@@ -64,7 +64,7 @@
 \verb=  init_iter  = &   Number of initial pressure iterations.  &  4 \\
 \verb=  init_shrink  = &   the multiplicative factor ($\le 1$) to reduce the initial timestep as computed by the various timestep estimators  &  1.0 \\
 \verb=  interp_type_radial_bin_to_cart  = &   The interpolation for filling a full multifab from a 1D bin-centered array. \newline 1 = piecewise constant; \newline 2 = piecewise linear.  &  1 \\
-\verb=  job_name  = &    &  "" \\
+\verb=  job_name  = &   job name printed in output  &  "" \\
 \verb=  lUsingNFiles  = &   If .true., use nOutFiles processors to write checkpoint and plotfiles. Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  .true. \\
 \verb=  max_dt_growth  = &   The maximum scale factor that the time step is allowed to grow by per time step.  &  1.1D0 \\
 \verb=  max_grid_size  = &    The largest grid size that will be created using make\_new\_grids.  &  64 \\
@@ -73,7 +73,7 @@
 \verb=  max_step  = &   Maximum number of steps in the simulation.  &  1 \\
 \verb=  mg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
 \verb=  mg_verbose  = &   Verbsoity of the multigrid solver, but not the bottom solver.  &  0 \\
-\verb=  min_eff  = &    &  0.7d0 \\
+\verb=  min_eff  = &   parameter for cluster algorithm for making new grids in adaptive problems  &  0.7d0 \\
 \verb=  min_width  = &   The minimum size on a side for a grid created using make\_new\_grids.  &  16 \\
 \verb=  model_file  = &   input model file  &  "model.hse" \\
 \verb=  nOutFiles  = &   If lUsingNFiles = .true., use this many processors to write checkpoint and plotfiles.  Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  64 \\
@@ -98,13 +98,13 @@
 \verb=  prob_lo_x  = &   physical coordinates of lo-x corner of problem domain  &  ZERO \\
 \verb=  prob_lo_y  = &   physical coordinates of lo-y corner of problem domain  &  ZERO \\
 \verb=  prob_lo_z  = &   physical coordinates of lo-z corner of problem domain  &  ZERO \\
-\verb=  radius  = &    &  1.0e6\_dp\_t \\
-\verb=  ref_ratio  = &    &  2 \\
-\verb=  regrid_int  = &    &  -1 \\
+\verb=  ref_ratio  = &   Refinement ratio for multilevel problems  &  2 \\
+\verb=  regrid_int  = &   How often we regrid.  &  -1 \\
 \verb=  restart  = &   which file to restart from.  -1 means do not restart  &  -1 \\
-\verb=  rotational_frequency  = &    &  ZERO \\
+\verb=  rotation_radius  = &   radius used for computing centrifugal term in rotation problems  &  1.0e6\_dp\_t \\
+\verb=  rotational_frequency  = &   rotational frequency used for computing centrifugal term in rotation problems.  &  ZERO \\
 \verb=  single_prec_plotfiles  = &    &  .false. \\
-\verb=  slope_order  = &    &  4 \\
+\verb=  slope_order  = &   order of slopes in Godunov algorithm.  Options are 0, 2, or 4.  &  4 \\
 \verb=  small_dens  = &    &  1.d-5 \\
 \verb=  small_temp  = &    &  5.d6 \\
 \verb=  spherical_in  = &   set to 1 if you are doing a spherical problem  &  0 \\
@@ -117,10 +117,10 @@
 \verb=  the_layout_verbosity  = &    &  0 \\
 \verb=  the_sfc_threshold  = &   When assigning processors for grids, this determines whether we use the sfc algorithm or knapsack algorithm.  If the total number of grids divided by the number of processors is greater than this number, use sfc.  &  5 \\
 \verb=  thermal_diffusion_type  = &   In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.  &  1 \\
-\verb=  use_delta_gamma1_term  = &    &  .false. \\
+\verb=  use_delta_gamma1_term  = &   turns on second order correction to delta gamma1 term  &  .false. \\
 \verb=  use_divu_firstdt  = &   Use the divu constraint when computing the first time step.  &  .false. \\
 \verb=  use_eos_coulomb  = &    &  .true. \\
-\verb=  use_etarho  = &    &  .true. \\
+\verb=  use_etarho  = &   turn on the etarho term as described in flow chart  &  .true. \\
 \verb=  use_soundspeed_firstdt  = &   Use the soundspeed constraint when computing the first time step.  &  .false. \\
 \verb=  use_tfromp  = &   When updating temperature, use $T=T(\rho,p_0,X) $ rather than $T=T(\rho,h,X)$.  &  .false. \\
 \verb=  use_thermal_diffusion  = &   Use thermal diffusion.  &  .false. \\

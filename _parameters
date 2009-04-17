@@ -203,10 +203,13 @@ small_dens                          real               1.d-5
 # Parameter for sponge.  Problem dependent.
 sponge_kappa                        real               10.d0               
 
+# turns on second order correction to delta gamma1 term
 use_delta_gamma1_term               logical            .false.             
 
+# turn on the etarho term as described in flow chart
 use_etarho                          logical            .true.              
 
+# order of slopes in Godunov algorithm.  Options are 0, 2, or 4.
 slope_order                         integer            4                   
 
 # The interpolation for filling a full multifab from a 1D bin-centered array. @@
@@ -264,8 +267,10 @@ max_levs                            integer            1
 #  The largest grid size that will be created using make\_new\_grids.
 max_grid_size                       integer            64                  
 
+# How often we regrid.
 regrid_int                          integer            -1                  
 
+# Refinement ratio for multilevel problems
 ref_ratio                           integer            2                   
 
 # Number of cells for the base level in the x-direction
@@ -292,17 +297,21 @@ the_layout_verbosity                integer            0
 # recompute the boxassoc, which is computationally expensive.
 the_copy_cache_max                  integer            50                  
 
+# parameter for cluster algorithm for making new grids in adaptive problems
 min_eff                             real               0.7d0               
 
 # The minimum size on a side for a grid created using make\_new\_grids.
 min_width                           integer            16                  
 
+# rotational frequency used for computing centrifugal term in rotation problems.
 rotational_frequency                real               ZERO                
 
 # latitude, in radians, for problems with rotation where the domain is 
 # only a subset of a full star.
 co_latitude                         real               ZERO                
 
-radius                              real               1.0e6_dp_t          
+# radius used for computing centrifugal term in rotation problems
+rotation_radius                     real               1.0e6_dp_t          
 
+# job name printed in output
 job_name                            character          ""                  

@@ -334,7 +334,7 @@ contains
 
   subroutine init_rotation()
 
-    use probin_module, only: rotational_frequency, co_latitude, radius
+    use probin_module, only: rotational_frequency, co_latitude, rotation_radius
     use bl_constants_module, only: M_PI, ZERO
 
     real(dp_t) :: theta_in_rad
@@ -346,9 +346,9 @@ contains
 
     omega = 2 * M_PI * rotational_frequency
 
-    centrifugal_term(1) = - omega * omega * radius * sin_theta * cos_theta
+    centrifugal_term(1) = - omega * omega * rotation_radius * sin_theta * cos_theta
     centrifugal_term(2) = ZERO
-    centrifugal_term(3) = - omega * omega * radius * sin_theta * sin_theta
+    centrifugal_term(3) = - omega * omega * rotation_radius * sin_theta * sin_theta
 
   end subroutine init_rotation
 
