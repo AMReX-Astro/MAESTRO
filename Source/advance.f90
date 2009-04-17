@@ -171,23 +171,15 @@ contains
        end if
     end if
 
-    ! Set this to zero so if evolve_base_state = F there is no effect in update_vel
-    w0_force = ZERO
-
-    ! Set Sbar to zero so if evolve_base_state = F then it doesn't affect rhs of projections
-    Sbar = ZERO
-
-    ! Set these to results from last
+    ! Initialize these to previous values
     w0_old = w0
     gamma1bar_old = gamma1bar
-
-    ! Set this to zero since we only compute this if dpdt_factor > 0
-    p0_minus_pthermbar = ZERO
 
     halfdt = half*dt
 
     call compute_cutoff_coords(rho0_old)
     
+    ! compute tempbar by "averaging"
     if (spherical .eq. 0) then
        call average(mla,sold,tempbar,dx,temp_comp)
     else
@@ -224,11 +216,10 @@ contains
        call setval(delta_p_term(n),ZERO,all=.true.)
     end do
 
+    ! compute p0_minus_pthermbar = p0_old - pthermbar (for making w0) and
+    ! compute delta_p_term = ptherm_old - pthermbar_cart (for RHS of projections)
     if (dpdt_factor .gt. ZERO ) then
     
-       ! compute p0_minus_pthermbar = p0_old - pthermbar (for making w0)
-       ! and delta_p_term = ptherm_old - pthermbar_cart (for RHS of projection)
-
        ! ptherm_old now holds the thermodynamic p computed from sold(rho,h,X)
        call makePfromRhoH(sold,sold,ptherm_old,mla,the_bc_tower%bc_tower_array)
 
@@ -242,7 +233,7 @@ contains
           call multifab_build(pthermbar_cart(n), mla%la(n), 1, 0)
        end do
        
-       ! compute pthermbar_cart = fill(pthermbar)
+       ! compute pthermbar_cart from pthermbar
        call put_1d_array_on_cart(pthermbar,pthermbar_cart,foextrap_comp, &
                                  .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
@@ -255,6 +246,11 @@ contains
        do n=1,nlevs
           call destroy(pthermbar_cart(n))
        end do
+
+    else
+
+       ! this should have no effect if dpdt_factor .le. 0
+       p0_minus_pthermbar = ZERO
 
     end if
 
@@ -285,6 +281,12 @@ contains
           call put_1d_array_on_cart(w0_force,w0_force_cart_vec,foextrap_comp,.false., &
                                     .true.,dx,the_bc_tower%bc_tower_array,mla,normal)
        end if
+
+    else
+
+       ! these should have no effect if evolve_base_state = F
+       w0_force = ZERO
+       Sbar = ZERO
 
     end if
     
@@ -380,6 +382,7 @@ contains
        call destroy(rho_Hext(n))
     end do
 
+    ! compute rhoh0_old by "averaging"
     if (evolve_base_state) then
        if (spherical .eq. 0) then
           call average(mla,s1,rhoh0_old,dx,rhoh_comp)
@@ -471,7 +474,7 @@ contains
                          normal,rho0_old,rho0_new,p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
 
-    ! Now compute the new etarho and psi
+    ! Now compute the new etarho
     if (evolve_base_state) then
        if (use_etarho) then
 
@@ -485,7 +488,7 @@ contains
        endif
     end if
 
-    ! Correct the base state using the time-centered etarho and psi
+    ! Correct the base state by "averaging"
     if (use_etarho .and. evolve_base_state) then
        if (spherical .eq. 0) then
           call average(mla,s2,rho0_new,dx,rho_comp)
@@ -503,18 +506,24 @@ contains
 
     if (evolve_base_state) then
 
-       call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
+       if (p0_update_type .eq. 1) then
 
-!       ! set new p0 through HSE
-!       p0_new = p0_old
-!       call enforce_HSE(rho0_new,p0_new,grav_cell_new)
-!
-!       ! make psi
-!       if (spherical .eq. 0) then
-!          call make_psi_planar(etarho_cc,psi)
-!       else
-!          call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar)
-!       end if
+          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
+
+       else if (p0_update_type .eq. 1) then
+
+          ! set new p0 through HSE
+          p0_new = p0_old
+          call enforce_HSE(rho0_new,p0_new,grav_cell_new)
+          
+          ! make psi
+          if (spherical .eq. 0) then
+             call make_psi_planar(etarho_cc,psi)
+          else
+             call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+          end if
+          
+       end if
 
     else
        p0_new = p0_old
@@ -667,10 +676,9 @@ contains
        call setval(delta_p_term(n),ZERO,all=.true.)
     end do
 
+    ! compute p0_minus_pthermbar = p0_nph - pthermbar (for making w0)
+    ! and delta_p_term = ptherm_nph - pthermbar_cart (for RHS of projection)
     if (dpdt_factor .gt. ZERO) then
-
-       ! compute p0_minus_pthermbar = p0_nph - pthermbar (for making w0)
-       ! and delta_p_term = ptherm_nph - pthermbar_cart (for RHS of projection)
 
        do n=1,nlevs
           call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
@@ -707,7 +715,7 @@ contains
           call multifab_build(pthermbar_cart(n), mla%la(n), 1, 0)
        end do
 
-       ! compute pthermbar_cart = fill(pthermbar)
+       ! compute pthermbar_cart from pthermbar
        call put_1d_array_on_cart(pthermbar,pthermbar_cart,foextrap_comp, &
             .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
@@ -856,7 +864,7 @@ contains
                          normal,rho0_old,rho0_new,p0_new,rho0_predicted_edge,dx,dt, &
                          the_bc_tower%bc_tower_array)
 
-    ! Now compute the new etarho and psi
+    ! Now compute the new etarho
     if (evolve_base_state) then
        if (use_etarho) then
 
@@ -874,7 +882,7 @@ contains
        call destroy(etarhoflux(n))
     end do
 
-    ! Correct the base state using the time-centered etarho and psi
+    ! Correct the base state using "averaging"
     if (use_etarho .and. evolve_base_state) then
        if (spherical .eq. 0) then
           call average(mla,s2,rho0_new,dx,rho_comp)
@@ -892,23 +900,29 @@ contains
     ! Define base state at half time for use in velocity advance
     rho0_nph = HALF*(rho0_old+rho0_new)
 
-    ! Define gravicyt at half time for use in velocity advance
+    ! Define gravity at half time for use in velocity advance
     call make_grav_cell(grav_cell_nph,rho0_nph)
 
     if (evolve_base_state) then
 
-       call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
+       if (p0_update_type .eq. 1) then
 
-!       ! set new p0 through HSE
-!       p0_new = p0_old
-!       call enforce_HSE(rho0_new,p0_new,grav_cell_new)
-!
-!       ! make psi
-!       if (spherical .eq. 0) then
-!          call make_psi_planar(etarho_cc,psi)
-!       else
-!          call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar)
-!       end if
+          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
+
+       else if (p0_update_type .eq. 2) then
+
+          ! set new p0 through HSE
+          p0_new = p0_old
+          call enforce_HSE(rho0_new,p0_new,grav_cell_new)
+          
+          ! make psi
+          if (spherical .eq. 0) then
+             call make_psi_planar(etarho_cc,psi)
+          else
+             call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+          end if
+          
+       end if
 
     else
        p0_new = p0_old
@@ -1094,7 +1108,7 @@ contains
        write(6,*) '<<< STEP 11 : update and project new velocity >>>'
     end if
     
-    ! Define rho at half time using the new rho from Step 8!
+    ! Define rho at half time using the new rho from Step 8
     do n=1,nlevs
        call multifab_build(rhohalf(n), mla%la(n), 1, 1)
     end do
@@ -1147,13 +1161,12 @@ contains
        call make_hgrhs(the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
                        Sbar,div_coeff_nph,dx)
 
+       ! compute delta_p_term = ptherm_new - pthermbar_cart (for RHS of projection)
        if (dpdt_factor .gt. ZERO) then
 
           do n=1,nlevs
              call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
           enddo
-
-          ! compute delta_p_term = ptherm_new - pthermbar_cart (for RHS of projection)
 
           ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
           call makePfromRhoH(snew,snew,ptherm_new,mla,the_bc_tower%bc_tower_array)
@@ -1167,7 +1180,7 @@ contains
              call multifab_build(pthermbar_cart(n), mla%la(n), 1, 0)
           end do
 
-          ! compute pthermbar_cart = fill(pthermbar)
+          ! compute pthermbar_cart from pthermbar
           call put_1d_array_on_cart(pthermbar,pthermbar_cart,foextrap_comp, &
                                     .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 

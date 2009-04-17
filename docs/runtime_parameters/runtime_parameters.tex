@@ -69,45 +69,47 @@
 \verb=  max_dt_growth  = &   The maximum scale factor that the time step is allowed to grow by per time step.  &  1.1D0 \\
 \verb=  max_grid_size  = &    The largest grid size that will be created using make\_new\_grids.  &  64 \\
 \verb=  max_levs  = &   Total number of levels.  1 = single level.  &  1 \\
+\verb=  max_mg_bottom_nlevels  = &   if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have  &  -1 \\
 \verb=  max_step  = &   Maximum number of steps in the simulation.  &  1 \\
 \verb=  mg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
 \verb=  mg_verbose  = &   Verbsoity of the multigrid solver, but not the bottom solver.  &  0 \\
 \verb=  min_eff  = &    &  0.7d0 \\
 \verb=  min_width  = &   The minimum size on a side for a grid created using make\_new\_grids.  &  16 \\
-\verb=  model_file  = &    &  "model.hse" \\
+\verb=  model_file  = &   input model file  &  "model.hse" \\
 \verb=  nOutFiles  = &   If lUsingNFiles = .true., use this many processors to write checkpoint and plotfiles.  Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  64 \\
 \verb=  n_cellx  = &   Number of cells for the base level in the x-direction  &  -1 \\
 \verb=  n_celly  = &   Number of cells for the base level in the y-direction  &  -1 \\
 \verb=  n_cellz  = &   Number of cells for the base level in the z-direction  &  -1 \\
+\verb=  p0_update_type  = &   How we update the base state pressure and compute psi. \newline 1 = call {\tt advect\_base\_pres}; \newline 2 = call {\tt enforce\_HSE}.  &  1 \\
 \verb=  perturb_model  = &   Turn on a perturbation in the initial data.  Problem specific.  &  .false. \\
-\verb=  plot_base  = &    &  .false. \\
-\verb=  plot_base_name  = &    &  "plt" \\
-\verb=  plot_deltat  = &    &  0.0 \\
-\verb=  plot_int  = &    &  0 \\
-\verb=  plot_spec  = &    &  .true. \\
-\verb=  plot_trac  = &    &  .false. \\
-\verb=  pmask_x  = &    &  .false. \\
-\verb=  pmask_y  = &    &  .false. \\
-\verb=  pmask_z  = &    &  .false. \\
+\verb=  plot_base  = &   plot w0\_x, w0\_y, w0\_z, divw0, rho0, rhoh0, h0, and p0 in plotfile  &  .false. \\
+\verb=  plot_base_name  = &   prefix to use in plotfile file names  &  "plt" \\
+\verb=  plot_deltat  = &   rather than use a plot interva, plot a file after the solution has advanced past plot\_deltat in time  &  0.0 \\
+\verb=  plot_int  = &   plot interval  &  0 \\
+\verb=  plot_spec  = &   plot species and omegadot in plotfile  &  .true. \\
+\verb=  plot_trac  = &   plot tracers in plotfile  &  .false. \\
+\verb=  pmask_x  = &   indicates whether the problem domain periodic in the x-direction  &  .false. \\
+\verb=  pmask_y  = &   indicates whether the problem domain periodic in the y-direction  &  .false. \\
+\verb=  pmask_z  = &   indicates whether the problem domain periodic in the z-direction  &  .false. \\
 \verb=  ppm_type  = &   0 = no ppm \newline 1 = 1985 ppm \newline 2 = 2009 ppm  &  0 \\
-\verb=  prob_hi_x  = &    &  1.0 \\
-\verb=  prob_hi_y  = &    &  1.0 \\
-\verb=  prob_hi_z  = &    &  1.0 \\
-\verb=  prob_lo_x  = &    &  ZERO \\
-\verb=  prob_lo_y  = &    &  ZERO \\
-\verb=  prob_lo_z  = &    &  ZERO \\
+\verb=  prob_hi_x  = &   physical coordinates of hi-x corner of problem domain  &  1.0 \\
+\verb=  prob_hi_y  = &   physical coordinates of hi-y corner of problem domain  &  1.0 \\
+\verb=  prob_hi_z  = &   physical coordinates of hi-z corner of problem domain  &  1.0 \\
+\verb=  prob_lo_x  = &   physical coordinates of lo-x corner of problem domain  &  ZERO \\
+\verb=  prob_lo_y  = &   physical coordinates of lo-y corner of problem domain  &  ZERO \\
+\verb=  prob_lo_z  = &   physical coordinates of lo-z corner of problem domain  &  ZERO \\
 \verb=  radius  = &    &  1.0e6\_dp\_t \\
 \verb=  ref_ratio  = &    &  2 \\
 \verb=  regrid_int  = &    &  -1 \\
-\verb=  restart  = &    &  -1 \\
+\verb=  restart  = &   which file to restart from.  -1 means do not restart  &  -1 \\
 \verb=  rotational_frequency  = &    &  ZERO \\
 \verb=  single_prec_plotfiles  = &    &  .false. \\
 \verb=  slope_order  = &    &  4 \\
 \verb=  small_dens  = &    &  1.d-5 \\
 \verb=  small_temp  = &    &  5.d6 \\
-\verb=  spherical_in  = &    &  0 \\
-\verb=  sponge_kappa  = &    &  10.d0 \\
-\verb=  stop_time  = &    &  -1.d0 \\
+\verb=  spherical_in  = &   set to 1 if you are doing a spherical problem  &  0 \\
+\verb=  sponge_kappa  = &   Parameter for sponge.  Problem dependent.  &  10.d0 \\
+\verb=  stop_time  = &   simulation stop time  &  -1.d0 \\
 \verb=  temp_diffusion_formulation  = &   How to compute the explicit thermal diffusion term.  \newline .true. = in terms of $T$; \newline .false. = in terms of $\rho,p_0,X$.  &  .false. \\
 \verb=  test_set  = &   Fixed grid file.  &  '' \\
 \verb=  the_copy_cache_max  = &    Number of boxassoc layouts we keep in memory to avoid having to recompute the boxassoc, which is computationally expensive.  &  50 \\

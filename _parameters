@@ -5,27 +5,38 @@
 # problem-specific runtime parameters should be defined in a _parameters
 # file in the problem directory.
 
+# input model file
 model_file                          character          "model.hse"         
 
+# simulation stop time
 stop_time                           real               -1.d0               
 
+# physical coordinates of lo-x corner of problem domain
 prob_lo_x                           real               ZERO                
 
+# physical coordinates of lo-y corner of problem domain
 prob_lo_y                           real               ZERO                
 
+# physical coordinates of lo-z corner of problem domain
 prob_lo_z                           real               ZERO                
 
+# physical coordinates of hi-x corner of problem domain
 prob_hi_x                           real               1.0                    
 
+# physical coordinates of hi-y corner of problem domain
 prob_hi_y                           real               1.0                    
 
+# physical coordinates of hi-z corner of problem domain
 prob_hi_z                           real               1.0                    
 
 # Maximum number of steps in the simulation.
 max_step                            integer            1                   
 
+# plot interval
 plot_int                            integer            0                   
 
+# rather than use a plot interva, plot a file after the solution has 
+# advanced past plot\_deltat in time
 plot_deltat                         real               0.0                 
 
 # Number of timesteps between writing a checkpoint file
@@ -47,6 +58,7 @@ init_shrink                         real               1.0
 # Fixed grid file.
 test_set                            character          ''                  
 
+# which file to restart from.  -1 means do not restart
 restart                             integer            -1                  
 
 # Do the initial projection.
@@ -70,10 +82,13 @@ bcz_lo                              integer            SLIP_WALL
 # $+z$ boundary condition
 bcz_hi                              integer            SLIP_WALL           
 
+# indicates whether the problem domain periodic in the x-direction
 pmask_x                             logical            .false.
 
+# indicates whether the problem domain periodic in the y-direction
 pmask_y                             logical            .false.             
 
+# indicates whether the problem domain periodic in the z-direction
 pmask_z                             logical            .false.             
 
 # General verbosity
@@ -91,7 +106,7 @@ hg_bottom_solver                    integer            -1
 # valid values are $\le$ 0
 mg_bottom_solver                    integer            -1                  
 
-# if mg_bottom_solver == 4, then how many mg levels can the bottom solver mgt object have
+# if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have
 max_mg_bottom_nlevels               integer            -1                  
 
 # Use sponging.
@@ -111,6 +126,7 @@ base_cutoff_density                 real               3.e6
 # factor in front of the volume discrepancy term (0.0 = off)
 dpdt_factor                         real               0.0d0               
 
+# set to 1 if you are doing a spherical problem
 spherical_in                        integer            0                   
 
 # dimensionality (valid values are 2 or 3)
@@ -119,12 +135,16 @@ dm_in                               integer            2
 # Turn on a perturbation in the initial data.  Problem specific.
 perturb_model                       logical            .false.             
 
+# plot species and omegadot in plotfile
 plot_spec                           logical            .true.              
 
+# plot tracers in plotfile
 plot_trac                           logical            .false.             
 
+# plot w0\_x, w0\_y, w0\_z, divw0, rho0, rhoh0, h0, and p0 in plotfile
 plot_base                           logical            .false.
 
+# prefix to use in plotfile file names
 plot_base_name                      character          "plt"               
 
 # prefix to use in checkpoint file names
@@ -132,6 +152,11 @@ check_base_name                     character          "chk"
 
 # turn on (.true.) or off (.false.) basestate evolution
 evolve_base_state                   logical            .true.              
+
+# How we update the base state pressure and compute psi. @@
+# 1 = call {\tt advect\_base\_pres}; @@
+# 2 = call {\tt enforce\_HSE}.
+p0_update_type                      integer            1
 
 # Use thermal diffusion.
 use_thermal_diffusion               logical            .false.             
@@ -175,6 +200,7 @@ small_temp                          real               5.d6
 
 small_dens                          real               1.d-5               
 
+# Parameter for sponge.  Problem dependent.
 sponge_kappa                        real               10.d0               
 
 use_delta_gamma1_term               logical            .false.             
