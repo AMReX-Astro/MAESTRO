@@ -86,22 +86,15 @@ state ($\rho, h, X$, and $T$) are computed.  We require that $\rho_0 =
 (\ref{HSE Discretization}), and the full state is thermodynamically
 consistent with $p_0$.  Here are the steps:
 \begin{enumerate}
-\item For plane-parallel problems, fill $\rho^{\init}, h^{\init},
-  X^{\init}$, and $T^{\init}$ onto a multifab to obtain the full state
-  $\rho, h, X$, and $T$.  For spherical problems, fill $\rho^{\init},
-  p^{\init}$, and $X^{\init}$ onto a multifab to obtain the full state
-  $\rho, p$, and $X$, and then call the EOS to obtain the full state
-  $h,T = h,T(\rho,p,X)$.  Note that this particular multifab version
-  of $p$ is temporary, and can be deallocated after this step.
-\item For spherical problems, skip the remaining steps and instead set
-  $p_0 = p^{\init}$ and $\rho_0 = \rho^{\init}$.
+\item Fill $\rho^{\init}, h^{\init}, X^{\init}$, and $T^{\init}$ onto a 
+  multifab to obtain the full state $\rho, h, X$, and $T$.
 \item If {\tt perturb\_model} = F, skip the remaining steps and
   instead set $p_0 = p^{\init}$ and $\rho_0 = \rho^{\init}$.
 \item Perturb $T$, then compute $\rho,h = \rho,h(p^{\init},T,X)$.
 \item Set $\rho_0 = \overline\rho$.
 \item Compute $p_0$ using equation (\ref{HSE Discretization}), using
-  the pressure at the top of the domain as the initial condition.
-  Note that we still integrate upwards from the bottom, but then
+  the $p^{\init}$ at the top of the domain as the one required boundary 
+  condition.  Note that we still integrate upwards from the bottom, but then
   offset the final pressure so the pressure at the top of the domain
   remains unchanged.
 \item Compute the full state $T,h = T,h(\rho,p_0,X)$.
