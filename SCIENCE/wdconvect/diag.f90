@@ -513,6 +513,9 @@ contains
     if (spherical .eq. 1) then
        do n=1,nlevs
           call destroy(w0r_cart(n))
+          do comp=1,dm
+             call destroy(w0mac(n,comp))
+          enddo
        end do
     end if
 
