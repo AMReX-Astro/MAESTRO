@@ -874,7 +874,7 @@ contains
     eps = 1.d-12
 
     if ( hg_bottom_solver >= 0 ) then
-        if (hg_bottom_solver == 4 .and. rh(1)%nboxes == 1) then
+        if (hg_bottom_solver == 4 .and. phi(1)%nboxes == 1) then
            if (parallel_IOProcessor()) then
               print *,'Dont use hg_bottom_solver == 4 with only one grid -- '
               print *,'  Reverting to default bottom solver ',bottom_solver
@@ -1009,7 +1009,7 @@ contains
        call boxarray_build_bx(new_coarse_ba,bxs)
 
        ! This is how many levels could be built if we made just one grid
-       n = max_mg_levels(new_coarse_ba,min_width)+1
+       n = max_mg_levels(new_coarse_ba,min_width)
 
        ! This is the user-imposed limit
        n = min(n,max_mg_bottom_nlevels)
@@ -1047,6 +1047,9 @@ contains
                            cg_verbose = cg_verbose, &
                            nodal = nodal)
 
+       if (parallel_IOProcessor() .and. verbose .ge. 1) &
+          print *,'ACTUAL NLEVELS IN BOTTOM_MGT ',bottom_mgt%nlevels
+
        ! START SPECIAL COPY
        ! Here we do special stuff to be able to copy the ghost cells of stored_coeffs into
        !   the ghost cells of coarse_coeffs(bottom)
@@ -1074,7 +1077,7 @@ contains
        end do
 
        call boxarray_build_copy(ba_cc,new_coarse_ba)
-       call boxarray_grow(ba_cc,1,1,1)
+       call boxarray_grow(ba_cc,1)
        call layout_build_ba(new_la_grown,ba_cc,explicit_mapping=get_proc(new_coarse_la))
        call destroy(ba_cc)
        call multifab_build(new_coeffs_grown,new_la_grown,1,ng=0)
@@ -1101,7 +1104,6 @@ contains
        do i = mglev, 1, -1
           call stencil_fill_nodal(bottom_mgt%ss(i), coarse_coeffs(i), bottom_mgt%dh(:,i), &
                                   bottom_mgt%mm(i), bottom_mgt%face_type, stencil_type)
-          pd  = coarsen(pd,2)
        end do
 
        do i = mglev, 1, -1
@@ -1135,7 +1137,8 @@ contains
 
     if (present(eps_in)) then
        if (bottom_solver == 4) then
-          call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,eps_in=eps_in,bottom_mgt=bottom_mgt)
+          call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,&
+                           eps_in=eps_in,bottom_mgt=bottom_mgt)
        else
           call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,eps_in=eps_in)
        end if
