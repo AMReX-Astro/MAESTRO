@@ -833,7 +833,7 @@ contains
     type(multifab)  :: stored_coeffs, stored_coeffs_grown
     type(multifab)  :: new_coeffs_grown
     type(multifab), allocatable :: coarse_coeffs(:)
-    integer         :: mglev,bottom_box_size
+    integer         :: j,nx,mglev,bottom_box_size
     real(dp_t), pointer :: sc_orig(:,:,:,:), sc_grown(:,:,:,:)
     real(dp_t)      :: coarse_dx(dm)
 
@@ -1014,7 +1014,19 @@ contains
        ! This is the user-imposed limit
        n = min(n,max_mg_bottom_nlevels)
 
+       if ( n .eq. 1) then
+          call bl_error("DONT USE HG_BOTTOM_SOLVER == 4 WHEN BOTTOM GRID NOT PROPERLY DIVISIBLE : n = 1 ")
+       end if
+
        bottom_box_size = 2**n
+
+       do j = 1,dm
+          nx = extent(bxs,j)
+          if ( (bottom_box_size * (nx/bottom_box_size)) .ne. nx ) then
+             call bl_error("DONT USE MG_BOTTOM_SOLVER == 4 WHEN BOTTOM GRID NOT PROPERLY DIVISIBLE ")
+          end if
+       end do
+
        call boxarray_maxsize(new_coarse_ba,bottom_box_size)
        call layout_build_ba(new_coarse_la,new_coarse_ba,coarse_pd)
 
@@ -1046,9 +1058,6 @@ contains
                            verbose = mg_verbose, &
                            cg_verbose = cg_verbose, &
                            nodal = nodal)
-
-       if (parallel_IOProcessor() .and. verbose .ge. 1) &
-          print *,'ACTUAL NLEVELS IN BOTTOM_MGT ',bottom_mgt%nlevels
 
        ! START SPECIAL COPY
        ! Here we do special stuff to be able to copy the ghost cells of stored_coeffs into
