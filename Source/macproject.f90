@@ -1356,7 +1356,7 @@ contains
     end if
 
     if ( mg_bottom_solver >= 0 ) then
-        if (mg_bottom_solver == 4 .and. rh(1)%nboxes == 1) then
+        if (mg_bottom_solver == 4 .and. phi(1)%nboxes == 1) then
            if (parallel_IOProcessor()) then
               print *,'Dont use mg_bottom_solver == 4 with only one grid -- '
               print *,'  Reverting to default bottom solver ',bottom_solver
@@ -1481,7 +1481,7 @@ contains
        call boxarray_build_bx(new_coarse_ba,bxs)
 
        ! This is how many levels could be built if we made just one grid
-       n = max_mg_levels(new_coarse_ba,min_width)+1
+       n = max_mg_levels(new_coarse_ba,min_width)
 
        ! This is the user-imposed limit
        n = min(n,max_mg_bottom_nlevels)
@@ -1519,6 +1519,8 @@ contains
                            verbose = mg_verbose, &
                            cg_verbose = cg_verbose, &
                            nodal = rh(1)%nodal)
+
+       print *,'NLEVELS AFTER BUILD ',bottom_mgt%nlevels
 
 ! START SPECIAL COPY
        ! Here we do special stuff to be able to copy the ghost cells of stored_coeffs into
