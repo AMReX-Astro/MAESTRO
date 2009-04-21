@@ -1005,7 +1005,7 @@ contains
        coarse_pd = layout_get_pd(old_coarse_la)
 
        ! Get the new coarse boxarray and layout
-       call box_build_2(bxs,coarse_pd%lo,coarse_pd%hi)
+       call box_build_2(bxs,coarse_pd%lo(1:dm),coarse_pd%hi(1:dm))
        call boxarray_build_bx(new_coarse_ba,bxs)
 
        ! This is how many levels could be built if we made just one grid
