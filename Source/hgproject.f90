@@ -879,6 +879,11 @@ contains
               print *,'Dont use hg_bottom_solver == 4 with only one grid -- '
               print *,'  Reverting to default bottom solver ',bottom_solver
            end if
+        else if (hg_bottom_solver == 4 .and. max_mg_bottom_levels < 2) then
+           if (parallel_IOProcessor()) then
+              print *,'Dont use hg_bottom_solver == 4 with max_mg_bottom_levels < 2'
+              print *,'  Reverting to default bottom solver ',bottom_solver
+           end if
         else
            bottom_solver = hg_bottom_solver
         end if
@@ -1019,6 +1024,8 @@ contains
        end if
 
        bottom_box_size = 2**n
+       print *,'N ',n
+       print *,'BOTTOM_BOX SIZE ',bottom_box_size
 
        do j = 1,dm
           nx = extent(bxs,j)

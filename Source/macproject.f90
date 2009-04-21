@@ -1361,6 +1361,11 @@ contains
               print *,'Dont use mg_bottom_solver == 4 with only one grid -- '
               print *,'  Reverting to default bottom solver ',bottom_solver
            end if
+        else if (mg_bottom_solver == 4 .and. max_mg_bottom_nlevels < 2) then
+           if (parallel_IOProcessor()) then
+              print *,'Dont use mg_bottom_solver == 4 with max_mg_bottom_nlevels < 2'
+              print *,'  Reverting to default bottom solver ',bottom_solver
+           end if
         else
            bottom_solver = mg_bottom_solver
         end if
