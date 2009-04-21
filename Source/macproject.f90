@@ -1505,7 +1505,7 @@ contains
        end do
 
        call boxarray_maxsize(new_coarse_ba,bottom_box_size)
-       call layout_build_ba(new_coarse_la,new_coarse_ba,coarse_pd)
+       call layout_build_ba(new_coarse_la,new_coarse_ba,coarse_pd,old_coarse_la%lap%pmask)
 
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           call print(layout_get_pd(old_coarse_la),"COARSE PD")
@@ -1553,7 +1553,8 @@ contains
        do j = 1, dm
           call boxarray_build_copy(ba_cc,get_boxarray(stored_coeffs))
           call boxarray_grow(ba_cc,1,j, 1)
-          call layout_build_ba(old_la_grown,ba_cc,explicit_mapping=get_proc(old_coarse_la))
+          call layout_build_ba(old_la_grown,ba_cc,pmask=old_coarse_la%lap%pmask, &
+                               explicit_mapping=get_proc(old_coarse_la))
           call destroy(ba_cc)
           call multifab_build(stored_coeffs_grown,old_la_grown,1,ng=0)
 
@@ -1568,7 +1569,8 @@ contains
           ! Note that new_coeffs_grown only has one component at a time
           call boxarray_build_copy(ba_cc,new_coarse_ba)
           call boxarray_grow(ba_cc,1,j, 1)
-          call layout_build_ba(new_la_grown,ba_cc,explicit_mapping=get_proc(new_coarse_la))
+          call layout_build_ba(new_la_grown,ba_cc,pmask=old_coarse_la%lap%pmask, &
+                               explicit_mapping=get_proc(new_coarse_la))
           call destroy(ba_cc)
           call multifab_build(new_coeffs_grown,new_la_grown,1,ng=0)
           call multifab_copy_c(new_coeffs_grown,1,stored_coeffs_grown,1,1)
