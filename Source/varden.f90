@@ -1164,21 +1164,4 @@ subroutine varden()
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)
   deallocate(psi,tempbar,grav_cell)
 
-  if (verbose .ge. 1) then
-     if ( parallel_IOProcessor() ) then
-        print *, 'MEMORY STATS AT END OF PROGRAM'
-        print*, ' '
-     end if
-     call print(multifab_mem_stats(),    "    multifab")
-     call print(fab_mem_stats(),         "         fab")
-     call print(boxarray_mem_stats(),    "    boxarray")
-     call print(layout_mem_stats(),      "      layout")
-     call print(boxassoc_mem_stats(),    "    boxassoc")
-     call print(fgassoc_mem_stats(),     "     fgassoc")
-     call print(syncassoc_mem_stats(),   "   syncassoc")
-     call print(copyassoc_mem_stats(),   "   copyassoc")
-     call print(fluxassoc_mem_stats(),   "   fluxassoc")
-     call print(aveassoc_mem_stats(),    "    aveassoc")
-  end if
-
 end subroutine varden
