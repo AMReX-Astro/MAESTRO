@@ -152,14 +152,14 @@ where we have made use of the fact that $\overline{\rhop^n} = 0$ by construction
 \section{$\eta$ Flow Chart}
 \begin{enumerate}
 \item Enter {\tt advance\_timestep} with $[\etarhoec, \etarhocc]^{n-\myhalf}$.
-\item Call {\tt make\_w0}.  The spherical version uses uses $\etarhoec$ and $\etarhocc$.
-\item Call {\tt density\_advance}.  The plane-parallel version computes $\etarhoflux$.
-\item Call {\tt make\_etarho} to compute $[\etarhoec, \etarhocc]$
-\item Call {\tt make\_psi}.  The plane-parallel version uses $\etarhocc$.
-\item Call {\tt make\_w0}.  The spherical version uses uses $\etarhoec$ and $\etarhocc$.
-\item Call {\tt density\_advance}.  The plane-parallel version computes $\etarhoflux$.
-\item Call {\tt make\_etarho} to compute $[\etarhoec, \etarhocc]^{n+\myhalf}$
-\item Call {\tt make\_psi}.  The plane-parallel version uses $\etarhocc$.
+\item Call {\tt make\_w0}.  The spherical version uses uses $\etarho^{{\rm ec},n-\myhalf}$ and $\etarho^{{\rm cc},n-\myhalf}$.
+\item Call {\tt density\_advance}.  The plane-parallel version computes $\etarho^{{\rm flux},n+\myhalf,*}$.
+\item Call {\tt make\_etarho} to compute $[\etarhoec, \etarhocc]^{n+\myhalf,*}$.  The plane-parallel version uses $\etarho^{{\rm flux},n+\myhalf,*}$.
+\item Call {\tt make\_psi}.  The plane-parallel version uses $\etarho^{{\rm cc},n+\myhalf,*}$.
+\item Call {\tt make\_w0}.  The spherical version uses uses $\etarho^{{\rm ec},n+\myhalf,*}$ and $\etarho^{{\rm cc},n+\myhalf,*}$.
+\item Call {\tt density\_advance}.  The plane-parallel version computes $\etarho^{{\rm flux},n+\myhalf}$.
+\item Call {\tt make\_etarho} to compute $[\etarhoec, \etarhocc]^{n+\myhalf}$.  The plane-parallel version uses $\etarho^{{\rm flux},n+\myhalf}$.
+\item Call {\tt make\_psi}.  The plane-parallel version uses $\etarho^{{\rm cc},n+\myhalf}$.
 \end{enumerate}
 
 %-----------------------------------------------------------------------------
@@ -169,7 +169,7 @@ where we have made use of the fact that $\overline{\rhop^n} = 0$ by construction
 This is done in {\tt make\_eta.f90}.
 
 \subsection{Plane-Parallel}
-We first compute a radial edge-centered multifab, $\eta_{\rho}^{\rm flux}$, using
+We first compute a radial edge-centered multifab, $\etarho^{\rm flux}$, using
 \begin{equation}
 \eta_{\rho,\ib+\myhalf\eb_r}^{\rm flux} = \left[\left(\Ubt_{\ib+\myhalf\eb_r}^{n+\myhalf}\cdot\eb_r\right) + w_{0,r+\myhalf}^{n+\myhalf}\right] \rho_{\ib+\myhalf\eb_r}^{n+\myhalf} - w_{0,r+\myhalf}^{n+\myhalf}\rho_{0,r+\myhalf}^{n+\myhalf, {\rm pred}}
 \end{equation}
