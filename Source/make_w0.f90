@@ -57,16 +57,17 @@ contains
        call make_w0_planar(w0,w0_old,Sbar_in,p0_old,p0_new,gamma1bar_old, &
                            gamma1bar_new,p0_minus_pthermbar,psi,w0_force,dt,dtold)
 
+       call fill_ghost_base(w0_force,.true.)
+
     else
 
        call make_w0_spherical(w0(1,:),w0_old(1,:),Sbar_in(1,:),rho0_old(1,:), &
                               rho0_new(1,:),p0_old(1,:),p0_new(1,:), &
-                              gamma1bar_old(1,:),gamma1bar_new(1,:),p0_minus_pthermbar(1,:), &
-                              etarho_ec(1,:),etarho_cc(1,:),w0_force(1,:),dt,dtold)
+                              gamma1bar_old(1,:),gamma1bar_new(1,:), &
+                              p0_minus_pthermbar(1,:),etarho_ec(1,:),etarho_cc(1,:), &
+                              w0_force(1,:),dt,dtold)
 
     end if
-
-    call fill_ghost_base(w0_force,.true.)
 
     if (verbose .ge. 1) then
        do n=1,nlevs_radial

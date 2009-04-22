@@ -29,12 +29,11 @@ contains
 
     if (spherical .eq. 0) then
        call advect_base_dens_planar(w0,rho0_old,rho0_new,rho0_predicted_edge,dz,dt)
+       call restrict_base(rho0_new,.true.)
+       call fill_ghost_base(rho0_new,.true.)
     else
        call advect_base_dens_spherical(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
     end if
-
-    call restrict_base(rho0_new,.true.)
-    call fill_ghost_base(rho0_new,.true.)
 
     call destroy(bpt)
        
@@ -135,7 +134,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine advect_base_pres(w0,Sbar_in,p0_old,p0_new,gamma1bar,psi,etarho_cc,dz,dt)
+  subroutine advect_base_pres(w0,Sbar_in,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs
@@ -148,6 +147,7 @@ contains
     real(kind=dp_t), intent(  out) ::    p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(inout) ::       psi(:,0:)
+    real(kind=dp_t), intent(inout) ::   psi_old(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
     real(kind=dp_t), intent(in   ) :: dz(:),dt
     
@@ -172,11 +172,11 @@ contains
 
        ! advect p0
        call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,dt)
-       call restrict_base(p0_new,.true.)
-       call fill_ghost_base(p0_new,.true.)
 
        ! make psi
        call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
+       call make_psi_spherical(psi_old,w0,gamma1bar,p0_old,p0_old,Sbar_in)
+
     end if
 
     call destroy(bpt)
@@ -362,7 +362,7 @@ contains
 
   subroutine advect_base_enthalpy(w0,Sbar_in,rho0_old, &
                                   rhoh0_old,rhoh0_new,p0_old,p0_new, &
-                                  gamma1bar,rho0_predicted_edge,psi,dz,dt)
+                                  gamma1bar,rho0_predicted_edge,psi,psi_old,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs
@@ -378,6 +378,7 @@ contains
     real(kind=dp_t), intent(in   ) ::           gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     real(kind=dp_t), intent(in   ) ::                 psi(:,0:)
+    real(kind=dp_t), intent(in   ) ::             psi_old(:,0:)
     real(kind=dp_t), intent(in   ) :: dz(:),dt
     
     ! local
@@ -388,13 +389,13 @@ contains
     if (spherical .eq. 0) then
        call advect_base_enthalpy_planar(w0,rho0_old,rhoh0_old,rhoh0_new, &
                                         rho0_predicted_edge,psi,dz,dt)
+       call restrict_base(rhoh0_new,.true.)
+       call fill_ghost_base(rhoh0_new,.true.)
     else
        call advect_base_enthalpy_spherical(w0,Sbar_in,rho0_old,rhoh0_old,rhoh0_new, &
-                                           p0_old,p0_new,gamma1bar,rho0_predicted_edge,dt)
+                                           p0_old,p0_new,gamma1bar,rho0_predicted_edge,&
+                                           psi,psi_old,dt)
     end if
-
-    call restrict_base(rhoh0_new,.true.)
-    call fill_ghost_base(rhoh0_new,.true.)
 
     call destroy(bpt)
        
@@ -477,7 +478,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
   subroutine advect_base_enthalpy_spherical(w0,Sbar_in,rho0_old,rhoh0_old,rhoh0_new, &
-                                            p0_old,p0_new,gamma1bar,rho0_predicted_edge,dt)
+                                            p0_old,p0_new,gamma1bar,rho0_predicted_edge, &
+                                            psi,psi_old,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -492,6 +494,7 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
+    real(kind=dp_t), intent(in   ) :: psi(:,0:),psi_old(:,0:)
     real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
@@ -501,7 +504,6 @@ contains
     real(kind=dp_t) :: div_w0_cart, div_w0_sph
 
     real (kind = dp_t) ::         force(1,0:nr_fine-1)
-    real (kind = dp_t) ::           psi(1,0:nr_fine-1)
     real (kind = dp_t) ::            h0(1,0:nr_fine-1)
     real (kind = dp_t) :: gamma1bar_old(1,0:nr_fine-1)
     real (kind = dp_t) ::          edge(1,0:nr_fine)
@@ -521,18 +523,7 @@ contains
        h0 = rhoh0_old/rho0_old
 
        do r=0,nr_fine-1
-
-          div_w0_sph = one/(r_cc_loc(1,r)**2) * &
-               (r_edge_loc(1,r+1)**2 * w0(1,r+1) - &
-               r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
-
-          ! add psi at time-level n to the force for the prediction
-          psi(1,r) = gamma1bar_old(1,r) * p0_old(1,r) * (Sbar_in(1,r) - div_w0_sph)
           force(1,r) = psi(1,r)
-
-          ! construct a new, time-centered psi for the final update
-          psi(1,r) = HALF*(gamma1bar(1,r)*p0_new(1,r) + gamma1bar_old(1,r)*p0_old(1,r))* &
-               (Sbar_in(1,r) - div_w0_sph)
        end do
 
        call make_edge_state_1d(h0,edge,w0,force,dr,dt)
@@ -547,20 +538,12 @@ contains
        do r=0,nr_fine-1
 
           div_w0_cart = (w0(1,r+1) - w0(1,r)) / dr(1)
-          div_w0_sph = one/(r_cc_loc(1,r)**2) * &
-               (r_edge_loc(1,r+1)**2 * w0(1,r+1) - &
-               r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
 
           force(1,r) = -rhoh0_old(1,r) * div_w0_cart - &
                2.0_dp_t*rhoh0_old(1,r)*HALF*(w0(1,r) + w0(1,r+1))/r_cc_loc(1,r)
 
           ! add psi at time-level n to the force for the prediction
-          psi(1,r) = gamma1bar_old(1,r) * p0_old(1,r) * (Sbar_in(1,r) - div_w0_sph)
-          force(1,r) = force(1,r) + psi(1,r)
-
-          ! construct a new, time-centered psi for the final update
-          psi(1,r) = HALF*(gamma1bar(1,r)*p0_new(1,r) + gamma1bar_old(1,r)*p0_old(1,r))* &
-               (Sbar_in(1,r) - div_w0_sph)
+          force(1,r) = force(1,r) + psi_old(1,r)
        end do
 
        call make_edge_state_1d(rhoh0_old,edge,w0,force,dr,dt)

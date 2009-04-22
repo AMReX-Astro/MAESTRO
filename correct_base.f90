@@ -14,7 +14,6 @@ contains
 
     use bl_prof_module
     use geometry, only: spherical
-    use restrict_base_module
     use bl_error_module
 
     real(kind=dp_t), intent(inout) :: s0_new(:,0:)
@@ -30,9 +29,6 @@ contains
     else
        call bl_error("correct_base not defined for plane-parallel")
     end if
-
-    call restrict_base(s0_new,.true.)
-    call fill_ghost_base(s0_new,.true.)
 
     call destroy(bpt)
        

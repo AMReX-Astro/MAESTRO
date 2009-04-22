@@ -147,6 +147,7 @@ contains
     real(dp_t) ::          rhoprimebar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         rhohprimebar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         tempprimebar(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::              psi_old(nlevs_radial,0:nr_fine-1)
 
     integer    :: n,comp,proj_type,numcell
     real(dp_t) :: halfdt
@@ -508,7 +509,8 @@ contains
 
        if (p0_update_type .eq. 1) then
 
-          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
+          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc, &
+                                dx(:,dm),dt)
 
        else if (p0_update_type .eq. 2) then
 
@@ -520,6 +522,7 @@ contains
           if (spherical .eq. 0) then
              call make_psi_planar(etarho_cc,psi)
           else
+             call make_psi_spherical(psi_old,w0,gamma1bar,p0_old,p0_old,Sbar)
              call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar)
           end if
           
@@ -531,7 +534,7 @@ contains
 
     if (evolve_base_state) then
        call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_old,rhoh0_new,p0_old,p0_new, &
-                                 gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
+                                 gamma1bar,rho0_predicted_edge,psi,psi_old,dx(:,dm),dt)
     else
        rhoh0_new = rhoh0_old
     end if
@@ -907,7 +910,8 @@ contains
 
        if (p0_update_type .eq. 1) then
 
-          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
+          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc, &
+                                dx(:,dm),dt)
 
        else if (p0_update_type .eq. 2) then
 
@@ -919,6 +923,7 @@ contains
           if (spherical .eq. 0) then
              call make_psi_planar(etarho_cc,psi)
           else
+             call make_psi_spherical(psi_old,w0,gamma1bar,p0_old,p0_old,Sbar)
              call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar)
           end if
           
@@ -930,7 +935,7 @@ contains
 
     if (evolve_base_state) then
        call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_old,rhoh0_new,p0_old,p0_new, &
-                                 gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
+                                 gamma1bar,rho0_predicted_edge,psi,psi_old,dx(:,dm),dt)
     else
        rhoh0_new = rhoh0_old
     end if
