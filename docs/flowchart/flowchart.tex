@@ -405,7 +405,7 @@ where the interface states are again found via the procedure described
 in paper II, Appendix A.\\
 
 \item {\bf Advect Base Pressure Spherical}$[p_0^{\inp},w_0^{\inp},\gammabar^{\inp},\Sbar^{\inp}] 
-\rightarrow [p_0^{\outp},\psi^{\outp}]$:
+\rightarrow [p_0^{\outp},\psi^{n,\outp},\psi^{n+\myhalf,\outp}]$:
 
 First use a predictor-corrector formulation for the pressure update 
 in order to improve the overall accuracy.  Beginning with equation~(\ref{eq:w01}),
@@ -448,14 +448,20 @@ strictly second-order accurate.  However, as $\gammabar$ varies slowly
 in time, we expect the effect to be small.  This is something that we 
 defer until simulations indicate it is warranted.
 
-Next, we compute $\psi^{\outp}$.  Rewriting Equation (\ref{eq:w01}), we can define
+Next, we compute $\psi^{\outp,n}$ and $\psi^{\outp,n+\myhalf}$.  Rewriting Equation (\ref{eq:w01}), we can define
 \begin{eqnarray}
 \psi \equiv \frac{D_0 p_0}{Dt} &=& \gammabar p_0 \left [ \overline{S} - 
        \frac{1}{r^2} \frac{\partial}{\partial r} \left (r^2 w_0 \right ) \right] \enskip .
 \end{eqnarray}
 We discretize this locally as:
 \begin{equation}
-\psi_j^{\outp} = 
+\psi_j^{\outp,n} = 
+\left(\gammabar^{\inp}p_0^{\inp}\right)_j
+\left \{ \Sbar_j^{\inp} -  \frac{1}{r_j^2} \left [ (r^2 w_0^{\inp})_{j+\myhalf} -
+          (r^2 w_0^{\outp})_{j-\myhalf} \right ] \right \} \enskip ,
+\end{equation}
+\begin{equation}
+\psi_j^{\outp,n+\myhalf} = 
 \left[\gammabar^{\inp} \frac{\left( p_0^{\inp} + p_0^{\outp} \right)}{2}\right]_j
 \left \{ \Sbar_j^{\inp} -  \frac{1}{r_j^2} \left [ (r^2 w_0^{\inp})_{j+\myhalf} -
           (r^2 w_0^{\outp})_{j-\myhalf} \right ] \right \} \enskip .
