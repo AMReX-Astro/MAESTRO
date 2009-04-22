@@ -417,7 +417,7 @@ contains
     end if
     
     if (evolve_base_state) then
-       call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dx(:,dm),dt)
+       call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
        call compute_cutoff_coords(rho0_new)
     else
        rho0_new = rho0_old
@@ -509,8 +509,7 @@ contains
 
        if (p0_update_type .eq. 1) then
 
-          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc, &
-                                dx(:,dm),dt)
+          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc,dt)
 
        else if (p0_update_type .eq. 2) then
 
@@ -533,8 +532,8 @@ contains
     end if
 
     if (evolve_base_state) then
-       call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_old,rhoh0_new,p0_old,p0_new, &
-                                 gamma1bar,rho0_predicted_edge,psi,psi_old,dx(:,dm),dt)
+       call advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new, &
+                                 rho0_predicted_edge,psi,psi_old,dt)
     else
        rhoh0_new = rhoh0_old
     end if
@@ -838,7 +837,7 @@ contains
     end if
 
     if (evolve_base_state) then
-       call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dx(:,dm),dt)
+       call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
        call compute_cutoff_coords(rho0_new)
     else
        rho0_new = rho0_old
@@ -910,8 +909,7 @@ contains
 
        if (p0_update_type .eq. 1) then
 
-          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc, &
-                                dx(:,dm),dt)
+          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc,dt)
 
        else if (p0_update_type .eq. 2) then
 
@@ -934,8 +932,8 @@ contains
     end if
 
     if (evolve_base_state) then
-       call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_old,rhoh0_new,p0_old,p0_new, &
-                                 gamma1bar,rho0_predicted_edge,psi,psi_old,dx(:,dm),dt)
+       call advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new, &
+                                 rho0_predicted_edge,psi,psi_old,dt)
     else
        rhoh0_new = rhoh0_old
     end if

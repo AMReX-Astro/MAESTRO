@@ -10,7 +10,7 @@ module advect_base_module
 
 contains
 
-  subroutine advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dz,dt)
+  subroutine advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs
@@ -20,7 +20,7 @@ contains
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
     real(kind=dp_t), intent(  out) ::            rho0_new(:,0:)
     real(kind=dp_t), intent(  out) :: rho0_predicted_edge(:,0:)
-    real(kind=dp_t), intent(in   ) :: dz(:),dt
+    real(kind=dp_t), intent(in   ) :: dt
     
     ! local
     type(bl_prof_timer), save :: bpt
@@ -28,7 +28,7 @@ contains
     call build(bpt, "advect_base_dens")
 
     if (spherical .eq. 0) then
-       call advect_base_dens_planar(w0,rho0_old,rho0_new,rho0_predicted_edge,dz,dt)
+       call advect_base_dens_planar(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
        call restrict_base(rho0_new,.true.)
        call fill_ghost_base(rho0_new,.true.)
     else
@@ -41,17 +41,17 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine advect_base_dens_planar(w0,rho0_old,rho0_new,rho0_predicted_edge,dz,dt)
+  subroutine advect_base_dens_planar(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
 
     use bl_constants_module
     use make_edge_state_module
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs, dr
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
     real(kind=dp_t), intent(  out) ::            rho0_new(:,0:)
     real(kind=dp_t), intent(  out) :: rho0_predicted_edge(:,0:)
-    real(kind=dp_t), intent(in   ) :: dz(:),dt
+    real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
     integer :: r, n, i
@@ -68,12 +68,12 @@ contains
     do n=1,nlevs
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
-             force(n,r) = -rho0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n)
+             force(n,r) = -rho0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dr(n)
           end do
        end do
     end do
        
-    call make_edge_state_1d(rho0_old,edge,w0,force,dz,dt)
+    call make_edge_state_1d(rho0_old,edge,w0,force,dt)
         
     rho0_predicted_edge = edge
 
@@ -82,7 +82,7 @@ contains
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
              rho0_new(n,r) = rho0_old(n,r) &
-                  - dt / dz(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) 
+                  - dt / dr(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) 
           end do
        end do
     end do
@@ -120,7 +120,7 @@ contains
             2.0_dp_t*rho0_old(1,r)*HALF*(w0(1,r) + w0(1,r+1))/r_cc_loc(1,r)
     end do
     
-    call make_edge_state_1d(rho0_old,edge,w0,force,dr,dt)
+    call make_edge_state_1d(rho0_old,edge,w0,force,dt)
     
     rho0_predicted_edge = edge
 
@@ -134,7 +134,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine advect_base_pres(w0,Sbar_in,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc,dz,dt)
+  subroutine advect_base_pres(w0,Sbar_in,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc,dt)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs
@@ -149,7 +149,7 @@ contains
     real(kind=dp_t), intent(inout) ::       psi(:,0:)
     real(kind=dp_t), intent(inout) ::   psi_old(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
-    real(kind=dp_t), intent(in   ) :: dz(:),dt
+    real(kind=dp_t), intent(in   ) :: dt
     
     ! local
     type(bl_prof_timer), save :: bpt
@@ -164,7 +164,7 @@ contains
        call restrict_base(psi,.true.)
 
        ! advect p0
-       call advect_base_pres_planar(w0,p0_old,p0_new,psi,dz,dt)
+       call advect_base_pres_planar(w0,p0_old,p0_new,psi,dt)
        call restrict_base(p0_new,.true.)
        call fill_ghost_base(p0_new,.true.)
 
@@ -185,17 +185,17 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine advect_base_pres_planar(w0,p0_old,p0_new,psi,dz,dt)
+  subroutine advect_base_pres_planar(w0,p0_old,p0_new,psi,dt)
 
     use bl_constants_module
     use make_edge_state_module
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs, dr
 
     real(kind=dp_t), intent(in   ) ::     w0(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:)
     real(kind=dp_t), intent(in   ) ::    psi(:,0:)
-    real(kind=dp_t), intent(in   ) :: dz(:),dt
+    real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
     integer :: r, n, i
@@ -209,13 +209,13 @@ contains
 
     force = psi
     
-    call make_edge_state_1d(p0_old,edge,w0,force,dz,dt)
+    call make_edge_state_1d(p0_old,edge,w0,force,dt)
     
     do n=1,nlevs
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
              p0_new(n,r) = p0_old(n,r) &
-                  - dt / dz(n) * HALF * (w0(n,r) + w0(n,r+1)) * (edge(n,r+1) - edge(n,r))  &
+                  - dt / dr(n) * HALF * (w0(n,r) + w0(n,r+1)) * (edge(n,r+1) - edge(n,r))  &
                   + dt * psi(n,r)
           end do
        end do
@@ -360,26 +360,21 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine advect_base_enthalpy(w0,Sbar_in,rho0_old, &
-                                  rhoh0_old,rhoh0_new,p0_old,p0_new, &
-                                  gamma1bar,rho0_predicted_edge,psi,psi_old,dz,dt)
+  subroutine advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new,rho0_predicted_edge, &
+                                  psi,psi_old,dt)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs
     use restrict_base_module
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
-    real(kind=dp_t), intent(in   ) ::             Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
     real(kind=dp_t), intent(in   ) ::           rhoh0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::              p0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::              p0_new(:,0:)
     real(kind=dp_t), intent(  out) ::           rhoh0_new(:,0:)
-    real(kind=dp_t), intent(in   ) ::           gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     real(kind=dp_t), intent(in   ) ::                 psi(:,0:)
     real(kind=dp_t), intent(in   ) ::             psi_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: dz(:),dt
+    real(kind=dp_t), intent(in   ) :: dt
     
     ! local
     type(bl_prof_timer), save :: bpt
@@ -388,12 +383,12 @@ contains
 
     if (spherical .eq. 0) then
        call advect_base_enthalpy_planar(w0,rho0_old,rhoh0_old,rhoh0_new, &
-                                        rho0_predicted_edge,psi,dz,dt)
+                                        rho0_predicted_edge,psi,dt)
        call restrict_base(rhoh0_new,.true.)
        call fill_ghost_base(rhoh0_new,.true.)
     else
-       call advect_base_enthalpy_spherical(w0,Sbar_in,rho0_old,rhoh0_old,rhoh0_new, &
-                                           p0_old,p0_new,gamma1bar,rho0_predicted_edge,&
+       call advect_base_enthalpy_spherical(w0,rho0_old,rhoh0_old,rhoh0_new, &
+                                           rho0_predicted_edge,&
                                            psi,psi_old,dt)
     end if
 
@@ -404,11 +399,11 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine advect_base_enthalpy_planar(w0,rho0_old,rhoh0_old,rhoh0_new, &
-                                         rho0_predicted_edge,psi,dz,dt)
+                                         rho0_predicted_edge,psi,dt)
 
     use bl_constants_module
     use make_edge_state_module
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs, dr
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
@@ -418,7 +413,7 @@ contains
     real(kind=dp_t), intent(  out) ::           rhoh0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     real(kind=dp_t), intent(in   ) ::                 psi(:,0:)
-    real(kind=dp_t), intent(in   ) :: dz(:),dt
+    real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
     integer :: r, i, n
@@ -442,7 +437,7 @@ contains
        ! mixing, we defer this to correct_base.
        force = ZERO
 
-       call make_edge_state_1d(h0,edge,w0,force,dz,dt)
+       call make_edge_state_1d(h0,edge,w0,force,dt)
 
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -454,12 +449,12 @@ contains
        do n=1,nlevs
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)
-                force(n,r) = -rhoh0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n) + psi(n,r)
+                force(n,r) = -rhoh0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dr(n) + psi(n,r)
              end do
           end do
        end do
           
-       call make_edge_state_1d(rhoh0_old,edge,w0,force,dz,dt)
+       call make_edge_state_1d(rhoh0_old,edge,w0,force,dt)
               
     end if
 
@@ -468,7 +463,7 @@ contains
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
              rhoh0_new(n,r) = rhoh0_old(n,r) &
-                  - dt/dz(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) + dt*psi(n,r)
+                  - dt/dr(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) + dt*psi(n,r)
           end do
        end do
     end do
@@ -477,9 +472,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  subroutine advect_base_enthalpy_spherical(w0,Sbar_in,rho0_old,rhoh0_old,rhoh0_new, &
-                                            p0_old,p0_new,gamma1bar,rho0_predicted_edge, &
-                                            psi,psi_old,dt)
+  subroutine advect_base_enthalpy_spherical(w0,rho0_old,rhoh0_old,rhoh0_new, &
+                                            rho0_predicted_edge,psi,psi_old,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -488,11 +482,8 @@ contains
     use pred_parameters
     
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: rhoh0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:),psi_old(:,0:)
     real(kind=dp_t), intent(in   ) :: dt
@@ -501,16 +492,13 @@ contains
     integer :: r
 
     real(kind=dp_t) :: dtdr
-    real(kind=dp_t) :: div_w0_cart, div_w0_sph
+    real(kind=dp_t) :: div_w0_cart
 
-    real (kind = dp_t) ::         force(1,0:nr_fine-1)
-    real (kind = dp_t) ::            h0(1,0:nr_fine-1)
-    real (kind = dp_t) :: gamma1bar_old(1,0:nr_fine-1)
-    real (kind = dp_t) ::          edge(1,0:nr_fine)
+    real (kind = dp_t) :: force(1,0:nr_fine-1)
+    real (kind = dp_t) ::    h0(1,0:nr_fine-1)
+    real (kind = dp_t) ::  edge(1,0:nr_fine)
     
     dtdr = dt / dr(1)
-
-    gamma1bar_old = gamma1bar
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOH0
@@ -526,7 +514,7 @@ contains
           force(1,r) = psi(1,r)
        end do
 
-       call make_edge_state_1d(h0,edge,w0,force,dr,dt)
+       call make_edge_state_1d(h0,edge,w0,force,dt)
 
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -546,7 +534,7 @@ contains
           force(1,r) = force(1,r) + psi_old(1,r)
        end do
 
-       call make_edge_state_1d(rhoh0_old,edge,w0,force,dr,dt)
+       call make_edge_state_1d(rhoh0_old,edge,w0,force,dt)
 
     endif
 

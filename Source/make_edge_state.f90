@@ -25,10 +25,10 @@ module make_edge_state_module
   
 contains
 
-   subroutine make_edge_state_1d(s,sedgex,w0,force,dx,dt)
+   subroutine make_edge_state_1d(s,sedgex,w0,force,dt)
 
      use geometry, only: r_start_coord, r_end_coord, nr_fine, nr, &
-          numdisjointchunks, nlevs_radial
+          numdisjointchunks, nlevs_radial, dr
      use probin_module, only: slope_order
      use bl_constants_module
      use variables, only: rel_eps
@@ -37,7 +37,7 @@ contains
      real(kind=dp_t), intent(inout) :: sedgex(:,0:)
      real(kind=dp_t), intent(in   ) ::   w0(:,0:)
      real(kind=dp_t), intent(in   ) ::  force(:,0:)
-     real(kind=dp_t), intent(in   ) :: dx(:),dt
+     real(kind=dp_t), intent(in   ) :: dt
      
      real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag
      real(kind=dp_t) :: ubardth, dth, savg, u
@@ -194,7 +194,7 @@ contains
            do r = lo,hi
               
               u = HALF * (w0(n,r) + w0(n,r+1))
-              ubardth = dth*u/dx(n)
+              ubardth = dth*u/dr(n)
 
               
               s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)

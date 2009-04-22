@@ -207,7 +207,7 @@ contains
     integer :: i,j
 
 
-    ! Add wtilde d(p0)/dz 
+    ! Add wtilde d(p0)/dr
     do j = lo(2),hi(2)
 
        if (j .lt. base_cutoff_density_coord(n)) then
@@ -274,7 +274,7 @@ contains
     real(kind=dp_t) :: gradp0,wadv
     integer :: i,j,k
 
-    ! Add wtilde d(p0)/dz 
+    ! Add wtilde d(p0)/dr
     do k = lo(3),hi(3)
 
        if (k .lt. base_cutoff_density_coord(n)) then
