@@ -510,7 +510,7 @@ contains
 
           call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
 
-       else if (p0_update_type .eq. 1) then
+       else if (p0_update_type .eq. 2) then
 
           ! set new p0 through HSE
           p0_new = p0_old
