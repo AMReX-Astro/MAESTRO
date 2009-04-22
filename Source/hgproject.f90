@@ -1024,8 +1024,10 @@ contains
        end if
 
        bottom_box_size = 2**n
-       print *,'N ',n
-       print *,'BOTTOM_BOX SIZE ',bottom_box_size
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          print *,'N ',n
+          print *,'BOTTOM_BOX SIZE ',bottom_box_size
+       end if
 
        do j = 1,dm
           nx = extent(bxs,j)
