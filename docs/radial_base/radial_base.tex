@@ -14,14 +14,13 @@ we use $5 \Delta r = \Delta x$.  We refer to the procedure that maps data
 from 1-d to 3-d as {\tt fill\_3d}, and the
 complementary procedure that maps from 3-d to 1-d as {\tt average}.
 \section{\tt fill\_3d}
-There are three different {\tt fill\_3d} modes, each performed with the
+There are two different {\tt fill\_3d} modes, each performed with the
 subroutine, {\tt put\_1d\_array\_on\_cart}:
 \begin{enumerate}
 \item The 1D array is cell-centered, and we map to Cartesian cell-centers.  
 This is the most commonly used mode of {\tt fill\_3d}, and in paper IV, 
 we refer to this mode as {\tt fill\_3d}.
 \item The 1D array is edge-centered, and we map to Cartesian cell-centers.
-\item The 1D array is edge-centered, and we map to Cartesian edges.  
 \end{enumerate}
 \subsection{1D Cell-Centered to Cartesian Cell-Centered}
 \label{Sec:1D Cell-Centered to Cartesian Cell-Centered}
@@ -51,7 +50,12 @@ to get the Cartesian cell-centered value.  In essence,
 we are doing a piecewise linear interpolation of the radial array onto the 
 Cartesian grid.  If the output is a vector quantity, rather than a scalar, we
 multiply the result by the unit vector in the normal direction.
-\subsection{1D Edge-Centered to Cartesian Edges}
+We use this function for:
+\begin{enumerate}
+\item Putting $\nabla p_0$ from radial edges onto cell centers as a vector.
+\item Computing radial velocity for plotfile.
+\end{enumerate}
+\section{1D Edge-Centered to Cartesian Edges}
 \label{Sec:1D Edge-Centered to Cartesian Edges}
 This case is only used to create {\tt w0mac} from {\tt w0} in the 
 subroutine, {\tt put\_w0\_on\_edges}.  There are several variations 
@@ -62,11 +66,11 @@ the unit vector in the normal direction.  Then, for each Cartesian
 face, we obtain the normal velocity by averaging the corresponding 
 velocities from the Cartesian cell-centers adjacent to the face.
 \section{1D Cell-Centered to Cartesian Edges}
-This is not part of the {\tt put\_1d\_array\_on\_cart} options, 
-but at various points in the algorithm we need base state quantities on 
-edges.  For example, we need $\rho_0$ at edges to compute the full 
-state $\rho$ used to compute fluxes.  More details to come.
-\MarginPar{This section needs to be written.}
+At various points in the algorithm we need to map cell-centered radial 
+quantities onto Cartesian edges.  For example, we need $\rho_0$ at edges 
+to compute the full state $\rho$ used to compute fluxes.  What we do
+is call {\tt fill\_3d}, and then average neighboring cell-centers onto
+edges.
 \section{{\tt average}}\label{Sec:Avg}
 For the {\tt average} process, we first define a coarse 1-d radial array 
 with $\Delta r_{\rm c} = \Delta x$.  Then, for each cell indexed by
