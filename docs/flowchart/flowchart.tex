@@ -25,97 +25,70 @@ J.~B.~Bell, M.~S.~Day, C.~A.~Rendleman, S.~E.~Woosley, \& M.~Zingale
 2004, JCP, 195, 2, 677 (henceforth BDRWZ)
 \end{itemize}
 
-%-----------------------------------------------------------------------------
-% Changes Between Paper 3 and Paper 4
-%-----------------------------------------------------------------------------
-
 \section{Changes Between Paper 3 and Paper 4}
-
-There are several changes to the algorithm since it was last detailed
-in paper III.  The major changes are:
-
-\begin{itemize}
-
-\item We have added thermal diffusion with {\tt use\_thermal\_diffusion = TRUE}.
-
-\item We discuss spherical geometries, in paricular:
-\begin{itemize}
-\item We are still working out the fill, average, and interpolate stencils.
-\item We are working on {\bf Advect Base} and {\bf Correct Base} details.
-\item We are working on $\etarho$ details.
-\item We compute the full state temperature on cell-centers after the 
-advection-diffusion step using $T=T(\rho,X_k,p_0)$ by setting 
-{\tt use\_tfromp = TRUE} rather than using $T=T(\rho,h,X_k)$.
+\begin{enumerate}
+\item {\tt fill\_3d} and {\tt average} algorithms.
+\item We update temperature after each {\bf React State} as well as the advection step.
+\item We have created a {\tt burning\_cutoff\_density}, where the burning does
+not happen below this density.  It is presently set to {\tt base\_cutoff\_density}.
+\item Use corner coupling in advection.
+\item We use {\tt use\_tfromp} to update temperature using $T=T(\rho,X_k,p_0)$ rather 
+than $T=T(\rho,h,X_k)$.
+\end{enumerate}
+Changes which modify enthalpy update.  These are separate because in this paper,
+enthalpy is only used as a diagnostic since we use {\tt use\_tfromp}.  If we don't
+mention these items in paper IV, they should me noted in paper 4.5.
+\begin{enumerate}
 \item We have changed the discretization of $\Ub\cdot\nabla p_0$ in the enthalpy
 update to $\nabla\cdot(\Ub p_0) - p_0\nabla\cdot\Ub$.
-\end{itemize}
-
 \item In paper III we discretized the enthalpy evolution equation in
 full, non-perturbation form, $\rho h$.  Since then we have discovered that 
 discretizing the enthalpy evolution in perturbational form, $(\rho h)'$,
 leads to better numerical properties.  We use {\tt enthalpy\_pred\_type = 1}.
 This is more like paper II.
-
+\item We have turned off the evolution of $h$ above the atmosphere and instead
+compute $h$ with the EOS using {\tt do\_eos\_h\_above\_cutoff = TRUE}.
+\end{enumerate}
+\section{Changes Between Papers 4 and Papers 4.5}
+\begin{enumerate}
 \item We split the update of the density and enthalpy in steps 4 and 8.
 Now, density is updated first, allowing us to compute time-centered values of 
 $\psi$ that are then used in the enthalpy update.
-
 \item We split {\bf Advect Base} into separate {\bf Advect Base Density},
-{\bf Advect Base Pressure}, and {\bf Advect Base Enthalpy}.
-\begin{itemize}
-\item First, we call {\bf Advect Base Density}, which computes a time-centered
-$\etarho$.
-\item Second, we call {\bf Advect Base Pressure}, which takes $\etarho$ as an
-input and computes a time-centered $\psi$.
-\item Third, we call {\bf Advect Base Enthalpy}, which takes $\psi$ as an input.
-\end{itemize}
-
-\item We added the volume-discrepancy term to the velocity constraint equation,
-controlled by the input parameter, $f$.
-
-\item We have turned off the evolution of $h$ above the atmosphere and instead
-compute $h$ with the EOS using {\tt do\_eos\_h\_above\_cutoff = TRUE}.
-
-\item We have created a {\tt burning\_cutoff\_density}, where the burning does
-not happen below this density.  It is presently set to {\tt base\_cutoff\_density}.
-
-\item We have given the advection scheme a face-lift, with some nifty options like
-corner coupling and various PPM limiters.
-
-\item We now update the density and enthalpy as full states with full-state fluxes, 
-not as perturbational quantities.
-
-\item We update temperature at the end of {\bf React State}.
-
-\end{itemize}
-
-%-----------------------------------------------------------------------------
-% Changes Since Paper 4
-%-----------------------------------------------------------------------------
-
-\section{Changes Since Paper 4}
-
-\begin{itemize}
-
-\item In {\bf Step 4} and {\bf Step 8}, we moved {\bf Correct Base} so it
-occurs immediately before {\bf Advect Base Pressure}.  Since the full
-enthalpy advance ``feels'' the effects of the time-centered $\etarho$, we should
-rely on a $\rho_0^{n+1}$ that also feels the effects.
-
-\item After {\bf React State}, we set $(\rho h)_0 = {\rm{\bf Avg}}(\rho h)$ in 
-plane-parallel and $(\rho h)_0 = (\rho h)_0 + {\rm{\bf Avg}}[(\rho h) - (\rho h)_0]$ 
-in spherical.  This means that {\bf React Base} no longer exists, and the intermediate states, 
-$(\rho h)_0^{(1)}$ and $(\rho h)_0^{(2)}$, no longer have to exist.  
-{\bf Advect Base Enthalpy} will advance $(\rho h)_0^n \rightarrow (\rho h)_0^{n+1}$ 
-directly.  This also means we don't have to deal with $\eta_{\rho h}$ or a 
-{\bf Diffuse Base}.
-
+{\bf Advect Base Pressure}, and {\bf Advect Base Enthalpy}.  The calling sequence
+is in the main flow chart.
 \item We replaced {\bf Correct Base} with $\rho_0 = {\rm{\bf Avg}}(\rho)$ in 
 plane-parallel and $\rho_0 = \rho_0 + {\rm{\bf Avg}}(\rho - \rho_0)$ in spherical,
 eliminating the need for $\nabla\cdot\etarho$.  {\bf Correct Base} is now used
 analogously for setting $(\rho h)_0$ after {\bf React State}.
-
-\end{itemize}
+\item After {\bf React State}, we set $(\rho h)_0 = {\rm{\bf Avg}}(\rho h)$ in 
+plane-parallel and $(\rho h)_0 = (\rho h)_0 + {\rm{\bf Avg}}[(\rho h) - (\rho h)_0]$ 
+in spherical.  This means that {\bf React Base} no longer exists, and the intermediate 
+states, $(\rho h)_0^{(1)}$ and $(\rho h)_0^{(2)}$, no longer have to exist.  
+{\bf Advect Base Enthalpy} will advance $(\rho h)_0^n \rightarrow (\rho h)_0^{n+1}$ 
+directly.  This also means we don't have to deal with $\eta_{\rho h}$ or a 
+{\bf Diffuse Base}.
+\item In {\bf Step 4} and {\bf Step 8}, we moved {\bf Correct Base} so it
+occurs after the full state density update and  before {\bf Advect Base Pressure}.  
+Since the full enthalpy advance ``feels'' the effects of the time-centered $\etarho$, 
+we should rely on a $\rho_0^{n+1}$ that also feels the effects.
+\end{enumerate}
+Changes specific to spherical:
+\begin{enumerate}
+\item Discuss {\bf Advect Base} routines and {\bf Correct Base} routine.
+\item $\etarho$ and $\psi$ equations.
+\end{enumerate}
+\section{Changes Between Papers 4.5 and Paper 5}
+\begin{enumerate}
+\item Use PPM limiters in advection.
+\end{enumerate}
+\section{Changes Between Paper 5 and XRB Paper}
+\begin{enumerate}
+\item We have added thermal diffusion, controlled by {\tt use\_thermal\_diffusion},
+{\tt temp\_diffusion\_formulation}, and {\tt thermal\_diffusion\_type}.
+\item We added the volume-discrepancy term to the velocity constraint equation,
+controlled by the input parameter, {\tt dpdt\_factor}.
+\end{enumerate}
 
 %-----------------------------------------------------------------------------
 % Future Considerations
@@ -468,11 +441,14 @@ We discretize this locally as:
 \end{equation}
 \end{description}
 
-\item {\bf Advect Base Enthalpy}$[(\rho h)_0^\inp,w_0^\inp,\psi^\inp] \rightarrow [(\rho h)_0^\outp]$\\
+\item {\bf Advect Base Enthalpy}
 is the process by which we update the base state enthalpy through $\dt$ in time.
+The input arguments are different for plane-parallel and spherical.
 \begin{description}
+\item {\bf Advect Base Enthalpy Planar}$[(\rho h)_0^\inp,w_0^\inp,\psi^\inp] \rightarrow 
+[(\rho h)_0^\outp]$
 
-\item[plane-parallel:] We discretize
+We discretize the base state enthalpy equation,
 \begin{equation}
 \frac{\partial (\rho h)_0}{\partial t} = -\nabla\cdot\left[(\rho h)_0w_0\er\right] 
 + \psi \enskip ,
@@ -485,9 +461,21 @@ to compute the new base state enthalpy,
 + \dt\psi_j^{\inp} \enskip ,
 \end{equation}
 where the interface states are again found via the procedure described
-in paper II, Appendix A.
+in paper II, Appendix A.\\
 
-\item[spherical:] 
+\item {\bf Advect Base Enthalpy Spherical}$[(\rho h)_0^\inp,w_0^\inp,\psi^{\inp,n},
+\psi^{\inp,n+\myhalf}] \rightarrow [(\rho h)_0^\outp]$
+
+The base state enthalpy update now includes the area factors in the divergences:
+\begin{equation}
+(\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp}
+ - \frac{1}{r_j^2} \frac{\dt}{\dr} 
+ \left \{ \left[ r^2 (\rho h)_0^{\outp} w_0^{\inp}\right]_{j+\myhalf} -  
+          \left[ r^2 (\rho h)_0^{\outp} w_0^{\inp}\right]_{j-\myhalf} \right\}
++\Delta t\psi^{\inp,n+\myhalf} \enskip. 
+\end{equation}
+The other difference is that the interface states are computed using 
+$\psi^{\inp,n}$ as the forcing.
 
 \end{description}
 
@@ -495,7 +483,8 @@ in paper II, Appendix A.
 is the process by which we adjust the base state density to account for
 large-scale mixing.  It is also used to adjust the base state enthalpy
 to account for large-scale mixing, reactions, and thermal diffusion.
-
+Unlike paper III where we used $\nabla\cdot\etarho$ as an adjustment to $\rho_0$, 
+we instead simply set $\rho_0=\overline{\rho}$, which is analytically equivalent.
 \begin{description}
 \item[plane-parallel:] Set $\rho_0^{\outp} = {\bf Avg}(\rho^{\inp})$.
 \item[spherical:] Set $\rho_0^{\outp} = \rho_0^{\inp} + {\bf Avg}(\rho^{\inp} - \rho_0^{\inp})$.
@@ -656,7 +645,7 @@ interval of $\dt / 2.$}
 \gammabar^{(1)}        &=& {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(1)}, p_0^{n}, X_k^{(1)}\right) \right] \enskip , \\
  {\beta   }_0^{(1)}    &=& \beta   \left(\rho_0^{n}, p_0^{n}, \gammabar^{(1)}\right) \enskip .
 \end{eqnarray}
-Here $\beta_0$ is computed as described in paper~III, Appendix C.
+Here $\beta_0$ is computed as described in paper III, Appendix C.
 
 \end{enumerate}
 
