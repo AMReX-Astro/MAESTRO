@@ -70,22 +70,29 @@ contains
     ng_rhn = rho_Hnuc(1)%ng
     ng_rhe = rho_Hext(1)%ng
 
+    ! initialize
     ! note that T_max corresponds to the maximum temperature in the 
     ! helium layer defined by X(He4) >= he_tol 
+
     T_max          = ZERO
-    T_max_local    = ZERO
     enuc_max       = ZERO
-    enuc_max_local = ZERO
 
     do n = 1, nlevs
+
+       T_max_local    = ZERO
+       enuc_max_local = ZERO
+
        do i = 1, s(n)%nboxes
+
           if ( multifab_remote(s(n), i) ) cycle
+
           sp => dataptr(s(n) , i)
           rhnp => dataptr(rho_Hnuc(n), i)
           rhep => dataptr(rho_Hext(n), i)
           up => dataptr(u(n) , i)
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
+
           select case (dm)
           case (2)
              call diag_2d(time,dt,dx(n,:), &
@@ -113,13 +120,15 @@ contains
                           T_max_local, enuc_max_local)
           end select
        end do
+
+       call parallel_reduce(T_max, T_max_local, MPI_MAX, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(enuc_max, enuc_max_local, MPI_MAX, &
+                            proc = parallel_IOProcessorNode())
+
     end do
 
-    call parallel_reduce(T_max, T_max_local, MPI_MAX, &
-                         proc = parallel_IOProcessorNode())
-
-    call parallel_reduce(enuc_max, enuc_max_local, MPI_MAX, &
-                         proc = parallel_IOProcessorNode())
 
 1000 format(1x,10(g20.10,1x))
 1001 format("#",10(a20,1x))
