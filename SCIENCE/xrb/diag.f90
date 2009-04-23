@@ -110,7 +110,7 @@ contains
                           w0(n,:), &
                           np(:,:,:,:),ng_n, &
                           lo,hi, &
-                          T_max, enuc_max_local)
+                          T_max_local, enuc_max_local)
           end select
        end do
     end do
