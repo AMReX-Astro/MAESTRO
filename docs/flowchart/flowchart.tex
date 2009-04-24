@@ -378,6 +378,10 @@ in paper II, Appendix A.\\
 \item {\bf Advect Base Pressure Spherical}$[p_0^{\inp},w_0^{\inp},\gammabar^{\inp},\Sbar^{\inp}] 
 \rightarrow [p_0^{\outp},\psi^{n,\outp},\psi^{n+\myhalf,\outp}]$:
 
+\begin{color}{red}
+Andy's proposal: We need to pass in two different $\gammabar$ objects, $\gammabar^{\inp,n}$ and $\gammabar^{\inp,n+\myhalf}$.  The pressure update will use $\gammabar^{\inp,n+\myhalf}$.  To compute $\psi^{\outp,n}$, we use $\gammabar^{\inp,n}$.  To compute $\psi^{\outp,n+\myhalf}$, we use $\gammabar^{\inp,n+\myhalf}$.  In the first half of the algorithm, we pass in $\gammabar^n$ for both arguments.  For the second half of the algorithm, we pass in $\gammabar^n$ and $(\gammabar^n+\gammabar^{n+1,*})/2$.  I don't think we ever need $\gammabar^{(1)}$, as the only place it's currently used is as an input to the first call to {\bf Advect Base Pressure Spherical}.
+\end{color}
+
 First use a predictor-corrector formulation for the pressure update 
 in order to improve the overall accuracy.  Beginning with equation~(\ref{eq:w01}),
 we can write
@@ -1252,7 +1256,6 @@ $\rightarrow [p_0^{n+1},\psi^{\nph}]$.
 \item For spherical,\\
 {\bf Advect Base Pressure Spherical}$[p_0^n,w_0^{\nph},\gammabar^{n+1,*},\overline{S^{\nph,\star}}] \rightarrow [p_0^{n+1},\psi^n,\psi^{\nph}]$.
 \end{description}
-\MarginPar{Rework Advect Base Pressure Spherical to take time-centered $\gammabar$?  Also, look at how $\psi^n$ is computed.  The base time centering doesn't make sense.}
 
 \item Update $(\rho h)_0$.
 \begin{description}
