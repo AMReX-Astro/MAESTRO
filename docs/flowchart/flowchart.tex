@@ -1037,18 +1037,17 @@ giving
 \enskip . \label{eq:rhohupdthermal2} 
   \end{equation}
 
-
 Compute $\kth^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  The update is given by
 \begin{eqnarray}
 (\rho h)^{(2),\star} &=& (\rho h)^{(1a),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
-&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{n+1,\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{n}\right),
 \end{eqnarray}
 which is numerically implemented as a diffusion equation for $h^{(2),\star}$,
 \begin{eqnarray}
 \left(\rho^{(2),\star} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla\right)h^{(2),\star} &=& (\rho h)^{(1a),\star} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
-&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{n+1,\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{n}\right),
 \end{eqnarray}
 \item Update the temperature using the equation of state.  For plane-parallel,
 we update using
@@ -1057,7 +1056,7 @@ T^{(2),\star} = T\left(\rho^{(2),\star}, h^{(2),\star}, X_k^{(2),\star}\right) \
 \end{equation}
 but in spherical, we set {\tt use\_tfromp = T}, and we use
 \begin{equation}
-T^{(2),\star} = T\left(\rho^{(2),\star}, p_0^{(2),\star}, X_k^{(2),\star}\right) \enskip .
+T^{(2),\star} = T\left(\rho^{(2),\star}, p_0^{n+1,\star}, X_k^{(2),\star}\right) \enskip .
 \end{equation}
 The latter has the effect of completely decoupling the enthalpy equation from the 
 evolution.
@@ -1074,8 +1073,8 @@ evolution.
 
 \item {\bf React State}$[ \rho^{(2),\star},(\rho h)^{(2),\star}, X_k^{(2),\star}, 
                              T^{(2),\star}, (\rho\Hext)^{(2),\star}] $\\
-$\rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\star}, 
-              (\rho \omegadot_k)^{(2),\star}, (\rho \Hnuc)^{(2),\star} ].$  
+$~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, 
+X_k^{n+1,\star}, T^{n+1,\star}, (\rho \omegadot_k)^{(2),\star}, (\rho \Hnuc)^{(2),\star} ].$  
 
 \item Define
 \begin{eqnarray}
@@ -1329,13 +1328,13 @@ $\rho^{(2)} < {\tt base\_cutoff\_density}$, then we recompute enthalpy using
 \begin{eqnarray}
 (\rho h)^{(2)} &=& (\rho h)^{(1a)} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla h^{(2)} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
-&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{n+1} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{n}\right),
 \end{eqnarray}
 which is numerically implemented as a diffusion equation for $h^{(2)}$,
 \begin{eqnarray}
 \left(\rho^{(2)} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla\right)h^{(2)} &=& (\rho h)^{(1a)} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
-&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{n+1} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{n}\right),
 \end{eqnarray}
 \item Update the temperature using the equation of state.  For plane-parallel we
 update using
@@ -1344,7 +1343,7 @@ T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) \enskip ,
 \end{equation}
 but in spherical, we set {\tt use\_tfromp = T}, and we use
 \begin{equation}
-T^{(2)} = T\left(\rho^{(2)}, p_0^{(2)}, X_k^{(2)}\right) \enskip .
+T^{(2)} = T\left(\rho^{(2)}, p_0^{n+1}, X_k^{(2)}\right) \enskip .
 \end{equation}
 The latter has the effect of completely decoupling the enthalpy equation from the 
 evolution.
@@ -1360,9 +1359,9 @@ interval of $\dt / 2.$}
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf React State}$[\rho^{(2)},(\rho h)^{(2)}, X_k^{(2)},T^{(2)}, (\rho^{(2)} \Hext) ]$\\
-                   $\rightarrow [\rho^{n+1}, (\rho h)^{n+1}, X_k^{n+1}, T^{n+1}, 
-                               (\rho \omegadot_k)^{(2)}, (\rho \Hnuc)^{(2)} ].$  
+\item {\bf React State}$[\rho^{(2)},(\rho h)^{(2)}, X_k^{(2)},T^{(2)}, (\rho\Hext)^{(2)} ]$\\
+$~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\rightarrow [\rho^{n+1}, 
+(\rho h)^{n+1}, X_k^{n+1}, T^{n+1}, (\rho \omegadot_k)^{(2)}, (\rho \Hnuc)^{(2)} ].$  
 
 \item Define
 \begin{eqnarray}
