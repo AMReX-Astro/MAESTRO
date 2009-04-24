@@ -826,11 +826,9 @@ interval of $\dt / 2.$}
 \item {\bf Correct Base}$[(\rho h)_0^{n},(\rho h)^{(1)}] \rightarrow [(\rho h)_0^{n}]$.
 
 \item Define
-\begin{eqnarray}
-\gammabar^{(1)}        &=& {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(1)}, p_0^{n}, X_k^{(1)}\right) \right] \enskip , \\
- {\beta   }_0^{(1)}    &=& \beta   \left(\rho_0^{n}, p_0^{n}, \gammabar^{(1)}\right) \enskip .
-\end{eqnarray}
-Here $\beta_0$ is computed as described in paper III, Appendix C.
+\begin{equation}
+\gammabar^{(1)} = {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(1)}, p_0^{n}, X_k^{(1)}\right) \right] \enskip .
+\end{equation}
 
 \end{enumerate}
 
@@ -1080,8 +1078,9 @@ X_k^{n+1,\star}, T^{n+1,\star}, (\rho \omegadot_k)^{(2),\star}, (\rho \Hnuc)^{(2
 \begin{eqnarray}
  \gammabar^{n+1,\star}    &=& {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{n+1,\star}, p_0^{n+1,\star}, 
                                                       X_k^{n+1,\star}\right) \right] \enskip , \\
- {\beta   }_0^{n+1,\star}    &=& \beta   \left(\rho_0^{n+1,\star}, p_0^{n+1,\star}, \gammabar^{n+1,\star}\right) \enskip .
+ \beta_0^{n+1,\star}    &=& \beta   \left(\rho_0^{n+1,\star}, p_0^{n+1,\star}, \gammabar^{n+1,\star}\right) \enskip ,
 \end{eqnarray}
+where $\beta_0$ is computed as described in paper III, Appendix C.
 
 \end{enumerate}
 
@@ -1366,8 +1365,9 @@ $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\rightarrow [\rho^{n+1},
 \item Define
 \begin{eqnarray}
  \gammabar^{n+1}    &=& {\rm{\bf Avg}}\left[\Gamma_1\left(\rho^{n+1}, p_0^{n+1}, X_k^{n+1}\right) \right] \enskip , \\ 
- {\beta   }_0^{n+1}    &=& \beta   \left(\rho_0^{n+1}, p_0^{n+1},   \gammabar^{n+1}\right) \enskip .
+ \beta_0^{n+1}    &=& \beta   \left(\rho_0^{n+1}, p_0^{n+1},   \gammabar^{n+1}\right) \enskip ,
 \end{eqnarray}
+where $\beta_0$ is computed as described in paper III, Appendix C.
 
 \end{enumerate}
 
@@ -1507,8 +1507,8 @@ First, we need to construct approximations to $S^0, w_0^{-\myhalf}, \Delta t^0$,
 and $\Ub^0$.  Start with initial data $X_k^{\initp}, \rho^{\initp},$ $T^{\initp},$ an 
 initial base state, and an initial guess for the velocity, $\Ub^{\initp}$.
 Set $w_0^0 = 0$ as an initial approximation.  Use the equation of state to 
-determine $(\rho h)^{\initp}$.  Compute $\beta_0^{\initp}$ as a function of 
-the initial data.  Then, project $\Ub^{\initp}$ using $\beta_0^{\initp}$ and 
+determine $(\rho h)^{\initp}$.  Compute $\beta_0^0$ as a function of 
+the initial data.  Then, project $\Ub^{\initp}$ using $\beta_0^0$ and 
 $S = \rho\Hext$, giving $\Ub^{0,0}$.  The next part of the initialization process 
 proceeds as follows.
 
@@ -1530,7 +1530,7 @@ proceeds as follows.
 
   \item Compute $w_0^{\nu}$ as in step 1c using $\overline{S^{0,\nu}}$ and $\psi=0$.
         
-  \item Project $\Ub^{0,\nu-1}$ using $\beta_0^{\initp}$ and 
+  \item Project $\Ub^{0,\nu-1}$ using $\beta_0^0$ and 
         $(S^{0,\nu} - \overline{S^{0,\nu}})$ as the source term.  
         This yields $\Ub^{0,\nu}.$
 
