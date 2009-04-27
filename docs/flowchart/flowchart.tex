@@ -704,7 +704,7 @@ is the process by which we compute gravity at both radial cell-centers and edges
 \item For plane-parallel, we hold the gravity constant in space and time.
 \item For spherical, we define the enclosed mass at edges, and then cell-centers:
 \begin{equation}
-m_{j-\myhalf} = \sum_{k=1}^j \frac{4}{3}\pi\left(r_{k-\myhalf}^3 - r_{k-\sfrac{3}{2}}^3\right)\rho_{0,k-1}^{\inp}; ~~~~~ m_j = m_{j-\myhalf} + \frac{4}{3}\pi \left(r_k^3 - r_{k-\myhalf}^3\right)\rho_{0,k}^{\inp} \enskip .
+m_{j-\myhalf} = \sum_{k=1}^j \frac{4}{3}\pi\left(r_{k-\myhalf}^3 - r_{k-\sfrac{3}{2}}^3\right)\rho_{0,k-1}^{\inp}; ~~~~~ m_j = m_{j-\myhalf} + \frac{4}{3}\pi \left(r_j^3 - r_{j-\myhalf}^3\right)\rho_{0,j}^{\inp} \enskip .
 \end{equation}
 Then, we define the gravity at both edges and cell-centers:
 \begin{equation}
