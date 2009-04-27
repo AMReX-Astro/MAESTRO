@@ -993,14 +993,14 @@ results in a better solution.
   averaging to compute $h_0$ and $\rho_0$ on all faces, and then multiply these 
   terms to get $(\rho h)_0$ on all faces.
 
-  \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(1a),\star}$ without
+  \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2),\star}$ without
   explicitly including the reaction terms.
 
 \begin{description}
 \item For plane-parallel,
 
   \begin{eqnarray}
-  (\rho h)^{(1a),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
+  (\rho h)^{(2),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
       \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right) (\rho
       h)^{(1),\nph,\star} \right] \right\} \nonumber \\ && + \dt \;
     \left(\uadvone \cdotb \er\right) \left(\frac{\partial
@@ -1010,7 +1010,7 @@ results in a better solution.
 \item For spherical,
 
   \begin{eqnarray}
-  (\rho h)^{(1a),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
+  (\rho h)^{(2),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
       \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right) (\rho
       h)^{(1),\nph,\star} \right] \right\} \nonumber \\ 
     && + \dt \; \left \{ \nabla \cdot \left (\uadvone p_0^{n} \right ) 
@@ -1025,7 +1025,7 @@ results in a better solution.
 If {\tt do\_eos\_h\_above\_cutoff=T} (which is the default setting), then if
 $\rho^{(2),\star} < {\tt base\_cutoff\_density}$, then we recompute enthalpy using
 \begin{equation}
-(\rho h)^{(1a),\star} = \rho^{(2),\star}h\left(\rho^{(2),\star},p_0^{n+1,\star},X_k^{(2),\star}\right).
+(\rho h)^{(2),\star} = \rho^{(2),\star}h\left(\rho^{(2),\star},p_0^{n+1,\star},X_k^{(2),\star}\right).
 \end{equation}
 
 
@@ -1033,7 +1033,9 @@ $\rho^{(2),\star} < {\tt base\_cutoff\_density}$, then we recompute enthalpy usi
 % STEP 4.1
 %--------------------------------------------------------------------------
 
-\item Diffuse the enthalpy through a time interval of $\dt$.  Here we begin
+\item If we are using thermal diffusion, diffuse the enthalpy through a time interval of 
+$\dt$.  First, define $(\rho h)^{(1a),\star} = (\rho h)^{(2),\star}$.  We recompute
+$(\rho h)^{(2),\star}$ to account for thermal diffusion.  Here we begin
 with the enthalpy equation (\ref{eq:rhohupd}), but consider only the 
 diffusion terms,
 \begin{equation}
@@ -1319,7 +1321,7 @@ $\rightarrow [p_0^{n+1},\psi^{\nph}]$.
 \begin{description}
 \item For plane-parallel,
 \begin{eqnarray}
-(\rho h)^{(1a)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
+(\rho h)^{(2)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
 (\rho h)^{(1),\nph} \right] \right\} \nonumber \\
 && + \frac{\dt}{2} \; \left(\uadvtwo \cdotb \er\right)
 \left [ \left(\frac{\partial p_0}{\partial r} \right)^{n}
@@ -1329,7 +1331,7 @@ $\rightarrow [p_0^{n+1},\psi^{\nph}]$.
 
 \item For spherical,
 \begin{eqnarray}
-(\rho h)^{(1a)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
+(\rho h)^{(2)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
 (\rho h)^{(1),\nph} \right] \right\} \nonumber \\
     && + \dt \; \left \{ \nabla \cdot \left (\uadvtwo p_0^{\nph} \right ) 
        - p_0^{\nph} \nabla \cdot \uadvtwo \right \} \nonumber \\
@@ -1343,13 +1345,17 @@ $\rightarrow [p_0^{n+1},\psi^{\nph}]$.
 If {\tt do\_eos\_h\_above\_cutoff=T} (which is the default setting), then if
 $\rho^{(2)} < {\tt base\_cutoff\_density}$, then we recompute enthalpy using
 \begin{equation}
-(\rho h)^{(1a)} = \rho^{(2)}h\left(\rho^{(2)},p_0^{n+\myhalf},X_k^{(2)}\right).
+(\rho h)^{(2)} = \rho^{(2)}h\left(\rho^{(2)},p_0^{n+1},X_k^{(2)}\right).
 \end{equation}
 
 %--------------------------------------------------------------------------
 % STEP 8.1
 %--------------------------------------------------------------------------
-\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(2),\star}, c_p^{(2),\star}$, and $\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to the equation of state.  The update is given by
+\item If we are using thermal diffusion, diffuse the enthalpy through a time interval of 
+$\dt$.  First, define $(\rho h)^{(1a)} = (\rho h)^{(2)}$.  We recompute $(\rho h)^{(2)}$ to 
+account for thermal diffusion.  Compute $\kth^{(2),\star}, c_p^{(2),\star}$, and 
+$\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to 
+the equation of state.  The update is given by
 \begin{eqnarray}
 (\rho h)^{(2)} &=& (\rho h)^{(1a)} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla h^{(2)} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
