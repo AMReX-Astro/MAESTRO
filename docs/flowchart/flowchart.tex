@@ -697,6 +697,21 @@ C_N = F_N &=& 0\enskip. \nonumber
 \end{eqnarray}
 Finally, $w_0^{\outp} = \ow + \delta w_0$.
 \end{description}
+
+\item {\bf Compute Gravity}$[\rhozero^{\inp}] \rightarrow [g^{\outp}]$\\
+is the process by which we compute gravity at both radial cell-centers and edges.
+\begin{description}
+\item For plane-parallel, we hold the gravity constant in space and time.
+\item For spherical, we define the enclosed mass at edges, and then cell-centers:
+\begin{equation}
+m_{j-\myhalf} = \sum_{k=1}^j \frac{4}{3}\pi\left(r_{k-\myhalf}^3 - r_{k-\sfrac{3}{2}}^3\right)\rho_{0,k-1}^{\inp}; ~~~~~ m_j = m_{j-\myhalf} + \frac{4}{3}\pi \left(r_k^3 - r_{k-\myhalf}^3\right)\rho_{0,k}^{\inp} \enskip .
+\end{equation}
+Then, we define the gravity at both edges and cell-centers:
+\begin{equation}
+g_{j-\myhalf} = \frac{Gm_{j-\myhalf}}{r_{j-\myhalf}^2}; ~~~~~ g_j = \frac{Gm_j}{r_j^2}\enskip .
+\end{equation}
+\end{description}
+
 \end{enumerate}
 
 %-----------------------------------------------------------------------------
@@ -917,13 +932,13 @@ Then, $\etarho^{\nph,\star}$ is the cell-centered average of $\eta_{\rho}^{{\rm 
 \begin{equation}
 \etarho^{\nph,\star} = \overline{\eta_{\rho}^{{\rm cart},\nph,\star}}.
 \end{equation}
-This gives a radial bin-centered $\etarho^{\nph,\star}$.  To get $\etarho^{\nph,\star}$ at 
+This gives a radial cell-centered $\etarho^{\nph,\star}$.  To get $\etarho^{\nph,\star}$ at 
 radial edges, average the two neighboring radial bins.
 \end{description}
 
 \item {\bf Correct Base}$[\rho_0^{(2a),\star},\rho^{(2),\star}] \rightarrow [\rho_0^{n+1,\star}]$.
 
-\item For spherical problems, update gravity, $g^{n+1,\star} = g(\rho_0^{n+1,\star})$
+\item {\bf Compute Gravity}$[\rho_0^{n+1,\star}] \rightarrow [g^{n+1,\star}]$.
 
 \item Update $p_0$ and compute $\psi$.
 \begin{description}
@@ -1100,7 +1115,7 @@ X_k^{n+1,\star}, T^{n+1,\star}, (\rho \omegadot_k)^{(2),\star}, (\rho \Hnuc)^{(2
 \begin{eqnarray}
  \gammabar^{n+1,\star}    &=& {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{n+1,\star}, p_0^{n+1,\star}, 
                                                       X_k^{n+1,\star}\right) \right] \enskip , \\
- \beta_0^{n+1,\star}    &=& \beta   \left(\rho_0^{n+1,\star}, p_0^{n+1,\star}, \gammabar^{n+1,\star}\right) \enskip ,
+ \beta_0^{n+1,\star}    &=& \beta   \left(\rho_0^{n+1,\star}, p_0^{n+1,\star}, \gammabar^{n+1,\star}, g^{n+1,\star}\right) \enskip ,
 \end{eqnarray}
 where $\beta_0$ is computed as described in paper III, Appendix C.
 
@@ -1264,14 +1279,15 @@ Then, $\etarho^{\nph}$ is the cell-centered average of $\eta_{\rho}^{{\rm cart},
 \begin{equation}
 \etarho^{\nph} = \overline{\eta_{\rho}^{{\rm cart},\nph}}.
 \end{equation}
-This gives a radial bin-centered $\etarho^{\nph}$.  To get $\etarho^{\nph}$ at 
+This gives a radial cell-centered $\etarho^{\nph}$.  To get $\etarho^{\nph}$ at 
 radial edges, average the two neighboring radial bins.
 \end{description}
 
 \item {\bf Correct Base}$[\rho_0^{(2a)},\rho^{(2)}] \rightarrow [\rho_0^{n+1}]$.
 
-\item For spherical problems, update gravity, 
-$g^{n+1} = g(\rho_0^{n+1})$; $g^{\nph} = g(\rho_0^\nph)$
+\item {\bf Compute Gravity}$[\rho_0^{n+1}] \rightarrow [g^{n+1}]$.
+
+Then, set $g^{n+\myhalf} = (g^n + g^{n+1})/2$.
 
 \item Update $p_0$ and compute $\psi$.
 \begin{description}
@@ -1397,7 +1413,7 @@ $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\rightarrow [\rho^{n+1},
 \item Define
 \begin{eqnarray}
  \gammabar^{n+1}    &=& {\rm{\bf Avg}}\left[\Gamma_1\left(\rho^{n+1}, p_0^{n+1}, X_k^{n+1}\right) \right] \enskip , \\ 
- \beta_0^{n+1}    &=& \beta   \left(\rho_0^{n+1}, p_0^{n+1},   \gammabar^{n+1}\right) \enskip ,
+ \beta_0^{n+1}    &=& \beta   \left(\rho_0^{n+1}, p_0^{n+1}, \gammabar^{n+1}, g^{n+1}\right) \enskip ,
 \end{eqnarray}
 where $\beta_0$ is computed as described in paper III, Appendix C.
 
@@ -1442,7 +1458,7 @@ equation (\ref{eq:utildeupd}) as
       - \dt \; \left(\uadvtwo \cdotb \er\right)  \left(\frac{\partial w_0^{\nph}}{\partial r} \right) \er \nonumber \\
    &&   + \dt \left[ - \frac{1}{\rho^\nph} {\mathbf{G}} \pi^\nmh
         + \frac{1}{\rho_0} {\mathbf{G}} \pizerotwo
-        - \frac{(\rho^\nph-\rhozero^\nph)}{\rho^\nph} g \er \right] \enskip ,
+        - \frac{(\rho^\nph-\rhozero^\nph)}{\rho^\nph} g^{n+\myhalf} \er \right] \enskip ,
 \end{eqnarray}
 where $\rho^{\nph}$ is defined as
 \begin{equation}
