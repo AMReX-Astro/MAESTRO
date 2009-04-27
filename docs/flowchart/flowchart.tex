@@ -86,7 +86,7 @@ Changes specific to spherical:
 \begin{enumerate}
 \item We have added thermal diffusion, controlled by {\tt use\_thermal\_diffusion},
 {\tt temp\_diffusion\_formulation}, and {\tt thermal\_diffusion\_type}.
-\item We added the volume-discrepancy term to the velocity constraint equation,
+\item We added the volume discrepancy term to the velocity constraint equation,
 controlled by the input parameter, {\tt dpdt\_factor}.
 \end{enumerate}
 
@@ -510,15 +510,16 @@ with the following discretization:
 - \frac{1}{\gammabar^{\inp} p_0^{\inp}}\psi^{\inp}
 \enskip ,
 \end{equation}
-and $w_0=0$ at $r=0$.
-% VOLUME DISCREPANCY STUFF
-%\begin{equation}
-%\frac{\partial w_0^{\nph,\star}}{\partial r} =  \overline{S^{\nph,\star}}
-%- \frac{1}{\gammabar^{n} p_0^{n}}
-%\left\{ \psi^{\nmh} + 
-%f \left[\frac{p_0^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n} \right]\right\}
-%\enskip .
-%\end{equation}
+and $w_0=0$ at $r=0$.\\
+
+The discretization with the volume discrepancy correction require an additional argument,
+$\overline{p^{\inp}}$, and the discretization becomes:
+\begin{equation}
+\frac{\partial w_0^{\nph,\outp}}{\partial r} = 
+\overline{S^{\nph,\inp}} - \frac{1}{\gammabar^{\inp} p_0^{\inp}}
+\left[ \psi^{\inp} + f \left(\frac{p_0^{\inp} - \overline{p^{\inp}}}{\Delta t^n}\right)\right]
+\enskip .
+\end{equation}
 
 \item {\bf Compute $w_0$ Spherical}$[\Sbar^{\inp},\gammabar^{\inp},\rho_0^{\inp},p_0^{\inp},
 \etarho^{\inp}] \rightarrow[w_0^{\outp}]$:
@@ -750,6 +751,9 @@ S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}}
 \item For plane-parallel,\\
 {\bf Compute $w_0$ Planar}$[\overline{S^{\nph,\star}},\gammabar^n,p_0^n,\psi^{n-\myhalf}] 
 \rightarrow [w_0^{n+\myhalf,\star}]$.
+
+If we are using the volume discrepancy term, compute 
+$\overline{p^{\inp}} = \overline{p(\rho,h,X_k)^n}$.
 \item For spherical,\\
 {\bf Compute $w_0$ Spherical}$[\overline{S^{\nph,\star}},\gammabar^n,\rhozero^n,p_0^n,
 \etarho^{n-\myhalf}] \rightarrow [w_0^{n+\myhalf,\star}]$.
@@ -803,8 +807,13 @@ We note that  $\uadvone$ satisfies the discrete versions of paper III equation (
 \end{equation}
 and paper III equation (39),
 \begin{equation}
-\nablab \cdotb (\beta_0 \Ubt )  = \beta_0 \left(S - \Sbar \right )\enskip .
+\nablab \cdotb (\beta_0 \Ubt )  = \beta_0 \left(S - \Sbar \right )\enskip ,
 \label{eq:tildeconstraint}
+\end{equation}
+with the discretization
+\begin{equation}
+\nablab \cdotb \left(\beta_0^n \uadvone\right) = 
+\beta_0^n \left(S^{\nph,\star} - \overline{S^{\nph,\star}}\right) \enskip .
 \end{equation}
 The discretization with the volume discrepancy correction is
 \begin{equation}
@@ -1124,29 +1133,24 @@ Then define
 
 \item Define:
 \begin{equation}
-\gammabar^{\nph,\star} = \frac{\gammabar^{n} + \gammabar^{n+1,\star}}{2}\enskip , ~~~
-\rhozero^{\nph,\star} = \frac{\rhozero^{n} + \rhozero^{n+1,\star}}{2}\enskip , ~~~
-p_0^{\nph,\star} = \frac{p_0^{n} + p_0^{n+1,\star}}{2}\enskip .
+\gammabar^{\nph} = \frac{\gammabar^{n} + \gammabar^{n+1,\star}}{2}\enskip , ~~~
+\rhozero^{\nph} = \frac{\rhozero^{n} + \rhozero^{n+1,\star}}{2}\enskip , ~~~
+p_0^{\nph} = \frac{p_0^{n} + p_0^{n+1,\star}}{2}\enskip .
 \end{equation}
 \item Compute $w_0^{n+\myhalf}$:
 \begin{description}
 \item For plane-parallel,\\
 {\bf Compute $w_0$ Planar}$[\overline{S^{\nph}},
-\gammabar^{n+\myhalf,\star},p_0^{n+\myhalf,\star},\psi^{n+\myhalf,\star}]\rightarrow [w_0^{n+\myhalf,\star}]$.
+\gammabar^{n+\myhalf},p_0^{n+\myhalf},\psi^{n+\myhalf,\star}]\rightarrow [w_0^{n+\myhalf}]$.
+
+If we are using the volume discrepancy term, compute
+\begin{equation}
+\overline{p^{\inp}} = \frac{\overline{p(\rho,h,X_k)^n} + \overline{p(\rho,h,X_k)^{n+1,\star}}}{2}.
+\end{equation}
 \item For spherical,\\
-{\bf Compute $w_0$ Spherical}$[\overline{S^{\nph}},\gammabar^{n+\myhalf,\star},
-\rhozero^{n+\myhalf,\star},p_0^{n+\myhalf,\star},\etarho^{n+\myhalf,\star}] \rightarrow [w_0^{n+\myhalf}]$.
+{\bf Compute $w_0$ Spherical}$[\overline{S^{\nph}},\gammabar^{n+\myhalf},
+\rhozero^{n+\myhalf},p_0^{n+\myhalf},\etarho^{n+\myhalf}] \rightarrow [w_0^{n+\myhalf}]$.
 \end{description}
-% VOLUME DISCREPANCY STUFF
-%\begin{equation}
-%\overline{p(\rho,h,X_k)^{\nph,\star}} = 
-%\frac{\overline{p(\rho,h,X_k)^n} + \overline{p(\rho,h,X_k)^{n+1,\star}}}{2}\enskip .
-%\end{equation}
-%\begin{equation}
-%\frac{\partial w_0^{\nph}}{\partial r} = 
-%\overline{S^{\nph}} - \frac{1}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
-%\left\{ \psi^{\nph,\star} + f \left[\frac{p_0^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right]\right\}
-%\enskip ,
 
 \item Using equation (\ref{eq:pizero}), define the scaled pressure gradient using the
 following discretization:
@@ -1157,12 +1161,12 @@ following discretization:
 \end{equation}
 where $w_0^n$ and $(\partial w_0 / \partial r)^{n}$ are defined through paper III equation (53),
 \begin{equation}
-w_0^{n,\star} = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\dt^{n-1}}\enskip,\label{eq:w0nstar}
+w_0^n = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph}}{\dt^n+\dt^{n-1}}\enskip,\label{eq:w0nstar}
 \end{equation}
 and paper III equation (54),
 \begin{equation}
-\left(\frac{\partial w_0}{\partial r}\right)^{n,\star} = \frac{1}{\dt^n+\dt^{n-1} } \left [ \dt^{n} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nmh}
-+ \dt^{n-1} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nph,\star} \right ] \enskip.\label{eq:dw0drnstar}
+\left(\frac{\partial w_0}{\partial r}\right)^{n} = \frac{1}{\dt^n+\dt^{n-1} } \left [ \dt^{n} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nmh}
++ \dt^{n-1} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nph} \right ] \enskip.\label{eq:dw0drnstar}
 \end{equation}
 
 \end{enumerate}
@@ -1175,16 +1179,20 @@ and paper III equation (54),
 The procedure to construct $\uadvtwo$ is described in detail in Appendix B of paper III
 and is analogous to the procedure used in step 2, but with updated values
 for $w_0$ and $\pizero.$  We note that $\uadvtwo$ satisfies the discrete versions of 
-equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}).   The discretization
-with the volume discrepancy correction is
-\begin{eqnarray}
-\nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) &=&
-\beta_0^{\nph,\star}\left\{\left(S^{\nph} - \overline{S^{\nph}}\right)
- + \frac{f}{\gammabar^{\nph,\star} p_0^{\nph,\star}}\cdot \right. \nonumber \\
-&& \left.\left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right]\right\} \enskip ,
-\end{eqnarray}
+equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}), with the discretization
 \begin{equation}
-\beta_0^{\nph,\star} = \frac{ \beta_0^n +  \beta_0^{n+1,\star} }{2} \enskip .
+\nablab \cdotb \left(\beta_0^{\nph} \uadvtwo\right) =
+\beta_0^{\nph}\left(S^{\nph} - \overline{S^{\nph}}\right) \enskip ,
+\end{equation}
+\begin{equation}
+\beta_0^{\nph} = \frac{ \beta_0^n +  \beta_0^{n+1,\star} }{2} \enskip .
+\end{equation}
+The discretization with the volume discrepancy correction is
+\begin{equation}
+\nablab \cdotb \left(\beta_0^{\nph} \uadvtwo\right) =
+\beta_0^{\nph}\left\{\left(S^{\nph} - \overline{S^{\nph}}\right)
+ + \frac{f}{\gammabar^{\nph} p_0^{\nph}}\cdot 
+\left[\frac{p(\rho,h,X_k)^{\nph} - \overline{p(\rho,h,X_k)^{\nph}}}{\Delta t^n}\right]\right\} \enskip ,
 \end{equation}
 
 %--------------------------------------------------------------------------
@@ -1269,7 +1277,7 @@ $g^{n+1} = g(\rho_0^{n+1})$; $g^{\nph} = g(\rho_0^\nph)$
 {\bf Advect Base Pressure Planar}$[p_0^n, w_0^{\nph}, \etarho^{n+\myhalf}]$ 
 $\rightarrow [p_0^{n+1},\psi^{\nph}]$.
 \item For spherical,\\
-{\bf Advect Base Pressure Spherical}$[p_0^n,w_0^{\nph},\gammabar^{n+1,\star},\overline{S^{\nph,\star}}] \rightarrow [p_0^{n+1},\psi^n,\psi^{\nph}]$.
+{\bf Advect Base Pressure Spherical}$[p_0^n,w_0^{\nph},\gammabar^{n+1,\star},\overline{S^{\nph}}] \rightarrow [p_0^{n+1},\psi^n,\psi^{\nph}]$.
 \end{description}
 
 \item Update $(\rho h)_0$.
@@ -1430,32 +1438,48 @@ equation (\ref{eq:utildeupd}) as
         + \frac{1}{\rho_0} {\mathbf{G}} \pizerotwo
         - \frac{(\rho^\nph-\rhozero^\nph)}{\rho^\nph} g \er \right] \enskip ,
 \end{eqnarray}
-where $\rho^\nph = ( \rho^n + \rho^{n+1} )/2$
+where $\rho^{\nph}$ is defined as
+\begin{equation}
+\rho^\nph = \frac{\rho^n + \rho^{n+1}}{2}\enskip ,
+\end{equation}
 and $\mathbf{G}$ approximates a cell-centered gradient from nodal data. 
 The construction of $[(\uadvtwo+ w_0^{\nph} \er \cdotb \nablab) \Ubt ]^\nph$
 is described in paper II, Appendix A, with $\Vb = \uadvtwo+w_0^{\nph} \er$ and~$s$ set to each
 component of $\Ubt^n$ individually.
 
-Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}) 
-including the volume discrepancy correction,
+Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}):
+\begin{equation}
+\nablab \cdotb \left(\beta_0^{\nph} \Ubt^{n+1} \right) 
+= \beta_0^{\nph} \left(S^{n+1} - \overline{S^{n+1}} \right) \enskip,
+\end{equation}
+where $\beta_0^{n+\myhalf}$ is now defined as
+\begin{equation}
+\beta_0^{n+\myhalf} = \frac{\beta_0^n + \beta_0^{n+1}}{2}\enskip .
+\end{equation}
+The discretization with the volume discrepancy term is:
 \begin{equation}
 \nablab \cdotb \left(\beta_0^{\nph} \Ubt^{n+1} \right)  = \beta_0^{\nph}\left\{  \left(S^{n+1} - \overline{S^{n+1}} \right)
 + \frac{f}{\gammabar^{n+1} p_0^{n+1}}
 \left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]\right\}
-\enskip,
+\enskip .
 \end{equation}
-by defining ${\bf V} = \Ubt^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
-and solving
+
+To solve this equation, we define
+${\bf V} = \Ubt^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
+and solve
+\begin{equation}
+ L_\beta^\rho \phi = D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph} 
+\left(S^{n+1}-\overline{S^{n+1}} \right) \enskip, \label{Linear System for Multigrid}
+\end{equation}
+for nodal values of $\phi$, where $L_\beta^\rho$ is the standard bilinear
+finite element approximation to $\nablab \cdotb ({\beta_0^\nph}/{\rho^\nph}) \nablab.$
+The discretization with the volume discrepancy term is:
 \begin{equation}
  L_\beta^\rho \phi =
    D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph}\left\{ \left(S^{n+1}-\overline{S^{n+1}} \right)
 - \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]\right\} \enskip, \label{Linear System for Multigrid}
+\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]\right\} \enskip.
 \end{equation}
-for nodal values of $\phi$, where
-$\beta_0^\nph = ( \beta_0^n + \beta_0^{n+1} )/2$ and
-$L_\beta^\rho$ is the standard bilinear
-finite element approximation to $\nablab \cdotb ({\beta_0^\nph}/{\rho^\nph}) \nablab.$
 In this step, $D$ is a discrete second-order operator that approximates the 
 divergence at nodes from cell-centered data and satisfies
 $\mathbf{G} = -D^T.$ 
