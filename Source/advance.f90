@@ -79,7 +79,7 @@ contains
     type(multifab),  intent(inout) :: rho_Hnuc2(:)
     real(dp_t)    ,  intent(inout) :: div_coeff_old(:,0:)
     real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
-    real(dp_t)    ,  intent(in   ) :: grav_cell_old(:,0:)
+    real(dp_t)    ,  intent(inout) :: grav_cell_old(:,0:)
     real(dp_t)    ,  intent(in   ) :: dx(:,:),time,dt,dtold
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(multifab),  intent(inout) ::       dSdt(:)
@@ -1248,9 +1248,14 @@ contains
        end do
     end if
 
-    if (.not. init_mode) &
-         call diag(time,dt,dx,snew,rho_Hnuc2,rho_Hext,rho0_new,rhoh0_new,p0_new,tempbar, &
-                   gamma1bar,div_coeff_new,unew,w0,normal,mla,the_bc_tower)
+    if (.not. init_mode) then
+
+       call diag(time,dt,dx,snew,rho_Hnuc2,rho_Hext,rho0_new,rhoh0_new,p0_new,tempbar, &
+                 gamma1bar,div_coeff_new,unew,w0,normal,mla,the_bc_tower)
+       
+       grav_cell_old = grav_cell_new
+
+    end if
 
     do n=1,nlevs
        call destroy(rho_Hext(n))

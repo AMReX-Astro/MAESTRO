@@ -20,7 +20,6 @@ subroutine varden()
   use make_grav_module
   use sponge_module
   use make_div_coeff_module
-  use mk_vel_force_module
   use define_bc_module
   use fill_3d_module
   use eos_module
@@ -52,13 +51,11 @@ subroutine varden()
 
   type(multifab), allocatable :: unew(:)
   type(multifab), allocatable :: snew(:)
-  type(multifab), allocatable :: vel_force(:)
   type(multifab), allocatable :: normal(:)
   type(multifab), allocatable :: sponge(:)
   type(multifab), allocatable :: Source_new(:)
   type(multifab), allocatable :: hgrhs(:)
   type(multifab), allocatable :: gamma1(:)
-  type(multifab), allocatable :: w0mac(:,:)
 
   ! these are pointers because they need to be allocated and built within another function
   type(multifab), pointer :: uold(:)
@@ -229,7 +226,6 @@ subroutine varden()
 
   allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs),Source_new(nlevs))
   allocate(normal(nlevs))
-  allocate(vel_force(nlevs))
 
   do n = 1,nlevs
      call multifab_build(      unew(n), mla%la(n),    dm, 3)
@@ -321,18 +317,8 @@ subroutine varden()
      ! Compute the initial time step
      !----------------------------------------------------------------------
     
-     do n=1,nlevs
-        call multifab_build(vel_force(n), mla%la(n), dm, 1)
-     end do
-
-     call mk_vel_force(vel_force,uold,gpres,sold,normal,rho0_old,grav_cell,dx, &
-                       the_bc_tower%bc_tower_array,mla)
-
-     call firstdt(uold,sold,vel_force,Source_old,normal,p0_old,gamma1bar,dx,cflfac,dt)
-
-     do n=1,nlevs
-        call destroy(vel_force(n))
-     end do
+     call firstdt(mla,the_bc_tower%bc_tower_array,uold,gpres,sold,Source_old,normal, &
+                  rho0_old,p0_old,grav_cell,gamma1bar,dx,cflfac,dt)
 
      if (parallel_IOProcessor()) then
         print*,"Minimum firstdt over all levels =",dt
@@ -355,21 +341,12 @@ subroutine varden()
         print *, ' '
      end if
 
-     do n=1,nlevs
-        call multifab_build(vel_force(n), mla%la(n), dm, 1)
-        call setval( vel_force(n),ZERO, all=.true.)
-     end do
-
      do istep_divu_iter=1,init_divu_iter
 
-        call divu_iter(istep_divu_iter,uold,sold,pres,gpres,vel_force,normal, &
+        call divu_iter(istep_divu_iter,uold,sold,pres,gpres,normal, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old, &
                        gamma1bar,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
-     end do
-
-     do n=1,nlevs
-        call destroy(vel_force(n))
      end do
 
   else if (restart >= 0) then
@@ -792,47 +769,13 @@ subroutine varden()
         !---------------------------------------------------------------------
         dtold = dt
 
-        call make_grav_cell(grav_cell,rho0_old)
-
         if (istep > 1) then
 
            dt = 1.e20
 
-           do n=1,nlevs
-              call multifab_build(vel_force(n), mla%la(n), dm, 1)
-              call setval( vel_force(n),ZERO, all=.true.)
-           end do
-
-           call mk_vel_force(vel_force,uold,gpres,sold,normal,rho0_old, &
-                             grav_cell,dx,the_bc_tower%bc_tower_array,mla)
-
-           allocate(w0mac(nlevs,dm))
-           if (spherical .eq. 1) then
-              do n=1,nlevs
-                 do comp=1,dm
-                    call multifab_build(w0mac(n,comp),mla%la(n),1,1, &
-                                        nodal=edge_nodal_flag(comp,:))
-                    call setval(w0mac(n,comp), ZERO, all=.true.)
-                 end do
-              end do
-              call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_old,the_bc_tower)
-           end if
-
-           call estdt(uold,sold,vel_force,Source_old,dSdt,normal,w0,w0mac,p0_old, &
-                      gamma1bar,dx,cflfac,dt)
-
-           if (spherical .eq. 1) then
-              do n=1,nlevs
-                 do comp=1,dm
-                    call destroy(w0mac(n,comp))
-                 end do
-              end do
-           end if
-           deallocate(w0mac)
-
-           do n=1,nlevs
-              call destroy(vel_force(n))
-           end do
+           call estdt(mla,the_bc_tower,uold,sold,gpres,Source_old,dSdt, &
+                      normal,w0,rho0_old,p0_old,gamma1bar,grav_cell,div_coeff_old, &
+                      dx,cflfac,dt)
 
            if (parallel_IOProcessor() .and. verbose .ge. 1) then
               print*,''

@@ -8,7 +8,7 @@ module divu_iter_module
 
 contains
 
-  subroutine divu_iter(istep_divu_iter,uold,sold,pres,gpres,vel_force,normal, &
+  subroutine divu_iter(istep_divu_iter,uold,sold,pres,gpres,normal, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
                        w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
@@ -19,7 +19,6 @@ contains
     use probin_module
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use proj_parameters, only: divu_iters_comp
-    use mk_vel_force_module
     use react_state_module
     use make_explicit_thermal_module
     use make_S_module
@@ -37,7 +36,6 @@ contains
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(inout) :: pres(:)
     type(multifab) , intent(inout) :: gpres(:)
-    type(multifab) , intent(inout) :: vel_force(:)
     type(multifab) , intent(in   ) :: normal(:)
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
@@ -67,7 +65,6 @@ contains
     type(multifab) :: rho_Hnuc1(nlevs)
     type(multifab) :: rho_Hext(nlevs)
     type(multifab) :: div_coeff_3d(nlevs)
-    type(multifab) :: w0mac(nlevs,dm)
     type(multifab) :: Tcoeff(nlevs)
     type(multifab) :: hcoeff(nlevs)
     type(multifab) :: Xkcoeff(nlevs)
@@ -95,9 +92,6 @@ contains
 
     halfdt = HALF*dt
     ng_s = sold(1)%ng
-
-    call mk_vel_force(vel_force,uold,gpres,sold,normal,rho0_old,grav_cell,dx, &
-                      the_bc_tower%bc_tower_array,mla)
 
     do n = 1,nlevs
        call multifab_build(s1(n),            mla%la(n), nscal, ng_s)      
@@ -221,31 +215,13 @@ contains
        call setval(gpres(n),0.0_dp_t, all=.true.)
     end do
     
-    if (spherical .eq. 1) then
-       do n=1,nlevs
-          do comp=1,dm
-             call multifab_build(w0mac(n,comp), mla%la(n),1,1, &
-                                 nodal = edge_nodal_flag(comp,:))
-             call setval(w0mac(n,comp), ZERO, all=.true.)
-          end do
-       end do
-       call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_old,the_bc_tower)
-    end if
-
     dt_hold = dt
     dt      = HUGE(dt)
 
-    call estdt(uold,sold,vel_force,Source_old,dSdt,normal,w0,w0mac,p0_old,gamma1bar,dx, &
-               cflfac,dt)
+    call estdt(mla,the_bc_tower,uold,sold,gpres,Source_old,dSdt, &
+               normal,w0,rho0_old,p0_old,gamma1bar,grav_cell,div_coeff_old, &
+               dx,cflfac,dt)
 
-    if (spherical .eq. 1) then
-       do n=1,nlevs
-          do comp=1,dm
-             call destroy(w0mac(n,comp))
-          end do
-       end do
-    end if
-    
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        print*,"Call to estdt at end of istep_divu_iter =",istep_divu_iter
        print*,"gives dt =",dt

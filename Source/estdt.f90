@@ -15,6 +15,8 @@ module estdt_module
   use bl_types
   use bl_constants_module
   use multifab_module
+  use ml_layout_module
+  use define_bc_module
 
   implicit none
 
@@ -24,26 +26,37 @@ module estdt_module
 
 contains
 
-  subroutine estdt(u,s,force,divU,dSdt,normal,w0,w0mac,p0,gamma1bar,dx,cflfac,dt)
+  subroutine estdt(mla,the_bc_tower,u,s,gpres,divU,dSdt,normal,w0,rho0,p0,gamma1bar, &
+                   grav,div_coeff,dx,cflfac,dt)
 
     use bl_prof_module
     use geometry, only: spherical, dm, nlevs
     use variables, only: rel_eps
-    
+    use mk_vel_force_module
+    use fill_3d_module
+    use probin_module, only: edge_nodal_flag
+
+    type(ml_layout), intent(inout) :: mla
+    type(bc_tower) , intent(in ) :: the_bc_tower
     type(multifab) , intent(in ) :: u(:)
     type(multifab) , intent(in ) :: s(:)
-    type(multifab) , intent(in ) :: force(:)
+    type(multifab) , intent(in ) :: gpres(:)
     type(multifab) , intent(in ) :: divU(:)
     type(multifab) , intent(in ) :: dSdt(:)
     type(multifab) , intent(in ) :: normal(:)
-    type(multifab) , intent(in ) :: w0mac(:,:)
     real(kind=dp_t), intent(in ) :: w0(:,0:)
+    real(kind=dp_t), intent(in ) :: rho0(:,0:)
     real(kind=dp_t), intent(in ) :: p0(:,0:)
     real(kind=dp_t), intent(in ) :: gamma1bar(:,0:)
+    real(kind=dp_t), intent(in ) :: grav(:,0:)
+    real(kind=dp_t), intent(in ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in ) :: dx(:,:)
     real(kind=dp_t), intent(in ) :: cflfac
     real(kind=dp_t), intent(out) :: dt
     
+    type(multifab) :: force(nlevs)
+    type(multifab) :: w0mac(nlevs,dm)
+
     real(kind=dp_t), pointer::   uop(:,:,:,:)
     real(kind=dp_t), pointer::   sop(:,:,:,:)
     real(kind=dp_t), pointer::    fp(:,:,:,:)
@@ -54,7 +67,7 @@ contains
     real(kind=dp_t), pointer::   wyp(:,:,:,:)
     real(kind=dp_t), pointer::   wzp(:,:,:,:)
     
-    integer :: lo(dm),hi(dm),i,n
+    integer :: lo(dm),hi(dm),i,n,comp
     integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_n,ng_w
     real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start,dt_lev
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
@@ -66,6 +79,23 @@ contains
 
     call build(bpt, "estdt")
     
+    do n=1,nlevs
+       call multifab_build(force(n), mla%la(n), dm, 1)
+    end do
+    
+    call mk_vel_force(force,u,gpres,s,normal,rho0,grav,dx,the_bc_tower%bc_tower_array,mla)
+
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          do comp=1,dm
+             call multifab_build(w0mac(n,comp),mla%la(n),1,1, &
+                  nodal=edge_nodal_flag(comp,:))
+             call setval(w0mac(n,comp), ZERO, all=.true.)
+          end do
+       end do
+       call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff,the_bc_tower)
+    end if
+
     ng_u = u(1)%ng
     ng_s = s(1)%ng
     ng_f = force(1)%ng
@@ -146,6 +176,18 @@ contains
        dt = min(dt,dt_lev)
 
     end do
+
+     do n=1,nlevs
+        call destroy(force(n))
+     end do
+
+     if (spherical .eq. 1) then
+        do n=1,nlevs
+           do comp=1,dm
+              call destroy(w0mac(n,comp))
+           end do
+        end do
+     end if
 
     call destroy(bpt)
 

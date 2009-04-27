@@ -11,6 +11,8 @@ module firstdt_module
 
   use bl_types
   use multifab_module
+  use ml_layout_module
+  use define_bc_module
 
   implicit none
 
@@ -20,22 +22,30 @@ module firstdt_module
 
 contains
 
-  subroutine firstdt(u,s,force,divU,normal,p0,gamma1bar,dx,cflfac,dt)
+  subroutine firstdt(mla,the_bc_level,u,gpres,s,divU,normal,rho0,p0,grav,gamma1bar, &
+                     dx,cflfac,dt)
 
     use geometry, only: dm, nlevs, spherical
     use variables, only: rel_eps
     use probin_module, only: init_shrink, verbose
+    use mk_vel_force_module
 
+    type(ml_layout), intent(inout) :: mla
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(multifab) , intent(in   ) ::      u(:)
+    type(multifab) , intent(in   ) ::  gpres(:)
     type(multifab) , intent(in   ) ::      s(:)
-    type(multifab) , intent(in   ) ::  force(:)
     type(multifab) , intent(in   ) ::   divU(:)
     type(multifab) , intent(in   ) :: normal(:)
+    real(kind=dp_t), intent(in   ) ::      rho0(:,0:)
     real(kind=dp_t), intent(in   ) ::        p0(:,0:)
+    real(kind=dp_t), intent(in   ) ::      grav(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     real(kind=dp_t), intent(in   ) :: cflfac
     real(kind=dp_t), intent(  out) :: dt
+
+    type(multifab) :: force(nlevs)
     
     real(kind=dp_t), pointer::   uop(:,:,:,:)
     real(kind=dp_t), pointer::   sop(:,:,:,:)
@@ -47,11 +57,17 @@ contains
     real(kind=dp_t) :: dt_proc,dt_grid,dt_lev
     real(kind=dp_t) :: umax,umax_proc,umax_grid
     
+    do n=1,nlevs
+       call multifab_build(force(n), mla%la(n), dm, 1)
+    end do
+    
+    call mk_vel_force(force,u,gpres,s,normal,rho0,grav,dx,the_bc_level,mla)
+
     ng_u  =     u(1)%ng
     ng_s  =     s(1)%ng
     ng_f  = force(1)%ng
     ng_dU =  divU(1)%ng
-    
+
     do n=1,nlevs
 
        dt_proc   = 1.d99
@@ -110,6 +126,10 @@ contains
        rel_eps = 1.d-8*umax
 
     end do
+
+     do n=1,nlevs
+        call destroy(force(n))
+     end do
     
   end subroutine firstdt
   
