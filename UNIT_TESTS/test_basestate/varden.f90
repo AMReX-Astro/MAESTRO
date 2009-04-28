@@ -50,6 +50,7 @@ subroutine varden()
   real(dp_t), allocatable :: w0(:,:)
   real(dp_t), allocatable :: w0_old(:,:)
   real(dp_t), allocatable :: psi(:,:)
+  real(dp_t), allocatable :: psi_old(:,:)
   real(dp_t), allocatable :: etarho_ec(:,:)
   real(dp_t), allocatable :: etarho_cc(:,:)
   real(dp_t), allocatable :: div_etarho(:,:)
@@ -128,6 +129,7 @@ subroutine varden()
   allocate(             w0_old(nlevs,0:nr_fine))
   allocate(                 w0(nlevs,0:nr_fine))
   allocate(                psi(nlevs,0:nr_fine-1))
+  allocate(            psi_old(nlevs,0:nr_fine-1))
   allocate(          etarho_ec(nlevs,0:nr_fine))
   allocate(          etarho_cc(nlevs,0:nr_fine-1))
   allocate(         div_etarho(nlevs,0:nr_fine-1))
@@ -140,10 +142,10 @@ subroutine varden()
   allocate(   X0(nlevs,0:nr_fine-1))
   allocate( edge(nlevs,0:nr_fine))
 
-
   gam1(:,:) = ZERO
   w0(:,:) = ZERO
   psi(:,:) = ZERO
+  psi_old(:,:) = ZERO
   etarho_ec(:,:) = ZERO
   etarho_cc(:,:) = ZERO
   div_etarho(:,:) = ZERO
@@ -164,9 +166,6 @@ subroutine varden()
      write(10,1000) r_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
   enddo
   close(unit=10)
-
-
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! main timestepping loop
@@ -283,22 +282,29 @@ subroutine varden()
      s0_old(:,:,:) = s0(:,:,:)
      p0_old(:,:) = p0(:,:)
 
-     
-     call advect_base_dens(w0,s0_old(:,:,rho_comp),s0(:,:,rho_comp), &
-                           rho0_predicted_edge,dx(:,1),dt)
+     call advect_base_dens(w0,s0_old(:,:,rho_comp),s0(:,:,rho_comp),rho0_predicted_edge,dt)
 
-     p0 = p0_old
-     call enforce_HSE(s0(:,:,rho_comp),p0,grav_cell)
-     if (spherical .eq. 1) then
-        call make_psi_spherical(psi,w0,gam1,p0_old,p0,Sbar_in)
+     if (p0_update_type .eq. 1) then
+
+        call advect_base_pres(w0,Sbar_in,p0_old,p0,gam1,psi,psi_old,etarho_cc,dt)
+
+     else
+
+        ! set new p0 through HSE
+        p0 = p0_old
+        call enforce_HSE(s0(:,:,rho_comp),p0,grav_cell)
+
+        ! make psi
+        if (spherical .eq. 0) then
+           call make_psi_planar(etarho_cc,psi)
+        else
+           call make_psi_spherical(psi,w0,gam1,p0_old,p0,Sbar_in)
+        end if
+
      end if
 
-!     call advect_base_pres(w0,Sbar_in,p0_old,p0,gam1,psi,etarho_cc,dx(:,1),dt)
-
-     call advect_base_enthalpy(w0,Sbar_in,s0_old(:,:,rho_comp), &
-                               s0_old(:,:,rhoh_comp),s0(:,:,rhoh_comp), &
-                               p0_old,p0,gam1,rho0_predicted_edge,psi,dx(:,1),dt)
-
+     call advect_base_enthalpy(w0,s0_old(:,:,rho_comp),s0_old(:,:,rhoh_comp), &
+                               s0(:,:,rhoh_comp),rho0_predicted_edge,psi,psi_old,dt)
 
      ! update the species.  In the real code, this will be done
      ! for the full state.  Here we are faking a 1-d star, so
@@ -315,9 +321,9 @@ subroutine varden()
         force = ZERO
 
         if (spherical .eq. 0) then
-           call make_edge_state_1d(X0,edge,w0,force,dx(:,1),dt)
+           call make_edge_state_1d(X0,edge,w0,force,dt)
         else
-           call make_edge_state_1d(X0,edge,w0,force,dr,dt)
+           call make_edge_state_1d(X0,edge,w0,force,dt)
         endif
 
         ! our final update needs (rho X)_0 on the edges, so compute
