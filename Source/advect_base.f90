@@ -134,13 +134,15 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine advect_base_pres(w0,Sbar_in,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc,s,dt)
+  subroutine advect_base_pres(w0,Sbar_in,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc,s, &
+                              dt,dx,mla)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs
     use make_psi_module
     use restrict_base_module
     use multifab_module
+    use ml_layout_module
 
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
     real(kind=dp_t), intent(in   ) ::   Sbar_in(:,0:)
@@ -152,6 +154,8 @@ contains
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
     type(multifab) , intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: dt
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(ml_layout), intent(in   ) :: mla
     
     ! local
     type(bl_prof_timer), save :: bpt
@@ -173,7 +177,7 @@ contains
     else
 
        ! advect p0
-       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,s,dt)
+       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,s,dt,dx,mla)
 
        ! make psi
        call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
@@ -205,10 +209,6 @@ contains
     real (kind=dp_t) :: force(nlevs,0:nr_fine-1)
     real (kind=dp_t) ::  edge(nlevs,0:nr_fine)
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Update p_0
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     force = psi
     
     call make_edge_state_1d(p0_old,edge,w0,force,dt)
@@ -227,16 +227,18 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  subroutine advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,s,dt)
+  subroutine advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,s,dt,dx,mla)
 
     use bl_constants_module
     use make_edge_state_module
-    use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine
+    use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine, nlevs
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
     use multifab_module
     use make_gamma_module
+    use average_module
+    use ml_layout_module
 
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
     real(kind=dp_t), intent(in   ) ::   Sbar_in(:,0:)
@@ -245,41 +247,21 @@ contains
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     type(multifab) , intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: dt
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(ml_layout), intent(in   ) :: mla
     
     ! Local variables
-    integer :: r
+    integer :: r,n
 
-    real(kind=dp_t) :: factor,divw,p0_avg
-    real(kind=dp_t) :: w0dpdr_avg,w0dpdr_avg_1,w0dpdr_avg_2
+    real(kind=dp_t) :: factor,divw,w0dpdr_avg,w0dpdr_avg_1,w0dpdr_avg_2
+    real(kind=dp_t) :: gamma1bar_star(1,0:nr_fine-1)
+    real(kind=dp_t) ::  gamma1bar_avg(1,0:nr_fine-1)
+    real(kind=dp_t) ::         p0_avg(1,0:nr_fine-1)
 
-    real(kind=dp_t) :: gam1star(1,0:nr_fine-1)
-
-!    real(kind=dp_t) :: divbetaw,betahalf
-!    real(kind=dp_t) :: div_coeff_new(1,0:nr_fine-1)
-!    real(kind=dp_t) ::     grav_cell(1,0:nr_fine-1)
-!    real(kind=dp_t) ::          beta(1,0:nr_fine)
-!    real(kind=dp_t) ::      beta_new(1,0:nr_fine)
-!    real(kind=dp_t) ::       beta_nh(1,0:nr_fine)
-!    real(kind=dp_t) :: gamma1bar_old(1,0:nr_fine-1)
-    
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! UPDATE P0
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    
-!   Put beta_old on edges
-!   NOTE: Make sure ghost cells for div_coeff_old are filled before calling this
-!   call cell_to_edge(div_coeff_old,beta)
-!   Update p0 -- predictor
-!   do r=0,nr_fine-1
-!      divbetaw = one/(r_cc_loc(1,r)**2) * &
-!           (r_edge_loc(1,r+1)**2 * beta(1,r+1) * w0(1,r+1) - &
-!            r_edge_loc(1,r  )**2 * beta(1,r  ) * w0(1,r  )) / dr(1)
-!      betahalf = div_coeff_old(1,r)
-!      factor = half * dt * gamma1bar(1,r) * (Sbar_in(1,r) - divbetaw / betahalf)
-!      p0_new(1,r) = p0_old(1,r) * (one + factor ) / (one - factor)
-!   end do
+    type(multifab) :: gamma1(nlevs)
 
     do r=0,nr_fine-1
+
        divw = one/(r_cc_loc(1,r)**2) * &
             (r_edge_loc(1,r+1)**2 * w0(1,r+1) - &
             r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
@@ -289,77 +271,64 @@ contains
           w0dpdr_avg_1 =  w0(1,1) * (p0_old(1,1)-p0_old(1,0)) / dr(1)
           w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
        else if (r .eq. nr_fine-1) then
-          w0dpdr_avg_2 =  w0(1,nr_fine-1) * &
-               (p0_old(1,nr_fine-1)-p0_old(1,nr_fine-2)) / dr(1)
-          w0dpdr_avg_1 =  w0(1,nr_fine-2) * &
-               (p0_old(1,nr_fine-2)-p0_old(1,nr_fine-3)) / dr(1)
+          w0dpdr_avg_2 =  w0(1,nr_fine-1) * (p0_old(1,nr_fine-1)-p0_old(1,nr_fine-2)) / dr(1)
+          w0dpdr_avg_1 =  w0(1,nr_fine-2) * (p0_old(1,nr_fine-2)-p0_old(1,nr_fine-3)) / dr(1)
           w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
        else
-          w0dpdr_avg =  HALF * ( w0(1,r+1)*(p0_old(1,r+1)-p0_old(1,r)) &
-               + w0(1,r)*(p0_old(1,r)-p0_old(1,r-1))) / dr(1)
+          w0dpdr_avg =  HALF * ( w0(1,r+1)*(p0_old(1,r+1)-p0_old(1,r  )) &
+                                +w0(1,r  )*(p0_old(1,r  )-p0_old(1,r-1)) ) / dr(1)
        end if
        
        factor = Sbar_in(1,r) - divw - 1.d0 / (gamma1bar(1,r)*p0_old(1,r)) * w0dpdr_avg
        factor = half * dt * factor
        
        p0_new(1,r) = p0_old(1,r) * (one + gamma1bar(1,r)*factor ) / &
-            (one - gamma1bar(1,r)*factor)
+                                   (one - gamma1bar(1,r)*factor)
        
     end do
-    
-!   Define beta^n+1 at cell edges using the new gravity above
-!   call make_grav_cell(grav_cell,rho0_new)
-!   call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell)
-!   NOTE: Make sure ghost cells are filled for div_coeff_new before calling this
-!   gamma1bar_old = gamma1bar
-!   call cell_to_edge(1,div_coeff_new,beta_new)
-!   beta_nh = HALF*(beta + beta_new)
-!   Update p0 -- corrector
-!   do r=0,nr_fine-1
-!      divbetaw = one / (r_cc_loc(1,r)**2) * &
-!           (r_edge_loc(1,r+1)**2 * beta_nh(1,r+1) * w0(1,r+1) - &
-!            r_edge_loc(1,r  )**2 * beta_nh(1,r  ) * w0(1,r  )) / dr(1)
 
-!      betahalf = HALF*(div_coeff_old(1,r) + div_coeff_new(1,r))
-!      factor = half * dt * (Sbar_in(1,r) - divbetaw / betahalf)
-!      p0_new(1,r) = p0_old(1,r) * &
-!           (one + factor * gamma1bar_old(1,r)) / (one - factor * gamma1bar(1,r))
-!   end do
+    ! compute p0_avg
+    p0_avg = HALF*(p0_old + p0_new)
+
+    ! compute gamma1bar_star
+    do n=1,nlevs
+       call multifab_build(gamma1(n), mla%la(n), 1, 0)
+    end do
+    
+    call make_gamma(mla,gamma1,s,p0_new,dx)
+    call average(mla,gamma1,gamma1bar_star,dx,1)
+    
+    do n=1,nlevs
+       call destroy(gamma1(n))
+    end do
+
+    ! compute gamma1bar_avg
+    gamma1bar_avg = HALF*(gamma1bar + gamma1bar_star)
 
     do r=0,nr_fine-1
+
        divw = one/(r_cc_loc(1,r)**2) * &
             (r_edge_loc(1,r+1)**2 * w0(1,r+1) - &
-            r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
+             r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
        
        if (r .eq. 0) then
-          w0dpdr_avg_2 =  HALF * w0(1,2) * ( (p0_old(1,2)-p0_old(1,1)) &
-               +(p0_new(1,2)-p0_new(1,1)) ) / dr(1)
-          w0dpdr_avg_1 =  HALF * w0(1,1) * ( (p0_old(1,1)-p0_old(1,0)) &
-               +(p0_new(1,1)-p0_new(1,0)) ) / dr(1)
+          w0dpdr_avg_2 =  w0(1,2) * (p0_avg(1,2)-p0_avg(1,1)) / dr(1)
+          w0dpdr_avg_1 =  w0(1,1) * (p0_avg(1,1)-p0_avg(1,0)) / dr(1)
           w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
-          
        else if (r .eq. nr_fine-1) then
-          w0dpdr_avg_2 = HALF * w0(1,nr_fine-1) * &
-               ((p0_old(1,nr_fine-1)-p0_old(1,nr_fine-2)) &
-               +(p0_new(1,nr_fine-1)-p0_new(1,nr_fine-2))) / dr(1)
-          w0dpdr_avg_1 = HALF * w0(1,nr_fine-2)* &
-               ((p0_old(1,nr_fine-2)-p0_old(1,nr_fine-3)) &
-               +(p0_new(1,nr_fine-2)-p0_new(1,nr_fine-3))) / dr(1)
+          w0dpdr_avg_2 =  w0(1,nr_fine-1) * (p0_avg(1,nr_fine-1)-p0_avg(1,nr_fine-2)) / dr(1)
+          w0dpdr_avg_1 =  w0(1,nr_fine-2) * (p0_avg(1,nr_fine-2)-p0_avg(1,nr_fine-3)) / dr(1)
           w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
-          
        else
-          w0dpdr_avg = HALF * HALF * ( w0(1,r+1)*(p0_old(1,r+1)-p0_old(1,r)) + &
-               w0(1,r)*(p0_old(1,r)-p0_old(1,r-1)) + &
-               w0(1,r+1)*(p0_new(1,r+1)-p0_new(1,r)) + &
-               w0(1,r)*(p0_new(1,r)-p0_new(1,r-1)) ) / dr(1)
+          w0dpdr_avg =  HALF * ( w0(1,r+1)*(p0_avg(1,r+1)-p0_avg(1,r  )) &
+                                +w0(1,r  )*(p0_avg(1,r  )-p0_avg(1,r-1)) ) / dr(1)
        end if
        
-       p0_avg = HALF * (p0_old(1,r) + p0_new(1,r))
-       factor = Sbar_in(1,r) - divw - 1.d0 / (gamma1bar(1,r)*p0_avg) * w0dpdr_avg
+       factor = Sbar_in(1,r) - divw - 1.d0 / (gamma1bar_avg(1,r)*p0_avg(1,r)) * w0dpdr_avg
        factor = half * dt * factor
        
-       p0_new(1,r) = p0_old(1,r) * (one + gamma1bar(1,r)*factor ) / &
-            (one - gamma1bar(1,r)*factor)
+       p0_new(1,r) = p0_old(1,r) * (one + gamma1bar_avg(1,r)*factor ) / &
+                                   (one - gamma1bar_avg(1,r)*factor)
        
     end do
        

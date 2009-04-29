@@ -455,6 +455,9 @@ contains
 
     do n=1,nlevs
        call multifab_build(s2(n), mla%la(n), nscal, 3)
+       ! copy temperature into s2 for seeding eos calls only
+       ! temperature will be overwritten later after enthalpy advance
+       call multifab_copy_c(s2(n), temp_comp, s1(n), temp_comp, 1, 3)
     end do
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -511,7 +514,7 @@ contains
        if (p0_update_type .eq. 1) then
 
           call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar_1,psi,psi_old,etarho_cc, &
-                                s2,dt)
+                                s2,dt,dx,mla)
 
        else if (p0_update_type .eq. 2) then
 
@@ -847,6 +850,10 @@ contains
 
     do n=1,nlevs
        call multifab_build(s2(n), mla%la(n), nscal, 3)
+       ! copy temperature into s2 for seeding eos calls only
+       ! temperature will be overwritten later after enthalpy advance
+       call multifab_copy_c(s2(n), temp_comp, s1(n), temp_comp, 1, 3)
+
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
@@ -912,7 +919,7 @@ contains
        if (p0_update_type .eq. 1) then
 
           call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar_1,psi,psi_old,etarho_cc, &
-                                s2,dt)
+                                s2,dt,dx,mla)
 
        else if (p0_update_type .eq. 2) then
 
