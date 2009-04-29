@@ -140,6 +140,7 @@ contains
     real(dp_t) ::                 Sbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::        div_coeff_nph(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::        gamma1bar_old(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::          gamma1bar_1(nlevs_radial,0:nr_fine-1)
     real(dp_t) :: delta_gamma1_termbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::               w0_old(nlevs_radial,0:nr_fine)
     real(dp_t) ::       div_coeff_edge(nlevs_radial,0:nr_fine)
@@ -271,8 +272,8 @@ contains
 
        call average(mla,Source_nph,Sbar,dx,1)
 
-       call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old,gamma1bar, &
-                    gamma1bar,p0_minus_pthermbar,psi,etarho_ec,etarho_cc,dt,dtold)
+       call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old,gamma1bar_old, &
+                    gamma1bar_old,p0_minus_pthermbar,psi,etarho_ec,etarho_cc,dt,dtold)
 
        if (spherical .eq. 1) then
           call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_old,the_bc_tower)
@@ -321,7 +322,7 @@ contains
     end do
 
     call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar,div_coeff_old,dx, &
-                     gamma1bar,gamma1bar,p0_old,p0_old,delta_p_term,dt)
+                     gamma1bar_old,gamma1bar_old,p0_old,p0_old,delta_p_term,dt)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
@@ -401,7 +402,7 @@ contains
        end do
        
        call make_gamma(mla,gamma1,s1,p0_old,dx)
-       call average(mla,gamma1,gamma1bar,dx,1)
+       call average(mla,gamma1,gamma1bar_1,dx,1)
 
        do n=1,nlevs
           call destroy(gamma1(n))
@@ -509,7 +510,7 @@ contains
 
        if (p0_update_type .eq. 1) then
 
-          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc,dt)
+          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar_1,psi,psi_old,etarho_cc,dt)
 
        else if (p0_update_type .eq. 2) then
 
@@ -521,8 +522,8 @@ contains
           if (spherical .eq. 0) then
              call make_psi_planar(etarho_cc,psi)
           else
-             call make_psi_spherical(psi_old,w0,gamma1bar,p0_old,p0_old,Sbar)
-             call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+             call make_psi_spherical(psi_old,w0,gamma1bar_1,p0_old,p0_old,Sbar)
+             call make_psi_spherical(psi,w0,gamma1bar_1,p0_old,p0_new,Sbar)
           end if
           
        end if
@@ -751,8 +752,8 @@ contains
        end if
 
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
-            gamma1bar_old,gamma1bar,p0_minus_pthermbar, &
-            psi,etarho_ec,etarho_cc,dt,dtold)
+                    gamma1bar_old,gamma1bar,p0_minus_pthermbar, &
+                    psi,etarho_ec,etarho_cc,dt,dtold)
 
        if (spherical .eq. 1) then
           call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_nph,the_bc_tower)
@@ -909,7 +910,7 @@ contains
 
        if (p0_update_type .eq. 1) then
 
-          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc,dt)
+          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar_1,psi,psi_old,etarho_cc,dt)
 
        else if (p0_update_type .eq. 2) then
 
@@ -921,8 +922,8 @@ contains
           if (spherical .eq. 0) then
              call make_psi_planar(etarho_cc,psi)
           else
-             call make_psi_spherical(psi_old,w0,gamma1bar,p0_old,p0_old,Sbar)
-             call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+             call make_psi_spherical(psi_old,w0,gamma1bar_1,p0_old,p0_old,Sbar)
+             call make_psi_spherical(psi,w0,gamma1bar_1,p0_old,p0_new,Sbar)
           end if
           
        end if

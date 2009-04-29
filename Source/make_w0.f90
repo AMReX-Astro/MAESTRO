@@ -216,7 +216,7 @@ contains
   end subroutine make_w0_planar
 
   subroutine make_w0_spherical(w0,w0_old,Sbar_in,rho0,rho0_new,p0,p0_new, &
-                               gamma1bar,gamma1bar_new,p0_minus_pthermbar, &
+                               gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
                                etarho_ec,etarho_cc,w0_force,dt,dtold)
 
     use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr
@@ -232,7 +232,7 @@ contains
     real(kind=dp_t), intent(in   ) ::           rho0_new(0:)
     real(kind=dp_t), intent(in   ) ::                 p0(0:)
     real(kind=dp_t), intent(in   ) ::             p0_new(0:)
-    real(kind=dp_t), intent(in   ) ::          gamma1bar(0:)
+    real(kind=dp_t), intent(in   ) ::      gamma1bar_old(0:)
     real(kind=dp_t), intent(in   ) ::      gamma1bar_new(0:)
     real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(0:)
     real(kind=dp_t), intent(in   ) ::          etarho_ec(0:)
@@ -263,7 +263,7 @@ contains
     do r = 0, nr_fine-1
        p0_nph(r)        = HALF*(p0(r)        + p0_new(r))
        rho0_nph(1,r)    = HALF*(rho0(r)      + rho0_new(r))
-       gamma1bar_nph(r) = HALF*(gamma1bar(r) + gamma1bar_new(r))       
+       gamma1bar_nph(r) = HALF*(gamma1bar_old(r) + gamma1bar_new(r))       
     enddo
 
     ! NOTE:  we first solve for the w0 resulting only from Sbar -- then we will
