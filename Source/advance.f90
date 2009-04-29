@@ -527,6 +527,7 @@ contains
              call make_psi_planar(etarho_cc,psi)
           else
              call make_psi_spherical(psi_old,w0,gamma1bar_1,p0_old,p0_old,Sbar)
+             ! this isn't right yet.  gamma1bar needs to be time-centered.
              call make_psi_spherical(psi,w0,gamma1bar_1,p0_old,p0_new,Sbar)
           end if
           
@@ -932,6 +933,7 @@ contains
              call make_psi_planar(etarho_cc,psi)
           else
              call make_psi_spherical(psi_old,w0,gamma1bar_1,p0_old,p0_old,Sbar)
+             ! this isn't right yet.  gamma1bar needs to be time-centered.
              call make_psi_spherical(psi,w0,gamma1bar_1,p0_old,p0_new,Sbar)
           end if
           

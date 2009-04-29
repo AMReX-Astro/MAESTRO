@@ -401,10 +401,11 @@ f = \frac{\dt}{2} \left [ \Sbar^{\inp} -  \frac{1}{r^2} \frac{\partial}{\partial
 \end{equation}
 where the $(\partial p_0^\inp / \partial r)$ is computed by
 interpolating $p_0^\inp$ from cell-centers to edges and then
-differencing.  Next, we compute a provisional updated $\gammabar$ using
+differencing.  Next, we compute a provisional updated $\gammabar$ using the
+provisional updated pressure,
 $\gammabar^\star = {\bf Avg}[\Gamma_1(\rho^{\inp},p_0^\star,X_k^{\inp})]$,
 where $\rho^\inp$ and $X_k^\inp$ are time-advanced versions of the $\rho$ and
-$X_k$ used to compute $\gammabar^\inp$.\\
+$X_k$ which were used to compute $\gammabar^\inp$.\\
 
 Now we begin the corrector step.  Using $p_0^\star$ and $\gammabar^\star$, 
 we can compute a more accurate approximation to equation~(\ref{eq:frhs}),
@@ -418,13 +419,7 @@ This allows us to complete the corrector for the pressure update:
 \begin{equation}
 p_0^{\outp} = p_0^{\inp} \frac{\left(1 + \gammabar^{\dagger} f^\dagger\right)}{\left(1 - \gammabar^{\dagger} f^\dagger\right)}\enskip .
 \end{equation}
-We note that since we do not time-center $\gammabar$, this is not
-strictly second-order accurate.  However, as $\gammabar$ varies slowly
-in time, we expect the effect to be small.  This is something that we 
-defer until simulations indicate it is warranted.\\
-
-Next, we compute $\psi^{\outp,n}$ and $\psi^{\outp,n+\myhalf}$.  Rewriting Equation 
-(\ref{eq:w01}), we can define
+Next, we compute $\psi^{\outp,n}$ and $\psi^{\outp,n+\myhalf}$.  First, we compute an updated $\gammabar$ using the update pressure, $\gammabar^\star = {\bf Avg}[\Gamma_1(\rho^{\inp},p_0^{\outp},X_k^{\inp})]$.  Then, rewriting equation (\ref{eq:w01}), we can define
 \begin{eqnarray}
 \psi \equiv \frac{D_0 p_0}{Dt} &=& \gammabar p_0 \left [ \overline{S} - 
        \frac{1}{r^2} \frac{\partial}{\partial r} \left (r^2 w_0 \right ) \right] \enskip .
@@ -432,13 +427,14 @@ Next, we compute $\psi^{\outp,n}$ and $\psi^{\outp,n+\myhalf}$.  Rewriting Equat
 We discretize this locally as:
 \begin{equation}
 \psi_j^{\outp,n} = 
-\left(\gammabar^{\inp}p_0^{\inp}\right)_j
+\left(\gammabar^\inp p_0^\inp\right)_j
 \left \{ \Sbar_j^{\inp} -  \frac{1}{r_j^2} \left [ (r^2 w_0^{\inp})_{j+\myhalf} -
           (r^2 w_0^{\inp})_{j-\myhalf} \right ] \right \} \enskip ,
 \end{equation}
 \begin{equation}
 \psi_j^{\outp,n+\myhalf} = 
-\left[\gammabar^{\inp} \frac{\left( p_0^{\inp} + p_0^{\outp} \right)}{2}\right]_j
+\left(\frac{\gammabar^\inp+\gammabar^{\star}}{2}\right)_j
+\left(\frac{p_0^\inp+p_0^\outp}{2}\right)_j
 \left \{ \Sbar_j^{\inp} -  \frac{1}{r_j^2} \left [ (r^2 w_0^{\inp})_{j+\myhalf} -
           (r^2 w_0^{\inp})_{j-\myhalf} \right ] \right \} \enskip .
 \end{equation}
@@ -449,7 +445,7 @@ is the process by which we update the base state enthalpy through $\dt$ in time.
 The input arguments are different for plane-parallel and spherical.
 \begin{description}
 \item {\bf Advect Base Enthalpy Planar}$[(\rho h)_0^\inp,w_0^\inp,\psi^\inp] \rightarrow 
-[(\rho h)_0^\outp]$
+[(\rho h)_0^\outp]$:
 
 We discretize the base state enthalpy equation,
 \begin{equation}
@@ -467,7 +463,7 @@ where the interface states are again found via the procedure described
 in paper II, Appendix A.\\
 
 \item {\bf Advect Base Enthalpy Spherical}$[(\rho h)_0^\inp,w_0^\inp,\psi^{\inp,n},
-\psi^{\inp,n+\myhalf}] \rightarrow [(\rho h)_0^\outp]$
+\psi^{\inp,n+\myhalf}] \rightarrow [(\rho h)_0^\outp]$:
 
 The base state enthalpy update now includes the area factors in the divergences:
 \begin{equation}

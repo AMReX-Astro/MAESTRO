@@ -138,7 +138,7 @@ contains
                               dt,dx,mla)
 
     use bl_prof_module
-    use geometry, only: spherical, nlevs
+    use geometry, only: spherical, nlevs, nr_fine
     use make_psi_module
     use restrict_base_module
     use multifab_module
@@ -160,6 +160,8 @@ contains
     ! local
     type(bl_prof_timer), save :: bpt
 
+    real(kind=dp_t) :: gamma1bar_avg(1,0:nr_fine-1)
+
     call build(bpt, "advect_base_pres")
 
     if (spherical .eq. 0) then
@@ -177,10 +179,11 @@ contains
     else
 
        ! advect p0
-       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,s,dt,dx,mla)
+       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,gamma1bar_avg, &
+                                       s,dt,dx,mla)
 
        ! make psi
-       call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
+       call make_psi_spherical(psi,w0,gamma1bar_avg,p0_old,p0_new,Sbar_in)
        call make_psi_spherical(psi_old,w0,gamma1bar,p0_old,p0_old,Sbar_in)
 
     end if
@@ -227,7 +230,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  subroutine advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,s,dt,dx,mla)
+  subroutine advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,gamma1bar_avg, &
+                                        s,dt,dx,mla)
 
     use bl_constants_module
     use make_edge_state_module
@@ -245,6 +249,7 @@ contains
     real(kind=dp_t), intent(in   ) ::    p0_old(:,0:)
     real(kind=dp_t), intent(  out) ::    p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
+    real(kind=dp_t), intent(  out) :: gamma1bar_avg(:,0:)
     type(multifab) , intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: dt
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -255,7 +260,6 @@ contains
 
     real(kind=dp_t) :: factor,divw,w0dpdr_avg,w0dpdr_avg_1,w0dpdr_avg_2
     real(kind=dp_t) :: gamma1bar_star(1,0:nr_fine-1)
-    real(kind=dp_t) ::  gamma1bar_avg(1,0:nr_fine-1)
     real(kind=dp_t) ::         p0_avg(1,0:nr_fine-1)
 
     type(multifab) :: gamma1(nlevs)
@@ -331,6 +335,21 @@ contains
                                    (one - gamma1bar_avg(1,r)*factor)
        
     end do
+
+    ! compute gamma1bar_starstar
+    do n=1,nlevs
+       call multifab_build(gamma1(n), mla%la(n), 1, 0)
+    end do
+    
+    call make_gamma(mla,gamma1,s,p0_new,dx)
+    call average(mla,gamma1,gamma1bar_star,dx,1)
+    
+    do n=1,nlevs
+       call destroy(gamma1(n))
+    end do
+
+    ! compute gamma1bar_avg for time-centered psi computation
+    gamma1bar_avg = HALF*(gamma1bar + gamma1bar_star)
        
   end subroutine advect_base_pres_spherical
 
