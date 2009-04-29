@@ -141,6 +141,7 @@ contains
     real(dp_t) ::        div_coeff_nph(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::        gamma1bar_old(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::          gamma1bar_1(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::        gamma1bar_nph(nlevs_radial,0:nr_fine-1)
     real(dp_t) :: delta_gamma1_termbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::               w0_old(nlevs_radial,0:nr_fine)
     real(dp_t) ::       div_coeff_edge(nlevs_radial,0:nr_fine)
@@ -521,14 +522,32 @@ contains
           ! set new p0 through HSE
           p0_new = p0_old
           call enforce_HSE(rho0_new,p0_new,grav_cell_new)
-          
+
           ! make psi
           if (spherical .eq. 0) then
              call make_psi_planar(etarho_cc,psi)
           else
-             call make_psi_spherical(psi_old,w0,gamma1bar_1,p0_old,p0_old,Sbar)
-             ! this isn't right yet.  gamma1bar needs to be time-centered.
-             call make_psi_spherical(psi,w0,gamma1bar_1,p0_old,p0_new,Sbar)
+             ! compute p0_nph
+             p0_nph = HALF*(p0_old+p0_new)
+
+             ! compute gamma1bar_2 and store it in gamma1bar_nph
+             do n=1,nlevs
+                call multifab_build(gamma1(n), mla%la(n), 1, 0)
+             end do
+             
+             call make_gamma(mla,gamma1,s2,p0_new,dx)
+             call average(mla,gamma1,gamma1bar_nph,dx,1)
+             
+             do n=1,nlevs
+                call destroy(gamma1(n))
+             end do
+
+             ! compute gamma1bar_nph
+             gamma1bar_nph = HALF*(gamma1bar_1+gamma1bar_nph)
+
+             ! make base time and time-centered psi
+             call make_psi_spherical(psi_old,w0,gamma1bar_1  ,p0_old,Sbar)
+             call make_psi_spherical(psi    ,w0,gamma1bar_nph,p0_nph,Sbar)
           end if
           
        end if
@@ -927,14 +946,29 @@ contains
           ! set new p0 through HSE
           p0_new = p0_old
           call enforce_HSE(rho0_new,p0_new,grav_cell_new)
+          p0_nph = HALF*(p0_old+p0_new)
           
           ! make psi
           if (spherical .eq. 0) then
              call make_psi_planar(etarho_cc,psi)
           else
-             call make_psi_spherical(psi_old,w0,gamma1bar_1,p0_old,p0_old,Sbar)
-             ! this isn't right yet.  gamma1bar needs to be time-centered.
-             call make_psi_spherical(psi,w0,gamma1bar_1,p0_old,p0_new,Sbar)
+             p0_nph = HALF*(p0_old+p0_new)
+
+             do n=1,nlevs
+                call multifab_build(gamma1(n), mla%la(n), 1, 0)
+             end do
+             
+             call make_gamma(mla,gamma1,s2,p0_new,dx)
+             call average(mla,gamma1,gamma1bar_nph,dx,1)
+             
+             do n=1,nlevs
+                call destroy(gamma1(n))
+             end do
+
+             gamma1bar_nph = HALF*(gamma1bar_1+gamma1bar_nph)
+
+             call make_psi_spherical(psi_old,w0,gamma1bar_1  ,p0_old,Sbar)
+             call make_psi_spherical(psi    ,w0,gamma1bar_nph,p0_nph,Sbar)
           end if
           
        end if

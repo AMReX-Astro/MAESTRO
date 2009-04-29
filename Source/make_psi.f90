@@ -40,7 +40,7 @@ contains
     
   end subroutine make_psi_planar
 
-  subroutine make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
+  subroutine make_psi_spherical(psi,w0,gamma1bar,p0_avg,Sbar_in)
 
     use bl_constants_module
     use geometry, only: dr, r_cc_loc, r_edge_loc, nr_fine
@@ -48,8 +48,7 @@ contains
     real(kind=dp_t), intent(inout) ::       psi(:,0:)
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
-    real(kind=dp_t), intent(in   ) ::    p0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::    p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::    p0_avg(:,0:)
     real(kind=dp_t), intent(in   ) ::   Sbar_in(:,0:)
     
     ! local variables
@@ -62,8 +61,7 @@ contains
             (r_edge_loc(1,r+1)**2 * w0(1,r+1) - &
              r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
 
-       psi(1,r) = gamma1bar(1,r) * HALF*(p0_old(1,r) + p0_new(1,r)) * &
-            (Sbar_in(1,r) - div_w0_sph)
+       psi(1,r) = gamma1bar(1,r) * p0_avg(1,r) * (Sbar_in(1,r) - div_w0_sph)
 
     enddo
 

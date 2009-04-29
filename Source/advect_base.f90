@@ -160,7 +160,8 @@ contains
     ! local
     type(bl_prof_timer), save :: bpt
 
-    real(kind=dp_t) :: gamma1bar_avg(1,0:nr_fine-1)
+    real(kind=dp_t) :: gamma1bar_nph(1,0:nr_fine-1)
+    real(kind=dp_t) :: p0_nph(1,0:nr_fine-1)
 
     call build(bpt, "advect_base_pres")
 
@@ -179,12 +180,12 @@ contains
     else
 
        ! advect p0
-       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,gamma1bar_avg, &
-                                       s,dt,dx,mla)
+       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_nph,p0_new, &
+                                       gamma1bar,gamma1bar_nph,s,dt,dx,mla)
 
-       ! make psi
-       call make_psi_spherical(psi,w0,gamma1bar_avg,p0_old,p0_new,Sbar_in)
-       call make_psi_spherical(psi_old,w0,gamma1bar,p0_old,p0_old,Sbar_in)
+       ! make base time and time-centered psi
+       call make_psi_spherical(psi_old,w0,gamma1bar    ,p0_old,Sbar_in)
+       call make_psi_spherical(psi    ,w0,gamma1bar_nph,p0_nph,Sbar_in)
 
     end if
 
@@ -230,8 +231,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  subroutine advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,gamma1bar_avg, &
-                                        s,dt,dx,mla)
+  subroutine advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_nph,p0_new, &
+                                        gamma1bar,gamma1bar_nph,s,dt,dx,mla)
 
     use bl_constants_module
     use make_edge_state_module
@@ -247,9 +248,10 @@ contains
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
     real(kind=dp_t), intent(in   ) ::   Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) ::    p0_old(:,0:)
+    real(kind=dp_t), intent(  out) ::    p0_nph(:,0:)
     real(kind=dp_t), intent(  out) ::    p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
-    real(kind=dp_t), intent(  out) :: gamma1bar_avg(:,0:)
+    real(kind=dp_t), intent(  out) :: gamma1bar_nph(:,0:)
     type(multifab) , intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: dt
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -258,11 +260,8 @@ contains
     ! Local variables
     integer :: r,n
 
-    real(kind=dp_t) :: factor,divw,w0dpdr_avg,w0dpdr_avg_1,w0dpdr_avg_2
-    real(kind=dp_t) :: gamma1bar_star(1,0:nr_fine-1)
-    real(kind=dp_t) ::         p0_avg(1,0:nr_fine-1)
-
-    type(multifab) :: gamma1(nlevs)
+    real(kind=dp_t) :: factor,divw,w0dpdr_nph,w0dpdr_nph_1,w0dpdr_nph_2
+    type(multifab)  :: gamma1(nlevs)
 
     do r=0,nr_fine-1
 
@@ -271,19 +270,19 @@ contains
             r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
        
        if (r .eq. 0) then
-          w0dpdr_avg_2 =  w0(1,2) * (p0_old(1,2)-p0_old(1,1)) / dr(1)
-          w0dpdr_avg_1 =  w0(1,1) * (p0_old(1,1)-p0_old(1,0)) / dr(1)
-          w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
+          w0dpdr_nph_2 =  w0(1,2) * (p0_old(1,2)-p0_old(1,1)) / dr(1)
+          w0dpdr_nph_1 =  w0(1,1) * (p0_old(1,1)-p0_old(1,0)) / dr(1)
+          w0dpdr_nph =  1.5d0 * w0dpdr_nph_1 - 0.5d0 * w0dpdr_nph_2
        else if (r .eq. nr_fine-1) then
-          w0dpdr_avg_2 =  w0(1,nr_fine-1) * (p0_old(1,nr_fine-1)-p0_old(1,nr_fine-2)) / dr(1)
-          w0dpdr_avg_1 =  w0(1,nr_fine-2) * (p0_old(1,nr_fine-2)-p0_old(1,nr_fine-3)) / dr(1)
-          w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
+          w0dpdr_nph_2 =  w0(1,nr_fine-1) * (p0_old(1,nr_fine-1)-p0_old(1,nr_fine-2)) / dr(1)
+          w0dpdr_nph_1 =  w0(1,nr_fine-2) * (p0_old(1,nr_fine-2)-p0_old(1,nr_fine-3)) / dr(1)
+          w0dpdr_nph =  1.5d0 * w0dpdr_nph_2 - 0.5d0 * w0dpdr_nph_1
        else
-          w0dpdr_avg =  HALF * ( w0(1,r+1)*(p0_old(1,r+1)-p0_old(1,r  )) &
+          w0dpdr_nph =  HALF * ( w0(1,r+1)*(p0_old(1,r+1)-p0_old(1,r  )) &
                                 +w0(1,r  )*(p0_old(1,r  )-p0_old(1,r-1)) ) / dr(1)
        end if
        
-       factor = Sbar_in(1,r) - divw - 1.d0 / (gamma1bar(1,r)*p0_old(1,r)) * w0dpdr_avg
+       factor = Sbar_in(1,r) - divw - 1.d0 / (gamma1bar(1,r)*p0_old(1,r)) * w0dpdr_nph
        factor = half * dt * factor
        
        p0_new(1,r) = p0_old(1,r) * (one + gamma1bar(1,r)*factor ) / &
@@ -291,23 +290,23 @@ contains
        
     end do
 
-    ! compute p0_avg
-    p0_avg = HALF*(p0_old + p0_new)
+    ! compute p0_nph
+    p0_nph = HALF*(p0_old + p0_new)
 
-    ! compute gamma1bar_star
+    ! compute gamma1bar_star and store it in gamma1bar_nph
     do n=1,nlevs
        call multifab_build(gamma1(n), mla%la(n), 1, 0)
     end do
     
     call make_gamma(mla,gamma1,s,p0_new,dx)
-    call average(mla,gamma1,gamma1bar_star,dx,1)
+    call average(mla,gamma1,gamma1bar_nph,dx,1)
     
     do n=1,nlevs
        call destroy(gamma1(n))
     end do
 
-    ! compute gamma1bar_avg
-    gamma1bar_avg = HALF*(gamma1bar + gamma1bar_star)
+    ! compute gamma1bar_nph
+    gamma1bar_nph = HALF*(gamma1bar + gamma1bar_nph)
 
     do r=0,nr_fine-1
 
@@ -316,40 +315,43 @@ contains
              r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
        
        if (r .eq. 0) then
-          w0dpdr_avg_2 =  w0(1,2) * (p0_avg(1,2)-p0_avg(1,1)) / dr(1)
-          w0dpdr_avg_1 =  w0(1,1) * (p0_avg(1,1)-p0_avg(1,0)) / dr(1)
-          w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
+          w0dpdr_nph_2 =  w0(1,2) * (p0_nph(1,2)-p0_nph(1,1)) / dr(1)
+          w0dpdr_nph_1 =  w0(1,1) * (p0_nph(1,1)-p0_nph(1,0)) / dr(1)
+          w0dpdr_nph =  1.5d0 * w0dpdr_nph_1 - 0.5d0 * w0dpdr_nph_2
        else if (r .eq. nr_fine-1) then
-          w0dpdr_avg_2 =  w0(1,nr_fine-1) * (p0_avg(1,nr_fine-1)-p0_avg(1,nr_fine-2)) / dr(1)
-          w0dpdr_avg_1 =  w0(1,nr_fine-2) * (p0_avg(1,nr_fine-2)-p0_avg(1,nr_fine-3)) / dr(1)
-          w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
+          w0dpdr_nph_2 =  w0(1,nr_fine-1) * (p0_nph(1,nr_fine-1)-p0_nph(1,nr_fine-2)) / dr(1)
+          w0dpdr_nph_1 =  w0(1,nr_fine-2) * (p0_nph(1,nr_fine-2)-p0_nph(1,nr_fine-3)) / dr(1)
+          w0dpdr_nph =  1.5d0 * w0dpdr_nph_2 - 0.5d0 * w0dpdr_nph_1
        else
-          w0dpdr_avg =  HALF * ( w0(1,r+1)*(p0_avg(1,r+1)-p0_avg(1,r  )) &
-                                +w0(1,r  )*(p0_avg(1,r  )-p0_avg(1,r-1)) ) / dr(1)
+          w0dpdr_nph =  HALF * ( w0(1,r+1)*(p0_nph(1,r+1)-p0_nph(1,r  )) &
+                                +w0(1,r  )*(p0_nph(1,r  )-p0_nph(1,r-1)) ) / dr(1)
        end if
        
-       factor = Sbar_in(1,r) - divw - 1.d0 / (gamma1bar_avg(1,r)*p0_avg(1,r)) * w0dpdr_avg
+       factor = Sbar_in(1,r) - divw - 1.d0 / (gamma1bar_nph(1,r)*p0_nph(1,r)) * w0dpdr_nph
        factor = half * dt * factor
        
-       p0_new(1,r) = p0_old(1,r) * (one + gamma1bar_avg(1,r)*factor ) / &
-                                   (one - gamma1bar_avg(1,r)*factor)
+       p0_new(1,r) = p0_old(1,r) * (one + gamma1bar_nph(1,r)*factor ) / &
+                                   (one - gamma1bar_nph(1,r)*factor)
        
     end do
 
-    ! compute gamma1bar_starstar
+    ! compute p0_nph
+    p0_nph = HALF*(p0_old + p0_new)
+
+    ! compute gamma1bar_star and store it in gamma1bar_nph
     do n=1,nlevs
        call multifab_build(gamma1(n), mla%la(n), 1, 0)
     end do
     
     call make_gamma(mla,gamma1,s,p0_new,dx)
-    call average(mla,gamma1,gamma1bar_star,dx,1)
+    call average(mla,gamma1,gamma1bar_nph,dx,1)
     
     do n=1,nlevs
        call destroy(gamma1(n))
     end do
 
-    ! compute gamma1bar_avg for time-centered psi computation
-    gamma1bar_avg = HALF*(gamma1bar + gamma1bar_star)
+    ! compute gamma1bar_nph
+    gamma1bar_nph = HALF*(gamma1bar + gamma1bar_nph)
        
   end subroutine advect_base_pres_spherical
 
