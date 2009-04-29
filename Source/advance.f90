@@ -510,7 +510,8 @@ contains
 
        if (p0_update_type .eq. 1) then
 
-          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar_1,psi,psi_old,etarho_cc,dt)
+          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar_1,psi,psi_old,etarho_cc, &
+                                s2,dt)
 
        else if (p0_update_type .eq. 2) then
 
@@ -910,7 +911,8 @@ contains
 
        if (p0_update_type .eq. 1) then
 
-          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar_1,psi,psi_old,etarho_cc,dt)
+          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar_1,psi,psi_old,etarho_cc, &
+                                s2,dt)
 
        else if (p0_update_type .eq. 2) then
 

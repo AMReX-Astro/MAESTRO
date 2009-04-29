@@ -134,12 +134,13 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine advect_base_pres(w0,Sbar_in,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc,dt)
+  subroutine advect_base_pres(w0,Sbar_in,p0_old,p0_new,gamma1bar,psi,psi_old,etarho_cc,s,dt)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs
     use make_psi_module
     use restrict_base_module
+    use multifab_module
 
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
     real(kind=dp_t), intent(in   ) ::   Sbar_in(:,0:)
@@ -149,6 +150,7 @@ contains
     real(kind=dp_t), intent(inout) ::       psi(:,0:)
     real(kind=dp_t), intent(inout) ::   psi_old(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
+    type(multifab) , intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: dt
     
     ! local
@@ -171,7 +173,7 @@ contains
     else
 
        ! advect p0
-       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,dt)
+       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,s,dt)
 
        ! make psi
        call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
@@ -225,7 +227,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  subroutine advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,dt)
+  subroutine advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,s,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -233,12 +235,15 @@ contains
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
+    use multifab_module
+    use make_gamma_module
 
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
     real(kind=dp_t), intent(in   ) ::   Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) ::    p0_old(:,0:)
     real(kind=dp_t), intent(  out) ::    p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
+    type(multifab) , intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
@@ -246,6 +251,8 @@ contains
 
     real(kind=dp_t) :: factor,divw,p0_avg
     real(kind=dp_t) :: w0dpdr_avg,w0dpdr_avg_1,w0dpdr_avg_2
+
+    real(kind=dp_t) :: gam1star(1,0:nr_fine-1)
 
 !    real(kind=dp_t) :: divbetaw,betahalf
 !    real(kind=dp_t) :: div_coeff_new(1,0:nr_fine-1)
@@ -366,6 +373,7 @@ contains
     use bl_prof_module
     use geometry, only: spherical, nlevs
     use restrict_base_module
+    use multifab_module
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
@@ -388,8 +396,7 @@ contains
        call fill_ghost_base(rhoh0_new,.true.)
     else
        call advect_base_enthalpy_spherical(w0,rho0_old,rhoh0_old,rhoh0_new, &
-                                           rho0_predicted_edge,&
-                                           psi,psi_old,dt)
+                                           rho0_predicted_edge,psi,psi_old,dt)
     end if
 
     call destroy(bpt)
@@ -480,7 +487,7 @@ contains
     use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
-    
+
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: rhoh0_new(:,0:)
