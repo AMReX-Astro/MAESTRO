@@ -402,7 +402,9 @@ f = \frac{\dt}{2} \left [ \Sbar^{\inp} -  \frac{1}{r^2} \frac{\partial}{\partial
 where the $(\partial p_0^\inp / \partial r)$ is computed by
 interpolating $p_0^\inp$ from cell-centers to edges and then
 differencing.  Next, we compute a provisional updated $\gammabar$ using
-$\gammabar^\star = {\bf Avg}[\Gamma_1(\rho^{\inp},p_0^\star,X_k^{\inp})]$.\\
+$\gammabar^\star = {\bf Avg}[\Gamma_1(\rho^{\inp},p_0^\star,X_k^{\inp})]$,
+where $\rho^\inp$ and $X_k^\inp$ are time-advanced versions of the $\rho$ and
+$X_k$ used to compute $\gammabar^\inp$.\\
 
 Now we begin the corrector step.  Using $p_0^\star$ and $\gammabar^\star$, 
 we can compute a more accurate approximation to equation~(\ref{eq:frhs}),
@@ -410,20 +412,19 @@ we can compute a more accurate approximation to equation~(\ref{eq:frhs}),
 f^\dagger = \frac{\dt}{2} \left [ \Sbar^{\inp} -  \frac{1}{r^2} \frac{\partial}{\partial r} \left (r^2 w_0^{\inp} \right) - 
                                              \frac{1}{\gammabar^{\dagger} p_0^\dagger} w_0^{\inp} \left ( \frac{\partial p_0^\dagger}{\partial r} \right ) \right ] \enskip ,
 \end{equation}
-where $p_0^\dagger = (p_0^\inp + p_0^\star)/2$, 
-$\gammabar^\dagger = (\gammabar^\inp + \gammabar^\star)/2$, 
-and the difference is again computed by first putting $p_0^\dagger$ on edges.
-
+where $p_0^\dagger = (p_0^\inp + p_0^\star)/2$ and
+$\gammabar^\dagger = (\gammabar^\inp + \gammabar^\star)/2$.
 This allows us to complete the corrector for the pressure update:
 \begin{equation}
-p_0^{\outp} = p_0^{\inp} \frac{\left(1 + \gammabar^{\inp} \tilde{f}\right)}{\left(1 - \gammabar^{\inp} \tilde{f}\right)}\enskip .
+p_0^{\outp} = p_0^{\inp} \frac{\left(1 + \gammabar^{\dagger} f^\dagger\right)}{\left(1 - \gammabar^{\dagger} f^\dagger\right)}\enskip .
 \end{equation}
 We note that since we do not time-center $\gammabar$, this is not
 strictly second-order accurate.  However, as $\gammabar$ varies slowly
 in time, we expect the effect to be small.  This is something that we 
 defer until simulations indicate it is warranted.\\
 
-Next, we compute $\psi^{\outp,n}$ and $\psi^{\outp,n+\myhalf}$.  Rewriting Equation (\ref{eq:w01}), we can define
+Next, we compute $\psi^{\outp,n}$ and $\psi^{\outp,n+\myhalf}$.  Rewriting Equation 
+(\ref{eq:w01}), we can define
 \begin{eqnarray}
 \psi \equiv \frac{D_0 p_0}{Dt} &=& \gammabar p_0 \left [ \overline{S} - 
        \frac{1}{r^2} \frac{\partial}{\partial r} \left (r^2 w_0 \right ) \right] \enskip .
