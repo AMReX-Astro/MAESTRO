@@ -388,6 +388,27 @@ subroutine varden()
                  w0dpdr_nph =  HALF * ( w0(1,r+1)*(p0_nph(1,r+1)-p0_nph(1,r  )) &
                       +w0(1,r  )*(p0_nph(1,r  )-p0_nph(1,r-1)) ) / dr(1)
               end if
+              
+!              if (r .eq. 0) then
+!                 w0dpdr_nph_2 =  HALF * w0(1,2) * ( (p0_old(1,2)-p0_old(1,1)) &
+!                      +(p0_new(1,2)-p0_new(1,1)) ) / dr(1)
+!                 w0dpdr_nph_1 =  HALF * w0(1,1) * ( (p0_old(1,1)-p0_old(1,0)) &
+!                      +(p0_new(1,1)-p0_new(1,0)) ) / dr(1)
+!                 w0dpdr_nph =  1.5d0 * w0dpdr_nph_1 - 0.5d0 * w0dpdr_nph_2
+!              else if (r .eq. nr_fine-1) then
+!                 w0dpdr_nph_2 = HALF * w0(1,nr_fine-1) * &
+!                      ((p0_old(1,nr_fine-1)-p0_old(1,nr_fine-2)) &
+!                      +(p0_new(1,nr_fine-1)-p0_new(1,nr_fine-2))) / dr(1)
+!                 w0dpdr_nph_1 = HALF * w0(1,nr_fine-2)* &
+!                      ((p0_old(1,nr_fine-2)-p0_old(1,nr_fine-3)) &
+!                      +(p0_new(1,nr_fine-2)-p0_new(1,nr_fine-3))) / dr(1)
+!                 w0dpdr_nph =  1.5d0 * w0dpdr_nph_2 - 0.5d0 * w0dpdr_nph_1
+!              else
+!                 w0dpdr_nph = HALF * HALF * ( w0(1,r+1)*(p0_old(1,r+1)-p0_old(1,r)) + &
+!                      w0(1,r)*(p0_old(1,r)-p0_old(1,r-1)) + &
+!                      w0(1,r+1)*(p0_new(1,r+1)-p0_new(1,r)) + &
+!                      w0(1,r)*(p0_new(1,r)-p0_new(1,r-1)) ) / dr(1)
+!              end if
 
               factor = Sbar_in(1,r) - divw &
                    - 1.d0 / (gamma1bar_nph(1,r)*p0_nph(1,r)) * w0dpdr_nph
