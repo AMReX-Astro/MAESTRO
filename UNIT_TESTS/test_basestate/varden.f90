@@ -34,29 +34,26 @@ subroutine varden()
   real(dp_t) :: factor,divw,w0dpdr_nph,w0dpdr_nph_1,w0dpdr_nph_2
 
   real(dp_t), allocatable ::                  dx(:,:)
-  real(dp_t), allocatable ::       div_coeff_old(:,:)
   real(dp_t), allocatable ::           div_coeff(:,:)
   real(dp_t), allocatable ::           grav_cell(:,:)
   real(dp_t), allocatable ::           gamma1bar(:,:)
+  real(dp_t), allocatable ::       gamma1bar_nph(:,:)
   real(dp_t), allocatable ::              s0_old(:,:,:)
-  real(dp_t), allocatable ::                  s0(:,:,:)
+  real(dp_t), allocatable ::              s0_new(:,:,:)
+  real(dp_t), allocatable ::                  X0(:,:)
   real(dp_t), allocatable ::              p0_old(:,:)
-  real(dp_t), allocatable ::                  p0(:,:)
+  real(dp_t), allocatable ::              p0_new(:,:)
+  real(dp_t), allocatable ::              p0_nph(:,:)
   real(dp_t), allocatable ::                  w0(:,:)
   real(dp_t), allocatable ::                 psi(:,:)
-  real(dp_t), allocatable ::             psi_old(:,:)
   real(dp_t), allocatable ::           etarho_ec(:,:)
   real(dp_t), allocatable ::           etarho_cc(:,:)
-  real(dp_t), allocatable ::          div_etarho(:,:)
   real(dp_t), allocatable ::            w0_force(:,:)
   real(dp_t), allocatable ::             Sbar_in(:,:)
   real(dp_t), allocatable ::  p0_minus_pthermbar(:,:)
   real(dp_t), allocatable :: rho0_predicted_edge(:,:)
   real(dp_t), allocatable ::               force(:,:)
-  real(dp_t), allocatable ::                  X0(:,:)
   real(dp_t), allocatable ::                edge(:,:)
-  real(dp_t), allocatable ::       gamma1bar_nph(:,:)
-  real(dp_t), allocatable ::              p0_nph(:,:)
 
   call probin_init()
   call init_dm()
@@ -107,37 +104,36 @@ subroutine varden()
      r_edge_loc(1,r) = prob_lo(dm) + (dble(r))*dr(1)
   end do
 
-  allocate(             s0_old(nlevs_radial,0:nr_fine-1,nscal))
-  allocate(                 s0(nlevs_radial,0:nr_fine-1,nscal))
-  allocate(      div_coeff_old(nlevs_radial,0:nr_fine-1))
+  allocate(anelastic_cutoff_coord(1))
+  allocate(base_cutoff_density_coord(1))
+  allocate(burning_cutoff_density_coord(1))
+
   allocate(          div_coeff(nlevs_radial,0:nr_fine-1))
   allocate(          grav_cell(nlevs_radial,0:nr_fine-1))
   allocate(          gamma1bar(nlevs_radial,0:nr_fine-1))
-  allocate(             p0_old(nlevs_radial,0:nr_fine-1))
-  allocate(                 p0(nlevs_radial,0:nr_fine-1))
-  allocate(                psi(nlevs_radial,0:nr_fine-1))
-  allocate(            psi_old(nlevs_radial,0:nr_fine-1))
-  allocate(          etarho_cc(nlevs_radial,0:nr_fine-1))
-  allocate(         div_etarho(nlevs_radial,0:nr_fine-1))
-  allocate(            Sbar_in(nlevs_radial,0:nr_fine-1))
-  allocate( p0_minus_pthermbar(nlevs_radial,0:nr_fine-1))
-  allocate(              force(nlevs_radial,0:nr_fine-1))
-  allocate(                 X0(nlevs_radial,0:nr_fine-1))
   allocate(      gamma1bar_nph(nlevs_radial,0:nr_fine-1))
+  allocate(             s0_old(nlevs_radial,0:nr_fine-1,nscal))
+  allocate(             s0_new(nlevs_radial,0:nr_fine-1,nscal))
+  allocate(                 X0(nlevs_radial,0:nr_fine-1))
+  allocate(             p0_old(nlevs_radial,0:nr_fine-1))
+  allocate(             p0_new(nlevs_radial,0:nr_fine-1))
   allocate(             p0_nph(nlevs_radial,0:nr_fine-1))
   allocate(                 w0(nlevs_radial,0:nr_fine))
+  allocate(                psi(nlevs_radial,0:nr_fine-1))
   allocate(          etarho_ec(nlevs_radial,0:nr_fine))
+  allocate(          etarho_cc(nlevs_radial,0:nr_fine-1))
   allocate(           w0_force(nlevs_radial,0:nr_fine))
+  allocate(            Sbar_in(nlevs_radial,0:nr_fine-1))
+  allocate( p0_minus_pthermbar(nlevs_radial,0:nr_fine-1))
   allocate(rho0_predicted_edge(nlevs_radial,0:nr_fine))
+  allocate(              force(nlevs_radial,0:nr_fine-1))
   allocate(               edge(nlevs_radial,0:nr_fine))
 
   gamma1bar          = ZERO
   w0                 = ZERO
   psi                = ZERO
-  psi_old            = ZERO
   etarho_ec          = ZERO
   etarho_cc          = ZERO
-  div_etarho         = ZERO
   p0_minus_pthermbar = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -145,13 +141,13 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   do n=1,nlevs
-     call init_base_state(n,model_file,s0(n,:,:),p0(n,:),dx(n,:))
+     call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),dx(n,:))
   enddo
 
   ! output
   open(unit=10,file="base.orig")
   do r=0,nr_fine-1
-     write(10,1000) r_cc_loc(1,r), s0(1,r,rho_comp), s0(1,r,temp_comp), p0(1,r)
+     write(10,1000) r_cc_loc(1,r), s0_old(1,r,rho_comp), s0_old(1,r,temp_comp), p0_old(1,r)
   enddo
   close(unit=10)
 
@@ -165,20 +161,11 @@ subroutine varden()
 
   iter = 0
 
-  allocate(anelastic_cutoff_coord(1))
-  allocate(base_cutoff_density_coord(1))
-  allocate(burning_cutoff_density_coord(1))
-
   do while (time < stop_time)
 
      print *, 'time = ', time
 
-     ! here we set the old state to the current state 
-     ! advect_base will update the state
-     s0_old = s0
-     p0_old = p0
-
-     call compute_cutoff_coords(s0(:,:,rho_comp))
+     call compute_cutoff_coords(s0_old(:,:,rho_comp))
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the heating term and gamma1bar
@@ -198,10 +185,10 @@ subroutine varden()
         endif
 
         ! (rho, T) --> p,h, etc
-        den_eos(1)  = s0(1,r,rho_comp)
-        temp_eos(1) = s0(1,r,temp_comp)
-        xn_eos(1,:) = s0(1,r,spec_comp:spec_comp-1+nspec)/s0(1,r,rho_comp)
-        
+        den_eos(1)  = s0_old(1,r,rho_comp)
+        temp_eos(1) = s0_old(1,r,temp_comp)
+        xn_eos(1,:) = s0_old(1,r,spec_comp:spec_comp-1+nspec)/s0_old(1,r,rho_comp)
+
         call eos(eos_input_rt, den_eos, temp_eos, NP, nspec, &
                  xn_eos, &
                  p_eos, h_eos, e_eos, &
@@ -222,26 +209,28 @@ subroutine varden()
      ! compute w_0
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     call make_w0(w0,w0,w0_force,Sbar_in,s0(:,:,rho_comp),s0(:,:,rho_comp),p0,p0, &
-                  gamma1bar,gamma1bar,p0_minus_pthermbar,psi,etarho_ec,etarho_cc,dt,dtold)
+     call make_w0(w0,w0,w0_force,Sbar_in,s0_old(:,:,rho_comp),s0_old(:,:,rho_comp), &
+                  p0_old,p0_old,gamma1bar,gamma1bar,p0_minus_pthermbar,psi, &
+                  etarho_ec,etarho_cc,dt,dtold)
   
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute gravity
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     call make_grav_cell(grav_cell,s0(:,:,rho_comp))
+     call make_grav_cell(grav_cell,s0_old(:,:,rho_comp))
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the divergence coefficient, beta_0
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     call make_div_coeff(div_coeff,s0(:,:,rho_comp),p0,gamma1bar,grav_cell)     
+     call make_div_coeff(div_coeff,s0_old(:,:,rho_comp),p0_old,gamma1bar,grav_cell)     
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! update density and compute rho0_predicted_edge
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     call advect_base_dens(w0,s0_old(:,:,rho_comp),s0(:,:,rho_comp),rho0_predicted_edge,dt)
+     call advect_base_dens(w0,s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
+                           rho0_predicted_edge,dt)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! update species
@@ -273,7 +262,7 @@ subroutine varden()
 
         ! update (rho X)_0
         do r=0,nr_fine-1
-           s0(1,r,comp) = s0_old(1,r,comp) &
+           s0_new(1,r,comp) = s0_old(1,r,comp) &
                 - (dt/dr(1))/r_cc_loc(1,r)**2* &
                 (r_edge_loc(1,r+1)**2 * edge(1,r+1) * w0(1,r+1) - &
                  r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  ))
@@ -284,23 +273,23 @@ subroutine varden()
      ! don't let the species leave here negative
      do comp=spec_comp,spec_comp+nspec-1
         
-        if (minval(s0(1,:,comp)) .lt. ZERO) then
+        if (minval(s0_new(1,:,comp)) .lt. ZERO) then
            do r=0,nr_fine-1
-              if (s0(1,r,comp) .lt. ZERO) then
-                 delta = -s0(1,r,comp)
+              if (s0_new(1,r,comp) .lt. ZERO) then
+                 delta = -s0_new(1,r,comp)
                  sum = ZERO
                  do comp2=spec_comp,spec_comp+nspec-1
-                    if (comp2 .ne. comp .and. s0(1,r,comp2) .ge. ZERO) then
-                       sum = sum + s0(1,r,comp2)
+                    if (comp2 .ne. comp .and. s0_new(1,r,comp2) .ge. ZERO) then
+                       sum = sum + s0_new(1,r,comp2)
                     endif
                  enddo
                  do comp2=spec_comp,spec_comp+nspec-1
-                    if (comp2 .ne. comp .and. s0(1,r,comp2) .ge. ZERO) then
-                       frac = s0(1,r,comp2) / sum
-                       s0(1,r,comp2) = s0(1,r,comp2) - frac * delta
+                    if (comp2 .ne. comp .and. s0_new(1,r,comp2) .ge. ZERO) then
+                       frac = s0_new(1,r,comp2) / sum
+                       s0_new(1,r,comp2) = s0_new(1,r,comp2) - frac * delta
                     endif
                  enddo
-                 s0(1,r,comp) = ZERO
+                 s0_new(1,r,comp) = ZERO
               endif
            enddo
         endif
@@ -318,7 +307,7 @@ subroutine varden()
               
               divw = one/(r_cc_loc(1,r)**2) * &
                    (r_edge_loc(1,r+1)**2 * w0(1,r+1) - &
-                   r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
+                    r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
               
               if (r .eq. 0) then
                  w0dpdr_nph_2 =  w0(1,2) * (p0_old(1,2)-p0_old(1,1)) / dr(1)
@@ -338,22 +327,20 @@ subroutine varden()
               factor = Sbar_in(1,r) - divw - 1.d0 / (gamma1bar(1,r)*p0_old(1,r)) * w0dpdr_nph
               factor = half * dt * factor
               
-              p0(1,r) = p0_old(1,r) * (one + gamma1bar(1,r)*factor ) / &
-                                      (one - gamma1bar(1,r)*factor)
+              p0_new(1,r) = p0_old(1,r) * (one + gamma1bar(1,r)*factor ) / &
+                                          (one - gamma1bar(1,r)*factor)
               
            end do
-           
-           ! compute p0_nph
-           p0_nph = HALF*(p0_old + p0)
 
-           ! compute gamma1bar_star and store it in gamma1bar_nph
+           ! compute provisionally updated gamma1bar and store it in gamma1bar_nph
            do r=0,nr_fine-1
 
               ! (rho, p) --> gamma1bar
-              den_eos(1)  = s0(1,r,rho_comp)
-              p_eos(1)    = p0(1,r)
-              xn_eos(1,:) = s0(1,r,spec_comp:spec_comp-1+nspec)/s0(1,r,rho_comp)
-              temp_eos(1) = s0(1,r,temp_comp)
+              den_eos(1)  = s0_new(1,r,rho_comp)
+              p_eos(1)    = p0_new(1,r)
+              xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+
+              temp_eos(1) = s0_old(1,r,temp_comp)
         
               call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
                       xn_eos, &
@@ -371,6 +358,9 @@ subroutine varden()
 
            ! compute gamma1bar_nph
            gamma1bar_nph = HALF*(gamma1bar + gamma1bar_nph)
+           
+           ! compute p0_nph
+           p0_nph = HALF*(p0_old + p0_new)
 
            do r=0,nr_fine-1
 
@@ -397,22 +387,20 @@ subroutine varden()
                    - 1.d0 / (gamma1bar_nph(1,r)*p0_nph(1,r)) * w0dpdr_nph
               factor = half * dt * factor
 
-              p0(1,r) = p0_old(1,r) * (one + gamma1bar_nph(1,r)*factor ) / &
-                                      (one - gamma1bar_nph(1,r)*factor)
+              p0_new(1,r) = p0_old(1,r) * (one + gamma1bar_nph(1,r)*factor ) / &
+                                          (one - gamma1bar_nph(1,r)*factor)
 
            end do
-
-           ! compute p0_nph
-           p0_nph = HALF*(p0_old + p0)
 
            ! compute gamma1bar_star and store it in gamma1bar_nph
            do r=0,nr_fine-1
 
               ! (rho, p) --> gamma1bar
-              den_eos(1)  = s0(1,r,rho_comp)
-              p_eos(1)    = p0(1,r)
-              xn_eos(1,:) = s0(1,r,spec_comp:spec_comp-1+nspec)/s0(1,r,rho_comp)
-              temp_eos(1) = s0(1,r,temp_comp)
+              den_eos(1)  = s0_new(1,r,rho_comp)
+              p_eos(1)    = p0_new(1,r)
+              xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+
+              temp_eos(1) = s0_old(1,r,temp_comp)
         
               call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
                       xn_eos, &
@@ -431,9 +419,11 @@ subroutine varden()
            ! compute gamma1bar_nph
            gamma1bar_nph = HALF*(gamma1bar + gamma1bar_nph)
 
-           ! make base time and time-centered psi
-           call make_psi_spherical(psi_old,w0,gamma1bar    ,p0_old,Sbar_in)
-           call make_psi_spherical(psi    ,w0,gamma1bar_nph,p0_nph,Sbar_in)
+           ! compute p0_nph
+           p0_nph = HALF*(p0_old + p0_new)
+
+           ! make psi
+           call make_psi_spherical(psi,w0,gamma1bar_nph,p0_nph,Sbar_in)
 
         else
               
@@ -447,7 +437,7 @@ subroutine varden()
     
            do n=1,nlevs
               do r=r_start_coord(n,1),r_end_coord(n,1)
-                 p0(n,r) = p0_old(n,r) - dt / dr(n) &
+                 p0_new(n,r) = p0_old(n,r) - dt / dr(n) &
                       * HALF * (w0(n,r) + w0(n,r+1)) * (edge(n,r+1) - edge(n,r)) &
                       + dt * psi(n,r)
               end do
@@ -458,14 +448,14 @@ subroutine varden()
      else
 
         ! set new p0 through HSE
-        p0 = p0_old
-        call enforce_HSE(s0(:,:,rho_comp),p0,grav_cell)
+        p0_new = p0_old
+        call enforce_HSE(s0_new(:,:,rho_comp),p0_new,grav_cell)
 
         ! make psi
         if (spherical .eq. 0) then
            call make_psi_planar(etarho_cc,psi)
         else
-           p0_nph = HALF*(p0_old + p0)
+           p0_nph = HALF*(p0_old + p0_new)
            call make_psi_spherical(psi,w0,gamma1bar,p0_nph,Sbar_in)
         end if
 
@@ -477,11 +467,12 @@ subroutine varden()
 
      do r=0,nr_fine-1
 
-        ! (rho, T) --> p,h, etc
-        den_eos(1)  = s0(1,r,rho_comp)
-        temp_eos(1) = s0(1,r,temp_comp)
-        p_eos(1)    = p0(1,r)
-        xn_eos(1,:) = s0(1,r,spec_comp:spec_comp-1+nspec)/s0(1,r,rho_comp)
+        ! (rho,p) --> T,h, etc
+        den_eos(1)  = s0_new(1,r,rho_comp)
+        p_eos(1)    = p0_new(1,r)
+        xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+
+        temp_eos(1) = s0_old(1,r,temp_comp)
 
         call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
                  xn_eos, &
@@ -493,7 +484,7 @@ subroutine varden()
                  dsdt_eos, dsdr_eos, &
                  do_diag)
 
-        s0(1,r,temp_comp) = temp_eos(1)
+        s0_new(1,r,temp_comp) = temp_eos(1)
 
      enddo
 
@@ -509,12 +500,16 @@ subroutine varden()
 
      iter = iter + 1
 
+     s0_old = s0_new
+     p0_old = p0_new
+
   enddo
 
   ! output
   open(unit=10,file="base.new")
   do r=0,nr_fine-1
-     write(10,1000) r_cc_loc(1,r), s0(1,r,rho_comp), s0(1,r,temp_comp), p0(1,r), w0(1,r)
+     write(10,1000) r_cc_loc(1,r), s0_new(1,r,rho_comp), s0_new(1,r,temp_comp), &
+          p0_new(1,r), w0(1,r)
   enddo
   close(unit=10)
 
@@ -522,9 +517,9 @@ subroutine varden()
 
   deallocate(r_start_coord,r_end_coord,numdisjointchunks)
   deallocate(dx,dr,nr,r_cc_loc,r_edge_loc)
-  deallocate(s0_old,s0,div_coeff_old,div_coeff,grav_cell,gamma1bar,p0_old,p0,psi,psi_old)
-  deallocate(etarho_cc,div_etarho,Sbar_in,p0_minus_pthermbar,force,X0,w0)
-  deallocate(etarho_ec,w0_force,rho0_predicted_edge,edge,gamma1bar_nph,p0_nph)
   deallocate(anelastic_cutoff_coord,base_cutoff_density_coord,burning_cutoff_density_coord)
+  deallocate(div_coeff,grav_cell,gamma1bar,gamma1bar_nph,s0_old,s0_new)
+  deallocate(X0,p0_old,p0_new,p0_nph,w0,psi,etarho_ec,etarho_cc,w0_force)
+  deallocate(Sbar_in,p0_minus_pthermbar,rho0_predicted_edge,force,edge)
 
 end subroutine varden
