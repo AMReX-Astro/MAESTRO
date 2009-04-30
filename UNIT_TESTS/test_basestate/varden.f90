@@ -392,7 +392,7 @@ subroutine varden()
 
            end do
 
-           ! compute gamma1bar_star and store it in gamma1bar_nph
+           ! compute updated gamma1bar and store it in gamma1bar_nph
            do r=0,nr_fine-1
 
               ! (rho, p) --> gamma1bar
@@ -455,8 +455,39 @@ subroutine varden()
         if (spherical .eq. 0) then
            call make_psi_planar(etarho_cc,psi)
         else
+
+           ! compute updated gamma1bar and store it in gamma1bar_nph
+           do r=0,nr_fine-1
+
+              ! (rho, p) --> gamma1bar
+              den_eos(1)  = s0_new(1,r,rho_comp)
+              p_eos(1)    = p0_new(1,r)
+              xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+
+              temp_eos(1) = s0_old(1,r,temp_comp)
+        
+              call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+              
+              gamma1bar_nph(1,r) = gam1_eos(1)
+
+           end do
+
+           ! compute gamma1bar_nph
+           gamma1bar_nph = HALF*(gamma1bar+gamma1bar_nph)
+
+           ! compute p0_nph
            p0_nph = HALF*(p0_old + p0_new)
-           call make_psi_spherical(psi,w0,gamma1bar,p0_nph,Sbar_in)
+
+           call make_psi_spherical(psi,w0,gamma1bar_nph,p0_nph,Sbar_in)
+
         end if
 
      end if
