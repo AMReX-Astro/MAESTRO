@@ -203,6 +203,12 @@ subroutine varden()
 
         Sbar_in(1,r) = Hbar * dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
 
+        ! NOTE: This was here before; I don't know why.  It seems to defeat the purpose
+        !       of calling advect base pressure.  Without this line, you get wild
+        !       oscillations in the solution.  Even with older versions of the code you
+        !       get oscillations if you remove this line.
+        p0_old(1,r) = p_eos(1)
+
      enddo
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
