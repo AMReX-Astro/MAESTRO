@@ -379,7 +379,7 @@ in paper II, Appendix A.\\
 \Sbar^{\inp}, \rho^\inp, X_k^\inp] \rightarrow [p_0^{\outp},\psi^{n,\outp},\psi^{n+\myhalf,\outp}]$:
 
 First use a predictor-corrector formulation for the pressure update 
-in order to improve the overall accuracy.  Beginning with equation~(\ref{eq:w01}),
+in order to improve the overall accuracy.  Beginning with equation (\ref{eq:w01}),
 we can write
 \begin{equation}
 \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} = 
@@ -408,7 +408,7 @@ where $\rho^\inp$ and $X_k^\inp$ are time-advanced versions of the $\rho$ and
 $X_k$ which were used to compute $\gammabar^\inp$.\\
 
 Now we begin the corrector step.  Using $p_0^\star$ and $\gammabar^\star$, 
-we can compute a more accurate approximation to equation~(\ref{eq:frhs}),
+we can compute a more accurate approximation to equation (\ref{eq:frhs}),
 \begin{equation}
 f^\dagger = \frac{\dt}{2} \left [ \Sbar^{\inp} -  \frac{1}{r^2} \frac{\partial}{\partial r} \left (r^2 w_0^{\inp} \right) - 
                                              \frac{1}{\gammabar^{\dagger} p_0^\dagger} w_0^{\inp} \left ( \frac{\partial p_0^\dagger}{\partial r} \right ) \right ] \enskip ,
@@ -720,7 +720,7 @@ g_{j-\myhalf} = \frac{Gm_{j-\myhalf}}{r_{j-\myhalf}^2}; ~~~~~ g_j = \frac{Gm_j}{
 We now describe the full time advancement algorithm, making frequent
 use of the shorthand developed above.  Here, we assume that the
 problem is already properly initialized.  We describe the details of
-the initialization in \S~\ref{Sec:Initialization}.
+the initialization in \S \ref{Sec:Initialization}.
 The advance of the state through a single timestep appears as:
 
 %--------------------------------------------------------------------------
@@ -812,8 +812,10 @@ The local velocity field is described by paper III equation (37),
  .
 \end{equation}
 
-The procedure to construct $\uadvone$ is described in detail in Appendix B of paper III.
-We note that  $\uadvone$ satisfies the discrete versions of paper III equation (21),
+We construct time-centered velocities at edges, $\uadvone$, 
+using a second-order unsplit Godunov procedure, as described
+in Appendix B of paper III.  We note that  $\uadvone$ satisfies 
+the discrete versions of paper III equation (21),
 \begin{equation}
 \int_{\Omega_H} \Ubt \cdotb \er \; dA = 0 \label{eq:udoterzero} \enskip ,
 \end{equation}
@@ -881,10 +883,11 @@ $[\rho_0^{(2a),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
   \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
   \item Compute the species edge states, $(\rho X_k)^{(1),\nph,\star}$,
-  for the conservative update of $(\rho X_k)$. 
-  Here we predict $\rho'$ and $X_k$ to the edges to obtain 
+  for the conservative update of $(\rho X_k)^{(1)}$. 
+  Here we predict $\rho^{'(1)} = \rho^{(1)} - \rhozero^n$ and 
+  $X_k^{(1)} = (\rho X_k)^{(1)} / \rho^{(1)}$ to time-centered edges to obtain 
   $\rho^{'(1),\nph,\star}$ and $X_k^{(1),\nph,\star}$ using a second-order
-  Taylor expansion in space and time, as described in paper II,
+  unsplit Godunov procedure, as described in paper II,
   Appendix A, using $\Vb = \uadvone+w_0^{\nph,\star} \er$.  We use the base
   state density, $\rho_0$, to convert this to an edge state for $\rho$,
 \begin{equation}
@@ -986,10 +989,11 @@ results in a better solution.
   \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
   \item Compute the enthalpy edge state, $(\rho h)^{(1),\nph,\star},$
-    for the conservative update of $(\rho h).$  Here we predict $(\rho
-    h)'$ to the edges to obtain $(\rho h)^{'(1),\nph,\star}$, 
-    using a second-order Taylor expansion in space
-    and time, as described in paper II, Appendix A, using $\Vb =
+    for the conservative update of $(\rho h)^{(1)}.$  Here we predict 
+    $(\rho h)' = (\rho h)^{(1)} - (\rho h)_0$ to time-centered edges to obtain 
+    $(\rho h)^{'(1),\nph,\star}$, 
+    using a second-order unsplit Godunov procedure, 
+    as described in paper II, Appendix A, using $\Vb =
     \uadvone+w_0^{\nph,\star} \er$.  We do not include the reaction
     terms in the enthalpy prediction, since we accounted for them
     already in {\bf React State}.  We use the base state enthalpy,
@@ -1231,11 +1235,12 @@ $[\rho_0^{(2a)}, \rho_0^{\nph,{\rm pred}}]$.
   \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
   \item Compute the species edge states, $(\rho X_k)^{(1),\nph}$, for
-    the conservative update of $(\rho X_k)$.  Here we predict $\rho'$ 
-    and $X_k$ to the edges to obtain $\rho^{'(1),\nph}$ and 
-    $X_k^{(1),\nph}$ using a second-order Taylor expansion in
-    space and time, as described in paper II, Appendix A, using $\Vb =
-    \uadvtwo+w_0^{\nph} \er$.  We use the base
+    the conservative update of $(\rho X_k)^{(1)}$.  Here we predict 
+    $\rho^{'(1)} = \rho^{(1)} - \rhozero^n$
+    and $X_k^{(1)} = (\rho X_k)^{(1)} / \rho^{(1)}$ to time-centered edges to 
+    obtain $\rho^{'(1),\nph}$ and $X_k^{(1),\nph}$ using a second-order 
+    unsplit Godunov procedure, as described in paper II, Appendix A, 
+    using $\Vb = \uadvtwo+w_0^{\nph} \er$.  We use the base
     state density, $\rho_0$, to convert this to an edge state for $\rho$,
 
 \begin{equation}
@@ -1318,10 +1323,11 @@ $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
   \item Compute the enthalpy edge state, $(\rho h)^{(1),\nph}$, for
-    the conservative update of $(\rho h)$. Here we predict $(\rho h)'$
-    to the edges to obtain $(\rho h)^{'(1),\nph}$, 
-    using a second-order Taylor expansion in space and
-    time, as described in paper II, Appendix A, using $\Vb =
+    the conservative update of $(\rho h)^{(1)}$. Here we predict 
+    $(\rho h)' = (\rho h)^{(1)} - (\rho h)_0$
+    to time-centered edges to obtain $(\rho h)^{'(1),\nph}$, 
+    using a second-order unsplit Godunov procedure, 
+    as described in paper II, Appendix A, using $\Vb =
     \uadvtwo+w_0^{\nph} \er$.  Again, we do not include the reaction
     terms in the enthalpy prediction since we accounted for them
     already in {\bf React State}. We use the base state enthalpy,
@@ -1467,10 +1473,12 @@ where $\rho^{\nph}$ is defined as
 \begin{equation}
 \rho^\nph = \frac{\rho^n + \rho^{n+1}}{2}\enskip ,
 \end{equation}
-and $\mathbf{G}$ approximates a cell-centered gradient from nodal data. 
+and $\mathbf{G}$ approximates a cell-centered gradient from nodal data.
 The construction of $[(\uadvtwo+ w_0^{\nph} \er \cdotb \nablab) \Ubt ]^\nph$
-is described in paper II, Appendix A, with $\Vb = \uadvtwo+w_0^{\nph} \er$ and~$s$ set to each
-component of $\Ubt^n$ individually.
+is described in paper II, Appendix A, with $\Vb = \uadvtwo+w_0^{\nph} \er$ and $s$ 
+set to each component of $\Ubt^n$ individually.  Here, the $\star$ superscript 
+does not refer to the predictor-corrector aspect of the algorithm, but rather 
+than the updated velocity does not satisfy the divergence constraint.
 
 Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}):
 \begin{equation}
