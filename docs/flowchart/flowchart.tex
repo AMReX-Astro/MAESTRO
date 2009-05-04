@@ -834,18 +834,18 @@ edges, $\uadvone$.}
 
 The local velocity field is described by paper III equation (37),
 \begin{equation}
-\frac{\partial\Ubt}{\partial t} = - \Ubt \cdotb \nablab \Ubt - w_0 \frac{\partial \Ubt}{\partial r}
-                                 - \left(\Ubt \cdotb \er\right) \frac{\partial w_0}{\partial r} \er
-                                 - \frac{1}{\rho} \nablab\pi
-                                 + \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \er
-                                 - \frac{(\rho-\rhozero)}{\rho} \; g \; \er  \label{eq:utildeupd}  \enskip\
- .
+\frac{\partial\Ubt}{\partial t} = 
+- \left(\Ubt+w_0\right) \cdotb \nablab \Ubt
+- \left(\Ubt \cdotb \er\right) \frac{\partial w_0}{\partial r} \er
+- \frac{1}{\rho} \nablab\pi
++ \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \er
+- \frac{(\rho-\rhozero)}{\rho} \; g \; \er  \label{eq:utildeupd}  \enskip .
 \end{equation}
 
 We construct time-centered velocities at edges, $\uadvone$, 
-using a second-order unsplit Godunov procedure, as described
-in Appendix B of paper III.  We note that  $\uadvone$ satisfies 
-the discrete versions of paper III equation (21),
+using a second-order unsplit Godunov procedure followed by an elliptic
+solve, as described in Appendix B of paper III.  We note that 
+$\uadvone$ satisfies the discrete versions of paper III equation (21),
 \begin{equation}
 \int_{\Omega_H} \Ubt \cdotb \er \; dA = 0 \label{eq:udoterzero} \enskip ,
 \end{equation}
