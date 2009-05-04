@@ -385,19 +385,6 @@ contains
        call destroy(rho_Hext(n))
     end do
 
-    if (evolve_base_state) then
-       do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 0)
-       end do
-       
-       call make_gamma(mla,gamma1,s1,p0_old,dx)
-       call average(mla,gamma1,gamma1bar_1,dx,1)
-
-       do n=1,nlevs
-          call destroy(gamma1(n))
-       end do
-    end if
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4 -- advect the base state and full state through dt
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -499,6 +486,19 @@ contains
     call make_grav_cell(grav_cell_new,rho0_new)
 
     if (evolve_base_state) then
+
+       if (spherical .eq. 1) then
+          do n=1,nlevs
+             call multifab_build(gamma1(n), mla%la(n), 1, 0)
+          end do
+          
+          call make_gamma(mla,gamma1,s1,p0_old,dx)
+          call average(mla,gamma1,gamma1bar_1,dx,1)
+          
+          do n=1,nlevs
+             call destroy(gamma1(n))
+          end do
+       end if
 
        if (p0_update_type .eq. 1) then
 

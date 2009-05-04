@@ -872,19 +872,8 @@ The discretization with the volume discrepancy correction is
 %--------------------------------------------------------------------------
 \item[Step 3.] {\em React the full state through the first time interval of $\dt / 2.$}
 
-\begin{enumerate}
-\renewcommand{\theenumi}{{\bf \alph{enumi}}}
-
-\item {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n, p_0^n]
-                   \rightarrow$ $[ \rho^{(1)}, (\rho h)^{(1)}, X_k^{(1)}, T^{(1)},
-                                  (\rho \omegadot_k)^{(1)}, (\rho \Hnuc)^{(1)} ].$
-
-\item Define
-\begin{equation}
-\gammabar^{(1)} = {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(1)}, p_0^{n}, X_k^{(1)}\right) \right] \enskip .
-\end{equation}
-
-\end{enumerate}
+{\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n, p_0^n] \rightarrow
+[ \rho^{(1)},(\rho h)^{(1)},X_k^{(1)},T^{(1)},(\rho \omegadot_k)^{(1)},(\rho \Hnuc)^{(1)} ]$.
 
 %--------------------------------------------------------------------------
 % STEP 4
@@ -985,8 +974,12 @@ radial edges, average the two neighboring radial bins.
 \end{equation}
 \item For spherical, first compute:
 \begin{equation}
-\gammabar^{(2)} = {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(2)}, p_0^{n+1,\star}, 
-X_k^{(2)}\right) \right] \enskip .
+\gammabar^{(1)} = {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(1)}, p_0^{n}, 
+X_k^{(1)}\right) \right] \enskip ,
+\end{equation}
+\begin{equation}
+\gammabar^{(2),\star} = {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(2),\star}, p_0^{n+1,\star}, 
+X_k^{(2),\star}\right) \right] \enskip .
 \end{equation}
 Then, define a base time and time-centered $\psi$:
 \begin{equation}
@@ -998,7 +991,7 @@ Then, define a base time and time-centered $\psi$:
 \end{equation}
 \begin{eqnarray}
 \psi_j^{n+\myhalf,\star} &=& 
-\left(\frac{\gammabar^{(1)}+\gammabar^{(2)}}{2}\right)_j
+\left(\frac{\gammabar^{(1)}+\gammabar^{(2),\star}}{2}\right)_j
 \left(\frac{p_0^n+p_0^{n+1,\star}}{2}\right)_j \nonumber \\
 && \left \{ \Sbar_j^{n+\myhalf,\star} - 
 \frac{1}{r_j^2} \left [ (r^2 w_0^{n+\myhalf,\star})_{j+\myhalf} -
@@ -1007,7 +1000,6 @@ Then, define a base time and time-centered $\psi$:
 \end{description}
 
 \item {\bf Correct Base}$[(\rho h)_0^{n},(\rho h)^{(1)}] \rightarrow [(\rho h)_0^{n}]$.
-This has the effect of setting $(\rho h)_0^{n}$ to be the average of $(\rho h)^{(1)}$.
 
 \item Update $(\rho h)_0$.
 \begin{description}
@@ -1374,8 +1366,8 @@ Then, set $g^{n+\myhalf} = (g^n + g^{n+1})/2$.
 \end{equation}
 \item For spherical, first compute:
 \begin{equation}
-\gammabar^{(2),\star} = {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(2),\star}, p_0^{n+1}, 
-X_k^{(2),\star}\right) \right] \enskip .
+\gammabar^{(2)} = {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(2)}, p_0^{n+1}, 
+X_k^{(2)}\right) \right] \enskip .
 \end{equation}
 Then, define a base time and time-centered $\psi$:
 \begin{equation}
@@ -1387,7 +1379,7 @@ Then, define a base time and time-centered $\psi$:
 \end{equation}
 \begin{eqnarray}
 \psi_j^{n+\myhalf} &=& 
-\left(\frac{\gammabar^{(1)}+\gammabar^{(2),\star}}{2}\right)_j
+\left(\frac{\gammabar^{(1)}+\gammabar^{(2)}}{2}\right)_j
 \left(\frac{p_0^n+p_0^{n+1}}{2}\right)_j \nonumber \\
 && \left \{ \Sbar_j^{n+\myhalf} - 
 \frac{1}{r_j^2} \left [ (r^2 w_0^{n+\myhalf})_{j+\myhalf} -
