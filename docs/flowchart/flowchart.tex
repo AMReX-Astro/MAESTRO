@@ -103,6 +103,8 @@ enforce HSE after {\bf Correct Base}?  {\bf Advect Base Pressure} was just a fan
 way of enforcing HSE anyway, so we just compute the new pressure directly.  The
 problems we have seen with enforcing HSE directly have to do with the roundoff
 error that accumulates, causing the temperature computed from the EOS to drift.
+However, using {\bf Advect Base Pressure}, the latest version of {\bf test\_basestate}
+does not work after some bug fixes.
 
 \item Should we use a predictor-corrector for updating the full-state density?
 Specifically, after calling {\bf Correct Base}, should we do a full-state density 
@@ -729,7 +731,8 @@ The advance of the state through a single timestep appears as:
 
 \begin{description}
 
-\item[Step 1.] {\em Define the average expansion at time $t^\nph$ and the new $w_0.$}
+\item[Step 1.] {\em Define the provisional time-centered expansion, $S^{n+\myhalf,\star}$, 
+base state velocity, $w_0^{n+\myhalf,\star}$, and base state velocity forcing.}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -800,7 +803,8 @@ If $n=0$, we use $\dt^{-1} = \dt^0$.
 %--------------------------------------------------------------------------
 % STEP 2
 %--------------------------------------------------------------------------
-\item[Step 2.] {\em Construct the provisional edge-based advective velocity}, $\uadvone$.\\
+\item[Step 2.] {\em Construct the provisional time-centered advective velocity on 
+edges, $\uadvone$.}
 
 The local velocity field is described by paper III equation (37),
 \begin{equation}
@@ -1128,7 +1132,8 @@ where $\beta_0$ is computed as described in paper III, Appendix C.
 %--------------------------------------------------------------------------
 % STEP 6
 %--------------------------------------------------------------------------
-\item[Step 6.] {\em Define a new average expansion rate at time $t^\nph.$}
+\item[Step 6.] {\em Define the final time-centered expansion, $S^{n+\myhalf}$, 
+base state velocity, $w_0^{n+\myhalf}$, and base state velocity forcing.}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -1195,7 +1200,8 @@ and paper III equation (54),
 %--------------------------------------------------------------------------
 % STEP 7
 %--------------------------------------------------------------------------
-\item[Step 7.] {\em Construct the final edge-based advective velocity}, $\uadvtwo$.
+\item[Step 7.] {\em Construct the final time-centered advective velocity on 
+edges, $\uadvtwo$.}
 
 The procedure to construct $\uadvtwo$ is described in detail in Appendix B of paper III
 and is analogous to the procedure used in step 2, but with updated values
@@ -1568,7 +1574,7 @@ The initial perturbational pressure also needs to be determined for
 use in steps 2, 7 and 11. 
 This is done through a second iterative procedure which follows the
 time advancement algorithm as described in steps 1-11 in 
-\S~\ref{Sec:Time Advancement Algorithm}.  
+\S \ref{Sec:Time Advancement Algorithm}.  
 The user specifies the number of iterations, 
 $N_{\rm iters}^{\pi},$ in this second step of the initialization procedure.
 The details for both iterations are given below.\\
