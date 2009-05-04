@@ -879,8 +879,6 @@ The discretization with the volume discrepancy correction is
                    \rightarrow$ $[ \rho^{(1)}, (\rho h)^{(1)}, X_k^{(1)}, T^{(1)},
                                   (\rho \omegadot_k)^{(1)}, (\rho \Hnuc)^{(1)} ].$
 
-\item {\bf Correct Base}$[(\rho h)_0^{n},(\rho h)^{(1)}] \rightarrow [(\rho h)_0^{n}]$.
-
 \item Define
 \begin{equation}
 \gammabar^{(1)} = {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(1)}, p_0^{n}, X_k^{(1)}\right) \right] \enskip .
@@ -1007,6 +1005,9 @@ Then, define a base time and time-centered $\psi$:
           (r^2 w_0^{n+\myhalf,\star})_{j-\myhalf} \right ] \right \} \enskip .
 \end{eqnarray}
 \end{description}
+
+\item {\bf Correct Base}$[(\rho h)_0^{n},(\rho h)^{(1)}] \rightarrow [(\rho h)_0^{n}]$.
+This has the effect of setting $(\rho h)_0^{n}$ to be the average of $(\rho h)^{(1)}$.
 
 \item Update $(\rho h)_0$.
 \begin{description}

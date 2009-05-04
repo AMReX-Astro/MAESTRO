@@ -385,18 +385,6 @@ contains
        call destroy(rho_Hext(n))
     end do
 
-    ! compute rhoh0_old by "averaging"
-    if (evolve_base_state) then
-       if (spherical .eq. 0) then
-          call average(mla,s1,rhoh0_old,dx,rhoh_comp)
-       else
-          ! set rhoh0_old = rhoh0_old - Avg(rhoh0_old - rhoh^{(1)})
-          call make_sprimebar_spherical(s1,rhoh_comp,rhoh0_old,dx,rhohprimebar,mla, &
-                                        the_bc_tower%bc_tower_array)
-          call correct_base(rhoh0_old,rhohprimebar)
-       end if
-    end if
-
     if (evolve_base_state) then
        do n=1,nlevs
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
@@ -557,6 +545,17 @@ contains
     end if
 
     if (evolve_base_state) then
+
+       ! compute rhoh0_old by "averaging"
+       if (spherical .eq. 0) then
+          call average(mla,s1,rhoh0_old,dx,rhoh_comp)
+       else
+          ! set rhoh0_old = rhoh0_old - Avg(rhoh0_old - rhoh^{(1)})
+          call make_sprimebar_spherical(s1,rhoh_comp,rhoh0_old,dx,rhohprimebar,mla, &
+                                        the_bc_tower%bc_tower_array)
+          call correct_base(rhoh0_old,rhohprimebar)
+       end if
+
        call advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new, &
                                  rho0_predicted_edge,psi,psi_old,dt)
     else
