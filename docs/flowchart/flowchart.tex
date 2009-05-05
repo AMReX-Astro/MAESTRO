@@ -41,7 +41,7 @@ mention these items in paper IV, they should me noted in paper 4.5.
 \item We have changed the discretization of $\Ubt\cdot\nabla p_0$ in the enthalpy
 update to $\nabla\cdot(\Ubt p_0) - p_0\nabla\cdot\Ubt$.
 \item In paper III we discretized the enthalpy evolution equation in
-full, non-perturbation form, $\rho h$.  Since then we have discovered that 
+terms of $T$.  Since then we have discovered that 
 discretizing the enthalpy evolution in perturbational form, $(\rho h)'$,
 leads to better numerical properties.  We use {\tt enthalpy\_pred\_type = 1}.
 This is more like paper II.
@@ -56,6 +56,13 @@ $\psi$ that are then used in the enthalpy update.
 \item We split {\bf Advect Base} into separate {\bf Advect Base Density},
 {\bf Advect Base Pressure}, and {\bf Advect Base Enthalpy}.  The calling sequence
 is in the main flow chart.
+\item We have eliminated {\bf Advect Base Pressure} entirely, and instead directly
+enforce HSE after {\bf Correct Base}.  {\bf Advect Base Pressure} was just a fancy
+way of enforcing HSE anyway, so we just compute the new pressure directly.  The
+problems we have seen with enforcing HSE directly may have to do with the roundoff
+error that accumulates, causing the temperature computed from the EOS to drift.
+However, using {\bf Advect Base Pressure}, the latest version of {\bf test\_basestate}
+generates negative pressures, so that is even worse.
 \item We replaced {\bf Correct Base} with $\rho_0 = {\rm{\bf Avg}}(\rho)$ in 
 plane-parallel and $\rho_0 = \rho_0 + {\rm{\bf Avg}}(\rho - \rho_0)$ in spherical,
 eliminating the need for $\nabla\cdot\etarho$.  {\bf Correct Base} is now used
@@ -97,14 +104,6 @@ controlled by the input parameter, {\tt dpdt\_factor}.
 \section{Future Considerations}
 
 \begin{itemize}
-
-\item Should we eliminate {\bf Advect Base Pressure} entirely, and instead directly
-enforce HSE after {\bf Correct Base}?  {\bf Advect Base Pressure} was just a fancy
-way of enforcing HSE anyway, so we just compute the new pressure directly.  The
-problems we have seen with enforcing HSE directly have to do with the roundoff
-error that accumulates, causing the temperature computed from the EOS to drift.
-However, using {\bf Advect Base Pressure}, the latest version of {\bf test\_basestate}
-does not work after some bug fixes.
 
 \item Should we use a predictor-corrector for updating the full-state density?
 Specifically, after calling {\bf Correct Base}, should we do a full-state density 
