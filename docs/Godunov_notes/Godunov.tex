@@ -356,11 +356,11 @@ and the choice of energy prediction is as follows:
 We are using {\tt enthalpy\_pred\_type} = 1 for now.  The equations
 of motion are:
 \begin{eqnarray}
-\frac{\partial \rho'}{\partial t} &=& -\Ub\cdot\nabla\rho' \underbrace{- \rho'\nabla\cdot\Ub - \nabla\cdot(\rho_0\Ubt)}_{f_{\rho'}}, \\
-\frac{\partial(\rho X_k)}{\partial t} &=& -\nabla\cdot(\rho X_k\Ub) ~~~ \text{(no forcing)}, \\
-\frac{\partial(\rho h)'}{\partial t} &=& -\Ub\cdot\nabla(\rho h)' + \underbrace{(\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nabla\cdot\Ub - \nabla\cdot\left[(\rho h)_0\Ubt\right] + \nabla\cdot\kth\nabla T}_{f_{(\rho h)'}}, \nonumber \\
+\frac{\partial \rho'}{\partial t} &=& -\Ub\cdot\nabla\rho' \underbrace{- \rho'\nabla\cdot\Ub - \nabla\cdot\left(\rho_0\Ubt\right)}_{f_{\rho'}}, \\
+\frac{\partial X_k}{\partial t} &=& -\Ub\cdot\nabla X_k ~~~ \text{(no forcing)}, \\
+\frac{\partial(\rho h)'}{\partial t} &=& -\Ub\cdot\nabla(\rho h)' \underbrace{- (\rho h)'\nabla\cdot\Ub - \nabla\cdot\left[(\rho h)_0\Ubt\right] + \left(\Ubt\cdot\eb_r\right)\frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T}_{f_{(\rho h)'}}, \nonumber \\
 && \\
-\frac{\partial\Ubt}{\partial t} &=& -\Ub\cdot\nabla\Ubt \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r \underbrace{- \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}_{\hbox{terms included in $\fb_{\Ubt}$}}}_{\hbox{forcing terms}}.
+\frac{\partial\Ubt}{\partial t} &=& -\Ub\cdot\nabla\Ubt \underbrace{- \left(\Ubt\cdot\eb_r\right)\frac{\partial w_0}{\partial r}\eb_r \underbrace{- \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}_{\hbox{terms included in $\fb_{\Ubt}$}}}_{\hbox{forcing terms}}.
 \end{eqnarray}
 
 \newpage
