@@ -514,11 +514,11 @@ we instead simply set $\rho_0=\overline{\rho}$, which is analytically equivalent
 \item[spherical:] Set $\rho_0^{\outp} = \rho_0^{\inp} + {\bf Avg}(\rho^{\inp} - \rho_0^{\inp})$.
 \end{description}
 
-\item {\bf Compute $w_0$} is the process by which we compute $w_0$.
+\item {\bf Compute} {\boldmath $w_0$} is the process by which we compute $w_0$.
 The arguments are different for plane-parallel and spherical.
 \begin{description}
-\item {\bf Compute $w_0$ Planar}$[\Sbar^{\inp},\gammabar^{\inp},p_0^{\inp},\psi^{\inp}] 
-\rightarrow [w_0^{\outp}]$:
+\item {\bf Compute} {\boldmath $w_0$} {\bf Planar}$[\Sbar^{\inp},\gammabar^{\inp},p_0^{\inp},
+\psi^{\inp}] \rightarrow [w_0^{\outp}]$:
 
 We integrate
 \begin{equation}
@@ -542,7 +542,7 @@ $\overline{p^{\inp}}$, and the discretization becomes:
 \enskip .
 \end{equation}
 
-\item {\bf Compute $w_0$ Spherical}$[\Sbar^{\inp},\gammabar^{\inp},\rho_0^{\inp},p_0^{\inp},
+\item {\bf Compute} {\boldmath $w_0$} {\bf Spherical}$[\Sbar^{\inp},\gammabar^{\inp},\rho_0^{\inp},p_0^{\inp},
 \etarho^{\inp}] \rightarrow[w_0^{\outp}]$:
 
 We begin with equation (23) in paper III written in spherical coordinates:
@@ -789,14 +789,14 @@ S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}}
 \item Compute $w_0^{n+\myhalf,\star}$:
 \begin{description}
 \item For plane-parallel,\\
-{\bf Compute $w_0$ Planar}$[\overline{S^{\nph,\star}},\gammabar^n,p_0^n,\psi^{n-\myhalf}] 
-\rightarrow [w_0^{n+\myhalf,\star}]$.
+{\bf Compute} {\boldmath $w_0$} {\bf Planar}$[\overline{S^{\nph,\star}},\gammabar^n,p_0^n,
+\psi^{n-\myhalf}] \rightarrow [w_0^{n+\myhalf,\star}]$.
 
 If we are using the volume discrepancy term, compute 
 $\overline{p^{\inp}} = \overline{p(\rho,h,X_k)^n}$.
 \item For spherical,\\
-{\bf Compute $w_0$ Spherical}$[\overline{S^{\nph,\star}},\gammabar^n,\rhozero^n,p_0^n,
-\etarho^{n-\myhalf}] \rightarrow [w_0^{n+\myhalf,\star}]$.
+{\bf Compute} {\boldmath $w_0$} {\bf Spherical}$[\overline{S^{\nph,\star}},\gammabar^n,
+\rhozero^n,p_0^n,\etarho^{n-\myhalf}] \rightarrow [w_0^{n+\myhalf,\star}]$.
 \end{description}
 
 \item Define the base state velocity forcing using equation (38) from paper III,
@@ -1207,7 +1207,7 @@ with
 \item Compute $w_0^{n+\myhalf}$:
 \begin{description}
 \item For plane-parallel,\\
-{\bf Compute $w_0$ Planar}$[\overline{S^{\nph}},
+{\bf Compute} {\boldmath $w_0$} {\bf Planar}$[\overline{S^{\nph}},
 \gammabar^{n+\myhalf},p_0^{n+\myhalf},\psi^{n+\myhalf,\star}]\rightarrow [w_0^{n+\myhalf}]$.
 
 If we are using the volume discrepancy term, compute
@@ -1215,7 +1215,7 @@ If we are using the volume discrepancy term, compute
 \overline{p^{\inp}} = \frac{\overline{p(\rho,h,X_k)^n} + \overline{p(\rho,h,X_k)^{n+1,\star}}}{2}.
 \end{equation}
 \item For spherical,\\
-{\bf Compute $w_0$ Spherical}$[\overline{S^{\nph}},\gammabar^{n+\myhalf},
+{\bf Compute} {\boldmath $w_0$} {\bf Spherical}$[\overline{S^{\nph}},\gammabar^{n+\myhalf},
 \rhozero^{n+\myhalf},p_0^{n+\myhalf},\etarho^{n+\myhalf}] \rightarrow [w_0^{n+\myhalf}]$.
 \end{description}
 
