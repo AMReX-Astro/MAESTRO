@@ -79,7 +79,7 @@ contains
   subroutine make_gamma_2d(lo,hi,gamma,ng_g,s,ng_s,p0)
 
     use eos_module
-    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
     real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:,lo(2)-ng_g:)
@@ -121,7 +121,7 @@ contains
   subroutine make_gamma_3d(lo,hi,gamma,ng_g,s,ng_s,p0)
 
     use eos_module
-    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp
     use fill_3d_module
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
@@ -164,7 +164,7 @@ contains
   subroutine make_gamma_3d_sphr(lo,hi,gamma,ng_g,s,ng_s,p0,dx)
 
     use eos_module
-    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp
     use fill_3d_module
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
