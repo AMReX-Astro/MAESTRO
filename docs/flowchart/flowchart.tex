@@ -885,13 +885,14 @@ of $\dt.$}
 \item {\bf Advect Base Density}$[\rhozero^{n},w_0^{\nph,\star}] \rightarrow$ 
 $[\rho_0^{(2a),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
 
-\item Update the species.  Here we do a difference approximation
-  to 
-  \begin{equation}
-  \frac{\partial (\rho X_k)}{\partial t} + \nablab \cdotb (\Ub \rho X_k) =
-         \rho {\omegadot}_k \enskip , \label{eq:species}
-  \end{equation}
-  neglecting the reaction terms.  The update consists of two steps:
+\item \label{step:species update} 
+Update the species.  Here we consider only the advection terms, 
+neglecting the reaction terms, and solve a discretized version of
+\begin{equation}
+\frac{\partial (\rho X_k)}{\partial t} + \nablab \cdotb (\Ub \rho X_k) = 0 \enskip .
+\label{eq:species}
+\end{equation}
+The update consists of two steps:
 
   \begin{enumerate}
   \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
@@ -902,8 +903,8 @@ $[\rho_0^{(2a),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
   $X_k^{(1)} = (\rho X_k)^{(1)} / \rho^{(1)}$ to time-centered edges to obtain 
   $\rho^{'(1),\nph,\star}$ and $X_k^{(1),\nph,\star}$ using a second-order
   unsplit Godunov procedure, as described in paper II,
-  Appendix A, using $\Vb = \uadvone+w_0^{\nph,\star} \er$.  We use the base
-  state density, $\rho_0$, to convert this to an edge state for $\rho$,
+  Appendix A, using $\Vb = \uadvone+w_0^{\nph,\star} \er$.  Convert the 
+  perturbational edge state to a full state using
 \begin{equation}
 \rho^{(1),\nph,\star} = 
 \rho^{'(1),\nph,\star} + \frac{\rho_0^n + \rho_0^{(2a),\star}}{2} \enskip .
@@ -946,8 +947,8 @@ Then, $\etarho^{\nph,\star}$ is the cell-centered average of $\eta_{\rho}^{{\rm 
 \begin{equation}
 \etarho^{\nph,\star} = \overline{\eta_{\rho}^{{\rm cart},\nph,\star}}.
 \end{equation}
-This gives a radial cell-centered $\etarho^{\nph,\star}$.  To get $\etarho^{\nph,\star}$ at 
-radial edges, average the two neighboring radial bins.
+This gives a cell-centered $\etarho^{\nph,\star}$.  To get $\etarho^{\nph,\star}$ at 
+radial edges, average the two neighboring radial cell-centers.
 \end{description}
 
 \item {\bf Correct Base}$[\rho_0^{(2a),\star},\rho^{(2),\star}] \rightarrow [\rho_0^{n+1,\star}]$.
@@ -1009,27 +1010,20 @@ Then, define a base time and time-centered $\psi$:
 \psi^{n,\star},\psi^{\nph,\star}] \rightarrow [(\rho h)_0^{n+1,\star}]$.
 \end{description}
 
-\item Update the enthalpy.  The full enthalpy equation is 
-  \begin{equation}
-  \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\Ub \rho h)
-+ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T + \rho \Hnuc + \rho \Hext 
-\enskip , \label{eq:rhohupd} 
-  \end{equation}
-Here we consider only the advection, neglecting the reaction terms and thermal diffusion terms,
-and solve a discretized version of
+\item Update the enthalpy.  Here we consider only the advective terms, 
+neglecting the reaction terms and thermal diffusion terms, and solve a discretized version of
   \begin{equation}
   \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\Ub \rho h)
 + \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} 
 \enskip , \label{eq:rhohupdadv} 
   \end{equation}
-For spherical flows, experience has shown that solving the algebraically-equivalent form
+For spherical flows, experience has shown that solving the analytically equivalent form,
 \begin{equation}
   \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\Ub \rho h)
 + \psi + \nabla \cdot (\Ubt p_0) - p_0 \nabla \cdot \Ubt  
 \enskip , \label{eq:rhohupdadv2} 
 \end{equation}
 results in a better solution.
-
 
   \begin{enumerate}
   \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
@@ -1042,9 +1036,8 @@ results in a better solution.
     as described in paper II, Appendix A, using $\Vb =
     \uadvone+w_0^{\nph,\star} \er$.  We do not include the reaction
     terms in the enthalpy prediction, since we accounted for them
-    already in {\bf React State}.  We use the base state enthalpy,
-    $(\rho h)_0$, to convert this to an edge state for $(\rho h)$,
-
+    already in {\bf React State}.  Convert the perturbational edge
+    state to a full state using
     
 \begin{equation}
 (\rho h)^{(1),\nph,\star} = 
@@ -1101,7 +1094,7 @@ $\rho^{(2),\star} < {\tt base\_cutoff\_density}$, then we recompute enthalpy usi
 \item If we are using thermal diffusion, diffuse the enthalpy through a time interval of 
 $\dt$.  First, define $(\rho h)^{(1a),\star} = (\rho h)^{(2),\star}$.  We recompute
 $(\rho h)^{(2),\star}$ to account for thermal diffusion.  Here we begin
-with the enthalpy equation (\ref{eq:rhohupd}), but consider only the 
+with the enthalpy equation, but consider only the 
 diffusion terms,
 \begin{equation}
   \frac{\partial (\rho h)}{\partial t}  = 
@@ -1272,32 +1265,19 @@ The discretization with the volume discrepancy correction is
 \item {\bf Advect Base Density}$[\rho_0^{n},w_0^{\nph}] \rightarrow$ 
 $[\rho_0^{(2a)}, \rho_0^{\nph,{\rm pred}}]$.
 
-\item Update the species.  Here we do a difference approximation to
-  equation (\ref{eq:species}), neglecting the reaction terms.  The
-  update consists of two steps:
+\item Update the species.  This step is identical to step 4b with the following changes:
 
-  \begin{enumerate}
-  \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
+\begin{enumerate}
+\renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
-  \item Compute the species edge states, $(\rho X_k)^{(1),\nph}$, for
-    the conservative update of $(\rho X_k)^{(1)}$.  Here we predict 
-    $\rho^{'(1)} = \rho^{(1)} - \rhozero^n$
-    and $X_k^{(1)} = (\rho X_k)^{(1)} / \rho^{(1)}$ to time-centered edges to 
-    obtain $\rho^{'(1),\nph}$ and $X_k^{(1),\nph}$ using a second-order 
-    unsplit Godunov procedure, as described in paper II, Appendix A, 
-    using $\Vb = \uadvtwo+w_0^{\nph} \er$.  We use the base
-    state density, $\rho_0$, to convert this to an edge state for $\rho$,
-
+\item Compute the species edge states, $(\rho X_k)^{(1),n+\myhalf}$, 
+using $\Vb = \uadvtwo+w_0^{\nph}\er$.  Convert the perturbational edge 
+state to a full state using 
 \begin{equation}
 \rho^{(1),\nph} = \rho^{'(1),\nph} + \frac{\rho_0^n + \rho_0^{(2a)}}{2}\enskip .
 \end{equation}
-  In plane-parallel, we use 4th-order spatial averaging to compute $\rho_0$ on 
-  radial faces.  In spherical, we first map $\rho_0$ to Cartesian cell-centers 
-  using the mapping in section \ref{Sec:1D Cell-Centered to Cartesian Cell-Centered}, 
-  and then use 2nd-order spatial averaging to compute $\rho_0$ on all faces.
 
-    \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$
-      without explicitly including the reaction terms,
+\item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$ using
 \begin{equation}
 (\rho X_k)^{(2)} = (\rho X_k)^{(1)} 
 - \dt \; \left\{ \nablab \cdotb \left[\left(\uadvtwo+w_0^{\nph} \er\right)  
@@ -1323,14 +1303,14 @@ X_k^{(2)} = (\rho X_k)^{(2)} / \rho^{(2)}
 \item For spherical, first construct 
 $\eta_{\rho}^{{\rm cart},\nph} = [\rho'(\Ubt\cdot\eb_r)]^{n+\myhalf}$ using:
 \begin{equation}
-\eta_{\rho}^{{\rm cart},\nph} = \left[\left(\frac{\rho^{(1)}+\rho^{(2),\star}}{2}\right)-\left(\frac{\rho_0^n+\rho_0^{(2a),\star}}{2}\right)\right] \sum_d \left(\uadvtwo \cdot \eb_d\right)n_d.
+\eta_{\rho}^{{\rm cart},\nph} = \left[\left(\frac{\rho^{(1)}+\rho^{(2)}}{2}\right)-\left(\frac{\rho_0^n+\rho_0^{(2a)}}{2}\right)\right] \sum_d \left(\uadvtwo \cdot \eb_d\right)n_d.
 \end{equation}
 Then, $\etarho^{\nph}$ is the cell-centered average of $\eta_{\rho}^{{\rm cart},\nph}$,
 \begin{equation}
 \etarho^{\nph} = \overline{\eta_{\rho}^{{\rm cart},\nph}}.
 \end{equation}
-This gives a radial cell-centered $\etarho^{\nph}$.  To get $\etarho^{\nph}$ at 
-radial edges, average the two neighboring radial bins.
+This gives a cell-centered $\etarho^{\nph}$.  To get $\etarho^{\nph}$ at 
+radial edges, average the two neighboring cell-centers.
 \end{description}
 
 \item {\bf Correct Base}$[\rho_0^{(2a)},\rho^{(2)}] \rightarrow [\rho_0^{n+1}]$.
@@ -1392,32 +1372,21 @@ Then, define a base time and time-centered $\psi$:
 \rightarrow [(\rho h)_0^{n+1}]$.
 \end{description}
 
-\item Update the enthalpy, using a difference approximation to
-  equation (\ref{eq:rhohupd}), neglecting the reaction terms.
+\item Update the enthalpy.  This step is identical to step 4j with the following changes:
 
-  \begin{enumerate}
-  \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
+\begin{enumerate}
+\renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
-  \item Compute the enthalpy edge state, $(\rho h)^{(1),\nph}$, for
-    the conservative update of $(\rho h)^{(1)}$. Here we predict 
-    $(\rho h)' = (\rho h)^{(1)} - (\rho h)_0$
-    to time-centered edges to obtain $(\rho h)^{'(1),\nph}$, 
-    using a second-order unsplit Godunov procedure, 
-    as described in paper II, Appendix A, using $\Vb =
-    \uadvtwo+w_0^{\nph} \er$.  Again, we do not include the reaction
-    terms in the enthalpy prediction since we accounted for them
-    already in {\bf React State}. We use the base state enthalpy,
-    $(\rho h)_0$, to convert these to edge states for $(\rho h)$,
+\item Compute the enthalpy edge state, $(\rho h)^{(1),\nph}$, using
+$\Vb = \uadvtwo+w_0^{\nph} \er$.  Convert the perturbational edge 
+state to a full state using
 \begin{equation}
 (\rho h)^{(1),\nph} = 
 (\rho h)^{'(1),\nph} + \frac{(\rho h)_0^n + (\rho h)_0^{n+1}}{2} \enskip .
 \end{equation}
-  In plane-parallel, we use 4th-order spatial averaging to compute $(\rho h)_0$
-  on radial faces.  In spherical, we first map $h_0 \equiv (\rho h)_0/\rho_0$ 
-  and $\rho_0$ to Cartesian cell-centers using the mapping in section 
-  \ref{Sec:1D Cell-Centered to Cartesian Cell-Centered}, use 2nd-order spatial 
-  averaging to compute $h_0$ and $\rho_0$ on all faces, and then multiply these 
-  terms to get $(\rho h)_0$ on all faces.
+
+\item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$
+without explicitly including the reaction terms,
 
 \begin{description}
 \item For plane-parallel,
