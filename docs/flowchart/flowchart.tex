@@ -870,8 +870,16 @@ The discretization with the volume discrepancy correction is
 %--------------------------------------------------------------------------
 \item[Step 3.] {\em React the full state through the first time interval of $\dt / 2.$}
 
-{\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n, p_0^n] \rightarrow
+\begin{enumerate}
+\renewcommand{\theenumi}{{\bf \alph{enumi}}}
+
+\item {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n, p_0^n] \rightarrow
 [ \rho^{(1)},(\rho h)^{(1)},X_k^{(1)},T^{(1)},(\rho \omegadot_k)^{(1)},(\rho \Hnuc)^{(1)} ]$.
+
+\item {\bf Correct Base}$[(\rho h)_0^{n},(\rho h)^{(1)}] \rightarrow [(\rho h)_0^{n}]$.
+This sets $(\rho h)_0$ to be the lateral average of $(\rho h)^{(1)}$
+
+\end{enumerate}
 
 %--------------------------------------------------------------------------
 % STEP 4
@@ -997,8 +1005,6 @@ Then, define a base time and time-centered $\psi$:
           (r^2 w_0^{n+\myhalf,\star})_{j-\myhalf} \right ] \right \} \enskip .
 \end{eqnarray}
 \end{description}
-
-\item {\bf Correct Base}$[(\rho h)_0^{n},(\rho h)^{(1)}] \rightarrow [(\rho h)_0^{n}]$.
 
 \item Update $(\rho h)_0$.
 \begin{description}
@@ -1372,7 +1378,7 @@ Then, define a base time and time-centered $\psi$:
 \rightarrow [(\rho h)_0^{n+1}]$.
 \end{description}
 
-\item Update the enthalpy.  This step is identical to step 4j with the following changes:
+\item Update the enthalpy.  This step is identical to step 4i with the following changes:
 
 \begin{enumerate}
 \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
