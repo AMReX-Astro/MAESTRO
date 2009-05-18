@@ -503,18 +503,6 @@ whereas in the enthalpy update, we use $\psi^{\inp,n+\myhalf}$ as the forcing.
 
 \end{description}
 
-\item {\bf Correct Base}$[\rho_0^{\inp}, \rho^{\inp}] \rightarrow [\rho_0^{\outp}]$
-is the process by which we adjust the base state density to account for
-large-scale mixing.  It is also used to reset the base state enthalpy to be
-the average of the full state enthalpy since we do not need to compute the complete
-evolution of the base state enthalpy.
-Unlike paper III where we used $\nabla\cdot\etarho$ as an adjustment to $\rho_0$, 
-we instead simply set $\rho_0=\overline{\rho}$, which is analytically equivalent.
-\begin{description}
-\item[planar:] Set $\rho_0^{\outp} = {\bf Avg}(\rho^{\inp})$.
-\item[spherical:] Set $\rho_0^{\outp} = \rho_0^{\inp} + {\bf Avg}(\rho^{\inp} - \rho_0^{\inp})$.
-\end{description}
-
 \item {\bf Compute} {\boldmath $w_0$} is the process by which we compute $w_0$.
 The arguments are different for planar and spherical geometries.
 \begin{description}
@@ -878,8 +866,11 @@ The discretization with the volume discrepancy correction is
 \item {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n, p_0^n] \rightarrow
 [ \rho^{(1)},(\rho h)^{(1)},X_k^{(1)},T^{(1)},(\rho \omegadot_k)^{(1)},(\rho \Hnuc)^{(1)} ]$.
 
-\item {\bf Correct Base}$[(\rho h)_0^{n},(\rho h)^{(1)}] \rightarrow [(\rho h)_0^{n}]$.
-This sets $(\rho h)_0$ to be the lateral average of $(\rho h)^{(1)}$
+\item Set $(\rho h)_0^n$ to be the lateral average of $(\rho h)^{(1)}$:
+\begin{description}
+\item For planar geometry, set $(\rho h)_0^n = $ {\bf Avg}$[(\rho h)^{(1)}]$
+\item For spherical geometry, set $(\rho h)_0^n = (\rho h)_0^n +$ {\bf Avg}$[(\rho h)^{(1)} - (\rho h)_0^n]$
+\end{description}
 
 \end{enumerate}
 
@@ -960,7 +951,11 @@ This gives a cell-centered $\etarho^{\nph,\star}$.  To get $\etarho^{\nph,\star}
 radial edges, average the two neighboring radial cell-centers.
 \end{description}
 
-\item {\bf Correct Base}$[\rho_0^{(2a),\star},\rho^{(2),\star}] \rightarrow [\rho_0^{n+1,\star}]$.
+\item Set $\rho_0^{n+1,\star}$ to be the lateral average of $\rho^{(2),\star}$:
+\begin{description}
+\item For planar geometry, set $\rho_0^{n+1,\star} =$ {\bf Avg}$(\rho^{(2),\star})$
+\item For spherical geometry, set $\rho_0^{n+1,\star} = \rho_0^{(2a),\star} +$ {\bf Avg}$(\rho^{(2),\star} - \rho_0^{(2a),\star})$
+\end{description}
 
 \item {\bf Compute Gravity}$[\rho_0^{n+1,\star}] \rightarrow [g^{n+1,\star}]$.
 
@@ -1320,7 +1315,11 @@ This gives a cell-centered $\etarho^{\nph}$.  To get $\etarho^{\nph}$ at
 radial edges, average the two neighboring cell-centers.
 \end{description}
 
-\item {\bf Correct Base}$[\rho_0^{(2a)},\rho^{(2)}] \rightarrow [\rho_0^{n+1}]$.
+\item Set $\rho_0^{n+1}$ to be the lateral average of $\rho^{(2)}$:
+\begin{description}
+\item For planar geometry, set $\rho_0^{n+1} =$ {\bf Avg}$(\rho^{(2)})$
+\item For spherical geometry, set $\rho_0^{n+1} = \rho_0^{(2a)} +$ {\bf Avg}$(\rho^{(2)} - \rho_0^{(2a)})$
+\end{description}
 
 \item {\bf Compute Gravity}$[\rho_0^{n+1}] \rightarrow [g^{n+1}]$.
 
