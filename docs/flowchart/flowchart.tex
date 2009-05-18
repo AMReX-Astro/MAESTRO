@@ -182,7 +182,7 @@ $t$     & time                                       & s \\
 \hline
 $T$     & temperature                                & K \\
 \hline
-$\Ub$     & total velocity ($\Ub = \Ubt + w_0 \er$) & cm~s$^{-1}$ \\
+$\Ub$     & total velocity ($\Ub = \Ubt + w_0 \eb_r$) & cm~s$^{-1}$ \\
 \hline
 $\Ubt$   & local velocity                             & cm~s$^{-1}$ \\
 \hline
@@ -197,7 +197,7 @@ $\beta_0$ & coefficient to velocity
 \hline
 $\Gamma_1$ & first adiabatic exponent ($\Gamma_1 \equiv \left . d \log p/d \log \rho \right |_s$) & -- \\
 \hline
-$\etarho$ & $\etarho \equiv \overline{(\rho' \Ubt \cdot \er)}$ & g~cm$^{-2}$~s$^{-1}$ \\
+$\etarho$ & $\etarho \equiv \overline{(\rho' \Ubt \cdot \eb_r)}$ & g~cm$^{-2}$~s$^{-1}$ \\
 \hline
 $\xi_k$ & $\xi_k \equiv \left . \partial h / \partial X_k \right |_{p,T,X_{j,j\ne k}}$ & erg~g$^{-1}$ \\
 \hline 
@@ -254,7 +254,8 @@ as the average over a layer at constant radius r, $\Omega_H$, as
 = \frac{1}{\mathrm{A}(\Omega_H)}\int_{\Omega_H} \phi(r,{\bf x}) \; dA \enskip .
 \end{equation}
 \begin{description}
-\item[planar:] We simply average cells at constant height.
+\item[planar:] This is a straightforward average since the radial coordinate is 
+in alignment with the lateral coordinate.
 \item[spherical:] See the description in paper IV, section 2.2 
 (or section \ref{Sec:Avg} in these notes).
 \end{description}
@@ -297,7 +298,7 @@ freeze $c_p$ and $\xi_k$ at the start of the integration time step and
 compute them using $\rho^{\inp}, X_k^{\inp},$ and $T^{\inp}$ as inputs
 to the equation of state.  We update temperature using
 $T^{\outp} = T(\rho^\outp,h^\outp,X_k^\outp)$ if {\tt use\_tfromp = FALSE} or 
-$T^{\outp} = T(\rho^\outp,p_0,X_k^\outp)$  if {\tt use\_tfromp = TRUE}.  
+$T^{\outp} = T(\rho^\outp,p_0^\inp,X_k^\outp)$  if {\tt use\_tfromp = TRUE}.  
 Note that the density remains unchanged
 during the {\bf React State} step, i.e., $\rho^{\outp} = \rho^{\inp}$.
 
@@ -329,7 +330,7 @@ for use later in the algorithm.
 \item[planar:] We discretize the base state density evolution 
 equation from paper III equation (29) without the $\etarho$ term,
 \begin{equation}
-\frac{\partial \rhozero}{\partial t} = - \nablab \cdotb \left( \rhozero w_0 \er \right)
+\frac{\partial \rhozero}{\partial t} = - \nabla \cdot \left( \rhozero w_0 \eb_r \right)
 \enskip ,
 \label{eq:rho0upd_new}
 \end{equation}
@@ -473,7 +474,7 @@ The input arguments are different for planar and spherical geometries.
 
 We discretize the base state enthalpy equation,
 \begin{equation}
-\frac{\partial (\rho h)_0}{\partial t} = -\nabla\cdot\left[(\rho h)_0w_0\er\right] 
+\frac{\partial (\rho h)_0}{\partial t} = -\nabla\cdot\left[(\rho h)_0w_0\eb_r\right] 
 + \psi \enskip ,
 \end{equation}
 to compute the new base state enthalpy,
@@ -834,11 +835,11 @@ edges, $\uadvone$.}
 The local velocity field is described by paper III equation (37),
 \begin{equation}
 \frac{\partial\Ubt}{\partial t} = 
-- \left(\Ubt+w_0\right) \cdotb \nablab \Ubt
-- \left(\Ubt \cdotb \er\right) \frac{\partial w_0}{\partial r} \er
-- \frac{1}{\rho} \nablab\pi
-+ \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \er
-- \frac{(\rho-\rhozero)}{\rho} \; g \; \er  \label{eq:utildeupd}  \enskip .
+- \left(\Ubt+w_0\right) \cdot \nabla \Ubt
+- \left(\Ubt \cdot \eb_r\right) \frac{\partial w_0}{\partial r} \eb_r
+- \frac{1}{\rho} \nabla\pi
++ \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \eb_r
+- \frac{(\rho-\rhozero)}{\rho} \; g \; \eb_r  \label{eq:utildeupd}  \enskip .
 \end{equation}
 
 We construct time-centered velocities at edges, $\uadvone$, 
@@ -846,21 +847,21 @@ using a second-order unsplit Godunov procedure followed by an elliptic
 solve, as described in Appendix B of paper III.  We note that 
 $\uadvone$ satisfies the discrete versions of paper III equation (21),
 \begin{equation}
-\int_{\Omega_H} \Ubt \cdotb \er \; dA = 0 \label{eq:udoterzero} \enskip ,
+\int_{\Omega_H} \Ubt \cdot \eb_r \; dA = 0 \label{eq:udoterzero} \enskip ,
 \end{equation}
 and paper III equation (39),
 \begin{equation}
-\nablab \cdotb (\beta_0 \Ubt )  = \beta_0 \left(S - \Sbar \right )\enskip ,
+\nabla \cdot (\beta_0 \Ubt )  = \beta_0 \left(S - \Sbar \right )\enskip ,
 \label{eq:tildeconstraint}
 \end{equation}
 with the discretization
 \begin{equation}
-\nablab \cdotb \left(\beta_0^n \uadvone\right) = 
+\nabla \cdot \left(\beta_0^n \uadvone\right) = 
 \beta_0^n \left(S^{\nph,\star} - \overline{S^{\nph,\star}}\right) \enskip .
 \end{equation}
 The discretization with the volume discrepancy correction is
 \begin{equation}
-\nablab \cdotb \left(\beta_0^n \uadvone\right) = 
+\nabla \cdot \left(\beta_0^n \uadvone\right) = 
 \beta_0^n \left\{ \left(S^{\nph,\star} - \overline{S^{\nph,\star}}\right)
 + \frac{f}{\gammabar^n p_0^n}
 \left[\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n}\right]\right\} \enskip .
@@ -885,8 +886,7 @@ This sets $(\rho h)_0$ to be the lateral average of $(\rho h)^{(1)}$
 %--------------------------------------------------------------------------
 % STEP 4
 %--------------------------------------------------------------------------
-\item[Step 4.] {\em Advect the base state, then the full state, through a time interval 
-of $\dt.$}
+\item[Step 4.] {\em Advect the base state and full state, through a time interval of $\dt.$}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -898,7 +898,7 @@ $[\rho_0^{(2a),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
 Update the species.  Here we consider only the advection terms, 
 neglecting the reaction terms, and solve a discretized version of
 \begin{equation}
-\frac{\partial (\rho X_k)}{\partial t} + \nablab \cdotb (\Ub \rho X_k) = 0 \enskip .
+\frac{\partial (\rho X_k)}{\partial t} + \nabla \cdot (\Ub \rho X_k) = 0 \enskip .
 \label{eq:species}
 \end{equation}
 The update consists of two steps:
@@ -912,7 +912,7 @@ The update consists of two steps:
   $X_k^{(1)} = (\rho X_k)^{(1)} / \rho^{(1)}$ to time-centered edges to obtain 
   $\rho^{'(1),\nph,\star}$ and $X_k^{(1),\nph,\star}$ using a second-order
   unsplit Godunov procedure, as described in paper II,
-  Appendix A, using $\Vb = \uadvone+w_0^{\nph,\star} \er$.  Convert the 
+  Appendix A, using $\Vb = \uadvone+w_0^{\nph,\star} \eb_r$.  Convert the 
   perturbational edge state to a full state using
 \begin{equation}
 \rho^{(1),\nph,\star} = 
@@ -928,7 +928,7 @@ The update consists of two steps:
   without explicitly including the reaction terms,
 \begin{equation}
 (\rho X_k)^{(2),\star} = (\rho X_k)^{(1)} 
- - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right)  
+ - \dt \; \left\{ \nabla \cdot \left[ \left(\uadvone+w_0^{\nph,\star} \eb_r\right)  
   (\rho X_k)^{(1),\nph,\star} \right] \right\} \enskip ,
 \end{equation}
 \begin{equation}
@@ -945,7 +945,7 @@ X_k^{(2),\star} = (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 \begin{description}
 \item For planar geometry,
 \begin{equation}
- \etarho^{\nph,\star} =  {\rm {\bf Avg}} \sum_k \left[ \left(\uadvone \cdotb \er + w_0^{\nph,\star}\right) (\rho X_k)^{(1),\nph,\star} \right] - w_0^{\nph,\star} \rho_0^{\nph,\star,{\rm pred}} \enskip ,
+ \etarho^{\nph,\star} =  {\rm {\bf Avg}} \sum_k \left[ \left(\uadvone \cdot \eb_r + w_0^{\nph,\star}\right) (\rho X_k)^{(1),\nph,\star} \right] - w_0^{\nph,\star} \rho_0^{\nph,\star,{\rm pred}} \enskip ,
 \end{equation}
 \item For spherical geometry, first construct 
 $\eta_{\rho}^{{\rm cart},\nph,\star} = [\rho'(\Ubt\cdot\eb_r)]^{n+\myhalf,\star}$ using:
@@ -1020,13 +1020,13 @@ Then, define a base time and time-centered $\psi$:
 \item Update the enthalpy.  Here we consider only the advective terms, 
 neglecting the reaction terms and thermal diffusion terms, and solve a discretized version of
   \begin{equation}
-  \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\Ub \rho h)
-+ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} 
+  \frac{\partial (\rho h)}{\partial t}  = - \nabla \cdot (\Ub \rho h)
++ \psi + (\Ubt \cdot \eb_r) \frac{\partial p_0}{\partial r} 
 \enskip , \label{eq:rhohupdadv} 
   \end{equation}
 For spherical geometry, experience has shown that solving the analytically equivalent form,
 \begin{equation}
-  \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\Ub \rho h)
+  \frac{\partial (\rho h)}{\partial t}  = - \nabla \cdot (\Ub \rho h)
 + \psi + \nabla \cdot (\Ubt p_0) - p_0 \nabla \cdot \Ubt  
 \enskip , \label{eq:rhohupdadv2} 
 \end{equation}
@@ -1041,7 +1041,7 @@ results in a better solution.
     $(\rho h)^{'(1),\nph,\star}$, 
     using a second-order unsplit Godunov procedure, 
     as described in paper II, Appendix A, using $\Vb =
-    \uadvone+w_0^{\nph,\star} \er$.  We do not include the reaction
+    \uadvone+w_0^{\nph,\star} \eb_r$.  We do not include the reaction
     terms in the enthalpy prediction, since we accounted for them
     already in {\bf React State}.  Convert the perturbational edge
     state to a full state using
@@ -1065,18 +1065,18 @@ results in a better solution.
 \item For planar geometry,
 
   \begin{eqnarray}
-  (\rho h)^{(2),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
-      \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right) (\rho
+  (\rho h)^{(2),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nabla
+      \cdot \left[ \left(\uadvone+w_0^{\nph,\star} \eb_r\right) (\rho
       h)^{(1),\nph,\star} \right] \right\} \nonumber \\ && + \dt \;
-    \left(\uadvone \cdotb \er\right) \left(\frac{\partial
+    \left(\uadvone \cdot \eb_r\right) \left(\frac{\partial
       p_0}{\partial r} \right)^{n} + \dt \; \psi^{\nph,\star} \enskip ,
   \end{eqnarray}
 
 \item For spherical geometry,
 
   \begin{eqnarray}
-  (\rho h)^{(2),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
-      \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right) (\rho
+  (\rho h)^{(2),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nabla
+      \cdot \left[ \left(\uadvone+w_0^{\nph,\star} \eb_r\right) (\rho
       h)^{(1),\nph,\star} \right] \right\} \nonumber \\ 
     && + \dt \; \left \{ \nabla \cdot \left (\uadvone p_0^{n} \right ) 
        - p_0^{n} \nabla \cdot \uadvone \right \} \nonumber \\
@@ -1244,7 +1244,7 @@ and is analogous to the procedure used in step 2, but with updated values
 for $w_0$ and $\pizero.$  We note that $\uadvtwo$ satisfies the discrete versions of 
 equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}), with the discretization
 \begin{equation}
-\nablab \cdotb \left(\beta_0^{\nph} \uadvtwo\right) =
+\nabla \cdot \left(\beta_0^{\nph} \uadvtwo\right) =
 \beta_0^{\nph}\left(S^{\nph} - \overline{S^{\nph}}\right) \enskip ,
 \end{equation}
 \begin{equation}
@@ -1255,7 +1255,7 @@ where $\beta_0$ is computed as described in paper III, Appendix C.
 
 The discretization with the volume discrepancy correction is
 \begin{equation}
-\nablab \cdotb \left(\beta_0^{\nph} \uadvtwo\right) =
+\nabla \cdot \left(\beta_0^{\nph} \uadvtwo\right) =
 \beta_0^{\nph}\left\{\left(S^{\nph} - \overline{S^{\nph}}\right)
  + \frac{f}{\gammabar^{\nph} p_0^{\nph}}\cdot 
 \left[\frac{p(\rho,h,X_k)^{\nph} - \overline{p(\rho,h,X_k)^{\nph}}}{\Delta t^n}\right]\right\} \enskip ,
@@ -1264,7 +1264,7 @@ The discretization with the volume discrepancy correction is
 %--------------------------------------------------------------------------
 % STEP 8
 %--------------------------------------------------------------------------
-\item[Step 8.] {\em Advect the base state, then the full state, through a time interval of $\dt.$}
+\item[Step 8.] {\em Advect the base state and full state through a time interval of $\dt.$}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -1278,7 +1278,7 @@ $[\rho_0^{(2a)}, \rho_0^{\nph,{\rm pred}}]$.
 \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
 \item Compute the species edge states, $(\rho X_k)^{(1),n+\myhalf}$, 
-using $\Vb = \uadvtwo+w_0^{\nph}\er$.  Convert the perturbational edge 
+using $\Vb = \uadvtwo+w_0^{\nph}\eb_r$.  Convert the perturbational edge 
 state to a full state using 
 \begin{equation}
 \rho^{(1),\nph} = \rho^{'(1),\nph} + \frac{\rho_0^n + \rho_0^{(2a)}}{2}\enskip .
@@ -1287,7 +1287,7 @@ state to a full state using
 \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$ using
 \begin{equation}
 (\rho X_k)^{(2)} = (\rho X_k)^{(1)} 
-- \dt \; \left\{ \nablab \cdotb \left[\left(\uadvtwo+w_0^{\nph} \er\right)  
+- \dt \; \left\{ \nabla \cdot \left[\left(\uadvtwo+w_0^{\nph} \eb_r\right)  
 (\rho X_k)^{(1),\nph} \right] \right\}  \enskip ,
 \end{equation}
 \begin{equation}
@@ -1305,7 +1305,7 @@ X_k^{(2)} = (\rho X_k)^{(2)} / \rho^{(2)}
 
 \item For planar geometry,
 \begin{equation}
- \etarho^{\nph} = {\rm {\bf Avg}} \sum_k \left [\left(\uadvtwo \cdotb \er + w_0^{\nph}\right) (\rho X_k)^{(1),\nph} \right] - w_0^{\nph} \rho_0^{\nph,{\rm pred}} \enskip ,
+ \etarho^{\nph} = {\rm {\bf Avg}} \sum_k \left [\left(\uadvtwo \cdot \eb_r + w_0^{\nph}\right) (\rho X_k)^{(1),\nph} \right] - w_0^{\nph} \rho_0^{\nph,{\rm pred}} \enskip ,
 \end{equation}
 \item For spherical geometry, first construct 
 $\eta_{\rho}^{{\rm cart},\nph} = [\rho'(\Ubt\cdot\eb_r)]^{n+\myhalf}$ using:
@@ -1385,7 +1385,7 @@ Then, define a base time and time-centered $\psi$:
 \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
 \item Compute the enthalpy edge state, $(\rho h)^{(1),\nph}$, using
-$\Vb = \uadvtwo+w_0^{\nph} \er$.  Convert the perturbational edge 
+$\Vb = \uadvtwo+w_0^{\nph} \eb_r$.  Convert the perturbational edge 
 state to a full state using
 \begin{equation}
 (\rho h)^{(1),\nph} = 
@@ -1398,9 +1398,9 @@ without explicitly including the reaction terms,
 \begin{description}
 \item For planar geometry,
 \begin{eqnarray}
-(\rho h)^{(2)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
+(\rho h)^{(2)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nabla \cdot \left[ \left(\uadvtwo+w_0^{\nph} \eb_r\right)  
 (\rho h)^{(1),\nph} \right] \right\} \nonumber \\
-&& + \frac{\dt}{2} \; \left(\uadvtwo \cdotb \er\right)
+&& + \frac{\dt}{2} \; \left(\uadvtwo \cdot \eb_r\right)
 \left [ \left(\frac{\partial p_0}{\partial r} \right)^{n}
       + \left(\frac{\partial p_0}{\partial r} \right)^{n+1}  \right ] 
 + \dt \; \psi^{\nph} \enskip ,
@@ -1408,7 +1408,7 @@ without explicitly including the reaction terms,
 
 \item For spherical geometry,
 \begin{eqnarray}
-(\rho h)^{(2)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
+(\rho h)^{(2)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nabla \cdot \left[ \left(\uadvtwo+w_0^{\nph} \eb_r\right)  
 (\rho h)^{(1),\nph} \right] \right\} \nonumber \\
     && + \dt \; \left \{ \nabla \cdot \left (\uadvtwo p_0^{\nph} \right ) 
        - p_0^{\nph} \nabla \cdot \uadvtwo \right \} \nonumber \\
@@ -1509,26 +1509,26 @@ We update the velocity field $\Ubt^n$ to $\Ubt^{n+1,\star}$ by discretizing
 equation (\ref{eq:utildeupd}) as
 \begin{eqnarray}
 \Ubt^{n+1,\star} &=& \Ubt^n - \dt \;
- \left[\left(\uadvtwo+ w_0^{\nph} \er\right) \cdotb \nablab \Ubt \right]^\nph
-      - \dt \; \left(\uadvtwo \cdotb \er\right)  \left(\frac{\partial w_0^{\nph}}{\partial r} \right) \er \nonumber \\
+ \left[\left(\uadvtwo+ w_0^{\nph} \eb_r\right) \cdot \nabla \Ubt \right]^\nph
+      - \dt \; \left(\uadvtwo \cdot \eb_r\right)  \left(\frac{\partial w_0^{\nph}}{\partial r} \right) \eb_r \nonumber \\
    &&   + \dt \left[ - \frac{1}{\rho^\nph} {\mathbf{G}} \pi^\nmh
         + \frac{1}{\rho_0} {\mathbf{G}} \pi_0^n
-        - \frac{(\rho^\nph-\rhozero^\nph)}{\rho^\nph} g^{n+\myhalf} \er \right] \enskip ,
+        - \frac{(\rho^\nph-\rhozero^\nph)}{\rho^\nph} g^{n+\myhalf} \eb_r \right] \enskip ,
 \end{eqnarray}
 where $\rho^{\nph}$ is defined as
 \begin{equation}
 \rho^\nph = \frac{\rho^n + \rho^{n+1}}{2}\enskip ,
 \end{equation}
 and $\mathbf{G}$ approximates a cell-centered gradient from nodal data.
-The construction of $[(\uadvtwo+ w_0^{\nph} \er \cdotb \nablab) \Ubt ]^\nph$
-is described in paper II, Appendix A, with $\Vb = \uadvtwo+w_0^{\nph} \er$ and $s$ 
+The construction of $[(\uadvtwo+ w_0^{\nph} \eb_r \cdot \nabla) \Ubt ]^\nph$
+is described in paper II, Appendix A, with $\Vb = \uadvtwo+w_0^{\nph} \eb_r$ and $s$ 
 set to each component of $\Ubt^n$ individually.  Here, the $\star$ superscript 
 does not refer to the predictor-corrector aspect of the algorithm, but rather 
 than the updated velocity does not satisfy the divergence constraint.
 
 Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}):
 \begin{equation}
-\nablab \cdotb \left(\beta_0^{\nph} \Ubt^{n+1} \right) 
+\nabla \cdot \left(\beta_0^{\nph} \Ubt^{n+1} \right) 
 = \beta_0^{\nph} \left(S^{n+1} - \overline{S^{n+1}} \right) \enskip,
 \end{equation}
 where $\beta_0^{n+\myhalf}$ is now defined as
@@ -1539,7 +1539,7 @@ where $\beta_0^{n+\myhalf}$ is now defined as
 
 The discretization with the volume discrepancy term is:
 \begin{equation}
-\nablab \cdotb \left(\beta_0^{\nph} \Ubt^{n+1} \right)  = \beta_0^{\nph}\left\{  \left(S^{n+1} - \overline{S^{n+1}} \right)
+\nabla \cdot \left(\beta_0^{\nph} \Ubt^{n+1} \right)  = \beta_0^{\nph}\left\{  \left(S^{n+1} - \overline{S^{n+1}} \right)
 + \frac{f}{\gammabar^{n+1} p_0^{n+1}}
 \left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]\right\}
 \enskip .
@@ -1553,7 +1553,7 @@ and solve
 \left(S^{n+1}-\overline{S^{n+1}} \right) \enskip, \label{Linear System for Multigrid}
 \end{equation}
 for nodal values of $\phi$, where $L_\beta^\rho$ is the standard bilinear
-finite element approximation to $\nablab \cdotb ({\beta_0^\nph}/{\rho^\nph}) \nablab.$
+finite element approximation to $\nabla \cdot ({\beta_0^\nph}/{\rho^\nph}) \nabla.$
 The discretization with the volume discrepancy term is:
 \begin{equation}
  L_\beta^\rho \phi =
