@@ -531,8 +531,7 @@ $\overline{p^{\inp}}$, and the discretization becomes:
 \enskip .
 \end{equation}
 
-\item {\bf Compute} {\boldmath $w_0$} {\bf Spherical}$[\Sbar^{\inp},\gammabar^{\inp},\rho_0^{\inp},p_0^{\inp},
-\etarho^{\inp}] \rightarrow[w_0^{\outp}]$:
+\item {\bf Compute} {\boldmath $w_0$} {\bf Spherical}$[\Sbar^{\inp},\gammabar^{\inp},\rho_0^{\inp},p_0^{\inp},g^\inp,\etarho^{\inp}] \rightarrow[w_0^{\outp}]$:
 
 We begin with equation (23) in paper III written in spherical coordinates:
 \begin{equation}
@@ -680,16 +679,11 @@ B_j &=& -\frac{1}{\Delta r^2} \left[ \left( \frac{\gammabar^{\inp} p_0^{\inp}}{r
               - \left( \frac{4}{r_{j-\myhalf} ^3} \frac{p_{0,j}^{\inp} - p_{0,j-1}^{\inp}}{\dr} \right) \enskip , \\
 C_j &=& \frac{1}{\Delta r^2} \left( \frac{\gammabar^{\inp} p_0^{\inp}}{r^2}\right)_{j}  \enskip, \\
 F_j &=&  \left( \frac{4}{r_{j-\myhalf} ^3} \frac{p_{0,j}^{\inp} - p_{0,j-1}^{\inp}}{\dr} \right) (r^2 \ow)_{j-\myhalf}
- - \frac{g_{j-\myhalf}}{r_{j-\myhalf}^2 \Delta r} 
+ - \frac{g_{j-\myhalf}^\inp}{r_{j-\myhalf}^2 \Delta r} 
 \left[ \left( r^2 \etarho^{\inp} \right)_{j} - \left( r^2 \etarho^{\inp}  \right)_{j-1} \right] 
 \nonumber \\
 && - \left(  4 \pi G \rhozero^{\inp} \etarho^{\inp}   \right)_{j-\myhalf} \enskip .
 \end{eqnarray}
-Here,
-\begin{equation}
-g_{j-\myhalf} = \frac{G}{r_{j-\myhalf}^2} \sum_{k=1}^{j} \frac{4}{3} \pi  (r_{k-\myhalf}^3 - r_{k-\thalf}^3) \; \rho_{0,k-1}^{\inp} \enskip.
-\end{equation}
-
 We define the lower boundary condition, $ \dw = 0$ at $r=0,$ which
 corresponds to $j=1,$ by setting:
 \begin{eqnarray}
@@ -782,7 +776,7 @@ If we are using the volume discrepancy term, compute
 $\overline{p^{\inp}} = \overline{p(\rho,h,X_k)^n}$.
 \item For spherical geometry,\\
 {\bf Compute} {\boldmath $w_0$} {\bf Spherical}$[\overline{S^{\nph,\star}},\gammabar^n,
-\rhozero^n,p_0^n,\etarho^{n-\myhalf}] \rightarrow [w_0^{n+\myhalf,\star}]$.
+\rhozero^n,p_0^n,g^n,\etarho^{n-\myhalf}] \rightarrow [w_0^{n+\myhalf,\star}]$.
 \end{description}
 
 \item Define the base state velocity forcing using equation (38) from paper III,
@@ -1183,11 +1177,12 @@ Then define
 \end{equation}
 
 \item Define:
-\begin{equation}
-\gammabar^{\nph} = \frac{\gammabar^{n} + \gammabar^{n+1,\star}}{2}\enskip , ~~~
-\rhozero^{\nph} = \frac{\rhozero^{n} + \rhozero^{n+1,\star}}{2}\enskip , ~~~
-p_0^{\nph} = \frac{p_0^{n} + p_0^{n+1,\star}}{2}\enskip ,
-\end{equation}
+\begin{eqnarray}
+\gammabar^{\nph} = \frac{\gammabar^{n} + \gammabar^{n+1,\star}}{2}\enskip, \qquad
+\rhozero^{\nph} = \frac{\rhozero^{n} + \rhozero^{n+1,\star}}{2}\enskip, \nonumber \\
+p_0^{\nph} = \frac{p_0^{n} + p_0^{n+1,\star}}{2}\enskip, \qquad
+g^\nph = \frac{g^n + g^{n+1,\star}}{2}\enskip ,
+\end{eqnarray}
 with
 \begin{equation}
  \gammabar^{n+1,\star} = {\rm{\bf Avg}} 
@@ -1199,7 +1194,7 @@ with
 \begin{description}
 \item For planar geometry,\\
 {\bf Compute} {\boldmath $w_0$} {\bf Planar}$[\overline{S^{\nph}},
-\gammabar^{n+\myhalf},p_0^{n+\myhalf},\psi^{n+\myhalf,\star}]\rightarrow [w_0^{n+\myhalf}]$.
+\gammabar^{n+\myhalf},p_0^{n+\myhalf},g^{n+\myhalf},\psi^{n+\myhalf,\star}]\rightarrow [w_0^{n+\myhalf}]$.
 
 If we are using the volume discrepancy term, compute
 \begin{equation}
