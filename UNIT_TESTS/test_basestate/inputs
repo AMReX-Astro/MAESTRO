@@ -1,5 +1,7 @@
 &PROBIN
 
+ p0_update_type = 2
+
  anelastic_cutoff = 1.e-4
  base_cutoff_density = 1.e-4
 
