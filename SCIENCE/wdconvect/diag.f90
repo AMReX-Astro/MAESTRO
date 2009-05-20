@@ -111,8 +111,12 @@ contains
     real(kind=dp_t) :: vx_Tmax_level, vy_Tmax_level, vz_Tmax_level
     real(kind=dp_t) :: vx_Tmax,       vy_Tmax,       vz_Tmax
 
+    ! buffers
     real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(dm)
     real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
+
+    real(kind=dp_t) :: max_data_level(4), max_data_local(4)
+
 
     integer :: index_max
 
@@ -340,23 +344,27 @@ contains
        call parallel_reduce(nzones_level, nzones_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
-       call parallel_reduce(vr_max_level, vr_max_local, MPI_MAX, &
-                            proc = parallel_IOProcessorNode())
-
-       call parallel_reduce(enuc_max_level, enuc_max_local, MPI_MAX, &
-                            proc = parallel_IOProcessorNode())
-
        call parallel_reduce(kin_ener_level, kin_ener_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
        call parallel_reduce(int_ener_level, int_ener_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
-       call parallel_reduce(U_max_level, U_max_local, MPI_MAX, &
+       ! pack the quantities that we are taking the max of into a vector
+       ! to reduce communications
+       max_data_local(1) = vr_max_local
+       max_data_local(2) = enuc_max_local
+       max_data_local(3) = U_max_local
+       max_data_local(4) = Mach_max_local
+
+       call parallel_reduce(max_data_level, max_data_local, MPI_MAX, &
                             proc = parallel_IOProcessorNode())
 
-       call parallel_reduce(Mach_max_level, Mach_max_local, MPI_MAX, &
-                            proc = parallel_IOProcessorNode())
+       vr_max_level   = max_data_level(1)
+       enuc_max_level = max_data_level(2)
+       U_max_level    = max_data_level(3)
+       Mach_max_level = max_data_level(4)
+
 
        ! for T_max, we want to know where the hot spot is, so we do a gather on
        ! the temperature and find the index corresponding to the maxiumum.  We
