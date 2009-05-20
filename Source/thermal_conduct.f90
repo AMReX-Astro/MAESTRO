@@ -23,7 +23,7 @@ contains
   subroutine thermal_conduct(mla,dx,dt,s1,hcoeff1,Xkcoeff1,pcoeff1, &
                              hcoeff2,Xkcoeff2,pcoeff2,s2,p0_old,p0_new,the_bc_tower)
 
-    use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp
+    use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
     use macproject_module
     use network, only: nspec
     use rhoh_vs_t_module
@@ -349,11 +349,16 @@ contains
 
     end if
 
-    ! compute updated temperature
+    ! pass temperature through for seeding the temperature update eos call
+    do n=1,nlevs
+       call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,3)
+    end do
+
+    ! now update temperature
     if (use_tfromp) then
-       call makeTfromRhoP(s2,p0_new,s1,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoP(s2,p0_new,mla,the_bc_tower%bc_tower_array,dx)
     else
-       call makeTfromRhoH(s2,s1,mla,the_bc_tower%bc_tower_array)
+       call makeTfromRhoH(s2,mla,the_bc_tower%bc_tower_array)
     end if
 
     call destroy(bpt)

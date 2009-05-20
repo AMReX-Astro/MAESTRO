@@ -19,6 +19,8 @@ contains
     use heating_module
     use probin_module, only: use_tfromp
     use rhoh_vs_t_module
+    use geometry, only: nlevs
+    use variables, only: temp_comp
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: sold(:)
@@ -33,6 +35,8 @@ contains
     ! Local
     type(bl_prof_timer), save :: bpt
 
+    integer :: n
+
     call build(bpt, "react_state")
 
     ! get heating term
@@ -41,11 +45,16 @@ contains
     ! do the burning
     call burner_loop(mla,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dt,the_bc_level)
 
+    ! pass temperature through for seeding the temperature update eos call
+    do n=1,nlevs
+       call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,3)
+    end do
+
     ! now update temperature
     if (use_tfromp) then
-       call makeTfromRhoP(snew,p0,sold,mla,the_bc_level,dx)
+       call makeTfromRhoP(snew,p0,mla,the_bc_level,dx)
     else
-       call makeTfromRhoH(snew,sold,mla,the_bc_level)
+       call makeTfromRhoH(snew,mla,the_bc_level)
     end if
 
     call destroy(bpt)
@@ -172,10 +181,6 @@ contains
     real (kind = dp_t) :: rhowdot(nspec)
     real (kind = dp_t) :: rhoH
 
-    logical :: update_temp
-
-    update_temp = .false.
-
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
           
@@ -238,10 +243,6 @@ contains
     real (kind = dp_t) :: x_out(nspec)
     real (kind = dp_t) :: rhowdot(nspec)
     real (kind = dp_t) :: rhoH
-
-    logical :: update_temp
-
-    update_temp = .false.
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)

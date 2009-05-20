@@ -534,7 +534,7 @@ contains
     
   end subroutine makeHfromRhoT_edge_3d_sphr
   
-  subroutine makeTfromRhoH(state,sold,mla,the_bc_level)
+  subroutine makeTfromRhoH(state,mla,the_bc_level)
 
     use variables,             only: temp_comp
     use bl_prof_module
@@ -544,7 +544,6 @@ contains
     use geometry, only: dm, nlevs
 
     type(multifab)    , intent(inout) :: state(:)
-    type(multifab)    , intent(in   ) :: sold(:)
     type(ml_layout)   , intent(in   ) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
 
@@ -558,10 +557,6 @@ contains
     call build(bpt, "makeTfromRhoH")
 
     ng = state(1)%ng
-
-    do n=1,nlevs
-       call multifab_copy_c(state(n),temp_comp,sold(n),temp_comp,1,ng)
-    end do
 
     do n=1,nlevs
 
@@ -698,7 +693,7 @@ contains
 
   end subroutine makeTfromRhoH_3d
 
-  subroutine makeTfromRhoP(state,p0,sold,mla,the_bc_level,dx)
+  subroutine makeTfromRhoP(state,p0,mla,the_bc_level,dx)
 
     use variables,             only: temp_comp
     use bl_prof_module
@@ -709,7 +704,6 @@ contains
 
     type(multifab)    , intent(inout) :: state(:)
     real (kind = dp_t), intent(in   ) :: p0(:,0:)
-    type(multifab)    , intent(in   ) :: sold(:)
     type(ml_layout)   , intent(in   ) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t)   , intent(in   ) :: dx(:,:)
@@ -724,10 +718,6 @@ contains
     call build(bpt, "makeTfromRhoP")
 
     ng = state(1)%ng
-
-    do n=1,nlevs
-       call multifab_copy_c(state(n),temp_comp,sold(n),temp_comp,1,ng)
-    end do
 
     do n=1,nlevs
 
