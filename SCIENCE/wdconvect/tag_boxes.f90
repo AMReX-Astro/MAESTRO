@@ -19,6 +19,8 @@ contains
 
   subroutine tag_boxes(mf,tagboxes,lev)
 
+    use variables, ONLY: rho_comp
+
     type( multifab), intent(in   ) :: mf
     type(lmultifab), intent(inout) :: tagboxes
     integer        , intent(in   ) :: lev
@@ -37,9 +39,9 @@ contains
 
        select case (mf%dim)
        case (2)
-          call tag_boxes_2d(tp(:,:,1,1),sp(:,:,1,1),lo,ng,lev)
+          call tag_boxes_2d(tp(:,:,1,1),sp(:,:,1,rho_comp),lo,ng,lev)
        case  (3)
-          call tag_boxes_3d(tp(:,:,:,1),sp(:,:,:,1),lo,ng,lev)
+          call tag_boxes_3d(tp(:,:,:,1),sp(:,:,:,rho_comp),lo,ng,lev)
        end select
     end do
 
