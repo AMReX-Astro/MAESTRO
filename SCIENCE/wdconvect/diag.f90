@@ -12,12 +12,15 @@
 !
 !   wdconvect_temp_diag.out:          
 !          peak temperature
+!          x/y/z location of peak temperature
 !
 !   wdconvect_vel_diag.out:
 !          peak total velocity
+!          peak Mach number
 !          total kinetic energy
 !          gravitational potential energy
-
+!          total internal energy
+!
 
 module diag_module
 
@@ -86,18 +89,26 @@ contains
     real(kind=dp_t) :: vr(dm),    vr_level(dm),    vr_local(dm)
     real(kind=dp_t) :: vr_max,    vr_max_level,    vr_max_local
     real(kind=dp_t) :: rhovr(dm), rhovr_level(dm), rhovr_local(dm)
+
     real(kind=dp_t) :: mass,      mass_level,      mass_local
     real(kind=dp_t) :: nzones,    nzones_level,    nzones_local
+
     real(kind=dp_t) :: T_max,     T_max_level,     T_max_local
     real(kind=dp_t) :: enuc_max,  enuc_max_level,  enuc_max_local
+
     real(kind=dp_t) :: kin_ener,  kin_ener_level,  kin_ener_local
     real(kind=dp_t) :: int_ener,  int_ener_level,  int_ener_local
+
     real(kind=dp_t) :: U_max,     U_max_level,     U_max_local
     real(kind=dp_t) :: Mach_max,  Mach_max_level,  Mach_max_local
 
     real(kind=dp_t) :: xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local
     real(kind=dp_t) :: xloc_Tmax_level, yloc_Tmax_level, zloc_Tmax_level
     real(kind=dp_t) :: xloc_Tmax,       yloc_Tmax,       zloc_Tmax
+
+    real(kind=dp_t) :: vx_Tmax_local, vy_Tmax_local, vz_Tmax_local
+    real(kind=dp_t) :: vx_Tmax_level, vy_Tmax_level, vz_Tmax_level
+    real(kind=dp_t) :: vx_Tmax,       vy_Tmax,       vz_Tmax
 
     real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(dm)
     real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
@@ -168,24 +179,36 @@ contains
     !=========================================================================
     vr(:)    = ZERO
     rhovr(:) = ZERO
+
     mass     = ZERO
     nzones   = ZERO
+
     vr_max   = ZERO
+
     T_max    = ZERO
     enuc_max = ZERO
+
     kin_ener = ZERO
     int_ener = ZERO
+
     U_max    = ZERO
     Mach_max  = ZERO
+
     xloc_Tmax = ZERO
     yloc_Tmax = ZERO
     zloc_Tmax = ZERO
+
+    vx_Tmax = ZERO
+    vy_Tmax = ZERO
+    vz_Tmax = ZERO
+
 
     !=========================================================================
     ! loop over the levels and compute the global quantities
     !=========================================================================
     do n = 1, nlevs
 
+       ! initialize the local (processor's version) and level quantities to 0
        vr_level(:) = ZERO
        vr_local(:) = ZERO
        
@@ -226,6 +249,14 @@ contains
        xloc_Tmax_level = ZERO
        yloc_Tmax_level = ZERO
        zloc_Tmax_level = ZERO
+
+       vx_Tmax_local = ZERO
+       vy_Tmax_local = ZERO
+       vz_Tmax_local = ZERO
+
+       vx_Tmax_level = ZERO
+       vy_Tmax_level = ZERO
+       vz_Tmax_level = ZERO
        
 
        !----------------------------------------------------------------------
@@ -264,6 +295,7 @@ contains
                              vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
                              rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
                              T_max_local, xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local, &
+                             vx_Tmax_local, vy_Tmax_local, vz_Tmax_local, &
                              enuc_max_local, kin_ener_local, int_ener_local, &
                              U_max_local, Mach_max_local)
              else
@@ -281,6 +313,7 @@ contains
                              vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
                              rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
                              T_max_local, xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local, &
+                             vx_Tmax_local, vy_Tmax_local, vz_Tmax_local, &
                              enuc_max_local, kin_ener_local, int_ener_local, &
                              U_max_local, Mach_max_local, &
                              mp(:,:,:,1))
@@ -326,8 +359,9 @@ contains
 
        ! for T_max, we want to know where the hot spot is, so we do a gather on
        ! the temperature and find the index corresponding to the maxiumum.  We
-       ! then pack the coordinates into a local array and gather that to the 
-       ! I/O processor and pick the values corresponding to the maximum.
+       ! then pack the coordinates and velocities into a local array and gather 
+       ! that to the I/O processor and pick the values corresponding to the 
+       ! maximum.
        allocate(T_max_data(parallel_nprocs()))
        T_max_data_local(1) = T_max_local
 
@@ -337,20 +371,29 @@ contains
 
        index_max = maxloc(T_max_data, dim=1)
        
-       allocate(T_max_coords(dm*parallel_nprocs()))
+       ! T_max_coords will contain both the coordinate information and 
+       ! the velocity information, so there are 2*dm values on each proc
+       allocate(T_max_coords(2*dm*parallel_nprocs()))
        T_max_coords_local(1) = xloc_Tmax_local
        T_max_coords_local(2) = yloc_Tmax_local
        T_max_coords_local(3) = zloc_Tmax_local
+       T_max_coords_local(4) = vx_Tmax_local
+       T_max_coords_local(5) = vy_Tmax_local
+       T_max_coords_local(6) = vz_Tmax_local
        
-       call parallel_gather(T_max_coords_local, T_max_coords, dm, &
+       call parallel_gather(T_max_coords_local, T_max_coords, 2*dm, &
                             root = parallel_IOProcessorNode())
 
        
        T_max_level = T_max_data(index_max)
 
-       xloc_Tmax_level = T_max_coords(dm*(index_max-1)+1)
-       yloc_Tmax_level = T_max_coords(dm*(index_max-1)+2)
-       zloc_Tmax_level = T_max_coords(dm*(index_max-1)+3)
+       xloc_Tmax_level = T_max_coords(2*dm*(index_max-1)+1)
+       yloc_Tmax_level = T_max_coords(2*dm*(index_max-1)+2)
+       zloc_Tmax_level = T_max_coords(2*dm*(index_max-1)+3)
+       vx_Tmax_level   = T_max_coords(2*dm*(index_max-1)+4)
+       vy_Tmax_level   = T_max_coords(2*dm*(index_max-1)+5)
+       vz_Tmax_level   = T_max_coords(2*dm*(index_max-1)+6)
+
 
        deallocate(T_max_data)
        deallocate(T_max_coords)
@@ -371,9 +414,14 @@ contains
           ! if T_max_level is the new max, then copy the location as well
           if (T_max_level > T_max) then
              T_max = T_max_level
+
              xloc_Tmax = xloc_Tmax_level
              yloc_Tmax = yloc_Tmax_level
              zloc_Tmax = zloc_Tmax_level
+
+             vx_Tmax = vx_Tmax_level
+             vy_Tmax = vy_Tmax_level
+             vz_Tmax = vz_Tmax_level
           endif
 
        endif
@@ -436,6 +484,11 @@ contains
     !=========================================================================
     vr(:) = vr(:)/nzones
     vr_favre(:) = rhovr(:)/mass    ! note, the common dV normalization cancels
+
+    ! the volume we normalize with is that of a single coarse-level zone.
+    ! This is because the weight used in the loop over cells was with reference
+    ! to the coarse level
+
     mass = mass*dx(1,1)*dx(1,2)*dx(1,3)
     kin_ener = kin_ener*dx(1,1)*dx(1,2)*dx(1,3)
     int_ener = int_ener*dx(1,1)*dx(1,2)*dx(1,3)
@@ -501,7 +554,8 @@ contains
 
           write (un2, *) " "
           write (un2, 999) trim(job_name)
-          write (un2,1001) "time", "max{T}", 'x(max{T})', 'y(max{T})', 'z(max{T})'
+          write (un2,1001) "time", "max{T}", 'x(max{T})', 'y(max{T})', 'z(max{T})', &
+               'vx(max{T})', 'vy(max{T})', 'vz(max{T})'
 
           write (un3, *) " "
           write (un3, 999) trim(job_name)
@@ -519,7 +573,7 @@ contains
             sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2), vr_max, &
             vr_favre(1), vr_favre(2), vr_favre(3), mass
        
-       write (un2,1000) time, T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax
+       write (un2,1000) time, T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax, vx_Tmax, vy_Tmax, vz_Tmax
 
        write (un3,1000) time, enuc_max
 
@@ -561,6 +615,7 @@ contains
                      vr_x,vr_y,vr_z,vr_max, &
                      rhovr_x,rhovr_y,rhovr_z,mass, &
                      T_max,xloc_Tmax,yloc_Tmax,zloc_Tmax, &
+                     vx_Tmax, vy_Tmax, vz_Tmax, &
                      enuc_max,kin_ener,int_ener, &
                      U_max,Mach_max, &
                      mask)
@@ -586,6 +641,7 @@ contains
     real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max
     real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, mass, nzones
     real (kind=dp_t), intent(inout) :: T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax
+    real (kind=dp_t), intent(inout) :: vx_Tmax, vy_Tmax, vz_Tmax
     real (kind=dp_t), intent(inout) :: enuc_max, kin_ener, int_ener
     real (kind=dp_t), intent(inout) :: U_max, Mach_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
@@ -650,12 +706,15 @@ contains
                 nzones = nzones + weight
 
 
-                ! max T and location
+                ! max T, location, and velocity at that location (including w0)
                 if (s(i,j,k,temp_comp) > T_max) then
                    T_max = s(i,j,k,temp_comp)
                    xloc_Tmax = x
                    yloc_Tmax = y
                    zloc_Tmax = z
+                   vx_Tmax = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
+                   vy_Tmax = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
+                   vz_Tmax = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
                 endif
 
 
