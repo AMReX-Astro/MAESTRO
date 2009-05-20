@@ -13,6 +13,7 @@
 !   wdconvect_temp_diag.out:          
 !          peak temperature
 !          x/y/z location of peak temperature
+!          velocity components at location of peak temperature
 !
 !   wdconvect_vel_diag.out:
 !          peak total velocity
