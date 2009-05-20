@@ -91,7 +91,9 @@ contains
     real(kind=dp_t) :: T_max,     T_max_level,     T_max_local
     real(kind=dp_t) :: enuc_max,  enuc_max_level,  enuc_max_local
     real(kind=dp_t) :: kin_ener,  kin_ener_level,  kin_ener_local
+    real(kind=dp_t) :: int_ener,  int_ener_level,  int_ener_local
     real(kind=dp_t) :: U_max,     U_max_level,     U_max_local
+    real(kind=dp_t) :: Mach_max,  Mach_max_level,  Mach_max_local
 
     real(kind=dp_t) :: xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local
     real(kind=dp_t) :: xloc_Tmax_level, yloc_Tmax_level, zloc_Tmax_level
@@ -172,7 +174,9 @@ contains
     T_max    = ZERO
     enuc_max = ZERO
     kin_ener = ZERO
+    int_ener = ZERO
     U_max    = ZERO
+    Mach_max  = ZERO
     xloc_Tmax = ZERO
     yloc_Tmax = ZERO
     zloc_Tmax = ZERO
@@ -206,8 +210,14 @@ contains
        kin_ener_level = ZERO
        kin_ener_local = ZERO
 
+       int_ener_level = ZERO
+       int_ener_local = ZERO
+
        U_max_level = ZERO
        U_max_local = ZERO
+
+       Mach_max_level = ZERO
+       Mach_max_local = ZERO
 
        xloc_Tmax_local = ZERO
        yloc_Tmax_local = ZERO
@@ -254,7 +264,8 @@ contains
                              vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
                              rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
                              T_max_local, xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local, &
-                             enuc_max_local, kin_ener_local, U_max_local)
+                             enuc_max_local, kin_ener_local, int_ener_local, &
+                             U_max_local, Mach_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_3d(n,time,dt,dx(n,:), &
@@ -270,7 +281,8 @@ contains
                              vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
                              rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
                              T_max_local, xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local, &
-                             enuc_max_local, kin_ener_local, U_max_local, &
+                             enuc_max_local, kin_ener_local, int_ener_local, &
+                             U_max_local, Mach_max_local, &
                              mp(:,:,:,1))
              end if
           end select
@@ -303,7 +315,13 @@ contains
        call parallel_reduce(kin_ener_level, kin_ener_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
+       call parallel_reduce(int_ener_level, int_ener_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
+
        call parallel_reduce(U_max_level, U_max_local, MPI_MAX, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(Mach_max_level, Mach_max_local, MPI_MAX, &
                             proc = parallel_IOProcessorNode())
 
        ! for T_max, we want to know where the hot spot is, so we do a gather on
@@ -346,7 +364,9 @@ contains
           vr_max   = max(vr_max,   vr_max_level)
           enuc_max = max(enuc_max, enuc_max_level)     
           kin_ener = kin_ener + kin_ener_level
+          int_ener = int_ener + int_ener_level
           U_max    = max(U_max,    U_max_level)
+          Mach_max = max(Mach_max, Mach_max_level)
           
           ! if T_max_level is the new max, then copy the location as well
           if (T_max_level > T_max) then
@@ -418,6 +438,7 @@ contains
     vr_favre(:) = rhovr(:)/mass    ! note, the common dV normalization cancels
     mass = mass*dx(1,1)*dx(1,2)*dx(1,3)
     kin_ener = kin_ener*dx(1,1)*dx(1,2)*dx(1,3)
+    int_ener = int_ener*dx(1,1)*dx(1,2)*dx(1,3)
 
 
     !=========================================================================
@@ -488,7 +509,7 @@ contains
 
           write (un4, *) " "
           write (un4, 999) trim(job_name)
-          write (un4,1001) "time", "max{|U + w0|}", "tot. kin. energy", "grav. pot. energy"
+          write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", "tot. kin. energy", "grav. pot. energy", "tot. int. energy"
 
           firstCall = .false.
        endif
@@ -502,7 +523,7 @@ contains
 
        write (un3,1000) time, enuc_max
 
-       write (un4,1000) time, U_max, kin_ener, grav_ener
+       write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener
 
        close(un)
        close(un2)
@@ -540,7 +561,8 @@ contains
                      vr_x,vr_y,vr_z,vr_max, &
                      rhovr_x,rhovr_y,rhovr_z,mass, &
                      T_max,xloc_Tmax,yloc_Tmax,zloc_Tmax, &
-                     enuc_max,kin_ener,U_max, &
+                     enuc_max,kin_ener,int_ener, &
+                     U_max,Mach_max, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
@@ -548,6 +570,7 @@ contains
     use network, only: nspec
     use geometry, only: spherical
     use probin_module, only: base_cutoff_density, prob_lo
+    use eos_module
 
     integer,          intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
     real (kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:  ,lo(2)-ng_s:  ,lo(3)-ng_s:,:)
@@ -561,9 +584,10 @@ contains
     real (kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n:  ,lo(2)-ng_n:  ,lo(3)-ng_n:,:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
     real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max
-    real (kind=dp_t), intent(inout) :: T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax
-    real (kind=dp_t), intent(inout) :: enuc_max, kin_ener, U_max
     real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, mass, nzones
+    real (kind=dp_t), intent(inout) :: T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax
+    real (kind=dp_t), intent(inout) :: enuc_max, kin_ener, int_ener
+    real (kind=dp_t), intent(inout) :: U_max, Mach_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
@@ -572,6 +596,8 @@ contains
     logical            :: cell_valid
     real (kind=dp_t)   :: x, y, z
 
+    ! weight is the factor by which the volume of a cell at the current level 
+    ! relates to the volume of a cell at the coarsest level of refinement.
     weight = 1.d0 / 8.d0**(n-1)
 
     if (.not. spherical == 1) then
@@ -594,14 +620,20 @@ contains
 
              if (cell_valid .and. s(i,j,k,rho_comp) > base_cutoff_density) then
                    
+
+                ! velr is the projection of the velocity (including w0) onto 
+                ! the radial unit vector 
                 velr = u(i,j,k,1)*normal(i,j,k,1) + &
                        u(i,j,k,2)*normal(i,j,k,2) + &
                        u(i,j,k,3)*normal(i,j,k,3) + w0r(i,j,k)
 
+                ! vel is the magnitude of the velocity, including w0
                 vel = sqrt( (u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))**2 + &
                             (u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))**2 + &
                             (u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))**2)
                 
+
+                ! radial velocity diagnostics
                 vr_max = max(vr_max,abs(velr))
                 
                 vr_x = vr_x + weight*velr*normal(i,j,k,1)
@@ -612,9 +644,13 @@ contains
                 rhovr_y = rhovr_y + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,2)
                 rhovr_z = rhovr_z + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,3)
                 
+
+                ! normalization quantities
                 mass = mass + weight*s(i,j,k,rho_comp)
                 nzones = nzones + weight
 
+
+                ! max T and location
                 if (s(i,j,k,temp_comp) > T_max) then
                    T_max = s(i,j,k,temp_comp)
                    xloc_Tmax = x
@@ -622,11 +658,36 @@ contains
                    zloc_Tmax = z
                 endif
 
+
+                ! max enuc
                 enuc_max = max(enuc_max,rho_Hnuc(i,j,k)/s(i,j,k,rho_comp))
 
-                kin_ener = kin_ener + weight*s(i,j,k,rho_comp)*vel**2
 
+                ! call the EOS to get the sound speed and internal energy
+                temp_eos(1) = s(i,j,k,temp_comp)
+                den_eos(1)  = s(i,j,k,rho_comp)
+                xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+                call eos(eos_input_rt, den_eos, temp_eos, &
+                         npts, nspec, &
+                         xn_eos, &
+                         p_eos, h_eos, e_eos, &
+                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                         dpdX_eos, dhdX_eos, &
+                         gam1_eos, cs_eos, s_eos, &
+                         dsdt_eos, dsdr_eos, &
+                         do_diag)
+
+
+                ! kinetic and internal energies
+                kin_ener = kin_ener + weight*s(i,j,k,rho_comp)*vel**2
+                int_ener = int_ener + weight*s(i,j,k,rho_comp)*e_eos(1)               
+
+
+                ! max vel and Mach number
                 U_max = max(U_max,vel)
+                Mach_max = max(Mach_max,vel/cs_eos(1))
 
              endif
 
