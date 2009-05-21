@@ -2,7 +2,7 @@
 ! 
 ! currently, there are 4 output files:
 !
-!   wdconvect_enuc_diag.out:
+!   wdconvect_enuc_diag.out:t
 !          peak nuc energy / g / s
 !
 !   wdconvect_radvel_diag.out:
@@ -111,11 +111,22 @@ contains
     real(kind=dp_t) :: vx_Tmax_level, vy_Tmax_level, vz_Tmax_level
     real(kind=dp_t) :: vx_Tmax,       vy_Tmax,       vz_Tmax
 
+    real(kind=dp_t) :: xloc_enucmax_local, yloc_enucmax_local, zloc_enucmax_local
+    real(kind=dp_t) :: xloc_enucmax_level, yloc_enucmax_level, zloc_enucmax_level
+    real(kind=dp_t) :: xloc_enucmax,       yloc_enucmax,       zloc_enucmax
+
+    real(kind=dp_t) :: vx_enucmax_local, vy_enucmax_local, vz_enucmax_local
+    real(kind=dp_t) :: vx_enucmax_level, vy_enucmax_level, vz_enucmax_level
+    real(kind=dp_t) :: vx_enucmax,       vy_enucmax,       vz_enucmax
+
     ! buffers
-    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(dm)
+    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(2*dm)
     real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
 
-    real(kind=dp_t) :: max_data_level(4), max_data_local(4)
+    real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(2*dm)
+    real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
+
+    real(kind=dp_t) :: max_data_level(3), max_data_local(3)
     real(kind=dp_t) :: sum_data_level(2*dm+4), sum_data_local(2*dm+4)
 
     integer :: index_max
@@ -207,6 +218,14 @@ contains
     vy_Tmax = ZERO
     vz_Tmax = ZERO
 
+    xloc_enucmax = ZERO
+    yloc_enucmax = ZERO
+    zloc_enucmax = ZERO
+
+    vx_enucmax = ZERO
+    vy_enucmax = ZERO
+    vz_enucmax = ZERO
+
 
     !=========================================================================
     ! loop over the levels and compute the global quantities
@@ -262,6 +281,22 @@ contains
        vx_Tmax_level = ZERO
        vy_Tmax_level = ZERO
        vz_Tmax_level = ZERO
+
+       xloc_enucmax_local = ZERO
+       yloc_enucmax_local = ZERO
+       zloc_enucmax_local = ZERO
+
+       xloc_enucmax_level = ZERO
+       yloc_enucmax_level = ZERO
+       zloc_enucmax_level = ZERO
+
+       vx_enucmax_local = ZERO
+       vy_enucmax_local = ZERO
+       vz_enucmax_local = ZERO
+
+       vx_enucmax_level = ZERO
+       vy_enucmax_level = ZERO
+       vz_enucmax_level = ZERO
        
 
        !----------------------------------------------------------------------
@@ -301,7 +336,9 @@ contains
                              rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
                              T_max_local, xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local, &
                              vx_Tmax_local, vy_Tmax_local, vz_Tmax_local, &
-                             enuc_max_local, kin_ener_local, int_ener_local, &
+                             enuc_max_local, xloc_enucmax_local, yloc_enucmax_local, zloc_enucmax_local, &
+                             vx_enucmax_local, vy_enucmax_local, vz_enucmax_local, &
+                             kin_ener_local, int_ener_local, &
                              U_max_local, Mach_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
@@ -319,7 +356,9 @@ contains
                              rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
                              T_max_local, xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local, &
                              vx_Tmax_local, vy_Tmax_local, vz_Tmax_local, &
-                             enuc_max_local, kin_ener_local, int_ener_local, &
+                             enuc_max_local, xloc_enucmax_local, yloc_enucmax_local, zloc_enucmax_local, &
+                             vx_enucmax_local, vy_enucmax_local, vz_enucmax_local, &
+                             kin_ener_local, int_ener_local, &
                              U_max_local, Mach_max_local, &
                              mp(:,:,:,1))
              end if
@@ -355,17 +394,15 @@ contains
        ! pack the quantities that we are taking the max of into a vector
        ! to reduce communication
        max_data_local(1) = vr_max_local
-       max_data_local(2) = enuc_max_local
-       max_data_local(3) = U_max_local
-       max_data_local(4) = Mach_max_local
+       max_data_local(2) = U_max_local
+       max_data_local(3) = Mach_max_local
 
        call parallel_reduce(max_data_level, max_data_local, MPI_MAX, &
                             proc = parallel_IOProcessorNode())
 
        vr_max_level   = max_data_level(1)
-       enuc_max_level = max_data_level(2)
-       U_max_level    = max_data_level(3)
-       Mach_max_level = max_data_level(4)
+       U_max_level    = max_data_level(2)
+       Mach_max_level = max_data_level(3)
 
 
        ! for T_max, we want to know where the hot spot is, so we do a gather on
@@ -409,16 +446,58 @@ contains
        deallocate(T_max_data)
        deallocate(T_max_coords)
 
+
+       ! for enuc_max, we also want to know where the hot spot is, so we do 
+       ! the same gather procedure as with the temperature (above).
+       allocate(enuc_max_data(parallel_nprocs()))
+       enuc_max_data_local(1) = enuc_max_local
+
+       call parallel_gather(enuc_max_data_local, enuc_max_data, 1, &
+                            root = parallel_IOProcessorNode())
+
+
+       index_max = maxloc(enuc_max_data, dim=1)
+       
+       ! enuc_max_coords will contain both the coordinate information and 
+       ! the velocity information, so there are 2*dm values on each proc
+       allocate(enuc_max_coords(2*dm*parallel_nprocs()))
+       enuc_max_coords_local(1) = xloc_enucmax_local
+       enuc_max_coords_local(2) = yloc_enucmax_local
+       enuc_max_coords_local(3) = zloc_enucmax_local
+       enuc_max_coords_local(4) = vx_enucmax_local
+       enuc_max_coords_local(5) = vy_enucmax_local
+       enuc_max_coords_local(6) = vz_enucmax_local
+       
+       call parallel_gather(enuc_max_coords_local, enuc_max_coords, 2*dm, &
+                            root = parallel_IOProcessorNode())
+
+       
+       enuc_max_level = enuc_max_data(index_max)
+
+       xloc_enucmax_level = enuc_max_coords(2*dm*(index_max-1)+1)
+       yloc_enucmax_level = enuc_max_coords(2*dm*(index_max-1)+2)
+       zloc_enucmax_level = enuc_max_coords(2*dm*(index_max-1)+3)
+       vx_enucmax_level   = enuc_max_coords(2*dm*(index_max-1)+4)
+       vy_enucmax_level   = enuc_max_coords(2*dm*(index_max-1)+5)
+       vz_enucmax_level   = enuc_max_coords(2*dm*(index_max-1)+6)
+
+
+       deallocate(enuc_max_data)
+       deallocate(enuc_max_coords)
+
        ! reduce the current level's data with the global data
        if (parallel_IOProcessor()) then
           vr       = vr     + vr_level
           rhovr    = rhovr  + rhovr_level
+
           mass     = mass   + mass_level
           nzones   = nzones + nzones_level
+
           vr_max   = max(vr_max,   vr_max_level)
-          enuc_max = max(enuc_max, enuc_max_level)     
+
           kin_ener = kin_ener + kin_ener_level
           int_ener = int_ener + int_ener_level
+
           U_max    = max(U_max,    U_max_level)
           Mach_max = max(Mach_max, Mach_max_level)
           
@@ -433,6 +512,19 @@ contains
              vx_Tmax = vx_Tmax_level
              vy_Tmax = vy_Tmax_level
              vz_Tmax = vz_Tmax_level
+          endif
+
+          ! if enuc_max_level is the new max, then copy the location as well
+          if (enuc_max_level > enuc_max) then
+             enuc_max = enuc_max_level
+
+             xloc_enucmax = xloc_enucmax_level
+             yloc_enucmax = yloc_enucmax_level
+             zloc_enucmax = zloc_enucmax_level
+
+             vx_enucmax = vx_enucmax_level
+             vy_enucmax = vy_enucmax_level
+             vz_enucmax = vz_enucmax_level
           endif
 
        endif
@@ -565,12 +657,13 @@ contains
 
           write (un2, *) " "
           write (un2, 999) trim(job_name)
-          write (un2,1001) "time", "max{T}", 'x(max{T})', 'y(max{T})', 'z(max{T})', &
-               'vx(max{T})', 'vy(max{T})', 'vz(max{T})'
+          write (un2,1001) "time", "max{T}", "x(max{T})", "y(max{T})", "z(max{T})", &
+               "vx(max{T})", "vy(max{T})", "vz(max{T})"
 
           write (un3, *) " "
           write (un3, 999) trim(job_name)
-          write (un3,1001) "time", "max{enuc}"
+          write (un3,1001) "time", "max{enuc}", "x(max{enuc})", "y(max{enuc})", "z(max{enuc})", &
+               "vx(max{enuc})", "vy(max{enuc})", "vz(max{enuc})"
 
           write (un4, *) " "
           write (un4, 999) trim(job_name)
@@ -586,7 +679,7 @@ contains
        
        write (un2,1000) time, T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax, vx_Tmax, vy_Tmax, vz_Tmax
 
-       write (un3,1000) time, enuc_max
+       write (un3,1000) time, enuc_max, xloc_enucmax, yloc_enucmax, zloc_enucmax, vx_enucmax, vy_enucmax, vz_enucmax
 
        write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener
 
@@ -627,7 +720,9 @@ contains
                      rhovr_x,rhovr_y,rhovr_z,mass, &
                      T_max,xloc_Tmax,yloc_Tmax,zloc_Tmax, &
                      vx_Tmax, vy_Tmax, vz_Tmax, &
-                     enuc_max,kin_ener,int_ener, &
+                     enuc_max,xloc_enucmax,yloc_enucmax,zloc_enucmax, &
+                     vx_enucmax, vy_enucmax, vz_enucmax, &
+                     kin_ener,int_ener, &
                      U_max,Mach_max, &
                      mask)
 
@@ -653,7 +748,9 @@ contains
     real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, mass, nzones
     real (kind=dp_t), intent(inout) :: T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax
     real (kind=dp_t), intent(inout) :: vx_Tmax, vy_Tmax, vz_Tmax
-    real (kind=dp_t), intent(inout) :: enuc_max, kin_ener, int_ener
+    real (kind=dp_t), intent(inout) :: enuc_max, xloc_enucmax, yloc_enucmax, zloc_enucmax
+    real (kind=dp_t), intent(inout) :: vx_enucmax, vy_enucmax, vz_enucmax
+    real (kind=dp_t), intent(inout) :: kin_ener, int_ener
     real (kind=dp_t), intent(inout) :: U_max, Mach_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
@@ -730,7 +827,15 @@ contains
 
 
                 ! max enuc
-                enuc_max = max(enuc_max,rho_Hnuc(i,j,k)/s(i,j,k,rho_comp))
+                if (rho_Hnuc(i,j,k)/s(i,j,k,rho_comp) > enuc_max) then
+                   enuc_max = rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
+                   xloc_enucmax = x
+                   yloc_enucmax = y
+                   zloc_enucmax = z
+                   vx_enucmax = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
+                   vy_enucmax = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
+                   vz_enucmax = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
+                endif
 
 
                 ! call the EOS to get the sound speed and internal energy
