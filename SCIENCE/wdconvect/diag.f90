@@ -116,7 +116,7 @@ contains
     real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
 
     real(kind=dp_t) :: max_data_level(4), max_data_local(4)
-
+    real(kind=dp_t) :: sum_data_level(2*dm+4), sum_data_local(2*dm+4)
 
     integer :: index_max
 
@@ -332,26 +332,28 @@ contains
 
        ! NOTE: only the I/O Processor will have the correct reduced value
 
-       call parallel_reduce(vr_level, vr_local, MPI_SUM, &
+       ! pack the quantities that we are summing into a vector to reduce
+       ! communication
+       sum_data_local(1:dm)      = vr_local(:)
+       sum_data_local(dm+1:2*dm) = rhovr_local(:)
+       sum_data_local(2*dm+1)    = mass_local
+       sum_data_local(2*dm+2)    = nzones_local
+       sum_data_local(2*dm+3)    = kin_ener_local
+       sum_data_local(2*dm+4)    = int_ener_local
+
+       call parallel_reduce(sum_data_level, sum_data_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
-       call parallel_reduce(rhovr_level, rhovr_local, MPI_SUM, &
-                            proc = parallel_IOProcessorNode())
+       vr_level(:)    = sum_data_level(1:dm)
+       rhovr_level(:) = sum_data_level(dm+1:2*dm)
+       mass_level     = sum_data_level(2*dm+1)
+       nzones_level   = sum_data_level(2*dm+2)
+       kin_ener_level = sum_data_level(2*dm+3)
+       int_ener_level = sum_data_level(2*dm+4)
 
-       call parallel_reduce(mass_level, mass_local, MPI_SUM, &
-                            proc = parallel_IOProcessorNode())
-
-       call parallel_reduce(nzones_level, nzones_local, MPI_SUM, &
-                            proc = parallel_IOProcessorNode())
-
-       call parallel_reduce(kin_ener_level, kin_ener_local, MPI_SUM, &
-                            proc = parallel_IOProcessorNode())
-
-       call parallel_reduce(int_ener_level, int_ener_local, MPI_SUM, &
-                            proc = parallel_IOProcessorNode())
 
        ! pack the quantities that we are taking the max of into a vector
-       ! to reduce communications
+       ! to reduce communication
        max_data_local(1) = vr_max_local
        max_data_local(2) = enuc_max_local
        max_data_local(3) = U_max_local
