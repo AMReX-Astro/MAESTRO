@@ -50,11 +50,24 @@ contains
     real(kind=dp_t), pointer::  up(:,:,:,:)
     real(kind=dp_t), pointer::  np(:,:,:,:)
 
-    real(kind=dp_t) :: T_max, T_max_local
-    real(kind=dp_t) :: enuc_max, enuc_max_local
+    real(kind=dp_t) :: T_max, T_max_local, T_max_level
+    real(kind=dp_t) :: x_Tmax_local, y_Tmax_local, z_Tmax_local
+    real(kind=dp_t) :: x_Tmax_level, y_Tmax_level, z_Tmax_level
+    real(kind=dp_t) :: x_Tmax, y_Tmax, z_Tmax
+    ! buffers
+    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(dm)
+    real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
+
+    real(kind=dp_t) :: enuc_max, enuc_max_local, enuc_max_level
+    real(kind=dp_t) :: x_enucmax_local, y_enucmax_local, z_enucmax_local
+    real(kind=dp_t) :: x_enucmax_level, y_enucmax_level, z_enucmax_level
+    real(kind=dp_t) :: x_enucmax, y_enucmax, z_enucmax
+    ! buffers
+    real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(dm)
+    real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
 
     integer :: lo(dm),hi(dm),ng_s,ng_u,ng_n,ng_rhn,ng_rhe
-    integer :: i,n
+    integer :: i,n, index_max
     integer :: un, un2
     logical :: lexist
 
@@ -74,13 +87,39 @@ contains
     ! note that T_max corresponds to the maximum temperature in the 
     ! helium layer defined by X(He4) >= he_tol 
 
-    T_max          = ZERO
-    enuc_max       = ZERO
+    T_max       = ZERO
+
+    x_Tmax      = ZERO
+    y_Tmax      = ZERO
+    z_Tmax      = ZERO
+
+    enuc_max    = ZERO
+
+    x_enucmax   = ZERO
+    y_enucmax   = ZERO
+    z_enucmax   = ZERO
 
     do n = 1, nlevs
 
-       T_max_local    = ZERO
-       enuc_max_local = ZERO
+       T_max_local     = ZERO
+       T_max_level     = ZERO
+
+       x_Tmax_local = ZERO
+       y_Tmax_local = ZERO
+       z_Tmax_local = ZERO
+       x_Tmax_level = ZERO
+       y_Tmax_level = ZERO
+       z_Tmax_level = ZERO       
+
+       enuc_max_local     = ZERO
+       enuc_max_level     = ZERO
+
+       x_enucmax_local = ZERO
+       y_enucmax_local = ZERO
+       z_enucmax_local = ZERO
+       x_enucmax_level = ZERO
+       y_enucmax_level = ZERO
+       z_enucmax_level = ZERO
 
        do i = 1, s(n)%nboxes
 
@@ -104,7 +143,10 @@ contains
                           up(:,:,1,:),ng_u, &
                           w0(n,:), &
                           lo,hi, &
-                          T_max_local, enuc_max_local)
+                          T_max_local, &
+                          x_Tmax_local, y_Tmax_local, &
+                          enuc_max_local, &
+                          x_enucmax_local, y_enucmax_local)
           case (3)
              np => dataptr(normal(n) , i)
              call diag_3d(time,dt,dx(n,:), &
@@ -117,15 +159,88 @@ contains
                           w0(n,:), &
                           np(:,:,:,:),ng_n, &
                           lo,hi, &
-                          T_max_local, enuc_max_local)
+                          T_max_local, &
+                          x_Tmax_local, y_Tmax_local, z_Tmax_local, &
+                          enuc_max_local, &
+                          x_enucmax_local, y_enucmax_local, z_enucmax_local)
           end select
        end do
 
-       call parallel_reduce(T_max, T_max_local, MPI_MAX, &
-                            proc = parallel_IOProcessorNode())
+       ! get the maximum temperature and its location
+       ! gather all the T_max data into an array; find the index of the maximum
+       allocate(T_max_data(parallel_nprocs()))
+       T_max_data_local(1) = T_max_local
 
-       call parallel_reduce(enuc_max, enuc_max_local, MPI_MAX, &
-                            proc = parallel_IOProcessorNode())
+       call parallel_gather(T_max_data_local, T_max_data, 1, &
+                            root = parallel_IOProcessorNode())
+       
+       index_max = maxloc(T_max_data, dim=1)
+
+       ! gather all the T_max_coords into an array and use index_max to 
+       ! get the correct location
+       allocate(T_max_coords(dm*parallel_nprocs()))
+       T_max_coords_local(1) = x_Tmax_local
+       T_max_coords_local(2) = y_Tmax_local
+       if (dm > 2) T_max_coords_local(3) = z_Tmax_local
+
+       call parallel_gather(T_max_coords_local , T_max_coords, dm, &
+                            root = parallel_IOProcessorNode())
+
+       T_max_level = T_max_data(index_max)
+
+       x_Tmax_level = T_max_coords(dm*(index_max-1) + 1)
+       y_Tmax_level = T_max_coords(dm*(index_max-1) + 2)
+       if (dm > 2) z_Tmax_level = T_max_coords(dm*(index_max-1) + 3)
+
+       deallocate(T_max_data, T_max_coords)
+
+       ! get the maximum enuc and its location
+       allocate(enuc_max_data(parallel_nprocs()))
+       enuc_max_data_local(1) = enuc_max_local
+
+       call parallel_gather(enuc_max_data_local, enuc_max_data, 1, &
+                            root = parallel_IOProcessorNode())
+
+       index_max = maxloc(enuc_max_data, dim=1)
+
+       allocate(enuc_max_coords(dm*parallel_nprocs()))
+       enuc_max_coords_local(1) = x_enucmax_local
+       enuc_max_coords_local(2) = y_enucmax_local
+       if (dm > 2) enuc_max_coords_local(3) = z_enucmax_local
+
+       call parallel_gather(enuc_max_coords_local, enuc_max_coords, dm, &
+                            root = parallel_IOProcessorNode())
+
+       enuc_max_level = enuc_max_data(index_max)
+
+       x_enucmax_level = enuc_max_coords(dm*(index_max - 1) + 1)
+       y_enucmax_level = enuc_max_coords(dm*(index_max - 1) + 2)
+       if (dm > 2) z_enucmax_level = enuc_max_coords(dm*(index_max - 1) + 3)
+
+       deallocate(enuc_max_data, enuc_max_coords)
+
+       ! reduce the current level's data with the global data
+       if (parallel_IOProcessor()) then
+
+          if (T_max_level > T_max) then
+             T_max = T_max_level
+
+             x_Tmax = x_Tmax_level
+             y_Tmax = y_Tmax_level
+             if (dm > 2) z_Tmax = z_Tmax_level
+
+          endif
+
+          if (enuc_max_level > enuc_max) then
+             enuc_max = enuc_max_level
+
+             x_enucmax = x_enucmax_level
+             y_enucmax = y_enucmax_level
+             if (dm > 2) z_enucmax = z_enucmax_level
+
+          endif
+
+       endif
 
     end do
 
@@ -157,15 +272,25 @@ contains
 
        ! print the headers
        if(firstCall) then
-          write(un , 1001) "time", "max{T}"
-          write(un2, 1001) "time", "max{enuc}"
+          if (dm > 2) then
+             write(un , 1001) "time", "max{T}", "x_loc", "y_loc", "z_loc"
+             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc", "z_loc"
+          else
+             write(un , 1001) "time", "max{T}", "x_loc", "y_loc"
+             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc"
+          endif
 
           firstCall = .false.
        endif
 
        ! print the data
-       write(un , 1000) time, T_max
-       write(un2, 1000) time, enuc_max
+       if (dm > 2) then
+          write(un , 1000) time, T_max, x_Tmax, y_Tmax, z_Tmax
+          write(un2, 1000) time, enuc_max, x_enucmax, y_enucmax, z_enucmax
+       else
+          write(un , 1000) time, T_max, x_Tmax, y_Tmax
+          write(un2, 1000) time, enuc_max, x_enucmax, y_enucmax
+       endif
 
        close(un )
        close(un2)
@@ -183,11 +308,15 @@ contains
                      u,ng_u, &
                      w0, &
                      lo,hi, &
-                     T_max, enuc_max)
+                     T_max, &
+                     x_Tmax, y_Tmax, &
+                     enuc_max, &
+                     x_enucmax, y_enucmax)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
-    use probin_module, only: diag_define_he_layer
+    use probin_module, only: diag_define_he_layer, prob_lo
+    use bl_constants_module, only: HALF
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
@@ -199,18 +328,45 @@ contains
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
+    real (kind=dp_t), intent(inout) :: x_Tmax, y_Tmax
+    real (kind=dp_t), intent(inout) :: x_enucmax, y_enucmax
 
     !     Local variables
     integer                     :: i, j
+    real (kind=dp_t) :: x, y 
+    real (kind=dp_t) :: enuc_local
 
     do j = lo(2), hi(2)
+       y = prob_lo(2) + (dble(j) + HALF) * dx(2)
+
        do i = lo(1), hi(1)
+          x = prob_lo(1) + (dble(i) + HALF) * dx(1)
 
+          ! temperature diagnostic
           ! check to see if we are in the helium layer
-          ! if we are, then get T_max
-          if (s(i,j,spec_comp) .ge. diag_define_he_layer) T_max = max(T_max,s(i,j,temp_comp))
+          ! if we are, then get T_max and its loc
+          if (s(i,j,spec_comp) .ge. diag_define_he_layer) then
 
-          enuc_max = max(enuc_max,rho_Hnuc(i,j)/s(i,j,rho_comp))
+             if (s(i,j,temp_comp) > T_max) then
+                
+                T_max = s(i,j,temp_comp)
+                
+                x_Tmax = x
+                y_Tmax = y
+
+             endif
+          endif
+
+          ! enuc diagnostic
+          enuc_local = rho_Hnuc(i,j)/s(i,j,rho_comp)
+          if (enuc_local > enuc_max) then
+
+             enuc_max = enuc_local
+             
+             x_enucmax = x
+             y_enucmax = y
+
+          endif
 
        enddo
     enddo
@@ -222,11 +378,16 @@ contains
                      rho_Hnuc,ng_rhn, &
                      rho_Hext,ng_rhe, &
                      rho0,rhoh0,p0,tempbar,gamma1bar, &
-                     u,ng_u,w0,normal,ng_n,lo,hi,T_max,enuc_max)
+                     u,ng_u,w0,normal,ng_n,lo,hi, &
+                     T_max, &
+                     x_Tmax, y_Tmax, z_Tmax, &
+                     enuc_max, &
+                     x_enucmax, y_enucmax, z_enucmax)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
-    use probin_module, only: diag_define_he_layer
+    use bl_constants_module, only: HALF
+    use probin_module, only: diag_define_he_layer, prob_lo
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n, ng_rhn, ng_rhe
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
@@ -239,21 +400,47 @@ contains
     real (kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
+    real (kind=dp_t), intent(inout) :: x_Tmax, y_Tmax, z_Tmax
+    real (kind=dp_t), intent(inout) :: x_enucmax, y_enucmax, z_enucmax
 
     !     Local variables
     integer                     :: i, j, k
+    real (kind=dp_t) :: x, y , z
+    real (kind=dp_t) :: enuc_local
 
     do k = lo(3), hi(3)
+       z = prob_lo(3) + (dble(k) + HALF) * dx(3)       
        do j = lo(2), hi(2)
+          y = prob_lo(2) + (dble(j) + HALF) * dx(2)
           do i = lo(1), hi(1)
+             x = prob_lo(1) + (dble(i) + HALF) * dx(1)
 
+             ! temperature diagnostic
              ! check to see if we are in the helium layer
              ! if we are, then get T_max
              if (s(i,j,k,spec_comp) .ge. diag_define_he_layer) then
-                T_max = max(T_max,s(i,j,k,temp_comp))
+                if (s(i,j,k,temp_comp) > T_max) then
+                   
+                   T_max = s(i,j,k,temp_comp)
+                   
+                   x_Tmax = x
+                   y_Tmax = y
+                   z_Tmax = z
+                   
+                endif
              endif
 
-             enuc_max = max(enuc_max,rho_Hnuc(i,j,k)/s(i,j,k,rho_comp))
+             ! enuc diagnostic
+             enuc_local = rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
+             if (enuc_local > enuc_max) then
+                
+                enuc_max = enuc_local
+
+                x_enucmax = x
+                y_enucmax = y
+                z_enucmax = z
+
+             endif
 
           enddo
        enddo
