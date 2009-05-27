@@ -30,6 +30,9 @@ contains
     if (icomp .eq. 1 .or. icomp .eq. 2) dir_val = ZERO
     if (icomp .eq. 3 .or. icomp .eq. 4) dir_val = ONE
 
+    !--------------------------------------------------------------------------                                                                  
+    ! lower X                                                                                                                                    
+    !--------------------------------------------------------------------------
     if (bc(1,1) .eq. EXT_DIR) then
        do j = lo(2)-1,hi(2)+1
           s(lo(1)-ng:lo(1)-1,j) = dir_val
@@ -58,11 +61,16 @@ contains
           end do
        end do
     else if (bc(1,1) .eq. INTERIOR) then
+       ! nothing to do
     else 
        print *,'BC(1,1) = ',bc(1,1),' NOT YET SUPPORTED '
        stop
     end if
 
+
+    !--------------------------------------------------------------------------                                                                  
+    ! upper X                                                                                                                                    
+    !--------------------------------------------------------------------------
     if (bc(1,2) .eq. EXT_DIR) then
        do j = lo(2)-1,hi(2)+1
           s(hi(1)+1:hi(1)+ng,j) = dir_val
@@ -91,11 +99,16 @@ contains
           end do
        end do
     else if (bc(1,2) .eq. INTERIOR) then
+       ! nothing to do
     else 
        print *,'BC(1,2) = ',bc(1,2),' NOT YET SUPPORTED '
        stop
     end if
 
+
+    !--------------------------------------------------------------------------                                                                  
+    ! lower Y                                                                                                                                    
+    !--------------------------------------------------------------------------
     if (bc(2,1) .eq. EXT_DIR) then
        do i = lo(1)-ng,hi(1)+ng
           s(i,lo(2)-ng:lo(2)-1) = dir_val
@@ -124,11 +137,16 @@ contains
           end do
        end do
     else if (bc(2,1) .eq. INTERIOR) then
+       ! nothing to do
     else 
        print *,'BC(2,1) = ',bc(2,1),' NOT YET SUPPORTED '
        stop
     end if
 
+
+    !--------------------------------------------------------------------------                                                                  
+    ! upper Y                                                                                                                                    
+    !--------------------------------------------------------------------------
     if (bc(2,2) .eq. EXT_DIR) then
        do i = lo(1)-ng,hi(1)+ng
           s(i,hi(2)+1:hi(2)+ng) = dir_val
@@ -157,12 +175,14 @@ contains
           end do
        end do
     else if (bc(2,2) .eq. INTERIOR) then
+       ! nothing to do
     else 
        print *,'BC(2,2) = ',bc(2,2),' NOT YET SUPPORTED '
        stop
     end if
 
   end subroutine setbc_2d
+
 
   subroutine setbc_3d(s,lo,hi,ng,bc,icomp)
 
@@ -179,6 +199,9 @@ contains
 
     if (ng == 0) return
 
+    !--------------------------------------------------------------------------                                                                  
+    ! lower X                                                                                                                                    
+    !--------------------------------------------------------------------------
     if (bc(1,1) .eq. EXT_DIR) then
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+1
@@ -217,11 +240,16 @@ contains
           end do
        end do
     else if (bc(1,1) .eq. INTERIOR) then
+       ! nothing to do
     else 
        print *,'BC(1,1) = ',bc(1,1),' NOT YET SUPPORTED '
        stop
     end if
 
+
+    !--------------------------------------------------------------------------                                                                  
+    ! upper X                                                                                                                                    
+    !--------------------------------------------------------------------------
     if (bc(1,2) .eq. EXT_DIR) then
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+1
@@ -260,11 +288,16 @@ contains
           end do
        end do
     else if (bc(1,2) .eq. INTERIOR) then
+       ! nothing to do
     else 
        print *,'BC(1,2) = ',bc(1,2),' NOT YET SUPPORTED '
        stop
     end if
 
+
+    !--------------------------------------------------------------------------                                                                  
+    ! lower Y                                                                                                                                    
+    !--------------------------------------------------------------------------
     if (bc(2,1) .eq. EXT_DIR) then
        do k = lo(3)-ng,hi(3)+ng
           do i = lo(1)-ng,hi(1)+ng
@@ -303,11 +336,16 @@ contains
           end do
        end do
     else if (bc(2,1) .eq. INTERIOR) then
+       ! nothing to do
     else 
        print *,'BC(2,1) = ',bc(2,1),' NOT YET SUPPORTED '
        stop
     end if
 
+
+    !--------------------------------------------------------------------------                                                                  
+    ! upper Y
+    !--------------------------------------------------------------------------
     if (bc(2,2) .eq. EXT_DIR) then
        do k = lo(3)-ng,hi(3)+ng
           do i = lo(1)-ng,hi(1)+ng
@@ -346,11 +384,16 @@ contains
           end do
        end do
     else if (bc(2,2) .eq. INTERIOR) then
+       ! nothing to do
     else 
        print *,'BC(2,2) = ',bc(2,2),' NOT YET SUPPORTED '
        stop
     end if
 
+
+    !--------------------------------------------------------------------------                                                                  
+    ! lower Z
+    !--------------------------------------------------------------------------   
     if (bc(3,1) .eq. EXT_DIR) then
        do j = lo(2)-ng,hi(2)+ng
           do i = lo(1)-ng,hi(1)+ng
@@ -389,11 +432,16 @@ contains
           end do
        end do
     else if (bc(3,1) .eq. INTERIOR) then
+       ! nothing to do
     else 
        print *,'BC(3,1) = ',bc(3,1),' NOT YET SUPPORTED '
        stop
     end if
 
+
+    !--------------------------------------------------------------------------                                                                  
+    ! upper Z
+    !--------------------------------------------------------------------------
     if (bc(3,2) .eq. EXT_DIR) then
        do j = lo(2)-ng,hi(2)+ng
           do i = lo(1)-ng,hi(1)+ng
@@ -432,6 +480,7 @@ contains
           end do
        end do
     else if (bc(3,2) .eq. INTERIOR) then
+       ! nothing to do
     else 
        print *,'BC(3,2) = ',bc(3,2),' NOT YET SUPPORTED '
        stop
