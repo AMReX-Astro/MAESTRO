@@ -99,6 +99,8 @@ contains
        print *,'*******************************************'
        print *,''
     else if (bc(1,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        print *,''
        print *,'*******************************************'
@@ -146,6 +148,8 @@ contains
        print *,'*******************************************'
        print *,''
     else if (bc(2,1) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        print *,''
        print *,'*******************************************'
@@ -183,6 +187,8 @@ contains
        print *,'*******************************************'
        print *,''
     else if (bc(2,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        print *,''
        print *,'*******************************************'
@@ -241,6 +247,8 @@ contains
        print *,'*******************************************'
        print *,'' 
     else if (bc(1,1) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else
        print *,''
        print *,'*******************************************'
@@ -280,6 +288,8 @@ contains
        print *,'*******************************************'
        print *,''         
     else if (bc(1,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        print *,''
        print *,'*******************************************'
@@ -319,6 +329,8 @@ contains
        print *,'*******************************************'
        print *,''         
     else if (bc(2,1) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else
        print *,''
        print *,'*******************************************'
@@ -358,6 +370,8 @@ contains
        print *,'*******************************************'
        print *,''         
     else if (bc(2,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        print *,''
        print *,'*******************************************'
@@ -414,6 +428,8 @@ contains
        print *,'*******************************************'
        print *,''         
     else if (bc(3,1) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        print *,''
        print *,'*******************************************'
@@ -453,6 +469,8 @@ contains
        print *,'*******************************************'
        print *,''
     else if (bc(3,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        print *,''
        print *,'*******************************************'
