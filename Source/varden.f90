@@ -636,11 +636,25 @@ subroutine varden()
               etarho_ec_temp(1,:)  = etarho_ec(1,:)
               w0_temp(1,:)         = w0(1,:)
 
-              ! piecewise constant interpolation to fill the cc temp arrays
+              ! piecewise linear interpolation to fill the cc temp arrays
               do n=2,max_levs
                  do r=0,nr(n)-1
-                    psi_temp(n,r)        = psi_temp(n-1,r/2)
-                    etarho_cc_temp(n,r)  = etarho_cc_temp(n-1,r/2)
+                    if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                       psi_temp(n,r) = psi_temp(n-1,r/2)
+                       etarho_cc_temp(n,r)  = etarho_cc_temp(n-1,r/2)
+                    else
+                       if (mod(r,2) .eq. 0) then
+                          psi_temp(n,r) = 0.75d0*psi_temp(n-1,r/2) &
+                               + 0.25d0*psi_temp(n-1,r/2-1)
+                          etarho_cc_temp(n,r) = 0.75d0*etarho_cc_temp(n-1,r/2) &
+                               + 0.25d0*etarho_cc_temp(n-1,r/2-1)
+                       else
+                          psi_temp(n,r) = 0.75d0*psi_temp(n-1,r/2) &
+                               + 0.25d0*psi_temp(n-1,r/2+1)
+                          etarho_cc_temp(n,r) = 0.75d0*etarho_cc_temp(n-1,r/2) &
+                               + 0.25d0*etarho_cc_temp(n-1,r/2+1)
+                       end if
+                    end if
                  end do
               end do
 
@@ -649,7 +663,7 @@ subroutine varden()
                  do r=0,nr(n)
                     if (mod(r,2) .eq. 0) then
                        etarho_ec_temp(n,r) = etarho_ec_temp(n-1,r/2)
-                       w0_temp(n,r)        = w0_temp(n-1,r/2)
+                       w0_temp(n,r) = w0_temp(n-1,r/2)
                     else
                        etarho_ec_temp(n,r) = &
                             HALF*(etarho_ec_temp(n-1,r/2)+etarho_ec_temp(n-1,r/2+1))
@@ -724,8 +738,6 @@ subroutine varden()
            if (spherical .eq. 0) then
               ! force rho0 to be the average of rho
               call average(mla,sold,rho0_old,dx,rho_comp)
-              ! force rhoh0 to be the average of rhoh
-              call average(mla,sold,rhoh0_old,dx,rhoh_comp)
            end if
            
            call make_grav_cell(grav_cell,rho0_old)
