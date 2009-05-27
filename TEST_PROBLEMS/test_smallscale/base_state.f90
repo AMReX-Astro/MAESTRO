@@ -12,13 +12,11 @@ contains
 
   subroutine init_base_state(n,model_file,s0_init,p0_init,dx)
 
-    use bc_module
-    use setbc_module
-    use multifab_module
-    use define_bc_module
+    use parallel
+    use bl_error_module
     use bl_constants_module
-    use network, only: spec_names
     use eos_module
+    use network, only: spec_names
     use probin_module, ONLY: prob_lo
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp
     use geometry, only: dr, spherical, nr, dm
