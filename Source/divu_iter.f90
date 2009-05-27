@@ -53,7 +53,7 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     ! local
-    integer        :: n,comp,ng_s
+    integer        :: n,ng_s
     real(dp_t)     :: halfdt,dt_temp,dt_hold
 
     type(multifab) :: s1(nlevs)  

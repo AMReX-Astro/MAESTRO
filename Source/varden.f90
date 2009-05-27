@@ -39,7 +39,7 @@ subroutine varden()
 
   integer    :: init_step,istep
   integer    :: istep_divu_iter,istep_init_iter
-  integer    :: i,n,r,comp,numcell
+  integer    :: i,n,r,numcell
   integer    :: last_plt_written,last_chk_written
   real(dp_t) :: smin,smax
   real(dp_t) :: time,dt,dtold
