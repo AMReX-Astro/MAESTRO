@@ -86,7 +86,6 @@ contains
     ! initialize
     ! note that T_max corresponds to the maximum temperature in the 
     ! helium layer defined by X(He4) >= he_tol 
-
     T_max       = ZERO
 
     x_Tmax      = ZERO
@@ -246,7 +245,7 @@ contains
 
 
 1000 format(1x,10(g20.10,1x))
-1001 format("#",10(a20,1x))
+1001 format("#",10(a18,1x))
 
     if (parallel_IOProcessor()) then
 
