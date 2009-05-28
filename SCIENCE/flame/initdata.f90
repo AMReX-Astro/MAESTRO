@@ -196,7 +196,7 @@ contains
     xn_eos(1,:) = xn_ash(:)
     p_eos(1) = p_ambient
 
-    call eos(eos_input_rp, den_eos, temp_eos, &
+    call eos(eos_input_tp, den_eos, temp_eos, &
              npts, nspec, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
