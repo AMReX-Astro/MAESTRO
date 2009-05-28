@@ -24,18 +24,26 @@ module inlet_bc_module
 
 contains
 
-  subroutine set_inlet_bcs(rho_in, T_in, xn_in, vel_in)
+  subroutine set_inlet_bcs()
 
+    ! initialize the inflow boundary condition variables
     use eos_module
     use network
+    use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel
 
-    real(dp_t) :: rho_in, T_in
-    real(dp_t) :: xn_in(nspec)
-    real(dp_t) :: vel_in
+    integer :: ic12, io16
 
-    den_eos(1)  = rho_in
-    temp_eos(1) = T_in
-    xn_eos(1,:) = xn_in(:)
+    ! figure out the indices for different species
+    ic12  = network_species_index("carbon-12")
+    io16  = network_species_index("oxygen-16")
+
+    den_eos(1)  = dens_fuel
+    temp_eos(1) = temp_fuel
+
+    xn_eos(1,:) = ZERO
+    xn_eos(1,ic12) = xc12_fuel
+    xn_eos(1,io16) = 1.d0 - xc12_fuel
+
     
     call eos(eos_input_rt, den_eos, temp_eos, &
              npts, nspec, &
@@ -48,11 +56,11 @@ contains
              dsdt_eos, dsdr_eos, &
              do_diag)
 
-    INLET_RHO     = rho_in
-    INLET_RHOH    = rho_in*h_eos(1)
-    INLET_TEMP    = T_in
-    INLET_RHOX(:) = rho_in*xn_in(:)
-    INLET_VEL     = vel_in
+    INLET_RHO     = dens_fuel
+    INLET_RHOH    = dens_fuel*h_eos(1)
+    INLET_TEMP    = temp_fuel
+    INLET_RHOX(:) = dens_fuel*xn_eos(1,:)
+    INLET_VEL     = vel_fuel
     INLET_TRA     = ZERO
 
     inlet_bc_initialized = .true.

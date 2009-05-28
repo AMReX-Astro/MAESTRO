@@ -25,7 +25,7 @@ contains
     use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm
-    use inlet_bc_module
+    use inlet_bc_module, only: set_inlet_bcs
 
     integer,             intent(in   ) :: n
     character(len=256),  intent(in   ) :: model_file ! Not used
@@ -67,10 +67,6 @@ contains
     p_ambient = p_eos(1)
 
 
-    ! define the inflow boundary condition parameters
-    call set_inlet_bcs(dens_fuel, temp_fuel, xn_eos(1,:), vel_fuel)
-
-
     ! set the base state quantities (except pressure) to be 0, and
     ! set the base state pressure to be the ambient pressure.
     s0_init(:,rho_comp)  = ZERO
@@ -81,6 +77,10 @@ contains
     if (ntrac > 0) then
        s0_init(:,trac_comp:trac_comp+ntrac-1) = ZERO
     endif
+
+
+    ! define the inflow boundary condition parameters
+    call set_inlet_bcs()
 
   end subroutine init_base_state
 
