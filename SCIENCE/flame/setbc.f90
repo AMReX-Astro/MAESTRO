@@ -96,7 +96,8 @@ contains
        
        ! species
        if (icomp >= dm+spec_comp .and. icomp < dm+spec_comp+nspec) then
-          s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOX(icomp-spec_comp+1)
+          s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = &
+               INLET_RHOX(icomp-(spec_comp+dm)+1)
        endif
 
        ! others
@@ -228,7 +229,8 @@ contains
 
        ! species
        if (icomp >= dm+spec_comp .and. icomp < dm+spec_comp+nspec) then
-          s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-ng:lo(3)-1) = INLET_RHOX(icomp-spec_comp+1)
+          s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-ng:lo(3)-1) = &
+               INLET_RHOX(icomp-(spec_comp+dm)+1)
        endif
 
        ! other

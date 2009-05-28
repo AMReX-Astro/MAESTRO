@@ -228,7 +228,7 @@ contains
              s(i,j,rho_comp)  = dens_fuel
              s(i,j,rhoh_comp) = rhoh_fuel
              s(i,j,temp_comp) = temp_fuel
-             s(i,j,spec_comp:spec_comp+nspec-1) = xn_fuel(:)
+             s(i,j,spec_comp:spec_comp+nspec-1) = dens_fuel*xn_fuel(:)
              s(i,j,trac_comp:trac_comp+ntrac-1) = ZERO
 
           else
@@ -237,7 +237,7 @@ contains
              s(i,j,rho_comp)  = dens_ash
              s(i,j,rhoh_comp) = rhoh_ash
              s(i,j,temp_comp) = temp_ash
-             s(i,j,spec_comp:spec_comp+nspec-1) = xn_ash(:)
+             s(i,j,spec_comp:spec_comp+nspec-1) = dens_ash*xn_ash(:)
              s(i,j,trac_comp:trac_comp+ntrac-1) = ZERO
 
           endif
