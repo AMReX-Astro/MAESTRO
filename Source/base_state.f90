@@ -29,6 +29,7 @@ contains
                              small_temp, small_dens, grav_const
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm
+    use inlet_bc_module, only: set_inlet_bcs
     
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
@@ -399,6 +400,10 @@ contains
        print *, "    for density < base_cutoff_density)"
        print *, " "
     endif
+
+
+    ! initialize any inlet BC parameters
+    call set_inlet_bcs()
 
     deallocate(vars_stored,varnames_stored)
     deallocate(base_state,base_r)
