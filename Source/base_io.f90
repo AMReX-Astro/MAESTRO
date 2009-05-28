@@ -113,6 +113,7 @@ contains
     use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks, nlevs_radial
     use bl_constants_module
     use restrict_base_module, only: fill_ghost_base
+    use inlet_bc_module, only: set_inlet_bcs
     
     character(len=256), intent(in   ) :: state_name
     character(len=256), intent(in   ) :: w0_name
@@ -183,6 +184,10 @@ contains
        end do
     end do
     close(99)
+
+    ! set the inlet boundary condition parameters
+    call set_inlet_bcs()
+    
 
     if (nlevs_radial .gt. 1) then
        call fill_ghost_base(rho0,.true.)

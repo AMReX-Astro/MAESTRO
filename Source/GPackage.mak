@@ -76,6 +76,7 @@ f90sources += velocity_advance.f90
 f90sources += velpred.f90
 f90sources += write_job_info.f90
 f90sources += diag.f90
+f90sources += inlet_bc.f90
 sf90sources += build_info.f90
 
 
