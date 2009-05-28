@@ -12,8 +12,8 @@
  
 
  ! domain size
- prob_hi_x = 25.0
- prob_hi_y = 100.0
+ prob_hi_x = 2.5
+ prob_hi_y = 10.0
 
 
  ! problem data
