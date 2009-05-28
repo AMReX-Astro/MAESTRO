@@ -55,6 +55,14 @@ contains
 
     if(ng == 0) return
 
+    if ( (bc(1,1) == EXT_DIR .or. &
+          bc(1,2) == EXT_DIR .or. &
+          bc(2,1) == EXT_DIR .or. &
+          bc(2,2) == EXT_DIR) .and. .NOT. inlet_bc_initialized) then
+       call bl_error("ERROR: in setbc, but inlet BCs not initialized")
+    endif
+
+
     !--------------------------------------------------------------------------
     ! lower X 
     !--------------------------------------------------------------------------
@@ -162,6 +170,16 @@ contains
     character (len=256) err_string
 
     if (ng == 0) return
+
+    if ( (bc(1,1) == EXT_DIR .or. &
+          bc(1,2) == EXT_DIR .or. &
+          bc(2,1) == EXT_DIR .or. &
+          bc(2,2) == EXT_DIR .or. &
+          bc(3,1) == EXT_DIR .or. &
+          bc(3,2) == EXT_DIR) .and. .NOT. inlet_bc_initialized) then
+       call bl_error("ERROR: in setbc, but inlet BCs not initialized")
+    endif
+
 
     !--------------------------------------------------------------------------
     ! lower X 
