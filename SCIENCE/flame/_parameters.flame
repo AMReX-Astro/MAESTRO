@@ -1,0 +1,15 @@
+# For a simple laminar flame setup we define the fuel and ash state.  The
+# fuel parameters will be used to define the inflow boundary condition.
+# the fuel and ash will be in pressure equilibrium, so the ash density
+# will be found via the EOS.  The ash composition will be set by simply
+# turning all the fuel into ash.
+
+dens_fuel               real                 1.d8
+temp_fuel               real                 1.d8
+xc12_fuel               real                 0.5d0
+vel_fuel                real                 1.d6
+
+temp_ash                real                 3.d9
+
+frac                    real                 0.5
+
