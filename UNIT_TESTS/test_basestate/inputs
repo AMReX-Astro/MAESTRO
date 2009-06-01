@@ -19,5 +19,5 @@
 
  model_file = "model.sph.768"
 
- use_eos_coulomb = F
+ use_eos_coulomb = T
 /
