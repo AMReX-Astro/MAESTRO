@@ -4,6 +4,7 @@ module fill_3d_module
   use multifab_module
   use ml_layout_module
   use bl_constants_module
+  use bl_prof_module
 
   implicit none
 
@@ -18,7 +19,6 @@ contains
   subroutine put_1d_array_on_cart(s0,s0_cart,bc_comp,is_input_edge_centered, &
                                   is_output_a_vector,dx,the_bc_level,mla,normal)
 
-    use bl_prof_module
     use bl_constants_module
     use define_bc_module
     use geometry, only: spherical, dm, nlevs
@@ -165,6 +165,10 @@ contains
 
     integer :: i,j
 
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_1d_array_on_cart_2d")
+
     s0_cart = ZERO
 
     if (is_input_edge_centered) then
@@ -209,6 +213,8 @@ contains
 
     end if
 
+    call destroy(bpt)
+
   end subroutine put_1d_array_on_cart_2d
 
   subroutine put_1d_array_on_cart_3d(is_input_edge_centered,is_output_a_vector,s0,s0_cart, &
@@ -223,6 +229,10 @@ contains
     real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
 
     integer :: i,j,k
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_1d_array_on_cart_3d")
 
     s0_cart = ZERO
 
@@ -276,6 +286,8 @@ contains
 
     end if
 
+    call destroy(bpt)
+
   end subroutine put_1d_array_on_cart_3d
 
   subroutine put_1d_array_on_cart_3d_sphr(is_input_edge_centered,is_output_a_vector, &
@@ -299,6 +311,10 @@ contains
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius,rfac,s0_cart_val
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_1d_array_on_cart_3d_sphr")
 
     if (is_output_a_vector .and. (.not. present(normal)) ) then
        call bl_error('Error: Calling put_1d_array_on_cart_3d_sphr with is_output_a_vector=T and without normal')
@@ -382,6 +398,8 @@ contains
        end do
 
     end if
+
+    call destroy(bpt)
 
   end subroutine put_1d_array_on_cart_3d_sphr
 
