@@ -2,11 +2,21 @@
  model_file = "model_6.e8.hybrid.hse.3840"
  drdxfac = 5
 
+! USE THIS WITH 1728 PROCS
  max_levs = 1
  n_cellx = 768
  n_celly = 768
  n_cellz = 768
  max_grid_size = 64
+
+!! USE THIS WITH 13824 PROCS
+! max_levs = 1
+! n_cellx = 768
+! n_celly = 768
+! n_cellz = 768
+! max_grid_size = 32
+! max_mg_bottom_nlevels = 2
+! mg_bottom_solver = 4
 
  anelastic_cutoff = 3.e6
  base_cutoff_density = 3.e6
