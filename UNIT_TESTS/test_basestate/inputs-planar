@@ -15,7 +15,7 @@
 
  cflfac = 0.5
 
- model_file = "model.hse"
+ model_file = "model.planar.768"
 
- use_eos_coulomb = F
+ use_eos_coulomb = T
 /
