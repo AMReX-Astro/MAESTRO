@@ -30,6 +30,8 @@ contains
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm
     use inlet_bc_module, only: set_inlet_bcs
+    use fundamental_constants_module, only: Gconst
+
     
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
@@ -68,7 +70,6 @@ contains
     
     real(kind=dp_t), parameter :: TINY = 1.0e-10
 
-    real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
     real(kind=dp_t) :: mencl, g, r_l, r_r, dpdr, rhog
     real(kind=dp_t) :: max_hse_error
 
