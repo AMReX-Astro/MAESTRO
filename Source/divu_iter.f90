@@ -228,7 +228,7 @@ contains
     end if
     
     dt = dt*init_shrink
-    if (parallel_IOProcessor()) then
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
        print*, "Multiplying dt by init_shrink; dt =",dt
     end if
     

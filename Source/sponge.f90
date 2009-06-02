@@ -21,7 +21,7 @@ contains
 
     use geometry, only: dr, r_end_coord
     use bl_constants_module
-    use probin_module, only: anelastic_cutoff, prob_hi
+    use probin_module, only: anelastic_cutoff, prob_hi, verbose
 
     real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -60,9 +60,9 @@ contains
        r_sp_outer = r_tp_outer - 4.d0 * dx(3)
     end if
 
-    if ( parallel_IOProcessor() ) write(6,1000) r_sp, r_tp
-    if ( parallel_IOProcessor() ) write(6,1001) r_sp_outer, r_tp_outer
-    if ( parallel_IOProcessor() ) print*,""
+    if ( parallel_IOProcessor() .and. verbose .ge. 1) write(6,1000) r_sp, r_tp
+    if ( parallel_IOProcessor() .and. verbose .ge. 1) write(6,1001) r_sp_outer, r_tp_outer
+    if ( parallel_IOProcessor() .and. verbose .ge. 1) print*,""
 
 1000 format('inner sponge: r_sp      , r_tp      : ',e20.12,2x,e20.12)
 1001 format('outer sponge: r_sp_outer, r_tp_outer: ',e20.12,2x,e20.12)

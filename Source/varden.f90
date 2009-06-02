@@ -320,7 +320,7 @@ subroutine varden()
      call firstdt(mla,the_bc_tower%bc_tower_array,uold,gpres,sold,Source_old,normal, &
                   rho0_old,p0_old,grav_cell,gamma1bar,dx,cflfac,dt)
 
-     if (parallel_IOProcessor()) then
+     if (parallel_IOProcessor() .and. verbose .ge. 1) then
         print*,"Minimum firstdt over all levels =",dt
         print*,""
      end if
