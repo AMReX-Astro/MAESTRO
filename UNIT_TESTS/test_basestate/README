@@ -2,3 +2,10 @@ An attempt to do just the 1-d base state expansion using the
 same routines as the main code.  This is effectively the oned_test
 routines reimplemented to use the main Maestro code.
 
+The initial model for the spherical case was created with FLASH using
+the lmn_head_isentropic_1d_spherical test problem.  The compressible
+solution is stored in compressible-1.e16-t=10.00.out.  The initial
+model and compressible output were run with Coulomb corrections
+enabled.
+
+
