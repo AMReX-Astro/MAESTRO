@@ -25,6 +25,7 @@ subroutine varden()
   use initialize_module
   use enforce_HSE_module
   use make_psi_module
+  use fundamental_constants_module, only: Gconst
 
   implicit none
 
@@ -55,6 +56,8 @@ subroutine varden()
   real(dp_t), allocatable ::               force(:,:)
   real(dp_t), allocatable ::                edge(:,:)
 
+  real(dp_t) :: mencl, max_hse_error, starting_rad, rloc, r_r, r_l, g, dpdr, rhog
+
   call probin_init()
   call init_dm()
   call init_spherical()
@@ -63,6 +66,7 @@ subroutine varden()
   call init_variables()
 
   call network_init()
+  print *, 'use_eos_coulomb = ', use_eos_coulomb
   call eos_init(use_eos_coulomb=use_eos_coulomb)
 
   nlevs = 1
@@ -364,7 +368,7 @@ subroutine varden()
 
            ! compute gamma1bar_nph
            gamma1bar_nph = HALF*(gamma1bar + gamma1bar_nph)
-           
+
            ! compute p0_nph
            p0_nph = HALF*(p0_old + p0_new)
 
@@ -416,6 +420,8 @@ subroutine varden()
 
               p0_new(1,r) = p0_old(1,r) * (one + gamma1bar_nph(1,r)*factor ) / &
                                           (one - gamma1bar_nph(1,r)*factor)
+
+              if (p0_new(1,r) < 0) print *, 'pressure negative'
 
            end do
 
@@ -542,7 +548,7 @@ subroutine varden()
                  dsdt_eos, dsdr_eos, &
                  do_diag)
 
-        s0_new(1,r,temp_comp) = temp_eos(1)
+           s0_new(1,r,temp_comp) = temp_eos(1)
 
      enddo
 
@@ -562,6 +568,48 @@ subroutine varden()
      p0_old = p0_new
 
   enddo
+
+
+  ! check the HSE-ness
+    if (spherical .eq. 1) then
+       mencl = four3rd*m_pi*dr(1)**3*s0_new(1,0,rho_comp)
+    endif
+
+    max_hse_error = -1.d30
+
+    if (spherical .eq. 0) then
+       starting_rad = prob_lo(1)
+    else
+       starting_rad = ZERO
+    endif
+
+    do r=1,nr(1)-1
+       
+       rloc = starting_rad + (dble(r) + HALF)*dr(1)
+
+       if (r < base_cutoff_density_coord(1)) then
+
+          r_r = starting_rad + dble(r+1)*dr(1)
+          r_l = starting_rad + dble(r)*dr(1)
+
+          if (spherical .eq. 1) then
+             g = -Gconst*mencl/r_l**2
+             mencl = mencl &
+                  + four3rd*m_pi*dr(1)*(r_l**2+r_l*r_r+r_r**2)*s0_new(1,r,rho_comp)
+          else
+             g = grav_const
+          endif
+
+          dpdr = (p0_new(1,r) - p0_new(1,r-1))/dr(1)
+          rhog = HALF*(s0_new(1,r,rho_comp) + s0_new(1,r-1,rho_comp))*g
+
+          max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
+
+       end if
+
+    enddo
+
+    print *, 'maximum HSE error = ', max_hse_error
 
   ! output
   open(unit=10,file="base.new")
