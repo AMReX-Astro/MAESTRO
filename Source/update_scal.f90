@@ -174,7 +174,7 @@ contains
 
     integer            :: i, j, comp, comp2
     real (kind = dp_t) :: divterm
-    real (kind = dp_t) :: delta,frac,sum
+    real (kind = dp_t) :: delta,frac,sumX
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
 
     do comp = nstart, nstop
@@ -252,15 +252,15 @@ contains
                 do i = lo(1), hi(1)
                    if (snew(i,j,comp) .lt. ZERO) then
                       delta = -snew(i,j,comp)
-                      sum = ZERO 
+                      sumX = ZERO 
                       do comp2 = nstart, nstop
                          if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) then
-                            sum = sum + snew(i,j,comp2)
+                            sumX = sumX + snew(i,j,comp2)
                          end if
                       enddo
                       do comp2 = nstart, nstop
                          if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) then
-                            frac = snew(i,j,comp2) / sum
+                            frac = snew(i,j,comp2) / sumX
                             snew(i,j,comp2) = snew(i,j,comp2) - frac * delta
                          end if
                       enddo
@@ -297,7 +297,7 @@ contains
 
     integer            :: i, j, k, comp, comp2
     real (kind = dp_t) :: divterm
-    real (kind = dp_t) :: delta,frac,sum
+    real (kind = dp_t) :: delta,frac,sumX
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
 
     do comp = nstart, nstop
@@ -386,14 +386,14 @@ contains
                    do i = lo(1), hi(1)
                       if (snew(i,j,k,comp) .lt. ZERO) then
                          delta = -snew(i,j,k,comp)
-                         sum = ZERO
+                         sumX = ZERO
                          do comp2 = nstart, nstop
                             if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) &
-                                 sum = sum + snew(i,j,k,comp2)
+                                 sumX = sumX + snew(i,j,k,comp2)
                          enddo
                          do comp2 = nstart, nstop
                             if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
-                               frac = snew(i,j,k,comp2) / sum
+                               frac = snew(i,j,k,comp2) / sumX
                                snew(i,j,k,comp2) = snew(i,j,k,comp2) - frac * delta
                             end if
                          enddo
@@ -431,7 +431,7 @@ contains
 
     integer            :: i, j, k, comp, comp2
     real (kind = dp_t) :: divterm
-    real (kind = dp_t) :: delta,frac,sum
+    real (kind = dp_t) :: delta,frac,sumX
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
 
     ! is spherical
@@ -520,14 +520,14 @@ contains
                    do i = lo(1), hi(1)
                       if (snew(i,j,k,comp) .lt. ZERO) then
                          delta = -snew(i,j,k,comp)
-                         sum = ZERO
+                         sumX = ZERO
                          do comp2 = nstart, nstop
                             if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) &
-                                 sum = sum + snew(i,j,k,comp2)
+                                 sumX = sumX + snew(i,j,k,comp2)
                          enddo
                          do comp2 = nstart, nstop
                             if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
-                               frac = snew(i,j,k,comp2) / sum
+                               frac = snew(i,j,k,comp2) / sumX
                                snew(i,j,k,comp2) = snew(i,j,k,comp2) - frac * delta
                             end if
                          enddo

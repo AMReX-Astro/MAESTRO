@@ -43,7 +43,7 @@ contains
     integer         :: i,j,r,comp
     real(kind=dp_t) :: rloc,dr_in,rmax,starting_rad,mod_dr
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
-    real(kind=dp_t) :: sum
+    real(kind=dp_t) :: sumX
 
     ! these indices define how the initial model is stored in the 
     ! base_state array
@@ -294,13 +294,13 @@ contains
           t_ambient = interpolate(rloc, npts_model, base_r, base_state(:,itemp_model))
           p_ambient = interpolate(rloc, npts_model, base_r, base_state(:,ipres_model))
 
-          sum = ZERO
+          sumX = ZERO
           do comp = 1, nspec
              xn_ambient(comp) = max(ZERO,min(ONE, &
                   interpolate(rloc, npts_model, base_r, base_state(:,ispec_model-1+comp))))
-             sum = sum + xn_ambient(comp)
+             sumX = sumX + xn_ambient(comp)
           enddo
-          xn_ambient = xn_ambient/sum
+          xn_ambient = xn_ambient/sumX
 
           ! use the EOS to make the state consistent
           temp_eos(1) = t_ambient
