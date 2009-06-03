@@ -212,7 +212,7 @@ subroutine varden()
         !       oscillations in the solution.  Even with older versions of the code you
         !       get oscillations if you remove this line.
         p0_old(1,r) = p_eos(1)
-
+        
      enddo
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -271,12 +271,19 @@ subroutine varden()
         edge(1,:) = rho0_predicted_edge(1,:)*edge(1,:)
 
         ! update (rho X)_0
-        do r=0,nr_fine-1
-           s0_new(1,r,comp) = s0_old(1,r,comp) &
-                - (dt/dr(1))/r_cc_loc(1,r)**2* &
-                (r_edge_loc(1,r+1)**2 * edge(1,r+1) * w0(1,r+1) - &
-                 r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  ))
-        end do
+        if (spherical .eq. 0) then
+           do r=0,nr_fine-1
+              s0_new(1,r,comp) = s0_old(1,r,comp) &
+                   - (dt/dr(1))*(edge(1,r+1) * w0(1,r+1) - edge(1,r) * w0(1,r))
+           end do
+        else
+           do r=0,nr_fine-1
+              s0_new(1,r,comp) = s0_old(1,r,comp) &
+                   - (dt/dr(1))/r_cc_loc(1,r)**2* &
+                   (r_edge_loc(1,r+1)**2 * edge(1,r+1) * w0(1,r+1) - &
+                   r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  ))
+           end do           
+        endif
 
      enddo
 
