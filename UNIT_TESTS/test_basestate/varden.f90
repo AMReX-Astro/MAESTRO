@@ -18,7 +18,6 @@ subroutine varden()
   use make_w0_module
   use advect_base_module
   use make_grav_module
-  use make_div_coeff_module
   use make_edge_state_module
   use probin_module
   use bl_constants_module
@@ -35,7 +34,6 @@ subroutine varden()
   real(dp_t) :: factor,divw,w0dpdr_nph,w0dpdr_nph_1,w0dpdr_nph_2
 
   real(dp_t), allocatable ::                  dx(:,:)
-  real(dp_t), allocatable ::           div_coeff(:,:)
   real(dp_t), allocatable ::           grav_cell(:,:)
   real(dp_t), allocatable ::           gamma1bar(:,:)
   real(dp_t), allocatable ::       gamma1bar_nph(:,:)
@@ -112,7 +110,6 @@ subroutine varden()
   allocate(base_cutoff_density_coord(1))
   allocate(burning_cutoff_density_coord(1))
 
-  allocate(          div_coeff(nlevs_radial,0:nr_fine-1))
   allocate(          grav_cell(nlevs_radial,0:nr_fine-1))
   allocate(          gamma1bar(nlevs_radial,0:nr_fine-1))
   allocate(      gamma1bar_nph(nlevs_radial,0:nr_fine-1))
@@ -216,18 +213,6 @@ subroutine varden()
      call make_w0(w0,w0,w0_force,Sbar_in,s0_old(:,:,rho_comp),s0_old(:,:,rho_comp), &
                   p0_old,p0_old,gamma1bar,gamma1bar,p0_minus_pthermbar,psi, &
                   etarho_ec,etarho_cc,dt,dtold)
-  
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     ! compute gravity
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-     call make_grav_cell(grav_cell,s0_old(:,:,rho_comp))
-
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     ! compute the divergence coefficient, beta_0
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-     call make_div_coeff(div_coeff,s0_old(:,:,rho_comp),p0_old,gamma1bar,grav_cell)     
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! update density and compute rho0_predicted_edge
@@ -235,6 +220,10 @@ subroutine varden()
 
      call advect_base_dens(w0,s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
                            rho0_predicted_edge,dt)
+  
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! compute gravity
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
      call make_grav_cell(grav_cell,s0_new(:,:,rho_comp))
 
@@ -627,7 +616,7 @@ subroutine varden()
   deallocate(r_start_coord,r_end_coord,numdisjointchunks)
   deallocate(dx,dr,nr,r_cc_loc,r_edge_loc)
   deallocate(anelastic_cutoff_coord,base_cutoff_density_coord,burning_cutoff_density_coord)
-  deallocate(div_coeff,grav_cell,gamma1bar,gamma1bar_nph,s0_old,s0_new)
+  deallocate(grav_cell,gamma1bar,gamma1bar_nph,s0_old,s0_new)
   deallocate(X0,p0_old,p0_new,p0_nph,w0,psi,etarho_ec,etarho_cc,w0_force)
   deallocate(Sbar_in,p0_minus_pthermbar,rho0_predicted_edge,force,edge)
 
