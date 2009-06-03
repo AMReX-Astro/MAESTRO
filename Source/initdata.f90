@@ -193,11 +193,10 @@ contains
     real(kind=dp_t)   , intent(in   ) :: p0_background(0:)
 
     !     Local variables
-    integer         :: i,j,k,comp
+    integer         :: i,j,k
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
-    real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
     ! initial the domain with the base state
     s = ZERO

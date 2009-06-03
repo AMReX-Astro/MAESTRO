@@ -428,7 +428,7 @@ contains
     integer :: npts
     real(kind=dp_t), dimension(npts) :: model_r, model_var
 
-    real(kind=dp_t) :: slope, xi, dr_model
+    real(kind=dp_t) :: slope
     real(kind=dp_t) :: minvar, maxvar
 
     integer :: i, id

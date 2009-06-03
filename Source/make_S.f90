@@ -165,10 +165,7 @@ contains
                                                   delta_gamma1_termbar(n,:),p0(n,:))
              case (3)
                 if (spherical .eq. 1) then
-                   call correct_dg1_term_3d_sphr(lo,hi,dgtp(:,:,:,1),ng_dt, &
-                                                 dgp(:,:,:,1),ng_dg, &
-                                                 gamma1bar(1,:),psi(1,:), &
-                                                 delta_gamma1_termbar(1,:),p0(1,:))
+                   call bl_error("ERROR: correct_delta_gamma1_term not implemented for spherical in make_S")
                 else
                    call correct_delta_gamma1_term_3d(lo,hi,dgtp(:,:,:,1),ng_dt, &
                                                      dgp(:,:,:,1),ng_dg, &
@@ -530,20 +527,5 @@ contains
     end do
 
   end subroutine correct_delta_gamma1_term_3d
-
-  subroutine correct_dg1_term_3d_sphr(lo,hi,delta_gamma1_term,ng_dt,delta_gamma1, &
-                                      ng_dg,gamma1bar,psi,delta_gamma1_termbar,p0)
-
-    integer         , intent(in   ) :: lo(:), hi(:), ng_dt, ng_dg
-    real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
-    real (kind=dp_t), intent(in   ) ::   delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
-    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) :: psi(0:)
-    real (kind=dp_t), intent(in   ) :: delta_gamma1_termbar(0:)
-    real (kind=dp_t), intent(in   ) :: p0(0:)
-
-    call bl_error("ERROR: correct_delta_gamma1_term not implemented for spherical in make_S")
-
-  end subroutine correct_dg1_term_3d_sphr
 
 end module make_S_module

@@ -40,7 +40,6 @@ contains
     real(kind=dp_t)              :: w_lo, w_hi, del_w, wsix, theta
     real(kind=dp_t)              :: w_min, w_max
 
-    real(kind=dp_t) ::   ncell_grid(nlevs,0:nr_fine-1)
     real(kind=dp_t) ::   ncell_proc(nlevs,0:nr_fine-1)
     real(kind=dp_t) ::        ncell(nlevs,0:nr_fine-1)
     real(kind=dp_t) ::  phisum_proc(nlevs,0:nr_fine-1)
