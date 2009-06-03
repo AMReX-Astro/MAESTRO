@@ -236,6 +236,8 @@ subroutine varden()
      call advect_base_dens(w0,s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
                            rho0_predicted_edge,dt)
 
+     call make_grav_cell(grav_cell,s0_new(:,:,rho_comp))
+
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! update species
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
