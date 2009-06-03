@@ -6,6 +6,7 @@
 module convert_rhoX_to_X_module
 
   use multifab_module
+  use bl_prof_module
 
   implicit none
 
@@ -33,6 +34,10 @@ contains
 
     ! Local variables
     integer :: n,comp,bc_comp
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "convert_rhoX_to_X")
 
     if (flag) then
        do n=1,nlevs
@@ -93,6 +98,8 @@ contains
        end do
 
     end if
+
+    call destroy(bpt)
     
   end subroutine convert_rhoX_to_X
 
@@ -113,6 +120,10 @@ contains
 
     ! Local variables
     integer :: n,bc_comp
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "convert_rhoh_to_h")
 
     if (flag) then
        do n=1,nlevs
@@ -163,6 +174,8 @@ contains
        end do
 
     end if
+
+    call destroy(bpt)
     
   end subroutine convert_rhoh_to_h
   

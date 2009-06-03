@@ -28,6 +28,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use bl_prof_module
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: comp,bc_comp
@@ -41,6 +42,10 @@ contains
     real(kind=dp_t), pointer::  sp(:,:,:,:)
     integer :: lo(dm),hi(dm)
     integer :: i,ng,n
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_in_pert_form")
 
     ng    = s(1)%ng
 
@@ -88,6 +93,8 @@ contains
        end do
 
     end if
+
+    call destroy(bpt)
 
   end subroutine put_in_pert_form
 
