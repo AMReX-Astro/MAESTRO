@@ -30,7 +30,7 @@ subroutine varden()
 
   integer :: n,r,comp,comp2,iter
 
-  real(dp_t) :: frac,delta,sum,time,dt,dtold,y_0,Hbar
+  real(dp_t) :: frac,delta,sumX,time,dt,dtold,y_0,Hbar
   real(dp_t) :: factor,divw,w0dpdr_nph,w0dpdr_nph_1,w0dpdr_nph_2
 
   real(dp_t), allocatable ::                  dx(:,:)
@@ -279,15 +279,15 @@ subroutine varden()
            do r=0,nr_fine-1
               if (s0_new(1,r,comp) .lt. ZERO) then
                  delta = -s0_new(1,r,comp)
-                 sum = ZERO
+                 sumX = ZERO
                  do comp2=spec_comp,spec_comp+nspec-1
                     if (comp2 .ne. comp .and. s0_new(1,r,comp2) .ge. ZERO) then
-                       sum = sum + s0_new(1,r,comp2)
+                       sumX = sumX + s0_new(1,r,comp2)
                     endif
                  enddo
                  do comp2=spec_comp,spec_comp+nspec-1
                     if (comp2 .ne. comp .and. s0_new(1,r,comp2) .ge. ZERO) then
-                       frac = s0_new(1,r,comp2) / sum
+                       frac = s0_new(1,r,comp2) / sumX
                        s0_new(1,r,comp2) = s0_new(1,r,comp2) - frac * delta
                     endif
                  enddo
@@ -416,6 +416,7 @@ subroutine varden()
               if (p0_new(1,r) < 0) print *, 'pressure negative'
 
            end do
+
 
            ! compute updated gamma1bar and store it in gamma1bar_nph
            do r=0,nr_fine-1
