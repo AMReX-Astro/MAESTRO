@@ -145,6 +145,8 @@ subroutine varden()
      call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),dx(n,:))
   enddo
 
+  call compute_cutoff_coords(s0_old(:,:,rho_comp))
+
   ! output
   open(unit=10,file="base.orig")
   do r=0,nr_fine-1
@@ -165,8 +167,6 @@ subroutine varden()
   do while (time < stop_time)
 
      print *, 'time = ', time
-
-     call compute_cutoff_coords(s0_old(:,:,rho_comp))
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the heating term and gamma1bar
@@ -220,6 +220,12 @@ subroutine varden()
 
      call advect_base_dens(w0,s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
                            rho0_predicted_edge,dt)
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! recompute cutoff coordinates now that rho0 has changed
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     call compute_cutoff_coords(s0_old(:,:,rho_comp))
   
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute gravity
