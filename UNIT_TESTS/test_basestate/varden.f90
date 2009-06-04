@@ -35,8 +35,9 @@ subroutine varden()
 
   real(dp_t), allocatable ::                  dx(:,:)
   real(dp_t), allocatable ::           grav_cell(:,:)
-  real(dp_t), allocatable ::           gamma1bar(:,:)
+  real(dp_t), allocatable ::       gamma1bar_old(:,:)
   real(dp_t), allocatable ::       gamma1bar_nph(:,:)
+  real(dp_t), allocatable ::       gamma1bar_new(:,:)
   real(dp_t), allocatable ::              s0_old(:,:,:)
   real(dp_t), allocatable ::              s0_new(:,:,:)
   real(dp_t), allocatable ::                  X0(:,:)
@@ -111,8 +112,9 @@ subroutine varden()
   allocate(burning_cutoff_density_coord(1))
 
   allocate(          grav_cell(nlevs_radial,0:nr_fine-1))
-  allocate(          gamma1bar(nlevs_radial,0:nr_fine-1))
+  allocate(      gamma1bar_old(nlevs_radial,0:nr_fine-1))
   allocate(      gamma1bar_nph(nlevs_radial,0:nr_fine-1))
+  allocate(      gamma1bar_new(nlevs_radial,0:nr_fine-1))
   allocate(             s0_old(nlevs_radial,0:nr_fine-1,nscal))
   allocate(             s0_new(nlevs_radial,0:nr_fine-1,nscal))
   allocate(                 X0(nlevs_radial,0:nr_fine-1))
@@ -130,7 +132,9 @@ subroutine varden()
   allocate(              force(nlevs_radial,0:nr_fine-1))
   allocate(               edge(nlevs_radial,0:nr_fine))
 
-  gamma1bar          = ZERO
+  gamma1bar_old      = ZERO
+  gamma1bar_nph      = ZERO
+  gamma1bar_new      = ZERO
   w0                 = ZERO
   psi                = ZERO
   etarho_ec          = ZERO
@@ -200,7 +204,7 @@ subroutine varden()
                  dsdt_eos, dsdr_eos, &
                  do_diag)
 
-        gamma1bar(1,r) = gam1_eos(1)
+        gamma1bar_old(1,r) = gam1_eos(1)
 
         Sbar_in(1,r) = Hbar * dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
 
@@ -211,7 +215,7 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
      call make_w0(w0,w0,w0_force,Sbar_in,s0_old(:,:,rho_comp),s0_old(:,:,rho_comp), &
-                  p0_old,p0_old,gamma1bar,gamma1bar,p0_minus_pthermbar,psi, &
+                  p0_old,p0_old,gamma1bar_old,gamma1bar_old,p0_minus_pthermbar,psi, &
                   etarho_ec,etarho_cc,dt,dtold)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -324,7 +328,7 @@ subroutine varden()
 
         else
 
-           ! compute updated gamma1bar and store it in gamma1bar_nph
+           ! compute updated gamma1bar
            do r=0,nr_fine-1
 
               ! (rho, p) --> gamma1bar
@@ -344,12 +348,12 @@ subroutine varden()
                       dsdt_eos, dsdr_eos, &
                       do_diag)
               
-              gamma1bar_nph(1,r) = gam1_eos(1)
+              gamma1bar_new(1,r) = gam1_eos(1)
 
            end do
 
            ! compute gamma1bar_nph
-           gamma1bar_nph = HALF*(gamma1bar+gamma1bar_nph)
+           gamma1bar_nph = HALF*(gamma1bar_old+gamma1bar_new)
 
            ! compute p0_nph
            p0_nph = HALF*(p0_old + p0_new)
@@ -401,6 +405,7 @@ subroutine varden()
 
      s0_old = s0_new
      p0_old = p0_new
+     gamma1bar_old = gamma1bar_new
 
   enddo
 
@@ -458,7 +463,7 @@ subroutine varden()
   deallocate(r_start_coord,r_end_coord,numdisjointchunks)
   deallocate(dx,dr,nr,r_cc_loc,r_edge_loc)
   deallocate(anelastic_cutoff_coord,base_cutoff_density_coord,burning_cutoff_density_coord)
-  deallocate(grav_cell,gamma1bar,gamma1bar_nph,s0_old,s0_new)
+  deallocate(grav_cell,gamma1bar_old,gamma1bar_nph,gamma1bar_new,s0_old,s0_new)
   deallocate(X0,p0_old,p0_new,p0_nph,w0,psi,etarho_ec,etarho_cc,w0_force)
   deallocate(Sbar_in,p0_minus_pthermbar,rho0_predicted_edge,force,edge)
 
