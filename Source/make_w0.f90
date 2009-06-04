@@ -215,7 +215,7 @@ contains
 
   end subroutine make_w0_planar
 
-  subroutine make_w0_spherical(w0,w0_old,Sbar_in,rho0,rho0_new,p0,p0_new, &
+  subroutine make_w0_spherical(w0,w0_old,Sbar_in,rho0_old,rho0_new,p0,p0_new, &
                                gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
                                etarho_ec,etarho_cc,w0_force,dt,dtold)
 
@@ -228,9 +228,9 @@ contains
     real(kind=dp_t), intent(  out) ::                 w0(0:)
     real(kind=dp_t), intent(in   ) ::             w0_old(0:)
     real(kind=dp_t), intent(in   ) ::            Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) ::               rho0(0:)
+    real(kind=dp_t), intent(in   ) ::           rho0_old(0:)
     real(kind=dp_t), intent(in   ) ::           rho0_new(0:)
-    real(kind=dp_t), intent(in   ) ::                 p0(0:)
+    real(kind=dp_t), intent(in   ) ::             p0_old(0:)
     real(kind=dp_t), intent(in   ) ::             p0_new(0:)
     real(kind=dp_t), intent(in   ) ::      gamma1bar_old(0:)
     real(kind=dp_t), intent(in   ) ::      gamma1bar_new(0:)
@@ -261,8 +261,8 @@ contains
 
     ! create time-centered base-state quantities
     do r = 0, nr_fine-1
-       p0_nph(r)        = HALF*(p0(r)        + p0_new(r))
-       rho0_nph(1,r)    = HALF*(rho0(r)      + rho0_new(r))
+       p0_nph(r)        = HALF*(p0_old(r)        + p0_new(r))
+       rho0_nph(1,r)    = HALF*(rho0_old(r)      + rho0_new(r))
        gamma1bar_nph(r) = HALF*(gamma1bar_old(r) + gamma1bar_new(r))       
     enddo
 
@@ -272,7 +272,7 @@ contains
     w0_from_Sbar = ZERO
     do r=1,nr_fine
 
-       if (rho0(r-1) .gt. base_cutoff_density) then
+       if (rho0_old(r-1) .gt. base_cutoff_density) then
           volume_discrepancy = dpdt_factor * p0_minus_pthermbar(r-1)/dt
        else
           volume_discrepancy = ZERO
