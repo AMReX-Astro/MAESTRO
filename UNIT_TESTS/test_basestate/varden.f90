@@ -238,7 +238,7 @@ subroutine varden()
      ! recompute cutoff coordinates now that rho0 has changed
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     call compute_cutoff_coords(s0_old(:,:,rho_comp))
+     call compute_cutoff_coords(s0_new(:,:,rho_comp))
   
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute gravity
@@ -406,9 +406,14 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! reset cutoff coordinates
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     call compute_cutoff_coords(s0_old(:,:,rho_comp))
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! make Sbar
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     call make_Sbar(Sbar_new(1,:), s0_new(1,:,:), Hext_bar(1,:))
+     call make_Sbar(Sbar_new(1,:),s0_new(1,:,:),Hext_bar(1,:))
      Sbar_nph(:,:) = HALF*(Sbar_old(:,:) + Sbar_new(:,:))
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -430,7 +435,7 @@ subroutine varden()
      ! recompute cutoff coordinates now that rho0 has changed
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     call compute_cutoff_coords(s0_old(:,:,rho_comp))
+     call compute_cutoff_coords(s0_new(:,:,rho_comp))
   
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute gravity
