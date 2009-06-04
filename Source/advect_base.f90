@@ -45,7 +45,8 @@ contains
 
     use bl_constants_module
     use make_edge_state_module
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs, dr
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs, dr, &
+         base_cutoff_density_coord
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
@@ -81,8 +82,12 @@ contains
     do n=1,nlevs
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
-             rho0_new(n,r) = rho0_old(n,r) &
-                  - dt / dr(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) 
+             if (r .le. base_cutoff_density_coord(n)) then
+                rho0_new(n,r) = rho0_old(n,r) &
+                     - dt / dr(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) 
+             else
+                rho0_new(n,r) = rho0_old(n,r)
+             end if
           end do
        end do
     end do
@@ -95,7 +100,7 @@ contains
 
     use bl_constants_module
     use make_edge_state_module
-    use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine
+    use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine, base_cutoff_density_coord
     
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
@@ -124,10 +129,13 @@ contains
     
     rho0_predicted_edge = edge
 
-    do r=0,nr_fine-1
+    do r=0,base_cutoff_density_coord(1)
        rho0_new(1,r) = rho0_old(1,r) - dtdr/r_cc_loc(1,r)**2 * &
             (r_edge_loc(1,r+1)**2 * edge(1,r+1) * w0(1,r+1) - &
             r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  ))
+    end do
+    do r=base_cutoff_density_coord(1)+1,nr_fine-1
+       rho0_new(1,r) = rho0_old(1,r)
     end do
     
   end subroutine advect_base_dens_spherical
