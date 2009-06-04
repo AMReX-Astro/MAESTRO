@@ -309,173 +309,7 @@ subroutine varden()
 
      if (p0_update_type .eq. 1) then
 
-        if (spherical .eq. 1) then
-
-           do r=0,nr_fine-1
-              
-              divw = one/(r_cc_loc(1,r)**2) * &
-                   (r_edge_loc(1,r+1)**2 * w0(1,r+1) - &
-                    r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
-              
-              if (r .eq. 0) then
-                 w0dpdr_nph_2 =  w0(1,2) * (p0_old(1,2)-p0_old(1,1)) / dr(1)
-                 w0dpdr_nph_1 =  w0(1,1) * (p0_old(1,1)-p0_old(1,0)) / dr(1)
-                 w0dpdr_nph =  1.5d0 * w0dpdr_nph_1 - 0.5d0 * w0dpdr_nph_2
-              else if (r .eq. nr_fine-1) then
-                 w0dpdr_nph_2 =  w0(1,nr_fine-1) &
-                      * (p0_old(1,nr_fine-1)-p0_old(1,nr_fine-2)) / dr(1)
-                 w0dpdr_nph_1 =  w0(1,nr_fine-2) &
-                      * (p0_old(1,nr_fine-2)-p0_old(1,nr_fine-3)) / dr(1)
-                 w0dpdr_nph =  1.5d0 * w0dpdr_nph_2 - 0.5d0 * w0dpdr_nph_1
-              else
-                 w0dpdr_nph =  HALF * ( w0(1,r+1)*(p0_old(1,r+1)-p0_old(1,r  )) &
-                                       +w0(1,r  )*(p0_old(1,r  )-p0_old(1,r-1)) ) / dr(1)
-              end if
-              
-              factor = Sbar_in(1,r) - divw - 1.d0 / (gamma1bar(1,r)*p0_old(1,r)) * w0dpdr_nph
-              factor = half * dt * factor
-              
-              p0_new(1,r) = p0_old(1,r) * (one + gamma1bar(1,r)*factor ) / &
-                                          (one - gamma1bar(1,r)*factor)
-              
-           end do
-
-           ! compute provisionally updated gamma1bar and store it in gamma1bar_nph
-           do r=0,nr_fine-1
-
-              ! (rho, p) --> gamma1bar
-              den_eos(1)  = s0_new(1,r,rho_comp)
-              p_eos(1)    = p0_new(1,r)
-              xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
-
-              temp_eos(1) = s0_old(1,r,temp_comp)
-        
-              call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      do_diag)
-              
-              gamma1bar_nph(1,r) = gam1_eos(1)
-
-           end do
-
-           ! compute gamma1bar_nph
-           gamma1bar_nph = HALF*(gamma1bar + gamma1bar_nph)
-
-           ! compute p0_nph
-           p0_nph = HALF*(p0_old + p0_new)
-
-           do r=0,nr_fine-1
-
-              divw = one/(r_cc_loc(1,r)**2) * &
-                   (r_edge_loc(1,r+1)**2 * w0(1,r+1) - &
-                   r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
-
-              if (r .eq. 0) then
-                 w0dpdr_nph_2 =  w0(1,2) * (p0_nph(1,2)-p0_nph(1,1)) / dr(1)
-                 w0dpdr_nph_1 =  w0(1,1) * (p0_nph(1,1)-p0_nph(1,0)) / dr(1)
-                 w0dpdr_nph =  1.5d0 * w0dpdr_nph_1 - 0.5d0 * w0dpdr_nph_2
-              else if (r .eq. nr_fine-1) then
-                 w0dpdr_nph_2 =  w0(1,nr_fine-1) &
-                      * (p0_nph(1,nr_fine-1)-p0_nph(1,nr_fine-2)) / dr(1)
-                 w0dpdr_nph_1 =  w0(1,nr_fine-2) &
-                      * (p0_nph(1,nr_fine-2)-p0_nph(1,nr_fine-3)) / dr(1)
-                 w0dpdr_nph =  1.5d0 * w0dpdr_nph_2 - 0.5d0 * w0dpdr_nph_1
-              else
-                 w0dpdr_nph =  HALF * ( w0(1,r+1)*(p0_nph(1,r+1)-p0_nph(1,r  )) &
-                      +w0(1,r  )*(p0_nph(1,r  )-p0_nph(1,r-1)) ) / dr(1)
-              end if
-              
-!              if (r .eq. 0) then
-!                 w0dpdr_nph_2 =  HALF * w0(1,2) * ( (p0_old(1,2)-p0_old(1,1)) &
-!                      +(p0_new(1,2)-p0_new(1,1)) ) / dr(1)
-!                 w0dpdr_nph_1 =  HALF * w0(1,1) * ( (p0_old(1,1)-p0_old(1,0)) &
-!                      +(p0_new(1,1)-p0_new(1,0)) ) / dr(1)
-!                 w0dpdr_nph =  1.5d0 * w0dpdr_nph_1 - 0.5d0 * w0dpdr_nph_2
-!              else if (r .eq. nr_fine-1) then
-!                 w0dpdr_nph_2 = HALF * w0(1,nr_fine-1) * &
-!                      ((p0_old(1,nr_fine-1)-p0_old(1,nr_fine-2)) &
-!                      +(p0_new(1,nr_fine-1)-p0_new(1,nr_fine-2))) / dr(1)
-!                 w0dpdr_nph_1 = HALF * w0(1,nr_fine-2)* &
-!                      ((p0_old(1,nr_fine-2)-p0_old(1,nr_fine-3)) &
-!                      +(p0_new(1,nr_fine-2)-p0_new(1,nr_fine-3))) / dr(1)
-!                 w0dpdr_nph =  1.5d0 * w0dpdr_nph_2 - 0.5d0 * w0dpdr_nph_1
-!              else
-!                 w0dpdr_nph = HALF * HALF * ( w0(1,r+1)*(p0_old(1,r+1)-p0_old(1,r)) + &
-!                      w0(1,r)*(p0_old(1,r)-p0_old(1,r-1)) + &
-!                      w0(1,r+1)*(p0_new(1,r+1)-p0_new(1,r)) + &
-!                      w0(1,r)*(p0_new(1,r)-p0_new(1,r-1)) ) / dr(1)
-!              end if
-
-              factor = Sbar_in(1,r) - divw &
-                   - 1.d0 / (gamma1bar_nph(1,r)*p0_nph(1,r)) * w0dpdr_nph
-              factor = half * dt * factor
-
-              p0_new(1,r) = p0_old(1,r) * (one + gamma1bar_nph(1,r)*factor ) / &
-                                          (one - gamma1bar_nph(1,r)*factor)
-
-              if (p0_new(1,r) < 0) print *, 'pressure negative'
-
-           end do
-
-
-           ! compute updated gamma1bar and store it in gamma1bar_nph
-           do r=0,nr_fine-1
-
-              ! (rho, p) --> gamma1bar
-              den_eos(1)  = s0_new(1,r,rho_comp)
-              p_eos(1)    = p0_new(1,r)
-              xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
-
-              temp_eos(1) = s0_old(1,r,temp_comp)
-        
-              call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      do_diag)
-              
-              gamma1bar_nph(1,r) = gam1_eos(1)
-
-           end do
-
-           ! compute gamma1bar_nph
-           gamma1bar_nph = HALF*(gamma1bar + gamma1bar_nph)
-
-           ! compute p0_nph
-           p0_nph = HALF*(p0_old + p0_new)
-
-           ! make psi
-           call make_psi_spherical(psi,w0,gamma1bar_nph,p0_nph,Sbar_in)
-
-        else
-              
-           ! make psi
-           call make_psi_planar(etarho_cc,psi)
-
-           ! advect p0
-           force = psi
-    
-           call make_edge_state_1d(p0_old,edge,w0,force,dt)
-    
-           do n=1,nlevs
-              do r=r_start_coord(n,1),r_end_coord(n,1)
-                 p0_new(n,r) = p0_old(n,r) - dt / dr(n) &
-                      * HALF * (w0(n,r) + w0(n,r+1)) * (edge(n,r+1) - edge(n,r)) &
-                      + dt * psi(n,r)
-              end do
-           end do
-
-        endif
+        call bl_error("We do not support p0_update_type = 1 for this example")
 
      else
 
@@ -485,7 +319,9 @@ subroutine varden()
 
         ! make psi
         if (spherical .eq. 0) then
+
            call make_psi_planar(etarho_cc,psi)
+
         else
 
            ! compute updated gamma1bar and store it in gamma1bar_nph
@@ -568,47 +404,46 @@ subroutine varden()
 
   enddo
 
-
   ! check the HSE-ness
-    if (spherical .eq. 1) then
-       mencl = four3rd*m_pi*dr(1)**3*s0_new(1,0,rho_comp)
-    endif
+  if (spherical .eq. 1) then
+     mencl = four3rd*m_pi*dr(1)**3*s0_new(1,0,rho_comp)
+  endif
+  
+  max_hse_error = -1.d30
 
-    max_hse_error = -1.d30
+  if (spherical .eq. 0) then
+     starting_rad = prob_lo(1)
+  else
+     starting_rad = ZERO
+  endif
 
-    if (spherical .eq. 0) then
-       starting_rad = prob_lo(1)
-    else
-       starting_rad = ZERO
-    endif
+  do r=1,nr(1)-1
 
-    do r=1,nr(1)-1
-       
-       rloc = starting_rad + (dble(r) + HALF)*dr(1)
+     rloc = starting_rad + (dble(r) + HALF)*dr(1)
 
-       if (r < base_cutoff_density_coord(1)) then
+     if (r < base_cutoff_density_coord(1)) then
 
-          r_r = starting_rad + dble(r+1)*dr(1)
-          r_l = starting_rad + dble(r)*dr(1)
+        r_r = starting_rad + dble(r+1)*dr(1)
+        r_l = starting_rad + dble(r)*dr(1)
 
-          if (spherical .eq. 1) then
-             g = -Gconst*mencl/r_l**2
-             mencl = mencl &
-                  + four3rd*m_pi*dr(1)*(r_l**2+r_l*r_r+r_r**2)*s0_new(1,r,rho_comp)
-          else
-             g = grav_const
-          endif
+        if (spherical .eq. 1) then
+           g = -Gconst*mencl/r_l**2
+           mencl = mencl &
+                + four3rd*m_pi*dr(1)*(r_l**2+r_l*r_r+r_r**2)*s0_new(1,r,rho_comp)
+        else
+           g = grav_const
+        endif
 
-          dpdr = (p0_new(1,r) - p0_new(1,r-1))/dr(1)
-          rhog = HALF*(s0_new(1,r,rho_comp) + s0_new(1,r-1,rho_comp))*g
+        dpdr = (p0_new(1,r) - p0_new(1,r-1))/dr(1)
+        rhog = HALF*(s0_new(1,r,rho_comp) + s0_new(1,r-1,rho_comp))*g
 
-          max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
+        max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
 
-       end if
+     end if
 
-    enddo
+  enddo
 
-    print *, 'maximum HSE error = ', max_hse_error
+  print *, 'maximum HSE error = ', max_hse_error
 
   ! output
   open(unit=10,file="base.new")
