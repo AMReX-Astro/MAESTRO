@@ -50,7 +50,9 @@ subroutine varden()
   real(dp_t), allocatable ::           etarho_ec(:,:)
   real(dp_t), allocatable ::           etarho_cc(:,:)
   real(dp_t), allocatable ::            w0_force(:,:)
-  real(dp_t), allocatable ::             Sbar_in(:,:)
+  real(dp_t), allocatable ::            Sbar_old(:,:)
+  real(dp_t), allocatable ::            Sbar_nph(:,:)
+  real(dp_t), allocatable ::            Sbar_new(:,:)
   real(dp_t), allocatable ::  p0_minus_pthermbar(:,:)
   real(dp_t), allocatable :: rho0_predicted_edge(:,:)
   real(dp_t), allocatable ::               force(:,:)
@@ -128,7 +130,9 @@ subroutine varden()
   allocate(          etarho_ec(nlevs_radial,0:nr_fine))
   allocate(          etarho_cc(nlevs_radial,0:nr_fine-1))
   allocate(           w0_force(nlevs_radial,0:nr_fine))
-  allocate(            Sbar_in(nlevs_radial,0:nr_fine-1))
+  allocate(           Sbar_old(nlevs_radial,0:nr_fine-1))
+  allocate(           Sbar_nph(nlevs_radial,0:nr_fine-1))
+  allocate(           Sbar_new(nlevs_radial,0:nr_fine-1))
   allocate( p0_minus_pthermbar(nlevs_radial,0:nr_fine-1))
   allocate(rho0_predicted_edge(nlevs_radial,0:nr_fine))
   allocate(              force(nlevs_radial,0:nr_fine-1))
@@ -213,13 +217,13 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! make Sbar
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     call make_Sbar(Sbar_in(1,:), s0_old(1,:,:), Hext_bar(1,:))
+     call make_Sbar(Sbar_old(1,:), s0_old(1,:,:), Hext_bar(1,:))
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute w_0
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     call make_w0(w0,w0,w0_force,Sbar_in,s0_old(:,:,rho_comp),s0_old(:,:,rho_comp), &
+     call make_w0(w0,w0,w0_force,Sbar_old,s0_old(:,:,rho_comp),s0_old(:,:,rho_comp), &
                   p0_old,p0_old,gamma1bar_old,gamma1bar_old,p0_minus_pthermbar,psi, &
                   etarho_ec,etarho_cc,dt,dtold)
 
@@ -363,21 +367,55 @@ subroutine varden()
            ! compute p0_nph
            p0_nph = HALF*(p0_old + p0_new)
 
-           call make_psi_spherical(psi,w0,gamma1bar_nph,p0_nph,Sbar_in)
+           call make_psi_spherical(psi,w0,gamma1bar_nph,p0_nph,Sbar_old)
 
         end if
 
      end if
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! update temperature
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     do r=0,nr_fine-1
+
+        ! (rho,p) --> T,h, etc
+        den_eos(1)  = s0_new(1,r,rho_comp)
+        p_eos(1)    = p0_new(1,r)
+        xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+
+        temp_eos(1) = s0_old(1,r,temp_comp)
+
+        call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+                 xn_eos, &
+                 p_eos, h_eos, e_eos, &
+                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                 dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                 dpdX_eos, dhdX_eos, &
+                 gam1_eos, cs_eos, s_eos, &
+                 dsdt_eos, dsdr_eos, &
+                 do_diag)
+
+        s0_new(1,r,temp_comp) = temp_eos(1)
+
+     enddo
+
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! SECOND HALF OF ALGORITHM
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! make Sbar
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     call make_Sbar(Sbar_new(1,:), s0_new(1,:,:), Hext_bar(1,:))
+     Sbar_nph(:,:) = HALF*(Sbar_old(:,:) + Sbar_new(:,:))
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute w_0
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     call make_w0(w0,w0,w0_force,Sbar_in,s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
+     call make_w0(w0,w0,w0_force,Sbar_nph,s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
                   p0_old,p0_new,gamma1bar_old,gamma1bar_new,p0_minus_pthermbar,psi, &
                   etarho_ec,etarho_cc,dt,dtold)
 
@@ -523,7 +561,7 @@ subroutine varden()
            ! compute p0_nph
            p0_nph = HALF*(p0_old + p0_new)
 
-           call make_psi_spherical(psi,w0,gamma1bar_nph,p0_nph,Sbar_in)
+           call make_psi_spherical(psi,w0,gamma1bar_nph,p0_nph,Sbar_nph)
 
         end if
 
@@ -630,6 +668,6 @@ subroutine varden()
   deallocate(anelastic_cutoff_coord,base_cutoff_density_coord,burning_cutoff_density_coord)
   deallocate(grav_cell,gamma1bar_old,gamma1bar_nph,gamma1bar_new,s0_old,s0_new)
   deallocate(X0,p0_old,p0_new,p0_nph,w0,psi,etarho_ec,etarho_cc,w0_force)
-  deallocate(Sbar_in,p0_minus_pthermbar,rho0_predicted_edge,force,edge)
+  deallocate(Sbar_old,Sbar_new,Sbar_nph,p0_minus_pthermbar,rho0_predicted_edge,force,edge)
 
 end subroutine varden
