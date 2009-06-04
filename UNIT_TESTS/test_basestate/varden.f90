@@ -25,12 +25,13 @@ subroutine varden()
   use enforce_HSE_module
   use make_psi_module
   use fundamental_constants_module, only: Gconst
+  use test_basestate_module
 
   implicit none
 
   integer :: n,r,comp,comp2,iter
 
-  real(dp_t) :: frac,delta,sumX,time,dt,dtold,y_0,Hbar
+  real(dp_t) :: frac,delta,sumX,time,dt,dtold
   real(dp_t) :: factor,divw,w0dpdr_nph,w0dpdr_nph_1,w0dpdr_nph_2
 
   real(dp_t), allocatable ::                  dx(:,:)
@@ -54,6 +55,7 @@ subroutine varden()
   real(dp_t), allocatable :: rho0_predicted_edge(:,:)
   real(dp_t), allocatable ::               force(:,:)
   real(dp_t), allocatable ::                edge(:,:)
+  real(dp_t), allocatable ::            Hext_bar(:,:)
 
   real(dp_t) :: mencl, max_hse_error, starting_rad, rloc, r_r, r_l, g, dpdr, rhog
 
@@ -131,6 +133,7 @@ subroutine varden()
   allocate(rho0_predicted_edge(nlevs_radial,0:nr_fine))
   allocate(              force(nlevs_radial,0:nr_fine-1))
   allocate(               edge(nlevs_radial,0:nr_fine))
+  allocate(           Hext_bar(nlevs_radial,0:nr_fine-1))
 
   gamma1bar_old      = ZERO
   gamma1bar_nph      = ZERO
@@ -140,7 +143,7 @@ subroutine varden()
   etarho_ec          = ZERO
   etarho_cc          = ZERO
   p0_minus_pthermbar = ZERO
-
+  Hext_bar           = ZERO
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! read in the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -202,19 +205,15 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the heating term and Sbar
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     do n = 1, nlevs
+        call get_heating(Hext_bar(n,0:))
+     enddo
 
-     print *, 'calling the eos', nr_fine
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! make Sbar
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      do r=0,nr_fine-1
-
-        if (spherical .eq. 0) then
-           ! plane-parallel -- do the heating term in paper II (section 4)
-           y_0 = 4.d7
-           Hbar = 1.d17 * exp(-((r_cc_loc(1,r) - y_0)**2)/ 1.d14)
-        else
-           ! spherical -- lower amplitude heating term
-           y_0 = 4.d7
-           Hbar = 1.d16 * exp(-((r_cc_loc(1,r) - y_0)**2)/ 1.d14)
-        endif
 
         ! (rho, T) --> p,h, etc
         den_eos(1)  = s0_old(1,r,rho_comp)
@@ -231,7 +230,7 @@ subroutine varden()
                  dsdt_eos, dsdr_eos, &
                  do_diag)
 
-        Sbar_in(1,r) = Hbar * dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
+        Sbar_in(1,r) = Hext_bar(1,r) * dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
 
      enddo
 

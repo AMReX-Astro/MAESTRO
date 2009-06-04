@@ -1,4 +1,4 @@
-NDEBUG := t
+NDEBUG := 
 MPI    :=
 OMP    :=
 
@@ -9,6 +9,9 @@ MKVERBOSE := t
 FPARALLEL := ../..
 
 include $(FPARALLEL)/mk/GMakedefs.mak
+
+include $(FPARALLEL)/MAESTRO/test_basestate/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO/test_basestate
 
 include $(FPARALLEL)/boxlib/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/boxlib
