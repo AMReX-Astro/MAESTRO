@@ -149,14 +149,41 @@ subroutine varden()
      call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),dx(n,:))
   enddo
 
-  call compute_cutoff_coords(s0_old(:,:,rho_comp))
-
   ! output
   open(unit=10,file="base.orig")
   do r=0,nr_fine-1
      write(10,1000) r_cc_loc(1,r), s0_old(1,r,rho_comp), s0_old(1,r,temp_comp), p0_old(1,r)
   enddo
   close(unit=10)
+
+  call compute_cutoff_coords(s0_old(:,:,rho_comp))
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! compute initial gamma1bar_old
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  do r=0,nr_fine-1
+
+     ! (rho, p) --> gamma1bar
+     den_eos(1)  = s0_old(1,r,rho_comp)
+     p_eos(1)    = p0_old(1,r)
+     xn_eos(1,:) = s0_old(1,r,spec_comp:spec_comp-1+nspec)/s0_old(1,r,rho_comp)
+     
+     temp_eos(1) = s0_old(1,r,temp_comp)
+     
+     call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+              xn_eos, &
+              p_eos, h_eos, e_eos, &
+              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+              dpdX_eos, dhdX_eos, &
+              gam1_eos, cs_eos, s_eos, &
+              dsdt_eos, dsdr_eos, &
+              do_diag)
+     
+     gamma1bar_old(1,r) = gam1_eos(1)
+
+  end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! main timestepping loop
@@ -173,7 +200,7 @@ subroutine varden()
      print *, 'time = ', time
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     ! compute the heating term and gamma1bar
+     ! compute the heating term and Sbar
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
      print *, 'calling the eos', nr_fine
@@ -203,8 +230,6 @@ subroutine varden()
                  gam1_eos, cs_eos, s_eos, &
                  dsdt_eos, dsdr_eos, &
                  do_diag)
-
-        gamma1bar_old(1,r) = gam1_eos(1)
 
         Sbar_in(1,r) = Hbar * dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
 
@@ -308,7 +333,7 @@ subroutine varden()
      enddo
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     ! update pressure
+     ! update pressure and compute psi
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
      if (p0_update_type .eq. 1) then
@@ -317,9 +342,33 @@ subroutine varden()
 
      else
 
-        ! set new p0 through HSE
+        ! update pressure
         p0_new = p0_old
         call enforce_HSE(s0_new(:,:,rho_comp),p0_new,grav_cell)
+
+        ! compute gamma1bar_new
+        do r=0,nr_fine-1
+           
+           ! (rho, p) --> gamma1bar
+           den_eos(1)  = s0_new(1,r,rho_comp)
+           p_eos(1)    = p0_new(1,r)
+           xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+           
+           temp_eos(1) = s0_old(1,r,temp_comp)
+           
+           call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+           
+           gamma1bar_new(1,r) = gam1_eos(1)
+           
+        end do
 
         ! make psi
         if (spherical .eq. 0) then
@@ -328,29 +377,150 @@ subroutine varden()
 
         else
 
-           ! compute updated gamma1bar
+           ! compute gamma1bar_nph
+           gamma1bar_nph = HALF*(gamma1bar_old+gamma1bar_new)
+
+           ! compute p0_nph
+           p0_nph = HALF*(p0_old + p0_new)
+
+           call make_psi_spherical(psi,w0,gamma1bar_nph,p0_nph,Sbar_in)
+
+        end if
+
+     end if
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! SECOND HALF OF ALGORITHM
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! compute w_0
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     call make_w0(w0,w0,w0_force,Sbar_in,s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
+                  p0_old,p0_new,gamma1bar_old,gamma1bar_new,p0_minus_pthermbar,psi, &
+                  etarho_ec,etarho_cc,dt,dtold)
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! compute gravity
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     call make_grav_cell(grav_cell,s0_new(:,:,rho_comp))
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! update species
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     ! In the real code, this will be done
+     ! for the full state.  Here we are faking a 1-d star, so
+     ! we need to do this manually, since the species are not
+     ! part of the base state
+     do comp=spec_comp,spec_comp+nspec-1
+
+        ! here we predict X_0 on the edges
+        X0(1,:) = s0_old(1,:,comp)/s0_old(1,:,rho_comp)
+        do r=0,nr_fine-1
+           X0(1,r) = max(X0(1,r),ZERO)
+        end do
+
+        force = ZERO
+
+        if (spherical .eq. 0) then
+           call make_edge_state_1d(X0,edge,w0,force,dt)
+        else
+           call make_edge_state_1d(X0,edge,w0,force,dt)
+        endif
+
+        ! our final update needs (rho X)_0 on the edges, so compute
+        ! that now
+        edge(1,:) = rho0_predicted_edge(1,:)*edge(1,:)
+
+        ! update (rho X)_0
+        if (spherical .eq. 0) then
            do r=0,nr_fine-1
-
-              ! (rho, p) --> gamma1bar
-              den_eos(1)  = s0_new(1,r,rho_comp)
-              p_eos(1)    = p0_new(1,r)
-              xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
-
-              temp_eos(1) = s0_old(1,r,temp_comp)
-        
-              call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      do_diag)
-              
-              gamma1bar_new(1,r) = gam1_eos(1)
-
+              s0_new(1,r,comp) = s0_old(1,r,comp) &
+                   - (dt/dr(1))*(edge(1,r+1) * w0(1,r+1) - edge(1,r) * w0(1,r))
            end do
+        else
+           do r=0,nr_fine-1
+              s0_new(1,r,comp) = s0_old(1,r,comp) &
+                   - (dt/dr(1))/r_cc_loc(1,r)**2* &
+                   (r_edge_loc(1,r+1)**2 * edge(1,r+1) * w0(1,r+1) - &
+                   r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  ))
+           end do           
+        endif
+
+     enddo
+
+     ! don't let the species leave here negative
+     do comp=spec_comp,spec_comp+nspec-1
+        
+        if (minval(s0_new(1,:,comp)) .lt. ZERO) then
+           do r=0,nr_fine-1
+              if (s0_new(1,r,comp) .lt. ZERO) then
+                 delta = -s0_new(1,r,comp)
+                 sumX = ZERO
+                 do comp2=spec_comp,spec_comp+nspec-1
+                    if (comp2 .ne. comp .and. s0_new(1,r,comp2) .ge. ZERO) then
+                       sumX = sumX + s0_new(1,r,comp2)
+                    endif
+                 enddo
+                 do comp2=spec_comp,spec_comp+nspec-1
+                    if (comp2 .ne. comp .and. s0_new(1,r,comp2) .ge. ZERO) then
+                       frac = s0_new(1,r,comp2) / sumX
+                       s0_new(1,r,comp2) = s0_new(1,r,comp2) - frac * delta
+                    endif
+                 enddo
+                 s0_new(1,r,comp) = ZERO
+              endif
+           enddo
+        endif
+     enddo
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! update pressure and compute psi
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     if (p0_update_type .eq. 1) then
+
+        call bl_error("We do not support p0_update_type = 1 for this example")
+
+     else
+
+        ! update pressure
+        p0_new = p0_old
+        call enforce_HSE(s0_new(:,:,rho_comp),p0_new,grav_cell)
+
+        ! compute gamma1bar_new
+        do r=0,nr_fine-1
+           
+           ! (rho, p) --> gamma1bar
+           den_eos(1)  = s0_new(1,r,rho_comp)
+           p_eos(1)    = p0_new(1,r)
+           xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+           
+           temp_eos(1) = s0_old(1,r,temp_comp)
+           
+           call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+           
+           gamma1bar_new(1,r) = gam1_eos(1)
+           
+        end do
+
+        ! make psi
+        if (spherical .eq. 0) then
+
+           call make_psi_planar(etarho_cc,psi)
+
+        else
 
            ! compute gamma1bar_nph
            gamma1bar_nph = HALF*(gamma1bar_old+gamma1bar_new)
@@ -387,7 +557,7 @@ subroutine varden()
                  dsdt_eos, dsdr_eos, &
                  do_diag)
 
-           s0_new(1,r,temp_comp) = temp_eos(1)
+        s0_new(1,r,temp_comp) = temp_eos(1)
 
      enddo
 
