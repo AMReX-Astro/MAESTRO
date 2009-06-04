@@ -644,6 +644,9 @@ contains
        write(6,*) '<<< STEP  6 : make new S and new w0 >>> '
     end if
 
+    ! reset cutoff coordinates to old time value
+    call compute_cutoff_coords(rho0_old)
+
     do n=1,nlevs
        call multifab_build(thermal2(n), mla%la(n), 1, 1)
     end do
