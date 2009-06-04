@@ -215,7 +215,7 @@ contains
 
   end subroutine make_w0_planar
 
-  subroutine make_w0_spherical(w0,w0_old,Sbar_in,rho0_old,rho0_new,p0,p0_new, &
+  subroutine make_w0_spherical(w0,w0_old,Sbar_in,rho0_old,rho0_new,p0_old,p0_new, &
                                gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
                                etarho_ec,etarho_cc,w0_force,dt,dtold)
 
