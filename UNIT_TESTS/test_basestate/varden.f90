@@ -213,26 +213,7 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! make Sbar
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     do r=0,nr_fine-1
-
-        ! (rho, T) --> p,h, etc
-        den_eos(1)  = s0_old(1,r,rho_comp)
-        temp_eos(1) = s0_old(1,r,temp_comp)
-        xn_eos(1,:) = s0_old(1,r,spec_comp:spec_comp-1+nspec)/s0_old(1,r,rho_comp)
-
-        call eos(eos_input_rt, den_eos, temp_eos, NP, nspec, &
-                 xn_eos, &
-                 p_eos, h_eos, e_eos, &
-                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                 dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                 dpdX_eos, dhdX_eos, &
-                 gam1_eos, cs_eos, s_eos, &
-                 dsdt_eos, dsdr_eos, &
-                 do_diag)
-
-        Sbar_in(1,r) = Hext_bar(1,r) * dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
-
-     enddo
+     call make_Sbar(Sbar_in(1,:), s0_old(1,:,:), Hext_bar(1,:))
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute w_0
@@ -401,10 +382,25 @@ subroutine varden()
                   etarho_ec,etarho_cc,dt,dtold)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! update density and compute rho0_predicted_edge
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     call advect_base_dens(w0,s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
+                           rho0_predicted_edge,dt)
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! recompute cutoff coordinates now that rho0 has changed
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     call compute_cutoff_coords(s0_old(:,:,rho_comp))
+  
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute gravity
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
      call make_grav_cell(grav_cell,s0_new(:,:,rho_comp))
+
+
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! update species

@@ -11,8 +11,6 @@ contains
   
     use geometry, ONLY : nr, spherical, r_cc_loc
 
-    implicit none
-
     real(dp_t), intent(inout) :: Hbar(0:)
 
     real(dp_t) :: y_0
@@ -33,6 +31,42 @@ contains
 
     return
   end subroutine get_heating
+
+  subroutine make_Sbar(Sbar, s0, Hbar)
+
+    use variables
+    use eos_module
+    use geometry, only : nr
+
+    real(dp_t), intent(inout) :: Sbar(0:)
+    real(dp_t), intent(in   ) :: s0(0:,:)
+    real(dp_t), intent(in   ) :: Hbar(0:)
+
+    integer :: r
+
+     do r=0,nr(1)-1
+
+        ! (rho, T) --> p,h, etc
+        den_eos(1)  = s0(r,rho_comp)
+        temp_eos(1) = s0(r,temp_comp)
+        xn_eos(1,:) = s0(r,spec_comp:spec_comp-1+nspec)/s0(r,rho_comp)
+
+        call eos(eos_input_rt, den_eos, temp_eos, NP, nspec, &
+                 xn_eos, &
+                 p_eos, h_eos, e_eos, &
+                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                 dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                 dpdX_eos, dhdX_eos, &
+                 gam1_eos, cs_eos, s_eos, &
+                 dsdt_eos, dsdr_eos, &
+                 do_diag)
+
+        Sbar(r) = Hbar(r) * dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
+
+     enddo
+
+  end subroutine make_Sbar
+
 
 end module test_basestate_module
 
