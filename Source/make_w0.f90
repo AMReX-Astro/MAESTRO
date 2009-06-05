@@ -248,11 +248,11 @@ contains
     real(kind=dp_t) ::    w0_new_cen(0:nr_fine-1)
     real(kind=dp_t) :: gamma1bar_nph(0:nr_fine-1)
     real(kind=dp_t) ::        p0_nph(0:nr_fine-1)
-    real(kind=dp_t) ::             c(0:nr_fine)
-    real(kind=dp_t) ::             d(0:nr_fine)
-    real(kind=dp_t) ::             e(0:nr_fine)
+    real(kind=dp_t) ::             A(0:nr_fine)
+    real(kind=dp_t) ::             B(0:nr_fine)
+    real(kind=dp_t) ::             C(0:nr_fine)
     real(kind=dp_t) ::             u(0:nr_fine)
-    real(kind=dp_t) ::           rhs(0:nr_fine)
+    real(kind=dp_t) ::             F(0:nr_fine)
     real(kind=dp_t) ::  w0_from_Sbar(0:nr_fine)
 
     ! These need the extra dimension so we can call make_grav_edge
@@ -293,54 +293,64 @@ contains
     call make_grav_edge(grav_edge,rho0_nph)
 
     ! NOTE:  now we solve for the remainder of (r^2 * w0)
+    ! this takes the form of a tri-diagonal matrix:
+    ! A_j (r^2 dw_0)_{j-3/2} + 
+    ! B_j (r^2 dw_0)_{j-1/2} + 
+    ! C_j (r^2 dw_0)_{j+1/2} = F_j
 
-    c   = ZERO
-    d   = ZERO
-    e   = ZERO
-    rhs = ZERO
+    A   = ZERO
+    B   = ZERO
+    C   = ZERO
+    F   = ZERO
     u   = ZERO
    
     ! Note that we are solving for (r^2 w0), not just w0. 
 
     do r=1,nr_fine
-       c(r) = gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(1,r-1)**2
-       c(r) = c(r) / dr(1)**2
+       A(r) = gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(1,r-1)**2
+       A(r) = A(r) / dr(1)**2
     end do
 
     do r=1,nr_fine-1
-       d(r) = -( gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(1,r-1)**2 &
+       B(r) = -( gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(1,r-1)**2 &
                 +gamma1bar_nph(r  ) * p0_nph(r  ) / r_cc_loc(1,r  )**2 ) / dr(1)**2 
 
        dpdr = (p0_nph(r)-p0_nph(r-1))/dr(1)
-       d(r) = d(r) - four * dpdr / (r_edge_loc(1,r))**3
+       B(r) = B(r) - four * dpdr / (r_edge_loc(1,r))**3
     end do
 
     do r = 0,nr_fine-1
-       e(r) = gamma1bar_nph(r) * p0_nph(r) / r_cc_loc(1,r)**2
-       e(r) = e(r) / dr(1)**2
+       C(r) = gamma1bar_nph(r) * p0_nph(r) / r_cc_loc(1,r)**2
+       C(r) = C(r) / dr(1)**2
     end do
 
     do r = 1,nr_fine-1
        dpdr = (p0_nph(r)-p0_nph(r-1))/dr(1)
-       rhs(r) = four * dpdr * w0_from_Sbar(r) / r_edge_loc(1,r) - &
-            grav_edge(1,r) * (r_cc_loc(1,r  )**2 * etarho_cc(r  ) - &
-            r_cc_loc(1,r-1)**2 * etarho_cc(r-1)) / &
-            (dr(1) * r_edge_loc(1,r)**2) - &
-            four * M_PI * Gconst * HALF * (rho0_nph(1,r) + rho0_nph(1,r-1)) * etarho_ec(r)
+       F(r) = four * dpdr * w0_from_Sbar(r) / r_edge_loc(1,r) - &
+              grav_edge(1,r) * (r_cc_loc(1,r  )**2 * etarho_cc(r  ) - &
+              r_cc_loc(1,r-1)**2 * etarho_cc(r-1)) / &
+              (dr(1) * r_edge_loc(1,r)**2) - &
+              four * M_PI * Gconst * HALF * &
+              (rho0_nph(1,r) + rho0_nph(1,r-1)) * etarho_ec(r)
     end do
 
     ! Lower boundary
-       d(0) = one
-       e(0) = zero
-     rhs(0) = zero
+       B(0) = one
+       C(0) = zero
+       F(0) = zero
 
     ! Upper boundary
-       c(nr_fine) = zero
-       d(nr_fine) =  one
-     rhs(nr_fine) = zero
+       A(nr_fine) = zero
+       B(nr_fine) =  one
+       F(nr_fine) = zero
+
+! these are the BCs specified in flowchart.tex
+!       A(nr_fine) = -one
+!       B(nr_fine) =  one
+!     F(nr_fine) = zero
 
     ! Call the tridiagonal solver
-    call tridiag(c, d, e, rhs, u, nr_fine+1)
+    call tridiag(A, B, C, F, u, nr_fine+1)
 
     w0(0) = ZERO
     do r=1,nr_fine
