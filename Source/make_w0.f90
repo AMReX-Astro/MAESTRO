@@ -340,14 +340,14 @@ contains
        F(0) = zero
 
     ! Upper boundary
-       A(nr_fine) = zero
-       B(nr_fine) =  one
-       F(nr_fine) = zero
+!       A(nr_fine) = zero
+!       B(nr_fine) =  one
+!       F(nr_fine) = zero
 
 ! these are the BCs specified in flowchart.tex
-!       A(nr_fine) = -one
-!       B(nr_fine) =  one
-!     F(nr_fine) = zero
+       A(nr_fine) = -one
+       B(nr_fine) =  one
+       F(nr_fine) = zero
 
     ! Call the tridiagonal solver
     call tridiag(A, B, C, F, u, nr_fine+1)
