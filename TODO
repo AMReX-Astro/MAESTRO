@@ -1,3 +1,9 @@
+-- put ppm into 1d edge state
+
+-- put tempbar in checkpoint
+
+-- update and review the cutoff coordinate section in the document
+
 -- figure out what density_cutoff should be in initdata.f90 (in relation
    to anelastic_cutoff), and understand what values of this give a valid
    basestate expansion.
