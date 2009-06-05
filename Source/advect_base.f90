@@ -129,13 +129,10 @@ contains
     
     rho0_predicted_edge = edge
 
-    do r=0,base_cutoff_density_coord(1)
+    do r=0,nr_fine-1
        rho0_new(1,r) = rho0_old(1,r) - dtdr/r_cc_loc(1,r)**2 * &
             (r_edge_loc(1,r+1)**2 * edge(1,r+1) * w0(1,r+1) - &
             r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  ))
-    end do
-    do r=base_cutoff_density_coord(1)+1,nr_fine-1
-       rho0_new(1,r) = rho0_old(1,r)
     end do
     
   end subroutine advect_base_dens_spherical
