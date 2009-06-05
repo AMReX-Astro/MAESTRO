@@ -168,7 +168,7 @@ contains
     ! compute the coordinates of the anelastic cutoff
     anelastic_cutoff_coord(1) = r_end_coord(1,1)+1
     do r=0,r_end_coord(1,1)
-       if (rho0(1,r) .lt. anelastic_cutoff .and. &
+       if (rho0(1,r) .le. anelastic_cutoff .and. &
             anelastic_cutoff_coord(1) .eq. r_end_coord(1,1)+1) then
           anelastic_cutoff_coord(1) = r
           exit
@@ -181,7 +181,7 @@ contains
     ! compute the coordinates of the base cutoff density
     base_cutoff_density_coord(1) = r_end_coord(1,1)+1
     do r=0,r_end_coord(1,1)
-       if (rho0(1,r) .lt. base_cutoff_density .and. &
+       if (rho0(1,r) .le. base_cutoff_density .and. &
             base_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
           base_cutoff_density_coord(1) = r
           exit
@@ -194,7 +194,7 @@ contains
     ! compute the coordinates of the burning cutoff density
     burning_cutoff_density_coord(1) = r_end_coord(1,1)+1
     do r=0,r_end_coord(1,1)
-       if (rho0(1,r) .lt. burning_cutoff_density .and. &
+       if (rho0(1,r) .le. burning_cutoff_density .and. &
             burning_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
           burning_cutoff_density_coord(1) = r
           exit
