@@ -24,3 +24,8 @@
 
 -- can we remove w0mac_interp_type = 0 (i.e. doing a MAC project to put
    w0 on edges?
+
+-- are we handling the thermodynamics consistently when we hit small_temp?
+
+-- the EOS should not take nspec as an argument -- this should come
+   from the network module directly.
