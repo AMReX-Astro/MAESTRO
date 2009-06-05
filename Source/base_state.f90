@@ -371,8 +371,8 @@ contains
 
        if (rloc .lt. base_cutoff_density_loc) then
 
-          r_r = dble(r+1)*dr(n)
-          r_l = dble(r)*dr(n)
+          r_r = starting_rad + dble(r+1)*dr(n)
+          r_l = starting_rad + dble(r)*dr(n)
 
           if (spherical .eq. 1) then
              g = -Gconst*mencl/r_l**2
