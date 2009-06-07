@@ -10,7 +10,7 @@ module base_io_module
 
 contains
 
-  subroutine write_base_state(state_name,w0_name,etarho_name,chk_name, &
+  subroutine write_base_state(istep,chk_name, &
                               rho0,rhoh0,p0,gamma1bar,w0,etarho_ec,etarho_cc, &
                               div_coeff,psi,problo)
     
@@ -21,9 +21,7 @@ contains
     use variables, only: rho_comp, rhoh_comp
     use bl_constants_module
 
-    character(len=256), intent(in) :: state_name
-    character(len=256), intent(in) :: w0_name
-    character(len=256), intent(in) :: etarho_name
+    integer          , intent(in) :: istep
     character(len=*) , intent(in) :: chk_name
     real(kind=dp_t)  , intent(in) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(in) :: p0(:,0:),gamma1bar(:,0:)
@@ -31,6 +29,7 @@ contains
     real(kind=dp_t)  , intent(in) :: w0(:,0:)
     real(kind=dp_t)  , intent(in) :: etarho_ec(:,0:),etarho_cc(:,0:)
 
+    character(len=256) :: state_name, w0_name, etarho_name
     real(kind=dp_t) :: base_r, problo
     character(len=256) :: out_name
     integer :: n, r, i
@@ -38,6 +37,17 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "write_base_state")
+
+    ! create the names of the files that will store the output
+    if (istep <= 99999) then
+       write(unit=state_name,fmt='("model_",i5.5)') istep
+       write(unit=w0_name,fmt='("w0_",i5.5)') istep
+       write(unit=etarho_name,fmt='("eta_",i5.5)') istep
+    else
+       write(unit=state_name,fmt='("model_",i6.6)') istep
+       write(unit=w0_name,fmt='("w0_",i6.6)') istep
+       write(unit=etarho_name,fmt='("eta_",i6.6)') istep
+    endif
 
     if (parallel_IOProcessor()) then
 
@@ -109,7 +119,7 @@ contains
     use parallel
     use bl_prof_module
     use variables, only: rho_comp, rhoh_comp
-    use network, only: nspec
+    use network, only: nspec, spec_names
     use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks, nlevs_radial
     use bl_constants_module
     use eos_module
