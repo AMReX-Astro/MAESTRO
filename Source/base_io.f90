@@ -21,7 +21,7 @@ contains
     use variables, only: rho_comp, rhoh_comp
     use bl_constants_module
 
-    integer           , intent(in) :: istep
+    integer          , intent(in) :: istep
     character(len=*) , intent(in) :: chk_name
     real(kind=dp_t)  , intent(in) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(in) :: p0(:,0:),gamma1bar(:,0:)
@@ -112,7 +112,7 @@ contains
   end subroutine write_base_state
 
 
-  subroutine read_base_state(state_name,w0_name,etarho_name,chk_name, &
+  subroutine read_base_state(restart,chk_name, &
                              rho0,rhoh0,p0,gamma1bar,w0, &
                              etarho_ec,etarho_cc,div_coeff,psi)
 
@@ -125,9 +125,7 @@ contains
     use restrict_base_module, only: fill_ghost_base
     use inlet_bc_module, only: set_inlet_bcs
     
-    character(len=256), intent(in   ) :: state_name
-    character(len=256), intent(in   ) :: w0_name
-    character(len=256), intent(in   ) :: etarho_name
+    integer          , intent(in   ) :: restart
     character(len=*) , intent(in   ) :: chk_name    
     real(kind=dp_t)  , intent(inout) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(inout) :: p0(:,0:),gamma1bar(:,0:)
@@ -136,6 +134,7 @@ contains
     real(kind=dp_t)  , intent(inout) :: etarho_ec(:,0:),etarho_cc(:,0:)
 
     ! local
+    character(len=256) :: state_name, w0_name, etarho_name
     real(kind=dp_t) :: r_dummy
     character(len=256) :: out_name
     integer :: r, n, i
@@ -143,6 +142,16 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "read_base_state")
+
+    if (restart <= 99999) then
+       write(unit=state_name,fmt='("model_",i5.5)') restart
+       write(unit=w0_name,fmt='("w0_",i5.5)') restart
+       write(unit=etarho_name,fmt='("eta_",i5.5)') restart
+    else
+       write(unit=state_name,fmt='("model_",i6.6)') restart
+       write(unit=w0_name,fmt='("w0_",i6.6)') restart
+       write(unit=etarho_name,fmt='("eta_",i6.6)') restart
+    endif
 
     ! read in the state variables
     out_name = trim(chk_name) // "/" // trim(state_name)

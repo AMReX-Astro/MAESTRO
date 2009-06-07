@@ -65,9 +65,6 @@ contains
     character(len=5)   :: check_index
     character(len=6)   :: check_index6
     character(len=256) :: check_file_name
-    character(len=256) :: base_state_name
-    character(len=256) :: base_w0_name
-    character(len=256) :: base_etarho_name
 
     ! create mba, chk stuff, time, and dt
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
@@ -194,18 +191,8 @@ contains
        check_file_name = trim(check_base_name) // check_index6
     endif
 
-    if (restart <= 99999) then
-       write(unit=base_state_name,fmt='("model_",i5.5)') restart
-       write(unit=base_w0_name,fmt='("w0_",i5.5)') restart
-       write(unit=base_etarho_name,fmt='("eta_",i5.5)') restart
-    else
-       write(unit=base_state_name,fmt='("model_",i6.6)') restart
-       write(unit=base_w0_name,fmt='("w0_",i6.6)') restart
-       write(unit=base_etarho_name,fmt='("eta_",i6.6)') restart
-    endif
-
     ! note: still need to load/store tempbar
-    call read_base_state(base_state_name, base_w0_name, base_etarho_name, check_file_name, &
+    call read_base_state(restart, check_file_name, &
                          rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
                          etarho_ec, etarho_cc, div_coeff_old, psi)
 
