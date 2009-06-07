@@ -72,9 +72,6 @@ subroutine varden()
   character(len=5)               :: plot_index, check_index
   character(len=6)               :: plot_index6, check_index6
   character(len=256)             :: plot_file_name, check_file_name
-  character(len=256)             :: base_state_name
-  character(len=256)             :: base_w0_name
-  character(len=256)             :: base_etarho_name
   character(len=20), allocatable :: plot_names(:)
 
   real(dp_t), parameter :: SMALL = 1.d-13
@@ -498,23 +495,12 @@ subroutine varden()
                               rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
                               time, dt)
 
-        last_chk_written = istep
-
-        if (istep <= 99999) then
-           write(unit=base_state_name,fmt='("model_",i5.5)') istep
-           write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
-           write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
-        else
-           write(unit=base_state_name,fmt='("model_",i6.6)') istep
-           write(unit=base_w0_name,fmt='("w0_",i6.6)') istep
-           write(unit=base_etarho_name,fmt='("eta_",i6.6)') istep
-        endif
-
-        call write_base_state(base_state_name, base_w0_name, &
-                              base_etarho_name, check_file_name, &
+        call write_base_state(istep, check_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, prob_lo(dm))
+
+        last_chk_written = istep
 
         do n = 1,nlevs
            call destroy(chkdata(n))
@@ -958,23 +944,12 @@ subroutine varden()
                                     rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
                                     time, dt)
 
-              last_chk_written = istep
-
-              if (istep <= 99999) then
-                 write(unit=base_state_name,fmt='("model_",i5.5)') istep
-                 write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
-                 write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
-              else
-                 write(unit=base_state_name,fmt='("model_",i6.6)') istep
-                 write(unit=base_w0_name,fmt='("w0_",i6.6)') istep
-                 write(unit=base_etarho_name,fmt='("eta_",i6.6)') istep
-              endif
-
-              call write_base_state(base_state_name, base_w0_name, &
-                                    base_etarho_name, check_file_name, &
+              call write_base_state(istep, check_file_name, &
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
                                     w0, etarho_ec, etarho_cc, &
                                     div_coeff_old, psi, prob_lo(dm))
+
+              last_chk_written = istep
 
               do n = 1,nlevs
                  call destroy(chkdata(n))
@@ -1050,18 +1025,7 @@ subroutine varden()
         end do
         deallocate(chkdata)
 
-        if (istep <= 99999) then
-           write(unit=base_state_name,fmt='("model_",i5.5)') istep
-           write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
-           write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
-        else
-           write(unit=base_state_name,fmt='("model_",i6.6)') istep
-           write(unit=base_w0_name,fmt='("w0_",i6.6)') istep
-           write(unit=base_etarho_name,fmt='("eta_",i6.6)') istep
-        endif
-        
-        call write_base_state(base_state_name, base_w0_name, &
-                              base_etarho_name, check_file_name, &
+        call write_base_state(istep, check_file_name, &
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, prob_lo(dm))
