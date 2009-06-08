@@ -18,10 +18,10 @@ of the coarser level.  We set the coordinates at the following points in the cod
 \item After each call to {\tt advect\_base\_dens}.
 
 \item After we ``{\tt correct base}'' (by setting $\rho_0 = \overline{\rho}$ in
-  plane-parallel and $\rho_0 = \rho_0 + {\bf{Avg}}(\rho - \rho_0)$).
+  plane-parallel and $\rho_0 = \rho_0 + {\bf{Avg}}(\rho - \rho_0)$ in spherical).
 
 \item At the beginning of the second-half of the algorithm (Step 6), we reset
-  the coordinates using $\rho_0^n$.
+  the coordinates to the base-time values using $\rho_0^n$.
 
 \end{itemize}
 
@@ -31,20 +31,22 @@ of the coarser level.  We set the coordinates at the following points in the cod
 
 \item In {\tt probin}, {\tt anelastic\_cutoff} is set to $3\times 10^6$ by default.
 
-\item In {\tt init\_base\_state}, we give a warning of {\tt anelastic\_cutoff}
-  is smaller than the minimum model density.  Then, if {\tt anelastic\_cutoff} 
-  $<$ {\tt base\_cutoff\_density} we abort the program.
+\item In {\tt init\_base\_state}, we give a warning if {\tt anelastic\_cutoff}
+  is smaller than the minimum model density.  Then, if ${\tt anelastic\_cutoff} 
+  < {\tt base\_cutoff\_density}$, we abort the program.
 
 \item In {\tt make\_div\_coeff}, for 
   $r \ge {\tt anelastic\_cutoff\_coord}$, we set
   ${\tt div\_coeff}(n,r) = {\tt div\_coeff}(n,r-1) * \rho_0(n,r)/\rho_0(n,r-1)$.
+  \MarginPar{I think we want $r > {\tt anelastic\_cutoff\_coord}$.}
 
 \item In {\tt make\_psi} for plane-parallel, we only compute $\psi$ for 
   $r < {\tt anelastic\_cutoff\_coord}$.
-\MarginPar{I think we want to change this to include {\tt anelatic\_cutoff\_coord}.}
+  \MarginPar{I think we want to change this to $r \le {\tt anelastic\_cutoff\_coord}$.}
 
 \item in {\tt make\_S}, we set {\tt delta\_gamma1\_term} and {\tt delta\_gamma1} 
   to zero for $r \ge {\tt anelastic\_cutoff\_coord}$.
+  \MarginPar{I think we want $r > {\tt anelastic\_cutoff\_coord}$.}
 
 \item In {\tt sponge}, {\tt anelastic\_cutoff} is used in a problem
   dependent way.
@@ -79,6 +81,7 @@ of the coarser level.  We set the coordinates at the following points in the cod
   $r \ge {\tt base\_cutoff\_density\_coord}$, we
   compute $\nabla p_0$ with a difference stencil instead of simply
   setting it to $\rho_0 g$.
+  \MarginPar{I think we want $r > {\tt base\_cutoff\_density\_coord}$.}
 
 \item In {\tt update\_scal}, if the new $\rho$ is less than 
   {\tt base\_cutoff\_density} and {\tt do\_eos\_h\_above\_cutoff},  
@@ -88,7 +91,7 @@ of the coarser level.  We set the coordinates at the following points in the cod
   $\rho_0 > {\tt base\_cutoff\_density}$.
 
 \item In {\tt enforce\_HSE}, we set $p_0(r) = p_0(r-1)$ for 
-  $r \ge {\tt base\_cutoff\_density\_coord}+1$.
+  $r > {\tt base\_cutoff\_density\_coord}$.
 
 \end{itemize}
 
