@@ -5,9 +5,21 @@ These are working notes for the low density parameters in {\tt MAESTRO}.
 At several points in the algorithm, we compute {\tt anelastic\_cutoff\_coord}, 
 {\tt base\_cutoff\_density\_coord}, and {\tt burning\_cutoff\_density\_coord} by 
 setting the corresponding coordinate equal to $r$ as soon as $\rho_0(r)$ is less than 
-or equal to that particular cutoff value.  We compute the cutoff coordinate at the
+or equal to that particular cutoff value (see Figure \ref{Fig:Cutoff}.
+We compute the cutoff coordinate at the
 coarsest level, and then set the coordinate at the next finer level to be twice that
 of the coarser level.  We set the coordinates at the following points in the code:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[hpb]
+\centering
+\includegraphics[width=4.0in]{\lodensfigpath/cutoff}\hspace{0.2in}
+\begin{minipage}[b]{5.0in}
+\caption{Image of how the cutoff density and cutoff coordinates
+are related.\vspace{2em}}
+\end{minipage}
+\label{Fig:Cutoff}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{itemize}
 
