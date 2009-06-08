@@ -88,7 +88,8 @@ are related.\vspace{2em}}
   we only add the volume discrepancy for $r < {\tt base\_cutoff\_density\_coord}$
   (in plane parallel) and if $\rho_0^{\rm cart} > {\tt base\_cutoff\_density}$ 
   (in spherical).
-  \MarginPar{Spherical should cue off the coordinate.}
+  \MarginPar{For plane-parallel, I think we should use 
+    $r \le {\tt base\_cutoff\_density\_coord}$.}
 
 \item In {\tt mkrhohforce} for plane-parallel, for
   $r \ge {\tt base\_cutoff\_density\_coord}$, we
@@ -98,11 +99,13 @@ are related.\vspace{2em}}
 
 \item In {\tt update\_scal}, if $\rho < {\tt base\_cutoff\_density}$
    and {\tt do\_eos\_h\_above\_cutoff}, we call the EOS to compute $h$.
-  \MarginPar{Perhaps $\rho \le {\tt base\_cutoff\_density}$}
+  \MarginPar{I think we want $\rho \le {\tt base\_cutoff\_density}$}
 
 \item In {\tt make\_grav} for spherical, we only add the enclosed mass if
   $\rho_0 > {\tt base\_cutoff\_density}$.
-  \MarginPar{Cue off the coordinate?}
+  \MarginPar{I think this needs to be reworked to include mass up to the 
+    cell-centered location of {\tt base\_cutoff\_density\_coord} for both cell 
+    and edge gravity.}
 
 \item In {\tt enforce\_HSE}, we set $p_0(r) = p_0(r-1)$ for 
   $r > {\tt base\_cutoff\_density\_coord}$.
