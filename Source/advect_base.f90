@@ -45,8 +45,7 @@ contains
 
     use bl_constants_module
     use make_edge_state_module
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs, dr, &
-         base_cutoff_density_coord
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs, dr
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
@@ -82,12 +81,8 @@ contains
     do n=1,nlevs
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
-             if (r .le. base_cutoff_density_coord(n)) then
-                rho0_new(n,r) = rho0_old(n,r) &
-                     - dt / dr(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) 
-             else
-                rho0_new(n,r) = rho0_old(n,r)
-             end if
+             rho0_new(n,r) = rho0_old(n,r) &
+                  - dt / dr(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) 
           end do
        end do
     end do
@@ -100,7 +95,7 @@ contains
 
     use bl_constants_module
     use make_edge_state_module
-    use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine, base_cutoff_density_coord
+    use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine
     
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
