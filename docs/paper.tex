@@ -17,6 +17,7 @@
 \newcommand{\lodensfigpath}{./lo_density}
 \newcommand{\radbasefigpath}{./radial_base}
 \newcommand{\sphericalfigpath}{./spherical_basestate}
+\newcommand{\rotfigpath}{./rotation}
 
 
 \def\eb    {{\bf e}}
@@ -85,6 +86,10 @@
 \newcommand{\omegadot}{\dot{\omega}}
 \newcommand{\er}{\mathbf{e}_r}
 
+\def\Omegab{{\bf \Omega}}
+\def\rb    {{\bf r}}
+
+
 \setlength{\marginparwidth}{0.8in}
 \newcommand{\MarginPar}[1]{\marginpar{%
 \vskip-\baselineskip %raise the marginpar a bit
@@ -126,10 +131,14 @@
 \chapter{Notes on the Low Density Parameters in {\tt MAESTRO}}
 \input lo_density/lo_density
 
+\chapter{Rotation}
+\input rotation/rotation
+
 \chapter{Radial Base State}
 \input radial_base/radial_base
 
 \chapter{Spherical Expansion}
 \input spherical_basestate/basestate
+
 
 \end{document}

@@ -2,7 +2,10 @@ EPStoPDF = epstopdf
 
 ALL: paper.ps paper.pdf 
 
-eps_source = $(wildcard *.eps) $(wildcard lo_density/*.eps)
+eps_source = $(wildcard *.eps) \
+             $(wildcard lo_density/*.eps) \
+             $(wildcard initial_models/*.eps) \
+             $(wildcard rotation/*.eps) 
 
 pdf_source = $(eps_source:.eps=.pdf)
 
