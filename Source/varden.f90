@@ -354,23 +354,6 @@ subroutine varden()
         ! write out a plotfile
         !------------------------------------------------------------------------
 
-        if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
-           call bl_error("Restart with predict_Tprime_then_h option needs tempbar in checkpoint")
-        end if
-
-        if (spherical .eq. 0) then
-           call average(mla,sold,tempbar,dx,temp_comp)
-        else
-           ! until we store tempbar in checkpoint, we have to simply set tempbar=Avg(temp)
-           tempbar = 0.d0
-           ! set tempbar = tempbar - Avg(tempbar - temp^n)
-           allocate(tempprimebar(nlevs_radial,0:nr_fine-1))
-           call make_sprimebar_spherical(sold,temp_comp,tempbar,dx,tempprimebar,mla, &
-                                         the_bc_tower%bc_tower_array)
-           call correct_base(tempbar,tempprimebar)
-           deallocate(tempprimebar)
-        end if
-
         ! we generate this only for the initial plotfile
         if (do_sponge) then
            call make_sponge(sponge,dx,dt,mla)
@@ -498,7 +481,7 @@ subroutine varden()
         call write_base_state(istep, check_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, prob_lo(dm))
+                              div_coeff_old, psi, tempbar, prob_lo(dm))
 
         last_chk_written = istep
 
@@ -540,7 +523,7 @@ subroutine varden()
         call write_base_state(istep, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, prob_lo(dm))
+                              div_coeff_old, psi, tempbar, prob_lo(dm))
 
         call write_job_info(plot_file_name)
         last_plt_written = istep
@@ -952,7 +935,7 @@ subroutine varden()
               call write_base_state(istep, check_file_name, &
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
                                     w0, etarho_ec, etarho_cc, &
-                                    div_coeff_old, psi, prob_lo(dm))
+                                    div_coeff_old, psi, tempbar, prob_lo(dm))
 
               last_chk_written = istep
 
@@ -985,7 +968,7 @@ subroutine varden()
               call write_base_state(istep, plot_file_name, &
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
                                     w0, etarho_ec, etarho_cc, &
-                                    div_coeff_old, psi, prob_lo(dm))
+                                    div_coeff_old, psi, tempbar, prob_lo(dm))
 
               call write_job_info(plot_file_name)
               last_plt_written = istep
@@ -1030,15 +1013,16 @@ subroutine varden()
                               rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
                               time, dt)
 
+        call write_base_state(istep, check_file_name, &
+                              rho0_new, rhoh0_new, p0_new, gamma1bar, &
+                              w0, etarho_ec, etarho_cc, &
+                              div_coeff_old, psi, tempbar, prob_lo(dm))
+
         do n = 1,nlevs
            call destroy(chkdata(n))
         end do
         deallocate(chkdata)
 
-        call write_base_state(istep, check_file_name, &
-                              rho0_new, rhoh0_new, p0_new, gamma1bar, &
-                              w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, prob_lo(dm))
      end if
 
      if ( plot_int > 0 .and. last_plt_written .ne. istep ) then
@@ -1058,7 +1042,7 @@ subroutine varden()
         call write_base_state(istep, plot_file_name, &
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, prob_lo(dm))
+                              div_coeff_old, psi, tempbar, prob_lo(dm))
 
         call write_job_info(plot_file_name)
      end if

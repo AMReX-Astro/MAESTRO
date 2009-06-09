@@ -12,7 +12,7 @@ contains
 
   subroutine write_base_state(istep,chk_name, &
                               rho0,rhoh0,p0,gamma1bar,w0,etarho_ec,etarho_cc, &
-                              div_coeff,psi,problo)
+                              div_coeff,psi,tempbar,problo)
     
     use parallel
     use bl_prof_module
@@ -25,7 +25,7 @@ contains
     character(len=*) , intent(in) :: chk_name
     real(kind=dp_t)  , intent(in) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(in) :: p0(:,0:),gamma1bar(:,0:)
-    real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:)
+    real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:), tempbar(:,0:)
     real(kind=dp_t)  , intent(in) :: w0(:,0:)
     real(kind=dp_t)  , intent(in) :: etarho_ec(:,0:),etarho_cc(:,0:)
 
@@ -66,7 +66,7 @@ contains
                 base_r = problo + (dble(r)+HALF) * dr(n)
                 write(99,1000)  base_r, rho0(n,r), p0(n,r), gamma1bar(n,r), &
                      rhoh0(n,r), div_coeff(n,r), &
-                     psi(n,r), etarho_cc(n,r)
+                     psi(n,r), tempbar(n,r), etarho_cc(n,r)
              end do
           end do
        end do
@@ -114,7 +114,7 @@ contains
 
   subroutine read_base_state(restart,chk_name, &
                              rho0,rhoh0,p0,gamma1bar,w0, &
-                             etarho_ec,etarho_cc,div_coeff,psi)
+                             etarho_ec,etarho_cc,div_coeff,psi,tempbar)
 
     use parallel
     use bl_prof_module
@@ -129,7 +129,7 @@ contains
     character(len=*) , intent(in   ) :: chk_name    
     real(kind=dp_t)  , intent(inout) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(inout) :: p0(:,0:),gamma1bar(:,0:)
-    real(kind=dp_t)  , intent(inout) :: div_coeff(:,0:), psi(:,0:)
+    real(kind=dp_t)  , intent(inout) :: div_coeff(:,0:), psi(:,0:), tempbar(:,0:)
     real(kind=dp_t)  , intent(inout) :: w0(:,0:)
     real(kind=dp_t)  , intent(inout) :: etarho_ec(:,0:),etarho_cc(:,0:)
 
@@ -165,7 +165,7 @@ contains
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
              read(99,*)  r_dummy, rho0(n,r), p0(n,r), gamma1bar(n,r), &
-                  rhoh0(n,r), div_coeff(n,r), psi(n,r), &
+                  rhoh0(n,r), div_coeff(n,r), psi(n,r), tempbar(n,r), &
                   etarho_cc(n,r)
           end do
        end do
@@ -215,6 +215,7 @@ contains
        call fill_ghost_base(gamma1bar,.true.)
        call fill_ghost_base(div_coeff,.true.)
        call fill_ghost_base(psi,.true.)
+       call fill_ghost_base(tempbar,.true.)
        call fill_ghost_base(etarho_cc,.true.)
        call fill_ghost_base(w0,.false.)
        call fill_ghost_base(etarho_ec,.false.)

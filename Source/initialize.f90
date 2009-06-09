@@ -194,7 +194,7 @@ contains
     ! note: still need to load/store tempbar
     call read_base_state(restart, check_file_name, &
                          rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
-                         etarho_ec, etarho_cc, div_coeff_old, psi)
+                         etarho_ec, etarho_cc, div_coeff_old, psi, tempbar)
 
     ! fill ghost cells
     ! this need to be done after read_base_state since in some problems, the inflow
