@@ -206,16 +206,16 @@ contains
     ! compute the energy release.  Our convention is that the binding 
     ! energies are negative, so the energy release is
     ! - sum_k { (Xout(k) - Xin(k)) ebin(k) }
-    enuc = 0.0_dp_t
+    !
+    ! since this version of the network only evolves C12, we can
+    ! compute the energy release easily
+    enuc = (ebin(img24) - ebin(ic12))*(Xout(ic12) - Xin(ic12))
+
+    ! also compute the density-weighted creation rates, rho_omegadot
     do n = 1, nspec
        dX = Xout(n) - Xin(n) 
-       
-       enuc = enuc - ebin(n) * dX
-     
        rho_omegadot(n) = dens * dX / dt
     enddo
-    
-!    if (y(ic12) > 0.1) print *, 'out: ', enuc
 
     rho_Hnuc = dens*enuc/dt
 
