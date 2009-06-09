@@ -372,6 +372,11 @@ subroutine varden()
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar, &
                            div_coeff_old,normal)
 
+        call write_base_state(restart, plot_file_name, &
+                              rho0_old, rhoh0_old, p0_old, gamma1bar, &
+                              w0, etarho_ec, etarho_cc, &
+                              div_coeff_old, psi, tempbar, prob_lo(dm))
+
         call write_job_info(plot_file_name)
 
      end if
