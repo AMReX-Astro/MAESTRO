@@ -6,7 +6,8 @@ eps_source = $(wildcard *.eps) \
              $(wildcard lo_density/*.eps) \
              $(wildcard initial_models/*.eps) \
              $(wildcard rotation/*.eps) \
-             $(wildcart radial_base/*.eps)
+             $(wildcard radial_base/*.eps) \
+             $(wildcard spherical_basestate/*.eps)
 
 pdf_source = $(eps_source:.eps=.pdf)
 
