@@ -182,16 +182,6 @@ contains
 
     call compute_cutoff_coords(rho0_old)
     
-    ! compute tempbar by "averaging"
-    if (spherical .eq. 0) then
-       call average(mla,sold,tempbar,dx,temp_comp)
-    else
-       ! set tempbar = tempbar - Avg(tempbar - temp^n)
-       call make_sprimebar_spherical(sold,temp_comp,tempbar,dx,tempprimebar,mla, &
-                                     the_bc_tower%bc_tower_array)
-       call correct_base(tempbar,tempprimebar)
-    end if
-    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 1 -- define average expansion at time n+1/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1302,6 +1292,16 @@ contains
                  gamma1bar,div_coeff_new,unew,w0,normal,mla,the_bc_tower)
        
        grav_cell_old = grav_cell_new
+
+       ! compute tempbar by "averaging"
+       if (spherical .eq. 0) then
+          call average(mla,snew,tempbar,dx,temp_comp)
+       else
+          ! set tempbar = tempbar - Avg(tempbar - temp^{n+1})
+          call make_sprimebar_spherical(snew,temp_comp,tempbar,dx,tempprimebar,mla, &
+                                        the_bc_tower%bc_tower_array)
+          call correct_base(tempbar,tempprimebar)
+       end if
 
     end if
 

@@ -102,7 +102,6 @@ subroutine varden()
   real(dp_t), allocatable :: etarho_cc_temp(:,:)
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
-  real(dp_t), allocatable :: tempprimebar(:,:)
 
   last_plt_written = -1
   last_chk_written = -1
@@ -284,17 +283,6 @@ subroutine varden()
      do n=1,nlevs
         call multifab_build(gamma1(n), mla%la(n), 1, 0)
      end do
-
-     if (spherical .eq. 0) then
-        call average(mla,sold,tempbar,dx,temp_comp)
-     else
-        ! set tempbar = tempbar - Avg(tempbar - temp^n)
-        allocate(tempprimebar(nlevs_radial,0:nr_fine-1))
-        call make_sprimebar_spherical(sold,temp_comp,tempbar,dx,tempprimebar,mla, &
-                                      the_bc_tower%bc_tower_array)
-        call correct_base(tempbar,tempprimebar)
-        deallocate(tempprimebar)
-     end if
 
      call make_gamma(mla,gamma1,sold,p0_old,dx)
      call average(mla,gamma1,gamma1bar,dx,1)
@@ -501,17 +489,6 @@ subroutine varden()
         !------------------------------------------------------------------------
         ! write a plotfile
         !------------------------------------------------------------------------
-
-        if (spherical .eq. 0) then
-           call average(mla,sold,tempbar,dx,temp_comp)
-        else
-           ! set tempbar = tempbar - Avg(tempbar - temp^n)
-           allocate(tempprimebar(nlevs_radial,0:nr_fine-1))
-           call make_sprimebar_spherical(sold,temp_comp,tempbar,dx,tempprimebar,mla, &
-                                         the_bc_tower%bc_tower_array)
-           call correct_base(tempbar,tempprimebar)
-           deallocate(tempprimebar)
-        end if
 
         if (istep <= 99999) then
            write(unit=plot_index,fmt='(i5.5)') istep
