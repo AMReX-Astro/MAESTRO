@@ -204,7 +204,6 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(ptherm_old(n), mla%la(n), 1, 0)
        call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
        call setval(delta_p_term(n),ZERO,all=.true.)
     end do
@@ -213,6 +212,10 @@ contains
     ! compute delta_p_term = ptherm_old - pthermbar_cart (for RHS of projections)
     if (dpdt_factor .gt. ZERO ) then
     
+       do n=1,nlevs
+          call multifab_build(ptherm_old(n), mla%la(n), 1, 0)
+       end do
+
        ! ptherm_old now holds the thermodynamic p computed from sold(rho,h,X)
        call makePfromRhoH(sold,sold,ptherm_old,mla,the_bc_tower%bc_tower_array)
 
@@ -392,11 +395,11 @@ contains
 
     do n=1,nlevs
        call multifab_build(thermal1(n), mla%la(n), 1, 1)
+       call setval(thermal1(n),ZERO,all=.true.)
     end do
     
     ! thermal is the forcing for rhoh or temperature
     if(use_thermal_diffusion) then
-
        do n=1,nlevs
           call multifab_build(Tcoeff1(n),  mla%la(n), 1,     1)
           call multifab_build(hcoeff1(n),  mla%la(n), 1,     1)
@@ -411,11 +414,6 @@ contains
 
        do n=1,nlevs
           call destroy(Tcoeff1(n))
-       end do
-
-    else
-       do n=1,nlevs
-          call setval(thermal1(n),ZERO,all=.true.)
        end do
     end if
 
@@ -718,6 +716,7 @@ contains
        enddo
 
        do n=1,nlevs
+          call destroy(ptherm_old(n))
           call destroy(ptherm_new(n))
        end do
 
@@ -1078,7 +1077,6 @@ contains
     end if
           
     do n=1,nlevs
-       call multifab_destroy(ptherm_old(n))
        call multifab_build(thermal2(n), mla%la(n), 1, 1)
     end do
 
