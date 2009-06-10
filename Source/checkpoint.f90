@@ -19,6 +19,7 @@ contains
     use fabio_module
     use bl_prof_module
     use probin_module, only: verbose, nOutFiles, lUsingNFiles
+    use variables, only: rel_eps
 
     type(multifab)  , intent(in) :: mfs(:), mfs_nodal(:)
     type(multifab)  , intent(in) :: dSdt(:), Source_old(:), Source_new(:)
@@ -105,6 +106,7 @@ contains
        write(unit=un, nml = chkpoint)
        write(unit=un,fmt=1000) dt
        write(unit=un,fmt=1000) time
+       write(unit=un,fmt=1000) rel_eps
        close(un)
     end if
 
@@ -121,6 +123,7 @@ contains
     use bl_IO_module
     use fabio_module
     use bl_prof_module
+    use variables, only: rel_eps
 
     type(multifab  ),                pointer :: mfs(:), mfs_nodal(:)
     type(multifab  ),                pointer :: dSdt(:), Source_old(:), Source_new(:)
@@ -152,6 +155,7 @@ contains
 
     read(unit=un,fmt=*) dt
     read(unit=un,fmt=*) time
+    read(unit=un,fmt=*) rel_eps
     close(un)
 
      time_out = time
