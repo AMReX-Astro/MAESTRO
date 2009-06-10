@@ -654,12 +654,6 @@ subroutine varden()
 
            end if ! end regridding of base state
 
-           ! create new grids and fill in data on those grids
-           call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
-                       dx,the_bc_tower)
-
-           call init_multilevel(sold)
-
            do n=1,nlevs
               call multifab_destroy(unew(n))
               call multifab_destroy(snew(n))
@@ -670,6 +664,12 @@ subroutine varden()
                  call multifab_destroy(normal(n))
               end if
            end do
+
+           ! create new grids and fill in data on those grids
+           call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
+                       dx,the_bc_tower)
+
+           call init_multilevel(sold)
 
            do n = 1,nlevs
               call multifab_build(      unew(n), mla%la(n),    dm, 3)
