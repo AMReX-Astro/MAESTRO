@@ -51,8 +51,8 @@ contains
     
     if (parallel_IOProcessor()) then
 
-       print*,"chk_name", trim(chk_name)
-       print*,"state_name", trim(state_name)
+       print*,"chk_name ", trim(chk_name)
+       print*,"state_name ", trim(state_name)
 
        ! write out the base state quantities
        out_name = trim(chk_name) // "/" // trim(state_name)
