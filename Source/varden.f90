@@ -53,7 +53,6 @@ subroutine varden()
   type(multifab), allocatable :: snew(:)
   type(multifab), allocatable :: normal(:)
   type(multifab), allocatable :: sponge(:)
-  type(multifab), allocatable :: Source_new(:)
   type(multifab), allocatable :: hgrhs(:)
   type(multifab), allocatable :: gamma1(:)
 
@@ -64,6 +63,7 @@ subroutine varden()
   type(multifab), pointer :: gpres(:)
   type(multifab), pointer :: dSdt(:)
   type(multifab), pointer :: Source_old(:)
+  type(multifab), pointer :: Source_new(:)
   type(multifab), pointer :: rho_omegadot2(:)
   type(multifab), pointer :: rho_Hnuc2(:)
 
@@ -124,7 +124,8 @@ subroutine varden()
   if (restart >= 0) then
 
      call initialize_from_restart(mla,restart,time,dt,pmask,dx,uold,sold,gpres,pres, &
-                                  dSdt,Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
+                                  dSdt,Source_old,Source_new, &
+                                  rho_omegadot2,rho_Hnuc2,the_bc_tower, &
                                   div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                                   s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                   p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar,grav_cell)
@@ -133,7 +134,8 @@ subroutine varden()
   else if (test_set /= '') then
 
      call initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres,dSdt, &
-                                      Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
+                                      Source_old,Source_new, &
+                                      rho_omegadot2,rho_Hnuc2,the_bc_tower, &
                                       div_coeff_old,div_coeff_new,gamma1bar, &
                                       gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
                                       rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
@@ -142,7 +144,8 @@ subroutine varden()
   else
 
      call initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres,dSdt, &
-                                         Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
+                                         Source_old,Source_new, &
+                                         rho_omegadot2,rho_Hnuc2,the_bc_tower, &
                                          div_coeff_old,div_coeff_new,gamma1bar, &
                                          gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
                                          rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
@@ -220,7 +223,7 @@ subroutine varden()
   allocate( etarho_ec_temp(max_levs,0:nr_fine))
   allocate(        w0_temp(max_levs,0:nr_fine))
 
-  allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs),Source_new(nlevs))
+  allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs))
   allocate(normal(nlevs))
 
   do n = 1,nlevs
@@ -228,7 +231,6 @@ subroutine varden()
      call multifab_build(      snew(n), mla%la(n), nscal, 3)
      call multifab_build(    sponge(n), mla%la(n),     1, 0)
      call multifab_build(     hgrhs(n), mla%la(n),     1, 0, nodal)
-     call multifab_build(Source_new(n), mla%la(n),     1, 1)
      if (dm .eq. 3) then
         call multifab_build(normal(n), mla%la(n),    dm, 1)
      end if
@@ -237,8 +239,6 @@ subroutine varden()
      call setval(      snew(n), ZERO, all=.true.)
      call setval(    sponge(n), ONE,  all=.true.)
      call setval(     hgrhs(n), ZERO, all=.true.)
-     call setval(Source_new(n), ZERO, all=.true.)
-
   end do
 
   ! Create normal now that we have defined center and dx
@@ -269,10 +269,6 @@ subroutine varden()
         call average(mla,sold,rhoh0_old,dx,rhoh_comp)
 
      end if
-
-  end if
-
-  if (restart < 0) then
 
      !----------------------------------------------------------------------
      ! Do an initial projection with omegadot = 0 and rho_Hext = 0
@@ -372,11 +368,9 @@ subroutine varden()
   end if
 
   do n = 1,nlevs
-
      ! This is done to impose any Dirichlet bc's on unew or snew.
      call multifab_copy_c(unew(n),1,uold(n),1,dm   ,3)
      call multifab_copy_c(snew(n),1,sold(n),1,nscal,3)
-
   end do
 
   if (restart < 0) then 
@@ -434,7 +428,9 @@ subroutine varden()
 
            runtime2 = parallel_wtime() - runtime1
            call parallel_reduce(runtime1, runtime2, MPI_MAX, proc=parallel_IOProcessorNode())
-           if (parallel_IOProcessor()) print*,'Time to advance timestep: ',runtime1,' seconds'
+           if (parallel_IOProcessor()) then
+              print*,'Time to advance timestep: ',runtime1,' seconds'
+           end if
            
            call print_and_reset_fab_byte_spread()
            
@@ -467,7 +463,7 @@ subroutine varden()
         endif
 
         call checkpoint_write(check_file_name, chkdata, &
-                              pres, dSdt, Source_old, &
+                              pres, dSdt, Source_old, Source_new, &
                               rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
                               time, dt)
 
@@ -910,7 +906,7 @@ subroutine varden()
               endif
 
               call checkpoint_write(check_file_name, chkdata, &
-                                    pres, dSdt, Source_old, &
+                                    pres, dSdt, Source_old, Source_new, &
                                     rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
                                     time, dt)
 
@@ -991,7 +987,7 @@ subroutine varden()
         endif
 
         call checkpoint_write(check_file_name, chkdata, &
-                              pres, dSdt, Source_old, &
+                              pres, dSdt, Source_old, Source_new, &
                               rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
                               time, dt)
 
@@ -1060,7 +1056,7 @@ subroutine varden()
 
   call probin_close()
 
-  deallocate(uold,sold,pres,gpres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2,dx)
+  deallocate(uold,sold,pres,gpres,dSdt,Source_old,Source_new,rho_omegadot2,rho_Hnuc2,dx)
   deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)
   deallocate(psi,tempbar,grav_cell)
