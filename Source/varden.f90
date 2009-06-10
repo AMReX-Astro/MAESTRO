@@ -522,7 +522,7 @@ subroutine varden()
         endif
 
         call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,rho_Hnuc2, &
-                           Source_new,sponge,mla%mba,plot_names,time,dx,the_bc_tower,w0, &
+                           Source_old,sponge,mla%mba,plot_names,time,dx,the_bc_tower,w0, &
                            rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar,div_coeff_old,normal)
 
         call write_base_state(istep, plot_file_name, &
