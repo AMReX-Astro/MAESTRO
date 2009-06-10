@@ -205,7 +205,7 @@ contains
        call multifab_build(Source_nph(n), mla%la(n), 1, 1)
     end do
 
-    if (init_mode) then
+    if (time .eq. ZERO) then
        call make_S_at_halftime(mla,Source_nph,Source_old,Source_new, &
                                the_bc_tower%bc_tower_array)
     else
