@@ -12,7 +12,7 @@ contains
 
   subroutine write_base_state(istep,chk_name, &
                               rho0,rhoh0,p0,gamma1bar,w0,etarho_ec,etarho_cc, &
-                              div_coeff,psi,problo)
+                              div_coeff,psi,tempbar,problo)
     
     use parallel
     use bl_prof_module
@@ -25,7 +25,7 @@ contains
     character(len=*) , intent(in) :: chk_name
     real(kind=dp_t)  , intent(in) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(in) :: p0(:,0:),gamma1bar(:,0:)
-    real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:)
+    real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:), tempbar(:,0:)
     real(kind=dp_t)  , intent(in) :: w0(:,0:)
     real(kind=dp_t)  , intent(in) :: etarho_ec(:,0:),etarho_cc(:,0:)
 
@@ -66,7 +66,7 @@ contains
                 base_r = problo + (dble(r)+HALF) * dr(n)
                 write(99,1000)  base_r, rho0(n,r), p0(n,r), gamma1bar(n,r), &
                      rhoh0(n,r), div_coeff(n,r), &
-                     psi(n,r), etarho_cc(n,r)
+                     psi(n,r), tempbar(n,r), etarho_cc(n,r)
              end do
           end do
        end do
