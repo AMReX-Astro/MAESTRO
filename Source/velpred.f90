@@ -516,9 +516,9 @@ contains
     integer        , intent(in   ) :: adv_bc(:,:,:)
 
     ! local variables
-    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
-    real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
-    real(kind=dp_t) :: slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
+    real(kind=dp_t), allocatable :: slopex(:,:,:,:)
+    real(kind=dp_t), allocatable :: slopey(:,:,:,:)
+    real(kind=dp_t), allocatable :: slopez(:,:,:,:)
 
     real(kind=dp_t), allocatable :: Ipu(:,:,:,:)
     real(kind=dp_t), allocatable :: Imu(:,:,:,:)
@@ -568,6 +568,10 @@ contains
     integer :: i,j,k,is,js,ie,je,ks,ke
 
     logical :: test
+
+    allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     allocate(Ipu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(Imu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
@@ -1483,6 +1487,7 @@ contains
        wmac(is:ie,js:je,ke+1) = max(wmacl(is:ie,js:je,ke+1),ZERO)
     endif
 
+    deallocate(slopex,slopey,slopez)
     deallocate(ulx,urx,uimhx,uly,ury,uimhy,ulz,urz,uimhz)
     deallocate(ulyz,uryz,uimhyz,ulzy,urzy,uimhzy)
     deallocate(vlxz,vrxz,vimhxz,vlzx,vrzx,vimhzx)
