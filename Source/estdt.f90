@@ -148,7 +148,7 @@ contains
                 call estdt_3d_cart(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
                                    fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
                                    dSdtp(:,:,:,1), ng_dS, &
-                                   w0(1,:), p0(1,:), gamma1bar(1,:), lo, hi, dx(n,:), &
+                                   w0(n,:), p0(n,:), gamma1bar(n,:), lo, hi, dx(n,:), &
                                    rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
              end if
           end select
