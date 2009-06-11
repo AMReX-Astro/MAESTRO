@@ -477,12 +477,15 @@ contains
     real (kind = dp_t), intent(in   ) :: rho_min, cfl
     real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, umax
     
-    real (kind = dp_t) :: gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3)
+    real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
+
     real (kind = dp_t) :: gp0(0:nr_fine)
 
     real (kind = dp_t) :: spdx, spdy, spdz, spdr, gp_dot_u, gamma1bar_p_avg
     real (kind = dp_t) :: fx, fy, fz, eps, denom, a, b, c
     integer            :: i,j,k,r
+
+    allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
     
     eps = 1.0d-8
     
@@ -597,6 +600,8 @@ contains
           enddo
        enddo
     enddo
+
+    deallocate(gp0_cart)
 
   end subroutine estdt_3d_sphr
   

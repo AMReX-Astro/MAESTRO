@@ -662,9 +662,9 @@ contains
     logical        , intent(in   ) :: is_conservative
 
     ! Local variables
-    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
-    real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
-    real(kind=dp_t) :: slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
+    real(kind=dp_t), allocatable :: slopex(:,:,:,:)
+    real(kind=dp_t), allocatable :: slopey(:,:,:,:)
+    real(kind=dp_t), allocatable :: slopez(:,:,:,:)
 
     real(kind=dp_t) :: hx,hy,hz,dt2,dt3,dt4,dt6
     real(kind=dp_t) :: savg
@@ -697,6 +697,10 @@ contains
     real(kind=dp_t), allocatable:: sedgelx(:,:,:),sedgerx(:,:,:)
     real(kind=dp_t), allocatable:: sedgely(:,:,:),sedgery(:,:,:)
     real(kind=dp_t), allocatable:: sedgelz(:,:,:),sedgerz(:,:,:)
+
+    allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
+    allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
+    allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
 
     allocate(Ip(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(Im(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
@@ -1998,6 +2002,7 @@ contains
        end if
     end if
 
+    deallocate(slopex,slopey,slopez)
     deallocate(slx,srx,simhx,sly,sry,simhy,slz,srz,simhz)
     deallocate(slxy,srxy,simhxy,slxz,srxz,simhxz,slyx,sryx,simhyx)
     deallocate(slyz,sryz,simhyz,slzx,srzx,simhzx,slzy,srzy,simhzy)

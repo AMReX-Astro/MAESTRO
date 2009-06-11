@@ -165,7 +165,9 @@ contains
 
     ! Local variables
     integer          :: i, j, k
-    real (kind=dp_t) :: p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+    real (kind=dp_t), allocatable :: p0_cart(:,:,:,:)
+
+    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0,0)
 
@@ -200,6 +202,8 @@ contains
           enddo
        enddo
     enddo
+
+    deallocate(p0_cart)
 
   end subroutine make_tfromH_3d_sphr
 
@@ -426,11 +430,19 @@ contains
     !     Local variables
     integer          :: i, j, k
     real (kind=dp_t) :: vel
-    real (kind=dp_t) ::      rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
-    real (kind=dp_t) ::     rhoh0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
-    real (kind=dp_t) ::   tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
-    real (kind=dp_t) ::        p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
-    real (kind=dp_t) :: gamma1bar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+
+
+    real (kind=dp_t), allocatable ::      rho0_cart(:,:,:,:)
+    real (kind=dp_t), allocatable ::     rhoh0_cart(:,:,:,:)
+    real (kind=dp_t), allocatable ::   tempbar_cart(:,:,:,:)
+    real (kind=dp_t), allocatable ::        p0_cart(:,:,:,:)
+    real (kind=dp_t), allocatable :: gamma1bar_cart(:,:,:,:)
+
+    allocate(     rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    allocate(    rhoh0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    allocate(  tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    allocate(       p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    allocate(gamma1bar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     do_diag = .false.
 
@@ -477,6 +489,8 @@ contains
           enddo
        enddo
     enddo
+
+    deallocate(rho0_cart,rhoh0_cart,tempbar_cart,p0_cart,gamma1bar_cart)
 
   end subroutine make_tfromp_3d_sphr
 
@@ -575,7 +589,9 @@ contains
 
     !     Local variables
     integer          :: i, j, k
-    real (kind=dp_t) :: entropybar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+    real (kind=dp_t), allocatable :: entropybar_cart(:,:,:,:)
+
+    allocate(entropybar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,entropybar,entropybar_cart, &
                                       lo,hi,dx,0,0)
@@ -589,6 +605,8 @@ contains
           enddo
        enddo
     enddo
+
+    deallocate(entropybar_cart)
 
   end subroutine make_entropypert_3d_sphr
 

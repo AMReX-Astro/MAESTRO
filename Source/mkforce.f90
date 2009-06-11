@@ -210,11 +210,16 @@ contains
     real(kind=dp_t), intent(in   ) ::   dx(:)
 
     integer         :: i,j,k
-    real(kind=dp_t) :: rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
-    real(kind=dp_t) :: grav_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3)
+
+    real(kind=dp_t), allocatable :: rho0_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: grav_cart(:,:,:,:)
+
     real(kind=dp_t) :: rhopert
     real(kind=dp_t) :: xx, yy, zz, distance, cos_theta
     real(kind=dp_t) :: centrifugal_term(3), coriolis_term(3)
+
+    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    allocate(grav_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
 
     vel_force = ZERO
 
@@ -251,6 +256,8 @@ contains
           end do
        end do
     end do
+
+    deallocate(rho0_cart,grav_cart)
 
   end subroutine mk_vel_force_3d_sphr
 

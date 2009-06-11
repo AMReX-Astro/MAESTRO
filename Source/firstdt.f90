@@ -425,8 +425,11 @@ contains
     real (kind = dp_t)  :: gp_dot_u,gamma1bar_p_avg,eps,dt_divu,dt_sound,denom,rho_min
     integer             :: i,j,k,r
 
-    real (kind = dp_t) :: gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3)
+    real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
+
     real (kind = dp_t) :: gp0(0:nr_fine)
+
+    allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
 
     eps = 1.0d-8
     

@@ -321,9 +321,9 @@ contains
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: phys_bc(:,:)
     
-    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
-    real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
-    real(kind=dp_t) :: slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
+    real(kind=dp_t), allocatable :: slopex(:,:,:,:)
+    real(kind=dp_t), allocatable :: slopey(:,:,:,:)
+    real(kind=dp_t), allocatable :: slopez(:,:,:,:)
     
     real(kind=dp_t), allocatable :: Ip(:,:,:,:)
     real(kind=dp_t), allocatable :: Im(:,:,:,:)
@@ -337,6 +337,10 @@ contains
     real(kind=dp_t), allocatable:: ulx(:,:,:),urx(:,:,:)
     real(kind=dp_t), allocatable:: vly(:,:,:),vry(:,:,:)
     real(kind=dp_t), allocatable:: wlz(:,:,:),wrz(:,:,:)
+
+    allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
+    allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
+    allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
 
     allocate(ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
@@ -638,6 +642,7 @@ contains
        enddo
     enddo
 
+    deallocate(slopex,slopey,slopez)
     deallocate(ulx,urx,vly,vry,wlz,wrz)
     deallocate(Ip,Im)
 

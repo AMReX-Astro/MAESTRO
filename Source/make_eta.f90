@@ -348,11 +348,15 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t) ::      rho0_nph(0:nr_fine-1)
-    real(kind=dp_t) :: rho0_new_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
-    real(kind=dp_t) :: rho0_nph_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+
+    real(kind=dp_t), allocatable :: rho0_new_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: rho0_nph_cart(:,:,:,:)
 
     real(kind=dp_t) :: Utilde_dot_er
     integer :: i,j,k,r
+
+    allocate(rho0_new_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    allocate(rho0_nph_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     ! put the time-centered base state density on a Cartesian patch.
     do r = 0, nr_fine-1
@@ -378,6 +382,8 @@ contains
        enddo
     enddo
 
+    deallocate(rho0_new_cart,rho0_nph_cart)
+    
   end subroutine construct_eta_cart
 
   subroutine make_sprimebar_spherical(s,comp,s0,dx,sprimebar,mla,the_bc_level)
@@ -475,9 +481,11 @@ contains
     real(kind=dp_t), intent(in   ) :: s0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
-    real(kind=dp_t) :: s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+    real(kind=dp_t), allocatable :: s0_cart(:,:,:,:)
 
     integer :: i,j,k
+
+    allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0,s0_cart,lo,hi,dx,0,0)
 
@@ -490,6 +498,8 @@ contains
           enddo
        enddo
     enddo
+
+    deallocate(s0_cart)
 
   end subroutine construct_sprime
 
