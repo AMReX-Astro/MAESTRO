@@ -1,8 +1,9 @@
 &PROBIN
-! uncomment for fixed grids
-! test_set = "gr0_2d_2levels"
  spherical_in = 0
  plot_base = T
+
+! uncomment for fixed grids
+! test_set = "gr0_2d_2levels"
 
 ! uncomment for adaptive grids
  max_levs = 2

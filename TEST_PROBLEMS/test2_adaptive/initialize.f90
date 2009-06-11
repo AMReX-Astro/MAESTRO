@@ -22,7 +22,8 @@ module initialize_module
 contains
     
   subroutine initialize_from_restart(mla,restart,time,dt,pmask,dx,uold,sold,gpres,pres, &
-                                     dSdt,Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
+                                     dSdt,Source_old,Source_new, &
+                                     rho_omegadot2,rho_Hnuc2,the_bc_tower, &
                                      div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                                      s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                      p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
@@ -40,7 +41,8 @@ contains
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
-    type(multifab), pointer       :: Source_old(:),rho_omegadot2(:),rho_Hnuc2(:)
+    type(multifab), pointer       :: Source_old(:),Source_new(:)
+    type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
@@ -59,19 +61,17 @@ contains
     type(multifab), pointer :: chk_p(:)
     type(multifab), pointer :: chk_dsdt(:)
     type(multifab), pointer :: chk_src_old(:)
+    type(multifab), pointer :: chk_src_new(:)
     type(multifab), pointer :: chk_rho_omegadot2(:)
     type(multifab), pointer :: chk_rho_Hnuc2(:)
 
     character(len=5)   :: check_index
     character(len=6)   :: check_index6
     character(len=256) :: check_file_name
-    character(len=256) :: base_state_name
-    character(len=256) :: base_w0_name
-    character(len=256) :: base_etarho_name
 
     ! create mba, chk stuff, time, and dt
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
-                           chk_rho_omegadot2, chk_rho_Hnuc2, time, dt)
+                           chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, time, dt)
 
     ! create mla
     call ml_layout_build(mla,mba,pmask)
@@ -93,7 +93,8 @@ contains
 
     ! allocate states
     allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
-    allocate(dSdt(nlevs),Source_old(nlevs),rho_omegadot2(nlevs),rho_Hnuc2(nlevs))
+    allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs))
+    allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs))
 
     ! build and fill states
     do n = 1,nlevs
@@ -103,6 +104,7 @@ contains
        call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(   Source_old(n), mla%la(n),     1, 1)
+       call multifab_build(   Source_new(n), mla%la(n),     1, 1)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
     end do
@@ -132,6 +134,12 @@ contains
        call destroy(chk_src_old(n)%la)
        call destroy(chk_src_old(n))
     end do
+
+    do n=1,nlevs
+       call multifab_copy_c(Source_new(n),1,chk_src_new(n),1,1)
+       call destroy(chk_src_new(n)%la)
+       call destroy(chk_src_new(n))
+    end do
     
     do n=1,nlevs
        call multifab_copy_c(rho_omegadot2(n),1,chk_rho_omegadot2(n),1,nspec)
@@ -145,7 +153,8 @@ contains
        call destroy(chk_rho_Hnuc2(n))
     end do
     
-    deallocate(chkdata, chk_p, chk_dsdt, chk_src_old, chk_rho_omegadot2, chk_rho_Hnuc2)
+    deallocate(chkdata, chk_p, chk_dsdt, chk_src_old, chk_src_new)
+    deallocate(chk_rho_omegadot2, chk_rho_Hnuc2)
 
     ! initialize dx
     call initialize_dx(dx,mba,nlevs)
@@ -194,20 +203,10 @@ contains
        check_file_name = trim(check_base_name) // check_index6
     endif
 
-    if (restart <= 99999) then
-       write(unit=base_state_name,fmt='("model_",i5.5)') restart
-       write(unit=base_w0_name,fmt='("w0_",i5.5)') restart
-       write(unit=base_etarho_name,fmt='("eta_",i5.5)') restart
-    else
-       write(unit=base_state_name,fmt='("model_",i6.6)') restart
-       write(unit=base_w0_name,fmt='("w0_",i6.6)') restart
-       write(unit=base_etarho_name,fmt='("eta_",i6.6)') restart
-    endif
-
     ! note: still need to load/store tempbar
-    call read_base_state(base_state_name, base_w0_name, base_etarho_name, check_file_name, &
+    call read_base_state(restart, check_file_name, &
                          rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
-                         etarho_ec, etarho_cc, div_coeff_old, psi)
+                         etarho_ec, etarho_cc, div_coeff_old, psi, tempbar)
 
     ! fill ghost cells
     ! this need to be done after read_base_state since in some problems, the inflow
@@ -259,7 +258,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
-                                         dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
+                                         dSdt,Source_old,Source_new, &
+                                         rho_omegadot2,rho_Hnuc2, &
                                          the_bc_tower,div_coeff_old,div_coeff_new, &
                                          gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
                                          rhoh0_old,rho0_new,rhoh0_new,p0_init, &
@@ -277,7 +277,8 @@ contains
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
-    type(multifab), pointer       :: Source_old(:),rho_omegadot2(:),rho_Hnuc2(:)
+    type(multifab), pointer       :: Source_old(:),Source_new(:)
+    type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
@@ -319,7 +320,8 @@ contains
 
     ! allocate states
     allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
-    allocate(dSdt(nlevs),Source_old(nlevs),rho_omegadot2(nlevs),rho_Hnuc2(nlevs))
+    allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs))
+    allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs))
     
     ! build states
     do n = 1,nlevs
@@ -329,6 +331,7 @@ contains
        call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(   Source_old(n), mla%la(n),     1, 1)
+       call multifab_build(   Source_new(n), mla%la(n),     1, 1)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
 
@@ -337,6 +340,7 @@ contains
        call setval(        gpres(n), ZERO, all=.true.)
        call setval(         pres(n), ZERO, all=.true.)
        call setval(   Source_old(n), ZERO, all=.true.)
+       call setval(   Source_new(n), ZERO, all=.true.)
        call setval(         dSdt(n), ZERO, all=.true.)
        call setval(rho_omegadot2(n), ZERO, all=.true.)
        call setval(    rho_Hnuc2(n), ZERO, all=.true.)
@@ -424,7 +428,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
-                                            dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
+                                            dSdt,Source_old,Source_new, &
+                                            rho_omegadot2,rho_Hnuc2, &
                                             the_bc_tower,div_coeff_old,div_coeff_new, &
                                             gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
                                             rhoh0_old,rho0_new,rhoh0_new,p0_init, &
@@ -445,7 +450,8 @@ contains
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
-    type(multifab), pointer       :: Source_old(:),rho_omegadot2(:),rho_Hnuc2(:)
+    type(multifab), pointer       :: Source_old(:),Source_new(:)
+    type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
@@ -488,7 +494,8 @@ contains
 
     ! allocate states
     allocate(uold(max_levs),sold(max_levs),gpres(max_levs),pres(max_levs))
-    allocate(dSdt(max_levs),Source_old(max_levs),rho_omegadot2(max_levs),rho_Hnuc2(max_levs))
+    allocate(dSdt(max_levs),Source_old(max_levs),Source_new(max_levs))
+    allocate(rho_omegadot2(max_levs),rho_Hnuc2(max_levs))
 
     ! Build the level 1 boxarray
     call box_build_2(bxs,lo,hi)
@@ -576,7 +583,7 @@ contains
           ! Do we need finer grids?
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
                               buf_wid,ref_ratio,nl,max_grid_size,tempbar)
-
+          
           if (new_grid) then
               
              call copy(mba%bas(nl+1),get_boxarray(la_array(nl+1)))
@@ -641,6 +648,7 @@ contains
        call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(   Source_old(n), mla%la(n),     1, 1)
+       call multifab_build(   Source_new(n), mla%la(n),     1, 1)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
 
@@ -649,6 +657,7 @@ contains
        call setval(        gpres(n), ZERO, all=.true.)
        call setval(         pres(n), ZERO, all=.true.)
        call setval(   Source_old(n), ZERO, all=.true.)
+       call setval(   Source_new(n), ZERO, all=.true.)
        call setval(         dSdt(n), ZERO, all=.true.)
        call setval(rho_omegadot2(n), ZERO, all=.true.)
        call setval(    rho_Hnuc2(n), ZERO, all=.true.)
