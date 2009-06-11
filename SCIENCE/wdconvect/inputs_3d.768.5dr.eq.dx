@@ -31,6 +31,7 @@
 
  anelastic_cutoff = 3.e6
  base_cutoff_density = 3.e6
+ p0_update_type	     = 2
 
  spherical_in = 1
  dm_in = 3
