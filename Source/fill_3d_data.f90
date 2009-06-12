@@ -896,7 +896,6 @@ contains
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius,s0_cart_val,rfac
-    real(kind=dp_t), allocatable :: s0_cc(:,:,:,:)
     real(kind=dp_t), allocatable :: s0_nodal(:,:,:,:)
 
     ! we currently have three different ideas for computing s0mac
@@ -906,60 +905,11 @@ contains
 
     if (s0mac_interp_type .eq. 1) then
 
-       allocate(s0_cc(lo(1)-2:hi(1)+2,lo(2)-2:hi(2)+2,lo(3)-2:hi(3)+2,3))
-
-       do k = lo(3)-2,hi(3)+2
-          z = (dble(k)+HALF)*dx(3) - center(3)
-          do j = lo(2)-2,hi(2)+2
-             y = (dble(j)+HALF)*dx(2) - center(2)
-             do i = lo(1)-2,hi(1)+2
-                x = (dble(i)+HALF)*dx(1) - center(1)
-
-                radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(1))
-                
-                rfac = (radius - dble(index)*dr(1)) / dr(1)
-
-                if (index .lt. nr_fine) then
-                   s0_cart_val = rfac * s0(index) + (ONE-rfac) * s0(index+1)
-                else
-                   s0_cart_val = s0(nr_fine)
-                end if
-
-                s0_cc(i,j,k,1) = s0_cart_val * x / radius
-                s0_cc(i,j,k,2) = s0_cart_val * y / radius
-                s0_cc(i,j,k,3) = s0_cart_val * z / radius
-
-             end do
-          end do
-       end do
-
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+2
-                s0macx(i,j,k) = HALF* (s0_cc(i-1,j,k,1) + s0_cc(i,j,k,1))
-             end do
-          end do
-       end do
-
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+2
-             do i=lo(1)-1,hi(1)+1
-                s0macy(i,j,k) = HALF* (s0_cc(i,j-1,k,2) + s0_cc(i,j,k,2))
-             end do
-          end do
-       end do
-
-       do k=lo(3)-1,hi(3)+2
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
-                s0macz(i,j,k) = HALF* (s0_cc(i,j,k-1,3) + s0_cc(i,j,k,3))
-             end do
-          end do
-       end do
-
-       deallocate(s0_cc)
-
+       ! writing this is slightly more compicated since we need to create a 
+       ! full multifab with a ghost cell in order to average to faces.
+       ! we do this already in mkflux.f90, for example, without using this function.
+       call bl_error('Error: put_s0_on_edges_3d_sphr with s0mac_interp_type=1 not written yet')
+      
     else if (s0mac_interp_type .eq. 2) then
 
        do k = lo(3)-1,hi(3)+1
@@ -969,17 +919,15 @@ contains
              do i = lo(1)-1,hi(1)+2
                 x = (dble(i)     )*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(1))
+                index  = int((radius-HALF*dr(1)) / dr(1))
 
-                rfac = (radius - dble(index)*dr(1)) / dr(1)
+                rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
-                   s0_cart_val = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                   s0macx(i,j,k) = rfac * s0(index) + (ONE-rfac) * s0(index+1)
                 else
-                   s0_cart_val = s0(nr_fine)
+                   s0macx(i,j,k) = s0(nr_fine)
                 end if
-
-                s0macx(i,j,k) = s0_cart_val * x / radius
 
              end do
           end do
@@ -992,17 +940,15 @@ contains
              do i = lo(1)-1,hi(1)+1
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(1))
+                index  = int((radius-HALF*dr(1)) / dr(1))
 
-                rfac = (radius - dble(index)*dr(1)) / dr(1)
+                rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
-                   s0_cart_val = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                   s0macy(i,j,k) = rfac * s0(index) + (ONE-rfac) * s0(index+1)
                 else
-                   s0_cart_val = s0(nr_fine)
+                   s0macy(i,j,k) = s0(nr_fine)
                 end if
-
-                s0macy(i,j,k) = s0_cart_val * y / radius
 
              end do
           end do
@@ -1015,17 +961,15 @@ contains
              do i = lo(1)-1,hi(1)+1
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(1))
+                index  = int((radius-HALF*dr(1)) / dr(1))
 
-                rfac = (radius - dble(index)*dr(1)) / dr(1)
+                rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
-                   s0_cart_val = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                   s0macz(i,j,k) = rfac * s0(index) + (ONE-rfac) * s0(index+1)
                 else
-                   s0_cart_val = s0(nr_fine)
+                   s0macz(i,j,k) = s0(nr_fine)
                 end if
-
-                s0macz(i,j,k) = s0_cart_val * z / radius
 
              end do
           end do
@@ -1033,65 +977,12 @@ contains
 
     else if (s0mac_interp_type .eq. 3) then
 
-       allocate(s0_nodal(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+2,3))
-
-       do k = lo(3)-1,hi(3)+2
-          z = (dble(k))*dx(3) - center(3)
-          do j = lo(2)-1,hi(2)+2
-             y = (dble(j))*dx(2) - center(2)
-             do i = lo(1)-1,hi(1)+2
-                x = (dble(i))*dx(1) - center(1)
-
-                radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(1))
-                
-                rfac = (radius - dble(index)*dr(1)) / dr(1)
-
-                if (index .lt. nr_fine) then
-                   s0_cart_val = rfac * s0(index) + (ONE-rfac) * s0(index+1)
-                else
-                   s0_cart_val = s0(nr_fine)
-                end if
-
-                s0_nodal(i,j,k,1) = s0_cart_val * x / radius
-                s0_nodal(i,j,k,2) = s0_cart_val * y / radius
-                s0_nodal(i,j,k,3) = s0_cart_val * z / radius
-
-             end do
-          end do
-       end do
-
-       do k = lo(3)-1,hi(3)+1
-          do j = lo(2)-1,hi(2)+1
-             do i = lo(1)-1,hi(1)+2
-                s0macx(i,j,k) = FOURTH*( s0_nodal(i,j,k,1) + s0_nodal(i,j+1,k,1) &
-                                        +s0_nodal(i,j,k+1,1) + s0_nodal(i,j+1,k+1,1))
-             end do
-          end do
-       end do
-
-       do k = lo(3)-1,hi(3)+1
-          do j = lo(2)-1,hi(2)+2
-             do i = lo(1)-1,hi(1)+1
-                s0macy(i,j,k) = FOURTH*( s0_nodal(i,j,k,2) + s0_nodal(i+1,j,k,2) &
-                                        +s0_nodal(i,j,k+1,2) + s0_nodal(i+1,j,k+1,2))
-             end do
-          end do
-       end do
-
-       do k = lo(3)-1,hi(3)+2
-          do j = lo(2)-1,hi(2)+1
-             do i = lo(1)-1,hi(1)+1
-                s0macz(i,j,k) = FOURTH*( s0_nodal(i,j,k,3) + s0_nodal(i+1,j,k,3) &
-                                        +s0_nodal(i,j+1,k,3) + s0_nodal(i+1,j+1,k,3))
-             end do
-          end do
-       end do
-
-       deallocate(s0_nodal)
+       call bl_error('Error: put_s0_on_edges_3d_sphr with s0mac_interp_type=3 not written yet')
 
     else
+
        call bl_error('Error: fill_3d_data:s0mac_interp_type can only be 1,2 or 3')
+
     end if
 
   end subroutine put_s0_on_edges_3d_sphr
