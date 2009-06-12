@@ -399,7 +399,7 @@ contains
 
   end subroutine put_1d_array_on_cart_3d_sphr
 
-  subroutine put_w0_on_edges(mla,w0,w0mac,dx,div_coeff,the_bc_tower)
+  subroutine put_w0_on_edges(mla,w0,w0mac,dx)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, dm, nlevs
@@ -413,14 +413,6 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(inout) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    real(dp_t)    ,  intent(in   ) :: div_coeff(:,0:)
-    type(bc_tower),  intent(in   ) :: the_bc_tower
-
-    ! Local multifabs
-    type(multifab)  :: div_coeff_3d(mla%nlevel)
-    type(multifab)  ::     w0phi_3d(mla%nlevel)
-    type(multifab)  ::     w0rhs_3d(mla%nlevel)
-    type(multifab)  ::    dummy_rho(mla%nlevel)
 
     ! Local variables
     integer         :: lo(dm),hi(dm)
@@ -440,182 +432,25 @@ contains
        call bl_error('Error: only call put_w0_on_edges for spherical')
     end if
 
-    if (w0mac_interp_type .eq. 0) then
-
-       do n=1,nlevs
-          call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
-          call multifab_build(    w0rhs_3d(n), mla%la(n), 1, 0)
-          call multifab_build(    w0phi_3d(n), mla%la(n), 1, 1)
-          call multifab_build(   dummy_rho(n), mla%la(n), 1, 1)
-   
-          call setval(w0phi_3d(n), ZERO, all=.true.)
-          call setval(w0rhs_3d(n), ZERO, all=.true.)
-          call setval(dummy_rho(n), ONE, all=.true.)
-          do i = 1,dm
-             call setval(w0mac(n,i), ZERO, all=.true.)
-          end do
-
+    ng_w0 = w0mac(1,1)%ng
+    
+    do n=1,nlevs
+       do i=1,w0mac(n,1)%nboxes
+          if ( multifab_remote(w0mac(n,1), i) ) cycle
+          w0xp => dataptr(w0mac(n,1), i)
+          w0yp => dataptr(w0mac(n,2), i)
+          w0zp => dataptr(w0mac(n,3), i)
+          lo = lwb(get_box(w0mac(n,1), i))
+          hi = upb(get_box(w0mac(n,1), i))
+          call put_w0_on_edges_3d_sphr(w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
+                                       ng_w0,lo,hi,dx(n,:))
        end do
-
-       call put_1d_array_on_cart(div_coeff,div_coeff_3d,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
-
-       call mk_w0mac_rhs(w0,div_coeff,w0rhs)
-
-       call put_1d_array_on_cart(w0rhs,w0rhs_3d,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
-
-       call macproject(mla,w0mac,w0phi_3d,dummy_rho,dx,the_bc_tower, &
-                       press_comp,w0rhs_3d,div_coeff_3d=div_coeff_3d)
-
-       ! Just check the div(beta0 * w0)
-!      do n = 1,nlevs
-!         call setval(w0rhs_3d(n), ZERO, all=.true.)
-!      end do
-!      call mk_div_beta0_w0mac(w0mac,div_coeff_3d,w0rhs_3d,dx)
-!      call fabio_ml_multifab_write_d(w0rhs_3d,mla%mba%rr(:,1),"a_divbw")
-
-       do n=1,nlevs
-          call destroy(div_coeff_3d(n))
-          call destroy(    w0rhs_3d(n))
-          call destroy(    w0phi_3d(n))
-          call destroy(   dummy_rho(n))
-       end do
-
-    else
-
-       ng_w0 = w0mac(1,1)%ng
-
-       do n=1,nlevs
-          do i=1,w0mac(n,1)%nboxes
-             if ( multifab_remote(w0mac(n,1), i) ) cycle
-             w0xp => dataptr(w0mac(n,1), i)
-             w0yp => dataptr(w0mac(n,2), i)
-             w0zp => dataptr(w0mac(n,3), i)
-             lo = lwb(get_box(w0mac(n,1), i))
-             hi = upb(get_box(w0mac(n,1), i))
-             call put_w0_on_edges_3d_sphr(w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1), &
-                                          w0zp(:,:,:,1),ng_w0,lo,hi,dx(n,:))
-          end do
-       end do
-
-    end if
+    end do
 
     call destroy(bpt)
 
   end subroutine put_w0_on_edges
 
-  subroutine mk_w0mac_rhs(w0,div_coeff,w0rhs)
-
-    use geometry, only: nr_fine, dr, nlevs
-
-    real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
-    real(kind=dp_t), intent(inout) :: w0rhs(:,0:)
-
-    real(kind=dp_t) :: r_lo,r_hi,r_c,div_lo,div_hi
-    integer         :: n,r
-
-    do n = 1, nlevs
-      do r= 0,nr_fine-1
-         r_hi = dble(r+1) * dr(n)
-         r_lo = dble(r  ) * dr(n)
-         r_c  = HALF * (r_lo + r_hi)
-         if (r.ge.1) then
-            div_lo = HALF * (div_coeff(n,r-1) + div_coeff(n,r))
-         else
-            div_lo = div_coeff(n,0)
-         end if
-         if (r.le.nr_fine-2) then
-            div_hi = HALF * (div_coeff(n,r+1) + div_coeff(n,r))
-         else
-            div_hi = div_coeff(n,nr_fine-1)
-         end if
-
-         w0rhs(n,r) = (r_hi**2*div_hi*w0(n,r+1) - r_lo**2*div_lo*w0(n,r)) / (r_c**2 * dr(n))
-      end do
-    end do
-
-  end subroutine mk_w0mac_rhs
-
-  subroutine mk_div_beta0_w0mac(w0mac,div_coeff_3d,w0rhs_3d,dx)
-
-    use geometry, only: dm, nlevs
-
-    type(multifab) , intent(in   ) :: div_coeff_3d(:)
-    type(multifab) , intent(in   ) :: w0mac(:,:)
-    type(multifab) , intent(inout) :: w0rhs_3d(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
-
-    integer         :: n,i,ng_w0,ng_dc,ng_dw
-    integer         :: lo(dm),hi(dm)
-
-    real(kind=dp_t), pointer :: w0xp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0yp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0zp(:,:,:,:)
-    real(kind=dp_t), pointer :: dwp(:,:,:,:)
-    real(kind=dp_t), pointer :: dcp(:,:,:,:)
-
-    ng_w0 = w0mac(1,1)%ng
-    ng_dc = div_coeff_3d(1)%ng
-    ng_dw = w0rhs_3d(1)%ng
-
-    do n=1,nlevs
-       do i=1,w0mac(n,1)%nboxes
-          if ( multifab_remote(w0mac(n,1), i) ) cycle
-          w0xp => dataptr(     w0mac(n,1), i)
-          w0yp => dataptr(     w0mac(n,2), i)
-          w0zp => dataptr(     w0mac(n,3), i)
-           dwp => dataptr(    w0rhs_3d(n), i)
-           dcp => dataptr(div_coeff_3d(n), i)
-          lo = lwb(get_box(w0rhs_3d(n), i))
-          hi = upb(get_box(w0rhs_3d(n), i))
-          call mk_div_beta0_w0mac_3d(w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_w0, &
-                                     dcp(:,:,:,1),ng_dc,dwp(:,:,:,1),ng_dw,lo,hi,dx(n,:))
-       end do
-    end do
-
-  end subroutine mk_div_beta0_w0mac
-
-  subroutine mk_div_beta0_w0mac_3d(w0macx,w0macy,w0macz,ng_w0,div_coeff,ng_dc, &
-                                   divw0,ng_dw,lo,hi,dx)
-
-    integer, intent(in)               :: lo(:), hi(:), ng_w0, ng_dc, ng_dw
-    real (kind = dp_t), intent(inout) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real (kind = dp_t), intent(inout) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real (kind = dp_t), intent(inout) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real (kind = dp_t), intent(inout) :: div_coeff(lo(1)-ng_dc:,lo(2)-ng_dc:,lo(3)-ng_dc:)
-    real (kind = dp_t), intent(inout) :: divw0(lo(1)-ng_dw:,lo(2)-ng_dw:,lo(3)-ng_dw:)
-    real(kind=dp_t)   , intent(in   ) :: dx(:)
-
-    ! Local variables
-    integer :: i,j,k
-    real (kind = dp_t) :: divc_lo, divc_hi
-
-    divw0 = 0.d0
-
-    do k=lo(3),hi(3)
-       do j=lo(2),hi(2)
-          do i=lo(1),hi(1)
-             divc_hi = 0.5d0 * (div_coeff(i+1,j,k) + div_coeff(i,j,k))
-             divc_lo = 0.5d0 * (div_coeff(i-1,j,k) + div_coeff(i,j,k))
-             divw0(i,j,k) = (divc_hi*w0macx(i+1,j,k)-divc_lo*w0macx(i,j,k)) / dx(1) 
-
-             divc_hi = 0.5d0 * (div_coeff(i,j+1,k) + div_coeff(i,j,k))
-             divc_lo = 0.5d0 * (div_coeff(i,j-1,k) + div_coeff(i,j,k))
-             divw0(i,j,k) = divw0(i,j,k) + &
-                           (divc_hi*w0macy(i,j+1,k)-divc_lo*w0macy(i,j,k)) / dx(2) 
-
-             divc_hi = 0.5d0 * (div_coeff(i,j,k+1) + div_coeff(i,j,k))
-             divc_lo = 0.5d0 * (div_coeff(i,j,k-1) + div_coeff(i,j,k))
-             divw0(i,j,k) = divw0(i,j,k) + &
-                           (divc_hi*w0macz(i,j,k+1)-divc_lo*w0macz(i,j,k)) / dx(3) 
-          end do
-       end do
-    end do
-
-  end subroutine mk_div_beta0_w0mac_3d
-  
   subroutine put_w0_on_edges_3d_sphr(w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx)
 
     use bl_constants_module

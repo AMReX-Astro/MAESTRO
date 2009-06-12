@@ -93,7 +93,7 @@ contains
 
   subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,rho_Hnuc,Source,sponge,&
                            mba,plot_names,time,dx,the_bc_tower,w0,rho0,rhoh0,p0,tempbar, &
-                           gamma1bar,div_coeff,normal)
+                           gamma1bar,normal)
 
     use bl_prof_module
     use fabio_module
@@ -129,7 +129,6 @@ contains
     real(dp_t)       , intent(in   ) :: p0(:,0:)
     real(dp_t)       , intent(in   ) :: tempbar(:,0:)
     real(dp_t)       , intent(in   ) :: gamma1bar(:,0:)
-    real(dp_t)       , intent(in   ) :: div_coeff(:,0:)
     type(multifab)   , intent(in   ) :: normal(:)
     
     type(multifab) :: plotdata(nlevs)
@@ -211,7 +210,7 @@ contains
        end do
 
        ! put w0 on Cartesian edges as a vector
-       call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff,the_bc_tower)
+       call put_w0_on_edges(mla,w0,w0mac,dx)
 
        ! put w0 in Cartesian cell-centers as a scalar (the radial expansion velocity)
        call put_1d_array_on_cart(w0,w0r_cart,foextrap_comp,.true.,.false.,dx, &

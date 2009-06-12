@@ -224,7 +224,6 @@ s0_interp_type                      integer            1
 s0mac_interp_type                   integer            1  
 
 # The interpolation for putting w0 on edges.  We only compute the normal component. @@
-# 0 = Compute w0 at edges using a projection; @@
 # 1 = Interpolate w0 to cell centers, then average to edges; @@
 # 2 = Interpolate w0 to edges directly;                @@
 # 3 = Interpolate w0 to nodes, then average to edges. 
