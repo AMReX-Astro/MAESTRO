@@ -11,7 +11,7 @@ module fill_3d_module
   private
   
   public :: put_1d_array_on_cart,  put_1d_array_on_cart_3d_sphr
-  public :: put_w0_on_edges, put_w0_on_edges_3d_sphr
+  public :: put_w0_on_edges, put_s0_on_edges
   public :: make_normal, make_normal_3d_sphr
   
 contains  
@@ -61,11 +61,9 @@ contains
           lo =  lwb(get_box(s0_cart(n), i))
           hi =  upb(get_box(s0_cart(n), i))
           select case (dm)
-
           case (2)
              call put_1d_array_on_cart_2d(is_input_edge_centered,is_output_a_vector, &
                                           s0(n,:),sp(:,:,1,:),lo,hi,ng_s)
-
           case (3)
              if (spherical .eq. 0) then
                 call put_1d_array_on_cart_3d(is_input_edge_centered,is_output_a_vector, &
@@ -74,7 +72,7 @@ contains
                 if (is_output_a_vector) then
                    np => dataptr(normal(n), i)
                    ng_n = normal(n)%ng
-                
+               
                    call put_1d_array_on_cart_3d_sphr(is_input_edge_centered, &
                                                      is_output_a_vector,s0(1,:), &
                                                      sp(:,:,:,:),lo,hi,dx(n,:),ng_s,ng_n, &
@@ -85,12 +83,10 @@ contains
                                                      sp(:,:,:,:),lo,hi,dx(n,:),ng_s,ng_n)
                 end if
              endif
-
           end select
        end do
 
     enddo
-
     
     if (is_output_a_vector) then
 
@@ -299,7 +295,7 @@ contains
 
     use bl_constants_module
     use geometry, only: dr, center, r_cc_loc, nr_fine
-    use probin_module, only: interp_type_radial_bin_to_cart
+    use probin_module, only: s0_interp_type
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s, ng_n
     logical        , intent(in   ) :: is_input_edge_centered,is_output_a_vector
@@ -360,11 +356,11 @@ contains
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
                 
-                if (interp_type_radial_bin_to_cart .eq. 1) then
+                if (s0_interp_type .eq. 1) then
 
                    s0_cart_val = s0(index)
 
-                else if (interp_type_radial_bin_to_cart .eq. 2) then
+                else if (s0_interp_type .eq. 2) then
 
                    if (radius .ge. r_cc_loc(1,index)) then
                       if (index .eq. nr_fine-1) then
@@ -383,7 +379,7 @@ contains
                    end if
 
                 else
-                   call bl_error('Error: interp_type_radial_bin_to_cart not defined')
+                   call bl_error('Error: s0_interp_type not defined')
                 end if
 
                 if (is_output_a_vector) then
@@ -427,8 +423,7 @@ contains
     type(multifab)  ::    dummy_rho(mla%nlevel)
 
     ! Local variables
-    integer         :: lo(dm)
-    integer         :: hi(dm)
+    integer         :: lo(dm),hi(dm)
     integer         :: i,n,ng_w0
     real(kind=dp_t) :: w0rhs(mla%nlevel,0:nr_fine-1)
 
@@ -441,7 +436,7 @@ contains
 
     call build(bpt, "put_w0_on_edges")
 
-    if (dm.eq.2 .or. spherical.eq.0) &
+    if (dm .eq. 2 .or. spherical .eq. 0) &
        call bl_error('Error: only call put_w0_on_edges for spherical')
 
     if (w0mac_interp_type .eq. 0) then
@@ -835,6 +830,271 @@ contains
     end if
 
   end subroutine put_w0_on_edges_3d_sphr
+
+  subroutine put_s0_on_edges(mla,s0,s0mac,dx)
+
+    use bl_constants_module
+    use geometry, only: spherical, nr_fine, dm, nlevs
+    use variables, only: foextrap_comp,press_comp
+    use define_bc_module
+    use macproject_module
+    use fabio_module
+
+    type(ml_layout), intent(in   ) :: mla
+    real(kind=dp_t), intent(in   ) :: s0(:,0:)
+    type(multifab) , intent(inout) :: s0mac(:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+
+    ! Local variables
+    integer         :: lo(dm),hi(dm)
+    integer         :: i,n,ng_s0
+
+    ! Local pointers
+    real(kind=dp_t), pointer :: s0xp(:,:,:,:)
+    real(kind=dp_t), pointer :: s0yp(:,:,:,:)
+    real(kind=dp_t), pointer :: s0zp(:,:,:,:)
+    
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_s0_on_edges")
+
+    if (dm .eq. 2 .or. spherical .eq. 0) &
+       call bl_error('Error: only call put_s0_on_edges for spherical')
+
+    ng_s0 = s0mac(1,1)%ng
+    
+    do n=1,nlevs
+       do i=1,s0mac(n,1)%nboxes
+          if ( multifab_remote(s0mac(n,1), i) ) cycle
+          s0xp => dataptr(s0mac(n,1), i)
+          s0yp => dataptr(s0mac(n,2), i)
+          s0zp => dataptr(s0mac(n,3), i)
+          lo = lwb(get_box(s0mac(n,1), i))
+          hi = upb(get_box(s0mac(n,1), i))
+          call put_s0_on_edges_3d_sphr(s0(1,:),s0xp(:,:,:,1),s0yp(:,:,:,1), &
+                                       s0zp(:,:,:,1),ng_s0,lo,hi,dx(n,:))
+       end do
+    end do
+
+    call destroy(bpt)
+
+  end subroutine put_s0_on_edges
+
+  subroutine put_s0_on_edges_3d_sphr(s0,s0macx,s0macy,s0macz,ng_s0,lo,hi,dx)
+
+    use bl_constants_module
+    use geometry, only: dr, center, nr_fine
+    use probin_module, only: s0mac_interp_type
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s0
+    real(kind=dp_t), intent(in   ) :: s0(0:)
+    real(kind=dp_t), intent(inout) :: s0macx(lo(1)-ng_s0:,lo(2)-ng_s0:,lo(3)-ng_s0:)
+    real(kind=dp_t), intent(inout) :: s0macy(lo(1)-ng_s0:,lo(2)-ng_s0:,lo(3)-ng_s0:)
+    real(kind=dp_t), intent(inout) :: s0macz(lo(1)-ng_s0:,lo(2)-ng_s0:,lo(3)-ng_s0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    integer         :: i,j,k,index
+    real(kind=dp_t) :: x,y,z
+    real(kind=dp_t) :: radius,s0_cart_val,rfac
+    real(kind=dp_t), allocatable :: s0_cc(:,:,:,:)
+    real(kind=dp_t), allocatable :: s0_nodal(:,:,:,:)
+
+    ! we currently have three different ideas for computing s0mac
+    ! 1.  Interpolate s0 to cell centers, then average to edges
+    ! 2.  Interpolate s0 to edges directly
+    ! 3.  Interpolate s0 to nodes, then average to edges
+
+    if (s0mac_interp_type .eq. 1) then
+
+       allocate(s0_cc(lo(1)-2:hi(1)+2,lo(2)-2:hi(2)+2,lo(3)-2:hi(3)+2,3))
+
+       do k = lo(3)-2,hi(3)+2
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2)-2,hi(2)+2
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1)-2,hi(1)+2
+                x = (dble(i)+HALF)*dx(1) - center(1)
+
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(1))
+                
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
+
+                if (index .lt. nr_fine) then
+                   s0_cart_val = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                else
+                   s0_cart_val = s0(nr_fine)
+                end if
+
+                s0_cc(i,j,k,1) = s0_cart_val * x / radius
+                s0_cc(i,j,k,2) = s0_cart_val * y / radius
+                s0_cc(i,j,k,3) = s0_cart_val * z / radius
+
+             end do
+          end do
+       end do
+
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+2
+                s0macx(i,j,k) = HALF* (s0_cc(i-1,j,k,1) + s0_cc(i,j,k,1))
+             end do
+          end do
+       end do
+
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+2
+             do i=lo(1)-1,hi(1)+1
+                s0macy(i,j,k) = HALF* (s0_cc(i,j-1,k,2) + s0_cc(i,j,k,2))
+             end do
+          end do
+       end do
+
+       do k=lo(3)-1,hi(3)+2
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+1
+                s0macz(i,j,k) = HALF* (s0_cc(i,j,k-1,3) + s0_cc(i,j,k,3))
+             end do
+          end do
+       end do
+
+       deallocate(s0_cc)
+
+    else if (s0mac_interp_type .eq. 2) then
+
+       do k = lo(3)-1,hi(3)+1
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2)-1,hi(2)+1
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1)-1,hi(1)+2
+                x = (dble(i)     )*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(1))
+
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
+
+                if (index .lt. nr_fine) then
+                   s0_cart_val = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                else
+                   s0_cart_val = s0(nr_fine)
+                end if
+
+                s0macx(i,j,k) = s0_cart_val * x / radius
+
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+1
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2)-1,hi(2)+2
+             y = (dble(j)     )*dx(2) - center(2)
+             do i = lo(1)-1,hi(1)+1
+                x = (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(1))
+
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
+
+                if (index .lt. nr_fine) then
+                   s0_cart_val = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                else
+                   s0_cart_val = s0(nr_fine)
+                end if
+
+                s0macy(i,j,k) = s0_cart_val * y / radius
+
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+2
+          z = (dble(k)     )*dx(3) - center(3)
+          do j = lo(2)-1,hi(2)+1
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1)-1,hi(1)+1
+                x = (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(1))
+
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
+
+                if (index .lt. nr_fine) then
+                   s0_cart_val = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                else
+                   s0_cart_val = s0(nr_fine)
+                end if
+
+                s0macz(i,j,k) = s0_cart_val * z / radius
+
+             end do
+          end do
+       end do
+
+    else if (s0mac_interp_type .eq. 3) then
+
+       allocate(s0_nodal(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+2,3))
+
+       do k = lo(3)-1,hi(3)+2
+          z = (dble(k))*dx(3) - center(3)
+          do j = lo(2)-1,hi(2)+2
+             y = (dble(j))*dx(2) - center(2)
+             do i = lo(1)-1,hi(1)+2
+                x = (dble(i))*dx(1) - center(1)
+
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(1))
+                
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
+
+                if (index .lt. nr_fine) then
+                   s0_cart_val = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                else
+                   s0_cart_val = s0(nr_fine)
+                end if
+
+                s0_nodal(i,j,k,1) = s0_cart_val * x / radius
+                s0_nodal(i,j,k,2) = s0_cart_val * y / radius
+                s0_nodal(i,j,k,3) = s0_cart_val * z / radius
+
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+1
+          do j = lo(2)-1,hi(2)+1
+             do i = lo(1)-1,hi(1)+2
+                s0macx(i,j,k) = FOURTH*( s0_nodal(i,j,k,1) + s0_nodal(i,j+1,k,1) &
+                                        +s0_nodal(i,j,k+1,1) + s0_nodal(i,j+1,k+1,1))
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+1
+          do j = lo(2)-1,hi(2)+2
+             do i = lo(1)-1,hi(1)+1
+                s0macy(i,j,k) = FOURTH*( s0_nodal(i,j,k,2) + s0_nodal(i+1,j,k,2) &
+                                        +s0_nodal(i,j,k+1,2) + s0_nodal(i+1,j,k+1,2))
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+2
+          do j = lo(2)-1,hi(2)+1
+             do i = lo(1)-1,hi(1)+1
+                s0macz(i,j,k) = FOURTH*( s0_nodal(i,j,k,3) + s0_nodal(i+1,j,k,3) &
+                                        +s0_nodal(i,j+1,k,3) + s0_nodal(i+1,j+1,k,3))
+             end do
+          end do
+       end do
+
+       deallocate(s0_nodal)
+
+    else
+       call bl_error('Error: fill_3d_data:s0mac_interp_type can only be 1,2 or 3')
+    end if
+
+  end subroutine put_s0_on_edges_3d_sphr
 
   subroutine make_normal(normal,dx)
 

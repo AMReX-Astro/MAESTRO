@@ -212,16 +212,23 @@ use_etarho                          logical            .true.
 # order of slopes in Godunov algorithm.  Options are 0, 2, or 4.
 slope_order                         integer            4                   
 
-# The interpolation for filling a full multifab from a 1D bin-centered array. @@
+# The interpolation for filling a cell-centered multifab from a 1D bin-centered array. @@
 # 1 = piecewise constant; @@
 # 2 = piecewise linear.
-interp_type_radial_bin_to_cart      integer            1                   
+s0_interp_type                      integer            1
+                   
+# The interpolation for filling an edge based multifab from a 1D bin-centered array. @@
+# 1 = Interpolate s0 to cell centers, then average to edges; @@
+# 2 = Interpolate s0 to edges directly;                @@
+# 3 = Interpolate s0 to nodes, then average to edges. 
+s0mac_interp_type                   integer            1  
 
+# The interpolation for putting w0 on edges.  We only compute the normal component. @@
 # 0 = Compute w0 at edges using a projection; @@
 # 1 = Interpolate w0 to cell centers, then average to edges; @@
 # 2 = Interpolate w0 to edges directly;                @@
 # 3 = Interpolate w0 to nodes, then average to edges. 
-w0mac_interp_type                   integer            1                   
+w0mac_interp_type                   integer            1   
 
 # If lUsingNFiles = .true., use this many processors to write checkpoint 
 # and plotfiles.  Fortran has the unfortunate feature of each processor 
