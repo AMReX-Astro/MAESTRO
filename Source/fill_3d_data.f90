@@ -436,8 +436,9 @@ contains
 
     call build(bpt, "put_w0_on_edges")
 
-    if (dm .eq. 2 .or. spherical .eq. 0) &
+    if (dm .eq. 2 .or. spherical .eq. 0) then
        call bl_error('Error: only call put_w0_on_edges for spherical')
+    end if
 
     if (w0mac_interp_type .eq. 0) then
 
@@ -633,6 +634,10 @@ contains
     real(kind=dp_t) :: radius,w0_cart_val,rfac
     real(kind=dp_t), allocatable :: w0_cc(:,:,:,:)
     real(kind=dp_t), allocatable :: w0_nodal(:,:,:,:)
+
+    if (ng_w0 .ne. 1) then
+       call bl_error('Error: put_w0_on_edges_3d_sphr assumes one ghost cell')
+    end if
 
     ! we currently have three different ideas for computing w0mac
     ! 1.  Interpolate w0 to cell centers, then average to edges
@@ -858,8 +863,9 @@ contains
 
     call build(bpt, "put_s0_on_edges")
 
-    if (dm .eq. 2 .or. spherical .eq. 0) &
+    if (dm .eq. 2 .or. spherical .eq. 0) then
        call bl_error('Error: only call put_s0_on_edges for spherical')
+    end if
 
     ng_s0 = s0mac(1,1)%ng
     
@@ -897,6 +903,10 @@ contains
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius,s0_cart_val,rfac
     real(kind=dp_t), allocatable :: s0_nodal(:,:,:,:)
+
+    if (ng_s0 .ne. 1) then
+       call bl_error('Error: put_s0_on_edges_3d_sphr assumes one ghost cell')
+    end if
 
     ! we currently have three different ideas for computing s0mac
     ! 1.  Interpolate s0 to cell centers, then average to edges
