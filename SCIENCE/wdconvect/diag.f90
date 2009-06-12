@@ -45,7 +45,7 @@ contains
                   mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: dm, nlevs, spherical, nr_fine, r_cc_loc, r_edge_loc, dr
+    use geometry, only: dm, nlevs, spherical, nr_fine, r_cc_loc, r_edge_loc, dr, center
     use fundamental_constants_module, only: Gconst
     use bl_constants_module
     use variables, only: foextrap_comp
@@ -106,6 +106,7 @@ contains
     real(kind=dp_t) :: xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local
     real(kind=dp_t) :: xloc_Tmax_level, yloc_Tmax_level, zloc_Tmax_level
     real(kind=dp_t) :: xloc_Tmax,       yloc_Tmax,       zloc_Tmax
+    real(kind=dp_t) :: Rloc_Tmax
 
     real(kind=dp_t) :: vx_Tmax_local, vy_Tmax_local, vz_Tmax_local
     real(kind=dp_t) :: vx_Tmax_level, vy_Tmax_level, vz_Tmax_level
@@ -114,6 +115,7 @@ contains
     real(kind=dp_t) :: xloc_enucmax_local, yloc_enucmax_local, zloc_enucmax_local
     real(kind=dp_t) :: xloc_enucmax_level, yloc_enucmax_level, zloc_enucmax_level
     real(kind=dp_t) :: xloc_enucmax,       yloc_enucmax,       zloc_enucmax
+    real(kind=dp_t) :: Rloc_enucmax
 
     real(kind=dp_t) :: vx_enucmax_local, vy_enucmax_local, vz_enucmax_local
     real(kind=dp_t) :: vx_enucmax_level, vy_enucmax_level, vz_enucmax_level
@@ -509,6 +511,11 @@ contains
              yloc_Tmax = yloc_Tmax_level
              zloc_Tmax = zloc_Tmax_level
 
+             ! compute the radius of the bubble from the center
+             Rloc_Tmax = sqrt( (xloc_Tmax - center(1))**2 + &
+                               (yloc_Tmax - center(2))**2 + &
+                               (zloc_Tmax - center(3))**2 )
+
              vx_Tmax = vx_Tmax_level
              vy_Tmax = vy_Tmax_level
              vz_Tmax = vz_Tmax_level
@@ -521,6 +528,11 @@ contains
              xloc_enucmax = xloc_enucmax_level
              yloc_enucmax = yloc_enucmax_level
              zloc_enucmax = zloc_enucmax_level
+
+             ! compute the radius of the bubble from the center
+             Rloc_enucmax = sqrt( (xloc_enucmax - center(1))**2 + &
+                                  (yloc_enucmax - center(2))**2 + &
+                                  (zloc_enucmax - center(3))**2 )
 
              vx_enucmax = vx_enucmax_level
              vy_enucmax = vy_enucmax_level
@@ -647,7 +659,8 @@ contains
 
        ! write out the headers
        if (firstCall) then
-          
+
+          ! radvel
           write (un, *) " "
           write (un, 999) trim(job_name)
           write (un, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
@@ -655,16 +668,19 @@ contains
                            "int{rhovr_x}/mass", "int{rhovr_y}/mass", "int{rhovr_z}/mass", &
                            "mass"
 
+          ! temp
           write (un2, *) " "
           write (un2, 999) trim(job_name)
           write (un2,1001) "time", "max{T}", "x(max{T})", "y(max{T})", "z(max{T})", &
-               "vx(max{T})", "vy(max{T})", "vz(max{T})"
+               "vx(max{T})", "vy(max{T})", "vz(max{T})", "R(max{T})"
 
+          ! enuc
           write (un3, *) " "
           write (un3, 999) trim(job_name)
           write (un3,1001) "time", "max{enuc}", "x(max{enuc})", "y(max{enuc})", "z(max{enuc})", &
-               "vx(max{enuc})", "vy(max{enuc})", "vz(max{enuc})"
+               "vx(max{enuc})", "vy(max{enuc})", "vz(max{enuc})", "R(max{enuc})"
 
+          ! vel
           write (un4, *) " "
           write (un4, 999) trim(job_name)
           write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", "tot. kin. energy", "grav. pot. energy", "tot. int. energy"
@@ -677,9 +693,9 @@ contains
             sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2), vr_max, &
             vr_favre(1), vr_favre(2), vr_favre(3), mass
        
-       write (un2,1000) time, T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax, vx_Tmax, vy_Tmax, vz_Tmax
+       write (un2,1000) time, T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax, vx_Tmax, vy_Tmax, vz_Tmax, Rloc_Tmax
 
-       write (un3,1000) time, enuc_max, xloc_enucmax, yloc_enucmax, zloc_enucmax, vx_enucmax, vy_enucmax, vz_enucmax
+       write (un3,1000) time, enuc_max, xloc_enucmax, yloc_enucmax, zloc_enucmax, vx_enucmax, vy_enucmax, vz_enucmax, Rloc_enucmax
 
        write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener
 
