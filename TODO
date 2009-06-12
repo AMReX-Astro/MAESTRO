@@ -4,11 +4,16 @@
    to anelastic_cutoff), and understand what values of this give a valid
    basestate expansion.
 
--- in modify_scal_force, for spherical, why do we compute divu for  
-   the base state in the radial geom and then put it on the Cart 
-   grid, instead of putting w0 onto the Cart grid first and then
-   computing div{U + w_0} together?  This is more along the lines
-   of how we treat the div{w_0} stuff in update_vel.f90
+-- in modify_scal_force, for spherical, why don't we compute divu for
+   the base state in the radial geom and then put it on the Cart grid,
+   instead of putting w0 onto the Cart grid first and then computing
+   div{U + w_0} together?  This is more along the lines of how we
+   treat the div{w_0} stuff in update_vel.f90
+
+-- in mkscalforce, do thinks improve if we compute the div {U p0} term
+   by creating a p0mac using the put_w0_on_edges routine, instead of
+   putting the radial p0 onto a Cart, and then averaging it to the
+   edges.
 
 -- update Gconst to the latest accepted value
 
