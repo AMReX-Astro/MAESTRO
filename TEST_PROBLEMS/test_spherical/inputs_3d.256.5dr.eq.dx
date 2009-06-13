@@ -63,7 +63,7 @@
  nOutFiles    = 16
  lUsingNFiles = .true.
 
- interp_type_radial_bin_to_cart = 1
+ s0_interp_type = 1
 
  single_prec_plotfiles = T
 
