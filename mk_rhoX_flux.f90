@@ -94,26 +94,26 @@ contains
           select case (dm)
           case (2)
              call mk_rhoX_flux_2d(sfxp(:,:,1,:), sfyp(:,:,1,:), ng_sf, &
-                            efp(:,:,1,1), ng_ef, &
-                            sexp(:,:,1,:), seyp(:,:,1,:), ng_se, &
-                            ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
-                            rho0_old(n,:), rho0_edge_old(n,:), &
-                            rho0_new(n,:), rho0_edge_new(n,:), &
-                            rho0_predicted_edge(n,:), &
-                            w0(n,:),startcomp,endcomp,lo,hi)
+                                  efp(:,:,1,1), ng_ef, &
+                                  sexp(:,:,1,:), seyp(:,:,1,:), ng_se, &
+                                  ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+                                  rho0_old(n,:), rho0_edge_old(n,:), &
+                                  rho0_new(n,:), rho0_edge_new(n,:), &
+                                  rho0_predicted_edge(n,:), &
+                                  w0(n,:),startcomp,endcomp,lo,hi)
           case (3)
              sfzp => dataptr(sflux(n,3),i)
              sezp => dataptr(sedge(n,3),i)
              wmp  => dataptr(umac(n,3),i)
              if(spherical .eq. 0) then
                 call mk_rhoX_flux_3d_cart(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), ng_sf, &
-                                    efp(:,:,:,1), ng_ef, &
-                                    sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), ng_se, &
-                                    ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                    rho0_old(n,:), rho0_edge_old(n,:), &
-                                    rho0_new(n,:), rho0_edge_new(n,:), &
-                                    rho0_predicted_edge(n,:), &
-                                    w0(n,:),startcomp,endcomp,lo,hi)
+                                          efp(:,:,:,1), ng_ef, &
+                                          sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), ng_se, &
+                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                          rho0_old(n,:), rho0_edge_old(n,:), &
+                                          rho0_new(n,:), rho0_edge_new(n,:), &
+                                          rho0_predicted_edge(n,:), &
+                                          w0(n,:),startcomp,endcomp,lo,hi)
 
              else
                 rho0op => dataptr(rho0_old_cart(n), i)
@@ -122,11 +122,11 @@ contains
                 w0yp => dataptr(w0mac(n,2),i)
                 w0zp => dataptr(w0mac(n,3),i)
                 call mk_rhoX_flux_3d_sphr(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), ng_sf, &
-                                    sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), ng_se, &
-                                    ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                    rho0op(:,:,:,1), ng_ro, rho0np(:,:,:,1), ng_rn, &
-                                    w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
-                                    ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
+                                          sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), ng_se, &
+                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                          rho0op(:,:,:,1), ng_ro, rho0np(:,:,:,1), ng_rn, &
+                                          w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
+                                          ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
              endif
           end select
        end do
@@ -149,8 +149,8 @@ contains
   end subroutine mk_rhoX_flux
   
   subroutine mk_rhoX_flux_2d(sfluxx,sfluxy,ng_sf,etarhoflux,ng_ef,sedgex,sedgey,ng_se, &
-                       umac,vmac,ng_um,rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
-                       rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
+                             umac,vmac,ng_um,rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
+                             rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
 
     use bl_constants_module
     use network, only : nspec
@@ -209,9 +209,9 @@ contains
   end subroutine mk_rhoX_flux_2d
 
   subroutine mk_rhoX_flux_3d_cart(sfluxx,sfluxy,sfluxz,ng_sf,etarhoflux,ng_ef, &
-                            sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
-                            rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
-                            rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
+                                  sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
+                                  rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
+                                  rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
 
     use bl_constants_module
     use network, only : nspec
@@ -294,10 +294,10 @@ contains
   end subroutine mk_rhoX_flux_3d_cart
 
   subroutine mk_rhoX_flux_3d_sphr(sfluxx,sfluxy,sfluxz,ng_sf,&
-                            sedgex,sedgey,sedgez,ng_se, &
-                            umac,vmac,wmac,ng_um, &
-                            rho0_old_cart,ng_ro,rho0_new_cart,ng_rn, &
-                            w0macx,w0macy,w0macz,ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
+                                  sedgex,sedgey,sedgez,ng_se, &
+                                  umac,vmac,wmac,ng_um, &
+                                  rho0_old_cart,ng_ro,rho0_new_cart,ng_rn, &
+                                  w0macx,w0macy,w0macz,ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
 
     use bl_constants_module
     use network, only: nspec
@@ -336,15 +336,9 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
                 
-                if (i.eq.domlo(1)) then
-                   rho0_edge = HALF * (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
-                else if (i.eq.domhi(1)+1) then
-                   rho0_edge = HALF * (rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k))
-                else
-                   rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i-1,j,k) &
-                                +rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) * FOURTH
-                end if
-                
+                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i-1,j,k) &
+                             +rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) * FOURTH
+
                 sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
                      (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
              
@@ -357,14 +351,8 @@ contains
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
                 
-                if (j.eq.domlo(2)) then
-                   rho0_edge = HALF * (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
-                else if (j.eq.domhi(2)+1) then
-                   rho0_edge = HALF * (rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k))
-                else
-                   rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) &
-                                +rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
-                end if
+                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) &
+                             +rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
                 
                 sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
                      (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
@@ -378,15 +366,9 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
                 
-                if (k.eq.domlo(3)) then
-                   rho0_edge = HALF * (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
-                else if (k.eq.domhi(3)+1) then
-                   rho0_edge = HALF * (rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1))
-                else
-                   rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j,k-1) &
-                                +rho0_new_cart(i,j,k)+rho0_new_cart(i,j,k-1) ) * FOURTH
-                end if
-                
+                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j,k-1) &
+                             +rho0_new_cart(i,j,k)+rho0_new_cart(i,j,k-1) ) * FOURTH
+
                 sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
                      (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
 
