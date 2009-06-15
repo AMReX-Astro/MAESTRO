@@ -434,6 +434,10 @@ contains
     end if
 
     ng_w0 = w0mac(1,1)%ng
+
+    if (ng_w0 .ne. 1) then
+       call bl_error('Error: make_w0mac_3d_sphr assumes one ghost cell')
+    end if
     
     do n=1,nlevs
        do i=1,w0mac(n,1)%nboxes
@@ -470,10 +474,6 @@ contains
     real(kind=dp_t) :: radius,w0_cart_val,rfac
     real(kind=dp_t), allocatable :: w0_cc(:,:,:,:)
     real(kind=dp_t), allocatable :: w0_nodal(:,:,:,:)
-
-    if (ng_w0 .ne. 1) then
-       call bl_error('Error: make_w0mac_3d_sphr assumes one ghost cell')
-    end if
 
     ! we currently have three different ideas for computing w0mac
     ! 1.  Interpolate w0 to cell centers, then average to edges
