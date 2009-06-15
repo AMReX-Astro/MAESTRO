@@ -31,7 +31,7 @@ contains
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
-    use probin_module, only: verbose
+    use probin_module, only: verbose, edge_nodal_flag
     use modify_scal_force_module
     use convert_rhoX_to_X_module
 
@@ -55,8 +55,10 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     type(multifab) :: rho0_old_cart(mla%nlevel)
-    type(multifab) :: rho0_new_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
+
+    type(multifab) :: rho0mac_old(mla%nlevel,dm)
+    type(multifab) :: rho0mac_new(mla%nlevel,dm)
 
     integer    :: comp,n
     logical    :: is_vel
@@ -71,24 +73,7 @@ contains
 
     is_vel  = .false.
 
-
-    if (spherical .eq. 1) then
-       
-       ! Define rho0_old_cart and rho0_new_cart
-       do n=1,nlevs
-          call build(rho0_old_cart(n), sold(n)%la, 1, 1)
-          call build(rho0_new_cart(n), sold(n)%la, 1, 1)
-          call build(p0_new_cart(n), sold(n)%la, 1, 1)          
-       end do
-
-       call put_1d_array_on_cart(rho0_old,rho0_old_cart,dm+rho_comp,.false., &
-                                 .false.,dx,the_bc_level,mla)
-       call put_1d_array_on_cart(rho0_new,rho0_new_cart,dm+rho_comp,.false., &
-                                 .false.,dx,the_bc_level,mla)
-       call put_1d_array_on_cart(p0_new,p0_new_cart,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_level,mla)
-
-    else
+    if (spherical .eq. 0) then
 
        ! create edge-centered base state quantities.
        ! Note: rho0_edge_{old,new} 
@@ -104,15 +89,28 @@ contains
     ! Create source terms at time n
     !**************************************************************************
 
+    ! Source terms for X and for tracers are zero - do nothing
     do n = 1, nlevs
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
-    ! Source terms for X and for tracers are zero - do nothing
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          call build(rho0_old_cart(n), sold(n)%la, 1, 1)
+       end do
+       call put_1d_array_on_cart(rho0_old,rho0_old_cart,dm+rho_comp,.false., &
+                                 .false.,dx,the_bc_level,mla)
+    end if
 
     ! Make source term for rho'
     call modify_scal_force(scal_force,sold,umac,rho0_old, &
                            rho0_edge_old,w0,dx,rho0_old_cart,rho_comp,mla,the_bc_level)
+
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          call destroy(rho0_old_cart(n))
+       end do
+    end if
 
     !**************************************************************************
     !     Add w0 to MAC velocities (trans velocities already have w0).
@@ -149,10 +147,11 @@ contains
     !**************************************************************************
     !     Create edge states of tracers
     !**************************************************************************
-    if (ntrac.ge.1) &
+    if (ntrac .ge. 1) then
        call make_edge_scal(sold,sedge,umac,scal_force,normal, &
                            w0,w0mac,dx,dt,is_vel,the_bc_level, &
                            trac_comp,dm+trac_comp,ntrac,.false.,mla)
+    end if
 
     !**************************************************************************
     !     Subtract w0 from MAC velocities.
@@ -168,33 +167,80 @@ contains
     ! for which_step .eq. 2, we pass in the old and new for averaging within mkflux
     if (which_step .eq. 1) then
 
+       if (spherical .eq. 1) then
+          do n=1,nlevs
+             do comp=1,dm
+                call multifab_build(rho0mac_old(n,comp),mla%la(n),1,1, &
+                                    nodal=edge_nodal_flag(comp,:))
+             end do
+          end do
+
+          call make_s0mac(mla,rho0_old,rho0mac_old,dx,dm+rho_comp,the_bc_level)
+
+       end if
+
        ! compute species fluxes
        call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
-                         rho0_old,rho0_edge_old,rho0_old_cart, &
-                         rho0_old,rho0_edge_old,rho0_old_cart, &
+                         rho0_old,rho0_edge_old,rho0mac_old, &
+                         rho0_old,rho0_edge_old,rho0mac_old, &
                          rho0_predicted_edge,spec_comp,spec_comp+nspec-1)
 
        ! compute tracer fluxes
-       if (ntrac.ge.1) &
+       if (ntrac .ge. 1) then
           call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
-                            rho0_old,rho0_edge_old,rho0_old_cart, &
-                            rho0_old,rho0_edge_old,rho0_old_cart, &
+                            rho0_old,rho0_edge_old,rho0mac_old, &
+                            rho0_old,rho0_edge_old,rho0mac_old, &
                             rho0_predicted_edge,trac_comp,trac_comp+ntrac-1)
+       end if
+
+
+       if (spherical .eq. 1) then
+          do n=1,nlevs
+             do comp=1,dm
+                call destroy(rho0mac_old(n,comp))
+             end do
+          end do
+       end if
 
     else if (which_step .eq. 2) then
 
+       if (spherical .eq. 1) then
+          do n=1,nlevs
+             do comp=1,dm
+                call multifab_build(rho0mac_old(n,comp),mla%la(n),1,1, &
+                                    nodal=edge_nodal_flag(comp,:))
+                call multifab_build(rho0mac_new(n,comp),mla%la(n),1,1, &
+                                    nodal=edge_nodal_flag(comp,:))
+             end do
+          end do
+
+          call make_s0mac(mla,rho0_old,rho0mac_old,dx,dm+rho_comp,the_bc_level)
+          call make_s0mac(mla,rho0_new,rho0mac_new,dx,dm+rho_comp,the_bc_level)
+
+       end if
+
        ! compute species fluxes
        call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
-                         rho0_old,rho0_edge_old,rho0_old_cart, &
-                         rho0_new,rho0_edge_new,rho0_new_cart, &
+                         rho0_old,rho0_edge_old,rho0mac_old, &
+                         rho0_new,rho0_edge_new,rho0mac_new, &
                          rho0_predicted_edge,spec_comp,spec_comp+nspec-1)
 
        ! compute tracer fluxes
-       if (ntrac.ge.1) &
+       if (ntrac .ge. 1) then
           call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
-                            rho0_old,rho0_edge_old,rho0_old_cart, &
-                            rho0_new,rho0_edge_new,rho0_new_cart, &
+                            rho0_old,rho0_edge_old,rho0mac_old, &
+                            rho0_new,rho0_edge_new,rho0mac_new, &
                             rho0_predicted_edge,trac_comp,trac_comp+ntrac-1)
+       end if
+
+       if (spherical .eq. 1) then
+          do n=1,nlevs
+             do comp=1,dm
+                call destroy(rho0mac_old(n,comp))
+                call destroy(rho0mac_new(n,comp))
+             end do
+          end do
+       end if
 
     end if
 
@@ -209,14 +255,30 @@ contains
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
+
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          call build(p0_new_cart(n), sold(n)%la, 1, 1)          
+       end do
+       call put_1d_array_on_cart(p0_new,p0_new_cart,foextrap_comp,.false., &
+                                 .false.,dx,the_bc_level,mla)
+    end if
+
     call update_scal(mla,spec_comp,spec_comp+nspec-1,sold,snew,sflux,scal_force, &
                      p0_new,p0_new_cart,dx,dt,the_bc_level)
 
-    if (ntrac.ge.1) &
+    if (ntrac .ge. 1) then
        call update_scal(mla,trac_comp,trac_comp+ntrac-1,sold,snew,sflux,scal_force, &
                         p0_new,p0_new_cart,dx,dt,the_bc_level)
+    end if
+
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          call destroy(p0_new_cart(n))
+       end do
+    end if
     
-    if ( verbose .ge. 1 ) then
+    if (verbose .ge. 1) then
        do n=1, nlevs
           do comp = spec_comp,spec_comp+nspec-1
              call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
@@ -235,20 +297,12 @@ contains
           if (parallel_IOProcessor()) &
                write(6,2000) smin,smax
 
-          if (ntrac.ge.1) then
+          if (ntrac .ge. 1) then
              smin = multifab_min_c(snew(n),trac_comp) 
              smax = multifab_max_c(snew(n),trac_comp)
              if (parallel_IOProcessor()) &
                   write(6,2003) smin,smax
           end if
-       end do
-    end if
-
-    if (spherical .eq. 1) then
-       do n=1,nlevs
-          call destroy(rho0_old_cart(n))
-          call destroy(rho0_new_cart(n))
-          call destroy(p0_new_cart(n))
        end do
     end if
 

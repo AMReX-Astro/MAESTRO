@@ -739,6 +739,12 @@ contains
        end do
     end do
 
+    if (s0mac_interp_type .eq. 1) then
+       do n=1,nlevs
+          call destroy(s0_cart(n))
+       end do
+    end if
+
     call destroy(bpt)
 
   end subroutine make_s0mac
@@ -780,7 +786,7 @@ contains
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+2
              do i = lo(1)-1,hi(1)+1
-                s0macx(i,j,k) = HALF*(s0_cart(i,j,k)+s0_cart(i,j-1,k))
+                s0macy(i,j,k) = HALF*(s0_cart(i,j,k)+s0_cart(i,j-1,k))
              end do
           end do
        end do
@@ -788,7 +794,7 @@ contains
        do k = lo(3)-1,hi(3)+2
           do j = lo(2)-1,hi(2)+1
              do i = lo(1)-1,hi(1)+1
-                s0macx(i,j,k) = HALF*(s0_cart(i,j,k)+s0_cart(i,j,k-1))
+                s0macz(i,j,k) = HALF*(s0_cart(i,j,k)+s0_cart(i,j,k-1))
              end do
           end do
        end do

@@ -13,8 +13,8 @@ module mk_rhoX_flux_module
 contains
 
   subroutine mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
-                          rho0_old,rho0_edge_old,rho0_old_cart, &
-                          rho0_new,rho0_edge_new,rho0_new_cart, &
+                          rho0_old,rho0_edge_old,rho0mac_old, &
+                          rho0_new,rho0_edge_new,rho0mac_new, &
                           rho0_predicted_edge,startcomp,endcomp)
 
     use bl_prof_module
@@ -31,9 +31,9 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:),rho0_edge_old(:,0:)
-    type(multifab) , intent(in   ) :: rho0_old_cart(:)
+    type(multifab) , intent(in   ) :: rho0mac_old(:,:)
     real(kind=dp_t), intent(in   ) :: rho0_new(:,0:),rho0_edge_new(:,0:)
-    type(multifab) , intent(in   ) :: rho0_new_cart(:)
+    type(multifab) , intent(in   ) :: rho0mac_new(:,:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     integer        , intent(in   ) :: startcomp,endcomp
 
@@ -43,7 +43,7 @@ contains
     integer :: domlo(dm),domhi(dm)
     integer :: i,n
     integer :: lo(dm),hi(dm)
-    integer :: ng_sf,ng_ef,ng_se,ng_um,ng_ro,ng_rn,ng_w0
+    integer :: ng_sf,ng_ef,ng_se,ng_um,ng_w0,ng_ro,ng_rn
 
 
     real(kind=dp_t), pointer :: sfxp(:,:,:,:)
@@ -61,6 +61,12 @@ contains
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: rho0op(:,:,:,:)
     real(kind=dp_t), pointer :: rho0np(:,:,:,:)
+    real(kind=dp_t), pointer :: r0xo(:,:,:,:)
+    real(kind=dp_t), pointer :: r0yo(:,:,:,:)
+    real(kind=dp_t), pointer :: r0zo(:,:,:,:)
+    real(kind=dp_t), pointer :: r0xn(:,:,:,:)
+    real(kind=dp_t), pointer :: r0yn(:,:,:,:)
+    real(kind=dp_t), pointer :: r0zn(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -70,9 +76,9 @@ contains
     ng_ef = etarhoflux(1)%ng
     ng_se = sedge(1,1)%ng
     ng_um = umac(1,1)%ng
-    ng_ro = rho0_old_cart(1)%ng
-    ng_rn = rho0_new_cart(1)%ng
     ng_w0 = w0mac(1,1)%ng
+    ng_ro = rho0mac_old(1,1)%ng
+    ng_rn = rho0mac_new(1,1)%ng
     
     do n=1,nlevs
 
@@ -116,17 +122,22 @@ contains
                                           w0(n,:),startcomp,endcomp,lo,hi)
 
              else
-                rho0op => dataptr(rho0_old_cart(n), i)
-                rho0np => dataptr(rho0_new_cart(n), i)
                 w0xp => dataptr(w0mac(n,1),i)
                 w0yp => dataptr(w0mac(n,2),i)
                 w0zp => dataptr(w0mac(n,3),i)
+                r0xo => dataptr(rho0mac_old(n,1),i)
+                r0yo => dataptr(rho0mac_old(n,2),i)
+                r0zo => dataptr(rho0mac_old(n,3),i)
+                r0xn => dataptr(rho0mac_new(n,1),i)
+                r0yn => dataptr(rho0mac_new(n,2),i)
+                r0zn => dataptr(rho0mac_new(n,3),i)
                 call mk_rhoX_flux_3d_sphr(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), ng_sf, &
                                           sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), ng_se, &
                                           ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                          rho0op(:,:,:,1), ng_ro, rho0np(:,:,:,1), ng_rn, &
-                                          w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
-                                          ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
+                                          w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_w0, &
+                                          r0xo(:,:,:,1),r0yo(:,:,:,1),r0zo(:,:,:,1),ng_ro, &
+                                          r0xn(:,:,:,1),r0yn(:,:,:,1),r0zn(:,:,:,1),ng_rn, &
+                                          startcomp,endcomp,lo,hi,domlo,domhi)
              endif
           end select
        end do
@@ -296,8 +307,10 @@ contains
   subroutine mk_rhoX_flux_3d_sphr(sfluxx,sfluxy,sfluxz,ng_sf,&
                                   sedgex,sedgey,sedgez,ng_se, &
                                   umac,vmac,wmac,ng_um, &
-                                  rho0_old_cart,ng_ro,rho0_new_cart,ng_rn, &
-                                  w0macx,w0macy,w0macz,ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
+                                  w0macx,w0macy,w0macz,ng_w0, &
+                                  rho0macx_old,rho0macy_old,rho0macz_old,ng_ro, &
+                                  rho0macx_new,rho0macy_new,rho0macz_new,ng_rn, &
+                                  startcomp,endcomp,lo,hi,domlo,domhi)
 
     use bl_constants_module
     use network, only: nspec
@@ -306,7 +319,7 @@ contains
     use probin_module, only: enthalpy_pred_type
 
     integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
-    integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_w0
+    integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_w0,ng_ro,ng_rn
     real(kind=dp_t), intent(inout) ::        sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::        sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::        sfluxz(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
@@ -316,11 +329,15 @@ contains
     real(kind=dp_t), intent(in   ) ::          umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::          vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::          wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) :: rho0_old_cart(lo(1)-ng_ro:,lo(2)-ng_ro:,lo(3)-ng_ro:)
-    real(kind=dp_t), intent(in   ) :: rho0_new_cart(lo(1)-ng_rn:,lo(2)-ng_rn:,lo(3)-ng_rn:)
     real(kind=dp_t), intent(in   ) ::        w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) ::        w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) ::        w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::  rho0macx_old(lo(1)-ng_ro:,lo(2)-ng_ro:,lo(3)-ng_ro:)
+    real(kind=dp_t), intent(in   ) ::  rho0macy_old(lo(1)-ng_ro:,lo(2)-ng_ro:,lo(3)-ng_ro:)
+    real(kind=dp_t), intent(in   ) ::  rho0macz_old(lo(1)-ng_ro:,lo(2)-ng_ro:,lo(3)-ng_ro:)
+    real(kind=dp_t), intent(in   ) ::  rho0macx_new(lo(1)-ng_rn:,lo(2)-ng_rn:,lo(3)-ng_rn:)
+    real(kind=dp_t), intent(in   ) ::  rho0macy_new(lo(1)-ng_rn:,lo(2)-ng_rn:,lo(3)-ng_rn:)
+    real(kind=dp_t), intent(in   ) ::  rho0macz_new(lo(1)-ng_rn:,lo(2)-ng_rn:,lo(3)-ng_rn:)
     integer        , intent(in   ) :: startcomp,endcomp
 
     ! local
@@ -336,8 +353,7 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
                 
-                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i-1,j,k) &
-                             +rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) * FOURTH
+                rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
 
                 sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
                      (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
@@ -351,8 +367,7 @@ contains
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
                 
-                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) &
-                             +rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
+                rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
                 
                 sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
                      (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
@@ -366,8 +381,7 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
                 
-                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j,k-1) &
-                             +rho0_new_cart(i,j,k)+rho0_new_cart(i,j,k-1) ) * FOURTH
+                rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
 
                 sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
                      (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
