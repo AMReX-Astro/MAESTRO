@@ -93,7 +93,7 @@ contains
              call setval(w0mac(n,comp), ZERO, all=.true.)
           end do
        end do
-       call put_w0_on_edges(mla,w0,w0mac,dx)
+       call make_w0mac(mla,w0,w0mac,dx)
     end if
 
     ng_u = u(1)%ng

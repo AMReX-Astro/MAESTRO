@@ -11,7 +11,7 @@ module fill_3d_module
   private
   
   public :: put_1d_array_on_cart,  put_1d_array_on_cart_3d_sphr
-  public :: put_w0_on_edges, put_s0_on_edges
+  public :: make_w0mac, make_s0mac
   public :: make_normal, make_normal_3d_sphr
   public :: put_data_on_faces
   
@@ -400,7 +400,7 @@ contains
 
   end subroutine put_1d_array_on_cart_3d_sphr
 
-  subroutine put_w0_on_edges(mla,w0,w0mac,dx)
+  subroutine make_w0mac(mla,w0,w0mac,dx)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, dm, nlevs
@@ -427,10 +427,10 @@ contains
     
     type(bl_prof_timer), save :: bpt
 
-    call build(bpt, "put_w0_on_edges")
+    call build(bpt, "make_w0mac")
 
     if (dm .eq. 2 .or. spherical .eq. 0) then
-       call bl_error('Error: only call put_w0_on_edges for spherical')
+       call bl_error('Error: only call make_w0mac for spherical')
     end if
 
     ng_w0 = w0mac(1,1)%ng
@@ -443,16 +443,16 @@ contains
           w0zp => dataptr(w0mac(n,3), i)
           lo = lwb(get_box(w0mac(n,1), i))
           hi = upb(get_box(w0mac(n,1), i))
-          call put_w0_on_edges_3d_sphr(w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
-                                       ng_w0,lo,hi,dx(n,:))
+          call make_w0mac_3d_sphr(w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
+                                  ng_w0,lo,hi,dx(n,:))
        end do
     end do
 
     call destroy(bpt)
 
-  end subroutine put_w0_on_edges
+  end subroutine make_w0mac
 
-  subroutine put_w0_on_edges_3d_sphr(w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx)
+  subroutine make_w0mac_3d_sphr(w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx)
 
     use bl_constants_module
     use geometry, only: dr, center, nr_fine
@@ -472,7 +472,7 @@ contains
     real(kind=dp_t), allocatable :: w0_nodal(:,:,:,:)
 
     if (ng_w0 .ne. 1) then
-       call bl_error('Error: put_w0_on_edges_3d_sphr assumes one ghost cell')
+       call bl_error('Error: make_w0mac_3d_sphr assumes one ghost cell')
     end if
 
     ! we currently have three different ideas for computing w0mac
@@ -670,9 +670,9 @@ contains
        call bl_error('Error: fill_3d_data:w0mac_interp_type can only be 1,2 or 3')
     end if
 
-  end subroutine put_w0_on_edges_3d_sphr
+  end subroutine make_w0mac_3d_sphr
 
-  subroutine put_s0_on_edges(mla,s0,s0mac,dx)
+  subroutine make_s0mac(mla,s0,s0mac,dx,bccomp,the_bc_level)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, dm, nlevs
@@ -680,69 +680,87 @@ contains
     use define_bc_module
     use macproject_module
     use fabio_module
+    use probin_module, only: s0mac_interp_type
 
     type(ml_layout), intent(in   ) :: mla
     real(kind=dp_t), intent(in   ) :: s0(:,0:)
     type(multifab) , intent(inout) :: s0mac(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
+    integer        , intent(in   ) :: bccomp
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
     integer         :: lo(dm),hi(dm)
-    integer         :: i,n,ng_s0
+    integer         :: i,n,ng_sm,ng_s0
 
     ! Local pointers
     real(kind=dp_t), pointer :: s0xp(:,:,:,:)
     real(kind=dp_t), pointer :: s0yp(:,:,:,:)
     real(kind=dp_t), pointer :: s0zp(:,:,:,:)
+    real(kind=dp_t), pointer :: s0p(:,:,:,:)
+
+    type(multifab) :: s0_cart(mla%nlevel)
     
     type(bl_prof_timer), save :: bpt
 
-    call build(bpt, "put_s0_on_edges")
+    call build(bpt, "make_s0mac")
 
     if (dm .eq. 2 .or. spherical .eq. 0) then
-       call bl_error('Error: only call put_s0_on_edges for spherical')
+       call bl_error('Error: only call make_s0mac for spherical')
     end if
 
-    ng_s0 = s0mac(1,1)%ng
-    
+    ! we first need to construct a cart version of s0    
+    if (s0mac_interp_type .eq. 1) then
+       do n=1,nlevs
+          call build(s0_cart(n),mla%la(n),1,2)
+       end do
+       call put_1d_array_on_cart(s0,s0_cart,bccomp,.false.,.false.,dx,the_bc_level,mla)
+    end if
+
+    ng_sm = s0mac(1,1)%ng
+    ng_s0 = s0_cart(1)%ng
+
+    if (ng_sm .ne. 1) then
+       call bl_error('Error: make_s0mac assumes one ghost cell in s0mac')
+    end if
+
     do n=1,nlevs
        do i=1,s0mac(n,1)%nboxes
           if ( multifab_remote(s0mac(n,1), i) ) cycle
           s0xp => dataptr(s0mac(n,1), i)
           s0yp => dataptr(s0mac(n,2), i)
           s0zp => dataptr(s0mac(n,3), i)
+          s0p  => dataptr(s0_cart(n), i)
           lo = lwb(get_box(s0mac(n,1), i))
           hi = upb(get_box(s0mac(n,1), i))
-          call put_s0_on_edges_3d_sphr(s0(1,:),s0xp(:,:,:,1),s0yp(:,:,:,1), &
-                                       s0zp(:,:,:,1),ng_s0,lo,hi,dx(n,:))
+          call make_s0mac_3d_sphr(s0(1,:),s0xp(:,:,:,1),s0yp(:,:,:,1), &
+                                  s0zp(:,:,:,1),ng_sm,s0p(:,:,:,1),ng_s0, &
+                                  lo,hi,dx(n,:))
        end do
     end do
 
     call destroy(bpt)
 
-  end subroutine put_s0_on_edges
+  end subroutine make_s0mac
 
-  subroutine put_s0_on_edges_3d_sphr(s0,s0macx,s0macy,s0macz,ng_s0,lo,hi,dx)
+  subroutine make_s0mac_3d_sphr(s0,s0macx,s0macy,s0macz,ng_sm,s0_cart,ng_s0,lo,hi,dx)
 
     use bl_constants_module
     use geometry, only: dr, center, nr_fine
     use probin_module, only: s0mac_interp_type
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s0
+    integer        , intent(in   ) :: lo(:),hi(:),ng_sm,ng_s0
     real(kind=dp_t), intent(in   ) :: s0(0:)
-    real(kind=dp_t), intent(inout) :: s0macx(lo(1)-ng_s0:,lo(2)-ng_s0:,lo(3)-ng_s0:)
-    real(kind=dp_t), intent(inout) :: s0macy(lo(1)-ng_s0:,lo(2)-ng_s0:,lo(3)-ng_s0:)
-    real(kind=dp_t), intent(inout) :: s0macz(lo(1)-ng_s0:,lo(2)-ng_s0:,lo(3)-ng_s0:)
+    real(kind=dp_t), intent(inout) ::  s0macx(lo(1)-ng_sm:,lo(2)-ng_sm:,lo(3)-ng_sm:)
+    real(kind=dp_t), intent(inout) ::  s0macy(lo(1)-ng_sm:,lo(2)-ng_sm:,lo(3)-ng_sm:)
+    real(kind=dp_t), intent(inout) ::  s0macz(lo(1)-ng_sm:,lo(2)-ng_sm:,lo(3)-ng_sm:)
+    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s0:,lo(2)-ng_s0:,lo(3)-ng_s0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius,s0_cart_val,rfac
     real(kind=dp_t), allocatable :: s0_nodal(:,:,:,:)
-
-    if (ng_s0 .ne. 1) then
-       call bl_error('Error: put_s0_on_edges_3d_sphr assumes one ghost cell')
-    end if
 
     ! we currently have three different ideas for computing s0mac
     ! 1.  Interpolate s0 to cell centers, then average to edges
@@ -751,10 +769,29 @@ contains
 
     if (s0mac_interp_type .eq. 1) then
 
-       ! writing this is slightly more compicated since we need to create a 
-       ! full multifab with a ghost cell in order to average to faces.
-       ! we do this already in mkflux.f90, for example, without using this function.
-       call bl_error('Error: put_s0_on_edges_3d_sphr with s0mac_interp_type=1 not written yet')
+       do k = lo(3)-1,hi(3)+1
+          do j = lo(2)-1,hi(2)+1
+             do i = lo(1)-1,hi(1)+2
+                s0macx(i,j,k) = HALF*(s0_cart(i,j,k)+s0_cart(i-1,j,k))
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+1
+          do j = lo(2)-1,hi(2)+2
+             do i = lo(1)-1,hi(1)+1
+                s0macx(i,j,k) = HALF*(s0_cart(i,j,k)+s0_cart(i,j-1,k))
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+2
+          do j = lo(2)-1,hi(2)+1
+             do i = lo(1)-1,hi(1)+1
+                s0macx(i,j,k) = HALF*(s0_cart(i,j,k)+s0_cart(i,j,k-1))
+             end do
+          end do
+       end do
       
     else if (s0mac_interp_type .eq. 2) then
 
@@ -823,15 +860,15 @@ contains
 
     else if (s0mac_interp_type .eq. 3) then
 
-       call bl_error('Error: put_s0_on_edges_3d_sphr with s0mac_interp_type=3 not written yet')
+       call bl_error('Error: make_s0mac_3d_sphr with s0mac_interp_type=3 not written yet')
 
     else
 
-       call bl_error('Error: fill_3d_data:s0mac_interp_type can only be 1,2 or 3')
+       call bl_error('Error: make_s0mac_3d_sphr: s0mac_interp_type can only be 1,2 or 3')
 
     end if
 
-  end subroutine put_s0_on_edges_3d_sphr
+  end subroutine make_s0mac_3d_sphr
 
   subroutine make_normal(normal,dx)
 
