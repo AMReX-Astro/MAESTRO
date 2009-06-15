@@ -508,7 +508,7 @@ contains
        spdz = max(spdz ,abs(u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))))
     enddo; enddo; enddo
     
-    do k = 0,size(w0,dim=1)-1
+    do k=0,nr_fine
        spdr = max(spdr ,abs(w0(k)))
     enddo
 

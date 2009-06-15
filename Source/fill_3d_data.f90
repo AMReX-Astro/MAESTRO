@@ -928,10 +928,10 @@ contains
           hi = upb(get_box(beta(n),i))
           select case (dm)
           case (2)
-             call put_data_on_faces_2d(lo,ccfabp(:,:,1,comp),ng_cc,betap(:,:,1,:),ng_fc, &
+             call put_data_on_faces_2d(lo,hi,ccfabp(:,:,1,comp),ng_cc,betap(:,:,1,:),ng_fc, &
                                        harmonic_avg)
           case (3)
-             call put_data_on_faces_3d(lo,ccfabp(:,:,:,comp),ng_cc,betap(:,:,:,:),ng_fc, &
+             call put_data_on_faces_3d(lo,hi,ccfabp(:,:,:,comp),ng_cc,betap(:,:,:,:),ng_fc, &
                                        harmonic_avg)
           end select
        end do
@@ -945,37 +945,43 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! put beta on faces
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_data_on_faces_2d(lo,ccbeta,ng_cc,beta,ng_fc,harmonic_avg)
+  subroutine put_data_on_faces_2d(lo,hi,ccbeta,ng_cc,beta,ng_fc,harmonic_avg)
 
-    integer        , intent(in   ) :: lo(:), ng_cc, ng_fc
+    integer        , intent(in   ) :: lo(:), hi(:), ng_cc, ng_fc
     real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_cc:,lo(2)-ng_cc:)
     real(kind=dp_t), intent(inout) ::   beta(lo(1)-ng_fc:,lo(2)-ng_fc:,:)
     logical        , intent(in   ) :: harmonic_avg
 
     ! Local
     integer :: i,j
-    integer :: nx,ny
-
-    nx = size(beta,dim=1) - 2
-    ny = size(beta,dim=2) - 2
 
     if (harmonic_avg) then
 
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)+1
              beta(i,j,1) = TWO*(ccbeta(i,j)*ccbeta(i-1,j))/(ccbeta(i,j) + ccbeta(i-1,j))
           end do
        end do
 
-       do j = lo(2),lo(2)+ny
-          do i = lo(1),lo(1)+nx-1
+       do j = lo(2),hi(2)+1
+          do i = lo(1),hi(1)
              beta(i,j,2) = TWO*(ccbeta(i,j)*ccbeta(i,j-1))/(ccbeta(i,j) + ccbeta(i,j-1))
           end do
        end do
 
     else
 
-       call bl_error('put_data_on_faces_2d non-harmonic not written yet')
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)+1
+             beta(i,j,1) = HALF*(ccbeta(i,j)+ccbeta(i-1,j))
+          end do
+       end do
+
+       do j = lo(2),hi(2)+1
+          do i = lo(1),hi(1)
+             beta(i,j,2) = HALF*(ccbeta(i,j)+ccbeta(i,j-1))
+          end do
+       end do
 
     end if
 
@@ -985,44 +991,39 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! put beta on faces
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_data_on_faces_3d(lo,ccbeta,ng_cc,beta,ng_fc,harmonic_avg)
+  subroutine put_data_on_faces_3d(lo,hi,ccbeta,ng_cc,beta,ng_fc,harmonic_avg)
 
-    integer        , intent(in   ) :: lo(:), ng_cc, ng_fc
+    integer        , intent(in   ) :: lo(:), hi(:), ng_cc, ng_fc
     real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_cc:,lo(2)-ng_cc:,lo(3)-ng_cc:)
     real(kind=dp_t), intent(inout) ::   beta(lo(1)-ng_fc:,lo(2)-ng_fc:,lo(3)-ng_fc:,:)
     logical        , intent(in   ) :: harmonic_avg
 
     ! Local
     integer :: i,j,k
-    integer :: nx,ny,nz
-
-    nx = size(beta,dim=1) - 2
-    ny = size(beta,dim=2) - 2
-    nz = size(beta,dim=3) - 2
 
     if (harmonic_avg) then
 
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx
+       do k = lo(3),hi(3)
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)+1
                 beta(i,j,k,1) = TWO*(ccbeta(i,j,k)*ccbeta(i-1,j,k))/(ccbeta(i,j,k) &
                      + ccbeta(i-1,j,k))
              end do
           end do
        end do
 
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny
-             do i = lo(1),lo(1)+nx-1
+       do k = lo(3),hi(3)
+          do j = lo(2),hi(2)+1
+             do i = lo(1),hi(1)
                 beta(i,j,k,2) = TWO*(ccbeta(i,j,k)*ccbeta(i,j-1,k))/(ccbeta(i,j,k) &
                      + ccbeta(i,j-1,k))
              end do
           end do
        end do
 
-       do k = lo(3),lo(3)+nz
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
+       do k = lo(3),hi(3)+1
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)
                 beta(i,j,k,3) = TWO*(ccbeta(i,j,k)*ccbeta(i,j,k-1))/(ccbeta(i,j,k) &
                      + ccbeta(i,j,k-1))
              end do
@@ -1031,7 +1032,29 @@ contains
 
     else
 
-       call bl_error('put_data_on_faces_2d non-harmonic not written yet')
+       do k = lo(3),hi(3)
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)+1
+                beta(i,j,k,1) = HALF*(ccbeta(i,j,k)+ccbeta(i-1,j,k))
+             end do
+          end do
+       end do
+
+       do k = lo(3),hi(3)
+          do j = lo(2),hi(2)+1
+             do i = lo(1),hi(1)
+                beta(i,j,k,2) = HALF*(ccbeta(i,j,k)+ccbeta(i,j-1,k))
+             end do
+          end do
+       end do
+
+       do k = lo(3),hi(3)+1
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)
+                beta(i,j,k,3) = HALF*(ccbeta(i,j,k)+ccbeta(i,j,k-1))
+             end do
+          end do
+       end do
 
     end if
 
