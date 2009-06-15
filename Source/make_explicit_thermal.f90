@@ -10,7 +10,7 @@ module make_explicit_thermal_module
 
   private
 
-  public :: make_explicit_thermal, make_thermal_coeffs, put_beta_on_faces
+  public :: make_explicit_thermal, make_thermal_coeffs
 
 contains 
 
@@ -75,7 +75,7 @@ contains
           call multifab_copy_c(phi(n),1,s(n),temp_comp,1,1)
        end do
 
-       call put_beta_on_faces(Tcoeff,1,beta)
+       call put_data_on_faces(Tcoeff,1,beta,.true.)
 
        do n=1,nlevs
           call multifab_build(alpha(n), mla%la(n), 1, 1)
@@ -115,7 +115,7 @@ contains
           call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
        end do
 
-       call put_beta_on_faces(hcoeff,1,beta)
+       call put_data_on_faces(hcoeff,1,beta,.true.)
 
        do n=1,nlevs
           call multifab_build(alpha(n), mla%la(n), 1, 1)
@@ -140,7 +140,7 @@ contains
              call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
           end do
 
-          call put_beta_on_faces(Xkcoeff,comp,beta)
+          call put_data_on_faces(Xkcoeff,comp,beta,.true.)
           
           ! applyop to compute resid = del dot Xkcoeff grad X_k
           call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+spec_comp+comp-1, &
@@ -184,7 +184,7 @@ contains
 
        end if
 
-       call put_beta_on_faces(pcoeff,1,beta)
+       call put_data_on_faces(pcoeff,1,beta,.true.)
 
        ! applyop to compute resid = del dot pcoeff grad p0
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,foextrap_comp, &
@@ -412,127 +412,4 @@ contains
     
   end subroutine make_thermal_coeffs_3d
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! put beta on faces
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_beta_on_faces(ccfab,comp,beta)
-
-    use geometry, only: nlevs, dm
-
-    type(multifab) , intent(in   ) :: ccfab(:)
-    type(multifab) , intent(inout) :: beta(:)
-    integer        , intent(in   ) :: comp
-
-    ! local
-    integer :: n,i,ng_cc,ng_fc
-    integer :: lo(dm),hi(dm)
-
-    real(kind=dp_t), pointer :: ccfabp(:,:,:,:),betap(:,:,:,:)
-
-    type(bl_prof_timer), save :: bpt
-
-    call build(bpt, "put_beta_on_faces")
-
-    ng_cc = ccfab(1)%ng
-    ng_fc = beta(1)%ng
-
-    ! setup beta = ccfab on faces
-    do n=1,nlevs
-       do i=1,beta(n)%nboxes
-          if (multifab_remote(beta(n),i)) cycle
-          ccfabp => dataptr(ccfab(n),i)
-          betap   => dataptr(beta(n),i)
-          lo = lwb(get_box(beta(n),i))
-          hi = upb(get_box(beta(n),i))
-          select case (dm)
-          case (2)
-             call put_beta_on_faces_2d(lo,ccfabp(:,:,1,comp),ng_cc,betap(:,:,1,:),ng_fc)
-          case (3)
-             call put_beta_on_faces_3d(lo,ccfabp(:,:,:,comp),ng_cc,betap(:,:,:,:),ng_fc)
-          end select
-       end do
-    enddo
-
-    call destroy(bpt)
-
-  end subroutine put_beta_on_faces
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! put beta on faces
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_beta_on_faces_2d(lo,ccbeta,ng_cc,beta,ng_fc)
-
-    integer        , intent(in   ) :: lo(:), ng_cc, ng_fc
-    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_cc:,lo(2)-ng_cc:)
-    real(kind=dp_t), intent(inout) ::   beta(lo(1)-ng_fc:,lo(2)-ng_fc:,:)
-
-    ! Local
-    integer :: i,j
-    integer :: nx,ny
-
-    nx = size(beta,dim=1) - 2
-    ny = size(beta,dim=2) - 2
-
-    do j = lo(2),lo(2)+ny-1
-       do i = lo(1),lo(1)+nx
-          beta(i,j,1) = TWO*(ccbeta(i,j)*ccbeta(i-1,j))/(ccbeta(i,j) + ccbeta(i-1,j))
-       end do
-    end do
-
-    do j = lo(2),lo(2)+ny
-       do i = lo(1),lo(1)+nx-1
-          beta(i,j,2) = TWO*(ccbeta(i,j)*ccbeta(i,j-1))/(ccbeta(i,j) + ccbeta(i,j-1))
-       end do
-    end do
-
-  end subroutine put_beta_on_faces_2d
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! put beta on faces
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_beta_on_faces_3d(lo,ccbeta,ng_cc,beta,ng_fc)
-
-    integer        , intent(in   ) :: lo(:), ng_cc, ng_fc
-    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_cc:,lo(2)-ng_cc:,lo(3)-ng_cc:)
-    real(kind=dp_t), intent(inout) ::   beta(lo(1)-ng_fc:,lo(2)-ng_fc:,lo(3)-ng_fc:,:)
-
-    ! Local
-    integer :: i,j,k
-    integer :: nx,ny,nz
-
-    nx = size(beta,dim=1) - 2
-    ny = size(beta,dim=2) - 2
-    nz = size(beta,dim=3) - 2
-
-    do k = lo(3),lo(3)+nz-1
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx
-             beta(i,j,k,1) = TWO*(ccbeta(i,j,k)*ccbeta(i-1,j,k))/(ccbeta(i,j,k) &
-                  + ccbeta(i-1,j,k))
-          end do
-       end do
-    end do
-
-    do k = lo(3),lo(3)+nz-1
-       do j = lo(2),lo(2)+ny
-          do i = lo(1),lo(1)+nx-1
-             beta(i,j,k,2) = TWO*(ccbeta(i,j,k)*ccbeta(i,j-1,k))/(ccbeta(i,j,k) &
-                  + ccbeta(i,j-1,k))
-          end do
-       end do
-    end do
-
-    do k = lo(3),lo(3)+nz
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             beta(i,j,k,3) = TWO*(ccbeta(i,j,k)*ccbeta(i,j,k-1))/(ccbeta(i,j,k) &
-                  + ccbeta(i,j,k-1))
-          end do
-       end do
-    end do
-
-  end subroutine put_beta_on_faces_3d
-  
 end module make_explicit_thermal_module
