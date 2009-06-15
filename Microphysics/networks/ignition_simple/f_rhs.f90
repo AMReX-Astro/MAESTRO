@@ -24,7 +24,7 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
 
   real(kind=dp_t) :: t
 
-  real(kind=dp_t) :: dens, temp, T9, T9a, dT9adt
+  real(kind=dp_t) :: dens, temp, T9, T9a, dT9dt, dT9adt
 
   real(kind=dp_t) :: rate, dratedt
   real(kind=dp_t) :: sc1212, dsc1212dt
@@ -71,19 +71,20 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   
   ! compute some often used temperature constants
   T9     = temp/1.d9
+  dT9dt  = ONE/1.d9
   T9a    = T9/(1.0d0 + 0.0396d0*T9)
-  dT9adt = T9a / T9 - (T9a / (1.0d0 + 0.0396d0*T9)) * 0.0396d0
+  dT9adt = (T9a / T9 - (T9a / (1.0d0 + 0.0396d0*T9)) * 0.0396d0) * dT9dt
 
   ! compute the CF88 rate
   scratch    = T9a**one_third
   dscratchdt = one_third * T9a**(-2.0d0 * one_third) * dT9adt
 
   a       = 4.27d26*T9a**five_sixths*T9**(-1.5d0)
-  dadt    = five_sixths * (a/T9a) * dT9adt - 1.5d0 * (a/T9)
+  dadt    = five_sixths * (a/T9a) * dT9adt - 1.5d0 * (a/T9) * dT9dt
 
   b       = dexp(-84.165d0/scratch - 2.12d-3*T9*T9*T9)
   dbdt    = (84.165d0 * dscratchdt/ scratch**2.0d0                            &
-             - 3.0d0 * 2.12d-3 * T9 * T9) * b
+             - 3.0d0 * 2.12d-3 * T9 * T9 * dT9dt) * b
 
   rate    = a *  b
   dratedt = dadt * b + a * dbdt
