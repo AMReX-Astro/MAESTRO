@@ -73,6 +73,8 @@ contains
     type(multifab) :: rho0mac_new(mla%nlevel,dm)
     type(multifab) :: rhoh0mac_old(mla%nlevel,dm)
     type(multifab) :: rhoh0mac_new(mla%nlevel,dm)
+    type(multifab) :: h0mac_old(mla%nlevel,dm)
+    type(multifab) :: h0mac_new(mla%nlevel,dm)
 
     integer    :: pred_comp,n,r,i,comp
     logical    :: is_vel
@@ -81,6 +83,7 @@ contains
 
     ! Create cell-centered base state quantity
     real(kind=dp_t) :: h0_old(nlevs_radial,0:nr_fine-1)
+    real(kind=dp_t) :: h0_new(nlevs_radial,0:nr_fine-1)
 
     ! Create edge-centered base state quantities.
     ! Note: rho0_edge_{old,new} and rhoh0_edge_{old,new}
@@ -289,11 +292,22 @@ contains
                                     nodal=edge_nodal_flag(comp,:))
                 call multifab_build(rhoh0mac_old(n,comp),mla%la(n),1,1, &
                                     nodal=edge_nodal_flag(comp,:))
+                call multifab_build(h0mac_old(n,comp),mla%la(n),1,1, &
+                                    nodal=edge_nodal_flag(comp,:))
+             end do
+          end do
+
+          do n=1,nlevs_radial
+             do i=1,numdisjointchunks(n)
+                do r=r_start_coord(n,i),r_end_coord(n,i)
+                   h0_old(n,r) = rhoh0_old(n,r) / rho0_old(n,r)
+                end do
              end do
           end do
 
           call make_s0mac(mla,rho0_old,rho0mac_old,dx,dm+rho_comp,the_bc_level)
           call make_s0mac(mla,rhoh0_old,rhoh0mac_old,dx,dm+rhoh_comp,the_bc_level)
+          call make_s0mac(mla,h0_old,h0mac_old,dx,foextrap_comp,the_bc_level)
        end if
 
        ! compute enthalpy fluxes
@@ -301,13 +315,15 @@ contains
                          rho0_old,rho0_edge_old,rho0_old_cart,rho0mac_old, &
                          rho0_old,rho0_edge_old,rho0_old_cart,rho0mac_old, &
                          rhoh0_old,rhoh0_edge_old,rhoh0_old_cart,rhoh0mac_old, &
-                         rhoh0_old,rhoh0_edge_old,rhoh0_old_cart,rhoh0mac_old)
+                         rhoh0_old,rhoh0_edge_old,rhoh0_old_cart,rhoh0mac_old, &
+                         h0mac_old,h0mac_old)
 
       if (spherical .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
                 call destroy(rho0mac_old(n,comp))
                 call destroy(rhoh0mac_old(n,comp))
+                call destroy(h0mac_old(n,comp))
              end do
           end do
        end if
@@ -321,17 +337,32 @@ contains
                                     nodal=edge_nodal_flag(comp,:))
                 call multifab_build(rhoh0mac_old(n,comp),mla%la(n),1,1, &
                                     nodal=edge_nodal_flag(comp,:))
+                call multifab_build(h0mac_old(n,comp),mla%la(n),1,1, &
+                                    nodal=edge_nodal_flag(comp,:))
                 call multifab_build(rho0mac_new(n,comp),mla%la(n),1,1, &
                                     nodal=edge_nodal_flag(comp,:))
                 call multifab_build(rhoh0mac_new(n,comp),mla%la(n),1,1, &
                                     nodal=edge_nodal_flag(comp,:))
+                call multifab_build(h0mac_new(n,comp),mla%la(n),1,1, &
+                                    nodal=edge_nodal_flag(comp,:))
+             end do
+          end do
+
+          do n=1,nlevs_radial
+             do i=1,numdisjointchunks(n)
+                do r=r_start_coord(n,i),r_end_coord(n,i)
+                   h0_old(n,r) = rhoh0_old(n,r) / rho0_old(n,r)
+                   h0_new(n,r) = rhoh0_new(n,r) / rho0_new(n,r)
+                end do
              end do
           end do
 
           call make_s0mac(mla,rho0_old,rho0mac_old,dx,dm+rho_comp,the_bc_level)
           call make_s0mac(mla,rhoh0_old,rhoh0mac_old,dx,dm+rhoh_comp,the_bc_level)
+          call make_s0mac(mla,h0_old,rhoh0mac_old,dx,foextrap_comp,the_bc_level)
           call make_s0mac(mla,rho0_new,rho0mac_new,dx,dm+rho_comp,the_bc_level)
           call make_s0mac(mla,rhoh0_new,rhoh0mac_new,dx,dm+rhoh_comp,the_bc_level)
+          call make_s0mac(mla,h0_new,rhoh0mac_new,dx,foextrap_comp,the_bc_level)
        end if
 
        ! compute enthalpy fluxes
@@ -339,15 +370,18 @@ contains
                          rho0_old,rho0_edge_old,rho0_old_cart,rho0mac_old, &
                          rho0_new,rho0_edge_new,rho0_new_cart,rho0mac_new, &
                          rhoh0_old,rhoh0_edge_old,rhoh0_old_cart,rhoh0mac_old, &
-                         rhoh0_new,rhoh0_edge_new,rhoh0_new_cart,rhoh0mac_new)
+                         rhoh0_new,rhoh0_edge_new,rhoh0_new_cart,rhoh0mac_new, &
+                         h0mac_old,h0mac_new)
 
       if (spherical .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
                 call destroy(rho0mac_old(n,comp))
                 call destroy(rhoh0mac_old(n,comp))
+                call destroy(h0mac_old(n,comp))
                 call destroy(rho0mac_new(n,comp))
                 call destroy(rhoh0mac_new(n,comp))
+                call destroy(h0mac_new(n,comp))
              end do
           end do
        end if
