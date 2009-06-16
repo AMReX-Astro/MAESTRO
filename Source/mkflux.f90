@@ -374,10 +374,10 @@ contains
   !**************************************************************************
 
   subroutine mk_rhoh_flux(mla,sflux,sold,sedge,umac,w0,w0mac, &
-                          rho0_old,rho0_edge_old,rho0_old_cart,rho0mac_old, &
-                          rho0_new,rho0_edge_new,rho0_new_cart,rho0mac_new, &
-                          rhoh0_old,rhoh0_edge_old,rhoh0_old_cart,rhoh0mac_old, &
-                          rhoh0_new,rhoh0_edge_new,rhoh0_new_cart,rhoh0mac_new, &
+                          rho0_old,rho0_edge_old,rho0mac_old, &
+                          rho0_new,rho0_edge_new,rho0mac_new, &
+                          rhoh0_old,rhoh0_edge_old,rhoh0mac_old, &
+                          rhoh0_new,rhoh0_edge_new,rhoh0mac_new, &
                           h0mac_old,h0mac_new)
 
     use bl_prof_module
@@ -392,13 +392,13 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:),rho0_edge_old(:,0:)
-    type(multifab) , intent(in   ) :: rho0_old_cart(:),rho0mac_old(:,:)
+    type(multifab) , intent(in   ) :: rho0mac_old(:,:)
     real(kind=dp_t), intent(in   ) :: rho0_new(:,0:),rho0_edge_new(:,0:)
-    type(multifab) , intent(in   ) :: rho0_new_cart(:),rho0mac_new(:,:)
+    type(multifab) , intent(in   ) :: rho0mac_new(:,:)
     real(kind=dp_t), intent(in   ) :: rhoh0_old(:,0:),rhoh0_edge_old(:,0:)
-    type(multifab) , intent(in   ) :: rhoh0_old_cart(:),rhoh0mac_old(:,:)
+    type(multifab) , intent(in   ) :: rhoh0mac_old(:,:)
     real(kind=dp_t), intent(in   ) :: rhoh0_new(:,0:),rhoh0_edge_new(:,0:)
-    type(multifab) , intent(in   ) :: rhoh0_new_cart(:),rhoh0mac_new(:,:)
+    type(multifab) , intent(in   ) :: rhoh0mac_new(:,:)
     type(multifab) , intent(in   ) :: h0mac_old(:,:),h0mac_new(:,:)
 
     ! local    
@@ -447,10 +447,6 @@ contains
     ng_sf = sflux(1,1)%ng
     ng_se = sedge(1,1)%ng
     ng_um = umac(1,1)%ng
-    ng_ro = rho0_old_cart(1)%ng
-    ng_rn = rho0_new_cart(1)%ng
-    ng_ho = rhoh0_old_cart(1)%ng
-    ng_hn = rhoh0_new_cart(1)%ng
     ng_w0 = w0mac(1,1)%ng
     ng_0m = rho0mac_old(1,1)%ng
     
@@ -490,10 +486,6 @@ contains
                                           w0(n,:),lo,hi)
 
              else
-                rho0op => dataptr(rho0_old_cart(n), i)
-                rho0np => dataptr(rho0_new_cart(n), i)
-                rhoh0op => dataptr(rhoh0_old_cart(n), i)
-                rhoh0np => dataptr(rhoh0_new_cart(n), i)
                 w0xp => dataptr(w0mac(n,1),i)
                 w0yp => dataptr(w0mac(n,2),i)
                 w0zp => dataptr(w0mac(n,3),i)
@@ -518,8 +510,6 @@ contains
                 call mk_rhoh_flux_3d_sphr(sfxp(:,:,:,:),sfyp(:,:,:,:),sfzp(:,:,:,:), ng_sf, &
                                           sexp(:,:,:,:),seyp(:,:,:,:),sezp(:,:,:,:), ng_se, &
                                           ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                          rho0op(:,:,:,1),ng_ro,rho0np(:,:,:,1),ng_rn, &
-                                          rhoh0op(:,:,:,1),ng_ho,rhoh0np(:,:,:,1),ng_hn, &
                                           w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_w0, &
                                           r0mxop(:,:,:,1),r0myop(:,:,:,1),r0mzop(:,:,:,1), &
                                           rh0mxop(:,:,:,1),rh0myop(:,:,:,1), &
@@ -753,8 +743,6 @@ contains
   subroutine mk_rhoh_flux_3d_sphr(sfluxx,sfluxy,sfluxz,ng_sf,&
                                   sedgex,sedgey,sedgez,ng_se, &
                                   umac,vmac,wmac,ng_um, &
-                                  rho0_old_cart,ng_ro,rho0_new_cart,ng_rn, &
-                                  rhoh0_old_cart,ng_ho,rhoh0_new_cart,ng_hn, &
                                   w0macx,w0macy,w0macz,ng_w0, &
                                   rho0macx_old,rho0macy_old,rho0macz_old, &
                                   rhoh0macx_old,rhoh0macy_old,rhoh0macz_old, &
@@ -771,7 +759,7 @@ contains
     use probin_module, only: enthalpy_pred_type
 
     integer        , intent(in   ) :: lo(:),hi(:)
-    integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0,ng_0m
+    integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_w0,ng_0m
     real(kind=dp_t), intent(inout) ::        sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::        sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::        sfluxz(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
@@ -781,10 +769,6 @@ contains
     real(kind=dp_t), intent(in   ) ::          umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::          vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::          wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) :: rho0_old_cart(lo(1)-ng_ro:,lo(2)-ng_ro:,lo(3)-ng_ro:)
-    real(kind=dp_t), intent(in   ) :: rho0_new_cart(lo(1)-ng_rn:,lo(2)-ng_rn:,lo(3)-ng_rn:)
-    real(kind=dp_t), intent(in   ) ::rhoh0_old_cart(lo(1)-ng_ho:,lo(2)-ng_ho:,lo(3)-ng_ho:)
-    real(kind=dp_t), intent(in   ) ::rhoh0_new_cart(lo(1)-ng_hn:,lo(2)-ng_hn:,lo(3)-ng_hn:)
     real(kind=dp_t), intent(in   ) ::        w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) ::        w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) ::        w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
@@ -809,7 +793,6 @@ contains
 
     ! local
     integer         :: i,j,k
-    real(kind=dp_t) :: bc_lox,bc_loy,bc_loz
     real(kind=dp_t) :: rho0_edge,h0_edge
     logical         :: test,test2
     
@@ -826,8 +809,7 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
 
-                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i-1,j,k) &
-                     +rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) * FOURTH
+                rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
 
                 sfluxx(i,j,k,rhoh_comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
                      (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,rhoh_comp)
@@ -845,13 +827,9 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
 
-                rho0_edge = FOURTH * ( rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k) &
-                     +rho0_old_cart(i  ,j,k)+rho0_new_cart(i  ,j,k) )
+                rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
 
-                h0_edge = FOURTH * ( rhoh0_old_cart(i-1,j,k)/rho0_old_cart(i-1,j,k) &
-                     +rhoh0_new_cart(i-1,j,k)/rho0_new_cart(i-1,j,k) &
-                     +rhoh0_old_cart(i  ,j,k)/rho0_old_cart(i  ,j,k) &
-                     +rhoh0_new_cart(i  ,j,k)/rho0_new_cart(i  ,j,k) )
+                h0_edge = HALF*(h0macx_old(i,j,k)+h0macx_new(i,j,k))
 
                 sfluxx(i,j,k,rhoh_comp) = (umac(i,j,k)+w0macx(i,j,k)) * &
                      (sedgex(i,j,k,rho_comp)+rho0_edge) * (sedgex(i,j,k,rhoh_comp)+h0_edge)
@@ -869,18 +847,12 @@ contains
                 ! Average (rho h) onto edges by averaging rho and h separately onto edges.
                 ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
                 ! where h_0 is computed from (rho h)_0 / rho_0
-                rho0_edge = FOURTH * ( rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k) &
-                                      +rho0_old_cart(i  ,j,k)+rho0_new_cart(i  ,j,k) )
+                rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
 
-                h0_edge = FOURTH * ( rhoh0_old_cart(i-1,j,k)/rho0_old_cart(i-1,j,k) &
-                                    +rhoh0_new_cart(i-1,j,k)/rho0_new_cart(i-1,j,k) &
-                                    +rhoh0_old_cart(i  ,j,k)/rho0_old_cart(i  ,j,k) &
-                                    +rhoh0_new_cart(i  ,j,k)/rho0_new_cart(i  ,j,k) )
-                
-                bc_lox = rho0_edge * h0_edge
+                h0_edge = HALF*(h0macx_old(i,j,k)+h0macx_new(i,j,k))
 
                 sfluxx(i,j,k,rhoh_comp) = &
-                     (umac(i,j,k)+w0macx(i,j,k))*(bc_lox+sedgex(i,j,k,rhoh_comp))
+                     (umac(i,j,k)+w0macx(i,j,k))*(rho0_edge*h0_edge+sedgex(i,j,k,rhoh_comp))
 
              end do
           end do
@@ -895,8 +867,7 @@ contains
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
 
-                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) &
-                     +rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
+                rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
 
                 sfluxy(i,j,k,rhoh_comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
                      (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,rhoh_comp)
@@ -914,13 +885,9 @@ contains
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
 
-                rho0_edge = FOURTH * ( rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k) &
-                     +rho0_old_cart(i,j  ,k)+rho0_new_cart(i,j  ,k) )
+                rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
 
-                h0_edge = FOURTH * ( rhoh0_old_cart(i,j-1,k)/rho0_old_cart(i,j-1,k) &
-                     +rhoh0_new_cart(i,j-1,k)/rho0_new_cart(i,j-1,k) &
-                     +rhoh0_old_cart(i,j  ,k)/rho0_old_cart(i,j  ,k) &
-                     +rhoh0_new_cart(i,j  ,k)/rho0_new_cart(i,j  ,k) )
+                h0_edge = HALF*(h0macy_old(i,j,k)+h0macy_new(i,j,k))
 
                 sfluxy(i,j,k,rhoh_comp) = (vmac(i,j,k)+w0macy(i,j,k)) * &
                      (sedgey(i,j,k,rho_comp)+rho0_edge) * (sedgey(i,j,k,rhoh_comp)+h0_edge)
@@ -938,18 +905,12 @@ contains
                 ! Average (rho h) onto edges by averaging rho and h separately onto edges.
                 ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
                 ! where h_0 is computed from (rho h)_0 / rho_0
-                rho0_edge = FOURTH * ( rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k) &
-                                      +rho0_old_cart(i,j  ,k)+rho0_new_cart(i,j  ,k) )
+                rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
 
-                h0_edge = FOURTH * ( rhoh0_old_cart(i,j-1,k)/rho0_old_cart(i,j-1,k) &
-                                    +rhoh0_new_cart(i,j-1,k)/rho0_new_cart(i,j-1,k) &
-                                    +rhoh0_old_cart(i,j  ,k)/rho0_old_cart(i,j  ,k) &
-                                    +rhoh0_new_cart(i,j  ,k)/rho0_new_cart(i,j  ,k) )
-
-                bc_loy = rho0_edge * h0_edge
+                h0_edge = HALF*(h0macy_old(i,j,k)+h0macy_new(i,j,k))
 
                 sfluxy(i,j,k,rhoh_comp) = &
-                     (vmac(i,j,k)+w0macy(i,j,k))*(sedgey(i,j,k,rhoh_comp)+bc_loy)
+                     (vmac(i,j,k)+w0macy(i,j,k))*(rho0_edge*h0_edge+sedgey(i,j,k,rhoh_comp))
 
              end do
           end do
@@ -965,8 +926,7 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
-                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j,k-1) &
-                     +rho0_new_cart(i,j,k)+rho0_new_cart(i,j,k-1) ) * FOURTH
+                rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
 
                 sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
                      (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,rhoh_comp)
@@ -984,13 +944,9 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
-                rho0_edge = FOURTH * ( rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1) &
-                     +rho0_old_cart(i,j,k  )+rho0_new_cart(i,j,k  ) )
+                rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
 
-                h0_edge = FOURTH * ( rhoh0_old_cart(i,j,k-1)/rho0_old_cart(i,j,k-1) &
-                     +rhoh0_new_cart(i,j,k-1)/rho0_new_cart(i,j,k-1) &
-                     +rhoh0_old_cart(i,j,k  )/rho0_old_cart(i,j,k  ) &
-                     +rhoh0_new_cart(i,j,k  )/rho0_new_cart(i,j,k  ) )
+                h0_edge = HALF*(h0macz_old(i,j,k)+h0macz_new(i,j,k))
 
                 sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k)+w0macz(i,j,k)) * &
                      (sedgez(i,j,k,rho_comp)+rho0_edge) * (sedgez(i,j,k,rhoh_comp)+h0_edge)
@@ -1008,18 +964,12 @@ contains
                 ! Average (rho h) onto edges by averaging rho and h separately onto edges.
                 ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
                 ! where h_0 is computed from (rho h)_0 / rho_0
-                rho0_edge = FOURTH * ( rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1) &
-                                      +rho0_old_cart(i,j,k  )+rho0_new_cart(i,j,k  ) )
+                rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
 
-                h0_edge = FOURTH * ( rhoh0_old_cart(i,j,k-1)/rho0_old_cart(i,j,k-1) &
-                                    +rhoh0_new_cart(i,j,k-1)/rho0_new_cart(i,j,k-1) &
-                                    +rhoh0_old_cart(i,j,k  )/rho0_old_cart(i,j,k  ) &
-                                    +rhoh0_new_cart(i,j,k  )/rho0_new_cart(i,j,k  ) )
-
-                bc_loz = rho0_edge * h0_edge
+                h0_edge = HALF*(h0macz_old(i,j,k)+h0macz_new(i,j,k))
 
                 sfluxz(i,j,k,rhoh_comp) = &
-                     (wmac(i,j,k)+w0macz(i,j,k))*(sedgez(i,j,k,rhoh_comp)+bc_loz)
+                     (wmac(i,j,k)+w0macz(i,j,k))*(rho0_edge*h0_edge+sedgez(i,j,k,rhoh_comp))
 
              end do
           end do

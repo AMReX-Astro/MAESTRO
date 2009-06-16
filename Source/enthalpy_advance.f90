@@ -63,10 +63,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
-    type(multifab) :: rho0_old_cart(mla%nlevel)
-    type(multifab) :: rho0_new_cart(mla%nlevel)
     type(multifab) :: rhoh0_old_cart(mla%nlevel)
-    type(multifab) :: rhoh0_new_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
     type(multifab) :: rho0mac_old(mla%nlevel,dm)
@@ -101,39 +98,13 @@ contains
 
     is_vel  = .false.
 
-    if (spherical .eq. 1) then
-
-       do n=1,nlevs
-          call build(rho0_old_cart(n), sold(n)%la, 1, 1)
-          call build(rho0_new_cart(n), sold(n)%la, 1, 1)
-          call build(rhoh0_old_cart(n), sold(n)%la, 1, 1)
-          call build(rhoh0_new_cart(n), sold(n)%la, 1, 1)        
-       end do
-
-       call put_1d_array_on_cart(rho0_old,rho0_old_cart,dm+rho_comp,.false., &
-                                 .false.,dx,the_bc_level,mla)
-       call put_1d_array_on_cart(rho0_new,rho0_new_cart,dm+rho_comp,.false., &
-                                 .false.,dx,the_bc_level,mla)
-
-
-       if (enthalpy_pred_type .eq. predict_T_then_rhohprime .or. &
-           enthalpy_pred_type .eq. predict_rhohprime .or. &
-           enthalpy_pred_type .eq. predict_hprime) then
-          call put_1d_array_on_cart(rhoh0_old,rhoh0_old_cart,dm+rhoh_comp,.false., &
-                                    .false.,dx,the_bc_level,mla)
-          call put_1d_array_on_cart(rhoh0_new,rhoh0_new_cart,dm+rhoh_comp,.false., &
-                                    .false.,dx,the_bc_level,mla)
-       end if
-
-    else
-
+    if (spherical .eq. 0) then
        call cell_to_edge(rho0_old,rho0_edge_old)
        call cell_to_edge(rho0_new,rho0_edge_new)
        call cell_to_edge(rhoh0_old,rhoh0_edge_old)
        call cell_to_edge(rhoh0_new,rhoh0_edge_new)
        call cell_to_edge(tempbar,t0_edge_old)
        call cell_to_edge(tempbar,t0_edge_new)
-
     end if
 
     if (enthalpy_pred_type .eq. predict_h .or. &
@@ -159,8 +130,20 @@ contains
                         thermal,umac,p0_old,p0_old,rho0_old,rho0_old,&
                         psi,dx,.true.,the_bc_level)
 
+       do n=1,nlevs
+          call build(rhoh0_old_cart(n), sold(n)%la, 1, 1)
+       end do
+
+
+       call put_1d_array_on_cart(rhoh0_old,rhoh0_old_cart,dm+rhoh_comp,.false., &
+                                 .false.,dx,the_bc_level,mla)
+
        call modify_scal_force(scal_force,sold,umac,rhoh0_old, &
                               rhoh0_edge_old,w0,dx,rhoh0_old_cart,rhoh_comp,mla,the_bc_level)
+
+       do n=1,nlevs
+          call destroy(rhoh0_old_cart(n))
+       end do
 
     else if (enthalpy_pred_type .eq. predict_h) then
 
@@ -234,8 +217,7 @@ contains
     end if
 
     call make_edge_scal(sold,sedge,umac,scal_force,normal, &
-                        w0,w0mac, &
-                        dx,dt,is_vel,the_bc_level, &
+                        w0,w0mac,dx,dt,is_vel,the_bc_level, &
                         pred_comp,dm+pred_comp,1,.false.,mla)
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
@@ -312,10 +294,10 @@ contains
 
        ! compute enthalpy fluxes
        call mk_rhoh_flux(mla,sflux,sold,sedge,umac,w0,w0mac, &
-                         rho0_old,rho0_edge_old,rho0_old_cart,rho0mac_old, &
-                         rho0_old,rho0_edge_old,rho0_old_cart,rho0mac_old, &
-                         rhoh0_old,rhoh0_edge_old,rhoh0_old_cart,rhoh0mac_old, &
-                         rhoh0_old,rhoh0_edge_old,rhoh0_old_cart,rhoh0mac_old, &
+                         rho0_old,rho0_edge_old,rho0mac_old, &
+                         rho0_old,rho0_edge_old,rho0mac_old, &
+                         rhoh0_old,rhoh0_edge_old,rhoh0mac_old, &
+                         rhoh0_old,rhoh0_edge_old,rhoh0mac_old, &
                          h0mac_old,h0mac_old)
 
       if (spherical .eq. 1) then
@@ -367,10 +349,10 @@ contains
 
        ! compute enthalpy fluxes
        call mk_rhoh_flux(mla,sflux,sold,sedge,umac,w0,w0mac, &
-                         rho0_old,rho0_edge_old,rho0_old_cart,rho0mac_old, &
-                         rho0_new,rho0_edge_new,rho0_new_cart,rho0mac_new, &
-                         rhoh0_old,rhoh0_edge_old,rhoh0_old_cart,rhoh0mac_old, &
-                         rhoh0_new,rhoh0_edge_new,rhoh0_new_cart,rhoh0mac_new, &
+                         rho0_old,rho0_edge_old,rho0mac_old, &
+                         rho0_new,rho0_edge_new,rho0mac_new, &
+                         rhoh0_old,rhoh0_edge_old,rhoh0mac_old, &
+                         rhoh0_new,rhoh0_edge_new,rhoh0mac_new, &
                          h0mac_old,h0mac_new)
 
       if (spherical .eq. 1) then
@@ -441,16 +423,7 @@ contains
        end do
     end if
 
-    if (parallel_IOProcessor()) write(6,2004) 
-
-    if (spherical .eq. 1) then
-       do n=1,nlevs
-          call destroy(rho0_old_cart(n))
-          call destroy(rho0_new_cart(n))
-          call destroy(rhoh0_old_cart(n))
-          call destroy(rhoh0_new_cart(n))
-       end do
-    end if
+    if (parallel_IOProcessor()) write(6,2004)
 
     ! pass temperature through for seeding the temperature update eos call
     do n=1,nlevs
