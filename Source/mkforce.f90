@@ -223,8 +223,8 @@ contains
 
     vel_force = ZERO
 
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0,rho0_cart,lo,hi,dx,0,0)
-    call put_1d_array_on_cart_3d_sphr(.false.,.true.,grav,grav_cart,lo,hi,dx,0,ng_n,normal)
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0,rho0_cart,lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(.false.,.true.,grav,grav_cart,lo,hi,dx,0)
 
     do k = lo(3),hi(3)
        zz = (dble(k) + HALF)*dx(3) - center(3)

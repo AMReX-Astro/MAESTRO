@@ -275,7 +275,7 @@ contains
 
        if (dm .eq. 3) then
           call put_1d_array_on_cart(w0_force,w0_force_cart_vec,foextrap_comp,.false., &
-                                    .true.,dx,the_bc_tower%bc_tower_array,mla,normal)
+                                    .true.,dx,the_bc_tower%bc_tower_array,mla)
        end if
 
     else
@@ -776,7 +776,7 @@ contains
 
        if (dm .eq. 3) then
           call put_1d_array_on_cart(w0_force,w0_force_cart_vec,foextrap_comp,.false., &
-                                    .true.,dx,the_bc_tower%bc_tower_array,mla,normal)
+                                    .true.,dx,the_bc_tower%bc_tower_array,mla)
        end if
     end if
 

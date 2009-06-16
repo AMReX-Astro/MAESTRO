@@ -245,7 +245,7 @@ contains
     end do
 
     ! compute w0 contribution to divu
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,divu,divu_cart,lo,hi,dx,0,0)
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,divu,divu_cart,lo,hi,dx,0)
     
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)

@@ -176,7 +176,7 @@ contains
        ! put w0 in Cartesian cell-centers as a scalar (the radial 
        ! expansion velocity)
        call put_1d_array_on_cart(w0,w0r_cart,foextrap_comp,.true.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+                                 the_bc_tower%bc_tower_array,mla)
 
     else
 

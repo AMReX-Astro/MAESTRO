@@ -18,7 +18,7 @@ module fill_3d_module
 contains  
 
   subroutine put_1d_array_on_cart(s0,s0_cart,bc_comp,is_input_edge_centered, &
-                                  is_output_a_vector,dx,the_bc_level,mla,normal)
+                                  is_output_a_vector,dx,the_bc_level,mla)
 
     use bl_constants_module
     use define_bc_module
@@ -36,21 +36,16 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(in   ) :: mla
-    type(multifab) , intent(in   ), optional :: normal(:)
     
     integer :: lo(dm)
     integer :: hi(dm)
-    integer :: i,n,ng_s,ng_n,comp
+    integer :: i,n,ng_s,comp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_1d_array_on_cart")
-
-    if (spherical .eq. 1 .and. is_output_a_vector .and. (.not. present(normal)) ) then
-       call bl_error('Error: Calling put_1d_array_on_cart for spherical with is_output_a_vector=T and without normal')
-    end if
 
     ng_s = s0_cart(1)%ng
     
@@ -70,19 +65,9 @@ contains
                 call put_1d_array_on_cart_3d(is_input_edge_centered,is_output_a_vector, &
                                              s0(n,:),sp(:,:,:,:),lo,hi,ng_s)
              else
-                if (is_output_a_vector) then
-                   np => dataptr(normal(n), i)
-                   ng_n = normal(n)%ng
-               
-                   call put_1d_array_on_cart_3d_sphr(is_input_edge_centered, &
-                                                     is_output_a_vector,s0(1,:), &
-                                                     sp(:,:,:,:),lo,hi,dx(n,:),ng_s,ng_n, &
-                                                     np(:,:,:,:))
-                else
-                   call put_1d_array_on_cart_3d_sphr(is_input_edge_centered, &
-                                                     is_output_a_vector,s0(1,:), &
-                                                     sp(:,:,:,:),lo,hi,dx(n,:),ng_s,ng_n)
-                end if
+                call put_1d_array_on_cart_3d_sphr(is_input_edge_centered, &
+                                                  is_output_a_vector,s0(1,:), &
+                                                  sp(:,:,:,:),lo,hi,dx(n,:),ng_s)
              endif
           end select
        end do
@@ -288,22 +273,17 @@ contains
   end subroutine put_1d_array_on_cart_3d
 
   subroutine put_1d_array_on_cart_3d_sphr(is_input_edge_centered,is_output_a_vector, &
-                                          s0,s0_cart,lo,hi,dx,ng_s,ng_n,normal)
-
-    ! note: ng_n is required only to dimension normal.  Since normal is 
-    ! optional, if you do not pass normal in, then you can use any dummy 
-    ! value for ng_n
+                                          s0,s0_cart,lo,hi,dx,ng_s)
 
     use bl_constants_module
     use geometry, only: dr, center, r_cc_loc, nr_fine
     use probin_module, only: s0_interp_type
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s, ng_n
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s
     logical        , intent(in   ) :: is_input_edge_centered,is_output_a_vector
     real(kind=dp_t), intent(in   ) :: s0(0:)
     real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ), optional :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
 
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
@@ -312,10 +292,6 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_1d_array_on_cart_3d_sphr")
-
-    if (is_output_a_vector .and. (.not. present(normal)) ) then
-       call bl_error('Error: Calling put_1d_array_on_cart_3d_sphr with is_output_a_vector=T and without normal')
-    end if
 
     if (is_input_edge_centered) then
 
@@ -334,9 +310,9 @@ contains
                 s0_cart_val      = rfac * s0(index) + (ONE-rfac) * s0(index+1)
 
                 if (is_output_a_vector) then
-                   s0_cart(i,j,k,1) = s0_cart_val * normal(i,j,k,1)
-                   s0_cart(i,j,k,2) = s0_cart_val * normal(i,j,k,2)
-                   s0_cart(i,j,k,3) = s0_cart_val * normal(i,j,k,3)
+                   s0_cart(i,j,k,1) = s0_cart_val * x / radius
+                   s0_cart(i,j,k,2) = s0_cart_val * y / radius
+                   s0_cart(i,j,k,3) = s0_cart_val * z / radius
                 else
                    s0_cart(i,j,k,1) = s0_cart_val
                 end if
@@ -384,9 +360,9 @@ contains
                 end if
 
                 if (is_output_a_vector) then
-                   s0_cart(i,j,k,1) = s0_cart_val * normal(i,j,k,1)
-                   s0_cart(i,j,k,2) = s0_cart_val * normal(i,j,k,2)
-                   s0_cart(i,j,k,3) = s0_cart_val * normal(i,j,k,3)
+                   s0_cart(i,j,k,1) = s0_cart_val * x / radius
+                   s0_cart(i,j,k,2) = s0_cart_val * y / radius
+                   s0_cart(i,j,k,3) = s0_cart_val * z / radius
                 else
                    s0_cart(i,j,k,1) = s0_cart_val
                 end if

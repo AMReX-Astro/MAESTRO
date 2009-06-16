@@ -384,7 +384,7 @@ contains
          (.NOT. is_prediction)) then
 
        allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-       call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0,0)
+       call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
@@ -658,7 +658,7 @@ contains
          (.NOT. is_prediction)) then
 
        allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-       call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0,0)
+       call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
@@ -980,7 +980,7 @@ contains
 
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0,0)
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)

@@ -51,9 +51,8 @@ contains
     real(kind=dp_t), pointer::   sop(:,:,:,:)
     real(kind=dp_t), pointer::    fp(:,:,:,:)
     real(kind=dp_t), pointer:: divup(:,:,:,:)
-    real(kind=dp_t), pointer::    np(:,:,:,:)
 
-    integer         :: lo(dm),hi(dm),ng_u,ng_s,ng_f,ng_dU,ng_n,i,n
+    integer         :: lo(dm),hi(dm),ng_u,ng_s,ng_f,ng_dU,i,n
     real(kind=dp_t) :: dt_proc,dt_grid,dt_lev
     real(kind=dp_t) :: umax,umax_proc,umax_grid
     
@@ -90,11 +89,9 @@ contains
                              dx(n,:), dt_grid, umax_grid, cflfac)
           case (3)
              if (spherical .eq. 1) then
-                np => dataptr(normal(n), i)
-                ng_n = normal(1)%ng
                 call firstdt_3d_sphr(uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
-                                     fp(:,:,:,:), ng_f, divup(:,:,:,1), ng_dU, np(:,:,:,:), &
-                                     ng_n, p0(1,:), gamma1bar(1,:), lo, hi, dx(n,:), &
+                                     fp(:,:,:,:), ng_f, divup(:,:,:,1), ng_dU, p0(1,:), &
+                                     gamma1bar(1,:), lo, hi, dx(n,:), &
                                      dt_grid, umax_grid, cflfac)
              else
                 call firstdt_3d(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
@@ -399,8 +396,8 @@ contains
 
   end subroutine firstdt_3d
 
-  subroutine firstdt_3d_sphr(u,ng_u,s,ng_s,force,ng_f,divU,ng_dU,normal,ng_n, &
-                             p0,gamma1bar,lo,hi,dx,dt,umax,cfl)
+  subroutine firstdt_3d_sphr(u,ng_u,s,ng_s,force,ng_f,divU,ng_dU,p0,gamma1bar,lo,hi,dx, &
+                             dt,umax,cfl)
 
     use geometry,  only: nr, dr, nr_fine
     use variables, only: rho_comp, temp_comp, spec_comp
@@ -409,12 +406,11 @@ contains
     use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
     use fill_3d_module
 
-    integer           , intent(in)  :: lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_n
+    integer           , intent(in)  :: lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU
     real (kind = dp_t), intent(in ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real (kind = dp_t), intent(in ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real (kind = dp_t), intent(in ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     real (kind = dp_t), intent(in ) ::   divU(lo(1)-ng_dU:,lo(2)-ng_dU:,lo(3)-ng_dU:) 
-    real (kind = dp_t), intent(in ) :: normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:) 
     real (kind = dp_t), intent(in ) :: p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(out) :: dt, umax
@@ -530,7 +526,7 @@ contains
        gp0(nr_fine) = gp0(nr_fine-1)
        gp0(      0) = gp0(        1)
        
-       call put_1d_array_on_cart_3d_sphr(.true.,.true.,gp0,gp0_cart,lo,hi,dx,0,ng_n,normal)
+       call put_1d_array_on_cart_3d_sphr(.true.,.true.,gp0,gp0_cart,lo,hi,dx,0)
        
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)

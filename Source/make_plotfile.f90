@@ -214,7 +214,7 @@ contains
 
        ! put w0 in Cartesian cell-centers as a scalar (the radial expansion velocity)
        call put_1d_array_on_cart(w0,w0r_cart,foextrap_comp,.true.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+                                 the_bc_tower%bc_tower_array,mla)
 
     end if
 
@@ -222,7 +222,7 @@ contains
 
        ! w0
        call put_1d_array_on_cart(w0,tempfab,1,.true.,.true.,dx, &
-                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+                                 the_bc_tower%bc_tower_array,mla)
 
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_w0,tempfab(n),1,dm)
@@ -241,7 +241,7 @@ contains
 
        ! rho0
        call put_1d_array_on_cart(rho0,tempfab,dm+rho_comp,.false.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+                                 the_bc_tower%bc_tower_array,mla)
 
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_rho0,tempfab(n),1,1)
@@ -250,7 +250,7 @@ contains
        ! rhoh0
        h0 = rhoh0 / rho0
        call put_1d_array_on_cart(rhoh0,tempfab,dm+rhoh_comp,.false.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+                                 the_bc_tower%bc_tower_array,mla)
 
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_rhoh0,tempfab(n),1,1)
@@ -258,7 +258,7 @@ contains
 
        ! h0
        call put_1d_array_on_cart(h0,tempfab,foextrap_comp,.false.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+                                 the_bc_tower%bc_tower_array,mla)
 
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_h0,tempfab(n),1,1)
@@ -266,7 +266,7 @@ contains
 
        ! p0
        call put_1d_array_on_cart(p0,tempfab,foextrap_comp,.false.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+                                 the_bc_tower%bc_tower_array,mla)
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_p0,tempfab(n),1,1)
        end do
