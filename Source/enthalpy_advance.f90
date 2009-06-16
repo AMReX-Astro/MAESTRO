@@ -359,10 +359,10 @@ contains
 
           call make_s0mac(mla,rho0_old,rho0mac_old,dx,dm+rho_comp,the_bc_level)
           call make_s0mac(mla,rhoh0_old,rhoh0mac_old,dx,dm+rhoh_comp,the_bc_level)
-          call make_s0mac(mla,h0_old,rhoh0mac_old,dx,foextrap_comp,the_bc_level)
+          call make_s0mac(mla,h0_old,h0mac_old,dx,foextrap_comp,the_bc_level)
           call make_s0mac(mla,rho0_new,rho0mac_new,dx,dm+rho_comp,the_bc_level)
           call make_s0mac(mla,rhoh0_new,rhoh0mac_new,dx,dm+rhoh_comp,the_bc_level)
-          call make_s0mac(mla,h0_new,rhoh0mac_new,dx,foextrap_comp,the_bc_level)
+          call make_s0mac(mla,h0_new,h0mac_new,dx,foextrap_comp,the_bc_level)
        end if
 
        ! compute enthalpy fluxes
