@@ -384,8 +384,7 @@ contains
                           rho0_old,rho0_edge_old,rho0_old_cart, &
                           rho0_new,rho0_edge_new,rho0_new_cart, &
                           rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                          rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
-                          startcomp,endcomp,mla)
+                          rhoh0_new,rhoh0_edge_new,rhoh0_new_cart,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -406,7 +405,6 @@ contains
     type(multifab) , intent(in   ) :: rhoh0_old_cart(:)
     real(kind=dp_t), intent(in   ) :: rhoh0_new(:,0:),rhoh0_edge_new(:,0:)
     type(multifab) , intent(in   ) :: rhoh0_new_cart(:)
-    integer        , intent(in   ) :: startcomp,endcomp
     type(ml_layout), intent(inout) :: mla
 
     ! local    
@@ -469,7 +467,7 @@ contains
                                   rho0_new(n,:), rho0_edge_new(n,:), &
                                   rhoh0_old(n,:), rhoh0_edge_old(n,:), &
                                   rhoh0_new(n,:), rhoh0_edge_new(n,:), &
-                                  w0(n,:),startcomp,endcomp,lo,hi)
+                                  w0(n,:),lo,hi)
           case (3)
              sfzp => dataptr(sflux(n,3),i)
              sezp => dataptr(sedge(n,3),i)
@@ -482,7 +480,7 @@ contains
                                           rho0_new(n,:), rho0_edge_new(n,:), &
                                           rhoh0_old(n,:), rhoh0_edge_old(n,:), &
                                           rhoh0_new(n,:), rhoh0_edge_new(n,:), &
-                                          w0(n,:),startcomp,endcomp,lo,hi)
+                                          w0(n,:),lo,hi)
 
              else
                 rho0op => dataptr(rho0_old_cart(n), i)
@@ -498,7 +496,7 @@ contains
                                           rho0op(:,:,:,1), ng_ro, rho0np(:,:,:,1), ng_rn, &
                                           rhoh0op(:,:,:,1), ng_ho, rhoh0np(:,:,:,1), ng_hn, &
                                           w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
-                                          ng_w0,startcomp,endcomp,lo,hi)
+                                          ng_w0,lo,hi)
              endif
           end select
        end do
@@ -519,11 +517,11 @@ contains
   subroutine mk_rhoh_flux_2d(sfluxx,sfluxy,ng_sf,sedgex,sedgey,ng_se, &
                              umac,vmac,ng_um,rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
                              rhoh0_old,rhoh0_edge_old,rhoh0_new,rhoh0_edge_new, &
-                             w0,startcomp,endcomp,lo,hi)
+                             w0,lo,hi)
     
     use bl_constants_module
     use network, only : nspec
-    use variables, only : rho_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only : rho_comp, rhoh_comp
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
@@ -539,78 +537,69 @@ contains
     real(kind=dp_t), intent(in   ) :: rhoh0_old(0:), rhoh0_edge_old(0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_new(0:), rhoh0_edge_new(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
-    integer        , intent(in   ) :: startcomp,endcomp
 
     ! local
-    integer         :: comp,i,j
-    real(kind=dp_t) :: rho0_edge, rhoh0_edge
+    integer         :: i,j
+    real(kind=dp_t) :: rho0_edge,rhoh0_edge
     logical         :: test,test2
+
+    test = enthalpy_pred_type.eq.predict_h .or. &
+           enthalpy_pred_type.eq.predict_T_then_h .or. &
+           enthalpy_pred_type.eq.predict_Tprime_then_h
+
+    test2 = enthalpy_pred_type.eq.predict_hprime
     
-    ! loop over components
-    do comp = startcomp, endcomp
+    ! create x-fluxes
+    if (test) then
 
-       ! test = T means the edge states are NOT in perturbational form
-       test = ( (comp.eq.rhoh_comp).and. &
-                     ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h .or. &
-                       enthalpy_pred_type.eq.predict_Tprime_then_h) ) &
-         .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
-
-       test2 = (comp.eq.rhoh_comp .and. enthalpy_pred_type.eq.predict_hprime)
-
-       ! create x-fluxes
-       if (test) then
-
-          do j=lo(2),hi(2)
-             rho0_edge = HALF*(rho0_old(j)+rho0_new(j))
-             do i=lo(1),hi(1)+1
-                sfluxx(i,j,comp) = umac(i,j)* &
-                     (rho0_edge+sedgex(i,j,rho_comp))*sedgex(i,j,comp)
-             end do
+       do j=lo(2),hi(2)
+          rho0_edge = HALF*(rho0_old(j)+rho0_new(j))
+          do i=lo(1),hi(1)+1
+             sfluxx(i,j,rhoh_comp) = &
+                  umac(i,j)*(rho0_edge+sedgex(i,j,rho_comp))*sedgex(i,j,rhoh_comp)
           end do
-           
-       else if (test2) then
+       end do
 
-          call bl_error("mk_rhoh_flux : predict_hprime not coded yet")
-     
-       else
-              
-          do j=lo(2),hi(2)
-             rhoh0_edge = HALF*(rhoh0_old(j)+rhoh0_new(j))
-             do i=lo(1),hi(1)+1
-                sfluxx(i,j,comp) = umac(i,j)*(rhoh0_edge+sedgex(i,j,comp))
-             end do
+    else if (test2) then
+
+       call bl_error("mk_rhoh_flux_2d : predict_hprime not coded yet")
+
+    else
+
+       do j=lo(2),hi(2)
+          rhoh0_edge = HALF*(rhoh0_old(j)+rhoh0_new(j))
+          do i=lo(1),hi(1)+1
+             sfluxx(i,j,rhoh_comp) = umac(i,j)*(rhoh0_edge+sedgex(i,j,rhoh_comp))
           end do
-          
-       end if
-        
-       ! create y-fluxes
-       if (test) then
-       
-          do j=lo(2),hi(2)+1
-             rho0_edge = HALF*(rho0_edge_old(j)+rho0_edge_new(j))
-             do i=lo(1),hi(1)
-                sfluxy(i,j,comp) = &
-                     (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,comp)
-             end do
+       end do
+
+    end if
+
+    ! create y-fluxes
+    if (test) then
+
+       do j=lo(2),hi(2)+1
+          rho0_edge = HALF*(rho0_edge_old(j)+rho0_edge_new(j))
+          do i=lo(1),hi(1)
+             sfluxy(i,j,rhoh_comp) = &
+                  (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,rhoh_comp)
           end do
-          
-       else if (test2) then
+       end do
 
-          call bl_error("mk_rhoh_flux : predict_hprime not coded yet")
+    else if (test2) then
 
-       else
-          
-          do j=lo(2),hi(2)+1
-             rhoh0_edge = HALF*(rhoh0_edge_old(j)+rhoh0_edge_new(j))
-             do i=lo(1),hi(1)
-                sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*(sedgey(i,j,comp)+rhoh0_edge)
-             end do
+       call bl_error("mk_rhoh_flux_2d : predict_hprime not coded yet")
+
+    else
+
+       do j=lo(2),hi(2)+1
+          rhoh0_edge = HALF*(rhoh0_edge_old(j)+rhoh0_edge_new(j))
+          do i=lo(1),hi(1)
+             sfluxy(i,j,rhoh_comp) = (vmac(i,j)+w0(j))*(sedgey(i,j,rhoh_comp)+rhoh0_edge)
           end do
+       end do
 
-       end if
-             
-    end do
+    end if
 
   end subroutine mk_rhoh_flux_2d
 
@@ -618,11 +607,11 @@ contains
                                   sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
                                   rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
                                   rhoh0_old,rhoh0_edge_old,rhoh0_new,rhoh0_edge_new, &
-                                  w0,startcomp,endcomp,lo,hi)
+                                  w0,lo,hi)
 
     use bl_constants_module
     use network, only : nspec
-    use variables, only : rho_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only : rho_comp, rhoh_comp
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
@@ -641,101 +630,92 @@ contains
     real(kind=dp_t), intent(in   ) :: rhoh0_old(0:), rhoh0_edge_old(0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_new(0:), rhoh0_edge_new(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
-    integer        , intent(in   ) :: startcomp,endcomp
 
    ! local
-    integer         :: comp
     integer         :: i,j,k
-    real(kind=dp_t) :: rho0_edge, rhoh0_edge
+    real(kind=dp_t) :: rho0_edge,rhoh0_edge
     logical         :: test,test2
     
-    ! loop over components
-    do comp = startcomp, endcomp
+    test = enthalpy_pred_type.eq.predict_h .or. &
+         enthalpy_pred_type.eq.predict_T_then_h .or. &
+         enthalpy_pred_type.eq.predict_Tprime_then_h
 
-       ! test = T means the edge states are NOT in perturbational form
-       test = ( (comp.eq.rhoh_comp).and. &
-                     ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h .or. &
-                       enthalpy_pred_type.eq.predict_Tprime_then_h) ) &
-         .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
+    test2 = enthalpy_pred_type.eq.predict_hprime
 
-       test2 = (comp.eq.rhoh_comp .and. enthalpy_pred_type.eq.predict_hprime)
+    ! create x-fluxes and y-fluxes
+    if (test) then
 
-       ! create x-fluxes and y-fluxes
-       if (test) then
-
-          do k=lo(3),hi(3)
-             rho0_edge = HALF*(rho0_old(k)+rho0_new(k))
-             do j=lo(2),hi(2)
-                do i=lo(1),hi(1)+1
-                   sfluxx(i,j,k,comp) = &
-                        umac(i,j,k)*(rho0_edge+sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
-                end do
-             end do
-             
-             do j=lo(2),hi(2)+1
-                do i=lo(1),hi(1)
-                   sfluxy(i,j,k,comp) = &
-                        vmac(i,j,k)*(rho0_edge+sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
-                end do
-             end do
-          end do
-           
-       else if (test2) then
-
-          call bl_error("mk_rhoh_flux : predict_hprime not coded yet")
-     
-       else
-              
-          do k=lo(3),hi(3)
-             rhoh0_edge = HALF*(rhoh0_old(k)+rhoh0_new(k))
-             do j=lo(2),hi(2)
-                do i=lo(1),hi(1)+1
-                   sfluxx(i,j,k,comp) = umac(i,j,k)*(rhoh0_edge+sedgex(i,j,k,comp))
-                end do
-             end do
-             
-             do j=lo(2),hi(2)+1
-                do i=lo(1),hi(1)
-                   sfluxy(i,j,k,comp) = vmac(i,j,k)*(rhoh0_edge+sedgey(i,j,k,comp))
-                end do
-             end do
-          end do
-          
-       end if
-        
-       ! create z-fluxes
-       if (test) then
-       
-          do k=lo(3),hi(3)+1
-             rho0_edge = HALF*(rho0_edge_old(k)+rho0_edge_new(k))
-             do j=lo(2),hi(2)
-                do i=lo(1),hi(1)
-                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))* &
-                        (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
-                end do
-             end do
-          end do
-          
-       else if (test2) then
-
-          call bl_error("mk_rhoh_flux : predict_hprime not coded yet")
-
-       else
-          
-          do k=lo(3),hi(3)+1
-             rhoh0_edge = HALF*(rhoh0_edge_old(k)+rhoh0_edge_new(k))
-             do j=lo(2),hi(2)
-                do i=lo(1),hi(1)
-                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*(sedgez(i,j,k,comp)+rhoh0_edge)
-                end do
+       do k=lo(3),hi(3)
+          rho0_edge = HALF*(rho0_old(k)+rho0_new(k))
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)+1
+                sfluxx(i,j,k,rhoh_comp) = &
+                     umac(i,j,k)*(rho0_edge+sedgex(i,j,k,rho_comp))*sedgex(i,j,k,rhoh_comp)
              end do
           end do
 
-       end if
-    end do
+          do j=lo(2),hi(2)+1
+             do i=lo(1),hi(1)
+                sfluxy(i,j,k,rhoh_comp) = &
+                     vmac(i,j,k)*(rho0_edge+sedgey(i,j,k,rho_comp))*sedgey(i,j,k,rhoh_comp)
+             end do
+          end do
+       end do
 
-     
+    else if (test2) then
+
+       call bl_error("mk_rhoh_flux_3d_cart : predict_hprime not coded yet")
+
+    else
+
+       do k=lo(3),hi(3)
+          rhoh0_edge = HALF*(rhoh0_old(k)+rhoh0_new(k))
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)+1
+                sfluxx(i,j,k,rhoh_comp) = umac(i,j,k)*(rhoh0_edge+sedgex(i,j,k,rhoh_comp))
+             end do
+          end do
+
+          do j=lo(2),hi(2)+1
+             do i=lo(1),hi(1)
+                sfluxy(i,j,k,rhoh_comp) = vmac(i,j,k)*(rhoh0_edge+sedgey(i,j,k,rhoh_comp))
+             end do
+          end do
+       end do
+
+    end if
+
+    ! create z-fluxes
+    if (test) then
+
+       do k=lo(3),hi(3)+1
+          rho0_edge = HALF*(rho0_edge_old(k)+rho0_edge_new(k))
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)
+                sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k)+w0(k))* &
+                     (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,rhoh_comp)
+             end do
+          end do
+       end do
+
+    else if (test2) then
+
+       call bl_error("mk_rhoh_flux_3d_cart : predict_hprime not coded yet")
+
+    else
+
+       do k=lo(3),hi(3)+1
+          rhoh0_edge = HALF*(rhoh0_edge_old(k)+rhoh0_edge_new(k))
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)
+                sfluxz(i,j,k,rhoh_comp) = &
+                     (wmac(i,j,k)+w0(k))*(sedgez(i,j,k,rhoh_comp)+rhoh0_edge)
+             end do
+          end do
+       end do
+
+    end if
+
   end subroutine mk_rhoh_flux_3d_cart
 
   subroutine mk_rhoh_flux_3d_sphr(sfluxx,sfluxy,sfluxz,ng_sf,&
@@ -743,11 +723,11 @@ contains
                                   umac,vmac,wmac,ng_um, &
                                   rho0_old_cart,ng_ro,rho0_new_cart,ng_rn, &
                                   rhoh0_old_cart,ng_ho,rhoh0_new_cart,ng_hn, &
-                                  w0macx,w0macy,w0macz,ng_w0,startcomp,endcomp,lo,hi)
+                                  w0macx,w0macy,w0macz,ng_w0,lo,hi)
 
     use bl_constants_module
     use network, only: nspec
-    use variables, only: rho_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, rhoh_comp
     use pred_parameters
     use probin_module, only: enthalpy_pred_type
 
@@ -769,263 +749,227 @@ contains
     real(kind=dp_t), intent(in   ) ::        w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) ::        w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) ::        w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    integer        , intent(in   ) :: startcomp,endcomp
 
     ! local
-    integer         :: comp
     integer         :: i,j,k
     real(kind=dp_t) :: bc_lox,bc_loy,bc_loz
-    real(kind=dp_t) :: rho0_edge, h0_edge
+    real(kind=dp_t) :: rho0_edge,h0_edge
     logical         :: test,test2
     
-    do comp = startcomp, endcomp
+    test = enthalpy_pred_type.eq.predict_h .or. &
+           enthalpy_pred_type.eq.predict_T_then_h .or. &
+           enthalpy_pred_type.eq.predict_Tprime_then_h
+    
+    test2 = enthalpy_pred_type.eq.predict_hprime
+    
+    ! loop for x-fluxes
+    if (test) then
 
-       ! test = T means the edge states are NOT in perturbational form
-       test = ( (comp.eq.rhoh_comp).and. &
-                     ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h .or. &
-                       enthalpy_pred_type.eq.predict_Tprime_then_h) ) &
-         .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)+1
 
-       test2 = (comp.eq.rhoh_comp .and. enthalpy_pred_type.eq.predict_hprime)
+                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i-1,j,k) &
+                     +rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) * FOURTH
 
-       ! loop for x-fluxes
-       if (test) then
+                sfluxx(i,j,k,rhoh_comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
+                     (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,rhoh_comp)
 
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)+1
-                   
-                   rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i-1,j,k) &
-                                +rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) * FOURTH
+             end do
+          end do
+       end do
 
-                   sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
-                        (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
+    else if (test2) then
+
+       ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
+       ! where h0 is computed from (rho h)_0 / rho_0
+       ! sfluxx = (umac(i,j,k)+w0macx(i,j,k)) * (rho h)_edge
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)+1
+
+                rho0_edge = FOURTH * ( rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k) &
+                     +rho0_old_cart(i  ,j,k)+rho0_new_cart(i  ,j,k) )
+
+                h0_edge = FOURTH * ( rhoh0_old_cart(i-1,j,k)/rho0_old_cart(i-1,j,k) &
+                     +rhoh0_new_cart(i-1,j,k)/rho0_new_cart(i-1,j,k) &
+                     +rhoh0_old_cart(i  ,j,k)/rho0_old_cart(i  ,j,k) &
+                     +rhoh0_new_cart(i  ,j,k)/rho0_new_cart(i  ,j,k) )
+
+                sfluxx(i,j,k,rhoh_comp) = (umac(i,j,k)+w0macx(i,j,k)) * &
+                     (sedgex(i,j,k,rho_comp)+rho0_edge) * (sedgex(i,j,k,rhoh_comp)+h0_edge)
+
+             end do
+          end do
+       end do
+
+    else
+
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)+1
+
+                ! Average (rho h) onto edges by averaging rho and h separately onto edges.
+                ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
+                ! where h_0 is computed from (rho h)_0 / rho_0
+                rho0_edge = FOURTH * ( rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k) &
+                                      +rho0_old_cart(i  ,j,k)+rho0_new_cart(i  ,j,k) )
+
+                h0_edge = FOURTH * ( rhoh0_old_cart(i-1,j,k)/rho0_old_cart(i-1,j,k) &
+                                    +rhoh0_new_cart(i-1,j,k)/rho0_new_cart(i-1,j,k) &
+                                    +rhoh0_old_cart(i  ,j,k)/rho0_old_cart(i  ,j,k) &
+                                    +rhoh0_new_cart(i  ,j,k)/rho0_new_cart(i  ,j,k) )
                 
-                end do
+                bc_lox = rho0_edge * h0_edge
+
+                sfluxx(i,j,k,rhoh_comp) = &
+                     (umac(i,j,k)+w0macx(i,j,k))*(bc_lox+sedgex(i,j,k,rhoh_comp))
+
              end do
           end do
+       end do
 
-       else if (test2) then
-          
-          ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
-          ! where h0 is computed from (rho h)_0 / rho_0
-          ! sfluxx = (umac(i,j,k)+w0macx(i,j,k)) * (rho h)_edge
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)+1
+    endif
 
-                   rho0_edge = FOURTH * ( rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k) &
-                                         +rho0_old_cart(i  ,j,k)+rho0_new_cart(i  ,j,k) )
+    ! loop for y-fluxes
+    if (test) then
 
-                   h0_edge = FOURTH * ( rhoh0_old_cart(i-1,j,k)/rho0_old_cart(i-1,j,k) &
-                                       +rhoh0_new_cart(i-1,j,k)/rho0_new_cart(i-1,j,k) &
-                                       +rhoh0_old_cart(i  ,j,k)/rho0_old_cart(i  ,j,k) &
-                                       +rhoh0_new_cart(i  ,j,k)/rho0_new_cart(i  ,j,k) )
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)+1
+             do i = lo(1), hi(1)
 
-                   sfluxx(i,j,k,comp) = (umac(i,j,k)+w0macx(i,j,k)) * &
-                        (sedgex(i,j,k,rho_comp)+rho0_edge) * (sedgex(i,j,k,comp)+h0_edge)
+                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) &
+                     +rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
 
-                end do
+                sfluxy(i,j,k,rhoh_comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
+                     (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,rhoh_comp)
+
              end do
           end do
+       end do
 
-       else
+    else if (test2) then
 
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)+1
-                
-                   ! Average (rho h) onto edges by averaging rho and h separately onto edges.
-                   ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
-                   ! where h_0 is computed from (rho h)_0 / rho_0
-                   if (comp.eq.rhoh_comp) then
+       ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
+       ! where h0 is computed from (rho h)_0 / rho_0
+       ! sfluxy = (vmac(i,j,k)+w0macy(i,j,k)) * (rho h)_edge
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)+1
+             do i = lo(1), hi(1)
 
-                      rho0_edge = FOURTH * ( rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k) &
-                                            +rho0_old_cart(i  ,j,k)+rho0_new_cart(i  ,j,k) )
-                      
-                      h0_edge = FOURTH * ( rhoh0_old_cart(i-1,j,k)/rho0_old_cart(i-1,j,k) &
-                                          +rhoh0_new_cart(i-1,j,k)/rho0_new_cart(i-1,j,k) &
-                                          +rhoh0_old_cart(i  ,j,k)/rho0_old_cart(i  ,j,k) &
-                                          +rhoh0_new_cart(i  ,j,k)/rho0_new_cart(i  ,j,k) )
+                rho0_edge = FOURTH * ( rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k) &
+                     +rho0_old_cart(i,j  ,k)+rho0_new_cart(i,j  ,k) )
 
-                      bc_lox = rho0_edge * h0_edge
+                h0_edge = FOURTH * ( rhoh0_old_cart(i,j-1,k)/rho0_old_cart(i,j-1,k) &
+                     +rhoh0_new_cart(i,j-1,k)/rho0_new_cart(i,j-1,k) &
+                     +rhoh0_old_cart(i,j  ,k)/rho0_old_cart(i,j  ,k) &
+                     +rhoh0_new_cart(i,j  ,k)/rho0_new_cart(i,j  ,k) )
 
-                   else
+                sfluxy(i,j,k,rhoh_comp) = (vmac(i,j,k)+w0macy(i,j,k)) * &
+                     (sedgey(i,j,k,rho_comp)+rho0_edge) * (sedgey(i,j,k,rhoh_comp)+h0_edge)
 
-                      bc_lox = ( rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i-1,j,k) &
-                                +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i-1,j,k) ) * FOURTH
-
-                   end if
-
-                   sfluxx(i,j,k,comp) = &
-                        (umac(i,j,k)+w0macx(i,j,k))*(bc_lox+sedgex(i,j,k,comp))
-
-                end do
              end do
           end do
+       end do
 
-       endif
+    else
 
-       ! loop for y-fluxes
-       if (test) then
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)+1
+             do i = lo(1), hi(1)
 
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)+1
-                do i = lo(1), hi(1)
-                   
-                   rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) &
-                                +rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
+                ! Average (rho h) onto edges by averaging rho and h separately onto edges.
+                ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
+                ! where h_0 is computed from (rho h)_0 / rho_0
+                rho0_edge = FOURTH * ( rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k) &
+                                      +rho0_old_cart(i,j  ,k)+rho0_new_cart(i,j  ,k) )
 
-                   sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
-                        (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
-                      
-                end do
+                h0_edge = FOURTH * ( rhoh0_old_cart(i,j-1,k)/rho0_old_cart(i,j-1,k) &
+                                    +rhoh0_new_cart(i,j-1,k)/rho0_new_cart(i,j-1,k) &
+                                    +rhoh0_old_cart(i,j  ,k)/rho0_old_cart(i,j  ,k) &
+                                    +rhoh0_new_cart(i,j  ,k)/rho0_new_cart(i,j  ,k) )
+
+                bc_loy = rho0_edge * h0_edge
+
+                sfluxy(i,j,k,rhoh_comp) = &
+                     (vmac(i,j,k)+w0macy(i,j,k))*(sedgey(i,j,k,rhoh_comp)+bc_loy)
+
              end do
           end do
+       end do
 
-       else if (test2) then
+    endif
 
-          ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
-          ! where h0 is computed from (rho h)_0 / rho_0
-          ! sfluxy = (vmac(i,j,k)+w0macy(i,j,k)) * (rho h)_edge
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)+1
-                do i = lo(1), hi(1)
 
-                   rho0_edge = FOURTH * ( rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k) &
-                                         +rho0_old_cart(i,j  ,k)+rho0_new_cart(i,j  ,k) )
+    ! loop for z-fluxes
+    if (test) then
 
-                   h0_edge = FOURTH * ( rhoh0_old_cart(i,j-1,k)/rho0_old_cart(i,j-1,k) &
-                                       +rhoh0_new_cart(i,j-1,k)/rho0_new_cart(i,j-1,k) &
-                                       +rhoh0_old_cart(i,j  ,k)/rho0_old_cart(i,j  ,k) &
-                                       +rhoh0_new_cart(i,j  ,k)/rho0_new_cart(i,j  ,k) )
+       do k = lo(3), hi(3)+1
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
-                   sfluxy(i,j,k,comp) = (vmac(i,j,k)+w0macy(i,j,k)) * &
-                        (sedgey(i,j,k,rho_comp)+rho0_edge) * (sedgey(i,j,k,comp)+h0_edge)
+                rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j,k-1) &
+                     +rho0_new_cart(i,j,k)+rho0_new_cart(i,j,k-1) ) * FOURTH
 
-                end do
+                sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
+                     (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,rhoh_comp)
+
              end do
           end do
-                   
-       else
+       end do
 
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)+1
-                do i = lo(1), hi(1)
+    else if (test2) then
 
-                   ! Average (rho h) onto edges by averaging rho and h separately onto edges.
-                   ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
-                   ! where h_0 is computed from (rho h)_0 / rho_0
-                   if (comp.eq.rhoh_comp) then
+       ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
+       ! where h0 is computed from (rho h)_0 / rho_0
+       ! sfluxz = (wmac(i,j,k)+w0macz(i,j,k)) * (rho h)_edge
+       do k = lo(3), hi(3)+1
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
-                      rho0_edge = FOURTH * ( rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k) &
-                                            +rho0_old_cart(i,j  ,k)+rho0_new_cart(i,j  ,k) )
+                rho0_edge = FOURTH * ( rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1) &
+                     +rho0_old_cart(i,j,k  )+rho0_new_cart(i,j,k  ) )
 
-                      h0_edge = FOURTH * ( rhoh0_old_cart(i,j-1,k)/rho0_old_cart(i,j-1,k) &
-                                          +rhoh0_new_cart(i,j-1,k)/rho0_new_cart(i,j-1,k) &
-                                          +rhoh0_old_cart(i,j  ,k)/rho0_old_cart(i,j  ,k) &
-                                          +rhoh0_new_cart(i,j  ,k)/rho0_new_cart(i,j  ,k) )
+                h0_edge = FOURTH * ( rhoh0_old_cart(i,j,k-1)/rho0_old_cart(i,j,k-1) &
+                     +rhoh0_new_cart(i,j,k-1)/rho0_new_cart(i,j,k-1) &
+                     +rhoh0_old_cart(i,j,k  )/rho0_old_cart(i,j,k  ) &
+                     +rhoh0_new_cart(i,j,k  )/rho0_new_cart(i,j,k  ) )
 
-                      bc_loy = rho0_edge * h0_edge
+                sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k)+w0macz(i,j,k)) * &
+                     (sedgez(i,j,k,rho_comp)+rho0_edge) * (sedgez(i,j,k,rhoh_comp)+h0_edge)
 
-                   else
-                
-                      bc_loy = ( rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i,j-1,k) &
-                                +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j-1,k) ) * FOURTH
-
-                   end if
-                   
-                   sfluxy(i,j,k,comp) = &
-                        (vmac(i,j,k)+w0macy(i,j,k))*(sedgey(i,j,k,comp)+bc_loy)
-
-                end do
              end do
           end do
+       end do
 
-       endif
+    else
 
+       do k = lo(3), hi(3)+1
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
-       ! loop for z-fluxes
-       if (test) then
+                ! Average (rho h) onto edges by averaging rho and h separately onto edges.
+                ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
+                ! where h_0 is computed from (rho h)_0 / rho_0
+                rho0_edge = FOURTH * ( rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1) &
+                                      +rho0_old_cart(i,j,k  )+rho0_new_cart(i,j,k  ) )
 
-          do k = lo(3), hi(3)+1
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-                   
-                   rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j,k-1) &
-                                +rho0_new_cart(i,j,k)+rho0_new_cart(i,j,k-1) ) * FOURTH
-                   
-                   sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
-                        (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
+                h0_edge = FOURTH * ( rhoh0_old_cart(i,j,k-1)/rho0_old_cart(i,j,k-1) &
+                                    +rhoh0_new_cart(i,j,k-1)/rho0_new_cart(i,j,k-1) &
+                                    +rhoh0_old_cart(i,j,k  )/rho0_old_cart(i,j,k  ) &
+                                    +rhoh0_new_cart(i,j,k  )/rho0_new_cart(i,j,k  ) )
 
-                end do
+                bc_loz = rho0_edge * h0_edge
+
+                sfluxz(i,j,k,rhoh_comp) = &
+                     (wmac(i,j,k)+w0macz(i,j,k))*(sedgez(i,j,k,rhoh_comp)+bc_loz)
+
              end do
           end do
+       end do
 
-       else if (test2) then
+    endif
 
-          ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
-          ! where h0 is computed from (rho h)_0 / rho_0
-          ! sfluxz = (wmac(i,j,k)+w0macz(i,j,k)) * (rho h)_edge
-          do k = lo(3), hi(3)+1
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-
-                   rho0_edge = FOURTH * ( rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1) &
-                                         +rho0_old_cart(i,j,k  )+rho0_new_cart(i,j,k  ) )
-                   
-                   h0_edge = FOURTH * ( rhoh0_old_cart(i,j,k-1)/rho0_old_cart(i,j,k-1) &
-                                       +rhoh0_new_cart(i,j,k-1)/rho0_new_cart(i,j,k-1) &
-                                       +rhoh0_old_cart(i,j,k  )/rho0_old_cart(i,j,k  ) &
-                                       +rhoh0_new_cart(i,j,k  )/rho0_new_cart(i,j,k  ) )
-
-                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0macz(i,j,k)) * &
-                        (sedgez(i,j,k,rho_comp)+rho0_edge) * (sedgez(i,j,k,comp)+h0_edge)
-
-                end do
-             end do
-          end do
-
-       else
-
-          do k = lo(3), hi(3)+1
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-
-                   ! Average (rho h) onto edges by averaging rho and h separately onto edges.
-                   ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
-                   ! where h_0 is computed from (rho h)_0 / rho_0
-                   if (comp.eq.rhoh_comp) then
-
-                      rho0_edge = FOURTH * ( rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1) &
-                                            +rho0_old_cart(i,j,k  )+rho0_new_cart(i,j,k  ) )
-
-                      h0_edge = FOURTH * ( rhoh0_old_cart(i,j,k-1)/rho0_old_cart(i,j,k-1) &
-                                          +rhoh0_new_cart(i,j,k-1)/rho0_new_cart(i,j,k-1) &
-                                          +rhoh0_old_cart(i,j,k  )/rho0_old_cart(i,j,k  ) &
-                                          +rhoh0_new_cart(i,j,k  )/rho0_new_cart(i,j,k  ) )
-
-                      bc_loz = rho0_edge * h0_edge
-
-                   else
-
-                      bc_loz = ( rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i,j,k-1) &
-                                +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j,k-1) ) * FOURTH
-
-                   end if
-
-                   sfluxz(i,j,k,comp) = &
-                        (wmac(i,j,k)+w0macz(i,j,k))*(sedgez(i,j,k,comp)+bc_loz)
-
-                end do
-             end do
-          end do
-
-       endif
-
-    end do ! end loop over components
-     
   end subroutine mk_rhoh_flux_3d_sphr
-   
+
 end module mkflux_module
