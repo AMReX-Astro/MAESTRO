@@ -41,7 +41,6 @@ contains
     integer :: hi(dm)
     integer :: i,n,ng_s,comp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -395,12 +394,12 @@ contains
     ! Local variables
     integer         :: lo(dm),hi(dm)
     integer         :: i,n,ng_w0,ng_wc
-    real(kind=dp_t) :: w0rhs(mla%nlevel,0:nr_fine-1)
 
     ! Local pointers
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0p(:,:,:,:)
 
     type(multifab) :: w0_cart(mla%nlevel)
     
@@ -421,8 +420,8 @@ contains
        call put_1d_array_on_cart(w0,w0_cart,foextrap_comp,.true.,.true.,dx,the_bc_level,mla)
     end if
 
-    ng_wc = w0_cart(1)%ng
     ng_w0 = w0mac(1,1)%ng
+    ng_wc = w0_cart(1)%ng
 
     if (ng_w0 .ne. 1) then
        call bl_error('Error: make_w0mac_3d_sphr assumes one ghost cell')
@@ -434,10 +433,11 @@ contains
           w0xp => dataptr(w0mac(n,1), i)
           w0yp => dataptr(w0mac(n,2), i)
           w0zp => dataptr(w0mac(n,3), i)
+          w0p  => dataptr(w0_cart(n), i)
           lo = lwb(get_box(w0mac(n,1), i))
           hi = upb(get_box(w0mac(n,1), i))
           call make_w0mac_3d_sphr(w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
-                                  ng_w0,lo,hi,dx(n,:))
+                                  ng_w0,w0p(:,:,:,:),ng_wc,lo,hi,dx(n,:))
        end do
     end do
 
@@ -449,23 +449,23 @@ contains
 
   end subroutine make_w0mac
 
-  subroutine make_w0mac_3d_sphr(w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx)
+  subroutine make_w0mac_3d_sphr(w0,w0macx,w0macy,w0macz,ng_w0,w0_cart,ng_wc,lo,hi,dx)
 
     use bl_constants_module
     use geometry, only: dr, center, nr_fine
     use probin_module, only: w0mac_interp_type
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_w0
+    integer        , intent(in   ) :: lo(:),hi(:),ng_w0,ng_wc
     real(kind=dp_t), intent(in   ) :: w0(0:)
-    real(kind=dp_t), intent(inout) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(inout) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(inout) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(inout) ::  w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(inout) ::  w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(inout) ::  w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(inout) :: w0_cart(lo(1)-ng_wc:,lo(2)-ng_wc:,lo(3)-ng_wc:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius,w0_cart_val,rfac
-    real(kind=dp_t), allocatable :: w0_cc(:,:,:,:)
     real(kind=dp_t), allocatable :: w0_nodal(:,:,:,:)
 
     ! we currently have three different ideas for computing w0mac
@@ -475,38 +475,10 @@ contains
 
     if (w0mac_interp_type .eq. 1) then
 
-       allocate(w0_cc(lo(1)-2:hi(1)+2,lo(2)-2:hi(2)+2,lo(3)-2:hi(3)+2,3))
-
-       do k = lo(3)-2,hi(3)+2
-          z = (dble(k)+HALF)*dx(3) - center(3)
-          do j = lo(2)-2,hi(2)+2
-             y = (dble(j)+HALF)*dx(2) - center(2)
-             do i = lo(1)-2,hi(1)+2
-                x = (dble(i)+HALF)*dx(1) - center(1)
-
-                radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(1))
-                
-                rfac = (radius - dble(index)*dr(1)) / dr(1)
-
-                if (index .lt. nr_fine) then
-                   w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
-                else
-                   w0_cart_val = w0(nr_fine)
-                end if
-
-                w0_cc(i,j,k,1) = w0_cart_val * x / radius
-                w0_cc(i,j,k,2) = w0_cart_val * y / radius
-                w0_cc(i,j,k,3) = w0_cart_val * z / radius
-
-             end do
-          end do
-       end do
-
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+2
-                w0macx(i,j,k) = HALF* (w0_cc(i-1,j,k,1) + w0_cc(i,j,k,1))
+                w0macx(i,j,k) = HALF* (w0_cart(i-1,j,k,1) + w0_cart(i,j,k,1))
              end do
           end do
        end do
@@ -514,7 +486,7 @@ contains
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+2
              do i=lo(1)-1,hi(1)+1
-                w0macy(i,j,k) = HALF* (w0_cc(i,j-1,k,2) + w0_cc(i,j,k,2))
+                w0macy(i,j,k) = HALF* (w0_cart(i,j-1,k,2) + w0_cart(i,j,k,2))
              end do
           end do
        end do
@@ -522,12 +494,10 @@ contains
        do k=lo(3)-1,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
-                w0macz(i,j,k) = HALF* (w0_cc(i,j,k-1,3) + w0_cc(i,j,k,3))
+                w0macz(i,j,k) = HALF* (w0_cart(i,j,k-1,3) + w0_cart(i,j,k,3))
              end do
           end do
        end do
-
-       deallocate(w0_cc)
 
     else if (w0mac_interp_type .eq. 2) then
 
@@ -757,8 +727,7 @@ contains
 
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
-    real(kind=dp_t) :: radius,s0_cart_val,rfac
-    real(kind=dp_t), allocatable :: s0_nodal(:,:,:,:)
+    real(kind=dp_t) :: radius,rfac
 
     ! we currently have three different ideas for computing s0mac
     ! 1.  Interpolate s0 to cell centers, then average to edges
