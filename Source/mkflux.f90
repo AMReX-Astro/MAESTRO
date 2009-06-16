@@ -793,7 +793,7 @@ contains
 
     ! local
     integer         :: i,j,k
-    real(kind=dp_t) :: rho0_edge,h0_edge
+    real(kind=dp_t) :: rho0_edge,h0_edge,rhoh0_edge
     logical         :: test,test2
     
     test = enthalpy_pred_type.eq.predict_h .or. &
@@ -854,6 +854,11 @@ contains
                 sfluxx(i,j,k,rhoh_comp) = &
                      (umac(i,j,k)+w0macx(i,j,k))*(rho0_edge*h0_edge+sedgex(i,j,k,rhoh_comp))
 
+                ! alternate options that needs further testing
+!                rhoh0_edge = HALF*(rhoh0macx_old(i,j,k)+rhoh0macx_new(i,j,k))
+!                sfluxx(i,j,k,rhoh_comp) = &
+!                     (umac(i,j,k)+w0macx(i,j,k))*(rhoh0_edge+sedgex(i,j,k,rhoh_comp))
+
              end do
           end do
        end do
@@ -911,6 +916,11 @@ contains
 
                 sfluxy(i,j,k,rhoh_comp) = &
                      (vmac(i,j,k)+w0macy(i,j,k))*(rho0_edge*h0_edge+sedgey(i,j,k,rhoh_comp))
+
+                ! alternate options that needs further testing
+!                rhoh0_edge = HALF*(rhoh0macy_old(i,j,k)+rhoh0macy_new(i,j,k))
+!                sfluxy(i,j,k,rhoh_comp) = &
+!                     (vmac(i,j,k)+w0macy(i,j,k))*(rhoh0_edge+sedgey(i,j,k,rhoh_comp))
 
              end do
           end do
@@ -970,6 +980,11 @@ contains
 
                 sfluxz(i,j,k,rhoh_comp) = &
                      (wmac(i,j,k)+w0macz(i,j,k))*(rho0_edge*h0_edge+sedgez(i,j,k,rhoh_comp))
+
+                ! alternate options that needs further testing
+!                rhoh0_edge = HALF*(rhoh0macz_old(i,j,k)+rhoh0macz_new(i,j,k))
+!                sfluxz(i,j,k,rhoh_comp) = &
+!                     (wmac(i,j,k)+w0macz(i,j,k))*(rhoh0_edge+sedgez(i,j,k,rhoh_comp))
 
              end do
           end do
