@@ -270,7 +270,7 @@ contains
                     gamma1bar_old,p0_minus_pthermbar,psi,etarho_ec,etarho_cc,dt,dtold)
 
        if (spherical .eq. 1) then
-          call make_w0mac(mla,w0,w0mac,dx)
+          call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
        end if
 
        if (dm .eq. 3) then
@@ -771,7 +771,7 @@ contains
                     psi,etarho_ec,etarho_cc,dt,dtold)
 
        if (spherical .eq. 1) then
-          call make_w0mac(mla,w0,w0mac,dx)
+          call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
        end if
 
        if (dm .eq. 3) then

@@ -376,7 +376,7 @@ contains
 
   end subroutine put_1d_array_on_cart_3d_sphr
 
-  subroutine make_w0mac(mla,w0,w0mac,dx)
+  subroutine make_w0mac(mla,w0,w0mac,dx,the_bc_level)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, dm, nlevs
@@ -390,16 +390,19 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(inout) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
     integer         :: lo(dm),hi(dm)
-    integer         :: i,n,ng_w0
+    integer         :: i,n,ng_w0,ng_wc
     real(kind=dp_t) :: w0rhs(mla%nlevel,0:nr_fine-1)
 
     ! Local pointers
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
+
+    type(multifab) :: w0_cart(mla%nlevel)
     
     type(bl_prof_timer), save :: bpt
 
@@ -409,6 +412,16 @@ contains
        call bl_error('Error: only call make_w0mac for spherical')
     end if
 
+    ! we first need to construct a cart version of w0
+    do n=1,nlevs
+       call build(w0_cart(n),mla%la(n),dm,2)
+    end do
+
+    if (w0mac_interp_type .eq. 1) then
+       call put_1d_array_on_cart(w0,w0_cart,foextrap_comp,.true.,.true.,dx,the_bc_level,mla)
+    end if
+
+    ng_wc = w0_cart(1)%ng
     ng_w0 = w0mac(1,1)%ng
 
     if (ng_w0 .ne. 1) then
@@ -426,6 +439,10 @@ contains
           call make_w0mac_3d_sphr(w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
                                   ng_w0,lo,hi,dx(n,:))
        end do
+    end do
+
+    do n=1,nlevs
+       call destroy(w0_cart(n))
     end do
 
     call destroy(bpt)
@@ -685,11 +702,12 @@ contains
        call bl_error('Error: only call make_s0mac for spherical')
     end if
 
-    ! we first need to construct a cart version of s0    
+    ! we first need to construct a cart version of s0
+    do n=1,nlevs
+       call build(s0_cart(n),mla%la(n),1,2)
+    end do
+
     if (s0mac_interp_type .eq. 1) then
-       do n=1,nlevs
-          call build(s0_cart(n),mla%la(n),1,2)
-       end do
        call put_1d_array_on_cart(s0,s0_cart,bccomp,.false.,.false.,dx,the_bc_level,mla)
     end if
 
@@ -715,11 +733,9 @@ contains
        end do
     end do
 
-    if (s0mac_interp_type .eq. 1) then
-       do n=1,nlevs
-          call destroy(s0_cart(n))
-       end do
-    end if
+    do n=1,nlevs
+       call destroy(s0_cart(n))
+    end do
 
     call destroy(bpt)
 

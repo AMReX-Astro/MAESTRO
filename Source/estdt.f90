@@ -93,7 +93,7 @@ contains
              call setval(w0mac(n,comp), ZERO, all=.true.)
           end do
        end do
-       call make_w0mac(mla,w0,w0mac,dx)
+       call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
     end if
 
     ng_u = u(1)%ng

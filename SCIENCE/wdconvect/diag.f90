@@ -170,7 +170,7 @@ contains
        end do
 
        ! put w0 on Cartesian edges as a vector  
-       call make_w0mac(mla,w0,w0mac,dx)
+       call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
 
 
        ! put w0 in Cartesian cell-centers as a scalar (the radial 
