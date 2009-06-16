@@ -40,7 +40,6 @@ contains
     ! local    
     type(box) :: domain
 
-    integer :: domlo(dm),domhi(dm)
     integer :: i,n
     integer :: lo(dm),hi(dm)
     integer :: ng_sf,ng_ef,ng_se,ng_um,ng_w0,ng_ro,ng_rn
@@ -59,8 +58,6 @@ contains
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
-    real(kind=dp_t), pointer :: rho0op(:,:,:,:)
-    real(kind=dp_t), pointer :: rho0np(:,:,:,:)
     real(kind=dp_t), pointer :: r0xo(:,:,:,:)
     real(kind=dp_t), pointer :: r0yo(:,:,:,:)
     real(kind=dp_t), pointer :: r0zo(:,:,:,:)
@@ -83,8 +80,6 @@ contains
     do n=1,nlevs
 
        domain = layout_get_pd(sold(n)%la)
-       domlo = lwb(domain)
-       domhi = upb(domain)
 
        do i=1, sold(n)%nboxes
           if ( multifab_remote(sold(n),i) ) cycle
@@ -112,11 +107,11 @@ contains
              sezp => dataptr(sedge(n,3),i)
              wmp  => dataptr(umac(n,3),i)
              if(spherical .eq. 0) then
-                call mk_rhoX_flux_3d_cart(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), ng_sf, &
-                                          efp(:,:,:,1), ng_ef, &
-                                          sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), ng_se, &
-                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                          rho0_old(n,:), rho0_edge_old(n,:), &
+                call mk_rhoX_flux_3d_cart(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), &
+                                          ng_sf, efp(:,:,:,1), ng_ef, &
+                                          sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), &
+                                          ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                          ng_um, rho0_old(n,:), rho0_edge_old(n,:), &
                                           rho0_new(n,:), rho0_edge_new(n,:), &
                                           rho0_predicted_edge(n,:), &
                                           w0(n,:),startcomp,endcomp,lo,hi)
@@ -131,13 +126,14 @@ contains
                 r0xn => dataptr(rho0mac_new(n,1),i)
                 r0yn => dataptr(rho0mac_new(n,2),i)
                 r0zn => dataptr(rho0mac_new(n,3),i)
-                call mk_rhoX_flux_3d_sphr(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), ng_sf, &
-                                          sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), ng_se, &
-                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                call mk_rhoX_flux_3d_sphr(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), &
+                                          ng_sf, sexp(:,:,:,:), seyp(:,:,:,:), &
+                                          sezp(:,:,:,:), ng_se, ump(:,:,:,1), vmp(:,:,:,1), &
+                                          wmp(:,:,:,1), ng_um, &
                                           w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_w0, &
                                           r0xo(:,:,:,1),r0yo(:,:,:,1),r0zo(:,:,:,1),ng_ro, &
                                           r0xn(:,:,:,1),r0yn(:,:,:,1),r0zn(:,:,:,1),ng_rn, &
-                                          startcomp,endcomp,lo,hi,domlo,domhi)
+                                          startcomp,endcomp,lo,hi)
              endif
           end select
        end do
@@ -203,16 +199,16 @@ contains
        do j = lo(2),hi(2)+1
           rho0_edge = HALF*(rho0_edge_old(j)+rho0_edge_new(j))
           do i = lo(1),hi(1)
-
              sfluxy(i,j,comp) = &
                   (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,comp)
 
-             if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) &
+             if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
                 etarhoflux(i,j) = etarhoflux(i,j) + sfluxy(i,j,comp)
+             end if
 
-             if ( comp.eq.spec_comp+nspec-1) &
+             if ( comp.eq.spec_comp+nspec-1) then
                 etarhoflux(i,j) = etarhoflux(i,j) - w0(j)*rho0_predicted_edge(j)
-
+             end if
           end do
        end do
     end do
@@ -256,50 +252,41 @@ contains
 
        ! create x-fluxes and y-fluxes
        do k=lo(3),hi(3)
-             
           rho0_edge = HALF*(rho0_old(k)+rho0_new(k))
-             
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)+1
-                
                 sfluxx(i,j,k,comp) = &
                      umac(i,j,k)*(rho0_edge+sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
-                
              end do
           end do
           
           do j=lo(2),hi(2)+1
              do i=lo(1),hi(1)
-                
                 sfluxy(i,j,k,comp) = &
                      vmac(i,j,k)*(rho0_edge+sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
-
              end do
           end do
-          
        end do
         
        ! create z-fluxes
        do k=lo(3),hi(3)+1
-             
           rho0_edge = HALF*(rho0_edge_old(k)+rho0_edge_new(k))
-          
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
-             
                 sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))* &
                      (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
 
-                if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) &
+                if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
                    etarhoflux(i,j,k) = etarhoflux(i,j,k) + sfluxz(i,j,k,comp)
+                end if
                    
-                if ( comp.eq.spec_comp+nspec-1) &
-                   etarhoflux(i,j,k) = &
-                        etarhoflux(i,j,k) - w0(k)*rho0_predicted_edge(k)
+                if ( comp.eq.spec_comp+nspec-1) then
+                   etarhoflux(i,j,k) = etarhoflux(i,j,k) - w0(k)*rho0_predicted_edge(k)
+                end if
              end do
           end do
-
        end do
+
     end do
      
   end subroutine mk_rhoX_flux_3d_cart
@@ -310,7 +297,7 @@ contains
                                   w0macx,w0macy,w0macz,ng_w0, &
                                   rho0macx_old,rho0macy_old,rho0macz_old,ng_ro, &
                                   rho0macx_new,rho0macy_new,rho0macz_new,ng_rn, &
-                                  startcomp,endcomp,lo,hi,domlo,domhi)
+                                  startcomp,endcomp,lo,hi)
 
     use bl_constants_module
     use network, only: nspec
@@ -318,7 +305,7 @@ contains
     use pred_parameters
     use probin_module, only: enthalpy_pred_type
 
-    integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
+    integer        , intent(in   ) :: lo(:),hi(:)
     integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_w0,ng_ro,ng_rn
     real(kind=dp_t), intent(inout) ::        sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::        sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
@@ -352,12 +339,9 @@ contains
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
-                
                 rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
-
                 sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
                      (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
-             
              end do
           end do
        end do
@@ -366,12 +350,9 @@ contains
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
-                
                 rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
-                
                 sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
                      (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
-                   
              end do
           end do
        end do
@@ -380,12 +361,9 @@ contains
        do k = lo(3), hi(3)+1
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
-                
                 rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
-
                 sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
                      (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
-
              end do
           end do
        end do

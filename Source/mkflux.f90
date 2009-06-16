@@ -44,7 +44,6 @@ contains
     ! local    
     type(box) :: domain
 
-    integer :: domlo(dm),domhi(dm)
     integer :: i,n
     integer :: lo(dm),hi(dm)
     integer :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0
@@ -82,8 +81,6 @@ contains
     do n=1,nlevs
 
        domain = layout_get_pd(sold(n)%la)
-       domlo = lwb(domain)
-       domhi = upb(domain)
 
        do i=1, sold(n)%nboxes
           if ( multifab_remote(sold(n),i) ) cycle
@@ -133,7 +130,7 @@ contains
                                     rho0op(:,:,:,1), ng_ro, rho0np(:,:,:,1), ng_rn, &
                                     rhoh0op(:,:,:,1), ng_ho, rhoh0np(:,:,:,1), ng_hn, &
                                     w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
-                                    ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
+                                    ng_w0,startcomp,endcomp,lo,hi)
              endif
           end select
        end do
@@ -197,16 +194,11 @@ contains
        if (test) then
 
           do j=lo(2),hi(2)
-             
              rho0_edge = HALF*(rho0_old(j)+rho0_new(j))
-             
              do i=lo(1),hi(1)+1
-                
                 sfluxx(i,j,comp) = umac(i,j)* &
                      (rho0_edge+sedgex(i,j,rho_comp))*sedgex(i,j,comp)
-                
              end do
-             
           end do
            
        else if (test2) then
@@ -216,15 +208,10 @@ contains
        else
               
           do j=lo(2),hi(2)
-             
              rhoh0_edge = HALF*(rhoh0_old(j)+rhoh0_new(j))
-             
              do i=lo(1),hi(1)+1
-                
                 sfluxx(i,j,comp) = umac(i,j)*(rhoh0_edge+sedgex(i,j,comp))
-                
              end do
-             
           end do
           
        end if
@@ -233,16 +220,11 @@ contains
        if (test) then
        
           do j=lo(2),hi(2)+1
-             
              rho0_edge = HALF*(rho0_edge_old(j)+rho0_edge_new(j))
-             
              do i=lo(1),hi(1)
-                
                 sfluxy(i,j,comp) = &
                      (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,comp)
-                
              end do
-
           end do
           
        else if (test2) then
@@ -252,15 +234,10 @@ contains
        else
           
           do j=lo(2),hi(2)+1
-             
              rhoh0_edge = HALF*(rhoh0_edge_old(j)+rhoh0_edge_new(j))
-             
              do i=lo(1),hi(1)
-                
                 sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*(sedgey(i,j,comp)+rhoh0_edge)
-                
              end do
-             
           end do
 
        end if
@@ -320,29 +297,20 @@ contains
        if (test) then
 
           do k=lo(3),hi(3)
-             
              rho0_edge = HALF*(rho0_old(k)+rho0_new(k))
-             
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)+1
-                   
-                   ! sedgex is either h or X at edges
                    sfluxx(i,j,k,comp) = &
                         umac(i,j,k)*(rho0_edge+sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
-                   
                 end do
              end do
              
              do j=lo(2),hi(2)+1
                 do i=lo(1),hi(1)
-                   
-                   ! sedgey is either h or X at edges
                    sfluxy(i,j,k,comp) = &
                         vmac(i,j,k)*(rho0_edge+sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
-
                 end do
              end do
-             
           end do
            
        else if (test2) then
@@ -352,25 +320,18 @@ contains
        else
               
           do k=lo(3),hi(3)
-             
              rhoh0_edge = HALF*(rhoh0_old(k)+rhoh0_new(k))
-             
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)+1
-                
                    sfluxx(i,j,k,comp) = umac(i,j,k)*(rhoh0_edge+sedgex(i,j,k,comp))
-                   
                 end do
              end do
              
              do j=lo(2),hi(2)+1
                 do i=lo(1),hi(1)
-                
                    sfluxy(i,j,k,comp) = vmac(i,j,k)*(rhoh0_edge+sedgey(i,j,k,comp))
-                   
                 end do
              end do
-             
           end do
           
        end if
@@ -379,19 +340,13 @@ contains
        if (test) then
        
           do k=lo(3),hi(3)+1
-             
              rho0_edge = HALF*(rho0_edge_old(k)+rho0_edge_new(k))
-             
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)
-                
-                   ! sedgez is either h or X at edges
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))* &
                         (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
-                
                 end do
              end do
-
           end do
           
        else if (test2) then
@@ -401,17 +356,12 @@ contains
        else
           
           do k=lo(3),hi(3)+1
-             
              rhoh0_edge = HALF*(rhoh0_edge_old(k)+rhoh0_edge_new(k))
-             
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)
-                
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*(sedgez(i,j,k,comp)+rhoh0_edge)
-                                
                 end do
              end do
-
           end do
 
        end if
@@ -425,7 +375,7 @@ contains
                             umac,vmac,wmac,ng_um, &
                             rho0_old_cart,ng_ro,rho0_new_cart,ng_rn, &
                             rhoh0_old_cart,ng_ho,rhoh0_new_cart,ng_hn, &
-                            w0macx,w0macy,w0macz,ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
+                            w0macx,w0macy,w0macz,ng_w0,startcomp,endcomp,lo,hi)
 
     use bl_constants_module
     use network, only: nspec
@@ -433,7 +383,7 @@ contains
     use pred_parameters
     use probin_module, only: enthalpy_pred_type
 
-    integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
+    integer        , intent(in   ) :: lo(:),hi(:)
     integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0
     real(kind=dp_t), intent(inout) ::        sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::        sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
