@@ -67,8 +67,6 @@ contains
     type(multifab) :: rho0_new_cart(mla%nlevel)
     type(multifab) :: rhoh0_old_cart(mla%nlevel)
     type(multifab) :: rhoh0_new_cart(mla%nlevel)
-    type(multifab) :: t0_old_cart(mla%nlevel)
-    type(multifab) :: t0_new_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
     integer    :: pred_comp,n,r,i
@@ -97,24 +95,18 @@ contains
 
     if (spherical .eq. 1) then
 
-       ! Define rho0_old_cart and rho0_new_cart
-       ! Define rhoh0_old_cart and rhoh0_new_cart
        do n=1,nlevs
           call build(rho0_old_cart(n), sold(n)%la, 1, 1)
           call build(rho0_new_cart(n), sold(n)%la, 1, 1)
           call build(rhoh0_old_cart(n), sold(n)%la, 1, 1)
-          call build(rhoh0_new_cart(n), sold(n)%la, 1, 1)
-          call build(t0_old_cart(n), sold(n)%la, 1, 1)
-          call build(t0_new_cart(n), sold(n)%la, 1, 1)
-          call build(p0_new_cart(n), sold(n)%la, 1, 1)          
+          call build(rhoh0_new_cart(n), sold(n)%la, 1, 1)        
        end do
 
        call put_1d_array_on_cart(rho0_old,rho0_old_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
        call put_1d_array_on_cart(rho0_new,rho0_new_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
-       call put_1d_array_on_cart(p0_new,p0_new_cart,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_level,mla)
+
 
        if (enthalpy_pred_type .eq. predict_T_then_rhohprime .or. &
            enthalpy_pred_type .eq. predict_rhohprime .or. &
@@ -122,13 +114,6 @@ contains
           call put_1d_array_on_cart(rhoh0_old,rhoh0_old_cart,dm+rhoh_comp,.false., &
                                     .false.,dx,the_bc_level,mla)
           call put_1d_array_on_cart(rhoh0_new,rhoh0_new_cart,dm+rhoh_comp,.false., &
-                                    .false.,dx,the_bc_level,mla)
-       end if
-
-       if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
-          call put_1d_array_on_cart(tempbar,t0_old_cart,dm+temp_comp,.false., &
-                                    .false.,dx,the_bc_level,mla)
-          call put_1d_array_on_cart(tempbar,t0_new_cart,dm+temp_comp,.false., &
                                     .false.,dx,the_bc_level,mla)
        end if
 
@@ -337,8 +322,23 @@ contains
                         psi,dx,.false.,the_bc_level)
     end if
 
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          call build(p0_new_cart(n), sold(n)%la, 1, 1)
+       end do
+
+       call put_1d_array_on_cart(p0_new,p0_new_cart,foextrap_comp,.false., &
+                                 .false.,dx,the_bc_level,mla)
+    end if
+
     call update_scal(mla,rhoh_comp,rhoh_comp,sold,snew,sflux,scal_force, &
                      p0_new,p0_new_cart,dx,dt,the_bc_level)
+
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          call destroy(p0_new_cart(n))
+       end do
+    end if
 
     if ( verbose .ge. 1 ) then
        do n=1,nlevs
@@ -358,9 +358,6 @@ contains
           call destroy(rho0_new_cart(n))
           call destroy(rhoh0_old_cart(n))
           call destroy(rhoh0_new_cart(n))
-          call destroy(t0_old_cart(n))
-          call destroy(t0_new_cart(n))
-          call destroy(p0_new_cart(n))
        end do
     end if
 
