@@ -152,24 +152,24 @@ contains
 
     ! initialize the scalars
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,rho_comp), &
-                                      s(:,:,:,rho_comp:),lo,hi,dx,ng,0)
+                                      s(:,:,:,rho_comp:),lo,hi,dx,ng)
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,rhoh_comp), &
-                                      s(:,:,:,rhoh_comp:),lo,hi,dx,ng,0)
+                                      s(:,:,:,rhoh_comp:),lo,hi,dx,ng)
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,temp_comp), &
-                                      s(:,:,:,temp_comp:),lo,hi,dx,ng,0)
+                                      s(:,:,:,temp_comp:),lo,hi,dx,ng)
 
     ! initialize species
     do comp = spec_comp, spec_comp+nspec-1
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
-                                         s(:,:,:,comp:),lo,hi,dx,ng,0)
+                                         s(:,:,:,comp:),lo,hi,dx,ng)
     end do
 
     ! initialize tracers
     do comp = trac_comp, trac_comp+ntrac-1
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
-                                         s(:,:,:,comp:),lo,hi,dx,ng,0)
+                                         s(:,:,:,comp:),lo,hi,dx,ng)
     end do
 
   end subroutine initscalardata_3d_sphr
