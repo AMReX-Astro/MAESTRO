@@ -46,7 +46,6 @@ f90sources += make_explicit_thermal.f90
 f90sources += make_S.f90
 f90sources += make_w0.f90
 f90sources += mkflux.f90
-f90sources += mk_rhoX_flux.f90
 f90sources += mkforce.f90
 f90sources += mkscalforce.f90
 f90sources += mkutrans.f90

@@ -21,7 +21,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use make_edge_scal_module
-    use mk_rhoX_flux_module
+    use mkflux_module
     use update_scal_module
     use addw0_module
     use define_bc_module
