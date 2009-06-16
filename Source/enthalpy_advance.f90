@@ -317,7 +317,9 @@ contains
                          rho0_old,rho0_edge_old,rho0_old_cart, &
                          rho0_old,rho0_edge_old,rho0_old_cart, &
                          rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                         rhoh0_old,rhoh0_edge_old,rhoh0_old_cart,mla)
+                         rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
+                         rho0mac_old,rhoh0mac_old,h0mac_old, &
+                         rho0mac_old,rhoh0mac_old,h0mac_old,mla)
 
       if (spherical .eq. 1) then
           do n=1,nlevs
@@ -369,7 +371,9 @@ contains
                          rho0_old,rho0_edge_old,rho0_old_cart, &
                          rho0_new,rho0_edge_new,rho0_new_cart, &
                          rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                         rhoh0_new,rhoh0_edge_new,rhoh0_new_cart,mla)
+                         rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
+                         rho0mac_old,rhoh0mac_old,h0mac_old, &
+                         rho0mac_new,rhoh0mac_new,h0mac_new,mla)
 
       if (spherical .eq. 1) then
           do n=1,nlevs

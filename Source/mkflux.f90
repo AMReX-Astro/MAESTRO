@@ -384,7 +384,9 @@ contains
                           rho0_old,rho0_edge_old,rho0_old_cart, &
                           rho0_new,rho0_edge_new,rho0_new_cart, &
                           rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                          rhoh0_new,rhoh0_edge_new,rhoh0_new_cart,mla)
+                          rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
+                          rho0mac_old,rhoh0mac_old,h0mac_old, &
+                          rho0mac_new,rhoh0mac_new,h0mac_new,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -393,8 +395,7 @@ contains
     use variables, only: nscal
 
     type(multifab) , intent(inout) :: sflux(:,:)
-    type(multifab) , intent(in   ) :: sold(:),sedge(:,:)
-    type(multifab) , intent(in   ) :: umac(:,:)
+    type(multifab) , intent(in   ) :: sold(:),sedge(:,:),umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:),rho0_edge_old(:,0:)
@@ -405,6 +406,9 @@ contains
     type(multifab) , intent(in   ) :: rhoh0_old_cart(:)
     real(kind=dp_t), intent(in   ) :: rhoh0_new(:,0:),rhoh0_edge_new(:,0:)
     type(multifab) , intent(in   ) :: rhoh0_new_cart(:)
+    type(multifab) , intent(in   ) :: rho0mac_old(:,:),rhoh0mac_old(:,:),h0mac_old(:,:)
+    type(multifab) , intent(in   ) :: rho0mac_new(:,:),rhoh0mac_new(:,:),h0mac_new(:,:)
+
     type(ml_layout), intent(inout) :: mla
 
     ! local    
@@ -412,7 +416,7 @@ contains
 
     integer :: i,n
     integer :: lo(dm),hi(dm)
-    integer :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0
+    integer :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0,ng_0m
 
     real(kind=dp_t), pointer :: sfxp(:,:,:,:)
     real(kind=dp_t), pointer :: sfyp(:,:,:,:)
@@ -430,6 +434,24 @@ contains
     real(kind=dp_t), pointer :: rho0np(:,:,:,:)
     real(kind=dp_t), pointer :: rhoh0op(:,:,:,:)
     real(kind=dp_t), pointer :: rhoh0np(:,:,:,:)
+    real(kind=dp_t), pointer :: r0mxop(:,:,:,:)
+    real(kind=dp_t), pointer :: rh0mxop(:,:,:,:)
+    real(kind=dp_t), pointer :: h0mxop(:,:,:,:)
+    real(kind=dp_t), pointer :: r0mxnp(:,:,:,:)
+    real(kind=dp_t), pointer :: rh0mxnp(:,:,:,:)
+    real(kind=dp_t), pointer :: h0mxnp(:,:,:,:)
+    real(kind=dp_t), pointer :: r0myop(:,:,:,:)
+    real(kind=dp_t), pointer :: rh0myop(:,:,:,:)
+    real(kind=dp_t), pointer :: h0myop(:,:,:,:)
+    real(kind=dp_t), pointer :: r0mynp(:,:,:,:)
+    real(kind=dp_t), pointer :: rh0mynp(:,:,:,:)
+    real(kind=dp_t), pointer :: h0mynp(:,:,:,:)
+    real(kind=dp_t), pointer :: r0mzop(:,:,:,:)
+    real(kind=dp_t), pointer :: rh0mzop(:,:,:,:)
+    real(kind=dp_t), pointer :: h0mzop(:,:,:,:)
+    real(kind=dp_t), pointer :: r0mznp(:,:,:,:)
+    real(kind=dp_t), pointer :: rh0mznp(:,:,:,:)
+    real(kind=dp_t), pointer :: h0mznp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -443,6 +465,7 @@ contains
     ng_ho = rhoh0_old_cart(1)%ng
     ng_hn = rhoh0_new_cart(1)%ng
     ng_w0 = w0mac(1,1)%ng
+    ng_0m = rho0mac_old(1,1)%ng
     
     do n=1,nlevs
 
@@ -490,13 +513,39 @@ contains
                 w0xp => dataptr(w0mac(n,1),i)
                 w0yp => dataptr(w0mac(n,2),i)
                 w0zp => dataptr(w0mac(n,3),i)
+                r0mxop => dataptr(rho0mac_old(n,1),i)
+                r0myop => dataptr(rho0mac_old(n,2),i)
+                r0mzop => dataptr(rho0mac_old(n,3),i)
+                rh0mxop => dataptr(rhoh0mac_old(n,1),i)
+                rh0myop => dataptr(rhoh0mac_old(n,2),i)
+                rh0mzop => dataptr(rhoh0mac_old(n,3),i)
+                h0mxop => dataptr(h0mac_old(n,1),i)
+                h0myop => dataptr(h0mac_old(n,2),i)
+                h0mzop => dataptr(h0mac_old(n,3),i)
+                r0mxnp => dataptr(rho0mac_new(n,1),i)
+                r0mynp => dataptr(rho0mac_new(n,2),i)
+                r0mznp => dataptr(rho0mac_new(n,3),i)
+                rh0mxnp => dataptr(rhoh0mac_new(n,1),i)
+                rh0mynp => dataptr(rhoh0mac_new(n,2),i)
+                rh0mznp => dataptr(rhoh0mac_new(n,3),i)
+                h0mxnp => dataptr(h0mac_new(n,1),i)
+                h0mynp => dataptr(h0mac_new(n,2),i)
+                h0mznp => dataptr(h0mac_new(n,3),i)
                 call mk_rhoh_flux_3d_sphr(sfxp(:,:,:,:),sfyp(:,:,:,:),sfzp(:,:,:,:), ng_sf, &
                                           sexp(:,:,:,:),seyp(:,:,:,:),sezp(:,:,:,:), ng_se, &
                                           ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                          rho0op(:,:,:,1), ng_ro, rho0np(:,:,:,1), ng_rn, &
-                                          rhoh0op(:,:,:,1), ng_ho, rhoh0np(:,:,:,1), ng_hn, &
-                                          w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
-                                          ng_w0,lo,hi)
+                                          rho0op(:,:,:,1),ng_ro,rho0np(:,:,:,1),ng_rn, &
+                                          rhoh0op(:,:,:,1),ng_ho,rhoh0np(:,:,:,1),ng_hn, &
+                                          w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_w0, &
+                                          r0mxop(:,:,:,1),r0myop(:,:,:,1),r0mzop(:,:,:,1), &
+                                          rh0mxop(:,:,:,1),rh0myop(:,:,:,1), &
+                                          rh0mzop(:,:,:,1), &
+                                          h0mxop(:,:,:,1),h0myop(:,:,:,1),h0mzop(:,:,:,1), &
+                                          r0mxnp(:,:,:,1),r0mynp(:,:,:,1),r0mznp(:,:,:,1), &
+                                          rh0mxnp(:,:,:,1),rh0mynp(:,:,:,1), &
+                                          rh0mznp(:,:,:,1), &
+                                          h0mxnp(:,:,:,1),h0mynp(:,:,:,1),h0mznp(:,:,:,1), &
+                                          ng_0m,lo,hi)
              endif
           end select
        end do
@@ -723,7 +772,13 @@ contains
                                   umac,vmac,wmac,ng_um, &
                                   rho0_old_cart,ng_ro,rho0_new_cart,ng_rn, &
                                   rhoh0_old_cart,ng_ho,rhoh0_new_cart,ng_hn, &
-                                  w0macx,w0macy,w0macz,ng_w0,lo,hi)
+                                  w0macx,w0macy,w0macz,ng_w0, &
+                                  rho0macx_old,rho0macy_old,rho0macz_old, &
+                                  rhoh0macx_old,rhoh0macy_old,rhoh0macz_old, &
+                                  h0macx_old,h0macy_old,h0macz_old, &
+                                  rho0macx_new,rho0macy_new,rho0macz_new, &
+                                  rhoh0macx_new,rhoh0macy_new,rhoh0macz_new, &
+                                  h0macx_new,h0macy_new,h0macz_new,ng_0m,lo,hi)
 
     use bl_constants_module
     use network, only: nspec
@@ -732,7 +787,7 @@ contains
     use probin_module, only: enthalpy_pred_type
 
     integer        , intent(in   ) :: lo(:),hi(:)
-    integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0
+    integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0,ng_0m
     real(kind=dp_t), intent(inout) ::        sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::        sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::        sfluxz(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
@@ -749,6 +804,24 @@ contains
     real(kind=dp_t), intent(in   ) ::        w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) ::        w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) ::        w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::  rho0macx_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::  rho0macy_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::  rho0macz_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) :: rhoh0macx_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) :: rhoh0macy_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) :: rhoh0macz_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::    h0macx_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::    h0macy_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::    h0macz_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::  rho0macx_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::  rho0macy_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::  rho0macz_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) :: rhoh0macx_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) :: rhoh0macy_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) :: rhoh0macz_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::    h0macx_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::    h0macy_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::    h0macz_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
 
     ! local
     integer         :: i,j,k
