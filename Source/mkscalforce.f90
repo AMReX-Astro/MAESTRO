@@ -33,11 +33,11 @@ contains
     use variables, only: foextrap_comp, rhoh_comp
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use ml_restriction_module, only: ml_cc_restriction_c
-    use fill_3d_module, only: put_1d_array_on_cart
+    use fill_3d_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use make_grav_module
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type, edge_nodal_flag
     use pred_parameters
 
     type(multifab) , intent(inout) :: scal_force(:)
@@ -55,7 +55,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer                  :: i,n,ng_f,ng_um,ng_th
+    integer                  :: i,n,comp,ng_f,ng_um,ng_th,ng_p0,ng_pm
     integer                  :: lo(dm),hi(dm)
 
     real(kind=dp_t), pointer :: ump(:,:,:,:)
@@ -64,8 +64,12 @@ contains
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: pp(:,:,:,:)
+    real(kind=dp_t), pointer :: pmx(:,:,:,:)
+    real(kind=dp_t), pointer :: pmy(:,:,:,:)
+    real(kind=dp_t), pointer :: pmz(:,:,:,:)
 
-    type(multifab)  :: p0_cart(mla%nlevel)
+    type(multifab) :: p0_cart(mla%nlevel)
+    type(multifab) :: p0mac(mla%nlevel,dm)
 
     real(kind=dp_t) :: p0_nph(nlevs_radial,0:nr_fine-1)
     real(kind=dp_t) ::   rho0(nlevs_radial,0:nr_fine-1)
@@ -83,21 +87,26 @@ contains
        call bl_error("ERROR: should not call mkrhohforce when predicting T")
     endif
 
-    ng_f  = scal_force(1)%ng
-    ng_um = umac(1,1)%ng
-    ng_th = thermal(1)%ng
-
     if (spherical .eq. 1) then
        p0_nph = HALF * (p0_old + p0_new)
        do n = 1,nlevs
           call multifab_build(p0_cart(n),mla%la(n),1,1)
+          do comp=1,dm
+             call multifab_build(p0mac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+          end do
        end do
-    end if
 
-    if (spherical .eq. 1) then
        call put_1d_array_on_cart(p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
                                  dx,the_bc_level,mla)
+
+       call make_s0mac(mla,p0_nph,p0mac,dx,foextrap_comp,the_bc_level)
     end if
+
+    ng_f  = scal_force(1)%ng
+    ng_um = umac(1,1)%ng
+    ng_th = thermal(1)%ng
+    ng_pm = p0mac(1,1)%ng
+    ng_p0 = p0_cart(1)%ng
 
     rho0 = HALF*(rho0_old + rho0_new)
 
@@ -128,10 +137,14 @@ contains
                                     rho0(n,:), grav(n,:), psi(n,:), add_thermal)
              else
                 pp  => dataptr(p0_cart(n),i)
+                pmx => dataptr(p0mac(n,1),i)
+                pmy => dataptr(p0mac(n,2),i)
+                pmz => dataptr(p0mac(n,3),i)
                 call mkrhohforce_3d_sphr(fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                         tp(:,:,:,1), ng_th, pp(:,:,:,1), lo, hi, dx(n,:), &
-                                         psi(1,:), add_thermal)
+                                         tp(:,:,:,1), ng_th, pp(:,:,:,1), ng_p0, &
+                                         pmx(:,:,:,1), pmy(:,:,:,1), pmz(:,:,:,1), ng_pm, &
+                                         lo, hi, dx(n,:), psi(1,:), add_thermal)
              end if
           end select
        end do
@@ -139,8 +152,11 @@ contains
     end do
 
     if (spherical .eq. 1) then
-       do n = 1,nlevs
+       do n=1,nlevs
           call destroy(p0_cart(n))
+          do comp=1,dm
+             call destroy(p0mac(n,comp))
+          end do
        end do
     end if
 
@@ -323,8 +339,10 @@ contains
   end subroutine mkrhohforce_3d
 
   subroutine mkrhohforce_3d_sphr(rhoh_force,ng_f,is_prediction, &
-                                 umac,vmac,wmac,ng_um,thermal,ng_th,p0_cart, &
-                                 lo,hi,dx,psi,add_thermal)
+                                 umac,vmac,wmac,ng_um,thermal,ng_th, &
+                                 p0_cart,ng_p0, &
+                                 p0macx,p0macy,p0macz, &
+                                 ng_pm,lo,hi,dx,psi,add_thermal)
 
     use fill_3d_module
     use geometry, only: nr_fine, dr, center
@@ -333,14 +351,17 @@ contains
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
-    integer,         intent(in   ) :: lo(:),hi(:),ng_f,ng_um,ng_th
+    integer,         intent(in   ) :: lo(:),hi(:),ng_f,ng_um,ng_th,ng_p0,ng_pm
     logical,         intent(in   ) :: is_prediction
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
-    real(kind=dp_t), intent(in   ) ::    p0_cart(lo(1)-   1 :,lo(2)-   1 :,lo(3)-   1 :)
+    real(kind=dp_t), intent(in   ) ::    p0_cart(lo(1)-ng_p0:,lo(2)-ng_p0:,lo(3)-ng_p0:)
+    real(kind=dp_t), intent(in   ) ::     p0macx(lo(1)-ng_pm:,lo(2)-ng_pm:,lo(3)-ng_pm:)
+    real(kind=dp_t), intent(in   ) ::     p0macy(lo(1)-ng_pm:,lo(2)-ng_pm:,lo(3)-ng_pm:)
+    real(kind=dp_t), intent(in   ) ::     p0macz(lo(1)-ng_pm:,lo(2)-ng_pm:,lo(3)-ng_pm:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
     logical        , intent(in   ) :: add_thermal
@@ -356,12 +377,12 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
 
-             p0_lox = HALF * (p0_cart(i,j,k) + p0_cart(i-1,j,k))
-             p0_hix = HALF * (p0_cart(i,j,k) + p0_cart(i+1,j,k))
-             p0_loy = HALF * (p0_cart(i,j,k) + p0_cart(i,j-1,k))
-             p0_hiy = HALF * (p0_cart(i,j,k) + p0_cart(i,j+1,k))
-             p0_loz = HALF * (p0_cart(i,j,k) + p0_cart(i,j,k-1))
-             p0_hiz = HALF * (p0_cart(i,j,k) + p0_cart(i,j,k+1))
+             p0_lox = p0macx(i,j,k)
+             p0_hix = p0macx(i+1,j,k)
+             p0_loy = p0macy(i,j,k)
+             p0_hiy = p0macy(i,j+1,k)
+             p0_loz = p0macz(i,j,k)
+             p0_hiz = p0macz(i,j,k+1)
 
              divup = (umac(i+1,j,k) * p0_hix - umac(i,j,k) * p0_lox) / dx(1) + &
                      (vmac(i,j+1,k) * p0_hiy - vmac(i,j,k) * p0_loy) / dx(2) + &
