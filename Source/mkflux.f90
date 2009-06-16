@@ -42,10 +42,7 @@ contains
     integer        , intent(in   ) :: startcomp,endcomp
 
     ! local    
-    type(box) :: domain
-
-    integer :: i,n
-    integer :: lo(dm),hi(dm)
+    integer :: i,n,lo(dm),hi(dm)
     integer :: ng_sf,ng_ef,ng_se,ng_um,ng_w0,ng_ro,ng_rn
 
 
@@ -82,9 +79,6 @@ contains
     ng_rn = rho0mac_new(1,1)%ng
     
     do n=1,nlevs
-
-       domain = layout_get_pd(sold(n)%la)
-
        do i=1, sold(n)%nboxes
           if ( multifab_remote(sold(n),i) ) cycle
           sfxp => dataptr(sflux(n,1),i)
@@ -141,7 +135,6 @@ contains
              endif
           end select
        end do
-
     end do ! end loop over levels
 
     ! synchronize fluxes at coarse-fine interface
@@ -407,10 +400,7 @@ contains
     type(multifab) , intent(in   ) :: rhoh0_new_cart(:),rhoh0mac_new(:,:)
 
     ! local    
-    type(box) :: domain
-
-    integer :: i,n
-    integer :: lo(dm),hi(dm)
+    integer :: i,n,lo(dm),hi(dm)
     integer :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0,ng_0m
 
     real(kind=dp_t), pointer :: sfxp(:,:,:,:)
@@ -457,9 +447,6 @@ contains
     ng_0m = rho0mac_old(1,1)%ng
     
     do n=1,nlevs
-
-       domain = layout_get_pd(sold(n)%la)
-
        do i=1, sold(n)%nboxes
           if ( multifab_remote(sold(n),i) ) cycle
           sfxp => dataptr(sflux(n,1),i)
@@ -530,7 +517,6 @@ contains
              endif
           end select
        end do
-
     end do ! end loop over levels
 
     ! synchronize fluxes at coarse-fine interface
