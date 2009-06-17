@@ -736,7 +736,7 @@ subroutine varden()
 
         if (istep > 1) then
 
-           dt = 1.e20
+           dt = 1.d20
 
            call estdt(mla,the_bc_tower,uold,sold,gpres,Source_old,dSdt, &
                       normal,w0,rho0_old,p0_old,gamma1bar,grav_cell,div_coeff_old, &
