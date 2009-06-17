@@ -25,7 +25,7 @@ module make_edge_state_module
   
 contains
 
-   subroutine make_edge_state_1d(s,sedgex,w0,force,dt)
+   subroutine make_edge_state_1d(s,sedge,w0,force,dt)
 
      use geometry, only: r_start_coord, r_end_coord, nr_fine, nr, numdisjointchunks, &
           nlevs_radial, dr
@@ -33,23 +33,23 @@ contains
      use bl_constants_module
      use variables, only: rel_eps
      
-     real(kind=dp_t), intent(in   ) ::      s(:,0:)
-     real(kind=dp_t), intent(inout) :: sedgex(:,0:)
-     real(kind=dp_t), intent(in   ) ::   w0(:,0:)
-     real(kind=dp_t), intent(in   ) ::  force(:,0:)
+     real(kind=dp_t), intent(in   ) ::     s(:,0:)
+     real(kind=dp_t), intent(inout) :: sedge(:,0:)
+     real(kind=dp_t), intent(in   ) ::    w0(:,0:)
+     real(kind=dp_t), intent(in   ) :: force(:,0:)
      real(kind=dp_t), intent(in   ) :: dt
      
      real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag
-     real(kind=dp_t) :: ubardth, dth, savg, u
+     real(kind=dp_t) :: ubardth,dth,savg,u
      
      integer :: r,lo,hi,n,i
 
-     integer        , parameter :: cen = 1, lim = 2, flag = 3, fromm = 4
-     real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t / 3.0_dp_t
+     integer        , parameter :: cen=1, lim=2, flag=3, fromm=4
+     real(kind=dp_t), parameter :: FOURTHIRDS = FOUR/THREE
         
-     real(kind=dp_t) :: slopex(nlevs_radial, 0:nr_fine-1)
-     real(kind=dp_t) ::    s_l(nlevs_radial,-1:nr_fine+1)
-     real(kind=dp_t) ::    s_r(nlevs_radial,-1:nr_fine+1)
+     real(kind=dp_t) ::  slope(nlevs_radial, 0:nr_fine-1)
+     real(kind=dp_t) :: sedgel(nlevs_radial,-1:nr_fine+1)
+     real(kind=dp_t) :: sedger(nlevs_radial,-1:nr_fine+1)
      real(kind=dp_t) ::  dxscr(nlevs_radial, 0:nr_fine-1,4)
 
      dth = HALF*dt
@@ -63,14 +63,14 @@ contains
 
            if (slope_order .eq. 0) then
 
-              slopex(n,:) = ZERO
+              slope(n,:) = ZERO
 
            else if (slope_order .eq. 2) then
 
               do r=lo,hi
                  if (r .eq. 0 .or. r .eq. nr(n)-1) then
                     ! set slopes next to domain boundaries to zero
-                    slopex(n,r) = ZERO
+                    slope(n,r) = ZERO
                  else
                     ! do standard limiting on interior cells
                     del = half*(s(n,r+1) - s(n,r-1))
@@ -79,7 +79,7 @@ contains
                     slim = min(abs(dpls), abs(dmin))
                     slim = merge(slim, zero, dpls*dmin.gt.ZERO)
                     sflag = sign(one,del)
-                    slopex(n,r)= sflag*min(slim,abs(del))
+                    slope(n,r)= sflag*min(slim,abs(del))
                  end if
               end do
 
@@ -90,7 +90,7 @@ contains
                     ! set fromm slopes next to domain boundaries to zero
                     dxscr(n,r,fromm) = ZERO
                  else
-                    ! do standard limiting on interior cells
+                    ! do standard limiting on interior cells to compute temporary slopes
                     dxscr(n,r,cen) = half*(s(n,r+1)-s(n,r-1))
                     dpls = two*(s(n,r+1)-s(n,r  ))
                     dmin = two*(s(n,r  )-s(n,r-1))
@@ -104,7 +104,7 @@ contains
               do r=lo,hi
                  if (r .eq. 0 .or. r .eq. nr(n)-1) then
                     ! set slopes adjacent to domain boundaries to zero
-                    slopex(n,r) = ZERO
+                    slope(n,r) = ZERO
                  else if (r .eq. r_start_coord(n,i) .or. r .eq. r_end_coord(n,i)) then
                     ! drop order to second-order limited differences at C-F interface
                     del = half*(s(n,r+1) - s(n,r-1))
@@ -113,21 +113,21 @@ contains
                     slim = min(abs(dpls), abs(dmin))
                     slim = merge(slim, zero, dpls*dmin.gt.ZERO)
                     sflag = sign(one,del)
-                    slopex(n,r)= sflag*min(slim,abs(del))
+                    slope(n,r)= sflag*min(slim,abs(del))
                  else
                     ! fourth-order limited slopes on interior
-                    ds = fourthirds*dxscr(n,r,cen) &
-                         - sixth*(dxscr(n,r+1,fromm) + dxscr(n,r-1,fromm))
-                    slopex(n,r) = dxscr(n,r,flag)*min(abs(ds),dxscr(n,r,lim))
+                    ds = FOURTHIRDS*dxscr(n,r,cen) - sixth*(dxscr(n,r+1,fromm) &
+                         + dxscr(n,r-1,fromm))
+                    slope(n,r) = dxscr(n,r,flag)*min(abs(ds),dxscr(n,r,lim))
                  end if
               end do
 
            end if ! which slope order
 
-        end do ! loop of disjointchunks
+        end do ! loop over disjointchunks
      end do ! loop over levels
 
-     ! compute s_l and s_r
+     ! compute sedgel and sedger
      do n=1,nlevs_radial
         do i=1,numdisjointchunks(n)
            
@@ -135,46 +135,49 @@ contains
            hi = r_end_coord(n,i)
            
            do r = lo,hi
-              u = HALF * (w0(n,r) + w0(n,r+1))
+              u = HALF*(w0(n,r)+w0(n,r+1))
               ubardth = dth*u/dr(n)
-              s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
-              s_r(n,r  )= s(n,r) - (HALF+ubardth)*slopex(n,r) + dth * force(n,r)
+              sedgel(n,r+1)= s(n,r) + (HALF-ubardth)*slope(n,r) + dth * force(n,r)
+              sedger(n,r  )= s(n,r) - (HALF+ubardth)*slope(n,r) + dth * force(n,r)
            end do
 
         end do ! loop over disjointchunks
      end do ! loop over levels
 
-     ! compute edge states from s_l and s_r
+     ! compute edge states from sedgel and sedger
      do n=1,nlevs_radial
         do i=1,numdisjointchunks(n)
            
            lo = r_start_coord(n,i)
            hi = r_end_coord(n,i)
 
-           ! if we are not at the finest level
-           ! copy in the s_r and s_l states from the next finer level at the c-f interface
+           ! if we are not at the finest level, copy in the sedger and sedgel states 
+           ! from the next finer level at the c-f interface
            if (n .ne. nlevs_radial) then
-              s_r(n,r_start_coord(n+1,i)/2) = s_r(n+1,r_start_coord(n+1,i))
-              s_l(n,(r_end_coord(n+1,i)+1)/2) = s_l(n+1,r_end_coord(n+1,i)+1)
+              sedger(n,r_start_coord(n+1,i)/2) = sedger(n+1,r_start_coord(n+1,i))
+              sedgel(n,(r_end_coord(n+1,i)+1)/2) = sedgel(n+1,r_end_coord(n+1,i)+1)
            end if
 
-           ! if we are not at the coarsest level
-           ! copy in the s_l and s_r states from the next coarser level at the c-f interface
+           ! if we are not at the coarsest level, copy in the sedgel and sedger states 
+           ! from the next coarser level at the c-f interface
            if (n .ne. 1) then
-              s_l(n,lo) = s_l(n-1,lo/2)
-              s_r(n,hi+1) = s_r(n-1,(hi+1)/2)
+              sedgel(n,lo) = sedgel(n-1,lo/2)
+              sedger(n,hi+1) = sedger(n-1,(hi+1)/2)
            end if
 
-           ! upwind
+           ! solve Riemann problem to get final edge state
            do r=lo,hi+1
               if (r .eq. 0) then
-                 sedgex(n,r) = s_r(n,r)
+                 ! pick interior state at lo domain boundary
+                 sedge(n,r) = sedger(n,r)
               else if (r .eq. nr(n)) then
-                 sedgex(n,r) = s_l(n,r)
+                 ! pick interior state at hi domain boundary
+                 sedge(n,r) = sedgel(n,r)
               else
-                 sedgex(n,r)=merge(s_l(n,r),s_r(n,r),w0(n,r).gt.ZERO)
-                 savg = HALF*(s_r(n,r) + s_l(n,r))
-                 sedgex(n,r)=merge(savg,sedgex(n,r),abs(w0(n,r)) .lt. rel_eps)
+                 ! upwind
+                 sedge(n,r)=merge(sedgel(n,r),sedger(n,r),w0(n,r).gt.ZERO)
+                 savg = HALF*(sedger(n,r) + sedgel(n,r))
+                 sedge(n,r)=merge(savg,sedge(n,r),abs(w0(n,r)) .lt. rel_eps)
               end if
            end do
 
