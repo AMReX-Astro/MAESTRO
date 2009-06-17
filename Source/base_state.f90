@@ -68,7 +68,7 @@ contains
 
     type(bl_prof_timer), save :: bpt
     
-    real(kind=dp_t), parameter :: TINY = 1.0e-10
+    real(kind=dp_t), parameter :: TINY = 1.0d-10
 
     real(kind=dp_t) :: mencl, g, r_l, r_r, dpdr, rhog
     real(kind=dp_t) :: max_hse_error

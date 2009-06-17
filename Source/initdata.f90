@@ -479,9 +479,9 @@ contains
     
     ! This case works
     temp = t0 * (ONE + TWO * ( &
-         .150_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
-         .300_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
-         .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
+         .150_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r0))) + &
+         .300_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r1))) + &
+         .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r2)))  ) )
           
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
@@ -548,9 +548,9 @@ contains
     
     ! This case works
     temp = t0 * (ONE + TWO * ( &
-         .150_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
-         .300_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
-         .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
+         .150_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r0))) + &
+         .300_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r1))) + &
+         .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r2)))  ) )
 
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
@@ -605,7 +605,7 @@ contains
     r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) / 2.5e6
     
     ! This case works
-    temp = t0 * (ONE + TWO*(.150_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0)))))
+    temp = t0 * (ONE + TWO*(.150_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r0)))))
 
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
