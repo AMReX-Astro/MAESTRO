@@ -306,7 +306,7 @@ contains
                 index  = int(radius / dr(1))
                 
                 rfac = (radius - dble(index)*dr(1)) / dr(1)
-                s0_cart_val      = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                s0_cart_val = rfac * s0(index+1) + (ONE-rfac) * s0(index)
 
                 if (is_output_a_vector) then
                    s0_cart(i,j,k,1) = s0_cart_val * x / radius
@@ -513,7 +513,7 @@ contains
                 rfac = (radius - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
-                   w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+                   w0_cart_val = rfac * w0(index+1) + (ONE-rfac) * w0(index)
                 else
                    w0_cart_val = w0(nr_fine)
                 end if
@@ -536,7 +536,7 @@ contains
                 rfac = (radius - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
-                   w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+                   w0_cart_val = rfac * w0(index+1) + (ONE-rfac) * w0(index)
                 else
                    w0_cart_val = w0(nr_fine)
                 end if
@@ -559,7 +559,7 @@ contains
                 rfac = (radius - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
-                   w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+                   w0_cart_val = rfac * w0(index+1) + (ONE-rfac) * w0(index)
                 else
                    w0_cart_val = w0(nr_fine)
                 end if
@@ -587,7 +587,7 @@ contains
                 rfac = (radius - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
-                   w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+                   w0_cart_val = rfac * w0(index+1) + (ONE-rfac) * w0(index)
                 else
                    w0_cart_val = w0(nr_fine)
                 end if
@@ -603,7 +603,7 @@ contains
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+1
              do i = lo(1)-1,hi(1)+2
-                w0macx(i,j,k) = FOURTH*( w0_nodal(i,j,k,1) + w0_nodal(i,j+1,k,1) &
+                w0macx(i,j,k) = FOURTH*( w0_nodal(i,j,k  ,1) + w0_nodal(i,j+1,k  ,1) &
                                         +w0_nodal(i,j,k+1,1) + w0_nodal(i,j+1,k+1,1))
              end do
           end do
@@ -612,7 +612,7 @@ contains
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+2
              do i = lo(1)-1,hi(1)+1
-                w0macy(i,j,k) = FOURTH*( w0_nodal(i,j,k,2) + w0_nodal(i+1,j,k,2) &
+                w0macy(i,j,k) = FOURTH*( w0_nodal(i,j,k  ,2) + w0_nodal(i+1,j,k  ,2) &
                                         +w0_nodal(i,j,k+1,2) + w0_nodal(i+1,j,k+1,2))
              end do
           end do
@@ -621,7 +621,7 @@ contains
        do k = lo(3)-1,hi(3)+2
           do j = lo(2)-1,hi(2)+1
              do i = lo(1)-1,hi(1)+1
-                w0macz(i,j,k) = FOURTH*( w0_nodal(i,j,k,3) + w0_nodal(i+1,j,k,3) &
+                w0macz(i,j,k) = FOURTH*( w0_nodal(i,j  ,k,3) + w0_nodal(i+1,j  ,k,3) &
                                         +w0_nodal(i,j+1,k,3) + w0_nodal(i+1,j+1,k,3))
              end do
           end do
@@ -774,7 +774,7 @@ contains
                 rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine-1) then
-                   s0macx(i,j,k) = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                   s0macx(i,j,k) = rfac * s0(index+1) + (ONE-rfac) * s0(index)
                 else
                    s0macx(i,j,k) = s0(nr_fine-1)
                 end if
@@ -795,7 +795,7 @@ contains
                 rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine-1) then
-                   s0macy(i,j,k) = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                   s0macy(i,j,k) = rfac * s0(index+1) + (ONE-rfac) * s0(index)
                 else
                    s0macy(i,j,k) = s0(nr_fine-1)
                 end if
@@ -816,7 +816,7 @@ contains
                 rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine-1) then
-                   s0macz(i,j,k) = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                   s0macz(i,j,k) = rfac * s0(index+1) + (ONE-rfac) * s0(index)
                 else
                    s0macz(i,j,k) = s0(nr_fine-1)
                 end if
