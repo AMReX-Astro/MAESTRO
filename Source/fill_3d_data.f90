@@ -773,10 +773,10 @@ contains
 
                 rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
 
-                if (index .lt. nr_fine) then
+                if (index .lt. nr_fine-1) then
                    s0macx(i,j,k) = rfac * s0(index) + (ONE-rfac) * s0(index+1)
                 else
-                   s0macx(i,j,k) = s0(nr_fine)
+                   s0macx(i,j,k) = s0(nr_fine-1)
                 end if
 
              end do
@@ -794,10 +794,10 @@ contains
 
                 rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
 
-                if (index .lt. nr_fine) then
+                if (index .lt. nr_fine-1) then
                    s0macy(i,j,k) = rfac * s0(index) + (ONE-rfac) * s0(index+1)
                 else
-                   s0macy(i,j,k) = s0(nr_fine)
+                   s0macy(i,j,k) = s0(nr_fine-1)
                 end if
 
              end do
@@ -815,10 +815,10 @@ contains
 
                 rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
 
-                if (index .lt. nr_fine) then
+                if (index .lt. nr_fine-1) then
                    s0macz(i,j,k) = rfac * s0(index) + (ONE-rfac) * s0(index+1)
                 else
-                   s0macz(i,j,k) = s0(nr_fine)
+                   s0macz(i,j,k) = s0(nr_fine-1)
                 end if
 
              end do
