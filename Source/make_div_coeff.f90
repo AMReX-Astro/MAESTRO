@@ -57,7 +57,7 @@ contains
        !     Redo the anelastic cutoff part
        !   end do
        ! end do
-       ! call restrict_base
+       ! call restrict_base and fill_ghost_base
        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        
        do n=1,nlevs_radial
@@ -205,8 +205,9 @@ contains
 
     end if
 
-    call fill_ghost_base(div_coeff,.true.)
     call restrict_base(div_coeff,.true.)
+    call fill_ghost_base(div_coeff,.true.)
+
 
   end subroutine make_div_coeff
 

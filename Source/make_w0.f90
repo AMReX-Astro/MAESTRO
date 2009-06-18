@@ -25,7 +25,6 @@ contains
     use geometry, only: spherical, dr, r_start_coord, r_end_coord, nlevs_radial
     use bl_constants_module
     use probin_module, only: verbose
-    use restrict_base_module, only: fill_ghost_base
 
     real(kind=dp_t), intent(  out) ::                 w0(:,0:)
     real(kind=dp_t), intent(in   ) ::             w0_old(:,0:)
@@ -57,7 +56,7 @@ contains
        call make_w0_planar(w0,w0_old,Sbar_in,p0_old,p0_new,gamma1bar_old, &
                            gamma1bar_new,p0_minus_pthermbar,psi,w0_force,dt,dtold)
 
-       call fill_ghost_base(w0_force,.true.)
+
 
     else
 
@@ -97,7 +96,7 @@ contains
     use variables, only: rho_comp
     use bl_constants_module
     use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
-    use restrict_base_module, only: fill_ghost_base
+    use restrict_base_module
 
     real(kind=dp_t), intent(  out) ::                 w0(:,0:)
     real(kind=dp_t), intent(in   ) ::             w0_old(:,0:)
@@ -192,10 +191,10 @@ contains
 
     end do
 
+    call restrict_base(w0,.false.)
     call fill_ghost_base(w0,.false.)
 
     do n=1,nlevs
-       
        do j=1,numdisjointchunks(n)
 
           ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
@@ -210,8 +209,10 @@ contains
           end do
           
        end do
-       
     end do
+
+    call restrict_base(w0_force,.true.)
+    call fill_ghost_base(w0_force,.true.)
 
   end subroutine make_w0_planar
 

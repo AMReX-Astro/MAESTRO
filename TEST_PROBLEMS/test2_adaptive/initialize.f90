@@ -401,25 +401,25 @@ contains
     else
        ! s0_init already contains the average
        rho0_old = s0_init(:,:,rho_comp)
-       call fill_ghost_base(rho0_old,.true.)
        call restrict_base(rho0_old,.true.)
+       call fill_ghost_base(rho0_old,.true.)
     end if
 
     ! this will be overwritten if we are multilevel or if perturb_model = T
     ! but we copy it anyway for the initial condition
     p0_old = p0_init
-    call fill_ghost_base(p0_old,.true.)
     call restrict_base(p0_old,.true.)
+    call fill_ghost_base(p0_old,.true.)
 
     ! this will be overwritten if we are multilevel or if perturb_model = T
     ! but we copy it anyway so s0_init can remain local
     rhoh0_old = s0_init(:,:,rhoh_comp)
-    call fill_ghost_base(rhoh0_old,.true.)
     call restrict_base(rhoh0_old,.true.)
+    call fill_ghost_base(rhoh0_old,.true.)
 
     tempbar = s0_init(:,:,temp_comp)
-    call fill_ghost_base(tempbar,.true.)
     call restrict_base(tempbar,.true.)
+    call fill_ghost_base(tempbar,.true.)
     
     call destroy(mba)
 
@@ -675,25 +675,25 @@ contains
     else
        ! s0_init already contains the average
        rho0_old = s0_init(:,:,rho_comp)
-       call fill_ghost_base(rho0_old,.true.)
        call restrict_base(rho0_old,.true.)
+       call fill_ghost_base(rho0_old,.true.)
     end if
 
     ! this will be overwritten if we are multilevel or if perturb_model = T
     ! but we copy it anyway for the initial condition
     p0_old = p0_init
-    call fill_ghost_base(p0_old,.true.)
     call restrict_base(p0_old,.true.)
+    call fill_ghost_base(p0_old,.true.)
 
     ! this will be overwritten if we are multilevel or if perturb_model = T
     ! but we copy it anyway so s0_init can remain local
     rhoh0_old = s0_init(:,:,rhoh_comp)
-    call fill_ghost_base(rhoh0_old,.true.)
     call restrict_base(rhoh0_old,.true.)
+    call fill_ghost_base(rhoh0_old,.true.)
 
     tempbar = s0_init(:,:,temp_comp)
-    call fill_ghost_base(tempbar,.true.)
     call restrict_base(tempbar,.true.)
+    call fill_ghost_base(tempbar,.true.)
 
     call destroy(mba)
 

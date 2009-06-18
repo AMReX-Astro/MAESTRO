@@ -169,8 +169,8 @@ contains
 
        ! make psi
        call make_psi_planar(etarho_cc,psi)
-       call fill_ghost_base(psi,.true.)
        call restrict_base(psi,.true.)
+       call fill_ghost_base(psi,.true.)
 
        ! advect p0
        call advect_base_pres_planar(w0,p0_old,p0_new,psi,dt)
