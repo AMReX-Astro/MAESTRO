@@ -16,6 +16,7 @@
 module make_edge_state_module
 
   use bl_types
+  use bl_error_module
 
   implicit none
 
@@ -29,7 +30,7 @@ contains
 
      use geometry, only: r_start_coord, r_end_coord, nr_fine, nr, numdisjointchunks, &
           nlevs_radial, dr
-     use probin_module, only: slope_order
+     use probin_module, only: slope_order, ppm_type
      use bl_constants_module
      use variables, only: rel_eps
      
@@ -44,105 +45,148 @@ contains
      
      integer :: r,lo,hi,n,i
 
-     integer        , parameter :: cen=1, lim=2, flag=3, fromm=4
+     integer        , parameter :: cen=1, lim=2, flag=3, fromm=4, vanleer=5
      real(kind=dp_t), parameter :: FOURTHIRDS = FOUR/THREE
         
      real(kind=dp_t) ::  slope(nlevs_radial, 0:nr_fine-1)
      real(kind=dp_t) :: sedgel(nlevs_radial,-1:nr_fine+1)
      real(kind=dp_t) :: sedger(nlevs_radial,-1:nr_fine+1)
-     real(kind=dp_t) ::  dxscr(nlevs_radial, 0:nr_fine-1,4)
+     real(kind=dp_t) ::  dxscr(nlevs_radial, 0:nr_fine-1,5)
 
      dth = HALF*dt
 
-     ! compute slopes
-     do n=1,nlevs_radial
-        do i=1,numdisjointchunks(n)
-           
-           lo = r_start_coord(n,i)
-           hi = r_end_coord(n,i)
+     if (ppm_type .eq. 0) then
+        
+        ! compute slopes
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
 
-           if (slope_order .eq. 0) then
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
 
-              slope(n,:) = ZERO
+              if (slope_order .eq. 0) then
 
-           else if (slope_order .eq. 2) then
+                 slope(n,:) = ZERO
 
+              else if (slope_order .eq. 2) then
+
+                 do r=lo,hi
+                    if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                       ! set slopes next to domain boundaries to zero
+                       slope(n,r) = ZERO
+                    else
+                       ! do standard limiting on interior cells
+                       del = half*(s(n,r+1) - s(n,r-1))
+                       dpls = two*(s(n,r+1) - s(n,r  ))
+                       dmin = two*(s(n,r  ) - s(n,r-1))
+                       slim = min(abs(dpls), abs(dmin))
+                       slim = merge(slim, ZERO, dpls*dmin.gt.ZERO)
+                       sflag = sign(ONE,del)
+                       slope(n,r)= sflag*min(slim,abs(del))
+                    end if
+                 end do
+
+              else if (slope_order .eq. 4) then
+
+                 do r=lo,hi
+                    if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                       ! set fromm slopes next to domain boundaries to zero
+                       dxscr(n,r,fromm) = ZERO
+                    else
+                       ! do standard limiting on interior cells to compute temporary slopes
+                       dxscr(n,r,cen) = half*(s(n,r+1)-s(n,r-1))
+                       dpls = two*(s(n,r+1)-s(n,r  ))
+                       dmin = two*(s(n,r  )-s(n,r-1))
+                       dxscr(n,r,lim)= min(abs(dmin),abs(dpls))
+                       dxscr(n,r,lim) = merge(dxscr(n,r,lim),ZERO,dpls*dmin.gt.ZERO)
+                       dxscr(n,r,flag) = sign(ONE,dxscr(n,r,cen))
+                       dxscr(n,r,fromm)= dxscr(n,r,flag) &
+                            *min(dxscr(n,r,lim),abs(dxscr(n,r,cen)))
+                    end if
+                 end do
+
+                 do r=lo,hi
+                    if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                       ! set slopes adjacent to domain boundaries to zero
+                       slope(n,r) = ZERO
+                    else if (r .eq. r_start_coord(n,i) .or. r .eq. r_end_coord(n,i)) then
+                       ! drop order to second-order limited differences at C-F interface
+                       del = half*(s(n,r+1) - s(n,r-1))
+                       dpls = two*(s(n,r+1) - s(n,r  ))
+                       dmin = two*(s(n,r  ) - s(n,r-1))
+                       slim = min(abs(dpls), abs(dmin))
+                       slim = merge(slim, ZERO, dpls*dmin.gt.ZERO)
+                       sflag = sign(ONE,del)
+                       slope(n,r)= sflag*min(slim,abs(del))
+                    else
+                       ! fourth-order limited slopes on interior
+                       ds = FOURTHIRDS*dxscr(n,r,cen) - SIXTH*(dxscr(n,r+1,fromm) &
+                            + dxscr(n,r-1,fromm))
+                       slope(n,r) = dxscr(n,r,flag)*min(abs(ds),dxscr(n,r,lim))
+                    end if
+                 end do
+
+              end if ! which slope order
+
+           end do ! loop over disjointchunks
+        end do ! loop over levels
+
+     else if (ppm_type .eq. 1) then
+
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
+
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
+        
+              ! compute van Leer slopes
               do r=lo,hi
                  if (r .eq. 0 .or. r .eq. nr(n)-1) then
-                    ! set slopes next to domain boundaries to zero
-                    slope(n,r) = ZERO
+                    dxscr(n,r,vanleer) = ZERO
                  else
-                    ! do standard limiting on interior cells
-                    del = half*(s(n,r+1) - s(n,r-1))
-                    dpls = two*(s(n,r+1) - s(n,r  ))
-                    dmin = two*(s(n,r  ) - s(n,r-1))
-                    slim = min(abs(dpls), abs(dmin))
-                    slim = merge(slim, zero, dpls*dmin.gt.ZERO)
-                    sflag = sign(one,del)
-                    slope(n,r)= sflag*min(slim,abs(del))
+                    del  = HALF * (s(n,r+1) - s(n,r-1))
+                    dmin = TWO  * (s(n,r  ) - s(n,r-1))
+                    dpls = TWO  * (s(n,r+1) - s(n,r  ))
+                    dxscr(n,r,vanleer) = sign(ONE,del)*min(abs(del),abs(dmin),abs(dpls))
                  end if
               end do
 
-           else if (slope_order .eq. 4) then
-              
-              do r=lo,hi
-                 if (r .eq. 0 .or. r .eq. nr(n)-1) then
-                    ! set fromm slopes next to domain boundaries to zero
-                    dxscr(n,r,fromm) = ZERO
-                 else
-                    ! do standard limiting on interior cells to compute temporary slopes
-                    dxscr(n,r,cen) = half*(s(n,r+1)-s(n,r-1))
-                    dpls = two*(s(n,r+1)-s(n,r  ))
-                    dmin = two*(s(n,r  )-s(n,r-1))
-                    dxscr(n,r,lim)= min(abs(dmin),abs(dpls))
-                    dxscr(n,r,lim) = merge(dxscr(n,r,lim),zero,dpls*dmin.gt.ZERO)
-                    dxscr(n,r,flag) = sign(one,dxscr(n,r,cen))
-                    dxscr(n,r,fromm)= dxscr(n,r,flag)*min(dxscr(n,r,lim),abs(dxscr(n,r,cen)))
-                 end if
-              end do
+              ! interpolate s to radial edges
 
-              do r=lo,hi
-                 if (r .eq. 0 .or. r .eq. nr(n)-1) then
-                    ! set slopes adjacent to domain boundaries to zero
-                    slope(n,r) = ZERO
-                 else if (r .eq. r_start_coord(n,i) .or. r .eq. r_end_coord(n,i)) then
-                    ! drop order to second-order limited differences at C-F interface
-                    del = half*(s(n,r+1) - s(n,r-1))
-                    dpls = two*(s(n,r+1) - s(n,r  ))
-                    dmin = two*(s(n,r  ) - s(n,r-1))
-                    slim = min(abs(dpls), abs(dmin))
-                    slim = merge(slim, zero, dpls*dmin.gt.ZERO)
-                    sflag = sign(one,del)
-                    slope(n,r)= sflag*min(slim,abs(del))
-                 else
-                    ! fourth-order limited slopes on interior
-                    ds = FOURTHIRDS*dxscr(n,r,cen) - sixth*(dxscr(n,r+1,fromm) &
-                         + dxscr(n,r-1,fromm))
-                    slope(n,r) = dxscr(n,r,flag)*min(abs(ds),dxscr(n,r,lim))
-                 end if
-              end do
 
-           end if ! which slope order
-
-        end do ! loop over disjointchunks
-     end do ! loop over levels
-
-     ! compute sedgel and sedger
-     do n=1,nlevs_radial
-        do i=1,numdisjointchunks(n)
-           
-           lo = r_start_coord(n,i)
-           hi = r_end_coord(n,i)
-           
-           do r = lo,hi
-              u = HALF*(w0(n,r)+w0(n,r+1))
-              ubardth = dth*u/dr(n)
-              sedgel(n,r+1)= s(n,r) + (HALF-ubardth)*slope(n,r) + dth * force(n,r)
-              sedger(n,r  )= s(n,r) - (HALF+ubardth)*slope(n,r) + dth * force(n,r)
            end do
+        end do
+        
+     else if (ppm_type .eq. 2) then
 
-        end do ! loop over disjointchunks
-     end do ! loop over levels
+     else
+        call bl_error("make_edge_state_1d: unknown ppm_type")
+     end if
+
+     if (ppm_type .eq. 0) then
+        
+        ! compute sedgel and sedger
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
+
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
+
+              do r = lo,hi
+                 u = HALF*(w0(n,r)+w0(n,r+1))
+                 ubardth = dth*u/dr(n)
+                 sedgel(n,r+1)= s(n,r) + (HALF-ubardth)*slope(n,r) + dth * force(n,r)
+                 sedger(n,r  )= s(n,r) - (HALF+ubardth)*slope(n,r) + dth * force(n,r)
+              end do
+
+           end do ! loop over disjointchunks
+        end do ! loop over levels
+
+     else if (ppm_type .eq. 1) then
+
+     else if (ppm_type .eq. 2) then
+
+     end if
 
      ! compute edge states from sedgel and sedger
      do n=1,nlevs_radial
