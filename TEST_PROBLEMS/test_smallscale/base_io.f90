@@ -272,6 +272,9 @@ contains
     INLET_TEMP = temp_eos(1)
     INLET_TRA = 0.0d0
 
+    ! calls to restrict_base are not here needed since they are written to the checkpoint 
+    ! file after a call to restrict base was already completed
+
     if (nlevs_radial .gt. 1) then
        call fill_ghost_base(rho0,.true.)
        call fill_ghost_base(rhoh0,.true.)
@@ -284,9 +287,6 @@ contains
        call fill_ghost_base(w0,.false.)
        call fill_ghost_base(etarho_ec,.false.)
     end if
-
-    ! calls to restrict base are not here needed since they are written to the checkpoint 
-    ! file after a call to restrict base was already completed
 
     call destroy(bpt)
 
