@@ -207,6 +207,8 @@ contains
     ! set the inlet boundary condition parameters
     call set_inlet_bcs()
     
+    ! calls to restrict base are not here needed since they are written to the checkpoint 
+    ! file after a call to restrict base was already completed
 
     if (nlevs_radial .gt. 1) then
        call fill_ghost_base(rho0,.true.)
@@ -220,9 +222,6 @@ contains
        call fill_ghost_base(w0,.false.)
        call fill_ghost_base(etarho_ec,.false.)
     end if
-
-    ! calls to restrict base are not here needed since they are written to the checkpoint 
-    ! file after a call to restrict base was already completed
 
     call destroy(bpt)
 

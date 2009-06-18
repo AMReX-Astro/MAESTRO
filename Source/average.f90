@@ -103,8 +103,8 @@ contains
 
        end do
 
-       call fill_ghost_base(phibar,.true.)
        call restrict_base(phibar,.true.)
+       call fill_ghost_base(phibar,.true.)
 
     else if(spherical .eq. 1) then
 

@@ -26,7 +26,6 @@ subroutine varden()
   use divu_iter_module
   use initial_proj_module
   use make_gamma_module
-  use restrict_base_module
   use enforce_HSE_module
   use rhoh_vs_t_module
   use initialize_module
