@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "model_6.e8.hse.test.64"
+ model_file = "model_6.e8.hybrid.hse.64"
  drdxfac = 1
 
  max_levs = 1
