@@ -112,7 +112,11 @@ contains
 
     end do
 
+    ! These calls shouldn't be needed since the planar algorithm doesn't use
+    ! these outside of this function, but this is just to be safe in case
+    ! things change in the future.
     call restrict_base(etarho_ec,.false.)
+    call fill_ghost_base(etarho_ec,.false.)
 
     ! make the cell-centered etarho_cc by averaging etarho to centers
     do n=1,nlevs
@@ -122,6 +126,12 @@ contains
           enddo
        enddo
     enddo
+
+    ! These calls shouldn't be needed since the planar algorithm only uses
+    ! etarho_cc to make_psi, and then we fill ghost cells in make_psi, but
+    ! this is just to be safe in case things change in the future
+    call restrict_base(etarho_cc,.true.)
+    call fill_ghost_base(etarho_cc,.true.)
 
     call destroy(bpt)
 

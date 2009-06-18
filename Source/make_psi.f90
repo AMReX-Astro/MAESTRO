@@ -35,8 +35,8 @@ contains
        end do
     end do
 
-    call fill_ghost_base(psi,.true.)
     call restrict_base(psi,.true.)
+    call fill_ghost_base(psi,.true.)
     
   end subroutine make_psi_planar
 
