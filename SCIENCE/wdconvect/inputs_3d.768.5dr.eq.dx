@@ -3,23 +3,23 @@
  drdxfac = 5
 
 ! USE THIS WITH 1728 PROCS
- max_levs = 1
- n_cellx = 768
- n_celly = 768
- n_cellz = 768
- max_grid_size = 64
-
-!! USE THIS WITH 4096 PROCS
 ! max_levs = 1
 ! n_cellx = 768
 ! n_celly = 768
 ! n_cellz = 768
-! max_grid_size = 48
-! max_mg_bottom_nlevels = 3
-! mg_bottom_solver = 4
-! hg_bottom_solver = 4
+! max_grid_size = 64
 
-!! USE THIS WITH 13824 PROCS
+! USE THIS WITH 1024, 2048, OR 4096 PROCS
+ max_levs = 1
+ n_cellx = 768
+ n_celly = 768
+ n_cellz = 768
+ max_grid_size = 48
+ max_mg_bottom_nlevels = 3
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
+
+! USE THIS WITH 13824 PROCS
 ! max_levs = 1
 ! n_cellx = 768
 ! n_celly = 768
