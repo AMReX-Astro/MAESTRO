@@ -164,10 +164,16 @@ contains
 
               ! 4th order interpolation of s to radial faces
               do r=lo,hi+1
-                 sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
-                 ! make sure sedgel lies in between adjacent cell-centered values
-                 sedgel(n,r) = max(sedgel(n,r),min(s(n,r),s(n,r-1)))
-                 sedgel(n,r) = min(sedgel(n,r),max(s(n,r),s(n,r-1)))
+                 if (r .eq. 0) then
+                    sedgel(n,r) = s(n,r)
+                 else if (r .eq. nr(n)) then
+                    sedgel(n,r) = s(n,r-1)
+                 else
+                    sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
+                    ! make sure sedgel lies in between adjacent cell-centered values
+                    sedgel(n,r) = max(sedgel(n,r),min(s(n,r),s(n,r-1)))
+                    sedgel(n,r) = min(sedgel(n,r),max(s(n,r),s(n,r-1)))
+                 end if
               end do
 
            end do ! loop over disjointchunks
