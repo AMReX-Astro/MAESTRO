@@ -239,29 +239,9 @@ contains
 
      end if
 
-     ! compute sedgel and sedger
-     if (ppm_type .eq. 0) then
+     ! compute Ip and Im
+     if (ppm_type .ge. 1) then
         
-        ! use taylor series
-        do n=1,nlevs_radial
-           do i=1,numdisjointchunks(n)
-
-              lo = r_start_coord(n,i)
-              hi = r_end_coord(n,i)
-
-              do r = lo,hi
-                 u = HALF*(w0(n,r)+w0(n,r+1))
-                 ubardth = dth*u/dr(n)
-                 sedgel(n,r+1)= s(n,r) + (HALF-ubardth)*slope(n,r) + dth * force(n,r)
-                 sedger(n,r  )= s(n,r) - (HALF+ubardth)*slope(n,r) + dth * force(n,r)
-              end do
-
-           end do ! loop over disjointchunks
-        end do ! loop over levels
-
-     else if (ppm_type .eq. 1) then
-
-        ! first compute Ip and Im
         do n=1,nlevs_radial
            do i=1,numdisjointchunks(n)
 
@@ -287,13 +267,44 @@ contains
            end do ! loop over disjointchunks
         end do ! loop over levels
 
+     end if
+
+     ! compute sedgel and sedger
+     if (ppm_type .eq. 0) then
+        
+        ! use taylor series
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
+
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
+
+              do r = lo,hi
+                 u = HALF*(w0(n,r)+w0(n,r+1))
+                 ubardth = dth*u/dr(n)
+                 sedgel(n,r+1)= s(n,r) + (HALF-ubardth)*slope(n,r) + dth * force(n,r)
+                 sedger(n,r  )= s(n,r) - (HALF+ubardth)*slope(n,r) + dth * force(n,r)
+              end do
+
+           end do ! loop over disjointchunks
+        end do ! loop over levels
+
+     else
+
         ! now extrapolate to faces
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
 
-     else if (ppm_type .eq. 2) then
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
 
-        !
-        !
-        !
+              do r=lo,hi
+                 sedgel(n,r+1) = Ip(n,r) + force(n,r)
+                 sedger(n,r  ) = Im(n,r) + force(n,r)
+              end do
+
+           end do
+        end do
 
      end if
 
