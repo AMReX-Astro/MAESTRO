@@ -41,19 +41,30 @@ contains
      real(kind=dp_t), intent(in   ) :: dt
      
      real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag
-     real(kind=dp_t) :: ubardth,dth,savg,u
+     real(kind=dp_t) :: ubardth,dth,dtdr,savg,u,sigmap,sigmam,s6
      
      integer :: r,lo,hi,n,i
 
-     integer        , parameter :: cen=1, lim=2, flag=3, fromm=4, vanleer=5
+     integer        , parameter :: cen=1, lim=2, flag=3, fromm=4
      real(kind=dp_t), parameter :: FOURTHIRDS = FOUR/THREE
         
-     real(kind=dp_t) ::  slope(nlevs_radial, 0:nr_fine-1)
-     real(kind=dp_t) :: sedgel(nlevs_radial,-1:nr_fine+1)
-     real(kind=dp_t) :: sedger(nlevs_radial,-1:nr_fine+1)
-     real(kind=dp_t) ::  dxscr(nlevs_radial, 0:nr_fine-1,5)
-
+     ! cell based indexing
+     real(kind=dp_t) :: slope(nlevs_radial,0:nr_fine-1)
+     real(kind=dp_t) :: dxscr(nlevs_radial,0:nr_fine-1,4)
+     real(kind=dp_t) ::  dxvl(nlevs_radial,-1:nr_fine)
+     real(kind=dp_t) ::    sp(nlevs_radial,0:nr_fine-1)
+     real(kind=dp_t) ::    sm(nlevs_radial,0:nr_fine-1)
+     real(kind=dp_t) ::    Ip(nlevs_radial,0:nr_fine-1)
+     real(kind=dp_t) ::    Im(nlevs_radial,0:nr_fine-1)
+     
+     ! edge based indexing
+     real(kind=dp_t) :: sedgel(nlevs_radial,0:nr_fine)
+     real(kind=dp_t) :: sedger(nlevs_radial,0:nr_fine)
+     
      dth = HALF*dt
+     dtdr = dt/dr(1)
+
+     dxvl = ZERO
 
      if (ppm_type .eq. 0) then
         
@@ -133,39 +144,105 @@ contains
 
      else if (ppm_type .eq. 1) then
 
+        ! interpolate s to radial edges, store these temporary values into sedgel
         do n=1,nlevs_radial
            do i=1,numdisjointchunks(n)
 
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
         
-              ! compute van Leer slopes
-              do r=lo,hi
-                 if (r .eq. 0 .or. r .eq. nr(n)-1) then
-                    dxscr(n,r,vanleer) = ZERO
-                 else
+              ! compute van Leer slopes away from domain boundaries
+              ! leave val Leer slopes at domain boundaries set to zero
+              do r=lo-1,hi+1
+                 if (r .gt. 0 .and. r .lt. nr(n)-1) then
                     del  = HALF * (s(n,r+1) - s(n,r-1))
                     dmin = TWO  * (s(n,r  ) - s(n,r-1))
                     dpls = TWO  * (s(n,r+1) - s(n,r  ))
-                    dxscr(n,r,vanleer) = sign(ONE,del)*min(abs(del),abs(dmin),abs(dpls))
+                    dxvl(n,r) = sign(ONE,del)*min(abs(del),abs(dmin),abs(dpls))
                  end if
               end do
 
-              ! interpolate s to radial edges
+              ! 4th order interpolation of s to radial faces
+              do r=lo,hi+1
+                 sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
+                 ! make sure sedgel lies in between adjacent cell-centered values
+                 sedgel(n,r) = max(sedgel(n,r),min(s(n,r),s(n,r-1)))
+                 sedgel(n,r) = min(sedgel(n,r),max(s(n,r),s(n,r-1)))
+              end do
 
-
-           end do
-        end do
+           end do ! loop over disjointchunks
+        end do ! loop over levels
         
      else if (ppm_type .eq. 2) then
+
+
+        ! interpolate s to radial edges, store these temporary values into sedgel
+        !
+        !
+
+        ! store centered differences in dxvl
+        !
+        !
 
      else
         call bl_error("make_edge_state_1d: unknown ppm_type")
      end if
 
+     if (ppm_type .ge. 1) then
+
+        ! fill copy sedgel into sp and sm
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
+              
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
+              
+              do r=lo,hi
+                 sp(n,r) = sedge(n,r+1)
+                 sm(n,r) = sedge(n,r  )
+              end do
+              
+           end do ! loop over disjointchunks
+        end do ! loop over levels
+
+     end if
+
+     ! limit sp and sm
+     if (ppm_type .eq. 1) then
+
+        ! modify using quadratic limiters
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
+
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
+
+              do r=lo,hi
+                 if ((sp(n,r)-s(n,r))*(s(n,r)-sm(n,r)) .le. ZERO) then
+                    sp(n,r) = s(n,r)
+                    sm(n,r) = s(n,r)
+                 else if (abs(sp(n,r)-s(n,r)) .ge. TWO*abs(sm(n,r)-s(n,r))) then
+                    sp(n,r) = THREE*s(n,r) - TWO*sm(n,r)
+                 else if (abs(sm(n,r)-s(n,r)) .ge. TWO*abs(sp(n,r)-s(n,r))) then
+                    sm(n,r) = THREE*s(n,r) - TWO*sp(n,r)
+                 end if
+              end do
+
+           end do ! loop over disjointchunks
+        end do ! loop over levels
+
+     else if (ppm_type .eq. 2) then
+
+        !
+        !
+        !
+
+     end if
+
+     ! compute sedgel and sedger
      if (ppm_type .eq. 0) then
         
-        ! compute sedgel and sedger
+        ! use taylor series
         do n=1,nlevs_radial
            do i=1,numdisjointchunks(n)
 
@@ -184,14 +261,46 @@ contains
 
      else if (ppm_type .eq. 1) then
 
+        ! first compute Ip and Im
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
+
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
+
+              do r=lo,hi
+                 sigmap = abs(w0(n,r+1))*dtdr
+                 sigmam = abs(w0(n,r  ))*dtdr
+                 s6 = SIX*s(n,r+1) - THREE*(sm(n,r)+sp(n,r))
+                 if (w0(n,r+1) .gt. rel_eps) then
+                    Ip(n,r) = sp(n,r) - (sigmap/TWO)*(sp(n,r)-sm(n,r)-(ONE-TWO3RD*sigmap)*s6)
+                 else
+                    Ip(n,r) = s(n,r)
+                 end if
+                 if (w0(n,r) .lt. -rel_eps) then
+                    Im(n,r) = sm(n,r) + (sigmam/TWO)*(sp(n,r)-sm(n,r)+(ONE-TWO3RD*sigmam)*s6)
+                 else
+                    Im(n,r) = s(n,r)
+                 end if
+              end do
+
+           end do ! loop over disjointchunks
+        end do ! loop over levels
+
+        ! now extrapolate to faces
+
      else if (ppm_type .eq. 2) then
+
+        !
+        !
+        !
 
      end if
 
-     ! compute edge states from sedgel and sedger
+     ! sync up edge states at coarse-fine interface
      do n=1,nlevs_radial
         do i=1,numdisjointchunks(n)
-           
+
            lo = r_start_coord(n,i)
            hi = r_end_coord(n,i)
 
@@ -209,7 +318,16 @@ contains
               sedger(n,hi+1) = sedger(n-1,(hi+1)/2)
            end if
 
-           ! solve Riemann problem to get final edge state
+        end do ! loop over disjointchunks
+     end do ! loop over levels
+
+     ! solve Riemann problem to get final edge state
+     do n=1,nlevs_radial
+        do i=1,numdisjointchunks(n)
+
+           lo = r_start_coord(n,i)
+           hi = r_end_coord(n,i)
+
            do r=lo,hi+1
               if (r .eq. 0) then
                  ! pick interior state at lo domain boundary
@@ -225,9 +343,9 @@ contains
               end if
            end do
 
-        end do ! loop over disjointchunks
+        end do  ! loop over disjointchunks
      end do ! loop over levels
-     
+
    end subroutine make_edge_state_1d
    
  end module make_edge_state_module
