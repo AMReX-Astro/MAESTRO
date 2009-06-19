@@ -8,7 +8,7 @@
  n_celly = 1280
  n_cellz = 1280
  max_grid_size = 64
- max_mg_bottom_nlevels = 2
+ max_mg_bottom_nlevels = 3
  mg_bottom_solver = 4
  hg_bottom_solver = 4
 
