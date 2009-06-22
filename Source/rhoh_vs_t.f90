@@ -957,7 +957,7 @@ contains
                                    lo, hi, ng_s, ng_so, ng_p)
           case (3)
              call makePfromRhoH_3d(snp(:,:,:,:), sop(:,:,:,temp_comp), pnp(:,:,:,1), &
-                                   lo, hi, ng_s, ng_p, ng_so)
+                                   lo, hi, ng_s, ng_so, ng_p)
           end select
        end do
 
