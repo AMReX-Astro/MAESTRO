@@ -43,11 +43,6 @@
  do_initial_projection = T
  init_divu_iter = 3
 
- velpert_amplitude = 1.d5
- velpert_radius = 5.d7
- velpert_scale = 5.d7
- velpert_steep = 1.d5
-
  enthalpy_pred_type = 1
  evolve_base_state = T
 
