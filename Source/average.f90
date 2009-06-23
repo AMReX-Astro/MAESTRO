@@ -37,8 +37,8 @@ contains
     type(box)                    :: domain
     integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
     integer                      :: i,j,r,r_inner,n,ng,nr_crse
-    real(kind=dp_t)              :: w_lo, w_hi, del_w, wsix, theta
-    real(kind=dp_t)              :: w_min, w_max
+    real(kind=dp_t)              :: w_lo,w_hi,del_w,wsix,theta,w_min,w_max
+    real(kind=dp_t)              :: Y,Z,coord
 
     real(kind=dp_t) ::   ncell_proc(nlevs,0:nr_fine-1)
     real(kind=dp_t) ::        ncell(nlevs,0:nr_fine-1)
@@ -162,6 +162,16 @@ contains
           phisum(nlevs,:) = phisum(nlevs,:) + phisum(n,:)
        end do
 
+       ! fixes the fact that for any given fine radial bin, you get
+       ! more contributions from cells which map to the outer half of
+       ! the fine radial bin
+       do r=0,nr_fine-1
+         if (ncell(nlevs,r) .ne. 0) then
+             phisum(nlevs,r) = phisum(nlevs,r) / ncell(nlevs,r)
+             ncell(nlevs,r) = ONE
+          end if
+       end do
+
        ! now compute phibar_crse
        if (drdxfac .ne. 1) then
 
@@ -272,6 +282,26 @@ contains
              end do
 
           end do
+
+          ! FIX THE INNER CELLS 
+          if (drdxfac .eq. 5) then
+             Y = phisum(nlevs,4)
+             Z = phisum(nlevs,8)
+             do j = 0,7
+                coord = (dble(j)+HALF) / dble(drdxfac)
+                phibar(nlevs,j) = (-HALF*Y+HALF*Z)*dble(coord)**2 &
+                     + (11.d0/8.d0)*Y - (3.d0/8.d0)*Z
+             end do
+             do j = 8,24
+                if (ncell(nlevs,j) .eq. ONE) then
+                   phibar(nlevs,j) = phisum(nlevs,j)
+                else if (ncell(nlevs,j-1) .eq. ONE .and. ncell(nlevs,j+1) .eq. ONE) then
+                   phibar(nlevs,j) = HALF * (phisum(nlevs,j-1) + phisum(nlevs,j+1))
+                else
+                   call bl_error("ERROR in average: didnt catch this j")
+                end if
+             end do
+          end if
 
        else 
 
