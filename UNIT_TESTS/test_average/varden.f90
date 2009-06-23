@@ -54,8 +54,6 @@ subroutine varden()
 
   type(bc_tower) ::  the_bc_tower
 
-  real(dp_t) :: dr_base
-
   call probin_init()
   call init_dm()
   call init_spherical()
