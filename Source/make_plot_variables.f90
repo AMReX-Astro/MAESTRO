@@ -652,7 +652,7 @@ contains
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
-          dT(i,j) = tfromH(i,j) - tfromp(i,j)
+          dT(i,j) = (tfromH(i,j) - tfromp(i,j)) / tfromH(i,j)
        end do
     end do
 
@@ -671,7 +671,7 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             dT(i,j,k) = tfromH(i,j,k) - tfromp(i,j,k)
+             dT(i,j,k) = (tfromH(i,j,k) - tfromp(i,j,k)) / tfromH(i,j,k)
           end do
        end do
     end do
