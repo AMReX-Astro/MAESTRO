@@ -305,8 +305,8 @@ contains
               hi = r_end_coord(n,i)
 
               do r=lo,hi
-                 sedgel(n,r+1) = Ip(n,r) + force(n,r)
-                 sedger(n,r  ) = Im(n,r) + force(n,r)
+                 sedgel(n,r+1) = Ip(n,r) + dth * force(n,r)
+                 sedger(n,r  ) = Im(n,r) + dth * force(n,r)
               end do
 
            end do
