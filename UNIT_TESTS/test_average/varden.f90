@@ -170,8 +170,6 @@ subroutine varden()
   call initveldata(uold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
   call initscalardata(sold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
 
-  call fabio_ml_multifab_write_d(sold,mla%mba%rr(:,1),"sold")
-
   ! now that we are initialized, try averaging the state to 1-d
   ! and compare to the base state
   if ( parallel_IOProcessor() ) &
