@@ -36,9 +36,7 @@ subroutine varden()
   type(ml_layout)           :: mla
 
   type(multifab), allocatable ::       uold(:)
-  type(multifab), allocatable ::       unew(:)
   type(multifab), allocatable ::       sold(:)
-  type(multifab), allocatable ::       snew(:)
   type(multifab), allocatable ::     normal(:)
 
   real(kind=dp_t), pointer :: nrp(:,:,:,:)
@@ -136,16 +134,10 @@ subroutine varden()
   ! Initialize all remaining arrays
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  allocate(unew(nlevs),snew(nlevs))
   allocate(normal(nlevs))
 
   do n = nlevs,1,-1
-     call multifab_build(   unew(n), mla%la(n),    dm, 3)
-     call multifab_build(   snew(n), mla%la(n), nscal, 3)
      call multifab_build( normal(n), mla%la(n),    dm, 1)
-
-     call setval(  unew(n),ZERO, all=.true.)
-     call setval(  snew(n),ZERO, all=.true.)
   end do
 
   la = mla%la(1)
@@ -178,11 +170,7 @@ subroutine varden()
   call initveldata(uold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
   call initscalardata(sold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
 
-  do n = 1,nlevs
-     ! This is done to impose any Dirichlet bc's on unew or snew.
-     call multifab_copy_c(unew(n),1,uold(n),1,dm   ,ng=unew(n)%ng)
-     call multifab_copy_c(snew(n),1,sold(n),1,nscal,ng=snew(n)%ng)
-  end do
+  call fabio_ml_multifab_write_d(sold,mla%mba%rr(:,1),"sold")
 
   ! now that we are initialized, try averaging the state to 1-d
   ! and compare to the base state
@@ -213,16 +201,14 @@ subroutine varden()
 
   do n = 1,nlevs
      call destroy(uold(n))
-     call destroy(unew(n))
      call destroy(sold(n))
-     call destroy(snew(n))
      call destroy(normal(n))
   end do
 
   call destroy(mla)
   call destroy(mba)
 
-  deallocate(uold,unew,sold,snew)
+  deallocate(uold,sold)
   deallocate(s0_old,s0_avg,p0_old,w0)
 
   deallocate(lo,hi)
