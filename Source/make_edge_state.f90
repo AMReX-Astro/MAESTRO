@@ -257,7 +257,7 @@ contains
               do r=lo,hi
                  sigmap = abs(w0(n,r+1))*dtdr
                  sigmam = abs(w0(n,r  ))*dtdr
-                 s6 = SIX*s(n,r+1) - THREE*(sm(n,r)+sp(n,r))
+                 s6 = SIX*s(n,r) - THREE*(sm(n,r)+sp(n,r))
                  if (w0(n,r+1) .gt. rel_eps) then
                     Ip(n,r) = sp(n,r) - (sigmap/TWO)*(sp(n,r)-sm(n,r)-(ONE-TWO3RD*sigmap)*s6)
                  else
