@@ -238,10 +238,12 @@ contains
              distance = sqrt(xx**2 + yy**2 + zz**2)
              cos_theta = normal(i,j,k,3)
 
+             ! omega x (omega x r )
              centrifugal_term(1) = -omega * omega * distance * normal(i,j,k,1)
              centrifugal_term(2) = -omega * omega * distance * normal(i,j,k,2)
              centrifugal_term(3) = ZERO
 
+             ! 2 omega x u
              coriolis_term(1) = -TWO * omega * uold(i,j,k,2)
              coriolis_term(2) =  TWO * omega * uold(i,j,k,1)
              coriolis_term(3) = ZERO
