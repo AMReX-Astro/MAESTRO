@@ -204,8 +204,8 @@ contains
               hi = r_end_coord(n,i)
               
               do r=lo,hi
-                 sp(n,r) = sedge(n,r+1)
-                 sm(n,r) = sedge(n,r  )
+                 sp(n,r) = sedgel(n,r+1)
+                 sm(n,r) = sedgel(n,r  )
               end do
               
            end do ! loop over disjointchunks
