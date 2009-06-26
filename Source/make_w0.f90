@@ -267,8 +267,9 @@ contains
        gamma1bar_nph(r) = HALF*(gamma1bar_old(r) + gamma1bar_new(r))       
     enddo
 
-    ! NOTE:  we first solve for the w0 resulting only from Sbar -- then we will
-    ! solve for the update to w0.  We integrate d/dr (r^2 w0) = (r^2 Sbar)
+    ! NOTE:  We first solve for the w0 resulting only from Sbar, w0_from_sbar by
+    !        integrating d/dr (r^2 w0_from_sbar) = (r^2 Sbar).
+    !        Then we will solve for the update, delta w0.
 
     w0_from_Sbar = ZERO
     do r=1,nr_fine
@@ -280,8 +281,7 @@ contains
        endif
 
        w0_from_Sbar(r) = w0_from_Sbar(r-1) + dr(1) * Sbar_in(r-1) * r_cc_loc(1,r-1)**2 - &
-            dr(1)* volume_discrepancy * r_cc_loc(1,r-1)**2 / &
-            (gamma1bar_nph(r-1)*p0_nph(r-1))
+            dr(1)* volume_discrepancy * r_cc_loc(1,r-1)**2 / (gamma1bar_nph(r-1)*p0_nph(r-1))
 
     end do
 
@@ -293,7 +293,7 @@ contains
     ! make the edge-centered gravity
     call make_grav_edge(grav_edge,rho0_nph)
 
-    ! NOTE:  now we solve for the remainder of (r^2 * w0)
+    ! NOTE:  now we solve for the remainder, (r^2 * delta w0)
     ! this takes the form of a tri-diagonal matrix:
     ! A_j (r^2 dw_0)_{j-3/2} + 
     ! B_j (r^2 dw_0)_{j-1/2} + 
@@ -305,9 +305,9 @@ contains
     F   = ZERO
     u   = ZERO
    
-    ! Note that we are solving for (r^2 w0), not just w0. 
+    ! Note that we are solving for (r^2 delta w0), not just w0. 
 
-    do r=1,nr_fine
+    do r=1,nr_fine-1
        A(r) = gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(1,r-1)**2
        A(r) = A(r) / dr(1)**2
     end do
@@ -320,12 +320,12 @@ contains
        B(r) = B(r) - four * dpdr / (r_edge_loc(1,r))**3
     end do
 
-    do r = 0,nr_fine-1
+    do r=1,nr_fine-1
        C(r) = gamma1bar_nph(r) * p0_nph(r) / r_cc_loc(1,r)**2
        C(r) = C(r) / dr(1)**2
     end do
 
-    do r = 1,nr_fine-1
+    do r=1,nr_fine-1
        dpdr = (p0_nph(r)-p0_nph(r-1))/dr(1)
        F(r) = four * dpdr * w0_from_Sbar(r) / r_edge_loc(1,r) - &
               grav_edge(1,r) * (r_cc_loc(1,r  )**2 * etarho_cc(r  ) - &
@@ -336,19 +336,16 @@ contains
     end do
 
     ! Lower boundary
-       B(0) = one
-       C(0) = zero
-       F(0) = zero
+    A(0) = zero
+    B(0) = one
+    C(0) = zero
+    F(0) = zero
 
     ! Upper boundary
-!       A(nr_fine) = zero
-!       B(nr_fine) =  one
-!       F(nr_fine) = zero
-
-! these are the BCs specified in flowchart.tex
-       A(nr_fine) = -one
-       B(nr_fine) =  one
-       F(nr_fine) = zero
+    A(nr_fine) = -one
+    B(nr_fine) = one
+    C(nr_fine) = zero
+    F(nr_fine) = zero
 
     ! Call the tridiagonal solver
     call tridiag(A, B, C, F, u, nr_fine+1)
