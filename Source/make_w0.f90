@@ -220,7 +220,7 @@ contains
                                gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
                                etarho_ec,etarho_cc,w0_force,dt,dtold)
 
-    use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr
+    use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr, base_cutoff_density_coord
     use make_grav_module
     use bl_constants_module
     use fundamental_constants_module, only: Gconst
@@ -261,7 +261,7 @@ contains
     real(kind=dp_t) :: grav_edge(1,0:nr_fine-1)
 
     ! create time-centered base-state quantities
-    do r = 0, nr_fine-1
+    do r=0,nr_fine-1
        p0_nph(r)        = HALF*(p0_old(r)        + p0_new(r))
        rho0_nph(1,r)    = HALF*(rho0_old(r)      + rho0_new(r))
        gamma1bar_nph(r) = HALF*(gamma1bar_old(r) + gamma1bar_new(r))       
@@ -285,10 +285,9 @@ contains
 
     end do
 
-    do r = 1,nr_fine
+    do r=1,nr_fine
        w0_from_Sbar(r) = w0_from_Sbar(r) / r_edge_loc(1,r)**2
     end do
-
 
     ! make the edge-centered gravity
     call make_grav_edge(grav_edge,rho0_nph)
@@ -307,12 +306,12 @@ contains
    
     ! Note that we are solving for (r^2 delta w0), not just w0. 
 
-    do r=1,nr_fine-1
+    do r=1,base_cutoff_density_coord(1)
        A(r) = gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(1,r-1)**2
        A(r) = A(r) / dr(1)**2
     end do
 
-    do r=1,nr_fine-1
+    do r=1,base_cutoff_density_coord(1)
        B(r) = -( gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(1,r-1)**2 &
                 +gamma1bar_nph(r  ) * p0_nph(r  ) / r_cc_loc(1,r  )**2 ) / dr(1)**2 
 
@@ -320,12 +319,12 @@ contains
        B(r) = B(r) - four * dpdr / (r_edge_loc(1,r))**3
     end do
 
-    do r=1,nr_fine-1
+    do r=1,base_cutoff_density_coord(1)
        C(r) = gamma1bar_nph(r) * p0_nph(r) / r_cc_loc(1,r)**2
        C(r) = C(r) / dr(1)**2
     end do
 
-    do r=1,nr_fine-1
+    do r=1,base_cutoff_density_coord(1)
        dpdr = (p0_nph(r)-p0_nph(r-1))/dr(1)
        F(r) = four * dpdr * w0_from_Sbar(r) / r_edge_loc(1,r) - &
               grav_edge(1,r) * (r_cc_loc(1,r  )**2 * etarho_cc(r  ) - &
@@ -342,21 +341,26 @@ contains
     F(0) = zero
 
     ! Upper boundary
-    A(nr_fine) = -one
-    B(nr_fine) = one
-    C(nr_fine) = zero
-    F(nr_fine) = zero
+    A(base_cutoff_density_coord(1)+1) = -one
+    B(base_cutoff_density_coord(1)+1) = one
+    C(base_cutoff_density_coord(1)+1) = zero
+    F(base_cutoff_density_coord(1)+1) = zero
 
     ! Call the tridiagonal solver
-    call tridiag(A, B, C, F, u, nr_fine+1)
+    call tridiag(A, B, C, F, u, base_cutoff_density_coord(1)+2)
 
     w0(0) = ZERO
-    do r=1,nr_fine
+    do r=1,base_cutoff_density_coord(1)+1
        w0(r) = u(r) / r_edge_loc(1,r)**2
     end do
 
-    do r=0,nr_fine
+    do r=0,base_cutoff_density_coord(1)+1
        w0(r) = w0(r) + w0_from_Sbar(r)
+    end do
+
+    do r=base_cutoff_density_coord(1)+2,nr_fine
+       w0(r) = w0(base_cutoff_density_coord(1)+1)&
+            *r_edge_loc(1,base_cutoff_density_coord(1)+1)**2/r_edge_loc(1,r)**2
     end do
 
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
