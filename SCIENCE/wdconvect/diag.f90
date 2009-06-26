@@ -2,8 +2,12 @@
 ! 
 ! currently, there are 4 output files:
 !
-!   wdconvect_enuc_diag.out:t
-!          peak nuc energy / g / s
+!   wdconvect_enuc_diag.out:
+!          peak nuc energy generation rate (erg / g / s)
+!          x/y/z location of peak enuc
+!          velocity components at location of peak enuc
+!          total nuclear energy release (erg / s)
+!          radius of peak enuc
 !
 !   wdconvect_radvel_diag.out:
 !          radial velocity components (std. average & Favre average)
@@ -14,6 +18,7 @@
 !          peak temperature
 !          x/y/z location of peak temperature
 !          velocity components at location of peak temperature
+!          radius of peak temperature
 !
 !   wdconvect_vel_diag.out:
 !          peak total velocity
@@ -99,6 +104,7 @@ contains
 
     real(kind=dp_t) :: kin_ener,  kin_ener_level,  kin_ener_local
     real(kind=dp_t) :: int_ener,  int_ener_level,  int_ener_local
+    real(kind=dp_t) :: nuc_ener,  nuc_ener_level,  nuc_ener_local
 
     real(kind=dp_t) :: U_max,     U_max_level,     U_max_local
     real(kind=dp_t) :: Mach_max,  Mach_max_level,  Mach_max_local
@@ -129,7 +135,8 @@ contains
     real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
 
     real(kind=dp_t) :: max_data_level(3), max_data_local(3)
-    real(kind=dp_t) :: sum_data_level(2*dm+4), sum_data_local(2*dm+4)
+    real(kind=dp_t) :: sum_data_level(2*dm+5), sum_data_local(2*dm+5)
+
 
     integer :: index_max
 
@@ -208,6 +215,7 @@ contains
 
     kin_ener = ZERO
     int_ener = ZERO
+    nuc_ener = ZERO
 
     U_max    = ZERO
     Mach_max  = ZERO
@@ -261,6 +269,9 @@ contains
 
        int_ener_level = ZERO
        int_ener_local = ZERO
+
+       nuc_ener_level = ZERO
+       nuc_ener_local = ZERO
 
        U_max_level = ZERO
        U_max_local = ZERO
@@ -340,7 +351,7 @@ contains
                              vx_Tmax_local, vy_Tmax_local, vz_Tmax_local, &
                              enuc_max_local, xloc_enucmax_local, yloc_enucmax_local, zloc_enucmax_local, &
                              vx_enucmax_local, vy_enucmax_local, vz_enucmax_local, &
-                             kin_ener_local, int_ener_local, &
+                             kin_ener_local, int_ener_local, nuc_ener_local, &
                              U_max_local, Mach_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
@@ -360,7 +371,7 @@ contains
                              vx_Tmax_local, vy_Tmax_local, vz_Tmax_local, &
                              enuc_max_local, xloc_enucmax_local, yloc_enucmax_local, zloc_enucmax_local, &
                              vx_enucmax_local, vy_enucmax_local, vz_enucmax_local, &
-                             kin_ener_local, int_ener_local, &
+                             kin_ener_local, int_ener_local, nuc_ener_local, &
                              U_max_local, Mach_max_local, &
                              mp(:,:,:,1))
              end if
@@ -381,6 +392,7 @@ contains
        sum_data_local(2*dm+2)    = nzones_local
        sum_data_local(2*dm+3)    = kin_ener_local
        sum_data_local(2*dm+4)    = int_ener_local
+       sum_data_local(2*dm+5)    = nuc_ener_local
 
        call parallel_reduce(sum_data_level, sum_data_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
@@ -391,6 +403,7 @@ contains
        nzones_level   = sum_data_level(2*dm+2)
        kin_ener_level = sum_data_level(2*dm+3)
        int_ener_level = sum_data_level(2*dm+4)
+       nuc_ener_level = sum_data_level(2*dm+5)
 
 
        ! pack the quantities that we are taking the max of into a vector
@@ -499,6 +512,7 @@ contains
 
           kin_ener = kin_ener + kin_ener_level
           int_ener = int_ener + int_ener_level
+          nuc_ener = nuc_ener + nuc_ener_level
 
           U_max    = max(U_max,    U_max_level)
           Mach_max = max(Mach_max, Mach_max_level)
@@ -607,6 +621,7 @@ contains
     mass = mass*dx(1,1)*dx(1,2)*dx(1,3)
     kin_ener = kin_ener*dx(1,1)*dx(1,2)*dx(1,3)
     int_ener = int_ener*dx(1,1)*dx(1,2)*dx(1,3)
+    nuc_ener = nuc_ener*dx(1,1)*dx(1,2)*dx(1,3)
 
 
     !=========================================================================
@@ -678,12 +693,12 @@ contains
           write (un3, *) " "
           write (un3, 999) trim(job_name)
           write (un3,1001) "time", "max{enuc}", "x(max{enuc})", "y(max{enuc})", "z(max{enuc})", &
-               "vx(max{enuc})", "vy(max{enuc})", "vz(max{enuc})", "R(max{enuc})"
+               "vx(max{enuc})", "vy(max{enuc})", "vz(max{enuc})", "R(max{enuc})", 'tot nuc ener (erg/s)'
 
           ! vel
           write (un4, *) " "
           write (un4, 999) trim(job_name)
-          write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", "tot. kin. energy", "grav. pot. energy", "tot. int. energy"
+          write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", "tot kin energy", "grav pot energy", "tot int energy"
 
           firstCall = .false.
        endif
@@ -695,7 +710,7 @@ contains
        
        write (un2,1000) time, T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax, vx_Tmax, vy_Tmax, vz_Tmax, Rloc_Tmax
 
-       write (un3,1000) time, enuc_max, xloc_enucmax, yloc_enucmax, zloc_enucmax, vx_enucmax, vy_enucmax, vz_enucmax, Rloc_enucmax
+       write (un3,1000) time, enuc_max, xloc_enucmax, yloc_enucmax, zloc_enucmax, vx_enucmax, vy_enucmax, vz_enucmax, Rloc_enucmax, nuc_ener
 
        write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener
 
@@ -738,7 +753,7 @@ contains
                      vx_Tmax, vy_Tmax, vz_Tmax, &
                      enuc_max,xloc_enucmax,yloc_enucmax,zloc_enucmax, &
                      vx_enucmax, vy_enucmax, vz_enucmax, &
-                     kin_ener,int_ener, &
+                     kin_ener,int_ener,nuc_ener, &
                      U_max,Mach_max, &
                      mask)
 
@@ -766,7 +781,7 @@ contains
     real (kind=dp_t), intent(inout) :: vx_Tmax, vy_Tmax, vz_Tmax
     real (kind=dp_t), intent(inout) :: enuc_max, xloc_enucmax, yloc_enucmax, zloc_enucmax
     real (kind=dp_t), intent(inout) :: vx_enucmax, vy_enucmax, vz_enucmax
-    real (kind=dp_t), intent(inout) :: kin_ener, int_ener
+    real (kind=dp_t), intent(inout) :: kin_ener, int_ener, nuc_ener
     real (kind=dp_t), intent(inout) :: U_max, Mach_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
@@ -871,9 +886,10 @@ contains
                          do_diag)
 
 
-                ! kinetic and internal energies
+                ! kinetic, internal, and nuclear energies
                 kin_ener = kin_ener + weight*s(i,j,k,rho_comp)*vel**2
                 int_ener = int_ener + weight*s(i,j,k,rho_comp)*e_eos(1)               
+                nuc_ener = nuc_ener + weight*rho_Hnuc(i,j,k)
 
 
                 ! max vel and Mach number
