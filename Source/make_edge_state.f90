@@ -40,8 +40,8 @@ contains
      real(kind=dp_t), intent(in   ) :: force(:,0:)
      real(kind=dp_t), intent(in   ) :: dt
      
-     real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag
-     real(kind=dp_t) :: ubardth,dth,dtdr,savg,u,sigmap,sigmam,s6
+     real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag,ubardth,dth,dtdr,savg,u
+     real(kind=dp_t) :: sigmap,sigmam,s6,D2,D2L,D2R,D2C,D2LIM,C,alphap,alpham,dI,sgn
      
      integer :: r,lo,hi,n,i
 
@@ -65,6 +65,9 @@ contains
      dtdr = dt/dr(1)
 
      dxvl = ZERO
+
+     ! constant used in Colella 2008
+     C = 1.25d0
 
      if (ppm_type .eq. 0) then
         
@@ -152,7 +155,7 @@ contains
               hi = r_end_coord(n,i)
         
               ! compute van Leer slopes away from domain boundaries
-              ! leave val Leer slopes at domain boundaries set to zero
+              ! leave van Leer slopes at domain boundaries set to zero
               do r=lo-1,hi+1
                  if (r .gt. 0 .and. r .lt. nr(n)-1) then
                     del  = HALF * (s(n,r+1) - s(n,r-1))
@@ -181,14 +184,51 @@ contains
         
      else if (ppm_type .eq. 2) then
 
-
         ! interpolate s to radial edges, store these temporary values into sedgel
-        !
-        !
 
-        ! store centered differences in dxvl
-        !
-        !
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
+
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
+
+              ! store centered differences in dxvl
+              ! leave slopes at domain boundaries set to zero
+              do r=lo-1,hi+1
+                 if (r .gt. 0 .and. r .lt. nr(n)-1) then
+                    dxvl(n,r) = HALF * (s(n,r+1) - s(n,r-1))
+                 end if
+              end do
+
+              ! 4th order interpolation of s to radial faces
+              do r=lo,hi+1
+                 if (r .eq. 0) then
+                    sedgel(n,r) = s(n,r)
+                 else if (r .eq. nr(n)) then
+                    sedgel(n,r) = s(n,r-1)
+                 else
+                    sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
+                    if (r .ge. 2 .and. r .le. nr(n)-2) then
+                       ! if sedge is not in between the neighboring s values, we limit
+                       if (sedgel(n,r) .lt. min(s(n,r),s(n,r-1)) .or. &
+                            sedgel(n,r) .gt. max(s(n,r),s(n,r-1))) then
+                          D2  = (THREE/dr(1)**2)*(s(n,r-1)-TWO*sedgel(n,r)+s(n,r))
+                          D2L = (ONE/dr(1)**2)*(s(n,r-2)-TWO*s(n,r-1)+s(n,r))
+                          D2R = (ONE/dr(1)**2)*(s(n,r-1)-TWO*s(n,r)+s(n,r+1))
+                          if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                               sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                             sedgel(n,r) = HALF*(s(n,r-1)+s(n,r)) - (dr(1)**2/THREE) &
+                                  *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
+                          else
+                             sedgel(n,r) = HALF*(s(n,r-1)+s(n,r))
+                          end if
+                       end if
+                    end if
+                 end if
+              end do
+
+           end do
+        end do 
 
      else
         call bl_error("make_edge_state_1d: unknown ppm_type")
@@ -239,9 +279,55 @@ contains
 
      else if (ppm_type .eq. 2) then
 
-        !
-        !
-        !
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
+
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
+
+              ! modify using Colella 2008 limiters
+              if (r .ge. 2 .and. r .le. nr(n)-3) then
+                 if ((sp(n,r)-s(n,r))*(s(n,r)-sm(n,r)) .le. ZERO .or. &
+                      (s(n,r+1)-s(n,r))*(s(n,r)-s(n,r-1)) .le. ZERO ) then
+                    s6 = SIX*s(n,r) - THREE*(sm(n,r)+sp(n,r))
+                    D2  = -TWO*s6/dr(1)**2
+                    D2C = (ONE/dr(1)**2)*(s(n,r-1)-TWO*s(n,r)+s(n,r+1))
+                    D2L = (ONE/dr(1)**2)*(s(n,r-2)-TWO*s(n,r-1)+s(n,r))
+                    D2R = (ONE/dr(1)**2)*(s(n,r)-TWO*s(n,r+1)+s(n,r+2))
+                    if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
+                         sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                         sign(ONE,D2) .eq. sign(ONE,D2R) .and. &
+                         D2 .ne. ZERO) then
+                       D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
+                       sp(n,r) = s(n,r) + (sp(n,r)-s(n,r))*(D2LIM/D2)
+                       sm(n,r) = s(n,r) + (sm(n,r)-s(n,r))*(D2LIM/D2)
+                    else
+                       sp(n,r) = s(n,r)
+                       sm(n,r) = s(n,r)
+                    end if
+                 else
+                    alphap = sp(n,r)-s(n,r)
+                    alpham = sm(n,r)-s(n,r)
+                    if (abs(alphap) .ge. TWO*abs(alpham)) then
+                       dI = -alphap**2 / (FOUR*(alphap+alpham))
+                       ds = s(n,r+1)-s(n,r)
+                       sgn = sign(ONE,s(n,r+1)-s(n,r-1))
+                       if (sgn*dI .ge. sgn*ds) then
+                          sp(n,r) = s(n,r) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
+                       end if
+                    else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                       dI = -alpham**2 / (FOUR*(alphap+alpham))
+                       ds = s(n,r-1)-s(n,r)
+                       sgn = sign(ONE,s(n,r+1)-s(n,r-1))
+                       if (sgn*dI .ge. sgn*ds) then
+                          sm(n,r) = s(n,r) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
+                       end if
+                    end if
+                 end if
+              end if
+
+           end do
+        end do
 
      end if
 
