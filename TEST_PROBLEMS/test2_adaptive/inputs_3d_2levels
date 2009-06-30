@@ -8,6 +8,7 @@
  n_cellz = 256
  regrid_int = 2
  max_grid_size = 32
+ min_width = 4
 
  prob_hi_x = 1.44e8
  prob_hi_y = 1.44e8
