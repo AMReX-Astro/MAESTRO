@@ -12,16 +12,6 @@ pidfile=process.pid
 plt_prefix=plt
 chk_prefix=chk
 
-
-# set the full name of the analysis routines -- note, these need to be in 
-# the working directory so compute nodes can access them.
-fwdconvect=./fwdconvect.Linux.PathScale.exe
-fsnapshot3d=./fsnapshot3d.Linux.PathScale.exe
-
-# set the name of the variable we want to process with fsnapshot
-pvar=radial_velocity
-
-
 # directory to archive to on HPSS -- set this to the working directory
 work_dir=`pwd`
 HPSS_DIR=`basename $work_dir`
@@ -60,18 +50,6 @@ N=60
 
 if [ ! -d plotfiles ]; then
   mkdir plotfiles
-fi
-
-
-# also create directories to hold the images and .averages file 
-# produced -- this just keeps the run directory clean
-
-if [ ! -d images ]; then
-  mkdir images
-fi
-
-if [ ! -d averages ]; then
-  mkdir averages
 fi
 
 
@@ -123,14 +101,6 @@ function process_files
 
         # do processing
 
-        echo "running fwdconvect on ${dir}"
-        ${fwdconvect} -p ${dir} -s ${dir}.averages
-
-        echo "running fsnapshot3d on ${dir}"
-        ${fsnapshot3d} -p ${dir} -n 1 -cname "${pvar}" -m -1.e6 -M 1.e6
-        ${fsnapshot3d} -p ${dir} -n 2 -cname "${pvar}" -m -1.e6 -M 1.e6
-        ${fsnapshot3d} -p ${dir} -n 3 -cname "${pvar}" -m -1.e6 -M 1.e6
-
         # store the file on HPSS
         ${HTAR} -cvf ${HPSS_DIR}/${dir}.tar ${dir} > ${dir}.htar
 
@@ -158,9 +128,6 @@ function process_files
 	  # file there too.
 	  mv ${dir}.processed plotfiles/
 
-	  mv ${dir}.averages averages/
-
-	  mv ${dir}*.ppm images/
         fi
 
       fi   # end test of whether plotfile already processed
@@ -230,9 +197,19 @@ function process_files
 
 
 #----------------------------------------------------------------------------
-# the main loop
+# the main function
 
-# Looping waiting for plt and chk directories to appear.
+# archive any diagnostic files first -- give them a unique name, appending 
+# the date string, to make sure that we don't overwrite anything
+datestr=$(date +"%Y%m%d_%H%M_%S")
+diag_files=$(find . -name "*_diag.out" -print)
+
+if [ "${diag_files}" ]; then
+    ${HTAR} -cvf ${HPSS_DIR}/diag_files_${datestr}.tar ${diag_files} >> /dev/null
+fi
+
+
+# Loop, waiting for plt and chk directories to appear.
 
 while true
 do
