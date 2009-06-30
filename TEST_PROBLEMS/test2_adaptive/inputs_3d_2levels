@@ -3,15 +3,15 @@
  dm_in = 3
 
  max_levs = 2
- n_cellx = 192
+ n_cellx = 128
  n_celly = 128
- n_cellz = 320
+ n_cellz = 256
  regrid_int = 2
  max_grid_size = 32
 
- prob_hi_x = 2.16e8
+ prob_hi_x = 1.44e8
  prob_hi_y = 1.44e8
- prob_hi_z = 3.6e8
+ prob_hi_z = 2.88e8
 
  grav_const = -1.5e10
 

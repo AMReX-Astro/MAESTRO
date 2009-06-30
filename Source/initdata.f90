@@ -458,30 +458,16 @@ contains
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
     real(kind=dp_t) :: temp,t0
-    real(kind=dp_t) :: x0, y0, x1, y1, x2, y2
-    real(kind=dp_t) :: r0, r1, r2
+    real(kind=dp_t) :: x0, y0, r0
 
     t0 = s0_init(temp_comp)
 
-    x0 = 5.0d7
-    y0 = 6.5d7
-    
-    x1 = 1.2d8
-    y1 = 8.5d7
-    
-    x2 = 2.0d8
-    y2 = 7.5d7
+    x0 = 7.2d7
+    y0 = 8.5d7
 
-    ! Tanh bubbles
     r0 = sqrt( (x-x0)**2 +(y-y0)**2 ) / 2.5e6
-    r1 = sqrt( (x-x1)**2 +(y-y1)**2 ) / 2.5e6
-    r2 = sqrt( (x-x2)**2 +(y-y2)**2 ) / 2.5e6
-    
-    ! This case works
-    temp = t0 * (ONE + TWO * ( &
-         .150_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r0))) + &
-         .300_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r1))) + &
-         .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r2)))  ) )
+
+    temp = t0 * (ONE + TWO * (0.15d0 * (1.d0 + tanh((2.d0-r0)))))
           
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
@@ -524,33 +510,17 @@ contains
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
     real(kind=dp_t) :: temp, t0
-    real(kind=dp_t) :: x0, y0, z0, x1, y1, z1, x2, y2, z2
-    real(kind=dp_t) :: r0, r1, r2
+    real(kind=dp_t) :: x0, y0, z0, r0
 
     t0 = s0_init(temp_comp)
 
-    x0 = 5.0d7
+    x0 = 7.2d7
     y0 = 7.2d7
-    z0 = 6.5d7
-    
-    x1 = 1.2d8
-    y1 = 7.2d7
-    z1 = 8.5d7
-    
-    x2 = 2.0d8
-    y2 = 7.2d7
-    z2 = 7.5d7
+    z0 = 8.5d7
 
-    ! Tanh bubbles
     r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) / 2.5e6
-    r1 = sqrt( (x-x1)**2 + (y-y1)**2 + (z-z1)**2 ) / 2.5e6
-    r2 = sqrt( (x-x2)**2 + (y-y2)**2 + (z-z2)**2 ) / 2.5e6
-    
-    ! This case works
-    temp = t0 * (ONE + TWO * ( &
-         .150_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r0))) + &
-         .300_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r1))) + &
-         .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r2)))  ) )
+
+    temp = t0 * (ONE + TWO * (0.15d0 * (1.d0 + tanh((2.d0-r0)))))
 
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure

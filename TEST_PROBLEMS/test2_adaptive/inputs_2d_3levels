@@ -2,13 +2,13 @@
  spherical_in = 0
 
  max_levs = 3
- n_cellx = 96
- n_celly = 160
- max_grid_size = 640
+ n_cellx = 64
+ n_celly = 128
+ max_grid_size = 512
  regrid_int = 2
 
- prob_hi_x = 2.16e8
- prob_hi_y = 3.6e8
+ prob_hi_x = 1.44e8
+ prob_hi_y = 2.88e8
 
  grav_const = -1.5e10
 
