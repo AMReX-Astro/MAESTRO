@@ -1,6 +1,10 @@
 &PROBIN
- test_set = "gr0_2d"
  spherical_in = 0
+
+ max_levs = 1
+ n_cellx = 384
+ n_celly = 640
+ max_grid_size = 640
 
  prob_hi_x = 2.16e8
  prob_hi_y = 3.6e8
@@ -12,6 +16,7 @@
 
  stop_time = 2.5
 
+ plot_base = T
  plot_int  = 10
  chk_int   = 100
 
@@ -37,7 +42,5 @@
 
 !restart = 50
  
- enthalpy_pred_type = 4
-
  use_eos_coulomb = F
 /

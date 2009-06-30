@@ -1,15 +1,11 @@
 &PROBIN
  spherical_in = 0
- plot_base = T
 
-! uncomment for fixed grids
-! test_set = "gr0_2d_2levels"
-
-! uncomment for adaptive grids
  max_levs = 2
  n_cellx = 192
  n_celly = 320
- regrid_int = 1
+ max_grid_size 640
+ regrid_int = 2
 
  prob_hi_x = 2.16e8
  prob_hi_y = 3.6e8
@@ -21,8 +17,9 @@
 
  stop_time = 2.5
 
+ plot_base = T
  plot_int  = 10
- chk_int   = 10
+ chk_int   = 100
 
  cflfac = 0.9
  init_shrink = 1.
@@ -46,7 +43,5 @@
 
 !restart = 50
  
- enthalpy_pred_type = 4
-
  use_eos_coulomb = F
 /

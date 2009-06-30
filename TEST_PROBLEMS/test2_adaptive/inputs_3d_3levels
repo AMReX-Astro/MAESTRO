@@ -1,16 +1,13 @@
 &PROBIN
  spherical_in = 0
- plot_base = T
-
-! adaptive grids
- max_levs = 3
- n_cellx = 48
- n_celly = 32
- n_cellz = 80
- regrid_int = 1
- max_grid_size = 32
-
  dm_in = 3
+
+ max_levs = 3
+ n_cellx = 96
+ n_celly = 64
+ n_cellz = 160
+ regrid_int = 2
+ max_grid_size = 32
 
  prob_hi_x = 2.16e8
  prob_hi_y = 1.44e8
@@ -23,8 +20,9 @@
 
  stop_time = 2.5
 
+ plot_base = T
  plot_int  = 10
- chk_int   = 10
+ chk_int   = 100
 
  cflfac = 0.9
  init_shrink = 1.
@@ -51,7 +49,5 @@
 
 !restart = 50
  
- enthalpy_pred_type = 4
-
  use_eos_coulomb = F
 /
