@@ -237,7 +237,7 @@ contains
     dx_vec(:) = dx
 
     allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx_vec,0,0)
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx_vec,0)
 
     llev = 1; if (present(lev)) llev = lev
 
