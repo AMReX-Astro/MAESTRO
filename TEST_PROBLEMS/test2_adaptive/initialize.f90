@@ -417,6 +417,8 @@ contains
     call restrict_base(rhoh0_old,.true.)
     call fill_ghost_base(rhoh0_old,.true.)
 
+    ! this will be overwritten if we are multilevel or if perturb_model = T
+    ! but we copy it anyway for the initial condition
     tempbar = s0_init(:,:,temp_comp)
     call restrict_base(tempbar,.true.)
     call fill_ghost_base(tempbar,.true.)

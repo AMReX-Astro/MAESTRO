@@ -267,6 +267,9 @@ subroutine varden()
         ! force rhoh0 to be the average of rhoh
         call average(mla,sold,rhoh0_old,dx,rhoh_comp)
 
+        ! force tempbar to be the average of temp
+        call average(mla,sold,tempbar,dx,temp_comp)
+
      end if
 
      !----------------------------------------------------------------------
