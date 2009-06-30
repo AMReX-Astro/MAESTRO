@@ -5,14 +5,14 @@
  max_levs = 3
  n_cellx = 64
  n_celly = 64
- n_cellz = 128
+ n_cellz = 160
  regrid_int = 2
  max_grid_size = 32
  min_width = 4
 
  prob_hi_x = 1.44e8
  prob_hi_y = 1.44e8
- prob_hi_z = 2.88e8
+ prob_hi_z = 3.60e8
 
  grav_const = -1.5e10
 
