@@ -4,7 +4,7 @@
  max_levs = 2
  n_cellx = 192
  n_celly = 320
- max_grid_size 640
+ max_grid_size = 640
  regrid_int = 2
 
  prob_hi_x = 2.16e8
