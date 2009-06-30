@@ -514,8 +514,8 @@ contains
 
     t0 = s0_init(temp_comp)
 
-    x0 = 7.2d7
-    y0 = 7.2d7
+    x0 = 3.6d7
+    y0 = 3.6d7
     z0 = 8.5d7
 
     r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) / 2.5e6
