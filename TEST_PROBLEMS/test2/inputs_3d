@@ -1,4 +1,5 @@
 &PROBIN
+ model = "model.hse.cool"
  spherical_in = 0
  dm_in = 3
 
