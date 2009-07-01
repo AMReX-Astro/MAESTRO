@@ -1,4 +1,4 @@
-! a module for storing the geometric information so we don't have to pass it
+! The sponge acts to damp the velocities at the edge of the star.
 
 module sponge_module
 
