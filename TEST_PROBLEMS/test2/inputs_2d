@@ -1,5 +1,5 @@
 &PROBIN
- model = "model.hse.cool"
+ model_file = "model.hse.cool"
  spherical_in = 0
 
  max_levs = 1
