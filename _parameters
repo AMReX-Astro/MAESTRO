@@ -156,7 +156,7 @@ evolve_base_state                   logical            .true.
 # How we update the base state pressure and compute psi. @@
 # 1 = call {\tt advect\_base\_pres}; @@
 # 2 = call {\tt enforce\_HSE}.
-p0_update_type                      integer            1
+p0_update_type                      integer            2
 
 # Use thermal diffusion.
 use_thermal_diffusion               logical            .false.             
