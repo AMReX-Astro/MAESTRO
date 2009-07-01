@@ -9,6 +9,9 @@
  prob_hi_x = 1.44e8
  prob_hi_y = 3.60e8
 
+ anelastic_cutoff = 1.d5
+ base_cutoff_density = 1.d5
+
  grav_const = -1.5e10
 
  max_step  = 100000000
@@ -43,4 +46,6 @@
 !restart = 50
  
  use_eos_coulomb = F
+
+ ppm_type = 2
 /

@@ -6,13 +6,16 @@
  n_cellx = 64
  n_celly = 64
  n_cellz = 320
- regrid_int = 2
+ regrid_int = 4
  max_grid_size = 32
  min_width = 4
 
  prob_hi_x = 7.2e7
  prob_hi_y = 7.2e7
  prob_hi_z = 3.6e8
+
+ anelastic_cutoff = 1.d5
+ base_cutoff_density = 1.d5
 
  grav_const = -1.5e10
 
@@ -51,4 +54,6 @@
 !restart = 50
  
  use_eos_coulomb = F
+
+ ppm_type = 2
 /
