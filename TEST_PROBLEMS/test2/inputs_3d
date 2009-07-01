@@ -12,8 +12,8 @@
  prob_hi_y = 7.2e7
  prob_hi_z = 3.6e8
 
- anelastic_cutoff = 1.d5
- base_cutoff_density = 1.d5
+ anelastic_cutoff = 3.d6
+ base_cutoff_density = 3.d6
  
  grav_const = -1.5e10
 
