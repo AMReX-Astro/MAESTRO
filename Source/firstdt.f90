@@ -27,7 +27,8 @@ contains
 
     use geometry, only: dm, nlevs, spherical
     use variables, only: rel_eps
-    use probin_module, only: init_shrink, verbose
+    use bl_constants_module
+    use probin_module, only: init_shrink, verbose, edge_nodal_flag
     use mk_vel_force_module
 
     type(ml_layout), intent(inout) :: mla
@@ -46,6 +47,9 @@ contains
     real(kind=dp_t), intent(  out) :: dt
 
     type(multifab) :: force(nlevs)
+    type(multifab) :: umac_dummy(nlevs,dm)
+
+    logical :: is_final_update
     
     real(kind=dp_t), pointer::   uop(:,:,:,:)
     real(kind=dp_t), pointer::   sop(:,:,:,:)
@@ -53,14 +57,32 @@ contains
     real(kind=dp_t), pointer:: divup(:,:,:,:)
 
     integer         :: lo(dm),hi(dm),ng_u,ng_s,ng_f,ng_dU,i,n
+    integer         :: comp
     real(kind=dp_t) :: dt_proc,dt_grid,dt_lev
     real(kind=dp_t) :: umax,umax_proc,umax_grid
     
     do n=1,nlevs
        call multifab_build(force(n), mla%la(n), dm, 1)
+
+       ! create an empty umac so we can call the vel force routine --
+       ! this will not be used
+       do comp=1,dm
+          call multifab_build(umac_dummy(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+          call setval(umac_dummy(n,comp), ZERO, all=.true.)
+       end do
+
     end do
     
-    call mk_vel_force(force,u,gpres,s,normal,rho0,grav,dx,the_bc_level,mla)
+    is_final_update = .false.
+    call mk_vel_force(force,is_final_update, &
+                      u,umac_dummy,gpres,s,normal, &
+                      rho0,grav,dx,the_bc_level,mla)
+
+    do n=1,nlevs
+       do comp=1,dm
+          call destroy(umac_dummy(n,comp))
+       end do
+    end do
 
     ng_u  =     u(1)%ng
     ng_s  =     s(1)%ng

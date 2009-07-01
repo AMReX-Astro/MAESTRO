@@ -4,6 +4,10 @@ module mk_vel_force_module
   ! equations.  This is used both when predicting the interface
   ! states and in the final, conservative update.
 
+  ! for the final conservative update of the velocity, we need to
+  ! time-center the Coriolis term ( -2 omega x U ), which means we
+  ! should use umac.  This is selected by setting is_final_update = T
+
   use multifab_module
   use define_bc_module
   use ml_layout_module
@@ -15,7 +19,9 @@ module mk_vel_force_module
 
 contains
 
-  subroutine mk_vel_force(vel_force,uold,gpres,s,normal,rho0,grav,dx,the_bc_level,mla)
+  subroutine mk_vel_force(vel_force,is_final_update, &
+                          uold,umac,gpres,s,normal, &
+                          rho0,grav,dx,the_bc_level,mla)
 
     use bl_prof_module
     use geometry, only: spherical, dm, nlevs
@@ -26,7 +32,9 @@ contains
     use multifab_physbc_module
 
     type(multifab) , intent(inout) :: vel_force(:)
+    logical        , intent(in   ) :: is_final_update
     type(multifab) , intent(in   ) :: uold(:)
+    type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: gpres(:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: normal(:)
@@ -37,12 +45,16 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     ! Local variables
-    real(kind=dp_t), pointer:: uop(:,:,:,:)
-    real(kind=dp_t), pointer:: gpp(:,:,:,:)
-    real(kind=dp_t), pointer:: fp(:,:,:,:)
-    real(kind=dp_t), pointer:: rp(:,:,:,:)
-    real(kind=dp_t), pointer:: np(:,:,:,:)
-    integer                 :: i,lo(dm),hi(dm),ng_s,ng_f,ng_n,ng_gp,n,ng_uo
+    real(kind=dp_t), pointer :: uop(:,:,:,:)
+    real(kind=dp_t), pointer :: ump(:,:,:,:)
+    real(kind=dp_t), pointer :: vmp(:,:,:,:)
+    real(kind=dp_t), pointer :: wmp(:,:,:,:)
+    real(kind=dp_t), pointer :: gpp(:,:,:,:)
+    real(kind=dp_t), pointer :: fp(:,:,:,:)
+    real(kind=dp_t), pointer :: rp(:,:,:,:)
+    real(kind=dp_t), pointer :: np(:,:,:,:)
+    integer                  :: i,lo(dm),hi(dm)
+    integer                  :: ng_s,ng_f,ng_n,ng_gp,n,ng_uo,ng_um
 
     type(bl_prof_timer), save :: bpt
 
@@ -68,14 +80,23 @@ contains
              ng_uo = uold(1)%ng
              uop => dataptr(uold(n),i)
 
+             ng_um = umac(1,1)%ng
+             ump => dataptr(umac(n,1),i)
+             vmp => dataptr(umac(n,2),i)
+             wmp => dataptr(umac(n,3),i)
+
              if (spherical .eq. 1) then
                 ng_n = normal(1)%ng
                 np => dataptr(normal(n), i)
-                call mk_vel_force_3d_sphr(fp(:,:,:,:),ng_f,uop(:,:,:,:),ng_uo, &
+                call mk_vel_force_3d_sphr(fp(:,:,:,:),ng_f,is_final_update, &
+                                          uop(:,:,:,:),ng_uo, &
+                                          ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,rho_comp),ng_s, &
                                           np(:,:,:,:),ng_n,rho0(1,:),grav(1,:),lo,hi,dx(n,:))
              else
-                call mk_vel_force_3d_cart(fp(:,:,:,:),ng_f,uop(:,:,:,:),ng_uo, &
+                call mk_vel_force_3d_cart(fp(:,:,:,:),ng_f,is_final_update, &
+                                          uop(:,:,:,:),ng_uo, &
+                                          ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,rho_comp),ng_s, &
                                           rho0(n,:),grav(n,:),lo,hi)
              end if
@@ -150,15 +171,23 @@ contains
 
   end subroutine mk_vel_force_2d
 
-  subroutine mk_vel_force_3d_cart(vel_force,ng_f,uold,ng_uo,gpres,ng_gp,rho,ng_s,rho0,grav,lo,hi)
+  subroutine mk_vel_force_3d_cart(vel_force,ng_f,is_final_update, &
+                                  uold,ng_uo, &
+                                  umac,vmac,wmac,ng_um, &
+                                  gpres,ng_gp,rho,ng_s, &
+                                  rho0,grav,lo,hi)
 
     use variables, only: rho_comp
     use geometry,  only: sin_theta, cos_theta, omega, centrifugal_term
     use bl_constants_module
 
-    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s, ng_uo
+    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s, ng_uo, ng_um
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
+    logical        , intent(in   ) :: is_final_update
     real(kind=dp_t), intent(in   ) ::      uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
+    real(kind=dp_t), intent(in   ) ::      umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::      vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::      wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
@@ -176,14 +205,37 @@ contains
           do i = lo(1),hi(1)
 
              rhopert = rho(i,j,k) - rho0(k)
+             
+             if (is_final_update) then
 
-             coriolis_term(1) = -TWO * omega * uold(i,j,k,2) * cos_theta
-             coriolis_term(2) =  TWO * omega * (uold(i,j,k,3) * sin_theta + uold(i,j,k,1) * cos_theta)
-             coriolis_term(3) = -TWO * omega * uold(i,j,k,2) * sin_theta
+                ! use umac so we are time-centered
+                coriolis_term(1) = -TWO * omega * &
+                     HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * cos_theta
 
-             vel_force(i,j,k,1) = -coriolis_term(1) - centrifugal_term(1) - gpres(i,j,k,1) / rho(i,j,k) 
-             vel_force(i,j,k,2) = -coriolis_term(2) - centrifugal_term(2) - gpres(i,j,k,2) / rho(i,j,k) 
-             vel_force(i,j,k,3) = -coriolis_term(3) - centrifugal_term(3) + ( rhopert * grav(k) - gpres(i,j,k,3) ) / rho(i,j,k)
+                coriolis_term(2) =  TWO * omega * &
+                     (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) * sin_theta + &
+                      HALF*(umac(i,j,k) + umac(i+1,j,k)) * cos_theta)
+
+                coriolis_term(3) = -TWO * omega * &
+                     HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * sin_theta
+
+             else
+                coriolis_term(1) = -TWO * omega * uold(i,j,k,2) * cos_theta
+
+                coriolis_term(2) =  TWO * omega * (uold(i,j,k,3) * sin_theta + &
+                                                   uold(i,j,k,1) * cos_theta)
+
+                coriolis_term(3) = -TWO * omega * uold(i,j,k,2) * sin_theta
+             endif
+
+             vel_force(i,j,k,1) = -coriolis_term(1) - centrifugal_term(1) - &
+                  gpres(i,j,k,1) / rho(i,j,k) 
+
+             vel_force(i,j,k,2) = -coriolis_term(2) - centrifugal_term(2) - &
+                  gpres(i,j,k,2) / rho(i,j,k) 
+
+             vel_force(i,j,k,3) = -coriolis_term(3) - centrifugal_term(3) + &
+                  ( rhopert * grav(k) - gpres(i,j,k,3) ) / rho(i,j,k)
 
           end do
        end do
@@ -191,17 +243,24 @@ contains
 
   end subroutine mk_vel_force_3d_cart
 
-  subroutine mk_vel_force_3d_sphr(vel_force,ng_f,uold,ng_uo,gpres,ng_gp,rho,ng_s,normal, &
-                                  ng_n,rho0,grav,lo,hi,dx)
+  subroutine mk_vel_force_3d_sphr(vel_force,ng_f,is_final_update, &
+                                  uold,ng_uo, &
+                                  umac,vmac,wmac,ng_um, &
+                                  gpres,ng_gp,rho,ng_s, &
+                                  normal,ng_n,rho0,grav,lo,hi,dx)
 
     use variables, only: rho_comp
     use fill_3d_module
     use bl_constants_module
     use geometry,  only: omega, center
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_n,ng_uo
+    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_n,ng_uo,ng_um
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
+    logical        , intent(in   ) :: is_final_update
     real(kind=dp_t), intent(in   ) ::      uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
+    real(kind=dp_t), intent(in   ) ::      umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::      vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::      wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::    normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
@@ -246,14 +305,29 @@ contains
 
              ! 2 omega x U = - 2 omega v e_x  + 2 omega u e_y
              ! (with omega = omega e_z)
-             coriolis_term(1) = -TWO * omega * uold(i,j,k,2)
-             coriolis_term(2) =  TWO * omega * uold(i,j,k,1)
-             coriolis_term(3) = ZERO
+             if (is_final_update) then
+
+                ! use umac so we are time-centered
+                coriolis_term(1) = -TWO * omega * &
+                     HALF*(vmac(i,j,k) + vmac(i,j+1,k))
+
+                coriolis_term(2) =  TWO * omega * &
+                     HALF*(umac(i,j,k) + umac(i+1,j,k))
+
+                coriolis_term(3) = ZERO
+
+             else
+                coriolis_term(1) = -TWO * omega * uold(i,j,k,2)
+                coriolis_term(2) =  TWO * omega * uold(i,j,k,1)
+                coriolis_term(3) = ZERO
+             endif
 
              vel_force(i,j,k,1) = -coriolis_term(1) - centrifugal_term(1) + &
                   ( rhopert * grav_cart(i,j,k,1) - gpres(i,j,k,1) ) / rho(i,j,k)
+
              vel_force(i,j,k,2) = -coriolis_term(2) - centrifugal_term(2) + &
                   ( rhopert * grav_cart(i,j,k,2) - gpres(i,j,k,2) ) / rho(i,j,k)
+
              vel_force(i,j,k,3) = -coriolis_term(3) - centrifugal_term(3) + &
                   ( rhopert * grav_cart(i,j,k,3) - gpres(i,j,k,3) ) / rho(i,j,k)
 

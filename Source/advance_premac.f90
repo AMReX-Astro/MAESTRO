@@ -43,6 +43,7 @@ contains
     type(multifab) ::  force(nlevs)
     type(multifab) :: utrans(nlevs,dm)
     integer        :: n,comp
+    logical        :: is_final_update
 
     type(bl_prof_timer), save :: bpt
 
@@ -55,8 +56,10 @@ contains
     !*************************************************************
     !     Create force, initializing with pressure gradient and buoyancy terms.
     !*************************************************************
-
-    call mk_vel_force(force,uold,gpres,sold,normal,rho0(:,:),grav_cell,dx,the_bc_level,mla)
+    is_final_update = .false.
+    call mk_vel_force(force,is_final_update, &
+                      uold,umac,gpres,sold,normal, &
+                      rho0(:,:),grav_cell,dx,the_bc_level,mla)
 
     call add_w0_force(force,w0_force,w0_force_cart_vec,the_bc_level,mla)
 

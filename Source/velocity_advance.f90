@@ -50,6 +50,7 @@ contains
     type(multifab)  :: force(nlevs)
     type(multifab)  :: uedge(nlevs,dm)
     logical         :: is_vel
+    logical         :: is_final_update
     integer         :: velpred,n,comp
     real(kind=dp_t) :: smin,smax
 
@@ -68,8 +69,10 @@ contains
     !     Create the velocity forcing term at time n using rho 
     !********************************************************
 
-    call mk_vel_force(force,uold,gpres,sold,normal,rho0_old,grav_cell_old, &
-                      dx,the_bc_level,mla)
+    is_final_update = .false.
+    call mk_vel_force(force,is_final_update, &
+                      uold,umac,gpres,sold,normal, &
+                      rho0_old,grav_cell_old,dx,the_bc_level,mla)
 
     call add_w0_force(force,w0_force,w0_force_cart_vec,the_bc_level,mla)
 
@@ -102,8 +105,10 @@ contains
     !     Now create the force at half-time using rhohalf 
     !********************************************************
 
-    call mk_vel_force(force,uold,gpres,rhohalf,normal,rho0_nph,grav_cell_nph, &
-                      dx,the_bc_level,mla)
+    is_final_update = .true.
+    call mk_vel_force(force,is_final_update, &
+                      uold,umac,gpres,rhohalf,normal, &
+                      rho0_nph,grav_cell_nph,dx,the_bc_level,mla)
 
     call add_w0_force(force,w0_force,w0_force_cart_vec,the_bc_level,mla)
 

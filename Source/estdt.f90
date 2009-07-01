@@ -32,6 +32,7 @@ contains
     use bl_prof_module
     use geometry, only: spherical, dm, nlevs
     use variables, only: rel_eps
+    use bl_constants_module
     use mk_vel_force_module
     use fill_3d_module
     use probin_module, only: edge_nodal_flag
@@ -54,8 +55,11 @@ contains
     real(kind=dp_t), intent(in ) :: cflfac
     real(kind=dp_t), intent(out) :: dt
     
-    type(multifab) :: force(nlevs)
-    type(multifab) :: w0mac(nlevs,dm)
+    type(multifab) ::      force(nlevs)
+    type(multifab) ::      w0mac(nlevs,dm)
+    type(multifab) :: umac_dummy(nlevs,dm)
+
+    logical :: is_final_update
 
     real(kind=dp_t), pointer::   uop(:,:,:,:)
     real(kind=dp_t), pointer::   sop(:,:,:,:)
@@ -81,9 +85,26 @@ contains
     
     do n=1,nlevs
        call multifab_build(force(n), mla%la(n), dm, 1)
+
+       ! create an empty umac so we can call the vel force routine --
+       ! this will not be used
+       do comp=1,dm
+          call multifab_build(umac_dummy(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+          call setval(umac_dummy(n,comp), ZERO, all=.true.)
+       end do
+ 
     end do
     
-    call mk_vel_force(force,u,gpres,s,normal,rho0,grav,dx,the_bc_tower%bc_tower_array,mla)
+    is_final_update = .false.
+    call mk_vel_force(force,is_final_update, &
+                      u,umac_dummy,gpres,s,normal, &
+                      rho0,grav,dx,the_bc_tower%bc_tower_array,mla)
+
+    do n=1,nlevs
+       do comp=1,dm
+          call destroy(umac_dummy(n,comp))
+       end do
+    end do
 
     if (spherical .eq. 1) then
        do n=1,nlevs
