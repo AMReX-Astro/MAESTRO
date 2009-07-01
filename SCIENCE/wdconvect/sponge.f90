@@ -1,8 +1,9 @@
-! a module for storing the geometric information so we don't have to pass it
+! The sponge acts to damp the velocities at the edge of the star.
 
 module sponge_module
 
   use bl_types
+  use bl_constants_module
   use multifab_module
   use ml_layout_module
 
@@ -19,9 +20,21 @@ contains
 
   subroutine init_sponge(rho0,dx,prob_lo_r)
 
+    ! The sponge has a HALF * ( 1 - cos( (r - r_sp)/L)) profile, where
+    ! the width, L, is r_tp - r_sp.
+    !
+    ! The center of the sponge, r_md, is set to the radius where r =
+    ! sponge_center_density
+    !
+    ! The start of the sponge, r_sp, (moving outward from the center)
+    ! is the radius where r = sponge_start_factor * sponge_center_density
+    ! 
+    ! The top of the sponge is then 2 * r_md - r_tp
+
     use geometry, only: dr, r_end_coord
     use bl_constants_module
-    use probin_module, only: anelastic_cutoff, prob_hi, verbose, sponge_start_factor
+    use probin_module, only: anelastic_cutoff, prob_hi, verbose, &
+         sponge_start_factor, sponge_center_density
 
     real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -33,25 +46,29 @@ contains
     r_top = prob_lo_r + dble(r_end_coord(1,1)+1) * dr(1)
     r_sp = r_top
 
+    ! set r_sp
     do r=0,r_end_coord(1,1)
        rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
-       if (rho0(r) < sponge_start_factor*anelastic_cutoff) then
+       if (rho0(r) < sponge_start_factor*sponge_center_density) then
           r_sp = rloc
           exit
        endif
     enddo
 
+    ! set r_md
     r_md = r_top
     do r=0,r_end_coord(1,1)
        rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
-       if (rho0(r) < anelastic_cutoff) then
+       if (rho0(r) < sponge_center_density) then
           r_md = rloc
           exit
        endif
     enddo
 
-    r_tp = 2.d0 * r_md - r_sp
+    ! set r_tp
+    r_tp = TWO * r_md - r_sp
 
+    ! outer sponge parameters
     r_tp_outer = HALF * max(prob_hi(1),prob_hi(2)) 
     if (size(prob_hi,dim=1) .eq. 2) then
        r_sp_outer = r_tp_outer - 4.d0 * dx(2)
@@ -95,7 +112,7 @@ contains
           hi =  upb(get_box(sponge(n), i))
           select case (dm)
           case (2)
-             call mk_sponge_2d(sp(:,:,1,1),ng_sp,lo,hi,dx(n,:),dt)
+             call bl_error("ERROR: no 2-D sponge implemented")
           case (3)
              call mk_sponge_3d(sp(:,:,:,1),ng_sp,lo,hi,dx(n,:),dt)
           end select
@@ -111,35 +128,6 @@ contains
 
   end subroutine make_sponge
 
-  subroutine mk_sponge_2d(sponge,ng_sp,lo,hi,dx,dt)
-
-    use bl_constants_module
-    use probin_module, only: prob_lo, sponge_kappa
-
-    integer        , intent(in   ) ::  lo(:),hi(:), ng_sp
-    real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:)
-    real(kind=dp_t), intent(in   ) ::     dx(:),dt
-
-    integer         :: j
-    real(kind=dp_t) :: y,smdamp
-
-    sponge = ONE
-
-    do j = lo(2),hi(2)
-       y = prob_lo(2) + (dble(j)+HALF)*dx(2)
-
-       if (y >= r_sp) then
-          if (y < r_tp) then
-             smdamp = HALF*(ONE - cos(M_PI*(y - r_sp)/(r_tp - r_sp)))
-          else
-             smdamp = ONE
-          endif
-          sponge(:,j) = ONE / (ONE + dt * smdamp* sponge_kappa)
-       endif
-
-    end do
-
-  end subroutine mk_sponge_2d
 
   subroutine mk_sponge_3d(sponge,ng_sp,lo,hi,dx,dt)
 
@@ -157,24 +145,16 @@ contains
     sponge = ONE
 
     if (spherical .eq. 0) then
-       do k = lo(3),hi(3)
-          z = prob_lo(3) + (dble(k)+HALF)*dx(3)
-          if (z >= r_sp) then
-             if (z < r_tp) then
-                smdamp = HALF*(ONE - cos(M_PI*(z - r_sp)/(r_tp - r_sp)))
-             else
-                smdamp = ONE
-             endif
-             sponge(:,:,k) = ONE / (ONE + dt * smdamp* sponge_kappa)
-          end if
-       end do
+       call bl_error("ERROR: 3-D Cartesian sponge not implemented")
 
     else
 
        do k = lo(3),hi(3)
           z = prob_lo(3) + (dble(k)+HALF)*dx(3)
+
           do j = lo(2),hi(2)
              y = prob_lo(2) + (dble(j)+HALF)*dx(2)
+
              do i = lo(1),hi(1)
                 x = prob_lo(1) + (dble(i)+HALF)*dx(1)
 
