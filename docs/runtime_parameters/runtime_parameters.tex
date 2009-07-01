@@ -63,13 +63,12 @@
 \verb=  init_divu_iter  = &   Number of initial divu iterations.  &  4 \\
 \verb=  init_iter  = &   Number of initial pressure iterations.  &  4 \\
 \verb=  init_shrink  = &   the multiplicative factor ($\le 1$) to reduce the initial timestep as computed by the various timestep estimators  &  1.0 \\
-\verb=  interp_type_radial_bin_to_cart  = &   The interpolation for filling a full multifab from a 1D bin-centered array. \newline 1 = piecewise constant; \newline 2 = piecewise linear.  &  1 \\
 \verb=  job_name  = &   job name printed in output  &  "" \\
 \verb=  lUsingNFiles  = &   If .true., use nOutFiles processors to write checkpoint and plotfiles. Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  .true. \\
 \verb=  max_dt_growth  = &   The maximum scale factor that the time step is allowed to grow by per time step.  &  1.1D0 \\
 \verb=  max_grid_size  = &    The largest grid size that will be created using make\_new\_grids.  &  64 \\
 \verb=  max_levs  = &   Total number of levels.  1 = single level.  &  1 \\
-\verb=  max_mg_bottom_nlevels  = &   if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have  &  -1 \\
+\verb=  max_mg_bottom_nlevels  = &   if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have  &  1000 \\
 \verb=  max_step  = &   Maximum number of steps in the simulation.  &  1 \\
 \verb=  mg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
 \verb=  mg_verbose  = &   Verbsoity of the multigrid solver, but not the bottom solver.  &  0 \\
@@ -80,7 +79,7 @@
 \verb=  n_cellx  = &   Number of cells for the base level in the x-direction  &  -1 \\
 \verb=  n_celly  = &   Number of cells for the base level in the y-direction  &  -1 \\
 \verb=  n_cellz  = &   Number of cells for the base level in the z-direction  &  -1 \\
-\verb=  p0_update_type  = &   How we update the base state pressure and compute psi. \newline 1 = call {\tt advect\_base\_pres}; \newline 2 = call {\tt enforce\_HSE}.  &  1 \\
+\verb=  p0_update_type  = &   How we update the base state pressure and compute psi. \newline 1 = call {\tt advect\_base\_pres}; \newline 2 = call {\tt enforce\_HSE}.  &  2 \\
 \verb=  perturb_model  = &   Turn on a perturbation in the initial data.  Problem specific.  &  .false. \\
 \verb=  plot_base  = &   plot w0\_x, w0\_y, w0\_z, divw0, rho0, rhoh0, h0, and p0 in plotfile  &  .false. \\
 \verb=  plot_base_name  = &   prefix to use in plotfile file names  &  "plt" \\
@@ -103,6 +102,8 @@
 \verb=  restart  = &   which file to restart from.  -1 means do not restart  &  -1 \\
 \verb=  rotation_radius  = &   radius used for computing centrifugal term in rotation problems  &  1.0e6\_dp\_t \\
 \verb=  rotational_frequency  = &   rotational frequency used for computing centrifugal term in rotation problems.  &  ZERO \\
+\verb=  s0_interp_type  = &   The interpolation for filling a cell-centered multifab from a 1D bin-centered array. \newline 1 = piecewise constant; \newline 2 = piecewise linear.  &  1 \\
+\verb=  s0mac_interp_type  = &   The interpolation for filling an edge based multifab from a 1D bin-centered array. \newline 1 = Interpolate s0 to cell centers, then average to edges; \newline 2 = Interpolate s0 to edges directly;                \newline 3 = Interpolate s0 to nodes, then average to edges.  &  1 \\
 \verb=  single_prec_plotfiles  = &    &  .false. \\
 \verb=  slope_order  = &   order of slopes in Godunov algorithm.  Options are 0, 2, or 4.  &  4 \\
 \verb=  small_dens  = &    &  1.d-5 \\
@@ -125,7 +126,7 @@
 \verb=  use_tfromp  = &   When updating temperature, use $T=T(\rho,p_0,X) $ rather than $T=T(\rho,h,X)$.  &  .false. \\
 \verb=  use_thermal_diffusion  = &   Use thermal diffusion.  &  .false. \\
 \verb=  verbose  = &   General verbosity  &  0 \\
-\verb=  w0mac_interp_type  = &   0 = Compute w0 at edges using a projection; \newline 1 = Interpolate w0 to cell centers, then average to edges; \newline 2 = Interpolate w0 to edges directly;                \newline 3 = Interpolate w0 to nodes, then average to edges.  &  1 \\
+\verb=  w0mac_interp_type  = &   The interpolation for putting w0 on edges.  We only compute the normal component. \newline 1 = Interpolate w0 to cell centers, then average to edges; \newline 2 = Interpolate w0 to edges directly;                \newline 3 = Interpolate w0 to nodes, then average to edges.  &  1 \\
 
 
 \end{longtable}
