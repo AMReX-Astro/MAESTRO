@@ -263,11 +263,7 @@ subroutine varden()
 
         force = ZERO
 
-        if (spherical .eq. 0) then
-           call make_edge_state_1d(X0,edge,w0,force,dt)
-        else
-           call make_edge_state_1d(X0,edge,w0,force,dt)
-        endif
+        call make_edge_state_1d(X0,edge,w0,force,dt)
 
         ! our final update needs (rho X)_0 on the edges, so compute
         ! that now
@@ -435,11 +431,7 @@ subroutine varden()
 
         force = ZERO
 
-        if (spherical .eq. 0) then
-           call make_edge_state_1d(X0,edge,w0,force,dt)
-        else
-           call make_edge_state_1d(X0,edge,w0,force,dt)
-        endif
+        call make_edge_state_1d(X0,edge,w0,force,dt)
 
         ! our final update needs (rho X)_0 on the edges, so compute
         ! that now
