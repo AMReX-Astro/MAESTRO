@@ -77,7 +77,7 @@ contains
 
 
     ! put w0 on cart both cell-centered and on edges
-    if (spherical == 1) then
+    if (spherical .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
              ! w0mac will contain an edge-centered w0 on a Cartesian grid,                                          
@@ -150,6 +150,15 @@ contains
           end select
        end do
     enddo
+
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          do comp=1,dm
+             call destroy(w0mac(n,comp))
+          end do
+          call destroy(w0_cart(n))
+       end do
+    end if
 
     if (nlevs .eq. 1) then
 
