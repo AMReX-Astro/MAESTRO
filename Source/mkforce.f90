@@ -20,7 +20,7 @@ module mk_vel_force_module
 contains
 
   subroutine mk_vel_force(vel_force,is_final_update, &
-                          uold,umac,gpres,s,normal, &
+                          uold,umac,w0,gpres,s,normal, &
                           rho0,grav,dx,the_bc_level,mla)
 
     use bl_prof_module
@@ -30,11 +30,14 @@ contains
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use probin_module, only: edge_nodal_flag
+    use fill_3d_module, only : make_w0mac, put_1d_array_on_cart
 
     type(multifab) , intent(inout) :: vel_force(:)
     logical        , intent(in   ) :: is_final_update
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(in   ) :: umac(:,:)
+    real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: gpres(:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: normal(:)
@@ -45,16 +48,24 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     ! Local variables
-    real(kind=dp_t), pointer :: uop(:,:,:,:)
-    real(kind=dp_t), pointer :: ump(:,:,:,:)
-    real(kind=dp_t), pointer :: vmp(:,:,:,:)
-    real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: gpp(:,:,:,:)
-    real(kind=dp_t), pointer :: fp(:,:,:,:)
-    real(kind=dp_t), pointer :: rp(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
-    integer                  :: i,lo(dm),hi(dm)
+    real(kind=dp_t), pointer ::  uop(:,:,:,:)
+    real(kind=dp_t), pointer ::  ump(:,:,:,:)
+    real(kind=dp_t), pointer ::  vmp(:,:,:,:)
+    real(kind=dp_t), pointer ::  wmp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0cp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0xp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0yp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0zp(:,:,:,:)
+    real(kind=dp_t), pointer ::  gpp(:,:,:,:)
+    real(kind=dp_t), pointer ::   fp(:,:,:,:)
+    real(kind=dp_t), pointer ::   rp(:,:,:,:)
+    real(kind=dp_t), pointer ::   np(:,:,:,:)
+    integer                  :: i,comp,lo(dm),hi(dm)
     integer                  :: ng_s,ng_f,ng_n,ng_gp,n,ng_uo,ng_um
+   
+    type(multifab) :: w0_cart(mla%nlevel)
+    type(multifab) :: w0mac(mla%nlevel,dm)
+    integer :: ng_wc, ng_wm
 
     type(bl_prof_timer), save :: bpt
 
@@ -63,6 +74,34 @@ contains
     ng_s = s(1)%ng
     ng_f = vel_force(1)%ng
     ng_gp = gpres(1)%ng
+
+
+    ! put w0 on cart both cell-centered and on edges
+    if (spherical == 1) then
+       do n=1,nlevs
+          do comp=1,dm
+             ! w0mac will contain an edge-centered w0 on a Cartesian grid,                                          
+             ! for use in computing the Coriolis term in the final update
+             call multifab_build(w0mac(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+             call setval(w0mac(n,comp), ZERO, all=.true.)
+          enddo
+
+          ! w0_cart will contain the cell-centered Cartesian components
+          ! of w0, for use in computing the Coriolis term in the prediction
+          call build(w0_cart(n),mla%la(n),dm,0)
+          call setval(w0_cart(n), ZERO, all=.true.)
+          
+       enddo
+
+       ! fill the edge-centered w0mac
+       call make_w0mac(mla,w0,w0mac,dx,the_bc_level)          
+       ng_wm = w0mac(1,1)%ng
+
+       ! fill the all dm components of the cell-centered w0_cart
+       call put_1d_array_on_cart(w0,w0_cart,foextrap_comp,.true.,.true.,dx,the_bc_level,mla)
+       ng_wc = w0_cart(1)%ng
+
+    endif
 
     do n=1,nlevs
        do i=1,s(n)%nboxes
@@ -88,15 +127,23 @@ contains
              if (spherical .eq. 1) then
                 ng_n = normal(1)%ng
                 np => dataptr(normal(n), i)
+                w0cp  => dataptr(w0_cart(n), i)
+                w0xp  => dataptr(w0mac(n,1),i)
+                w0yp  => dataptr(w0mac(n,2),i)
+                w0zp  => dataptr(w0mac(n,3),i)
+
                 call mk_vel_force_3d_sphr(fp(:,:,:,:),ng_f,is_final_update, &
                                           uop(:,:,:,:),ng_uo, &
                                           ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
+                                          w0cp(:,:,:,:),ng_wc, &
+                                          w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,rho_comp),ng_s, &
                                           np(:,:,:,:),ng_n,rho0(1,:),grav(1,:),lo,hi,dx(n,:))
              else
                 call mk_vel_force_3d_cart(fp(:,:,:,:),ng_f,is_final_update, &
                                           uop(:,:,:,:),ng_uo, &
                                           ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
+                                          w0(n,:), &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,rho_comp),ng_s, &
                                           rho0(n,:),grav(n,:),lo,hi)
              end if
@@ -174,6 +221,7 @@ contains
   subroutine mk_vel_force_3d_cart(vel_force,ng_f,is_final_update, &
                                   uold,ng_uo, &
                                   umac,vmac,wmac,ng_um, &
+                                  w0, &
                                   gpres,ng_gp,rho,ng_s, &
                                   rho0,grav,lo,hi)
 
@@ -188,6 +236,7 @@ contains
     real(kind=dp_t), intent(in   ) ::      umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::      vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::      wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::   w0(0:)
     real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
@@ -246,6 +295,8 @@ contains
   subroutine mk_vel_force_3d_sphr(vel_force,ng_f,is_final_update, &
                                   uold,ng_uo, &
                                   umac,vmac,wmac,ng_um, &
+                                  w0_cart,ng_wc, &
+                                  w0macx,w0macy,w0macz,ng_wm, &
                                   gpres,ng_gp,rho,ng_s, &
                                   normal,ng_n,rho0,grav,lo,hi,dx)
 
@@ -254,13 +305,17 @@ contains
     use bl_constants_module
     use geometry,  only: omega, center
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_n,ng_uo,ng_um
+    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_n,ng_uo,ng_um,ng_wc,ng_wm
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     logical        , intent(in   ) :: is_final_update
     real(kind=dp_t), intent(in   ) ::      uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
     real(kind=dp_t), intent(in   ) ::      umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::      vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::      wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::   w0_cart(lo(1)-ng_wc:,lo(2)-ng_wc:,lo(3)-ng_wc:,:)
+    real(kind=dp_t), intent(in   ) ::    w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) ::    w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) ::    w0macz(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)    
     real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::    normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)

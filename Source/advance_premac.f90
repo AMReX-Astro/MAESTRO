@@ -58,7 +58,7 @@ contains
     !*************************************************************
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      uold,umac,gpres,sold,normal, &
+                      uold,umac,w0,gpres,sold,normal, &
                       rho0(:,:),grav_cell,dx,the_bc_level,mla)
 
     call add_w0_force(force,w0_force,w0_force_cart_vec,the_bc_level,mla)

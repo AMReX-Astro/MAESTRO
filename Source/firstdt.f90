@@ -25,7 +25,7 @@ contains
   subroutine firstdt(mla,the_bc_level,u,gpres,s,divU,normal,rho0,p0,grav,gamma1bar, &
                      dx,cflfac,dt)
 
-    use geometry, only: dm, nlevs, spherical
+    use geometry, only: dm, nlevs, spherical, nr_fine
     use variables, only: rel_eps
     use bl_constants_module
     use probin_module, only: init_shrink, verbose, edge_nodal_flag
@@ -48,7 +48,7 @@ contains
 
     type(multifab) :: force(nlevs)
     type(multifab) :: umac_dummy(nlevs,dm)
-
+    real(kind=dp_t) :: w0_dummy(nlevs,nr_fine)
     logical :: is_final_update
     
     real(kind=dp_t), pointer::   uop(:,:,:,:)
@@ -60,7 +60,7 @@ contains
     integer         :: comp
     real(kind=dp_t) :: dt_proc,dt_grid,dt_lev
     real(kind=dp_t) :: umax,umax_proc,umax_grid
-    
+
     do n=1,nlevs
        call multifab_build(force(n), mla%la(n), dm, 1)
 
@@ -72,10 +72,11 @@ contains
        end do
 
     end do
-    
+    w0_dummy(:,:) = ZERO
+
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      u,umac_dummy,gpres,s,normal, &
+                      u,umac_dummy,w0_dummy,gpres,s,normal, &
                       rho0,grav,dx,the_bc_level,mla)
 
     do n=1,nlevs
