@@ -23,6 +23,7 @@ contains
     use geometry, only: dm, nlevs
     use addw0_module
     use bl_constants_module
+    use variables, only: rho_comp
 
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(in   ) :: sold(:)
@@ -58,7 +59,7 @@ contains
     !*************************************************************
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      uold,umac,w0,gpres,sold,normal, &
+                      uold,umac,w0,gpres,sold,rho_comp,normal, &
                       rho0(:,:),grav_cell,dx,the_bc_level,mla)
 
     call add_w0_force(force,w0_force,w0_force_cart_vec,the_bc_level,mla)

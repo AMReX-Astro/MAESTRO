@@ -20,12 +20,17 @@ module mk_vel_force_module
 contains
 
   subroutine mk_vel_force(vel_force,is_final_update, &
-                          uold,umac,w0,gpres,s,normal, &
+                          uold,umac,w0,gpres,s,index_rho,normal, &
                           rho0,grav,dx,the_bc_level,mla)
+
+    ! index_rho refers to the index into s where the density lives.
+    ! Usually s will be the full state array, and index_rho would
+    ! be rho_comp, but sometimes we pass in only a single-variable
+    ! multifab array, so index_rho may be different.
 
     use bl_prof_module
     use geometry, only: spherical, dm, nlevs
-    use variables, only: foextrap_comp, rho_comp
+    use variables, only: foextrap_comp
     use bl_constants_module
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
@@ -40,6 +45,7 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: gpres(:)
     type(multifab) , intent(in   ) :: s(:)
+    integer                        :: index_rho  
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(in   ) :: grav(:,0:)
@@ -113,7 +119,7 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp,rp(:,:,1,rho_comp), &
+             call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp,rp(:,:,1,index_rho), &
                                   ng_s,rho0(n,:),grav(n,:),lo,hi)
           case (3)
              ng_uo = uold(1)%ng
@@ -137,14 +143,14 @@ contains
                                           ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
                                           w0cp(:,:,:,:),ng_wc, &
                                           w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
-                                          gpp(:,:,:,:),ng_gp,rp(:,:,:,rho_comp),ng_s, &
+                                          gpp(:,:,:,:),ng_gp,rp(:,:,:,index_rho),ng_s, &
                                           np(:,:,:,:),ng_n,rho0(1,:),grav(1,:),lo,hi,dx(n,:))
              else
                 call mk_vel_force_3d_cart(fp(:,:,:,:),ng_f,is_final_update, &
                                           uop(:,:,:,:),ng_uo, &
                                           ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
                                           w0(n,:), &
-                                          gpp(:,:,:,:),ng_gp,rp(:,:,:,rho_comp),ng_s, &
+                                          gpp(:,:,:,:),ng_gp,rp(:,:,:,index_rho),ng_s, &
                                           rho0(n,:),grav(n,:),lo,hi)
              end if
           end select
@@ -199,7 +205,6 @@ contains
 
   subroutine mk_vel_force_2d(vel_force,ng_f,gpres,ng_gp,rho,ng_s,rho0,grav,lo,hi)
 
-    use variables, only: rho_comp
     use bl_constants_module
 
     integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s
@@ -234,7 +239,6 @@ contains
                                   gpres,ng_gp,rho,ng_s, &
                                   rho0,grav,lo,hi)
 
-    use variables, only: rho_comp
     use geometry,  only: sin_theta, cos_theta, omega, centrifugal_term
     use bl_constants_module
 
@@ -310,7 +314,6 @@ contains
                                   gpres,ng_gp,rho,ng_s, &
                                   normal,ng_n,rho0,grav,lo,hi,dx)
 
-    use variables, only: rho_comp
     use fill_3d_module
     use bl_constants_module
     use geometry,  only: omega, center
@@ -410,7 +413,7 @@ contains
 
     use bl_prof_module
     use geometry, only: spherical, dm, nlevs
-    use variables, only: foextrap_comp, rho_comp
+    use variables, only: foextrap_comp
     use bl_constants_module
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
@@ -494,7 +497,6 @@ contains
 
   subroutine add_w0_force_2d(vel_force,ng_f,w0_force,lo,hi)
 
-    use variables, only: rho_comp
     use bl_constants_module
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_f
@@ -513,7 +515,6 @@ contains
 
   subroutine add_w0_force_3d_cart(vel_force,ng_f,w0_force,lo,hi)
 
-    use variables, only: rho_comp
     use bl_constants_module
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_f
@@ -534,7 +535,6 @@ contains
 
   subroutine add_w0_force_3d_sphr(vel_force,ng_f,w0_force_cart,ng_w,lo,hi)
 
-    use variables, only: rho_comp
     use bl_constants_module
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_w

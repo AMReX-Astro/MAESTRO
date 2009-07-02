@@ -71,7 +71,7 @@ contains
 
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      uold,umac,w0,gpres,sold,normal, &
+                      uold,umac,w0,gpres,sold,rho_comp,normal, &
                       rho0_old,grav_cell_old,dx,the_bc_level,mla)
 
     call add_w0_force(force,w0_force,w0_force_cart_vec,the_bc_level,mla)
@@ -107,7 +107,7 @@ contains
 
     is_final_update = .true.
     call mk_vel_force(force,is_final_update, &
-                      uold,umac,w0,gpres,rhohalf,normal, &
+                      uold,umac,w0,gpres,rhohalf,1,normal, &
                       rho0_nph,grav_cell_nph,dx,the_bc_level,mla)
 
     call add_w0_force(force,w0_force,w0_force_cart_vec,the_bc_level,mla)

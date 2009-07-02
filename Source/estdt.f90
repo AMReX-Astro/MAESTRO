@@ -31,7 +31,7 @@ contains
 
     use bl_prof_module
     use geometry, only: spherical, dm, nlevs
-    use variables, only: rel_eps
+    use variables, only: rel_eps, rho_comp
     use bl_constants_module
     use mk_vel_force_module
     use fill_3d_module
@@ -97,7 +97,7 @@ contains
     
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      u,umac_dummy,w0,gpres,s,normal, &
+                      u,umac_dummy,w0,gpres,s,rho_comp,normal, &
                       rho0,grav,dx,the_bc_tower%bc_tower_array,mla)
 
     do n=1,nlevs
