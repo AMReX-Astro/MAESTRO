@@ -488,48 +488,41 @@ contains
           end do
        end if
 
-       if (p0_update_type .eq. 1) then
+       ! set new p0 through HSE
+       p0_new = p0_old
+       call enforce_HSE(rho0_new,p0_new,grav_cell_new)
 
-          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar_1,psi,psi_old,etarho_cc, &
-                                s2,dt,dx,mla)
+       ! make psi
+       if (spherical .eq. 0) then
+          call make_psi_planar(etarho_cc,psi)
+       else
+          ! compute p0_nph
+          p0_nph = HALF*(p0_old+p0_new)
 
-       else if (p0_update_type .eq. 2) then
+          ! compute gamma1bar_2 and store it in gamma1bar_nph
+          do n=1,nlevs
+             call multifab_build(gamma1(n), mla%la(n), 1, 0)
+          end do
 
-          ! set new p0 through HSE
-          p0_new = p0_old
-          call enforce_HSE(rho0_new,p0_new,grav_cell_new)
+          call make_gamma(mla,gamma1,s2,p0_new,dx)
+          call average(mla,gamma1,gamma1bar_nph,dx,1)
 
-          ! make psi
-          if (spherical .eq. 0) then
-             call make_psi_planar(etarho_cc,psi)
-          else
-             ! compute p0_nph
-             p0_nph = HALF*(p0_old+p0_new)
+          do n=1,nlevs
+             call destroy(gamma1(n))
+          end do
 
-             ! compute gamma1bar_2 and store it in gamma1bar_nph
-             do n=1,nlevs
-                call multifab_build(gamma1(n), mla%la(n), 1, 0)
-             end do
-             
-             call make_gamma(mla,gamma1,s2,p0_new,dx)
-             call average(mla,gamma1,gamma1bar_nph,dx,1)
-             
-             do n=1,nlevs
-                call destroy(gamma1(n))
-             end do
+          ! compute gamma1bar_nph
+          gamma1bar_nph = HALF*(gamma1bar_1+gamma1bar_nph)
 
-             ! compute gamma1bar_nph
-             gamma1bar_nph = HALF*(gamma1bar_1+gamma1bar_nph)
-
-             ! make base time and time-centered psi
-             call make_psi_spherical(psi_old,w0,gamma1bar_1  ,p0_old,Sbar)
-             call make_psi_spherical(psi    ,w0,gamma1bar_nph,p0_nph,Sbar)
-          end if
-          
+          ! make base time and time-centered psi
+          call make_psi_spherical(psi_old,w0,gamma1bar_1  ,p0_old,Sbar)
+          call make_psi_spherical(psi    ,w0,gamma1bar_nph,p0_nph,Sbar)
        end if
 
     else
+
        p0_new = p0_old
+
     end if
 
     if (evolve_base_state) then
@@ -926,46 +919,39 @@ contains
     call make_grav_cell(grav_cell_nph,rho0_nph)
 
     if (evolve_base_state) then
+       
+       ! set new p0 through HSE
+       p0_new = p0_old
+       call enforce_HSE(rho0_new,p0_new,grav_cell_new)
+       p0_nph = HALF*(p0_old+p0_new)
 
-       if (p0_update_type .eq. 1) then
-
-          call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar_1,psi,psi_old,etarho_cc, &
-                                s2,dt,dx,mla)
-
-       else if (p0_update_type .eq. 2) then
-
-          ! set new p0 through HSE
-          p0_new = p0_old
-          call enforce_HSE(rho0_new,p0_new,grav_cell_new)
+       ! make psi
+       if (spherical .eq. 0) then
+          call make_psi_planar(etarho_cc,psi)
+       else
           p0_nph = HALF*(p0_old+p0_new)
-          
-          ! make psi
-          if (spherical .eq. 0) then
-             call make_psi_planar(etarho_cc,psi)
-          else
-             p0_nph = HALF*(p0_old+p0_new)
 
-             do n=1,nlevs
-                call multifab_build(gamma1(n), mla%la(n), 1, 0)
-             end do
-             
-             call make_gamma(mla,gamma1,s2,p0_new,dx)
-             call average(mla,gamma1,gamma1bar_nph,dx,1)
-             
-             do n=1,nlevs
-                call destroy(gamma1(n))
-             end do
+          do n=1,nlevs
+             call multifab_build(gamma1(n), mla%la(n), 1, 0)
+          end do
 
-             gamma1bar_nph = HALF*(gamma1bar_1+gamma1bar_nph)
+          call make_gamma(mla,gamma1,s2,p0_new,dx)
+          call average(mla,gamma1,gamma1bar_nph,dx,1)
 
-             call make_psi_spherical(psi_old,w0,gamma1bar_1  ,p0_old,Sbar)
-             call make_psi_spherical(psi    ,w0,gamma1bar_nph,p0_nph,Sbar)
-          end if
-          
+          do n=1,nlevs
+             call destroy(gamma1(n))
+          end do
+
+          gamma1bar_nph = HALF*(gamma1bar_1+gamma1bar_nph)
+
+          call make_psi_spherical(psi_old,w0,gamma1bar_1  ,p0_old,Sbar)
+          call make_psi_spherical(psi    ,w0,gamma1bar_nph,p0_nph,Sbar)
        end if
 
     else
+
        p0_new = p0_old
+
     end if
 
     if (evolve_base_state) then

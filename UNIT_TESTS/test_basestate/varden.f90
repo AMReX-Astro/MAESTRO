@@ -319,41 +319,33 @@ subroutine varden()
      ! update pressure
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     if (p0_update_type .eq. 1) then
+     ! update pressure
+     p0_new = p0_old
+     call enforce_HSE(s0_new(:,:,rho_comp),p0_new,grav_cell)
 
-        call bl_error("We do not support p0_update_type = 1 for this example")
+     ! compute gamma1bar_new
+     do r=0,nr_fine-1
 
-     else
+        ! (rho, p) --> gamma1bar
+        den_eos(1)  = s0_new(1,r,rho_comp)
+        p_eos(1)    = p0_new(1,r)
+        xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
 
-        ! update pressure
-        p0_new = p0_old
-        call enforce_HSE(s0_new(:,:,rho_comp),p0_new,grav_cell)
+        temp_eos(1) = s0_old(1,r,temp_comp)
 
-        ! compute gamma1bar_new
-        do r=0,nr_fine-1
-           
-           ! (rho, p) --> gamma1bar
-           den_eos(1)  = s0_new(1,r,rho_comp)
-           p_eos(1)    = p0_new(1,r)
-           xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
-           
-           temp_eos(1) = s0_old(1,r,temp_comp)
-           
-           call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                do_diag)
-           
-           gamma1bar_new(1,r) = gam1_eos(1)
-           
-        end do
+        call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+             xn_eos, &
+             p_eos, h_eos, e_eos, &
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
+             do_diag)
 
-     end if
+        gamma1bar_new(1,r) = gam1_eos(1)
+
+     end do
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! update temperature
@@ -499,41 +491,33 @@ subroutine varden()
      ! update pressure
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     if (p0_update_type .eq. 1) then
+     ! update pressure
+     p0_new = p0_old
+     call enforce_HSE(s0_new(:,:,rho_comp),p0_new,grav_cell)
 
-        call bl_error("We do not support p0_update_type = 1 for this example")
+     ! compute gamma1bar_new
+     do r=0,nr_fine-1
 
-     else
+        ! (rho, p) --> gamma1bar
+        den_eos(1)  = s0_new(1,r,rho_comp)
+        p_eos(1)    = p0_new(1,r)
+        xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
 
-        ! update pressure
-        p0_new = p0_old
-        call enforce_HSE(s0_new(:,:,rho_comp),p0_new,grav_cell)
+        temp_eos(1) = s0_old(1,r,temp_comp)
 
-        ! compute gamma1bar_new
-        do r=0,nr_fine-1
-           
-           ! (rho, p) --> gamma1bar
-           den_eos(1)  = s0_new(1,r,rho_comp)
-           p_eos(1)    = p0_new(1,r)
-           xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
-           
-           temp_eos(1) = s0_old(1,r,temp_comp)
-           
-           call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                do_diag)
-           
-           gamma1bar_new(1,r) = gam1_eos(1)
-           
-        end do
+        call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+             xn_eos, &
+             p_eos, h_eos, e_eos, &
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
+             do_diag)
 
-     end if
+        gamma1bar_new(1,r) = gam1_eos(1)
+
+     end do
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! update temperature
