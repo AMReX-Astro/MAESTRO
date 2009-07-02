@@ -2,7 +2,6 @@
  model_file = "model_6.e8.hybrid.hse.5120"
  drdxfac = 5
 
-! USE THIS WITH 2000, 4000, or 8000
  max_levs = 1
  n_cellx = 1280
  n_celly = 1280

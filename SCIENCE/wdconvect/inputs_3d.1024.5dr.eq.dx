@@ -2,7 +2,6 @@
  model_file = "model_6.e8.hybrid.hse.5120"
  drdxfac = 5
 
-! USE THIS WITH 4096 PROCS
  max_levs = 1
  n_cellx = 1024
  n_celly = 1024
