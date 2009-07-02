@@ -15,9 +15,9 @@
  dm_in = 3
  do_sponge = .true.
 
- prob_hi_x = 4.e8
- prob_hi_y = 4.e8
- prob_hi_z = 4.e8
+ prob_hi_x = 5.e8
+ prob_hi_y = 5.e8
+ prob_hi_z = 5.e8
 
  max_step  = 100000000
  init_iter = 1
