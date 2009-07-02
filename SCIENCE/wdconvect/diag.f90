@@ -708,9 +708,12 @@ contains
             sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2), vr_max, &
             vr_favre(1), vr_favre(2), vr_favre(3), mass
        
-       write (un2,1000) time, T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax, vx_Tmax, vy_Tmax, vz_Tmax, Rloc_Tmax
+       write (un2,1000) time, T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax, &
+            vx_Tmax, vy_Tmax, vz_Tmax, Rloc_Tmax
 
-       write (un3,1000) time, enuc_max, xloc_enucmax, yloc_enucmax, zloc_enucmax, vx_enucmax, vy_enucmax, vz_enucmax, Rloc_enucmax, nuc_ener
+       write (un3,1000) time, enuc_max, &
+            xloc_enucmax, yloc_enucmax, zloc_enucmax, &
+            vx_enucmax, vy_enucmax, vz_enucmax, Rloc_enucmax, nuc_ener
 
        write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener
 
