@@ -1,7 +1,7 @@
 &PROBIN
 
- anelastic_cutoff = 1.e6
- base_cutoff_density = 1.e6
+ anelastic_cutoff = 1.e5
+ base_cutoff_density = 1.e5
 
  spherical_in = 0
  dm_in = 1
@@ -13,7 +13,9 @@
 
  stop_time = 5
 
- cflfac = 0.5
+ cflfac = 0.9
+
+ ppm_type = 2
 
  model_file = "model.planar.768"
 

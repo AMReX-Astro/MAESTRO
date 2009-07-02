@@ -13,7 +13,9 @@
 
  stop_time = 10
 
- cflfac = 0.5
+ cflfac = 0.9
+
+ ppm_type = 2
 
  model_file = "model.sph.768"
 
