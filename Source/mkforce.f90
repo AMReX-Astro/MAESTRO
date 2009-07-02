@@ -262,7 +262,8 @@ contains
                      HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * cos_theta
 
                 coriolis_term(2) =  TWO * omega * &
-                     (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) * sin_theta + &
+                     (HALF*(wmac(i,j,k)   + w0(k) + &
+                            wmac(i,j,k+1) + w0(k+1)) * sin_theta + &
                       HALF*(umac(i,j,k) + umac(i+1,j,k)) * cos_theta)
 
                 coriolis_term(3) = -TWO * omega * &
@@ -271,7 +272,7 @@ contains
              else
                 coriolis_term(1) = -TWO * omega * uold(i,j,k,2) * cos_theta
 
-                coriolis_term(2) =  TWO * omega * (uold(i,j,k,3) * sin_theta + &
+                coriolis_term(2) =  TWO * omega * ((uold(i,j,k,3) + HALF*(w0(k) + w0(k+1))) * sin_theta + &
                                                    uold(i,j,k,1) * cos_theta)
 
                 coriolis_term(3) = -TWO * omega * uold(i,j,k,2) * sin_theta
@@ -364,16 +365,18 @@ contains
 
                 ! use umac so we are time-centered
                 coriolis_term(1) = -TWO * omega * &
-                     HALF*(vmac(i,j,k) + vmac(i,j+1,k))
+                     HALF*(vmac(i,j,k)   + w0macy(i,j,k) + &
+                           vmac(i,j+1,k) + w0macy(i,j+1,k))
 
                 coriolis_term(2) =  TWO * omega * &
-                     HALF*(umac(i,j,k) + umac(i+1,j,k))
+                     HALF*(umac(i,j,k)   + w0macx(i,j,k) + &
+                           umac(i+1,j,k) + w0macx(i+1,j,k))
 
                 coriolis_term(3) = ZERO
 
              else
-                coriolis_term(1) = -TWO * omega * uold(i,j,k,2)
-                coriolis_term(2) =  TWO * omega * uold(i,j,k,1)
+                coriolis_term(1) = -TWO * omega * (uold(i,j,k,2) + w0_cart(i,j,k,2))
+                coriolis_term(2) =  TWO * omega * (uold(i,j,k,1) + w0_cart(i,j,k,1))
                 coriolis_term(3) = ZERO
              endif
 
