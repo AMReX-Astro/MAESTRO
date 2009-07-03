@@ -1271,12 +1271,6 @@ contains
     end if
 
     if (.not. init_mode) then
-
-       call diag(time,dt,dx,snew,rho_Hnuc2,rho_Hext,rho_omegadot2, &
-                 rho0_new,rhoh0_new,p0_new,tempbar, &
-                 gamma1bar,div_coeff_new, &
-                 unew,w0,normal, &
-                 mla,the_bc_tower)
        
        grav_cell_old = grav_cell_new
 
@@ -1289,6 +1283,13 @@ contains
                                         the_bc_tower%bc_tower_array)
           call correct_base(tempbar,tempprimebar)
        end if
+
+       ! output any runtime diagnostics
+       call diag(time,dt,dx,snew,rho_Hnuc2,rho_Hext,rho_omegadot2, &
+                 rho0_new,rhoh0_new,p0_new,tempbar, &
+                 gamma1bar,div_coeff_new, &
+                 unew,w0,normal, &
+                 mla,the_bc_tower)
 
     end if
 
