@@ -50,12 +50,13 @@ contains
     real(kind=dp_t), pointer::  sp(:,:,:,:)
     real(kind=dp_t), pointer::  rhnp(:,:,:,:)
     real(kind=dp_t), pointer::  rhep(:,:,:,:)
+    real(kind=dp_t), pointer::  rwp(:,:,:,:)
     real(kind=dp_t), pointer::  up(:,:,:,:)
     real(kind=dp_t), pointer::  np(:,:,:,:)
     logical        , pointer::  mp(:,:,:,:)
     
     integer :: lo(dm),hi(dm)
-    integer :: ng_s,ng_u,ng_n,ng_rhn,ng_rhe
+    integer :: ng_s,ng_u,ng_n,ng_rhn,ng_rhe,ng_rw
     integer :: i,n
     integer :: un
     logical :: lexist
@@ -71,6 +72,7 @@ contains
     ng_n = normal(1)%ng
     ng_rhn = rho_Hnuc(1)%ng
     ng_rhe = rho_Hext(1)%ng
+    ng_rw = rho_omegadot(1)%ng
 
     !=========================================================================
     ! initialize
@@ -102,6 +104,7 @@ contains
                              sp(:,:,1,:),ng_s, &
                              rhnp(:,:,1,1),ng_rhn, &
                              rhep(:,:,1,1),ng_rhe, &
+                             rwp(:,:,1,1),ng_rw, &
                              rho0(n,:),rhoh0(n,:), &
                              p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                              up(:,:,1,:),ng_u, &
@@ -113,6 +116,7 @@ contains
                              sp(:,:,1,:),ng_s, &
                              rhnp(:,:,1,1),ng_rhn, &
                              rhep(:,:,1,1),ng_rhe, &
+                             rwp(:,:,1,1),ng_rw, &
                              rho0(n,:),rhoh0(n,:), &
                              p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                              up(:,:,1,:),ng_u, &
@@ -153,6 +157,7 @@ contains
                      s,ng_s, &
                      rho_Hnuc,ng_rhn, &
                      rho_Hext,ng_rhe, &
+                     rho_omegadot,ng_rw, &
                      rho0,rhoh0,p0,tempbar,gamma1bar, &
                      u,ng_u, &
                      w0, &
@@ -164,10 +169,11 @@ contains
     use network, only: nspec
     use probin_module, only: prob_lo
 
-    integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
+    integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:)
     real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:)
+    real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:)
     real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
