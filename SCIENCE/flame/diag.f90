@@ -145,9 +145,41 @@ contains
     !=========================================================================
     ! output
     !=========================================================================
+ 999 format("# job name: ",a)
+1000 format(1x,10(g20.10,1x))
+1001 format("#",10(a20,1x))
+
+    if (parallel_IOProcessor()) then
+
+       ! open the diagnostic files for output, taking care not to overwrite
+       ! an existing file
+       un = unit_new()
+       inquire(file="flame_basic_diag.out", exist=lexist)
+       if (lexist) then
+          open(unit=un, file="flame_basic_diag.out", &
+               status="old", position="append")
+       else
+          open(unit=un, file="flame_basic_diag.out", status="new")
+       endif
 
 
+       ! write out the headers
+       if (firstCall) then
 
+          ! radvel
+          write (un, *) " "
+          write (un, 999) trim(job_name)
+          write (un, 1001) "time", "flame speed", "flame thickness"
+
+          firstCall = .false.
+       endif
+
+       ! write out the data
+       write (un,1000) time
+
+       close(un)
+
+    endif
 
     call destroy(bpt)
 
