@@ -54,6 +54,8 @@ contains
     real(kind=dp_t), pointer::  up(:,:,:,:)
     real(kind=dp_t), pointer::  np(:,:,:,:)
     logical        , pointer::  mp(:,:,:,:)
+
+    real(kind=dp_t) :: flame_speed, flame_speed_level, flame_speed_local
     
     integer :: lo(dm),hi(dm)
     integer :: ng_s,ng_u,ng_n,ng_rhn,ng_rhe,ng_rw
@@ -77,7 +79,7 @@ contains
     !=========================================================================
     ! initialize
     !=========================================================================
-
+    flame_speed = ZERO
 
     !=========================================================================
     ! loop over the levels and compute the global quantities
@@ -85,6 +87,8 @@ contains
     do n = 1, nlevs
 
        ! initialize the local (processor's version) and level quantities to 0
+       flame_speed_level = ZERO
+       flame_speed_local = ZERO
 
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
@@ -109,7 +113,8 @@ contains
                              p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                              up(:,:,1,:),ng_u, &
                              w0(n,:), &
-                             lo,hi)
+                             lo,hi, &
+                             flame_speed_local)
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_2d(n,time,dt,dx(n,:), &
@@ -122,6 +127,7 @@ contains
                              up(:,:,1,:),ng_u, &
                              w0(n,:), &
                              lo,hi, &
+                             flame_speed_local, &
                              mp(:,:,1,1))
              endif
           case (3)
@@ -134,12 +140,25 @@ contains
        !----------------------------------------------------------------------
 
        ! NOTE: only the I/O Processor will have the correct reduced value
+       call parallel_reduce(flame_speed_level, flame_speed_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
+
+       !----------------------------------------------------------------------
+       ! reduce the current level's data with the global data
+       !----------------------------------------------------------------------
+       if (parallel_IOProcessor()) then
+
+          flame_speed = flame_speed + flame_speed_level
+
+       endif
 
     end do
 
     !=========================================================================
     ! normalize
     !=========================================================================
+    
+    ! our flame speed estimate is based on the carbon destruction rate
 
 
     !=========================================================================
@@ -175,7 +194,7 @@ contains
        endif
 
        ! write out the data
-       write (un,1000) time
+       write (un,1000) time, flame_speed
 
        close(un)
 
@@ -194,6 +213,7 @@ contains
                      u,ng_u, &
                      w0, &
                      lo,hi, &
+                     flame_speed, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
@@ -211,6 +231,7 @@ contains
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
+    real (kind=dp_t), intent(inout) :: flame_speed
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
     !     Local variables
@@ -236,14 +257,13 @@ contains
 
           if (cell_valid) then
 
-             ! do diagnostics here
-             !
-             ! access state variables as:
-             !   s(i,j,rho_comp)
-             !
-             ! access velocity components as:
-             !   u(i,j,1), u(i,j,2), u(i,j,3)
-             !
+             ! compute the flame speed by integrating the carbon
+             ! consumption rate.
+
+             
+             ! compute the min/max temperature and the maximum
+             ! temperature gradient for computing the flame thickness.
+
 
           endif
 
