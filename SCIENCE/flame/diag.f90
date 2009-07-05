@@ -28,6 +28,7 @@ contains
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
                              job_name
+    use inlet_bc_module
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(multifab) , intent(in   ) :: s(:)
@@ -63,11 +64,20 @@ contains
     integer :: un
     logical :: lexist
 
-    logical, save :: firstCall = .true.
+    integer, save :: ic12
+    logical, save :: firstCall_io = .true.
+    logical, save :: firstCall_params = .true.
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "diagnostics")
+
+    if (firstCall_params) then
+
+       ic12 = network_species_index("carbon-12")
+
+       firstCall_params = .false.
+    endif
 
     ng_s = s(1)%ng
     ng_u = u(1)%ng
@@ -108,7 +118,7 @@ contains
                              sp(:,:,1,:),ng_s, &
                              rhnp(:,:,1,1),ng_rhn, &
                              rhep(:,:,1,1),ng_rhe, &
-                             rwp(:,:,1,1),ng_rw, &
+                             rwp(:,:,1,:),ng_rw, &
                              rho0(n,:),rhoh0(n,:), &
                              p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                              up(:,:,1,:),ng_u, &
@@ -121,7 +131,7 @@ contains
                              sp(:,:,1,:),ng_s, &
                              rhnp(:,:,1,1),ng_rhn, &
                              rhep(:,:,1,1),ng_rhe, &
-                             rwp(:,:,1,1),ng_rw, &
+                             rwp(:,:,1,:),ng_rw, &
                              rho0(n,:),rhoh0(n,:), &
                              p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                              up(:,:,1,:),ng_u, &
@@ -159,7 +169,11 @@ contains
     !=========================================================================
     
     ! our flame speed estimate is based on the carbon destruction rate
-
+    ! V_eff = - int { rho omegadot dx } / W (rho X)^in
+    flame_speed = -flame_speed*dx(1,1)*dx(1,2)*dx(1,3)/ &
+         ((prob_hi_x - prob_lo_x)*inlet_rhox(ic12))
+    
+    
 
     !=========================================================================
     ! output
@@ -183,14 +197,14 @@ contains
 
 
        ! write out the headers
-       if (firstCall) then
+       if (firstCall_io) then
 
           ! radvel
           write (un, *) " "
           write (un, 999) trim(job_name)
           write (un, 1001) "time", "flame speed", "flame thickness"
 
-          firstCall = .false.
+          firstCall_io = .false.
        endif
 
        ! write out the data
@@ -218,14 +232,14 @@ contains
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use bl_constants_module
-    use network, only: nspec
+    use network, only: nspec, network_species_index
     use probin_module, only: prob_lo
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:)
     real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:)
-    real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:)
+    real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,:)
     real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
@@ -239,6 +253,18 @@ contains
     real (kind=dp_t)   :: weight
     logical            :: cell_valid
     real (kind=dp_t)   :: x, y
+
+    integer, save :: ic12
+
+    logical, save :: firstCall = .true.
+
+
+    if (firstCall) then
+
+       ic12 = network_species_index("carbon-12")
+
+       firstCall = .false.
+    endif
 
     ! weight is the factor by which the volume of a cell at the current level
     ! relates to the volume of a cell at the coarsest level of refinement.
@@ -259,7 +285,7 @@ contains
 
              ! compute the flame speed by integrating the carbon
              ! consumption rate.
-
+             flame_speed = flame_speed + weight*rho_omegadot(i,j,ic12)
              
              ! compute the min/max temperature and the maximum
              ! temperature gradient for computing the flame thickness.
