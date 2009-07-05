@@ -502,7 +502,9 @@ contains
        deallocate(enuc_max_data)
        deallocate(enuc_max_coords)
 
+       !----------------------------------------------------------------------
        ! reduce the current level's data with the global data
+       !----------------------------------------------------------------------
        if (parallel_IOProcessor()) then
           vr       = vr     + vr_level
           rhovr    = rhovr  + rhovr_level
