@@ -24,7 +24,7 @@
 
  temp_ash = 3.e9
  
- frac = 0.25
+ frac = 0.125
 
 
  ! stepping parameters
