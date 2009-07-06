@@ -415,7 +415,7 @@ contains
                                          fill_crse_input=.false.)
           call multifab_fill_ghost_cells(sold(n),sold(n-1),3,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n),1,dm+rho_comp, &
+                                         the_bc_tower%bc_tower_array(n),rho_comp,dm+rho_comp, &
                                          nscal,fill_crse_input=.false.)
           do d=1,dm
              call multifab_fill_ghost_cells(gpres(n),gpres(n-1),1,mla%mba%rr(n-1,:), &
