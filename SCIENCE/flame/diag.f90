@@ -64,7 +64,7 @@ contains
     integer :: un
     logical :: lexist
 
-    integer, save :: ic12
+    integer, save :: ic12, io16
     logical, save :: firstCall_io = .true.
     logical, save :: firstCall_params = .true.
 
@@ -75,6 +75,7 @@ contains
     if (firstCall_params) then
 
        ic12 = network_species_index("carbon-12")
+       io16 = network_species_index("oxygen-16")
 
        firstCall_params = .false.
     endif
@@ -179,6 +180,8 @@ contains
     !=========================================================================
     ! output
     !=========================================================================
+ 997 format("# fuel dens: ", g18.10, " fuel temp: ", g18.10, " fuel vel: ", g18.10)
+ 998 format("# C12 frac: ", g18.10, " O16 frac: ", g18.10)
  999 format("# job name: ",a)
 1000 format(1x,10(g20.10,1x))
 1001 format("#",10(a20,1x))
@@ -202,6 +205,8 @@ contains
 
           ! radvel
           write (un, *) " "
+          write (un, 997) INLET_RHO, INLET_TEMP, INLET_VEL
+          write (un, 998) INLET_RHOX(ic12)/INLET_RHO, INLET_RHOX(io16)/INLET_RHO
           write (un, 999) trim(job_name)
           write (un, 1001) "time", "flame speed", "flame thickness"
 
