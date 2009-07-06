@@ -108,6 +108,7 @@ contains
           sp => dataptr(s(n) , i)
           rhnp => dataptr(rho_Hnuc(n), i)
           rhep => dataptr(rho_Hext(n), i)
+          rwp => dataptr(rho_omegadot(n), i)
           up => dataptr(u(n) , i)
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
@@ -170,7 +171,7 @@ contains
     
     ! our flame speed estimate is based on the carbon destruction rate
     ! V_eff = - int { rho omegadot dx } / W (rho X)^in
-    flame_speed = -flame_speed*dx(1,1)*dx(1,2)*dx(1,3)/ &
+    flame_speed = -flame_speed*dx(1,1)*dx(1,2)/ &
          ((prob_hi_x - prob_lo_x)*inlet_rhox(ic12))
     
     
