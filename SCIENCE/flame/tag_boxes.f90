@@ -128,7 +128,7 @@ contains
           if (XC12 > small_XC12 .and. XC12 < fuel_XC12) then
              radialtag(j) = .true.
           end if
-       end do
+       enddo
     enddo
 
     ! also tag cells that straddle the interface between small_XC12
@@ -143,7 +143,7 @@ contains
              radialtag(j) = .true.
              radialtag(j-1) = .true.
           end if
-       end do
+       enddo
     enddo
 
 
@@ -161,49 +161,44 @@ contains
     integer, optional, intent(in   ) :: lev
 
     ! local
+    real(kind=dp_t), parameter :: small_XC12 = 1.d-4
     integer :: i,j,k,nx,ny,nz,llev
-    real(kind=dp_t) :: XC12
+    real(kind=dp_t) :: XC12, XC12_below
 
     llev = 1; if (present(lev)) llev = lev
     nx = size(rho_XC12,dim=1) - 2*ng
     ny = size(rho_XC12,dim=2) - 2*ng
     nz = size(rho_XC12,dim=3) - 2*ng
 
-    select case(llev)
-    case (1)
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                XC12 = rho_XC12(i,j,k)/rho(i,j,k)
-                if (XC12 .gt. 1.d-4 .and. XC12 .lt. fuel_XC12) then
-                   radialtag(k) = .true.
-                end if
-             end do
+    ! check for zones where X(C12) falls between small_XC12 and
+    ! fuel_XC12
+    do k = lo(3),lo(3)+nz-1
+       do j = lo(2),lo(2)+ny-1
+          do i = lo(1),lo(1)+nx-1
+             XC12 = rho_XC12(i,j,k)/rho(i,j,k)
+             if (XC12 > small_XC12 .and. XC12 < fuel_XC12) then
+                radialtag(k) = .true.
+             end if
           enddo
-       end do
-    case (2)
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                XC12 = rho_XC12(i,j,k)/rho(i,j,k)
-                if (XC12 .gt. 1.d-4 .and. XC12 .lt. fuel_XC12) then
-                   radialtag(k) = .true.
-                end if
-             end do
-          end do
-       end do
-    case default
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                XC12 = rho_XC12(i,j,k)/rho(i,j,k)
-                if (XC12 .gt. 1.d-4 .and. XC12 .lt. fuel_XC12) then
-                   radialtag(k) = .true.
-                end if
-             end do
-          end do
-       end do
-    end select
+       enddo
+    enddo
+
+    ! also tag cells that straddle the interface between small_XC12
+    ! and fuel_XC12 -- this tags the initial discontinuity
+    do k = lo(3),lo(3)+nz-1
+       do j = lo(2),lo(2)+ny-1
+          do i = lo(1),lo(1)+nx-1
+             XC12 = rho_XC12(i,j,k)/rho(i,j,k)
+             XC12_below = rho_XC12(i,j,k-1)/rho(i,j,k-1)
+
+             ! fuel flows in from the lower y boundary
+             if (XC12 < small_XC12 .and. XC12_below == fuel_XC12) then
+                radialtag(k) = .true.
+                radialtag(k-1) = .true.
+             end if
+          enddo
+       enddo
+    enddo
 
   end subroutine radialtag_3d
 
