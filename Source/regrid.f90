@@ -146,6 +146,10 @@ contains
 
        ! Do we need finer grids?
 
+       ! Need to fill ghost cells here in case we use them in tagging
+       call multifab_fill_boundary(sold(nl))
+       call multifab_physbc(sold(nl),rho_comp,dm+rho_comp,nscal,the_bc_tower%bc_tower_array(nl))
+
        call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1),buf_wid,&
                            ref_ratio,nl,max_grid_size)
 
