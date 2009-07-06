@@ -1,5 +1,5 @@
-NDEBUG := 
-MPI    :=
+NDEBUG := t
+MPI    := t
 OMP    :=
 
 COMP := Intel
@@ -30,8 +30,8 @@ FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/conducteos
 include $(FPARALLEL)/extern/constants/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/constants
 
-include $(FPARALLEL)/extern/networks/ignition/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/ignition
+include $(FPARALLEL)/extern/networks/ignition_simple/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/ignition_simple
 
 include $(FPARALLEL)/extern/VODE/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/VODE
