@@ -79,7 +79,7 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),1,dm+rho_comp,nscal, &
+                                         bc(n-1),bc(n),rho_comp,dm+rho_comp,nscal, &
                                          fill_crse_input=.false.)
 
        enddo
