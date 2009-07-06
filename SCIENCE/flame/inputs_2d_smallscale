@@ -20,7 +20,7 @@
  dens_fuel = 5.e7
  temp_fuel = 1.e8
  xc12_fuel = 0.5
- vel_fuel = 1.e5
+ vel_fuel = 7.5e4
 
  temp_ash = 3.e9
  
