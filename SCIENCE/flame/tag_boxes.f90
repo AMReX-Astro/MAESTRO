@@ -112,42 +112,40 @@ contains
     integer, optional, intent(in   ) :: lev
 
     ! local
+    real(kind=dp_t), parameter :: small_XC12 = 1.d-4
     integer :: i,j,nx,ny,llev
-    real(kind=dp_t) :: XC12
+    real(kind=dp_t) :: XC12, XC12_below
 
     llev = 1; if (present(lev)) llev = lev
     nx = size(rho_XC12,dim=1) - 2*ng
     ny = size(rho_XC12,dim=2) - 2*ng
 
-    select case(llev)
-    case (1)
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             XC12 = rho_XC12(i,j)/rho(i,j)
-             if (XC12 .gt. 1.d-4 .and. XC12 .lt. fuel_XC12) then
-                radialtag(j) = .true.
-             end if
-          end do
-       enddo
-    case (2)
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             XC12 = rho_XC12(i,j)/rho(i,j)
-             if (XC12 .gt. 1.d-4 .and. XC12 .lt. fuel_XC12) then
-                radialtag(j) = .true.
-             end if
-          end do
+    ! check for zones where X(C12) falls between small_XC12 and
+    ! fuel_XC12
+    do j = lo(2),lo(2)+ny-1
+       do i = lo(1),lo(1)+nx-1
+          XC12 = rho_XC12(i,j)/rho(i,j)
+          if (XC12 > small_XC12 .and. XC12 < fuel_XC12) then
+             radialtag(j) = .true.
+          end if
        end do
-    case default
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             XC12 = rho_XC12(i,j)/rho(i,j)
-             if (XC12 .gt. 1.d-4 .and. XC12 .lt. fuel_XC12) then
-                radialtag(j) = .true.
-             end if
-          end do
+    enddo
+
+    ! also tag cells that straddle the interface between small_XC12
+    ! and fuel_XC12 -- this tags the initial discontinuity
+    do j = lo(2),lo(2)+ny-1
+       do i = lo(1),lo(1)+nx-1
+          XC12 = rho_XC12(i,j)/rho(i,j)
+          XC12_below = rho_XC12(i,j-1)/rho(i,j-1)
+
+          ! fuel flows in from the lower y boundary
+          if (XC12 < small_XC12 .and. XC12_below == fuel_XC12) then
+             radialtag(j) = .true.
+             radialtag(j-1) = .true.
+          end if
        end do
-    end select
+    enddo
+
 
   end subroutine radialtag_2d
 
