@@ -343,7 +343,8 @@ contains
 
     ! initialize the velocity -- we'll just set it to the inflow velocity
     ! and let the projection figure out the true field
-    u = vel_fuel
+    u(1) = ZERO
+    u(2) = vel_fuel
 
   end subroutine initveldata_2d
 
