@@ -63,6 +63,12 @@ contains
        call setval(thermal(n), ZERO, all=.true.)
     end do
 
+    ! for either diffusion formulation, we will use mac_applyop to
+    ! construct the form of the conduction term.  mac_applyop forms
+    ! the generic quantity:
+    !
+    ! (alpha MINUS del dot beta grad) phi = RHS
+
     if(temp_diffusion_formulation) then
 
        do n=1,nlevs
