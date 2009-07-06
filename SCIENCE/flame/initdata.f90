@@ -155,8 +155,8 @@ contains
     img24  = network_species_index("magnesium-24")
 
     ! length of the domain
-    xlen = HALF*(prob_hi(1) - prob_lo(1))
-    ylen = HALF*(prob_hi(2) - prob_lo(2))
+    xlen = (prob_hi(1) - prob_lo(1))
+    ylen = (prob_hi(2) - prob_lo(2))
 
     ! figure out the thermodynamics of the fuel and ash state
 
