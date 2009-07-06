@@ -57,7 +57,12 @@ contains
     logical        , pointer::  mp(:,:,:,:)
 
     real(kind=dp_t) :: flame_speed, flame_speed_level, flame_speed_local
-    
+    real(kind=dp_t) :: T_max, T_max_level, T_max_local
+    real(kind=dp_t) :: T_min, T_min_level, T_min_local
+    real(kind=dp_t) :: max_gradT_y, max_gradT_y_level, max_gradT_y_local
+
+    real(kind=dp_t) :: flame_thickness
+
     integer :: lo(dm),hi(dm)
     integer :: ng_s,ng_u,ng_n,ng_rhn,ng_rhe,ng_rw
     integer :: i,n
@@ -91,6 +96,9 @@ contains
     ! initialize
     !=========================================================================
     flame_speed = ZERO
+    T_max = ZERO
+    T_min = huge(T_min)
+    max_gradT_y = ZERO
 
     !=========================================================================
     ! loop over the levels and compute the global quantities
@@ -100,6 +108,16 @@ contains
        ! initialize the local (processor's version) and level quantities to 0
        flame_speed_level = ZERO
        flame_speed_local = ZERO
+
+       T_max_level = ZERO
+       T_max_local = ZERO
+
+       T_min_level = huge(T_min_level)
+       T_min_local = huge(T_min_level)
+
+       max_gradT_y_level = ZERO
+       max_gradT_y_local = ZERO
+
 
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
@@ -126,7 +144,8 @@ contains
                              up(:,:,1,:),ng_u, &
                              w0(n,:), &
                              lo,hi, &
-                             flame_speed_local)
+                             flame_speed_local, &
+                             T_max_local, T_min_local, max_gradT_y_local)
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_2d(n,time,dt,dx(n,:), &
@@ -140,6 +159,7 @@ contains
                              w0(n,:), &
                              lo,hi, &
                              flame_speed_local, &
+                             T_max_local, T_min_local, max_gradT_y_local, &
                              mp(:,:,1,1))
              endif
           case (3)
@@ -155,12 +175,27 @@ contains
        call parallel_reduce(flame_speed_level, flame_speed_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
+       call parallel_reduce(T_max_level, T_max_local, MPI_MAX, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(T_min_level, T_min_local, MPI_MIN, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(max_gradT_y_level, max_gradT_y_local, MPI_MAX, &
+                            proc = parallel_IOProcessorNode())
+
+
+
        !----------------------------------------------------------------------
        ! reduce the current level's data with the global data
        !----------------------------------------------------------------------
        if (parallel_IOProcessor()) then
 
           flame_speed = flame_speed + flame_speed_level
+          
+          T_max = max(T_max, T_max_level)
+          T_min = min(T_min, T_min_level)
+          max_gradT_y = max(max_gradT_y, max_gradT_y_level)
 
        endif
 
@@ -175,7 +210,7 @@ contains
     flame_speed = -flame_speed*dx(1,1)*dx(1,2)/ &
          ((prob_hi_x - prob_lo_x)*inlet_rhox(ic12))
     
-    
+    flame_thickness = (T_max - T_min)/abs(max_gradT_y)
 
     !=========================================================================
     ! output
@@ -208,13 +243,13 @@ contains
           write (un, 997) INLET_RHO, INLET_TEMP, INLET_VEL
           write (un, 998) INLET_RHOX(ic12)/INLET_RHO, INLET_RHOX(io16)/INLET_RHO
           write (un, 999) trim(job_name)
-          write (un, 1001) "time", "flame speed", "flame thickness"
+          write (un, 1001) "time", "flame speed", "flame thickness", 'T_min', 'T_max'
 
           firstCall_io = .false.
        endif
 
        ! write out the data
-       write (un,1000) time, flame_speed
+       write (un,1000) time, flame_speed, flame_thickness, T_min, T_max
 
        close(un)
 
@@ -234,6 +269,7 @@ contains
                      w0, &
                      lo,hi, &
                      flame_speed, &
+                     T_max, T_min, max_gradT_y, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
@@ -252,6 +288,7 @@ contains
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
     real (kind=dp_t), intent(inout) :: flame_speed
+    real (kind=dp_t), intent(inout) :: T_max, T_min, max_gradT_y
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
     !     Local variables
@@ -295,7 +332,10 @@ contains
              
              ! compute the min/max temperature and the maximum
              ! temperature gradient for computing the flame thickness.
-
+             T_max = max(T_max, s(i,j,temp_comp))
+             T_min = min(T_min, s(i,j,temp_comp))
+             max_gradT_y = max(max_gradT_y, &
+                               (s(i,j+1,temp_comp) - s(i,j-1,temp_comp))/(2.d0*dx(2)))
 
           endif
 
