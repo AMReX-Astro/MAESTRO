@@ -10,7 +10,7 @@
  n_cellx = 32
  n_celly = 256
 
- max_grid_size = 64
+ max_grid_size = 32
  regrid_int = 4 
 
  ! domain size
