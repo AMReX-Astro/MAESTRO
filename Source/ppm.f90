@@ -34,6 +34,7 @@ contains
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
     real(kind=dp_t) :: dI, sgn
     real(kind=dp_t) :: sigma, s6, w0cc
+    real(kind=dp_t) :: diff1, diff2, diff3, diff4
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:)
@@ -147,8 +148,19 @@ contains
        ! modify using Colella 2008 limiters
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             if ((sp(i,j)-s(i,j))*(s(i,j)-sm(i,j)) .le. ZERO .or. &
-                 (s(i+1,j)-s(i,j))*(s(i,j)-s(i-1,j)) .le. ZERO ) then
+
+             diff1 = sp(i,j)-s(i,j)
+             diff2 = s(i,j)-sm(i,j)
+             diff3 = s(i+1,j)-s(i,j)
+             diff4 = s(i,j)-s(i-1,j)
+
+             if (abs(diff1) .le. rel_eps) diff1 = ZERO
+             if (abs(diff2) .le. rel_eps) diff2 = ZERO
+             if (abs(diff3) .le. rel_eps) diff3 = ZERO
+             if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+             if (diff1*diff2 .le. ZERO .or. &
+                 diff3*diff4 .le. ZERO ) then
                 s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
                 D2  = -TWO*s6/dx(1)**2
                 D2C = (ONE/dx(1)**2)*(s(i-1,j)-TWO*s(i,j)+s(i+1,j))
@@ -351,8 +363,19 @@ contains
        ! modify using Colella 2008 limiters
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             if ((sp(i,j)-s(i,j))*(s(i,j)-sm(i,j)) .le. ZERO .or. &
-                 (s(i,j+1)-s(i,j))*(s(i,j)-s(i,j-1)) .le. ZERO ) then
+
+             diff1 = sp(i,j)-s(i,j)
+             diff2 = s(i,j)-sm(i,j)
+             diff3 = s(i,j+1)-s(i,j)
+             diff4 = s(i,j)-s(i,j-1)
+
+             if (abs(diff1) .le. rel_eps) diff1 = ZERO
+             if (abs(diff2) .le. rel_eps) diff2 = ZERO
+             if (abs(diff3) .le. rel_eps) diff3 = ZERO
+             if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+             if (diff1*diff2 .le. ZERO .or. &
+                 diff3*diff4 .le. ZERO ) then
                 s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
                 D2  = -TWO*s6/dx(2)**2
                 D2C = (ONE/dx(2)**2)*(s(i,j-1)-TWO*s(i,j)+s(i,j+1))
@@ -493,6 +516,7 @@ contains
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
     real(kind=dp_t) :: dI, sgn
     real(kind=dp_t) :: sigmam, sigmap, s6, w0lo, w0hi
+    real(kind=dp_t) :: diff1, diff2, diff3, diff4
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:)
@@ -606,8 +630,19 @@ contains
        ! modify using Colella 2008 limiters
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             if ((sp(i,j)-s(i,j))*(s(i,j)-sm(i,j)) .le. ZERO .or. &
-                 (s(i+1,j)-s(i,j))*(s(i,j)-s(i-1,j)) .le. ZERO ) then
+
+             diff1 = sp(i,j)-s(i,j)
+             diff2 = s(i,j)-sm(i,j)
+             diff3 = s(i+1,j)-s(i,j)
+             diff4 = s(i,j)-s(i-1,j)
+
+             if (abs(diff1) .le. rel_eps) diff1 = ZERO
+             if (abs(diff2) .le. rel_eps) diff2 = ZERO
+             if (abs(diff3) .le. rel_eps) diff3 = ZERO
+             if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+             if (diff1*diff2 .le. ZERO .or. &
+                 diff3*diff4 .le. ZERO ) then
                 s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
                 D2  = -TWO*s6/dx(1)**2
                 D2C = (ONE/dx(1)**2)*(s(i-1,j)-TWO*s(i,j)+s(i+1,j))
@@ -811,8 +846,19 @@ contains
        ! modify using Colella 2008 limiters
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             if ((sp(i,j)-s(i,j))*(s(i,j)-sm(i,j)) .le. ZERO .or. &
-                 (s(i,j+1)-s(i,j))*(s(i,j)-s(i,j-1)) .le. ZERO ) then
+
+             diff1 = sp(i,j)-s(i,j)
+             diff2 = s(i,j)-sm(i,j)
+             diff3 = s(i,j+1)-s(i,j)
+             diff4 = s(i,j)-s(i,j-1)
+
+             if (abs(diff1) .le. rel_eps) diff1 = ZERO
+             if (abs(diff2) .le. rel_eps) diff2 = ZERO
+             if (abs(diff3) .le. rel_eps) diff3 = ZERO
+             if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+             if (diff1*diff2 .le. ZERO .or. &
+                 diff3*diff4 .le. ZERO ) then
                 s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
                 D2  = -TWO*s6/dx(2)**2
                 D2C = (ONE/dx(2)**2)*(s(i,j-1)-TWO*s(i,j)+s(i,j+1))
