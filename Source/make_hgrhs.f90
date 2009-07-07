@@ -253,7 +253,7 @@ contains
     do j = lo(2),hi(2)+1
        do i = lo(1), hi(1)+1
           rhs(i,j) = FOURTH * ( rhs_cc(i,j  ) + rhs_cc(i-1,j  ) &
-               + rhs_cc(i,j-1) + rhs_cc(i-1,j-1) )
+                              + rhs_cc(i,j-1) + rhs_cc(i-1,j-1) )
        end do
     end do
     
