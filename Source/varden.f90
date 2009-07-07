@@ -256,7 +256,8 @@ subroutine varden()
 
      ! this section is not needed for spherical since there is only
      ! one level of refinement of the base state, no matter what nlevs is
-     if ( (nlevs .gt. 1 .or. perturb_model) .and. spherical .eq. 0) then
+     if ( (nlevs .gt. 1 .or. perturb_model) .and. spherical .eq. 0 &
+          .and. evolve_base_state) then
 
         ! enforce HSE
         call enforce_HSE(rho0_old,p0_old,grav_cell)
@@ -571,8 +572,9 @@ subroutine varden()
         !---------------------------------------------------------------------
         ! regrid
         !---------------------------------------------------------------------
-        if (max_levs > 1 .and. regrid_int > 0 .and. (mod(istep-1,regrid_int) .eq. 0) ) then
-
+        if (max_levs > 1 .and. regrid_int > 0 &
+             .and. (mod(istep-1,regrid_int) .eq. 0) &
+             .and. evolve_base_state) then
            ! we do not regrid spherical base state arrays since there is only one
            ! level of refinement
            if (spherical .eq. 0) then
@@ -689,14 +691,14 @@ subroutine varden()
            ! Create normal now that we have defined center and dx
            call make_normal(normal,dx)
 
-           if (spherical .eq. 0) then
+           if (spherical .eq. 0 .and. evolve_base_state) then
               ! force rho0 to be the average of rho
               call average(mla,sold,rho0_old,dx,rho_comp)
            end if
            
            call make_grav_cell(grav_cell,rho0_old)
 
-           if (spherical .eq. 0) then
+           if (spherical .eq. 0 .and. evolve_base_state) then
               ! enforce HSE
               call enforce_HSE(rho0_old,p0_old,grav_cell)
            end if
@@ -709,22 +711,24 @@ subroutine varden()
               call average(mla,sold,tempbar,dx,temp_comp)
            end if
 
-           ! gamma1bar needs to be recomputed
-           if (allocated(gamma1)) then
-              deallocate(gamma1)
+           if (evolve_base_state) then
+              ! gamma1bar needs to be recomputed
+              if (allocated(gamma1)) then
+                 deallocate(gamma1)
+              end if
+              allocate(gamma1(nlevs))
+              
+              do n=1,nlevs
+                 call multifab_build(gamma1(n), mla%la(n), 1, 0)
+              end do
+              
+              call make_gamma(mla,gamma1,sold,p0_old,dx)
+              call average(mla,gamma1,gamma1bar,dx,1)
+              
+              do n=1,nlevs
+                 call destroy(gamma1(n))
+              end do
            end if
-           allocate(gamma1(nlevs))
-           
-           do n=1,nlevs
-              call multifab_build(gamma1(n), mla%la(n), 1, 0)
-           end do
-           
-           call make_gamma(mla,gamma1,sold,p0_old,dx)
-           call average(mla,gamma1,gamma1bar,dx,1)
-           
-           do n=1,nlevs
-              call destroy(gamma1(n))
-           end do
 
            ! div_coeff_old needs to be recomputed
            call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
