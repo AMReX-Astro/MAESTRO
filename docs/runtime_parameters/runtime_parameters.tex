@@ -110,7 +110,7 @@
 \verb=  spherical_in  = &   set to 1 if you are doing a spherical problem  &  0 \\
 \verb=  sponge_kappa  = &   Parameter for sponge.  Problem dependent.  &  10.d0 \\
 \verb=  stop_time  = &   simulation stop time  &  -1.d0 \\
-\verb=  temp_diffusion_formulation  = &   How to compute the explicit thermal diffusion term.  \newline .true. = in terms of $T$; \newline .false. = in terms of $\rho,p_0,X$.  &  .false. \\
+\verb=  temp_diffusion_formulation  = &   How to compute the explicit thermal diffusion term.  \newline 1 = in terms of $T$; \newline 2 = in terms of $\rho,p_0,X$.  &  2 \\
 \verb=  test_set  = &   Fixed grid file.  &  '' \\
 \verb=  the_copy_cache_max  = &    Number of boxassoc layouts we keep in memory to avoid having to recompute the boxassoc, which is computationally expensive.  &  50 \\
 \verb=  the_knapsack_verbosity  = &   Verbosity of the knapscak processor-to-grid algorithm.  &  .false. \\

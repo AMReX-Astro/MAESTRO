@@ -15,7 +15,7 @@ module make_explicit_thermal_module
 contains 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Compute thermal = del dot kappa grad T (if temp_diffusion_formulation)
+! Compute thermal = del dot kappa grad T (if temp_diffusion_formulation .eq. 1)
 ! Otherwise, compute thermal with grad h + grad X_k + grad p_0 formulation
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -69,7 +69,7 @@ contains
     !
     ! (alpha MINUS del dot beta grad) phi = RHS
 
-    if(temp_diffusion_formulation) then
+    if(temp_diffusion_formulation .eq. 1) then
 
        do n=1,nlevs
           call multifab_build(phi(n), mla%la(n), 1,  1)
@@ -108,7 +108,7 @@ contains
           call destroy(resid(n))
        enddo
 
-    else ! the if(.not. temp_diffusion_formulation) case
+    else ! if (temp_diffusion_formulation .eq. 2) case
        
        do n=1,nlevs
           call multifab_build(phi(n),  mla%la(n), 1,  1)
@@ -211,7 +211,7 @@ contains
           call destroy(resid(n))
        enddo
 
-    endif ! end if(temp_diffusion_formulation) logic
+    endif ! end temp_diffusion_formulation logic
     
     if (nlevs .eq. 1) then
 

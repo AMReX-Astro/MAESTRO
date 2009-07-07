@@ -157,9 +157,9 @@ evolve_base_state                   logical            .true.
 use_thermal_diffusion               logical            .false.             
 
 # How to compute the explicit thermal diffusion term.  @@
-# .true. = in terms of $T$; @@
-# .false. = in terms of $\rho,p_0,X$.
-temp_diffusion_formulation          logical            .false.             
+# 1 = in terms of $T$; @@
+# 2 = in terms of $\rho,p_0,X$.
+temp_diffusion_formulation          integer            2                   
 
 # In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.
 thermal_diffusion_type              integer            1                   
