@@ -10,6 +10,7 @@
  n_cellx = 128
  n_celly = 1024
  
+ max_grid_size = 64
 
  ! domain size
  prob_hi_x = 0.625
