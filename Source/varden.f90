@@ -573,11 +573,10 @@ subroutine varden()
         ! regrid
         !---------------------------------------------------------------------
         if (max_levs > 1 .and. regrid_int > 0 &
-             .and. (mod(istep-1,regrid_int) .eq. 0) &
-             .and. evolve_base_state) then
+             .and. (mod(istep-1,regrid_int) .eq. 0)) then
            ! we do not regrid spherical base state arrays since there is only one
            ! level of refinement
-           if (spherical .eq. 0) then
+           if (spherical .eq. 0 .and. evolve_base_state) then
               
               ! first 'regrid' the 1d arrays 
               ! (other than rho0, rhoh0, and p0, which are handled below)
