@@ -42,6 +42,7 @@ contains
      
      real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag,ubardth,dth,dtdr,savg,u
      real(kind=dp_t) :: sigmap,sigmam,s6,D2,D2L,D2R,D2C,D2LIM,C,alphap,alpham,dI,sgn
+     real(kind=dp_t) :: diff1,diff2,diff3,diff4
      
      integer :: r,lo,hi,n,i
 
@@ -287,8 +288,19 @@ contains
 
               ! modify using Colella 2008 limiters
               if (r .ge. 2 .and. r .le. nr(n)-3) then
-                 if ((sp(n,r)-s(n,r))*(s(n,r)-sm(n,r)) .le. ZERO .or. &
-                      (s(n,r+1)-s(n,r))*(s(n,r)-s(n,r-1)) .le. ZERO ) then
+                 
+                 diff1 = sp(n,r)-s(n,r)
+                 diff2 = s(n,r)-sm(n,r)
+                 diff3 = s(n,r+1)-s(n,r)
+                 diff4 = s(n,r)-s(n,r-1)
+
+                 if (abs(diff1) .le. rel_eps) diff1 = ZERO
+                 if (abs(diff2) .le. rel_eps) diff2 = ZERO
+                 if (abs(diff3) .le. rel_eps) diff3 = ZERO
+                 if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+                 if (diff1*diff2 .le. ZERO .or. &
+                     diff3*diff4 .le. ZERO ) then
                     s6 = SIX*s(n,r) - THREE*(sm(n,r)+sp(n,r))
                     D2  = -TWO*s6/dr(1)**2
                     D2C = (ONE/dr(1)**2)*(s(n,r-1)-TWO*s(n,r)+s(n,r+1))

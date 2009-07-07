@@ -32,8 +32,7 @@ contains
     integer :: i,j
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
-    real(kind=dp_t) :: dI, sgn
-    real(kind=dp_t) :: sigma, s6, w0cc
+    real(kind=dp_t) :: dI, sgn, sigma, s6, w0cc
     real(kind=dp_t) :: diff1, diff2, diff3, diff4
 
     ! s_{\ib,+}, s_{\ib,-}
@@ -514,8 +513,7 @@ contains
     integer :: i,j
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
-    real(kind=dp_t) :: dI, sgn
-    real(kind=dp_t) :: sigmam, sigmap, s6, w0lo, w0hi
+    real(kind=dp_t) :: dI, sgn, sigmam, sigmap, s6, w0lo, w0hi
     real(kind=dp_t) :: diff1, diff2, diff3, diff4
 
     ! s_{\ib,+}, s_{\ib,-}
@@ -1004,8 +1002,8 @@ contains
     integer :: i,j,k
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
-    real(kind=dp_t) :: dI, sgn
-    real(kind=dp_t) :: sigma, s6, w0cc, velcc
+    real(kind=dp_t) :: dI, sgn, sigma, s6, w0cc, velcc
+    real(kind=dp_t) :: diff1, diff2, diff3, diff4
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:,:)
@@ -1132,8 +1130,19 @@ contains
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
-                if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO .or. &
-                     (s(i+1,j,k)-s(i,j,k))*(s(i,j,k)-s(i-1,j,k)) .le. ZERO ) then
+
+                diff1 = sp(i,j,k)-s(i,j,k)
+                diff2 = s(i,j,k)-sm(i,j,k)
+                diff3 = s(i+1,j,k)-s(i,j,k)
+                diff4 = s(i,j,k)-s(i-1,j,k)
+
+                if (abs(diff1) .le. rel_eps) diff1 = ZERO
+                if (abs(diff2) .le. rel_eps) diff2 = ZERO
+                if (abs(diff3) .le. rel_eps) diff3 = ZERO
+                if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+                if (diff1*diff2 .le. ZERO .or. &
+                    diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
                    D2  = -TWO*s6/dx(1)**2
                    D2C = (ONE/dx(1)**2)*(s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k))
@@ -1367,8 +1376,19 @@ contains
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
-                if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO .or. &
-                     (s(i,j+1,k)-s(i,j,k))*(s(i,j,k)-s(i,j-1,k)) .le. ZERO ) then
+
+                diff1 = sp(i,j,k)-s(i,j,k)
+                diff2 = s(i,j,k)-sm(i,j,k)
+                diff3 = s(i,j+1,k)-s(i,j,k)
+                diff4 = s(i,j,k)-s(i,j-1,k)
+
+                if (abs(diff1) .le. rel_eps) diff1 = ZERO
+                if (abs(diff2) .le. rel_eps) diff2 = ZERO
+                if (abs(diff3) .le. rel_eps) diff3 = ZERO
+                if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+                if (diff1*diff2 .le. ZERO .or. &
+                    diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
                    D2  = -TWO*s6/dx(2)**2
                    D2C = (ONE/dx(2)**2)*(s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k))
@@ -1602,8 +1622,19 @@ contains
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
-                if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO .or. &
-                     (s(i,j,k+1)-s(i,j,k))*(s(i,j,k)-s(i,j,k-1)) .le. ZERO ) then
+
+                diff1 = sp(i,j,k)-s(i,j,k)
+                diff2 = s(i,j,k)-sm(i,j,k)
+                diff3 = s(i,j,k+1)-s(i,j,k)
+                diff4 = s(i,j,k)-s(i,j,k-1)
+
+                if (abs(diff1) .le. rel_eps) diff1 = ZERO
+                if (abs(diff2) .le. rel_eps) diff2 = ZERO
+                if (abs(diff3) .le. rel_eps) diff3 = ZERO
+                if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+                if (diff1*diff2 .le. ZERO .or. &
+                    diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
                    D2  = -TWO*s6/dx(3)**2
                    D2C = (ONE/dx(3)**2)*(s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1))
@@ -1767,8 +1798,8 @@ contains
     integer :: i,j,k
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
-    real(kind=dp_t) :: dI, sgn
-    real(kind=dp_t) :: sigmam, sigmap, s6, w0lo, w0hi, vello, velhi
+    real(kind=dp_t) :: dI, sgn, sigmam, sigmap, s6, w0lo, w0hi, vello, velhi
+    real(kind=dp_t) :: diff1, diff2, diff3, diff4
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:,:)
@@ -1895,8 +1926,19 @@ contains
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
-                if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO .or. &
-                     (s(i+1,j,k)-s(i,j,k))*(s(i,j,k)-s(i-1,j,k)) .le. ZERO ) then
+
+                diff1 = sp(i,j,k)-s(i,j,k)
+                diff2 = s(i,j,k)-sm(i,j,k)
+                diff3 = s(i+1,j,k)-s(i,j,k)
+                diff4 = s(i,j,k)-s(i-1,j,k)
+
+                if (abs(diff1) .le. rel_eps) diff1 = ZERO
+                if (abs(diff2) .le. rel_eps) diff2 = ZERO
+                if (abs(diff3) .le. rel_eps) diff3 = ZERO
+                if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+                if (diff1*diff2 .le. ZERO .or. &
+                    diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
                    D2  = -TWO*s6/dx(1)**2
                    D2C = (ONE/dx(1)**2)*(s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k))
@@ -2133,8 +2175,19 @@ contains
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
-                if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO .or. &
-                     (s(i,j+1,k)-s(i,j,k))*(s(i,j,k)-s(i,j-1,k)) .le. ZERO ) then
+
+                diff1 = sp(i,j,k)-s(i,j,k)
+                diff2 = s(i,j,k)-sm(i,j,k)
+                diff3 = s(i,j+1,k)-s(i,j,k)
+                diff4 = s(i,j,k)-s(i,j-1,k)
+
+                if (abs(diff1) .le. rel_eps) diff1 = ZERO
+                if (abs(diff2) .le. rel_eps) diff2 = ZERO
+                if (abs(diff3) .le. rel_eps) diff3 = ZERO
+                if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+                if (diff1*diff2 .le. ZERO .or. &
+                    diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
                    D2  = -TWO*s6/dx(2)**2
                    D2C = (ONE/dx(2)**2)*(s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k))
@@ -2371,8 +2424,19 @@ contains
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
-                if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO .or. &
-                     (s(i,j,k+1)-s(i,j,k))*(s(i,j,k)-s(i,j,k-1)) .le. ZERO ) then
+
+                diff1 = sp(i,j,k)-s(i,j,k)
+                diff2 = s(i,j,k)-sm(i,j,k)
+                diff3 = s(i,j,k+1)-s(i,j,k)
+                diff4 = s(i,j,k)-s(i,j,k-1)
+
+                if (abs(diff1) .le. rel_eps) diff1 = ZERO
+                if (abs(diff2) .le. rel_eps) diff2 = ZERO
+                if (abs(diff3) .le. rel_eps) diff3 = ZERO
+                if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+                if (diff1*diff2 .le. ZERO .or. &
+                    diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
                    D2  = -TWO*s6/dx(3)**2
                    D2C = (ONE/dx(3)**2)*(s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1))
