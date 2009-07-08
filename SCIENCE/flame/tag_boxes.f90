@@ -25,7 +25,7 @@ contains
   subroutine tag_boxes(mf,tagboxes,lev)
 
     use variables, only: rho_comp, spec_comp
-    use geometry, only: dm, nr_fine
+    use geometry, only: dm, nr_fine, nr
     use network
     use inlet_bc_module, only: INLET_RHOX, INLET_RHO
 
@@ -35,13 +35,14 @@ contains
 
     real(kind = dp_t), pointer :: sp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
-    integer           :: i, lo(dm), ng_s
+    integer           :: i, j, lo(dm), ng_s
     logical           ::      radialtag(0:nr_fine-1)
     logical           :: radialtag_proc(0:nr_fine-1)
 
     real(kind = dp_t), save    :: fuel_XC12
     integer, save :: ic12
     logical, save :: firstCall = .true.    
+    integer, parameter :: npad = 4
 
     if (firstCall) then
 
@@ -85,6 +86,27 @@ contains
 
     ! gather radialtag
     call parallel_reduce(radialtag, radialtag_proc, MPI_LOR)
+
+    ! apply some padding
+    do j = 1, npad
+
+       ! pad the start of a tagged region
+       do i = 1, nr(lev)-1
+          if (radialtag(i) .and. .not. radialtag(i-1)) then
+             ! found start of a tagged region
+             radialtag(i-1) = .true.
+          endif
+       enddo
+
+       ! pad the end of a tagged region
+       do i = nr(lev)-1, 1, -1
+          if (radialtag(i) .and. .not. radialtag(i+1)) then
+             ! found end of a tagged region
+             radialtag(i+1) = .true.
+          endif
+       enddo
+       
+    enddo
 
     do i = 1, mf%nboxes
        if ( multifab_remote(mf, i) ) cycle
