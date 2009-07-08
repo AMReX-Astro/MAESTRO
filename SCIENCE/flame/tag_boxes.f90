@@ -143,8 +143,7 @@ contains
           XC12_below = rho_XC12(i,j-1)/rho(i,j-1)
 
           ! fuel flows in from the lower y boundary
-          diff_below = abs(XC12_below - fuel_XC12)
-          if ( (XC12 < small_XC12) .and. (diff_below .lt. 1.d-8) ) then
+          if ( abs(XC12 - XC12_below) > 0.1*fuel_XC12) then
              radialtag(j) = .true.
              radialtag(j-1) = .true.
           end if
