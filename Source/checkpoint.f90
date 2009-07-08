@@ -92,6 +92,7 @@ contains
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
       write(6,*) 'Writing state to checkpoint file ',trim(sd_name_nodal)
+      write(6,*)
     end if
 
     ! Note: parallel fails on Bassi if this is done on all processors

@@ -872,7 +872,10 @@ subroutine varden()
 1106    format('... min/max : gpresz              ',e17.10,2x,e17.10)
 1107    format(' ')
 
-        if (parallel_IOProcessor()) write(6,1000) istep,time,dt
+        if (parallel_IOProcessor()) then
+           write(6,1000) istep,time,dt
+           write(6,*)
+        end if
 
         !---------------------------------------------------------------------
         ! save the old velocity, scalars and source terms for the next step
