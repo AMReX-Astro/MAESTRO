@@ -101,7 +101,7 @@ contains
     use plot_variables_module
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base, &
-         single_prec_plotfiles, edge_nodal_flag
+         single_prec_plotfiles, edge_nodal_flag, do_smallscale
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use average_module
     use ml_restriction_module
@@ -248,7 +248,11 @@ contains
        end do
 
        ! rhoh0
-       h0 = rhoh0 / rho0
+       if (do_smallscale) then
+          h0 = ZERO
+       else
+          h0 = rhoh0 / rho0
+       end if
        call put_1d_array_on_cart(rhoh0,tempfab,dm+rhoh_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla)
 
