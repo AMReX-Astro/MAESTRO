@@ -181,6 +181,13 @@ contains
 
     pmask_xyz = (/pmask_x, pmask_y, pmask_z/)
 
+    if (do_smallscale .and. evolve_base_state) then
+       call bl_error("do_smallscale requires evolve_base_state = F")
+    end if
+
+    if (do_smallscale .and. beta_type .ne. 3) then
+       call bl_error("do_smallscale requires beta_type = 3")
+    end if
 
     ! for the moment, set the cutoff for burning to be base_cutoff_density
     burning_cutoff_density = base_cutoff_density
