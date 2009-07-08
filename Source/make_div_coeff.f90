@@ -36,6 +36,7 @@ contains
     real(kind=dp_t) :: del,dpls,dmin,slim,sflag
     real(kind=dp_t) :: offset
 
+    div_coeff = 0.d0
 
     if (beta_type .eq. 1) then
 
@@ -195,19 +196,25 @@ contains
           do j=1,numdisjointchunks(n)
              do r=r_start_coord(n,j),r_end_coord(n,j)
                 div_coeff(n,r) = rho0(n,r)
-             enddo
+             end do
           end do
        end do
 
     else if (beta_type .eq. 3) then
 
-       div_coeff = 1.d0
+       ! beta_0 = 1.d0
+       do n=1,nlevs_radial
+          do j=1,numdisjointchunks(n)
+             do r=r_start_coord(n,j),r_end_coord(n,j)
+                div_coeff = 1.d0
+             end do
+          end do
+       end do
 
     end if
 
     call restrict_base(div_coeff,.true.)
     call fill_ghost_base(div_coeff,.true.)
-
 
   end subroutine make_div_coeff
 

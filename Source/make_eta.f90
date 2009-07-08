@@ -70,6 +70,7 @@ contains
     etarhosum_proc  = ZERO
     etarhosum       = ZERO
     etarho_ec       = ZERO
+    etarho_cc       = ZERO
     
     if (spherical .eq. 1) then
        call bl_error("ERROR: make_eta should not be called for spherical")
