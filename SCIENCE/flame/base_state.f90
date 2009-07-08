@@ -20,9 +20,11 @@ contains
   subroutine init_base_state(n,model_file,s0_init,p0_init,dx)
 
     use bl_constants_module
+    use bl_error_module
     use network
     use eos_module
-    use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel
+    use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel, &
+         anelastic_cutoff, base_cutoff_density
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm
     use inlet_bc_module, only: set_inlet_bcs
@@ -76,6 +78,13 @@ contains
     p0_init(:) = p_ambient
     if (ntrac > 0) then
        s0_init(:,trac_comp:trac_comp+ntrac-1) = ZERO
+    endif
+
+
+    ! sanity check
+    if (dens_fuel < base_cutoff_density .or. &
+        dens_fuel < anelastic_cutoff) then
+       call bl_error('ERROR: fuel density < (base_cutoff_density or anelastic_cutoff)')
     endif
 
 
