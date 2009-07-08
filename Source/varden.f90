@@ -256,21 +256,28 @@ subroutine varden()
 
      ! this section is not needed for spherical since there is only
      ! one level of refinement of the base state, no matter what nlevs is
-     if ( (nlevs .gt. 1 .or. perturb_model) .and. spherical .eq. 0 &
-          .and. evolve_base_state) then
+     if (spherical .eq. 0) then
 
-        ! enforce HSE
-        call enforce_HSE(rho0_old,p0_old,grav_cell)
+        ! we need to update p0 to account for either:
+        ! 1) the fact that rho0 has changed due to the perturbation 
+        ! 2) we need a consistent definition of HSE across multiple levels
+        if ( (perturb_model .or. nlevs .gt. 1) .and. evolve_base_state) then
 
-        ! compute full state T,h = T,h(rho,p0_old,X)
-        call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
+           ! enforce HSE
+           call enforce_HSE(rho0_old,p0_old,grav_cell)
 
-        ! force rhoh0 to be the average of rhoh
-        call average(mla,sold,rhoh0_old,dx,rhoh_comp)
+           ! recompute T and h using update pressure using
+           ! T,h = T,h(rho,p0_old,X)
+           call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
+           
+           ! force rhoh0 to be the average of rhoh
+           call average(mla,sold,rhoh0_old,dx,rhoh_comp)
+           
+           ! force tempbar to be the average of temp
+           call average(mla,sold,tempbar,dx,temp_comp)
 
-        ! force tempbar to be the average of temp
-        call average(mla,sold,tempbar,dx,temp_comp)
-
+        end if
+        
      end if
 
      !----------------------------------------------------------------------
@@ -572,14 +579,15 @@ subroutine varden()
         !---------------------------------------------------------------------
         ! regrid
         !---------------------------------------------------------------------
-        if (max_levs > 1 .and. regrid_int > 0 &
-             .and. (mod(istep-1,regrid_int) .eq. 0)) then
-           ! we do not regrid spherical base state arrays since there is only one
-           ! level of refinement
+        if (max_levs > 1 .and. regrid_int > 0 .and. (mod(istep-1,regrid_int) .eq. 0)) then
+
+           ! Regrid psi, etarho_cc, etarho_ec, and w0.
+           ! We do not regrid these in spherical since the base state array only
+           ! contains 1 level of refinement.
+           ! We do not regrid these if evolve_base_state=F since they are
+           ! identically zero, set this way in initialize.
            if (spherical .eq. 0 .and. evolve_base_state) then
               
-              ! first 'regrid' the 1d arrays 
-              ! (other than rho0, rhoh0, and p0, which are handled below)
               ! copy the coarsest level only, interpolate to all the other levels
               ! and then copy the valid data from the old arrays onto the new
               ! this must be done before we call init_multilevel or else we lose track
@@ -710,24 +718,22 @@ subroutine varden()
               call average(mla,sold,tempbar,dx,temp_comp)
            end if
 
-           if (evolve_base_state) then
-              ! gamma1bar needs to be recomputed
-              if (allocated(gamma1)) then
-                 deallocate(gamma1)
-              end if
-              allocate(gamma1(nlevs))
-              
-              do n=1,nlevs
-                 call multifab_build(gamma1(n), mla%la(n), 1, 0)
-              end do
-              
-              call make_gamma(mla,gamma1,sold,p0_old,dx)
-              call average(mla,gamma1,gamma1bar,dx,1)
-              
-              do n=1,nlevs
-                 call destroy(gamma1(n))
-              end do
+           ! gamma1bar needs to be recomputed
+           if (allocated(gamma1)) then
+              deallocate(gamma1)
            end if
+           allocate(gamma1(nlevs))
+           
+           do n=1,nlevs
+              call multifab_build(gamma1(n), mla%la(n), 1, 0)
+           end do
+           
+           call make_gamma(mla,gamma1,sold,p0_old,dx)
+           call average(mla,gamma1,gamma1bar,dx,1)
+           
+           do n=1,nlevs
+              call destroy(gamma1(n))
+           end do
 
            ! div_coeff_old needs to be recomputed
            call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
