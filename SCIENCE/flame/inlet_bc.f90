@@ -28,7 +28,6 @@ contains
 
     ! initialize the inflow boundary condition variables
     use eos_module
-    use network
     use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel
 
     integer :: ic12, io16
@@ -44,7 +43,6 @@ contains
     xn_eos(1,ic12) = xc12_fuel
     xn_eos(1,io16) = 1.d0 - xc12_fuel
 
-    
     call eos(eos_input_rt, den_eos, temp_eos, &
              npts, nspec, &
              xn_eos, &
