@@ -140,8 +140,8 @@ contains
     real(dp_t) ::                 Sbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::        div_coeff_nph(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::        gamma1bar_old(nlevs_radial,0:nr_fine-1)
-    real(dp_t) ::          gamma1bar_1(nlevs_radial,0:nr_fine-1)
-    real(dp_t) ::        gamma1bar_nph(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::      gamma1bar_temp1(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::      gamma1bar_temp2(nlevs_radial,0:nr_fine-1)
     real(dp_t) :: delta_gamma1_termbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::               w0_old(nlevs_radial,0:nr_fine)
     real(dp_t) ::       div_coeff_edge(nlevs_radial,0:nr_fine)
@@ -175,7 +175,7 @@ contains
     end if
 
     ! Initialize these to previous values
-    w0_old = w0
+    w0_old        = w0
     gamma1bar_old = gamma1bar
 
     halfdt = half*dt
@@ -475,19 +475,6 @@ contains
 
     if (evolve_base_state) then
 
-       if (spherical .eq. 1) then
-          do n=1,nlevs
-             call multifab_build(gamma1(n), mla%la(n), 1, 0)
-          end do
-          
-          call make_gamma(mla,gamma1,s1,p0_old,dx)
-          call average(mla,gamma1,gamma1bar_1,dx,1)
-          
-          do n=1,nlevs
-             call destroy(gamma1(n))
-          end do
-       end if
-
        ! set new p0 through HSE
        p0_new = p0_old
        call enforce_HSE(rho0_new,p0_new,grav_cell_new)
@@ -499,24 +486,28 @@ contains
           ! compute p0_nph
           p0_nph = HALF*(p0_old+p0_new)
 
-          ! compute gamma1bar_2 and store it in gamma1bar_nph
           do n=1,nlevs
              call multifab_build(gamma1(n), mla%la(n), 1, 0)
           end do
 
+          ! compute gamma1bar^{(1)} and store it in gamma1bar_temp1
+          call make_gamma(mla,gamma1,s1,p0_old,dx)
+          call average(mla,gamma1,gamma1bar_temp1,dx,1)
+
+          ! compute gamma1bar^{(2),*} and store it in gamma1bar_temp2
           call make_gamma(mla,gamma1,s2,p0_new,dx)
-          call average(mla,gamma1,gamma1bar_nph,dx,1)
+          call average(mla,gamma1,gamma1bar_temp2,dx,1)
 
           do n=1,nlevs
              call destroy(gamma1(n))
           end do
 
-          ! compute gamma1bar_nph
-          gamma1bar_nph = HALF*(gamma1bar_1+gamma1bar_nph)
+          ! compute gamma1bar^{nph,*} and store it in gamma1bar_temp2
+          gamma1bar_temp2 = HALF*(gamma1bar_temp1+gamma1bar_temp2)
 
           ! make base time and time-centered psi
-          call make_psi_spherical(psi_old,w0,gamma1bar_1  ,p0_old,Sbar)
-          call make_psi_spherical(psi    ,w0,gamma1bar_nph,p0_nph,Sbar)
+          call make_psi_spherical(psi_old,w0,gamma1bar_temp1,p0_old,Sbar)
+          call make_psi_spherical(psi    ,w0,gamma1bar_temp2,p0_nph,Sbar)
        end if
 
     else
@@ -935,17 +926,19 @@ contains
              call multifab_build(gamma1(n), mla%la(n), 1, 0)
           end do
 
+          ! compute gamma1bar^{(2)} and store it in gamma1bar_temp2
           call make_gamma(mla,gamma1,s2,p0_new,dx)
-          call average(mla,gamma1,gamma1bar_nph,dx,1)
+          call average(mla,gamma1,gamma1bar_temp2,dx,1)
 
           do n=1,nlevs
              call destroy(gamma1(n))
           end do
 
-          gamma1bar_nph = HALF*(gamma1bar_1+gamma1bar_nph)
+          ! compute gamma1bar^{nph} and store it in gamma1bar_temp2
+          gamma1bar_temp2 = HALF*(gamma1bar_temp1+gamma1bar_temp2)
 
-          call make_psi_spherical(psi_old,w0,gamma1bar_1  ,p0_old,Sbar)
-          call make_psi_spherical(psi    ,w0,gamma1bar_nph,p0_nph,Sbar)
+          call make_psi_spherical(psi_old,w0,gamma1bar_temp1,p0_old,Sbar)
+          call make_psi_spherical(psi    ,w0,gamma1bar_temp2,p0_nph,Sbar)
        end if
 
     else
