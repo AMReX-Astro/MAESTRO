@@ -60,7 +60,7 @@ contains
        do n=1,nlevs_radial
           do r=0,nr(n)-1
              base_r = problo + (dble(r)+HALF) * dr(n)
-             write(99,1000)  base_r, rho0(n,r), p0(n,r), gamma1bar(n,r), rhoh0(n,r), &
+             write(99,1000)  r, base_r, rho0(n,r), p0(n,r), gamma1bar(n,r), rhoh0(n,r), &
                   div_coeff(n,r), psi(n,r), tempbar(n,r), etarho_cc(n,r)
           end do
        end do
@@ -74,7 +74,7 @@ contains
        do n=1,nlevs_radial
           do r=0,nr(n)
              base_r = problo + dble(r) * dr(n)
-             write(99,1000)  base_r,w0(n,r),etarho_ec(n,r)
+             write(99,1000)  r, base_r, w0(n,r), etarho_ec(n,r)
           end do
        end do
        close(99)
@@ -115,7 +115,7 @@ contains
     character(len=256) :: state_name, w0_name
     real(kind=dp_t) :: r_dummy
     character(len=256) :: out_name
-    integer :: r, n, i
+    integer :: r, n, i, r_dummy_int
 
     type(bl_prof_timer), save :: bpt
 
@@ -139,8 +139,8 @@ contains
 
     do n=1,nlevs_radial
        do r=0,nr(n)-1
-          read(99,*)  r_dummy, rho0(n,r), p0(n,r), gamma1bar(n,r), rhoh0(n,r), &
-               div_coeff(n,r), psi(n,r), tempbar(n,r), etarho_cc(n,r)
+          read(99,*) r_dummy_int, r_dummy, rho0(n,r), p0(n,r), gamma1bar(n,r), &
+               rhoh0(n,r), div_coeff(n,r), psi(n,r), tempbar(n,r), etarho_cc(n,r)
        end do
     end do
     close(99)
@@ -154,7 +154,7 @@ contains
     open(unit=99,file=out_name)
     do n=1,nlevs_radial
        do r=0,nr(n)
-          read(99,*)  r_dummy, w0(n,r), etarho_ec(n,r)
+          read(99,*) r_dummy_int, r_dummy, w0(n,r), etarho_ec(n,r)
        end do
     end do
     close(99)
