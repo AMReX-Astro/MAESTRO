@@ -83,12 +83,12 @@ contains
 
   end subroutine initscalardata
 
-  subroutine initscalardata_on_level(n,s,s0_init,p0_background,dx,bc)
+  subroutine initscalardata_on_level(n,s,s0_init,p0_init,dx,bc)
 
     integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_background(0:)
+    real(kind=dp_t), intent(in   ) :: p0_init(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     type(bc_level) , intent(in   ) :: bc
 

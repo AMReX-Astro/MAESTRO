@@ -22,11 +22,11 @@ module init_module
 
 contains
 
-  subroutine initscalardata(s,s0_init,p0_background,dx,bc,mla)
+  subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_background(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
@@ -50,7 +50,7 @@ contains
           case (3)
              if (spherical .eq. 1) then
                 call initscalardata_3d_sphr(sop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                            s0_init(1,:,:), p0_background(1,:))
+                                            s0_init(1,:,:), p0_init(1,:))
              else
                 call bl_error('initscalardata_3d not written')
              end if
@@ -88,12 +88,12 @@ contains
        
   end subroutine initscalardata
 
-  subroutine initscalardata_on_level(n,s,s0_init,p0_background,dx,bc)
+  subroutine initscalardata_on_level(n,s,s0_init,p0_init,dx,bc)
 
     integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_background(0:)
+    real(kind=dp_t), intent(in   ) :: p0_init(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     type(bc_level) , intent(in   ) :: bc
 
@@ -114,7 +114,7 @@ contains
           call bl_error('initscalardata_2d not written')
        case (3)
           if (spherical .eq. 1) then
-             call initscalardata_3d_sphr(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_background)
+             call initscalardata_3d_sphr(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_init)
           else
              call bl_error('initscalardata_3d not written')
           end if
@@ -127,7 +127,7 @@ contains
 
   end subroutine initscalardata_on_level
 
-  subroutine initscalardata_3d_sphr(s,lo,hi,ng,dx,s0_init,p0_background)
+  subroutine initscalardata_3d_sphr(s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo, perturb_model
 
@@ -135,7 +135,7 @@ contains
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t),    intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t),    intent(in   ) :: p0_background(0:)
+    real(kind=dp_t),    intent(in   ) :: p0_init(0:)
 
     !     Local variables
     integer :: i, j, k, comp
@@ -174,13 +174,13 @@ contains
 
   end subroutine initscalardata_3d_sphr
 
-  subroutine initveldata(u,s0_init,p0_background,dx,bc,mla)
+  subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
 
     use mt19937_module
     
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_background(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
@@ -254,7 +254,7 @@ contains
           case (3)
              if (spherical .eq. 1) then
                 call initveldata_3d_sphr(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                         s0_init(1,:,:), p0_background(1,:), &
+                                         s0_init(1,:,:), p0_init(1,:), &
                                          alpha, beta, gamma, phix, phiy, phiz, normk)
              else
                 call bl_error('initveldata_3d not written')
@@ -301,7 +301,7 @@ contains
   ! The steepness of the cutoff is controlled by "velpert_steep".  The
   ! relative amplitude of the modes is controlled by
   ! "velpert_amplitude".
-  subroutine initveldata_3d_sphr(u,lo,hi,ng,dx,s0_init,p0_background, &
+  subroutine initveldata_3d_sphr(u,lo,hi,ng,dx,s0_init,p0_init, &
                                  alpha,beta,gamma,phix,phiy,phiz,normk)
 
     use probin_module, only: prob_lo, prob_hi, &
@@ -311,7 +311,7 @@ contains
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in ) :: dx(:)
     real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0_background(0:)
+    real(kind=dp_t), intent(in   ) ::    p0_init(0:)
 
     ! random numbers between -1 and 1
     real(kind=dp_t), intent(in) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)

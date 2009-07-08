@@ -24,11 +24,11 @@ module init_module
 
 contains
 
-  subroutine initscalardata(s,s0_init,p0_background,dx,bc,mla)
+  subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_background(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
@@ -48,13 +48,13 @@ contains
           select case (dm)
           case (2)
              call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                    p0_background(n,:))
+                                    p0_init(n,:))
           case (3)
              if (spherical .eq. 1) then
                 call bl_error("ERROR: initscalardata not implemented in spherical")
              else
                 call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                       p0_background(n,:))
+                                       p0_init(n,:))
              end if
           end select
        end do
@@ -90,12 +90,12 @@ contains
 
   end subroutine initscalardata
 
-  subroutine initscalardata_on_level(n,s,s0_init,p0_background,dx,bc)
+  subroutine initscalardata_on_level(n,s,s0_init,p0_init,dx,bc)
 
     integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_background(0:)
+    real(kind=dp_t), intent(in   ) :: p0_init(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     type(bc_level) , intent(in   ) :: bc
 
@@ -113,12 +113,12 @@ contains
        hi =  upb(get_box(s,i))
        select case (dm)
        case (2)
-          call initscalardata_2d(sop(:,:,1,:),lo,hi,ng,dx,s0_init,p0_background)
+          call initscalardata_2d(sop(:,:,1,:),lo,hi,ng,dx,s0_init,p0_init)
        case (3)
           if (spherical .eq. 1) then
              call bl_error("ERROR: initscalardata not implemented in spherical")
           else
-             call initscalardata_3d(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_background)
+             call initscalardata_3d(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_init)
           end if
        end select
     end do
@@ -129,7 +129,7 @@ contains
 
   end subroutine initscalardata_on_level
 
-  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_background)
+  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo, prob_hi, &
          dens_fuel, temp_fuel, xc12_fuel, vel_fuel, &
@@ -139,7 +139,7 @@ contains
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t)   , intent(in   ) :: p0_background(0:)
+    real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
 
     ! Local variables
     integer         :: i,j
@@ -179,7 +179,7 @@ contains
              dsdt_eos, dsdr_eos, &
              do_diag)
 
-    ! note: p_ambient should be = p0_background
+    ! note: p_ambient should be = p0_init
     p_ambient = p_eos(1)
     rhoh_fuel = dens_fuel*h_eos(1)
 
@@ -246,7 +246,7 @@ contains
         
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d(s,lo,hi,ng,dx,s0_init,p0_background)
+  subroutine initscalardata_3d(s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo
     
@@ -254,20 +254,20 @@ contains
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t)   , intent(in   ) :: p0_background(0:)
+    real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
 
     call bl_error("ERROR: initscalardata_3d not implemented")
 
   end subroutine initscalardata_3d
 
 
-  subroutine initveldata(u,s0_init,p0_background,dx,bc,mla)
+  subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
 
     use geometry, only: nlevs
 
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_background(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
@@ -287,14 +287,14 @@ contains
           select case (dm)
           case (2)
              call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
-                                 s0_init(n,:,:), p0_background(n,:))
+                                 s0_init(n,:,:), p0_init(n,:))
           case (3) 
              if (spherical .eq. 1) then
                 call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                    s0_init(1,:,:), p0_background(1,:))
+                                    s0_init(1,:,:), p0_init(1,:))
              else
                 call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                    s0_init(n,:,:), p0_background(n,:))
+                                    s0_init(n,:,:), p0_init(n,:))
              end if
           end select
        end do
@@ -328,7 +328,7 @@ contains
 
   end subroutine initveldata
 
-  subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_background)
+  subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: vel_fuel
 
@@ -336,7 +336,7 @@ contains
     real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t)   , intent(in   ) :: p0_background(0:)
+    real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
 
     ! Local variables
 
@@ -347,13 +347,13 @@ contains
 
   end subroutine initveldata_2d
 
-  subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_background)
+  subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_init)
 
     integer           , intent(in   ) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t)   , intent(in   ) :: p0_background(0:)
+    real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
 
     ! Local variables
 
