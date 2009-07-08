@@ -591,18 +591,16 @@ contains
        call destroy(s2(n))
     end do
     
-    if (evolve_base_state) then
-       do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 0)
-       end do
+    do n=1,nlevs
+       call multifab_build(gamma1(n), mla%la(n), 1, 0)
+    end do
        
-       call make_gamma(mla,gamma1,snew,p0_new,dx)
-       call average(mla,gamma1,gamma1bar,dx,1)
+    call make_gamma(mla,gamma1,snew,p0_new,dx)
+    call average(mla,gamma1,gamma1bar,dx,1)
 
-       do n=1,nlevs
-          call destroy(gamma1(n))
-       end do
-    end if
+    do n=1,nlevs
+       call destroy(gamma1(n))
+    end do
 
     call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
     
@@ -1030,18 +1028,16 @@ contains
        call destroy(s2(n))
     end do
 
-    if (evolve_base_state) then
-       do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 0)
-       end do
+    do n=1,nlevs
+       call multifab_build(gamma1(n), mla%la(n), 1, 0)
+    end do
 
-       call make_gamma(mla,gamma1,snew,p0_new,dx)
-       call average(mla,gamma1,gamma1bar,dx,1)
+    call make_gamma(mla,gamma1,snew,p0_new,dx)
+    call average(mla,gamma1,gamma1bar,dx,1)
 
-       do n=1,nlevs
-          call destroy(gamma1(n))
-       end do
-    end if
+    do n=1,nlevs
+       call destroy(gamma1(n))
+    end do
 
     call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
 

@@ -719,9 +719,7 @@ subroutine varden()
            end if
 
            ! gamma1bar needs to be recomputed
-           if (allocated(gamma1)) then
-              deallocate(gamma1)
-           end if
+           if (allocated(gamma1)) deallocate(gamma1)
            allocate(gamma1(nlevs))
            
            do n=1,nlevs
