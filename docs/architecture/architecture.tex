@@ -140,7 +140,6 @@ number of ghostcells, so we can use {\tt s(1)} here.
 
 \begin{verbatim}
     do n=1,nlevs
-
        do i = 1, s(n)%nboxes
 \end{verbatim}
 
@@ -211,7 +210,7 @@ these functions is:
        y = prob_lo(2) + (dble(j) + HALF)*dx(2)
 
        do i = lo(1), hi(1)
-          y = prob_lo(2) + (dble(j) + HALF)*dx(2)
+          x = prob_lo(1) + (dble(i) + HALF)*dx(1)
 
           ! operate on density(i,j)
 
@@ -229,7 +228,10 @@ lower bound of the domain.  {\tt bl\_constants\_module} declares
 useful double-precision constants, like {\tt HALF} (0.5).
 
 The three-dimensional case is similar, with the {\tt density} array
-declared as {\tt density(lo(1)-ng\_sp:,lo(2)-ng\_sp:,lo(3)-ng\_sp)},
+declared as 
+\begin{verbatim}
+  density(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp)
+\end{verbatim}
 and an additional loop over the `z' coordinate (from {\tt lo(3)} to
 {\tt hi(3)}).
 
