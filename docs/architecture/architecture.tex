@@ -8,6 +8,77 @@
 \caption{The basic MAESTRO directory structure}
 \end{figure}
 
+All the files needed to build MAESTRO are contained in the {\tt
+fParallel} directory structure.  Briefly, the sub-directories
+are:
+\begin{itemize}
+\item {\tt boxlib/} 
+
+ boxlib is a library for describing meshes consisting of a union
+ of boxes.  The boxlib modules define the basic datatypes used
+ in MAESTRO.
+
+\item {\tt data\_processing/}
+
+ Simple Fortran-based analysis routines (e.g.\ extract a line from a
+ multidimensional dataset) that operate on boxlib plotfiles.
+
+\item {\tt doc/}
+
+ Documentation describing the basic algorithm.
+
+\item {\tt extern/}
+
+ External modules, like ODE integrators, equations of state, reaction
+ networks
+
+\item {\tt MAESTRO/}
+
+ The main MAESTRO algorithm files.  Here you will find the main driver,
+ the advection routines, etc.
+
+ Important directories under {\tt MAESTRO/} include:
+
+ \begin{itemize}
+
+ \item {\tt initial\_models}
+
+   Several sub-directories containing routines to generate
+   1D initial conditions in hydrostatic equilibrium for 
+   mapping onto the MAESTRO grid.
+
+ \item problem directories: {\tt test}, {\tt test2}, {\tt
+   test\_spherical}, $\ldots$
+
+   Each problem in MAESTRO gets it own subdirectory.  The {\tt
+   GNUmakefile} includes the instructions on how to build the
+   executable, including what modules in {\tt extern} are used.
+
+   Any file that you place in a sub-directory here takes 
+   precedence over a file of the same name in {\tt MAESTRO/}.
+   This allows problems to have custom versions of the main
+   MAESTRO routines (e.g.\ initial conditions via {\tt initdata.f90}.
+
+ \end{itemize}
+
+\item {\tt mg/}
+
+  The multigrid solver.
+
+\item {\tt mk/}
+
+  The generic Makefiles that store the compilation flags for
+  various platforms.
+
+\item {\tt scripts/}
+
+  Some simple scripts that are useful for building, running,
+  maintaining MAESTRO.
+
+\end{itemize}
+
+
+
 \subsection{BoxLib Data Structures}
 
 \subsubsection{\boxtype}
