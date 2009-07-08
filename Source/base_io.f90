@@ -85,7 +85,7 @@ contains
 
     call destroy(bpt)
 
-1000 format(32(e30.20,1x))
+1000 format(i8,32(e30.20,1x))
 
   end subroutine write_base_state
 
