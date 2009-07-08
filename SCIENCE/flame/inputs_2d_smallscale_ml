@@ -28,6 +28,7 @@
  
  frac = 0.125
 
+ do_smallscale = T
 
  ! stepping parameters
  max_step  = 300000

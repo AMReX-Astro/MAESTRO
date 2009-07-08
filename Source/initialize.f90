@@ -395,14 +395,22 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
-    if (perturb_model) then
-       ! force rho0 to be the average density
-       call average(mla,sold,rho0_old,dx,rho_comp)
-    else
-       ! s0_init already contains the average
-       rho0_old = s0_init(:,:,rho_comp)
-       call restrict_base(rho0_old,.true.)
-       call fill_ghost_base(rho0_old,.true.)
+    if (.not. do_smallscale) then
+       if (perturb_model) then
+          ! force rho0 to be the average density
+          call average(mla,sold,rho0_old,dx,rho_comp)
+       else
+          ! s0_init already contains the average
+          rho0_old = s0_init(:,:,rho_comp)
+          call restrict_base(rho0_old,.true.)
+          call fill_ghost_base(rho0_old,.true.)
+       end if
+
+       ! this will be overwritten if we are multilevel or if perturb_model = T
+       ! but we copy it anyway so s0_init can remain local
+       rhoh0_old = s0_init(:,:,rhoh_comp)
+       call restrict_base(rhoh0_old,.true.)
+       call fill_ghost_base(rhoh0_old,.true.)
     end if
 
     ! this will be overwritten if we are multilevel or if perturb_model = T
@@ -410,12 +418,6 @@ contains
     p0_old = p0_init
     call restrict_base(p0_old,.true.)
     call fill_ghost_base(p0_old,.true.)
-
-    ! this will be overwritten if we are multilevel or if perturb_model = T
-    ! but we copy it anyway so s0_init can remain local
-    rhoh0_old = s0_init(:,:,rhoh_comp)
-    call restrict_base(rhoh0_old,.true.)
-    call fill_ghost_base(rhoh0_old,.true.)
 
     ! this will be overwritten if we are multilevel or if perturb_model = T
     ! but we copy it anyway for the initial condition
@@ -668,14 +670,22 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
-    if (perturb_model) then
-       ! force rho0 to be the average density
-       call average(mla,sold,rho0_old,dx,rho_comp)
-    else
-       ! s0_init already contains the average
-       rho0_old = s0_init(:,:,rho_comp)
-       call restrict_base(rho0_old,.true.)
-       call fill_ghost_base(rho0_old,.true.)
+    if (.not. do_smallscale) then
+       if (perturb_model) then
+          ! force rho0 to be the average density
+          call average(mla,sold,rho0_old,dx,rho_comp)
+       else
+          ! s0_init already contains the average
+          rho0_old = s0_init(:,:,rho_comp)
+          call restrict_base(rho0_old,.true.)
+          call fill_ghost_base(rho0_old,.true.)
+       end if
+
+       ! this will be overwritten if we are multilevel or if perturb_model = T
+       ! but we copy it anyway so s0_init can remain local
+       rhoh0_old = s0_init(:,:,rhoh_comp)
+       call restrict_base(rhoh0_old,.true.)
+       call fill_ghost_base(rhoh0_old,.true.)
     end if
 
     ! this will be overwritten if we are multilevel or if perturb_model = T
@@ -683,12 +693,6 @@ contains
     p0_old = p0_init
     call restrict_base(p0_old,.true.)
     call fill_ghost_base(p0_old,.true.)
-
-    ! this will be overwritten if we are multilevel or if perturb_model = T
-    ! but we copy it anyway so s0_init can remain local
-    rhoh0_old = s0_init(:,:,rhoh_comp)
-    call restrict_base(rhoh0_old,.true.)
-    call fill_ghost_base(rhoh0_old,.true.)
 
     tempbar = s0_init(:,:,temp_comp)
     call restrict_base(tempbar,.true.)
