@@ -395,7 +395,8 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
-    if (.not. do_smallscale) then
+    if (evolve_base_state) then
+
        if (perturb_model) then
           ! force rho0 to be the average density
           call average(mla,sold,rho0_old,dx,rho_comp)
@@ -411,13 +412,26 @@ contains
        rhoh0_old = s0_init(:,:,rhoh_comp)
        call restrict_base(rhoh0_old,.true.)
        call fill_ghost_base(rhoh0_old,.true.)
-    end if
 
-    ! this will be overwritten if we are multilevel or if perturb_model = T
-    ! but we copy it anyway for the initial condition
-    p0_old = p0_init
-    call restrict_base(p0_old,.true.)
-    call fill_ghost_base(p0_old,.true.)
+       ! this will be overwritten if we are multilevel or if perturb_model = T
+       ! but we copy it anyway for the initial condition
+       p0_old = p0_init
+       call restrict_base(p0_old,.true.)
+       call fill_ghost_base(p0_old,.true.)
+
+    else
+
+       if (do_smallscale) then
+          ! leave rho0_old = rhoh0_old ZERO
+          ! but we still need p0
+          p0_old = p0_init
+       else
+          rho0_old = s0_init(:,:,rho_comp)
+          rhoh0_old = s0_init(:,:,rhoh_comp)
+          p0_old = p0_init
+       end if
+
+    end if
 
     ! this will be overwritten if we are multilevel or if perturb_model = T
     ! but we copy it anyway for the initial condition
@@ -670,7 +684,8 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
-    if (.not. do_smallscale) then
+    if (evolve_base_state) then
+
        if (perturb_model) then
           ! force rho0 to be the average density
           call average(mla,sold,rho0_old,dx,rho_comp)
@@ -686,14 +701,29 @@ contains
        rhoh0_old = s0_init(:,:,rhoh_comp)
        call restrict_base(rhoh0_old,.true.)
        call fill_ghost_base(rhoh0_old,.true.)
+
+       ! this will be overwritten if we are multilevel or if perturb_model = T
+       ! but we copy it anyway for the initial condition
+       p0_old = p0_init
+       call restrict_base(p0_old,.true.)
+       call fill_ghost_base(p0_old,.true.)
+
+    else
+
+       if (do_smallscale) then
+          ! leave rho0_old = rhoh0_old ZERO
+          ! but we still need p0
+          p0_old = p0_init
+       else
+          rho0_old = s0_init(:,:,rho_comp)
+          rhoh0_old = s0_init(:,:,rhoh_comp)
+          p0_old = p0_init
+       end if
+
     end if
 
     ! this will be overwritten if we are multilevel or if perturb_model = T
     ! but we copy it anyway for the initial condition
-    p0_old = p0_init
-    call restrict_base(p0_old,.true.)
-    call fill_ghost_base(p0_old,.true.)
-
     tempbar = s0_init(:,:,temp_comp)
     call restrict_base(tempbar,.true.)
     call fill_ghost_base(tempbar,.true.)
