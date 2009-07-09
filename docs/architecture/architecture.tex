@@ -83,8 +83,9 @@ are:
 
 \subsubsection{\boxtype}
 
-A \boxtype\ is simply a rectangular domain in space.  The datatype for
-a \boxtype\ is
+A \boxtype\ is simply a rectangular domain in space.  Note that boxes
+do not hold the state data themselves.  The datatype for a
+\boxtype\ is
 \begin{verbatim}
   type box
      integer :: dim  = 0
@@ -100,16 +101,22 @@ a \boxtype\ is
 \item {\tt hi} is the index of the upper bound of the box
 \end{itemize}
 
-Note that boxes do not hold the state data themselves.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=5.0in]{\archfigpath/index_grid2}
-\caption{The basic MAESTRO directory structure}
+\includegraphics[width=4.0in]{\archfigpath/index_grid2}
+\caption{\label{fig:boxes} Three boxes that comprise a single level.
+At this resolution, the domain is 20$\times$18 zones.}
 \end{figure}
 
 
-add description of index-space
+The computational domain is divided into boxes.  The collection of
+boxes with the same resolution comprise a level.
+Figure~\ref{fig:boxes} shows three boxes in the same level of
+refinement.  The position of the boxes is with respect to a global
+index space at that level.  For example, box 1 in the figure has {\tt
+  lo} = (3,7) and {\tt hi} = (9,12).
+
 
 \subsubsection{\fab}
 
