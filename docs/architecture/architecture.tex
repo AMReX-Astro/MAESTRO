@@ -80,7 +80,7 @@ are:
 \section{BoxLib Data Structures}
 
 MAESTRO's gridding is handled by the boxlib library.  The underlying
-idea in boxlib is to allow for adaptive mesh refinement.  The domain
+idea in boxlib is to allow for adaptive mesh refinement (AMR).  The domain
 is broken into boxes.  At the coarsest (base) level of refinement, the
 entire computational domain is covered, either by one box or broken
 across many boxes.  Higher levels of refinement have finer zones
@@ -334,7 +334,7 @@ these functions is:
        enddo
     end do
 
-  end subroutine mk_sponge_2d
+  end subroutine example_2d
 \end{verbatim}
 
 \noindent In this function, the bounds of the {\tt density} array
