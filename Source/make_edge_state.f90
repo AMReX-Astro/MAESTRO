@@ -286,57 +286,59 @@ contains
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
 
-              ! modify using Colella 2008 limiters
-              if (r .ge. 2 .and. r .le. nr(n)-3) then
-                 
-                 diff1 = sp(n,r)-s(n,r)
-                 diff2 = s(n,r)-sm(n,r)
-                 diff3 = s(n,r+1)-s(n,r)
-                 diff4 = s(n,r)-s(n,r-1)
+              do r=lo,hi
+                 ! modify using Colella 2008 limiters
+                 if (r .ge. 2 .and. r .le. nr(n)-3) then
 
-                 if (abs(diff1) .le. rel_eps) diff1 = ZERO
-                 if (abs(diff2) .le. rel_eps) diff2 = ZERO
-                 if (abs(diff3) .le. rel_eps) diff3 = ZERO
-                 if (abs(diff4) .le. rel_eps) diff4 = ZERO
+                    diff1 = sp(n,r)-s(n,r)
+                    diff2 = s(n,r)-sm(n,r)
+                    diff3 = s(n,r+1)-s(n,r)
+                    diff4 = s(n,r)-s(n,r-1)
 
-                 if (diff1*diff2 .le. ZERO .or. &
-                     diff3*diff4 .le. ZERO ) then
-                    s6 = SIX*s(n,r) - THREE*(sm(n,r)+sp(n,r))
-                    D2  = -TWO*s6/dr(1)**2
-                    D2C = (ONE/dr(1)**2)*(s(n,r-1)-TWO*s(n,r)+s(n,r+1))
-                    D2L = (ONE/dr(1)**2)*(s(n,r-2)-TWO*s(n,r-1)+s(n,r))
-                    D2R = (ONE/dr(1)**2)*(s(n,r)-TWO*s(n,r+1)+s(n,r+2))
-                    if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
-                         sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                         sign(ONE,D2) .eq. sign(ONE,D2R) .and. &
-                         D2 .ne. ZERO) then
-                       D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
-                       sp(n,r) = s(n,r) + (sp(n,r)-s(n,r))*(D2LIM/D2)
-                       sm(n,r) = s(n,r) + (sm(n,r)-s(n,r))*(D2LIM/D2)
-                    else
-                       sp(n,r) = s(n,r)
-                       sm(n,r) = s(n,r)
-                    end if
-                 else
-                    alphap = sp(n,r)-s(n,r)
-                    alpham = sm(n,r)-s(n,r)
-                    if (abs(alphap) .ge. TWO*abs(alpham)) then
-                       dI = -alphap**2 / (FOUR*(alphap+alpham))
-                       ds = s(n,r+1)-s(n,r)
-                       sgn = sign(ONE,s(n,r+1)-s(n,r-1))
-                       if (sgn*dI .ge. sgn*ds) then
-                          sp(n,r) = s(n,r) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
+                    if (abs(diff1) .le. rel_eps) diff1 = ZERO
+                    if (abs(diff2) .le. rel_eps) diff2 = ZERO
+                    if (abs(diff3) .le. rel_eps) diff3 = ZERO
+                    if (abs(diff4) .le. rel_eps) diff4 = ZERO
+
+                    if (diff1*diff2 .le. ZERO .or. &
+                         diff3*diff4 .le. ZERO ) then
+                       s6 = SIX*s(n,r) - THREE*(sm(n,r)+sp(n,r))
+                       D2  = -TWO*s6/dr(1)**2
+                       D2C = (ONE/dr(1)**2)*(s(n,r-1)-TWO*s(n,r)+s(n,r+1))
+                       D2L = (ONE/dr(1)**2)*(s(n,r-2)-TWO*s(n,r-1)+s(n,r))
+                       D2R = (ONE/dr(1)**2)*(s(n,r)-TWO*s(n,r+1)+s(n,r+2))
+                       if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
+                            sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                            sign(ONE,D2) .eq. sign(ONE,D2R) .and. &
+                            D2 .ne. ZERO) then
+                          D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
+                          sp(n,r) = s(n,r) + (sp(n,r)-s(n,r))*(D2LIM/D2)
+                          sm(n,r) = s(n,r) + (sm(n,r)-s(n,r))*(D2LIM/D2)
+                       else
+                          sp(n,r) = s(n,r)
+                          sm(n,r) = s(n,r)
                        end if
-                    else if (abs(alpham) .ge. TWO*abs(alphap)) then
-                       dI = -alpham**2 / (FOUR*(alphap+alpham))
-                       ds = s(n,r-1)-s(n,r)
-                       sgn = sign(ONE,s(n,r+1)-s(n,r-1))
-                       if (sgn*dI .ge. sgn*ds) then
-                          sm(n,r) = s(n,r) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
+                    else
+                       alphap = sp(n,r)-s(n,r)
+                       alpham = sm(n,r)-s(n,r)
+                       if (abs(alphap) .ge. TWO*abs(alpham)) then
+                          dI = -alphap**2 / (FOUR*(alphap+alpham))
+                          ds = s(n,r+1)-s(n,r)
+                          sgn = sign(ONE,s(n,r+1)-s(n,r-1))
+                          if (sgn*dI .ge. sgn*ds) then
+                             sp(n,r) = s(n,r) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
+                          end if
+                       else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                          dI = -alpham**2 / (FOUR*(alphap+alpham))
+                          ds = s(n,r-1)-s(n,r)
+                          sgn = sign(ONE,s(n,r+1)-s(n,r-1))
+                          if (sgn*dI .ge. sgn*ds) then
+                             sm(n,r) = s(n,r) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
+                          end if
                        end if
                     end if
                  end if
-              end if
+              end do
 
            end do
         end do
