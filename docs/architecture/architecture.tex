@@ -1,6 +1,4 @@
-\section{MAESTRO Architecture}
-
-\subsection{MAESTRO Directory Structure}
+\section{MAESTRO Directory Structure}
 
 \begin{figure}[h]
 \centering
@@ -79,9 +77,25 @@ are:
 
 
 
-\subsection{BoxLib Data Structures}
+\section{BoxLib Data Structures}
 
-\subsubsection{\boxtype}
+MAESTRO's gridding is handled by the boxlib library.  The underlying
+idea in boxlib is to allow for adaptive mesh refinement.  The domain
+is broken into boxes.  At the coarsest (base) level of refinement, the
+entire computational domain is covered, either by one box or broken
+across many boxes.  Higher levels of refinement have finer zones
+(typically $2\times$).  Only a portion of the domain may be covered by
+the higher levels of refinement.  \MarginPar{Nesting?}
+For parallel computations, the boxes are spread across processors, in
+a fashion designed to put roughly equal amounts of work on each
+processor (load balancing).
+
+To simplify the description of the underlying AMR grid, boxlib
+provides a number of Fortran types.  We briefly summarize the major
+data types below.
+
+
+\subsection{\boxtype}
 
 A \boxtype\ is simply a rectangular domain in space.  Note that boxes
 do not hold the state data themselves.  The datatype for a
@@ -118,7 +132,7 @@ index space at that level.  For example, box 1 in the figure has {\tt
   lo} = (3,7) and {\tt hi} = (9,12).
 
 
-\subsubsection{\fab}
+\subsection{\fab}
 
 A \fab\ is a ``Fortran Array Box''.  It contains the state data in a
 multidimensional array and several \boxtype-types to describe where in
@@ -154,7 +168,7 @@ Also note that all state data is stored in a four-dimensional array,
 {\tt (nx,ny,nz,nc)} in size, regardless of the dimensionality of the
 problem.  For 2D problems, {\tt nz=1}.
 
-\subsubsection{\multifab}
+\subsection{\multifab}
 
 A \multifab\ is a collection of \fab s at the same level of
 refinement.  The data type of a \multifab\ is:
@@ -171,22 +185,22 @@ refinement.  The data type of a \multifab\ is:
 \end{verbatim}
 
 
-\subsubsection{\boxarray}
+\subsection{\boxarray}
 
 A \boxarray\ is an array of boxes
 
-\subsubsection{\mlboxarray}
+\subsection{\mlboxarray}
 
 A \mlboxarray\ is a collection of \boxarray s at different levels of
 refinement.
 
-\subsubsection{\mllayout}
+\subsection{\mllayout}
 
 
-\subsubsection{\bctower}
+\subsection{\bctower}
 
 
-\subsection{Example: Accessing State Data}
+\section{Example: Accessing State Data}
 
 In MAESTRO, the state data is stored in a multifab array (the array
 index refers to the AMR level).  A typical way to extract the state data
@@ -338,13 +352,15 @@ declared as
 and an additional loop over the `z' coordinate (from {\tt lo(3)} to
 {\tt hi(3)}).
 
-\subsection{Working with Multifabs}
+\section{Working with Multifabs}
 
 
-\subsection{Filling Ghostcells}
+\section{Filling Ghostcells}
 
 
-\subsection{Boundary Conditions}
+\section{Boundary Conditions}
+
+
 
 
 
