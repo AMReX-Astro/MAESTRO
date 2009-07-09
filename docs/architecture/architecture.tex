@@ -80,12 +80,13 @@ are:
 \section{BoxLib Data Structures}
 
 MAESTRO's gridding is handled by the boxlib library.  The underlying
-idea in boxlib is to allow for adaptive mesh refinement (AMR).  The domain
-is broken into boxes.  At the coarsest (base) level of refinement, the
-entire computational domain is covered, either by one box or broken
-across many boxes.  Higher levels of refinement have finer zones
-(typically $2\times$).  Only a portion of the domain may be covered by
-the higher levels of refinement.  \MarginPar{Nesting?}
+idea in boxlib is to allow for adaptive mesh refinement---different
+regions of the domain can have different spatial resolutions.  The
+domain is broken into boxes.  At the coarsest (base) level of
+refinement, the entire computational domain is covered, either by one
+box or broken across many boxes.  Higher levels of refinement have
+finer zones (typically $2\times$).  Only a portion of the domain may
+be covered by the higher levels of refinement.  \MarginPar{Nesting?}
 For parallel computations, the boxes are spread across processors, in
 a fashion designed to put roughly equal amounts of work on each
 processor (load balancing).
@@ -120,7 +121,8 @@ do not hold the state data themselves.  The datatype for a
 \centering
 \includegraphics[width=4.0in]{\archfigpath/index_grid2}
 \caption{\label{fig:boxes} Three boxes that comprise a single level.
-At this resolution, the domain is 20$\times$18 zones.}
+At this resolution, the domain is 20$\times$18 zones.  Note that the
+indexing in boxlib starts with $0$.}
 \end{figure}
 
 
@@ -291,9 +293,9 @@ stored in the {\tt dm}-dimensional arrays {\tt lo} and {\tt hi}
           case (3)
              call example_3d(sp(:,:,:,rho_comp),ng_sp,lo,hi,dx(n,:),dt)
           end select
-       end do
+       enddo    ! end loop over boxes
 
-    end do
+    enddo    ! end loop over levels
 
   end subroutine example
 \end{verbatim}
@@ -330,9 +332,10 @@ these functions is:
           x = prob_lo(1) + (dble(i) + HALF)*dx(1)
 
           ! operate on density(i,j)
+          ! ...
 
        enddo
-    end do
+    enddo
 
   end subroutine example_2d
 \end{verbatim}
@@ -361,10 +364,31 @@ and an additional loop over the `z' coordinate (from {\tt lo(3)} to
 \section{Boundary Conditions}
 
 
+\section{Multigrid}
+
+
+\section{MAESTRO Modules}
+
+\subsection{{\tt fill\_3d\_module}}
+
+\subsection{{\tt geometry}}
+
+\subsection{{\tt variables}}
+
+
 
 
 
 \section{Adding A Problem}
+
+\subsection{Plane-Parallel Geometry}
+
+
+\subsection{Full Star / Spherical}
+
+
+\subsection{Small-scale Flame}
+
 
 
 
