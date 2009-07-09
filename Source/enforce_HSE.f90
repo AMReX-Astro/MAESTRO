@@ -32,7 +32,7 @@ contains
     ! create a copy of the input pressure to help us with initial conditions
     p0_old = p0
     
-    ! zero the old pressure so we don't leave a non-zero pressure in fine radial
+    ! zero the new pressure so we don't leave a non-zero pressure in fine radial
     ! regions that no longer have a corresponding full state
     p0 = 0.d0
     
