@@ -91,6 +91,28 @@ For parallel computations, the boxes are spread across processors, in
 a fashion designed to put roughly equal amounts of work on each
 processor (load balancing).
 
+On a grid, the data can be stored at cell-centers, on a face/edge, or
+on the corners.  In boxlib, data that is on an edge is termed `nodal'
+in that direction (see figure~\ref{fig:dataloc}.  Data that is on the
+corners is nodal in all spatial directions.  In MAESTRO, the state
+data (density, enthalpy, velocity, $\ldots$) is generally
+cell-centered.  Fluxes are nodal in the direction they represent.
+A few quantities are nodal in all directions (e.g.\ $\phi$ used in
+the final velocity projection).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=6.5in]{\archfigpath/data_loc2}
+\caption{\label{fig:dataloc} Some of the different data-centerings:
+  (a) cell-centered, (b) nodal in the $x$-direction, and (c) nodal in
+  both the $x$- and $y$-directions.  Note that for nodal data, the
+  integer index corresponds to the lower boundary in that direction.
+  In each of these centerings, the red point has the same indices:\ (1,2).
+  Not show is the case where data is nodal in the $y$-direction only.}
+\end{figure}
+
+
+
 To simplify the description of the underlying AMR grid, boxlib
 provides a number of Fortran types.  We briefly summarize the major
 data types below.
@@ -194,12 +216,6 @@ through \multifab s, described next.
 
 \subsection{\multifab}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=6.5in]{\archfigpath/data_loc2}
-\caption{\label{fig:dataloc} Some of the different data-centerings: (a) cell-centered, (b) nodal in the $x$-direction, and (c) nodal in both the $x$- and $y$-directions.}
-\end{figure}
-
 A \multifab\ is a collection of \fab s at the same level of
 refinement.  The data type of a \multifab\ is:
 \begin{verbatim}
@@ -230,6 +246,23 @@ refinement.
 
 
 \subsection{\bctower}
+
+
+\section{MAESTRO Data Organization}
+
+The state of the star in MAESTRO is described by both a
+multidimensional state and the 1D base state.  The full
+multidimensional state is stored in \multifab s while the base state
+is simply stored in Fortran arrays.
+
+\subsection{`{\tt s}' and `{\tt u}' \multifab s}
+
+\subsection{\tt umac}
+
+\subsection{Base State Arrays}
+
+\subsection{Other Quantities}
+
 
 
 \section{Example: Accessing State Data}
@@ -397,7 +430,7 @@ and an additional loop over the `z' coordinate (from {\tt lo(3)} to
 \section{Multigrid}
 
 
-\section{MAESTRO Modules}
+\section{MAESTRO Helper Modules}
 
 \subsection{{\tt fill\_3d\_module}}
 
@@ -407,7 +440,7 @@ and an additional loop over the `z' coordinate (from {\tt lo(3)} to
 
 \subsection{{\tt variables}}
 
-
+The {\tt variables} module provides 
 
 
 
