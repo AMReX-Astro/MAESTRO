@@ -157,13 +157,31 @@ problem.  For 2D problems, {\tt nz=1}.
 \subsubsection{\multifab}
 
 A \multifab\ is a collection of \fab s at the same level of
-refinement.
+refinement.  The data type of a \multifab\ is:
+\begin{verbatim}
+  type multifab
+     integer :: dim = 0
+     integer :: nboxes = 0
+     integer :: nc = 1
+     integer :: ng = 0
+     logical, pointer :: nodal(:) => Null()
+     type(layout) :: la
+     type(fab), pointer :: fbs(:) => Null()
+  end type multifab
+\end{verbatim}
+
 
 \subsubsection{\boxarray}
 
+A \boxarray\ is an array of boxes
+
 \subsubsection{\mlboxarray}
 
+A \mlboxarray\ is a collection of \boxarray s at different levels of
+refinement.
+
 \subsubsection{\mllayout}
+
 
 \subsubsection{\bctower}
 
