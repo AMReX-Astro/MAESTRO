@@ -189,6 +189,21 @@ contains
 
        end do ! end loop over levels
 
+       ! zero the div_coeff where there is no corresponding full state array
+       do n=2,nlevs_radial
+          do j=1,numdisjointchunks(n)
+             if (j .eq. numdisjointchunks(n)) then
+                do r=r_end_coord(n,j)+1,nr(n)-1
+                   div_coeff(n,r) = ZERO
+                end do
+             else
+                do r=r_end_coord(n,j)+1,r_start_coord(n,j+1)-1
+                   div_coeff(n,r) = ZERO
+                end do
+             end if
+          end do
+       end do
+
     else if (beta_type .eq. 2) then
 
        ! beta_0 = rho_0

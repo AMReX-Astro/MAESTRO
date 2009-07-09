@@ -127,6 +127,21 @@ contains
        end do
     end do
 
+    ! zero p0 where there is no corresponding full state array
+    do n=2,nlevs_radial
+       do i=1,numdisjointchunks(n)
+          if (i .eq. numdisjointchunks(n)) then
+             do r=r_end_coord(n,i)+1,nr(n)-1
+                p0(n,r) = 0.d0
+             end do
+          else
+             do r=r_end_coord(n,i)+1,r_start_coord(n,i+1)-1
+                p0(n,r) = 0.d0
+             end do
+          end if
+       end do
+    end do
+
     call restrict_base(p0,.true.)
     call fill_ghost_base(p0,.true.)
 
