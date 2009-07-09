@@ -61,6 +61,10 @@ contains
    
     rho0_predicted_edge = ZERO
 
+    ! zero the new density so we don't leave a non-zero density in fine radial
+    ! regions that no longer have a corresponding full state
+    rho0_new = ZERO
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Predict rho_0 to vertical edges
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -195,6 +199,10 @@ contains
     real (kind=dp_t) :: force(nlevs,0:nr_fine-1)
     real (kind=dp_t) ::    h0(nlevs,0:nr_fine-1)
     real (kind=dp_t) ::  edge(nlevs,0:nr_fine)
+
+    ! zero the new enthalpy so we don't leave a non-zero enthalpy in fine radial
+    ! regions that no longer have a corresponding full state
+    rhoh0_new = ZERO
    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Update (rho h)_0
