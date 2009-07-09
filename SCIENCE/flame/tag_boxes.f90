@@ -126,6 +126,8 @@ contains
 
   subroutine radialtag_2d(radialtag,rho_XC12,rho,fuel_XC12,lo,ng,lev)
 
+    use probin_module, ONLY: XC12_ref_threshold
+
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) :: rho_XC12(lo(1)-ng:,lo(2)-ng:)
@@ -134,7 +136,6 @@ contains
     integer, optional, intent(in   ) :: lev
 
     ! local
-    real(kind=dp_t), parameter :: small_XC12 = 1.d-4
     integer :: i,j,nx,ny,llev
     real(kind=dp_t) :: XC12, XC12_below
     real(kind=dp_t) :: fuel_XC12_factor, diff_below
@@ -146,19 +147,19 @@ contains
     ! We set this slightly below fuel_XC12 so we don't tag on roundoff
     fuel_XC12_factor = (1.d0 - 1.d-8) * fuel_XC12
 
-    ! check for zones where X(C12) falls between small_XC12 and
-    ! fuel_XC12
+    ! check for zones where X(C12) falls between XC12_ref_threshold 
+    ! and fuel_XC12
     do j = lo(2),lo(2)+ny-1
        do i = lo(1),lo(1)+nx-1
           XC12 = rho_XC12(i,j)/rho(i,j)
-          if (XC12 > small_XC12 .and. XC12 < fuel_XC12_factor) then
+          if (XC12 > XC12_ref_threshold .and. XC12 < fuel_XC12_factor) then
              radialtag(j) = .true.
           end if
        enddo
     enddo
 
-    ! also tag cells that straddle the interface between small_XC12
-    ! and fuel_XC12 -- this tags the initial discontinuity
+    ! also tag cells that straddle the interface between fuel and
+    ! ash -- this tags the initial discontinuity
     do j = lo(2),lo(2)+ny-1
        do i = lo(1),lo(1)+nx-1
           XC12 = rho_XC12(i,j)/rho(i,j)
@@ -179,6 +180,8 @@ contains
 
   subroutine radialtag_3d(radialtag,rho_XC12,rho,fuel_XC12,lo,ng,lev)
 
+    use probin_module, ONLY: XC12_ref_threshold
+
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) :: rho_XC12(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
@@ -187,7 +190,6 @@ contains
     integer, optional, intent(in   ) :: lev
 
     ! local
-    real(kind=dp_t), parameter :: small_XC12 = 1.d-4
     integer :: i,j,k,nx,ny,nz,llev
     real(kind=dp_t) :: XC12, XC12_below
 
@@ -196,21 +198,21 @@ contains
     ny = size(rho_XC12,dim=2) - 2*ng
     nz = size(rho_XC12,dim=3) - 2*ng
 
-    ! check for zones where X(C12) falls between small_XC12 and
-    ! fuel_XC12
+    ! check for zones where X(C12) falls between XC12_ref_threshold
+    ! and fuel_XC12
     do k = lo(3),lo(3)+nz-1
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              XC12 = rho_XC12(i,j,k)/rho(i,j,k)
-             if (XC12 > small_XC12 .and. XC12 < fuel_XC12) then
+             if (XC12 > XC12_ref_threshold .and. XC12 < fuel_XC12) then
                 radialtag(k) = .true.
              end if
           enddo
        enddo
     enddo
 
-    ! also tag cells that straddle the interface between small_XC12
-    ! and fuel_XC12 -- this tags the initial discontinuity
+    ! also tag cells that straddle the interface between fuel and
+    ! ash -- this tags the initial discontinuity
     do k = lo(3),lo(3)+nz-1
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
@@ -218,7 +220,7 @@ contains
              XC12_below = rho_XC12(i,j,k-1)/rho(i,j,k-1)
 
              ! fuel flows in from the lower y boundary
-             if (XC12 < small_XC12 .and. XC12_below == fuel_XC12) then
+             if (abs(XC12 - XC12_below) > 0.1*fuel_XC12) then
                 radialtag(k) = .true.
                 radialtag(k-1) = .true.
              end if
