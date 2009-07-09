@@ -133,6 +133,8 @@ contains
     !   end do
     ! end do
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    w0 = ZERO
     
     ! Compute w0 on edges at level n
     do n=1,nlevs
@@ -190,6 +192,21 @@ contains
        end do
 
     end do
+
+       ! zero w0 where there is no corresponding full state array
+       do n=2,nlevs
+          do j=1,numdisjointchunks(n)
+             if (j .eq. numdisjointchunks(n)) then
+                do r=r_end_coord(n,j)+2,nr(n)
+                   w0(n,r) = ZERO
+                end do
+             else
+                do r=r_end_coord(n,j)+2,r_start_coord(n,j+1)-1
+                   w0(n,r) = ZERO
+                end do
+             end if
+          end do
+       end do
 
     call restrict_base(w0,.false.)
     call fill_ghost_base(w0,.false.)
