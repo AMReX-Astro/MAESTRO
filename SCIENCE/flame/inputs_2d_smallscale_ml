@@ -6,9 +6,9 @@
 
 
  ! grid size
- max_levs = 3
- n_cellx = 32
- n_celly = 256
+ max_levs = 4
+ n_cellx = 8
+ n_celly = 128
 
  max_grid_size = 32
 
@@ -17,7 +17,7 @@
  XC12_ref_threshold = 1.d-3
 
  ! domain size
- prob_hi_x = 0.625d0
+ prob_hi_x = 0.3125d0
  prob_hi_y = 5.0d0
 
 
