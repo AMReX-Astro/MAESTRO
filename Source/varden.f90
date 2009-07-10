@@ -246,7 +246,7 @@ subroutine varden()
   call compute_cutoff_coords(rho0_old)
 
   if (do_sponge) then
-     call init_sponge(rho0_old(1,:),dx(1,:),prob_lo(dm))
+     call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
   end if
 
   call make_grav_cell(grav_cell,rho0_old)
@@ -794,7 +794,7 @@ subroutine varden()
         !---------------------------------------------------------------------
         init_mode = .false.
         if (do_sponge) then
-           call init_sponge(rho0_old(1,:),dx(1,:),prob_lo(dm))
+           call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
            call make_sponge(sponge,dx,dt,mla)
         end if
         runtime1 = parallel_wtime()
