@@ -701,17 +701,20 @@ subroutine varden()
            if (spherical .eq. 0 .and. evolve_base_state) then
               ! force rho0 to be the average of rho
               call average(mla,sold,rho0_old,dx,rho_comp)
-           end if
            
-           call make_grav_cell(grav_cell,rho0_old)
+              call make_grav_cell(grav_cell,rho0_old)
 
-           if (spherical .eq. 0 .and. evolve_base_state) then
               ! enforce HSE
               call enforce_HSE(rho0_old,p0_old,grav_cell)
            end if
 
-           ! compute full state T = T(rho,h,X)
-           call makeTfromRhoH(sold,mla,the_bc_tower%bc_tower_array)
+           if (use_tfromp) then
+              ! compute full state T = T(rho,p0,X)
+              call makeTfromRhoH(sold,p0_old,mla,the_bc_tower%bc_tower_array)
+           else
+              ! compute full state T = T(rho,h,X)
+              call makeTfromRhoH(sold,mla,the_bc_tower%bc_tower_array)
+           end if
 
            if (spherical .eq. 0) then
               ! force tempbar to be the average of temp
