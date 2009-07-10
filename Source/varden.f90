@@ -710,7 +710,7 @@ subroutine varden()
 
            if (use_tfromp) then
               ! compute full state T = T(rho,p0,X)
-              call makeTfromRhoH(sold,p0_old,mla,the_bc_tower%bc_tower_array)
+              call makeTfromRhoP(sold,p0_old,mla,the_bc_tower%bc_tower_array)
            else
               ! compute full state T = T(rho,h,X)
               call makeTfromRhoH(sold,mla,the_bc_tower%bc_tower_array)
