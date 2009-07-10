@@ -13,32 +13,32 @@
  max_grid_size = 64
 
  ! domain size
- prob_hi_x = 0.625
- prob_hi_y = 5.0
+ prob_hi_x = 0.625d0
+ prob_hi_y = 5.0d0
 
 
  ! problem data
- dens_fuel = 5.e7
- temp_fuel = 1.e8
- xc12_fuel = 0.5
- vel_fuel = 1.e5
+ dens_fuel = 5.d7
+ temp_fuel = 1.d8
+ xc12_fuel = 0.5d0
+ vel_fuel = 1.d5
 
- temp_ash = 3.e9
+ temp_ash = 3.d9
  
- frac = 0.125
+ frac = 0.125d0
 
  do_smallscale = T
 
  ! stepping parameters
  max_step  = 300000
- stop_time = 1.0
- cflfac = 0.5
- init_shrink = 0.1
- max_dt_growth = 1.2
+ stop_time = 1.d0
+ cflfac = 0.5d0
+ init_shrink = 0.1d0
+ max_dt_growth = 1.2d0
 
 
  ! physics
- grav_const = 0.e0
+ grav_const = 0.d0
  use_thermal_diffusion = T
  use_eos_coulomb = T
  ppm_type = 2
@@ -50,8 +50,9 @@
 
 
  ! output
- plot_int  = 25
- chk_int   = 200
+ plot_int  = -1
+ plot_deltat = 1.d-5
+ chk_int   = 1000
 
 
  ! boundary conditions
