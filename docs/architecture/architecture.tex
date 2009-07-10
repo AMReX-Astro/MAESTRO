@@ -255,22 +255,44 @@ multidimensional state and the 1D base state.  The full
 multidimensional state is stored in \multifab s while the base state
 is simply stored in Fortran arrays.
 
-\subsection{`{\tt s}' and `{\tt u}' \multifab s (fluid state and velocity)}
+\subsection{`{\tt s}' \multifab s (fluid state)}
 
 The fluid state (density, enthalpy, species) are stored together in a
-multi-component \multifab, typically named {\tt sold}, {\tt s1}, {\tt
-s2}, or {\tt snew} (depending on which time-level it represents).
+cell-centered multi-component \multifab, typically named {\tt sold},
+{\tt s1}, {\tt s2}, or {\tt snew} (depending on which time-level it
+represents).  The enthalpy is stored as $(\rho h)$, and the species
+are stored as partial-densities $(\rho X_k)$.
 
+Individual state variables should be indexed using the {\tt variables}
+module, with {\tt rho\_comp} referring to the density, {\tt rhoh\_comp}
+referring to the enthalpy quantity $(\rho h)$, and {\tt spec\_comp}
+referring to the start of the species (partial densities).  
 
+To find a particular species, a query can be made through the {\tt network}
+module, such as:
+\begin{verbatim}
+  ic12 = network_species_index("carbon-12")
+\end{verbatim}
+and then the \fab\ can be indexed using {\tt spec\_comp-1+ic12} to
+get ``carbon-12''.
+
+\subsection{`{\tt u}' \multifab s (fluid velocity)}
+
+The fluid velocity at time-levels $n$ and $n+1$ is stored in
+a cell-centered multi-component \multifab, typically named
+{\tt uold} or {\tt unew}.  Here the {\tt dm}
+components correspond to each coordinate direction.
 
 \subsection{{\tt umac} (the MAC velocity)}
 
-In creating the advective fluxes, we need the velocity through the
-faces of the zone---the $x$-velocity on the $x$-edges, the
-$y$-velocity on the $y$-edges, etc (see figure~\ref{fig:mac}.  This
+In creating the advective fluxes, we need the time-centered velocity
+through the faces of the zone---the $x$-velocity on the $x$-edges, the
+$y$-velocity on the $y$-edges, etc.\ (see figure~\ref{fig:mac}).  This
 type of velocity discretization is termed the MAC velocity (after the
 ``marker-and-cell'' method for free boundaries in incompressible
 flows, Harlow and Welch 1965).
+
+
 
 \begin{figure}[h]
 \centering
@@ -285,9 +307,9 @@ blue points) and the $y$-velocity is on the $y$-edges
 \end{minipage}
 \end{figure}
 
-At each level of refinement, this is done by making a \multifab\
-array where each of the {\tt dm} components is nodal in
-its respective direction:
+The MAC velocities are allocated at each level of refinement,{\tt n},
+by making a \multifab\ array where each of the {\tt dm} components is
+nodal in its respective direction:
 \begin{verbatim}
   type(multifab) :: umac(dm)
 
@@ -300,6 +322,8 @@ its respective direction:
 
 
 \subsection{Base State Arrays}
+
+
 
 \subsection{Other Quantities}
 
