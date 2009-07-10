@@ -23,6 +23,7 @@ contains
                         bc_comp,divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
 
     use geometry, only: dm, nlevs, spherical
+    use probin_module, only: verbose
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
@@ -120,6 +121,15 @@ contains
                        the_bc_tower,bc_comp,stencil_order,mla%mba%rr,umac_norm)
 
     call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,bc_comp,mla%mba%rr)
+
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       do n = 1,nlevs
+         print *,'MAX OF UMAC AT LEVEL ',n,norm_inf(umac(n,1))
+         print *,'MAX OF VMAC AT LEVEL ',n,norm_inf(umac(n,2))
+         if (dm.eq.3) &
+            print *,'MAX OF WMAC AT LEVEL ',n,norm_inf(umac(n,3))
+       end do
+    end if
 
     if (use_rhs) then
        call divumac(umac,rh,dx,mla%mba%rr,.false.,divu_rhs)
