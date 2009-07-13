@@ -42,6 +42,7 @@ contains
     type(bndry_reg) :: fine_flx(2:mla%nlevel)
 
     real(dp_t)                   :: umac_norm(mla%nlevel)
+    real(dp_t)                   :: unorm,vnorm,wnorm
     integer                      :: stencil_order,i,n
     logical                      :: use_rhs, use_div_coeff_1d, use_div_coeff_3d
 
@@ -122,12 +123,19 @@ contains
 
     call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,bc_comp,mla%mba%rr)
 
-    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+    ! Print the norm of each component separately
+    if (verbose .eq. 1) then
        do n = 1,nlevs
-         print *,'MAX OF UMAC AT LEVEL ',n,norm_inf(umac(n,1))
-         print *,'MAX OF VMAC AT LEVEL ',n,norm_inf(umac(n,2))
-         if (dm.eq.3) &
-            print *,'MAX OF WMAC AT LEVEL ',n,norm_inf(umac(n,3))
+          unorm = norm_inf(umac(n,1))
+          vnorm = norm_inf(umac(n,2))
+          if (dm.eq.3) &
+            wnorm = norm_inf(umac(n,3))
+          if (parallel_IOProcessor()) then
+            print *,'MAX OF UMAC AT LEVEL ',n,unorm
+            print *,'MAX OF VMAC AT LEVEL ',n,vnorm
+            if (dm.eq.3) &
+               print *,'MAX OF WMAC AT LEVEL ',n,wnorm
+          end if
        end do
     end if
 
