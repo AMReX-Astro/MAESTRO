@@ -427,12 +427,13 @@ contains
     end if
 
     do n=1,nlevs
-
        call multifab_build(sprime(n),s(n)%la,1,1)
+    end do
 
-       ng_sp = sprime(n)%ng
-       ng_s = s(n)%ng
+    ng_sp = sprime(1)%ng
+    ng_s  = s(1)%ng
 
+    do n=1,nlevs
        do i=1,sprime(n)%nboxes
           if ( multifab_remote(sprime(n),i) ) cycle
           spp  => dataptr(sprime(n), i)
@@ -441,7 +442,6 @@ contains
           hi = upb(get_box(sprime(n),i))
           call construct_sprime(sp(:,:,:,comp),ng_s,spp(:,:,:,1),ng_sp,s0(1,:),dx(n,:),lo,hi)
        enddo
-
     enddo
 
     ! fill sprime ghostcells
