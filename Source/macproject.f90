@@ -107,13 +107,11 @@ contains
        do n = 1,nlevs
           unorm = norm_inf(umac(n,1))
           vnorm = norm_inf(umac(n,2))
-          if (dm.eq.3) &
-            wnorm = norm_inf(umac(n,3))
+          if (dm.eq.3) wnorm = norm_inf(umac(n,3))
           if (parallel_IOProcessor()) then
             print *,'MAX OF UMAC AT LEVEL ',n,unorm
             print *,'MAX OF VMAC AT LEVEL ',n,vnorm
-            if (dm.eq.3) &
-               print *,'MAX OF WMAC AT LEVEL ',n,wnorm
+            if (dm.eq.3) print *,'MAX OF WMAC AT LEVEL ',n,wnorm
           end if
        end do
     end if
@@ -150,15 +148,14 @@ contains
        do n = 1,nlevs
           unorm = norm_inf(umac(n,1))
           vnorm = norm_inf(umac(n,2))
-          if (dm.eq.3) &
-            wnorm = norm_inf(umac(n,3))
+          if (dm.eq.3) wnorm = norm_inf(umac(n,3))
           if (parallel_IOProcessor()) then
             print *,'MAX OF UMAC AT LEVEL ',n,unorm
             print *,'MAX OF VMAC AT LEVEL ',n,vnorm
             if (dm.eq.3) print *,'MAX OF WMAC AT LEVEL ',n,wnorm
-            print *,''
           end if
        end do
+       print *,''
     end if
 
     if (use_div_coeff_1d) then
