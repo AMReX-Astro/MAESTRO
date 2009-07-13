@@ -403,7 +403,7 @@ contains
 
     ! local    
     integer :: i,n,lo(dm),hi(dm)
-    integer :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0,ng_0m
+    integer :: ng_sf,ng_se,ng_um,ng_w0,ng_0m
 
     real(kind=dp_t), pointer :: sfxp(:,:,:,:)
     real(kind=dp_t), pointer :: sfyp(:,:,:,:)
@@ -417,10 +417,6 @@ contains
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
-    real(kind=dp_t), pointer :: rho0op(:,:,:,:)
-    real(kind=dp_t), pointer :: rho0np(:,:,:,:)
-    real(kind=dp_t), pointer :: rhoh0op(:,:,:,:)
-    real(kind=dp_t), pointer :: rhoh0np(:,:,:,:)
     real(kind=dp_t), pointer :: r0mxop(:,:,:,:)
     real(kind=dp_t), pointer :: rh0mxop(:,:,:,:)
     real(kind=dp_t), pointer :: h0mxop(:,:,:,:)
