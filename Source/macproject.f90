@@ -102,6 +102,22 @@ contains
        call divumac(umac,rh,dx,mla%mba%rr,.true.)
     end if
 
+    ! Print the norm of each component separately
+    if (verbose .eq. 1) then
+       do n = 1,nlevs
+          unorm = norm_inf(umac(n,1))
+          vnorm = norm_inf(umac(n,2))
+          if (dm.eq.3) &
+            wnorm = norm_inf(umac(n,3))
+          if (parallel_IOProcessor()) then
+            print *,'MAX OF UMAC AT LEVEL ',n,unorm
+            print *,'MAX OF VMAC AT LEVEL ',n,vnorm
+            if (dm.eq.3) &
+               print *,'MAX OF WMAC AT LEVEL ',n,wnorm
+          end if
+       end do
+    end if
+
     call mk_mac_coeffs(mla,rho,beta,the_bc_tower)
 
     if (use_div_coeff_1d) then
@@ -123,6 +139,12 @@ contains
 
     call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,bc_comp,mla%mba%rr)
 
+    if (use_rhs) then
+       call divumac(umac,rh,dx,mla%mba%rr,.false.,divu_rhs)
+    else
+       call divumac(umac,rh,dx,mla%mba%rr,.false.)
+    end if
+
     ! Print the norm of each component separately
     if (verbose .eq. 1) then
        do n = 1,nlevs
@@ -133,16 +155,10 @@ contains
           if (parallel_IOProcessor()) then
             print *,'MAX OF UMAC AT LEVEL ',n,unorm
             print *,'MAX OF VMAC AT LEVEL ',n,vnorm
-            if (dm.eq.3) &
-               print *,'MAX OF WMAC AT LEVEL ',n,wnorm
+            if (dm.eq.3) print *,'MAX OF WMAC AT LEVEL ',n,wnorm
+            print *,''
           end if
        end do
-    end if
-
-    if (use_rhs) then
-       call divumac(umac,rh,dx,mla%mba%rr,.false.,divu_rhs)
-    else
-       call divumac(umac,rh,dx,mla%mba%rr,.false.)
     end if
 
     if (use_div_coeff_1d) then
@@ -262,7 +278,6 @@ contains
             write(6,1001) rhmax
          else
             write(6,1002) rhmax
-            write(6,1000) 
          end if
       end if
 
