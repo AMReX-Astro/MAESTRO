@@ -153,11 +153,6 @@ contains
              diff3 = s(i+1,j)-s(i,j)
              diff4 = s(i,j)-s(i-1,j)
 
-             if (abs(diff1) .le. rel_eps) diff1 = ZERO
-             if (abs(diff2) .le. rel_eps) diff2 = ZERO
-             if (abs(diff3) .le. rel_eps) diff3 = ZERO
-             if (abs(diff4) .le. rel_eps) diff4 = ZERO
-
              if (diff1*diff2 .le. ZERO .or. &
                  diff3*diff4 .le. ZERO ) then
                 s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
@@ -179,17 +174,17 @@ contains
              else
                 alphap = sp(i,j)-s(i,j)
                 alpham = sm(i,j)-s(i,j)
-                if (abs(alphap) .ge. TWO*abs(alpham)) then
+                if (abs(alphap) .gt. TWO*abs(alpham)) then
                    dI = -alphap**2 / (FOUR*(alphap+alpham))
                    ds = s(i+1,j)-s(i,j)
-                   sgn = sign(ONE,s(i+1,j)-s(i-1,j))
+                   sgn = sign(ONE,alpham)
                    if (sgn*dI .ge. sgn*ds) then
                       sp(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
                    end if
-                else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                else if (abs(alpham) .gt. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
                    ds = s(i-1,j)-s(i,j)
-                   sgn = sign(ONE,s(i+1,j)-s(i-1,j))
+                   sgn = sign(ONE,alphap)
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                    end if
@@ -368,11 +363,6 @@ contains
              diff3 = s(i,j+1)-s(i,j)
              diff4 = s(i,j)-s(i,j-1)
 
-             if (abs(diff1) .le. rel_eps) diff1 = ZERO
-             if (abs(diff2) .le. rel_eps) diff2 = ZERO
-             if (abs(diff3) .le. rel_eps) diff3 = ZERO
-             if (abs(diff4) .le. rel_eps) diff4 = ZERO
-
              if (diff1*diff2 .le. ZERO .or. &
                  diff3*diff4 .le. ZERO ) then
                 s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
@@ -394,17 +384,17 @@ contains
              else
                 alphap = sp(i,j)-s(i,j)
                 alpham = sm(i,j)-s(i,j)
-                if (abs(alphap) .ge. TWO*abs(alpham)) then
+                if (abs(alphap) .gt. TWO*abs(alpham)) then
                    dI = -alphap**2 / (FOUR*(alphap+alpham))
                    ds = s(i,j+1)-s(i,j)
-                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   sgn = sign(ONE,alpham)
                    if (sgn*dI .ge. sgn*ds) then
                       sp(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
                    end if
-                else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                else if (abs(alpham) .gt. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
                    ds = s(i,j-1)-s(i,j)
-                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   sgn = sign(ONE,alphap)
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                    end if
@@ -634,11 +624,6 @@ contains
              diff3 = s(i+1,j)-s(i,j)
              diff4 = s(i,j)-s(i-1,j)
 
-             if (abs(diff1) .le. rel_eps) diff1 = ZERO
-             if (abs(diff2) .le. rel_eps) diff2 = ZERO
-             if (abs(diff3) .le. rel_eps) diff3 = ZERO
-             if (abs(diff4) .le. rel_eps) diff4 = ZERO
-
              if (diff1*diff2 .le. ZERO .or. &
                  diff3*diff4 .le. ZERO ) then
                 s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
@@ -660,17 +645,17 @@ contains
              else
                 alphap = sp(i,j)-s(i,j)
                 alpham = sm(i,j)-s(i,j)
-                if (abs(alphap) .ge. TWO*abs(alpham)) then
+                if (abs(alphap) .gt. TWO*abs(alpham)) then
                    dI = -alphap**2 / (FOUR*(alphap+alpham))
                    ds = s(i+1,j)-s(i,j)
-                   sgn = sign(ONE,s(i+1,j)-s(i-1,j))
+                   sgn = sign(ONE,alpham)
                    if (sgn*dI .ge. sgn*ds) then
                       sp(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
                    end if
-                else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                else if (abs(alpham) .gt. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
                    ds = s(i-1,j)-s(i,j)
-                   sgn = sign(ONE,s(i+1,j)-s(i-1,j))
+                   sgn = sign(ONE,alphap)
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                    end if
@@ -850,11 +835,6 @@ contains
              diff3 = s(i,j+1)-s(i,j)
              diff4 = s(i,j)-s(i,j-1)
 
-             if (abs(diff1) .le. rel_eps) diff1 = ZERO
-             if (abs(diff2) .le. rel_eps) diff2 = ZERO
-             if (abs(diff3) .le. rel_eps) diff3 = ZERO
-             if (abs(diff4) .le. rel_eps) diff4 = ZERO
-
              if (diff1*diff2 .le. ZERO .or. &
                  diff3*diff4 .le. ZERO ) then
                 s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
@@ -876,17 +856,17 @@ contains
              else
                 alphap = sp(i,j)-s(i,j)
                 alpham = sm(i,j)-s(i,j)
-                if (abs(alphap) .ge. TWO*abs(alpham)) then
+                if (abs(alphap) .gt. TWO*abs(alpham)) then
                    dI = -alphap**2 / (FOUR*(alphap+alpham))
                    ds = s(i,j+1)-s(i,j)
-                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   sgn = sign(ONE,alpham)
                    if (sgn*dI .ge. sgn*ds) then
                       sp(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
                    end if
-                else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                else if (abs(alpham) .gt. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
                    ds = s(i,j-1)-s(i,j)
-                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   sgn = sign(ONE,alphap)
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                    end if
@@ -1136,11 +1116,6 @@ contains
                 diff3 = s(i+1,j,k)-s(i,j,k)
                 diff4 = s(i,j,k)-s(i-1,j,k)
 
-                if (abs(diff1) .le. rel_eps) diff1 = ZERO
-                if (abs(diff2) .le. rel_eps) diff2 = ZERO
-                if (abs(diff3) .le. rel_eps) diff3 = ZERO
-                if (abs(diff4) .le. rel_eps) diff4 = ZERO
-
                 if (diff1*diff2 .le. ZERO .or. &
                     diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
@@ -1162,17 +1137,17 @@ contains
                 else
                    alphap = sp(i,j,k)-s(i,j,k)
                    alpham = sm(i,j,k)-s(i,j,k)
-                   if (abs(alphap) .ge. TWO*abs(alpham)) then
+                   if (abs(alphap) .gt. TWO*abs(alpham)) then
                       dI = -alphap**2 / (FOUR*(alphap+alpham))
                       ds = s(i+1,j,k)-s(i,j,k)
-                      sgn = sign(ONE,s(i+1,j,k)-s(i-1,j,k))
+                      sgn = sign(ONE,alpham)
                       if (sgn*dI .ge. sgn*ds) then
                          sp(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
                       end if
-                   else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                   else if (abs(alpham) .gt. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i-1,j,k)-s(i,j,k)
-                      sgn = sign(ONE,s(i+1,j,k)-s(i-1,j,k))
+                      sgn = sign(ONE,alphap)
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
@@ -1382,11 +1357,6 @@ contains
                 diff3 = s(i,j+1,k)-s(i,j,k)
                 diff4 = s(i,j,k)-s(i,j-1,k)
 
-                if (abs(diff1) .le. rel_eps) diff1 = ZERO
-                if (abs(diff2) .le. rel_eps) diff2 = ZERO
-                if (abs(diff3) .le. rel_eps) diff3 = ZERO
-                if (abs(diff4) .le. rel_eps) diff4 = ZERO
-
                 if (diff1*diff2 .le. ZERO .or. &
                     diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
@@ -1408,17 +1378,17 @@ contains
                 else
                    alphap = sp(i,j,k)-s(i,j,k)
                    alpham = sm(i,j,k)-s(i,j,k)
-                   if (abs(alphap) .ge. TWO*abs(alpham)) then
+                   if (abs(alphap) .gt. TWO*abs(alpham)) then
                       dI = -alphap**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j+1,k)-s(i,j,k)
-                      sgn = sign(ONE,s(i,j+1,k)-s(i,j-1,k))
+                      sgn = sign(ONE,alpham)
                       if (sgn*dI .ge. sgn*ds) then
                          sp(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
                       end if
-                   else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                   else if (abs(alpham) .gt. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j-1,k)-s(i,j,k)
-                      sgn = sign(ONE,s(i,j+1,k)-s(i,j-1,k))
+                      sgn = sign(ONE,alphap)
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
@@ -1628,11 +1598,6 @@ contains
                 diff3 = s(i,j,k+1)-s(i,j,k)
                 diff4 = s(i,j,k)-s(i,j,k-1)
 
-                if (abs(diff1) .le. rel_eps) diff1 = ZERO
-                if (abs(diff2) .le. rel_eps) diff2 = ZERO
-                if (abs(diff3) .le. rel_eps) diff3 = ZERO
-                if (abs(diff4) .le. rel_eps) diff4 = ZERO
-
                 if (diff1*diff2 .le. ZERO .or. &
                     diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
@@ -1654,17 +1619,17 @@ contains
                 else
                    alphap = sp(i,j,k)-s(i,j,k)
                    alpham = sm(i,j,k)-s(i,j,k)
-                   if (abs(alphap) .ge. TWO*abs(alpham)) then
+                   if (abs(alphap) .gt. TWO*abs(alpham)) then
                       dI = -alphap**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j,k+1)-s(i,j,k)
-                      sgn = sign(ONE,s(i,j,k+1)-s(i,j,k-1))
+                      sgn = sign(ONE,alpham)
                       if (sgn*dI .ge. sgn*ds) then
                          sp(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
                       end if
-                   else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                   else if (abs(alpham) .gt. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j,k-1)-s(i,j,k)
-                      sgn = sign(ONE,s(i,j,k+1)-s(i,j,k-1))
+                      sgn = sign(ONE,alphap)
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
@@ -1932,11 +1897,6 @@ contains
                 diff3 = s(i+1,j,k)-s(i,j,k)
                 diff4 = s(i,j,k)-s(i-1,j,k)
 
-                if (abs(diff1) .le. rel_eps) diff1 = ZERO
-                if (abs(diff2) .le. rel_eps) diff2 = ZERO
-                if (abs(diff3) .le. rel_eps) diff3 = ZERO
-                if (abs(diff4) .le. rel_eps) diff4 = ZERO
-
                 if (diff1*diff2 .le. ZERO .or. &
                     diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
@@ -1958,17 +1918,17 @@ contains
                 else
                    alphap = sp(i,j,k)-s(i,j,k)
                    alpham = sm(i,j,k)-s(i,j,k)
-                   if (abs(alphap) .ge. TWO*abs(alpham)) then
+                   if (abs(alphap) .gt. TWO*abs(alpham)) then
                       dI = -alphap**2 / (FOUR*(alphap+alpham))
                       ds = s(i+1,j,k)-s(i,j,k)
-                      sgn = sign(ONE,s(i+1,j,k)-s(i-1,j,k))
+                      sgn = sign(ONE,alpham)
                       if (sgn*dI .ge. sgn*ds) then
                          sp(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
                       end if
-                   else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                   else if (abs(alpham) .gt. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i-1,j,k)-s(i,j,k)
-                      sgn = sign(ONE,s(i+1,j,k)-s(i-1,j,k))
+                      sgn = sign(ONE,alphap)
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
@@ -2181,11 +2141,6 @@ contains
                 diff3 = s(i,j+1,k)-s(i,j,k)
                 diff4 = s(i,j,k)-s(i,j-1,k)
 
-                if (abs(diff1) .le. rel_eps) diff1 = ZERO
-                if (abs(diff2) .le. rel_eps) diff2 = ZERO
-                if (abs(diff3) .le. rel_eps) diff3 = ZERO
-                if (abs(diff4) .le. rel_eps) diff4 = ZERO
-
                 if (diff1*diff2 .le. ZERO .or. &
                     diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
@@ -2207,17 +2162,17 @@ contains
                 else
                    alphap = sp(i,j,k)-s(i,j,k)
                    alpham = sm(i,j,k)-s(i,j,k)
-                   if (abs(alphap) .ge. TWO*abs(alpham)) then
+                   if (abs(alphap) .gt. TWO*abs(alpham)) then
                       dI = -alphap**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j+1,k)-s(i,j,k)
-                      sgn = sign(ONE,s(i,j+1,k)-s(i,j-1,k))
+                      sgn = sign(ONE,alpham)
                       if (sgn*dI .ge. sgn*ds) then
                          sp(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
                       end if
-                   else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                   else if (abs(alpham) .gt. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j-1,k)-s(i,j,k)
-                      sgn = sign(ONE,s(i,j+1,k)-s(i,j-1,k))
+                      sgn = sign(ONE,alphap)
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
@@ -2430,11 +2385,6 @@ contains
                 diff3 = s(i,j,k+1)-s(i,j,k)
                 diff4 = s(i,j,k)-s(i,j,k-1)
 
-                if (abs(diff1) .le. rel_eps) diff1 = ZERO
-                if (abs(diff2) .le. rel_eps) diff2 = ZERO
-                if (abs(diff3) .le. rel_eps) diff3 = ZERO
-                if (abs(diff4) .le. rel_eps) diff4 = ZERO
-
                 if (diff1*diff2 .le. ZERO .or. &
                     diff3*diff4 .le. ZERO ) then
                    s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
@@ -2456,17 +2406,17 @@ contains
                 else
                    alphap = sp(i,j,k)-s(i,j,k)
                    alpham = sm(i,j,k)-s(i,j,k)
-                   if (abs(alphap) .ge. TWO*abs(alpham)) then
+                   if (abs(alphap) .gt. TWO*abs(alpham)) then
                       dI = -alphap**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j,k+1)-s(i,j,k)
-                      sgn = sign(ONE,s(i,j,k+1)-s(i,j,k-1))
+                      sgn = sign(ONE,alpham)
                       if (sgn*dI .ge. sgn*ds) then
                          sp(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
                       end if
-                   else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                   else if (abs(alpham) .gt. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j,k-1)-s(i,j,k)
-                      sgn = sign(ONE,s(i,j,k+1)-s(i,j,k-1))
+                      sgn = sign(ONE,alphap)
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
