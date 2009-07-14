@@ -155,7 +155,7 @@ contains
             if (dm.eq.3) print *,'MAX OF WMAC AT LEVEL ',n,wnorm
           end if
        end do
-       print *,''
+       if (parallel_IOProcessor()) print *,''
     end if
 
     if (use_div_coeff_1d) then
