@@ -1,15 +1,15 @@
 &PROBIN
  spherical_in = 0
 
- n_cellx = 384
- n_celly = 640
+ n_cellx = 48
+ n_celly = 80
+ max_levs = 4
 
  prob_hi_x = 2.16e8
  prob_hi_y = 3.6e8
 
- max_mg_bottom_nlevels = 3
- mg_bottom_solver = 4
- hg_bottom_solver = 4
+ regrid_int = 4
+
 
  max_grid_size = 32
 
