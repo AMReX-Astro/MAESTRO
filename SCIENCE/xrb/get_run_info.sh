@@ -11,12 +11,15 @@ function usage() {
     echo "calculation."
     echo
     echo "Usage:"
-    echo "${0} [-g|--grid_file <grid_file>] [-n ncpus] <output_file_list>"
+    echo "${0} [-g <grid_file>] [-n ncpus] [-w weight] <output_file_list>"
     echo
     echo " --  grid_file is used to determine the number of processors used."
     echo "     By default, grid_file, is set to 'my_grid_file.'  "
     echo " --  If ncpus is specified, then this number will override what "
     echo "     would be taken from grid_file."
+    echo " --  weight is useful for determining the total cost at a particular"
+    echo "     computing center:"
+    echo "   total computational cost = total cpu_hours * weight_per_cpu_hour"
     echo 
     echo "     Note that specifying a grid_file instead of ncpus will only be"
     echo "     accurate for a single level run."
@@ -36,16 +39,21 @@ fi
 # get the grid_file if we need it by parsing the options
 grid_file="my_grid_file"
 n_cpus=-1
+weight=1
 
 while [ "$1" != "" ]; do
     case $1 in
-	-g | --grid_file)
+	-g )
 	    shift
 	    grid_file=$1
 	    ;;
         -n )
 	    shift
 	    n_cpus=$1
+	    ;;
+	-w )
+	    shift
+	    weight=$1
 	    ;;
 	*)
 	    break
@@ -73,7 +81,8 @@ fi
 awk "BEGIN{ \
     nmatches=0; \
     total_time=0; \
-    ncpus= ${n_cpus} \
+    ncpus=${n_cpus}; \
+    w=${weight} \
 }; \
 /Time to advance timestep/ { \
     nmatches+=1; \
@@ -86,6 +95,7 @@ END{ \
     print \"Number of timesteps: \" nmatches; \
     print \"Average time per timestep: \" total_time/nmatches \" seconds\"; \
     print \"Total number of cpu-hours: \" total_time*ncpus/3600.0; \
+    print \"Total computational cost: \" total_time*ncpus*w/3600.0 \" cpu-hours\"; \
     print \"\"
 }" ${@}
 
