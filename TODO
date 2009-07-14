@@ -22,3 +22,7 @@
 
 -- the EOS should not take nspec as an argument -- this should come
    from the network module directly.
+
+-- the new interpolation in average.f90 should be generalized for
+   drdx_factor /= 5.
+
