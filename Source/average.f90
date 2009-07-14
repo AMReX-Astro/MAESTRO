@@ -197,36 +197,19 @@ contains
              end do
 
           end do
-          
-          ! for multilevel problems, it's possible that the center of the star
-          ! is not at the finest level of refinement.  If this is the case then both
-          ! phibar_crse and ncell_crse will be zero for some number of cells near
-          ! the center, depending on the number of levels of refinement
-          ! we compute the coordinate, r_inner, in which phibar_crse and ncell_crse
-          ! might be in this category
-          r_inner = (dx(1,1)*sqrt(3.d0)/2.d0)/dr(1) - 1
-          
+
           do r=0,nr_crse-1
 
              ! Now compute the average
              if (ncell_crse(r) .gt. ZERO) then
                 phibar_crse(r) = phibar_crse(r) / ncell_crse(r)
-             else if (r .gt. r_inner) then
+             else
                 ! if this is ever the case, it means we are in a very coarse
                 ! region far away from the center of the star so assuming the 
                 ! average stays constant is a reasonable assumption
                 phibar_crse(r) = phibar_crse(r-1)
              end if
 
-          end do
-
-          ! now fill in phibar_crse from r=0,r_inner, if necessary
-          ! we use piecewise constant interpolation for now
-          ! probably want to use quadratic extrapolation instead
-          do r=r_inner,0,-1
-             if (ncell_crse(r) .eq. ZERO) then
-                phibar_crse(r) = phibar_crse(r+1)
-             end if
           end do
 
           ! "ghost cells" needed to compute 4th order profiles
@@ -267,7 +250,7 @@ contains
              do j = 0, min(drdxfac-1,nr_fine-drdxfac*r-1)
 
                 ! piecewise constant
-                ! phibar(nlevs,drdxfac*r+j) = phibar_crse(r)
+                ! phibar(1,drdxfac*r+j) = phibar_crse(r)
    
                 ! parabolic interpolation
                 theta = (dble(j)+0.5d0) / dble(drdxfac)
@@ -289,14 +272,14 @@ contains
              Z = phisum(nlevs,8)
              do j = 0,7
                 coord = (dble(j)+HALF) / dble(drdxfac)
-                phibar(nlevs,j) = (-HALF*Y+HALF*Z)*dble(coord)**2 &
+                phibar(1,j) = (-HALF*Y+HALF*Z)*dble(coord)**2 &
                      + (11.d0/8.d0)*Y - (3.d0/8.d0)*Z
              end do
              do j = 8,24
                 if (ncell(nlevs,j) .eq. ONE) then
-                   phibar(nlevs,j) = phisum(nlevs,j)
+                   phibar(1,j) = phisum(nlevs,j)
                 else if (ncell(nlevs,j-1) .eq. ONE .and. ncell(nlevs,j+1) .eq. ONE) then
-                   phibar(nlevs,j) = HALF * (phisum(nlevs,j-1) + phisum(nlevs,j+1))
+                   phibar(1,j) = HALF * (phisum(nlevs,j-1) + phisum(nlevs,j+1))
                 else
                    call bl_error("ERROR in average: didnt catch this j")
                 end if
