@@ -1,29 +1,37 @@
 &PROBIN
- test_set = "gr0_3d_5cm"
  model_file = "sorted_xrb_lo_5cm.hse"
  spherical_in = 0
  dm_in = 3
  plot_base = T
 
+ max_levs = 1
+ n_cellx = 128
+ n_celly = 128
+ n_cellz = 256
+ 
+! 8x8x16 = 1024 blocks
+ max_grid_size = 16
+
  use_eos_coulomb = T
 
- prob_lo_x = 2520.0d0
- prob_lo_y = 2520.0d0
- prob_lo_z = 600.0d0
+ prob_lo_x = 0.0d0
+ prob_lo_y = 0.0d0
+ prob_lo_z = 1720.0d0
 
- prob_hi_x = 3160.0d0
- prob_hi_y = 3160.0d0
- prob_hi_z = 3160.0d0
+ prob_hi_x = 640.0d0
+ prob_hi_y = 640.0d0
+ prob_hi_z = 3000.0d0
 
  grav_const = -2.45e14
 
- max_step  = 1500
+ max_step  = 99999
  init_iter = 3
 
  stop_time = 2.5
 
- plot_int  = 100
- chk_int   = 100
+ plot_int  = -1
+ plot_deltat = 1.e-4
+ chk_int   = 200
 
  cflfac = 0.7
  init_shrink = 0.1
