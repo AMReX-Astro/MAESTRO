@@ -12,7 +12,7 @@ contains
 
   subroutine enforce_HSE(rho0,p0,grav_cell)
 
-    use geometry, only: dr, r_start_coord, r_end_coord, numdisjointchunks, spherical, &
+    use geometry, only: dr, r_start_coord, r_end_coord, numdisjointchunks, &
          base_cutoff_density_coord, nr, nlevs_radial, nr_fine
     use restrict_base_module
     use bl_error_module
@@ -60,6 +60,8 @@ contains
           else if (r_start_coord(n,i) .le. base_cutoff_density_coord(n)) then
              ! we integrate upwards starting from the nearest coarse
              ! cell at a lower physical height
+             !
+             ! NOTE: we are assuming constant g here
              p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
                   + (3.d0*grav_cell(1,0)*dr(n)/4.d0)* &
                   (rho0(n-1,r_start_coord(n,i)/2-1)+rho0(n,r_start_coord(n,i)))
@@ -69,6 +71,8 @@ contains
           end if
 
           ! integrate upwards as normal
+          !
+          ! NOTE: we are assuming constant g here
           do r=r_start_coord(n,i)+1,min(r_end_coord(n,i),base_cutoff_density_coord(n))
              p0(n,r) = p0(n,r-1) + (dr(n)/2.d0)*(rho0(n,r)+rho0(n,r-1))*grav_cell(1,0)
           end do
@@ -88,6 +92,8 @@ contains
              offset = 0.d0
           else if (r_end_coord(n,i) .le. base_cutoff_density_coord(n)) then
              ! use fine -> coarse stencil in notes
+             !
+             ! NOTE: we are assuming constant g here
              temp = p0(n,r_end_coord(n,i)) + (3.d0*grav_cell(1,0)*dr(n)/4.d0)* &
                   (rho0(n,r_end_coord(n,i))+rho0(n-1,(r_end_coord(n,i)+1)/2))
              offset = p0(n-1,(r_end_coord(n,i)+1)/2) - temp
