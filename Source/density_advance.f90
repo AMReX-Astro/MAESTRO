@@ -280,6 +280,8 @@ contains
     
     if (verbose .ge. 1) then
        do n=1, nlevs
+          if (parallel_IOProcessor()) write(6,1999) n
+
           do comp = spec_comp,spec_comp+nspec-1
              call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
              
@@ -308,6 +310,7 @@ contains
 
     call destroy(bpt)
 
+1999 format('... Level ', i1, ' update:')
 2000 format('... new min/max : density           ',e17.10,2x,e17.10)
 2002 format('... new min/max : ',a16,2x,e17.10,2x,e17.10)
 2003 format('... new min/max : tracer            ',e17.10,2x,e17.10)
