@@ -24,3 +24,5 @@
 -- the new interpolation in average.f90 should be generalized for
    drdx_factor /= 5.
 
+-- figure out how we want to implement ppm_type=2.  See MAESTRO/docs 
+   at the end of section "Godunov notes" for details.
