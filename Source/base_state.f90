@@ -396,6 +396,7 @@ contains
 
     if ( parallel_IOProcessor() ) then
        print *, " " 
+       print *, "Level: ", n
        print *, "Maximum HSE Error = ", max_hse_error
        print *, "   (after putting initial model into base state arrays, and"
        print *, "    for density < base_cutoff_density)"
