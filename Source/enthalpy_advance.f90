@@ -418,7 +418,8 @@ contains
           smin = multifab_min_c(snew(n),rhoh_comp) 
           smax = multifab_max_c(snew(n),rhoh_comp)
           if (parallel_IOProcessor()) then
-             write(6,2001) smin,smax
+             write (6,1999) n
+             write (6,2001) smin,smax
           end if
        end do
     end if
@@ -441,6 +442,7 @@ contains
 
     call destroy(bpt)
 
+1999 format('... Level ', i1, ' update:')
 2001 format('... new min/max : rho * H           ',e17.10,2x,e17.10)
 2004 format(' ')
 
