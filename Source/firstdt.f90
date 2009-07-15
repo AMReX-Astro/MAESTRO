@@ -157,6 +157,7 @@ contains
                         umax,cfl)
 
     use eos_module
+    use network, only: nspec
     use variables, only: rho_comp, temp_comp, spec_comp
     use geometry,  only: nr
     use bl_constants_module
@@ -284,6 +285,7 @@ contains
     use geometry,  only: spherical, nr, dr, nr_fine
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
+    use network, only: nspec
     use bl_constants_module
     use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
     use fill_3d_module
@@ -425,6 +427,7 @@ contains
     use geometry,  only: nr, dr, nr_fine
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
+    use network, only: nspec
     use bl_constants_module
     use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
     use fill_3d_module

@@ -217,6 +217,7 @@ contains
 
     use bl_constants_module
     use eos_module
+    use network, only: nspec
     use variables, only: rho_comp, temp_comp, spec_comp
     use probin_module, only: use_delta_gamma1_term
     use geometry, only: anelastic_cutoff_coord, nr
@@ -310,6 +311,7 @@ contains
 
     use bl_constants_module
     use eos_module
+    use network, only: nspec
     use variables, only: rho_comp, temp_comp, spec_comp
     use probin_module, only: use_delta_gamma1_term
     use geometry, only: anelastic_cutoff_coord, nr
@@ -404,6 +406,7 @@ contains
 
     use bl_constants_module
     use eos_module
+    use network, only: nspec
     use variables, only: rho_comp, temp_comp, spec_comp
     use probin_module, only: use_delta_gamma1_term
     use geometry, only: anelastic_cutoff_coord, nr

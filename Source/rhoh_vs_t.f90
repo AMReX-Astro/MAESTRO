@@ -158,6 +158,7 @@ contains
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
+    use network,       only: nspec
     use probin_module, only: enthalpy_pred_type, small_temp
     use pred_parameters
 
@@ -256,6 +257,7 @@ contains
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
+    use network,       only: nspec
     use probin_module, only: enthalpy_pred_type, small_temp
     use pred_parameters
     use bl_constants_module
@@ -393,6 +395,7 @@ contains
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
+    use network,       only: nspec
     use probin_module, only: enthalpy_pred_type, small_temp
     use pred_parameters
     use bl_constants_module
@@ -610,6 +613,7 @@ contains
   subroutine makeTfromRhoH_2d(state,lo,hi,ng)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use network, only: nspec
     use eos_module
 
     integer, intent(in)               :: lo(:), hi(:), ng
@@ -653,6 +657,7 @@ contains
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
+    use network,        only: nspec
     use fill_3d_module
 
     integer        , intent(in)    :: lo(:), hi(:), ng
@@ -776,6 +781,7 @@ contains
 
     use variables,     only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
+    use network,       only: nspec
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
@@ -819,6 +825,7 @@ contains
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
+    use network,       only: nspec
     use fill_3d_module
 
     integer, intent(in) :: lo(:), hi(:), ng
@@ -864,6 +871,7 @@ contains
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
+    use network,       only: nspec
     use fill_3d_module
 
     integer, intent(in) :: lo(:), hi(:), ng
@@ -998,6 +1006,7 @@ contains
 
     use variables,     only: rho_comp, spec_comp, rhoh_comp
     use eos_module
+    use network,       only: nspec
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_so, ng_p
     real (kind = dp_t), intent(in   ) ::    state(lo(1)-ng_s :,lo(2)-ng_s :,:)
@@ -1041,6 +1050,7 @@ contains
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp
     use eos_module
+    use network,       only: nspec
     use fill_3d_module
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_s, ng_so, ng_p
@@ -1172,7 +1182,7 @@ contains
   subroutine makeTHfromRhoP_2d(s,ng_s,lo,hi,p0)
 
     use eos_module
-    use network
+    use network,       only: nspec
     use variables
 
     integer           , intent(in   ) :: lo(:),hi(:),ng_s
@@ -1212,7 +1222,7 @@ contains
   subroutine makeTHfromRhoP_3d(s,ng_s,lo,hi,p0)
 
     use eos_module
-    use network
+    use network,       only: nspec
     use variables
 
     integer           , intent(in   ) :: lo(:),hi(:),ng_s
@@ -1254,7 +1264,7 @@ contains
   subroutine makeTHfromRhoP_3d_sphr(s,ng_s,lo,hi,p0,dx)
 
     use eos_module
-    use network
+    use network,       only: nspec
     use variables
     use fill_3d_module
 

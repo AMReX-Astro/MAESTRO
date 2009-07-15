@@ -58,6 +58,7 @@ contains
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
+    use network, only: nspec
     use bl_constants_module
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
@@ -105,6 +106,7 @@ contains
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
+    use network, only: nspec
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
@@ -154,6 +156,7 @@ contains
 
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use eos_module
+    use network, only: nspec
     use fill_3d_module
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
@@ -273,6 +276,7 @@ contains
                             ng_p,s,ng_s,u,ng_u,lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0)
 
     use eos_module
+    use network, only: nspec
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s, ng_u
@@ -340,6 +344,7 @@ contains
 
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use eos_module
+    use network, only: nspec
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s, ng_u
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
@@ -408,6 +413,7 @@ contains
 
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use eos_module
+    use network, only: nspec
     use fill_3d_module
 
     integer         , intent(in   ) :: lo(:),hi(:),ng_p,ng_s,ng_u

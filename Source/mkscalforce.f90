@@ -835,6 +835,7 @@ contains
     use geometry, only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
+    use network, only: nspec
 
     ! compute the source terms for temperature
 
@@ -907,6 +908,7 @@ contains
     use geometry,  only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
+    use network, only: nspec
 
     ! compute the source terms for temperature
 
@@ -977,6 +979,7 @@ contains
     use fill_3d_module
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
+    use network, only: nspec
     use geometry,  only: dr, nr_fine
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
