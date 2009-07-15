@@ -1,5 +1,18 @@
-! This is an interface for doing runtime diagnostics on the state.
-! It is called at the end of advance
+! xrb-specific diagnostic routine
+!
+! output files:
+!
+!    xrb_enuc_diag.out:
+!        peak nuclear energy generation rate (erg / g / s)
+!        x/y/z location of peak 
+!
+!    xrb_temp_diag.out:
+!        peak temperature in the helium layer
+!            helium layer defined by X(He4) >= diag_define_he_layer where 
+!            diag_define_he_layer is a xrb _parameter
+!        x/y/z location of peak
+!
+
 
 module diag_module
 
@@ -50,7 +63,7 @@ contains
     real(kind=dp_t), pointer::  rhnp(:,:,:,:)
     real(kind=dp_t), pointer::  rhep(:,:,:,:)
     real(kind=dp_t), pointer::  up(:,:,:,:)
-    real(kind=dp_t), pointer::  np(:,:,:,:)
+    logical,         pointer :: mp(:,:,:,:)
 
     real(kind=dp_t) :: T_max, T_max_local, T_max_level
     real(kind=dp_t) :: x_Tmax_local, y_Tmax_local, z_Tmax_local
@@ -68,7 +81,7 @@ contains
     real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(dm)
     real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
 
-    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_n,ng_rhn,ng_rhe
+    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_rhn,ng_rhe
     integer :: i,n, index_max
     integer :: un, un2
     logical :: lexist
@@ -81,13 +94,12 @@ contains
 
     ng_s = s(1)%ng
     ng_u = u(1)%ng
-    ng_n = normal(1)%ng
     ng_rhn = rho_Hnuc(1)%ng
     ng_rhe = rho_Hext(1)%ng
 
     ! initialize
     ! note that T_max corresponds to the maximum temperature in the 
-    ! helium layer defined by X(He4) >= he_tol 
+    ! helium layer defined by X(He4) >= diag_define_he_layer
     T_max       = ZERO
 
     x_Tmax      = ZERO
@@ -100,8 +112,10 @@ contains
     y_enucmax   = ZERO
     z_enucmax   = ZERO
 
+    ! loop over the levels and calculate global quantities
     do n = 1, nlevs
 
+       ! initialize local and level quantities
        T_max_local     = ZERO
        T_max_level     = ZERO
 
@@ -122,6 +136,7 @@ contains
        y_enucmax_level = ZERO
        z_enucmax_level = ZERO
 
+       ! loop over the boxes at the current level
        do i = 1, s(n)%nboxes
 
           if ( multifab_remote(s(n), i) ) cycle
@@ -133,40 +148,82 @@ contains
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
 
+          ! build the local data
           select case (dm)
           case (2)
-             call diag_2d(time,dt,dx(n,:), &
-                          sp(:,:,1,:),ng_s, &
-                          rhnp(:,:,1,1),ng_rhn, &
-                          rhep(:,:,1,1),ng_rhe, &
-                          rho0(n,:),rhoh0(n,:), &
-                          p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                          up(:,:,1,:),ng_u, &
-                          w0(n,:), &
-                          lo,hi, &
-                          T_max_local, &
-                          x_Tmax_local, y_Tmax_local, &
-                          enuc_max_local, &
-                          x_enucmax_local, y_enucmax_local)
+             ! only do those boxes that aren't masked
+             if (n .eq. nlevs) then
+                
+                call diag_2d(n,time,dt,dx(n,:), &
+                             sp(:,:,1,:),ng_s, &
+                             rhnp(:,:,1,1),ng_rhn, &
+                             rhep(:,:,1,1),ng_rhe, &
+                             rho0(n,:),rhoh0(n,:), &
+                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                             up(:,:,1,:),ng_u, &
+                             w0(n,:), &
+                             lo,hi, &
+                             T_max_local, &
+                             x_Tmax_local, y_Tmax_local, &
+                             enuc_max_local, &
+                             x_enucmax_local, y_enucmax_local)
+             else
+                mp => dataptr(mla%mask(n),i)
+                call diag_2d(n,time,dt,dx(n,:), &
+                             sp(:,:,1,:),ng_s, &
+                             rhnp(:,:,1,1),ng_rhn, &
+                             rhep(:,:,1,1),ng_rhe, &
+                             rho0(n,:),rhoh0(n,:), &
+                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                             up(:,:,1,:),ng_u, &
+                             w0(n,:), &
+                             lo,hi, &
+                             T_max_local, &
+                             x_Tmax_local, y_Tmax_local, &
+                             enuc_max_local, &
+                             x_enucmax_local, y_enucmax_local, &
+                             mp(:,:,1,1))
+             endif
           case (3)
-             np => dataptr(normal(n) , i)
-             call diag_3d(time,dt,dx(n,:), &
-                          sp(:,:,:,:),ng_s, &
-                          rhnp(:,:,:,1),ng_rhn, &
-                          rhep(:,:,:,1),ng_rhe, &
-                          rho0(n,:),rhoh0(n,:), &
-                          p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                          up(:,:,:,:),ng_u, &
-                          w0(n,:), &
-                          np(:,:,:,:),ng_n, &
-                          lo,hi, &
-                          T_max_local, &
-                          x_Tmax_local, y_Tmax_local, z_Tmax_local, &
-                          enuc_max_local, &
-                          x_enucmax_local, y_enucmax_local, z_enucmax_local)
+             ! only do those boxes that aren't masked
+             if (n .eq. nlevs) then
+
+                call diag_3d(n,time,dt,dx(n,:), &
+                             sp(:,:,:,:),ng_s, &
+                             rhnp(:,:,:,1),ng_rhn, &
+                             rhep(:,:,:,1),ng_rhe, &
+                             rho0(n,:),rhoh0(n,:), &
+                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                             up(:,:,:,:),ng_u, &
+                             w0(n,:), &
+                             lo,hi, &
+                             T_max_local, &
+                             x_Tmax_local, y_Tmax_local, z_Tmax_local, &
+                             enuc_max_local, &
+                             x_enucmax_local, y_enucmax_local, z_enucmax_local)
+
+             else
+                mp => dataptr(mla%mask(n),i)
+                call diag_3d(n,time,dt,dx(n,:), &
+                             sp(:,:,:,:),ng_s, &
+                             rhnp(:,:,:,1),ng_rhn, &
+                             rhep(:,:,:,1),ng_rhe, &
+                             rho0(n,:),rhoh0(n,:), &
+                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                             up(:,:,:,:),ng_u, &
+                             w0(n,:), &
+                             lo,hi, &
+                             T_max_local, &
+                             x_Tmax_local, y_Tmax_local, z_Tmax_local, &
+                             enuc_max_local, &
+                             x_enucmax_local, y_enucmax_local, z_enucmax_local,&
+                             mp(:,:,:,1))
+             endif
           end select
        end do
 
+       ! build the level data
+       
        ! get the maximum temperature and its location
        ! gather all the T_max data into an array; find the index of the maximum
        allocate(T_max_data(parallel_nprocs()))
@@ -301,7 +358,7 @@ contains
 
   end subroutine diag
 
-  subroutine diag_2d(time,dt,dx, &
+  subroutine diag_2d(n,time,dt,dx, &
                      s,ng_s, &
                      rho_Hnuc,ng_rhn, &
                      rho_Hext,ng_rhe, &
@@ -312,14 +369,15 @@ contains
                      T_max, &
                      x_Tmax, y_Tmax, &
                      enuc_max, &
-                     x_enucmax, y_enucmax)
+                     x_enucmax, y_enucmax, &
+                     mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
-    use probin_module, only: diag_define_he_layer, prob_lo
+    use probin_module, only: diag_define_he_layer, prob_lo, base_cutoff_density
     use bl_constants_module, only: HALF
 
-    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
+    integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:)
     real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:)
@@ -331,11 +389,13 @@ contains
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
     real (kind=dp_t), intent(inout) :: x_Tmax, y_Tmax
     real (kind=dp_t), intent(inout) :: x_enucmax, y_enucmax
+    logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
     !     Local variables
     integer                     :: i, j
     real (kind=dp_t) :: x, y 
     real (kind=dp_t) :: enuc_local
+    logical :: cell_valid
 
     do j = lo(2), hi(2)
        y = prob_lo(2) + (dble(j) + HALF) * dx(2)
@@ -343,29 +403,38 @@ contains
        do i = lo(1), hi(1)
           x = prob_lo(1) + (dble(i) + HALF) * dx(1)
 
-          ! temperature diagnostic
-          ! check to see if we are in the helium layer
-          ! if we are, then get T_max and its loc
-          if (s(i,j,spec_comp) .ge. diag_define_he_layer) then
-
-             if (s(i,j,temp_comp) > T_max) then
-                
-                T_max = s(i,j,temp_comp)
-                
-                x_Tmax = x
-                y_Tmax = y
-
-             endif
+          cell_valid = .true.
+          if (present(mask)) then
+             if ( (.not. mask(i,j)) ) cell_valid = .false.
           endif
 
-          ! enuc diagnostic
-          enuc_local = rho_Hnuc(i,j)/s(i,j,rho_comp)
-          if (enuc_local > enuc_max) then
+          if (cell_valid .and. s(i,j,rho_comp) > base_cutoff_density) then
 
-             enuc_max = enuc_local
+             ! temperature diagnostic
+             ! check to see if we are in the helium layer
+             ! if we are, then get T_max and its loc
+             if (s(i,j,spec_comp) .ge. diag_define_he_layer) then
+
+                if (s(i,j,temp_comp) > T_max) then
+                
+                   T_max = s(i,j,temp_comp)
+                
+                   x_Tmax = x
+                   y_Tmax = y
+
+                endif
+             endif
+
+             ! enuc diagnostic
+             enuc_local = rho_Hnuc(i,j)/s(i,j,rho_comp)
+             if (enuc_local > enuc_max) then
+
+                enuc_max = enuc_local
              
-             x_enucmax = x
-             y_enucmax = y
+                x_enucmax = x
+                y_enucmax = y
+
+             endif
 
           endif
 
@@ -374,23 +443,25 @@ contains
 
   end subroutine diag_2d
 
-  subroutine diag_3d(time,dt,dx, &
+  subroutine diag_3d(n,time,dt,dx, &
                      s,ng_s, &
                      rho_Hnuc,ng_rhn, &
                      rho_Hext,ng_rhe, &
                      rho0,rhoh0,p0,tempbar,gamma1bar, &
-                     u,ng_u,w0,normal,ng_n,lo,hi, &
+                     u,ng_u,w0, &
+                     lo,hi, &
                      T_max, &
                      x_Tmax, y_Tmax, z_Tmax, &
                      enuc_max, &
-                     x_enucmax, y_enucmax, z_enucmax)
+                     x_enucmax, y_enucmax, z_enucmax, &
+                     mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
     use bl_constants_module, only: HALF
-    use probin_module, only: diag_define_he_layer, prob_lo
+    use probin_module, only: diag_define_he_layer, prob_lo, base_cutoff_density
 
-    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n, ng_rhn, ng_rhe
+    integer, intent(in) :: n,lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:,lo(3)-ng_rhn:)
     real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:,lo(3)-ng_rhe:)
@@ -398,16 +469,17 @@ contains
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
-    real (kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
     real (kind=dp_t), intent(inout) :: x_Tmax, y_Tmax, z_Tmax
     real (kind=dp_t), intent(inout) :: x_enucmax, y_enucmax, z_enucmax
+    logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
     integer                     :: i, j, k
     real (kind=dp_t) :: x, y , z
     real (kind=dp_t) :: enuc_local
+    logical :: cell_valid
 
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k) + HALF) * dx(3)       
@@ -416,30 +488,39 @@ contains
           do i = lo(1), hi(1)
              x = prob_lo(1) + (dble(i) + HALF) * dx(1)
 
-             ! temperature diagnostic
-             ! check to see if we are in the helium layer
-             ! if we are, then get T_max
-             if (s(i,j,k,spec_comp) .ge. diag_define_he_layer) then
-                if (s(i,j,k,temp_comp) > T_max) then
-                   
-                   T_max = s(i,j,k,temp_comp)
-                   
-                   x_Tmax = x
-                   y_Tmax = y
-                   z_Tmax = z
-                   
-                endif
+             cell_valid = .true.
+             if (present(mask)) then
+                if ( (.not. mask(i,j,k)) ) cell_valid = .false.
              endif
 
-             ! enuc diagnostic
-             enuc_local = rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
-             if (enuc_local > enuc_max) then
-                
-                enuc_max = enuc_local
+             if (cell_valid .and. s(i,j,k,rho_comp) > base_cutoff_density) then
 
-                x_enucmax = x
-                y_enucmax = y
-                z_enucmax = z
+                ! temperature diagnostic
+                ! check to see if we are in the helium layer
+                ! if we are, then get T_max
+                if (s(i,j,k,spec_comp) .ge. diag_define_he_layer) then
+                   if (s(i,j,k,temp_comp) > T_max) then
+                   
+                      T_max = s(i,j,k,temp_comp)
+                   
+                      x_Tmax = x
+                      y_Tmax = y
+                      z_Tmax = z
+                   
+                   endif
+                endif
+
+                ! enuc diagnostic
+                enuc_local = rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
+                if (enuc_local > enuc_max) then
+                
+                   enuc_max = enuc_local
+
+                   x_enucmax = x
+                   y_enucmax = y
+                   z_enucmax = z
+
+                endif
 
              endif
 
