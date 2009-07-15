@@ -1,7 +1,7 @@
 module base_state_module
 
   use bl_types
-  use eos_module, only: nspec
+  use network, only: nspec
   
   implicit none
 
