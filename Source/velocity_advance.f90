@@ -128,6 +128,7 @@ contains
 
     if ( verbose .ge. 1 ) then
        do n = 1, nlevs
+          write (6, 999) n
           smin = multifab_min_c(unew(n),1)
           smax = multifab_max_c(unew(n),1)
           if (parallel_IOProcessor()) write(6,1001) smin,smax
@@ -141,6 +142,7 @@ contains
           end if
           if (parallel_IOProcessor()) write(6,1004)
           
+999       format('... Level ', i1, ' update:')
 1001      format('... new min/max : x-velocity       ',e17.10,2x,e17.10)
 1002      format('... new min/max : y-velocity       ',e17.10,2x,e17.10)
 1003      format('... new min/max : z-velocity       ',e17.10,2x,e17.10)
