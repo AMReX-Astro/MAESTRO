@@ -19,7 +19,7 @@
  use_eos_coulomb = T
 
  prob_lo_x = 0.0d0
- prob_lo_y = 1820.0d0
+ prob_lo_y = 1980.0d0
 
  prob_hi_x = 512.0d0
  prob_hi_y = 3004.0d0
