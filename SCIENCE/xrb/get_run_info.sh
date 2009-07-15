@@ -11,18 +11,11 @@ function usage() {
     echo "calculation."
     echo
     echo "Usage:"
-    echo "${0} [-g <grid_file>] [-n ncpus] [-w weight] <output_file_list>"
+    echo "${0} [-w weight] <output_file_list>"
     echo
-    echo " --  grid_file is used to determine the number of processors used."
-    echo "     By default, grid_file, is set to 'my_grid_file.'  "
-    echo " --  If ncpus is specified, then this number will override what "
-    echo "     would be taken from grid_file."
     echo " --  weight is useful for determining the total cost at a particular"
     echo "     computing center:"
     echo "   total computational cost = total cpu_hours * weight_per_cpu_hour"
-    echo 
-    echo "     Note that specifying a grid_file instead of ncpus will only be"
-    echo "     accurate for a single level run."
     echo 
 }
 
@@ -37,20 +30,10 @@ fi
 
 
 # get the grid_file if we need it by parsing the options
-grid_file="my_grid_file"
-n_cpus=-1
 weight=1
 
 while [ "$1" != "" ]; do
     case $1 in
-	-g )
-	    shift
-	    grid_file=$1
-	    ;;
-        -n )
-	    shift
-	    n_cpus=$1
-	    ;;
 	-w )
 	    shift
 	    weight=$1
@@ -62,20 +45,8 @@ while [ "$1" != "" ]; do
     shift
 done
 
-# if we need a grid file, make sure it exists and then read ncpus
-if [ ${n_cpus} -lt 0 ]; then
-        
-    if [ -f "${grid_file}" ]; then
-
-        # it exists and we get the number of processors
-	n_cpus=`awk '(NR==2) {print \$NF}' ${grid_file}`
-
-    else
-	echo "File ${grid_file} is not a regular file."
-	exit
-    fi
-
-fi
+# get the number of cpus from the first outputfile
+n_cpus=`awk '/number of processors/ {print $5}' $1`
 
 # parse the output files
 awk "BEGIN{ \
