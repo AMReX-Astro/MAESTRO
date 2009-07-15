@@ -128,7 +128,7 @@ contains
 
     if ( verbose .ge. 1 ) then
        do n = 1, nlevs
-          write (6, 999) n
+          if (parallel_IOProcessor()) write (6, 999) n
           smin = multifab_min_c(unew(n),1)
           smax = multifab_max_c(unew(n),1)
           if (parallel_IOProcessor()) write(6,1001) smin,smax
