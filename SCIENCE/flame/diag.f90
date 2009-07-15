@@ -57,6 +57,7 @@ contains
     logical        , pointer::  mp(:,:,:,:)
 
     real(kind=dp_t) :: C12_flame_speed, C12_flame_speed_level, C12_flame_speed_local
+    real(kind=dp_t) :: O16_flame_speed, O16_flame_speed_level, O16_flame_speed_local
     real(kind=dp_t) :: CO_flame_speed, CO_flame_speed_level, CO_flame_speed_local
     real(kind=dp_t) :: T_max, T_max_level, T_max_local
     real(kind=dp_t) :: T_min, T_min_level, T_min_local
@@ -97,6 +98,7 @@ contains
     ! initialize
     !=========================================================================
     C12_flame_speed = ZERO
+    O16_flame_speed = ZERO
     CO_flame_speed = ZERO
     T_max = ZERO
     T_min = huge(T_min)
@@ -110,6 +112,9 @@ contains
        ! initialize the local (processor's version) and level quantities to 0
        C12_flame_speed_level = ZERO
        C12_flame_speed_local = ZERO
+
+       O16_flame_speed_level = ZERO
+       O16_flame_speed_local = ZERO
 
        CO_flame_speed_level = ZERO
        CO_flame_speed_local = ZERO
@@ -150,6 +155,7 @@ contains
                              w0(n,:), &
                              lo,hi, &
                              C12_flame_speed_local, &
+                             O16_flame_speed_local, &
                              CO_flame_speed_local, &
                              T_max_local, T_min_local, max_gradT_y_local)
              else
@@ -165,6 +171,7 @@ contains
                              w0(n,:), &
                              lo,hi, &
                              C12_flame_speed_local, &
+                             O16_flame_speed_local, &
                              CO_flame_speed_local, &
                              T_max_local, T_min_local, max_gradT_y_local, &
                              mp(:,:,1,1))
@@ -180,6 +187,9 @@ contains
 
        ! NOTE: only the I/O Processor will have the correct reduced value
        call parallel_reduce(C12_flame_speed_level, C12_flame_speed_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(O16_flame_speed_level, O16_flame_speed_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
        call parallel_reduce(CO_flame_speed_level, CO_flame_speed_local, MPI_SUM, &
@@ -202,7 +212,8 @@ contains
        if (parallel_IOProcessor()) then
 
           C12_flame_speed = C12_flame_speed + C12_flame_speed_level
-          CO_flame_speed = CO_flame_speed + CO_flame_speed_level
+          O16_flame_speed = O16_flame_speed + O16_flame_speed_level
+          CO_flame_speed  = CO_flame_speed  + CO_flame_speed_level
           
           T_max = max(T_max, T_max_level)
           T_min = min(T_min, T_min_level)
@@ -220,6 +231,9 @@ contains
     ! V_eff = - int { rho omegadot dx } / W (rho X)^in
     C12_flame_speed = -C12_flame_speed*dx(1,1)*dx(1,2)/ &
          ((prob_hi_x - prob_lo_x)*inlet_rhox(ic12))
+
+    O16_flame_speed = -O16_flame_speed*dx(1,1)*dx(1,2)/ &
+         ((prob_hi_x - prob_lo_x)*inlet_rhox(io16))
 
     CO_flame_speed = -CO_flame_speed*dx(1,1)*dx(1,2)/ &
          ((prob_hi_x - prob_lo_x)*(inlet_rhox(ic12) + inlet_rhox(io16)) )
@@ -257,13 +271,13 @@ contains
           write (un, 997) INLET_RHO, INLET_TEMP, INLET_VEL
           write (un, 998) INLET_RHOX(ic12)/INLET_RHO, INLET_RHOX(io16)/INLET_RHO
           write (un, 999) trim(job_name)
-          write (un, 1001) "time", "C12 flame speed", "C/O flame speed", "flame thickness", 'T_min', 'T_max'
+          write (un, 1001) "time", "C12 flame speed", "O16 flame speed", "C/O flame speed", "flame thickness", 'T_min', 'T_max'
 
           firstCall_io = .false.
        endif
 
        ! write out the data
-       write (un,1000) time, C12_flame_speed, CO_flame_speed, flame_thickness, T_min, T_max
+       write (un,1000) time, C12_flame_speed, O16_flame_speed, CO_flame_speed, flame_thickness, T_min, T_max
 
        close(un)
 
@@ -283,6 +297,7 @@ contains
                      w0, &
                      lo,hi, &
                      C12_flame_speed, &
+                     O16_flame_speed, &
                      CO_flame_speed, &
                      T_max, T_min, max_gradT_y, &
                      mask)
@@ -302,7 +317,7 @@ contains
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
-    real (kind=dp_t), intent(inout) :: C12_flame_speed, CO_flame_speed
+    real (kind=dp_t), intent(inout) :: C12_flame_speed, O16_flame_speed, CO_flame_speed
     real (kind=dp_t), intent(inout) :: T_max, T_min, max_gradT_y
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
@@ -345,7 +360,8 @@ contains
              ! compute the flame speed by integrating the carbon
              ! consumption rate.
              C12_flame_speed = C12_flame_speed + weight*rho_omegadot(i,j,ic12)
-             CO_flame_speed  = CO_flame_speed + weight*(rho_omegadot(i,j,ic12) + rho_omegadot(i,j,io16)) 
+             O16_flame_speed = O16_flame_speed + weight*rho_omegadot(i,j,io16) 
+             CO_flame_speed  = CO_flame_speed  + weight*(rho_omegadot(i,j,ic12) + rho_omegadot(i,j,io16)) 
              
              ! compute the min/max temperature and the maximum
              ! temperature gradient for computing the flame thickness.
