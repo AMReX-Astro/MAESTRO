@@ -8,6 +8,8 @@
  n_cellz = 128
  max_grid_size = 32
 
+ perturb_model = T
+
  anelastic_cutoff = 3.e6
  base_cutoff_density = 3.e6
 
@@ -51,11 +53,6 @@
 
  do_initial_projection = T
  init_divu_iter = 3
-
- velpert_amplitude = 0.d0
- velpert_radius = 2.d7
- velpert_scale = 1.d7
- velpert_steep = 1.d5
 
  do_burning = T
 
