@@ -455,7 +455,7 @@ contains
                                             psi,tempbar,grav_cell)
 
     use probin_module, only: n_cellx, n_celly, n_cellz, regrid_int, max_grid_size, &
-         ref_ratio, max_levs
+         max_grid_size_base, ref_ratio, max_levs
     use init_module
     use average_module
     use restrict_base_module
@@ -518,7 +518,7 @@ contains
     ! Build the level 1 boxarray
     call box_build_2(bxs,lo,hi)
     call boxarray_build_bx(mba%bas(1),bxs)
-    call boxarray_maxsize(mba%bas(1),max_grid_size)
+    call boxarray_maxsize(mba%bas(1),max_grid_size_base)
 
     ! build pd(:)
     mba%pd(1) = bxs

@@ -181,6 +181,10 @@ contains
 
     pmask_xyz = (/pmask_x, pmask_y, pmask_z/)
 
+    if (max_grid_size_base .eq. -1) then
+       max_grid_size_base = max_grid_size
+    end if
+
     if (do_smallscale .and. evolve_base_state) then
        call bl_error("do_smallscale requires evolve_base_state = F")
     end if
