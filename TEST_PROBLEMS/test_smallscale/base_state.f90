@@ -16,7 +16,7 @@ contains
     use bl_error_module
     use bl_constants_module
     use eos_module
-    use network, only: spec_names
+    use network, only: spec_names, nspec
     use probin_module, ONLY: prob_lo
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp
     use geometry, only: dr, spherical, nr, dm
