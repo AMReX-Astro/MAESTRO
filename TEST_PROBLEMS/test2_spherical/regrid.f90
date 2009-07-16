@@ -53,6 +53,8 @@ contains
        call bl_error('Dont call regrid with max_levs < 2')
     end if
 
+    call average(mla,sold,tempbar,dx,temp_comp)
+
     call ml_layout_build(mla_old,mla%mba,mla%pmask)
 
     do n = 1,nlevs
@@ -147,9 +149,6 @@ contains
     do while ( (nl .lt. max_levs) .and. (new_grid) )
 
        ! Do we need finer grids?
-
-       call average_one_level(nl,sold,tempbar,temp_comp)
-
        call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1),buf_wid,&
                            ref_ratio,nl,max_grid_size,tempbar)
 
