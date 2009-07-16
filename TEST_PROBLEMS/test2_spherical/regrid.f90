@@ -23,7 +23,7 @@ module regrid_module
 
 contains
 
-  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,rw2,rH2,dx,the_bc_tower)
+  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,rw2,rH2,dx,the_bc_tower,tempbar)
 
     use probin_module, only : nodal, pmask, regrid_int, max_grid_size, ref_ratio, max_levs
     use geometry, only: dm, nlevs, nlevs_radial, spherical, nr_fine
@@ -36,6 +36,7 @@ contains
     type(multifab), pointer       :: dSdt(:),src(:),rw2(:),rH2(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(bc_tower), intent(inout) :: the_bc_tower
+    real(dp_t)    , intent(in   ) :: tempbar(:,:)
 
     ! local
     logical           :: new_grid
@@ -43,7 +44,6 @@ contains
     type(layout)      :: la_array(max_levs)
     type(ml_layout)   :: mla_old
     type(ml_boxarray) :: mba
-    real(kind=dp_t)   :: tempbar(max_levs,0:nr_fine-1)
 
     ! These are copies to hold the old data.
     type(multifab) :: uold_temp(nlevs), sold_temp(nlevs), gpres_temp(nlevs), pres_temp(nlevs)
@@ -52,8 +52,6 @@ contains
     if (max_levs < 2) then
        call bl_error('Dont call regrid with max_levs < 2')
     end if
-
-    call average(mla,sold,tempbar,dx,temp_comp)
 
     call ml_layout_build(mla_old,mla%mba,mla%pmask)
 
