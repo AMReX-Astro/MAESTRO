@@ -221,6 +221,7 @@ contains
 
     use fill_3d_module, only: put_1d_array_on_cart_3d_sphr
     use geometry, only: dm
+    use probin_module, only: n_cellx, regrid_int
 
     integer          , intent(in   ) :: lo(:),hi(:),ng
     logical          , intent(  out) :: tagbox(lo(1)   :,lo(2)   :,lo(3)   :)
@@ -229,7 +230,7 @@ contains
     real(kind=dp_t)  , intent(in   ) :: dx
     integer, optional, intent(in   ) :: lev
 
-    integer    :: i,j,k,llev
+    integer    :: i,j,k,llev,lotag,hitag,n_cellx_lev
     real(dp_t) :: dx_vec(dm),x,y,z,dist
 
     real(kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
@@ -240,6 +241,13 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx_vec,0)
 
     llev = 1; if (present(lev)) llev = lev
+
+    n_cellx_lev = n_cellx*2**(lev-1)
+
+    ! want a 32^3 refined area
+    ! subtract off regrid_int since it will be grown later
+    lotag = n_cellx_lev/2 - 8 + regrid_int
+    hitag = n_cellx_lev/2 + 7 - regrid_int
 
     tagbox = .false.
 
@@ -256,6 +264,12 @@ contains
                 dist = sqrt((x-2.5d8)**2 + (y-2.5d8)**2 + (z-2.5d8)**2)
 
                 if (abs(mf(i,j,k)-tempbar_cart(i,j,k,1)).gt.3.d7 .and. dist.lt.1.5d8) then
+                   tagbox(i,j,k) = .true.
+                end if
+
+                if (i .ge. lotag .and. i .le. hitag .and. &
+                    j .ge. lotag .and. j .le. hitag .and. &
+                    k .ge. lotag .and. k .le. hitag) then
                    tagbox(i,j,k) = .true.
                 end if
 
