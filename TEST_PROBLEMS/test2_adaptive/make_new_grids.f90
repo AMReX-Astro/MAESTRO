@@ -16,8 +16,7 @@ module make_new_grids_module
 
   contains
 
-    subroutine make_new_grids(new_grid_flag,la_crse,la_fine,mf,dx_crse,buf_wid,ref_ratio, &
-                              lev,max_grid_size,tempbar)
+    subroutine make_new_grids(new_grid_flag,la_crse,la_fine,mf,dx_crse,buf_wid,ref_ratio,lev,max_grid_size,tempbar)
 
        logical            , intent(  out) :: new_grid_flag
        type(layout)       , intent(in   ) :: la_crse
@@ -188,7 +187,8 @@ module make_new_grids_module
                 ! Merge the new boxarray "ba_new" with the existing box_array 
                 ! mba%bas(nl) so that we get the union of points.
                 call boxarray_complementIn(ba_old_comp,mba%pd(nl),mba%bas(nl))
-                call build(la_old_comp,ba_old_comp,mba%pd(nl))
+                call build(la_old_comp,ba_old_comp,mba%pd(nl),mapping = LA_LOCAL)
+                ! LA_LOCAL ==> bypass processor distribution calculation.
 
                 ! Start to load bl with the boxes we had before in ba_old (aka mba%bas(nl)).
                 do i = 1, mba%bas(nl)%nboxes
