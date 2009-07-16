@@ -244,10 +244,10 @@ contains
 
     n_cellx_lev = n_cellx*2**(lev-1)
 
-    ! want a 32^3 refined area
+    ! want a 16^3 refined area
     ! subtract off regrid_int since it will be grown later
-    lotag = n_cellx_lev/2 - 8 + regrid_int
-    hitag = n_cellx_lev/2 + 7 - regrid_int
+    lotag = n_cellx_lev/2 - 4 + regrid_int
+    hitag = n_cellx_lev/2 + 3 - regrid_int
 
     tagbox = .false.
 
