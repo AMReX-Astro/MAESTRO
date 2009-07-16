@@ -36,6 +36,7 @@ contains
 
     use variables
     use eos_module
+    use network, only: nspec
     use geometry, only : nr
 
     real(dp_t), intent(inout) :: Sbar(0:)
