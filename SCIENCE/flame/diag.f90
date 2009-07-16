@@ -28,6 +28,7 @@ contains
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
                              job_name
+    use network, only: network_species_index
     use inlet_bc_module
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
