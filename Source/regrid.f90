@@ -376,10 +376,10 @@ contains
        call multifab_fill_boundary(uold(nlevs))
        call multifab_fill_boundary(sold(nlevs))
        call multifab_fill_boundary(gpres(nlevs))
-       call multifab_fill_boundary(pres(n))
-       call multifab_fill_boundary(src(n))
-       call multifab_fill_boundary(rw2(n))
-       call multifab_fill_boundary(rH2(n))
+       call multifab_fill_boundary(pres(nlevs))
+       call multifab_fill_boundary(src(nlevs))
+       call multifab_fill_boundary(rw2(nlevs))
+       call multifab_fill_boundary(rH2(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
        call multifab_physbc(uold(nlevs),1,1,dm,the_bc_tower%bc_tower_array(nlevs))
