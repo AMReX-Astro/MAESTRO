@@ -23,13 +23,12 @@ contains
     ! The sponge has a HALF * ( 1 - cos( (r - r_sp)/L)) profile, where
     ! the width, L, is r_tp - r_sp.
     !
-    ! The center of the sponge, r_md, is set to the radius where r =
+    ! The center of the sponge, r_md, is set to the radius where rho =
     ! sponge_center_density
     !
     ! The start of the sponge, r_sp, (moving outward from the center)
-    ! is the radius where r = sponge_start_factor * sponge_center_density
+    ! is the radius where rho = sponge_start_factor * sponge_center_density
     ! 
-    ! The top of the sponge is then 2 * r_md - r_tp
 
     use geometry, only: dr, r_end_coord
     use bl_constants_module
