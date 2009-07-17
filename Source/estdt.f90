@@ -27,7 +27,7 @@ module estdt_module
 contains
 
   subroutine estdt(mla,the_bc_tower,u,s,gpres,divU,dSdt,normal,w0,rho0,p0,gamma1bar, &
-                   grav,div_coeff,dx,cflfac,dt)
+                   grav,dx,cflfac,dt)
 
     use bl_prof_module
     use geometry, only: spherical, dm, nlevs
@@ -50,7 +50,6 @@ contains
     real(kind=dp_t), intent(in ) :: p0(:,0:)
     real(kind=dp_t), intent(in ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in ) :: grav(:,0:)
-    real(kind=dp_t), intent(in ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in ) :: dx(:,:)
     real(kind=dp_t), intent(in ) :: cflfac
     real(kind=dp_t), intent(out) :: dt
