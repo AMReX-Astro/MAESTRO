@@ -1,46 +1,51 @@
 NDEBUG := t
-MPI    := t
+MPI    := 
 OMP    :=
 
 COMP := Intel
 
 MKVERBOSE := t
 
+# define the location of the fParallel root directory
 FPARALLEL := ../..
 
+
+# include the main Makefile stuff
 include $(FPARALLEL)/mk/GMakedefs.mak
 
-include $(FPARALLEL)/boxlib/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/boxlib
 
-include $(FPARALLEL)/mg/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/mg
+# define the packages to build this problem
+#   note: we only need to include the problem's directory if there are 
+#   unique files there (as specified in a GPackage.mak).  The problem 
+#   directory is always placed at the start of the vpath by the 
+#   GMakerules.mak.
+Fmdirs := boxlib \
+          mg \
+          MAESTRO \
+          extern/helmeos \
+          extern/conducteos \
+          extern/constants \
+          extern/networks/ignition_simple \
+          extern/VODE 
 
-include $(FPARALLEL)/MAESTRO/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO
+Fmpack := $(foreach dir, $(Fmdirs), $(FPARALLEL)/$(dir)/GPackage.mak)
+Fmlocs := $(foreach dir, $(Fmdirs), $(FPARALLEL)/$(dir))
 
-include $(FPARALLEL)/extern/helmeos/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/helmeos
-FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/helmeos
+# include the necessary GPackage.mak files that define this setup
+include $(Fmpack)
 
-include $(FPARALLEL)/extern/conducteos/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/conducteos
-FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/conducteos
+# vpath defines the directories to search for the source files
+VPATH_LOCATIONS += $(Fmlocs)
 
-include $(FPARALLEL)/extern/constants/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/constants
+FINCLUDE_LOCATIONS += $(Fmlocs)
 
-include $(FPARALLEL)/extern/networks/ignition_simple/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/ignition_simple
 
-include $(FPARALLEL)/extern/VODE/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/VODE
-
+# define the build instructions for the executable
 main.$(suf).exe: $(objects)
 	$(LINK.f90) -o main.$(suf).exe $(objects) $(libraries)
 	@echo SUCCESS
 
-
+# define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters ./_parameters.flame
 PROBIN_TEMPLATE   := ../probin.template
 
@@ -48,5 +53,7 @@ probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
 	../write_probin.py -t $(PROBIN_TEMPLATE) $(PROBIN_PARAMETERS)
 
 
+
+# include the Makefile rules
 include $(FPARALLEL)/mk/GMakerules.mak
 
