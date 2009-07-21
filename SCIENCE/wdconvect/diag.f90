@@ -702,7 +702,7 @@ contains
           ! vel
           write (un4, *) " "
           write (un4, 999) trim(job_name)
-          write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", "tot kin energy", "grav pot energy", "tot int energy"
+          write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", "tot kin energy", "grav pot energy", "tot int energy", 'dt'
 
           firstCall = .false.
        endif
@@ -719,7 +719,7 @@ contains
             xloc_enucmax, yloc_enucmax, zloc_enucmax, &
             vx_enucmax, vy_enucmax, vz_enucmax, Rloc_enucmax, nuc_ener
 
-       write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener
+       write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener, dt
 
        close(un)
        close(un2)
