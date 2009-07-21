@@ -13,6 +13,7 @@ include $(FPARALLEL)/mk/GMakedefs.mak
 
 programs += testburn
 programs += eval
+programs += testjacobian
 
 include $(FPARALLEL)/boxlib/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/boxlib
