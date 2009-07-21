@@ -145,6 +145,8 @@ subroutine jac(neq, t, y, ml, mu, pd, nrpd, rpar, ipar)
   ! EOS calls
   use burner_aux_module, only : dens_pass, c_p_pass, dhdx_pass, X_O16_pass
 
+  implicit none
+
   integer        , intent(IN   ) :: neq, ml, mu, nrpd, ipar
   real(kind=dp_t), intent(IN   ) :: y(neq), rpar, t
   real(kind=dp_t), intent(  OUT) :: pd(neq,neq)
@@ -152,7 +154,7 @@ subroutine jac(neq, t, y, ml, mu, pd, nrpd, rpar, ipar)
   real(kind=dp_t) :: rate, dratedt, scorr, dscorrdt, xc12tmp
   common /rate_info/ rate, dratedt, scorr, dscorrdt, xc12tmp
 
-  integer :: itemp, i, j
+  integer :: itemp
 
   integer, save :: ic12, io16, img24
 
@@ -170,7 +172,7 @@ subroutine jac(neq, t, y, ml, mu, pd, nrpd, rpar, ipar)
   ! initialize
   pd(:,:)  = ZERO
 
-  itemp = neq
+  itemp = nspec_advance + 1
 
 
   ! carbon jacobian elements
