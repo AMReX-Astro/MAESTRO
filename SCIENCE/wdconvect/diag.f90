@@ -32,6 +32,7 @@ module diag_module
 
   use bl_types
   use bl_IO_module
+  use bl_error_module
   use multifab_module
   use ml_layout_module
   use define_bc_module
@@ -129,6 +130,14 @@ contains
     real(kind=dp_t) :: vx_enucmax_level, vy_enucmax_level, vz_enucmax_level
     real(kind=dp_t) :: vx_enucmax,       vy_enucmax,       vz_enucmax
 
+    real(kind=dp_t) :: vx_center_local, vy_center_local, vz_center_local
+    real(kind=dp_t) :: vx_center_level, vy_center_level, vz_center_level
+    real(kind=dp_t) :: vx_center,       vy_center,       vz_center
+
+    real(kind=dp_t) :: T_center_local, T_center_level, T_center
+
+    integer         :: ncenter_local, ncenter_level, ncenter
+
     ! buffers
     real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(2*dm)
     real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
@@ -137,7 +146,7 @@ contains
     real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
 
     real(kind=dp_t) :: max_data_level(3), max_data_local(3)
-    real(kind=dp_t) :: sum_data_level(2*dm+5), sum_data_local(2*dm+5)
+    real(kind=dp_t) :: sum_data_level(2*dm+9), sum_data_local(2*dm+9)
 
 
     integer :: index_max
@@ -238,6 +247,14 @@ contains
     vy_enucmax = ZERO
     vz_enucmax = ZERO
 
+    vx_center = ZERO
+    vy_center = ZERO
+    vz_center = ZERO
+
+    T_center = ZERO
+    
+    ncenter = 0
+
 
     !=========================================================================
     ! loop over the levels and compute the global quantities
@@ -312,7 +329,21 @@ contains
        vx_enucmax_level = ZERO
        vy_enucmax_level = ZERO
        vz_enucmax_level = ZERO
+
+       vx_center_local = ZERO
+       vy_center_local = ZERO
+       vz_center_local = ZERO
+
+       vx_center_level = ZERO
+       vy_center_level = ZERO
+       vz_center_level = ZERO
        
+       T_center_local = ZERO
+       T_center_level = ZERO
+
+       ncenter_local = 0
+       ncenter_level = 0
+
 
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
@@ -354,7 +385,8 @@ contains
                              enuc_max_local, xloc_enucmax_local, yloc_enucmax_local, zloc_enucmax_local, &
                              vx_enucmax_local, vy_enucmax_local, vz_enucmax_local, &
                              kin_ener_local, int_ener_local, nuc_ener_local, &
-                             U_max_local, Mach_max_local)
+                             U_max_local, Mach_max_local, &
+                             ncenter_local,T_center_local,vx_center_local,vy_center_local,vz_center_local)
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_3d(n,time,dt,dx(n,:), &
@@ -375,6 +407,7 @@ contains
                              vx_enucmax_local, vy_enucmax_local, vz_enucmax_local, &
                              kin_ener_local, int_ener_local, nuc_ener_local, &
                              U_max_local, Mach_max_local, &
+                             ncenter_local,T_center_local,vx_center_local,vy_center_local,vz_center_local, &
                              mp(:,:,:,1))
              end if
           end select
@@ -388,6 +421,8 @@ contains
 
        ! pack the quantities that we are summing into a vector to reduce
        ! communication
+
+       ! start with the real quantities...
        sum_data_local(1:dm)      = vr_local(:)
        sum_data_local(dm+1:2*dm) = rhovr_local(:)
        sum_data_local(2*dm+1)    = mass_local
@@ -395,17 +430,29 @@ contains
        sum_data_local(2*dm+3)    = kin_ener_local
        sum_data_local(2*dm+4)    = int_ener_local
        sum_data_local(2*dm+5)    = nuc_ener_local
+       sum_data_local(2*dm+6)    = vx_center_local
+       sum_data_local(2*dm+7)    = vy_center_local
+       sum_data_local(2*dm+8)    = vz_center_local
+       sum_data_local(2*dm+9)    = T_center_local
 
        call parallel_reduce(sum_data_level, sum_data_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
-       vr_level(:)    = sum_data_level(1:dm)
-       rhovr_level(:) = sum_data_level(dm+1:2*dm)
-       mass_level     = sum_data_level(2*dm+1)
-       nzones_level   = sum_data_level(2*dm+2)
-       kin_ener_level = sum_data_level(2*dm+3)
-       int_ener_level = sum_data_level(2*dm+4)
-       nuc_ener_level = sum_data_level(2*dm+5)
+       vr_level(:)     = sum_data_level(1:dm)
+       rhovr_level(:)  = sum_data_level(dm+1:2*dm)
+       mass_level      = sum_data_level(2*dm+1)
+       nzones_level    = sum_data_level(2*dm+2)
+       kin_ener_level  = sum_data_level(2*dm+3)
+       int_ener_level  = sum_data_level(2*dm+4)
+       nuc_ener_level  = sum_data_level(2*dm+5)
+       vx_center_level = sum_data_level(2*dm+6)   
+       vy_center_level = sum_data_level(2*dm+7)    
+       vz_center_level = sum_data_level(2*dm+8)   
+       T_center_level  = sum_data_level(2*dm+9)   
+
+       ! ...and the integer quantities
+       call parallel_reduce(ncenter_level, ncenter_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
 
 
        ! pack the quantities that we are taking the max of into a vector
@@ -557,6 +604,14 @@ contains
              vz_enucmax = vz_enucmax_level
           endif
 
+          T_center = T_center + T_center_level
+
+          vx_center = vx_center + vx_center_level
+          vy_center = vy_center + vy_center_level
+          vz_center = vz_center + vz_center_level
+
+          ncenter = ncenter + ncenter_level
+
        endif
 
     end do
@@ -615,17 +670,32 @@ contains
     !=========================================================================
     ! normalize
     !=========================================================================
-    vr(:) = vr(:)/nzones
-    vr_favre(:) = rhovr(:)/mass    ! note, the common dV normalization cancels
+    if (parallel_IOProcessor()) then
 
-    ! the volume we normalize with is that of a single coarse-level zone.
-    ! This is because the weight used in the loop over cells was with reference
-    ! to the coarse level
+       vr(:) = vr(:)/nzones
+       vr_favre(:) = rhovr(:)/mass    ! note, the common dV normalization cancels
 
-    mass = mass*dx(1,1)*dx(1,2)*dx(1,3)
-    kin_ener = kin_ener*dx(1,1)*dx(1,2)*dx(1,3)
-    int_ener = int_ener*dx(1,1)*dx(1,2)*dx(1,3)
-    nuc_ener = nuc_ener*dx(1,1)*dx(1,2)*dx(1,3)
+       ! the volume we normalize with is that of a single coarse-level zone.
+       ! This is because the weight used in the loop over cells was with reference
+       ! to the coarse level
+
+       mass = mass*dx(1,1)*dx(1,2)*dx(1,3)
+       kin_ener = kin_ener*dx(1,1)*dx(1,2)*dx(1,3)
+       int_ener = int_ener*dx(1,1)*dx(1,2)*dx(1,3)
+       nuc_ener = nuc_ener*dx(1,1)*dx(1,2)*dx(1,3)
+
+       
+       ! ncenter should be 8 -- there are only 8 zones that have a vertex at the
+       ! center of the star
+       if (ncenter /= 8) then
+          call bl_error("ERROR: ncenter /= 8 in diag")
+       else
+          T_center = T_center/ncenter
+          vx_center = vx_center/ncenter
+          vy_center = vy_center/ncenter
+          vz_center = vz_center/ncenter
+       endif
+    endif
 
 
     !=========================================================================
@@ -691,7 +761,7 @@ contains
           write (un2, *) " "
           write (un2, 999) trim(job_name)
           write (un2,1001) "time", "max{T}", "x(max{T})", "y(max{T})", "z(max{T})", &
-               "vx(max{T})", "vy(max{T})", "vz(max{T})", "R(max{T})"
+               "vx(max{T})", "vy(max{T})", "vz(max{T})", "R(max{T})", "T_center"
 
           ! enuc
           write (un3, *) " "
@@ -702,7 +772,9 @@ contains
           ! vel
           write (un4, *) " "
           write (un4, 999) trim(job_name)
-          write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", "tot kin energy", "grav pot energy", "tot int energy", 'dt'
+          write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", &
+               "tot kin energy", "grav pot energy", "tot int energy", &
+               "velx_center", "vely_center", "velz_center", "dt"
 
           firstCall = .false.
        endif
@@ -713,13 +785,13 @@ contains
             vr_favre(1), vr_favre(2), vr_favre(3), mass
        
        write (un2,1000) time, T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax, &
-            vx_Tmax, vy_Tmax, vz_Tmax, Rloc_Tmax
+            vx_Tmax, vy_Tmax, vz_Tmax, Rloc_Tmax, T_center
 
        write (un3,1000) time, enuc_max, &
             xloc_enucmax, yloc_enucmax, zloc_enucmax, &
             vx_enucmax, vy_enucmax, vz_enucmax, Rloc_enucmax, nuc_ener
 
-       write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener, dt
+       write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener, vx_center, vy_center, vz_center, dt
 
        close(un)
        close(un2)
@@ -762,12 +834,13 @@ contains
                      vx_enucmax, vy_enucmax, vz_enucmax, &
                      kin_ener,int_ener,nuc_ener, &
                      U_max,Mach_max, &
+                     ncenter,T_center,velx_center,vely_center,velz_center, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use bl_constants_module
     use network, only: nspec
-    use geometry, only: spherical
+    use geometry, only: spherical, center
     use probin_module, only: base_cutoff_density, prob_lo
     use eos_module
 
@@ -790,6 +863,8 @@ contains
     real (kind=dp_t), intent(inout) :: vx_enucmax, vy_enucmax, vz_enucmax
     real (kind=dp_t), intent(inout) :: kin_ener, int_ener, nuc_ener
     real (kind=dp_t), intent(inout) :: U_max, Mach_max
+    integer         , intent(inout) :: ncenter
+    real (kind=dp_t), intent(inout) :: T_center, velx_center, vely_center, velz_center
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
@@ -822,6 +897,26 @@ contains
 
              if (cell_valid .and. s(i,j,k,rho_comp) > base_cutoff_density) then
                    
+
+                ! is it one of the 8 zones surrounding the center?
+                if (abs(x - center(1)) < dx(1)  .and. &
+                    abs(y - center(2)) < dx(2)  .and. &
+                    abs(z - center(3)) < dx(3)) then
+
+                   ncenter = ncenter + 1
+
+                   T_center = T_center + s(i,j,k,temp_comp)
+
+                   velx_center = velx_center + &
+                        u(i,j,k,1) + HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
+
+                   vely_center = vely_center + &
+                        u(i,j,k,2) + HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
+
+                   velz_center = velz_center + &
+                        u(i,j,k,3) + HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
+                endif
+
 
                 ! velr is the projection of the velocity (including w0) onto 
                 ! the radial unit vector 
