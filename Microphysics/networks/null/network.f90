@@ -54,16 +54,6 @@ contains
     zion(2) = 8.0_dp_t
     zion(3) = 12.0_dp_t
 
-    ! our convention is that the binding energies are negative.  We convert
-    ! from the MeV values that are traditionally written in astrophysics 
-    ! papers by multiplying by 1.e6 eV/MeV * 1.60217646e-12 erg/eV.  The
-    ! MeV values are per nucleus, so we divide by aion to make it per
-    ! nucleon and we multiple by Avogardo's # (6.0221415e23) to get the 
-    ! value in erg/g
-    ebin(1) = -7.4103097e18_dp_t     !  92.16294 MeV
-    ebin(2) = -7.6959672e18_dp_t     ! 127.62093 MeV
-    ebin(3) = -7.9704080e18_dp_t     ! 198.2579  MeV
-
     network_initialized = .true.
 
   end subroutine network_init
