@@ -189,7 +189,7 @@ subroutine jac(neq, t, y, ml, mu, pd, nrpd, rpar, ipar)
 
   ! add df(T) / dT
   pd(itemp,itemp) = -( (dhdx_pass(img24) - dhdx_pass(ic12)) + &
-                       (ebin(img24) - ebin(ic12)) )*pd(ic12,itemp)
+                       (ebin(img24) - ebin(ic12)) )*pd(ic12,itemp)/c_p_pass
 
 
   return
