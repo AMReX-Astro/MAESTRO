@@ -28,8 +28,8 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
 
   real(kind=dp_t) :: rate, dratedt
   real(kind=dp_t) :: sc1212, dsc1212dt
-  real(kind=dp_t) :: xc12tmp, dxc12tmpdt
-  common /rate_info/ rate, dratedt, sc1212, dsc1212dt, xc12tmp, dxc12tmpdt
+  real(kind=dp_t) :: xc12tmp
+  common /rate_info/ rate, dratedt, sc1212, dsc1212dt, xc12tmp
 
   real(kind=dp_t), PARAMETER :: &
                      one_twelvth = 1.0d0/12.0d0, &
@@ -149,8 +149,8 @@ subroutine jac(neq, t, y, ml, mu, pd, nrpd, rpar, ipar)
   real(kind=dp_t), intent(IN   ) :: y(neq), rpar, t
   real(kind=dp_t), intent(  OUT) :: pd(neq,neq)
 
-  real(kind=dp_t) :: rate, dratedt, scorr, dscorrdt, xc12tmp, dxc12tmpdt
-  common /rate_info/ rate, dratedt, scorr, dscorrdt, xc12tmp, dxc12tmpdt
+  real(kind=dp_t) :: rate, dratedt, scorr, dscorrdt, xc12tmp
+  common /rate_info/ rate, dratedt, scorr, dscorrdt, xc12tmp
 
   integer :: itemp, i, j
 
@@ -179,10 +179,8 @@ subroutine jac(neq, t, y, ml, mu, pd, nrpd, rpar, ipar)
 
 
   ! add the temperature derivatives: df(y_i) / dT
-  pd(ic12,itemp) = -(1.0d0/12.0d0)*(dens_pass*rate*xc12tmp**2*dscorrdt             &
-                                    + dens_pass*scorr*xc12tmp**2*dratedt           &
-                                    + 2.0d0*dens_pass*scorr*xc12tmp*dxc12tmpdt     &
-                                   ) / 1.0d9
+  pd(ic12,itemp) = -(1.0d0/12.0d0)*(dens_pass*rate*xc12tmp**2*dscorrdt    &
+                                    + dens_pass*scorr*xc12tmp**2*dratedt)  
 
   ! add the temperature jacobian elements df(T) / df(y)
   pd(itemp,ic12) =  ( (dhdx_pass(img24) - dhdx_pass(ic12)) + &
