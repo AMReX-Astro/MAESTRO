@@ -2,26 +2,24 @@ program testburn
 
   use bl_types
   use bl_constants_module
+  use bl_error_module
   use network
   use eos_module
   use burner_module
+  use burner_aux_module
 
   implicit none
 
   real(kind=dp_t) :: dens, temp
   real(kind=dp_t), dimension(nspec) :: Xin
-  real(kind=dp_t), dimension(nspec+1) :: y, ydot
+  real(kind=dp_t), dimension(nspec_advance+1) :: y, ydot
   real(kind=dp_t) :: enucdot
 
   real(kind=dp_t) :: rpar
   integer :: ipar
 
-  real(kind=dp_t) :: c_p, dhdx(nspec), T_eos, dT_crit
-
   integer :: ic12, io16, img24
   integer :: n
-
-  common /zone_state/ dens, c_p, dhdx, T_eos, dT_crit
 
   call network_init()
   call eos_init()
@@ -30,8 +28,12 @@ program testburn
   io16 = network_species_index("oxygen-16")
   img24 = network_species_index("magnesium-24")
 
-  dens = 2.e9_dp_t
-  temp = 7.e8_dp_t
+  if (ic12 < 0 .or. io16 < 0 .or. img24 < 0) then
+     call bl_error("ERROR: species index not defined")
+  endif
+
+  dens = 2.6e9_dp_t
+  temp = 6.e8_dp_t
 
   Xin(ic12) = 0.5_dp_t
   Xin(io16) = 0.5_dp_t
@@ -58,18 +60,16 @@ program testburn
 
   ! load the state
   y(1) = Xin(ic12)
-  y(2) = Xin(io16)
-  y(3) = Xin(img24)
-  y(4) = temp
+  y(nspec_advance+1) = temp
 
-  ! load the common block
-  T_eos = temp
-  dT_crit = 0.01d0
-  dhdx(:) = dhdX_eos(1,:)
-  c_p = cp_eos(1)
+  ! set the burner_aux variables
+  dens_pass = dens
+  c_p_pass = cp_eos(1)
+  dhdx_pass(:) = dhdX_eos(1,:)
+  X_O16_pass = Xin(io16)
   
 
-  call f_rhs(nspec+1, ZERO, y, ydot, rpar, ipar)
+  call f_rhs(nspec_advance+1, ZERO, y, ydot, rpar, ipar)
 
   
   print *, 'done!'
@@ -78,10 +78,8 @@ program testburn
   print *, 'rhs:  ', ydot
 
   ! compute the energy release/s (erg/g/s)
-  enucdot = ZERO
-  do n = 1, nspec
-     enucdot = enucdot - ebin(n)*ydot(n)
-  enddo
+  enucdot = (ebin(img24) - ebin(ic12))*ydot(ic12)
+
   print *, 'enucdot = ', enucdot
 
 end program testburn
