@@ -562,7 +562,21 @@ contains
 
        call thermal_conduct(mla,dx,dt,s1,hcoeff1,Xkcoeff1,pcoeff1,hcoeff1,Xkcoeff1,pcoeff1, &
                             s2,p0_old,p0_new,the_bc_tower)
-          
+    end if
+
+    ! pass temperature through for seeding the temperature update eos call
+    do n=1,nlevs
+       call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,3)
+    end do
+
+    ! now update temperature
+    if (use_tfromp) then
+       call makeTfromRhoP(s2,p0_new,mla,the_bc_tower%bc_tower_array,dx)
+    else
+       call makeTfromRhoH(s2,mla,the_bc_tower%bc_tower_array)
+    end if
+
+    if (use_thermal_diffusion) then
        ! make a copy of s2star since these are needed to compute
        ! coefficients in the call to thermal_conduct_full_alg
        do n=1,nlevs
@@ -970,7 +984,7 @@ contains
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
+!! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if (use_thermal_diffusion) then
@@ -988,6 +1002,7 @@ contains
        call make_thermal_coeffs(s2star,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2)
 
        do n=1,nlevs
+          call destroy(s2star(n))
           call destroy(Tcoeff2(n))
        end do
 
@@ -1001,8 +1016,19 @@ contains
           call destroy(hcoeff2(n))
           call destroy(Xkcoeff2(n))
           call destroy(pcoeff2(n))
-          call destroy(s2star(n))
        end do
+    end if
+
+    ! pass temperature through for seeding the temperature update eos call
+    do n=1,nlevs
+       call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,3)
+    end do
+
+    ! now update temperature
+    if (use_tfromp) then
+       call makeTfromRhoP(s2,p0_new,mla,the_bc_tower%bc_tower_array,dx)
+    else
+       call makeTfromRhoH(s2,mla,the_bc_tower%bc_tower_array)
     end if
 
     do n=1,nlevs

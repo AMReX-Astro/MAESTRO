@@ -426,20 +426,6 @@ contains
 
     if (parallel_IOProcessor()) write(6,2004)
 
-    ! pass temperature through for seeding the temperature update eos call
-    do n=1,nlevs
-       call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,3)
-    end do
-
-    ! now update temperature
-    if (.not. use_thermal_diffusion) then
-       if (use_tfromp) then
-          call makeTfromRhoP(snew,p0_new,mla,the_bc_level,dx)
-       else
-          call makeTfromRhoH(snew,mla,the_bc_level)
-       end if
-    end if
-
     call destroy(bpt)
 
 1999 format('... Level ', i1, ' update:')

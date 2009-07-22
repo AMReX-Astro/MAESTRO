@@ -349,18 +349,6 @@ contains
 
     end if
 
-    ! pass temperature through for seeding the temperature update eos call
-    do n=1,nlevs
-       call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,3)
-    end do
-
-    ! now update temperature
-    if (use_tfromp) then
-       call makeTfromRhoP(s2,p0_new,mla,the_bc_tower%bc_tower_array,dx)
-    else
-       call makeTfromRhoH(s2,mla,the_bc_tower%bc_tower_array)
-    end if
-
     call destroy(bpt)
 
   end subroutine thermal_conduct
