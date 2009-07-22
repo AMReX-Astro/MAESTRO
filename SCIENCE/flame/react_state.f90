@@ -180,6 +180,7 @@ contains
              if (do_average_burn) then
                 call burner_loop_2d_avg(snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so,rp(:,:,1,:),ng_rw, &
                                         hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he,dt,lo,hi, &
+                                        rho_avg(n,:), T_avg(n,:), X_in_avg(n,:,:), &
                                         X_out_avg(n,:,:), rhowdot_avg(n,:,:), rhoH_avg(n,:))
              else
                 call burner_loop_2d(snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so,rp(:,:,1,:),ng_rw, &
@@ -290,8 +291,10 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine burner_loop_2d_avg(sold,ng_si,snew,ng_so,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
-                                rho_Hext,ng_he,dt,lo,hi,X_out_avg,rhowdot_avg,rhoH_avg)
+  subroutine burner_loop_2d_avg(sold,ng_si,snew,ng_so,rho_omegadot,ng_rw, &
+                                rho_Hnuc,ng_hn,rho_Hext,ng_he,dt,lo,hi, &
+                                rho_avg,T_avg,X_in_avg, &
+                                X_out_avg,rhowdot_avg,rhoH_avg)
 
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
@@ -305,23 +308,36 @@ contains
     real(kind=dp_t), intent(  out) ::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:)
     real(kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:)
     real(kind=dp_t), intent(in   ) :: dt
+    real(kind=dp_t), intent(in   ) ::     rho_avg(0:)
+    real(kind=dp_t), intent(in   ) ::       T_avg(0:)
+    real(kind=dp_t), intent(in   ) ::    X_in_avg(0:,:)
     real(kind=dp_t), intent(in   ) ::   X_out_avg(0:,:)
     real(kind=dp_t), intent(in   ) :: rhowdot_avg(0:,:)
     real(kind=dp_t), intent(in   ) ::    rhoH_avg(0:)
 
     !     Local variables
-    integer            :: i, j
-    real (kind=dp_t) :: rho
+    integer          :: i, j
+    real (kind=dp_t) :: rho, T_in
     real (kind=dp_t) :: x_out(nspec)
     real (kind=dp_t) :: rhowdot(nspec)
     real (kind=dp_t) :: rhoH
+
+    real (kind=dp_t) :: TOL = 1.e-8
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
           
           rho = sold(i,j,rho_comp)
+          T_in = sold(i,j,temp_comp)
 
           if (do_burning .and. rho > burning_cutoff_density) then
+             ! check to make sure that the average was a good representation
+             ! of this zone
+             if ( (abs(rho  - rho_avg(j) ) > TOL*rho) .or. &
+                  (abs(T_in - T_avg(j) )   > TOL*T_in) ) then
+                call bl_error("ERROR: transverse variations too large")
+             endif
+
              x_out = X_out_avg(j,:)
              rhowdot = rhowdot_avg(j,:)
              rhoH = rhoH_avg(j)
