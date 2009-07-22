@@ -64,6 +64,8 @@ contains
     real(kind=dp_t) :: T_min, T_min_level, T_min_local
     real(kind=dp_t) :: max_gradT_y, max_gradT_y_level, max_gradT_y_local
 
+    real(kind=dp_t) :: int_rho_omegadot_C12
+
     real(kind=dp_t) :: flame_thickness
 
     integer :: lo(dm),hi(dm)
@@ -227,7 +229,10 @@ contains
     !=========================================================================
     ! normalize
     !=========================================================================
-    
+
+    ! what we've actually calculated for far is the integral of rho_omegadot
+    int_rho_omegadot_C12 = C12_flame_speed
+
     ! our flame speed estimate is based on the carbon destruction rate
     ! V_eff = - int { rho omegadot dx } / W (rho X)^in
     C12_flame_speed = -C12_flame_speed*dx(1,1)*dx(1,2)/ &
@@ -272,13 +277,13 @@ contains
           write (un, 997) INLET_RHO, INLET_TEMP, INLET_VEL
           write (un, 998) INLET_RHOX(ic12)/INLET_RHO, INLET_RHOX(io16)/INLET_RHO
           write (un, 999) trim(job_name)
-          write (un, 1001) "time", "C12 flame speed", "O16 flame speed", "C/O flame speed", "flame thickness", 'T_min', 'T_max'
+          write (un, 1001) "time", "C12 flame speed", "O16 flame speed", "C/O flame speed", "flame thickness", 'int {rho_omegadot(C12)}', 'T_min', 'T_max'
 
           firstCall_io = .false.
        endif
 
        ! write out the data
-       write (un,1000) time, C12_flame_speed, O16_flame_speed, CO_flame_speed, flame_thickness, T_min, T_max
+       write (un,1000) time, C12_flame_speed, O16_flame_speed, CO_flame_speed, int_rho_omegadot_C12, flame_thickness, T_min, T_max
 
        close(un)
 
