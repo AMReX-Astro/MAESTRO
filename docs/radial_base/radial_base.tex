@@ -130,7 +130,7 @@ q_{6,n_{\rm c}} = 6\left[q_{0,n_{\rm c}} -
 17 & 3.5 & 48 & 0.5 & 0.5 & 3.5 & \sqrt{51/4} & 3.571 & 16~17~19~20 \\
 18 & 3.7 & 0 & & & & & & 16~17~19~20 \\
 19 & 3.9 & 72 & 0.5 & 1.5 & 3.5 & \sqrt{59/4} & 3.841 & 16~17~19~20 \\
-20 & 4.1 & 24 & 1.5 & 1.5 & 3.5 & \sqrt{67/4} & 4.093 & 19~20~21~22 \\
+20 & 4.1 & 24 & 1.5 & 1.5 & 3.5 & \sqrt{67/4} & 4.093 & 17~19~20~21 \\
 21 & 4.3 & 56 & 0.5 & 2.5 & 3.5 & \sqrt{75/4} & 4.330 & 20~21~22~23 \\
 22 & 4.5 & 72 & 0.5 & 0.5 & 4.5 & \sqrt{83/4} & 4.555 & 21~22~23~24 \\
 23 & 4.7 & 48 & 0.5 & 1.5 & 4.5 & \sqrt{91/4} & 4.770 & 22~23~24~25 \\
@@ -145,6 +145,14 @@ q_{6,n_{\rm c}} = 6\left[q_{0,n_{\rm c}} -
 & & & & & & \sqrt{163/4} & 6.384 & \\
 \end{array}\right.\nonumber
 \end{equation}
+For $31^*$, use cell value in 31 and $r=6.3$.
+
+Divided difference for cells 8 through 30:
+\begin{eqnarray}
+f(x) &=& y_0 + \frac{y_1-y_0}{x_1-x_0}(x-x_0) \nonumber \\
+&& + \frac{\left(\frac{y_2-y_1}{x_2-x_1}\right)-\left(\frac{y_1-y_0}{x_1-x_0}\right)}{x_2-x_0}(x-x_0)(x-x_1) \nonumber \\
+&& + \frac{\frac{\left(\frac{y_2-y_1}{x_2-x_1}\right)-\left(\frac{y_1-y_0}{x_1-x_0}\right)}{x_2-x_0}-\frac{\left(\frac{y_3-y_2}{x_3-x_2}\right)-\left(\frac{y_2-y_1}{x_2-x_1}\right)}{x_3-x_1}}{x_3-x_0}(x-x_0)(x-x_1)(x-x_2)
+\end{eqnarray}
 
 \clearpage
 
