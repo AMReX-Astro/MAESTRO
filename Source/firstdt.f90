@@ -175,7 +175,8 @@ contains
     
     ! local variables
     real (kind = dp_t)  :: spdx,spdy,pforcex,pforcey,ux,uy,eps,dt_divu,dt_sound,rho_min
-    integer             :: i,j,gradp0,denom
+    real (kind = dp_t)  :: gradp0,denom
+    integer             :: i,j
     
     rho_min = 1.d-20
     
