@@ -1,3 +1,25 @@
+\section{Compiling}
+
+\begin{enumerate}
+
+\item {\em Does it matter if we use a Fortran 90 compiler instead of a 
+   Fortran 95 compiler?}
+
+
+   On some machines it does---Fortran 95 specifies that any local
+   allocated arrays are automatically deallocated when a subroutine
+   ends.  Fortran 90 does not do this.  Most MAESTRO routines rely 
+   on this Fortran 95 feature.  
+
+   On IBM machines, for instance, using {\tt xlf90} instead of {\tt
+     xlf95} for MAESTRO will produce memory leaks.
+
+  
+
+\end{enumerate}
+
+\section{Running}
+
 \begin{enumerate}
 
 \item {\em  How do we turn off all the initial projections to look at the
@@ -11,6 +33,12 @@
     do_initial_projection = T
 \end{verbatim}
 
+\end{enumerate}
+
+
+\section{I/O}
+
+\begin{enumerate}
 
 \item {\em How can we dump out a variable to a plotfile from any point in the
    code?} 
@@ -22,15 +50,6 @@
     call fabio_ml_multifab_write_d(umac(:,1),mla%mba%rr(:,1),"a_umacx")
 \end{verbatim}
 
-\item {\em Does it matter if we use a Fortran 90 compiler instead of a 
-   Fortran 95 compiler?}
-
-
-   On some machines it does---Fortran 95 specifies that any local
-   allocated arrays are automatically deallocated when a subroutine
-   ends.  Fortran 90 does not do this.  On IBM machines, for instance,
-   using {\tt xlf90} instead of {\tt xlf95} for MAESTRO will produce
-   memory leaks.
 
 
 \item {\em How can I tell from a plotfile what runtime parameters were
@@ -39,5 +58,15 @@
    In each plotfile directory, there is a file called {\tt job\_info}
    (e.g.\ {\tt plt00000/job\_info}) that lists the build directory and
    date, as well as the value of every runtime parameter for the run.
+
+
+\item {\em How can I force the code to output a plotfile at the next
+   step?}
+
+   In the output directory (where the code is running) do `{\tt touch
+     .dump\_plotfile}'.  This will create an empty file called {\tt
+     .dump\_plotfile}.  At the end of each step, if the code finds
+   that file, it will output a plotfile.  Simply delete the file to
+   restore the code to its normal plotfile behavior.
 
 \end{enumerate}
