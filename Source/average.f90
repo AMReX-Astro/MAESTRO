@@ -166,19 +166,11 @@ contains
        ! more contributions from cells which map to the outer half of
        ! the fine radial bin
        do r=0,nr_fine-1
-          if (ncell(nlevs,r) .ne. 0) then
-             
-             print*,"r,ncell",r,ncell(nlevs,r)
-             
+         if (ncell(nlevs,r) .ne. 0) then
              phisum(nlevs,r) = phisum(nlevs,r) / ncell(nlevs,r)
              ncell(nlevs,r) = ONE
-
-          else
-             print*,"r,ncell",r,ncell(nlevs,r)
           end if
        end do
-
-       stop
 
        ! now compute phibar_crse
        if (drdxfac .ne. 1) then
@@ -393,26 +385,9 @@ contains
              if (cell_valid) then
                 radius = sqrt(x**2 + y**2 + z**2)
                 idx  = int(radius / dr(1))
-
+                
                 phisum(idx) = phisum(idx) + cell_weight*phi(i,j,k,incomp)
                 ncell(idx) = ncell(idx) + cell_weight
-
-                if (idx .eq. 4) then
-                   print*,"contributing to cell 4",radius,i,j,k
-                end if
-                if (idx .eq. 8) then
-                   print*,"contributing to cell 8",radius,i,j,k
-                end if
-                if (idx .eq. 10) then
-                   print*,"contributing to cell 10",radius,i,j,k
-                end if
-                if (idx .eq. 12) then
-                   print*,"contributing to cell 12",radius,i,j,k
-                end if
-                if (idx .eq. 14) then
-                   print*,"contributing to cell 14",radius,i,j,k
-                end if
-
              end if
 
           end do
