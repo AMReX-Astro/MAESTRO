@@ -11,7 +11,7 @@ contains
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpres,pres,normal,rho0_old,rhoh0_old, &
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
-                              rho_omegadot2,rho_Hnuc2,div_coeff_old,div_coeff_new, &
+                              rho_omegadot2,rho_Hnuc2,thermal2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
                               dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
                               psi,sponge,hgrhs)
@@ -77,6 +77,7 @@ contains
     real(dp_t)    ,  intent(inout) ::        w0(:,0:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
     type(multifab),  intent(inout) :: rho_Hnuc2(:)
+    type(multifab),  intent(inout) ::  thermal2(:)
     real(dp_t)    ,  intent(inout) :: div_coeff_old(:,0:)
     real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
     real(dp_t)    ,  intent(inout) :: grav_cell_old(:,0:)
@@ -99,7 +100,6 @@ contains
     type(multifab) ::          hgrhs_old(mla%nlevel)
     type(multifab) ::         Source_nph(mla%nlevel)
     type(multifab) ::           thermal1(mla%nlevel)
-    type(multifab) ::           thermal2(mla%nlevel)
     type(multifab) ::             s2star(mla%nlevel)
     type(multifab) ::                 s1(mla%nlevel)
     type(multifab) ::                 s2(mla%nlevel)
@@ -631,10 +631,6 @@ contains
     ! reset cutoff coordinates to old time value
     call compute_cutoff_coords(rho0_old)
 
-    do n=1,nlevs
-       call multifab_build(thermal2(n), mla%la(n), 1, 1)
-    end do
-
     if(use_thermal_diffusion) then
 
        do n=1,nlevs
@@ -674,7 +670,6 @@ contains
 
     do n=1,nlevs
        call destroy(rho_Hext(n))
-       call destroy(thermal2(n))
        call destroy(delta_gamma1(n))
     end do
 
@@ -1077,9 +1072,6 @@ contains
        write(6,*) '<<< STEP 10 : make new S >>>'
     end if
           
-    do n=1,nlevs
-       call multifab_build(thermal2(n), mla%la(n), 1, 1)
-    end do
 
     if(use_thermal_diffusion) then
 
@@ -1119,7 +1111,6 @@ contains
                 mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
-       call destroy(thermal2(n))
        call destroy(delta_gamma1(n))
     end do
 

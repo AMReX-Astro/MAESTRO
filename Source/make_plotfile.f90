@@ -91,7 +91,7 @@ contains
 
   end subroutine get_plot_names
 
-  subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,rho_Hnuc,Source,sponge,&
+  subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,rho_Hnuc,thermal,Source,sponge,&
                            mba,plot_names,time,dx,the_bc_tower,w0,rho0,rhoh0,p0,tempbar, &
                            gamma1bar,normal)
 
@@ -117,6 +117,7 @@ contains
     type(multifab)   , intent(in   ) :: gpres(:)
     type(multifab)   , intent(in   ) :: rho_omegadot(:)
     type(multifab)   , intent(in   ) :: rho_Hnuc(:)
+    type(multifab)   , intent(in   ) :: thermal(:)
     type(multifab)   , intent(in   ) :: Source(:)
     type(multifab)   , intent(in   ) :: sponge(:)
     type(ml_boxarray), intent(in   ) :: mba
