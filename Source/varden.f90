@@ -102,6 +102,8 @@ subroutine varden()
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
 
+  logical :: dump_file
+
   last_plt_written = -1
   last_chk_written = -1
 
@@ -939,10 +941,15 @@ subroutine varden()
            end if
         end if
 
-        if (plot_int > 0 .or. plot_deltat > 0.0) then
+        ! if the file .dump_plotfile exists in our output directory, then
+        ! automatically dump a plotfile
+        inquire(file=".dump_plotfile", exist=dump_file)
+
+        if (plot_int > 0 .or. plot_deltat > 0.0 .or. dump_file) then
            if ( (plot_int > 0 .and. mod(istep,plot_int) .eq. 0) .or. &
                 (plot_deltat > 0.0 .and. &
-                mod(time - dt,plot_deltat) > mod(time,plot_deltat))) then
+                mod(time - dt,plot_deltat) > mod(time,plot_deltat)) .or. &
+                dump_file) then
 
               if (istep <= 99999) then
                  write(unit=plot_index,fmt='(i5.5)') istep
