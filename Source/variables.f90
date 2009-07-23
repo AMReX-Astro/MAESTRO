@@ -18,11 +18,27 @@ module variables
   integer, save :: icomp_machno,icomp_dg,icomp_gp,icomp_entropy,icomp_entropypert
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
   integer, save :: icomp_omegadot,icomp_enuc,icomp_sponge
-  integer, save :: n_plot_comps
+  integer, save :: icomp_thermal
+
+  ! the total number of plot components
+  integer, save :: n_plot_comps = 0
+
   integer, save :: ntrac,nscal
   real(kind=dp_t), save :: rel_eps
 
 contains
+
+  function get_next_plot_index(num) result (next)
+
+    ! return the next starting index for a plotfile quantity,
+    ! and increment the counter of plotfile quantities by num
+    integer :: num, next
+
+    next = n_plot_comps + 1
+    n_plot_comps = n_plot_comps + num
+
+    return
+  end function get_next_plot_index
 
   subroutine init_variables()
 
@@ -50,77 +66,53 @@ contains
   subroutine init_plot_variables()
 
     use network, only: nspec
-    use probin_module, only: plot_spec, plot_trac, plot_base
+    use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion
     use geometry, only: spherical, dm
 
-    integer :: first_derive_comp
+    icomp_vel      = get_next_plot_index(dm)
+    icomp_rho      = get_next_plot_index(1)
+    icomp_rhoh     = get_next_plot_index(1)
 
-    icomp_vel      = 1
-    icomp_rho      = dm+1
-    icomp_rhoh     = icomp_rho +1
-    first_derive_comp = icomp_rhoh + 1
-
-    if (plot_spec) then
-      icomp_spec     = icomp_rhoh+1
-      first_derive_comp = first_derive_comp + nspec
-    end if
-
-    if (plot_trac) then
-      icomp_trac  = first_derive_comp
-      first_derive_comp = first_derive_comp + ntrac
-    end if
+    if (plot_spec) icomp_spec = get_next_plot_index(nspec)
+    if (plot_trac) icomp_trac = get_next_plot_index(ntrac)
 
     if (plot_base) then
-       icomp_w0 = first_derive_comp
-       first_derive_comp = first_derive_comp + dm
-
-       icomp_divw0 = first_derive_comp
-       first_derive_comp = first_derive_comp + 1
-
-       icomp_rho0 = first_derive_comp
-       first_derive_comp = first_derive_comp + 1
-
-       icomp_rhoh0 = first_derive_comp
-       first_derive_comp = first_derive_comp + 1
-
-       icomp_h0 = first_derive_comp
-       first_derive_comp = first_derive_comp + 1       
-
-       icomp_p0 = first_derive_comp
-       first_derive_comp = first_derive_comp + 1
+       icomp_w0    = get_next_plot_index(dm)
+       icomp_divw0 = get_next_plot_index(1)
+       icomp_rho0  = get_next_plot_index(1)
+       icomp_rhoh0 = get_next_plot_index(1)
+       icomp_h0    = get_next_plot_index(1)
+       icomp_p0    = get_next_plot_index(1)
     end if
 
-    if (spherical .eq. 1) then
-       icomp_velr = first_derive_comp
-       first_derive_comp = first_derive_comp + 1
-    endif
+    if (spherical .eq. 1) icomp_velr = get_next_plot_index(1)
 
-    icomp_magvel      = first_derive_comp
-    icomp_mom         = first_derive_comp+1
-    icomp_vort        = first_derive_comp+2
-    icomp_divu        = first_derive_comp+3
-    icomp_enthalpy    = first_derive_comp+4
-    icomp_rhopert     = first_derive_comp+5
-    icomp_rhohpert    = first_derive_comp+6
-    icomp_tfromp      = first_derive_comp+7
-    icomp_tfromH      = first_derive_comp+8
-    icomp_tpert       = first_derive_comp+9
-    icomp_dT          = first_derive_comp+10
-    icomp_machno      = first_derive_comp+11
-    icomp_dp          = first_derive_comp+12
-    icomp_dg          = first_derive_comp+13
-    icomp_entropy     = first_derive_comp+14
-    icomp_entropypert = first_derive_comp+15
-    icomp_sponge      = first_derive_comp+16
-    icomp_gp          = first_derive_comp+17
+    icomp_magvel      = get_next_plot_index(1)
+    icomp_mom         = get_next_plot_index(1)
+    icomp_vort        = get_next_plot_index(1)
+    icomp_divu        = get_next_plot_index(1)
+    icomp_enthalpy    = get_next_plot_index(1)
+    icomp_rhopert     = get_next_plot_index(1)
+    icomp_rhohpert    = get_next_plot_index(1)
+    icomp_tfromp      = get_next_plot_index(1)
+    icomp_tfromH      = get_next_plot_index(1)
+    icomp_tpert       = get_next_plot_index(1)
+    icomp_dT          = get_next_plot_index(1)
+    icomp_machno      = get_next_plot_index(1)
+    icomp_dp          = get_next_plot_index(1)
+    icomp_dg          = get_next_plot_index(1)
+    icomp_entropy     = get_next_plot_index(1)
+    icomp_entropypert = get_next_plot_index(1)
+    icomp_sponge      = get_next_plot_index(1)
+    icomp_gp          = get_next_plot_index(dm)
 
     if (plot_spec) then
-      icomp_omegadot = icomp_gp + dm
-      icomp_enuc     = icomp_omegadot + nspec
-      n_plot_comps = icomp_enuc
-    else
-      n_plot_comps = icomp_gp + dm - 1
+      icomp_omegadot = get_next_plot_index(nspec)
+      icomp_enuc     = get_next_plot_index(1)
     end if
+
+    if (use_thermal_diffusion) icomp_thermal = get_next_plot_index(1)
+
 
   end subroutine init_plot_variables
 

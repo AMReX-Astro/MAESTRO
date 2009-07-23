@@ -17,7 +17,7 @@ contains
     use plot_variables_module
     use variables
     use network, only: nspec, short_spec_names
-    use probin_module, only: plot_spec, plot_trac, plot_base
+    use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion
     use geometry, only: spherical, dm
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -89,6 +89,8 @@ contains
        plot_names(icomp_enuc) = "enucdot"
     end if
 
+    if (use_thermal_diffusion) plot_names(icomp_thermal) = "thermal"
+
   end subroutine get_plot_names
 
   subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,rho_Hnuc,thermal,Source,sponge,&
@@ -101,7 +103,7 @@ contains
     use plot_variables_module
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base, &
-         single_prec_plotfiles, edge_nodal_flag, do_smallscale
+         single_prec_plotfiles, edge_nodal_flag, do_smallscale, use_thermal_diffusion
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use average_module
     use ml_restriction_module
@@ -181,8 +183,13 @@ contains
           ! ENUCDOT
           call multifab_copy_c(plotdata(n),icomp_enuc,rho_Hnuc(n),1)
           call multifab_div_div_c(plotdata(n),icomp_enuc,s(n),rho_comp,1)
-
+         
        end if
+
+       if (use_thermal_diffusion) then
+          call multifab_copy_c(plotdata(n),icomp_thermal,thermal(n),1)
+       endif
+
 
        ! TRACER
        if (plot_trac .and. ntrac .ge. 1) then
