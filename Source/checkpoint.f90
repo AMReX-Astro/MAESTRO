@@ -187,7 +187,7 @@ contains
     write(unit=sd_name, fmt='(a,"/rho_omegadot2")') trim(dirname)
     call fabio_ml_multifab_read_d(rho_omegadot2, sd_name)
 
-!   Read the rho_omegadot2 data into a multilevel multifab.
+!   Read the rho_Hnuc2 data into a multilevel multifab.
     write(unit=sd_name, fmt='(a,"/rho_Hnuc2")') trim(dirname)
     call fabio_ml_multifab_read_d(rho_Hnuc2, sd_name)
 
