@@ -185,11 +185,12 @@ subroutine varden()
   ! compute the error against the base state
   if ( parallel_IOProcessor() ) then
      open (unit=10, file="dens.error")
-     write (10,*) "r_cc_loc, rho0, rhoavg, rho0-rhoavg"
+     write (10,*) "r_cc_loc, rho0, rhoavg, rho0-rhoavg, (rho0-rhoavg)/rho0"
      do n=1,nlevs
         do i = 0, nr(n)-1
            write (10,1000) r_cc_loc(n,i), s0_old(n,i,rho_comp), s0_avg(n,i,rho_comp), &
-                s0_old(n,i,rho_comp)-s0_avg(n,i,rho_comp)
+                s0_old(n,i,rho_comp)-s0_avg(n,i,rho_comp), &
+                (s0_old(n,i,rho_comp)-s0_avg(n,i,rho_comp))/s0_old(n,i,rho_comp)
         enddo
      enddo
      close (10)
