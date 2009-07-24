@@ -29,3 +29,13 @@
 
 -- in extern/helmeos/ we have a helmeos.f (used by MAESTRO) and
    helmeos.f90 (used by CASTRO).  We should remove helmeos.f
+
+-- rho_omegadot2, rho_Hnuc2, and thermal2 do not need to be regridded,
+   since they are filled before they are used.  We can just delete the
+   old and create an empty multifab with the new mla.
+
+-- rho_omegadot2 and rho_Huc2 don't need to be stored in the checkpoint
+   file anymore, since they are filled before they are used.
+
+-- in regrid.f90, rw2 and rH2 have 1 ghostcell, but when they are originally
+   allocated in initialize, they have 0
