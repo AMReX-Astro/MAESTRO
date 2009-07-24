@@ -145,7 +145,44 @@ q_{6,n_{\rm c}} = 6\left[q_{0,n_{\rm c}} -
 & & & & & & \sqrt{163/4} & 6.384 & \\
 \end{array}\right.\nonumber
 \end{equation}
-For $31^*$, use cell value in 31 and $r=6.3$.
+$^*$ For $31$, use cell value in 31 and $r=6.3$.
+
+Cubic interpolate for cells 0 through 7:
+\begin{equation}
+Ax^3 + Bx^2 + Cx + D = f
+\end{equation}
+Homogeneous neumann at $x=0 \rightarrow C=0$.
+\begin{eqnarray}
+\left(\begin{array}{ccc}
+\sqrt{27/64} & 3/4 & 1 \\
+\sqrt{1331/64} & 11/4 & 1 \\
+\sqrt{6859/64} & 19/4 & 1
+\end{array}\right)
+\left(\begin{array}{c}
+A \\
+B \\
+D
+\end{array}\right)
+=
+\left(\begin{array}{c}
+f_4 \\
+f_8 \\
+f_{10}
+\end{array}\right).
+\end{eqnarray}
+\begin{equation}
+\left(\begin{array}{c}
+A \\
+B \\
+D
+\end{array}\right)
+=
+\left(\begin{array}{c}
+ 0.53157958f_4 - 1.06315917f_8 + 0.53157958f_{10} \\
+-1.53946136f_4 + 2.57892271f_8 - 1.03946136f_{10} \\
+ 1.80932495f_4 - 1.24364990f_8 + 0.43432495f_{10}
+\end{array}\right).
+\end{equation}
 
 Divided difference for cells 8 through 30:
 \begin{eqnarray}
