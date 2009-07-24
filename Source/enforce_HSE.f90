@@ -117,9 +117,13 @@ contains
 
     end do ! end loop over levels
 
-    ! now compare pressure in the last cell and offset to make sure we are !
+    ! now compare pressure in the last cell and offset to make sure we are
     ! integrating "from the top"
-    offset = p0(1,nr(1)-1) - p0_old(1,nr(1)-1)
+    do n=1,nlevs_radial
+       if (r_end_coord(n,numdisjointchunks(n)) .eq. nr(n)-1) then
+          offset = p0(n,nr(n)-1) - p0_old(n,nr(n)-1)
+       end if
+    end do
 
     ! offset level 1
     p0(1,:) = p0(1,:) - offset
