@@ -39,3 +39,8 @@
 
 -- in regrid.f90, rw2 and rH2 have 1 ghostcell, but when they are originally
    allocated in initialize, they have 0
+
+-- we use mac_multigrid in thermal_conduct.f90 to do the enthalpy diffusion,
+   but mac_multigrid sets abs_eps based on the umac norm.  It should be
+   generalized.
+
