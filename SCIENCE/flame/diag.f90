@@ -277,7 +277,9 @@ contains
           write (un, 997) INLET_RHO, INLET_TEMP, INLET_VEL
           write (un, 998) INLET_RHOX(ic12)/INLET_RHO, INLET_RHOX(io16)/INLET_RHO
           write (un, 999) trim(job_name)
-          write (un, 1001) "time", "C12 flame speed", "O16 flame speed", "C/O flame speed", "flame thickness", 'int {rho_omegadot(C12)}', 'T_min', 'T_max'
+          write (un, 1001) "time", "C12 flame speed", "O16 flame speed", &
+               "C/O flame speed", "flame thickness", &
+               'int {rho_omegadot(C12)}', 'T_min', 'T_max'
 
           firstCall_io = .false.
        endif
