@@ -15,8 +15,11 @@ module make_explicit_thermal_module
 contains 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Compute thermal = del dot kappa grad T (if temp_diffusion_formulation .eq. 1)
-! Otherwise, compute thermal with grad h + grad X_k + grad p_0 formulation
+! Compute the quantity: thermal = del dot kappa grad T
+!
+!  if temp_diffusion_formulation = 1, then we compute this directly.
+!  if temp_diffusion_formulation = 2, then we compute the algebraically
+!     equivalent form with grad h + grad X_k + grad p_0 formulation
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine make_explicit_thermal(mla,dx,thermal,s,Tcoeff,hcoeff,Xkcoeff,pcoeff, &
@@ -67,9 +70,11 @@ contains
     ! construct the form of the conduction term.  mac_applyop forms
     ! the generic quantity:
     !
-    ! (alpha MINUS del dot beta grad) phi = RHS
+    !   (alpha MINUS del dot beta grad) phi = RHS
 
-    if(temp_diffusion_formulation .eq. 1) then
+    if (temp_diffusion_formulation .eq. 1) then
+
+       ! compute del dot (Tcoeff grad T) directly
 
        do n=1,nlevs
           call multifab_build(phi(n), mla%la(n), 1,  1)
@@ -109,6 +114,10 @@ contains
        enddo
 
     else ! if (temp_diffusion_formulation .eq. 2) case
+
+       ! compute thermal = del dot ( hcoeff grad h) +
+       !             sum_k del dot (Xkcoeff grad X_k) +
+       !                   del dit ( pcoeff grad p_0)
        
        do n=1,nlevs
           call multifab_build(phi(n),  mla%la(n), 1,  1)
@@ -175,17 +184,17 @@ contains
 
           do n=nlevs,2,-1
 
-             ! we shouldn't need a call to ml_cc_restriction here
-             ! as long as the coarse phi under fine cells is reasonably valued,
-             ! the results of mac_applyop are identical
+             ! we shouldn't need a call to ml_cc_restriction here as
+             ! long as the coarse phi under fine cells is reasonably
+             ! valued, the results of mac_applyop are identical
 
-             ! fill level n ghost cells using interpolation from level n-1 data
-             ! note that multifab_fill_boundary and multifab_physbc are called for
-             ! both levels n-1 and n
+             ! fill level n ghost cells using interpolation from level
+             ! n-1 data note that multifab_fill_boundary and
+             ! multifab_physbc are called for both levels n-1 and n
              call multifab_fill_ghost_cells(phi(n),phi(n-1),1,mla%mba%rr(n-1,:), &
                                             the_bc_tower%bc_tower_array(n-1), &
                                             the_bc_tower%bc_tower_array(n), &
-                                            1,foextrap_comp,1,fill_crse_input=.false.)
+                                            1,foextrap_comp,1),fill_crse_input=.false.)
           end do
 
        end if
@@ -224,15 +233,17 @@ contains
                             the_bc_tower%bc_tower_array(nlevs))
     else
 
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       ! the loop over nlevs must count backwards to make sure the
+       ! finer grids are done first
        do n=nlevs,2,-1
 
-          ! set level n-1 data to be the average of the level n data covering it
+          ! set level n-1 data to be the average of the level n data
+          ! covering it
           call ml_cc_restriction(thermal(n-1),thermal(n),mla%mba%rr(n-1,:))
           
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
+          ! fill level n ghost cells using interpolation from level
+          ! n-1 data note that multifab_fill_boundary and
+          ! multifab_physbc are called for both levels n-1 and n
           call multifab_fill_ghost_cells(thermal(n),thermal(n-1), &
                                          1,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
@@ -280,7 +291,10 @@ contains
     ng_X = Xkcoeff(1)%ng
     ng_p = pcoeff(1)%ng
 
-    ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
+    ! create Tcoeff = -kth, 
+    !        hcoeff = -kth/cp, 
+    !        Xkcoeff = xik*kth/cp, 
+    !        pcoeff = hp*kth/cp
     do n=1,nlevs
        do i=1,s(n)%nboxes
           if (multifab_remote(s(n),i)) cycle
@@ -308,11 +322,14 @@ contains
 
   end subroutine make_thermal_coeffs
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_thermal_coeffs_2d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X, &
-                                    pcoeff,ng_p)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! create Tcoeff = -kth, 
+!        hcoeff = -kth/cp, 
+!       Xkcoeff = xik*kth/cp, 
+!        pcoeff = hp*kth/cp
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine make_thermal_coeffs_2d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h, &
+                                    Xkcoeff,ng_X,pcoeff,ng_p)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
@@ -365,11 +382,14 @@ contains
   end subroutine make_thermal_coeffs_2d
   
   
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_thermal_coeffs_3d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X, &
-                                    pcoeff,ng_p)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! create Tcoeff = -kth, 
+!        hcoeff = -kth/cp, 
+!       Xkcoeff = xik*kth/cp, 
+!        pcoeff = hp*kth/cp
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine make_thermal_coeffs_3d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h, &
+                                    Xkcoeff,ng_X,pcoeff,ng_p)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
