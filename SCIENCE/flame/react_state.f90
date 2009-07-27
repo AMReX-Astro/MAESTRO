@@ -299,7 +299,8 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec
-    use probin_module, ONLY: do_burning, burning_cutoff_density
+    use probin_module, ONLY: do_burning, burning_cutoff_density, &
+         do_average_burn, transverse_tol
     
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
     real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,lo(2)-ng_si:,:)
@@ -322,7 +323,7 @@ contains
     real (kind=dp_t) :: rhowdot(nspec)
     real (kind=dp_t) :: rhoH
 
-    real (kind=dp_t) :: TOL = 1.e-8
+    real (kind=dp_t) :: err_rho, err_T
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -333,9 +334,16 @@ contains
           if (do_burning .and. rho > burning_cutoff_density) then
              ! check to make sure that the average was a good representation
              ! of this zone
-             if ( (abs(rho  - rho_avg(j) ) > TOL*rho) .or. &
-                  (abs(T_in - T_avg(j) )   > TOL*T_in) ) then
-                call bl_error("ERROR: transverse variations too large")
+
+             if (do_average_burn) then
+                err_rho = abs(rho  - rho_avg(j))/rho
+                err_T = abs(T_in - T_avg(j))/T_in
+
+                if ( err_rho > transverse_tol .or. err_T > transverse_tol) then
+                   print *, 'ERROR: transverse density error: ', err_rho
+                   print *, 'ERROR: transverse temperature error: ', err_T
+                   call bl_error("ERROR: transverse variations too large")
+                endif
              endif
 
              x_out = X_out_avg(j,:)

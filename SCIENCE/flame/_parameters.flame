@@ -15,7 +15,12 @@ frac                    real                 0.5
 
 
 # minimum X(C12) that should trigger refinement
-XC12_ref_threshold      real                 1.e-3
+XC12_ref_threshold      real                 1.d-3
 
 # do the burning only once for each vertical coordinate
 do_average_burn         logical              .false.
+
+# acceptable relative error for a cell compared to the average
+# at that vertical coord if do_average_burn = T (should be smaller
+# than the EOS tolerance).
+transverse_tol          real                 1.d-7
