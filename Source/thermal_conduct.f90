@@ -76,7 +76,7 @@ contains
     !           dt/2 div . ( pcoeff2 grad p_0^new + pcoeff1 grad p_0^old)
     !
     ! or 
-    ! (alpha_lhs - div . beta_lhs grad) h^2 = RHS
+    ! (lhsalpha - div . lhsbeta grad) h^2 = RHS
     !
     ! First we will construct the RHS by adding each of the terms in
     ! turn.  
@@ -84,9 +84,9 @@ contains
     ! To actually construct each div . (c grad q) term for the RHS, we will 
     ! make use of the mac_applyop routine, which constructs the quantity
     !
-    !     (alpha_rhs - div . beta_rhs grad) phi = Lphi
+    !     (rhsalpha - div . rhsbeta grad) phi = Lphi
     !
-    ! For all RHS terms, we set alpha_rhs = 0, beta_rhs = the appropriate 
+    ! For all RHS terms, we set rhsalpha = 0, rhsbeta = the appropriate 
     ! coefficient, and phi = the quantity being diffused.
 
 
