@@ -16,10 +16,10 @@ module thermal_conduct_module
 
 contains 
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Crank-Nicholson solve for enthalpy, taking into account only the
   ! enthalpy-diffusion terms in the temperature conduction term.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine thermal_conduct(mla,dx,dt,s1,hcoeff1,Xkcoeff1,pcoeff1, &
                              hcoeff2,Xkcoeff2,pcoeff2,s2,p0_old,p0_new,the_bc_tower)
 
@@ -67,9 +67,32 @@ contains
        call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
     end do
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! here we will solve:
+    !
+    ! (rho^2 - dt/2 div . hcoeff2 grad ) h^2 = (rho h)^1  + 
+    !           dt/2 div . ( hcoeff1 grad h^1) -
+    !           dt/2 sum_k div . (Xkcoeff2 grad X_k^2 + Xkcoeff1 grad X_k^1) -
+    !           dt/2 div . ( pcoeff2 grad p_0^new + pcoeff1 grad p_0^old)
+    !
+    ! or 
+    ! (alpha_lhs - div . beta_lhs grad) h^2 = RHS
+    !
+    ! First we will construct the RHS by adding each of the terms in
+    ! turn.  
+    !
+    ! To actually construct each div . (c grad q) term for the RHS, we will 
+    ! make use of the mac_applyop routine, which constructs the quantity
+    !
+    !     (alpha_rhs - div . beta_rhs grad) phi = Lphi
+    !
+    ! For all RHS terms, we set alpha_rhs = 0, beta_rhs = the appropriate 
+    ! coefficient, and phi = the quantity being diffused.
+
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! add enthalpy diffusion to rhs
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n=1,nlevs
        call multifab_build(rhsbeta(n), mla%la(n), dm, 1)
@@ -117,9 +140,9 @@ contains
        enddo
     end if
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! add species diffusion to rhs
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! loop over species
     do comp=1,nspec
@@ -187,9 +210,9 @@ contains
        enddo
     enddo
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! add pressure diffusion to rhs
-!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! do p0_old term first
     ! put beta on faces
@@ -255,9 +278,9 @@ contains
        call destroy(Lphi(n))
     end do
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Setup LHS coefficients
-!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n=1,nlevs
        call multifab_build(lhsbeta(n), mla%la(n), dm, 1)
@@ -278,9 +301,9 @@ contains
        enddo
     end if
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Now do the implicit solve
-!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! initialize phi to h^{(2'')} as a guess; also sets the ghost cells at inflow/outflow
     ! to a reasonable value
@@ -296,7 +319,7 @@ contains
     enddo
 
     ! Call the solver to obtain h^(2) (it will be stored in phi)
-    ! solves (alpha - nabla dot beta nabla)phi = rh
+    ! solves (alpha - nabla dot beta nabla)phi = rhs
     call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
                        dm+rhoh_comp,stencil_order,mla%mba%rr)
 
