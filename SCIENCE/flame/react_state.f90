@@ -19,8 +19,11 @@ contains
     use heating_module
     use probin_module, only: use_tfromp
     use rhoh_vs_t_module
-    use geometry, only: nlevs
+    use geometry, only: nlevs, dm
     use variables, only: temp_comp
+    use multifab_fill_ghost_module
+    use ml_restriction_module
+    use multifab_physbc_module
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: sold(:)
@@ -56,6 +59,38 @@ contains
     else
        call makeTfromRhoH(snew,mla,the_bc_level)
     end if
+
+    ! fill the temperature ghostcells
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary_c(snew(nlevs),temp_comp,1)
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(snew(nlevs),temp_comp,dm+temp_comp,1, &
+                            the_bc_level(nlevs))
+    else
+
+       ! the loop over nlevs must count backwards to make sure the
+       ! finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction_c(snew(n-1),temp_comp,snew(n),temp_comp,mla%mba%rr(n-1,:),1)
+          
+          ! fill level n ghost cells using interpolation from level
+          ! n-1 data note that multifab_fill_boundary and
+          ! multifab_physbc are called for both levels n-1 and n
+          call multifab_fill_ghost_cells(snew(n),snew(n-1), &
+                                         snew(1)%ng,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1), &
+                                         the_bc_level(n  ), &
+                                         temp_comp,dm+temp_comp,1,fill_crse_input=.false.)
+       end do
+          
+    end if
+
 
     call destroy(bpt)
 
