@@ -988,7 +988,7 @@ subroutine varden()
      ! write the final checkpoint and plotfile
      !---------------------------------------------------------------------
 
-1000 format('STEP = ',i6,1x,' TIME = ',f16.10,1x,'DT = ',f14.9)
+1000 format('STEP = ',i6,1x,' TIME = ',es16.10,1x,' DT = ',es16.10)
 
      if ( chk_int > 0 .and. last_chk_written .ne. istep ) then
         !       This writes a checkpoint file.
