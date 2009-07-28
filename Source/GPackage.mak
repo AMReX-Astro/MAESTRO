@@ -23,6 +23,7 @@ f90sources += fillpatch.f90
 f90sources += firstdt.f90
 f90sources += geometry.f90
 f90sources += hgproject.f90
+f90sources += impose_phys_bcs_on_edge_vels.f90
 f90sources += initdata.f90
 f90sources += initial_proj.f90
 f90sources += initialize.f90
