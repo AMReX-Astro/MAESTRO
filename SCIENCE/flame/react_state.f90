@@ -102,7 +102,7 @@ contains
 
     use bl_constants_module
     use geometry, only: dm, nlevs, nr_fine, nr, nlevs_radial
-    use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, nscal
+    use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, nscal, ntrac, trac_comp
     use multifab_fill_ghost_module
     use ml_restriction_module
     use multifab_physbc_module
