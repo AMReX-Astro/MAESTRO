@@ -4,6 +4,7 @@ module mkutrans_module
   use bl_constants_module
   use multifab_module
   use define_bc_module
+  use impose_phys_bcs_on_edges_module
 
   implicit none
 
@@ -95,10 +96,10 @@ contains
           call multifab_fill_boundary(utrans(1,i))
        enddo
     end if
-    
-    ! we don't need calls to multifab_physbc or multifab_fill_ghost cells since the boundary 
-    ! conditions are handled within mkutrans_2d and _3d.
-    ! I don't think a call to ml_edge_restriction makes sense here
+
+    ! This fills the same edges that create_umac_grown does but fills them from 
+    !  physical boundary conditions rather than from coarser grids
+    call impose_phys_bcs_on_edges(u,utrans,the_bc_level)
 
     call destroy(bpt)
 
@@ -220,23 +221,6 @@ contains
        end do
     end do
 
-    ! impose lo j side bc's
-    if (phys_bc(2,1) .eq. INLET .or. phys_bc(2,1) .eq. SLIP_WALL .or. &
-        phys_bc(2,1) .eq. NO_SLIP_WALL) then 
-       utrans(is:ie+1,js-1) = ZERO
-    else if (phys_bc(2,1) .eq. OUTLET) then
-       utrans(is:ie+1,js-1) = utrans(is:ie+1,js)
-    end if
-
-    ! impose hi j side bc's
-    if (phys_bc(2,2) .eq. INLET .or. phys_bc(2,2) .eq. SLIP_WALL .or. &
-        phys_bc(2,2) .eq. NO_SLIP_WALL) then 
-       utrans(is:ie+1,je+1) = ZERO
-    else if (phys_bc(2,2) .eq. OUTLET) then
-       utrans(is:ie+1,je+1) = utrans(is:ie+1,je)
-    end if
-
-
     !******************************************************************
     ! create vtrans
     !******************************************************************
@@ -309,22 +293,6 @@ contains
           vtrans(i,j) = merge(ZERO,vtrans(i,j),test)
        enddo
     enddo
-
-    ! impose lo i side bc's
-    if (phys_bc(1,1) .eq. INLET .or. phys_bc(1,1) .eq. SLIP_WALL .or. &
-        phys_bc(1,1) .eq. NO_SLIP_WALL) then 
-       vtrans(is-1,js:je+1) = ZERO
-    else if (phys_bc(1,1) .eq. OUTLET) then
-       vtrans(is-1,js:je+1) = vtrans(is,js:je+1)
-    end if
-
-    ! impose hi i side bc's
-    if (phys_bc(1,2) .eq. INLET .or. phys_bc(1,2) .eq. SLIP_WALL .or. &
-        phys_bc(1,2) .eq. NO_SLIP_WALL) then 
-       vtrans(ie+1,js:je+1) = ZERO
-    else if (phys_bc(2,2) .eq. OUTLET) then
-       vtrans(ie+1,js:je+1) = vtrans(ie,js:je+1)
-    end if
 
     deallocate(ulx,urx,vly,vry)
     deallocate(Ip,Im)

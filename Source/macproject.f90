@@ -8,6 +8,7 @@ module macproject_module
   use bl_constants_module
   use sparse_solve_module
   use create_umac_grown_module
+  use impose_phys_bcs_on_edges_module
 
   implicit none
 
@@ -181,6 +182,10 @@ contains
           end do
        end do
     end if
+
+    ! This fills the same edges that create_umac_grown does but fills them from 
+    !  physical boundary conditions rather than from coarser grids
+    call impose_phys_bcs_on_edges(rho,umac,the_bc_tower%bc_tower_array)
     
     do n = 1, nlevs
        call destroy(rh(n))
