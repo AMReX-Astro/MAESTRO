@@ -185,7 +185,7 @@ contains
        end do
     end if
 
-    ! impose lo side bc's
+    ! impose lo i side bc's
     if (phys_bc(1,1) .eq. INLET) then
        ulx(is,js:je) = u(is-1,js:je,1)
        urx(is,js:je) = u(is-1,js:je,1)
@@ -197,7 +197,7 @@ contains
        urx(is,js:je) = min(urx(is,js:je),ZERO)
     end if
 
-    ! impose hi side bc's    
+    ! impose hi i side bc's    
     if (phys_bc(1,2) .eq. INLET) then
        ulx(ie+1,js:je) = u(ie+1,js:je,1)
        urx(ie+1,js:je) = u(ie+1,js:je,1)
@@ -219,6 +219,23 @@ contains
           utrans(i,j) = merge(ZERO,utrans(i,j),test)
        end do
     end do
+
+    ! impose lo j side bc's
+    if (phys_bc(2,1) .eq. INLET .or. phys_bc(2,1) .eq. SLIP_WALL .or. &
+        phys_bc(2,1) .eq. NO_SLIP_WALL) then 
+       utrans(is:ie+1,js-1) = ZERO
+    else if (phys_bc(2,1) .eq. OUTLET) then
+       utrans(is:ie+1,js-1) = utrans(is:ie+1,js)
+    end if
+
+    ! impose hi j side bc's
+    if (phys_bc(2,2) .eq. INLET .or. phys_bc(2,2) .eq. SLIP_WALL .or. &
+        phys_bc(2,2) .eq. NO_SLIP_WALL) then 
+       utrans(is:ie+1,je+1) = ZERO
+    else if (phys_bc(2,2) .eq. OUTLET) then
+       utrans(is:ie+1,je+1) = utrans(is:ie+1,je)
+    end if
+
 
     !******************************************************************
     ! create vtrans
@@ -292,6 +309,22 @@ contains
           vtrans(i,j) = merge(ZERO,vtrans(i,j),test)
        enddo
     enddo
+
+    ! impose lo i side bc's
+    if (phys_bc(1,1) .eq. INLET .or. phys_bc(1,1) .eq. SLIP_WALL .or. &
+        phys_bc(1,1) .eq. NO_SLIP_WALL) then 
+       vtrans(is-1,js:je+1) = ZERO
+    else if (phys_bc(1,1) .eq. OUTLET) then
+       vtrans(is-1,js:je+1) = vtrans(is,js:je+1)
+    end if
+
+    ! impose hi i side bc's
+    if (phys_bc(1,2) .eq. INLET .or. phys_bc(1,2) .eq. SLIP_WALL .or. &
+        phys_bc(1,2) .eq. NO_SLIP_WALL) then 
+       vtrans(ie+1,js:je+1) = ZERO
+    else if (phys_bc(2,2) .eq. OUTLET) then
+       vtrans(ie+1,js:je+1) = vtrans(ie,js:je+1)
+    end if
 
     deallocate(ulx,urx,vly,vry)
     deallocate(Ip,Im)
