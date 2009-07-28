@@ -102,11 +102,12 @@ contains
   subroutine burner_loop(mla,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dt,the_bc_level)
 
     use geometry, only: dm, nlevs
-    use variables, only: rho_comp, nscal
+    use variables, only: rho_comp, rhoh_comp, spec_comp, nscal, ntrac, trac_comp
     use multifab_fill_ghost_module
     use ml_restriction_module
     use multifab_physbc_module
-
+    use network, only: nspec
+    
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(inout) :: snew(:)
@@ -195,6 +196,11 @@ contains
           call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
                                          spec_comp,dm+spec_comp,nspec,fill_crse_input=.false.)
+
+          ! tracers
+          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n), &
+                                         trac_comp,dm+trac_comp,ntrac,fill_crse_input=.false.)
 
        enddo
 
