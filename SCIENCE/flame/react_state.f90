@@ -102,7 +102,7 @@ contains
 
     use bl_constants_module
     use geometry, only: dm, nlevs, nr_fine, nr, nlevs_radial
-    use variables, only: rho_comp, temp_comp, spec_comp,nscal
+    use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, nscal
     use multifab_fill_ghost_module
     use ml_restriction_module
     use multifab_physbc_module
@@ -251,9 +251,22 @@ contains
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
+
+          ! density
           call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
+                                         rho_comp,dm+rho_comp,1,fill_crse_input=.false.)
+
+          ! enthalpy
+          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n), &
+                                         rhoh_comp,dm+rhoh_comp,1,fill_crse_input=.false.)
+
+          ! species
+          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n), &
+                                         spec_comp,dm+spec_comp,nspec,fill_crse_input=.false.)
+
        enddo
 
     end if
