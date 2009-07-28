@@ -136,13 +136,12 @@ contains
                 w0cp  => dataptr(w0_cart(n), i)
                 w0xp  => dataptr(w0mac(n,1),i)
                 w0yp  => dataptr(w0mac(n,2),i)
-                w0zp  => dataptr(w0mac(n,3),i)
 
                 call mk_vel_force_3d_sphr(fp(:,:,:,:),ng_f,is_final_update, &
                                           uop(:,:,:,:),ng_uo, &
-                                          ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
+                                          ump(:,:,:,1),vmp(:,:,:,1),ng_um, &
                                           w0cp(:,:,:,:),ng_wc, &
-                                          w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
+                                          w0xp(:,:,:,1),w0yp(:,:,:,1),ng_wm, &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,index_rho),ng_s, &
                                           np(:,:,:,:),ng_n,rho0(1,:),grav(1,:),lo,hi,dx(n,:))
              else
@@ -308,9 +307,9 @@ contains
 
   subroutine mk_vel_force_3d_sphr(vel_force,ng_f,is_final_update, &
                                   uold,ng_uo, &
-                                  umac,vmac,wmac,ng_um, &
+                                  umac,vmac,ng_um, &
                                   w0_cart,ng_wc, &
-                                  w0macx,w0macy,w0macz,ng_wm, &
+                                  w0macx,w0macy,ng_wm, &
                                   gpres,ng_gp,rho,ng_s, &
                                   normal,ng_n,rho0,grav,lo,hi,dx)
 
@@ -324,11 +323,9 @@ contains
     real(kind=dp_t), intent(in   ) ::      uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
     real(kind=dp_t), intent(in   ) ::      umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::      vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) ::      wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   w0_cart(lo(1)-ng_wc:,lo(2)-ng_wc:,lo(3)-ng_wc:,:)
     real(kind=dp_t), intent(in   ) ::    w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
     real(kind=dp_t), intent(in   ) ::    w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
-    real(kind=dp_t), intent(in   ) ::    w0macz(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)    
     real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::    normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
