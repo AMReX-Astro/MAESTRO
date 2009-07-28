@@ -267,6 +267,11 @@ contains
                                          the_bc_level(n-1),the_bc_level(n), &
                                          spec_comp,dm+spec_comp,nspec,fill_crse_input=.false.)
 
+          ! tracers
+          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n), &
+                                         trac_comp,dm+trac_comp,ntrac,fill_crse_input=.false.)
+
        enddo
 
     end if
