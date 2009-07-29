@@ -74,7 +74,7 @@ subroutine varden()
   character(len=9)               :: base_etarho_name
   character(len=20), allocatable :: plot_names(:)
 
-  real, parameter :: SMALL = 1.d-13
+  real(dp_t), parameter :: SMALL = 1.d-13
 
   logical :: init_mode
 
