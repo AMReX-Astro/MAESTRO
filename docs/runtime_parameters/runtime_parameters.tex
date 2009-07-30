@@ -41,6 +41,8 @@
 \verb=  bcz_hi  = &   $+z$ boundary condition  &  SLIP\_WALL \\
 \verb=  bcz_lo  = &   $-z$ boundary condition  &  SLIP\_WALL \\
 \verb=  beta_type  = &   what type of coefficient to use inside the velocity divergence constraint. \newline {\tt beta\_type} = 1 uses $\beta_0$; \newline {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); \newline {\tt beta\_type} = 3 uses 1 (small-scale combustion).  &  1 \\
+\verb=  burner_threshold_cutoff  = &   Mass fraction cutoff for burner\_threshold\_species  used in burner threshold  &  1.e-10 \\
+\verb=  burner_threshold_species  = &   Name of the species to be used in burner threshold  &  "" \\
 \verb=  cflfac  = &   CFL factor to use in the computation of the advection timestep constraint  &  0.5 \\
 \verb=  cg_verbose  = &   Verbosity of bottom solver  &  0 \\
 \verb=  check_base_name  = &   prefix to use in checkpoint file names  &  "chk" \\
@@ -51,6 +53,7 @@
 \verb=  do_burning  = &   turn on (.true.) or off (.false.) burning  &  .true. \\
 \verb=  do_eos_h_above_cutoff  = &   After the advective enthalpy update, recompute the enthalpy if we are below the base cutoff density.  &  .true. \\
 \verb=  do_initial_projection  = &   Do the initial projection.  &  .true. \\
+\verb=  do_smallscale  = &   force $\rho_0 = (\rho h)_0 = 0$, {\tt evolve\_base\_state = F} and {\tt beta\_type} = 3  &  .false. \\
 \verb=  do_sponge  = &   Use sponging.  &  .false. \\
 \verb=  dpdt_factor  = &   factor in front of the volume discrepancy term (0.0 = off)  &  0.0d0 \\
 \verb=  drdxfac  = &   ratio of radial base state zones to Cartesian full state zones for spherical geometry  &  1 \\
@@ -66,7 +69,8 @@
 \verb=  job_name  = &   job name printed in output  &  "" \\
 \verb=  lUsingNFiles  = &   If .true., use nOutFiles processors to write checkpoint and plotfiles. Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  .true. \\
 \verb=  max_dt_growth  = &   The maximum scale factor that the time step is allowed to grow by per time step.  &  1.1D0 \\
-\verb=  max_grid_size  = &    The largest grid size that will be created using make\_new\_grids.  &  64 \\
+\verb=  max_grid_size  = &   The largest grid size that will be created using make\_new\_grids.  &  64 \\
+\verb=  max_grid_size_base  = &   The largest grid size that will be created using make\_new\_grids for the coarsest level.  Defaults to {\tt max\_grid\_size}.  &  -1 \\
 \verb=  max_levs  = &   Total number of levels.  1 = single level.  &  1 \\
 \verb=  max_mg_bottom_nlevels  = &   if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have  &  1000 \\
 \verb=  max_step  = &   Maximum number of steps in the simulation.  &  1 \\
