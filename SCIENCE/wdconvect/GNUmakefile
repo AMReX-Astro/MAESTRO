@@ -43,7 +43,7 @@ FINCLUDE_LOCATIONS += $(Fmlocs)
 
 # define the build instructions for the executable
 main.$(suf).exe: $(objects)
-	$(LINK.f90) -o main.$(suf).exe $(objects) $(libraries)
+	$(HPCLINK) $(LINK.f90) -o main.$(suf).exe $(objects) $(libraries)
 	@echo SUCCESS
 
 # define the runtime parameter files
