@@ -1,5 +1,4 @@
 #PBS -q debug
-#PBS -l feature=quad
 #PBS -l mppwidth=64
 #PBS -l mppnppn=4
 #PBS -l walltime=00:30:00
