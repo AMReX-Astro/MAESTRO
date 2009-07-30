@@ -217,8 +217,9 @@ contains
 
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
-    use network, only: nspec
-    use probin_module, ONLY: do_burning, burning_cutoff_density
+    use network, only: nspec, network_species_index
+    use probin_module, ONLY: do_burning, burning_cutoff_density, burner_threshold_species, &
+         burner_threshold_cutoff
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
     real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,lo(2)-ng_si:,:)
@@ -235,6 +236,13 @@ contains
     real (kind = dp_t) :: x_out(nspec)
     real (kind = dp_t) :: rhowdot(nspec)
     real (kind = dp_t) :: rhoH
+    integer, save      :: ispec_threshold
+    logical, save      :: firstCall = .true.
+
+    if (firstCall) then
+       ispec_threshold = network_species_index(burner_threshold_species)
+       firstCall = .false.
+    endif
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -243,7 +251,17 @@ contains
           x_in(1:nspec) = sold(i,j,spec_comp:spec_comp+nspec-1) / rho
           T_in = sold(i,j,temp_comp)
 
-          if (do_burning .and. rho > burning_cutoff_density) then
+          ! if the threshold species is not in the network, then we burn
+          ! normally.  if it is in the network, make sure the mass
+          ! fraction is above the cutoff.
+          if (do_burning .and.                                        &
+              rho > burning_cutoff_density .and.                      &
+              ( ispec_threshold < 0 .or.                              &
+               (ispec_threshold > 0 .and.                             &
+                x_in(ispec_threshold) > burner_threshold_cutoff       &
+               )                                                      &
+              )                                                       &
+             ) then
              call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
           else
              x_out = x_in
@@ -279,8 +297,9 @@ contains
 
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
-    use network, only: nspec
-    use probin_module, ONLY: do_burning, burning_cutoff_density
+    use network, only: nspec, network_species_index
+    use probin_module, ONLY: do_burning, burning_cutoff_density, burner_threshold_species, &
+         burner_threshold_cutoff
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
     real(kind=dp_t), intent(in   ) ::         sold(lo(1)-ng_si:,lo(2)-ng_si:,lo(3)-ng_si:,:)
@@ -298,6 +317,13 @@ contains
     real (kind = dp_t) :: x_out(nspec)
     real (kind = dp_t) :: rhowdot(nspec)
     real (kind = dp_t) :: rhoH
+    integer, save      :: ispec_threshold
+    logical, save      :: firstCall = .true.
+
+    if (firstCall) then
+       ispec_threshold = network_species_index(burner_threshold_species)
+       firstCall = .false.
+    endif
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -307,7 +333,17 @@ contains
              x_in = sold(i,j,k,spec_comp:spec_comp+nspec-1) / rho
              T_in = sold(i,j,k,temp_comp)
              
-             if (do_burning .and. rho > burning_cutoff_density) then
+             ! if the threshold species is not in the network, then we burn
+             ! normally.  if it is in the network, make sure the mass
+             ! fraction is above the cutoff.
+             if (do_burning .and.                                        &
+                 rho > burning_cutoff_density .and.                      &
+                 ( ispec_threshold < 0 .or.                              &
+                  (ispec_threshold > 0 .and.                             &
+                   x_in(ispec_threshold) > burner_threshold_cutoff       &
+                  )                                                      &
+                 )                                                       &
+                 ) then
                 call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
              else
                 x_out = x_in

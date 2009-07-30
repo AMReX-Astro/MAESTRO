@@ -324,3 +324,9 @@ rotation_radius                     real               1.0e6_dp_t
 
 # job name printed in output
 job_name                            character          ""                  
+
+# Name of the species to be used in burner threshold
+burner_threshold_species            character          ""
+
+# Mass fraction cutoff for burner\_threshold\_species  used in burner threshold
+burner_threshold_cutoff             real               1.e-10
