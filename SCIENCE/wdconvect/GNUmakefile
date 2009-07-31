@@ -26,7 +26,7 @@ Fmdirs := MAESTRO/wdconvect \
           extern/helmeos \
           extern/conducteos \
           extern/constants \
-          extern/networks/ignition \
+          extern/networks/ignition_chamulak \
           extern/VODE
 
 # directories containing files that are 'include'-d via Fortran
