@@ -91,13 +91,13 @@ contains
     L_x = 2.5d8
     pi = 3.1415926535897932384626433d0
 
-    if (time <= 200.0) then
+    if (time <= 200.0d0) then
 
        y_layer = 1.25d8
 
        do j = lo(2),hi(2)
           y = (dble(j)+HALF)*dx(2) + prob_lo(2)
-          ey = exp(-(y-y_layer)*(y-y_layer)/1.e14)
+          ey = exp(-(y-y_layer)*(y-y_layer)/1.d14)
           do i = lo(1),hi(1)
              x =  (dble(i)+HALF)*dx(1) + prob_lo(1)
 
@@ -145,13 +145,13 @@ contains
 
     pi = 3.1415926535897932384626433d0
 
-    if (time <= 200.0) then
+    if (time <= 200.0d0) then
 
        z_layer = 1.25d8
 
        do k = lo(3),hi(3)
           z = (dble(k)+HALF)*dx(3) + prob_lo(3)
-          ez = exp(-(z-z_layer)*(z-z_layer)/1.e14)
+          ez = exp(-(z-z_layer)*(z-z_layer)/1.d14)
 
           do j = lo(2),hi(2)
              y = (dble(j)+HALF)*dx(2) + prob_lo(2)
