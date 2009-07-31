@@ -493,7 +493,7 @@ subroutine varden()
         deallocate(chkdata)
      end if
 
-     if ( plot_int > 0 .or. plot_deltat > 0.0) then
+     if ( plot_int > 0 .or. plot_deltat > ZERO) then
 
         !------------------------------------------------------------------------
         ! write a plotfile
@@ -946,9 +946,9 @@ subroutine varden()
         ! automatically dump a plotfile
         inquire(file=".dump_plotfile", exist=dump_file)
 
-        if (plot_int > 0 .or. plot_deltat > 0.0 .or. dump_file) then
+        if (plot_int > 0 .or. plot_deltat > ZERO .or. dump_file) then
            if ( (plot_int > 0 .and. mod(istep,plot_int) .eq. 0) .or. &
-                (plot_deltat > 0.0 .and. &
+                (plot_deltat > ZERO .and. &
                 mod(time - dt,plot_deltat) > mod(time,plot_deltat)) .or. &
                 dump_file) then
 

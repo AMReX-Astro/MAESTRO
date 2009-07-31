@@ -141,7 +141,7 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
 
-             ! T(i,j,k) = log(temp_eos(1))/log(10.)
+             ! T(i,j,k) = log(temp_eos(1))/log(10.0d0)
              T(i,j,k) = temp_eos(1)
 
              deltaP(i,j,k) = (p_eos(1)-p0(k))/ p0(k)
