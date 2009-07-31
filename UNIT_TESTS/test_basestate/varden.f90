@@ -545,7 +545,7 @@ subroutine varden()
      time  = time + dt
      dtold = dt
 
-     dt = min(1.1*dt,cflfac*dr_fine/maxval(abs(w0)))
+     dt = min(1.1d0*dt,cflfac*dr_fine/maxval(abs(w0)))
      if (time+dt > stop_time) dt = stop_time - time
 
      iter = iter + 1
