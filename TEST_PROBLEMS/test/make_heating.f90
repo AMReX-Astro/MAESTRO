@@ -88,7 +88,7 @@ contains
 
     Hmax = 0.0_dp_t
 
-    if (time <= 2.0) then
+    if (time <= 2.0_dp_t) then
 
        ! First point at (0.5,.65)
        x0 = 5.0d7
@@ -124,9 +124,9 @@ contains
              !      + .01250_dp_t * exp(-((x-x2)**2 +(y-y2)**2)/0.25e14) ) * 1.d17
 
              rho_Hext(i,j) = ( ey + &
-                  .00625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) &
-                  + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) &
-                  + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2))) ) * 1.d17
+                  .00625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r0))) &
+                  + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r1))) &
+                  + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r2))) ) * 1.d17
 
              ! rho_Hext(i,j) = ey * 1.d17
 
@@ -162,7 +162,7 @@ contains
 
     Hmax = 0.0_dp_t
 
-    if (time <= 2.0) then
+    if (time <= 2.0_dp_t) then
 
        ! First point at (0.5,.65)
        x0 = 5.0d7
@@ -199,9 +199,9 @@ contains
                 !      + .01875_dp_t * exp(-((x-x1)**2 +(z-z1)**2)/0.25e14) &
                 !      + .01250_dp_t * exp(-((x-x2)**2 +(z-z2)**2)/0.25e14) ) * 1.d17
 
-                rho_Hext(i,j,k) = (  .00625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) &
-                     + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) &
-                     + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2))) ) * 1.d17
+                rho_Hext(i,j,k) = (  .00625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r0))) &
+                     + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r1))) &
+                     + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0_dp_t-r2))) ) * 1.d17
 
                 ! HACK NO HEATING
                 rho_Hext(i,j,k) = ZERO

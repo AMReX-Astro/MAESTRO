@@ -620,7 +620,7 @@ contains
     ! compute the gravitational potential energy too.
     !-------------------------------------------------------------------------
     allocate(m(0:nr_fine-1))
-    grav_ener = 0.0
+    grav_ener = ZERO
 
     ! m(r) will contain mass enclosed by the center
     m(0) = FOUR3RD*M_PI*rho0(1,0)*r_cc_loc(1,0)**3
