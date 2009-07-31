@@ -44,3 +44,4 @@
    but mac_multigrid sets abs_eps based on the umac norm.  It should be
    generalized.
 
+-- only need to keep one set of species names around in a network
