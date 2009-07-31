@@ -23,12 +23,13 @@ contains
     ! The sponge has a HALF * ( 1 - cos( (r - r_sp)/L)) profile, where
     ! the width, L, is r_tp - r_sp.
     !
-    ! The center of the sponge, r_md, is set to the radius where rho =
+    ! The center of the sponge, r_md, is set to the radius where r =
     ! sponge_center_density
     !
     ! The start of the sponge, r_sp, (moving outward from the center)
-    ! is the radius where rho = sponge_start_factor * sponge_center_density
+    ! is the radius where r = sponge_start_factor * sponge_center_density
     ! 
+    ! The top of the sponge is then 2 * r_md - r_tp
 
     use geometry, only: dr, r_end_coord
     use bl_constants_module
@@ -68,13 +69,9 @@ contains
     r_tp = TWO * r_md - r_sp
 
     ! outer sponge parameters
-    r_tp_outer = HALF * max(prob_hi(1),prob_hi(2)) 
-    if (size(prob_hi,dim=1) .eq. 2) then
-       r_sp_outer = r_tp_outer - 4.d0 * dx(2)
-    else
-       r_tp_outer = max(r_tp_outer, HALF * prob_hi(3)) 
-       r_sp_outer = r_tp_outer - 4.d0 * dx(3)
-    end if
+    r_sp_outer = r_tp
+    r_tp_outer = r_sp_outer + 4.d0 * dx(3)
+
 
     if ( parallel_IOProcessor() .and. verbose .ge. 1) write(6,1000) r_sp, r_tp
     if ( parallel_IOProcessor() .and. verbose .ge. 1) write(6,1001) r_sp_outer, r_tp_outer
