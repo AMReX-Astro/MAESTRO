@@ -21,13 +21,13 @@ prob_lo_y                           real               ZERO
 prob_lo_z                           real               ZERO                
 
 # physical coordinates of hi-x corner of problem domain
-prob_hi_x                           real               1.0                    
+prob_hi_x                           real               1.d0                    
 
 # physical coordinates of hi-y corner of problem domain
-prob_hi_y                           real               1.0                    
+prob_hi_y                           real               1.d0                    
 
 # physical coordinates of hi-z corner of problem domain
-prob_hi_z                           real               1.0                    
+prob_hi_z                           real               1.d0                    
 
 # Maximum number of steps in the simulation.
 max_step                            integer            1                   
@@ -37,7 +37,7 @@ plot_int                            integer            0
 
 # rather than use a plot interva, plot a file after the solution has 
 # advanced past plot\_deltat in time
-plot_deltat                         real               0.0                 
+plot_deltat                         real               0.d0                 
 
 # Number of timesteps between writing a checkpoint file
 chk_int                             integer            0                   
@@ -49,11 +49,11 @@ init_iter                           integer            4
 init_divu_iter                      integer            4                   
 
 # CFL factor to use in the computation of the advection timestep constraint
-cflfac                              real               0.5                 
+cflfac                              real               0.5d0                 
 
 # the multiplicative factor ($\le 1$) to reduce the initial timestep as 
 # computed by the various timestep estimators
-init_shrink                         real               1.0                 
+init_shrink                         real               1.d0                 
 
 # Fixed grid file.
 test_set                            character          ''                  
@@ -118,13 +118,13 @@ do_sponge                           logical            .false.
 hg_dense_stencil                    logical            .true.              
 
 # Refer to Section \ref{Sec:Anelastic Cutoff}.
-anelastic_cutoff                    real               3.e6                
+anelastic_cutoff                    real               3.d6                
 
 # Refer to Section \ref{Sec:Base Cutoff Density}
-base_cutoff_density                 real               3.e6                
+base_cutoff_density                 real               3.d6                
 
 # factor in front of the volume discrepancy term (0.0 = off)
-dpdt_factor                         real               0.0d0               
+dpdt_factor                         real               0.d0               
 
 # set to 1 if you are doing a spherical problem
 spherical_in                        integer            0                   
@@ -182,7 +182,7 @@ enthalpy_pred_type                  integer            predict_rhohprime
 
 # The maximum scale factor that the time step is allowed to grow by per 
 # time step.
-max_dt_growth                       real               1.1D0
+max_dt_growth                       real               1.1d0
 
 # Fix the time step.  If -1.0, then use the standard time step.
 fixed_dt                            real               -1.0d0              
@@ -320,7 +320,7 @@ rotational_frequency                real               ZERO
 co_latitude                         real               ZERO                
 
 # radius used for computing centrifugal term in rotation problems
-rotation_radius                     real               1.0e6_dp_t          
+rotation_radius                     real               1.0d6
 
 # job name printed in output
 job_name                            character          ""                  
@@ -329,4 +329,4 @@ job_name                            character          ""
 burner_threshold_species            character          ""
 
 # Mass fraction cutoff for burner\_threshold\_species  used in burner threshold
-burner_threshold_cutoff             real               1.e-10
+burner_threshold_cutoff             real               1.d-10
