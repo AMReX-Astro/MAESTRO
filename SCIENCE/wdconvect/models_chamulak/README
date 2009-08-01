@@ -1,0 +1,4 @@
+this directory contains Kepler models relaxed onto our grid in HSE
+using the kepler_hybrid routines and the ignition_chamulak burner.
+The initial model compositions other than C12 and O16 were changed to
+the 'ash' that this burner carries.
