@@ -143,7 +143,7 @@ contains
        vedge(is-1:ie+1,js  :je+1,ks-1) = ZERO
     else if (phys_bc(3,1) .eq. OUTLET) then
        uedge(is  :ie+1,js-1:je+1,ks-1) = uedge(is  :ie+1,js-1:je+1,ks)
-       vedge(is-1:ie+1,js  :je+1,ke-1) = vedge(is-1:ie+1,js  :je+1,ks)
+       vedge(is-1:ie+1,js  :je+1,ks-1) = vedge(is-1:ie+1,js  :je+1,ks)
     end if
 
     ! impose hi k side bc's on uedge and vedge
