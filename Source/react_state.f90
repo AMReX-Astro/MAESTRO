@@ -295,6 +295,7 @@ contains
   subroutine burner_loop_3d(sold,ng_si,snew,ng_so,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
                             rho_Hext,ng_he,dt,lo,hi)
 
+    use bl_constants_module
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
@@ -317,6 +318,7 @@ contains
     real (kind = dp_t) :: x_out(nspec)
     real (kind = dp_t) :: rhowdot(nspec)
     real (kind = dp_t) :: rhoH
+    real (kind = dp_t) :: x_test
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
@@ -336,12 +338,17 @@ contains
              ! if the threshold species is not in the network, then we burn
              ! normally.  if it is in the network, make sure the mass
              ! fraction is above the cutoff.
+             if (ispec_threshold > 0) then
+                x_test = x_in(ispec_threshold)
+             else
+                x_test = ZERO
+             endif
+
              if (do_burning .and.                                        &
                  rho > burning_cutoff_density .and.                      &
                  ( ispec_threshold < 0 .or.                              &
                   (ispec_threshold > 0 .and.                             &
-                   x_in(ispec_threshold) > burner_threshold_cutoff       &
-                  )                                                      &
+                   x_test > burner_threshold_cutoff)                     &
                  )                                                       &
                  ) then
                 call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
