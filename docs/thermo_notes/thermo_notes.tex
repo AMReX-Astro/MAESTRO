@@ -1,0 +1,86 @@
+  \section{Derivatives With Respect to Composition}
+  \label{Sec:Derivatives With Respect to Composition}
+  In the following we assume that the molar mass of species $i$ is given by its
+  atomic mass number, $A_i = N_i + Z_i$ where $N_i$ is the number of neutrons
+  and $Z_i$ is the number of protons in the isotope.  \MarginPar{Note that this
+    is common practice and that our EOS also makes this approximation.}  This 
+  is a slight approximation that ignores the mass difference between protons 
+  and neutrons as well as some minor binding energy terms.
+  
+  The number density [cm$^-{3}$] of isotope $i$ is can be formed from the mass 
+  density and the molar mass of that isotope as follows:
+  \begin{equation}\label{eq:number density}
+    n_i = \frac{\rho_i N_\text{A}}{A_i},
+  \end{equation}
+  where $N_\text{A}$ is Avogadro's number [\# / mole].  The molar abundance, 
+  $Y_i$, is a measure of the number of moles of species $i$ per gram in the 
+  system:
+  \begin{equation}\label{eq:molar abundance}
+    Y_i = \frac{n_i}{\rho N_\text{A}} = \frac{\rho_i}{\rho}\frac{1}{A_i} 
+    \equiv \frac{X_i}{A_i}
+  \end{equation}
+  where we have defined the mass fraction, $X_i = \frac{\rho_i}{\rho}$.  Note
+  \begin{equation}\label{eq:mass fraction sums to 1}
+    \sum_i X_i = 1.
+  \end{equation}
+  
+  We write the average molar mass and average proton number as:
+  \begin{align}\label{eq:abar}
+    \bar{A} &= \frac{\sum_i A_i n_i}{\sum_i n_i} = \left(\sum_i X_i\right)
+    \left(\sum_i \frac{X_i}{A_i}\right)^{-1}\\
+    \label{eq:zbar}
+    \bar{Z} &= \frac{\sum_i Z_i n_i}{\sum_i n_i} = \left(\sum_i Z_i
+    \frac{X_i}{A_i}\right)\left(\sum_i \frac{X_i}{A_i}\right)^{-1}.
+  \end{align}
+  Our algorithm requires terms involving the derivative thermodynamic variables
+  ($p$ or $e$, e.g.) with respect to composition.  Our EOS does not return such
+  derivatives but instead returns derivatives of these variables with respect 
+  to $\bar{A}$ and $\bar{Z}$.  Using the chain rule, we have
+  \begin{equation}\label{eq:p_xk}
+    \frac{\ptl p}{\ptl X_k} = p_{X_k} = 
+    \frac{\ptl p}{\ptl \bar{A}}\frac{\ptl \bar{A}}{\ptl X_k} + 
+    \frac{\ptl p}{\ptl \bar{Z}}\frac{\ptl \bar{Z}}{\ptl X_k}.
+  \end{equation}
+  From \eqref{eq:abar} and \eqref{eq:zbar} we have
+  \begin{align}\label{eq:abar_X_k}
+    \frac{\ptl \bar{A}}{\ptl X_k} &= \left(\sum_i \frac{X_i}{A_i}\right)^{-1}
+    - \frac{\bar{A}^2}{A_k} = -\frac{\bar{A}}{A_k}\left(\bar{A} - A_k\right)\\
+    \label{eq:zbar_X_k}
+    \frac{\ptl \bar{Z}}{\ptl X_k} &= 
+    \left(\frac{Z_k}{A_k}\right)\left(\sum_i \frac{X_i}{A_i}\right)^{-1}
+    - \frac{\bar{Z}}{A_k}\left(\sum_i \frac{X_i}{A_i}\right)^{-1} = 
+    -\frac{\bar{A}}{A_k}\left(\bar{Z} - Z_k\right),
+  \end{align}
+  where after differentiation we have used \eqref{eq:mass fraction sums to 1}
+  to write
+  \[
+  \left(\sum_i \frac{X_i}{A_i}\right)^{-1} = \bar{A}.
+  \]
+  We therefore have
+  \begin{equation}\label{eq:p_Xk_full}
+    p_{X_k} = -\frac{\bar{A}}{A_k}\left(\bar{A} - A_k\right)
+    \frac{\ptl p}{\ptl\bar{A}} - \frac{\bar{A}}{A_k}\left(\bar{Z} - Z_k\right)
+    \frac{\ptl p}{\ptl\bar{Z}}.
+  \end{equation}
+  Before it was brought to our attention by Frank Timmes, we were missing the
+  second term in \eqref{eq:abar_X_k}.  The only place where such terms 
+  appear in our algorithm is in a sum over all species, such as:
+  \begin{equation}\label{eq:sum over species}
+    \sum_i p_{X_i}\dot{\omega}_i = 
+    -\bar{A}^2\frac{\ptl p}{\ptl\bar{A}}\sum_i \frac{\dot{\omega}_i}{A_i}
+    +\bar{A}\frac{\ptl p}{\ptl\bar{A}}\sum_i \dot{\omega}_i
+    -\bar{A}\bar{Z}\frac{\ptl p}{\ptl\bar{Z}}\sum_i \frac{\dot{\omega}_i}{A_i}
+    +\bar{A}\frac{\ptl p}{\ptl \bar{Z}}\sum_i\frac{Z_i}{A_i}\dot{\omega}_i.
+  \end{equation}
+  \MarginPar{Note that if we are dealing with symmetric nuclei 
+  (as we have been up through paper III) where $Z_k = N_k = \half A_k$ for all
+  $k$, then the last term in \eqref{eq:sum over species} is identically zero
+  as well.}
+  The second term in \eqref{eq:sum over species} is identically zero because
+  \[
+  \sum_k \dot{\omega}_k \equiv 0.
+  \]
+  This second term arises from what was added to \eqref{eq:abar_X_k} by 
+  Frank's correction.  Therefore, although important for individual derivatives
+  with respect to composition, this correction term has no effect on our 
+  solution.
