@@ -22,7 +22,9 @@ section_sources = flowchart/flowchart.tex \
                   lo_density/lo_density.tex \
                   rotation/rotation.tex \
                   radial_base/radial_base.tex \
-                  spherical_basestate/basestate.tex
+                  spherical_basestate/basestate.tex \
+                  FAQ/faq.tex \
+                  thermo_notes/thermo_notes.tex
 
 paper.dvi: paper.tex $(eps_source) $(section_sources) $(eps_source)
 	latex paper.tex < /dev/null
