@@ -26,7 +26,7 @@ contains
     use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel, frac, &
          anelastic_cutoff, base_cutoff_density, prob_lo, prob_hi, temp_ash, temp_fuel
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, spherical, nr, dm
+    use geometry, only: dr, spherical, nr, dm, dr_fine
     use inlet_bc_module, only: set_inlet_bcs
 
     integer,             intent(in   ) :: n
@@ -39,7 +39,7 @@ contains
     real(kind=dp_t) :: rlen, rloc
     integer :: r, ic12, io16, img24
     real(kind=dp_t) :: p_ambient, dens_ash, rhoh_fuel, rhoh_ash
-    real(kind=dp_t) :: xn_fuel(nspec), xn_ash(nspec)
+    real(kind=dp_t) :: xn_fuel(nspec), xn_ash(nspec), xn_smooth(nspec)
     
 
     ! figure out the indices for different species
@@ -101,6 +101,9 @@ contains
     dens_ash = den_eos(1)
     rhoh_ash = dens_ash*h_eos(1)
 
+    ! initialize the fuel and ash, but put in a smooth temperature
+    ! profile -- this means that we'll need to go back through an
+    ! adjust the thermodynamics
     do r=0,nr(n)-1
 
        rloc = prob_lo(dm) + (dble(r)+0.5d0)*dr(n)
@@ -112,7 +115,7 @@ contains
           ! fuel
           s0_init(r,rho_comp)  = dens_fuel
           s0_init(r,rhoh_comp) = rhoh_fuel
-          s0_init(r,temp_comp) = temp_fuel
+          !s0_init(r,temp_comp) = temp_fuel
           s0_init(r,spec_comp:spec_comp+nspec-1) = dens_fuel*xn_fuel(:)
           s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
           
@@ -121,11 +124,45 @@ contains
           ! ash
           s0_init(r,rho_comp)  = dens_ash
           s0_init(r,rhoh_comp) = rhoh_ash
-          s0_init(r,temp_comp) = temp_ash
+          !s0_init(r,temp_comp) = temp_ash
           s0_init(r,spec_comp:spec_comp+nspec-1) = dens_ash*xn_ash(:)
           s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
           
        endif
+
+       ! give the temperature a smooth profile
+       s0_init(r,temp_comp) = temp_fuel + (temp_ash - temp_fuel) * &
+            HALF * (ONE + tanh( (rloc - (prob_lo(dm) + frac*rlen))/(25.d0*dr_fine) ) )
+
+       ! give the carbon mass fraction a smooth profile too
+       xn_smooth(ic12) = xn_fuel(ic12) + (xn_ash(ic12) - xn_fuel(ic12)) * &
+            HALF * (ONE + tanh( (rloc - (prob_lo(dm) + frac*rlen))/(25.d0*dr_fine) ) )
+
+       xn_smooth(io16) = xn_fuel(io16)
+       xn_smooth(img24) = 1.d0 - xn_smooth(ic12) - xn_smooth(io16)
+
+       ! get the new density and enthalpy 
+       den_eos(1)  = s0_init(r,rho_comp)
+       temp_eos(1) = s0_init(r,temp_comp)
+       xn_eos(1,:) = xn_smooth(:)
+       p_eos(1) = p_ambient
+
+       call eos(eos_input_tp, den_eos, temp_eos, &
+                npts, nspec, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+
+       s0_init(r,rho_comp)  = den_eos(1)
+       s0_init(r,spec_comp:spec_comp+nspec-1) = den_eos(1)*xn_smooth(:)
+       s0_init(r,rhoh_comp) = den_eos(1)*h_eos(1)
+
+       print *, r, real(s0_init(r,temp_comp)), real(s0_init(r,rho_comp)), real(s0_init(r,rhoh_comp))
 
     enddo
 
