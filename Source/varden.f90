@@ -103,7 +103,7 @@ subroutine varden()
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
 
-  logical :: dump_file
+  logical :: dump_plotfile, dump_checkpoint
 
   last_plt_written = -1
   last_chk_written = -1
@@ -904,8 +904,12 @@ subroutine varden()
         ! output
         !---------------------------------------------------------------------
 
-        if (chk_int > 0) then
-           if (mod(istep,chk_int) .eq. 0) then
+        ! if the file .dump_checkpoint exists in our output directory, then
+        ! automatically dump a plotfile
+        inquire(file=".dump_checkpoint", exist=dump_checkpoint)
+
+        if (chk_int > 0 .or. dump_checkpoint) then
+           if (mod(istep,chk_int) .eq. 0 .or. dump_checkpoint) then
               allocate(chkdata(nlevs))
               do n = 1,nlevs
                  call multifab_build(chkdata(n), mla%la(n), 2*dm+nscal, 0)
@@ -944,13 +948,13 @@ subroutine varden()
 
         ! if the file .dump_plotfile exists in our output directory, then
         ! automatically dump a plotfile
-        inquire(file=".dump_plotfile", exist=dump_file)
+        inquire(file=".dump_plotfile", exist=dump_plotfile)
 
-        if (plot_int > 0 .or. plot_deltat > ZERO .or. dump_file) then
+        if (plot_int > 0 .or. plot_deltat > ZERO .or. dump_plotfile) then
            if ( (plot_int > 0 .and. mod(istep,plot_int) .eq. 0) .or. &
                 (plot_deltat > ZERO .and. &
                 mod(time - dt,plot_deltat) > mod(time,plot_deltat)) .or. &
-                dump_file) then
+                dump_plotfile) then
 
               if (istep <= 99999) then
                  write(unit=plot_index,fmt='(i5.5)') istep
