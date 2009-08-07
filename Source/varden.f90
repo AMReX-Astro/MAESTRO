@@ -670,23 +670,28 @@ subroutine varden()
               call multifab_destroy(sponge(n))
               call multifab_destroy(hgrhs(n))
               call multifab_destroy(Source_new(n))
+              call multifab_destroy(rho_omegadot2(n))
+              call multifab_destroy(rho_Hnuc2(n))
+              call multifab_destroy(thermal2(n))
               if (dm .eq. 3) then
                  call multifab_destroy(normal(n))
               end if
            end do
 
            ! create new grids and fill in data on those grids
-           call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2,thermal2, &
-                       dx,the_bc_tower)
+           call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,dx,the_bc_tower)
 
            call init_multilevel(sold)
 
            do n = 1,nlevs
-              call multifab_build(      unew(n), mla%la(n),    dm, 3)
-              call multifab_build(      snew(n), mla%la(n), nscal, 3)
-              call multifab_build(    sponge(n), mla%la(n),     1, 0)
-              call multifab_build(     hgrhs(n), mla%la(n),     1, 0, nodal)
-              call multifab_build(Source_new(n), mla%la(n),     1, 1)
+              call multifab_build(      unew(n),    mla%la(n),    dm, 3)
+              call multifab_build(      snew(n),    mla%la(n), nscal, 3)
+              call multifab_build(    sponge(n),    mla%la(n),     1, 0)
+              call multifab_build(     hgrhs(n),    mla%la(n),     1, 0, nodal)
+              call multifab_build(Source_new(n),    mla%la(n),     1, 1)
+              call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
+              call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
+              call multifab_build(     thermal2(n), mla%la(n),     1, 1)
               if (dm .eq. 3) then
                  call multifab_build(normal(n), mla%la(n),    dm, 1)
               end if
