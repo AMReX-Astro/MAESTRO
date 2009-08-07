@@ -8,8 +8,6 @@
    div{U + w_0} together?  This is more along the lines of how we
    treat the div{w_0} stuff in update_vel.f90
 
--- update Gconst to the latest accepted value
-
 -- should we be computing beta_0 differently for spherical?  In 
    particular, should we do linear reconstruction on g?
 
