@@ -1,4 +1,4 @@
-qsub -A MAESTRO -t 5 -n 16 --mode smp -q prod-devel ./main.Linux.xlf.mpi.omp.exe inputs_3d.128.5dr.eq.dx
+qsub -A MAESTRO -t 5 -n 16 --mode smp -q prod-devel ./main.Linux.xlf.mpi.smp.exe inputs_3d.128.5dr.eq.dx
 
 -A      account number
 -t      time in minutes
