@@ -34,6 +34,8 @@
 
 -- rho_omegadot2 and rho_Huc2 don't need to be stored in the checkpoint
    file anymore, since they are filled before they are used.
+   AJN: Actually they do otherwise when you print the plotfile immediately
+        after restart, make_plotfile needs this data.
 
 -- in regrid.f90, rw2 and rH2 have 1 ghostcell, but when they are originally
    allocated in initialize, they have 0
