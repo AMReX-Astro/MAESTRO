@@ -26,29 +26,30 @@ subroutine varden()
   use probin_module
   use bl_constants_module
   use initialize_module
+  use multifab_physbc_module
+  use multifab_fill_ghost_module
 
   implicit none
 
-  real(dp_t) :: lenx,leny,lenz,max_dist
-  integer    :: i,n
+  real(dp_t) :: dist,lenx,leny,lenz,max_dist
 
-  real(dp_t)  , pointer :: dx(:,:)
-  type(ml_layout)           :: mla
+  integer :: i,n,r
 
-  type(multifab), allocatable ::       uold(:)
-  type(multifab), allocatable ::       sold(:)
-  type(multifab), allocatable ::     normal(:)
+  type(ml_layout) :: mla
+
+  type(multifab), allocatable :: phi(:)
 
   real(kind=dp_t), pointer :: nrp(:,:,:,:)
-  integer, allocatable      :: lo(:),hi(:)
+  real(kind=dp_t), pointer :: pp(:,:,:,:)
+  real(kind=dp_t), pointer :: dx(:,:)
 
-  type(layout)    :: la
+  integer, allocatable :: lo(:),hi(:)
+
+  type(layout)      :: la
   type(ml_boxarray) :: mba
 
-  real(dp_t), allocatable :: s0_old(:,:,:)
-  real(dp_t), allocatable :: s0_avg(:,:,:)
-  real(dp_t), allocatable :: p0_old(:,:)
-  real(dp_t), allocatable :: w0(:,:)
+  real(dp_t), allocatable :: phi_exact(:,:)
+  real(dp_t), allocatable :: phi_avg(:,:)
 
   type(bc_tower) ::  the_bc_tower
 
@@ -81,14 +82,12 @@ subroutine varden()
   end do
 
   ! allocate states
-  allocate(uold(nlevs),sold(nlevs))
+  allocate(phi(nlevs))
 
   ! build states
   do n = 1,nlevs
-     call multifab_build(      uold(n), mla%la(n),    dm, 3)
-     call multifab_build(      sold(n), mla%la(n), nscal, 3)
-     call setval( uold(n),0.0_dp_t, all=.true.)
-     call setval( sold(n),0.0_dp_t, all=.true.)
+     call multifab_build(phi(n),mla%la(n),1,3)
+     call setval(phi(n),0.0_dp_t,all=.true.)
   end do
 
   ! initialize_dx
@@ -115,82 +114,92 @@ subroutine varden()
   end if
 
   ! create numdisjointchunks, r_start_coord, r_end_coord
-  call init_multilevel(sold)
+  call init_multilevel(phi)
 
   ! now that we have nr_fine and dr_fine we can create nr, dr, r_cc_loc, r_edge_loc
   call init_radial(nlevs,mba)
 
+  allocate( phi_exact(nlevs,0:nr_fine-1))
+  allocate( phi_avg  (nlevs,0:nr_fine-1))
 
-  allocate( s0_old(nlevs,0:nr_fine-1,nscal))
-  allocate( s0_avg(nlevs,0:nr_fine-1,nscal))
-  allocate( p0_old(nlevs,0:nr_fine-1))
-  allocate(     w0(nlevs,0:nr_fine  ))
+  phi_exact(:,:) = ZERO
+  phi_avg  (:,:) = ZERO
 
-  s0_old(:,:,:) = ZERO
-  s0_avg(:,:,:) = ZERO
-  w0(:,:) = ZERO
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Initialize all remaining arrays
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  allocate(normal(nlevs))
-
-  do n = nlevs,1,-1
-     call multifab_build( normal(n), mla%la(n),    dm, 1)
+  do r=0,nr(1)-1
+     dist = (dble(r)+HALF)*dr(1)
+     phi_exact(1,r) = exp(-dist**2/0.1d0)
   end do
 
   la = mla%la(1)
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Now initialize the grid data, and do initial projection if restart < 0.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  ! Initialize base state at finest level
-  do n=1,nlevs
-     call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),dx(n,:))
-  enddo
-
   allocate(lo(dm))
   allocate(hi(dm))
 
-  ! Create the normal array once we have defined "center"
-  if (spherical .eq. 1) then
-     do n = 1,nlevs
-        do i = 1, normal(n)%nboxes
-           if ( multifab_remote(normal(n), i) ) cycle
-           nrp => dataptr(normal(n), i)
-           lo =  lwb(get_box(normal(n), i))
-           hi =  upb(get_box(normal(n), i))
-           call make_normal_3d_sphr(nrp(:,:,:,:),lo,hi,dx(n,:),1)
-        end do
+  do n=1,nlevs
+     do i = 1, phi(n)%nboxes
+        if ( multifab_remote(phi(n),i) ) cycle
+        pp => dataptr(phi(n),i)
+        lo =  lwb(get_box(phi(n),i))
+        hi =  upb(get_box(phi(n),i))
+        select case (dm)
+        case (2)
+        case (3)
+           if (spherical .eq. 1) then
+              call initgaussian_3d_sphr(pp(:,:,:,1), phi(n)%ng, lo, hi, dx(n,:))
+           else
+           end if
+        end select
      end do
-  end if
+  enddo
 
-  call initveldata(uold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
-  call initscalardata(sold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
+  if (nlevs .eq. 1) then
+
+     ! fill ghost cells for two adjacent grids at the same level
+     ! this includes periodic domain boundary ghost cells
+     call multifab_fill_boundary(phi(nlevs))
+
+     ! fill non-periodic domain boundary ghost cells
+     call multifab_physbc(phi(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+
+  else
+
+     ! the loop over nlevs must count backwards to make sure the finer grids are done first
+     do n=nlevs,2,-1
+
+        ! set level n-1 data to be the average of the level n data covering it
+        call ml_cc_restriction(phi(n-1),phi(n),mla%mba%rr(n-1,:))
+
+        ! fill level n ghost cells using interpolation from level n-1 data
+        ! note that multifab_fill_boundary and multifab_physbc are called for
+        ! both levels n-1 and n
+        call multifab_fill_ghost_cells(phi(n),phi(n-1),phi(n)%ng,mla%mba%rr(n-1,:), &
+                                       the_bc_tower%bc_tower_array(n-1), &
+                                       the_bc_tower%bc_tower_array(n), &
+                                       1,foextrap_comp,1,fill_crse_input=.false.)
+
+     enddo
+
+  end if
 
   ! now that we are initialized, try averaging the state to 1-d
   ! and compare to the base state
   if ( parallel_IOProcessor() ) &
        print *, 'averaging...'
 
-  do i=1,nscal
-     call average(mla,sold,s0_avg(:,:,i),dx,i)
-  end do
+  call average(mla,phi,phi_avg,dx,1)
 
   if ( parallel_IOProcessor() ) &
        print *, 'done'
 
   ! compute the error against the base state
   if ( parallel_IOProcessor() ) then
-     open (unit=10, file="dens.error")
-     write (10,*) "r_cc_loc, rho0, rhoavg, rho0-rhoavg, (rho0-rhoavg)/rho0"
+     open (unit=10, file="phi.error")
+     write (10,*) "r_cc_loc, phi_exact, phi_avg, phi_exact-phi_avg, (phi_exact-phi_avg)/phi_exact"
      do n=1,nlevs
-        do i = 0, nr(n)-1
-           write (10,1000) r_cc_loc(n,i), s0_old(n,i,rho_comp), s0_avg(n,i,rho_comp), &
-                s0_old(n,i,rho_comp)-s0_avg(n,i,rho_comp), &
-                (s0_old(n,i,rho_comp)-s0_avg(n,i,rho_comp))/s0_old(n,i,rho_comp)
+        do r=0,nr(n)-1
+           write (10,1000) r_cc_loc(n,r), phi_exact(n,r), phi_avg(n,r), &
+                phi_exact(n,r)-phi_avg(n,r), &
+                (phi_exact(n,r)-phi_avg(n,r))/phi_exact(n,r)
         enddo
      enddo
      close (10)
@@ -199,23 +208,50 @@ subroutine varden()
 1000 format(1x,6(g24.16))
 
   do n = 1,nlevs
-     call destroy(uold(n))
-     call destroy(sold(n))
-     call destroy(normal(n))
+     call destroy(phi(n))
   end do
 
   call destroy(mla)
   call destroy(mba)
 
-  deallocate(uold,sold)
-  deallocate(s0_old,s0_avg,p0_old,w0)
-
-  deallocate(lo,hi)
+  deallocate(phi)
+  deallocate(phi_exact,phi_avg,lo,hi)
 
   call bc_tower_destroy(the_bc_tower)
 
   call probin_close()
 
   deallocate(dr,r_cc_loc,r_edge_loc,r_start_coord,r_end_coord,nr,numdisjointchunks,dx)
+
+  contains
+
+    subroutine initgaussian_3d_sphr(phi,ng,lo,hi,dx)
+
+      use probin_module, only: prob_lo, perturb_model
+
+      integer           , intent(in   ) :: lo(:),hi(:),ng
+      real (kind = dp_t), intent(inout) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+      real (kind = dp_t), intent(in   ) :: dx(:)
+
+      !     Local variables
+      integer         :: i,j,k
+      real(kind=dp_t) :: x,y,z,dist
+
+      ! initialize (rho h) using the EOS
+      do k = lo(3), hi(3)
+         z = (dble(k)+0.5d0)*dx(3) - center(3)
+         do j = lo(2), hi(2)
+            y = (dble(j)+0.5d0)*dx(2) - center(2)
+            do i = lo(1), hi(1)
+               x = (dble(i)+0.5d0)*dx(1) - center(1)
+
+               dist = sqrt(x**2 + y**2 + z**2)
+               phi(i,j,k) = exp(-dist**2/0.1d0)
+
+            enddo
+         enddo
+      enddo
+
+    end subroutine initgaussian_3d_sphr
 
 end subroutine varden
