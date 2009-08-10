@@ -8,7 +8,7 @@ module divu_iter_module
 
 contains
 
-  subroutine divu_iter(istep_divu_iter,uold,sold,pres,gpres,normal, &
+  subroutine divu_iter(istep_divu_iter,uold,sold,pres,gpres,normal,thermal, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
                        w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
@@ -37,6 +37,7 @@ contains
     type(multifab) , intent(inout) :: pres(:)
     type(multifab) , intent(inout) :: gpres(:)
     type(multifab) , intent(in   ) :: normal(:)
+    type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
     type(multifab) , intent(in   ) :: dSdt(:)
@@ -59,7 +60,6 @@ contains
     type(multifab) :: s1(nlevs)  
     type(multifab) :: delta_gamma1_term(nlevs)
     type(multifab) :: delta_gamma1(nlevs)
-    type(multifab) :: thermal(nlevs)
     type(multifab) :: rhohalf(nlevs)
     type(multifab) :: rho_omegadot1(nlevs)
     type(multifab) :: rho_Hnuc1(nlevs)
@@ -108,10 +108,6 @@ contains
        call destroy(s1(n))
     end do
 
-    do n=1,nlevs
-       call multifab_build(thermal(n), mla%la(n), 1, 1)
-    end do
-
     if(use_thermal_diffusion) then
 
        do n=1,nlevs
@@ -150,7 +146,6 @@ contains
                 mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
-       call destroy(thermal(n))
        call destroy(rho_omegadot1(n))
        call destroy(rho_Hnuc1(n))
        call destroy(rho_Hext(n))

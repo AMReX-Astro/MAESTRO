@@ -303,7 +303,7 @@ subroutine varden()
      call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
 
      if(do_initial_projection) then
-        call initial_proj(uold,sold,pres,gpres,Source_old,hgrhs, &
+        call initial_proj(uold,sold,pres,gpres,Source_old,hgrhs,thermal2, &
                           div_coeff_old,p0_old,gamma1bar,dx,the_bc_tower,mla)
      end if
 
@@ -337,7 +337,7 @@ subroutine varden()
 
      do istep_divu_iter=1,init_divu_iter
 
-        call divu_iter(istep_divu_iter,uold,sold,pres,gpres,normal, &
+        call divu_iter(istep_divu_iter,uold,sold,pres,gpres,normal,thermal2, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old, &
                        gamma1bar,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 

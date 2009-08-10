@@ -7,7 +7,7 @@ module initial_proj_module
 
 contains
 
-  subroutine initial_proj(uold,sold,pres,gpres,Source_old,hgrhs, &
+  subroutine initial_proj(uold,sold,pres,gpres,Source_old,hgrhs,thermal, &
                           div_coeff_old,p0,gamma1bar,dx,the_bc_tower,mla)
 
     use variables, only: press_comp, foextrap_comp, rho_comp
@@ -33,6 +33,7 @@ contains
     type(multifab) , intent(inout) :: gpres(:)
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
+    type(multifab) , intent(inout) :: thermal(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
     real(kind=dp_t), intent(inout) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
@@ -46,7 +47,6 @@ contains
 
     type(multifab) :: delta_gamma1_term(nlevs)
     type(multifab) :: delta_gamma1(nlevs)
-    type(multifab) :: thermal(nlevs)
     type(multifab) :: rhohalf(nlevs)
     type(multifab) :: rho_omegadot1(nlevs)
     type(multifab) :: rho_Hnuc1(nlevs)
@@ -69,10 +69,6 @@ contains
        print *, ' '
     end if
 
-    do n=1,nlevs
-       call multifab_build(thermal(n), mla%la(n), 1, 1)
-    end do
-    
     if(use_thermal_diffusion) then
 
        do n=1,nlevs
@@ -121,7 +117,6 @@ contains
                 mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
-       call destroy(thermal(n))
        call destroy(rho_omegadot1(n))
        call destroy(rho_Hnuc1(n))
        call destroy(rho_Hext(n))
