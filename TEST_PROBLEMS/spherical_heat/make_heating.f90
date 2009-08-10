@@ -94,9 +94,9 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),time
 
     integer :: i, j, k
-    real(kind=dp_t) :: x, y, z, r, width
+    real(kind=dp_t) :: x, y, z, r, y_0
 
-    width = 2.5d7
+    y_0 = 4.d7
 
     do k = lo(3), hi(3)
        z = (dble(k) + HALF)*dx(3) - center(3)
@@ -109,8 +109,8 @@ contains
 
              r = sqrt(x**2 + y**2 + z**2)
 
-             rho_Hext(i,j,k) = 1.d17 * s(i,j,k,rho_comp) * exp(-r**2/width**2)
-             
+             rho_Hext = s(i,j,k,rho_comp)* 1.d16*exp(-(r-y_0)**2/1.d14)
+
           enddo
        enddo
     enddo
