@@ -625,7 +625,7 @@ contains
              enddo
           endif
 
-          print *, 'done'
+          if (parallel_IOProcessor()) print *, 'done'
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
                               buf_wid,ref_ratio,nl,max_grid_size)
           
