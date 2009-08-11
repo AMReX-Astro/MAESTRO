@@ -382,7 +382,6 @@ contains
     use probin_module, only: w0mac_interp_type
     use variables, only: foextrap_comp,press_comp
     use define_bc_module
-    use macproject_module
     use fabio_module
 
     type(ml_layout), intent(in   ) :: mla
@@ -641,7 +640,6 @@ contains
     use geometry, only: spherical, nr_fine, dm, nlevs
     use variables, only: foextrap_comp,press_comp
     use define_bc_module
-    use macproject_module
     use fabio_module
     use probin_module, only: s0mac_interp_type
 
