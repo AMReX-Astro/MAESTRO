@@ -905,37 +905,44 @@ contains
     use geometry, only: nlevs, dm
 
     type(multifab) , intent(in   ) :: ccfab(:)
-    type(multifab) , intent(inout) :: beta(:)
+    type(multifab) , intent(inout) :: beta(:,:)
     integer        , intent(in   ) :: comp
     logical        , intent(in   ) :: harmonic_avg
 
     ! local
-    integer :: n,i,ng_cc,ng_fc
+    integer :: n,i,ng_c,ng_b
     integer :: lo(dm),hi(dm)
 
-    real(kind=dp_t), pointer :: ccfabp(:,:,:,:),betap(:,:,:,:)
+    real(kind=dp_t), pointer :: ccfabp(:,:,:,:)
+    real(kind=dp_t), pointer :: bxp(:,:,:,:)
+    real(kind=dp_t), pointer :: byp(:,:,:,:)
+    real(kind=dp_t), pointer :: bzp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_data_on_faces")
 
-    ng_cc = ccfab(1)%ng
-    ng_fc = beta(1)%ng
+    ng_c = ccfab(1)%ng
+    ng_b = beta(1,1)%ng
 
     ! setup beta = ccfab on faces
     do n=1,nlevs
-       do i=1,beta(n)%nboxes
-          if (multifab_remote(beta(n),i)) cycle
+       do i=1,ccfab(n)%nboxes
+          if (multifab_remote(ccfab(n),i)) cycle
           ccfabp => dataptr(ccfab(n),i)
-          betap   => dataptr(beta(n),i)
-          lo = lwb(get_box(beta(n),i))
-          hi = upb(get_box(beta(n),i))
+          bxp   => dataptr(beta(n,1),i)
+          byp   => dataptr(beta(n,2),i)
+          lo = lwb(get_box(ccfab(n),i))
+          hi = upb(get_box(ccfab(n),i))
           select case (dm)
           case (2)
-             call put_data_on_faces_2d(lo,hi,ccfabp(:,:,1,comp),ng_cc,betap(:,:,1,:),ng_fc, &
+             call put_data_on_faces_2d(lo,hi,ccfabp(:,:,1,comp),ng_c, &
+                                       bxp(:,:,1,1),byp(:,:,1,1),ng_b, &
                                        harmonic_avg)
           case (3)
-             call put_data_on_faces_3d(lo,hi,ccfabp(:,:,:,comp),ng_cc,betap(:,:,:,:),ng_fc, &
+             bzp   => dataptr(beta(n,3),i)
+             call put_data_on_faces_3d(lo,hi,ccfabp(:,:,:,comp),ng_c, &
+                                       bxp(:,:,:,1),byp(:,:,:,1),bzp(:,:,:,1),ng_b, &
                                        harmonic_avg)
           end select
        end do
@@ -949,11 +956,12 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! put beta on faces
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_data_on_faces_2d(lo,hi,ccbeta,ng_cc,beta,ng_fc,harmonic_avg)
+  subroutine put_data_on_faces_2d(lo,hi,ccbeta,ng_c,betax,betay,ng_b,harmonic_avg)
 
-    integer        , intent(in   ) :: lo(:), hi(:), ng_cc, ng_fc
-    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_cc:,lo(2)-ng_cc:)
-    real(kind=dp_t), intent(inout) ::   beta(lo(1)-ng_fc:,lo(2)-ng_fc:,:)
+    integer        , intent(in   ) :: lo(:), hi(:), ng_c, ng_b
+    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_c:,lo(2)-ng_c:)
+    real(kind=dp_t), intent(inout) ::  betax(lo(1)-ng_b:,lo(2)-ng_b:)
+    real(kind=dp_t), intent(inout) ::  betay(lo(1)-ng_b:,lo(2)-ng_b:)
     logical        , intent(in   ) :: harmonic_avg
 
     ! Local
@@ -963,13 +971,13 @@ contains
 
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)+1
-             beta(i,j,1) = TWO*(ccbeta(i,j)*ccbeta(i-1,j))/(ccbeta(i,j) + ccbeta(i-1,j))
+             betax(i,j) = TWO*(ccbeta(i,j)*ccbeta(i-1,j))/(ccbeta(i,j) + ccbeta(i-1,j))
           end do
        end do
 
        do j = lo(2),hi(2)+1
           do i = lo(1),hi(1)
-             beta(i,j,2) = TWO*(ccbeta(i,j)*ccbeta(i,j-1))/(ccbeta(i,j) + ccbeta(i,j-1))
+             betay(i,j) = TWO*(ccbeta(i,j)*ccbeta(i,j-1))/(ccbeta(i,j) + ccbeta(i,j-1))
           end do
        end do
 
@@ -977,13 +985,13 @@ contains
 
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)+1
-             beta(i,j,1) = HALF*(ccbeta(i,j)+ccbeta(i-1,j))
+             betax(i,j) = HALF*(ccbeta(i,j)+ccbeta(i-1,j))
           end do
        end do
 
        do j = lo(2),hi(2)+1
           do i = lo(1),hi(1)
-             beta(i,j,2) = HALF*(ccbeta(i,j)+ccbeta(i,j-1))
+             betay(i,j) = HALF*(ccbeta(i,j)+ccbeta(i,j-1))
           end do
        end do
 
@@ -995,11 +1003,13 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! put beta on faces
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_data_on_faces_3d(lo,hi,ccbeta,ng_cc,beta,ng_fc,harmonic_avg)
+  subroutine put_data_on_faces_3d(lo,hi,ccbeta,ng_c,betax,betay,betaz,ng_b,harmonic_avg)
 
-    integer        , intent(in   ) :: lo(:), hi(:), ng_cc, ng_fc
-    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_cc:,lo(2)-ng_cc:,lo(3)-ng_cc:)
-    real(kind=dp_t), intent(inout) ::   beta(lo(1)-ng_fc:,lo(2)-ng_fc:,lo(3)-ng_fc:,:)
+    integer        , intent(in   ) :: lo(:), hi(:), ng_c, ng_b
+    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_c:,lo(2)-ng_c:,lo(3)-ng_c:)
+    real(kind=dp_t), intent(inout) ::  betax(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+    real(kind=dp_t), intent(inout) ::  betay(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+    real(kind=dp_t), intent(inout) ::  betaz(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
     logical        , intent(in   ) :: harmonic_avg
 
     ! Local
@@ -1010,8 +1020,8 @@ contains
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)+1
-                beta(i,j,k,1) = TWO*(ccbeta(i,j,k)*ccbeta(i-1,j,k))/(ccbeta(i,j,k) &
-                     + ccbeta(i-1,j,k))
+                betax(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i-1,j,k)) / &
+                                   (ccbeta(i,j,k) + ccbeta(i-1,j,k))
              end do
           end do
        end do
@@ -1019,8 +1029,8 @@ contains
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)+1
              do i = lo(1),hi(1)
-                beta(i,j,k,2) = TWO*(ccbeta(i,j,k)*ccbeta(i,j-1,k))/(ccbeta(i,j,k) &
-                     + ccbeta(i,j-1,k))
+                betay(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i,j-1,k)) / &
+                                   (ccbeta(i,j,k) + ccbeta(i,j-1,k))
              end do
           end do
        end do
@@ -1028,8 +1038,8 @@ contains
        do k = lo(3),hi(3)+1
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
-                beta(i,j,k,3) = TWO*(ccbeta(i,j,k)*ccbeta(i,j,k-1))/(ccbeta(i,j,k) &
-                     + ccbeta(i,j,k-1))
+                betaz(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i,j,k-1)) / &
+                                   (ccbeta(i,j,k) + ccbeta(i,j,k-1))
              end do
           end do
        end do
@@ -1039,7 +1049,7 @@ contains
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)+1
-                beta(i,j,k,1) = HALF*(ccbeta(i,j,k)+ccbeta(i-1,j,k))
+                betax(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i-1,j,k))
              end do
           end do
        end do
@@ -1047,7 +1057,7 @@ contains
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)+1
              do i = lo(1),hi(1)
-                beta(i,j,k,2) = HALF*(ccbeta(i,j,k)+ccbeta(i,j-1,k))
+                betay(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i,j-1,k))
              end do
           end do
        end do
@@ -1055,7 +1065,7 @@ contains
        do k = lo(3),hi(3)+1
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
-                beta(i,j,k,3) = HALF*(ccbeta(i,j,k)+ccbeta(i,j,k-1))
+                betaz(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i,j,k-1))
              end do
           end do
        end do
