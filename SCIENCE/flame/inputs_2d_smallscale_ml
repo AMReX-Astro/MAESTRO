@@ -29,7 +29,8 @@
 
  temp_ash = 3.d9
  
- frac = 0.125d0
+ interface_pos_frac = 0.125d0
+ smooth_len_frac = 0.025d0
 
  do_smallscale = T
 
