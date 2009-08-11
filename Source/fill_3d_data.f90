@@ -899,11 +899,12 @@ contains
 
   end subroutine make_normal_3d_sphr
 
-
-  subroutine put_data_on_faces(ccfab,comp,beta,harmonic_avg)
+  subroutine put_data_on_faces(mla,ccfab,comp,beta,harmonic_avg)
 
     use geometry, only: nlevs, dm
+    use ml_restriction_module, only: ml_edge_restriction
 
+    type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: ccfab(:)
     type(multifab) , intent(inout) :: beta(:,:)
     integer        , intent(in   ) :: comp
@@ -947,6 +948,13 @@ contains
           end select
        end do
     enddo
+
+    ! Make sure that the fine edges average down onto the coarse edges.
+    do n = nlevs,2,-1
+       do i = 1,dm
+          call ml_edge_restriction(beta(n-1,i),beta(n,i),mla%mba%rr(n-1,:),i)
+       end do
+    end do
 
     call destroy(bpt)
 
