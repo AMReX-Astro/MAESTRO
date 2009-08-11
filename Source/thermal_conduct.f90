@@ -25,7 +25,7 @@ contains
 
     use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
     use mac_multigrid_module
-    use macproject_module
+    use mac_applyop_module
     use network, only: nspec
     use rhoh_vs_t_module
     use probin_module, ONLY: thermal_diffusion_type, use_tfromp, edge_nodal_flag

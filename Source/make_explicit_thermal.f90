@@ -28,7 +28,7 @@ contains
     use bc_module
     use bl_prof_module
     use stencil_module
-    use macproject_module
+    use mac_applyop_module
     use network, only: nspec
     use ml_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
