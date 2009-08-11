@@ -24,6 +24,7 @@ contains
                              hcoeff2,Xkcoeff2,pcoeff2,s2,p0_old,p0_new,the_bc_tower)
 
     use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
+    use mac_multigrid_module
     use macproject_module
     use network, only: nspec
     use rhoh_vs_t_module
