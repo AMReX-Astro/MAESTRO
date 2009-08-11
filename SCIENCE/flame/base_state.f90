@@ -162,8 +162,6 @@ contains
        s0_init(r,spec_comp:spec_comp+nspec-1) = den_eos(1)*xn_smooth(:)
        s0_init(r,rhoh_comp) = den_eos(1)*h_eos(1)
 
-       print *, r, real(s0_init(r,temp_comp)), real(s0_init(r,rho_comp)), real(s0_init(r,rhoh_comp))
-
     enddo
 
     ! set the base state pressure to be the ambient pressure.
