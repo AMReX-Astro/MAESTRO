@@ -51,10 +51,10 @@ contains
     type(bc_tower) , intent(in   ) :: the_bc_tower
 
     ! Local
-    type(multifab) :: phi(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel)
+    type(multifab) :: phi(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel,dm)
     type(multifab) :: resid(mla%nlevel)
 
-    integer                     :: comp,n,stencil_order
+    integer                     :: comp,i,n,stencil_order
 
     type(bl_prof_timer), save :: bpt
 
@@ -78,7 +78,9 @@ contains
 
        do n=1,nlevs
           call multifab_build(phi(n), mla%la(n), 1,  1)
-          call multifab_build(beta(n),mla%la(n), dm, 1)
+          do i = 1,dm
+             call multifab_build(beta(n,i),mla%la(n),1,1)
+          end do
        end do
 
        do n=1,nlevs
@@ -101,12 +103,16 @@ contains
        do n=1,nlevs
           call destroy(phi(n))
           call destroy(alpha(n))
-          call destroy(beta(n))
+          do i = 1,dm
+             call destroy(beta(n,i))
+          end do
        end do
 
        ! add residual to thermal
        do n=1,nlevs
-          call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
+          do i = 1,dm
+             call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
+          end do
        enddo
 
        do n = 1,nlevs
@@ -121,7 +127,9 @@ contains
        
        do n=1,nlevs
           call multifab_build(phi(n),  mla%la(n), 1,  1)
-          call multifab_build(beta(n), mla%la(n), dm, 1)
+          do i = 1,dm
+             call multifab_build(beta(n,i), mla%la(n), dm, 1)
+          end do
        end do
 
        do n=1,nlevs
@@ -208,7 +216,9 @@ contains
        do n=1,nlevs
           call destroy(phi(n))
           call destroy(alpha(n))
-          call destroy(beta(n))
+          do i = 1,dm 
+             call destroy(beta(n,i))
+          end do
        end do
 
        ! add residual to thermal

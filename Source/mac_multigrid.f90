@@ -31,7 +31,7 @@ contains
     real(dp_t)     , intent(in)           :: dx(:,:)
     type(bc_tower) , intent(in)           :: the_bc_tower
     integer        , intent(in   )        :: bc_comp
-    type(multifab) , intent(in   )        :: alpha(:), beta(:)
+    type(multifab) , intent(in   )        :: alpha(:), beta(:,:)
     type(multifab) , intent(inout)        ::    rh(:),  phi(:)
     type(bndry_reg), intent(inout)        :: fine_flx(2:)
     real(dp_t)     , intent(in), optional :: umac_norm(:)
@@ -184,7 +184,10 @@ contains
 
        call multifab_build(coeffs(mgt(n)%nlevels), la, 1+dm, 1)
        call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1, 1,ng=alpha(n)%ng)
-       call multifab_copy_c(coeffs(mgt(n)%nlevels),2, beta(n),1,dm,ng= beta(n)%ng)
+       call multifab_copy_c(coeffs(mgt(n)%nlevels),2, beta(n,1),1,1,ng=beta(n,1)%ng)
+       call multifab_copy_c(coeffs(mgt(n)%nlevels),3, beta(n,2),1,1,ng=beta(n,2)%ng)
+       if (dm > 2) &
+          call multifab_copy_c(coeffs(mgt(n)%nlevels),4, beta(n,3),1,1,ng=beta(n,3)%ng)
 
        do i = mgt(n)%nlevels-1, 1, -1
           call multifab_build(coeffs(i), mgt(n)%ss(i)%la, 1+dm, 1)

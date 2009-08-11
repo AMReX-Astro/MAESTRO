@@ -25,7 +25,7 @@ contains
 
     use mac_multigrid_module
     use geometry, only: dm, nlevs, spherical
-    use probin_module, only: verbose
+    use probin_module, only: verbose, edge_nodal_flag
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
@@ -40,7 +40,7 @@ contains
     real(dp_t)     , intent(in   ), optional :: div_coeff_half_1d(:,:)
     type(multifab ), intent(in   ), optional :: div_coeff_3d(:)
 
-    type(multifab)  :: rh(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel)
+    type(multifab)  :: rh(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel,dm)
     type(bndry_reg) :: fine_flx(2:mla%nlevel)
 
     real(dp_t)                   :: umac_norm(mla%nlevel)
@@ -73,8 +73,9 @@ contains
     do n = 1, nlevs
        call multifab_build(   rh(n), mla%la(n),  1, 0)
        call multifab_build(alpha(n), mla%la(n),  1, 1)
-       call multifab_build( beta(n), mla%la(n), dm, 1)
-
+       do i = 1,dm
+          call multifab_build(beta(n,i),mla%la(n),1,1,nodal=edge_nodal_flag(i,:))
+       end do
        call setval(alpha(n),ZERO,all=.true.)
     end do
 
@@ -86,7 +87,7 @@ contains
     else if (use_div_coeff_3d) then
        do n = 1,nlevs
           call mult_umac_by_3d_coeff(umac(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n), &
-                                     .true.)
+                                 .true.)
        end do
     end if
 
@@ -122,11 +123,11 @@ contains
 
     if (use_div_coeff_1d) then
        do n = 1,nlevs
-          call mult_beta_by_1d_coeff(beta(n),div_coeff_1d(n,:),div_coeff_half_1d(n,:))
+          call mult_beta_by_1d_coeff(beta(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:))
        end do
     else if (use_div_coeff_3d) then
        do n = 1,nlevs
-          call mult_beta_by_3d_coeff(beta(n),div_coeff_3d(n),ml_layout_get_pd(mla,n))
+          call mult_beta_by_3d_coeff(beta(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n))
        end do
     end if
 
@@ -191,7 +192,9 @@ contains
     do n = 1, nlevs
        call destroy(rh(n))
        call destroy(alpha(n))
-       call destroy(beta(n))
+       do i = 1,dm
+          call destroy(beta(n,i))
+       end do
     end do
 
     do n = 2,nlevs
@@ -372,27 +375,30 @@ contains
 
       use geometry, only: dm
 
-      type(multifab) , intent(inout) :: beta
+      type(multifab) , intent(inout) :: beta(:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
 
-      real(kind=dp_t), pointer :: bp(:,:,:,:) 
-      integer                  :: lo(dm)
-      integer                  :: i,ng_b
+      real(kind=dp_t), pointer :: bxp(:,:,:,:) 
+      real(kind=dp_t), pointer :: byp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bzp(:,:,:,:) 
+      integer                  :: i,lo(dm),ng_b
 
-      ng_b = beta%ng
+      ng_b = beta(1)%ng
 
       ! Multiply edge coefficients by div coeff
-      do i = 1, beta%nboxes
-         if ( multifab_remote(beta, i) ) cycle
-         bp => dataptr(beta,i)
-         lo =  lwb(get_box(beta, i))
+      do i = 1, beta(1)%nboxes
+         if ( multifab_remote(beta(1), i) ) cycle
+         bxp => dataptr(beta(1),i)
+         byp => dataptr(beta(2),i)
+         lo =  lwb(get_box(beta(1), i))
          select case (dm)
          case (2)
-            call mult_by_1d_coeff_2d(bp(:,:,1,1), bp(:,:,1,2), ng_b, &
+            call mult_by_1d_coeff_2d(bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), .true.)
          case (3)
-            call mult_by_1d_coeff_3d(bp(:,:,:,1), bp(:,:,:,2), bp(:,:,:,3), ng_b, &
+            bzp => dataptr(beta(3),i)
+            call mult_by_1d_coeff_3d(bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), .true.)
          end select
       end do
@@ -509,11 +515,13 @@ contains
 
       use geometry, only: dm
 
-      type(multifab) , intent(inout) :: beta
+      type(multifab) , intent(inout) :: beta(:)
       type(multifab) , intent(in   ) :: div_coeff
       type(box)      , intent(in   ) :: domain
 
-      real(kind=dp_t), pointer :: bp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bxp(:,:,:,:) 
+      real(kind=dp_t), pointer :: byp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bzp(:,:,:,:) 
       real(kind=dp_t), pointer :: dp(:,:,:,:) 
       integer :: i,lo(dm),hi(dm)
       integer :: domlo(dm),domhi(dm)
@@ -522,15 +530,17 @@ contains
       domhi =  upb(domain)
 
       ! Multiply edge coefficients by div coeff
-      do i = 1, beta%nboxes
-         if ( multifab_remote(beta, i) ) cycle
-         bp => dataptr(     beta,i)
+      do i = 1, beta(1)%nboxes
+         if ( multifab_remote(beta(1), i) ) cycle
+         bxp => dataptr( beta(1),i)
+         byp => dataptr( beta(2),i)
+         bzp => dataptr( beta(3),i)
          dp => dataptr(div_coeff,i)
-         lo =  lwb(get_box(beta, i))
-         hi =  upb(get_box(beta, i))
+         lo =  lwb(get_box(div_coeff, i))
+         hi =  upb(get_box(div_coeff, i))
          select case (dm)
          case (3)
-            call mult_by_3d_coeff_3d(bp(:,:,:,1), bp(:,:,:,2), bp(:,:,:,3), &
+            call mult_by_3d_coeff_3d(bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), &
                                      dp(:,:,:,1), lo, hi, domlo, domhi, .true.)
          end select
       end do
@@ -682,91 +692,93 @@ contains
 
       type(ml_layout), intent(in   ) :: mla
       type(multifab ), intent(in   ) :: rho(:)
-      type(multifab ), intent(inout) :: beta(:)
+      type(multifab ), intent(inout) :: beta(:,:)
       type(bc_tower ), intent(in   ) :: the_bc_tower
 
-      real(kind=dp_t), pointer :: bp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bxp(:,:,:,:) 
+      real(kind=dp_t), pointer :: byp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bzp(:,:,:,:) 
       real(kind=dp_t), pointer :: rp(:,:,:,:) 
-      integer :: i,ng_r,ng_b
+      integer :: i,ng_r,ng_b,lo(dm),hi(dm)
 
       ng_r = rho(1)%ng
-      ng_b = beta(1)%ng
+      ng_b = beta(1,1)%ng
 
       do n = 1, nlevs
          do i = 1, rho(n)%nboxes
             if ( multifab_remote(rho(n), i) ) cycle
             rp => dataptr(rho(n) , i)
-            bp => dataptr(beta(n), i)
+            bxp => dataptr(beta(n,1), i)
+            byp => dataptr(beta(n,2), i)
+            lo = lwb(get_box(rho(n), i))
+            hi = upb(get_box(rho(n), i))
             select case (dm)
             case (2)
-               call mk_mac_coeffs_2d(bp(:,:,1,:), ng_b, rp(:,:,1,1), ng_r)
+               call mk_mac_coeffs_2d(bxp(:,:,1,1),byp(:,:,1,1),ng_b, rp(:,:,1,1), &
+                                     ng_r,lo,hi)
             case (3)
-               call mk_mac_coeffs_3d(bp(:,:,:,:), ng_b, rp(:,:,:,1), ng_r)
+               bzp => dataptr(beta(n,3), i)
+               call mk_mac_coeffs_3d(bxp(:,:,:,1),byp(:,:,:,1),bzp(:,:,:,1),&
+                                     ng_b,rp(:,:,:,1),ng_r,lo,hi)
             end select
          end do
       end do
 
     end subroutine mk_mac_coeffs
 
-    subroutine mk_mac_coeffs_2d(beta,ng_b,rho,ng_r)
+    subroutine mk_mac_coeffs_2d(betax,betay,ng_b,rho,ng_r,lo,hi)
 
-      integer :: ng_b,ng_r
-      real(kind=dp_t), intent(inout) :: beta(-ng_b:,-ng_b:,:)
-      real(kind=dp_t), intent(inout) ::  rho(-ng_r:,-ng_r:)
+      integer :: ng_b,ng_r,lo(2),hi(2)
+      real(kind=dp_t), intent(inout) :: betax(lo(1)-ng_b:,lo(2)-ng_b:)
+      real(kind=dp_t), intent(inout) :: betay(lo(1)-ng_b:,lo(2)-ng_b:)
+      real(kind=dp_t), intent(inout) ::   rho(lo(1)-ng_r:,lo(2)-ng_r:)
 
       integer :: i,j
-      integer :: nx,ny
 
-      nx = size(beta,dim=1) - 2
-      ny = size(beta,dim=2) - 2
-
-      do j = 0,ny-1
-         do i = 0,nx
-            beta(i,j,1) = TWO / (rho(i,j) + rho(i-1,j))
+      do j = lo(2),hi(2)
+         do i = lo(1),hi(1)+1
+            betax(i,j) = TWO / (rho(i,j) + rho(i-1,j))
          end do
       end do
 
-      do j = 0,ny
-         do i = 0,nx-1
-            beta(i,j,2) = TWO / (rho(i,j) + rho(i,j-1))
+      do j = lo(2),hi(2)+1
+         do i = lo(1),hi(1)
+            betay(i,j) = TWO / (rho(i,j) + rho(i,j-1))
          end do
       end do
 
     end subroutine mk_mac_coeffs_2d
 
-    subroutine mk_mac_coeffs_3d(beta,ng_b,rho,ng_r)
+    subroutine mk_mac_coeffs_3d(betax,betay,betaz,ng_b,rho,ng_r,lo,hi)
 
-      integer :: ng_b,ng_r
-      real(kind=dp_t), intent(inout) :: beta(-ng_b:,-ng_b:,-ng_b:,:)
-      real(kind=dp_t), intent(inout) ::  rho(-ng_r:,-ng_r:,-ng_r:)
+      integer :: ng_b,ng_r,lo(3),hi(3)
+      real(kind=dp_t), intent(inout) :: betax(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+      real(kind=dp_t), intent(inout) :: betay(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+      real(kind=dp_t), intent(inout) :: betaz(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+      real(kind=dp_t), intent(inout) ::   rho(lo(1)-ng_r:,lo(2)-ng_r:,lo(3)-ng_r:)
 
       integer :: i,j,k
-      integer :: nx,ny,nz
 
-      nx = size(beta,dim=1) - 2
-      ny = size(beta,dim=2) - 2
-      nz = size(beta,dim=3) - 2
-
-      do k = 0,nz-1
-         do j = 0,ny-1
-            do i = 0,nx
-               beta(i,j,k,1) = TWO / (rho(i,j,k) + rho(i-1,j,k))
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)+1
+               betax(i,j,k) = TWO / (rho(i,j,k) + rho(i-1,j,k))
             end do
          end do
       end do
 
-      do k = 0,nz-1
-         do j = 0,ny
-            do i = 0,nx-1
-               beta(i,j,k,2) = TWO / (rho(i,j,k) + rho(i,j-1,k))
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)+1
+            do i = lo(1),hi(1)
+               betay(i,j,k) = TWO / (rho(i,j,k) + rho(i,j-1,k))
             end do
          end do
       end do
 
-      do k = 0,nz
-         do j = 0,ny-1
-            do i = 0,nx-1
-               beta(i,j,k,3) = TWO / (rho(i,j,k) + rho(i,j,k-1))
+      do k = lo(3),hi(3)+1
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               betaz(i,j,k) = TWO / (rho(i,j,k) + rho(i,j,k-1))
             end do
          end do
       end do
@@ -781,7 +793,7 @@ contains
       type(multifab), intent(inout) :: umac(:,:)
       type(multifab), intent(inout) ::   rh(:)
       type(multifab), intent(in   ) ::  phi(:)
-      type(multifab), intent(in   ) :: beta(:)
+      type(multifab), intent(in   ) :: beta(:,:)
       type(bndry_reg),intent(in   ) :: fine_flx(2:)
       real(dp_t)    , intent(in   ) :: dx(:,:)
       type(bc_tower), intent(in   ) :: the_bc_tower
@@ -796,7 +808,9 @@ contains
       real(kind=dp_t), pointer :: vmp(:,:,:,:) 
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
       real(kind=dp_t), pointer :: php(:,:,:,:) 
-      real(kind=dp_t), pointer ::  bp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bxp(:,:,:,:) 
+      real(kind=dp_t), pointer :: byp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bzp(:,:,:,:) 
       real(kind=dp_t), pointer :: lxp(:,:,:,:) 
       real(kind=dp_t), pointer :: hxp(:,:,:,:) 
       real(kind=dp_t), pointer :: lyp(:,:,:,:) 
@@ -806,7 +820,7 @@ contains
 
       ng_um = umac(1,1)%ng
       ng_p = phi(1)%ng
-      ng_b = beta(1)%ng
+      ng_b = beta(1,1)%ng
 
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
@@ -815,7 +829,8 @@ contains
             ump => dataptr(umac(n,1), i)
             vmp => dataptr(umac(n,2), i)
             php => dataptr( phi(n), i)
-            bp => dataptr(beta(n), i)
+            bxp => dataptr(beta(n,1), i)
+            byp => dataptr(beta(n,2), i)
             select case (dm)
             case (2)
                if (n > 1) then
@@ -823,17 +838,20 @@ contains
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
                   lyp => dataptr(fine_flx(n)%bmf(2,0), i)
                   hyp => dataptr(fine_flx(n)%bmf(2,1), i)
-                  call mkumac_2d(ump(:,:,1,1),vmp(:,:,1,1), ng_um, &
-                                 php(:,:,1,1), ng_p, bp(:,:,1,:), ng_b, &
+                  call mkumac_2d(ump(:,:,1,1),vmp(:,:,1,1),ng_um, &
+                                 php(:,:,1,1),ng_p, &
+                                 bxp(:,:,1,1),byp(:,:,1,1),ng_b, &
                                  lxp(:,:,1,1),hxp(:,:,1,1),lyp(:,:,1,1),hyp(:,:,1,1), &
                                  dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                else 
                   call mkumac_2d_base(ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
-                                      php(:,:,1,1), ng_p, bp(:,:,1,:), ng_b, &
+                                      php(:,:,1,1), ng_p, &
+                                      bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
                                       dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                end if
             case (3)
                wmp => dataptr(umac(n,3), i)
+               bzp => dataptr(beta(n,3), i)
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
@@ -842,14 +860,16 @@ contains
                   lzp => dataptr(fine_flx(n)%bmf(3,0), i)
                   hzp => dataptr(fine_flx(n)%bmf(3,1), i)
                   call mkumac_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                 php(:,:,:,1), ng_p, bp(:,:,:,:), ng_b, &
+                                 php(:,:,:,1), ng_p, &
+                                 bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
                                  lxp(:,:,:,1),hxp(:,:,:,1),lyp(:,:,:,1),hyp(:,:,:,1), &
                                  lzp(:,:,:,1),hzp(:,:,:,1),dx(n,:),&
                                  bc%ell_bc_level_array(i,:,:,press_comp))
                else
                   call mkumac_3d_base(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
-                                      php(:,:,:,1), ng_p, bp(:,:,:,:), ng_b, dx(n,:), &
-                                      bc%ell_bc_level_array(i,:,:,press_comp))
+                                      php(:,:,:,1), ng_p, &
+                                      bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
+                                      dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                end if
             end select
          end do
@@ -863,13 +883,14 @@ contains
 
     end subroutine mkumac
 
-    subroutine mkumac_2d_base(umac,vmac,ng_um,phi,ng_p,beta,ng_b,dx,press_bc)
+    subroutine mkumac_2d_base(umac,vmac,ng_um,phi,ng_p,betax,betay,ng_b,dx,press_bc)
 
       integer        , intent(in   ) :: ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,:)
+      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
@@ -919,14 +940,14 @@ contains
       do j = 0,ny-1
          do i = 0,nx
             gphix = (phi(i,j) - phi(i-1,j)) / dx(1)
-            umac(i,j) = umac(i,j) - beta(i,j,1)*gphix
+            umac(i,j) = umac(i,j) - betax(i,j)*gphix
          end do
       end do
 
       do i = 0,nx-1
          do j = 0,ny
             gphiy = (phi(i,j) - phi(i,j-1)) / dx(2)
-            vmac(i,j) = vmac(i,j) - beta(i,j,2)*gphiy
+            vmac(i,j) = vmac(i,j) - betay(i,j)*gphiy
          end do
       end do
 
@@ -938,14 +959,15 @@ contains
 
     end subroutine mkumac_2d_base
 
-    subroutine mkumac_2d(umac,vmac,ng_um,phi,ng_p,beta,ng_b, &
+    subroutine mkumac_2d(umac,vmac,ng_um,phi,ng_p,betax,betay,ng_b, &
                          lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx,dx,press_bc)
 
       integer        , intent(in   ) :: ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,:)
+      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:)
       real(kind=dp_t), intent(in   ) :: lo_x_flx(:,0:), lo_y_flx(0:,:)
       real(kind=dp_t), intent(in   ) :: hi_x_flx(:,0:), hi_y_flx(0:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
@@ -999,7 +1021,7 @@ contains
          umac(nx,j) = umac(nx,j) + hi_x_flx(1,j) * dx(1)
          do i = 1,nx-1
             gphix = (phi(i,j) - phi(i-1,j)) / dx(1)
-            umac(i,j) = umac(i,j) - beta(i,j,1)*gphix
+            umac(i,j) = umac(i,j) - betax(i,j)*gphix
          end do
       end do
 
@@ -1009,7 +1031,7 @@ contains
          vmac(i,ny) = vmac(i,ny) + hi_y_flx(i,1) * dx(2)
          do j = 1,ny-1
             gphiy = (phi(i,j) - phi(i,j-1)) / dx(2)
-            vmac(i,j) = vmac(i,j) - beta(i,j,2)*gphiy
+            vmac(i,j) = vmac(i,j) - betay(i,j)*gphiy
          end do
       end do
 
@@ -1021,14 +1043,17 @@ contains
 
     end subroutine mkumac_2d
 
-    subroutine mkumac_3d_base(umac,vmac,wmac,ng_um,phi,ng_p,beta,ng_b,dx,press_bc)
+    subroutine mkumac_3d_base(umac,vmac,wmac,ng_um,phi,ng_p, &
+                              betax,betay,betaz,ng_b,dx,press_bc)
 
       integer        , intent(in   ) :: ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: wmac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,-ng_b:,:)
+      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betaz(-ng_b:,-ng_b:,-ng_b:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
@@ -1122,7 +1147,7 @@ contains
          do j = 0,ny-1
             do i = 0,nx
                gphix = (phi(i,j,k) - phi(i-1,j,k)) / dx(1)
-               umac(i,j,k) = umac(i,j,k) - beta(i,j,k,1)*gphix
+               umac(i,j,k) = umac(i,j,k) - betax(i,j,k)*gphix
             end do
          end do
       end do
@@ -1131,7 +1156,7 @@ contains
          do j = 0,ny
             do i = 0,nx-1
                gphiy = (phi(i,j,k) - phi(i,j-1,k)) / dx(2)
-               vmac(i,j,k) = vmac(i,j,k) - beta(i,j,k,2)*gphiy
+               vmac(i,j,k) = vmac(i,j,k) - betay(i,j,k)*gphiy
             end do
          end do
       end do
@@ -1140,7 +1165,7 @@ contains
          do j = 0,ny-1
             do i = 0,nx-1
                gphiz = (phi(i,j,k) - phi(i,j,k-1)) / dx(3)
-               wmac(i,j,k) = wmac(i,j,k) - beta(i,j,k,3)*gphiz
+               wmac(i,j,k) = wmac(i,j,k) - betaz(i,j,k)*gphiz
             end do
          end do
       end do
@@ -1155,7 +1180,8 @@ contains
 
     end subroutine mkumac_3d_base
 
-    subroutine mkumac_3d(umac,vmac,wmac,ng_um,phi,ng_p,beta,ng_b, &
+    subroutine mkumac_3d(umac,vmac,wmac,ng_um,phi,ng_p, &
+                         betax,betay,betaz,ng_b, &
                          lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx,lo_z_flx,hi_z_flx,dx,press_bc)
 
       integer        , intent(in   ) :: ng_um,ng_p,ng_b
@@ -1163,7 +1189,9 @@ contains
       real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: wmac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,-ng_b:,:)
+      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betaz(-ng_b:,-ng_b:,-ng_b:)
       real(kind=dp_t), intent(in   ) :: lo_x_flx(:,0:,0:),lo_y_flx(0:,:,0:),lo_z_flx(0:,0:,:)
       real(kind=dp_t), intent(in   ) :: hi_x_flx(:,0:,0:),hi_y_flx(0:,:,0:),hi_z_flx(0:,0:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
@@ -1261,7 +1289,7 @@ contains
             umac(nx,j,k) = umac(nx,j,k) + hi_x_flx(1,j,k) * dx(1)
             do i = 1,nx-1
                gphix = (phi(i,j,k) - phi(i-1,j,k)) / dx(1)
-               umac(i,j,k) = umac(i,j,k) - beta(i,j,k,1)*gphix
+               umac(i,j,k) = umac(i,j,k) - betax(i,j,k)*gphix
             end do
          end do
       end do
@@ -1272,7 +1300,7 @@ contains
             vmac(i,ny,k) = vmac(i,ny,k) + hi_y_flx(i,1,k) * dx(2)
             do j = 1,ny-1
                gphiy = (phi(i,j,k) - phi(i,j-1,k)) / dx(2)
-               vmac(i,j,k) = vmac(i,j,k) - beta(i,j,k,2)*gphiy
+               vmac(i,j,k) = vmac(i,j,k) - betay(i,j,k)*gphiy
             end do
          end do
       end do
@@ -1283,7 +1311,7 @@ contains
             wmac(i,j,nz) = wmac(i,j,nz) + hi_z_flx(i,j,1) * dx(3)
             do k = 1,nz-1
                gphiz = (phi(i,j,k) - phi(i,j,k-1)) / dx(3)
-               wmac(i,j,k) = wmac(i,j,k) - beta(i,j,k,3)*gphiz
+               wmac(i,j,k) = wmac(i,j,k) - betaz(i,j,k)*gphiz
             end do
          end do
       end do
@@ -1314,7 +1342,7 @@ contains
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower) , intent(in)    :: the_bc_tower
     integer        , intent(in   ) :: bc_comp
-    type(multifab) , intent(in   ) :: alpha(:), beta(:)
+    type(multifab) , intent(in   ) :: alpha(:), beta(:,:)
     type(multifab) , intent(inout) :: res(:), phi(:)
     real(dp_t)     , intent(in), optional :: umac_norm(:)
 
@@ -1436,8 +1464,11 @@ contains
        pd = layout_get_pd(la)
 
        call multifab_build(coeffs(mgt(n)%nlevels), la, 1+dm, 1)
-       call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1, 1,ng=alpha(n)%ng)
-       call multifab_copy_c(coeffs(mgt(n)%nlevels),2, beta(n),1,dm,ng= beta(n)%ng)
+       call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1,1,ng=alpha(n)%ng)
+       call multifab_copy_c(coeffs(mgt(n)%nlevels),2,beta(n,1),1,1,ng=beta(n,1)%ng)
+       call multifab_copy_c(coeffs(mgt(n)%nlevels),3,beta(n,2),1,1,ng=beta(n,2)%ng)
+       if (dm > 2) &
+         call multifab_copy_c(coeffs(mgt(n)%nlevels),4,beta(n,3),1,1,ng=beta(n,3)%ng)
 
        do i = mgt(n)%nlevels-1, 1, -1
           call multifab_build(coeffs(i), mgt(n)%ss(i)%la, 1+dm, 1)
