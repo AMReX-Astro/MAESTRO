@@ -25,7 +25,8 @@ contains
     use bl_constants_module
     use geometry, only: spherical, dm, nlevs
     use ml_restriction_module, only: ml_edge_restriction_c
-    use variables, only: nscal
+    use variables, only: spec_comp
+    use network, only: nspec
 
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: sflux(:,:)
@@ -140,11 +141,14 @@ contains
     ! synchronize fluxes at coarse-fine interface
     do n = nlevs,2,-1
        do i = 1, dm
-          call ml_edge_restriction_c(sflux(n-1,i),1,sflux(n,i),1,mla%mba%rr(n-1,:),i,nscal)
+          call ml_edge_restriction_c(sflux(n-1,i),spec_comp,sflux(n,i),spec_comp, &
+                                     mla%mba%rr(n-1,:),i,nspec)
        enddo
 
-       if (spherical .eq. 0) &
-         call ml_edge_restriction_c(etarhoflux(n-1),1,etarhoflux(n),1,mla%mba%rr(n-1,:),dm,1)
+       if (spherical .eq. 0) then
+          call ml_edge_restriction_c(etarhoflux(n-1),1,etarhoflux(n),1,mla%mba%rr(n-1,:), &
+                                     dm,1)
+       end if
 
     enddo
 
@@ -384,7 +388,7 @@ contains
     use bl_constants_module
     use geometry, only: spherical, dm, nlevs
     use ml_restriction_module, only: ml_edge_restriction_c
-    use variables, only: nscal
+    use variables, only: rhoh_comp
 
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: sflux(:,:)
@@ -524,7 +528,8 @@ contains
     ! synchronize fluxes at coarse-fine interface
     do n = nlevs,2,-1
        do i = 1, dm
-          call ml_edge_restriction_c(sflux(n-1,i),1,sflux(n,i),1,mla%mba%rr(n-1,:),i,nscal)
+          call ml_edge_restriction_c(sflux(n-1,i),rhoh_comp,sflux(n,i),rhoh_comp, &
+                                     mla%mba%rr(n-1,:),i,1)
        enddo
     enddo
 
