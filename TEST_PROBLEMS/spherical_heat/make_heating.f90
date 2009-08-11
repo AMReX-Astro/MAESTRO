@@ -109,7 +109,7 @@ contains
 
              r = sqrt(x**2 + y**2 + z**2)
 
-             rho_Hext = s(i,j,k,rho_comp)* 1.d16*exp(-(r-y_0)**2/1.d14)
+             rho_Hext(i,j,k) = s(i,j,k,rho_comp)* 1.d16*exp(-(r-y_0)**2/1.d14)
 
           enddo
        enddo
