@@ -689,6 +689,7 @@ contains
     subroutine mk_mac_coeffs(mla,rho,beta,the_bc_tower)
 
       use geometry, only: dm
+      use ml_restriction_module, only: ml_edge_restriction
 
       type(ml_layout), intent(in   ) :: mla
       type(multifab ), intent(in   ) :: rho(:)
@@ -721,6 +722,13 @@ contains
                call mk_mac_coeffs_3d(bxp(:,:,:,1),byp(:,:,:,1),bzp(:,:,:,1),&
                                      ng_b,rp(:,:,:,1),ng_r,lo,hi)
             end select
+         end do
+      end do
+
+      ! Make sure that the fine edges average down onto the coarse edges.
+      do n = nlevs,2,-1
+         do i = 1,dm
+            call ml_edge_restriction(beta(n-1,i),beta(n,i),mla%mba%rr(n-1,:),i)
          end do
       end do
 

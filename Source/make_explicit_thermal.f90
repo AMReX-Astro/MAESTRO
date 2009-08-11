@@ -88,7 +88,7 @@ contains
           call multifab_copy_c(phi(n),1,s(n),temp_comp,1,1)
        end do
 
-       call put_data_on_faces(Tcoeff,1,beta,.true.)
+       call put_data_on_faces(mla,Tcoeff,1,beta,.true.)
 
        do n=1,nlevs
           call multifab_build(alpha(n), mla%la(n), 1, 1)
@@ -138,7 +138,7 @@ contains
           call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
        end do
 
-       call put_data_on_faces(hcoeff,1,beta,.true.)
+       call put_data_on_faces(mla,hcoeff,1,beta,.true.)
 
        do n=1,nlevs
           call multifab_build(alpha(n), mla%la(n), 1, 1)
@@ -163,7 +163,7 @@ contains
              call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
           end do
 
-          call put_data_on_faces(Xkcoeff,comp,beta,.true.)
+          call put_data_on_faces(mla,Xkcoeff,comp,beta,.true.)
           
           ! applyop to compute resid = del dot Xkcoeff grad X_k
           call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+spec_comp+comp-1, &
@@ -207,7 +207,7 @@ contains
 
        end if
 
-       call put_data_on_faces(pcoeff,1,beta,.true.)
+       call put_data_on_faces(mla,pcoeff,1,beta,.true.)
 
        ! applyop to compute resid = del dot pcoeff grad p0
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,foextrap_comp, &

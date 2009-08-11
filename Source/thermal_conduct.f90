@@ -102,7 +102,7 @@ contains
     end do
 
     ! put beta on faces
-    call put_data_on_faces(hcoeff1,1,rhsbeta,.true.)
+    call put_data_on_faces(mla,hcoeff1,1,rhsbeta,.true.)
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
@@ -156,7 +156,7 @@ contains
 
        ! do X_k^{(1)} term first
        ! put beta on faces
-       call put_data_on_faces(Xkcoeff1,comp,rhsbeta,.true.)
+       call put_data_on_faces(mla,Xkcoeff1,comp,rhsbeta,.true.)
 
        ! scale by dt/2
        if (thermal_diffusion_type .eq. 1) then
@@ -192,7 +192,7 @@ contains
 
        ! now do X_k^{(2)} term
        ! put beta on faces
-       call put_data_on_faces(Xkcoeff2,comp,rhsbeta,.true.)
+       call put_data_on_faces(mla,Xkcoeff2,comp,rhsbeta,.true.)
 
        ! scale by dt/2
        if (thermal_diffusion_type .eq. 1) then
@@ -231,7 +231,7 @@ contains
 
     ! do p0_old term first
     ! put beta on faces
-    call put_data_on_faces(pcoeff1,1,rhsbeta,.true.)
+    call put_data_on_faces(mla,pcoeff1,1,rhsbeta,.true.)
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
@@ -263,7 +263,7 @@ contains
 
     ! now do p0_new term
     ! put beta on faces
-    call put_data_on_faces(pcoeff2,1,rhsbeta,.true.)
+    call put_data_on_faces(mla,pcoeff2,1,rhsbeta,.true.)
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
@@ -315,7 +315,7 @@ contains
 
     ! create lhsbeta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
     ! put beta on faces (remember to scale by -dt/2 afterwards)
-    call put_data_on_faces(hcoeff2,1,lhsbeta,.true.)
+    call put_data_on_faces(mla,hcoeff2,1,lhsbeta,.true.)
 
     ! scale by -dt/2
     if (thermal_diffusion_type .eq. 1) then
