@@ -1,7 +1,9 @@
-! this defines the "base state" for a small-scale laminar flame problem.
-! basically, we set everything but the pressure to 0.  This will mimic
-! the way that the original smallscale low Mach number code dealt with 
-! flames.
+! This defines the "base state" for a small-scale laminar flame problem.
+!
+! We start by initializing the base state to represent the fuel and ash
+! separated by a smoothed interface.  In initdata, we use this to map into
+! the full state.  The base state is then overwritten, resetting everything
+! but the pressure to 0.
 !
 ! This routine will also define the inflow boundary condition state
 
@@ -23,8 +25,10 @@ contains
     use bl_error_module
     use network
     use eos_module
-    use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel, frac, &
-         anelastic_cutoff, base_cutoff_density, prob_lo, prob_hi, temp_ash, temp_fuel
+    use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel, &
+         interface_pos_frac, smooth_len_frac, &
+         anelastic_cutoff, base_cutoff_density, prob_lo, prob_hi, &
+         temp_ash, temp_fuel
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm, dr_fine
     use inlet_bc_module, only: set_inlet_bcs
@@ -108,9 +112,9 @@ contains
 
        rloc = prob_lo(dm) + (dble(r)+0.5d0)*dr(n)
 
-       ! the flame propagates in the -y direction.  If we are more than
-       ! fuel/ash division is frac through the domain
-       if (rloc < prob_lo(dm) + frac*rlen) then
+       ! the flame propagates in the -y direction.  The fuel/ash division 
+       ! is interface_pos_frac through the domain
+       if (rloc < prob_lo(dm) + interface_pos_frac*rlen) then
           
           ! fuel
           s0_init(r,rho_comp)  = dens_fuel
@@ -132,11 +136,15 @@ contains
 
        ! give the temperature a smooth profile
        s0_init(r,temp_comp) = temp_fuel + (temp_ash - temp_fuel) * &
-            HALF * (ONE + tanh( (rloc - (prob_lo(dm) + frac*rlen))/(25.d0*dr_fine) ) )
+            HALF * (ONE + &
+            tanh( (rloc - (prob_lo(dm) + interface_pos_frac*rlen)) / &
+            (smooth_len_frac*rlen) ) )
 
        ! give the carbon mass fraction a smooth profile too
        xn_smooth(ic12) = xn_fuel(ic12) + (xn_ash(ic12) - xn_fuel(ic12)) * &
-            HALF * (ONE + tanh( (rloc - (prob_lo(dm) + frac*rlen))/(25.d0*dr_fine) ) )
+            HALF * (ONE + &
+            tanh( (rloc - (prob_lo(dm) + interface_pos_frac*rlen)) / &
+            (smooth_len_frac*rlen) ) )
 
        xn_smooth(io16) = xn_fuel(io16)
        xn_smooth(img24) = 1.d0 - xn_smooth(ic12) - xn_smooth(io16)
