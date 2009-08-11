@@ -81,13 +81,13 @@ contains
 
     if (use_div_coeff_1d) then
        do n = 1,nlevs
-          call mult_umac_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:), &
+          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:),&
                                      .true.)
        end do
     else if (use_div_coeff_3d) then
        do n = 1,nlevs
-          call mult_umac_by_3d_coeff(umac(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n), &
-                                 .true.)
+          call mult_edge_by_3d_coeff(umac(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n),&
+                                     .true.)
        end do
     end if
 
@@ -123,11 +123,13 @@ contains
 
     if (use_div_coeff_1d) then
        do n = 1,nlevs
-          call mult_beta_by_1d_coeff(beta(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:))
+          call mult_edge_by_1d_coeff(beta(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:),&
+                                     .true.)
        end do
     else if (use_div_coeff_3d) then
        do n = 1,nlevs
-          call mult_beta_by_3d_coeff(beta(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n))
+          call mult_edge_by_3d_coeff(beta(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n),&
+                                     .true.)
        end do
     end if
 
@@ -163,12 +165,12 @@ contains
 
     if (use_div_coeff_1d) then
        do n = 1,nlevs
-          call mult_umac_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:), &
+          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:), &
                                      .false.)
        end do
     else if (use_div_coeff_3d) then
        do n = 1,nlevs
-          call mult_umac_by_3d_coeff(umac(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n), &
+          call mult_edge_by_3d_coeff(umac(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n), &
                                      .false.)
        end do
     end if
@@ -335,11 +337,11 @@ contains
 
     end subroutine divumac_3d
 
-    subroutine mult_umac_by_1d_coeff(umac,div_coeff,div_coeff_half,do_mult)
+    subroutine mult_edge_by_1d_coeff(edge,div_coeff,div_coeff_half,do_mult)
 
       use geometry, only: dm
 
-      type(multifab) , intent(inout) :: umac(:)
+      type(multifab) , intent(inout) :: edge(:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
       logical        , intent(in   ) :: do_mult
@@ -350,135 +352,101 @@ contains
       integer                  :: lo(dm)
       integer                  :: i,ng_um
 
-      ng_um = umac(1)%ng
+      ng_um = edge(1)%ng
 
       ! Multiply edge velocities by div coeff
-      do i = 1, umac(1)%nboxes
-         if ( multifab_remote(umac(1), i) ) cycle
-         ump => dataptr(umac(1), i)
-         vmp => dataptr(umac(2), i)
-         lo =  lwb(get_box(umac(1), i))
+      do i = 1, edge(1)%nboxes
+         if ( multifab_remote(edge(1), i) ) cycle
+         ump => dataptr(edge(1), i)
+         vmp => dataptr(edge(2), i)
+         lo =  lwb(get_box(edge(1), i))
          select case (dm)
          case (2)
             call mult_by_1d_coeff_2d(ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), do_mult)
          case (3)
-            wmp => dataptr(umac(3), i)
+            wmp => dataptr(edge(3), i)
             call mult_by_1d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), do_mult)
          end select
       end do
 
-    end subroutine mult_umac_by_1d_coeff
+    end subroutine mult_edge_by_1d_coeff
 
-    subroutine mult_beta_by_1d_coeff(beta,div_coeff,div_coeff_half)
-
-      use geometry, only: dm
-
-      type(multifab) , intent(inout) :: beta(:)
-      real(dp_t)     , intent(in   ) :: div_coeff(0:)
-      real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
-
-      real(kind=dp_t), pointer :: bxp(:,:,:,:) 
-      real(kind=dp_t), pointer :: byp(:,:,:,:) 
-      real(kind=dp_t), pointer :: bzp(:,:,:,:) 
-      integer                  :: i,lo(dm),ng_b
-
-      ng_b = beta(1)%ng
-
-      ! Multiply edge coefficients by div coeff
-      do i = 1, beta(1)%nboxes
-         if ( multifab_remote(beta(1), i) ) cycle
-         bxp => dataptr(beta(1),i)
-         byp => dataptr(beta(2),i)
-         lo =  lwb(get_box(beta(1), i))
-         select case (dm)
-         case (2)
-            call mult_by_1d_coeff_2d(bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
-                                     div_coeff(lo(dm):), div_coeff_half(lo(dm):), .true.)
-         case (3)
-            bzp => dataptr(beta(3),i)
-            call mult_by_1d_coeff_3d(bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
-                                     div_coeff(lo(dm):), div_coeff_half(lo(dm):), .true.)
-         end select
-      end do
-
-    end subroutine mult_beta_by_1d_coeff
-
-    subroutine mult_by_1d_coeff_2d(umac,vmac,ng_um,div_coeff,div_coeff_half,do_mult)
+    subroutine mult_by_1d_coeff_2d(uedge,vedge,ng_um,div_coeff,div_coeff_half,do_mult)
 
       integer                        :: ng_Um
-      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: uedge(-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: vedge(-ng_um:,-ng_um:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
       logical        , intent(in   ) :: do_mult
 
       integer :: j,ny
 
-      ny = size(umac,dim=2)-2
+      ny = size(uedge,dim=2)-2
 
       if (do_mult) then
          do j = 0,ny-1
-            umac(:,j) = umac(:,j) * div_coeff(j)
+            uedge(:,j) = uedge(:,j) * div_coeff(j)
          end do
          do j = 0,ny
-            vmac(:,j) = vmac(:,j) * div_coeff_half(j)
+            vedge(:,j) = vedge(:,j) * div_coeff_half(j)
          end do
       else
          do j = 0,ny-1 
-            umac(:,j) = umac(:,j) / div_coeff(j)
+            uedge(:,j) = uedge(:,j) / div_coeff(j)
          end do
          do j = 0,ny
-            vmac(:,j) = vmac(:,j) / div_coeff_half(j)
+            vedge(:,j) = vedge(:,j) / div_coeff_half(j)
          end do
       end if
 
     end subroutine mult_by_1d_coeff_2d
 
-    subroutine mult_by_1d_coeff_3d(umac,vmac,wmac,ng_um,div_coeff,div_coeff_half,do_mult)
+    subroutine mult_by_1d_coeff_3d(uedge,vedge,wedge,ng_um,div_coeff,div_coeff_half,do_mult)
 
       integer                        :: ng_um
-      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: wmac(-ng_um:,-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: uedge(-ng_um:,-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: vedge(-ng_um:,-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: wedge(-ng_um:,-ng_um:,-ng_um:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
       logical        , intent(in   ) :: do_mult
 
       integer :: k,nz
 
-      nz = size(umac,dim=3)-2
+      nz = size(uedge,dim=3)-2
 
       if (do_mult) then
          do k = 0,nz-1 
-            umac(:,:,k) = umac(:,:,k) * div_coeff(k)
+            uedge(:,:,k) = uedge(:,:,k) * div_coeff(k)
          end do
          do k = 0,nz-1 
-            vmac(:,:,k) = vmac(:,:,k) * div_coeff(k)
+            vedge(:,:,k) = vedge(:,:,k) * div_coeff(k)
          end do
          do k = 0,nz
-            wmac(:,:,k) = wmac(:,:,k) * div_coeff_half(k)
+            wedge(:,:,k) = wedge(:,:,k) * div_coeff_half(k)
          end do
       else
          do k = 0,nz-1 
-            umac(:,:,k) = umac(:,:,k) / div_coeff(k)
+            uedge(:,:,k) = uedge(:,:,k) / div_coeff(k)
          end do
          do k = 0,nz-1
-            vmac(:,:,k) = vmac(:,:,k) / div_coeff(k)
+            vedge(:,:,k) = vedge(:,:,k) / div_coeff(k)
          end do
          do k = 0,nz
-            wmac(:,:,k) = wmac(:,:,k) / div_coeff_half(k)
+            wedge(:,:,k) = wedge(:,:,k) / div_coeff_half(k)
          end do
       end if
 
     end subroutine mult_by_1d_coeff_3d
 
-    subroutine mult_umac_by_3d_coeff(umac,div_coeff,domain,do_mult)
+    subroutine mult_edge_by_3d_coeff(edge,div_coeff,domain,do_mult)
 
       use geometry, only: dm
 
-      type(multifab) , intent(inout) :: umac(:)
+      type(multifab) , intent(inout) :: edge(:)
       type(multifab) , intent(in   ) :: div_coeff
       type(box)      , intent(in   ) :: domain
       logical        , intent(in   ) :: do_mult
@@ -494,14 +462,14 @@ contains
       domhi =  upb(domain)
 
       ! Multiply edge velocities by div coeff
-      do i = 1, umac(1)%nboxes
-         if ( multifab_remote(umac(1), i) ) cycle
-         ump => dataptr(umac(1), i)
-         vmp => dataptr(umac(2), i)
-         wmp => dataptr(umac(3), i)
+      do i = 1, edge(1)%nboxes
+         if ( multifab_remote(edge(1), i) ) cycle
+         ump => dataptr(edge(1), i)
+         vmp => dataptr(edge(2), i)
+         wmp => dataptr(edge(3), i)
          dp => dataptr(div_coeff, i)
-         lo =  lwb(get_box(umac(1), i))
-         hi =  upb(get_box(umac(1), i))
+         lo =  lwb(get_box(edge(1), i))
+         hi =  upb(get_box(edge(1), i))
          select case (dm)
          case (3)
             call mult_by_3d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
@@ -509,50 +477,14 @@ contains
          end select
       end do
 
-    end subroutine mult_umac_by_3d_coeff
+    end subroutine mult_edge_by_3d_coeff
 
-    subroutine mult_beta_by_3d_coeff(beta,div_coeff,domain)
-
-      use geometry, only: dm
-
-      type(multifab) , intent(inout) :: beta(:)
-      type(multifab) , intent(in   ) :: div_coeff
-      type(box)      , intent(in   ) :: domain
-
-      real(kind=dp_t), pointer :: bxp(:,:,:,:) 
-      real(kind=dp_t), pointer :: byp(:,:,:,:) 
-      real(kind=dp_t), pointer :: bzp(:,:,:,:) 
-      real(kind=dp_t), pointer :: dp(:,:,:,:) 
-      integer :: i,lo(dm),hi(dm)
-      integer :: domlo(dm),domhi(dm)
-
-      domlo =  lwb(domain)
-      domhi =  upb(domain)
-
-      ! Multiply edge coefficients by div coeff
-      do i = 1, beta(1)%nboxes
-         if ( multifab_remote(beta(1), i) ) cycle
-         bxp => dataptr( beta(1),i)
-         byp => dataptr( beta(2),i)
-         bzp => dataptr( beta(3),i)
-         dp => dataptr(div_coeff,i)
-         lo =  lwb(get_box(div_coeff, i))
-         hi =  upb(get_box(div_coeff, i))
-         select case (dm)
-         case (3)
-            call mult_by_3d_coeff_3d(bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), &
-                                     dp(:,:,:,1), lo, hi, domlo, domhi, .true.)
-         end select
-      end do
-
-    end subroutine mult_beta_by_3d_coeff
-
-    subroutine mult_by_3d_coeff_3d(umac,vmac,wmac,div_coeff,lo,hi,domlo,domhi,do_mult)
+    subroutine mult_by_3d_coeff_3d(uedge,vedge,wedge,div_coeff,lo,hi,domlo,domhi,do_mult)
 
       integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
-      real(kind=dp_t), intent(inout) ::      umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-      real(kind=dp_t), intent(inout) ::      vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-      real(kind=dp_t), intent(inout) ::      wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+      real(kind=dp_t), intent(inout) ::      uedge(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+      real(kind=dp_t), intent(inout) ::      vedge(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+      real(kind=dp_t), intent(inout) ::      wedge(lo(1)-1:,lo(2)-1:,lo(3)-1:)
       real(dp_t)     , intent(in   ) :: div_coeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
       logical        , intent(in   ) :: do_mult
 
@@ -563,18 +495,18 @@ contains
          do k = lo(3),hi(3)
             do j = lo(2),hi(2)
                do i = lo(1)+1,hi(1)
-                  umac(i,j,k) = umac(i,j,k) * HALF * (div_coeff(i,j,k)+div_coeff(i-1,j,k))
+                  uedge(i,j,k) = uedge(i,j,k) * HALF * (div_coeff(i,j,k)+div_coeff(i-1,j,k))
                end do
                if (lo(1).eq.domlo(1)) then
-                  umac(lo(1),j,k) = umac(lo(1),j,k) * div_coeff(lo(1),j,k)
+                  uedge(lo(1),j,k) = uedge(lo(1),j,k) * div_coeff(lo(1),j,k)
                else
-                  umac(lo(1),j,k) = umac(lo(1),j,k) * HALF * &
+                  uedge(lo(1),j,k) = uedge(lo(1),j,k) * HALF * &
                        (div_coeff(lo(1),j,k)+div_coeff(lo(1)-1,j,k))
                end if
                if (hi(1).eq.domhi(1)) then
-                  umac(hi(1)+1,j,k) = umac(hi(1)+1,j,k) * div_coeff(hi(1),j,k)
+                  uedge(hi(1)+1,j,k) = uedge(hi(1)+1,j,k) * div_coeff(hi(1),j,k)
                else
-                  umac(hi(1)+1,j,k) = umac(hi(1)+1,j,k) * HALF * &
+                  uedge(hi(1)+1,j,k) = uedge(hi(1)+1,j,k) * HALF * &
                        (div_coeff(hi(1)+1,j,k)+div_coeff(hi(1),j,k))
                end if
             end do
@@ -583,18 +515,18 @@ contains
          do k = lo(3),hi(3)
             do i = lo(1),hi(1)
                do j = lo(2)+1,hi(2)
-                  vmac(i,j,k) = vmac(i,j,k) * HALF * (div_coeff(i,j,k)+div_coeff(i,j-1,k))
+                  vedge(i,j,k) = vedge(i,j,k) * HALF * (div_coeff(i,j,k)+div_coeff(i,j-1,k))
                end do
                if (lo(2).eq.domlo(2)) then
-                  vmac(i,lo(2),k) = vmac(i,lo(2),k) * div_coeff(i,lo(2),k)
+                  vedge(i,lo(2),k) = vedge(i,lo(2),k) * div_coeff(i,lo(2),k)
                else
-                  vmac(i,lo(2),k) = vmac(i,lo(2),k) * HALF * &
+                  vedge(i,lo(2),k) = vedge(i,lo(2),k) * HALF * &
                        (div_coeff(i,lo(2),k)+div_coeff(i,lo(2)-1,k))
                end if
                if (hi(2).eq.domhi(2)) then
-                  vmac(i,hi(2)+1,k) = vmac(i,hi(2)+1,k) * div_coeff(i,hi(2),k)
+                  vedge(i,hi(2)+1,k) = vedge(i,hi(2)+1,k) * div_coeff(i,hi(2),k)
                else
-                  vmac(i,hi(2)+1,k) = vmac(i,hi(2)+1,k) * HALF * &
+                  vedge(i,hi(2)+1,k) = vedge(i,hi(2)+1,k) * HALF * &
                        (div_coeff(i,hi(2)+1,k)+div_coeff(i,hi(2),k))
                end if
             end do
@@ -603,18 +535,18 @@ contains
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
                do k = lo(3)+1,hi(3)
-                  wmac(i,j,k) = wmac(i,j,k) * HALF * (div_coeff(i,j,k)+div_coeff(i,j,k-1))
+                  wedge(i,j,k) = wedge(i,j,k) * HALF * (div_coeff(i,j,k)+div_coeff(i,j,k-1))
                end do
                if (lo(3).eq.domlo(3)) then
-                  wmac(i,j,lo(3)) = wmac(i,j,lo(3)) * div_coeff(i,j,lo(3))
+                  wedge(i,j,lo(3)) = wedge(i,j,lo(3)) * div_coeff(i,j,lo(3))
                else
-                  wmac(i,j,lo(3)) = wmac(i,j,lo(3)) * HALF * &
+                  wedge(i,j,lo(3)) = wedge(i,j,lo(3)) * HALF * &
                        (div_coeff(i,j,lo(3))+div_coeff(i,j,lo(3)-1))
                end if
                if (hi(3).eq.domhi(3)) then
-                  wmac(i,j,hi(3)+1) = wmac(i,j,hi(3)+1) * div_coeff(i,j,hi(3))
+                  wedge(i,j,hi(3)+1) = wedge(i,j,hi(3)+1) * div_coeff(i,j,hi(3))
                else
-                  wmac(i,j,hi(3)+1) = wmac(i,j,hi(3)+1) * HALF * &
+                  wedge(i,j,hi(3)+1) = wedge(i,j,hi(3)+1) * HALF * &
                        (div_coeff(i,j,hi(3)+1)+div_coeff(i,j,hi(3)))
                end if
             end do
@@ -625,18 +557,18 @@ contains
          do k = lo(3),hi(3)
             do j = lo(2),hi(2)
                do i = lo(1)+1,hi(1)
-                  umac(i,j,k) = umac(i,j,k) / ( HALF * (div_coeff(i,j,k)+div_coeff(i-1,j,k)))
+                  uedge(i,j,k) = uedge(i,j,k) / ( HALF * (div_coeff(i,j,k)+div_coeff(i-1,j,k)))
                end do
                if (lo(1).eq.domlo(1)) then
-                  umac(lo(1),j,k) = umac(lo(1),j,k) / div_coeff(lo(1),j,k)
+                  uedge(lo(1),j,k) = uedge(lo(1),j,k) / div_coeff(lo(1),j,k)
                else
-                  umac(lo(1),j,k) = umac(lo(1),j,k) / &
+                  uedge(lo(1),j,k) = uedge(lo(1),j,k) / &
                        ( HALF * (div_coeff(lo(1),j,k)+div_coeff(lo(1)-1,j,k)))
                end if
                if (hi(1).eq.domhi(1)) then
-                  umac(hi(1)+1,j,k) = umac(hi(1)+1,j,k) / div_coeff(hi(1),j,k)
+                  uedge(hi(1)+1,j,k) = uedge(hi(1)+1,j,k) / div_coeff(hi(1),j,k)
                else
-                  umac(hi(1)+1,j,k) = umac(hi(1)+1,j,k) / &
+                  uedge(hi(1)+1,j,k) = uedge(hi(1)+1,j,k) / &
                        ( HALF * (div_coeff(hi(1)+1,j,k)+div_coeff(hi(1),j,k)))
                end if
             end do
@@ -645,18 +577,18 @@ contains
          do k = lo(3),hi(3)
             do i = lo(1),hi(1)
                do j = lo(2)+1,hi(2)
-                  vmac(i,j,k) = vmac(i,j,k) / ( HALF * (div_coeff(i,j,k)+div_coeff(i,j-1,k)))
+                  vedge(i,j,k) = vedge(i,j,k) / ( HALF * (div_coeff(i,j,k)+div_coeff(i,j-1,k)))
                end do
                if (lo(2).eq.domlo(2)) then
-                  vmac(i,lo(2),k) = vmac(i,lo(2),k) / div_coeff(i,lo(2),k)
+                  vedge(i,lo(2),k) = vedge(i,lo(2),k) / div_coeff(i,lo(2),k)
                else
-                  vmac(i,lo(2),k) = vmac(i,lo(2),k) / &
+                  vedge(i,lo(2),k) = vedge(i,lo(2),k) / &
                        ( HALF * (div_coeff(i,lo(2),k)+div_coeff(i,lo(2)-1,k)))
                end if
                if (hi(2).eq.domhi(2)) then
-                  vmac(i,hi(2)+1,k) = vmac(i,hi(2)+1,k) / div_coeff(i,hi(2),k)
+                  vedge(i,hi(2)+1,k) = vedge(i,hi(2)+1,k) / div_coeff(i,hi(2),k)
                else
-                  vmac(i,hi(2)+1,k) = vmac(i,hi(2)+1,k) / &
+                  vedge(i,hi(2)+1,k) = vedge(i,hi(2)+1,k) / &
                        ( HALF * (div_coeff(i,hi(2)+1,k)+div_coeff(i,hi(2),k)))
                end if
             end do
@@ -665,18 +597,18 @@ contains
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
                do k = lo(3)+1,hi(3)
-                  wmac(i,j,k) = wmac(i,j,k) / ( HALF * (div_coeff(i,j,k)+div_coeff(i,j,k-1)))
+                  wedge(i,j,k) = wedge(i,j,k) / ( HALF * (div_coeff(i,j,k)+div_coeff(i,j,k-1)))
                end do
                if (lo(3).eq.domlo(3)) then
-                  wmac(i,j,lo(3)) = wmac(i,j,lo(3)) / div_coeff(i,j,lo(3))
+                  wedge(i,j,lo(3)) = wedge(i,j,lo(3)) / div_coeff(i,j,lo(3))
                else
-                  wmac(i,j,lo(3)) = wmac(i,j,lo(3)) / &
+                  wedge(i,j,lo(3)) = wedge(i,j,lo(3)) / &
                        ( HALF * (div_coeff(i,j,lo(3))+div_coeff(i,j,lo(3)-1)))
                end if
                if (hi(3).eq.domhi(3)) then
-                  wmac(i,j,hi(3)+1) = wmac(i,j,hi(3)+1) / div_coeff(i,j,hi(3))
+                  wedge(i,j,hi(3)+1) = wedge(i,j,hi(3)+1) / div_coeff(i,j,hi(3))
                else
-                  wmac(i,j,hi(3)+1) = wmac(i,j,hi(3)+1) / &
+                  wedge(i,j,hi(3)+1) = wedge(i,j,hi(3)+1) / &
                        ( HALF * (div_coeff(i,j,hi(3)+1)+div_coeff(i,j,hi(3))))
                end if
             end do
