@@ -14,7 +14,7 @@ module macproject_module
 
   private
 
-  public :: macproject, mac_applyop, mac_multigrid
+  public :: macproject, mac_applyop
 
 contains 
 
@@ -23,8 +23,9 @@ contains
   subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower, &
                         bc_comp,divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
 
+    use mac_multigrid_module
     use geometry, only: dm, nlevs, spherical
-    use probin_module, only: verbose
+    use probin_module, only: verbose, edge_nodal_flag
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
@@ -39,7 +40,7 @@ contains
     real(dp_t)     , intent(in   ), optional :: div_coeff_half_1d(:,:)
     type(multifab ), intent(in   ), optional :: div_coeff_3d(:)
 
-    type(multifab)  :: rh(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel)
+    type(multifab)  :: rh(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel,dm)
     type(bndry_reg) :: fine_flx(2:mla%nlevel)
 
     real(dp_t)                   :: umac_norm(mla%nlevel)
@@ -72,8 +73,9 @@ contains
     do n = 1, nlevs
        call multifab_build(   rh(n), mla%la(n),  1, 0)
        call multifab_build(alpha(n), mla%la(n),  1, 1)
-       call multifab_build( beta(n), mla%la(n), dm, 1)
-
+       do i = 1,dm
+          call multifab_build(beta(n,i),mla%la(n),1,1,nodal=edge_nodal_flag(i,:))
+       end do
        call setval(alpha(n),ZERO,all=.true.)
     end do
 
@@ -85,7 +87,7 @@ contains
     else if (use_div_coeff_3d) then
        do n = 1,nlevs
           call mult_umac_by_3d_coeff(umac(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n), &
-                                     .true.)
+                                 .true.)
        end do
     end if
 
@@ -121,11 +123,11 @@ contains
 
     if (use_div_coeff_1d) then
        do n = 1,nlevs
-          call mult_beta_by_1d_coeff(beta(n),div_coeff_1d(n,:),div_coeff_half_1d(n,:))
+          call mult_beta_by_1d_coeff(beta(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:))
        end do
     else if (use_div_coeff_3d) then
        do n = 1,nlevs
-          call mult_beta_by_3d_coeff(beta(n),div_coeff_3d(n),ml_layout_get_pd(mla,n))
+          call mult_beta_by_3d_coeff(beta(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n))
        end do
     end if
 
@@ -190,7 +192,9 @@ contains
     do n = 1, nlevs
        call destroy(rh(n))
        call destroy(alpha(n))
-       call destroy(beta(n))
+       do i = 1,dm
+          call destroy(beta(n,i))
+       end do
     end do
 
     do n = 2,nlevs
@@ -371,27 +375,30 @@ contains
 
       use geometry, only: dm
 
-      type(multifab) , intent(inout) :: beta
+      type(multifab) , intent(inout) :: beta(:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
 
-      real(kind=dp_t), pointer :: bp(:,:,:,:) 
-      integer                  :: lo(dm)
-      integer                  :: i,ng_b
+      real(kind=dp_t), pointer :: bxp(:,:,:,:) 
+      real(kind=dp_t), pointer :: byp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bzp(:,:,:,:) 
+      integer                  :: i,lo(dm),ng_b
 
-      ng_b = beta%ng
+      ng_b = beta(1)%ng
 
       ! Multiply edge coefficients by div coeff
-      do i = 1, beta%nboxes
-         if ( multifab_remote(beta, i) ) cycle
-         bp => dataptr(beta,i)
-         lo =  lwb(get_box(beta, i))
+      do i = 1, beta(1)%nboxes
+         if ( multifab_remote(beta(1), i) ) cycle
+         bxp => dataptr(beta(1),i)
+         byp => dataptr(beta(2),i)
+         lo =  lwb(get_box(beta(1), i))
          select case (dm)
          case (2)
-            call mult_by_1d_coeff_2d(bp(:,:,1,1), bp(:,:,1,2), ng_b, &
+            call mult_by_1d_coeff_2d(bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), .true.)
          case (3)
-            call mult_by_1d_coeff_3d(bp(:,:,:,1), bp(:,:,:,2), bp(:,:,:,3), ng_b, &
+            bzp => dataptr(beta(3),i)
+            call mult_by_1d_coeff_3d(bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), .true.)
          end select
       end do
@@ -508,11 +515,13 @@ contains
 
       use geometry, only: dm
 
-      type(multifab) , intent(inout) :: beta
+      type(multifab) , intent(inout) :: beta(:)
       type(multifab) , intent(in   ) :: div_coeff
       type(box)      , intent(in   ) :: domain
 
-      real(kind=dp_t), pointer :: bp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bxp(:,:,:,:) 
+      real(kind=dp_t), pointer :: byp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bzp(:,:,:,:) 
       real(kind=dp_t), pointer :: dp(:,:,:,:) 
       integer :: i,lo(dm),hi(dm)
       integer :: domlo(dm),domhi(dm)
@@ -521,15 +530,17 @@ contains
       domhi =  upb(domain)
 
       ! Multiply edge coefficients by div coeff
-      do i = 1, beta%nboxes
-         if ( multifab_remote(beta, i) ) cycle
-         bp => dataptr(     beta,i)
+      do i = 1, beta(1)%nboxes
+         if ( multifab_remote(beta(1), i) ) cycle
+         bxp => dataptr( beta(1),i)
+         byp => dataptr( beta(2),i)
+         bzp => dataptr( beta(3),i)
          dp => dataptr(div_coeff,i)
-         lo =  lwb(get_box(beta, i))
-         hi =  upb(get_box(beta, i))
+         lo =  lwb(get_box(div_coeff, i))
+         hi =  upb(get_box(div_coeff, i))
          select case (dm)
          case (3)
-            call mult_by_3d_coeff_3d(bp(:,:,:,1), bp(:,:,:,2), bp(:,:,:,3), &
+            call mult_by_3d_coeff_3d(bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), &
                                      dp(:,:,:,1), lo, hi, domlo, domhi, .true.)
          end select
       end do
@@ -678,94 +689,104 @@ contains
     subroutine mk_mac_coeffs(mla,rho,beta,the_bc_tower)
 
       use geometry, only: dm
+      use ml_restriction_module, only: ml_edge_restriction
 
       type(ml_layout), intent(in   ) :: mla
       type(multifab ), intent(in   ) :: rho(:)
-      type(multifab ), intent(inout) :: beta(:)
+      type(multifab ), intent(inout) :: beta(:,:)
       type(bc_tower ), intent(in   ) :: the_bc_tower
 
-      real(kind=dp_t), pointer :: bp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bxp(:,:,:,:) 
+      real(kind=dp_t), pointer :: byp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bzp(:,:,:,:) 
       real(kind=dp_t), pointer :: rp(:,:,:,:) 
-      integer :: i,ng_r,ng_b
+      integer :: i,ng_r,ng_b,lo(dm),hi(dm)
 
       ng_r = rho(1)%ng
-      ng_b = beta(1)%ng
+      ng_b = beta(1,1)%ng
 
       do n = 1, nlevs
          do i = 1, rho(n)%nboxes
             if ( multifab_remote(rho(n), i) ) cycle
             rp => dataptr(rho(n) , i)
-            bp => dataptr(beta(n), i)
+            bxp => dataptr(beta(n,1), i)
+            byp => dataptr(beta(n,2), i)
+            lo = lwb(get_box(rho(n), i))
+            hi = upb(get_box(rho(n), i))
             select case (dm)
             case (2)
-               call mk_mac_coeffs_2d(bp(:,:,1,:), ng_b, rp(:,:,1,1), ng_r)
+               call mk_mac_coeffs_2d(bxp(:,:,1,1),byp(:,:,1,1),ng_b, rp(:,:,1,1), &
+                                     ng_r,lo,hi)
             case (3)
-               call mk_mac_coeffs_3d(bp(:,:,:,:), ng_b, rp(:,:,:,1), ng_r)
+               bzp => dataptr(beta(n,3), i)
+               call mk_mac_coeffs_3d(bxp(:,:,:,1),byp(:,:,:,1),bzp(:,:,:,1),&
+                                     ng_b,rp(:,:,:,1),ng_r,lo,hi)
             end select
+         end do
+      end do
+
+      ! Make sure that the fine edges average down onto the coarse edges.
+      do n = nlevs,2,-1
+         do i = 1,dm
+            call ml_edge_restriction(beta(n-1,i),beta(n,i),mla%mba%rr(n-1,:),i)
          end do
       end do
 
     end subroutine mk_mac_coeffs
 
-    subroutine mk_mac_coeffs_2d(beta,ng_b,rho,ng_r)
+    subroutine mk_mac_coeffs_2d(betax,betay,ng_b,rho,ng_r,lo,hi)
 
-      integer :: ng_b,ng_r
-      real(kind=dp_t), intent(inout) :: beta(-ng_b:,-ng_b:,:)
-      real(kind=dp_t), intent(inout) ::  rho(-ng_r:,-ng_r:)
+      integer :: ng_b,ng_r,lo(2),hi(2)
+      real(kind=dp_t), intent(inout) :: betax(lo(1)-ng_b:,lo(2)-ng_b:)
+      real(kind=dp_t), intent(inout) :: betay(lo(1)-ng_b:,lo(2)-ng_b:)
+      real(kind=dp_t), intent(inout) ::   rho(lo(1)-ng_r:,lo(2)-ng_r:)
 
       integer :: i,j
-      integer :: nx,ny
 
-      nx = size(beta,dim=1) - 2
-      ny = size(beta,dim=2) - 2
-
-      do j = 0,ny-1
-         do i = 0,nx
-            beta(i,j,1) = TWO / (rho(i,j) + rho(i-1,j))
+      do j = lo(2),hi(2)
+         do i = lo(1),hi(1)+1
+            betax(i,j) = TWO / (rho(i,j) + rho(i-1,j))
          end do
       end do
 
-      do j = 0,ny
-         do i = 0,nx-1
-            beta(i,j,2) = TWO / (rho(i,j) + rho(i,j-1))
+      do j = lo(2),hi(2)+1
+         do i = lo(1),hi(1)
+            betay(i,j) = TWO / (rho(i,j) + rho(i,j-1))
          end do
       end do
 
     end subroutine mk_mac_coeffs_2d
 
-    subroutine mk_mac_coeffs_3d(beta,ng_b,rho,ng_r)
+    subroutine mk_mac_coeffs_3d(betax,betay,betaz,ng_b,rho,ng_r,lo,hi)
 
-      integer :: ng_b,ng_r
-      real(kind=dp_t), intent(inout) :: beta(-ng_b:,-ng_b:,-ng_b:,:)
-      real(kind=dp_t), intent(inout) ::  rho(-ng_r:,-ng_r:,-ng_r:)
+      integer :: ng_b,ng_r,lo(3),hi(3)
+      real(kind=dp_t), intent(inout) :: betax(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+      real(kind=dp_t), intent(inout) :: betay(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+      real(kind=dp_t), intent(inout) :: betaz(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+      real(kind=dp_t), intent(inout) ::   rho(lo(1)-ng_r:,lo(2)-ng_r:,lo(3)-ng_r:)
 
       integer :: i,j,k
-      integer :: nx,ny,nz
 
-      nx = size(beta,dim=1) - 2
-      ny = size(beta,dim=2) - 2
-      nz = size(beta,dim=3) - 2
-
-      do k = 0,nz-1
-         do j = 0,ny-1
-            do i = 0,nx
-               beta(i,j,k,1) = TWO / (rho(i,j,k) + rho(i-1,j,k))
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)+1
+               betax(i,j,k) = TWO / (rho(i,j,k) + rho(i-1,j,k))
             end do
          end do
       end do
 
-      do k = 0,nz-1
-         do j = 0,ny
-            do i = 0,nx-1
-               beta(i,j,k,2) = TWO / (rho(i,j,k) + rho(i,j-1,k))
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)+1
+            do i = lo(1),hi(1)
+               betay(i,j,k) = TWO / (rho(i,j,k) + rho(i,j-1,k))
             end do
          end do
       end do
 
-      do k = 0,nz
-         do j = 0,ny-1
-            do i = 0,nx-1
-               beta(i,j,k,3) = TWO / (rho(i,j,k) + rho(i,j,k-1))
+      do k = lo(3),hi(3)+1
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               betaz(i,j,k) = TWO / (rho(i,j,k) + rho(i,j,k-1))
             end do
          end do
       end do
@@ -780,7 +801,7 @@ contains
       type(multifab), intent(inout) :: umac(:,:)
       type(multifab), intent(inout) ::   rh(:)
       type(multifab), intent(in   ) ::  phi(:)
-      type(multifab), intent(in   ) :: beta(:)
+      type(multifab), intent(in   ) :: beta(:,:)
       type(bndry_reg),intent(in   ) :: fine_flx(2:)
       real(dp_t)    , intent(in   ) :: dx(:,:)
       type(bc_tower), intent(in   ) :: the_bc_tower
@@ -795,7 +816,9 @@ contains
       real(kind=dp_t), pointer :: vmp(:,:,:,:) 
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
       real(kind=dp_t), pointer :: php(:,:,:,:) 
-      real(kind=dp_t), pointer ::  bp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bxp(:,:,:,:) 
+      real(kind=dp_t), pointer :: byp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bzp(:,:,:,:) 
       real(kind=dp_t), pointer :: lxp(:,:,:,:) 
       real(kind=dp_t), pointer :: hxp(:,:,:,:) 
       real(kind=dp_t), pointer :: lyp(:,:,:,:) 
@@ -805,7 +828,7 @@ contains
 
       ng_um = umac(1,1)%ng
       ng_p = phi(1)%ng
-      ng_b = beta(1)%ng
+      ng_b = beta(1,1)%ng
 
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
@@ -814,7 +837,8 @@ contains
             ump => dataptr(umac(n,1), i)
             vmp => dataptr(umac(n,2), i)
             php => dataptr( phi(n), i)
-            bp => dataptr(beta(n), i)
+            bxp => dataptr(beta(n,1), i)
+            byp => dataptr(beta(n,2), i)
             select case (dm)
             case (2)
                if (n > 1) then
@@ -822,17 +846,20 @@ contains
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
                   lyp => dataptr(fine_flx(n)%bmf(2,0), i)
                   hyp => dataptr(fine_flx(n)%bmf(2,1), i)
-                  call mkumac_2d(ump(:,:,1,1),vmp(:,:,1,1), ng_um, &
-                                 php(:,:,1,1), ng_p, bp(:,:,1,:), ng_b, &
+                  call mkumac_2d(ump(:,:,1,1),vmp(:,:,1,1),ng_um, &
+                                 php(:,:,1,1),ng_p, &
+                                 bxp(:,:,1,1),byp(:,:,1,1),ng_b, &
                                  lxp(:,:,1,1),hxp(:,:,1,1),lyp(:,:,1,1),hyp(:,:,1,1), &
                                  dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                else 
                   call mkumac_2d_base(ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
-                                      php(:,:,1,1), ng_p, bp(:,:,1,:), ng_b, &
+                                      php(:,:,1,1), ng_p, &
+                                      bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
                                       dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                end if
             case (3)
                wmp => dataptr(umac(n,3), i)
+               bzp => dataptr(beta(n,3), i)
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
@@ -841,14 +868,16 @@ contains
                   lzp => dataptr(fine_flx(n)%bmf(3,0), i)
                   hzp => dataptr(fine_flx(n)%bmf(3,1), i)
                   call mkumac_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                 php(:,:,:,1), ng_p, bp(:,:,:,:), ng_b, &
+                                 php(:,:,:,1), ng_p, &
+                                 bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
                                  lxp(:,:,:,1),hxp(:,:,:,1),lyp(:,:,:,1),hyp(:,:,:,1), &
                                  lzp(:,:,:,1),hzp(:,:,:,1),dx(n,:),&
                                  bc%ell_bc_level_array(i,:,:,press_comp))
                else
                   call mkumac_3d_base(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
-                                      php(:,:,:,1), ng_p, bp(:,:,:,:), ng_b, dx(n,:), &
-                                      bc%ell_bc_level_array(i,:,:,press_comp))
+                                      php(:,:,:,1), ng_p, &
+                                      bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
+                                      dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                end if
             end select
          end do
@@ -862,13 +891,14 @@ contains
 
     end subroutine mkumac
 
-    subroutine mkumac_2d_base(umac,vmac,ng_um,phi,ng_p,beta,ng_b,dx,press_bc)
+    subroutine mkumac_2d_base(umac,vmac,ng_um,phi,ng_p,betax,betay,ng_b,dx,press_bc)
 
       integer        , intent(in   ) :: ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,:)
+      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
@@ -918,14 +948,14 @@ contains
       do j = 0,ny-1
          do i = 0,nx
             gphix = (phi(i,j) - phi(i-1,j)) / dx(1)
-            umac(i,j) = umac(i,j) - beta(i,j,1)*gphix
+            umac(i,j) = umac(i,j) - betax(i,j)*gphix
          end do
       end do
 
       do i = 0,nx-1
          do j = 0,ny
             gphiy = (phi(i,j) - phi(i,j-1)) / dx(2)
-            vmac(i,j) = vmac(i,j) - beta(i,j,2)*gphiy
+            vmac(i,j) = vmac(i,j) - betay(i,j)*gphiy
          end do
       end do
 
@@ -945,14 +975,15 @@ contains
 
     end subroutine mkumac_2d_base
 
-    subroutine mkumac_2d(umac,vmac,ng_um,phi,ng_p,beta,ng_b, &
+    subroutine mkumac_2d(umac,vmac,ng_um,phi,ng_p,betax,betay,ng_b, &
                          lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx,dx,press_bc)
 
       integer        , intent(in   ) :: ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,:)
+      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:)
       real(kind=dp_t), intent(in   ) :: lo_x_flx(:,0:), lo_y_flx(0:,:)
       real(kind=dp_t), intent(in   ) :: hi_x_flx(:,0:), hi_y_flx(0:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
@@ -1006,7 +1037,7 @@ contains
          umac(nx,j) = umac(nx,j) + hi_x_flx(1,j) * dx(1)
          do i = 1,nx-1
             gphix = (phi(i,j) - phi(i-1,j)) / dx(1)
-            umac(i,j) = umac(i,j) - beta(i,j,1)*gphix
+            umac(i,j) = umac(i,j) - betax(i,j)*gphix
          end do
       end do
 
@@ -1016,7 +1047,7 @@ contains
          vmac(i,ny) = vmac(i,ny) + hi_y_flx(i,1) * dx(2)
          do j = 1,ny-1
             gphiy = (phi(i,j) - phi(i,j-1)) / dx(2)
-            vmac(i,j) = vmac(i,j) - beta(i,j,2)*gphiy
+            vmac(i,j) = vmac(i,j) - betay(i,j)*gphiy
          end do
       end do
 
@@ -1035,14 +1066,17 @@ contains
 
     end subroutine mkumac_2d
 
-    subroutine mkumac_3d_base(umac,vmac,wmac,ng_um,phi,ng_p,beta,ng_b,dx,press_bc)
+    subroutine mkumac_3d_base(umac,vmac,wmac,ng_um,phi,ng_p, &
+                              betax,betay,betaz,ng_b,dx,press_bc)
 
       integer        , intent(in   ) :: ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: wmac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,-ng_b:,:)
+      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betaz(-ng_b:,-ng_b:,-ng_b:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
@@ -1136,7 +1170,7 @@ contains
          do j = 0,ny-1
             do i = 0,nx
                gphix = (phi(i,j,k) - phi(i-1,j,k)) / dx(1)
-               umac(i,j,k) = umac(i,j,k) - beta(i,j,k,1)*gphix
+               umac(i,j,k) = umac(i,j,k) - betax(i,j,k)*gphix
             end do
          end do
       end do
@@ -1145,7 +1179,7 @@ contains
          do j = 0,ny
             do i = 0,nx-1
                gphiy = (phi(i,j,k) - phi(i,j-1,k)) / dx(2)
-               vmac(i,j,k) = vmac(i,j,k) - beta(i,j,k,2)*gphiy
+               vmac(i,j,k) = vmac(i,j,k) - betay(i,j,k)*gphiy
             end do
          end do
       end do
@@ -1154,7 +1188,7 @@ contains
          do j = 0,ny-1
             do i = 0,nx-1
                gphiz = (phi(i,j,k) - phi(i,j,k-1)) / dx(3)
-               wmac(i,j,k) = wmac(i,j,k) - beta(i,j,k,3)*gphiz
+               wmac(i,j,k) = wmac(i,j,k) - betaz(i,j,k)*gphiz
             end do
          end do
       end do
@@ -1169,7 +1203,8 @@ contains
 
     end subroutine mkumac_3d_base
 
-    subroutine mkumac_3d(umac,vmac,wmac,ng_um,phi,ng_p,beta,ng_b, &
+    subroutine mkumac_3d(umac,vmac,wmac,ng_um,phi,ng_p, &
+                         betax,betay,betaz,ng_b, &
                          lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx,lo_z_flx,hi_z_flx,dx,press_bc)
 
       integer        , intent(in   ) :: ng_um,ng_p,ng_b
@@ -1177,7 +1212,9 @@ contains
       real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: wmac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,-ng_b:,:)
+      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betaz(-ng_b:,-ng_b:,-ng_b:)
       real(kind=dp_t), intent(in   ) :: lo_x_flx(:,0:,0:),lo_y_flx(0:,:,0:),lo_z_flx(0:,0:,:)
       real(kind=dp_t), intent(in   ) :: hi_x_flx(:,0:,0:),hi_y_flx(0:,:,0:),hi_z_flx(0:,0:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
@@ -1275,7 +1312,7 @@ contains
             umac(nx,j,k) = umac(nx,j,k) + hi_x_flx(1,j,k) * dx(1)
             do i = 1,nx-1
                gphix = (phi(i,j,k) - phi(i-1,j,k)) / dx(1)
-               umac(i,j,k) = umac(i,j,k) - beta(i,j,k,1)*gphix
+               umac(i,j,k) = umac(i,j,k) - betax(i,j,k)*gphix
             end do
          end do
       end do
@@ -1286,7 +1323,7 @@ contains
             vmac(i,ny,k) = vmac(i,ny,k) + hi_y_flx(i,1,k) * dx(2)
             do j = 1,ny-1
                gphiy = (phi(i,j,k) - phi(i,j-1,k)) / dx(2)
-               vmac(i,j,k) = vmac(i,j,k) - beta(i,j,k,2)*gphiy
+               vmac(i,j,k) = vmac(i,j,k) - betay(i,j,k)*gphiy
             end do
          end do
       end do
@@ -1297,7 +1334,7 @@ contains
             wmac(i,j,nz) = wmac(i,j,nz) + hi_z_flx(i,j,1) * dx(3)
             do k = 1,nz-1
                gphiz = (phi(i,j,k) - phi(i,j,k-1)) / dx(3)
-               wmac(i,j,k) = wmac(i,j,k) - beta(i,j,k,3)*gphiz
+               wmac(i,j,k) = wmac(i,j,k) - betaz(i,j,k)*gphiz
             end do
          end do
       end do
@@ -1314,390 +1351,6 @@ contains
 
   end subroutine macproject
 
-  subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp, &
-                           stencil_order,ref_ratio,umac_norm)
-    use mg_module
-    use coeffs_module
-    use ml_solve_module
-    use probin_module, only : mg_bottom_solver, max_mg_bottom_nlevels, verbose, mg_verbose, cg_verbose
-    use geometry, only: dm, nlevs
-
-    type(ml_layout), intent(in   )        :: mla
-    integer        , intent(in   )        :: stencil_order
-    integer        , intent(in   )        :: ref_ratio(:,:)
-    real(dp_t)     , intent(in)           :: dx(:,:)
-    type(bc_tower) , intent(in)           :: the_bc_tower
-    integer        , intent(in   )        :: bc_comp
-    type(multifab) , intent(in   )        :: alpha(:), beta(:)
-    type(multifab) , intent(inout)        ::    rh(:),  phi(:)
-    type(bndry_reg), intent(inout)        :: fine_flx(2:)
-    real(dp_t)     , intent(in), optional :: umac_norm(:)
-
-    type(layout  ) :: la
-    type(boxarray) :: pdv
-    type(box     ) :: pd
-
-    type(multifab), allocatable :: coeffs(:)
-
-    type(sparse)    :: sparse_object
-    type(mg_tower)  :: mgt(mla%nlevel)
-    integer         :: i, ns
-
-    ! Bottom MGT stuff
-    type(mg_tower)  :: bottom_mgt
-    real(dp_t)      ::  coarse_xa(dm),  coarse_xb(dm)
-    real(dp_t)      :: coarse_pxa(dm), coarse_pxb(dm)
-    type(layout)    :: old_coarse_la,new_coarse_la
-    type(layout)    :: old_la_grown, new_la_grown
-    type(box)       :: coarse_pd,bxs
-    type(boxarray)  :: ba_cc,new_coarse_ba
-    type(multifab)  :: stored_coeffs, stored_coeffs_grown
-    type(multifab)  :: new_coeffs_grown
-    type(multifab), allocatable :: coarse_coeffs(:)
-    integer         :: j,nx,mglev,bottom_box_size
-    real(dp_t), pointer :: sc_orig(:,:,:,:), sc_grown(:,:,:,:)
-
-    ! MG solver defaults
-    integer    :: bottom_solver, bottom_max_iter
-    integer    :: max_iter, min_width, max_nlevel
-    integer    :: n, nu1, nu2, gamma, cycle, smoother
-    integer    :: max_nlevel_in,do_diagnostics
-    real(dp_t) :: eps,abs_eps,omega,bottom_solver_eps
-    real(dp_t) ::  xa(dm),  xb(dm)
-    real(dp_t) :: pxa(dm), pxb(dm)
-    real(dp_t) :: coarse_dx(dm)
-
-    type(bl_prof_timer), save :: bpt
-
-    call build(bpt, "mac_multigrid")
-
-    !! Defaults:
-
-    max_nlevel        = mgt(nlevs)%max_nlevel
-    max_iter          = mgt(nlevs)%max_iter
-    eps               = mgt(nlevs)%eps
-    abs_eps           = mgt(nlevs)%abs_eps
-    smoother          = mgt(nlevs)%smoother
-    nu1               = mgt(nlevs)%nu1
-    nu2               = mgt(nlevs)%nu2
-    gamma             = mgt(nlevs)%gamma
-    omega             = mgt(nlevs)%omega
-    cycle             = mgt(nlevs)%cycle
-    bottom_solver     = mgt(nlevs)%bottom_solver
-    bottom_solver_eps = mgt(nlevs)%bottom_solver_eps
-    bottom_max_iter   = mgt(nlevs)%bottom_max_iter
-    min_width         = mgt(nlevs)%min_width
-
-    ! Note: put this here to minimize asymmetries - ASA
-    if (nlevs .eq. 1) then
-       eps = 1.d-12
-    else if (nlevs .eq. 2) then
-       eps = 1.d-11
-    else
-       eps = 1.d-10
-    end if
-
-    abs_eps = -1.0_dp_t
-    if (present(umac_norm)) then
-       do n = 1,nlevs
-          abs_eps = max(abs_eps, umac_norm(n) / dx(n,1))
-       end do
-       abs_eps = eps * abs_eps
-    end if
-
-    if ( mg_bottom_solver >= 0 ) then
-        if (mg_bottom_solver == 4 .and. phi(1)%nboxes == 1) then
-           if (parallel_IOProcessor()) then
-              print *,'Dont use mg_bottom_solver == 4 with only one grid -- '
-              print *,'  Reverting to default bottom solver ',bottom_solver
-           end if
-        else if (mg_bottom_solver == 4 .and. max_mg_bottom_nlevels < 2) then
-           if (parallel_IOProcessor()) then
-              print *,'Dont use mg_bottom_solver == 4 with max_mg_bottom_nlevels < 2'
-              print *,'  Reverting to default bottom solver ',bottom_solver
-           end if
-        else
-           bottom_solver = mg_bottom_solver
-        end if
-    end if
-
-    bottom_solver_eps = 1.d-3
-
-    ! Note: put this here for robustness
-    max_iter = 100
-
-    if ( bottom_solver /= 0 .AND. max_iter == mgt(nlevs)%max_iter ) &
-         max_iter = 1000
-
-    ns = 1 + dm*3
-
-    do n = nlevs, 1, -1
-
-       if (n == 1) then
-          max_nlevel_in = max_nlevel
-       else
-          if ( all(ref_ratio(n-1,:) == 2) ) then
-             max_nlevel_in = 1
-          else if ( all(ref_ratio(n-1,:) == 4) ) then
-             max_nlevel_in = 2
-          else
-             call bl_error("MAC_MULTIGRID: confused about ref_ratio")
-          end if
-       end if
-
-       pd = layout_get_pd(mla%la(n))
-
-       call mg_tower_build(mgt(n), mla%la(n), pd, &
-                           the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp),&
-                           dh = dx(n,:), &
-                           ns = ns, &
-                           smoother = smoother, &
-                           nu1 = nu1, &
-                           nu2 = nu2, &
-                           gamma = gamma, &
-                           cycle = cycle, &
-                           omega = omega, &
-                           bottom_solver = bottom_solver, &
-                           bottom_max_iter = bottom_max_iter, &
-                           bottom_solver_eps = bottom_solver_eps, &
-                           max_iter = max_iter, &
-                           max_nlevel = max_nlevel_in, &
-                           min_width = min_width, &
-                           eps = eps, &
-                           abs_eps = abs_eps, &
-                           verbose = mg_verbose, &
-                           cg_verbose = cg_verbose, &
-                           nodal = rh(nlevs)%nodal)
-
-    end do
-
-    !! Fill coefficient array
-    do n = nlevs,1,-1
-
-       allocate(coeffs(mgt(n)%nlevels))
-
-       la = mla%la(n)
-       pd = layout_get_pd(la)
-
-       call multifab_build(coeffs(mgt(n)%nlevels), la, 1+dm, 1)
-       call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1, 1,ng=alpha(n)%ng)
-       call multifab_copy_c(coeffs(mgt(n)%nlevels),2, beta(n),1,dm,ng= beta(n)%ng)
-
-       do i = mgt(n)%nlevels-1, 1, -1
-          call multifab_build(coeffs(i), mgt(n)%ss(i)%la, 1+dm, 1)
-          call setval(coeffs(i), ZERO, 1, dm+1, all=.true.)
-          call coarsen_coeffs(coeffs(i+1),coeffs(i))
-       end do
-
-       if (n > 1) then
-          xa = HALF*ref_ratio(n-1,:)*mgt(n)%dh(:,mgt(n)%nlevels)
-          xb = HALF*ref_ratio(n-1,:)*mgt(n)%dh(:,mgt(n)%nlevels)
-       else
-          xa = ZERO
-          xb = ZERO
-       end if
-
-       pxa = ZERO
-       pxb = ZERO
-       do i = mgt(n)%nlevels, 1, -1
-          pdv = layout_boxarray(mgt(n)%ss(i)%la)
-          call stencil_fill_cc(mgt(n)%ss(i), coeffs(i), mgt(n)%dh(:,i), &
-                               pdv, mgt(n)%mm(i), xa, xb, pxa, pxb, pd, stencil_order, &
-                               the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp))
-       end do
-
-       if ( n == 1 .and. bottom_solver == 3 ) then
-          call sparse_build(mgt(n)%sparse_object, mgt(n)%ss(1), &
-                            mgt(n)%mm(1), mgt(n)%ss(1)%la, stencil_order, mgt(nlevs)%verbose)
-       end if
-
-       ! Need to hang on to these coeffs at the bottom level of this mg
-       if ( n == 1 .and. bottom_solver == 4 ) then
-          call multifab_build(stored_coeffs, mgt(n)%ss(1)%la, nc=1+dm, ng=1)
-          call multifab_copy_c(stored_coeffs,1,coeffs(n),1,dm+1,ng=coeffs(1)%ng)
-       end if
-
-       do i = mgt(n)%nlevels, 1, -1
-          call destroy(coeffs(i))
-       end do
-       deallocate(coeffs)
-
-    end do
-
-    ! START OF BOTTOM_SOLVER == 4
-    if (bottom_solver == 4) then
-
-       ! Get the old/new coarse problem domain
-       old_coarse_la = mgt(1)%ss(1)%la
-       coarse_pd = layout_get_pd(old_coarse_la)
-
-       ! Get the new coarse boxarray and layout
-       call box_build_2(bxs,coarse_pd%lo(1:dm),coarse_pd%hi(1:dm))
-       call boxarray_build_bx(new_coarse_ba,bxs)
-
-       ! This is how many levels could be built if we made just one grid
-       n = max_mg_levels(new_coarse_ba,min_width)
-
-       ! This is the user-imposed limit
-       n = min(n,max_mg_bottom_nlevels)
-
-       if ( n .eq. 1) then
-          call bl_error("DONT USE MG_BOTTOM_SOLVER == 4 WHEN BOTTOM GRID NOT PROPERLY DIVISIBLE : n = 1 ")
-       end if
-
-       bottom_box_size = 2**n
-
-       do j = 1,dm
-          nx = extent(bxs,j)
-          if ( (bottom_box_size * (nx/bottom_box_size)) .ne. nx ) then 
-             call bl_error("DONT USE MG_BOTTOM_SOLVER == 4 WHEN BOTTOM GRID NOT PROPERLY DIVISIBLE ")
-          end if
-       end do
-
-       call boxarray_maxsize(new_coarse_ba,bottom_box_size)
-       call layout_build_ba(new_coarse_la,new_coarse_ba,coarse_pd,old_coarse_la%lap%pmask)
-
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          call print(layout_get_pd(old_coarse_la),"COARSE PD")
-          print *,'ORIG MG NBOXES ',old_coarse_la%lap%nboxes
-          print *,'NEW  MG NBOXES ',new_coarse_la%lap%nboxes
-       end if
-
-       coarse_dx(:) = dx(1,:) * 2**(mgt(1)%nlevels-1)
-
-       call mg_tower_build(bottom_mgt, new_coarse_la, coarse_pd, &
-                           the_bc_tower%bc_tower_array(1)%ell_bc_level_array(0,:,:,bc_comp),&
-                           dh = coarse_dx, &
-                           ns = ns, &
-                           smoother = smoother, &
-                           nu1 = nu1, &
-                           nu2 = nu2, &
-                           gamma = gamma, &
-                           cycle = cycle, &
-                           omega = omega, &
-                           bottom_solver = 1, &
-                           bottom_max_iter = bottom_max_iter, &
-                           bottom_solver_eps = bottom_solver_eps, &
-                           max_iter = max_iter, &
-                           max_nlevel = max_nlevel, &
-                           min_width = min_width, &
-                           eps = eps, &
-                           abs_eps = abs_eps, &
-                           verbose = mg_verbose, &
-                           cg_verbose = cg_verbose, &
-                           nodal = rh(1)%nodal)
-
-       ! START SPECIAL COPY
-       ! Here we do special stuff to be able to copy the ghost cells of stored_coeffs into
-       !   the ghost cells of coarse_coeffs(bottom)
-
-       ! Make sure to do this before the copy so we get all the data
-       call multifab_fill_boundary(stored_coeffs)
-
-       mglev = bottom_mgt%nlevels
-
-       allocate(coarse_coeffs(mglev))
-       call multifab_build(coarse_coeffs(mglev), new_coarse_la, 1+dm, 1)
-       call setval(coarse_coeffs(mglev),ZERO,all=.true.)
-
-       do j = 1, dm
-          call boxarray_build_copy(ba_cc,get_boxarray(stored_coeffs))
-          call boxarray_grow(ba_cc,1,j, 1)
-          call layout_build_ba(old_la_grown,ba_cc,pmask=old_coarse_la%lap%pmask, &
-                               explicit_mapping=get_proc(old_coarse_la))
-          call destroy(ba_cc)
-          call multifab_build(stored_coeffs_grown,old_la_grown,1,ng=0)
-
-          ! Note that stored_coeffs_grown only has one component at a time
-          do i = 1, stored_coeffs_grown%nboxes
-             if (remote(stored_coeffs_grown,i)) cycle 
-             sc_orig  => dataptr(stored_coeffs      ,i,get_pbox(stored_coeffs_grown,i),j+1,1)
-             sc_grown => dataptr(stored_coeffs_grown,i,get_pbox(stored_coeffs_grown,i),  1,1)
-             sc_grown = sc_orig
-          end do
-
-          ! Note that new_coeffs_grown only has one component at a time
-          call boxarray_build_copy(ba_cc,new_coarse_ba)
-          call boxarray_grow(ba_cc,1,j, 1)
-          call layout_build_ba(new_la_grown,ba_cc,pmask=old_coarse_la%lap%pmask, &
-                               explicit_mapping=get_proc(new_coarse_la))
-          call destroy(ba_cc)
-          call multifab_build(new_coeffs_grown,new_la_grown,1,ng=0)
-          call multifab_copy_c(new_coeffs_grown,1,stored_coeffs_grown,1,1)
-          call destroy(stored_coeffs_grown)
-          call destroy(old_la_grown)
-
-          do i = 1, new_coeffs_grown%nboxes
-             if (remote(new_coeffs_grown,i)) cycle 
-             sc_orig  => dataptr(coarse_coeffs(mglev),i,get_pbox(new_coeffs_grown,i),j+1,1)
-             sc_grown => dataptr(new_coeffs_grown    ,i,get_pbox(new_coeffs_grown,i),1  ,1)
-             sc_orig = sc_grown
-          end do
-
-          call destroy(new_coeffs_grown)
-          call destroy(new_la_grown)
-
-       end do
-       call destroy(new_coarse_ba)
-       !   END SPECIAL COPY
-
-       do i = mglev-1, 1, -1
-          call multifab_build(coarse_coeffs(i), bottom_mgt%ss(i)%la, 1+dm, 1)
-          call setval(coarse_coeffs(i), ZERO, 1, dm+1, all=.true.)
-          call coarsen_coeffs(coarse_coeffs(i+1),coarse_coeffs(i))
-       end do
-
-       coarse_xa = ZERO
-       coarse_xb = ZERO
-       coarse_pxa = ZERO
-       coarse_pxb = ZERO
-
-       do i = mglev, 1, -1
-          pdv = layout_boxarray(bottom_mgt%ss(i)%la)
-          call stencil_fill_cc(bottom_mgt%ss(i), coarse_coeffs(i), bottom_mgt%dh(:,i), &
-                               pdv, bottom_mgt%mm(i), coarse_xa, coarse_xb, coarse_pxa, coarse_pxb, &
-                               coarse_pd, stencil_order, &
-                               the_bc_tower%bc_tower_array(1)%ell_bc_level_array(0,:,:,bc_comp))
-       end do
-
-       do i = mglev, 1, -1
-          call destroy(coarse_coeffs(i))
-       end do
-       deallocate(coarse_coeffs)
-       call destroy(stored_coeffs)
-    end if
-    ! END   OF BOTTOM_SOLVER == 4
-
-    if (mg_verbose >= 3) then
-       do_diagnostics = 1
-    else
-       do_diagnostics = 0
-    end if
-
-    if (bottom_solver == 4) then
-       call ml_cc_solve(mla, mgt, rh, phi, fine_flx, ref_ratio, do_diagnostics, bottom_mgt)
-    else
-       call ml_cc_solve(mla, mgt, rh, phi, fine_flx, ref_ratio, do_diagnostics)
-    end if
-
-    if ( bottom_solver == 3 ) then
-       call sparse_destroy(sparse_object)
-    else if (bottom_solver == 4) then
-       call destroy(new_coarse_la)
-    end if
-
-    do n = 1, nlevs
-       call mg_tower_destroy(mgt(n))
-    end do
-
-    if (bottom_solver == 4) then
-       call mg_tower_destroy(bottom_mgt)
-    end if
-
-    call destroy(bpt)
-
-  end subroutine mac_multigrid
-
   subroutine mac_applyop(mla,res,phi,alpha,beta,dx,the_bc_tower,bc_comp,stencil_order, &
                          ref_ratio,umac_norm)
     use mg_module
@@ -1712,7 +1365,7 @@ contains
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower) , intent(in)    :: the_bc_tower
     integer        , intent(in   ) :: bc_comp
-    type(multifab) , intent(in   ) :: alpha(:), beta(:)
+    type(multifab) , intent(in   ) :: alpha(:), beta(:,:)
     type(multifab) , intent(inout) :: res(:), phi(:)
     real(dp_t)     , intent(in), optional :: umac_norm(:)
 
@@ -1834,8 +1487,11 @@ contains
        pd = layout_get_pd(la)
 
        call multifab_build(coeffs(mgt(n)%nlevels), la, 1+dm, 1)
-       call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1, 1,ng=alpha(n)%ng)
-       call multifab_copy_c(coeffs(mgt(n)%nlevels),2, beta(n),1,dm,ng= beta(n)%ng)
+       call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1,1,ng=alpha(n)%ng)
+       call multifab_copy_c(coeffs(mgt(n)%nlevels),2,beta(n,1),1,1,ng=beta(n,1)%ng)
+       call multifab_copy_c(coeffs(mgt(n)%nlevels),3,beta(n,2),1,1,ng=beta(n,2)%ng)
+       if (dm > 2) &
+         call multifab_copy_c(coeffs(mgt(n)%nlevels),4,beta(n,3),1,1,ng=beta(n,3)%ng)
 
        do i = mgt(n)%nlevels-1, 1, -1
           call multifab_build(coeffs(i), mgt(n)%ss(i)%la, 1+dm, 1)

@@ -24,10 +24,11 @@ contains
                              hcoeff2,Xkcoeff2,pcoeff2,s2,p0_old,p0_new,the_bc_tower)
 
     use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
+    use mac_multigrid_module
     use macproject_module
     use network, only: nspec
     use rhoh_vs_t_module
-    use probin_module, ONLY: thermal_diffusion_type, use_tfromp
+    use probin_module, ONLY: thermal_diffusion_type, use_tfromp, edge_nodal_flag
     use bl_prof_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
@@ -50,11 +51,11 @@ contains
 
     ! Local
     type(multifab) :: rhsalpha(mla%nlevel),lhsalpha(mla%nlevel)
-    type(multifab) :: rhsbeta(mla%nlevel),lhsbeta(mla%nlevel)
+    type(multifab) :: rhsbeta(mla%nlevel,dm),lhsbeta(mla%nlevel,dm)
     type(multifab) :: phi(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
 
     integer                     :: stencil_order
-    integer                     :: n,comp
+    integer                     :: i,n,comp
     type(bndry_reg)             :: fine_flx(2:mla%nlevel)
 
     type(bl_prof_timer), save :: bpt
@@ -95,20 +96,26 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n=1,nlevs
-       call multifab_build(rhsbeta(n), mla%la(n), dm, 1)
+       do i = 1,dm
+          call multifab_build(rhsbeta(n,i), mla%la(n), 1, 1, nodal=edge_nodal_flag(i,:))
+       end do
     end do
 
     ! put beta on faces
-    call put_data_on_faces(hcoeff1,1,rhsbeta,.true.)
+    call put_data_on_faces(mla,hcoeff1,1,rhsbeta,.true.)
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
        do n=1,nlevs
-          call multifab_mult_mult_s_c(rhsbeta(n),1,dt/2.d0,dm,1)
+          do i = 1,dm 
+             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt/2.d0,1,1)
+          enddo
        enddo
     else
        do n=1,nlevs
-          call multifab_mult_mult_s_c(rhsbeta(n),1,dt,dm,1)
+          do i = 1,dm 
+             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt,1,1)
+          end do
        enddo
     end if
 
@@ -149,16 +156,20 @@ contains
 
        ! do X_k^{(1)} term first
        ! put beta on faces
-       call put_data_on_faces(Xkcoeff1,comp,rhsbeta,.true.)
+       call put_data_on_faces(mla,Xkcoeff1,comp,rhsbeta,.true.)
 
        ! scale by dt/2
        if (thermal_diffusion_type .eq. 1) then
           do n=1,nlevs
-             call multifab_mult_mult_s_c(rhsbeta(n),1,dt/2.d0,dm,1)
+             do i = 1,dm 
+                call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt/2.d0,1,1)
+             enddo
           enddo
        else
           do n=1,nlevs
-             call multifab_mult_mult_s_c(rhsbeta(n),1,dt,dm,1)
+             do i = 1,dm 
+                call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt,1,1)
+             enddo
           enddo
        end if
 
@@ -181,16 +192,20 @@ contains
 
        ! now do X_k^{(2)} term
        ! put beta on faces
-       call put_data_on_faces(Xkcoeff2,comp,rhsbeta,.true.)
+       call put_data_on_faces(mla,Xkcoeff2,comp,rhsbeta,.true.)
 
        ! scale by dt/2
        if (thermal_diffusion_type .eq. 1) then
           do n=1,nlevs
-             call multifab_mult_mult_s_c(rhsbeta(n),1,dt/2.d0,dm,1)
+             do i = 1,dm 
+                call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt/2.d0,1,1)
+             end do
           enddo
        else
           do n=1,nlevs
-             call multifab_mult_mult_s_c(rhsbeta(n),1,dt,dm,1)
+             do i = 1,dm 
+                call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt,1,1)
+             enddo
           enddo
        end if
 
@@ -216,16 +231,20 @@ contains
 
     ! do p0_old term first
     ! put beta on faces
-    call put_data_on_faces(pcoeff1,1,rhsbeta,.true.)
+    call put_data_on_faces(mla,pcoeff1,1,rhsbeta,.true.)
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
        do n=1,nlevs
-          call multifab_mult_mult_s_c(rhsbeta(n),1,dt/2.d0,dm,1)
+          do i = 1,dm 
+             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt/2.d0,1,1)
+          end do
        enddo
     else
        do n=1,nlevs
-          call multifab_mult_mult_s_c(rhsbeta(n),1,dt,dm,1)
+          do i = 1,dm 
+             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt,1,1)
+          end do
        enddo
     end if
 
@@ -244,16 +263,20 @@ contains
 
     ! now do p0_new term
     ! put beta on faces
-    call put_data_on_faces(pcoeff2,1,rhsbeta,.true.)
+    call put_data_on_faces(mla,pcoeff2,1,rhsbeta,.true.)
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
        do n=1,nlevs
-          call multifab_mult_mult_s_c(rhsbeta(n),1,dt/2.d0,dm,1)
+          do i = 1,dm 
+             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt/2.d0,1,1)
+          end do
        enddo
     else
        do n=1,nlevs
-          call multifab_mult_mult_s_c(rhsbeta(n),1,dt,dm,1)
+          do i = 1,dm 
+             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt,1,1)
+          end do
        enddo
     end if
 
@@ -266,7 +289,9 @@ contains
 
     do n=1,nlevs
        call destroy(rhsalpha(n))
-       call destroy(rhsbeta(n))
+       do i = 1,dm
+          call destroy(rhsbeta(n,i))
+       end do
     end do
 
     ! add lphi to rhs
@@ -283,21 +308,27 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n=1,nlevs
-       call multifab_build(lhsbeta(n), mla%la(n), dm, 1)
+       do i = 1,dm
+          call multifab_build(lhsbeta(n,i), mla%la(n), 1, 1, nodal=edge_nodal_flag(i,:))
+       end do
     end do
 
     ! create lhsbeta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
     ! put beta on faces (remember to scale by -dt/2 afterwards)
-    call put_data_on_faces(hcoeff2,1,lhsbeta,.true.)
+    call put_data_on_faces(mla,hcoeff2,1,lhsbeta,.true.)
 
     ! scale by -dt/2
     if (thermal_diffusion_type .eq. 1) then
        do n=1,nlevs
-          call multifab_mult_mult_s_c(lhsbeta(n),1,-dt/2.d0,dm,1)
+          do i = 1,dm
+             call multifab_mult_mult_s_c(lhsbeta(n,i),1,-dt/2.d0,1,1)
+          end do
        enddo
     else
        do n=1,nlevs
-          call multifab_mult_mult_s_c(lhsbeta(n),1,-dt,dm,1)
+          do i = 1,dm
+             call multifab_mult_mult_s_c(lhsbeta(n,i),1,-dt,1,1)
+          end do
        enddo
     end if
 
@@ -329,7 +360,9 @@ contains
 
     do n=1,nlevs
        call destroy(lhsalpha(n))
-       call destroy(lhsbeta(n))
+       do i = 1,dm
+          call destroy(lhsbeta(n,i))
+       end do
        call destroy(rhs(n))
     end do
 
@@ -339,8 +372,6 @@ contains
        call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1)
        call enforce_transverse(n,s2(n),rhoh_comp)
     enddo
-
-
 
     do n=1,nlevs
        call destroy(phi(n))
