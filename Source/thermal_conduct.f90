@@ -28,7 +28,7 @@ contains
     use macproject_module
     use network, only: nspec
     use rhoh_vs_t_module
-    use probin_module, ONLY: thermal_diffusion_type, use_tfromp
+    use probin_module, ONLY: thermal_diffusion_type, use_tfromp, edge_nodal_flag
     use bl_prof_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
@@ -97,7 +97,7 @@ contains
 
     do n=1,nlevs
        do i = 1,dm
-          call multifab_build(rhsbeta(n,i), mla%la(n), dm, 1)
+          call multifab_build(rhsbeta(n,i), mla%la(n), 1, 1, nodal=edge_nodal_flag(i,:))
        end do
     end do
 
@@ -309,7 +309,7 @@ contains
 
     do n=1,nlevs
        do i = 1,dm
-          call multifab_build(lhsbeta(n,i), mla%la(n), 1, 1)
+          call multifab_build(lhsbeta(n,i), mla%la(n), 1, 1, nodal=edge_nodal_flag(i,:))
        end do
     end do
 

@@ -37,7 +37,7 @@ contains
     use multifab_physbc_module
     use fill_3d_module
     use geometry, only: dm, nlevs
-    use probin_module, only: temp_diffusion_formulation
+    use probin_module, only: temp_diffusion_formulation, edge_nodal_flag
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:)
@@ -79,7 +79,7 @@ contains
        do n=1,nlevs
           call multifab_build(phi(n), mla%la(n), 1,  1)
           do i = 1,dm
-             call multifab_build(beta(n,i),mla%la(n),1,1)
+             call multifab_build(beta(n,i),mla%la(n),1,1,nodal=edge_nodal_flag(i,:))
           end do
        end do
 
@@ -128,7 +128,7 @@ contains
        do n=1,nlevs
           call multifab_build(phi(n),  mla%la(n), 1,  1)
           do i = 1,dm
-             call multifab_build(beta(n,i), mla%la(n), dm, 1)
+             call multifab_build(beta(n,i), mla%la(n), 1, 1, nodal=edge_nodal_flag(i,:))
           end do
        end do
 
