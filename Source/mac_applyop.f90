@@ -14,8 +14,7 @@ module mac_applyop_module
 
 contains
 
-  subroutine mac_applyop(mla,res,phi,alpha,beta,dx,the_bc_tower,bc_comp,stencil_order, &
-                         ref_ratio,umac_norm)
+  subroutine mac_applyop(mla,res,phi,alpha,beta,dx,the_bc_tower,bc_comp,stencil_order,ref_ratio)
     use mg_module
     use coeffs_module
     use ml_cc_module, only: ml_cc_applyop
@@ -30,7 +29,6 @@ contains
     integer        , intent(in   ) :: bc_comp
     type(multifab) , intent(in   ) :: alpha(:), beta(:,:)
     type(multifab) , intent(inout) :: res(:), phi(:)
-    real(dp_t)     , intent(in), optional :: umac_norm(:)
 
     type(layout  ) :: la
     type(boxarray) :: pdv
@@ -47,7 +45,6 @@ contains
     integer    :: min_width
     integer    :: max_nlevel
     integer    :: n, nu1, nu2, gamma, ncycle, smoother
-    integer    :: max_nlevel_in
     real(dp_t) :: eps,abs_eps,omega,bottom_solver_eps
     real(dp_t) ::  xa(dm),  xb(dm)
     real(dp_t) :: pxa(dm), pxb(dm)
