@@ -56,5 +56,5 @@
  
  use_eos_coulomb = F
 
- ppm_type = 2
+ ppm_type = 1
 /

@@ -15,7 +15,7 @@
 
  cflfac = 0.9
 
- ppm_type = 2
+ ppm_type = 1
 
  model_file = "model.planar.768"
 

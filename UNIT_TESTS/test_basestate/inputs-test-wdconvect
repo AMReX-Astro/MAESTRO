@@ -15,7 +15,7 @@
 
  cflfac = 0.9
 
- ppm_type = 2
+ ppm_type = 1
 
  model_file = "model_6.e8.hybrid.hse.1280"
 
