@@ -117,11 +117,19 @@ do_sponge                           logical            .false.
 # 7-point Laplacian (.false.).
 hg_dense_stencil                    logical            .true.              
 
+# The density below which we modify the constraint to look like
+# the anelastic constraint, instead of the low Mach constraint.  This
+# prevents velocities from getting out of hand at the edge of the star.
 # Refer to Section \ref{Sec:Anelastic Cutoff}.
 anelastic_cutoff                    real               3.d6                
 
+# The density below which we keep the initial model constant.
 # Refer to Section \ref{Sec:Base Cutoff Density}
 base_cutoff_density                 real               3.d6                
+
+# The multiplicative factor (over base_cutoff_density) below which we
+# do zero out the buoyancy term in the momentum equation.
+buoyancy_cutoff_factor              real               5.0
 
 # factor in front of the volume discrepancy term (0.0 = off)
 dpdt_factor                         real               0.d0               

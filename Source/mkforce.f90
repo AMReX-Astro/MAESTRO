@@ -316,7 +316,7 @@ contains
     use fill_3d_module
     use bl_constants_module
     use geometry,  only: omega, center
-    use probin_module, only: base_cutoff_density
+    use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_n,ng_uo,ng_um,ng_wc,ng_wm
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
@@ -360,7 +360,8 @@ contains
 
              rhopert = rho(i,j,k) - rho0_cart(i,j,k,1)
 
-             if (rho(i,j,k) .lt. 5.d0*base_cutoff_density) then
+             ! cutoff the buoyancy term if we are outside of the star
+             if (rho(i,j,k) .lt. buoyancy_cutoff_factor*base_cutoff_density) then
                 rhopert = 0.d0
              end if
 
