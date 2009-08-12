@@ -470,6 +470,9 @@ contains
     use restrict_base_module
     use make_new_grids_module
     use probin_module, only : drdxfac
+    use multifab_physbc_module
+    use ml_restriction_module
+    use multifab_fill_ghost_module
     use variables, only: temp_comp
 
     type(ml_layout),intent(out  ) :: mla
@@ -608,6 +611,22 @@ contains
        do while ( (nl .lt. max_levs) .and. (new_grid) )
           
           ! Do we need finer grids?
+          if (nl .eq. 1) then
+             call multifab_fill_boundary(sold(1))
+             call multifab_physbc(sold(1),rho_comp,dm+rho_comp,nscal, &
+                                  the_bc_tower%bc_tower_array(1))
+          else
+             do n=nl,2,-1
+                call ml_cc_restriction(sold(n-1),sold(n),mba%rr(n-1,:))
+                call multifab_fill_ghost_cells(sold(n),sold(n-1), &
+                                               sold(n)%ng,mba%rr(n-1,:), &
+                                               the_bc_tower%bc_tower_array(n-1), &
+                                               the_bc_tower%bc_tower_array(n), &
+                                               rho_comp,dm+rho_comp,nscal, &
+                                               fill_crse_input=.false.)
+             enddo
+          endif
+
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
                               buf_wid,ref_ratio,nl,max_grid_size,tempbar)
           
