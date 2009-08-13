@@ -273,11 +273,14 @@ contains
           ! FIX THE INNER CELLS 
           if (drdxfac .eq. 5) then
 
-             ! fill the inner 8 cells using a quadratic polynomial, 
-             ! with the first two valid data values (cells 4 and 8) and
-             ! a Neumann BC at the center.
-             Y = phisum(nlevs,4)
-             Z = phisum(nlevs,8)
+             ! fill the inner 8 cells using a quadratic polynomial.
+             ! If we know that drdxfac = 5, then we see that the first
+             ! two valid data values are radial bins 4 and 8 (using
+             ! 0-based indexing).  Together with a Neumann BC at the
+             ! center, we fit the quadratic y = a x**2 + c (the 'b x'
+             ! term of the general quadratic = 0 by Neumann BC).  
+             Y = phisum(nlevs,4)   ! at r = sqrt(3/4) dr
+             Z = phisum(nlevs,8)   ! at r = sqrt(11/4) dr
              do j = 0,7
                 coord = (dble(j)+HALF) / dble(drdxfac)
                 phibar(1,j) = (-HALF*Y+HALF*Z)*dble(coord)**2 &
