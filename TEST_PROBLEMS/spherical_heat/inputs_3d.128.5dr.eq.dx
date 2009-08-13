@@ -8,6 +8,12 @@
  n_cellz = 128
  max_grid_size = 32
 
+ anelastic_cutoff = 1.d6
+ base_cutoff_density = 1.d5
+ sponge_center_density = 3.d6
+ sponge_start_factor = 3.333d0
+ sponge_kappa = 10.0d0
+
  anelastic_cutoff = 1.e5
  base_cutoff_density = 1.e5
 
