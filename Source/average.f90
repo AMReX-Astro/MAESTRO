@@ -111,23 +111,25 @@ contains
        ! The spherical case is tricky because the base state only exists at 
        ! one level with dr(1) = dx(nlevs) / drdxfac.
 
-       ! Therefore, for each level, we compute a volume weighted contribution to each 
-       ! radial bin.  Then we sum the contributions to a coarse radial bin with 
-       ! dr_coarse = dx(nlevs), then interpolate to fill the fine radial bin.
+       ! Therefore, for each level, we compute a volume weighted
+       ! contribution to each radial bin.  Then we sum the
+       ! contributions to a coarse radial bin with dr_coarse =
+       ! dx(nlevs), then interpolate to fill the fine radial bin.
 
-       ! phisum(nlevs,:) will be the volume weighted sum over all levels.
-       ! ncell(nlevs,:) will be the volume weighted number of cells over all levels.
-       ! we use the convention that a cell volume of 1.0 corresponds to dx(n=1)**3
+       ! phisum(nlevs,:) will be the volume weighted sum over all
+       ! levels.  ncell(nlevs,:) will be the volume weighted number of
+       ! cells over all levels.  we use the convention that a cell
+       ! volume of 1.0 corresponds to dx(n=1)**3
 
        ! We make sure to use mla%mask to not double count cells, i.e.,
        ! we only sum up cells that are not covered by finer cells.
 
        do n=nlevs,1,-1
 
-          ! First we compute ncell(nlevs,:) and phisum(nlevs,:) as if the 
-          ! finest level were the only level in existence.
-          ! Then we compute ncell(n,:) and phisum(n,:) for each non-finest level
-          ! cell that is not covered by a finer cell
+          ! First we compute ncell(nlevs,:) and phisum(nlevs,:) as if
+          ! the finest level were the only level in existence.  Then
+          ! we compute ncell(n,:) and phisum(n,:) for each non-finest
+          ! level cell that is not covered by a finer cell
           do i=1,phi(n)%nboxes
              if ( multifab_remote(phi(n), i) ) cycle
              pp => dataptr(phi(n), i)
@@ -155,8 +157,8 @@ contains
 
        end do
 
-       ! now gather ncell and phisum from all the levels and store them
-       ! in ncell(nlevs,:) and phisum(nlevs,:)
+       ! now gather ncell and phisum from all the levels and store
+       ! them in ncell(nlevs,:) and phisum(nlevs,:)
        do n=nlevs-1,1,-1
           ncell(nlevs,:) = ncell(nlevs,:) + ncell(n,:)
           phisum(nlevs,:) = phisum(nlevs,:) + phisum(n,:)
@@ -204,9 +206,10 @@ contains
              if (ncell_crse(r) .gt. ZERO) then
                 phibar_crse(r) = phibar_crse(r) / ncell_crse(r)
              else
-                ! if this is ever the case, it means we are in a very coarse
-                ! region far away from the center of the star so assuming the 
-                ! average stays constant is a reasonable assumption
+                ! if this is ever the case, it means we are in a very
+                ! coarse region far away from the center of the star
+                ! so assuming the average stays constant is a
+                ! reasonable assumption
                 phibar_crse(r) = phibar_crse(r-1)
              end if
 
@@ -225,6 +228,7 @@ contains
           ! Put the average back onto the fine grid
           do r=0,nr_crse-1
    
+             ! compute the edge states using the PPM reconstruction
              w_lo = ( 7.d0 * (phibar_crse(r  ) + phibar_crse(r-1)) &
                      -1.d0 * (phibar_crse(r+1) + phibar_crse(r-2)) ) / 12.d0
              w_hi = ( 7.d0 * (phibar_crse(r  ) + phibar_crse(r+1)) &
@@ -268,6 +272,10 @@ contains
 
           ! FIX THE INNER CELLS 
           if (drdxfac .eq. 5) then
+
+             ! fill the inner 8 cells using a quadratic polynomial, 
+             ! with the first two valid data values (cells 4 and 8) and
+             ! a Neumann BC at the center.
              Y = phisum(nlevs,4)
              Z = phisum(nlevs,8)
              do j = 0,7
@@ -275,10 +283,14 @@ contains
                 phibar(1,j) = (-HALF*Y+HALF*Z)*dble(coord)**2 &
                      + (11.d0/8.d0)*Y - (3.d0/8.d0)*Z
              end do
+
+             ! for the next set of cells, any 'holes' are guaranteed to
+             ! have valid data on either side -- just average
              do j = 8,24
                 if (ncell(nlevs,j) .eq. ONE) then
                    phibar(1,j) = phisum(nlevs,j)
-                else if (ncell(nlevs,j-1) .eq. ONE .and. ncell(nlevs,j+1) .eq. ONE) then
+                else if (ncell(nlevs,j-1) .eq. ONE .and. &
+                         ncell(nlevs,j+1) .eq. ONE) then
                    phibar(1,j) = HALF * (phisum(nlevs,j-1) + phisum(nlevs,j+1))
                 else
                    call bl_error("ERROR in average: didnt catch this j")
@@ -288,7 +300,8 @@ contains
 
        else 
 
-          ! if drdxfac = 1 then divide the total phisum by the number of cells to get phibar
+          ! if drdxfac = 1 then divide the total phisum by the number
+          ! of cells to get phibar
           do r=0,nr_fine-1
              if (ncell(nlevs,r) .gt. ZERO) then
                 phibar(1,r) = phisum(nlevs,r) / ncell(nlevs,r)
