@@ -40,6 +40,12 @@ contains
        lo = lwb(get_box(s,i))
        hi = upb(get_box(s,i))
        select case (dm)
+       case (1)
+          do scomp = start_scomp,start_scomp+num_comp-1
+             bccomp = start_bccomp + scomp - start_scomp
+             call setbc_1d(sp(:,1,1,scomp), lo, hi, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+          end do
        case (2)
           do scomp = start_scomp,start_scomp+num_comp-1
              bccomp = start_bccomp + scomp - start_scomp

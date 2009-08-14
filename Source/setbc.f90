@@ -9,9 +9,82 @@ module setbc_module
 
   private
 
-  public :: setbc_2d, setbc_3d
+  public :: setbc_1d, setbc_2d, setbc_3d
 
 contains
+
+  subroutine setbc_1d(s,lo,hi,ng,bc,icomp)
+
+    use bc_module
+    use bl_constants_module
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng
+    real(kind=dp_t), intent(inout) :: s(lo(1)-ng:)
+    integer        , intent(in   ) :: bc(:,:)
+    integer        , intent(in   ) :: icomp
+
+    !     Local variables
+    integer :: i
+
+    if(ng == 0) return
+
+    !--------------------------------------------------------------------------
+    ! lower 
+    !--------------------------------------------------------------------------
+    if (bc(1,1) .eq. EXT_DIR) then
+       ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
+       s(lo(1)-ng:lo(1)-1) = 0.d0
+    else if (bc(1,1) .eq. FOEXTRAP) then
+       s(lo(1)-ng:lo(1)-1) = s(lo(1))
+    else if (bc(1,1) .eq. HOEXTRAP) then
+       s(lo(1)-ng:lo(1)-1) = &
+            ( 15.d0 * s(lo(1)  ) &
+             -10.d0 * s(lo(1)+1) &
+             + 3.d0 * s(lo(1)+2) ) * EIGHTH
+    else if (bc(1,1) .eq. REFLECT_EVEN) then
+       do i = 1,ng
+          s(lo(1)-i) = s(lo(1)+i-1)
+       end do
+    else if (bc(1,1) .eq. REFLECT_ODD) then
+       do i = 1,ng
+          s(lo(1)-i) = -s(lo(1)+i-1)
+       end do
+    else if (bc(1,1) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else 
+       call bl_error("setbc_1d: bc(1,1) not yet supported")
+    end if
+
+    !--------------------------------------------------------------------------
+    ! upper 
+    !--------------------------------------------------------------------------
+    if (bc(1,2) .eq. EXT_DIR) then
+       ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
+       s(hi(1)+1:hi(1)+ng) = 0.d0
+    else if (bc(1,2) .eq. FOEXTRAP) then
+       s(hi(1)+1:hi(1)+ng) = s(hi(1))
+    else if (bc(1,2) .eq. HOEXTRAP) then
+       s(hi(1)+1:hi(1)+ng) = &
+            ( 15.d0 * s(hi(1)  ) &
+             -10.d0 * s(hi(1)-1) &
+             + 3.d0 * s(hi(1)-2) ) * EIGHTH
+    else if (bc(1,2) .eq. REFLECT_EVEN) then
+       do i = 1,ng
+          s(hi(1)+i) = s(hi(1)-i+1)
+       end do
+    else if (bc(1,2) .eq. REFLECT_ODD) then
+       do i = 1,ng
+          s(hi(1)+i) = -s(hi(1)-i+1)
+       end do
+    else if (bc(1,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else 
+       call bl_error("setbc_1d: bc(1,2) not yet supported")
+    end if
+
+  end subroutine setbc_1d
 
   subroutine setbc_2d(s,lo,hi,ng,bc,icomp)
 
@@ -157,7 +230,6 @@ contains
     end if
 
   end subroutine setbc_2d
-
 
   subroutine setbc_3d(s,lo,hi,ng,bc,icomp)
 

@@ -930,15 +930,20 @@ contains
           if (multifab_remote(ccfab(n),i)) cycle
           ccfabp => dataptr(ccfab(n),i)
           bxp   => dataptr(beta(n,1),i)
-          byp   => dataptr(beta(n,2),i)
           lo = lwb(get_box(ccfab(n),i))
           hi = upb(get_box(ccfab(n),i))
           select case (dm)
+          case (1)
+             call put_data_on_faces_1d(lo,hi,ccfabp(:,1,1,comp),ng_c, &
+                                       bxp(:,1,1,1),ng_b, &
+                                       harmonic_avg)
           case (2)
+             byp   => dataptr(beta(n,2),i)
              call put_data_on_faces_2d(lo,hi,ccfabp(:,:,1,comp),ng_c, &
                                        bxp(:,:,1,1),byp(:,:,1,1),ng_b, &
                                        harmonic_avg)
           case (3)
+             byp   => dataptr(beta(n,2),i)
              bzp   => dataptr(beta(n,3),i)
              call put_data_on_faces_3d(lo,hi,ccfabp(:,:,:,comp),ng_c, &
                                        bxp(:,:,:,1),byp(:,:,:,1),bzp(:,:,:,1),ng_b, &
@@ -958,6 +963,34 @@ contains
 
   end subroutine put_data_on_faces
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! put beta on faces
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine put_data_on_faces_1d(lo,hi,ccbeta,ng_c,betax,ng_b,harmonic_avg)
+
+    integer        , intent(in   ) :: lo(:), hi(:), ng_c, ng_b
+    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_c:)
+    real(kind=dp_t), intent(inout) ::  betax(lo(1)-ng_b:)
+    logical        , intent(in   ) :: harmonic_avg
+
+    ! Local
+    integer :: i
+
+    if (harmonic_avg) then
+
+       do i = lo(1),hi(1)+1
+          betax(i) = TWO*(ccbeta(i)*ccbeta(i-1))/(ccbeta(i) + ccbeta(i-1))
+       end do
+
+    else
+
+       do i = lo(1),hi(1)+1
+          betax(i) = HALF*(ccbeta(i)+ccbeta(i-1))
+       end do
+
+    end if
+
+  end subroutine put_data_on_faces_1d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! put beta on faces
