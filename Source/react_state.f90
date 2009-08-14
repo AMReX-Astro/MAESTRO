@@ -148,6 +148,9 @@ contains
           lo =  lwb(get_box(sold(n), i))
           hi =  upb(get_box(sold(n), i))
           select case (dm)
+          case (1)
+             call burner_loop_1d(snp(:,1,1,:),ng_si,sop(:,1,1,:),ng_so,rp(:,1,1,:),ng_rw, &
+                                 hnp(:,1,1,1),ng_hn,hep(:,1,1,1),ng_he,dt,lo,hi)
           case (2)
              call burner_loop_2d(snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so,rp(:,:,1,:),ng_rw, &
                                  hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he,dt,lo,hi)
@@ -209,6 +212,97 @@ contains
     call destroy(bpt)
 
   end subroutine burner_loop
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine burner_loop_1d(sold,ng_si,snew,ng_so,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
+                            rho_Hext,ng_he,dt,lo,hi)
+
+    use bl_constants_module
+    use burner_module
+    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use network, only: nspec, network_species_index
+    use probin_module, ONLY: do_burning, burning_cutoff_density, burner_threshold_species, &
+         burner_threshold_cutoff
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
+    real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,:)
+    real(kind=dp_t), intent(  out) ::         snew(lo(1)-ng_so:,:)
+    real(kind=dp_t), intent(  out) :: rho_omegadot(lo(1)-ng_rw:,:)
+    real(kind=dp_t), intent(  out) ::     rho_Hnuc(lo(1)-ng_hn:)
+    real(kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:)
+    real(kind=dp_t), intent(in   ) :: dt
+
+    !     Local variables
+    integer            :: i
+    real (kind = dp_t) :: rho,T_in
+    real (kind = dp_t) :: x_in(nspec)
+    real (kind = dp_t) :: x_out(nspec)
+    real (kind = dp_t) :: rhowdot(nspec)
+    real (kind = dp_t) :: rhoH
+    real (kind = dp_t) :: x_test
+    integer, save      :: ispec_threshold
+    logical, save      :: firstCall = .true.
+
+    if (firstCall) then
+       ispec_threshold = network_species_index(burner_threshold_species)
+       firstCall = .false.
+    endif
+
+    do i = lo(1), hi(1)
+          
+          rho = sold(i,rho_comp)
+          x_in(1:nspec) = sold(i,spec_comp:spec_comp+nspec-1) / rho
+          T_in = sold(i,temp_comp)
+
+          ! Fortran doesn't guarantee short-circuit evaluation of logicals so
+          ! we need to test the value of ispec_threshold before using it 
+          ! as an index in x_in
+          if (ispec_threshold > 0) then
+             x_test = x_in(ispec_threshold)
+          else
+             x_test = ZERO
+          endif
+
+          ! if the threshold species is not in the network, then we burn
+          ! normally.  if it is in the network, make sure the mass
+          ! fraction is above the cutoff.
+          if (do_burning .and.                                        &
+              rho > burning_cutoff_density .and.                      &
+              ( ispec_threshold < 0 .or.                              &
+               (ispec_threshold > 0 .and.                             &
+                x_test > burner_threshold_cutoff                      &
+               )                                                      &
+              )                                                       &
+             ) then
+             call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
+          else
+             x_out = x_in
+             rhowdot = 0.d0
+             rhoH = 0.d0
+          endif
+
+          ! pass the density through
+          snew(i,rho_comp) = sold(i,rho_comp)
+
+          ! update the species
+          snew(i,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
+
+          ! store the energy generation and species creation quantities
+          rho_omegadot(i,1:nspec) = rhowdot(1:nspec)
+          rho_Hnuc(i) = rhoH
+
+          ! update the enthalpy -- include the change due to external heating
+          snew(i,rhoh_comp) = sold(i,rhoh_comp) + dt*rho_Hnuc(i) + dt*rho_Hext(i)
+
+          ! pass the tracers through
+          snew(i,trac_comp:trac_comp+ntrac-1) = sold(i,trac_comp:trac_comp+ntrac-1)   
+          
+    enddo
+
+  end subroutine burner_loop_1d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
