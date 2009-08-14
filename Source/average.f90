@@ -36,7 +36,7 @@ contains
 
     type(box)                    :: domain
     integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
-    integer                      :: i,j,r,r_inner,n,ng,nr_crse
+    integer                      :: i,j,r,n,ng,nr_crse
     real(kind=dp_t)              :: w_lo,w_hi,del_w,wsix,theta,w_min,w_max
     real(kind=dp_t)              :: Y,Z,coord
 
@@ -72,7 +72,9 @@ contains
           domlo  = lwb(domain)
           domhi  = upb(domain)
 
-          if (dm .eq. 2) then
+          if (dm .eq. 1) then
+             ncell(n,:) = 1
+          else if (dm .eq. 2) then
              ncell(n,:) = domhi(1)-domlo(1)+1
           else if (dm .eq. 3) then
              ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
@@ -84,6 +86,8 @@ contains
              lo =  lwb(get_box(phi(n), i))
              hi =  upb(get_box(phi(n), i))
              select case (dm)
+             case (1)
+                call sum_phi_1d(pp(:,1,1,:),phisum_proc(n,:),lo,hi,ng,incomp)
              case (2)
                 call sum_phi_2d(pp(:,:,1,:),phisum_proc(n,:),lo,hi,ng,incomp)
              case (3)
@@ -325,6 +329,22 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+  subroutine sum_phi_1d(phi,phisum,lo,hi,ng,incomp)
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp
+    real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,:)
+    real (kind=dp_t), intent(inout) :: phisum(0:)
+
+    integer :: i
+
+    do i=lo(1),hi(1)
+       phisum(i) = phi(i,incomp)
+    end do
+
+  end subroutine sum_phi_1d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   subroutine sum_phi_2d(phi,phisum,lo,hi,ng,incomp)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng, incomp
@@ -454,7 +474,9 @@ contains
        domlo  = lwb(domain)
        domhi  = upb(domain)
 
-       if (dm .eq. 2) then
+       if (dm .eq. 1) then
+          ncell = 1
+       else if (dm .eq. 2) then
           ncell = domhi(1)-domlo(1)+1
        else if (dm .eq. 3) then
           ncell = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
@@ -466,6 +488,8 @@ contains
           lo =  lwb(get_box(phi(n), i))
           hi =  upb(get_box(phi(n), i))
           select case (dm)
+          case (1)
+             call sum_phi_1d(pp(:,1,1,:),phisum_proc,lo,hi,ng,incomp)
           case (2)
              call sum_phi_2d(pp(:,:,1,:),phisum_proc,lo,hi,ng,incomp)
           case (3)
