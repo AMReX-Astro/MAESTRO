@@ -794,7 +794,8 @@ contains
 
     ! local
     integer         :: i,j,k
-    real(kind=dp_t) :: rho0_edge,h0_edge,rhoh0_edge
+    real(kind=dp_t) :: rho0_edge,h0_edge
+!   real(kind=dp_t) :: rhoh0_edge
     logical         :: test,test2
     
     test = enthalpy_pred_type.eq.predict_h .or. &
