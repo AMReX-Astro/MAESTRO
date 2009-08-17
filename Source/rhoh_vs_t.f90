@@ -215,7 +215,7 @@ contains
               
           if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
              t0_edge = HALF*(t0_edge_old(j)+t0_edge_new(j))
-             temp_eos(1) = max(sx(i,j,temp_comp)+t0_edge,small_temp)
+             temp_eos(1) = max(sy(i,j,temp_comp)+t0_edge,small_temp)
           else
              temp_eos(1) = max(sy(i,j,temp_comp),small_temp)
           end if
