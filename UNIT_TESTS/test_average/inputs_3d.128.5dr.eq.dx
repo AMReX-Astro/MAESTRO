@@ -2,7 +2,13 @@
 
  drdxfac = 5
 
- test_set = "gr0_3d.128"
+ n_cellx = 128
+
+ max_levs = 1
+ n_cellx = 128
+ n_celly = 128
+ n_cellz = 128
+ max_grid_size = 32
 
  spherical_in = 1
  dm_in = 3
@@ -25,7 +31,5 @@
     verbose = 1
  mg_verbose = 1
  cg_verbose = 0
-
- s0_interp_type = 1
 
 /
