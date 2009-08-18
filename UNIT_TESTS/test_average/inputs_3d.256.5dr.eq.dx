@@ -1,14 +1,10 @@
 &PROBIN
 
+ test_set = "gr0_3d.256"
+
  drdxfac = 5
 
  n_cellx = 256
-
- max_levs = 1
- n_cellx = 256
- n_celly = 256
- n_cellz = 256
- max_grid_size = 32
 
  spherical_in = 1
  dm_in = 3
