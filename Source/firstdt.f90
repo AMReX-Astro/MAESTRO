@@ -48,7 +48,7 @@ contains
 
     type(multifab) :: force(nlevs)
     type(multifab) :: umac_dummy(nlevs,dm)
-    real(kind=dp_t) :: w0_dummy(nlevs,nr_fine)
+    real(kind=dp_t) :: w0_dummy(nlevs,0:nr_fine)
     logical :: is_final_update
     
     real(kind=dp_t), pointer::   uop(:,:,:,:)
