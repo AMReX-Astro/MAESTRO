@@ -7,9 +7,27 @@ module setbc_module
 
   private
 
-  public :: setbc_2d, setbc_3d
+  public :: setbc_1d, setbc_2d, setbc_3d
 
 contains
+
+  subroutine setbc_1d(s,lo,hi,ng,bc,icomp)
+
+    use bc_module
+    use bl_constants_module
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng
+    real(kind=dp_t), intent(inout) :: s(lo(1)-ng:)
+    integer        , intent(in   ) :: bc(:,:)
+    integer        , intent(in   ) :: icomp
+
+    print *,''
+    print *,'*******************************************'
+    print *,'WARNING: setbc_1d not supported'
+    print *,'*******************************************'
+    print *,''
+
+  end subroutine setbc_1d
 
   subroutine setbc_2d(s,lo,hi,ng,bc,icomp)
 
