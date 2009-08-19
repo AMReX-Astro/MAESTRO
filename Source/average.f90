@@ -22,7 +22,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
-    use probin_module, only: drdxfac
+    use probin_module, only: n_cellx
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp
@@ -36,17 +36,20 @@ contains
 
     type(box)                    :: domain
     integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
-    integer                      :: i,j,r,n,ng,nr_crse
+    integer                      :: i,j,r,rcoord,n,ng,nr_crse
+    integer                      :: max_radial,r_inner
     real(kind=dp_t)              :: w_lo,w_hi,del_w,wsix,theta,w_min,w_max
-    real(kind=dp_t)              :: Y,Z,coord
+    real(kind=dp_t)              :: radius
 
-    real(kind=dp_t) ::   ncell_proc(nlevs,0:nr_fine-1)
-    real(kind=dp_t) ::        ncell(nlevs,0:nr_fine-1)
-    real(kind=dp_t) ::  phisum_proc(nlevs,0:nr_fine-1)
-    real(kind=dp_t) ::       phisum(nlevs,0:nr_fine-1)
+    real(kind=dp_t), allocatable ::   ncell_proc(:,:)
+    real(kind=dp_t), allocatable ::        ncell(:,:)
+    real(kind=dp_t), allocatable ::  phisum_proc(:,:)
+    real(kind=dp_t), allocatable ::       phisum(:,:)
 
-    real(kind=dp_t) :: source_buffer(0:nr_fine-1)
-    real(kind=dp_t) :: target_buffer(0:nr_fine-1)
+    real(kind=dp_t), allocatable :: radii(:)
+
+    real(kind=dp_t), allocatable :: source_buffer(:)
+    real(kind=dp_t), allocatable :: target_buffer(:)
 
     real(kind=dp_t), allocatable :: ncell_crse(:)
     real(kind=dp_t), allocatable :: phibar_crse(:)
@@ -55,10 +58,45 @@ contains
 
     call build(bpt, "average")
 
+
+    if (spherical .eq. 1) then
+
+       max_radial = (3*(n_cellx/2-0.5d0)**2-0.75d0)/2.d0
+
+       allocate(ncell_proc (nlevs, 0:max_radial))
+       allocate(ncell      (nlevs, 0:max_radial))
+       allocate(phisum_proc(nlevs, 0:max_radial))
+       allocate(phisum     (nlevs,-1:max_radial))
+
+       allocate(radii(-1:max_radial))
+
+       allocate(source_buffer(0:max_radial))
+       allocate(target_buffer(0:max_radial))
+
+       ! radii contains every possible distance that a cell-center at the finest
+       ! level can map into
+       do r=0,max_radial
+          radii(r) = sqrt(0.75d0+2.d0*r)*dx(nlevs,1)
+       end do
+
+       ! this refers to the center of the star
+       radii(-1) = 0.d0
+
+    else
+
+       allocate(ncell_proc (nlevs,0:nr_fine-1))
+       allocate(ncell      (nlevs,0:nr_fine-1))
+       allocate(phisum_proc(nlevs,0:nr_fine-1))
+       allocate(phisum     (nlevs,0:nr_fine-1))
+
+       allocate(source_buffer(0:nr_fine-1))
+       allocate(target_buffer(0:nr_fine-1))
+
+    end if
+
     ng = phi(1)%ng
 
-    phibar = ZERO
-
+    phibar       = ZERO
     ncell        = ZERO
     ncell_proc   = ZERO
     phisum       = ZERO       
@@ -66,6 +104,9 @@ contains
 
     if (spherical .eq. 0) then
        
+       ! The plane-parallel case is straightforward.
+       ! Simply average all the cells values at a particular height.
+
        do n=1,nlevs
 
           domain = layout_get_pd(phi(n)%la)
@@ -99,6 +140,8 @@ contains
           source_buffer = phisum_proc(n,:)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
           phisum(n,:) = target_buffer
+
+          ! compute phibar by normalizing phisum
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)
                 phibar(n,r) = phisum(n,r) / dble(ncell(n,r))
@@ -112,28 +155,16 @@ contains
 
     else if(spherical .eq. 1) then
 
-       ! The spherical case is tricky because the base state only exists at 
-       ! one level with dr(1) = dx(nlevs) / drdxfac.
+       ! For spherical, we construct a 1D array, phisum, that has space
+       ! allocated for every possible radius that a cell-center at the finest
+       ! level can map into.  The radius locations have been precomputed and stored
+       ! in radii(:).
 
-       ! Therefore, for each level, we compute a volume weighted
-       ! contribution to each radial bin.  Then we sum the
-       ! contributions to a coarse radial bin with dr_coarse =
-       ! dx(nlevs), then interpolate to fill the fine radial bin.
-
-       ! phisum(nlevs,:) will be the volume weighted sum over all
-       ! levels.  ncell(nlevs,:) will be the volume weighted number of
-       ! cells over all levels.  we use the convention that a cell
-       ! volume of 1.0 corresponds to dx(n=1)**3
-
-       ! We make sure to use mla%mask to not double count cells, i.e.,
-       ! we only sum up cells that are not covered by finer cells.
+       ! For cells at the non-finest level, map a weighted contribution into the nearest
+       ! bin in phisum.
 
        do n=nlevs,1,-1
 
-          ! First we compute ncell(nlevs,:) and phisum(nlevs,:) as if
-          ! the finest level were the only level in existence.  Then
-          ! we compute ncell(n,:) and phisum(n,:) for each non-finest
-          ! level cell that is not covered by a finer cell
           do i=1,phi(n)%nboxes
              if ( multifab_remote(phi(n), i) ) cycle
              pp => dataptr(phi(n), i)
@@ -141,11 +172,13 @@ contains
              hi =  upb(get_box(phi(n), i))
 
              if (n .eq. nlevs) then
-                call sum_phi_3d_sphr(n,pp(:,:,:,:),phisum_proc(n,:), &
+                call sum_phi_3d_sphr(n,radii(0:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
                                      lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp)
              else
+                ! we include the mask so we don't double count; i.e., we only consider
+                ! cells that we can "see" when constructing the sum
                 mp => dataptr(mla%mask(n), i)
-                call sum_phi_3d_sphr(n,pp(:,:,:,:),phisum_proc(n,:), &
+                call sum_phi_3d_sphr(n,radii(0:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
                                      lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp, &
                                      mp(:,:,:,1))
              end if
@@ -157,169 +190,90 @@ contains
 
           source_buffer = phisum_proc(n,:)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          phisum(n,:) = target_buffer
+          phisum(n,0:) = target_buffer
 
        end do
 
        ! now gather ncell and phisum from all the levels and store
-       ! them in ncell(nlevs,:) and phisum(nlevs,:)
-       do n=nlevs-1,1,-1
-          ncell(nlevs,:) = ncell(nlevs,:) + ncell(n,:)
-          phisum(nlevs,:) = phisum(nlevs,:) + phisum(n,:)
+       ! them in ncell(1,:) and phisum(1,:).  We use 0 based indexing for
+       ! phisum so we don't mess with the center point of the star.  We will
+       ! compute phisum(1,-1) later.
+       do n=2,nlevs
+          ncell (1, :) = ncell (1, :) + ncell (n, :)
+          phisum(1,0:) = phisum(1,0:) + phisum(n,0:)
        end do
 
-       ! fixes the fact that for any given fine radial bin, you get
-       ! more contributions from cells which map to the outer half of
-       ! the fine radial bin
-       do r=0,nr_fine-1
-         if (ncell(nlevs,r) .ne. 0) then
-             phisum(nlevs,r) = phisum(nlevs,r) / ncell(nlevs,r)
-             ncell(nlevs,r) = ONE
+       ! normalize the contributions
+       do r=0,max_radial
+         if (ncell(1,r) .ne. 0.d0) then
+             phisum(1,r) = phisum(1,r) / ncell(1,r)
           end if
        end do
 
-       ! now compute phibar_crse
-       if (drdxfac .ne. 1) then
+       ! fill the empty bins using piecewise linear functions
+       do r=0,max_radial
 
-          if ( mod(nr_fine,drdxfac) .eq. 0 ) then
-             nr_crse = nr_fine / drdxfac
-          else
-             nr_crse = nr_fine / drdxfac + 1
-          end if
-
-          ! phibar_crse will have 2 "ghost cells"
-          allocate( ncell_crse(0:nr_crse-1))
-          allocate(phibar_crse(-2:nr_crse+1))
-
-          ! Sum fine data onto the crse grid
-          do r=0,nr_crse-1
-
-             phibar_crse(r) = 0.d0
-              ncell_crse(r) = 0.d0
-
-             do j = drdxfac*r, min(drdxfac*r+(drdxfac-1),nr_fine-1)
-                phibar_crse(r) = phibar_crse(r) + phisum(nlevs,j)
-                 ncell_crse(r) =  ncell_crse(r) +  ncell(nlevs,j)
-             end do
-
-          end do
-
-          do r=0,nr_crse-1
-
-             ! Now compute the average
-             if (ncell_crse(r) .gt. ZERO) then
-                phibar_crse(r) = phibar_crse(r) / ncell_crse(r)
-             else
-                ! if this is ever the case, it means we are in a very
-                ! coarse region far away from the center of the star
-                ! so assuming the average stays constant is a
-                ! reasonable assumption
-                phibar_crse(r) = phibar_crse(r-1)
-             end if
-
-          end do
-
-          ! "ghost cells" needed to compute 4th order profiles
-          ! Reflect (even) across origin
-          phibar_crse(-1) = phibar_crse(0)
-          phibar_crse(-2) = phibar_crse(1)
-
-          ! "ghost cells" needed to compute 4th order profiles
-          ! Extend using 1st order extrapolation at high r
-          phibar_crse(nr_crse  ) = phibar_crse(nr_crse-1)
-          phibar_crse(nr_crse+1) = phibar_crse(nr_crse-1)
-
-          ! Put the average back onto the fine grid
-          do r=0,nr_crse-1
-   
-             ! compute the edge states using the PPM reconstruction
-             w_lo = ( 7.d0 * (phibar_crse(r  ) + phibar_crse(r-1)) &
-                     -1.d0 * (phibar_crse(r+1) + phibar_crse(r-2)) ) / 12.d0
-             w_hi = ( 7.d0 * (phibar_crse(r  ) + phibar_crse(r+1)) &
-                     -1.d0 * (phibar_crse(r-1) + phibar_crse(r+2)) ) / 12.d0
-
-             w_min = min(phibar_crse(r),phibar_crse(r-1))
-             w_max = max(phibar_crse(r),phibar_crse(r-1))
-             w_lo = max(w_lo,w_min)
-             w_lo = min(w_lo,w_max)
-
-             w_min = min(phibar_crse(r),phibar_crse(r+1))
-             w_max = max(phibar_crse(r),phibar_crse(r+1))
-             w_hi = max(w_hi,w_min)
-             w_hi = min(w_hi,w_max)
-
-             del_w = w_hi - w_lo
-
-             wsix = 6.d0 * ( phibar_crse(r) - 0.5d0 * (w_lo + w_hi) )
-
-             w_min = min(w_lo,w_hi)
-             w_max = max(w_lo,w_hi)
-
-             do j = 0, min(drdxfac-1,nr_fine-drdxfac*r-1)
-
-                ! piecewise constant
-                ! phibar(1,drdxfac*r+j) = phibar_crse(r)
-   
-                ! parabolic interpolation
-                theta = (dble(j)+0.5d0) / dble(drdxfac)
-                phibar(1,drdxfac*r+j) = &
-                       w_lo + &
-                       theta * del_w + &
-                       theta * (1.d0 - theta) * wsix
-
-                phibar(1,drdxfac*r+j) = max(phibar(1,drdxfac*r+j),w_min)
-                phibar(1,drdxfac*r+j) = min(phibar(1,drdxfac*r+j),w_max)
-
-             end do
-
-          end do
-
-          ! FIX THE INNER CELLS 
-          if (drdxfac .eq. 5) then
-
-             ! fill the inner 8 cells using a quadratic polynomial.
-             ! If we know that drdxfac = 5, then we see that the first
-             ! two valid data values are radial bins 4 and 8 (using
-             ! 0-based indexing).  Together with a Neumann BC at the
-             ! center, we fit the quadratic y = a x**2 + c (the 'b x'
-             ! term of the general quadratic = 0 by Neumann BC).  
-             Y = phisum(nlevs,4)   ! at r = sqrt(3/4) dr
-             Z = phisum(nlevs,8)   ! at r = sqrt(11/4) dr
-             do j = 0,7
-                coord = (dble(j)+HALF) / dble(drdxfac)
-                phibar(1,j) = (-HALF*Y+HALF*Z)*dble(coord)**2 &
-                     + (11.d0/8.d0)*Y - (3.d0/8.d0)*Z
-             end do
-
-             ! for the next set of cells, any 'holes' are guaranteed to
-             ! have valid data on either side -- just average
-             do j = 8,24
-                if (ncell(nlevs,j) .eq. ONE) then
-                   phibar(1,j) = phisum(nlevs,j)
-                else if (ncell(nlevs,j-1) .eq. ONE .and. &
-                         ncell(nlevs,j+1) .eq. ONE) then
-                   phibar(1,j) = HALF * (phisum(nlevs,j-1) + phisum(nlevs,j+1))
-                else
-                   call bl_error("ERROR in average: didnt catch this j")
+          if (ncell(1,r) .eq. 0.d0) then
+             ! compute the upper bounding point, rcoord.
+             ! note that ncell(1,max_radial) is guaranteed to be non-zero.
+             do j=r+1,max_radial
+                if (ncell(1,j) .ne. 0) then
+                   rcoord = j
+                   exit
                 end if
              end do
+
+             call lin_interp(radii(r), &
+                             radii(r-1),radii(rcoord), &
+                             phisum(1,r), &
+                             phisum(1,r-1),phisum(1,rcoord))
           end if
 
-       else 
+       end do
 
-          ! if drdxfac = 1 then divide the total phisum by the number
-          ! of cells to get phibar
-          do r=0,nr_fine-1
-             if (ncell(nlevs,r) .gt. ZERO) then
-                phibar(1,r) = phisum(nlevs,r) / ncell(nlevs,r)
-             else if (r .eq. nr_fine-1) then
-                phibar(1,r) = phibar(nlevs,r-1)
-             else
-                call bl_error("ERROR: ncell_crse=0 in average for drdxfac=1 case")
+       ! use quadratic interpolation with homogeneous neumann bc at center of star
+       ! to compute value at center of star, indicated with coordinate r=-1
+       phisum(1,-1) = (11.d0/8.d0)*phisum(1,0) - (3.d0/8.d0)*phisum(1,1)
+
+       ! compute phibar
+       do r=0,nr_fine-1
+
+          ! compute the radius in physical coordinates
+          radius = (dble(r)+HALF)*dr(1)
+
+          ! compute the coordinate, rcoord, such that
+          ! radius lies in between the radii(r) and radii(r+1)
+          rcoord = ((radius/dx(nlevs,1))**2 - 0.75d0)/2.0d0
+
+          ! now overwrite rcoord to correspond to the lo stencil point
+          ! for the quadratic interpolation.
+          ! compare rcoord-1 and rcoord+2 and see which is closer.
+          ! if rcoord-1 is closer, set rcoord=roord-1
+          if (rcoord+2 .le. max_radial) then
+             if (abs(radii(rcoord-1)-radius) .lt. abs(radii(rcoord+2)-radius)) then
+                rcoord = rcoord-1
              end if
-          end do
+          end if
 
-       end if
+          ! use first order extrapolation if the stencil would have used a point
+          ! outside of max_radial
+          if (rcoord+2 .gt. max_radial) then
+             ! extrapolate the quadratic from the 3 outermost points
+             call quad_interp(radius, &
+                              radii(max_radial-2),radii(max_radial-1), &
+                              radii(max_radial), &
+                              phibar(1,r), &
+                              phisum(1,max_radial-2),phisum(1,max_radial-1), &
+                              phisum(1,max_radial))
+          else
+             ! interpolate from the three nearest points
+             call quad_interp(radius, &
+                              radii(rcoord),radii(rcoord+1),radii(rcoord+2), &
+                              phibar(1,r), &
+                              phisum(1,rcoord),phisum(1,rcoord+1),phisum(1,rcoord+2))
+          end if
+
+       end do
 
     endif
 
@@ -383,13 +337,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine sum_phi_3d_sphr(n,phi,phisum,lo,hi,ng,dx,ncell,incomp,mask)
+  subroutine sum_phi_3d_sphr(n,radii,max_radial,phi,phisum,lo,hi,ng,dx,ncell,incomp,mask)
 
-    use geometry, only: dr, center
+    use geometry, only: dr, center, nlevs, dm
     use ml_layout_module
     use bl_constants_module
 
-    integer         , intent(in   )           :: n, lo(:), hi(:), ng, incomp
+    integer         , intent(in   )           :: n, lo(:), hi(:), ng, incomp, max_radial
+    real (kind=dp_t), intent(in   )           :: radii(0:)
     real (kind=dp_t), intent(in   )           :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout)           :: phisum(0:)
     real (kind=dp_t), intent(in   )           :: dx(:)
@@ -397,38 +352,93 @@ contains
     logical         , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     ! local
-    real (kind=dp_t) :: x, y, z, radius
-    integer          :: i, j, k, idx
-    real (kind=dp_t) :: cell_weight
+    real (kind=dp_t) :: x, y, z, radius, dx_fine(dm), weight, diff
+    integer          :: i, j, k, ii, jj, kk, index, factor
     logical          :: cell_valid
 
-    cell_weight = ONE / EIGHT**(n-1)
+    if (n .eq. nlevs) then
+       
+       do k=lo(3),hi(3)
+          z = (dble(k) + HALF)*dx(3) - center(3)
 
-    do k=lo(3),hi(3)
-       z = (dble(k) + HALF)*dx(3) - center(3)
+          do j=lo(2),hi(2)
+             y = (dble(j) + HALF)*dx(2) - center(2)
 
-       do j=lo(2),hi(2)
-          y = (dble(j) + HALF)*dx(2) - center(2)
+             do i=lo(1),hi(1)
+                x = (dble(i) + HALF)*dx(1) - center(1)
 
-          do i=lo(1),hi(1)
-             x = (dble(i) + HALF)*dx(1) - center(1)
-
-             cell_valid = .true.
-             if ( present(mask) ) then
-                if ( (.not. mask(i,j,k)) ) cell_valid = .false.
-             end if
-
-             if (cell_valid) then
+                ! compute distance to center
                 radius = sqrt(x**2 + y**2 + z**2)
-                idx  = int(radius / dr(1))
-                
-                phisum(idx) = phisum(idx) + cell_weight*phi(i,j,k,incomp)
-                ncell(idx) = ncell(idx) + cell_weight
-             end if
 
+                ! figure out which radii index this point maps into
+                index = ((radius / dx(1))**2 - 0.75d0) / 2.d0
+
+                ! due to roundoff error, need to ensure that we are in the proper radial bin
+                if (index .lt. max_radial) then
+                   if (abs(radius-radii(index)) .gt. abs(radius-radii(index+1))) then
+                      index = index+1
+                   end if
+                end if
+
+                ! update phisum and ncell
+                phisum(index) = phisum(index) + phi(i,j,k,incomp)
+                ncell(index)  = ncell(index) + 1.d0
+
+             end do
           end do
        end do
-    end do
+
+    else
+
+       factor = 2**(nlevs-n)
+       weight = 8.d0**(nlevs-n)
+
+       do i=1,dm
+          dx_fine(i) = dx(i)/dble(factor)
+       end do
+
+       do k=lo(3),hi(3)
+          z = (dble(k) + HALF)*dx(3) - center(3)
+
+          do j=lo(2),hi(2)
+             y = (dble(j) + HALF)*dx(2) - center(2)
+
+             do i=lo(1),hi(1)
+                x = (dble(i) + HALF)*dx(1) - center(1)
+
+                ! make sure the cell isn't covered by finer cells
+                cell_valid = .true.
+                if ( present(mask) ) then
+                   if ( (.not. mask(i,j,k)) ) cell_valid = .false.
+                end if
+
+                if (cell_valid) then
+
+                   ! compute distance to center
+                   radius = sqrt(x**2 + y**2 + z**2)
+
+                   ! figure out which radii index this point maps into
+                   index = ((radius / dx_fine(1))**2 - 0.75d0) / 2.d0
+
+                   ! we won't map exactly onto a location in radii, 
+                   ! so we use the index of the closest point
+                   if (index .lt. max_radial) then
+                      if (abs(radius-radii(index)) .gt. abs(radius-radii(index+1))) then
+                         index = index+1
+                      end if
+                   end if
+
+                   ! update phisum and ncell
+                   phisum(index) = phisum(index) + weight*phi(i,j,k,incomp)
+                   ncell(index)  = ncell(index) + weight
+
+                end if
+
+             end do
+          end do
+       end do
+
+    end if
 
   end subroutine sum_phi_3d_sphr
 
@@ -514,5 +524,27 @@ contains
     call destroy(bpt)
 
   end subroutine average_one_level
+
+  subroutine quad_interp(x,x0,x1,x2,y,y0,y1,y2)
+
+    real(kind=dp_t), intent(in   ) :: x,x0,x1,x2,y0,y1,y2
+    real(kind=dp_t), intent(  out) :: y
+    
+    y = y0 + (y1-y0)/(x1-x0)*(x-x0) &
+           + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(x-x0)*(x-x1)
+
+    if (y .gt. max(y0,y1,y2)) y = max(y0,y1,y2)
+    if (y .lt. min(y0,y1,y2)) y = min(y0,y1,y2)
+
+  end subroutine quad_interp
+
+  subroutine lin_interp(x,x0,x1,y,y0,y1)
+
+    real(kind=dp_t), intent(in   ) :: x,x0,x1,y0,y1
+    real(kind=dp_t), intent(  out) :: y
+    
+    y = y0 + (y1-y0)/(x1-x0)*(x-x0)
+
+  end subroutine lin_interp
 
 end module average_module
