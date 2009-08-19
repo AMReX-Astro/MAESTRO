@@ -215,7 +215,7 @@ contains
 
           if (ncell(1,r) .eq. 0.d0) then
              ! compute the upper bounding point, rcoord.
-             ! note that ncell(1,max_radial) is guaranteed to be non-zero.
+             rcoord = max_radial+1
              do j=r+1,max_radial
                 if (ncell(1,j) .ne. 0) then
                    rcoord = j
@@ -223,10 +223,18 @@ contains
                 end if
              end do
 
-             call lin_interp(radii(r), &
-                             radii(r-1),radii(rcoord), &
-                             phisum(1,r), &
-                             phisum(1,r-1),phisum(1,rcoord))
+             if (rcoord .ne. max_radial+1) then
+                call lin_interp(radii(r), &
+                                radii(r-1),radii(rcoord), &
+                                phisum(1,r), &
+                                phisum(1,r-1),phisum(1,rcoord))
+             else
+                ! if there is no upper bounding point, linearly extrapolate
+                call lin_interp(radii(r), &
+                                radii(r-2),radii(r-1), &
+                                phisum(1,r), &
+                                phisum(1,r-2),phisum(1,r-1))
+             end if
           end if
 
        end do
