@@ -354,6 +354,26 @@ contains
                       end if
                    end if
 
+                else if (s0_interp_type .eq. 3) then
+
+                   ! compare distance to index-1 and index+2 to determine
+                   ! the low point in the quadratic stencil
+                   if (index .ge. 1 .and. index .le. nr_fine-3) then
+                      if (radius-r_cc_loc(1,index-1) .gt. r_cc_loc(1,index+2)-radius) then
+                         index = index-1
+                      end if
+                   else if (index .lt. 1) then
+                      index = 0
+                   else if (index .gt. nr_fine-3) then
+                      index = nr_fine-3
+                   end if
+
+                   call quad_interp(radius, &
+                                    r_cc_loc(1,index),r_cc_loc(1,index+1), &
+                                    r_cc_loc(1,index+2), &
+                                    s0_cart_val, &
+                                    s0(index),s0(index+1),s0(index+2))
+
                 else
                    call bl_error('Error: s0_interp_type not defined')
                 end if
@@ -374,6 +394,19 @@ contains
     call destroy(bpt)
 
   end subroutine put_1d_array_on_cart_3d_sphr
+
+  subroutine quad_interp(x,x0,x1,x2,y,y0,y1,y2)
+
+    real(kind=dp_t), intent(in   ) :: x,x0,x1,x2,y0,y1,y2
+    real(kind=dp_t), intent(  out) :: y
+    
+    y = y0 + (y1-y0)/(x1-x0)*(x-x0) &
+           + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(x-x0)*(x-x1)
+
+    if (y .gt. max(y0,y1,y2)) y = max(y0,y1,y2)
+    if (y .lt. min(y0,y1,y2)) y = min(y0,y1,y2)
+
+  end subroutine quad_interp
 
   subroutine make_w0mac(mla,w0,w0mac,dx,the_bc_level)
 
