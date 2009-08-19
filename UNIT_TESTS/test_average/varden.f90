@@ -97,7 +97,7 @@ subroutine varden()
   if (spherical .eq. 1) then
      
      ! for spherical, we will now require that dr_fine = dx
-     dr_fine = dx(1,nlevs) / dble(drdxfac)
+     dr_fine = dx(nlevs,1) / dble(drdxfac)
      
      lenx = HALF * (prob_hi(1) - prob_lo(1))
      leny = HALF * (prob_hi(2) - prob_lo(2))
