@@ -356,23 +356,19 @@ contains
 
                 else if (s0_interp_type .eq. 3) then
 
-                   ! compare distance to index-1 and index+2 to determine
-                   ! the low point in the quadratic stencil
-                   if (index .ge. 1 .and. index .le. nr_fine-3) then
-                      if (radius-r_cc_loc(1,index-1) .gt. r_cc_loc(1,index+2)-radius) then
-                         index = index-1
-                      end if
-                   else if (index .lt. 1) then
-                      index = 0
-                   else if (index .gt. nr_fine-3) then
-                      index = nr_fine-3
+                   ! index refers to the center point in the quadratic stencil.
+                   ! we need to modify this if we're too close to the edge
+                   if (index .eq. 0) then
+                      index = 1
+                   else if (index .eq. nr_fine-1) then
+                      index = nr_fine-2
                    end if
 
                    call quad_interp(radius, &
-                                    r_cc_loc(1,index),r_cc_loc(1,index+1), &
-                                    r_cc_loc(1,index+2), &
+                                    r_cc_loc(1,index-1),r_cc_loc(1,index), &
+                                    r_cc_loc(1,index+1), &
                                     s0_cart_val, &
-                                    s0(index),s0(index+1),s0(index+2))
+                                    s0(index-1),s0(index),s0(index+1))
 
                 else
                    call bl_error('Error: s0_interp_type not defined')
