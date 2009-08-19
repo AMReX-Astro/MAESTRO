@@ -74,6 +74,7 @@ subroutine varden()
 
   ! initialize nlevs
   nlevs = mla%nlevel
+  nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
   ! initialize boundary conditions
   call initialize_bc(the_bc_tower,nlevs,pmask)
@@ -195,7 +196,7 @@ subroutine varden()
   if ( parallel_IOProcessor() ) then
      open (unit=10, file="phi.error")
      write (10,*) "r_cc_loc, phi_exact, phi_avg, phi_exact-phi_avg, (phi_exact-phi_avg)/phi_exact"
-     do n=1,nlevs
+     do n=1,nlevs_radial
         do r=0,nr(n)-1
            write (10,1000) r_cc_loc(n,r), phi_exact(n,r), phi_avg(n,r), &
                 phi_exact(n,r)-phi_avg(n,r), &
