@@ -294,7 +294,8 @@ contains
 
     if (is_input_edge_centered) then
 
-       ! interpolate from radial bin edge values
+       ! we currently use linear interpolation to compute s0_cart, 
+       ! where s0 is edge-centered.
 
        do k = lo(3),hi(3)
           z = (dble(k)+HALF)*dx(3) - center(3)
@@ -321,7 +322,11 @@ contains
 
     else
 
-       ! interpolate from radial bin centered values
+       ! we currently have three different ideas for computing s0_cart, 
+       ! where s0 is bin-centered.
+       ! 1.  Piecewise constant
+       ! 2.  Piecewise linear
+       ! 3.  Quadratic
 
        do k = lo(3),hi(3)
           z = (dble(k)+HALF)*dx(3) - center(3)
@@ -751,7 +756,7 @@ contains
        deallocate(w0_nodal)
 
     else
-       call bl_error('Error: fill_3d_data:w0mac_interp_type can only be 1,2 or 3')
+       call bl_error('Error: w0mac_interp_type not defined')
     end if
 
   end subroutine make_w0mac_3d_sphr
@@ -834,7 +839,7 @@ contains
   subroutine make_s0mac_3d_sphr(s0,s0macx,s0macy,s0macz,ng_sm,s0_cart,ng_s0,lo,hi,dx)
 
     use bl_constants_module
-    use geometry, only: dr, center, nr_fine
+    use geometry, only: dr, center, nr_fine, r_cc_loc
     use probin_module, only: s0mac_interp_type
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sm,ng_s0
@@ -852,7 +857,8 @@ contains
     ! we currently have three different ideas for computing s0mac
     ! 1.  Interpolate s0 to cell centers, then average to edges
     ! 2.  Interpolate s0 to edges directly using linear interpolation
-    ! 3.  Interpolate s0 to nodes, then average to edges
+    ! 3.  Interpolate s0 to edges directly using quadratic interpolation
+    ! 4.  Interpolate s0 to nodes, then average to edges
 
     if (s0mac_interp_type .eq. 1) then
 
@@ -947,11 +953,87 @@ contains
 
     else if (s0mac_interp_type .eq. 3) then
 
-       call bl_error('Error: make_s0mac_3d_sphr with s0mac_interp_type=3 not written yet')
+       do k = lo(3)-1,hi(3)+1
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2)-1,hi(2)+1
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1)-1,hi(1)+2
+                x = (dble(i)     )*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int((radius-HALF*dr(1)) / dr(1))
+
+                ! index refers to the center point in the quadratic stencil.
+                ! we need to modify this if we're too close to the edge
+                if (index .eq. 0) then
+                   index = 1
+                else if (index .eq. nr_fine-1) then
+                   index = nr_fine-2
+                end if
+
+                call quad_interp(radius, &
+                                 r_cc_loc(1,index-1),r_cc_loc(1,index), &
+                                 r_cc_loc(1,index+1), &
+                                 s0macx(i,j,k), &
+                                 s0(index-1),s0(index),s0(index+1))
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+1
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2)-1,hi(2)+2
+             y = (dble(j)     )*dx(2) - center(2)
+             do i = lo(1)-1,hi(1)+1
+                x = (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int((radius-HALF*dr(1)) / dr(1))
+
+                ! index refers to the center point in the quadratic stencil.
+                ! we need to modify this if we're too close to the edge
+                if (index .eq. 0) then
+                   index = 1
+                else if (index .eq. nr_fine-1) then
+                   index = nr_fine-2
+                end if
+
+                call quad_interp(radius, &
+                                 r_cc_loc(1,index-1),r_cc_loc(1,index), &
+                                 r_cc_loc(1,index+1), &
+                                 s0macy(i,j,k), &
+                                 s0(index-1),s0(index),s0(index+1))
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+2
+          z = (dble(k)     )*dx(3) - center(3)
+          do j = lo(2)-1,hi(2)+1
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1)-1,hi(1)+1
+                x = (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int((radius-HALF*dr(1)) / dr(1))
+
+                ! index refers to the center point in the quadratic stencil.
+                ! we need to modify this if we're too close to the edge
+                if (index .eq. 0) then
+                   index = 1
+                else if (index .eq. nr_fine-1) then
+                   index = nr_fine-2
+                end if
+
+                call quad_interp(radius, &
+                                 r_cc_loc(1,index-1),r_cc_loc(1,index), &
+                                 r_cc_loc(1,index+1), &
+                                 s0macz(i,j,k), &
+                                 s0(index-1),s0(index),s0(index+1))
+             end do
+          end do
+       end do
 
     else
 
-       call bl_error('Error: make_s0mac_3d_sphr: s0mac_interp_type can only be 1,2 or 3')
+       call bl_error('Error: s0mac_interp_type not defined')
 
     end if
 
