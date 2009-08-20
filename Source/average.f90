@@ -22,7 +22,6 @@ contains
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
-    use probin_module, only: n_cellx
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp
@@ -58,10 +57,11 @@ contains
 
     call build(bpt, "average")
 
-
     if (spherical .eq. 1) then
 
-       max_radial = (3*(n_cellx/2-0.5d0)**2-0.75d0)/2.d0
+       domain = layout_get_pd(phi(nlevs)%la)
+       domhi  = upb(domain)+1
+       max_radial = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
 
        allocate(ncell_proc (nlevs, 0:max_radial))
        allocate(ncell      (nlevs, 0:max_radial))
