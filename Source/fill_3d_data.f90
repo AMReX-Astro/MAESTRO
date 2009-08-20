@@ -851,7 +851,7 @@ contains
 
     ! we currently have three different ideas for computing s0mac
     ! 1.  Interpolate s0 to cell centers, then average to edges
-    ! 2.  Interpolate s0 to edges directly
+    ! 2.  Interpolate s0 to edges directly using linear interpolation
     ! 3.  Interpolate s0 to nodes, then average to edges
 
     if (s0mac_interp_type .eq. 1) then
