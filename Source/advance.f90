@@ -459,16 +459,8 @@ contains
 
     ! Correct the base state by "averaging"
     if (use_etarho .and. evolve_base_state) then
-       if (spherical .eq. 0) then
-          call average(mla,s2,rho0_new,dx,rho_comp)
-          call compute_cutoff_coords(rho0_new)
-       else
-          ! set rho0_new = rho0_new - Avg(rho0_new - rho^{(2)})
-          call make_sprimebar_spherical(s2,rho_comp,rho0_new,dx,rhoprimebar,mla, &
-                                        the_bc_tower%bc_tower_array)
-          call correct_base(rho0_new,rhoprimebar)
-          call compute_cutoff_coords(rho0_new)
-       end if
+       call average(mla,s2,rho0_new,dx,rho_comp)
+       call compute_cutoff_coords(rho0_new)
     end if
 
     call make_grav_cell(grav_cell_new,rho0_new)
@@ -519,14 +511,7 @@ contains
     if (evolve_base_state) then
 
        ! compute rhoh0_old by "averaging"
-       if (spherical .eq. 0) then
-          call average(mla,s1,rhoh0_old,dx,rhoh_comp)
-       else
-          ! set rhoh0_old = rhoh0_old - Avg(rhoh0_old - rhoh^{(1)})
-          call make_sprimebar_spherical(s1,rhoh_comp,rhoh0_old,dx,rhohprimebar,mla, &
-                                        the_bc_tower%bc_tower_array)
-          call correct_base(rhoh0_old,rhohprimebar)
-       end if
+       call average(mla,s1,rhoh0_old,dx,rhoh_comp)
 
        call advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new, &
                                  rho0_predicted_edge,psi,psi_old,dt)
@@ -897,15 +882,8 @@ contains
 
     ! Correct the base state using "averaging"
     if (use_etarho .and. evolve_base_state) then
-       if (spherical .eq. 0) then
-          call average(mla,s2,rho0_new,dx,rho_comp)
-          call compute_cutoff_coords(rho0_new)
-       else
-          call make_sprimebar_spherical(s2,rho_comp,rho0_new,dx,rhoprimebar,mla, &
-                                        the_bc_tower%bc_tower_array)
-          call correct_base(rho0_new,rhoprimebar)
-          call compute_cutoff_coords(rho0_new)
-       end if
+       call average(mla,s2,rho0_new,dx,rho_comp)
+       call compute_cutoff_coords(rho0_new)
     end if
 
     call make_grav_cell(grav_cell_new,rho0_new)
@@ -1281,14 +1259,7 @@ contains
        grav_cell_old = grav_cell_new
 
        ! compute tempbar by "averaging"
-       if (spherical .eq. 0) then
-          call average(mla,snew,tempbar,dx,temp_comp)
-       else
-          ! set tempbar = tempbar - Avg(tempbar - temp^{n+1})
-          call make_sprimebar_spherical(snew,temp_comp,tempbar,dx,tempprimebar,mla, &
-                                        the_bc_tower%bc_tower_array)
-          call correct_base(tempbar,tempprimebar)
-       end if
+       call average(mla,snew,tempbar,dx,temp_comp)
 
        ! output any runtime diagnostics
        call diag(time,dt,dx,snew,rho_Hnuc2,rho_Hext,rho_omegadot2, &
