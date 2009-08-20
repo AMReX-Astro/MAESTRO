@@ -4,8 +4,6 @@
 
  drdxfac = 5
 
- n_cellx = 128
-
  spherical_in = 1
  dm_in = 3
 
