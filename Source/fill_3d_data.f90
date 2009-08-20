@@ -480,7 +480,7 @@ contains
   subroutine make_w0mac_3d_sphr(w0,w0macx,w0macy,w0macz,ng_w0,w0_cart,ng_wc,lo,hi,dx)
 
     use bl_constants_module
-    use geometry, only: dr, center, nr_fine
+    use geometry, only: dr, center, nr_fine, r_edge_loc
     use probin_module, only: w0mac_interp_type
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_w0,ng_wc
@@ -498,8 +498,9 @@ contains
 
     ! we currently have three different ideas for computing w0mac
     ! 1.  Interpolate w0 to cell centers, then average to edges
-    ! 2.  Interpolate w0 to edges directly
-    ! 3.  Interpolate w0 to nodes, then average to edges
+    ! 2.  Interpolate w0 to edges directly using linear interpolation
+    ! 3.  Interpolate w0 to edges directly using quadratic interpolation
+    ! 4.  Interpolate w0 to nodes, then average to edges
 
     if (w0mac_interp_type .eq. 1) then
 
@@ -599,6 +600,98 @@ contains
        end do
 
     else if (w0mac_interp_type .eq. 3) then
+
+       do k = lo(3)-1,hi(3)+1
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2)-1,hi(2)+1
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1)-1,hi(1)+2
+                x = (dble(i)     )*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(1))
+
+                ! index refers to the lo point in the quadratic stencil
+                if (index .le. 0) then
+                   index = 0
+                else if (index .ge. nr_fine-1) then
+                   index = nr_fine-2
+                else if (radius-r_edge_loc(1,index) .lt. r_edge_loc(1,index+1)) then
+                   index = index-1
+                end if
+
+                call quad_interp(radius, &
+                                 r_edge_loc(1,index),r_edge_loc(1,index+1), &
+                                 r_edge_loc(1,index+2), &
+                                 w0_cart_val, &
+                                 w0(index),w0(index+1),w0(index+2))
+
+                w0macx(i,j,k) = w0_cart_val * x / radius
+
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+1
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2)-1,hi(2)+2
+             y = (dble(j)     )*dx(2) - center(2)
+             do i = lo(1)-1,hi(1)+1
+                x = (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(1))
+
+                ! index refers to the lo point in the quadratic stencil
+                if (index .le. 0) then
+                   index = 0
+                else if (index .ge. nr_fine-1) then
+                   index = nr_fine-2
+                else if (radius-r_edge_loc(1,index) .lt. r_edge_loc(1,index+1)) then
+                   index = index-1
+                end if
+
+                call quad_interp(radius, &
+                                 r_edge_loc(1,index),r_edge_loc(1,index+1), &
+                                 r_edge_loc(1,index+2), &
+                                 w0_cart_val, &
+                                 w0(index),w0(index+1),w0(index+2))
+
+                w0macy(i,j,k) = w0_cart_val * y / radius
+
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+2
+          z = (dble(k)     )*dx(3) - center(3)
+          do j = lo(2)-1,hi(2)+1
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1)-1,hi(1)+1
+                x = (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(1))
+
+                ! index refers to the lo point in the quadratic stencil
+                if (index .le. 0) then
+                   index = 0
+                else if (index .ge. nr_fine-1) then
+                   index = nr_fine-2
+                else if (radius-r_edge_loc(1,index) .lt. r_edge_loc(1,index+1)) then
+                   index = index-1
+                end if
+
+                call quad_interp(radius, &
+                                 r_edge_loc(1,index),r_edge_loc(1,index+1), &
+                                 r_edge_loc(1,index+2), &
+                                 w0_cart_val, &
+                                 w0(index),w0(index+1),w0(index+2))
+
+                w0macz(i,j,k) = w0_cart_val * z / radius
+
+             end do
+          end do
+       end do
+
+    else if (w0mac_interp_type .eq. 4) then
 
        allocate(w0_nodal(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+2,3))
 
