@@ -275,8 +275,8 @@ contains
                                           s0,s0_cart,lo,hi,dx,ng_s)
 
     use bl_constants_module
-    use geometry, only: dr, center, r_cc_loc, nr_fine
-    use probin_module, only: s0_interp_type
+    use geometry, only: dr, center, r_cc_loc, nr_fine, r_edge_loc
+    use probin_module, only: s0_interp_type, w0_interp_type
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s
     logical        , intent(in   ) :: is_input_edge_centered,is_output_a_vector
@@ -296,29 +296,105 @@ contains
 
        ! we currently use linear interpolation to compute s0_cart, 
        ! where s0 is edge-centered.
+       if (w0_interp_type .eq. 1) then
 
-       do k = lo(3),hi(3)
-          z = (dble(k)+HALF)*dx(3) - center(3)
-          do j = lo(2),hi(2)
-             y = (dble(j)+HALF)*dx(2) - center(2)
-             do i = lo(1),hi(1)
-                x = (dble(i)+HALF)*dx(1) - center(1)
-                radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(1))
-                
-                rfac = (radius - dble(index)*dr(1)) / dr(1)
-                s0_cart_val = rfac * s0(index+1) + (ONE-rfac) * s0(index)
+          do k = lo(3),hi(3)
+             z = (dble(k)+HALF)*dx(3) - center(3)
+             do j = lo(2),hi(2)
+                y = (dble(j)+HALF)*dx(2) - center(2)
+                do i = lo(1),hi(1)
+                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   radius = sqrt(x**2 + y**2 + z**2)
+                   index  = int(radius / dr(1))
 
-                if (is_output_a_vector) then
-                   s0_cart(i,j,k,1) = s0_cart_val * x / radius
-                   s0_cart(i,j,k,2) = s0_cart_val * y / radius
-                   s0_cart(i,j,k,3) = s0_cart_val * z / radius
-                else
-                   s0_cart(i,j,k,1) = s0_cart_val
-                end if
+                   rfac = (radius - dble(index)*dr(1)) / dr(1)
+
+                   if (rfac .gt. 0.5d0) then
+                      s0_cart_val = s0(index+1)
+                   else
+                      s0_cart_val = s0(index)
+                   end if
+
+                   if (is_output_a_vector) then
+                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
+                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
+                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                   else
+                      s0_cart(i,j,k,1) = s0_cart_val
+                   end if
+
+                end do
              end do
           end do
-       end do
+
+       else if (w0_interp_type .eq. 2) then
+
+          do k = lo(3),hi(3)
+             z = (dble(k)+HALF)*dx(3) - center(3)
+             do j = lo(2),hi(2)
+                y = (dble(j)+HALF)*dx(2) - center(2)
+                do i = lo(1),hi(1)
+                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   radius = sqrt(x**2 + y**2 + z**2)
+                   index  = int(radius / dr(1))
+
+                   rfac = (radius - dble(index)*dr(1)) / dr(1)
+                   s0_cart_val = rfac * s0(index+1) + (ONE-rfac) * s0(index)
+
+                   if (is_output_a_vector) then
+                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
+                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
+                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                   else
+                      s0_cart(i,j,k,1) = s0_cart_val
+                   end if
+
+                end do
+             end do
+          end do
+
+       else if (w0_interp_type .eq. 3) then
+
+          do k = lo(3),hi(3)
+             z = (dble(k)+HALF)*dx(3) - center(3)
+             do j = lo(2),hi(2)
+                y = (dble(j)+HALF)*dx(2) - center(2)
+                do i = lo(1),hi(1)
+                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   radius = sqrt(x**2 + y**2 + z**2)
+                   index  = int(radius / dr(1))
+
+                   ! index refers to the lo point in the quadratic stencil
+                   if (index .le. 0) then
+                      index = 0
+                   else if (index .ge. nr_fine-1) then
+                      index = nr_fine-2
+                   else if (radius-r_edge_loc(1,index) .lt. r_edge_loc(1,index+1)) then
+                      index = index-1
+                   end if
+
+                   call quad_interp(radius, &
+                        r_edge_loc(1,index),r_edge_loc(1,index+1), &
+                        r_edge_loc(1,index+2), &
+                        s0_cart_val, &
+                        s0(index),s0(index+1),s0(index+2))
+
+
+                   if (is_output_a_vector) then
+                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
+                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
+                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                   else
+                      s0_cart(i,j,k,1) = s0_cart_val
+                   end if
+
+                end do
+             end do
+          end do
+
+       else
+          call bl_error('Error: w0_interp_type not defined')
+       end if
 
     else
 
@@ -327,21 +403,42 @@ contains
        ! 1.  Piecewise constant
        ! 2.  Piecewise linear
        ! 3.  Quadratic
+       
+       if (s0_interp_type .eq. 1) then
 
-       do k = lo(3),hi(3)
-          z = (dble(k)+HALF)*dx(3) - center(3)
-          do j = lo(2),hi(2)
-             y = (dble(j)+HALF)*dx(2) - center(2)
-             do i = lo(1),hi(1)
-                x = (dble(i)+HALF)*dx(1) - center(1)
-                radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(1))
-                
-                if (s0_interp_type .eq. 1) then
+          do k = lo(3),hi(3)
+             z = (dble(k)+HALF)*dx(3) - center(3)
+             do j = lo(2),hi(2)
+                y = (dble(j)+HALF)*dx(2) - center(2)
+                do i = lo(1),hi(1)
+                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   radius = sqrt(x**2 + y**2 + z**2)
+                   index  = int(radius / dr(1))
 
                    s0_cart_val = s0(index)
 
-                else if (s0_interp_type .eq. 2) then
+                   if (is_output_a_vector) then
+                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
+                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
+                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                   else
+                      s0_cart(i,j,k,1) = s0_cart_val
+                   end if
+
+                end do
+             end do
+          end do
+
+       else if (s0_interp_type .eq. 2) then
+
+          do k = lo(3),hi(3)
+             z = (dble(k)+HALF)*dx(3) - center(3)
+             do j = lo(2),hi(2)
+                y = (dble(j)+HALF)*dx(2) - center(2)
+                do i = lo(1),hi(1)
+                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   radius = sqrt(x**2 + y**2 + z**2)
+                   index  = int(radius / dr(1))
 
                    if (radius .ge. r_cc_loc(1,index)) then
                       if (index .eq. nr_fine-1) then
@@ -359,7 +456,28 @@ contains
                       end if
                    end if
 
-                else if (s0_interp_type .eq. 3) then
+                   if (is_output_a_vector) then
+                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
+                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
+                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                   else
+                      s0_cart(i,j,k,1) = s0_cart_val
+                   end if
+
+                end do
+             end do
+          end do
+
+       else if (s0_interp_type .eq. 3) then
+
+          do k = lo(3),hi(3)
+             z = (dble(k)+HALF)*dx(3) - center(3)
+             do j = lo(2),hi(2)
+                y = (dble(j)+HALF)*dx(2) - center(2)
+                do i = lo(1),hi(1)
+                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   radius = sqrt(x**2 + y**2 + z**2)
+                   index  = int(radius / dr(1))
 
                    ! index refers to the center point in the quadratic stencil.
                    ! we need to modify this if we're too close to the edge
@@ -375,20 +493,21 @@ contains
                                     s0_cart_val, &
                                     s0(index-1),s0(index),s0(index+1))
 
-                else
-                   call bl_error('Error: s0_interp_type not defined')
-                end if
+                   if (is_output_a_vector) then
+                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
+                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
+                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                   else
+                      s0_cart(i,j,k,1) = s0_cart_val
+                   end if
 
-                if (is_output_a_vector) then
-                   s0_cart(i,j,k,1) = s0_cart_val * x / radius
-                   s0_cart(i,j,k,2) = s0_cart_val * y / radius
-                   s0_cart(i,j,k,3) = s0_cart_val * z / radius
-                else
-                   s0_cart(i,j,k,1) = s0_cart_val
-                end if
+                end do
              end do
           end do
-       end do
+
+       else
+          call bl_error('Error: s0_interp_type not defined')
+       end if
 
     end if
 
