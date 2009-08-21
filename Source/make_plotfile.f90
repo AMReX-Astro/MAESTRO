@@ -103,7 +103,8 @@ contains
     use plot_variables_module
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base, &
-         single_prec_plotfiles, edge_nodal_flag, do_smallscale, use_thermal_diffusion
+         single_prec_plotfiles, edge_nodal_flag, do_smallscale, use_thermal_diffusion, &
+         evolve_base_state
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use average_module
     use ml_restriction_module
@@ -217,20 +218,28 @@ contains
 
        end do
 
-       ! put w0 on Cartesian edges as a vector
-       call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
+       if (evolve_base_state) then
+          ! put w0 on Cartesian edges as a vector
+          call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
 
-       ! put w0 in Cartesian cell-centers as a scalar (the radial expansion velocity)
-       call put_1d_array_on_cart(w0,w0r_cart,foextrap_comp,.true.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla)
+          ! put w0 in Cartesian cell-centers as a scalar (the radial expansion velocity)
+          call put_1d_array_on_cart(w0,w0r_cart,foextrap_comp,.true.,.false.,dx, &
+                                    the_bc_tower%bc_tower_array,mla)
+       end if
 
     end if
 
     if (plot_base) then
 
        ! w0
-       call put_1d_array_on_cart(w0,tempfab,1,.true.,.true.,dx, &
-                                 the_bc_tower%bc_tower_array,mla)
+       if (evolve_base_state) then
+          call put_1d_array_on_cart(w0,tempfab,1,.true.,.true.,dx, &
+                                    the_bc_tower%bc_tower_array,mla)
+       else
+          do n=1,nlevs
+             call setval(tempfab(n), ZERO, all=.true.)
+          end do
+       end if
 
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_w0,tempfab(n),1,dm)
