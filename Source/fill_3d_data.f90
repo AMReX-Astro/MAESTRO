@@ -294,8 +294,12 @@ contains
 
     if (is_input_edge_centered) then
 
-       ! we currently use linear interpolation to compute s0_cart, 
+       ! we currently have three different ideas for computing s0_cart, 
        ! where s0 is edge-centered.
+       ! 1.  Piecewise constant
+       ! 2.  Piecewise linear
+       ! 3.  Quadratic
+
        if (w0_interp_type .eq. 1) then
 
           do k = lo(3),hi(3)
@@ -374,10 +378,10 @@ contains
                    end if
 
                    call quad_interp(radius, &
-                        r_edge_loc(1,index),r_edge_loc(1,index+1), &
-                        r_edge_loc(1,index+2), &
-                        s0_cart_val, &
-                        s0(index),s0(index+1),s0(index+2))
+                                    r_edge_loc(1,index),r_edge_loc(1,index+1), &
+                                    r_edge_loc(1,index+2), &
+                                    s0_cart_val, &
+                                    s0(index),s0(index+1),s0(index+2))
 
 
                    if (is_output_a_vector) then
@@ -1014,14 +1018,22 @@ contains
              do i = lo(1)-1,hi(1)+2
                 x = (dble(i)     )*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int((radius-HALF*dr(1)) / dr(1))
+                index  = int(radius / dr(1))
 
-                rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
-
-                if (index .lt. nr_fine-1) then
-                   s0macx(i,j,k) = rfac * s0(index+1) + (ONE-rfac) * s0(index)
+                if (radius .ge. r_cc_loc(1,index)) then
+                   if (index .eq. nr_fine-1) then
+                      s0macx(i,j,k) = s0(index)
+                   else
+                      s0macx(i,j,k) = s0(index+1)*(radius-r_cc_loc(1,index))/dr(1) &
+                           + s0(index)*(r_cc_loc(1,index+1)-radius)/dr(1)
+                   endif
                 else
-                   s0macx(i,j,k) = s0(nr_fine-1)
+                   if (index .eq. 0) then
+                      s0macx(i,j,k) = s0(index)
+                   else
+                      s0macx(i,j,k) = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
+                           + s0(index-1)*(r_cc_loc(1,index)-radius)/dr(1)
+                   end if
                 end if
 
              end do
@@ -1035,14 +1047,22 @@ contains
              do i = lo(1)-1,hi(1)+1
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int((radius-HALF*dr(1)) / dr(1))
+                index  = int(radius / dr(1))
 
-                rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
-
-                if (index .lt. nr_fine-1) then
-                   s0macy(i,j,k) = rfac * s0(index+1) + (ONE-rfac) * s0(index)
+                if (radius .ge. r_cc_loc(1,index)) then
+                   if (index .eq. nr_fine-1) then
+                      s0macy(i,j,k) = s0(index)
+                   else
+                      s0macy(i,j,k) = s0(index+1)*(radius-r_cc_loc(1,index))/dr(1) &
+                           + s0(index)*(r_cc_loc(1,index+1)-radius)/dr(1)
+                   endif
                 else
-                   s0macy(i,j,k) = s0(nr_fine-1)
+                   if (index .eq. 0) then
+                      s0macy(i,j,k) = s0(index)
+                   else
+                      s0macy(i,j,k) = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
+                           + s0(index-1)*(r_cc_loc(1,index)-radius)/dr(1)
+                   end if
                 end if
 
              end do
@@ -1056,14 +1076,22 @@ contains
              do i = lo(1)-1,hi(1)+1
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int((radius-HALF*dr(1)) / dr(1))
+                index  = int(radius / dr(1))
 
-                rfac = ((radius-HALF*dr(1)) - dble(index)*dr(1)) / dr(1)
-
-                if (index .lt. nr_fine-1) then
-                   s0macz(i,j,k) = rfac * s0(index+1) + (ONE-rfac) * s0(index)
+                if (radius .ge. r_cc_loc(1,index)) then
+                   if (index .eq. nr_fine-1) then
+                      s0macz(i,j,k) = s0(index)
+                   else
+                      s0macz(i,j,k) = s0(index+1)*(radius-r_cc_loc(1,index))/dr(1) &
+                           + s0(index)*(r_cc_loc(1,index+1)-radius)/dr(1)
+                   endif
                 else
-                   s0macz(i,j,k) = s0(nr_fine-1)
+                   if (index .eq. 0) then
+                      s0macz(i,j,k) = s0(index)
+                   else
+                      s0macz(i,j,k) = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
+                           + s0(index-1)*(r_cc_loc(1,index)-radius)/dr(1)
+                   end if
                 end if
 
              end do
@@ -1079,7 +1107,7 @@ contains
              do i = lo(1)-1,hi(1)+2
                 x = (dble(i)     )*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int((radius-HALF*dr(1)) / dr(1))
+                index  = int(radius / dr(1))
 
                 ! index refers to the center point in the quadratic stencil.
                 ! we need to modify this if we're too close to the edge
@@ -1105,7 +1133,7 @@ contains
              do i = lo(1)-1,hi(1)+1
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int((radius-HALF*dr(1)) / dr(1))
+                index  = int(radius / dr(1))
 
                 ! index refers to the center point in the quadratic stencil.
                 ! we need to modify this if we're too close to the edge
@@ -1131,7 +1159,7 @@ contains
              do i = lo(1)-1,hi(1)+1
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int((radius-HALF*dr(1)) / dr(1))
+                index  = int(radius / dr(1))
 
                 ! index refers to the center point in the quadratic stencil.
                 ! we need to modify this if we're too close to the edge
