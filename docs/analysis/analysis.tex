@@ -1,10 +1,15 @@
+\section{The {\tt data\_processing} Routines}
+
 The {\tt fParallel/data\_processing/} directory contains a large
 number of Fortran-based analysis routines for BoxLib datasets.  Many
 of these can be used with both MAESTRO and the compressible
 astrophysics code, Castro.
 
+To compile any of the individual routines, edit the {\tt GNUmakefile}
+add uncomment the line beginning with `{\tt programs +=}' containing
+the routine you want to build.
 
-\section{General Analysis Routines}
+\subsection{General Analysis Routines}
 
 The following routines are generally applicable for any BoxLib-based
 plotfile.  Typing the executable names without any arguments will
