@@ -39,3 +39,8 @@
    generalized.
 
 -- only need to keep one set of species names around in a network
+
+-- boxlib/fabio.f90 does not add prob_lo to the domain limits in the
+   plotfile header.  As a result, amrvis or our data_processing
+   routines have incorrect coordinate information for problems that
+   don't start at 0 (e.g. xrb).
