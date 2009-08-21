@@ -35,7 +35,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only: edge_nodal_flag
+    use probin_module, only: edge_nodal_flag, evolve_base_state
     use fill_3d_module, only : make_w0mac, put_1d_array_on_cart
 
     type(multifab) , intent(inout) :: vel_force(:)
@@ -81,15 +81,14 @@ contains
     ng_f = vel_force(1)%ng
     ng_gp = gpres(1)%ng
 
-
     ! put w0 on cart both cell-centered and on edges
     if (spherical .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
              ! w0mac will contain an edge-centered w0 on a Cartesian grid,                                          
              ! for use in computing the Coriolis term in the final update
-             call multifab_build(w0mac(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
-             call setval(w0mac(n,comp), ZERO, all=.true.)
+             call multifab_build(w0mac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+             call setval(w0mac(n,comp),ZERO,all=.true.)
           enddo
 
           ! w0_cart will contain the cell-centered Cartesian components
@@ -97,15 +96,19 @@ contains
           call build(w0_cart(n),mla%la(n),dm,0)
           call setval(w0_cart(n), ZERO, all=.true.)
           
-       enddo
-
-       ! fill the edge-centered w0mac
-       call make_w0mac(mla,w0,w0mac,dx,the_bc_level)          
+       enddo       
+   
        ng_wm = w0mac(1,1)%ng
-
-       ! fill the all dm components of the cell-centered w0_cart
-       call put_1d_array_on_cart(w0,w0_cart,foextrap_comp,.true.,.true.,dx,the_bc_level,mla)
        ng_wc = w0_cart(1)%ng
+
+       if (evolve_base_state) then
+          ! fill the edge-centered w0mac
+          call make_w0mac(mla,w0,w0mac,dx,the_bc_level)
+
+          ! fill the all dm components of the cell-centered w0_cart
+          call put_1d_array_on_cart(w0,w0_cart,foextrap_comp,.true.,.true.,dx, &
+                                    the_bc_level,mla)
+       end if
 
     endif
 
