@@ -8,4 +8,5 @@ solution is stored in compressible-1.e16-t=10.00.out.  The initial
 model and compressible output were run with Coulomb corrections
 enabled.
 
-
+***NEW***
+Run with inputs-spherical_heat and compare the output to CASTRO_1sec.out and the output from spherical_heat/inputs_3d.256.5dr.eq.dx
