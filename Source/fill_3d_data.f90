@@ -343,7 +343,12 @@ contains
                    index  = int(radius / dr(1))
 
                    rfac = (radius - dble(index)*dr(1)) / dr(1)
-                   s0_cart_val = rfac * s0(index+1) + (ONE-rfac) * s0(index)
+
+                   if (index .lt. nr_fine) then
+                      s0_cart_val = rfac * s0(index+1) + (ONE-rfac) * s0(index)
+                   else
+                      s0_cart_val = s0(nr_fine)
+                   end if
 
                    if (is_output_a_vector) then
                       s0_cart(i,j,k,1) = s0_cart_val * x / radius
@@ -382,7 +387,6 @@ contains
                                     r_edge_loc(1,index+2), &
                                     s0_cart_val, &
                                     s0(index),s0(index+1),s0(index+2))
-
 
                    if (is_output_a_vector) then
                       s0_cart(i,j,k,1) = s0_cart_val * x / radius
