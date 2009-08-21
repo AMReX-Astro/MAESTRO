@@ -458,7 +458,7 @@ contains
                    else
                       if (index .eq. 0) then
                          s0_cart_val = s0(index)
-                      else if (index .gt. nr_fine-1)
+                      else if (index .gt. nr_fine-1) then
                          s0_cart_val = s0(nr_fine-1)
                       else
                          s0_cart_val = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
@@ -1036,7 +1036,7 @@ contains
                 else
                    if (index .eq. 0) then
                       s0macx(i,j,k) = s0(index)
-                   else if (index .gt. nr_fine-1)
+                   else if (index .gt. nr_fine-1) then
                       s0macx(i,j,k) = s0(nr_fine-1)
                    else
                       s0macx(i,j,k) = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
@@ -1067,7 +1067,7 @@ contains
                 else
                    if (index .eq. 0) then
                       s0macy(i,j,k) = s0(index)
-                   else if (index .gt. nr_fine-1)
+                   else if (index .gt. nr_fine-1) then
                       s0macy(i,j,k) = s0(nr_fine-1)
                    else
                       s0macy(i,j,k) = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
@@ -1098,7 +1098,7 @@ contains
                 else
                    if (index .eq. 0) then
                       s0macz(i,j,k) = s0(index)
-                   else if (index .gt. nr_fine-1)
+                   else if (index .gt. nr_fine-1) then
                       s0macz(i,j,k) = s0(nr_fine-1)
                    else
                       s0macz(i,j,k) = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
