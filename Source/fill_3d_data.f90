@@ -449,8 +449,8 @@ contains
                    index  = int(radius / dr(1))
 
                    if (radius .ge. r_cc_loc(1,index)) then
-                      if (index .eq. nr_fine-1) then
-                         s0_cart_val = s0(index)
+                      if (index .ge. nr_fine-1) then
+                         s0_cart_val = s0(nr_fine-1)
                       else
                          s0_cart_val = s0(index+1)*(radius-r_cc_loc(1,index))/dr(1) &
                               + s0(index)*(r_cc_loc(1,index+1)-radius)/dr(1)
@@ -458,6 +458,8 @@ contains
                    else
                       if (index .eq. 0) then
                          s0_cart_val = s0(index)
+                      else if (index .gt. nr_fine-1)
+                         s0_cart_val = s0(nr_fine-1)
                       else
                          s0_cart_val = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
                               + s0(index-1)*(r_cc_loc(1,index)-radius)/dr(1)
@@ -1025,8 +1027,8 @@ contains
                 index  = int(radius / dr(1))
 
                 if (radius .ge. r_cc_loc(1,index)) then
-                   if (index .eq. nr_fine-1) then
-                      s0macx(i,j,k) = s0(index)
+                   if (index .ge. nr_fine-1) then
+                      s0macx(i,j,k) = s0(nr_fine-1)
                    else
                       s0macx(i,j,k) = s0(index+1)*(radius-r_cc_loc(1,index))/dr(1) &
                            + s0(index)*(r_cc_loc(1,index+1)-radius)/dr(1)
@@ -1034,6 +1036,8 @@ contains
                 else
                    if (index .eq. 0) then
                       s0macx(i,j,k) = s0(index)
+                   else if (index .gt. nr_fine-1)
+                      s0macx(i,j,k) = s0(nr_fine-1)
                    else
                       s0macx(i,j,k) = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
                            + s0(index-1)*(r_cc_loc(1,index)-radius)/dr(1)
@@ -1054,8 +1058,8 @@ contains
                 index  = int(radius / dr(1))
 
                 if (radius .ge. r_cc_loc(1,index)) then
-                   if (index .eq. nr_fine-1) then
-                      s0macy(i,j,k) = s0(index)
+                   if (index .ge. nr_fine-1) then
+                      s0macy(i,j,k) = s0(nr_fine-1)
                    else
                       s0macy(i,j,k) = s0(index+1)*(radius-r_cc_loc(1,index))/dr(1) &
                            + s0(index)*(r_cc_loc(1,index+1)-radius)/dr(1)
@@ -1063,6 +1067,8 @@ contains
                 else
                    if (index .eq. 0) then
                       s0macy(i,j,k) = s0(index)
+                   else if (index .gt. nr_fine-1)
+                      s0macy(i,j,k) = s0(nr_fine-1)
                    else
                       s0macy(i,j,k) = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
                            + s0(index-1)*(r_cc_loc(1,index)-radius)/dr(1)
@@ -1083,8 +1089,8 @@ contains
                 index  = int(radius / dr(1))
 
                 if (radius .ge. r_cc_loc(1,index)) then
-                   if (index .eq. nr_fine-1) then
-                      s0macz(i,j,k) = s0(index)
+                   if (index .ge. nr_fine-1) then
+                      s0macz(i,j,k) = s0(nr_fine-1)
                    else
                       s0macz(i,j,k) = s0(index+1)*(radius-r_cc_loc(1,index))/dr(1) &
                            + s0(index)*(r_cc_loc(1,index+1)-radius)/dr(1)
@@ -1092,6 +1098,8 @@ contains
                 else
                    if (index .eq. 0) then
                       s0macz(i,j,k) = s0(index)
+                   else if (index .gt. nr_fine-1)
+                      s0macz(i,j,k) = s0(nr_fine-1)
                    else
                       s0macz(i,j,k) = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
                            + s0(index-1)*(r_cc_loc(1,index)-radius)/dr(1)
