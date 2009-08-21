@@ -1,6 +1,6 @@
 &PROBIN
 
- anelastic_cutoff = 1.e5
+ anelastic_cutoff = 1.e6
  base_cutoff_density = 1.e5
 
  spherical_in = 1
@@ -17,7 +17,7 @@
 
  ppm_type = 1
 
- model_file = "spherical.hse.1280"
+ model_file = "model_6.e8.hybrid.hse.1280"
 
  use_eos_coulomb = T
 /
