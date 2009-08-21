@@ -85,7 +85,7 @@ contains
     if (spherical .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
-             ! w0mac will contain an edge-centered w0 on a Cartesian grid,                                          
+             ! w0mac will contain an edge-centered w0 on a Cartesian grid,
              ! for use in computing the Coriolis term in the final update
              call multifab_build(w0mac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
              call setval(w0mac(n,comp),ZERO,all=.true.)
