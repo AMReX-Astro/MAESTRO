@@ -17,7 +17,7 @@
 
  ppm_type = 1
 
- model_file = "model_6.e8.hybrid.hse.1280"
+ model_file = "spherical.hse.1280"
 
  use_eos_coulomb = T
 /
