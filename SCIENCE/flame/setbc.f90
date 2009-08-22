@@ -1,12 +1,13 @@
 ! set the boundary conditions for a laminar flame.  On one end we
 ! will have inflow and on the other end we will have outflow.  
 !
+! In 1-d the flame is assumed to move in the X direction
 ! In 2-d the flame is assumed to move in the Y direction
 ! In 3-d the flame is assumed to move in the Z direction
 !
 ! In the inputs file, these are specified via
 !
-! bcy_lo = 11
+! bcy_lo = 11   ! 2-d
 ! bcy_hi = 12
 !
 ! where boxlib/bc.f90 defines the integer parameters 
@@ -27,9 +28,95 @@ module setbc_module
 
   private
 
-  public :: setbc_2d, setbc_3d
+  public :: setbc_1d, setbc_2d, setbc_3d
 
 contains
+
+  !============================================================================
+  ! setbc_1d
+  !============================================================================
+  subroutine setbc_1d(s,lo,hi,ng,bc,icomp)
+
+    use bc_module
+    use bl_constants_module
+    use inlet_bc_module
+    use network
+    use variables
+    use geometry, ONLY: dm
+    
+    integer        , intent(in   ) :: lo(:),hi(:),ng
+    real(kind=dp_t), intent(inout) :: s(lo(1)-ng:)
+    integer        , intent(in   ) :: bc(:,:)
+    integer        , intent(in   ) :: icomp
+
+    !     Local variables
+    integer         :: i
+    
+    character (len=256) err_string
+
+    if(ng == 0) return
+
+    if ( (bc(1,1) == EXT_DIR .or. &
+          bc(1,2) == EXT_DIR) .and. .NOT. inlet_bc_initialized) then
+       call bl_error("ERROR: in setbc, but inlet BCs not initialized")
+    endif
+
+
+    !--------------------------------------------------------------------------
+    ! lower X
+    !--------------------------------------------------------------------------
+    if (bc(1,1) == EXT_DIR) then
+
+       ! velocity components
+       if (icomp == 1) s(lo(1)-ng:lo(1)-1) = ZERO
+       if (icomp == 2) s(lo(1)-ng:lo(1)-1) = INLET_VEL
+
+       ! density
+       if (icomp == dm+rho_comp) s(lo(1)-ng:lo(1)-1) = INLET_RHO
+
+       ! rho * h
+       if (icomp == dm+rhoh_comp) s(lo(1)-ng:lo(1)-1) = INLET_RHOH
+       
+       ! species
+       if (icomp >= dm+spec_comp .and. icomp < dm+spec_comp+nspec) then
+          s(lo(1)-ng:lo(1)-1) = &
+               INLET_RHOX(icomp-(spec_comp+dm)+1)
+       endif
+
+       ! others
+       if (icomp == dm+temp_comp) s(lo(1)-ng:lo(1)-1) = INLET_TEMP
+       if (icomp == dm+trac_comp) s(lo(1)-ng:lo(1)-1) = INLET_TRA
+
+    else if (bc(1,1) == FOEXTRAP) then
+       s(lo(1)-ng:lo(1)-1) = s(lo(1))
+
+    else if (bc(1,1) == INTERIOR) then
+       ! nothing to do 
+
+    else 
+       write (unit=err_string, fmt="(a, i3)") &
+            "ERROR: setbc does not implement bc(1,1) = ", bc(1,1)
+       call bl_error(trim(err_string))
+    end if
+
+
+    !--------------------------------------------------------------------------
+    ! upper X
+    !--------------------------------------------------------------------------
+    if (bc(1,2) == FOEXTRAP) then
+       s(hi(1)+1:hi(1)+ng) = s(hi(1))
+
+    else if (bc(1,2) == INTERIOR) then
+       ! nothing to do
+
+    else
+       write (unit=err_string, fmt="(a, i3)") &
+            "ERROR: setbc does not implement bc(2,2) = ", bc(1,2)
+       call bl_error(trim(err_string))
+    end if
+
+  end subroutine setbc_1d
+
 
   !============================================================================
   ! setbc_2d
