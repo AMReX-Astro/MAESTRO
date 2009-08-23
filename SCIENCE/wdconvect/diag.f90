@@ -113,23 +113,13 @@ contains
     real(kind=dp_t) :: U_max,     U_max_level,     U_max_local
     real(kind=dp_t) :: Mach_max,  Mach_max_level,  Mach_max_local
 
-    real(kind=dp_t) :: xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local
-    real(kind=dp_t) :: xloc_Tmax_level, yloc_Tmax_level, zloc_Tmax_level
-    real(kind=dp_t) :: xloc_Tmax,       yloc_Tmax,       zloc_Tmax
+    real(kind=dp_t) :: coord_Tmax_local(dm), coord_Tmax_level(dm), coord_Tmax(dm)
     real(kind=dp_t) :: Rloc_Tmax
+    real(kind=dp_t) :: vel_Tmax_local(dm), vel_Tmax_level(dm), vel_Tmax(dm)
 
-    real(kind=dp_t) :: vx_Tmax_local, vy_Tmax_local, vz_Tmax_local
-    real(kind=dp_t) :: vx_Tmax_level, vy_Tmax_level, vz_Tmax_level
-    real(kind=dp_t) :: vx_Tmax,       vy_Tmax,       vz_Tmax
-
-    real(kind=dp_t) :: xloc_enucmax_local, yloc_enucmax_local, zloc_enucmax_local
-    real(kind=dp_t) :: xloc_enucmax_level, yloc_enucmax_level, zloc_enucmax_level
-    real(kind=dp_t) :: xloc_enucmax,       yloc_enucmax,       zloc_enucmax
+    real(kind=dp_t) :: coord_enucmax_local(dm), coord_enucmax_level(dm), coord_enucmax(dm)
     real(kind=dp_t) :: Rloc_enucmax
-
-    real(kind=dp_t) :: vx_enucmax_local, vy_enucmax_local, vz_enucmax_local
-    real(kind=dp_t) :: vx_enucmax_level, vy_enucmax_level, vz_enucmax_level
-    real(kind=dp_t) :: vx_enucmax,       vy_enucmax,       vz_enucmax
+    real(kind=dp_t) :: vel_enucmax_local(dm), vel_enucmax_level(dm), vel_enucmax(dm)
 
     real(kind=dp_t) :: vx_center_local, vy_center_local, vz_center_local
     real(kind=dp_t) :: vx_center_level, vy_center_level, vz_center_level
@@ -233,21 +223,11 @@ contains
     U_max    = ZERO
     Mach_max  = ZERO
 
-    xloc_Tmax = ZERO
-    yloc_Tmax = ZERO
-    zloc_Tmax = ZERO
+    coord_Tmax(:) = ZERO
+    vel_Tmax(:) = ZERO
 
-    vx_Tmax = ZERO
-    vy_Tmax = ZERO
-    vz_Tmax = ZERO
-
-    xloc_enucmax = ZERO
-    yloc_enucmax = ZERO
-    zloc_enucmax = ZERO
-
-    vx_enucmax = ZERO
-    vy_enucmax = ZERO
-    vz_enucmax = ZERO
+    coord_enucmax(:) = ZERO
+    vel_enucmax(:) = ZERO
 
     vx_center = ZERO
     vy_center = ZERO
@@ -300,37 +280,17 @@ contains
        Mach_max_level = ZERO
        Mach_max_local = ZERO
 
-       xloc_Tmax_local = ZERO
-       yloc_Tmax_local = ZERO
-       zloc_Tmax_local = ZERO
+       coord_Tmax_local(:) = ZERO
+       coord_Tmax_level(:) = ZERO
 
-       xloc_Tmax_level = ZERO
-       yloc_Tmax_level = ZERO
-       zloc_Tmax_level = ZERO
+       vel_Tmax_local(:) = ZERO
+       vel_Tmax_level(:) = ZERO
 
-       vx_Tmax_local = ZERO
-       vy_Tmax_local = ZERO
-       vz_Tmax_local = ZERO
+       coord_enucmax_local(:) = ZERO
+       coord_enucmax_level(:) = ZERO
 
-       vx_Tmax_level = ZERO
-       vy_Tmax_level = ZERO
-       vz_Tmax_level = ZERO
-
-       xloc_enucmax_local = ZERO
-       yloc_enucmax_local = ZERO
-       zloc_enucmax_local = ZERO
-
-       xloc_enucmax_level = ZERO
-       yloc_enucmax_level = ZERO
-       zloc_enucmax_level = ZERO
-
-       vx_enucmax_local = ZERO
-       vy_enucmax_local = ZERO
-       vz_enucmax_local = ZERO
-
-       vx_enucmax_level = ZERO
-       vy_enucmax_level = ZERO
-       vz_enucmax_level = ZERO
+       vel_enucmax_local(:) = ZERO
+       vel_enucmax_level(:) = ZERO
 
        vx_center_local = ZERO
        vy_center_local = ZERO
@@ -382,10 +342,8 @@ contains
                              nzones_local, &
                              vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
                              rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
-                             T_max_local, xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local, &
-                             vx_Tmax_local, vy_Tmax_local, vz_Tmax_local, &
-                             enuc_max_local, xloc_enucmax_local, yloc_enucmax_local, zloc_enucmax_local, &
-                             vx_enucmax_local, vy_enucmax_local, vz_enucmax_local, &
+                             T_max_local, coord_Tmax_local, vel_Tmax_local, &
+                             enuc_max_local, coord_enucmax_local, vel_enucmax_local, &
                              kin_ener_local, int_ener_local, nuc_ener_local, &
                              U_max_local, Mach_max_local, &
                              ncenter_local,T_center_local,vx_center_local,vy_center_local,vz_center_local)
@@ -403,10 +361,8 @@ contains
                              nzones_local, &
                              vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
                              rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
-                             T_max_local, xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local, &
-                             vx_Tmax_local, vy_Tmax_local, vz_Tmax_local, &
-                             enuc_max_local, xloc_enucmax_local, yloc_enucmax_local, zloc_enucmax_local, &
-                             vx_enucmax_local, vy_enucmax_local, vz_enucmax_local, &
+                             T_max_local, coord_Tmax_local, vel_Tmax_local, &
+                             enuc_max_local, coord_enucmax_local, vel_enucmax_local, &
                              kin_ener_local, int_ener_local, nuc_ener_local, &
                              U_max_local, Mach_max_local, &
                              ncenter_local,T_center_local,vx_center_local,vy_center_local,vz_center_local, &
@@ -489,12 +445,12 @@ contains
        ! the velocity information, so there are 2*dm values on each
        ! proc
        allocate(T_max_coords(2*dm*parallel_nprocs()))
-       T_max_coords_local(1) = xloc_Tmax_local
-       T_max_coords_local(2) = yloc_Tmax_local
-       T_max_coords_local(3) = zloc_Tmax_local
-       T_max_coords_local(4) = vx_Tmax_local
-       T_max_coords_local(5) = vy_Tmax_local
-       T_max_coords_local(6) = vz_Tmax_local
+       T_max_coords_local(1) = coord_Tmax_local(1)
+       T_max_coords_local(2) = coord_Tmax_local(2)
+       T_max_coords_local(3) = coord_Tmax_local(3)
+       T_max_coords_local(4) = vel_Tmax_local(1)
+       T_max_coords_local(5) = vel_Tmax_local(2)
+       T_max_coords_local(6) = vel_Tmax_local(3)
        
        call parallel_gather(T_max_coords_local, T_max_coords, 2*dm, &
                             root = parallel_IOProcessorNode())
@@ -502,12 +458,12 @@ contains
        
        T_max_level = T_max_data(index_max)
 
-       xloc_Tmax_level = T_max_coords(2*dm*(index_max-1)+1)
-       yloc_Tmax_level = T_max_coords(2*dm*(index_max-1)+2)
-       zloc_Tmax_level = T_max_coords(2*dm*(index_max-1)+3)
-       vx_Tmax_level   = T_max_coords(2*dm*(index_max-1)+4)
-       vy_Tmax_level   = T_max_coords(2*dm*(index_max-1)+5)
-       vz_Tmax_level   = T_max_coords(2*dm*(index_max-1)+6)
+       coord_Tmax_level(1) = T_max_coords(2*dm*(index_max-1)+1)
+       coord_Tmax_level(2) = T_max_coords(2*dm*(index_max-1)+2)
+       coord_Tmax_level(3) = T_max_coords(2*dm*(index_max-1)+3)
+       vel_Tmax_level(1)   = T_max_coords(2*dm*(index_max-1)+4)
+       vel_Tmax_level(2)   = T_max_coords(2*dm*(index_max-1)+5)
+       vel_Tmax_level(3)   = T_max_coords(2*dm*(index_max-1)+6)
 
 
        deallocate(T_max_data)
@@ -530,12 +486,12 @@ contains
        ! and the velocity information, so there are 2*dm values on
        ! each proc
        allocate(enuc_max_coords(2*dm*parallel_nprocs()))
-       enuc_max_coords_local(1) = xloc_enucmax_local
-       enuc_max_coords_local(2) = yloc_enucmax_local
-       enuc_max_coords_local(3) = zloc_enucmax_local
-       enuc_max_coords_local(4) = vx_enucmax_local
-       enuc_max_coords_local(5) = vy_enucmax_local
-       enuc_max_coords_local(6) = vz_enucmax_local
+       enuc_max_coords_local(1) = coord_enucmax_local(1)
+       enuc_max_coords_local(2) = coord_enucmax_local(2)
+       enuc_max_coords_local(3) = coord_enucmax_local(3)
+       enuc_max_coords_local(4) = vel_enucmax_local(1)
+       enuc_max_coords_local(5) = vel_enucmax_local(2)
+       enuc_max_coords_local(6) = vel_enucmax_local(3)
        
        call parallel_gather(enuc_max_coords_local, enuc_max_coords, 2*dm, &
                             root = parallel_IOProcessorNode())
@@ -543,12 +499,12 @@ contains
        
        enuc_max_level = enuc_max_data(index_max)
 
-       xloc_enucmax_level = enuc_max_coords(2*dm*(index_max-1)+1)
-       yloc_enucmax_level = enuc_max_coords(2*dm*(index_max-1)+2)
-       zloc_enucmax_level = enuc_max_coords(2*dm*(index_max-1)+3)
-       vx_enucmax_level   = enuc_max_coords(2*dm*(index_max-1)+4)
-       vy_enucmax_level   = enuc_max_coords(2*dm*(index_max-1)+5)
-       vz_enucmax_level   = enuc_max_coords(2*dm*(index_max-1)+6)
+       coord_enucmax_level(1) = enuc_max_coords(2*dm*(index_max-1)+1)
+       coord_enucmax_level(2) = enuc_max_coords(2*dm*(index_max-1)+2)
+       coord_enucmax_level(3) = enuc_max_coords(2*dm*(index_max-1)+3)
+       vel_enucmax_level(1)   = enuc_max_coords(2*dm*(index_max-1)+4)
+       vel_enucmax_level(2)   = enuc_max_coords(2*dm*(index_max-1)+5)
+       vel_enucmax_level(3)   = enuc_max_coords(2*dm*(index_max-1)+6)
 
 
        deallocate(enuc_max_data)
@@ -577,36 +533,29 @@ contains
           if (T_max_level > T_max) then
              T_max = T_max_level
 
-             xloc_Tmax = xloc_Tmax_level
-             yloc_Tmax = yloc_Tmax_level
-             zloc_Tmax = zloc_Tmax_level
+             coord_Tmax(:) = coord_Tmax_level(:)
 
              ! compute the radius of the bubble from the center
-             Rloc_Tmax = sqrt( (xloc_Tmax - center(1))**2 + &
-                               (yloc_Tmax - center(2))**2 + &
-                               (zloc_Tmax - center(3))**2 )
+             Rloc_Tmax = sqrt( (coord_Tmax(1) - center(1))**2 + &
+                               (coord_Tmax(2) - center(2))**2 + &
+                               (coord_Tmax(3) - center(3))**2 )
 
-             vx_Tmax = vx_Tmax_level
-             vy_Tmax = vy_Tmax_level
-             vz_Tmax = vz_Tmax_level
+             vel_Tmax(:) = vel_Tmax_level(:)
+
           endif
 
           ! if enuc_max_level is the new max, then copy the location as well
           if (enuc_max_level > enuc_max) then
              enuc_max = enuc_max_level
 
-             xloc_enucmax = xloc_enucmax_level
-             yloc_enucmax = yloc_enucmax_level
-             zloc_enucmax = zloc_enucmax_level
+             coord_enucmax(:) = coord_enucmax_level(:)
 
              ! compute the radius of the bubble from the center
-             Rloc_enucmax = sqrt( (xloc_enucmax - center(1))**2 + &
-                                  (yloc_enucmax - center(2))**2 + &
-                                  (zloc_enucmax - center(3))**2 )
+             Rloc_enucmax = sqrt( (coord_enucmax(1) - center(1))**2 + &
+                                  (coord_enucmax(2) - center(2))**2 + &
+                                  (coord_enucmax(3) - center(3))**2 )
 
-             vx_enucmax = vx_enucmax_level
-             vy_enucmax = vy_enucmax_level
-             vz_enucmax = vz_enucmax_level
+             vel_enucmax(:) = vel_enucmax_level(:)
           endif
 
           T_center = T_center + T_center_level
@@ -791,12 +740,13 @@ contains
             sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2), vr_max, &
             vr_favre(1), vr_favre(2), vr_favre(3), mass
        
-       write (un2,1000) time, T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax, &
-            vx_Tmax, vy_Tmax, vz_Tmax, Rloc_Tmax, T_center
+       write (un2,1000) time, T_max, &
+            coord_Tmax(1), coord_Tmax(2), coord_Tmax(3), &
+            vel_Tmax(1), vel_Tmax(2), vel_Tmax(3), Rloc_Tmax, T_center
 
        write (un3,1000) time, enuc_max, &
-            xloc_enucmax, yloc_enucmax, zloc_enucmax, &
-            vx_enucmax, vy_enucmax, vz_enucmax, Rloc_enucmax, nuc_ener
+            coord_enucmax(1), coord_enucmax(2), coord_enucmax(3), &
+            vel_enucmax(1), vel_enucmax(2), vel_enucmax(3), Rloc_enucmax, nuc_ener
 
        write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener, vx_center, vy_center, vz_center, dt
 
@@ -835,10 +785,8 @@ contains
                      nzones, &
                      vr_x,vr_y,vr_z,vr_max, &
                      rhovr_x,rhovr_y,rhovr_z,mass, &
-                     T_max,xloc_Tmax,yloc_Tmax,zloc_Tmax, &
-                     vx_Tmax, vy_Tmax, vz_Tmax, &
-                     enuc_max,xloc_enucmax,yloc_enucmax,zloc_enucmax, &
-                     vx_enucmax, vy_enucmax, vz_enucmax, &
+                     T_max,coord_Tmax,vel_Tmax, &
+                     enuc_max,coord_enucmax,vel_enucmax, &
                      kin_ener,int_ener,nuc_ener, &
                      U_max,Mach_max, &
                      ncenter,T_center,velx_center,vely_center,velz_center, &
@@ -864,10 +812,10 @@ contains
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
     real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max
     real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, mass, nzones
-    real (kind=dp_t), intent(inout) :: T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax
-    real (kind=dp_t), intent(inout) :: vx_Tmax, vy_Tmax, vz_Tmax
-    real (kind=dp_t), intent(inout) :: enuc_max, xloc_enucmax, yloc_enucmax, zloc_enucmax
-    real (kind=dp_t), intent(inout) :: vx_enucmax, vy_enucmax, vz_enucmax
+    real (kind=dp_t), intent(inout) :: T_max, coord_Tmax(:)
+    real (kind=dp_t), intent(inout) :: vel_Tmax(:)
+    real (kind=dp_t), intent(inout) :: enuc_max, coord_enucmax(:)
+    real (kind=dp_t), intent(inout) :: vel_enucmax(:)
     real (kind=dp_t), intent(inout) :: kin_ener, int_ener, nuc_ener
     real (kind=dp_t), intent(inout) :: U_max, Mach_max
     integer         , intent(inout) :: ncenter
@@ -958,24 +906,24 @@ contains
                 ! max T, location, and velocity at that location (including w0)
                 if (s(i,j,k,temp_comp) > T_max) then
                    T_max = s(i,j,k,temp_comp)
-                   xloc_Tmax = x
-                   yloc_Tmax = y
-                   zloc_Tmax = z
-                   vx_Tmax = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
-                   vy_Tmax = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
-                   vz_Tmax = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
+                   coord_Tmax(1) = x
+                   coord_Tmax(2) = y
+                   coord_Tmax(3) = z
+                   vel_Tmax(1) = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
+                   vel_Tmax(2) = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
+                   vel_Tmax(3) = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
                 endif
 
 
                 ! max enuc
                 if (rho_Hnuc(i,j,k)/s(i,j,k,rho_comp) > enuc_max) then
                    enuc_max = rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
-                   xloc_enucmax = x
-                   yloc_enucmax = y
-                   zloc_enucmax = z
-                   vx_enucmax = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
-                   vy_enucmax = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
-                   vz_enucmax = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
+                   coord_enucmax(1) = x
+                   coord_enucmax(2) = y
+                   coord_enucmax(3) = z
+                   vel_enucmax(1) = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
+                   vel_enucmax(2) = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
+                   vel_enucmax(3) = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
                 endif
 
 
