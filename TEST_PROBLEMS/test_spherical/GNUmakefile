@@ -1,59 +1,44 @@
-NDEBUG :=  
-MPI    :=  
-
 NDEBUG := t
-MPI    := t
-
+MPI    := 
 OMP    :=
 
 COMP := Intel
 
 MKVERBOSE := t
 
+# define the location of the fParallel root directory
 FPARALLEL := ../..
 
+
+# include the main Makefile stuff
 include $(FPARALLEL)/mk/GMakedefs.mak
 
-include $(FPARALLEL)/MAESTRO/test_spherical/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO/test_spherical
 
-include $(FPARALLEL)/boxlib/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/boxlib
+# define the packages to build this problem
+#   note: we only need to include the problem's directory if there are 
+#   unique files there (as specified in a GPackage.mak).  The problem 
+#   directory is always placed at the start of the vpath by the 
+#   GMakerules.mak.
+Fmdirs := MAESTRO/test_spherical \
+          boxlib \
+          mg \
+          MAESTRO \
+          extern/helmeos \
+          extern/conducteos \
+          extern/constants \
+          extern/networks/null \
+          extern/VODE
 
-include $(FPARALLEL)/mg/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/mg
+# directories containing files that are 'include'-d via Fortran
+Fmincludes := extern/helmeos
 
-include $(FPARALLEL)/MAESTRO/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO
-
-include $(FPARALLEL)/extern/helmeos/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/helmeos
-FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/helmeos
-
-include $(FPARALLEL)/extern/conducteos/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/conducteos
-FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/conducteos
-
-include $(FPARALLEL)/extern/constants/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/constants
-
-include $(FPARALLEL)/extern/networks/null/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/null
-
-include $(FPARALLEL)/extern/VODE/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/VODE
-
-main.$(suf).exe: $(objects)
-	$(LINK.f90) -o main.$(suf).exe $(objects) $(libraries)
-	@echo SUCCESS
-
-
+# define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters ./_parameters.test_spherical
-PROBIN_TEMPLATE   := ../probin.template
-
-probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
-	../write_probin.py -t $(PROBIN_TEMPLATE) $(PROBIN_PARAMETERS)
 
 
+# include the MAESTRO build stuff
+include $(FPARALLEL)/MAESTRO/GMaestro.mak
+
+# include the Makefile rules
 include $(FPARALLEL)/mk/GMakerules.mak
 
