@@ -52,7 +52,8 @@ contains
                   mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: dm, nlevs, spherical, nr_fine, r_cc_loc, r_edge_loc, dr, center
+    use geometry, only: dm, nlevs, spherical, nr_fine, &
+         r_cc_loc, r_edge_loc, dr, center
     use fundamental_constants_module, only: Gconst
     use bl_constants_module
     use variables, only: foextrap_comp
@@ -176,7 +177,8 @@ contains
           do comp=1,dm
              ! w0mac will contain an edge-centered w0 on a Cartesian grid,   
              ! for use in computing divergences.                            
-             call multifab_build(w0mac(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+             call multifab_build(w0mac(n,comp), mla%la(n),1,1, &
+                                 nodal=edge_nodal_flag(comp,:))
              call setval(w0mac(n,comp), ZERO, all=.true.)
           enddo
 
@@ -469,11 +471,11 @@ contains
        Mach_max_level = max_data_level(3)
 
 
-       ! for T_max, we want to know where the hot spot is, so we do a gather on
-       ! the temperature and find the index corresponding to the maxiumum.  We
-       ! then pack the coordinates and velocities into a local array and gather 
-       ! that to the I/O processor and pick the values corresponding to the 
-       ! maximum.
+       ! for T_max, we want to know where the hot spot is, so we do a
+       ! gather on the temperature and find the index corresponding to
+       ! the maxiumum.  We then pack the coordinates and velocities
+       ! into a local array and gather that to the I/O processor and
+       ! pick the values corresponding to the maximum.
        allocate(T_max_data(parallel_nprocs()))
        T_max_data_local(1) = T_max_local
 
@@ -483,8 +485,9 @@ contains
 
        index_max = maxloc(T_max_data, dim=1)
        
-       ! T_max_coords will contain both the coordinate information and 
-       ! the velocity information, so there are 2*dm values on each proc
+       ! T_max_coords will contain both the coordinate information and
+       ! the velocity information, so there are 2*dm values on each
+       ! proc
        allocate(T_max_coords(2*dm*parallel_nprocs()))
        T_max_coords_local(1) = xloc_Tmax_local
        T_max_coords_local(2) = yloc_Tmax_local
@@ -511,8 +514,9 @@ contains
        deallocate(T_max_coords)
 
 
-       ! for enuc_max, we also want to know where the hot spot is, so we do 
-       ! the same gather procedure as with the temperature (above).
+       ! for enuc_max, we also want to know where the hot spot is, so
+       ! we do the same gather procedure as with the temperature
+       ! (above).
        allocate(enuc_max_data(parallel_nprocs()))
        enuc_max_data_local(1) = enuc_max_local
 
@@ -522,8 +526,9 @@ contains
 
        index_max = maxloc(enuc_max_data, dim=1)
        
-       ! enuc_max_coords will contain both the coordinate information and 
-       ! the velocity information, so there are 2*dm values on each proc
+       ! enuc_max_coords will contain both the coordinate information
+       ! and the velocity information, so there are 2*dm values on
+       ! each proc
        allocate(enuc_max_coords(2*dm*parallel_nprocs()))
        enuc_max_coords_local(1) = xloc_enucmax_local
        enuc_max_coords_local(2) = yloc_enucmax_local
@@ -631,9 +636,9 @@ contains
     do r=1,nr_fine-1
 
        ! the mass is defined at the cell-centers, so to compute the
-       ! mass at the current center, we need to add the contribution of
-       ! the upper half of the zone below us and the lower half of the
-       ! current zone.
+       ! mass at the current center, we need to add the contribution
+       ! of the upper half of the zone below us and the lower half of
+       ! the current zone.
        
        ! don't add any contributions from outside the star -- i.e.
        ! rho < base_cutoff_density
@@ -659,8 +664,10 @@ contains
 
        m(r) = m(r-1) + term1 + term2
           
-       ! dU = - G M dM / r;  dM = 4 pi r**2 rho dr  -->  dU = - 4 pi G r rho dr
-       grav_ener = grav_ener - FOUR*M_PI*Gconst*m(r)*r_cc_loc(1,r)*rho0(1,r)*dr(1)
+       ! dU = - G M dM / r;  
+       ! dM = 4 pi r**2 rho dr  -->  dU = - 4 pi G r rho dr
+       grav_ener = grav_ener - &
+            FOUR*M_PI*Gconst*m(r)*r_cc_loc(1,r)*rho0(1,r)*dr(1)
 
     enddo
 
@@ -673,11 +680,11 @@ contains
     if (parallel_IOProcessor()) then
 
        vr(:) = vr(:)/nzones
-       vr_favre(:) = rhovr(:)/mass    ! note, the common dV normalization cancels
+       vr_favre(:) = rhovr(:)/mass    ! note: common dV normalization cancels
 
-       ! the volume we normalize with is that of a single coarse-level zone.
-       ! This is because the weight used in the loop over cells was with reference
-       ! to the coarse level
+       ! the volume we normalize with is that of a single coarse-level
+       ! zone.  This is because the weight used in the loop over cells
+       ! was with reference to the coarse level
 
        mass = mass*dx(1,1)*dx(1,2)*dx(1,3)
        kin_ener = kin_ener*dx(1,1)*dx(1,2)*dx(1,3)
@@ -685,8 +692,8 @@ contains
        nuc_ener = nuc_ener*dx(1,1)*dx(1,2)*dx(1,3)
 
        
-       ! ncenter should be 8 -- there are only 8 zones that have a vertex at the
-       ! center of the star
+       ! ncenter should be 8 -- there are only 8 zones that have a
+       ! vertex at the center of the star
        if (ncenter /= 8) then
           call bl_error("ERROR: ncenter /= 8 in diag")
        else
@@ -873,8 +880,9 @@ contains
     logical            :: cell_valid
     real (kind=dp_t)   :: x, y, z
 
-    ! weight is the factor by which the volume of a cell at the current level 
-    ! relates to the volume of a cell at the coarsest level of refinement.
+    ! weight is the factor by which the volume of a cell at the
+    ! current level relates to the volume of a cell at the coarsest
+    ! level of refinement.
     weight = 1.d0 / 8.d0**(n-1)
 
     if (.not. spherical == 1) then
@@ -990,7 +998,7 @@ contains
 
                 ! kinetic, internal, and nuclear energies
                 kin_ener = kin_ener + weight*s(i,j,k,rho_comp)*vel**2
-                int_ener = int_ener + weight*s(i,j,k,rho_comp)*e_eos(1)               
+                int_ener = int_ener + weight*s(i,j,k,rho_comp)*e_eos(1)
                 nuc_ener = nuc_ener + weight*rho_Hnuc(i,j,k)
 
 
