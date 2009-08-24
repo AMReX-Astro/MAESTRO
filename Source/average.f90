@@ -533,6 +533,22 @@ contains
 
   end subroutine average_one_level
 
+  subroutine cubic_interp(x,x0,x1,x2,x3,y,y0,y1,y2,y3)
+
+    real(kind=dp_t), intent(in   ) :: x,x0,x1,x2,x3,y0,y1,y2,y3
+    real(kind=dp_t), intent(  out) :: y
+    
+    y = y0 + (y1-y0)/(x1-x0)*(x-x0) &
+           + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(x-x0)*(x-x1) &
+           + ( ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0) &
+              -((y3-y2)/(x3-x2)-(y2-y1)/(x2-x1))/(x3-x1) ) / (x3-x0) &
+            *(x-x0)*(x-x1)*(x-x2)
+
+    if (y .gt. max(y0,y1,y2,y3)) y = max(y0,y1,y2,y3)
+    if (y .lt. min(y0,y1,y2,y3)) y = min(y0,y1,y2,y3)
+
+  end subroutine cubic_interp
+
   subroutine quad_interp(x,x0,x1,x2,y,y0,y1,y2)
 
     real(kind=dp_t), intent(in   ) :: x,x0,x1,x2,y0,y1,y2
