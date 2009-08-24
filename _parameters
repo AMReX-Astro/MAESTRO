@@ -223,7 +223,7 @@ slope_order                         integer            4
 # 1 = piecewise constant; @@
 # 2 = piecewise linear; @@
 # 3 = quadratic
-s0_interp_type                      integer            1
+s0_interp_type                      integer            3
 
 # The interpolation for filling a cell-centered multifab from a 1D edge-centered array. @@
 # 1 = piecewise constant; @@
