@@ -30,13 +30,6 @@
 
 module diag_module
 
-  use bl_types
-  use bl_IO_module
-  use bl_error_module
-  use multifab_module
-  use ml_layout_module
-  use define_bc_module
-
   implicit none
 
   private
@@ -51,13 +44,27 @@ contains
                   u,w0,normal, &
                   mla,the_bc_tower)
 
-    use bl_prof_module
-    use geometry, only: dm, nlevs, spherical, nr_fine, &
-         r_cc_loc, r_edge_loc, dr, center
+    use parallel                        
+
+    use bl_types, only: dp_t
+    use bl_IO_module, only: unit_new
+    use bl_constants_module, only: ZERO, FOUR, FOUR3RD, M_PI
+    use bl_prof_module, only: bl_prof_timer, build
+    use bl_error_module, only: bl_error
+    use bl_system_module, only: BL_CWD_SIZE, get_cwd 
+
     use fundamental_constants_module, only: Gconst
-    use bl_constants_module
+
+    use fab_module, only: lwb, upb
+    use multifab_module, only: multifab, multifab_build, destroy, &
+                               multifab_remote, dataptr, setval, get_box
+    use ml_layout_module, only: ml_layout
+    use define_bc_module, only: bc_tower
+
+    use geometry, only: dm, nlevs, spherical, nr_fine, &
+                        r_cc_loc, r_edge_loc, dr, center
     use variables, only: foextrap_comp
-    use fill_3d_module
+    use fill_3d_module, only: put_1d_array_on_cart, make_w0mac
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
                              job_name, &
@@ -153,6 +160,10 @@ contains
     integer :: i,n, comp, r
     integer :: un,un2,un3,un4
     logical :: lexist
+
+    character (len=16) :: date_str, time_str
+    integer, dimension(8) :: values
+    character (len=BL_CWD_SIZE) :: cwd
 
     logical, save :: firstCall = .true.
 
@@ -660,6 +671,9 @@ contains
  999 format("# job name: ",a)
 1000 format(1x,10(g20.10,1x))
 1001 format("#",10(a20,1x))
+ 800 format("# ",a,i4.4,'-',i2.2,'-',i2.2)
+ 801 format("# ",a,i2.2,':',i2.2,':',i2.2)
+ 802 format("# ",a,a)
 
     if (parallel_IOProcessor()) then
 
@@ -705,8 +719,17 @@ contains
        ! write out the headers
        if (firstCall) then
 
+          ! get the data and time
+          call date_and_time(date_str, time_str, VALUES=values)
+
+          ! get the output directory
+          call get_cwd(cwd)
+
           ! radvel
           write (un, *) " "
+          write (un, 800) "output date: ", values(1), values(2), values(3)
+          write (un, 801) "output time: ", values(5), values(6), values(7)
+          write (un, 802) "output dir:  ", trim(cwd)
           write (un, 999) trim(job_name)
           write (un, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
                            "max{|vr|}", &
@@ -715,18 +738,27 @@ contains
 
           ! temp
           write (un2, *) " "
+          write (un2, 800) "output date: ", values(1), values(2), values(3)
+          write (un2, 801) "output time: ", values(5), values(6), values(7)
+          write (un2, 802) "output dir:  ", trim(cwd)
           write (un2, 999) trim(job_name)
           write (un2,1001) "time", "max{T}", "x(max{T})", "y(max{T})", "z(max{T})", &
                "vx(max{T})", "vy(max{T})", "vz(max{T})", "R(max{T})", "T_center"
 
           ! enuc
           write (un3, *) " "
+          write (un3, 800) "output date: ", values(1), values(2), values(3)
+          write (un3, 801) "output time: ", values(5), values(6), values(7)
+          write (un3, 802) "output dir:  ", trim(cwd)
           write (un3, 999) trim(job_name)
           write (un3,1001) "time", "max{enuc}", "x(max{enuc})", "y(max{enuc})", "z(max{enuc})", &
                "vx(max{enuc})", "vy(max{enuc})", "vz(max{enuc})", "R(max{enuc})", 'tot nuc ener (erg/s)'
 
           ! vel
           write (un4, *) " "
+          write (un4, 800) "output date: ", values(1), values(2), values(3)
+          write (un4, 801) "output time: ", values(5), values(6), values(7)
+          write (un4, 802) "output dir:  ", trim(cwd)
           write (un4, 999) trim(job_name)
           write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", &
                "tot kin energy", "grav pot energy", "tot int energy", &
@@ -793,7 +825,8 @@ contains
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
-    use bl_constants_module
+    use bl_constants_module, only: HALF
+    use bl_error_module, only: bl_error
     use network, only: nspec
     use geometry, only: spherical, center
     use probin_module, only: base_cutoff_density, prob_lo
