@@ -87,8 +87,6 @@
 
  use_tfromp = T
 
- s0_interp_type = 1
-
  single_prec_plotfiles = T
 
  use_eos_coulomb = T
