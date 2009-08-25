@@ -46,7 +46,7 @@
  cg_verbose = 0
 
  do_initial_projection = T
- init_divu_iter = 3
+ init_divu_iter = 1
 
  do_sponge = T
  sponge_kappa = 100.d0
