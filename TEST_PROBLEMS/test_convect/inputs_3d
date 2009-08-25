@@ -26,7 +26,7 @@
  plot_int  = 25
  chk_int   = 200
 
- cflfac = 0.7d0
+ cflfac = 0.9
  init_shrink = 1.
 
  bcx_lo = -1
