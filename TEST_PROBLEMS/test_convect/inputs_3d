@@ -9,12 +9,12 @@
  n_cellz = 128
  max_grid_size = 32
 
- anelastic_cutoff = 1.d6
- base_cutoff_density = 1.d5
-
  prob_hi_x = 3.0d8
  prob_hi_y = 3.0d8
  prob_hi_z = 4.0d8
+
+ anelastic_cutoff = 1.d6
+ base_cutoff_density = 1.d5
 
  grav_const = -1.5d10
 
@@ -23,6 +23,7 @@
 
  stop_time = 10.d0
 
+ plot_base = T
  plot_int  = 25
  chk_int   = 200
 
