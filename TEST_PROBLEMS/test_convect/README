@@ -1,2 +1,1 @@
-test_convect was used in paper III.  The equivalent FLASH setup is
-lmn_convect.
+a new test_convect with the multilevel paper algorithm
