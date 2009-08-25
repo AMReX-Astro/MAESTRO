@@ -208,6 +208,7 @@ contains
   subroutine mk_vel_force_2d(vel_force,ng_f,gpres,ng_gp,rho,ng_s,rho0,grav,lo,hi)
 
     use bl_constants_module
+    use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
 
     integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,:)
@@ -225,6 +226,11 @@ contains
        do i = lo(1),hi(1)
 
           rhopert = rho(i,j) - rho0(j)
+          
+          ! cutoff the buoyancy term if we are outside of the star
+          if (rho(i,j) .lt. buoyancy_cutoff_factor*base_cutoff_density) then
+             rhopert = 0.d0
+          end if
 
           vel_force(i,j,1) = - gpres(i,j,1) / rho(i,j)
           vel_force(i,j,2) =  rhopert / rho(i,j) * grav(j) &
@@ -243,6 +249,7 @@ contains
 
     use geometry,  only: sin_theta, cos_theta, omega, centrifugal_term
     use bl_constants_module
+    use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
 
     integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s, ng_uo, ng_um
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
@@ -270,6 +277,11 @@ contains
 
              rhopert = rho(i,j,k) - rho0(k)
              
+             ! cutoff the buoyancy term if we are outside of the star
+             if (rho(i,j,k) .lt. buoyancy_cutoff_factor*base_cutoff_density) then
+                rhopert = 0.d0
+             end if
+
              if (is_final_update) then
 
                 ! use umac so we are time-centered
