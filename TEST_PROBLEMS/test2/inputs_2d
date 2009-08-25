@@ -5,7 +5,7 @@
  max_levs = 1
  n_cellx = 256
  n_celly = 640
- max_grid_size = 640
+ max_grid_size = 128
 
  prob_hi_x = 1.44e8
  prob_hi_y = 3.60e8
@@ -47,4 +47,7 @@
  use_eos_coulomb = F
 
  ppm_type = 1
+
+ do_sponge = T
+ sponge_kappa = 100.d0
 /
