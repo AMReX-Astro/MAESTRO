@@ -40,10 +40,10 @@
  cg_verbose = 0
 
  do_initial_projection = T
- init_divu_iter = 3
+ init_divu_iter = 1
 
  perturb_model = T
- 
+
  use_eos_coulomb = F
 
  ppm_type = 1

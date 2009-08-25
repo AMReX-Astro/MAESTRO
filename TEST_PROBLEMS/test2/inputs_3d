@@ -15,7 +15,7 @@
 
  anelastic_cutoff = 1.d6
  base_cutoff_density = 1.d5
- 
+
  grav_const = -1.5e10
 
  max_step  = 100000000
