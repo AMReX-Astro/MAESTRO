@@ -45,4 +45,6 @@
  sponge_kappa = 100.d0
 
  use_eos_coulomb = F
+
+ ppm_type = 1
 /
