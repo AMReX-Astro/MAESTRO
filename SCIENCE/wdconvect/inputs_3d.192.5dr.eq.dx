@@ -8,16 +8,23 @@
  n_cellz = 192
  max_grid_size = 32
 
- anelastic_cutoff = 3.e6
- base_cutoff_density = 3.e6
+ anelastic_cutoff = 1.d6
+ base_cutoff_density = 1.d5
+ sponge_center_density = 3.d6
+ sponge_start_factor = 3.333d0
+ sponge_kappa = 10.0d0
+
+ max_mg_bottom_nlevels = 3
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
 
  spherical_in = 1
  dm_in = 3
  do_sponge = .true.
 
- prob_hi_x = 5.e8
- prob_hi_y = 5.e8
- prob_hi_z = 5.e8
+ prob_hi_x = 5.d8
+ prob_hi_y = 5.d8
+ prob_hi_z = 5.d8
 
  max_step  = 100000000
  init_iter = 1
@@ -25,12 +32,12 @@
  stop_time = 30000.
 
  plot_int  = -1
- plot_deltat = 10.0
+ plot_deltat = 10.0d0
  chk_int   = 100
 
- cflfac = 0.7
- init_shrink = 0.1
- max_dt_growth = 1.1
+ cflfac = 0.7d0
+ init_shrink = 0.1d0
+ max_dt_growth = 1.1d0
  use_soundspeed_firstdt = T
  use_divu_firstdt = T
 
@@ -62,7 +69,7 @@
  enthalpy_pred_type = 1
  evolve_base_state = T
 
- dpdt_factor = 0.0
+ dpdt_factor = 0.0d0
 
  use_tfromp = T
 

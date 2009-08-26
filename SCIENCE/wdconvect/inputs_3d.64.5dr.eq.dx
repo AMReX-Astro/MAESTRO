@@ -27,7 +27,7 @@
 
  stop_time = 30000.
 
- plot_int  = 100
+ plot_int  = -1
  plot_deltat = 10.0d0
  chk_int   = 100
 
@@ -68,7 +68,6 @@
  dpdt_factor = 0.0d0
 
  use_tfromp = T
-
 
  single_prec_plotfiles = T
 
