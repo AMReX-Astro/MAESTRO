@@ -599,7 +599,7 @@ subroutine varden()
 
   ! output
   open(unit=10,file="base.new")
-  write(10,*) "1=r_cc, 2=rho, 3=temp, 4=p0"
+  write(10,*) "ONE=r_cc, TWO=rho, THREE=temp, FOUR=p0"
   do r=0,nr_fine-1
      write(10,1000) r_cc_loc(1,r), s0_new(1,r,rho_comp), s0_new(1,r,temp_comp), &
           p0_new(1,r)
@@ -607,7 +607,7 @@ subroutine varden()
   close(unit=10)
 
   open(unit=10,file="base.new_w0")
-  write(10,*) "1=r_edge, 2=w0"
+  write(10,*) "ONE=r_edge, TWO=w0"
   do r=0,nr_fine
      write(10,1000) r_edge_loc(1,r), w0(1,r)
   enddo
