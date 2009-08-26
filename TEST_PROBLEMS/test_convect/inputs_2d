@@ -7,11 +7,16 @@
  n_celly = 512
  max_grid_size = 64
 
- anelastic_cutoff = 1.d6
- base_cutoff_density = 1.d5
-
  prob_hi_x = 2.5d8
  prob_hi_y = 4.0d8
+
+ anelastic_cutoff = 3.d6
+ base_cutoff_density = 3.d6
+
+ do_sponge = T
+ sponge_center_density = 3.d6
+ sponge_start_factor = 33.333d0
+ sponge_kappa = 100.d0
 
  grav_const = -1.5d10
 
@@ -41,9 +46,6 @@
 
  do_initial_projection = T
  init_divu_iter = 1
-
- do_sponge = T
- sponge_kappa = 100.d0
 
  use_eos_coulomb = F
 
