@@ -15,6 +15,9 @@
  anelastic_cutoff = 1.d6
  base_cutoff_density = 1.d5
 
+ do_sponge = T
+ sponge_kappa = 50.d0
+
  grav_const = -1.5e10
 
  max_step  = 100000000
@@ -49,7 +52,4 @@
  use_eos_coulomb = F
 
  ppm_type = 1
-
- do_sponge = T
- sponge_kappa = 100.d0
 /
