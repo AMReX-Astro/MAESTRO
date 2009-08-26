@@ -119,7 +119,7 @@ sponge_kappa                        real               10.d0
 sponge_center_density               real               3.d6
 
 # The sponge begins at sponge\_center\_density * sponge\_start\_factor.
-sponge_start_factor                 real               10.d0
+sponge_start_factor                 real               3.333d0
 
 # In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point 
 # Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 
