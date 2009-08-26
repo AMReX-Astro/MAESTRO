@@ -106,14 +106,16 @@
 \verb=  restart  = &   which file to restart from.  -1 means do not restart  &  -1 \\
 \verb=  rotation_radius  = &   radius used for computing centrifugal term in rotation problems  &  1.0d6 \\
 \verb=  rotational_frequency  = &   rotational frequency used for computing centrifugal term in rotation problems.  &  ZERO \\
-\verb=  s0_interp_type  = &   The interpolation for filling a cell-centered multifab from a 1D bin-centered array. \newline 1 = piecewise constant; \newline 2 = piecewise linear; \newline 3 = quadratic  &  1 \\
+\verb=  s0_interp_type  = &   The interpolation for filling a cell-centered multifab from a 1D bin-centered array. \newline 1 = piecewise constant; \newline 2 = piecewise linear; \newline 3 = quadratic  &  3 \\
 \verb=  s0mac_interp_type  = &   The interpolation for filling an edge based multifab from a 1D bin-centered array. \newline 1 = Interpolate s0 to cell centers (with s0\_interp\_type), then average to edges; \newline 2 = Interpolate s0 to edges directly using linear interpolation; \newline 3 = Interpolate s0 to edges directly using quadratic interpolation.  &  1 \\
 \verb=  single_prec_plotfiles  = &    &  .false. \\
 \verb=  slope_order  = &   order of slopes in Godunov algorithm.  Options are 0, 2, or 4.  &  4 \\
 \verb=  small_dens  = &    &  1.d-5 \\
 \verb=  small_temp  = &    &  5.d6 \\
 \verb=  spherical_in  = &   set to 1 if you are doing a spherical problem  &  0 \\
+\verb=  sponge_center_density  = &   Center of the inner sponge.  &  3.d6 \\
 \verb=  sponge_kappa  = &   Parameter for sponge.  Problem dependent.  &  10.d0 \\
+\verb=  sponge_start_factor  = &   The sponge begins at sponge\_center\_density * sponge\_start\_factor.  &  10.d0 \\
 \verb=  stop_time  = &   simulation stop time  &  -1.d0 \\
 \verb=  temp_diffusion_formulation  = &   How to compute the explicit thermal diffusion term.  \newline 1 = in terms of $T$; \newline 2 = in terms of $\rho,p_0,X$.  &  2 \\
 \verb=  test_set  = &   Fixed grid file.  &  '' \\

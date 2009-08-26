@@ -110,7 +110,16 @@ mg_bottom_solver                    integer            -1
 max_mg_bottom_nlevels               integer            1000
 
 # Use sponging.
-do_sponge                           logical            .false.             
+do_sponge                           logical            .false. 
+
+# Parameter for sponge.  Problem dependent.
+sponge_kappa                        real               10.d0
+
+# Center of the inner sponge.
+sponge_center_density               real               3.d6
+
+# The sponge begins at sponge\_center\_density * sponge\_start\_factor.
+sponge_start_factor                 real               10.d0
 
 # In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point 
 # Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 
@@ -205,10 +214,7 @@ use_eos_coulomb                     logical            .true.
 
 small_temp                          real               5.d6                
 
-small_dens                          real               1.d-5               
-
-# Parameter for sponge.  Problem dependent.
-sponge_kappa                        real               10.d0               
+small_dens                          real               1.d-5            
 
 # turns on second order correction to delta gamma1 term
 use_delta_gamma1_term               logical            .false.             
