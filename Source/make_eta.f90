@@ -93,6 +93,8 @@ contains
           lo =  lwb(get_box(mla%la(n), i))
           hi =  upb(get_box(mla%la(n), i))
           select case (dm)
+          case (1)
+             call sum_etarho_1d(n,lo,hi,efp(:,1,1,1),ng_e,etarhosum_proc(n,:))
           case (2)
              call sum_etarho_2d(n,lo,hi,efp(:,:,1,1),ng_e,etarhosum_proc(n,:))
           case (3)
@@ -137,6 +139,40 @@ contains
     call destroy(bpt)
 
   end subroutine make_etarho_planar
+
+!---------------------------------------------------------------------------
+
+  subroutine sum_etarho_1d(n,lo,hi,etarhoflux,ng_e,etarhosum)
+
+    use geometry, only: r_end_coord, numdisjointchunks
+
+    integer         , intent(in   ) :: n, lo(:), hi(:), ng_e
+    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1)-ng_e:)
+    real (kind=dp_t), intent(inout) :: etarhosum(0:)
+
+    ! local
+    integer :: i,k
+    logical :: top_edge
+
+    do i=lo(1),hi(1)
+       etarhosum(i) = etarhoflux(i)
+    end do
+
+    ! we only add the contribution at the top edge if we are at the top of grid at a level
+    ! this prevents double counting
+    top_edge = .false.
+    do k = 1,numdisjointchunks(n)
+       if (hi(1) .eq. r_end_coord(n,k)) then
+          top_edge = .true.
+       end if
+    end do
+
+    if (top_edge) then
+       i=hi(1)+1
+       etarhosum(i) = etarhoflux(i)
+    end if
+
+  end subroutine sum_etarho_1d
 
 !---------------------------------------------------------------------------
 
