@@ -45,6 +45,8 @@ contains
           lo =  lwb(get_box(umac(n,dm), i))
           hi =  upb(get_box(umac(n,dm), i))
           select case(dm)
+          case(1)
+             call addw0_1d(wmp(:,1,1,1),ng_um,w0(n,:),lo,hi,mult)
           case(2)
              call addw0_2d(wmp(:,:,1,1),ng_um,w0(n,:),lo,hi,mult)
           case(3)
@@ -79,6 +81,21 @@ contains
     call destroy(bpt)
 
   end subroutine addw0
+
+  subroutine addw0_1d(umac,ng_um,w0,lo,hi,mult)
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_um
+    real(kind=dp_t), intent(inout) :: umac(lo(1)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::   w0(0:)
+    real(kind=dp_t), intent(in   ) :: mult
+
+    integer :: i
+
+    do i = lo(1),hi(1)+1
+       umac(i) = umac(i) + mult * w0(i)
+    end do
+
+  end subroutine addw0_1d
 
   subroutine addw0_2d(vmac,ng_um,w0,lo,hi,mult)
 
