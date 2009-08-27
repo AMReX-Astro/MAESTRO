@@ -24,7 +24,7 @@ module make_eta_module
 
   private
 
-  public :: make_etarho_planar, make_etarho_spherical, make_sprimebar_spherical
+  public :: make_etarho_planar, make_etarho_spherical
 
 contains
 
@@ -396,122 +396,5 @@ contains
     deallocate(rho0_new_cart,rho0_nph_cart)
     
   end subroutine construct_eta_cart
-
-  subroutine make_sprimebar_spherical(s,comp,s0,dx,sprimebar,mla,the_bc_level)
-
-    use bl_constants_module
-    use geometry, only: spherical, nr_fine, dm, nlevs
-    use variables
-    use average_module
-    use ml_restriction_module
-    use multifab_physbc_module
-    use multifab_fill_ghost_module
-
-    integer        , intent(in   ) :: comp
-    type(multifab) , intent(in   ) :: s(:)
-    real(kind=dp_t), intent(in   ) :: s0(:,0:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
-    real(kind=dp_t), intent(  out) :: sprimebar(:,0:)
-    type(ml_layout), intent(in   ) :: mla
-    type(bc_level) , intent(in   ) :: the_bc_level(:)
-
-    type(multifab) :: sprime(mla%nlevel)
-    
-    real(kind=dp_t), pointer :: spp(:,:,:,:)
-    real(kind=dp_t), pointer :: sp(:,:,:,:)
-
-    integer :: n,i,lo(dm),hi(dm),ng_sp,ng_s
-
-    if (spherical .eq. 0) then
-       call bl_error("ERROR: make_sprimebar_spherical shouldn't be called in plane-parallel")
-    end if
-
-    do n=1,nlevs
-       call multifab_build(sprime(n),s(n)%la,1,1)
-    end do
-
-    ng_sp = sprime(1)%ng
-    ng_s  = s(1)%ng
-
-    do n=1,nlevs
-       do i=1,sprime(n)%nboxes
-          if ( multifab_remote(sprime(n),i) ) cycle
-          spp  => dataptr(sprime(n), i)
-          sp => dataptr(s(n), i)
-          lo = lwb(get_box(sprime(n),i))
-          hi = upb(get_box(sprime(n),i))
-          call construct_sprime(sp(:,:,:,comp),ng_s,spp(:,:,:,1),ng_sp,s0(1,:),dx(n,:),lo,hi)
-       enddo
-    enddo
-
-    ! fill sprime ghostcells
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(sprime(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(sprime(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(sprime(n-1),sprime(n),mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(sprime(n),sprime(n-1),ng_sp,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n),1, &
-                                         foextrap_comp,1,fill_crse_input=.false.)
-       enddo
-
-    end if
-
-    call average(mla,sprime,sprimebar,dx,1)
-
-    do n=1,nlevs
-       call destroy(sprime(n))
-    enddo
-
-  end subroutine make_sprimebar_spherical
-
-  subroutine construct_sprime(s,ng_s,sprime,ng_sp,s0,dx,lo,hi)
-
-    use bl_constants_module
-    use geometry, only: nr_fine
-    use fill_3d_module
-
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_sp
-    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
-    real(kind=dp_t), intent(inout) :: sprime(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:)
-    real(kind=dp_t), intent(in   ) :: s0(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-
-    real(kind=dp_t), allocatable :: s0_cart(:,:,:,:)
-
-    integer :: i,j,k
-
-    allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0,s0_cart,lo,hi,dx,0)
-
-    do k = lo(3),hi(3)
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-
-             sprime(i,j,k) = s(i,j,k) - s0_cart(i,j,k,1)
- 
-          enddo
-       enddo
-    enddo
-
-    deallocate(s0_cart)
-
-  end subroutine construct_sprime
 
 end module make_eta_module
