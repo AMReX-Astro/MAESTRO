@@ -11,13 +11,13 @@
 
  max_step  = 100000000
 
- stop_time = 1.d0
+ stop_time = 2.0d0
 
- cflfac = 0.9
+ cflfac = 0.5
 
  ppm_type = 1
 
- model_file = "spherical.hse.1280"
+ model_file = "spherical.hse.640"
 
  use_eos_coulomb = T
 /
