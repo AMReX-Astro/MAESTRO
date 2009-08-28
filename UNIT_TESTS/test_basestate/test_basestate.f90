@@ -7,27 +7,44 @@ module test_basestate_module
 
 contains
 
-  subroutine get_heating(Hbar)
+  subroutine get_heating(Hbar,time,dt)
   
     use geometry, ONLY : nr, spherical, r_cc_loc
 
     real(dp_t), intent(inout) :: Hbar(0:)
+    real(dp_t), intent(in   ) :: time,dt
 
-    real(dp_t) :: y_0
+    real(dp_t) :: y_0, fac, t_stop
     integer :: r
+
+!   For heating away from the center
+    y_0 = 5.d7
+
+!   For heating at the center
+!   y_0 = 0.d0
+
+    Hbar(:) = 0.d0
+
+    t_stop = 0.5d0
     
-    do r = 0, nr(1)-1
-       if (spherical .eq. 0) then
-          ! plane-parallel -- do the heating term in paper II (section 4)
-          y_0 = 4.d7
-          Hbar(r) = 1.d17 * exp(-((r_cc_loc(1,r) - y_0)**2)/ 1.d14)
+    if (time .le. t_stop) then
+
+       if ( (time+dt) .gt. t_stop ) then
+           fac = (t_stop - time) / dt
        else
-          ! spherical -- lower amplitude heating term
-          y_0 = 4.d7
-          Hbar(r) = 1.d16 * exp(-((r_cc_loc(1,r) - y_0)**2)/ 1.d14)
-       endif
-       
-    enddo
+           fac = 1.d0
+       end if
+ 
+       do r = 0, nr(1)-1
+          if (spherical .eq. 0) then
+             ! plane-parallel -- do the heating term in paper II (section 4)
+             Hbar(r) = 1.d17 * exp(-((r_cc_loc(1,r) - y_0)**2)/ 1.d14)
+          else
+             ! spherical -- lower amplitude heating term
+             Hbar(r) = fac * 1.0d16 * exp(-((r_cc_loc(1,r) - y_0)**2)/ 1.d14)
+          endif
+       enddo
+    end if
 
     return
   end subroutine get_heating
