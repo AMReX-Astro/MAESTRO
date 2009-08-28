@@ -24,14 +24,15 @@
  max_step  = 100000
  init_iter = 4
 
- stop_time = 10.d0
+ stop_time = 100.d0
 
  plot_base = T
- plot_int  = 100
- chk_int   = 800
+ plot_int  = -1
+ plot_deltat = 1.d0
+ chk_int   = 1000
 
- cflfac = 0.9
- init_shrink = 1.
+ cflfac = 0.9d0
+ init_shrink = 1.d0
 
  bcx_lo = -1
  bcx_hi = -1
