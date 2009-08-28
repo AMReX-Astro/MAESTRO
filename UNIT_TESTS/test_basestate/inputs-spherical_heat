@@ -13,9 +13,9 @@
 
  stop_time = 2.0d0
 
- cflfac = 0.5
+ cflfac = 0.7d0
 
- model_file = "spherical.hse.640"
+ model_file = "spherical.hse.1280"
 
  use_eos_coulomb = T
 /
