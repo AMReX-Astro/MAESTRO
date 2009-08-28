@@ -10,6 +10,8 @@
 
  max_grid_size = 32
 
+ ppm_type = 0
+
  max_mg_bottom_nlevels = 3
  mg_bottom_solver = 4
  hg_bottom_solver = 4

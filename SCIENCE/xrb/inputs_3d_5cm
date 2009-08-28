@@ -12,6 +12,8 @@
 ! 8x8x16 = 1024 blocks
  max_grid_size = 16
 
+ ppm_type = 0
+
  burner_threshold_species = "He4"
 
  use_eos_coulomb = T
