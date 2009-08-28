@@ -209,7 +209,7 @@ subroutine varden()
      ! compute the heating term and Sbar
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      do n = 1, nlevs
-        call get_heating(Hext_bar(n,0:))
+        call get_heating(Hext_bar(n,0:),time,dt)
      enddo
 
 
