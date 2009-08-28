@@ -20,7 +20,7 @@
 
  grav_const = -1.5d10
 
- max_step  = 100000
+ max_step  = 999999
  init_iter = 4
 
  stop_time = 100.d0
