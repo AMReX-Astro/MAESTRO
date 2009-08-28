@@ -99,6 +99,8 @@ contains
 !    y_0 = 4.d7
     y_0 = 0.d0
 
+    rho_Hext = 0.d0
+
     if (time .lt. 0.5d0) then
 
        do k = lo(3), hi(3)
