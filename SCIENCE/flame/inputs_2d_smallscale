@@ -41,7 +41,6 @@
  grav_const = 0.d0
  use_thermal_diffusion = T
  use_eos_coulomb = T
- ppm_type = 0
 
  ! projection
  do_initial_projection = T

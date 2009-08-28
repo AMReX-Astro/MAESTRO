@@ -15,8 +15,6 @@
 
  cflfac = 0.5
 
- ppm_type = 1
-
  model_file = "spherical.hse.640"
 
  use_eos_coulomb = T

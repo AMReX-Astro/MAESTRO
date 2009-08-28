@@ -49,6 +49,4 @@
  init_divu_iter = 1
 
  use_eos_coulomb = F
-
- ppm_type = 1
 /

@@ -94,7 +94,7 @@
 \verb=  pmask_x  = &   indicates whether the problem domain periodic in the x-direction  &  .false. \\
 \verb=  pmask_y  = &   indicates whether the problem domain periodic in the y-direction  &  .false. \\
 \verb=  pmask_z  = &   indicates whether the problem domain periodic in the z-direction  &  .false. \\
-\verb=  ppm_type  = &   0 = no ppm \newline 1 = 1985 ppm \newline 2 = 2009 ppm  &  0 \\
+\verb=  ppm_type  = &   0 = no ppm \newline 1 = 1985 ppm \newline 2 = 2009 ppm  &  1 \\
 \verb=  prob_hi_x  = &   physical coordinates of hi-x corner of problem domain  &  1.d0 \\
 \verb=  prob_hi_y  = &   physical coordinates of hi-y corner of problem domain  &  1.d0 \\
 \verb=  prob_hi_z  = &   physical coordinates of hi-z corner of problem domain  &  1.d0 \\
@@ -115,7 +115,7 @@
 \verb=  spherical_in  = &   set to 1 if you are doing a spherical problem  &  0 \\
 \verb=  sponge_center_density  = &   Center of the inner sponge.  &  3.d6 \\
 \verb=  sponge_kappa  = &   Parameter for sponge.  Problem dependent.  &  10.d0 \\
-\verb=  sponge_start_factor  = &   The sponge begins at sponge\_center\_density * sponge\_start\_factor.  &  10.d0 \\
+\verb=  sponge_start_factor  = &   The sponge begins at sponge\_center\_density * sponge\_start\_factor.  &  3.333d0 \\
 \verb=  stop_time  = &   simulation stop time  &  -1.d0 \\
 \verb=  temp_diffusion_formulation  = &   How to compute the explicit thermal diffusion term.  \newline 1 = in terms of $T$; \newline 2 = in terms of $\rho,p_0,X$.  &  2 \\
 \verb=  test_set  = &   Fixed grid file.  &  '' \\

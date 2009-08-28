@@ -15,8 +15,6 @@
 
  cflfac = 0.9
 
- ppm_type = 1
-
  model_file = "model.planar.768"
 
  use_eos_coulomb = T

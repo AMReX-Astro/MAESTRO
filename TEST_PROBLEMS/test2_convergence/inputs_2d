@@ -54,6 +54,4 @@
  perturb_model = T
 
  use_eos_coulomb = F
-
- ppm_type = 1
 /

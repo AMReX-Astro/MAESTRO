@@ -42,8 +42,6 @@
  use_soundspeed_firstdt = T
  use_divu_firstdt = T
 
- ppm_type = 1
-
  bcx_lo = 12
  bcx_hi = 12
  bcy_lo = 12
