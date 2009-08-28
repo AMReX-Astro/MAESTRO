@@ -96,25 +96,30 @@ contains
     integer :: i, j, k
     real(kind=dp_t) :: x, y, z, r, y_0
 
-    y_0 = 4.d7
+!    y_0 = 4.d7
+    y_0 = 0.d0
 
-    do k = lo(3), hi(3)
-       z = (dble(k) + HALF)*dx(3) - center(3)
+    if (time .lt. 0.5d0) then
 
-       do j = lo(2), hi(2)
-          y = (dble(j) + HALF)*dx(2) - center(2)
+       do k = lo(3), hi(3)
+          z = (dble(k) + HALF)*dx(3) - center(3)
 
-          do i = lo(1), hi(1)
-             x = (dble(i) + HALF)*dx(1) - center(1)
+          do j = lo(2), hi(2)
+             y = (dble(j) + HALF)*dx(2) - center(2)
 
-             r = sqrt(x**2 + y**2 + z**2)
+             do i = lo(1), hi(1)
+                x = (dble(i) + HALF)*dx(1) - center(1)
 
-             rho_Hext(i,j,k) = s(i,j,k,rho_comp)* 1.d16*exp(-(r-y_0)**2/1.d14)
+                r = sqrt(x**2 + y**2 + z**2)
 
+                rho_Hext(i,j,k) = s(i,j,k,rho_comp)* 1.d16*exp(-(r-y_0)**2/1.d14)
+
+             enddo
           enddo
        enddo
-    enddo
-    
+
+    end if
+
   end subroutine get_rho_Hext_3d
   
 end module heating_module
