@@ -18,10 +18,10 @@ contains
     integer :: r
 
 !   For heating away from the center
-    y_0 = 5.d7
+!   y_0 = 5.d7
 
 !   For heating at the center
-!   y_0 = 0.d0
+    y_0 = 0.d0
 
     Hbar(:) = 0.d0
 
