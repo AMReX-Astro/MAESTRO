@@ -14,7 +14,7 @@ module heating_module
   
 contains
 
-  subroutine get_rho_Hext(mla,s,rho_Hext,dx,time,the_bc_level)
+  subroutine get_rho_Hext(mla,s,rho_Hext,dx,time,dt,the_bc_level)
 
     use geometry, only: nlevs
     use multifab_module
@@ -26,7 +26,7 @@ contains
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:),time
+    real(kind=dp_t), intent(in   ) :: dx(:,:),time,dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
@@ -53,7 +53,7 @@ contains
           case (2)
              call get_rho_Hext_2d(hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s,lo,hi,dx(n,:),time)
           case (3)
-             call get_rho_Hext_3d(hp(:,:,:,1),ng_h,sp(:,:,:,:),ng_s,lo,hi,dx(n,:),time)
+             call get_rho_Hext_3d(hp(:,:,:,1),ng_h,sp(:,:,:,:),ng_s,lo,hi,dx(n,:),time,dt)
           end select
        end do
 
@@ -82,7 +82,7 @@ contains
     
   end subroutine get_rho_Hext_2d
   
-  subroutine get_rho_Hext_3d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
+  subroutine get_rho_Hext_3d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time,dt)
     
     use bl_constants_module
     use geometry, only: center
@@ -91,17 +91,25 @@ contains
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real(kind=dp_t), intent(in   ) :: dx(:),time
+    real(kind=dp_t), intent(in   ) :: dx(:),time,dt
 
     integer :: i, j, k
-    real(kind=dp_t) :: x, y, z, r, y_0
+    real(kind=dp_t) :: x, y, z, r, y_0, fac, t_stop
+
+    t_stop = 0.5d0
 
 !    y_0 = 4.d7
     y_0 = 0.d0
 
     rho_Hext = 0.d0
 
-    if (time .lt. 0.5d0) then
+    if (time .lt. t_stop) then
+
+       if ( (time+dt) .gt. t_stop ) then
+          fac = (t_stop - time) / dt
+       else
+          fac = 1.d0
+       end if
 
        do k = lo(3), hi(3)
           z = (dble(k) + HALF)*dx(3) - center(3)
@@ -114,7 +122,7 @@ contains
 
                 r = sqrt(x**2 + y**2 + z**2)
 
-                rho_Hext(i,j,k) = s(i,j,k,rho_comp)* 1.d16*exp(-(r-y_0)**2/1.d14)
+                rho_Hext(i,j,k) = fac * s(i,j,k,rho_comp)* 1.d16*exp(-(r-y_0)**2/1.d14)
 
              enddo
           enddo
