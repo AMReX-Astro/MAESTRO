@@ -28,11 +28,12 @@
  do_initial_projection = T
  init_divu_iter = 3
 
- stop_time = 1.d0
+ stop_time = 2.d0
 
  plot_base = T
- plot_int  = 25
- chk_int   = 25
+ plot_deltat = 0.5d0
+ plot_int  = -1
+ chk_int   = -1
 
  plot_base = T
 
