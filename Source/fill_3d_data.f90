@@ -144,7 +144,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0(0:)
     real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,lo(2)-ng_s:,:)
 
-    integer :: i,j
+    integer :: j
 
     type(bl_prof_timer), save :: bpt
 
@@ -157,17 +157,13 @@ contains
        if (is_output_a_vector) then
 
           do j=lo(2),hi(2)
-             do i=lo(1),hi(1)
-                s0_cart(i,j,2) = HALF * (s0(j) + s0(j+1))
-             end do
+             s0_cart(:,j,2) = HALF * (s0(j) + s0(j+1))
           end do
 
        else
 
           do j=lo(2),hi(2)
-             do i=lo(1),hi(1)
-                s0_cart(i,j,1) = HALF * (s0(j) + s0(j+1))
-             end do
+             s0_cart(:,j,1) = HALF * (s0(j) + s0(j+1))
           end do
 
        end if
@@ -177,17 +173,13 @@ contains
        if (is_output_a_vector) then
 
           do j=lo(2),hi(2)
-             do i=lo(1),hi(1)
-                s0_cart(i,j,2) = s0(j)
-             end do
+             s0_cart(:,j,2) = s0(j)
           end do
 
        else
 
           do j=lo(2),hi(2)
-             do i=lo(1),hi(1)
-                s0_cart(i,j,1) = s0(j)
-             end do
+             s0_cart(:,j,1) = s0(j)
           end do
 
        end if
@@ -209,7 +201,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0(0:)
     real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
 
-    integer :: i,j,k
+    integer :: k
 
     type(bl_prof_timer), save :: bpt
 
@@ -222,21 +214,13 @@ contains
        if (is_output_a_vector) then
 
           do k=lo(3),hi(3)
-             do j=lo(2),hi(2)
-                do i=lo(1),hi(1)
-                   s0_cart(i,j,k,3) = HALF * (s0(k) + s0(k+1))
-                end do
-             end do
+             s0_cart(:,:,k,3) = HALF * (s0(k) + s0(k+1))
           end do
           
        else
           
           do k=lo(3),hi(3)
-             do j=lo(2),hi(2)
-                do i=lo(1),hi(1)
-                   s0_cart(i,j,k,1) = HALF * (s0(k) + s0(k+1))
-                end do
-             end do
+             s0_cart(:,:,k,1) = HALF * (s0(k) + s0(k+1))
           end do
           
        end if
@@ -246,21 +230,13 @@ contains
        if (is_output_a_vector) then
 
           do k=lo(3),hi(3)
-             do j=lo(2),hi(2)
-                do i=lo(1),hi(1)
-                   s0_cart(i,j,k,3) = s0(k)
-                end do
-             end do
+             s0_cart(:,:,k,3) = s0(k)
           end do
           
        else
           
           do k=lo(3),hi(3)
-             do j=lo(2),hi(2)
-                do i=lo(1),hi(1)
-                   s0_cart(i,j,k,1) = s0(k)
-                end do
-             end do
+             s0_cart(:,:,k,1) = s0(k)
           end do
           
        end if
