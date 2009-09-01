@@ -146,7 +146,8 @@ subroutine varden()
         case (2)
         case (3)
            if (spherical .eq. 1) then
-              call initgaussian_3d_sphr(pp(:,:,:,1), phi(n)%ng, lo, hi, dx(n,:))
+              call initgaussian_3d_sphr(phi_exact(1,:), pp(:,:,:,:), phi(n)%ng, &
+                                        lo, hi, dx(n,:))
            else
            end if
         end select
@@ -226,12 +227,13 @@ subroutine varden()
 
   contains
 
-    subroutine initgaussian_3d_sphr(phi,ng,lo,hi,dx)
+    subroutine initgaussian_3d_sphr(phi_exact,phi,ng,lo,hi,dx)
 
       use probin_module, only: prob_lo, perturb_model
 
+      real (kind = dp_t), intent(in   ) :: phi_exact(:)
       integer           , intent(in   ) :: lo(:),hi(:),ng
-      real (kind = dp_t), intent(inout) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+      real (kind = dp_t), intent(inout) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(in   ) :: dx(:)
 
       !     Local variables
@@ -239,19 +241,22 @@ subroutine varden()
       real(kind=dp_t) :: x,y,z,dist
 
       ! initialize (rho h) using the EOS
-      do k = lo(3), hi(3)
-         z = (dble(k)+0.5d0)*dx(3) - center(3)
-         do j = lo(2), hi(2)
-            y = (dble(j)+0.5d0)*dx(2) - center(2)
-            do i = lo(1), hi(1)
-               x = (dble(i)+0.5d0)*dx(1) - center(1)
+!      do k = lo(3), hi(3)
+!         z = (dble(k)+0.5d0)*dx(3) - center(3)
+!         do j = lo(2), hi(2)
+!            y = (dble(j)+0.5d0)*dx(2) - center(2)
+!            do i = lo(1), hi(1)
+!               x = (dble(i)+0.5d0)*dx(1) - center(1)
+!
+!               dist = sqrt(x**2 + y**2 + z**2)
+!               phi(i,j,k,1) = exp(-dist**2/0.1d0)
+!
+!            enddo
+!         enddo
+!      enddo
 
-               dist = sqrt(x**2 + y**2 + z**2)
-               phi(i,j,k) = exp(-dist**2/0.1d0)
-
-            enddo
-         enddo
-      enddo
+      call put_1d_array_on_cart_3d_sphr(.false.,.false.,phi_exact(:), &
+                                        phi(:,:,:,1:),lo,hi,dx,ng)
 
     end subroutine initgaussian_3d_sphr
 
