@@ -104,7 +104,7 @@ contains
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base, &
          single_prec_plotfiles, edge_nodal_flag, do_smallscale, use_thermal_diffusion, &
-         evolve_base_state
+         evolve_base_state, prob_lo, prob_hi
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use average_module
     use ml_restriction_module
@@ -432,7 +432,8 @@ contains
     end do
 
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
-                                   mba%pd(1), time, dx(1,:), nOutFiles = nOutFiles, &
+                                   mba%pd(1), prob_lo, prob_hi, time, dx(1,:), &
+                                   nOutFiles = nOutFiles, &
                                    lUsingNFiles = lUsingNFiles, prec = prec)
 
     do n = 1,nlevs
