@@ -1262,7 +1262,7 @@ contains
        call average(mla,snew,tempbar,dx,temp_comp)
 
        ! output any runtime diagnostics
-       call diag(time,dt,dx,snew,rho_Hnuc2,rho_Hext,rho_omegadot2, &
+       call diag(time,dt,dx,snew,rho_Hnuc2,rho_Hext,thermal2,rho_omegadot2, &
                  rho0_new,rhoh0_new,p0_new,tempbar, &
                  gamma1bar,div_coeff_new, &
                  unew,w0,normal, &

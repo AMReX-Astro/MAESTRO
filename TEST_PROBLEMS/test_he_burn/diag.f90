@@ -1,16 +1,20 @@
-! xrb-specific diagnostic routine
+! test_he_burn diagnostic routine
 !
 ! output files:
 !
-!    xrb_enuc_diag.out:
+!    test_he_burn_enuc_diag.out:
 !        peak nuclear energy generation rate (erg / g / s)
 !        x/y/z location of peak 
 !
-!    xrb_temp_diag.out:
-!        peak temperature in the helium layer
-!            helium layer defined by X(He4) >= diag_define_he_layer where 
-!            diag_define_he_layer is a xrb _parameter
+!    test_he_burn_temp_diag.out:
+!        peak temperature (K)
 !        x/y/z location of peak
+!
+!    test_he_burn_energetics_diag.out:
+!        max ratio of rho*enucdot / thermal
+!        x/y/z location of max
+!        min ratio of rho*enucdot / thermal
+!        x/y/z location of min
 !
 
 
@@ -44,8 +48,8 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: rho_Hnuc(:)
     type(multifab) , intent(in   ) :: rho_Hext(:)
-    type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: rho_omegadot(:)    
+    type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) ::      rho0(:,0:)
@@ -63,6 +67,7 @@ contains
     real(kind=dp_t), pointer::  sp(:,:,:,:)
     real(kind=dp_t), pointer::  rhnp(:,:,:,:)
     real(kind=dp_t), pointer::  rhep(:,:,:,:)
+    real(kind=dp_t), pointer::  thp(:,:,:,:)
     real(kind=dp_t), pointer::  up(:,:,:,:)
     logical,         pointer :: mp(:,:,:,:)
 
@@ -82,7 +87,23 @@ contains
     real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(dm)
     real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
 
-    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_rhn,ng_rhe
+    real(kind=dp_t) :: ratio_max, ratio_max_local, ratio_max_level
+    real(kind=dp_t) :: x_ratiomax_local, y_ratiomax_local, z_ratiomax_local
+    real(kind=dp_t) :: x_ratiomax_level, y_ratiomax_level, z_ratiomax_level
+    real(kind=dp_t) :: x_ratiomax, y_ratiomax, z_ratiomax
+    ! buffers
+    real(kind=dp_t) :: ratio_max_data_local(1), ratio_max_coords_local(dm)
+    real(kind=dp_t), allocatable :: ratio_max_data(:), ratio_max_coords(:)
+
+    real(kind=dp_t) :: ratio_min, ratio_min_local, ratio_min_level
+    real(kind=dp_t) :: x_ratiomin_local, y_ratiomin_local, z_ratiomin_local
+    real(kind=dp_t) :: x_ratiomin_level, y_ratiomin_level, z_ratiomin_level
+    real(kind=dp_t) :: x_ratiomin, y_ratiomin, z_ratiomin
+    ! buffers
+    real(kind=dp_t) :: ratio_min_data_local(1), ratio_min_coords_local(dm)
+    real(kind=dp_t), allocatable :: ratio_min_data(:), ratio_min_coords(:)
+
+    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_rhn,ng_rhe, ng_th
     integer :: i,n, index_max
     integer :: un, un2
     logical :: lexist
@@ -97,10 +118,10 @@ contains
     ng_u = u(1)%ng
     ng_rhn = rho_Hnuc(1)%ng
     ng_rhe = rho_Hext(1)%ng
+    ng_th  = thermal(1)%ng
 
     ! initialize
     ! note that T_max corresponds to the maximum temperature in the 
-    ! helium layer defined by X(He4) >= diag_define_he_layer
     T_max       = ZERO
 
     x_Tmax      = ZERO
@@ -112,6 +133,19 @@ contains
     x_enucmax   = ZERO
     y_enucmax   = ZERO
     z_enucmax   = ZERO
+
+    ratio_max   = ZERO
+    
+    x_ratiomax  = ZERO
+    y_ratiomax  = ZERO
+    z_ratiomax  = ZERO
+    
+    ratio_min   = ZERO
+    
+    x_ratiomin  = ZERO
+    y_ratiomin  = ZERO
+    z_ratiomin  = ZERO
+
 
     ! loop over the levels and calculate global quantities
     do n = 1, nlevs
@@ -137,6 +171,27 @@ contains
        y_enucmax_level = ZERO
        z_enucmax_level = ZERO
 
+       ratio_max_local     = ZERO
+       ratio_max_level     = ZERO
+
+       x_ratiomax_local = ZERO
+       y_ratiomax_local = ZERO
+       z_ratiomax_local = ZERO
+       x_ratiomax_level = ZERO
+       y_ratiomax_level = ZERO
+       z_ratiomax_level = ZERO
+
+       ratio_min_local     = ZERO
+       ratio_min_level     = ZERO
+
+       x_ratiomin_local = ZERO
+       y_ratiomin_local = ZERO
+       z_ratiomin_local = ZERO
+       x_ratiomin_level = ZERO
+       y_ratiomin_level = ZERO
+       z_ratiomin_level = ZERO
+       
+
        ! loop over the boxes at the current level
        do i = 1, s(n)%nboxes
 
@@ -145,6 +200,7 @@ contains
           sp => dataptr(s(n) , i)
           rhnp => dataptr(rho_Hnuc(n), i)
           rhep => dataptr(rho_Hext(n), i)
+          thp => dataptr(thermal(n), i)
           up => dataptr(u(n) , i)
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
@@ -159,6 +215,7 @@ contains
                              sp(:,:,1,:),ng_s, &
                              rhnp(:,:,1,1),ng_rhn, &
                              rhep(:,:,1,1),ng_rhe, &
+                             thp(:,:,1,1), ng_th, &
                              rho0(n,:),rhoh0(n,:), &
                              p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                              up(:,:,1,:),ng_u, &
@@ -174,6 +231,7 @@ contains
                              sp(:,:,1,:),ng_s, &
                              rhnp(:,:,1,1),ng_rhn, &
                              rhep(:,:,1,1),ng_rhe, &
+                             thp(:,:,1,1), ng_th, &
                              rho0(n,:),rhoh0(n,:), &
                              p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                              up(:,:,1,:),ng_u, &
@@ -193,6 +251,7 @@ contains
                              sp(:,:,:,:),ng_s, &
                              rhnp(:,:,:,1),ng_rhn, &
                              rhep(:,:,:,1),ng_rhe, &
+                             thp(:,:,:,1), ng_th, &
                              rho0(n,:),rhoh0(n,:), &
                              p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                              up(:,:,:,:),ng_u, &
@@ -209,6 +268,7 @@ contains
                              sp(:,:,:,:),ng_s, &
                              rhnp(:,:,:,1),ng_rhn, &
                              rhep(:,:,:,1),ng_rhe, &
+                             thp(:,:,:,1), ng_th, &
                              rho0(n,:),rhoh0(n,:), &
                              p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                              up(:,:,:,:),ng_u, &
@@ -312,21 +372,21 @@ contains
        ! open the diagnostic files for output, taking care not to overwrite
        ! an existing file
        un = unit_new()
-       inquire(file="xrb_temp_diag.out", exist=lexist)
+       inquire(file="test_he_burn_temp_diag.out", exist=lexist)
        if (lexist) then
-          open(unit=un, file="xrb_temp_diag.out", &
+          open(unit=un, file="test_he_burn_temp_diag.out", &
                status="old", position="append")
        else
-          open(unit=un, file="xrb_temp_diag.out", status="new")
+          open(unit=un, file="test_he_burn_temp_diag.out", status="new")
        endif
 
        un2 = unit_new()
-       inquire(file="xrb_enuc_diag.out", exist=lexist)
+       inquire(file="test_he_burn_enuc_diag.out", exist=lexist)
        if (lexist) then
-          open(unit=un2, file="xrb_enuc_diag.out", &
+          open(unit=un2, file="test_he_burn_enuc_diag.out", &
                status="old", position="append")
        else
-          open(unit=un2, file="xrb_enuc_diag.out", status="new")
+          open(unit=un2, file="test_he_burn_enuc_diag.out", status="new")
        endif
 
        ! print the headers
@@ -363,6 +423,7 @@ contains
                      s,ng_s, &
                      rho_Hnuc,ng_rhn, &
                      rho_Hext,ng_rhe, &
+                     thermal, ng_th, &
                      rho0,rhoh0,p0,tempbar,gamma1bar, &
                      u,ng_u, &
                      w0, &
@@ -375,13 +436,14 @@ contains
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
-    use probin_module, only: diag_define_he_layer, prob_lo, base_cutoff_density
+    use probin_module, only: prob_lo, base_cutoff_density
     use bl_constants_module, only: HALF
 
-    integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
+    integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_th
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:)
     real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:)
+    real (kind=dp_t), intent(in   ) :: thermal(lo(1)-ng_th:,lo(2)-ng_th:)
     real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
@@ -412,18 +474,13 @@ contains
           if (cell_valid .and. s(i,j,rho_comp) > base_cutoff_density) then
 
              ! temperature diagnostic
-             ! check to see if we are in the helium layer
-             ! if we are, then get T_max and its loc
-             if (s(i,j,spec_comp) .ge. diag_define_he_layer) then
-
-                if (s(i,j,temp_comp) > T_max) then
+             if (s(i,j,temp_comp) > T_max) then
                 
-                   T_max = s(i,j,temp_comp)
+                T_max = s(i,j,temp_comp)
                 
-                   x_Tmax = x
-                   y_Tmax = y
+                x_Tmax = x
+                y_Tmax = y
 
-                endif
              endif
 
              ! enuc diagnostic
@@ -448,6 +505,7 @@ contains
                      s,ng_s, &
                      rho_Hnuc,ng_rhn, &
                      rho_Hext,ng_rhe, &
+                     thermal, ng_th, &
                      rho0,rhoh0,p0,tempbar,gamma1bar, &
                      u,ng_u,w0, &
                      lo,hi, &
@@ -460,12 +518,13 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
     use bl_constants_module, only: HALF
-    use probin_module, only: diag_define_he_layer, prob_lo, base_cutoff_density
+    use probin_module, only: prob_lo, base_cutoff_density
 
-    integer, intent(in) :: n,lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
+    integer, intent(in) :: n,lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_th
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:,lo(3)-ng_rhn:)
     real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:,lo(3)-ng_rhe:)
+    real (kind=dp_t), intent(in   ) :: thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
     real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
@@ -497,18 +556,14 @@ contains
              if (cell_valid .and. s(i,j,k,rho_comp) > base_cutoff_density) then
 
                 ! temperature diagnostic
-                ! check to see if we are in the helium layer
-                ! if we are, then get T_max
-                if (s(i,j,k,spec_comp) .ge. diag_define_he_layer) then
-                   if (s(i,j,k,temp_comp) > T_max) then
+                if (s(i,j,k,temp_comp) > T_max) then
                    
-                      T_max = s(i,j,k,temp_comp)
+                   T_max = s(i,j,k,temp_comp)
                    
-                      x_Tmax = x
-                      y_Tmax = y
-                      z_Tmax = z
+                   x_Tmax = x
+                   y_Tmax = y
+                   z_Tmax = z
                    
-                   endif
                 endif
 
                 ! enuc diagnostic
