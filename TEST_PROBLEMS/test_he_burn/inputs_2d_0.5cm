@@ -4,10 +4,10 @@
  plot_base = T
 
  max_levs = 1
- n_cellx = 1024
+ n_cellx = 512
  n_celly = 1024
 
-! 16x16 = 256 blocks
+! 8x16 = 128 blocks
  max_grid_size = 64
 
  ppm_type = 0
@@ -20,24 +20,22 @@
  
  use_eos_coulomb = T
 
- do_burning = F
-
  prob_lo_x = 0.0d0
  prob_lo_y = 0.0d0
 
- prob_hi_x = 512.0d0
+ prob_hi_x = 256.0d0
  prob_hi_y = 512.0d0
 
  grav_const = -2.45e14
 
- max_step  = 10000
+ max_step  = 20000
  init_iter = 3
 
  stop_time = 2.5
 
  plot_int  = -1
  plot_deltat = 1.e-4
- chk_int   = 200
+ chk_int   = 500
 
  cflfac = 0.7
  init_shrink = 0.1
@@ -60,19 +58,16 @@
  do_initial_projection = T
  init_divu_iter = 3
 
- use_thermal_diffusion = F
+ use_thermal_diffusion = T
  dpdt_factor = 0.3d0
 
  base_cutoff_density = 1.d4
  anelastic_cutoff = 1.d4
 
-! perturb_model = T
-! xrb_pert_size = 50
-! xrb_pert_factor = 1.0d-5
-! xrb_pert_type = 1
+! perturb_model = F
 
 ! do_sponge = T
 
-!restart = 50
+! restart = 10000
 
 /
