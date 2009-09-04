@@ -5,17 +5,14 @@
 !    test_he_burn_enuc_diag.out:
 !        peak nuclear energy generation rate (erg / g / s)
 !        x/y/z location of peak 
+!        max ratio of cooling / nuc energy generation
+!        x/y/z location of max
 !
 !    test_he_burn_temp_diag.out:
 !        peak temperature (K)
 !        x/y/z location of peak
 !
-!    test_he_burn_energetics_diag.out:
-!        max ratio of rho*enucdot / thermal
-!        x/y/z location of max
-!        min ratio of rho*enucdot / thermal
-!        x/y/z location of min
-!
+
 
 
 module diag_module
@@ -95,14 +92,6 @@ contains
     real(kind=dp_t) :: ratio_max_data_local(1), ratio_max_coords_local(dm)
     real(kind=dp_t), allocatable :: ratio_max_data(:), ratio_max_coords(:)
 
-    real(kind=dp_t) :: ratio_min, ratio_min_local, ratio_min_level
-    real(kind=dp_t) :: x_ratiomin_local, y_ratiomin_local, z_ratiomin_local
-    real(kind=dp_t) :: x_ratiomin_level, y_ratiomin_level, z_ratiomin_level
-    real(kind=dp_t) :: x_ratiomin, y_ratiomin, z_ratiomin
-    ! buffers
-    real(kind=dp_t) :: ratio_min_data_local(1), ratio_min_coords_local(dm)
-    real(kind=dp_t), allocatable :: ratio_min_data(:), ratio_min_coords(:)
-
     integer :: lo(dm),hi(dm),ng_s,ng_u,ng_rhn,ng_rhe, ng_th
     integer :: i,n, index_max
     integer :: un, un2
@@ -121,7 +110,6 @@ contains
     ng_th  = thermal(1)%ng
 
     ! initialize
-    ! note that T_max corresponds to the maximum temperature in the 
     T_max       = ZERO
 
     x_Tmax      = ZERO
@@ -140,19 +128,13 @@ contains
     y_ratiomax  = ZERO
     z_ratiomax  = ZERO
     
-    ratio_min   = ZERO
-    
-    x_ratiomin  = ZERO
-    y_ratiomin  = ZERO
-    z_ratiomin  = ZERO
-
 
     ! loop over the levels and calculate global quantities
     do n = 1, nlevs
 
        ! initialize local and level quantities
-       T_max_local     = ZERO
-       T_max_level     = ZERO
+       T_max_local = ZERO
+       T_max_level = ZERO
 
        x_Tmax_local = ZERO
        y_Tmax_local = ZERO
@@ -161,8 +143,8 @@ contains
        y_Tmax_level = ZERO
        z_Tmax_level = ZERO       
 
-       enuc_max_local     = ZERO
-       enuc_max_level     = ZERO
+       enuc_max_local = ZERO
+       enuc_max_level = ZERO
 
        x_enucmax_local = ZERO
        y_enucmax_local = ZERO
@@ -171,8 +153,8 @@ contains
        y_enucmax_level = ZERO
        z_enucmax_level = ZERO
 
-       ratio_max_local     = ZERO
-       ratio_max_level     = ZERO
+       ratio_max_local = ZERO
+       ratio_max_level = ZERO
 
        x_ratiomax_local = ZERO
        y_ratiomax_local = ZERO
@@ -181,16 +163,6 @@ contains
        y_ratiomax_level = ZERO
        z_ratiomax_level = ZERO
 
-       ratio_min_local     = ZERO
-       ratio_min_level     = ZERO
-
-       x_ratiomin_local = ZERO
-       y_ratiomin_local = ZERO
-       z_ratiomin_local = ZERO
-       x_ratiomin_level = ZERO
-       y_ratiomin_level = ZERO
-       z_ratiomin_level = ZERO
-       
 
        ! loop over the boxes at the current level
        do i = 1, s(n)%nboxes
@@ -224,7 +196,9 @@ contains
                              T_max_local, &
                              x_Tmax_local, y_Tmax_local, &
                              enuc_max_local, &
-                             x_enucmax_local, y_enucmax_local)
+                             x_enucmax_local, y_enucmax_local, &
+                             ratio_max_local, &
+                             x_ratiomax_local, y_ratiomax_local)
              else
                 mp => dataptr(mla%mask(n),i)
                 call diag_2d(n,time,dt,dx(n,:), &
@@ -241,6 +215,8 @@ contains
                              x_Tmax_local, y_Tmax_local, &
                              enuc_max_local, &
                              x_enucmax_local, y_enucmax_local, &
+                             ratio_max_local, &
+                             x_ratiomax_local, y_ratiomax_local, &
                              mp(:,:,1,1))
              endif
           case (3)
@@ -260,7 +236,9 @@ contains
                              T_max_local, &
                              x_Tmax_local, y_Tmax_local, z_Tmax_local, &
                              enuc_max_local, &
-                             x_enucmax_local, y_enucmax_local, z_enucmax_local)
+                             x_enucmax_local, y_enucmax_local, z_enucmax_local, &
+                             ratio_max_local, &
+                             x_ratiomax_local, y_ratiomax_local, z_ratiomax_local)
 
              else
                 mp => dataptr(mla%mask(n),i)
@@ -278,6 +256,8 @@ contains
                              x_Tmax_local, y_Tmax_local, z_Tmax_local, &
                              enuc_max_local, &
                              x_enucmax_local, y_enucmax_local, z_enucmax_local,&
+                             ratio_max_local, &
+                             x_ratiomax_local, y_ratiomax_local, z_ratiomax_local, &
                              mp(:,:,:,1))
              endif
           end select
@@ -338,6 +318,32 @@ contains
 
        deallocate(enuc_max_data, enuc_max_coords)
 
+       ! get the maximum cooling to energy generation ratio and its location
+       allocate(ratio_max_data(parallel_nprocs()))
+       ratio_max_data_local(1) = ratio_max_local
+
+       call parallel_gather(ratio_max_data_local, ratio_max_data, 1, &
+                            root = parallel_IOProcessorNode())
+
+       index_max = maxloc(ratio_max_data, dim=1)
+
+       allocate(ratio_max_coords(dm*parallel_nprocs()))
+       ratio_max_coords_local(1) = x_ratiomax_local
+       ratio_max_coords_local(2) = y_ratiomax_local
+       if (dm > 2) ratio_max_coords_local(3) = z_ratiomax_local
+       
+       call parallel_gather(ratio_max_coords_local,ratio_max_coords, dm, &
+                            root = parallel_IOProcessorNode())
+
+       ratio_max_level = ratio_max_data(index_max)
+
+       x_ratiomax_level = ratio_max_coords(dm*(index_max - 1) + 1)
+       y_ratiomax_level = ratio_max_coords(dm*(index_max - 1) + 2)
+       if (dm > 2) z_ratiomax_level = ratio_max_coords(dm*(index_max - 1) + 3)
+
+       deallocate(ratio_max_data, ratio_max_coords)
+
+
        ! reduce the current level's data with the global data
        if (parallel_IOProcessor()) then
 
@@ -357,6 +363,14 @@ contains
              y_enucmax = y_enucmax_level
              if (dm > 2) z_enucmax = z_enucmax_level
 
+          endif
+
+          if (ratio_max_level > ratio_max) then
+             ratio_max = ratio_max_level
+
+             x_ratiomax = x_ratiomax_level
+             y_ratiomax = y_ratiomax_level
+             if (dm > 2) z_ratiomax = z_ratiomax_level
           endif
 
        endif
@@ -393,10 +407,12 @@ contains
        if(firstCall) then
           if (dm > 2) then
              write(un , 1001) "time", "max{T}", "x_loc", "y_loc", "z_loc"
-             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc", "z_loc"
+             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc", "z_loc", &
+                              "max{cool/nuc}", "x_loc", "y_loc", "z_loc"
           else
              write(un , 1001) "time", "max{T}", "x_loc", "y_loc"
-             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc"
+             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc", &
+                              "max{cool/nuc}", "x_loc", "y_loc"
           endif
 
           firstCall = .false.
@@ -405,10 +421,12 @@ contains
        ! print the data
        if (dm > 2) then
           write(un , 1000) time, T_max, x_Tmax, y_Tmax, z_Tmax
-          write(un2, 1000) time, enuc_max, x_enucmax, y_enucmax, z_enucmax
+          write(un2, 1000) time, enuc_max, x_enucmax, y_enucmax, z_enucmax, &
+                           ratio_max, x_ratiomax, y_ratiomax, z_ratiomax
        else
           write(un , 1000) time, T_max, x_Tmax, y_Tmax
-          write(un2, 1000) time, enuc_max, x_enucmax, y_enucmax
+          write(un2, 1000) time, enuc_max, x_enucmax, y_enucmax, &
+                           ratio_max, x_ratiomax, y_ratiomax
        endif
 
        close(un )
@@ -432,12 +450,14 @@ contains
                      x_Tmax, y_Tmax, &
                      enuc_max, &
                      x_enucmax, y_enucmax, &
+                     ratio_max, &
+                     x_ratiomax, y_ratiomax, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
     use probin_module, only: prob_lo, base_cutoff_density
-    use bl_constants_module, only: HALF
+    use bl_constants_module, only: HALF, ZERO
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_th
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
@@ -452,12 +472,14 @@ contains
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
     real (kind=dp_t), intent(inout) :: x_Tmax, y_Tmax
     real (kind=dp_t), intent(inout) :: x_enucmax, y_enucmax
+    real (kind=dp_t), intent(inout) :: ratio_max
+    real (kind=dp_t), intent(inout) :: x_ratiomax, y_ratiomax
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
     !     Local variables
     integer                     :: i, j
     real (kind=dp_t) :: x, y 
-    real (kind=dp_t) :: enuc_local
+    real (kind=dp_t) :: enuc_local, ratio_local
     logical :: cell_valid
 
     do j = lo(2), hi(2)
@@ -494,6 +516,23 @@ contains
 
              endif
 
+             ! ratio cooling / nuc. energy generation
+             ! cooling is where thermal < ZERO
+             ratio_local = ZERO
+
+             if (thermal(i,j) < ZERO) then
+                ratio_local = abs(thermal(i,j)) / rho_Hnuc(i,j)
+             endif
+             
+             if (ratio_local > ratio_max) then
+
+                ratio_max = ratio_local
+
+                x_ratiomax = x
+                y_ratiomax = y
+
+             endif
+
           endif
 
        enddo
@@ -513,11 +552,13 @@ contains
                      x_Tmax, y_Tmax, z_Tmax, &
                      enuc_max, &
                      x_enucmax, y_enucmax, z_enucmax, &
+                     ratio_max, &
+                     x_ratiomax, y_ratiomax, z_ratiomax, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
-    use bl_constants_module, only: HALF
+    use bl_constants_module, only: HALF, ZERO
     use probin_module, only: prob_lo, base_cutoff_density
 
     integer, intent(in) :: n,lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_th
@@ -533,12 +574,14 @@ contains
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
     real (kind=dp_t), intent(inout) :: x_Tmax, y_Tmax, z_Tmax
     real (kind=dp_t), intent(inout) :: x_enucmax, y_enucmax, z_enucmax
+    real (kind=dp_t), intent(inout) :: ratio_max
+    real (kind=dp_t), intent(inout) :: x_ratiomax, y_ratiomax, z_ratiomax
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
     integer                     :: i, j, k
     real (kind=dp_t) :: x, y , z
-    real (kind=dp_t) :: enuc_local
+    real (kind=dp_t) :: enuc_local, ratio_local
     logical :: cell_valid
 
     do k = lo(3), hi(3)
@@ -575,6 +618,23 @@ contains
                    x_enucmax = x
                    y_enucmax = y
                    z_enucmax = z
+
+                endif
+
+                ! ratio cooling / nuc. energy generation
+                ! cooling is where thermal < ZERO
+                ratio_local = ZERO
+                if (thermal(i,j,k) < ZERO) then
+                   ratio_local = abs(thermal(i,j,k)) / rho_Hnuc(i,j,k)
+                endif
+             
+                if (ratio_local > ratio_max) then
+
+                   ratio_max = ratio_local
+
+                   x_ratiomax = x
+                   y_ratiomax = y
+                   z_ratiomax = z
 
                 endif
 
