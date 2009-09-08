@@ -75,7 +75,7 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: rho_Hnuc(:)
     type(multifab) , intent(in   ) :: rho_Hext(:)    
-    type(multifab) , intent(in   ) :: thermal
+    type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: rho_omegadot(:)    
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: normal(:)

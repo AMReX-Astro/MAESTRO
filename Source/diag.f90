@@ -17,7 +17,7 @@ module diag_module
 
 contains
 
-  subroutine diag(time,dt,dx,s,rho_Hnuc,rho_Hext,rho_omegadot, &
+  subroutine diag(time,dt,dx,s,rho_Hnuc,rho_Hext,thermal,rho_omegadot, &
                   rho0,rhoh0,p0,tempbar, &
                   gamma1bar,div_coeff, &
                   u,w0,normal, &
@@ -31,6 +31,7 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: rho_Hnuc(:)
     type(multifab) , intent(in   ) :: rho_Hext(:)
+    type(multifab) , intent(in   ) :: thermal(:)
     type(multifab),  intent(in   ) :: rho_omegadot(:)
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: normal(:)
