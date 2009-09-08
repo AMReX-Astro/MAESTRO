@@ -182,13 +182,37 @@ contains
 
     call compute_cutoff_coords(rho0_old)
     
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 1 -- react the full state and then base state through dt/2
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< STEP  1 : react state     '
+    end if
+
+    do n=1,nlevs
+       call multifab_build(s1(n),            mla%la(n), nscal, 3)
+       call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
+       call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
+       call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
+    end do
+
+    call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old,halfdt,dx, &
+                     the_bc_tower%bc_tower_array,time)
+
+    do n=1,nlevs
+       call destroy(rho_omegadot1(n))
+       call destroy(rho_Hnuc1(n))
+       call destroy(rho_Hext(n))
+    end do
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! STEP 1 -- define average expansion at time n+1/2
+!! STEP 2 -- define average expansion at time n+1/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< CALLING advance_timestep with dt =',dt 
-       write(6,*) '<<< STEP  1 : make w0 >>> '
+       write(6,*) '<<< STEP  2 : make w0 >>> '
     end if
     
     do n=1,nlevs
@@ -287,11 +311,11 @@ contains
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! STEP 2 -- construct the advective velocity
+!! STEP 3 -- construct the advective velocity
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-       write(6,*) '<<< STEP  2 : create MAC velocities>>> '
+       write(6,*) '<<< STEP  3 : create MAC velocities>>> '
     end if
 
     do n=1,nlevs
@@ -352,30 +376,6 @@ contains
 
     do n=1,nlevs
        call destroy(macrhs(n))
-    end do
-    
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! STEP 3 -- react the full state and then base state through dt/2
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    if (parallel_IOProcessor() .and. verbose .ge. 1) then
-       write(6,*) '<<< STEP  3 : react state     '
-    end if
-
-    do n=1,nlevs
-       call multifab_build(s1(n),            mla%la(n), nscal, 3)
-       call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
-       call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
-       call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
-    end do
-
-    call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old,halfdt,dx, &
-                     the_bc_tower%bc_tower_array,time)
-
-    do n=1,nlevs
-       call destroy(rho_omegadot1(n))
-       call destroy(rho_Hnuc1(n))
-       call destroy(rho_Hext(n))
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
