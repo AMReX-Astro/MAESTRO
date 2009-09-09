@@ -43,7 +43,7 @@ contains
     call build(bpt, "react_state")
 
     ! get heating term
-    call get_rho_Hext(mla,sold,rho_Hext,dx,time,the_bc_level)
+    call get_rho_Hext(mla,sold,rho_Hext,dx,time,dt,the_bc_level)
 
     ! do the burning
     call burner_loop(mla,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dt,dx,the_bc_level)
