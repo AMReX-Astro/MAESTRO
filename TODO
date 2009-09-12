@@ -44,3 +44,8 @@
    plotfile header.  As a result, amrvis or our data_processing
    routines have incorrect coordinate information for problems that
    don't start at 0 (e.g. xrb).
+
+-- in helmeos, npoints and nspecies in the eos() interface itself
+   should be intent in.
+
+   We should also test that npoints <= NP
