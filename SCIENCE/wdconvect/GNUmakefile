@@ -23,14 +23,14 @@ Fmdirs := MAESTRO/wdconvect \
           boxlib \
           mg \
           MAESTRO \
-          extern/helmeos \
+          extern/EOS/helmeos \
           extern/conducteos \
           extern/constants \
           extern/networks/ignition_chamulak \
           extern/VODE
 
 # directories containing files that are 'include'-d via Fortran
-Fmincludes := extern/helmeos
+Fmincludes := extern/EOS/helmeos
 
 # define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters ./_parameters.wdconvect

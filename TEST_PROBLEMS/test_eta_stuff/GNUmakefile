@@ -22,9 +22,9 @@ VPATH_LOCATIONS += $(FPARALLEL)/mg
 include $(FPARALLEL)/MAESTRO/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO
 
-include $(FPARALLEL)/extern/helmeos/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/helmeos
-FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/helmeos
+include $(FPARALLEL)/extern/EOS/helmeos/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/extern/EOS/helmeos
+FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/EOS/helmeos
 
 include $(FPARALLEL)/extern/conducteos/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/conducteos
