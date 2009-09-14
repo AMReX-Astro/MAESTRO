@@ -366,64 +366,62 @@ contains
     implicit none
 
 !    include 'vector_eos.dek'
-
-
-!     ::::: Arguments
-    logical do_eos_diag
+!   ::::: Arguments
+    logical             :: do_eos_diag
     integer, intent(in) :: input
-    integer npoints
-    integer nspecies
+    integer             :: npoints
+    integer             :: nspecies
 
-    double precision dens(npoints), temp(npoints)
-    double precision xmass(npoints,nspecies)
-    double precision pres(npoints), enthalpy(npoints), eint(npoints)
-    double precision c_v(npoints), c_p(npoints)
-    double precision ne(npoints), eta(npoints), pele(npoints)
-    double precision dPdT(npoints), dPdR(npoints), dEdT(npoints), dEdR(npoints)
-    double precision gam1(npoints), entropy(npoints), cs(npoints)
-    double precision dPdX(npoints,nspecies), dedX(npoints,nspecies), dhdX(npoints,nspecies)
-    double precision dsdT(npoints), dsdR(npoints)
+    real(kind=dp_t) :: dens(npoints), temp(npoints)
+    real(kind=dp_t) :: xmass(npoints,nspecies)
+    real(kind=dp_t) :: pres(npoints), enthalpy(npoints), eint(npoints)
+    real(kind=dp_t) :: c_v(npoints), c_p(npoints)
+    real(kind=dp_t) :: ne(npoints), eta(npoints), pele(npoints)
+    real(kind=dp_t) :: dPdT(npoints), dPdR(npoints), dEdT(npoints), dEdR(npoints)
+    real(kind=dp_t) :: gam1(npoints), entropy(npoints), cs(npoints)
+    real(kind=dp_t) :: dPdX(npoints,nspecies), dedX(npoints,nspecies), dhdX(npoints,nspecies)
+    real(kind=dp_t) :: dsdT(npoints), dsdR(npoints)
     
 !     ::::: Local variables and arrays
 
-    integer i, k, n, iter, niter, max_newton
+    integer :: i, k, n, iter, niter, max_newton
     parameter (max_newton = 100)
     
-    double precision error
-    double precision ymass(npoints,nspecies)
-    double precision abar(npoints), zbar(npoints)
-    double precision energy_want(npoints)
-    double precision enthalpy_want(npoints)
-    double precision pres_want(npoints)
-    double precision dhdt(npoints)
-    double precision tnew(npoints)
-    double precision dnew(npoints)
-    double precision enth1(npoints)
-    double precision ener1(npoints)
-    double precision dpdd, pres1
+    real(kind=dp_t) :: error
+    real(kind=dp_t) :: ymass(npoints,nspecies)
+    real(kind=dp_t) :: abar(npoints), zbar(npoints)
+    real(kind=dp_t) :: energy_want(npoints)
+    real(kind=dp_t) :: enthalpy_want(npoints)
+    real(kind=dp_t) :: pres_want(npoints)
+    real(kind=dp_t) :: dhdt(npoints)
+    real(kind=dp_t) :: tnew(npoints)
+    real(kind=dp_t) :: dnew(npoints)
+    real(kind=dp_t) :: enth1(npoints)
+    real(kind=dp_t) :: ener1(npoints)
+    real(kind=dp_t) :: dpdd, pres1
 
-    double precision ttol
-
+    real(kind=dp_t) :: ttol
     parameter (ttol = 1.0d-8)
-    double precision dtol
+
+    real(kind=dp_t) :: dtol
     parameter (dtol = 1.0d-8)
-    double precision stol
+
+    real(kind=dp_t) :: stol
     parameter (stol = 1.0d-8)
 
     logical eosfail
 
 !     ::::: Input/Output arrays for call to helmeos
-    double precision temp_row(npoints), den_row(npoints), abar_row(npoints), &
-                     zbar_row(npoints), etot_row(npoints), ptot_row(npoints), &
-                     cv_row(npoints), cp_row(npoints), &
-                     xne_row(npoints), xnp_row(npoints), etaele_row(npoints), &
-                     pele_row(npoints), ppos_row(npoints), dpd_row(npoints), &
-                     dpt_row(npoints), dpa_row(npoints), dpz_row(npoints), &
-                     ded_row(npoints), det_row(npoints), dea_row(npoints), &
-                     dez_row(npoints), &
-                     stot_row(npoints), dsd_row(npoints), dst_row(npoints)
-    double precision gam1_row(npoints), cs_row(npoints)
-      
+    real(kind=dp_t) :: temp_row(npoints), den_row(npoints), abar_row(npoints), &
+                       zbar_row(npoints), etot_row(npoints), ptot_row(npoints), &
+                       cv_row(npoints), cp_row(npoints), &
+                       xne_row(npoints), xnp_row(npoints), etaele_row(npoints), &
+                       pele_row(npoints), ppos_row(npoints), dpd_row(npoints), &
+                       dpt_row(npoints), dpa_row(npoints), dpz_row(npoints), &
+                       ded_row(npoints), det_row(npoints), dea_row(npoints), &
+                       dez_row(npoints), &
+                       stot_row(npoints), dsd_row(npoints), dst_row(npoints)
+    real(kind=dp_t) :: gam1_row(npoints), cs_row(npoints)
 
 ! Dont allow multi-streaming of this function on CRAY X1
 !DIR$  NOSTREAM
