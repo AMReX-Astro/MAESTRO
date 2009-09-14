@@ -6,18 +6,11 @@ collapse:
    Adam Burrow's nuclear EOS for core-collapse supernova simulations
 
 
-gamma_law_eos:
-
-   the original CASTRO gamma-law EOS.  This should eventually be
-   removed, as it does not really do anything physical for the
-   temperature.
-
-
 gamma_law_eos_abar:
 
-   a hacked version of the gamma_law_eos.  It assumes a completely
-   ionized solar composition, and gives a meaningful temperature as a
-   result.
+   a simply gamma-law EOS with a hard-coded composition.  It assumes a
+   completely ionized solar composition, and gives a meaningful
+   temperature as a result.
 
 
 gamma_law_general:
