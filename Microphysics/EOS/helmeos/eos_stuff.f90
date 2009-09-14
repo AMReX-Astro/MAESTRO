@@ -368,9 +368,7 @@ contains
 !    include 'vector_eos.dek'
 !   ::::: Arguments
     logical             :: do_eos_diag
-    integer, intent(in) :: input
-    integer             :: npoints
-    integer             :: nspecies
+    integer, intent(in) :: input, npoints, nspecies
 
     real(kind=dp_t) :: dens(npoints), temp(npoints)
     real(kind=dp_t) :: xmass(npoints,nspecies)
