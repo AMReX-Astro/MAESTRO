@@ -81,8 +81,6 @@ module eos_module
 contains
 
   ! EOS initialization routine -- this is used by both MAESTRO and Castro
-  ! For this general EOS, this calls helmeos_init() which reads in the 
-  ! table with the electron component's properties.
   subroutine eos_init(use_eos_coulomb, small_temp, small_dens, gamma_in)
 
     implicit none
