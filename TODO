@@ -43,6 +43,3 @@
 -- in helmeos, npoints and nspecies in the eos() interface itself
    should be intent in.
 
--- we should do "real (kind=dp_t)" instead of "double precision"
-   in helmeos/eos_stuff.f90
-
