@@ -18,7 +18,7 @@ contains
     use bl_IO_module
     use fabio_module
     use bl_prof_module
-    use probin_module, only: verbose, nOutFiles, lUsingNFiles
+    use probin_module, only: verbose, nOutFiles, lUsingNFiles, use_thermal_diffusion
     use variables, only: rel_eps
 
     type(multifab)  , intent(in) :: mfs(:), mfs_nodal(:)
@@ -82,8 +82,10 @@ contains
     write(unit=sd_name, fmt='(a,"/rho_Hnuc2")') trim(dirname)
     call fabio_ml_multifab_write_d(rho_Hnuc2, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
 
-    write(unit=sd_name, fmt='(a,"/thermal2")') trim(dirname)
-    call fabio_ml_multifab_write_d(thermal2, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
+    if (use_thermal_diffusion) then
+       write(unit=sd_name, fmt='(a,"/thermal2")') trim(dirname)
+       call fabio_ml_multifab_write_d(thermal2, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
+    end if
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
       write(6,*) 'Writing state to checkpoint file ',trim(sd_name)
@@ -127,6 +129,7 @@ contains
     use fabio_module
     use bl_prof_module
     use variables, only: rel_eps
+    use probin_module, only: use_thermal_diffusion
 
     type(multifab  ),                pointer :: mfs(:), mfs_nodal(:)
     type(multifab  ),                pointer :: dSdt(:), Source_old(:), Source_new(:)
@@ -194,8 +197,10 @@ contains
     call fabio_ml_multifab_read_d(rho_Hnuc2, sd_name)
 
 !   Read the thermal2 data into a multilevel multifab.
-    write(unit=sd_name, fmt='(a,"/thermal2")') trim(dirname)
-    call fabio_ml_multifab_read_d(thermal2, sd_name)
+    if (use_thermal_diffusion) then
+       write(unit=sd_name, fmt='(a,"/thermal2")') trim(dirname)
+       call fabio_ml_multifab_read_d(thermal2, sd_name)
+    end if
 
     call destroy(bpt)
 
