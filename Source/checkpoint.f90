@@ -12,7 +12,7 @@ module checkpoint_module
 contains
 
   subroutine checkpoint_write(dirname, mfs, mfs_nodal, dSdt, Source_old, Source_new, &
-                              rho_omegadot2, rho_Hnuc2, rrs, time, dt)
+                              rho_omegadot2, rho_Hnuc2, thermal2, rrs, time, dt)
 
     use parallel
     use bl_IO_module
@@ -23,8 +23,7 @@ contains
 
     type(multifab)  , intent(in) :: mfs(:), mfs_nodal(:)
     type(multifab)  , intent(in) :: dSdt(:), Source_old(:), Source_new(:)
-    type(multifab)  , intent(in) :: rho_omegadot2(:)
-    type(multifab)  , intent(in) :: rho_Hnuc2(:)
+    type(multifab)  , intent(in) :: rho_omegadot2(:), rho_Hnuc2(:), thermal2(:)
     integer         , intent(in) :: rrs(:,:)
     character(len=*), intent(in) :: dirname
     real(kind=dp_t) , intent(in) :: time, dt
@@ -83,6 +82,9 @@ contains
     write(unit=sd_name, fmt='(a,"/rho_Hnuc2")') trim(dirname)
     call fabio_ml_multifab_write_d(rho_Hnuc2, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
 
+    write(unit=sd_name, fmt='(a,"/thermal2")') trim(dirname)
+    call fabio_ml_multifab_write_d(thermal2, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
+
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
       write(6,*) 'Writing state to checkpoint file ',trim(sd_name)
     end if
@@ -118,7 +120,7 @@ contains
   end subroutine checkpoint_write
 
   subroutine checkpoint_read(mfs, mfs_nodal, dSdt, Source_old, Source_new, rho_omegadot2, &
-                             rho_Hnuc2, dirname, time_out, dt_out, nlevs_out)
+                             rho_Hnuc2, thermal2, dirname, time_out, dt_out, nlevs_out)
 
     use parallel
     use bl_IO_module
@@ -128,7 +130,7 @@ contains
 
     type(multifab  ),                pointer :: mfs(:), mfs_nodal(:)
     type(multifab  ),                pointer :: dSdt(:), Source_old(:), Source_new(:)
-    type(multifab  ),                pointer :: rho_omegadot2(:), rho_Hnuc2(:)
+    type(multifab  ),                pointer :: rho_omegadot2(:), rho_Hnuc2(:), thermal2(:)
     character(len=*), intent(in   )          :: dirname
     integer         , intent(  out)          :: nlevs_out
     real(kind=dp_t) , intent(  out)          :: time_out, dt_out
@@ -190,6 +192,10 @@ contains
 !   Read the rho_Hnuc2 data into a multilevel multifab.
     write(unit=sd_name, fmt='(a,"/rho_Hnuc2")') trim(dirname)
     call fabio_ml_multifab_read_d(rho_Hnuc2, sd_name)
+
+!   Read the thermal2 data into a multilevel multifab.
+    write(unit=sd_name, fmt='(a,"/thermal2")') trim(dirname)
+    call fabio_ml_multifab_read_d(thermal2, sd_name)
 
     call destroy(bpt)
 

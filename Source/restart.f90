@@ -13,7 +13,8 @@ module restart_module
 contains
 
   subroutine fill_restart_data(restart_int,mba,chkdata,chk_p,chk_dsdt,chk_src_old, &
-                               chk_src_new,chk_rho_omegadot2,chk_rho_Hnuc2,time,dt)
+                               chk_src_new,chk_rho_omegadot2,chk_rho_Hnuc2,chk_thermal2, &
+                               time,dt)
 
     use parallel
     use bl_prof_module
@@ -32,6 +33,7 @@ contains
     type(multifab)   , pointer        :: chk_src_new(:)
     type(multifab)   , pointer        :: chk_rho_omegadot2(:)
     type(multifab)   , pointer        :: chk_rho_Hnuc2(:)
+    type(multifab)   , pointer        :: chk_thermal2(:)
     character(len=5)                  :: check_index
     character(len=6)                  :: check_index6
     character(len=256)                :: check_file_name
@@ -49,11 +51,11 @@ contains
        check_file_name = trim(check_base_name) // check_index6
     endif
 
-
     if ( parallel_IOProcessor()) &
       print *,'Reading ', trim(check_file_name), ' to get state data for restart'
     call checkpoint_read(chkdata, chk_p, chk_dsdt, chk_src_old, chk_src_new, &
-         chk_rho_omegadot2, chk_rho_Hnuc2, check_file_name, time, dt, nlevs_local)
+                         chk_rho_omegadot2, chk_rho_Hnuc2, chk_thermal2, check_file_name, &
+                         time, dt, nlevs_local)
 
     call build(mba,nlevs_local,dm)
     mba%pd(1) =  bbox(get_boxarray(chkdata(1)))

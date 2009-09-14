@@ -25,12 +25,6 @@
 -- in extern/helmeos/ we have a helmeos.f (used by MAESTRO) and
    helmeos.f90 (used by CASTRO).  We should remove helmeos.f
 
--- rho_omegadot2 and rho_Huc2 don't need to be stored in the checkpoint
-   file anymore, since they are filled before they are used.
-   AJN: Actually they do otherwise when you print the plotfile immediately
-        after restart, make_plotfile needs this data.  This is precisely why
-	upon restart that thermal differs in the first printed plotfile only.
-
 -- we use mac_multigrid in thermal_conduct.f90 to do the enthalpy diffusion,
    but mac_multigrid sets abs_eps based on the umac norm.  It should be
    generalized.
