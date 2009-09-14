@@ -114,6 +114,196 @@ contains
  
   end subroutine eos_init
 
+
+  !---------------------------------------------------------------------------
+  ! Castro interfaces 
+  !---------------------------------------------------------------------------
+  subroutine eos_get_small_temp(small_temp_out)
+ 
+    real(kind=dp_t), intent(out) :: small_temp_out
+ 
+    small_temp_out = smallt
+ 
+  end subroutine eos_get_small_temp
+ 
+  subroutine eos_get_small_dens(small_dens_out)
+ 
+    real(kind=dp_t), intent(out) :: small_dens_out
+ 
+    small_dens_out = smalld
+ 
+  end subroutine eos_get_small_dens
+
+  subroutine eos_given_ReX(G, P, C, T, dpdr, dpde, R, e, X)
+
+     ! In/out variables
+     real(kind=dp_t), intent(  out) :: G, P, C, dpdr, dpde
+     real(kind=dp_t), intent(inout) :: T
+     real(kind=dp_t), intent(in   ) :: R, e, X(:)
+
+     ! Local variables
+     logical :: do_diag
+
+     do_diag = .false.
+
+     temp_eos(1) = T
+      den_eos(1) = R
+        e_eos(1) = e
+      xn_eos(1,1:nspec) = X(1:nspec)
+
+     call eos(eos_input_re, den_eos, temp_eos, &
+              npts, nspec, &
+              xn_eos, &
+              p_eos, h_eos, e_eos, &
+              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+              dpdX_eos, dhdX_eos, &
+              gam1_eos, cs_eos, s_eos, &
+              dsdt_eos, dsdr_eos, &
+              do_diag)
+
+    G  = gam1_eos(1)
+    P  =    p_eos(1)
+    C  =   cs_eos(1)
+    T  = temp_eos(1)
+    dpdr = dpdr_eos(1) - dpdt_eos(1)*dedr_eos(1)/dedt_eos(1)
+    dpde = dpdt_eos(1) / dedt_eos(1)
+
+  end subroutine eos_given_ReX
+
+  subroutine eos_e_given_RPX(e, T, R, P, X)
+
+     ! In/out variables
+     real(kind=dp_t), intent(  out) :: e
+     real(kind=dp_t), intent(in   ) :: R, p, X(:)
+     real(kind=dp_t), intent(inout) :: T
+
+     ! Local variables
+     logical :: do_diag
+
+     do_diag = .false.
+
+     temp_eos(1) = T
+      den_eos(1) = R
+        p_eos(1) = P
+      xn_eos(1,1:nspec) = X(1:nspec)
+
+      print *, 'calling EOS: ', temp_eos(1)
+
+     call eos(eos_input_rp, den_eos, temp_eos, &
+              npts, nspec, &
+              xn_eos, &
+              p_eos, h_eos, e_eos, &
+              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+              dpdX_eos, dhdX_eos, &
+              gam1_eos, cs_eos, s_eos, &
+              dsdt_eos, dsdr_eos, &
+              do_diag)
+
+    e  =    e_eos(1)
+    T  = temp_eos(1)
+
+  end subroutine eos_e_given_RPX
+
+  subroutine eos_S_given_ReX(S, R, e, T, X)
+
+     implicit none
+
+     ! In/out variables
+     real(kind=dp_t), intent(  out) :: S
+     real(kind=dp_t), intent(in   ) :: R, e, T, X(:)
+
+     ! Local variables
+     logical :: do_diag
+
+     do_diag = .false.
+
+     temp_eos(1) = T
+      den_eos(1) = R
+        e_eos(1) = e
+      xn_eos(1,1:nspec) = X(1:nspec)
+
+     call eos(eos_input_re, den_eos, temp_eos, &
+              npts, nspec, &
+              xn_eos, &
+              p_eos, h_eos, e_eos, &
+              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+              dpdX_eos, dhdX_eos, &
+              gam1_eos, cs_eos, s_eos, &
+              dsdt_eos, dsdr_eos, &
+              do_diag)
+
+    S  = s_eos(1)
+
+  end subroutine eos_S_given_ReX
+
+  subroutine eos_given_RTX(e, P, R, T, X)
+
+     ! In/out variables
+     real(kind=dp_t), intent(  out) :: e, P
+     real(kind=dp_t), intent(in   ) :: R, T, X(:)
+
+     ! Local variables
+     logical :: do_diag
+
+     do_diag = .false.
+
+      den_eos(1) = R
+     temp_eos(1) = T
+      xn_eos(1,1:nspec) = X(1:nspec)
+
+     call eos(eos_input_rt, den_eos, temp_eos, &
+              npts, nspec, &
+              xn_eos, &
+              p_eos, h_eos, e_eos, &
+              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+              dpdX_eos, dhdX_eos, &
+              gam1_eos, cs_eos, s_eos, &
+              dsdt_eos, dsdr_eos, &
+              do_diag)
+
+    P  =    p_eos(1)
+    e  =    e_eos(1)
+
+  end subroutine eos_given_RTX
+
+  subroutine eos_given_TPX(e, P, R, T, X)
+
+     ! In/out variables
+     real(kind=dp_t), intent(  out) :: e, R
+     real(kind=dp_t), intent(in   ) :: P, T, X(:)
+
+     ! Local variables
+     logical :: do_diag
+
+     do_diag = .false.
+
+     ! An initial guess of density needs to be given
+     den_eos(1) = R 
+     p_eos(1) = P
+     temp_eos(1) = T
+     xn_eos(1,1:nspec) = X(1:nspec)
+
+     call eos(eos_input_tp, den_eos, temp_eos, &
+              npts, nspec, &
+              xn_eos, &
+              p_eos, h_eos, e_eos, &
+              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+              dpdX_eos, dhdX_eos, &
+              gam1_eos, cs_eos, s_eos, &
+              dsdt_eos, dsdr_eos, &
+              do_diag)
+
+    R  =    den_eos(1)
+    e  =    e_eos(1)
+
+  end subroutine eos_given_TPX
+
+
   !---------------------------------------------------------------------------
   ! The main interface -- this is used directly by MAESTRO
   !---------------------------------------------------------------------------
