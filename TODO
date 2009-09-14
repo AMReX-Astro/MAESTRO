@@ -40,6 +40,3 @@
 
 -- only need to keep one set of species names around in a network
 
--- in helmeos, npoints and nspecies in the eos() interface itself
-   should be intent in.
-
