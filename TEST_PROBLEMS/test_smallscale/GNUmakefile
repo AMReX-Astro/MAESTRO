@@ -24,7 +24,7 @@ Fmdirs := MAESTRO/test_smallscale \
           mg \
           MAESTRO \
           extern/EOS/helmeos \
-          extern/conducteos \
+          extern/EOS/conducteos \
           extern/constants \
           extern/networks/ignition \
           extern/VODE 

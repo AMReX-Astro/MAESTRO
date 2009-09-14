@@ -23,7 +23,7 @@ Fmdirs := boxlib \
           mg \
           MAESTRO \
           extern/EOS/helmeos \
-          extern/conducteos \
+          extern/EOS/conducteos \
           extern/constants \
           extern/networks/null \
           extern/VODE 

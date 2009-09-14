@@ -24,7 +24,7 @@ Fmdirs := MAESTRO/test_spherical \
           mg \
           MAESTRO \
           extern/EOS/helmeos \
-          extern/conducteos \
+          extern/EOS/conducteos \
           extern/constants \
           extern/networks/null \
           extern/VODE

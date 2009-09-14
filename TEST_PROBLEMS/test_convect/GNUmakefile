@@ -23,9 +23,9 @@ include $(FPARALLEL)/extern/EOS/helmeos/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/EOS/helmeos
 FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/EOS/helmeos
 
-include $(FPARALLEL)/extern/conducteos/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/conducteos
-FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/conducteos
+include $(FPARALLEL)/extern/EOS/conducteos/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/extern/EOS/conducteos
+FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/EOS/conducteos
 
 include $(FPARALLEL)/extern/constants/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/constants
