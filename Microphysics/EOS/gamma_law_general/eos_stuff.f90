@@ -519,6 +519,16 @@ contains
 
           ! the species only come into p and e (and therefore h)
           ! through mu, so first compute dmu/dX
+          !
+          ! NOTE: an extra, constant term appears in dmudx, which
+          ! results from writing mu = sum { X_k} / sum {X_k / A_k}
+          ! (for the neutral, analogous for the ionized).  The
+          ! numerator is simply 1, but we can differentiate
+          ! wrt it, giving the constant mu(k) term in dmudx.  Since
+          ! dPdX only appears in a sum over species creation rate 
+          ! (omegadot) and sum{omegadot} = 0, this term has no effect.
+          ! If is added simply for completeness.
+
           if (eos_assume_neutral) then
              dmudX =  (mu(k)/aion(n))*(aion(n) - mu(k))
           else
