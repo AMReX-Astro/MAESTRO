@@ -7,7 +7,7 @@ COMP := Intel
 
 MKVERBOSE := t
 
-FPARALLEL := ../../..
+FPARALLEL := ../../../..
 
 include $(FPARALLEL)/mk/GMakedefs.mak
 
@@ -19,7 +19,7 @@ f90sources += testeos.f90
 #   directory is always placed at the start of the vpath by the 
 #   GMakerules.mak.
 Fmdirs := boxlib \
-          extern/gamma_law_general \
+          extern/EOS/gamma_law_general \
           extern/networks/ignition \
           extern/VODE \
           extern/constants
