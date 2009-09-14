@@ -366,19 +366,28 @@ contains
     implicit none
 
 !    include 'vector_eos.dek'
-!   ::::: Arguments
+
+
+!     ::::: Arguments
     logical             :: do_eos_diag
     integer, intent(in) :: input, npoints, nspecies
 
-    real(kind=dp_t) :: dens(npoints), temp(npoints)
-    real(kind=dp_t) :: xmass(npoints,nspecies)
-    real(kind=dp_t) :: pres(npoints), enthalpy(npoints), eint(npoints)
-    real(kind=dp_t) :: c_v(npoints), c_p(npoints)
-    real(kind=dp_t) :: ne(npoints), eta(npoints), pele(npoints)
-    real(kind=dp_t) :: dPdT(npoints), dPdR(npoints), dEdT(npoints), dEdR(npoints)
-    real(kind=dp_t) :: gam1(npoints), entropy(npoints), cs(npoints)
-    real(kind=dp_t) :: dPdX(npoints,nspecies), dedX(npoints,nspecies), dhdX(npoints,nspecies)
-    real(kind=dp_t) :: dsdT(npoints), dsdR(npoints)
+    ! some of these quantites can be inputs or outputs
+    real(kind=dp_t), intent(inout) :: dens(npoints), temp(npoints)
+    real(kind=dp_t), intent(in)    :: xmass(npoints,nspecies)
+    real(kind=dp_t), intent(inout) :: pres(npoints), enthalpy(npoints), &
+                                      eint(npoints)
+
+    ! these quantities are always outputs
+    real(kind=dp_t), intent(out) :: c_v(npoints), c_p(npoints)
+    real(kind=dp_t), intent(out) :: ne(npoints), eta(npoints), pele(npoints)
+    real(kind=dp_t), intent(out) :: dPdT(npoints), dPdR(npoints), &
+                                    dedT(npoints), dedR(npoints)
+    real(kind=dp_t), intent(out) :: gam1(npoints)
+    real(kind=dp_t), intent(out) :: entropy(npoints), cs(npoints)
+    real(kind=dp_t), intent(out) :: dPdX(npoints,nspecies), &
+                                    dhdX(npoints,nspecies)
+    real(kind=dp_t), intent(out) :: dsdT(npoints), dsdR(npoints)
     
 !     ::::: Local variables and arrays
 
@@ -396,14 +405,14 @@ contains
     real(kind=dp_t) :: dnew(npoints)
     real(kind=dp_t) :: enth1(npoints)
     real(kind=dp_t) :: ener1(npoints)
+    real(kind=dp_t) :: dedX(npoints,nspecies)
+
     real(kind=dp_t) :: dpdd, pres1
 
     real(kind=dp_t) :: ttol
     parameter (ttol = 1.0d-8)
-
     real(kind=dp_t) :: dtol
     parameter (dtol = 1.0d-8)
-
     real(kind=dp_t) :: stol
     parameter (stol = 1.0d-8)
 
@@ -411,15 +420,16 @@ contains
 
 !     ::::: Input/Output arrays for call to helmeos
     real(kind=dp_t) :: temp_row(npoints), den_row(npoints), abar_row(npoints), &
-                       zbar_row(npoints), etot_row(npoints), ptot_row(npoints), &
-                       cv_row(npoints), cp_row(npoints), &
-                       xne_row(npoints), xnp_row(npoints), etaele_row(npoints), &
-                       pele_row(npoints), ppos_row(npoints), dpd_row(npoints), &
-                       dpt_row(npoints), dpa_row(npoints), dpz_row(npoints), &
-                       ded_row(npoints), det_row(npoints), dea_row(npoints), &
-                       dez_row(npoints), &
-                       stot_row(npoints), dsd_row(npoints), dst_row(npoints)
+                     zbar_row(npoints), etot_row(npoints), ptot_row(npoints), &
+                     cv_row(npoints), cp_row(npoints), &
+                     xne_row(npoints), xnp_row(npoints), etaele_row(npoints), &
+                     pele_row(npoints), ppos_row(npoints), dpd_row(npoints), &
+                     dpt_row(npoints), dpa_row(npoints), dpz_row(npoints), &
+                     ded_row(npoints), det_row(npoints), dea_row(npoints), &
+                     dez_row(npoints), &
+                     stot_row(npoints), dsd_row(npoints), dst_row(npoints)
     real(kind=dp_t) :: gam1_row(npoints), cs_row(npoints)
+      
 
 ! Dont allow multi-streaming of this function on CRAY X1
 !DIR$  NOSTREAM
