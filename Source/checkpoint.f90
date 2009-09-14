@@ -89,10 +89,10 @@ contains
     if (use_thermal_diffusion) then
        write(unit=sd_name, fmt='(a,"/thermal2")') trim(dirname)
        call fabio_ml_multifab_write_d(thermal2, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
-    end if
 
-    if (parallel_IOProcessor() .and. verbose .ge. 1) then
-      write(6,*) 'Writing state to checkpoint file ',trim(sd_name)
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) 'Writing state to checkpoint file ',trim(sd_name)
+       end if
     end if
 
     write(unit=sd_name_nodal, fmt='(a,"/Pressure")') trim(dirname)
