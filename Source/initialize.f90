@@ -160,14 +160,21 @@ contains
        call destroy(chk_rho_Hnuc2(n))
     end do
 
-    do n=1,nlevs
-       call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,1)
-       call destroy(chk_thermal2(n)%la)
-       call destroy(chk_thermal2(n))
-    end do
+    if (use_thermal_diffusion) then
+       do n=1,nlevs
+          call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,1)
+          call destroy(chk_thermal2(n)%la)
+          call destroy(chk_thermal2(n))
+       end do
+       deallocate(chk_thermal2)
+    else
+       do n=1,nlevs
+          call setval(thermal2(n),ZERO,all=.true.)
+       end do
+    end if
     
     deallocate(chkdata, chk_p, chk_dsdt, chk_src_old, chk_src_new)
-    deallocate(chk_rho_omegadot2, chk_rho_Hnuc2, chk_thermal2)
+    deallocate(chk_rho_omegadot2, chk_rho_Hnuc2)
 
     ! initialize dx
     call initialize_dx(dx,mba,nlevs)
