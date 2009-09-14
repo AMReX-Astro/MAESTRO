@@ -1,0 +1,50 @@
+This directory contains the different equations of state that either
+MAESTRO or CASTRO use (or both).
+
+collapse:
+
+   Adam Burrow's nuclear EOS for core-collapse supernova simulations
+
+
+gamma_law_eos:
+
+   the original CASTRO gamma-law EOS.  This should eventually be
+   removed, as it does not really do anything physical for the
+   temperature.
+
+
+gamma_law_eos_abar:
+
+   a hacked version of the gamma_law_eos.  It assumes a completely
+   ionized solar composition, and gives a meaningful temperature as a
+   result.
+
+
+gamma_law_general:
+
+   a new, general gamma-law EOS.  This computes the mean molecular
+   weight from the mass fractions and the species properties defined
+   in the network module.  Eventually, this should be the default (and
+   only) gamma-law EOS.
+
+
+helmeos:
+   
+   Frank Timmes' general stellar EOS.
+
+
+hma_eos:
+
+   Haito Ma's slighly tweaked version of the helmeos -- basically the
+   helmeos with a table look up for abar.
+
+
+lattimer_swesty:
+
+   the Lattimer-Swesty nuclear EOS for core-collapse simulations
+
+
+perfect_gas_with_rad:
+
+   Candace Church Joggerst's EOS that implements an ideal gas (with 
+   ionization) + radiation.
