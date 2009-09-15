@@ -174,22 +174,25 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
+          ! create cell-centered Utilde
           ubar = HALF*(umac(i,j) + umac(i+1,j))
           vbar = HALF*(vmac(i,j) + vmac(i,j+1))
 
+          ! create (Utilde dot grad) Utilde
           ugradu = ubar*(uedgex(i+1,j,1) - uedgex(i,j,1))/dx(1) + &
                vbar*(uedgey(i,j+1,1) - uedgey(i,j,1))/dx(2)
 
           ugradv = ubar*(uedgex(i+1,j,2) - uedgex(i,j,2))/dx(1) + &
                vbar*(uedgey(i,j+1,2) - uedgey(i,j,2))/dx(2)
 
+          ! update with (Utilde dot grad) Utilde and force
           unew(i,j,1) = uold(i,j,1) - dt * ugradu + dt * force(i,j,1)
           unew(i,j,2) = uold(i,j,2) - dt * ugradv + dt * force(i,j,2)
 
-          ! Add w dot grad w0 term to w.
+          ! subtract (Utilde dot er) dw0/dr er term from wtilde only
           unew(i,j,2) = unew(i,j,2) - dt * vbar*(w0(j+1) - w0(j))/dx(2)
 
-          ! Add w0 dot grad u term to u and w.
+          ! subtract (w0 dot grad) Utilde term
           vbar = HALF*(w0(j) + w0(j+1))
           unew(i,j,:) = unew(i,j,:) - dt * vbar*(uedgey(i,j+1,:) - uedgey(i,j,:))/dx(2)
 
@@ -249,10 +252,12 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
+             ! create cell-centered Utilde
              ubar = HALF*(umac(i,j,k) + umac(i+1,j,k))
              vbar = HALF*(vmac(i,j,k) + vmac(i,j+1,k))
              wbar = HALF*(wmac(i,j,k) + wmac(i,j,k+1))
 
+             ! create (Utilde dot grad) Utilde
              ugradu = ubar*(uedgex(i+1,j,k,1) - uedgex(i,j,k,1))/dx(1) + &
                   vbar*(uedgey(i,j+1,k,1) - uedgey(i,j,k,1))/dx(2) + &
                   wbar*(uedgez(i,j,k+1,1) - uedgez(i,j,k,1))/dx(3)
@@ -265,6 +270,7 @@ contains
                   vbar*(uedgey(i,j+1,k,3) - uedgey(i,j,k,3))/dx(2) + &
                   wbar*(uedgez(i,j,k+1,3) - uedgez(i,j,k,3))/dx(3)
 
+             ! update with (Utilde dot grad) Utilde and force
              unew(i,j,k,1) = uold(i,j,k,1) - dt * ugradu + dt * force(i,j,k,1)
              unew(i,j,k,2) = uold(i,j,k,2) - dt * ugradv + dt * force(i,j,k,2)
              unew(i,j,k,3) = uold(i,j,k,3) - dt * ugradw + dt * force(i,j,k,3)
@@ -278,8 +284,7 @@ contains
 
        do k = lo(3), hi(3)
 
-          ! A) Subtract (Utilde dot er) grad w0 er term from new Utilde.
-
+          ! subtract (Utilde dot er) dw0/dr er term from wtilde only
           gradw0 = (w0(k+1) - w0(k)) /dx(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -289,8 +294,7 @@ contains
           enddo
 
 
-          ! B) Subtract w0 dot grad U term from new Utilde
-
+          ! subtract (w0 dot grad) Utilde term
           wbar = HALF*(w0(k) + w0(k+1))
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -322,21 +326,18 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
-                ! A) Subtract (Utilde dot er) grad w0 er term from new Utilde.
+                ! subtract (Utilde dot er) dw0/dr er term from new Utilde.
                 Utilde_dot_er = HALF*(umac(i,j,k) + umac(i+1,j,k)) * normal(i,j,k,1) + &
                                 HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * normal(i,j,k,2) + &
                                 HALF*(wmac(i,j,k) + wmac(i,j,k+1)) * normal(i,j,k,3)
 
 
                 unew(i,j,k,1) = unew(i,j,k,1) - dt * Utilde_dot_er * gradw0_cart(i,j,k,1)
-
                 unew(i,j,k,2) = unew(i,j,k,2) - dt * Utilde_dot_er * gradw0_cart(i,j,k,2)
-
                 unew(i,j,k,3) = unew(i,j,k,3) - dt * Utilde_dot_er * gradw0_cart(i,j,k,3)
 
 
-                ! B) Subtract (w0 dot grad) U term from new Utilde
-
+                ! B) Subtract (w0 dot grad) Utilde term from new Utilde
                 gradux = (uedgex(i+1,j,k,1) - uedgex(i,j,k,1))/dx(1)
                 gradvx = (uedgex(i+1,j,k,2) - uedgex(i,j,k,2))/dx(1)
                 gradwx = (uedgex(i+1,j,k,3) - uedgex(i,j,k,3))/dx(1)
