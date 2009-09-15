@@ -149,7 +149,6 @@ contains
     real(dp_t) ::          rhoprimebar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         rhohprimebar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         tempprimebar(nlevs_radial,0:nr_fine-1)
-    real(dp_t) ::              psi_old(nlevs_radial,0:nr_fine-1)
 
     integer    :: n,comp,proj_type,numcell
     real(dp_t) :: halfdt
@@ -497,9 +496,8 @@ contains
           ! compute gamma1bar^{nph,*} and store it in gamma1bar_temp2
           gamma1bar_temp2 = HALF*(gamma1bar_temp1+gamma1bar_temp2)
 
-          ! make base time and time-centered psi
-          call make_psi_spherical(psi_old,w0,gamma1bar_temp1,p0_old,Sbar)
-          call make_psi_spherical(psi    ,w0,gamma1bar_temp2,p0_nph,Sbar)
+          ! make time-centered psi
+          call make_psi_spherical(psi,w0,gamma1bar_temp2,p0_nph,Sbar)
        end if
 
     else
@@ -513,8 +511,7 @@ contains
        ! compute rhoh0_old by "averaging"
        call average(mla,s1,rhoh0_old,dx,rhoh_comp)
 
-       call advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new, &
-                                 rho0_predicted_edge,psi,psi_old,dt)
+       call advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new,rho0_predicted_edge,psi,dt)
     else
        rhoh0_new = rhoh0_old
     end if
@@ -922,8 +919,7 @@ contains
           ! compute gamma1bar^{nph} and store it in gamma1bar_temp2
           gamma1bar_temp2 = HALF*(gamma1bar_temp1+gamma1bar_temp2)
 
-          call make_psi_spherical(psi_old,w0,gamma1bar_temp1,p0_old,Sbar)
-          call make_psi_spherical(psi    ,w0,gamma1bar_temp2,p0_nph,Sbar)
+          call make_psi_spherical(psi,w0,gamma1bar_temp2,p0_nph,Sbar)
        end if
 
     else
@@ -934,7 +930,7 @@ contains
 
     if (evolve_base_state) then
        call advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new, &
-                                 rho0_predicted_edge,psi,psi_old,dt)
+                                 rho0_predicted_edge,psi,dt)
     else
        rhoh0_new = rhoh0_old
     end if

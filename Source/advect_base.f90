@@ -139,7 +139,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new,rho0_predicted_edge, &
-                                  psi,psi_old,dt)
+                                  psi,dt)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs
@@ -152,7 +152,6 @@ contains
     real(kind=dp_t), intent(  out) ::           rhoh0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     real(kind=dp_t), intent(in   ) ::                 psi(:,0:)
-    real(kind=dp_t), intent(in   ) ::             psi_old(:,0:)
     real(kind=dp_t), intent(in   ) :: dt
     
     ! local
@@ -167,7 +166,7 @@ contains
        call fill_ghost_base(rhoh0_new,.true.)
     else
        call advect_base_enthalpy_spherical(w0,rho0_old,rhoh0_old,rhoh0_new, &
-                                           rho0_predicted_edge,psi,psi_old,dt)
+                                           rho0_predicted_edge,psi,dt)
     end if
 
     call destroy(bpt)
@@ -255,7 +254,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
   subroutine advect_base_enthalpy_spherical(w0,rho0_old,rhoh0_old,rhoh0_new, &
-                                            rho0_predicted_edge,psi,psi_old,dt)
+                                            rho0_predicted_edge,psi,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -267,7 +266,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: rhoh0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
-    real(kind=dp_t), intent(in   ) :: psi(:,0:),psi_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
@@ -313,7 +312,7 @@ contains
                2.0_dp_t*rhoh0_old(1,r)*HALF*(w0(1,r) + w0(1,r+1))/r_cc_loc(1,r)
 
           ! add psi at time-level n to the force for the prediction
-          force(1,r) = force(1,r) + psi_old(1,r)
+          force(1,r) = force(1,r) + psi(1,r)
        end do
 
        call make_edge_state_1d(rhoh0_old,edge,w0,force,dt)
