@@ -1,8 +1,9 @@
 This is a test problem for base-state expansion in a full white-dwarf environment.
-We have a gaussinan bump of heating near the center of the star, and a null reaction network.
-This is essentially a 3D version
+We have a gaussinan bump of heating at the center of the star, and a null reaction network.
 
-In order to make this run in 1D properly, several tweaks need to be added to the code
+This is 3D version of test_basestate.
+
+Note: If you would like to force Utilde=0, several tweaks need to be added to the code
 to fix for numerical noise coming from the fact that "X - Avg(X)" should be ZERO,
 but isn't due to roundoff.
 
