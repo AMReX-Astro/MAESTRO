@@ -1,12 +1,6 @@
-An attempt to do just the 1-d base state expansion using the 
-same routines as the main code.  This is effectively the oned_test
-routines reimplemented to use the main Maestro code.
+This is a test problem for base-state expansion in a full white-dwarf environment.
+We have a gaussinan bump of heating at the center of the star, and a null reaction network.
 
-The initial model for the spherical case was created with FLASH using
-the lmn_head_isentropic_1d_spherical test problem.  The compressible
-solution is stored in compressible-1.e16-t=10.00.out.  The initial
-model and compressible output were run with Coulomb corrections
-enabled.
+This is a 1D version of spherical_heat.
 
-***NEW***
-Run with inputs-spherical_heat and compare the output to CASTRO_1sec.out and the output from spherical_heat/inputs_3d.256.5dr.eq.dx
+inputs and inputs-planar were used for paper III and are now defunct.
