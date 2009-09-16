@@ -12,7 +12,7 @@ contains
   subroutine make_psi_planar(etarho_cc,psi)
 
     use bl_constants_module
-    use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord, &
+    use geometry, only: base_cutoff_density_coord, r_start_coord, r_end_coord, &
          numdisjointchunks, nlevs_radial
     use probin_module, only: grav_const
     use restrict_base_module
@@ -28,7 +28,7 @@ contains
     do n=1,nlevs_radial
        do i=1,numdisjointchunks(n)
           do r = r_start_coord(n,i), r_end_coord(n,i)
-             if (r .lt. anelastic_cutoff_coord(n)) then
+             if (r .lt. base_cutoff_density_coord(n)) then
                 psi(n,r) = etarho_cc(n,r) * abs(grav_const)
              end if
           end do

@@ -52,10 +52,6 @@ are related.  This is drawn assuming {\tt drdxfac}=5.\vspace{2em}}
   ${\tt div\_coeff}(n,r) = {\tt div\_coeff}(n,r-1) * \rho_0(n,r)/\rho_0(n,r-1)$.
   \MarginPar{I think we want $r > {\tt anelastic\_cutoff\_coord}$.}
 
-\item In {\tt make\_psi} for plane-parallel, we only compute $\psi$ for 
-  $r < {\tt anelastic\_cutoff\_coord}$.
-  \MarginPar{I think we want to change this to $r \le {\tt anelastic\_cutoff\_coord}$.}
-
 \item in {\tt make\_S}, we set {\tt delta\_gamma1\_term} and {\tt delta\_gamma1} 
   to zero for $r \ge {\tt anelastic\_cutoff\_coord}$.
   \MarginPar{I think we want $r > {\tt anelastic\_cutoff\_coord}$.}
@@ -109,6 +105,10 @@ are related.  This is drawn assuming {\tt drdxfac}=5.\vspace{2em}}
 
 \item In {\tt enforce\_HSE}, we set $p_0(r) = p_0(r-1)$ for 
   $r > {\tt base\_cutoff\_density\_coord}$.
+
+\item In {\tt make\_psi} for plane-parallel, we only compute $\psi$ for 
+  $r < {\tt anelastic\_cutoff\_coord}$.
+  \MarginPar{I think we want to change this to $r \le {\tt anelastic\_cutoff\_coord}$.}
 
 \end{itemize}
 
