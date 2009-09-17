@@ -229,9 +229,11 @@ contains
        if (j .lt. base_cutoff_density_coord(n)) then
           gradp0 = rho0(j) * grav(j)
        else if (j.eq.nr(n)-1) then
+          ! NOTE: this should be zero since p0 is constant up here
           gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
                            -p0_old(j-1) - p0_new(j-1) ) / dr(n)
        else
+          ! NOTE: this should be zero since p0 is constant up here
           gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
                            -p0_old(j  ) - p0_new(j  ) ) / dr(n)
        end if
