@@ -37,6 +37,10 @@ are related.  This is drawn assuming {\tt drdxfac}=5.\vspace{2em}}
 
 \end{itemize}
 
+\section{Density vs. Coordinate}
+
+Note that saying $r\ge$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\rho_0(r)\le$ {\tt anelastic\_cutoff}.  Also, saying $r<$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\rho_0(r)>$ {\tt anelastic\_cutoff}.  Ditto for {\tt base\_cutoff\_density} and {\tt base\_cutoff\_density\_coord}.
+
 \section{anelastic\_cutoff}\label{Sec:Anelastic Cutoff}
 
 \begin{itemize}
@@ -50,11 +54,9 @@ are related.  This is drawn assuming {\tt drdxfac}=5.\vspace{2em}}
 \item In {\tt make\_div\_coeff}, for 
   $r \ge {\tt anelastic\_cutoff\_coord}$, we set
   ${\tt div\_coeff}(n,r) = {\tt div\_coeff}(n,r-1) * \rho_0(n,r)/\rho_0(n,r-1)$.
-  \MarginPar{I think we want $r > {\tt anelastic\_cutoff\_coord}$.}
 
 \item in {\tt make\_S}, we set {\tt delta\_gamma1\_term} and {\tt delta\_gamma1} 
   to zero for $r \ge {\tt anelastic\_cutoff\_coord}$.
-  \MarginPar{I think we want $r > {\tt anelastic\_cutoff\_coord}$.}
 
 \item In {\tt sponge}, {\tt anelastic\_cutoff} is used in a problem
   dependent way.
@@ -84,31 +86,23 @@ are related.  This is drawn assuming {\tt drdxfac}=5.\vspace{2em}}
   we only add the volume discrepancy for $r < {\tt base\_cutoff\_density\_coord}$
   (in plane parallel) and if $\rho_0^{\rm cart} > {\tt base\_cutoff\_density}$ 
   (in spherical).
-  \MarginPar{For plane-parallel, I think we should use 
-    $r \le {\tt base\_cutoff\_density\_coord}$.}
 
 \item In {\tt mkrhohforce} for plane-parallel, for
   $r \ge {\tt base\_cutoff\_density\_coord}$, we
   compute $\nabla p_0$ with a difference stencil instead of simply
   setting it to $\rho_0 g$.
-  \MarginPar{I think we want $r > {\tt base\_cutoff\_density\_coord}$.}
 
-\item In {\tt update\_scal}, if $\rho < {\tt base\_cutoff\_density}$
+\item In {\tt update\_scal}, if $\rho \le {\tt base\_cutoff\_density}$
    and {\tt do\_eos\_h\_above\_cutoff}, we call the EOS to compute $h$.
-  \MarginPar{I think we want $\rho \le {\tt base\_cutoff\_density}$}
 
 \item In {\tt make\_grav} for spherical, we only add the enclosed mass if
   $\rho_0 > {\tt base\_cutoff\_density}$.
-  \MarginPar{I think this needs to be reworked to include mass up to the 
-    cell-centered location of {\tt base\_cutoff\_density\_coord} for both cell 
-    and edge gravity.}
 
-\item In {\tt enforce\_HSE}, we set $p_0(r) = p_0(r-1)$ for 
-  $r > {\tt base\_cutoff\_density\_coord}$.
+\item In {\tt enforce\_HSE}, we set $p_0(r+1) = p_0(r)$ for 
+  $r \ge {\tt base\_cutoff\_density\_coord}$.
 
 \item In {\tt make\_psi} for plane-parallel, we only compute $\psi$ for 
   $r < {\tt base\_cutoff\_density\_coord}$.
-  \MarginPar{I think we want to change this to $r \le {\tt base\_cutoff\_density\_coord}$.}
 
 \end{itemize}
 

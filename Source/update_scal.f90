@@ -197,7 +197,7 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              
-             if (snew(i,j,rho_comp) < base_cutoff_density) then
+             if (snew(i,j,rho_comp) .le. base_cutoff_density) then
                 den_eos(1) = snew(i,j,rho_comp)
                 temp_eos(1) = sold(i,j,temp_comp)
                 p_eos(1) = p0(j)
@@ -325,7 +325,7 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
-                if (snew(i,j,k,rho_comp) < base_cutoff_density) then
+                if (snew(i,j,k,rho_comp) .le. base_cutoff_density) then
                    den_eos(1) = snew(i,j,k,rho_comp)
                    temp_eos(1) = sold(i,j,k,temp_comp)
                    p_eos(1) = p0(k)
@@ -460,7 +460,7 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
-                if (snew(i,j,k,rho_comp) < base_cutoff_density) then
+                if (snew(i,j,k,rho_comp) .le. base_cutoff_density) then
                    den_eos(1) = snew(i,j,k,rho_comp)
                    temp_eos(1) = sold(i,j,k,temp_comp)
                    p_eos(1) = p0_new_cart(i,j,k)
