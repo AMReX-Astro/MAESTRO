@@ -1,17 +1,27 @@
 &PROBIN
- test_set = "gr0_2d"
+ model_file = "model.hse.cool"
  spherical_in = 0
 
- prob_hi_x = 2.16e8
- prob_hi_y = 3.6e8
+ max_levs = 1
+ n_cellx = 256
+ n_celly = 640
+ max_grid_size = 128
+
+ prob_hi_x = 1.44e8
+ prob_hi_y = 3.60e8
+
+ anelastic_cutoff = 3.d6
+ base_cutoff_density = 3.d6
+
+ do_sponge = T
+ sponge_center_density = 3.d6
+ sponge_start_factor = 10.d0
+ sponge_kappa = 10.d0
 
  grav_const = -1.5e10
 
  max_step  = 100000000
  init_iter = 1
-
- do_initial_projection = T
- init_divu_iter = 3
 
  stop_time = 100.0
 
@@ -34,6 +44,8 @@
  mg_verbose = 1
  cg_verbose = 0
 
- use_eos_coulomb = F
+ do_initial_projection = T
+ init_divu_iter = 1
 
+ use_eos_coulomb = F
 /
