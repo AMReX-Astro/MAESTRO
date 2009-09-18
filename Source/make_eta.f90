@@ -256,7 +256,7 @@ contains
   ! spherical routines
   !---------------------------------------------------------------------------
 
-  subroutine make_etarho_spherical(sold,snew,umac,rho0_old,rho0_new, &
+  subroutine make_etarho_spherical(sold,snew,umac,w0mac,rho0_old,rho0_new, &
                                    dx,normal,etarho_ec,etarho_cc,mla,the_bc_level)
 
     use bl_constants_module
@@ -268,6 +268,7 @@ contains
     use multifab_fill_ghost_module
 
     type(multifab) , intent(in   ) :: umac(:,:)
+    type(multifab) , intent(in   ) :: w0mac(:,:)
     type(multifab) , intent(in   ) :: sold(:), snew(:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:) 
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -282,9 +283,10 @@ contains
     real(kind=dp_t), pointer :: ep(:,:,:,:)
     real(kind=dp_t), pointer :: sop(:,:,:,:), snp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:), wmp(:,:,:,:)
+    real(kind=dp_t), pointer :: wxp(:,:,:,:), wyp(:,:,:,:), wzp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
 
-    integer :: n,i,lo(dm),hi(dm),ng_so,ng_sn,ng_um,ng_n,ng_e
+    integer :: n,i,lo(dm),hi(dm),ng_so,ng_sn,ng_um,ng_n,ng_e,ng_wm
     integer :: r
 
     if (spherical .eq. 0) then
@@ -297,6 +299,7 @@ contains
     ng_sn = snew(1)%ng
     ng_um = umac(1,1)%ng
     ng_n  = normal(1)%ng
+    ng_wm = w0mac(1,1)%ng
 
     do n=1,nlevs
 
@@ -312,12 +315,16 @@ contains
           ump => dataptr(umac(n,1), i)
           vmp => dataptr(umac(n,2), i)
           wmp => dataptr(umac(n,3), i)
+          wxp => dataptr(w0mac(n,1), i)
+          wyp => dataptr(w0mac(n,2), i)
+          wzp => dataptr(w0mac(n,3), i)
           np  => dataptr(normal(n), i)
           lo = lwb(get_box(eta_cart(n),i))
           hi = upb(get_box(eta_cart(n),i))
           call construct_eta_cart(sop(:,:,:,rho_comp), ng_so, &
                                   snp(:,:,:,rho_comp), ng_sn, &
                                   ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                  wxp(:,:,:,1), wyp(:,:,:,1), wzp(:,:,:,1), ng_wm, &
                                   np(:,:,:,:), ng_n, ep(:,:,:,1), ng_e, &
                                   rho0_old(1,:), rho0_new(1,:), &
                                   dx(n,:), lo, hi)
@@ -377,18 +384,22 @@ contains
   end subroutine make_etarho_spherical
 
   subroutine construct_eta_cart(rho_old, ng_so, rho_new, ng_sn, umac, vmac, wmac, ng_um, &
+                                w0macx, w0macy, w0macz, ng_wm, &
                                 normal, ng_n, eta_cart, ng_e, rho0_old, rho0_new, dx, lo, hi)
 
     use bl_constants_module
     use geometry, only: nr_fine
     use fill_3d_module
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_so, ng_sn, ng_um, ng_n, ng_e
+    integer        , intent(in   ) :: lo(:),hi(:),ng_so, ng_sn, ng_um, ng_n, ng_e, ng_wm
     real(kind=dp_t), intent(in   ) ::       rho_old(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:)
     real(kind=dp_t), intent(in   ) ::       rho_new(lo(1)-ng_sn:,lo(2)-ng_sn:,lo(3)-ng_sn:)
     real(kind=dp_t), intent(in   ) ::          umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::          vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::          wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::        w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) ::        w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) ::        w0macz(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
     real(kind=dp_t), intent(in   ) ::        normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
     real(kind=dp_t), intent(inout) ::      eta_cart(lo(1)-ng_e :,lo(2)-ng_e :,lo(3)-ng_e :)
     real(kind=dp_t), intent(in   ) :: rho0_old(0:), rho0_new(0:)
@@ -417,9 +428,12 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
 
-             Utilde_dot_er = HALF*(umac(i,j,k) + umac(i+1,j,k)) * normal(i,j,k,1) + &
-                             HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * normal(i,j,k,2) + &
-                             HALF*(wmac(i,j,k) + wmac(i,j,k+1)) * normal(i,j,k,3)
+             Utilde_dot_er = HALF*(    umac(i,j,k) +   umac(i+1,j,k) &
+                                   + w0macx(i,j,k) + w0macx(i+1,j,k)) * normal(i,j,k,1) + &
+                             HALF*(    vmac(i,j,k) +   vmac(i,j+1,k) &
+                                   + w0macy(i,j,k) + w0macy(i,j+1,k)) * normal(i,j,k,2) + &
+                             HALF*(    wmac(i,j,k) +   wmac(i,j,k+1) &
+                                   + w0macz(i,j,k) + w0macz(i,j,k+1)) * normal(i,j,k,3)
 
              ! construct time-centered [ rho' (Utilde . e_r) ]
              eta_cart(i,j,k) = (HALF*(rho_old(i,j,k) + rho_new(i,j,k)) - &

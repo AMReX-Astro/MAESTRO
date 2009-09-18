@@ -30,5 +30,3 @@
    generalized.
 
 -- only need to keep one set of species names around in a network
-
--- change etarho computation in spherical to use U, not Utilde.

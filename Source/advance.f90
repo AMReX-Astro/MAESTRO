@@ -449,7 +449,7 @@ contains
           if (spherical .eq. 0) then
              call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
           else
-             call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,normal, &
+             call make_etarho_spherical(s1,s2,umac,w0mac,rho0_old,rho0_new,dx,normal, &
                                         etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
           endif
 
@@ -866,7 +866,7 @@ contains
           if (spherical .eq. 0) then
              call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
           else
-             call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,normal, &
+             call make_etarho_spherical(s1,s2,umac,w0mac,rho0_old,rho0_new,dx,normal, &
                                         etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
           endif
 
