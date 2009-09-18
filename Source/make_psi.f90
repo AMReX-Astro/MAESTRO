@@ -43,7 +43,7 @@ contains
   subroutine make_psi_spherical(psi,w0,gamma1bar,p0_avg,Sbar_in)
 
     use bl_constants_module
-    use geometry, only: dr, r_cc_loc, r_edge_loc, nr_fine
+    use geometry, only: dr, r_cc_loc, r_edge_loc, nr_fine, base_cutoff_density_coord
 
     real(kind=dp_t), intent(inout) ::       psi(:,0:)
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
@@ -55,7 +55,9 @@ contains
     integer :: r
     real(kind=dp_t) :: div_w0_sph
 
-    do r=0,nr_fine-1
+    psi = ZERO
+
+    do r=0,base_cutoff_density_coord(1)-1
 
        div_w0_sph = one/(r_cc_loc(1,r)**2)* &
             (r_edge_loc(1,r+1)**2 * w0(1,r+1) - &
