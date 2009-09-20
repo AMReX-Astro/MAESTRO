@@ -129,10 +129,7 @@ contains
     real(kind=dp_t) :: Rloc_enucmax
     real(kind=dp_t) :: vel_enucmax_local(dm), vel_enucmax_level(dm), vel_enucmax(dm)
 
-    real(kind=dp_t) :: vx_center_local, vy_center_local, vz_center_local
-    real(kind=dp_t) :: vx_center_level, vy_center_level, vz_center_level
-    real(kind=dp_t) :: vx_center,       vy_center,       vz_center
-
+    real(kind=dp_t) :: vel_center_local(dm), vel_center_level(dm), vel_center(dm)
     real(kind=dp_t) :: T_center_local, T_center_level, T_center
 
     integer         :: ncenter_local, ncenter_level, ncenter
@@ -159,7 +156,7 @@ contains
     integer :: lo(dm),hi(dm)
     integer :: ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
     integer :: i,n, comp, r
-    integer :: un,un2,un3,un4
+    integer :: un1,un2,un3,un4
     logical :: lexist
 
     character (len=16) :: date_str, time_str
@@ -241,10 +238,7 @@ contains
     coord_enucmax(:) = ZERO
     vel_enucmax(:) = ZERO
 
-    vx_center = ZERO
-    vy_center = ZERO
-    vz_center = ZERO
-
+    vel_center(:) = ZERO
     T_center = ZERO
     
     ncenter = 0
@@ -304,13 +298,8 @@ contains
        vel_enucmax_local(:) = ZERO
        vel_enucmax_level(:) = ZERO
 
-       vx_center_local = ZERO
-       vy_center_local = ZERO
-       vz_center_local = ZERO
-
-       vx_center_level = ZERO
-       vy_center_level = ZERO
-       vz_center_level = ZERO
+       vel_center_local(:) = ZERO
+       vel_center_level(:) = ZERO
        
        T_center_local = ZERO
        T_center_level = ZERO
@@ -358,7 +347,7 @@ contains
                              enuc_max_local, coord_enucmax_local, vel_enucmax_local, &
                              kin_ener_local, int_ener_local, nuc_ener_local, &
                              U_max_local, Mach_max_local, &
-                             ncenter_local,T_center_local,vx_center_local,vy_center_local,vz_center_local)
+                             ncenter_local,T_center_local,vel_center_local(1),vel_center_local(2),vel_center_local(3))
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_3d(n,time,dt,dx(n,:), &
@@ -377,7 +366,7 @@ contains
                              enuc_max_local, coord_enucmax_local, vel_enucmax_local, &
                              kin_ener_local, int_ener_local, nuc_ener_local, &
                              U_max_local, Mach_max_local, &
-                             ncenter_local,T_center_local,vx_center_local,vy_center_local,vz_center_local, &
+                             ncenter_local,T_center_local,vel_center_local(1),vel_center_local(2),vel_center_local(3), &
                              mp(:,:,:,1))
              end if
           end select
@@ -400,25 +389,25 @@ contains
        sum_data_local(2*dm+3)    = kin_ener_local
        sum_data_local(2*dm+4)    = int_ener_local
        sum_data_local(2*dm+5)    = nuc_ener_local
-       sum_data_local(2*dm+6)    = vx_center_local
-       sum_data_local(2*dm+7)    = vy_center_local
-       sum_data_local(2*dm+8)    = vz_center_local
+       sum_data_local(2*dm+6)    = vel_center_local(1)
+       sum_data_local(2*dm+7)    = vel_center_local(2)
+       sum_data_local(2*dm+8)    = vel_center_local(3)
        sum_data_local(2*dm+9)    = T_center_local
 
        call parallel_reduce(sum_data_level, sum_data_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
-       vr_level(:)     = sum_data_level(1:dm)
-       rhovr_level(:)  = sum_data_level(dm+1:2*dm)
-       mass_level      = sum_data_level(2*dm+1)
-       nzones_level    = sum_data_level(2*dm+2)
-       kin_ener_level  = sum_data_level(2*dm+3)
-       int_ener_level  = sum_data_level(2*dm+4)
-       nuc_ener_level  = sum_data_level(2*dm+5)
-       vx_center_level = sum_data_level(2*dm+6)   
-       vy_center_level = sum_data_level(2*dm+7)    
-       vz_center_level = sum_data_level(2*dm+8)   
-       T_center_level  = sum_data_level(2*dm+9)   
+       vr_level(:)         = sum_data_level(1:dm)
+       rhovr_level(:)      = sum_data_level(dm+1:2*dm)
+       mass_level          = sum_data_level(2*dm+1)
+       nzones_level        = sum_data_level(2*dm+2)
+       kin_ener_level      = sum_data_level(2*dm+3)
+       int_ener_level      = sum_data_level(2*dm+4)
+       nuc_ener_level      = sum_data_level(2*dm+5)
+       vel_center_level(1) = sum_data_level(2*dm+6)   
+       vel_center_level(2) = sum_data_level(2*dm+7)    
+       vel_center_level(3) = sum_data_level(2*dm+8)   
+       T_center_level      = sum_data_level(2*dm+9)   
 
        ! ...and the integer quantities
        call parallel_reduce(ncenter_level, ncenter_local, MPI_SUM, &
@@ -572,9 +561,8 @@ contains
 
           T_center = T_center + T_center_level
 
-          vx_center = vx_center + vx_center_level
-          vy_center = vy_center + vy_center_level
-          vz_center = vz_center + vz_center_level
+          vel_center = vel_center + vel_center_level
+
 
           ncenter = ncenter + ncenter_level
 
@@ -659,9 +647,7 @@ contains
           call bl_error("ERROR: ncenter /= 8 in diag")
        else
           T_center = T_center/ncenter
-          vx_center = vx_center/ncenter
-          vy_center = vy_center/ncenter
-          vz_center = vz_center/ncenter
+          vel_center(:) = vel_center(:)/ncenter
        endif
     endif
 
@@ -680,13 +666,13 @@ contains
 
        ! open the diagnostic files for output, taking care not to overwrite
        ! an existing file
-       un = unit_new()
+       un1 = unit_new()
        inquire(file="wdconvect_radvel_diag.out", exist=lexist)
        if (lexist) then
-          open(unit=un, file="wdconvect_radvel_diag.out", &
+          open(unit=un1, file="wdconvect_radvel_diag.out", &
                status="old", position="append")
        else
-          open(unit=un, file="wdconvect_radvel_diag.out", status="new")
+          open(unit=un1, file="wdconvect_radvel_diag.out", status="new")
        endif
 
        un2 = unit_new()
@@ -727,15 +713,15 @@ contains
           call get_cwd(cwd)
 
           ! radvel
-          write (un, *) " "
-          write (un, 800) "output date: ", values(1), values(2), values(3)
-          write (un, 801) "output time: ", values(5), values(6), values(7)
-          write (un, 802) "output dir:  ", trim(cwd)
-          write (un, 999) trim(job_name)
-          write (un, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
-                           "max{|vr|}", &
-                           "int{rhovr_x}/mass", "int{rhovr_y}/mass", "int{rhovr_z}/mass", &
-                           "mass"
+          write (un1, *) " "
+          write (un1, 800) "output date: ", values(1), values(2), values(3)
+          write (un1, 801) "output time: ", values(5), values(6), values(7)
+          write (un1, 802) "output dir:  ", trim(cwd)
+          write (un1, 999) trim(job_name)
+          write (un1, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
+                            "max{|vr|}", &
+                            "int{rhovr_x}/mass", "int{rhovr_y}/mass", "int{rhovr_z}/mass", &
+                            "mass"
 
           ! temp
           write (un2, *) " "
@@ -744,7 +730,8 @@ contains
           write (un2, 802) "output dir:  ", trim(cwd)
           write (un2, 999) trim(job_name)
           write (un2,1001) "time", "max{T}", "x(max{T})", "y(max{T})", "z(max{T})", &
-               "vx(max{T})", "vy(max{T})", "vz(max{T})", "R(max{T})", "T_center"
+                           "vx(max{T})", "vy(max{T})", "vz(max{T})", &
+                           "R(max{T})", "T_center"
 
           ! enuc
           write (un3, *) " "
@@ -752,8 +739,10 @@ contains
           write (un3, 801) "output time: ", values(5), values(6), values(7)
           write (un3, 802) "output dir:  ", trim(cwd)
           write (un3, 999) trim(job_name)
-          write (un3,1001) "time", "max{enuc}", "x(max{enuc})", "y(max{enuc})", "z(max{enuc})", &
-               "vx(max{enuc})", "vy(max{enuc})", "vz(max{enuc})", "R(max{enuc})", 'tot nuc ener (erg/s)'
+          write (un3,1001) "time", "max{enuc}", &
+                           "x(max{enuc})", "y(max{enuc})", "z(max{enuc})", &
+                           "vx(max{enuc})", "vy(max{enuc})", "vz(max{enuc})", &
+                           "R(max{enuc})", 'tot nuc ener (erg/s)'
 
           ! vel
           write (un4, *) " "
@@ -762,14 +751,14 @@ contains
           write (un4, 802) "output dir:  ", trim(cwd)
           write (un4, 999) trim(job_name)
           write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", &
-               "tot kin energy", "grav pot energy", "tot int energy", &
-               "velx_center", "vely_center", "velz_center", "dt"
+                           "tot kin energy", "grav pot energy", "tot int energy", &
+                           "velx_center", "vely_center", "velz_center", "dt"
 
           firstCall = .false.
        endif
 
        ! write out the data
-       write (un,1000) time, vr(1), vr(2), vr(3), &
+       write (un1,1000) time, vr(1), vr(2), vr(3), &
             sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2), vr_max, &
             vr_favre(1), vr_favre(2), vr_favre(3), mass
        
@@ -781,9 +770,10 @@ contains
             coord_enucmax(1), coord_enucmax(2), coord_enucmax(3), &
             vel_enucmax(1), vel_enucmax(2), vel_enucmax(3), Rloc_enucmax, nuc_ener
 
-       write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener, vx_center, vy_center, vz_center, dt
+       write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener, &
+            vel_center(1), vel_center(2), vel_center(3), dt
 
-       close(un)
+       close(un1)
        close(un2)
        close(un3)
        close(un4)
