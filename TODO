@@ -30,3 +30,5 @@
    generalized.
 
 -- only need to keep one set of species names around in a network
+
+-- are we computing eta correctly for spherical? (Utilde vs. U)
