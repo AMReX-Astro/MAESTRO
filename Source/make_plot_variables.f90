@@ -3,6 +3,7 @@ module plot_variables_module
   use bl_types
   use multifab_module
   use define_bc_module
+  use probin_module, only: use_tfromp
 
   implicit none
 
@@ -13,14 +14,14 @@ module plot_variables_module
 
 contains
 
-  subroutine make_tfromH(plotdata,comp_t,comp_dp,state,p0,dx)
+  subroutine make_tfromH(plotdata,comp_t,comp_tpert,comp_dp,state,p0,tempbar,dx)
 
     use geometry, only: spherical, dm
 
-    integer        , intent(in   ) :: comp_t,comp_dp
+    integer        , intent(in   ) :: comp_t,comp_tpert,comp_dp
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: state
-    real(kind=dp_t), intent(in   ) :: p0(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:),tempbar(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
@@ -39,22 +40,25 @@ contains
        hi =  upb(get_box(state, i))
        select case (dm)
        case (2)
-          call make_tfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),ng_p,sp(:,:,1,:),ng_s, &
-                              lo,hi,p0)
+          call make_tfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_tpert), &
+                              tp(:,:,1,comp_dp),ng_p,sp(:,:,1,:),ng_s, &
+                              lo,hi,p0,tempbar)
        case (3)
           if (spherical .eq. 1) then
-             call make_tfromH_3d_sphr(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),ng_p, &
-                                      sp(:,:,:,:),ng_s,lo,hi,p0,dx)
+             call make_tfromH_3d_sphr(tp(:,:,:,comp_t),tp(:,:,:,comp_tpert), &
+                                      tp(:,:,:,comp_dp),ng_p, &
+                                      sp(:,:,:,:),ng_s,lo,hi,p0,tempbar,dx)
           else
-             call make_tfromH_3d_cart(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),ng_p, &
-                                      sp(:,:,:,:),ng_s,lo,hi,p0)
+             call make_tfromH_3d_cart(tp(:,:,:,comp_t),tp(:,:,:,comp_tpert), &
+                                      tp(:,:,:,comp_dp),ng_p, &
+                                      sp(:,:,:,:),ng_s,lo,hi,p0,tempbar)
           end if
        end select
     end do
 
   end subroutine make_tfromH
 
-  subroutine make_tfromH_2d(T,deltaP,ng_p,state,ng_s,lo,hi,p0)
+  subroutine make_tfromH_2d(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
@@ -63,9 +67,10 @@ contains
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:,lo(2)-ng_p:)  
+    real (kind = dp_t), intent(  out) ::  tpert(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) ::  p0(0:)
+    real (kind = dp_t), intent(in   ) ::  p0(0:),tempbar(0:)
 
     ! Local variables
     integer :: i, j
@@ -94,6 +99,7 @@ contains
                    do_diag)
 
           T(i,j) = temp_eos(1)
+          if (.not. use_tfromp) tpert(i,j) = temp_eos(1) - tempbar(j)
 
           deltaP(i,j) = abs(p_eos(1)-p0(j))/ p0(j)
 
@@ -102,7 +108,7 @@ contains
 
   end subroutine make_tfromH_2d
 
-  subroutine make_tfromH_3d_cart(T,deltaP,ng_p,state,ng_s,lo,hi,p0)
+  subroutine make_tfromH_3d_cart(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
@@ -110,9 +116,10 @@ contains
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
+    real (kind = dp_t), intent(  out) ::  tpert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) :: p0(0:)
+    real (kind = dp_t), intent(in   ) :: p0(0:),tempbar(0:)
 
     ! Local variables
     integer :: i, j, k
@@ -141,8 +148,8 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
 
-             ! T(i,j,k) = log(temp_eos(1))/log(10.0d0)
              T(i,j,k) = temp_eos(1)
+             if (.not. use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar(k)
 
              deltaP(i,j,k) = (p_eos(1)-p0(k))/ p0(k)
 
@@ -152,7 +159,7 @@ contains
 
   end subroutine make_tfromH_3d_cart
 
-  subroutine make_tfromH_3d_sphr(T,deltaP,ng_p,state,ng_s,lo,hi,p0,dx)
+  subroutine make_tfromH_3d_sphr(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar,dx)
 
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use eos_module
@@ -161,18 +168,22 @@ contains
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
+    real (kind = dp_t), intent(  out) ::  tpert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) :: p0(0:)
+    real (kind = dp_t), intent(in   ) :: p0(0:),tempbar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
 
     ! Local variables
     integer          :: i, j, k
     real (kind=dp_t), allocatable :: p0_cart(:,:,:,:)
+    real (kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    allocate(  tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
 
     do_diag = .false.
 
@@ -199,14 +210,15 @@ contains
                       do_diag)
 
              T(i,j,k) = temp_eos(1)
-
+             if (.not. use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar_cart(i,j,k,1)
+             
              deltaP(i,j,k) = (p_eos(1)-p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
 
           enddo
        enddo
     enddo
 
-    deallocate(p0_cart)
+    deallocate(p0_cart,tempbar_cart)
 
   end subroutine make_tfromH_3d_sphr
 
@@ -323,7 +335,7 @@ contains
                    do_diag)
 
           t(i,j) = temp_eos(1)
-          tpert(i,j) = temp_eos(1) - tempbar(j)
+          if (use_tfromp) tpert(i,j) = temp_eos(1) - tempbar(j)
 
           rhopert(i,j)  = s(i,j,rho_comp)  - rho0(j)
           rhohpert(i,j) = s(i,j,rhoh_comp) - rhoh0(j)
@@ -391,7 +403,7 @@ contains
                       do_diag)
 
              t(i,j,k) = temp_eos(1)
-             tpert(i,j,k) = temp_eos(1) - tempbar(k)
+             if (use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar(k)
 
              rhopert(i,j,k)  = s(i,j,k,rho_comp)  - rho0(k)
              rhohpert(i,j,k) = s(i,j,k,rhoh_comp) - rhoh0(k)
@@ -481,7 +493,7 @@ contains
                       do_diag)
 
              t(i,j,k) = temp_eos(1)
-             tpert(i,j,k) = temp_eos(1) - tempbar_cart(i,j,k,1)
+             if (use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar_cart(i,j,k,1)
 
              rhopert(i,j,k)  = s(i,j,k,rho_comp)  -  rho0_cart(i,j,k,1)
              rhohpert(i,j,k) = s(i,j,k,rhoh_comp) - rhoh0_cart(i,j,k,1)

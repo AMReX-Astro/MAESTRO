@@ -331,7 +331,8 @@ contains
                            icomp_rhohpert,icomp_machno,icomp_dg,icomp_entropy,s(n),u(n), &
                            rho0(1,:),rhoh0(1,:),tempbar(1,:),gamma1bar(1,:),p0(1,:),dx(n,:))
 
-          call make_tfromH(plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(1,:),dx(n,:))
+          call make_tfromH(plotdata(n),icomp_tfromH,icomp_tpert,icomp_dp,s(n),p0(1,:), &
+                           tempbar(1,:),dx(n,:))
 
        else
 
@@ -339,7 +340,8 @@ contains
                            icomp_rhohpert,icomp_machno,icomp_dg,icomp_entropy,s(n),u(n), &
                            rho0(n,:),rhoh0(n,:),tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
 
-          call make_tfromH(plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:),dx(n,:))
+          call make_tfromH(plotdata(n),icomp_tfromH,icomp_tpert,icomp_dp,s(n),p0(n,:), &
+                           tempbar(n,:),dx(n,:))
 
        end if
        
