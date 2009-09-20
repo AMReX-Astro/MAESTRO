@@ -347,7 +347,8 @@ contains
                              enuc_max_local, coord_enucmax_local, vel_enucmax_local, &
                              kin_ener_local, int_ener_local, nuc_ener_local, &
                              U_max_local, Mach_max_local, &
-                             ncenter_local,T_center_local,vel_center_local(1),vel_center_local(2),vel_center_local(3))
+                             ncenter_local,T_center_local, &
+                             vel_center_local(1),vel_center_local(2),vel_center_local(3))
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_3d(n,time,dt,dx(n,:), &
@@ -366,7 +367,8 @@ contains
                              enuc_max_local, coord_enucmax_local, vel_enucmax_local, &
                              kin_ener_local, int_ener_local, nuc_ener_local, &
                              U_max_local, Mach_max_local, &
-                             ncenter_local,T_center_local,vel_center_local(1),vel_center_local(2),vel_center_local(3), &
+                             ncenter_local,T_center_local, &
+                             vel_center_local(1),vel_center_local(2),vel_center_local(3), &
                              mp(:,:,:,1))
              end if
           end select
@@ -812,7 +814,8 @@ contains
                      enuc_max,coord_enucmax,vel_enucmax, &
                      kin_ener,int_ener,nuc_ener, &
                      U_max,Mach_max, &
-                     ncenter,T_center,velx_center,vely_center,velz_center, &
+                     ncenter,T_center, &
+                     velx_center,vely_center,velz_center, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
