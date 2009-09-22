@@ -13,7 +13,7 @@ module init_module
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
-  use probin_module, only: prob_lo
+  use probin_module, only: prob_lo, perturb_model
 
   implicit none
 
@@ -44,20 +44,26 @@ contains
     
     ng = s(1)%ng
 
-    ! compute the perturbation r location based on where the concentration of He
-    ! becomes greater than he4_pert at the coarsest level
-    he4_comp = network_species_index('helium-4')
-    do r=0,nr(1)-1
-       if (s0_init(1,r,spec_comp+he4_comp-1)/s0_init(1,r,rho_comp) .gt. he4_pert) then
-          pert_index = r
-          exit
+    ! compute the perturbation r location based on where the concentration 
+    ! of He becomes greater than he4_pert at the coarsest level
+    if (perturb_model) then
+
+       he4_comp = network_species_index('helium-4')
+
+       do r=0,nr(1)-1
+          if (s0_init(1,r,spec_comp+he4_comp-1)/s0_init(1,r,rho_comp) .gt. he4_pert) then
+             pert_index = r
+             exit
+          end if
+       end do
+
+       if(dm .eq. 2) then
+          pert_height = prob_lo(2) + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
+       else if(dm .eq. 3) then
+          pert_height = prob_lo(3) + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
        end if
-    end do
-    if(dm .eq. 2) then
-       pert_height = prob_lo(2) + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
-    else if(dm .eq. 3) then
-       pert_height = prob_lo(3) + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
-    end if
+
+    endif
 
     do n=1,nlevs
        do i = 1, s(n)%nboxes
@@ -125,7 +131,8 @@ contains
     ng = s%ng
 
     ! we only need to compute pert_height at the coarsest level
-    if (n .eq. 1) then
+    if (n .eq. 1 .and. perturb_model) then
+
        ! compute the perturbation r location based on where the concentration of He
        ! becomes greater than he4_pert at the coarsest level
        he4_comp = network_species_index('helium-4')
