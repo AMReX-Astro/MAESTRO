@@ -146,9 +146,6 @@ contains
     real(dp_t) ::               w0_old(nlevs_radial,0:nr_fine)
     real(dp_t) ::       div_coeff_edge(nlevs_radial,0:nr_fine)
     real(dp_t) ::  rho0_predicted_edge(nlevs_radial,0:nr_fine)
-    real(dp_t) ::          rhoprimebar(nlevs_radial,0:nr_fine-1)
-    real(dp_t) ::         rhohprimebar(nlevs_radial,0:nr_fine-1)
-    real(dp_t) ::         tempprimebar(nlevs_radial,0:nr_fine-1)
 
     integer    :: n,comp,proj_type,numcell
     real(dp_t) :: halfdt
