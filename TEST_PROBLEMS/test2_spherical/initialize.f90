@@ -64,6 +64,7 @@ contains
     type(multifab), pointer :: chk_src_new(:)
     type(multifab), pointer :: chk_rho_omegadot2(:)
     type(multifab), pointer :: chk_rho_Hnuc2(:)
+    type(multifab), pointer :: chk_thermal2(:)
 
     character(len=5)   :: check_index
     character(len=6)   :: check_index6
@@ -71,7 +72,8 @@ contains
 
     ! create mba, chk stuff, time, and dt
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
-                           chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, time, dt)
+                           chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, &
+                           chk_thermal2, time, dt)
 
     ! create mla
     call ml_layout_build(mla,mba,pmask)
@@ -142,6 +144,10 @@ contains
        call destroy(chk_src_new(n))
     end do
     
+    ! Note: rho_omegadot2, rho_Hnuc2, and thermal2 are not actually needed other
+    ! than to have them available when we print a plotfile immediately after
+    ! restart.  They are recomputed before they are used.
+
     do n=1,nlevs
        call multifab_copy_c(rho_omegadot2(n),1,chk_rho_omegadot2(n),1,nspec)
        call destroy(chk_rho_omegadot2(n)%la)
@@ -154,11 +160,18 @@ contains
        call destroy(chk_rho_Hnuc2(n))
     end do
 
-    ! thermal2 is not stored in the checkpoint file, but
-    ! we'll initialize it to zero here
-    do n=1,nlevs
-       call setval(thermal2(n), ZERO, all=.true.)
-    end do
+    if (use_thermal_diffusion) then
+       do n=1,nlevs
+          call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,1)
+          call destroy(chk_thermal2(n)%la)
+          call destroy(chk_thermal2(n))
+       end do
+       deallocate(chk_thermal2)
+    else
+       do n=1,nlevs
+          call setval(thermal2(n),ZERO,all=.true.)
+       end do
+    end if
     
     deallocate(chkdata, chk_p, chk_dsdt, chk_src_old, chk_src_new)
     deallocate(chk_rho_omegadot2, chk_rho_Hnuc2)
@@ -470,7 +483,10 @@ contains
     use restrict_base_module
     use make_new_grids_module
     use probin_module, only : drdxfac
-    use variables, only: temp_comp
+    use multifab_physbc_module
+    use ml_restriction_module
+    use multifab_fill_ghost_module
+
 
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
@@ -608,6 +624,22 @@ contains
        do while ( (nl .lt. max_levs) .and. (new_grid) )
           
           ! Do we need finer grids?
+          if (nl .eq. 1) then
+             call multifab_fill_boundary(sold(1))
+             call multifab_physbc(sold(1),rho_comp,dm+rho_comp,nscal, &
+                                  the_bc_tower%bc_tower_array(1))
+          else
+             do n=nl,2,-1
+                call ml_cc_restriction(sold(n-1),sold(n),mba%rr(n-1,:))
+                call multifab_fill_ghost_cells(sold(n),sold(n-1), &
+                                               sold(n)%ng,mba%rr(n-1,:), &
+                                               the_bc_tower%bc_tower_array(n-1), &
+                                               the_bc_tower%bc_tower_array(n), &
+                                               rho_comp,dm+rho_comp,nscal, &
+                                               fill_crse_input=.false.)
+             enddo
+          endif
+
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
                               buf_wid,ref_ratio,nl,max_grid_size,tempbar)
           

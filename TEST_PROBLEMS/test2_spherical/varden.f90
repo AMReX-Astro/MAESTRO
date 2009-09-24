@@ -103,7 +103,7 @@ subroutine varden()
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
 
-  logical :: dump_file
+  logical :: dump_plotfile, dump_checkpoint
 
   last_plt_written = -1
   last_chk_written = -1
@@ -303,7 +303,7 @@ subroutine varden()
      call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
 
      if(do_initial_projection) then
-        call initial_proj(uold,sold,pres,gpres,Source_old,hgrhs, &
+        call initial_proj(uold,sold,pres,gpres,Source_old,hgrhs,thermal2, &
                           div_coeff_old,p0_old,gamma1bar,dx,the_bc_tower,mla)
      end if
 
@@ -337,7 +337,7 @@ subroutine varden()
 
      do istep_divu_iter=1,init_divu_iter
 
-        call divu_iter(istep_divu_iter,uold,sold,pres,gpres,normal, &
+        call divu_iter(istep_divu_iter,uold,sold,pres,gpres,normal,thermal2, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old, &
                        gamma1bar,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
@@ -364,8 +364,8 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index6
         endif
 
-        call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,rho_Hnuc2,thermal2, &
-                           Source_old,sponge,mla%mba,plot_names,time,dx, &
+        call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,rho_Hnuc2, &
+                           thermal2,Source_old,sponge,mla%mba,plot_names,time,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar, &
                            normal)
 
@@ -477,7 +477,7 @@ subroutine varden()
 
         call checkpoint_write(check_file_name, chkdata, &
                               pres, dSdt, Source_old, Source_new, &
-                              rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
+                              rho_omegadot2, rho_Hnuc2, thermal2, mla%mba%rr, &
                               time, dt)
 
         call write_base_state(istep, check_file_name, &
@@ -507,9 +507,9 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index6
         endif
 
-        call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,rho_Hnuc2,thermal2, &
-                           Source_old,sponge,mla%mba,plot_names,time,dx,the_bc_tower,w0, &
-                           rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar,normal)
+        call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,rho_Hnuc2, &
+                           thermal2,Source_old,sponge,mla%mba,plot_names,time,dx, &
+                           the_bc_tower,w0,rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar,normal)
 
         call write_base_state(istep, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
@@ -670,23 +670,29 @@ subroutine varden()
               call multifab_destroy(sponge(n))
               call multifab_destroy(hgrhs(n))
               call multifab_destroy(Source_new(n))
+              call multifab_destroy(rho_omegadot2(n))
+              call multifab_destroy(rho_Hnuc2(n))
+              call multifab_destroy(thermal2(n))
               if (dm .eq. 3) then
                  call multifab_destroy(normal(n))
               end if
            end do
 
            ! create new grids and fill in data on those grids
-           call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2,thermal2, &
-                       dx,the_bc_tower,tempbar)
+           call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
+                       thermal2,dx,the_bc_tower,tempbar)
 
            call init_multilevel(sold)
 
            do n = 1,nlevs
-              call multifab_build(      unew(n), mla%la(n),    dm, 3)
-              call multifab_build(      snew(n), mla%la(n), nscal, 3)
-              call multifab_build(    sponge(n), mla%la(n),     1, 0)
-              call multifab_build(     hgrhs(n), mla%la(n),     1, 0, nodal)
-              call multifab_build(Source_new(n), mla%la(n),     1, 1)
+              call multifab_build(      unew(n),    mla%la(n),    dm, 3)
+              call multifab_build(      snew(n),    mla%la(n), nscal, 3)
+              call multifab_build(    sponge(n),    mla%la(n),     1, 0)
+              call multifab_build(     hgrhs(n),    mla%la(n),     1, 0, nodal)
+              call multifab_build(Source_new(n),    mla%la(n),     1, 1)
+              call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
+              call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
+              call multifab_build(     thermal2(n), mla%la(n),     1, 1)
               if (dm .eq. 3) then
                  call multifab_build(normal(n), mla%la(n),    dm, 1)
               end if
@@ -904,8 +910,12 @@ subroutine varden()
         ! output
         !---------------------------------------------------------------------
 
-        if (chk_int > 0) then
-           if (mod(istep,chk_int) .eq. 0) then
+        ! if the file .dump_checkpoint exists in our output directory, then
+        ! automatically dump a plotfile
+        inquire(file=".dump_checkpoint", exist=dump_checkpoint)
+
+        if (chk_int > 0 .or. dump_checkpoint) then
+           if (mod(istep,chk_int) .eq. 0 .or. dump_checkpoint) then
               allocate(chkdata(nlevs))
               do n = 1,nlevs
                  call multifab_build(chkdata(n), mla%la(n), 2*dm+nscal, 0)
@@ -924,7 +934,7 @@ subroutine varden()
 
               call checkpoint_write(check_file_name, chkdata, &
                                     pres, dSdt, Source_old, Source_new, &
-                                    rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
+                                    rho_omegadot2, rho_Hnuc2, thermal2, mla%mba%rr, &
                                     time, dt)
 
               call write_base_state(istep, check_file_name, &
@@ -944,13 +954,13 @@ subroutine varden()
 
         ! if the file .dump_plotfile exists in our output directory, then
         ! automatically dump a plotfile
-        inquire(file=".dump_plotfile", exist=dump_file)
+        inquire(file=".dump_plotfile", exist=dump_plotfile)
 
-        if (plot_int > 0 .or. plot_deltat > ZERO .or. dump_file) then
+        if (plot_int > 0 .or. plot_deltat > ZERO .or. dump_plotfile) then
            if ( (plot_int > 0 .and. mod(istep,plot_int) .eq. 0) .or. &
                 (plot_deltat > ZERO .and. &
                 mod(time - dt,plot_deltat) > mod(time,plot_deltat)) .or. &
-                dump_file) then
+                dump_plotfile) then
 
               if (istep <= 99999) then
                  write(unit=plot_index,fmt='(i5.5)') istep
@@ -960,10 +970,10 @@ subroutine varden()
                  plot_file_name = trim(plot_base_name) // plot_index6
               endif
 
-              call make_plotfile(plot_file_name,mla,unew,snew,gpres,rho_omegadot2,rho_Hnuc2,thermal2,&
-                                 Source_new,sponge,mla%mba,plot_names,time,dx,the_bc_tower, &
-                                 w0,rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar, &
-                                 normal)
+              call make_plotfile(plot_file_name,mla,unew,snew,gpres,rho_omegadot2, &
+                                 rho_Hnuc2,thermal2,Source_new,sponge,mla%mba,plot_names, &
+                                 time,dx,the_bc_tower,w0,rho0_new,rhoh0_new,p0_new,tempbar, &
+                                 gamma1bar,normal)
 
               call write_base_state(istep, plot_file_name, &
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
@@ -988,7 +998,7 @@ subroutine varden()
      ! write the final checkpoint and plotfile
      !---------------------------------------------------------------------
 
-1000 format('STEP = ',i6,1x,' TIME = ',f16.10,1x,'DT = ',f14.9)
+1000 format('STEP = ',i6,1x,' TIME = ',es16.10,1x,' DT = ',es16.10)
 
      if ( chk_int > 0 .and. last_chk_written .ne. istep ) then
         !       This writes a checkpoint file.
@@ -1010,7 +1020,7 @@ subroutine varden()
 
         call checkpoint_write(check_file_name, chkdata, &
                               pres, dSdt, Source_old, Source_new, &
-                              rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
+                              rho_omegadot2, rho_Hnuc2, thermal2, mla%mba%rr, &
                               time, dt)
 
         call write_base_state(istep, check_file_name, &
@@ -1035,9 +1045,9 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index6
         endif
 
-        call make_plotfile(plot_file_name,mla,unew,snew,gpres,rho_omegadot2,rho_Hnuc2, thermal2, &
-                           Source_new,sponge,mla%mba,plot_names,time,dx,the_bc_tower,w0, &
-                           rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar,normal)
+        call make_plotfile(plot_file_name,mla,unew,snew,gpres,rho_omegadot2,rho_Hnuc2, &
+                           thermal2,Source_new,sponge,mla%mba,plot_names,time,dx, &
+                           the_bc_tower,w0,rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar,normal)
         
         call write_base_state(istep, plot_file_name, &
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
@@ -1079,7 +1089,8 @@ subroutine varden()
 
   call probin_close()
 
-  deallocate(uold,sold,pres,gpres,dSdt,Source_old,Source_new,rho_omegadot2,rho_Hnuc2,thermal2,dx)
+  deallocate(uold,sold,pres,gpres,dSdt,Source_old,Source_new,rho_omegadot2,rho_Hnuc2)
+  deallocate(thermal2,dx)
   deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)
   deallocate(psi,tempbar,grav_cell)
