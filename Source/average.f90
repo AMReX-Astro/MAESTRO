@@ -34,24 +34,23 @@ contains
     logical, pointer             :: mp(:,:,:,:)
 
     type(box)                    :: domain
-    integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
-    integer                      :: i,j,r,rcoord,n,ng,nr_crse
-    integer                      :: max_radial,r_inner
-    real(kind=dp_t)              :: w_lo,w_hi,del_w,wsix,theta,w_min,w_max
+    integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm),index(nlevs)
+    integer                      :: i,j,r,rcoord,n,ng,max_radial,max_rcoord,which_level
     real(kind=dp_t)              :: radius
 
-    real(kind=dp_t), allocatable ::   ncell_proc(:,:)
-    real(kind=dp_t), allocatable ::        ncell(:,:)
-    real(kind=dp_t), allocatable ::  phisum_proc(:,:)
-    real(kind=dp_t), allocatable ::       phisum(:,:)
+    integer, allocatable ::  ncell_proc(:,:)
+    integer, allocatable ::       ncell(:,:)
+    integer, allocatable :: ncell_merge(:)
 
-    real(kind=dp_t), allocatable :: radii(:)
+    real(kind=dp_t), allocatable :: phisum_proc(:,:)
+    real(kind=dp_t), allocatable ::      phisum(:,:)
+    real(kind=dp_t), allocatable :: phisum_merge(:)
+
+    real(kind=dp_t), allocatable :: radii(:,:)
+    real(kind=dp_t), allocatable :: radii_merge(:)
 
     real(kind=dp_t), allocatable :: source_buffer(:)
     real(kind=dp_t), allocatable :: target_buffer(:)
-
-    real(kind=dp_t), allocatable :: ncell_crse(:)
-    real(kind=dp_t), allocatable :: phibar_crse(:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -63,24 +62,28 @@ contains
        domhi  = upb(domain)+1
        max_radial = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
 
-       allocate(ncell_proc (nlevs, 0:max_radial))
-       allocate(ncell      (nlevs, 0:max_radial))
-       allocate(phisum_proc(nlevs, 0:max_radial))
-       allocate(phisum     (nlevs,-1:max_radial))
+       allocate(ncell_proc (nlevs,0:max_radial))
+       allocate(ncell      (nlevs,0:max_radial))
 
-       allocate(radii(-1:max_radial))
+       allocate(phisum_proc(nlevs,0:max_radial))
+       allocate(phisum     (nlevs,0:max_radial))
+       allocate(radii      (nlevs,0:max_radial+1))
+
+       allocate(phisum_merge(-1:nlevs*max_radial+nlevs-1))
+       allocate(radii_merge (-1:nlevs*max_radial+nlevs-1))
+       allocate(ncell_merge ( 0:nlevs*max_radial+nlevs-1))
 
        allocate(source_buffer(0:max_radial))
        allocate(target_buffer(0:max_radial))
 
        ! radii contains every possible distance that a cell-center at the finest
        ! level can map into
-       do r=0,max_radial
-          radii(r) = sqrt(0.75d0+2.d0*r)*dx(nlevs,1)
+       do n=1,nlevs
+          do r=0,max_radial
+             radii(n,r) = sqrt(0.75d0+2.d0*r)*dx(n,1)
+          end do
        end do
-
-       ! this refers to the center of the star
-       radii(-1) = 0.d0
+       radii(:,max_radial+1) = 1.d99
 
     else
 
@@ -97,8 +100,8 @@ contains
     ng = phi(1)%ng
 
     phibar       = ZERO
-    ncell        = ZERO
-    ncell_proc   = ZERO
+    ncell        = 0
+    ncell_proc   = 0
     phisum       = ZERO       
     phisum_proc  = ZERO
 
@@ -172,13 +175,13 @@ contains
              hi =  upb(get_box(phi(n), i))
 
              if (n .eq. nlevs) then
-                call sum_phi_3d_sphr(n,radii(0:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
+                call sum_phi_3d_sphr(radii(n,:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
                                      lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp)
              else
                 ! we include the mask so we don't double count; i.e., we only consider
                 ! cells that we can "see" when constructing the sum
                 mp => dataptr(mla%mask(n), i)
-                call sum_phi_3d_sphr(n,radii(0:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
+                call sum_phi_3d_sphr(radii(n,:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
                                      lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp, &
                                      mp(:,:,:,1))
              end if
@@ -190,58 +193,65 @@ contains
 
           source_buffer = phisum_proc(n,:)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          phisum(n,0:) = target_buffer
+          phisum(n,:) = target_buffer
 
        end do
 
-       ! now gather ncell and phisum from all the levels and store
-       ! them in ncell(1,:) and phisum(1,:).  We use 0 based indexing for
-       ! phisum so we don't mess with the center point of the star.  We will
-       ! compute phisum(1,-1) later.
-       do n=2,nlevs
-          ncell (1, :) = ncell (1, :) + ncell (n, :)
-          phisum(1,0:) = phisum(1,0:) + phisum(n,0:)
-       end do
-
-       ! normalize the contributions
-       do r=0,max_radial
-         if (ncell(1,r) .ne. 0.d0) then
-             phisum(1,r) = phisum(1,r) / ncell(1,r)
-          end if
-       end do
-
-       ! fill the empty bins using piecewise linear functions
-       do r=0,max_radial
-
-          if (ncell(1,r) .eq. 0.d0) then
-             ! compute the upper bounding point, rcoord.
-             rcoord = max_radial+1
-             do j=r+1,max_radial
-                if (ncell(1,j) .ne. 0) then
-                   rcoord = j
-                   exit
-                end if
-             end do
-
-             if (rcoord .ne. max_radial+1) then
-                call lin_interp(radii(r), &
-                                radii(r-1),radii(rcoord), &
-                                phisum(1,r), &
-                                phisum(1,r-1),phisum(1,rcoord))
-             else
-                ! if there is no upper bounding point, linearly extrapolate
-                call lin_interp(radii(r), &
-                                radii(r-2),radii(r-1), &
-                                phisum(1,r), &
-                                phisum(1,r-2),phisum(1,r-1))
+       do n=1,nlevs
+          do r=0,max_radial
+             if (ncell(n,r) .ne. 0.d0) then
+                phisum(n,r) = phisum(n,r) / dble(ncell(n,r))
              end if
-          end if
-
+          end do
        end do
+
+       ! create phisum_merge and radii_merge
+       index(:) = 0
+       do r=0,nlevs*max_radial+nlevs-1
+          which_level=1
+          radius = radii(1,index(1))
+          do n=2,nlevs
+             if (radii(n,index(n)) .lt. radius) then
+                which_level = n
+                radius = radii(n,index(n))
+             end if
+          end do
+          phisum_merge(r) = phisum(which_level,index(which_level))
+          radii_merge(r)  = radii (which_level,index(which_level))
+          ncell_merge(r)  = ncell (which_level,index(which_level))
+          index(which_level) = index(which_level) + 1
+       end do
+
+       ! now condense the merged lists to only contain
+       ! elements corresponding to non-zero ncell
+       j=0
+       do r=0,nlevs*max_radial+nlevs-1
+          do while (ncell_merge(j) .eq. 0)
+             j = j+1
+             if (j .gt. nlevs*max_radial+nlevs-1) then
+                exit
+             end if
+          end do
+          if (j .gt. nlevs*max_radial+nlevs-1) then
+             phisum_merge(r:nlevs*max_radial+nlevs-1) = ZERO
+             radii_merge (r:nlevs*max_radial+nlevs-1) = 1.d99
+             exit
+          end if
+          phisum_merge(r) = phisum_merge(j)
+          radii_merge(r)  = radii_merge(j)
+          j = j+1
+          if (j .gt. nlevs*max_radial+nlevs-1) exit
+       end do
+
+       max_rcoord = r
 
        ! use quadratic interpolation with homogeneous neumann bc at center of star
        ! to compute value at center of star, indicated with coordinate r=-1
-       phisum(1,-1) = (11.d0/8.d0)*phisum(1,0) - (3.d0/8.d0)*phisum(1,1)
+       ! this assumes the center of the star is at the finest level of refinement
+       phisum_merge(-1) = (11.d0/8.d0)*phisum_merge(0) - (3.d0/8.d0)*phisum_merge(1)
+
+       ! this refers to the center of the star
+       radii_merge(-1) = 0.d0
 
        ! compute phibar
        do r=0,nr_fine-1
@@ -249,38 +259,20 @@ contains
           ! compute the radius in physical coordinates
           radius = (dble(r)+HALF)*dr(1)
 
-          ! compute the coordinate, rcoord, such that
-          ! radius lies in between the radii(r) and radii(r+1)
-          rcoord = ((radius/dx(nlevs,1))**2 - 0.75d0)/2.0d0
+          ! find the closest rcoord
+          do rcoord=0,max_rcoord
+             if (abs(radius-radii_merge(rcoord)) .lt. abs(radius-radii_merge(rcoord+1))) exit
+          end do
 
-          ! now overwrite rcoord to correspond to the lo stencil point
-          ! for the quadratic interpolation.
-          ! compare rcoord-1 and rcoord+2 and see which is closer.
-          ! if rcoord-1 is closer, set rcoord=roord-1
-          if (rcoord+2 .le. max_radial) then
-             if (abs(radii(rcoord-1)-radius) .lt. abs(radii(rcoord+2)-radius)) then
-                rcoord = rcoord-1
-             end if
+          if (rcoord .ge. max_rcoord) then
+             rcoord = max_rcoord - 1
           end if
 
-          ! use first order extrapolation if the stencil would have used a point
-          ! outside of max_radial
-          if (rcoord+2 .gt. max_radial) then
-             ! extrapolate the quadratic from the 3 outermost points
-             call quad_interp(radius, &
-                              radii(max_radial-2),radii(max_radial-1), &
-                              radii(max_radial), &
-                              phibar(1,r), &
-                              phisum(1,max_radial-2),phisum(1,max_radial-1), &
-                              phisum(1,max_radial))
-          else
-             ! interpolate from the three nearest points
-             call quad_interp(radius, &
-                              radii(rcoord),radii(rcoord+1),radii(rcoord+2), &
-                              phibar(1,r), &
-                              phisum(1,rcoord),phisum(1,rcoord+1),phisum(1,rcoord+2))
-          end if
-
+          ! interpolate from the three nearest points
+          call quad_interp(radius, &
+                           radii_merge(rcoord-1),radii_merge(rcoord),radii_merge(rcoord+1), &
+                           phibar(1,r), &
+                           phisum_merge(rcoord-1),phisum_merge(rcoord),phisum_merge(rcoord+1))
        end do
 
     endif
@@ -345,108 +337,64 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine sum_phi_3d_sphr(n,radii,max_radial,phi,phisum,lo,hi,ng,dx,ncell,incomp,mask)
+  subroutine sum_phi_3d_sphr(radii,max_radial,phi,phisum,lo,hi,ng,dx,ncell,incomp,mask)
 
     use geometry, only: dr, center, nlevs, dm
     use ml_layout_module
     use bl_constants_module
 
-    integer         , intent(in   )           :: n, lo(:), hi(:), ng, incomp, max_radial
+    integer         , intent(in   )           :: lo(:), hi(:), ng, incomp, max_radial
     real (kind=dp_t), intent(in   )           :: radii(0:)
     real (kind=dp_t), intent(in   )           :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout)           :: phisum(0:)
     real (kind=dp_t), intent(in   )           :: dx(:)
-    real (kind=dp_t), intent(inout)           :: ncell(0:)
+    integer         , intent(inout)           :: ncell(0:)
     logical         , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     ! local
-    real (kind=dp_t) :: x, y, z, radius, dx_fine(dm), weight, diff
-    integer          :: i, j, k, ii, jj, kk, index, factor
+    real (kind=dp_t) :: x, y, z, radius
+    integer          :: i, j, k, index
     logical          :: cell_valid
 
-    if (n .eq. nlevs) then
+    do k=lo(3),hi(3)
+       z = (dble(k) + HALF)*dx(3) - center(3)
        
-       do k=lo(3),hi(3)
-          z = (dble(k) + HALF)*dx(3) - center(3)
-
-          do j=lo(2),hi(2)
-             y = (dble(j) + HALF)*dx(2) - center(2)
-
-             do i=lo(1),hi(1)
-                x = (dble(i) + HALF)*dx(1) - center(1)
+       do j=lo(2),hi(2)
+          y = (dble(j) + HALF)*dx(2) - center(2)
+          
+          do i=lo(1),hi(1)
+             x = (dble(i) + HALF)*dx(1) - center(1)
+             
+             ! make sure the cell isn't covered by finer cells
+             cell_valid = .true.
+             if ( present(mask) ) then
+                if ( (.not. mask(i,j,k)) ) cell_valid = .false.
+             end if
+             
+             if (cell_valid) then
 
                 ! compute distance to center
                 radius = sqrt(x**2 + y**2 + z**2)
-
+                
                 ! figure out which radii index this point maps into
                 index = ((radius / dx(1))**2 - 0.75d0) / 2.d0
-
+                
                 ! due to roundoff error, need to ensure that we are in the proper radial bin
                 if (index .lt. max_radial) then
                    if (abs(radius-radii(index)) .gt. abs(radius-radii(index+1))) then
                       index = index+1
                    end if
                 end if
-
+                
                 ! update phisum and ncell
                 phisum(index) = phisum(index) + phi(i,j,k,incomp)
-                ncell(index)  = ncell(index) + 1.d0
+                ncell(index)  = ncell(index) + 1
 
-             end do
+             end if
+             
           end do
        end do
-
-    else
-
-       factor = 2**(nlevs-n)
-       weight = 8.d0**(nlevs-n)
-
-       do i=1,dm
-          dx_fine(i) = dx(i)/dble(factor)
-       end do
-
-       do k=lo(3),hi(3)
-          z = (dble(k) + HALF)*dx(3) - center(3)
-
-          do j=lo(2),hi(2)
-             y = (dble(j) + HALF)*dx(2) - center(2)
-
-             do i=lo(1),hi(1)
-                x = (dble(i) + HALF)*dx(1) - center(1)
-
-                ! make sure the cell isn't covered by finer cells
-                cell_valid = .true.
-                if ( present(mask) ) then
-                   if ( (.not. mask(i,j,k)) ) cell_valid = .false.
-                end if
-
-                if (cell_valid) then
-
-                   ! compute distance to center
-                   radius = sqrt(x**2 + y**2 + z**2)
-
-                   ! figure out which radii index this point maps into
-                   index = ((radius / dx_fine(1))**2 - 0.75d0) / 2.d0
-
-                   ! we won't map exactly onto a location in radii, 
-                   ! so we use the index of the closest point
-                   if (index .lt. max_radial) then
-                      if (abs(radius-radii(index)) .gt. abs(radius-radii(index+1))) then
-                         index = index+1
-                      end if
-                   end if
-
-                   ! update phisum and ncell
-                   phisum(index) = phisum(index) + weight*phi(i,j,k,incomp)
-                   ncell(index)  = ncell(index) + weight
-
-                end if
-
-             end do
-          end do
-       end do
-
-    end if
+    end do
 
   end subroutine sum_phi_3d_sphr
 
@@ -482,7 +430,7 @@ contains
 
     phibar = ZERO
 
-    ncell        = ZERO
+    ncell        = 0
     phisum       = ZERO       
     phisum_proc  = ZERO
 
