@@ -42,80 +42,55 @@ average in terms of spherical coordinates,
 where $\int_{\Omega_H} d\Omega = 4\pi$ represents the integral over
 the spherical $\theta$ and $\phi$ angles at constant radius.
 
-Recall that if initially $ \overline{\rhop} = 1 /
-{4\pi} \int_{\Omega_H} \rhop \; d\Omega = 0,$ 
-\MarginPar{this section is here temporarily, just to better understand
-what's going on here.  These notes came from an early version of
-paper~III} 
-there is no guarantee that $\overline{\rhop} = 0$ will hold at later
-time.  To see this we start with the equation for $\rho'$, 
+In Paper III, we introduced a mixing term, $\etarho$, to the base state density
+evolution equation (see eq. [29] of Paper III), with the objective of
+keeping the base state density equal to the average of the density
+over a layer.  Here we derive $\etarho$ for spherical problems.
+For this derivation, it is best to define the average in terms of spherical coordinates,
 \begin{equation}
-\frac{\partial \rhop}{\partial t} = - \nablab \cdotb (\rho_0 \Ubt)
--\nablab \cdotb (\rhop w_0 \er) - \nablab \cdotb (\rhop \Ubt )
-\label{eq:rhoprimeold} \enskip ,
+\overline{\phi(r)} = \frac{1}{4\pi} \int_{\Omega_H} \phi(r,\theta,\phi) d\Omega
 \end{equation}
-rewritten by moving one term to the left-hand-side:
+where $\int_{\Omega_H} d\Omega = 4\pi$ represents the integral over
+the angles $\theta$ and $\phi$ at constant radius.
+
+Recall from Paper III that if initially $\overline{\rho'} = 0$,
+there is no guarantee that $\overline{\rho'} = 0$ will hold at later
+time.  To see this, recall equation (\ref{eq:Perturbational Density}),
+written in a slightly different form:
 \begin{equation}
-\frac{\partial \rhop}{\partial t} + \nablab \cdotb (\rhop \Ubt) 
-= - \nablab \cdotb (\rho_0 \Ubt)
-  -\nablab \cdotb (\rhop w_0 \er) \enskip .
+\frac{\partial\rho'}{\partial t} + \nabla\cdot\left(\rho'\Ub\right) = -\nabla\cdot\left(\rho_0\Ubt\right).
 \end{equation}
-We integrate this over a spherical shell of thickness $2h$ at radius $r_0$, 
+We integrate this over a spherical shell of thickness $2h$ at radius $r_0$, i.e.,
 $\Omega_H \times (r_0-h, r_0+h)$, and normalize by the integration
-volume, which is $\sim 4\pi r_0^2 \, 2h$ for small $h$, to obtain:
+volume, which is $\sim 4\pi r_0^2  2h$ for small $h$, to obtain:
 \begin{eqnarray}
-\frac{1}{4\pi r_0^2 \, 2h} \int_{r_0-h}^{r_0+h} r^2 \; dr \int_{\Omega_H} 
-    \left(\frac{\partial \rhop}{\partial t} + \nabla \cdotb ( \rhop \Ubt ) \right) \; d\Omega 
-&=& - \frac{1}{4\pi r_0^2 \, 2h} \int_{r_0-h}^{r_0+h} r^2 \; dr 
-\int_{\Omega_H} \nabla \cdotb \left( \rho_0 \Ubt + \rhop w_0 \er \right) \; d\Omega \nonumber  \\
-&=& \left .  - \frac{1}{4\pi r_0^2 \, 2h}  \int_{\Omega_H} 
-\left [ \rho_0  (\Ubt \cdot \er)  + \rhop w_0 \right] r^2
-  \; d\Omega  \; \right  |_{r_0-h}^{r_0+h} \nonumber  \\
-&=& 0 \nonumber \enskip ,
+\frac{1}{4\pi r_0^2 2h}\int_{r_0-h}^{r_0+h}r^2 dr\int_{\Omega_H}\left[\frac{\partial\rho'}{\partial t} + \nabla\cdot\left(\rho'\Ub\right)\right]d\Omega 
+&=& - \frac{1}{4\pi r_0^2 2h}\int_{r_0-h}^{r_0+h}r^2 dr\int_{\Omega_H}\nabla\cdot\left(\rho_0\Ubt\right)d\Omega \nonumber \\
+&=& \left. -\frac{1}{4\pi r_0^2 2h}\int_{\Omega_H}\left[\rho_0\left(\Ubt\cdot\eb_r\right)\right]r^2 d\Omega\right|_{r_0-h}^{r_0+h} \nonumber \\
+&=& 0,
 \end{eqnarray} 
 where we have used the divergence theorem in spherical coordinates to transform
-the volume integrals into area integrals over $\Omega_H.$
-We see that both of the terms on the right hand side disappear. The first,
-$\int_{\Omega_H} \rho_0 (\Ubt \cdot \er) d\Omega = 0$ follows from the definition of $\Ubt,$
-and the second, $\int_{\Omega_H} \rhop w_0 d\Omega = w_0 \int_{\Omega_H} \rhop d\Omega = 0$
-follows from our initial assumption.  
-%\begin{eqnarray}
-%\frac{1}{4\pi r_0^2 \, 2h} \frac{\partial}{\partial t} 
-%  \int_{r_0-h}^{r_0+h} \int_{\Omega_H}  \rhop \; r^2 dr \; d\Omega &=&  
-%\frac{1}{4\pi r_0^2 \, 2h} \int_{r_0-h}^{r_0+h} \int_{\Omega_H} \nabla \cdotb \left( \rho_0 \Ubt + \rhop w_0 \er \right)
-%\; r^2 dr \; d\Omega &=&
-%\\
-%&=& \left .  - \frac{1}{4\pi r_0^2 \, 2h} \int_{\Omega_H} 
-% \rhop (\Ubt \cdot \er)  \; r^2 d\Omega  \right  |_{r_0-h}^{r_0+h}
-%\enskip ,
-%\end{eqnarray} 
-Now expanding the remaining terms and taking the limit as $h \rightarrow 0,$ we can write 
+the volume integral on the right hand side into an area integral over $\Omega_H$.  
+We see that the right hand side disappears since 
+$\int_{\Omega_H}\rho_0(\Ubt\cdot\eb_r)d\Omega=0$,  which follows from the definition 
+of $\Ubt$.  Now, expanding the remaining terms and taking the limit as 
+$h\rightarrow 0,$ we can write
 \begin{eqnarray} 
-0 &=& \lim_{h\rightarrow 0} \frac{1}{4\pi r_0^2 \, 2h} \int_{r_0-h}^{r_0+h} r^2 \; dr \int_{\Omega_H} 
-    \left(\frac{\partial \rhop}{\partial t} + \nabla \cdotb ( \rhop \Ubt ) \right) \; d\Omega \nonumber \\
-&=& \frac{\partial}{\partial t} \left( \lim_{h\rightarrow 0} \frac{1}{4\pi r_0^2} \frac{1}{2h} 
-  \int_{r_0-h}^{r_0+h} r^2 \; dr \int_{\Omega_H}  \rhop \;d\Omega \right) +
-\lim_{h\rightarrow 0} \left( \frac{1}{4\pi r_0^2 \, 2h}  
-  \int_{r_0-h}^{r_0+h} r^2 \; dr \int_{\Omega_H}  \nabla \cdotb ( \rhop \Ubt ) \; d\Omega \right) \nonumber \\
-&=& \frac{\partial}{\partial t} \left(\frac{1}{4\pi} \int_{\Omega_H}  \rhop \; d\Omega \right) +
-\lim_{h\rightarrow 0} \left( \left .  \frac{1}{4\pi r_0^2 \, 2h}  
-\left [ \int_{\Omega_H} \rhop (\Ubt \cdot \er) \; d\Omega  \right]  r^2\; \right |_{r_0-h}^{r_0+h} \right) \nonumber  \\
-&=&  \frac{\partial}{\partial t} \overline{\rhop} + \lim_{h\rightarrow 0} \left( \left .  \frac{1}{r_0^2 \, 2h}
-\overline{[\rhop (\Ubt \cdot \er)]} \; r^2 \; \right |_{r_0-h}^{r_0+h} \right) \nonumber  \\
-&=&  \frac{\partial}{\partial t} \overline{\rhop} + 
-\lim_{h\rightarrow 0} \frac{1}{r_0^2 \, 2h} \int_{r_0-h}^{r_0+h} \nabla \cdot \left[\overline{\left(\rhop\Ubt \cdot \er\right)} \er \right]\;  r^2 \; dr \nonumber \\
-&=&  \frac{\partial}{\partial t} \overline{\rhop} + \nabla \cdot \left[ \overline{\left(\rhop \Ubt \cdot \er\right)} \er \right]
+0 &=& \lim_{h\rightarrow 0} \frac{1}{4\pi r_0^2 2h} \int_{r_0-h}^{r_0+h} r^2  dr \int_{\Omega_H} \left[\frac{\partial \rho'}{\partial t} + \nabla\cdot(\rho'\Ub)\right] d\Omega \nonumber \\
+&=& \frac{\partial}{\partial t} \left( \lim_{h\rightarrow 0} \frac{1}{4\pi r_0^2} \frac{1}{2h} \int_{r_0-h}^{r_0+h} r^2  dr \int_{\Omega_H}  \rho' d\Omega \right) + \lim_{h\rightarrow 0} \left[\frac{1}{4\pi r_0^2  2h} \int_{r_0-h}^{r_0+h} r^2  dr \int_{\Omega_H}  \nabla \cdot ( \rho' \Ub )  d\Omega\right] \nonumber \\
+&=& \frac{\partial}{\partial t} \left(\frac{1}{4\pi} \int_{\Omega_H}  \rho'  d\Omega \right) + \lim_{h\rightarrow 0} \left\{\left.\frac{1}{r_0^2 2h}\left[\frac{1}{4\pi}\int_{\Omega_H} \rho' (\Ub \cdot \eb_r)  d\Omega  \right]  r^2 \right |_{r_0-h}^{r_0+h} \right\} \nonumber  \\
+&=&  \frac{\partial}{\partial t} \overline{\rho'} + \lim_{h\rightarrow 0} \left\{ \left .  \frac{1}{r_0^2  2h} \left[ \overline{\rho' (\Ub \cdot \eb_r)} \right]  r^2  \right |_{r_0-h}^{r_0+h} \right\} \nonumber  \\
+&=&  \frac{\partial}{\partial t} \overline{\rho'} + \lim_{h\rightarrow 0} \frac{1}{r_0^2 2h} \int_{r_0-h}^{r_0+h} \nabla \cdot \left[\overline{\rho' (\Ub \cdot \eb_r)} \eb_r \right]  r^2  dr \nonumber \\
+&=&  \frac{\partial}{\partial t} \overline{\rho'} + \nabla \cdot \left[ \overline{\rho' (\Ub \cdot \eb_r)} \eb_r \right]
 \end{eqnarray} 
 again using the divergence theorem, extracting the time derivative from the spatial integral,
 and switching the order of operations as appropriate.
 
 In short, 
 \begin{equation}
-\frac{\partial}{\partial t} \overline{\rhop} = 
-- \nabla \cdot \left [ \overline{\left(\rhop \Ubt \cdot \er\right)} \, \er \right ] = 
-- \nabla \cdot ( \etarho \er )
- \enskip .\label{eq:rhopbar} 
+\frac{\partial}{\partial t} \overline{\rho'} = - \nabla\cdot\left[\overline{\rho'\left(\Ub\cdot\eb_r\right)}\eb_r\right] = -\nabla\cdot\left(\etarho\eb_r\right),
 \end{equation} 
+and thus, $\etarho = \overline{\left(\rho'\Ub\cdot\eb_r\right)}$.
 
 We need both $\etarho$ alone and its divergence for the
 various terms in the construction of $w_0$ and the correction to
