@@ -79,22 +79,31 @@ contains
     logical    :: is_prediction
 
     ! Create cell-centered base state quantity
-    real(kind=dp_t) :: h0_old(nlevs_radial,0:nr_fine-1)
-    real(kind=dp_t) :: h0_new(nlevs_radial,0:nr_fine-1)
+    real(kind=dp_t), allocatable :: h0_old(:,:)
+    real(kind=dp_t), allocatable :: h0_new(:,:)
 
     ! Create edge-centered base state quantities.
     ! Note: rho0_edge_{old,new} and rhoh0_edge_{old,new}
     ! contain edge-centered quantities created via spatial interpolation.
-    real(kind=dp_t) ::  rho0_edge_old(nlevs_radial,0:nr_fine)
-    real(kind=dp_t) ::  rho0_edge_new(nlevs_radial,0:nr_fine)
-    real(kind=dp_t) :: rhoh0_edge_old(nlevs_radial,0:nr_fine)
-    real(kind=dp_t) :: rhoh0_edge_new(nlevs_radial,0:nr_fine)
-    real(kind=dp_t) ::    t0_edge_old(nlevs_radial,0:nr_fine)
-    real(kind=dp_t) ::    t0_edge_new(nlevs_radial,0:nr_fine)
+    real(kind=dp_t), allocatable ::  rho0_edge_old(:,:)
+    real(kind=dp_t), allocatable ::  rho0_edge_new(:,:)
+    real(kind=dp_t), allocatable :: rhoh0_edge_old(:,:)
+    real(kind=dp_t), allocatable :: rhoh0_edge_new(:,:)
+    real(kind=dp_t), allocatable ::    t0_edge_old(:,:)
+    real(kind=dp_t), allocatable ::    t0_edge_new(:,:)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "enthalpy_advance")
+
+    allocate( h0_old(nlevs_radial,0:nr_fine-1))
+    allocate( h0_new(nlevs_radial,0:nr_fine-1))
+    allocate(  rho0_edge_old(nlevs_radial,0:nr_fine))
+    allocate(  rho0_edge_new(nlevs_radial,0:nr_fine))
+    allocate( rhoh0_edge_old(nlevs_radial,0:nr_fine))
+    allocate( rhoh0_edge_new(nlevs_radial,0:nr_fine))
+    allocate(    t0_edge_old(nlevs_radial,0:nr_fine))
+    allocate(    t0_edge_new(nlevs_radial,0:nr_fine))
 
     is_vel  = .false.
 
