@@ -33,7 +33,7 @@ Fmdirs := MAESTRO/test_basestate \
 Fmincludes := extern/EOS/helmeos
 
 # define the runtime parameter files                                            
-PROBIN_PARAMETERS := ../_parameters
+PROBIN_PARAMETERS := ../_parameters ./_parameters.basestate
 
 
 # include the MAESTRO build stuff                                               
