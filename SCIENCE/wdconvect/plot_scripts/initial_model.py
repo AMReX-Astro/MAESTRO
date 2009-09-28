@@ -14,7 +14,7 @@ import string
 
 def initial_model():
 
-    hybridModel = "model_6.e8.hybrid.hse.1920"
+    hybridModel = "kepler_new_6.25e8.hybrid.hse.1280"
 
     # read in the hybrid model and store the data in 
     # hybridData
