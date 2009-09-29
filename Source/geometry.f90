@@ -23,7 +23,7 @@ module geometry
   integer   , allocatable, save :: anelastic_cutoff_coord(:)
   integer   , allocatable, save :: base_cutoff_density_coord(:)
   integer   , allocatable, save :: burning_cutoff_density_coord(:)
-  real(dp_t), save :: sin_theta, cos_theta, omega, centrifugal_term(3)
+  real(dp_t), save :: sin_theta, cos_theta, omega
 
   private
 
@@ -34,7 +34,7 @@ module geometry
   public :: anelastic_cutoff_coord
   public :: base_cutoff_density_coord
   public :: burning_cutoff_density_coord
-  public :: sin_theta, cos_theta, omega, centrifugal_term
+  public :: sin_theta, cos_theta, omega
 
   public :: init_dm, init_spherical, init_center, init_radial, init_cutoff, &
        compute_cutoff_coords, init_multilevel, init_rotation, destroy_geometry
@@ -332,6 +332,22 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+! rotation
+! 
+! co_latitude, rotation_radius, theta_in_rad, sin_theta and cos_theta are only
+! important when wanting to rotate a plane-parallel patch which lives at an 
+! angle co_latitude from the rotation axis and at a distance rotation_radius 
+! from center().  mk_vel_force should calculate the rotational forcing terms
+! for the points within the patch.  
+!
+! for spherical problems, the only important variable from init_rotation() is 
+! omega, the angular frequency - mk_vel_force will calculate the appropriate
+! terms for a given coordinate
+!
+! NOTE: it is currently unclear how to handle BC's with a plane-parallel patch
+!       and it is not advisable to utilize rotation for such problems.
+!
+
   subroutine init_rotation()
 
     use probin_module, only: rotational_frequency, co_latitude, rotation_radius
@@ -345,10 +361,6 @@ contains
     cos_theta = cos(theta_in_rad)
 
     omega = 2 * M_PI * rotational_frequency
-
-    centrifugal_term(1) = - omega * omega * rotation_radius * sin_theta * cos_theta
-    centrifugal_term(2) = ZERO
-    centrifugal_term(3) = - omega * omega * rotation_radius * sin_theta * sin_theta
 
   end subroutine init_rotation
 

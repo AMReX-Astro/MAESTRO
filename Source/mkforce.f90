@@ -247,9 +247,10 @@ contains
                                   gpres,ng_gp,rho,ng_s, &
                                   rho0,grav,lo,hi)
 
-    use geometry,  only: sin_theta, cos_theta, omega, centrifugal_term
+    use geometry,  only: sin_theta, cos_theta, omega
     use bl_constants_module
-    use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
+    use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor, &
+                             rotation_radius
 
     integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s, ng_uo, ng_um
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
@@ -267,9 +268,35 @@ contains
     integer         :: i,j,k
     real(kind=dp_t) :: rhopert
 
-    real(kind=dp_t) :: coriolis_term(3)
+    real(kind=dp_t) :: coriolis_term(3), centrifugal_term(3)
 
     vel_force = ZERO
+
+    ! CURRENTLY for rotation in plane-parallel, we make the (bad) assumption 
+    ! that all points within the patch have the same centrifugal forcing terms.
+    !
+    ! We assume the centrifugal term applies at a constant radius, 
+    ! rotation_radius, for the patch.  In otherwords, the patch lives on the
+    ! surface of a sphere of radius rotation_radius.
+    !
+    ! Furthermore, we assume the patch lives at longitude = 0.
+    !
+    ! Then the orientation of the patch is such that e_z is in the 
+    ! outward radial direction of the star, e_x is in the co_latitude (polar) 
+    ! angle direction and e_y is in the global y-direction.
+    !
+    ! centrifugal_term = omega x (omega x r) = (omega dot r) * omega
+    !                                          - omega^2 * r
+    ! where omega = (-|omega| sin_theta) e_x + (|omega| cos_theta) e_z
+    !           r = rotation_radius e_z
+    !
+    ! See docs/rotation for derivation and figures.
+    ! 
+
+    centrifugal_term(1) = - omega**2 * rotation_radius * sin_theta * sin_theta
+    centrifugal_term(2) = ZERO
+    centrifugal_term(3) = omega**2 * rotation_radius * cos_theta * sin_theta &
+                          - omega**2 * rotation_radius
 
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
@@ -281,6 +308,10 @@ contains
              if (rho(i,j,k) .lt. buoyancy_cutoff_factor*base_cutoff_density) then
                 rhopert = 0.d0
              end if
+
+             ! the coriolis term is:
+             !    TWO * omega x U
+             ! where omega is given above and U = (u, v, w) is the velocity
 
              if (is_final_update) then
 
