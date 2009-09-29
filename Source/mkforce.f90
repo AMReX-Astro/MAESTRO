@@ -355,7 +355,7 @@ contains
     real(kind=dp_t), allocatable :: grav_cart(:,:,:,:)
 
     real(kind=dp_t) :: rhopert
-    real(kind=dp_t) :: xx, yy, zz, distance, cos_theta
+    real(kind=dp_t) :: xx, yy, zz
     real(kind=dp_t) :: centrifugal_term(3), coriolis_term(3)
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
@@ -380,13 +380,14 @@ contains
                 rhopert = 0.d0
              end if
 
-             distance = sqrt(xx**2 + yy**2 + zz**2)
-             cos_theta = normal(i,j,k,3)
+             ! Coriolis and centrifugal forces.  We assume that the
+             ! rotation axis is the z direction, with angular velocity
+             ! omega
 
              ! omega x (omega x r ) = - omega^2 x e_x  - omega^2 y e_y    
              ! (with omega = omega e_z)
-             centrifugal_term(1) = -omega * omega * distance * normal(i,j,k,1)
-             centrifugal_term(2) = -omega * omega * distance * normal(i,j,k,2)
+             centrifugal_term(1) = -omega * omega * xx
+             centrifugal_term(2) = -omega * omega * yy
              centrifugal_term(3) = ZERO
 
              ! 2 omega x U = - 2 omega v e_x  + 2 omega u e_y
@@ -410,6 +411,12 @@ contains
                 coriolis_term(3) = ZERO
              endif
 
+
+             ! F_Coriolis = -2 omega x U  
+             ! F_centrifugal = - omega x (omega x r)
+
+             ! we just computed the absolute value of the forces above, so use
+             ! the right sign here
              vel_force(i,j,k,1) = -coriolis_term(1) - centrifugal_term(1) + &
                   ( rhopert * grav_cart(i,j,k,1) - gpres(i,j,k,1) ) / rho(i,j,k)
 
