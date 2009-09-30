@@ -124,10 +124,12 @@ contains
     real(kind=dp_t) :: coord_Tmax_local(dm), coord_Tmax_level(dm), coord_Tmax(dm)
     real(kind=dp_t) :: Rloc_Tmax
     real(kind=dp_t) :: vel_Tmax_local(dm), vel_Tmax_level(dm), vel_Tmax(dm)
-
+    real(kind=dp_t) :: vr_Tmax
+    
     real(kind=dp_t) :: coord_enucmax_local(dm), coord_enucmax_level(dm), coord_enucmax(dm)
     real(kind=dp_t) :: Rloc_enucmax
     real(kind=dp_t) :: vel_enucmax_local(dm), vel_enucmax_level(dm), vel_enucmax(dm)
+    real(kind=dp_t) :: vr_enucmax
 
     real(kind=dp_t) :: vel_center_local(dm), vel_center_level(dm), vel_center(dm)
     real(kind=dp_t) :: T_center_local, T_center_level, T_center
@@ -545,6 +547,13 @@ contains
 
              vel_Tmax(:) = vel_Tmax_level(:)
 
+             ! use the coordinates of the hot spot and the velocity components
+             ! to compute the radial velocity at the hotspot
+             vr_Tmax = &
+                  ((coord_Tmax(1) - center(1))/Rloc_Tmax)*vel_Tmax(1) + &
+                  ((coord_Tmax(2) - center(2))/Rloc_Tmax)*vel_Tmax(2) + &
+                  ((coord_Tmax(3) - center(3))/Rloc_Tmax)*vel_Tmax(3)
+
           endif
 
           ! if enuc_max_level is the new max, then copy the location as well
@@ -559,6 +568,15 @@ contains
                                   (coord_enucmax(3) - center(3))**2 )
 
              vel_enucmax(:) = vel_enucmax_level(:)
+
+             ! use the coordinates of the hot spot and the velocity components
+             ! to compute the radial velocity at the hotspot
+             vr_enucmax = &
+                  ((coord_enucmax(1) - center(1))/Rloc_enucmax)*vel_enucmax(1) + &
+                  ((coord_enucmax(2) - center(2))/Rloc_enucmax)*vel_enucmax(2) + &
+                  ((coord_enucmax(3) - center(3))/Rloc_enucmax)*vel_enucmax(3)
+
+
           endif
 
           T_center = T_center + T_center_level
@@ -733,7 +751,7 @@ contains
           write (un2, 999) trim(job_name)
           write (un2,1001) "time", "max{T}", "x(max{T})", "y(max{T})", "z(max{T})", &
                            "vx(max{T})", "vy(max{T})", "vz(max{T})", &
-                           "R(max{T})", "T_center"
+                           "R(max{T})", "vr(max{T})", "T_center"
 
           ! enuc
           write (un3, *) " "
@@ -744,7 +762,7 @@ contains
           write (un3,1001) "time", "max{enuc}", &
                            "x(max{enuc})", "y(max{enuc})", "z(max{enuc})", &
                            "vx(max{enuc})", "vy(max{enuc})", "vz(max{enuc})", &
-                           "R(max{enuc})", 'tot nuc ener (erg/s)'
+                           "R(max{enuc})", "vr(max{enuc})", "tot nuc ener (erg/s)"
 
           ! vel
           write (un4, *) " "
@@ -766,11 +784,15 @@ contains
        
        write (un2,1000) time, T_max, &
             coord_Tmax(1), coord_Tmax(2), coord_Tmax(3), &
-            vel_Tmax(1), vel_Tmax(2), vel_Tmax(3), Rloc_Tmax, T_center
+            vel_Tmax(1), vel_Tmax(2), vel_Tmax(3), &
+            Rloc_Tmax, vr_Tmax, &
+            T_center
 
        write (un3,1000) time, enuc_max, &
             coord_enucmax(1), coord_enucmax(2), coord_enucmax(3), &
-            vel_enucmax(1), vel_enucmax(2), vel_enucmax(3), Rloc_enucmax, nuc_ener
+            vel_enucmax(1), vel_enucmax(2), vel_enucmax(3), &
+            Rloc_enucmax, vr_enucmax, &
+            nuc_ener
 
        write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener, &
             vel_center(1), vel_center(2), vel_center(3), dt
