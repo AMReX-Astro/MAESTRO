@@ -411,6 +411,7 @@ contains
                 rhopert = 0.d0
              end if
 
+
              ! Coriolis and centrifugal forces.  We assume that the
              ! rotation axis is the z direction, with angular velocity
              ! omega
@@ -420,6 +421,12 @@ contains
              centrifugal_term(1) = -omega * omega * xx
              centrifugal_term(2) = -omega * omega * yy
              centrifugal_term(3) = ZERO
+
+             ! cutoff the centrifugal term if we are outside the star
+             if (rho(i,j,k) .lt. buoyancy_cutoff_factor*base_cutoff_density) then
+                centrifugal_term(:) = 0.d0
+             end if
+
 
              ! 2 omega x U = - 2 omega v e_x  + 2 omega u e_y
              ! (with omega = omega e_z)
