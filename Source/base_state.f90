@@ -62,8 +62,8 @@ contains
     real(kind=dp_t), allocatable :: base_state(:,:), base_r(:)
     real(kind=dp_t), allocatable :: vars_stored(:)
     character(len=MAX_VARNAME_LENGTH), allocatable :: varnames_stored(:)
-    logical :: found
-
+    logical :: found_model, found_dens, found_temp, found_pres
+    logical :: found_spec(nspec)
     integer :: ipos
     character (len=256) :: header_line
 
@@ -139,7 +139,6 @@ contains
        write (*,*)   nvars_model_file, ' variables found in the initial model file'
     endif
 
-    
 
 
     do i = 1, npts_model
@@ -147,41 +146,75 @@ contains
 
        base_state(i,:) = ZERO
 
+       ! make sure that each of the variables that MAESTRO cares about are found
+       found_dens = .false.
+       found_temp = .false.
+       found_pres = .false.
+       found_spec(:) = .false.
+
        do j = 1,nvars_model_file
 
-          found = .false.
+          ! keep track of whether the current variable from the model file is 
+          ! one that MAESTRO cares about
+          found_model = .false.
+
 
           if (trim(varnames_stored(j)) == "density") then
              base_state(i,idens_model) = vars_stored(j)
-             found = .true.
+             found_model = .true.
+             found_dens  = .true.
 
           else if (trim(varnames_stored(j)) == "temperature") then
              base_state(i,itemp_model) = vars_stored(j)
-             found = .true.
+             found_model = .true.
+             found_temp  = .true.
 
           else if (trim(varnames_stored(j)) == "pressure") then
              base_state(i,ipres_model) = vars_stored(j)
-             found = .true.
-
+             found_model = .true.
+             found_pres  = .true.
           else
              do comp = 1, nspec
                 if (trim(varnames_stored(j)) == spec_names(comp)) then
                    base_state(i,ispec_model-1+comp) = vars_stored(j)
-                   found = .true.
+                   found_model = .true.
+                   found_spec(comp) = .true.
                    exit
                 endif
              enddo
           endif
 
-          if (.NOT. found) then
+          ! is the current variable from the model file one that we care about?
+          if (.NOT. found_model .and. i == 1) then
              if ( parallel_IOProcessor() ) then
-                print *, 'ERROR: variable not found: ', varnames_stored(j)
+                print *, 'WARNING: variable not found: ', trim(varnames_stored(j))
              end if
           endif
 
-       enddo
+       enddo   ! end loop over nvars_model_file
 
-    end do
+       ! were all the variables we care about provided?
+       if (i == 1) then
+          if (.not. found_dens) then
+             print *, 'WARNING: density not provided in inputs file'
+          endif
+
+          if (.not. found_temp) then
+             print *, 'WARNING: temperature not provided in inputs file'
+          endif
+
+          if (.not. found_pres) then
+             print *, 'WARNING: pressure not provided in inputs file'
+          endif
+
+          do comp = 1, nspec
+             if (.not. found_spec(comp)) then
+                print *, 'WARNING: ', trim(spec_names(comp)), ' not provided in inputs file'
+             endif
+          enddo
+       endif
+
+    end do   ! end loop over npts_model
 
     close(99)
 
@@ -195,14 +228,15 @@ contains
 
     if ( parallel_IOProcessor() ) then
        write (*,889) ' '
-       write (*,888) '    maximum density of model =                        ', &
-            max_dens
        write (*,888) '    minimum density of model =                        ', &
             min_dens
-       write (*,888) '    maximum temperature of model =                    ', &
-            max_temp
+       write (*,888) '    maximum density of model =                        ', &
+            max_dens
+       write (*,*)   ' '
        write (*,888) '    minimum temperature of model =                    ', &
             min_temp
+       write (*,888) '    maximum temperature of model =                    ', &
+            max_temp
        write (*,887)
        write (*,889) ' '
     endif
@@ -261,16 +295,24 @@ contains
     if ( parallel_IOProcessor() ) then
        ! close the cutoff density output block
        write (*,887)
-       print *, ' '
-       print *, ' '
+       write (*,*)   ' '
+       write (*,*)   ' '
     end if
 
     dr_in = (base_r(npts_model) - base_r(1)) / dble(npts_model-1)
     rmax = base_r(npts_model)
 
     if ( parallel_IOProcessor() ) then
-       print *,'DR , RMAX OF MODEL     ',dr_in, rmax
-
+       write (*,887)
+       write (*,*)   'model file mapping:'
+       write (*,888) 'dr of MAESTRO base state =                            ', &
+            dr(n)
+       write (*,888) 'dr of input file data =                               ', &
+            dr_in
+       write (*,*) ' '
+       write (*,888) 'maximum radius (cell-centered) of input model =       ', &
+            rmax
+       
        if (dr(n) .lt. dr_in) then
           mod_dr = mod(dr_in,dr(n))
        else
@@ -369,7 +411,8 @@ contains
                base_cutoff_density_loc .eq. prob_hi_r .and. n .eq. 1 ) then
 
              if ( parallel_IOProcessor() ) then
-                print *,'SETTING R_CUTOFF TO ',r
+                print (*,*) ' '
+                write (*,*) 'setting r_cutoff to ', r
              end if
 
              base_cutoff_density_loc = rloc
@@ -428,12 +471,13 @@ contains
     enddo
 
     if ( parallel_IOProcessor() ) then
-       print *, " " 
-       print *, "Level: ", n
-       print *, "Maximum HSE Error = ", max_hse_error
-       print *, "   (after putting initial model into base state arrays, and"
-       print *, "    for density < base_cutoff_density)"
-       print *, " "
+       write (*,*) ' '
+       write (*,*) 'Level: ', n
+       write (*,*) 'Maximum HSE Error = ', max_hse_error
+       write (*,*) '   (after putting initial model into base state arrays, and'
+       write (*,*) '    for density < base_cutoff_density)'
+       write (*,*) ' '
+       write (*,887)
     endif
 
 
