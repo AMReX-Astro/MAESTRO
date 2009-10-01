@@ -107,16 +107,10 @@ contains
     ipos = index(header_line, '=') + 1
     read (header_line(ipos:),*) npts_model
 
-    if ( parallel_IOProcessor() ) &
-         print *, npts_model, '    points found in the initial model file'
-
     ! now read in the number of variables
     read (99, '(a256)') header_line
     ipos = index(header_line, '=') + 1
     read (header_line(ipos:),*) nvars_model_file
-
-    if ( parallel_IOProcessor() ) &
-         print *, nvars_model_file, ' variables found in the initial model file'
 
     allocate (vars_stored(nvars_model_file))
     allocate (varnames_stored(nvars_model_file))
@@ -131,6 +125,22 @@ contains
     ! allocate storage for the model data
     allocate (base_state(npts_model, nvars_model))
     allocate (base_r(npts_model))
+
+
+887 format(78('-'))
+888 format(a60,g18.10)
+889 format(a60)
+
+    if ( parallel_IOProcessor() ) then
+       write (*,889) ' '
+       write (*,887) 
+       write (*,*)   'reading initial model'
+       write (*,*)   npts_model, 'points found in the initial model file'
+       write (*,*)   nvars_model_file, ' variables found in the initial model file'
+    endif
+
+    
+
 
     do i = 1, npts_model
        read(99,*) base_r(i), (vars_stored(j), j = 1, nvars_model_file)
@@ -175,20 +185,16 @@ contains
 
     close(99)
 
+
+
     max_dens = maxval(base_state(:,idens_model))
     min_dens = minval(base_state(:,idens_model))
 
     max_temp = maxval(base_state(:,itemp_model))
     min_temp = minval(base_state(:,itemp_model))
 
-887 format(78('-'))
-888 format(a60,g18.10)
-889 format(a60)
-
     if ( parallel_IOProcessor() ) then
        write (*,889) ' '
-       write (*,887)
-       write (*,889) 'model read in:                                        '
        write (*,888) '    maximum density of model =                        ', &
             max_dens
        write (*,888) '    minimum density of model =                        ', &
@@ -197,20 +203,26 @@ contains
             max_temp
        write (*,888) '    minimum temperature of model =                    ', &
             min_temp
+       write (*,887)
        write (*,889) ' '
-       write (*,889) 'cutoff densities:                                     '
-       write (*,888) '    anelastic cutoff =                                ', &
-            anelastic_cutoff
+    endif
+
+
+    if ( parallel_IOProcessor() ) then
+       ! output block for cutoff density information
+       write (*,887)
+       write (*,*)   'cutoff densities:'
        write (*,888) '    low density cutoff (for mapping the model) =      ', &
             base_cutoff_density
        write (*,888) '    buoyancy cutoff density                           '
        write (*,888) '        (for zeroing rho - rho_0, centrifugal term) = ', &
             buoyancy_cutoff_factor*base_cutoff_density
+       write (*,888) '    anelastic cutoff =                                ', &
+            anelastic_cutoff
        write (*,888) '    sponge start density =                            ', &
             sponge_start_factor*sponge_center_density
        write (*,888) '    sponge center density =                           ', &
             sponge_center_density
-       write (*,887)
        write (*,888) ' '
     end if
 
@@ -220,7 +232,6 @@ contains
           print *, 'WARNING: minimum model density is lower than one of the cutoff densities'
           print *, '         make sure that the cutoff densities are lower than any density'
           print *, '         of dynamical interest'
-          print *, ' '
        end if
     endif
 
@@ -229,7 +240,6 @@ contains
           print *, ' '
           print *, 'WARNING: minimum model temperature is lower than the EOS cutoff'
           print *, '         temperature, small_temp'
-          print *, ' '
        endif
     endif
 
@@ -238,7 +248,6 @@ contains
           print *, ' '
           print *, 'WARNING: minimum model density is lower than the EOS cutoff'
           print *, '         density, small_dens'
-          print *, ' '
        endif
     endif
 
@@ -250,8 +259,10 @@ contains
     endif
 
     if ( parallel_IOProcessor() ) then
-        print *, ' '
-        print *, ' '
+       ! close the cutoff density output block
+       write (*,887)
+       print *, ' '
+       print *, ' '
     end if
 
     dr_in = (base_r(npts_model) - base_r(1)) / dble(npts_model-1)
