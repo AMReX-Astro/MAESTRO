@@ -183,12 +183,16 @@ contains
     if ( parallel_IOProcessor() ) then
        print *, ' '
        print *, 'model read in:'
-       print *, '    maximum density of model =                   ', max_dens
-       print *, '    minimum density of model =                   ', min_dens
-       print *, '    maximum temperature of model =               ', max_temp
-       print *, '    minimum temperature of model =               ', min_temp
-       print *, '    anelastic cutoff =                           ', anelastic_cutoff
-       print *, '    low density cutoff (for mapping the model) = ', base_cutoff_density
+       print *, '    maximum density of model =                          ', max_dens
+       print *, '    minimum density of model =                          ', min_dens
+       print *, '    maximum temperature of model =                      ', max_temp
+       print *, '    minimum temperature of model =                      ', min_temp
+       print *, ' '
+       print *, 'cutoff densities:'
+       print *, '    anelastic cutoff =                                  ', anelastic_cutoff
+       print *, '    low density cutoff (for mapping the model) =        ', base_cutoff_density
+       print *, '    buoyancy cutoff density (for zeroing rho - rho_0, centrifugal term) = ', &
+            buoyancy_cutoff_factor*base_cutoff_density
        print *, ' '
     end if
 
@@ -385,7 +389,7 @@ contains
           dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
           rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*g
 
-          !write(*,1000) r, dpdr, rhog, abs(dpdr - rhog)/abs(dpdr), s0_init(r,rho_comp)
+!          write(*,1000) r, dpdr, rhog, abs(dpdr - rhog)/abs(dpdr), s0_init(r,rho_comp)
 1000      format(1x,6(g20.10))
 
           max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
