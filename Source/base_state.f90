@@ -26,6 +26,7 @@ contains
     use eos_module
     use network, only: spec_names
     use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo, prob_hi, &
+                             buoyancy_cutoff_factor, sponge_start_factor, sponge_center_density, &
                              small_temp, small_dens, grav_const
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm
@@ -191,8 +192,12 @@ contains
        print *, 'cutoff densities:'
        print *, '    anelastic cutoff =                                  ', anelastic_cutoff
        print *, '    low density cutoff (for mapping the model) =        ', base_cutoff_density
-       print *, '    buoyancy cutoff density (for zeroing rho - rho_0, centrifugal term) = ', &
+       print *, '    buoyancy cutoff density'
+       print *, '          (for zeroing rho - rho_0, centrifugal term) = ', &
             buoyancy_cutoff_factor*base_cutoff_density
+       print *, '    sponge start density =                              ', &
+            sponge_start_factor*sponge_center_density
+       print *, '    sponge center density =                             ', sponge_center_density
        print *, ' '
     end if
 
