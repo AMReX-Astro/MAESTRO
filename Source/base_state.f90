@@ -181,24 +181,37 @@ contains
     max_temp = maxval(base_state(:,itemp_model))
     min_temp = minval(base_state(:,itemp_model))
 
+887 format(78('-'))
+888 format(a60,g18.10)
+889 format(a60)
+
     if ( parallel_IOProcessor() ) then
-       print *, ' '
-       print *, 'model read in:'
-       print *, '    maximum density of model =                          ', max_dens
-       print *, '    minimum density of model =                          ', min_dens
-       print *, '    maximum temperature of model =                      ', max_temp
-       print *, '    minimum temperature of model =                      ', min_temp
-       print *, ' '
-       print *, 'cutoff densities:'
-       print *, '    anelastic cutoff =                                  ', anelastic_cutoff
-       print *, '    low density cutoff (for mapping the model) =        ', base_cutoff_density
-       print *, '    buoyancy cutoff density'
-       print *, '          (for zeroing rho - rho_0, centrifugal term) = ', &
+       write (*,889) ' '
+       write (*,887)
+       write (*,889) 'model read in:                                        '
+       write (*,888) '    maximum density of model =                        ', &
+            max_dens
+       write (*,888) '    minimum density of model =                        ', &
+            min_dens
+       write (*,888) '    maximum temperature of model =                    ', &
+            max_temp
+       write (*,888) '    minimum temperature of model =                    ', &
+            min_temp
+       write (*,889) ' '
+       write (*,889) 'cutoff densities:                                     '
+       write (*,888) '    anelastic cutoff =                                ', &
+            anelastic_cutoff
+       write (*,888) '    low density cutoff (for mapping the model) =      ', &
+            base_cutoff_density
+       write (*,888) '    buoyancy cutoff density                           '
+       write (*,888) '        (for zeroing rho - rho_0, centrifugal term) = ', &
             buoyancy_cutoff_factor*base_cutoff_density
-       print *, '    sponge start density =                              ', &
+       write (*,888) '    sponge start density =                            ', &
             sponge_start_factor*sponge_center_density
-       print *, '    sponge center density =                             ', sponge_center_density
-       print *, ' '
+       write (*,888) '    sponge center density =                           ', &
+            sponge_center_density
+       write (*,887)
+       write (*,888) ' '
     end if
 
     if (min_dens < base_cutoff_density .OR. min_dens < anelastic_cutoff) then
