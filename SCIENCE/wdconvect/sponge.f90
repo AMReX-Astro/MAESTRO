@@ -33,8 +33,7 @@ contains
 
     use geometry, only: dr, r_end_coord
     use bl_constants_module
-    use probin_module, only: anelastic_cutoff, prob_hi, verbose, &
-         sponge_start_factor, sponge_center_density
+    use probin_module, only: verbose, sponge_start_factor, sponge_center_density
 
     real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
     real(kind=dp_t), intent(in   ) :: dx(:)
