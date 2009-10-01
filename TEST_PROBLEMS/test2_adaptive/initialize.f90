@@ -64,6 +64,7 @@ contains
     type(multifab), pointer :: chk_src_new(:)
     type(multifab), pointer :: chk_rho_omegadot2(:)
     type(multifab), pointer :: chk_rho_Hnuc2(:)
+    type(multifab), pointer :: chk_thermal2(:)
 
     character(len=5)   :: check_index
     character(len=6)   :: check_index6
@@ -71,7 +72,8 @@ contains
 
     ! create mba, chk stuff, time, and dt
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
-                           chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, time, dt)
+                           chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, &
+                           chk_thermal2, time, dt)
 
     ! create mla
     call ml_layout_build(mla,mba,pmask)
@@ -141,6 +143,10 @@ contains
        call destroy(chk_src_new(n)%la)
        call destroy(chk_src_new(n))
     end do
+
+    ! Note: rho_omegadot2, rho_Hnuc2, and thermal2 are not actually needed other
+    ! than to have them available when we print a plotfile immediately after
+    ! restart.  They are recomputed before they are used.
     
     do n=1,nlevs
        call multifab_copy_c(rho_omegadot2(n),1,chk_rho_omegadot2(n),1,nspec)
@@ -154,12 +160,19 @@ contains
        call destroy(chk_rho_Hnuc2(n))
     end do
 
-    ! thermal2 is not stored in the checkpoint file, but
-    ! we'll initialize it to zero here
-    do n=1,nlevs
-       call setval(thermal2(n), ZERO, all=.true.)
-    end do
-    
+    if (use_thermal_diffusion) then
+       do n=1,nlevs
+          call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,1)
+          call destroy(chk_thermal2(n)%la)
+          call destroy(chk_thermal2(n))
+       end do
+       deallocate(chk_thermal2)
+    else
+       do n=1,nlevs
+          call setval(thermal2(n), ZERO, all=.true.)
+       end do
+    endif
+
     deallocate(chkdata, chk_p, chk_dsdt, chk_src_old, chk_src_new)
     deallocate(chk_rho_omegadot2, chk_rho_Hnuc2)
 
