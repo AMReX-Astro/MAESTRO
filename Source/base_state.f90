@@ -131,7 +131,7 @@ contains
 888 format(a60,g18.10)
 889 format(a60)
 
-    if ( parallel_IOProcessor() ) then
+    if ( parallel_IOProcessor() .and. n == 1) then
        write (*,889) ' '
        write (*,887) 
        write (*,*)   'reading initial model'
@@ -185,7 +185,7 @@ contains
           endif
 
           ! is the current variable from the model file one that we care about?
-          if (.NOT. found_model .and. i == 1) then
+          if (.NOT. found_model .and. i == 1 .and. n == 1) then
              if ( parallel_IOProcessor() ) then
                 print *, 'WARNING: variable not found: ', trim(varnames_stored(j))
              end if
@@ -194,7 +194,7 @@ contains
        enddo   ! end loop over nvars_model_file
 
        ! were all the variables we care about provided?
-       if (i == 1) then
+       if (i == 1 .and. n == 1) then
           if (.not. found_dens) then
              print *, 'WARNING: density not provided in inputs file'
           endif
@@ -226,7 +226,7 @@ contains
     max_temp = maxval(base_state(:,itemp_model))
     min_temp = minval(base_state(:,itemp_model))
 
-    if ( parallel_IOProcessor() ) then
+    if ( parallel_IOProcessor() .and. n == 1) then
        write (*,889) ' '
        write (*,888) '    minimum density of model =                        ', &
             min_dens
@@ -242,7 +242,7 @@ contains
     endif
 
 
-    if ( parallel_IOProcessor() ) then
+    if ( parallel_IOProcessor() .and. n == 1) then
        ! output block for cutoff density information
        write (*,887)
        write (*,*)   'cutoff densities:'
@@ -261,7 +261,7 @@ contains
     end if
 
     if (min_dens < base_cutoff_density .OR. min_dens < anelastic_cutoff) then
-       if ( parallel_IOProcessor() ) then
+       if ( parallel_IOProcessor() .and. n == 1) then
           print *, ' '
           print *, 'WARNING: minimum model density is lower than one of the cutoff densities'
           print *, '         make sure that the cutoff densities are lower than any density'
@@ -270,7 +270,7 @@ contains
     endif
 
     if (min_temp < small_temp) then
-       if ( parallel_IOProcessor() ) then
+       if ( parallel_IOProcessor() .and. n == 1) then
           print *, ' '
           print *, 'WARNING: minimum model temperature is lower than the EOS cutoff'
           print *, '         temperature, small_temp'
@@ -278,7 +278,7 @@ contains
     endif
 
     if (min_dens < small_dens) then
-       if ( parallel_IOProcessor() ) then
+       if ( parallel_IOProcessor() .and. n == 1) then
           print *, ' '
           print *, 'WARNING: minimum model density is lower than the EOS cutoff'
           print *, '         density, small_dens'
@@ -292,10 +292,9 @@ contains
        call bl_error("anelastic cutoff < base_cutoff_density")
     endif
 
-    if ( parallel_IOProcessor() ) then
+    if ( parallel_IOProcessor() .and. n == 1) then
        ! close the cutoff density output block
        write (*,887)
-       write (*,*)   ' '
        write (*,*)   ' '
     end if
 
@@ -304,7 +303,7 @@ contains
 
     if ( parallel_IOProcessor() ) then
        write (*,887)
-       write (*,*)   'model file mapping:'
+       write (*,*)   'model file mapping, level:', n
        write (*,888) 'dr of MAESTRO base state =                            ', &
             dr(n)
        write (*,888) 'dr of input file data =                               ', &
@@ -472,12 +471,11 @@ contains
 
     if ( parallel_IOProcessor() ) then
        write (*,*) ' '
-       write (*,*) 'Level: ', n
        write (*,*) 'Maximum HSE Error = ', max_hse_error
        write (*,*) '   (after putting initial model into base state arrays, and'
        write (*,*) '    for density < base_cutoff_density)'
-       write (*,*) ' '
        write (*,887)
+       write (*,*) ' '
     endif
 
 
