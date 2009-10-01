@@ -411,7 +411,7 @@ contains
                base_cutoff_density_loc .eq. prob_hi_r .and. n .eq. 1 ) then
 
              if ( parallel_IOProcessor() ) then
-                print (*,*) ' '
+                write (*,*) ' '
                 write (*,*) 'setting r_cutoff to ', r
              end if
 
