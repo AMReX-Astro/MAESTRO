@@ -235,15 +235,17 @@ contains
           if (j .gt. nlevs*max_radial+nlevs-1) then
              phisum_merge(r:nlevs*max_radial+nlevs-1) = ZERO
              radii_merge (r:nlevs*max_radial+nlevs-1) = 1.d99
+             max_rcoord = r-1
              exit
           end if
           phisum_merge(r) = phisum_merge(j)
           radii_merge(r)  = radii_merge(j)
           j = j+1
-          if (j .gt. nlevs*max_radial+nlevs-1) exit
+          if (j .gt. nlevs*max_radial+nlevs-1) then
+             max_rcoord = r
+             exit
+          end if
        end do
-
-       max_rcoord = r
 
        ! use quadratic interpolation with homogeneous neumann bc at center of star
        ! to compute value at center of star, indicated with coordinate r=-1
@@ -253,6 +255,8 @@ contains
        ! this refers to the center of the star
        radii_merge(-1) = 0.d0
 
+       rcoord = 0
+
        ! compute phibar
        do r=0,nr_fine-1
 
@@ -260,8 +264,11 @@ contains
           radius = (dble(r)+HALF)*dr(1)
 
           ! find the closest rcoord
-          do rcoord=0,max_rcoord
-             if (abs(radius-radii_merge(rcoord)) .lt. abs(radius-radii_merge(rcoord+1))) exit
+          do j=rcoord,max_rcoord
+             if (abs(radius-radii_merge(j)) .lt. abs(radius-radii_merge(j+1))) then
+                rcoord = j
+                exit
+             end if
           end do
 
           if (rcoord .ge. max_rcoord) then
