@@ -64,9 +64,12 @@ contains
     Sbar = ZERO
     psi = ZERO
 
+111 format(78('-'))
     if ( parallel_IOProcessor() ) then
-       print *, 'DOING THE INITIAL VELOCITY PROJECTION'
-       print *, ' '
+       write (*,111)
+       write (*,*) 'DOING THE INITIAL VELOCITY PROJECTION'
+       write (*,111)
+       write (*,*) ' '
     end if
 
     if(use_thermal_diffusion) then
