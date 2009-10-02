@@ -138,10 +138,7 @@ contains
     real(kind=dp_t),    intent(in   ) :: p0_init(0:)
 
     !     Local variables
-    integer :: i, j, k, comp
-    real(kind=dp_t) :: x,y,z
-    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
-    real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
+    integer :: comp
 
     if (perturb_model) then
        call bl_error('perturb_model not written for initscalardata_3d_sphr')
