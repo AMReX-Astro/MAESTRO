@@ -1,5 +1,5 @@
 NDEBUG := t
-MPI    := 
+MPI    := t
 OMP    :=
 
 COMP := Intel
