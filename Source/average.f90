@@ -22,6 +22,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
+    use probin_module, only: prob_hi
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp
@@ -34,20 +35,20 @@ contains
     logical, pointer             :: mp(:,:,:,:)
 
     type(box)                    :: domain
-    integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm),index(nlevs)
-    integer                      :: i,j,r,rcoord,n,ng,max_radial,max_rcoord,which_level
+    integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
+    integer                      :: index(nlevs),max_rcoord(nlevs),rcoord(nlevs)
+    integer                      :: i,j,k,r,n,ng,max_radial,stencil_coord
     real(kind=dp_t)              :: radius
 
     integer, allocatable ::  ncell_proc(:,:)
     integer, allocatable ::       ncell(:,:)
-    integer, allocatable :: ncell_merge(:)
+
+    integer, allocatable ::  which_lev(:)
 
     real(kind=dp_t), allocatable :: phisum_proc(:,:)
     real(kind=dp_t), allocatable ::      phisum(:,:)
-    real(kind=dp_t), allocatable :: phisum_merge(:)
 
     real(kind=dp_t), allocatable :: radii(:,:)
-    real(kind=dp_t), allocatable :: radii_merge(:)
 
     real(kind=dp_t), allocatable :: source_buffer(:)
     real(kind=dp_t), allocatable :: target_buffer(:)
@@ -63,15 +64,13 @@ contains
        max_radial = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
 
        allocate(ncell_proc (nlevs,0:max_radial))
-       allocate(ncell      (nlevs,0:max_radial))
+       allocate(ncell      (nlevs,-1:max_radial))
+
+       allocate(which_lev(0:nr_fine-1))
 
        allocate(phisum_proc(nlevs,0:max_radial))
-       allocate(phisum     (nlevs,0:max_radial))
-       allocate(radii      (nlevs,0:max_radial+1))
-
-       allocate(phisum_merge(-1:nlevs*max_radial+nlevs-1))
-       allocate(radii_merge (-1:nlevs*max_radial+nlevs-1))
-       allocate(ncell_merge ( 0:nlevs*max_radial+nlevs-1))
+       allocate(phisum     (nlevs,-1:max_radial))
+       allocate(radii      (nlevs,-1:max_radial+1))
 
        allocate(source_buffer(0:max_radial))
        allocate(target_buffer(0:max_radial))
@@ -175,13 +174,13 @@ contains
              hi =  upb(get_box(phi(n), i))
 
              if (n .eq. nlevs) then
-                call sum_phi_3d_sphr(radii(n,:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
+                call sum_phi_3d_sphr(radii(n,0:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
                                      lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp)
              else
                 ! we include the mask so we don't double count; i.e., we only consider
                 ! cells that we can "see" when constructing the sum
                 mp => dataptr(mla%mask(n), i)
-                call sum_phi_3d_sphr(radii(n,:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
+                call sum_phi_3d_sphr(radii(n,0:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
                                      lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp, &
                                      mp(:,:,:,1))
              end if
@@ -189,14 +188,15 @@ contains
 
           source_buffer = ncell_proc(n,:)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          ncell(n,:) = target_buffer
+          ncell(n,0:) = target_buffer
 
           source_buffer = phisum_proc(n,:)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          phisum(n,:) = target_buffer
+          phisum(n,0:) = target_buffer
 
        end do
 
+       ! normalize phisum so it actually stores the average at a radius
        do n=1,nlevs
           do r=0,max_radial
              if (ncell(n,r) .ne. 0.d0) then
@@ -205,88 +205,113 @@ contains
           end do
        end do
 
-       ! create phisum_merge and radii_merge
-       index(:) = 0
-       do r=0,nlevs*max_radial+nlevs-1
-          which_level=1
-          radius = radii(1,index(1))
-          do n=2,nlevs
-             if (radii(n,index(n)) .lt. radius) then
-                which_level = n
-                radius = radii(n,index(n))
-             end if
-          end do
-          phisum_merge(r) = phisum(which_level,index(which_level))
-          radii_merge(r)  = radii (which_level,index(which_level))
-          ncell_merge(r)  = ncell (which_level,index(which_level))
-          index(which_level) = index(which_level) + 1
-       end do
+       ! compute center point for the finest level
+       phisum(nlevs,-1) = (11.d0/8.d0)*phisum(nlevs,0) - (3.d0/8.d0)*phisum(nlevs,1)
+       radii (nlevs,-1) = 0.d0
+       ncell (nlevs,-1) = 1
 
-       ! now condense the merged lists to only contain
-       ! elements corresponding to non-zero ncell
-       j=0
-       do r=0,nlevs*max_radial+nlevs-1
-          do while (ncell_merge(j) .eq. 0)
+       ! choose which level to interpolate from
+       do r=0,nr_fine-1
+
+         radius = (dble(r)+HALF)*dr(1)
+
+         ! for each level, find the closest coordinate
+         do n=1,nlevs
+            do j=0,max_radial
+               if (abs(radius-radii(n,j)) .lt. abs(radius-radii(n,j+1))) then
+                  rcoord(n) = j
+                  exit
+               end if
+            end do
+         end do
+
+         ! make sure closest coordinate is in bounds
+         do n=1,nlevs-1
+            rcoord(n) = max(rcoord(n),1)
+         end do
+         do n=1,nlevs
+            rcoord(n) = min(rcoord(n),max_radial-1)
+         end do
+         
+         ! choose the level with the largest min over the ncell interpolation points
+         which_lev(r)=1
+         do n=2,nlevs
+            if (min(ncell(n,rcoord(n)-1), &
+                    ncell(n,rcoord(n)), &
+                    ncell(n,rcoord(n)+1)) &
+                    .gt. &
+                min(ncell(which_lev(r),rcoord(which_lev(r))-1),&
+                    ncell(which_lev(r),rcoord(which_lev(r))), &
+                    ncell(which_lev(r),rcoord(which_lev(r))+1))) then
+               which_lev(r) = n
+            end if
+         end do
+
+      end do
+
+       ! squish the list at each level down to exclude points with no contribution
+       do n=1,nlevs
+          j=0
+          do r=0,max_radial
+             do while(ncell(n,j) .eq. 0)
+                j = j+1
+                if (j .gt. max_radial) then
+                   exit
+                end if
+             end do
+             if (j .gt. max_radial) then
+                phisum(n,r:max_radial)   = 1.d99
+                radii (n,r:max_radial+1) = 1.d99
+                max_rcoord(n) = r-1
+                exit
+             end if
+             phisum(n,r) = phisum(n,j)
+             radii (n,r) = radii (n,j)
+             ncell (n,r) = ncell (n,j)
              j = j+1
-             if (j .gt. nlevs*max_radial+nlevs-1) then
+             if (j .gt. max_radial) then
+                max_rcoord(n) = r
                 exit
              end if
           end do
-          if (j .gt. nlevs*max_radial+nlevs-1) then
-             phisum_merge(r:nlevs*max_radial+nlevs-1) = ZERO
-             radii_merge (r:nlevs*max_radial+nlevs-1) = 1.d99
-             max_rcoord = r-1
-             exit
-          end if
-          phisum_merge(r) = phisum_merge(j)
-          radii_merge(r)  = radii_merge(j)
-          j = j+1
-          if (j .gt. nlevs*max_radial+nlevs-1) then
-             max_rcoord = r
-             exit
-          end if
        end do
-
-       ! use quadratic interpolation with homogeneous neumann bc at center of star
-       ! to compute value at center of star, indicated with coordinate r=-1
-       ! this assumes the center of the star is at the finest level of refinement
-       phisum_merge(-1) = (11.d0/8.d0)*phisum_merge(0) - (3.d0/8.d0)*phisum_merge(1)
-
-       ! this refers to the center of the star
-       radii_merge(-1) = 0.d0
-
-       rcoord = 0
 
        ! compute phibar
        do r=0,nr_fine-1
 
-          ! compute the radius in physical coordinates
-          radius = (dble(r)+HALF)*dr(1)
+         radius = (dble(r)+HALF)*dr(1)
 
-          ! find the closest rcoord
-          do j=rcoord,max_rcoord
-             if (abs(radius-radii_merge(j)) .lt. abs(radius-radii_merge(j+1))) then
-                rcoord = j
-                exit
-             end if
-          end do
+         ! find the closest coordinate
+         do j=0,max_rcoord(which_lev(r))
+            if (abs(radius-radii(which_lev(r),j  )) .lt. &
+                abs(radius-radii(which_lev(r),j+1))) then
+               stencil_coord = j
+               exit
+            end if
+         end do
 
-          if (rcoord .ge. max_rcoord) then
-             rcoord = max_rcoord - 1
-          end if
+         ! make sure the interpolation points will be in bounds
+         if (which_lev(r) .ne. nlevs) then
+            stencil_coord = max(stencil_coord,1)
+         end if
+         stencil_coord = min(stencil_coord,max_rcoord(which_lev(r))-1)
 
-          ! interpolate from the three nearest points
-          call quad_interp(radius, &
-                           radii_merge(rcoord-1),radii_merge(rcoord),radii_merge(rcoord+1), &
-                           phibar(1,r), &
-                           phisum_merge(rcoord-1),phisum_merge(rcoord),phisum_merge(rcoord+1))
-       end do
+         call quad_interp(radius, &
+                          radii(which_lev(r),stencil_coord-1), &
+                          radii(which_lev(r),stencil_coord  ), &
+                          radii(which_lev(r),stencil_coord+1), &
+                          phibar(1,r), &
+                          phisum(which_lev(r),stencil_coord-1), &
+                          phisum(which_lev(r),stencil_coord  ), &
+                          phisum(which_lev(r),stencil_coord+1))
 
-    endif
+      end do
 
-    call destroy(bpt)
+   end if
 
-  end subroutine average
+   call destroy(bpt)
+
+ end subroutine average
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
