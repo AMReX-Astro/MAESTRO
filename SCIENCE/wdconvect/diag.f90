@@ -900,7 +900,8 @@ contains
                 if ( (.not. mask(i,j,k)) ) cell_valid = .false.
              end if
 
-             if (cell_valid .and. s(i,j,k,rho_comp) > base_cutoff_density) then
+             if (cell_valid .and. &
+                  s(i,j,k,rho_comp) >= sponge_start_factor*sponge_center_density) then
                    
 
                 ! is it one of the 8 zones surrounding the center?
@@ -1003,7 +1004,7 @@ contains
                 U_max = max(U_max,vel)
                 Mach_max = max(Mach_max,vel/cs_eos(1))
 
-             endif
+             endif  ! end cell_valid and density check
 
           enddo
        enddo
