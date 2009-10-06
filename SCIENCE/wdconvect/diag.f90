@@ -845,7 +845,8 @@ contains
     use bl_error_module, only: bl_error
     use network, only: nspec
     use geometry, only: spherical, center
-    use probin_module, only: base_cutoff_density, prob_lo
+    use probin_module, only: base_cutoff_density, prob_lo, sponge_start_factor, &
+         sponge_center_density
     use eos_module
 
     integer,          intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
