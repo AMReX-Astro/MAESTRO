@@ -14,6 +14,8 @@ module regrid_module
   use multifab_physbc_module
   use multifab_fill_ghost_module
   use ml_restriction_module
+  use pert_form_module
+  use convert_rhoX_to_X_module
 
   implicit none
 
@@ -23,18 +25,19 @@ module regrid_module
 
 contains
 
-  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,dx,the_bc_tower)
+  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,dx,the_bc_tower,rho0,rhoh0)
 
     use probin_module, only : nodal, pmask, regrid_int, max_grid_size, ref_ratio, max_levs
     use geometry, only: dm, nlevs, nlevs_radial, spherical
-    use variables, only: nscal, rho_comp, foextrap_comp
+    use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp
     use network, only: nspec
 
-    type(ml_layout),intent(inout) :: mla
-    type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:)
-    type(multifab), pointer       :: dSdt(:),src(:)
-    real(dp_t)    , pointer       :: dx(:,:)
-    type(bc_tower), intent(inout) :: the_bc_tower
+    type(ml_layout), intent(inout) :: mla
+    type(multifab),  pointer       :: uold(:),sold(:),gpres(:),pres(:)
+    type(multifab),  pointer       :: dSdt(:),src(:)
+    real(dp_t)    ,  pointer       :: dx(:,:)
+    type(bc_tower),  intent(inout) :: the_bc_tower
+    real(kind=dp_t), intent(in   ) :: rho0(:,0:),rhoh0(:,0:)
 
     ! local
     logical           :: new_grid
@@ -210,6 +213,21 @@ contains
 
     enddo
 
+    if (spherical .eq. 1) then
+
+       ! convert (rho X) --> X in sold 
+       call convert_rhoX_to_X(sold_temp,.true.,mla,the_bc_tower%bc_tower_array)
+
+       ! convert rho -> rho' in sold_temp
+       call put_in_pert_form(mla_old,sold_temp,rho0,dx,rho_comp,foextrap_comp,.true., &
+                             the_bc_tower%bc_tower_array)
+
+       ! convert (rho h) -> (rho h)' in sold_temp
+       call put_in_pert_form(mla_old,sold_temp,rhoh0,dx,rhoh_comp,foextrap_comp,.true., &
+                             the_bc_tower%bc_tower_array)
+
+    end if
+
     do n = 1,nl
        call destroy(  sold(n))
        call destroy(  uold(n))
@@ -319,6 +337,21 @@ contains
        call destroy(   src_temp(nl+1))
 
     end do
+
+    if (spherical .eq. 1) then
+
+       ! convert rho' -> rho in sold
+       call put_in_pert_form(mla,sold,rho0,dx,rho_comp,dm+rho_comp,.false., &
+                             the_bc_tower%bc_tower_array)
+
+       ! convert X --> (rho X) in sold 
+       call convert_rhoX_to_X(sold,.false.,mla,the_bc_tower%bc_tower_array)
+
+       ! convert (rho h)' -> (rho h) in sold
+       call put_in_pert_form(mla,sold,rhoh0,dx,rhoh_comp,dm+rhoh_comp,.false., &
+                             the_bc_tower%bc_tower_array)
+
+    end if
 
     if (nlevs .eq. 1) then
 
