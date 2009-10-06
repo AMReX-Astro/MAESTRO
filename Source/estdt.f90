@@ -150,6 +150,12 @@ contains
           dt_divu_grid  = HUGE(dt_divu_grid)
 
           select case (dm)
+          case (1)
+             call estdt_1d(n, uop(:,1,1,1), ng_u, sop(:,1,1,:), ng_s, &
+                           fp(:,1,1,1), ng_f, dUp(:,1,1,1), ng_dU, &
+                           dSdtp(:,1,1,1), ng_dS, &
+                           w0(n,:), p0(n,:), gamma1bar(n,:), lo, hi, &
+                           dx(n,:), rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
           case (2)
              call estdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, &
                            fp(:,:,1,:), ng_f, dUp(:,:,1,1), ng_dU, &
@@ -195,8 +201,12 @@ contains
        dt_lev = min(dt_adv,dt_divu)
 
        if (dt_lev .eq. dt_start) then
-          dt_lev = min(dx(n,1),dx(n,2))
-          if (dm .eq. 3) dt_lev = min(dt_lev,dx(n,3))
+          if (dm .eq. 1) then 
+             dt_lev = dx(n,1)
+          else
+             dt_lev = min(dx(n,1),dx(n,2))
+             if (dm .eq. 3) dt_lev = min(dt_lev,dx(n,3))
+          end if
        end if
 
        dt = min(dt,dt_lev)
@@ -218,7 +228,103 @@ contains
     call destroy(bpt)
 
   end subroutine estdt
-  
+
+  subroutine estdt_1d(n, u, ng_u, s, ng_s, force, ng_f, &
+                      divU, ng_dU, dSdt, ng_dS, &
+                      w0, p0, gamma1bar, lo, hi, &
+                      dx, rho_min, dt_adv, dt_divu, umax, cfl)
+
+    use geometry,  only: nr
+    use variables, only: rho_comp
+
+    integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS
+    real (kind = dp_t), intent(in   ) ::     u(lo(1)-ng_u :)  
+    real (kind = dp_t), intent(in   ) ::     s(lo(1)-ng_s :,:)  
+    real (kind = dp_t), intent(in   ) :: force(lo(1)-ng_f :)  
+    real (kind = dp_t), intent(in   ) ::  divU(lo(1)-ng_dU:)
+    real (kind = dp_t), intent(in   ) ::  dSdt(lo(1)-ng_dS:)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real (kind = dp_t), intent(in   ) :: rho_min,cfl
+    real (kind = dp_t), intent(inout) :: dt_adv,dt_divu,umax
+    
+    real (kind = dp_t)  :: spdx, spdr
+    real (kind = dp_t)  :: fx
+    real (kind = dp_t)  :: eps
+    real (kind = dp_t)  :: denom, gradp0
+    real (kind = dp_t)  :: a, b, c
+    integer             :: i
+    
+    eps = 1.0d-8
+    
+    ! advective constraints
+    spdx = ZERO
+    spdr = ZERO
+    umax = ZERO
+    
+    do i = lo(1), hi(1)
+       spdx = max(spdx ,abs(u(i)))
+       spdr = max(spdr ,abs(w0(i)))
+    enddo
+
+    umax = max(spdr,spdx)
+
+    if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
+    if (spdr > eps) dt_adv = min(dt_adv, dx(1)/spdr)
+
+    dt_adv = dt_adv * cfl
+    
+    ! force constraints
+    fx = ZERO
+    
+    do i = lo(1), hi(1)
+       fx = max(fx,abs(force(i)))
+    enddo
+    
+    if (fx > eps) &
+       dt_adv = min(dt_adv,sqrt(2.0D0 *dx(1)/fx))
+    
+    ! divU constraint
+    do i = lo(1), hi(1)
+       
+       if (i .eq. 0) then
+          gradp0 = (p0(i+1) - p0(i))/dx(1)
+       else if (i .eq. nr(n)-1) then
+          gradp0 = (p0(i) - p0(i-1))/dx(1)
+       else
+          gradp0 = HALF*(p0(i+1) - p0(i-1))/dx(1)
+       endif
+          
+       denom = divU(i) - u(i)*gradp0/(gamma1bar(i)*p0(i))
+          
+       if (denom > ZERO) then
+          
+          dt_divu = min(dt_divu, &
+               0.4d0*(ONE - rho_min/s(i,rho_comp))/denom)
+       endif
+          
+    enddo
+    
+    do i = lo(1), hi(1)           
+          !
+          ! An additional dS/dt timestep constraint originally
+          ! used in nova
+          ! solve the quadratic equation
+          ! (rho - rho_min)/(rho dt) = S + (dt/2)*(dS/dt)
+          ! which is equivalent to
+          ! (rho/2)*dS/dt*dt^2 + rho*S*dt + (rho_min-rho) = 0
+          ! which has solution dt = 2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c))
+          !
+          if (dSdt(i) .gt. 1.d-20) then
+             a = HALF*s(i,rho_comp)*dSdt(i)
+             b = s(i,rho_comp)*divU(i)
+             c = rho_min - s(i,rho_comp)
+             dt_divu = min(dt_divu, 0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
+          endif
+          
+    enddo
+    
+  end subroutine estdt_1d
   
   subroutine estdt_2d(n, u, ng_u, s, ng_s, force, ng_f, &
                       divU, ng_dU, dSdt, ng_dS, &
