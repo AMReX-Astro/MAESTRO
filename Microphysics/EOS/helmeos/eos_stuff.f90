@@ -140,7 +140,7 @@ contains
       xn_eos(1,1:nspec) = X(1:nspec)
 
      call eos(eos_input_re, den_eos, temp_eos, &
-              npts, nspec, &
+              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -179,7 +179,7 @@ contains
       print *, 'calling EOS: ', temp_eos(1)
 
      call eos(eos_input_rp, den_eos, temp_eos, &
-              npts, nspec, &
+              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -213,7 +213,7 @@ contains
       xn_eos(1,1:nspec) = X(1:nspec)
 
      call eos(eos_input_re, den_eos, temp_eos, &
-              npts, nspec, &
+              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -243,7 +243,7 @@ contains
       xn_eos(1,1:nspec) = X(1:nspec)
 
      call eos(eos_input_rt, den_eos, temp_eos, &
-              npts, nspec, &
+              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -276,7 +276,7 @@ contains
      xn_eos(1,1:nspec) = X(1:nspec)
 
      call eos(eos_input_tp, den_eos, temp_eos, &
-              npts, nspec, &
+              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -296,7 +296,7 @@ contains
   ! The main interface -- this is used directly by MAESTRO
   !---------------------------------------------------------------------------
   subroutine eos(input, dens, temp, &
-                 npoints, nspecies, &
+                 npoints, &
                  xmass, &
                  pres, enthalpy, eint, &
                  c_v, c_p, ne, eta, pele, &
@@ -314,7 +314,6 @@ contains
 ! dens     -- mass density (g/cc)
 ! temp     -- temperature (K)
 ! npoints     -- the number of elements in input/output arrays
-! nspecies -- the number of isotopes
 ! xmass    -- the mass fractions of the individual isotopes
 ! pres     -- the pressure (dyn/cm**2)
 ! enthalpy -- the enthalpy (erg/g)
@@ -370,11 +369,11 @@ contains
 
 !     ::::: Arguments
     logical             :: do_eos_diag
-    integer, intent(in) :: input, npoints, nspecies
+    integer, intent(in) :: input, npoints
 
     ! some of these quantites can be inputs or outputs
     real(kind=dp_t), intent(inout) :: dens(npoints), temp(npoints)
-    real(kind=dp_t), intent(in)    :: xmass(npoints,nspecies)
+    real(kind=dp_t), intent(in)    :: xmass(npoints,nspec)
     real(kind=dp_t), intent(inout) :: pres(npoints), enthalpy(npoints), &
                                       eint(npoints)
 
@@ -385,8 +384,8 @@ contains
                                     dedT(npoints), dedR(npoints)
     real(kind=dp_t), intent(out) :: gam1(npoints)
     real(kind=dp_t), intent(out) :: entropy(npoints), cs(npoints)
-    real(kind=dp_t), intent(out) :: dPdX(npoints,nspecies), &
-                                    dhdX(npoints,nspecies)
+    real(kind=dp_t), intent(out) :: dPdX(npoints,nspec), &
+                                    dhdX(npoints,nspec)
     real(kind=dp_t), intent(out) :: dsdT(npoints), dsdR(npoints)
     
 !     ::::: Local variables and arrays
@@ -395,7 +394,7 @@ contains
     parameter (max_newton = 100)
     
     real(kind=dp_t) :: error
-    real(kind=dp_t) :: ymass(npoints,nspecies)
+    real(kind=dp_t) :: ymass(npoints,nspec)
     real(kind=dp_t) :: abar(npoints), zbar(npoints)
     real(kind=dp_t) :: energy_want(npoints)
     real(kind=dp_t) :: enthalpy_want(npoints)
@@ -405,7 +404,7 @@ contains
     real(kind=dp_t) :: dnew(npoints)
     real(kind=dp_t) :: enth1(npoints)
     real(kind=dp_t) :: ener1(npoints)
-    real(kind=dp_t) :: dedX(npoints,nspecies)
+    real(kind=dp_t) :: dedX(npoints,nspec)
 
     real(kind=dp_t) :: dpdd, pres1
 
@@ -435,20 +434,16 @@ contains
 !DIR$  NOSTREAM
     if (.not. initialized) call bl_error('EOS: not initialized')
       
-    if (nspecies /= nspec) then
-       call bl_error('EOS: too many species')
-    endif
-
     if (npoints > NP) then
        call bl_error('EOS: eos called with too large of a vector size')
     endif
 
-!      print*,'EOS with npoints, nspecies = ',npoints,nspecies
+!      print*,'EOS with npoints, nspec = ',npoints,nspec
 
 ! get the average atomic mass and the average proton number for the current
 ! composition
 ! MLW: use tnew and dnew as scratch arrays for azbar
-!      call azbar(xmass,nxpts,aion,zion,npoints,nspecies,ymass,
+!      call azbar(xmass,nxpts,aion,zion,npoints,nspec,ymass,
 !     +           abar,zbar,tnew,dnew)
 !
 !
@@ -465,7 +460,7 @@ contains
        dnew(k)   = 0.0d0
     enddo
 
-    do i=1,nspecies
+    do i=1,nspec
        do k = 1, npoints
           ymass(k,i) = xmass(k,i)/aion(i)
           dnew(k)    = dnew(k) + ymass(k,i)
@@ -532,7 +527,7 @@ contains
           dsdT(k) = dst_row(k)
           dsdR(k) = dsd_row(k)
 
-          do n = 1, nspecies
+          do n = 1, nspec
              dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
                                       (aion(n) - abar(k)) + &
                          dpz_row(k) * (abar(k)/aion(n))* &
@@ -674,7 +669,7 @@ contains
           dsdT(k) = dst_row(k)
           dsdR(k) = dsd_row(k)
 
-          do n = 1, nspecies
+          do n = 1, nspec
              dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
                                       (aion(n) - abar(k)) + &
                          dpz_row(k) * (abar(k)/aion(n))* &
@@ -812,7 +807,7 @@ contains
           dsdT(k) = dst_row(k)
           dsdR(k) = dsd_row(k)
 
-          do n = 1, nspecies
+          do n = 1, nspec
              dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
                                       (aion(n) - abar(k)) + &
                          dpz_row(k) * (abar(k)/aion(n))* &
@@ -965,7 +960,7 @@ contains
           dsdT(k) = dst_row(k)
           dsdR(k) = dsd_row(k)
 
-          do n = 1, nspecies
+          do n = 1, nspec
              dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
                                       (aion(n) - abar(k)) + &
                          dpz_row(k) * (abar(k)/aion(n))* &
@@ -1111,7 +1106,7 @@ contains
           dsdT(k) = dst_row(k)
           dsdR(k) = dsd_row(k)
 
-          do n = 1, nspecies
+          do n = 1, nspec
              dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
                                       (aion(n) - abar(k)) + &
                          dpz_row(k) * (abar(k)/aion(n))* &
