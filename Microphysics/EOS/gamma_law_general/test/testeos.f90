@@ -33,7 +33,7 @@ program testburn
   
   ! test eos_input_rt
   call eos(eos_input_rt, den_eos, temp_eos, &
-           npts, nspec, &
+           npts, &
            xn_eos, &
            p_eos, h_eos, e_eos, &
            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -58,7 +58,7 @@ program testburn
   ! test eos_input_rh
   temp_eos(1) = 0.d0
   call eos(eos_input_rh, den_eos, temp_eos, &
-           npts, nspec, &
+           npts, &
            xn_eos, &
            p_eos, h_eos, e_eos, &
            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -83,7 +83,7 @@ program testburn
   ! test eos_input_tp
   den_eos(1) = 0.d0
   call eos(eos_input_tp, den_eos, temp_eos, &
-           npts, nspec, &
+           npts, &
            xn_eos, &
            p_eos, h_eos, e_eos, &
            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -108,7 +108,7 @@ program testburn
   ! test eos_input_rp
   temp_eos(1) = 0.d0
   call eos(eos_input_rp, den_eos, temp_eos, &
-           npts, nspec, &
+           npts, &
            xn_eos, &
            p_eos, h_eos, e_eos, &
            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -133,7 +133,7 @@ program testburn
   ! test eos_input_re
   temp_eos(1) = 0.d0
   call eos(eos_input_re, den_eos, temp_eos, &
-           npts, nspec, &
+           npts, &
            xn_eos, &
            p_eos, h_eos, e_eos, &
            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &

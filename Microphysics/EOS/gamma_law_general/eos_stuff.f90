@@ -152,7 +152,7 @@ contains
       xn_eos(1,1:nspec) = X(1:nspec)
 
      call eos(eos_input_re, den_eos, temp_eos, &
-              npts, nspec, &
+              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -191,7 +191,7 @@ contains
       print *, 'calling EOS: ', temp_eos(1)
 
      call eos(eos_input_rp, den_eos, temp_eos, &
-              npts, nspec, &
+              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -225,7 +225,7 @@ contains
       xn_eos(1,1:nspec) = X(1:nspec)
 
      call eos(eos_input_re, den_eos, temp_eos, &
-              npts, nspec, &
+              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -255,7 +255,7 @@ contains
       xn_eos(1,1:nspec) = X(1:nspec)
 
      call eos(eos_input_rt, den_eos, temp_eos, &
-              npts, nspec, &
+              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -288,7 +288,7 @@ contains
      xn_eos(1,1:nspec) = X(1:nspec)
 
      call eos(eos_input_tp, den_eos, temp_eos, &
-              npts, nspec, &
+              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -308,7 +308,7 @@ contains
   ! The main interface -- this is used directly by MAESTRO
   !---------------------------------------------------------------------------
   subroutine eos(input, dens, temp, &
-                 npoints, nspecies, &
+                 npoints, &
                  xmass, &
                  pres, enthalpy, eint, &
                  c_v, c_p, ne, eta, pele, &
@@ -324,7 +324,6 @@ contains
 ! dens     -- mass density (g/cc)
 ! temp     -- temperature (K)
 ! npoints     -- the number of elements in input/output arrays
-! nspecies -- the number of isotopes
 ! xmass    -- the mass fractions of the individual isotopes
 ! pres     -- the pressure (dyn/cm**2)
 ! enthalpy -- the enthalpy (erg/g)
@@ -369,20 +368,19 @@ contains
     logical do_eos_diag
     integer, intent(in) :: input
     integer, intent(in) :: npoints
-    integer, intent(in) :: nspecies
 
     real(kind=dp_t) :: dens(npoints), temp(npoints)
-    real(kind=dp_t) :: xmass(npoints,nspecies)
+    real(kind=dp_t) :: xmass(npoints,nspec)
     real(kind=dp_t) :: pres(npoints), enthalpy(npoints), eint(npoints)
     real(kind=dp_t) :: c_v(npoints), c_p(npoints)
     real(kind=dp_t) :: ne(npoints), eta(npoints), pele(npoints)
     real(kind=dp_t) :: dPdT(npoints), dPdR(npoints), dedT(npoints), dedR(npoints)
     real(kind=dp_t) :: gam1(npoints), entropy(npoints), cs(npoints)
-    real(kind=dp_t) :: dPdX(npoints,nspecies), dedX(npoints,nspecies), dhdX(npoints,nspecies)
+    real(kind=dp_t) :: dPdX(npoints,nspec), dedX(npoints,nspec), dhdX(npoints,nspec)
     real(kind=dp_t) :: dsdT(npoints), dsdR(npoints)
 
     ! local variables
-    real(kind=dp_t) :: ymass(npoints,nspecies)    
+    real(kind=dp_t) :: ymass(npoints,nspec)    
     real(kind=dp_t) :: mu(npoints)
     real(kind=dp_t) :: dmudX, sum_y
 
@@ -394,10 +392,6 @@ contains
     ! general sanity checks
     if (.not. initialized) call bl_error('EOS: not initialized')
       
-    if (nspecies /= nspec) then
-       call bl_error('EOS: too many species')
-    endif
-
     if (npoints > NP) then
        call bl_error('EOS: eos called with too large of a vector size')
     endif
@@ -411,7 +405,7 @@ contains
        do k = 1, npoints
           sum_y  = 0.d0
           
-          do n = 1, nspecies
+          do n = 1, nspec
              ymass(k,n) = xmass(k,n)/aion(n)
              sum_y = sum_y + ymass(k,n)
           enddo
@@ -425,7 +419,7 @@ contains
        do k = 1, npoints
           sum_y  = 0.d0
           
-          do n = 1, nspecies
+          do n = 1, nspec
              ymass(k,n) = xmass(k,n)*(1.d0 + zion(n))/aion(n)
              sum_y = sum_y + ymass(k,n)
           enddo
@@ -515,7 +509,7 @@ contains
 
        gam1(k) = gamma
 
-       do n = 1, nspecies
+       do n = 1, nspec
 
           ! the species only come into p and e (and therefore h)
           ! through mu, so first compute dmu/dX
