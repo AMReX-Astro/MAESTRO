@@ -177,7 +177,7 @@ subroutine varden()
      
      temp_eos(1) = s0_old(1,r,temp_comp)
      
-     call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+     call eos(eos_input_rp, den_eos, temp_eos, npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -329,7 +329,7 @@ subroutine varden()
 
         temp_eos(1) = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+        call eos(eos_input_rp, den_eos, temp_eos, npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -356,7 +356,7 @@ subroutine varden()
 
         temp_eos(1) = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+        call eos(eos_input_rp, den_eos, temp_eos, npts, &
                  xn_eos, &
                  p_eos, h_eos, e_eos, &
                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -497,7 +497,7 @@ subroutine varden()
 
         temp_eos(1) = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+        call eos(eos_input_rp, den_eos, temp_eos, npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -524,7 +524,7 @@ subroutine varden()
 
         temp_eos(1) = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+        call eos(eos_input_rp, den_eos, temp_eos, npts, &
                  xn_eos, &
                  p_eos, h_eos, e_eos, &
                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &

@@ -69,7 +69,7 @@ contains
         temp_eos(1) = s0(r,temp_comp)
         xn_eos(1,:) = s0(r,spec_comp:spec_comp-1+nspec)/s0(r,rho_comp)
 
-        call eos(eos_input_rt, den_eos, temp_eos, NP, nspec, &
+        call eos(eos_input_rt, den_eos, temp_eos, npts, &
                  xn_eos, &
                  p_eos, h_eos, e_eos, &
                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &

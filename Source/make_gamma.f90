@@ -102,7 +102,7 @@ contains
 
           ! dens, pres, and xmass are inputs
           call eos(eos_input_rp, den_eos, temp_eos, &
-                   npts, nspec, &
+                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, & 
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -145,15 +145,15 @@ contains
 
              ! dens, pres, and xmass are inputs
              call eos(eos_input_rp, den_eos, temp_eos, &
-                  npts, nspec, &
-                  xn_eos, &
-                  p_eos, h_eos, e_eos, & 
-                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                  dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                  dpdX_eos, dhdX_eos, &
-                  gam1_eos, cs_eos, s_eos, &
-                  dsdt_eos, dsdr_eos, &
-                  do_diag)
+                      npts, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, & 
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
 
              gamma(i,j,k) = gam1_eos(1)
 
@@ -195,15 +195,15 @@ contains
 
              ! dens, pres, and xmass are inputs
              call eos(eos_input_rp, den_eos, temp_eos, &
-                  npts, nspec, &
-                  xn_eos, &
-                  p_eos, h_eos, e_eos, & 
-                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                  dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                  dpdX_eos, dhdX_eos, &
-                  gam1_eos, cs_eos, s_eos, &
-                  dsdt_eos, dsdr_eos, &
-                  do_diag)
+                      npts, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, & 
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
 
              gamma(i,j,k) = gam1_eos(1)
 

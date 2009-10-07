@@ -57,7 +57,7 @@ contains
 
     ! given P, T, and X, compute rho
     call eos(eos_input_tp, den_eos, temp_eos, &
-             npts, nspec, &
+             npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, & 
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -69,7 +69,7 @@ contains
 
     ! given rho, T, and X, compute h
     call eos(eos_input_rt, den_eos, temp_eos, &
-             npts, nspec, &
+             npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, & 
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &

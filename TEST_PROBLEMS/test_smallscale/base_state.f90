@@ -70,27 +70,27 @@ contains
 
        ! given P, T, and X, compute rho
        call eos(eos_input_tp, den_eos, temp_eos, &
-            npts, nspec, &
-            xn_eos, &
-            p_eos, h_eos, e_eos, & 
-            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-            dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-            dpdX_eos, dhdX_eos, &
-            gam1_eos, cs_eos, s_eos, &
-            dsdt_eos, dsdr_eos, &
-            do_diag)
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, & 
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
 
        ! given rho, T, and X, compute h.
        call eos(eos_input_rt, den_eos, temp_eos, &
-            npts, nspec, &
-            xn_eos, &
-            p_eos, h_eos, e_eos, & 
-            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-            dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-            dpdX_eos, dhdX_eos, &
-            gam1_eos, cs_eos, s_eos, &
-            dsdt_eos, dsdr_eos, &
-            do_diag)
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, & 
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
 
        s0_init(r,rho_comp) = den_eos(1)
        s0_init(r,rhoh_comp) = den_eos(1)*h_eos(1)

@@ -190,7 +190,7 @@ contains
           xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
           
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, nspec, &
+                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -225,7 +225,7 @@ contains
           xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
           
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, nspec, &
+                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -292,7 +292,7 @@ contains
              xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
              
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -329,7 +329,7 @@ contains
              xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
              
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -366,7 +366,7 @@ contains
              xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
 
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -433,7 +433,7 @@ contains
              xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
 
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -473,7 +473,7 @@ contains
              xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1) 
 
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -513,7 +513,7 @@ contains
              xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1) 
 
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -636,7 +636,7 @@ contains
           h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
           
           call eos(eos_input_rh, den_eos, temp_eos, &
-                   npts, nspec, &
+                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -680,7 +680,7 @@ contains
              h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
              
              call eos(eos_input_rh, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -804,7 +804,7 @@ contains
           p_eos(1) = p0(j)
           
           call eos(eos_input_rp, den_eos, temp_eos, &
-                   npts, nspec, &
+                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -849,7 +849,7 @@ contains
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
              
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -900,7 +900,7 @@ contains
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
              
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1029,7 +1029,7 @@ contains
           h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
           call eos(eos_input_rh, den_eos, temp_eos, &
-                   npts, nspec, &
+                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1074,7 +1074,7 @@ contains
              h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
              
              call eos(eos_input_rh, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1201,7 +1201,7 @@ contains
           p_eos(1) = p0(j)
 
           call eos(eos_input_rp, den_eos, temp_eos, &
-                   npts, nspec, &
+                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1242,7 +1242,7 @@ contains
              p_eos(1) = p0(k)
              
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1290,7 +1290,7 @@ contains
              p_eos(1) = p0_cart(i,j,k,1)
              
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &

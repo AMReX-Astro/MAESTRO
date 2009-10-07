@@ -244,7 +244,7 @@ contains
 
           ! (rho,T) --> p,h
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, nspec, &
+                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &

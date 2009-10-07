@@ -984,7 +984,7 @@ contains
                 xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
                 call eos(eos_input_rt, den_eos, temp_eos, &
-                         npts, nspec, &
+                         npts, &
                          xn_eos, &
                          p_eos, h_eos, e_eos, &
                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &

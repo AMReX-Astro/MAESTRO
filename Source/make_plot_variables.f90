@@ -88,7 +88,7 @@ contains
           h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
           call eos(eos_input_rh, den_eos, temp_eos, &
-                   npts, nspec, &
+                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -138,7 +138,7 @@ contains
              h_eos(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
 
              call eos(eos_input_rh, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -199,7 +199,7 @@ contains
 
              ! (rho, H) --> T, p
              call eos(eos_input_rh, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -324,7 +324,7 @@ contains
 
           ! (rho,P) --> T,h
           call eos(eos_input_rp, den_eos, temp_eos, &
-                   npts, nspec, &
+                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, & 
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -392,7 +392,7 @@ contains
 
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -482,7 +482,7 @@ contains
 
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, nspec, &
+                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
