@@ -1089,7 +1089,6 @@ Here is a list of differences between Phil's test code and the JCP version of th
 \item Before equation (25), the paper tests on the inequality, $|\alpha_{j,\pm}| \ge 2|\alpha_{j,\mp}|$.  Phil tests on a slightly different inequality, $|\alpha_{j,\pm}| > 2|\alpha_{j,\mp}|$. {\bf Changed in code to match Phil}
 \item In equation (25), the paper defines $\delta a = a_{j\pm 1}^n - a_j^n$.  Phil uses $\delta a = a_{j\mp 1}^n - a_j^n$.
 \item During (25), Phil redefines $s = \text{sign}(\alpha_{j,\mp})$ instead of leaving it as $s = \text{sign}(a_{j+1}^n - a_{j-1}^n)$. {\bf Changed in code to match Phil}
-\item The paper uses the inequality $\delta\mathcal{I}_{\rm ext} \ge s\delta a$.  Phil multiplies the $\delta\mathcal{I}_{\rm ext}$ by $s$. {\bf Changed in code to match Phil}
-\item Phil's equation (26) reads $a_{j,\pm} = -2\delta a - 2s[(\delta a)^2 - \delta a \alpha_{j,\mp}]^{\myhalf}$ instead of $a_{j,\pm} = a_j^n - \{2\delta a + 2s[(\delta a)^2 - \delta a \alpha_{j,\mp}]^{\myhalf}\}$
+\item The paper uses the inequality $\delta\mathcal{I}_{\rm ext} \ge s\delta a$.  Phil multiplies the $\delta\mathcal{I}_{\rm ext}$ by $s$, which is consistent with the preprint. {\bf Changed in code to match Phil}
 \item Phil only applies equation (26) if $s(\delta a - \alpha_{j,\mp}) > \epsilon$.  If this condition fails, Phil sets $a_{j,\pm} = -2\alpha_{j,\mp}$.
 \end{itemize}
