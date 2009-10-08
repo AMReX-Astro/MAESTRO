@@ -86,31 +86,19 @@ contains
        end do
 
     else if (ppm_type .eq. 2) then
-
-       ! store centered differences in dsvl
-       do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-2,hi(1)+2
-             dsvl(i,j) = HALF * (s(i+1,j) - s(i-1,j))
-          end do
-       end do
        
        ! interpolate s to x-edges
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+2
-             sedge(i,j) = HALF*(s(i,j)+s(i-1,j)) - SIXTH*(dsvl(i,j)-dsvl(i-1,j))
-             ! if sedge is not in between the neighboring s values, we limit
-             if (sedge(i,j) .lt. min(s(i,j),s(i-1,j)) .or. &
-                 sedge(i,j) .gt. max(s(i,j),s(i-1,j))) then
-                D2  = (THREE/dx(1)**2)*(s(i-1,j)-TWO*sedge(i,j)+s(i,j))
-                D2L = (ONE/dx(1)**2)*(s(i-2,j)-TWO*s(i-1,j)+s(i,j))
-                D2R = (ONE/dx(1)**2)*(s(i-1,j)-TWO*s(i,j)+s(i+1,j))
-                if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
-                   sedge(i,j) = HALF*(s(i-1,j)+s(i,j)) - (dx(1)**2/THREE) &
-                        *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
-                else
-                   sedge(i,j) = HALF*(s(i-1,j)+s(i,j))
-                end if
+             sedge(i,j) = (7.d0/12.d0)*(s(i-1,j)+s(i,j)) - (1.d0/12.d0)*(s(i-2,j)+s(i+1,j))
+             ! limit sedge
+             if ((sedge(i,j)-s(i-1,j))*(s(i,j)-sedge(i,j)) .lt. ZERO) then
+                D2  = THREE*(s(i-1,j)-TWO*sedge(i,j)+s(i,j))
+                D2L = s(i-2,j)-TWO*s(i-1,j)+s(i,j)
+                D2R = s(i-1,j)-TWO*s(i,j)+s(i+1,j)
+                sgn = sign(ONE,D2)
+                D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+                sedge(i,j) = HALF*(s(i-1,j)+s(i,j)) - SIXTH*D2LIM
              end if
           end do
        end do
@@ -296,31 +284,19 @@ contains
        end do
 
     else if (ppm_type .eq. 2) then
-
-       ! store centered differences in dsvl
-       do j=lo(2)-2,hi(2)+2
-          do i=lo(1)-1,hi(1)+1
-             dsvl(i,j) = HALF * (s(i,j+1) - s(i,j-1))
-          end do
-       end do
        
        ! interpolate s to y-edges
        do j=lo(2)-1,hi(2)+2
           do i=lo(1)-1,hi(1)+1
-             sedge(i,j) = HALF*(s(i,j)+s(i,j-1)) - SIXTH*(dsvl(i,j)-dsvl(i,j-1))
-             ! if sedge is not in between the neighboring s values, we limit
-             if (sedge(i,j) .lt. min(s(i,j),s(i,j-1)) .or. &
-                 sedge(i,j) .gt. max(s(i,j),s(i,j-1))) then
-                D2  = (THREE/dx(2)**2)*(s(i,j-1)-TWO*sedge(i,j)+s(i,j))
-                D2L = (ONE/dx(2)**2)*(s(i,j-2)-TWO*s(i,j-1)+s(i,j))
-                D2R = (ONE/dx(2)**2)*(s(i,j-1)-TWO*s(i,j)+s(i,j+1))
-                if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
-                   sedge(i,j) = HALF*(s(i,j-1)+s(i,j)) - (dx(2)**2/THREE) &
-                        *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
-                else
-                   sedge(i,j) = HALF*(s(i,j-1)+s(i,j))
-                end if
+             sedge(i,j) = (7.d0/12.d0)*(s(i,j-1)+s(i,j)) - (1.d0/12.d0)*(s(i,j-2)+s(i,j+1))
+             ! limit sedge
+             if ((sedge(i,j)-s(i,j-1))*(s(i,j)-sedge(i,j)) .lt. ZERO) then
+                D2  = THREE*(s(i,j-1)-TWO*sedge(i,j)+s(i,j))
+                D2L = s(i,j-2)-TWO*s(i,j-1)+s(i,j)
+                D2R = s(i,j-1)-TWO*s(i,j)+s(i,j+1)
+                sgn = sign(ONE,D2)
+                D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+                sedge(i,j) = HALF*(s(i,j-1)+s(i,j)) - SIXTH*D2LIM
              end if
           end do
        end do
@@ -557,31 +533,19 @@ contains
        end do
 
     else if (ppm_type .eq. 2) then
-
-       ! store centered differences in dsvl
-       do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-2,hi(1)+2
-             dsvl(i,j) = HALF * (s(i+1,j) - s(i-1,j))
-          end do
-       end do
        
        ! interpolate s to x-edges
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+2
-             sedge(i,j) = HALF*(s(i,j)+s(i-1,j)) - SIXTH*(dsvl(i,j)-dsvl(i-1,j))
-             ! if sedge is not in between the neighboring s values, we limit
-             if (sedge(i,j) .lt. min(s(i,j),s(i-1,j)) .or. &
-                 sedge(i,j) .gt. max(s(i,j),s(i-1,j))) then
-                D2  = (THREE/dx(1)**2)*(s(i-1,j)-TWO*sedge(i,j)+s(i,j))
-                D2L = (ONE/dx(1)**2)*(s(i-2,j)-TWO*s(i-1,j)+s(i,j))
-                D2R = (ONE/dx(1)**2)*(s(i-1,j)-TWO*s(i,j)+s(i+1,j))
-                if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
-                   sedge(i,j) = HALF*(s(i-1,j)+s(i,j)) - (dx(1)**2/THREE) &
-                        *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
-                else
-                   sedge(i,j) = HALF*(s(i-1,j)+s(i,j))
-                end if
+             sedge(i,j) = (7.d0/12.d0)*(s(i-1,j)+s(i,j)) - (1.d0/12.d0)*(s(i-2,j)+s(i+1,j))
+             ! limit sedge
+             if ((sedge(i,j)-s(i-1,j))*(s(i,j)-sedge(i,j)) .lt. ZERO) then
+                D2  = THREE*(s(i-1,j)-TWO*sedge(i,j)+s(i,j))
+                D2L = s(i-2,j)-TWO*s(i-1,j)+s(i,j)
+                D2R = s(i-1,j)-TWO*s(i,j)+s(i+1,j)
+                sgn = sign(ONE,D2)
+                D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+                sedge(i,j) = HALF*(s(i-1,j)+s(i,j)) - SIXTH*D2LIM
              end if
           end do
        end do
@@ -768,31 +732,19 @@ contains
        end do
 
     else if (ppm_type .eq. 2) then
-
-       ! store centered differences in dsvl
-       do j=lo(2)-2,hi(2)+2
-          do i=lo(1)-1,hi(1)+1
-             dsvl(i,j) = HALF * (s(i,j+1) - s(i,j-1))
-          end do
-       end do
        
        ! interpolate s to y-edges
        do j=lo(2)-1,hi(2)+2
           do i=lo(1)-1,hi(1)+1
-             sedge(i,j) = HALF*(s(i,j)+s(i,j-1)) - SIXTH*(dsvl(i,j)-dsvl(i,j-1))
-             ! if sedge is not in between the neighboring s values, we limit
-             if (sedge(i,j) .lt. min(s(i,j),s(i,j-1)) .or. &
-                 sedge(i,j) .gt. max(s(i,j),s(i,j-1))) then
-                D2  = (THREE/dx(2)**2)*(s(i,j-1)-TWO*sedge(i,j)+s(i,j))
-                D2L = (ONE/dx(2)**2)*(s(i,j-2)-TWO*s(i,j-1)+s(i,j))
-                D2R = (ONE/dx(2)**2)*(s(i,j-1)-TWO*s(i,j)+s(i,j+1))
-                if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
-                   sedge(i,j) = HALF*(s(i,j-1)+s(i,j)) - (dx(2)**2/THREE) &
-                        *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
-                else
-                   sedge(i,j) = HALF*(s(i,j-1)+s(i,j))
-                end if
+             sedge(i,j) = (7.d0/12.d0)*(s(i,j-1)+s(i,j)) - (1.d0/12.d0)*(s(i,j-2)+s(i,j+1))
+             ! limit sedge
+             if ((sedge(i,j)-s(i,j-1))*(s(i,j)-sedge(i,j)) .lt. ZERO) then
+                D2  = THREE*(s(i,j-1)-TWO*sedge(i,j)+s(i,j))
+                D2L = s(i,j-2)-TWO*s(i,j-1)+s(i,j)
+                D2R = s(i,j-1)-TWO*s(i,j)+s(i,j+1)
+                sgn = sign(ONE,D2)
+                D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+                sedge(i,j) = HALF*(s(i,j-1)+s(i,j)) - SIXTH*D2LIM
              end if
           end do
        end do
@@ -1040,34 +992,21 @@ contains
        end do
 
     else if (ppm_type .eq. 2) then
-       
-       ! store centered differences in dsvl
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-2,hi(1)+2
-                dsvl(i,j,k) = HALF * (s(i+1,j,k) - s(i-1,j,k))
-             end do
-          end do
-       end do
 
        ! interpolate s to x-edges
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+2
-                sedge(i,j,k) = HALF*(s(i,j,k)+s(i-1,j,k)) - SIXTH*(dsvl(i,j,k)-dsvl(i-1,j,k))
-                ! if sedge is not in between the neighboring s values, we limit
-                if (sedge(i,j,k) .lt. min(s(i,j,k),s(i-1,j,k)) .or. &
-                     sedge(i,j,k) .gt. max(s(i,j,k),s(i-1,j,k))) then
-                   D2  = (THREE/dx(1)**2)*(s(i-1,j,k)-TWO*sedge(i,j,k)+s(i,j,k))
-                   D2L = (ONE/dx(1)**2)*(s(i-2,j,k)-TWO*s(i-1,j,k)+s(i,j,k))
-                   D2R = (ONE/dx(1)**2)*(s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k))
-                   if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                        sign(ONE,D2) .eq. sign(ONE,D2R)) then
-                      sedge(i,j,k) = HALF*(s(i-1,j,k)+s(i,j,k)) - (dx(1)**2/THREE) &
-                           *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
-                   else
-                      sedge(i,j,k) = HALF*(s(i-1,j,k)+s(i,j,k))
-                   end if
+                sedge(i,j,k) = (7.d0/12.d0)*(s(i-1,j,k)+s(i,j,k)) &
+                     - (1.d0/12.d0)*(s(i-2,j,k)+s(i+1,j,k))
+                ! limit sedge
+                if ((sedge(i,j,k)-s(i-1,j,k))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
+                   D2  = THREE*(s(i-1,j,k)-TWO*sedge(i,j,k)+s(i,j,k))
+                   D2L = s(i-2,j,k)-TWO*s(i-1,j,k)+s(i,j,k)
+                   D2R = s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k)
+                   sgn = sign(ONE,D2)
+                   D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+                   sedge(i,j,k) = HALF*(s(i-1,j,k)+s(i,j,k)) - SIXTH*D2LIM
                 end if
              end do
           end do
@@ -1282,33 +1221,20 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! store centered differences in dsvl
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-2,hi(2)+2
-             do i=lo(1)-1,hi(1)+1
-                dsvl(i,j,k) = HALF * (s(i,j+1,k) - s(i,j-1,k))
-             end do
-          end do
-       end do
-
        ! interpolate s to y-edges
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+2
              do i=lo(1)-1,hi(1)+1
-                sedge(i,j,k) = HALF*(s(i,j,k)+s(i,j-1,k)) - SIXTH*(dsvl(i,j,k)-dsvl(i,j-1,k))
-                ! if sedge is not in between the neighboring s values, we limit
-                if (sedge(i,j,k) .lt. min(s(i,j,k),s(i,j-1,k)) .or. &
-                     sedge(i,j,k) .gt. max(s(i,j,k),s(i,j-1,k))) then
-                   D2  = (THREE/dx(2)**2)*(s(i,j-1,k)-TWO*sedge(i,j,k)+s(i,j,k))
-                   D2L = (ONE/dx(2)**2)*(s(i,j-2,k)-TWO*s(i,j-1,k)+s(i,j,k))
-                   D2R = (ONE/dx(2)**2)*(s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k))
-                   if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                        sign(ONE,D2) .eq. sign(ONE,D2R)) then
-                      sedge(i,j,k) = HALF*(s(i,j-1,k)+s(i,j,k)) - (dx(2)**2/THREE) &
-                           *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
-                   else
-                      sedge(i,j,k) = HALF*(s(i,j-1,k)+s(i,j,k))
-                   end if
+                sedge(i,j,k) = (7.d0/12.d0)*(s(i,j-1,k)+s(i,j,k)) &
+                     - (1.d0/12.d0)*(s(i,j-2,k)+s(i,j+1,k))
+                ! limit sedge
+                if ((sedge(i,j,k)-s(i,j-1,k))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
+                   D2  = THREE*(s(i,j-1,k)-TWO*sedge(i,j,k)+s(i,j,k))
+                   D2L = s(i,j-2,k)-TWO*s(i,j-1,k)+s(i,j,k)
+                   D2R = s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k)
+                   sgn = sign(ONE,D2)
+                   D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+                   sedge(i,j,k) = HALF*(s(i,j-1,k)+s(i,j,k)) - SIXTH*D2LIM
                 end if
              end do
           end do
@@ -1523,33 +1449,20 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! store centered differences in dsvl
-       do k=lo(3)-2,hi(3)+2
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
-                dsvl(i,j,k) = HALF * (s(i,j,k+1) - s(i,j,k-1))
-             end do
-          end do
-       end do
-
        ! interpolate s to z-edges
        do k=lo(3)-1,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
-                sedge(i,j,k) = HALF*(s(i,j,k)+s(i,j,k-1)) - SIXTH*(dsvl(i,j,k)-dsvl(i,j,k-1))
-                ! if sedge is not in between the neighboring s values, we limit
-                if (sedge(i,j,k) .lt. min(s(i,j,k),s(i,j,k-1)) .or. &
-                     sedge(i,j,k) .gt. max(s(i,j,k),s(i,j,k-1))) then
-                   D2  = (THREE/dx(3)**2)*(s(i,j,k-1)-TWO*sedge(i,j,k)+s(i,j,k))
-                   D2L = (ONE/dx(3)**2)*(s(i,j,k-2)-TWO*s(i,j,k-1)+s(i,j,k))
-                   D2R = (ONE/dx(3)**2)*(s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1))
-                   if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                        sign(ONE,D2) .eq. sign(ONE,D2R)) then
-                      sedge(i,j,k) = HALF*(s(i,j,k-1)+s(i,j,k)) - (dx(3)**2/THREE) &
-                           *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
-                   else
-                      sedge(i,j,k) = HALF*(s(i,j,k-1)+s(i,j,k))
-                   end if
+                sedge(i,j,k) = (7.d0/12.d0)*(s(i,j,k-1)+s(i,j,k)) &
+                     - (1.d0/12.d0)*(s(i,j,k-2)+s(i,j,k+1))
+                ! limit sedge
+                if ((sedge(i,j,k)-s(i,j,k-1))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
+                   D2  = THREE*(s(i,j,k-1)-TWO*sedge(i,j,k)+s(i,j,k))
+                   D2L = s(i,j,k-2)-TWO*s(i,j,k-1)+s(i,j,k)
+                   D2R = s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1)
+                   sgn = sign(ONE,D2)
+                   D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+                   sedge(i,j,k) = HALF*(s(i,j,k-1)+s(i,j,k)) - SIXTH*D2LIM
                 end if
              end do
           end do
@@ -1821,34 +1734,21 @@ contains
        end do
 
     else if (ppm_type .eq. 2) then
-       
-       ! store centered differences in dsvl
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-2,hi(1)+2
-                dsvl(i,j,k) = HALF * (s(i+1,j,k) - s(i-1,j,k))
-             end do
-          end do
-       end do
 
        ! interpolate s to x-edges
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+2
-                sedge(i,j,k) = HALF*(s(i,j,k)+s(i-1,j,k)) - SIXTH*(dsvl(i,j,k)-dsvl(i-1,j,k))
-                ! if sedge is not in between the neighboring s values, we limit
-                if (sedge(i,j,k) .lt. min(s(i,j,k),s(i-1,j,k)) .or. &
-                     sedge(i,j,k) .gt. max(s(i,j,k),s(i-1,j,k))) then
-                   D2  = (THREE/dx(1)**2)*(s(i-1,j,k)-TWO*sedge(i,j,k)+s(i,j,k))
-                   D2L = (ONE/dx(1)**2)*(s(i-2,j,k)-TWO*s(i-1,j,k)+s(i,j,k))
-                   D2R = (ONE/dx(1)**2)*(s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k))
-                   if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                        sign(ONE,D2) .eq. sign(ONE,D2R)) then
-                      sedge(i,j,k) = HALF*(s(i-1,j,k)+s(i,j,k)) - (dx(1)**2/THREE) &
-                           *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
-                   else
-                      sedge(i,j,k) = HALF*(s(i-1,j,k)+s(i,j,k))
-                   end if
+                sedge(i,j,k) = (7.d0/12.d0)*(s(i-1,j,k)+s(i,j,k)) &
+                     - (1.d0/12.d0)*(s(i-2,j,k)+s(i+1,j,k))
+                ! limit sedge
+                if ((sedge(i,j,k)-s(i-1,j,k))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
+                   D2  = THREE*(s(i-1,j,k)-TWO*sedge(i,j,k)+s(i,j,k))
+                   D2L = s(i-2,j,k)-TWO*s(i-1,j,k)+s(i,j,k)
+                   D2R = s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k)
+                   sgn = sign(ONE,D2)
+                   D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+                   sedge(i,j,k) = HALF*(s(i-1,j,k)+s(i,j,k)) - SIXTH*D2LIM
                 end if
              end do
           end do
@@ -2066,33 +1966,20 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! store centered differences in dsvl
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-2,hi(2)+2
-             do i=lo(1)-1,hi(1)+1
-                dsvl(i,j,k) = HALF * (s(i,j+1,k) - s(i,j-1,k))
-             end do
-          end do
-       end do
-
        ! interpolate s to y-edges
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+2
              do i=lo(1)-1,hi(1)+1
-                sedge(i,j,k) = HALF*(s(i,j,k)+s(i,j-1,k)) - SIXTH*(dsvl(i,j,k)-dsvl(i,j-1,k))
-                ! if sedge is not in between the neighboring s values, we limit
-                if (sedge(i,j,k) .lt. min(s(i,j,k),s(i,j-1,k)) .or. &
-                     sedge(i,j,k) .gt. max(s(i,j,k),s(i,j-1,k))) then
-                   D2  = (THREE/dx(2)**2)*(s(i,j-1,k)-TWO*sedge(i,j,k)+s(i,j,k))
-                   D2L = (ONE/dx(2)**2)*(s(i,j-2,k)-TWO*s(i,j-1,k)+s(i,j,k))
-                   D2R = (ONE/dx(2)**2)*(s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k))
-                   if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                        sign(ONE,D2) .eq. sign(ONE,D2R)) then
-                      sedge(i,j,k) = HALF*(s(i,j-1,k)+s(i,j,k)) - (dx(2)**2/THREE) &
-                           *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
-                   else
-                      sedge(i,j,k) = HALF*(s(i,j-1,k)+s(i,j,k))
-                   end if
+                sedge(i,j,k) = (7.d0/12.d0)*(s(i,j-1,k)+s(i,j,k)) &
+                     - (1.d0/12.d0)*(s(i,j-2,k)+s(i,j+1,k))
+                ! limit sedge
+                if ((sedge(i,j,k)-s(i,j-1,k))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
+                   D2  = THREE*(s(i,j-1,k)-TWO*sedge(i,j,k)+s(i,j,k))
+                   D2L = s(i,j-2,k)-TWO*s(i,j-1,k)+s(i,j,k)
+                   D2R = s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k)
+                   sgn = sign(ONE,D2)
+                   D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+                   sedge(i,j,k) = HALF*(s(i,j-1,k)+s(i,j,k)) - SIXTH*D2LIM
                 end if
              end do
           end do
@@ -2310,33 +2197,20 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! store centered differences in dsvl
-       do k=lo(3)-2,hi(3)+2
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
-                dsvl(i,j,k) = HALF * (s(i,j,k+1) - s(i,j,k-1))
-             end do
-          end do
-       end do
-
        ! interpolate s to z-edges
        do k=lo(3)-1,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
-                sedge(i,j,k) = HALF*(s(i,j,k)+s(i,j,k-1)) - SIXTH*(dsvl(i,j,k)-dsvl(i,j,k-1))
-                ! if sedge is not in between the neighboring s values, we limit
-                if (sedge(i,j,k) .lt. min(s(i,j,k),s(i,j,k-1)) .or. &
-                     sedge(i,j,k) .gt. max(s(i,j,k),s(i,j,k-1))) then
-                   D2  = (THREE/dx(3)**2)*(s(i,j,k-1)-TWO*sedge(i,j,k)+s(i,j,k))
-                   D2L = (ONE/dx(3)**2)*(s(i,j,k-2)-TWO*s(i,j,k-1)+s(i,j,k))
-                   D2R = (ONE/dx(3)**2)*(s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1))
-                   if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                        sign(ONE,D2) .eq. sign(ONE,D2R)) then
-                      sedge(i,j,k) = HALF*(s(i,j,k-1)+s(i,j,k)) - (dx(3)**2/THREE) &
-                           *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
-                   else
-                      sedge(i,j,k) = HALF*(s(i,j,k-1)+s(i,j,k))
-                   end if
+                sedge(i,j,k) = (7.d0/12.d0)*(s(i,j,k-1)+s(i,j,k)) &
+                     - (1.d0/12.d0)*(s(i,j,k-2)+s(i,j,k+1))
+                ! limit sedge
+                if ((sedge(i,j,k)-s(i,j,k-1))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
+                   D2  = THREE*(s(i,j,k-1)-TWO*sedge(i,j,k)+s(i,j,k))
+                   D2L = s(i,j,k-2)-TWO*s(i,j,k-1)+s(i,j,k)
+                   D2R = s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1)
+                   sgn = sign(ONE,D2)
+                   D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+                   sedge(i,j,k) = HALF*(s(i,j,k-1)+s(i,j,k)) - SIXTH*D2LIM
                 end if
              end do
           end do

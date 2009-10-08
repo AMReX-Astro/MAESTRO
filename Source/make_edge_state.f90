@@ -208,21 +208,17 @@ contains
                  else if (r .eq. nr(n)) then
                     sedgel(n,r) = s(n,r-1)
                  else
+                    ! this reduces to the standard 4th-order stencil away from boundaries
                     sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
                     if (r .ge. 2 .and. r .le. nr(n)-2) then
-                       ! if sedge is not in between the neighboring s values, we limit
-                       if (sedgel(n,r) .lt. min(s(n,r),s(n,r-1)) .or. &
-                            sedgel(n,r) .gt. max(s(n,r),s(n,r-1))) then
-                          D2  = (THREE/dr(1)**2)*(s(n,r-1)-TWO*sedgel(n,r)+s(n,r))
-                          D2L = (ONE/dr(1)**2)*(s(n,r-2)-TWO*s(n,r-1)+s(n,r))
-                          D2R = (ONE/dr(1)**2)*(s(n,r-1)-TWO*s(n,r)+s(n,r+1))
-                          if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                               sign(ONE,D2) .eq. sign(ONE,D2R)) then
-                             sedgel(n,r) = HALF*(s(n,r-1)+s(n,r)) - (dr(1)**2/THREE) &
-                                  *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
-                          else
-                             sedgel(n,r) = HALF*(s(n,r-1)+s(n,r))
-                          end if
+                       ! limit sedge
+                       if ((sedge(n,r)-s(n,r-1))*(s(n,r)-sedge(n,r)) .lt. ZERO) then
+                          D2  = THREE*(s(n,r-1)-TWO*sedgel(n,r)+s(n,r))
+                          D2L = s(n,r-2)-TWO*s(n,r-1)+s(n,r)
+                          D2R = s(n,r-1)-TWO*s(n,r)+s(n,r+1)
+                          sgn = sign(ONE,D2)
+                          D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+                          sedge(n,r) = HALF*(s(n,r-1)+s(n,r)) - SIXTH*D2LIM
                        end if
                     end if
                  end if
