@@ -42,9 +42,12 @@ contains
      
      real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag,ubardth,dth,dtdr,savg,u
      real(kind=dp_t) :: sigmap,sigmam,s6,D2,D2L,D2R,D2C,D2LIM,C,alphap,alpham,dI,sgn
-     real(kind=dp_t) :: diff1,diff2,diff3,diff4
+     real(kind=dp_t) :: dafacem,dafacep,dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp
+     real(kind=dp_t) :: amax,delam,delap
      
      integer :: r,lo,hi,n,i
+
+     logical :: extremum, bigp, bigm
 
      integer        , parameter :: cen=1, lim=2, flag=3, fromm=4
      real(kind=dp_t), parameter :: FOURTHIRDS = FOUR/THREE
@@ -284,50 +287,78 @@ contains
 
               do r=lo,hi
                  ! modify using Colella 2008 limiters
+                 ! This is a new version of the algorithm 
+                 ! to eliminate sensitivity to roundoff.
                  if (r .ge. 2 .and. r .le. nr(n)-3) then
 
-                    diff1 = sp(n,r)-s(n,r)
-                    diff2 = s(n,r)-sm(n,r)
-                    diff3 = s(n,r+1)-s(n,r)
-                    diff4 = s(n,r)-s(n,r-1)
+                    alphap = sp(n,r)-s(n,r)
+                    alpham = sm(n,r)-s(n,r)
+                    bigp = abs(alphap).gt.TWO*abs(alpham)
+                    bigm = abs(alpham).gt.TWO*abs(alphap)
+                    extremum = .false.
 
-                    if (diff1*diff2 .le. ZERO .or. &
-                         diff3*diff4 .le. ZERO ) then
-                       s6 = SIX*s(n,r) - THREE*(sm(n,r)+sp(n,r))
-                       D2  = -TWO*s6/dr(1)**2
-                       D2C = (ONE/dr(1)**2)*(s(n,r-1)-TWO*s(n,r)+s(n,r+1))
-                       D2L = (ONE/dr(1)**2)*(s(n,r-2)-TWO*s(n,r-1)+s(n,r))
-                       D2R = (ONE/dr(1)**2)*(s(n,r)-TWO*s(n,r+1)+s(n,r+2))
-                       if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
-                            sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                            sign(ONE,D2) .eq. sign(ONE,D2R) .and. &
-                            D2 .ne. ZERO) then
-                          D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
-                          sp(n,r) = s(n,r) + (sp(n,r)-s(n,r))*(D2LIM/D2)
-                          sm(n,r) = s(n,r) + (sm(n,r)-s(n,r))*(D2LIM/D2)
+                    if (alpham*alphap .ge. ZERO) then
+                       extremum = .true.
+                    else if (bigp .or. bigm) then
+                       ! Possible extremum. We look at cell centered values and face
+                       ! centered values for a change in sign in the differences adjacent to
+                       ! the cell. We use the pair of differences whose minimum magnitude is 
+                       ! the largest, and thus least susceptible to sensitivity to roundoff.
+                       dafacem = sedge(n,r) - sedge(n,r-1)
+                       dafacep = sedge(n,r+2) - sedge(n,r+1)
+                       dabarm = s(n,r) - s(n,r-1)
+                       dabarp = s(n,r+1) - s(n,r)
+                       dafacemin = min(abs(dafacem),abs(dafacep))
+                       dabarmin= min(abs(dabarm),abs(dabarp))
+                       if (dafacemin.ge.dabarmin) then
+                          dachkm = dafacem
+                          dachkp = dafacep
                        else
-                          sp(n,r) = s(n,r)
-                          sm(n,r) = s(n,r)
-                       end if
+                          dachkm = dabarm
+                          dachkp = dabarp
+                       endif
+                       extremum = (dachkm*dachkp .le. 0.d0)
+                    end if
+
+                    if (extremum) then
+                       D2  = SIX*(alpham + alphap)
+                       D2L = s(n,r-2)-TWO*s(n,r-1)+s(n,r)
+                       D2R = s(n,r)-TWO*s(n,r+1)+s(n,r+2)
+                       D2C = s(n,r-1)-TWO*s(n,r)+s(n,r+1)
+                       sgn = sign(ONE,D2)
+                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
+                       alpham = alpham*D2LIM/max(abs(D2),1.d-10)
+                       alphap = alphap*D2LIM/max(abs(D2),1.d-10)
                     else
-                       alphap = sp(n,r)-s(n,r)
-                       alpham = sm(n,r)-s(n,r)
-                       if (abs(alphap) .gt. TWO*abs(alpham)) then
-                          dI = -alphap**2 / (FOUR*(alphap+alpham))
-                          ds = s(n,r+1)-s(n,r)
+                       if (bigp) then
                           sgn = sign(ONE,alpham)
-                          if (sgn*dI .ge. sgn*ds) then
-                             sp(n,r) = s(n,r) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
-                          end if
-                       else if (abs(alpham) .gt. TWO*abs(alphap)) then
-                          dI = -alpham**2 / (FOUR*(alphap+alpham))
-                          ds = s(n,r-1)-s(n,r)
+                          amax = -alphap**2 / (4*(alpham + alphap))
+                          delam = s(n,r-1) - s(n,r)
+                          if (sgn*amax .ge. sgn*delam) then
+                             if (sgn*(delam - alpham).ge.1.d-10) then
+                                alphap = (-TWO*delam - TWO*sgn*sqrt(delam**2 - delam*alpham))
+                             else 
+                                alphap = -TWO*alpham
+                             endif
+                          endif
+                       end if
+                       if (bigm) then
                           sgn = sign(ONE,alphap)
-                          if (sgn*dI .ge. sgn*ds) then
-                             sm(n,r) = s(n,r) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
-                          end if
+                          amax = -alpham**2 / (4*(alpham + alphap))
+                          delap = s(n,r+1) - s(n,r)
+                          if (sgn*amax .ge. sgn*delap) then
+                             if (sgn*(delap - alphap).ge.1.d-10) then
+                                alpham = (-TWO*delap - TWO*sgn*sqrt(delap**2 - delap*alphap))
+                             else
+                                alpham = -TWO*alphap
+                             endif
+                          endif
                        end if
                     end if
+                    
+                    sm(n,r) = s(n,r) + alpham
+                    sp(n,r) = s(n,r) + alphap
+
                  end if
               end do
 
