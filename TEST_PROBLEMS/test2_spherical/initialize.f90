@@ -55,7 +55,7 @@ contains
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
-    integer :: n
+    integer :: n,ng_s
 
     type(multifab), pointer :: chkdata(:)
     type(multifab), pointer :: chk_p(:)
@@ -98,10 +98,16 @@ contains
     allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs))
     allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),thermal2(nlevs))
 
+    if (ppm_type .eq. 2) then
+       ng_s = 4
+    else
+       ng_s = 3
+    end if
+
     ! build and fill states
     do n = 1,nlevs
-       call multifab_build(         uold(n), mla%la(n),    dm, 3)
-       call multifab_build(         sold(n), mla%la(n), nscal, 3)
+       call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
+       call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
        call multifab_build(        gpres(n), mla%la(n),    dm, 1)
        call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
@@ -258,12 +264,12 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(uold(n),uold(n-1), &
-                                         3,mla%mba%rr(n-1,:), &
+                                         uold(n)%ng,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
                                          1,1,dm,fill_crse_input=.false.)
           call multifab_fill_ghost_cells(sold(n),sold(n-1), &
-                                         3,mla%mba%rr(n-1,:), &
+                                         sold(n)%ng,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
                                          rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
@@ -311,7 +317,7 @@ contains
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
-    integer :: n
+    integer :: n,ng_s
     
     ! set time and dt
     time = ZERO
@@ -342,11 +348,17 @@ contains
     allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
     allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs))
     allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),thermal2(nlevs))
-    
+
+    if (ppm_type .eq. 2) then
+       ng_s = 4
+    else
+       ng_s = 3
+    end if
+
     ! build states
     do n = 1,nlevs
-       call multifab_build(         uold(n), mla%la(n),    dm, 3)
-       call multifab_build(         sold(n), mla%la(n), nscal, 3)
+       call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
+       call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
        call multifab_build(        gpres(n), mla%la(n),    dm, 1)
        call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
@@ -509,7 +521,7 @@ contains
     type(box)    :: bxs
 
     real(dp_t) :: lenx,leny,lenz,max_dist
-    integer    :: buf_wid,n,nl
+    integer    :: buf_wid,n,ng_s,nl
     integer    :: lo(dm), hi(dm)
     logical    :: new_grid
 
@@ -556,6 +568,12 @@ contains
 
     ! initialize cutoff arrays
     call init_cutoff(max_levs)
+
+    if (ppm_type .eq. 2) then
+       ng_s = 4
+    else
+       ng_s = 3
+    end if
 
     ! now that we have dx we can initialize nr_fine and dr_fine
     if (spherical .eq. 1) then
@@ -604,7 +622,7 @@ contains
     call layout_build_ba(la_array(1),mba%bas(1),mba%pd(1),pmask)
 
     ! Build the level 1 data only
-    call multifab_build(sold(1), la_array(1), nscal, 3)
+    call multifab_build(sold(1), la_array(1), nscal, ng_s)
 
     ! Define bc_tower at level 1.
     call bc_tower_level_build(the_bc_tower,1,la_array(1))
@@ -648,7 +666,7 @@ contains
              call copy(mba%bas(nl+1),get_boxarray(la_array(nl+1)))
              
              ! Build the level nl+1 data only.
-             call multifab_build(sold(nl+1),la_array(nl+1),nscal,3)
+             call multifab_build(sold(nl+1),la_array(nl+1),nscal,ng_s)
              
              ! Define bc_tower at level nl+1.
              call bc_tower_level_build(the_bc_tower,nl+1,la_array(nl+1))
@@ -701,8 +719,8 @@ contains
     
     ! build states
     do n = 1,nlevs
-       call multifab_build(         uold(n), mla%la(n),    dm, 3)
-       call multifab_build(         sold(n), mla%la(n), nscal, 3)
+       call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
+       call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
        call multifab_build(        gpres(n), mla%la(n),    dm, 1)
        call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)

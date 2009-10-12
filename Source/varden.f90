@@ -229,8 +229,8 @@ subroutine varden()
   allocate(normal(nlevs))
 
   do n = 1,nlevs
-     call multifab_build(      unew(n), mla%la(n),    dm, 3)
-     call multifab_build(      snew(n), mla%la(n), nscal, 3)
+     call multifab_build(      unew(n), mla%la(n),    dm, uold(n)%ng)
+     call multifab_build(      snew(n), mla%la(n), nscal, sold(n)%ng)
      call multifab_build(    sponge(n), mla%la(n),     1, 0)
      call multifab_build(     hgrhs(n), mla%la(n),     1, 0, nodal)
      if (dm .eq. 3) then
@@ -382,8 +382,8 @@ subroutine varden()
 
   do n = 1,nlevs
      ! This is done to impose any Dirichlet bc's on unew or snew.
-     call multifab_copy_c(unew(n),1,uold(n),1,dm   ,3)
-     call multifab_copy_c(snew(n),1,sold(n),1,nscal,3)
+     call multifab_copy_c(unew(n),1,uold(n),1,dm   ,uold(n)%ng)
+     call multifab_copy_c(snew(n),1,sold(n),1,nscal,uold(n)%ng)
   end do
 
   if (restart < 0) then 
@@ -685,8 +685,8 @@ subroutine varden()
            call init_multilevel(sold)
 
            do n = 1,nlevs
-              call multifab_build(      unew(n),    mla%la(n),    dm, 3)
-              call multifab_build(      snew(n),    mla%la(n), nscal, 3)
+              call multifab_build(      unew(n),    mla%la(n),    dm, uold(n)%ng)
+              call multifab_build(      snew(n),    mla%la(n), nscal, sold(n)%ng)
               call multifab_build(    sponge(n),    mla%la(n),     1, 0)
               call multifab_build(     hgrhs(n),    mla%la(n),     1, 0, nodal)
               call multifab_build(Source_new(n),    mla%la(n),     1, 1)
@@ -893,8 +893,8 @@ subroutine varden()
         !---------------------------------------------------------------------
 
         do n = 1,nlevs
-           call multifab_copy_c(uold(n),      1,unew(n),      1,dm,   3)
-           call multifab_copy_c(sold(n),      1,snew(n),      1,nscal,3)
+           call multifab_copy_c(uold(n),      1,unew(n),      1,dm,   uold(n)%ng)
+           call multifab_copy_c(sold(n),      1,snew(n),      1,nscal,uold(n)%ng)
            call multifab_copy_c(Source_old(n),1,Source_new(n),1,1)
         end do
 

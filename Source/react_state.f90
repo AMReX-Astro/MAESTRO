@@ -50,7 +50,7 @@ contains
 
     ! pass temperature through for seeding the temperature update eos call
     do n=1,nlevs
-       call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,3)
+       call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,sold(n)%ng)
     end do
 
     ! now update temperature

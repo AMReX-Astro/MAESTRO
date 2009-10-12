@@ -87,7 +87,7 @@ subroutine varden()
 
   ! build states
   do n = 1,nlevs
-     call multifab_build(phi(n),mla%la(n),1,3)
+     call multifab_build(phi(n),mla%la(n),1,1)
      call setval(phi(n),0.0_dp_t,all=.true.)
   end do
 
