@@ -49,7 +49,7 @@ contains
 
   subroutine tag_boxes_2d(tagbox,mf,lo,ng,lev)
 
-    use probin_module, ONLY : base_cutoff_density
+    use probin_module, ONLY : base_cutoff_density, tag_density_1, tag_density_2
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):)
@@ -65,28 +65,17 @@ contains
 
     select case(llev)
     case (1)
-       ! tag all boxes with a density > base_cutoff_density
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. base_cutoff_density) then
+             if (mf(i,j) .gt. tag_density_1) then
                 tagbox(i,j) = .true.
              end if
           end do
        enddo
     case (2)
-       ! for level 2 tag all boxes with a density > base_cutoff_density
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. base_cutoff_density) then
-                tagbox(i,j) = .true.
-             end if
-          end do
-       end do
-    case default
-       ! for level 3 or greater tag all boxes with a density > base_cutoff_density
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. base_cutoff_density) then
+             if (mf(i,j) .gt. tag_density_2) then
                 tagbox(i,j) = .true.
              end if
           end do
@@ -97,7 +86,7 @@ contains
 
   subroutine tag_boxes_3d(tagbox,mf,lo,ng,lev)
 
-    use probin_module, ONLY : base_cutoff_density
+    use probin_module, ONLY : base_cutoff_density, tag_density_1, tag_density_2
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):,lo(3):)
@@ -115,33 +104,20 @@ contains
 
     select case(llev)
     case (1)
-       ! tag all boxes with a density > base_cutoff_density
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. base_cutoff_density) then
+                if (mf(i,j,k) .gt. tag_density_1) then
                    tagbox(i,j,k) = .true.
                 end if
              end do
           enddo
        end do
     case (2)
-       ! for level 2 tag all boxes with a density > base_cutoff_density
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. base_cutoff_density) then
-                   tagbox(i,j,k) = .true.
-                end if
-             end do
-          end do
-       end do
-    case default
-       ! for level 3 or greater tag all boxes with a density > base_cutoff_density
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. base_cutoff_density) then
+                if (mf(i,j,k) .gt. tag_density_2) then
                    tagbox(i,j,k) = .true.
                 end if
              end do
