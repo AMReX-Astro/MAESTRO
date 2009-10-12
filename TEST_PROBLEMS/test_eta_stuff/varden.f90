@@ -238,7 +238,7 @@ subroutine varden()
      end do
 
      do n=1,nlevs
-        call multifab_copy_c(rho_omegadot2(n),1,chk_rho_omegadot2(n),1,3)
+        call multifab_copy_c(rho_omegadot2(n),1,chk_rho_omegadot2(n),1,nspec)
         call destroy(chk_rho_omegadot2(n))
      end do
 
