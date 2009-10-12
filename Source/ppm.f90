@@ -112,16 +112,16 @@ contains
 
     end if
 
-    ! fill x-component of sp and sm
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
-          sp(i,j) = sedge(i+1,j)
-          sm(i,j) = sedge(i  ,j)
-       end do
-    end do
-
-    ! limit x-component of sp and sm
+    ! compute sp and sm
     if (ppm_type .eq. 1) then
+
+       ! copy sedge into sp and sm
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             sp(i,j) = sedge(i+1,j)
+             sm(i,j) = sedge(i  ,j)
+          end do
+       end do
 
        ! modify using quadratic limiters
        do j=lo(2)-1,hi(2)+1
@@ -139,14 +139,14 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! modify using Colella 2008 limiters
+       ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
 
-             alphap = sp(i,j)-s(i,j)
-             alpham = sm(i,j)-s(i,j)
+             alphap = sedge(i+1,j)-s(i,j)
+             alpham = sedge(i  ,j)-s(i,j)
              bigp = abs(alphap).gt.TWO*abs(alpham)
              bigm = abs(alpham).gt.TWO*abs(alphap)
              extremum = .false.
@@ -338,16 +338,16 @@ contains
 
     end if
 
-    ! fill y-component of sp and sm
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
-          sp(i,j) = sedge(i,j+1)
-          sm(i,j) = sedge(i,j  )
-       end do
-    end do
-
-    ! limit y-component of sp and sm
+    ! compute sp and sm
     if (ppm_type .eq. 1) then
+
+       ! copy sedge into sp and sm
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             sp(i,j) = sedge(i,j+1)
+             sm(i,j) = sedge(i,j  )
+          end do
+       end do
 
        ! modify using quadratic limiters
        do j=lo(2)-1,hi(2)+1
@@ -365,14 +365,14 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! modify using Colella 2008 limiters
+       ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
 
-             alphap = sp(i,j)-s(i,j)
-             alpham = sm(i,j)-s(i,j)
+             alphap = sedge(i,j+1)-s(i,j)
+             alpham = sedge(i,j  )-s(i,j)
              bigp = abs(alphap).gt.TWO*abs(alpham)
              bigm = abs(alpham).gt.TWO*abs(alphap)
              extremum = .false.
@@ -621,16 +621,16 @@ contains
 
     end if
 
-    ! fill x-component of sp and sm
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
-          sp(i,j) = sedge(i+1,j)
-          sm(i,j) = sedge(i  ,j)
-       end do
-    end do
-
-    ! limit x-component of sp and sm
+    ! compute sp and sm
     if (ppm_type .eq. 1) then
+
+       ! copy sedge into sp and sm
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             sp(i,j) = sedge(i+1,j)
+             sm(i,j) = sedge(i  ,j)
+          end do
+       end do
 
        ! modify using quadratic limiters
        do j=lo(2)-1,hi(2)+1
@@ -648,14 +648,14 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! modify using Colella 2008 limiters
+       ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
 
-             alphap = sp(i,j)-s(i,j)
-             alpham = sm(i,j)-s(i,j)
+             alphap = sedge(i+1,j)-s(i,j)
+             alpham = sedge(i  ,j)-s(i,j)
              bigp = abs(alphap).gt.TWO*abs(alpham)
              bigm = abs(alpham).gt.TWO*abs(alphap)
              extremum = .false.
@@ -848,16 +848,16 @@ contains
 
     end if
 
-    ! fill y-component of sp and sm
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
-          sp(i,j) = sedge(i,j+1)
-          sm(i,j) = sedge(i,j  )
-       end do
-    end do
-
-    ! limit y-component of sp and sm
+    ! compute sp and sm
     if (ppm_type .eq. 1) then
+
+       ! copy sedge into sp and sm
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             sp(i,j) = sedge(i,j+1)
+             sm(i,j) = sedge(i,j  )
+          end do
+       end do
 
        ! modify using quadratic limiters
        do j=lo(2)-1,hi(2)+1
@@ -875,14 +875,14 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! modify using Colella 2008 limiters
+       ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
 
-             alphap = sp(i,j)-s(i,j)
-             alpham = sm(i,j)-s(i,j)
+             alphap = sedge(i,j+1)-s(i,j)
+             alpham = sedge(i,j  )-s(i,j)
              bigp = abs(alphap).gt.TWO*abs(alpham)
              bigm = abs(alpham).gt.TWO*abs(alphap)
              extremum = .false.
@@ -1061,8 +1061,9 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0cc, velcc, amax, delam, delap
+    real(kind=dp_t) :: sgn, sigma, s6, w0cc, velcc
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
+    real(kind=dp_t) :: amax, delam, delap
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:,:)
@@ -1144,19 +1145,19 @@ contains
        end do
 
     end if
+    
+    ! compute sp and sm
+    if (ppm_type .eq. 1) then
 
-    ! fill x-component of sp and sm
-    do k=lo(3)-1,hi(3)+1
-       do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+1
-             sp(i,j,k) = sedge(i+1,j,k)
-             sm(i,j,k) = sedge(i  ,j,k)
+       ! copy sedge into sp and sm
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+1
+                sp(i,j,k) = sedge(i+1,j,k)
+                sm(i,j,k) = sedge(i  ,j,k)
+             end do
           end do
        end do
-    end do
-    
-    ! limit x-component of sp and sm
-    if (ppm_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -1176,15 +1177,15 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! modify using Colella 2008 limiters
+       ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
 
-                alphap = sp(i,j,k)-s(i,j,k)
-                alpham = sm(i,j,k)-s(i,j,k)
+                alphap = sedge(i+1,j,k)-s(i,j,k)
+                alpham = sedge(i  ,j,k)-s(i,j,k)
                 bigp = abs(alphap).gt.TWO*abs(alpham)
                 bigm = abs(alpham).gt.TWO*abs(alphap)
                 extremum = .false.
@@ -1220,7 +1221,7 @@ contains
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
                    alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)                   
+                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -1401,18 +1402,18 @@ contains
 
     end if
 
-    ! fill y-component of sp and sm
-    do k=lo(3)-1,hi(3)+1
-       do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+1
-             sp(i,j,k) = sedge(i,j+1,k)
-             sm(i,j,k) = sedge(i,j  ,k)
+    ! compute sp and sm
+    if (ppm_type .eq. 1) then
+
+       ! copy sedge into sp and sm
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+1
+                sp(i,j,k) = sedge(i,j+1,k)
+                sm(i,j,k) = sedge(i,j  ,k)
+             end do
           end do
        end do
-    end do
-
-    ! limit y-component of sp and sm
-    if (ppm_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -1432,15 +1433,15 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! modify using Colella 2008 limiters
+       ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
 
-                alphap = sp(i,j,k)-s(i,j,k)
-                alpham = sm(i,j,k)-s(i,j,k)
+                alphap = sedge(i,j+1,k)-s(i,j,k)
+                alpham = sedge(i,j  ,k)-s(i,j,k)
                 bigp = abs(alphap).gt.TWO*abs(alpham)
                 bigm = abs(alpham).gt.TWO*abs(alphap)
                 extremum = .false.
@@ -1465,7 +1466,7 @@ contains
                       dachkm = dabarm
                       dachkp = dabarp
                    endif
-                   extremum = (dachkm*dachkp .le. 0.d0)                   
+                   extremum = (dachkm*dachkp .le. 0.d0)
                 end if
 
                 if (extremum) then
@@ -1476,7 +1477,7 @@ contains
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
                    alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)                   
+                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -1657,18 +1658,18 @@ contains
 
     end if
 
-    ! fill z-component of sp and sm
-    do k=lo(3)-1,hi(3)+1
-       do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+1
-             sp(i,j,k) = sedge(i,j,k+1)
-             sm(i,j,k) = sedge(i,j,k  )
+    ! compute sp and sm
+    if (ppm_type .eq. 1) then
+
+       ! copy sedge into sp and sm
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+1
+                sp(i,j,k) = sedge(i,j,k+1)
+                sm(i,j,k) = sedge(i,j,k  )
+             end do
           end do
        end do
-    end do
-
-    ! limit z-component of sp and sm
-    if (ppm_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -1688,15 +1689,15 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! modify using Colella 2008 limiters
+       ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
 
-                alphap = sp(i,j,k)-s(i,j,k)
-                alpham = sm(i,j,k)-s(i,j,k)
+                alphap = sedge(i,j,k+1)-s(i,j,k)
+                alpham = sedge(i,j,k  )-s(i,j,k)
                 bigp = abs(alphap).gt.TWO*abs(alpham)
                 bigm = abs(alpham).gt.TWO*abs(alphap)
                 extremum = .false.
@@ -1721,7 +1722,7 @@ contains
                       dachkm = dabarm
                       dachkp = dabarp
                    endif
-                   extremum = (dachkm*dachkp .le. 0.d0)                   
+                   extremum = (dachkm*dachkp .le. 0.d0)
                 end if
 
                 if (extremum) then
@@ -1732,7 +1733,7 @@ contains
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
                    alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)                   
+                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -1977,19 +1978,19 @@ contains
        end do
 
     end if
+    
+    ! compute sp and sm
+    if (ppm_type .eq. 1) then
 
-    ! fill x-component of sp and sm
-    do k=lo(3)-1,hi(3)+1
-       do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+1
-             sp(i,j,k) = sedge(i+1,j,k)
-             sm(i,j,k) = sedge(i  ,j,k)
+       ! copy sedge into sp and sm
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+1
+                sp(i,j,k) = sedge(i+1,j,k)
+                sm(i,j,k) = sedge(i  ,j,k)
+             end do
           end do
        end do
-    end do
-    
-    ! limit x-component of sp and sm
-    if (ppm_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -2009,15 +2010,15 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! modify using Colella 2008 limiters
+       ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
 
-                alphap = sp(i,j,k)-s(i,j,k)
-                alpham = sm(i,j,k)-s(i,j,k)
+                alphap = sedge(i+1,j,k)-s(i,j,k)
+                alpham = sedge(i  ,j,k)-s(i,j,k)
                 bigp = abs(alphap).gt.TWO*abs(alpham)
                 bigm = abs(alpham).gt.TWO*abs(alphap)
                 extremum = .false.
@@ -2042,7 +2043,7 @@ contains
                       dachkm = dabarm
                       dachkp = dabarp
                    endif
-                   extremum = (dachkm*dachkp .le. 0.d0)                   
+                   extremum = (dachkm*dachkp .le. 0.d0)
                 end if
 
                 if (extremum) then
@@ -2053,7 +2054,7 @@ contains
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
                    alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)  
+                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -2237,18 +2238,18 @@ contains
 
     end if
 
-    ! fill y-component of sp and sm
-    do k=lo(3)-1,hi(3)+1
-       do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+1
-             sp(i,j,k) = sedge(i,j+1,k)
-             sm(i,j,k) = sedge(i,j  ,k)
+    ! compute sp and sm
+    if (ppm_type .eq. 1) then
+
+       ! copy sedge into sp and sm
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+1
+                sp(i,j,k) = sedge(i,j+1,k)
+                sm(i,j,k) = sedge(i,j  ,k)
+             end do
           end do
        end do
-    end do
-
-    ! limit y-component of sp and sm
-    if (ppm_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -2268,15 +2269,15 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! modify using Colella 2008 limiters
+       ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
 
-                alphap = sp(i,j,k)-s(i,j,k)
-                alpham = sm(i,j,k)-s(i,j,k)
+                alphap = sedge(i,j+1,k)-s(i,j,k)
+                alpham = sedge(i,j  ,k)-s(i,j,k)
                 bigp = abs(alphap).gt.TWO*abs(alpham)
                 bigm = abs(alpham).gt.TWO*abs(alphap)
                 extremum = .false.
@@ -2301,7 +2302,7 @@ contains
                       dachkm = dabarm
                       dachkp = dabarp
                    endif
-                   extremum = (dachkm*dachkp .le. 0.d0)                   
+                   extremum = (dachkm*dachkp .le. 0.d0)
                 end if
 
                 if (extremum) then
@@ -2496,18 +2497,18 @@ contains
 
     end if
 
-    ! fill z-component of sp and sm
-    do k=lo(3)-1,hi(3)+1
-       do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+1
-             sp(i,j,k) = sedge(i,j,k+1)
-             sm(i,j,k) = sedge(i,j,k  )
+    ! compute sp and sm
+    if (ppm_type .eq. 1) then
+
+       ! copy sedge into sp and sm
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+1
+                sp(i,j,k) = sedge(i,j,k+1)
+                sm(i,j,k) = sedge(i,j,k  )
+             end do
           end do
        end do
-    end do
-
-    ! limit z-component of sp and sm
-    if (ppm_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -2527,15 +2528,15 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       ! modify using Colella 2008 limiters
+       ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
 
-                alphap = sp(i,j,k)-s(i,j,k)
-                alpham = sm(i,j,k)-s(i,j,k)
+                alphap = sedge(i,j,k+1)-s(i,j,k)
+                alpham = sedge(i,j,k  )-s(i,j,k)
                 bigp = abs(alphap).gt.TWO*abs(alpham)
                 bigm = abs(alpham).gt.TWO*abs(alphap)
                 extremum = .false.
@@ -2560,7 +2561,7 @@ contains
                       dachkm = dabarm
                       dachkp = dabarp
                    endif
-                   extremum = (dachkm*dachkp .le. 0.d0)                   
+                   extremum = (dachkm*dachkp .le. 0.d0)
                 end if
 
                 if (extremum) then
@@ -2571,7 +2572,7 @@ contains
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
                    alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)                   
+                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)

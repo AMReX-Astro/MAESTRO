@@ -234,9 +234,10 @@ contains
         call bl_error("make_edge_state_1d: unknown ppm_type")
      end if
 
-     if (ppm_type .ge. 1) then
+     ! compute sp and sm
+     if (ppm_type .eq. 1) then
 
-        ! fill copy sedgel into sp and sm
+        ! copy sedgel into sp and sm
         do n=1,nlevs_radial
            do i=1,numdisjointchunks(n)
               
@@ -250,11 +251,6 @@ contains
               
            end do ! loop over disjointchunks
         end do ! loop over levels
-
-     end if
-
-     ! limit sp and sm
-     if (ppm_type .eq. 1) then
 
         ! modify using quadratic limiters
         do n=1,nlevs_radial
@@ -279,6 +275,9 @@ contains
 
      else if (ppm_type .eq. 2) then
 
+        ! use Colella 2008 limiters
+        ! This is a new version of the algorithm 
+        ! to eliminate sensitivity to roundoff.
         do n=1,nlevs_radial
            do i=1,numdisjointchunks(n)
 
@@ -286,13 +285,10 @@ contains
               hi = r_end_coord(n,i)
 
               do r=lo,hi
-                 ! modify using Colella 2008 limiters
-                 ! This is a new version of the algorithm 
-                 ! to eliminate sensitivity to roundoff.
                  if (r .ge. 2 .and. r .le. nr(n)-3) then
 
-                    alphap = sp(n,r)-s(n,r)
-                    alpham = sm(n,r)-s(n,r)
+                    alphap = sedgel(n,r+1)-s(n,r)
+                    alpham = sedgel(n,r  )-s(n,r)
                     bigp = abs(alphap).gt.TWO*abs(alpham)
                     bigm = abs(alpham).gt.TWO*abs(alphap)
                     extremum = .false.
