@@ -31,4 +31,4 @@
 
 -- only need to keep one set of species names around in a network
 
--- are we computing eta correctly for spherical? (Utilde vs. U)
+-- increase the accuracy of make_edge_state at the center of the star
