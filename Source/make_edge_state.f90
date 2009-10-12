@@ -41,7 +41,7 @@ contains
      real(kind=dp_t), intent(in   ) :: dt
      
      real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag,ubardth,dth,dtdr,savg,u
-     real(kind=dp_t) :: sigmap,sigmam,s6,D2,D2L,D2R,D2C,D2LIM,C,alphap,alpham,dI,sgn
+     real(kind=dp_t) :: sigmap,sigmam,s6,D2,D2L,D2R,D2C,D2LIM,C,alphap,alpham,sgn
      real(kind=dp_t) :: dafacem,dafacep,dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp
      real(kind=dp_t) :: amax,delam,delap
      
