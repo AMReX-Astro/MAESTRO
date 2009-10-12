@@ -9,7 +9,7 @@
  max_grid_size = 32
  regrid_int = 2
 
- tag_density_1 = 1.d5
+ tag_density_1 = 1.d8
 
  anelastic_cutoff = 1.d6
  base_cutoff_density = 1.d5
