@@ -223,7 +223,7 @@ contains
     if (spherical .eq. 1) then
 
        ! convert (rho X) --> X in sold 
-       call convert_rhoX_to_X(sold_temp,.true.,mla,the_bc_tower%bc_tower_array)
+       call convert_rhoX_to_X(sold_temp,.true.,mla_old,the_bc_tower%bc_tower_array)
 
        ! convert rho -> rho' in sold_temp
        call put_in_pert_form(mla_old,sold_temp,rho0,dx,rho_comp,foextrap_comp,.true., &
@@ -351,12 +351,12 @@ contains
        call put_in_pert_form(mla,sold,rho0,dx,rho_comp,dm+rho_comp,.false., &
                              the_bc_tower%bc_tower_array)
 
-       ! convert X --> (rho X) in sold 
-       call convert_rhoX_to_X(sold,.false.,mla,the_bc_tower%bc_tower_array)
-
        ! convert (rho h)' -> (rho h) in sold
        call put_in_pert_form(mla,sold,rhoh0,dx,rhoh_comp,dm+rhoh_comp,.false., &
                              the_bc_tower%bc_tower_array)
+
+       ! convert X --> (rho X) in sold 
+       call convert_rhoX_to_X(sold,.false.,mla,the_bc_tower%bc_tower_array)
 
     end if
 
