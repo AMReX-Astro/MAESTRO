@@ -80,7 +80,7 @@ function process_files
   pltlist5=$(find . -maxdepth 1 -type d -name "${plt_prefix}?????" -print | sort)
   pltlist6=$(find . -maxdepth 1 -type d -name "${plt_prefix}??????" -print | sort)
 
-  pltlist ="$pltlist5 $pltlist6"
+  pltlist="$pltlist5 $pltlist6"
 
   if [ "$pltlist" ]; then
     nl=$(echo "$pltlist" | wc -l)
