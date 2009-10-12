@@ -89,6 +89,10 @@ contains
 
     else if (ppm_type .eq. 2) then
        
+       if (ng_s .lt. 4 .or. ng_u .lt. 4) then
+          call bl_error("Need 4 ghost cells for ppm_type=2")
+       end if
+
        ! interpolate s to x-edges
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+2
@@ -594,6 +598,10 @@ contains
 
     else if (ppm_type .eq. 2) then
        
+       if (ng_s .lt. 4 .or. ng_u .lt. 4) then
+          call bl_error("Need 4 ghost cells for ppm_type=2")
+       end if
+
        ! interpolate s to x-edges
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+2
@@ -1110,6 +1118,10 @@ contains
        end do
 
     else if (ppm_type .eq. 2) then
+
+       if (ng_s .lt. 4 .or. ng_u .lt. 4) then
+          call bl_error("Need 4 ghost cells for ppm_type=2")
+       end if
 
        ! interpolate s to x-edges
        do k=lo(3)-1,hi(3)+1
@@ -1939,6 +1951,10 @@ contains
        end do
 
     else if (ppm_type .eq. 2) then
+
+       if (ng_s .lt. 4 .or. ng_u .lt. 4) then
+          call bl_error("Need 4 ghost cells for ppm_type=2")
+       end if
 
        ! interpolate s to x-edges
        do k=lo(3)-1,hi(3)+1
