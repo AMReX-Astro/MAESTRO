@@ -1,6 +1,7 @@
 module ppm_module
 
   use bl_types
+  use bl_error_module
   use probin_module, only: ppm_type
   use variables, only: rel_eps
 
@@ -33,8 +34,8 @@ contains
 
     logical :: extremum, bigp, bigm
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
-    real(kind=dp_t) :: dI, sgn, sigma, s6, w0cc, amax, delam, delap
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
+    real(kind=dp_t) :: sgn, sigma, s6, w0cc, amax, delam, delap
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! s_{\ib,+}, s_{\ib,-}
@@ -542,8 +543,8 @@ contains
 
     logical :: extremum, bigp, bigm
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
-    real(kind=dp_t) :: dI, sgn, sigmam, sigmap, s6, w0lo, w0hi, amax, delam, delap
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
+    real(kind=dp_t) :: sgn, sigmam, sigmap, s6, w0lo, w0hi, amax, delam, delap
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! s_{\ib,+}, s_{\ib,-}
@@ -1059,8 +1060,8 @@ contains
 
     logical :: extremum, bigp, bigm
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
-    real(kind=dp_t) :: dI, sgn, sigma, s6, w0cc, velcc, amax, delam, delap
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
+    real(kind=dp_t) :: sgn, sigma, s6, w0cc, velcc, amax, delam, delap
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! s_{\ib,+}, s_{\ib,-}
@@ -1891,8 +1892,8 @@ contains
 
     logical :: extremum, bigp, bigm
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
-    real(kind=dp_t) :: dI, sgn, sigmam, sigmap, s6, w0lo, w0hi, vello, velhi
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
+    real(kind=dp_t) :: sgn, sigmam, sigmap, s6, w0lo, w0hi, vello, velhi
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
     real(kind=dp_t) :: amax, delam, delap
 
