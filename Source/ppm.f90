@@ -89,7 +89,7 @@ contains
 
     else if (ppm_type .eq. 2) then
        
-       if (ng_s .lt. 4 .or. ng_u .lt. 4) then
+       if (ng_s .lt. 4) then
           call bl_error("Need 4 ghost cells for ppm_type=2")
        end if
 
@@ -598,7 +598,7 @@ contains
 
     else if (ppm_type .eq. 2) then
        
-       if (ng_s .lt. 4 .or. ng_u .lt. 4) then
+       if (ng_s .lt. 4) then
           call bl_error("Need 4 ghost cells for ppm_type=2")
        end if
 
@@ -1119,7 +1119,7 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       if (ng_s .lt. 4 .or. ng_u .lt. 4) then
+       if (ng_s .lt. 4) then
           call bl_error("Need 4 ghost cells for ppm_type=2")
        end if
 
@@ -1952,7 +1952,7 @@ contains
 
     else if (ppm_type .eq. 2) then
 
-       if (ng_s .lt. 4 .or. ng_u .lt. 4) then
+       if (ng_s .lt. 4) then
           call bl_error("Need 4 ghost cells for ppm_type=2")
        end if
 
