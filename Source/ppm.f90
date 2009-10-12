@@ -63,7 +63,11 @@ contains
     allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1))
 
     ! edge-centered indexing for x-faces
-    allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
+    if (ppm_type .eq. 1) then
+       allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
+    else
+       allocate(sedge(lo(1)-2:hi(1)+3,lo(2)-1:hi(2)+1))
+    end if
 
     ! compute s at x-edges
     if (ppm_type .eq. 1) then
@@ -96,7 +100,7 @@ contains
 
        ! interpolate s to x-edges
        do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+2
+          do i=lo(1)-2,hi(1)+3
              sedge(i,j) = (7.d0/12.d0)*(s(i-1,j)+s(i,j)) - (1.d0/12.d0)*(s(i-2,j)+s(i+1,j))
              ! limit sedge
              if ((sedge(i,j)-s(i-1,j))*(s(i,j)-sedge(i,j)) .lt. ZERO) then
@@ -293,7 +297,11 @@ contains
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+2))
 
     ! edge-centered indexing for y-faces
-    allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
+    if (ppm_type .eq. 1) then
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
+    else
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+3))
+    end if
 
     ! compute s at y-edges
     if (ppm_type .eq. 1) then
@@ -321,7 +329,7 @@ contains
     else if (ppm_type .eq. 2) then
        
        ! interpolate s to y-edges
-       do j=lo(2)-1,hi(2)+2
+       do j=lo(2)-2,hi(2)+3
           do i=lo(1)-1,hi(1)+1
              sedge(i,j) = (7.d0/12.d0)*(s(i,j-1)+s(i,j)) - (1.d0/12.d0)*(s(i,j-2)+s(i,j+1))
              ! limit sedge
@@ -572,7 +580,11 @@ contains
     allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1))
 
     ! edge-centered indexing for x-faces
-    allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
+    if (ppm_type .eq. 1) then
+       allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
+    else
+       allocate(sedge(lo(1)-2:hi(1)+3,lo(2)-1:hi(2)+1))
+    end if
 
     ! compute s at x-edges
     if (ppm_type .eq. 1) then
@@ -605,7 +617,7 @@ contains
 
        ! interpolate s to x-edges
        do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+2
+          do i=lo(1)-2,hi(1)+3
              sedge(i,j) = (7.d0/12.d0)*(s(i-1,j)+s(i,j)) - (1.d0/12.d0)*(s(i-2,j)+s(i+1,j))
              ! limit sedge
              if ((sedge(i,j)-s(i-1,j))*(s(i,j)-sedge(i,j)) .lt. ZERO) then
@@ -803,7 +815,11 @@ contains
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+2))
 
     ! edge-centered indexing for y-faces
-    allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
+    if (ppm_type .eq. 1) then
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
+    else
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+3))
+    end if
 
     ! compute s at y-edges
     if (ppm_type .eq. 1) then
@@ -831,7 +847,7 @@ contains
     else if (ppm_type .eq. 2) then
        
        ! interpolate s to y-edges
-       do j=lo(2)-1,hi(2)+2
+       do j=lo(2)-2,hi(2)+3
           do i=lo(1)-1,hi(1)+1
              sedge(i,j) = (7.d0/12.d0)*(s(i,j-1)+s(i,j)) - (1.d0/12.d0)*(s(i,j-2)+s(i,j+1))
              ! limit sedge
@@ -1090,7 +1106,11 @@ contains
     allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
 
     ! edge-centered indexing for x-faces
-    allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    if (ppm_type .eq. 1) then
+       allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    else
+       allocate(sedge(lo(1)-2:hi(1)+3,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    end if       
 
     ! compute s at x-edges
     if (ppm_type .eq. 1) then
@@ -1128,7 +1148,7 @@ contains
        ! interpolate s to x-edges
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+2
+             do i=lo(1)-2,hi(1)+3
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i-1,j,k)+s(i,j,k)) &
                      - (1.d0/12.d0)*(s(i-2,j,k)+s(i+1,j,k))
                 ! limit sedge
@@ -1350,7 +1370,11 @@ contains
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+2,lo(3)-1:hi(3)+1))
 
     ! edge-centered indexing for y-faces
-    allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+1))
+    if (ppm_type .eq. 1) then
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+1))
+    else
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+3,lo(3)-1:hi(3)+1))
+    end if
 
     ! compute s at y-edges
     if (ppm_type .eq. 1) then
@@ -1383,7 +1407,7 @@ contains
 
        ! interpolate s to y-edges
        do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+2
+          do j=lo(2)-2,hi(2)+3
              do i=lo(1)-1,hi(1)+1
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i,j-1,k)+s(i,j,k)) &
                      - (1.d0/12.d0)*(s(i,j-2,k)+s(i,j+1,k))
@@ -1606,7 +1630,11 @@ contains
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-2:hi(3)+2))
 
     ! edge-centered indexing for z-faces
-    allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+2))
+    if (ppm_type .eq. 1) then
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+2))
+    else
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-2:hi(3)+3))
+    end if
 
     ! compute s at z-edges
     if (ppm_type .eq. 1) then
@@ -1638,7 +1666,7 @@ contains
     else if (ppm_type .eq. 2) then
 
        ! interpolate s to z-edges
-       do k=lo(3)-1,hi(3)+2
+       do k=lo(3)-2,hi(3)+3
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i,j,k-1)+s(i,j,k)) &
@@ -1923,7 +1951,11 @@ contains
     allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
 
     ! edge-centered indexing for x-faces
-    allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    if (ppm_type .eq. 1) then
+       allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    else
+       allocate(sedge(lo(1)-2:hi(1)+3,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    end if
 
     ! compute s at x-edges
     if (ppm_type .eq. 1) then
@@ -1961,7 +1993,7 @@ contains
        ! interpolate s to x-edges
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+2
+             do i=lo(1)-2,hi(1)+3
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i-1,j,k)+s(i,j,k)) &
                      - (1.d0/12.d0)*(s(i-2,j,k)+s(i+1,j,k))
                 ! limit sedge
@@ -2186,7 +2218,11 @@ contains
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+2,lo(3)-1:hi(3)+1))
 
     ! edge-centered indexing for y-faces
-    allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+1))
+    if (ppm_type .eq. 1) then
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+1))
+    else
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+3,lo(3)-1:hi(3)+1))
+    end if
 
     ! compute s at y-edges
     if (ppm_type .eq. 1) then
@@ -2219,7 +2255,7 @@ contains
 
        ! interpolate s to y-edges
        do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+2
+          do j=lo(2)-2,hi(2)+3
              do i=lo(1)-1,hi(1)+1
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i,j-1,k)+s(i,j,k)) &
                      - (1.d0/12.d0)*(s(i,j-2,k)+s(i,j+1,k))
@@ -2445,7 +2481,11 @@ contains
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-2:hi(3)+2))
 
     ! edge-centered indexing for z-faces
-    allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+2))
+    if (ppm_type .eq. 1) then
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+2))
+    else
+       allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-2:hi(3)+3))
+    end if
 
     ! compute s at z-edges
     if (ppm_type .eq. 1) then
@@ -2477,7 +2517,7 @@ contains
     else if (ppm_type .eq. 2) then
 
        ! interpolate s to z-edges
-       do k=lo(3)-1,hi(3)+2
+       do k=lo(3)-2,hi(3)+3
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i,j,k-1)+s(i,j,k)) &
