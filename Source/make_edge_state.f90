@@ -176,6 +176,7 @@ contains
      else if (ppm_type .eq. 1) then
 
         ! interpolate s to radial edges, store these temporary values into sedgel
+
         do n=1,nlevs_radial
            do i=1,numdisjointchunks(n)
 
@@ -204,13 +205,15 @@ contains
                  end if
               end do
 
-              ! 4th order interpolation of s to radial faces
               do r=lo,hi+1
                  if (r .eq. 0) then
+                    ! 2nd order interpolation to boundary face
                     sedgel(n,r) = s(n,r) - half*dxvl(n,r)
                  else if (r .eq. nr(n)) then
+                    ! 2nd order interpolation to boundary face
                     sedgel(n,r) = s(n,r-1) + half*dxvl(n,r)
                  else
+                    ! 4th order interpolation of s to radial faces
                     sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
                     ! make sure sedgel lies in between adjacent cell-centered values
                     sedgel(n,r) = max(sedgel(n,r),min(s(n,r),s(n,r-1)))
@@ -232,21 +235,33 @@ contains
               hi = r_end_coord(n,i)
 
               ! store centered differences in dxvl
-              ! leave slopes at domain boundaries set to zero
               do r=lo-1,hi+1
-                 if (r .gt. 0 .and. r .lt. nr(n)-1) then
+                 if (r .eq. 0) then
+                    if (spherical .eq. 1) then
+                       ! slope of quadratic interpolant with neumann bc at center of star
+                       dxvl(n,r) = half*(s(n,r+1)-s(n,r))
+                    else
+                       ! one-sided difference
+                       dxvl(n,r) = s(n,r+1)-s(n,r)
+                    end if
+                 else if (r .eq. nr(n)-1) then
+                    ! one-sided difference
+                    dxvl(n,r) = s(n,r)-s(n,r-1)
+                 else if (r .gt. 0 .and. r .lt. nr(n)-1) then
+                    ! centered difference
                     dxvl(n,r) = HALF * (s(n,r+1) - s(n,r-1))
                  end if
               end do
 
-              ! 4th order interpolation of s to radial faces
               do r=lo,hi+1
                  if (r .eq. 0) then
-                    sedgel(n,r) = s(n,r)
+                    ! 2nd order interpolation to boundary face
+                    sedgel(n,r) = s(n,r) - half*dxvl(n,r)
                  else if (r .eq. nr(n)) then
-                    sedgel(n,r) = s(n,r-1)
+                    ! 2nd order interpolation to boundary face
+                    sedgel(n,r) = s(n,r-1) + half*dxvl(n,r)
                  else
-                    ! this reduces to the standard 4th-order stencil away from boundaries
+                    ! 4th order interpolation of s to radial faces
                     sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
                     if (r .ge. 2 .and. r .le. nr(n)-2) then
                        ! limit sedge
@@ -320,6 +335,7 @@ contains
               hi = r_end_coord(n,i)
 
               do r=lo,hi
+
                  if (r .ge. 2 .and. r .le. nr(n)-3) then
 
                     alphap = sedgel(n,r+1)-s(n,r)
@@ -390,11 +406,17 @@ contains
                     sm(n,r) = s(n,r) + alpham
                     sp(n,r) = s(n,r) + alphap
 
-                 end if
-              end do
+                 else
 
-           end do
-        end do
+                    sp(n,r) = sedgel(n,r+1)
+                    sm(n,r) = sedgel(n,r  )
+
+                 end if
+
+              end do ! end loop over r
+
+           end do ! end loop over disjointchunks
+        end do ! end loop over nlevs_radial
 
      end if
 
