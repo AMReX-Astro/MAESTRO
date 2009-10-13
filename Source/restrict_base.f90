@@ -58,6 +58,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use geometry, only: r_start_coord, r_end_coord, nr, numdisjointchunks, nlevs_radial
+    use bl_error_module
 
     real(kind=dp_t), intent(inout) :: s0(:,0:)
     logical        , intent(in   ) :: is_cell_centered
@@ -72,10 +73,12 @@ contains
 
     if (is_cell_centered) then
 
-       ! compute limited slopes at the coarse level and set 2 fine ghost cells 
+       ! compute limited slopes at the coarse level and set 4 fine ghost cells 
        ! maintaining conservation
        do n=nlevs_radial,2,-1
           do i=1,numdisjointchunks(n)
+
+             ! lo side
              if (r_start_coord(n,i) .ne. 0) then
                 r_crse = r_start_coord(n,i)/2-1
                 del = HALF*(s0(n-1,r_crse+1)-s0(n-1,r_crse-1))
@@ -86,8 +89,19 @@ contains
                 slope=sign(ONE,del)*min(slim,abs(del))
                 s0(n,r_start_coord(n,i)-1) = s0(n-1,r_crse) + FOURTH*slope
                 s0(n,r_start_coord(n,i)-2) = s0(n-1,r_crse) - FOURTH*slope
+
+                r_crse = r_start_coord(n,i)/2-2
+                del = HALF*(s0(n-1,r_crse+1)-s0(n-1,r_crse-1))
+                dpls = TWO*(s0(n-1,r_crse+1)-s0(n-1,r_crse  ))
+                dmin = TWO*(s0(n-1,r_crse  )-s0(n-1,r_crse-1))
+                slim = min(abs(dpls),abs(dmin))
+                slim = merge(slim,ZERO,dpls*dmin.gt.ZERO)
+                slope=sign(ONE,del)*min(slim,abs(del))
+                s0(n,r_start_coord(n,i)-3) = s0(n-1,r_crse) + FOURTH*slope
+                s0(n,r_start_coord(n,i)-4) = s0(n-1,r_crse) - FOURTH*slope
              end if
              
+             ! hi side
              if (r_end_coord(n,i) .ne. nr(n)-1) then
                 r_crse = (r_end_coord(n,i)+1)/2
                 del = HALF*(s0(n-1,r_crse+1)-s0(n-1,r_crse-1))
@@ -98,7 +112,18 @@ contains
                 slope=sign(ONE,del)*min(slim,abs(del))
                 s0(n,r_end_coord(n,i)+1) = s0(n-1,r_crse) - FOURTH*slope
                 s0(n,r_end_coord(n,i)+2) = s0(n-1,r_crse) + FOURTH*slope
+
+                r_crse = (r_end_coord(n,i)+1)/2+1
+                del = HALF*(s0(n-1,r_crse+1)-s0(n-1,r_crse-1))
+                dpls = TWO*(s0(n-1,r_crse+1)-s0(n-1,r_crse  ))
+                dmin = TWO*(s0(n-1,r_crse  )-s0(n-1,r_crse-1))
+                slim = min(abs(dpls),abs(dmin))
+                slim = merge(slim,ZERO,dpls*dmin.gt.ZERO)
+                slope=sign(ONE,del)*min(slim,abs(del))
+                s0(n,r_end_coord(n,i)+3) = s0(n-1,r_crse) - FOURTH*slope
+                s0(n,r_end_coord(n,i)+4) = s0(n-1,r_crse) + FOURTH*slope
              end if
+
           end do
        end do
 
