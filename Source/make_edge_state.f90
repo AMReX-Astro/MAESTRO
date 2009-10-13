@@ -29,7 +29,7 @@ contains
    subroutine make_edge_state_1d(s,sedge,w0,force,dt)
 
      use geometry, only: r_start_coord, r_end_coord, nr_fine, nr, numdisjointchunks, &
-          nlevs_radial, dr
+          nlevs_radial, dr, spherical
      use probin_module, only: slope_order, ppm_type
      use bl_constants_module
      use variables, only: rel_eps
@@ -89,9 +89,17 @@ contains
               else if (slope_order .eq. 2) then
 
                  do r=lo,hi
-                    if (r .eq. 0 .or. r .eq. nr(n)-1) then
-                       ! set slopes next to domain boundaries to zero
-                       slope(n,r) = ZERO
+                    if (r .eq. 0) then
+                       if (spherical .eq. 1) then
+                          ! slope of quadratic interpolant with neumann bc at center of star
+                          slope(n,r) = half*(s(n,r+1)-s(n,r))
+                       else
+                          ! one-sided difference
+                          slope(n,r) = s(n,r+1)-s(n,r)
+                       end if
+                    else if (r .eq. nr(n)-1) then
+                       ! one-sided difference
+                       slope(n,r) = s(n,r)-s(n,r-1)
                     else
                        ! do standard limiting on interior cells
                        del = half*(s(n,r+1) - s(n,r-1))
@@ -107,9 +115,17 @@ contains
               else if (slope_order .eq. 4) then
 
                  do r=lo,hi
-                    if (r .eq. 0 .or. r .eq. nr(n)-1) then
-                       ! set fromm slopes next to domain boundaries to zero
-                       dxscr(n,r,fromm) = ZERO
+                    if (r .eq. 0) then
+                       if (spherical .eq. 1) then
+                          ! slope of quadratic interpolant with neumann bc at center of star
+                          dxscr(n,r,fromm) = half*(s(n,r+1)-s(n,r))
+                       else
+                          ! one-sided difference
+                          dxscr(n,r,fromm) = s(n,r+1)-s(n,r)
+                       end if
+                    else if (r .eq. nr(n)-1) then
+                       ! one-sided difference
+                       dxscr(n,r,fromm) = s(n,r)-s(n,r-1)
                     else
                        ! do standard limiting on interior cells to compute temporary slopes
                        dxscr(n,r,cen) = half*(s(n,r+1)-s(n,r-1))
@@ -124,9 +140,17 @@ contains
                  end do
 
                  do r=lo,hi
-                    if (r .eq. 0 .or. r .eq. nr(n)-1) then
-                       ! set slopes adjacent to domain boundaries to zero
-                       slope(n,r) = ZERO
+                    if (r .eq. 0) then
+                       if (spherical .eq. 1) then
+                          ! slope of quadratic interpolant with neumann bc at center of star
+                          slope(n,r) = half*(s(n,r+1)-s(n,r))
+                       else
+                          ! one-sided difference
+                          slope(n,r) = s(n,r+1)-s(n,r)
+                       end if
+                    else if (r .eq. nr(n)-1) then
+                       ! one-sided difference
+                       slope(n,r) = s(n,r)-s(n,r-1)
                     else if (r .eq. r_start_coord(n,i) .or. r .eq. r_end_coord(n,i)) then
                        ! drop order to second-order limited differences at C-F interface
                        del = half*(s(n,r+1) - s(n,r-1))
@@ -161,7 +185,18 @@ contains
               ! compute van Leer slopes away from domain boundaries
               ! leave van Leer slopes at domain boundaries set to zero
               do r=lo-1,hi+1
-                 if (r .gt. 0 .and. r .lt. nr(n)-1) then
+                 if (r .eq. 0) then
+                    if (spherical .eq. 1) then
+                       ! slope of quadratic interpolant with neumann bc at center of star
+                       dxvl(n,r) = half*(s(n,r+1)-s(n,r))
+                    else
+                       ! one-sided difference
+                       dxvl(n,r) = s(n,r+1)-s(n,r)
+                    end if
+                 else if (r .eq. nr(n)-1) then
+                    ! one-sided difference
+                    dxvl(n,r) = s(n,r)-s(n,r-1)
+                 else if (r .gt. 0 .and. r .lt. nr(n)-1) then
                     del  = HALF * (s(n,r+1) - s(n,r-1))
                     dmin = TWO  * (s(n,r  ) - s(n,r-1))
                     dpls = TWO  * (s(n,r+1) - s(n,r  ))
@@ -172,9 +207,9 @@ contains
               ! 4th order interpolation of s to radial faces
               do r=lo,hi+1
                  if (r .eq. 0) then
-                    sedgel(n,r) = s(n,r)
+                    sedgel(n,r) = s(n,r) - half*dxvl(n,r)
                  else if (r .eq. nr(n)) then
-                    sedgel(n,r) = s(n,r-1)
+                    sedgel(n,r) = s(n,r-1) + half*dxvl(n,r)
                  else
                     sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
                     ! make sure sedgel lies in between adjacent cell-centered values
