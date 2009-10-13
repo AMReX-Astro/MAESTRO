@@ -235,7 +235,7 @@ contains
               hi = r_end_coord(n,i)
 
               ! store centered differences in dxvl
-              do r=lo-1,hi+1
+              do r=lo-3,hi+3
                  if (r .eq. 0) then
                     if (spherical .eq. 1) then
                        ! slope of quadratic interpolant with neumann bc at center of star
@@ -253,7 +253,7 @@ contains
                  end if
               end do
 
-              do r=lo,hi+1
+              do r=lo-2,hi+3
                  if (r .eq. 0) then
                     ! 2nd order interpolation to boundary face
                     sedgel(n,r) = s(n,r) - half*dxvl(n,r)
@@ -277,8 +277,8 @@ contains
                  end if
               end do
 
-           end do
-        end do 
+           end do ! loop over disjointchunks
+        end do ! loop over levels
 
      else
         call bl_error("make_edge_state_1d: unknown ppm_type")
@@ -411,12 +411,12 @@ contains
                     sp(n,r) = sedgel(n,r+1)
                     sm(n,r) = sedgel(n,r  )
 
-                 end if
+                 end if ! test (r .ge. 2 .and. r .le. nr(n)-3)
 
-              end do ! end loop over r
+              end do ! loop over r
 
-           end do ! end loop over disjointchunks
-        end do ! end loop over nlevs_radial
+           end do ! loop over disjointchunks
+        end do ! loop over levels
 
      end if
 
