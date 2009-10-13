@@ -31,4 +31,6 @@
 
 -- only need to keep one set of species names around in a network
 
--- increase the accuracy of make_edge_state at the center of the star
+-- increase the accuracy of make_edge_state at the center of the star, and/or
+   determine if this is even necessary due to have cells at the center of
+   the star feed back into the full state
