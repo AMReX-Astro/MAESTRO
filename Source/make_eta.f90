@@ -1,4 +1,4 @@
-! Compute eta_rho = Avg { rho' Utilde.e_r }  (see paper III, Eq. 30)
+! Compute eta_rho = Avg { rho' U dot e_r }  (see paper III, Eq. 30)
 !
 ! We keep make three quantities here: 
 !    etarho     is edge-centered
@@ -9,7 +9,7 @@
 ! from etarho.
 !
 ! For spherical geometries, 
-!      We construct a multifab containing ! { rho' Utilde.e_r } and 
+!      We construct a multifab containing {rho' (U dot e_r)} and 
 !      use the average routine to put it in cell-centers 
 !      on the base state to get etarho_cc.  We compute etarho from these 
 !      cell-centered quantites by averaging to the center.  
@@ -293,7 +293,7 @@ contains
        call bl_error("ERROR: make_eta_spherical should not be called for plane-parallel")
     end if
 
-    ! construct a multifab containing  [ rho' (Utilde . e_r) ] 
+    ! construct a multifab containing  [ rho' (U dot e_r) ] 
     ! and another containing [ rho' ]
     ng_so = sold(1)%ng
     ng_sn = snew(1)%ng
@@ -362,17 +362,16 @@ contains
 
     end if
     
-    ! compute etarho_cc as the average of eta_cart = [ rho' (Utilde . e_r) ]
+    ! compute etarho_cc as the average of eta_cart = [ rho' (U dot e_r) ]
     call average(mla,eta_cart,etarho_cc,dx,1)
 
     do n=1,nlevs
        call destroy(eta_cart(n))
     enddo
 
-    ! put eta on base state edges -- here we are assuming that there
-    ! is no refinement
-       
-    ! the 0th value of etarho = 0, since Utilde . e_r must be 
+    ! put eta on base state edges
+    ! note that in spherical the base state has no refinement
+    ! the 0th value of etarho = 0, since U dot . e_r must be 
     ! zero at the center (since e_r is not defined there)
     etarho_ec(1,0) = ZERO
     do r=1,nr_fine-1
@@ -410,7 +409,7 @@ contains
     real(kind=dp_t), allocatable :: rho0_new_cart(:,:,:,:)
     real(kind=dp_t), allocatable :: rho0_nph_cart(:,:,:,:)
 
-    real(kind=dp_t) :: Utilde_dot_er
+    real(kind=dp_t) :: U_dot_er
     integer :: i,j,k,r
 
     allocate(rho0_new_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
@@ -428,16 +427,16 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
 
-             Utilde_dot_er = HALF*(    umac(i,j,k) +   umac(i+1,j,k) &
-                                   + w0macx(i,j,k) + w0macx(i+1,j,k)) * normal(i,j,k,1) + &
-                             HALF*(    vmac(i,j,k) +   vmac(i,j+1,k) &
-                                   + w0macy(i,j,k) + w0macy(i,j+1,k)) * normal(i,j,k,2) + &
-                             HALF*(    wmac(i,j,k) +   wmac(i,j,k+1) &
-                                   + w0macz(i,j,k) + w0macz(i,j,k+1)) * normal(i,j,k,3)
+             U_dot_er = HALF*(    umac(i,j,k) +   umac(i+1,j,k) &
+                              + w0macx(i,j,k) + w0macx(i+1,j,k)) * normal(i,j,k,1) + &
+                        HALF*(    vmac(i,j,k) +   vmac(i,j+1,k) &
+                              + w0macy(i,j,k) + w0macy(i,j+1,k)) * normal(i,j,k,2) + &
+                        HALF*(    wmac(i,j,k) +   wmac(i,j,k+1) &
+                              + w0macz(i,j,k) + w0macz(i,j,k+1)) * normal(i,j,k,3)
 
-             ! construct time-centered [ rho' (Utilde . e_r) ]
+             ! construct time-centered [ rho' (U dot e_r) ]
              eta_cart(i,j,k) = (HALF*(rho_old(i,j,k) + rho_new(i,j,k)) - &
-                                rho0_nph_cart(i,j,k,1)) * Utilde_dot_er
+                                rho0_nph_cart(i,j,k,1)) * U_dot_er
 
           enddo
        enddo
