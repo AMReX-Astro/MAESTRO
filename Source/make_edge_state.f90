@@ -73,6 +73,21 @@ contains
      ! constant used in Colella 2008
      C = 1.25d0
 
+     ! error checking to make sure that there is a 2 cell buffer at the top and bottom
+     ! of the domain for finer levels in planar geometry.  This can be removed if
+     ! blocking_factor is implemented at set > 1.
+     if (ppm_type .ge. 1) then
+        do n=2,nlevs_radial
+           do i=1,numdisjointchunks(n)
+              if (r_start_coord(n,i) .eq. 2) then
+                 call bl_error("make_edge_state assumes blocking_factor > 1 at lo boundary")
+              else if (r_end_coord(n,i) .eq. nr(n)-3) then
+                 call bl_error("make_edge_state assumes blocking_factor > 1 at hi boundary")
+              end if
+           end do
+        end do
+     end if
+
      if (ppm_type .eq. 0) then
         
         ! compute slopes
@@ -271,8 +286,6 @@ contains
            end do ! loop over disjointchunks
         end do ! loop over levels
 
-     else
-        call bl_error("make_edge_state_1d: unknown ppm_type")
      end if
 
      ! compute sp and sm
