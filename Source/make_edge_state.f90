@@ -114,7 +114,7 @@ contains
 
               else if (slope_order .eq. 4) then
 
-                 do r=lo,hi
+                 do r=lo-1,hi+1
                     if (r .eq. 0) then
                        if (spherical .eq. 1) then
                           ! slope of quadratic interpolant with neumann bc at center of star
@@ -126,8 +126,8 @@ contains
                     else if (r .eq. nr(n)-1) then
                        ! one-sided difference
                        dxscr(n,r,fromm) = s(n,r)-s(n,r-1)
-                    else
-                       ! do standard limiting on interior cells to compute temporary slopes
+                    else if (r .gt. 0 .and. r .lt. nr(n)-1) then
+                       ! do standard limiting to compute temporary slopes
                        dxscr(n,r,cen) = half*(s(n,r+1)-s(n,r-1))
                        dpls = two*(s(n,r+1)-s(n,r  ))
                        dmin = two*(s(n,r  )-s(n,r-1))
@@ -151,19 +151,10 @@ contains
                     else if (r .eq. nr(n)-1) then
                        ! one-sided difference
                        slope(n,r) = s(n,r)-s(n,r-1)
-                    else if (r .eq. r_start_coord(n,i) .or. r .eq. r_end_coord(n,i)) then
-                       ! drop order to second-order limited differences at C-F interface
-                       del = half*(s(n,r+1) - s(n,r-1))
-                       dpls = two*(s(n,r+1) - s(n,r  ))
-                       dmin = two*(s(n,r  ) - s(n,r-1))
-                       slim = min(abs(dpls), abs(dmin))
-                       slim = merge(slim, ZERO, dpls*dmin.gt.ZERO)
-                       sflag = sign(ONE,del)
-                       slope(n,r)= sflag*min(slim,abs(del))
                     else
                        ! fourth-order limited slopes on interior
-                       ds = FOURTHIRDS*dxscr(n,r,cen) - SIXTH*(dxscr(n,r+1,fromm) &
-                            + dxscr(n,r-1,fromm))
+                       ds = FOURTHIRDS*dxscr(n,r,cen) &
+                            - SIXTH*(dxscr(n,r+1,fromm) + dxscr(n,r-1,fromm))
                        slope(n,r) = dxscr(n,r,flag)*min(abs(ds),dxscr(n,r,lim))
                     end if
                  end do
