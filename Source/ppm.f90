@@ -870,6 +870,7 @@ contains
        if (bc(2,2) .eq. EXT_DIR  .or. bc(2,2) .eq. HOEXTRAP) then
           ! the value in the first cc ghost cell represents the edge value
           sp(lo(1)-1:hi(1)+1,hi(2)) = s(lo(1)-1:hi(1)+1,hi(2)+1)
+          sedge(lo(1)-1:hi(1)+1,hi(2)+1) = s(lo(1)-1:hi(1)+1,hi(2)+1)
 
           ! use a modified stencil to get sedge on the first interior edge
           sedge(lo(1)-1:hi(1)+1,hi(2)) = &
@@ -1857,6 +1858,7 @@ contains
        if (bc(2,2) .eq. EXT_DIR  .or. bc(2,2) .eq. HOEXTRAP) then
           ! the value in the first cc ghost cell represents the edge value
           sp(lo(1)-1:hi(1)+1,hi(2)) = s(lo(1)-1:hi(1)+1,hi(2)+1)
+          sedge(lo(1)-1:hi(1)+1,hi(2)+1) = s(lo(1)-1:hi(1)+1,hi(2)+1)
 
           ! use a modified stencil to get sedge on the first interior edge
           sedge(lo(1)-1:hi(1)+1,hi(2)) = &
