@@ -74,13 +74,15 @@ contains
        end do
     end do
 
-    call mkutrans(uold,utrans,w0,w0mac,dx,dt,the_bc_level)
+    if (dm > 1) &
+       call mkutrans(uold,utrans,w0,w0mac,dx,dt,the_bc_level)
 
     !*************************************************************
     !     Add w0 to trans velocities.
     !*************************************************************
     
-    call addw0(utrans,w0,w0mac,mult=ONE)
+    if (dm > 1) &
+       call addw0(utrans,w0,w0mac,mult=ONE)
 
     !*************************************************************
     !     Create the edge states to be used for the MAC velocity 
