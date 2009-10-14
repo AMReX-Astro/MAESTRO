@@ -2,7 +2,11 @@
  model_file = "spherical.hse.320"
  drdxfac = 5
 
- test_set = "gr0_3d.64"
+ max_levs = 1
+ n_cellx = 64
+ n_celly = 64
+ n_cellz = 64
+ max_grid_size = 32
 
  spherical_in = 1
  dm_in = 3
