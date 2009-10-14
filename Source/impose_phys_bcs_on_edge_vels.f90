@@ -74,7 +74,6 @@ contains
     
     ! Local variables
     integer :: is,ie,js,je
-    integer :: i,j
 
     is = lo(1)
     js = lo(2)
@@ -127,7 +126,6 @@ contains
     
     ! Local variables
     integer :: is,ie,js,je,ks,ke
-    integer :: i,j,k
 
     is = lo(1)
     js = lo(2)
