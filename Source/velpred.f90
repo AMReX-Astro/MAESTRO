@@ -87,14 +87,21 @@ contains
           if ( multifab_remote(u(n),i) ) cycle
           uop  => dataptr(u(n),i)
           ump  => dataptr(umac(n,1),i)
-          vmp  => dataptr(umac(n,2),i)
           utp  => dataptr(utrans(n,1),i)
-          vtp  => dataptr(utrans(n,2),i)
           fp   => dataptr(force(n),i)
           lo   =  lwb(get_box(u(n),i))
           hi   =  upb(get_box(u(n),i))
           select case (dm)
+          case (1)
+             call velpred_1d(n, uop(:,1,1,:), ng_u, &
+                             utp(:,1,1,1), ng_ut, &
+                             ump(:,1,1,1), ng_um, &
+                             fp(:,1,1,:), ng_f, w0(n,:), lo, hi, dx(n,:), dt, &
+                             the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                             the_bc_level(n)%adv_bc_level_array(i,:,:,:))
           case (2)
+             vtp  => dataptr(utrans(n,2),i)
+             vmp  => dataptr(  umac(n,2),i)
              call velpred_2d(n, uop(:,:,1,:), ng_u, &
                              utp(:,:,1,1), vtp(:,:,1,1), ng_ut, &
                              ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
@@ -103,7 +110,9 @@ contains
                              the_bc_level(n)%adv_bc_level_array(i,:,:,:))
 
           case (3)
+             vmp  => dataptr(  umac(n,2),i)
              wmp  => dataptr(  umac(n,3),i)
+             vtp  => dataptr(utrans(n,2),i)
              wtp  => dataptr(utrans(n,3),i)
              w0xp  => dataptr(w0mac(n,1),i)
              w0yp  => dataptr(w0mac(n,2),i)
@@ -146,6 +155,159 @@ contains
     call destroy(bpt)
 
   end subroutine velpred
+
+  subroutine velpred_1d(n,u,ng_u,ng_ut,umac,ng_um,force,ng_f, &
+                        w0,lo,hi,dx,dt,phys_bc,adv_bc)
+
+    use geometry, only: nr
+    use bc_module
+    use slope_module
+    use bl_constants_module
+    use variables, only: rel_eps
+    use probin_module, only: ppm_type
+    use ppm_module
+
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_um,ng_ut,ng_f
+    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :)
+    real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::     w0(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:),dt
+    integer        , intent(in   ) :: phys_bc(:,:)
+    integer        , intent(in   ) :: adv_bc(:,:,:)
+
+    ! Local variables
+    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,1)
+
+    real(kind=dp_t), allocatable :: Ipu(:)
+    real(kind=dp_t), allocatable :: Imu(:)
+
+    ! these correspond to u_L^x, etc.
+    real(kind=dp_t), allocatable :: ulx(:),urx(:)
+
+    ! these correspond to umac_L, etc.
+    real(kind=dp_t), allocatable :: umacl(:),umacr(:)
+
+    real(kind=dp_t) :: hx, hy, dt2, dt4, uavg
+
+    integer :: i,j,is,ie
+
+    logical :: test
+
+    allocate(Ipu(lo(1)-1:hi(1)+1))
+    allocate(Imu(lo(1)-1:hi(1)+1))
+    allocate(Ipv(lo(1)-1:hi(1)+1))
+    allocate(Imv(lo(1)-1:hi(1)+1))
+
+    allocate(  ulx(lo(1):hi(1)+1))
+    allocate(  urx(lo(1):hi(1)+1))
+
+    allocate(umacl(lo(1):hi(1)+1))
+    allocate(umacr(lo(1):hi(1)+1))
+
+    is = lo(1)
+    ie = hi(1)
+
+    dt2 = HALF*dt
+    dt4 = dt/4.0d0
+
+    hx = dx(1)
+
+    if (ppm_type .gt. 0) then
+       call ppm_1d(n,u(:,1,1),ng_u,u,ng_u,Ipu,Imu,w0,lo,hi,adv_bc(:,1,1),dx,dt)
+    else
+       call slopex_1d(u,slopex,lo,hi,ng_u,1,adv_bc)
+    end if
+       
+    !******************************************************************
+    ! Create u_{\i-\half\e_x}^x, etc.
+    !******************************************************************
+
+    if (ppm_type .gt. 0) then
+       do i=is,ie+1
+          ! extrapolate velocity to left face
+          ulx(i) = Ipu(i-1,1)
+          ! extrapolate velocity to right face
+          urx(i,1) = Imu(i)
+       end do
+    else
+       do i=is,ie+1
+          ! extrapolate velocity to left face
+          ulx(i) = u(i-1) + (HALF - (dt2/hx)*max(ZERO,u(i-1)))*slopex(i-1,1)
+          ! extrapolate velocity to right face
+          urx(i) = u(i) - (HALF + (dt2/hx)*min(ZERO,u(i)))*slopex(i,1)
+       end do
+    end if
+    
+    ! impose lo side bc's
+    if (phys_bc(1,1) .eq. INLET) then
+       ulx(is) = u(is-1)
+       urx(is) = u(is-1)
+    else if (phys_bc(1,1) .eq. SLIP_WALL) then
+       ulx(is) = ZERO
+       urx(is) = ZERO
+    else if (phys_bc(1,1) .eq. NO_SLIP_WALL) then
+       ulx(is) = ZERO
+       urx(is) = ZERO
+    else if (phys_bc(1,1) .eq. OUTLET) then
+       ulx(is) = min(urx(is),ZERO)
+       urx(is) = min(urx(is),ZERO)
+    end if
+
+    ! impose hi side bc's
+    if (phys_bc(1,2) .eq. INLET) then
+       ulx(ie+1) = u(ie+1)
+       urx(ie+1) = u(ie+1)
+    else if (phys_bc(1,2) .eq. SLIP_WALL) then
+       ulx(ie+1) = ZERO
+       urx(ie+1) = ZERO
+    else if (phys_bc(1,2) .eq. NO_SLIP_WALL) then
+       ulx(ie+1) = ZERO
+       urx(ie+1) = ZERO
+    else if (phys_bc(1,2) .eq. OUTLET) then
+       ulx(ie+1) = max(ulx(ie+1),ZERO)
+       urx(ie+1) = max(ulx(ie+1),ZERO)
+    end if
+
+    !******************************************************************
+    ! Create umac 
+    !******************************************************************
+
+    do i=is,ie+1
+       ! extrapolate to edges
+       umacl(i) = ulx(i) + dt2*force(i-1)
+       umacr(i,j) = urx(i,j,1) + dt2*force(i)
+
+       ! solve Riemann problem
+       uavg = HALF*(umacl(i)+umacr(i))
+       test = ((umacl(i) .le. ZERO .and. umacr(i) .ge. ZERO) .or. &
+            (abs(umacl(i)+umacr(i)) .lt. rel_eps))
+       umac(i) = merge(umacl(i),umacr(i),uavg .gt. ZERO)
+       umac(i) = merge(ZERO,umac(i),test)
+    enddo
+
+    ! impose lo side bc's
+    if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
+       umac(is) = ZERO
+    else if (phys_bc(1,1) .eq. INLET) then
+       umac(is) = u(is-1)
+    else if (phys_bc(1,1) .eq. OUTLET) then
+       umac(is) = min(umacr(is),ZERO)
+    endif
+    
+    ! impose hi side bc's
+    if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
+       umac(ie+1) = ZERO
+    else if (phys_bc(1,2) .eq. INLET) then
+       umac(ie+1) = u(ie+1)
+    else if (phys_bc(1,2) .eq. OUTLET) then
+       umac(ie+1) = max(umacl(ie+1),ZERO)
+    endif
+
+    deallocate(ulx,urx,umacl,umacr)
+    deallocate(Ipu,Imu)
+
+  end subroutine velpred_1d
 
   subroutine velpred_2d(n,u,ng_u,utrans,vtrans,ng_ut,umac,vmac,ng_um,force,ng_f, &
                         w0,lo,hi,dx,dt,phys_bc,adv_bc)
