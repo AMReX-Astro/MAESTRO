@@ -93,10 +93,9 @@ contains
           hi   =  upb(get_box(u(n),i))
           select case (dm)
           case (1)
-             call velpred_1d(n, uop(:,1,1,:), ng_u, &
-                             utp(:,1,1,1), ng_ut, &
+             call velpred_1d(n, uop(:,1,1,1), ng_u, &
                              ump(:,1,1,1), ng_um, &
-                             fp(:,1,1,:), ng_f, w0(n,:), lo, hi, dx(n,:), dt, &
+                             fp(:,1,1,1), ng_f, w0(n,:), lo, hi, dx(n,:), dt, &
                              the_bc_level(n)%phys_bc_level_array(i,:,:), &
                              the_bc_level(n)%adv_bc_level_array(i,:,:,:))
           case (2)
@@ -156,7 +155,7 @@ contains
 
   end subroutine velpred
 
-  subroutine velpred_1d(n,u,ng_u,ng_ut,umac,ng_um,force,ng_f, &
+  subroutine velpred_1d(n,u,ng_u,umac,ng_um,force,ng_f, &
                         w0,lo,hi,dx,dt,phys_bc,adv_bc)
 
     use geometry, only: nr
@@ -167,7 +166,7 @@ contains
     use probin_module, only: ppm_type
     use ppm_module
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_um,ng_ut,ng_f
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :)
@@ -188,16 +187,14 @@ contains
     ! these correspond to umac_L, etc.
     real(kind=dp_t), allocatable :: umacl(:),umacr(:)
 
-    real(kind=dp_t) :: hx, hy, dt2, dt4, uavg
+    real(kind=dp_t) :: hx, dt2, dt4, uavg
 
-    integer :: i,j,is,ie
+    integer :: i,is,ie
 
     logical :: test
 
     allocate(Ipu(lo(1)-1:hi(1)+1))
     allocate(Imu(lo(1)-1:hi(1)+1))
-    allocate(Ipv(lo(1)-1:hi(1)+1))
-    allocate(Imv(lo(1)-1:hi(1)+1))
 
     allocate(  ulx(lo(1):hi(1)+1))
     allocate(  urx(lo(1):hi(1)+1))
@@ -214,7 +211,7 @@ contains
     hx = dx(1)
 
     if (ppm_type .gt. 0) then
-       call ppm_1d(n,u(:,1,1),ng_u,u,ng_u,Ipu,Imu,w0,lo,hi,adv_bc(:,1,1),dx,dt)
+       call ppm_1d(n,u,ng_u,u,ng_u,Ipu,Imu,w0,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_1d(u,slopex,lo,hi,ng_u,1,adv_bc)
     end if
@@ -226,9 +223,9 @@ contains
     if (ppm_type .gt. 0) then
        do i=is,ie+1
           ! extrapolate velocity to left face
-          ulx(i) = Ipu(i-1,1)
+          ulx(i) = Ipu(i-1)
           ! extrapolate velocity to right face
-          urx(i,1) = Imu(i)
+          urx(i) = Imu(i)
        end do
     else
        do i=is,ie+1
@@ -276,7 +273,7 @@ contains
     do i=is,ie+1
        ! extrapolate to edges
        umacl(i) = ulx(i) + dt2*force(i-1)
-       umacr(i,j) = urx(i,j,1) + dt2*force(i)
+       umacr(i) = urx(i) + dt2*force(i)
 
        ! solve Riemann problem
        uavg = HALF*(umacl(i)+umacr(i))
