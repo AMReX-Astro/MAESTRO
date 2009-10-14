@@ -93,7 +93,7 @@ contains
           hi   =  upb(get_box(u(n),i))
           select case (dm)
           case (1)
-             call velpred_1d(n, uop(:,1,1,1), ng_u, &
+             call velpred_1d(n, uop(:,1,1,:), ng_u, &
                              ump(:,1,1,1), ng_um, &
                              fp(:,1,1,1), ng_f, w0(n,:), lo, hi, dx(n,:), dt, &
                              the_bc_level(n)%phys_bc_level_array(i,:,:), &
@@ -167,7 +167,7 @@ contains
     use ppm_module
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_um,ng_f
-    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :)
+    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :)
     real(kind=dp_t), intent(in   ) ::     w0(0:)
@@ -211,7 +211,7 @@ contains
     hx = dx(1)
 
     if (ppm_type .gt. 0) then
-       call ppm_1d(n,u,ng_u,u,ng_u,Ipu,Imu,w0,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_1d(n,u(:,1),ng_u,u(:,1),ng_u,Ipu,Imu,w0,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_1d(u,slopex,lo,hi,ng_u,1,adv_bc)
     end if
@@ -230,16 +230,16 @@ contains
     else
        do i=is,ie+1
           ! extrapolate velocity to left face
-          ulx(i) = u(i-1) + (HALF - (dt2/hx)*max(ZERO,u(i-1)))*slopex(i-1,1)
+          ulx(i) = u(i-1,1) + (HALF - (dt2/hx)*max(ZERO,u(i-1,1)))*slopex(i-1,1)
           ! extrapolate velocity to right face
-          urx(i) = u(i) - (HALF + (dt2/hx)*min(ZERO,u(i)))*slopex(i,1)
+          urx(i) = u(i,1) - (HALF + (dt2/hx)*min(ZERO,u(i,1)))*slopex(i,1)
        end do
     end if
     
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
-       ulx(is) = u(is-1)
-       urx(is) = u(is-1)
+       ulx(is) = u(is-1,1)
+       urx(is) = u(is-1,1)
     else if (phys_bc(1,1) .eq. SLIP_WALL) then
        ulx(is) = ZERO
        urx(is) = ZERO
@@ -253,8 +253,8 @@ contains
 
     ! impose hi side bc's
     if (phys_bc(1,2) .eq. INLET) then
-       ulx(ie+1) = u(ie+1)
-       urx(ie+1) = u(ie+1)
+       ulx(ie+1) = u(ie+1,1)
+       urx(ie+1) = u(ie+1,1)
     else if (phys_bc(1,2) .eq. SLIP_WALL) then
        ulx(ie+1) = ZERO
        urx(ie+1) = ZERO
@@ -287,7 +287,7 @@ contains
     if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
        umac(is) = ZERO
     else if (phys_bc(1,1) .eq. INLET) then
-       umac(is) = u(is-1)
+       umac(is) = u(is-1,1)
     else if (phys_bc(1,1) .eq. OUTLET) then
        umac(is) = min(umacr(is),ZERO)
     endif
@@ -296,7 +296,7 @@ contains
     if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
        umac(ie+1) = ZERO
     else if (phys_bc(1,2) .eq. INLET) then
-       umac(ie+1) = u(ie+1)
+       umac(ie+1) = u(ie+1,1)
     else if (phys_bc(1,2) .eq. OUTLET) then
        umac(ie+1) = max(umacl(ie+1),ZERO)
     endif
