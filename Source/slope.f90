@@ -8,6 +8,143 @@ module slope_module
 
 contains
 
+  subroutine slopex_1d(s,slx,lo,hi,ng,nvar,bc)
+
+    use bc_module
+    use bl_constants_module
+    use probin_module, only : slope_order
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng,nvar
+    real(kind=dp_t), intent(in   ) ::   s(lo(1)-ng:,:)
+    real(kind=dp_t), intent(  out) :: slx(lo(1)- 1:,:) 
+    integer        , intent(in)    :: bc(:,:,:)
+
+    !     Local variables
+    integer :: is,ie
+    integer :: i,comp
+
+    real(kind=dp_t) :: del,slim,sflag,dpls,dmin,ds
+    real(kind=dp_t) :: dxscr(lo(1)-2:hi(1)+2,4)
+
+    is = lo(1)
+    ie = hi(1)
+
+    !     HERE DOING 1ST ORDER
+    if (slope_order .eq. 0) then
+       slx = zero
+
+       !     HERE DOING 2ND ORDER
+    else if (slope_order .eq. 2) then
+
+       do comp=1,nvar 
+          do i = is-1,ie+1 
+             del = half*(s(i+1,comp) - s(i-1,comp))
+             dpls = two*(s(i+1,comp) - s(i  ,comp))
+             dmin = two*(s(i  ,comp) - s(i-1,comp))
+             slim = min(abs(dpls), abs(dmin))
+             slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag = sign(one,del)
+             slx(i,comp)= sflag*min(slim,abs(del))
+          enddo
+
+          if (bc(1,1,comp) .eq. EXT_DIR  .or. bc(1,1,comp) .eq. HOEXTRAP) then
+
+             slx(is-1,comp) = zero
+             del = (s(is+1,comp)+three*s(is,comp)- &
+                  four*s(is-1,comp) ) * third
+             dpls = two*(s(is+1,comp) - s(is  ,comp))
+             dmin = two*(s(is  ,comp) - s(is-1,comp))
+             slim = min(abs(dpls), abs(dmin))
+             slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag = sign(one,del)
+             slx(is,comp)= sflag*min(slim,abs(del))
+
+          endif
+
+          if (bc(1,2,comp) .eq. EXT_DIR  .or. bc(1,2,comp) .eq. HOEXTRAP) then
+
+             slx(ie+1,comp) = zero
+             del = -(s(ie-1,comp)+three*s(ie,comp)- &
+                  four*s(ie+1,comp) ) * third
+             dpls = two*(s(ie  ,comp) - s(ie-1,comp))
+             dmin = two*(s(ie+1,comp) - s(ie  ,comp))
+             slim = min(abs(dpls), abs(dmin))
+             slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag = sign(one,del)
+             slx(ie,comp)= sflag*min(slim,abs(del))
+
+          endif
+       enddo
+
+    else 
+
+       !     HERE DOING 4TH ORDER
+       do comp=1,nvar 
+
+          do i = is-2,ie+2 
+             dxscr(i,cen) = half*(s(i+1,comp)-s(i-1,comp))
+             dmin = two*(s(i  ,comp)-s(i-1,comp))
+             dpls = two*(s(i+1,comp)-s(i  ,comp))
+             dxscr(i,lim)= min(abs(dmin),abs(dpls))
+             dxscr(i,lim) = merge(dxscr(i,lim),zero,dpls*dmin.gt.ZERO)
+             dxscr(i,flag) = sign(one,dxscr(i,cen))
+             dxscr(i,fromm)= dxscr(i,flag)*min(dxscr(i,lim), &
+                  abs(dxscr(i,cen)))
+          enddo
+
+          do i = is-1,ie+1 
+             ds = two * two3rd * dxscr(i,cen) - &
+                  sixth * (dxscr(i+1,fromm) + dxscr(i-1,fromm)) 
+             slx(i,comp) = dxscr(i,flag)*min(abs(ds),dxscr(i,lim))
+          enddo
+
+          if (bc(1,1,comp) .eq. EXT_DIR  .or. bc(1,1,comp) .eq. HOEXTRAP) then
+
+             slx(is-1,comp) = zero
+
+             del = -sixteen/fifteen*s(is-1,comp) + half*s(is,comp) + &
+                  two3rd*s(is+1,comp) - tenth*s(is+2,comp)
+             dmin = two*(s(is  ,comp)-s(is-1,comp))
+             dpls = two*(s(is+1,comp)-s(is  ,comp))
+             slim = min(abs(dpls), abs(dmin))
+             slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag = sign(one,del)
+             slx(is,comp)= sflag*min(slim,abs(del))
+
+             !           Recalculate the slope at is+1 using the revised dxscr(is,fromm)
+             dxscr(is,fromm) = slx(is,comp)
+             ds = two * two3rd * dxscr(is+1,cen) - &
+                  sixth * (dxscr(is+2,fromm) + dxscr(is,fromm))
+             slx(is+1,comp) = dxscr(is+1,flag)*min(abs(ds),dxscr(is+1,lim))
+
+          endif
+
+          if (bc(1,2,comp) .eq. EXT_DIR  .or. bc(1,2,comp) .eq. HOEXTRAP) then
+
+             slx(ie+1,comp) = zero
+
+             del = -( -sixteen/fifteen*s(ie+1,comp) + half*s(ie,comp) +  &
+                  two3rd*s(ie-1,comp) - tenth*s(ie-2,comp) )
+             dmin = two*(s(ie  ,comp)-s(ie-1,comp))
+             dpls = two*(s(ie+1,comp)-s(ie  ,comp))
+             slim = min(abs(dpls), abs(dmin))
+             slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag = sign(one,del)
+             slx(ie,comp)= sflag*min(slim,abs(del))
+
+             !           Recalculate the slope at ie-1 using the revised dxscr(ie,fromm)
+             dxscr(ie,fromm) = slx(ie,comp)
+             ds = two * two3rd * dxscr(ie-1,cen) - &
+                  sixth * (dxscr(ie-2,fromm) + dxscr(ie,fromm))
+             slx(ie-1,comp) = dxscr(ie-1,flag)*min(abs(ds),dxscr(ie-1,lim))
+
+          endif
+       enddo
+
+    endif
+
+  end subroutine slopex_1d
+
   subroutine slopex_2d(s,slx,lo,hi,ng,nvar,bc)
 
     use bc_module
