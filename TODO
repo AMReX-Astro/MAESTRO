@@ -16,8 +16,6 @@
 
 -- are we handling the thermodynamics consistently when we hit small_temp?
 
--- fix ppm boundary conditions for HOEXTRAP and EXT_DIR
-
 -- in extern/helmeos/ we have a helmeos.f (used by MAESTRO) and
    helmeos.f90 (used by CASTRO).  We should remove helmeos.f
 
