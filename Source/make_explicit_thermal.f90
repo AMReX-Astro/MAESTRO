@@ -316,6 +316,10 @@ contains
           lo = lwb(get_box(s(n),i))
           hi = upb(get_box(s(n),i))
           select case (dm)
+          case (1)
+             call make_thermal_coeffs_1d(lo,hi,sp(:,1,1,:),ng_s,Tcoeffp(:,1,1,1),ng_T, &
+                                         hcoeffp(:,1,1,1),ng_h,Xkcoeffp(:,1,1,:),ng_X, &
+                                         pcoeffp(:,1,1,1),ng_p)
           case (2)
              call make_thermal_coeffs_2d(lo,hi,sp(:,:,1,:),ng_s,Tcoeffp(:,:,1,1),ng_T, &
                                          hcoeffp(:,:,1,1),ng_h,Xkcoeffp(:,:,1,:),ng_X, &
@@ -331,6 +335,64 @@ contains
     call destroy(bpt)
 
   end subroutine make_thermal_coeffs
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! create Tcoeff = -kth, 
+!        hcoeff = -kth/cp, 
+!       Xkcoeff = xik*kth/cp, 
+!        pcoeff = hp*kth/cp
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine make_thermal_coeffs_1d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h, &
+                                    Xkcoeff,ng_X,pcoeff,ng_p)
+
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use eos_module
+    use network, only: nspec
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_T,ng_h,ng_X,ng_p
+    real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,:)
+    real(kind=dp_t), intent(inout) ::  Tcoeff(lo(1)-ng_T:)
+    real(kind=dp_t), intent(inout) ::  hcoeff(lo(1)-ng_h:)
+    real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-ng_X:,:)
+    real(kind=dp_t), intent(inout) ::  pcoeff(lo(1)-ng_p:)
+    
+    ! local
+    integer :: i,comp    
+    
+    do i=lo(1)-1,hi(1)+1
+          
+       den_eos(1) = s(i,rho_comp)
+       temp_eos(1) = s(i,temp_comp)
+       xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       
+       ! dens, temp, and xmass are inputs
+       do_diag = .false.
+       
+       call conducteos(eos_input_rt, den_eos, temp_eos, &
+                       npts, nspec, &
+                       xn_eos, &
+                       p_eos, h_eos, e_eos, & 
+                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                       dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                       dpdX_eos, dhdX_eos, &
+                       gam1_eos, cs_eos, s_eos, &
+                       dsdt_eos, dsdr_eos, &
+                       do_diag, conduct_eos)
+       
+       Tcoeff(i) = -conduct_eos(1)
+       hcoeff(i) = -conduct_eos(1)/cp_eos(1)
+       pcoeff(i) = (conduct_eos(1)/cp_eos(1))* &
+            ((1.0d0/den_eos(1))* &
+            (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
+       
+       do comp=1,nspec
+          Xkcoeff(i,comp) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,comp)
+       enddo
+
+    enddo
+    
+  end subroutine make_thermal_coeffs_1d
+  
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, 

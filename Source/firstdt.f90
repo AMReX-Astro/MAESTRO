@@ -106,6 +106,10 @@ contains
           lo    =  lwb(get_box(u(n), i))
           hi    =  upb(get_box(u(n), i))
           select case (dm)
+          case (1)
+             call firstdt_1d(n, uop(:,1,1,1), ng_u, sop(:,1,1,:), ng_s, fp(:,1,1,1), ng_f, &
+                             divup(:,1,1,1), ng_dU, p0(n,:), gamma1bar(n,:), lo, hi, &
+                             dx(n,:), dt_grid, umax_grid, cflfac)
           case (2)
              call firstdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, fp(:,:,1,:), ng_f, &
                              divup(:,:,1,1), ng_dU, p0(n,:), gamma1bar(n,:), lo, hi, &
@@ -152,6 +156,119 @@ contains
      end do
     
   end subroutine firstdt
+
+  subroutine firstdt_1d(n,u,ng_u,s,ng_s,force,ng_f,divu,ng_dU,p0,gamma1bar,lo,hi,dx,dt, &
+                        umax,cfl)
+
+    use eos_module
+    use network, only: nspec
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use geometry,  only: nr
+    use bl_constants_module
+    use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
+    
+    integer, intent(in)             :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU
+    real (kind = dp_t), intent(in ) ::     u(lo(1)-ng_u :)
+    real (kind = dp_t), intent(in ) ::     s(lo(1)-ng_s :,:)  
+    real (kind = dp_t), intent(in ) :: force(lo(1)-ng_f :)
+    real (kind = dp_t), intent(in ) ::  divu(lo(1)-ng_dU:)
+    real (kind = dp_t), intent(in ) :: p0(0:), gamma1bar(0:)
+    real (kind = dp_t), intent(in ) :: dx(:)
+    real (kind = dp_t), intent(out) :: dt, umax
+    real (kind = dp_t), intent(in ) :: cfl
+    
+    ! local variables
+    real (kind = dp_t)  :: spdx,pforcex,ux,eps,dt_divu,dt_sound,rho_min
+    real (kind = dp_t)  :: gradp0,denom
+    integer             :: i
+    
+    rho_min = 1.d-20
+    
+    eps = 1.0d-8
+    
+    spdx    = ZERO
+    pforcex = ZERO
+    ux      = ZERO
+
+    dt = 1.d99
+    umax = ZERO
+   
+    do i = lo(1), hi(1)
+          
+       ! compute the sound speed from rho and temp
+       den_eos(1)  = s(i,rho_comp)
+       temp_eos(1) = s(i,temp_comp)
+       xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       
+       ! dens, temp, and xmass are inputs
+       call eos(eos_input_rt, den_eos, temp_eos, &
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, & 
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+       
+       spdx    = max(spdx,cs_eos(1))
+       pforcex = max(pforcex,abs(force(i)))
+       ux      = max(ux,abs(u(i)))
+
+    enddo
+    
+    umax = max(umax,ux)
+
+    ux = ux / dx(1)
+    
+    spdx = spdx / dx(1)
+
+    ! advective constraint
+    if (ux .ne. ZERO) then
+       dt = cfl / ux
+    else if (spdx .ne. ZERO) then
+       dt = cfl / spdx
+    end if
+
+    ! sound speed constraint
+    if (use_soundspeed_firstdt) then
+       if (spdx .eq. ZERO) then
+          dt_sound = 1.d99
+       else
+          dt_sound = cfl / spdx
+       end if
+       dt = min(dt,dt_sound)
+    end if
+    
+    ! force constraints
+    if (pforcex > eps) dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
+    
+    ! divU constraint
+    if (use_divu_firstdt) then
+       
+       dt_divu = 1.d99
+       
+       do i = lo(1), hi(1)
+          if (i .eq. 0) then
+             gradp0 = (p0(i+1) - p0(i))/dx(1)
+          else if (i .eq. nr(n)-1) then
+             gradp0 = (p0(i) - p0(i-1))/dx(1)
+          else
+             gradp0 = HALF*(p0(i+1) - p0(i-1))/dx(1)
+          endif
+          
+          denom = divU(i) - u(i)*gradp0/(gamma1bar(i)*p0(i))
+          if (denom > ZERO) then
+             dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,rho_comp))/denom)
+          endif
+       enddo
+    
+       dt = min(dt,dt_divu)
+
+    end if
+
+  end subroutine firstdt_1d
   
   subroutine firstdt_2d(n,u,ng_u,s,ng_s,force,ng_f,divu,ng_dU,p0,gamma1bar,lo,hi,dx,dt, &
                         umax,cfl)

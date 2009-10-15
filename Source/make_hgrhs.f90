@@ -95,6 +95,9 @@ contains
           lo =  lwb(get_box(Source(n), i))
           hi =  upb(get_box(Source(n), i))
           select case (dm)
+          case (1)
+             call make_rhscc_1d(lo,hi,rp(:,1,1,1),ng_rh,sp(:,1,1,1),ng_sr, &
+                                gp(:,1,1,1),ng_dg,Sbar(n,:),div_coeff(n,:))
           case (2)
              call make_rhscc_2d(lo,hi,rp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
                                 gp(:,:,1,1),ng_dg,Sbar(n,:),div_coeff(n,:))
@@ -149,6 +152,8 @@ contains
           lo =  lwb(get_box(Source(n), i))
           hi =  upb(get_box(Source(n), i))
           select case (dm)
+          case (1)
+             call make_hgrhs_1d(lo,hi,hp(:,1,1,1),ng_hg,rp(:,1,1,1),ng_rh)
           case (2)
              call make_hgrhs_2d(lo,hi,hp(:,:,1,1),ng_hg,rp(:,:,1,1),ng_rh)
           case (3)
@@ -168,6 +173,25 @@ contains
     call destroy(bpt)
     
   end subroutine make_hgrhs
+  
+  subroutine make_rhscc_1d(lo,hi,rhs_cc,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
+                           div_coeff)
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
+    real (kind=dp_t), intent(  out) ::            rhs_cc(lo(1)-ng_rh:)
+    real (kind=dp_t), intent(in   ) ::            Source(lo(1)-ng_sr:)
+    real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:)
+    real (kind=dp_t), intent(in   ) ::      Sbar(0:)
+    real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+    
+    ! Local variables
+    integer :: i
+    
+    do i = lo(1),hi(1)
+       rhs_cc(i) = div_coeff(i) * (Source(i) - Sbar(i) + delta_gamma1_term(i))
+    end do
+    
+  end subroutine make_rhscc_1d
   
   subroutine make_rhscc_2d(lo,hi,rhs_cc,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
                            div_coeff)
@@ -238,6 +262,23 @@ contains
     end do
     
   end subroutine make_rhscc_3d_sphr
+  
+  subroutine make_hgrhs_1d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
+
+    use bl_constants_module
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_hg, ng_rh
+    real (kind=dp_t), intent(  out) ::    rhs(lo(1)-ng_hg:)
+    real (kind=dp_t), intent(in   ) :: rhs_cc(lo(1)-ng_rh:)
+    
+    ! Local variables
+    integer :: i
+    
+    do i = lo(1), hi(1)+1
+       rhs(i) = HALF * ( rhs_cc(i) + rhs_cc(i-1) )
+    end do
+    
+  end subroutine make_hgrhs_1d
   
   subroutine make_hgrhs_2d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
 

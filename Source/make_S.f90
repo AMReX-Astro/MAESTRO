@@ -84,6 +84,12 @@ contains
           lo = lwb(get_box(state(n), i))
           hi = upb(get_box(state(n), i))
           select case (dm)
+          case (1)
+             call make_S_1d(n,lo, hi, srcp(:,1,1,1), ng_sr, dgtp(:,1,1,1), ng_dt, &
+                            dgp(:,1,1,1), ng_dg, sp(:,1,1,:), ng_s, up(:,1,1,1), ng_u, &
+                            omegap(:,1,1,:), ng_rw, hnp(:,1,1,1), ng_hn, &
+                            hep(:,1,1,1), ng_he, &
+                            tp(:,1,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
           case (2)
              call make_S_2d(n,lo, hi, srcp(:,:,1,1), ng_sr, dgtp(:,:,1,1), ng_dt, &
                             dgp(:,:,1,1), ng_dg, sp(:,:,1,:), ng_s, up(:,:,1,:), ng_u, &
@@ -158,6 +164,11 @@ contains
              dgtp   => dataptr(delta_gamma1_term(n), i)
              dgp    => dataptr(delta_gamma1(n), i)
              select case (dm)
+             case (1)
+                call correct_delta_gamma1_term_1d(lo,hi,dgtp(:,1,1,1),ng_dt, &
+                                                  dgp(:,1,1,1),ng_dg, &
+                                                  gamma1bar(n,:),psi(n,:), &
+                                                  delta_gamma1_termbar(n,:),p0(n,:))
              case (2)
                 call correct_delta_gamma1_term_2d(lo,hi,dgtp(:,:,1,1),ng_dt, &
                                                   dgp(:,:,1,1),ng_dg, &
@@ -209,6 +220,98 @@ contains
 
   end subroutine make_S
 
+  subroutine make_S_1d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
+                       s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
+                       rho_Hext,ng_he,thermal,ng_th, &
+                       p0,gamma1bar,dx)
+
+    use bl_constants_module
+    use eos_module
+    use network, only: nspec
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use probin_module, only: use_delta_gamma1_term
+    use geometry, only: anelastic_cutoff_coord, nr
+
+    integer         , intent(in   ) :: n,lo(:),hi(:)
+    integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
+    real (kind=dp_t), intent(  out) ::            Source(lo(1)-ng_sr:)
+    real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1)-ng_dt:)
+    real (kind=dp_t), intent(  out) ::      delta_gamma1(lo(1)-ng_dg:)
+    real (kind=dp_t), intent(in   ) ::                 s(lo(1)-ng_s :,:)
+    real (kind=dp_t), intent(in   ) ::                 u(lo(1)-ng_u :)
+    real (kind=dp_t), intent(in   ) ::      rho_omegadot(lo(1)-ng_rw:,:)
+    real (kind=dp_t), intent(in   ) ::          rho_Hnuc(lo(1)-ng_hn:)
+    real (kind=dp_t), intent(in   ) ::          rho_Hext(lo(1)-ng_he:)
+    real (kind=dp_t), intent(in   ) ::           thermal(lo(1)-ng_th:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    !     Local variables
+    integer         :: i, comp
+    real(kind=dp_t) :: sigma, xi_term, pres_term, gradp0
+
+    Source = zero
+
+    do_diag = .false.
+
+    do i = lo(1), hi(1)
+
+          den_eos(1) = s(i,rho_comp)
+          temp_eos(1) = s(i,temp_comp)
+          xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+          ! dens, temp, and xmass are inputs
+          call eos(eos_input_rt, den_eos, temp_eos, &
+                   npts, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, & 
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
+                   do_diag)
+
+          sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
+
+          xi_term = ZERO
+          pres_term = ZERO
+          do comp = 1, nspec
+             xi_term = xi_term - &
+                  dhdX_eos(1,comp)*rho_omegadot(i,comp)/den_eos(1) 
+
+             pres_term = pres_term + &
+                  dpdX_eos(1,comp)*rho_omegadot(i,comp)/den_eos(1)
+          enddo
+
+          Source(i) = (sigma/den_eos(1)) * &
+               ( rho_Hext(i) + rho_Hnuc(i) + thermal(i) ) &
+               + sigma*xi_term &
+               + pres_term/(den_eos(1)*dpdr_eos(1))
+
+          if (use_delta_gamma1_term .and. i < anelastic_cutoff_coord(n)) then
+             if (i .eq. 0) then
+                gradp0 = (p0(i+1) - p0(i))/dx(1)
+             else if (i .eq. nr(n)-1) then
+                gradp0 = (p0(i) - p0(i-1))/dx(1)
+             else
+                gradp0 = HALF*(p0(i+1) - p0(i-1))/dx(1)
+             endif
+
+             delta_gamma1(i) = gam1_eos(1) - gamma1bar(i)
+
+             delta_gamma1_term(i) = &
+                  (gam1_eos(1) - gamma1bar(i))*u(i)* &
+                  gradp0/(gamma1bar(i)*gamma1bar(i)*p0(i))
+          else
+             delta_gamma1_term(i) = ZERO
+             delta_gamma1(i) = ZERO
+          endif
+
+    enddo
+
+  end subroutine make_S_1d
 
   subroutine make_S_2d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
                        s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
@@ -480,6 +583,28 @@ contains
     enddo
 
   end subroutine make_S_3d_sphr
+
+  subroutine correct_delta_gamma1_term_1d(lo,hi,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
+                                          gamma1bar,psi,delta_gamma1_termbar,p0)
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_dt, ng_dg
+    real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1)-ng_dt:)
+    real (kind=dp_t), intent(in   ) ::      delta_gamma1(lo(1)-ng_dg:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) :: psi(0:)
+    real (kind=dp_t), intent(in   ) :: delta_gamma1_termbar(0:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)
+
+    integer :: i
+
+    do i = lo(1), hi(1)
+
+       delta_gamma1_term(i) = delta_gamma1_term(i) - delta_gamma1_termbar(i) &
+            + delta_gamma1(i)*psi(i)/(gamma1bar(i)**2*p0(i))
+
+    end do
+
+  end subroutine correct_delta_gamma1_term_1d
 
   subroutine correct_delta_gamma1_term_2d(lo,hi,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
                                           gamma1bar,psi,delta_gamma1_termbar,p0)
