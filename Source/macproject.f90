@@ -971,6 +971,9 @@ contains
       integer :: i,j,nx,ny
       integer :: imin,imax,jmin,jmax
 
+      nx = size(phi,dim=1) - 2
+      ny = size(phi,dim=2) - 2
+
       if (n.eq.1) then
          imin = 0
          imax = nx
@@ -982,9 +985,6 @@ contains
          jmin = 1
          jmax = ny-1
       end if
-
-      nx = size(phi,dim=1) - 2
-      ny = size(phi,dim=2) - 2
 
       if (press_bc(1,1) == BC_NEU) then
          do j = 0,ny-1
