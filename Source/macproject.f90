@@ -309,7 +309,7 @@ contains
 
       do i = lo(1),hi(1)
          rh(i) = (umac(i+1) - umac(i)) / dx(1) 
-!     end do
+      end do
 
     end subroutine divumac_1d
 
@@ -806,6 +806,7 @@ contains
 
       integer :: i
       integer :: ng_um,ng_p,ng_b
+      integer :: lo(dm),hi(dm)
 
       type(bc_level)           :: bc
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
@@ -822,6 +823,7 @@ contains
       real(kind=dp_t), pointer :: lzp(:,:,:,:) 
       real(kind=dp_t), pointer :: hzp(:,:,:,:) 
 
+
       ng_um = umac(1,1)%ng
       ng_p = phi(1)%ng
       ng_b = beta(1,1)%ng
@@ -835,27 +837,41 @@ contains
             php => dataptr( phi(n), i)
             bxp => dataptr(beta(n,1), i)
             byp => dataptr(beta(n,2), i)
+            lo = lwb(get_box(phi(n), i))
+            hi = upb(get_box(phi(n), i))
             select case (dm)
+            case (1)
+               call mkumac_1d(ump(:,1,1,1), ng_um, & 
+                              php(:,1,1,1), ng_p, &
+                              bxp(:,1,1,1), ng_b, &
+                              dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
+               if (n > 1) then
+                  lxp => dataptr(fine_flx(n)%bmf(1,0), i)
+                  hxp => dataptr(fine_flx(n)%bmf(1,1), i)
+                  call correct_mkumac_1d(ump(:,1,1,1),ng_um, &
+                                         lxp(:,1,1,1),hxp(:,1,1,1),lo,hi,dx(n,:))
+               end if
             case (2)
+               call mkumac_2d(ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
+                              php(:,:,1,1), ng_p, &
+                              bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
+                              dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
                   lyp => dataptr(fine_flx(n)%bmf(2,0), i)
                   hyp => dataptr(fine_flx(n)%bmf(2,1), i)
-                  call mkumac_2d(ump(:,:,1,1),vmp(:,:,1,1),ng_um, &
-                                 php(:,:,1,1),ng_p, &
-                                 bxp(:,:,1,1),byp(:,:,1,1),ng_b, &
-                                 lxp(:,:,1,1),hxp(:,:,1,1),lyp(:,:,1,1),hyp(:,:,1,1), &
-                                 dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
-               else 
-                  call mkumac_2d_base(ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
-                                      php(:,:,1,1), ng_p, &
-                                      bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
-                                      dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
+                  call correct_mkumac_2d(ump(:,:,1,1),vmp(:,:,1,1),ng_um, &
+                                         lxp(:,:,1,1),hxp(:,:,1,1),lyp(:,:,1,1),hyp(:,:,1,1), &
+                                         lo,hi,dx(n,:))
                end if
             case (3)
                wmp => dataptr(umac(n,3), i)
                bzp => dataptr(beta(n,3), i)
+               call mkumac_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
+                              php(:,:,:,1), ng_p, &
+                              bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
+                              dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
@@ -863,17 +879,9 @@ contains
                   hyp => dataptr(fine_flx(n)%bmf(2,1), i)
                   lzp => dataptr(fine_flx(n)%bmf(3,0), i)
                   hzp => dataptr(fine_flx(n)%bmf(3,1), i)
-                  call mkumac_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                 php(:,:,:,1), ng_p, &
-                                 bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
-                                 lxp(:,:,:,1),hxp(:,:,:,1),lyp(:,:,:,1),hyp(:,:,:,1), &
-                                 lzp(:,:,:,1),hzp(:,:,:,1),dx(n,:),&
-                                 bc%ell_bc_level_array(i,:,:,press_comp))
-               else
-                  call mkumac_3d_base(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
-                                      php(:,:,:,1), ng_p, &
-                                      bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
-                                      dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
+                  call correct_mkumac_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                         lxp(:,:,:,1),hxp(:,:,:,1),lyp(:,:,:,1),hyp(:,:,:,1), &
+                                         lzp(:,:,:,1),hzp(:,:,:,1),lo,hi,dx(n,:))
                end if
             end select
          end do
@@ -887,7 +895,57 @@ contains
 
     end subroutine mkumac
 
-    subroutine mkumac_2d_base(umac,vmac,ng_um,phi,ng_p,betax,betay,ng_b,dx,press_bc)
+    subroutine mkumac_1d(umac,ng_um,phi,ng_p,betax,ng_b,dx,press_bc)
+
+      integer        , intent(in   ) :: ng_um,ng_p,ng_b
+      real(kind=dp_t), intent(inout) :: umac(-ng_um:)
+      real(kind=dp_t), intent(inout) ::  phi(-ng_p:)
+      real(kind=dp_t), intent(in   ) :: betax(-ng_b:)
+      real(kind=dp_t), intent(in   ) :: dx(:)
+      integer        , intent(in   ) :: press_bc(:,:)
+
+      real(kind=dp_t) :: gphix
+      integer :: i,nx
+
+      nx = size(phi,dim=1) - 2
+
+      if (press_bc(1,1) == BC_NEU) then
+         phi(-1) = phi(0)
+      else if (press_bc(1,1) == BC_DIR) then
+         phi(-1) = -TWO*phi(0) + THIRD * phi(1)
+      end if
+
+      if (press_bc(1,2) == BC_NEU) then
+         phi(nx) = phi(nx-1)
+      else if (press_bc(1,2) == BC_DIR) then
+         phi(nx) = -TWO*phi(nx-1) + THIRD * phi(nx-2)
+      end if
+
+      do i = 0,nx
+         gphix = (phi(i) - phi(i-1)) / dx(1)
+         umac(i) = umac(i) - betax(i)*gphix
+      end do
+
+      ! Here we reset phi == 0 at BC_DIR to be used in later iteration if necessary
+      if (press_bc(1,1) == BC_DIR) phi(-1) = ZERO
+      if (press_bc(1,2) == BC_DIR) phi(nx) = ZERO
+
+    end subroutine mkumac_1d
+
+    subroutine correct_mkumac_1d(umac,ng_um,lo_x_flx,hi_x_flx,lo,hi,dx)
+
+      integer        , intent(in   ) :: lo(:),hi(:),ng_um
+      real(kind=dp_t), intent(inout) :: umac(lo(1)-ng_um:)
+      real(kind=dp_t), intent(in   ) :: lo_x_flx(:)
+      real(kind=dp_t), intent(in   ) :: hi_x_flx(:)
+      real(kind=dp_t), intent(in   ) :: dx(:)
+
+      umac(lo(1)  ) = umac(lo(1)  ) - lo_x_flx(1) * dx(1)
+      umac(hi(1)+1) = umac(hi(1)+1) + hi_x_flx(1) * dx(1)
+
+    end subroutine correct_mkumac_1d
+
+    subroutine mkumac_2d(umac,vmac,ng_um,phi,ng_p,betax,betay,ng_b,dx,press_bc)
 
       integer        , intent(in   ) :: ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
@@ -961,94 +1019,36 @@ contains
       if (press_bc(2,1) == BC_DIR) phi(:,-1) = ZERO
       if (press_bc(2,2) == BC_DIR) phi(:,ny) = ZERO
 
-    end subroutine mkumac_2d_base
-
-    subroutine mkumac_2d(umac,vmac,ng_um,phi,ng_p,betax,betay,ng_b, &
-                         lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx,dx,press_bc)
-
-      integer        , intent(in   ) :: ng_um,ng_p,ng_b
-      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:)
-      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:)
-      real(kind=dp_t), intent(in   ) :: lo_x_flx(:,0:), lo_y_flx(0:,:)
-      real(kind=dp_t), intent(in   ) :: hi_x_flx(:,0:), hi_y_flx(0:,:)
-      real(kind=dp_t), intent(in   ) :: dx(:)
-      integer        , intent(in   ) :: press_bc(:,:)
-
-      real(kind=dp_t) :: gphix,gphiy
-      integer :: i,j,nx,ny
-
-      nx = size(phi,dim=1) - 2
-      ny = size(phi,dim=2) - 2
-
-      if (press_bc(1,1) == BC_NEU) then
-         do j = 0,ny-1
-            phi(-1,j) = phi(0,j)
-         end do
-      else if (press_bc(1,1) == BC_DIR) then
-         do j = 0,ny-1
-            phi(-1,j) = -TWO*phi(0,j) + THIRD * phi(1,j)
-         end do
-      end if
-      if (press_bc(1,2) == BC_NEU) then
-         do j = 0,ny-1
-            phi(nx,j) = phi(nx-1,j)
-         end do
-      else if (press_bc(1,2) == BC_DIR) then
-         do j = 0,ny-1
-            phi(nx,j) = -TWO*phi(nx-1,j) + THIRD * phi(nx-2,j)
-         end do
-      end if
-      if (press_bc(2,1) == BC_NEU) then
-         do i = 0,nx-1
-            phi(i,-1) = phi(i,0)
-         end do
-      else if (press_bc(2,1) == BC_DIR) then
-         do i = 0,nx-1
-            phi(i,-1) = -TWO*phi(i,0) + THIRD * phi(i,1)
-         end do
-      end if
-      if (press_bc(2,2) == BC_NEU) then
-         do i = 0,nx-1
-            phi(i,ny) = phi(i,ny-1)
-         end do
-      else if (press_bc(2,2) == BC_DIR) then
-         do i = 0,nx-1
-            phi(i,ny) = -TWO*phi(i,ny-1) + THIRD * phi(i,ny-2)
-         end do
-      end if
-
-      do j = 0,ny-1
-         umac( 0,j) = umac( 0,j) - lo_x_flx(1,j) * dx(1)
-         umac(nx,j) = umac(nx,j) + hi_x_flx(1,j) * dx(1)
-         do i = 1,nx-1
-            gphix = (phi(i,j) - phi(i-1,j)) / dx(1)
-            umac(i,j) = umac(i,j) - betax(i,j)*gphix
-         end do
-      end do
-
-
-      do i = 0,nx-1
-         vmac(i, 0) = vmac(i, 0) - lo_y_flx(i,1) * dx(2)
-         vmac(i,ny) = vmac(i,ny) + hi_y_flx(i,1) * dx(2)
-         do j = 1,ny-1
-            gphiy = (phi(i,j) - phi(i,j-1)) / dx(2)
-            vmac(i,j) = vmac(i,j) - betay(i,j)*gphiy
-         end do
-      end do
-
-      ! Here we reset phi == 0 at BC_DIR to be used in later iteration if necessary
-      if (press_bc(1,1) == BC_DIR) phi(-1,:) = ZERO
-      if (press_bc(1,2) == BC_DIR) phi(nx,:) = ZERO
-      if (press_bc(2,1) == BC_DIR) phi(:,-1) = ZERO
-      if (press_bc(2,2) == BC_DIR) phi(:,ny) = ZERO
-
     end subroutine mkumac_2d
 
-    subroutine mkumac_3d_base(umac,vmac,wmac,ng_um,phi,ng_p, &
-                              betax,betay,betaz,ng_b,dx,press_bc)
+    subroutine correct_mkumac_2d(umac,vmac,ng_um, &
+                                 lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx, &
+                                 lo,hi,dx)
+
+      integer        , intent(in   ) :: lo(:),hi(:),ng_um
+      real(kind=dp_t), intent(inout) :: umac(lo(1)-ng_um:,lo(2)-ng_um:)
+      real(kind=dp_t), intent(inout) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+      real(kind=dp_t), intent(in   ) :: lo_x_flx(:,lo(2):), lo_y_flx(lo(1):,:)
+      real(kind=dp_t), intent(in   ) :: hi_x_flx(:,lo(2):), hi_y_flx(lo(1):,:)
+      real(kind=dp_t), intent(in   ) :: dx(:)
+
+      integer :: i,j
+
+      do j = lo(2),hi(2)
+         umac(lo(1)  ,j) = umac(lo(1)  ,j) - lo_x_flx(1,j) * dx(1)
+         umac(hi(1)+1,j) = umac(hi(1)+1,j) + hi_x_flx(1,j) * dx(1)
+      end do
+
+
+      do i = lo(1),hi(1)
+         vmac(i,lo(2)  ) = vmac(i,lo(2)  ) - lo_y_flx(i,1) * dx(2)
+         vmac(i,hi(2)+1) = vmac(i,hi(2)+1) + hi_y_flx(i,1) * dx(2)
+      end do
+
+    end subroutine correct_mkumac_2d
+
+    subroutine mkumac_3d(umac,vmac,wmac,ng_um,phi,ng_p, &
+                         betax,betay,betaz,ng_b,dx,press_bc)
 
       integer        , intent(in   ) :: ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:,-ng_um:)
@@ -1182,153 +1182,45 @@ contains
       if (press_bc(3,1) == BC_DIR) phi(:,:,-1) = ZERO
       if (press_bc(3,2) == BC_DIR) phi(:,:,nz) = ZERO
 
-    end subroutine mkumac_3d_base
-
-    subroutine mkumac_3d(umac,vmac,wmac,ng_um,phi,ng_p, &
-                         betax,betay,betaz,ng_b, &
-                         lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx,lo_z_flx,hi_z_flx,dx,press_bc)
-
-      integer        , intent(in   ) :: ng_um,ng_p,ng_b
-      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: wmac(-ng_um:,-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:,-ng_b:)
-      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:,-ng_b:)
-      real(kind=dp_t), intent(in   ) :: betaz(-ng_b:,-ng_b:,-ng_b:)
-      real(kind=dp_t), intent(in   ) :: lo_x_flx(:,0:,0:),lo_y_flx(0:,:,0:),lo_z_flx(0:,0:,:)
-      real(kind=dp_t), intent(in   ) :: hi_x_flx(:,0:,0:),hi_y_flx(0:,:,0:),hi_z_flx(0:,0:,:)
-      real(kind=dp_t), intent(in   ) :: dx(:)
-      integer        , intent(in   ) :: press_bc(:,:)
-
-      real(kind=dp_t) :: gphix,gphiy,gphiz
-      integer :: i,j,k,nx,ny,nz
-
-      nx = size(phi,dim=1) - 2
-      ny = size(phi,dim=2) - 2
-      nz = size(phi,dim=3) - 2
-
-      if (press_bc(1,1) == BC_NEU) then
-         do k = 0,nz-1
-            do j = 0,ny-1
-               phi(-1,j,k) = phi(0,j,k)
-            end do
-         end do
-      else if (press_bc(1,1) == BC_DIR) then
-         do k = 0,nz-1
-            do j = 0,ny-1
-               phi(-1,j,k) = -TWO*phi(0,j,k) + THIRD * phi(1,j,k)
-            end do
-         end do
-      end if
-      if (press_bc(1,2) == BC_NEU) then
-         do k = 0,nz-1
-            do j = 0,ny-1
-               phi(nx,j,k) = phi(nx-1,j,k)
-            end do
-         end do
-      else if (press_bc(1,2) == BC_DIR) then
-         do k = 0,nz-1
-            do j = 0,ny-1
-               phi(nx,j,k) = -TWO*phi(nx-1,j,k) + THIRD * phi(nx-2,j,k)
-            end do
-         end do
-      end if
-      if (press_bc(2,1) == BC_NEU) then
-         do k = 0,nz-1
-            do i = 0,nx-1
-               phi(i,-1,k) = phi(i,0,k)
-            end do
-         end do
-      else if (press_bc(2,1) == BC_DIR) then
-         do k = 0,nz-1
-            do i = 0,nx-1
-               phi(i,-1,k) = -TWO*phi(i,0,k) + THIRD * phi(i,1,k)
-            end do
-         end do
-      end if
-      if (press_bc(2,2) == BC_NEU) then
-         do k = 0,nz-1
-            do i = 0,nx-1
-               phi(i,ny,k) = phi(i,ny-1,k)
-            end do
-         end do
-      else if (press_bc(2,2) == BC_DIR) then
-         do k = 0,nz-1
-            do i = 0,nx-1
-               phi(i,ny,k) = -TWO*phi(i,ny-1,k) + THIRD * phi(i,ny-2,k)
-            end do
-         end do
-      end if
-      if (press_bc(3,1) == BC_NEU) then
-         do j = 0,ny-1
-            do i = 0,nx-1
-               phi(i,j,-1) = phi(i,j,0)
-            end do
-         end do
-      else if (press_bc(3,1) == BC_DIR) then
-         do j = 0,ny-1
-            do i = 0,nx-1
-               phi(i,j,-1) = -TWO*phi(i,j,0) + THIRD * phi(i,j,1)
-            end do
-         end do
-      end if
-      if (press_bc(3,2) == BC_NEU) then
-         do j = 0,ny-1
-            do i = 0,nx-1
-               phi(i,j,nz) = phi(i,j,nz-1)
-            end do
-         end do
-      else if (press_bc(3,2) == BC_DIR) then
-         do j = 0,ny-1
-            do i = 0,nx-1
-               phi(i,j,nz) = -TWO*phi(i,j,nz-1) + THIRD * phi(i,j,nz-2)
-            end do
-         end do
-      end if
-
-      do k = 0,nz-1
-         do j = 0,ny-1
-            umac( 0,j,k) = umac( 0,j,k) - lo_x_flx(1,j,k) * dx(1)
-            umac(nx,j,k) = umac(nx,j,k) + hi_x_flx(1,j,k) * dx(1)
-            do i = 1,nx-1
-               gphix = (phi(i,j,k) - phi(i-1,j,k)) / dx(1)
-               umac(i,j,k) = umac(i,j,k) - betax(i,j,k)*gphix
-            end do
-         end do
-      end do
-
-      do k = 0,nz-1
-         do i = 0,nx-1
-            vmac(i, 0,k) = vmac(i, 0,k) - lo_y_flx(i,1,k) * dx(2)
-            vmac(i,ny,k) = vmac(i,ny,k) + hi_y_flx(i,1,k) * dx(2)
-            do j = 1,ny-1
-               gphiy = (phi(i,j,k) - phi(i,j-1,k)) / dx(2)
-               vmac(i,j,k) = vmac(i,j,k) - betay(i,j,k)*gphiy
-            end do
-         end do
-      end do
-
-      do j = 0,ny-1
-         do i = 0,nx-1
-            wmac(i,j, 0) = wmac(i,j, 0) - lo_z_flx(i,j,1) * dx(3)
-            wmac(i,j,nz) = wmac(i,j,nz) + hi_z_flx(i,j,1) * dx(3)
-            do k = 1,nz-1
-               gphiz = (phi(i,j,k) - phi(i,j,k-1)) / dx(3)
-               wmac(i,j,k) = wmac(i,j,k) - betaz(i,j,k)*gphiz
-            end do
-         end do
-      end do
-
-      ! Here we reset phi == 0 at BC_DIR to be used in later iteration if necessary
-      if (press_bc(1,1) == BC_DIR) phi(-1,:,:) = ZERO
-      if (press_bc(1,2) == BC_DIR) phi(nx,:,:) = ZERO
-      if (press_bc(2,1) == BC_DIR) phi(:,-1,:) = ZERO
-      if (press_bc(2,2) == BC_DIR) phi(:,ny,:) = ZERO
-      if (press_bc(3,1) == BC_DIR) phi(:,:,-1) = ZERO
-      if (press_bc(3,2) == BC_DIR) phi(:,:,nz) = ZERO
-
     end subroutine mkumac_3d
+
+    subroutine correct_mkumac_3d(umac,vmac,wmac,ng_um, &
+                                 lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx,lo_z_flx,hi_z_flx, &
+                                 lo,hi,dx)
+
+      integer        , intent(in   ) :: lo(:),hi(:),ng_um
+      real(kind=dp_t), intent(inout) :: umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(kind=dp_t), intent(inout) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(kind=dp_t), intent(inout) :: wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(kind=dp_t), intent(in   ) :: lo_x_flx(:,lo(2):,lo(3):), hi_x_flx(:,lo(2):,lo(3):)
+      real(kind=dp_t), intent(in   ) :: lo_y_flx(lo(1):,:,lo(3):), hi_y_flx(lo(1):,:,lo(3):)
+      real(kind=dp_t), intent(in   ) :: lo_z_flx(lo(1):,lo(2):,:), hi_z_flx(lo(1):,lo(2):,:)
+      real(kind=dp_t), intent(in   ) :: dx(:)
+
+      integer :: i,j,k
+
+      do k = lo(3),hi(3)
+      do j = lo(2),hi(2)
+         umac(lo(1)  ,j,k) = umac(lo(1)  ,j,k) - lo_x_flx(1,j,k) * dx(1)
+         umac(hi(1)+1,j,k) = umac(hi(1)+1,j,k) + hi_x_flx(1,j,k) * dx(1)
+      end do
+      end do
+
+      do k = lo(3),hi(3)
+      do i = lo(1),hi(1)
+         vmac(i,lo(2)  ,k) = vmac(i,lo(2)  ,k) - lo_y_flx(i,1,k) * dx(2)
+         vmac(i,hi(2)+1,k) = vmac(i,hi(2)+1,k) + hi_y_flx(i,1,k) * dx(2)
+      end do
+      end do
+
+      do j = lo(2),hi(2)
+      do i = lo(1),hi(1)
+         wmac(i,j,lo(3)  ) = wmac(i,j,lo(3)  ) - lo_z_flx(i,j,1) * dx(3)
+         wmac(i,j,hi(3)+1) = wmac(i,j,hi(3)+1) + hi_z_flx(i,j,1) * dx(3)
+      end do
+      end do
+
+    end subroutine correct_mkumac_3d
 
   end subroutine macproject
 
