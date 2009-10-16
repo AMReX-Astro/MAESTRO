@@ -840,7 +840,7 @@ contains
             hi = upb(get_box(phi(n), i))
             select case (dm)
             case (1)
-               call mkumac_1d(ump(:,1,1,1), ng_um, & 
+               call mkumac_1d(n,ump(:,1,1,1), ng_um, & 
                               php(:,1,1,1), ng_p, &
                               bxp(:,1,1,1), ng_b, &
                               dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
@@ -853,7 +853,7 @@ contains
             case (2)
                vmp => dataptr(umac(n,2), i)
                byp => dataptr(beta(n,2), i)
-               call mkumac_2d(ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
+               call mkumac_2d(n,ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
                               php(:,:,1,1), ng_p, &
                               bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
                               dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
@@ -871,7 +871,7 @@ contains
                wmp => dataptr(umac(n,3), i)
                byp => dataptr(beta(n,2), i)
                bzp => dataptr(beta(n,3), i)
-               call mkumac_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
+               call mkumac_3d(n,ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
                               php(:,:,:,1), ng_p, &
                               bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
                               dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
@@ -898,9 +898,9 @@ contains
 
     end subroutine mkumac
 
-    subroutine mkumac_1d(umac,ng_um,phi,ng_p,betax,ng_b,dx,press_bc)
+    subroutine mkumac_1d(n,umac,ng_um,phi,ng_p,betax,ng_b,dx,press_bc)
 
-      integer        , intent(in   ) :: ng_um,ng_p,ng_b
+      integer        , intent(in   ) :: n,ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:)
       real(kind=dp_t), intent(inout) ::  phi(-ng_p:)
       real(kind=dp_t), intent(in   ) :: betax(-ng_b:)
@@ -908,9 +908,17 @@ contains
       integer        , intent(in   ) :: press_bc(:,:)
 
       real(kind=dp_t) :: gphix
-      integer :: i,nx
+      integer :: i,nx,imin,imax
 
       nx = size(phi,dim=1) - 2
+
+      if (n.eq.1) then
+         imin = 0
+         imax = nx
+      else
+         imin = 1
+         imax = nx-1
+      end if
 
       if (press_bc(1,1) == BC_NEU) then
          phi(-1) = phi(0)
@@ -924,7 +932,7 @@ contains
          phi(nx) = -TWO*phi(nx-1) + THIRD * phi(nx-2)
       end if
 
-      do i = 0,nx
+      do i = imin,imax
          gphix = (phi(i) - phi(i-1)) / dx(1)
          umac(i) = umac(i) - betax(i)*gphix
       end do
@@ -948,9 +956,9 @@ contains
 
     end subroutine correct_mkumac_1d
 
-    subroutine mkumac_2d(umac,vmac,ng_um,phi,ng_p,betax,betay,ng_b,dx,press_bc)
+    subroutine mkumac_2d(n,umac,vmac,ng_um,phi,ng_p,betax,betay,ng_b,dx,press_bc)
 
-      integer        , intent(in   ) :: ng_um,ng_p,ng_b
+      integer        , intent(in   ) :: n,ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:)
@@ -961,6 +969,19 @@ contains
 
       real(kind=dp_t) :: gphix,gphiy
       integer :: i,j,nx,ny
+      integer :: imin,imax,jmin,jmax
+
+      if (n.eq.1) then
+         imin = 0
+         imax = nx
+         jmin = 0
+         jmax = ny
+      else
+         imin = 1
+         imax = nx-1
+         jmin = 1
+         jmax = ny-1
+      end if
 
       nx = size(phi,dim=1) - 2
       ny = size(phi,dim=2) - 2
@@ -1003,14 +1024,14 @@ contains
       end if
 
       do j = 0,ny-1
-         do i = 0,nx
+         do i = imin,imax
             gphix = (phi(i,j) - phi(i-1,j)) / dx(1)
             umac(i,j) = umac(i,j) - betax(i,j)*gphix
          end do
       end do
 
       do i = 0,nx-1
-         do j = 0,ny
+         do j = jmin,jmax
             gphiy = (phi(i,j) - phi(i,j-1)) / dx(2)
             vmac(i,j) = vmac(i,j) - betay(i,j)*gphiy
          end do
@@ -1050,10 +1071,10 @@ contains
 
     end subroutine correct_mkumac_2d
 
-    subroutine mkumac_3d(umac,vmac,wmac,ng_um,phi,ng_p, &
+    subroutine mkumac_3d(n,umac,vmac,wmac,ng_um,phi,ng_p, &
                          betax,betay,betaz,ng_b,dx,press_bc)
 
-      integer        , intent(in   ) :: ng_um,ng_p,ng_b
+      integer        , intent(in   ) :: n,ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: wmac(-ng_um:,-ng_um:,-ng_um:)
@@ -1066,10 +1087,27 @@ contains
 
       real(kind=dp_t) :: gphix,gphiy,gphiz
       integer :: i,j,k,nx,ny,nz
+      integer :: imin,imax,jmin,jmax,kmin,kmax
 
       nx = size(phi,dim=1) - 2
       ny = size(phi,dim=2) - 2
       nz = size(phi,dim=3) - 2
+
+      if (n.eq.1) then
+         imin = 0
+         imax = nx
+         jmin = 0
+         jmax = ny
+         kmin = 0
+         kmax = nz
+      else
+         imin = 1
+         imax = nx-1
+         jmin = 1
+         jmax = ny-1
+         kmin = 1
+         kmax = nz-1
+      end if
 
       if (press_bc(1,1) == BC_NEU) then
          do k = 0,nz-1
@@ -1150,9 +1188,9 @@ contains
          end do
       end if
 
-      do k = 0,nz-1
+      do k = 0,nz-1 
          do j = 0,ny-1
-            do i = 0,nx
+            do i = imin,imax
                gphix = (phi(i,j,k) - phi(i-1,j,k)) / dx(1)
                umac(i,j,k) = umac(i,j,k) - betax(i,j,k)*gphix
             end do
@@ -1160,7 +1198,7 @@ contains
       end do
 
       do k = 0,nz-1
-         do j = 0,ny
+         do j = jmin,jmax
             do i = 0,nx-1
                gphiy = (phi(i,j,k) - phi(i,j-1,k)) / dx(2)
                vmac(i,j,k) = vmac(i,j,k) - betay(i,j,k)*gphiy
@@ -1168,7 +1206,7 @@ contains
          end do
       end do
 
-      do k = 0,nz
+      do k = kmin,kmax
          do j = 0,ny-1
             do i = 0,nx-1
                gphiz = (phi(i,j,k) - phi(i,j,k-1)) / dx(3)
