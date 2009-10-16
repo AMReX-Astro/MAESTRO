@@ -519,6 +519,15 @@ contains
           lo = lwb(get_box(sold(n),i))
           hi = upb(get_box(sold(n),i))
           select case (dm)
+          case (1)
+             call mk_rhoh_flux_1d(sfxp(:,1,1,:), ng_sf, &
+                                  sexp(:,1,1,:), ng_se, &
+                                   ump(:,1,1,1), ng_um, &
+                                  rho0_edge_old(n,:), &
+                                  rho0_edge_new(n,:), &
+                                  rhoh0_edge_old(n,:), &
+                                  rhoh0_edge_new(n,:), &
+                                  w0(n,:),lo,hi)
           case (2)
              call mk_rhoh_flux_2d(sfxp(:,:,1,:), sfyp(:,:,1,:), ng_sf, &
                                   sexp(:,:,1,:), seyp(:,:,1,:), ng_se, &
@@ -593,6 +602,62 @@ contains
     call destroy(bpt)
     
   end subroutine mk_rhoh_flux
+
+  subroutine mk_rhoh_flux_1d(sfluxx,ng_sf,sedgex,ng_se, &
+                             umac,ng_um,rho0_edge_old,rho0_edge_new, &
+                             rhoh0_edge_old,rhoh0_edge_new, &
+                             w0,lo,hi)
+    
+    use bl_constants_module
+    use network, only : nspec
+    use variables, only : rho_comp, rhoh_comp
+    use probin_module, only: enthalpy_pred_type
+    use pred_parameters
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_se,ng_um
+    real(kind=dp_t), intent(inout) ::     sfluxx(lo(1)-ng_sf:,:)
+    real(kind=dp_t), intent(inout) ::     sedgex(lo(1)-ng_se:,:)
+    real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_edge_old(0:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_edge_new(0:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+
+    ! local
+    integer         :: i
+    real(kind=dp_t) :: rho0_edge,rhoh0_edge
+    logical         :: test,test2
+
+    test = enthalpy_pred_type.eq.predict_h .or. &
+           enthalpy_pred_type.eq.predict_T_then_h .or. &
+           enthalpy_pred_type.eq.predict_Tprime_then_h
+
+    test2 = enthalpy_pred_type.eq.predict_hprime
+    
+    ! create x-fluxes
+    if (test) then
+
+       do i=lo(1),hi(1)+1
+          rho0_edge = HALF*(rho0_edge_old(i)+rho0_edge_new(i))
+          sfluxx(i,rhoh_comp) = &
+               (umac(i)+w0(i))*(rho0_edge+sedgex(i,rho_comp))*sedgex(i,rhoh_comp)
+       end do
+
+    else if (test2) then
+
+       call bl_error("mk_rhoh_flux_1d : predict_hprime not coded yet")
+
+    else
+
+       do i=lo(1),hi(1)+1
+          rhoh0_edge = HALF*(rhoh0_edge_old(i)+rhoh0_edge_new(i))
+          sfluxx(i,rhoh_comp) = (umac(i)+w0(i))*(sedgex(i,rhoh_comp)+rhoh0_edge)
+       end do
+
+    end if
+
+  end subroutine mk_rhoh_flux_1d
   
   subroutine mk_rhoh_flux_2d(sfluxx,sfluxy,ng_sf,sedgex,sedgey,ng_se, &
                              umac,vmac,ng_um,rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
