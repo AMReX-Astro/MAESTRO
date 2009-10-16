@@ -71,15 +71,20 @@ contains
           fp => dataptr(force(n),i)
           sp => dataptr(s(n),i)
           ump => dataptr(umac(n,1),i)
-          vmp => dataptr(umac(n,2),i)
           lo = lwb(get_box(s(n),i))
           hi = upb(get_box(s(n),i))
           select case (dm)
+          case (1)
+             call modify_scal_force_1d(fp(:,1,1,comp),ng_f,sp(:,1,1,comp),ng_s,lo,hi, &
+                                       ump(:,1,1,1),ng_um,base(n,:), &
+                                       base_edge(n,:),w0(n,:),dx(n,:))
           case (2)
+             vmp => dataptr(umac(n,2),i)
              call modify_scal_force_2d(fp(:,:,1,comp),ng_f,sp(:,:,1,comp),ng_s,lo,hi, &
                                        ump(:,:,1,1),vmp(:,:,1,1),ng_um,base(n,:), &
                                        base_edge(n,:),w0(n,:),dx(n,:))
           case(3)
+             vmp => dataptr(umac(n,2),i)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 1) then
                 bcp => dataptr(base_cart(n), i)
@@ -132,6 +137,36 @@ contains
     call destroy(bpt)
     
   end subroutine modify_scal_force
+  
+  subroutine modify_scal_force_1d(force,ng_f,s,ng_s,lo,hi,umac,ng_um, &
+                                  base,base_edge,w0,dx)
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um
+    real(kind=dp_t), intent(  out) :: force(lo(1)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::  umac(lo(1)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::  base(0:), base_edge(0:)
+    real(kind=dp_t), intent(in   ) ::    w0(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+    
+    integer :: i
+    real(kind=dp_t) :: divu,divbaseu
+    
+    do i = lo(1),hi(1)
+
+       ! umac does not contain w0
+       divu =  (umac(i+1) - umac(i)) / dx(1)
+
+       ! add w0 contribution
+       divu = divu + (w0(i+1)-w0(i))/dx(1)
+
+       divbaseu = (umac(i+1) * base_edge(i+1) - &
+                   umac(i  ) * base_edge(i  ) )/ dx(1)
+       
+       force(i) = force(i) - (s(i)-base(i))*divu - divbaseu 
+    end do
+          
+  end subroutine modify_scal_force_1d
   
   subroutine modify_scal_force_2d(force,ng_f,s,ng_s,lo,hi,umac,vmac,ng_um, &
                                   base,base_edge,w0,dx)
