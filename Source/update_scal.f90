@@ -66,18 +66,26 @@ contains
           sop => dataptr(sold(n),i)
           snp => dataptr(snew(n),i)
           sfpx => dataptr(sflux(n,1),i)
-          sfpy => dataptr(sflux(n,2),i)
           fp => dataptr(scal_force(n),i)
           lo =  lwb(get_box(sold(n),i))
           hi =  upb(get_box(sold(n),i))
           select case (dm)
+          case (1)
+             call update_scal_1d(nstart, nstop, &
+                                  sop(:,1,1,:), ng_so, &
+                                  snp(:,1,1,:), ng_sn, &
+                                 sfpx(:,1,1,:), ng_sf, &
+                                   fp(:,1,1,:), ng_f, &
+                                 p0(n,:), lo, hi, dx(n,:), dt)
           case (2)
+             sfpy => dataptr(sflux(n,2),i)
              call update_scal_2d(nstart, nstop, &
                                  sop(:,:,1,:), ng_so, snp(:,:,1,:), ng_sn, &
                                  sfpx(:,:,1,:), sfpy(:,:,1,:), ng_sf, &
                                  fp(:,:,1,:), ng_f, &
                                  p0(n,:), lo, hi, dx(n,:), dt)
           case (3)
+             sfpy => dataptr(sflux(n,2),i)
              sfpz => dataptr(sflux(n,3),i)
              if (spherical .eq. 0) then
                 call update_scal_3d_cart(nstart, nstop, &
@@ -151,6 +159,118 @@ contains
     call destroy(bpt)
 
   end subroutine update_scal
+
+  subroutine update_scal_1d(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,ng_sf, &
+                            force,ng_f,p0,lo,hi,dx,dt)
+
+    use network,       only: nspec
+    use eos_module
+    use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
+    use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac, temp_comp
+    use pred_parameters
+    use bl_constants_module
+
+    integer           , intent(in   ) :: nstart, nstop, lo(:), hi(:)
+    integer           , intent(in   ) :: ng_so, ng_sn, ng_sf, ng_f
+    real (kind = dp_t), intent(in   ) ::   sold(lo(1)-ng_so:,:)
+    real (kind = dp_t), intent(  out) ::   snew(lo(1)-ng_sn:,:)
+    real (kind = dp_t), intent(in   ) :: sfluxx(lo(1)-ng_sf:,:)
+    real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,:)
+    real (kind = dp_t), intent(in   ) ::        p0(0:)
+    real (kind = dp_t), intent(in   ) :: dt,dx(:)
+
+    integer            :: i, comp, comp2
+    real (kind = dp_t) :: divterm
+    real (kind = dp_t) :: delta,frac,sumX
+    real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
+
+    do comp = nstart, nstop
+
+       do i=lo(1),hi(1)
+             
+          divterm = (sfluxx(i+1,comp) - sfluxx(i,comp))/dx(1)
+
+          snew(i,comp) = sold(i,comp) + dt*(-divterm + force(i,comp))
+          
+       end do
+
+    enddo
+
+    if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
+       
+       do i = lo(1), hi(1)
+             
+          if (snew(i,rho_comp) .le. base_cutoff_density) then
+             den_eos(1) = snew(i,rho_comp)
+             temp_eos(1) = sold(i,temp_comp)
+             p_eos(1) = p0(i)
+             xn_eos(1,:) = snew(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             
+             ! (rho,P) --> T,h
+             call eos(eos_input_rp, den_eos, temp_eos, &
+                      npts, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+             
+             snew(i,rhoh_comp) = snew(i,rho_comp) * h_eos(1)
+             
+          end if
+          
+       enddo
+       
+    end if
+    
+    ! Define the update to rho as the sum of the updates to (rho X)_i
+    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+       
+       smin(:) =  HUGE(smin)
+       smax(:) = -HUGE(smax)
+       
+       snew(:,rho_comp) = sold(:,rho_comp)
+       
+       do comp = nstart, nstop
+          do i = lo(1), hi(1)
+             snew(i,rho_comp) = snew(i,rho_comp) + (snew(i,comp)-sold(i,comp))
+             smin(comp) = min(smin(comp),snew(i,comp))
+             smax(comp) = max(smax(comp),snew(i,comp))
+          enddo
+       enddo
+       
+    end if
+    
+    ! Do not allow the species to leave here negative.
+    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+       do comp = nstart, nstop
+          if (smin(comp) .lt. ZERO) then 
+             do i = lo(1), hi(1)
+                if (snew(i,comp) .lt. ZERO) then
+                   delta = -snew(i,comp)
+                   sumX = ZERO 
+                   do comp2 = nstart, nstop
+                      if (comp2 .ne. comp .and. snew(i,comp2) .ge. ZERO) then
+                         sumX = sumX + snew(i,comp2)
+                      end if
+                   enddo
+                   do comp2 = nstart, nstop
+                      if (comp2 .ne. comp .and. snew(i,comp2) .ge. ZERO) then
+                         frac = snew(i,comp2) / sumX
+                         snew(i,comp2) = snew(i,comp2) - frac * delta
+                      end if
+                   enddo
+                   snew(i,comp) = ZERO
+                end if
+             enddo
+          end if
+       enddo
+    end if
+
+  end subroutine update_scal_1d
 
   subroutine update_scal_2d(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,ng_sf, &
                             force,ng_f,p0,lo,hi,dx,dt)
