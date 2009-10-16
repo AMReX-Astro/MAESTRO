@@ -241,15 +241,18 @@ contains
          do i = 1, rh(n)%nboxes
             if ( multifab_remote(rh(n), i) ) cycle
             ump => dataptr(umac(n,1), i)
-            vmp => dataptr(umac(n,2), i)
-            rhp => dataptr(rh(n)  , i)
-            lo =  lwb(get_box(rh(n), i))
-            hi =  upb(get_box(rh(n), i))
+            rhp => dataptr(rh(n)    , i)
+            lo =   lwb(get_box(rh(n), i))
+            hi =   upb(get_box(rh(n), i))
             select case (dm)
+            case (1)
+               call divumac_1d(ump(:,1,1,1),ng_um,rhp(:,1,1,1),ng_rh,dx(n,:),lo,hi)
             case (2)
+               vmp => dataptr(umac(n,2), i)
                call divumac_2d(ump(:,:,1,1),vmp(:,:,1,1),ng_um,rhp(:,:,1,1),ng_rh, &
                                dx(n,:),lo,hi)
             case (3)
+               vmp => dataptr(umac(n,2), i)
                wmp => dataptr(umac(n,3), i)
                call divumac_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
                                rhp(:,:,:,1),ng_rh,dx(n,:),lo,hi)
@@ -294,6 +297,21 @@ contains
 1002  format('...  after mac_projection: max of [div (coeff * UMAC) - RHS)]',e15.8)
 
     end subroutine divumac
+
+    subroutine divumac_1d(umac,ng_um,rh,ng_rh,dx,lo,hi)
+
+      integer        , intent(in   ) :: lo(:),hi(:),ng_um,ng_rh
+      real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_um:)
+      real(kind=dp_t), intent(inout) ::   rh(lo(1)-ng_rh:)
+      real(kind=dp_t), intent(in   ) ::   dx(:)
+
+      integer :: i
+
+      do i = lo(1),hi(1)
+         rh(i) = (umac(i+1) - umac(i)) / dx(1) 
+!     end do
+
+    end subroutine divumac_1d
 
     subroutine divumac_2d(umac,vmac,ng_um,rh,ng_rh,dx,lo,hi)
 
@@ -358,13 +376,17 @@ contains
       do i = 1, edge(1)%nboxes
          if ( multifab_remote(edge(1), i) ) cycle
          ump => dataptr(edge(1), i)
-         vmp => dataptr(edge(2), i)
          lo =  lwb(get_box(edge(1), i))
          select case (dm)
+         case (1)
+            call mult_by_1d_coeff_1d(ump(:,1,1,1), ng_um, &
+                                     div_coeff(lo(dm):), div_coeff_half(lo(dm):), do_mult)
          case (2)
+            vmp => dataptr(edge(2), i)
             call mult_by_1d_coeff_2d(ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), do_mult)
          case (3)
+            vmp => dataptr(edge(2), i)
             wmp => dataptr(edge(3), i)
             call mult_by_1d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), do_mult)
@@ -372,6 +394,30 @@ contains
       end do
 
     end subroutine mult_edge_by_1d_coeff
+
+    subroutine mult_by_1d_coeff_1d(uedge,ng_um,div_coeff,div_coeff_half,do_mult)
+
+      integer                        :: ng_um
+      real(kind=dp_t), intent(inout) :: uedge(-ng_um:)
+      real(dp_t)     , intent(in   ) :: div_coeff(0:)
+      real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
+      logical        , intent(in   ) :: do_mult
+
+      integer :: i,nx
+
+      nx = size(uedge,dim=1)-2
+
+      if (do_mult) then
+         do i = 0,nx
+            uedge(i) = uedge(i) * div_coeff_half(i)
+         end do
+      else
+         do i = 0,nx
+            uedge(i) = uedge(i) / div_coeff_half(i)
+         end do
+      end if
+
+    end subroutine mult_by_1d_coeff_1d
 
     subroutine mult_by_1d_coeff_2d(uedge,vedge,ng_um,div_coeff,div_coeff_half,do_mult)
 
@@ -642,14 +688,18 @@ contains
             if ( multifab_remote(rho(n), i) ) cycle
             rp => dataptr(rho(n) , i)
             bxp => dataptr(beta(n,1), i)
-            byp => dataptr(beta(n,2), i)
             lo = lwb(get_box(rho(n), i))
             hi = upb(get_box(rho(n), i))
             select case (dm)
+            case (1)
+               call mk_mac_coeffs_1d(bxp(:,1,1,1),ng_b, rp(:,1,1,1), &
+                                     ng_r,lo,hi)
             case (2)
+               byp => dataptr(beta(n,2), i)
                call mk_mac_coeffs_2d(bxp(:,:,1,1),byp(:,:,1,1),ng_b, rp(:,:,1,1), &
                                      ng_r,lo,hi)
             case (3)
+               byp => dataptr(beta(n,2), i)
                bzp => dataptr(beta(n,3), i)
                call mk_mac_coeffs_3d(bxp(:,:,:,1),byp(:,:,:,1),bzp(:,:,:,1),&
                                      ng_b,rp(:,:,:,1),ng_r,lo,hi)
@@ -666,9 +716,23 @@ contains
 
     end subroutine mk_mac_coeffs
 
+    subroutine mk_mac_coeffs_1d(betax,ng_b,rho,ng_r,lo,hi)
+
+      integer :: ng_b,ng_r,lo(:),hi(:)
+      real(kind=dp_t), intent(inout) :: betax(lo(1)-ng_b:)
+      real(kind=dp_t), intent(inout) ::   rho(lo(1)-ng_r:)
+
+      integer :: i,j
+
+      do i = lo(1),hi(1)+1
+         betax(i) = TWO / (rho(i) + rho(i-1))
+      end do
+
+    end subroutine mk_mac_coeffs_1d
+
     subroutine mk_mac_coeffs_2d(betax,betay,ng_b,rho,ng_r,lo,hi)
 
-      integer :: ng_b,ng_r,lo(2),hi(2)
+      integer :: ng_b,ng_r,lo(:),hi(:)
       real(kind=dp_t), intent(inout) :: betax(lo(1)-ng_b:,lo(2)-ng_b:)
       real(kind=dp_t), intent(inout) :: betay(lo(1)-ng_b:,lo(2)-ng_b:)
       real(kind=dp_t), intent(inout) ::   rho(lo(1)-ng_r:,lo(2)-ng_r:)
@@ -691,7 +755,7 @@ contains
 
     subroutine mk_mac_coeffs_3d(betax,betay,betaz,ng_b,rho,ng_r,lo,hi)
 
-      integer :: ng_b,ng_r,lo(3),hi(3)
+      integer :: ng_b,ng_r,lo(:),hi(:)
       real(kind=dp_t), intent(inout) :: betax(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
       real(kind=dp_t), intent(inout) :: betay(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
       real(kind=dp_t), intent(inout) :: betaz(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
