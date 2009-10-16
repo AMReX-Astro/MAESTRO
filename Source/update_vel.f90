@@ -76,14 +76,18 @@ contains
           uop  => dataptr(uold(n),i)
           unp  => dataptr(unew(n),i)
           ump  => dataptr(umac(n,1),i)
-          vmp  => dataptr(umac(n,2),i)
           uepx => dataptr(uedge(n,1),i)
-          uepy => dataptr(uedge(n,2),i)
           spp  => dataptr(sponge(n),i)
           fp   =>  dataptr(force(n),i)
           lo = lwb(get_box(uold(n),i))
           hi = upb(get_box(uold(n),i))
           select case (dm)
+          case (1)
+             call update_velocity_1d(uop(:,1,1,:), ng_uo, unp(:,1,1,:), ng_un, &
+                                     ump(:,1,1,1),  ng_um, &
+                                     uepx(:,1,1,:), ng_ue, &
+                                     fp(:,1,1,:), ng_f, w0(n,:), &
+                                     lo, hi, dx(n,:), dt, spp(:,1,1,1), ng_sp)
           case (2)
              call update_velocity_2d(uop(:,:,1,:), ng_uo, unp(:,:,1,:), ng_un, &
                                      ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
@@ -91,7 +95,9 @@ contains
                                      fp(:,:,1,:), ng_f, w0(n,:), &
                                      lo, hi, dx(n,:), dt, spp(:,:,1,1), ng_sp)
           case (3)
+             vmp  => dataptr(umac(n,2),i)
              wmp   => dataptr(umac(n,3),i)
+             uepy => dataptr(uedge(n,2),i)
              uepz  => dataptr(uedge(n,3),i)
              w0xp   => dataptr(w0mac(n,1),i)
              w0yp   => dataptr(w0mac(n,2),i)
@@ -147,6 +153,48 @@ contains
     call destroy(bpt)
 
   end subroutine update_velocity
+
+  subroutine update_velocity_1d(uold,ng_uo,unew,ng_un,umac,ng_um,uedgex,ng_ue, &
+                                force,ng_f,w0,lo,hi,dx,dt,sponge,ng_sp)
+
+    use bl_constants_module
+    use probin_module, only: do_sponge
+
+    integer, intent(in) :: lo(:), hi(:), ng_uo, ng_un, ng_um, ng_ue, ng_f, ng_sp
+    real (kind = dp_t), intent(in   ) ::   uold(lo(1)-ng_uo:,:)  
+    real (kind = dp_t), intent(  out) ::   unew(lo(1)-ng_un:,:)  
+    real (kind = dp_t), intent(in   ) ::   umac(lo(1)-ng_um:)  
+    real (kind = dp_t), intent(in   ) :: uedgex(lo(1)-ng_ue:,:)  
+    real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,:)  
+    real (kind = dp_t), intent(in   ) :: sponge(lo(1)-ng_sp:)
+    real (kind = dp_t), intent(in   ) ::     w0(0:)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real (kind = dp_t), intent(in   ) :: dt
+
+    integer :: i
+    real (kind = dp_t) ubar
+    real (kind = dp_t) ugradu
+
+    do i = lo(1), hi(1)
+
+       ! create cell-centered Utilde
+       ubar = HALF*(umac(i) + umac(i+1))
+
+       ! create (Utilde dot grad) Utilde
+       ugradu = ubar*(uedgex(i+1,1) - uedgex(i,1))/dx(1) 
+
+       ! update with (Utilde dot grad) Utilde and force
+       unew(i,1) = uold(i,1) - dt * ugradu + dt * force(i,1)
+
+       ! subtract (Utilde dot er) dw0/dr er term from wtilde only
+       unew(i,1) = unew(i,1) - dt * ubar*(w0(i+1) - w0(i))/dx(1)
+
+       ! Add the sponge
+       if (do_sponge) unew(i,:) = unew(i,:) * sponge(i)
+
+    enddo
+
+  end subroutine update_velocity_1d
 
   subroutine update_velocity_2d(uold,ng_uo,unew,ng_un,umac,vmac,ng_um,uedgex,uedgey,ng_ue, &
                                 force,ng_f,w0,lo,hi,dx,dt,sponge,ng_sp)
