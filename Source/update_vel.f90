@@ -90,6 +90,7 @@ contains
                                      lo, hi, dx(n,:), dt, spp(:,1,1,1), ng_sp)
           case (2)
              vmp  => dataptr(umac(n,2),i)
+             uepy => dataptr(uedge(n,2),i)
              call update_velocity_2d(uop(:,:,1,:), ng_uo, unp(:,:,1,:), ng_un, &
                                      ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                      uepx(:,:,1,:), uepy(:,:,1,:), ng_ue, &
