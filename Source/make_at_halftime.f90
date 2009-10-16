@@ -57,6 +57,9 @@ contains
           lo =  lwb(get_box(shalf(n), i))
           hi =  upb(get_box(shalf(n), i))
           select case (dm)
+          case (1)
+             call make_at_halftime_1d(shp(:,1,1,out_comp),sop(:,1,1,in_comp), &
+                                      snp(:,1,1,in_comp),lo,hi,ng_h,ng_o,ng_n)
           case (2)
              call make_at_halftime_2d(shp(:,:,1,out_comp),sop(:,:,1,in_comp), &
                                       snp(:,:,1,in_comp),lo,hi,ng_h,ng_o,ng_n)
@@ -137,6 +140,9 @@ contains
           lo =  lwb(get_box(phihalf(n), i))
           hi =  upb(get_box(phihalf(n), i))
           select case (dm)
+          case (1)
+             call make_at_halftime_1d(rhp(:,1,1,out_comp),rop(:,1,1,in_comp), &
+                                      rnp(:,1,1,in_comp),lo,hi,ng_h,ng_o,ng_n)
           case (2)
              call make_at_halftime_2d(rhp(:,:,1,out_comp),rop(:,:,1,in_comp), &
                                       rnp(:,:,1,in_comp),lo,hi,ng_h,ng_o,ng_n)
@@ -176,6 +182,26 @@ contains
     end if
 
   end subroutine make_at_halftime
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine make_at_halftime_1d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old,ng_new)
+
+    use bl_constants_module
+
+    integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old,ng_new
+    real (kind=dp_t), intent(  out) :: phihalf(lo(1)-ng_half:)
+    real (kind=dp_t), intent(in   ) ::  phiold(lo(1)-ng_old :)
+    real (kind=dp_t), intent(in   ) ::  phinew(lo(1)-ng_new :)
+
+    !  Local variables
+    integer :: i
+
+    do i = lo(1),hi(1)
+       phihalf(i) = HALF * (phiold(i) + phinew(i))
+    end do
+
+  end subroutine make_at_halftime_1d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

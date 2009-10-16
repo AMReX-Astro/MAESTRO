@@ -52,6 +52,8 @@ contains
           lo = lwb(get_box(s(n), i))
           hi = upb(get_box(s(n), i))
           select case (dm)
+          case (1)
+             call make_gamma_1d(lo,hi,gamp(:,1,1,1),ng_g,sp(:,1,1,:),ng_s,p0(n,:))
           case (2)
              call make_gamma_2d(lo,hi,gamp(:,:,1,1),ng_g,sp(:,:,1,:),ng_s,p0(n,:))
           case (3)
@@ -75,6 +77,47 @@ contains
     call destroy(bpt)
 
   end subroutine make_gamma
+
+  subroutine make_gamma_1d(lo,hi,gamma,ng_g,s,ng_s,p0)
+
+    use eos_module
+    use network, only: nspec
+    use variables, only: rho_comp, spec_comp, temp_comp
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
+    real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:)
+    real (kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)
+
+    ! local variables
+    integer :: i
+
+    do_diag = .false.
+
+    do i = lo(1), hi(1)
+
+       den_eos(1) = s(i,rho_comp)
+       p_eos(1) = p0(i)
+       xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       temp_eos(1) = s(i,temp_comp)
+
+       ! dens, pres, and xmass are inputs
+       call eos(eos_input_rp, den_eos, temp_eos, &
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, & 
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+
+       gamma(i) = gam1_eos(1)
+
+    end do
+
+  end subroutine make_gamma_1d
 
   subroutine make_gamma_2d(lo,hi,gamma,ng_g,s,ng_s,p0)
 

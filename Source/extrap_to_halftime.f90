@@ -53,6 +53,11 @@ contains
           hi =  upb(get_box(Source_nph(n), i))
           
           select case (dm)
+          case (1)
+             call extrap_to_halftime_1d(Snphp(:,1,1,1), &
+                                        dSdtp(:,1,1,1), &
+                                        Soldp(:,1,1,1), &
+                                        dt,lo,hi,ng_h,ng_o,ng_dS)
           case (2)
              call extrap_to_halftime_2d(Snphp(:,:,1,1), &
                                         dSdtp(:,:,1,1), &
@@ -100,6 +105,25 @@ contains
 
   end subroutine extrap_to_halftime
 
+  subroutine extrap_to_halftime_1d(Source_nph,dSdt,Source_old, &
+                                   dt,lo,hi,ng_h,ng_o,ng_dS)
+
+    use bl_constants_module
+
+    integer         , intent(in ) :: lo(:), hi(:), ng_h, ng_o, ng_dS
+    real (kind=dp_t), intent(out) :: Source_nph(lo(1)-ng_h :)
+    real (kind=dp_t), intent(in ) ::       dSdt(lo(1)-ng_dS:)
+    real (kind=dp_t), intent(in ) :: Source_old(lo(1)-ng_o :)
+    real (kind=dp_t) :: dt
+
+    ! Local variables
+    integer          :: i
+
+    do i = lo(1),hi(1)
+       Source_nph(i) = Source_old(i) + HALF*dt*dSdt(i)
+    end do
+ 
+  end subroutine extrap_to_halftime_1d
 
   subroutine extrap_to_halftime_2d(Source_nph,dSdt,Source_old, &
                                    dt,lo,hi,ng_h,ng_o,ng_dS)

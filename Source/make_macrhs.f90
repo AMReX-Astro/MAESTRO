@@ -65,6 +65,11 @@ contains
           lo =  lwb(get_box(Source(n), i))
           hi =  upb(get_box(Source(n), i))
           select case (dm)
+          case (1)
+             call make_macrhs_1d(n,lo,hi,mp(:,1,1,1),ng_rh,sp(:,1,1,1),ng_sr, &
+                                 gp(:,1,1,1),ng_dg,Sbar(n,:),div_coeff(n,:), &
+                                 gamma1bar_old(n,:),gamma1bar_new(n,:),p0_old(n,:), &
+                                 p0_new(n,:),pop(:,1,1,1),ng_dp,dt)
           case (2)
              call make_macrhs_2d(n,lo,hi,mp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
                                  gp(:,:,1,1),ng_dg,Sbar(n,:),div_coeff(n,:), &
@@ -90,6 +95,45 @@ contains
     call destroy(bpt)
 
   end subroutine make_macrhs
+
+  subroutine make_macrhs_1d(n,lo,hi,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+                            Sbar,div_coeff,gamma1bar_old,gamma1bar_new,p0_old,p0_new, &
+                            delta_p_term,ng_dp,dt)
+
+    use probin_module, only: dpdt_factor
+    use geometry, only: base_cutoff_density_coord
+
+    integer         , intent(in   ) :: n, lo(:), hi(:), ng_rh, ng_sr, ng_dg, ng_dp
+    real (kind=dp_t), intent(  out) ::               rhs(lo(1)-ng_rh:)
+    real (kind=dp_t), intent(in   ) ::            Source(lo(1)-ng_sr:)
+    real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:)
+    real (kind=dp_t), intent(in   ) :: Sbar(0:)  
+    real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar_old(0:),gamma1bar_new(0:)
+    real (kind=dp_t), intent(in   ) :: p0_old(0:),p0_new(0:)
+    real (kind=dp_t), intent(in   ) ::      delta_p_term(lo(1)-ng_dp:)
+    real (kind=dp_t), intent(in   ) :: dt
+
+    !     Local variables
+    integer :: i
+    real(kind=dp_t) :: gamma1bar_p0_avg
+
+    do i = lo(1),hi(1)
+       rhs(i) = div_coeff(i) * (Source(i) - Sbar(i) + delta_gamma1_term(i))
+    end do
+
+    if (dpdt_factor .gt. 0.0d0) then
+       do i = lo(1),hi(1)
+          if (i .lt. base_cutoff_density_coord(n)) then
+             gamma1bar_p0_avg = 0.25d0 * &
+                  (gamma1bar_old(i)+gamma1bar_new(i))*(p0_old(i)+p0_new(i))
+             rhs(i) = rhs(i) + div_coeff(i) * &
+                  (dpdt_factor / gamma1bar_p0_avg) * (delta_p_term(i) / dt)
+          end if
+       end do
+    end if
+
+  end subroutine make_macrhs_1d
 
   subroutine make_macrhs_2d(n,lo,hi,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
                             Sbar,div_coeff,gamma1bar_old,gamma1bar_new,p0_old,p0_new, &

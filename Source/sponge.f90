@@ -124,6 +124,36 @@ contains
 
   end subroutine make_sponge
 
+  subroutine mk_sponge_1d(sponge,ng_sp,lo,hi,dx,dt)
+
+    use bl_constants_module
+    use probin_module, only: prob_lo, sponge_kappa
+
+    integer        , intent(in   ) ::  lo(:),hi(:), ng_sp
+    real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:)
+    real(kind=dp_t), intent(in   ) ::     dx(:),dt
+
+    integer         :: i
+    real(kind=dp_t) :: y,smdamp
+
+    sponge = ONE
+
+    do i = lo(1),hi(1)
+       y = prob_lo(1) + (dble(i)+HALF)*dx(1)
+
+       if (y >= r_sp) then
+          if (y < r_tp) then
+             smdamp = HALF*(ONE - cos(M_PI*(y - r_sp)/(r_tp - r_sp)))
+          else
+             smdamp = ONE
+          endif
+          sponge(i) = ONE / (ONE + dt * smdamp* sponge_kappa)
+       endif
+
+    end do
+
+  end subroutine mk_sponge_1d
+
   subroutine mk_sponge_2d(sponge,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module

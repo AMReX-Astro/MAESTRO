@@ -39,6 +39,10 @@ contains
        lo =  lwb(get_box(state, i))
        hi =  upb(get_box(state, i))
        select case (dm)
+       case (1)
+          call make_tfromH_1d(tp(:,1,1,comp_t),tp(:,1,1,comp_tpert), &
+                              tp(:,1,1,comp_dp),ng_p,sp(:,1,1,:),ng_s, &
+                              lo,hi,p0,tempbar)
        case (2)
           call make_tfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_tpert), &
                               tp(:,:,1,comp_dp),ng_p,sp(:,:,1,:),ng_s, &
@@ -57,6 +61,54 @@ contains
     end do
 
   end subroutine make_tfromH
+
+  subroutine make_tfromH_1d(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
+
+    use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use eos_module
+    use network, only: nspec
+    use bl_constants_module
+
+    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
+    real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:)
+    real (kind = dp_t), intent(  out) ::  tpert(lo(1)-ng_p:)
+    real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:)
+    real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,:)
+    real (kind = dp_t), intent(in   ) ::  p0(0:),tempbar(0:)
+
+    ! Local variables
+    integer :: i
+
+    do_diag = .false.
+
+    do i = lo(1), hi(1)
+
+       ! (rho, H) --> T, p
+       den_eos(1)  = state(i,rho_comp)
+       p_eos(1)    = p0(i)
+       temp_eos(1) = state(i,temp_comp)
+       xn_eos(1,:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       h_eos(1) = state(i,rhoh_comp) / state(i,rho_comp)
+
+       call eos(eos_input_rh, den_eos, temp_eos, &
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+
+       T(i) = temp_eos(1)
+       if (.not. use_tfromp) tpert(i) = temp_eos(1) - tempbar(i)
+
+       deltaP(i) = abs(p_eos(1)-p0(i))/ p0(i)
+
+    enddo
+
+  end subroutine make_tfromH_1d
 
   subroutine make_tfromH_2d(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
 
@@ -256,6 +308,13 @@ contains
        lo =  lwb(get_box(s, i))
        hi =  upb(get_box(s, i))
        select case (dm)
+       case (1)
+          call make_tfromp_1d(tp(:,1,1,comp_tfromp  ),tp(:,1,1,comp_tpert), &
+                              tp(:,1,1,comp_rhopert ),tp(:,1,1,comp_rhohpert), &
+                              tp(:,1,1,comp_machno  ),tp(:,1,1,comp_deltag), &
+                              tp(:,1,1,comp_entropy ), ng_p, &
+                              sp(:,1,1,:), ng_s, up(:,1,1,1), ng_u, &
+                              lo, hi, rho0, rhoh0, tempbar, gamma1bar, p0)
        case (2)
           call make_tfromp_2d(tp(:,:,1,comp_tfromp),tp(:,:,1,comp_tpert), &
                               tp(:,:,1,comp_rhopert ),tp(:,:,1,comp_rhohpert), &
@@ -283,6 +342,70 @@ contains
     end do
 
   end subroutine make_tfromp
+
+  subroutine make_tfromp_1d(t,tpert,rhopert,rhohpert,machno,deltagamma,entropy, &
+                            ng_p,s,ng_s,u,ng_u,lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0)
+
+    use eos_module
+    use network, only: nspec
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
+
+    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s, ng_u
+    real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:)  
+    real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:)  
+    real (kind=dp_t), intent(  out) ::    rhopert(lo(1)-ng_p:)  
+    real (kind=dp_t), intent(  out) ::   rhohpert(lo(1)-ng_p:)  
+    real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:)  
+    real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:)  
+    real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:)  
+    real (kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) ::          u(lo(1)-ng_u:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:)
+    real (kind=dp_t), intent(in   ) :: rhoh0(0:)
+    real (kind=dp_t), intent(in   ) :: tempbar(0:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)
+
+    !     Local variables
+    integer          :: i
+    real (kind=dp_t) :: vel
+
+    do_diag = .false.
+
+    ! Then compute the perturbation
+    do i = lo(1), hi(1)
+
+       den_eos(1) = s(i,rho_comp)
+       temp_eos(1) = s(i,temp_comp)
+       p_eos(1) = p0(i)
+       xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+       ! (rho,P) --> T,h
+       call eos(eos_input_rp, den_eos, temp_eos, &
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, & 
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+
+       t(i) = temp_eos(1)
+       if (use_tfromp) tpert(i) = temp_eos(1) - tempbar(i)
+
+       rhopert(i)  = s(i,rho_comp)  - rho0(i)
+       rhohpert(i) = s(i,rhoh_comp) - rhoh0(i)
+
+       vel = abs(u(i))
+       machno(i) = vel / cs_eos(1)
+       deltagamma(i) = gam1_eos(1) - gamma1bar(i)
+
+       entropy(i) = s_eos(1)
+    enddo
+
+  end subroutine make_tfromp_1d
 
   subroutine make_tfromp_2d(t,tpert,rhopert,rhohpert,machno,deltagamma,entropy, &
                             ng_p,s,ng_s,u,ng_u,lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0)
@@ -534,6 +657,10 @@ contains
           lo =  lwb(get_box(plotdata(n), i))
           hi =  upb(get_box(plotdata(n), i))
           select case (dm)
+          case (1)
+             call make_entropypert_1d(tp(:,1,1,comp_entropy), &
+                                      tp(:,1,1,comp_entropypert),ng_p, &
+                                      lo, hi, entropybar(n,:))
           case (2)
              call make_entropypert_2d(tp(:,:,1,comp_entropy), &
                                       tp(:,:,1,comp_entropypert),ng_p, &
@@ -553,6 +680,23 @@ contains
     end do
 
   end subroutine make_entropypert
+
+  subroutine make_entropypert_1d(entropy,entropypert,ng_p,lo,hi,entropybar)
+
+    integer, intent(in) :: lo(:), hi(:), ng_p
+    real (kind=dp_t), intent(inout) ::     entropy(lo(1)-ng_p:)
+    real (kind=dp_t), intent(  out) :: entropypert(lo(1)-ng_p:)
+    real (kind=dp_t), intent(in   ) :: entropybar(0:)
+
+    !     Local variables
+    integer          :: i
+
+    ! Compute entropy - entropybar
+    do i = lo(1), hi(1)
+       entropypert(i) = (entropy(i) - entropybar(i))/entropybar(i)
+    enddo
+
+  end subroutine make_entropypert_1d
 
   subroutine make_entropypert_2d(entropy,entropypert,ng_p,lo,hi,entropybar)
 
@@ -647,6 +791,9 @@ contains
        lo =  lwb(get_box(plotdata, i))
        hi =  upb(get_box(plotdata, i))
        select case (dm)
+       case (1)
+          call make_deltaT_1d(tp(:,1,1,comp_dT),tp(:,1,1,comp_tfromH), &
+                              tp(:,1,1,comp_tfromp), ng_p, lo, hi)
        case (2)
           call make_deltaT_2d(tp(:,:,1,comp_dT),tp(:,:,1,comp_tfromH), &
                               tp(:,:,1,comp_tfromp), ng_p, lo, hi)
@@ -657,6 +804,22 @@ contains
     end do
 
   end subroutine make_deltaT
+
+  subroutine make_deltaT_1d(dT,tfromH,tfromp,ng_p,lo,hi)
+
+    integer, intent(in) :: lo(:), hi(:), ng_p
+    real (kind = dp_t), intent(  out) ::     dT(lo(1)-ng_p:)
+    real (kind = dp_t), intent(in   ) :: tfromH(lo(1)-ng_p:)
+    real (kind = dp_t), intent(in   ) :: tfromp(lo(1)-ng_p:)
+
+    !     Local variables
+    integer :: i
+
+    do i = lo(1), hi(1)
+       dT(i) = (tfromH(i) - tfromp(i)) / tfromH(i)
+    end do
+
+  end subroutine make_deltaT_1d
 
   subroutine make_deltaT_2d(dT,tfromH,tfromp,ng_p,lo,hi)
 
@@ -721,6 +884,8 @@ contains
        lo = lwb(get_box(divw0, i))
        hi = upb(get_box(divw0, i))
        select case (dm)
+       case (1)
+          call make_divw0_1d(w0, dwp(:,1,1,comp_divw0), ng_dw, lo, hi, dx)
        case (2)
           call make_divw0_2d(w0, dwp(:,:,1,comp_divw0), ng_dw, lo, hi, dx)
        case (3)
@@ -738,6 +903,22 @@ contains
     end do
 
   end subroutine make_divw0
+
+  subroutine make_divw0_1d(w0,divw0,ng_dw,lo,hi,dx)
+
+    integer, intent(in)            :: lo(:), hi(:), ng_dw
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    real(kind=dp_t), intent(inout) :: divw0(lo(1)-ng_dw:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    !     Local variables
+    integer :: i
+
+    do i = lo(1), hi(1)
+       divw0(i) = ( w0(i+1) - w0(i) )/dx(1)
+    end do
+
+  end subroutine make_divw0_1d
 
   subroutine make_divw0_2d(w0,divw0,ng_dw,lo,hi,dx)
 
@@ -825,6 +1006,8 @@ contains
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
        select case (dm)
+       case (1)
+          call setval(vort,0.d0,all=.true.)
        case (2)
           call makevort_2d(vp(:,:,1,comp),ng_v,up(:,:,1,:),ng_u,lo,hi,dx, &
                            bc%phys_bc_level_array(i,:,:))
@@ -1460,6 +1643,8 @@ contains
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
        select case (dm)
+       case (1)
+          call makemagvel_1d(pp(:,1,1,comp_magvel),pp(:,1,1,comp_mom),ng_p,sp(:,1,1,rho_comp),ng_s,up(:,1,1,1),ng_u,w0,lo,hi)
        case (2)
           call makemagvel_2d(pp(:,:,1,comp_magvel),pp(:,:,1,comp_mom),ng_p,sp(:,:,1,rho_comp),ng_s,up(:,:,1,:),ng_u,w0,lo,hi)
        case (3)
@@ -1479,6 +1664,28 @@ contains
     end do
 
   end subroutine make_magvel
+
+  subroutine makemagvel_1d(magvel,mom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
+
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
+    real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:)
+    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:)
+    real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:)
+    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:)
+    real (kind = dp_t), intent(in   ) :: w0(0:)
+
+    !     Local variables
+    integer :: i
+    real (kind = dp_t) :: w0_cent
+
+    ! Recall w0 is edge-centered
+    do i = lo(1), hi(1)
+       w0_cent = 0.5d0 * (w0(i) + w0(i+1))
+       magvel(i) = abs(u(i)+w0_cent)
+       mom(i) = rho(i)*magvel(i)
+    enddo
+
+  end subroutine makemagvel_1d
 
   subroutine makemagvel_2d(magvel,mom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
 

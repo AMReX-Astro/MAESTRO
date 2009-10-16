@@ -479,6 +479,8 @@ contains
           lo =  lwb(get_box(delta_p_term(n), i))
           hi =  upb(get_box(delta_p_term(n), i))
           select case (dm)
+          case (1)
+             call create_correction_nodal_1d(lo,hi,cnp(:,1,1,1),ng_cn,ccp(:,1,1,1),ng_cc)
           case (2)
              call create_correction_nodal_2d(lo,hi,cnp(:,:,1,1),ng_cn,ccp(:,:,1,1),ng_cc)
           case (3)
@@ -634,6 +636,24 @@ contains
     end do
     
   end subroutine create_correction_cc_3d_sphr
+  
+  subroutine create_correction_nodal_1d(lo,hi,correction_nodal,ng_cn,correction_cc,ng_cc)
+
+    use bl_constants_module
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_cn, ng_cc
+    real (kind=dp_t), intent(  out) :: correction_nodal(lo(1)-ng_cn:)
+    real (kind=dp_t), intent(in   ) ::    correction_cc(lo(1)-ng_cc:)
+    
+    ! Local variables
+    integer :: i
+    
+    do i = lo(1), hi(1)+1
+       correction_nodal(i) = HALF * ( correction_cc(i) + correction_cc(i-1) )
+    end do
+    
+  end subroutine create_correction_nodal_1d
+
   
   subroutine create_correction_nodal_2d(lo,hi,correction_nodal,ng_cn,correction_cc,ng_cc)
 
