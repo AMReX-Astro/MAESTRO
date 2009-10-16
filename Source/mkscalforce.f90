@@ -117,25 +117,33 @@ contains
        do i=1,scal_force(n)%nboxes
           if ( multifab_remote(scal_force(n),i) ) cycle
           fp => dataptr(scal_force(n), i)
-          ump => dataptr(umac(n,1),i)
-          vmp => dataptr(umac(n,2),i)
           tp  => dataptr(thermal(n),i)
           lo = lwb(get_box(scal_force(n),i))
           hi = upb(get_box(scal_force(n),i))
           select case (dm)
+          case (1)
+             ump => dataptr(umac(n,1),i)
+             call mkrhohforce_1d(n,fp(:,1,1,rhoh_comp), ng_f, is_prediction, &
+                                 ump(:,1,1,1), ng_um, &
+                                 tp(:,1,1,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
+                                 rho0(n,:), grav(n,:), psi(n,:), add_thermal)
           case (2)
+             vmp => dataptr(umac(n,2),i)
              call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), ng_f, is_prediction, &
                                  vmp(:,:,1,1), ng_um, &
                                  tp(:,:,1,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
                                  rho0(n,:), grav(n,:), psi(n,:), add_thermal)
           case(3)
-             wmp  => dataptr(umac(n,3), i)
+             wmp => dataptr(umac(n,3), i)
              if (spherical .eq. 0) then
                 call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
                                     wmp(:,:,:,1), ng_um, &
                                     tp(:,:,:,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
                                     rho0(n,:), grav(n,:), psi(n,:), add_thermal)
              else
+                ump => dataptr(umac(n,1),i)
+                vmp => dataptr(umac(n,2),i)
+                wmp => dataptr(umac(n,3),i)
                 pp  => dataptr(p0_cart(n),i)
                 pmx => dataptr(p0mac(n,1),i)
                 pmy => dataptr(p0mac(n,2),i)
@@ -192,6 +200,72 @@ contains
     call destroy(bpt)
     
   end subroutine mkrhohforce
+
+  subroutine mkrhohforce_1d(n,rhoh_force,ng_f,is_prediction, &
+                            umac,ng_um,thermal,ng_th,lo,hi, &
+                            p0_old,p0_new,rho0,grav,psi,add_thermal)
+
+    use geometry, only: dr, nr, base_cutoff_density_coord
+    use probin_module, only: enthalpy_pred_type
+    use pred_parameters
+
+    ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
+    
+    ! note, in the prediction of the interface states, we will set
+    ! both p0_old and p0_new to the same old value.  In the computation
+    ! of the rhoh_force for the update, they will be used to time-center.
+
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th
+    logical,         intent(in   ) :: is_prediction
+    real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:)
+    real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
+    real(kind=dp_t), intent(in   ) :: grav(0:)
+    real(kind=dp_t), intent(in   ) :: psi(0:)
+    logical        , intent(in   ) :: add_thermal
+
+    real(kind=dp_t) :: gradp0, uadv
+    integer :: i
+
+    ! Add wtilde d(p0)/dr
+    do i = lo(1),hi(1)
+
+       if (i .lt. base_cutoff_density_coord(n)) then
+          gradp0 = rho0(i) * grav(i)
+       else if (i.eq.nr(n)-1) then
+          ! NOTE: this should be zero since p0 is constant up here
+          gradp0 = HALF * ( p0_old(i  ) + p0_new(i  ) &
+                           -p0_old(i-1) - p0_new(i-1) ) / dr(n)
+       else
+          ! NOTE: this should be zero since p0 is constant up here
+          gradp0 = HALF * ( p0_old(i+1) + p0_new(i+1) &
+                           -p0_old(i  ) - p0_new(i  ) ) / dr(n)
+       end if
+
+       uadv = HALF*(umac(i)+umac(i+1))
+       rhoh_force(i) = uadv * gradp0           
+    enddo
+
+    ! psi should always be in the force if we are doing the final update
+    ! For prediction, it should not be in the force if we are predicting
+    ! (rho h)', but should be there if we are predicting h
+    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
+         (.NOT. is_prediction)) then
+       do i = lo(1),hi(1)
+          rhoh_force(i) =  rhoh_force(i)  + psi(i)
+       end do
+    endif
+
+    if (add_thermal) then
+       do i=lo(1),hi(1)
+          rhoh_force(i) = rhoh_force(i) + thermal(i)
+       end do
+    end if
+
+  end subroutine mkrhohforce_1d
 
   subroutine mkrhohforce_2d(n,rhoh_force,ng_f,is_prediction, &
                             wmac,ng_um,thermal,ng_th,lo,hi, &
