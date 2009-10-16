@@ -132,9 +132,11 @@ contains
           smin = multifab_min_c(unew(n),1)
           smax = multifab_max_c(unew(n),1)
           if (parallel_IOProcessor()) write(6,1001) smin,smax
-          smin = multifab_min_c(unew(n),2) 
-          smax = multifab_max_c(unew(n),2)
-          if (parallel_IOProcessor()) write(6,1002) smin,smax
+          if (dm .ge. 2) then
+             smin = multifab_min_c(unew(n),2) 
+             smax = multifab_max_c(unew(n),2)
+             if (parallel_IOProcessor()) write(6,1002) smin,smax
+          end if
           if (dm .eq. 3) then
              smin = multifab_min_c(unew(n),3) 
              smax = multifab_max_c(unew(n),3)

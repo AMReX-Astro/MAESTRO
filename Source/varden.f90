@@ -565,9 +565,11 @@ subroutine varden()
                  print *,'MAX OF UOLD ', smax,' AT LEVEL ',n
               end if
                    
-              smax = norm_inf(uold(n),2,1)
-              if ( parallel_IOProcessor()) then
-                 print *,'MAX OF VOLD ', smax,' AT LEVEL ',n
+              if (dm > 1) then
+                 smax = norm_inf(uold(n),2,1)
+                 if ( parallel_IOProcessor()) then
+                    print *,'MAX OF VOLD ', smax,' AT LEVEL ',n
+                 end if
               end if
               
               if (dm > 2) then
