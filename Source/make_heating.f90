@@ -49,6 +49,8 @@ contains
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
           select case (dm)
+          case (1)
+             call get_rho_Hext_1d(hp(:,1,1,1),ng_h,sp(:,1,1,:),ng_s,lo,hi,dx(n,:),time)
           case (2)
              call get_rho_Hext_2d(hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s,lo,hi,dx(n,:),time)
           case (3)
@@ -67,6 +69,19 @@ contains
     call destroy(bpt)
 
   end subroutine get_rho_Hext
+  
+  subroutine get_rho_Hext_1d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
+    
+    use bl_constants_module
+    
+    integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
+    real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:)
+    real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:),time
+    
+    rho_Hext = 0.0_dp_t
+    
+  end subroutine get_rho_Hext_1d
   
   subroutine get_rho_Hext_2d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
     
