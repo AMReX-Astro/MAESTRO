@@ -189,7 +189,8 @@ contains
 
     ! This fills the same edges that create_umac_grown does but fills them from 
     !  physical boundary conditions rather than from coarser grids
-    call impose_phys_bcs_on_edges(rho,umac,the_bc_tower%bc_tower_array)
+    if (dm > 1) &
+       call impose_phys_bcs_on_edges(rho,umac,the_bc_tower%bc_tower_array)
     
     do n = 1, nlevs
        call destroy(rh(n))
@@ -405,7 +406,7 @@ contains
 
       integer :: i,nx
 
-      nx = size(uedge,dim=1)-2
+      nx = size(uedge,dim=1)-2*ng_um-1
 
       if (do_mult) then
          do i = 0,nx
@@ -430,7 +431,7 @@ contains
 
       integer :: j,ny
 
-      ny = size(uedge,dim=2)-2
+      ny = size(uedge,dim=2)-2*ng_um
 
       if (do_mult) then
          do j = 0,ny-1
@@ -462,7 +463,7 @@ contains
 
       integer :: k,nz
 
-      nz = size(uedge,dim=3)-2
+      nz = size(uedge,dim=3)-2*ng_um
 
       if (do_mult) then
          do k = 0,nz-1 
@@ -833,10 +834,8 @@ contains
          do i = 1, rh(n)%nboxes
             if ( multifab_remote(rh(n), i) ) cycle
             ump => dataptr(umac(n,1), i)
-            vmp => dataptr(umac(n,2), i)
             php => dataptr( phi(n), i)
             bxp => dataptr(beta(n,1), i)
-            byp => dataptr(beta(n,2), i)
             lo = lwb(get_box(phi(n), i))
             hi = upb(get_box(phi(n), i))
             select case (dm)
@@ -852,6 +851,8 @@ contains
                                          lxp(:,1,1,1),hxp(:,1,1,1),lo,hi,dx(n,:))
                end if
             case (2)
+               vmp => dataptr(umac(n,2), i)
+               byp => dataptr(beta(n,2), i)
                call mkumac_2d(ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
                               php(:,:,1,1), ng_p, &
                               bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
@@ -866,7 +867,9 @@ contains
                                          lo,hi,dx(n,:))
                end if
             case (3)
+               vmp => dataptr(umac(n,2), i)
                wmp => dataptr(umac(n,3), i)
+               byp => dataptr(beta(n,2), i)
                bzp => dataptr(beta(n,3), i)
                call mkumac_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
                               php(:,:,:,1), ng_p, &
