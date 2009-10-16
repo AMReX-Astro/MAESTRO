@@ -92,6 +92,15 @@ contains
           lo = lwb(get_box(sold(n),i))
           hi = upb(get_box(sold(n),i))
           select case (dm)
+          case (1)
+             call mk_rhoX_flux_1d(sfxp(:,1,1,:), ng_sf, &
+                                   efp(:,1,1,1), ng_ef, &
+                                  sexp(:,1,1,:), ng_se, &
+                                   ump(:,1,1,1), ng_um, &
+                                  rho0_edge_old(n,:), &
+                                  rho0_edge_new(n,:), &
+                                  rho0_predicted_edge(n,:), &
+                                  w0(n,:),startcomp,endcomp,lo,hi)
           case (2)
              call mk_rhoX_flux_2d(sfxp(:,:,1,:), sfyp(:,:,1,:), ng_sf, &
                                   efp(:,:,1,1), ng_ef, &
@@ -155,6 +164,51 @@ contains
     call destroy(bpt)
     
   end subroutine mk_rhoX_flux
+  
+  subroutine mk_rhoX_flux_1d(sfluxx,ng_sf,etarhoflux,ng_ef,sedgex,ng_se, &
+                             umac,ng_um,rho0_edge_old,rho0_edge_new, &
+                             rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
+
+    use bl_constants_module
+    use network, only : nspec
+    use variables, only : spec_comp, rho_comp
+    use pred_parameters
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_ef,ng_se,ng_um
+    real(kind=dp_t), intent(inout) ::     sfluxx(lo(1)-ng_sf:,:)
+    real(kind=dp_t), intent(inout) :: etarhoflux(lo(1)-ng_ef:)
+    real(kind=dp_t), intent(inout) ::     sedgex(lo(1)-ng_se:,:)
+    real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:), rho0_edge_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(0:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    integer        , intent(in   ) :: startcomp,endcomp
+
+    ! local
+    integer         :: comp
+    integer         :: i
+    real(kind=dp_t) :: rho0_edge
+    
+    ! loop over components -- note the edges states are X
+    do comp = startcomp, endcomp
+
+       ! create x-fluxes
+       do i = lo(1),hi(1)+1
+          rho0_edge = HALF*(rho0_edge_old(i)+rho0_edge_new(i))
+          sfluxx(i,comp) = &
+               (umac(i)+w0(i))*(rho0_edge+sedgex(i,rho_comp))*sedgex(i,comp)
+
+          if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
+             etarhoflux(i) = etarhoflux(i) + sfluxx(i,comp)
+          end if
+
+          if ( comp.eq.spec_comp+nspec-1) then
+             etarhoflux(i) = etarhoflux(i) - w0(i)*rho0_predicted_edge(i)
+          end if
+       end do
+    end do
+
+  end subroutine mk_rhoX_flux_1d
   
   subroutine mk_rhoX_flux_2d(sfluxx,sfluxy,ng_sf,etarhoflux,ng_ef,sedgex,sedgey,ng_se, &
                              umac,vmac,ng_um,rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
