@@ -511,11 +511,8 @@ contains
        do i=1, sold(n)%nboxes
           if ( multifab_remote(sold(n),i) ) cycle
           sfxp => dataptr(sflux(n,1),i)
-          sfyp => dataptr(sflux(n,2),i)
           sexp => dataptr(sedge(n,1),i)
-          seyp => dataptr(sedge(n,2),i)
           ump  => dataptr(umac(n,1),i)
-          vmp  => dataptr(umac(n,2),i)
           lo = lwb(get_box(sold(n),i))
           hi = upb(get_box(sold(n),i))
           select case (dm)
@@ -529,6 +526,9 @@ contains
                                   rhoh0_edge_new(n,:), &
                                   w0(n,:),lo,hi)
           case (2)
+             sfyp => dataptr(sflux(n,2),i)
+             seyp => dataptr(sedge(n,2),i)
+             vmp  => dataptr(umac(n,2),i)
              call mk_rhoh_flux_2d(sfxp(:,:,1,:), sfyp(:,:,1,:), ng_sf, &
                                   sexp(:,:,1,:), seyp(:,:,1,:), ng_se, &
                                   ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
@@ -538,8 +538,11 @@ contains
                                   rhoh0_new(n,:), rhoh0_edge_new(n,:), &
                                   w0(n,:),lo,hi)
           case (3)
+             sfyp => dataptr(sflux(n,2),i)
              sfzp => dataptr(sflux(n,3),i)
+             seyp => dataptr(sedge(n,2),i)
              sezp => dataptr(sedge(n,3),i)
+             vmp  => dataptr(umac(n,2),i)
              wmp  => dataptr(umac(n,3),i)
              if(spherical .eq. 0) then
                 call mk_rhoh_flux_3d_cart(sfxp(:,:,:,:),sfyp(:,:,:,:),sfzp(:,:,:,:),ng_sf, &
