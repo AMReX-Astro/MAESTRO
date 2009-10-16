@@ -415,6 +415,9 @@ contains
           lo =  lwb(get_box(delta_p_term(n), i))
           hi =  upb(get_box(delta_p_term(n), i))
           select case (dm)
+          case (1)
+             call create_correction_cc_1d(n,lo,hi,ccp(:,1,1,1),ng_cc,ptp(:,1,1,1),ng_dp, &
+                                          div_coeff(n,:),gamma1bar(n,:),p0(n,:),dt)
           case (2)
              call create_correction_cc_2d(n,lo,hi,ccp(:,:,1,1),ng_cc,ptp(:,:,1,1),ng_dp, &
                                           div_coeff(n,:),gamma1bar(n,:),p0(n,:),dt)
@@ -503,6 +506,35 @@ contains
     call destroy(bpt)
     
   end subroutine correct_hgrhs
+  
+  subroutine create_correction_cc_1d(n,lo,hi,correction_cc,ng_cc,delta_p_term,ng_dp, &
+                                     div_coeff,gamma1bar,p0,dt)
+
+    use probin_module, only: dpdt_factor
+    use geometry, only: base_cutoff_density_coord
+
+    integer         , intent(in   ) :: n, lo(:), hi(:), ng_cc, ng_dp
+    real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-ng_cc:)
+    real (kind=dp_t), intent(in   ) ::  delta_p_term(lo(1)-ng_dp:)
+    real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)    
+    real (kind=dp_t), intent(in   ) :: dt
+    
+    ! Local variables
+    integer :: i
+    real(kind=dp_t) :: correction_factor
+    
+    do i = lo(1),hi(1)
+       if(i .lt. base_cutoff_density_coord(n)) then
+          correction_factor = div_coeff(i)*(dpdt_factor/(gamma1bar(i)*p0(i))) / dt
+       else
+          correction_factor = 0.0d0
+       end if
+       correction_cc(i) = correction_factor*delta_p_term(i)
+    end do
+    
+  end subroutine create_correction_cc_1d
   
   subroutine create_correction_cc_2d(n,lo,hi,correction_cc,ng_cc,delta_p_term,ng_dp, &
                                      div_coeff,gamma1bar,p0,dt)
