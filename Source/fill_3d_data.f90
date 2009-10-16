@@ -957,7 +957,7 @@ contains
 
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
-    real(kind=dp_t) :: radius,rfac
+    real(kind=dp_t) :: radius
 
     ! we currently have three different ideas for computing s0mac
     ! 1.  Interpolate s0 to cell centers, then average to edges
