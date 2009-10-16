@@ -121,6 +121,9 @@ contains
           lo = lwb(get_box(s(n),i))
           hi = upb(get_box(s(n),i))
           select case (dm)
+          case (1)
+             call mk_vel_force_1d(fp(:,1,1,1),ng_f,gpp(:,1,1,1),ng_gp,rp(:,1,1,index_rho), &
+                                  ng_s,rho0(n,:),grav(n,:),lo,hi)
           case (2)
              call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp,rp(:,:,1,index_rho), &
                                   ng_s,rho0(n,:),grav(n,:),lo,hi)
@@ -204,6 +207,38 @@ contains
     call destroy(bpt)
 
   end subroutine mk_vel_force
+
+  subroutine mk_vel_force_1d(vel_force,ng_f,gpres,ng_gp,rho,ng_s,rho0,grav,lo,hi)
+
+    use bl_constants_module
+    use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
+
+    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s
+    real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:)
+    real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
+    real(kind=dp_t), intent(in   ) :: grav(0:)
+
+    integer         :: i
+    real(kind=dp_t) :: rhopert
+
+    vel_force = ZERO
+
+    do i = lo(1),hi(1)
+
+       rhopert = rho(i) - rho0(i)
+       
+       ! cutoff the buoyancy term if we are outside of the star
+       if (rho(i) .lt. buoyancy_cutoff_factor*base_cutoff_density) then
+          rhopert = 0.d0
+       end if
+
+       vel_force(i) =  rhopert / rho(i) * grav(i) - gpres(i) / rho(i)
+
+    end do
+
+  end subroutine mk_vel_force_1d
 
   subroutine mk_vel_force_2d(vel_force,ng_f,gpres,ng_gp,rho,ng_s,rho0,grav,lo,hi)
 
@@ -507,6 +542,8 @@ contains
           lo = lwb(get_box(vel_force(n),i))
           hi = upb(get_box(vel_force(n),i))
           select case (dm)
+          case (1)
+             call add_w0_force_1d(fp(:,1,1,1),ng_f,w0_force(n,:),lo,hi)
           case (2)
              call add_w0_force_2d(fp(:,:,1,:),ng_f,w0_force(n,:),lo,hi)
           case (3)
@@ -557,6 +594,22 @@ contains
     call destroy(bpt)
 
   end subroutine add_w0_force
+
+  subroutine add_w0_force_1d(vel_force,ng_f,w0_force,lo,hi)
+
+    use bl_constants_module
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_f
+    real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f:)
+    real(kind=dp_t), intent(in   ) :: w0_force(0:)
+
+    integer         :: i
+
+    do i = lo(1),hi(1)
+       vel_force(i) = vel_force(i) - w0_force(i)
+    end do
+
+  end subroutine add_w0_force_1d
 
   subroutine add_w0_force_2d(vel_force,ng_f,w0_force,lo,hi)
 
