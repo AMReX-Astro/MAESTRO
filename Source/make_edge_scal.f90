@@ -101,14 +101,27 @@ contains
           if ( multifab_remote(s(n),i) ) cycle
           sop  => dataptr(s(n),i)
           sepx => dataptr(sedge(n,1),i)
-          sepy => dataptr(sedge(n,2),i)
           ump  => dataptr(umac(n,1),i)
-          vmp  => dataptr(umac(n,2),i)
           fp   => dataptr(force(n),i)
           lo   =  lwb(get_box(s(n),i))
           hi   =  upb(get_box(s(n),i))
           select case (dm)
+          case (1)
+             do scomp = start_scomp, start_scomp + num_comp - 1
+                bccomp = start_bccomp + scomp - start_scomp
+                call make_edge_scal_1d(n, sop(:,1,1,:), ng_s, &
+                                       sepx(:,1,1,:), ng_se, &
+                                        ump(:,1,1,1), ng_um, &
+                                       fp(:,1,1,:), ng_f, w0(n,:), &
+                                       lo, hi, dx(n,:), dt, is_vel, &
+                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
+                                       scomp, is_conservative)
+             end do
+
           case (2)
+             vmp  => dataptr(umac(n,2),i)
+             sepy => dataptr(sedge(n,2),i)
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
                 call make_edge_scal_2d(n, sop(:,:,1,:), ng_s, &
@@ -122,14 +135,16 @@ contains
              end do
 
           case (3)
-            wmp  => dataptr(  umac(n,3),i)
-            sepz => dataptr( sedge(n,3),i)
-            w0xp => dataptr(w0mac(n,1),i)
-            w0yp => dataptr(w0mac(n,2),i)
-            w0zp => dataptr(w0mac(n,3),i)
-            np   => dataptr(normal(n), i)
-            gw0p => dataptr(gradw0_cart(n), i)
-            do scomp = start_scomp, start_scomp + num_comp - 1
+             vmp  => dataptr(umac(n,2),i)
+             wmp  => dataptr(  umac(n,3),i)
+             sepy => dataptr(sedge(n,2),i)
+             sepz => dataptr( sedge(n,3),i)
+             w0xp => dataptr(w0mac(n,1),i)
+             w0yp => dataptr(w0mac(n,2),i)
+             w0zp => dataptr(w0mac(n,3),i)
+             np   => dataptr(normal(n), i)
+             gw0p => dataptr(gradw0_cart(n), i)
+             do scomp = start_scomp, start_scomp + num_comp - 1
                bccomp = start_bccomp + scomp - start_scomp
                if (spherical .eq. 1) then
                   call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
@@ -178,7 +193,257 @@ contains
     call destroy(bpt)
     
   end subroutine make_edge_scal
+  
+  subroutine make_edge_scal_1d(n,s,ng_s,sedgex,ng_se,umac,ng_um, &
+                               force,ng_f,w0,lo,hi,dx,dt,is_vel,phys_bc,adv_bc, &
+                               comp,is_conservative)
 
+    use geometry, only: nr
+    use bc_module
+    use slope_module
+    use bl_constants_module
+    use variables, only: rel_eps
+    use ppm_module
+    use probin_module, only: ppm_type
+
+    integer        , intent(in   ) :: lo(:),hi(:),n,ng_s,ng_se,ng_um,ng_f
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,:)
+    real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,:)
+    real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,:)
+    real(kind=dp_t), intent(in   ) ::     w0(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:),dt
+    logical        , intent(in   ) :: is_vel
+    integer        , intent(in   ) :: phys_bc(:,:)
+    integer        , intent(in   ) :: adv_bc(:,:,:)
+    integer        , intent(in   ) :: comp
+    logical        , intent(in   ) :: is_conservative
+
+    ! Local variables
+    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,1)
+
+    real(kind=dp_t) :: hx,dt2,dt4,savg
+
+    integer :: i,is,ie
+
+    real(kind=dp_t), allocatable :: Ip(:)
+    real(kind=dp_t), allocatable :: Im(:)
+
+    ! these correspond to s_L^x, etc.
+    real(kind=dp_t), allocatable:: slx(:),srx(:)
+
+    ! these correspond to s_{\i-\half\e_x}^x, etc.
+    real(kind=dp_t), allocatable:: simhx(:)
+
+    ! these correspond to \mathrm{sedge}_L^x, etc.
+    real(kind=dp_t), allocatable:: sedgelx(:),sedgerx(:)
+
+    allocate(Ip(lo(1)-1:hi(1)+1))
+    allocate(Im(lo(1)-1:hi(1)+1))
+
+    ! Normal predictor states.
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo-1:hi+1 in the transverse direction
+    allocate(slx  (lo(1):hi(1)+1))
+    allocate(srx  (lo(1):hi(1)+1))
+    allocate(simhx(lo(1):hi(1)+1))
+
+    ! Final edge states.
+    ! lo:hi+1 in the normal direction
+    ! lo:hi in the transverse direction
+    allocate(sedgelx(lo(1):hi(1)+1))
+    allocate(sedgerx(lo(1):hi(1)+1))
+
+    is = lo(1)
+    ie = hi(1)
+
+    if (ppm_type .gt. 0) then
+       call ppm_fpu_1d(n,s(:,comp),ng_s,umac,ng_um,Ip,Im,w0,lo,hi,adv_bc(:,:,1),dx,dt)
+    else
+       call slopex_1d(s(:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
+    end if
+
+    dt2 = HALF*dt
+    dt4 = dt/4.0d0
+
+    hx = dx(1)
+    
+    !******************************************************************
+    ! Create s_{\i-\half\e_x}^x, etc.
+    !******************************************************************
+
+    ! loop over appropriate x-faces    
+    if (ppm_type .gt. 0) then
+       do i=is,ie+1
+          ! make slx, srx with 1D extrapolation
+          slx(i) = Ip(i-1)
+          srx(i) = Im(i  )
+       end do
+    else
+       do i=is,ie+1
+          ! make slx, srx with 1D extrapolation
+          slx(i) = s(i-1,comp) + (HALF - dt2*umac(i)/hx)*slopex(i-1,1)
+          srx(i) = s(i  ,comp) - (HALF + dt2*umac(i)/hx)*slopex(i  ,1)
+       enddo
+    end if
+
+    ! impose lo side bc's
+    if (phys_bc(1,1) .eq. INLET) then
+       slx(is) = s(is-1,comp)
+       srx(is) = s(is-1,comp)
+    else if (phys_bc(1,1) .eq. SLIP_WALL) then
+       if (is_vel .and. comp .eq. 1) then
+          slx(is) = ZERO
+          srx(is) = ZERO
+       else
+          slx(is) = srx(is)
+       end if
+    else if (phys_bc(1,1) .eq. NO_SLIP_WALL) then
+       if (is_vel) then
+          slx(is) = ZERO
+          srx(is) = ZERO
+       else
+          slx(is) = srx(is)
+       end if
+    else if (phys_bc(1,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 1) then
+          slx(is) = min(srx(is),ZERO)
+          srx(is) = min(srx(is),ZERO)
+       else
+          slx(is) = srx(is)
+       end if
+    end if
+
+    ! impose hi side bc's
+    if (phys_bc(1,2) .eq. INLET) then
+       slx(ie+1) = s(ie+1,comp)
+       srx(ie+1) = s(ie+1,comp)
+    else if (phys_bc(1,2) .eq. SLIP_WALL) then
+       if (is_vel .and. comp .eq. 1) then
+          slx(ie+1) = ZERO
+          srx(ie+1) = ZERO
+       else
+          srx(ie+1) = slx(ie+1)
+       end if
+    else if (phys_bc(1,2) .eq. NO_SLIP_WALL) then
+       if (is_vel) then
+          slx(ie+1) = ZERO
+          srx(ie+1) = ZERO
+       else
+          srx(ie+1) = slx(ie+1)
+       end if
+    else if (phys_bc(1,2) .eq. OUTLET) then       
+       if (is_vel .and. comp .eq. 1) then
+          slx(ie+1) = max(slx(ie+1),ZERO)
+          srx(ie+1) = max(slx(ie+1),ZERO)
+       else
+          srx(ie+1) = slx(ie+1)
+       end if
+    end if
+
+    do i=is,ie+1
+       ! make simhx by solving Riemann problem
+       simhx(i) = merge(slx(i),srx(i),umac(i) .gt. ZERO)
+       savg = HALF*(slx(i)+srx(i))
+       simhx(i) = merge(simhx(i),savg,abs(umac(i)) .gt. rel_eps)
+    enddo
+
+    !******************************************************************
+    ! Create sedgelx, etc.
+    !******************************************************************
+
+    ! loop over appropriate x-faces
+    do i=is,ie+1
+       ! make sedgelx, sedgerx
+       if(is_conservative) then
+          sedgelx(i) = slx(i) &
+               - (dt2/hx)*s(i-1,comp)*(umac(i  )-umac(i-1)) &
+               + dt2*force(i-1,comp)
+          sedgerx(i) = srx(i) &
+               - (dt2/hx)*s(i  ,comp)*(umac(i+1)-umac(i  )) &
+               + dt2*force(i  ,comp)
+       else
+          sedgelx(i) = slx(i) + dt2*force(i-1,comp)
+          sedgerx(i) = srx(i) + dt2*force(i  ,comp)
+       end if
+
+       ! add the (Utilde . e_r) d w_0 /dr e_r term here
+       ! umac contains w0 so we need to subtract it off
+
+       if (is_vel .and. comp .eq. 1) then
+          if (i .eq. 0) then
+             ! sedgelx unchanged since dw_0 / dr = 0
+             sedgerx(i) = sedgerx(i) &
+                  -(dt4/hx)*(umac(i+1)-w0(i+1)+umac(i)-w0(i))*(w0(i+1)-w0(i))
+          else if (i .eq. nr(n)) then
+             sedgelx(i) = sedgelx(i) &
+                  -(dt4/hx)*(umac(i)-w0(i)+umac(i-1)-w0(i-1))*(w0(i)-w0(i-1))
+             ! sedgerx unchanged since dw_0 / dr = 0
+          else
+             sedgelx(i) = sedgelx(i) &
+                  -(dt4/hx)*(umac(i)-w0(i)+umac(i-1)-w0(i-1))*(w0(i)-w0(i-1))
+             sedgerx(i) = sedgerx(i) &
+                  -(dt4/hx)*(umac(i+1)-w0(i+1)+umac(i)-w0(i))*(w0(i+1)-w0(i))
+          end if
+       end if
+
+       ! make sedgex by solving Riemann problem
+       ! boundary conditions enforced outside of i loop
+       sedgex(i,comp) = merge(sedgelx(i),sedgerx(i),umac(i) .gt. ZERO)
+       savg = HALF*(sedgelx(i)+sedgerx(i))
+       sedgex(i,comp) = merge(sedgex(i,comp),savg,abs(umac(i)) .gt. rel_eps)
+    enddo
+ 
+    ! impose lo side bc's
+    if (phys_bc(1,1) .eq. INLET) then
+       sedgex(is,comp) = s(is-1,comp)
+    else if (phys_bc(1,1) .eq. SLIP_WALL) then
+       if (is_vel .and. comp .eq. 1) then
+          sedgex(is,comp) = ZERO
+       else
+          sedgex(is,comp) = sedgerx(is)
+       end if
+    else if (phys_bc(1,1) .eq. NO_SLIP_WALL) then
+       if (is_vel) then
+          sedgex(is,comp) = ZERO
+       else
+          sedgex(is,comp) = sedgerx(is)
+       end if
+    else if (phys_bc(1,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 1) then
+          sedgex(is,comp) = min(sedgerx(is),ZERO)
+       else
+          sedgex(is,comp) = sedgerx(is)
+       end if
+    end if
+
+    ! impose hi side bc's
+    if (phys_bc(1,2) .eq. INLET) then
+       sedgex(ie+1,comp) = s(ie+1,comp)
+    else if (phys_bc(1,2) .eq. SLIP_WALL) then
+       if (is_vel .and. comp .eq. 1) then
+          sedgex(ie+1,comp) = ZERO
+       else
+          sedgex(ie+1,comp) = sedgelx(ie+1)
+       end if
+    else if (phys_bc(1,2) .eq. NO_SLIP_WALL) then
+       if (is_vel) then
+          sedgex(ie+1,comp) = ZERO
+       else
+          sedgex(ie+1,comp) = sedgelx(ie+1)
+       end if
+    else if (phys_bc(1,2) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 1) then
+          sedgex(ie+1,comp) = max(sedgelx(ie+1),ZERO)
+       else
+          sedgex(ie+1,comp) = sedgelx(ie+1)
+       end if
+    end if
+
+    deallocate(slx,srx,simhx,sedgelx,sedgerx)
+    deallocate(Ip,Im)
+
+  end subroutine make_edge_scal_1d
   
   subroutine make_edge_scal_2d(n,s,ng_s,sedgex,sedgey,ng_se,umac,vmac,ng_um, &
                                force,ng_f,w0,lo,hi,dx,dt,is_vel,phys_bc,adv_bc, &
