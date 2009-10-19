@@ -194,388 +194,48 @@ $\omegadot_k$ & creation rate for species $k$ ($\omegadot_k \equiv DX_k/Dt$) & s
 \renewcommand{\arraystretch}{1.0}
 There are some great charts in the appendix of the multilevel paper demonstrating what 
 the superscript notation represents.
-\section{Shorthand Functions}
-See the multilevel paper for the latest.
 
 %-----------------------------------------------------------------------------
 % Time Advancement Algorithm
 %-----------------------------------------------------------------------------
 
 \section{Time Advancement Algorithm}\label{Sec:Time Advancement Algorithm}
-
-We now describe the full time advancement algorithm, making frequent
-use of the shorthand developed above.  Here, we assume that the
-problem is already properly initialized.  We describe the details of
-the initialization in \S \ref{Sec:Initialization}.
-The advance of the state through a single timestep appears as:
-
-%--------------------------------------------------------------------------
-% STEP 1
-%--------------------------------------------------------------------------
-
-\begin{description}
-
-\item[Step 1.] {\em Define the provisional time-centered expansion, $S^{n+\myhalf,\star}$, 
-provisional base state velocity, $w_0^{n+\myhalf,\star}$, and provisional base state velocity 
-forcing.}
-
-\begin{enumerate}
-\renewcommand{\theenumi}{{\bf \alph{enumi}}}
-
-\item At the beginning of each time step, we need an estimate for the time-centered
-source term in the velocity divergence constraint, as given in paper III equation (19),
-\begin{equation}
-  S =  -\sigma  \sum_k  \xi_k \omegadot_k  + 
-  \frac{1}{\rho p_\rho} \sum_k p_{X_k}  {\omegadot}_k  + \sigma \Hnuc + \sigma \Hext 
-  + \frac{\sigma}{\rho}\nabla\cdot\kth\nabla T \enskip .
-\label{eq:defineS} 
-\end{equation}
-
-If this is the first step of the calculation ($n=0$), we set
-\begin{equation}
-S^{\myhalf,\star} = \frac{S^0 + S^1}{2} \enskip ,
-\end{equation}
-where $S^1$ is found through the iterative process that initializes the calculation.
-Otherwise, following the method used in our small-scale low Mach number algorithm
-(BDRWZ), we extrapolate to the half-time using the source
-terms at the previous and current time levels
-\begin{equation}
-S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}} \enskip .
-\end{equation}
-\item Compute
-\begin{equation}
-\overline{S^{\nph,\star}} = {\mathrm{\bf Avg}} \left(S^{\nph,\star}\right) \enskip .
-\end{equation}
-\item Compute $w_0^{n+\myhalf,\star}$:
-\begin{description}
-\item For planar geometry,\\
-{\bf Compute} {\boldmath $w_0$} {\bf Planar}$[\overline{S^{\nph,\star}},\gammabar^n,p_0^n,
-\psi^{n-\myhalf}] \rightarrow [w_0^{n+\myhalf,\star}]$.
-
-If we are using the volume discrepancy term, compute 
-$\overline{p^{\inp}} = \overline{p(\rho,h,X_k)^n}$.
-\item For spherical geometry,\\
-{\bf Compute} {\boldmath $w_0$} {\bf Spherical}$[\overline{S^{\nph,\star}},\gammabar^n,
-\rhozero^n,p_0^n,g^n,\etarho^{n-\myhalf}] \rightarrow [w_0^{n+\myhalf,\star}]$.
-\end{description}
-
-\item Define the base state velocity forcing using equation (38) from paper III,
-\begin{equation}
--\frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} 
-= \frac{\partial w_0}{\partial t} + w_0 \frac{\partial w_0}{\partial r} 
-\enskip, \label{eq:pizero}
-\end{equation}
-with the following discretization:
-\begin{equation}
-\left ( \frac{1}{\rho_0} \frac{\partial \pi_0}{\partial r} \right )^{n,\star} = 
--\frac{w_0^{\nph,\star} - w_0^\nmh}{(\dt^n+\dt^{n-1})/2} 
-- w_0^{n,\star} \left(\frac{\partial w_0}{\partial r}\right)^{n,\star} \enskip ,
-\end{equation} 
-where $w_0^{n,\star}$ and $(\partial w_0 / \partial r)^{n,\star}$ are defined through 
-paper III equation (53),
-\begin{equation}
-w_0^{n,\star} = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\dt^{n-1}} 
-\enskip,
-\end{equation}
-\begin{equation}
-\left(\frac{\partial w_0}{\partial r}\right)^{n,\star} = 
-\frac{1}{\dt^n+\dt^{n-1} } 
-\left [ \dt^{n} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nmh}
-+ \dt^{n-1} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nph,\star} \right ] 
-\enskip.
-\end{equation}
-If $n=0$, we use $\dt^{-1} = \dt^0$.
-
-\end{enumerate}
-
-%--------------------------------------------------------------------------
-% STEP 2
-%--------------------------------------------------------------------------
-\item[Step 2.] {\em Construct the provisional time-centered advective velocity on 
-edges, $\uadvone$.}
-
-The local velocity field is described by paper III equation (37),
-\begin{equation}
-\frac{\partial\Ubt}{\partial t} = 
-- \left(\Ubt+w_0\right) \cdot \nabla \Ubt
-- \left(\Ubt \cdot \eb_r\right) \frac{\partial w_0}{\partial r} \eb_r
-- \frac{1}{\rho} \nabla\pi
-+ \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \eb_r
-- \frac{(\rho-\rhozero)}{\rho} \; g \; \eb_r  \label{eq:utildeupd}  \enskip .
-\end{equation}
-
-We construct time-centered velocities at edges, $\uadvone$, 
-using a second-order unsplit Godunov procedure followed by an elliptic
-solve, as described in Appendix B of paper III.  We note that 
-$\uadvone$ satisfies the discrete versions of paper III equation (21),
-\begin{equation}
-\int_{\Omega_H} \Ubt \cdot \eb_r \; dA = 0 \label{eq:udoterzero} \enskip ,
-\end{equation}
-and paper III equation (39),
-\begin{equation}
-\nabla \cdot (\beta_0 \Ubt )  = \beta_0 \left(S - \Sbar \right )\enskip ,
-\label{eq:tildeconstraint}
-\end{equation}
-with the discretization
+Here are changes to the algorithm from the multilevel paper description.
+The initialization has also been included with more detail than was given in paper III.
+\subsection{Volume Discrepancy Changes}
+\begin{itemize}
+\item In {\bf Step 2B}, to compute $w_0$, we need to account for the volume discrepancy
+term by computing $p_{\rm EOS} = \overline{p(\rho,h,X_k)^n}$.
+\item In {\bf Step 3}, the MAC projection should account for the volume discrepancy term:
 \begin{equation}
 \nabla \cdot \left(\beta_0^n \uadvone\right) = 
-\beta_0^n \left(S^{\nph,\star} - \overline{S^{\nph,\star}}\right) \enskip .
-\end{equation}
-The discretization with the volume discrepancy correction is
-\begin{equation}
-\nabla \cdot \left(\beta_0^n \uadvone\right) = 
-\beta_0^n \left\{ \left(S^{\nph,\star} - \overline{S^{\nph,\star}}\right)
+\beta_0^n \left\{ \left(S^{\nph,\star\star} - \overline{S^{\nph,\star\star}}\right)
 + \frac{f}{\gammabar^n p_0^n}
-\left[\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n}\right]\right\} \enskip .
+\left[\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n}\right]\right\}.
 \end{equation}
-
-%--------------------------------------------------------------------------
-% STEP 3
-%--------------------------------------------------------------------------
-\item[Step 3.] {\em React the full state through the first time interval of $\dt / 2.$}
-
-\begin{enumerate}
-\renewcommand{\theenumi}{{\bf \alph{enumi}}}
-
-\item {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n, p_0^n] \rightarrow
-[ \rho^{(1)},(\rho h)^{(1)},X_k^{(1)},T^{(1)},(\rho \omegadot_k)^{(1)},(\rho \Hnuc)^{(1)} ]$.
-
-\item Set $(\rho h)_0^n$ to be the lateral average of $(\rho h)^{(1)}$:
-\begin{description}
-\item For planar geometry, set $(\rho h)_0^n = $ {\bf Avg}$[(\rho h)^{(1)}]$
-\item For spherical geometry, set $(\rho h)_0^n = (\rho h)_0^n +$ {\bf Avg}$[(\rho h)^{(1)} - (\rho h)_0^n]$
-\end{description}
-
-\end{enumerate}
-
-%--------------------------------------------------------------------------
-% STEP 4
-%--------------------------------------------------------------------------
-\item[Step 4.] {\em Advect the base state and full state, through a time interval of $\dt.$}
-
-\begin{enumerate}
-\renewcommand{\theenumi}{{\bf \alph{enumi}}}
-
-\item {\bf Advect Base Density}$[\rhozero^{n},w_0^{\nph,\star}] \rightarrow$ 
-$[\rho_0^{(2a),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
-
-\item \label{step:species update} 
-Update the species.  Here we consider only the advection terms, 
-neglecting the reaction terms, and solve a discretized version of
+\item In {\bf Step 6B}, to compute $w_0$, we need to account for the volume discrepancy
+term by computing $p_{\rm EOS} = \left[\overline{p(\rho,h,X_k)^n} + \overline{p(\rho,h,X_k)^{n+1,\star}}\right]/2$.
+\item In {\bf Step 7}, the MAC projection should account for the volume discrepancy term:
 \begin{equation}
-\frac{\partial (\rho X_k)}{\partial t} + \nabla \cdot (\Ub \rho X_k) = 0 \enskip .
-\label{eq:species}
+\nabla \cdot \left(\beta_0^{\nph,\star} \uadvtwo\right) = \beta_0^{\nph,\star}\left\{\left(S^{\nph,\star} - \overline{S^{\nph,\star}}\right) + \frac{f}{\overline{\Gamma_1^{\nph,\star}} p_0^{\nph,\star}} \left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right]\right\},
 \end{equation}
-The update consists of two steps:
-
-  \begin{enumerate}
-  \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
-
-  \item Compute the species edge states, $(\rho X_k)^{(1),\nph,\star}$,
-  for the conservative update of $(\rho X_k)^{(1)}$. 
-  Here we predict $\rho^{'(1)} = \rho^{(1)} - \rhozero^n$ and 
-  $X_k^{(1)} = (\rho X_k)^{(1)} / \rho^{(1)}$ to time-centered edges to obtain 
-  $\rho^{'(1),\nph,\star}$ and $X_k^{(1),\nph,\star}$ using a second-order
-  unsplit Godunov procedure, as described in paper II,
-  Appendix A, using $\Vb = \uadvone+w_0^{\nph,\star} \eb_r$.  Convert the 
-  perturbational edge state to a full state using
+where $p(\rho,h,X_k)^{\nph,\star} = \left[p(\rho,h,X_k)^n +p(\rho,h,X_k)^{n+1,\star}\right]/2$.
+\item In {\bf Step 11}, the approximate projection should account for the volume
+discrepancy term:
 \begin{equation}
-\rho^{(1),\nph,\star} = 
-\rho^{'(1),\nph,\star} + \frac{\rho_0^n + \rho_0^{(2a),\star}}{2} \enskip .
-\label{eq:rhoXedgestate}
+\nabla \cdot \left(\beta_0^{\nph} \Ubt^{n+1} \right)  = \beta_0^{\nph}\left\{  \left(S^{n+1} - \overline{S^{n+1}} \right)
++ \frac{f}{\overline{\Gamma_1^{n+1}} p_0^{n+1}}
+\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]\right\}.
 \end{equation}
-  In planar geometry, we use 4th-order spatial averaging to compute $\rho_0$ on 
-  radial faces.  In spherical geometry, we first map $\rho_0$ to Cartesian cell-centers 
-  using the mapping in section \ref{Sec:1D Cell-Centered to Cartesian Cell-Centered}, 
-  and then use 2nd-order spatial averaging to compute $\rho_0$ on all faces.
-
-  \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2),\star}$
-  without explicitly including the reaction terms,
-\begin{equation}
-(\rho X_k)^{(2),\star} = (\rho X_k)^{(1)} 
- - \dt \; \left\{ \nabla \cdot \left[ \left(\uadvone+w_0^{\nph,\star} \eb_r\right)  
-  (\rho X_k)^{(1),\nph,\star} \right] \right\} \enskip ,
-\end{equation}
-\begin{equation}
-\rho^{(2),\star} = \sum_k (\rho X_k)^{(2),\star} \enskip ,
-\end{equation}
-\begin{equation}
-X_k^{(2),\star} = (\rho X_k)^{(2),\star} / \rho^{(2),\star}
-\end{equation}
-
-\end{enumerate}
-
-\item Define an edge-centered $\etarho^{\nph,\star}$:
-
-\begin{description}
-\item For planar geometry,
-\begin{equation}
- \etarho^{\nph,\star} =  {\rm {\bf Avg}} \sum_k \left[ \left(\uadvone \cdot \eb_r + w_0^{\nph,\star}\right) (\rho X_k)^{(1),\nph,\star} \right] - w_0^{\nph,\star} \rho_0^{\nph,\star,{\rm pred}} \enskip ,
-\end{equation}
-\item For spherical geometry, first construct 
-$\eta_{\rho}^{{\rm cart},\nph,\star} = [\rho'(\Ubt\cdot\eb_r)]^{n+\myhalf,\star}$ using:
-\begin{equation}
-\eta_{\rho}^{{\rm cart},\nph,\star} = \left[\left(\frac{\rho^{(1)}+\rho^{(2),\star}}{2}\right)-\left(\frac{\rho_0^n+\rho_0^{(2a),\star}}{2}\right)\right] \sum_d \left(\uadvone \cdot \eb_d\right)n_d.
-\end{equation}
-Then, $\etarho^{\nph,\star}$ is the cell-centered average of $\eta_{\rho}^{{\rm cart},\nph,\star}$,
-\begin{equation}
-\etarho^{\nph,\star} = \overline{\eta_{\rho}^{{\rm cart},\nph,\star}}.
-\end{equation}
-This gives a cell-centered $\etarho^{\nph,\star}$.  To get $\etarho^{\nph,\star}$ at 
-radial edges, average the two neighboring radial cell-centers.
-\end{description}
-
-\item Set $\rho_0^{n+1,\star}$ to be the lateral average of $\rho^{(2),\star}$:
-\begin{description}
-\item For planar geometry, set $\rho_0^{n+1,\star} =$ {\bf Avg}$(\rho^{(2),\star})$
-\item For spherical geometry, set $\rho_0^{n+1,\star} = \rho_0^{(2a),\star} +$ {\bf Avg}$(\rho^{(2),\star} - \rho_0^{(2a),\star})$
-\end{description}
-
-\item {\bf Compute Gravity}$[\rho_0^{n+1,\star}] \rightarrow [g^{n+1,\star}]$.
-
-%{\bf Advect Base Pressure Planar}$[p_0^n, w_0^{\nph,\star}, \etarho^{n+\myhalf,\star}]
-%\rightarrow [p_0^{n+1,\star},\psi^{\nph,\star}]$.
-%\item For spherical geometry,\\
-%{\bf Advect Base Pressure Spherical}$[p_0^n,w_0^{\nph,\star},\gammabar^{(1)},
-%\overline{S^{\nph,\star}}, \rho^{(2),\star}, X_k^{(2),\star}]$\\
-%$~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-%\rightarrow [p_0^{n+1,\star},\psi^{n,\star},\psi^{\nph,\star}]$.
-\item {\bf Enforce HSE}$[p_0^n,\rho_0^{n+1,\star},g^{n+1,\star}] \rightarrow [p_0^{n+1,\star}]$.
-
-\item Compute $\psi$.
-\begin{description}
-\item For planar geometry,
-\begin{equation}
-\psi_j^{n+\myhalf,\star} = \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{n+\myhalf,\star} 
-+ \eta_{\rho,j+\myhalf}^{n+\myhalf,\star}\right) g \enskip .
-\end{equation}
-\item For spherical geometry, first compute:
-\begin{equation}
-\gammabar^{(1)} = {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(1)}, p_0^{n}, 
-X_k^{(1)}\right) \right] \enskip ,
-\end{equation}
-\begin{equation}
-\gammabar^{(2),\star} = {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(2),\star}, p_0^{n+1,\star}, 
-X_k^{(2),\star}\right) \right] \enskip .
-\end{equation}
-Then, define a base time and time-centered $\psi$:
-\begin{equation}
-\psi_j^{n,\star} = 
-\left(\gammabar^{(1)} p_0^n\right)_j
-\left \{ \Sbar_j^{n+\myhalf,\star} - 
-\frac{1}{r_j^2} \left [ (r^2 w_0^{n+\myhalf,\star})_{j+\myhalf} -
-          (r^2 w_0^{n+\myhalf,\star})_{j-\myhalf} \right ] \right \} \enskip ,
-\end{equation}
-\begin{eqnarray}
-\psi_j^{n+\myhalf,\star} &=& 
-\left(\frac{\gammabar^{(1)}+\gammabar^{(2),\star}}{2}\right)_j
-\left(\frac{p_0^n+p_0^{n+1,\star}}{2}\right)_j \nonumber \\
-&& \left \{ \Sbar_j^{n+\myhalf,\star} - 
-\frac{1}{r_j^2} \left [ (r^2 w_0^{n+\myhalf,\star})_{j+\myhalf} -
-          (r^2 w_0^{n+\myhalf,\star})_{j-\myhalf} \right ] \right \} \enskip .
-\end{eqnarray}
-\end{description}
-
-\item Update $(\rho h)_0$.
-\begin{description}
-\item For planar geometry,\\
-{\bf Advect Base Enthalpy Planar}$[(\rho h)_0^{n}, w_0^{\nph,\star}, \psi^{\nph,\star}]
-\rightarrow [(\rho h)_0^{n+1,\star}]$.
-\item For spherical geometry,\\
-{\bf Advect Base Enthalpy Spherical}$[(\rho h)_0^{n}, w_0^{\nph,\star}, 
-\psi^{n,\star},\psi^{\nph,\star}] \rightarrow [(\rho h)_0^{n+1,\star}]$.
-\end{description}
-
-\item Update the enthalpy.  Here we consider only the advective terms, 
-neglecting the reaction terms and thermal diffusion terms, and solve a discretized version of
-  \begin{equation}
-  \frac{\partial (\rho h)}{\partial t}  = - \nabla \cdot (\Ub \rho h)
-+ \psi + (\Ubt \cdot \eb_r) \frac{\partial p_0}{\partial r} 
-\enskip , \label{eq:rhohupdadv} 
-  \end{equation}
-For spherical geometry, experience has shown that solving the analytically equivalent form,
-\begin{equation}
-  \frac{\partial (\rho h)}{\partial t}  = - \nabla \cdot (\Ub \rho h)
-+ \psi + \nabla \cdot (\Ubt p_0) - p_0 \nabla \cdot \Ubt  
-\enskip , \label{eq:rhohupdadv2} 
-\end{equation}
-results in a better solution.
-
-  \begin{enumerate}
-  \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
-
-  \item Compute the enthalpy edge state, $(\rho h)^{(1),\nph,\star},$
-    for the conservative update of $(\rho h)^{(1)}.$  Here we predict 
-    $(\rho h)' = (\rho h)^{(1)} - (\rho h)_0$ to time-centered edges to obtain 
-    $(\rho h)^{'(1),\nph,\star}$, 
-    using a second-order unsplit Godunov procedure, 
-    as described in paper II, Appendix A, using $\Vb =
-    \uadvone+w_0^{\nph,\star} \eb_r$.  We do not include the reaction
-    terms in the enthalpy prediction, since we accounted for them
-    already in {\bf React State}.  Convert the perturbational edge
-    state to a full state using
-    
-\begin{equation}
-(\rho h)^{(1),\nph,\star} = 
-(\rho h)^{'(1),\nph,\star} + \frac{(\rho h)_0^n + (\rho h)_0^{n+1,\star}}{2}
-\enskip .
-\end{equation}
-  For planar geometry, we use 4th-order spatial averaging to compute $(\rho h)_0$
-  on radial faces.  In spherical geometry, we first map $h_0 \equiv (\rho h)_0/\rho_0$ 
-  and $\rho_0$ to Cartesian cell-centers using the mapping in section 
-  \ref{Sec:1D Cell-Centered to Cartesian Cell-Centered}, use 2nd-order spatial 
-  averaging to compute $h_0$ and $\rho_0$ on all faces, and then multiply these 
-  terms to get $(\rho h)_0$ on all faces.
-
-  \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2),\star}$ without
-  explicitly including the reaction terms.
-
-\begin{description}
-\item For planar geometry,
-
-  \begin{eqnarray}
-  (\rho h)^{(2),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nabla
-      \cdot \left[ \left(\uadvone+w_0^{\nph,\star} \eb_r\right) (\rho
-      h)^{(1),\nph,\star} \right] \right\} \nonumber \\ && + \dt \;
-    \left(\uadvone \cdot \eb_r\right) \left(\frac{\partial
-      p_0}{\partial r} \right)^{n} + \dt \; \psi^{\nph,\star} \enskip ,
-  \end{eqnarray}
-
-\item For spherical geometry,
-
-  \begin{eqnarray}
-  (\rho h)^{(2),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nabla
-      \cdot \left[ \left(\uadvone+w_0^{\nph,\star} \eb_r\right) (\rho
-      h)^{(1),\nph,\star} \right] \right\} \nonumber \\ 
-    && + \dt \; \left \{ \nabla \cdot \left (\uadvone p_0^{n} \right ) 
-       - p_0^{n} \nabla \cdot \uadvone \right \} \nonumber \\
-    && + \dt \; \psi^{\nph,\star} \enskip ,
-  \end{eqnarray}
-
-\end{description}
-
-\end{enumerate}
-
-If {\tt do\_eos\_h\_above\_cutoff=T} (which is the default setting), then if
-$\rho^{(2),\star} < {\tt base\_cutoff\_density}$, then we recompute enthalpy using
-\begin{equation}
-(\rho h)^{(2),\star} = \rho^{(2),\star}h\left(\rho^{(2),\star},p_0^{n+1,\star},X_k^{(2),\star}\right).
-\end{equation}
-
-
-%--------------------------------------------------------------------------
-% STEP 4.1
-%--------------------------------------------------------------------------
-
-\item If we are using thermal diffusion, diffuse the enthalpy through a time interval of 
-$\dt$.  First, define $(\rho h)^{(1a),\star} = (\rho h)^{(2),\star}$.  We recompute
-$(\rho h)^{(2),\star}$ to account for thermal diffusion.  Here we begin
+\end{itemize}
+\subsection{Thermal Diffusion Changes}
+Immediately after {\bf Step 4H}, diffuse the enthalpy through 
+a time interval of $\dt$.  First, define $(\rho h)^{(1a),\star} = (\rho h)^{(2),\star}$.  
+We recompute $(\rho h)^{(2),\star}$ to account for thermal diffusion.  Here we begin
 with the enthalpy equation, but consider only the 
 diffusion terms,
 \begin{equation}
-  \frac{\partial (\rho h)}{\partial t}  = 
- \nabla\cdot\kth\nabla T 
-\enskip . \label{eq:rhohupdthermal} 
+\frac{\partial (\rho h)}{\partial t} = \nabla\cdot\kth\nabla T.
   \end{equation}
 We can recast this as an enthalpy-diffusion equation by applying the
 chain-rule to $h(p_0,T,X_k)$,
@@ -587,10 +247,8 @@ giving
   \frac{\partial (\rho h)}{\partial t}  = 
  \nabla\cdot \frac{\kth}{c_p}\nabla h -  
  \sum_k \nabla\cdot \frac{\xi_k \kth}{c_p}\nabla X_k -
- \nabla\cdot \frac{h_p \kth}{c_p}\nabla p_0 
-\enskip . \label{eq:rhohupdthermal2} 
+ \nabla\cdot \frac{h_p \kth}{c_p}\nabla p_0.
   \end{equation}
-
 Compute $\kth^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  The update is given by
 \begin{eqnarray}
 (\rho h)^{(2),\star} &=& (\rho h)^{(1a),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
@@ -603,306 +261,8 @@ which is numerically implemented as a diffusion equation for $h^{(2),\star}$,
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{n+1,\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{n}\right),
 \end{eqnarray}
-\item Update the temperature using the equation of state.  For planar geometry,
-we update using
-\begin{equation}
-T^{(2),\star} = T\left(\rho^{(2),\star}, h^{(2),\star}, X_k^{(2),\star}\right) \enskip ,
-\end{equation}
-but in spherical geometry, we set {\tt use\_tfromp = T}, and we use
-\begin{equation}
-T^{(2),\star} = T\left(\rho^{(2),\star}, p_0^{n+1,\star}, X_k^{(2),\star}\right) \enskip .
-\end{equation}
-The latter has the effect of completely decoupling the enthalpy equation from the 
-evolution.
 
-\end{enumerate}
-
-%--------------------------------------------------------------------------
-% STEP 5
-%--------------------------------------------------------------------------
-\item[Step 5.] {\em React the full state through a second time interval of $\dt / 2.$}
-
-{\bf React State}$[ \rho^{(2),\star},(\rho h)^{(2),\star}, X_k^{(2),\star}, T^{(2),\star}, 
-(\rho\Hext)^{(2),\star}, p_0^{n+1,\star}] $\\
-$~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-\rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, 
-X_k^{n+1,\star}, T^{n+1,\star}, (\rho \omegadot_k)^{(2),\star}, (\rho \Hnuc)^{(2),\star} ].$
-
-%--------------------------------------------------------------------------
-% STEP 6
-%--------------------------------------------------------------------------
-\item[Step 6.] {\em Define the time-centered expansion, $S^{n+\myhalf}$, base state
-velocity, $w_0^{n+\myhalf}$, and base state velocity forcing.}
-
-\begin{enumerate}
-\renewcommand{\theenumi}{{\bf \alph{enumi}}}
-\item Define
-\begin{equation}
-  S^{n+1,\star} =  -\sigma  \sum_k  \xi_k  (\omegadot_k)^{(2),\star}  + 
-  \sigma \Hnuc^{(2),\star} +
-  \frac{1}{\rho p_\rho} \sum_k p_{X_k}  ({\omegadot}_k)^{(2),\star}  
-  + \sigma \Hext + \frac{\sigma}{\rho}\nabla\cdot\kth\nabla T^{n+1,\star} \enskip ,
-\end{equation} 
-where $(\omegadot_k)^{(2),\star} = (\rho \omegadot_k)^{(2),\star} / \rho^{(2),\star}$
-and the thermodynamic quantities are defined using $\rho^{n+1,\star}, X_k^{n+1,\star},$ 
-and $T^{n+1,\star}$ as inputs to the equation of state.
-Then define
-\begin{equation}
- S^\nph = \frac{S^n + S^{n+1,\star}}{2} \enskip. 
-\end{equation}
-
-\item Compute
-\begin{equation}
-\overline{S^{\nph}} = {\mathrm{\bf Avg}} (S^{\nph}) \enskip.
-\end{equation}
-
-\item Define:
-\begin{eqnarray}
-\gammabar^{\nph} = \frac{\gammabar^{n} + \gammabar^{n+1,\star}}{2}\enskip, \qquad
-\rhozero^{\nph} = \frac{\rhozero^{n} + \rhozero^{n+1,\star}}{2}\enskip, \nonumber \\
-p_0^{\nph} = \frac{p_0^{n} + p_0^{n+1,\star}}{2}\enskip, \qquad
-g^\nph = \frac{g^n + g^{n+1,\star}}{2}\enskip ,
-\end{eqnarray}
-with
-\begin{equation}
- \gammabar^{n+1,\star} = {\rm{\bf Avg}} 
-\left[ \Gamma_1\left(\rho^{n+1,\star}, p_0^{n+1,\star}, X_k^{n+1,\star}\right) \right] 
-\enskip .
-\end{equation}
-
-\item Compute $w_0^{n+\myhalf}$:
-\begin{description}
-\item For planar geometry,\\
-{\bf Compute} {\boldmath $w_0$} {\bf Planar}$[\overline{S^{\nph}},
-\gammabar^{n+\myhalf},p_0^{n+\myhalf},g^{n+\myhalf},\psi^{n+\myhalf,\star}]\rightarrow [w_0^{n+\myhalf}]$.
-
-If we are using the volume discrepancy term, compute
-\begin{equation}
-\overline{p^{\inp}} = \frac{\overline{p(\rho,h,X_k)^n} + \overline{p(\rho,h,X_k)^{n+1,\star}}}{2}.
-\end{equation}
-\item For spherical geometry,\\
-{\bf Compute} {\boldmath $w_0$} {\bf Spherical}$[\overline{S^{\nph}},\gammabar^{n+\myhalf},
-\rhozero^{n+\myhalf},p_0^{n+\myhalf},\etarho^{n+\myhalf}] \rightarrow [w_0^{n+\myhalf}]$.
-\end{description}
-
-\item Define the base state velocity forcing using equation (\ref{eq:pizero}) 
-with the following discretization:
-\begin{equation}
-\left ( \frac{1}{\rho_0} \frac{\partial \pi_0}{\partial r} \right )^n = 
--\frac{w_0^{\nph} - w_0^\nmh}{\myhalf(\dt^n+\dt^{n-1})} 
-- w_0^n \left(\frac{\partial w_0}{\partial r}\right)^n,
-\end{equation}
-where $w_0^{n}$ and $(\partial w_0 / \partial r)^{n}$ are defined as
-\begin{equation}
-w_0^n = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph}}{\dt^n+\dt^{n-1}}\enskip,
-\end{equation}
-\begin{equation}
-\left(\frac{\partial w_0}{\partial r}\right)^{n} = \frac{1}{\dt^n+\dt^{n-1} } \left [ \dt^{n} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nmh}
-+ \dt^{n-1} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nph} \right ] \enskip.
-\end{equation}
-If $n=0$, we use $\dt^{-1} = \dt^0$.
-
-\end{enumerate}
-
-%--------------------------------------------------------------------------
-% STEP 7
-%--------------------------------------------------------------------------
-\item[Step 7.] {\em Construct the time-centered advective velocity on edges, $\uadvtwo$.}
-
-The procedure to construct $\uadvtwo$ is described in detail in Appendix B of paper III
-and is analogous to the procedure used in step 2, but with updated values
-for $w_0$ and $\pizero.$  We note that $\uadvtwo$ satisfies the discrete versions of 
-equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}), with the discretization
-\begin{equation}
-\nabla \cdot \left(\beta_0^{\nph} \uadvtwo\right) =
-\beta_0^{\nph}\left(S^{\nph} - \overline{S^{\nph}}\right) \enskip ,
-\end{equation}
-\begin{equation}
-\beta_0^{\nph} = \frac{ \beta_0^n +  \beta_0^{n+1,\star} }{2}; ~~~~~
- \beta_0^{n+1,\star} = \beta \left(\rho_0^{n+1,\star}, p_0^{n+1,\star}, \gammabar^{n+1,\star}, g^{n+1,\star}\right) \enskip ,
-\end{equation}
-where $\beta_0$ is computed as described in paper III, Appendix C.
-
-The discretization with the volume discrepancy correction is
-\begin{equation}
-\nabla \cdot \left(\beta_0^{\nph} \uadvtwo\right) =
-\beta_0^{\nph}\left\{\left(S^{\nph} - \overline{S^{\nph}}\right)
- + \frac{f}{\gammabar^{\nph} p_0^{\nph}}\cdot 
-\left[\frac{p(\rho,h,X_k)^{\nph} - \overline{p(\rho,h,X_k)^{\nph}}}{\Delta t^n}\right]\right\} \enskip ,
-\end{equation}
-
-%--------------------------------------------------------------------------
-% STEP 8
-%--------------------------------------------------------------------------
-\item[Step 8.] {\em Advect the base state and full state through a time interval of $\dt.$}
-
-\begin{enumerate}
-\renewcommand{\theenumi}{{\bf \alph{enumi}}}
-
-\item {\bf Advect Base Density}$[\rho_0^{n},w_0^{\nph}] \rightarrow$ 
-$[\rho_0^{(2a)}, \rho_0^{\nph,{\rm pred}}]$.
-
-\item Update the species.  This step is identical to step 4b with the following changes:
-
-\begin{enumerate}
-\renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
-
-\item Compute the species edge states, $(\rho X_k)^{(1),n+\myhalf}$, 
-using $\Vb = \uadvtwo+w_0^{\nph}\eb_r$.  Convert the perturbational edge 
-state to a full state using 
-\begin{equation}
-\rho^{(1),\nph} = \rho^{'(1),\nph} + \frac{\rho_0^n + \rho_0^{(2a)}}{2}\enskip .
-\end{equation}
-
-\item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$ using
-\begin{equation}
-(\rho X_k)^{(2)} = (\rho X_k)^{(1)} 
-- \dt \; \left\{ \nabla \cdot \left[\left(\uadvtwo+w_0^{\nph} \eb_r\right)  
-(\rho X_k)^{(1),\nph} \right] \right\}  \enskip ,
-\end{equation}
-\begin{equation}
-\rho^{(2)} = \sum_k (\rho X_k)^{(2)} \enskip ,
-\end{equation}
-\begin{equation}
-X_k^{(2)} = (\rho X_k)^{(2)} / \rho^{(2)}
-\end{equation}
-
-\end{enumerate}
-
-\item Define an edge-centered $\etarho^{\nph}$:
-
-\begin{description}
-
-\item For planar geometry,
-\begin{equation}
- \etarho^{\nph} = {\rm {\bf Avg}} \sum_k \left [\left(\uadvtwo \cdot \eb_r + w_0^{\nph}\right) (\rho X_k)^{(1),\nph} \right] - w_0^{\nph} \rho_0^{\nph,{\rm pred}} \enskip ,
-\end{equation}
-\item For spherical geometry, first construct 
-$\eta_{\rho}^{{\rm cart},\nph} = [\rho'(\Ubt\cdot\eb_r)]^{n+\myhalf}$ using:
-\begin{equation}
-\eta_{\rho}^{{\rm cart},\nph} = \left[\left(\frac{\rho^{(1)}+\rho^{(2)}}{2}\right)-\left(\frac{\rho_0^n+\rho_0^{(2a)}}{2}\right)\right] \sum_d \left(\uadvtwo \cdot \eb_d\right)n_d.
-\end{equation}
-Then, $\etarho^{\nph}$ is the cell-centered average of $\eta_{\rho}^{{\rm cart},\nph}$,
-\begin{equation}
-\etarho^{\nph} = \overline{\eta_{\rho}^{{\rm cart},\nph}}.
-\end{equation}
-This gives a cell-centered $\etarho^{\nph}$.  To get $\etarho^{\nph}$ at 
-radial edges, average the two neighboring cell-centers.
-\end{description}
-
-\item Set $\rho_0^{n+1}$ to be the lateral average of $\rho^{(2)}$:
-\begin{description}
-\item For planar geometry, set $\rho_0^{n+1} =$ {\bf Avg}$(\rho^{(2)})$
-\item For spherical geometry, set $\rho_0^{n+1} = \rho_0^{(2a)} +$ {\bf Avg}$(\rho^{(2)} - \rho_0^{(2a)})$
-\end{description}
-
-\item {\bf Compute Gravity}$[\rho_0^{n+1}] \rightarrow [g^{n+1}]$.
-
-Then, set $g^{n+\myhalf} = (g^n + g^{n+1})/2$.
-
-%\item Update $p_0$ and compute $\psi$.
-%\begin{description}
-%\item For planar geometry,\\
-%{\bf Advect Base Pressure Planar}$[p_0^n, w_0^{\nph}, \etarho^{n+\myhalf}]$ 
-%$\rightarrow [p_0^{n+1},\psi^{\nph}]$.
-%\item For spherical geometry,\\
-%{\bf Advect Base Pressure Spherical}$[p_0^n,w_0^{\nph},\gammabar^{(1)},\overline{S^{\nph}},
-%\rho^{(2)},X_k^{(2)}]$\\
-%$~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-% \rightarrow [p_0^{n+1},\psi^n,\psi^{\nph}]$.
-%\end{description}
-\item {\bf Enforce HSE}$[p_0^n,\rho_0^{n+1},g^{n+1}] \rightarrow [p_0^{n+1}]$.
-
-\item Compute $\psi$.
-\begin{description}
-\item For planar geometry, 
-\begin{equation}
-\psi_j^{n+\myhalf} = \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{n+\myhalf} 
-+ \eta_{\rho,j+\myhalf}^{n+\myhalf}\right) g\enskip .
-\end{equation}
-\item For spherical geometry, first compute:
-\begin{equation}
-\gammabar^{(2)} = {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(2)}, p_0^{n+1}, 
-X_k^{(2)}\right) \right] \enskip .
-\end{equation}
-Then, define a base time and time-centered $\psi$:
-\begin{equation}
-\psi_j^{n} = 
-\left(\gammabar^{(1)} p_0^n\right)_j
-\left \{ \Sbar_j^{n+\myhalf} - 
-\frac{1}{r_j^2} \left [ (r^2 w_0^{n+\myhalf})_{j+\myhalf} -
-          (r^2 w_0^{n+\myhalf})_{j-\myhalf} \right ] \right \} \enskip ,
-\end{equation}
-\begin{eqnarray}
-\psi_j^{n+\myhalf} &=& 
-\left(\frac{\gammabar^{(1)}+\gammabar^{(2)}}{2}\right)_j
-\left(\frac{p_0^n+p_0^{n+1}}{2}\right)_j \nonumber \\
-&& \left \{ \Sbar_j^{n+\myhalf} - 
-\frac{1}{r_j^2} \left [ (r^2 w_0^{n+\myhalf})_{j+\myhalf} -
-          (r^2 w_0^{n+\myhalf})_{j-\myhalf} \right ] \right \} \enskip .
-\end{eqnarray}
-\end{description}
-
-\item Update $(\rho h)_0$.
-\begin{description}
-\item For planar geometry,\\
-{\bf Advect Base Enthalpy Planar}$[(\rho h)_0^n, w_0^{\nph}, \psi^{\nph}]
-\rightarrow [(\rho h)_0^{n+1}]$.
-\item For spherical geometry,\\
-{\bf Advect Base Enthalpy Spherical}$[(\rho h)_0^n, w_0^{\nph}, \psi^n, \psi^{\nph}]
-\rightarrow [(\rho h)_0^{n+1}]$.
-\end{description}
-
-\item Update the enthalpy.  This step is identical to step 4i with the following changes:
-
-\begin{enumerate}
-\renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
-
-\item Compute the enthalpy edge state, $(\rho h)^{(1),\nph}$, using
-$\Vb = \uadvtwo+w_0^{\nph} \eb_r$.  Convert the perturbational edge 
-state to a full state using
-\begin{equation}
-(\rho h)^{(1),\nph} = 
-(\rho h)^{'(1),\nph} + \frac{(\rho h)_0^n + (\rho h)_0^{n+1}}{2} \enskip .
-\end{equation}
-
-\item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$
-without explicitly including the reaction terms,
-
-\begin{description}
-\item For planar geometry,
-\begin{eqnarray}
-(\rho h)^{(2)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nabla \cdot \left[ \left(\uadvtwo+w_0^{\nph} \eb_r\right)  
-(\rho h)^{(1),\nph} \right] \right\} \nonumber \\
-&& + \frac{\dt}{2} \; \left(\uadvtwo \cdot \eb_r\right)
-\left [ \left(\frac{\partial p_0}{\partial r} \right)^{n}
-      + \left(\frac{\partial p_0}{\partial r} \right)^{n+1}  \right ] 
-+ \dt \; \psi^{\nph} \enskip ,
-\end{eqnarray}
-
-\item For spherical geometry,
-\begin{eqnarray}
-(\rho h)^{(2)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nabla \cdot \left[ \left(\uadvtwo+w_0^{\nph} \eb_r\right)  
-(\rho h)^{(1),\nph} \right] \right\} \nonumber \\
-    && + \dt \; \left \{ \nabla \cdot \left (\uadvtwo p_0^{\nph} \right ) 
-       - p_0^{\nph} \nabla \cdot \uadvtwo \right \} \nonumber \\
-    && + \dt \; \psi^{\nph} \enskip ,
-\end{eqnarray}
-
-\end{description}
-
-\end{enumerate}
-
-If {\tt do\_eos\_h\_above\_cutoff=T} (which is the default setting), then if
-$\rho^{(2)} < {\tt base\_cutoff\_density}$, then we recompute enthalpy using
-\begin{equation}
-(\rho h)^{(2)} = \rho^{(2)}h\left(\rho^{(2)},p_0^{n+1},X_k^{(2)}\right).
-\end{equation}
-
-%--------------------------------------------------------------------------
-% STEP 8.1
-%--------------------------------------------------------------------------
-\item If we are using thermal diffusion, diffuse the enthalpy through a time interval of 
+Immediately after {\bf Step 8H}, diffuse the enthalpy through a time interval of 
 $\dt$.  First, define $(\rho h)^{(1a)} = (\rho h)^{(2)}$.  We recompute $(\rho h)^{(2)}$ to 
 account for thermal diffusion.  Compute $\kth^{(2),\star}, c_p^{(2),\star}$, and 
 $\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to 
@@ -912,162 +272,12 @@ the equation of state.  The update is given by
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{n+1} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{n}\right),
 \end{eqnarray}
-which is numerically implemented as a diffusion equation for $h^{(2)}$,
+which is numerically implemented as a diffusion equation for $h^{(2)}$.
 \begin{eqnarray}
 \left(\rho^{(2)} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla\right)h^{(2)} &=& (\rho h)^{(1a)} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{n+1} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{n}\right),
 \end{eqnarray}
-\item Update the temperature using the equation of state.  For planar geometry we
-update using
-\begin{equation}
-T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) \enskip ,
-\end{equation}
-but in spherical geometry, we set {\tt use\_tfromp = T}, and we use
-\begin{equation}
-T^{(2)} = T\left(\rho^{(2)}, p_0^{n+1}, X_k^{(2)}\right) \enskip .
-\end{equation}
-The latter has the effect of completely decoupling the enthalpy equation from the 
-evolution.
-
-\end{enumerate}
-
-%--------------------------------------------------------------------------
-% STEP 9
-%--------------------------------------------------------------------------
-\item[Step 9.] {\em React the full state through a second time interval of $\dt / 2.$}
-
-{\bf React State}$[\rho^{(2)},(\rho h)^{(2)}, X_k^{(2)},T^{(2)}, (\rho\Hext)^{(2)}, p_0^{n+1}]$\\
-$~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\rightarrow [\rho^{n+1}, 
-(\rho h)^{n+1}, X_k^{n+1}, T^{n+1}, (\rho \omegadot_k)^{(2)}, (\rho \Hnuc)^{(2)} ].$  
-
-
-%--------------------------------------------------------------------------
-% STEP 10
-%--------------------------------------------------------------------------
-\item[Step 10.] {\em Define the new time expansion $S^{n+1}$, and $\gammabar^{n+1}$.}
-
-\begin{enumerate}
-\renewcommand{\theenumi}{{\bf \alph{enumi}}}
-\item Define
-\begin{equation}
-  S^{n+1} =  -\sigma  \sum_k  \xi_k (\omegadot_k)^{(2)}  + \sigma \Hnuc^{(2)} +
-  \frac{1}{\rho p_\rho} \sum_k p_{X_k}  ({\omegadot}_k)^{(2)}  
-   + \sigma \Hext + \frac{\sigma}{\rho}\nabla\cdot\kth\nabla T^{n+1} \enskip ,
-\end{equation}
-where $(\omegadot_k)^{(2)} = (\rho \omegadot_k)^{(2)} / \rho^{(2)}$
-and the thermodynamic quantities are defined using $\rho^{n+1}, X_k^{n+1},$
-and $T^{n+1}$ as inputs to the equation of state.
-
-\item Compute
-\begin{equation}
-\overline{S^{n+1}} = {\mathrm{\bf Avg}} (S^{n+1}) \enskip.
-\end{equation}
-
-\item Define
-\begin{equation}
- \gammabar^{n+1} = {\rm{\bf Avg}}\left[\Gamma_1\left(\rho^{n+1}, p_0^{n+1}, 
-X_k^{n+1}\right) \right] \enskip .
-\end{equation}
-
-\end{enumerate}
-
-
-%--------------------------------------------------------------------------
-% STEP 11
-%--------------------------------------------------------------------------
-\item[Step 11.] {\em Update the velocity}.  
-
-The velocity update happens analogously to paper II, using $S^{n+1}$ from step 10.
-We update the velocity field $\Ubt^n$ to $\Ubt^{n+1,\star}$ by discretizing 
-equation (\ref{eq:utildeupd}) as
-\begin{eqnarray}
-\Ubt^{n+1,\star} &=& \Ubt^n - \dt \;
- \left[\left(\uadvtwo+ w_0^{\nph} \eb_r\right) \cdot \nabla \Ubt \right]^\nph
-      - \dt \; \left(\uadvtwo \cdot \eb_r\right)  \left(\frac{\partial w_0^{\nph}}{\partial r} \right) \eb_r \nonumber \\
-   &&   + \dt \left[ - \frac{1}{\rho^\nph} {\mathbf{G}} \pi^\nmh
-        + \frac{1}{\rho_0} {\mathbf{G}} \pi_0^n
-        - \frac{(\rho^\nph-\rhozero^\nph)}{\rho^\nph} g^{n+\myhalf} \eb_r \right] \enskip ,
-\end{eqnarray}
-where $\rho^{\nph}$ is defined as
-\begin{equation}
-\rho^\nph = \frac{\rho^n + \rho^{n+1}}{2}\enskip ,
-\end{equation}
-and $\mathbf{G}$ approximates a cell-centered gradient from nodal data.
-The construction of $[(\uadvtwo+ w_0^{\nph} \eb_r \cdot \nabla) \Ubt ]^\nph$
-is described in paper II, Appendix A, with $\Vb = \uadvtwo+w_0^{\nph} \eb_r$ and $s$ 
-set to each component of $\Ubt^n$ individually.  Here, the $\star$ superscript 
-does not refer to the predictor-corrector aspect of the algorithm, but rather 
-than the updated velocity does not satisfy the divergence constraint.
-
-Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}):
-\begin{equation}
-\nabla \cdot \left(\beta_0^{\nph} \Ubt^{n+1} \right) 
-= \beta_0^{\nph} \left(S^{n+1} - \overline{S^{n+1}} \right) \enskip,
-\end{equation}
-where $\beta_0^{n+\myhalf}$ is now defined as
-\begin{equation}
-\beta_0^{n+\myhalf} = \frac{\beta_0^n + \beta_0^{n+1}}{2}; ~~~~~ 
-\beta_0^{n+1} = \beta \left(\rho_0^{n+1}, p_0^{n+1}, \gammabar^{n+1}, g^{n+1}\right)\enskip .
-\end{equation}
-
-The discretization with the volume discrepancy term is:
-\begin{equation}
-\nabla \cdot \left(\beta_0^{\nph} \Ubt^{n+1} \right)  = \beta_0^{\nph}\left\{  \left(S^{n+1} - \overline{S^{n+1}} \right)
-+ \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]\right\}
-\enskip .
-\end{equation}
-
-To solve this equation, we define
-${\bf V} = \Ubt^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
-and solve
-\begin{equation}
- L_\beta^\rho \phi = D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph} 
-\left(S^{n+1}-\overline{S^{n+1}} \right) \enskip, \label{Linear System for Multigrid}
-\end{equation}
-for nodal values of $\phi$, where $L_\beta^\rho$ is the standard bilinear
-finite element approximation to $\nabla \cdot ({\beta_0^\nph}/{\rho^\nph}) \nabla.$
-The discretization with the volume discrepancy term is:
-\begin{equation}
- L_\beta^\rho \phi =
-   D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph}\left\{ \left(S^{n+1}-\overline{S^{n+1}} \right)
-- \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]\right\} \enskip.
-\end{equation}
-In this step, $D$ is a discrete second-order operator that approximates the 
-divergence at nodes from cell-centered data and satisfies
-$\mathbf{G} = -D^T.$ 
-(See (cite almgrenBellSzymczak:1996) for a detailed discussion of this
-approximate projection; see (cite almgren:bell:crutchfield) for a discussion
-of this particular form of the projection operand.)  
-We solve the linear system of equation (\ref{Linear System for Multigrid})
-using multigrid V-cycles with Gauss-Seidel relaxation.
-
-We determine the new time velocity field from
-\begin{equation}
-\Ubt^{n+1} = {\bf V} - \frac{1}{\rho^\nph} \mathbf{G} \phi \enskip ,
-\end{equation}
-and the new time-centered perturbational pressure from
-\begin{equation}
-  \pi^\nph = \frac{1}{\dt} \phi \enskip .
-\end{equation}
-
-%--------------------------------------------------------------------------
-% STEP 12
-%--------------------------------------------------------------------------
-\item[Step 12.] {\em Compute a new $\dt.$}
-
-Compute $\dt$ for the next time step with the procedure described in \S 3.4 of paper III
-using $w_0$ as computed in step 6 and
-$\Ubt^{n+1}$ as computed in step 11.  We use this $\dt$ in the next time step. 
-
-
-\end{description}
-
-\noindent This completes the time advancement of the algorithm.
-
-
 
 %-----------------------------------------------------------------------------
 % Initialization
@@ -1087,9 +297,9 @@ the constraint.  The user specifies the number of iterations,
 $N_{\rm iters}^{S},$ in this first step of the initialization procedure.
 
 The initial perturbational pressure also needs to be determined for
-use in steps 2, 7 and 11. 
+use in {\bf Steps 2}, {\bf 7}, and {\bf 11}. 
 This is done through a second iterative procedure which follows the
-time advancement algorithm as described in steps 1-11 in 
+time advancement algorithm as described in {\bf Steps 1-11} in 
 \S \ref{Sec:Time Advancement Algorithm}.  
 The user specifies the number of iterations, 
 $N_{\rm iters}^{\pi},$ in this second step of the initialization procedure.
@@ -1127,7 +337,7 @@ X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{0,\nu} ].$
 
   \item Compute $\overline{S^{0,\nu}} = {\mathrm{\bf Avg}} (S^{0,\nu}).$
 
-  \item Compute $w_0^{\nu}$ as in step 1c using $\overline{S^{0,\nu}}$ and $\psi=0$.
+  \item Compute $w_0^{\nu}$ as in {\bf Step 2B} using $\overline{S^{0,\nu}}$ and $\psi=0$.
         
   \item Project $\Ub^{0,\nu-1}$ using $\beta_0^0$ and 
         $(S^{0,\nu} - \overline{S^{0,\nu}})$ as the source term.  
@@ -1146,27 +356,27 @@ Next, we need to construct approximations to $\etarho^{-\myhalf}, \psi^{-\myhalf
 and $\pi^{-\myhalf}$.  As initial approximations, set 
 $\etarho^{-\myhalf}=0, \psi^{-\myhalf}=0, S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
 \begin{enumerate}
-  \renewcommand{\theenumi}{{\bf \alph{enumi}}}
-  \renewcommand{\labelenumii}{\roman{enumii}.}
-  \addtocounter{enumi}{1}
+\renewcommand{\theenumi}{{\bf \alph{enumi}}}
+\renewcommand{\labelenumii}{\roman{enumii}.}
+\addtocounter{enumi}{1}
   
 \item {\bf Do} {$\nu = 1,...,N_{\rm iters}^{\pi}$.}
   
   \begin{enumerate}
-  \item Perform steps 1--11 as described above, using 
-    $S^{\myhalf,\star} = (S^0 + S^{1,\nu-1})/2$ in step 1 as described.
-    The only other difference in the time advancement is that in step 11
+  \item Perform {\bf Steps 1-11} as described above, using 
+    $S^{\myhalf,\star\star} = (S^0 + S^{1,\nu-1})/2$ in {\bf Step 2} as described.
+    The only other difference in the time advancement is that in {\bf Step 11}
     we define ${\bf V} = (\Ubt^{1,\star} - \Ubt^0)$ and solve
-    \begin{equation}  L_\beta^\rho \phi =
-      D \left ( \beta_0^{\myhalf} {\bf V} \right) - \beta_0^{\myhalf} \left[ \left(S^{1}-\overline{S^{1}}\right) - \left(S^{0}-\overline{S^{0}}\right) \right] \enskip . 
+    \begin{equation}  L_\beta^\rho \phi = D \left ( \beta_0^{\myhalf} {\bf V} \right) - \beta_0^{\myhalf} \left[ \left(S^{1}-\overline{S^{1}}\right) - \left(S^{0}-\overline{S^{0}}\right) \right] \enskip . 
     \end{equation}
     (The motivation for this form of the projection in the initial pressure iterations
     is discussed in (cite almgren:bell:crutchfield).)
       We discard the new velocity resulting from this, but keep the new  
       value for $\pi^{\myhalf} = \pi^{-\myhalf} + (1 / \dt) \; \phi.$  
       These steps also yield new scalar data at time $\dt,$ which
-      we discard,  and new values for $\etarho^{\myhalf}$ (step 8), $\psi^{\myhalf}$ (step 8), 
-      $S^{1,\nu}$ (step 10), and $\pi^{\myhalf}$ (step 11), which we keep.
+      we discard, and new values for $\etarho^{\myhalf}$ ({\bf Step 8}), 
+      $\psi^{\myhalf}$ ({\bf step 8}), 
+      $S^{1,\nu}$ ({\bf step 10}), and $\pi^{\myhalf}$ ({\bf step 11}), which we keep.
     \item Set $\pi^{-\myhalf} = \pi^{\myhalf}$, $\etarho^{-\myhalf} = \etarho^{\myhalf}$,
       and $\psi^{-\myhalf} = \psi^{\myhalf}$. 
     \end{enumerate}
