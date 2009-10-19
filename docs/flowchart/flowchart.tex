@@ -8,12 +8,17 @@ the development of the algorithm:
   paper~I)
 \item {\em Low Mach Number Modeling of Type Ia Supernovae. II. Energy
   Evolution,} A.~S.~Almgren, J.~B.~Bell, C.~A.~Rendleman, \& M.~Zingale
-  2006, ApJ, 649, 927 (henceforth paper~II)\item {\em Low Mach Number Modeling of Type Ia Supernovae. III. Reactions,}
-A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, \& M.~Zingale
+  2006, ApJ, 649, 927 (henceforth paper~II)
+\item {\em Low Mach Number Modeling of Type Ia Supernovae. III. Reactions,}
+  A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, \& M.~Zingale
   2008, ApJ, 684, 449 (henceforth paper~III)
 \item {\em Low Mach Number Modeling of Type Ia Supernovae. IV. White Dwarf Convection,}
-M.~Zingale, A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, \& S.~E.~Woosley
-  2009, ApJ, submitted (henceforth paper~IV)
+  M.~Zingale, A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, \& S.~E.~Woosley
+  2009, ApJ, 704, 196 (henceforth paper~IV)
+\item {\em MAESTRO: An Adaptive Low Mach Number Hydrodynamics Algorithm for Stellar
+  Flows,} A.~Nonaka, A.~S.~Almgren, J.~B.~Bell, M.~J.~Lijewski, C.~M.~Malone,
+  \& M.~Zingale 2009, {\it Submited to SIAM J. Sci. Comput.}
+  (henceforth ``the multilevel paper'')
 \end{itemize}
 We also carry over some ideas from our small-scale low Mach number algorithm
 for astrophysical flows:
@@ -197,7 +202,7 @@ $\beta_0$ & coefficient to velocity
 \hline
 $\Gamma_1$ & first adiabatic exponent ($\Gamma_1 \equiv \left . d \log p/d \log \rho \right |_s$) & -- \\
 \hline
-$\etarho$ & $\etarho \equiv \overline{(\rho' \Ubt \cdot \eb_r)}$ & g~cm$^{-2}$~s$^{-1}$ \\
+$\etarho$ & $\etarho \equiv \overline{(\rho' \Ub \cdot \eb_r)}$ & g~cm$^{-2}$~s$^{-1}$ \\
 \hline
 $\xi_k$ & $\xi_k \equiv \left . \partial h / \partial X_k \right |_{p,T,X_{j,j\ne k}}$ & erg~g$^{-1}$ \\
 \hline 
@@ -757,7 +762,7 @@ S^{\myhalf,\star} = \frac{S^0 + S^1}{2} \enskip ,
 \end{equation}
 where $S^1$ is found through the iterative process that initializes the calculation.
 Otherwise, following the method used in our small-scale low Mach number algorithm
-(cite BDRWZ), we extrapolate to the half-time using the source
+(BDRWZ), we extrapolate to the half-time using the source
 terms at the previous and current time levels
 \begin{equation}
 S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}} \enskip .
