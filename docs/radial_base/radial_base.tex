@@ -1,210 +1,148 @@
-Since the one-dimensional spherical base state is not aligned with the
-3-d Cartesian grid we use for full star spherical geometry, computing quantities that
-involve both the base state and the full state becomes complicated.
-Therefore, various parts of the algorithm (such as the averaging operations)
-require a mapping between the base state and the full state.
-
-As there is no alignment between the 3-d Cartesian grid and the 1-d
-spherical base state grid, we are free to choose their grid spacings
-independently.  Experimentation has shown that the best choice results
-from picking the 3-d Cartesian grid spacing, $\Delta x,$ to be coarser
-than the 1-d spherical base state spacing, $\Delta r$.  (Here we
-assume $\Delta x = \Delta y = \Delta z.$)  For the paper IV simulations,
-we use $5 \Delta r = \Delta x$.  We refer to the procedure that maps data 
-from 1-d to 3-d as {\tt fill\_3d}, and the
-complementary procedure that maps from 3-d to 1-d as {\tt average}.
-\section{\tt fill\_3d}
-There are two different {\tt fill\_3d} modes, each performed with the
-subroutine, {\tt put\_1d\_array\_on\_cart}:
+We refer to the procedure for mapping a cell-centered Cartesian field to a
+cell-centered radial array as a lateral ``average''.  We refer to the procedures for mapping
+an edge- or cell-centered radial field to an edge- or cell-centered Cartesian grid
+as a ``fill''.
+\subsubsection{Average}\label{Sec:Average}
+For any Cartesian cell-centered field, $\phi$, we define 
+$\overline{\phi} = ${\bf Avg}$(\phi)$ as the average over a layer at 
+constant radius $r$, $\Omega_H$, as
+\begin{equation}
+\overline{\phi(r)} = \frac{1}{A(\Omega_H)}\int_{\Omega_H}\phi(r,\xb)d\Omega; \qquad
+A(\Omega_H) = \int_{\Omega_H}d\Omega.
+\end{equation}
+\begin{description}
+\item[planar:] 
+  This is a straightforward arithmetic average of cells at a particular
+  height since the radial cell centers are in alignment with the Cartesian 
+  grid cell centers.
+\item[spherical:] It can be shown that any Cartesian cell center is a
+  radius $\hat r_m = \Delta x\sqrt{\sfrac{3}{4} + 2m}$ from the center of
+  the star, where $m \ge 0$ is an integer.  
+  For example, the Cartesian cell with coordinates $(i,j,k) = (1,1,1)$ relative
+  to the center of the star lies at a distance of $\Delta x\sqrt{\sfrac{3}{4}+6}$
+  from the center of the star, corresponding to $m=3$.  The Cartesian cells
+  with coordinates $(i,j,k) = (2,0,0), (0,2,0)$, or $(0,0,2)$ relative to
+  the center of the star also lie at that same 
+  distance.  For the 384$^3$ resolution
+  examples in this paper, we have verified that a non-zero set of
+  Cartesian cell centers map into each radius $\hat r_m$ until $m$ is 
+  large enough to correspond to a radius larger
+  than half the width of the computational domain (i.e., the edge of the
+  domain, not the corner of the domain).  Figure 
+  \ref{Fig:test_average3} shows the number of Cartesian cells that map into each 
+  radius $\hat r_m$, which we refer to as the ``hit count'', for a 384$^3$ domain.  
+  We use this mapping to help construct the lateral average, using the following steps:
 \begin{enumerate}
-\item The 1D array is cell-centered, and we map to Cartesian cell-centers.  
-This is the most commonly used mode of {\tt fill\_3d}, and in paper IV, 
-we refer to this mode as {\tt fill\_3d}.
-\item The 1D array is edge-centered, and we map to Cartesian cell-centers.
+\item Create an itemized list, $\hat\phi_m$, where each element is
+  associated with a radius $\hat r_m = \Delta x\sqrt{\sfrac{3}{4} + 2m}$ from the 
+  center of the star.
+\item For each $\hat\phi_m$, compute the arithmetic average value of the Cartesian 
+  cells whose centers lie at the associated radius.  As an additional 
+  element in the itemized list, include the center of the star (corresponding
+  to a radius of $r=0$).  Compute this additional value of $\hat\phi$
+  at this location using quadratic interpolation with $\hat\phi_0$, $\hat\phi_1$,
+  and a homogeneous Neumann condition at $r=0$ as the stencil points.  Note
+  that for very large values of $m$, it is possible that no Cartesian cell centers
+  exist at a radius $\hat r_m$ (i.e., the hit count is zero).  
+  If so, we say that $\hat\phi_m$ has an 
+  undefined/invalid value, and we ignore such values for the rest of this procedure.
+\item To compute the lateral average, use quadratic interpolation using the 
+  value in the itemized list with the closest associated radius, $\hat\phi_k$,
+  and the nearest values above and below, $\hat\phi_{k_+}$ and $\hat\phi_{k_-}$,
+  using divided differences:
+  \begin{equation}
+    \overline{\phi(r)} = \hat\phi_{k_-} + \frac{\hat\phi_k-\hat\phi_{k_-}}{\hat r_k-\hat r_{k_-}}(r-\hat r_{k_-}) + \frac{\frac{\hat\phi_{k_+}-\hat\phi_k}{\hat r_{k_+}-\hat r_k}-\frac{\hat\phi_k-\hat\phi_{k_-}}{\hat r_k-\hat r_{k_-}}}{\hat r_{k_+}-\hat r_{k_-}}(r-\hat r_{k_-})(r-\hat r_k)\nonumber,
+  \end{equation}
+  where $\hat r_{k_-}$, $\hat r_k$, and $\hat r_{k_+}$ are the three radii
+  associated with $\hat\phi_{k_-}$, $\hat\phi_k$, and  $\hat\phi_{k_+}$.
+  Finally, constrain $\overline{\phi(r)}$ to lie within the range of
+  $\hat\phi_{k_-}$, $\hat\phi_k$, and $\hat\phi_{k_+}$ so as to not introduce
+  any new maxima or minima.
 \end{enumerate}
-\subsection{1D Cell-Centered to Cartesian Cell-Centered}
-\label{Sec:1D Cell-Centered to Cartesian Cell-Centered}
-
-Figure  \ref{fig:mapping} shows the Cartesian grid overlaid by the 
-spherical base state (for simplicity, the figure is drawn in 2-d 
-using $2 \Delta r = \Delta x$).
-The {\tt fill\_3d} procedure computes the distance of the center of
-cell indexed by $(i,j,k)$ from the center of the star,
-\begin{equation}
-r = \sqrt{(x_i - x_c)^2 + (y_j - y_c)^2 + (z_k - z_c)^2},
-\end{equation}
-where $(x_c, y_c, z_c)$ are the coordinates of the center of the star.
-We use this radius to find the corresponding radial bin as $n = \mathtt{int}(r
-/ \Delta r)$ (here, our convention is to use 0-based indexing for the
-base state).  We can then initialize a Cartesian cell quantity $q$ from its
-corresponding base state quantity, $q_0,$ as $q_{i,j,k} = q_{0,n}$.
-
-In essence, we are doing a piecewise constant interpolation of the radial array 
-onto the Cartesian grid.  If the output is a vector quantity, rather than a 
-scalar, we multiply the result by the unit vector in the normal direction.
-\subsection{1D Edge-Centered to Cartesian Cell-Centered}
-\label{Sec:1D Edge-Centered to Cartesian Cell-Centered}
-Again, for each Cartesian cell-center, we compute the corresponding radial
-bin.  We linearly interpolate from the two nearest radial edge values 
-to get the Cartesian cell-centered value.  In essence,
-we are doing a piecewise linear interpolation of the radial array onto the 
-Cartesian grid.  If the output is a vector quantity, rather than a scalar, we
-multiply the result by the unit vector in the normal direction.
-We use this function for:
-\begin{enumerate}
-\item Putting $\nabla p_0$ from radial edges onto cell centers as a vector.
-\item Computing radial velocity for plotfile.
-\end{enumerate}
-\section{1D Edge-Centered to Cartesian Edges}
-\label{Sec:1D Edge-Centered to Cartesian Edges}
-This case is only used to create {\tt w0mac} from {\tt w0} in the 
-subroutine, {\tt put\_w0\_on\_edges}.  There are several variations 
-of the interpolation, controlled by {\tt w0mac\_interp\_type}.  We 
-currently use the default, {\tt w0mac\_interp\_type} = 1.  We first 
-map $w_0$ onto Cartesian cell-centers, and multiply the result by 
-the unit vector in the normal direction.  Then, for each Cartesian 
-face, we obtain the normal velocity by averaging the corresponding 
-velocities from the Cartesian cell-centers adjacent to the face.
-\section{1D Cell-Centered to Cartesian Edges}
-At various points in the algorithm we need to map cell-centered radial 
-quantities onto Cartesian edges.  For example, we need $\rho_0$ at edges 
-to compute the full state $\rho$ used to compute fluxes.  What we do
-is call {\tt fill\_3d}, and then average neighboring cell-centers onto
-edges.
-\section{{\tt average}}\label{Sec:Avg}
-For the {\tt average} process, we first define a coarse 1-d radial array 
-with $\Delta r_{\rm c} = \Delta x$.  Then, for each cell indexed by
-$(i,j,k)$ we again compute the radius, $r,$ as above, and 
-define the index of the corresponding coarse radial bin, 
-$n_{\rm c} = \mathtt{int}(r / \Delta r_{\rm c})$.  
-We define $q_{0,n_{\rm c}}$ as the average of all the $q_{i,j,k}$ whose 
-Cartesian cell centers map into coarse radial bin $n_{\rm c}$.
-Next, we construct edge-centered states on the coarse radial bin using 
-the fourth order approximation,
-$q_{0,n_{\rm c}+\myhalf} = (7/12)(q_{0,n_{\rm c}}+q_{0,n_{\rm c}+1}) 
-- (1/12)(q_{0,n_{\rm c}-1}+q_{0,n_{\rm c}+2})$.  Finally, for each coarse radial bin
-we construct a quadratic profile using $q_{0,n_{\rm c}-\myhalf}, q_{0,n_{\rm c}}$ 
-and $q_{0,n_{\rm c}+\myhalf}$.  This is based on the interpolating polynomial used by 
-the PPM scheme to find edge states (Colella \& Woodward 1984).  Specifically, for 
-$n_{\rm c}\Delta r_{\rm c} \le r \le (n_{\rm c}+1)\Delta r_{\rm c}$, the 
-interpolating polynomial is
-\MarginPar{Need to add description of limiters}
-\begin{equation}
-q_0(r) = q_{0,n_{\rm c}-\myhalf} + \xi(r)\left\{\Delta q_{n_{\rm c}} + q_{6,n_{\rm c}}[1 - \xi(r)]\right\},
-\end{equation}
-with
-\begin{equation}
-\xi(r) = \frac{r - n_{\rm c}\Delta r_{\rm c}}{\Delta r_{\rm c}},
-\end{equation}
-\begin{equation}
-\Delta q_{n_{\rm c}} = q_{0,n_{\rm c}+\myhalf} - q_{0,n_{\rm c}-\myhalf},
-\end{equation}
-and
-\begin{equation}
-q_{6,n_{\rm c}} = 6\left[q_{0,n_{\rm c}} - 
-\frac{1}{2}\left(q_{0,n_{\rm c}+\myhalf} + q_{0,n_{\rm c}-\myhalf}\right)\right].
-\end{equation}
-
-\subsection{Mapping}
-\begin{equation}
-\left.\begin{array}{ccccccccc}
-\bf{r} & \text{r\_cc\_loc} & \text{number at distance} & \text{i offset} & \text{j offset} & \text{k offset} & \text{exact dist} & \text{approx dist} & \text{stencil pts for cubic} \\
-\hline
-0 & 0.1 & 0 & & & & & & -0.5~4~8~10 \\
-1 & 0.3 & 0 & & & & & & -0.5~4~8~10 \\
-2 & 0.5 & 0 & & & & & & -0.5~4~8~10 \\
-3 & 0.7 & 0 & & & & & & -0.5~4~8~10 \\
-4 & 0.9 & 8 & 0.5 & 0.5 & 0.5 & \sqrt{3/4} & 0.866 & -0.5~4~8~10 \\
-5 & 1.1 & 0 & & & & & & -0.5~4~8~10 \\
-6 & 1.3 & 0 & & & & & & -0.5~4~8~10 \\
-7 & 1.5 & 0 & & & & & & -0.5~4~8~10 \\
-8 & 1.7 & 24 & 0.5 & 0.5 & 1.5 & \sqrt{11/4} & 1.658 & -0.5~4~8~10 \\
-9 & 1.9 & 0 & & & & & & 4~8~10~12 \\
-10 & 2.1 & 24 & 0.5 & 1.5 & 1.5 & \sqrt{19/4} & 2.179 & 8~10~12~14 \\
-11 & 2.3 & 0 & & & & & & 8~10~12~14 \\
-12 & 2.5 & 32 & 0.5 & 0.5 & 2.5 & \sqrt{27/4} & 2.598 & 10~12~14~16 \\
-13 & 2.7 & 0 & & & & & & 10~12~14~16 \\
-14 & 2.9 & 48 & 0.5 & 1.5 & 2.5 & \sqrt{35/4} & 2.958 & 12~14~16~17 \\
-15 & 3.1 & 0 & & & & & & 12~14~16~17 \\
-16 & 3.3 & 24 & 1.5 & 1.5 & 2.5 & \sqrt{43/4} & 3.279 & 12~14~16~17 \\
-17 & 3.5 & 48 & 0.5 & 0.5 & 3.5 & \sqrt{51/4} & 3.571 & 16~17~19~20 \\
-18 & 3.7 & 0 & & & & & & 16~17~19~20 \\
-19 & 3.9 & 72 & 0.5 & 1.5 & 3.5 & \sqrt{59/4} & 3.841 & 16~17~19~20 \\
-20 & 4.1 & 24 & 1.5 & 1.5 & 3.5 & \sqrt{67/4} & 4.093 & 17~19~20~21 \\
-21 & 4.3 & 56 & 0.5 & 2.5 & 3.5 & \sqrt{75/4} & 4.330 & 20~21~22~23 \\
-22 & 4.5 & 72 & 0.5 & 0.5 & 4.5 & \sqrt{83/4} & 4.555 & 21~22~23~24 \\
-23 & 4.7 & 48 & 0.5 & 1.5 & 4.5 & \sqrt{91/4} & 4.770 & 22~23~24~25 \\
-24 & 4.9 & 72 & 1.5 & 1.5 & 4.5 & \sqrt{99/4} & 4.974 & 23~24~25~26 \\
-25 & 5.1 & 72 & 0.5 & 2.5 & 4.5 & \sqrt{107/4} & 5.172 & 24~25~26~27 \\
-26 & 5.3 & 48 & 1.5 & 2.5 & 4.5 & \sqrt{115/4} & 5.362 & 25~26~27~28 \\
-27 & 5.5 & 48 & 0.5 & 0.5 & 5.5 & \sqrt{123/4} & 5.545 & 26~27~28~29 \\
-28 & 5.7 & 120 & 0.5 & 1.5 & 5.5 & \sqrt{131/4} & 5.723 & 27~28~29~30 \\
-29 & 5.9 & 72 & 1.5 & 1.5 & 5.5 & \sqrt{139/4} & 5.895 & 27~28~29~30 \\
-30 & 6.1 & 56 & 0.5 & 2.5 & 5.5 & \sqrt{147/4} & 6.062 & 28~29~30~31^\star \\
-31 & 6.3 & 121 & & & & \sqrt{155/4} & 6.225 & \\
-& & & & & & \sqrt{163/4} & 6.384 & \\
-\end{array}\right.\nonumber
-\end{equation}
-$^*$ For $31$, use cell value in 31 and $r=6.3$.
-
-Cubic interpolate for cells 0 through 7:
-\begin{equation}
-Ax^3 + Bx^2 + Cx + D = f
-\end{equation}
-Homogeneous neumann at $x=0 \rightarrow C=0$.
-\begin{eqnarray}
-\left(\begin{array}{ccc}
-\sqrt{27/64} & 3/4 & 1 \\
-\sqrt{1331/64} & 11/4 & 1 \\
-\sqrt{6859/64} & 19/4 & 1
-\end{array}\right)
-\left(\begin{array}{c}
-A \\
-B \\
-D
-\end{array}\right)
-=
-\left(\begin{array}{c}
-f_4 \\
-f_8 \\
-f_{10}
-\end{array}\right).
-\end{eqnarray}
-\begin{equation}
-\left(\begin{array}{c}
-A \\
-B \\
-D
-\end{array}\right)
-=
-\left(\begin{array}{c}
- 0.53157958f_4 - 1.06315917f_8 + 0.53157958f_{10} \\
--1.53946136f_4 + 2.57892271f_8 - 1.03946136f_{10} \\
- 1.80932495f_4 - 1.24364990f_8 + 0.43432495f_{10}
-\end{array}\right).
-\end{equation}
-
-Divided difference for cells 8 through 30:
-\begin{eqnarray}
-f(x) &=& y_0 + \frac{y_1-y_0}{x_1-x_0}(x-x_0) \nonumber \\
-&& + \frac{\left(\frac{y_2-y_1}{x_2-x_1}\right)-\left(\frac{y_1-y_0}{x_1-x_0}\right)}{x_2-x_0}(x-x_0)(x-x_1) \nonumber \\
-&& + \frac{\frac{\left(\frac{y_2-y_1}{x_2-x_1}\right)-\left(\frac{y_1-y_0}{x_1-x_0}\right)}{x_2-x_0}-\frac{\left(\frac{y_3-y_2}{x_3-x_2}\right)-\left(\frac{y_2-y_1}{x_2-x_1}\right)}{x_3-x_1}}{x_3-x_0}(x-x_0)(x-x_1)(x-x_2)
-\end{eqnarray}
-
-\clearpage
-
-\begin{figure}[tpb]
-\begin{center}
-\includegraphics{\radbasefigpath/mapping2_bw}
-\caption{\label{fig:mapping} The Cartesian grid and spherical base
-state (shown here in 2-d for simplicity using $2 \Delta r = \Delta x$).
-Here we represent the
-spherical base state as concentric shells (blue lines).  Since the
-base state is not aligned with the Cartesian grid we use on which
-we discretize the star, we need to map between the two configurations.
-The `$+$' symbols represent the Cartesian zone centers.  In our
-mapping, the zone marked with the red symbol maps into the gray-shaded
-radial bin. }
-\label{fig:mapping}
-\end{center}
+  In \S \ref{Sec:Mapping Test}, we show the improvement of this averaging procedure 
+  over the Paper IV procedure.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[h]
+\centering
+\includegraphics{\radbasefigpath/test_average3}
+\caption{\label{Fig:test_average3}
+The number of Cartesian cells whose centers lie
+at a radius $\hat r_m$ (i.e., the ``hit count'') for a 384$^3$ domain vs. the
+itemized list index, $m$.  
+Indices $m<18,432$ correspond to locations within half the width 
+of the computational domain.  A non-zero set of Cartesian cell centers maps 
+into the radius associated with every $m\le 37,912$, which corresponds to 
+approximately 0.72 times the width of the computational domain.  The inset plot
+is a zoom-in of the innermost 75 values of $m$.}
 \end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Fill}\label{Sec:Fill}
+There are four different mappings from a 1D radial array to the 3D Cartesian grid;
+below we describe the procedures for planar and spherical geometries separately.
+\begin{description}
+\item[planar:]
+\end{description}
+\begin{enumerate}
+\item To map a cell-centered radial array onto Cartesian cell centers,
+  we use direct-injection since the radial cell centers are in
+  alignment with the Cartesian cell centers. 
+\item To map an edge-centered radial array onto Cartesian 
+  cell centers, we average the two nearest radial edge-centered values.
+\item To map a cell-centered radial array onto Cartesian edges with normal in 
+  the radial direction, we use 4th order spatial interpolation:
+\begin{equation}
+\phi_{i,j,k+\myhalf} = \frac{7}{12}(\phi_{j}+\phi_{j+1}) - \frac{1}{12}(\phi_{j-1}+\phi_{j+2}).
+\end{equation}
+  We constrain $\phi_{i,j,k+\myhalf}$ to lie between the interpolated values, and 
+  lower the order of interpolation near domain boundaries.  For the 
+  Cartesian edges transverse to the base state direction, we use direct-injection 
+  since the radial cell centers are in alignment with these 
+  Cartesian edges.
+\item To map an edge-centered radial array onto Cartesian edges, 
+  we use direct-injection on Cartesian edges normal to the base state direction
+  since the radial edges are in alignment with these Cartesian edges.  
+  For the remaining Cartesian edges, we average the two nearest radial 
+  edge-centered values.
+\end{enumerate}
+\begin{description}
+\item[spherical:] 
+\end{description}
+\begin{enumerate}
+\item To map a cell-centered radial array onto Cartesian cell centers,
+      we use quadratic interpolation from the nearest 
+      three radial cell centers (see Figure \ref{Fig:fill}a).
+      This is a departure from Paper IV, in which we used 
+      piecewise constant interpolation.  
+\item To map an edge-centered radial array onto Cartesian cell centers, 
+      we use linear interpolation from the nearest two points
+      (see Figure \ref{Fig:fill}b).
+\item To map a cell-centered radial array onto Cartesian edges,
+      we first map the radial array onto Cartesian cell centers (see 1.), 
+      then average the two neighboring centers to obtain the Cartesian edge values
+      (see Figure \ref{Fig:fill}c).
+\item To map an edge-centered radial array onto Cartesian edges,
+      we first map the radial array onto Cartesian cell centers (see 2.), 
+      then average the two neighboring centers to obtain the Cartesian edge values
+      (see Figure \ref{Fig:fill}c).
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[tpb]
+\centering
+\includegraphics[width=1.75in]{\radbasefigpath/fill1}\hspace{0.1in}
+\includegraphics[width=1.75in]{\radbasefigpath/fill2}\hspace{0.1in}
+\includegraphics[width=1.75in]{\radbasefigpath/fill3}
+\caption{\label{Fig:fill} Illustrations of the fill operation for
+  spherical geometry.  (a) To fill the Cartesian cell center (fill
+  type 1), represented by the square, from radial cell-centered data,
+  represented by the circles, we use quadratic interpolation from the
+  nearest three points.  (b) To fill the Cartesian cell center
+  (fill type 2), represented by the square, from radial edge-centered
+  data, represented by the circles, we use linear interpolation from
+  the nearest two points. (c) To fill a Cartesian edge (fill
+  types 3 and 4), represented by the squares, first fill the 
+  Cartesian cell centers, represented by the circles, then average
+  the two neighboring cell centers.}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
