@@ -297,7 +297,7 @@ the constraint.  The user specifies the number of iterations,
 $N_{\rm iters}^{S},$ in this first step of the initialization procedure.
 
 The initial perturbational pressure also needs to be determined for
-use in {\bf Steps 2}, {\bf 7}, and {\bf 11}. 
+use in {\bf Steps 3}, {\bf 7}, and {\bf 11}. 
 This is done through a second iterative procedure which follows the
 time advancement algorithm as described in {\bf Steps 1-11} in 
 \S \ref{Sec:Time Advancement Algorithm}.  
@@ -359,9 +359,7 @@ $\etarho^{-\myhalf}=0, \psi^{-\myhalf}=0, S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 \renewcommand{\labelenumii}{\roman{enumii}.}
 \addtocounter{enumi}{1}
-  
 \item {\bf Do} {$\nu = 1,...,N_{\rm iters}^{\pi}$.}
-  
   \begin{enumerate}
   \item Perform {\bf Steps 1-11} as described above, using 
     $S^{\myhalf,\star\star} = (S^0 + S^{1,\nu-1})/2$ in {\bf Step 2} as described.
@@ -374,9 +372,9 @@ $\etarho^{-\myhalf}=0, \psi^{-\myhalf}=0, S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
       We discard the new velocity resulting from this, but keep the new  
       value for $\pi^{\myhalf} = \pi^{-\myhalf} + (1 / \dt) \; \phi.$  
       These steps also yield new scalar data at time $\dt,$ which
-      we discard, and new values for $\etarho^{\myhalf}$ ({\bf Step 8}), 
-      $\psi^{\myhalf}$ ({\bf step 8}), 
-      $S^{1,\nu}$ ({\bf step 10}), and $\pi^{\myhalf}$ ({\bf step 11}), which we keep.
+      we discard, and new values for $\etarho^{\myhalf}$ ({\bf Step 8C}), 
+      $\psi^{\myhalf}$ ({\bf Step 8F}), 
+      $S^{1,\nu}$ ({\bf Step 10A}), and $\pi^{\myhalf}$ ({\bf Step 11}), which we keep.
     \item Set $\pi^{-\myhalf} = \pi^{\myhalf}$, $\etarho^{-\myhalf} = \etarho^{\myhalf}$,
       and $\psi^{-\myhalf} = \psi^{\myhalf}$. 
     \end{enumerate}
