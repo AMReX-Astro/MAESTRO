@@ -902,20 +902,24 @@ to get $\text{sedge}_{\ib-\half\eb_x}$, but use UEDGE instead of UAD.
 % PPM
 %-----------------------------------------------------------------------------
 \section{Piecewise Parabolic Method (PPM)}
-Let's consider a scalar, $s$, which we wish to predict to edges.  The PPM method
-modifies how we perform the 1D extrapolation to get left and right edge states
-(for example, we modify equations (\ref{3D predict s to left}) and 
+Consider a scalar, $s$, which we wish to predict to time-centered edges.
+The PPM method is an improvement over the piecewise-linear method.
+Using our notation, we modify equations (\ref{3D predict s to left}) and 
 (\ref{3D predict s to right}) in Section 
-\ref{Scalar Edge State Prediction in MAESTRO} to obtain higher-order estimates
-of $s_{L/R,\ib-\half}$).  Once these 1D edge states are obtained, we
-continue with the full-dimensional extrapolations as described before.\\ \\
+\ref{Scalar Edge State Prediction in MAESTRO} to obtain better estimates
+for the time-centered 1D edge states, $s_{L/R,\ib-\half}$.  Once these states 
+are obtained, we continue with the full-dimensional extrapolations as 
+described before.\\ \\
 The PPM method is described in a series of papers:
 \begin{itemize}
-\item Colella and Woodward 1984 - describes the basic method
+\item Colella and Woodward 1984 - describes the basic method.
 \item Miller and Colella 2002 - describes how to apply PPM to a multidimensional
 unsplit Godunov method and generalizes the characteristic tracing for more complicated
-systems (thankfully, we only upwind based on the fluid velocity)
-\item Colella and Sekora 2008 - describes new fancy quadratic limiters
+systems.  Note that we only need to upwind based on the fluid velocity, so we don't
+need to use fancy characteristic tracing.
+\item Colella and Sekora 2008 - describes new fancy quadratic limiters.  There are
+several errors in the printed text, so we have implemented a corrected version from
+Phil Colella.
 \end{itemize}
 Here are the steps for the $x$-direction.  For simplicity, we replace the vector index notation with a simple scalar notation ($\ib+\eb_x \rightarrow i+1$, etc.):
 \begin{itemize}
