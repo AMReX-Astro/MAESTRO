@@ -1242,7 +1242,7 @@ contains
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
        call hgproject(proj_type,mla,unew,uold,rhohalf,pres,gpres,dx,dt,the_bc_tower, &
-                      press_comp,hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-12)
+                      press_comp,hgrhs,div_coeff_3d=div_coeff_3d)
 
        do n=1,nlevs
           call destroy(div_coeff_3d(n))
