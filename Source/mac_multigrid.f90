@@ -18,7 +18,7 @@ module mac_multigrid_module
 
 contains 
   subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp, &
-                           stencil_order,ref_ratio,umac_norm)
+                           stencil_order,ref_ratio,phi_norm)
     use mg_module
     use coeffs_module
     use ml_solve_module
@@ -34,7 +34,7 @@ contains
     type(multifab) , intent(in   )        :: alpha(:), beta(:,:)
     type(multifab) , intent(inout)        ::    rh(:),  phi(:)
     type(bndry_reg), intent(inout)        :: fine_flx(2:)
-    real(dp_t)     , intent(in), optional :: umac_norm(:)
+    real(dp_t)     , intent(in), optional :: phi_norm(:)
 
     type(layout  ) :: la
     type(boxarray) :: pdv
@@ -101,9 +101,9 @@ contains
     end if
 
     abs_eps = -1.0_dp_t
-    if (present(umac_norm)) then
+    if (present(phi_norm)) then
        do n = 1,nlevs
-          abs_eps = max(abs_eps, umac_norm(n) / dx(n,1))
+          abs_eps = max(abs_eps, phi_norm(n) / dx(n,1))
        end do
        abs_eps = eps * abs_eps
     end if

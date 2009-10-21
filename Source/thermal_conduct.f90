@@ -57,6 +57,7 @@ contains
     integer                     :: stencil_order
     integer                     :: i,n,comp
     type(bndry_reg)             :: fine_flx(2:mla%nlevel)
+    real(dp_t)                  :: h_norm(mla%nlevel)
 
     type(bl_prof_timer), save :: bpt
 
@@ -349,10 +350,18 @@ contains
        call multifab_copy_c(lhsalpha(n),1,s2(n),rho_comp,1,1)
     enddo
 
+    ! Compute h_norm to be used inside the MG solver as part of a stopping criterion
+    h_norm = -1.d0
+    do n = 1,nlevs
+       do i = 1,dm
+          h_norm(n) = max(h_norm(n),norm_inf(phi(n)))
+       end do
+    end do
+
     ! Call the solver to obtain h^(2) (it will be stored in phi)
     ! solves (alpha - nabla dot beta nabla)phi = rhs
     call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
-                       dm+rhoh_comp,stencil_order,mla%mba%rr)
+                       dm+rhoh_comp,stencil_order,mla%mba%rr,h_norm)
 
     do n=2,nlevs
        call destroy(fine_flx(n))
