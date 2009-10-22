@@ -122,12 +122,13 @@ contains
  
   end subroutine eos_get_small_dens
 
-  subroutine eos_given_ReX(G, P, C, T, dpdr, dpde, R, e, X)
+  subroutine eos_given_ReX(G, P, C, T, dpdr, dpde, R, e, X, pt_index)
 
      ! In/out variables
      real(kind=dp_t), intent(  out) :: G, P, C, dpdr, dpde
      real(kind=dp_t), intent(inout) :: T
      real(kind=dp_t), intent(in   ) :: R, e, X(:)
+     integer, optional, intent(in   ) :: pt_index(:)
 
      ! Local variables
      logical :: do_diag
@@ -159,12 +160,13 @@ contains
 
   end subroutine eos_given_ReX
 
-  subroutine eos_e_given_RPX(e, T, R, P, X)
+  subroutine eos_e_given_RPX(e, T, R, P, X, pt_index)
 
      ! In/out variables
      real(kind=dp_t), intent(  out) :: e
      real(kind=dp_t), intent(in   ) :: R, p, X(:)
      real(kind=dp_t), intent(inout) :: T
+     integer, optional, intent(in   ) :: pt_index(:)
 
      ! Local variables
      logical :: do_diag
@@ -194,13 +196,14 @@ contains
 
   end subroutine eos_e_given_RPX
 
-  subroutine eos_S_given_ReX(S, R, e, T, X)
+  subroutine eos_S_given_ReX(S, R, e, T, X, pt_index)
 
      implicit none
 
      ! In/out variables
      real(kind=dp_t), intent(  out) :: S
      real(kind=dp_t), intent(in   ) :: R, e, T, X(:)
+     integer, optional, intent(in   ) :: pt_index(:)
 
      ! Local variables
      logical :: do_diag
@@ -227,11 +230,12 @@ contains
 
   end subroutine eos_S_given_ReX
 
-  subroutine eos_given_RTX(e, P, R, T, X)
+  subroutine eos_given_RTX(e, P, R, T, X, pt_index)
 
      ! In/out variables
      real(kind=dp_t), intent(  out) :: e, P
      real(kind=dp_t), intent(in   ) :: R, T, X(:)
+     integer, optional, intent(in   ) :: pt_index(:)
 
      ! Local variables
      logical :: do_diag
@@ -258,11 +262,12 @@ contains
 
   end subroutine eos_given_RTX
 
-  subroutine eos_given_TPX(e, P, R, T, X)
+  subroutine eos_given_TPX(e, P, R, T, X, pt_index)
 
      ! In/out variables
      real(kind=dp_t), intent(  out) :: e, R
      real(kind=dp_t), intent(in   ) :: P, T, X(:)
+     integer, optional, intent(in   ) :: pt_index(:)
 
      ! Local variables
      logical :: do_diag
