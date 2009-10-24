@@ -329,7 +329,7 @@ contains
     allocate(alpha(nmodes), phi(nmodes))
 
     y_0 = HALF*(prob_lo(2) + prob_hi(2))
-    L_x = (prob_lo(1) - prob_hi(1))
+    L_x = (prob_hi(1) - prob_lo(1))
 
     ! random amplitudes and phases
     do n = 1, nmodes
@@ -357,8 +357,9 @@ contains
           do n = 1, nmodes
              pert = pert + vel_amplitude*alpha(n)*cos(2.d0*M_PI*x/L_x + phi(n))
           enddo
-
-          u = exp(-(y-y_0)**2/vel_width**2)*pert
+          
+          u(i,j,1) = ZERO
+          u(i,j,2) = exp(-(y-y_0)**2/vel_width**2)*pert
 
        enddo
     enddo
