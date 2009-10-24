@@ -13,7 +13,7 @@
  rho_1 = 1.0d0
  rho_2 = 2.0d0
 
- vel_amplitude = 0.025d0
+ vel_amplitude = 0.25d0
  vel_width = 0.025d0
 
  p0_base = 5.0d0
