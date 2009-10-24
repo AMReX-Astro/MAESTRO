@@ -499,7 +499,7 @@ contains
        enthalpy(k) = eint(k) + pres(k)/dens(k)
 
        ! entropy ?
-       entropy(k) = 0.d0
+       entropy(k) = 1.d0
 
        ! compute the thermodynamic derivatives and specific heats 
        dPdT(k) = pres(k)/temp(k)
