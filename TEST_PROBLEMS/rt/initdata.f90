@@ -354,9 +354,23 @@ contains
           x = prob_lo(1) + (dble(i)+HALF) * dx(1)
 
           pert = 0.d0
-          do n = 1, nmodes
-             pert = pert + vel_amplitude*alpha(n)*cos(2.d0*M_PI*x/L_x + phi(n))
-          enddo
+
+          if (nmodes == 1) then
+
+             ! single-mode -- make sure its symmetric
+             pert = pert + vel_amplitude* &
+                  HALF*(cos(2.d0*M_PI*x/L_x) + &
+                        cos(2.d0*M_PI*(L_x- x)/L_x) )
+
+          else
+
+             ! multi-mode
+             do n = 1, nmodes
+                pert = pert + vel_amplitude*alpha(n)* &
+                     cos(2.d0*M_PI*x/L_x + phi(n))
+             enddo
+
+          endif
           
           u(i,j,1) = ZERO
           u(i,j,2) = exp(-(y-y_0)**2/vel_width**2)*pert
