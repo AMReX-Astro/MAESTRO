@@ -176,7 +176,7 @@ contains
        s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
        p0_init(r) = p_eos(1)
        
-       s0_init(r,temp_comp) = t_ambient
+       s0_init(r,temp_comp) = temp_eos(1)
 
        if (ntrac .gt. 0) then
           s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
