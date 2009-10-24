@@ -70,7 +70,7 @@ module eos_module
 
   real(kind=dp_t), save, private :: smallt
   real(kind=dp_t), save, private :: smalld
-  real(kind=dp_t), save          :: gamma
+  real(kind=dp_t), save          :: gamma_const
 
   logical, save, private :: initialized = .false.
 
@@ -92,9 +92,9 @@ contains
  
     ! constant ratio of specific heats
     if (present(gamma_in)) then
-       gamma = gamma_in
+       gamma_const = gamma_in
     else
-       gamma = 1.4d0
+       gamma_const = 1.4d0
     end if
  
     ! small temperature and density parameters
@@ -445,7 +445,7 @@ contains
 
           ! Solve for the temperature:
           ! h = e + p/rho = (p/rho)*[1 + 1/(gamma-1)] = (p/rho)*gamma/(gamma-1)
-          temp(k) = (enthalpy(k)*mu(k)*m_nucleon/k_B)*(gamma - 1.0)/gamma
+          temp(k) = (enthalpy(k)*mu(k)*m_nucleon/k_B)*(gamma_const - 1.0)/gamma_const
        enddo
 
 
@@ -478,7 +478,7 @@ contains
 
           ! Solve for the temperature
           ! e = k T / [(mu m_nucleon)*(gamma-1)]
-          temp(k) = eint(k)*mu(k)*m_nucleon*(gamma-1.0)/k_B
+          temp(k) = eint(k)*mu(k)*m_nucleon*(gamma_const-1.0)/k_B
 
        enddo
     
@@ -493,7 +493,7 @@ contains
        ! compute the pressure simply from the ideal gas law, and the
        ! specific internal energy using the gamma-law EOS relation
        pres(k) = dens(k)*k_B*temp(k)/(mu(k)*m_nucleon)
-       eint(k) = pres(k)/(gamma - 1.0)/dens(k)
+       eint(k) = pres(k)/(gamma_const - 1.0)/dens(k)
 
        ! enthalpy is h = e + p/rho
        enthalpy(k) = eint(k) + pres(k)/dens(k)
@@ -510,9 +510,9 @@ contains
        dsdR(k) = 0.d0
 
        c_v(k) = dedT(k)
-       c_p(k) = gamma*c_v(k)
+       c_p(k) = gamma_const*c_v(k)
 
-       gam1(k) = gamma
+       gam1(k) = gamma_const
 
        do n = 1, nspec
 
@@ -548,7 +548,7 @@ contains
        pele(k) = 0.d0
 
        ! sound speed
-       cs(k) = sqrt(gamma*pres(k)/dens(k))
+       cs(k) = sqrt(gamma_const*pres(k)/dens(k))
 
     enddo
 
