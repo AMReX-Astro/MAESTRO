@@ -9,8 +9,8 @@ pidfile=process.pid
 
 
 # set the prefix of the plotfiles and checkpoint files
-plt_prefix=plt
-chk_prefix=chk
+plt_prefix=*_plt
+chk_prefix=*_chk
 
 # directory to archive to on HPSS -- set this to the working directory
 work_dir=`pwd`
