@@ -9,8 +9,8 @@ pidfile=process.pid
 
 
 # set the prefix of the plotfiles and checkpoint files
-plt_prefix=plt
-chk_prefix=chk
+plt_prefix=*_plt
+chk_prefix=*_chk
 
 # directory to archive to on HPSS -- set this to the working directory
 work_dir=`pwd`
@@ -102,7 +102,7 @@ function process_files
         # do processing
 
         # store the file on HPSS
-        ${HTAR} -cvf ${HPSS_DIR}/${dir}.tar ${dir} > ${dir}.htar
+        ${HTAR} -H copies=2 -cvf ${HPSS_DIR}/${dir}.tar ${dir} > ${dir}.htar
 
 	# Ordinarily, we'd check htar's exit status (0 = successful), but 
 	# on some machines (like Atlas) htar doesn't return a valid exit
@@ -143,8 +143,8 @@ function process_files
   # written to disk.  Strip out any tar files that are lying around as well 
   # as chkXXXXX.processed files.
   #chklist=$(ls -d ${chk_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
-  chklist5=$(find . -type d -name "${chk_prefix}??[05]00" -print | sort)
-  chklist6=$(find . -type d -name "${chk_prefix}???[05]00" -print | sort)
+  chklist5=$(find . -maxdepth 1 -type d -name "${chk_prefix}??[05]00" -print | sort)
+  chklist6=$(find . -maxdepth 1 -type d -name "${chk_prefix}???[05]00" -print | sort)
 
   chklist="$chklist5 $chklist6"
 
@@ -166,7 +166,7 @@ function process_files
       if [ ! -f ${dir}.processed ]; then
 
         # store the file on HPSS
-        ${HTAR} -cvf ${HPSS_DIR}/${dir}.tar ${dir} > ${dir}.htar
+        ${HTAR} -H copies=2 -cvf ${HPSS_DIR}/${dir}.tar ${dir} > ${dir}.htar
 
 	# Ordinarily, we'd check htar's exit status (0 = successful), but 
 	# on some machines (like Atlas) htar doesn't return a valid exit
@@ -202,7 +202,7 @@ function process_files
 # archive any diagnostic files first -- give them a unique name, appending 
 # the date string, to make sure that we don't overwrite anything
 datestr=$(date +"%Y%m%d_%H%M_%S")
-diag_files=$(find . -name "*_diag.out" -print)
+diag_files=$(find . -maxdepth 1 -name "*_diag.out" -print)
 
 if [ "${diag_files}" ]; then
     ${HTAR} -cvf ${HPSS_DIR}/diag_files_${datestr}.tar ${diag_files} >> /dev/null
