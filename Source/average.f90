@@ -36,8 +36,8 @@ contains
 
     type(box)                    :: domain
     integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
-    integer                      :: index(nlevs),max_rcoord(nlevs),rcoord(nlevs)
-    integer                      :: i,j,k,r,n,ng,max_radial,stencil_coord
+    integer                      :: max_rcoord(nlevs),rcoord(nlevs)
+    integer                      :: i,j,r,n,ng,max_radial,stencil_coord
     real(kind=dp_t)              :: radius
 
     integer, allocatable ::  ncell_proc(:,:)

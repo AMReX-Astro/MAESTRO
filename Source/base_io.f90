@@ -32,7 +32,7 @@ contains
     character(len=256) :: state_name, w0_name
     real(kind=dp_t) :: base_r, problo
     character(len=256) :: out_name
-    integer :: n, r, i
+    integer :: n, r
 
     type(bl_prof_timer), save :: bpt
 
@@ -115,7 +115,7 @@ contains
     character(len=256) :: state_name, w0_name
     real(kind=dp_t) :: r_dummy
     character(len=256) :: out_name
-    integer :: r, n, i, r_dummy_int
+    integer :: r, n, r_dummy_int
 
     type(bl_prof_timer), save :: bpt
 

@@ -71,7 +71,7 @@ contains
     real(kind=dp_t), pointer::   wzp(:,:,:,:)
     
     integer :: lo(dm),hi(dm),i,n,comp
-    integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_n,ng_w
+    integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_w
     real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start,dt_lev
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
     real(kind=dp_t) :: umax,umax_grid,umax_proc
@@ -164,15 +164,13 @@ contains
                            dx(n,:), rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
           case (3)
              if (spherical .eq. 1) then
-                np => dataptr(normal(n), i)
-                ng_n = normal(1)%ng
                 ng_w = w0mac(1,1)%ng
                 wxp => dataptr(w0mac(n,1), i)
                 wyp => dataptr(w0mac(n,2), i)
                 wzp => dataptr(w0mac(n,3), i)
                 call estdt_3d_sphr(uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
                                    fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
-                                   dSdtp(:,:,:,1), ng_dS, np(:,:,:,:), ng_n, &
+                                   dSdtp(:,:,:,1), ng_dS, &
                                    w0(1,:),wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
                                    p0(1,:), gamma1bar(1,:), lo, hi, dx(n,:), &
                                    rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
@@ -586,7 +584,7 @@ contains
   end subroutine estdt_3d_cart
   
   subroutine estdt_3d_sphr(u, ng_u, s, ng_s, force, ng_f, &
-                           divU, ng_dU, dSdt, ng_dS, normal, ng_n, &
+                           divU, ng_dU, dSdt, ng_dS, &
                            w0,w0macx,w0macy,w0macz,ng_w, p0, gamma1bar, &
                            lo, hi, dx, rho_min, dt_adv, dt_divu, umax, cfl)
 
@@ -594,13 +592,12 @@ contains
     use variables, only: rho_comp
     use fill_3d_module
     
-    integer           , intent(in   ) :: lo(:),hi(:),ng_u,ng_s,ng_f,ng_dU,ng_dS,ng_n,ng_w
+    integer           , intent(in   ) :: lo(:),hi(:),ng_u,ng_s,ng_f,ng_dU,ng_dS,ng_w
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)  
     real (kind = dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)  
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)  
     real (kind = dp_t), intent(in   ) ::   divU(lo(1)-ng_dU:,lo(2)-ng_dU:,lo(3)-ng_dU:)
     real (kind = dp_t), intent(in   ) ::   dSdt(lo(1)-ng_dS:,lo(2)-ng_dS:,lo(3)-ng_dS:)
-    real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
     real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
     real (kind = dp_t), intent(in   ) :: w0macy(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
     real (kind = dp_t), intent(in   ) :: w0macz(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)

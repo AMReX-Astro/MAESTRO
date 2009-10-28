@@ -23,7 +23,7 @@ contains
     real(kind=dp_t), intent(in   ) :: grav_cell(:,0:)
 
     integer         :: n,l,i,r
-    real(kind=dp_t) :: temppres,temp,offset
+    real(kind=dp_t) :: temp,offset
     real(kind=dp_t) :: grav_edge(nlevs_radial,0:nr_fine-1)
     real(kind=dp_t) ::    p0_old(nlevs_radial,0:nr_fine-1)
 
