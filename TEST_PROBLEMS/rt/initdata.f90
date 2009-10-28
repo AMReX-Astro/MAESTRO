@@ -130,6 +130,7 @@ contains
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo, perturb_model, rho_1, rho_2
+    use geometry, only: nr_fine
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -138,10 +139,11 @@ contains
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
 
     ! Local variables
-    integer         :: i,j
-    real(kind=dp_t) :: x,y,f,pi
-    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
+    integer         :: i,j,comp
+    real(kind=dp_t) :: x,y,pi,pertheight
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
+
+    real(kind=dp_t) :: rhoX_1,rhoX_2
 
     pi = 3.1415926535897932384d0
 
@@ -149,33 +151,44 @@ contains
     s = ZERO
 
     do j = lo(2), hi(2)
-       y = (j+HALF)*dx(2)+prob_lo(2)
        do i = lo(1), hi(1)
-          x = (i+HALF)*dx(1)+prob_lo(1)
 
-          f = 0.01*sin(4.0*pi*x) + 0.5d0
-
-          if (y .lt. f) then
-             s(i,j,rho_comp)  = s0_init(0,rho_comp)
-             s(i,j,rhoh_comp) = s0_init(0,rhoh_comp)
-             s(i,j,temp_comp) = s0_init(0,temp_comp)
-             s(i,j,spec_comp:spec_comp+nspec-1) = &
-                  s0_init(0,spec_comp:spec_comp+nspec-1)
-             s(i,j,trac_comp:trac_comp+ntrac-1) = &
-                  s0_init(0,trac_comp:trac_comp+ntrac-1)
-          else
-             s(i,j,rho_comp)  = s0_init(255,rho_comp)
-             s(i,j,rhoh_comp) = s0_init(255,rhoh_comp)
-             s(i,j,temp_comp) = s0_init(255,temp_comp)
-             s(i,j,spec_comp:spec_comp+nspec-1) = &
-                  s0_init(255,spec_comp:spec_comp+nspec-1)
-             s(i,j,trac_comp:trac_comp+ntrac-1) = &
-                  s0_init(255,trac_comp:trac_comp+ntrac-1)
-          end if
+             s(i,j,rhoh_comp) = s0_init(j,rhoh_comp)
+             s(i,j,temp_comp) = s0_init(j,temp_comp)
+             s(i,j,trac_comp:trac_comp+ntrac-1) = s0_init(j,trac_comp:trac_comp+ntrac-1)
 
        end do
     end do
-    
+
+    do j = lo(2), hi(2)
+       y = (j+HALF)*dx(2)+prob_lo(2)
+       do i = lo(1), hi(1)
+          x = (i+HALF)*dx(1)+prob_lo(1)
+          
+          pertheight = 0.01d0*sin(4.d0*pi*x) + 0.5d0
+
+          s(i,j,rho_comp) = rho_1 + ((rho_2-rho_1)/2.d0)*(1+tanh((y-pertheight)/0.005d0))
+
+       end do
+    end do
+
+
+    do comp=spec_comp,spec_comp+nspec-1
+       do j = lo(2), hi(2)
+          y = (j+HALF)*dx(2)+prob_lo(2)
+          do i = lo(1), hi(1)
+             x = (i+HALF)*dx(1)+prob_lo(1)
+
+             pertheight = 0.01d0*sin(4.d0*pi*x) + 0.5d0
+
+             rhoX_1 = s0_init(0,comp)
+             rhoX_2 = s0_init(nr_fine-1,comp)
+             s(i,j,comp) = rhoX_1 + ((rhoX_2-rhoX_1)/2.d0)*(1+tanh((y-pertheight)/0.005d0))
+             
+          end do
+       end do
+    end do
+
   end subroutine initscalardata_2d
 
   subroutine initscalardata_3d(s,lo,hi,ng,dx,s0_init,p0_init)
