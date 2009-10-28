@@ -20,7 +20,10 @@
 ! At the moment, we will select between these 2 ionization extremes
 ! (completely neutral vs. completely ionized) by a hard-coded
 ! parameter, eos_assume_neutral
-
+!
+! The ratio of specific heats (gamma) is allowed to vary.  NOTE: the
+! expression for entropy is only valid for an ideal MONATOMIC gas
+! (gamma = 5/3).  
 
 module eos_module
 
@@ -348,7 +351,8 @@ contains
 ! cs       -- sound speed -- note that this is the non-relativistic one
 !             (we compute it in this wrapper as sqrt(gam1 p /rho) instead
 !             of taking the relativistic version from helmeos.
-! entropy  -- entropy (erg/g/K)
+! entropy  -- entropy (erg/g/K)  NOTE: presently the entropy expression is 
+!             valid only for an ideal MONATOMIC gas (gamma = 5/3).
 !
 ! input = 1 means dens, temp    , and xmass are inputs, return enthalpy, eint
 !       = 2 means dens, enthalpy, and xmass are inputs, return temp    , eint
@@ -499,6 +503,7 @@ contains
        enthalpy(k) = eint(k) + pres(k)/dens(k)
 
        ! entropy (per gram) of an ideal monoatomic gas (the Sactur-Tetrode equation)
+       ! NOTE: this expression is only valid for gamma = 5/3.
        entropy(k) = (k_B/(mu(k)*m_nucleon))*(2.5_dp_t + &
             log( ( (mu(k)*m_nucleon)**2.5/dens(k) )*(k_B*temp(k))**1.5_dp_t / (2.0_dp_t*M_PI*hbar*hbar)**1.5_dp_t ) )
 
