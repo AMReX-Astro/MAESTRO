@@ -129,7 +129,7 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
 
-    use probin_module, only: prob_lo, perturb_model
+    use probin_module, only: prob_lo, perturb_model, rho_1, rho_2
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -139,45 +139,42 @@ contains
 
     ! Local variables
     integer         :: i,j
-    real(kind=dp_t) :: x,y
+    real(kind=dp_t) :: x,y,f,pi
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
+
+    pi = 3.1415926535897932384d0
 
     ! initial the domain with the base state
     s = ZERO
 
-    ! initialize the scalars
     do j = lo(2), hi(2)
+       y = (j+HALF)*dx(2)+prob_lo(2)
        do i = lo(1), hi(1)
-          s(i,j,rho_comp)  = s0_init(j,rho_comp)
-          s(i,j,rhoh_comp) = s0_init(j,rhoh_comp)
-          s(i,j,temp_comp) = s0_init(j,temp_comp)
-          s(i,j,spec_comp:spec_comp+nspec-1) = &
-               s0_init(j,spec_comp:spec_comp+nspec-1)
-          s(i,j,trac_comp:trac_comp+ntrac-1) = &
-               s0_init(j,trac_comp:trac_comp+ntrac-1)
-       enddo
-    enddo
-    
-    ! add an optional perturbation
-    if (perturb_model) then
-       do j = lo(2), hi(2)
-          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
-          
-          do i = lo(1), hi(1)
-             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
-          
-             call perturb_2d(x, y, p0_init(j), s0_init(j,:), &
-                             dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+          x = (i+HALF)*dx(1)+prob_lo(1)
 
-             s(i,j,rho_comp) = dens_pert
-             s(i,j,rhoh_comp) = rhoh_pert
-             s(i,j,temp_comp) = temp_pert
-             s(i,j,spec_comp:spec_comp+nspec-1) = rhoX_pert(1:)
-             s(i,j,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
-          enddo
-       enddo
-    endif
+          f = 0.01*sin(4.0*pi*x) + 0.5d0
+
+          if (y .lt. f) then
+             s(i,j,rho_comp)  = s0_init(0,rho_comp)
+             s(i,j,rhoh_comp) = s0_init(0,rhoh_comp)
+             s(i,j,temp_comp) = s0_init(0,temp_comp)
+             s(i,j,spec_comp:spec_comp+nspec-1) = &
+                  s0_init(0,spec_comp:spec_comp+nspec-1)
+             s(i,j,trac_comp:trac_comp+ntrac-1) = &
+                  s0_init(0,trac_comp:trac_comp+ntrac-1)
+          else
+             s(i,j,rho_comp)  = s0_init(255,rho_comp)
+             s(i,j,rhoh_comp) = s0_init(255,rhoh_comp)
+             s(i,j,temp_comp) = s0_init(255,temp_comp)
+             s(i,j,spec_comp:spec_comp+nspec-1) = &
+                  s0_init(255,spec_comp:spec_comp+nspec-1)
+             s(i,j,trac_comp:trac_comp+ntrac-1) = &
+                  s0_init(255,trac_comp:trac_comp+ntrac-1)
+          end if
+
+       end do
+    end do
     
   end subroutine initscalardata_2d
 
@@ -320,65 +317,9 @@ contains
     real (kind=dp_t)  , intent(in   ) :: p0_init(0:)
 
     ! Local variables
-    integer :: i, j, n
-    real (kind=dp_t) :: x, y, y_0, L_x
-    real (kind=dp_t) :: pert
-    real (kind=dp_t) :: rand
-    real, allocatable :: alpha(:), phi(:)
-
-    allocate(alpha(nmodes), phi(nmodes))
-
-    y_0 = HALF*(prob_lo(2) + prob_hi(2))
-    L_x = (prob_hi(1) - prob_lo(1))
-
-    ! random amplitudes and phases
-    do n = 1, nmodes
-
-       ! mode amplitudes
-       rand = genrand_real1()
-       rand = 2.0d0*rand - 1.0d0
-       alpha(n) = rand
-
-       ! mode phases
-       rand = genrand_real1()
-       rand = 2.0d0*M_PI*rand
-       phi(n) = rand
-    enddo
-
 
     ! initial the velocity
-    do j = lo(2), hi(2)
-       y = prob_lo(2) + (dble(j)+HALF) * dx(2)
-
-       do i = lo(1), hi(1)
-          x = prob_lo(1) + (dble(i)+HALF) * dx(1)
-
-          pert = 0.d0
-
-          if (nmodes == 1) then
-
-             ! single-mode -- make sure its symmetric
-             pert = pert + vel_amplitude* &
-                  HALF*(cos(2.d0*M_PI*x/L_x) + &
-                        cos(2.d0*M_PI*(L_x- x)/L_x) )
-
-          else
-
-             ! multi-mode
-             do n = 1, nmodes
-                pert = pert + vel_amplitude*alpha(n)* &
-                     cos(2.d0*M_PI*x/L_x + phi(n))
-             enddo
-
-          endif
-          
-          u(i,j,1) = ZERO
-          u(i,j,2) = exp(-(y-y_0)**2/vel_width**2)*pert
-
-       enddo
-    enddo
-
-    deallocate(alpha, phi)
+    u = ZERO
 
   end subroutine initveldata_2d
 
