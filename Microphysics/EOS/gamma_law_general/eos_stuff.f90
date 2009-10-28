@@ -25,7 +25,7 @@
 module eos_module
 
   use bl_types
-  use bl_constants_module
+  use bl_constants_module, only: M_PI, ONE
   use network, only: nspec, aion, zion
 
   implicit none
@@ -324,7 +324,7 @@ contains
                  do_eos_diag)
 
     use bl_error_module
-    use fundamental_constants_module, only: k_B, n_A
+    use fundamental_constants_module, only: k_B, n_A, hbar
 
 ! dens     -- mass density (g/cc)
 ! temp     -- temperature (K)
@@ -498,8 +498,9 @@ contains
        ! enthalpy is h = e + p/rho
        enthalpy(k) = eint(k) + pres(k)/dens(k)
 
-       ! entropy ?
-       entropy(k) = 1.d0
+       ! entropy (per gram) of an ideal monoatomic gas (the Sactur-Tetrode equation)
+       entropy(k) = (k_B/(mu(k)*m_nucleon))*(2.5_dp_t + &
+            log( ( (mu(k)*m_nucleon)**2.5/dens(k) )*(k_B*temp(k))**1.5_dp_t / (2.0_dp_t*M_PI*hbar*hbar)**1.5_dp_t ) )
 
        ! compute the thermodynamic derivatives and specific heats 
        dPdT(k) = pres(k)/temp(k)

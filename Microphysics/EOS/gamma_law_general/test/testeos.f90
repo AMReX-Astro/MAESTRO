@@ -18,8 +18,8 @@ program testburn
   io16 = network_species_index("oxygen-16")
   img24 = network_species_index("magnesium-24")
 
-  dens = 1.0_dp_t
-  temp = 1.e7_dp_t
+  dens = 1.e4_dp_t
+  temp = 1.e8_dp_t
 
   Xin(ic12) = 0.5_dp_t
   Xin(io16) = 0.5_dp_t
@@ -73,6 +73,7 @@ program testburn
   print *, 'dens: ', dens, ' temp: ', temp
   print *, 'X: ', Xin
   print *, 'pres: ', p_eos(1),  ' ener: ', e_eos(1)
+  print *, 'entropy: ', s_eos(1)
   print *, 'h:    ', h_eos(1)
   print *, 'c_v:  ', cv_eos(1), ' c_p : ', cp_eos(1)
   print *, 'dpdT: ', dpdt_eos(1), ' dpdr: ', dpdr_eos(1)
