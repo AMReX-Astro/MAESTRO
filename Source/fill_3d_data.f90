@@ -1313,12 +1313,18 @@ contains
     logical        , intent(in   ) :: harmonic_avg
 
     ! Local
-    integer :: i
+    integer         :: i
+    real(kind=dp_t) :: denom
 
     if (harmonic_avg) then
 
        do i = lo(1),hi(1)+1
-          betax(i) = TWO*(ccbeta(i)*ccbeta(i-1))/(ccbeta(i) + ccbeta(i-1))
+          denom = (ccbeta(i) + ccbeta(i-1))
+          if (denom .ne. 0.d0) then
+             betax(i) = TWO*(ccbeta(i)*ccbeta(i-1)) / denom
+          else
+             betax(i) = HALF*(ccbeta(i)+ccbeta(i-1))
+          end if
        end do
 
     else
@@ -1343,19 +1349,30 @@ contains
     logical        , intent(in   ) :: harmonic_avg
 
     ! Local
-    integer :: i,j
+    integer         :: i,j
+    real(kind=dp_t) :: denom
 
     if (harmonic_avg) then
 
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)+1
-             betax(i,j) = TWO*(ccbeta(i,j)*ccbeta(i-1,j))/(ccbeta(i,j) + ccbeta(i-1,j))
+             denom = (ccbeta(i,j) + ccbeta(i-1,j))
+             if (denom .ne. 0.d0) then
+                betax(i,j) = TWO*(ccbeta(i,j)*ccbeta(i-1,j)) / denom
+             else
+                betax(i,j) = HALF*(ccbeta(i,j)+ccbeta(i-1,j))
+             end if
           end do
        end do
 
        do j = lo(2),hi(2)+1
           do i = lo(1),hi(1)
-             betay(i,j) = TWO*(ccbeta(i,j)*ccbeta(i,j-1))/(ccbeta(i,j) + ccbeta(i,j-1))
+             denom = (ccbeta(i,j) + ccbeta(i,j-1))
+             if (denom .ne. 0.d0) then
+                betay(i,j) = TWO*(ccbeta(i,j)*ccbeta(i,j-1)) / denom
+             else
+                betay(i,j) = HALF*(ccbeta(i,j)+ccbeta(i,j-1))
+             end if
           end do
        end do
 
@@ -1391,15 +1408,20 @@ contains
     logical        , intent(in   ) :: harmonic_avg
 
     ! Local
-    integer :: i,j,k
+    integer         :: i,j,k
+    real(kind=dp_t) :: denom
 
     if (harmonic_avg) then
 
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)+1
-                betax(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i-1,j,k)) / &
-                                   (ccbeta(i,j,k) + ccbeta(i-1,j,k))
+                denom = (ccbeta(i,j,k) + ccbeta(i-1,j,k))
+                if (denom .ne. 0.d0) then
+                   betax(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i-1,j,k)) / denom
+                else
+                   betax(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i-1,j,k))
+                end if
              end do
           end do
        end do
@@ -1407,8 +1429,12 @@ contains
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)+1
              do i = lo(1),hi(1)
-                betay(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i,j-1,k)) / &
-                                   (ccbeta(i,j,k) + ccbeta(i,j-1,k))
+                denom = (ccbeta(i,j,k) + ccbeta(i,j-1,k))
+                if (denom .ne. 0.d0) then
+                   betay(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i,j-1,k)) / denom
+                else
+                   betay(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i,j-1,k))
+                end if
              end do
           end do
        end do
@@ -1416,8 +1442,12 @@ contains
        do k = lo(3),hi(3)+1
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
-                betaz(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i,j,k-1)) / &
-                                   (ccbeta(i,j,k) + ccbeta(i,j,k-1))
+                denom = (ccbeta(i,j,k) + ccbeta(i,j,k-1))
+                if (denom .ne. 0.d0) then
+                   betaz(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i,j,k-1)) / denom
+                else
+                   betaz(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i,j,k-1))
+                end if
              end do
           end do
        end do
