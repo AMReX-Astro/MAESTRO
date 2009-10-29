@@ -129,7 +129,7 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
 
-    use probin_module, only: prob_lo, perturb_model, rho_1, rho_2
+    use probin_module, only: prob_lo, prob_hi, perturb_model, rho_1, rho_2
     use geometry, only: nr_fine
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
@@ -140,12 +140,12 @@ contains
 
     ! Local variables
     integer         :: i,j,comp
-    real(kind=dp_t) :: x,y,pi,pertheight
+    real(kind=dp_t) :: x,y,pertheight, L_x
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
     real(kind=dp_t) :: rhoX_1,rhoX_2
 
-    pi = 3.1415926535897932384d0
+    L_x = prob_hi(1) - prob_lo(1)
 
     ! initial the domain with the base state
     s = ZERO
@@ -165,7 +165,7 @@ contains
        do i = lo(1), hi(1)
           x = (i+HALF)*dx(1)+prob_lo(1)
           
-          pertheight = 0.01d0*sin(4.d0*pi*x) + 0.5d0
+          pertheight = 0.01d0*HALF*(cos(2.d0*M_PI*x/L_x)+cos(2.d0*M_PI*(L_x-x)/L_x)) + 0.5d0
 
           s(i,j,rho_comp) = rho_1 + ((rho_2-rho_1)/2.d0)*(1+tanh((y-pertheight)/0.005d0))
 
@@ -179,7 +179,7 @@ contains
           do i = lo(1), hi(1)
              x = (i+HALF)*dx(1)+prob_lo(1)
 
-             pertheight = 0.01d0*sin(4.d0*pi*x) + 0.5d0
+             pertheight = 0.01d0*HALF*(cos(2.d0*M_PI*x/L_x)+cos(2.d0*M_PI*(L_x-x)/L_x)) + 0.5d0
 
              rhoX_1 = s0_init(0,comp)
              rhoX_2 = s0_init(nr_fine-1,comp)
