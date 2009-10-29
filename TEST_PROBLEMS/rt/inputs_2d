@@ -34,6 +34,8 @@
 
  stop_time = 2.5d0
 
+ init_shrink = 0.1d0
+
  plot_base = T
  plot_int  = 10
  chk_int   = 100
