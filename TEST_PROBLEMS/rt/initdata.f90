@@ -128,7 +128,7 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
 
-    use probin_module, only: prob_lo, prob_hi, perturb_model, rho_1, rho_2
+    use probin_module, only: prob_lo, prob_hi, perturb_model, rho_1, rho_2, perturb_type
     use geometry, only: nr_fine
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
@@ -289,7 +289,8 @@ contains
 
   subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init)
 
-    use probin_module, only : prob_lo, prob_hi, nmodes, vel_amplitude, vel_width
+    use probin_module, only : prob_lo, prob_hi, nmodes, vel_amplitude, vel_width, &
+         perturb_type
     use mt19937_module
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
