@@ -1,3 +1,5 @@
+perturb_type                        integer            1
+
 nmodes                              integer            5
 vel_amplitude                       real               0.025d0
 vel_width                           real               0.025d0

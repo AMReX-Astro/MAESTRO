@@ -51,8 +51,7 @@ contains
              if (spherical .eq. 1) then
                 call bl_error("ERROR: spherical not implemented in initdata")
              else
-                call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                       p0_init(n,:))
+                call bl_error("ERROR: 3d not implemented in initdata")
              end if
           end select
        end do
@@ -116,7 +115,7 @@ contains
           if (spherical .eq. 1) then
              call bl_error("ERROR: spherical not implemented in initdata")
           else
-             call initscalardata_3d(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_init)
+             call bl_error("ERROR: 3d not implemented in initdata")
           end if
        end select
     end do
@@ -145,49 +144,68 @@ contains
 
     real(kind=dp_t) :: rhoX_1,rhoX_2
 
-    L_x = prob_hi(1) - prob_lo(1)
-
     ! initial the domain with the base state
     s = ZERO
 
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
+    if (perturb_type .eq. 1) then
+
+       L_x = prob_hi(1) - prob_lo(1)
+       
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              s(i,j,rhoh_comp) = s0_init(j,rhoh_comp)
              s(i,j,temp_comp) = s0_init(j,temp_comp)
              s(i,j,trac_comp:trac_comp+ntrac-1) = s0_init(j,trac_comp:trac_comp+ntrac-1)
 
+          end do
        end do
-    end do
 
-    do j = lo(2), hi(2)
-       y = (j+HALF)*dx(2)+prob_lo(2)
-       do i = lo(1), hi(1)
-          x = (i+HALF)*dx(1)+prob_lo(1)
-          
-          pertheight = 0.01d0*HALF*(cos(2.d0*M_PI*x/L_x)+cos(2.d0*M_PI*(L_x-x)/L_x)) + 0.5d0
-
-          s(i,j,rho_comp) = rho_1 + ((rho_2-rho_1)/2.d0)*(1+tanh((y-pertheight)/0.005d0))
-
-       end do
-    end do
-
-
-    do comp=spec_comp,spec_comp+nspec-1
        do j = lo(2), hi(2)
           y = (j+HALF)*dx(2)+prob_lo(2)
           do i = lo(1), hi(1)
              x = (i+HALF)*dx(1)+prob_lo(1)
 
-             pertheight = 0.01d0*HALF*(cos(2.d0*M_PI*x/L_x)+cos(2.d0*M_PI*(L_x-x)/L_x)) + 0.5d0
+             pertheight = 0.01d0*HALF*(cos(2.d0*M_PI*x/L_x)+cos(2.d0*M_PI*(L_x-x)/L_x)) &
+                  + 0.5d0
 
-             rhoX_1 = s0_init(0,comp)
-             rhoX_2 = s0_init(nr_fine-1,comp)
-             s(i,j,comp) = rhoX_1 + ((rhoX_2-rhoX_1)/2.d0)*(1+tanh((y-pertheight)/0.005d0))
-             
+             s(i,j,rho_comp) = rho_1 + ((rho_2-rho_1)/2.d0)*(1+tanh((y-pertheight)/0.005d0))
+
           end do
        end do
-    end do
+
+
+       do comp=spec_comp,spec_comp+nspec-1
+          do j = lo(2), hi(2)
+             y = (j+HALF)*dx(2)+prob_lo(2)
+             do i = lo(1), hi(1)
+                x = (i+HALF)*dx(1)+prob_lo(1)
+
+                pertheight = 0.01d0*HALF*(cos(2.d0*M_PI*x/L_x)+cos(2.d0*M_PI*(L_x-x)/L_x)) &
+                     + 0.5d0
+
+                rhoX_1 = s0_init(0,comp)
+                rhoX_2 = s0_init(nr_fine-1,comp)
+                s(i,j,comp) = rhoX_1 &
+                     + ((rhoX_2-rhoX_1)/2.d0)*(1+tanh((y-pertheight)/0.005d0))
+
+             end do
+          end do
+       end do
+
+    else if (perturb_type .eq. 2) then
+
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             s(i,j,rho_comp)  = s0_init(j,rho_comp)
+             s(i,j,rhoh_comp) = s0_init(j,rhoh_comp)
+             s(i,j,temp_comp) = s0_init(j,temp_comp)
+             s(i,j,spec_comp:spec_comp+nspec-1) = s0_init(j,spec_comp:spec_comp+nspec-1)
+             s(i,j,trac_comp:trac_comp+ntrac-1) = s0_init(j,trac_comp:trac_comp+ntrac-1)
+          enddo
+       enddo
+       
+    end if
 
   end subroutine initscalardata_2d
 
@@ -201,54 +219,7 @@ contains
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
 
-    !     Local variables
-    integer         :: i,j,k
-    real(kind=dp_t) :: x,y,z
-    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
-    real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
-
-    ! initial the domain with the base state
     s = ZERO
-    
-    ! initialize the scalars
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             s(i,j,k,rho_comp)  = s0_init(k,rho_comp)
-             s(i,j,k,rhoh_comp) = s0_init(k,rhoh_comp)
-             s(i,j,k,temp_comp) = s0_init(k,temp_comp)
-             s(i,j,k,spec_comp:spec_comp+nspec-1) = &
-                  s0_init(k,spec_comp:spec_comp+nspec-1)
-             s(i,j,k,trac_comp:trac_comp+ntrac-1) = &
-                  s0_init(k,trac_comp:trac_comp+ntrac-1)
-          enddo
-       enddo
-    enddo
-
-    if (perturb_model) then
-
-       ! add an optional perturbation
-       do k = lo(3), hi(3)
-          z = prob_lo(3) + (dble(k)+HALF) * dx(3)
-
-          do j = lo(2), hi(2)
-             y = prob_lo(2) + (dble(j)+HALF) * dx(2)
-
-             do i = lo(1), hi(1)
-                x = prob_lo(1) + (dble(i)+HALF) * dx(1)
-
-                call perturb_3d(x, y, z, p0_init(k), s0_init(k,:), &
-                                dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
-
-                s(i,j,k,rho_comp) = dens_pert
-                s(i,j,k,rhoh_comp) = rhoh_pert
-                s(i,j,k,temp_comp) = temp_pert
-                s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
-                s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
-             enddo
-          enddo
-       enddo
-    endif
 
   end subroutine initscalardata_3d
 
@@ -281,11 +252,9 @@ contains
                                  s0_init(n,:,:), p0_init(n,:))
           case (3) 
              if (spherical .eq. 1) then
-                call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                    s0_init(1,:,:), p0_init(1,:))
+                call bl_error("ERROR: spherical not implemented in initdata")
              else
-                call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                    s0_init(n,:,:), p0_init(n,:))
+                call bl_error("ERROR: 3d not implemented in initdata")
              end if
           end select
        end do
@@ -330,9 +299,72 @@ contains
     real (kind=dp_t)  , intent(in   ) :: p0_init(0:)
 
     ! Local variables
+    integer :: i, j, n
+    real (kind=dp_t) :: x, y, y_0, L_x
+    real (kind=dp_t) :: pert
+    real (kind=dp_t) :: rand
+    real, allocatable :: alpha(:), phi(:)
 
-    ! initial the velocity
-    u = ZERO
+    if (perturb_type .eq. 1) then
+
+       u = ZERO
+
+    else
+       
+       allocate(alpha(nmodes), phi(nmodes))
+
+       y_0 = HALF*(prob_lo(2) + prob_hi(2))
+       L_x = (prob_hi(1) - prob_lo(1))
+
+       ! random amplitudes and phases
+       do n = 1, nmodes
+
+          ! mode amplitudes
+          rand = genrand_real1()
+          rand = 2.0d0*rand - 1.0d0
+          alpha(n) = rand
+
+          ! mode phases
+          rand = genrand_real1()
+          rand = 2.0d0*M_PI*rand
+          phi(n) = rand
+       enddo
+
+       ! initial the velocity
+       do j = lo(2), hi(2)
+          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+
+          do i = lo(1), hi(1)
+             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+
+             pert = 0.d0
+
+             if (nmodes == 1) then
+
+                ! single-mode -- make sure its symmetric
+                pert = pert + vel_amplitude* &
+                     HALF*(cos(2.d0*M_PI*x/L_x) + &
+                     cos(2.d0*M_PI*(L_x- x)/L_x) )
+
+             else
+
+                ! multi-mode
+                do n = 1, nmodes
+                   pert = pert + vel_amplitude*alpha(n)* &
+                        cos(2.d0*M_PI*x/L_x + phi(n))
+                enddo
+
+             endif
+
+             u(i,j,1) = ZERO
+             u(i,j,2) = exp(-(y-y_0)**2/vel_width**2)*pert
+
+          enddo
+       enddo
+
+       deallocate(alpha, phi)
+
+    end if
 
   end subroutine initveldata_2d
 
@@ -343,117 +375,9 @@ contains
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
-
-    ! Local variables
-
-    ! initial the velocity
-    u = ZERO
     
+    u = ZERO
+
   end subroutine initveldata_3d
-
-  subroutine perturb_2d(x, y, p0_init, s0_init, dens_pert, rhoh_pert, rhoX_pert, &
-                        temp_pert, trac_pert)
-
-    ! apply an optional perturbation to the initial temperature field
-    ! to see some bubbles
-
-    real(kind=dp_t), intent(in ) :: x, y
-    real(kind=dp_t), intent(in ) :: p0_init, s0_init(:)
-    real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
-    real(kind=dp_t), intent(out) :: rhoX_pert(:)
-    real(kind=dp_t), intent(out) :: trac_pert(:)
-
-    real(kind=dp_t) :: temp,t0
-    real(kind=dp_t) :: x0, y0, r0
-
-    t0 = s0_init(temp_comp)
-
-    x0 = 7.2d7
-    y0 = 8.5d7
-
-    r0 = sqrt( (x-x0)**2 +(y-y0)**2 ) / 2.5d6
-
-    temp = t0 * (ONE + TWO * (0.15d0 * (1.d0 + tanh((2.d0-r0)))))
-          
-    ! Use the EOS to make this temperature perturbation occur at constant 
-    ! pressure
-    temp_eos(1) = temp
-    p_eos(1) = p0_init
-    den_eos(1) = s0_init(rho_comp)
-    xn_eos(1,:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
-
-    call eos(eos_input_tp, den_eos, temp_eos, &
-             npts, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, &
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             do_diag)
-
-    dens_pert = den_eos(1)
-    rhoh_pert = den_eos(1)*h_eos(1)
-    rhoX_pert = dens_pert*xn_eos(1,:)
-
-    temp_pert = temp
-
-    trac_pert = ZERO
-
-  end subroutine perturb_2d
-
-  subroutine perturb_3d(x, y, z, p0_init, s0_init, dens_pert, rhoh_pert, &
-                        rhoX_pert, temp_pert, trac_pert)
-
-    ! apply an optional perturbation to the initial temperature field
-    ! to see some bubbles
-
-    real(kind=dp_t), intent(in ) :: x, y, z
-    real(kind=dp_t), intent(in ) :: p0_init, s0_init(:)
-    real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
-    real(kind=dp_t), intent(out) :: rhoX_pert(:)
-    real(kind=dp_t), intent(out) :: trac_pert(:)
-
-    real(kind=dp_t) :: temp, t0
-    real(kind=dp_t) :: x0, y0, z0, r0
-
-    t0 = s0_init(temp_comp)
-
-    x0 = 3.6d7
-    y0 = 3.6d7
-    z0 = 8.5d7
-
-    r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) / 2.5d6
-
-    temp = t0 * (ONE + TWO * (0.15d0 * (1.d0 + tanh((2.d0-r0)))))
-
-    ! Use the EOS to make this temperature perturbation occur at constant 
-    ! pressure
-    temp_eos(1) = temp
-    p_eos(1) = p0_init
-    den_eos(1) = s0_init(rho_comp)
-    xn_eos(1,:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
-
-    call eos(eos_input_tp, den_eos, temp_eos, &
-             npts, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, &
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             do_diag)
-
-    dens_pert = den_eos(1)
-    rhoh_pert = den_eos(1)*h_eos(1)
-    rhoX_pert = dens_pert*xn_eos(1,:)
-
-    temp_pert = temp
-
-    trac_pert = ZERO
-
-  end subroutine perturb_3d
 
 end module init_module
