@@ -2,8 +2,8 @@
  spherical_in = 0
 
  max_levs = 1
- n_cellx = 128
- n_celly = 256
+ n_cellx = 256
+ n_celly = 512
 
  max_grid_size = 128
 
