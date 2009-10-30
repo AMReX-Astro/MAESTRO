@@ -937,7 +937,7 @@ s_6 = 6s_{i} - 3\left(s_{i,-}+s_{i,+}\right),
 \begin{equation}
 \xi = \frac{x - ih}{h}, ~ 0 \le \xi \le 1.
 \end{equation}
-\item {\bf Step 6:} Integrate quadratic profiles.\\ \\
+\item {\bf Step 3:} Integrate quadratic profiles.\\ \\
 Define the following integrals, where $\sigma = |u|\Delta t/h$:
 \begin{eqnarray}
 \mathcal{I}_{i,+}(\sigma) &=& \frac{1}{\sigma h}\int_{(i+\myhalf)h-\sigma h}^{(i+\myhalf)h}s_i^I(x)dx \\
@@ -948,7 +948,7 @@ Plugging in (\ref{Quadratic Interp}) gives:
 \mathcal{I}_{i,+}(\sigma) &=& s_{j,+} - \frac{\sigma}{2}\left[s_{j,+}-s_{j,-}-\left(1-\frac{2}{3}\sigma\right)s_{6,i}\right], \\
 \mathcal{I}_{i,-}(\sigma) &=& s_{j,-} + \frac{\sigma}{2}\left[s_{j,+}-s_{j,-}+\left(1-\frac{2}{3}\sigma\right)s_{6,i}\right].
 \end{eqnarray}
-\item {\bf Step 7:} Obtain 1D edge states.\\ \\
+\item {\bf Step 4:} Obtain 1D edge states.\\ \\
 Perform a 1D extrapolation, without source terms, to get 
 left and right edge states.  Add the source terms later if desired/necessary.\\ \\
 \begin{eqnarray}
