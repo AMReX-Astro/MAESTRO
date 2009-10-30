@@ -23,7 +23,7 @@ contains
                              buoyancy_cutoff_factor, &
                              prob_lo, prob_hi, &
                              small_temp, small_dens, grav_const, &
-                             rho_1, rho_2, p0_base
+                             rho_1, rho_2, p0_base, do_SNe
 
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm
@@ -139,7 +139,11 @@ contains
 
           ! top half -- heavy fluid
           d_ambient = rho_2
-          p_ambient = p0_heavy + rho_2*grav_const*(rloc - rmid)
+          if (do_SNe) then
+             p_ambient = p0_base
+          else
+             p_ambient = p0_heavy + rho_2*grav_const*(rloc - rmid)
+          end if
           t_ambient = t_guess
           xn_ambient(:) = xn_heavy(:)
 
@@ -147,7 +151,11 @@ contains
 
           ! lower half -- light fluid
           d_ambient = rho_1
-          p_ambient = p0_light + rho_1*grav_const*(rloc - prob_lo(dm))
+          if (do_SNe) then
+             p_ambient = p0_base
+          else
+             p_ambient = p0_light + rho_1*grav_const*(rloc - prob_lo(dm))
+          end if
           t_ambient = t_guess
           xn_ambient(:) = xn_light(:)
 
@@ -174,7 +182,11 @@ contains
        s0_init(r, rho_comp) = d_ambient
        s0_init(r,rhoh_comp) = d_ambient * h_eos(1)
        s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-       p0_init(r) = p_eos(1)
+       if (do_SNe) then
+          p0_init(r) = p0_base
+       else
+          p0_init(r) = p_eos(1)
+       end if
        
        s0_init(r,temp_comp) = temp_eos(1)
 

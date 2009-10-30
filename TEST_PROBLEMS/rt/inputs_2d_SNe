@@ -23,6 +23,7 @@
  evolve_base_state = F
  do_smallscale = T
  beta_type = 3
+ do_SNe = T
 
  anelastic_cutoff = 1.d-10
  base_cutoff_density = 1.d-10

@@ -7,9 +7,5 @@ rho_1                               real               1.0d0
 
 p0_base                             real               1.0d0
 
-
-
-
-
-
+do_SNe                              logical            .false.
 
