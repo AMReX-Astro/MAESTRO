@@ -9,7 +9,7 @@ module init_module
   use eos_module
   use variables
   use network
-  use geometry, only: nr, spherical, dm
+  use geometry, only: nr, spherical, dm, nlevs
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -26,7 +26,6 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
-    use geometry, only: nlevs
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -51,10 +50,15 @@ contains
        he4_comp = network_species_index('helium-4')
 
        do r=0,nr(1)-1
-          if (s0_init(1,r,spec_comp+he4_comp-1)/s0_init(1,r,rho_comp) .gt. he4_pert) then
+
+          if (s0_init(1,r,spec_comp+he4_comp-1)/s0_init(1,r,rho_comp) .gt. &
+               he4_pert) then
+
              pert_index = r
              exit
+
           end if
+
        end do
 
        if(dm .eq. 2) then
@@ -66,21 +70,26 @@ contains
     endif
 
     do n=1,nlevs
+
        do i = 1, s(n)%nboxes
+
           if ( multifab_remote(s(n),i) ) cycle
+
           sop => dataptr(s(n),i)
           lo =  lwb(get_box(s(n),i))
           hi =  upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                    p0_init(n,:))
+             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), &
+                  s0_init(n,:,:), p0_init(n,:))
           case (3)
-             call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                    p0_init(n,:))
+             call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx(n,:), &
+                  s0_init(n,:,:), p0_init(n,:))
           end select
-       end do
-     enddo
+
+       enddo
+
+    enddo
 
     if (nlevs .eq. 1) then
 
@@ -93,24 +102,28 @@ contains
 
     else
 
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       ! the loop over nlevs must count backwards to make sure the finer grids
+       ! are done first
        do n=nlevs,2,-1
 
-          ! set level n-1 data to be the average of the level n data covering it
+          ! set level n-1 data to be the average of the level n data covering 
+          ! it
           call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),rho_comp,dm+rho_comp,nscal, &
-                                         fill_crse_input=.false.)
+                                         bc(n-1),bc(n),rho_comp,dm+rho_comp, &
+                                         nscal, fill_crse_input=.false.)
 
        enddo
 
     end if
 
   end subroutine initscalardata
+
+
 
   subroutine initscalardata_on_level(n,s,s0_init,p0_init,dx,bc)
 
@@ -133,33 +146,46 @@ contains
     ! we only need to compute pert_height at the coarsest level
     if (n .eq. 1 .and. perturb_model) then
 
-       ! compute the perturbation r location based on where the concentration of He
-       ! becomes greater than he4_pert at the coarsest level
+       ! compute the perturbation r location based on where the concentration 
+       ! of He becomes greater than he4_pert at the coarsest level
        he4_comp = network_species_index('helium-4')
+
        do r=0,nr(1)-1
-          if (s0_init(r,spec_comp+he4_comp-1)/s0_init(r,rho_comp) .gt. he4_pert) then
+
+          if (s0_init(r,spec_comp+he4_comp-1)/s0_init(r,rho_comp) .gt. &
+               he4_pert) then
+
              pert_index = r
              exit
+
           end if
+
        end do
+
        if(dm .eq. 2) then
           pert_height = prob_lo(2) + (dble(pert_index)+HALF)*dx(dm) + 50.0d0
        else if(dm .eq. 3) then
           pert_height = prob_lo(3) + (dble(pert_index)+HALF)*dx(dm) + 50.0d0
        end if
+
     end if
 
     do i = 1, s%nboxes
+
        if ( multifab_remote(s,i) ) cycle
+
        sop => dataptr(s,i)
        lo =  lwb(get_box(s,i))
        hi =  upb(get_box(s,i))
        select case (dm)
        case (2)
-          call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, s0_init, p0_init)
+          call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, s0_init, &
+               p0_init)
        case (3)
-          call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_init)
+          call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, s0_init, &
+               p0_init)
        end select
+
     end do
 
     call multifab_fill_boundary(s)
@@ -167,6 +193,8 @@ contains
     call multifab_physbc(s,rho_comp,dm+rho_comp,nscal,bc)
 
   end subroutine initscalardata_on_level
+
+
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
 
@@ -191,7 +219,9 @@ contains
 
     ! initialize the scalars
     do j = lo(2), hi(2)
+
        do i = lo(1), hi(1)
+
           s(i,j,rho_comp)  = s0_init(j,rho_comp)
           s(i,j,rhoh_comp) = s0_init(j,rhoh_comp)
           s(i,j,temp_comp) = s0_init(j,temp_comp)
@@ -199,7 +229,9 @@ contains
                s0_init(j,spec_comp:spec_comp+nspec-1)
           s(i,j,trac_comp:trac_comp+ntrac-1) = &
                s0_init(j,trac_comp:trac_comp+ntrac-1)
+
        enddo
+
     enddo
     
     ! add an optional perturbation
@@ -217,18 +249,25 @@ contains
              dist = sqrt((x-xcen)**2 + (y-ycen)**2)
 
              call perturb(dist, p0_init(j), s0_init(j,:), &
-                          dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+                          dens_pert, rhoh_pert, rhoX_pert, temp_pert, &
+                          trac_pert)
 
              s(i,j,rho_comp) = dens_pert
              s(i,j,rhoh_comp) = rhoh_pert
              s(i,j,temp_comp) = temp_pert
              s(i,j,spec_comp:spec_comp+nspec-1) = rhoX_pert(1:)
              s(i,j,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
+
           enddo
+
        enddo
+
     endif
     
   end subroutine initscalardata_2d
+
+
+
 
   subroutine initscalardata_3d(s,lo,hi,ng,dx,s0_init,p0_init)
 
@@ -259,8 +298,11 @@ contains
 
        ! initialize the scalars
        do k = lo(3), hi(3)
+
           do j = lo(2), hi(2)
+
              do i = lo(1), hi(1)
+                
                 s(i,j,k,rho_comp)  = s0_init(k,rho_comp)
                 s(i,j,k,rhoh_comp) = s0_init(k,rhoh_comp)
                 s(i,j,k,temp_comp) = s0_init(k,temp_comp)
@@ -268,8 +310,11 @@ contains
                      s0_init(k,spec_comp:spec_comp+nspec-1)
                 s(i,j,k,trac_comp:trac_comp+ntrac-1) = &
                      s0_init(k,trac_comp:trac_comp+ntrac-1)
+
              enddo
+
           enddo
+
        enddo
        
        if (perturb_model) then
@@ -291,25 +336,33 @@ contains
                    dist = sqrt((x-xcen)**2 + (y-ycen)**2 + (z-zcen)**2)
                    
                    call perturb(dist, p0_init(k), s0_init(k,:), &
-                                dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+                                dens_pert, rhoh_pert, rhoX_pert, temp_pert, &
+                                trac_pert)
 
                    s(i,j,k,rho_comp) = dens_pert
                    s(i,j,k,rhoh_comp) = rhoh_pert
                    s(i,j,k,temp_comp) = temp_pert
                    s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
                    s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
+
                 enddo
+
              enddo
+
           enddo
+
        endif
 
     end if
     
   end subroutine initscalardata_3d
 
-  subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
 
-    use geometry, only: nlevs
+
+
+  subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
+    
+    use probin_module, only: prob_hi, num_vortices
 
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -321,6 +374,18 @@ contains
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     integer :: lo(dm),hi(dm),ng
     integer :: i,n
+
+    real(kind=dp_t) :: xloc_vortices(num_vortices)
+    real(kind=dp_t) :: offset
+
+    ! for now, this is calculated even if we don't use the velocity field in
+    ! the _2d and _3d routines below
+    offset = (prob_hi(1) - prob_lo(1)) / (num_vortices + 1)
+
+    do i = 1, num_vortices
+       xloc_vortices(i) = dble(i) * offset
+    enddo
+    
     
     ng = u(1)%ng
 
@@ -333,7 +398,8 @@ contains
           select case (dm)
           case (2)
              call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
-                                 s0_init(n,:,:), p0_init(n,:))
+                                 s0_init(n,:,:), p0_init(n,:), xloc_vortices)
+          ! 3d doesn't currently have vortice information coded !
           case (3) 
              call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
                                  s0_init(n,:,:), p0_init(n,:))
@@ -351,17 +417,20 @@ contains
        call multifab_physbc(u(nlevs),1,1,dm,bc(nlevs))
     else
     
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       ! the loop over nlevs must count backwards to make sure the finer grids
+       ! are done first
        do n=nlevs,2,-1
 
-          ! set level n-1 data to be the average of the level n data covering it
+          ! set level n-1 data to be the average of the level n data covering 
+          ! it
           call ml_cc_restriction(u(n-1),u(n),mla%mba%rr(n-1,:))
           
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(u(n),u(n-1),ng,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),1,1,dm,fill_crse_input=.false.)
+                                         bc(n-1),bc(n),1,1,dm, &
+                                         fill_crse_input=.false.)
 
        enddo
 
@@ -369,18 +438,76 @@ contains
 
   end subroutine initveldata
 
-  subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init)
+
+
+
+  subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init,xloc_vortices)
+
+    use probin_module, only: apply_vel_field, velpert_scale, &
+                             velpert_amplitude, velpert_height_loc
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
+    real(kind=dp_t)   , intent(in   ) :: xloc_vortices(:)
 
-    ! initial the velocity
+    ! local variables
+    real(kind=dp_t) :: xloc(2), upert(2)
+    integer :: i, j, vortex
+    real(kind=dp_t) :: xdist, ydist, r
+
+
     u = ZERO
 
+    if (apply_vel_field) then
+
+       do j = lo(2), hi(2)
+
+          xloc(2) = prob_lo(2) + (dble(j)+HALF)*dx(2)
+
+          ydist = xloc(2) - velpert_height_loc
+          
+          do i = lo(1), hi(1)
+
+             upert = ZERO
+
+             xloc(1) = prob_lo(1) + (dble(i)+HALF)*dx(1)
+
+             ! loop over each vortex
+             do vortex = 1, size(xloc_vortices, dim=1)
+
+                xdist = xloc(1) - xloc_vortices(vortex)
+
+                r = xdist**2 + ydist**2
+                r = sqrt(r)
+
+                ! e.g. Calder et al. ApJSS 143, 201-229 (2002)
+                ! we set things up so that every other vortex has the same
+                ! orientation
+                upert(1) = upert(1) - ydist * &
+                     velpert_amplitude * exp( -r**2/(TWO*velpert_scale)) &
+                     * (-ONE)**vortex
+
+                upert(2) = upert(2) + xdist * &
+                     velpert_amplitude * exp(-r**2/(TWO*velpert_scale)) &
+                     * (-ONE)**vortex
+             enddo
+
+             u(i,j,:) = u(i,j,:) + upert(:)
+
+          enddo
+
+       enddo
+       
+                
+    endif
+
   end subroutine initveldata_2d
+
+
+
 
   subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_init)
 
@@ -392,8 +519,11 @@ contains
 
     ! initial the velocity
     u = ZERO
+
     
   end subroutine initveldata_3d
+
+
 
 
   subroutine perturb(distance, p0_init, s0_init,  &
@@ -464,5 +594,8 @@ contains
     trac_pert(:) = ZERO
 
   end subroutine perturb
+
+
+
 
 end module init_module
