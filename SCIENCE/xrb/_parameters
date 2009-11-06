@@ -16,3 +16,22 @@ xrb_use_bottom_sponge               logical            .true.
 # Helium mass fraction used in {\tt diag.f90} to define where the helium 
 # begins.
 diag_define_he_layer                real               0.1
+
+# Velocity field initialization
+apply_vel_field                     logical            .false.
+
+# Initial velocity field vortex scale
+velpert_scale                       real               1.0d2
+
+# Initial velocity field vortex amplitude
+velpert_amplitude                   real               1.0d2
+
+# Initial velocity field vortex height location
+velpert_height_loc                  real               6.5d3
+
+# number of vortices 
+num_vortices                        integer            1
+
+# apply the conductivity limiting
+limit_conductivity                  logical            .false.
+
