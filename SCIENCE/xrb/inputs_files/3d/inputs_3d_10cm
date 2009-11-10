@@ -79,4 +79,13 @@
  do_sponge = T
 
 !restart = 50
+
+ apply_vel_field    = F
+ velpert_scale      = 1.0d2
+ velpert_amplitude  = 1.0d2
+ velpert_height_loc = 6.5d3
+ num_vortices       = 1
+
+ limit_conductivity = F
+
 /
