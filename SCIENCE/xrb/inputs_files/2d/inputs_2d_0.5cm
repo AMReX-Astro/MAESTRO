@@ -28,7 +28,7 @@
 
  grav_const = -2.45e14
 
- max_step  = 99999
+ max_step  = 1
  init_iter = 3
 
  stop_time = 2.5
