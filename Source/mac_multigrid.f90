@@ -269,8 +269,9 @@ contains
                 print *,'NEW N ',n
                 print *,'NEW BOTTOM_BOX SIZE ',bottom_box_size
              end if
-             if (n.eq.1) &
+             if (n.eq.1) then
                 call bl_error("DONT USE MG_BOTTOM_SOLVER == 4 WHEN BOTTOM GRID NOT PROPERLY DIVISIBLE ")
+             end if
           end if
        end do
 
