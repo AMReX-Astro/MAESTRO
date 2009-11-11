@@ -245,38 +245,23 @@ contains
        call boxarray_build_bx(new_coarse_ba,bxs)
 
        ! This is how many levels could be built if we made just one grid
-       n = max_mg_levels(new_coarse_ba,min_width)
+       n = max_mg_levels_bottom(new_coarse_ba,min_width)
 
        ! This is the user-imposed limit
        n = min(n,max_mg_bottom_nlevels)
 
        if ( n .eq. 1) then
-          call bl_error("DONT USE MG_BOTTOM_SOLVER == 4 WHEN BOTTOM GRID NOT PROPERLY DIVISIBLE : n = 1 ")
+          call bl_error("DONT USE MG_BOTTOM_SOLVER == 4: BOTTOM GRID NOT PROPERLY DIVISIBLE")
        end if
 
        bottom_box_size = 2**n
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          print *,'N ',n
-          print *,'BOTTOM_BOX SIZE ',bottom_box_size
+          print *,'TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE',n
        end if
 
-       do j = 1,dm
-          nx = extent(bxs,j)
-          if ( (bottom_box_size * (nx/bottom_box_size)) .ne. nx ) then
-             n = n-1
-             bottom_box_size = 2**n
-             if (parallel_IOProcessor() .and. verbose .ge. 1) then
-                print *,'NEW N ',n
-                print *,'NEW BOTTOM_BOX SIZE ',bottom_box_size
-             end if
-             if (n.eq.1) then
-                call bl_error("DONT USE MG_BOTTOM_SOLVER == 4 WHEN BOTTOM GRID NOT PROPERLY DIVISIBLE ")
-             end if
-          end if
-       end do
-
        call boxarray_maxsize(new_coarse_ba,bottom_box_size)
-       call layout_build_ba(new_coarse_la,new_coarse_ba,coarse_pd,pmask=old_coarse_la%lap%pmask)
+       call layout_build_ba(new_coarse_la,new_coarse_ba,coarse_pd, &
+                            pmask=old_coarse_la%lap%pmask)
 
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           call print(layout_get_pd(old_coarse_la),"COARSE PD")
