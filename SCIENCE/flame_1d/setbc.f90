@@ -65,8 +65,7 @@ contains
     if (bc(1,1) == EXT_DIR) then
 
        ! velocity components
-       if (icomp == 1) s(lo(1)-ng:lo(1)-1) = ZERO
-       if (icomp == 2) s(lo(1)-ng:lo(1)-1) = INLET_VEL
+       if (icomp == 1) s(lo(1)-ng:lo(1)-1) = INLET_VEL 
 
        ! density
        if (icomp == dm+rho_comp) s(lo(1)-ng:lo(1)-1) = INLET_RHO
