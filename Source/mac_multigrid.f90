@@ -150,6 +150,8 @@ contains
 
        pd = layout_get_pd(mla%la(n))
 
+!      if (dm .eq. 1) omega = 4.d0 / 3.d0
+
        call mg_tower_build(mgt(n), mla%la(n), pd, &
                            the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp),&
                            dh = dx(n,:), &
@@ -261,7 +263,14 @@ contains
        do j = 1,dm
           nx = extent(bxs,j)
           if ( (bottom_box_size * (nx/bottom_box_size)) .ne. nx ) then
-             call bl_error("DONT USE MG_BOTTOM_SOLVER == 4 WHEN BOTTOM GRID NOT PROPERLY DIVISIBLE ")
+             n = n-1
+             bottom_box_size = 2**n
+             if (parallel_IOProcessor() .and. verbose .ge. 1) then
+                print *,'NEW N ',n
+                print *,'NEW BOTTOM_BOX SIZE ',bottom_box_size
+             end if
+             if (n.eq.1) &
+                call bl_error("DONT USE MG_BOTTOM_SOLVER == 4 WHEN BOTTOM GRID NOT PROPERLY DIVISIBLE ")
           end if
        end do
 
