@@ -101,7 +101,7 @@ contains
           if (dm .ge. 2) then
              vmin = min(vmin,multifab_min_c(unew(n),2))
              vmax = max(vmax,multifab_max_c(unew(n),2))
-          endif
+          end if
           if (dm .eq. 3) then
              wmin = min(wmin,multifab_min_c(unew(n),3))
              wmax = max(wmax,multifab_max_c(unew(n),3))
@@ -139,10 +139,13 @@ contains
        call setval(phi(n),ZERO,all=.true.)
     end do
 
+!   if (dm .eq. 1) then
+!      call hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,press_comp,divu_rhs)
+!   else if (present(eps_in)) then
     if (present(eps_in)) then
        call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
                          press_comp,stencil_type,divu_rhs,eps_in)
-    else
+    else 
        call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
                          press_comp,stencil_type,divu_rhs)
     end if
@@ -179,8 +182,10 @@ contains
        do n = 1, nlevs
           umin = min(umin,multifab_min_c(unew(n),1))
           umax = max(umax,multifab_max_c(unew(n),1))
-          vmin = min(vmin,multifab_min_c(unew(n),2))
-          vmax = max(vmax,multifab_max_c(unew(n),2))
+          if (dm .ge. 2) then
+             vmin = min(vmin,multifab_min_c(unew(n),2))
+             vmax = max(vmax,multifab_max_c(unew(n),2))
+          end if
           if (dm .eq. 3) then
              wmin = min(wmin,multifab_min_c(unew(n),3))
              wmax = max(wmax,multifab_max_c(unew(n),3))
@@ -188,7 +193,7 @@ contains
        end do
        if (parallel_IOProcessor()) then
           write(6,1101) umin,umax
-          write(6,1102) vmin,vmax
+          if (dm .ge. 2) write(6,1102) vmin,vmax
           if (dm .eq. 3) write(6,1103) wmin,wmax
           write(6,1104)
        end if
@@ -244,6 +249,10 @@ contains
             gpp => dataptr(gpres(n)       , i)
              rp => dataptr(  rhohalf(n), i)
             select case (dm)
+               case (1)
+                 call create_uvec_1d(unp(:,1,1,1), ng_un, uop(:,1,1,1), ng_uo, &
+                                     rp(:,1,1,1), ng_rh, gpp(:,1,1,1), ng_gp, &
+                                     dt,bc%phys_bc_level_array(i,:,:), proj_type)
                case (2)
                  call create_uvec_2d(unp(:,:,1,:), ng_un, uop(:,:,1,:), ng_uo, &
                                      rp(:,:,1,1), ng_rh, gpp(:,:,1,:), ng_gp, &
@@ -260,6 +269,56 @@ contains
       call destroy(bpt)
 
     end subroutine create_uvec_for_projection
+
+    !   ******************************************************************************** !
+
+    subroutine create_uvec_1d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpres,ng_gp, &
+                              dt,phys_bc,proj_type)
+
+      use proj_parameters
+
+      integer        , intent(in   ) :: ng_un,ng_uo,ng_rh,ng_gp
+      real(kind=dp_t), intent(inout) ::    unew(-ng_un:)
+      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:)
+      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:)
+      real(kind=dp_t), intent(in   ) :: dt
+      integer        , intent(in   ) :: phys_bc(:,:)
+      integer        , intent(in   ) :: proj_type
+
+      integer :: nx
+      nx = size(gpres,dim=1) - 2*ng_gp
+
+      if (phys_bc(1,1) .eq. INLET) gpres(-1) = ZERO
+      if (phys_bc(1,2) .eq. INLET) gpres(nx) = ZERO
+
+      ! quantity projected is U
+      if (proj_type .eq. initial_projection_comp) then
+
+      ! quantity projected is U
+      else if (proj_type .eq. divu_iters_comp) then
+
+      ! quantity projected is (Ustar - Un)
+      else if (proj_type .eq. pressure_iters_comp) then
+
+         unew(-1:nx) = ( unew(-1:nx) - uold(-1:nx) ) / dt
+
+      ! quantity projected is Ustar + dt * (1/rho) gpres
+      else if (proj_type .eq. regular_timestep_comp) then
+
+         unew(-1:nx) = unew(-1:nx) + dt*gpres(-1:nx)/rhohalf(-1:nx)
+
+       else
+
+          call bl_error('No proj_type by this number ')
+
+      end if
+
+      if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL) unew(-1) = ZERO
+      if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL) unew(nx) = ZERO
+
+    end subroutine create_uvec_1d
+
 
     !   ******************************************************************************** !
 
@@ -412,6 +471,8 @@ contains
             gph => dataptr(gphi(n),i)
             pp  => dataptr(phi(n),i)
             select case (dm)
+            case (1)
+               call mkgphi_1d(gph(:,1,1,1), ng_gp, pp(:,1,1,1), ng_p, dx(n,:))
             case (2)
                call mkgphi_2d(gph(:,:,1,:), ng_gp, pp(:,:,1,1), ng_p, dx(n,:))
             case (3)
@@ -424,6 +485,25 @@ contains
       call destroy(bpt)
 
     end subroutine mkgphi
+
+    !   ********************************************************************************* !
+
+    subroutine mkgphi_1d(gphi,ng_gp,phi,ng_p,dx)
+
+      integer        , intent(in   ) :: ng_gp,ng_p
+      real(kind=dp_t), intent(inout) :: gphi(-ng_gp:)
+      real(kind=dp_t), intent(inout) ::  phi(-ng_p :)
+      real(kind=dp_t), intent(in   ) :: dx(:)
+
+      integer :: i,nx
+
+      nx = size(gphi,dim=1)
+
+      do i = 0,nx-1
+         gphi(i) = ( phi(i+1) - phi(i) ) / dx(1)
+      end do
+
+    end subroutine mkgphi_1d
 
     !   ********************************************************************************* !
 
@@ -542,6 +622,10 @@ contains
             pp  => dataptr(pres(n),i)
             ph  => dataptr(phi(n),i)
             select case (dm)
+            case (1)
+               call hg_update_1d(proj_type, upn(:,1,1,1), ng_un, uon(:,1,1,1), ng_uo, &
+                                 gpp(:,1,1,1), ng_gp, gph(:,1,1,1), ng_gh, rp(:,1,1,1), &
+                                 ng_rh, pp(:,1,1,1), ng_p, ph(:,1,1,1), ng_h, dt)
             case (2)
                call hg_update_2d(proj_type, upn(:,:,1,:), ng_un, uon(:,:,1,:), ng_uo, &
                                  gpp(:,:,1,:), ng_gp, gph(:,:,1,:), ng_gh, rp(:,:,1,1), &
@@ -604,6 +688,58 @@ contains
 
     !   ****************************************************************************** !
 
+    subroutine hg_update_1d(proj_type,unew,ng_un,uold,ng_uo,gpres,ng_gp,gphi,ng_gh, &
+                            rhohalf,ng_rh,pres,ng_p,phi,ng_h,dt)
+
+      use proj_parameters
+
+      integer        , intent(in   ) :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h
+      integer        , intent(in   ) :: proj_type
+      real(kind=dp_t), intent(inout) ::    unew(-ng_un:)
+      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:)
+      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:)
+      real(kind=dp_t), intent(in   ) ::    gphi(-ng_gh:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:)
+      real(kind=dp_t), intent(inout) ::    pres(-ng_p :)
+      real(kind=dp_t), intent(in   ) ::     phi(-ng_h :)
+      real(kind=dp_t), intent(in   ) :: dt
+
+      integer         :: nx,j
+
+      nx = size(gphi,dim=1)-1
+
+      !     Subtract off the density-weighted gradient.
+      unew(0:nx) = unew(0:nx) - gphi(0:nx)/rhohalf(0:nx) 
+
+      if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
+           unew(0:nx) = uold(0:nx) + dt * unew(0:nx)
+
+      if ( (proj_type .eq. initial_projection_comp) .or. &
+           (proj_type .eq. divu_iters_comp) ) then
+
+         gpres = ZERO
+         pres = ZERO
+
+      else if (proj_type .eq. pressure_iters_comp) then
+
+         !  phi held                 (change in pressure)
+         ! gphi held the gradient of (change in pressure)
+         gpres(0:nx) = gpres(0:nx) + gphi(0:nx)
+          pres(0:nx) =  pres(0:nx)  + phi(0:nx)
+
+      else if (proj_type .eq. regular_timestep_comp) then
+
+         !  phi held                 dt * (pressure)
+         ! gphi held the gradient of dt * (pressure)
+         gpres(0:nx) = (ONE/dt) * gphi(0:nx)
+          pres(0:nx) = (ONE/dt) *  phi(0:nx)
+
+      end if
+
+    end subroutine hg_update_1d
+
+    !   ****************************************************************************** !
+
     subroutine hg_update_2d(proj_type,unew,ng_un,uold,ng_uo,gpres,ng_gp,gphi,ng_gh, &
                             rhohalf,ng_rh,pres,ng_p,phi,ng_h,dt)
 
@@ -620,6 +756,7 @@ contains
       real(kind=dp_t), intent(in   ) ::     phi(-ng_h :,-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
+      integer         :: j
       integer         :: nx,ny
 
       nx = size(gphi,dim=1)-1
@@ -734,6 +871,8 @@ contains
             if ( multifab_remote(divu_rhs(n), i) ) cycle
             divp => dataptr(divu_rhs(n)     , i)
             select case (dm)
+            case (1)
+               call enforce_outflow_1d(divp(:,1,1,1), ng_d, bc%phys_bc_level_array(i,:,:))
             case (2)
                call enforce_outflow_2d(divp(:,:,1,1), ng_d, bc%phys_bc_level_array(i,:,:))
             case (3)
@@ -743,6 +882,23 @@ contains
       end do
 
     end subroutine enforce_outflow_on_divu_rhs
+
+    ! ******************************************************************************** !
+
+    subroutine enforce_outflow_1d(divu_rhs,ng_d,phys_bc)
+
+      integer        , intent(in   ) :: ng_d
+      real(kind=dp_t), intent(inout) :: divu_rhs(-ng_d:)
+      integer        , intent(in   ) :: phys_bc(:,:)
+
+      integer :: nx
+      nx = size(divu_rhs,dim=1)-1
+
+      if (phys_bc(1,1) .eq. OUTLET) divu_rhs(0 ) = ZERO
+      if (phys_bc(1,2) .eq. OUTLET) divu_rhs(nx) = ZERO
+
+    end subroutine enforce_outflow_1d
+
 
     ! ******************************************************************************** !
 
@@ -907,6 +1063,8 @@ contains
           end if
        else if (dm .eq. 2) then
           ns = 9
+       else if (dm .eq. 1) then
+          ns = 3
        end if
     else
        ns = 2*dm+1
@@ -932,6 +1090,13 @@ contains
        end if
 
        pd = layout_get_pd(mla%la(n))
+
+       if (dm .eq. 1) then
+          max_iter = 200
+          omega = 1.33d0
+          nu1 = 200
+          nu2 = 200
+       end if
 
        call mg_tower_build(mgt(n), mla%la(n), pd, &
                        the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,press_comp), &
@@ -1198,6 +1363,104 @@ contains
 
   !   ********************************************************************************* !
 
+  subroutine hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,press_comp,divu_rhs)
+
+    use bl_prof_module
+    use bl_constants_module
+    use stencil_module
+    use coeffs_module
+    use ml_solve_module
+    use nodal_divu_module
+    use probin_module, only : nodal
+    use geometry, only: dm, nlevs
+    use probin_module, only : verbose, nodal
+
+    type(ml_layout), intent(inout) :: mla
+    type(multifab ), intent(inout) :: unew(:)
+    type(multifab ), intent(in   ) :: rhohalf(:)
+    type(multifab ), intent(inout) :: phi(:)
+    real(dp_t)     , intent(in)    :: dx(:,:)
+    type(bc_tower ), intent(in   ) :: the_bc_tower
+    integer        , intent(in   ) :: press_comp
+
+    type(multifab ), intent(in   ), optional :: divu_rhs(:)
+
+    ! Local variables
+    type(box     ) :: pd
+    type(  layout) :: la
+    type(mg_tower) :: mgt(mla%nlevel)
+
+    type(multifab) :: rh(mla%nlevel)
+
+    type(multifab), allocatable :: coeffs(:)
+
+    integer :: n, ns
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "hg_1d_solver")
+    
+    ns = 3
+
+    do n = nlevs, 1, -1
+
+       pd = layout_get_pd(mla%la(n))
+
+       call mg_tower_build(mgt(n), mla%la(n), pd, &
+                           the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,press_comp), &
+                           dh = dx(n,:), &
+                           ns = ns, &
+                           nodal = nodal)
+
+    end do
+
+
+    !! Fill coefficient array
+    allocate(coeffs(nlevs))
+    do n = nlevs,1,-1
+
+       la = mla%la(n)
+       pd = layout_get_pd(la)
+
+       call multifab_build(coeffs(n), la, 1, 1)
+       call setval(coeffs(n), 0.0_dp_t, 1, all=.true.)
+
+       call mkcoeffs(rhohalf(n),coeffs(n))
+       call multifab_fill_boundary(coeffs(n))
+
+    end do
+
+    do n = 1, nlevs
+       call multifab_build(rh(n),mla%la(n),1,1,nodal)
+       call setval(rh(n),ZERO,all=.true.)
+    end do
+
+    call divu(nlevs,mgt,unew,rh,mla%mba%rr,verbose,nodal)
+
+    ! Do rh = rh - divu_rhs (this routine preserves rh=0 on
+    !  nodes which have bc_dirichlet = true.
+    if (present(divu_rhs)) &
+       call subtract_divu_from_rh(nlevs,mgt,rh,divu_rhs)
+
+!   call solve_1d(mla,mgt,rh,phi,mla%mba%rr)
+
+    do n = nlevs,1,-1
+       call multifab_fill_boundary(phi(n))
+    end do
+
+    do n = 1, nlevs
+       call destroy(coeffs(n))
+       call mg_tower_destroy(mgt(n))
+       call destroy(rh(n))
+    end do
+    deallocate(coeffs)
+
+    call destroy(bpt)
+
+  end subroutine hg_1d_solver
+
+  !   ********************************************************************************* !
+
   subroutine mkcoeffs(rho,coeffs)
 
     use geometry, only: dm
@@ -1217,6 +1480,8 @@ contains
        rp => dataptr(rho   , i)
        cp => dataptr(coeffs, i)
        select case (dm)
+       case (1)
+          call mkcoeffs_1d(cp(:,1,1,1), ng_c, rp(:,1,1,1), ng_r)
        case (2)
           call mkcoeffs_2d(cp(:,:,1,1), ng_c, rp(:,:,1,1), ng_r)
        case (3)
@@ -1228,9 +1493,29 @@ contains
 
   !   *********************************************************************************** !
 
+  subroutine mkcoeffs_1d(coeffs,ng_c,rho,ng_r)
+
+    use bl_constants_module
+
+    integer                        :: ng_c,ng_r
+    real(kind=dp_t), intent(inout) :: coeffs(1-ng_c:)
+    real(kind=dp_t), intent(in   ) ::    rho(1-ng_r:)
+
+    integer :: i,nx
+
+    nx = size(coeffs,dim=1) - 2
+
+    do i = 1,nx
+       coeffs(i) = ONE / rho(i)
+    end do
+
+  end subroutine mkcoeffs_1d
+
+  !   *********************************************************************************** !
+
   subroutine mkcoeffs_2d(coeffs,ng_c,rho,ng_r)
 
-      use bl_constants_module
+    use bl_constants_module
 
     integer                        :: ng_c,ng_r
     real(kind=dp_t), intent(inout) :: coeffs(1-ng_c:,1-ng_c:)
@@ -1307,6 +1592,8 @@ contains
           lo =  lwb(get_box(u(n),i))
           hi =  upb(get_box(u(n),i))
           select case (dm)
+          case (1)
+             call mult_by_1d_coeff_1d(ump(:,1,1,1),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
           case (2)
              call mult_by_1d_coeff_2d(ump(:,:,1,:),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
           case (3)
@@ -1317,6 +1604,29 @@ contains
     end do
 
   end subroutine mult_by_1d_coeff
+
+  !   ********************************************************************************** !
+
+  subroutine mult_by_1d_coeff_1d(u,ng_u,div_coeff,lo,hi,do_mult)
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_u
+    real(kind=dp_t), intent(inout) :: u(lo(1)-ng_u:)
+    real(dp_t)     , intent(in   ) :: div_coeff(0:)
+    logical        , intent(in   ) :: do_mult
+
+    integer :: i
+
+    if (do_mult) then
+       do i = lo(1),hi(1)
+          u(i) = u(i) * div_coeff(i)
+       end do
+    else
+       do i = lo(1),hi(1)
+          u(i) = u(i) / div_coeff(i)
+       end do
+    end if
+
+  end subroutine mult_by_1d_coeff_1d
 
   !   ********************************************************************************** !
 
