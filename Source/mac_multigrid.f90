@@ -253,16 +253,20 @@ contains
        end if
 
        bottom_box_size = 2**n
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          print *,'N ',n
+          print *,'BOTTOM_BOX SIZE ',bottom_box_size
+       end if
 
        do j = 1,dm
           nx = extent(bxs,j)
-          if ( (bottom_box_size * (nx/bottom_box_size)) .ne. nx ) then 
+          if ( (bottom_box_size * (nx/bottom_box_size)) .ne. nx ) then
              call bl_error("DONT USE MG_BOTTOM_SOLVER == 4 WHEN BOTTOM GRID NOT PROPERLY DIVISIBLE ")
           end if
        end do
 
        call boxarray_maxsize(new_coarse_ba,bottom_box_size)
-       call layout_build_ba(new_coarse_la,new_coarse_ba,coarse_pd,old_coarse_la%lap%pmask)
+       call layout_build_ba(new_coarse_la,new_coarse_ba,coarse_pd,pmask=old_coarse_la%lap%pmask)
 
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           call print(layout_get_pd(old_coarse_la),"COARSE PD")
