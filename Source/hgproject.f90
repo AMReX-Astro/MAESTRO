@@ -98,8 +98,10 @@ contains
        do n = 1, nlevs
           umin = min(umin,multifab_min_c(unew(n),1))
           umax = max(umax,multifab_max_c(unew(n),1))
-          vmin = min(vmin,multifab_min_c(unew(n),2))
-          vmax = max(vmax,multifab_max_c(unew(n),2))
+          if (dm .ge. 2) then
+             vmin = min(vmin,multifab_min_c(unew(n),2))
+             vmax = max(vmax,multifab_max_c(unew(n),2))
+          endif
           if (dm .eq. 3) then
              wmin = min(wmin,multifab_min_c(unew(n),3))
              wmax = max(wmax,multifab_max_c(unew(n),3))
@@ -107,7 +109,7 @@ contains
        end do
        if (parallel_IOProcessor()) then
           write(6,1001) umin,umax
-          write(6,1002) vmin,vmax
+          if (dm .ge. 2) write(6,1002) vmin,vmax
           if (dm .eq. 3) write(6,1003) wmin,wmax
           write(6,1004)
        end if
