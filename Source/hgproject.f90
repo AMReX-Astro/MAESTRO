@@ -1196,9 +1196,6 @@ contains
           print *,'BOTTOM_BOX SIZE ',bottom_box_size
        end if
 
-       call boxarray_maxsize(new_coarse_ba,bottom_box_size)
-       call layout_build_ba(new_coarse_la,new_coarse_ba,coarse_pd,pmask=old_coarse_la%lap%pmask)
-
        do j = 1,dm
           nx = extent(bxs,j)
           if ( (bottom_box_size * (nx/bottom_box_size)) .ne. nx ) then
@@ -1213,6 +1210,9 @@ contains
              end if
           end if
        end do
+
+       call boxarray_maxsize(new_coarse_ba,bottom_box_size)
+       call layout_build_ba(new_coarse_la,new_coarse_ba,coarse_pd,pmask=old_coarse_la%lap%pmask)
 
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           call print(layout_get_pd(old_coarse_la),"COARSE PD")
