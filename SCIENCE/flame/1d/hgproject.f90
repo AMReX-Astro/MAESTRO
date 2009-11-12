@@ -852,7 +852,7 @@ contains
     integer :: max_iter
     integer :: min_width
     integer :: max_nlevel
-    integer :: nu1, nu2, gamma, cycle, smoother
+    integer :: nu1, nu2, gamma, cycle_type, smoother
     integer :: n
     integer :: max_nlevel_in
     integer :: do_diagnostics
@@ -870,7 +870,7 @@ contains
     nu2               = mgt(nlevs)%nu2
     gamma             = mgt(nlevs)%gamma
     omega             = mgt(nlevs)%omega
-    cycle             = mgt(nlevs)%cycle
+    cycle_type        = mgt(nlevs)%cycle_type
     bottom_solver     = mgt(nlevs)%bottom_solver
     bottom_solver_eps = mgt(nlevs)%bottom_solver_eps
     bottom_max_iter   = mgt(nlevs)%bottom_max_iter
@@ -946,7 +946,7 @@ contains
                            nu2 = nu2, &
                            nub = nu2, &
                            gamma = gamma, &
-                           cycle = cycle, &
+                           cycle_type = cycle_type, &
                            omega = omega, &
                            bottom_solver = bottom_solver, &
                            bottom_max_iter = bottom_max_iter, &
@@ -1061,7 +1061,7 @@ contains
                            nu1 = nu1, &
                            nu2 = nu2, &
                            gamma = gamma, &
-                           cycle = cycle, &
+                           cycle_type = cycle_type, &
                            omega = omega, &
                            bottom_solver = 1, &
                            bottom_max_iter = bottom_max_iter, &
