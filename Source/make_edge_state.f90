@@ -266,7 +266,7 @@ contains
                  else if (r .eq. nr(n)) then
                     ! 2nd order interpolation to boundary face
                     sedgel(n,r) = s(n,r-1) + half*dxvl(n,r)
-                 else if (r .gt. 0 .and. r .lt. nr(n)-1) then
+                 else if (r .gt. 0 .and. r .lt. nr(n)) then
                     ! 4th order interpolation of s to radial faces
                     sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
                     if (r .ge. 2 .and. r .le. nr(n)-2) then
