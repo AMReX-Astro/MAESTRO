@@ -13,7 +13,6 @@ module init_module
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
-  use probin_module, only: prob_lo, perturb_model
 
   implicit none
 
@@ -26,6 +25,7 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
+    use probin_module, only: prob_lo, prob_hi, perturb_model, xrb_pert_height
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -38,36 +38,8 @@ contains
     integer :: lo(dm),hi(dm),ng
     integer :: i,n,r
 
-    real(kind=dp_t), parameter :: he4_pert = 0.99d0
-    integer                    :: he4_comp, pert_index
-    
+
     ng = s(1)%ng
-
-    ! compute the perturbation r location based on where the concentration 
-    ! of He becomes greater than he4_pert at the coarsest level
-    if (perturb_model) then
-
-       he4_comp = network_species_index('helium-4')
-
-       do r=0,nr(1)-1
-
-          if (s0_init(1,r,spec_comp+he4_comp-1)/s0_init(1,r,rho_comp) .gt. &
-               he4_pert) then
-
-             pert_index = r
-             exit
-
-          end if
-
-       end do
-
-       if(dm .eq. 2) then
-          pert_height = prob_lo(2) + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
-       else if(dm .eq. 3) then
-          pert_height = prob_lo(3) + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
-       end if
-
-    endif
 
     do n=1,nlevs
 
@@ -80,9 +52,23 @@ contains
           hi =  upb(get_box(s(n),i))
           select case (dm)
           case (2)
+
+             ! make sure our perturbation is within the domain
+             if (perturb_model .and. &
+                  (xrb_pert_height < prob_lo(2) .or. &
+                   xrb_pert_height > prob_hi(2))) &
+                   call bl_error("perturbation outside of the domain")
+
              call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), &
                   s0_init(n,:,:), p0_init(n,:))
           case (3)
+
+             ! make sure our perturbation is within the domain
+             if (perturb_model .and. &
+                  (xrb_pert_height < prob_lo(3) .or. &
+                   xrb_pert_height > prob_hi(3))) &
+                   call bl_error("perturbation outside of the domain")
+
              call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx(n,:), &
                   s0_init(n,:,:), p0_init(n,:))
           end select
@@ -138,37 +124,9 @@ contains
     integer                    :: ng,i,r
     integer                    :: lo(dm),hi(dm)
     real(kind=dp_t), pointer   :: sop(:,:,:,:)
-    real(kind=dp_t), parameter :: he4_pert = 0.99d0
-    integer                    :: he4_comp, pert_index
+
 
     ng = s%ng
-
-    ! we only need to compute pert_height at the coarsest level
-    if (n .eq. 1 .and. perturb_model) then
-
-       ! compute the perturbation r location based on where the concentration 
-       ! of He becomes greater than he4_pert at the coarsest level
-       he4_comp = network_species_index('helium-4')
-
-       do r=0,nr(1)-1
-
-          if (s0_init(r,spec_comp+he4_comp-1)/s0_init(r,rho_comp) .gt. &
-               he4_pert) then
-
-             pert_index = r
-             exit
-
-          end if
-
-       end do
-
-       if(dm .eq. 2) then
-          pert_height = prob_lo(2) + (dble(pert_index)+HALF)*dx(dm) + 50.0d0
-       else if(dm .eq. 3) then
-          pert_height = prob_lo(3) + (dble(pert_index)+HALF)*dx(dm) + 50.0d0
-       end if
-
-    end if
 
     do i = 1, s%nboxes
 
@@ -198,7 +156,7 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
 
-    use probin_module, only: prob_lo, prob_hi, perturb_model
+    use probin_module, only: prob_lo, prob_hi, perturb_model, xrb_pert_height
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -238,7 +196,7 @@ contains
     if (perturb_model) then
 
        xcen = (prob_lo(1) + prob_hi(1)) / TWO
-       ycen = pert_height
+       ycen = xrb_pert_height
 
        do j = lo(2), hi(2)
           y = prob_lo(2) + (dble(j)+HALF) * dx(2)
@@ -271,7 +229,7 @@ contains
 
   subroutine initscalardata_3d(s,lo,hi,ng,dx,s0_init,p0_init)
 
-    use probin_module, only: prob_lo, prob_hi, perturb_model
+    use probin_module, only: prob_lo, prob_hi, perturb_model, xrb_pert_height
     
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -321,7 +279,7 @@ contains
 
           xcen = (prob_lo(1) + prob_hi(1)) / TWO
           ycen = (prob_lo(2) + prob_hi(2)) / TWO
-          zcen = pert_height
+          zcen = xrb_pert_height
 
           ! add an optional perturbation
           do k = lo(3), hi(3)
@@ -362,7 +320,7 @@ contains
 
   subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
     
-    use probin_module, only: prob_hi, num_vortices
+    use probin_module, only: prob_lo, prob_hi, num_vortices
 
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -379,7 +337,7 @@ contains
     real(kind=dp_t) :: offset
 
     ! for now, this is calculated even if we don't use the velocity field in
-    ! the _2d and _3d routines below
+    ! the initveldata_2d routine below
     offset = (prob_hi(1) - prob_lo(1)) / (num_vortices + 1)
 
     do i = 1, num_vortices
@@ -443,7 +401,7 @@ contains
 
   subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init,xloc_vortices)
 
-    use probin_module, only: apply_vel_field, velpert_scale, &
+    use probin_module, only: prob_lo, apply_vel_field, velpert_scale, &
                              velpert_amplitude, velpert_height_loc
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
@@ -511,6 +469,8 @@ contains
 
   subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_init)
 
+    use probin_module, only: apply_vel_field
+
     integer           , intent(in   ) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
@@ -519,6 +479,9 @@ contains
 
     ! initial the velocity
     u = ZERO
+
+    ! we don't support the vortices in 3d yet...
+    if (apply_vel_field) call bl_error("apply_vel_field not supported for 3d")
 
     
   end subroutine initveldata_3d
