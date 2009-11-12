@@ -62,7 +62,7 @@ contains
     nu2               = mgt(nlevs)%nu2
     gamma             = mgt(nlevs)%gamma
     omega             = mgt(nlevs)%omega
-    ncycle            = mgt(nlevs)%cycle
+    ncycle            = mgt(nlevs)%cycle_type
     bottom_solver     = mgt(nlevs)%bottom_solver
     bottom_solver_eps = mgt(nlevs)%bottom_solver_eps
     bottom_max_iter   = mgt(nlevs)%bottom_max_iter
@@ -82,7 +82,7 @@ contains
                            nu1 = nu1, &
                            nu2 = nu2, &
                            gamma = gamma, &
-                           cycle = ncycle, &
+                           cycle_type = ncycle, &
                            omega = omega, &
                            bottom_solver = bottom_solver, &
                            bottom_max_iter = bottom_max_iter, &
