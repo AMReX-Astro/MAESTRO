@@ -991,7 +991,7 @@ contains
     type(multifab)  :: stored_coeffs, stored_coeffs_grown
     type(multifab)  :: new_coeffs_grown
     type(multifab), allocatable :: coarse_coeffs(:)
-    integer         :: j,nx,mglev,bottom_box_size
+    integer         :: nx,mglev,bottom_box_size
     real(dp_t), pointer :: sc_orig(:,:,:,:), sc_grown(:,:,:,:)
     real(dp_t)      :: coarse_dx(dm)
 
