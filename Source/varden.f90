@@ -848,9 +848,11 @@ subroutine varden()
               smax = multifab_max_c(unew(n),1)
               if (parallel_IOProcessor()) write(6,1101) smin,smax
 
-              smin = multifab_min_c(unew(n),2) 
-              smax = multifab_max_c(unew(n),2)
-              if (parallel_IOProcessor()) write(6,1102) smin,smax
+              if (dm .ge. 2) then
+                 smin = multifab_min_c(unew(n),2) 
+                 smax = multifab_max_c(unew(n),2)
+                 if (parallel_IOProcessor()) write(6,1102) smin,smax
+              end if
 
               if (dm .eq. 3) then
                  smin = multifab_min_c(unew(n),3) 
@@ -862,9 +864,11 @@ subroutine varden()
               smax = multifab_max_c(gpres(n),1)
               if (parallel_IOProcessor()) write(6,1104) smin,smax
 
-              smin = multifab_min_c(gpres(n),2) 
-              smax = multifab_max_c(gpres(n),2)
-              if (parallel_IOProcessor()) write(6,1105) smin,smax
+              if (dm .ge. 2) then
+                 smin = multifab_min_c(gpres(n),2) 
+                 smax = multifab_max_c(gpres(n),2)
+                 if (parallel_IOProcessor()) write(6,1105) smin,smax
+              end if
 
               if (dm .eq. 3) then
                  smin = multifab_min_c(gpres(n),3) 

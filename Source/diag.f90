@@ -75,7 +75,18 @@ contains
           up => dataptr(u(n) , i)
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
+          print *,'DM ',dm
           select case (dm)
+          case (1)
+             call diag_1d(time,dt,dx(n,:), &
+                          sp(:,1,1,:),ng_s, &
+                          rhnp(:,1,1,1),ng_rhn, &
+                          rhep(:,1,1,1),ng_rhe, &
+                          rho0(n,:),rhoh0(n,:), &
+                          p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                          up(:,1,1,1),ng_u, &
+                          w0(n,:), &
+                          lo,hi)
           case (2)
              call diag_2d(time,dt,dx(n,:), &
                           sp(:,:,1,:),ng_s, &
@@ -118,6 +129,46 @@ contains
     call destroy(bpt)
 
   end subroutine diag
+
+  subroutine diag_1d(time,dt,dx, &
+                     s,ng_s, &
+                     rho_Hnuc,ng_rhn, &
+                     rho_Hext,ng_rhe, &
+                     rho0,rhoh0,p0,tempbar,gamma1bar, &
+                     u,ng_u, &
+                     w0, &
+                     lo,hi)
+
+    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
+    use network, only: nspec
+
+    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
+    real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:)
+    real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
+                                         p0(0:),tempbar(0:),gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
+    real (kind=dp_t), intent(in   ) :: w0(0:)
+    real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
+
+    !     Local variables
+    integer            :: i
+
+    do i = lo(1), hi(1)
+
+       ! do diagnostics here
+       !
+       ! access state variables as:
+       !   s(i,rho_comp)
+       !
+       ! access velocity components as:
+       !   u(i,1)
+       !
+
+    enddo
+
+  end subroutine diag_1d
 
   subroutine diag_2d(time,dt,dx, &
                      s,ng_s, &
