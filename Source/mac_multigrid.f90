@@ -57,7 +57,7 @@ contains
     type(multifab)  :: stored_coeffs, stored_coeffs_grown
     type(multifab)  :: new_coeffs_grown
     type(multifab), allocatable :: coarse_coeffs(:)
-    integer         :: j,nx,mglev,bottom_box_size
+    integer         :: j,mglev,bottom_box_size
     real(dp_t), pointer :: sc_orig(:,:,:,:), sc_grown(:,:,:,:)
 
     ! MG solver defaults
@@ -136,7 +136,9 @@ contains
 
     do n = nlevs, 1, -1
 
-       if (n == 1) then
+       if (dm == 1) then
+          max_nlevel_in = 1
+       else if (n == 1) then
           max_nlevel_in = max_nlevel
        else
           if ( all(ref_ratio(n-1,:) == 2) ) then
