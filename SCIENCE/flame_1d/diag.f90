@@ -62,7 +62,7 @@ contains
     real(kind=dp_t) :: O16_flame_speed, O16_flame_speed_level, O16_flame_speed_local
     real(kind=dp_t) :: T_max, T_max_level, T_max_local
     real(kind=dp_t) :: T_min, T_min_level, T_min_local
-    real(kind=dp_t) :: max_gradT_y, max_gradT_y_level, max_gradT_y_local
+    real(kind=dp_t) :: max_gradT_x, max_gradT_x_level, max_gradT_x_local
 
     real(kind=dp_t) :: int_rho_omegadot_C12
 
@@ -104,7 +104,7 @@ contains
     O16_flame_speed = ZERO
     T_max = ZERO
     T_min = huge(T_min)
-    max_gradT_y = ZERO
+    max_gradT_x = ZERO
 
     !=========================================================================
     ! loop over the levels and compute the global quantities
@@ -124,8 +124,8 @@ contains
        T_min_level = huge(T_min_level)
        T_min_local = huge(T_min_level)
 
-       max_gradT_y_level = ZERO
-       max_gradT_y_local = ZERO
+       max_gradT_x_level = ZERO
+       max_gradT_x_local = ZERO
 
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
@@ -154,7 +154,7 @@ contains
                              lo,hi, &
                              C12_flame_speed_local, &
                              O16_flame_speed_local, &
-                             T_max_local, T_min_local, max_gradT_y_local)
+                             T_max_local, T_min_local, max_gradT_x_local)
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_1d(n,time,dt,dx(n,:), &
@@ -169,7 +169,7 @@ contains
                              lo,hi, &
                              C12_flame_speed_local, &
                              O16_flame_speed_local, &
-                             T_max_local, T_min_local, max_gradT_y_local, &
+                             T_max_local, T_min_local, max_gradT_x_local, &
                              mp(:,1,1,1))
              endif
           end select
@@ -192,7 +192,7 @@ contains
        call parallel_reduce(T_min_level, T_min_local, MPI_MIN, &
                             proc = parallel_IOProcessorNode())
 
-       call parallel_reduce(max_gradT_y_level, max_gradT_y_local, MPI_MAX, &
+       call parallel_reduce(max_gradT_x_level, max_gradT_x_local, MPI_MAX, &
                             proc = parallel_IOProcessorNode())
 
 
@@ -207,7 +207,7 @@ contains
           
           T_max = max(T_max, T_max_level)
           T_min = min(T_min, T_min_level)
-          max_gradT_y = max(max_gradT_y, max_gradT_y_level)
+          max_gradT_x = max(max_gradT_x, max_gradT_x_level)
 
        endif
 
@@ -222,13 +222,11 @@ contains
 
     ! our flame speed estimate is based on the carbon destruction rate
     ! V_eff = - int { rho omegadot dx } / W (rho X)^in
-    C12_flame_speed = -C12_flame_speed*dx(1,1)*dx(1,2)/ &
-         ((prob_hi_x - prob_lo_x)*inlet_rhox(ic12))
+    C12_flame_speed = -C12_flame_speed*dx(1,1)/inlet_rhox(ic12)
 
-    O16_flame_speed = -O16_flame_speed*dx(1,1)*dx(1,2)/ &
-         ((prob_hi_x - prob_lo_x)*inlet_rhox(io16))
+    O16_flame_speed = -O16_flame_speed*dx(1,1)/inlet_rhox(io16)
     
-    flame_thickness = (T_max - T_min)/abs(max_gradT_y)
+    flame_thickness = (T_max - T_min)/abs(max_gradT_x)
 
     !=========================================================================
     ! output
@@ -290,7 +288,7 @@ contains
                      lo,hi, &
                      C12_flame_speed, &
                      O16_flame_speed, &
-                     T_max, T_min, max_gradT_y, &
+                     T_max, T_min, max_gradT_x, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
@@ -309,7 +307,7 @@ contains
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
     real (kind=dp_t), intent(inout) :: C12_flame_speed, O16_flame_speed
-    real (kind=dp_t), intent(inout) :: T_max, T_min, max_gradT_y
+    real (kind=dp_t), intent(inout) :: T_max, T_min, max_gradT_x
     logical,          intent(in   ), optional :: mask(lo(1):)
 
     !     Local variables
@@ -332,7 +330,7 @@ contains
 
     ! weight is the factor by which the volume of a cell at the current level
     ! relates to the volume of a cell at the coarsest level of refinement.
-    weight = 1.d0 / 4.d0**(n-1)
+    weight = 1.d0 / 2.d0**(n-1)
 
     do i = lo(1), hi(1)
        x = prob_lo(1) + (dble(i) + HALF) * dx(1)
@@ -353,7 +351,7 @@ contains
           ! temperature gradient for computing the flame thickness.
           T_max = max(T_max, s(i,temp_comp))
           T_min = min(T_min, s(i,temp_comp))
-          max_gradT_y = max(max_gradT_y, &
+          max_gradT_x = max(max_gradT_x, &
                             (s(i+1,temp_comp) - s(i-1,temp_comp))/(2.d0*dx(1)))
 
        endif
