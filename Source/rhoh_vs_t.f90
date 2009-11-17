@@ -101,11 +101,19 @@ contains
        do i=1,u(n)%nboxes
           if ( multifab_remote(u(n),i) ) cycle
           sepx => dataptr(sedge(n,1), i)
-          sepy => dataptr(sedge(n,2), i)
           lo = lwb(get_box(u(n),i))
           hi = upb(get_box(u(n),i))
           select case (dm)
+          case (1)
+             call makeHfromRhoT_edge_1d(sepx(:,1,1,:), ng_se, &
+                                        rho0_old(n,:), rhoh0_old(n,:), t0_old(n,:), &
+                                        rho0_edge_old(n,:), rhoh0_edge_old(n,:), &
+                                        t0_edge_old(n,:), rho0_new(n,:), rhoh0_new(n,:), &
+                                        t0_new(n,:), rho0_edge_new(n,:), &
+                                        rhoh0_edge_new(n,:), t0_edge_new(n,:), lo, hi)
+
           case (2)
+             sepy => dataptr(sedge(n,2), i)
              call makeHfromRhoT_edge_2d(sepx(:,:,1,:), sepy(:,:,1,:), ng_se, &
                                         rho0_old(n,:), rhoh0_old(n,:), t0_old(n,:), &
                                         rho0_edge_old(n,:), rhoh0_edge_old(n,:), &
@@ -147,6 +155,68 @@ contains
     call destroy(bpt)
     
   end subroutine makeHfromRhoT_edge
+
+  subroutine makeHfromRhoT_edge_1d(sx,ng_se, &
+                                   rho0_old,rhoh0_old,t0_old, &
+                                   rho0_edge_old,rhoh0_edge_old,t0_edge_old, &
+                                   rho0_new,rhoh0_new,t0_new, &
+                                   rho0_edge_new,rhoh0_edge_new,t0_edge_new, &
+                                   lo,hi)
+
+    use bl_constants_module
+    use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
+    use eos_module
+    use network,       only: nspec
+    use probin_module, only: enthalpy_pred_type, small_temp
+    use pred_parameters
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_se
+    real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(0:),rhoh0_old(0:),t0_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:),rhoh0_edge_old(0:),t0_edge_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_new(0:),rhoh0_new(0:),t0_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:),rhoh0_edge_new(0:),t0_edge_new(0:)
+ 
+    integer :: i,j
+    real(kind=dp_t) :: t0_edge
+    
+    do_diag = .false.
+    
+    do i = lo(1), hi(1)+1
+
+       if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+          t0_edge = HALF*(t0_edge_old(i)+t0_edge_new(i))
+          temp_eos(1) = max(sx(i,temp_comp)+t0_edge,small_temp)
+       else
+          temp_eos(1) = max(sx(i,temp_comp),small_temp)
+       end if
+       den_eos(1)  = sx(i,rho_comp) + HALF * (rho0_edge_old(i) + rho0_edge_new(i))
+
+       ! sx(i,spec_comp:spec_comp+nspec-1) holds X
+       xn_eos(1,:) = sx(i,spec_comp:spec_comp+nspec-1)
+
+       call eos(eos_input_rt, den_eos, temp_eos, &
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+
+       if (enthalpy_pred_type .eq. predict_T_then_h .or. &
+            enthalpy_pred_type .eq. predict_Tprime_then_h) then
+          sx(i,rhoh_comp) = h_eos(1) 
+       else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
+          sx(i,rhoh_comp) = den_eos(1)*h_eos(1) &
+               - HALF*(rhoh0_edge_old(i) + rhoh0_edge_new(i))
+       end if
+
+    enddo
+
+  end subroutine makeHfromRhoT_edge_1d
 
   subroutine makeHfromRhoT_edge_2d(sx,sy,ng_se, &
                                    rho0_old,rhoh0_old,t0_old, &
@@ -569,6 +639,8 @@ contains
           lo = lwb(get_box(state(n),i))
           hi = upb(get_box(state(n),i))
           select case (dm)
+          case (1)
+             call makeTfromRhoH_1d(sp(:,1,1,:), lo, hi, ng)
           case (2)
              call makeTfromRhoH_2d(sp(:,:,1,:), lo, hi, ng)
           case (3)
@@ -609,6 +681,47 @@ contains
     call destroy(bpt)
 
   end subroutine makeTfromRhoH
+
+  subroutine makeTfromRhoH_1d(state,lo,hi,ng)
+
+    use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use network, only: nspec
+    use eos_module
+
+    integer, intent(in)               :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(inout) :: state(lo(1)-ng:,:)
+    
+    ! Local variables
+    integer :: i
+    
+    do_diag = .false.
+    
+    do i = lo(1), hi(1)
+
+       ! (rho, H) --> T, p
+
+       den_eos(1)  = state(i,rho_comp)
+       temp_eos(1) = state(i,temp_comp)
+       xn_eos(1,:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+       h_eos(1) = state(i,rhoh_comp) / state(i,rho_comp)
+
+       call eos(eos_input_rh, den_eos, temp_eos, &
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+
+       state(i,temp_comp) = temp_eos(1)
+
+    enddo
+
+  end subroutine makeTfromRhoH_1d
 
   subroutine makeTfromRhoH_2d(state,lo,hi,ng)
 
@@ -732,6 +845,8 @@ contains
           lo = lwb(get_box(state(n),i))
           hi = upb(get_box(state(n),i))
           select case (dm)
+          case (1)
+             call makeTfromRhoP_1d(sp(:,1,1,:),lo,hi,ng,p0(n,:))
           case (2)
              call makeTfromRhoP_2d(sp(:,:,1,:),lo,hi,ng,p0(n,:))
           case (3)
@@ -776,6 +891,48 @@ contains
     call destroy(bpt)
 
   end subroutine makeTfromRhoP
+
+  subroutine makeTfromRhoP_1d(state,lo,hi,ng,p0)
+
+    use variables,     only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use eos_module
+    use network,       only: nspec
+
+    integer, intent(in) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,:)
+    real (kind = dp_t), intent(in   ) ::  p0(0:)
+    
+    ! Local variables
+    integer :: i
+
+    do_diag = .false.
+
+    do i = lo(1), hi(1)
+
+       ! (rho, p) --> T
+
+       den_eos(1)  = state(i,rho_comp)
+       temp_eos(1) = state(i,temp_comp)
+       xn_eos(1,:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+       p_eos(1) = p0(i)
+
+       call eos(eos_input_rp, den_eos, temp_eos, &
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+
+       state(i,temp_comp) = temp_eos(1)
+
+    enddo
+
+  end subroutine makeTfromRhoP_1d
 
   subroutine makeTfromRhoP_2d(state,lo,hi,ng,p0)
 
@@ -960,6 +1117,9 @@ contains
           lo = lwb(get_box(state(n),i))
           hi = upb(get_box(state(n),i))
           select case (dm)
+          case (1)
+             call makePfromRhoH_1d(snp(:,1,1,:), sop(:,1,1,temp_comp), pnp(:,1,1,1), &
+                                   lo, hi, ng_s, ng_so, ng_p)
           case (2)
              call makePfromRhoH_2d(snp(:,:,1,:), sop(:,:,1,temp_comp), pnp(:,:,1,1), &
                                    lo, hi, ng_s, ng_so, ng_p)
@@ -1001,6 +1161,48 @@ contains
     call destroy(bpt)
 
   end subroutine makePfromRhoH
+
+  subroutine makePfromRhoH_1d(state,temp_old,pres,lo,hi,ng_s,ng_so,ng_p)
+
+    use variables,     only: rho_comp, spec_comp, rhoh_comp
+    use eos_module
+    use network,       only: nspec
+
+    integer, intent(in) :: lo(:), hi(:), ng_s, ng_so, ng_p
+    real (kind = dp_t), intent(in   ) ::    state(lo(1)-ng_s :,:)
+    real (kind = dp_t), intent(in   ) :: temp_old(lo(1)-ng_so:)    
+    real (kind = dp_t), intent(inout) ::     pres(lo(1)-ng_p :)
+    
+    ! Local variables
+    integer :: i
+    
+    do_diag = .false.
+
+    do i = lo(1), hi(1)
+
+       ! (rho, H) --> T, p
+       den_eos(1)  = state(i,rho_comp)
+       temp_eos(1) = temp_old(i)
+       xn_eos(1,:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       
+       h_eos(1) = state(i,rhoh_comp) / state(i,rho_comp)
+       
+       call eos(eos_input_rh, den_eos, temp_eos, &
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+       
+       pres(i) = p_eos(1)
+       
+    enddo
+
+  end subroutine makePfromRhoH_1d
 
   subroutine makePfromRhoH_2d(state,temp_old,pres,lo,hi,ng_s,ng_so,ng_p)
 
@@ -1127,6 +1329,8 @@ contains
           lo =  lwb(get_box(s(n),i))
           hi =  upb(get_box(s(n),i))
           select case (dm)
+          case (1)
+             call makeTHfromRhoP_1d(sop(:,1,1,:), ng_s, lo, hi, p0(n,:))
           case (2)
              call makeTHfromRhoP_2d(sop(:,:,1,:), ng_s, lo, hi, p0(n,:))
           case (3)
@@ -1178,6 +1382,44 @@ contains
     call destroy(bpt)
 
   end subroutine makeTHfromRhoP
+
+  subroutine makeTHfromRhoP_1d(s,ng_s,lo,hi,p0)
+
+    use eos_module
+    use network,       only: nspec
+    use variables
+
+    integer           , intent(in   ) :: lo(:),hi(:),ng_s
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,:)  
+    real(kind=dp_t)   , intent(in   ) :: p0(0:)
+
+    ! local
+    integer    :: i
+
+    do i=lo(1),hi(1)
+
+       den_eos(1) = s(i,rho_comp)
+       xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/s(i,rho_comp)
+       temp_eos(1) = s(i,temp_comp)
+       p_eos(1) = p0(i)
+
+       call eos(eos_input_rp, den_eos, temp_eos, &
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+
+       s(i,rhoh_comp) = den_eos(1)*h_eos(1)
+       s(i,temp_comp) = temp_eos(1)
+
+    end do
+
+  end subroutine makeTHfromRhoP_1d
 
   subroutine makeTHfromRhoP_2d(s,ng_s,lo,hi,p0)
 
