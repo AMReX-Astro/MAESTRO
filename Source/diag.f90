@@ -84,7 +84,7 @@ contains
                           rhep(:,1,1,1),ng_rhe, &
                           rho0(n,:),rhoh0(n,:), &
                           p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                          up(:,1,1,1),ng_u, &
+                          up(:,1,1,:),ng_u, &
                           w0(n,:), &
                           lo,hi)
           case (2)
@@ -148,7 +148,7 @@ contains
     real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:)
     real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
                                          p0(0:),tempbar(0:),gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
+    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
 
