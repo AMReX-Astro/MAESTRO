@@ -32,7 +32,7 @@
  ! stepping parameters
  max_step  = 300000
  stop_time = 1.d0
- cflfac = 0.5d0
+ cflfac = 0.8d0
  init_shrink = 0.1d0
  max_dt_growth = 1.2d0
 
