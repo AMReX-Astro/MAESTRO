@@ -49,7 +49,7 @@ contains
 
     if (plot_base) then
        plot_names(icomp_w0)   = "w0_x"
-       if (dm > 1) plot_names(icomp_w0+2) = "w0_y"
+       if (dm > 1) plot_names(icomp_w0+1) = "w0_y"
        if (dm > 2) plot_names(icomp_w0+2) = "w0_z"
        plot_names(icomp_divw0) = "divw0"
        plot_names(icomp_rho0)  = "rho0"
