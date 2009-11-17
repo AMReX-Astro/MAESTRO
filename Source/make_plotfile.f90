@@ -26,7 +26,9 @@ contains
     integer :: comp
 
     plot_names(icomp_vel  ) = "x_vel"
-    plot_names(icomp_vel+1) = "y_vel"
+    if (dm > 1) then
+       plot_names(icomp_vel+1) = "y_vel"
+    end if
     if (dm > 2) then
        plot_names(icomp_vel+2) = "z_vel"
     end if
@@ -47,7 +49,7 @@ contains
 
     if (plot_base) then
        plot_names(icomp_w0)   = "w0_x"
-       plot_names(icomp_w0+1) = "w0_y"
+       if (dm > 1) plot_names(icomp_w0+2) = "w0_y"
        if (dm > 2) plot_names(icomp_w0+2) = "w0_z"
        plot_names(icomp_divw0) = "divw0"
        plot_names(icomp_rho0)  = "rho0"
@@ -78,7 +80,7 @@ contains
     plot_names(icomp_dT)          = "deltaT"
     plot_names(icomp_sponge)      = "sponge"
     plot_names(icomp_gp)          = "gpx"
-    plot_names(icomp_gp+1)        = "gpy"
+    if (dm > 1) plot_names(icomp_gp+1) = "gpy"
     if (dm > 2) plot_names(icomp_gp+2) = "gpz"
 
     if (plot_spec) then
@@ -165,7 +167,6 @@ contains
 
        ! DENSITY AND (RHO H) 
        call multifab_copy_c(plotdata(n),icomp_rho,s(n),rho_comp,2)
-
        
        if (plot_spec) then
           
