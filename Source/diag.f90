@@ -75,7 +75,6 @@ contains
           up => dataptr(u(n) , i)
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
-          print *,'DM ',dm
           select case (dm)
           case (1)
              call diag_1d(time,dt,dx(n,:), &
