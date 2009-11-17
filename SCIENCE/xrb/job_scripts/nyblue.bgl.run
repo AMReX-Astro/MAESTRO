@@ -1,5 +1,5 @@
 # @ job_type = bluegene
-# @ class = normal
+# @ class = long
 
 # @ executable = /bgl/BlueLight/ppcfloor/bglsys/bin/mpirun
 
