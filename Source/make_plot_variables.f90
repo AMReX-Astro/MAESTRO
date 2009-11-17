@@ -1007,7 +1007,7 @@ contains
        hi =  upb(get_box(u, i))
        select case (dm)
        case (1)
-          call setval(vort,0.d0,all=.true.)
+          call setval(vort,0.d0,comp,1,all=.true.)
        case (2)
           call makevort_2d(vp(:,:,1,comp),ng_v,up(:,:,1,:),ng_u,lo,hi,dx, &
                            bc%phys_bc_level_array(i,:,:))
