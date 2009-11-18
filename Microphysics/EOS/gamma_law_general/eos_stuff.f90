@@ -139,6 +139,10 @@ contains
 
   subroutine eos_given_ReX(G, P, C, T, dpdr, dpde, R, e, X, pt_index)
 
+    ! note: here, dpdr is partial p / partial rho at constant e   
+    !       and   dpde is partial p / partial e   at constant rho 
+
+
      ! In/out variables
      real(kind=dp_t), intent(  out) :: G, P, C, dpdr, dpde
      real(kind=dp_t), intent(inout) :: T
