@@ -26,7 +26,7 @@ module diag_module
 
   private
 
-  public :: diag
+  public :: diag, flush_diag
 
 contains
 
@@ -358,6 +358,16 @@ contains
     call destroy(bpt)
 
   end subroutine diag
+
+
+  subroutine flush_diag()
+    ! flush_diag is called immediately before checkpointing.  If an
+    ! implementation of these diagnostic routines wants to buffer the
+    ! data a write out a lot of timestep's worth of information all 
+    ! at once, flush_diag() is the routine that should do the writing.
+
+  end subroutine flush_diag
+
 
   subroutine diag_2d(n,time,dt,dx, &
                      s,ng_s, &
