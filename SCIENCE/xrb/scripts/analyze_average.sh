@@ -5,11 +5,11 @@
 # quantities.
 #
 
-# get the average data using faverage2d.f90 and store it in dataDir
-faverage=/home/cmalone/MAESTRO/fParallel/data_processing/faverage2d.Linux.gfortran.exe
+# get the average data using faverage.f90 and store it in dataDir
+faverage=/home/cmalone/faverage.Linux.Intel.exe
 
 # CHANGE THESE
-vars=( X\(C12\) X\(He4\) momentum entropy )
+vars=( X\(C12\) entropy tfromp )
 
 dataDir=./data
 
@@ -28,7 +28,8 @@ for pltfile in `ls -d plt*`; do
     # average it
     ${faverage} -p ${pltfile} \
 	-o ${dataDir}/${pltfile}.out \
-	-v ${#vars[*]} ${vars[*]}
+	-v ${#vars[*]} ${vars[*]} \
+	-d 2
 
     # loop over variables
     for varIndex in $(seq 0 $(( ${#vars[*]} - 1 ))); do
@@ -53,9 +54,18 @@ for pltfile in `ls -d plt*`; do
 
 done
 
-# get the time from the last (in terms of `ls`) output file from faverage2d
-# this is the maximum time
-maxTime=$(head -1 `ls -l ${dataDir}/plt*.out | tail -1 | awk '{print $NF}'` | awk '{print $3}')
+
+# useful file
+lastFile=`ls -l ${dataDir}/plt*.out | tail -1 | awk '{print $NF}'`
+
+# get the max and min height from the last plotfile - this is assumed to be
+# constant for all files
+minPos=`awk '(NR==3) {print \$1}' ${lastFile}`
+maxPos=`tail -1 ${lastFile} | awk '{print \$1}'`
+
+# get the time from the last output file from faverage
+maxTime=`head -1 ${lastFile} | awk '{print $3}'`
+
 
 # loop over variables and do the plotting
 for var in ${vars[*]}; do
@@ -69,7 +79,7 @@ for var in ${vars[*]}; do
     # also note that we are plotting the logarithm of these values
     case "${var}" in 
 	X\(C12\))
-	    optionsString="set palette defined (-10 'white', -7 'green', -4 'blue'); set cbrange [-10:-4]"
+	    optionsString="set palette defined (-10 'white', -5 'green', -1 'blue'); set cbrange [-10:-1]"
 	    ;;
 	X\(He4\))
 	    optionsString="set palette defined (-6 'white', -3 'green', 0 'blue'); set cbrange [-6:0]"
@@ -79,6 +89,9 @@ for var in ${vars[*]}; do
 	    ;;
 	entropy)
 	    optionsString="set palette defined (8 'white', 8.3 'green', 8.6 'blue'); set cbrange [8:8.6]"
+	    ;;
+	tfromp)
+	    optionsString="set palette defined (6 'white', 7.5 'green', 9 'blue'); set cbrange [6:9]"
 	    ;;
     esac
 
@@ -94,7 +107,7 @@ set ylabel "y(cm)"
 set cblabel "log(${var})"
 set title "${var} evolution"
 set xrange [0:${maxTime}]
-set yrange [0:1024]
+set yrange [${minPos}:${maxPos}]
 splot "${outputFile}" u 1:2:(log10(\$3))
 EOF
     
