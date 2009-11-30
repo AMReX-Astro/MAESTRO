@@ -33,6 +33,7 @@ subroutine varden()
   use regrid_module
   use correct_base_module
   use make_eta_module
+  use diag_module, only: flush_diag
 
   implicit none
 
@@ -922,6 +923,10 @@ subroutine varden()
 
         if (chk_int > 0 .or. dump_checkpoint) then
            if (mod(istep,chk_int) .eq. 0 .or. dump_checkpoint) then
+
+              ! write out any buffered diagnostic information
+              call flush_diag()
+
               allocate(chkdata(nlevs))
               do n = 1,nlevs
                  call multifab_build(chkdata(n), mla%la(n), 2*dm+nscal, 0)
@@ -1008,6 +1013,10 @@ subroutine varden()
 
      if ( chk_int > 0 .and. last_chk_written .ne. istep ) then
         !       This writes a checkpoint file.
+
+        ! write out any buffered diagnostic information
+        call flush_diag()
+
         allocate(chkdata(nlevs))
         do n = 1,nlevs
            call multifab_build(chkdata(n), mla%la(n), 2*dm+nscal, 0)

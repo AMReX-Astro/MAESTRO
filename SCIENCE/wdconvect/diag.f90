@@ -27,14 +27,29 @@
 !          gravitational potential energy
 !          total internal energy
 !
+!
+! We hold many timesteps-worth of diagnostic information in a buffer
+! and output to the files only when flush_diag() is called.  This
+! gives better performance on large machines with slow filesystems.
+!
 
 module diag_module
+
+  use bl_types, only: dp_t
 
   implicit none
 
   private
 
-  public :: diag
+
+  ! buffers
+  real(kind=dp_t), allocatable, save :: time_data(:)
+  real(kind=dp_t), allocatable, save :: file1_data(:,:), file2_data(:,:), &
+                                        file3_data(:,:), file4_data(:,:)
+
+  integer, save :: nstored = 0
+
+  public :: diag, flush_diag
 
 contains
 
@@ -44,14 +59,10 @@ contains
                   u,w0,normal, &
                   mla,the_bc_tower)
 
-    use parallel                        
-
-    use bl_types, only: dp_t
-    use bl_IO_module, only: unit_new
+    use parallel
     use bl_constants_module, only: ZERO, FOUR, FOUR3RD, M_PI
     use bl_prof_module, only: bl_prof_timer, build
     use bl_error_module, only: bl_error
-    use bl_system_module, only: BL_CWD_SIZE, get_cwd 
 
     use fundamental_constants_module, only: Gconst
 
@@ -67,9 +78,9 @@ contains
     use fill_3d_module, only: put_1d_array_on_cart, make_w0mac
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
-                             job_name, &
                              edge_nodal_flag, &
-                             base_cutoff_density
+                             base_cutoff_density, &
+                             diag_buf_size
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(multifab) , intent(in   ) :: s(:)
@@ -146,6 +157,7 @@ contains
     real(kind=dp_t) :: max_data_level(3), max_data_local(3)
     real(kind=dp_t) :: sum_data_level(2*dm+9), sum_data_local(2*dm+9)
 
+    integer :: index
 
     integer :: index_max
 
@@ -158,19 +170,38 @@ contains
     integer :: lo(dm),hi(dm)
     integer :: ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
     integer :: i,n, comp, r
-    integer :: un1,un2,un3,un4
-    logical :: lexist
-
-    character (len=16) :: date_str, time_str
-    integer, dimension(8) :: values
-    character (len=BL_CWD_SIZE) :: cwd
-
-    logical, save :: firstCall = .true.
 
     type(bl_prof_timer), save :: bpt
 
+    ! the maximum number of quantities to store in a size file -- for the 
+    ! buffering
+    integer, parameter :: MAX_FIELDS_PER_FILE = 32
+
+    logical, save :: firstCall = .true.
+
     call build(bpt, "diagnostics")
 
+
+    if (firstCall) then
+       
+       ! allocate the storage space for the buffers
+       allocate(time_data(diag_buf_size))
+       allocate(file1_data(diag_buf_size, MAX_FIELDS_PER_FILE))
+       allocate(file2_data(diag_buf_size, MAX_FIELDS_PER_FILE))
+       allocate(file3_data(diag_buf_size, MAX_FIELDS_PER_FILE))
+       allocate(file4_data(diag_buf_size, MAX_FIELDS_PER_FILE))
+
+       nstored = 0
+       time_data(:) = ZERO
+       file1_data(:,:) = ZERO
+       file2_data(:,:) = ZERO
+       file3_data(:,:) = ZERO
+       file4_data(:,:) = ZERO
+
+       firstCall = .false.
+    endif
+
+       
     if (spherical .eq. 1) then
 
        do n=1,nlevs
@@ -673,14 +704,121 @@ contains
 
 
     !=========================================================================
-    ! output
+    ! store the current step's data in the buffers
     !=========================================================================
- 999 format("# job name: ",a)
-1000 format(1x,10(g20.10,1x))
-1001 format("#",10(a20,1x))
- 800 format("# ",a,i4.4,'-',i2.2,'-',i2.2)
- 801 format("# ",a,i2.2,':',i2.2,':',i2.2)
- 802 format("# ",a,a)
+
+    index = get_next_buffer_index()
+
+    ! time
+    time_data(index) = time
+
+    ! file1
+    file1_data(index, 1) = vr(1)
+    file1_data(index, 2) = vr(2)
+    file1_data(index, 3) = vr(3)
+    file1_data(index, 4) = sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2)
+    file1_data(index, 5) = vr_max
+    file1_data(index, 6) = vr_favre(1)
+    file1_data(index, 7) = vr_favre(2)
+    file1_data(index, 8) = vr_favre(3)
+    file1_data(index, 9) = mass
+       
+
+    ! file2
+    file2_data(index, 1) = T_max
+    file2_data(index, 2) = coord_Tmax(1)
+    file2_data(index, 3) = coord_Tmax(2)
+    file2_data(index, 4) = coord_Tmax(3)
+    file2_data(index, 5) = vel_Tmax(1)
+    file2_data(index, 6) = vel_Tmax(2)
+    file2_data(index, 7) = vel_Tmax(3)
+    file2_data(index, 8) = Rloc_Tmax
+    file2_data(index, 9) = vr_Tmax
+    file2_data(index,10) = T_center
+
+
+    ! file3
+    file3_data(index, 1) = enuc_max
+    file3_data(index, 2) = coord_enucmax(1)
+    file3_data(index, 3) = coord_enucmax(2)
+    file3_data(index, 4) = coord_enucmax(3)
+    file3_data(index, 5) = vel_enucmax(1)
+    file3_data(index, 6) = vel_enucmax(2)
+    file3_data(index, 7) = vel_enucmax(3)
+    file3_data(index, 8) = Rloc_enucmax
+    file3_data(index, 9) = vr_enucmax
+    file3_data(index,10) = nuc_ener
+
+
+    ! file4
+    file4_data(index, 1) = U_max
+    file4_data(index, 2) = Mach_max
+    file4_data(index, 3) = kin_ener
+    file4_data(index, 4) = grav_ener
+    file4_data(index, 5) = int_ener
+    file4_data(index, 6) = vel_center(1)
+    file4_data(index, 7) = vel_center(2)
+    file4_data(index, 8) = vel_center(3)
+    file4_data(index, 9) = dt
+
+
+
+    !=========================================================================
+    ! output, if needed
+    !=========================================================================
+    if (index == diag_buf_size) then
+       call flush_diag()
+    endif
+
+
+
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          call destroy(w0r_cart(n))
+          do comp=1,dm
+             call destroy(w0mac(n,comp))
+          enddo
+       end do
+    end if
+
+    call destroy(bpt)
+
+  end subroutine diag
+
+
+
+
+  !===========================================================================
+  ! flush_diag -- the output routine
+  !===========================================================================
+  subroutine flush_diag()
+
+    use parallel
+    use bl_constants_module, only: ZERO
+    use bl_IO_module, only: unit_new
+    use bl_system_module, only: BL_CWD_SIZE, get_cwd 
+    use probin_module, only: job_name
+
+    integer :: un1,un2,un3,un4
+    logical :: lexist
+
+    character (len=16) :: date_str, time_str
+    integer, dimension(8) :: values
+    character (len=BL_CWD_SIZE) :: cwd
+
+    integer :: n
+
+    logical, save :: firstCall = .true.
+
+
+    if (nstored == 0) return
+
+999 format("# job name: ",a)
+1000 format(1x,16(g20.10,1x))
+1001 format("#",16(a20,1x))
+800 format("# ",a,i4.4,'-',i2.2,'-',i2.2)
+801 format("# ",a,i2.2,':',i2.2,':',i2.2)
+802 format("# ",a,a)
 
     if (parallel_IOProcessor()) then
 
@@ -777,44 +915,68 @@ contains
           firstCall = .false.
        endif
 
-       ! write out the data
-       write (un1,1000) time, vr(1), vr(2), vr(3), &
-            sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2), vr_max, &
-            vr_favre(1), vr_favre(2), vr_favre(3), mass
+       do n = 1, nstored
+
+          ! write out the data
+          write (un1,1000) time_data(n), &
+               file1_data(n,1), file1_data(n,2), file1_data(n,3), &
+               file1_data(n,4), file1_data(n,5), &
+               file1_data(n,6), file1_data(n,7), file1_data(n,8), file1_data(n,9)
        
-       write (un2,1000) time, T_max, &
-            coord_Tmax(1), coord_Tmax(2), coord_Tmax(3), &
-            vel_Tmax(1), vel_Tmax(2), vel_Tmax(3), &
-            Rloc_Tmax, vr_Tmax, &
-            T_center
+          write (un2,1000) time_data(n), &
+               file2_data(n,1), &
+               file2_data(n,2), file2_data(n,3), file2_data(n,4), &
+               file2_data(n,5), file2_data(n,6), file2_data(n,7), &
+               file2_data(n,8), file2_data(n,9), &
+               file2_data(n,10)
 
-       write (un3,1000) time, enuc_max, &
-            coord_enucmax(1), coord_enucmax(2), coord_enucmax(3), &
-            vel_enucmax(1), vel_enucmax(2), vel_enucmax(3), &
-            Rloc_enucmax, vr_enucmax, &
-            nuc_ener
+          write (un3,1000) time_data(n), &
+               file3_data(n,1), &
+               file3_data(n,2), file3_data(n,3), file3_data(n,4), &
+               file3_data(n,5), file3_data(n,6), file3_data(n,7), &
+               file3_data(n,8), file3_data(n,9), &
+               file3_data(n,10)
 
-       write (un4,1000) time, U_max, Mach_max, kin_ener, grav_ener, int_ener, &
-            vel_center(1), vel_center(2), vel_center(3), dt
+          write (un4,1000) time_data(n), &
+               file4_data(n,1), file4_data(n,2), file4_data(n,3), file4_data(n,4), file4_data(n,5), &
+               file4_data(n,6), file4_data(n,7), file4_data(n,8), file4_data(n,9)
+          
+       enddo
 
        close(un1)
        close(un2)
        close(un3)
        close(un4)
+
     endif
 
-    if (spherical .eq. 1) then
-       do n=1,nlevs
-          call destroy(w0r_cart(n))
-          do comp=1,dm
-             call destroy(w0mac(n,comp))
-          enddo
-       end do
-    end if
 
-    call destroy(bpt)
+    ! reset the buffers
+    nstored = 0
+    time_data(:) = ZERO
+    file1_data(:,:) = ZERO
+    file2_data(:,:) = ZERO
+    file3_data(:,:) = ZERO
+    file4_data(:,:) = ZERO
 
-  end subroutine diag
+  end subroutine flush_diag
+
+
+
+  !===========================================================================
+  ! get_next_buffer_index returns the next index into the main buffers for
+  ! storing one timestep's data.  It increments the nstored index to account
+  ! for the new data
+  !===========================================================================
+  function get_next_buffer_index() result (next_index)
+    integer :: next_index
+
+    ! we will use 1-based indexing
+    nstored = nstored + 1
+    next_index = nstored
+
+  end function get_next_buffer_index
+
 
 
   !===========================================================================

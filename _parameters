@@ -352,3 +352,8 @@ burner_threshold_species            character          ""
 
 # Mass fraction cutoff for burner\_threshold\_species  used in burner threshold
 burner_threshold_cutoff             real               1.d-10
+
+# number of timesteps to buffer diagnostic output information before writing
+# (note: not implemented for all problems)
+diag_buf_size                       integer            10
+
