@@ -192,7 +192,7 @@ contains
           print*,"************************************************************************"
        end if
        if (evolve_base_state) then
-	  call bl_error("do_smallscale requires evolve_base_state = F")
+          call bl_error("do_smallscale requires evolve_base_state = F")
        end if
        if (beta_type .ne. 3) then
           call bl_error("do_smallscale requires beta_type = 3")
