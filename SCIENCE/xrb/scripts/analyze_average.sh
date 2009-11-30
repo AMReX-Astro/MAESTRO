@@ -55,7 +55,7 @@ done
 
 # get the time from the last (in terms of `ls`) output file from faverage2d
 # this is the maximum time
-maxTime=$(head -1 `ls -l ${dataDir}/plt*.out | tail -1 | awk '{print $8}'` | awk '{print $3}')
+maxTime=$(head -1 `ls -l ${dataDir}/plt*.out | tail -1 | awk '{print $NF}'` | awk '{print $3}')
 
 # loop over variables and do the plotting
 for var in ${vars[*]}; do
