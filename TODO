@@ -21,3 +21,6 @@
 
 -- only need to keep one set of species names around in a network
 
+-- need to add entropy to the gamma_law_general EOS
+
+-- merge flame and flame_1d
