@@ -184,7 +184,11 @@ contains
 
     if (firstCall) then
        
-       ! allocate the storage space for the buffers
+       ! allocate the storage space for the buffers -- diag_buf_size
+       ! is a runtime parameter that specifies how many steps we
+       ! should go between outputting.  We need to make sure that we
+       ! call flush_diag() before (or when) we reach diag_buf_size
+       ! timesteps stored.
        allocate(time_data(diag_buf_size))
        allocate(file1_data(diag_buf_size, MAX_FIELDS_PER_FILE))
        allocate(file2_data(diag_buf_size, MAX_FIELDS_PER_FILE))
@@ -707,12 +711,17 @@ contains
     ! store the current step's data in the buffers
     !=========================================================================
 
+    ! get the index into the buffer arrays for the current step's information.
     index = get_next_buffer_index()
 
     ! time
     time_data(index) = time
 
-    ! file1
+    ! for the file information, we need to coordinate with the header
+    ! information printing out in flush_diag() to make sure that we are storing
+    ! the right information in the right order.
+
+    ! file1 -- wdconvect_radvel_diag.out
     file1_data(index, 1) = vr(1)
     file1_data(index, 2) = vr(2)
     file1_data(index, 3) = vr(3)
@@ -724,7 +733,7 @@ contains
     file1_data(index, 9) = mass
        
 
-    ! file2
+    ! file2 -- wdconvect_temp_diag.out
     file2_data(index, 1) = T_max
     file2_data(index, 2) = coord_Tmax(1)
     file2_data(index, 3) = coord_Tmax(2)
@@ -737,7 +746,7 @@ contains
     file2_data(index,10) = T_center
 
 
-    ! file3
+    ! file3 -- wdconvect_enuc_diag.out
     file3_data(index, 1) = enuc_max
     file3_data(index, 2) = coord_enucmax(1)
     file3_data(index, 3) = coord_enucmax(2)
@@ -750,7 +759,7 @@ contains
     file3_data(index,10) = nuc_ener
 
 
-    ! file4
+    ! file4 -- wdconvect_vel_diag.out
     file4_data(index, 1) = U_max
     file4_data(index, 2) = Mach_max
     file4_data(index, 3) = kin_ener
@@ -766,12 +775,16 @@ contains
     !=========================================================================
     ! output, if needed
     !=========================================================================
+
+    ! if we've filled the buffers, flush them
     if (index == diag_buf_size) then
        call flush_diag()
     endif
 
 
-
+    !=========================================================================
+    ! clean-up
+    !=========================================================================
     if (spherical .eq. 1) then
        do n=1,nlevs
           call destroy(w0r_cart(n))
@@ -787,9 +800,9 @@ contains
 
 
 
-
   !===========================================================================
-  ! flush_diag -- the output routine
+  ! flush_diag -- the output routine.  When this routine is called, it 
+  ! outputs all the stored information in the buffers and resets them.
   !===========================================================================
   subroutine flush_diag()
 
@@ -811,8 +824,12 @@ contains
     logical, save :: firstCall = .true.
 
 
+    ! if the buffers are empty, move on
     if (nstored == 0) return
 
+
+    ! IMPORTANT: make sure that there are enough entries in the format
+    ! statement to write out all of the data in each file.
 999 format("# job name: ",a)
 1000 format(1x,16(g20.10,1x))
 1001 format("#",16(a20,1x))
