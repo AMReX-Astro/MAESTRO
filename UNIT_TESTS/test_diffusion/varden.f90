@@ -198,6 +198,7 @@ subroutine varden()
     write(unit=sstep,fmt='(i5.5)')istep
     outdir = "coeffs2_" // sstep
 
+
     if (parallel_IOProcessor()) print *, '... writing to ', outdir
 
     call fabio_ml_write(plot_coeffs, mla%mba%rr(:,1), trim(outdir), &
