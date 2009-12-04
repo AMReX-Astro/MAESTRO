@@ -124,15 +124,21 @@ contains
           xn_eos(1,1:nspec) = s0_init(j,spec_comp:spec_comp+nspec-1) / &
                               s0_init(j,rho_comp)
 
-          den_eos(1) = s0_init(j,rho_comp)
-          pres_zone = p0_init(j)
+!          den_eos(1) = s0_init(j,rho_comp)
+          dens_zone = s0_init(j,rho_comp)
+!          pres_zone = p0_init(j)
+          p_eos(1) = p0_init(j)
 
           converged = .false.
 
           do iter = 1, max_iter
-             p_eos(1) = pres_zone
+!             p_eos(1) = pres_zone
+             den_eos(1) = dens_zone
 
-             call eos(eos_input_tp, den_eos, temp_eos, &
+             call eos( &
+!                      eos_input_tp, &
+                      eos_input_rt, &
+                      den_eos, temp_eos, &
                       npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
@@ -143,12 +149,16 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
 
-             del_pres = -(den_eos(1) - s0_init(j,rho_comp)) * dpdr_eos(1)
+!             del_pres = -(den_eos(1) - s0_init(j,rho_comp)) * dpdr_eos(1)
+             del_dens = -(p_eos(1) - p0_init(j)) / dpdr_eos(1)
 
-             pres_zone = max(0.9*pres_zone, &
-                             min(pres_zone + del_pres, 1.1*pres_zone))
+!             pres_zone = max(0.9*pres_zone, &
+!                             min(pres_zone + del_pres, 1.1*pres_zone))
+             dens_zone = max(0.9*dens_zone, &
+                             min(dens_zone + del_dens, 1.1*dens_zone))
 
-             if (abs(del_pres) < tol*pres_zone) then
+!             if (abs(del_pres) < tol*pres_zone) then
+             if (abs(del_dens) < tol*dens_zone) then
                 converged = .true.
                 exit
              endif
@@ -158,9 +168,13 @@ contains
              call bl_error("density iter did not converge in initscalars")
 
           ! call eos one last time
-          p_eos(1) = pres_zone
+!          p_eos(1) = pres_zone
+          den_eos(1) = dens_zone
 
-          call eos(eos_input_tp, den_eos, temp_eos, &
+          call eos( &
+!                   eos_input_tp, &
+                   eos_input_rt, &
+                   den_eos, temp_eos, &
                    npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
