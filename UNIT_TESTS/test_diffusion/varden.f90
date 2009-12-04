@@ -150,6 +150,7 @@ subroutine varden()
 
     ! get the timestep
     call make_explicit_thermal_dt(mla,the_bc_tower,dx,s_old,dt)
+    dt = 1.d-6
 
     if (parallel_IOProcessor()) print *, '... dt =', dt
 
