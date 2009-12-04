@@ -1,0 +1,58 @@
+This problem is designed to test the solver used in the conduction
+step of the main algorithm.
+
+We set up a 2d Gaussian temperature pulse and wish to see how this
+evolves in time.  An analog of this test problem for diffusion of
+energy is given in Swesty & Myra, ApJSS 181, 1-52 (2009) (SM).  The
+thermal pulse is set at constant pressure.
+
+We make use of an analytic solution (e.g. SM) to the 2D time-dependent
+diffusion equation for a constant diffusion coefficient.  The initial
+conditions are given as the Guassian pulse:
+
+   T = T_0 * exp( -|r - r_0|^2 / (4 * D * t_0))
+
+where T_0 is the peak temperature, r_0 is the location of the center
+of the peak, D is the diffusion coefficient and t_0 is the time from
+which the system is evolved.  The analytic solution is given by
+
+  T(t) = T_0 * (t_0 / (t + t_0)) * exp( -|r - r_0|^2 / (4 * D * (t + t_0))).
+
+
+
+OUTLINE:
+
+  To solve this problem we take the following steps:
+
+  1) initialize the state with the Gaussian pulse
+  2) calculate the explicit conduction timestep
+    
+     we have an equation of the form:   d(rho*h) / dt = - D grad dot del T
+     or dimensionally
+	|(c_p * rho * T) / t| = |-D * T / x^2|
+     so we get
+        t = (c_p * rho * x^2) / D
+
+     more formally we find the timestep to be half that given above.  this is 
+     what we use in the timestep calculation and we find the minimum of such a
+     value over the entire domain.
+
+  3) build the coefficients used in the thermal_conduct routines
+  4) conduct for the timestep determined in 2)
+  5) copy the new data into the old data and repeat steps 2) - 4) until we 
+     reach the maximum time.
+
+
+ISSUES: these are probably all my faults but I cannot locate them
+
+  1) if I use the conduction timestep as given above, the MG fails to converge
+     in the conduction step.  for the current CVS version of the code, this
+     timestep is something like 1.06e-6
+
+  2) I can make the timestep hardcoded at 1.0e-6 and the MG will complain about
+     a breakdown in the bicg algorithm but apparently (?) the solution 
+     converges after applying a smoother.  However, when I look at the data
+     nothing has diffused even over multiple timesteps.
+        
+
+  
