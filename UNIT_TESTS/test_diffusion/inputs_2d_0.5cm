@@ -5,6 +5,8 @@
  spherical_in = 0
  plot_base = T
 
+ thermal_diffusion_type = 1
+
  diff_coeff = 1.d10
 
  t0 = 1.0d-9
