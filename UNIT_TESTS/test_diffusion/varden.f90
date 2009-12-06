@@ -211,6 +211,8 @@ subroutine varden()
                          hcoeff2, Xkcoeff2, pcoeff2, s_new, p0, p0, &
                          the_bc_tower)
 
+    call makeTfromRhoH(s_new,mla,the_bc_tower%bc_tower_array)
+
     ! dump data
     write(unit=sstep,fmt='(i5.5)')istep
     outdir = "state_" // sstep
