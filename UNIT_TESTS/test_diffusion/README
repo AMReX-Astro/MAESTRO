@@ -29,30 +29,37 @@ OUTLINE:
     
      we have an equation of the form:   d(rho*h) / dt = - D grad dot del T
      or dimensionally
-	|(c_p * rho * T) / t| = |-D * T / x^2|
+	|(c_p * rho * T) / dt| = |-D * T / dx^2|
      so we get
-        t = (c_p * rho * x^2) / D
+        dt = (c_p * rho * dx^2) / D
 
      more formally we find the timestep to be half that given above.  this is 
      what we use in the timestep calculation and we find the minimum of such a
      value over the entire domain.
 
-  3) build the coefficients used in the thermal_conduct routines
+     this is compared with the previous timestep (dtold) and we take 
+	dt = min(dt, dtold*max_dt_growth)
+
+  3) build the coefficients used in the thermal_conduct routine
   4) conduct for the timestep determined in 2)
-  5) copy the new data into the old data and repeat steps 2) - 4) until we 
+  5) update the temperature with a call to makeTfromRhoH
+  6) copy the new data into the old data and repeat steps 2) - 5) until we 
      reach the maximum time.
 
 
 ISSUES: these are probably all my faults but I cannot locate them
 
-  1) if I use the conduction timestep as given above, the MG fails to converge
-     in the conduction step.  for the current CVS version of the code, this
-     timestep is something like 1.06e-6
+  1) The MG solver is calling a smoothing function at EVERY timestep, even 
+     with the small initial (t0) stepsize.  After smoothing multiple times, 
+     the solution usually converges until 2) below happens.
 
-  2) I can make the timestep hardcoded at 1.0e-6 and the MG will complain about
-     a breakdown in the bicg algorithm but apparently (?) the solution 
-     converges after applying a smoother.  However, when I look at the data
-     nothing has diffused even over multiple timesteps.
+  2) The temperature profile begins to diffuse as one would expect until the
+     Gaussian has expanded enough to reach the next computational box.  
+     Something in the box boundary conditions isn't set correctly because the
+     data is not properly filled; e.g.
+	 http://astro.sunysb.edu/cmalone/nolink/temp.gif
+
+
         
 
   
