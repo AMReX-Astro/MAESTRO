@@ -30,7 +30,7 @@ subroutine varden()
   type(ml_layout)   :: mla
   type(bc_tower)    :: the_bc_tower
 
-  real(kind=dp_t) :: time, dt
+  real(kind=dp_t) :: time, dt, dtold
 
   type(multifab),  pointer :: s_old(:), thermal(:)
   type(multifab), allocatable :: s_new(:)
@@ -125,7 +125,7 @@ subroutine varden()
     call build(Xkcoeff2(n), mla%la(n), nspec,           1)
     call build(pcoeff2(n),  mla%la(n),     1,           1)
 
-    call build(plot_coeffs(n), mla%la(n), 3+nspec, 0)
+!    call build(plot_coeffs(n), mla%la(n), 3+nspec, 0)
 
     ! for now just copy the state data to s_new
     call multifab_copy_c(s_new(n), 1, s_old(n), 1, nscal, s_old(n)%ng)
@@ -140,6 +140,7 @@ subroutine varden()
  call fabio_ml_write(s_old, mla%mba%rr(:,1), trim(outdir), &
                      names=names, time=time)
 
+ dtold = t0
 
  ! loop
  do while (istep < max_step)
@@ -150,11 +151,25 @@ subroutine varden()
 
     ! get the timestep
     call make_explicit_thermal_dt(mla,the_bc_tower,dx,s_old,dt)
-    dt = 1.d-6
+    if (parallel_IOProcessor()) then
+       print *, '... call to make_explicit_thermal_dt gives dt =', dt    
+    endif
 
-    if (parallel_IOProcessor()) print *, '... dt =', dt
+    if (dt > dtold*max_dt_growth) then
+
+       dt = dtold*max_dt_growth
+
+       if (parallel_IOProcessor()) then
+          print *, '... dt greater than dtold*max_dt_growth'
+          print *, '... limiting dt to ', dt
+       endif
+
+    endif
+!    dt = 1.e-6
+!    if (parallel_IOProcessor()) print *, '... restricting dt =', dt
 
     time = time + dt
+    if (parallel_IOProcessor()) print *, '... time = ', time
 
     ! build the coeffs
     if (parallel_IOProcessor()) print *, '... building thermal coefficients'
@@ -170,68 +185,73 @@ subroutine varden()
        enddo
     endif
 
-    ! throw the coeffs1 to a mfab for output 
-    do n = 1, nlevs
-       call multifab_copy_c(plot_coeffs(n), 1, Tcoeff1(n),1,1)
-       call multifab_copy_c(plot_coeffs(n), 2, hcoeff1(n),1,1)
-       call multifab_copy_c(plot_coeffs(n), 3, Xkcoeff1(n),1,nspec)
-       call multifab_copy_c(plot_coeffs(n), 3+nspec-1, pcoeff1(n),1,1)
-    enddo
+ !    ! throw the coeffs1 to a mfab for output 
+!     do n = 1, nlevs
+!        call multifab_copy_c(plot_coeffs(n), 1, Tcoeff1(n),1,1)
+!        call multifab_copy_c(plot_coeffs(n), 2, hcoeff1(n),1,1)
+!        call multifab_copy_c(plot_coeffs(n), 3, Xkcoeff1(n),1,nspec)
+!        call multifab_copy_c(plot_coeffs(n), 3+nspec, pcoeff1(n),1,1)
+!     enddo
 
-    write(unit=sstep,fmt='(i5.5)')istep
-    outdir = "coeffs1_" // sstep
+!     write(unit=sstep,fmt='(i5.5)')istep
+!     outdir = "coeffs1_" // sstep
 
-    if (parallel_IOProcessor()) print *, '... writing to ', outdir
+!     if (parallel_IOProcessor()) print *, '... writing to ', outdir
 
-    call fabio_ml_write(plot_coeffs, mla%mba%rr(:,1), trim(outdir), &
-                        names=coeff_names, &
-                        time=time)
+!     call fabio_ml_write(plot_coeffs, mla%mba%rr(:,1), trim(outdir), &
+!                         names=coeff_names, &
+!                         time=time)
 
-    ! throw the coeffs2 to a mfab for output
-    do n = 1, nlevs
-       call multifab_copy_c(plot_coeffs(n), 1, Tcoeff2(n),1,1)
-       call multifab_copy_c(plot_coeffs(n), 2, hcoeff2(n),1,1)
-       call multifab_copy_c(plot_coeffs(n), 3, Xkcoeff2(n),1,nspec)
-       call multifab_copy_c(plot_coeffs(n), 3+nspec-1, pcoeff2(n),1,1)
-    enddo
+!     ! throw the coeffs2 to a mfab for output
+!     do n = 1, nlevs
+!        call multifab_copy_c(plot_coeffs(n), 1, Tcoeff2(n),1,1)
+!        call multifab_copy_c(plot_coeffs(n), 2, hcoeff2(n),1,1)
+!        call multifab_copy_c(plot_coeffs(n), 3, Xkcoeff2(n),1,nspec)
+!        call multifab_copy_c(plot_coeffs(n), 3+nspec, pcoeff2(n),1,1)
+!     enddo
 
-    write(unit=sstep,fmt='(i5.5)')istep
-    outdir = "coeffs2_" // sstep
+!     write(unit=sstep,fmt='(i5.5)')istep
+!     outdir = "coeffs2_" // sstep
 
 
-    if (parallel_IOProcessor()) print *, '... writing to ', outdir
+!     if (parallel_IOProcessor()) print *, '... writing to ', outdir
 
-    call fabio_ml_write(plot_coeffs, mla%mba%rr(:,1), trim(outdir), &
-                        names=coeff_names, &
-                        time=time)
+!     call fabio_ml_write(plot_coeffs, mla%mba%rr(:,1), trim(outdir), &
+!                         names=coeff_names, &
+!                         time=time)
 
-    ! conduct
+    ! diffuse the enthalpy
     if (parallel_IOProcessor()) print *, '... conducting'
     call thermal_conduct(mla, dx, dt, s_old, hcoeff1, Xkcoeff1, pcoeff1, &
                          hcoeff2, Xkcoeff2, pcoeff2, s_new, p0, p0, &
                          the_bc_tower)
 
+    ! update temperature
     call makeTfromRhoH(s_new,mla,the_bc_tower%bc_tower_array)
 
-    ! dump data
-    write(unit=sstep,fmt='(i5.5)')istep
-    outdir = "state_" // sstep
+    ! dump data if needed
+    if (mod(istep,plot_int) .eq. 0) then
+       write(unit=sstep,fmt='(i5.5)')istep
+       outdir = "state_" // sstep
 
-    if (parallel_IOProcessor()) print *, '... writing to ', outdir
+       if (parallel_IOProcessor()) print *, '... writing to ', outdir
 
-    call fabio_ml_write(s_new, mla%mba%rr(:,1), trim(outdir), &
-                        names=names, time=time)
+       call fabio_ml_write(s_new, mla%mba%rr(:,1), trim(outdir), &
+                           names=names, time=time)
+    endif
 
 
     ! fill the mfs for the next timestep
      do n = 1, nlevs
         call multifab_copy_c(s_old(n), 1, s_new(n), 1, nscal, s_old(n)%ng)
 
-        call multifab_copy_c(Tcoeff2(n), 1, Tcoeff1(n), 1, 1)
-        call multifab_copy_c(hcoeff2(n), 1, hcoeff1(n), 1, 1)
+        call multifab_copy_c(Tcoeff2(n),  1,  Tcoeff1(n), 1,     1)
+        call multifab_copy_c(hcoeff2(n),  1,  hcoeff1(n), 1,     1)
         call multifab_copy_c(Xkcoeff2(n), 1, Xkcoeff1(n), 1, nspec)
-        call multifab_copy_c(pcoeff2(n), 1, pcoeff1(n), 1, 1)
+        call multifab_copy_c(pcoeff2(n),  1,  pcoeff1(n), 1,     1)
      enddo
+
+     dtold = dt
 
     if (parallel_IOProcessor()) print *, ''
  enddo
