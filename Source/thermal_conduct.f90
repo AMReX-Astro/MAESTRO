@@ -1,3 +1,7 @@
+! thermal_conduct implements thermal diffusion in the enthalpy equation.
+! This is an implicit solve, using the multigrid solver.  This updates
+! the enthalpy only. 
+
 module thermal_conduct_module
 
   use bl_types
