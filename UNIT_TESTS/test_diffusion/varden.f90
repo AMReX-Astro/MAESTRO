@@ -245,10 +245,10 @@ subroutine varden()
      do n = 1, nlevs
         call multifab_copy_c(s_old(n), 1, s_new(n), 1, nscal, s_old(n)%ng)
 
-        call multifab_copy_c(Tcoeff2(n),  1,  Tcoeff1(n), 1,     1)
-        call multifab_copy_c(hcoeff2(n),  1,  hcoeff1(n), 1,     1)
-        call multifab_copy_c(Xkcoeff2(n), 1, Xkcoeff1(n), 1, nspec)
-        call multifab_copy_c(pcoeff2(n),  1,  pcoeff1(n), 1,     1)
+        call multifab_copy_c(Tcoeff2(n),  1,  Tcoeff1(n), 1,     1, 1)
+        call multifab_copy_c(hcoeff2(n),  1,  hcoeff1(n), 1,     1, 1)
+        call multifab_copy_c(Xkcoeff2(n), 1, Xkcoeff1(n), 1, nspec, 1)
+        call multifab_copy_c(pcoeff2(n),  1,  pcoeff1(n), 1,     1, 1)
      enddo
 
      dtold = dt
