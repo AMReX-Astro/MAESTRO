@@ -90,7 +90,7 @@ subroutine varden()
  endif
 
  if (spherical .eq. 1 ) then
-    call bl_error('sperical = 1 not supported')
+    call bl_error('spherical = 1 not supported')
  endif
 
  if (abs(dx(1,1) - dx(1,2)) > SMALL) then
