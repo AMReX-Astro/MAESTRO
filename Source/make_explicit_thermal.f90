@@ -123,7 +123,7 @@ contains
 
        ! compute thermal = del dot ( hcoeff grad h) +
        !             sum_k del dot (Xkcoeff grad X_k) +
-       !                   del dit ( pcoeff grad p_0)
+       !                   del dot ( pcoeff grad p_0)
        
        do n=1,nlevs
           call multifab_build(phi(n),  mla%la(n), 1,  1)
