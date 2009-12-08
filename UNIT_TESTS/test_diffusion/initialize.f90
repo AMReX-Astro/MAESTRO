@@ -23,7 +23,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_fixed_grids(mla,time,dt,dx,pmask,the_bc_tower,&
-                                         s,s_init,p0,rho0,thermal)
+                                         s,s_init,p0,thermal)
 
     use box_util_module
     use init_module
@@ -35,7 +35,7 @@ contains
     logical       , intent(in   ) :: pmask(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     type(multifab),  pointer      :: s(:), thermal(:)
-    real(kind=dp_t), pointer      :: s_init(:,:,:),p0(:,:),rho0(:,:),dx(:,:)
+    real(kind=dp_t), pointer      :: s_init(:,:,:),p0(:,:),dx(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -122,7 +122,7 @@ contains
     call init_radial(nlevs,mba)
 
     ! now that we have nr_fine we can allocate 1d arrays
-    call initialize_1d_arrays(nlevs,s_init,p0,rho0)
+    call initialize_1d_arrays(nlevs,s_init,p0)
 
     ! now that we have dr and nr we can fill initial state
     if (spherical .eq. 1) then
@@ -135,8 +135,6 @@ contains
     
     ! fill the s multifab
     call initscalardata(s,s_init,p0,dx,the_bc_tower%bc_tower_array,mla)
-
-    rho0 = s_init(:,:,rho_comp)
 
     call destroy(mba)
 
@@ -210,24 +208,21 @@ contains
 
   end subroutine initialize_dx
 
-  subroutine initialize_1d_arrays(num_levs,s_init,p0,rho0)
+  subroutine initialize_1d_arrays(num_levs,s_init,p0)
 
     integer    , intent(in)  :: num_levs    
-    real(kind=dp_t), pointer :: s_init(:,:,:), p0(:,:), rho0(:,:)
+    real(kind=dp_t), pointer :: s_init(:,:,:), p0(:,:)
     
     if (spherical .eq. 0) then
        allocate(s_init(num_levs,0:nr_fine-1,nscal))
        allocate(p0    (num_levs,0:nr_fine-1))
-       allocate(rho0  (num_levs,0:nr_fine-1))
     else
        allocate(s_init(1,0:nr_fine-1,nscal))
        allocate(p0    (1,0:nr_fine-1))
-       allocate(rho0  (1,0:nr_fine-1))
     end if
     
     s_init = ZERO
     p0     = ZERO
-    rho0   = ZERO
 
   end subroutine initialize_1d_arrays
   

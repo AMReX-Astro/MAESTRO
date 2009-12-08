@@ -32,7 +32,7 @@ subroutine varden()
   type(multifab), allocatable :: Tcoeff1(:), hcoeff1(:), Xkcoeff1(:), pcoeff1(:)
   type(multifab), allocatable :: Tcoeff2(:), hcoeff2(:), Xkcoeff2(:), pcoeff2(:)
 
-  real(kind=dp_t), pointer :: p0(:,:), rho0(:,:), s0_init(:,:,:)
+  real(kind=dp_t), pointer :: p0(:,:), s0_init(:,:,:)
   real(kind=dp_t), pointer :: dx(:,:)
 
   character(len=20), allocatable :: names(:)
@@ -61,7 +61,7 @@ subroutine varden()
  ! for now we only use fixed grids
  if (test_set /= '') then
     call initialize_with_fixed_grids(mla, time, dt, dx, pmask, the_bc_tower, &
-                                     s_old, s0_init, p0, rho0, thermal)
+                                     s_old, s0_init, p0, thermal)
  else
     call bl_error('Currently only implemented with fixed grids!')
  endif
