@@ -122,8 +122,11 @@ subroutine varden()
  ! dump the initial data
  write(unit=sstep,fmt='(i5.5)')istep
  outdir = trim(plot_base_name) // sstep
+ ! we only give dx at coarsest level for now
  call fabio_ml_write(s_old, mla%mba%rr(:,1), trim(outdir), &
-                     names=names, time=time)
+                     names=names, time=time, &
+                     problo=prob_lo, probhi=prob_hi, &
+                     dx=dx(1,:))
 
  ! loop
  do while (istep < max_step)
@@ -178,8 +181,11 @@ subroutine varden()
 
        if (parallel_IOProcessor()) print *, '... writing to ', outdir
 
+       ! we only give dx at the coarsest level for now
        call fabio_ml_write(s_new, mla%mba%rr(:,1), trim(outdir), &
-                           names=names, time=time)
+                           names=names, time=time, &
+                           problo=prob_lo, probhi=prob_hi, &
+                           dx=dx(1,:))
     endif
 
 
