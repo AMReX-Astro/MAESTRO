@@ -8,19 +8,14 @@ subroutine varden()
   use fabio_module
   use probin_module
   use bl_constants_module
-  use bl_IO_module
-  use average_module
   use define_bc_module
-  use fill_3d_module
   use eos_module
   use rhoh_vs_t_module
   use initialize_module
-  use box_util_module
   use multifab_module
-  use ml_multifab_module
   use make_explicit_thermal_module
-  use make_plotfile_module
   use thermal_conduct_module
+  use estdt_module
 
   implicit none
 
@@ -150,9 +145,9 @@ subroutine varden()
     if (parallel_IOProcessor()) print *, 'Working on step', istep
 
     ! get the timestep
-    call make_explicit_thermal_dt(mla,the_bc_tower,dx,s_old,dt)
+    call estdt(s_old, dx, dt, mla, the_bc_tower)
     if (parallel_IOProcessor()) then
-       print *, '... call to make_explicit_thermal_dt gives dt =', dt    
+       print *, '... estdt gives dt =', dt    
     endif
 
     if (dt > dtold*max_dt_growth) then
@@ -165,9 +160,8 @@ subroutine varden()
        endif
 
     endif
-
-!    dt = 1.e-6
-!    if (parallel_IOProcessor()) print *, '... restricting dt =', dt
+    
+    dt = dt * 1.e1
 
     time = time + dt
     if (parallel_IOProcessor()) print *, '... time = ', time
@@ -186,40 +180,6 @@ subroutine varden()
        enddo
     endif
 
- !    ! throw the coeffs1 to a mfab for output 
-!     do n = 1, nlevs
-!        call multifab_copy_c(plot_coeffs(n), 1, Tcoeff1(n),1,1)
-!        call multifab_copy_c(plot_coeffs(n), 2, hcoeff1(n),1,1)
-!        call multifab_copy_c(plot_coeffs(n), 3, Xkcoeff1(n),1,nspec)
-!        call multifab_copy_c(plot_coeffs(n), 3+nspec, pcoeff1(n),1,1)
-!     enddo
-
-!     write(unit=sstep,fmt='(i5.5)')istep
-!     outdir = "coeffs1_" // sstep
-
-!     if (parallel_IOProcessor()) print *, '... writing to ', outdir
-
-!     call fabio_ml_write(plot_coeffs, mla%mba%rr(:,1), trim(outdir), &
-!                         names=coeff_names, &
-!                         time=time)
-
-!     ! throw the coeffs2 to a mfab for output
-!     do n = 1, nlevs
-!        call multifab_copy_c(plot_coeffs(n), 1, Tcoeff2(n),1,1)
-!        call multifab_copy_c(plot_coeffs(n), 2, hcoeff2(n),1,1)
-!        call multifab_copy_c(plot_coeffs(n), 3, Xkcoeff2(n),1,nspec)
-!        call multifab_copy_c(plot_coeffs(n), 3+nspec, pcoeff2(n),1,1)
-!     enddo
-
-!     write(unit=sstep,fmt='(i5.5)')istep
-!     outdir = "coeffs2_" // sstep
-
-
-!     if (parallel_IOProcessor()) print *, '... writing to ', outdir
-
-!     call fabio_ml_write(plot_coeffs, mla%mba%rr(:,1), trim(outdir), &
-!                         names=coeff_names, &
-!                         time=time)
 
     ! diffuse the enthalpy
     if (parallel_IOProcessor()) print *, '... conducting'
