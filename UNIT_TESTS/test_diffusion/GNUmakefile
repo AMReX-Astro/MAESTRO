@@ -21,15 +21,15 @@ include $(FPARALLEL)/mk/GMakedefs.mak
 #   GMakerules.mak.
 Fmdirs := boxlib \
           mg \
-          MAESTRO \
 	  extern/EOS/gamma_law_general \
 	  MAESTRO/test_diffusion \
           extern/constants \
           extern/networks/triple_alpha \
           extern/VODE
 
-# directories containing files that are 'include'-d via Fortran
-#Fmincludes := extern/EOS/helmeos
+# we dont' want to include EVERYTHING in the MAESTRO directory, but
+# we should add it to the VPATH for source file searching
+VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO/
 
 # define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters ./_parameters
