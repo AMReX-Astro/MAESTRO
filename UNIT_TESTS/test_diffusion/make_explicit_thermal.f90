@@ -35,17 +35,16 @@ contains
     integer :: n, i
     integer :: ng_s
 
-    real(kind=dp_t) :: min_dt_local, min_dt_data_local(1) 
-    real(kind=dp_t) :: min_dt_level, min_dt_data_level(1)
-
+    real(kind=dp_t) :: dt_grid, dt_proc, dt_lev
     ng_s  = s(1)%ng
 
     ! calculate the timestep
-    dt = 1.d20
+    dt     = 1.d20
+    dt_lev = 1.d20
+    
     do n = 1, nlevs
 
-       min_dt_local = 1.d20
-       min_dt_level = 1.d20
+       dt_proc = 1.d20
 
        do i = 1,s(n)%nboxes
 
@@ -53,25 +52,27 @@ contains
           sp      => dataptr(s(n),i)
           lo = lwb(get_box(s(n),i))
           hi = upb(get_box(s(n),i))
+
+          dt_grid = 1.d20
+
           select case(dm)
           case(2)
              call make_explicit_thermal_dt_2d(lo,hi,                  &
-                                              sp(:,:,1,:),ng_s,     &
+                                              sp(:,:,1,:),ng_s,       &
                                               dx(n,1),                &
-                                              min_dt_local)
+                                              dt_grid)
           case default
              call bl_error('explicit timestep not yet implemented for non-2d')
           end select
           
+          dt_proc = min(dt_proc, dt_grid)
+          
        enddo
 
-       min_dt_data_local(1) = min_dt_local
-       call parallel_reduce(min_dt_data_level, min_dt_data_local, MPI_MIN, &
-                            proc = parallel_IOProcessorNode())
+       call parallel_reduce(dt_lev, dt_proc, MPI_MIN)
 
-       if (parallel_IOProcessor()) then
-          dt = min(dt, min_dt_data_level(1))
-       endif
+       dt = min(dt,dt_lev)
+
     enddo
 
 
