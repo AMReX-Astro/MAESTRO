@@ -9,7 +9,7 @@
 
  diff_coeff = 1.d11
 
- dt_mult_factor = 1.0d0
+ dt_mult_factor = 1.0d1
 
  t0 = 1.0d-10
 

@@ -121,7 +121,7 @@ subroutine varden()
 
  ! dump the initial data
  write(unit=sstep,fmt='(i5.5)')istep
- outdir = "state_" // sstep
+ outdir = trim(plot_base_name) // sstep
  call fabio_ml_write(s_old, mla%mba%rr(:,1), trim(outdir), &
                      names=names, time=time)
 
@@ -134,11 +134,15 @@ subroutine varden()
 
     ! get the timestep
     call estdt(s_old, dx, dt, mla, the_bc_tower)
+
     if (parallel_IOProcessor()) then
        print *, '... estdt gives dt =', dt    
-!       dt = dt * dt_mult_factor
-!       print *, '... multiplying by dt_mult_factor: ', dt
     endif
+    
+    dt = dt * dt_mult_factor
+    
+    if (parallel_IOProcessor()) &
+         print *, '... dt after applying mult_factor:', dt
 
     time = time + dt
     if (parallel_IOProcessor()) print *, '... time = ', time
@@ -170,7 +174,7 @@ subroutine varden()
     ! dump data if needed
     if (mod(istep,plot_int) .eq. 0) then
        write(unit=sstep,fmt='(i5.5)')istep
-       outdir = "state_" // sstep
+       outdir = trim(plot_base_name) // sstep
 
        if (parallel_IOProcessor()) print *, '... writing to ', outdir
 
