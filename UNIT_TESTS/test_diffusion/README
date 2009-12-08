@@ -47,19 +47,6 @@ OUTLINE:
      reach the maximum time.
 
 
-ISSUES: these are probably all my faults but I cannot locate them
-
-  1) The MG solver is calling a smoothing function at EVERY timestep, even 
-     with the small initial (t0) stepsize.  After smoothing multiple times, 
-     the solution usually converges until 2) below happens.
-
-  2) The temperature profile begins to diffuse as one would expect until the
-     Gaussian has expanded enough to reach the next computational box.  
-     Something in the box boundary conditions isn't set correctly because the
-     data is not properly filled; e.g.
-	 http://astro.sunysb.edu/cmalone/nolink/temp.gif
-
-
         
 
   
