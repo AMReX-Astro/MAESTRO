@@ -20,6 +20,7 @@ contains
     use ml_layout_module
     use define_bc_module
     use geometry, only: dm, nlevs
+    use probin_module, only: dt_mult_factor
 
     type(multifab),  intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -62,6 +63,7 @@ contains
        call parallel_reduce(dt_lev, dt_proc, MPI_MIN)
 
        dt = min(dt,dt_lev)
+       dt = dt * dt_mult_factor
 
     enddo
 

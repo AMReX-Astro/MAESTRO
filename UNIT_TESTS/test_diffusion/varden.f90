@@ -136,8 +136,8 @@ subroutine varden()
     call estdt(s_old, dx, dt, mla, the_bc_tower)
     if (parallel_IOProcessor()) then
        print *, '... estdt gives dt =', dt    
-       dt = dt * dt_mult_factor
-       print *, '... multiplying by dt_mult_factor: ', dt
+!       dt = dt * dt_mult_factor
+!       print *, '... multiplying by dt_mult_factor: ', dt
     endif
 
     time = time + dt
