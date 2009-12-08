@@ -20,6 +20,10 @@ gamma_law_general:
    in the network module.  Eventually, this should be the default (and
    only) gamma-law EOS.
 
+   NOTE: the entropy is currently only correct for a monatomic gas
+   (gamma = 5/3).  A more general expression (than the Sactur-Tetrode
+   equation) is needed for an arbitrary constant-gamma gas.
+
 
 helmeos:
    
@@ -36,8 +40,15 @@ lattimer_swesty:
 
    the Lattimer-Swesty nuclear EOS for core-collapse simulations
 
+   NOTE: dpdr and dpde are both set to 0.  This will affect the use of
+   source terms.
+
 
 perfect_gas_with_rad:
 
    Candace Church Joggerst's EOS that implements an ideal gas (with 
    ionization) + radiation.
+
+   NOTE: dpdr is not set correctly in this EOS.  This will affect the 
+   use of source terms.
+
