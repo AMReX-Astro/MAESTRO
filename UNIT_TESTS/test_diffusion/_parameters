@@ -23,5 +23,8 @@ ambient_c12                         real               0.d0
 # ambient iron mass fraction 
 ambient_fe56                        real               0.d0
 
+# multiplier for the explicit timestep value
+dt_mult_factor                      real               1.d0
+
 
 

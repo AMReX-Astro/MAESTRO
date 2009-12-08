@@ -9,7 +9,7 @@
 
  diff_coeff = 1.d11
 
- max_dt_growth = 2
+ dt_mult_factor = 1.0d0
 
  t0 = 1.0d-10
 
@@ -36,8 +36,8 @@
 
  grav_const = 0.0d0
 
- max_step  = 100
- plot_int  = 1
+ max_step  = 200
+ plot_int  = 10
 
  stop_time = 2.5
 

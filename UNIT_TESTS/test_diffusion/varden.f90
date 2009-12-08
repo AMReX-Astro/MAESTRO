@@ -25,20 +25,17 @@ subroutine varden()
   type(ml_layout)   :: mla
   type(bc_tower)    :: the_bc_tower
 
-  real(kind=dp_t) :: time, dt, dtold
+  real(kind=dp_t) :: time, dt
 
   type(multifab),  pointer :: s_old(:), thermal(:)
   type(multifab), allocatable :: s_new(:)
   type(multifab), allocatable :: Tcoeff1(:), hcoeff1(:), Xkcoeff1(:), pcoeff1(:)
   type(multifab), allocatable :: Tcoeff2(:), hcoeff2(:), Xkcoeff2(:), pcoeff2(:)
-  type(multifab), allocatable :: plot_coeffs(:)
 
   real(kind=dp_t), pointer :: p0(:,:), rho0(:,:), s0_init(:,:,:)
   real(kind=dp_t), pointer :: dx(:,:)
 
-  real(kind=dp_t) :: dist, lenx, leny, lenz, max_dist
-
-  character(len=20), allocatable :: names(:), coeff_names(:)
+  character(len=20), allocatable :: names(:)
   character(len=20) :: outdir, sstep
 
   real(kind=dp_t), parameter :: SMALL = 1.e-13
@@ -56,16 +53,10 @@ subroutine varden()
   call eos_init(use_eos_coulomb=use_eos_coulomb,gamma_in=FIVE3RD)
 
   ! setup some names for the data fab's
-  allocate(names(nscal),coeff_names(3+nspec))
+  allocate(names(nscal))
   names(:) = (/ "density", "rhoh", &
        "X(He4)*rho", "X(C12)*rho", "X(Fe56)*rho", &
        "temp", "trac" /)
-  coeff_names(:) = (/ "Tcoeff", &
-                      "hcoeff", &
-                      "He4 coeff", &
-                      "C12 coeff", &
-                      "Fe56 coeff", &
-                      "pcoeff" /)
 
  ! for now we only use fixed grids
  if (test_set /= '') then
@@ -106,8 +97,8 @@ subroutine varden()
  ! initialize remaining arrays
  allocate(s_new(nlevs),&
           Tcoeff1(nlevs),hcoeff1(nlevs),Xkcoeff1(nlevs),pcoeff1(nlevs),&
-          Tcoeff2(nlevs),hcoeff2(nlevs),Xkcoeff2(nlevs),pcoeff2(nlevs),&
-          plot_coeffs(nlevs))
+          Tcoeff2(nlevs),hcoeff2(nlevs),Xkcoeff2(nlevs),pcoeff2(nlevs))
+
  do n = 1, nlevs
     call build(s_new(n),   mla%la(n), nscal, s_old(n)%ng)
 
@@ -120,7 +111,6 @@ subroutine varden()
     call build(Xkcoeff2(n), mla%la(n), nspec,           1)
     call build(pcoeff2(n),  mla%la(n),     1,           1)
 
-!    call build(plot_coeffs(n), mla%la(n), 3+nspec, 0)
 
     ! for now just copy the state data to s_new
     call multifab_copy_c(s_new(n), 1, s_old(n), 1, nscal, s_old(n)%ng)
@@ -135,8 +125,6 @@ subroutine varden()
  call fabio_ml_write(s_old, mla%mba%rr(:,1), trim(outdir), &
                      names=names, time=time)
 
- dtold = t0
-
  ! loop
  do while (istep < max_step)
 
@@ -148,20 +136,9 @@ subroutine varden()
     call estdt(s_old, dx, dt, mla, the_bc_tower)
     if (parallel_IOProcessor()) then
        print *, '... estdt gives dt =', dt    
+       dt = dt * dt_mult_factor
+       print *, '... multiplying by dt_mult_factor: ', dt
     endif
-
-    if (dt > dtold*max_dt_growth) then
-
-       dt = dtold*max_dt_growth
-
-       if (parallel_IOProcessor()) then
-          print *, '... dt greater than dtold*max_dt_growth'
-          print *, '... limiting dt to ', dt
-       endif
-
-    endif
-    
-    dt = dt * 1.e1
 
     time = time + dt
     if (parallel_IOProcessor()) print *, '... time = ', time
@@ -211,8 +188,6 @@ subroutine varden()
         call multifab_copy_c(Xkcoeff2(n), 1, Xkcoeff1(n), 1, nspec, 1)
         call multifab_copy_c(pcoeff2(n),  1, pcoeff1(n),  1, 1,     1)
      enddo
-
-     dtold = dt
 
     if (parallel_IOProcessor()) print *, ''
  enddo
