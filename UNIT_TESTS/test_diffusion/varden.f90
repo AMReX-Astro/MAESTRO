@@ -36,7 +36,7 @@ subroutine varden()
   real(kind=dp_t), pointer :: dx(:,:)
 
   character(len=20), allocatable :: names(:)
-  character(len=20) :: outdir, sstep
+  character(len=256) :: outdir, sstep
 
   real(kind=dp_t), parameter :: SMALL = 1.e-13
   real(kind=dp_t), parameter :: FIVE3RD = FIVE/THREE 
@@ -179,7 +179,7 @@ subroutine varden()
        write(unit=sstep,fmt='(i5.5)')istep
        outdir = trim(plot_base_name) // sstep
 
-       if (parallel_IOProcessor()) print *, '... writing to ', outdir
+       if (parallel_IOProcessor()) print *, '... writing to ', trim(outdir)
 
        ! we only give dx at the coarsest level for now
        call fabio_ml_write(s_new, mla%mba%rr(:,1), trim(outdir), &
