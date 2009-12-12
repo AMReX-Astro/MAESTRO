@@ -125,8 +125,8 @@ contains
        write(unit=state_name,fmt='("model_cc_",i5.5)') restart
        write(unit=w0_name,fmt='("model_ec_",i5.5)') restart
     else
-       write(unit=state_name,fmt='("model_",i6.6)') restart
-       write(unit=w0_name,fmt='("w0_",i6.6)') restart
+       write(unit=state_name,fmt='("model_cc_",i6.6)') restart
+       write(unit=w0_name,fmt='("model_ec_",i6.6)') restart
     endif
 
     ! read in cell-centered 1D data
