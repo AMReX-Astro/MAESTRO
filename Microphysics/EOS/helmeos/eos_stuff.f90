@@ -266,6 +266,39 @@ contains
 
   end subroutine eos_given_RTX
 
+  subroutine eos_dpdr_given_RTX(e, P, R, T, X, dpdr, pt_index)
+
+     ! In/out variables
+     real(kind=dp_t), intent(  out) :: e, P, dpdr
+     real(kind=dp_t), intent(in   ) :: R, T, X(:)
+     integer, optional, intent(in   ) :: pt_index(:)
+
+     ! Local variables
+     logical :: do_diag
+
+     do_diag = .false.
+
+      den_eos(1) = R
+     temp_eos(1) = T
+      xn_eos(1,1:nspec) = X(1:nspec)
+
+     call eos(eos_input_rt, den_eos, temp_eos, &
+              npts, &
+              xn_eos, &
+              p_eos, h_eos, e_eos, &
+              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+              dpdX_eos, dhdX_eos, &
+              gam1_eos, cs_eos, s_eos, &
+              dsdt_eos, dsdr_eos, &
+              do_diag)
+
+    P  =    p_eos(1)
+    e  =    e_eos(1)
+    dpdr =  dpdr_eos(1)
+
+  end subroutine eos_dpdr_given_RTX
+
   subroutine eos_given_TPX(e, P, R, T, X, pt_index)
 
      ! In/out variables
