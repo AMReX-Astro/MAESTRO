@@ -1,14 +1,14 @@
 &PROBIN
- model_file = "model.hse.cool"
+ model_file = "model.hse.cool.coulomb"
  spherical_in = 0
 
  max_levs = 1
- n_cellx = 256
+ n_cellx = 384
  n_celly = 640
- max_grid_size = 128
+ max_grid_size = 64
 
- prob_hi_x = 1.44e8
- prob_hi_y = 3.60e8
+ prob_hi_x = 2.16e8
+ prob_hi_y = 3.6e8
 
  anelastic_cutoff = 3.d6
  base_cutoff_density = 3.d6
@@ -25,9 +25,9 @@
 
  stop_time = 2.5d0
 
- plot_base = T
- plot_int  = 10
- chk_int   = 100
+ plot_base   = T
+ plot_deltat = 0.5d0
+ chk_int     = 100
 
  cflfac = 0.9
  init_shrink = 1.
@@ -48,6 +48,4 @@
  init_divu_iter = 1
 
  perturb_model = T
-
- use_eos_coulomb = F
 /

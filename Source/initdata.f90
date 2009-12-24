@@ -458,16 +458,26 @@ contains
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
     real(kind=dp_t) :: temp,t0
-    real(kind=dp_t) :: x0, y0, r0
+    real(kind=dp_t) :: x1, y1, r1, x2, y2, r2, x3, y3, r3
 
     t0 = s0_init(temp_comp)
 
-    x0 = 7.2d7
-    y0 = 8.5d7
+    x1 = 5.0d7
+    y1 = 6.5d7
+    r1 = sqrt( (x-x1)**2 +(y-y1)**2 ) / 2.5d6
+    
+    x2 = 1.2d8
+    y2 = 8.5d7
+    r2 = sqrt( (x-x2)**2 +(y-y2)**2 ) / 2.5d6
+    
+    x3 = 2.0d8
+    y3 = 7.5d7
+    r3 = sqrt( (x-x3)**2 +(y-y3)**2 ) / 2.5d6
 
-    r0 = sqrt( (x-x0)**2 +(y-y0)**2 ) / 2.5d6
-
-    temp = t0 * (ONE + TWO * (0.15d0 * (1.d0 + tanh((2.d0-r0)))))
+    temp = t0 * (1.d0 + &
+                 (0.150d0 * (1.d0 + tanh(2.d0-r1)) + &
+                  0.300d0 * (1.d0 + tanh(2.d0-r2)) + &
+                  0.225d0 * (1.d0 + tanh(2.d0-r3))))
           
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
