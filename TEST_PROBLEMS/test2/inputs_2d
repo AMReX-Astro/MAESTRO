@@ -2,6 +2,8 @@
  model_file = "model.hse.cool.coulomb"
  spherical_in = 0
 
+ ppm_type = 2
+
  max_levs = 1
  n_cellx = 384
  n_celly = 640
