@@ -61,6 +61,9 @@ test_set                            character          ''
 # which file to restart from.  -1 means do not restart
 restart                             integer            -1                  
 
+# restart and add a level of refinement
+restart_into_finer                  logical            .false.
+
 # Do the initial projection.
 do_initial_projection               logical            .true.              
 

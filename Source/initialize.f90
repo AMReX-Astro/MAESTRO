@@ -33,7 +33,7 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only : drdxfac
+    use probin_module, only : drdxfac, restart_into_finer
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(in   ) :: restart
@@ -275,6 +275,10 @@ contains
                                          rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
        end do
        
+    end if
+
+    if (restart_into_finer .and. spherical .eq. 0) then
+       call bl_error('restart_into_finer only currently supported for spherical')
     end if
 
     call destroy(mba)
