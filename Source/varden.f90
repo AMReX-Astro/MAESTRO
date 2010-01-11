@@ -710,7 +710,7 @@ subroutine varden()
            ! Create normal now that we have defined center and dx
            call make_normal(normal,dx)
 
-           if (spherical .eq. 0 .and. evolve_base_state) then
+           if (evolve_base_state) then
               ! force rho0 to be the average of rho
               call average(mla,sold,rho0_old,dx,rho_comp)
            
@@ -728,10 +728,8 @@ subroutine varden()
               call makeTfromRhoH(sold,mla,the_bc_tower%bc_tower_array)
            end if
 
-           if (spherical .eq. 0) then
-              ! force tempbar to be the average of temp
-              call average(mla,sold,tempbar,dx,temp_comp)
-           end if
+           ! force tempbar to be the average of temp
+           call average(mla,sold,tempbar,dx,temp_comp)
 
            ! gamma1bar needs to be recomputed
            if (allocated(gamma1)) deallocate(gamma1)
