@@ -94,9 +94,9 @@ contains
     end do
 
     ! allocate states
-    allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
-    allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs))
-    allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),thermal2(nlevs))
+    allocate(uold(max_levs),sold(max_levs),gpres(max_levs),pres(max_levs))
+    allocate(dSdt(max_levs),Source_old(max_levs),Source_new(max_levs))
+    allocate(rho_omegadot2(max_levs),rho_Hnuc2(max_levs),thermal2(max_levs))
 
     if (ppm_type .eq. 2) then
        ng_s = 4
@@ -279,6 +279,60 @@ contains
 
     if (restart_into_finer .and. spherical .eq. 0) then
        call bl_error('restart_into_finer only currently supported for spherical')
+    end if
+
+    if (restart_into_finer .and. spherical .eq. 1) then
+
+       ! compute dr_fine and nr_fine assuming a finer dx
+       dr_fine = dx(nlevs,1) / dble(drdxfac)
+       dr_fine = 0.5d0*dr_fine
+       lenx = HALF * (prob_hi(1) - prob_lo(1))
+       leny = HALF * (prob_hi(2) - prob_lo(2))
+       lenz = HALF * (prob_hi(3) - prob_lo(3))
+       max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
+       nr_fine = int(max_dist / dr_fine) + 1
+
+       ! recompute mba
+
+       ! compute dx
+
+       ! deallocate arrays in geometry.f90
+       call destroy_geometry()
+
+       ! regrid
+
+       ! initialize arrays in geometry.f90
+       call init_radial(nlevs,mba)
+       call init_cutoff(nlevs)
+       call init_multilevel(sold)
+
+       ! make temporary copy of old psi, etarho_cc, etarho_ec, and w0
+
+       ! reallocate 1D arrays
+
+       ! fill psi, etarho_cc, etarho_ec, and w0 using linear interpolation
+
+       ! compute rho0 by calling average
+
+       ! compute cutoff coordinates
+       call compute_cutoff_coords(rho0_old)
+
+       ! compute gravity
+
+       ! compute p0 by HSE
+
+       ! make normal
+
+       ! compute temperature with EOS
+
+       ! force tempbar to be the average of temp
+
+       ! compute gamma1bar
+
+       ! compute div_coeff_old
+
+       ! recompute time step
+
     end if
 
     call destroy(mba)
