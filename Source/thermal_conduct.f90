@@ -357,9 +357,7 @@ contains
     ! Compute h_norm to be used inside the MG solver as part of a stopping criterion
     h_norm = -1.d0
     do n = 1,nlevs
-       do i = 1,dm
           h_norm(n) = max(h_norm(n),norm_inf(phi(n)))
-       end do
     end do
 
     ! Call the solver to obtain h^(2) (it will be stored in phi)
