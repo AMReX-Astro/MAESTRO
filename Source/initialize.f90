@@ -42,6 +42,7 @@ contains
     use make_div_coeff_module
     use fill_3d_module
     use estdt_module
+    use regrid_module
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(in   ) :: restart
@@ -320,11 +321,28 @@ contains
 
        ! deallocate arrays in geometry.f90
        call destroy_geometry()
-
+       
        ! regrid
+       do n=1,nlevs
+          call multifab_destroy(Source_new(n))
+          call multifab_destroy(rho_omegadot2(n))
+          call multifab_destroy(rho_Hnuc2(n))
+          call multifab_destroy(thermal2(n))
+       end do
+
+       call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,dx,the_bc_tower, &
+            rho0_old,rhoh0_old)
+
+       call init_multilevel(sold)
+
+       do n = 1,nlevs
+          call multifab_build(   Source_new(n), mla%la(n),     1, 1)
+          call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
+          call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
+          call multifab_build(     thermal2(n), mla%la(n),     1, 1)
+       end do
 
        ! initialize arrays in geometry.f90
-       call init_multilevel(sold)
        call init_radial(nlevs,mba)
        call init_cutoff(nlevs)
 
