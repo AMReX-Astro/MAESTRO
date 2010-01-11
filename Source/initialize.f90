@@ -372,11 +372,11 @@ contains
        ! fill psi and etarho_cc using linear interpolation
        do r=0,nr_fine-1
           if (r .eq. 0) then
-             psi(1,0) = psi_temp(1,0)
+             psi      (1,0) = psi_temp      (1,0)
              etarho_cc(1,0) = etarho_cc_temp(1,0)
-          else if (r .gt. 2*nr_fine_old) then
-             psi(1,r) = psi_temp(1,nr_fine-1)
-             etarho_cc(1,r) = etarho_cc_temp(r,nr_fine-1)
+          else if (r/2+1 .ge. nr_fine_old) then
+             psi(1,r) = psi_temp(1,nr_fine_old-1)
+             etarho_cc(1,r) = etarho_cc_temp(1,nr_fine_old-1)
           else
              if (mod(r,2) .eq. 0) then
                 psi(1,r) = 0.75d0*psi_temp(1,r/2)+0.25d0*psi_temp(1,r/2-1)
