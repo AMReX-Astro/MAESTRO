@@ -105,8 +105,8 @@ contains
     nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
     ! initialize boundary conditions
-    call initialize_bc(the_bc_tower,max_levs,pmask)
-    do n = 1,max_levs
+    call initialize_bc(the_bc_tower,nlevs,pmask)
+    do n = 1,nlevs
        call bc_tower_level_build(the_bc_tower,n,mla%la(n))
     end do
 
@@ -200,7 +200,7 @@ contains
     deallocate(chk_rho_omegadot2, chk_rho_Hnuc2)
 
     ! initialize dx
-    call initialize_dx(dx,mba,max_levs)
+    call initialize_dx(dx,mla%mba,nlevs)
 
     ! initialize cutoff arrays
     call init_cutoff(nlevs)
@@ -229,7 +229,7 @@ contains
     call init_multilevel(sold)
 
     ! now that we have nr_fine and dr_fine we can create nr, dr, r_cc_loc, r_edge_loc
-    call init_radial(nlevs,mba)
+    call init_radial(nlevs,mla%mba)
 
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -316,9 +316,6 @@ contains
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
 
-       ! compute dx
-       call initialize_dx(dx,mba,max_levs)
-
        ! deallocate arrays in geometry.f90
        call destroy_geometry()
        
@@ -330,8 +327,17 @@ contains
           call multifab_destroy(thermal2(n))
        end do
 
+       ! initialize boundary conditions
+       call bc_tower_destroy(the_bc_tower)
+       call initialize_bc(the_bc_tower,max_levs,pmask)
+       call bc_tower_level_build(the_bc_tower,1,mla%la(1))
+
        call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,dx,the_bc_tower, &
-            rho0_old,rhoh0_old)
+                   rho0_old,rhoh0_old)
+
+       ! compute dx
+       deallocate(dx)
+       call initialize_dx(dx,mla%mba,max_levs)
 
        call init_multilevel(sold)
 
@@ -343,7 +349,7 @@ contains
        end do
 
        ! initialize arrays in geometry.f90
-       call init_radial(nlevs,mba)
+       call init_radial(nlevs,mla%mba)
        call init_cutoff(nlevs)
 
        ! make temporary copy of old psi, etarho_cc, etarho_ec, and w0

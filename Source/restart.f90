@@ -57,9 +57,9 @@ contains
                          chk_rho_omegadot2, chk_rho_Hnuc2, chk_thermal2, check_file_name, &
                          time, dt, nlevs_local)
 
-    call build(mba,max_levs,dm)
+    call build(mba,nlevs_local,dm)
     mba%pd(1) =  bbox(get_boxarray(chkdata(1)))
-    do n = 2,max_levs
+    do n = 2,nlevs_local
       mba%pd(n) = refine(mba%pd(n-1),2)
       mba%rr(n-1,:) = 2
     end do
