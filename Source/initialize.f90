@@ -63,7 +63,7 @@ contains
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
-    integer :: n,ng_s
+    integer :: n,ng_s,nr_fine_old,r
 
     type(multifab), pointer :: chkdata(:)
     type(multifab), pointer :: chk_p(:)
@@ -76,6 +76,11 @@ contains
 
     type(multifab), allocatable :: gamma1(:)
     type(multifab), allocatable :: normal(:)
+
+    real(dp_t), allocatable :: psi_temp(:,:)
+    real(dp_t), allocatable :: etarho_cc_temp(:,:)
+    real(dp_t), allocatable :: etarho_ec_temp(:,:)
+    real(dp_t), allocatable :: w0_temp(:,:)
   
     character(len=5)   :: check_index
     character(len=6)   :: check_index6
@@ -294,6 +299,13 @@ contains
 
     if (restart_into_finer .and. spherical .eq. 1) then
 
+       nr_fine_old = nr_fine
+       
+       allocate(psi_temp      (1,0:nr_fine_old-1))
+       allocate(etarho_cc_temp(1,0:nr_fine_old-1))
+       allocate(etarho_ec_temp(1,0:nr_fine_old))
+       allocate(w0_temp       (1,0:nr_fine_old))
+
        ! compute dr_fine and nr_fine assuming a finer dx
        dr_fine = dx(nlevs,1) / dble(drdxfac)
        dr_fine = 0.5d0*dr_fine
@@ -317,10 +329,56 @@ contains
        call init_cutoff(nlevs)
 
        ! make temporary copy of old psi, etarho_cc, etarho_ec, and w0
+       psi_temp       = psi
+       etarho_cc_temp = etarho_cc
+       etarho_ec_temp = etarho_ec
+       w0_temp        = w0
+
+       ! deallocate 1D arrays
+       deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
+       deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec)
+       deallocate(etarho_cc,psi,tempbar,grav_cell)
 
        ! reallocate 1D arrays
+       call initialize_1d_arrays(max_levs,div_coeff_old,div_coeff_new,gamma1bar, &
+                                 gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
+                                 rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
+                                 psi,tempbar,grav_cell)
 
-       ! fill psi, etarho_cc, etarho_ec, and w0 using linear interpolation
+       ! fill psi and etarho_cc using linear interpolation
+       do r=0,nr_fine-1
+          if (r .eq. 0) then
+             psi(1,0) = psi_temp(1,0)
+             etarho_cc(1,0) = etarho_cc_temp(1,0)
+          else if (r .gt. 2*nr_fine_old) then
+             psi(1,r) = psi_temp(1,nr_fine-1)
+             etarho_cc(1,r) = etarho_cc_temp(r,nr_fine-1)
+          else
+             if (mod(r,2) .eq. 0) then
+                psi(1,r) = 0.75d0*psi_temp(1,r/2)+0.25d0*psi_temp(1,r/2-1)
+                etarho_cc(1,r) = 0.75d0*etarho_cc_temp(1,r/2)+0.25d0*etarho_cc_temp(1,r/2+1)
+             else
+                psi(1,r) = 0.75d0*psi_temp(1,r/2)+0.25d0*psi_temp(1,r/2-1)
+                etarho_cc(1,r) = 0.75d0*etarho_cc_temp(1,r/2)+0.25d0*etarho_cc_temp(1,r/2+1)
+             end if
+          end if
+       end do
+
+       ! fill etarho_ec and w0 using linear interpolation
+       do r=0,nr_fine
+          if (r .gt. 2*nr_fine_old) then
+             etarho_ec(1,r) = etarho_ec_temp(1,nr_fine_old)
+             w0(1,r) = w0_temp(1,nr_fine_old)
+          else
+             if (mod(r,2) .eq. 0) then
+                etarho_ec(1,r) = etarho_ec_temp(1,r/2)
+                w0(1,r) = w0_temp(1,r/2)
+             else
+                etarho_ec(1,r) = 0.5d0*etarho_ec_temp(1,r/2)+0.5d0*etarho_ec_temp(1,r/2+1)
+                w0(1,r) = 0.5d0*w0_temp(1,r/2)+0.5d0*w0_temp(1,r/2+1)
+             end if
+          end if
+       end do
 
        ! compute rho0 by calling average
        call average(mla,sold,rho0_old,dx,rho_comp)
