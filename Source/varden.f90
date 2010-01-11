@@ -713,6 +713,7 @@ subroutine varden()
            if (evolve_base_state) then
               ! force rho0 to be the average of rho
               call average(mla,sold,rho0_old,dx,rho_comp)
+              call compute_cutoff_coords(rho0_old)
            
               call make_grav_cell(grav_cell,rho0_old)
 
