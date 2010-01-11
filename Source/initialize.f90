@@ -333,7 +333,7 @@ contains
        call bc_tower_level_build(the_bc_tower,1,mla%la(1))
 
        call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,dx,the_bc_tower, &
-                   rho0_old,rhoh0_old)
+                   rho0_old,rhoh0_old,.false.)
 
        ! compute dx
        deallocate(dx)

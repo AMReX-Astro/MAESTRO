@@ -25,7 +25,7 @@ module regrid_module
 
 contains
 
-  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,dx,the_bc_tower,rho0,rhoh0)
+  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,dx,the_bc_tower,rho0,rhoh0,interp_pert)
 
     use probin_module, only : nodal, pmask, regrid_int, max_grid_size, ref_ratio, max_levs, &
          ppm_type
@@ -39,6 +39,7 @@ contains
     real(dp_t)    ,  pointer       :: dx(:,:)
     type(bc_tower),  intent(inout) :: the_bc_tower
     real(kind=dp_t), intent(in   ) :: rho0(:,0:),rhoh0(:,0:)
+    logical        , intent(in   ) :: interp_pert
 
     ! local
     logical           :: new_grid
@@ -48,8 +49,8 @@ contains
     type(ml_boxarray) :: mba
 
     ! These are copies to hold the old data.
-    type(multifab) :: uold_temp(nlevs), sold_temp(nlevs), gpres_temp(nlevs), pres_temp(nlevs)
-    type(multifab) :: dSdt_temp(nlevs), src_temp(nlevs)
+    type(multifab) :: uold_temp(max_levs), sold_temp(max_levs), gpres_temp(max_levs)
+    type(multifab) :: pres_temp(max_levs), dSdt_temp(max_levs), src_temp(max_levs)
 
     if (ppm_type .eq. 2) then
        ng_s = 4
@@ -220,7 +221,7 @@ contains
 
     enddo
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .and. interp_pert) then
 
        ! convert (rho X) --> X in sold 
        call convert_rhoX_to_X(sold_temp,.true.,mla_old,the_bc_tower%bc_tower_array)
@@ -334,18 +335,18 @@ contains
           call multifab_copy_c(  pres(nl+1),1,  pres_temp(nl+1),1,    1)
           call multifab_copy_c(  dSdt(nl+1),1,  dSdt_temp(nl+1),1,    1)
           call multifab_copy_c(   src(nl+1),1,   src_temp(nl+1),1,    1)
-       end if
 
-       call destroy(  uold_temp(nl+1))
-       call destroy(  sold_temp(nl+1))
-       call destroy( gpres_temp(nl+1))
-       call destroy(  pres_temp(nl+1))
-       call destroy(  dSdt_temp(nl+1))
-       call destroy(   src_temp(nl+1))
+          call destroy(  uold_temp(nl+1))
+          call destroy(  sold_temp(nl+1))
+          call destroy( gpres_temp(nl+1))
+          call destroy(  pres_temp(nl+1))
+          call destroy(  dSdt_temp(nl+1))
+          call destroy(   src_temp(nl+1))
+       end if
 
     end do
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .and. interp_pert) then
 
        ! convert rho' -> rho in sold
        call put_in_pert_form(mla,sold,rho0,dx,rho_comp,dm+rho_comp,.false., &
