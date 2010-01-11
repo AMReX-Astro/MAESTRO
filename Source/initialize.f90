@@ -34,6 +34,14 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use probin_module, only : drdxfac, restart_into_finer
+    use average_module
+    use make_grav_module
+    use enforce_HSE_module
+    use rhoh_vs_t_module
+    use make_gamma_module
+    use make_div_coeff_module
+    use fill_3d_module
+    use estdt_module
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(in   ) :: restart
@@ -66,6 +74,9 @@ contains
     type(multifab), pointer :: chk_rho_Hnuc2(:)
     type(multifab), pointer :: chk_thermal2(:)
 
+    type(multifab), allocatable :: gamma1(:)
+    type(multifab), allocatable :: normal(:)
+  
     character(len=5)   :: check_index
     character(len=6)   :: check_index6
     character(len=256) :: check_file_name
@@ -88,8 +99,8 @@ contains
     nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
     ! initialize boundary conditions
-    call initialize_bc(the_bc_tower,nlevs,pmask)
-    do n = 1,nlevs
+    call initialize_bc(the_bc_tower,max_levs,pmask)
+    do n = 1,max_levs
        call bc_tower_level_build(the_bc_tower,n,mla%la(n))
     end do
 
@@ -183,7 +194,7 @@ contains
     deallocate(chk_rho_omegadot2, chk_rho_Hnuc2)
 
     ! initialize dx
-    call initialize_dx(dx,mba,nlevs)
+    call initialize_dx(dx,mba,max_levs)
 
     ! initialize cutoff arrays
     call init_cutoff(nlevs)
@@ -292,9 +303,8 @@ contains
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
 
-       ! recompute mba
-
        ! compute dx
+       call initialize_dx(dx,mba,max_levs)
 
        ! deallocate arrays in geometry.f90
        call destroy_geometry()
@@ -302,9 +312,9 @@ contains
        ! regrid
 
        ! initialize arrays in geometry.f90
+       call init_multilevel(sold)
        call init_radial(nlevs,mba)
        call init_cutoff(nlevs)
-       call init_multilevel(sold)
 
        ! make temporary copy of old psi, etarho_cc, etarho_ec, and w0
 
@@ -313,25 +323,60 @@ contains
        ! fill psi, etarho_cc, etarho_ec, and w0 using linear interpolation
 
        ! compute rho0 by calling average
+       call average(mla,sold,rho0_old,dx,rho_comp)
 
        ! compute cutoff coordinates
        call compute_cutoff_coords(rho0_old)
 
        ! compute gravity
+       call make_grav_cell(grav_cell,rho0_old)
 
        ! compute p0 by HSE
-
-       ! make normal
+       call enforce_HSE(rho0_old,p0_old,grav_cell)
 
        ! compute temperature with EOS
+       if (use_tfromp) then
+          ! compute full state T = T(rho,p0,X)
+          call makeTfromRhoP(sold,p0_old,mla,the_bc_tower%bc_tower_array,dx)
+       else
+          ! compute full state T = T(rho,h,X)
+          call makeTfromRhoH(sold,mla,the_bc_tower%bc_tower_array)
+       end if
 
        ! force tempbar to be the average of temp
+       call average(mla,sold,tempbar,dx,temp_comp)
 
        ! compute gamma1bar
-
+       allocate(gamma1(nlevs))
+       do n=1,nlevs
+          call multifab_build(gamma1(n), mla%la(n), 1, 0)
+       end do
+       call make_gamma(mla,gamma1,sold,p0_old,dx)
+       call average(mla,gamma1,gamma1bar,dx,1)
+       do n=1,nlevs
+          call destroy(gamma1(n))
+       end do
+       deallocate(gamma1)
+     
        ! compute div_coeff_old
+       call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
+
+       ! compute normal (just for use in computing time step)
+       allocate(normal(nlevs))
+       do n = 1,nlevs
+          call multifab_build(normal(n), mla%la(n),    dm, 1)
+       end do
+       call make_normal(normal,dx)
 
        ! recompute time step
+       dt = 1.d20
+       call estdt(mla,the_bc_tower,uold,sold,gpres,Source_old,dSdt, &
+                  normal,w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
+
+       do n = 1,nlevs
+          call multifab_destroy(normal(n))
+       end do
+       deallocate(normal)
 
     end if
 
