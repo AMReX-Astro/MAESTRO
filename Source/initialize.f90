@@ -382,7 +382,7 @@ contains
                 psi(1,r) = 0.75d0*psi_temp(1,r/2)+0.25d0*psi_temp(1,r/2-1)
                 etarho_cc(1,r) = 0.75d0*etarho_cc_temp(1,r/2)+0.25d0*etarho_cc_temp(1,r/2+1)
              else
-                psi(1,r) = 0.75d0*psi_temp(1,r/2)+0.25d0*psi_temp(1,r/2-1)
+                psi(1,r) = 0.75d0*psi_temp(1,r/2)+0.25d0*psi_temp(1,r/2+1)
                 etarho_cc(1,r) = 0.75d0*etarho_cc_temp(1,r/2)+0.25d0*etarho_cc_temp(1,r/2+1)
              end if
           end if
