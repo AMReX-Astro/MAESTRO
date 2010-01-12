@@ -62,7 +62,7 @@ contains
     ! local
     type(ml_boxarray) :: mba
 
-    real(dp_t) :: lenx,leny,lenz,max_dist
+    real(dp_t) :: lenx,leny,lenz,max_dist,p0_temp
 
     integer :: n,ng_s,nr_fine_old,r
 
@@ -358,6 +358,9 @@ contains
        etarho_ec_temp = etarho_ec
        w0_temp        = w0
 
+       ! copy outer pressure for reference
+       p0_temp = p0_old(1,nr_fine_old-1)
+
        ! deallocate 1D arrays
        deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
        deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec)
@@ -368,6 +371,9 @@ contains
                                  gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
                                  rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
                                  psi,tempbar,grav_cell)
+
+       ! copy outer pressure for reference
+       p0_old(1,nr_fine-1) = p0_temp
 
        ! fill psi and etarho_cc using linear interpolation
        do r=0,nr_fine-1
