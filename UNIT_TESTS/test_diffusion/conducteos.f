@@ -10,7 +10,7 @@
      &                      do_eos_diag,
      &                      conductivity)
 
-      use probin_module, only: diff_coeff
+      use probin_module, only: thermal_conductivity
       use eos_module
 
       implicit none
@@ -44,6 +44,6 @@ c     ::::: Arguments
      &         do_eos_diag)
 
       ! fill the conductivity
-      conductivity(1) = diff_coeff
+      conductivity(1) = thermal_conductivity
 
       end

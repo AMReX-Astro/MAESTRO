@@ -1,15 +1,15 @@
 
 # constant diffusion coefficient (default is a guess)
-diff_coeff                          real               1.d7
+thermal_conductivity                          real               1.d7
 
 # t0 used in the initialization of Gaussian pulse (c.f. Swesty \& Myra, ApJSS 181, 1-52 (2009))
 t0                                  real               1.d-9
 
 # peak temperature
-peak_temp                           real               1.d7
+peak_h                           real               1.d7
 
 # ambient temp
-ambient_temp                        real               1.d6
+ambient_h                        real               1.d6
 
 # ambient density
 ambient_dens                        real               1.d5
