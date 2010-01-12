@@ -23,7 +23,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_fixed_grids(mla,time,dt,dx,pmask,the_bc_tower,&
-                                         s,s_init,p0,thermal)
+                                         s,s_init,p0,thermal,&
+                                         diffusion_coefficient)
 
     use box_util_module
     use init_module
@@ -32,6 +33,7 @@ contains
     
     type(ml_layout),intent(  out) :: mla
     real(dp_t)    , intent(inout) :: time,dt
+    real(dp_t)    , intent(  out) :: diffusion_coefficient
     logical       , intent(in   ) :: pmask(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     type(multifab),  pointer      :: s(:), thermal(:)
@@ -126,15 +128,18 @@ contains
 
     ! now that we have dr and nr we can fill initial state
     if (spherical .eq. 1) then
-       call init_base_state(1,model_file,s_init(1,:,:),p0(1,:),dx(nlevs,:))
+       call init_base_state(1,model_file,s_init(1,:,:),p0(1,:),dx(nlevs,:),&
+                            diffusion_coefficient)
     else
        do n=1,nlevs
-          call init_base_state(n,model_file,s_init(n,:,:),p0(n,:),dx(n,:))
+          call init_base_state(n,model_file,s_init(n,:,:),p0(n,:),dx(n,:),&
+                               diffusion_coefficient)
        end do
     end if
     
     ! fill the s multifab
-    call initscalardata(s,s_init,p0,dx,the_bc_tower%bc_tower_array,mla)
+    call initscalardata(s,s_init,p0,dx,the_bc_tower%bc_tower_array,mla,&
+                        diffusion_coefficient)
 
     call destroy(mba)
 

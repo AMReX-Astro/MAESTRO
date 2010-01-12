@@ -22,7 +22,7 @@ module init_module
 
 contains
 
-  subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
+  subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla,diffusion_coefficient)
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -30,8 +30,9 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
+    real(kind=dp_t), intent(in   ) :: diffusion_coefficient
 
-    real(kind=dp_t), pointer:: sop(:,:,:,:)
+    real(kind=dp_t), pointer:: sp(:,:,:,:)
     integer :: lo(dm),hi(dm),ng
     integer :: i,n
     integer :: ii,jj
@@ -41,13 +42,13 @@ contains
     do n=1,nlevs
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n),i) ) cycle
-          sop => dataptr(s(n),i)
+          sp => dataptr(s(n),i)
           lo = lwb(get_box(s(n),i))
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                    p0_init(n,:))
+             call initscalardata_2d(sp(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
+                                    p0_init(n,:), diffusion_coefficient)
           end select
        end do
     enddo
@@ -82,22 +83,25 @@ contains
 
   end subroutine initscalardata
 
-  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
+  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init,&
+                               diffusion_coefficient)
 
-    use probin_module, only: prob_lo, perturb_model, peak_temp, diff_coeff, t0
+    use probin_module, only: prob_lo, perturb_model, peak_h, t0, ambient_h
 
-    integer           , intent(in   ) :: lo(:),hi(:),ng
-    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t)   , intent(inout) :: p0_init(0:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng
+    real(kind=dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
+    real(kind=dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t), intent(in   ) :: s0_init(0:,:)
+    real(kind=dp_t), intent(inout) :: p0_init(0:)
+    real(kind=dp_t), intent(in   ) :: diffusion_coefficient 
 
     ! Local variables
     integer         :: i,j,iter
     integer, parameter :: max_iter = 50
     real, parameter :: tol = 1.e-12
-    real(kind=dp_t) :: x,y,dist2,dens_zone,temp_zone,del_dens
+    real(kind=dp_t) :: x,y,dist2,dens_zone,temp_zone,del_dens, del_temp
     real(kind=dp_t) :: pres_zone, del_pres
+    real(kind=dp_t) :: h_zone, dhdt
     logical :: converged
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
@@ -113,31 +117,25 @@ contains
 
           x = prob_lo(1) + (dble(i)+HALF) * dx(1)
 
-          ! apply the guassian temperature pulse at constant density
+          ! apply the guassian enthalpy pulse at constant density
           dist2 = (center(1) - x)**2 + (center(2) - y)**2
 
-          temp_zone = (peak_temp-s0_init(j,temp_comp)) * &
-               exp(-dist2/(FOUR*diff_coeff*t0))
+          h_zone = (peak_h - ambient_h) * &
+                    exp(-dist2/(FOUR*diffusion_coefficient*t0)) + ambient_h
 
-          temp_eos(1) = temp_zone + s0_init(j,temp_comp)
+          temp_zone = s0_init(j,temp_comp)
 
           xn_eos(1,1:nspec) = s0_init(j,spec_comp:spec_comp+nspec-1) / &
                               s0_init(j,rho_comp)
 
-!          den_eos(1) = s0_init(j,rho_comp)
-          dens_zone = s0_init(j,rho_comp)
-!          pres_zone = p0_init(j)
-          p_eos(1) = p0_init(j)
+          den_eos(1) = s0_init(j,rho_comp)
 
           converged = .false.
 
           do iter = 1, max_iter
-!             p_eos(1) = pres_zone
-             den_eos(1) = dens_zone
+             temp_eos(1) = temp_zone
 
-             call eos( &
-!                      eos_input_tp, &
-                      eos_input_rt, &
+             call eos(eos_input_rt, &
                       den_eos, temp_eos, &
                       npts, &
                       xn_eos, &
@@ -149,31 +147,25 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
 
-!             del_pres = -(den_eos(1) - s0_init(j,rho_comp)) * dpdr_eos(1)
-             del_dens = -(p_eos(1) - p0_init(j)) / dpdr_eos(1)
+             dhdt = cv_eos(1) + dpdt_eos(1)/den_eos(1)
 
-!             pres_zone = max(0.9*pres_zone, &
-!                             min(pres_zone + del_pres, 1.1*pres_zone))
-             dens_zone = max(0.9*dens_zone, &
-                             min(dens_zone + del_dens, 1.1*dens_zone))
+             del_temp = -(h_eos(1) - h_zone) / dhdt
 
-!             if (abs(del_pres) < tol*pres_zone) then
-             if (abs(del_dens) < tol*dens_zone) then
+             temp_zone = temp_zone + del_temp
+
+             if (abs(del_temp) < tol*temp_zone) then
                 converged = .true.
                 exit
              endif
           enddo
 
           if (.not. converged) &
-             call bl_error("density iter did not converge in initscalars")
+             call bl_error("iters did not converge in initscalars")
 
           ! call eos one last time
-!          p_eos(1) = pres_zone
-          den_eos(1) = dens_zone
+          temp_eos(1) = temp_zone
 
-          call eos( &
-!                   eos_input_tp, &
-                   eos_input_rt, &
+          call eos(eos_input_rt, &
                    den_eos, temp_eos, &
                    npts, &
                    xn_eos, &
