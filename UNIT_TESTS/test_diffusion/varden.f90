@@ -3,7 +3,6 @@ subroutine varden()
   use variables
   use network
   use geometry
-  use init_module
   use base_state_module
   use fabio_module
   use probin_module
@@ -40,6 +39,8 @@ subroutine varden()
 
   real(kind=dp_t), parameter :: SMALL = 1.e-13
   real(kind=dp_t), parameter :: FIVE3RD = FIVE/THREE 
+  
+  real(kind=dp_t) :: diffusion_coefficient
 
   ! initialize some things
   call probin_init()
@@ -58,12 +59,13 @@ subroutine varden()
        "X(He4)*rho", "X(C12)*rho", "X(Fe56)*rho", &
        "temp", "trac" /)
 
- ! for now we only use fixed grids
+ ! we only use fixed grids
  if (test_set /= '') then
     call initialize_with_fixed_grids(mla, time, dt, dx, pmask, the_bc_tower, &
-                                     s_old, s0_init, p0, thermal)
+                                     s_old, s0_init, p0, thermal, &
+                                     diffusion_coefficient)
  else
-    call bl_error('Currently only implemented with fixed grids!')
+    call bl_error('test_diffusion only implemented with fixed grids!')
  endif
 
  ! error checking
@@ -116,6 +118,16 @@ subroutine varden()
     call multifab_copy_c(s_new(n), 1, s_old(n), 1, nscal, s_old(n)%ng)
  enddo
 
+ ! calculate the explicit timestep
+ call estdt(dx, diffusion_coefficient, dt)
+ if (parallel_IOProcessor()) then
+    print *, '... estdt gives dt =', dt    
+ endif
+    
+ dt = dt * dt_mult_factor
+    
+ if (parallel_IOProcessor()) &
+      print *, '... dt after applying mult_factor:', dt
 
  istep = 0
 
@@ -128,6 +140,9 @@ subroutine varden()
                      problo=prob_lo, probhi=prob_hi, &
                      dx=dx(1,:))
 
+ ! dump some parameters for the analytic comparison
+ if (parallel_IOProcessor()) call dump_gnuplot_analysis(istep,time)
+
  ! loop
  do while (istep < max_step)
 
@@ -135,20 +150,11 @@ subroutine varden()
 
     if (parallel_IOProcessor()) print *, 'Working on step', istep
 
-    ! get the timestep
-    call estdt(s_old, dx, dt, mla, the_bc_tower)
-
-    if (parallel_IOProcessor()) then
-       print *, '... estdt gives dt =', dt    
-    endif
-    
-    dt = dt * dt_mult_factor
-    
-    if (parallel_IOProcessor()) &
-         print *, '... dt after applying mult_factor:', dt
-
     time = time + dt
     if (parallel_IOProcessor()) print *, '... time = ', time
+
+    ! dump the analytic comparison
+    if (parallel_IOProcessor()) call dump_gnuplot_analysis(istep,time)
 
     ! build the coeffs
     if (parallel_IOProcessor()) print *, '... building thermal coefficients'
@@ -201,6 +207,47 @@ subroutine varden()
 
     if (parallel_IOProcessor()) print *, ''
  enddo
+
+contains
+  
+  subroutine dump_gnuplot_analysis(istep,time)
+
+    use bl_IO_module
+    
+    implicit none
+
+    integer        , intent(in   ) :: istep
+    real(kind=dp_t), intent(in   ) :: time
+    
+    character(len=10) :: outputfile = "params.out"
+
+    integer :: unit
+
+    ! dump info to the outputfile
+    unit = unit_new()
+    if (istep == 0) then
+       open(unit=unit, file=outputfile, status='replace')
+
+       write(unit,100) "t0", t0
+       write(unit,100) "D", diffusion_coefficient
+       write(unit,100) "hp", peak_h
+       write(unit,100) "h0", ambient_h
+
+    else
+       open(unit=unit, file=outputfile, status='old', position='append')
+    endif
+
+    write(unit,101) istep,time,time
+
+    close(unit)
+
+100 format (A,"=",G)
+101 format ("f",I3.3,"(x)=(hp-h0)*(t0/(",G,"+t0))*exp(-x*x/(4.0e0*D*(",G,"+t0)))+h0")
+
+  end subroutine dump_gnuplot_analysis
+    
+
+    
  
 end subroutine varden
 
