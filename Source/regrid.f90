@@ -93,8 +93,6 @@ contains
 
     call destroy(mla)
 
-    buf_wid = regrid_int
-
     ! mba is big enough to hold max_levs levels
     ! even though we know we had nlevs last time, we might 
     ! want more or fewer levels after regrid (if nlevs < max_levs)
@@ -138,6 +136,9 @@ contains
     call multifab_copy_c(  pres(1),1,  pres_temp(1) ,1,    1)
     call multifab_copy_c(  dSdt(1),1,  dSdt_temp(1), 1,    1)
     call multifab_copy_c(   src(1),1,   src_temp(1), 1,    1)
+
+    ! buf_wid needed in make_new_grids
+    buf_wid = regrid_int
 
     nl       = 1
     new_grid = .true.
@@ -214,7 +215,7 @@ contains
 
           nlevs = nl+1
           nlevs_radial = merge(1, nlevs, spherical .eq. 1)
-          nl = nl + 1
+          nl = nl+1
 
        endif
 
