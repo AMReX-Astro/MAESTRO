@@ -8,7 +8,6 @@ module regrid_module
   use init_module
   use box_util_module
   use make_new_grids_module
-  use initialize_module
   use fillpatch_module
   use ml_prolongation_module
   use multifab_physbc_module
