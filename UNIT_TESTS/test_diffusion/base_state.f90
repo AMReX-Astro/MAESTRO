@@ -11,7 +11,8 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state(n,model_file,s0_init,p0_init,dx)
+  subroutine init_base_state(n,model_file,s0_init,p0_init,dx,&
+       diffusion_coefficient)
 
     use bl_prof_module
     use parallel
@@ -19,8 +20,9 @@ contains
     use bl_constants_module
     use eos_module
     use network, only: network_species_index
-    use probin_module, only: ambient_temp, ambient_dens, &
-                             ambient_he4, ambient_c12, ambient_fe56
+    use probin_module, only: ambient_h, ambient_dens, &
+                             ambient_he4, ambient_c12, ambient_fe56, &
+                             thermal_conductivity
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp,  &
                          trac_comp, ntrac
     use geometry, only: nr
@@ -32,6 +34,7 @@ contains
     real(kind=dp_t)   , intent(inout) :: s0_init(0:,:)
     real(kind=dp_t)   , intent(inout) :: p0_init(0:)
     real(kind=dp_t)   , intent(in   ) :: dx(:)
+    real(kind=dp_t)   , intent(  out) :: diffusion_coefficient
 
     ! local
     integer :: ihe4, ic12, ife56
@@ -51,25 +54,27 @@ contains
     if (ihe4 < 0 .or. ic12 < 0 .or. ife56 < 0) &
        call bl_error("Invalid species in init_base_state.")
 
+    h_eos(1) = ambient_h
+    den_eos(1)  = ambient_dens
+    
+    xn_eos(1,ihe4)  = ambient_he4
+    xn_eos(1,ic12)  = ambient_c12
+    xn_eos(1,ife56) = ambient_fe56
+
+    call eos(eos_input_rh, den_eos, temp_eos, &
+         npts, &
+         xn_eos, &
+         p_eos, h_eos, e_eos, &
+         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+         dpdX_eos, dhdX_eos, &
+         gam1_eos, cs_eos, s_eos, &
+         dsdt_eos, dsdr_eos, &
+         do_diag)       
+
+    diffusion_coefficient = thermal_conductivity / (cp_eos(1) * ambient_dens)
+
     do r = 0, nr(n) - 1
-
-       temp_eos(1) = ambient_temp
-       den_eos(1)  = ambient_dens
-
-       xn_eos(1,ihe4)  = ambient_he4
-       xn_eos(1,ic12)  = ambient_c12
-       xn_eos(1,ife56) = ambient_fe56
-
-       call eos(eos_input_rt, den_eos, temp_eos, &
-                npts, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                do_diag)       
 
        s0_init(r,rho_comp ) = den_eos(1)
        s0_init(r,rhoh_comp) = den_eos(1) * h_eos(1)
@@ -84,7 +89,6 @@ contains
        end if
 
     enddo
-    
 
     ! initialize any inlet BC parameters
     call set_inlet_bcs()
