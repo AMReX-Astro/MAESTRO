@@ -298,6 +298,10 @@ contains
        call bl_error('restart_into_finer only currently supported for spherical')
     end if
 
+    if (restart_into_finer .and. time .eq. 0) then
+       call bl_error('restart_into_finer does not work if time = 0')
+    end if
+
     if (restart_into_finer .and. spherical .eq. 1) then
 
        nr_fine_old = nr_fine
@@ -316,10 +320,28 @@ contains
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
 
-       ! deallocate arrays in geometry.f90
+       ! deallocate arrays in geometry.f90 including:
+       ! dr,r_cc_loc,r_edge_loc,r_start_coord,r_end_coord,nr,numdisjointchunks,
+       ! anelastic_cutoff_coord,base_cutoff_density_coord,burning_cutoff_density_coord
        call destroy_geometry()
        
-       ! regrid
+       ! deallocate the following:
+       ! bct%bc_tower_array(i)%phys_bc_level_array
+       ! bct%bc_tower_array(i)%adv_bc_level_array
+       ! bct%bc_tower_array(i)%ell_bc_level_array
+       ! bct%bc_tower_array
+       ! bct%domain_bc
+       call bc_tower_destroy(the_bc_tower)
+
+       ! this calls bc_tower_init sets bct%nlevels, bct%dim, allocates
+       ! bcg%bc_tower_array and bct%domain_bc.  Then bct%bc_tower_array(n)%ngrids
+       ! is set to a null value, and bct%domain_bc(:,:) = phys_bc_in(:,:)
+       call initialize_bc(the_bc_tower,max_levs,pmask)
+
+       ! build the bc_tower for level 1 only
+       call bc_tower_level_build(the_bc_tower,1,mla%la(1))
+
+       ! destroy these before we reset nlevs
        do n=1,nlevs
           call multifab_destroy(Source_new(n))
           call multifab_destroy(rho_omegadot2(n))
@@ -327,25 +349,34 @@ contains
           call multifab_destroy(thermal2(n))
        end do
 
-       ! initialize boundary conditions
-       call bc_tower_destroy(the_bc_tower)
-       call initialize_bc(the_bc_tower,max_levs,pmask)
-       call bc_tower_level_build(the_bc_tower,1,mla%la(1))
-
+       ! regrid
        call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,dx,the_bc_tower, &
                    rho0_old,rhoh0_old,.false.)
 
-       ! compute dx
+       ! recompute dx
        deallocate(dx)
        call initialize_dx(dx,mla%mba,max_levs)
 
+       ! set numdisjointchunks = 1
+       ! set r_start_coord(1,1) = 0
+       ! set r_end_coord(1,1) = nr_fine-1
        call init_multilevel(sold)
 
-       do n = 1,nlevs
+       ! rebuild these with the new ml_layout
+       do n=1,nlevs
           call multifab_build(   Source_new(n), mla%la(n),     1, 1)
           call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
           call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
           call multifab_build(     thermal2(n), mla%la(n),     1, 1)
+       end do
+
+       ! we set these to zero because they won't affect the solution
+       ! they can only affect an immediately generated plotfile
+       do n=1,nlevs
+          call setval(   Source_new(n),ZERO,all=.true.)
+          call setval(rho_omegadot2(n),ZERO,all=.true.)
+          call setval(    rho_Hnuc2(n),ZERO,all=.true.)
+          call setval(     thermal2(n),ZERO,all=.true.)
        end do
 
        ! initialize arrays in geometry.f90
