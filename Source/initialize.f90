@@ -310,20 +310,6 @@ contains
        allocate(etarho_cc_temp(1,0:nr_fine_old-1))
        allocate(etarho_ec_temp(1,0:nr_fine_old))
        allocate(w0_temp       (1,0:nr_fine_old))
-
-       ! compute dr_fine and nr_fine assuming a finer dx
-       dr_fine = dx(nlevs,1) / dble(drdxfac)
-       dr_fine = 0.5d0*dr_fine
-       lenx = HALF * (prob_hi(1) - prob_lo(1))
-       leny = HALF * (prob_hi(2) - prob_lo(2))
-       lenz = HALF * (prob_hi(3) - prob_lo(3))
-       max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
-       nr_fine = int(max_dist / dr_fine) + 1
-
-       ! deallocate arrays in geometry.f90 including:
-       ! dr,r_cc_loc,r_edge_loc,r_start_coord,r_end_coord,nr,numdisjointchunks,
-       ! anelastic_cutoff_coord,base_cutoff_density_coord,burning_cutoff_density_coord
-       call destroy_geometry()
        
        ! deallocate the following:
        ! bct%bc_tower_array(i)%phys_bc_level_array
@@ -350,17 +336,9 @@ contains
        end do
 
        ! regrid
+       ! this also rebuilds mla and the_bc_tower
        call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,dx,the_bc_tower, &
                    rho0_old,rhoh0_old,.false.)
-
-       ! recompute dx
-       deallocate(dx)
-       call initialize_dx(dx,mla%mba,max_levs)
-
-       ! set numdisjointchunks = 1
-       ! set r_start_coord(1,1) = 0
-       ! set r_end_coord(1,1) = nr_fine-1
-       call init_multilevel(sold)
 
        ! rebuild these with the new ml_layout
        do n=1,nlevs
@@ -371,13 +349,35 @@ contains
        end do
 
        ! we set these to zero because they won't affect the solution
-       ! they can only affect an immediately generated plotfile
+       ! they only affect an immediately generated plotfile
        do n=1,nlevs
           call setval(   Source_new(n),ZERO,all=.true.)
           call setval(rho_omegadot2(n),ZERO,all=.true.)
           call setval(    rho_Hnuc2(n),ZERO,all=.true.)
           call setval(     thermal2(n),ZERO,all=.true.)
        end do
+
+       ! compute dx at the new level
+       deallocate(dx)
+       call initialize_dx(dx,mla%mba,nlevs)
+
+       ! compute dr_fine and nr_fine assuming a finer dx
+       dr_fine = dx(nlevs,1) / dble(drdxfac)
+       lenx = HALF * (prob_hi(1) - prob_lo(1))
+       leny = HALF * (prob_hi(2) - prob_lo(2))
+       lenz = HALF * (prob_hi(3) - prob_lo(3))
+       max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
+       nr_fine = int(max_dist / dr_fine) + 1
+
+       ! deallocate arrays in geometry.f90 including:
+       ! dr,r_cc_loc,r_edge_loc,r_start_coord,r_end_coord,nr,numdisjointchunks,
+       ! anelastic_cutoff_coord,base_cutoff_density_coord,burning_cutoff_density_coord
+       call destroy_geometry()
+
+       ! set numdisjointchunks = 1
+       ! set r_start_coord(1,1) = 0
+       ! set r_end_coord(1,1) = nr_fine-1
+       call init_multilevel(sold)
 
        ! initialize arrays in geometry.f90
        call init_radial(nlevs,mla%mba)
@@ -398,7 +398,7 @@ contains
        deallocate(etarho_cc,psi,tempbar,grav_cell)
 
        ! reallocate 1D arrays
-       call initialize_1d_arrays(max_levs,div_coeff_old,div_coeff_new,gamma1bar, &
+       call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar, &
                                  gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
                                  rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
                                  psi,tempbar,grav_cell)
