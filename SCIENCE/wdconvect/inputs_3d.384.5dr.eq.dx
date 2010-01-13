@@ -37,7 +37,7 @@
  plot_int  = -1
  plot_deltat = 10.0d0
 
- plot_base_name = "wd_384_6.25e8K_norotate_chk"
+ check_base_name = "wd_384_6.25e8K_norotate_chk"
  chk_int   = 100
 
  cflfac = 0.7d0
