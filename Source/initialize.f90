@@ -465,13 +465,17 @@ contains
        ! force tempbar to be the average of temp
        call average(mla,sold,tempbar,dx,temp_comp)
 
-       ! compute gamma1bar
+       ! compute gamma1 (just for use in computing gamma1bar)
        allocate(gamma1(nlevs))
        do n=1,nlevs
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
        end do
        call make_gamma(mla,gamma1,sold,p0_old,dx)
+
+       ! compute gamma1bar
        call average(mla,gamma1,gamma1bar,dx,1)
+
+       ! deallocate gamma1
        do n=1,nlevs
           call destroy(gamma1(n))
        end do
@@ -492,6 +496,7 @@ contains
        call estdt(mla,the_bc_tower,uold,sold,gpres,Source_old,dSdt, &
                   normal,w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
 
+       ! deallocate normal
        do n = 1,nlevs
           call multifab_destroy(normal(n))
        end do
