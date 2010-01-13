@@ -153,9 +153,6 @@ subroutine varden()
     time = time + dt
     if (parallel_IOProcessor()) print *, '... time = ', time
 
-    ! dump the analytic comparison
-    if (parallel_IOProcessor()) call dump_gnuplot_analysis(istep,time)
-
     ! build the coeffs
     if (parallel_IOProcessor()) print *, '... building thermal coefficients'
     call make_thermal_coeffs(s_old,Tcoeff1,hcoeff1,Xkcoeff1,pcoeff1)
@@ -182,6 +179,10 @@ subroutine varden()
 
     ! dump data if needed
     if (mod(istep,plot_int) .eq. 0) then
+
+       ! dump the analytic comparison
+       if (parallel_IOProcessor()) call dump_gnuplot_analysis(istep,time)
+
        write(unit=sstep,fmt='(i5.5)')istep
        outdir = trim(plot_base_name) // sstep
 
