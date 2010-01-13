@@ -13,6 +13,8 @@
 
  plot_base_name = "test"
 
+ gnuplot_outputfile = "analytic.out"
+
  t0 = 1.0d-1
 
  peak_h = 1.0d1

@@ -219,14 +219,14 @@ contains
     integer        , intent(in   ) :: istep
     real(kind=dp_t), intent(in   ) :: time
     
-    character(len=10) :: outputfile = "params.out"
+!    character(len=10) :: outputfile = "params.out"
 
     integer :: unit
 
     ! dump info to the outputfile
     unit = unit_new()
     if (istep == 0) then
-       open(unit=unit, file=outputfile, status='replace')
+       open(unit=unit, file=gnuplot_outputfile, status='replace')
 
        write(unit,100) "t0", t0
        write(unit,100) "D", diffusion_coefficient
@@ -234,7 +234,7 @@ contains
        write(unit,100) "h0", ambient_h
 
     else
-       open(unit=unit, file=outputfile, status='old', position='append')
+       open(unit=unit, file=gnuplot_outputfile,status='old',position='append')
     endif
 
     write(unit,101) istep,time,time
