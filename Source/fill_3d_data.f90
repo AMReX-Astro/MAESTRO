@@ -469,7 +469,7 @@ contains
                    ! we need to modify this if we're too close to the edge
                    if (index .eq. 0) then
                       index = 1
-                   else if (index .eq. nr_fine-1) then
+                   else if (index .ge. nr_fine-1) then
                       index = nr_fine-2
                    end if
 
