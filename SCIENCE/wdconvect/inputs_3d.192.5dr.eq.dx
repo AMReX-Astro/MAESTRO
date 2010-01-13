@@ -1,6 +1,8 @@
 &PROBIN
- model_file = "model_6.e8.hybrid.hse.960"
+ model_file = "kepler_new_6.25e8.hybrid.hse.960"
  drdxfac = 5
+
+ job_name = "192^3 production run using new averaging, interp, Chamulak burner, 6.25e8 K model, base evolution"
 
  max_levs = 1
  n_cellx = 192
@@ -59,7 +61,7 @@
  do_initial_projection = T
  init_divu_iter = 3
 
- velpert_amplitude = 1.d5
+ velpert_amplitude = 1.d6
  velpert_radius = 2.d7
  velpert_scale = 1.d7
  velpert_steep = 1.d5
