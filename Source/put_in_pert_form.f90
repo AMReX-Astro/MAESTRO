@@ -39,15 +39,24 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    real(kind=dp_t), pointer::  sp(:,:,:,:)
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
     integer :: lo(dm),hi(dm)
     integer :: i,ng,n
+    real(kind=dp_t) :: dx_temp(nlevs,dm)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_in_pert_form")
 
-    ng    = s(1)%ng
+    ng = s(1)%ng
+
+    ! the reason I go through this dx_temp thing is because when you
+    ! restart into finer, we haven't initialized dx when we add the base state
+    ! back to the perturbational state.  This should be fixed.
+    dx_temp(1,:) = dx(1,:)
+    do n=2,nlevs
+       dx_temp(n,:) = dx_temp(n-1,:)/2.d0
+    end do
 
     do n=1,nlevs
        do i = 1, s(n)%nboxes
@@ -60,7 +69,7 @@ contains
              call pert_form_2d(sp(:,:,1,:),base(n,:),lo,hi,ng,comp,flag)
           case (3)
              if (spherical .eq. 1) then
-                call pert_form_3d_sphr(sp(:,:,:,:),base(1,:),lo,hi,ng,dx(n,:),comp,flag)
+                call pert_form_3d_sphr(sp(:,:,:,:),base(1,:),lo,hi,ng,dx_temp(n,:),comp,flag)
              else
                 call pert_form_3d_cart(sp(:,:,:,:),base(n,:),lo,hi,ng,comp,flag)
              end if

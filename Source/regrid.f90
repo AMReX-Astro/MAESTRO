@@ -24,7 +24,7 @@ module regrid_module
 
 contains
 
-  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,dx,the_bc_tower,rho0,rhoh0,interp_pert)
+  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart)
 
     use probin_module, only : nodal, pmask, regrid_int, max_grid_size, ref_ratio, max_levs, &
          ppm_type
@@ -38,7 +38,7 @@ contains
     real(dp_t)    ,  pointer       :: dx(:,:)
     type(bc_tower),  intent(inout) :: the_bc_tower
     real(kind=dp_t), intent(in   ) :: rho0(:,0:),rhoh0(:,0:)
-    logical        , intent(in   ) :: interp_pert
+    logical        , intent(in   ) :: is_restart
 
     ! local
     logical           :: new_grid
@@ -221,7 +221,9 @@ contains
 
     enddo
 
-    if (spherical .eq. 1 .and. interp_pert) then
+    if (spherical .eq. 1) then
+
+       if (is_restart) nlevs = nlevs-1
 
        ! convert (rho X) --> X in sold 
        call convert_rhoX_to_X(sold_temp,.true.,mla_old,the_bc_tower%bc_tower_array)
@@ -233,6 +235,8 @@ contains
        ! convert (rho h) -> (rho h)' in sold_temp
        call put_in_pert_form(mla_old,sold_temp,rhoh0,dx,rhoh_comp,foextrap_comp,.true., &
                              the_bc_tower%bc_tower_array)
+
+       if (is_restart) nlevs = nlevs+1
 
     end if
 
@@ -346,7 +350,7 @@ contains
 
     end do
 
-    if (spherical .eq. 1 .and. interp_pert) then
+    if (spherical .eq. 1) then
 
        ! convert rho' -> rho in sold
        call put_in_pert_form(mla,sold,rho0,dx,rho_comp,dm+rho_comp,.false., &

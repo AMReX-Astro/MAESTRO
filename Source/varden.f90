@@ -683,7 +683,7 @@ subroutine varden()
 
            ! create new grids and fill in data on those grids
            call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,dx,the_bc_tower, &
-                       rho0_old,rhoh0_old,.true.)
+                       rho0_old,rhoh0_old,.false.)
 
            call init_multilevel(sold)
 

@@ -338,7 +338,7 @@ contains
        ! regrid
        ! this also rebuilds mla and the_bc_tower
        call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,dx,the_bc_tower, &
-                   rho0_old,rhoh0_old,.false.)
+                   rho0_old,rhoh0_old,.true.)
 
        ! rebuild these with the new ml_layout
        do n=1,nlevs
