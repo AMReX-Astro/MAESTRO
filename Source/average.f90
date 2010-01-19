@@ -36,14 +36,14 @@ contains
 
     type(box)                    :: domain
     integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
-    integer                      :: max_rcoord(nlevs),rcoord(nlevs)
-    integer                      :: i,j,r,n,ng,max_radial,stencil_coord
+    integer                      :: max_rcoord(nlevs),rcoord(nlevs),stencil_coord(nlevs)
+    integer                      :: i,j,r,n,ng,max_radial
     real(kind=dp_t)              :: radius
 
     integer, allocatable ::  ncell_proc(:,:)
     integer, allocatable ::       ncell(:,:)
 
-    integer, allocatable ::  which_lev(:)
+    integer, allocatable :: which_lev(:)
 
     real(kind=dp_t), allocatable :: phisum_proc(:,:)
     real(kind=dp_t), allocatable ::      phisum(:,:)
@@ -164,7 +164,6 @@ contains
 
        ! For cells at the non-finest level, map a weighted contribution into the nearest
        ! bin in phisum.
-
        do n=nlevs,1,-1
 
           do i=1,phi(n)%nboxes
@@ -211,13 +210,17 @@ contains
        ncell (nlevs,-1) = 1
 
        ! choose which level to interpolate from
+       do n=1,nlevs
+          rcoord(n) = 0
+       end do
+
        do r=0,nr_fine-1
 
          radius = (dble(r)+HALF)*dr(1)
 
          ! for each level, find the closest coordinate
          do n=1,nlevs
-            do j=0,max_radial
+            do j=rcoord(n),max_radial
                if (abs(radius-radii(n,j)) .lt. abs(radius-radii(n,j+1))) then
                   rcoord(n) = j
                   exit
@@ -277,33 +280,35 @@ contains
        end do
 
        ! compute phibar
+       stencil_coord(:) = 0
+
        do r=0,nr_fine-1
 
          radius = (dble(r)+HALF)*dr(1)
 
          ! find the closest coordinate
-         do j=0,max_rcoord(which_lev(r))
+         do j=stencil_coord(which_lev(r)),max_rcoord(which_lev(r))
             if (abs(radius-radii(which_lev(r),j  )) .lt. &
                 abs(radius-radii(which_lev(r),j+1))) then
-               stencil_coord = j
+               stencil_coord(which_lev(r)) = j
                exit
             end if
          end do
 
          ! make sure the interpolation points will be in bounds
          if (which_lev(r) .ne. nlevs) then
-            stencil_coord = max(stencil_coord,1)
+            stencil_coord(which_lev(r)) = max(stencil_coord(which_lev(r)),1)
          end if
-         stencil_coord = min(stencil_coord,max_rcoord(which_lev(r))-1)
+         stencil_coord(which_lev(r)) = min(stencil_coord(which_lev(r)),max_rcoord(which_lev(r))-1)
 
          call quad_interp(radius, &
-                          radii(which_lev(r),stencil_coord-1), &
-                          radii(which_lev(r),stencil_coord  ), &
-                          radii(which_lev(r),stencil_coord+1), &
+                          radii(which_lev(r),stencil_coord(which_lev(r))-1), &
+                          radii(which_lev(r),stencil_coord(which_lev(r))  ), &
+                          radii(which_lev(r),stencil_coord(which_lev(r))+1), &
                           phibar(1,r), &
-                          phisum(which_lev(r),stencil_coord-1), &
-                          phisum(which_lev(r),stencil_coord  ), &
-                          phisum(which_lev(r),stencil_coord+1))
+                          phisum(which_lev(r),stencil_coord(which_lev(r))-1), &
+                          phisum(which_lev(r),stencil_coord(which_lev(r))  ), &
+                          phisum(which_lev(r),stencil_coord(which_lev(r))+1))
 
       end do
 
