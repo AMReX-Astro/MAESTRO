@@ -61,6 +61,8 @@ contains
 
     ! local
     type(ml_boxarray) :: mba
+    type(box)         :: domain
+    integer           :: domhi(dm)
 
     real(dp_t) :: lenx,leny,lenz,max_dist,p0_temp
 
@@ -217,6 +219,11 @@ contains
        
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
+
+       ! compute nr_irreg
+       domain = layout_get_pd(sold(nlevs)%la)
+       domhi  = upb(domain)+1
+       nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
        
     else
        
@@ -368,6 +375,11 @@ contains
        lenz = HALF * (prob_hi(3) - prob_lo(3))
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
+       
+       ! compute nr_irreg
+       domain = layout_get_pd(sold(nlevs)%la)
+       domhi  = upb(domain)+1
+       nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
 
        ! deallocate arrays in geometry.f90 including:
        ! dr,r_cc_loc,r_edge_loc,r_start_coord,r_end_coord,nr,numdisjointchunks,
@@ -541,6 +553,8 @@ contains
 
     ! local
     type(ml_boxarray) :: mba
+    type(box)         :: domain
+    integer           :: domhi(dm)
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
@@ -624,6 +638,11 @@ contains
        
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
+
+       ! compute nr_irreg
+       domain = layout_get_pd(sold(nlevs)%la)
+       domhi  = upb(domain)+1
+       nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
        
     else
        
@@ -743,6 +762,8 @@ contains
 
     ! local
     type(ml_boxarray) :: mba
+    type(box)         :: domain
+    integer           :: domhi(dm)
 
     type(layout) :: la_array(max_levs)
     type(box)    :: bxs
@@ -966,6 +987,11 @@ contains
        call setval(    rho_Hnuc2(n), ZERO, all=.true.)
        call setval(     thermal2(n), ZERO, all=.true.)
     end do
+
+    ! compute nr_irreg
+    domain = layout_get_pd(sold(nlevs)%la)
+    domhi  = upb(domain)+1
+    nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
 
     ! create numdisjointchunks, r_start_coord, r_end_coord
     call init_multilevel(sold)

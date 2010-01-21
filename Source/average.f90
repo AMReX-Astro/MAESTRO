@@ -17,8 +17,8 @@ contains
 
   subroutine average(mla,phi,phibar,dx,incomp)
 
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, spherical, numdisjointchunks, &
-         dm, nlevs, dr
+    use geometry, only: nr_fine, nr_irreg, r_start_coord, r_end_coord, spherical, &
+         numdisjointchunks, dm, nlevs, dr
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
@@ -37,7 +37,7 @@ contains
     type(box)                    :: domain
     integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
     integer                      :: max_rcoord(nlevs),rcoord(nlevs),stencil_coord(nlevs)
-    integer                      :: i,j,r,n,ng,max_radial
+    integer                      :: i,j,r,n,ng
     real(kind=dp_t)              :: radius
 
     integer, allocatable ::  ncell_proc(:,:)
@@ -59,30 +59,26 @@ contains
 
     if (spherical .eq. 1) then
 
-       domain = layout_get_pd(phi(nlevs)%la)
-       domhi  = upb(domain)+1
-       max_radial = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
-
-       allocate(ncell_proc (nlevs,0:max_radial))
-       allocate(ncell      (nlevs,-1:max_radial))
+       allocate(ncell_proc (nlevs, 0:nr_irreg))
+       allocate(ncell      (nlevs,-1:nr_irreg))
 
        allocate(which_lev(0:nr_fine-1))
 
-       allocate(phisum_proc(nlevs,0:max_radial))
-       allocate(phisum     (nlevs,-1:max_radial))
-       allocate(radii      (nlevs,-1:max_radial+1))
+       allocate(phisum_proc(nlevs, 0:nr_irreg))
+       allocate(phisum     (nlevs,-1:nr_irreg))
+       allocate(radii      (nlevs,-1:nr_irreg+1))
 
-       allocate(source_buffer(0:max_radial))
-       allocate(target_buffer(0:max_radial))
+       allocate(source_buffer(0:nr_irreg))
+       allocate(target_buffer(0:nr_irreg))
 
        ! radii contains every possible distance that a cell-center at the finest
        ! level can map into
        do n=1,nlevs
-          do r=0,max_radial
+          do r=0,nr_irreg
              radii(n,r) = sqrt(0.75d0+2.d0*r)*dx(n,1)
           end do
        end do
-       radii(:,max_radial+1) = 1.d99
+       radii(:,nr_irreg+1) = 1.d99
 
     else
 
@@ -173,13 +169,13 @@ contains
              hi =  upb(get_box(phi(n), i))
 
              if (n .eq. nlevs) then
-                call sum_phi_3d_sphr(radii(n,0:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
+                call sum_phi_3d_sphr(radii(n,0:),nr_irreg,pp(:,:,:,:),phisum_proc(n,:), &
                                      lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp)
              else
                 ! we include the mask so we don't double count; i.e., we only consider
                 ! cells that we can "see" when constructing the sum
                 mp => dataptr(mla%mask(n), i)
-                call sum_phi_3d_sphr(radii(n,0:),max_radial,pp(:,:,:,:),phisum_proc(n,:), &
+                call sum_phi_3d_sphr(radii(n,0:),nr_irreg,pp(:,:,:,:),phisum_proc(n,:), &
                                      lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp, &
                                      mp(:,:,:,1))
              end if
@@ -197,7 +193,7 @@ contains
 
        ! normalize phisum so it actually stores the average at a radius
        do n=1,nlevs
-          do r=0,max_radial
+          do r=0,nr_irreg
              if (ncell(n,r) .ne. 0.d0) then
                 phisum(n,r) = phisum(n,r) / dble(ncell(n,r))
              end if
@@ -220,7 +216,7 @@ contains
 
          ! for each level, find the closest coordinate
          do n=1,nlevs
-            do j=rcoord(n),max_radial
+            do j=rcoord(n),nr_irreg
                if (abs(radius-radii(n,j)) .lt. abs(radius-radii(n,j+1))) then
                   rcoord(n) = j
                   exit
@@ -233,7 +229,7 @@ contains
             rcoord(n) = max(rcoord(n),1)
          end do
          do n=1,nlevs
-            rcoord(n) = min(rcoord(n),max_radial-1)
+            rcoord(n) = min(rcoord(n),nr_irreg-1)
          end do
          
          ! choose the level with the largest min over the ncell interpolation points
@@ -255,16 +251,16 @@ contains
        ! squish the list at each level down to exclude points with no contribution
        do n=1,nlevs
           j=0
-          do r=0,max_radial
+          do r=0,nr_irreg
              do while(ncell(n,j) .eq. 0)
                 j = j+1
-                if (j .gt. max_radial) then
+                if (j .gt. nr_irreg) then
                    exit
                 end if
              end do
-             if (j .gt. max_radial) then
-                phisum(n,r:max_radial)   = 1.d99
-                radii (n,r:max_radial+1) = 1.d99
+             if (j .gt. nr_irreg) then
+                phisum(n,r:nr_irreg)   = 1.d99
+                radii (n,r:nr_irreg+1) = 1.d99
                 max_rcoord(n) = r-1
                 exit
              end if
@@ -272,7 +268,7 @@ contains
              radii (n,r) = radii (n,j)
              ncell (n,r) = ncell (n,j)
              j = j+1
-             if (j .gt. max_radial) then
+             if (j .gt. nr_irreg) then
                 max_rcoord(n) = r
                 exit
              end if
@@ -374,13 +370,13 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine sum_phi_3d_sphr(radii,max_radial,phi,phisum,lo,hi,ng,dx,ncell,incomp,mask)
+  subroutine sum_phi_3d_sphr(radii,nr_irreg,phi,phisum,lo,hi,ng,dx,ncell,incomp,mask)
 
     use geometry, only: dr, center, nlevs, dm
     use ml_layout_module
     use bl_constants_module
 
-    integer         , intent(in   )           :: lo(:), hi(:), ng, incomp, max_radial
+    integer         , intent(in   )           :: lo(:), hi(:), ng, incomp, nr_irreg
     real (kind=dp_t), intent(in   )           :: radii(0:)
     real (kind=dp_t), intent(in   )           :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout)           :: phisum(0:)
@@ -417,7 +413,7 @@ contains
                 index = ((radius / dx(1))**2 - 0.75d0) / 2.d0
                 
                 ! due to roundoff error, need to ensure that we are in the proper radial bin
-                if (index .lt. max_radial) then
+                if (index .lt. nr_irreg) then
                    if (abs(radius-radii(index)) .gt. abs(radius-radii(index+1))) then
                       index = index+1
                    end if

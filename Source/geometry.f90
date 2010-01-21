@@ -15,7 +15,7 @@ module geometry
   integer   , save :: spherical
   integer   , save :: dm
   real(dp_t), save :: center(3)
-  integer   , save :: nr_fine
+  integer   , save :: nr_fine, nr_irreg
   real(dp_t), save :: dr_fine
   real(dp_t), allocatable, save :: dr(:), r_cc_loc(:,:), r_edge_loc(:,:)
   integer   , allocatable, save :: numdisjointchunks(:)
@@ -27,7 +27,7 @@ module geometry
 
   private
 
-  public :: nlevs, nlevs_radial, spherical, dm, center, nr_fine, dr_fine
+  public :: nlevs, nlevs_radial, spherical, dm, center, nr_fine, dr_fine, nr_irreg
   public :: dr, r_cc_loc, r_edge_loc
   public :: numdisjointchunks
   public :: r_start_coord, r_end_coord, nr
