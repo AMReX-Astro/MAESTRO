@@ -11,7 +11,7 @@ module average_module
   implicit none
 
   private
-  public :: average, average_one_level
+  public :: average, average_irreg, average_one_level
 
 contains
 
@@ -295,7 +295,8 @@ contains
          if (which_lev(r) .ne. nlevs) then
             stencil_coord(which_lev(r)) = max(stencil_coord(which_lev(r)),1)
          end if
-         stencil_coord(which_lev(r)) = min(stencil_coord(which_lev(r)),max_rcoord(which_lev(r))-1)
+         stencil_coord(which_lev(r)) = min(stencil_coord(which_lev(r)), &
+                                           max_rcoord(which_lev(r))-1)
 
          call quad_interp(radius, &
                           radii(which_lev(r),stencil_coord(which_lev(r))-1), &
@@ -313,6 +314,131 @@ contains
    call destroy(bpt)
 
  end subroutine average
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine average_irreg(mla,phi,phibar_irreg,dx,incomp)
+
+    use geometry, only: nr_fine, nr_irreg, r_start_coord, r_end_coord, spherical, &
+         numdisjointchunks, dm, nlevs, dr
+    use bl_prof_module
+    use bl_constants_module
+    use restrict_base_module
+    use probin_module, only: prob_hi
+
+    type(ml_layout), intent(in   ) :: mla
+    integer        , intent(in   ) :: incomp
+    type(multifab) , intent(in   ) :: phi(:)
+    real(kind=dp_t), intent(inout) :: phibar_irreg(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+
+    ! local
+    real(kind=dp_t), pointer     :: pp(:,:,:,:)
+    logical, pointer             :: mp(:,:,:,:)
+
+    integer                      :: lo(dm),hi(dm)
+    integer                      :: i,r,n,ng
+
+    integer, allocatable ::  ncell_proc(:,:)
+    integer, allocatable ::       ncell(:,:)
+
+    integer, allocatable :: which_lev(:)
+
+    real(kind=dp_t), allocatable :: phisum_proc(:,:)
+    real(kind=dp_t), allocatable ::      phisum(:,:)
+
+    real(kind=dp_t), allocatable :: radii(:,:)
+
+    real(kind=dp_t), allocatable :: source_buffer(:)
+    real(kind=dp_t), allocatable :: target_buffer(:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "average_irreg")
+
+    if (spherical .eq. 0) then
+       call bl_error("average_irreg only written for spherical")
+    end if
+    
+    allocate(ncell_proc (nlevs, 0:nr_irreg))
+    allocate(ncell      (nlevs,-1:nr_irreg))
+
+    allocate(which_lev(0:nr_fine-1))
+
+    allocate(phisum_proc(nlevs, 0:nr_irreg))
+    allocate(phisum     (nlevs,-1:nr_irreg))
+    allocate(radii      (nlevs,-1:nr_irreg+1))
+
+    allocate(source_buffer(0:nr_irreg))
+    allocate(target_buffer(0:nr_irreg))
+
+    ! radii contains every possible distance that a cell-center at the finest
+    ! level can map into
+    do n=1,nlevs
+       do r=0,nr_irreg
+          radii(n,r) = sqrt(0.75d0+2.d0*r)*dx(n,1)
+       end do
+    end do
+    radii(:,nr_irreg+1) = 1.d99
+
+    ng = phi(1)%ng
+
+    phibar_irreg = ZERO
+    ncell        = 0
+    ncell_proc   = 0
+    phisum       = ZERO       
+    phisum_proc  = ZERO
+    
+    ! For spherical, we construct a 1D array, phisum, that has space
+    ! allocated for every possible radius that a cell-center at the finest
+    ! level can map into.  The radius locations have been precomputed and stored
+    ! in radii(:).
+    
+    ! For cells at the non-finest level, map a weighted contribution into the nearest
+    ! bin in phisum.
+    do n=nlevs,1,-1
+
+       do i=1,phi(n)%nboxes
+          if ( multifab_remote(phi(n), i) ) cycle
+          pp => dataptr(phi(n), i)
+          lo =  lwb(get_box(phi(n), i))
+          hi =  upb(get_box(phi(n), i))
+
+          if (n .eq. nlevs) then
+             call sum_phi_3d_sphr(radii(n,0:),nr_irreg,pp(:,:,:,:),phisum_proc(n,:), &
+                  lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp)
+          else
+             ! we include the mask so we don't double count; i.e., we only consider
+             ! cells that we can "see" when constructing the sum
+             mp => dataptr(mla%mask(n), i)
+             call sum_phi_3d_sphr(radii(n,0:),nr_irreg,pp(:,:,:,:),phisum_proc(n,:), &
+                  lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp, &
+                  mp(:,:,:,1))
+          end if
+       end do
+
+       source_buffer = ncell_proc(n,:)
+       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+       ncell(n,0:) = target_buffer
+
+       source_buffer = phisum_proc(n,:)
+       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+       phisum(n,0:) = target_buffer
+
+    end do
+
+    ! compute phibar_irreg
+    do n=1,nlevs
+       do r=0,nr_irreg
+          if (ncell(n,r) .ne. 0.d0) then
+             phibar_irreg(n,r) = phisum(n,r) / dble(ncell(n,r))
+          end if
+       end do
+    end do
+
+   call destroy(bpt)
+
+ end subroutine average_irreg
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -514,6 +640,8 @@ contains
 
   end subroutine average_one_level
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   subroutine cubic_interp(x,x0,x1,x2,x3,y,y0,y1,y2,y3)
 
     real(kind=dp_t), intent(in   ) :: x,x0,x1,x2,x3,y0,y1,y2,y3
@@ -530,6 +658,8 @@ contains
 
   end subroutine cubic_interp
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   subroutine quad_interp(x,x0,x1,x2,y,y0,y1,y2)
 
     real(kind=dp_t), intent(in   ) :: x,x0,x1,x2,y0,y1,y2
@@ -543,6 +673,8 @@ contains
 
   end subroutine quad_interp
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   subroutine lin_interp(x,x0,x1,y,y0,y1)
 
     real(kind=dp_t), intent(in   ) :: x,x0,x1,y0,y1
@@ -551,5 +683,7 @@ contains
     y = y0 + (y1-y0)/(x1-x0)*(x-x0)
 
   end subroutine lin_interp
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 end module average_module
