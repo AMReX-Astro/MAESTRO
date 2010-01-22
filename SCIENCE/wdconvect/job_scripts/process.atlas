@@ -19,6 +19,11 @@ HPSS_DIR=`basename $work_dir`
 # set HTAR command
 HTAR=/usr/local/bin/htar
 
+# path to the ftime executable -- used for making a simple ftime.out file
+# listing the name of the plotfile and its simulation time
+FTIME_EXE=./ftime.Linux.Intel.exe
+
+
 #----------------------------------------------------------------------------
 # initialization stuff
 
@@ -116,6 +121,11 @@ function process_files
 	    
           # mark this file as processed so we skip it next time
           date > ${dir}.processed
+
+	  # output the plotfile name and simulation time to ftime.out
+	  if [ -f ${FTIME_EXE} ] ; then
+	      ${FTIME_EXE} ${dir} >> ftime.out
+	  fi
 
 	  # remove the htar temporary file
 	  rm ${dir}.htar
