@@ -97,7 +97,7 @@ function process_files
   do
     if [ -d ${dir} ]; then
 
-      if [ ! -f ${dir}.processed ]; then
+      if [ ! -f ${dir}.processed ] && [ ! -f plotfiles/${dir}.processed ]; then
 
         # do processing
 
