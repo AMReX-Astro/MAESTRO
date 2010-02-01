@@ -14,6 +14,7 @@ module fill_3d_module
   public :: make_w0mac, make_s0mac
   public :: make_normal, make_normal_3d_sphr
   public :: put_data_on_faces
+  public :: put_1d_array_on_cart_irreg
   
 contains  
 
@@ -1479,5 +1480,129 @@ contains
     end if
 
   end subroutine put_data_on_faces_3d
+
+  subroutine put_1d_array_on_cart_irreg(s0,s0_cart,bc_comp,dx,the_bc_level,mla)
+
+    use bl_constants_module
+    use define_bc_module
+    use geometry, only: spherical, dm, nlevs, nr_irreg
+    use ml_layout_module
+    use multifab_physbc_module
+    use ml_restriction_module, only: ml_cc_restriction_c
+    use multifab_fill_ghost_module
+    use variables, only: foextrap_comp
+    
+    real(kind=dp_t), intent(in   ) :: s0(:,0:)
+    type(multifab) , intent(inout) :: s0_cart(:)
+    integer        , intent(in   ) :: bc_comp
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
+    type(ml_layout), intent(in   ) :: mla
+    
+    integer :: lo(dm)
+    integer :: hi(dm)
+    integer :: i,n,r,ng_s,comp
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+
+    real(kind=dp_t), allocatable :: radii(:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_1d_array_on_cart")
+
+    ng_s = s0_cart(1)%ng
+    
+    ! radii contains every possible distance that a cell-center at the finest
+    ! level can map into
+    allocate(radii(0:nr_irreg))
+    do r=0,nr_irreg
+       radii(r) = sqrt(0.75d0+2.d0*r)*dx(nlevs,1)
+    end do
+
+    do n=1,nlevs
+       
+       do i = 1, s0_cart(n)%nboxes
+          if ( multifab_remote(s0_cart(n), i) ) cycle
+          sp => dataptr(s0_cart(n), i)
+          lo =  lwb(get_box(s0_cart(n), i))
+          hi =  upb(get_box(s0_cart(n), i))
+          select case (dm)
+          case (2)
+             call bl_error("Only call put_1d_array_on_cart_irreg for 3D spherical!")
+          case (3)
+             if (spherical .eq. 0) then
+                call bl_error("Only call put_1d_array_on_cart_irreg for 3D spherical!")
+             else
+                call put_1d_array_on_cart_irreg_sphr(s0(1,:),radii,sp(:,:,:,:),lo,hi, &
+                                                     dx(n,:),ng_s)
+             endif
+          end select
+       end do
+
+    enddo
+
+    ! Here will fill the one component using bc_comp
+    if (nlevs .eq. 1) then
+       call multifab_fill_boundary_c(s0_cart(nlevs),1,1)
+       call multifab_physbc(s0_cart(nlevs),1,bc_comp,1,the_bc_level(nlevs))
+    else
+       do n=nlevs,2,-1
+          call ml_cc_restriction_c(s0_cart(n-1),1,s0_cart(n),1,mla%mba%rr(n-1,:),1)
+          call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n),1,bc_comp,1, &
+                                         fill_crse_input=.false.)
+       end do
+    end if
+
+    call destroy(bpt)
+    
+  end subroutine put_1d_array_on_cart_irreg
+
+  subroutine put_1d_array_on_cart_irreg_sphr(s0,radii,s0_cart,lo,hi,dx,ng_s)
+
+    use bl_constants_module
+    use geometry, only: dr, center, r_cc_loc, nr_fine, r_edge_loc, nr_irreg
+    use probin_module, only: s0_interp_type, w0_interp_type
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s
+    real(kind=dp_t), intent(in   ) :: s0(0:),radii(0:)
+    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    integer         :: i,j,k,index
+    real(kind=dp_t) :: x,y,z
+    real(kind=dp_t) :: radius,rfac,s0_cart_val
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_1d_array_on_cart_irreg_3d_sphr")
+    
+    do k = lo(3),hi(3)
+       z = (dble(k)+HALF)*dx(3) - center(3)
+       do j = lo(2),hi(2)
+          y = (dble(j)+HALF)*dx(2) - center(2)
+          do i = lo(1),hi(1)
+             x = (dble(i)+HALF)*dx(1) - center(1)
+             radius = sqrt(x**2 + y**2 + z**2)
+
+             ! figure out which radii index this point maps into
+             index = ((radius / dx(1))**2 - 0.75d0) / 2.d0
+                
+             ! due to roundoff error, need to ensure that we are in the proper radial bin
+             if (index .lt. nr_irreg) then
+                if (abs(radius-radii(index)) .gt. abs(radius-radii(index+1))) then
+                   index = index+1
+                end if
+             end if
+
+             s0_cart(i,j,k,1) = s0(index)
+
+          end do
+       end do
+    end do
+
+    call destroy(bpt)
+
+  end subroutine put_1d_array_on_cart_irreg_sphr
 
 end module fill_3d_module
