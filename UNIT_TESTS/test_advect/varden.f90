@@ -17,12 +17,12 @@ subroutine varden()
   use bl_IO_module
   use fabio_module
   use setbc_module
-  use variables, only: nscal, init_variables
+  use variables, only: nscal, init_variables, rho_comp, spec_comp
   use geometry, only:  nlevs, nlevs_radial, spherical, dm, &
                        dr_fine, nr_fine, &
                        init_dm, init_spherical, init_center, init_multilevel, init_radial, &
                        init_cutoff, destroy_geometry
-  use network, only: network_init
+  use network, only: network_init, nspec
   use eos_module, only: eos_init
 !  use fill_3d_module
   use probin_module, only: itest_dir, &
@@ -36,6 +36,7 @@ subroutine varden()
   use bl_constants_module
   use multifab_physbc_module
   use multifab_fill_ghost_module
+  use test_advect_module, only: init_density_3d
 
   implicit none
 
@@ -48,6 +49,8 @@ subroutine varden()
 
   type(multifab), allocatable :: sold(:), snew(:)
   type(multifab), allocatable :: umac(:,:)
+
+  real(kind=dp_t), pointer :: sp(:,:,:,:)
 
   real(dp_t), allocatable :: rho0(:,:), rhoh0(:,:), p0(:,:), w0(:,:)
 
@@ -192,8 +195,24 @@ subroutine varden()
 
   enddo
 
+
   ! initialize the density field
-  
+  do n=1,nlevs
+     do i = 1, sold(n)%nboxes
+        if ( multifab_remote(sold(n),i) ) cycle
+        sp => dataptr(sold(n), i)
+        lo = lwb(get_box(sold(n), i))
+        hi = upb(get_box(sold(n), i))
+        
+        select case (dm)
+        case (2)
+
+        case (3)
+           call init_density_3d(sp(:,:,:,rho_comp), sp(:,:,:,spec_comp:spec_comp-1+nspec), &
+                                sold(n)%ng, lo, hi, dx(n,:))
+        end select
+     end do
+  end do
 
 
   ! compute the initial timestep
@@ -224,3 +243,6 @@ subroutine varden()
   call destroy_geometry()
 
 end subroutine varden
+
+
+
