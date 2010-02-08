@@ -35,6 +35,7 @@ module eos_module
   real(kind=dp_t) :: dpdX_eos(NP,nspec)
   real(kind=dp_t) :: dhdX_eos(NP,nspec)
   real(kind=dp_t) :: conduct_eos(NP)
+!$omp threadprivate(xn_eos,temp_eos,den_eos,abar_eos,zbar_eos,e_eos,p_eos,h_eos,cv_eos,cp_eos,xne_eos,eta_eos,pele_eos,dpdt_eos,dpdr_eos,dedr_eos,dedt_eos,gam1_eos,cs_eos,s_eos,dsdt_eos,dsdr_eos,dpdX_eos,dhdX_eos,conduct_eos)
 
   integer, parameter :: eos_input_rt = 1   ! density, temperature are inputs
   integer, parameter :: eos_input_rh = 2   ! density, enthalpy are inputs
