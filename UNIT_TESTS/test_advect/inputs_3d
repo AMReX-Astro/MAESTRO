@@ -1,0 +1,23 @@
+&PROBIN
+ test_set = "gr0_3d"
+
+ spherical_in = 0
+ dm_in = 3
+
+ prob_hi_x = 1.0
+ prob_hi_y = 1.0
+ prob_hi_z = 1.0
+
+ bcx_lo = -1
+ bcx_hi = -1
+ bcy_lo = -1
+ bcy_hi = -1
+ bcz_lo = -1
+ bcz_hi = -1
+
+ pmask_x = T
+ pmask_y = T
+ pmask_z = T
+
+ use_eos_coulomb = F
+/

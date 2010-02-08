@@ -1,0 +1,15 @@
+test_advect is a simple test of the advection scheme only.  In short
+we:
+
+-- set up a unit cube (or equivalent in lower dimensions) with 
+   periodic boundaries
+
+-- initialize a constant velocity field in one of the coordinate
+   directions
+
+-- initialize the density field to a gaussian
+
+-- estimate a timestep
+
+-- use density_advance to update the density field only.
+
