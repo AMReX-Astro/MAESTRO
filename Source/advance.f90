@@ -447,7 +447,7 @@ contains
           call multifab_build(sedge(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
           call multifab_build(sflux(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
        end do
-       call build(scal_force(n), mla%la(n), nscal, 1)
+       call multifab_build(scal_force(n), mla%la(n), nscal, 1)
        call multifab_build(etarhoflux(n), mla%la(n), 1, nodal=edge_nodal_flag(dm,:))
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
