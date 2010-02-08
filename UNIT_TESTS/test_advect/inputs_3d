@@ -1,8 +1,14 @@
 &PROBIN
  test_set = "gr0_3d"
 
+ cflfac = 0.7d0
+
+ stop_time = 1.0
+
  spherical_in = 0
  dm_in = 3
+
+ verbose = 1
 
  prob_hi_x = 1.0
  prob_hi_y = 1.0

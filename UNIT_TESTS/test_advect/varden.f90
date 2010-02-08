@@ -18,6 +18,7 @@ subroutine varden()
   use fabio_module
   use setbc_module
   use variables, only: nscal, init_variables, rho_comp, spec_comp
+  use fill_3d_module, only: make_normal
   use geometry, only:  nlevs, nlevs_radial, spherical, dm, &
                        dr_fine, nr_fine, &
                        init_dm, init_spherical, init_center, init_multilevel, init_radial, &
@@ -30,6 +31,8 @@ subroutine varden()
                            use_eos_coulomb, &
                            test_set, &
                            ppm_type, &
+                           cflfac, &
+                           stop_time, &
                            edge_nodal_flag, &
                            probin_init, probin_close
   use initialize_module, only: initialize_bc, initialize_dx
@@ -37,6 +40,7 @@ subroutine varden()
   use multifab_physbc_module
   use multifab_fill_ghost_module
   use test_advect_module, only: init_density_3d
+  use density_advance_module, only: density_advance
 
   implicit none
 
@@ -49,10 +53,16 @@ subroutine varden()
 
   type(multifab), allocatable :: sold(:), snew(:)
   type(multifab), allocatable :: umac(:,:)
+  type(multifab), allocatable :: normal(:)
+
+  type(multifab), allocatable :: sedge(:,:), sflux(:,:)
+  type(multifab), allocatable :: scal_force(:), etarhoflux(:)
+  type(multifab), allocatable :: w0mac(:,:)
 
   real(kind=dp_t), pointer :: sp(:,:,:,:)
 
-  real(dp_t), allocatable :: rho0(:,:), rhoh0(:,:), p0(:,:), w0(:,:)
+  real(dp_t), allocatable :: rho0_old(:,:), rho0_new(:,:), rhoh0(:,:), p0(:,:), w0(:,:)
+  real(dp_t), allocatable :: rho0_predicted_edge(:,:)
 
   real(kind=dp_t), pointer :: dx(:,:)
 
@@ -61,6 +71,9 @@ subroutine varden()
   type(ml_boxarray) :: mba
 
   type(bc_tower) ::  the_bc_tower
+
+  real(kind=dp_t) :: t, dt
+
 
   ! general Maestro initializations
   call probin_init()
@@ -154,22 +167,60 @@ subroutine varden()
   call init_cutoff(nlevs)
 
 
+  ! allocate normal
+  allocate (normal(nlevs))
+  if (dm == 3) then
+     do n = 1,nlevs
+        call multifab_build(normal(n), mla%la(n),    dm, 1)
+     enddo
+  endif
+
+  call make_normal(normal,dx)
+
+
   ! allocate the base state and set it all to 0
-  allocate( rho0(nlevs,0:nr_fine-1))
-  allocate(rhoh0(nlevs,0:nr_fine-1))
-  allocate(   p0(nlevs,0:nr_fine-1))
-  allocate(   w0(nlevs,0:nr_fine))
+  allocate(           rho0_old(nlevs,0:nr_fine-1))
+  allocate(           rho0_new(nlevs,0:nr_fine-1))
+  allocate(              rhoh0(nlevs,0:nr_fine-1))
+  allocate(                 p0(nlevs,0:nr_fine-1))
+  allocate(                 w0(nlevs,0:nr_fine))
+  allocate(rho0_predicted_edge(nlevs,0:nr_fine))
 
-   rho0(:,:) = ZERO
-  rhoh0(:,:) = ZERO
-     p0(:,:) = ZERO
-     w0(:,:) = ZERO
-
+  ! the base state will not carry any information in this test problem
+             rho0_old(:,:) = ZERO
+             rho0_new(:,:) = ZERO
+                rhoh0(:,:) = ZERO
+                   p0(:,:) = ZERO
+                   w0(:,:) = ZERO
+  rho0_predicted_edge(:,:) = ZERO
 
   ! other allocations
   allocate(lo(dm))
   allocate(hi(dm))
   
+  allocate(sedge(nlevs,dm))
+  allocate(sflux(nlevs,dm))
+
+  allocate(scal_force(nlevs))
+  allocate(etarhoflux(nlevs))
+
+  allocate(w0mac(nlevs,dm))
+
+  do n=1,nlevs
+     do comp = 1,dm
+        call multifab_build(sedge(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
+        call multifab_build(sflux(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
+        call multifab_build(w0mac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+        call setval(w0mac(n,comp),ZERO,all=.true.)
+     end do
+
+     call multifab_build(scal_force(n), mla%la(n), nscal, 1)
+     call multifab_build(etarhoflux(n), mla%la(n), 1, nodal=edge_nodal_flag(dm,:))
+     call setval(scal_force(n),ZERO,all=.true.)
+     call setval(etarhoflux(n),ZERO,all=.true.)
+  end do
+
+
 
   ! initialize the velocity field -- it is unity in the direction of propagation
   do n = 1, nlevs
@@ -196,7 +247,7 @@ subroutine varden()
   enddo
 
 
-  ! initialize the density field
+  ! initialize the density field and species
   do n=1,nlevs
      do i = 1, sold(n)%nboxes
         if ( multifab_remote(sold(n),i) ) cycle
@@ -215,11 +266,71 @@ subroutine varden()
   end do
 
 
-  ! compute the initial timestep
+  ! ghost cell fill
+  if (nlevs .eq. 1) then
+
+     ! fill ghost cells for two adjacent grids at the same level
+     ! this includes periodic domain boundary ghost cells
+     call multifab_fill_boundary(sold(nlevs))
+     
+     ! fill non-periodic domain boundary ghost cells
+     call multifab_physbc(sold(nlevs),rho_comp,dm+rho_comp,nscal,the_bc_tower%bc_tower_array(nlevs))
+
+  else
+
+     ! the loop over nlevs must count backwards to make sure the finer grids are done first
+     do n=nlevs,2,-1
+        
+        ! set level n-1 data to be the average of the level n data covering it
+        call ml_cc_restriction(sold(n-1),sold(n),mla%mba%rr(n-1,:))
+
+        ! fill level n ghost cells using interpolation from level n-1 data
+        ! note that multifab_fill_boundary and multifab_physbc are called for
+        ! both levels n-1 and n
+        call multifab_fill_ghost_cells(sold(n),sold(n-1),sold(n)%ng,mla%mba%rr(n-1,:), &
+                                       the_bc_tower%bc_tower_array(n-1), &
+                                       the_bc_tower%bc_tower_array(n), &
+                                       rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
+        
+     enddo
+     
+  end if
+
+
+
+  ! compute the initial timestep -- dt = dx / u
+  dt = cflfac*dx(nlevs,1)/ONE
 
 
   ! advance the density using the constant velocity field
+  t = ZERO
+  do while (t <= stop_time)
 
+     print *, 't = ', t
+     
+
+     ! advance density according to rho_t + (rho U)_x = 0
+     call density_advance(mla,1,sold,snew,sedge,sflux,scal_force,umac,w0,w0mac,etarhoflux, &
+                          normal,rho0_old,rho0_new,p0,rho0_predicted_edge, &
+                          dx,dt,the_bc_tower%bc_tower_array)
+          
+
+     ! save the state for the next step
+     do n = 1,nlevs
+        call multifab_copy_c(sold(n),1,snew(n),1,nscal,sold(n)%ng)
+     enddo
+
+     rho0_old = rho0_new
+
+
+     ! update the time
+     if (t + dt > stop_time) then
+        dt = stop_time - t
+     endif
+
+     t = t + dt
+
+  end do
 
 
   ! clean-up
