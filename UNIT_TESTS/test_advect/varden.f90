@@ -76,6 +76,8 @@ subroutine varden()
 
   real(kind=dp_t) :: t, dt
 
+  character (len=32) :: outname
+
 
   ! general Maestro initializations
   call probin_init()
@@ -325,7 +327,7 @@ subroutine varden()
   t = ZERO
   do while (t < stop_time)
 
-     print *, 't = ', t
+     print *, 't = ', t, 'dt = ', dt
      
 
      ! advance density according to rho_t + (rho U)_x = 0
@@ -361,7 +363,27 @@ subroutine varden()
      call multifab_copy_c(single_var(n),1,snew(n),rho_comp,1,0)
   enddo
 
-  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_final")
+  select case (itest_dir)
+  case (-1)   
+     outname = "dens_xm_final"
+
+  case (1)
+     outname = "dens_xp_final"
+
+  case (-2)
+     outname = "dens_ym_final"
+
+  case (2)
+     outname = "dens_yp_final"
+
+  case (-3)
+     outname = "dens_zm_final"
+
+  case (3)
+     outname = "dens_zp_final"
+  end select
+
+  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),trim(outname))
 
 
   ! clean-up
