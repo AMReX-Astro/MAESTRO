@@ -39,7 +39,7 @@ subroutine varden()
   use bl_constants_module
   use multifab_physbc_module
   use multifab_fill_ghost_module
-  use test_advect_module, only: init_density_3d
+  use test_advect_module, only: init_density_2d, init_density_3d
   use density_advance_module, only: density_advance
 
   implicit none
@@ -58,6 +58,8 @@ subroutine varden()
   type(multifab), allocatable :: sedge(:,:), sflux(:,:)
   type(multifab), allocatable :: scal_force(:), etarhoflux(:)
   type(multifab), allocatable :: w0mac(:,:)
+
+  type(multifab), allocatable :: single_var(:)
 
   real(kind=dp_t), pointer :: sp(:,:,:,:)
 
@@ -178,6 +180,14 @@ subroutine varden()
   call make_normal(normal,dx)
 
 
+  ! a dummy variable
+  allocate(single_var(nlevs))
+
+  do n = 1,nlevs
+     call multifab_build(single_var(n), mla%la(n), 1, ng_s)
+  end do
+
+
   ! allocate the base state and set it all to 0
   allocate(           rho0_old(nlevs,0:nr_fine-1))
   allocate(           rho0_new(nlevs,0:nr_fine-1))
@@ -230,12 +240,12 @@ subroutine varden()
      case (1)
         call setval(umac(n,1), ONE,  all=.true.)
         call setval(umac(n,2), ZERO, all=.true.)
-        call setval(umac(n,3), ZERO, all=.true.)
+        if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
      
      case (2)
         call setval(umac(n,1), ZERO, all=.true.)
         call setval(umac(n,2), ONE,  all=.true.)
-        call setval(umac(n,3), ZERO, all=.true.)
+        if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
 
      case (3)
         call setval(umac(n,1), ZERO, all=.true.)
@@ -257,6 +267,8 @@ subroutine varden()
         
         select case (dm)
         case (2)
+           call init_density_2d(sp(:,:,1,rho_comp), sp(:,:,1,spec_comp:spec_comp-1+nspec), &
+                                sold(n)%ng, lo, hi, dx(n,:))
 
         case (3)
            call init_density_3d(sp(:,:,:,rho_comp), sp(:,:,:,spec_comp:spec_comp-1+nspec), &
@@ -297,6 +309,13 @@ subroutine varden()
   end if
 
 
+  ! write out the initial density field
+  do n = 1,nlevs
+     call multifab_copy_c(single_var(n),1,sold(n),rho_comp,1,0)
+  enddo
+
+  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_orig")
+
 
   ! compute the initial timestep -- dt = dx / u
   dt = cflfac*dx(nlevs,1)/ONE
@@ -304,7 +323,7 @@ subroutine varden()
 
   ! advance the density using the constant velocity field
   t = ZERO
-  do while (t <= stop_time)
+  do while (t < stop_time)
 
      print *, 't = ', t
      
@@ -322,15 +341,27 @@ subroutine varden()
 
      rho0_old = rho0_new
 
+     ! update the time     
+     t = t + dt
 
-     ! update the time
+     
+     ! adjust the timestep, if necessary
      if (t + dt > stop_time) then
         dt = stop_time - t
      endif
 
-     t = t + dt
+
 
   end do
+
+  print *, 'finished evolution, t = ', t
+
+  ! write out the initial density field
+  do n = 1,nlevs
+     call multifab_copy_c(single_var(n),1,snew(n),rho_comp,1,0)
+  enddo
+
+  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_final")
 
 
   ! clean-up
