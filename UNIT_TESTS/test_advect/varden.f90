@@ -120,7 +120,7 @@ subroutine varden()
   end if
 
   ! sanity checks
-  if (abs(itest_dir) > dm) then
+  if (abs(itest_dir) > dm .or. itest_dir == 0) then
      call bl_error("ERROR: |itest_dir| > dm in test_advect")
   endif
 
