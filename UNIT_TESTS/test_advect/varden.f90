@@ -120,8 +120,8 @@ subroutine varden()
   end if
 
   ! sanity checks
-  if (itest_dir > dm) then
-     call bl_error("ERROR: itest_dir > dm in test_advect")
+  if (abs(itest_dir) > dm) then
+     call bl_error("ERROR: |itest_dir| > dm in test_advect")
   endif
 
   if (spherical == 1) then
@@ -235,19 +235,35 @@ subroutine varden()
 
 
   ! initialize the velocity field -- it is unity in the direction of propagation
+  ! a negative itest_dir indicates negative velocity
   do n = 1, nlevs
 
      select case (itest_dir)
+
+     case (-1)
+        call setval(umac(n,1), -ONE,  all=.true.)
+        call setval(umac(n,2), ZERO, all=.true.)
+        if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
 
      case (1)
         call setval(umac(n,1), ONE,  all=.true.)
         call setval(umac(n,2), ZERO, all=.true.)
         if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
      
+     case (-2)
+        call setval(umac(n,1), ZERO, all=.true.)
+        call setval(umac(n,2), -ONE,  all=.true.)
+        if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
+
      case (2)
         call setval(umac(n,1), ZERO, all=.true.)
         call setval(umac(n,2), ONE,  all=.true.)
         if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
+
+     case (-3)
+        call setval(umac(n,1), ZERO, all=.true.)
+        call setval(umac(n,2), ZERO, all=.true.)
+        call setval(umac(n,3), -ONE,  all=.true.)
 
      case (3)
         call setval(umac(n,1), ZERO, all=.true.)
