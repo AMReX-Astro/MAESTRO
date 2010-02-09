@@ -4,7 +4,12 @@ module test_advect_module
   use bl_constants_module
   implicit none
 
+  private
   public :: init_density_2d, init_density_3d
+
+  ! width of the gaussian
+  real (kind=dp_t), parameter :: W = 0.05
+  real (kind=dp_t), parameter :: dens_floor = 1.d-20
 
 contains
 
@@ -26,8 +31,6 @@ contains
     real (kind=dp_t) :: xc, yc
     real (kind=dp_t) :: dist
 
-    ! width of the gaussian
-    real (kind=dp_t), parameter :: W = 0.05
 
     xc = HALF*(prob_hi(1) - prob_lo(1))
     yc = HALF*(prob_hi(2) - prob_lo(2))
@@ -40,7 +43,7 @@ contains
     
           dist = sqrt((x - xc)**2 + (y - yc)**2)
 
-          rho(i,j) = exp(-dist**2/W**2)
+          rho(i,j) = max(exp(-dist**2/W**2),dens_floor)
           
           rhoX(i,j,:) = ZERO
           rhoX(i,j,1) = rho(i,j)
@@ -69,8 +72,6 @@ contains
     real (kind=dp_t) :: xc, yc, zc
     real (kind=dp_t) :: dist
 
-    ! width of the gaussian
-    real (kind=dp_t), parameter :: W = 0.05
 
     xc = HALF*(prob_hi(1) - prob_lo(1))
     yc = HALF*(prob_hi(2) - prob_lo(2))
@@ -88,7 +89,7 @@ contains
     
              dist = sqrt((x - xc)**2 + (y - yc)**2 + (z - zc)**2)
 
-             rho(i,j,k) = exp(-dist**2/W**2)
+             rho(i,j,k) = max(exp(-dist**2/W**2),dens_floor)
 
              rhoX(i,j,k,:) = ZERO
              rhoX(i,j,k,1) = rho(i,j,k)
