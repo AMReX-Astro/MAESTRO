@@ -399,7 +399,7 @@ subroutine varden()
      outname = "dens_zp_final"
   end select
 
-  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),trim(outname))
+  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),trim(outname),names=(/"density"/))
 
 
   ! clean-up
