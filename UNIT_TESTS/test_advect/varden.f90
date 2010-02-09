@@ -332,7 +332,7 @@ subroutine varden()
      call multifab_copy_c(single_var(n),1,sold(n),rho_comp,1,0)
   enddo
 
-  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_orig")
+  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_orig",names=(/"density"/))
 
 
   ! compute the initial timestep -- dt = dx / u
