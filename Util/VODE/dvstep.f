@@ -64,21 +64,7 @@ C          whose real name is dependent on the method used.
 C RPAR, IPAR = Dummy names for user's real and integer work arrays.
 C-----------------------------------------------------------------------
 C
-C Type declarations for labeled COMMON block DVOD01 --------------------
-C
-      DOUBLE PRECISION ACNRM, CCMXJ, CONP, CRATE, DRC, EL,
-     1     ETA, ETAMAX, H, HMIN, HMXI, HNEW, HSCAL, PRL1,
-     2     RC, RL1, TAU, TQ, TN, UROUND
-      INTEGER ICF, INIT, IPUP, JCUR, JSTART, JSV, KFLAG, KUTH,
-     1        L, LMAX, LYH, LEWT, LACOR, LSAVF, LWM, LIWM,
-     2        LOCJS, MAXORD, METH, MITER, MSBJ, MXHNIL, MXSTEP,
-     3        N, NEWH, NEWQ, NHNIL, NQ, NQNYH, NQWAIT, NSLJ,
-     4        NSLP, NYH
-C
-C Type declarations for labeled COMMON block DVOD02 --------------------
-C
-      DOUBLE PRECISION HU
-      INTEGER NCFN, NETF, NFE, NJE, NLU, NNI, NQU, NST
+      include "vode.H"
 C
 C Type declarations for local variables --------------------------------
 C
@@ -99,15 +85,6 @@ C-----------------------------------------------------------------------
      1     ETACF, ETAMIN, ETAMX1, ETAMX2, ETAMX3, ETAMXF, ETAQ, ETAQM1,
      2     KFC, KFH, MXNCF, ONEPSM, THRESH, ONE, ZERO
 C-----------------------------------------------------------------------
-      COMMON /DVOD01/ ACNRM, CCMXJ, CONP, CRATE, DRC, EL(13),
-     1                ETA, ETAMAX, H, HMIN, HMXI, HNEW, HSCAL, PRL1,
-     2                RC, RL1, TAU(13), TQ(5), TN, UROUND,
-     3                ICF, INIT, IPUP, JCUR, JSTART, JSV, KFLAG, KUTH,
-     4                L, LMAX, LYH, LEWT, LACOR, LSAVF, LWM, LIWM,
-     5                LOCJS, MAXORD, METH, MITER, MSBJ, MXHNIL, MXSTEP,
-     6                N, NEWH, NEWQ, NHNIL, NQ, NQNYH, NQWAIT, NSLJ,
-     7                NSLP, NYH
-      COMMON /DVOD02/ HU, NCFN, NETF, NFE, NJE, NLU, NNI, NQU, NST
 C
       DATA KFC/-3/, KFH/-7/, MXNCF/10/
       DATA ADDON  /1.0D-6/,    BIAS1  /6.0D0/,     BIAS2  /6.0D0/,

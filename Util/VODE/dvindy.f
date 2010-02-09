@@ -35,21 +35,7 @@ C
 C Discussion above and comments in driver explain all variables.
 C-----------------------------------------------------------------------
 C
-C Type declarations for labeled COMMON block DVOD01 --------------------
-C
-      DOUBLE PRECISION ACNRM, CCMXJ, CONP, CRATE, DRC, EL,
-     1     ETA, ETAMAX, H, HMIN, HMXI, HNEW, HSCAL, PRL1,
-     2     RC, RL1, TAU, TQ, TN, UROUND
-      INTEGER ICF, INIT, IPUP, JCUR, JSTART, JSV, KFLAG, KUTH,
-     1        L, LMAX, LYH, LEWT, LACOR, LSAVF, LWM, LIWM,
-     2        LOCJS, MAXORD, METH, MITER, MSBJ, MXHNIL, MXSTEP,
-     3        N, NEWH, NEWQ, NHNIL, NQ, NQNYH, NQWAIT, NSLJ,
-     4        NSLP, NYH
-C
-C Type declarations for labeled COMMON block DVOD02 --------------------
-C
-      DOUBLE PRECISION HU
-      INTEGER NCFN, NETF, NFE, NJE, NLU, NNI, NQU, NST
+      include "vode.H"
 C
 C Type declarations for local variables --------------------------------
 C
@@ -61,16 +47,6 @@ C The following Fortran-77 declaration is to cause the values of the
 C listed (local) variables to be saved between calls to this integrator.
 C-----------------------------------------------------------------------
       SAVE HUN, ZERO
-C
-      COMMON /DVOD01/ ACNRM, CCMXJ, CONP, CRATE, DRC, EL(13),
-     1                ETA, ETAMAX, H, HMIN, HMXI, HNEW, HSCAL, PRL1,
-     2                RC, RL1, TAU(13), TQ(5), TN, UROUND,
-     3                ICF, INIT, IPUP, JCUR, JSTART, JSV, KFLAG, KUTH,
-     4                L, LMAX, LYH, LEWT, LACOR, LSAVF, LWM, LIWM,
-     5                LOCJS, MAXORD, METH, MITER, MSBJ, MXHNIL, MXSTEP,
-     6                N, NEWH, NEWQ, NHNIL, NQ, NQNYH, NQWAIT, NSLJ,
-     7                NSLP, NYH
-      COMMON /DVOD02/ HU, NCFN, NETF, NFE, NJE, NLU, NNI, NQU, NST
 C
       DATA HUN /100.0D0/, ZERO /0.0D0/
 C

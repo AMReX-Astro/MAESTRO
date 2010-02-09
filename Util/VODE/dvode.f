@@ -1021,21 +1021,7 @@ C All the others are subroutines.
 C
 C-----------------------------------------------------------------------
 C
-C Type declarations for labeled COMMON block DVOD01 --------------------
-C
-      DOUBLE PRECISION ACNRM, CCMXJ, CONP, CRATE, DRC, EL,
-     1     ETA, ETAMAX, H, HMIN, HMXI, HNEW, HSCAL, PRL1,
-     2     RC, RL1, TAU, TQ, TN, UROUND
-      INTEGER ICF, INIT, IPUP, JCUR, JSTART, JSV, KFLAG, KUTH,
-     1        L, LMAX, LYH, LEWT, LACOR, LSAVF, LWM, LIWM,
-     2        LOCJS, MAXORD, METH, MITER, MSBJ, MXHNIL, MXSTEP,
-     3        N, NEWH, NEWQ, NHNIL, NQ, NQNYH, NQWAIT, NSLJ,
-     4        NSLP, NYH
-C
-C Type declarations for labeled COMMON block DVOD02 --------------------
-C
-      DOUBLE PRECISION HU
-      INTEGER NCFN, NETF, NFE, NJE, NLU, NNI, NQU, NST
+      include "vode.H"
 C
 C Type declarations for local variables --------------------------------
 C
@@ -1153,15 +1139,6 @@ C NNI    = Number of nonlinear iterations so far.
 C NQU    = The method order last used.
 C NST    = The number of steps taken for the problem so far.
 C-----------------------------------------------------------------------
-      COMMON /DVOD01/ ACNRM, CCMXJ, CONP, CRATE, DRC, EL(13),
-     1                ETA, ETAMAX, H, HMIN, HMXI, HNEW, HSCAL, PRL1,
-     2                RC, RL1, TAU(13), TQ(5), TN, UROUND,
-     3                ICF, INIT, IPUP, JCUR, JSTART, JSV, KFLAG, KUTH,
-     4                L, LMAX, LYH, LEWT, LACOR, LSAVF, LWM, LIWM,
-     5                LOCJS, MAXORD, METH, MITER, MSBJ, MXHNIL, MXSTEP,
-     6                N, NEWH, NEWQ, NHNIL, NQ, NQNYH, NQWAIT, NSLJ,
-     7                NSLP, NYH
-      COMMON /DVOD02/ HU, NCFN, NETF, NFE, NJE, NLU, NNI, NQU, NST
 C
       DATA  MORD(1) /12/, MORD(2) /5/, MXSTP0 /500/, MXHNL0 /10/
       DATA ZERO /0.0D0/, ONE /1.0D0/, TWO /2.0D0/, FOUR /4.0D0/,
