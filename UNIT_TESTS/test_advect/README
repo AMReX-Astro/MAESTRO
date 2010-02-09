@@ -36,11 +36,11 @@ Computing the Norm of the Error
   which gives:
 
     level =            1
-     Var-001               5.621649219909652E-002   97.5143285214983     
+     density               5.621649219909652E-002   97.5143285214983     
 
-  Here, "Var-001" is the name of the variable (density) and the 
-  two numbers following are the L2 error and L2 relative-error.  In
-  this case, the relative error is likely set where the densities are
-  tiny, and is not too meaningful. 
+  Here, the only variable in the file, "density" is listed with two
+  numbers following, the L2 error and L2 relative-error.  In this
+  case, the relative error is likely set where the densities are tiny,
+  and is not too meaningful.
 
  
