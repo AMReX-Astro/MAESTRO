@@ -78,6 +78,8 @@ subroutine varden()
 
   character (len=32) :: outname
 
+  character (len=20) :: plot_names(1)
+
 
   ! general Maestro initializations
   call probin_init()
@@ -188,6 +190,8 @@ subroutine varden()
   do n = 1,nlevs
      call multifab_build(single_var(n), mla%la(n), 1, ng_s)
   end do
+
+  plot_names(1) = "density"
 
 
   ! allocate the base state and set it all to 0
@@ -332,7 +336,7 @@ subroutine varden()
      call multifab_copy_c(single_var(n),1,sold(n),rho_comp,1,0)
   enddo
 
-  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_orig",names=(/"density"/))
+  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_orig",names=plot_names)
 
 
   ! compute the initial timestep -- dt = dx / u
@@ -399,7 +403,7 @@ subroutine varden()
      outname = "dens_zp_final"
   end select
 
-  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),trim(outname),names=(/"density"/))
+  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),trim(outname),names=plot_names)
 
 
   ! clean-up
