@@ -336,8 +336,11 @@ subroutine varden()
      call multifab_copy_c(single_var(n),1,sold(n),rho_comp,1,0)
   enddo
 
-  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_orig",names=plot_names)
-
+  if (dm == 2) then
+     call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_2d_orig",names=plot_names)
+  else if (dm == 3) then
+     call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_3d_orig",names=plot_names)
+  endif
 
   ! compute the initial timestep -- dt = dx / u
   dt = cflfac*dx(nlevs,1)/ONE
@@ -383,24 +386,45 @@ subroutine varden()
      call multifab_copy_c(single_var(n),1,snew(n),rho_comp,1,0)
   enddo
 
-  select case (itest_dir)
-  case (-1)   
-     outname = "dens_xm_final"
+  ! the output name will include the dimensionality, ppm_type, and
+  ! advection direction
 
+  if (dm == 2) then
+     outname = "dens_2d_"
+  else if (dm == 3) then
+     outname = "dens_3d_"
+  endif
+
+  select case (ppm_type)
+  case (0)
+     outname = trim(outname) // "ppm0_"
+     
   case (1)
-     outname = "dens_xp_final"
-
-  case (-2)
-     outname = "dens_ym_final"
+     outname = trim(outname) // "ppm1_"
 
   case (2)
-     outname = "dens_yp_final"
+     outname = trim(outname) // "ppm2_"
+  end select
+
+
+  select case (itest_dir)
+  case (-1)   
+     outname = trim(outname) // "xm_final"
+
+  case (1)
+     outname = trim(outname) // "xp_final"
+
+  case (-2)
+     outname = trim(outname) // "ym_final"
+
+  case (2)
+     outname = trim(outname) // "yp_final"
 
   case (-3)
-     outname = "dens_zm_final"
+     outname = trim(outname) // "zm_final"
 
   case (3)
-     outname = "dens_zp_final"
+     outname = trim(outname) // "zp_final"
   end select
 
   call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),trim(outname),names=plot_names)
