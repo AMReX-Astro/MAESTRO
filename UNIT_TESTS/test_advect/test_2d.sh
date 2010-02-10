@@ -3,7 +3,7 @@
 MAESTRO_EXE=./main.Linux.Intel.debug.exe
 COMPARE_EXE=fcompare.Linux.Intel.exe
 
-echo "2-d advection tests" > advect_3d_report.out
+echo "2-d advection tests" > advect_2d_report.out
 
 # PPM 0
 
