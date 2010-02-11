@@ -1,6 +1,14 @@
 This directory contains the different equations of state that either
 MAESTRO or CASTRO use (or both).
 
+EOSs with MAESTRO interfaces:
+
+  -- helmeos
+  -- gamma_law_general
+
+
+Brief descriptions of the various EOSs:
+
 collapse:
 
    Adam Burrow's nuclear EOS for core-collapse supernova simulations
@@ -49,6 +57,11 @@ perfect_gas_with_rad:
    Candace Church Joggerst's EOS that implements an ideal gas (with 
    ionization) + radiation.
 
-   NOTE: dpdr is not set correctly in this EOS.  This will affect the 
-   use of source terms.
+   NOTE: dpdr was originally not set correctly in this EOS.  This will
+   affect the use of source terms.  There is a new version of the EOS
+   in use now, new_eos.f90.  It has not been evaluated.
+
+
+
+
 
