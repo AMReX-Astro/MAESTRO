@@ -206,6 +206,8 @@ contains
              p_eos(1) = p0(i)
              xn_eos(1,:) = snew(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
              
+             pt_index_eos(:) = (/i, -1, -1/)
+             
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_eos, temp_eos, &
                       npts, &
@@ -216,7 +218,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              snew(i,rhoh_comp) = snew(i,rho_comp) * h_eos(1)
              
@@ -322,6 +325,8 @@ contains
                 temp_eos(1) = sold(i,j,temp_comp)
                 p_eos(1) = p0(j)
                 xn_eos(1,:) = snew(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+                pt_index_eos(:) = (/i, j, -1/)
                 
                 ! (rho,P) --> T,h
                 call eos(eos_input_rp, den_eos, temp_eos, &
@@ -333,7 +338,8 @@ contains
                          dpdX_eos, dhdX_eos, &
                          gam1_eos, cs_eos, s_eos, &
                          dsdt_eos, dsdr_eos, &
-                         do_diag)
+                         do_diag, &
+                         pt_index_eos)
                 
                 snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * h_eos(1)
                 
@@ -451,6 +457,8 @@ contains
                    p_eos(1) = p0(k)
                    xn_eos(1,:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
+                   pt_index_eos(:) = (/i, j, k/)
+
                    ! (rho,P) --> T,h
                    call eos(eos_input_rp, den_eos, temp_eos, &
                             npts, &
@@ -461,7 +469,8 @@ contains
                             dpdX_eos, dhdX_eos, &
                             gam1_eos, cs_eos, s_eos, &
                             dsdt_eos, dsdr_eos, &
-                            do_diag)
+                            do_diag, &
+                            pt_index_eos)
 
                    snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)
 
@@ -586,6 +595,8 @@ contains
                    p_eos(1) = p0_new_cart(i,j,k)
                    xn_eos(1,:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
+                   pt_index_eos(:) = (/i, j, k/)
+
                    ! (rho,P) --> T,h
                    call eos(eos_input_rp, den_eos, temp_eos, &
                             npts, &
@@ -596,7 +607,8 @@ contains
                             dpdX_eos, dhdX_eos, &
                             gam1_eos, cs_eos, s_eos, &
                             dsdt_eos, dsdr_eos, &
-                            do_diag)
+                            do_diag, &
+                            pt_index_eos)
 
                    snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)
 
