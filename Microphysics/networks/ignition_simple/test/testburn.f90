@@ -1,6 +1,7 @@
 program testburn
   use bl_types
   use bl_constants_module
+  use bl_error_module
   use network
   use eos_module, only : eos_init
   use burner_module
@@ -18,6 +19,10 @@ program testburn
   ic12 = network_species_index("carbon-12")
   io16 = network_species_index("oxygen-16")
   img24 = network_species_index("magnesium-24")
+
+  if (ic12 < 0 .or. io16 < 0 .or. img24 < 0) then
+     call bl_error("ERROR: species index not defined")
+  endif
 
   dens = 2.6e9_dp_t
   temp = 6.e8_dp_t
