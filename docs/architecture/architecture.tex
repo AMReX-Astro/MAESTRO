@@ -497,9 +497,13 @@ and an additional loop over the `z' coordinate (from {\tt lo(3)} to
 
 \section{MAESTRO Helper Modules}
 
+\subsection{{\tt eos\_module}}
+
 \subsection{{\tt fill\_3d\_module}}
 
 \subsection{{\tt geometry}}
+
+\subsection{{\tt network}}
 
 \subsection{{\tt probin\_module}}
 
@@ -521,4 +525,33 @@ The {\tt variables} module provides
 
 
 \section{Visualization / Analysis}
+
+\subsection{Amrvis}
+
+\subsection{{\tt data\_processing} scripts}
+
+Several useful analysis scripts can be found in {\tt
+fParallel/data\_processing}.  The makefile there needs
+to be edited to indicate which of the tools to build.
+
+\begin{itemize}
+
+\item {\tt fextract3d}
+
+  Extracts a 1-d slice from a plotfile, through the center of the
+  domain in any coordinate direction.  Either all of the variables or
+  a single variable is output.
+
+\item {\tt fextrema} 
+
+  Outputs the min/max of each of the quantities in the plotfile.
+
+\item {\tt ftime}
+
+  Outputs the simulation time for one or more plotfiles.
+
+\end{itemize}
+
+\subsection{VisIt}
+
 
