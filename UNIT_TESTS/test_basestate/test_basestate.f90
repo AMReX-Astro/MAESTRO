@@ -10,11 +10,12 @@ contains
   subroutine get_heating(Hbar,time,dt)
   
     use geometry, ONLY : nr, spherical, r_cc_loc
+    use probin_module, ONLY : t_stop
 
     real(dp_t), intent(inout) :: Hbar(0:)
     real(dp_t), intent(in   ) :: time,dt
 
-    real(dp_t) :: y_0, fac, t_stop
+    real(dp_t) :: y_0, fac
     integer :: r
 
 !   For heating away from the center
@@ -24,8 +25,6 @@ contains
     y_0 = 0.d0
 
     Hbar(:) = 0.d0
-
-    t_stop = 0.5d0
     
     if (time .le. t_stop) then
 
