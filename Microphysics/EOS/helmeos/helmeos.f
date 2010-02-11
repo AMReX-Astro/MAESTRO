@@ -229,10 +229,14 @@ c..start of vectorization loop, normal executaion starts here
          din = ye*den
 
          if (temp .le. 0.0D0) then
-            call bl_error('EOS: temp less than 0')
+            call bl_warn('EOS: temp less than 0')
+            eosfail = .true.
+            return
          end if
          if (den  .le. 0.0D0) then
-            call bl_error('EOS: den less than 0')
+            call bl_warn('EOS: den less than 0')
+            eosfail = .true.
+            return
          end if
 
          if ( temp .lt. t(1) ) then
