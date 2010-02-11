@@ -63,6 +63,8 @@ module eos_module
   real(kind=dp_t) :: dhdX_eos(NP,nspec)
   real(kind=dp_t) :: conduct_eos(NP)
 
+  integer         :: pt_index_eos(MAX_SPACEDIM)
+
   integer, parameter :: eos_input_rt = 1   ! density, temperature are inputs
   integer, parameter :: eos_input_rh = 2   ! density, enthalpy are inputs
   integer, parameter :: eos_input_tp = 3   ! temperature, pressure are inputs
@@ -326,7 +328,8 @@ contains
                  dPdX, dhdX, &
                  gam1, cs, entropy, &
                  dsdT, dsdR, &
-                 do_eos_diag)
+                 do_eos_diag, &
+                 pt_index)
 
     use bl_error_module
     use fundamental_constants_module, only: k_B, n_A, hbar
@@ -389,6 +392,9 @@ contains
     real(kind=dp_t) :: gam1(npoints), entropy(npoints), cs(npoints)
     real(kind=dp_t) :: dPdX(npoints,nspec), dedX(npoints,nspec), dhdX(npoints,nspec)
     real(kind=dp_t) :: dsdT(npoints), dsdR(npoints)
+
+    integer, optional, intent(in   ) :: pt_index(:)
+
 
     ! local variables
     real(kind=dp_t) :: ymass(npoints,nspec)    
