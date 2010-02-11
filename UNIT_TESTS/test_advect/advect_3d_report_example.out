@@ -1,0 +1,73 @@
+3-d advection tests
+ 
+3-d advection PPM 0, -X direction error
+ level =            1
+ density               0.135411700899960        32257327.0088854     
+ 
+3-d advection PPM 0, +X direction error
+ level =            1
+ density               0.135411700899960        32257327.0088854     
+ 
+3-d advection PPM 0, -Y direction error
+ level =            1
+ density               0.135411700899960        32257327.0088854     
+ 
+3-d advection PPM 0, +Y direction error
+ level =            1
+ density               0.135411700899960        32257327.0088854     
+ 
+3-d advection PPM 0, -Z direction error
+ level =            1
+ density               0.135411700899960        32257327.0088854     
+ 
+3-d advection PPM 0, +Z direction error
+ level =            1
+ density               0.135411700899960        32257327.0088854     
+ 
+3-d advection PPM 1, -X direction error
+ level =            1
+ density               0.105604113268602        8745.28868041316     
+ 
+3-d advection PPM 1, +X direction error
+ level =            1
+ density               0.105604113268602        8745.28868041316     
+ 
+3-d advection PPM 1, -Y direction error
+ level =            1
+ density               0.105604113268602        8745.28868041316     
+ 
+3-d advection PPM 1, +Y direction error
+ level =            1
+ density               0.105604113268602        8745.28868041316     
+ 
+3-d advection PPM 1, -Z direction error
+ level =            1
+ density               0.105604113268602        8745.28868041316     
+ 
+3-d advection PPM 1, +Z direction error
+ level =            1
+ density               0.105604113268602        8745.28868041316     
+ 
+3-d advection PPM 2, -X direction error
+ level =            1
+ density               4.140496304475560E-002   63803425.5856801     
+ 
+3-d advection PPM 2, +X direction error
+ level =            1
+ density               4.140496304475560E-002   63803425.5856801     
+ 
+3-d advection PPM 2, -Y direction error
+ level =            1
+ density               4.140496304475560E-002   63803425.5856801     
+ 
+3-d advection PPM 2, +Y direction error
+ level =            1
+ density               4.140496304475560E-002   63803425.5856801     
+ 
+3-d advection PPM 2, -Z direction error
+ level =            1
+ density               4.140496304475560E-002   63803425.5856801     
+ 
+3-d advection PPM 2, +Z direction error
+ level =            1
+ density               4.140496304475560E-002   63803425.5856801     
