@@ -32,6 +32,8 @@ contains
 
     integer :: ic12, io16
 
+    do_diag = .false.
+
     ! figure out the indices for different species
     ic12  = network_species_index("carbon-12")
     io16  = network_species_index("oxygen-16")

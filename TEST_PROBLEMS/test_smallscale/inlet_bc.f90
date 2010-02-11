@@ -37,6 +37,8 @@ contains
 
     real(kind=dp_t) :: state1d(ndum)
 
+    do_diag = .false.
+
     ! now reset inflow boundary conditions
     call asin1d('flame_4.e7_screen_left.out', -.00125d0, 0.d0, state1d, ndum, .false.)
 

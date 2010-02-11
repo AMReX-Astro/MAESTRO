@@ -44,7 +44,8 @@ contains
     integer :: r, ic12, io16, img24
     real(kind=dp_t) :: p_ambient, dens_ash, rhoh_fuel, rhoh_ash
     real(kind=dp_t) :: xn_fuel(nspec), xn_ash(nspec), xn_smooth(nspec)
-    
+
+    do_diag = .false.
 
     ! figure out the indices for different species
     ic12  = network_species_index("carbon-12")

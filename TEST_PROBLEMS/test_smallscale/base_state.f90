@@ -35,6 +35,8 @@ contains
     real(kind=dp_t) :: state1d(ndum),Pamb,starting_rad
     real(kind=dp_t) :: loloc,hiloc,flameloc
 
+    do_diag = .false.
+
     ! set bottom of domain
     starting_rad = prob_lo(dm)
 

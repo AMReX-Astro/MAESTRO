@@ -106,6 +106,8 @@ contains
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
+    do_diag = .false.
+
     s = ZERO
 
     ! initialize the scalars

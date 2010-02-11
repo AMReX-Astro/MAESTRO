@@ -182,6 +182,8 @@ contains
     real (kind = dp_t)  :: gradp0,denom
     integer             :: i
     
+    do_diag = .false.
+
     rho_min = 1.d-20
     
     eps = 1.0d-8
@@ -294,6 +296,8 @@ contains
     real (kind = dp_t)  :: spdx,spdy,pforcex,pforcey,ux,uy,eps,dt_divu,dt_sound,rho_min
     real (kind = dp_t)  :: gradp0,denom
     integer             :: i,j
+
+    do_diag = .false.
     
     rho_min = 1.d-20
     
@@ -422,6 +426,8 @@ contains
     real (kind = dp_t)  :: spdx,spdy,spdz,pforcex,pforcey,pforcez,ux,uy,uz
     real (kind = dp_t)  :: eps,dt_divu,dt_sound,gradp0,denom,rho_min
     integer             :: i,j,k
+
+    do_diag = .false.
 
     eps = 1.0d-8
     

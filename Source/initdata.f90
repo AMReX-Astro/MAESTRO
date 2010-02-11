@@ -260,6 +260,8 @@ contains
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
+    do_diag = .false.
+
     ! initial the domain with the base state
     s = ZERO
     
@@ -460,6 +462,8 @@ contains
     real(kind=dp_t) :: temp,t0
     real(kind=dp_t) :: x1, y1, r1, x2, y2, r2, x3, y3, r3
 
+    do_diag = .false.
+
     t0 = s0_init(temp_comp)
 
     x1 = 5.0d7
@@ -522,6 +526,8 @@ contains
     real(kind=dp_t) :: temp, t0
     real(kind=dp_t) :: x0, y0, z0, r0
 
+    do_diag = .false.
+
     t0 = s0_init(temp_comp)
 
     x0 = 3.6d7
@@ -573,6 +579,8 @@ contains
 
     real(kind=dp_t) :: temp, t0
     real(kind=dp_t) :: x0, y0, z0, r0
+
+    do_diag = .false.
 
     t0 = s0_init(temp_comp)
 

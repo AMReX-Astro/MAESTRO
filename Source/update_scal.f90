@@ -184,6 +184,8 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
 
+    do_diag = .false.
+
     do comp = nstart, nstop
 
        do i=lo(1),hi(1)
@@ -299,6 +301,8 @@ contains
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sumX
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
+
+    do_diag = .false.
 
     do comp = nstart, nstop
 
@@ -425,6 +429,8 @@ contains
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sumX
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
+
+    do_diag = .false.
 
     do comp = nstart, nstop
 
@@ -563,8 +569,9 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
 
-    ! is spherical
+    do_diag = .false.
 
+    ! is spherical
     do comp = nstart, nstop
        
        do k = lo(3), hi(3)

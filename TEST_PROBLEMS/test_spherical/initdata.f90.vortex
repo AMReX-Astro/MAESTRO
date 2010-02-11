@@ -264,6 +264,8 @@ contains
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
+    do_diag = .false.
+
     ! initial the domain with the base state
     s = ZERO
     

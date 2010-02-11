@@ -1057,6 +1057,8 @@ contains
     logical            :: cell_valid
     real (kind=dp_t)   :: x, y, z
 
+    do_diag = .false.
+
     ! weight is the factor by which the volume of a cell at the
     ! current level relates to the volume of a cell at the coarsest
     ! level of refinement.

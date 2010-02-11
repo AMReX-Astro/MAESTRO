@@ -507,6 +507,8 @@ contains
     integer, parameter :: perturb_temp = 1, perturb_dens = 2
     integer :: eos_input_flag
 
+    do_diag = .false.
+
     rad_pert = -xrb_pert_size**2 / (FOUR*log(HALF))
 
     select case (xrb_pert_type)

@@ -931,6 +931,7 @@ contains
 
     real(kind=dp_t) :: gradp0, wadv, dhdp
 
+    do_diag = .false.
 
     do j = lo(2),hi(2)
 
@@ -1001,6 +1002,8 @@ contains
 
     integer         :: i,j,k
     real(kind=dp_t) :: dhdp, gradp0, wadv
+
+    do_diag = .false.
 
     do k = lo(3),hi(3)
        if (k.eq.0) then
@@ -1077,6 +1080,8 @@ contains
     real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
     real(kind=dp_t) :: divup,p0divu,ugradp,dhdp
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
+
+    do_diag = .false.
 
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 

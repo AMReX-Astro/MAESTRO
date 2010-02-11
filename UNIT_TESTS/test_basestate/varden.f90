@@ -60,6 +60,8 @@ subroutine varden()
 
   real(dp_t) :: mencl, max_hse_error, starting_rad, rloc, r_r, r_l, g, dpdr, rhog
 
+  do_diag = .false.
+
   call probin_init()
   call init_dm()
   call init_spherical()

@@ -61,6 +61,8 @@ contains
 
     integer :: r
 
+    do_diag = .false.
+
      do r=0,nr(1)-1
 
         ! (rho, T) --> p,h, etc
