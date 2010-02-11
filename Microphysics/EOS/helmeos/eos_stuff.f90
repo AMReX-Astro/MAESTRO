@@ -1,5 +1,6 @@
 module eos_module
 
+  use bl_space, only: MAX_SPACEDIM
   use bl_types
   use bl_constants_module
   use network, only: nspec, aion, zion
@@ -35,6 +36,9 @@ module eos_module
   real(kind=dp_t) :: dpdX_eos(NP,nspec)
   real(kind=dp_t) :: dhdX_eos(NP,nspec)
   real(kind=dp_t) :: conduct_eos(NP)
+
+  integer         :: pt_index_eos(MAX_SPACEDIM)
+
 !$omp threadprivate(xn_eos,temp_eos,den_eos,abar_eos,zbar_eos,e_eos,p_eos,h_eos,cv_eos,cp_eos,xne_eos,eta_eos,pele_eos,dpdt_eos,dpdr_eos,dedr_eos,dedt_eos,gam1_eos,cs_eos,s_eos,dsdt_eos,dsdr_eos,dpdX_eos,dhdX_eos,conduct_eos)
 
   integer, parameter :: eos_input_rt = 1   ! density, temperature are inputs
@@ -347,7 +351,8 @@ contains
                  dPdX, dhdX, &
                  gam1, cs, entropy, &
                  dsdT, dsdR, &
-                 do_eos_diag)
+                 do_eos_diag, &
+                 pt_index)
 
     use bl_error_module
 
@@ -430,6 +435,9 @@ contains
     real(kind=dp_t), intent(out) :: dPdX(npoints,nspec), &
                                     dhdX(npoints,nspec)
     real(kind=dp_t), intent(out) :: dsdT(npoints), dsdR(npoints)
+
+    integer, optional, intent(in   ) :: pt_index(:)
+
     
 !     ::::: Local variables and arrays
 
@@ -460,6 +468,10 @@ contains
 
     logical eosfail
 
+    ! err_string is used to convert the pt_index information into a string
+    character (len=64) :: err_string  
+
+
 !     ::::: Input/Output arrays for call to helmeos
     real(kind=dp_t) :: temp_row(npoints), den_row(npoints), abar_row(npoints), &
                      zbar_row(npoints), etot_row(npoints), ptot_row(npoints), &
@@ -480,6 +492,11 @@ contains
     if (npoints > NP) then
        call bl_error('EOS: eos called with too large of a vector size')
     endif
+
+    ! this format statement is for writing into err_string -- make sure that
+    ! the len of err_string can accomodate this format specifier
+1000 format(1x,"zone index info: i = ", i5, '  j = ', i5, '  k = ', i5)
+
 
 !      print*,'EOS with npoints, nspec = ',npoints,nspec
 
@@ -541,7 +558,15 @@ contains
                    gam1_row, cs_row, stot_row, &
                    dsd_row, dst_row)
 
-       if (eosfail) call bl_error('EOS: error in the EOS')
+       if (eosfail) then
+          if (present(pt_index)) then
+             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             call bl_error('EOS: error in the EOS', err_string)
+          else
+             call bl_error('EOS: error in the EOS')
+          endif
+       endif
+
 
 ! fill the outputs
        do k = 1, npoints
@@ -620,7 +645,14 @@ contains
                     gam1_row, cs_row, stot_row, &
                     dsd_row, dst_row)
 
-       if (eosfail) call bl_error('EOS: error in the EOS')
+       if (eosfail) then
+          if (present(pt_index)) then
+             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             call bl_error('EOS: error in the EOS', err_string)
+          else
+             call bl_error('EOS: error in the EOS')
+          endif
+       endif
 
        do iter = 1, max_newton
 
@@ -674,7 +706,14 @@ contains
                        gam1_row, cs_row, stot_row, &
                        dsd_row, dst_row)
 
-          if (eosfail) call bl_error('EOS: error in the EOS')
+          if (eosfail) then
+             if (present(pt_index)) then
+                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                call bl_error('EOS: error in the EOS', err_string)
+             else
+                call bl_error('EOS: error in the EOS')
+             endif
+          endif
         
        enddo
 
@@ -682,7 +721,12 @@ contains
 
        continue
 
-       call bl_error('EOS: Newton-Raphson failed:2: too many iterations')
+       if (present(pt_index)) then
+          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          call bl_error('EOS: Newton-Raphson failed:2: too many iterations', err_string)
+       else
+          call bl_error('EOS: Newton-Raphson failed:2: too many iterations')
+       endif
 
 70     continue
 
@@ -748,8 +792,14 @@ contains
           ! we want to converge to the given pressure
           pres_want(k) = pres(k)
 
-          if (pres_want(k) < ZERO) &
-               call bl_error('ERROR: pressure < 0 in the EOS')
+          if (pres_want(k) < ZERO) then
+             if (present(pt_index)) then
+                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                call bl_error('ERROR: pressure < 0 in the EOS', err_string)
+             else
+                call bl_error('ERROR: pressure < 0 in the EOS')
+             endif
+          endif
        enddo
          
        call helmeos(do_coulomb,npoints, eosfail, &
@@ -762,7 +812,14 @@ contains
                     gam1_row, cs_row, stot_row, &
                     dsd_row, dst_row)
        
-       if (eosfail) call bl_error('EOS: error in the EOS')
+       if (eosfail) then
+          if (present(pt_index)) then
+             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             call bl_error('EOS: error in the EOS', err_string)
+          else
+             call bl_error('EOS: error in the EOS')
+          endif
+       endif
 
        do iter = 1, max_newton
 
@@ -813,13 +870,25 @@ contains
                        gam1_row, cs_row, stot_row, &
                        dsd_row, dst_row)
         
-          if (eosfail) call bl_error('EOS: error in the EOS')
+          if (eosfail) then
+             if (present(pt_index)) then
+                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                call bl_error('EOS: error in the EOS', err_string)
+             else
+                call bl_error('EOS: error in the EOS')
+             endif
+          endif
 
        end do
 
        ! Land here if too many iterations are needed
 
-       call bl_error('EOS: Newton-Raphson failed:3: too many iterations')         
+       if (present(pt_index)) then
+          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          call bl_error('EOS: Newton-Raphson failed:3: too many iterations', err_string)         
+       else
+          call bl_error('EOS: Newton-Raphson failed:3: too many iterations')         
+       endif
 
 170    continue
 
@@ -890,8 +959,14 @@ contains
           pres_want(k) = pres(k)
           if (do_eos_diag) print*,'P WANT ',pres(k)
 
-          if (pres_want(k) < ZERO) &
-               call bl_error('ERROR: pressure < 0 in the EOS')
+          if (pres_want(k) < ZERO) then
+             if (present(pt_index)) then
+                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                call bl_error('ERROR: pressure < 0 in the EOS', err_string)
+             else
+                call bl_error('ERROR: pressure < 0 in the EOS')
+             endif
+          endif
        enddo
 
        ! First pass
@@ -905,7 +980,14 @@ contains
                     gam1_row, cs_row, stot_row, &
                     dsd_row, dst_row)
 
-       if (eosfail) call bl_error('EOS: error in the EOS')
+       if (eosfail) then
+          if (present(pt_index)) then
+             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             call bl_error('EOS: error in the EOS', err_string)
+          else
+             call bl_error('EOS: error in the EOS')
+          endif
+       endif
        
        do iter = 1, max_newton
 
@@ -956,7 +1038,14 @@ contains
                        gam1_row, cs_row, stot_row, &
                        dsd_row, dst_row)
 
-          if (eosfail) call bl_error('EOS: error in the EOS')
+          if (eosfail) then
+             if (present(pt_index)) then
+                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                call bl_error('EOS: error in the EOS', err_string)
+             else
+                call bl_error('EOS: error in the EOS')
+             endif
+          endif
              
         
        end do
@@ -969,7 +1058,12 @@ contains
                 k,error,temp_row(k),den_row(k)
        enddo
 
-       call bl_error('EOS: Newton-Raphson failed:4: too many iterations')
+       if (present(pt_index)) then
+          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          call bl_error('EOS: Newton-Raphson failed:4: too many iterations', err_string)          
+       else
+          call bl_error('EOS: Newton-Raphson failed:4: too many iterations')          
+       endif
 
 870    continue
 
@@ -1042,8 +1136,14 @@ contains
           ! we want to converge to the given enthalpy
           energy_want(k) = eint(k)
 
-          if (energy_want(k) < ZERO) &
-               call bl_error('ERROR: energy < 0 in the EOS')
+          if (energy_want(k) < ZERO) then
+             if (present(pt_index)) then
+                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                call bl_error('ERROR: energy < 0 in the EOS', err_string)
+             else
+                call bl_error('ERROR: energy < 0 in the EOS')
+             endif
+          endif
 
           if (do_eos_diag) print*,'WANT e ',energy_want(k)
        enddo
@@ -1058,7 +1158,14 @@ contains
                     gam1_row, cs_row, stot_row, &
                     dsd_row, dst_row)
 
-       if (eosfail) call bl_error('EOS: error in the EOS')
+       if (eosfail) then
+          if (present(pt_index)) then
+             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             call bl_error('EOS: error in the EOS', err_string)
+          else
+             call bl_error('EOS: error in the EOS')
+          endif
+       endif
 
        do iter = 1, max_newton
 
@@ -1112,7 +1219,14 @@ contains
                        gam1_row, cs_row, stot_row, &
                        dsd_row, dst_row)
 
-          if (eosfail) call bl_error('EOS: error in the EOS')
+          if (eosfail) then
+             if (present(pt_index)) then
+                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                call bl_error('EOS: error in the EOS', err_string)
+             else
+                call bl_error('EOS: error in the EOS')
+             endif
+          endif
         
        enddo
 
@@ -1120,7 +1234,12 @@ contains
 
        continue
 
-       call bl_error('EOS: Newton-Raphson failed:2: too many iterations')
+       if (present(pt_index)) then
+          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          call bl_error('EOS: Newton-Raphson failed:2: too many iterations', err_string)
+       else
+          call bl_error('EOS: Newton-Raphson failed:2: too many iterations')
+       endif
 
 270     continue
 
@@ -1171,7 +1290,12 @@ contains
 
     else 
 
-       call bl_error('EOS: invalid input')
+       if (present(pt_index)) then
+          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          call bl_error('EOS: invalid input', err_string)
+       else
+          call bl_error('EOS: invalid input')
+       endif
 
     endif
 
