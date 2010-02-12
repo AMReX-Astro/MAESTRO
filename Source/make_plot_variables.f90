@@ -90,6 +90,8 @@ contains
        xn_eos(1,:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
        h_eos(1) = state(i,rhoh_comp) / state(i,rho_comp)
 
+       pt_index_eos(:) = (/i, -1, -1/)       
+
        call eos(eos_input_rh, den_eos, temp_eos, &
                 npts, &
                 xn_eos, &
@@ -99,7 +101,8 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag)
+                do_diag, &
+                pt_index_eos)
 
        T(i) = temp_eos(1)
        if (.not. use_tfromp) tpert(i) = temp_eos(1) - tempbar(i)
@@ -139,6 +142,8 @@ contains
           xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
           h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
+          pt_index_eos(:) = (/i, j, -1/)
+
           call eos(eos_input_rh, den_eos, temp_eos, &
                    npts, &
                    xn_eos, &
@@ -148,7 +153,8 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag)
+                   do_diag, &
+                   pt_index_eos)
 
           T(i,j) = temp_eos(1)
           if (.not. use_tfromp) tpert(i,j) = temp_eos(1) - tempbar(j)
@@ -189,6 +195,8 @@ contains
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
              h_eos(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
 
+             pt_index_eos(:) = (/i, j, k/)
+
              call eos(eos_input_rh, den_eos, temp_eos, &
                       npts, &
                       xn_eos, &
@@ -198,7 +206,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
 
              T(i,j,k) = temp_eos(1)
              if (.not. use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar(k)
@@ -249,6 +258,8 @@ contains
              temp_eos(1) = state(i,j,k,temp_comp)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
+             pt_index_eos(:) = (/i, j, k/)
+
              ! (rho, H) --> T, p
              call eos(eos_input_rh, den_eos, temp_eos, &
                       npts, &
@@ -259,7 +270,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
 
              T(i,j,k) = temp_eos(1)
              if (.not. use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar_cart(i,j,k,1)
@@ -380,6 +392,8 @@ contains
        p_eos(1) = p0(i)
        xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
+       pt_index_eos(:) = (/i, -1, -1/)
+
        ! (rho,P) --> T,h
        call eos(eos_input_rp, den_eos, temp_eos, &
                 npts, &
@@ -390,7 +404,8 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag)
+                do_diag, &
+                pt_index_eos)
 
        t(i) = temp_eos(1)
        if (use_tfromp) tpert(i) = temp_eos(1) - tempbar(i)
@@ -445,6 +460,8 @@ contains
           p_eos(1) = p0(j)
           xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
+          pt_index_eos(:) = (/i, j, -1/)
+
           ! (rho,P) --> T,h
           call eos(eos_input_rp, den_eos, temp_eos, &
                    npts, &
@@ -455,7 +472,8 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag)
+                   do_diag, &
+                   pt_index_eos)
 
           t(i,j) = temp_eos(1)
           if (use_tfromp) tpert(i,j) = temp_eos(1) - tempbar(j)
@@ -513,6 +531,8 @@ contains
              p_eos(1) = p0(k)
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
+             pt_index_eos(:) = (/i, j, k/)
+
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_eos, temp_eos, &
                       npts, &
@@ -523,7 +543,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
 
              t(i,j,k) = temp_eos(1)
              if (use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar(k)
@@ -603,6 +624,8 @@ contains
              p_eos(1) = p0_cart(i,j,k,1)
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
+             pt_index_eos(:) = (/i, j, k/)
+
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_eos, temp_eos, &
                       npts, &
@@ -613,7 +636,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
 
              t(i,j,k) = temp_eos(1)
              if (use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar_cart(i,j,k,1)

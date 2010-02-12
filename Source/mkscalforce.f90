@@ -952,6 +952,8 @@ contains
            den_eos(1) = s(i,j,rho_comp)
           xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1) / s(i,j,rho_comp)
 
+          pt_index_eos(:) = (/i, -1, -1/)
+
           ! dens, temp, xmass inputs
          call eos(eos_input_rt, den_eos, temp_eos, &
                   npts, &
@@ -962,7 +964,8 @@ contains
                   dpdX_eos, dhdX_eos, &
                   gam1_eos, cs_eos, s_eos, &
                   dsdt_eos, dsdr_eos, &
-                  do_diag)
+                  do_diag, &
+                  pt_index_eos)
 
          dhdp = ONE / s(i,j,rho_comp) + ( s(i,j,rho_comp) * dedr_eos(1) - &
                                           p_eos(1) / s(i,j,rho_comp) ) &
@@ -1023,6 +1026,8 @@ contains
              temp_eos(1) = s(i,j,k,temp_comp)
              den_eos(1) = s(i,j,k,rho_comp)
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
+
+             pt_index_eos(:) = (/i, j, -1/)
              
              ! dens, temp, xmass inputs
              call eos(eos_input_rt, den_eos, temp_eos, &
@@ -1034,7 +1039,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) - &
                   p_eos(1) / s(i,j,k,rho_comp) ) / ( s(i,j,k,rho_comp) * dpdr_eos(1) )
@@ -1094,6 +1100,8 @@ contains
              temp_eos(1)   = s(i,j,k,temp_comp)
              den_eos(1)   = s(i,j,k,rho_comp)
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
+
+             pt_index_eos(:) = (/i, j, k/)
              
              ! dens, temp, xmass inputs
              call eos(eos_input_rt, den_eos, temp_eos, &
@@ -1105,7 +1113,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) - &
                                                 p_eos(1) / s(i,j,k,rho_comp) ) &

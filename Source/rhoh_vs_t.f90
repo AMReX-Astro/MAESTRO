@@ -195,6 +195,8 @@ contains
        ! sx(i,spec_comp:spec_comp+nspec-1) holds X
        xn_eos(1,:) = sx(i,spec_comp:spec_comp+nspec-1)
 
+       pt_index_eos(:) = (/i, -1, -1/)
+
        call eos(eos_input_rt, den_eos, temp_eos, &
                 npts, &
                 xn_eos, &
@@ -204,7 +206,8 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag)
+                do_diag, &
+                pt_index_eos)
 
        if (enthalpy_pred_type .eq. predict_T_then_h .or. &
             enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -258,6 +261,8 @@ contains
 
           ! sx(i,j,spec_comp:spec_comp+nspec-1) holds X
           xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
+
+          pt_index_eos(:) = (/i, j, -1/)
           
           call eos(eos_input_rt, den_eos, temp_eos, &
                    npts, &
@@ -268,7 +273,8 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag)
+                   do_diag, &
+                   pt_index_eos)
           
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
               enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -293,6 +299,8 @@ contains
           
           ! sy(i,j,spec_comp:spec_comp+nspec-1) holds X
           xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
+
+          pt_index_eos(:) = (/i, j, -1/)
           
           call eos(eos_input_rt, den_eos, temp_eos, &
                    npts, &
@@ -303,7 +311,8 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag)
+                   do_diag, &
+                   pt_index_eos)
           
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
               enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -360,6 +369,8 @@ contains
 
              ! sx(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
+
+             pt_index_eos(:) = (/i, j, k/)
              
              call eos(eos_input_rt, den_eos, temp_eos, &
                       npts, &
@@ -370,7 +381,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -397,6 +409,8 @@ contains
 
              ! sy(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
+
+             pt_index_eos(:) = (/i, j, k/)
              
              call eos(eos_input_rt, den_eos, temp_eos, &
                       npts, &
@@ -407,7 +421,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -435,6 +450,8 @@ contains
              ! sz(i,j,k,spec_comp:spec_comp+nspec-1) X
              xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
 
+             pt_index_eos(:) = (/i, j, k/)
+
              call eos(eos_input_rt, den_eos, temp_eos, &
                       npts, &
                       xn_eos, &
@@ -444,7 +461,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -502,6 +520,8 @@ contains
              ! sx(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
 
+             pt_index_eos(:) = (/i, j, k/)
+
              call eos(eos_input_rt, den_eos, temp_eos, &
                       npts, &
                       xn_eos, &
@@ -511,7 +531,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -542,6 +563,8 @@ contains
              ! sy(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1) 
 
+             pt_index_eos(:) = (/i, j, k/)
+
              call eos(eos_input_rt, den_eos, temp_eos, &
                       npts, &
                       xn_eos, &
@@ -551,7 +574,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -582,6 +606,8 @@ contains
              ! sz(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1) 
 
+             pt_index_eos(:) = (/i, j, k/)
+
              call eos(eos_input_rt, den_eos, temp_eos, &
                       npts, &
                       xn_eos, &
@@ -591,7 +617,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -706,6 +733,8 @@ contains
 
        h_eos(1) = state(i,rhoh_comp) / state(i,rho_comp)
 
+       pt_index_eos(:) = (/i, -1, -1/)
+
        call eos(eos_input_rh, den_eos, temp_eos, &
                 npts, &
                 xn_eos, &
@@ -715,7 +744,8 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag)
+                do_diag, &
+                pt_index_eos)
 
        state(i,temp_comp) = temp_eos(1)
 
@@ -747,6 +777,8 @@ contains
           xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
           
           h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
+
+          pt_index_eos(:) = (/i, j, -1/)
           
           call eos(eos_input_rh, den_eos, temp_eos, &
                    npts, &
@@ -757,7 +789,8 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag)
+                   do_diag, &
+                   pt_index_eos)
           
           state(i,j,temp_comp) = temp_eos(1)
           
@@ -791,6 +824,8 @@ contains
              temp_eos(1) = state(i,j,k,temp_comp)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
              h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+
+             pt_index_eos(:) = (/i, j, k/)
              
              call eos(eos_input_rh, den_eos, temp_eos, &
                       npts, &
@@ -801,7 +836,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              state(i,j,k,temp_comp) = temp_eos(1)
              
@@ -917,6 +953,8 @@ contains
 
        p_eos(1) = p0(i)
 
+       pt_index_eos(:) = (/i, -1, -1/)
+
        call eos(eos_input_rp, den_eos, temp_eos, &
                 npts, &
                 xn_eos, &
@@ -926,7 +964,8 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag)
+                do_diag, &
+                pt_index_eos)
 
        state(i,temp_comp) = temp_eos(1)
 
@@ -959,6 +998,8 @@ contains
           xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
           
           p_eos(1) = p0(j)
+
+          pt_index_eos(:) = (/i, j, -1/)
           
           call eos(eos_input_rp, den_eos, temp_eos, &
                    npts, &
@@ -969,7 +1010,8 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag)
+                   do_diag, &
+                   pt_index_eos)
           
           state(i,j,temp_comp) = temp_eos(1)
           
@@ -1004,6 +1046,8 @@ contains
              temp_eos(1) = state(i,j,k,temp_comp)
              p_eos(1) = p0(k)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+             pt_index_eos(:) = (/i, j, k/)
              
              call eos(eos_input_rp, den_eos, temp_eos, &
                       npts, &
@@ -1014,7 +1058,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              state(i,j,k,temp_comp) = temp_eos(1)
              
@@ -1055,6 +1100,8 @@ contains
              temp_eos(1) = state(i,j,k,temp_comp)
              p_eos(1) = p0_cart(i,j,k,1)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+             pt_index_eos(:) = (/i, j, k/)
              
              call eos(eos_input_rp, den_eos, temp_eos, &
                       npts, &
@@ -1065,7 +1112,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              state(i,j,k,temp_comp) = temp_eos(1)
              
@@ -1186,6 +1234,8 @@ contains
        xn_eos(1,:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
        
        h_eos(1) = state(i,rhoh_comp) / state(i,rho_comp)
+
+       pt_index_eos(:) = (/i, -1, -1/)
        
        call eos(eos_input_rh, den_eos, temp_eos, &
                 npts, &
@@ -1196,7 +1246,8 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag)
+                do_diag, &
+                pt_index_eos)
        
        pres(i) = p_eos(1)
        
@@ -1230,6 +1281,8 @@ contains
 
           h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
+          pt_index_eos(:) = (/i, j, -1/)
+
           call eos(eos_input_rh, den_eos, temp_eos, &
                    npts, &
                    xn_eos, &
@@ -1239,7 +1292,8 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag)
+                   do_diag, &
+                   pt_index_eos)
 
           pres(i,j) = p_eos(1)
 
@@ -1274,6 +1328,8 @@ contains
              temp_eos(1) = temp_old(i,j,k)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
              h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+
+             pt_index_eos(:) = (/i, j, k/)
              
              call eos(eos_input_rh, den_eos, temp_eos, &
                       npts, &
@@ -1284,7 +1340,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              pres(i,j,k) = p_eos(1)
              
@@ -1405,6 +1462,8 @@ contains
        temp_eos(1) = s(i,temp_comp)
        p_eos(1) = p0(i)
 
+       pt_index_eos(:) = (/i, -1, -1/)
+
        call eos(eos_input_rp, den_eos, temp_eos, &
                 npts, &
                 xn_eos, &
@@ -1414,7 +1473,8 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag)
+                do_diag, &
+                pt_index_eos)
 
        s(i,rhoh_comp) = den_eos(1)*h_eos(1)
        s(i,temp_comp) = temp_eos(1)
@@ -1446,6 +1506,8 @@ contains
           temp_eos(1) = s(i,j,temp_comp)
           p_eos(1) = p0(j)
 
+          pt_index_eos(:) = (/i, j, -1/)
+
           call eos(eos_input_rp, den_eos, temp_eos, &
                    npts, &
                    xn_eos, &
@@ -1455,7 +1517,8 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag)
+                   do_diag, &
+                   pt_index_eos)
 
           s(i,j,rhoh_comp) = den_eos(1)*h_eos(1)
           s(i,j,temp_comp) = temp_eos(1)
@@ -1488,6 +1551,8 @@ contains
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,K,rho_comp)
              temp_eos(1) = s(i,j,k,temp_comp)
              p_eos(1) = p0(k)
+
+             pt_index_eos(:) = (/i, j, k/)
              
              call eos(eos_input_rp, den_eos, temp_eos, &
                       npts, &
@@ -1498,7 +1563,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              s(i,j,k,temp_comp) = temp_eos(1)
@@ -1538,6 +1604,8 @@ contains
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,K,rho_comp)
              temp_eos(1) = s(i,j,k,temp_comp)
              p_eos(1) = p0_cart(i,j,k,1)
+
+             pt_index_eos(:) = (/i, j, k/)
              
              call eos(eos_input_rp, den_eos, temp_eos, &
                       npts, &
@@ -1548,7 +1616,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
              
              s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              s(i,j,k,temp_comp) = temp_eos(1)

@@ -101,6 +101,8 @@ contains
        xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
        temp_eos(1) = s(i,temp_comp)
 
+       pt_index_eos(:) = (/i, -1, -1/)
+
        ! dens, pres, and xmass are inputs
        call eos(eos_input_rp, den_eos, temp_eos, &
                 npts, &
@@ -111,7 +113,8 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag)
+                do_diag, &
+                pt_index_eos)
 
        gamma(i) = gam1_eos(1)
 
@@ -143,6 +146,8 @@ contains
           xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
           temp_eos(1) = s(i,j,temp_comp)
 
+          pt_index_eos(:) = (/i, j, -1/)
+
           ! dens, pres, and xmass are inputs
           call eos(eos_input_rp, den_eos, temp_eos, &
                    npts, &
@@ -153,7 +158,8 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag)
+                   do_diag, &
+                   pt_index_eos)
 
           gamma(i,j) = gam1_eos(1)
 
@@ -188,6 +194,8 @@ contains
              temp_eos(1) = s(i,j,k,temp_comp)
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
+             pt_index_eos(:) = (/i, j, k/)
+
              ! dens, pres, and xmass are inputs
              call eos(eos_input_rp, den_eos, temp_eos, &
                       npts, &
@@ -198,7 +206,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
 
              gamma(i,j,k) = gam1_eos(1)
 
@@ -240,6 +249,8 @@ contains
              temp_eos(1) = s(i,j,k,temp_comp)
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
+             pt_index_eos(:) = (/i, j, k/)
+
              ! dens, pres, and xmass are inputs
              call eos(eos_input_rp, den_eos, temp_eos, &
                       npts, &
@@ -250,7 +261,8 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      do_diag, &
+                      pt_index_eos)
 
              gamma(i,j,k) = gam1_eos(1)
 
