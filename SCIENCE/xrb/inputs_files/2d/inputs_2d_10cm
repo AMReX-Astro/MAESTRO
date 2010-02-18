@@ -82,4 +82,5 @@
 
  limit_conductivity = F
 
+ xrb_pert_height = 2500.d0
 /
