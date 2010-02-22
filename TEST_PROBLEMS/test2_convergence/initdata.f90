@@ -460,26 +460,18 @@ contains
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
     real(kind=dp_t) :: temp,t0
-    real(kind=dp_t) :: x0, y0, x1, y1, x2, y2
-    real(kind=dp_t) :: r0, r1, r2
+    real(kind=dp_t) :: x1, y1
+    real(kind=dp_t) :: r1
 
     do_diag = .false.
 
     t0 = s0_init(temp_comp)
-
-    x0 = 5.0d7
-    y0 = 6.5d7
     
-    x1 = 1.2d8
+    x1 = 7.2d7
     y1 = 8.5d7
-    
-    x2 = 2.0d8
-    y2 = 7.5d7
 
     ! Tanh bubbles
-    r0 = sqrt( (x-x0)**2 +(y-y0)**2 ) / 2.5e6
     r1 = sqrt( (x-x1)**2 +(y-y1)**2 ) / 2.5e6
-    r2 = sqrt( (x-x2)**2 +(y-y2)**2 ) / 2.5e6
 
     temp = t0 * (ONE + TWO * (.3_dp_t * 0.5_dp_t * (1.0_dp_t + tanh(2.0-r1)) ) )
 

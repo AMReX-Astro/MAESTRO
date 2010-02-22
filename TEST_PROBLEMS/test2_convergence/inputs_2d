@@ -6,17 +6,22 @@
  n_cellx = 128
  n_celly = 128
  max_grid_size = 128
+ fixed_dt = 0.02d0
+
  !n_cellx = 256
  !n_celly = 256
  !max_grid_size = 256
+ !fixed_dt = 0.01d0
+
  !n_cellx = 512
  !n_celly = 512
  !max_grid_size = 512
+ !fixed_dt = 0.005d0
 
- prob_lo_x = 4.8e7
- prob_lo_y = 3.9e7
- prob_hi_x = 1.92e8
- prob_hi_y = 1.83e8
+ prob_lo_x = 0
+ prob_lo_y = 4.e7
+ prob_hi_x = 1.44e8
+ prob_hi_y = 1.84e8
 
  grav_const = -1.5e10
 
@@ -26,15 +31,8 @@
  stop_time = 1.0d0
 
  plot_base = T
- plot_int  = 10
- chk_int   = -1
-
- cflfac = 0.9
- init_shrink = 1.
-
- fixed_dt = 0.02d0
- !fixed_dt = 0.01d0
- !fixed_dt = 0.005d0
+ plot_int  = 100
+ chk_int   = -1 
 
  bcx_lo = -1
  bcx_hi = -1
