@@ -28,6 +28,7 @@
 module eos_module
 
   use bl_types
+  use bl_space
   use bl_constants_module, only: M_PI, ONE
   use network, only: nspec, aion, zion
 
