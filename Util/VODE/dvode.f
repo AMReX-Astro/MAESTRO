@@ -1039,12 +1039,11 @@ C
       DOUBLE PRECISION DUMACH, DVNORM
 C
       DIMENSION MORD(2)
-C-----------------------------------------------------------------------
-C The following Fortran-77 declaration is to cause the values of the
-C listed (local) variables to be saved between calls to DVODE.
-C-----------------------------------------------------------------------
-      SAVE MORD, MXHNL0, MXSTP0
-      SAVE ZERO, ONE, TWO, FOUR, PT2, HUN
+
+      DATA  MORD(1) /12/, MORD(2) /5/
+      PARAMETER(MXSTP0 = 500, MXHNL0 = 10)
+      PARAMETER(ZERO = 0.0D0, ONE = 1.0D0, TWO = 2.0D0, FOUR = 4.0D0)
+      PARAMETER(PT2 = 0.2D0, HUN = 100.0D0)
 C-----------------------------------------------------------------------
 C The following internal COMMON blocks contain variables which are
 C communicated between subroutines in the DVODE package, or which are
@@ -1139,10 +1138,7 @@ C NNI    = Number of nonlinear iterations so far.
 C NQU    = The method order last used.
 C NST    = The number of steps taken for the problem so far.
 C-----------------------------------------------------------------------
-C
-      DATA  MORD(1) /12/, MORD(2) /5/, MXSTP0 /500/, MXHNL0 /10/
-      DATA ZERO /0.0D0/, ONE /1.0D0/, TWO /2.0D0/, FOUR /4.0D0/,
-     1     PT2 /0.2D0/, HUN /100.0D0/
+
 C-----------------------------------------------------------------------
 C Block A.
 C This code block is executed on every call.

@@ -75,13 +75,7 @@ C
 C Type declaration for function subroutines called ---------------------
 C
       DOUBLE PRECISION DVNORM
-C-----------------------------------------------------------------------
-C The following Fortran-77 declaration is to cause the values of the
-C listed (local) variables to be saved between calls to this subroutine.
-C-----------------------------------------------------------------------
-      SAVE ONE, PT1, THOU, ZERO
-C-----------------------------------------------------------------------
-      DATA ONE /1.0D0/, THOU /1000.0D0/, ZERO /0.0D0/, PT1 /0.1D0/
+      PARAMETER(ONE = 1.0D0, THOU = 1000.0D0, ZERO = 0.0D0, PT1 = 0.1D0)
 C
       IERPJ = 0
       HRL1 = H*RL1

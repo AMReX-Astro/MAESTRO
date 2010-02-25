@@ -40,13 +40,7 @@ C Type declarations for local variables --------------------------------
 C
       INTEGER I, MEBAND, ML, MU
       DOUBLE PRECISION DI, HRL1, ONE, PHRL1, R, ZERO
-C-----------------------------------------------------------------------
-C The following Fortran-77 declaration is to cause the values of the
-C listed (local) variables to be saved between calls to this integrator.
-C-----------------------------------------------------------------------
-      SAVE ONE, ZERO
-C
-      DATA ONE /1.0D0/, ZERO /0.0D0/
+      PARAMETER(ONE = 1.0D0, ZERO = 0.0D0)
 C
       IERSL = 0
       GO TO (100, 100, 300, 400, 400), MITER

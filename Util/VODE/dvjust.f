@@ -29,13 +29,7 @@ C Type declarations for local variables --------------------------------
 C
       DOUBLE PRECISION ALPH0, ALPH1, HSUM, ONE, PROD, T1, XI,XIOLD, ZERO
       INTEGER I, IBACK, J, JP1, LP1, NQM1, NQM2, NQP1
-C-----------------------------------------------------------------------
-C The following Fortran-77 declaration is to cause the values of the
-C listed (local) variables to be saved between calls to this integrator.
-C-----------------------------------------------------------------------
-      SAVE ONE, ZERO
-C
-      DATA ONE /1.0D0/, ZERO /0.0D0/
+      PARAMETER(ONE = 1.0D0, ZERO = 0.0D0)
 C
       IF ((NQ .EQ. 2) .AND. (IORD .NE. 1)) RETURN
       NQM1 = NQ - 1

@@ -42,13 +42,7 @@ C
       DOUBLE PRECISION C, HUN, R, S, TFUZZ, TN1, TP, ZERO
       INTEGER I, IC, J, JB, JB2, JJ, JJ1, JP1
       CHARACTER*80 MSG
-C-----------------------------------------------------------------------
-C The following Fortran-77 declaration is to cause the values of the
-C listed (local) variables to be saved between calls to this integrator.
-C-----------------------------------------------------------------------
-      SAVE HUN, ZERO
-C
-      DATA HUN /100.0D0/, ZERO /0.0D0/
+      PARAMETER(HUN = 100.0D0, ZERO = 0.0D0)
 C
       IFLAG = 0
       IF (K .LT. 0 .OR. K .GT. NQ) GO TO 80

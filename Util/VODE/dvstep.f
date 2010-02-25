@@ -77,21 +77,16 @@ C
 C Type declaration for function subroutines called ---------------------
 C
       DOUBLE PRECISION DVNORM
-C-----------------------------------------------------------------------
-C The following Fortran-77 declaration is to cause the values of the
-C listed (local) variables to be saved between calls to this integrator.
-C-----------------------------------------------------------------------
-      SAVE ADDON, BIAS1, BIAS2, BIAS3,
-     1     ETACF, ETAMIN, ETAMX1, ETAMX2, ETAMX3, ETAMXF, ETAQ, ETAQM1,
-     2     KFC, KFH, MXNCF, ONEPSM, THRESH, ONE, ZERO
-C-----------------------------------------------------------------------
+
+      PARAMETER(KFC = -3, KFH = -7, MXNCF = 10, ADDON = 1.0D-6)
+      PARAMETER(BIAS1 = 6.0D0, BIAS2 = 6.0D0, BIAS3 = 10.0D0)
+      PARAMETER(ETACF = 0.25D0, ETAMIN = 0.1D0, ETAMXF = 0.2D0)
+      PARAMETER(ETAMX1 = 1.0D4, ETAMX2 = 10.0D0, ETAMX3 = 10.0D0)
+      PARAMETER(ONEPSM = 1.00001D0, THRESH = 1.5D0, ONE = 1.0D0)
+      PARAMETER(ZERO = 0.0D0)
 C
-      DATA KFC/-3/, KFH/-7/, MXNCF/10/
-      DATA ADDON  /1.0D-6/,    BIAS1  /6.0D0/,     BIAS2  /6.0D0/,
-     1     BIAS3  /10.0D0/,    ETACF  /0.25D0/,    ETAMIN /0.1D0/,
-     2     ETAMXF /0.2D0/,     ETAMX1 /1.0D4/,     ETAMX2 /10.0D0/,
-     3     ETAMX3 /10.0D0/,    ONEPSM /1.00001D0/, THRESH /1.5D0/
-      DATA ONE/1.0D0/, ZERO/0.0D0/
+      ETAQ   = ONE
+      ETAQM1 = ONE
 C
       KFLAG = 0
       TOLD = TN

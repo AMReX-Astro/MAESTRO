@@ -23,15 +23,11 @@ C-----------------------------------------------------------------------
       DOUBLE PRECISION RVOD1, RVOD2
       INTEGER IVOD1, IVOD2
       INTEGER I, LENIV1, LENIV2, LENRV1, LENRV2
-C-----------------------------------------------------------------------
-C The following Fortran-77 declaration is to cause the values of the
-C listed (local) variables to be saved between calls to this integrator.
-C-----------------------------------------------------------------------
-      SAVE LENRV1, LENIV1, LENRV2, LENIV2
 C
       COMMON /DVOD01/ RVOD1(48), IVOD1(33)
       COMMON /DVOD02/ RVOD2(1), IVOD2(8)
-      DATA LENRV1/48/, LENIV1/33/, LENRV2/1/, LENIV2/8/
+
+      PARAMETER(LENRV1=48,LENIV1=33, LENRV2=1, LENIV2=8)
 C
       IF (JOB .EQ. 2) GO TO 100
       DO 10 I = 1,LENRV1

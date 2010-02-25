@@ -56,14 +56,8 @@ C
       INTEGER I, IBACK, J, JP1, NQM1, NQM2
 C
       DIMENSION EM(13)
-C-----------------------------------------------------------------------
-C The following Fortran-77 declaration is to cause the values of the
-C listed (local) variables to be saved between calls to this integrator.
-C-----------------------------------------------------------------------
-      SAVE CORTES, ONE, SIX, TWO, ZERO
-C
-      DATA CORTES /0.1D0/
-      DATA ONE  /1.0D0/, SIX /6.0D0/, TWO /2.0D0/, ZERO /0.0D0/
+      PARAMETER(CORTES = 0.1D0, ONE = 1.0D0, SIX = 6.0D0, TWO = 2.0D0)
+      PARAMETER(ZERO = 0.0D0)
 C
       FLOTL = REAL(L)
       NQM1 = NQ - 1

@@ -55,12 +55,8 @@ C
 C Type declaration for function subroutines called ---------------------
 C
       DOUBLE PRECISION DVNORM
-C-----------------------------------------------------------------------
-C The following Fortran-77 declaration is to cause the values of the
-C listed (local) variables to be saved between calls to this integrator.
-C-----------------------------------------------------------------------
-      SAVE HALF, HUN, PT1, TWO
-      DATA HALF /0.5D0/, HUN /100.0D0/, PT1 /0.1D0/, TWO /2.0D0/
+
+      PARAMETER(HALF =0.5D0, HUN = 100.0D0, PT1 = 0.1D0, TWO = 2.0D0)
 C
       NITER = 0
       TDIST = ABS(TOUT - T0)

@@ -76,15 +76,9 @@ C
 C Type declaration for function subroutines called ---------------------
 C
       DOUBLE PRECISION DVNORM
-C-----------------------------------------------------------------------
-C The following Fortran-77 declaration is to cause the values of the
-C listed (local) variables to be saved between calls to this integrator.
-C-----------------------------------------------------------------------
-      SAVE CCMAX, CRDOWN, MAXCOR, MSBP, RDIV, ONE, TWO, ZERO
-C
-      DATA CCMAX /0.3D0/, CRDOWN /0.3D0/, MAXCOR /3/, MSBP /20/,
-     1     RDIV  /2.0D0/
-      DATA ONE /1.0D0/, TWO /2.0D0/, ZERO /0.0D0/
+      PARAMETER(CCMAX = 0.3D0, CRDOWN = 0.3D0, MAXCOR = 3, MSBP = 20)
+      PARAMETER(RDIV  = 2.0D0, ONE = 1.0D0, TWO = 2.0D0, ZERO = 0.0D0)
+
 C-----------------------------------------------------------------------
 C On the first step, on a change of method order, or after a
 C nonlinear convergence failure with NFLAG = -2, set IPUP = MITER
