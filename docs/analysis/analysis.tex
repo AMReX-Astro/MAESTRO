@@ -17,13 +17,18 @@ provide usage examples.
 
 \begin{itemize}
 
-\item {\tt faverage2d.f90}, {\tt faverage3d.f90}
+\item {\tt faverage.f90}
 
-  Laterally average each of the variables in a plotfile (separate
-  routines exist for 2-d and 3-d).  This is written with MAESTRO
-  plane-paralle geometry plotfiles in mind, and the averaging is done
+  Laterally average each of the variables in a plotfile (works for
+  both 2-d and 3-d).  This is written with MAESTRO
+  plane-parallel geometry plotfiles in mind, and the averaging is done
   over the coordinate direction(s) perpendicular to gravity.
 
+
+\item {\tt fboxinfo.f90}
+
+  Print out some basic information about the number of boxes on each
+  refinement level and (optionally) the bounds of each of the boxes.
 
 \item {\tt fcompare.f90}
 
@@ -51,7 +56,7 @@ provide usage examples.
   in one or more plotfiles.
 
 
-\item {\tt fIDLdump.f90}
+\item {\tt fIDLdump.f90}, {\tt fIDLdump3d.f90}
 
   Create a binary file containing a uniformly gridded, single variable
   from a plotfile.  This is can then be read into IDL using the routines
@@ -69,6 +74,18 @@ provide usage examples.
  
   For each plotfile, simply print the simulation time.
 
+
+\subsection{Data Processing Example}
+
+A well-commented example processing routine is provided in {\tt
+  data\_processing/tutorial} as {\tt fspeciesmass2d.f90}.  This
+routine simply computes the total mass of a particular species on the
+entire domain for a 2-d dataset.  It is written to understand a
+multilevel (AMR) dataset, and only considers the finest-available data
+at any physical location in the computational domain.  
+
+{\tt fspeciesmass2d.f90} should provide a good starting point for
+writing a new analysis routine for BoxLib data.
 
 \end{itemize}
 
