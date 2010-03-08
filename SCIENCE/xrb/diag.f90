@@ -5,6 +5,7 @@
 !    xrb_enuc_diag.out:
 !        peak nuclear energy generation rate (erg / g / s)
 !        x/y/z location of peak 
+!        total mass of C12
 !
 !    xrb_temp_diag.out:
 !        peak temperature in the helium layer
@@ -66,21 +67,26 @@ contains
     real(kind=dp_t), pointer::  up(:,:,:,:)
     logical,         pointer :: mp(:,:,:,:)
 
-    real(kind=dp_t) :: T_max, T_max_local, T_max_level
-    real(kind=dp_t) :: x_Tmax_local, y_Tmax_local, z_Tmax_local
-    real(kind=dp_t) :: x_Tmax_level, y_Tmax_level, z_Tmax_level
-    real(kind=dp_t) :: x_Tmax, y_Tmax, z_Tmax
+
+    real(kind=dp_t) :: T_max, T_max_level, T_max_local
+    real(kind=dp_t) :: coord_T_max(dm), coord_T_max_level(dm), &
+                       coord_T_max_local(dm)
+
+    real(kind=dp_t) :: enuc_max, enuc_max_level, enuc_max_local
+    real(kind=dp_t) :: coord_enuc_max(dm), coord_enuc_max_level(dm), &
+                       coord_enuc_max_local(dm)
+
+    real(kind=dp_t) :: total_c12_mass, total_c12_mass_level, &
+                       total_c12_mass_local
+
     ! buffers
     real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(dm)
     real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
 
-    real(kind=dp_t) :: enuc_max, enuc_max_local, enuc_max_level
-    real(kind=dp_t) :: x_enucmax_local, y_enucmax_local, z_enucmax_local
-    real(kind=dp_t) :: x_enucmax_level, y_enucmax_level, z_enucmax_level
-    real(kind=dp_t) :: x_enucmax, y_enucmax, z_enucmax
-    ! buffers
     real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(dm)
     real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
+
+    real(kind=dp_t) :: sum_data_level(1), sum_data_local(1)
 
     integer :: lo(dm),hi(dm),ng_s,ng_u,ng_rhn,ng_rhe
     integer :: i,n, index_max
@@ -102,16 +108,12 @@ contains
     ! note that T_max corresponds to the maximum temperature in the 
     ! helium layer defined by X(He4) >= diag_define_he_layer
     T_max       = ZERO
-
-    x_Tmax      = ZERO
-    y_Tmax      = ZERO
-    z_Tmax      = ZERO
+    coord_T_max(:) = ZERO
 
     enuc_max    = ZERO
+    coord_enuc_max(:) = ZERO
 
-    x_enucmax   = ZERO
-    y_enucmax   = ZERO
-    z_enucmax   = ZERO
+    total_c12_mass = ZERO
 
     ! loop over the levels and calculate global quantities
     do n = 1, nlevs
@@ -120,22 +122,17 @@ contains
        T_max_local     = ZERO
        T_max_level     = ZERO
 
-       x_Tmax_local = ZERO
-       y_Tmax_local = ZERO
-       z_Tmax_local = ZERO
-       x_Tmax_level = ZERO
-       y_Tmax_level = ZERO
-       z_Tmax_level = ZERO       
+       coord_T_max_level(:) = ZERO
+       coord_T_max_local(:) = ZERO
 
        enuc_max_local     = ZERO
        enuc_max_level     = ZERO
 
-       x_enucmax_local = ZERO
-       y_enucmax_local = ZERO
-       z_enucmax_local = ZERO
-       x_enucmax_level = ZERO
-       y_enucmax_level = ZERO
-       z_enucmax_level = ZERO
+       coord_enuc_max_level(:) = ZERO
+       coord_enuc_max_local(:) = ZERO
+       
+       total_c12_mass_local = ZERO
+       total_c12_mass_level = ZERO
 
        ! loop over the boxes at the current level
        do i = 1, s(n)%nboxes
@@ -165,9 +162,10 @@ contains
                              w0(n,:), &
                              lo,hi, &
                              T_max_local, &
-                             x_Tmax_local, y_Tmax_local, &
+                             coord_T_max_local, &
                              enuc_max_local, &
-                             x_enucmax_local, y_enucmax_local)
+                             coord_enuc_max_local, &
+                             total_c12_mass_local)
              else
                 mp => dataptr(mla%mask(n),i)
                 call diag_2d(n,time,dt,dx(n,:), &
@@ -180,9 +178,10 @@ contains
                              w0(n,:), &
                              lo,hi, &
                              T_max_local, &
-                             x_Tmax_local, y_Tmax_local, &
+                             coord_T_max_local, &
                              enuc_max_local, &
-                             x_enucmax_local, y_enucmax_local, &
+                             coord_enuc_max_local, &
+                             total_c12_mass_local, &
                              mp(:,:,1,1))
              endif
           case (3)
@@ -199,9 +198,10 @@ contains
                              w0(n,:), &
                              lo,hi, &
                              T_max_local, &
-                             x_Tmax_local, y_Tmax_local, z_Tmax_local, &
+                             coord_T_max_local, &
                              enuc_max_local, &
-                             x_enucmax_local, y_enucmax_local, z_enucmax_local)
+                             coord_enuc_max_local, &
+                             total_c12_mass_local)
 
              else
                 mp => dataptr(mla%mask(n),i)
@@ -215,9 +215,10 @@ contains
                              w0(n,:), &
                              lo,hi, &
                              T_max_local, &
-                             x_Tmax_local, y_Tmax_local, z_Tmax_local, &
+                             coord_T_max_local, &
                              enuc_max_local, &
-                             x_enucmax_local, y_enucmax_local, z_enucmax_local,&
+                             coord_enuc_max_local, &
+                             total_c12_mass_local, &
                              mp(:,:,:,1))
              endif
           end select
@@ -238,18 +239,16 @@ contains
        ! gather all the T_max_coords into an array and use index_max to 
        ! get the correct location
        allocate(T_max_coords(dm*parallel_nprocs()))
-       T_max_coords_local(1) = x_Tmax_local
-       T_max_coords_local(2) = y_Tmax_local
-       if (dm > 2) T_max_coords_local(3) = z_Tmax_local
+       T_max_coords_local(:) = coord_T_max_local(:)
 
        call parallel_gather(T_max_coords_local , T_max_coords, dm, &
                             root = parallel_IOProcessorNode())
 
        T_max_level = T_max_data(index_max)
-
-       x_Tmax_level = T_max_coords(dm*(index_max-1) + 1)
-       y_Tmax_level = T_max_coords(dm*(index_max-1) + 2)
-       if (dm > 2) z_Tmax_level = T_max_coords(dm*(index_max-1) + 3)
+       
+       coord_T_max_level(1) = T_max_coords(dm*(index_max-1) + 1)
+       coord_T_max_level(2) = T_max_coords(dm*(index_max-1) + 2)
+       if (dm>2) coord_T_max_level(3) = T_max_coords(dm*(index_max-1) + 3)
 
        deallocate(T_max_data, T_max_coords)
 
@@ -263,20 +262,26 @@ contains
        index_max = maxloc(enuc_max_data, dim=1)
 
        allocate(enuc_max_coords(dm*parallel_nprocs()))
-       enuc_max_coords_local(1) = x_enucmax_local
-       enuc_max_coords_local(2) = y_enucmax_local
-       if (dm > 2) enuc_max_coords_local(3) = z_enucmax_local
+       enuc_max_coords_local(:) = coord_enuc_max_local(:)
 
        call parallel_gather(enuc_max_coords_local, enuc_max_coords, dm, &
                             root = parallel_IOProcessorNode())
 
        enuc_max_level = enuc_max_data(index_max)
 
-       x_enucmax_level = enuc_max_coords(dm*(index_max - 1) + 1)
-       y_enucmax_level = enuc_max_coords(dm*(index_max - 1) + 2)
-       if (dm > 2) z_enucmax_level = enuc_max_coords(dm*(index_max - 1) + 3)
+       coord_enuc_max_level(1) = enuc_max_coords(dm*(index_max-1) + 1)
+       coord_enuc_max_level(2) = enuc_max_coords(dm*(index_max-1) + 2)
+       if(dm>2) coord_enuc_max_level(3) = enuc_max_coords(dm*(index_max-1) + 3)
 
        deallocate(enuc_max_data, enuc_max_coords)
+
+       ! get the total c12 mass
+       sum_data_local(1) = total_c12_mass_local
+
+       call parallel_reduce(sum_data_level, sum_data_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
+       
+       total_c12_mass_level = sum_data_level(1)
 
        ! reduce the current level's data with the global data
        if (parallel_IOProcessor()) then
@@ -284,25 +289,27 @@ contains
           if (T_max_level > T_max) then
              T_max = T_max_level
 
-             x_Tmax = x_Tmax_level
-             y_Tmax = y_Tmax_level
-             if (dm > 2) z_Tmax = z_Tmax_level
+             coord_T_max(:) = coord_T_max_level(:)
 
           endif
 
           if (enuc_max_level > enuc_max) then
              enuc_max = enuc_max_level
 
-             x_enucmax = x_enucmax_level
-             y_enucmax = y_enucmax_level
-             if (dm > 2) z_enucmax = z_enucmax_level
+             coord_enuc_max(:) = coord_enuc_max_level(:)
 
           endif
+
+          total_c12_mass = total_c12_mass + total_c12_mass_level
 
        endif
 
     end do
 
+    ! normalize the mass
+    ! we weight things in the loop over zones by the coarse level resolution
+    total_c12_mass = total_c12_mass * dx(1,1) * dx(1,2)
+    if (dm>2) total_c12_mass = total_c12_mass * dx(1,3)
 
 1000 format(1x,10(g20.10,1x))
 1001 format("#",10(a18,1x))
@@ -333,23 +340,20 @@ contains
        if(firstCall) then
           if (dm > 2) then
              write(un , 1001) "time", "max{T}", "x_loc", "y_loc", "z_loc"
-             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc", "z_loc"
+             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc", "z_loc", &
+                  "mass_c12"
           else
              write(un , 1001) "time", "max{T}", "x_loc", "y_loc"
-             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc"
+             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc", "mass_c12"
           endif
 
           firstCall = .false.
        endif
 
        ! print the data
-       if (dm > 2) then
-          write(un , 1000) time, T_max, x_Tmax, y_Tmax, z_Tmax
-          write(un2, 1000) time, enuc_max, x_enucmax, y_enucmax, z_enucmax
-       else
-          write(un , 1000) time, T_max, x_Tmax, y_Tmax
-          write(un2, 1000) time, enuc_max, x_enucmax, y_enucmax
-       endif
+       write(un,  1000) time, T_max, (coord_T_max(i), i=1,dm)
+       write(un2, 1000) time, enuc_max, (coord_enuc_max(i), i=1,dm), &
+            total_c12_mass
 
        close(un )
        close(un2)
@@ -378,15 +382,16 @@ contains
                      w0, &
                      lo,hi, &
                      T_max, &
-                     x_Tmax, y_Tmax, &
+                     coord_T_max, &
                      enuc_max, &
-                     x_enucmax, y_enucmax, &
+                     coord_enuc_max, &
+                     c12_mass, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
     use probin_module, only: diag_define_he_layer, prob_lo, base_cutoff_density
-    use bl_constants_module, only: HALF
+    use bl_constants_module, only: HALF, ONE, FOUR
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
@@ -398,8 +403,8 @@ contains
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
-    real (kind=dp_t), intent(inout) :: x_Tmax, y_Tmax
-    real (kind=dp_t), intent(inout) :: x_enucmax, y_enucmax
+    real (kind=dp_t), intent(inout) :: coord_T_max(2), coord_enuc_max(2)
+    real (kind=dp_t), intent(inout) :: c12_mass
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
     !     Local variables
@@ -407,6 +412,11 @@ contains
     real (kind=dp_t) :: x, y 
     real (kind=dp_t) :: enuc_local
     logical :: cell_valid
+    real (kind=dp_t) :: weight
+
+    ! weight is the volume of a cell at the current level divided by the
+    ! volume of a cell at the COARSEST level
+    weight = ONE / FOUR**(n-1)
 
     do j = lo(2), hi(2)
        y = prob_lo(2) + (dble(j) + HALF) * dx(2)
@@ -425,14 +435,14 @@ contains
              ! check to see if we are in the helium layer
              ! if we are, then get T_max and its loc
              if ( s(i,j,spec_comp) .ge. &
-                  diag_define_he_layer * s(i,j,rho_comp) ) then
+		  diag_define_he_layer * s(i,j,rho_comp) ) then
 
                 if (s(i,j,temp_comp) > T_max) then
                 
                    T_max = s(i,j,temp_comp)
                 
-                   x_Tmax = x
-                   y_Tmax = y
+                   coord_T_max(1) = x
+                   coord_T_max(2) = y
 
                 endif
              endif
@@ -443,10 +453,13 @@ contains
 
                 enuc_max = enuc_local
              
-                x_enucmax = x
-                y_enucmax = y
+                coord_enuc_max(1) = x
+                coord_enuc_max(2) = y
 
              endif
+
+             ! c12 mass diagnostic
+             c12_mass = c12_mass + weight*s(i,j,spec_comp+1)
 
           endif
 
@@ -463,14 +476,15 @@ contains
                      u,ng_u,w0, &
                      lo,hi, &
                      T_max, &
-                     x_Tmax, y_Tmax, z_Tmax, &
+                     coord_T_max, &
                      enuc_max, &
-                     x_enucmax, y_enucmax, z_enucmax, &
+                     coord_enuc_max, &
+                     c12_mass, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
-    use bl_constants_module, only: HALF
+    use bl_constants_module, only: HALF, ONE, EIGHT
     use probin_module, only: diag_define_he_layer, prob_lo, base_cutoff_density
 
     integer, intent(in) :: n,lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
@@ -483,8 +497,8 @@ contains
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
-    real (kind=dp_t), intent(inout) :: x_Tmax, y_Tmax, z_Tmax
-    real (kind=dp_t), intent(inout) :: x_enucmax, y_enucmax, z_enucmax
+    real (kind=dp_t), intent(inout) :: coord_T_max(3), coord_enuc_max(3)
+    real (kind=dp_t), intent(inout) :: c12_mass
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
@@ -492,6 +506,12 @@ contains
     real (kind=dp_t) :: x, y , z
     real (kind=dp_t) :: enuc_local
     logical :: cell_valid
+    real (kind=dp_t) :: weight
+
+
+    ! weight is the volume of a cell at the current level divided by the
+    ! volume of a cell at the COARSEST level
+    weight = ONE / EIGHT**(n-1)
 
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k) + HALF) * dx(3)       
@@ -516,10 +536,10 @@ contains
                    if (s(i,j,k,temp_comp) > T_max) then
                    
                       T_max = s(i,j,k,temp_comp)
-                   
-                      x_Tmax = x
-                      y_Tmax = y
-                      z_Tmax = z
+
+                      coord_T_max(1) = x
+                      coord_T_max(2) = y
+                      coord_T_max(3) = z
                    
                    endif
                 endif
@@ -530,11 +550,14 @@ contains
                 
                    enuc_max = enuc_local
 
-                   x_enucmax = x
-                   y_enucmax = y
-                   z_enucmax = z
+                   coord_enuc_max(1) = x
+                   coord_enuc_max(2) = y
+                   coord_enuc_max(3) = z
 
                 endif
+
+                ! c12 mass diagnostic
+                c12_mass = c12_mass + weight*s(i,j,k,spec_comp+1)
 
              endif
 
