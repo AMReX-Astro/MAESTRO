@@ -424,7 +424,8 @@ contains
              ! temperature diagnostic
              ! check to see if we are in the helium layer
              ! if we are, then get T_max and its loc
-             if (s(i,j,spec_comp) .ge. diag_define_he_layer) then
+             if ( s(i,j,spec_comp) .ge. &
+                  diag_define_he_layer * s(i,j,rho_comp) ) then
 
                 if (s(i,j,temp_comp) > T_max) then
                 
@@ -509,7 +510,9 @@ contains
                 ! temperature diagnostic
                 ! check to see if we are in the helium layer
                 ! if we are, then get T_max
-                if (s(i,j,k,spec_comp) .ge. diag_define_he_layer) then
+                if ( s(i,j,k,spec_comp) .ge. &
+                     diag_define_he_layer * s(i,j,k,rho_comp) ) then
+
                    if (s(i,j,k,temp_comp) > T_max) then
                    
                       T_max = s(i,j,k,temp_comp)
