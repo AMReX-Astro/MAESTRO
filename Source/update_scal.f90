@@ -182,7 +182,7 @@ contains
     integer            :: i, comp, comp2
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sumX
-    real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
+    logical            :: has_negative_species
 
     do_diag = .false.
 
@@ -234,39 +234,29 @@ contains
     ! update density
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
        
-       smin(:) =  HUGE(smin)
-       smax(:) = -HUGE(smax)
-       
        snew(:,rho_comp) = sold(:,rho_comp)
        
        do i = lo(1), hi(1)
 
+          has_negative_species = .false.
+
           ! define the update to rho as the sum of the updates to (rho X)_i
           do comp = nstart, nstop
              snew(i,rho_comp) = snew(i,rho_comp) + (snew(i,comp)-sold(i,comp))
-             smin(comp) = min(smin(comp),snew(i,comp))
-             smax(comp) = max(smax(comp),snew(i,comp))
+             if (snew(i,comp) .lt. ZERO) has_negative_species = .true.
           enddo
 
           ! enforce a density floor
           if (snew(i,rho_comp) .lt. 0.5d0*base_cutoff_density) then
              do comp = nstart, nstop
                 snew(i,comp) = snew(i,comp) * 0.5d0*base_cutoff_density/snew(i,rho_comp)
-                smin(comp) = min(smin(comp),snew(i,comp))
-                smax(comp) = max(smax(comp),snew(i,comp))
              end do
              snew(i,rho_comp) = 0.5d0*base_cutoff_density
           end if
 
-       enddo
-       
-    end if
-    
-    ! Do not allow the species to leave here negative.
-    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-       do comp = nstart, nstop
-          if (smin(comp) .lt. ZERO) then 
-             do i = lo(1), hi(1)
+          ! do not allow the species to leave here negative.
+          if (has_negative_species) then
+             do comp = nstart, nstop
                 if (snew(i,comp) .lt. ZERO) then
                    delta = -snew(i,comp)
                    sumX = ZERO 
@@ -283,9 +273,11 @@ contains
                    enddo
                    snew(i,comp) = ZERO
                 end if
-             enddo
+             end do
           end if
+
        enddo
+       
     end if
 
   end subroutine update_scal_1d
@@ -313,7 +305,7 @@ contains
     integer            :: i, j, comp, comp2
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sumX
-    real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
+    logical            :: has_negative_species
 
     do_diag = .false.
 
@@ -370,19 +362,17 @@ contains
     ! update density
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
        
-       smin(:) =  HUGE(smin)
-       smax(:) = -HUGE(smax)
-       
        snew(:,:,rho_comp) = sold(:,:,rho_comp)
            
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
+             has_negative_species = .false.
+
              ! define the update to rho as the sum of the updates to (rho X)_i  
              do comp = nstart, nstop
                 snew(i,j,rho_comp) = snew(i,j,rho_comp) + (snew(i,j,comp)-sold(i,j,comp))
-                smin(comp) = min(smin(comp),snew(i,j,comp))
-                smax(comp) = max(smax(comp),snew(i,j,comp))
+                if (snew(i,j,comp) .lt. ZERO) has_negative_species = .true.
              enddo
 
              ! enforce a density floor
@@ -390,23 +380,13 @@ contains
                 do comp = nstart, nstop
                    snew(i,j,comp) = snew(i,j,comp) * &
                         0.5d0*base_cutoff_density/snew(i,j,rho_comp)
-                   smin(comp) = min(smin(comp),snew(i,j,comp))
-                   smax(comp) = max(smax(comp),snew(i,j,comp))
                 end do
                 snew(i,j,rho_comp) = 0.5d0*base_cutoff_density
              end if
 
-          enddo
-       enddo
-
-    end if
-    
-    ! Do not allow the species to leave here negative.
-    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-       do comp = nstart, nstop
-          if (smin(comp) .lt. ZERO) then 
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
+             ! do not allow the species to leave here negative.
+             if (has_negative_species) then
+                do comp = nstart, nstop
                    if (snew(i,j,comp) .lt. ZERO) then
                       delta = -snew(i,j,comp)
                       sumX = ZERO 
@@ -423,10 +403,12 @@ contains
                       enddo
                       snew(i,j,comp) = ZERO
                    end if
-                enddo
-             enddo
-          end if
+                end do
+             end if
+
+          enddo
        enddo
+
     end if
 
   end subroutine update_scal_2d
@@ -455,7 +437,7 @@ contains
     integer            :: i, j, k, comp, comp2
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sumX
-    real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
+    logical            :: has_negative_species
 
     do_diag = .false.
 
@@ -519,21 +501,19 @@ contains
     ! update density
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
 
-       smin(:) =  HUGE(smin)
-       smax(:) = -HUGE(smax)
-
        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
        
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
+                has_negative_species = .false.
+
                 ! define the update to rho as the sum of the updates to (rho X)_i
                 do comp = nstart, nstop
                    snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) &
                         + (snew(i,j,k,comp)-sold(i,j,k,comp))
-                   smin(comp) = min(smin(comp),snew(i,j,k,comp))
-                   smax(comp) = max(smax(comp),snew(i,j,k,comp))
+                   if (snew(i,j,k,comp) .lt. ZERO) has_negative_species = .true.
                 enddo
 
                 ! enforce a density floor
@@ -541,31 +521,20 @@ contains
                    do comp = nstart, nstop
                       snew(i,j,k,comp) = snew(i,j,k,comp) * &
                            0.5d0*base_cutoff_density/snew(i,j,k,rho_comp)
-                      smin(comp) = min(smin(comp),snew(i,j,k,comp))
-                      smax(comp) = max(smax(comp),snew(i,j,k,comp))
                    end do
                    snew(i,j,k,rho_comp) = 0.5d0*base_cutoff_density
                 end if
 
-             enddo
-          enddo
-       enddo
-
-    end if
-
-    ! Do not allow the species to leave here negative.
-    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-       do comp = nstart, nstop
-          if (smin(comp) .lt. ZERO) then
-             do k = lo(3), hi(3)
-                do j = lo(2), hi(2)
-                   do i = lo(1), hi(1)
+                ! do not allow the species to leave here negative.
+                if (has_negative_species) then
+                   do comp = nstart, nstop
                       if (snew(i,j,k,comp) .lt. ZERO) then
                          delta = -snew(i,j,k,comp)
-                         sumX = ZERO
+                         sumX = ZERO 
                          do comp2 = nstart, nstop
-                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) &
-                                 sumX = sumX + snew(i,j,k,comp2)
+                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
+                               sumX = sumX + snew(i,j,k,comp2)
+                            end if
                          enddo
                          do comp2 = nstart, nstop
                             if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
@@ -575,11 +544,13 @@ contains
                          enddo
                          snew(i,j,k,comp) = ZERO
                       end if
-                   enddo
-                enddo
+                   end do
+                end if
+
              enddo
-          end if
+          enddo
        enddo
+
     end if
 
   end subroutine update_scal_3d_cart
@@ -608,7 +579,7 @@ contains
     integer            :: i, j, k, comp, comp2
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sumX
-    real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
+    logical            :: has_negative_species
 
     do_diag = .false.
 
@@ -671,21 +642,19 @@ contains
     ! update density
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
 
-       smin(:) =  HUGE(smin)
-       smax(:) = -HUGE(smax)
-
        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
 
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
+                has_negative_species = .false.
+
                 ! define the update to rho as the sum of the updates to (rho X)_i
                 do comp = nstart, nstop
                    snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) &
                         + (snew(i,j,k,comp)-sold(i,j,k,comp))
-                   smin(comp) = min(smin(comp),snew(i,j,k,comp))
-                   smax(comp) = max(smax(comp),snew(i,j,k,comp))
+                   if (snew(i,j,k,comp) .lt. ZERO) has_negative_species = .true.
                 enddo
 
                 ! enforce a density floor
@@ -693,30 +662,20 @@ contains
                    do comp = nstart, nstop
                       snew(i,j,k,comp) = snew(i,j,k,comp) * &
                            0.5d0*base_cutoff_density/snew(i,j,k,rho_comp)
-                      smin(comp) = min(smin(comp),snew(i,j,k,comp))
-                      smax(comp) = max(smax(comp),snew(i,j,k,comp))
                    end do
                    snew(i,j,k,rho_comp) = 0.5d0*base_cutoff_density
                 end if
 
-             enddo
-          enddo
-       enddo
-    end if
-
-    ! Do not allow the species to leave here negative.
-    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-       do comp = nstart, nstop
-          if (smin(comp) .lt. ZERO) then
-             do k = lo(3), hi(3)
-                do j = lo(2), hi(2)
-                   do i = lo(1), hi(1)
+                ! do not allow the species to leave here negative.
+                if (has_negative_species) then
+                   do comp = nstart, nstop
                       if (snew(i,j,k,comp) .lt. ZERO) then
                          delta = -snew(i,j,k,comp)
-                         sumX = ZERO
+                         sumX = ZERO 
                          do comp2 = nstart, nstop
-                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) &
-                                 sumX = sumX + snew(i,j,k,comp2)
+                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
+                               sumX = sumX + snew(i,j,k,comp2)
+                            end if
                          enddo
                          do comp2 = nstart, nstop
                             if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
@@ -726,10 +685,11 @@ contains
                          enddo
                          snew(i,j,k,comp) = ZERO
                       end if
-                   enddo
-                enddo
+                   end do
+                end if
+
              enddo
-          end if
+          enddo
        enddo
     end if
 
