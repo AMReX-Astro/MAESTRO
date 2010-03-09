@@ -970,59 +970,6 @@ contains
     allocate(Ip(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(Im(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
-    ! Normal predictor states.
-    ! Allocated from lo:hi+1 in the normal direction
-    ! lo-1:hi+1 in the transverse directions
-    allocate(slx  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(srx  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(simhx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-
-    allocate(sly  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(sry  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(simhy(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
-
-    allocate(slz  (lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
-    allocate(srz  (lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
-    allocate(simhz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
-
-    ! These are transverse terms.  The size allocation is tricky.
-    ! lo:hi+1 in normal direction
-    ! lo:hi in transverse direction
-    ! lo-1:hi+1 in unused direction
-    allocate(slxy  (lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
-    allocate(srxy  (lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
-    allocate(simhxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
-
-    allocate(slxz  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
-    allocate(srxz  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
-    allocate(simhxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
-
-    allocate(slyx  (lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(sryx  (lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(simhyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
-
-    allocate(slyz  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
-    allocate(sryz  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
-    allocate(simhyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
-
-    allocate(slzx  (lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
-    allocate(srzx  (lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
-    allocate(simhzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
-
-    allocate(slzy  (lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
-    allocate(srzy  (lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
-    allocate(simhzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
-
-    ! Final edge states.
-    ! lo:hi+1 in the normal direction
-    ! lo:hi in the transverse directions
-    allocate(sedgelx(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
-    allocate(sedgerx(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
-    allocate(sedgely(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
-    allocate(sedgery(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
-    allocate(sedgelz(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
-    allocate(sedgerz(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
-
     is = lo(1)
     ie = hi(1)
     js = lo(2)
@@ -1049,10 +996,17 @@ contains
     hx = dx(1)
     hy = dx(2)
     hz = dx(3)
-    
+
     !******************************************************************
     ! Create s_{\i-\half\e_x}^x, etc.
     !******************************************************************
+
+    ! Normal predictor states.
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo-1:hi+1 in the transverse directions
+    allocate(slx  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(srx  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(simhx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     
     ! loop over appropriate x-faces
     if (ppm_type .gt. 0) then
@@ -1142,6 +1096,13 @@ contains
        enddo
     enddo
 
+    ! Normal predictor states.
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo-1:hi+1 in the transverse directions
+    allocate(sly  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(sry  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(simhy(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+
     ! loop over appropriate y-faces
     if (ppm_type .gt. 0) then
        do k=ks-1,ke+1
@@ -1230,6 +1191,13 @@ contains
        enddo
     enddo
 
+    ! Normal predictor states.
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo-1:hi+1 in the transverse directions
+    allocate(slz  (lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(srz  (lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(simhz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+
     ! loop over appropriate z-faces
     if (ppm_type .gt. 0) then
        do k=ks,ke+1
@@ -1252,6 +1220,8 @@ contains
           enddo
        enddo
     end if
+
+    deallocate(slopex,slopey,slopez,Ip,Im)
 
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
@@ -1322,29 +1292,40 @@ contains
     ! Create s_{\i-\half\e_x}^{x|y}, etc.
     !******************************************************************
 
+    allocate(slxy  (lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+    allocate(srxy  (lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+    allocate(simhxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+
     ! loop over appropriate xy faces
-    do k=ks-1,ke+1
-       do j=js,je
-          do i=is,ie+1
-             ! make slxy, srxy by updating 1D extrapolation
-             if(is_conservative) then
+    if (is_conservative) then
+       do k=ks-1,ke+1
+          do j=js,je
+             do i=is,ie+1
+                ! make slxy, srxy by updating 1D extrapolation
                 slxy(i,j,k) = slx(i,j,k) &
                      - (dt3/hy)*(simhy(i-1,j+1,k)*vmac(i-1,j+1,k) &
                      - simhy(i-1,j,k)*vmac(i-1,j,k))
                 srxy(i,j,k) = srx(i,j,k) &
                      - (dt3/hy)*(simhy(i  ,j+1,k)*vmac(i  ,j+1,k) &
                      - simhy(i  ,j,k)*vmac(i  ,j,k))
-             else
+             enddo
+          enddo
+       enddo
+    else
+       do k=ks-1,ke+1
+          do j=js,je
+             do i=is,ie+1
+                ! make slxy, srxy by updating 1D extrapolation
                 slxy(i,j,k) = slx(i,j,k) &
                      - (dt6/hy)*(vmac(i-1,j+1,k)+vmac(i-1,j,k)) &
                      *(simhy(i-1,j+1,k)-simhy(i-1,j,k))
                 srxy(i,j,k) = srx(i,j,k) &
                      - (dt6/hy)*(vmac(i  ,j+1,k)+vmac(i  ,j,k)) &
                      *(simhy(i  ,j+1,k)-simhy(i  ,j,k))
-             end if
+             enddo
           enddo
        enddo
-    enddo
+    end if
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -1411,29 +1392,47 @@ contains
        enddo
     enddo
 
+    deallocate(slxy,srxy)
+
     ! loop over appropriate xz faces
-    do k=ks,ke
-       do j=js-1,je+1
-          do i=is,ie+1
-             ! make slxz, srxz by updating 1D extrapolation
-             if(is_conservative) then
+
+    ! These are transverse terms.  The size allocation is tricky.
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    ! lo-1:hi+1 in unused direction
+    allocate(slxz  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+    allocate(srxz  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+    allocate(simhxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+
+    if (is_conservative) then
+       do k=ks,ke
+          do j=js-1,je+1
+             do i=is,ie+1
+                ! make slxz, srxz by updating 1D extrapolation
                 slxz(i,j,k) = slx(i,j,k) &
                      - (dt3/hz)*(simhz(i-1,j,k+1)*wmac(i-1,j,k+1) &
                      - simhz(i-1,j,k)*wmac(i-1,j,k))
                 srxz(i,j,k) = srx(i,j,k) &
                      - (dt3/hz)*(simhz(i  ,j,k+1)*wmac(i  ,j,k+1) &
                      - simhz(i  ,j,k)*wmac(i  ,j,k))
-             else
+             enddo
+          enddo
+       enddo
+    else
+       do k=ks,ke
+          do j=js-1,je+1
+             do i=is,ie+1
+                ! make slxz, srxz by updating 1D extrapolation
                 slxz(i,j,k) = slx(i,j,k) &
                      - (dt6/hz)*(wmac(i-1,j,k+1)+wmac(i-1,j,k)) &
                      *(simhz(i-1,j,k+1)-simhz(i-1,j,k))
                 srxz(i,j,k) = srx(i,j,k) &
                      - (dt6/hz)*(wmac(i  ,j,k+1)+wmac(i  ,j,k)) &
                      *(simhz(i  ,j,k+1)-simhz(i  ,j,k))
-             end if
+             enddo
           enddo
        enddo
-    enddo
+    end if
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -1500,29 +1499,47 @@ contains
        enddo
     enddo
 
+    deallocate(slxz,srxz)
+
     ! loop over appropriate yx faces
-    do k=ks-1,ke+1
-       do j=js,je+1
-          do i=is,ie
-             ! make slyx, sryx by updating 1D extrapolation
-             if(is_conservative) then
+
+    ! These are transverse terms.  The size allocation is tricky.
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    ! lo-1:hi+1 in unused direction
+    allocate(slyx  (lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(sryx  (lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(simhyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+
+    if (is_conservative) then
+       do k=ks-1,ke+1
+          do j=js,je+1
+             do i=is,ie
+                ! make slyx, sryx by updating 1D extrapolation
                 slyx(i,j,k) = sly(i,j,k) &
                      - (dt3/hx)*(simhx(i+1,j-1,k)*umac(i+1,j-1,k) &
                      - simhx(i,j-1,k)*umac(i,j-1,k))
                 sryx(i,j,k) = sry(i,j,k) &
                      - (dt3/hx)*(simhx(i+1,j  ,k)*umac(i+1,j  ,k) &
                      - simhx(i,j  ,k)*umac(i,j  ,k))
-             else
+             enddo
+          enddo
+       enddo
+    else
+       do k=ks-1,ke+1
+          do j=js,je+1
+             do i=is,ie
+                ! make slyx, sryx by updating 1D extrapolation
                 slyx(i,j,k) = sly(i,j,k) &
                      - (dt6/hx)*(umac(i+1,j-1,k)+umac(i,j-1,k)) &
                      *(simhx(i+1,j-1,k)-simhx(i,j-1,k))
                 sryx(i,j,k) = sry(i,j,k) &
                      - (dt6/hx)*(umac(i+1,j  ,k)+umac(i,j  ,k)) &
                      *(simhx(i+1,j  ,k)-simhx(i,j  ,k))
-             end if
+             enddo
           enddo
        enddo
-    enddo
+    end if
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -1589,29 +1606,49 @@ contains
        enddo
     enddo
 
+    deallocate(slyx,sryx)
+
     ! loop over appropriate yz faces
-    do k=ks,ke
-       do j=js,je+1
-          do i=is-1,ie+1
-             ! make slyz, sryz by updating 1D extrapolation
-             if(is_conservative) then
+
+    ! These are transverse terms.  The size allocation is tricky.
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    ! lo-1:hi+1 in unused direction
+    allocate(slyz  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(sryz  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(simhyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
+
+    if (is_conservative) then
+       do k=ks,ke
+          do j=js,je+1
+             do i=is-1,ie+1
+                ! make slyz, sryz by updating 1D extrapolation
                 slyz(i,j,k) = sly(i,j,k) &
                      - (dt3/hz)*(simhz(i,j-1,k+1)*wmac(i,j-1,k+1) &
                      - simhz(i,j-1,k)*wmac(i,j-1,k))
                 sryz(i,j,k) = sry(i,j,k) &
                      - (dt3/hz)*(simhz(i,j  ,k+1)*wmac(i,j  ,k+1) &
                      - simhz(i,j  ,k)*wmac(i,j  ,k))
-             else
+             enddo
+          enddo
+       enddo
+    else
+       do k=ks,ke
+          do j=js,je+1
+             do i=is-1,ie+1
+                ! make slyz, sryz by updating 1D extrapolation
                 slyz(i,j,k) = sly(i,j,k) &
                      - (dt6/hz)*(wmac(i,j-1,k+1)+wmac(i,j-1,k)) &
                      *(simhz(i,j-1,k+1)-simhz(i,j-1,k))
                 sryz(i,j,k) = sry(i,j,k) &
                      - (dt6/hz)*(wmac(i,j  ,k+1)+wmac(i,j  ,k)) &
                      *(simhz(i,j  ,k+1)-simhz(i,j  ,k))
-             end if
+             enddo
           enddo
        enddo
-    enddo
+    end if
+
+    deallocate(simhz)
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -1678,29 +1715,49 @@ contains
        enddo
     enddo
 
+    deallocate(slyz,sryz)
+
     ! loop over appropriate zx faces
-    do k=ks,ke+1
-       do j=js-1,je+1
-          do i=is,ie
-             ! make slzx, srzx by updating 1D extrapolation
-             if(is_conservative) then
+
+    ! These are transverse terms.  The size allocation is tricky.
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    ! lo-1:hi+1 in unused direction
+    allocate(slzx  (lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(srzx  (lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(simhzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+
+    if (is_conservative) then
+       do k=ks,ke+1
+          do j=js-1,je+1
+             do i=is,ie
+                ! make slzx, srzx by updating 1D extrapolation
                 slzx(i,j,k) = slz(i,j,k) &
                      - (dt3/hx)*(simhx(i+1,j,k-1)*umac(i+1,j,k-1) &
                      - simhx(i,j,k-1)*umac(i,j,k-1))
                 srzx(i,j,k) = srz(i,j,k) &
                      - (dt3/hx)*(simhx(i+1,j,k  )*umac(i+1,j,k  ) &
                      - simhx(i,j,k  )*umac(i,j,k  ))
-             else
+             enddo
+          enddo
+       enddo
+    else
+       do k=ks,ke+1
+          do j=js-1,je+1
+             do i=is,ie
+                ! make slzx, srzx by updating 1D extrapolation
                 slzx(i,j,k) = slz(i,j,k) &
                      - (dt6/hx)*(umac(i+1,j,k-1)+umac(i,j,k-1)) &
                      *(simhx(i+1,j,k-1)-simhx(i,j,k-1))
                 srzx(i,j,k) = srz(i,j,k) &
                      - (dt6/hx)*(umac(i+1,j,k  )+umac(i,j,k  )) &
                      *(simhx(i+1,j,k  )-simhx(i,j,k  ))
-             end if
+             enddo
           enddo
-       enddo
-    enddo
+       end do
+    end if
+
+    deallocate(simhx)
 
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
@@ -1767,29 +1824,49 @@ contains
        enddo
     enddo
 
+    deallocate(slzx,srzx)
+
     ! loop over appropriate zy faces
-    do k=ks,ke+1
-       do j=js,je
-          do i=is-1,ie+1
-             ! make slzy, srzy by updating 1D extrapolation
-             if(is_conservative) then
+
+    ! These are transverse terms.  The size allocation is tricky.
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    ! lo-1:hi+1 in unused direction
+    allocate(slzy  (lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(srzy  (lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(simhzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+
+    if (is_conservative) then
+       do k=ks,ke+1
+          do j=js,je
+             do i=is-1,ie+1
+                ! make slzy, srzy by updating 1D extrapolation
                 slzy(i,j,k) = slz(i,j,k) &
                      - (dt3/hy)*(simhy(i,j+1,k-1)*vmac(i,j+1,k-1) &
                      - simhy(i,j,k-1)*vmac(i,j,k-1))
                 srzy(i,j,k) = srz(i,j,k) &
                      - (dt3/hy)*(simhy(i,j+1,k  )*vmac(i,j+1,k  ) &
                      - simhy(i,j,k  )*vmac(i,j,k  ))
-             else
+             enddo
+          enddo
+       enddo
+    else
+       do k=ks,ke+1
+          do j=js,je
+             do i=is-1,ie+1
+                ! make slzy, srzy by updating 1D extrapolation
                 slzy(i,j,k) = slz(i,j,k) &
                      - (dt6/hy)*(vmac(i,j+1,k-1)+vmac(i,j,k-1)) &
                      *(simhy(i,j+1,k-1)-simhy(i,j,k-1))
                 srzy(i,j,k) = srz(i,j,k) &
                      - (dt6/hy)*(vmac(i,j+1,k  )+vmac(i,j,k  )) &
                      *(simhy(i,j+1,k  )-simhy(i,j,k  ))
-             end if
+             enddo
           enddo
        enddo
-    enddo
+    end if
+
+    deallocate(simhy)
 
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
@@ -1856,16 +1933,24 @@ contains
        enddo
     enddo
 
+    deallocate(slzy,srzy)
+
     !******************************************************************
     ! Create sedgelx, etc.
     !******************************************************************
 
+    ! Final edge states.
+    ! lo:hi+1 in the normal direction
+    ! lo:hi in the transverse directions
+    allocate(sedgelx(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
+    allocate(sedgerx(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
+
     ! loop over appropriate x-faces
-    do k=ks,ke
-       do j=js,je
-          do i=is,ie+1
-             ! make sedgelx, sedgerx
-             if(is_conservative) then
+    if (is_conservative) then
+       do k=ks,ke
+          do j=js,je
+             do i=is,ie+1
+                ! make sedgelx, sedgerx
                 sedgelx(i,j,k) = slx(i,j,k) &
                      - (dt2/hy)*(simhyz(i-1,j+1,k  )*vmac(i-1,j+1,k  ) &
                      - simhyz(i-1,j,k)*vmac(i-1,j,k)) &
@@ -1880,7 +1965,14 @@ contains
                      - simhzy(i  ,j,k)*wmac(i  ,j,k)) &
                      - (dt2/hx)*s(i  ,j,k,comp)*(umac(i+1,j,k)-umac(i  ,j,k)) &
                      + dt2*force(i  ,j,k,comp)
-             else
+             end do
+          end do
+       end do
+    else
+       do k=ks,ke
+          do j=js,je
+             do i=is,ie+1
+                ! make sedgelx, sedgerx
                 sedgelx(i,j,k) = slx(i,j,k) &
                      - (dt4/hy)*(vmac(i-1,j+1,k  )+vmac(i-1,j,k))* &
                      (simhyz(i-1,j+1,k  )-simhyz(i-1,j,k)) &
@@ -1893,10 +1985,20 @@ contains
                      - (dt4/hz)*(wmac(i  ,j  ,k+1)+wmac(i  ,j,k))* &
                      (simhzy(i  ,j  ,k+1)-simhzy(i  ,j,k)) &
                      + dt2*force(i  ,j,k,comp)
-             end if
+             end do
+          end do
+       end do
+    end if
 
-             ! add the (Utilde . e_r) d w_0 /dr e_r term here
-             if (is_vel) then
+    deallocate(slx,srx,simhyz,simhzy)
+
+    if (is_vel) then
+
+       ! add the (Utilde . e_r) d w_0 /dr e_r term here
+
+       do k=ks,ke
+          do j=js,je
+             do i=is,ie+1
 
                 if (spherical .eq. 0 .and. comp .eq. 3) then
 
@@ -1913,30 +2015,36 @@ contains
                    ! u/v/wmac contain w0, so we need to subtract it off.
                    ! left face centered about (i-1,j,k)
                    Ut_dot_er = (HALF*(umac(i-1,j,k) + umac(i,j,k)) - &
-                                HALF*(w0macx(i-1,j,k)+w0macx(i,j,k)))*normal(i-1,j,k,1) + &
-                               (HALF*(vmac(i-1,j,k) + vmac(i-1,j+1,k)) - &
-                                HALF*(w0macy(i-1,j,k)+w0macy(i-1,j+1,k)))*normal(i-1,j,k,2) + &
-                               (HALF*(wmac(i-1,j,k) + wmac(i-1,j,k+1)) - &
-                                HALF*(w0macz(i-1,j,k)+w0macz(i-1,j,k+1)))*normal(i-1,j,k,3)
+                        HALF*(w0macx(i-1,j,k)+w0macx(i,j,k)))*normal(i-1,j,k,1) + &
+                        (HALF*(vmac(i-1,j,k) + vmac(i-1,j+1,k)) - &
+                        HALF*(w0macy(i-1,j,k)+w0macy(i-1,j+1,k)))*normal(i-1,j,k,2) + &
+                        (HALF*(wmac(i-1,j,k) + wmac(i-1,j,k+1)) - &
+                        HALF*(w0macz(i-1,j,k)+w0macz(i-1,j,k+1)))*normal(i-1,j,k,3)
 
                    sedgelx(i,j,k) = sedgelx(i,j,k) &
                         - dt2*Ut_dot_er*gradw0_cart(i-1,j,k)*normal(i-1,j,k,comp)
 
                    ! right face centered about (i,j,k)
                    Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
-                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
-                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
+                        HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
+                        (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
+                        HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
+                        (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
+                        HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
 
                    sedgerx(i,j,k) = sedgerx(i,j,k) &
                         - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
 
                 end if
+             enddo
+          enddo
+       enddo
 
-             end if             
+    end if
 
+    do k=ks,ke
+       do j=js,je
+          do i=is,ie+1
              ! make sedgex by solving Riemann problem
              ! boundary conditions enforced outside of i,j,k loop
              sedgex(i,j,k,comp) = merge(sedgelx(i,j,k),sedgerx(i,j,k),umac(i,j,k) .gt. ZERO)
@@ -1992,12 +2100,17 @@ contains
        end if
     end if
 
+    deallocate(sedgelx,sedgerx)
+
+    allocate(sedgely(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(sedgery(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
+
     ! loop over appropriate y-faces
-    do k=ks,ke
-       do j=js,je+1
-          do i=is,ie
-             ! make sedgely, sedgery
-             if(is_conservative) then
+    if (is_conservative) then
+       do k=ks,ke
+          do j=js,je+1
+             do i=is,ie
+                ! make sedgely, sedgery
                 sedgely(i,j,k) = sly(i,j,k) &
                      - (dt2/hx)*(simhxz(i+1,j-1,k  )*umac(i+1,j-1,k  ) &
                      - simhxz(i,j-1,k)*umac(i,j-1,k)) &
@@ -2012,7 +2125,14 @@ contains
                      - simhzx(i,j  ,k)*wmac(i,j  ,k)) &
                      - (dt2/hy)*s(i,j  ,k,comp)*(vmac(i,j+1,k)-vmac(i,j  ,k)) &
                      + dt2*force(i,j  ,k,comp)
-             else
+             end do
+          end do
+       end do
+    else
+       do k=ks,ke
+          do j=js,je+1
+             do i=is,ie
+                ! make sedgely, sedgery
                 sedgely(i,j,k) = sly(i,j,k) &
                      - (dt4/hx)*(umac(i+1,j-1,k  )+umac(i,j-1,k))* &
                      (simhxz(i+1,j-1,k  )-simhxz(i,j-1,k)) &
@@ -2025,10 +2145,20 @@ contains
                      - (dt4/hz)*(wmac(i  ,j  ,k+1)+wmac(i,j  ,k))* &
                      (simhzx(i  ,j  ,k+1)-simhzx(i,j  ,k)) &
                      + dt2*force(i,j  ,k,comp)
-             end if
+             end do
+          end do
+       end do
+    end if
 
-             ! add the (Utilde . e_r) d w_0 /dr e_r term here
-             if (is_vel) then
+    deallocate(sly,sry,simhxz,simhzx)
+
+    if (is_vel) then
+
+       ! add the (Utilde . e_r) d w_0 /dr e_r term here
+
+       do k=ks,ke
+          do j=js,je+1
+             do i=is,ie
 
                 if (spherical .eq. 0 .and. comp .eq. 3) then
 
@@ -2045,30 +2175,37 @@ contains
                    ! u/v/wmac contain w0, so we need to subtract it off.  
                    ! left face centered about (i,j-1,k)
                    Ut_dot_er = (HALF*(umac(i,j-1,k) + umac(i+1,j-1,k)) - &
-                                HALF*(w0macx(i,j-1,k)+w0macx(i+1,j-1,k)))*normal(i,j-1,k,1) + &
-                               (HALF*(vmac(i,j-1,k) + vmac(i,j,k)) - &
-                                HALF*(w0macy(i,j-1,k)+w0macy(i,j,k)))*normal(i,j-1,k,2) + &
-                               (HALF*(wmac(i,j-1,k) + wmac(i,j-1,k+1)) - &
-                                HALF*(w0macz(i,j-1,k)+w0macz(i,j-1,k+1)))*normal(i,j-1,k,3)
+                        HALF*(w0macx(i,j-1,k)+w0macx(i+1,j-1,k)))*normal(i,j-1,k,1) + &
+                        (HALF*(vmac(i,j-1,k) + vmac(i,j,k)) - &
+                        HALF*(w0macy(i,j-1,k)+w0macy(i,j,k)))*normal(i,j-1,k,2) + &
+                        (HALF*(wmac(i,j-1,k) + wmac(i,j-1,k+1)) - &
+                        HALF*(w0macz(i,j-1,k)+w0macz(i,j-1,k+1)))*normal(i,j-1,k,3)
 
                    sedgely(i,j,k) = sedgely(i,j,k) &
                         - dt2*Ut_dot_er*gradw0_cart(i,j-1,k)*normal(i,j-1,k,comp)
 
                    ! right face centered about (i,j,k)
                    Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
-                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
-                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
+                        HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
+                        (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
+                        HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
+                        (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
+                        HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
 
                    sedgery(i,j,k) = sedgery(i,j,k) &
                         - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
 
                 end if
 
-             end if 
+             enddo
+          enddo
+       enddo
 
+    end if
+
+    do k=ks,ke
+       do j=js,je+1
+          do i=is,ie
              ! make sedgey by solving Riemann problem
              ! boundary conditions enforced outside of i,j,k loop
              sedgey(i,j,k,comp) = merge(sedgely(i,j,k),sedgery(i,j,k),vmac(i,j,k) .gt. ZERO)
@@ -2124,12 +2261,17 @@ contains
        end if
     end if
 
+    deallocate(sedgely,sedgery)
+
+    allocate(sedgelz(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(sedgerz(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
+
     ! loop over appropriate z-faces
-    do k=ks,ke+1
-       do j=js,je
-          do i=is,ie
-             ! make sedgelz, sedgerz
-             if(is_conservative) then
+    if (is_conservative) then
+       do k=ks,ke+1
+          do j=js,je
+             do i=is,ie
+                ! make sedgelz, sedgerz
                 sedgelz(i,j,k) = slz(i,j,k) &
                      - (dt2/hx)*(simhxy(i+1,j  ,k-1)*umac(i+1,j  ,k-1) &
                      - simhxy(i,j,k-1)*umac(i,j,k-1)) &
@@ -2144,7 +2286,14 @@ contains
                      - simhyx(i,j,k  )*vmac(i,j,k  )) &
                      - (dt2/hz)*s(i,j,k  ,comp)*(wmac(i,j,k+1)-wmac(i,j,k  )) &
                      + dt2*force(i,j,k  ,comp)
-             else
+             end do
+          end do
+       end do
+    else
+       do k=ks,ke+1
+          do j=js,je
+             do i=is,ie
+                ! make sedgelz, sedgerz
                 sedgelz(i,j,k) = slz(i,j,k) &
                      - (dt4/hx)*(umac(i+1,j  ,k-1)+umac(i,j,k-1)) &
                      *(simhxy(i+1,j  ,k-1)-simhxy(i,j,k-1)) &
@@ -2157,10 +2306,20 @@ contains
                      - (dt4/hy)*(vmac(i  ,j+1,k  )+vmac(i,j,k  )) &
                      *(simhyx(i  ,j+1,k  )-simhyx(i,j,k  )) &
                      + dt2*force(i,j,k  ,comp)
-             end if
+             end do
+          end do
+       end do
+    end if
 
-             ! add the (Utilde . e_r) d w_0 /dr e_r term here
-             if (is_vel) then
+    deallocate(slz,srz,simhxy,simhyx)
+
+    if (is_vel) then
+
+       ! add the (Utilde . e_r) d w_0 /dr e_r term here
+
+       do k=ks,ke+1
+          do j=js,je
+             do i=is,ie
 
                 if (spherical .eq. 0 .and. comp .eq. 3) then
                    ! wmac contains w0 so we need to subtract it off
@@ -2188,30 +2347,37 @@ contains
 
                    ! left face centered about (i,j,k-1)
                    Ut_dot_er = (HALF*(umac(i,j,k-1) + umac(i+1,j,k-1)) - &
-                                HALF*(w0macx(i,j,k-1)+w0macx(i+1,j,k-1)))*normal(i,j,k-1,1) + &
-                               (HALF*(vmac(i,j,k-1) + vmac(i,j+1,k-1)) - &
-                                HALF*(w0macy(i,j,k-1)+w0macy(i,j+1,k-1)))*normal(i,j,k-1,2) + &
-                               (HALF*(wmac(i,j,k-1) + wmac(i,j,k)) - &
-                                HALF*(w0macz(i,j,k-1)+w0macz(i,j,k)))*normal(i,j,k-1,3)
+                        HALF*(w0macx(i,j,k-1)+w0macx(i+1,j,k-1)))*normal(i,j,k-1,1) + &
+                        (HALF*(vmac(i,j,k-1) + vmac(i,j+1,k-1)) - &
+                        HALF*(w0macy(i,j,k-1)+w0macy(i,j+1,k-1)))*normal(i,j,k-1,2) + &
+                        (HALF*(wmac(i,j,k-1) + wmac(i,j,k)) - &
+                        HALF*(w0macz(i,j,k-1)+w0macz(i,j,k)))*normal(i,j,k-1,3)
 
                    sedgelz(i,j,k) = sedgelz(i,j,k) &
                         - dt2*Ut_dot_er*gradw0_cart(i,j,k-1)*normal(i,j,k-1,comp)
 
                    ! right face centered about (i,j,k)
                    Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
-                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
-                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
+                        HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
+                        (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
+                        HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
+                        (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
+                        HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
 
                    sedgerz(i,j,k) = sedgerz(i,j,k) &
                         - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
 
                 end if
 
-             end if 
+             enddo
+          enddo
+       enddo
 
+    end if
+
+    do k=ks,ke+1
+       do j=js,je
+          do i=is,ie
              ! make sedgez by solving Riemann problem
              ! boundary conditions enforced outside of i,j,k loop
              sedgez(i,j,k,comp) = merge(sedgelz(i,j,k),sedgerz(i,j,k),wmac(i,j,k) .gt. ZERO)
@@ -2267,14 +2433,8 @@ contains
        end if
     end if
 
-    deallocate(slopex,slopey,slopez)
-    deallocate(slx,srx,simhx,sly,sry,simhy,slz,srz,simhz)
-    deallocate(slxy,srxy,simhxy,slxz,srxz,simhxz,slyx,sryx,simhyx)
-    deallocate(slyz,sryz,simhyz,slzx,srzx,simhzx,slzy,srzy,simhzy)
-    deallocate(sedgelx,sedgerx,sedgely,sedgery,sedgelz,sedgerz)    
-    deallocate(Ip,Im)
+    deallocate(sedgelz,sedgerz)
 
   end subroutine make_edge_scal_3d
 
 end module make_edge_scal_module
- 
