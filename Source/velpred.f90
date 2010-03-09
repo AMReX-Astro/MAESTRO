@@ -739,59 +739,6 @@ contains
     allocate(Ipw(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(Imw(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
-    ! normal predictor states
-    ! Allocated from lo:hi+1 in the normal direction
-    ! lo-1:hi+1 in the transverse directions
-    allocate(ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-    allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-    allocate(uimhx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-
-    allocate(uly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
-    allocate(ury(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
-    allocate(uimhy(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
-
-    allocate(ulz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
-    allocate(urz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
-    allocate(uimhz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
-
-    ! transverse states
-    ! lo-1:hi+1 in base direction
-    ! lo:hi+1 in normal direction
-    ! lo:hi in transverse direction
-    allocate(ulyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
-    allocate(uryz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
-    allocate(uimhyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
-
-    allocate(ulzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
-    allocate(urzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
-    allocate(uimhzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
-
-    allocate(vlxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
-    allocate(vrxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
-    allocate(vimhxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
-
-    allocate(vlzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
-    allocate(vrzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
-    allocate(vimhzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
-
-    allocate(wlxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
-    allocate(wrxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
-    allocate(wimhxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
-
-    allocate(wlyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(wryx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(wimhyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
-
-    ! mac states
-    ! Allocated from lo:hi+1 in the normal direction
-    ! lo:hi in the transverse direction
-    allocate(umacl(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
-    allocate(umacr(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
-    allocate(vmacl(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
-    allocate(vmacr(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
-    allocate(wmacl(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
-    allocate(wmacr(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
-
     is = lo(1)
     ie = hi(1)
     js = lo(2)
@@ -825,6 +772,12 @@ contains
     !******************************************************************
     ! Create u_{\i-\half\e_x}^x, etc.
     !******************************************************************
+
+    ! normal predictor states
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo-1:hi+1 in the transverse directions
+    allocate(ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
        do k=ks-1,ke+1
@@ -869,6 +822,8 @@ contains
        end do
     end if
 
+    deallocate(slopex)
+
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
        ulx(is,js-1:je+1,ks-1:ke+1,1:3) = u(is-1,js-1:je+1,ks-1:ke+1,1:3)
@@ -907,6 +862,8 @@ contains
        urx(ie+1,js-1:je+1,ks-1:ke+1,3) = ulx(ie+1,js-1:je+1,ks-1:ke+1,3)
     end if
 
+    allocate(uimhx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+
     do k=ks-1,ke+1
        do j=js-1,je+1
           do i=is,ie+1
@@ -922,6 +879,12 @@ contains
           enddo
        enddo
     enddo
+
+    ! normal predictor states
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo-1:hi+1 in the transverse directions
+    allocate(uly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(ury(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
        do k=ks-1,ke+1
@@ -966,6 +929,8 @@ contains
        enddo
     end if
 
+    deallocate(slopey)
+
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
        uly(is-1:ie+1,js,ks-1:ke+1,1:3) = u(is-1:ie+1,js-1,ks-1:ke+1,1:3)
@@ -1004,6 +969,8 @@ contains
        ury(is-1:ie+1,je+1,ks-1:ke+1,3) = uly(is-1:ie+1,je+1,ks-1:ke+1,3)
     end if
 
+    allocate(uimhy(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
+
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is-1,ie+1
@@ -1019,6 +986,12 @@ contains
           enddo
        enddo
     enddo
+
+    ! normal predictor states
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo-1:hi+1 in the transverse directions
+    allocate(ulz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
+    allocate(urz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
        do k=ks,ke+1
@@ -1071,6 +1044,8 @@ contains
        end do
     end if
 
+    deallocate(slopez,Ipu,Imu,Ipv,Imv,Ipw,Imw)
+
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
        ulz(is-1:ie+1,js-1:je+1,ks,1:3) = u(is-1:ie+1,js-1:je+1,ks-1,1:3)
@@ -1109,6 +1084,8 @@ contains
        urz(is-1:ie+1,js-1:je+1,ke+1,3) = max(ulz(is-1:ie+1,js-1:je+1,ke+1,3),ZERO)
     end if
 
+    allocate(uimhz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
+
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is-1,ie+1
@@ -1128,6 +1105,14 @@ contains
     !******************************************************************
     ! Create u_{\i-\half\e_y}^{y|z}, etc.
     !******************************************************************
+
+    ! transverse states
+    ! lo-1:hi+1 in base direction
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    allocate(ulyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(uryz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(uimhyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
 
     ! uimhyz loop
     do k=ks,ke
@@ -1175,6 +1160,16 @@ contains
        enddo
     enddo
 
+    deallocate(ulyz,uryz)
+
+    ! transverse states
+    ! lo-1:hi+1 in base direction
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    allocate(ulzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(urzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(uimhzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+
     ! uimhzy loop
     do k=ks,ke+1
        do j=js,je
@@ -1221,6 +1216,15 @@ contains
        enddo
     enddo
 
+    deallocate(ulzy,urzy)
+
+    ! transverse states
+    ! lo-1:hi+1 in base direction
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    allocate(vlxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+    allocate(vrxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+
     ! vimhxz loop
     do k=ks,ke
        do j=js-1,je+1
@@ -1233,6 +1237,8 @@ contains
           enddo
        enddo
     enddo
+
+    deallocate(uimhz)
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -1256,6 +1262,8 @@ contains
        vrxz(ie+1,js-1:je+1,ks:ke) = ZERO
     end if
 
+    allocate(vimhxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+
     do k=ks,ke
        do j=js-1,je+1
           do i=is,ie+1
@@ -1266,6 +1274,16 @@ contains
           enddo
        enddo
     enddo
+
+    deallocate(vlxz,vrxz)
+
+    ! transverse states
+    ! lo-1:hi+1 in base direction
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    allocate(vlzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(vrzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(vimhzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
     ! vimhzx loop
     do k=ks,ke+1
@@ -1313,6 +1331,15 @@ contains
        enddo
     enddo
 
+    deallocate(vlzx,vrzx)
+
+    ! transverse states
+    ! lo-1:hi+1 in base direction
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    allocate(wlxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+    allocate(wrxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+
     ! wimhxy loop
     do k=ks-1,ke+1
        do j=js,je
@@ -1325,6 +1352,8 @@ contains
           enddo
        enddo
     enddo
+
+    deallocate(uimhy)
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -1348,6 +1377,8 @@ contains
        wrxy(ie+1,js:je,ks-1:ke+1) = ZERO
     end if
 
+    allocate(wimhxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+
     do k=ks-1,ke+1
        do j=js,je
           do i=is,ie+1
@@ -1358,6 +1389,15 @@ contains
           enddo
        enddo
     enddo
+
+    deallocate(wlxy,wrxy)
+
+    ! transverse states
+    ! lo-1:hi+1 in base direction
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    allocate(wlyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(wryx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
     ! wimhyx loop
     do k=ks-1,ke+1
@@ -1371,6 +1411,8 @@ contains
           enddo
        enddo
     enddo
+
+    deallocate(uimhx)
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -1394,6 +1436,8 @@ contains
        wryx(is:ie,je+1,ks-1:ke+1) = ZERO
     end if
 
+    allocate(wimhyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is,ie
@@ -1405,9 +1449,17 @@ contains
        enddo
     enddo
 
+    deallocate(wlyx,wryx)
+
     !******************************************************************
     ! Create umac, etc.
     !******************************************************************
+
+    ! mac states
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo:hi in the transverse direction
+    allocate(umacl(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
+    allocate(umacr(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
 
     do k=ks,ke
        do j=js,je
@@ -1464,6 +1516,8 @@ contains
        enddo
     enddo
 
+    deallocate(ulx,urx,uimhyz,uimhzy)
+
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
        umac(is,js:je,ks:ke) = ZERO
@@ -1481,6 +1535,14 @@ contains
     else if (phys_bc(1,2) .eq. OUTLET) then
        umac(ie+1,js:je,ks:ke) = max(umacl(ie+1,js:je,ks:ke),ZERO)
     endif
+
+    deallocate(umacl,umacr)
+
+    ! mac states
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo:hi in the transverse direction
+    allocate(vmacl(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(vmacr(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
 
     do k=ks,ke
        do j=js,je+1
@@ -1537,6 +1599,8 @@ contains
        enddo
     enddo
 
+    deallocate(uly,ury,vimhxz,vimhzx)
+
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
        vmac(is:ie,js,ks:ke) = ZERO
@@ -1554,6 +1618,14 @@ contains
     else if (phys_bc(2,2) .eq. OUTLET) then
        vmac(is:ie,je+1,ks:ke) = max(vmacl(is:ie,je+1,ks:ke),ZERO)
     endif
+
+    deallocate(vmacl,vmacr)
+
+    ! mac states
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo:hi in the transverse direction
+    allocate(wmacl(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(wmacr(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
 
     do k=ks,ke+1
        do j=js,je
@@ -1628,6 +1700,8 @@ contains
        enddo
     enddo
 
+    deallocate(ulz,urz,wimhxy,wimhyx)
+
     ! impose hi side bc's
     if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. NO_SLIP_WALL) then
        wmac(is:ie,js:je,ks) = ZERO
@@ -1646,13 +1720,7 @@ contains
        wmac(is:ie,js:je,ke+1) = max(wmacl(is:ie,js:je,ke+1),ZERO)
     endif
 
-    deallocate(slopex,slopey,slopez)
-    deallocate(ulx,urx,uimhx,uly,ury,uimhy,ulz,urz,uimhz)
-    deallocate(ulyz,uryz,uimhyz,ulzy,urzy,uimhzy)
-    deallocate(vlxz,vrxz,vimhxz,vlzx,vrzx,vimhzx)
-    deallocate(wlxy,wrxy,wimhxy,wlyx,wryx,wimhyx)
-    deallocate(umacl,umacr,vmacl,vmacr,wmacl,wmacr)
-    deallocate(Ipu,Imu,Ipv,Imv,Ipw,Imw)
+    deallocate(wmacl,wmacr)
 
   end subroutine velpred_3d
 
