@@ -343,15 +343,6 @@ contains
     allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
     allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
 
-    allocate(ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-
-    allocate(vly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(vry(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
-
-    allocate(wlz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
-    allocate(wrz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
-
     allocate(Ip(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(Im(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
@@ -383,6 +374,9 @@ contains
     ! create utrans
     !******************************************************************
 
+    allocate(ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+
     if (ppm_type .gt. 0) then
        do k=ks,ke
           do j=js,je
@@ -413,6 +407,8 @@ contains
           end do
        end do
     end if
+
+    deallocate(slopex)
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -461,6 +457,8 @@ contains
        enddo
     enddo
 
+    deallocate(ulx,urx)
+
     !******************************************************************
     ! create vtrans
     !******************************************************************
@@ -469,6 +467,9 @@ contains
        call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,2),dx,dt)
     end if
+
+    allocate(vly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(vry(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
     if (ppm_type .gt. 0) then
        do k=ks,ke
@@ -500,6 +501,8 @@ contains
           enddo
        enddo
     end if
+
+    deallocate(slopey)
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -548,6 +551,8 @@ contains
        enddo
     enddo
 
+    deallocate(vly,vry)
+
     !******************************************************************
     ! create wtrans
     !******************************************************************
@@ -556,6 +561,9 @@ contains
        call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,3),dx,dt)
     end if
+
+    allocate(wlz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(wrz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
     if (ppm_type .gt. 0) then
        do k=ks,ke+1
@@ -595,6 +603,8 @@ contains
           end do
        end do
     end if
+
+    deallocate(slopez,Ip,Im)
     
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
@@ -643,9 +653,7 @@ contains
        enddo
     enddo
 
-    deallocate(slopex,slopey,slopez)
-    deallocate(ulx,urx,vly,vry,wlz,wrz)
-    deallocate(Ip,Im)
+    deallocate(wlz,wrz)
 
   end subroutine mkutrans_3d
   
