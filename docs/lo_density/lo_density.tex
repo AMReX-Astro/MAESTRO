@@ -95,6 +95,9 @@ Note that saying $r\ge$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\
 \item In {\tt update\_scal}, if $\rho \le {\tt base\_cutoff\_density}$
    and {\tt do\_eos\_h\_above\_cutoff}, we call the EOS to compute $h$.
 
+\item In {\tt update\_scal}, if $\rho \le {\tt base\_cutoff\_density}/2$
+   we set it to ${\tt base\_cutoff\_density}/2$.
+
 \item In {\tt make\_grav} for spherical, we only add the enclosed mass if
   $\rho_0 > {\tt base\_cutoff\_density}$.
 
