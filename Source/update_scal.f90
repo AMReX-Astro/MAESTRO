@@ -231,7 +231,7 @@ contains
        
     end if
     
-    ! Define the update to rho as the sum of the updates to (rho X)_i
+    ! update density
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
        
        smin(:) =  HUGE(smin)
@@ -239,12 +239,25 @@ contains
        
        snew(:,rho_comp) = sold(:,rho_comp)
        
-       do comp = nstart, nstop
-          do i = lo(1), hi(1)
+       do i = lo(1), hi(1)
+
+          ! define the update to rho as the sum of the updates to (rho X)_i
+          do comp = nstart, nstop
              snew(i,rho_comp) = snew(i,rho_comp) + (snew(i,comp)-sold(i,comp))
              smin(comp) = min(smin(comp),snew(i,comp))
              smax(comp) = max(smax(comp),snew(i,comp))
           enddo
+
+          ! enforce a density floor
+          if (snew(i,rho_comp) .lt. 0.5d0*base_cutoff_density) then
+             do comp = nstart, nstop
+                snew(i,comp) = snew(i,comp) * 0.5d0*base_cutoff_density/snew(i,rho_comp)
+                smin(comp) = min(smin(comp),snew(i,comp))
+                smax(comp) = max(smax(comp),snew(i,comp))
+             end do
+             snew(i,rho_comp) = 0.5d0*base_cutoff_density
+          end if
+
        enddo
        
     end if
@@ -354,24 +367,38 @@ contains
        
     end if
     
-    ! Define the update to rho as the sum of the updates to (rho X)_i
+    ! update density
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
        
        smin(:) =  HUGE(smin)
        smax(:) = -HUGE(smax)
        
        snew(:,:,rho_comp) = sold(:,:,rho_comp)
-       
-       do comp = nstart, nstop
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
+           
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             ! define the update to rho as the sum of the updates to (rho X)_i  
+             do comp = nstart, nstop
                 snew(i,j,rho_comp) = snew(i,j,rho_comp) + (snew(i,j,comp)-sold(i,j,comp))
                 smin(comp) = min(smin(comp),snew(i,j,comp))
                 smax(comp) = max(smax(comp),snew(i,j,comp))
              enddo
+
+             ! enforce a density floor
+             if (snew(i,j,rho_comp) .lt. 0.5d0*base_cutoff_density) then
+                do comp = nstart, nstop
+                   snew(i,j,comp) = snew(i,j,comp) * &
+                        0.5d0*base_cutoff_density/snew(i,j,rho_comp)
+                   smin(comp) = min(smin(comp),snew(i,j,comp))
+                   smax(comp) = max(smax(comp),snew(i,j,comp))
+                end do
+                snew(i,j,rho_comp) = 0.5d0*base_cutoff_density
+             end if
+
           enddo
        enddo
-       
+
     end if
     
     ! Do not allow the species to leave here negative.
@@ -489,23 +516,37 @@ contains
     end if
 
 
-    ! Define the update to rho as the sum of the updates to (rho X)_i
+    ! update density
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
 
        smin(:) =  HUGE(smin)
        smax(:) = -HUGE(smax)
 
        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
+       
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
-       do comp = nstart, nstop
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
+                ! define the update to rho as the sum of the updates to (rho X)_i
+                do comp = nstart, nstop
                    snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) &
                         + (snew(i,j,k,comp)-sold(i,j,k,comp))
                    smin(comp) = min(smin(comp),snew(i,j,k,comp))
                    smax(comp) = max(smax(comp),snew(i,j,k,comp))
                 enddo
+
+                ! enforce a density floor
+                if (snew(i,j,k,rho_comp) .lt. 0.5d0*base_cutoff_density) then
+                   do comp = nstart, nstop
+                      snew(i,j,k,comp) = snew(i,j,k,comp) * &
+                           0.5d0*base_cutoff_density/snew(i,j,k,rho_comp)
+                      smin(comp) = min(smin(comp),snew(i,j,k,comp))
+                      smax(comp) = max(smax(comp),snew(i,j,k,comp))
+                   end do
+                   snew(i,j,k,rho_comp) = 0.5d0*base_cutoff_density
+                end if
+
              enddo
           enddo
        enddo
@@ -627,7 +668,7 @@ contains
 
     end if
 
-    ! Define the update to rho as the sum of the updates to (rho X)_i
+    ! update density
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
 
        smin(:) =  HUGE(smin)
@@ -635,16 +676,29 @@ contains
 
        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
 
-       do comp = nstart, nstop
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+
+                ! define the update to rho as the sum of the updates to (rho X)_i
+                do comp = nstart, nstop
                    snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) &
                         + (snew(i,j,k,comp)-sold(i,j,k,comp))
                    smin(comp) = min(smin(comp),snew(i,j,k,comp))
                    smax(comp) = max(smax(comp),snew(i,j,k,comp))
-
                 enddo
+
+                ! enforce a density floor
+                if (snew(i,j,k,rho_comp) .lt. 0.5d0*base_cutoff_density) then
+                   do comp = nstart, nstop
+                      snew(i,j,k,comp) = snew(i,j,k,comp) * &
+                           0.5d0*base_cutoff_density/snew(i,j,k,rho_comp)
+                      smin(comp) = min(smin(comp),snew(i,j,k,comp))
+                      smax(comp) = max(smax(comp),snew(i,j,k,comp))
+                   end do
+                   snew(i,j,k,rho_comp) = 0.5d0*base_cutoff_density
+                end if
+
              enddo
           enddo
        enddo
