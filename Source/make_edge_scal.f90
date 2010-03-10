@@ -1010,6 +1010,7 @@ contains
     
     ! loop over appropriate x-faces
     if (ppm_type .gt. 0) then
+!$omp parallel do private(i,j,k)
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -1019,7 +1020,9 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -1029,6 +1032,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     end if
 
     ! impose lo side bc's
@@ -1085,6 +1089,7 @@ contains
        end if
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks-1,ke+1
        do j=js-1,je+1
           do i=is,ie+1
@@ -1095,6 +1100,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! Normal predictor states.
     ! Allocated from lo:hi+1 in the normal direction
@@ -1105,6 +1111,7 @@ contains
 
     ! loop over appropriate y-faces
     if (ppm_type .gt. 0) then
+!$omp parallel do private(i,j,k)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -1114,7 +1121,9 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -1124,6 +1133,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     end if
 
     ! impose lo side bc's
@@ -1180,6 +1190,7 @@ contains
        end if
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is-1,ie+1
@@ -1190,6 +1201,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! Normal predictor states.
     ! Allocated from lo:hi+1 in the normal direction
@@ -1200,6 +1212,7 @@ contains
 
     ! loop over appropriate z-faces
     if (ppm_type .gt. 0) then
+!$omp parallel do private(i,j,k)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
@@ -1209,7 +1222,9 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
@@ -1219,6 +1234,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     end if
 
     deallocate(slopex,slopey,slopez,Ip,Im)
@@ -1277,6 +1293,7 @@ contains
        end if
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is-1,ie+1
@@ -1287,6 +1304,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     !******************************************************************
     ! Create s_{\i-\half\e_x}^{x|y}, etc.
@@ -1298,6 +1316,7 @@ contains
 
     ! loop over appropriate xy faces
     if (is_conservative) then
+!$omp parallel do private(i,j,k)
        do k=ks-1,ke+1
           do j=js,je
              do i=is,ie+1
@@ -1311,7 +1330,9 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks-1,ke+1
           do j=js,je
              do i=is,ie+1
@@ -1325,6 +1346,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     end if
 
     ! impose lo side bc's
@@ -1381,6 +1403,7 @@ contains
        end if
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks-1,ke+1
        do j=js,je
           do i=is,ie+1
@@ -1391,6 +1414,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(slxy,srxy)
 
@@ -1405,6 +1429,7 @@ contains
     allocate(simhxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
 
     if (is_conservative) then
+!$omp parallel do private(i,j,k)
        do k=ks,ke
           do j=js-1,je+1
              do i=is,ie+1
@@ -1418,7 +1443,9 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks,ke
           do j=js-1,je+1
              do i=is,ie+1
@@ -1432,6 +1459,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     end if
 
     ! impose lo side bc's
@@ -1488,6 +1516,7 @@ contains
        end if
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks,ke
        do j=js-1,je+1
           do i=is,ie+1
@@ -1498,6 +1527,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(slxz,srxz)
 
@@ -1512,6 +1542,7 @@ contains
     allocate(simhyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
     if (is_conservative) then
+!$omp parallel do private(i,j,k)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is,ie
@@ -1525,7 +1556,9 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is,ie
@@ -1539,6 +1572,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     end if
 
     ! impose lo side bc's
@@ -1595,6 +1629,7 @@ contains
        end if
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is,ie
@@ -1605,6 +1640,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(slyx,sryx)
 
@@ -1619,6 +1655,7 @@ contains
     allocate(simhyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
 
     if (is_conservative) then
+!$omp parallel do private(i,j,k)
        do k=ks,ke
           do j=js,je+1
              do i=is-1,ie+1
@@ -1632,7 +1669,9 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks,ke
           do j=js,je+1
              do i=is-1,ie+1
@@ -1646,6 +1685,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     end if
 
     deallocate(simhz)
@@ -1704,6 +1744,7 @@ contains
        end if
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks,ke
        do j=js,je+1
           do i=is-1,ie+1
@@ -1714,6 +1755,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(slyz,sryz)
 
@@ -1728,6 +1770,7 @@ contains
     allocate(simhzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
     if (is_conservative) then
+!$omp parallel do private(i,j,k)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is,ie
@@ -1741,7 +1784,9 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is,ie
@@ -1755,6 +1800,7 @@ contains
              enddo
           enddo
        end do
+!$omp end parallel do
     end if
 
     deallocate(simhx)
@@ -1813,6 +1859,7 @@ contains
        end if
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is,ie
@@ -1823,6 +1870,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(slzx,srzx)
 
@@ -1837,6 +1885,7 @@ contains
     allocate(simhzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
 
     if (is_conservative) then
+!$omp parallel do private(i,j,k)
        do k=ks,ke+1
           do j=js,je
              do i=is-1,ie+1
@@ -1850,7 +1899,9 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks,ke+1
           do j=js,je
              do i=is-1,ie+1
@@ -1864,6 +1915,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     end if
 
     deallocate(simhy)
@@ -1922,6 +1974,7 @@ contains
        end if
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks,ke+1
        do j=js,je
           do i=is-1,ie+1
@@ -1932,6 +1985,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(slzy,srzy)
 
@@ -1947,6 +2001,7 @@ contains
 
     ! loop over appropriate x-faces
     if (is_conservative) then
+!$omp parallel do private(i,j,k)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -1968,7 +2023,9 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -1988,20 +2045,20 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     end if
 
     deallocate(slx,srx,simhyz,simhzy)
 
     if (is_vel) then
-
+       
        ! add the (Utilde . e_r) d w_0 /dr e_r term here
+       if (spherical .eq. 0 .and. comp .eq. 3) then
 
-       do k=ks,ke
-          do j=js,je
-             do i=is,ie+1
-
-                if (spherical .eq. 0 .and. comp .eq. 3) then
-
+!$omp parallel do private(i,j,k)
+          do k=ks,ke
+             do j=js,je
+                do i=is,ie+1
                    ! wmac contains w0 so we need to subtract it off
                    sedgelx(i,j,k) = sedgelx(i,j,k) &
                         -(dt4/hz)*(wmac(i-1,j,k)-w0(k)+wmac(i-1,j,k+1)-w0(k+1))* &
@@ -2009,9 +2066,17 @@ contains
                    sedgerx(i,j,k) = sedgerx(i,j,k) &
                         -(dt4/hz)*(wmac(i  ,j,k)-w0(k)+wmac(i  ,j,k+1)-w0(k+1))* &
                         (w0(k+1)-w0(k))
+                enddo
+             enddo
+          enddo
+!$omp end parallel do
 
-                else if (spherical .eq. 1) then
+       else if (spherical .eq. 1) then
 
+!$omp parallel do private(i,j,k,Ut_dot_er)
+          do k=ks,ke
+             do j=js,je
+                do i=is,ie+1
                    ! u/v/wmac contain w0, so we need to subtract it off.
                    ! left face centered about (i-1,j,k)
                    Ut_dot_er = (HALF*(umac(i-1,j,k) + umac(i,j,k)) - &
@@ -2034,14 +2099,16 @@ contains
 
                    sedgerx(i,j,k) = sedgerx(i,j,k) &
                         - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
-
-                end if
+                enddo
              enddo
           enddo
-       enddo
+!$omp end parallel do
+
+       end if
 
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks,ke
        do j=js,je
           do i=is,ie+1
@@ -2049,10 +2116,11 @@ contains
              ! boundary conditions enforced outside of i,j,k loop
              sedgex(i,j,k,comp) = merge(sedgelx(i,j,k),sedgerx(i,j,k),umac(i,j,k) .gt. ZERO)
              savg = HALF*(sedgelx(i,j,k)+sedgerx(i,j,k))
-             sedgex(i,j,k,comp) = merge(sedgex(i,j,k,comp),savg,abs(umac(i,j,k)) .gt. rel_eps)
+             sedgex(i,j,k,comp) = merge(sedgex(i,j,k,comp),savg,abs(umac(i,j,k)).gt.rel_eps)
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -2107,6 +2175,7 @@ contains
 
     ! loop over appropriate y-faces
     if (is_conservative) then
+!$omp parallel do private(i,j,k)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -2128,7 +2197,9 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -2148,20 +2219,20 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     end if
 
     deallocate(sly,sry,simhxz,simhzx)
 
     if (is_vel) then
-
+       
        ! add the (Utilde . e_r) d w_0 /dr e_r term here
+       if (spherical .eq. 0 .and. comp .eq. 3) then
 
-       do k=ks,ke
-          do j=js,je+1
-             do i=is,ie
-
-                if (spherical .eq. 0 .and. comp .eq. 3) then
-
+!$omp parallel do private(i,j,k)
+          do k=ks,ke
+             do j=js,je+1
+                do i=is,ie
                    ! wmac contains w0 so we need to subtract it off
                    sedgely(i,j,k) = sedgely(i,j,k) &
                         -(dt4/hz)*(wmac(i,j-1,k)-w0(k)+wmac(i,j-1,k+1)-w0(k+1)) &
@@ -2169,9 +2240,17 @@ contains
                    sedgery(i,j,k) = sedgery(i,j,k) &
                         -(dt4/hz)*(wmac(i,j  ,k)-w0(k)+wmac(i,j  ,k+1)-w0(k+1)) &
                         *(w0(k+1)-w0(k))
+                enddo
+             enddo
+          enddo
+!$omp end parallel do
 
-                else if (spherical .eq. 1) then
+       else if (spherical .eq. 1) then
 
+!$omp parallel do private(i,j,k,Ut_dot_er)
+          do k=ks,ke
+             do j=js,je+1
+                do i=is,ie
                    ! u/v/wmac contain w0, so we need to subtract it off.  
                    ! left face centered about (i,j-1,k)
                    Ut_dot_er = (HALF*(umac(i,j-1,k) + umac(i+1,j-1,k)) - &
@@ -2194,15 +2273,16 @@ contains
 
                    sedgery(i,j,k) = sedgery(i,j,k) &
                         - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
-
-                end if
-
+                enddo
              enddo
           enddo
-       enddo
+!$omp end parallel do
+
+       end if
 
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks,ke
        do j=js,je+1
           do i=is,ie
@@ -2210,10 +2290,11 @@ contains
              ! boundary conditions enforced outside of i,j,k loop
              sedgey(i,j,k,comp) = merge(sedgely(i,j,k),sedgery(i,j,k),vmac(i,j,k) .gt. ZERO)
              savg = HALF*(sedgely(i,j,k)+sedgery(i,j,k))
-             sedgey(i,j,k,comp) = merge(sedgey(i,j,k,comp),savg,abs(vmac(i,j,k)) .gt. rel_eps)
+             sedgey(i,j,k,comp) = merge(sedgey(i,j,k,comp),savg,abs(vmac(i,j,k)).gt.rel_eps)
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -2268,6 +2349,7 @@ contains
 
     ! loop over appropriate z-faces
     if (is_conservative) then
+!$omp parallel do private(i,j,k)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -2289,7 +2371,9 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -2309,19 +2393,20 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     end if
 
     deallocate(slz,srz,simhxy,simhyx)
 
     if (is_vel) then
-
+       
        ! add the (Utilde . e_r) d w_0 /dr e_r term here
+       if (spherical .eq. 0 .and. comp .eq. 3) then
 
-       do k=ks,ke+1
-          do j=js,je
-             do i=is,ie
-
-                if (spherical .eq. 0 .and. comp .eq. 3) then
+!$omp parallel do private(i,j,k)
+          do k=ks,ke+1
+             do j=js,je
+                do i=is,ie
                    ! wmac contains w0 so we need to subtract it off
                    if (k .eq. 0) then
                       ! sedgelz unchanged since dw_0 / dr = 0
@@ -2341,10 +2426,18 @@ contains
                            -(dt4/hz)*(wmac(i,j,k)-w0(k)+wmac(i,j,k+1)-w0(k+1)) &
                            *(w0(k+1)-w0(k  ))
                    end if
+                enddo
+             enddo
+          enddo
+!$omp end parallel do
 
-                else if (spherical .eq. 1) then
+       else if (spherical .eq. 1) then
+
+!$omp parallel do private(i,j,k,Ut_dot_er)
+          do k=ks,ke+1
+             do j=js,je
+                do i=is,ie
                    ! u/v/wmac contain w0, so we need to subtract it off.  
-
                    ! left face centered about (i,j,k-1)
                    Ut_dot_er = (HALF*(umac(i,j,k-1) + umac(i+1,j,k-1)) - &
                         HALF*(w0macx(i,j,k-1)+w0macx(i+1,j,k-1)))*normal(i,j,k-1,1) + &
@@ -2366,15 +2459,16 @@ contains
 
                    sedgerz(i,j,k) = sedgerz(i,j,k) &
                         - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
-
-                end if
-
+                enddo
              enddo
           enddo
-       enddo
+!$omp end parallel do
+
+       end if
 
     end if
 
+!$omp parallel do private(i,j,k,savg)
     do k=ks,ke+1
        do j=js,je
           do i=is,ie
@@ -2382,10 +2476,11 @@ contains
              ! boundary conditions enforced outside of i,j,k loop
              sedgez(i,j,k,comp) = merge(sedgelz(i,j,k),sedgerz(i,j,k),wmac(i,j,k) .gt. ZERO)
              savg = HALF*(sedgelz(i,j,k)+sedgerz(i,j,k))
-             sedgez(i,j,k,comp) = merge(sedgez(i,j,k,comp),savg,abs(wmac(i,j,k)) .gt. rel_eps)
+             sedgez(i,j,k,comp) = merge(sedgez(i,j,k,comp),savg,abs(wmac(i,j,k)).gt.rel_eps)
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
