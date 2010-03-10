@@ -53,7 +53,9 @@ until the previous job finished and then automatically queue up:
 \begin{verbatim}
 qsub -W depend=afterany:<JOB-ID>  <QSUB SCRIPT>
 \end{verbatim}
-
+where {\tt <JOB-ID>} is the id number of the job that must complete
+before the new submission runs and {\tt QSUB SCRIPT} is the submission
+script (e.g.\ {\tt jaguar.run}).
 This way you can queue up a bunch of runs and literally leave things
 alone and it will restart from the right place automatically and store
 the data as it is generated.
@@ -65,4 +67,10 @@ is running at any one time.  Sometimes if the machine crashes, the
 aborts.  Just delete that if you know the script is not running.
 
 Analogous scripts exist for running on Atlas, with the same general
-procedure.
+procedure.  The command to chain a job on atlas is:
+\begin{verbatim}
+msub -l depend=<JOB-ID> <MSUB SCRIPT>
+\end{verbatim}
+where, again, {\tt <JOB-ID>} is the id number of the job that must
+complete before the current submission runs and {\tt <MSUB SCRIPT>}
+is the job submission script (e.g.\ {\tt atlas.run}).
