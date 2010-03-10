@@ -3012,6 +3012,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in x-direction
+!$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-2,hi(1)+2
@@ -3022,8 +3023,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
        
        ! interpolate s to x-edges
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+2
@@ -3034,8 +3037,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! copy sedge into sp and sm
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -3044,8 +3049,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! modify using quadratic limiters
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -3060,11 +3067,13 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
        
        ! different stencil needed for x-component of EXT_DIR and HOEXTRAP bc's
        if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
           ! the value in the first cc ghost cell represents the edge value
-          sm(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+          sm(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
+               s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
           ! use a modified stencil to get sedge on the first interior edge
           sedge(lo(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
@@ -3169,6 +3178,7 @@ contains
        end if
 
        ! interpolate s to x-edges
+!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-2,hi(1)+3
@@ -3186,6 +3196,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
@@ -3269,8 +3280,10 @@ contains
        ! different stencil needed for x-component of EXT_DIR and HOEXTRAP bc's
        if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
           ! the value in the first cc ghost cell represents the edge value
-          sm(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)    = s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
-          sedge(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+          sm(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)    = &
+               s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+          sedge(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
+               s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
           ! use a modified stencil to get sedge on the first interior edge
           sedge(lo(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
@@ -3311,8 +3324,8 @@ contains
                    else if (bigp .or. bigm) then
                       ! Possible extremum. We look at cell centered values and face
                       ! centered values for a change in sign in the differences adjacent to
-                      ! the cell. We use the pair of differences whose minimum magnitude is the
-                      ! largest, and thus least susceptible to sensitivity to roundoff.
+                      ! the cell. We use the pair of differences whose minimum magnitude is 
+                      ! the largest, and thus least susceptible to sensitivity to roundoff.
                       dafacem = sedge(i,j,k) - sedge(i-1,j,k)
                       dafacep = sedge(i+2,j,k) - sedge(i+1,j,k)
                       dabarm = s(i,j,k) - s(i-1,j,k)
@@ -3375,7 +3388,8 @@ contains
 
        if (bc(1,2) .eq. EXT_DIR  .or. bc(1,2) .eq. HOEXTRAP) then
           ! the value in the first cc ghost cell represents the edge value
-          sp(hi(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = s(hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+          sp(hi(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
+               s(hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
           ! use a modified stencil to get sedge on the first interior edge
           sedge(hi(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
@@ -3416,8 +3430,8 @@ contains
                    else if (bigp .or. bigm) then
                       ! Possible extremum. We look at cell centered values and face
                       ! centered values for a change in sign in the differences adjacent to
-                      ! the cell. We use the pair of differences whose minimum magnitude is the
-                      ! largest, and thus least susceptible to sensitivity to roundoff.
+                      ! the cell. We use the pair of differences whose minimum magnitude is 
+                      ! the largest, and thus least susceptible to sensitivity to roundoff.
                       dafacem = sedge(i,j,k) - sedge(i-1,j,k)
                       dafacep = sedge(i+2,j,k) - sedge(i+1,j,k)
                       dabarm = s(i,j,k) - s(i-1,j,k)
@@ -3481,6 +3495,7 @@ contains
     end if
     
     ! compute x-component of Ip and Im
+!$omp parallel do private(i,j,k,velcc,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
@@ -3492,11 +3507,13 @@ contains
              sigma = abs(velcc)*dt/dx(1)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
              if (velcc .gt. rel_eps) then
-                Ip(i,j,k,1) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
+                Ip(i,j,k,1) = sp(i,j,k) - &
+                     (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
                 Im(i,j,k,1) = s(i,j,k)
              else if (velcc .lt. -rel_eps) then
                 Ip(i,j,k,1) = s(i,j,k)
-                Im(i,j,k,1) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
+                Im(i,j,k,1) = sm(i,j,k) + &
+                     (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
                 Ip(i,j,k,1) = s(i,j,k)
                 Im(i,j,k,1) = s(i,j,k)
@@ -3504,6 +3521,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
     deallocate(sedge,dsvl)
 
@@ -3525,6 +3543,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in y-direction
+!$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-2,hi(2)+2
              do i=lo(1)-1,hi(1)+1
@@ -3535,8 +3554,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! interpolate s to y-edges
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+2
              do i=lo(1)-1,hi(1)+1
@@ -3547,8 +3568,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! copy sedge into sp and sm
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -3557,8 +3580,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! modify using quadratic limiters
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -3573,6 +3598,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
        
        ! different stencil needed for y-component of EXT_DIR and HOEXTRAP bc's
        if (bc(2,1) .eq. EXT_DIR  .or. bc(2,1) .eq. HOEXTRAP) then
@@ -3678,6 +3704,7 @@ contains
     else if (ppm_type .eq. 2) then
 
        ! interpolate s to y-edges
+!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-2,hi(2)+3
              do i=lo(1)-1,hi(1)+1
@@ -3695,6 +3722,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
@@ -3991,6 +4019,7 @@ contains
     end if
 
     ! compute y-component of Ip and Im
+!$omp parallel do private(i,j,k,velcc,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
@@ -4014,6 +4043,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
     deallocate(sedge,dsvl)
 
@@ -4035,6 +4065,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in z-direction
+!$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-2,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -4045,8 +4076,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! interpolate s to z-edges
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -4057,8 +4090,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! copy sedge into sp and sm
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -4067,8 +4102,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! modify using quadratic limiters
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -4083,6 +4120,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
        
        ! different stencil needed for z-component of EXT_DIR and HOEXTRAP bc's
        if (bc(3,1) .eq. EXT_DIR  .or. bc(3,1) .eq. HOEXTRAP) then
@@ -4188,6 +4226,7 @@ contains
     else if (ppm_type .eq. 2) then
 
        ! interpolate s to z-edges
+!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-2,hi(3)+3
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -4205,6 +4244,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
@@ -4501,6 +4541,7 @@ contains
     end if
 
     ! compute z-component of Ip and Im
+!$omp parallel do private(i,j,k,w0cc,velcc,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        ! compute effect of w0 in plane-parallel
        if (spherical .eq. 0) then
@@ -4534,6 +4575,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
     deallocate(sp,sm,dsvl,sedge)
 
@@ -4606,6 +4648,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in x-direction
+!$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-2,hi(1)+2
@@ -4616,8 +4659,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
        
        ! interpolate s to x-edges
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+2
@@ -4628,8 +4673,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! copy sedge into sp and sm
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -4638,8 +4685,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! modify using quadratic limiters
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -4654,6 +4703,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
        
        ! different stencil needed for x-component of EXT_DIR and HOEXTRAP bc's
        if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
@@ -4763,6 +4813,7 @@ contains
        end if
 
        ! interpolate s to x-edges
+!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-2,hi(1)+3
@@ -4780,6 +4831,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
@@ -5075,6 +5127,7 @@ contains
     end if
     
     ! compute x-component of Ip and Im
+!$omp parallel do private(i,j,k,velhi,vello,sigmap,sigmam,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
@@ -5101,6 +5154,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
     deallocate(sedge,dsvl)
 
@@ -5122,6 +5176,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in y-direction
+!$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-2,hi(2)+2
              do i=lo(1)-1,hi(1)+1
@@ -5132,8 +5187,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! interpolate s to y-edges
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+2
              do i=lo(1)-1,hi(1)+1
@@ -5144,8 +5201,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! copy sedge into sp and sm
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -5154,8 +5213,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! modify using quadratic limiters
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -5170,6 +5231,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
        
        ! different stencil needed for y-component of EXT_DIR and HOEXTRAP bc's
        if (bc(2,1) .eq. EXT_DIR  .or. bc(2,1) .eq. HOEXTRAP) then
@@ -5275,6 +5337,7 @@ contains
     else if (ppm_type .eq. 2) then
 
        ! interpolate s to y-edges
+!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-2,hi(2)+3
              do i=lo(1)-1,hi(1)+1
@@ -5292,6 +5355,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
@@ -5588,6 +5652,7 @@ contains
     end if
 
     ! compute y-component of Ip and Im
+!$omp parallel do private(i,j,k,velhi,vello,sigmap,sigmam,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
@@ -5614,6 +5679,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
     deallocate(sedge,dsvl)
 
@@ -5635,6 +5701,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in z-direction
+!$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-2,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -5645,8 +5712,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! interpolate s to z-edges
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -5657,8 +5726,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! copy sedge into sp and sm
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -5667,8 +5738,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! modify using quadratic limiters
+!$omp parallel do private(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -5683,6 +5756,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
        
        ! different stencil needed for z-component of EXT_DIR and HOEXTRAP bc's
        if (bc(3,1) .eq. EXT_DIR  .or. bc(3,1) .eq. HOEXTRAP) then
@@ -5788,6 +5862,7 @@ contains
     else if (ppm_type .eq. 2) then
 
        ! interpolate s to z-edges
+!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-2,hi(3)+3
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -5805,6 +5880,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
@@ -6101,6 +6177,7 @@ contains
     end if
 
     ! compute z-component of Ip and Im
+!$omp parallel do private(i,j,k,w0lo,w0hi,velhi,vello,sigmap,sigmam,s6)
     do k=lo(3)-1,hi(3)+1
        ! compute effect of w0 in plane-parallel
        if (spherical .eq. 0) then
@@ -6140,6 +6217,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
     deallocate(sp,sm,dsvl,sedge)
 
