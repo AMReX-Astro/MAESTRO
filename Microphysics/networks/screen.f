@@ -3,7 +3,6 @@
 
 
       implicit none
-      save
 
       integer nion
       double precision t, d, z1, z2, a1, a2
