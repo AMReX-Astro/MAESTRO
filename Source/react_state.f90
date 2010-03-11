@@ -432,6 +432,7 @@ contains
        firstCall = .false.
     endif
 
+!$omp parallel do private(i,j,k,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -487,6 +488,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
   end subroutine burner_loop_3d
 
