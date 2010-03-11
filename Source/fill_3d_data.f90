@@ -626,6 +626,9 @@ contains
 
     if (w0mac_interp_type .eq. 1) then
 
+       !$OMP PARALLEL PRIVATE(i,j,k)
+
+       !$OMP DO
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+2
@@ -633,7 +636,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+2
              do i=lo(1)-1,hi(1)+1
@@ -641,7 +646,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k=lo(3)-1,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -649,9 +656,15 @@ contains
              end do
           end do
        end do
+       !$OMP END DO
+
+       !$OMP END PARALLEL
 
     else if (w0mac_interp_type .eq. 2) then
 
+       !$OMP PARALLEL PRIVATE(i,j,k,x,y,z,radius,index,rfac,w0_cart_val)
+
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           z = (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
@@ -674,7 +687,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           z = (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+2
@@ -697,7 +712,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+2
           z = (dble(k)     )*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
@@ -720,9 +737,15 @@ contains
              end do
           end do
        end do
+       !$OMP END DO
+
+       !$OMP END PARALLEL
 
     else if (w0mac_interp_type .eq. 3) then
 
+       !$OMP PARALLEL PRIVATE(i,j,k,x,y,z,radius,index,w0_cart_val)
+
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           z = (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
@@ -752,7 +775,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           z = (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+2
@@ -782,7 +807,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+2
           z = (dble(k)     )*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
@@ -812,11 +839,15 @@ contains
              end do
           end do
        end do
+       !$OMP END DO
+
+       !$OMP END PARALLEL
 
     else if (w0mac_interp_type .eq. 4) then
 
        allocate(w0_nodal(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+2,3))
 
+       !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,rfac,w0_cart_val)
        do k = lo(3)-1,hi(3)+2
           z = (dble(k))*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+2
@@ -842,7 +873,11 @@ contains
              end do
           end do
        end do
+       !$OMP END PARALLEL DO
 
+       !$OMP PARALLEL PRIVATE(i,j,k)
+
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+1
              do i = lo(1)-1,hi(1)+2
@@ -851,7 +886,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+2
              do i = lo(1)-1,hi(1)+1
@@ -860,7 +897,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+2
           do j = lo(2)-1,hi(2)+1
              do i = lo(1)-1,hi(1)+1
@@ -869,6 +908,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO
+
+       !$OMP END PARALLEL
 
        deallocate(w0_nodal)
 
@@ -978,6 +1020,9 @@ contains
 
     if (s0mac_interp_type .eq. 1) then
 
+       !$OMP PARALLEL PRIVATE(i,j,k)
+
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+1
              do i = lo(1)-1,hi(1)+2
@@ -985,7 +1030,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+2
              do i = lo(1)-1,hi(1)+1
@@ -993,7 +1040,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+2
           do j = lo(2)-1,hi(2)+1
              do i = lo(1)-1,hi(1)+1
@@ -1001,9 +1050,15 @@ contains
              end do
           end do
        end do
+       !$OMP END DO
+
+       !$OMP END PARALLEL
       
     else if (s0mac_interp_type .eq. 2) then
 
+       !$OMP PARALLEL PRIVATE(i,j,k,x,y,z,radius,index)
+
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           z = (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
@@ -1034,7 +1089,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           z = (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+2
@@ -1065,7 +1122,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+2
           z = (dble(k)     )*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
@@ -1096,9 +1155,15 @@ contains
              end do
           end do
        end do
+       !$OMP END DO
+
+       !$OMP END PARALLEL
 
     else if (s0mac_interp_type .eq. 3) then
 
+       !$OMP PARALLEL PRIVATE(i,j,k,x,y,z,radius,index)
+
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           z = (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
@@ -1124,7 +1189,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+1
           z = (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+2
@@ -1150,7 +1217,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3)-1,hi(3)+2
           z = (dble(k)     )*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
@@ -1176,6 +1245,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO
+
+       !$OMP END PARALLEL
 
     else
 
@@ -1225,24 +1297,28 @@ contains
     real(kind=dp_t) :: x,y,z,radius
 
     if (spherical .eq. 1) then
-      do k = lo(3)-ng,hi(3)+ng
-        z = (dble(k)+HALF)*dx(3) - center(3)
-        do j = lo(2)-ng,hi(2)+ng
-          y = (dble(j)+HALF)*dx(2) - center(2)
-          do i = lo(1)-ng,hi(1)+ng
-            x = (dble(i)+HALF)*dx(1) - center(1)
-  
-            radius = sqrt(x**2 + y**2 + z**2)
-  
-            normal(i,j,k,1) = x / radius
-            normal(i,j,k,2) = y / radius
-            normal(i,j,k,3) = z / radius
-  
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius)
+       do k = lo(3)-ng,hi(3)+ng
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2)-ng,hi(2)+ng
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1)-ng,hi(1)+ng
+                x = (dble(i)+HALF)*dx(1) - center(1)
+
+                radius = sqrt(x**2 + y**2 + z**2)
+
+                normal(i,j,k,1) = x / radius
+                normal(i,j,k,2) = y / radius
+                normal(i,j,k,3) = z / radius
+
+             end do
           end do
-        end do
-      end do
+       end do
+       !$OMP END PARALLEL DO
+
     else 
-      call bl_error('SHOULDNT CALL MAKE_3D_NORMAL WITH SPHERICAL = 0')
+       call bl_error('SHOULDNT CALL MAKE_3D_NORMAL WITH SPHERICAL = 0')
     end if
 
   end subroutine make_normal_3d_sphr
