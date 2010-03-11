@@ -63,7 +63,6 @@ contains
     real(kind=dp_t), pointer::   uop(:,:,:,:)
     real(kind=dp_t), pointer::   sop(:,:,:,:)
     real(kind=dp_t), pointer::    fp(:,:,:,:)
-    real(kind=dp_t), pointer::    np(:,:,:,:)
     real(kind=dp_t), pointer::   dUp(:,:,:,:)
     real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
     real(kind=dp_t), pointer::   wxp(:,:,:,:)

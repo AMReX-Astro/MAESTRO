@@ -61,7 +61,6 @@ contains
     real(kind=dp_t), pointer :: w0cp(:,:,:,:)
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer ::  gpp(:,:,:,:)
     real(kind=dp_t), pointer ::   fp(:,:,:,:)
     real(kind=dp_t), pointer ::   rp(:,:,:,:)

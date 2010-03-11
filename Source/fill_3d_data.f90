@@ -1513,7 +1513,7 @@ contains
     
     integer :: lo(dm)
     integer :: hi(dm)
-    integer :: i,n,r,ng_s,comp
+    integer :: i,n,r,ng_s
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     real(kind=dp_t), allocatable :: radii(:)
@@ -1583,7 +1583,7 @@ contains
 
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
-    real(kind=dp_t) :: radius,rfac,s0_cart_val
+    real(kind=dp_t) :: radius
 
     type(bl_prof_timer), save :: bpt
 
