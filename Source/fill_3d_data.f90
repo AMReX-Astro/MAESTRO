@@ -279,6 +279,7 @@ contains
 
        if (w0_interp_type .eq. 1) then
 
+          !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,rfac,s0_cart_val)
           do k = lo(3),hi(3)
              z = (dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
@@ -307,9 +308,11 @@ contains
                 end do
              end do
           end do
+          !$OMP END PARALLEL DO
 
        else if (w0_interp_type .eq. 2) then
 
+          !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,rfac,s0_cart_val)
           do k = lo(3),hi(3)
              z = (dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
@@ -338,9 +341,11 @@ contains
                 end do
              end do
           end do
+          !$OMP END PARALLEL DO
 
        else if (w0_interp_type .eq. 3) then
 
+          !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,s0_cart_val)
           do k = lo(3),hi(3)
              z = (dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
@@ -376,6 +381,7 @@ contains
                 end do
              end do
           end do
+          !$OMP END PARALLEL DO
 
        else
           call bl_error('Error: w0_interp_type not defined')
@@ -391,6 +397,7 @@ contains
        
        if (s0_interp_type .eq. 1) then
 
+          !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,s0_cart_val)
           do k = lo(3),hi(3)
              z = (dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
@@ -413,9 +420,11 @@ contains
                 end do
              end do
           end do
+          !$OMP END PARALLEL DO
 
        else if (s0_interp_type .eq. 2) then
 
+          !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,s0_cart_val)
           do k = lo(3),hi(3)
              z = (dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
@@ -454,9 +463,11 @@ contains
                 end do
              end do
           end do
+          !$OMP END PARALLEL DO
 
        else if (s0_interp_type .eq. 3) then
 
+          !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,s0_cart_val)
           do k = lo(3),hi(3)
              z = (dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
@@ -491,6 +502,7 @@ contains
                 end do
              end do
           end do
+          !$OMP END PARALLEL DO
 
        else
           call bl_error('Error: s0_interp_type not defined')
