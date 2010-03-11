@@ -74,9 +74,11 @@ contains
        ! radii contains every possible distance that a cell-center at the finest
        ! level can map into
        do n=1,nlevs
+!$omp parallel do private(r)
           do r=0,nr_irreg
              radii(n,r) = sqrt(0.75d0+2.d0*r)*dx(n,1)
           end do
+!$omp end parallel do
        end do
        radii(:,nr_irreg+1) = 1.d99
 
@@ -193,11 +195,13 @@ contains
 
        ! normalize phisum so it actually stores the average at a radius
        do n=1,nlevs
+!$omp parallel do private(r)
           do r=0,nr_irreg
              if (ncell(n,r) .ne. 0.d0) then
                 phisum(n,r) = phisum(n,r) / dble(ncell(n,r))
              end if
           end do
+!$omp end parallel do
        end do
 
        ! compute center point for the finest level
@@ -210,6 +214,7 @@ contains
           rcoord(n) = 0
        end do
 
+!$omp parallel do private(r,radius,n,j) firstprivate(rcoord)
        do r=0,nr_fine-1
 
          radius = (dble(r)+HALF)*dr(1)
@@ -247,6 +252,7 @@ contains
          end do
 
       end do
+!$omp end parallel do
 
        ! squish the list at each level down to exclude points with no contribution
        do n=1,nlevs
@@ -278,6 +284,7 @@ contains
        ! compute phibar
        stencil_coord(:) = 0
 
+!$omp parallel do private(r,radius,j) firstprivate(stencil_coord)
        do r=0,nr_fine-1
 
          radius = (dble(r)+HALF)*dr(1)
@@ -308,6 +315,7 @@ contains
                           phisum(which_lev(r),stencil_coord(which_lev(r))+1))
 
       end do
+!$omp end parallel do
 
    end if
 
@@ -375,9 +383,11 @@ contains
     ! radii contains every possible distance that a cell-center at the finest
     ! level can map into
     do n=1,nlevs
+!$omp parallel do private(r)
        do r=0,nr_irreg
           radii(n,r) = sqrt(0.75d0+2.d0*r)*dx(n,1)
        end do
+!$omp end parallel do
     end do
     radii(:,nr_irreg+1) = 1.d99
 
@@ -406,14 +416,14 @@ contains
 
           if (n .eq. nlevs) then
              call sum_phi_3d_sphr(radii(n,0:),nr_irreg,pp(:,:,:,:),phisum_proc(n,:), &
-                  lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp)
+                                  lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp)
           else
              ! we include the mask so we don't double count; i.e., we only consider
              ! cells that we can "see" when constructing the sum
              mp => dataptr(mla%mask(n), i)
              call sum_phi_3d_sphr(radii(n,0:),nr_irreg,pp(:,:,:,:),phisum_proc(n,:), &
-                  lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp, &
-                  mp(:,:,:,1))
+                                  lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp, &
+                                  mp(:,:,:,1))
           end if
        end do
 
@@ -429,11 +439,13 @@ contains
 
     ! compute phibar_irreg
     do n=1,nlevs
+!$omp parallel do private(r)
        do r=0,nr_irreg
           if (ncell(n,r) .ne. 0.d0) then
              phibar_irreg(n,r) = phisum(n,r) / dble(ncell(n,r))
           end if
        end do
+!$omp end parallel do
     end do
 
    call destroy(bpt)
@@ -515,6 +527,7 @@ contains
     integer          :: i, j, k, index
     logical          :: cell_valid
 
+!$omp parallel do private(i,j,k,x,y,z,cell_valid,radius,index) reduction(+:phisum,ncell)
     do k=lo(3),hi(3)
        z = (dble(k) + HALF)*dx(3) - center(3)
        
@@ -554,6 +567,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
   end subroutine sum_phi_3d_sphr
 
