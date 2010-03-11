@@ -542,6 +542,7 @@ contains
 
     do_diag = .false.
 
+!$omp parallel do private(i,j,k,comp,sigma,xi_term,pres_term)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -593,6 +594,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
   end subroutine make_S_3d_sphr
 
