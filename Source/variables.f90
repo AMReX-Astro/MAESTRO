@@ -18,7 +18,7 @@ module variables
   integer, save :: icomp_machno,icomp_dg,icomp_gp,icomp_entropy,icomp_entropypert
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
   integer, save :: icomp_omegadot,icomp_enuc,icomp_sponge
-  integer, save :: icomp_thermal
+  integer, save :: icomp_thermal, icomp_conductivity
 
   ! the total number of plot components
   integer, save :: n_plot_comps = 0
@@ -111,7 +111,10 @@ contains
       icomp_enuc     = get_next_plot_index(1)
     end if
 
-    if (use_thermal_diffusion) icomp_thermal = get_next_plot_index(1)
+    if (use_thermal_diffusion) then
+       icomp_thermal = get_next_plot_index(1)
+       icomp_conductivity = get_next_plot_index(1)
+    endif
 
 
   end subroutine init_plot_variables
