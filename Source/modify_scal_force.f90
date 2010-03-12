@@ -272,16 +272,20 @@ contains
     real(kind=dp_t), allocatable :: divu_cart(:,:,:,:)
 
     allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    
+
+!$omp parallel do private(r)    
     do r=0,nr_fine-1
        divu(r) = (r_edge_loc(1,r+1)**2 * w0(r+1) - &
                   r_edge_loc(1,r  )**2 * w0(r  ) ) / &
                  (dr(1)*r_cc_loc(1,r)**2)
     end do
+!$omp end parallel do
 
     ! compute w0 contribution to divu
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,divu,divu_cart,lo,hi,dx,0)
     
+!$omp parallel do private(i,j,k,divumac,base_xhi,base_xlo,base_yhi,base_ylo, &
+!$omp base_zhi,base_zlo,divbaseu)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -333,6 +337,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
     
     deallocate(divu_cart)
 

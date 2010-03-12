@@ -240,6 +240,7 @@ contains
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
+!$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -269,6 +270,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
     deallocate(p0_cart)
 
