@@ -104,6 +104,7 @@ contains
 
     select case(llev)
     case (1)
+!$omp parallel do private(i,j,k)
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
@@ -113,7 +114,9 @@ contains
              end do
           enddo
        end do
+!$omp end parallel do
     case (2)
+!$omp parallel do private(i,j,k)
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
@@ -123,6 +126,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     end select
 
   end subroutine tag_boxes_3d
