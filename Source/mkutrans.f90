@@ -378,6 +378,8 @@ contains
     allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
 
     if (ppm_type .gt. 0) then
+
+!$omp parallel do private(i,j,k)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -387,25 +389,42 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
+
     else
-       do k=ks,ke
-          do j=js,je
-             do i=is,ie+1
-                ! compute effect of w0
-                if (spherical .eq. 1) then
+       
+       if (spherical .eq. 1) then
+!$omp parallel do private(i,j,k,ulo,uhi)
+          do k=ks,ke
+             do j=js,je
+                do i=is,ie+1
+                   ! compute effect of w0
                    ulo = u(i-1,j,k,1) + HALF * (w0macx(i-1,j,k)+w0macx(i  ,j,k))
                    uhi = u(i  ,j,k,1) + HALF * (w0macx(i  ,j,k)+w0macx(i+1,j,k))
-                else
-                   ulo = u(i-1,j,k,1)
-                   uhi = u(i  ,j,k,1)
-                end if
-
-                ! extrapolate to edges
-                ulx(i,j,k) = u(i-1,j,k,1) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,1)
-                urx(i,j,k) = u(i  ,j,k,1) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i  ,j,k,1)
+                   ! extrapolate to edges
+                   ulx(i,j,k) = u(i-1,j,k,1) + (HALF-dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,1)
+                   urx(i,j,k) = u(i  ,j,k,1) - (HALF+dt2*min(ZERO,uhi)/hx)*slopex(i  ,j,k,1)
+                end do
              end do
           end do
-       end do
+!$omp end parallel do
+       else
+!$omp parallel do private(i,j,k,ulo,uhi)
+          do k=ks,ke
+             do j=js,je
+                do i=is,ie+1
+                   ! compute effect of w0
+                   ulo = u(i-1,j,k,1)
+                   uhi = u(i  ,j,k,1)
+                   ! extrapolate to edges
+                   ulx(i,j,k) = u(i-1,j,k,1) + (HALF-dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,1)
+                   urx(i,j,k) = u(i  ,j,k,1) - (HALF+dt2*min(ZERO,uhi)/hx)*slopex(i  ,j,k,1)
+                end do
+             end do
+          end do
+!$omp end parallel do
+       end if
+
     end if
 
     deallocate(slopex)
@@ -434,10 +453,11 @@ contains
        urx(ie+1,js:je,ks:ke) = max(ulx(ie+1,js:je,ks:ke),ZERO)
     end if
 
-    do k=ks,ke
-       do j=js,je
-          do i=is,ie+1
-             if (spherical .eq. 1) then
+    if (spherical .eq. 1) then
+!$omp parallel do private(i,j,k,uavg,test)
+       do k=ks,ke
+          do j=js,je
+             do i=is,ie+1
                 ! upwind using full u
                 uavg = HALF*(ulx(i,j,k)+urx(i,j,k))
                 test = ((ulx(i,j,k)+w0macx(i,j,k) .le. ZERO .and. &
@@ -445,17 +465,26 @@ contains
                      (abs(ulx(i,j,k)+urx(i,j,k)+TWO*w0macx(i,j,k)) .lt. rel_eps))
                 utrans(i,j,k) = merge(ulx(i,j,k),urx(i,j,k),uavg+w0macx(i,j,k) .gt. ZERO)
                 utrans(i,j,k) = merge(ZERO,utrans(i,j,k),test)
-             else
+             enddo
+          enddo
+       enddo
+!$omp end parallel do
+    else
+!$omp parallel do private(i,j,k,uavg,test)
+       do k=ks,ke
+          do j=js,je
+             do i=is,ie+1
                 ! upwind
                 uavg = HALF*(ulx(i,j,k)+urx(i,j,k))
                 test = ((ulx(i,j,k) .le. ZERO .and. urx(i,j,k) .ge. ZERO) .or. &
                      (abs(ulx(i,j,k)+urx(i,j,k)) .lt. rel_eps))
                 utrans(i,j,k) = merge(ulx(i,j,k),urx(i,j,k),uavg .gt. ZERO)
                 utrans(i,j,k) = merge(ZERO,utrans(i,j,k),test)
-             end if
+             enddo
           enddo
        enddo
-    enddo
+!$omp end parallel do
+    end if
 
     deallocate(ulx,urx)
 
@@ -472,6 +501,8 @@ contains
     allocate(vry(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
     if (ppm_type .gt. 0) then
+
+!$omp parallel do private(i,j,k)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -481,25 +512,42 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
+
     else
-       do k=ks,ke
-          do j=js,je+1
-             do i=is,ie
-                ! compute effect of w0
-                if (spherical .eq. 1) then
+
+       if (spherical .eq. 1) then
+!$omp parallel do private(i,j,k,vlo,vhi)
+          do k=ks,ke
+             do j=js,je+1
+                do i=is,ie
+                   ! compute effect of w0
                    vlo = u(i,j-1,k,2) + HALF * (w0macy(i,j-1,k)+w0macy(i,j  ,k))
                    vhi = u(i,j  ,k,2) + HALF * (w0macy(i,j  ,k)+w0macy(i,j+1,k))
-                else
-                   vlo = u(i,j-1,k,2)
-                   vhi = u(i,j  ,k,2)
-                end if
-
-                ! extrapolate to edges
-                vly(i,j,k) = u(i,j-1,k,2) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,1)
-                vry(i,j,k) = u(i,j  ,k,2) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j  ,k,1)
+                   ! extrapolate to edges
+                   vly(i,j,k) = u(i,j-1,k,2) + (HALF-dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,1)
+                   vry(i,j,k) = u(i,j  ,k,2) - (HALF+dt2*min(ZERO,vhi)/hy)*slopey(i,j  ,k,1)
+                enddo
              enddo
           enddo
-       enddo
+!$omp end parallel do
+       else
+!$omp parallel do private(i,j,k,vlo,vhi)
+          do k=ks,ke
+             do j=js,je+1
+                do i=is,ie
+                   ! compute effect of w0
+                   vlo = u(i,j-1,k,2)
+                   vhi = u(i,j  ,k,2)
+                   ! extrapolate to edges
+                   vly(i,j,k) = u(i,j-1,k,2) + (HALF-dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,1)
+                   vry(i,j,k) = u(i,j  ,k,2) - (HALF+dt2*min(ZERO,vhi)/hy)*slopey(i,j  ,k,1)
+                enddo
+             enddo
+          enddo
+!$omp end parallel do
+       end if
+
     end if
 
     deallocate(slopey)
@@ -527,11 +575,12 @@ contains
        vly(is:ie,je+1,ks:ke) = max(vly(is:ie,je+1,ks:ke),ZERO)
        vry(is:ie,je+1,ks:ke) = max(vly(is:ie,je+1,ks:ke),ZERO)
     end if
-
-    do k=ks,ke
-       do j=js,je+1
-          do i=is,ie
-             if (spherical .eq. 1) then
+    
+    if (spherical .eq. 1) then
+!$omp parallel do private(i,j,k,uavg,test)
+       do k=ks,ke
+          do j=js,je+1
+             do i=is,ie
                 ! upwind using full v
                 uavg = HALF*(vly(i,j,k)+vry(i,j,k))
                 test = ((vly(i,j,k)+w0macy(i,j,k) .le. ZERO .and. &
@@ -539,17 +588,26 @@ contains
                      (abs(vly(i,j,k)+vry(i,j,k)+TWO*w0macy(i,j,k)) .lt. rel_eps))
                 vtrans(i,j,k) = merge(vly(i,j,k),vry(i,j,k),uavg+w0macy(i,j,k) .gt. ZERO)
                 vtrans(i,j,k) = merge(ZERO,vtrans(i,j,k),test)
-             else
+             enddo
+          enddo
+       enddo
+!$omp end parallel do
+    else
+!$omp parallel do private(i,j,k,uavg,test)
+       do k=ks,ke
+          do j=js,je+1
+             do i=is,ie
                 ! upwind
                 uavg = HALF*(vly(i,j,k)+vry(i,j,k))
                 test = ((vly(i,j,k) .le. ZERO .and. vry(i,j,k) .ge. ZERO) .or. &
                      (abs(vly(i,j,k)+vry(i,j,k)) .lt. rel_eps))
                 vtrans(i,j,k) = merge(vly(i,j,k),vry(i,j,k),uavg .gt. ZERO)
                 vtrans(i,j,k) = merge(ZERO,vtrans(i,j,k),test)
-             end if
+             enddo
           enddo
        enddo
-    enddo
+!$omp end parallel do
+    end if
 
     deallocate(vly,vry)
 
@@ -566,6 +624,7 @@ contains
     allocate(wrz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
     if (ppm_type .gt. 0) then
+!$omp parallel do private(i,j,k)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -575,15 +634,31 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
+
     else
-       do k=ks,ke+1
-          do j=js,je
-             do i=is,ie
-                ! compute effect of w0
-                if (spherical .eq. 1) then
+
+       if (spherical .eq. 1) then
+!$omp parallel do private(i,j,k,wlo,whi)
+          do k=ks,ke+1
+             do j=js,je
+                do i=is,ie
+                   ! compute effect of w0
                    wlo = u(i,j,k-1,3) + HALF * (w0macz(i,j,k-1)+w0macz(i,j,k  ))
                    whi = u(i,j,k  ,3) + HALF * (w0macz(i,j,k  )+w0macz(i,j,k+1))
-                else
+                   ! extrapolate to edges
+                   wlz(i,j,k) = u(i,j,k-1,3) + (HALF-dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,1)
+                   wrz(i,j,k) = u(i,j,k  ,3) - (HALF+dt2*min(ZERO,whi)/hz)*slopez(i,j,k  ,1)
+                end do
+             end do
+          end do
+!$omp end parallel do
+       else
+!$omp parallel do private(i,j,k,wlo,whi)
+          do k=ks,ke+1
+             do j=js,je
+                do i=is,ie
+                   ! compute effect of w0
                    if (k .eq. 0) then
                       wlo = u(i,j,k-1,3) + w0(k)
                       whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
@@ -594,14 +669,15 @@ contains
                       wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
                       whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
                    end if
-                end if
-
-                ! extrapolate to edges
-                wlz(i,j,k) = u(i,j,k-1,3) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,1)
-                wrz(i,j,k) = u(i,j,k  ,3) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k  ,1)
+                   ! extrapolate to edges
+                   wlz(i,j,k) = u(i,j,k-1,3) + (HALF-dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,1)
+                   wrz(i,j,k) = u(i,j,k  ,3) - (HALF+dt2*min(ZERO,whi)/hz)*slopez(i,j,k  ,1)
+                end do
              end do
           end do
-       end do
+!$omp end parallel do
+       end if
+
     end if
 
     deallocate(slopez,Ip,Im)
@@ -629,11 +705,12 @@ contains
        wlz(is:ie,js:je,ke+1) = max(wlz(is:ie,js:je,ke+1),ZERO)
        wrz(is:ie,js:je,ke+1) = max(wlz(is:ie,js:je,ke+1),ZERO)
     end if
-
-    do k=ks,ke+1
-       do j=js,je
-          do i=is,ie
-             if (spherical .eq. 1) then
+    
+    if (spherical .eq. 1) then
+!$omp parallel do private(i,j,k,uavg,test)
+       do k=ks,ke+1
+          do j=js,je
+             do i=is,ie
                 ! upwind using full w
                 uavg = HALF*(wlz(i,j,k)+wrz(i,j,k))
                 test = ((wlz(i,j,k)+w0macz(i,j,k) .le. ZERO .and. &
@@ -641,17 +718,26 @@ contains
                      (abs(wlz(i,j,k)+wrz(i,j,k)+TWO*w0macz(i,j,k)) .lt. rel_eps))
                 wtrans(i,j,k) = merge(wlz(i,j,k),wrz(i,j,k),uavg+w0macz(i,j,k) .gt. ZERO)
                 wtrans(i,j,k) = merge(ZERO,wtrans(i,j,k),test)
-             else
+             enddo
+          enddo
+       enddo
+!$omp end parallel do
+    else
+!$omp parallel do private(i,j,k,uavg,test)
+       do k=ks,ke+1
+          do j=js,je
+             do i=is,ie
                 ! upwind using full w
                 uavg = HALF*(wlz(i,j,k)+wrz(i,j,k))
                 test = ((wlz(i,j,k)+w0(k).le.ZERO .and. wrz(i,j,k)+w0(k).ge.ZERO) .or. &
                      (abs(wlz(i,j,k)+wrz(i,j,k)+TWO*w0(k)) .lt. rel_eps))
                 wtrans(i,j,k) = merge(wlz(i,j,k),wrz(i,j,k),uavg+w0(k) .gt. ZERO)
                 wtrans(i,j,k) = merge(ZERO,wtrans(i,j,k),test)
-             end if
+             enddo
           enddo
        enddo
-    enddo
+!$omp end parallel do
+    end if
 
     deallocate(wlz,wrz)
 
