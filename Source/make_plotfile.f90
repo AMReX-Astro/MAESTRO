@@ -349,12 +349,16 @@ contains
                            tempbar(n,:),dx(n,:))
 
        end if
-
-       ! this just uses (rho, T, X_k) ---> conductivity
-       ! it doesn't need to do anything fancy for spherical
-       call make_conductivity(plotdata(n),icomp_conductivity,s(n))
        
     end do
+
+    if (use_thermal_diffusion) then
+       do n=1,nlevs
+          ! this just uses (rho, T, X_k) ---> conductivity
+          ! it doesn't need to do anything fancy for spherical
+          call make_conductivity(plotdata(n),icomp_conductivity,s(n))
+       end do
+    end if
 
     ! the loop over nlevs must count backwards to make sure the finer grids are done first
     do n=nlevs,2,-1
