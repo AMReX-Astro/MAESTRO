@@ -119,21 +119,25 @@ contains
 ! Predict rho_0 to vertical edges
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+!$omp parallel do private(r)
     do r=0,nr_fine-1
        force(1,r) = -rho0_old(1,r) * (w0(1,r+1) - w0(1,r)) / dr(1) - &
             2.0_dp_t*rho0_old(1,r)*HALF*(w0(1,r) + w0(1,r+1))/r_cc_loc(1,r)
     end do
+!$omp end parallel do
     
     call make_edge_state_1d(rho0_old,edge,w0,force,dt)
     
     rho0_predicted_edge = edge
 
+!$omp parallel do private(r)
     do r=0,nr_fine-1
        rho0_new(1,r) = rho0_old(1,r) - dtdr/r_cc_loc(1,r)**2 * &
             (r_edge_loc(1,r+1)**2 * edge(1,r+1) * w0(1,r+1) - &
             r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  ))
     end do
-    
+!$omp end parallel do
+
   end subroutine advect_base_dens_spherical
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -291,9 +295,7 @@ contains
        ! here we predict h_0 on the edges
        h0 = rhoh0_old/rho0_old
 
-       do r=0,nr_fine-1
-          force(1,r) = psi(1,r)
-       end do
+       force(1,:) = psi(1,:)
 
        call make_edge_state_1d(h0,edge,w0,force,dt)
 
@@ -304,31 +306,30 @@ contains
     else
 
        ! here we predict (rho h)_0 on the edges
+!$omp parallel do private(r,div_w0_cart)
        do r=0,nr_fine-1
 
           div_w0_cart = (w0(1,r+1) - w0(1,r)) / dr(1)
 
-          force(1,r) = -rhoh0_old(1,r) * div_w0_cart - &
-               2.0_dp_t*rhoh0_old(1,r)*HALF*(w0(1,r) + w0(1,r+1))/r_cc_loc(1,r)
-
           ! add psi at time-level n to the force for the prediction
-          force(1,r) = force(1,r) + psi(1,r)
+          force(1,r) = -rhoh0_old(1,r) * div_w0_cart - &
+               2.0_dp_t*rhoh0_old(1,r)*HALF*(w0(1,r) + w0(1,r+1))/r_cc_loc(1,r) + psi(1,r)
+          
        end do
+!$omp end parallel do
 
        call make_edge_state_1d(rhoh0_old,edge,w0,force,dt)
 
     endif
 
     ! update (rho h)_0
+!$omp parallel do private(r)
     do r=0,nr_fine-1
-
        rhoh0_new(1,r) = rhoh0_old(1,r) - dtdr / r_cc_loc(1,r)**2 * &
             (r_edge_loc(1,r+1)**2 * edge(1,r+1) * w0(1,r+1) - &
-            r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  ))
-
-       rhoh0_new(1,r) = rhoh0_new(1,r) + dt * psi(1,r)
-
+            r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  )) + dt * psi(1,r)
     end do
+!$omp end parallel do
 
   end subroutine advect_base_enthalpy_spherical
 

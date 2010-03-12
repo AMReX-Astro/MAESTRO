@@ -585,7 +585,8 @@ contains
 
     ! is spherical
     do comp = nstart, nstop
-       
+
+!$omp parallel do private(i,j,k,divterm)       
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -599,11 +600,13 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
 
     end do
 
     if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
+!$omp parallel do private(i,j,k)
        do k = lo(3), hi(3) 
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -636,6 +639,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
 
     end if
 
@@ -644,6 +648,7 @@ contains
 
        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
 
+!$omp parallel do private(i,j,k,has_negative_species,comp,delta,sumX,comp2,frac)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -691,6 +696,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     end if
 
   end subroutine update_scal_3d_sphr
