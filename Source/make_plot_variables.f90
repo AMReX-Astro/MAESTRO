@@ -9,10 +9,170 @@ module plot_variables_module
 
   private
 
+  public :: make_conductivity
   public :: make_tfromH, make_tfromp, make_entropypert
   public :: make_deltaT, make_divw0, make_vorticity, make_magvel, make_velr
 
 contains
+
+  subroutine make_conductivity(plotdata,comp_cond,state)
+
+    use geometry, only: spherical, dm
+
+    type(multifab),  intent(inout) :: plotdata
+    integer,         intent(in   ) :: comp_cond
+    type(multifab),  intent(in   ) :: state
+
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+    real(kind=dp_t), pointer :: cp(:,:,:,:)
+    integer :: lo(dm), hi(dm), ng_s, ng_c
+    integer :: i
+
+    ng_s = state%ng
+    ng_c = plotdata%ng
+
+    do i = 1, state%nboxes
+       if (multifab_remote(state, i)) cycle
+       sp => dataptr(state,i)
+       cp => dataptr(plotdata,i)
+       lo = lwb(get_box(state,i))
+       hi = upb(get_box(state,i))
+       select case (dm)
+       case (1)
+          call make_conductivity_1d(cp(:,1,1,comp_cond), ng_c, &
+                                    sp(:,1,1,:), ng_s, lo, hi)
+       case (2)
+          call make_conductivity_2d(cp(:,:,1,comp_cond), ng_c, &
+                                    sp(:,:,1,:), ng_s, lo, hi)
+       case (3)
+          call make_conductivity_3d(cp(:,:,:,comp_cond), ng_c, &
+                                    sp(:,:,:,:), ng_s, lo, hi)
+       end select
+
+    enddo
+
+  end subroutine make_conductivity
+
+  subroutine make_conductivity_1d(cond,ng_c,state,ng_s,lo,hi)
+
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use eos_module
+    use network, only: nspec
+
+    integer,         intent(in   ) :: lo(:), hi(:), ng_c, ng_s
+    real(kind=dp_t), intent(  out) :: cond(lo(1)-ng_c:)
+    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,:)
+
+    ! local
+    integer :: i
+
+    do_diag = .false.
+
+    do i = lo(1), hi(1)
+
+       den_eos(1)  = state(i,rho_comp)
+       temp_eos(1) = state(i,temp_comp)
+       xn_eos(1,:) = state(i,spec_comp:spec_comp+nspec-1) / den_eos(1)
+
+       call conducteos(eos_input_rt, den_eos, temp_eos, &
+                       npts, nspec, &
+                       xn_eos, &
+                       p_eos, h_eos, e_eos, &
+                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                       dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                       dpdX_eos, dhdX_eos, &
+                       gam1_eos, cs_eos, s_eos, &
+                       dsdt_eos, dsdr_eos, &
+                       do_diag, conduct_eos)
+
+       cond(i) = conduct_eos(1)
+
+    enddo
+
+  end subroutine make_conductivity_1d
+
+  subroutine make_conductivity_2d(cond,ng_c,state,ng_s,lo,hi)
+
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use eos_module
+    use network, only: nspec
+
+    integer,         intent(in   ) :: lo(:), hi(:), ng_c, ng_s
+    real(kind=dp_t), intent(  out) :: cond(lo(1)-ng_c:,lo(2)-ng_c:)
+    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,:)
+
+    ! local
+    integer :: i, j
+
+    do_diag = .false.
+
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+
+          den_eos(1) = state(i,j,rho_comp)
+          temp_eos(1) = state(i,j,temp_comp)
+          xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1) / den_eos(1)
+
+          call conducteos(eos_input_rt, den_eos, temp_eos, &
+                          npts, nspec, &
+                          xn_eos, &
+                          p_eos, h_eos, e_eos, &
+                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                          dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                          dpdX_eos, dhdX_eos, &
+                          gam1_eos, cs_eos, s_eos, &
+                          dsdt_eos, dsdr_eos, &
+                          do_diag, conduct_eos)
+
+          cond(i,j) = conduct_eos(1)
+
+       enddo
+    enddo
+
+  end subroutine make_conductivity_2d
+
+  subroutine make_conductivity_3d(cond,ng_c,state,ng_s,lo,hi)
+
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use eos_module
+    use network, only: nspec
+
+    integer,         intent(in   ) :: lo(:), hi(:), ng_c, ng_s
+    real(kind=dp_t), intent(  out) :: cond(lo(1)-ng_c:,lo(2)-ng_c:,lo(3)-ng_c:)
+    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+
+    ! local
+    integer :: i, j, k
+
+    do_diag = .false.
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             den_eos(1)  = state(i,j,k,rho_comp)
+             temp_eos(1) = state(i,j,k,temp_comp)
+             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1) / &
+                           den_eos(1)
+
+             call conducteos(eos_input_rt, den_eos, temp_eos, &
+                             npts, nspec, &
+                             xn_eos, &
+                             p_eos, h_eos, e_eos, &
+                             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                             dpdX_eos, dhdX_eos, &
+                             gam1_eos, cs_eos, s_eos, &
+                             dsdt_eos, dsdr_eos, &
+                             do_diag, conduct_eos)
+
+             cond(i,j,k) = conduct_eos(1)
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine make_conductivity_3d
 
   subroutine make_tfromH(plotdata,comp_t,comp_tpert,comp_dp,state,p0,tempbar,dx)
 

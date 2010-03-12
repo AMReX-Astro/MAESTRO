@@ -91,7 +91,10 @@ contains
        plot_names(icomp_enuc) = "enucdot"
     end if
 
-    if (use_thermal_diffusion) plot_names(icomp_thermal) = "thermal"
+    if (use_thermal_diffusion) then
+       plot_names(icomp_thermal) = "thermal"
+       plot_names(icomp_conductivity) = "conductivity"
+    endif
 
   end subroutine get_plot_names
 
@@ -326,6 +329,7 @@ contains
 
        ! make_tfromp -> RHOPERT, TFROMP, TPERT, MACHNUMBER, DELTAGAMMA, ENTROPY, AND RHOPERT
        ! make_tfromH -> TFROMP AND DELTA_P
+       ! make_conductivity -> CONDUCTIVITY
        if (spherical .eq. 1) then
           
           call make_tfromp(plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert, &
@@ -345,6 +349,10 @@ contains
                            tempbar(n,:),dx(n,:))
 
        end if
+
+       ! this just uses (rho, T, X_k) ---> conductivity
+       ! it doesn't need to do anything fancy for spherical
+       call make_conductivity(plotdata(n),icomp_conductivity,s(n))
        
     end do
 
