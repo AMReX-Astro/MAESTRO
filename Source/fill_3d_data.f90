@@ -1500,6 +1500,9 @@ contains
 
     if (harmonic_avg) then
 
+       !$OMP PARALLEL PRIVATE(i,j,k,denom)
+
+       !$OMP DO
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)+1
@@ -1507,12 +1510,14 @@ contains
                 if (denom .ne. 0.d0) then
                    betax(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i-1,j,k)) / denom
                 else
-                   betax(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i-1,j,k))
+                   betax(i,j,k) = HALF*denom
                 end if
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)+1
              do i = lo(1),hi(1)
@@ -1520,12 +1525,14 @@ contains
                 if (denom .ne. 0.d0) then
                    betay(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i,j-1,k)) / denom
                 else
-                   betay(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i,j-1,k))
+                   betay(i,j,k) = HALF*denom
                 end if
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3),hi(3)+1
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
@@ -1533,14 +1540,20 @@ contains
                 if (denom .ne. 0.d0) then
                    betaz(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i,j,k-1)) / denom
                 else
-                   betaz(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i,j,k-1))
+                   betaz(i,j,k) = HALF*denom
                 end if
              end do
           end do
        end do
+       !$OMP END DO
+
+       !$OMP END PARALLEL
 
     else
 
+       !$OMP PARALLEL PRIVATE(i,j,k)
+
+       !$OMP DO
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)+1
@@ -1548,7 +1561,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)+1
              do i = lo(1),hi(1)
@@ -1556,7 +1571,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO NOWAIT
 
+       !$OMP DO
        do k = lo(3),hi(3)+1
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
@@ -1564,6 +1581,9 @@ contains
              end do
           end do
        end do
+       !$OMP END DO
+
+       !$OMP END PARALLEL
 
     end if
 
@@ -1664,7 +1684,8 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_1d_array_on_cart_irreg_3d_sphr")
-    
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,s0_cart)    
     do k = lo(3),hi(3)
        z = (dble(k)+HALF)*dx(3) - center(3)
        do j = lo(2),hi(2)
@@ -1688,6 +1709,7 @@ contains
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
 
     call destroy(bpt)
 
