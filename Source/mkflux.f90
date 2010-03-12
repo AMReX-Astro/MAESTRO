@@ -394,6 +394,7 @@ contains
     do comp = startcomp, endcomp
 
        ! loop for x-fluxes
+!$omp parallel do private(i,j,k,rho0_edge)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
@@ -403,8 +404,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! loop for y-fluxes
+!$omp parallel do private(i,j,k,rho0_edge)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
@@ -414,8 +417,10 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
        ! loop for z-fluxes
+!$omp parallel do private(i,j,k,rho0_edge)
        do k = lo(3), hi(3)+1
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -425,6 +430,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
     end do ! end loop over components
      
@@ -932,6 +938,7 @@ contains
     ! loop for x-fluxes
     if (test) then
 
+!$omp parallel do private(i,j,k,rho0_edge)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
@@ -944,12 +951,14 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
     else if (test2) then
 
        ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
        ! where h0 is computed from (rho h)_0 / rho_0
        ! sfluxx = (umac(i,j,k)+w0macx(i,j,k)) * (rho h)_edge
+!$omp parallel do private(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
@@ -964,9 +973,11 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
     else
 
+!$omp parallel do private(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
@@ -989,12 +1000,14 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
     endif
 
     ! loop for y-fluxes
     if (test) then
 
+!$omp parallel do private(i,j,k,rho0_edge)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
@@ -1007,12 +1020,14 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
     else if (test2) then
 
        ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
        ! where h0 is computed from (rho h)_0 / rho_0
        ! sfluxy = (vmac(i,j,k)+w0macy(i,j,k)) * (rho h)_edge
+!$omp parallel do private(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
@@ -1027,9 +1042,11 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
     else
 
+!$omp parallel do private(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
@@ -1052,6 +1069,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
     endif
 
@@ -1059,6 +1077,7 @@ contains
     ! loop for z-fluxes
     if (test) then
 
+!$omp parallel do private(i,j,k,rho0_edge)
        do k = lo(3), hi(3)+1
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -1071,12 +1090,14 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
     else if (test2) then
 
        ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
        ! where h0 is computed from (rho h)_0 / rho_0
        ! sfluxz = (wmac(i,j,k)+w0macz(i,j,k)) * (rho h)_edge
+!$omp parallel do private(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)+1
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -1091,9 +1112,11 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
     else
 
+!$omp parallel do private(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)+1
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -1116,6 +1139,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
 
     endif
 
