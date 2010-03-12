@@ -293,6 +293,8 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
+999 format('... Level ', i1, ' create thermal coeffs:')
+
     call build(bpt, "make_thermal_coeffs")
 
     ng_s = s(1)%ng
@@ -306,6 +308,8 @@ contains
     !        Xkcoeff = xik*kth/cp, 
     !        pcoeff = hp*kth/cp
     do n=1,nlevs
+       if (parallel_IOProcessor()) write (6, 999) n
+
        do i=1,s(n)%nboxes
           if (multifab_remote(s(n),i)) cycle
           sp       => dataptr(s(n),i)
