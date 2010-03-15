@@ -24,3 +24,13 @@
 -- need to add entropy to the gamma_law_general EOS
 
 -- merge flame and flame_1d
+
+-- In Maestro, initialize.f90, we have:
+ 
+     ! check for proper nesting
+     if (.not. ml_boxarray_properly_nested(mla%mba, 3, pmask)) then
+        call bl_error('restart_grids not properly nested')
+     end if
+ 
+   the '3' is ng_s.  For ppm_type = 2, should this be 4?
+
