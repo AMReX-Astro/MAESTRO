@@ -1685,7 +1685,7 @@ contains
 
     call build(bpt, "put_1d_array_on_cart_irreg_3d_sphr")
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,s0_cart)    
+    !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index)
     do k = lo(3),hi(3)
        z = (dble(k)+HALF)*dx(3) - center(3)
        do j = lo(2),hi(2)
