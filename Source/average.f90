@@ -527,7 +527,10 @@ contains
     integer          :: i, j, k, index
     logical          :: cell_valid
 
-!$omp parallel do private(i,j,k,x,y,z,cell_valid,radius,index) reduction(+:phisum,ncell)
+!*************
+! Note: This omp call is commented out because for some reason it crashes PathScale on franklin
+!*************
+!!$omp parallel do private(i,j,k,x,y,z,cell_valid,radius,index) reduction(+:phisum,ncell)
     do k=lo(3),hi(3)
        z = (dble(k) + HALF)*dx(3) - center(3)
        
@@ -567,7 +570,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+!!$omp end parallel do
 
   end subroutine sum_phi_3d_sphr
 
