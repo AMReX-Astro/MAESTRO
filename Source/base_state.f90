@@ -196,20 +196,28 @@ contains
        ! were all the variables we care about provided?
        if (i == 1 .and. n == 1) then
           if (.not. found_dens) then
-             print *, 'WARNING: density not provided in inputs file'
+             if ( parallel_IOProcessor() ) then
+                print *, 'WARNING: density not provided in inputs file'
+             end if
           endif
 
           if (.not. found_temp) then
-             print *, 'WARNING: temperature not provided in inputs file'
+             if ( parallel_IOProcessor() ) then
+                print *, 'WARNING: temperature not provided in inputs file'
+             end if
           endif
 
           if (.not. found_pres) then
-             print *, 'WARNING: pressure not provided in inputs file'
+             if ( parallel_IOProcessor() ) then
+                print *, 'WARNING: pressure not provided in inputs file'
+             end if
           endif
 
           do comp = 1, nspec
              if (.not. found_spec(comp)) then
-                print *, 'WARNING: ', trim(spec_names(comp)), ' not provided in inputs file'
+                if ( parallel_IOProcessor() ) then
+                   print *, 'WARNING: ', trim(spec_names(comp)), ' not provided in inputs file'
+                end if
              endif
           enddo
        endif
