@@ -1,0 +1,11 @@
+#PBS -A ast006
+#PBS -N wdconvect
+#PBS -j oe
+#PBS -q debug
+#PBS -l walltime=00:10:00,size=12
+
+setenv OMP_NUM_THREADS 6
+
+cd $PBS_O_WORKDIR
+
+aprun -n 2 -S 1 -d 6 ./main.Linux.PGI.debug.mpi.omp.exe inputs_3d.64.5dr.eq.dx >& output.$PBS_JOBID
