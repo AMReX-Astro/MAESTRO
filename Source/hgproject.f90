@@ -1304,7 +1304,7 @@ contains
        call setval(rh(n),ZERO,all=.true.)
     end do
 
-    call divu(nlevs,mgt,unew,rh,mla%mba%rr,verbose,nodal)
+    call divu(nlevs,mgt,unew,rh,mla%mba%rr,nodal)
 
     ! Do rh = rh - divu_rhs (this routine preserves rh=0 on
     !  nodes which have bc_dirichlet = true.
@@ -1430,7 +1430,7 @@ contains
        call setval(rh(n),ZERO,all=.true.)
     end do
 
-    call divu(nlevs,mgt,unew,rh,mla%mba%rr,verbose,nodal)
+    call divu(nlevs,mgt,unew,rh,mla%mba%rr,nodal)
 
     ! Do rh = rh - divu_rhs (this routine preserves rh=0 on
     !  nodes which have bc_dirichlet = true.
