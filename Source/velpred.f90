@@ -762,10 +762,12 @@ contains
        call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ipw,Imw,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,3),dx,dt)
     else
+!$omp parallel do private(k)
        do k = lo(3)-1,hi(3)+1
           call slopex_2d(u(:,:,k,:),slopex(:,:,k,:),lo,hi,ng_u,3,adv_bc)
           call slopey_2d(u(:,:,k,:),slopey(:,:,k,:),lo,hi,ng_u,3,adv_bc)
        end do
+!$omp end parallel do
        call slopez_3d(u,slopez,lo,hi,ng_u,3,adv_bc)
     end if
 
@@ -780,6 +782,7 @@ contains
     allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
+!$omp parallel do private(i,j,k)
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -795,7 +798,9 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k,ulo,uhi)
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -820,6 +825,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     end if
 
     deallocate(slopex)
@@ -864,6 +870,7 @@ contains
 
     allocate(uimhx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
+!$omp parallel do private(i,j,k,uavg)
     do k=ks-1,ke+1
        do j=js-1,je+1
           do i=is,ie+1
@@ -879,6 +886,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! normal predictor states
     ! Allocated from lo:hi+1 in the normal direction
@@ -887,6 +895,7 @@ contains
     allocate(ury(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
+!$omp parallel do private(i,j,k)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -902,7 +911,9 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k,vlo,vhi)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -927,6 +938,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
     end if
 
     deallocate(slopey)
@@ -971,6 +983,7 @@ contains
 
     allocate(uimhy(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
 
+!$omp parallel do private(i,j,k,uavg)
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is-1,ie+1
@@ -986,6 +999,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! normal predictor states
     ! Allocated from lo:hi+1 in the normal direction
@@ -994,6 +1008,7 @@ contains
     allocate(urz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
+!$omp parallel do private(i,j,k)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
@@ -1009,7 +1024,9 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     else
+!$omp parallel do private(i,j,k,wlo,whi)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
@@ -1042,6 +1059,7 @@ contains
              end do
           end do
        end do
+!$omp end parallel do
     end if
 
     deallocate(slopez,Ipu,Imu,Ipv,Imv,Ipw,Imw)
@@ -1086,6 +1104,7 @@ contains
 
     allocate(uimhz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
 
+!$omp parallel do private(i,j,k,uavg)
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is-1,ie+1
@@ -1101,6 +1120,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     !******************************************************************
     ! Create u_{\i-\half\e_y}^{y|z}, etc.
@@ -1115,6 +1135,7 @@ contains
     allocate(uimhyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
 
     ! uimhyz loop
+!$omp parallel do private(i,j,k)
     do k=ks,ke
        do j=js,je+1
           do i=is-1,ie+1
@@ -1126,6 +1147,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -1149,6 +1171,7 @@ contains
        uryz(is-1:ie+1,je+1,ks:ke) = ZERO
     end if
 
+!$omp parallel do private(i,j,k,uavg)
     do k=ks,ke
        do j=js,je+1
           do i=is-1,ie+1
@@ -1159,6 +1182,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(ulyz,uryz)
 
@@ -1171,6 +1195,7 @@ contains
     allocate(uimhzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
 
     ! uimhzy loop
+!$omp parallel do private(i,j,k)
     do k=ks,ke+1
        do j=js,je
           do i=is-1,ie+1
@@ -1182,6 +1207,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
@@ -1205,6 +1231,7 @@ contains
        urzy(is-1:ie+1,js:je,ke+1) = ZERO
     end if
 
+!$omp parallel do private(i,j,k,uavg)
     do k=ks,ke+1
        do j=js,je
           do i=is-1,ie+1
@@ -1215,6 +1242,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(ulzy,urzy)
 
@@ -1226,6 +1254,7 @@ contains
     allocate(vrxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
 
     ! vimhxz loop
+!$omp parallel do private(i,j,k)
     do k=ks,ke
        do j=js-1,je+1
           do i=is,ie+1
@@ -1237,6 +1266,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(uimhz)
 
@@ -1264,6 +1294,7 @@ contains
 
     allocate(vimhxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
 
+!$omp parallel do private(i,j,k,uavg)
     do k=ks,ke
        do j=js-1,je+1
           do i=is,ie+1
@@ -1274,6 +1305,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(vlxz,vrxz)
 
@@ -1286,6 +1318,7 @@ contains
     allocate(vimhzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
     ! vimhzx loop
+!$omp parallel do private(i,j,k)
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is,ie
@@ -1297,6 +1330,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
@@ -1320,6 +1354,7 @@ contains
        vrzx(is:ie,js-1:je+1,ke+1) = ZERO
     end if
 
+!$omp parallel do private(i,j,k,uavg)
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is,ie
@@ -1330,6 +1365,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(vlzx,vrzx)
 
@@ -1341,6 +1377,7 @@ contains
     allocate(wrxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
 
     ! wimhxy loop
+!$omp parallel do private(i,j,k)
     do k=ks-1,ke+1
        do j=js,je
           do i=is,ie+1
@@ -1352,6 +1389,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(uimhy)
 
@@ -1379,6 +1417,7 @@ contains
 
     allocate(wimhxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
 
+!$omp parallel do private(i,j,k,uavg)
     do k=ks-1,ke+1
        do j=js,je
           do i=is,ie+1
@@ -1389,6 +1428,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(wlxy,wrxy)
 
@@ -1400,6 +1440,7 @@ contains
     allocate(wryx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
     ! wimhyx loop
+!$omp parallel do private(i,j,k)
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is,ie
@@ -1411,6 +1452,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(uimhx)
 
@@ -1438,6 +1480,7 @@ contains
 
     allocate(wimhyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
+!$omp parallel do private(i,j,k,uavg)
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is,ie
@@ -1448,6 +1491,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(wlyx,wryx)
 
@@ -1461,6 +1505,7 @@ contains
     allocate(umacl(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
     allocate(umacr(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
 
+!$omp parallel do private(i,j,k)
     do k=ks,ke
        do j=js,je
           do i=is,ie+1
@@ -1480,23 +1525,27 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! add the (Utilde . e_r) d w_0 /dr e_r term here
     ! u/v/w trans contains w0 so subtract it off
     if (spherical .eq. 1) then
 
+!$omp parallel do private(i,j,k,Ut_dot_er,uavg,test)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
 
-                Ut_dot_er = HALF*(utrans(i-1,j,k)-w0macx(i-1,j,k)+utrans(i  ,j  ,k)-w0macx(i  ,j  ,k))*normal(i-1,j,k,1) + &
+                Ut_dot_er = &
+                     HALF*(utrans(i-1,j,k)-w0macx(i-1,j,k)+utrans(i  ,j  ,k)-w0macx(i  ,j  ,k))*normal(i-1,j,k,1) + &
                      HALF*(vtrans(i-1,j,k)-w0macy(i-1,j,k)+vtrans(i-1,j+1,k)-w0macy(i-1,j+1,k))*normal(i-1,j,k,2) + &
                      HALF*(wtrans(i-1,j,k)-w0macz(i-1,j,k)+wtrans(i-1,j,k+1)-w0macz(i-1,j,k+1))*normal(i-1,j,k,3)
 
                 umacl(i,j,k) = umacl(i,j,k) &
                      - dt2*Ut_dot_er*gradw0_cart(i-1,j,k)*normal(i-1,j,k,1)
 
-                Ut_dot_er = HALF*(utrans(i,j,k)-w0macx(i,j,k)+utrans(i+1,j,k)-w0macx(i+1,j,k))*normal(i,j,k,1) + &
+                Ut_dot_er = &
+                     HALF*(utrans(i,j,k)-w0macx(i,j,k)+utrans(i+1,j,k)-w0macx(i+1,j,k))*normal(i,j,k,1) + &
                      HALF*(vtrans(i,j,k)-w0macy(i,j,k)+vtrans(i,j+1,k)-w0macy(i,j+1,k))*normal(i,j,k,2) + &
                      HALF*(wtrans(i,j,k)-w0macz(i,j,k)+wtrans(i,j,k+1)-w0macz(i,j,k+1))*normal(i,j,k,3)
 
@@ -1511,13 +1560,14 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
 
     else
 
+!$omp parallel do private(i,j,k,uavg,test)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
-
                 uavg = HALF*(umacl(i,j,k)+umacr(i,j,k))
                 test = ((umacl(i,j,k) .le. ZERO .and. umacr(i,j,k) .ge. ZERO) .or. &
                      (abs(umacl(i,j,k)+umacr(i,j,k)) .lt. rel_eps))
@@ -1526,6 +1576,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
 
     end if
 
@@ -1557,6 +1608,7 @@ contains
     allocate(vmacl(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
     allocate(vmacr(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
 
+!$omp parallel do private(i,j,k)
     do k=ks,ke
        do j=js,je+1
           do i=is,ie
@@ -1576,23 +1628,27 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! add the (Utilde . e_r) d w_0 /dr e_r term here
     ! u/v/w trans contains w0 so subtract it off
     if (spherical .eq. 1) then
 
+!$omp parallel do private(i,j,k,Ut_dot_er,uavg,test)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
 
-                Ut_dot_er = HALF*(utrans(i,j-1,k)-w0macx(i,j-1,k)+utrans(i+1,j-1,k)-w0macx(i+1,j-1,k))*normal(i,j-1,k,1) + &
+                Ut_dot_er = &
+                     HALF*(utrans(i,j-1,k)-w0macx(i,j-1,k)+utrans(i+1,j-1,k)-w0macx(i+1,j-1,k))*normal(i,j-1,k,1) + &
                      HALF*(vtrans(i,j-1,k)-w0macy(i,j-1,k)+vtrans(i,j  ,k  )-w0macy(i,j  ,k  ))*normal(i,j-1,k,2) + &
                      HALF*(wtrans(i,j-1,k)-w0macz(i,j-1,k)+wtrans(i,j-1,k+1)-w0macz(i,j-1,k+1))*normal(i,j-1,k,3)
 
                 vmacl(i,j,k) = vmacl(i,j,k) &
                      - dt2*Ut_dot_er*gradw0_cart(i,j-1,k)*normal(i,j-1,k,2)
 
-                Ut_dot_er = HALF*(utrans(i,j,k)-w0macx(i,j,k)+utrans(i+1,j,k)-w0macx(i+1,j,k))*normal(i,j,k,1) + &
+                Ut_dot_er = &
+                     HALF*(utrans(i,j,k)-w0macx(i,j,k)+utrans(i+1,j,k)-w0macx(i+1,j,k))*normal(i,j,k,1) + &
                      HALF*(vtrans(i,j,k)-w0macy(i,j,k)+vtrans(i,j+1,k)-w0macy(i,j+1,k))*normal(i,j,k,2) + &
                      HALF*(wtrans(i,j,k)-w0macz(i,j,k)+wtrans(i,j,k+1)-w0macz(i,j,k+1))*normal(i,j,k,3)
 
@@ -1608,22 +1664,23 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
 
     else
 
+!$omp parallel do private(i,j,k,uavg,test)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
-
                 uavg = HALF*(vmacl(i,j,k)+vmacr(i,j,k))
                 test = ((vmacl(i,j,k) .le. ZERO .and. vmacr(i,j,k) .ge. ZERO) .or. &
                      (abs(vmacl(i,j,k)+vmacr(i,j,k)) .lt. rel_eps))
                 vmac(i,j,k) = merge(vmacl(i,j,k),vmacr(i,j,k),uavg .gt. ZERO)
                 vmac(i,j,k) = merge(ZERO,vmac(i,j,k),test)
-
              enddo
           enddo
        enddo
+!$omp end parallel do
 
     end if
 
@@ -1655,6 +1712,7 @@ contains
     allocate(wmacl(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
     allocate(wmacr(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
 
+!$omp parallel do private(i,j,k)
     do k=ks,ke+1
        do j=js,je
           do i=is,ie
@@ -1674,10 +1732,13 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     ! add the (Utilde . e_r) d w_0 /dr e_r term here
     ! u/v/w trans contains w0 so subtract it off
     if (spherical .eq. 1) then
+
+!$omp parallel do private(i,j,k,Ut_dot_er,uavg,test)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -1705,7 +1766,11 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
+
     else
+
+!$omp parallel do private(i,j,k,uavg,test)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -1735,6 +1800,7 @@ contains
              enddo
           enddo
        enddo
+!$omp end parallel do
 
     end if
 
