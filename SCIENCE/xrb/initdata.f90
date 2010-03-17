@@ -507,8 +507,6 @@ contains
     integer, parameter :: perturb_temp = 1, perturb_dens = 2
     integer :: eos_input_flag
 
-    do_diag = .false.
-
     rad_pert = -xrb_pert_size**2 / (FOUR*log(HALF))
 
     select case (xrb_pert_type)
@@ -548,7 +546,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
     dens_pert = den_eos(1)
     rhoh_pert = den_eos(1)*h_eos(1)

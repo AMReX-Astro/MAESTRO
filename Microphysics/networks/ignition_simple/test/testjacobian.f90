@@ -62,7 +62,7 @@ program testjacobian
            dpdX_eos, dhdX_eos, &
            gam1_eos, cs_eos, s_eos, &
            dsdt_eos, dsdr_eos, &
-           do_diag)
+           .false.)
 
 
   print *, 'evaluating the RHS...'

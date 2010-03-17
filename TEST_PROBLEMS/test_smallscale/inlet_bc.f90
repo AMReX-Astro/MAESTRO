@@ -37,8 +37,6 @@ contains
 
     real(kind=dp_t) :: state1d(ndum)
 
-    do_diag = .false.
-
     ! now reset inflow boundary conditions
     call asin1d('flame_4.e7_screen_left.out', -.00125d0, 0.d0, state1d, ndum, .false.)
 
@@ -67,7 +65,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
     ! given rho, T, and X, compute h
     call eos(eos_input_rt, den_eos, temp_eos, &
@@ -79,7 +77,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
     INLET_VN = 0.0d0
     INLET_VT = 0.0d0

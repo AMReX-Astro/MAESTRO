@@ -61,8 +61,6 @@ contains
 
     integer :: r
 
-    do_diag = .false.
-
      do r=0,nr(1)-1
 
         ! (rho, T) --> p,h, etc
@@ -78,7 +76,7 @@ contains
                  dpdX_eos, dhdX_eos, &
                  gam1_eos, cs_eos, s_eos, &
                  dsdt_eos, dsdr_eos, &
-                 do_diag)
+                 .false.)
 
         Sbar(r) = Hbar(r) * dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
 

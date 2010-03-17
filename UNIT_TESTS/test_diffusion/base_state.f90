@@ -45,8 +45,6 @@ contains
 
     call build(bpt, "init_base_state")
 
-    do_diag = .false.
-
     ihe4  = network_species_index("He4")
     ic12  = network_species_index("C12")
     ife56 = network_species_index("Fe56")
@@ -70,7 +68,7 @@ contains
          dpdX_eos, dhdX_eos, &
          gam1_eos, cs_eos, s_eos, &
          dsdt_eos, dsdr_eos, &
-         do_diag)       
+         .false.)       
 
     diffusion_coefficient = thermal_conductivity / (cp_eos(1) * ambient_dens)
 

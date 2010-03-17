@@ -253,8 +253,6 @@ contains
 
     Source = zero
 
-    do_diag = .false.
-
     do i = lo(1), hi(1)
 
           den_eos(1) = s(i,rho_comp)
@@ -273,7 +271,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
 
           sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
@@ -349,8 +347,6 @@ contains
 
     Source = zero
 
-    do_diag = .false.
-
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
@@ -370,7 +366,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
 
           sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
@@ -446,8 +442,6 @@ contains
 
     Source = zero
 
-    do_diag = .false.
-
 !$omp parallel do private(i,j,k,comp,sigma,xi_term,pres_term,gradp0)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -469,7 +463,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
 
              sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
@@ -542,8 +536,6 @@ contains
 
     Source = zero
 
-    do_diag = .false.
-
 !$omp parallel do private(i,j,k,comp,sigma,xi_term,pres_term)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -565,7 +557,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
 
              sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))

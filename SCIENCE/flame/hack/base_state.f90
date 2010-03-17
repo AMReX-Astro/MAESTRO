@@ -70,7 +70,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
     ! note: p_ambient should be = p0_init
     p_ambient = p_eos(1)
@@ -96,7 +96,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
     dens_ash = den_eos(1)
     rhoh_ash = dens_ash*h_eos(1)

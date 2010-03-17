@@ -1057,8 +1057,6 @@ contains
     logical            :: cell_valid
     real (kind=dp_t)   :: x, y, z
 
-    do_diag = .false.
-
     ! weight is the factor by which the volume of a cell at the
     ! current level relates to the volume of a cell at the coarsest
     ! level of refinement.
@@ -1173,7 +1171,7 @@ contains
                          dpdX_eos, dhdX_eos, &
                          gam1_eos, cs_eos, s_eos, &
                          dsdt_eos, dsdr_eos, &
-                         do_diag)
+                         .false.)
 
 
                 ! kinetic, internal, and nuclear energies

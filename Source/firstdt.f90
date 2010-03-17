@@ -182,8 +182,6 @@ contains
     real (kind = dp_t)  :: gradp0,denom
     integer             :: i
     
-    do_diag = .false.
-
     rho_min = 1.d-20
     
     eps = 1.0d-8
@@ -214,7 +212,7 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag, &
+                .false., &
                 pt_index_eos)
        
        spdx    = max(spdx,cs_eos(1))
@@ -300,8 +298,6 @@ contains
     real (kind = dp_t)  :: gradp0,denom
     integer             :: i,j
 
-    do_diag = .false.
-    
     rho_min = 1.d-20
     
     eps = 1.0d-8
@@ -336,7 +332,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
           
           spdx    = max(spdx,cs_eos(1))
@@ -433,8 +429,6 @@ contains
     real (kind = dp_t)  :: eps,dt_divu,dt_sound,gradp0,denom,rho_min
     integer             :: i,j,k
 
-    do_diag = .false.
-
     eps = 1.0d-8
     
     rho_min = 1.d-20
@@ -473,7 +467,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              spdx    = max(spdx,cs_eos(1))
@@ -624,7 +618,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              spdx    = max(spdx,cs_eos(1))

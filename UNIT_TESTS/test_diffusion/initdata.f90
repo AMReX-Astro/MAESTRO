@@ -106,8 +106,6 @@ contains
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
-    do_diag = .false.
-
     s = ZERO
 
     ! initialize the scalars
@@ -147,7 +145,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag)
+                      .false.)
 
              dhdt = cv_eos(1) + dpdt_eos(1)/den_eos(1)
 
@@ -177,7 +175,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag)
+                   .false.)
 
           s(i,j,rho_comp)  = den_eos(1)
           s(i,j,rhoh_comp) = den_eos(1) * h_eos(1)

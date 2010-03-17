@@ -180,8 +180,6 @@ contains
     integer :: i,j
     real(kind=dp_t) :: t0_edge
     
-    do_diag = .false.
-    
     do i = lo(1), hi(1)+1
 
        if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -206,7 +204,7 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag, &
+                .false., &
                 pt_index_eos)
 
        if (enthalpy_pred_type .eq. predict_T_then_h .or. &
@@ -246,8 +244,6 @@ contains
     integer :: i,j
     real(kind=dp_t) :: t0_edge
     
-    do_diag = .false.
-    
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)+1
           
@@ -273,7 +269,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
           
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
@@ -311,7 +307,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
           
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
@@ -353,8 +349,6 @@ contains
     integer         :: i,j,k
     real(kind=dp_t) :: t0_edge
     
-    do_diag = .false.
-    
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
@@ -381,7 +375,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
@@ -421,7 +415,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
@@ -461,7 +455,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
@@ -501,8 +495,6 @@ contains
     integer :: i, j, k
     real(kind=dp_t) rho0_edge, rhoh0_edge, t0_edge
     
-    do_diag = .false.
-
 !$omp parallel do private(i,j,k,t0_edge,rho0_edge)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -532,7 +524,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
@@ -577,7 +569,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
@@ -622,7 +614,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
@@ -727,8 +719,6 @@ contains
     ! Local variables
     integer :: i
     
-    do_diag = .false.
-    
     do i = lo(1), hi(1)
 
        ! (rho, H) --> T, p
@@ -750,7 +740,7 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag, &
+                .false., &
                 pt_index_eos)
 
        state(i,temp_comp) = temp_eos(1)
@@ -771,8 +761,6 @@ contains
     ! Local variables
     integer :: i, j
     
-    do_diag = .false.
-
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
@@ -795,7 +783,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
           
           state(i,j,temp_comp) = temp_eos(1)
@@ -818,8 +806,6 @@ contains
     ! Local variables
     integer :: i, j, k
 
-    do_diag = .false.
-    
 !$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -843,7 +829,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              state(i,j,k,temp_comp) = temp_eos(1)
@@ -949,8 +935,6 @@ contains
     ! Local variables
     integer :: i
 
-    do_diag = .false.
-
     do i = lo(1), hi(1)
 
        ! (rho, p) --> T
@@ -972,7 +956,7 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag, &
+                .false., &
                 pt_index_eos)
 
        state(i,temp_comp) = temp_eos(1)
@@ -994,8 +978,6 @@ contains
     ! Local variables
     integer :: i, j
     
-    do_diag = .false.
-
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
           
@@ -1018,7 +1000,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
           
           state(i,j,temp_comp) = temp_eos(1)
@@ -1042,8 +1024,6 @@ contains
     ! Local variables
     integer :: i, j, k
 
-    do_diag = .false.
-
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1066,7 +1046,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              state(i,j,k,temp_comp) = temp_eos(1)
@@ -1096,8 +1076,6 @@ contains
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
-    do_diag = .false.
-
 !$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -1121,7 +1099,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              state(i,j,k,temp_comp) = temp_eos(1)
@@ -1234,8 +1212,6 @@ contains
     ! Local variables
     integer :: i
     
-    do_diag = .false.
-
     do i = lo(1), hi(1)
 
        ! (rho, H) --> T, p
@@ -1256,7 +1232,7 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag, &
+                .false., &
                 pt_index_eos)
        
        pres(i) = p_eos(1)
@@ -1279,8 +1255,6 @@ contains
     ! Local variables
     integer :: i, j
     
-    do_diag = .false.
-
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
@@ -1302,7 +1276,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
 
           pres(i,j) = p_eos(1)
@@ -1327,8 +1301,6 @@ contains
     ! Local variables
     integer :: i, j, k
 
-    do_diag = .false.
-    
 !$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -1351,7 +1323,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              pres(i,j,k) = p_eos(1)
@@ -1465,8 +1437,6 @@ contains
     ! local
     integer    :: i
 
-    do_diag = .false.
-
     do i=lo(1),hi(1)
 
        den_eos(1) = s(i,rho_comp)
@@ -1485,7 +1455,7 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag, &
+                .false., &
                 pt_index_eos)
 
        s(i,rhoh_comp) = den_eos(1)*h_eos(1)
@@ -1508,8 +1478,6 @@ contains
     ! local
     integer    :: i,j
 
-    do_diag = .false.
-
     do j=lo(2),hi(2)
        do i=lo(1),hi(1)
 
@@ -1529,7 +1497,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
 
           s(i,j,rhoh_comp) = den_eos(1)*h_eos(1)
@@ -1553,8 +1521,6 @@ contains
     ! local
     integer    :: i,j,k
 
-    do_diag = .false.
-
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
@@ -1575,7 +1541,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
@@ -1603,8 +1569,6 @@ contains
     integer    :: i,j,k
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
-    do_diag = .false.
-
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
@@ -1629,7 +1593,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)

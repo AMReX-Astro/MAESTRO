@@ -39,12 +39,10 @@ module eos_module
 
   integer         :: pt_index_eos(MAX_SPACEDIM)
 
-  logical :: do_diag
-
   common /eos_common/ xn_eos,temp_eos,den_eos,abar_eos,zbar_eos,e_eos,p_eos,h_eos
   common /eos_common/ cv_eos,cp_eos,xne_eos,eta_eos,pele_eos,dpdt_eos,dpdr_eos,dedr_eos
   common /eos_common/ dedt_eos,gam1_eos,cs_eos,s_eos,dsdt_eos,dsdr_eos,dpdX_eos,dhdX_eos
-  common /eos_common/ conduct_eos,pt_index_eos,do_diag
+  common /eos_common/ conduct_eos,pt_index_eos
   SAVE /eos_common/
 !$omp threadprivate(/eos_common/)
 

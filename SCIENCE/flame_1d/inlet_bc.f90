@@ -32,8 +32,6 @@ contains
 
     integer :: ic12, io16
 
-    do_diag = .false.
-
     ! figure out the indices for different species
     ic12  = network_species_index("carbon-12")
     io16  = network_species_index("oxygen-16")
@@ -54,7 +52,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
     INLET_RHO     = dens_fuel
     INLET_RHOH    = dens_fuel*h_eos(1)

@@ -92,8 +92,6 @@ contains
     ! local variables
     integer :: i
 
-    do_diag = .false.
-
     do i = lo(1), hi(1)
 
        den_eos(1) = s(i,rho_comp)
@@ -113,7 +111,7 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag, &
+                .false., &
                 pt_index_eos)
 
        gamma(i) = gam1_eos(1)
@@ -136,8 +134,6 @@ contains
     ! local variables
     integer :: i, j
 
-    do_diag = .false.
-
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
@@ -158,7 +154,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
 
           gamma(i,j) = gam1_eos(1)
@@ -183,8 +179,6 @@ contains
     ! local variables
     integer :: i, j, k
 
-    do_diag = .false.
-
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -206,7 +200,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
 
              gamma(i,j,k) = gam1_eos(1)
@@ -235,8 +229,6 @@ contains
 
     real (kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
-    do_diag = .false.
-
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
@@ -262,7 +254,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
 
              gamma(i,j,k) = gam1_eos(1)

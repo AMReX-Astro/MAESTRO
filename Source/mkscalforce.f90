@@ -931,8 +931,6 @@ contains
 
     real(kind=dp_t) :: gradp0, wadv, dhdp
 
-    do_diag = .false.
-
     do j = lo(2),hi(2)
 
        if (j.eq.0) then
@@ -964,7 +962,7 @@ contains
                   dpdX_eos, dhdX_eos, &
                   gam1_eos, cs_eos, s_eos, &
                   dsdt_eos, dsdr_eos, &
-                  do_diag, &
+                  .false., &
                   pt_index_eos)
 
          dhdp = ONE / s(i,j,rho_comp) + ( s(i,j,rho_comp) * dedr_eos(1) - &
@@ -1006,8 +1004,6 @@ contains
     integer         :: i,j,k
     real(kind=dp_t) :: dhdp, gradp0, wadv
 
-    do_diag = .false.
-
     do k = lo(3),hi(3)
        if (k.eq.0) then
           gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
@@ -1039,7 +1035,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) - &
@@ -1087,8 +1083,6 @@ contains
     real(kind=dp_t) :: divup,p0divu,ugradp,dhdp
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
 
-    do_diag = .false.
-
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0)
@@ -1113,7 +1107,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) - &

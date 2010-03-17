@@ -60,8 +60,6 @@ subroutine varden()
 
   real(dp_t) :: mencl, max_hse_error, starting_rad, rloc, r_r, r_l, g, dpdr, rhog
 
-  do_diag = .false.
-
   call probin_init()
   call init_dm()
   call init_spherical()
@@ -187,7 +185,7 @@ subroutine varden()
               dpdX_eos, dhdX_eos, &
               gam1_eos, cs_eos, s_eos, &
               dsdt_eos, dsdr_eos, &
-              do_diag)
+              .false.)
      
      gamma1bar_old(1,r) = gam1_eos(1)
 
@@ -339,7 +337,7 @@ subroutine varden()
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
         gamma1bar_new(1,r) = gam1_eos(1)
 
@@ -366,7 +364,7 @@ subroutine varden()
                  dpdX_eos, dhdX_eos, &
                  gam1_eos, cs_eos, s_eos, &
                  dsdt_eos, dsdr_eos, &
-                 do_diag)
+                 .false.)
 
         s0_new(1,r,temp_comp) = temp_eos(1)
 
@@ -507,7 +505,7 @@ subroutine varden()
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
         gamma1bar_new(1,r) = gam1_eos(1)
 
@@ -534,7 +532,7 @@ subroutine varden()
                  dpdX_eos, dhdX_eos, &
                  gam1_eos, cs_eos, s_eos, &
                  dsdt_eos, dsdr_eos, &
-                 do_diag)
+                 .false.)
 
         s0_new(1,r,temp_comp) = temp_eos(1)
 

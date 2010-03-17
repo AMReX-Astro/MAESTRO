@@ -370,8 +370,6 @@ contains
        xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
        
        ! dens, temp, and xmass are inputs
-       do_diag = .false.
-       
        call conducteos(eos_input_rt, den_eos, temp_eos, &
                        npts, nspec, &
                        xn_eos, &
@@ -381,7 +379,7 @@ contains
                        dpdX_eos, dhdX_eos, &
                        gam1_eos, cs_eos, s_eos, &
                        dsdt_eos, dsdr_eos, &
-                       do_diag, conduct_eos)
+                       .false., conduct_eos)
        
        Tcoeff(i) = -conduct_eos(1)
        hcoeff(i) = -conduct_eos(1)/cp_eos(1)
@@ -429,8 +427,6 @@ contains
           xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
           
           ! dens, temp, and xmass are inputs
-          do_diag = .false.
-          
           call conducteos(eos_input_rt, den_eos, temp_eos, &
                           npts, nspec, &
                           xn_eos, &
@@ -440,7 +436,7 @@ contains
                           dpdX_eos, dhdX_eos, &
                           gam1_eos, cs_eos, s_eos, &
                           dsdt_eos, dsdr_eos, &
-                          do_diag, conduct_eos)
+                          .false., conduct_eos)
           
           Tcoeff(i,j) = -conduct_eos(1)
           hcoeff(i,j) = -conduct_eos(1)/cp_eos(1)
@@ -493,8 +489,6 @@ contains
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
              
              ! dens, temp, and xmass are inputs
-             do_diag = .false.
-             
              call conducteos(eos_input_rt, den_eos, temp_eos, &
                              npts, nspec, &
                              xn_eos, &
@@ -504,7 +498,7 @@ contains
                              dpdX_eos, dhdX_eos, &
                              gam1_eos, cs_eos, s_eos, &
                              dsdt_eos, dsdr_eos, &
-                             do_diag, conduct_eos)
+                             .false., conduct_eos)
              
              Tcoeff(i,j,k) = -conduct_eos(1)
              hcoeff(i,j,k) = -conduct_eos(1)/cp_eos(1)

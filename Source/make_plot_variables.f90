@@ -66,8 +66,6 @@ contains
     ! local
     integer :: i
 
-    do_diag = .false.
-
     do i = lo(1), hi(1)
 
        den_eos(1)  = state(i,rho_comp)
@@ -83,7 +81,7 @@ contains
                        dpdX_eos, dhdX_eos, &
                        gam1_eos, cs_eos, s_eos, &
                        dsdt_eos, dsdr_eos, &
-                       do_diag, conduct_eos)
+                       .false., conduct_eos)
 
        cond(i) = conduct_eos(1)
 
@@ -104,8 +102,6 @@ contains
     ! local
     integer :: i, j
 
-    do_diag = .false.
-
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
@@ -122,7 +118,7 @@ contains
                           dpdX_eos, dhdX_eos, &
                           gam1_eos, cs_eos, s_eos, &
                           dsdt_eos, dsdr_eos, &
-                          do_diag, conduct_eos)
+                          .false., conduct_eos)
 
           cond(i,j) = conduct_eos(1)
 
@@ -144,8 +140,6 @@ contains
     ! local
     integer :: i, j, k
 
-    do_diag = .false.
-
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -164,7 +158,7 @@ contains
                              dpdX_eos, dhdX_eos, &
                              gam1_eos, cs_eos, s_eos, &
                              dsdt_eos, dsdr_eos, &
-                             do_diag, conduct_eos)
+                             .false., conduct_eos)
 
              cond(i,j,k) = conduct_eos(1)
 
@@ -239,8 +233,6 @@ contains
     ! Local variables
     integer :: i
 
-    do_diag = .false.
-
     do i = lo(1), hi(1)
 
        ! (rho, H) --> T, p
@@ -261,7 +253,7 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag, &
+                .false., &
                 pt_index_eos)
 
        T(i) = temp_eos(1)
@@ -290,8 +282,6 @@ contains
     ! Local variables
     integer :: i, j
 
-    do_diag = .false.
-
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
@@ -313,7 +303,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
 
           T(i,j) = temp_eos(1)
@@ -342,8 +332,6 @@ contains
     ! Local variables
     integer :: i, j, k
 
-    do_diag = .false.
-
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -366,7 +354,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
 
              T(i,j,k) = temp_eos(1)
@@ -406,8 +394,6 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
 
-    do_diag = .false.
-
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -430,7 +416,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
 
              T(i,j,k) = temp_eos(1)
@@ -542,8 +528,6 @@ contains
     integer          :: i
     real (kind=dp_t) :: vel
 
-    do_diag = .false.
-
     ! Then compute the perturbation
     do i = lo(1), hi(1)
 
@@ -564,7 +548,7 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag, &
+                .false., &
                 pt_index_eos)
 
        t(i) = temp_eos(1)
@@ -609,8 +593,6 @@ contains
     integer          :: i, j
     real (kind=dp_t) :: vel
 
-    do_diag = .false.
-
     ! Then compute the perturbation
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -632,7 +614,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag, &
+                   .false., &
                    pt_index_eos)
 
           t(i,j) = temp_eos(1)
@@ -679,8 +661,6 @@ contains
     integer          :: i, j, k
     real (kind=dp_t) :: vel
 
-    do_diag = .false.
-
     ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -703,7 +683,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
 
              t(i,j,k) = temp_eos(1)
@@ -766,8 +746,6 @@ contains
     allocate(       p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     allocate(gamma1bar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
-    do_diag = .false.
-
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0,rho0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,rhoh0,rhoh0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
@@ -796,7 +774,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
 
              t(i,j,k) = temp_eos(1)

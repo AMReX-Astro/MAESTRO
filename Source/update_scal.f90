@@ -184,8 +184,6 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
 
-    do_diag = .false.
-
     do comp = nstart, nstop
 
        do i=lo(1),hi(1)
@@ -220,7 +218,7 @@ contains
                       dpdX_eos, dhdX_eos, &
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
-                      do_diag, &
+                      .false., &
                       pt_index_eos)
              
              snew(i,rhoh_comp) = snew(i,rho_comp) * h_eos(1)
@@ -307,8 +305,6 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
 
-    do_diag = .false.
-
     do comp = nstart, nstop
 
        do j=lo(2),hi(2)
@@ -347,7 +343,7 @@ contains
                          dpdX_eos, dhdX_eos, &
                          gam1_eos, cs_eos, s_eos, &
                          dsdt_eos, dsdr_eos, &
-                         do_diag, &
+                         .false., &
                          pt_index_eos)
                 
                 snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * h_eos(1)
@@ -439,8 +435,6 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
 
-    do_diag = .false.
-
     do comp = nstart, nstop
 
        do k = lo(3), hi(3)
@@ -484,7 +478,7 @@ contains
                             dpdX_eos, dhdX_eos, &
                             gam1_eos, cs_eos, s_eos, &
                             dsdt_eos, dsdr_eos, &
-                            do_diag, &
+                            .false., &
                             pt_index_eos)
 
                    snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)
@@ -581,8 +575,6 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
 
-    do_diag = .false.
-
     ! is spherical
     do comp = nstart, nstop
 
@@ -629,7 +621,7 @@ contains
                             dpdX_eos, dhdX_eos, &
                             gam1_eos, cs_eos, s_eos, &
                             dsdt_eos, dsdr_eos, &
-                            do_diag, &
+                            .false., &
                             pt_index_eos)
 
                    snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)

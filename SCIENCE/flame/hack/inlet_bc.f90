@@ -68,7 +68,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
     INLET_RHO     = dens_fuel
     INLET_RHOH    = dens_fuel*h_eos(1)

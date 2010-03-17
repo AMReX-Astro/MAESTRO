@@ -350,8 +350,6 @@ contains
     real(kind=dp_t) :: x0, y0, x1, y1, x2, y2
     real(kind=dp_t) :: r0, r1, r2
 
-    do_diag = .false.
-
     t0 = s0_init(temp_comp)
 
     x0 = 5.0d7
@@ -396,7 +394,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
     dens_pert = den_eos(1)
     rhoh_pert = den_eos(1)*h_eos(1)
@@ -427,8 +425,6 @@ contains
     real(kind=dp_t) :: temp, t0
     real(kind=dp_t) :: x0, y0, z0, x1, y1, z1, x2, y2, z2
     real(kind=dp_t) :: r0, r1, r2
-
-    do_diag = .false.
 
     t0 = s0_init(temp_comp)
 
@@ -476,7 +472,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
     dens_pert = den_eos(1)
     rhoh_pert = den_eos(1)*h_eos(1)

@@ -45,8 +45,6 @@ contains
     real(kind=dp_t) :: p_ambient, dens_ash, rhoh_fuel, rhoh_ash
     real(kind=dp_t) :: xn_fuel(nspec), xn_ash(nspec), xn_smooth(nspec)
     
-    do_diag = .false.
-
     ! figure out the indices for different species
     ic12  = network_species_index("carbon-12")
     io16  = network_species_index("oxygen-16")
@@ -75,7 +73,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
     ! note: p_ambient should be = p0_init
     p_ambient = p_eos(1)
@@ -101,7 +99,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             .false.)
 
     dens_ash = den_eos(1)
     rhoh_ash = dens_ash*h_eos(1)
@@ -165,7 +163,7 @@ contains
                 dpdX_eos, dhdX_eos, &
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
-                do_diag)
+                .false.)
 
        s0_init(r,rho_comp)  = den_eos(1)
        s0_init(r,spec_comp:spec_comp+nspec-1) = den_eos(1)*xn_smooth(:)

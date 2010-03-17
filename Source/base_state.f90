@@ -76,8 +76,6 @@ contains
 
     call build(bpt, "init_base_state")
 
-    do_diag = .false.
-
     ! open the model file and read in the header
     ! the model file is assumed to be of the follow form:
     ! # npts = 896
@@ -400,7 +398,7 @@ contains
                    dpdX_eos, dhdX_eos, &
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
-                   do_diag)
+                   .false.)
 
           s0_init(r, rho_comp ) = d_ambient
           s0_init(r,rhoh_comp ) = d_ambient * h_eos(1)
