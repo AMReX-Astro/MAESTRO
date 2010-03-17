@@ -191,6 +191,7 @@ contains
         
               ! compute van Leer slopes away from domain boundaries
               ! leave van Leer slopes at domain boundaries set to zero
+!$omp parallel do private(r,del,dmin,dpls)
               do r=lo-1,hi+1
                  if (r .eq. 0) then
                     if (spherical .eq. 1) then
@@ -210,7 +211,9 @@ contains
                     dxvl(n,r) = sign(ONE,del)*min(abs(del),abs(dmin),abs(dpls))
                  end if
               end do
+!$omp end parallel do
 
+!$omp parallel do private(r)
               do r=lo,hi+1
                  if (r .eq. 0) then
                     ! 2nd order interpolation to boundary face
@@ -226,6 +229,7 @@ contains
                     sedgel(n,r) = min(sedgel(n,r),max(s(n,r),s(n,r-1)))
                  end if
               end do
+!$omp end parallel do
 
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -241,6 +245,7 @@ contains
               hi = r_end_coord(n,i)
 
               ! store centered differences in dxvl
+!$omp parallel do private(r)
               do r=lo-3,hi+3
                  if (r .eq. 0) then
                     if (spherical .eq. 1) then
@@ -258,7 +263,9 @@ contains
                     dxvl(n,r) = HALF * (s(n,r+1) - s(n,r-1))
                  end if
               end do
+!$omp end parallel do
 
+!$omp parallel do private(r,D2,D2L,D2R,sgn,D2LIM)
               do r=lo-2,hi+3
                  if (r .eq. 0) then
                     ! 2nd order interpolation to boundary face
@@ -282,6 +289,7 @@ contains
                     end if
                  end if
               end do
+!$omp end parallel do
 
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -297,11 +305,13 @@ contains
               
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
-              
+
+!$omp parallel do private(r)     
               do r=lo,hi
                  sp(n,r) = sedgel(n,r+1)
                  sm(n,r) = sedgel(n,r  )
               end do
+!$omp end parallel do
               
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -313,6 +323,7 @@ contains
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
 
+!$omp parallel do private(r)
               do r=lo,hi
                  if ((sp(n,r)-s(n,r))*(s(n,r)-sm(n,r)) .le. ZERO) then
                     sp(n,r) = s(n,r)
@@ -323,6 +334,7 @@ contains
                     sm(n,r) = THREE*s(n,r) - TWO*sp(n,r)
                  end if
               end do
+!$omp end parallel do
 
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -338,6 +350,9 @@ contains
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
 
+!$omp parallel do private(r,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
+!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM, &
+!$omp amax,delam,delap)
               do r=lo,hi
 
                  if (r .ge. 2 .and. r .le. nr(n)-3) then
@@ -418,6 +433,7 @@ contains
                  end if ! test (r .ge. 2 .and. r .le. nr(n)-3)
 
               end do ! loop over r
+!$omp end parallel do
 
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -433,6 +449,7 @@ contains
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
 
+!$omp parallel do private(r,sigmap,sigmam,s6)
               do r=lo,hi
                  sigmap = abs(w0(n,r+1))*dtdr
                  sigmam = abs(w0(n,r  ))*dtdr
@@ -448,6 +465,7 @@ contains
                     Im(n,r) = s(n,r)
                  end if
               end do
+!$omp end parallel do
 
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -483,10 +501,12 @@ contains
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
 
+!$omp parallel do private(r)
               do r=lo,hi
                  sedgel(n,r+1) = Ip(n,r) + dth * force(n,r)
                  sedger(n,r  ) = Im(n,r) + dth * force(n,r)
               end do
+!$omp end parallel do
 
            end do
         end do
@@ -524,6 +544,7 @@ contains
            lo = r_start_coord(n,i)
            hi = r_end_coord(n,i)
 
+!$omp parallel do private(r,savg)
            do r=lo,hi+1
               if (r .eq. 0) then
                  ! pick interior state at lo domain boundary
@@ -538,6 +559,7 @@ contains
                  sedge(n,r)=merge(savg,sedge(n,r),abs(w0(n,r)) .lt. rel_eps)
               end if
            end do
+!$omp end parallel do
 
         end do  ! loop over disjointchunks
      end do ! loop over levels
