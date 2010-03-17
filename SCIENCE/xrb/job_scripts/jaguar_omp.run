@@ -4,6 +4,8 @@
 #PBS -q debug
 #PBS -l walltime=00:10:00,size=12
 
+setenv PSC_OMP_AFFINITY FALSE
+
 setenv OMP_NUM_THREADS 6
 
 cd $PBS_O_WORKDIR
