@@ -483,6 +483,7 @@ contains
     ! local
     integer :: i,j,k,comp
     
+!$omp parallel do private(i,j,k,do_diag,comp)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
@@ -518,6 +519,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
     
   end subroutine make_thermal_coeffs_3d
 

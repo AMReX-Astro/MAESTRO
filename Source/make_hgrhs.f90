@@ -227,6 +227,7 @@ contains
     ! Local variables
     integer :: i,j,k
     
+!$omp parallel do private(i,j,k)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -235,6 +236,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
     
   end subroutine make_rhscc_3d_cart
    
@@ -251,6 +253,7 @@ contains
     ! Local variables
     integer :: i,j,k
     
+!$omp parallel do private(i,j,k)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -260,6 +263,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
     
   end subroutine make_rhscc_3d_sphr
   
@@ -311,6 +315,7 @@ contains
     ! Local variables
     integer :: i, j,k
     
+!$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)+1
@@ -321,6 +326,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
     
   end subroutine make_hgrhs_3d
 
@@ -587,6 +593,7 @@ contains
     integer :: i, j, k
     real(kind=dp_t) :: correction_factor
     
+!$omp parallel do private(i,j,k,correction_factor)
     do k = lo(3),hi(3)
        if(k .lt. base_cutoff_density_coord(n)) then
           correction_factor = div_coeff(k)*(dpdt_factor/(gamma1bar(k)*p0(k))) / dt
@@ -599,6 +606,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
     
   end subroutine create_correction_cc_3d_cart
 
@@ -621,6 +629,7 @@ contains
     integer :: i, j, k
     real(kind=dp_t) :: correction_factor
     
+!$omp parallel do private(i,j,k,correction_factor)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -634,6 +643,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
     
   end subroutine create_correction_cc_3d_sphr
   
@@ -687,6 +697,7 @@ contains
     ! Local variables
     integer :: i, j,k
     
+!$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)+1
@@ -698,6 +709,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
     
   end subroutine create_correction_nodal_3d
   
