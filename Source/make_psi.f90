@@ -27,11 +27,13 @@ contains
 
     do n=1,nlevs_radial
        do i=1,numdisjointchunks(n)
+!$omp parallel do private(r)
           do r = r_start_coord(n,i), r_end_coord(n,i)
              if (r .lt. base_cutoff_density_coord(n)) then
                 psi(n,r) = etarho_cc(n,r) * abs(grav_const)
              end if
           end do
+!$omp end parallel do
        end do
     end do
 
@@ -57,6 +59,7 @@ contains
 
     psi = ZERO
 
+!$omp parallel do private(r,div_w0_sph)
     do r=0,base_cutoff_density_coord(1)-1
 
        div_w0_sph = one/(r_cc_loc(1,r)**2)* &
@@ -66,6 +69,7 @@ contains
        psi(1,r) = gamma1bar(1,r) * p0_avg(1,r) * (Sbar_in(1,r) - div_w0_sph)
 
     enddo
+!$omp end parallel do
 
   end subroutine make_psi_spherical
   
