@@ -5,6 +5,8 @@
 #PBS -l walltime=00:30:00
 #PBS -j eo
 
+setenv PSC_OMP_AFFINITY FALSE
+
 setenv OMP_NUM_THREADS 4
 
 cd $PBS_O_WORKDIR
