@@ -31,7 +31,6 @@ subroutine varden()
   use initialize_module
   use make_new_grids_module
   use regrid_module
-  use correct_base_module
   use make_eta_module
   use diag_module, only: flush_diag
 

@@ -34,7 +34,6 @@ contains
     use make_div_coeff_module
     use make_w0_module
     use advect_base_module
-    use correct_base_module
     use react_state_module
     use make_S_module
     use average_module
