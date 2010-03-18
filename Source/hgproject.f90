@@ -394,7 +394,7 @@ contains
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
-      integer :: nx,ny,nz
+      integer :: nx,ny,nz,i,j,k
 
       nx = size(gpres,dim=1) - 2
       ny = size(gpres,dim=2) - 2
@@ -416,18 +416,28 @@ contains
       ! quantity projected is (Ustar - Un)
       else if (proj_type .eq. pressure_iters_comp) then
 
-         unew(-1:nx,-1:ny,-1:nz,:) =&
-              ( unew(-1:nx,-1:ny,-1:nz,:) - uold(-1:nx,-1:ny,-1:nz,:) ) / dt
+!$omp parallel do private(i,j,k)
+         do k=-1,nz
+            do j=-1,ny
+               do i=-1,nx
+                  unew(i,j,k,1:3) = (unew(i,j,k,1:3) - uold(i,j,k,1:3)) / dt
+               end do
+            end do
+         end do
+!$omp end parallel do
 
       ! quantity projected is Ustar + dt * (1/rho) gpres
       else if (proj_type .eq. regular_timestep_comp) then
 
-         unew(-1:nx,-1:ny,-1:nz,1) = unew(-1:nx,-1:ny,-1:nz,1) + &
-                                    dt*gpres(-1:nx,-1:ny,-1:nz,1)/rhohalf(-1:nx,-1:ny,-1:nz)
-         unew(-1:nx,-1:ny,-1:nz,2) = unew(-1:nx,-1:ny,-1:nz,2) + &
-                                    dt*gpres(-1:nx,-1:ny,-1:nz,2)/rhohalf(-1:nx,-1:ny,-1:nz)
-         unew(-1:nx,-1:ny,-1:nz,3) = unew(-1:nx,-1:ny,-1:nz,3) + &
-                                    dt*gpres(-1:nx,-1:ny,-1:nz,3)/rhohalf(-1:nx,-1:ny,-1:nz)
+!$omp parallel do private(i,j,k)
+         do k=-1,nz
+            do j=-1,ny
+               do i=-1,nx
+                  unew(i,j,k,1:3) = unew(i,j,k,1:3) + dt*gpres(i,j,k,1:3)/rhohalf(i,j,k)
+               end do
+            end do
+         end do
+!$omp end parallel do
 
       else
 
@@ -545,6 +555,7 @@ contains
       ny = size(gphi,dim=2)
       nz = size(gphi,dim=3)
 
+!$omp parallel do private(i,j,k)
       do k = 0,nz-1
          do j = 0,ny-1
             do i = 0,nx-1
@@ -563,6 +574,7 @@ contains
             end do
          end do
       end do
+!$omp end parallel do
 
     end subroutine mkgphi_3d
 
@@ -811,22 +823,35 @@ contains
       real(kind=dp_t), intent(in   ) ::     phi(-ng_h :,-ng_h :,-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
-      integer         :: nx,ny,nz
+      integer         :: nx,ny,nz,i,j,k
 
       nx = size(gphi,dim=1)-1
       ny = size(gphi,dim=2)-1
       nz = size(gphi,dim=3)-1
 
-      !     Subtract off the density-weighted gradient.
-      unew(0:nx,0:ny,0:nz,1) = &
-           unew(0:nx,0:ny,0:nz,1) - gphi(0:nx,0:ny,0:nz,1)/rhohalf(0:nx,0:ny,0:nz) 
-      unew(0:nx,0:ny,0:nz,2) = &
-           unew(0:nx,0:ny,0:nz,2) - gphi(0:nx,0:ny,0:nz,2)/rhohalf(0:nx,0:ny,0:nz) 
-      unew(0:nx,0:ny,0:nz,3) = &
-           unew(0:nx,0:ny,0:nz,3) - gphi(0:nx,0:ny,0:nz,3)/rhohalf(0:nx,0:ny,0:nz) 
+      ! Subtract off the density-weighted gradient
+!$omp parallel do private(i,j,k)
+      do k=0,nz
+         do j=0,ny
+            do i=0,nx
+               unew(i,j,k,1:3) = unew(i,j,k,1:3) - gphi(i,j,k,1:3)/rhohalf(i,j,k)
+            end do
+         end do
+      end do
+!$omp end parallel do
 
-      if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
-           unew(0:nx,0:ny,0:nz,:) = uold(0:nx,0:ny,0:nz,:) + dt * unew(0:nx,0:ny,0:nz,:)
+      if (proj_type .eq. pressure_iters_comp) then
+         ! unew held the projection of (ustar-uold)
+!$omp parallel do private(i,j,k)
+         do k=0,nz
+            do j=0,ny
+               do i=0,nx
+                  unew(i,j,k,1:3) = uold(i,j,k,1:3) + dt*unew(i,j,k,1:3)
+               end do
+            end do
+         end do
+!$omp end parallel do
+      end if
 
       if ( (proj_type .eq. initial_projection_comp) .or. &
            (proj_type .eq. divu_iters_comp) ) then
@@ -838,15 +863,31 @@ contains
 
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
-         gpres(0:nx,0:ny,0:nz,:) = gpres(0:nx,0:ny,0:nz,:) + gphi(0:nx,0:ny,0:nz,:)
-         pres(0:nx,0:ny,0:nz  ) =  pres(0:nx,0:ny,0:nz  )  +  phi(0:nx,0:ny,0:nz  )
+!$omp parallel do private(i,j,k)
+         do k=0,nz
+            do j=0,ny
+               do i=0,nx
+                  gpres(i,j,k,1:3) = gpres(i,j,k,1:3) + gphi(i,j,k,1:3)
+                  pres(i,j,k) = pres(i,j,k) + phi(i,j,k)
+               end do
+            end do
+         end do
+!$omp end parallel do
 
       else if (proj_type .eq. regular_timestep_comp) then
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
-         gpres(0:nx,0:ny,0:nz,:) = (ONE/dt) * gphi(0:nx,0:ny,0:nz,:)
-         pres(0:nx,0:ny,0:nz  ) = (ONE/dt) *  phi(0:nx,0:ny,0:nz  )
+!$omp parallel do private(i,j,k)
+         do k=0,nz
+            do j=0,ny
+               do i=0,nx
+                  gpres(i,j,k,1:3) = (ONE/dt) * gphi(i,j,k,1:3)
+                  pres(i,j,k) = (ONE/dt) * phi(i,j,k)
+               end do
+            end do
+         end do
+!$omp end parallel do
 
       end if
 
@@ -1547,6 +1588,7 @@ contains
     ny = size(coeffs,dim=2) - 2
     nz = size(coeffs,dim=3) - 2
 
+!$omp parallel do private(i,j,k)
     do k = 1,nz
        do j = 1,ny
           do i = 1,nx
@@ -1554,6 +1596,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
   end subroutine mkcoeffs_3d
 
@@ -1658,13 +1701,17 @@ contains
     integer :: k
 
     if (do_mult) then
+!$omp parallel do private(k)
        do k = lo(3),hi(3)
           u(:,:,k,:) = u(:,:,k,:) * div_coeff(k)
        end do
+!$omp end parallel do
     else
+!$omp parallel do private(k)
        do k = lo(3),hi(3)
           u(:,:,k,:) = u(:,:,k,:) / div_coeff(k)
        end do
+!$omp end parallel do
     end if
 
   end subroutine mult_by_1d_coeff_3d
@@ -1719,6 +1766,7 @@ contains
 
     if (do_mult) then
        do m = 1, size(u,dim=4)
+!$omp parallel do private(i,j,k)
           do k = 0,nz-1 
              do j = 0,ny-1 
                 do i = 0,nx-1 
@@ -1726,9 +1774,11 @@ contains
                 end do
              end do
           end do
+!$omp end parallel do
        end do
     else
        do m = 1, size(u,dim=4)
+!$omp parallel do private(i,j,k)
           do k = 0,nz-1 
              do j = 0,ny-1 
                 do i = 0,nx-1 
@@ -1736,6 +1786,7 @@ contains
                 end do
              end do
           end do
+!$omp end parallel do
        end do
     end if
 
