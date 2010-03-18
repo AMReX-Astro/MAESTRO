@@ -1066,6 +1066,10 @@ contains
        call bl_error("ERROR: geometry not spherical in diag")
     endif
 
+!$omp parallel do private(i,j,k,x,y,z,cell_valid,velr,vel) &
+!$omp reduction(max:vr_max,U_max,Mach_max) &
+!$omp reduction(+:ncenter,T_center,velx_center,vely_center,velz_center,vr_x,vr_y,vr_z, &
+!$omp             rhovr_x,rhovr_y,rhovr_z,mass,nzones,kin_ener,int_ener,nuc_ener)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
@@ -1080,10 +1084,10 @@ contains
                 if ( (.not. mask(i,j,k)) ) cell_valid = .false.
              end if
 
+             ! we only consider cells inside of where the sponging begins
              if (cell_valid .and. &
                   s(i,j,k,rho_comp) >= sponge_start_factor*sponge_center_density) then
                    
-
                 ! is it one of the 8 zones surrounding the center?
                 if (abs(x - center(1)) < dx(1)  .and. &
                     abs(y - center(2)) < dx(2)  .and. &
@@ -1115,7 +1119,6 @@ contains
                             (u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))**2 + &
                             (u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))**2)
                 
-
                 ! radial velocity diagnostics
                 vr_max = max(vr_max,abs(velr))
                 
@@ -1127,12 +1130,11 @@ contains
                 rhovr_y = rhovr_y + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,2)
                 rhovr_z = rhovr_z + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,3)
                 
-
                 ! normalization quantities
                 mass = mass + weight*s(i,j,k,rho_comp)
                 nzones = nzones + weight
 
-
+!$omp critical
                 ! max T, location, and velocity at that location (including w0)
                 if (s(i,j,k,temp_comp) > T_max) then
                    T_max = s(i,j,k,temp_comp)
@@ -1144,7 +1146,6 @@ contains
                    vel_Tmax(3) = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
                 endif
 
-
                 ! max enuc
                 if (rho_Hnuc(i,j,k)/s(i,j,k,rho_comp) > enuc_max) then
                    enuc_max = rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
@@ -1155,7 +1156,7 @@ contains
                    vel_enucmax(2) = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
                    vel_enucmax(3) = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
                 endif
-
+!$omp end critical
 
                 ! call the EOS to get the sound speed and internal energy
                 temp_eos(1) = s(i,j,k,temp_comp)
@@ -1178,7 +1179,6 @@ contains
                 kin_ener = kin_ener + weight*s(i,j,k,rho_comp)*vel**2
                 int_ener = int_ener + weight*s(i,j,k,rho_comp)*e_eos(1)
                 nuc_ener = nuc_ener + weight*rho_Hnuc(i,j,k)
-
 
                 ! max vel and Mach number
                 U_max = max(U_max,vel)
