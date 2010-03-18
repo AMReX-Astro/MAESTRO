@@ -344,6 +344,7 @@ contains
 
       integer :: i,j,k
 
+!$omp parallel do private(i,j,k)
       do k = lo(3),hi(3)
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
@@ -353,6 +354,7 @@ contains
             end do
          end do
       end do
+!$omp end parallel do
 
     end subroutine divumac_3d
 
@@ -466,25 +468,29 @@ contains
       nz = size(uedge,dim=3)-2*ng_um
 
       if (do_mult) then
+!$omp parallel do private(k)
          do k = 0,nz-1 
             uedge(:,:,k) = uedge(:,:,k) * div_coeff(k)
-         end do
-         do k = 0,nz-1 
             vedge(:,:,k) = vedge(:,:,k) * div_coeff(k)
          end do
+!$omp end parallel do
+!$omp parallel do private(k)
          do k = 0,nz
             wedge(:,:,k) = wedge(:,:,k) * div_coeff_half(k)
          end do
+!$omp end parallel do
       else
+!$omp parallel do private(k)
          do k = 0,nz-1 
             uedge(:,:,k) = uedge(:,:,k) / div_coeff(k)
-         end do
-         do k = 0,nz-1
             vedge(:,:,k) = vedge(:,:,k) / div_coeff(k)
          end do
+!$omp end parallel do
+!$omp parallel do private(k)
          do k = 0,nz
             wedge(:,:,k) = wedge(:,:,k) / div_coeff_half(k)
          end do
+!$omp end parallel do
       end if
 
     end subroutine mult_by_1d_coeff_3d
@@ -539,6 +545,8 @@ contains
 
       if (do_mult) then
 
+!$omp parallel private(i,j,k)
+!$omp do
          do k = lo(3),hi(3)
             do j = lo(2),hi(2)
                do i = lo(1)+1,hi(1)
@@ -558,7 +566,8 @@ contains
                end if
             end do
          end do
-
+!$omp end do nowait
+!$omp do
          do k = lo(3),hi(3)
             do i = lo(1),hi(1)
                do j = lo(2)+1,hi(2)
@@ -578,7 +587,8 @@ contains
                end if
             end do
          end do
-
+!$omp end do nowait
+!$omp do
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
                do k = lo(3)+1,hi(3)
@@ -598,13 +608,17 @@ contains
                end if
             end do
          end do
+!$omp end do
+!$omp end parallel
 
       else
 
+!$omp parallel private(i,j,k)
+!$omp do
          do k = lo(3),hi(3)
             do j = lo(2),hi(2)
                do i = lo(1)+1,hi(1)
-                  uedge(i,j,k) = uedge(i,j,k) / ( HALF * (div_coeff(i,j,k)+div_coeff(i-1,j,k)))
+                  uedge(i,j,k) = uedge(i,j,k) / ( HALF*(div_coeff(i,j,k)+div_coeff(i-1,j,k)))
                end do
                if (lo(1).eq.domlo(1)) then
                   uedge(lo(1),j,k) = uedge(lo(1),j,k) / div_coeff(lo(1),j,k)
@@ -620,11 +634,12 @@ contains
                end if
             end do
          end do
-
+!$omp end do nowait
+!$omp do
          do k = lo(3),hi(3)
             do i = lo(1),hi(1)
                do j = lo(2)+1,hi(2)
-                  vedge(i,j,k) = vedge(i,j,k) / ( HALF * (div_coeff(i,j,k)+div_coeff(i,j-1,k)))
+                  vedge(i,j,k) = vedge(i,j,k) / ( HALF*(div_coeff(i,j,k)+div_coeff(i,j-1,k)))
                end do
                if (lo(2).eq.domlo(2)) then
                   vedge(i,lo(2),k) = vedge(i,lo(2),k) / div_coeff(i,lo(2),k)
@@ -640,11 +655,12 @@ contains
                end if
             end do
          end do
-
+!$omp end do nowait
+!$omp do
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
                do k = lo(3)+1,hi(3)
-                  wedge(i,j,k) = wedge(i,j,k) / ( HALF * (div_coeff(i,j,k)+div_coeff(i,j,k-1)))
+                  wedge(i,j,k) = wedge(i,j,k) / ( HALF*(div_coeff(i,j,k)+div_coeff(i,j,k-1)))
                end do
                if (lo(3).eq.domlo(3)) then
                   wedge(i,j,lo(3)) = wedge(i,j,lo(3)) / div_coeff(i,j,lo(3))
@@ -660,6 +676,8 @@ contains
                end if
             end do
          end do
+!$omp end do
+!$omp end parallel
 
       end if
 
@@ -764,6 +782,8 @@ contains
 
       integer :: i,j,k
 
+!$omp parallel private(i,j,k)
+!$omp do
       do k = lo(3),hi(3)
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)+1
@@ -771,7 +791,8 @@ contains
             end do
          end do
       end do
-
+!$omp end do nowait
+!$omp do
       do k = lo(3),hi(3)
          do j = lo(2),hi(2)+1
             do i = lo(1),hi(1)
@@ -779,7 +800,8 @@ contains
             end do
          end do
       end do
-
+!$omp end do nowait
+!$omp do
       do k = lo(3),hi(3)+1
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
@@ -787,6 +809,8 @@ contains
             end do
          end do
       end do
+!$omp end do
+!$omp end parallel
 
     end subroutine mk_mac_coeffs_3d
 
@@ -1188,6 +1212,7 @@ contains
          end do
       end if
 
+!$omp parallel do private(i,j,k,gphix)
       do k = 0,nz-1 
          do j = 0,ny-1
             do i = imin,imax
@@ -1196,7 +1221,9 @@ contains
             end do
          end do
       end do
+!$omp end parallel do
 
+!$omp parallel do private(i,j,k,gphiy)
       do k = 0,nz-1
          do j = jmin,jmax
             do i = 0,nx-1
@@ -1205,7 +1232,9 @@ contains
             end do
          end do
       end do
+!$omp end parallel do
 
+!$omp parallel do private(i,j,k,gphiz)
       do k = kmin,kmax
          do j = 0,ny-1
             do i = 0,nx-1
@@ -1214,6 +1243,7 @@ contains
             end do
          end do
       end do
+!$omp end parallel do
 
       ! Here we reset phi == 0 at BC_DIR to be used in later iteration if necessary
       if (press_bc(1,1) == BC_DIR) phi(-1,:,:) = ZERO
@@ -1240,26 +1270,32 @@ contains
 
       integer :: i,j,k
 
+!$omp parallel do private(j,k)
       do k = lo(3),hi(3)
       do j = lo(2),hi(2)
          umac(lo(1)  ,j,k) = umac(lo(1)  ,j,k) - lo_x_flx(1,j,k) * dx(1)
          umac(hi(1)+1,j,k) = umac(hi(1)+1,j,k) + hi_x_flx(1,j,k) * dx(1)
       end do
       end do
+!$omp end parallel do
 
+!$omp parallel do private(i,k)
       do k = lo(3),hi(3)
       do i = lo(1),hi(1)
          vmac(i,lo(2)  ,k) = vmac(i,lo(2)  ,k) - lo_y_flx(i,1,k) * dx(2)
          vmac(i,hi(2)+1,k) = vmac(i,hi(2)+1,k) + hi_y_flx(i,1,k) * dx(2)
       end do
       end do
+!$omp end parallel do
 
+!$omp parallel do private(i,j)
       do j = lo(2),hi(2)
       do i = lo(1),hi(1)
          wmac(i,j,lo(3)  ) = wmac(i,j,lo(3)  ) - lo_z_flx(i,j,1) * dx(3)
          wmac(i,j,hi(3)+1) = wmac(i,j,hi(3)+1) + hi_z_flx(i,j,1) * dx(3)
       end do
       end do
+!$omp end parallel do
 
     end subroutine correct_mkumac_3d
 
