@@ -40,7 +40,7 @@ subroutine varden()
                        init_cutoff, destroy_geometry
   use network, only: network_init, nspec
   use eos_module, only: eos_init
-  use probin_module, only: dump_output, &
+  use probin_module, only: dump_output, advect_test_tol, &
                            prob_lo, prob_hi, pmask, drdxfac, &
                            use_eos_coulomb, &
                            test_set, &
@@ -555,6 +555,16 @@ subroutine varden()
      enddo
      print *, ' '
   enddo
+
+  if ( (minval(abs_norm) - maxval(abs_norm)) < &
+          advect_test_tol*maxval(abs_norm) .and. &
+       (minval(abs_norm) - maxval(abs_norm)) < &
+          advect_test_tol*maxval(abs_norm) ) then
+     print *, "SUCCESS: advection errors for all directions agree with tolerance"
+  else
+     print *, "ERROR: advection errors across directions are too large"
+  endif
+
 
   ! clean-up
   do n = 1,nlevs
