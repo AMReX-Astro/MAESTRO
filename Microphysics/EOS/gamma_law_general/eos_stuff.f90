@@ -72,7 +72,6 @@ module eos_module
   integer, parameter :: eos_input_rp = 4   ! density, pressure are inputs
   integer, parameter :: eos_input_re = 5   ! density, internal energy are inputs
  
-  logical :: do_diag
 
   real(kind=dp_t), save, private :: smallt
   real(kind=dp_t), save, private :: smalld
