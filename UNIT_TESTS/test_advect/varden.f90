@@ -97,6 +97,8 @@ subroutine varden()
   character (len=20) :: plot_names(1)
 
   real(kind=dp_t), allocatable :: abs_norm(:,:), rel_norm(:,:)
+  real(kind=dp_t) :: max_dabs_error, max_abs_error
+  real(kind=dp_t) :: max_drel_error, max_rel_error
 
   logical :: wrote_init_file = .false.
 
@@ -556,14 +558,28 @@ subroutine varden()
      print *, ' '
   enddo
 
-  if ( (minval(abs_norm) - maxval(abs_norm)) < &
-          advect_test_tol*maxval(abs_norm) .and. &
-       (minval(abs_norm) - maxval(abs_norm)) < &
-          advect_test_tol*maxval(abs_norm) ) then
+  max_dabs_error = -1.d30
+  max_abs_error  = -1.d30
+
+  max_drel_error = -1.d30
+  max_rel_error  = -1.d30
+  
+  do n = 1, nlevs
+     max_dabs_error = max(abs(maxval(abs_norm(n,:)) - minval(abs_norm(n,:))), max_dabs_error)
+     max_abs_error = max(maxval(abs_norm(n,:)), max_abs_error)
+
+     max_drel_error = max(abs(maxval(rel_norm(n,:)) - minval(rel_norm(n,:))), max_drel_error)
+     max_rel_error = max(maxval(rel_norm(n,:)), max_rel_error)
+  enddo
+
+  if (max_dabs_error < advect_test_tol * max_abs_error .and. &
+      max_drel_error < advect_test_tol * max_rel_error) then
      print *, "SUCCESS: advection errors for all directions agree with tolerance"
   else
      print *, "ERROR: advection errors across directions are too large"
   endif
+
+  print *, " "
 
 
   ! clean-up
