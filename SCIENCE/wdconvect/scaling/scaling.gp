@@ -3,7 +3,7 @@ set output 'scaling.eps'
 
 set key top right
 
-set title 'Scaling Behavior of 768^3 MAESTRO Scientific Production Runs on jaguarpf.ccs.ornl.gov'
+set title 'Strong Scaling Behavior of 768^3 MAESTRO Scientific Production Runs on jaguarpf.ccs.ornl.gov'
 
 set xrange [1000:50000];
 
@@ -11,7 +11,7 @@ set yrange [0:65];
 
 set pointsize 2;
 
-set size 1, 1.0;
+set size 1, 1;
 
 set xlabel "Number of Processors";
 set ylabel "Average Time per Time Step (seconds)";
