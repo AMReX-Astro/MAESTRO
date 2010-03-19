@@ -364,7 +364,7 @@ subroutine varden()
               outname = "dens_2d_orig"
 
            else if (dm == 3) then
-              outname = "dens3d_orig"
+              outname = "dens_3d_orig"
 
            endif
 
