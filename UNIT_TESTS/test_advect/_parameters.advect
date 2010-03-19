@@ -1,1 +1,3 @@
-itest_dir                            integer            1                   
+dump_output                 logical           .false.
+
+

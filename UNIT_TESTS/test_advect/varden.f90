@@ -25,8 +25,7 @@ subroutine varden()
                        init_cutoff, destroy_geometry
   use network, only: network_init, nspec
   use eos_module, only: eos_init
-!  use fill_3d_module
-  use probin_module, only: itest_dir, &
+  use probin_module, only: dump_output, &
                            prob_lo, prob_hi, pmask, drdxfac, &
                            use_eos_coulomb, &
                            test_set, &
@@ -48,6 +47,8 @@ subroutine varden()
 
   integer :: i,n,comp
   integer :: ng_s
+
+  integer :: idir, idim, itest_dir
 
   type(ml_layout) :: mla
 
@@ -80,6 +81,7 @@ subroutine varden()
 
   character (len=20) :: plot_names(1)
 
+  logical :: wrote_init_file = .false.
 
   ! general Maestro initializations
   call probin_init()
@@ -121,10 +123,6 @@ subroutine varden()
      ng_s = 3
   end if
 
-  ! sanity checks
-  if (abs(itest_dir) > dm .or. itest_dir == 0) then
-     call bl_error("ERROR: |itest_dir| > dm in test_advect")
-  endif
 
   if (spherical == 1) then
      call bl_error("ERROR: test_advect not defined for spherical = 1")
@@ -194,7 +192,7 @@ subroutine varden()
   plot_names(1) = "density"
 
 
-  ! allocate the base state and set it all to 0
+  ! allocate the base state 
   allocate(           rho0_old(nlevs,0:nr_fine-1))
   allocate(           rho0_new(nlevs,0:nr_fine-1))
   allocate(              rhoh0(nlevs,0:nr_fine-1))
@@ -202,13 +200,6 @@ subroutine varden()
   allocate(                 w0(nlevs,0:nr_fine))
   allocate(rho0_predicted_edge(nlevs,0:nr_fine))
 
-  ! the base state will not carry any information in this test problem
-             rho0_old(:,:) = ZERO
-             rho0_new(:,:) = ZERO
-                rhoh0(:,:) = ZERO
-                   p0(:,:) = ZERO
-                   w0(:,:) = ZERO
-  rho0_predicted_edge(:,:) = ZERO
 
   ! other allocations
   allocate(lo(dm))
@@ -224,210 +215,269 @@ subroutine varden()
 
   do n=1,nlevs
      do comp = 1,dm
-        call multifab_build(sedge(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
-        call multifab_build(sflux(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
-        call multifab_build(w0mac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+        call multifab_build(sedge(n,comp),mla%la(n),nscal,0, &
+                            nodal=edge_nodal_flag(comp,:))
+        call multifab_build(sflux(n,comp),mla%la(n),nscal,0, &
+                            nodal=edge_nodal_flag(comp,:))
+        call multifab_build(w0mac(n,comp),mla%la(n),1,1, &
+                            nodal=edge_nodal_flag(comp,:))
         call setval(w0mac(n,comp),ZERO,all=.true.)
      end do
 
      call multifab_build(scal_force(n), mla%la(n), nscal, 1)
-     call multifab_build(etarhoflux(n), mla%la(n), 1, nodal=edge_nodal_flag(dm,:))
+     call multifab_build(etarhoflux(n), mla%la(n), 1, &
+                         nodal=edge_nodal_flag(dm,:))
      call setval(scal_force(n),ZERO,all=.true.)
      call setval(etarhoflux(n),ZERO,all=.true.)
   end do
 
 
+  !---------------------------------------------------------------------------
+  ! loop over all possible directions
+  !---------------------------------------------------------------------------
+  do idim = 1, dm
+     do idir = -1, 1, 2
 
-  ! initialize the velocity field -- it is unity in the direction of propagation
-  ! a negative itest_dir indicates negative velocity
-  do n = 1, nlevs
+        itest_dir = idir * idim
 
-     select case (itest_dir)
+        print *, ' '
+        print *, '<<< advection test in direction ', itest_dir, ' >>>'
 
-     case (-1)
-        call setval(umac(n,1), -ONE,  all=.true.)
-        call setval(umac(n,2), ZERO, all=.true.)
-        if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
+        ! initialize the velocity field -- it is unity in the
+        ! direction of propagation a negative itest_dir indicates
+        ! negative velocity
+        do n = 1, nlevs
 
-     case (1)
-        call setval(umac(n,1), ONE,  all=.true.)
-        call setval(umac(n,2), ZERO, all=.true.)
-        if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
+           select case (itest_dir)
+
+           case (-1)
+              call setval(umac(n,1), -ONE,  all=.true.)
+              call setval(umac(n,2), ZERO, all=.true.)
+              if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
+
+           case (1)
+              call setval(umac(n,1), ONE,  all=.true.)
+              call setval(umac(n,2), ZERO, all=.true.)
+              if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
      
-     case (-2)
-        call setval(umac(n,1), ZERO, all=.true.)
-        call setval(umac(n,2), -ONE,  all=.true.)
-        if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
+           case (-2)
+              call setval(umac(n,1), ZERO, all=.true.)
+              call setval(umac(n,2), -ONE,  all=.true.)
+              if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
 
-     case (2)
-        call setval(umac(n,1), ZERO, all=.true.)
-        call setval(umac(n,2), ONE,  all=.true.)
-        if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
+           case (2)
+              call setval(umac(n,1), ZERO, all=.true.)
+              call setval(umac(n,2), ONE,  all=.true.)
+              if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
 
-     case (-3)
-        call setval(umac(n,1), ZERO, all=.true.)
-        call setval(umac(n,2), ZERO, all=.true.)
-        call setval(umac(n,3), -ONE,  all=.true.)
+           case (-3)
+              call setval(umac(n,1), ZERO, all=.true.)
+              call setval(umac(n,2), ZERO, all=.true.)
+              call setval(umac(n,3), -ONE,  all=.true.)
 
-     case (3)
-        call setval(umac(n,1), ZERO, all=.true.)
-        call setval(umac(n,2), ZERO, all=.true.)
-        call setval(umac(n,3), ONE,  all=.true.)
+           case (3)
+              call setval(umac(n,1), ZERO, all=.true.)
+              call setval(umac(n,2), ZERO, all=.true.)
+              call setval(umac(n,3), ONE,  all=.true.)
+              
+           end select
 
-     end select
-
-  enddo
+        enddo
 
 
-  ! initialize the density field and species
-  do n=1,nlevs
-     do i = 1, sold(n)%nboxes
-        if ( multifab_remote(sold(n),i) ) cycle
-        sp => dataptr(sold(n), i)
-        lo = lwb(get_box(sold(n), i))
-        hi = upb(get_box(sold(n), i))
+        ! the base state will not carry any information in this test problem
+        rho0_old(:,:) = ZERO
+        rho0_new(:,:) = ZERO
+        rhoh0(:,:) = ZERO
+        p0(:,:) = ZERO
+        w0(:,:) = ZERO
+        rho0_predicted_edge(:,:) = ZERO
+
+
+        ! initialize the density field and species
+        do n=1,nlevs
+           do i = 1, sold(n)%nboxes
+              if ( multifab_remote(sold(n),i) ) cycle
+              sp => dataptr(sold(n), i)
+              lo = lwb(get_box(sold(n), i))
+              hi = upb(get_box(sold(n), i))
         
-        select case (dm)
-        case (2)
-           call init_density_2d(sp(:,:,1,rho_comp), sp(:,:,1,spec_comp:spec_comp-1+nspec), &
-                                sold(n)%ng, lo, hi, dx(n,:))
+              select case (dm)
+              case (2)
+                 call init_density_2d(sp(:,:,1,rho_comp), &
+                                      sp(:,:,1,spec_comp:spec_comp-1+nspec), &
+                                      sold(n)%ng, lo, hi, dx(n,:))
 
-        case (3)
-           call init_density_3d(sp(:,:,:,rho_comp), sp(:,:,:,spec_comp:spec_comp-1+nspec), &
-                                sold(n)%ng, lo, hi, dx(n,:))
-        end select
-     end do
-  end do
+              case (3)
+                 call init_density_3d(sp(:,:,:,rho_comp), &
+                                      sp(:,:,:,spec_comp:spec_comp-1+nspec), &
+                                      sold(n)%ng, lo, hi, dx(n,:))
+              end select
+           end do
+        end do
 
 
-  ! ghost cell fill
-  if (nlevs .eq. 1) then
+        ! ghost cell fill
+        if (nlevs .eq. 1) then
 
-     ! fill ghost cells for two adjacent grids at the same level
-     ! this includes periodic domain boundary ghost cells
-     call multifab_fill_boundary(sold(nlevs))
+           ! fill ghost cells for two adjacent grids at the same level
+           ! this includes periodic domain boundary ghost cells
+           call multifab_fill_boundary(sold(nlevs))
      
-     ! fill non-periodic domain boundary ghost cells
-     call multifab_physbc(sold(nlevs),rho_comp,dm+rho_comp,nscal,the_bc_tower%bc_tower_array(nlevs))
+           ! fill non-periodic domain boundary ghost cells
+           call multifab_physbc(sold(nlevs),rho_comp,dm+rho_comp,nscal, &
+                                the_bc_tower%bc_tower_array(nlevs))
 
-  else
+        else
 
-     ! the loop over nlevs must count backwards to make sure the finer grids are done first
-     do n=nlevs,2,-1
+           ! the loop over nlevs must count backwards to make sure the
+           ! finer grids are done first
+           do n=nlevs,2,-1
         
-        ! set level n-1 data to be the average of the level n data covering it
-        call ml_cc_restriction(sold(n-1),sold(n),mla%mba%rr(n-1,:))
+              ! set level n-1 data to be the average of the level n
+              ! data covering it
+              call ml_cc_restriction(sold(n-1),sold(n),mla%mba%rr(n-1,:))
 
-        ! fill level n ghost cells using interpolation from level n-1 data
-        ! note that multifab_fill_boundary and multifab_physbc are called for
-        ! both levels n-1 and n
-        call multifab_fill_ghost_cells(sold(n),sold(n-1),sold(n)%ng,mla%mba%rr(n-1,:), &
-                                       the_bc_tower%bc_tower_array(n-1), &
-                                       the_bc_tower%bc_tower_array(n), &
-                                       rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
+              ! fill level n ghost cells using interpolation from
+              ! level n-1 data note that multifab_fill_boundary and
+              ! multifab_physbc are called for both levels n-1 and n
+              call multifab_fill_ghost_cells(sold(n),sold(n-1),sold(n)%ng, &
+                                             mla%mba%rr(n-1,:), &
+                                             the_bc_tower%bc_tower_array(n-1), &
+                                             the_bc_tower%bc_tower_array(n), &
+                                             rho_comp,dm+rho_comp,nscal, &
+                                             fill_crse_input=.false.)
         
-     enddo
+           enddo
      
-  end if
+        end if
 
 
-  ! write out the initial density field
-  do n = 1,nlevs
-     call multifab_copy_c(single_var(n),1,sold(n),rho_comp,1,0)
-  enddo
+        if (dump_output .and. .not. wrote_init_file) then
 
-  if (dm == 2) then
-     call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_2d_orig",names=plot_names)
-  else if (dm == 3) then
-     call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),"dens_3d_orig",names=plot_names)
-  endif
+           ! write out the initial density field
+           do n = 1,nlevs
+              call multifab_copy_c(single_var(n),1,sold(n),rho_comp,1,0)
+           enddo
+           
+           if (dm == 2) then
+              outname = "dens_2d_orig"
 
-  ! compute the initial timestep -- dt = dx / u
-  dt = cflfac*dx(nlevs,1)/ONE
+           else if (dm == 3) then
+              outname = "dens3d_orig"
+
+           endif
+
+           call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1), &
+                                          trim(outname),names=plot_names)
+
+           print *, 'wrote file: ', trim(outname)
+           print *, ' '
+
+           wrote_init_file = .true.
+
+        endif
+
+        ! compute the initial timestep -- dt = dx / u
+        dt = cflfac*dx(nlevs,1)/ONE
 
 
-  ! advance the density using the constant velocity field
-  t = ZERO
-  do while (t < stop_time)
+        ! advance the density using the constant velocity field
+        t = ZERO
+        do while (t < stop_time)
 
-     print *, 't = ', t, 'dt = ', dt
+           print *, 't = ', t, 'dt = ', dt
      
 
-     ! advance density according to rho_t + (rho U)_x = 0
-     call density_advance(mla,1,sold,snew,sedge,sflux,scal_force,umac,w0,w0mac,etarhoflux, &
-                          normal,rho0_old,rho0_new,p0,rho0_predicted_edge, &
-                          dx,dt,the_bc_tower%bc_tower_array)
+           ! advance density according to rho_t + (rho U)_x = 0
+           call density_advance(mla,1,sold,snew,sedge,sflux, &
+                                scal_force,umac,w0,w0mac,etarhoflux, &
+                                normal,rho0_old,rho0_new,p0, &
+                                rho0_predicted_edge, &
+                                dx,dt,the_bc_tower%bc_tower_array)
           
 
-     ! save the state for the next step
-     do n = 1,nlevs
-        call multifab_copy_c(sold(n),1,snew(n),1,nscal,sold(n)%ng)
-     enddo
+           ! save the state for the next step
+           do n = 1,nlevs
+              call multifab_copy_c(sold(n),1,snew(n),1,nscal,sold(n)%ng)
+           enddo
 
-     rho0_old = rho0_new
+           rho0_old = rho0_new
 
-     ! update the time     
-     t = t + dt
+           ! update the time     
+           t = t + dt
 
      
-     ! adjust the timestep, if necessary
-     if (t + dt > stop_time) then
-        dt = stop_time - t
-     endif
+           ! adjust the timestep, if necessary
+           if (t + dt > stop_time) then
+              dt = stop_time - t
+           endif
 
 
 
-  end do
+        end do
 
-  print *, 'finished evolution, t = ', t
+        print *, 'finished evolution, t = ', t
 
-  ! write out the initial density field
-  do n = 1,nlevs
-     call multifab_copy_c(single_var(n),1,snew(n),rho_comp,1,0)
-  enddo
+        if (dump_output) then
 
-  ! the output name will include the dimensionality, ppm_type, and
-  ! advection direction
+           ! write out the initial density field
+           do n = 1,nlevs
+              call multifab_copy_c(single_var(n),1,snew(n),rho_comp,1,0)
+           enddo
 
-  if (dm == 2) then
-     outname = "dens_2d_"
-  else if (dm == 3) then
-     outname = "dens_3d_"
-  endif
+           ! the output name will include the dimensionality,
+           ! ppm_type, and advection direction
 
-  select case (ppm_type)
-  case (0)
-     outname = trim(outname) // "ppm0_"
+           if (dm == 2) then
+              outname = "dens_2d_"
+           else if (dm == 3) then
+              outname = "dens_3d_"
+           endif
+  
+           select case (ppm_type)
+           case (0)
+              outname = trim(outname) // "ppm0_"
      
-  case (1)
-     outname = trim(outname) // "ppm1_"
+           case (1)
+              outname = trim(outname) // "ppm1_"
+              
+           case (2)
+              outname = trim(outname) // "ppm2_"
+           end select
 
-  case (2)
-     outname = trim(outname) // "ppm2_"
-  end select
 
+           select case (itest_dir)
+           case (-1)   
+              outname = trim(outname) // "xm_final"
+              
+           case (1)
+              outname = trim(outname) // "xp_final"
+              
+           case (-2)
+              outname = trim(outname) // "ym_final"
+              
+           case (2)
+              outname = trim(outname) // "yp_final"
+              
+           case (-3)
+              outname = trim(outname) // "zm_final"
+              
+           case (3)
+              outname = trim(outname) // "zp_final"
+           end select
 
-  select case (itest_dir)
-  case (-1)   
-     outname = trim(outname) // "xm_final"
+           call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1), &
+                                          trim(outname),names=plot_names)
 
-  case (1)
-     outname = trim(outname) // "xp_final"
+           print *, 'wrote file: ', trim(outname)
+           
+        endif
 
-  case (-2)
-     outname = trim(outname) // "ym_final"
+        print *, ' '
 
-  case (2)
-     outname = trim(outname) // "yp_final"
-
-  case (-3)
-     outname = trim(outname) // "zm_final"
-
-  case (3)
-     outname = trim(outname) // "zp_final"
-  end select
-
-  call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1),trim(outname),names=plot_names)
+     enddo    ! idir loop
+  enddo    ! idim loop
 
 
   ! clean-up

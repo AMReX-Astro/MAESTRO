@@ -1,14 +1,16 @@
 &PROBIN
- test_set = "gr0_3d"
+ test_set = "gr0_2d"
 
  cflfac = 0.7d0
 
- itest_dir = -1
-
  stop_time = 1.0
 
+ base_cutoff_density = 0.d0
+
+ dump_output = .true.
+
  spherical_in = 0
- dm_in = 3
+ dm_in = 2
 
  ppm_type = 0
 
@@ -16,18 +18,14 @@
 
  prob_hi_x = 1.0
  prob_hi_y = 1.0
- prob_hi_z = 1.0
 
  bcx_lo = -1
  bcx_hi = -1
  bcy_lo = -1
  bcy_hi = -1
- bcz_lo = -1
- bcz_hi = -1
 
  pmask_x = T
  pmask_y = T
- pmask_z = T
 
  use_eos_coulomb = F
 /

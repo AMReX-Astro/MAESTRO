@@ -3,9 +3,11 @@
 
  cflfac = 0.7d0
 
- itest_dir = 3
-
  stop_time = 1.0
+
+ base_cutoff_density = 0.d0
+
+ dump_output = .true.
 
  spherical_in = 0
  dm_in = 3
