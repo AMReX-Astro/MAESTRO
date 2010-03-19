@@ -1,3 +1,18 @@
+! a driver that advects a Gaussian profile through a periodic domain
+! in all possible coordinate directions.  This tests the advection
+! scheme.  
+!
+! The norm of the error (initial profile compared to final profile)
+! should be the same for all directions, otherwise there is some
+! directional bias in the advection solver.  Note: this does not mean
+! that the final density profile cannot have an imprint from the
+! advection in a particular direction, just that advecting in any
+! direction should show that same pattern of imprinting.
+!
+! Here we compute the norm level-by-level.  This driver assume that
+! the grid is static, so the initial and final grids agree.  This
+! allows us to compute a meaningful norm.
+
 subroutine varden()
 
   use BoxLib
@@ -48,7 +63,7 @@ subroutine varden()
   integer :: i,n,comp
   integer :: ng_s
 
-  integer :: idir, idim, itest_dir
+  integer :: idir, idim, itest_dir, index_t
 
   type(ml_layout) :: mla
 
@@ -60,7 +75,7 @@ subroutine varden()
   type(multifab), allocatable :: scal_force(:), etarhoflux(:)
   type(multifab), allocatable :: w0mac(:,:)
 
-  type(multifab), allocatable :: single_var(:)
+  type(multifab), allocatable :: dens_orig(:), dens_final(:)
 
   real(kind=dp_t), pointer :: sp(:,:,:,:)
 
@@ -80,6 +95,8 @@ subroutine varden()
   character (len=32) :: outname
 
   character (len=20) :: plot_names(1)
+
+  real(kind=dp_t), allocatable :: abs_norm(:,:), rel_norm(:,:)
 
   logical :: wrote_init_file = .false.
 
@@ -182,11 +199,14 @@ subroutine varden()
   call make_normal(normal,dx)
 
 
-  ! a dummy variable
-  allocate(single_var(nlevs))
+  ! the initial and final densities
+  allocate(dens_orig(nlevs))
+  allocate(dens_final(nlevs))
+
 
   do n = 1,nlevs
-     call multifab_build(single_var(n), mla%la(n), 1, ng_s)
+     call multifab_build(dens_orig(n), mla%la(n), 1, ng_s)
+     call multifab_build(dens_final(n), mla%la(n), 1, ng_s)
   end do
 
   plot_names(1) = "density"
@@ -232,6 +252,13 @@ subroutine varden()
   end do
 
 
+  allocate(rel_norm(nlevs,2*dm))
+  allocate(abs_norm(nlevs,2*dm))
+
+  rel_norm = ZERO
+  abs_norm = ZERO
+
+
   !---------------------------------------------------------------------------
   ! loop over all possible directions
   !---------------------------------------------------------------------------
@@ -240,8 +267,16 @@ subroutine varden()
 
         itest_dir = idir * idim
 
+        ! a unique index for indexing array by test
+        index_t = idim
+        if (idir < 0) then
+           index_t = index_t + dm
+        endif
+        
+
         print *, ' '
         print *, '<<< advection test in direction ', itest_dir, ' >>>'
+        print *, 'index_t = ', index_t
 
         ! initialize the velocity field -- it is unity in the
         ! direction of propagation a negative itest_dir indicates
@@ -357,7 +392,7 @@ subroutine varden()
 
            ! write out the initial density field
            do n = 1,nlevs
-              call multifab_copy_c(single_var(n),1,sold(n),rho_comp,1,0)
+              call multifab_copy_c(dens_orig(n),1,sold(n),rho_comp,1,0)
            enddo
            
            if (dm == 2) then
@@ -368,7 +403,7 @@ subroutine varden()
 
            endif
 
-           call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1), &
+           call fabio_ml_multifab_write_d(dens_orig,mla%mba%rr(:,1), &
                                           trim(outname),names=plot_names)
 
            print *, 'wrote file: ', trim(outname)
@@ -419,15 +454,18 @@ subroutine varden()
 
         print *, 'finished evolution, t = ', t
 
+        ! copy the final density field into a dummy multifab for
+        ! output and analysis
+        do n = 1,nlevs
+           call multifab_copy_c(dens_final(n),1,snew(n),rho_comp,1,0)
+        enddo
+
+
         if (dump_output) then
 
-           ! write out the initial density field
-           do n = 1,nlevs
-              call multifab_copy_c(single_var(n),1,snew(n),rho_comp,1,0)
-           enddo
-
-           ! the output name will include the dimensionality,
-           ! ppm_type, and advection direction
+           ! write out the initial density field the output name will
+           ! include the dimensionality, ppm_type, and advection
+           ! direction
 
            if (dm == 2) then
               outname = "dens_2d_"
@@ -467,18 +505,56 @@ subroutine varden()
               outname = trim(outname) // "zp_final"
            end select
 
-           call fabio_ml_multifab_write_d(single_var,mla%mba%rr(:,1), &
+           call fabio_ml_multifab_write_d(dens_final,mla%mba%rr(:,1), &
                                           trim(outname),names=plot_names)
 
            print *, 'wrote file: ', trim(outname)
            
         endif
 
-        print *, ' '
+        ! compare the initial and final density
+
+        ! compute dens_final - dens_orig
+        do n = 1, nlevs
+           call multifab_sub_sub(dens_final(n), dens_orig(n))
+        enddo
+
+        do n = 1, nlevs
+           abs_norm(n,index_t) = multifab_norm_l2(dens_final(n))
+        enddo
+
+        ! now compute (dens_final - dens_orig)/dens_orig
+        do n = 1, nlevs
+           call multifab_div_div(dens_final(n), dens_orig(n), 0)
+        enddo
+
+        do n = 1, nlevs
+           rel_norm(n,index_t) = multifab_norm_l2(dens_final(n))
+        enddo
 
      enddo    ! idir loop
   enddo    ! idim loop
 
+  print *, ' '
+  print *, ' '
+
+
+  ! report
+  do i = 1, 2*dm
+     if (i <= dm) then
+        itest_dir = i
+     else
+        itest_dir = -1*(i - dm)
+     endif
+
+     print *, 'advection direction: ', itest_dir
+     do n = 1,nlevs
+        print *, '  level ', n
+        print *, '    | rho_final - rho_init |_2              = ', abs_norm(n,i)
+        print *, '    | (rho_final - rho_init) / rho_init |_2 = ', rel_norm(n,i)
+     enddo
+     print *, ' '
+  enddo
 
   ! clean-up
   do n = 1,nlevs
