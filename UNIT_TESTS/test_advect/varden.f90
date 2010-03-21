@@ -390,13 +390,15 @@ subroutine varden()
         end if
 
 
+        ! store the initial density field
+        do n = 1,nlevs
+           call multifab_copy_c(dens_orig(n),1,sold(n),rho_comp,1,ng_s)
+        enddo          
+
+
+        ! write out the initial density field
         if (dump_output .and. .not. wrote_init_file) then
 
-           ! write out the initial density field
-           do n = 1,nlevs
-              call multifab_copy_c(dens_orig(n),1,sold(n),rho_comp,1,0)
-           enddo
-           
            if (dm == 2) then
               outname = "dens_2d_orig"
 
