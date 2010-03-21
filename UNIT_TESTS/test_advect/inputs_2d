@@ -5,9 +5,9 @@
 
  stop_time = 1.0
 
- base_cutoff_density = 0.d0
+ base_cutoff_density = 1.d-10
 
- dump_output = .true.
+ dump_output = .false.
 
  spherical_in = 0
  dm_in = 2
