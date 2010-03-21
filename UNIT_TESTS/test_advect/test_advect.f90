@@ -9,7 +9,6 @@ module test_advect_module
 
   ! width of the gaussian
   real (kind=dp_t), parameter :: W = 0.05
-  real (kind=dp_t), parameter :: dens_floor = 1.d-20
 
 contains
 
@@ -18,7 +17,7 @@ contains
     ! initialize the density field to a Gaussian centered on the domain.
     ! set the first composition variable to the density and the rest to 0.
 
-    use probin_module, only: prob_lo, prob_hi
+    use probin_module, only: prob_lo, prob_hi, base_cutoff_density
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_s
     real (kind=dp_t), intent(inout) ::  rho(lo(1)-ng_s:,lo(2)-ng_s:)
@@ -43,7 +42,7 @@ contains
     
           dist = sqrt((x - xc)**2 + (y - yc)**2)
 
-          rho(i,j) = max(exp(-dist**2/W**2),dens_floor)
+          rho(i,j) = max(exp(-dist**2/W**2),base_cutoff_density)
           
           rhoX(i,j,:) = ZERO
           rhoX(i,j,1) = rho(i,j)
@@ -59,7 +58,7 @@ contains
     ! initialize the density field to a Gaussian centered on the domain.
     ! set the first composition variable to the density and the rest to 0.
 
-    use probin_module, only: prob_lo, prob_hi
+    use probin_module, only: prob_lo, prob_hi, base_cutoff_density
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_s
     real (kind=dp_t), intent(inout) ::  rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:)
@@ -89,7 +88,7 @@ contains
     
              dist = sqrt((x - xc)**2 + (y - yc)**2 + (z - zc)**2)
 
-             rho(i,j,k) = max(exp(-dist**2/W**2),dens_floor)
+             rho(i,j,k) = max(exp(-dist**2/W**2),base_cutoff_density)
 
              rhoX(i,j,k,:) = ZERO
              rhoX(i,j,k,1) = rho(i,j,k)
