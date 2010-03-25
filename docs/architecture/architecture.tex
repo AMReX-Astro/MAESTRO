@@ -86,13 +86,40 @@ that are used to build the executable.  Full details of the
 
 Some of the test problems available are:
 \begin{itemize}
-\item {\tt flame}
-\item {\tt planar\_heat}
-\item {\tt spherical\_heat}
-\item {\tt test2}
-\item {\tt test\_convect}
-\item {\tt test\_spherical}
+\item {\tt flame} \\[-3mm]
+
+The {\tt flame} problem models a planar laminar flame.  Initially cool
+fuel and hot ash are put in pressure equilibrium.  Thermal diffusion
+transfers heat to the fuel, driving a burning front.
+
+\item {\tt planar\_heat} \\[-3mm]
+
+
+\item {\tt spherical\_heat} \\[-3mm]
+
+\item {\tt test2} \\[-3mm]
+
+{\tt test2} places 3 hots spots in a plane-parallel atmosphere.
+Burning makes these buoyant bubbles which role up.  This problem was
+used in \cite{lowMach3} to compare with compressible solvers.
+
+\item {\tt test\_convect} \\[-3mm]
+
+\item {\tt test\_spherical} \\[-3mm]
 \end{itemize}
+
+To build the MAESTRO executable, simply type `{\tt make}' in the
+problem directory.  The executable will have a name like
+{\tt main.Linux.Intel.exe}, where the specific parts of 
+the name depend on the compilers and OS used.  Each problem
+will have one or more inputs files (for example, {\tt test2/inputs\_2d}
+which override the default values for one or more runtime parameters.
+The code is run simply as:
+\begin{verbatim}
+  main.Linux.Intel.exe inputs_2d
+\end{verbatim}
+
+
 
 
 \subsection{Unit Tests}
