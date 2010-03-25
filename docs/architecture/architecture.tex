@@ -129,8 +129,30 @@ specific MAESTRO routines directly.
   The output from this test was described in detail in
   \cite{multilevel}.
 
-\item {\tt test\_basestate}
+\item {\tt test\_basestate} \\[-3mm]
+
+  This test initializes the base state to contain a hydrostatic
+  model and then evolves the state with heating to watch the 
+  hydrostatic adjustment of the atmosphere.  In particular,
+  the base state velocity, $w_0$, is computed in response to 
+  the heating and this is used to advect the base state density
+  and compute the new pressure, $p_0$.  An early version of 
+  this routine was used for the plane-parallel expansion test
+  in \cite{lowMach2}.  This version of the test was also shown
+  for a spherical, self-gravitating star in \cite{multilevel}.
+
+  
 \item {\tt test\_diffusion}
+
+  This test initializes a Gaussian temperature profile and calls
+  the thermal diffusion routines in MAESTRO to evolve the state 
+  considering only diffusion.  The driver estimates a timestep
+  based on the explicit thermal diffusion timescale and loops
+  over calls to the thermal diffusion solver.  A Gaussian remains
+  Gaussian when diffusing, so an explicit error can be computed
+  by comparing to the analytic solution.  This test is 
+  described in \cite{xrb}.
+
 \end{itemize}
 
 
@@ -399,7 +421,7 @@ index-space it lives.  The datatype of a \fab\ is
 \item {\tt dim} is the dimensionality of the data
 \item {\tt bx} is a \boxtype\ describing the index space for which this \fab\ is defined
 \item {\tt ibx} is a \boxtype\ that describes the index range of the valid data
-  for the \fab.  This differes from {\tt bx} when the box is nodal in one more more 
+  for the \fab.  This differes from {\tt bx} when the box is nodal in one or more 
   directions.
 \item {\tt pbx} is a \boxtype\ that extends {\tt ibx} to include
   any ghostcells, or equivalently, the physical box for the \fab\
@@ -511,7 +533,7 @@ blue points) and the $y$-velocity is on the $y$-edges
 \end{minipage}
 \end{figure}
 
-The MAC velocities are allocated at each level of refinement,{\tt n},
+The MAC velocities are allocated at each level of refinement, {\tt n},
 by making a \multifab\ array where each of the {\tt dm} components is
 nodal in its respective direction:
 \begin{verbatim}
@@ -549,7 +571,7 @@ array looks like:
 \end{verbatim}
 
 \noindent Here, the {\tt bl\_types} and {\tt multifab\_module} modules
-bring in the basic boxlib data types Specifically, here, {\tt
+bring in the basic boxlib data types. Specifically, here, {\tt
 bl\_types} defines {\tt dp\_t} which is the {\tt kind} used for
 declaring double precision data, and {\tt multifab\_module} defines
 the \multifab\ data type.  The {\tt geometry} module is a MAESTRO
