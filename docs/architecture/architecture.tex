@@ -76,6 +76,149 @@ are:
 \end{itemize}
 
 
+\section{Running A Problem}
+
+\section{Adding A New Problem}
+
+Different problems in MAESTRO are contained in individual
+sub-directories under {\tt MAESTRO/}.  The minimum requirement to
+define a new problem would be a {\tt GNUmakefile} which describes how
+to build the application and an input file which lists the runtime
+parameters.  The problem-specific executable is built in the problem
+directory by typing {\tt make}.  Source files are found automatically
+by searching the directories listed in the {\tt GNUmakefile}.
+
+\subsection{The {\tt GNUmakefile}}
+
+A basic {\tt GNUmakefile} begins with:
+\begin{verbatim}
+  NDEBUG := t
+  MPI    :=
+  OMP    :=
+\end{verbatim}
+Here, {\tt NDEBUG} is true is we are building an optimized executable.  Otherwise,
+the debug version is built---this typically uses less optimization and adds various
+runtime checks through compiler flags.  {\tt MPI} and {\tt OMP} are set to true if
+we want to use either MPI or OpenMP for parallelization.
+
+The MAESTRO build system knows what options to use for various compiler families.
+The {\tt COMP} flag specifies which compiler to us.  Allowed values include
+{\tt Intel}, {\tt gfortran}, {\tt PGI}, and {\tt PathScale}.  The specific details
+of these choices are defined in the {\tt MAESTRO/mk/} directory.
+\begin{verbatim}
+  COMP := Intel
+  MKVERBOSE := t
+\end{verbatim}
+{\tt MKVERBOSE} set to true will echo the build commands to the terminal as the
+are executed.
+
+The next set of lines tell the build system where to look for source
+files.  A MAESTRO application is built from several pacakges (the
+multigrid solver, an EOS, a reaction network, etc.).  
+\begin{verbatim}
+  FPARALLEL := ../..
+
+  include $(FPARALLEL)/mk/GMakedefs.mak
+
+  Fmdirs := boxlib \
+            mg \
+            MAESTRO \
+            extern/EOS/helmeos \
+            extern/EOS/conducteos \
+            extern/constants \
+            extern/networks/ignition \
+            extern/VODE
+
+  Fmincludes := extern/EOS/helmeos
+\end{verbatim}
+The {\tt FPARALLEL} variable should point to the top-level directory
+of the source tree (i.e.\ {\tt fParallel/}).  Next we include the
+compiler definitions, {\tt mk/GMakedefs.mak}.  The {\tt Fmdirs}
+variable lists the individual directories in the {\tt fParallel/}
+source tree that are used to build the problem.  Generally, one does
+not need to include the problem directory itself, unless there are
+unique source files found there, described in a {\tt GPackage.mak}
+file.  The build system will attempt to build all of the files listed
+in the various {\tt GPackage.mak} files found in the {\tt Fmdirs}
+directories.  Furthermore, {\tt Fmdirs} will be will be added to the
+{\tt make} {\tt VPATH}, which is the list of directories to search for
+source files.  The problem directory will always be put first in the
+{\tt VPATH}, so any source files placed there override those with the
+same name found elsewhere in the source tree.  The {\tt Fmincludes} variable
+lists all those directories that contain include files that are inserted into
+the Fortran source at compile time via the {\tt include} statement.  Presently,
+the only instance of this is with the Helmholtz general equation of state
+found in {\tt extern/EOS/helmeos/}.
+
+Runtime parameters listed in the {\tt MAESTRO/\_parameters} file are
+parsed at compile time and the file {\tt probin.f90} is written and 
+compiled.  This is a Fortran module that holds the values of the runtime
+parameters and makes them available to any routine.  The variable
+{\tt PROBIN\_PARAMETERS} should list all of the files that contain
+runtime parameters for the current problem.  You must always
+include the main {\tt ../\_parameters} file (i.e.\ {\tt MAESTRO/\_parameters}).
+Sometimes a problem defines their own runtime parameters, in which
+case, its parameter file should also appear in {\tt PROBIN\_PARAMETERS}.
+\begin{verbatim}
+  PROBIN_PARAMETERS := ../_parameters
+\end{verbatim}
+
+The final lines in the {\tt GNUmakefile} include the rules to actually
+build the executable.
+\begin{verbatim}
+  include $(FPARALLEL)/MAESTRO/GMaestro.mak
+  include $(FPARALLEL)/mk/GMakerules.mak
+\end{verbatim}
+
+As mentioned above, any source files placed in the problem directory
+override a files with the same name found elsewhere in the source
+tree.  This allows you to create a problem-specific version of any
+routine.  Source files that are unique to this problem (i.e.\ there is
+no file with the same name elsewhere in the source tree) need to be
+listed in a file {\tt GPackage.mak} in the problem directory.
+
+
+
+
+
+\subsection{Plane-Parallel Geometry}
+
+
+\subsection{Full Star / Spherical}
+
+
+\subsection{Small-scale Flame}
+
+
+\section{Visualization / Analysis}
+
+\subsection{Amrvis}
+
+\subsection{{\tt data\_processing} scripts}
+
+Several useful analysis scripts can be found in {\tt
+fParallel/data\_processing}.  The makefile there needs
+to be edited to indicate which of the tools to build.
+
+\begin{itemize}
+
+\item {\tt fextract3d}
+
+  Extracts a 1-d slice from a plotfile, through the center of the
+  domain in any coordinate direction.  Either all of the variables or
+  a single variable is output.
+
+\item {\tt fextrema} 
+
+  Outputs the min/max of each of the quantities in the plotfile.
+
+\item {\tt ftime}
+
+  Outputs the simulation time for one or more plotfiles.
+
+\end{itemize}
+
+
 
 \section{BoxLib Data Structures}
 
@@ -512,146 +655,6 @@ and an additional loop over the `z' coordinate (from {\tt lo(3)} to
 The {\tt variables} module provides 
 
 
-
-\section{Adding A Problem}
-
-Different problems in MAESTRO are contained in individual
-sub-directories under {\tt MAESTRO/}.  The minimum requirement to
-define a new problem would be a {\tt GNUmakefile} which describes how
-to build the application and an input file which lists the runtime
-parameters.  The problem-specific executable is built in the problem
-directory by typing {\tt make}.  Source files are found automatically
-by searching the directories listed in the {\tt GNUmakefile}.
-
-\subsection{The {\tt GNUmakefile}}
-
-A basic {\tt GNUmakefile} begins with:
-\begin{verbatim}
-  NDEBUG := t
-  MPI    :=
-  OMP    :=
-\end{verbatim}
-Here, {\tt NDEBUG} is true is we are building an optimized executable.  Otherwise,
-the debug version is built---this typically uses less optimization and adds various
-runtime checks through compiler flags.  {\tt MPI} and {\tt OMP} are set to true if
-we want to use either MPI or OpenMP for parallelization.
-
-The MAESTRO build system knows what options to use for various compiler families.
-The {\tt COMP} flag specifies which compiler to us.  Allowed values include
-{\tt Intel}, {\tt gfortran}, {\tt PGI}, and {\tt PathScale}.  The specific details
-of these choices are defined in the {\tt MAESTRO/mk/} directory.
-\begin{verbatim}
-  COMP := Intel
-  MKVERBOSE := t
-\end{verbatim}
-{\tt MKVERBOSE} set to true will echo the build commands to the terminal as the
-are executed.
-
-The next set of lines tell the build system where to look for source
-files.  A MAESTRO application is built from several pacakges (the
-multigrid solver, an EOS, a reaction network, etc.).  
-\begin{verbatim}
-  FPARALLEL := ../..
-
-  include $(FPARALLEL)/mk/GMakedefs.mak
-
-  Fmdirs := boxlib \
-            mg \
-            MAESTRO \
-            extern/EOS/helmeos \
-            extern/EOS/conducteos \
-            extern/constants \
-            extern/networks/ignition \
-            extern/VODE
-
-  Fmincludes := extern/EOS/helmeos
-\end{verbatim}
-The {\tt FPARALLEL} variable should point to the top-level directory
-of the source tree (i.e.\ {\tt fParallel/}).  Next we include the
-compiler definitions, {\tt mk/GMakedefs.mak}.  The {\tt Fmdirs}
-variable lists the individual directories in the {\tt fParallel/}
-source tree that are used to build the problem.  Generally, one does
-not need to include the problem directory itself, unless there are
-unique source files found there, described in a {\tt GPackage.mak}
-file.  The build system will attempt to build all of the files listed
-in the various {\tt GPackage.mak} files found in the {\tt Fmdirs}
-directories.  Furthermore, {\tt Fmdirs} will be will be added to the
-{\tt make} {\tt VPATH}, which is the list of directories to search for
-source files.  The problem directory will always be put first in the
-{\tt VPATH}, so any source files placed there override those with the
-same name found elsewhere in the source tree.  The {\tt Fmincludes} variable
-lists all those directories that contain include files that are inserted into
-the Fortran source at compile time via the {\tt include} statement.  Presently,
-the only instance of this is with the Helmholtz general equation of state
-found in {\tt extern/EOS/helmeos/}.
-
-Runtime parameters listed in the {\tt MAESTRO/\_parameters} file are
-parsed at compile time and the file {\tt probin.f90} is written and 
-compiled.  This is a Fortran module that holds the values of the runtime
-parameters and makes them available to any routine.  The variable
-{\tt PROBIN\_PARAMETERS} should list all of the files that contain
-runtime parameters for the current problem.  You must always
-include the main {\tt ../\_parameters} file (i.e.\ {\tt MAESTRO/\_parameters}).
-Sometimes a problem defines their own runtime parameters, in which
-case, its parameter file should also appear in {\tt PROBIN\_PARAMETERS}.
-\begin{verbatim}
-  PROBIN_PARAMETERS := ../_parameters
-\end{verbatim}
-
-The final lines in the {\tt GNUmakefile} include the rules to actually
-build the executable.
-\begin{verbatim}
-  include $(FPARALLEL)/MAESTRO/GMaestro.mak
-  include $(FPARALLEL)/mk/GMakerules.mak
-\end{verbatim}
-
-As mentioned above, any source files placed in the problem directory
-override a files with the same name found elsewhere in the source
-tree.  This allows you to create a problem-specific version of any
-routine.  Source files that are unique to this problem (i.e.\ there is
-no file with the same name elsewhere in the source tree) need to be
-listed in a file {\tt GPackage.mak} in the problem directory.
-
-
-
-
-
-\subsection{Plane-Parallel Geometry}
-
-
-\subsection{Full Star / Spherical}
-
-
-\subsection{Small-scale Flame}
-
-
-\section{Visualization / Analysis}
-
-\subsection{Amrvis}
-
-\subsection{{\tt data\_processing} scripts}
-
-Several useful analysis scripts can be found in {\tt
-fParallel/data\_processing}.  The makefile there needs
-to be edited to indicate which of the tools to build.
-
-\begin{itemize}
-
-\item {\tt fextract3d}
-
-  Extracts a 1-d slice from a plotfile, through the center of the
-  domain in any coordinate direction.  Either all of the variables or
-  a single variable is output.
-
-\item {\tt fextrema} 
-
-  Outputs the min/max of each of the quantities in the plotfile.
-
-\item {\tt ftime}
-
-  Outputs the simulation time for one or more plotfiles.
-
-\end{itemize}
 
 \subsection{VisIt}
 
