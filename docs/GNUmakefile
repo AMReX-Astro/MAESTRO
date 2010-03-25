@@ -28,12 +28,14 @@ section_sources = flowchart/flowchart.tex \
 
 paper.dvi: paper.tex $(eps_source) $(section_sources) $(eps_source)
 	latex paper.tex < /dev/null
+	bibtex paper
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
 
 paper.pdf: paper.tex $(pdf_source) $(section_sources) $(pdf_source)
 	pdflatex paper.tex < /dev/null
+	bibtex paper
 	pdflatex paper.tex < /dev/null
 	pdflatex paper.tex < /dev/null
 	pdflatex paper.tex < /dev/null

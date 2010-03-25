@@ -17,7 +17,10 @@
 \newcommand{\lodensfigpath}{./lo_density}
 \newcommand{\radbasefigpath}{./radial_base}
 \newcommand{\sphericalfigpath}{./spherical_basestate}
+\newcommand{\archfigpath}{./architecture}
 \newcommand{\rotfigpath}{./rotation}
+
+\newcommand{\apj}{ApJ}
 
 \def\ptl   {\partial}
 
@@ -92,6 +95,15 @@
 \def\rb    {{\bf r}}
 
 
+\newcommand{\boxtype}{{\tt box\/}}
+\newcommand{\fab}{{\tt fab\/}}
+\newcommand{\multifab}{{\tt multifab\/}}
+\newcommand{\boxarray}{{\tt boxarray\/}}
+\newcommand{\mlboxarray}{{\tt ml\_boxarray\/}}
+\newcommand{\mllayout}{{\tt ml\_layout\/}}
+\newcommand{\bctower}{{\tt bc\_tower\/}}
+
+
 \setlength{\marginparwidth}{0.8in}
 \newcommand{\MarginPar}[1]{\marginpar{%
 \vskip-\baselineskip %raise the marginpar a bit
@@ -108,6 +120,9 @@
 
 \chapter{Algorithm Flowchart}
 \input flowchart/flowchart
+
+\chapter{Architecture}
+\input architecture/architecture
 
 \chapter{Runtime Parameters}
 \input runtime_parameters/runtime_parameters
@@ -151,5 +166,9 @@
 \chapter{FAQ}
 \input FAQ/faq
 
+\renewcommand\bibname{References}
+\addcontentsline{toc}{chapter}{References}
+\bibliographystyle{plain}
+\bibliography{maestro_doc}
 
 \end{document}

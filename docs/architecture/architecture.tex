@@ -78,10 +78,66 @@ are:
 
 \section{Running A Problem}
 
-\section{Adding A New Problem}
-
 Different problems in MAESTRO are contained in individual
-sub-directories under {\tt MAESTRO/}.  The minimum requirement to
+sub-directories under {\tt MAESTRO/}.  The {\tt GNUmakefile}
+in each problem directory lists the components of {\tt MAESTRO}
+that are used to build the executable.  Full details of the
+{\tt GNUmakefile} can be found in \S~\ref{sec:adding_problems}.
+
+Some of the test problems available are:
+\begin{itemize}
+\item {\tt flame}
+\item {\tt planar\_heat}
+\item {\tt spherical\_heat}
+\item {\tt test2}
+\item {\tt test\_convect}
+\item {\tt test\_spherical}
+\end{itemize}
+
+
+\subsection{Unit Tests}
+
+In addition to the problems descibed above which use the full
+capabilities of MAESTRO, there are a number of unit tests that
+exercise only specific components of the MAESTRO solvers.  The
+tests have their own drivers (a custom {\tt varden.f90}) that
+initialize only the data needed for the specific test and call
+specific MAESTRO routines directly.
+
+\begin{itemize}
+\item {\tt test\_advect} \\[-3mm]
+
+  This test initializes a Gaussian density field (no other scalar
+  quantities are used) and a uniform velocity field in any one of the
+  coordinate directions.  The Gaussian profile is advected through
+  the period domain exactly once and the error in the density profile
+  (L2 norm) is computed.  The driver for this problem does this 
+  for every dimension twice (once with a positive velocity and once
+  with a negative velocity).  After all coordinate directions are 
+  tested, the norms are compared to ensure that the error does
+  not show any directional bias.
+
+
+\item {\tt test\_average} \\[-3mm]
+
+  This test initializes a 1-d radial base state quantity with a
+  Gaussian distribution, maps it into the 3-d domain (assuming a
+  spherical geometry) using the routines provided by the {\tt
+    fill\_3d\_module} module, and then calls {\tt average} to put it
+  back onto a 1-d radial array.  This way we test the accuracy of our
+  procedure to map between the 1-d radial and 3-d Cartesian states.
+  The output from this test was described in detail in
+  \cite{multilevel}.
+
+\item {\tt test\_basestate}
+\item {\tt test\_diffusion}
+\end{itemize}
+
+
+\section{Adding A New Problem}
+\label{sec:adding_problems}
+
+The minimum requirement to
 define a new problem would be a {\tt GNUmakefile} which describes how
 to build the application and an input file which lists the runtime
 parameters.  The problem-specific executable is built in the problem
