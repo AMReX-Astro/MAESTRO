@@ -121,7 +121,7 @@ and stirs it up with a random velocity field.  The low Mach number
 constraint is replaced with the anelastic constraint (through
 the {\tt beta\_type} runtime parameter).  Analytically, under
 these conditions, the density of the star should not change.
-This test problem was discussed in \cite{wdconvect}.
+This test problem was discussed in \cite{lowMach4}.
 
 \end{itemize}
 
@@ -229,6 +229,8 @@ by searching the directories listed in the {\tt GNUmakefile}.
 
 \subsection{The {\tt GNUmakefile}}
 
+\label{sec:makefile}
+
 A basic {\tt GNUmakefile} begins with:
 \begin{verbatim}
   NDEBUG := t
@@ -318,6 +320,31 @@ listed in a file {\tt GPackage.mak} in the problem directory.
 
 
 \subsection{Defining Runtime Parameters}
+
+The runtime parameters for the core MAESTRO algorithm are listed
+in {\tt MAESTRO/\_parameters}.  That file is parsed at compile-time
+by the {\tt MAESTRO/write\_probin.py} script
+(along with any other parameter files listed in the {\tt PROBIN\_PARAMETERS}
+variable in the {GNUmakefile}, see \S \ref{sec:makefile}).  The script
+outputs the {\tt probin.f90} source file.  Each line
+in the {\tt \_parameters} file has the form: 
+
+{\em parameter} \hskip 10em  {\em data-type} \hskip 10em  {\em value} 
+
+\noindent where {\em parameter} is the name of the runtime parameter,
+{\em data-type} is one of \{{\tt character}, {\tt real}, {\tt
+  integer}, {\tt logical}\}, and the {\em value} specifies the default
+value for the runtime parameter.  Comments are indicated by a `{\tt
+  \#}' character and a used to produce documentation about the
+available runtime parameters.
+
+At runtime, the default values for the parameters can be overridden
+either through the inputs file (by adding a line of the form: {\tt
+  parameter = value}) or through a command-line argument (taking the
+form: {\tt --parameter value}).  The {\tt probin\_module} makes the
+values of the runtime parameters available to the various functions
+in the code (see \S~\ref{sec:probin}).
+
 
 
 
@@ -627,6 +654,34 @@ gets the information about the fluid species from the {\tt network}
 module (for example, the atomic number, $Z$, and atomic weight, $A$,
 of the nuclei).
 
+Presently there are 2 equations of state that work with MAESTRO:
+\begin{itemize}
+\item {\tt extern/EOS/helmeos/} represents a general stellar equation 
+      of state, consisting of nuclei (as an ideal gas), radiation,
+      and electrons (with arbitrary degeneracy and degree of relativity).
+      This equation of state is that described in \cite{timmes_eos}.
+
+\item {\tt extern/EOS/gamma\_law\_general} assumes an ideal gas with a mixed 
+     composition and a constant ratio of specific heats, $\gamma$:
+      \begin{eqnarray}
+      e &=& \frac{p}{\rho (\gamma - 1) } \\
+      p &=& \frac{\rho k_B T}{\mu m_p} 
+      \end{eqnarray}
+     where $k_B$ is Boltzmann's constant and $m_p$ is the mass of the
+     proton.
+     The mean molecular weight, $\mu$, is computed either assuming 
+     electrically neutral atoms:
+     \begin{equation}
+     \mu = \left ( \sum_k \frac{X_k}{A_k} \right )^{-1}
+     \end{equation}
+     or complete ionization:
+     \begin{equation}
+     \mu = \left ( \sum_k \frac{X_k (Z_k + 1)}{A_k} \right )^{-1}
+     \end{equation}
+     The default is neutral, and presently one must change a parameter
+     in the source code to switch between these limits.
+\end{itemize}
+
 \subsection{{\tt fill\_3d\_module}}
 
 \subsection{{\tt geometry}}
@@ -650,6 +705,8 @@ If the resulting index is {\tt -1}, then the requested species was not
 found.
 
 \subsection{{\tt probin\_module}}
+
+\label{sec:probin}
 
 {\tt probin\_module} provides access to the runtime parameters.
 
@@ -692,6 +749,7 @@ variables and boundary condition types.
 
 \subsection{{\tt bl\_constants}}
 
+\subsection{{\tt parallel}}
 
 \section{Example: Accessing State Data}
 
