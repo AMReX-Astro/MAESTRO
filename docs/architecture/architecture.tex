@@ -321,13 +321,22 @@ listed in a file {\tt GPackage.mak} in the problem directory.
 
 
 
-\subsection{Plane-Parallel Geometry}
+\subsection{Preparing the Initial Model}
 
+MAESTRO models subsonic flows that are in hydrostatic equilibrium.
+The solution in MAESTRO is broken up into a 1-d base state and the 2-
+or 3-d full state.  The job of the 1-d base state in the algorithm is
+to represent the hydrostatic structure.  The full, Cartesian state
+carries the departures from hydrostatic equilibrium.  The underlying
+formulation of the low Mach number equations assumes that the base
+state is in hydrostatic equilibrium.  At the start of a simulation,
+the initial model is read in and taken as the base state.  Therefore,
+any initial model needs to already be in hydrostatic equilibrium.
 
-\subsection{Full Star / Spherical}
-
-
-\subsection{Small-scale Flame}
+The routines in {\tt MAESTRO/initial\_model/} take a 1-d initial
+model and map it onto a uniform grid, at the desired resolution, using
+the equation of state in MAESTRO, and using MAESTRO's discretization of
+hydrostatic equilibrium.
 
 
 \section{Visualization / Analysis}
@@ -551,10 +560,9 @@ cell-centered multi-component \multifab, typically named {\tt sold},
 represents).  The enthalpy is stored as $(\rho h)$, and the species
 are stored as partial-densities $(\rho X_k)$.
 
-Individual state variables should be indexed using the {\tt variables}
-module, with {\tt rho\_comp} referring to the density, {\tt rhoh\_comp}
-referring to the enthalpy quantity $(\rho h)$, and {\tt spec\_comp}
-referring to the start of the species (partial densities).  
+Individual state variables should be indexed using the integer keys provided 
+by the {\tt variables} module (see \S \ref{sec:variables_module}).  For example,
+the integer {\tt rho\_comp} will always refer to the density component of the state.
 
 
 \subsection{`{\tt u}' \multifab s (fluid velocity)}
@@ -571,7 +579,7 @@ through the faces of the zone---the $x$-velocity on the $x$-edges, the
 $y$-velocity on the $y$-edges, etc.\ (see figure~\ref{fig:mac}).  This
 type of velocity discretization is termed the MAC velocity (after the
 ``marker-and-cell'' method for free boundaries in incompressible
-flows, Harlow and Welch 1965).
+flows \cite{harlowwelch:1965}).
 
 
 
@@ -613,6 +621,12 @@ nodal in its respective direction:
 
 \subsection{{\tt eos\_module}}
 
+The {\tt eos\_module} provides the interface to the equation of 
+state to connect the state variables thermodynamically.  It 
+gets the information about the fluid species from the {\tt network}
+module (for example, the atomic number, $Z$, and atomic weight, $A$,
+of the nuclei).
+
 \subsection{{\tt fill\_3d\_module}}
 
 \subsection{{\tt geometry}}
@@ -627,11 +641,21 @@ modeled.  Many different reaction modules (containing different sets
 of isotopes) exist in {\tt extern/networks}.  The particular network
 used by a problem is defined in the problem's {\tt GNUmakefile}.
 
+To find the location of a particular species (for instance, ``carbon-12'')
+in the allowed range of {\tt 1:nspec}, you do the following query:
+\begin{verbatim}
+  ic12 = network_species_index("carbon-12")
+\end{verbatim}
+If the resulting index is {\tt -1}, then the requested species was not
+found.
+
 \subsection{{\tt probin\_module}}
 
 {\tt probin\_module} provides access to the runtime parameters.
 
 \subsection{{\tt variables}}
+
+\label{sec:variables_module}
 
 The {\tt variables} module provides integer keys to index the state
 multifabs and other arrays dealing with the scalar quantities.  The
@@ -641,14 +665,16 @@ most commonly used keys are are listed in table~\ref{tab:variable_keys}.
 \begin{tabular}{ll}
 \hline
 {\tt rho\_comp}  & density \\
-{\tt rhoh\_comp} & density * specific enthalpy, $(\rho h)$ \\
-{\tt spec\_comp} & starting index of the species \\
+{\tt rhoh\_comp} & density $\times$ specific enthalpy, $(\rho h)$ \\
+{\tt spec\_comp} & first species partial density, $(\rho X_1)$ \\
 {\tt temp\_comp} & temperature \\
 \hline
 \end{tabular}
+
 \caption{\label{tab:variable_keys} {\tt variables} module common keys}
 \end{table}
 
+The species indices are contiguous in the state array, spanning {\tt spec\_comp:spec\_comp-1+nspec}.
 To find a particular species, a query can be made through the {\tt
   network} module, such as:
 \begin{verbatim}
@@ -660,8 +686,11 @@ The {\tt variables} module also provides keys for the plotfile
 variables and boundary condition types.
 
 
+\section{BoxLib Helper Modules}
 
+\subsection{{\tt bl\_types}}
 
+\subsection{{\tt bl\_constants}}
 
 
 \section{Example: Accessing State Data}
