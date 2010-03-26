@@ -556,13 +556,6 @@ module, with {\tt rho\_comp} referring to the density, {\tt rhoh\_comp}
 referring to the enthalpy quantity $(\rho h)$, and {\tt spec\_comp}
 referring to the start of the species (partial densities).  
 
-To find a particular species, a query can be made through the {\tt network}
-module, such as:
-\begin{verbatim}
-  ic12 = network_species_index("carbon-12")
-\end{verbatim}
-and then the \fab\ can be indexed using {\tt spec\_comp-1+ic12} to
-get ``carbon-12''.
 
 \subsection{`{\tt u}' \multifab s (fluid velocity)}
 
@@ -626,11 +619,47 @@ nodal in its respective direction:
 
 \subsection{{\tt network}}
 
+The {\tt network} module defines the number species advected by the
+code ({\tt nspec}), their ordering, and gives their basic properties
+(like atomic number, $Z$, and atomic mass, $A$).  All MAESTRO problems
+require a {\tt network} module, even if there are no reactions
+modeled.  Many different reaction modules (containing different sets
+of isotopes) exist in {\tt extern/networks}.  The particular network
+used by a problem is defined in the problem's {\tt GNUmakefile}.
+
 \subsection{{\tt probin\_module}}
+
+{\tt probin\_module} provides access to the runtime parameters.
 
 \subsection{{\tt variables}}
 
-The {\tt variables} module provides 
+The {\tt variables} module provides integer keys to index the state
+multifabs and other arrays dealing with the scalar quantities.  The
+most commonly used keys are are listed in table~\ref{tab:variable_keys}.
+\begin{table}[h!]
+\centering
+\begin{tabular}{ll}
+\hline
+{\tt rho\_comp}  & density \\
+{\tt rhoh\_comp} & density * specific enthalpy, $(\rho h)$ \\
+{\tt spec\_comp} & starting index of the species \\
+{\tt temp\_comp} & temperature \\
+\hline
+\end{tabular}
+\caption{\label{tab:variable_keys} {\tt variables} module common keys}
+\end{table}
+
+To find a particular species, a query can be made through the {\tt
+  network} module, such as:
+\begin{verbatim}
+  ic12 = network_species_index("carbon-12")
+\end{verbatim}
+and then the \fab\ can be indexed using {\tt spec\_comp-1+ic12} to
+get ``carbon-12''.
+The {\tt variables} module also provides keys for the plotfile
+variables and boundary condition types.
+
+
 
 
 
