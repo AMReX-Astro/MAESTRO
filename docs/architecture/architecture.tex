@@ -78,6 +78,8 @@ are:
 
 \section{Running A Problem}
 
+\subsection{`Standard' Test Problems}
+
 Different problems in MAESTRO are contained in individual
 sub-directories under {\tt MAESTRO/}.  The {\tt GNUmakefile}
 in each problem directory lists the components of {\tt MAESTRO}
@@ -92,10 +94,12 @@ The {\tt flame} problem models a planar laminar flame.  Initially cool
 fuel and hot ash are put in pressure equilibrium.  Thermal diffusion
 transfers heat to the fuel, driving a burning front.
 
-\item {\tt planar\_heat} \\[-3mm]
-
-
 \item {\tt spherical\_heat} \\[-3mm]
+
+Spherical heat maps a spherical star (a Chandrasekhar-mass white dwarf)
+onto the Cartesian domain and uses an external heat source to cause
+the star to expand.  This is the 3-d analogue of the {\tt test\_basestate}
+unit test.  This problem was discussed in \cite{multilevel}.
 
 \item {\tt test2} \\[-3mm]
 
@@ -105,8 +109,22 @@ used in \cite{lowMach3} to compare with compressible solvers.
 
 \item {\tt test\_convect} \\[-3mm]
 
+{\tt test\_convect} drives convection through a plane-parallel
+atmosphere using an externally-specified heat source.  This problem
+was used to compare with compressible solvers in \cite{lowMach3}
+and to test the multilevel algorithm in \cite{multilevel}.
+
 \item {\tt test\_spherical} \\[-3mm]
+
+{\tt test\_spherical} sets up an isentropically stratified star
+and stirs it up with a random velocity field.  The low Mach number
+constraint is replaced with the anelastic constraint (through
+the {\tt beta\_type} runtime parameter).  Analytically, under
+these conditions, the density of the star should not change.
+This test problem was discussed in \cite{wdconvect}.
+
 \end{itemize}
+
 
 To build the MAESTRO executable, simply type `{\tt make}' in the
 problem directory.  The executable will have a name like
@@ -118,7 +136,23 @@ The code is run simply as:
 \begin{verbatim}
   main.Linux.Intel.exe inputs_2d
 \end{verbatim}
+As the code runs, it will output both plotfiles and checkpoint files.
+By default, the plotfiles will be named {\tt plt}{\em nnnnn}, where
+the number {\em nnnnn} is the timestep number when the file was
+outputted.  Similarly, the checkpoint files are named {\tt chk}{\em
+  nnnnn}.
 
+To restart a calculation from a checkpoint file, either edit the inputs
+file, setting
+\begin{verbatim}
+  restart = n
+\end{verbatim}
+where {\tt n} is the step number of the checkpoint file to restart
+from.  Equivalently, you can override the value in the inputs file
+by adding {\tt --restart n} to the commandline, as 
+\begin{verbatim}
+  main.Linux.Intel.exe inputs_2d --restart n
+\end{verbatim}
 
 
 
@@ -283,6 +317,7 @@ no file with the same name elsewhere in the source tree) need to be
 listed in a file {\tt GPackage.mak} in the problem directory.
 
 
+\subsection{Defining Runtime Parameters}
 
 
 
@@ -581,6 +616,24 @@ nodal in its respective direction:
 \subsection{Other Quantities}
 
 
+\section{MAESTRO Helper Modules}
+
+\subsection{{\tt eos\_module}}
+
+\subsection{{\tt fill\_3d\_module}}
+
+\subsection{{\tt geometry}}
+
+\subsection{{\tt network}}
+
+\subsection{{\tt probin\_module}}
+
+\subsection{{\tt variables}}
+
+The {\tt variables} module provides 
+
+
+
 
 \section{Example: Accessing State Data}
 
@@ -746,20 +799,4 @@ and an additional loop over the `z' coordinate (from {\tt lo(3)} to
 
 \section{Multigrid}
 
-
-\section{MAESTRO Helper Modules}
-
-\subsection{{\tt eos\_module}}
-
-\subsection{{\tt fill\_3d\_module}}
-
-\subsection{{\tt geometry}}
-
-\subsection{{\tt network}}
-
-\subsection{{\tt probin\_module}}
-
-\subsection{{\tt variables}}
-
-The {\tt variables} module provides 
 
