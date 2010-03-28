@@ -95,7 +95,9 @@ Some of the test problems available are:
 
 The {\tt flame} problem models a planar laminar flame.  Initially cool
 fuel and hot ash are put in pressure equilibrium.  Thermal diffusion
-transfers heat to the fuel, driving a burning front.
+transfers heat to the fuel, driving a burning front.  This problem
+does not use the traditional MAESTRO elliptic constraint, but
+rather enforces $\nabla \cdot U = S$ as discussed in \cite{SNe}.
 
 \item {\tt spherical\_heat} \\[-3mm]
 
@@ -161,7 +163,43 @@ by adding {\tt --restart n} to the commandline, as
 \end{verbatim}
 
 
+\subsection{Defining the Grid and Boundary Conditions}
+
 \subsection{Common Runtime Parameters}
+
+\begin{itemize}
+
+\item {\tt model\_file }
+\item {\tt spherical\_in }
+\item {\tt ppm\_type }
+\item {\tt max\_levs }
+\item {\tt n\_cellx }, {\tt n\_celly }, {\tt n\_cellz }
+\item {\tt max\_grid\_size }
+\item {\tt prob\_lo\_x }, {\tt prob\_lo\_y }, {\tt prob\_lo\_z }
+\item {\tt prob\_hi\_x }, {\tt prob\_hi\_y }, {\tt prob\_hi\_z }
+\item {\tt anelastic\_cutoff }
+\item {\tt base\_cutoff\_density }
+\item {\tt do\_sponge }
+\item {\tt grav\_const }
+\item {\tt max\_step }
+\item {\tt init\_iter }
+\item {\tt stop\_time }
+\item {\tt plot\_base }
+\item {\tt plot\_deltat }
+\item {\tt chk\_int }
+\item {\tt cflfac }
+\item {\tt init\_shrink }
+\item {\tt bcx\_lo }, {\tt bcy\_lo }, {\tt bcz\_lo }, 
+      {\tt bcx\_hi }, {\tt bcy\_hi }, {\tt bcz\_hi }
+\item {\tt pmask\_x }, {\tt pmask\_y }, {\tt pmask\_z }
+\item {\tt verbose }
+\item {\tt mg\_verbose }
+\item {\tt cg\_verbose }
+\item {\tt do\_initial\_projection }
+\item {\tt init\_divu\_iter }
+\item {\tt perturb\_model }
+
+\end{itemize}
 
 \subsection{Working with the Output}
 
@@ -383,9 +421,9 @@ by the {\tt MAESTRO/write\_probin.py} script
 variable in the {GNUmakefile}, see \S \ref{sec:makefile}).  The script
 outputs the {\tt probin.f90} source file.  Each line
 in the {\tt \_parameters} file has the form: 
-
+\vskip 3mm
 {\em parameter} \hskip 10em  {\em data-type} \hskip 10em  {\em value} 
-
+\vskip 3mm
 \noindent where {\em parameter} is the name of the runtime parameter,
 {\em data-type} is one of \{{\tt character}, {\tt real}, {\tt
   integer}, {\tt logical}\}, and the {\em value} specifies the default
@@ -662,12 +700,20 @@ nodal in its respective direction:
 
 \subsection{Base State Arrays}
 
-
+The base state is defined by $\rho_0$, $p_0$, and $w_0$.  There is no
+base state composition.  Other arrays are defined as needed, such as
+$h_0$, the base state enthalpy.
 
 \subsection{Other Quantities}
 
 
 \section{MAESTRO Helper Modules}
+
+A number of MAESTRO modules appear frequently throughout the source.
+Below, we describe some of the more common functionality of the most
+popular modules.
+
+\subsection{\tt average}
 
 \subsection{{\tt eos\_module}}
 
@@ -703,6 +749,11 @@ Presently there are 2 equations of state that work with MAESTRO:
      The default is neutral, and presently one must change a parameter
      in the source code to switch between these limits.
 \end{itemize}
+
+eos module variables
+
+eos input types
+
 
 \subsection{{\tt fill\_3d\_module}}
 
@@ -766,6 +817,11 @@ variables and boundary condition types.
 
 
 \section{BoxLib Helper Modules}
+
+There are a large number of modules in {\tt boxlib/} that provide
+the core functionality for managing grids.  Here we describe
+the most popular such modules.
+
 
 \subsection{{\tt bl\_types}}
 
@@ -928,6 +984,8 @@ and an additional loop over the `z' coordinate (from {\tt lo(3)} to
 
 \section{Working with Multifabs}
 
+need to describe the routines for adding two multifabs, subtracting,
+etc. and norm, etc.
 
 \section{Filling Ghostcells}
 
