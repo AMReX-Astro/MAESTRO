@@ -1,0 +1,118 @@
+%-----------------------------------------------------------------------------
+% Notation
+%-----------------------------------------------------------------------------
+
+\section{Notation}
+
+%%%%%%%%%%%%%%%%
+% symbol table
+%%%%%%%%%%%%%%%%
+
+\renewcommand{\arraystretch}{1.5}
+%
+\begin{center}
+\begin{longtable}{|l|p{4.0in}|l|}
+\caption[definition of symbols.]{definition of symbols.} \label{table:sym} \\
+%
+\hline \multicolumn{1}{|c|}{\textbf{symbol}} & 
+       \multicolumn{1}{ c|}{\textbf{meaning}} & 
+       \multicolumn{1}{ c|}{\textbf{units}} \\ \hline 
+\endfirsthead
+
+\multicolumn{3}{c}%
+{{\tablename\ \thetable{}---continued}} \\
+\hline \multicolumn{1}{|c|}{\textbf{symbol}} & 
+       \multicolumn{1}{ c|}{\textbf{meaning}} & 
+       \multicolumn{1}{ c|}{\textbf{units}} \\ \hline 
+\endhead
+
+\multicolumn{3}{|r|}{{\em continued on next page}} \\ \hline
+\endfoot
+
+\hline 
+\endlastfoot
+
+$c_p$   & specific heat at constant pressure
+          ($c_p \equiv \left . \partial h / \partial T \right |_{p,X_k}$)
+        & erg~g$^{-1}$~K$^{-1}$ \\
+\hline
+$f$     & volume discrepancy factor ($0 \le f \le 1$) & -- \\
+\hline
+$g$     & gravitational acceleration                 & cm~s$^{-2}$ \\
+\hline
+$h$     & specific enthalpy                          & erg~g$^{-1}$ \\
+\hline
+$\Hext$ & external heating energy generation rate    & erg~g$^{-1}$~s$^{-1}$ \\
+\hline
+$\Hnuc$ & nuclear energy generation rate             & erg~g$^{-1}$~s$^{-1}$ \\
+\hline
+$h_p$   & $h_p \equiv \left . \partial h / \partial p \right |_{T,X_k}$ & cm$^{3}$~g$^{-1}$ \\
+\hline
+$\kth$  & thermal conductivity                       & erg~cm$^{-1}$~s$^{-1}$~K$^{-1}$ \\
+\hline
+$p_0$   & base state pressure                        & erg~cm$^{-3}$ \\
+\hline
+$p_T$   & $p_T \equiv \left . \partial p / \partial T \right |_{\rho,X_k}$ & erg~cm$^{-3}$~K$^{-1}$ \\
+\hline
+$p_{X_k}$ & $p_{X_k} \equiv \left . \partial p / \partial X_k \right |_{p,T,X_{j,j\ne k}}$ & erg~cm$^{-3}$ \\
+\hline
+$p_\rho$ & $p_\rho \equiv \left . \partial p / \partial \rho \right |_{T,X_k}$ & erg~g$^{-1}$ \\
+\hline
+$q_k$   & specific nuclear binding energy            & erg~g$^{-1}$  \\
+\hline
+$r$     & radial coordinate (direction of gravity)   & cm \\
+\hline
+$s$     & specific entropy                           & erg~g$^{-1}$~K$^{-1}$ \\
+\hline
+$S$     & source term to the divergence constraint   & s$^{-1}$ \\
+\hline
+$t$     & time                                       & s \\
+\hline
+$T$     & temperature                                & K \\
+\hline
+$\Ub$     & total velocity ($\Ub = \Ubt + w_0 \eb_r$) & cm~s$^{-1}$ \\
+\hline
+$\Ubt$   & local velocity                             & cm~s$^{-1}$ \\
+\hline
+$\uadv$ & advective velocity (edge-centered)         & cm~s$^{-1}$ \\
+\hline
+$w_0$   & base state expansion velocity              & cm~s$^{-1}$ \\
+\hline
+$X_k$   & mass fraction of the species ($\sum_k X_k = 1$) & -- \\
+\hline
+$\beta_0$ & coefficient to velocity
+            in velocity constraint equation  & g~cm$^{-3}$ \\
+\hline
+$\Gamma_1$ & first adiabatic exponent ($\Gamma_1 \equiv \left . d \log p/d \log \rho \right |_s$) & -- \\
+\hline
+$\etarho$ & $\etarho \equiv \overline{(\rho' \Ub \cdot \eb_r)}$ & g~cm$^{-2}$~s$^{-1}$ \\
+\hline
+$\xi_k$ & $\xi_k \equiv \left . \partial h / \partial X_k \right |_{p,T,X_{j,j\ne k}}$ & erg~g$^{-1}$ \\
+\hline 
+$\pi$   & dynamic pressure & erg~cm$^{-3}$ \\
+\hline
+$\pizero$ & base state dynamic pressure & erg~cm$^{-3}$ \\
+\hline
+$\rho$  & mass density  & g~cm$^{-3}$ \\
+\hline
+$\rho_0$  & base state mass density  & g~cm$^{-3}$ \\
+\hline
+$\rho'$  & perturbational density ($\rho' = \rho - \rho_0$) & g~cm$^{-3}$ \\
+\hline
+$(\rho h)_0$ & base state enthalpy density & erg~cm$^{-3}$  \\
+\hline
+$(\rho h)'$ & perturbational enthalpy density 
+              $ \left [(\rho h)' = \rho h - (\rho h)_0 \right ]$ & erg~cm$^{-3}$  \\
+\hline
+$\sigma$ & $\sigma \equiv p_T/(\rho c_p p_\rho)$ & erg$^{-1}$~g \\
+\hline
+$\psi$  & $\psi \equiv D_0 p_0/Dt = \partial p_0/\partial t + w_0\partial p_0/\partial r$ & erg~cm$^{-3}$~s$^{-1}$ \\
+\hline
+$\omegadot_k$ & creation rate for species $k$ ($\omegadot_k \equiv DX_k/Dt$) & s$^{-1}$ \\
+\end{longtable}
+\end{center}
+
+\renewcommand{\arraystretch}{1.0}
+There are some great charts in the appendix of the multilevel paper demonstrating what 
+the superscript notation represents.
+
