@@ -161,6 +161,36 @@ which is numerically implemented as a diffusion equation for $h^{(2)}$.
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{n+1} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{n}\right),
 \end{eqnarray}
 
+
+%-----------------------------------------------------------------------------
+% graphical flowcharts
+%-----------------------------------------------------------------------------
+\begin{figure}[tb]
+\centering
+\includegraphics[scale=0.6]{flowchart}
+\caption{\label{Fig:flowchart} A flowchart of the algorithm.  The
+  thermodynamic state variables, base state variables, and local velocity are
+  indicated in each step.  Red text indicates that quantity was
+  updated during that step.  The predictor-corrector steps are
+  outlined by the dotted box.  The blue text indicates state
+  variables that are the same in {\bf Step 6} as they are in
+  {\bf Step 2}, i.e., they are unchanged by the predictor steps.}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                                               
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                                               
+\begin{figure}[tb]                                                              
+\centering
+\includegraphics[scale=0.6]{flowchart_4_8}
+\caption{\label{Fig:flowchart48}
+A flowchart for {\bf Steps 4} and {\bf 8}.  The thermodynamic state variables
+and base state variables are indicated in each step.  Red text indicates that q\
+uantity
+was updated during that step.  Note, for {\bf Step 4}, the updated
+quantities should also have a $\star$ superscript, e.g., {\bf Step 8I} defines
+$T^{(2)}$ while {\bf Step 4I} defines $T^{(2),\star}$ .}
+\end{figure}
+
+
 %-----------------------------------------------------------------------------
 % Initialization
 %-----------------------------------------------------------------------------
