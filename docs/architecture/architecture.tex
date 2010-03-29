@@ -150,6 +150,14 @@ the number {\em nnnnn} is the timestep number when the file was
 outputted.  Similarly, the checkpoint files are named {\tt chk}{\em
   nnnnn}. 
 
+A large number of runtime parameters affect the code's behavior.  A
+full list is detailed in \S~\ref{sec:runtime_parameters}.  Below we
+outline the most common runtime parameters.
+
+\subsection{Controlling Timestepping and Output}
+
+
+
 To restart a calculation from a checkpoint file, either edit the inputs
 file, setting
 \begin{verbatim}
@@ -162,42 +170,27 @@ by adding {\tt --restart n} to the commandline, as
   main.Linux.Intel.exe inputs_2d --restart n
 \end{verbatim}
 
+\begin{itemize}
+
+\item {\tt stop\_time }
+\item {\tt max\_step }
+\item {\tt cflfac }
+\item {\tt init\_shrink }
+
+\end{itemize}
 
 \subsection{Defining the Grid and Boundary Conditions}
 
-\subsection{Common Runtime Parameters}
-
 \begin{itemize}
 
-\item {\tt model\_file }
-\item {\tt spherical\_in }
-\item {\tt ppm\_type }
 \item {\tt max\_levs }
 \item {\tt n\_cellx }, {\tt n\_celly }, {\tt n\_cellz }
 \item {\tt max\_grid\_size }
 \item {\tt prob\_lo\_x }, {\tt prob\_lo\_y }, {\tt prob\_lo\_z }
 \item {\tt prob\_hi\_x }, {\tt prob\_hi\_y }, {\tt prob\_hi\_z }
-\item {\tt anelastic\_cutoff }
-\item {\tt base\_cutoff\_density }
-\item {\tt do\_sponge }
-\item {\tt grav\_const }
-\item {\tt max\_step }
-\item {\tt init\_iter }
-\item {\tt stop\_time }
-\item {\tt plot\_base }
-\item {\tt plot\_deltat }
-\item {\tt chk\_int }
-\item {\tt cflfac }
-\item {\tt init\_shrink }
 \item {\tt bcx\_lo }, {\tt bcy\_lo }, {\tt bcz\_lo }, 
       {\tt bcx\_hi }, {\tt bcy\_hi }, {\tt bcz\_hi }
 \item {\tt pmask\_x }, {\tt pmask\_y }, {\tt pmask\_z }
-\item {\tt verbose }
-\item {\tt mg\_verbose }
-\item {\tt cg\_verbose }
-\item {\tt do\_initial\_projection }
-\item {\tt init\_divu\_iter }
-\item {\tt perturb\_model }
 
 \end{itemize}
 

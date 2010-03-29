@@ -4,6 +4,7 @@ ALL: paper.ps paper.pdf
 
 eps_source = $(wildcard *.eps) \
              $(wildcard lo_density/*.eps) \
+             $(wildcard flowchart/*.eps) \
              $(wildcard architecture/*.eps) \
              $(wildcard initial_models/*.eps) \
              $(wildcard rotation/*.eps) \
@@ -12,7 +13,8 @@ eps_source = $(wildcard *.eps) \
 
 pdf_source = $(eps_source:.eps=.pdf)
 
-section_sources = flowchart/flowchart.tex \
+section_sources = introduction/introduction.tex \
+                  flowchart/flowchart.tex \
                   architecture/architecture.tex \
                   runtime_parameters/runtime_parameters.tex \
                   volume_discrepancy/volume_discrepancy.tex \
