@@ -1,7 +1,7 @@
 module create_umac_grown_module
 
+  use multifab_module
   use bl_constants_module
-  use sparse_solve_module
 
   private
   public :: create_umac_grown, create_umac_grown_onesided
