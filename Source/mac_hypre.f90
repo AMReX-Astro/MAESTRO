@@ -6,8 +6,6 @@ module mac_hypre_module
   use multifab_module
   use bndry_reg_module
   use bl_constants_module
-  use sparse_solve_module
-  use create_umac_grown_module
   use impose_phys_bcs_on_edges_module
  
   implicit none
