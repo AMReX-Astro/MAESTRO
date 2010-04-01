@@ -12,14 +12,14 @@ are:
 \begin{itemize}
 \item {\tt boxlib/} 
 
- boxlib is a library for describing meshes consisting of a union
- of boxes.  The boxlib modules define the basic datatypes used
+ BoxLib is a library for describing meshes consisting of a union
+ of boxes.  The BoxLib modules define the basic datatypes used
  in MAESTRO.
 
 \item {\tt data\_processing/}
 
  Simple Fortran-based analysis routines (e.g.\ extract a line from a
- multidimensional dataset) that operate on boxlib plotfiles.
+ multidimensional dataset) that operate on BoxLib datasets.
 
 \item {\tt doc/}
 
@@ -29,6 +29,31 @@ are:
 
  External modules, like ODE integrators, equations of state, reaction
  networks
+
+ Important subdirectories include:
+ \begin{itemize}
+ \item {\tt constants/}
+
+ A simple module to define physical constants
+
+ \item {\tt EOS/}
+
+ A collection of various EOSes for use with the code.  The two
+ important ones for MAESTRO are {\tt helmeos/} and {\tt
+ gamma\_law\_general/}.
+
+ \item {\tt networks/}
+
+ Various reaction networks for MAESTRO problems.  In addition to
+ providing a routine to evolve the nuclear species due to reactions,
+ the networks also define the species that are advected by the code.
+
+ \item {\tt VODE/}
+
+ An integration package for ODEs.  At the moment, this is used 
+ for integrating various reaction networks.
+ 
+ \end{itemize}
 
 \item {\tt MAESTRO/}
 
@@ -43,7 +68,8 @@ are:
 
    Several sub-directories containing routines to generate
    1D initial conditions in hydrostatic equilibrium for 
-   mapping onto the MAESTRO grid.
+   mapping onto the MAESTRO grid.  See \S~\ref{sec:initial_models}
+   for details.
 
  \item problem directories: {\tt test}, {\tt test2}, {\tt
    test\_spherical}, $\ldots$
@@ -56,6 +82,7 @@ are:
    precedence over a file of the same name in {\tt MAESTRO/}.
    This allows problems to have custom versions of the main
    MAESTRO routines (e.g.\ initial conditions via {\tt initdata.f90}.
+   See \S~\ref{sec:makefile} for details on the build system.
 
  \end{itemize}
 
@@ -79,7 +106,8 @@ are:
 \section{Getting Started}
 
 In this section we describe some of the standard problems that come
-with MAESTRO, how to run the code, and how to look at the output.
+with MAESTRO, how to run the code, some basic runtime parameters, and
+how to look at the output.
 
 \subsection{`Standard' Test Problems}
 
@@ -97,15 +125,16 @@ The {\tt flame} problem models a planar laminar flame.  Initially cool
 fuel and hot ash are put in pressure equilibrium.  Thermal diffusion
 transfers heat to the fuel, driving a burning front.  This problem
 does not use the traditional MAESTRO elliptic constraint, but
-rather enforces $\nabla \cdot U = S$ as discussed in \cite{SNe}.
+rather enforces $\nabla \cdot U = S$ (through the runtime parameter
+{\tt do\_smallscale = T}) as discussed in \cite{SNe}.
 
 \item {\tt spherical\_heat} \\[-3mm]
 
-Spherical heat maps a spherical star (a Chandrasekhar-mass white
+{\tt spherical\_heat} maps a spherical star (a Chandrasekhar-mass white
 dwarf) onto the Cartesian domain and uses an external heat source to
 cause the star to expand.  This is the 3-d analogue of the {\tt
-  test\_basestate} unit test.  This problem was discussed in
-\cite{multilevel}.
+  test\_basestate} unit test (see \S~\ref{sec:unit_tests}).  This
+problem was discussed in \cite{multilevel}.
 
 \item {\tt test2} \\[-3mm]
 
@@ -138,107 +167,165 @@ To build the MAESTRO executable, simply type `{\tt make}' in the
 problem directory.  The executable will have a name like
 {\tt main.Linux.Intel.exe}, where the specific parts of 
 the name depend on the compilers and OS used.  Each problem
-will have one or more inputs files (for example, {\tt test2/inputs\_2d}
+will have one or more inputs files (for example, {\tt test2/inputs\_2d})
 which override the default values for one or more runtime parameters.
 The code is run simply as:
 \begin{verbatim}
   main.Linux.Intel.exe inputs_2d
 \end{verbatim}
-As the code runs, it will output both plotfiles and checkpoint files.
+As the code runs, it will output both plotfiles and checkpoints.
 By default, the plotfiles will be named {\tt plt}{\em nnnnn}, where
 the number {\em nnnnn} is the timestep number when the file was
-outputted.  Similarly, the checkpoint files are named {\tt chk}{\em
-  nnnnn}. 
+outputted.  Similarly, the checkpoints are named {\tt chk}{\em
+  nnnnn}.  BoxLib plotfiles and checkpoints are actually directories,
+with the data stored in subdirectories grouped by refinement level.
+Details of the simulation (number of processors used, output date,
+output directory, runtime parameter values, ...) are stored in
+the {\tt job\_info} file in each plotfile directory.
 
-A large number of runtime parameters affect the code's behavior.  A
-full list is detailed in \S~\ref{sec:runtime_parameters}.  Below we
+A large number of runtime parameters affect the code's behavior.  Any
+runtime parameter can be set either in the inputs file, as {\tt parameter
+  = value} or on the command line by adding {\tt --parameter value} after
+listing the inputs file on the command line.  A full list of runtime
+parameters is detailed in \S~\ref{sec:runtime_parameters}.  Below we
 outline the most common runtime parameters.
 
 \subsection{Controlling Timestepping and Output}
 
+Parameters that set the maximum time for the simulation to run
+include:
+\begin{itemize}
+\item {\tt stop\_time} is the maximum simulation time, in seconds,
+      to evolve the system for.
 
+\item {\tt max\_step} is the maximum number of steps to take.
+\end{itemize}
 
-To restart a calculation from a checkpoint file, either edit the inputs
-file, setting
-\begin{verbatim}
-  restart = n
-\end{verbatim}
-where {\tt n} is the step number of the checkpoint file to restart
-from.  Equivalently, you can override the value in the inputs file
-by adding {\tt --restart n} to the commandline, as 
-\begin{verbatim}
-  main.Linux.Intel.exe inputs_2d --restart n
-\end{verbatim}
+\noindent Parameters affecting the size of the timestep include:
+\begin{itemize}
+\item {\tt cflfac} is a multiplicative factor ({\tt $\le 1$}) 
+      applied to the advective CFL timestep
 
+\item {\tt init\_shrink} is the factor ({\tt $\le 1$}) by which to reduce 
+      the initial timestep from the estimated first timestep.
+\end{itemize}
+
+\noindent Parameters affecting output and restart include:
 \begin{itemize}
 
-\item {\tt stop\_time }
-\item {\tt max\_step }
-\item {\tt cflfac }
-\item {\tt init\_shrink }
+\item {\tt restart} tells MAESTRO to restart from a checkpoint.  The
+      value of this parameter should be the file number to restart from.
+
+\item {\tt plot\_int} is the number of steps to take between
+  outputting a plotfile
+
+\item {\tt plot\_deltat} is the simulation time to evolve between
+  outputting a plotfile.  Note: to output only based on simulation
+  time, set {\tt plot\_int = -1}.
+
+\item {\tt check\_int} is the number of steps to take between
+  outputting a checkpoint.
 
 \end{itemize}
 
 \subsection{Defining the Grid and Boundary Conditions}
 
+Parameters that determine the spatial extent of the grid, 
+the types of boundaries, and the number of computational cells include:
 \begin{itemize}
 
-\item {\tt max\_levs }
-\item {\tt n\_cellx }, {\tt n\_celly }, {\tt n\_cellz }
-\item {\tt max\_grid\_size }
-\item {\tt prob\_lo\_x }, {\tt prob\_lo\_y }, {\tt prob\_lo\_z }
-\item {\tt prob\_hi\_x }, {\tt prob\_hi\_y }, {\tt prob\_hi\_z }
+\item {\tt max\_levs } is the maximum number of grid levels in the AMR
+  hierarchy to us.  {\tt max\_levs = 1} indicates running with only a
+  single level spanning the whole domain.
+
+\item {\tt n\_cellx }, {\tt n\_celly }, {\tt n\_cellz } the size of
+  base level in terms of number of cells, in the $x$, $y$, and $z$
+  coordinate directions.
+
+\item {\tt max\_grid\_size } the maximum extend of a grid, in any
+  coordinate direction, as measured in terms of number of cells.
+
+\item {\tt prob\_lo\_x }, {\tt prob\_lo\_y }, {\tt prob\_lo\_z } is
+  the physical coordinate of the lower extent of the domain boundary
+  in the $x$, $y$, and $z$ coordinate directions.
+
+\item {\tt prob\_hi\_x }, {\tt prob\_hi\_y }, {\tt prob\_hi\_z } is
+  the physical coordinate of the upper extent of the domain boundary
+  in the $x$, $y$, and $z$ coordinate directions.
+
 \item {\tt bcx\_lo }, {\tt bcy\_lo }, {\tt bcz\_lo }, 
-      {\tt bcx\_hi }, {\tt bcy\_hi }, {\tt bcz\_hi }
-\item {\tt pmask\_x }, {\tt pmask\_y }, {\tt pmask\_z }
+      {\tt bcx\_hi }, {\tt bcy\_hi }, {\tt bcz\_hi } are the boundary
+   condition types at the lower (`{\tt lo}') and upper (`{\tt hi}')
+   domain boundaries in the $x$, $y$, and $z$ coordinate directions.
+   The different types are set via integer flags noted below: 
+
+   \begin{center}
+   \begin{tabular}{ll}
+   \hline
+   BC type    & integer flag \\
+   \hline
+   periodic             & -1 \\
+   inlet (user-defined) & 11 \\
+   outlet               & 12 \\
+   symmetry             & 13 \\
+   slip wall            & 14 \\
+   no-slip wall         & 15 \\
+   \hline
+   \end{tabular}
+   \end{center}
+
+   Note: for periodic boundaries, one must also set the corresponding
+   {\tt pmask\_}\{{\em x,y,z}\} parameter.
+
+\item {\tt pmask\_x }, {\tt pmask\_y }, {\tt pmask\_z } is set to 
+   true ({\tt T}) to indicate that the boundary is periodic in the
+   $x$, $y$, or $z$ coordinate directions.
+
 
 \end{itemize}
+
+Note that grid cells must be square, i.e. $\Delta x = \Delta y = \Delta z$
+where $\Delta x$ on the base grid is computed as $({\tt prob\_hi\_x}
+- {\tt prob\_lo\_x})/{\tt n\_cellx}$. 
+
+\subsection{Refinement Criteria}
 
 \subsection{Working with the Output}
 
-Visualization and analysis are done with on the plotfiles.  The
-frequency of plotfile outputting can be changed using the runtime
-parameters {\tt plot\_int}, which specifies the number of steps
-between output, and {\tt plot\_deltat} which specifies the simulation
-time between output.  Setting {\tt plot\_int} to {\tt -1} disables
-step-based outputting; setting {\tt plot\_deltat} to {\tt 0.0}
-disables time-based outputting.
+Visualization and analysis are done with on the plotfiles.  A
+number of in-house and externally developed tools can work 
+with BoxLib-formatted plotfiles.
 
 
+\subsubsection{\tt Amrvis}
 
-\subsubsection{Amrvis}
+{\tt Amrvis} is a visualization tool developed at LBL for 2- and 3-d
+datasets which can plot slices through 3-d datasets as well as
+volume-renderings.  It is distributed separately from the MAESTRO
+distribution.
+
 
 \subsubsection{{\tt data\_processing} scripts}
 
-Several useful analysis scripts can be found in {\tt
-fParallel/data\_processing}.  The makefile there needs
-to be edited to indicate which of the tools to build.
-
-\begin{itemize}
-
-\item {\tt fextract3d}
-
-  Extracts a 1-d slice from a plotfile, through the center of the
-  domain in any coordinate direction.  Either all of the variables or
-  a single variable is output.
-
-\item {\tt fextrema} 
-
-  Outputs the min/max of each of the quantities in the plotfile.
-
-\item {\tt ftime}
-
-  Outputs the simulation time for one or more plotfiles.
-
-\end{itemize}
+Several useful analysis scripts (written in Fortran 90) can be found
+in {\tt fParallel/data\_processing}.  The {\tt GNUmakefile} there
+needs to be edited to indicate which of the tools to build.  These
+routines are described in \S~\ref{sec:analysis}.
 
 
 \subsubsection{VisIt}
 
+VisIt is a powerful, DOE-supported visualization tool for 2- and 3-d
+datasets.  It can do contouring, volume rendering, streamlines, ...\
+directly from BoxLib plotfiles (to open a plotfile in VisIt, point to
+the {\tt Header} file inside the plotfile directory.  Details on
+visit can be found at {\tt https://wci.llnl.gov/codes/visit/home.html}\,.
 
 
 
 \subsection{Unit Tests}
+
+\label{sec:unit_tests}
 
 In addition to the problems descibed above which use the full
 capabilities of MAESTRO, there are a number of unit tests that
@@ -302,12 +389,22 @@ specific MAESTRO routines directly.
 \section{Adding A New Problem}
 \label{sec:adding_problems}
 
+Different MAESTRO problems are defined in subdirectories under
+{\tt MAESTRO/}.  To add a problem, start by creating a new
+sub-directory---this is where you will compile your problem and
+store all the problem-specific files.
+
 The minimum requirement to
 define a new problem would be a {\tt GNUmakefile} which describes how
 to build the application and an input file which lists the runtime
 parameters.  The problem-specific executable is built in the problem
 directory by typing {\tt make}.  Source files are found automatically
 by searching the directories listed in the {\tt GNUmakefile}.
+Customised versions of any source files placed in the problem-directory
+override those with the same name found elsewhere.  Any unique
+source files (and not simply a custom version of a file found
+elsewhere) needs to be listed in a file call {\tt GPackage.mak}
+in the problem-directory.
 
 \subsection{The {\tt GNUmakefile}}
 
@@ -384,8 +481,9 @@ variable {\tt PROBIN\_PARAMETERS} should list all of the files that
 contain runtime parameters for the current problem.  You must always
 include the main {\tt ../\_parameters} file (i.e.\ {\tt
   MAESTRO/\_parameters}).  Sometimes a problem defines their own
-runtime parameters, in which case, its parameter file should also
-appear in {\tt PROBIN\_PARAMETERS}.
+runtime parameters (see \S~\ref{sec:def_runtime_param}), in which
+case, its parameter file should also appear in {\tt
+  PROBIN\_PARAMETERS}.
 \begin{verbatim}
   PROBIN_PARAMETERS := ../_parameters
 \end{verbatim}
@@ -406,6 +504,8 @@ listed in a file {\tt GPackage.mak} in the problem directory.
 
 
 \subsection{Defining Runtime Parameters}
+
+\label{sec:def_runtime_param}
 
 The runtime parameters for the core MAESTRO algorithm are listed
 in {\tt MAESTRO/\_parameters}.  That file is parsed at compile-time
@@ -431,10 +531,16 @@ form: {\tt --parameter value}).  The {\tt probin\_module} makes the
 values of the runtime parameters available to the various functions
 in the code (see \S~\ref{sec:probin}).
 
+Problem-specify runtime parameters should be defined in the
+problem-directory in a file called {\tt
+  \_parameters}\{{\em.problem-name}\}.  This file should be added
+to the {\tt PROBIN\_PARAMETERS} variable in the {\tt GNUmakefile}.
 
 
 
 \subsection{Preparing the Initial Model}
+
+\label{sec:initial_models}
 
 MAESTRO models subsonic flows that are in hydrostatic equilibrium.
 The solution in MAESTRO is broken up into a 1-d base state and the 2-
@@ -449,15 +555,19 @@ any initial model needs to already be in hydrostatic equilibrium.
 The routines in {\tt MAESTRO/initial\_model/} take a 1-d initial
 model and map it onto a uniform grid, at the desired resolution, using
 the equation of state in MAESTRO, and using MAESTRO's discretization of
-hydrostatic equilibrium.
+hydrostatic equilibrium:
+\begin{equation}
+\frac{p_{i+1} - p_i}{\Delta r} = \frac{1}{2} (\rho_i + \rho_{i+1})
+g_{i+1/2}
+\end{equation}
 
 
 
 
 \section{BoxLib Data Structures}
 
-MAESTRO's gridding is handled by the boxlib library.  The underlying
-idea in boxlib is to allow for adaptive mesh refinement (AMR)---different
+MAESTRO's gridding is handled by the BoxLib library.  The underlying
+idea in BoxLib is to allow for adaptive mesh refinement (AMR)---different
 regions of the domain can have different spatial resolutions.  The
 domain is broken into boxes.  At the coarsest (base) level of
 refinement, the entire computational domain is covered, either by one
@@ -469,7 +579,7 @@ a fashion designed to put roughly equal amounts of work on each
 processor (load balancing).
 
 On a grid, the data can be stored at cell-centers, on a face/edge, or
-on the corners.  In boxlib, data that is on an edge is termed `nodal'
+on the corners.  In BoxLib, data that is on an edge is termed `nodal'
 in that direction (see Figure~\ref{fig:dataloc}).  Data that is on the
 corners is nodal in all spatial directions.  In MAESTRO, the state
 data (density, enthalpy, velocity, $\ldots$) is generally
@@ -490,7 +600,7 @@ the final velocity projection).
 
 
 
-To simplify the description of the underlying AMR grid, boxlib
+To simplify the description of the underlying AMR grid, BoxLib
 provides a number of Fortran types.  We briefly summarize the major
 data types below.
 
@@ -521,7 +631,7 @@ do not hold the state data themselves.  The datatype for a
 \includegraphics[width=4.0in]{\archfigpath/index_grid2}
 \caption{\label{fig:boxes} Three boxes that comprise a single level.
 At this resolution, the domain is 20$\times$18 zones.  Note that the
-indexing in boxlib starts with $0$.}
+indexing in BoxLib starts with $0$.}
 \end{figure}
 
 
@@ -546,7 +656,7 @@ For a \boxtype\ declared as:
      the box lower bounds
 
 \item {\tt hi = upb(mybox)} returns an array, {\tt hi(dm)}, with
-     the box lower bounds
+     the box upper bounds
 
 \end{itemize}
 
@@ -631,7 +741,8 @@ refinement.
 The state of the star in MAESTRO is described by both a
 multidimensional state and the 1D base state.  The full
 multidimensional state is stored in \multifab s while the base state
-is simply stored in Fortran arrays.
+is simply stored in Fortran arrays.  Here we describe the
+major MAESTRO data-structures.
 
 \subsection{`{\tt s}' \multifab s (fluid state)}
 
@@ -730,17 +841,14 @@ Presently there are 2 equations of state that work with MAESTRO:
       \end{equation}
      where $k_B$ is Boltzmann's constant and $m_p$ is the mass of the
      proton.
-     The mean molecular weight, $\mu$, is computed either assuming 
+     The mean molecular weight, $\mu$, is computed assuming 
      electrically neutral atoms:
      \begin{equation}
      \mu = \left ( \sum_k \frac{X_k}{A_k} \right )^{-1}
      \end{equation}
-     or complete ionization:
-     \begin{equation}
-     \mu = \left ( \sum_k \frac{X_k (Z_k + 1)}{A_k} \right )^{-1}
-     \end{equation}
-     The default is neutral, and presently one must change a parameter
-     in the source code to switch between these limits.
+     An option in the source code itself exists for treating the
+     species as fully-ionized, but there is no runtime-parameter to
+     make this switch.
 \end{itemize}
 
 eos module variables
@@ -775,6 +883,12 @@ found.
 \label{sec:probin}
 
 {\tt probin\_module} provides access to the runtime parameters.
+The runtime parameters appear simply as module variables.  To get the 
+value of a parameter, one simply needs to `{\tt use probin\_module}'.
+The preferred method is to add the `{\tt only}' clause to the
+{\tt use} statement and explicitly list only those parameters that
+are used in the routine.  Defining new runtime parameters is
+described in \S~\ref{sec:def_runtime_param}.
 
 \subsection{{\tt variables}}
 
@@ -782,9 +896,9 @@ found.
 
 The {\tt variables} module provides integer keys to index the state
 multifabs and other arrays dealing with the scalar quantities.  The
-most commonly used keys are are listed in table~\ref{tab:variable_keys}.
-\begin{table}[h!]
-\centering
+most commonly used keys are are:
+
+\begin{center}
 \begin{tabular}{ll}
 \hline
 {\tt rho\_comp}  & density \\
@@ -793,9 +907,7 @@ most commonly used keys are are listed in table~\ref{tab:variable_keys}.
 {\tt temp\_comp} & temperature \\
 \hline
 \end{tabular}
-
-\caption{\label{tab:variable_keys} {\tt variables} module common keys}
-\end{table}
+\end{center}
 
 The species indices are contiguous in the state array, spanning {\tt spec\_comp:spec\_comp-1+nspec}.
 To find a particular species, a query can be made through the {\tt
@@ -838,7 +950,7 @@ array looks like:
 \end{verbatim}
 
 \noindent Here, the {\tt bl\_types} and {\tt multifab\_module} modules
-bring in the basic boxlib data types. Specifically, here, {\tt
+bring in the basic BoxLib data types. Specifically, here, {\tt
 bl\_types} defines {\tt dp\_t} which is the {\tt kind} used for
 declaring double precision data, and {\tt multifab\_module} defines
 the \multifab\ data type.  The {\tt geometry} module is a MAESTRO
