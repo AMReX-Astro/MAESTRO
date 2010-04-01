@@ -28,6 +28,7 @@ section_sources = introduction/introduction.tex \
                   radial_base/radial_base.tex \
                   spherical_basestate/basestate.tex \
                   FAQ/faq.tex \
+                  analysis/analysis.tex \
                   thermo_notes/thermo_notes.tex
 
 paper.dvi: paper.tex $(eps_source) $(section_sources) $(eps_source)
