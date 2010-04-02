@@ -15,6 +15,7 @@ pdf_source = $(eps_source:.eps=.pdf)
 
 section_sources = introduction/introduction.tex \
                   flowchart/flowchart.tex \
+                  preface/preface.tex \
                   architecture/architecture.tex \
                   runtime_parameters/runtime_parameters.tex \
                   volume_discrepancy/volume_discrepancy.tex \
