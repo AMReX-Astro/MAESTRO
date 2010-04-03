@@ -34,3 +34,8 @@
  
    the '3' is ng_s.  For ppm_type = 2, should this be 4?
 
+-- add the ability in _parameters to check to make sure that runtime
+   parameters are valid (e.g. cflfac should be <= 1).
+
+
+   
