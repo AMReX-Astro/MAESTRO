@@ -2,8 +2,8 @@
 
 \tolerance=600
 
-\usepackage{amsmath,color,longtable,epsfig,epsf}
-
+\usepackage{color,longtable,epsfig,epsf,amsmath}
+%\usepackage{hyperref}
 %\usepackage[T1]{fontenc}
 
 
@@ -69,6 +69,7 @@
 \def\model {\rm model}
 \def\raw   {\rm raw}
 
+\newcommand{\pred}{{\rm pred}}
 \newcommand{\Sbar}{\overline{S}}
 
 \newcommand{\inp}{\mathrm{in}}
@@ -77,7 +78,10 @@
 
 \newcommand{\uadv}{\widetilde{\mathbf{U}}^{\mathrm{ADV}}}
 \newcommand{\uadvone}{\widetilde{\mathbf{U}}^{\mathrm{ADV},\star}}
+\newcommand{\uadvonedag}{\Ubt^{\mathrm{ADV},\dagger,\star}}
 \newcommand{\uadvtwo}{\widetilde{\mathbf{U}}^{\mathrm{ADV}}}
+\newcommand{\uadvtwodag}{\Ubt^{\mathrm{ADV},\dagger}}
+
 \newcommand{\dt}{\Delta t}
 \newcommand{\dr}{\Delta r}
 
@@ -122,10 +126,12 @@
 \begin{document}
 
 \maketitle
+
 \tableofcontents
 
 \addcontentsline{toc}{part}{list of figures}
 \listoffigures
+
 
 \cleardoublepage
 
