@@ -50,8 +50,6 @@
  bcy_lo = 14
  bcy_hi = 12
 
- pmask_x = T
- pmask_y = F
 
     verbose = 1
  mg_verbose = 0

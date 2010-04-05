@@ -24,8 +24,6 @@
  bcy_lo = -1
  bcy_hi = -1
 
- pmask_x = T
- pmask_y = T
 
  use_eos_coulomb = F
 /

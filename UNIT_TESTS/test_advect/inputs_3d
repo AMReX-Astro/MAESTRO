@@ -27,9 +27,6 @@
  bcz_lo = -1
  bcz_hi = -1
 
- pmask_x = T
- pmask_y = T
- pmask_z = T
 
  use_eos_coulomb = F
 /

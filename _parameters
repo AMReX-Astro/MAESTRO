@@ -85,15 +85,6 @@ bcz_lo                              integer            SLIP_WALL
 # $+z$ boundary condition
 bcz_hi                              integer            SLIP_WALL           
 
-# indicates whether the problem domain periodic in the x-direction
-pmask_x                             logical            .false.
-
-# indicates whether the problem domain periodic in the y-direction
-pmask_y                             logical            .false.             
-
-# indicates whether the problem domain periodic in the z-direction
-pmask_z                             logical            .false.             
-
 # General verbosity
 verbose                             integer            0                   
 

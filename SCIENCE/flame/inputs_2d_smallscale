@@ -60,8 +60,6 @@
  bcy_lo = 11
  bcy_hi = 12
 
- pmask_x = T
- pmask_y = F
 
 
  ! verbosity

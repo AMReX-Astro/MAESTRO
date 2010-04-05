@@ -15,11 +15,7 @@ module probin_module
 
   @@declarations@@
 
-
-  logical, save :: pmask_xyz(MAX_SPACEDIM)
-
   real(dp_t), save         :: burning_cutoff_density  ! note: presently not runtime parameter
-
 
   ! These will be allocated and defined below
   logical,    allocatable, save :: edge_nodal_flag(:,:)
@@ -155,8 +151,6 @@ contains
       print*, "PROBINIT total time = ", pitotalall_max
     endif
 
-    pmask_xyz = (/pmask_x, pmask_y, pmask_z/)
-    
     do while ( farg <= narg )
        call get_command_argument(farg, value = fname)
        select case (fname)
@@ -178,8 +172,6 @@ contains
 
        farg = farg + 1
     end do
-
-    pmask_xyz = (/pmask_x, pmask_y, pmask_z/)
 
     if (max_grid_size_base .eq. -1) then
        max_grid_size_base = max_grid_size
@@ -216,7 +208,13 @@ contains
     ! initialize pmask
     allocate(pmask(dm_in))
     pmask = .FALSE.
-    pmask = pmask_xyz(1:dm_in)
+    if (bcx_lo .eq. -1 .and. bcx_hi .eq. -1) pmask(1) = .true.
+    if (dm_in > 1) then
+       if (bcy_lo .eq. -1 .and. bcy_hi .eq. -1) pmask(2) = .true.
+    end if
+    if (dm_in > 2) then
+       if (bcz_lo .eq. -1 .and. bcz_hi .eq. -1) pmask(3) = .true.
+    end if
 
     ! initialize prob_lo and prob_hi
     allocate(prob_lo(dm_in))
