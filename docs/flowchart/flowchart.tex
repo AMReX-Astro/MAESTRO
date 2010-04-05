@@ -123,10 +123,17 @@ Call {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n, p_0^n]$\\
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \Alph{enumi}}}
 
-\item Compute $S^{\nph,\star\star}$.  We compute an estimate for the 
-  time-centered expansion term in the velocity 
-  divergence constraint (eq. [\ref{eq:utilde divergence}]).  For the  
-  first time step ($n=0$), we set
+\item Compute $S^{\nph,\star\star}$.  We compute an estimate for the
+  time-centered expansion term in the velocity divergence constraint,
+  as given in paper~III equation (19),
+\begin{equation}
+  S =  -\sigma  \sum_k  \xi_k \omegadot_k  + 
+  \frac{1}{\rho p_\rho} \sum_k p_{X_k}  {\omegadot}_k  + \sigma \Hnuc + \sigma \Hext 
+  + \frac{\sigma}{\rho}\nabla\cdot\kth\nabla T \enskip .
+\label{eq:defineS} 
+\end{equation}
+
+  For the first time step ($n=0$), we set
 \begin{equation}
 S^{n+\myhalf,\star\star} = \frac{S^0 + S^1}{2},
 \end{equation}
@@ -150,8 +157,8 @@ S^{\nph,\star\star} = S^n + \frac{\dt^n}{2} \frac{S^n - S^{n-1}}{\dt^{n-1}}.
 {\bf Compute} {\boldmath $w_0$} {\bf Spherical}$[\overline{S^{\nph,\star\star}},\overline{\Gamma_1^n},\rho_0^n,p_0^n,\etarho^{n-\myhalf}] \rightarrow [w_0^{\nph,\star}]$.
 \end{description}
 
-\item Compute the provisional base state velocity forcing.
-  Rearrange equation (\ref{eq:w0 evolution}),
+\item Compute the provisional base state velocity forcing, using equation (38)
+  from paper~III,
 \begin{equation}
 -\frac{1}{\rho_0} \frac{\partial \pi_0}{\partial r} = \frac{\partial w_0}{\partial t} + w_0 \frac{\partial w_0}{\partial r}, \label{eq:pizero}
 \end{equation}
@@ -173,7 +180,16 @@ w_0^{n,\star} &=& \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\
 \item[Step 3.] {\em Construct the provisional time-centered advective velocity on 
 edges, $\uadvone$.}
 
-Using equation (\ref{eq:utildeupd}), we compute time-centered edge 
+The local velocity field is described by paper III equation (37),
+\begin{equation}
+\frac{\partial\Ubt}{\partial t} = 
+- \left(\Ubt+w_0\right) \cdot \nabla \Ubt
+- \left(\Ubt \cdot \eb_r\right) \frac{\partial w_0}{\partial r} \eb_r
+- \frac{1}{\rho} \nabla\pi
++ \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \eb_r
+- \frac{(\rho-\rhozero)}{\rho} \; g \; \eb_r  \label{eq:utildeupd}  \enskip .
+\end{equation}
+From this, we compute time-centered edge 
 velocities, $\uadvonedag$, using 
 $\Ub = \Ubt^n + w_0^{\nph,\star}$.  The $\dagger$ superscript refers to the 
 fact that the predicted velocity field does not satisfy the divergence 
@@ -199,16 +215,28 @@ where $\beta_0$ is computed as described in Appendix C of Paper III.
 
 {\bf Advect Base Density}$[\rho_0^{n},w_0^{\nph,\star}] \rightarrow [\rho_0^{(2a),\star}, \rho_0^{\nph,\star,\pred}]$.
 
-\item Update $(\rho X_k)$ using a discretized version of equation 
-(\ref{eq:species}) omitting the reaction terms, which were already 
+\item Update $(\rho X_k)$ using a discretized version of the species 
+continuity equation,
+\begin{equation}
+\frac{\partial (\rho X_k)}{\partial t} + \nabla \cdot (\Ub \rho X_k) = 0 \enskip .
+\label{eq:species}
+\end{equation}
+where we omit the reaction terms, which were already 
 accounted for in {\bf React State}.  The update consists of two steps:
 
 \begin{enumerate}
 \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
 \item Compute the time-centered species edge states, $(\rho X_k)^{\nph,\star,\pred}$,
-  for the conservative update of $(\rho X_k)^{(1)}$.  We use equations 
-  (\ref{eq:Perturbational Density}) and (\ref{eq:Primitive Species}) to 
+  for the conservative update of $(\rho X_k)^{(1)}$.  We use the equations 
+\begin{eqnarray}
+\frac{\partial\rho'}{\partial t} &=& -\Ub\cdot\nabla\rho' - 
+     \rho'\nabla\cdot\Ub - \nabla\cdot\left(\rho_0\Ubt\right),
+     \label{eq:Perturbational Density}  \\
+\frac{\partial X_k}{\partial t} &=& -\Ub\cdot\nabla X_k + 
+     \omegadot_k. \label{eq:Primitive Species}
+\end{eqnarray}
+  to
   predict $\rho^{'(1)} = \rho^{(1)} - \rho_0^n$ and 
   $X_k^{(1)} = (\rho  X_k)^{(1)} / \rho^{(1)}$ to time-centered edges using 
   $\Ub = \uadvone+w_0^{\nph,\star}\eb_r$, yielding $\rho^{'\nph,\star,\pred}$ 
@@ -287,8 +315,8 @@ Then, define $\psi^{\nph,\star}$ using equation (\ref{eq:psi def})
 Then, call\\
 {\bf Advect Base Enthalpy}$[(\rho h)_0^{n}, w_0^{\nph,\star}, \psi^{\nph,\star}] \rightarrow [(\rho h)_0^{n+1,\star}]$.
 
-\item Update the enthalpy using a discretized version of equation
-(\ref{eq:enthalpy}), again omitting the reaction and heating terms
+\item Update the enthalpy using a discretized version of the enthalpy
+evolution equation, again omitting the reaction and heating terms
 since we already accounted for
 them in {\bf React State}.  This equation takes the form:
 \begin{equation}
@@ -299,14 +327,21 @@ analytically equivalent form,
 \begin{equation}
 \frac{\partial (\rho h)}{\partial t}  = - \nabla \cdot (\Ub \rho h) + \psi + \nabla \cdot (\Ubt p_0) - p_0 \nabla \cdot \Ubt,
 \end{equation}
-which experience has shown to minimize the drift from thermodynamic equilibrium.  The update consists of two steps:
+which experience has shown to minimize the drift from thermodynamic
+equilibrium.  The update consists of two steps:
 
 \begin{enumerate}
 \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
 \item Compute the time-centered enthalpy edge state, $(\rho h)^{\nph,\star,\pred},$
-  for the conservative update of $(\rho h)^{(1)}$.  We use equation 
-  (\ref{eq:Perturbational Enthalpy}) to predict
+  for the conservative update of $(\rho h)^{(1)}$.  The perturbational
+  enthalpy equation, neglecting reactions,
+\begin{equation}
+\frac{\partial(\rho h)'}{\partial t} = -\Ub\cdot\nabla(\rho h)' - 
+   (\rho h)'\nabla\cdot\Ub - \nabla\cdot\left[(\rho h)_0\Ubt\right] + \Ubt\cdot\nabla p_0 
+    \label{eq:Perturbational Enthalpy}.
+\end{equation}
+  is used to predict
   $(\rho h)' = (\rho h)^{(1)} - (\rho h)_0^n$ to time-centered edges, 
   using $\Ub = \uadvone+w_0^{\nph,\star} \eb_r$,
   yielding $(\rho h)^{'\nph,\star,\pred}$.  We convert the perturbational 
