@@ -1,8 +1,55 @@
+\section{History of MAESTRO}
+
+MAESTRO describes the evolution of low Mach number flows that are in
+hydrostatic equilibrium.  The idea for MAESTRO grew out of our
+small-scale astrophysical combustion algorithm detailed in
+\begin{itemize}
+\item {\em Adaptive Low Mach Number Simulations of Nuclear Flames,}
+J. B. Bell, M. S. Day, C. A. Rendleman, S. E. Woosley, \& M. Zingale
+2004, JCP, 195, 2, 677 (henceforth BDRWZ)
+\end{itemize}
+
+\noindent MAESTRO was developed initially for modeling the convecting
+phase in a white dwarf preceding the ignition of a Type Ia supernovae.
+The low Mach number equations were developed in a series of papers
+leading up to the first application to this problem:
+\begin{itemize}
+\item {\em Low Mach Number Modeling of Type Ia
+  Supernovae. I. Hydrodynamics,} A. S. Almgren, J. B. Bell, 
+  C. A. Rendleman, \& M. Zingale 2006, ApJ, 637, 922 (henceforth
+  paper I)
+\item {\em Low Mach Number Modeling of Type Ia Supernovae. II. Energy
+  Evolution,} A. S. Almgren, J. B. Bell, C. A. Rendleman, \& M. Zingale
+  2006, ApJ, 649, 927 (henceforth paper II)
+\item {\em Low Mach Number Modeling of Type Ia Supernovae. III. Reactions,}
+  A. S. Almgren, J. B. Bell, A. Nonaka, \& M. Zingale
+  2008, ApJ, 684, 449 (henceforth paper III)
+\item {\em Low Mach Number Modeling of Type Ia Supernovae. IV. White Dwarf Convection,}
+  M. Zingale, A. S. Almgren, J. B. Bell, A. Nonaka, \& S. E. Woosley
+  2009, ApJ, 704, 196 (henceforth paper IV)
+\end{itemize}
+
+\noindent The current version of the algorithm is described in our multilevel paper:
+\begin{itemize}
+\item {\em MAESTRO: An Adaptive Low Mach Number Hydrodynamics Algorithm for Stellar
+  Flows,} A. Nonaka, A. S. Almgren, J. B. Bell, M. J. Lijewski, C. M. Malone,
+  \& M. Zingale 2009, submitted to SIAM J. Sci. Comput. 
+  (henceforth ``the multilevel paper'')
+\end{itemize}
+
+
+
 %-----------------------------------------------------------------------------
 % Notation
 %-----------------------------------------------------------------------------
 
 \section{Notation}
+
+Throughout the papers describing MAESTRO, we've largely kept our
+notation consistent.  Table~\ref{table:sym} defines the
+frequently-used quantities and provides their units.
+
+
 
 %%%%%%%%%%%%%%%%
 % symbol table

@@ -13,7 +13,8 @@ eps_source = $(wildcard *.eps) \
 
 pdf_source = $(eps_source:.eps=.pdf)
 
-section_sources = introduction/introduction.tex \
+section_sources = maestro_doc.bib \
+                  introduction/introduction.tex \
                   flowchart/flowchart.tex \
                   preface/preface.tex \
                   architecture/architecture.tex \
@@ -32,7 +33,7 @@ section_sources = introduction/introduction.tex \
                   analysis/analysis.tex \
                   thermo_notes/thermo_notes.tex
 
-paper.dvi: paper.tex $(eps_source) $(section_sources) $(eps_source)
+paper.dvi: paper.tex $(eps_source) $(section_sources) $(eps_source) 
 	latex paper.tex < /dev/null
 	bibtex paper
 	latex paper.tex < /dev/null
