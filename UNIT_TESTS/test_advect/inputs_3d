@@ -7,6 +7,8 @@
 
  base_cutoff_density = 1.d-10
 
+ advect_test_tol = 2.d-14
+
  dump_output = .false.
 
  spherical_in = 0
