@@ -1,4 +1,6 @@
 
+\section{Runtime Parameters}
+
 %%%%%%%%%%%%%%%%
 % symbol table
 %%%%%%%%%%%%%%%%
@@ -46,7 +48,9 @@
 \verb=  cg_verbose  = &   Verbosity of bottom solver  &  0 \\
 \verb=  check_base_name  = &   prefix to use in checkpoint file names  &  "chk" \\
 \verb=  chk_int  = &   Number of timesteps between writing a checkpoint file  &  0 \\
+\verb=  cluster_min_width  = &   The minimum size on a side for a grid created using make\_new\_grids.  &  16 \\
 \verb=  co_latitude  = &   latitude, in radians, for problems with rotation where the domain is only a subset of a full star.  &  ZERO \\
+\verb=  diag_buf_size  = &   number of timesteps to buffer diagnostic output information before writing (note: not implemented for all problems)  &  10 \\
 \verb=  dm_in  = &   dimensionality (valid values are 2 or 3)  &  2 \\
 \verb=  do_alltoallv  = &    &  .false. \\
 \verb=  do_burning  = &   turn on (.true.) or off (.false.) burning  &  .true. \\
@@ -76,7 +80,6 @@
 \verb=  mg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
 \verb=  mg_verbose  = &   Verbsoity of the multigrid solver, but not the bottom solver.  &  0 \\
 \verb=  min_eff  = &   parameter for cluster algorithm for making new grids in adaptive problems  &  0.7d0 \\
-\verb=  min_width  = &   The minimum size on a side for a grid created using make\_new\_grids.  &  16 \\
 \verb=  model_file  = &   input model file  &  "model.hse" \\
 \verb=  nOutFiles  = &   If lUsingNFiles = .true., use this many processors to write checkpoint and plotfiles.  Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  64 \\
 \verb=  n_cellx  = &   Number of cells for the base level in the x-direction  &  -1 \\
@@ -89,9 +92,6 @@
 \verb=  plot_int  = &   plot interval  &  0 \\
 \verb=  plot_spec  = &   plot species and omegadot in plotfile  &  .true. \\
 \verb=  plot_trac  = &   plot tracers in plotfile  &  .false. \\
-\verb=  pmask_x  = &   indicates whether the problem domain periodic in the x-direction  &  .false. \\
-\verb=  pmask_y  = &   indicates whether the problem domain periodic in the y-direction  &  .false. \\
-\verb=  pmask_z  = &   indicates whether the problem domain periodic in the z-direction  &  .false. \\
 \verb=  ppm_type  = &   0 = no ppm \newline 1 = 1985 ppm \newline 2 = 2009 ppm  &  1 \\
 \verb=  prob_hi_x  = &   physical coordinates of hi-x corner of problem domain  &  1.d0 \\
 \verb=  prob_hi_y  = &   physical coordinates of hi-y corner of problem domain  &  1.d0 \\
@@ -102,6 +102,7 @@
 \verb=  ref_ratio  = &   Refinement ratio for multilevel problems  &  2 \\
 \verb=  regrid_int  = &   How often we regrid.  &  -1 \\
 \verb=  restart  = &   which file to restart from.  -1 means do not restart  &  -1 \\
+\verb=  restart_into_finer  = &   restart and add a level of refinement  &  .false. \\
 \verb=  rotation_radius  = &   radius used for computing centrifugal term in rotation problems  &  1.0d6 \\
 \verb=  rotational_frequency  = &   rotational frequency used for computing centrifugal term in rotation problems.  &  ZERO \\
 \verb=  s0_interp_type  = &   The interpolation for filling a cell-centered multifab from a 1D bin-centered array. \newline 1 = piecewise constant; \newline 2 = piecewise linear; \newline 3 = quadratic  &  3 \\
