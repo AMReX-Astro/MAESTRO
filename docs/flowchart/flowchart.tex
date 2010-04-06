@@ -14,8 +14,10 @@ grid for spherical problems (which we improve upon in the multilevel paper).
 \item We have created a {\tt burning\_cutoff\_density}, where the burning does
 not happen below this density.  It is presently set to {\tt base\_cutoff\_density}.
 \item Use corner coupling in advection.
-\item We use {\tt use\_tfromp} to update temperature using $T=T(\rho,X_k,p_0)$ rather 
-than $T=T(\rho,h,X_k)$.
+\item We have an option, controlled by {\tt use\_tfromp}, to update temperature 
+using $T=T(\rho,X_k,p_0)$ rather than $T=T(\rho,h,X_k)$.  The former completely 
+decouples enthalpy from our system.  For spherical problems, we use 
+{\tt use\_tfromp = TRUE}, for planar problems, we use {\tt use\_tfromp = FALSE}.
 \item For spherical problems, we have changed the discretization of 
 $\Ubt\cdot\nabla p_0$ in the enthalpy update to 
 $\nabla\cdot(\Ubt p_0) - p_0\nabla\cdot\Ubt$.
@@ -39,6 +41,8 @@ See the multilevel paper for the latest.
 {\tt temp\_diffusion\_formulation}, and {\tt thermal\_diffusion\_type}.
 \item We added the volume discrepancy term to the velocity constraint equation,
 controlled by the input parameter, {\tt dpdt\_factor}.
+\item For certain problems, we need to set {\tt do\_eos\_h\_above\_cutoff = FALSE}
+to prevent large, unphysical velocities from appearing near the edge of the star.
 \end{enumerate}
 
 %-----------------------------------------------------------------------------
@@ -48,11 +52,14 @@ controlled by the input parameter, {\tt dpdt\_factor}.
 \section{Future Considerations}
 
 \begin{itemize}
-
 \item Should we use a predictor-corrector for updating the full-state density?
 Specifically, after calling {\bf Correct Base}, should we do a full-state density 
 advance and {\bf Correct Base} using the more accurate estimate of $\rho_0^{n+1}$?
-
+\item We are still exploring the effects of {\tt use\_tfromp = FALSE} for spherical
+problems.  We would eventually like to run in this mode, but $T=T(\rho,X_k,p_0)$ 
+and $T=T(\rho,h,X_k)$ drift away from each other more than we would like.  Our
+attempts at incorporating a {\tt dpdt\_factor} for spherical problems have not 
+been successful.
 \end{itemize}
 
 %-----------------------------------------------------------------------------
@@ -72,8 +79,8 @@ The initialization has also been included with more detail than was given in pap
 
 \item[Step 0.] {\em Initialization}
 
-This step remains unchanged from Paper III.
-The initialization step only occurs at the beginning of the simulation.  
+This step remains unchanged from Paper III.  See \S \ref{Sec:Initialization}
+for details.  The initialization step only occurs at the beginning of the simulation.  
 The initial values for $\Ub^0, \rho^0, (\rho h)^0, X_k^0, T^0, 
 \rho_0^0, p_0^0$, and $\overline{\Gamma_1^0}$ are specified from the problem-dependent 
 initial conditions.  The initial time step, $\dt^0$, is computed as in 
@@ -116,7 +123,7 @@ Call {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n, p_0^n]$\\
 S^{n+\myhalf,\star\star} = \frac{S^0 + S^1}{2},
 \end{equation}
   where $S^1$ is found during initialization.  For other time steps
-  $(n \ne 0)$, following \cite{Bell:2004}, we extrapolate
+  $(n \ne 0)$, following \cite{SNe}, we extrapolate
   to the half-time using $S$ at the previous and current
   time levels
 \begin{equation}
