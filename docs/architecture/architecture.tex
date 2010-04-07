@@ -1107,5 +1107,25 @@ etc. and norm, etc.
 
 
 \section{Multigrid}
+\subsection{\tt bottom\_solver\_type = 4}
+We have a special bottom solver type that greatly speeds up large problems.
+In fact, you should use this bottom solver whenever possible, because in 
+testing, it always speeds up the multigrid, even if the problem is relatively 
+small.  What this solver essentially does is take the grid structure and
+data from the coarsest level of multigrid, and copy it onto a new grid
+structure with fewer, larger grids, with the intent of further coarsening
+this ``new'' problem so the ``new'' bottom solver has fewer data points on
+a smaller number of grids.  If you want to enable this solver for the nodal 
+solver, set {\tt hg\_bottom\_solver = 4} in your inputs file.  If you want 
+to enable this solver for the cell-centered solver, set 
+{\tt mg\_bottom\_solver = 4} in your inputs file.
 
+To understand how this bottom solver work, the first thing you need to know
+is what the grid structure of the coarsest level of your multigrid V-cycle
+looks like.  Now, figure out what the size of a single box would be if you
+wanted it to fit all the data at the bottom level.  Now, figure out what
+the largest integer $n$ is so that you can evenly divide this single box
+by $2^n$ in every coordinate direction.  If $n < 2$, the program will abort
+since the grid structure is not suitable for this bottom solver.
 
+{\tt max\_mg\_bottom\_nlevs}
