@@ -1107,6 +1107,18 @@ etc. and norm, etc.
 
 
 \section{Multigrid}
+
+MAESTRO uses the multigrid solver to enforce the divergence constraint
+both on the half-time edge-centered advective velocities (the ``MAC
+projection'') and on the final cell-centered velocities (the ``HG
+projection'').  For the MAC projection, since the velocity data is
+edge-centered (the MAC grid), the projection is cell-centered.  For
+the HG projection, since the velocity data is cell-centered, the
+projection is node-centered.  \MarginPar{should draw a figure} The multigrid solver performs a number
+of V-cycles until the residual drops by 10-12 orders-of-magnitude.
+There are several options that affect how the multigrid solver
+behaves, which we describe below.
+
 \subsection{Special Bottom Solver}
 We have a special bottom solver type that greatly speeds up large problems
 and speeds up smaller problems to a lesser degree.
