@@ -564,8 +564,18 @@ g_{i+1/2}
 The {\tt toy\_atm} example provides a simple approximation for a thin
 (plane-parallel) convectively-unstable accreted layer on the surface
 of a star.  This can be used as the starting point for a more complex
-model.  Further details on the initial model routines can be 
-found in \S~\ref{sec:initial_models_main}.
+model.  
+
+MAESTRO initial models are read in by the {\tt init\_base\_state}
+routine.  This expects the initial model to contain a header giving
+the number of variables and their names, followed by rows of data
+giving the coordinate and data values at that coordinate.  The initial
+model should contain the same species data (as mass fractions) as
+defined in the {\tt network} module used by the MAESTRO problem.
+
+Full details on which initial model routine matches each problem and
+how the initial models are used to initialize the full state data can
+be found in \S~\ref{sec:initial_models_main}.
 
 
 

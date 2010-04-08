@@ -1,3 +1,7 @@
+Here we briefly describe the various routines for generating initial models
+for the main MAESTRO problems and how the initial model is used to initialize
+both the base state and the full Cartesian state.
+
 \section{Creating the Model Data from Raw Data}\label{Sec:Creating the Model Data from Raw Data}
 \label{sec:initial_models_main}
 
@@ -42,15 +46,15 @@ resolution.
 
 \section{Creating the Initial Data from the Model Data}
 In {\tt base\_state.f90}, using the subroutine {\tt
-  init\_base\_state.f90} (which is actually a terrible name since we
+  init\_base\_state} (which is actually a terrible name since we
 are setting the initial data, not the base state), we set the initial
 data $\rho^{\init}, T^{\init}, p^{\init}$ and $X^{\init}$ equal to the
 model data.  Then, we set $h^{\init} =
-h^{\init}(\rho^{\init},T^{\init},X^{\init})$.  Note that in the code,
+h(\rho^{\init},T^{\init},X^{\init})$ through the EOS.  Note that in the code,
 $p^{\init}$ is also overwritten, but the value of $p^{\init}$ does not
 change since we called $p^{\model} =
 p^{\model}(\rho^{\model},T^{\model},X^{\model})$ at the end of the
-fortran subroutine in \S~\ref{Sec:Creating the Model Data from Raw
+initial model generation routines in \S~\ref{Sec:Creating the Model Data from Raw
   Data}.
 
 \subsection{Multilevel Plane-Parallel}
@@ -83,10 +87,11 @@ these on the base state and full state later.
 
 Given $p^{\init}, \rho^{\init}, T^{\init},$ and $X^{\init}$, this
 section describes how the base state ($\rho_0$ and $p_0$) and full
-state ($\rho, h, X$, and $T$) are computed.  We require that $\rho_0 =
-\overline\rho$, the base state is in HSE according to equation
-(\ref{HSE Discretization}), and the full state is thermodynamically
-consistent with $p_0$.  Here are the steps:
+state ($\rho, h, X$, and $T$) are computed.  The base state is, general, not
+simply a direct copy of the initial model data, since we require that
+$\rho_0 = \overline\rho$.  Additionally, we require thebase state to
+be HSE according to equation (\ref{HSE Discretization}), and that the full
+state is thermodynamically consistent with $p_0$.  Overall we do:
 \begin{enumerate}
 \item Fill $\rho^{\init}, h^{\init}, X^{\init}$, and $T^{\init}$ onto a 
   multifab to obtain the full state $\rho, h, X$, and $T$.
