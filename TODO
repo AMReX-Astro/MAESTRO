@@ -37,5 +37,16 @@
 -- add the ability in _parameters to check to make sure that runtime
    parameters are valid (e.g. cflfac should be <= 1).
 
+-- add the ability to do an octant in the star.  Perhaps we need to
+   expand the geometry types to include:
+
+    o plane parallel
+    o spherical
+    o spherical_octant
+    o planar 1/r**2 gravity
+
+   the spherical octant will be useful for shell burning.  The planar
+   1/r**2 gravity will be useful for the novae.
+
 
    
