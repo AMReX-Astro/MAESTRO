@@ -140,6 +140,10 @@ dpdt_factor                         real               0.d0
 # set to 1 if you are doing a spherical problem
 spherical_in                        integer            0                   
 
+# set octant = T if you just want to model an octant of a sphere
+# (note: only takes effect for spherical geometry)
+octant                              logical            .false.
+
 # dimensionality (valid values are 2 or 3)
 dm_in                               integer            2                   
 

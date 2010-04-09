@@ -65,10 +65,20 @@ contains
 
   subroutine init_center()
 
-    use probin_module, only: prob_lo, prob_hi
+    use probin_module, only: prob_lo, prob_hi, octant
     use bl_constants_module
 
-    center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
+    if (.not. octant) then
+       center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
+    else
+       if (.not. (spherical == 1 .and. dm == 3 .and. &
+                  prob_lo(1) == ZERO .and. &
+                  prob_lo(2) == ZERO .and. &
+                  prob_lo(3) == ZERO)) then
+          call bl_error("ERROR: octant requires spherical with prob_lo = 0.0")
+       endif
+       center(1:dm) = ZERO
+    endif
 
   end subroutine init_center
 
