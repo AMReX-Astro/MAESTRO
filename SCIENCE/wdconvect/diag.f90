@@ -80,7 +80,7 @@ contains
                              prob_hi_x, prob_hi_y, prob_hi_z, &
                              edge_nodal_flag, &
                              base_cutoff_density, &
-                             diag_buf_size
+                             diag_buf_size, octant
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(multifab) , intent(in   ) :: s(:)
@@ -696,10 +696,12 @@ contains
        nuc_ener = nuc_ener*dx(1,1)*dx(1,2)*dx(1,3)
 
        
-       ! ncenter should be 8 -- there are only 8 zones that have a
-       ! vertex at the center of the star
-       if (ncenter /= 8) then
-          call bl_error("ERROR: ncenter /= 8 in diag")
+       ! for a full star ncenter should be 8 -- there are only 8 zones
+       ! that have a vertex at the center of the star.  For an octant,
+       ! ncenter should be 1
+       if ( .not. ((ncenter == 8 .and. .not. octant) .or. &
+                   (ncenter == 1 .and. octant)) ) then
+          call bl_error("ERROR: ncenter invalid in diag")
        else
           T_center = T_center/ncenter
           vel_center(:) = vel_center(:)/ncenter
