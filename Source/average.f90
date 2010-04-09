@@ -22,7 +22,6 @@ contains
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
-    use probin_module, only: prob_hi
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp
@@ -332,7 +331,6 @@ contains
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
-    use probin_module, only: prob_hi
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp
