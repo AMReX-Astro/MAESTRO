@@ -33,7 +33,7 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only : drdxfac, restart_into_finer
+    use probin_module, only : drdxfac, restart_into_finer, octant
     use average_module
     use make_grav_module
     use enforce_HSE_module
@@ -223,8 +223,11 @@ contains
        ! compute nr_irreg
        domain = layout_get_pd(sold(nlevs)%la)
        domhi  = upb(domain)+1
-       nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
-       
+       if (.not. octant) then
+          nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+       else
+          nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
+       endif
     else
        
        nr_fine = extent(mla%mba%pd(nlevs),dm)
@@ -379,7 +382,12 @@ contains
        ! compute nr_irreg
        domain = layout_get_pd(sold(nlevs)%la)
        domhi  = upb(domain)+1
-       nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+       if (.not. octant) then
+          nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+       else
+          nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
+       endif
+
 
        ! deallocate arrays in geometry.f90 including:
        ! dr,r_cc_loc,r_edge_loc,r_start_coord,r_end_coord,nr,numdisjointchunks,
@@ -535,7 +543,7 @@ contains
     use init_module
     use average_module
     use restrict_base_module
-    use probin_module, only : drdxfac
+    use probin_module, only : drdxfac, octant
     
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
@@ -642,8 +650,12 @@ contains
        ! compute nr_irreg
        domain = layout_get_pd(sold(nlevs)%la)
        domhi  = upb(domain)+1
-       nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
-       
+       if (.not.octant) then
+          nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+       else
+          nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
+       endif
+
     else
        
        nr_fine = extent(mla%mba%pd(nlevs),dm)
@@ -735,7 +747,7 @@ contains
                                             psi,tempbar,grav_cell)
 
     use probin_module, only: n_cellx, n_celly, n_cellz, regrid_int, max_grid_size, &
-         max_grid_size_base, ref_ratio, max_levs
+         max_grid_size_base, ref_ratio, max_levs, octant
     use init_module
     use average_module
     use restrict_base_module
@@ -991,7 +1003,11 @@ contains
     ! compute nr_irreg
     domain = layout_get_pd(sold(nlevs)%la)
     domhi  = upb(domain)+1
-    nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+    if (.not. octant) then
+       nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+    else
+       nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
+    endif
 
     ! create numdisjointchunks, r_start_coord, r_end_coord
     call init_multilevel(sold)
