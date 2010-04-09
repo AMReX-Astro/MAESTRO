@@ -11,6 +11,7 @@ subroutine varden()
   use ml_restriction_module
   use bc_module
   use define_bc_module
+  use bl_space, ONLY: MAX_SPACEDIM
   use bl_mem_stat_module
   use bl_timer_module
   use box_util_module
@@ -45,6 +46,9 @@ subroutine varden()
 
   integer, allocatable :: lo(:),hi(:)
 
+  type(box) :: domain
+  integer   :: domhi(MAX_SPACEDIM)
+
   type(layout)      :: la
   type(ml_boxarray) :: mba
 
@@ -76,6 +80,8 @@ subroutine varden()
   nlevs = mla%nlevel
   nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
+  print *, 'nlevs = ', nlevs
+
   ! initialize boundary conditions
   call initialize_bc(the_bc_tower,nlevs,pmask)
   do n = 1,nlevs
@@ -106,6 +112,11 @@ subroutine varden()
      
      max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
      nr_fine = int(max_dist / dr_fine) + 1
+
+     ! compute nr_irreg
+     domain = layout_get_pd(phi(nlevs)%la)
+     domhi  = upb(domain)+1
+     nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
      
   else
      
