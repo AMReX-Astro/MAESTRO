@@ -116,7 +116,11 @@ subroutine varden()
      ! compute nr_irreg
      domain = layout_get_pd(phi(nlevs)%la)
      domhi  = upb(domain)+1
-     nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+     if (.not. octant) then
+        nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+     else
+        nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
+     endif
      
   else
      
