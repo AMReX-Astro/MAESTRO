@@ -103,7 +103,6 @@ subroutine varden()
   ! now that we have dx we can initialize nr_fine and dr_fine
   if (spherical .eq. 1) then
      
-     ! for spherical, we will now require that dr_fine = dx
      dr_fine = dx(nlevs,1) / dble(drdxfac)
      
      lenx = HALF * (prob_hi(1) - prob_lo(1))
