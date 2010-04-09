@@ -212,9 +212,15 @@ contains
 
        dr_fine = dx(nlevs,1) / dble(drdxfac)
        
-       lenx = HALF * (prob_hi(1) - prob_lo(1))
-       leny = HALF * (prob_hi(2) - prob_lo(2))
-       lenz = HALF * (prob_hi(3) - prob_lo(3))
+       if (.not. octant) then
+          lenx = HALF * (prob_hi(1) - prob_lo(1))
+          leny = HALF * (prob_hi(2) - prob_lo(2))
+          lenz = HALF * (prob_hi(3) - prob_lo(3))
+       else
+          lenx = prob_hi(1) - prob_lo(1)
+          leny = prob_hi(2) - prob_lo(2)
+          lenz = prob_hi(3) - prob_lo(3)
+       end if
        
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
@@ -372,9 +378,17 @@ contains
 
        ! compute dr_fine and nr_fine assuming a finer dx
        dr_fine = dx(nlevs,1) / dble(drdxfac)
-       lenx = HALF * (prob_hi(1) - prob_lo(1))
-       leny = HALF * (prob_hi(2) - prob_lo(2))
-       lenz = HALF * (prob_hi(3) - prob_lo(3))
+
+       if (.not. octant) then
+          lenx = HALF * (prob_hi(1) - prob_lo(1))
+          leny = HALF * (prob_hi(2) - prob_lo(2))
+          lenz = HALF * (prob_hi(3) - prob_lo(3))
+       else
+          lenx = prob_hi(1) - prob_lo(1)
+          leny = prob_hi(2) - prob_lo(2)
+          lenz = prob_hi(3) - prob_lo(3)
+       end if
+
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
        
@@ -638,9 +652,15 @@ contains
 
        dr_fine = dx(nlevs,1) / dble(drdxfac)
        
-       lenx = HALF * (prob_hi(1) - prob_lo(1))
-       leny = HALF * (prob_hi(2) - prob_lo(2))
-       lenz = HALF * (prob_hi(3) - prob_lo(3))
+       if (.not. octant) then
+          lenx = HALF * (prob_hi(1) - prob_lo(1))
+          leny = HALF * (prob_hi(2) - prob_lo(2))
+          lenz = HALF * (prob_hi(3) - prob_lo(3))
+       else
+          lenx = prob_hi(1) - prob_lo(1)
+          leny = prob_hi(2) - prob_lo(2)
+          lenz = prob_hi(3) - prob_lo(3)
+       end if
        
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
@@ -838,9 +858,15 @@ contains
 
        dr_fine = dx(max_levs,1) / dble(drdxfac)
 
-       lenx = HALF * (prob_hi(1) - prob_lo(1))
-       leny = HALF * (prob_hi(2) - prob_lo(2))
-       lenz = HALF * (prob_hi(3) - prob_lo(3))
+       if (.not. octant) then
+          lenx = HALF * (prob_hi(1) - prob_lo(1))
+          leny = HALF * (prob_hi(2) - prob_lo(2))
+          lenz = HALF * (prob_hi(3) - prob_lo(3))
+       else
+          lenx = prob_hi(1) - prob_lo(1)
+          leny = prob_hi(2) - prob_lo(2)
+          lenz = prob_hi(3) - prob_lo(3)
+       end if
 
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
