@@ -19,15 +19,15 @@ include $(FPARALLEL)/mk/GMakedefs.mak
 #   unique files there (as specified in a GPackage.mak).  The problem 
 #   directory is always placed at the start of the vpath by the 
 #   GMakerules.mak.
-Fmdirs := MAESTRO/spherical_heat \
-          boxlib \
+Fmdirs := boxlib \
           mg \
           MAESTRO \
           extern/EOS/helmeos \
           extern/EOS/conducteos \
           extern/constants \
           extern/networks/null \
-          extern/VODE
+          extern/VODE \
+          extern/random
 
 # directories containing files that are 'include'-d via Fortran
 Fmincludes := extern/EOS/helmeos

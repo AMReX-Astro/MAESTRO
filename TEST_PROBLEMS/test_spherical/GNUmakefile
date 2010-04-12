@@ -19,8 +19,7 @@ include $(FPARALLEL)/mk/GMakedefs.mak
 #   unique files there (as specified in a GPackage.mak).  The problem 
 #   directory is always placed at the start of the vpath by the 
 #   GMakerules.mak.
-Fmdirs := MAESTRO/test_spherical \
-          boxlib \
+Fmdirs := boxlib \
           mg \
           MAESTRO \
           extern/EOS/helmeos \
