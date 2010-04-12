@@ -1,5 +1,5 @@
-NDEBUG := 
-MPI    := 
+NDEBUG := t
+MPI    := t
 OMP    :=
 
 COMP := Intel
@@ -19,15 +19,16 @@ include $(FPARALLEL)/mk/GMakedefs.mak
 #   unique files there (as specified in a GPackage.mak).  The problem 
 #   directory is always placed at the start of the vpath by the 
 #   GMakerules.mak.
-Fmdirs := MAESTRO/wdconvect \
-          boxlib \
+Fmdirs := boxlib \
           mg \
           MAESTRO \
           extern/EOS/helmeos \
           extern/EOS/conducteos \
           extern/constants \
           extern/networks/ignition_chamulak \
-          extern/VODE
+          extern/VODE \
+          extern/random
+
 
 # directories containing files that are 'include'-d via Fortran
 Fmincludes := extern/EOS/helmeos
