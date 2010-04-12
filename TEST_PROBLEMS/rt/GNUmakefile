@@ -9,10 +9,8 @@ MKVERBOSE := t
 # define the location of the fParallel root directory
 FPARALLEL := ../..
 
-
 # include the main Makefile stuff
 include $(FPARALLEL)/mk/GMakedefs.mak
-
 
 # define the packages to build this problem                        
 #   note: we only need to include the problem's directory if there are
@@ -26,11 +24,11 @@ Fmdirs := MAESTRO/rt \
           extern/EOS/gamma_law_general \
           extern/EOS/conducteos \
           extern/constants \
-          extern/networks/simple 
+          extern/networks/simple \
+          extern/random
 
 # define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters ./_parameters.rt
-
 
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
