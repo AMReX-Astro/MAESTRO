@@ -1,4 +1,4 @@
-NDEBUG := 
+NDEBUG := t
 MPI    :=
 OMP    :=
 
@@ -17,8 +17,7 @@ include $(FPARALLEL)/mk/GMakedefs.mak
 #   unique files there (as specified in a GPackage.mak).  The problem
 #   directory is always placed at the start of the vpath by the
 #   GMakerules.mak.           
-Fmdirs := MAESTRO/rt \
-          boxlib \
+Fmdirs := boxlib \
           mg \
           MAESTRO \
           extern/EOS/gamma_law_general \
