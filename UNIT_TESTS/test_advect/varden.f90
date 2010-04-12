@@ -579,6 +579,8 @@ subroutine varden()
      print *, "SUCCESS: advection errors for all directions agree with tolerance"
   else
      print *, "ERROR: advection errors across directions are too large"
+     print *, "absolute error: ", max_dabs_error/max_abs_error
+     print *, "relative error: ", max_drel_error/max_rel_error
   endif
 
   print *, " "
