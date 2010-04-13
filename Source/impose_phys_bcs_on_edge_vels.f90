@@ -73,7 +73,7 @@ contains
     integer        , intent(in   ) :: phys_bc(:,:)
     
     ! Local variables
-    integer :: is,ie,js,je
+    integer :: is,ie,js,je,bc
 
     is = lo(1)
     js = lo(2)
@@ -81,36 +81,44 @@ contains
     je = hi(2)
     
     ! impose lo j side bc's on uedge
-    if (phys_bc(2,1) .eq. INLET .or. phys_bc(2,1) .eq. SLIP_WALL .or. &
-        phys_bc(2,1) .eq. NO_SLIP_WALL) then 
+    select case(phys_bc(2,1))
+    case (INLET, SLIP_WALL, NO_SLIP_WALL)
        uedge(is:ie+1,js-1) = ZERO
-    else if (phys_bc(2,1) .eq. OUTLET) then
+    case (OUTLET, SYMMETRY)
        uedge(is:ie+1,js-1) = uedge(is:ie+1,js)
-    end if
+    case  default 
+       call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(2,1)")
+    end select
 
     ! impose hi j side bc's on uedge
-    if (phys_bc(2,2) .eq. INLET .or. phys_bc(2,2) .eq. SLIP_WALL .or. &
-        phys_bc(2,2) .eq. NO_SLIP_WALL) then 
+    select case(phys_bc(2,2))
+    case (INLET, SLIP_WALL, NO_SLIP_WALL)
        uedge(is:ie+1,je+1) = ZERO
-    else if (phys_bc(2,2) .eq. OUTLET) then
+    case (OUTLET, SYMMETRY)
        uedge(is:ie+1,je+1) = uedge(is:ie+1,je)
-    end if
+    case  default 
+       call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(2,2)")
+    end select
 
     ! impose lo i side bc's on vedge
-    if (phys_bc(1,1) .eq. INLET .or. phys_bc(1,1) .eq. SLIP_WALL .or. &
-        phys_bc(1,1) .eq. NO_SLIP_WALL) then 
+    select case(phys_bc(1,1))
+    case (INLET, SLIP_WALL, NO_SLIP_WALL)
        vedge(is-1,js:je+1) = ZERO
-    else if (phys_bc(1,1) .eq. OUTLET) then
+    case (OUTLET, SYMMETRY)
        vedge(is-1,js:je+1) = vedge(is,js:je+1)
-    end if
+    case  default 
+       call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(1,1)")
+    end select
 
     ! impose hi i side bc's on vedge
-    if (phys_bc(1,2) .eq. INLET .or. phys_bc(1,2) .eq. SLIP_WALL .or. &
-        phys_bc(1,2) .eq. NO_SLIP_WALL) then 
+    select case(phys_bc(1,2))
+    case (INLET, SLIP_WALL, NO_SLIP_WALL)
        vedge(ie+1,js:je+1) = ZERO
-    else if (phys_bc(1,2) .eq. OUTLET) then
+    case (OUTLET, SYMMETRY)
        vedge(ie+1,js:je+1) = vedge(ie,js:je+1)
-    end if
+    case  default
+       call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(1,2)")
+    end select
 
   end subroutine impose_phys_bcs_2d
 
@@ -133,65 +141,82 @@ contains
     ie = hi(1)
     je = hi(2)
     ke = hi(3)
-    
+
     ! impose lo k side bc's on uedge and vedge
-    if (phys_bc(3,1) .eq. INLET .or. phys_bc(3,1) .eq. SLIP_WALL .or. &
-        phys_bc(3,1) .eq. NO_SLIP_WALL) then 
+    select case(phys_bc(3,1))
+    case (INLET, SLIP_WALL, NO_SLIP_WALL)
        uedge(is  :ie+1,js-1:je+1,ks-1) = ZERO
        vedge(is-1:ie+1,js  :je+1,ks-1) = ZERO
-    else if (phys_bc(3,1) .eq. OUTLET) then
+    case (OUTLET, SYMMETRY)
        uedge(is  :ie+1,js-1:je+1,ks-1) = uedge(is  :ie+1,js-1:je+1,ks)
        vedge(is-1:ie+1,js  :je+1,ks-1) = vedge(is-1:ie+1,js  :je+1,ks)
-    end if
+    case  default 
+       call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(3,1)")
+    end select
 
     ! impose hi k side bc's on uedge and vedge
-    if (phys_bc(3,2) .eq. INLET .or. phys_bc(3,2) .eq. SLIP_WALL .or. &
-        phys_bc(3,2) .eq. NO_SLIP_WALL) then 
+    select case(phys_bc(3,2))
+    case (INLET, SLIP_WALL, NO_SLIP_WALL)
        uedge(is  :ie+1,js-1:je+1,ke+1) = ZERO
        vedge(is-1:ie+1,js  :je+1,ke+1) = ZERO
-    else if (phys_bc(3,2) .eq. OUTLET) then
+    case (OUTLET, SYMMETRY)
        uedge(is  :ie+1,js-1:je+1,ke+1) = uedge(is  :ie+1,js-1:je+1,ke)
        vedge(is-1:ie+1,js  :je+1,ke+1) = vedge(is-1:ie+1,js  :je+1,ke)
-    end if
-    
+    case  default
+       call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(3,2)")
+    end select
+
     ! impose lo j side bc's on uedge and wedge
-    if (phys_bc(2,1) .eq. INLET .or. phys_bc(2,1) .eq. SLIP_WALL .or. &
-        phys_bc(2,1) .eq. NO_SLIP_WALL) then 
+    select case(phys_bc(2,1))
+    case (INLET, SLIP_WALL, NO_SLIP_WALL)
        uedge(is  :ie+1,js-1,ks-1:ke+1) = ZERO
        wedge(is-1:ie+1,js-1,ks  :ke+1) = ZERO
-    else if (phys_bc(2,1) .eq. OUTLET) then
+    case (OUTLET, SYMMETRY)
        uedge(is  :ie+1,js-1,ks-1:ke+1) = uedge(is  :ie+1,js,ks-1:ke+1)
        wedge(is-1:ie+1,js-1,ks  :ke+1) = wedge(is-1:ie+1,js,ks  :ke+1)
-    end if
+    case  default
+       call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(2,1)")
+    end select
 
     ! impose hi j side bc's on uedge and wedge
-    if (phys_bc(2,2) .eq. INLET .or. phys_bc(2,2) .eq. SLIP_WALL .or. &
-        phys_bc(2,2) .eq. NO_SLIP_WALL) then 
+    select case(phys_bc(2,2))
+    case (INLET, SLIP_WALL, NO_SLIP_WALL)
        uedge(is  :ie+1,je+1,ks-1:ke+1) = ZERO
        wedge(is-1:ie+1,je+1,ks  :ke+1) = ZERO
-    else if (phys_bc(2,2) .eq. OUTLET) then
+    case (OUTLET, SYMMETRY)
        uedge(is  :ie+1,je+1,ks-1:ke+1) = uedge(is  :ie+1,je,ks-1:ke+1)
        wedge(is-1:ie+1,je+1,ks  :ke+1) = wedge(is-1:ie+1,je,ks  :ke+1)
-    end if
+    case  default
+       call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(2,2)")
+    end select
 
     ! impose lo i side bc's on vedge and wedge
-    if (phys_bc(1,1) .eq. INLET .or. phys_bc(1,1) .eq. SLIP_WALL .or. &
-        phys_bc(1,1) .eq. NO_SLIP_WALL) then 
+    select case(phys_bc(1,1))
+    case (INLET, SLIP_WALL, NO_SLIP_WALL)
        vedge(is-1,js  :je+1,ks-1:ke+1) = ZERO
        wedge(is-1,js-1:je+1,ks  :ke+1) = ZERO
-    else if (phys_bc(1,1) .eq. OUTLET) then
+    case (OUTLET, SYMMETRY)
        vedge(is-1,js  :je+1,ks-1:ke+1) = vedge(is,js  :je+1,ks-1:ke+1)
        wedge(is-1,js-1:je+1,ks  :ke+1) = wedge(is,js-1:je+1,ks  :ke+1)
-    end if
+    case  default
+       call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(1,1)")
+    end select
 
     ! impose hi i side bc's on vedge and wedge
-    if (phys_bc(1,2) .eq. INLET .or. phys_bc(1,2) .eq. SLIP_WALL .or. &
-        phys_bc(1,2) .eq. NO_SLIP_WALL) then 
+    select case(phys_bc(1,2))
+    case (INLET, SLIP_WALL, NO_SLIP_WALL)
        vedge(ie+1,js  :je+1,ks-1:ke+1) = ZERO
        wedge(ie+1,js-1:je+1,ks  :ke+1) = ZERO
-    else if (phys_bc(2,2) .eq. OUTLET) then
+    case (OUTLET, SYMMETRY)
        vedge(ie+1,js  :je+1,ks-1:ke+1) = vedge(ie,js  :je+1,ks-1:ke+1)
        wedge(ie+1,js-1:je+1,ks  :ke+1) = wedge(ie,js-1:je+1,ks  :ke+1)
+    case  default
+       call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(1,2)")
+    end select
+
+    if (phys_bc(1,2) .eq. INLET .or. phys_bc(1,2) .eq. SLIP_WALL .or. &
+        phys_bc(1,2) .eq. NO_SLIP_WALL) then 
+    else if (phys_bc(2,2) .eq. OUTLET) then
     end if
 
   end subroutine impose_phys_bcs_3d
