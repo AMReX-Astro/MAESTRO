@@ -1,8 +1,10 @@
 \section{History of MAESTRO}
 
 MAESTRO describes the evolution of low Mach number flows that are in
-hydrostatic equilibrium.  The idea for MAESTRO grew out of our
-small-scale astrophysical combustion algorithm detailed in
+hydrostatic equilibrium.  The idea for MAESTRO grew out of our success
+in applying low Mach number combustion methods to small-scale
+astrophysical flows.  Our original small-scale astrophysical
+combustion algorithm is detailed in
 \begin{itemize}
 \item {\em Adaptive Low Mach Number Simulations of Nuclear Flames,}
 J. B. Bell, M. S. Day, C. A. Rendleman, S. E. Woosley, \& M. Zingale
@@ -11,8 +13,17 @@ J. B. Bell, M. S. Day, C. A. Rendleman, S. E. Woosley, \& M. Zingale
 
 \noindent MAESTRO was developed initially for modeling the convecting
 phase in a white dwarf preceding the ignition of a Type Ia supernovae.
-The low Mach number equations were developed in a series of papers
-leading up to the first application to this problem:
+As such, we needed to incorporate the compressibility effects due to
+large-scale stratification in the star.  The method closest in spirit
+to MAESTRO is the pseudo-incompressible method of
+Durran~\cite{durran}, developed for terrestrial atmospheric flows
+(assuming an ideal gas).  Part of the complexity of the equations in
+MAESTRO stems from the need to descibe a general equation of state.
+Additionally, since reactions can significantly alter the hydrostatic
+structure of a star, we incorporated extensions that capture the
+expansion of the background state~\cite{almgren:2000}.  The low Mach
+number equations for stellar flows were developed in a series of
+papers leading up to the first application to this problem:
 \begin{itemize}
 \item {\em Low Mach Number Modeling of Type Ia
   Supernovae. I. Hydrodynamics,} A. S. Almgren, J. B. Bell, 
@@ -29,7 +40,8 @@ leading up to the first application to this problem:
   2009, ApJ, 704, 196 (henceforth paper IV)
 \end{itemize}
 
-\noindent The current version of the algorithm is described in our multilevel paper:
+\noindent The current version of the algorithm is described in our
+multilevel paper:
 \begin{itemize}
 \item {\em MAESTRO: An Adaptive Low Mach Number Hydrodynamics Algorithm for Stellar
   Flows,} A. Nonaka, A. S. Almgren, J. B. Bell, M. J. Lijewski, C. M. Malone,
@@ -37,7 +49,8 @@ leading up to the first application to this problem:
   (henceforth ``the multilevel paper'')
 \end{itemize}
 
-\noindent We have two papers in preparation:
+\noindent We have two papers in preparation that describe applications of the
+method:
 \begin{itemize}
 \item {\em The Convective Phase Preceding Type Ia Supernovae,}
   M. Zingale, A. S. Almgren, J. B. Bell, C. M. Malone, A. Nonaka, \& S. E. Woosley 2010,
@@ -46,6 +59,105 @@ leading up to the first application to this problem:
   C. M. Malone, A. Nonaka, A. S. Almgren, J. B. Bell, \& M. Zingale 2010,
   in preparation (henceforth ``the XRB paper'')
 \end{itemize}
+
+
+\section{Projection Methods 101}
+
+Most astrophysical codes hydrodynamics codes
+(e.g.\ CASTRO~\cite{castro} or FLASH~\cite{flash}) solve the
+compressible Euler equations, which can be written in the form:
+\begin{equation}
+U_t + \nabla \cdot F(U) = 0
+\end{equation}
+where U is the vector of conserved quantities, $U = (\rho, \rho u,
+\rho E)$, with $\rho$ the density, $u$ the velocity, and $E$ the total
+energy per unit mass.  This system of equations can be expressed 
+as a system of advection equations:
+\begin{equation}
+w_t + A(w) w_x = 0
+\end{equation}
+where $w$ are called the characteristic variables, and $A$ is the
+Jacobian, $A \equiv \partial F / \partial U$.  The eigenvalues of the
+matrix $A$ are the characteristic speeds---the speeds at which
+information propagates.  For the Euler equations, these are $u$ and $u
+\pm c$, where $c$ is the sound speed.  Solution methods for the
+compressible equations make use of this wave-nature to compute fluxes
+at the interfaces of grid cells to update the state in time.  An
+excellent introduction to these methods is provided by LeVeque's book
+\cite{leveque}.  The timestep for these methods is limited by the time
+it takes for maximum characteristic speed to traverse one grid cell.
+For very subsonic flows, this means that the timestep is dominated by
+the propagation of soundwaves, which may not be important to the
+overall dynamics of the flow.
+
+
+In contrast, low Mach number systems (including the equations of
+incompressible hydrodynamics) typically solve one or more
+advection-like equations (representing, e.g.\ conservation of mass and
+momentum) coupled with a divergence constraint on the velocity field.
+For example, the equations of constant-density incompressible flow
+are:
+\begin{eqnarray}
+U_t &=& -U \cdot \nabla U + \nabla p \label{eq:incompressible_u} \\
+\nabla \cdot U &=& 0
+\end{eqnarray}
+Here, $U$ represents the velocity vector%
+%
+\footnote{Here we see an unfortunately conflict
+of notation between the compressible hydro community and the
+incompressible community.  In papers on compressible hydrodynamics,
+$U$ will usually mean the vector of conserved quantities.  In 
+incompressible / low speed papers, $U$ will mean the velocity vector.}
+%
+and $p$ is the dynamical pressure.  The time-evolution equation for
+the velocity (eq.~[\ref{eq:incompressible_u}]) can be solved using
+techniques similar to those developed for compressible hydrodynamics,
+updating the old velocity, $U^n$, to the new time-level, $U^\star$.
+Here the `$^\star$' indicates that the updated velocity does not, in
+general, satisfy the divergence constraint.  A projection method will
+take this updated velocity and force it to obey the constraint
+equation.  The basic idea follows from the idea that any velocity
+field can be expressed as the sum of a divergence-free quantity and
+the gradient of a scalar.  For the velocity, we can write:
+\begin{equation}
+U^\star = U^d + \nabla \phi \label{eq:decomposition}
+\end{equation}
+where $U^d$ is the divergence free portion of the velocity vector,
+$U^\star$, and $\phi$ is a scalar.  Taking the divergence of
+eq~(\ref{eq:decomposition}), we have
+\begin{equation}
+\nabla^2 \phi = \nabla \cdot U^\star
+\end{equation}
+(where we used $\nabla \cdot U^d = 0$).
+With appropriate boundary conditions, this Poisson equation can be
+solved for $\phi$, and the final, divergence free velocity can 
+be computed as
+\begin{equation}
+U^{n+1} = U^\star - \nabla \phi
+\end{equation}
+
+Extensions to variable-density incompressible
+flows~\cite{bellMarcus:1992b} involve a slightly different
+decomposition of the velocity field and, as a result, a slightly
+different Poisson equation.  There is also a variety of different ways
+to express what is being projected~\cite{almgren:bell:crutchfield},
+and different discretizations of the divergence and gradient operators
+lead to slightly different mathematical properties of the methods
+(leading to ``approximate
+projections''~\cite{almgrenBellSzymczak:1996}).  Finally, for
+second-order methods, two projections are typically done per timestep.
+The first (the `MAC' projection~\cite{bellColellaHowell:1991})
+operates one the half-time, edge-centered advective velocities, making
+sure that they satisfy the divergence constraint.  These advective
+velocities are used to construct the fluxes through the interfaces to
+advance the solution to the new time.  The second/final projection
+operates on the cell-centered velocities at the new time, again
+enforcing the divergence constraint.  The MAESTRO algorithm performs
+both of these projections.
+
+The MAESTRO algorithm builds upon these ideas, using a different
+velocity constraint equation that captures the compressibility
+due to local sources and large-scale stratification.
 
 
 %-----------------------------------------------------------------------------
@@ -91,84 +203,82 @@ frequently-used quantities and provides their units.
 $c_p$   & specific heat at constant pressure
           ($c_p \equiv \left . \partial h / \partial T \right |_{p,X_k}$)
         & erg~g$^{-1}$~K$^{-1}$ \\
-\hline
+%\hline
 $f$     & volume discrepancy factor ($0 \le f \le 1$) & -- \\
-\hline
+%\hline
 $g$     & gravitational acceleration                 & cm~s$^{-2}$ \\
-\hline
+%\hline
 $h$     & specific enthalpy                          & erg~g$^{-1}$ \\
-\hline
+%\hline
 $\Hext$ & external heating energy generation rate    & erg~g$^{-1}$~s$^{-1}$ \\
-\hline
+%\hline
 $\Hnuc$ & nuclear energy generation rate             & erg~g$^{-1}$~s$^{-1}$ \\
-\hline
+%\hline
 $h_p$   & $h_p \equiv \left . \partial h / \partial p \right |_{T,X_k}$ & cm$^{3}$~g$^{-1}$ \\
-\hline
+%\hline
 $\kth$  & thermal conductivity                       & erg~cm$^{-1}$~s$^{-1}$~K$^{-1}$ \\
-\hline
+%\hline
 $p_0$   & base state pressure                        & erg~cm$^{-3}$ \\
-\hline
+%\hline
 $p_T$   & $p_T \equiv \left . \partial p / \partial T \right |_{\rho,X_k}$ & erg~cm$^{-3}$~K$^{-1}$ \\
-\hline
+%\hline
 $p_{X_k}$ & $p_{X_k} \equiv \left . \partial p / \partial X_k \right |_{p,T,X_{j,j\ne k}}$ & erg~cm$^{-3}$ \\
-\hline
+%\hline
 $p_\rho$ & $p_\rho \equiv \left . \partial p / \partial \rho \right |_{T,X_k}$ & erg~g$^{-1}$ \\
-\hline
+%\hline
 $q_k$   & specific nuclear binding energy            & erg~g$^{-1}$  \\
-\hline
+%\hline
 $r$     & radial coordinate (direction of gravity)   & cm \\
-\hline
+%\hline
 $s$     & specific entropy                           & erg~g$^{-1}$~K$^{-1}$ \\
-\hline
+%\hline
 $S$     & source term to the divergence constraint   & s$^{-1}$ \\
-\hline
+%\hline
 $t$     & time                                       & s \\
-\hline
+%\hline
 $T$     & temperature                                & K \\
-\hline
+%\hline
 $\Ub$     & total velocity ($\Ub = \Ubt + w_0 \eb_r$) & cm~s$^{-1}$ \\
-\hline
+%\hline
 $\Ubt$   & local velocity                             & cm~s$^{-1}$ \\
-\hline
+%\hline
 $\uadv$ & advective velocity (edge-centered)         & cm~s$^{-1}$ \\
-\hline
+%\hline
 $w_0$   & base state expansion velocity              & cm~s$^{-1}$ \\
-\hline
+%\hline
 $X_k$   & mass fraction of the species ($\sum_k X_k = 1$) & -- \\
-\hline
+%\hline
 $\beta_0$ & coefficient to velocity
             in velocity constraint equation  & g~cm$^{-3}$ \\
-\hline
+%\hline
 $\Gamma_1$ & first adiabatic exponent ($\Gamma_1 \equiv \left . d \log p/d \log \rho \right |_s$) & -- \\
-\hline
+%\hline
 $\etarho$ & $\etarho \equiv \overline{(\rho' \Ub \cdot \eb_r)}$ & g~cm$^{-2}$~s$^{-1}$ \\
-\hline
+%\hline
 $\xi_k$ & $\xi_k \equiv \left . \partial h / \partial X_k \right |_{p,T,X_{j,j\ne k}}$ & erg~g$^{-1}$ \\
-\hline 
+%\hline 
 $\pi$   & dynamic pressure & erg~cm$^{-3}$ \\
-\hline
+%\hline
 $\pizero$ & base state dynamic pressure & erg~cm$^{-3}$ \\
-\hline
+%\hline
 $\rho$  & mass density  & g~cm$^{-3}$ \\
-\hline
+%\hline
 $\rho_0$  & base state mass density  & g~cm$^{-3}$ \\
-\hline
+%\hline
 $\rho'$  & perturbational density ($\rho' = \rho - \rho_0$) & g~cm$^{-3}$ \\
-\hline
+%\hline
 $(\rho h)_0$ & base state enthalpy density & erg~cm$^{-3}$  \\
-\hline
+%\hline
 $(\rho h)'$ & perturbational enthalpy density 
               $ \left [(\rho h)' = \rho h - (\rho h)_0 \right ]$ & erg~cm$^{-3}$  \\
-\hline
+%\hline
 $\sigma$ & $\sigma \equiv p_T/(\rho c_p p_\rho)$ & erg$^{-1}$~g \\
-\hline
+%\hline
 $\psi$  & $\psi \equiv D_0 p_0/Dt = \partial p_0/\partial t + w_0\partial p_0/\partial r$ & erg~cm$^{-3}$~s$^{-1}$ \\
-\hline
+%\hline
 $\omegadot_k$ & creation rate for species $k$ ($\omegadot_k \equiv DX_k/Dt$) & s$^{-1}$ \\
 \end{longtable}
 \end{center}
 
 \renewcommand{\arraystretch}{1.0}
-There are some great charts in the appendix of the multilevel paper demonstrating what 
-the superscript notation represents.
 
