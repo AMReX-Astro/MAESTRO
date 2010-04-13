@@ -214,11 +214,6 @@ contains
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(1,2)")
     end select
 
-    if (phys_bc(1,2) .eq. INLET .or. phys_bc(1,2) .eq. SLIP_WALL .or. &
-        phys_bc(1,2) .eq. NO_SLIP_WALL) then 
-    else if (phys_bc(2,2) .eq. OUTLET) then
-    end if
-
   end subroutine impose_phys_bcs_3d
   
 end module impose_phys_bcs_on_edges_module
