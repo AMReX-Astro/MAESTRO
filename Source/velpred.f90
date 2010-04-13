@@ -247,6 +247,7 @@ contains
     case (OUTLET)
        ulx(is) = min(urx(is),ZERO)
        urx(is) = min(urx(is),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_1d: invalid boundary type phys_bc(1,1)")
     end select
@@ -262,6 +263,7 @@ contains
     case (OUTLET)
        ulx(ie+1) = max(ulx(ie+1),ZERO)
        urx(ie+1) = max(ulx(ie+1),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_1d: invalid boundary type phys_bc(1,2)")
     end select
@@ -291,6 +293,7 @@ contains
        umac(is) = ZERO
     case (OUTLET)
        umac(is) = min(umacr(is),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_1d: invalid boundary type phys_bc(1,1)")
     end select
@@ -303,6 +306,7 @@ contains
        umac(ie+1) = ZERO
     case (OUTLET)
        umac(ie+1) = max(umacl(ie+1),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_1d: invalid boundary type phys_bc(1,2)")
     end select
@@ -440,6 +444,7 @@ contains
        ulx(is,js-1:je+1,1) = min(urx(is,js-1:je+1,1),ZERO)
        urx(is,js-1:je+1,1) = min(urx(is,js-1:je+1,1),ZERO)
        ulx(is,js-1:je+1,2) = urx(is,js-1:je+1,2)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(1,1)")
     end select
@@ -460,6 +465,7 @@ contains
        ulx(ie+1,js-1:je+1,1) = max(ulx(ie+1,js-1:je+1,1),ZERO)
        urx(ie+1,js-1:je+1,1) = max(ulx(ie+1,js-1:je+1,1),ZERO)
        urx(ie+1,js-1:je+1,2) = ulx(ie+1,js-1:je+1,2)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(1,2)")
     end select
@@ -525,6 +531,7 @@ contains
        uly(is-1:ie+1,js,1) = ury(is-1:ie+1,js,1)
        uly(is-1:ie+1,js,2) = min(ury(is-1:ie+1,js,2),ZERO)
        ury(is-1:ie+1,js,2) = min(ury(is-1:ie+1,js,2),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(2,1)")
     end select
@@ -545,6 +552,7 @@ contains
        ury(is-1:ie+1,je+1,1) = uly(is-1:ie+1,je+1,1)
        uly(is-1:ie+1,je+1,2) = max(uly(is-1:ie+1,je+1,2),ZERO)
        ury(is-1:ie+1,je+1,2) = max(uly(is-1:ie+1,je+1,2),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(2,2)")
     end select
@@ -590,6 +598,7 @@ contains
        umac(is,js:je) = ZERO
     case (OUTLET)
        umac(is,js:je) = min(umacr(is,js:je),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(1,1)")
     end select
@@ -602,6 +611,7 @@ contains
        umac(ie+1,js:je) = ZERO
     case (OUTLET)
        umac(ie+1,js:je) = max(umacl(ie+1,js:je),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(1,2)")
     end select
@@ -650,6 +660,7 @@ contains
        vmac(is:ie,js) = ZERO
     case (OUTLET)
        vmac(is:ie,js) = min(vmacr(is:ie,js),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(2,1)")
     end select
@@ -662,6 +673,7 @@ contains
        vmac(is:ie,je+1) = ZERO
     case (OUTLET)
        vmac(is:ie,je+1) = max(vmacl(is:ie,je+1),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(2,2)")
     end select
@@ -878,6 +890,7 @@ contains
        urx(is,js-1:je+1,ks-1:ke+1,1) = min(urx(is,js-1:je+1,ks-1:ke+1,1),ZERO)
        ulx(is,js-1:je+1,ks-1:ke+1,2) = urx(is,js-1:je+1,ks-1:ke+1,2)
        ulx(is,js-1:je+1,ks-1:ke+1,3) = urx(is,js-1:je+1,ks-1:ke+1,3)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(1,1)")
     end select
@@ -900,6 +913,7 @@ contains
        urx(ie+1,js-1:je+1,ks-1:ke+1,1) = max(ulx(ie+1,js-1:je+1,ks-1:ke+1,1),ZERO)
        urx(ie+1,js-1:je+1,ks-1:ke+1,2) = ulx(ie+1,js-1:je+1,ks-1:ke+1,2)
        urx(ie+1,js-1:je+1,ks-1:ke+1,3) = ulx(ie+1,js-1:je+1,ks-1:ke+1,3)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(1,2)")
     end select
@@ -996,6 +1010,7 @@ contains
        uly(is-1:ie+1,js,ks-1:ke+1,2) = min(ury(is-1:ie+1,js,ks-1:ke+1,2),ZERO)
        ury(is-1:ie+1,js,ks-1:ke+1,2) = min(ury(is-1:ie+1,js,ks-1:ke+1,2),ZERO)
        uly(is-1:ie+1,js,ks-1:ke+1,3) = ury(is-1:ie+1,js,ks-1:ke+1,3) 
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(2,1)")
     end select
@@ -1018,6 +1033,7 @@ contains
        uly(is-1:ie+1,je+1,ks-1:ke+1,2) = max(uly(is-1:ie+1,je+1,ks-1:ke+1,2),ZERO)
        ury(is-1:ie+1,je+1,ks-1:ke+1,2) = max(uly(is-1:ie+1,je+1,ks-1:ke+1,2),ZERO)
        ury(is-1:ie+1,je+1,ks-1:ke+1,3) = uly(is-1:ie+1,je+1,ks-1:ke+1,3)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(2,2)")
     end select
@@ -1123,6 +1139,7 @@ contains
        ulz(is-1:ie+1,js-1:je+1,ks,2) = urz(is-1:ie+1,js-1:je+1,ks,2)
        ulz(is-1:ie+1,js-1:je+1,ks,3) = min(urz(is-1:ie+1,js-1:je+1,ks,3),ZERO)
        urz(is-1:ie+1,js-1:je+1,ks,3) = min(urz(is-1:ie+1,js-1:je+1,ks,3),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,1)")
     end select
@@ -1145,6 +1162,7 @@ contains
        urz(is-1:ie+1,js-1:je+1,ke+1,2) = ulz(is-1:ie+1,js-1:je+1,ke+1,2)
        ulz(is-1:ie+1,js-1:je+1,ke+1,3) = max(ulz(is-1:ie+1,js-1:je+1,ke+1,3),ZERO)
        urz(is-1:ie+1,js-1:je+1,ke+1,3) = max(ulz(is-1:ie+1,js-1:je+1,ke+1,3),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,2)")
     end select
@@ -1206,6 +1224,7 @@ contains
     case (NO_SLIP_WALL)
        ulyz(is-1:ie+1,js,ks:ke) = ZERO
        uryz(is-1:ie+1,js,ks:ke) = ZERO
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(2,1)")
     end select
@@ -1220,6 +1239,7 @@ contains
     case (NO_SLIP_WALL)
        ulyz(is-1:ie+1,je+1,ks:ke) = ZERO
        uryz(is-1:ie+1,je+1,ks:ke) = ZERO
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(2,2)")
     end select
@@ -1272,6 +1292,7 @@ contains
     case (NO_SLIP_WALL)
        ulzy(is-1:ie+1,js:je,ks) = ZERO
        urzy(is-1:ie+1,js:je,ks) = ZERO
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,1)")
     end select
@@ -1286,6 +1307,7 @@ contains
     case (NO_SLIP_WALL)
        ulzy(is-1:ie+1,js:je,ke+1) = ZERO
        urzy(is-1:ie+1,js:je,ke+1) = ZERO
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,2)")
     end select
@@ -1339,6 +1361,7 @@ contains
     case (NO_SLIP_WALL)
        vlxz(is,js-1:je+1,ks:ke) = ZERO
        vrxz(is,js-1:je+1,ks:ke) = ZERO       
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(1,1)")
     end select
@@ -1353,6 +1376,7 @@ contains
     case (NO_SLIP_WALL)
        vlxz(ie+1,js-1:je+1,ks:ke) = ZERO
        vrxz(ie+1,js-1:je+1,ks:ke) = ZERO
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(1,2)")
     end select
@@ -1407,6 +1431,7 @@ contains
     case (NO_SLIP_WALL)
        vlzx(is:ie,js-1:je+1,ks) = ZERO
        vrzx(is:ie,js-1:je+1,ks) = ZERO       
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,1)")
     end select
@@ -1421,6 +1446,7 @@ contains
     case (NO_SLIP_WALL)
        vlzx(is:ie,js-1:je+1,ke+1) = ZERO
        vrzx(is:ie,js-1:je+1,ke+1) = ZERO
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,2)")
     end select
@@ -1474,6 +1500,7 @@ contains
     case (NO_SLIP_WALL)
        wlxy(is,js:je,ks-1:ke+1) = ZERO
        wrxy(is,js:je,ks-1:ke+1) = ZERO
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(1,1)")
     end select
@@ -1488,6 +1515,7 @@ contains
     case (NO_SLIP_WALL)
        wlxy(ie+1,js:je,ks-1:ke+1) = ZERO
        wrxy(ie+1,js:je,ks-1:ke+1) = ZERO
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(1,2)")
     end select
@@ -1543,6 +1571,7 @@ contains
     case (NO_SLIP_WALL)
        wlyx(is:ie,js,ks-1:ke+1) = ZERO
        wryx(is:ie,js,ks-1:ke+1) = ZERO
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(2,1)")
     end select
@@ -1557,6 +1586,7 @@ contains
     case (NO_SLIP_WALL)
        wlyx(is:ie,je+1,ks-1:ke+1) = ZERO
        wryx(is:ie,je+1,ks-1:ke+1) = ZERO
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(2,2)")
     end select
@@ -1673,6 +1703,7 @@ contains
        umac(is,js:je,ks:ke) = ZERO
     case (OUTLET)
        umac(is,js:je,ks:ke) = min(umacr(is,js:je,ks:ke),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(1,1)")
     end select
@@ -1685,6 +1716,7 @@ contains
        umac(ie+1,js:je,ks:ke) = ZERO
     case (OUTLET)
        umac(ie+1,js:je,ks:ke) = max(umacl(ie+1,js:je,ks:ke),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(1,2)")
     end select
@@ -1783,6 +1815,7 @@ contains
        vmac(is:ie,js,ks:ke) = ZERO
     case (OUTLET)
        vmac(is:ie,js,ks:ke) = min(vmacr(is:ie,js,ks:ke),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(2,1)")
     end select
@@ -1795,6 +1828,7 @@ contains
        vmac(is:ie,je+1,ks:ke) = ZERO
     case (OUTLET)
        vmac(is:ie,je+1,ks:ke) = max(vmacl(is:ie,je+1,ks:ke),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(2,2)")
     end select
@@ -1909,6 +1943,7 @@ contains
        wmac(is:ie,js:je,ks) = ZERO
     case (OUTLET)
        wmac(is:ie,js:je,ks) = min(wmacr(is:ie,js:je,ks),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,1)")
     end select
@@ -1921,6 +1956,7 @@ contains
        wmac(is:ie,js:je,ke+1) = ZERO
     case (OUTLET)
        wmac(is:ie,js:je,ke+1) = max(wmacl(is:ie,js:je,ke+1),ZERO)
+    case (INTERIOR)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,2)")
     end select
