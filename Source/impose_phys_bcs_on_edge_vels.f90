@@ -108,7 +108,7 @@ contains
     if (phys_bc(1,2) .eq. INLET .or. phys_bc(1,2) .eq. SLIP_WALL .or. &
         phys_bc(1,2) .eq. NO_SLIP_WALL) then 
        vedge(ie+1,js:je+1) = ZERO
-    else if (phys_bc(2,2) .eq. OUTLET) then
+    else if (phys_bc(1,2) .eq. OUTLET) then
        vedge(ie+1,js:je+1) = vedge(ie,js:je+1)
     end if
 
