@@ -1063,7 +1063,7 @@ contains
     if (phys_bc(1,1) .eq. INLET) then
        slx(is,js-1:je+1,ks-1:ke+1) = s(is-1,js-1:je+1,ks-1:ke+1,comp)
        srx(is,js-1:je+1,ks-1:ke+1) = s(is-1,js-1:je+1,ks-1:ke+1,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SLIP_WALL) then
+    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 1) then
           slx(is,js-1:je+1,ks-1:ke+1) = ZERO
           srx(is,js-1:je+1,ks-1:ke+1) = ZERO
@@ -1092,7 +1092,7 @@ contains
     if (phys_bc(1,2) .eq. INLET) then
        slx(ie+1,js-1:je+1,ks-1:ke+1) = s(ie+1,js-1:je+1,ks-1:ke+1,comp)
        srx(ie+1,js-1:je+1,ks-1:ke+1) = s(ie+1,js-1:je+1,ks-1:ke+1,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SLIP_WALL) then
+    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 1) then
           slx(ie+1,js-1:je+1,ks-1:ke+1) = ZERO
           srx(ie+1,js-1:je+1,ks-1:ke+1) = ZERO
@@ -1168,7 +1168,7 @@ contains
     if (phys_bc(2,1) .eq. INLET) then
        sly(is-1:ie+1,js,ks-1:ke+1) = s(is-1:ie+1,js-1,ks-1:ke+1,comp)
        sry(is-1:ie+1,js,ks-1:ke+1) = s(is-1:ie+1,js-1,ks-1:ke+1,comp)
-    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SLIP_WALL) then
+    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 2) then
           sly(is-1:ie+1,js,ks-1:ke+1) = ZERO
           sry(is-1:ie+1,js,ks-1:ke+1) = ZERO
@@ -1197,7 +1197,7 @@ contains
     if (phys_bc(2,2) .eq. INLET) then
        sly(is-1:ie+1,je+1,ks-1:ke+1) = s(is-1:ie+1,je+1,ks-1:ke+1,comp)
        sry(is-1:ie+1,je+1,ks-1:ke+1) = s(is-1:ie+1,je+1,ks-1:ke+1,comp)
-    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SLIP_WALL) then
+    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 2) then
           sly(is-1:ie+1,je+1,ks-1:ke+1) = ZERO
           sry(is-1:ie+1,je+1,ks-1:ke+1) = ZERO
@@ -1275,7 +1275,7 @@ contains
     if (phys_bc(3,1) .eq. INLET) then
        slz(is-1:ie+1,js-1:je+1,ks) = s(is-1:ie+1,js-1:je+1,ks,comp)
        srz(is-1:ie+1,js-1:je+1,ks) = s(is-1:ie+1,js-1:je+1,ks,comp)
-    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SLIP_WALL) then
+    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 3) then
           slz(is-1:ie+1,js-1:je+1,ks) = ZERO
           srz(is-1:ie+1,js-1:je+1,ks) = ZERO
@@ -1304,7 +1304,7 @@ contains
     if (phys_bc(3,2) .eq. INLET) then
        slz(is-1:ie+1,js-1:je+1,ke+1) = s(is-1:ie+1,js-1:je+1,ke+1,comp)
        srz(is-1:ie+1,js-1:je+1,ke+1) = s(is-1:ie+1,js-1:je+1,ke+1,comp)
-    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SLIP_WALL) then
+    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 3) then
           slz(is-1:ie+1,js-1:je+1,ke+1) = ZERO
           srz(is-1:ie+1,js-1:je+1,ke+1) = ZERO
@@ -1389,7 +1389,7 @@ contains
     if (phys_bc(1,1) .eq. INLET) then
        slxy(is,js:je,ks-1:ke+1) = s(is-1,js:je,ks-1:ke+1,comp)
        srxy(is,js:je,ks-1:ke+1) = s(is-1,js:je,ks-1:ke+1,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SLIP_WALL) then
+    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 1) then
           slxy(is,js:je,ks-1:ke+1) = ZERO
           srxy(is,js:je,ks-1:ke+1) = ZERO
@@ -1418,7 +1418,7 @@ contains
     if (phys_bc(1,2) .eq. INLET) then
        slxy(ie+1,js:je,ks-1:ke+1) = s(ie+1,js:je,ks-1:ke+1,comp)
        srxy(ie+1,js:je,ks-1:ke+1) = s(ie+1,js:je,ks-1:ke+1,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SLIP_WALL) then
+    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 1) then
           slxy(ie+1,js:je,ks-1:ke+1) = ZERO
           srxy(ie+1,js:je,ks-1:ke+1) = ZERO
@@ -1506,7 +1506,7 @@ contains
     if (phys_bc(1,1) .eq. INLET) then
        slxz(is,js-1:je+1,ks:ke) = s(is-1,js-1:je+1,ks:ke,comp)
        srxz(is,js-1:je+1,ks:ke) = s(is-1,js-1:je+1,ks:ke,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SLIP_WALL) then
+    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 1) then
           slxz(is,js-1:je+1,ks:ke) = ZERO
           srxz(is,js-1:je+1,ks:ke) = ZERO
@@ -1535,7 +1535,7 @@ contains
     if (phys_bc(1,2) .eq. INLET) then
        slxz(ie+1,js-1:je+1,ks:ke) = s(ie+1,js-1:je+1,ks:ke,comp)
        srxz(ie+1,js-1:je+1,ks:ke) = s(ie+1,js-1:je+1,ks:ke,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SLIP_WALL) then
+    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 1) then
           slxz(ie+1,js-1:je+1,ks:ke) = ZERO
           srxz(ie+1,js-1:je+1,ks:ke) = ZERO
@@ -1623,7 +1623,7 @@ contains
     if (phys_bc(2,1) .eq. INLET) then
        slyx(is:ie,js,ks-1:ke+1) = s(is:ie,js-1,ks-1:ke+1,comp)
        sryx(is:ie,js,ks-1:ke+1) = s(is:ie,js-1,ks-1:ke+1,comp)
-    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SLIP_WALL) then
+    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 2) then
           slyx(is:ie,js,ks-1:ke+1) = ZERO
           sryx(is:ie,js,ks-1:ke+1) = ZERO
@@ -1652,7 +1652,7 @@ contains
     if (phys_bc(2,2) .eq. INLET) then
        slyx(is:ie,je+1,ks-1:ke+1) = s(is:ie,je+1,ks-1:ke+1,comp)
        sryx(is:ie,je+1,ks-1:ke+1) = s(is:ie,je+1,ks-1:ke+1,comp)
-    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SLIP_WALL) then
+    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 2) then
           slyx(is:ie,je+1,ks-1:ke+1) = ZERO
           sryx(is:ie,je+1,ks-1:ke+1) = ZERO
@@ -1742,7 +1742,7 @@ contains
     if (phys_bc(2,1) .eq. INLET) then
        slyz(is-1:ie+1,js,ks:ke) = s(is-1:ie+1,js-1,ks:ke,comp)
        sryz(is-1:ie+1,js,ks:ke) = s(is-1:ie+1,js-1,ks:ke,comp)
-    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SLIP_WALL) then
+    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 2) then
           slyz(is-1:ie+1,js,ks:ke) = ZERO
           sryz(is-1:ie+1,js,ks:ke) = ZERO
@@ -1771,7 +1771,7 @@ contains
     if (phys_bc(2,2) .eq. INLET) then
        slyz(is-1:ie+1,je+1,ks:ke) = s(is-1:ie+1,je+1,ks:ke,comp)
        sryz(is-1:ie+1,je+1,ks:ke) = s(is-1:ie+1,je+1,ks:ke,comp)
-    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SLIP_WALL) then
+    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 2) then
           slyz(is-1:ie+1,je+1,ks:ke) = ZERO
           sryz(is-1:ie+1,je+1,ks:ke) = ZERO
@@ -1861,7 +1861,7 @@ contains
     if (phys_bc(3,1) .eq. INLET) then
        slzx(is:ie,js-1:je+1,ks) = s(is:ie,js-1:je+1,ks-1,comp)
        srzx(is:ie,js-1:je+1,ks) = s(is:ie,js-1:je+1,ks-1,comp)
-    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SLIP_WALL) then
+    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 3) then
           slzx(is:ie,js-1:je+1,ks) = ZERO
           srzx(is:ie,js-1:je+1,ks) = ZERO
@@ -1890,7 +1890,7 @@ contains
     if (phys_bc(3,2) .eq. INLET) then
        slzx(is:ie,js-1:je+1,ke+1) = s(is:ie,js-1:je+1,ke+1,comp)
        srzx(is:ie,js-1:je+1,ke+1) = s(is:ie,js-1:je+1,ke+1,comp)
-    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SLIP_WALL) then
+    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 3) then
           slzx(is:ie,js-1:je+1,ke+1) = ZERO
           srzx(is:ie,js-1:je+1,ke+1) = ZERO
@@ -1980,7 +1980,7 @@ contains
     if (phys_bc(3,1) .eq. INLET) then
        slzy(is-1:ie+1,js:je,ks) = s(is-1:ie+1,js:je,ks-1,comp)
        srzy(is-1:ie+1,js:je,ks) = s(is-1:ie+1,js:je,ks-1,comp)
-    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SLIP_WALL) then
+    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 3) then
           slzy(is-1:ie+1,js:je,ks) = ZERO
           srzy(is-1:ie+1,js:je,ks) = ZERO
@@ -2009,7 +2009,7 @@ contains
     if (phys_bc(3,2) .eq. INLET) then
        slzy(is-1:ie+1,js:je,ke+1) = s(is-1:ie+1,js:je,ke+1,comp)
        srzy(is-1:ie+1,js:je,ke+1) = s(is-1:ie+1,js:je,ke+1,comp)
-    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SLIP_WALL) then
+    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 3) then
           slzy(is-1:ie+1,js:je,ke+1) = ZERO
           srzy(is-1:ie+1,js:je,ke+1) = ZERO
@@ -2185,7 +2185,7 @@ contains
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
        sedgex(is,js:je,ks:ke,comp) = s(is-1,js:je,ks:ke,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SLIP_WALL) then
+    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 1) then
           sedgex(is,js:je,ks:ke,comp) = ZERO
        else
@@ -2210,7 +2210,7 @@ contains
     ! impose hi side bc's
     if (phys_bc(1,2) .eq. INLET) then
        sedgex(ie+1,js:je,ks:ke,comp) = s(ie+1,js:je,ks:ke,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SLIP_WALL) then
+    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 1) then
           sedgex(ie+1,js:je,ks:ke,comp) = ZERO
        else
@@ -2363,7 +2363,7 @@ contains
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
        sedgey(is:ie,js,ks:ke,comp) = s(is:ie,js-1,ks:ke,comp)
-    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SLIP_WALL) then
+    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 2) then
           sedgey(is:ie,js,ks:ke,comp) = ZERO
        else
@@ -2388,7 +2388,7 @@ contains
     ! impose hi side bc's
     if (phys_bc(2,2) .eq. INLET) then
        sedgey(is:ie,je+1,ks:ke,comp) = s(is:ie,je+1,ks:ke,comp)
-    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SLIP_WALL) then
+    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 2) then
           sedgey(is:ie,je+1,ks:ke,comp) = ZERO
        else
@@ -2553,7 +2553,7 @@ contains
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
        sedgez(is:ie,js:je,ks,comp) = s(is:ie,js:je,ks-1,comp)
-    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SLIP_WALL) then
+    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 3) then
           sedgez(is:ie,js:je,ks,comp) = ZERO
        else
@@ -2578,7 +2578,7 @@ contains
     ! impose hi side bc's
     if (phys_bc(3,2) .eq. INLET) then
        sedgez(is:ie,js:je,ke+1,comp) = s(is:ie,js:je,ke+1,comp)
-    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SLIP_WALL) then
+    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 3) then
           sedgez(is:ie,js:je,ke+1,comp) = ZERO
        else
