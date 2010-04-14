@@ -96,7 +96,7 @@ contains
        uedge(is:ie+1,je+1) = ZERO
     case (OUTLET, SYMMETRY)
        uedge(is:ie+1,je+1) = uedge(is:ie+1,je)
-    case (INTERIOR)
+    case (INTERIOR, PERIODIC)
     case  default 
        call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(2,2)")
     end select
@@ -107,7 +107,7 @@ contains
        vedge(is-1,js:je+1) = ZERO
     case (OUTLET, SYMMETRY)
        vedge(is-1,js:je+1) = vedge(is,js:je+1)
-    case (INTERIOR)
+    case (INTERIOR, PERIODIC)
     case  default 
        call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(1,1)")
     end select
@@ -118,7 +118,7 @@ contains
        vedge(ie+1,js:je+1) = ZERO
     case (OUTLET, SYMMETRY)
        vedge(ie+1,js:je+1) = vedge(ie,js:je+1)
-    case (INTERIOR)
+    case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(1,2)")
     end select
@@ -153,7 +153,7 @@ contains
     case (OUTLET, SYMMETRY)
        uedge(is  :ie+1,js-1:je+1,ks-1) = uedge(is  :ie+1,js-1:je+1,ks)
        vedge(is-1:ie+1,js  :je+1,ks-1) = vedge(is-1:ie+1,js  :je+1,ks)
-    case (INTERIOR)
+    case (INTERIOR, PERIODIC)
     case  default 
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(3,1)")
     end select
@@ -166,7 +166,7 @@ contains
     case (OUTLET, SYMMETRY)
        uedge(is  :ie+1,js-1:je+1,ke+1) = uedge(is  :ie+1,js-1:je+1,ke)
        vedge(is-1:ie+1,js  :je+1,ke+1) = vedge(is-1:ie+1,js  :je+1,ke)
-    case (INTERIOR)
+    case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(3,2)")
     end select
@@ -179,7 +179,7 @@ contains
     case (OUTLET, SYMMETRY)
        uedge(is  :ie+1,js-1,ks-1:ke+1) = uedge(is  :ie+1,js,ks-1:ke+1)
        wedge(is-1:ie+1,js-1,ks  :ke+1) = wedge(is-1:ie+1,js,ks  :ke+1)
-    case (INTERIOR)
+    case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(2,1)")
     end select
@@ -192,7 +192,7 @@ contains
     case (OUTLET, SYMMETRY)
        uedge(is  :ie+1,je+1,ks-1:ke+1) = uedge(is  :ie+1,je,ks-1:ke+1)
        wedge(is-1:ie+1,je+1,ks  :ke+1) = wedge(is-1:ie+1,je,ks  :ke+1)
-    case (INTERIOR)
+    case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(2,2)")
     end select
@@ -205,7 +205,7 @@ contains
     case (OUTLET, SYMMETRY)
        vedge(is-1,js  :je+1,ks-1:ke+1) = vedge(is,js  :je+1,ks-1:ke+1)
        wedge(is-1,js-1:je+1,ks  :ke+1) = wedge(is,js-1:je+1,ks  :ke+1)
-    case (INTERIOR)
+    case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(1,1)")
     end select
@@ -218,7 +218,7 @@ contains
     case (OUTLET, SYMMETRY)
        vedge(ie+1,js  :je+1,ks-1:ke+1) = vedge(ie,js  :je+1,ks-1:ke+1)
        wedge(ie+1,js-1:je+1,ks  :ke+1) = wedge(ie,js-1:je+1,ks  :ke+1)
-    case (INTERIOR)
+    case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(1,2)")
     end select

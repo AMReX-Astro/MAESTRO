@@ -197,7 +197,7 @@ contains
     case (OUTLET)
        ulx(is,js:je) = min(urx(is,js:je),ZERO)
        urx(is,js:je) = min(urx(is,js:je),ZERO)
-    case (INTERIOR) 
+    case (INTERIOR, PERIODIC) 
     case  default
        call bl_error("mkutrans_2d: invalid boundary type phys_bc(1,1)")
     end select
@@ -213,7 +213,7 @@ contains
     case (OUTLET)
        ulx(ie+1,js:je) = max(ulx(ie+1,js:je),ZERO)
        urx(ie+1,js:je) = max(ulx(ie+1,js:je),ZERO)
-    case (INTERIOR) 
+    case (INTERIOR, PERIODIC) 
     case  default
        call bl_error("mkutrans_2d: invalid boundary type phys_bc(1,2)")
     end select
@@ -278,7 +278,7 @@ contains
     case (OUTLET)
        vly(is:ie,js) = min(vry(is:ie,js),ZERO)
        vry(is:ie,js) = min(vry(is:ie,js),ZERO)
-    case (INTERIOR) 
+    case (INTERIOR, PERIODIC) 
     case  default
        call bl_error("mkutrans_2d: invalid boundary type phys_bc(2,1)")
     end select
@@ -294,7 +294,7 @@ contains
     case (OUTLET)
        vly(is:ie,je+1) = max(vly(is:ie,je+1),ZERO)
        vry(is:ie,je+1) = max(vly(is:ie,je+1),ZERO)
-    case (INTERIOR) 
+    case (INTERIOR, PERIODIC) 
     case  default
        call bl_error("mkutrans_2d: invalid boundary type phys_bc(2,2)")
     end select
@@ -456,7 +456,7 @@ contains
     case (OUTLET)
        ulx(is,js:je,ks:ke) = min(urx(is,js:je,ks:ke),ZERO)
        urx(is,js:je,ks:ke) = min(urx(is,js:je,ks:ke),ZERO)
-    case (INTERIOR) 
+    case (INTERIOR, PERIODIC) 
     case  default
        call bl_error("mkutrans_3d: invalid boundary type phys_bc(1,1)")
     end select
@@ -472,7 +472,7 @@ contains
     case (OUTLET)
        ulx(ie+1,js:je,ks:ke) = max(ulx(ie+1,js:je,ks:ke),ZERO)
        urx(ie+1,js:je,ks:ke) = max(ulx(ie+1,js:je,ks:ke),ZERO)
-    case (INTERIOR) 
+    case (INTERIOR, PERIODIC) 
     case  default
        call bl_error("mkutrans_3d: invalid boundary type phys_bc(1,2)")
     end select
@@ -587,7 +587,7 @@ contains
     case (OUTLET)
        vly(is:ie,js,ks:ke) = min(vry(is:ie,js,ks:ke),ZERO)
        vry(is:ie,js,ks:ke) = min(vry(is:ie,js,ks:ke),ZERO)
-    case (INTERIOR) 
+    case (INTERIOR, PERIODIC) 
     case  default
        call bl_error("mkutrans_3d: invalid boundary type phys_bc(2,1)")
     end select
@@ -603,7 +603,7 @@ contains
     case (OUTLET)
        vly(is:ie,je+1,ks:ke) = max(vly(is:ie,je+1,ks:ke),ZERO)
        vry(is:ie,je+1,ks:ke) = max(vly(is:ie,je+1,ks:ke),ZERO)
-    case (INTERIOR) 
+    case (INTERIOR, PERIODIC) 
     case  default
        call bl_error("mkutrans_3d: invalid boundary type phys_bc(2,2)")
     end select
@@ -725,7 +725,7 @@ contains
     case (OUTLET)
        wlz(is:ie,js:je,ks) = min(wrz(is:ie,js:je,ks),ZERO)
        wrz(is:ie,js:je,ks) = min(wrz(is:ie,js:je,ks),ZERO)
-    case (INTERIOR) 
+    case (INTERIOR, PERIODIC) 
     case  default
        call bl_error("mkutrans_3d: invalid boundary type phys_bc(3,1)")
     end select
@@ -741,7 +741,7 @@ contains
     case (OUTLET)
        wlz(is:ie,js:je,ke+1) = max(wlz(is:ie,js:je,ke+1),ZERO)
        wrz(is:ie,js:je,ke+1) = max(wlz(is:ie,js:je,ke+1),ZERO)
-    case (INTERIOR) 
+    case (INTERIOR, PERIODIC) 
     case  default
        call bl_error("mkutrans_3d: invalid boundary type phys_bc(3,2)")
     end select
