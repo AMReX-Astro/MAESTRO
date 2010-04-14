@@ -56,7 +56,8 @@ contains
 
   subroutine tag_boxes_3d(tagbox,rho,rho_Xhe,lo,ng,lev)
 
-    use probin_module, ONLY: base_cutoff_density
+    use bl_constants_module, ONLY: HALF
+    use probin_module, ONLY: base_cutoff_density, prob_lo, prob_hi
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):,lo(3):)
@@ -64,7 +65,7 @@ contains
     real(kind = dp_t), intent(in   ) :: rho_Xhe(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     integer, optional, intent(in   ) :: lev
 
-    real(kind = dp_t) :: Xhe
+    real(kind = dp_t) :: Xhe, x, y, z
 
     integer :: i,j,k,nx,ny,nz,llev
 
@@ -75,12 +76,32 @@ contains
 
     tagbox = .false.
 
-!$omp parallel do private(i,j,k)
+!$omp parallel do private(i,j,k,Xhe)
     do k = lo(3),lo(3)+nz-1
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              Xhe = rho_Xhe(i,j,k)/rho(i,j,k)
              if (Xhe > 0.01_dp_t .and. rho(i,j,k) <= base_cutoff_density) then
+                tagbox(i,j,k) = .true.
+             end if
+          end do
+       enddo
+    end do
+!$omp end parallel do
+
+    ! refine the very center of the star, for average
+!$omp parallel do private(i,j,k,x,y,z)
+    do k = lo(3),lo(3)+nz-1
+       !z = prob_lo(3) + (dble(k)+HALF)*dx(3)
+
+       do j = lo(2),lo(2)+ny-1
+          !y = prob_lo(2) + (dble(j)+HALF)*dx(2)
+
+          do i = lo(1),lo(1)+nx-1
+             !x = prob_lo(1) + (dble(i)+HALF)*dx(1)
+
+             !if (sqrt(x**2 + y**2 + z**2) < 0.1*prob_hi(1)) then
+             if (sqrt(dble(i)**2 + dble(j)**2 + dble(k)**2) < 10.d0) then
                 tagbox(i,j,k) = .true.
              end if
           end do
