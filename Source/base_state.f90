@@ -309,7 +309,12 @@ contains
 
     if ( parallel_IOProcessor() ) then
        write (*,887)
-       write (*,*)   'model file mapping, level:', n
+       if (.not. spherical) then
+          write (*,*)   'model file mapping, level:', n
+       else
+          write (*,*)   'model file mapping (spherical base state)'
+       endif
+
        write (*,888) 'dr of MAESTRO base state =                            ', &
             dr(n)
        write (*,888) 'dr of input file data =                               ', &
