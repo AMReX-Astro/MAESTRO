@@ -313,6 +313,7 @@ contains
           slx(is) = srx(is)
        end if
     else if (phys_bc(1,1) .eq. INTERIOR) then
+    else if (phys_bc(1,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_1d: invalid boundary type phys_bc(1,1)")
     end if
@@ -343,6 +344,7 @@ contains
           srx(ie+1) = slx(ie+1)
        end if
     else if (phys_bc(1,2) .eq. INTERIOR) then
+    else if (phys_bc(1,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_1d: invalid boundary type phys_bc(1,2)")
     end if
@@ -422,6 +424,7 @@ contains
           sedgex(is,comp) = sedgerx(is)
        end if
     else if (phys_bc(1,1) .eq. INTERIOR) then
+    else if (phys_bc(1,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_1d: invalid boundary type phys_bc(1,1)")
     end if
@@ -448,6 +451,7 @@ contains
           sedgex(ie+1,comp) = sedgelx(ie+1)
        end if
     else if (phys_bc(1,2) .eq. INTERIOR) then
+    else if (phys_bc(1,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_1d: invalid boundary type phys_bc(1,2)")
     end if
@@ -595,6 +599,7 @@ contains
           slx(is,js-1:je+1) = srx(is,js-1:je+1)
        end if
     else if (phys_bc(1,1) .eq. INTERIOR) then
+    else if (phys_bc(1,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(1,1)")
     end if
@@ -625,6 +630,7 @@ contains
           srx(ie+1,js-1:je+1) = slx(ie+1,js-1:je+1)
        end if
     else if (phys_bc(1,2) .eq. INTERIOR) then
+    else if (phys_bc(1,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(1,2)")
     end if
@@ -683,6 +689,7 @@ contains
           sly(is-1:ie+1,js) = sry(is-1:ie+1,js)
        end if
     else if (phys_bc(2,1) .eq. INTERIOR) then
+    else if (phys_bc(2,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(2,1)")
     end if
@@ -713,6 +720,7 @@ contains
           sry(is-1:ie+1,je+1) = sly(is-1:ie+1,je+1)
        end if
     else if (phys_bc(2,2) .eq. INTERIOR) then
+    else if (phys_bc(2,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(2,2)")
     end if
@@ -791,6 +799,7 @@ contains
           sedgex(is,js:je,comp) = sedgerx(is,js:je)
        end if
     else if (phys_bc(1,1) .eq. INTERIOR) then
+    else if (phys_bc(1,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(1,1)")
     end if
@@ -817,6 +826,7 @@ contains
           sedgex(ie+1,js:je,comp) = sedgelx(ie+1,js:je)
        end if
     else if (phys_bc(1,2) .eq. INTERIOR) then
+    else if (phys_bc(1,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(1,2)")
     end if
@@ -892,6 +902,7 @@ contains
           sedgey(is:ie,js,comp) = sedgery(is:ie,js)
        end if
     else if (phys_bc(2,1) .eq. INTERIOR) then
+    else if (phys_bc(2,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(2,1)")
     end if
@@ -918,6 +929,7 @@ contains
           sedgey(is:ie,je+1,comp) = sedgely(is:ie,je+1)
        end if
     else if (phys_bc(2,2) .eq. INTERIOR) then
+    else if (phys_bc(2,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(2,2)")
     end if
@@ -1097,6 +1109,7 @@ contains
           slx(is,js-1:je+1,ks-1:ke+1) = srx(is,js-1:je+1,ks-1:ke+1)
        end if
     else if (phys_bc(1,1) .eq. INTERIOR) then
+    else if (phys_bc(1,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,1)")
     end if
@@ -1127,6 +1140,7 @@ contains
           srx(ie+1,js-1:je+1,ks-1:ke+1) = slx(ie+1,js-1:je+1,ks-1:ke+1)
        end if
     else if (phys_bc(1,2) .eq. INTERIOR) then
+    else if (phys_bc(1,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,2)")
     end if
@@ -1204,6 +1218,7 @@ contains
           sly(is-1:ie+1,js,ks-1:ke+1) = sry(is-1:ie+1,js,ks-1:ke+1)
        end if
     else if (phys_bc(2,1) .eq. INTERIOR) then
+    else if (phys_bc(2,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,1)")
     end if
@@ -1234,6 +1249,7 @@ contains
           sry(is-1:ie+1,je+1,ks-1:ke+1) = sly(is-1:ie+1,je+1,ks-1:ke+1)
        end if
     else if (phys_bc(2,2) .eq. INTERIOR) then
+    else if (phys_bc(2,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,2)")
     end if
@@ -1313,6 +1329,7 @@ contains
           slz(is-1:ie+1,js-1:je+1,ks) = srz(is-1:ie+1,js-1:je+1,ks)
        end if
     else if (phys_bc(3,1) .eq. INTERIOR) then
+    else if (phys_bc(3,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,1)")
     end if
@@ -1343,6 +1360,7 @@ contains
           srz(is-1:ie+1,js-1:je+1,ke+1) = slz(is-1:ie+1,js-1:je+1,ke+1)
        end if
     else if (phys_bc(3,2) .eq. INTERIOR) then
+    else if (phys_bc(3,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,2)")
     end if
@@ -1429,6 +1447,7 @@ contains
           slxy(is,js:je,ks-1:ke+1) = srxy(is,js:je,ks-1:ke+1)
        end if
     else if (phys_bc(1,1) .eq. INTERIOR) then
+    else if (phys_bc(1,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,1)")
     end if
@@ -1459,6 +1478,7 @@ contains
           srxy(ie+1,js:je,ks-1:ke+1) = slxy(ie+1,js:je,ks-1:ke+1)
        end if
     else if (phys_bc(1,2) .eq. INTERIOR) then
+    else if (phys_bc(1,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,2)")
     end if
@@ -1548,6 +1568,7 @@ contains
           slxz(is,js-1:je+1,ks:ke) = srxz(is,js-1:je+1,ks:ke)
        end if
     else if (phys_bc(1,1) .eq. INTERIOR) then
+    else if (phys_bc(1,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,1)")
     end if
@@ -1578,6 +1599,7 @@ contains
           srxz(ie+1,js-1:je+1,ks:ke) = slxz(ie+1,js-1:je+1,ks:ke)
        end if
     else if (phys_bc(1,2) .eq. INTERIOR) then
+    else if (phys_bc(1,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,2)")
     end if
@@ -1667,6 +1689,7 @@ contains
           slyx(is:ie,js,ks-1:ke+1) = sryx(is:ie,js,ks-1:ke+1)
        end if
     else if (phys_bc(2,1) .eq. INTERIOR) then
+    else if (phys_bc(2,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,1)")
     end if
@@ -1697,6 +1720,7 @@ contains
           sryx(is:ie,je+1,ks-1:ke+1) = slyx(is:ie,je+1,ks-1:ke+1)
        end if
     else if (phys_bc(2,2) .eq. INTERIOR) then
+    else if (phys_bc(2,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,2)")
     end if
@@ -1788,6 +1812,7 @@ contains
           slyz(is-1:ie+1,js,ks:ke) = sryz(is-1:ie+1,js,ks:ke)
        end if
     else if (phys_bc(2,1) .eq. INTERIOR) then
+    else if (phys_bc(2,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,1)")
     end if
@@ -1818,6 +1843,7 @@ contains
           sryz(is-1:ie+1,je+1,ks:ke) = slyz(is-1:ie+1,je+1,ks:ke)
        end if
     else if (phys_bc(2,2) .eq. INTERIOR) then
+    else if (phys_bc(2,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,2)")
     end if
@@ -1909,6 +1935,7 @@ contains
           slzx(is:ie,js-1:je+1,ks) = srzx(is:ie,js-1:je+1,ks)
        end if
     else if (phys_bc(3,1) .eq. INTERIOR) then
+    else if (phys_bc(3,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,1)")
     end if
@@ -1939,6 +1966,7 @@ contains
           srzx(is:ie,js-1:je+1,ke+1) = slzx(is:ie,js-1:je+1,ke+1)
        end if
     else if (phys_bc(3,2) .eq. INTERIOR) then
+    else if (phys_bc(3,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,2)")
     end if
@@ -2030,6 +2058,7 @@ contains
           slzy(is-1:ie+1,js:je,ks) = srzy(is-1:ie+1,js:je,ks)
        end if
     else if (phys_bc(3,1) .eq. INTERIOR) then
+    else if (phys_bc(3,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,1)")
     end if
@@ -2060,6 +2089,7 @@ contains
           srzy(is-1:ie+1,js:je,ke+1) = slzy(is-1:ie+1,js:je,ke+1)
        end if
     else if (phys_bc(3,2) .eq. INTERIOR) then
+    else if (phys_bc(3,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,2)")
     end if
@@ -2234,6 +2264,7 @@ contains
           sedgex(is,js:je,ks:ke,comp) = sedgerx(is,js:je,ks:ke)
        end if
     else if (phys_bc(1,1) .eq. INTERIOR) then
+    else if (phys_bc(1,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,1)")
     end if
@@ -2260,6 +2291,7 @@ contains
           sedgex(ie+1,js:je,ks:ke,comp) = sedgelx(ie+1,js:je,ks:ke)
        end if
     else if (phys_bc(1,2) .eq. INTERIOR) then
+    else if (phys_bc(1,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,2)")
     end if
@@ -2414,6 +2446,7 @@ contains
           sedgey(is:ie,js,ks:ke,comp) = sedgery(is:ie,js,ks:ke)
        end if
     else if (phys_bc(2,1) .eq. INTERIOR) then
+    else if (phys_bc(2,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,1)")
     end if
@@ -2440,6 +2473,7 @@ contains
           sedgey(is:ie,je+1,ks:ke,comp) = sedgely(is:ie,je+1,ks:ke)
        end if
     else if (phys_bc(2,2) .eq. INTERIOR) then
+    else if (phys_bc(2,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,2)")
     end if
@@ -2606,6 +2640,7 @@ contains
           sedgez(is:ie,js:je,ks,comp) = sedgerz(is:ie,js:je,ks)
        end if
     else if (phys_bc(3,1) .eq. INTERIOR) then
+    else if (phys_bc(3,1) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,1)")
     end if
@@ -2632,6 +2667,7 @@ contains
           sedgez(is:ie,js:je,ke+1,comp) = sedgelz(is:ie,js:je,ke+1)
        end if
     else if (phys_bc(3,2) .eq. INTERIOR) then
+    else if (phys_bc(3,2) .eq. PERIODIC) then
     else 
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,2)")
     end if

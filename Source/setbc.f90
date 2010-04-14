@@ -52,6 +52,9 @@ contains
     else if (bc(1,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(1,1) .eq. PERIODIC) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        call bl_error("setbc_1d: bc(1,1) not yet supported")
     end if
@@ -78,6 +81,9 @@ contains
           s(hi(1)+i) = -s(hi(1)-i+1)
        end do
     else if (bc(1,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(1,2) .eq. PERIODIC) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
@@ -129,6 +135,9 @@ contains
     else if (bc(1,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(1,1) .eq. PERIODIC) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        call bl_error("setbc_2d: bc(1,1) not yet supported")
     end if
@@ -159,6 +168,9 @@ contains
           s(hi(1)+i,lo(2)-1:hi(2)+1) = -s(hi(1)-i+1,lo(2)-1:hi(2)+1)
        end do
     else if (bc(1,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(1,2) .eq. PERIODIC) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
@@ -193,6 +205,9 @@ contains
     else if (bc(2,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(2,1) .eq. PERIODIC) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        call bl_error("setbc_2d: bc(2,1) not yet supported")
     end if
@@ -223,6 +238,9 @@ contains
           s(lo(1)-ng:hi(1)+ng,hi(2)+j) = -s(lo(1)-ng:hi(1)+ng,hi(2)-j+1)
        end do
     else if (bc(2,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(2,2) .eq. PERIODIC) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
@@ -290,6 +308,9 @@ contains
     else if (bc(1,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(1,1) .eq. PERIODIC) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        call bl_error("setbc_3d: bc(1,1) not yet supported")
     end if
@@ -336,6 +357,9 @@ contains
           end do
        end do
     else if (bc(1,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(1,2) .eq. PERIODIC) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
@@ -386,6 +410,9 @@ contains
     else if (bc(2,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(2,1) .eq. PERIODIC) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        call bl_error("setbc_3d: bc(2,1) not yet supported")
     end if
@@ -432,6 +459,9 @@ contains
           end do
        end do
     else if (bc(2,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(2,2) .eq. PERIODIC) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
@@ -482,6 +512,9 @@ contains
     else if (bc(3,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(3,1) .eq. PERIODIC) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
        call bl_error("setbc_3d: bc(3,1) not yet supported")
     end if
@@ -528,6 +561,9 @@ contains
           end do
        end do
     else if (bc(3,2) .eq. INTERIOR) then
+       ! nothing to do - these ghost cells are filled with either
+       ! multifab_fill_boundary or multifab_fill_ghost_cells
+    else if (bc(3,2) .eq. PERIODIC) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
