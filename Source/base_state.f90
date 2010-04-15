@@ -309,7 +309,7 @@ contains
 
     if ( parallel_IOProcessor() ) then
        write (*,887)
-       if (.not. spherical) then
+       if (spherical .ne. 1) then
           write (*,*)   'model file mapping, level:', n
        else
           write (*,*)   'model file mapping (spherical base state)'
