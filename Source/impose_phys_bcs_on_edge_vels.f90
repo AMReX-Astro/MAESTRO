@@ -86,6 +86,7 @@ contains
        uedge(is:ie+1,js-1) = ZERO
     case (OUTLET, SYMMETRY)
        uedge(is:ie+1,js-1) = uedge(is:ie+1,js)
+    case (INTERIOR, PERIODIC)
     case  default 
        call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(2,1)")
     end select
