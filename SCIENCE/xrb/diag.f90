@@ -479,10 +479,10 @@ contains
        endif
 
        ! print the data
-       write(un,  1000) time+dt, T_max, (coord_T_max(i), i=1,dm)
-       write(un2, 1000) time+dt, enuc_max, (coord_enuc_max(i), i=1,dm), &
+       write(un,  1000) time, T_max, (coord_T_max(i), i=1,dm)
+       write(un2, 1000) time, enuc_max, (coord_enuc_max(i), i=1,dm), &
             total_c12_mass
-       write(un3, 1000) time+dt, vel_max, (coord_vel_max(i), i=1,dm), &
+       write(un3, 1000) time, vel_max, (coord_vel_max(i), i=1,dm), &
             Machno_max, (coord_Machno_max(i), i=1,dm)
 
        close(un )
