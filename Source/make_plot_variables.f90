@@ -433,36 +433,33 @@ contains
   end subroutine make_tfromH_3d_sphr
 
   subroutine make_tfromp(plotdata,comp_tfromp,comp_tpert,comp_rhopert,comp_rhohpert, &
-                         comp_machno,comp_deltag,comp_entropy, &
-                         s,u,rho0,rhoh0,tempbar,gamma1bar,p0,dx)
+                         comp_machno,comp_deltag,comp_entropy, comp_magvel, &
+                         s,rho0,rhoh0,tempbar,gamma1bar,p0,dx)
 
     use geometry, only: spherical, dm
 
     integer        , intent(in   ) :: comp_tfromp,comp_tpert
     integer        , intent(in   ) :: comp_rhopert, comp_rhohpert, comp_machno
-    integer        , intent(in   ) :: comp_deltag, comp_entropy
+    integer        , intent(in   ) :: comp_deltag, comp_entropy, comp_magvel
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: s
-    type(multifab) , intent(in   ) :: u
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: rhoh0(0:)
     real(kind=dp_t), intent(in   ) :: tempbar(0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:),up(:,:,:,:)
+    real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:)
     integer :: lo(dm),hi(dm),i
-    integer :: ng_p,ng_s,ng_u
+    integer :: ng_p,ng_s
 
     ng_p = plotdata%ng
     ng_s = s%ng
-    ng_u = u%ng
 
     do i = 1, s%nboxes
        if ( multifab_remote(s, i) ) cycle
        tp => dataptr(plotdata, i)
        sp => dataptr(s, i)
-       up => dataptr(u, i)
        lo =  lwb(get_box(s, i))
        hi =  upb(get_box(s, i))
        select case (dm)
@@ -470,30 +467,34 @@ contains
           call make_tfromp_1d(tp(:,1,1,comp_tfromp  ),tp(:,1,1,comp_tpert), &
                               tp(:,1,1,comp_rhopert ),tp(:,1,1,comp_rhohpert), &
                               tp(:,1,1,comp_machno  ),tp(:,1,1,comp_deltag), &
-                              tp(:,1,1,comp_entropy ), ng_p, &
-                              sp(:,1,1,:), ng_s, up(:,1,1,1), ng_u, &
+                              tp(:,1,1,comp_entropy ),tp(:,1,1,comp_magvel), &
+                              ng_p, &
+                              sp(:,1,1,:), ng_s, &
                               lo, hi, rho0, rhoh0, tempbar, gamma1bar, p0)
        case (2)
           call make_tfromp_2d(tp(:,:,1,comp_tfromp),tp(:,:,1,comp_tpert), &
                               tp(:,:,1,comp_rhopert ),tp(:,:,1,comp_rhohpert), &
                               tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
-                              tp(:,:,1,comp_entropy ), ng_p, &
-                              sp(:,:,1,:), ng_s, up(:,:,1,:), ng_u, &
+                              tp(:,:,1,comp_entropy ),tp(:,:,1,comp_magvel), &
+                              ng_p, &
+                              sp(:,:,1,:), ng_s, &
                               lo, hi, rho0, rhoh0, tempbar, gamma1bar, p0)
        case (3)
           if (spherical .eq. 1) then
              call make_tfromp_3d_sphr(tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
                                       tp(:,:,:,comp_rhopert ),tp(:,:,:,comp_rhohpert), &
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
-                                      tp(:,:,:,comp_entropy ), ng_p, &
-                                      sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
+                                      tp(:,:,:,comp_entropy ),tp(:,:,:,comp_magvel), &
+                                      ng_p, &
+                                      sp(:,:,:,:), ng_s, &
                                       lo, hi, rho0, rhoh0, tempbar, gamma1bar, p0, dx)
           else
              call make_tfromp_3d_cart(tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
                                       tp(:,:,:,comp_rhopert ),tp(:,:,:,comp_rhohpert), &
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
-                                      tp(:,:,:,comp_entropy ), ng_p, &
-                                      sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
+                                      tp(:,:,:,comp_entropy ),tp(:,:,:,comp_magvel), &
+                                      ng_p, &
+                                      sp(:,:,:,:), ng_s, &
                                       lo, hi, rho0, rhoh0, tempbar, gamma1bar, p0)
           endif
        end select
@@ -502,13 +503,14 @@ contains
   end subroutine make_tfromp
 
   subroutine make_tfromp_1d(t,tpert,rhopert,rhohpert,machno,deltagamma,entropy, &
-                            ng_p,s,ng_s,u,ng_u,lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0)
+                            magvel, &
+                            ng_p,s,ng_s,lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0)
 
     use eos_module
     use network, only: nspec
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
 
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s, ng_u
+    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:)  
     real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1)-ng_p:)  
@@ -516,8 +518,8 @@ contains
     real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:)  
+    real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:)
     real (kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s:,:)
-    real (kind=dp_t), intent(in   ) ::          u(lo(1)-ng_u:)
     real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(in   ) :: rhoh0(0:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
@@ -526,7 +528,6 @@ contains
 
     !     Local variables
     integer          :: i
-    real (kind=dp_t) :: vel
 
     ! Then compute the perturbation
     do i = lo(1), hi(1)
@@ -557,8 +558,7 @@ contains
        rhopert(i)  = s(i,rho_comp)  - rho0(i)
        rhohpert(i) = s(i,rhoh_comp) - rhoh0(i)
 
-       vel = abs(u(i))
-       machno(i) = vel / cs_eos(1)
+       machno(i) = magvel(i) / cs_eos(1)
        deltagamma(i) = gam1_eos(1) - gamma1bar(i)
 
        entropy(i) = s_eos(1)
@@ -567,13 +567,14 @@ contains
   end subroutine make_tfromp_1d
 
   subroutine make_tfromp_2d(t,tpert,rhopert,rhohpert,machno,deltagamma,entropy, &
-                            ng_p,s,ng_s,u,ng_u,lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0)
+                            magvel, &
+                            ng_p,s,ng_s,lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0)
 
     use eos_module
     use network, only: nspec
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
 
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s, ng_u
+    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1)-ng_p:,lo(2)-ng_p:)  
@@ -581,8 +582,8 @@ contains
     real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:,lo(2)-ng_p:)  
+    real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:,lo(2)-ng_p:)
     real (kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real (kind=dp_t), intent(in   ) ::          u(lo(1)-ng_u:,lo(2)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(in   ) :: rhoh0(0:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
@@ -591,7 +592,6 @@ contains
 
     !     Local variables
     integer          :: i, j
-    real (kind=dp_t) :: vel
 
     ! Then compute the perturbation
     do j = lo(2), hi(2)
@@ -623,8 +623,7 @@ contains
           rhopert(i,j)  = s(i,j,rho_comp)  - rho0(j)
           rhohpert(i,j) = s(i,j,rhoh_comp) - rhoh0(j)
 
-          vel = sqrt(u(i,j,1)*u(i,j,1) + u(i,j,2)*u(i,j,2))
-          machno(i,j) = vel / cs_eos(1)
+          machno(i,j) = magvel(i,j) / cs_eos(1)
 
           deltagamma(i,j) = gam1_eos(1) - gamma1bar(j)
 
@@ -635,13 +634,14 @@ contains
   end subroutine make_tfromp_2d
 
   subroutine make_tfromp_3d_cart(t,tpert,rhopert,rhohpert,machno,deltagamma,entropy, &
-                                 ng_p,s,ng_s,u,ng_u,lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0)
+                                 magvel, &
+                                 ng_p,s,ng_s,lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0)
 
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use eos_module
     use network, only: nspec
 
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s, ng_u
+    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
@@ -649,8 +649,8 @@ contains
     real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
+    real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
     real (kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind=dp_t), intent(in   ) ::          u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(in   ) :: rhoh0(0:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
@@ -659,7 +659,6 @@ contains
 
     ! Local variables
     integer          :: i, j, k
-    real (kind=dp_t) :: vel
 
     ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)
@@ -692,8 +691,7 @@ contains
              rhopert(i,j,k)  = s(i,j,k,rho_comp)  - rho0(k)
              rhohpert(i,j,k) = s(i,j,k,rhoh_comp) - rhoh0(k)
 
-             vel = sqrt(u(i,j,k,1)*u(i,j,k,1)+u(i,j,k,2)*u(i,j,k,2)+u(i,j,k,3)*u(i,j,k,3))
-             machno(i,j,k) = vel / cs_eos(1)
+             machno(i,j,k) = magvel(i,j,k) / cs_eos(1)
 
              deltagamma(i,j,k) = gam1_eos(1) - gamma1bar(k)
 
@@ -705,14 +703,15 @@ contains
   end subroutine make_tfromp_3d_cart
 
   subroutine make_tfromp_3d_sphr(t,tpert,rhopert,rhohpert,machno,deltagamma,entropy, &
-                                 ng_p,s,ng_s,u,ng_u,lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0,dx)
+                                 magvel, &
+                                 ng_p,s,ng_s,lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0,dx)
 
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use eos_module
     use network, only: nspec
     use fill_3d_module
 
-    integer         , intent(in   ) :: lo(:),hi(:),ng_p,ng_s,ng_u
+    integer         , intent(in   ) :: lo(:),hi(:),ng_p,ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
@@ -720,8 +719,8 @@ contains
     real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
+    real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
     real (kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind=dp_t), intent(in   ) ::          u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(in   ) :: rhoh0(0:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
@@ -731,7 +730,6 @@ contains
 
     !     Local variables
     integer          :: i, j, k
-    real (kind=dp_t) :: vel
 
 
     real (kind=dp_t), allocatable ::      rho0_cart(:,:,:,:)
@@ -783,8 +781,7 @@ contains
              rhopert(i,j,k)  = s(i,j,k,rho_comp)  -  rho0_cart(i,j,k,1)
              rhohpert(i,j,k) = s(i,j,k,rhoh_comp) - rhoh0_cart(i,j,k,1)
 
-             vel = sqrt(u(i,j,k,1)*u(i,j,k,1)+u(i,j,k,2)*u(i,j,k,2)+u(i,j,k,3)*u(i,j,k,3))
-             machno(i,j,k) = vel / cs_eos(1)
+             machno(i,j,k) = magvel(i,j,k) / cs_eos(1)
 
              deltagamma(i,j,k) = gam1_eos(1) - gamma1bar_cart(i,j,k,1)
 
