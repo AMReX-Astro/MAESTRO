@@ -57,7 +57,7 @@ contains
     integer, parameter :: MAX_VARNAME_LENGTH=80
     integer :: npts_model, nvars_model_file
 
-    real(kind=dp_t) :: min_dens, max_dens, min_temp, max_temp
+    real(kind=dp_t) :: min_dens, max_dens, min_temp, max_temp, eps
 
     real(kind=dp_t), allocatable :: base_state(:,:), base_r(:)
     real(kind=dp_t), allocatable :: vars_stored(:)
@@ -224,7 +224,7 @@ contains
 
     close(99)
 
-
+    eps = 1.d-8
 
     max_dens = maxval(base_state(:,idens_model))
     min_dens = minval(base_state(:,idens_model))
@@ -274,6 +274,10 @@ contains
           print *, '         of dynamical interest'
        end if
     endif
+
+    if (min_dens + eps > base_cutoff_density .or. min_dens + eps > anelastic_cutoff) then
+       call bl_error("minimum model density is larger than, or very close to the cutoff density.")
+    end if
 
     if (min_temp < small_temp) then
        if ( parallel_IOProcessor() .and. n == 1) then
