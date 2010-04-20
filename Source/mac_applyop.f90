@@ -17,7 +17,7 @@ contains
   subroutine mac_applyop(mla,res,phi,alpha,beta,dx,the_bc_tower,bc_comp,stencil_order,ref_ratio)
     use mg_module
     use stencil_fill_module
-    use coeffs_module
+!   use coeffs_module
     use ml_cc_module, only: ml_cc_applyop
     use probin_module, only: cg_verbose, mg_verbose
     use geometry, only: dm, nlevs

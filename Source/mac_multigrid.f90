@@ -20,7 +20,7 @@ contains
                            stencil_order,ref_ratio,phi_norm)
     use mg_module
     use stencil_fill_module
-    use coeffs_module
+!   use coeffs_module
     use ml_solve_module
     use probin_module, only : mg_bottom_solver, max_mg_bottom_nlevels, verbose, mg_verbose, cg_verbose
     use geometry, only: dm, nlevs

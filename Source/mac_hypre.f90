@@ -19,7 +19,7 @@ iii
   subroutine mac_hypre(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp, &
                        stencil_order,ref_ratio,umac_norm)
     use mg_module
-    use coeffs_module
+!   use coeffs_module
     use probin_module, only : verbose
     use geometry, only: dm, nlevs
 

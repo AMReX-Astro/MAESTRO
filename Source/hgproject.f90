@@ -20,7 +20,6 @@ contains
     use bl_prof_module
     use proj_parameters
     use nodal_divu_module
-    use stencil_module
     use ml_solve_module
     use ml_restriction_module
     use multifab_fill_ghost_module
@@ -992,7 +991,6 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use stencil_module
     use stencil_fill_module
     use ml_solve_module
     use nodal_divu_module
@@ -1228,8 +1226,6 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use stencil_module
-    use coeffs_module
     use ml_solve_module
     use nodal_divu_module
     use probin_module, only : nodal
