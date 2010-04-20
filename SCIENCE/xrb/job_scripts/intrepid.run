@@ -1,7 +1,7 @@
 # There's no job submission scripts, so you just have to type in commands manually
 
 # MPI example - 64 nodes with no threads, i.e., 256 MPI processes
-qsub -t 10 -n 64 -q prod --mode vn -A MAESTRO main.Linux.xlf.mpi.exe inputs_3d.256.5dr.eq.dx
+qsub -t 10 -n 64 -q prod --mode vn -A SNe_Ia_scaling main.Linux.xlf.mpi.exe inputs_3d.256.5dr.eq.dx
 
 # Hybrid MPI/OpenMP example - 64 nodes, each spawning 4 threads
-qsub -t 10 -n 64 -q prod --mode smp -A MAESTRO main.Linux.xlf.mpi.omp.exe inputs_3d.256.5dr.eq.dx
+qsub -t 10 -n 64 -q prod --mode smp -A SNe_Ia_scaling main.Linux.xlf.mpi.omp.exe inputs_3d.256.5dr.eq.dx
