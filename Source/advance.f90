@@ -41,7 +41,7 @@ contains
     use extraphalf_module
     use thermal_conduct_module
     use make_explicit_thermal_module
-    use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
+    use variables, only: nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry
     use network, only: nspec
     use make_grav_module
@@ -374,15 +374,14 @@ contains
        call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-       call macproject(mla,umac,macphi,sold,dx,the_bc_tower,press_comp, &
-                       macrhs,div_coeff_3d=div_coeff_3d)
+       call macproject(mla,umac,macphi,sold,dx,the_bc_tower,macrhs,div_coeff_3d=div_coeff_3d)
 
        do n=1,nlevs
           call destroy(div_coeff_3d(n))
        end do
     else
        call cell_to_edge(div_coeff_old,div_coeff_edge)
-       call macproject(mla,umac,macphi,sold,dx,the_bc_tower,press_comp, &
+       call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
                        macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
     end if
 
@@ -812,7 +811,7 @@ contains
        call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-       call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,press_comp,macrhs, &
+       call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,macrhs, &
                        div_coeff_3d=div_coeff_3d)
 
        do n=1,nlevs
@@ -820,7 +819,7 @@ contains
        end do
     else
        call cell_to_edge(div_coeff_nph,div_coeff_edge)
-       call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,press_comp,macrhs, &
+       call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,macrhs, &
                        div_coeff_1d=div_coeff_nph,div_coeff_half_1d=div_coeff_edge)
     end if
 
@@ -1241,14 +1240,14 @@ contains
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
        call hgproject(proj_type,mla,unew,uold,rhohalf,pres,gpres,dx,dt,the_bc_tower, &
-                      press_comp,hgrhs,div_coeff_3d=div_coeff_3d)
+                      hgrhs,div_coeff_3d=div_coeff_3d)
 
        do n=1,nlevs
           call destroy(div_coeff_3d(n))
        end do
     else
        call hgproject(proj_type,mla,unew,uold,rhohalf,pres,gpres,dx,dt,the_bc_tower, &
-                      press_comp,hgrhs,div_coeff_1d=div_coeff_nph)
+                      hgrhs,div_coeff_1d=div_coeff_nph)
     end if
 
     do n=1,nlevs

@@ -12,7 +12,7 @@ contains
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
                        w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
-    use variables, only: press_comp, nscal, foextrap_comp, rho_comp
+    use variables, only: nscal, foextrap_comp, rho_comp
     use network, only: nspec
     use define_bc_module
     use bl_constants_module
@@ -186,13 +186,11 @@ contains
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
        call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pres,gpres,dx,dt_temp, &
-                      the_bc_tower,press_comp, &
-                      hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
+                      the_bc_tower,hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
        
     else
        call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pres,gpres,dx,dt_temp, &
-                      the_bc_tower,press_comp, &
-                      hgrhs,div_coeff_1d=div_coeff_old)
+                      the_bc_tower,hgrhs,div_coeff_1d=div_coeff_old)
     end if
 
     if(spherical .eq. 1) then

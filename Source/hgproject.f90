@@ -14,7 +14,7 @@ module hgproject_module
 contains 
 
   subroutine hgproject(proj_type,mla,unew,uold,rhohalf,pres,gpres,dx,dt,the_bc_tower, &
-                       press_comp, divu_rhs,div_coeff_1d,div_coeff_3d,eps_in)
+                       divu_rhs,div_coeff_1d,div_coeff_3d,eps_in)
 
     use bc_module
     use bl_prof_module
@@ -36,7 +36,6 @@ contains
     type(multifab ), intent(inout) :: gpres(:)
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
     type(bc_tower ), intent(in   ) :: the_bc_tower
-    integer        , intent(in   ) :: press_comp
 
     type(multifab ), intent(inout), optional :: divu_rhs(:)
     real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:,:)
@@ -140,14 +139,14 @@ contains
     end do
 
 !   if (dm .eq. 1) then
-!      call hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,press_comp,divu_rhs)
+!      call hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,divu_rhs)
 !   else if (present(eps_in)) then
     if (present(eps_in)) then
        call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
-                         press_comp,stencil_type,divu_rhs,eps_in)
+                         stencil_type,divu_rhs,eps_in)
     else 
        call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
-                         press_comp,stencil_type,divu_rhs)
+                         stencil_type,divu_rhs)
     end if
 
     if (use_div_coeff_1d) then
@@ -989,7 +988,7 @@ contains
   ! ******************************************************************************** !
 
   subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
-                          press_comp,stencil_type,divu_rhs,eps_in)
+                          stencil_type,divu_rhs,eps_in)
 
     use bl_prof_module
     use bl_constants_module
@@ -997,8 +996,10 @@ contains
     use coeffs_module
     use ml_solve_module
     use nodal_divu_module
-    use probin_module, only : hg_bottom_solver, max_mg_bottom_nlevels, verbose, mg_verbose, cg_verbose, nodal
+    use probin_module, only : hg_bottom_solver, max_mg_bottom_nlevels, verbose, &
+         mg_verbose, cg_verbose, nodal
     use geometry, only: dm, nlevs
+    use variables, only: press_comp
 
     type(ml_layout), intent(inout) :: mla
     type(multifab ), intent(inout) :: unew(:)
@@ -1006,7 +1007,6 @@ contains
     type(multifab ), intent(inout) :: phi(:)
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
-    integer        , intent(in   ) :: press_comp
     integer        , intent(in   ) :: stencil_type
 
     type(multifab ), intent(in   ), optional :: divu_rhs(:)
@@ -1399,7 +1399,7 @@ contains
 
   !   ********************************************************************************* !
 
-  subroutine hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,press_comp,divu_rhs)
+  subroutine hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,divu_rhs)
 
     use bl_prof_module
     use bl_constants_module
@@ -1410,6 +1410,7 @@ contains
     use probin_module, only : nodal
     use geometry, only: dm, nlevs
     use probin_module, only : verbose, nodal
+    use variables, only: press_comp
 
     type(ml_layout), intent(inout) :: mla
     type(multifab ), intent(inout) :: unew(:)
@@ -1417,7 +1418,6 @@ contains
     type(multifab ), intent(inout) :: phi(:)
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
-    integer        , intent(in   ) :: press_comp
 
     type(multifab ), intent(in   ), optional :: divu_rhs(:)
 

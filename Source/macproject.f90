@@ -21,11 +21,12 @@ contains
   ! NOTE: this routine differs from that in varden because phi is passed in/out 
   !       rather than allocated here
   subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower, &
-                        bc_comp,divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
+                        divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
 
     use mac_multigrid_module
     use geometry, only: dm, nlevs, spherical
     use probin_module, only: verbose, edge_nodal_flag
+    use variables, only: press_comp
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
@@ -33,7 +34,6 @@ contains
     type(multifab ), intent(in   ) :: rho(:)
     real(dp_t)     , intent(in   ) :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
-    integer        , intent(in   ) :: bc_comp
 
     type(multifab ), intent(in   ), optional :: divu_rhs(:)
     real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:,:)
@@ -138,9 +138,9 @@ contains
     end do
 
     call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
-                       the_bc_tower,bc_comp,stencil_order,mla%mba%rr,umac_norm)
+                       the_bc_tower,press_comp,stencil_order,mla%mba%rr,umac_norm)
 
-    call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,bc_comp,mla%mba%rr)
+    call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,mla%mba%rr)
 
     if (use_rhs) then
        call divumac(umac,rh,dx,mla%mba%rr,.false.,divu_rhs)
@@ -814,10 +814,11 @@ contains
 
     end subroutine mk_mac_coeffs_3d
 
-    subroutine mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,press_comp,ref_ratio)
+    subroutine mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,ref_ratio)
 
       use ml_restriction_module, only: ml_edge_restriction
       use geometry, only: dm, nlevs
+      use variables, only: press_comp
 
       type(multifab), intent(inout) :: umac(:,:)
       type(multifab), intent(inout) ::   rh(:)
@@ -826,7 +827,6 @@ contains
       type(bndry_reg),intent(in   ) :: fine_flx(2:)
       real(dp_t)    , intent(in   ) :: dx(:,:)
       type(bc_tower), intent(in   ) :: the_bc_tower
-      integer       , intent(in   ) :: press_comp
       integer       , intent(in   ) :: ref_ratio(:,:)
 
       integer :: i

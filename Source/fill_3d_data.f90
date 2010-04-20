@@ -532,7 +532,7 @@ contains
     use bl_constants_module
     use geometry, only: spherical, nr_fine, dm, nlevs
     use probin_module, only: w0mac_interp_type
-    use variables, only: foextrap_comp,press_comp
+    use variables, only: foextrap_comp
     use define_bc_module
 
     type(ml_layout), intent(in   ) :: mla
@@ -924,7 +924,6 @@ contains
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, dm, nlevs
-    use variables, only: foextrap_comp,press_comp
     use define_bc_module
     use probin_module, only: s0mac_interp_type
 
@@ -1598,7 +1597,6 @@ contains
     use multifab_physbc_module
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
-    use variables, only: foextrap_comp
     
     real(kind=dp_t), intent(in   ) :: s0(:,0:)
     type(multifab) , intent(inout) :: s0_cart(:)

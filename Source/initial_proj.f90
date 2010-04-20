@@ -10,7 +10,7 @@ contains
   subroutine initial_proj(uold,sold,pres,gpres,Source_old,hgrhs,thermal, &
                           div_coeff_old,p0,gamma1bar,dx,the_bc_tower,mla)
 
-    use variables, only: press_comp, foextrap_comp, rho_comp
+    use variables, only: foextrap_comp, rho_comp
     use network, only: nspec
     use define_bc_module
     use bl_constants_module
@@ -158,13 +158,11 @@ contains
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
        call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
-                      dt_temp,the_bc_tower,press_comp, &
-                      hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
+                      dt_temp,the_bc_tower,hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
        
     else
        call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
-                      dt_temp,the_bc_tower,press_comp, &
-                      hgrhs,div_coeff_1d=div_coeff_old)
+                      dt_temp,the_bc_tower,hgrhs,div_coeff_1d=div_coeff_old)
     end if
 
     if(spherical .eq. 1) then
