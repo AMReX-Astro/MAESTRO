@@ -105,7 +105,6 @@ contains
        allocate(coeffs(mgt(n)%nlevels))
 
        la = mla%la(n)
-       pd = layout_get_pd(la)
 
        call multifab_build(coeffs(mgt(n)%nlevels), la, 1+dm, 1)
        call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1,1,ng=alpha(n)%ng)
@@ -126,7 +125,7 @@ contains
        pxa = ZERO
        pxb = ZERO
 
-       call stencil_fill_cc_all_mglevels(mgt(n), coeffs, xa, xb, pxa, pxb, pd, stencil_order, &
+       call stencil_fill_cc_all_mglevels(mgt(n), coeffs, xa, xb, pxa, pxb, stencil_order, &
                                          the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp))
 
        call destroy(coeffs(mgt(n)%nlevels))
