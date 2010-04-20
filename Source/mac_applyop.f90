@@ -115,12 +115,6 @@ contains
        if (dm > 2) &
          call multifab_copy_c(coeffs(mgt(n)%nlevels),4,beta(n,3),1,1,ng=beta(n,3)%ng)
 
-       do i = mgt(n)%nlevels-1, 1, -1
-          call multifab_build(coeffs(i), mgt(n)%ss(i)%la, 1+dm, 1)
-          call setval(coeffs(i), ZERO, 1, dm+1, all=.true.)
-          call coarsen_coeffs(coeffs(i+1),coeffs(i))
-       end do
-
        if (n > 1) then
           xa = HALF*ref_ratio(n-1,:)*mgt(n)%dh(:,mgt(n)%nlevels)
           xb = HALF*ref_ratio(n-1,:)*mgt(n)%dh(:,mgt(n)%nlevels)
@@ -132,7 +126,7 @@ contains
        pxa = ZERO
        pxb = ZERO
 
-      call stencil_fill_cc_all_mglevels(mgt(n), coeffs, xa, xb, pxa, pxb, pd, stencil_order, &
+       call stencil_fill_cc_all_mglevels(mgt(n), coeffs, xa, xb, pxa, pxb, pd, stencil_order, &
                                          the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp))
 
        call destroy(coeffs(mgt(n)%nlevels))
