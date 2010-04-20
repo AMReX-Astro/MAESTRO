@@ -993,11 +993,11 @@ contains
     use bl_prof_module
     use bl_constants_module
     use stencil_module
-    use coeffs_module
+    use stencil_fill_module
     use ml_solve_module
     use nodal_divu_module
-    use probin_module, only : hg_bottom_solver, max_mg_bottom_nlevels, verbose, &
-         mg_verbose, cg_verbose, nodal
+    use probin_module, only : hg_bottom_solver, max_mg_bottom_nlevels, &
+                              verbose, mg_verbose, cg_verbose, nodal
     use geometry, only: dm, nlevs
     use variables, only: press_comp
 
@@ -1022,19 +1022,6 @@ contains
     type(multifab) :: one_sided_ss(2:mla%nlevel)
 
     type(multifab), allocatable :: coeffs(:)
-
-    ! Bottom MGT stuff
-    type(mg_tower)  :: bottom_mgt
-    type(layout)    :: old_coarse_la,new_coarse_la
-    type(layout)    :: old_la_grown, new_la_grown
-    type(box)       :: coarse_pd,bxs
-    type(boxarray)  :: ba_cc,new_coarse_ba
-    type(multifab)  :: stored_coeffs, stored_coeffs_grown
-    type(multifab)  :: new_coeffs_grown
-    type(multifab), allocatable :: coarse_coeffs(:)
-    integer         :: mglev,bottom_box_size
-    real(dp_t), pointer :: sc_orig(:,:,:,:), sc_grown(:,:,:,:)
-    real(dp_t)      :: coarse_dx(dm)
 
     real(dp_t) :: bottom_solver_eps
     real(dp_t) :: eps
@@ -1171,7 +1158,6 @@ contains
        allocate(coeffs(mgt(n)%nlevels))
 
        la = mla%la(n)
-       pd = layout_get_pd(la)
 
        call multifab_build(coeffs(mgt(n)%nlevels), la, 1, 1)
        call setval(coeffs(mgt(n)%nlevels), 0.0_dp_t, 1, all=.true.)
@@ -1179,166 +1165,19 @@ contains
        call mkcoeffs(rhohalf(n),coeffs(mgt(n)%nlevels))
        call multifab_fill_boundary(coeffs(mgt(n)%nlevels))
 
-       do i = mgt(n)%nlevels-1, 1, -1
-          call multifab_build(coeffs(i), mgt(n)%ss(i)%la, 1, 1)
-          call setval(coeffs(i), 0.0_dp_t, 1, all=.true.)
-          call coarsen_coeffs(coeffs(i+1),coeffs(i))
-          call multifab_fill_boundary(coeffs(i))
-       end do
-
-       do i = mgt(n)%nlevels, 1, -1
-          call stencil_fill_nodal(mgt(n)%ss(i), coeffs(i), mgt(n)%dh(:,i), &
-                                  mgt(n)%mm(i), mgt(n)%face_type, stencil_type)
-          pd  = coarsen(pd,2)
-       end do
+       call stencil_fill_nodal_all_mglevels(mgt(n), coeffs, stencil_type)
 
        if (stencil_type .eq. ST_CROSS .and. n .gt. 1) then
           i = mgt(n)%nlevels
           call stencil_fill_one_sided(one_sided_ss(n), coeffs(i), &
-                                      mgt(n    )%dh(:,i), &
+                                      mgt(n)%dh(:,i), &
                                       mgt(n)%mm(i), mgt(n)%face_type)
        end if
 
-       ! Need to hang on to these coeffs at the bottom level of this mg
-       if ( n == 1 .and. bottom_solver == 4 ) then
-          call multifab_build(stored_coeffs, mgt(n)%ss(1)%la, 1, 1)
-          call multifab_copy_c(stored_coeffs,1,coeffs(n),1,1,ng=coeffs(1)%ng)
-       end if
-
-       do i = mgt(n)%nlevels, 1, -1
-          call destroy(coeffs(i))
-       end do
+       call destroy(coeffs(mgt(n)%nlevels))
        deallocate(coeffs)
 
     end do
-
-    ! START OF BOTTOM_SOLVER == 4
-    if (bottom_solver == 4) then
-
-       ! Get the old/new coarse problem domain
-       old_coarse_la = mgt(1)%ss(1)%la
-       coarse_pd = layout_get_pd(old_coarse_la)
-
-       ! Get the new coarse boxarray and layout
-       call box_build_2(bxs,coarse_pd%lo(1:dm),coarse_pd%hi(1:dm))
-       call boxarray_build_bx(new_coarse_ba,bxs)
-
-       ! This is how many levels could be built if we made just one grid
-       n = max_mg_levels_bottom(new_coarse_ba,min_width)
-
-       ! This is the user-imposed limit
-       n = min(n,max_mg_bottom_nlevels)
-
-       if ( n .eq. 1) then
-          call bl_error("DONT USE HG_BOTTOM_SOLVER == 4: BOTTOM GRID NOT PROPERLY DIVISIBLE")
-       end if
-
-       bottom_box_size = 2**n
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          print *,'TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE',n
-       end if
-
-       call boxarray_maxsize(new_coarse_ba,bottom_box_size)
-       call layout_build_ba(new_coarse_la,new_coarse_ba,coarse_pd, &
-                            pmask=old_coarse_la%lap%pmask)
-
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          call print(layout_get_pd(old_coarse_la),"COARSE PD")
-          print *,'ORIG HG NBOXES ',old_coarse_la%lap%nboxes
-          print *,'NEW  HG NBOXES ',new_coarse_la%lap%nboxes
-       end if
-
-       coarse_dx(:) = dx(1,:) * 2**(mgt(1)%nlevels-1)
-
-       call mg_tower_build(bottom_mgt, new_coarse_la, coarse_pd, &
-                           the_bc_tower%bc_tower_array(1)%ell_bc_level_array(0,:,:,press_comp),&
-                           dh = coarse_dx, &
-                           ns = ns, &
-                           smoother = smoother, &
-                           nu1 = nu1, &
-                           nu2 = nu2, &
-                           gamma = gamma, &
-                           cycle_type = cycle_type, &
-                           omega = omega, &
-                           bottom_solver = 1, &
-                           bottom_max_iter = bottom_max_iter, &
-                           bottom_solver_eps = bottom_solver_eps, &
-                           max_iter = max_iter, &
-                           max_nlevel = max_nlevel, &
-                           min_width = min_width, &
-                           eps = eps, &
-                           verbose = mg_verbose, &
-                           cg_verbose = cg_verbose, &
-                           nodal = nodal)
-
-       ! START SPECIAL COPY
-       ! Here we do special stuff to be able to copy the ghost cells of stored_coeffs into
-       !   the ghost cells of coarse_coeffs(bottom)
-
-       ! Make sure to do this before the copy so we get all the data
-       call multifab_fill_boundary(stored_coeffs)
-
-       mglev = bottom_mgt%nlevels
-
-       allocate(coarse_coeffs(mglev))
-       call multifab_build(coarse_coeffs(mglev),new_coarse_la,1,1)
-       call setval(coarse_coeffs(mglev),ZERO,all=.true.)
-
-       call boxarray_build_copy(ba_cc,get_boxarray(stored_coeffs))
-       call boxarray_grow(ba_cc,1)
-       call layout_build_ba(old_la_grown,ba_cc,pmask=old_coarse_la%lap%pmask, &
-                            explicit_mapping=get_proc(old_coarse_la))
-       call destroy(ba_cc)
-       call multifab_build(stored_coeffs_grown,old_la_grown,1,ng=0)
-
-       do i = 1, stored_coeffs_grown%nboxes
-          if (remote(stored_coeffs_grown,i)) cycle 
-          sc_orig  => dataptr(stored_coeffs      ,i,get_pbox(stored_coeffs_grown,i),1,1)
-          sc_grown => dataptr(stored_coeffs_grown,i,get_pbox(stored_coeffs_grown,i),1,1)
-          sc_grown = sc_orig
-       end do
-
-       call boxarray_build_copy(ba_cc,new_coarse_ba)
-       call boxarray_grow(ba_cc,1)
-       call layout_build_ba(new_la_grown,ba_cc,pmask=old_coarse_la%lap%pmask, &
-                            explicit_mapping=get_proc(new_coarse_la))
-       call destroy(ba_cc)
-       call multifab_build(new_coeffs_grown,new_la_grown,1,ng=0)
-       call multifab_copy_c(new_coeffs_grown,1,stored_coeffs_grown,1,1)
-
-       do i = 1, new_coeffs_grown%nboxes
-          if (remote(new_coeffs_grown,i)) cycle 
-          sc_orig  => dataptr(coarse_coeffs(mglev),i,get_pbox(new_coeffs_grown,i),1,1)
-          sc_grown => dataptr(new_coeffs_grown    ,i,get_pbox(new_coeffs_grown,i),1,1)
-          sc_orig = sc_grown
-       end do
-
-       call destroy(new_coeffs_grown)
-       call destroy(new_coarse_ba)
-       !   END SPECIAL COPY
-
-       do i = mglev-1, 1, -1
-          call multifab_build(coarse_coeffs(i), bottom_mgt%ss(i)%la, 1, 1)
-          call setval(coarse_coeffs(i), ZERO, 1, 1, all=.true.)
-          call coarsen_coeffs(coarse_coeffs(i+1),coarse_coeffs(i))
-          call multifab_fill_boundary(coarse_coeffs(i))
-       end do
-
-       do i = mglev, 1, -1
-          call stencil_fill_nodal(bottom_mgt%ss(i), coarse_coeffs(i), bottom_mgt%dh(:,i), &
-                                  bottom_mgt%mm(i), bottom_mgt%face_type, stencil_type)
-       end do
-
-       do i = mglev, 1, -1
-          call destroy(coarse_coeffs(i))
-       end do
-       deallocate(coarse_coeffs)
-       call destroy(stored_coeffs)
-       call destroy(stored_coeffs_grown)
-       call destroy(old_la_grown)
-       call destroy(new_la_grown)
-    end if
-    ! END   OF BOTTOM_SOLVER == 4
 
     do n = 1, nlevs
        call multifab_build(rh(n),mla%la(n),1,1,nodal)
@@ -1359,18 +1198,9 @@ contains
     end if
 
     if (present(eps_in)) then
-       if (bottom_solver == 4) then
-          call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,&
-                           eps_in=eps_in,bottom_mgt=bottom_mgt)
-       else
-          call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,eps_in=eps_in)
-       end if
+       call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,eps_in=eps_in)
     else
-       if (bottom_solver == 4) then
-          call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,bottom_mgt=bottom_mgt)
-       else
-          call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics)
-       end if
+       call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics)
     end if
 
     do n = nlevs,1,-1
@@ -1381,11 +1211,6 @@ contains
        call mg_tower_destroy(mgt(n))
        call destroy(rh(n))
     end do
-
-    if (bottom_solver == 4) then
-       call destroy(new_coarse_la)
-       call mg_tower_destroy(bottom_mgt)
-    end if
 
     if (stencil_type .ne. ST_DENSE) then
        do n = nlevs, 2, -1

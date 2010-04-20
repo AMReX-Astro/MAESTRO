@@ -16,6 +16,7 @@ contains
 
   subroutine mac_applyop(mla,res,phi,alpha,beta,dx,the_bc_tower,bc_comp,stencil_order,ref_ratio)
     use mg_module
+    use stencil_fill_module
     use coeffs_module
     use ml_cc_module, only: ml_cc_applyop
     use probin_module, only: cg_verbose, mg_verbose
@@ -31,7 +32,6 @@ contains
     type(multifab) , intent(inout) :: res(:), phi(:)
 
     type(layout  ) :: la
-    type(boxarray) :: pdv
     type(box     ) :: pd
 
     type(multifab), allocatable :: coeffs(:)
@@ -131,16 +131,11 @@ contains
 
        pxa = ZERO
        pxb = ZERO
-       do i = mgt(n)%nlevels, 1, -1
-          pdv = layout_boxarray(mgt(n)%ss(i)%la)
-          call stencil_fill_cc(mgt(n)%ss(i), coeffs(i), mgt(n)%dh(:,i), &
-                               pdv, mgt(n)%mm(i), xa, xb, pxa, pxb, pd, stencil_order, &
-                               the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp))
-       end do
 
-       do i = mgt(n)%nlevels, 1, -1
-          call destroy(coeffs(i))
-       end do
+      call stencil_fill_cc_all_mglevels(mgt(n), coeffs, xa, xb, pxa, pxb, pd, stencil_order, &
+                                         the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp))
+
+       call destroy(coeffs(mgt(n)%nlevels))
        deallocate(coeffs)
 
     end do
