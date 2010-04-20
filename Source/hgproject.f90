@@ -1142,6 +1142,7 @@ contains
                            bottom_solver_eps = bottom_solver_eps, &
                            max_iter = max_iter, &
                            max_nlevel = max_nlevel_in, &
+                           max_bottom_nlevel = max_mg_bottom_nlevels, &
                            min_width = min_width, &
                            eps = eps, &
                            verbose = mg_verbose, &
