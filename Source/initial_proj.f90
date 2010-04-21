@@ -7,7 +7,7 @@ module initial_proj_module
 
 contains
 
-  subroutine initial_proj(uold,sold,pres,gpres,Source_old,hgrhs,thermal, &
+  subroutine initial_proj(uold,sold,pi,gpi,Source_old,hgrhs,thermal, &
                           div_coeff_old,p0,gamma1bar,dx,the_bc_tower,mla)
 
     use variables, only: foextrap_comp, rho_comp
@@ -29,8 +29,8 @@ contains
 
     type(multifab) , intent(inout) :: uold(:)
     type(multifab) , intent(in   ) :: sold(:)
-    type(multifab) , intent(inout) :: pres(:)
-    type(multifab) , intent(inout) :: gpres(:)
+    type(multifab) , intent(inout) :: pi(:)
+    type(multifab) , intent(inout) :: gpi(:)
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
     type(multifab) , intent(inout) :: thermal(:)
@@ -146,7 +146,7 @@ contains
     end do
 
     ! dt doesn't matter for the initial projection since we're throwing
-    ! away the p and gpres anyway
+    ! away the pi and gpi anyway
     dt_temp = ONE
 
     if (spherical .eq. 1) then
@@ -157,11 +157,11 @@ contains
        call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-       call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
+       call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pi,gpi,dx, &
                       dt_temp,the_bc_tower,hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
        
     else
-       call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
+       call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pi,gpi,dx, &
                       dt_temp,the_bc_tower,hgrhs,div_coeff_1d=div_coeff_old)
     end if
 
@@ -176,8 +176,8 @@ contains
     end do
 
     do n=1,nlevs
-       call setval( pres(n), 0.0_dp_t, all=.true.)
-       call setval(gpres(n), 0.0_dp_t, all=.true.)
+       call setval( pi(n), 0.0_dp_t, all=.true.)
+       call setval(gpi(n), 0.0_dp_t, all=.true.)
     end do
     
   end subroutine initial_proj

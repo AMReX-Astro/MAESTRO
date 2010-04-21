@@ -9,7 +9,7 @@ module advance_timestep_module
 contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
-                              gpres,pres,normal,rho0_old,rhoh0_old, &
+                              gpi,pi,normal,rho0_old,rhoh0_old, &
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,rho_Hnuc2,thermal2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
@@ -62,8 +62,8 @@ contains
     type(multifab),  intent(in   ) ::   sold(:)
     type(multifab),  intent(inout) ::   unew(:)
     type(multifab),  intent(inout) ::   snew(:)
-    type(multifab),  intent(inout) ::  gpres(:)
-    type(multifab),  intent(inout) ::   pres(:)
+    type(multifab),  intent(inout) ::  gpi(:)
+    type(multifab),  intent(inout) ::   pi(:)
     type(multifab),  intent(in   ) :: normal(:)
     real(dp_t)    ,  intent(inout) ::  rho0_old(:,0:)
     real(dp_t)    ,  intent(inout) :: rhoh0_old(:,0:)
@@ -172,11 +172,11 @@ contains
 
     if (verbose .ge. 1) then
        do n=1,nlevs
-          numcell = multifab_volume(pres(n),.false.)
+          numcell = multifab_volume(pi(n),.false.)
           if (parallel_IOProcessor()) then
              print*,"Number of valid cells at level        ",n,numcell
           end if
-          numcell = multifab_volume(pres(n),.true.)
+          numcell = multifab_volume(pi(n),.true.)
           if (parallel_IOProcessor()) then
              print*,"Number of valid + ghost cells at level",n,numcell
           end if
@@ -336,7 +336,7 @@ contains
        end do
     end do
     
-    call advance_premac(uold,sold,umac,gpres,normal,w0,w0mac,w0_force,w0_force_cart_vec, &
+    call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart_vec, &
                         rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
     if (dm .eq. 3) then
@@ -779,7 +779,7 @@ contains
        end do
     end do
 
-    call advance_premac(uold,sold,umac,gpres,normal,w0,w0mac,w0_force,w0_force_cart_vec, &
+    call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart_vec, &
                         rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
     do n=1,nlevs
@@ -1132,7 +1132,7 @@ contains
 
     call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
     
-    call velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpres,normal,w0,w0mac,w0_force, &
+    call velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpi,normal,w0,w0mac,w0_force, &
                           w0_force_cart_vec,rho0_old,rho0_nph,grav_cell_old,grav_cell_nph, &
                           dx,dt,the_bc_tower%bc_tower_array,sponge)
 
@@ -1239,14 +1239,14 @@ contains
        call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-       call hgproject(proj_type,mla,unew,uold,rhohalf,pres,gpres,dx,dt,the_bc_tower, &
+       call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
                       hgrhs,div_coeff_3d=div_coeff_3d)
 
        do n=1,nlevs
           call destroy(div_coeff_3d(n))
        end do
     else
-       call hgproject(proj_type,mla,unew,uold,rhohalf,pres,gpres,dx,dt,the_bc_tower, &
+       call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
                       hgrhs,div_coeff_1d=div_coeff_nph)
     end if
 

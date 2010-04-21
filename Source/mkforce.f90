@@ -20,7 +20,7 @@ module mk_vel_force_module
 contains
 
   subroutine mk_vel_force(vel_force,is_final_update, &
-                          uold,umac,w0,gpres,s,index_rho,normal, &
+                          uold,umac,w0,gpi,s,index_rho,normal, &
                           rho0,grav,dx,the_bc_level,mla)
 
     ! index_rho refers to the index into s where the density lives.
@@ -43,7 +43,7 @@ contains
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    type(multifab) , intent(in   ) :: gpres(:)
+    type(multifab) , intent(in   ) :: gpi(:)
     type(multifab) , intent(in   ) :: s(:)
     integer                        :: index_rho  
     type(multifab) , intent(in   ) :: normal(:)
@@ -78,7 +78,7 @@ contains
 
     ng_s = s(1)%ng
     ng_f = vel_force(1)%ng
-    ng_gp = gpres(1)%ng
+    ng_gp = gpi(1)%ng
 
     ! put w0 on cart both cell-centered and on edges
     if (spherical .eq. 1) then
@@ -115,7 +115,7 @@ contains
        do i=1,s(n)%nboxes
           if ( multifab_remote(s(n), i) ) cycle
           fp  => dataptr(vel_force(n),i)
-          gpp => dataptr(gpres(n),i)
+          gpp => dataptr(gpi(n),i)
           rp  => dataptr(s(n),i)
           lo = lwb(get_box(s(n),i))
           hi = upb(get_box(s(n),i))
@@ -207,14 +207,14 @@ contains
 
   end subroutine mk_vel_force
 
-  subroutine mk_vel_force_1d(vel_force,ng_f,gpres,ng_gp,rho,ng_s,rho0,grav,lo,hi)
+  subroutine mk_vel_force_1d(vel_force,ng_f,gpi,ng_gp,rho,ng_s,rho0,grav,lo,hi)
 
     use bl_constants_module
     use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
 
     integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :)
-    real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:)
+    real(kind=dp_t), intent(in   ) ::     gpi(lo(1)-ng_gp:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
@@ -233,20 +233,20 @@ contains
           rhopert = 0.d0
        end if
 
-       vel_force(i) =  rhopert / rho(i) * grav(i) - gpres(i) / rho(i)
+       vel_force(i) =  rhopert / rho(i) * grav(i) - gpi(i) / rho(i)
 
     end do
 
   end subroutine mk_vel_force_1d
 
-  subroutine mk_vel_force_2d(vel_force,ng_f,gpres,ng_gp,rho,ng_s,rho0,grav,lo,hi)
+  subroutine mk_vel_force_2d(vel_force,ng_f,gpi,ng_gp,rho,ng_s,rho0,grav,lo,hi)
 
     use bl_constants_module
     use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
 
     integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,:)
-    real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:,lo(2)-ng_gp:,:)
+    real(kind=dp_t), intent(in   ) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
@@ -266,9 +266,9 @@ contains
              rhopert = 0.d0
           end if
 
-          vel_force(i,j,1) = - gpres(i,j,1) / rho(i,j)
+          vel_force(i,j,1) = - gpi(i,j,1) / rho(i,j)
           vel_force(i,j,2) =  rhopert / rho(i,j) * grav(j) &
-               - gpres(i,j,2) / rho(i,j)
+               - gpi(i,j,2) / rho(i,j)
        end do
     end do
 
@@ -278,7 +278,7 @@ contains
                                   uold,ng_uo, &
                                   umac,vmac,wmac,ng_um, &
                                   w0, &
-                                  gpres,ng_gp,rho,ng_s, &
+                                  gpi,ng_gp,rho,ng_s, &
                                   rho0,grav,lo,hi)
 
     use geometry,  only: sin_theta, cos_theta, omega
@@ -294,7 +294,7 @@ contains
     real(kind=dp_t), intent(in   ) ::      vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::      wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   w0(0:)
-    real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
+    real(kind=dp_t), intent(in   ) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
@@ -372,13 +372,13 @@ contains
              endif
 
              vel_force(i,j,k,1) = -coriolis_term(1) - centrifugal_term(1) - &
-                  gpres(i,j,k,1) / rho(i,j,k) 
+                  gpi(i,j,k,1) / rho(i,j,k) 
 
              vel_force(i,j,k,2) = -coriolis_term(2) - centrifugal_term(2) - &
-                  gpres(i,j,k,2) / rho(i,j,k) 
+                  gpi(i,j,k,2) / rho(i,j,k) 
 
              vel_force(i,j,k,3) = -coriolis_term(3) - centrifugal_term(3) + &
-                  ( rhopert * grav(k) - gpres(i,j,k,3) ) / rho(i,j,k)
+                  ( rhopert * grav(k) - gpi(i,j,k,3) ) / rho(i,j,k)
 
           end do
        end do
@@ -392,7 +392,7 @@ contains
                                   umac,vmac,ng_um, &
                                   w0_cart,ng_wc, &
                                   w0macx,w0macy,ng_wm, &
-                                  gpres,ng_gp,rho,ng_s, &
+                                  gpi,ng_gp,rho,ng_s, &
                                   normal,ng_n,rho0,grav,lo,hi,dx)
 
     use fill_3d_module
@@ -409,7 +409,7 @@ contains
     real(kind=dp_t), intent(in   ) ::   w0_cart(lo(1)-ng_wc:,lo(2)-ng_wc:,lo(3)-ng_wc:,:)
     real(kind=dp_t), intent(in   ) ::    w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
     real(kind=dp_t), intent(in   ) ::    w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
-    real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
+    real(kind=dp_t), intent(in   ) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::    normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
@@ -493,13 +493,13 @@ contains
              ! we just computed the absolute value of the forces above, so use
              ! the right sign here
              vel_force(i,j,k,1) = -coriolis_term(1) - centrifugal_term(1) + &
-                  ( rhopert * grav_cart(i,j,k,1) - gpres(i,j,k,1) ) / rho(i,j,k)
+                  ( rhopert * grav_cart(i,j,k,1) - gpi(i,j,k,1) ) / rho(i,j,k)
 
              vel_force(i,j,k,2) = -coriolis_term(2) - centrifugal_term(2) + &
-                  ( rhopert * grav_cart(i,j,k,2) - gpres(i,j,k,2) ) / rho(i,j,k)
+                  ( rhopert * grav_cart(i,j,k,2) - gpi(i,j,k,2) ) / rho(i,j,k)
 
              vel_force(i,j,k,3) = -coriolis_term(3) - centrifugal_term(3) + &
-                  ( rhopert * grav_cart(i,j,k,3) - gpres(i,j,k,3) ) / rho(i,j,k)
+                  ( rhopert * grav_cart(i,j,k,3) - gpi(i,j,k,3) ) / rho(i,j,k)
 
           end do
        end do

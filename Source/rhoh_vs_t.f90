@@ -1113,7 +1113,7 @@ contains
 
   end subroutine makeTfromRhoP_3d_sphr
 
-  subroutine makePfromRhoH(state,sold,pres,mla,the_bc_level)
+  subroutine makePfromRhoH(state,sold,peos,mla,the_bc_level)
 
     use variables,             only: foextrap_comp, temp_comp
     use bl_prof_module
@@ -1124,7 +1124,7 @@ contains
 
     type(multifab)    , intent(in   ) :: state(:)
     type(multifab)    , intent(in   ) :: sold(:)
-    type(multifab)    , intent(inout) :: pres(:)
+    type(multifab)    , intent(inout) :: peos(:)
     type(ml_layout)   , intent(inout) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
 
@@ -1141,7 +1141,7 @@ contains
 
     ng_s  = state(1)%ng
     ng_so = sold(1)%ng
-    ng_p  = pres(1)%ng
+    ng_p  = peos(1)%ng
 
     do n=1,nlevs
 
@@ -1149,7 +1149,7 @@ contains
           if (multifab_remote(state(n),i)) cycle
           snp => dataptr(state(n),i)
           sop => dataptr(sold(n),i)
-          pnp => dataptr(pres(n),i)
+          pnp => dataptr(peos(n),i)
           lo = lwb(get_box(state(n),i))
           hi = upb(get_box(state(n),i))
           select case (dm)
@@ -1171,10 +1171,10 @@ contains
 
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(pres(nlevs),1,1)
+       call multifab_fill_boundary_c(peos(nlevs),1,1)
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(pres(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
+       call multifab_physbc(peos(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
 
     else
 
@@ -1182,12 +1182,12 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(pres(n-1),1,pres(n),1,mla%mba%rr(n-1,:),1)
+          call ml_cc_restriction_c(peos(n-1),1,peos(n),1,mla%mba%rr(n-1,:),1)
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          call multifab_fill_ghost_cells(pres(n),pres(n-1),ng_p,mla%mba%rr(n-1,:), &
+          call multifab_fill_ghost_cells(peos(n),peos(n-1),ng_p,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n),1, &
                                          foextrap_comp,1,fill_crse_input=.false.)
        enddo
@@ -1198,7 +1198,7 @@ contains
 
   end subroutine makePfromRhoH
 
-  subroutine makePfromRhoH_1d(state,temp_old,pres,lo,hi,ng_s,ng_so,ng_p)
+  subroutine makePfromRhoH_1d(state,temp_old,peos,lo,hi,ng_s,ng_so,ng_p)
 
     use variables,     only: rho_comp, spec_comp, rhoh_comp
     use eos_module
@@ -1207,7 +1207,7 @@ contains
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_so, ng_p
     real (kind = dp_t), intent(in   ) ::    state(lo(1)-ng_s :,:)
     real (kind = dp_t), intent(in   ) :: temp_old(lo(1)-ng_so:)    
-    real (kind = dp_t), intent(inout) ::     pres(lo(1)-ng_p :)
+    real (kind = dp_t), intent(inout) ::     peos(lo(1)-ng_p :)
     
     ! Local variables
     integer :: i
@@ -1235,13 +1235,13 @@ contains
                 .false., &
                 pt_index_eos)
        
-       pres(i) = p_eos(1)
+       peos(i) = p_eos(1)
        
     enddo
 
   end subroutine makePfromRhoH_1d
 
-  subroutine makePfromRhoH_2d(state,temp_old,pres,lo,hi,ng_s,ng_so,ng_p)
+  subroutine makePfromRhoH_2d(state,temp_old,peos,lo,hi,ng_s,ng_so,ng_p)
 
     use variables,     only: rho_comp, spec_comp, rhoh_comp
     use eos_module
@@ -1250,7 +1250,7 @@ contains
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_so, ng_p
     real (kind = dp_t), intent(in   ) ::    state(lo(1)-ng_s :,lo(2)-ng_s :,:)
     real (kind = dp_t), intent(in   ) :: temp_old(lo(1)-ng_so:,lo(2)-ng_so:)    
-    real (kind = dp_t), intent(inout) ::     pres(lo(1)-ng_p :,lo(2)-ng_p :)
+    real (kind = dp_t), intent(inout) ::     peos(lo(1)-ng_p :,lo(2)-ng_p :)
     
     ! Local variables
     integer :: i, j
@@ -1279,14 +1279,14 @@ contains
                    .false., &
                    pt_index_eos)
 
-          pres(i,j) = p_eos(1)
+          peos(i,j) = p_eos(1)
 
        enddo
     enddo
 
   end subroutine makePfromRhoH_2d
 
-  subroutine makePfromRhoH_3d(state,temp_old,pres,lo,hi,ng_s,ng_so,ng_p)
+  subroutine makePfromRhoH_3d(state,temp_old,peos,lo,hi,ng_s,ng_so,ng_p)
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp
     use eos_module
@@ -1296,7 +1296,7 @@ contains
     integer           , intent(in   ) :: lo(:), hi(:), ng_s, ng_so, ng_p
     real (kind = dp_t), intent(in   ) ::    state(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real (kind = dp_t), intent(in   ) :: temp_old(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:)
-    real (kind = dp_t), intent(inout) ::     pres(lo(1)-ng_p :,lo(2)-ng_p :,lo(3)-ng_p :)
+    real (kind = dp_t), intent(inout) ::     peos(lo(1)-ng_p :,lo(2)-ng_p :,lo(3)-ng_p :)
 
     ! Local variables
     integer :: i, j, k
@@ -1326,7 +1326,7 @@ contains
                       .false., &
                       pt_index_eos)
              
-             pres(i,j,k) = p_eos(1)
+             peos(i,j,k) = p_eos(1)
              
           enddo
        enddo

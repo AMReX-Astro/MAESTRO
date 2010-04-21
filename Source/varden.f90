@@ -58,8 +58,8 @@ subroutine varden()
   ! these are pointers because they need to be allocated and built within another function
   type(multifab), pointer :: uold(:)
   type(multifab), pointer :: sold(:)
-  type(multifab), pointer :: pres(:)
-  type(multifab), pointer :: gpres(:)
+  type(multifab), pointer :: pi(:)
+  type(multifab), pointer :: gpi(:)
   type(multifab), pointer :: dSdt(:)
   type(multifab), pointer :: Source_old(:)
   type(multifab), pointer :: Source_new(:)
@@ -125,7 +125,7 @@ subroutine varden()
 
   if (restart >= 0) then
 
-     call initialize_from_restart(mla,restart,time,dt,pmask,dx,uold,sold,gpres,pres, &
+     call initialize_from_restart(mla,restart,time,dt,pmask,dx,uold,sold,gpi,pi, &
                                   dSdt,Source_old,Source_new, &
                                   rho_omegadot2,rho_Hnuc2,thermal2,the_bc_tower, &
                                   div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -135,7 +135,7 @@ subroutine varden()
 
   else if (test_set /= '') then
 
-     call initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres,dSdt, &
+     call initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                       Source_old,Source_new, &
                                       rho_omegadot2,rho_Hnuc2,thermal2,the_bc_tower, &
                                       div_coeff_old,div_coeff_new,gamma1bar, &
@@ -145,7 +145,7 @@ subroutine varden()
 
   else
 
-     call initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres,dSdt, &
+     call initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                          Source_old,Source_new, &
                                          rho_omegadot2,rho_Hnuc2,thermal2,the_bc_tower, &
                                          div_coeff_old,div_coeff_new,gamma1bar, &
@@ -202,11 +202,11 @@ subroutine varden()
 
   if (verbose .ge. 1) then
      do n=1,nlevs
-        numcell = multifab_volume(pres(n),.false.)
+        numcell = multifab_volume(pi(n),.false.)
         if (parallel_IOProcessor()) then
            print*,"Number of valid cells at level        ",n,numcell
         end if
-        numcell = multifab_volume(pres(n),.true.)
+        numcell = multifab_volume(pi(n),.true.)
         if (parallel_IOProcessor()) then
            print*,"Number of valid + ghost cells at level",n,numcell
         end if
@@ -269,8 +269,7 @@ subroutine varden()
            ! enforce HSE
            call enforce_HSE(rho0_old,p0_old,grav_cell)
 
-           ! recompute T and h using update pressure using
-           ! T,h = T,h(rho,p0_old,X)
+           ! recompute T,h = T,h(rho,p0_old,X)
            call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
            
            ! force rhoh0 to be the average of rhoh
@@ -303,7 +302,7 @@ subroutine varden()
      call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
 
      if(do_initial_projection) then
-        call initial_proj(uold,sold,pres,gpres,Source_old,hgrhs,thermal2, &
+        call initial_proj(uold,sold,pi,gpi,Source_old,hgrhs,thermal2, &
                           div_coeff_old,p0_old,gamma1bar,dx,the_bc_tower,mla)
      end if
 
@@ -311,7 +310,7 @@ subroutine varden()
      ! Compute the initial time step
      !----------------------------------------------------------------------
     
-     call firstdt(mla,the_bc_tower%bc_tower_array,uold,gpres,sold,Source_old,normal, &
+     call firstdt(mla,the_bc_tower%bc_tower_array,uold,gpi,sold,Source_old,normal, &
                   rho0_old,p0_old,grav_cell,gamma1bar,dx,cflfac,dt)
 
      if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -337,7 +336,7 @@ subroutine varden()
 
      do istep_divu_iter=1,init_divu_iter
 
-        call divu_iter(istep_divu_iter,uold,sold,pres,gpres,normal,thermal2, &
+        call divu_iter(istep_divu_iter,uold,sold,pi,gpi,normal,thermal2, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old, &
                        gamma1bar,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
@@ -364,7 +363,7 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index6
         endif
 
-        call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,rho_Hnuc2, &
+        call make_plotfile(plot_file_name,mla,uold,sold,gpi,rho_omegadot2,rho_Hnuc2, &
                            thermal2,Source_old,sponge,mla%mba,plot_names,time,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar, &
                            normal)
@@ -401,7 +400,7 @@ subroutine varden()
   if (restart < 0) then
 
      !------------------------------------------------------------------------
-     ! Begin the initial iterations to define an initial pressure field.
+     ! Begin the initial pressure iterations
      !------------------------------------------------------------------------
 
      ! initialize Source_new to the Source_old the first time through
@@ -432,7 +431,7 @@ subroutine varden()
 
            runtime1 = parallel_wtime()
 
-           call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpres,pres,normal, &
+           call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpi,pi,normal, &
                                  rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                                  tempbar,gamma1bar,w0,rho_omegadot2,rho_Hnuc2,thermal2, &
                                  div_coeff_old,div_coeff_new,grav_cell,dx,time,dt,dtold, &
@@ -464,7 +463,7 @@ subroutine varden()
            call multifab_build(chkdata(n), mla%la(n), 2*dm+nscal, 0)
            call multifab_copy_c(chkdata(n),1                ,uold(n), 1,dm)
            call multifab_copy_c(chkdata(n),rho_comp+dm      ,sold(n), 1,nscal)
-           call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
+           call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpi(n),1,dm)
         end do
 
         if (istep <= 99999) then
@@ -476,7 +475,7 @@ subroutine varden()
         endif
 
         call checkpoint_write(check_file_name, chkdata, &
-                              pres, dSdt, Source_old, Source_new, &
+                              pi, dSdt, Source_old, Source_new, &
                               rho_omegadot2, rho_Hnuc2, thermal2, mla%mba%rr, &
                               time, dt)
 
@@ -507,7 +506,7 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index6
         endif
 
-        call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,rho_Hnuc2, &
+        call make_plotfile(plot_file_name,mla,uold,sold,gpi,rho_omegadot2,rho_Hnuc2, &
                            thermal2,Source_old,sponge,mla%mba,plot_names,time,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar,normal)
 
@@ -681,7 +680,7 @@ subroutine varden()
            end do
 
            ! create new grids and fill in data on those grids
-           call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,dx,the_bc_tower, &
+           call regrid(mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
                        rho0_old,rhoh0_old,.false.)
 
            call init_multilevel(sold)
@@ -760,7 +759,7 @@ subroutine varden()
 
            dt = 1.d20
 
-           call estdt(mla,the_bc_tower,uold,sold,gpres,Source_old,dSdt, &
+           call estdt(mla,the_bc_tower,uold,sold,gpi,Source_old,dSdt, &
                       normal,w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
 
            if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -808,7 +807,7 @@ subroutine varden()
         end if
         runtime1 = parallel_wtime()
 
-        call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpres,pres,normal,rho0_old, &
+        call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpi,pi,normal,rho0_old, &
                               rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar, &
                               w0,rho_omegadot2,rho_Hnuc2,thermal2,div_coeff_old,div_coeff_new, &
                               grav_cell,dx,time,dt,dtold,the_bc_tower,dSdt,Source_old, &
@@ -859,19 +858,19 @@ subroutine varden()
                  if (parallel_IOProcessor()) write(6,1103) smin,smax
               end if
 
-              smin = multifab_min_c(gpres(n),1) 
-              smax = multifab_max_c(gpres(n),1)
+              smin = multifab_min_c(gpi(n),1) 
+              smax = multifab_max_c(gpi(n),1)
               if (parallel_IOProcessor()) write(6,1104) smin,smax
 
               if (dm .ge. 2) then
-                 smin = multifab_min_c(gpres(n),2) 
-                 smax = multifab_max_c(gpres(n),2)
+                 smin = multifab_min_c(gpi(n),2) 
+                 smax = multifab_max_c(gpi(n),2)
                  if (parallel_IOProcessor()) write(6,1105) smin,smax
               end if
 
               if (dm .eq. 3) then
-                 smin = multifab_min_c(gpres(n),3) 
-                 smax = multifab_max_c(gpres(n),3)
+                 smin = multifab_min_c(gpi(n),3) 
+                 smax = multifab_max_c(gpi(n),3)
                  if (parallel_IOProcessor()) write(6,1106) smin,smax
               end if
 
@@ -883,9 +882,9 @@ subroutine varden()
 1101    format('... min/max : x-velocity       ',e17.10,2x,e17.10)
 1102    format('... min/max : y-velocity       ',e17.10,2x,e17.10)
 1103    format('... min/max : z-velocity       ',e17.10,2x,e17.10)
-1104    format('... min/max : gpresx              ',e17.10,2x,e17.10)
-1105    format('... min/max : gpresy              ',e17.10,2x,e17.10)
-1106    format('... min/max : gpresz              ',e17.10,2x,e17.10)
+1104    format('... min/max : gpix              ',e17.10,2x,e17.10)
+1105    format('... min/max : gpiy              ',e17.10,2x,e17.10)
+1106    format('... min/max : gpiz              ',e17.10,2x,e17.10)
 1107    format(' ')
 
         if (parallel_IOProcessor()) then
@@ -930,7 +929,7 @@ subroutine varden()
                  call multifab_build(chkdata(n), mla%la(n), 2*dm+nscal, 0)
                  call multifab_copy_c(chkdata(n),1,unew(n),1,dm)
                  call multifab_copy_c(chkdata(n),rho_comp+dm,snew(n),1,nscal)
-                 call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
+                 call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpi(n),1,dm)
               end do
 
               if (istep <= 99999) then
@@ -942,7 +941,7 @@ subroutine varden()
               endif
 
               call checkpoint_write(check_file_name, chkdata, &
-                                    pres, dSdt, Source_old, Source_new, &
+                                    pi, dSdt, Source_old, Source_new, &
                                     rho_omegadot2, rho_Hnuc2, thermal2, mla%mba%rr, &
                                     time, dt)
 
@@ -979,7 +978,7 @@ subroutine varden()
                  plot_file_name = trim(plot_base_name) // plot_index6
               endif
 
-              call make_plotfile(plot_file_name,mla,unew,snew,gpres,rho_omegadot2, &
+              call make_plotfile(plot_file_name,mla,unew,snew,gpi,rho_omegadot2, &
                                  rho_Hnuc2,thermal2,Source_new,sponge,mla%mba,plot_names, &
                                  time,dx,the_bc_tower,w0,rho0_new,rhoh0_new,p0_new,tempbar, &
                                  gamma1bar,normal)
@@ -1020,7 +1019,7 @@ subroutine varden()
            call multifab_build(chkdata(n), mla%la(n), 2*dm+nscal, 0)
            call multifab_copy_c(chkdata(n),1,unew(n),1,dm)
            call multifab_copy_c(chkdata(n),rho_comp+dm,snew(n),1,nscal)
-           call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
+           call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpi(n),1,dm)
         end do
 
         if (istep <= 99999) then
@@ -1032,7 +1031,7 @@ subroutine varden()
         endif
 
         call checkpoint_write(check_file_name, chkdata, &
-                              pres, dSdt, Source_old, Source_new, &
+                              pi, dSdt, Source_old, Source_new, &
                               rho_omegadot2, rho_Hnuc2, thermal2, mla%mba%rr, &
                               time, dt)
 
@@ -1058,9 +1057,10 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index6
         endif
 
-        call make_plotfile(plot_file_name,mla,unew,snew,gpres,rho_omegadot2,rho_Hnuc2, &
+        call make_plotfile(plot_file_name,mla,unew,snew,gpi,rho_omegadot2,rho_Hnuc2, &
                            thermal2,Source_new,sponge,mla%mba,plot_names,time,dx, &
-                           the_bc_tower,w0,rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar,normal)
+                           the_bc_tower,w0,rho0_new,rhoh0_new,p0_new,tempbar, &
+                           gamma1bar,normal)
         
         call write_base_state(istep, plot_file_name, &
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
@@ -1076,8 +1076,8 @@ subroutine varden()
      call destroy(unew(n))
      call destroy(sold(n))
      call destroy(snew(n))
-     call destroy(pres(n))
-     call destroy(gpres(n))
+     call destroy(pi(n))
+     call destroy(gpi(n))
      call destroy(dSdt(n))
      call destroy(Source_old(n))
      call destroy(Source_new(n))
@@ -1102,7 +1102,7 @@ subroutine varden()
 
   call probin_close()
 
-  deallocate(uold,sold,pres,gpres,dSdt,Source_old,Source_new,rho_omegadot2,rho_Hnuc2)
+  deallocate(uold,sold,pi,gpi,dSdt,Source_old,Source_new,rho_omegadot2,rho_Hnuc2)
   deallocate(thermal2,dx)
   deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)

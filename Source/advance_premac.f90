@@ -12,7 +12,7 @@ module pre_advance_module
 
 contains
 
-  subroutine advance_premac(uold,sold,umac,gpres,normal,w0,w0mac, &
+  subroutine advance_premac(uold,sold,umac,gpi,normal,w0,w0mac, &
                             w0_force,w0_force_cart_vec,rho0,grav_cell,dx,dt,the_bc_level,mla)
 
     use bl_prof_module
@@ -28,7 +28,7 @@ contains
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(inout) :: umac(:,:)
-    type(multifab) , intent(in   ) :: gpres(:)
+    type(multifab) , intent(in   ) :: gpi(:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
@@ -59,7 +59,7 @@ contains
     !*************************************************************
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      uold,umac,w0,gpres,sold,rho_comp,normal, &
+                      uold,umac,w0,gpi,sold,rho_comp,normal, &
                       rho0(:,:),grav_cell,dx,the_bc_level,mla)
 
     call add_w0_force(force,w0_force,w0_force_cart_vec,the_bc_level,mla)

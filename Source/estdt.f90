@@ -26,7 +26,7 @@ module estdt_module
 
 contains
 
-  subroutine estdt(mla,the_bc_tower,u,s,gpres,divU,dSdt,normal,w0,rho0,p0,gamma1bar, &
+  subroutine estdt(mla,the_bc_tower,u,s,gpi,divU,dSdt,normal,w0,rho0,p0,gamma1bar, &
                    grav,dx,cflfac,dt)
 
     use bl_prof_module
@@ -41,7 +41,7 @@ contains
     type(bc_tower) , intent(in ) :: the_bc_tower
     type(multifab) , intent(in ) :: u(:)
     type(multifab) , intent(in ) :: s(:)
-    type(multifab) , intent(in ) :: gpres(:)
+    type(multifab) , intent(in ) :: gpi(:)
     type(multifab) , intent(in ) :: divU(:)
     type(multifab) , intent(in ) :: dSdt(:)
     type(multifab) , intent(in ) :: normal(:)
@@ -96,7 +96,7 @@ contains
     
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      u,umac_dummy,w0,gpres,s,rho_comp,normal, &
+                      u,umac_dummy,w0,gpi,s,rho_comp,normal, &
                       rho0,grav,dx,the_bc_tower%bc_tower_array,mla)
 
     do n=1,nlevs

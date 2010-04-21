@@ -8,7 +8,7 @@ module divu_iter_module
 
 contains
 
-  subroutine divu_iter(istep_divu_iter,uold,sold,pres,gpres,normal,thermal, &
+  subroutine divu_iter(istep_divu_iter,uold,sold,pi,gpi,normal,thermal, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
                        w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
@@ -34,8 +34,8 @@ contains
     integer        , intent(in   ) :: istep_divu_iter
     type(multifab) , intent(inout) :: uold(:)
     type(multifab) , intent(in   ) :: sold(:)
-    type(multifab) , intent(inout) :: pres(:)
-    type(multifab) , intent(inout) :: gpres(:)
+    type(multifab) , intent(inout) :: pi(:)
+    type(multifab) , intent(inout) :: gpi(:)
     type(multifab) , intent(in   ) :: normal(:)
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(inout) :: Source_old(:)
@@ -169,7 +169,7 @@ contains
     end do
 
     ! dt doesn't matter for the div iters since we're throwing
-    ! away the p and gpres anyway
+    ! away the pi and gpi anyway
     dt_temp = ONE
 
     do n=1,nlevs
@@ -185,11 +185,11 @@ contains
        call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-       call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pres,gpres,dx,dt_temp, &
+       call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
                       the_bc_tower,hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
        
     else
-       call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pres,gpres,dx,dt_temp, &
+       call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
                       the_bc_tower,hgrhs,div_coeff_1d=div_coeff_old)
     end if
 
@@ -204,14 +204,14 @@ contains
     end do
 
     do n = 1,nlevs
-       call setval(pres(n) ,0.0_dp_t, all=.true.)
-       call setval(gpres(n),0.0_dp_t, all=.true.)
+       call setval(pi(n) ,0.0_dp_t, all=.true.)
+       call setval(gpi(n),0.0_dp_t, all=.true.)
     end do
     
     dt_hold = dt
     dt      = HUGE(dt)
 
-    call estdt(mla,the_bc_tower,uold,sold,gpres,Source_old,dSdt, &
+    call estdt(mla,the_bc_tower,uold,sold,gpi,Source_old,dSdt, &
                normal,w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then

@@ -13,7 +13,7 @@ module velocity_advance_module
 
 contains
 
-  subroutine velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpres, &
+  subroutine velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpi, &
                               normal,w0,w0mac,w0_force,w0_force_cart_vec, &
                               rho0_old,rho0_nph,grav_cell_old,grav_cell_nph,dx,dt, &
                               the_bc_level,sponge)
@@ -33,7 +33,7 @@ contains
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(in   ) :: rhohalf(:)
     type(multifab) , intent(inout) :: umac(:,:)
-    type(multifab) , intent(in   ) :: gpres(:)
+    type(multifab) , intent(in   ) :: gpi(:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
@@ -71,7 +71,7 @@ contains
 
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      uold,umac,w0,gpres,sold,rho_comp,normal, &
+                      uold,umac,w0,gpi,sold,rho_comp,normal, &
                       rho0_old,grav_cell_old,dx,the_bc_level,mla)
 
     call add_w0_force(force,w0_force,w0_force_cart_vec,the_bc_level,mla)
@@ -107,7 +107,7 @@ contains
 
     is_final_update = .true.
     call mk_vel_force(force,is_final_update, &
-                      uold,umac,w0,gpres,rhohalf,1,normal, &
+                      uold,umac,w0,gpi,rhohalf,1,normal, &
                       rho0_nph,grav_cell_nph,dx,the_bc_level,mla)
 
     call add_w0_force(force,w0_force,w0_force_cart_vec,the_bc_level,mla)

@@ -13,7 +13,7 @@ module hgproject_module
 
 contains 
 
-  subroutine hgproject(proj_type,mla,unew,uold,rhohalf,pres,gpres,dx,dt,the_bc_tower, &
+  subroutine hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
                        divu_rhs,div_coeff_1d,div_coeff_3d,eps_in)
 
     use bc_module
@@ -31,8 +31,8 @@ contains
     type(multifab ), intent(inout) :: unew(:)
     type(multifab ), intent(in   ) :: uold(:)
     type(multifab ), intent(inout) :: rhohalf(:)
-    type(multifab ), intent(inout) :: pres(:)
-    type(multifab ), intent(inout) :: gpres(:)
+    type(multifab ), intent(inout) :: pi(:)
+    type(multifab ), intent(inout) :: gpi(:)
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
     type(bc_tower ), intent(in   ) :: the_bc_tower
 
@@ -118,7 +118,7 @@ contains
 1003 format('... z-velocity before projection ',e17.10,2x,e17.10)
 1004 format(' ')
 
-    call create_uvec_for_projection(unew,uold,rhohalf,gpres,dt,the_bc_tower,proj_type)
+    call create_uvec_for_projection(unew,uold,rhohalf,gpi,dt,the_bc_tower,proj_type)
 
     if (use_div_coeff_1d) then
        call mult_by_1d_coeff(unew,div_coeff_1d,.true.)
@@ -162,8 +162,8 @@ contains
 
     call mkgphi(gphi,phi,dx)
 
-    call hg_update(proj_type,unew,uold,gpres,gphi,rhohalf,  &
-                   pres,phi,dt,mla,the_bc_tower%bc_tower_array)
+    call hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,  &
+                   pi,phi,dt,mla,the_bc_tower%bc_tower_array)
 
     do n = 1,nlevs
        call destroy(phi(n))
@@ -208,13 +208,13 @@ contains
 
     ! ******************************************************************************* !
 
-    subroutine create_uvec_for_projection(unew,uold,rhohalf,gpres,dt,the_bc_tower, &
+    subroutine create_uvec_for_projection(unew,uold,rhohalf,gpi,dt,the_bc_tower, &
                                           proj_type)
 
       type(multifab) , intent(inout) :: unew(:)
       type(multifab) , intent(in   ) :: uold(:)
       type(multifab) , intent(in   ) :: rhohalf(:)
-      type(multifab) , intent(inout) :: gpres(:)
+      type(multifab) , intent(inout) :: gpi(:)
       real(kind=dp_t), intent(in   ) :: dt
       type(bc_tower) , intent(in   ) :: the_bc_tower
       integer        , intent(in   ) :: proj_type
@@ -236,7 +236,7 @@ contains
       ng_un = unew(1)%ng
       ng_uo = uold(1)%ng
       ng_rh = rhohalf(1)%ng
-      ng_gp = gpres(1)%ng
+      ng_gp = gpi(1)%ng
   
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
@@ -244,7 +244,7 @@ contains
             if ( multifab_remote(unew(n), i) ) cycle
             unp => dataptr(unew(n)     , i) 
             uop => dataptr(uold(n)     , i) 
-            gpp => dataptr(gpres(n)       , i)
+            gpp => dataptr(gpi(n)       , i)
              rp => dataptr(  rhohalf(n), i)
             select case (dm)
                case (1)
@@ -270,7 +270,7 @@ contains
 
     !   ******************************************************************************** !
 
-    subroutine create_uvec_1d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpres,ng_gp, &
+    subroutine create_uvec_1d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpi,ng_gp, &
                               dt,phys_bc,proj_type)
 
       use proj_parameters
@@ -279,16 +279,16 @@ contains
       real(kind=dp_t), intent(inout) ::    unew(-ng_un:)
       real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:)
       real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:)
-      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:)
+      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:)
       real(kind=dp_t), intent(in   ) :: dt
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
       integer :: nx
-      nx = size(gpres,dim=1) - 2*ng_gp
+      nx = size(gpi,dim=1) - 2*ng_gp
 
-      if (phys_bc(1,1) .eq. INLET) gpres(-1) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpres(nx) = ZERO
+      if (phys_bc(1,1) .eq. INLET) gpi(-1) = ZERO
+      if (phys_bc(1,2) .eq. INLET) gpi(nx) = ZERO
 
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
@@ -301,10 +301,10 @@ contains
 
          unew(-1:nx) = ( unew(-1:nx) - uold(-1:nx) ) / dt
 
-      ! quantity projected is Ustar + dt * (1/rho) gpres
+      ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
 
-         unew(-1:nx) = unew(-1:nx) + dt*gpres(-1:nx)/rhohalf(-1:nx)
+         unew(-1:nx) = unew(-1:nx) + dt*gpi(-1:nx)/rhohalf(-1:nx)
 
        else
 
@@ -320,7 +320,7 @@ contains
 
     !   ******************************************************************************** !
 
-    subroutine create_uvec_2d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpres,ng_gp, &
+    subroutine create_uvec_2d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpi,ng_gp, &
                               dt,phys_bc,proj_type)
 
       use proj_parameters
@@ -329,19 +329,19 @@ contains
       real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,:)
       real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,:)
       real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:)
-      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:,-ng_gp:,:)
+      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:,-ng_gp:,:)
       real(kind=dp_t), intent(in   ) :: dt
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
       integer :: nx,ny
-      nx = size(gpres,dim=1) - 2
-      ny = size(gpres,dim=2) - 2
+      nx = size(gpi,dim=1) - 2
+      ny = size(gpi,dim=2) - 2
 
-      if (phys_bc(1,1) .eq. INLET) gpres(-1,-1:ny,:) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpres(nx,-1:ny,:) = ZERO
-      if (phys_bc(2,1) .eq. INLET) gpres(-1:nx,-1,:) = ZERO
-      if (phys_bc(2,2) .eq. INLET) gpres(-1:nx,ny,:) = ZERO
+      if (phys_bc(1,1) .eq. INLET) gpi(-1,-1:ny,:) = ZERO
+      if (phys_bc(1,2) .eq. INLET) gpi(nx,-1:ny,:) = ZERO
+      if (phys_bc(2,1) .eq. INLET) gpi(-1:nx,-1,:) = ZERO
+      if (phys_bc(2,2) .eq. INLET) gpi(-1:nx,ny,:) = ZERO
 
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
@@ -355,13 +355,13 @@ contains
          unew(-1:nx,-1:ny,1) = ( unew(-1:nx,-1:ny,1) - uold(-1:nx,-1:ny,1) ) / dt
          unew(-1:nx,-1:ny,2) = ( unew(-1:nx,-1:ny,2) - uold(-1:nx,-1:ny,2) ) / dt
      
-      ! quantity projected is Ustar + dt * (1/rho) gpres
+      ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
 
          unew(-1:nx,-1:ny,1) = &
-              unew(-1:nx,-1:ny,1) + dt*gpres(-1:nx,-1:ny,1)/rhohalf(-1:nx,-1:ny)
+              unew(-1:nx,-1:ny,1) + dt*gpi(-1:nx,-1:ny,1)/rhohalf(-1:nx,-1:ny)
          unew(-1:nx,-1:ny,2) = &
-              unew(-1:nx,-1:ny,2) + dt*gpres(-1:nx,-1:ny,2)/rhohalf(-1:nx,-1:ny)
+              unew(-1:nx,-1:ny,2) + dt*gpi(-1:nx,-1:ny,2)/rhohalf(-1:nx,-1:ny)
 
        else
      
@@ -378,7 +378,7 @@ contains
 
     !  *********************************************************************************** !
 
-    subroutine create_uvec_3d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpres,ng_gp, &
+    subroutine create_uvec_3d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpi,ng_gp, &
                               dt,phys_bc,proj_type)
 
       use proj_parameters
@@ -386,7 +386,7 @@ contains
       integer        , intent(in   ) :: ng_un,ng_uo,ng_rh,ng_gp
       real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,-ng_un:,:)
       real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,-ng_uo:,:)
-      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:,-ng_gp:,-ng_gp:,:)
+      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:,-ng_gp:,-ng_gp:,:)
       real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:,-ng_rh:)
       real(kind=dp_t), intent(in   ) :: dt
       integer        , intent(in   ) :: phys_bc(:,:)
@@ -394,16 +394,16 @@ contains
 
       integer :: nx,ny,nz,i,j,k
 
-      nx = size(gpres,dim=1) - 2
-      ny = size(gpres,dim=2) - 2
-      nz = size(gpres,dim=3) - 2
+      nx = size(gpi,dim=1) - 2
+      ny = size(gpi,dim=2) - 2
+      nz = size(gpi,dim=3) - 2
 
-      if (phys_bc(1,1) .eq. INLET) gpres(-1,-1:ny,-1:nz,:) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpres(nx,-1:ny,-1:nz,:) = ZERO
-      if (phys_bc(2,1) .eq. INLET) gpres(-1:nx,-1,-1:nz,:) = ZERO
-      if (phys_bc(2,2) .eq. INLET) gpres(-1:nx,ny,-1:nz,:) = ZERO
-      if (phys_bc(3,1) .eq. INLET) gpres(-1:nx,-1:ny,-1,:) = ZERO
-      if (phys_bc(3,2) .eq. INLET) gpres(-1:nx,-1:ny,nz,:) = ZERO
+      if (phys_bc(1,1) .eq. INLET) gpi(-1,-1:ny,-1:nz,:) = ZERO
+      if (phys_bc(1,2) .eq. INLET) gpi(nx,-1:ny,-1:nz,:) = ZERO
+      if (phys_bc(2,1) .eq. INLET) gpi(-1:nx,-1,-1:nz,:) = ZERO
+      if (phys_bc(2,2) .eq. INLET) gpi(-1:nx,ny,-1:nz,:) = ZERO
+      if (phys_bc(3,1) .eq. INLET) gpi(-1:nx,-1:ny,-1,:) = ZERO
+      if (phys_bc(3,2) .eq. INLET) gpi(-1:nx,-1:ny,nz,:) = ZERO
 
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
@@ -424,14 +424,14 @@ contains
          end do
 !$omp end parallel do
 
-      ! quantity projected is Ustar + dt * (1/rho) gpres
+      ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
 
 !$omp parallel do private(i,j,k)
          do k=-1,nz
             do j=-1,ny
                do i=-1,nx
-                  unew(i,j,k,1:3) = unew(i,j,k,1:3) + dt*gpres(i,j,k,1:3)/rhohalf(i,j,k)
+                  unew(i,j,k,1:3) = unew(i,j,k,1:3) + dt*gpi(i,j,k,1:3)/rhohalf(i,j,k)
                end do
             end do
          end do
@@ -578,7 +578,7 @@ contains
 
     ! ******************************************************************************* !
 
-    subroutine hg_update(proj_type,unew,uold,gpres,gphi,rhohalf,pres,phi,dt, &
+    subroutine hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,pi,phi,dt, &
                          mla,the_bc_level)
 
       use multifab_physbc_module
@@ -587,10 +587,10 @@ contains
       integer        , intent(in   ) :: proj_type
       type(multifab) , intent(inout) :: unew(:)
       type(multifab) , intent(in   ) :: uold(:)
-      type(multifab) , intent(inout) :: gpres(:)
+      type(multifab) , intent(inout) :: gpi(:)
       type(multifab) , intent(in   ) :: gphi(:)
       type(multifab) , intent(in   ) :: rhohalf(:)
-      type(multifab) , intent(inout) :: pres(:)
+      type(multifab) , intent(inout) :: pi(:)
       type(multifab) , intent(in   ) :: phi(:)
       real(kind=dp_t), intent(in   ) :: dt
       type(ml_layout), intent(inout) :: mla
@@ -614,10 +614,10 @@ contains
 
       ng_un = unew(1)%ng
       ng_uo = uold(1)%ng
-      ng_gp = gpres(1)%ng
+      ng_gp = gpi(1)%ng
       ng_gh = gphi(1)%ng
       ng_rh = rhohalf(1)%ng
-      ng_p = pres(1)%ng
+      ng_p = pi(1)%ng
       ng_h = phi(1)%ng
 
       do n = 1, nlevs
@@ -626,10 +626,10 @@ contains
             if ( multifab_remote(unew(n),i) ) cycle
             upn => dataptr(unew(n),i)
             uon => dataptr(uold(n),i)
-            gpp => dataptr(gpres(n),i)
+            gpp => dataptr(gpi(n),i)
             gph => dataptr(gphi(n),i)
             rp  => dataptr(rhohalf(n),i)
-            pp  => dataptr(pres(n),i)
+            pp  => dataptr(pi(n),i)
             ph  => dataptr(phi(n),i)
             select case (dm)
             case (1)
@@ -649,7 +649,7 @@ contains
 
          ! fill ghost cells for two adjacent grids at the same level
          ! this includes periodic domain boundary ghost cells
-         call multifab_fill_boundary(pres(n))
+         call multifab_fill_boundary(pi(n))
 
       end do
 
@@ -658,12 +658,12 @@ contains
          ! fill ghost cells for two adjacent grids at the same level
          ! this includes periodic domain boundary ghost cells
          call multifab_fill_boundary(unew(nlevs))
-         call multifab_fill_boundary(gpres(nlevs))
+         call multifab_fill_boundary(gpi(nlevs))
 
          ! fill non-periodic domain boundary ghost cells
          call multifab_physbc(unew(nlevs),1,1,dm,the_bc_level(nlevs))
          do i=1,dm
-            call multifab_physbc(gpres(nlevs),i,foextrap_comp,1,the_bc_level(nlevs))
+            call multifab_physbc(gpi(nlevs),i,foextrap_comp,1,the_bc_level(nlevs))
          end do
 
       else
@@ -674,7 +674,7 @@ contains
 
             ! set level n-1 data to be the average of the level n data covering it
             call ml_cc_restriction(unew(n-1),unew(n),mla%mba%rr(n-1,:)) 
-            call ml_cc_restriction(gpres(n-1),gpres(n),mla%mba%rr(n-1,:))
+            call ml_cc_restriction(gpi(n-1),gpi(n),mla%mba%rr(n-1,:))
 
             ! fill level n ghost cells using interpolation from level n-1 data
             ! note that multifab_fill_boundary and multifab_physbc are called for
@@ -683,7 +683,7 @@ contains
                                            the_bc_level(n-1),the_bc_level(n),1,1,dm, &
                                            fill_crse_input=.false.)
             do i=1,dm
-               call multifab_fill_ghost_cells(gpres(n),gpres(n-1),1,mla%mba%rr(n-1,:), &
+               call multifab_fill_ghost_cells(gpi(n),gpi(n-1),1,mla%mba%rr(n-1,:), &
                                               the_bc_level(n-1),the_bc_level(n),i, &
                                               foextrap_comp,1,fill_crse_input=.false.)
             end do
@@ -698,8 +698,8 @@ contains
 
     !   ****************************************************************************** !
 
-    subroutine hg_update_1d(proj_type,unew,ng_un,uold,ng_uo,gpres,ng_gp,gphi,ng_gh, &
-                            rhohalf,ng_rh,pres,ng_p,phi,ng_h,dt)
+    subroutine hg_update_1d(proj_type,unew,ng_un,uold,ng_uo,gpi,ng_gp,gphi,ng_gh, &
+                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,dt)
 
       use proj_parameters
 
@@ -707,10 +707,10 @@ contains
       integer        , intent(in   ) :: proj_type
       real(kind=dp_t), intent(inout) ::    unew(-ng_un:)
       real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:)
-      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:)
+      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:)
       real(kind=dp_t), intent(in   ) ::    gphi(-ng_gh:)
       real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:)
-      real(kind=dp_t), intent(inout) ::    pres(-ng_p :)
+      real(kind=dp_t), intent(inout) ::    pi(-ng_p :)
       real(kind=dp_t), intent(in   ) ::     phi(-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
@@ -727,22 +727,22 @@ contains
       if ( (proj_type .eq. initial_projection_comp) .or. &
            (proj_type .eq. divu_iters_comp) ) then
 
-         gpres = ZERO
-         pres = ZERO
+         gpi = ZERO
+         pi = ZERO
 
       else if (proj_type .eq. pressure_iters_comp) then
 
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
-         gpres(0:nx) = gpres(0:nx) + gphi(0:nx)
-          pres(0:nx) =  pres(0:nx)  + phi(0:nx)
+         gpi(0:nx) = gpi(0:nx) + gphi(0:nx)
+          pi(0:nx) =  pi(0:nx)  + phi(0:nx)
 
       else if (proj_type .eq. regular_timestep_comp) then
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
-         gpres(0:nx) = (ONE/dt) * gphi(0:nx)
-          pres(0:nx) = (ONE/dt) *  phi(0:nx)
+         gpi(0:nx) = (ONE/dt) * gphi(0:nx)
+          pi(0:nx) = (ONE/dt) *  phi(0:nx)
 
       end if
 
@@ -750,8 +750,8 @@ contains
 
     !   ****************************************************************************** !
 
-    subroutine hg_update_2d(proj_type,unew,ng_un,uold,ng_uo,gpres,ng_gp,gphi,ng_gh, &
-                            rhohalf,ng_rh,pres,ng_p,phi,ng_h,dt)
+    subroutine hg_update_2d(proj_type,unew,ng_un,uold,ng_uo,gpi,ng_gp,gphi,ng_gh, &
+                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,dt)
 
       use proj_parameters
 
@@ -759,10 +759,10 @@ contains
       integer        , intent(in   ) :: proj_type
       real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,:)
       real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,:)
-      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:,-ng_gp:,:)
+      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:,-ng_gp:,:)
       real(kind=dp_t), intent(in   ) ::    gphi(-ng_gh:,-ng_gh:,:)
       real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:)
-      real(kind=dp_t), intent(inout) ::    pres(-ng_p :,-ng_p :)
+      real(kind=dp_t), intent(inout) ::    pi(-ng_p :,-ng_p :)
       real(kind=dp_t), intent(in   ) ::     phi(-ng_h :,-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
@@ -782,22 +782,22 @@ contains
       if ( (proj_type .eq. initial_projection_comp) .or. &
            (proj_type .eq. divu_iters_comp) ) then
 
-         gpres = ZERO
-         pres = ZERO
+         gpi = ZERO
+         pi = ZERO
 
       else if (proj_type .eq. pressure_iters_comp) then
 
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
-         gpres(0:nx,0:ny,:) = gpres(0:nx,0:ny,:) + gphi(0:nx,0:ny,:)
-         pres(0:nx,0:ny  ) =  pres(0:nx,0:ny  )  +  phi(0:nx,0:ny  )
+         gpi(0:nx,0:ny,:) = gpi(0:nx,0:ny,:) + gphi(0:nx,0:ny,:)
+         pi(0:nx,0:ny  ) =  pi(0:nx,0:ny  )  +  phi(0:nx,0:ny  )
 
       else if (proj_type .eq. regular_timestep_comp) then
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
-         gpres(0:nx,0:ny,:) = (ONE/dt) * gphi(0:nx,0:ny,:)
-         pres(0:nx,0:ny  ) = (ONE/dt) * phi(0:nx,0:ny  )
+         gpi(0:nx,0:ny,:) = (ONE/dt) * gphi(0:nx,0:ny,:)
+         pi(0:nx,0:ny  ) = (ONE/dt) * phi(0:nx,0:ny  )
 
       end if
 
@@ -805,8 +805,8 @@ contains
 
     !   ******************************************************************************* !
 
-    subroutine hg_update_3d(proj_type,unew,ng_un,uold,ng_uo,gpres,ng_gp,gphi,ng_gh, &
-                            rhohalf,ng_rh,pres,ng_p,phi,ng_h,dt)
+    subroutine hg_update_3d(proj_type,unew,ng_un,uold,ng_uo,gpi,ng_gp,gphi,ng_gh, &
+                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,dt)
 
       use proj_parameters
 
@@ -814,10 +814,10 @@ contains
       integer        , intent(in   ) :: proj_type
       real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,-ng_un:,:)
       real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,-ng_uo:,:)
-      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:,-ng_gp:,-ng_gp:,:)
+      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:,-ng_gp:,-ng_gp:,:)
       real(kind=dp_t), intent(in   ) ::    gphi(-ng_gh:,-ng_gh:,-ng_gh:,:)
       real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:,-ng_rh:)
-      real(kind=dp_t), intent(inout) ::    pres(-ng_p :,-ng_p :,-ng_p :)
+      real(kind=dp_t), intent(inout) ::    pi(-ng_p :,-ng_p :,-ng_p :)
       real(kind=dp_t), intent(in   ) ::     phi(-ng_h :,-ng_h :,-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
@@ -854,8 +854,8 @@ contains
       if ( (proj_type .eq. initial_projection_comp) .or. &
            (proj_type .eq. divu_iters_comp) ) then
 
-         gpres = ZERO
-         pres = ZERO
+         gpi = ZERO
+         pi = ZERO
 
       else if (proj_type .eq. pressure_iters_comp) then
 
@@ -865,8 +865,8 @@ contains
          do k=0,nz
             do j=0,ny
                do i=0,nx
-                  gpres(i,j,k,1:3) = gpres(i,j,k,1:3) + gphi(i,j,k,1:3)
-                  pres(i,j,k) = pres(i,j,k) + phi(i,j,k)
+                  gpi(i,j,k,1:3) = gpi(i,j,k,1:3) + gphi(i,j,k,1:3)
+                  pi(i,j,k) = pi(i,j,k) + phi(i,j,k)
                end do
             end do
          end do
@@ -880,8 +880,8 @@ contains
          do k=0,nz
             do j=0,ny
                do i=0,nx
-                  gpres(i,j,k,1:3) = (ONE/dt) * gphi(i,j,k,1:3)
-                  pres(i,j,k) = (ONE/dt) * phi(i,j,k)
+                  gpi(i,j,k,1:3) = (ONE/dt) * gphi(i,j,k,1:3)
+                  pi(i,j,k) = (ONE/dt) * phi(i,j,k)
                end do
             end do
          end do

@@ -98,7 +98,7 @@ contains
 
   end subroutine get_plot_names
 
-  subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,rho_Hnuc,thermal,Source,sponge,&
+  subroutine make_plotfile(dirname,mla,u,s,gpi,rho_omegadot,rho_Hnuc,thermal,Source,sponge,&
                            mba,plot_names,time,dx,the_bc_tower,w0,rho0,rhoh0,p0,tempbar, &
                            gamma1bar,normal)
 
@@ -122,7 +122,7 @@ contains
     type(ml_layout)  , intent(in   ) :: mla
     type(multifab)   , intent(in   ) :: u(:)
     type(multifab)   , intent(in   ) :: s(:)
-    type(multifab)   , intent(in   ) :: gpres(:)
+    type(multifab)   , intent(in   ) :: gpi(:)
     type(multifab)   , intent(in   ) :: rho_omegadot(:)
     type(multifab)   , intent(in   ) :: rho_Hnuc(:)
     type(multifab)   , intent(in   ) :: thermal(:)
@@ -392,8 +392,8 @@ contains
        ! DIFF BETWEEN TFROMP AND TFROMH
        call make_deltaT(plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
 
-       ! PRESSURE GRADIENT
-       call multifab_copy_c(plotdata(n),icomp_gp,gpres(n),1,dm)
+       ! PERTURBATIONAL PRESSURE GRADIENT
+       call multifab_copy_c(plotdata(n),icomp_gp,gpi(n),1,dm)
 
        ! SPONGE
        call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)
