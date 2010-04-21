@@ -301,7 +301,7 @@ contains
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+1
              do i = 1,ng
-                s(lo(1)-i,j,k) = -s(lo(1)+1-i,j,k)
+                s(lo(1)-i,j,k) = -s(lo(1)+i-1,j,k)
              end do
           end do
        end do
