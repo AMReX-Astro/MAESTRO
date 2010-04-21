@@ -47,7 +47,7 @@ contains
     ! MG solver defaults
     integer    :: bottom_solver, bottom_max_iter
     integer    :: max_iter, min_width, max_nlevel, max_bottom_nlevel
-    integer    :: n, nu1, nu2, gamma, cycle_type, smoother
+    integer    :: n, nu1, nu2, nub, gamma, cycle_type, smoother
     integer    :: max_nlevel_in, do_diagnostics
     real(dp_t) :: eps,abs_eps,omega,bottom_solver_eps
     real(dp_t) ::  xa(dm),  xb(dm)
@@ -67,6 +67,7 @@ contains
     smoother          = mgt(nlevs)%smoother
     nu1               = mgt(nlevs)%nu1
     nu2               = mgt(nlevs)%nu2
+    nub               = mgt(nlevs)%nub
     gamma             = mgt(nlevs)%gamma
     omega             = mgt(nlevs)%omega
     cycle_type        = mgt(nlevs)%cycle_type
@@ -145,7 +146,7 @@ contains
                            smoother = smoother, &
                            nu1 = nu1, &
                            nu2 = nu2, &
-                           nub = nu2, &
+                           nub = nub, &
                            gamma = gamma, &
                            cycle_type = cycle_type, &
                            omega = omega, &
