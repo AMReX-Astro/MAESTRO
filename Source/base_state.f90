@@ -5,7 +5,7 @@ module base_state_module
   
   implicit none
 
-  real(dp_t), save :: base_cutoff_density_loc, prob_hi_r
+  real(dp_t), save :: base_cutoff_density_loc
   real(dp_t), save :: rho_above_cutoff, rhoh_above_cutoff
   real(dp_t), save :: spec_above_cutoff(nspec), p_above_cutoff
   real(dp_t), save :: temp_above_cutoff
@@ -26,7 +26,8 @@ contains
     use eos_module
     use network, only: spec_names
     use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo, prob_hi, &
-                             buoyancy_cutoff_factor, sponge_start_factor, sponge_center_density, &
+                             buoyancy_cutoff_factor, sponge_start_factor, &
+                             sponge_center_density, &
                              small_temp, small_dens, grav_const
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm
@@ -352,8 +353,7 @@ contains
     endif
 
     if (n .eq. 1) then
-       base_cutoff_density_loc = prob_hi(dm)
-       prob_hi_r = base_cutoff_density_loc
+       base_cutoff_density_loc = 1.d99
     end if
     
     do r=0,nr(n)-1
@@ -422,7 +422,7 @@ contains
 
           ! keep track of the height where we drop below the cutoff density
           if (s0_init(r,rho_comp) .le. base_cutoff_density .and. &
-               base_cutoff_density_loc .eq. prob_hi_r .and. n .eq. 1 ) then
+               base_cutoff_density_loc .eq. 1.d99 .and. n .eq. 1) then
 
              if ( parallel_IOProcessor() ) then
                 write (*,*) ' '
