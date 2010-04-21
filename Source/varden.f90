@@ -363,7 +363,7 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index6
         endif
 
-        call make_plotfile(plot_file_name,mla,uold,sold,gpi,rho_omegadot2,rho_Hnuc2, &
+        call make_plotfile(plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2,rho_Hnuc2, &
                            thermal2,Source_old,sponge,mla%mba,plot_names,time,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar, &
                            normal)
@@ -506,9 +506,10 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index6
         endif
 
-        call make_plotfile(plot_file_name,mla,uold,sold,gpi,rho_omegadot2,rho_Hnuc2, &
+        call make_plotfile(plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2,rho_Hnuc2, &
                            thermal2,Source_old,sponge,mla%mba,plot_names,time,dx, &
-                           the_bc_tower,w0,rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar,normal)
+                           the_bc_tower,w0,rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar, &
+                           normal)
 
         call write_base_state(istep, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
@@ -978,7 +979,7 @@ subroutine varden()
                  plot_file_name = trim(plot_base_name) // plot_index6
               endif
 
-              call make_plotfile(plot_file_name,mla,unew,snew,gpi,rho_omegadot2, &
+              call make_plotfile(plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
                                  rho_Hnuc2,thermal2,Source_new,sponge,mla%mba,plot_names, &
                                  time,dx,the_bc_tower,w0,rho0_new,rhoh0_new,p0_new,tempbar, &
                                  gamma1bar,normal)
@@ -1057,7 +1058,7 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index6
         endif
 
-        call make_plotfile(plot_file_name,mla,unew,snew,gpi,rho_omegadot2,rho_Hnuc2, &
+        call make_plotfile(plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2,rho_Hnuc2, &
                            thermal2,Source_new,sponge,mla%mba,plot_names,time,dx, &
                            the_bc_tower,w0,rho0_new,rhoh0_new,p0_new,tempbar, &
                            gamma1bar,normal)

@@ -79,9 +79,10 @@ contains
     plot_names(icomp_entropypert) = "entropypert"
     plot_names(icomp_dT)          = "deltaT"
     plot_names(icomp_sponge)      = "sponge"
-    plot_names(icomp_gp)          = "gpx"
-    if (dm > 1) plot_names(icomp_gp+1) = "gpy"
-    if (dm > 2) plot_names(icomp_gp+2) = "gpz"
+    plot_names(icomp_pi)          = "pi"
+    plot_names(icomp_gpi)         = "gpi_x"
+    if (dm > 1) plot_names(icomp_gpi+1) = "gpi_y"
+    if (dm > 2) plot_names(icomp_gpi+2) = "gpi_z"
 
     if (plot_spec) then
        do comp = 1, nspec
@@ -98,9 +99,9 @@ contains
 
   end subroutine get_plot_names
 
-  subroutine make_plotfile(dirname,mla,u,s,gpi,rho_omegadot,rho_Hnuc,thermal,Source,sponge,&
-                           mba,plot_names,time,dx,the_bc_tower,w0,rho0,rhoh0,p0,tempbar, &
-                           gamma1bar,normal)
+  subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot,rho_Hnuc,thermal,Source, &
+                           sponge,mba,plot_names,time,dx,the_bc_tower,w0,rho0,rhoh0,p0, &
+                           tempbar,gamma1bar,normal)
 
     use bl_prof_module
     use fabio_module
@@ -122,6 +123,7 @@ contains
     type(ml_layout)  , intent(in   ) :: mla
     type(multifab)   , intent(in   ) :: u(:)
     type(multifab)   , intent(in   ) :: s(:)
+    type(multifab)   , intent(in   ) :: pi(:)
     type(multifab)   , intent(in   ) :: gpi(:)
     type(multifab)   , intent(in   ) :: rho_omegadot(:)
     type(multifab)   , intent(in   ) :: rho_Hnuc(:)
@@ -392,8 +394,11 @@ contains
        ! DIFF BETWEEN TFROMP AND TFROMH
        call make_deltaT(plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
 
+       ! PERTURBATIONAL PRESSURE
+       call multifab_copy_c(plotdata(n),icomp_pi,pi(n),1,1)
+
        ! PERTURBATIONAL PRESSURE GRADIENT
-       call multifab_copy_c(plotdata(n),icomp_gp,gpi(n),1,dm)
+       call multifab_copy_c(plotdata(n),icomp_gpi,gpi(n),1,dm)
 
        ! SPONGE
        call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)
