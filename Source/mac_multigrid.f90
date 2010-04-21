@@ -48,7 +48,7 @@ contains
     integer    :: bottom_solver, bottom_max_iter
     integer    :: max_iter, min_width, max_nlevel, max_bottom_nlevel
     integer    :: n, nu1, nu2, gamma, cycle_type, smoother
-    integer    :: max_nlevel_in, max_bottom_nlevel_in, do_diagnostics
+    integer    :: max_nlevel_in, do_diagnostics
     real(dp_t) :: eps,abs_eps,omega,bottom_solver_eps
     real(dp_t) ::  xa(dm),  xb(dm)
     real(dp_t) :: pxa(dm), pxb(dm)
