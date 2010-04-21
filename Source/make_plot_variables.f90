@@ -9,7 +9,7 @@ module plot_variables_module
 
   private
 
-  public :: make_conductivity
+  public :: make_conductivity, make_cc_pi
   public :: make_tfromH, make_tfromp, make_entropypert
   public :: make_deltaT, make_divw0, make_vorticity, make_magvel, make_velr
 
@@ -167,6 +167,118 @@ contains
     enddo
 
   end subroutine make_conductivity_3d
+
+  subroutine make_cc_pi(mla,pi,pi_cc)
+
+  use ml_layout_module
+  use geometry, only: dm, nlevs
+
+    type(ml_layout), intent(in   ) :: mla
+    type(multifab) , intent(in   ) :: pi(:)
+    type(multifab) , intent(inout) :: pi_cc(:)
+
+    real(kind=dp_t), pointer :: ppn(:,:,:,:)
+    real(kind=dp_t), pointer :: ppc(:,:,:,:)
+    logical,         pointer ::  mp(:,:,:,:)
+
+    integer :: i,n,ng_pn,ng_pc
+    integer :: lo(dm),hi(dm)
+
+    real(kind=dp_t) :: ncell_proc(nlevs), ncell(nlevs)
+    real(kind=dp_t) :: pisum_proc(nlevs), pisum(nlevs)
+    real(kind=dp_t) :: source_buffer, target_buffer
+
+    real(kind=dp_t) :: weight,avg
+
+    ncell(:) = 0.d0
+    pisum(:) = 0.d0
+
+    ng_pn = pi(1)%ng
+    ng_pc = pi_cc(1)%ng
+
+    do n=1,nlevs
+       weight = 2.d0**(dm*(n-1))
+       do i=1,pi_cc(n)%nboxes
+          if ( multifab_remote(pi(n), i) ) cycle
+          ppn => dataptr(pi(n), i)
+          ppc => dataptr(pi_cc(n), i)
+          lo =  lwb(get_box(pi_cc(n), i))
+          hi =  upb(get_box(pi_cc(n), i))
+          select case (dm)
+          case (1)
+          case (2)
+             if (n .eq. 1) then
+                call make_cc_pi_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
+                                   lo,hi,ncell_proc(n),pisum_proc(n))
+             else
+                mp => dataptr(mla%mask(n), i)
+                call make_cc_pi_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
+                                   lo,hi,ncell_proc(n),pisum_proc(n),mp(:,:,1,1))
+             end if
+          case (3)
+          end select
+       end do
+       
+       source_buffer = ncell_proc(n)
+       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+       ncell(n) = target_buffer
+
+       source_buffer = pisum_proc(n)
+       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+       pisum(n) = target_buffer
+    end do
+
+    ! now ncell will contain the total number of cells over all levels
+    ! now picum will contain the sum of (volume weighted) pi over all levels
+    do n=2,nlevs
+       ncell(1) = ncell(1) + ncell(n)
+       pisum(1) = pisum(1) + pisum(n)
+    end do
+
+    ! divide the sum by the number of cells
+    avg = pisum(1)/ncell(1)
+
+    ! normalize pi_cc
+    do n=1,nlevs
+       call multifab_sub_sub_s(pi_cc(n),avg,ng_pc)
+    end do
+
+  end subroutine make_cc_pi
+
+  subroutine make_cc_pi_2d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
+
+    real (kind=dp_t), intent(in   )           :: weight
+    integer         , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc
+    real (kind=dp_t), intent(in   )           ::    pi(lo(1)-ng_pn:,lo(2)-ng_pn:)
+    real (kind=dp_t), intent(inout)           :: pi_cc(lo(1)-ng_pc:,lo(2)-ng_pc:)
+    real (kind=dp_t), intent(inout)           :: ncell,pisum
+    logical         , intent(in   ), optional ::  mask(lo(1):      ,lo(2):      )
+
+    ! local
+    integer :: i,j
+
+    logical :: cell_valid
+
+    do j=lo(2),hi(2)
+       do i=lo(1),hi(1)
+
+          pi_cc(i,j) = (pi(i,j) + pi(i+1,j) + pi(i,j+1) + pi(i,j+1)) / 4.d0
+
+          ! make sure the cell isn't covered by finer cells
+          cell_valid = .true.
+          if ( present(mask) ) then
+             cell_valid = mask(i,j)
+          end if
+
+          if (cell_valid) then
+             pisum = pisum + weight*pi_cc(i,j)
+             ncell = ncell + weight
+          end if
+             
+       end do
+    end do
+
+  end subroutine make_cc_pi_2d
 
   subroutine make_tfromH(plotdata,comp_t,comp_tpert,comp_dp,state,p0,tempbar,dx)
 

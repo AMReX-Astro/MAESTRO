@@ -146,6 +146,7 @@ contains
     type(multifab) ::  tempfab(nlevs)
     type(multifab) ::    w0mac(nlevs,dm)
     type(multifab) :: w0r_cart(nlevs)
+    type(multifab) ::    pi_cc(nlevs)
 
     real(dp_t) :: entropybar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         h0(nlevs_radial,0:nr_fine-1)
@@ -389,13 +390,23 @@ contains
                                 mla%mba%rr(n-1,:),1)
     end do
 
+    ! build a cell-centered multifab to hold pi
+    do n=1,nlevs
+       call multifab_build(pi_cc(n), mla%la(n), 1, 0)
+       call setval(pi_cc(n), ZERO, all=.true.)
+    end do
+
+    ! new function that average the nodal pi to cell-centers, then
+    ! normalized the entire signal to sum to 0
+    call make_cc_pi(mla,pi,pi_cc)
+
     do n=1,nlevs
 
        ! DIFF BETWEEN TFROMP AND TFROMH
        call make_deltaT(plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
 
        ! PERTURBATIONAL PRESSURE
-       call multifab_copy_c(plotdata(n),icomp_pi,pi(n),1,1)
+       call multifab_copy_c(plotdata(n),icomp_pi,pi_cc(n),1,1)
 
        ! PERTURBATIONAL PRESSURE GRADIENT
        call multifab_copy_c(plotdata(n),icomp_gpi,gpi(n),1,dm)
@@ -463,6 +474,7 @@ contains
     do n = 1,nlevs
        call destroy(plotdata(n))
        call destroy(tempfab(n))
+       call destroy(pi_cc(n))
     end do
 
     if (spherical .eq. 1) then
