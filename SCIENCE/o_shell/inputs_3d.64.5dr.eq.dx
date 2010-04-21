@@ -3,10 +3,10 @@
  drdxfac = 5
 
  max_levs = 1
- n_cellx = 32
- n_celly = 32
- n_cellz = 32
- max_grid_size = 16
+ n_cellx = 64
+ n_celly = 64
+ n_cellz = 64
+ max_grid_size = 32
 
  anelastic_cutoff = 1.d6
  base_cutoff_density = 1.d5
@@ -24,8 +24,12 @@
  prob_hi_y = 1.25d8
  prob_hi_z = 1.25d8
 
- max_step  = 100
- init_iter = 1
+ prob_hi_x = 0.625d8
+ prob_hi_y = 0.625d8
+ prob_hi_z = 0.625d8
+
+ max_step  = 0
+ init_iter = 0
 
  stop_time = 30000.
 
@@ -40,19 +44,19 @@
  use_divu_firstdt = T
 
  bcx_lo = 13
- bcx_hi = 12
  bcy_lo = 13
- bcy_hi = 12
  bcz_lo = 13
- bcz_hi = 12
 
+ bcx_hi = 12
+ bcy_hi = 12
+ bcz_hi = 12
 
     verbose = 1
  mg_verbose = 1
  cg_verbose = 0
 
  do_initial_projection = T
- init_divu_iter = 3
+ init_divu_iter = 1
 
  velpert_amplitude = 1.d5
  velpert_radius = 2.d7
