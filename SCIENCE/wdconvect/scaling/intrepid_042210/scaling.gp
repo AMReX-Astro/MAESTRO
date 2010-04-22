@@ -7,7 +7,7 @@ set title 'Strong Scaling Behavior of 768^3 MAESTRO Scientific Production Runs o
 
 set xrange [1000:20000];
 
-set yrange [0:250];
+set yrange [0:300];
 
 set pointsize 2;
 
