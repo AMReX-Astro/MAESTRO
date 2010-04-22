@@ -206,6 +206,14 @@ contains
           hi =  upb(get_box(pi_cc(n), i))
           select case (dm)
           case (1)
+             if (n .eq. 1) then
+                call make_cc_pi_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,1),ng_pc, &
+                                   lo,hi,ncell_proc(n),pisum_proc(n))
+             else
+                mp => dataptr(mla%mask(n), i)
+                call make_cc_pi_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,1),ng_pc, &
+                                   lo,hi,ncell_proc(n),pisum_proc(n),mp(:,1,1,1))
+             end if
           case (2)
              if (n .eq. 1) then
                 call make_cc_pi_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
@@ -216,6 +224,14 @@ contains
                                    lo,hi,ncell_proc(n),pisum_proc(n),mp(:,:,1,1))
              end if
           case (3)
+             if (n .eq. 1) then
+                call make_cc_pi_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,1),ng_pc, &
+                                   lo,hi,ncell_proc(n),pisum_proc(n))
+             else
+                mp => dataptr(mla%mask(n), i)
+                call make_cc_pi_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,1),ng_pc, &
+                                   lo,hi,ncell_proc(n),pisum_proc(n),mp(:,:,:,1))
+             end if
           end select
        end do
        
@@ -245,6 +261,39 @@ contains
 
   end subroutine make_cc_pi
 
+  subroutine make_cc_pi_1d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
+
+    real (kind=dp_t), intent(in   )           :: weight
+    integer         , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc
+    real (kind=dp_t), intent(in   )           ::    pi(lo(1)-ng_pn:)
+    real (kind=dp_t), intent(inout)           :: pi_cc(lo(1)-ng_pc:)
+    real (kind=dp_t), intent(inout)           :: ncell,pisum
+    logical         , intent(in   ), optional ::  mask(lo(1):      )
+
+    ! local
+    integer :: i
+
+    logical :: cell_valid
+
+    do i=lo(1),hi(1)
+
+       pi_cc(i) = (pi(i) + pi(i+1)) / 2.d0
+
+       ! make sure the cell isn't covered by finer cells
+       cell_valid = .true.
+       if ( present(mask) ) then
+          cell_valid = mask(i)
+       end if
+       
+       if (cell_valid) then
+          pisum = pisum + weight*pi_cc(i)
+          ncell = ncell + weight
+       end if
+       
+    end do
+
+  end subroutine make_cc_pi_1d
+
   subroutine make_cc_pi_2d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
 
     real (kind=dp_t), intent(in   )           :: weight
@@ -262,7 +311,7 @@ contains
     do j=lo(2),hi(2)
        do i=lo(1),hi(1)
 
-          pi_cc(i,j) = (pi(i,j) + pi(i+1,j) + pi(i,j+1) + pi(i,j+1)) / 4.d0
+          pi_cc(i,j) = (pi(i,j) + pi(i+1,j) + pi(i,j+1) + pi(i+1,j+1)) / 4.d0
 
           ! make sure the cell isn't covered by finer cells
           cell_valid = .true.
@@ -279,6 +328,44 @@ contains
     end do
 
   end subroutine make_cc_pi_2d
+
+  subroutine make_cc_pi_3d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
+
+    real (kind=dp_t), intent(in   )           :: weight
+    integer         , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc
+    real (kind=dp_t), intent(in   )           ::    pi(lo(1)-ng_pn:,lo(2)-ng_pn:,lo(3)-ng_pn:)
+    real (kind=dp_t), intent(inout)           :: pi_cc(lo(1)-ng_pc:,lo(2)-ng_pc:,lo(3)-ng_pc:)
+    real (kind=dp_t), intent(inout)           :: ncell,pisum
+    logical         , intent(in   ), optional ::  mask(lo(1):      ,lo(2):      ,lo(3):      )
+
+    ! local
+    integer :: i,j,k
+
+    logical :: cell_valid
+
+    do k=lo(3),hi(3)
+       do j=lo(2),hi(2)
+          do i=lo(1),hi(1)
+             
+             pi_cc(i,j,k) = (pi(i,j,k) + pi(i+1,j,k) + pi(i,j+1,k) + pi(i,j,k+1) &
+                  + pi(i+1,j+1,k) + pi(i+1,j,k+1) + pi(i,j+1,k+1) + pi(i+1,j+1,k+1)) / 8.d0
+             
+             ! make sure the cell isn't covered by finer cells
+             cell_valid = .true.
+             if ( present(mask) ) then
+                cell_valid = mask(i,j,k)
+             end if
+             
+             if (cell_valid) then
+                pisum = pisum + weight*pi_cc(i,j,k)
+                ncell = ncell + weight
+             end if
+             
+          end do
+       end do
+    end do
+
+  end subroutine make_cc_pi_3d
 
   subroutine make_tfromH(plotdata,comp_t,comp_tpert,comp_dp,state,p0,tempbar,dx)
 
