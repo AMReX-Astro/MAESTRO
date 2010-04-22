@@ -5,7 +5,7 @@ set key top right
 
 set title 'Strong Scaling Behavior of 768^3 MAESTRO Scientific Production Runs on intrepid.alcf.anl.gov'
 
-set xrange [1000:20000];
+set xrange [1500:20000];
 
 set yrange [0:300];
 
