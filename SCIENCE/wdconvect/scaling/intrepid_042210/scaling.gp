@@ -5,7 +5,7 @@ set key top right
 
 set title 'Strong Scaling Behavior of 768^3 MAESTRO Scientific Production Runs on intrepid.alcf.anl.gov'
 
-set xrange [1500:20000];
+set xrange [1500:60000];
 
 set yrange [0:300];
 
@@ -18,7 +18,7 @@ set ylabel "Average Time per Time Step (seconds)";
 
 set logscale x
 
-set xtics nomirror ("1728" 1728, "5000" 5000, "10000" 10000, "16384" 16384)
+set xtics nomirror ("1728" 1728, "5000" 5000, "10000" 10000, "16384" 16384, "55296" 55296)
 
 set ytics nomirror 25
 

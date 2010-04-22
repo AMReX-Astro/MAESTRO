@@ -1,0 +1,979 @@
+ MPI initialized with  13824  CPUs
+ PROBINIT max time   =  0.668517588235295612E-01
+ PROBINIT total time =  3.27002501882352892
+ 
+ finished reading eos table
+ imax= 211 jmax=  71
+ temp(1)   =  1.000E+04 temp(jmax)   =  1.000E+11
+ ye*den(1) =  1.000E-10 ye*den(imax) =  1.000E+11
+ 
+                                                            
+------------------------------------------------------------------------------
+ reading initial model
+ 3840 points found in the initial model file
+ 6  variables found in the initial model file
+ WARNING: variable not found: magnesium-24
+ WARNING: ash not provided in inputs file
+                                                            
+          minimum density of model =                          0.1000000000E-03
+          maximum density of model =                           2678710032.    
+  
+          minimum temperature of model =                       5000000.000    
+          maximum temperature of model =                       600443646.9    
+------------------------------------------------------------------------------
+                                                            
+------------------------------------------------------------------------------
+ cutoff densities:
+          low density cutoff (for mapping the model) =         100000.0000    
+          buoyancy cutoff density                           
+              (for zeroing rho - rho_0, centrifugal term) =    500000.0000    
+          anelastic cutoff =                                   1000000.000    
+          sponge start density =                               9999000.000    
+          sponge center density =                              3000000.000    
+                                                            
+  
+ WARNING: minimum model density is lower than one of the cutoff densities
+          make sure that the cutoff densities are lower than any density
+          of dynamical interest
+------------------------------------------------------------------------------
+  
+------------------------------------------------------------------------------
+ model file mapping (spherical base state)
+      dr of MAESTRO base state =                               130208.3333    
+      dr of input file data =                                  130208.3333    
+  
+      maximum radius (cell-centered) of input model =          499934895.8    
+  
+ setting r_cutoff to  1428
+  
+ Maximum HSE Error =  0.489029172656794010E-03
+    (after putting initial model into base state arrays, and
+     for density < base_cutoff_density)
+------------------------------------------------------------------------------
+  
+ number of processors =  13824
+ number of dimensions =  3
+ level:  1
+    number of boxes =  13824
+    maximum zones   =  768 768 768
+ 
+ Number of valid cells at level         1 452984832
+ Number of valid + ghost cells at level 1 592704000
+ 
+inner sponge: r_sp      , r_tp      :   0.151106770833E+09    0.182617187500E+09
+outer sponge: r_sp_outer, r_tp_outer:   0.182617187500E+09    0.185221354167E+09
+ 
+------------------------------------------------------------------------------
+ DOING THE INITIAL VELOCITY PROJECTION
+------------------------------------------------------------------------------
+  
+ PROJ_TYPE IN HGPROJECT: 1
+ PROJ_TYPE IN HGPROJECT: ST_DENSE
+... x-velocity before projection -0.3441286031E+06   0.2788013809E+06
+... y-velocity before projection -0.3235960250E+06   0.3093912484E+06
+... z-velocity before projection -0.2993925281E+06   0.3038372669E+06
+ 
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+MG finished at   6 iterations
+... x-velocity  after projection -0.3445940180E+06   0.2754794945E+06
+... y-velocity  after projection -0.3317053868E+06   0.3086412418E+06
+... z-velocity  after projection -0.3016733595E+06   0.3064973321E+06
+ 
+ Call to firstdt for level 1 gives dt_lev = 0.479584268808872264E-03
+ Multiplying dt_lev by init_shrink; dt_lev = 0.479584268808872305E-04
+ Minimum firstdt over all levels = 0.479584268808872305E-04
+ 
+ DOING 1 INITIAL DIVU ITERATIONS
+  
+ ... max CFL of w0:  0.331157128637143655E-07
+ 
+ PROJ_TYPE IN HGPROJECT: 2
+ PROJ_TYPE IN HGPROJECT: ST_DENSE
+... x-velocity before projection -0.3445940180E+06   0.2754794945E+06
+... y-velocity before projection -0.3317053868E+06   0.3086412418E+06
+... z-velocity before projection -0.3016733595E+06   0.3064973321E+06
+ 
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+MG finished at   5 iterations
+... x-velocity  after projection -0.3444717739E+06   0.2750599061E+06
+... y-velocity  after projection -0.3326468796E+06   0.3086694334E+06
+... z-velocity  after projection -0.3019384337E+06   0.3067892071E+06
+ 
+ Call to estdt at end of istep_divu_iter = 1
+ gives dt = 1.32299756165220894
+ Multiplying dt by init_shrink; dt = 0.132299756165220911
+ Ignoring this new dt since it's larger than the previous dt = 0.479584268808872305E-04
+ 
+ DOING 1 INITIAL PRESSURE ITERATIONS
+ 
+ Number of valid cells at level         1 452984832
+ Number of valid + ghost cells at level 1 592704000
+ 
+ <<< STEP  1 : react state     
+ <<< CALLING advance_timestep with dt = 0.479584268808872305E-04
+ <<< STEP  2 : make w0 >>> 
+ ... max CFL of w0:  0.331157128637143655E-07
+ 
+ <<< STEP  3 : create MAC velocities>>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11694861E+10
+ MAX OF UMAC AT LEVEL  1 859218503999935.000
+ MAX OF VMAC AT LEVEL  1 809624636368046.125
+ MAX OF WMAC AT LEVEL  1 784696080125892.000
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11694861E+10
+F90mg: Initial error (error0)       =  0.11694861E+10
+F90mg: Final Iter.  87 error/error0 =  0.54649313E-11
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.63911612E-02
+ MAX OF UMAC AT LEVEL  1 889554378205380.250
+ MAX OF VMAC AT LEVEL  1 840609556375671.125
+ MAX OF WMAC AT LEVEL  1 803206687199253.375
+ 
+ <<< STEP  4 : advect base        
+             :  density_advance >>> 
+             :   tracer_advance >>> 
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.1992301862E-09
+... new min/max : density            0.9712277087E+05   0.2678361655E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>> 
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224921E+28
+ 
+ <<< STEP  5 : react state     
+ <<< STEP  6 : make new S and new w0 >>> 
+ ... max CFL of w0:  0.315775943106649468E-07
+ 
+ <<< STEP  7 : create MAC velocities >>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11694827E+10
+ MAX OF UMAC AT LEVEL  1 859217934251877.000
+ MAX OF VMAC AT LEVEL  1 809624681177670.875
+ MAX OF WMAC AT LEVEL  1 784695749973975.500
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11694827E+10
+F90mg: Initial error (error0)       =   81974817.    
+F90mg: Final Iter.  80 error/error0 =  0.17924553E-10
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.14693619E-02
+ MAX OF UMAC AT LEVEL  1 889553606983727.625
+ MAX OF VMAC AT LEVEL  1 840609295689394.500
+ MAX OF WMAC AT LEVEL  1 803206309414220.250
+ 
+ <<< STEP  8 : advect base   
+             :  density_advance >>>
+             :   tracer_advance >>>
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.1992301862E-09
+... new min/max : density            0.9712277087E+05   0.2678361655E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>>
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224921E+28
+ 
+ <<< STEP  9 : react state 
+ <<< STEP 10 : make new S >>>
+ <<< STEP 11 : update and project new velocity >>>
+... Level 1 update:
+... new min/max : x-velocity       -0.3444695853E+06   0.2750594983E+06
+... new min/max : y-velocity       -0.3326460471E+06   0.3086685953E+06
+... new min/max : z-velocity       -0.3019368961E+06   0.3067892821E+06
+ 
+ PROJ_TYPE IN HGPROJECT: 3
+ PROJ_TYPE IN HGPROJECT: ST_DENSE
+... x-velocity before projection -0.3444695853E+06   0.2750594983E+06
+... y-velocity before projection -0.3326460471E+06   0.3086685953E+06
+... z-velocity before projection -0.3019368961E+06   0.3067892821E+06
+ 
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+MG finished at   7 iterations
+... x-velocity  after projection -0.3444706560E+06   0.2750594702E+06
+... y-velocity  after projection -0.3326460627E+06   0.3086682844E+06
+... z-velocity  after projection -0.3019375043E+06   0.3067888746E+06
+ 
+ Time to advance timestep:  92.2391151058823482  seconds
+ 
+FAB byte spread across CPUs: [  42912864 ...   42953824]
+ 
+ 
+ BEGIN MAIN EVOLUTION LOOP WITH dt = 0.479584268808872305E-04
+ 
+ MEMORY STATS AT START OF TIMESTEP  1
+  
+    multifab:     23868739584    23868739584             21             21
+         fab:         1726596        1731716             15             18
+    boxarray:          305235         305235             63             63
+      layout:               0              0              6              6
+    boxassoc:             268           2484             44             44
+     fgassoc:               0              0              0              0
+   syncassoc:              16            168             16             16
+   copyassoc:              16           5982             16             16
+   fluxassoc:               0              0              0              0
+    aveassoc:               0              0              0              0
+ 
+ MAX OF UOLD  344471.773943188367  AT LEVEL  1
+ MAX OF VOLD  332646.879574398627  AT LEVEL  1
+ MAX OF WOLD  306789.207098868617  AT LEVEL  1
+inner sponge: r_sp      , r_tp      :   0.151106770833E+09    0.182617187500E+09
+outer sponge: r_sp_outer, r_tp_outer:   0.182617187500E+09    0.185221354167E+09
+ 
+ Number of valid cells at level         1 452984832
+ Number of valid + ghost cells at level 1 592704000
+ 
+ <<< STEP  1 : react state     
+ <<< CALLING advance_timestep with dt = 0.479584268808872305E-04
+ <<< STEP  2 : make w0 >>> 
+ ... max CFL of w0:  0.315730751563585448E-07
+ 
+ <<< STEP  3 : create MAC velocities>>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11694820E+10
+ MAX OF UMAC AT LEVEL  1 859218484573807.250
+ MAX OF VMAC AT LEVEL  1 809624788086246.375
+ MAX OF WMAC AT LEVEL  1 784696823134083.625
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11694820E+10
+F90mg: Initial error (error0)       =  0.11694820E+10
+F90mg: Final Iter.  87 error/error0 =  0.54655823E-11
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.63919004E-02
+ MAX OF UMAC AT LEVEL  1 889554866450369.625
+ MAX OF VMAC AT LEVEL  1 840610220773894.750
+ MAX OF WMAC AT LEVEL  1 803207177812000.250
+ 
+ <<< STEP  4 : advect base        
+             :  density_advance >>> 
+             :   tracer_advance >>> 
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.1992301862E-09
+... new min/max : density            0.9712277087E+05   0.2678361655E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>> 
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224921E+28
+ 
+ <<< STEP  5 : react state     
+ <<< STEP  6 : make new S and new w0 >>> 
+ ... max CFL of w0:  0.315775941922230262E-07
+ 
+ <<< STEP  7 : create MAC velocities >>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11694797E+10
+ MAX OF UMAC AT LEVEL  1 859218280131894.375
+ MAX OF VMAC AT LEVEL  1 809624476982747.000
+ MAX OF WMAC AT LEVEL  1 784696556094790.250
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11694797E+10
+F90mg: Initial error (error0)       =   945705.03    
+F90mg: Final Iter.  31 error/error0 =  0.12098612E-08
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11440781E-02
+ MAX OF UMAC AT LEVEL  1 889553967714764.250
+ MAX OF VMAC AT LEVEL  1 840609974594693.375
+ MAX OF WMAC AT LEVEL  1 803206914340780.500
+ 
+ <<< STEP  8 : advect base   
+             :  density_advance >>>
+             :   tracer_advance >>>
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.1992301862E-09
+... new min/max : density            0.9712277087E+05   0.2678361655E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>>
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224921E+28
+ 
+ <<< STEP  9 : react state 
+ <<< STEP 10 : make new S >>>
+ <<< STEP 11 : update and project new velocity >>>
+... Level 1 update:
+... new min/max : x-velocity       -0.3444706560E+06   0.2750594702E+06
+... new min/max : y-velocity       -0.3326460628E+06   0.3086682844E+06
+... new min/max : z-velocity       -0.3019375043E+06   0.3067888746E+06
+ 
+ PROJ_TYPE IN HGPROJECT: 4
+ PROJ_TYPE IN HGPROJECT: ST_DENSE
+... x-velocity before projection -0.3444706560E+06   0.2750594702E+06
+... y-velocity before projection -0.3326460628E+06   0.3086682844E+06
+... z-velocity before projection -0.3019375043E+06   0.3067888746E+06
+ 
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+MG finished at   6 iterations
+... x-velocity  after projection -0.3444513781E+06   0.2750042231E+06
+... y-velocity  after projection -0.3328754327E+06   0.3086791219E+06
+... z-velocity  after projection -0.3019722242E+06   0.3068337162E+06
+ 
+ Time to advance timestep:  78.1270962152941024  seconds
+ 
+FAB byte spread across CPUs: [  42912864 ...   42953824]
+ 
+ MEMORY STATS AT END OF TIMESTEP  1
+  
+    multifab:     23869016064    23869016064             27             27
+         fab:         1726596        1731716             15             18
+    boxarray:          485703         485703            104            104
+      layout:               0              0              9              9
+    boxassoc:             268           2484             59             59
+     fgassoc:               0              0              0              0
+   syncassoc:              16            168             20             20
+   copyassoc:              29           6008             29             29
+   fluxassoc:               0              0              0              0
+    aveassoc:               0              0              0              0
+ 
+At level   1
+... min/max : x-velocity       -0.3444513781E+06   0.2750042231E+06
+... min/max : y-velocity       -0.3328754327E+06   0.3086791219E+06
+... min/max : z-velocity       -0.3019722242E+06   0.3068337162E+06
+... min/max : gpix              -0.1897844709E+18   0.2180861739E+18
+... min/max : gpiy              -0.2954343108E+18   0.2849023940E+18
+... min/max : gpiz              -0.2277049481E+18   0.2369262679E+18
+ 
+STEP =      1  TIME = 4.7958426881E-05  DT = 4.7958426881E-05
+ 
+ MEMORY STATS AT START OF TIMESTEP  2
+  
+    multifab:     23869016064    23869016064             27             27
+         fab:         1726596        1731716             15             18
+    boxarray:          485703         485703            104            104
+      layout:               0              0              9              9
+    boxassoc:             268           2484             59             59
+     fgassoc:               0              0              0              0
+   syncassoc:              16            168             20             20
+   copyassoc:              29           6008             29             29
+   fluxassoc:               0              0              0              0
+    aveassoc:               0              0              0              0
+ 
+ MAX OF UOLD  344451.378120182024  AT LEVEL  1
+ MAX OF VOLD  332875.432728634274  AT LEVEL  1
+ MAX OF WOLD  306833.716225984390  AT LEVEL  1
+ 
+ Call to estdt at beginning of step 2
+ gives dt = 0.100529101167103285
+ dt_growth factor limits the new dt = 0.527542695689759569E-04
+ 
+inner sponge: r_sp      , r_tp      :   0.151106770833E+09    0.182617187500E+09
+outer sponge: r_sp_outer, r_tp_outer:   0.182617187500E+09    0.185221354167E+09
+ 
+ Number of valid cells at level         1 452984832
+ Number of valid + ghost cells at level 1 592704000
+ 
+ <<< STEP  1 : react state     
+ <<< CALLING advance_timestep with dt = 0.527542695689759569E-04
+ <<< STEP  2 : make w0 >>> 
+ ... max CFL of w0:  0.311758114613366105E-07
+ 
+ <<< STEP  3 : create MAC velocities>>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11695913E+10
+ MAX OF UMAC AT LEVEL  1 859284143979605.125
+ MAX OF VMAC AT LEVEL  1 809717396884321.125
+ MAX OF WMAC AT LEVEL  1 784810618761336.000
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11695913E+10
+F90mg: Initial error (error0)       =  0.11695913E+10
+F90mg: Final Iter.  88 error/error0 =  0.52792025E-11
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.61745092E-02
+ MAX OF UMAC AT LEVEL  1 889463264823843.875
+ MAX OF VMAC AT LEVEL  1 840583571084297.750
+ MAX OF WMAC AT LEVEL  1 803157287693824.875
+ 
+ <<< STEP  4 : advect base        
+             :  density_advance >>> 
+             :   tracer_advance >>> 
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.5795278561E-09
+... new min/max : density            0.9712277087E+05   0.2678361654E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>> 
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224920E+28
+ 
+ <<< STEP  5 : react state     
+ <<< STEP  6 : make new S and new w0 >>> 
+ ... max CFL of w0:  0.330429719930095540E-07
+ 
+ <<< STEP  7 : create MAC velocities >>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11695925E+10
+ MAX OF UMAC AT LEVEL  1 859284564952694.875
+ MAX OF VMAC AT LEVEL  1 809716986603333.125
+ MAX OF WMAC AT LEVEL  1 784810691441322.500
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11695925E+10
+F90mg: Initial error (error0)       =  0.12776198E+09
+F90mg: Final Iter.  80 error/error0 =  0.13195495E-10
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.16858827E-02
+ MAX OF UMAC AT LEVEL  1 889463129341854.125
+ MAX OF VMAC AT LEVEL  1 840583217321739.375
+ MAX OF WMAC AT LEVEL  1 803158844408951.375
+ 
+ <<< STEP  8 : advect base   
+             :  density_advance >>>
+             :   tracer_advance >>>
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.5795278561E-09
+... new min/max : density            0.9712277087E+05   0.2678361654E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>>
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224920E+28
+ 
+ <<< STEP  9 : react state 
+ <<< STEP 10 : make new S >>>
+ <<< STEP 11 : update and project new velocity >>>
+... Level 1 update:
+... new min/max : x-velocity       -0.3444289541E+06   0.2749429544E+06
+... new min/max : y-velocity       -0.3331268149E+06   0.3086897751E+06
+... new min/max : z-velocity       -0.3020094187E+06   0.3068826479E+06
+ 
+ PROJ_TYPE IN HGPROJECT: 4
+ PROJ_TYPE IN HGPROJECT: ST_DENSE
+... x-velocity before projection -0.3444289541E+06   0.2749429544E+06
+... y-velocity before projection -0.3331268149E+06   0.3086897751E+06
+... z-velocity before projection -0.3020094187E+06   0.3068826479E+06
+ 
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+MG finished at   6 iterations
+... x-velocity  after projection -0.3444458530E+06   0.2749958693E+06
+... y-velocity  after projection -0.3330432756E+06   0.3086798921E+06
+... z-velocity  after projection -0.3019763000E+06   0.3068406435E+06
+ 
+ Time to advance timestep:  84.4446729176470399  seconds
+ 
+FAB byte spread across CPUs: [  42912864 ...   42953824]
+ 
+ MEMORY STATS AT END OF TIMESTEP  2
+  
+    multifab:     23869292544    23869292544             33             33
+         fab:         1726596        1731716             15             18
+    boxarray:          666171         666171            145            145
+      layout:               0              0             12             12
+    boxassoc:             268           2484             74             74
+     fgassoc:               0              0              0              0
+   syncassoc:              16            168             24             24
+   copyassoc:              42           6034             42             42
+   fluxassoc:               0              0              0              0
+    aveassoc:               0              0              0              0
+ 
+At level   1
+... min/max : x-velocity       -0.3444458530E+06   0.2749958693E+06
+... min/max : y-velocity       -0.3330432756E+06   0.3086798921E+06
+... min/max : z-velocity       -0.3019763000E+06   0.3068406435E+06
+... min/max : gpix              -0.1002155810E+18   0.1089418271E+18
+... min/max : gpiy              -0.1299863583E+18   0.1348552029E+18
+... min/max : gpiz              -0.9513917450E+17   0.1019288521E+18
+ 
+STEP =      2  TIME = 1.0071269645E-04  DT = 5.2754269569E-05
+ 
+ MEMORY STATS AT START OF TIMESTEP  3
+  
+    multifab:     23869292544    23869292544             33             33
+         fab:         1726596        1731716             15             18
+    boxarray:          666171         666171            145            145
+      layout:               0              0             12             12
+    boxassoc:             268           2484             74             74
+     fgassoc:               0              0              0              0
+   syncassoc:              16            168             24             24
+   copyassoc:              42           6034             42             42
+   fluxassoc:               0              0              0              0
+    aveassoc:               0              0              0              0
+ 
+ MAX OF UOLD  344445.853027039440  AT LEVEL  1
+ MAX OF VOLD  333043.275600392022  AT LEVEL  1
+ MAX OF WOLD  306840.643461642961  AT LEVEL  1
+ 
+ Call to estdt at beginning of step 3
+ gives dt = 0.148019590498491532
+ dt_growth factor limits the new dt = 0.580296965258735546E-04
+ 
+inner sponge: r_sp      , r_tp      :   0.151106770833E+09    0.182617187500E+09
+outer sponge: r_sp_outer, r_tp_outer:   0.182617187500E+09    0.185221354167E+09
+ 
+ Number of valid cells at level         1 452984832
+ Number of valid + ghost cells at level 1 592704000
+ 
+ <<< STEP  1 : react state     
+ <<< CALLING advance_timestep with dt = 0.580296965258735546E-04
+ <<< STEP  2 : make w0 >>> 
+ ... max CFL of w0:  0.363472817627679604E-07
+ 
+ <<< STEP  3 : create MAC velocities>>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11696600E+10
+ MAX OF UMAC AT LEVEL  1 859274926226327.250
+ MAX OF VMAC AT LEVEL  1 809696368562607.375
+ MAX OF WMAC AT LEVEL  1 784782903341133.750
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11696600E+10
+F90mg: Initial error (error0)       =  0.11696600E+10
+F90mg: Final Iter.  85 error/error0 =  0.54857056E-11
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.64164106E-02
+ MAX OF UMAC AT LEVEL  1 889485453242343.625
+ MAX OF VMAC AT LEVEL  1 840578247667379.500
+ MAX OF WMAC AT LEVEL  1 803182404377400.250
+ 
+ <<< STEP  4 : advect base        
+             :  density_advance >>> 
+             :   tracer_advance >>> 
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.9978553539E-09
+... new min/max : density            0.9712277087E+05   0.2678361654E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>> 
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224919E+28
+ 
+ <<< STEP  5 : react state     
+ <<< STEP  6 : make new S and new w0 >>> 
+ ... max CFL of w0:  0.363472753115980098E-07
+ 
+ <<< STEP  7 : create MAC velocities >>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11696600E+10
+ MAX OF UMAC AT LEVEL  1 859274926149883.875
+ MAX OF VMAC AT LEVEL  1 809696368492841.500
+ MAX OF WMAC AT LEVEL  1 784782903272296.750
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11696600E+10
+F90mg: Initial error (error0)       =  0.74962020E-01
+F90mg: Final Iter.  15 error/error0 =  0.17234490E-01
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.12919322E-02
+ MAX OF UMAC AT LEVEL  1 889485453164430.500
+ MAX OF VMAC AT LEVEL  1 840578247594776.375
+ MAX OF WMAC AT LEVEL  1 803182404327921.125
+ 
+ <<< STEP  8 : advect base   
+             :  density_advance >>>
+             :   tracer_advance >>>
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.9978553539E-09
+... new min/max : density            0.9712277087E+05   0.2678361654E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>>
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224919E+28
+ 
+ <<< STEP  9 : react state 
+ <<< STEP 10 : make new S >>>
+ <<< STEP 11 : update and project new velocity >>>
+... Level 1 update:
+... new min/max : x-velocity       -0.3444400243E+06   0.2749862880E+06
+... new min/max : y-velocity       -0.3332276631E+06   0.3086806294E+06
+... new min/max : z-velocity       -0.3019813284E+06   0.3068476666E+06
+ 
+ PROJ_TYPE IN HGPROJECT: 4
+ PROJ_TYPE IN HGPROJECT: ST_DENSE
+... x-velocity before projection -0.3444400243E+06   0.2749862880E+06
+... y-velocity before projection -0.3332276631E+06   0.3086806294E+06
+... z-velocity before projection -0.3019813284E+06   0.3068476666E+06
+ 
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+MG finished at   6 iterations
+... x-velocity  after projection -0.3444406330E+06   0.2749941742E+06
+... y-velocity  after projection -0.3332008838E+06   0.3086788403E+06
+... z-velocity  after projection -0.3019760232E+06   0.3068413617E+06
+ 
+ Time to advance timestep:  75.0556956235294592  seconds
+ 
+FAB byte spread across CPUs: [  42912864 ...   42953824]
+ 
+ MEMORY STATS AT END OF TIMESTEP  3
+  
+    multifab:     23869569024    23869569024             39             39
+         fab:         1726596        1731716             15             18
+    boxarray:          777384         777384            176            176
+      layout:               0              0             15             15
+    boxassoc:             268           2484             89             89
+     fgassoc:               0              0              0              0
+   syncassoc:              16            168             28             28
+   copyassoc:              50           6045             50             50
+   fluxassoc:               0              0              0              0
+    aveassoc:               0              0              0              0
+ 
+At level   1
+... min/max : x-velocity       -0.3444406330E+06   0.2749941742E+06
+... min/max : y-velocity       -0.3332008838E+06   0.3086788403E+06
+... min/max : z-velocity       -0.3019760232E+06   0.3068413617E+06
+... min/max : gpix              -0.6164275804E+17   0.6952796473E+17
+... min/max : gpiy              -0.6416761563E+17   0.6917776106E+17
+... min/max : gpiz              -0.5673461286E+17   0.6102274950E+17
+ 
+STEP =      3  TIME = 1.5874239298E-04  DT = 5.8029696526E-05
+ 
+ MEMORY STATS AT START OF TIMESTEP  4
+  
+    multifab:     23869569024    23869569024             39             39
+         fab:         1726596        1731716             15             18
+    boxarray:          777384         777384            176            176
+      layout:               0              0             15             15
+    boxassoc:             268           2484             89             89
+     fgassoc:               0              0              0              0
+   syncassoc:              16            168             28             28
+   copyassoc:              50           6045             50             50
+   fluxassoc:               0              0              0              0
+    aveassoc:               0              0              0              0
+ 
+ MAX OF UOLD  344440.632951624400  AT LEVEL  1
+ MAX OF VOLD  333200.883791556640  AT LEVEL  1
+ MAX OF WOLD  306841.361724827322  AT LEVEL  1
+ 
+ Call to estdt at beginning of step 4
+ gives dt = 0.206249368844458103
+ dt_growth factor limits the new dt = 0.638326661784609142E-04
+ 
+inner sponge: r_sp      , r_tp      :   0.151106770833E+09    0.182617187500E+09
+outer sponge: r_sp_outer, r_tp_outer:   0.182617187500E+09    0.185221354167E+09
+ 
+ Number of valid cells at level         1 452984832
+ Number of valid + ghost cells at level 1 592704000
+ 
+ <<< STEP  1 : react state     
+ <<< CALLING advance_timestep with dt = 0.638326661784609142E-04
+ <<< STEP  2 : make w0 >>> 
+ ... max CFL of w0:  0.399819997952424378E-07
+ 
+ <<< STEP  3 : create MAC velocities>>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11697242E+10
+ MAX OF UMAC AT LEVEL  1 859270116589606.750
+ MAX OF VMAC AT LEVEL  1 809690545867407.750
+ MAX OF WMAC AT LEVEL  1 784776662795638.375
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11697242E+10
+F90mg: Initial error (error0)       =  0.11697242E+10
+F90mg: Final Iter.  86 error/error0 =  0.56675360E-11
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.66294541E-02
+ MAX OF UMAC AT LEVEL  1 889487035476383.500
+ MAX OF VMAC AT LEVEL  1 840573338137459.625
+ MAX OF WMAC AT LEVEL  1 803184372993680.875
+ 
+ <<< STEP  4 : advect base        
+             :  density_advance >>> 
+             :   tracer_advance >>> 
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.1458015788E-08
+... new min/max : density            0.9712277086E+05   0.2678361653E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>> 
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224917E+28
+ 
+ <<< STEP  5 : react state     
+ <<< STEP  6 : make new S and new w0 >>> 
+ ... max CFL of w0:  0.399820044683581215E-07
+ 
+ <<< STEP  7 : create MAC velocities >>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11697242E+10
+ MAX OF UMAC AT LEVEL  1 859270116507334.875
+ MAX OF VMAC AT LEVEL  1 809690545789352.875
+ MAX OF WMAC AT LEVEL  1 784776662720433.750
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11697242E+10
+F90mg: Initial error (error0)       =   97.572797    
+F90mg: Final Iter.  15 error/error0 =  0.13519494E-04
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.13191348E-02
+ MAX OF UMAC AT LEVEL  1 889487035391813.250
+ MAX OF VMAC AT LEVEL  1 840573338057952.000
+ MAX OF WMAC AT LEVEL  1 803184372935568.375
+ 
+ <<< STEP  8 : advect base   
+             :  density_advance >>>
+             :   tracer_advance >>>
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.1458015788E-08
+... new min/max : density            0.9712277086E+05   0.2678361653E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>>
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224917E+28
+ 
+ <<< STEP  9 : react state 
+ <<< STEP 10 : make new S >>>
+ <<< STEP 11 : update and project new velocity >>>
+... Level 1 update:
+... new min/max : x-velocity       -0.3444348921E+06   0.2749923095E+06
+... new min/max : y-velocity       -0.3333742468E+06   0.3086776832E+06
+... new min/max : z-velocity       -0.3019757188E+06   0.3068421519E+06
+ 
+ PROJ_TYPE IN HGPROJECT: 4
+ PROJ_TYPE IN HGPROJECT: ST_DENSE
+... x-velocity before projection -0.3444348921E+06   0.2749923095E+06
+... y-velocity before projection -0.3333742468E+06   0.3086776832E+06
+... z-velocity before projection -0.3019757188E+06   0.3068421519E+06
+ 
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+MG finished at   6 iterations
+... x-velocity  after projection -0.3444339125E+06   0.2749934531E+06
+... y-velocity  after projection -0.3333459334E+06   0.3086773628E+06
+... z-velocity  after projection -0.3019750053E+06   0.3068409138E+06
+ 
+ Time to advance timestep:  75.4654123623529358  seconds
+ 
+FAB byte spread across CPUs: [  42912864 ...   42953824]
+ 
+ MEMORY STATS AT END OF TIMESTEP  4
+  
+    multifab:     23869845504    23869845504             45             45
+         fab:         1726596        1731716             15             18
+    boxarray:          777789         777789            191            191
+      layout:               0              0             18             18
+    boxassoc:             268           2484            104            104
+     fgassoc:               0              0              0              0
+   syncassoc:              16            168             32             32
+   copyassoc:              50           6045             50             50
+   fluxassoc:               0              0              0              0
+    aveassoc:               0              0              0              0
+ 
+At level   1
+... min/max : x-velocity       -0.3444339125E+06   0.2749934531E+06
+... min/max : y-velocity       -0.3333459334E+06   0.3086773628E+06
+... min/max : z-velocity       -0.3019750053E+06   0.3068409138E+06
+... min/max : gpix              -0.4056717173E+17   0.4733201000E+17
+... min/max : gpiy              -0.3705562030E+17   0.3776008708E+17
+... min/max : gpiz              -0.3527135993E+17   0.3841039604E+17
+ 
+STEP =      4  TIME = 2.2257505915E-04  DT = 6.3832666178E-05
+ 
+ MEMORY STATS AT START OF TIMESTEP  5
+  
+    multifab:     23869845504    23869845504             45             45
+         fab:         1726596        1731716             15             18
+    boxarray:          777789         777789            191            191
+      layout:               0              0             18             18
+    boxassoc:             268           2484            104            104
+     fgassoc:               0              0              0              0
+   syncassoc:              16            168             32             32
+   copyassoc:              50           6045             50             50
+   fluxassoc:               0              0              0              0
+    aveassoc:               0              0              0              0
+ 
+ MAX OF UOLD  344433.912497616897  AT LEVEL  1
+ MAX OF VOLD  333345.933413324994  AT LEVEL  1
+ MAX OF WOLD  306840.913787807629  AT LEVEL  1
+ 
+ Call to estdt at beginning of step 5
+ gives dt = 0.249974041729059737
+ dt_growth factor limits the new dt = 0.702159327963070110E-04
+ 
+inner sponge: r_sp      , r_tp      :   0.151106770833E+09    0.182617187500E+09
+outer sponge: r_sp_outer, r_tp_outer:   0.182617187500E+09    0.185221354167E+09
+ 
+ Number of valid cells at level         1 452984832
+ Number of valid + ghost cells at level 1 592704000
+ 
+ <<< STEP  1 : react state     
+ <<< CALLING advance_timestep with dt = 0.702159327963070110E-04
+ <<< STEP  2 : make w0 >>> 
+ ... max CFL of w0:  0.439802106038015617E-07
+ 
+ <<< STEP  3 : create MAC velocities>>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11697750E+10
+ MAX OF UMAC AT LEVEL  1 859267307385966.125
+ MAX OF VMAC AT LEVEL  1 809686405184460.625
+ MAX OF WMAC AT LEVEL  1 784773127447154.375
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11697750E+10
+F90mg: Initial error (error0)       =  0.11697750E+10
+F90mg: Final Iter.  86 error/error0 =  0.56870190E-11
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.66525326E-02
+ MAX OF UMAC AT LEVEL  1 889471345310303.750
+ MAX OF VMAC AT LEVEL  1 840586476345032.375
+ MAX OF WMAC AT LEVEL  1 803132299581198.750
+ 
+ <<< STEP  4 : advect base        
+             :  density_advance >>> 
+             :   tracer_advance >>> 
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.1964192429E-08
+... new min/max : density            0.9712277086E+05   0.2678361653E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>> 
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224916E+28
+ 
+ <<< STEP  5 : react state     
+ <<< STEP  6 : make new S and new w0 >>> 
+ ... max CFL of w0:  0.439802163731733518E-07
+ 
+ <<< STEP  7 : create MAC velocities >>> 
+ 
+... before mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11697750E+10
+ MAX OF UMAC AT LEVEL  1 859267307295022.250
+ MAX OF VMAC AT LEVEL  1 809686405098617.625
+ MAX OF WMAC AT LEVEL  1 784773127364312.250
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+F90mg: Initial rhs                  =  0.11697750E+10
+F90mg: Initial error (error0)       =   370.00957    
+F90mg: Final Iter.  16 error/error0 =  0.32157067E-05
+
+...  after mac_projection: max of [div (coeff * UMAC) - RHS)] 0.11898422E-02
+ MAX OF UMAC AT LEVEL  1 889471345216959.250
+ MAX OF VMAC AT LEVEL  1 840586476257435.500
+ MAX OF WMAC AT LEVEL  1 803132299516635.750
+ 
+ <<< STEP  8 : advect base   
+             :  density_advance >>>
+             :   tracer_advance >>>
+... Level 1 update:
+... new min/max : carbon-12          0.4995473283E+00   0.5000047420E+00
+... new min/max : oxygen-16          0.4999952580E+00   0.5004526717E+00
+... new min/max : ash                0.0000000000E+00   0.1964192429E-08
+... new min/max : density            0.9712277086E+05   0.2678361653E+10
+... new min/max : tracer             0.0000000000E+00   0.0000000000E+00
+             : enthalpy_advance >>>
+... Level 1 update:
+... new min/max : rho * H            0.1884292929E+22   0.6632224916E+28
+ 
+ <<< STEP  9 : react state 
+ <<< STEP 10 : make new S >>>
+ <<< STEP 11 : update and project new velocity >>>
+... Level 1 update:
+... new min/max : x-velocity       -0.3444265205E+06   0.2749926598E+06
+... new min/max : y-velocity       -0.3335054830E+06   0.3086757376E+06
+... new min/max : z-velocity       -0.3019738858E+06   0.3068404210E+06
+ 
+ PROJ_TYPE IN HGPROJECT: 4
+ PROJ_TYPE IN HGPROJECT: ST_DENSE
+... x-velocity before projection -0.3444265205E+06   0.2749926598E+06
+... y-velocity before projection -0.3335054830E+06   0.3086757376E+06
+... z-velocity before projection -0.3019738858E+06   0.3068404210E+06
+ 
+ TOTAL # OF LEVELS IN FANCY BOTTOM SOLVE 4
+BOX[(* COARSE PD *){0, 0, 0}, {47, 47, 47}]
+ ORIG MG NBOXES  13824
+ NEW  MG NBOXES  27
+MG finished at   6 iterations
+... x-velocity  after projection -0.3444257144E+06   0.2749928498E+06
+... y-velocity  after projection -0.3334759117E+06   0.3086757031E+06
+... z-velocity  after projection -0.3019737823E+06   0.3068401195E+06
+ 
+ Time to advance timestep:  75.3864787717647573  seconds
+ 
+FAB byte spread across CPUs: [  42912864 ...   42953824]
+ 
+ MEMORY STATS AT END OF TIMESTEP  5
+  
+    multifab:     23870121984    23870121984             51             51
+         fab:         1726596        1731716             15             18
+    boxarray:          778194         778194            206            206
+      layout:               0              0             21             21
+    boxassoc:             268           2484            119            119
+     fgassoc:               0              0              0              0
+   syncassoc:              16            168             36             36
+   copyassoc:              50           6045             50             50
+   fluxassoc:               0              0              0              0
+    aveassoc:               0              0              0              0
+ 
+At level   1
+... min/max : x-velocity       -0.3444257144E+06   0.2749928498E+06
+... min/max : y-velocity       -0.3334759117E+06   0.3086757031E+06
+... min/max : z-velocity       -0.3019737823E+06   0.3068401195E+06
+... min/max : gpix              -0.2807608448E+17   0.3370529679E+17
+... min/max : gpiy              -0.2372680482E+17   0.2372843342E+17
+... min/max : gpiz              -0.2358630091E+17   0.2523784403E+17
+ 
+STEP =      5  TIME = 2.9279099195E-04  DT = 7.0215932796E-05
+ 
+ MEMORY STATS AT END OF PROGRAM
+  
+    multifab:         1658880        1658880             36             36
+         fab:               0           5120              0              3
+    boxarray:            2700           2700            100            100
+      layout:               0              0             20             20
+    boxassoc:               0           1384            104            104
+     fgassoc:               0              0              0              0
+   syncassoc:               0            112             32             32
+   copyassoc:               0              0              0              0
+   fluxassoc:               0              0              0              0
+    aveassoc:               0              0              0              0
+  
+ Run Time =  581.420072015294068
