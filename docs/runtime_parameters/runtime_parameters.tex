@@ -59,7 +59,7 @@
 \verb=  do_smallscale  = &   force $\rho_0 = (\rho h)_0 = 0$, {\tt evolve\_base\_state = F} and {\tt beta\_type} = 3  &  .false. \\
 \verb=  do_sponge  = &   Use sponging.  &  .false. \\
 \verb=  dpdt_factor  = &   factor in front of the volume discrepancy term (0.0 = off)  &  0.d0 \\
-\verb=  drdxfac  = &   ratio of radial base state zones to Cartesian full state zones for spherical geometry  &  1 \\
+\verb=  drdxfac  = &   ratio of radial base state cells to Cartesian full state cells for spherical geometry, (i.e. $\Delta r = \Delta x/ \mathtt{drdxfac}$)  &  1 \\
 \verb=  enthalpy_pred_type  = &   predict\_rhohprime = 1; \newline predict\_h = 2; \newline predict\_T\_then\_rhohprime = 3; \newline predict\_T\_then\_h = 4; \newline predict\_hprime = 5; \newline predict\_Tprime\_then\_h = 6.  &  predict\_rhohprime \\
 \verb=  evolve_base_state  = &   turn on (.true.) or off (.false.) basestate evolution  &  .true. \\
 \verb=  fixed_dt  = &   Fix the time step.  If -1.0, then use the standard time step.  &  -1.0d0 \\
@@ -126,7 +126,7 @@
 \verb=  use_delta_gamma1_term  = &   turns on second order correction to delta gamma1 term  &  .false. \\
 \verb=  use_divu_firstdt  = &   Use the divu constraint when computing the first time step.  &  .false. \\
 \verb=  use_eos_coulomb  = &    &  .true. \\
-\verb=  use_etarho  = &   turn on the etarho term as described in flow chart  &  .true. \\
+\verb=  use_etarho  = &   turn on the $\etarho$ term as described in the flow chart  &  .true. \\
 \verb=  use_soundspeed_firstdt  = &   Use the soundspeed constraint when computing the first time step.  &  .false. \\
 \verb=  use_tfromp  = &   When updating temperature, use $T=T(\rho,p_0,X) $ rather than $T=T(\rho,h,X)$.  &  .false. \\
 \verb=  use_thermal_diffusion  = &   Use thermal diffusion.  &  .false. \\
