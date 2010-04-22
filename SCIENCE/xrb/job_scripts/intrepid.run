@@ -10,11 +10,12 @@ qsub -t 10 -n 64 -q prod-devel --mode vn -A SNe_Ia_scaling main.Linux.xlf.mpi.ex
 qsub -t 10 -n 64 -q prod-devel --mode smp -A SNe_Ia_scaling main.Linux.xlf.mpi.omp.exe inputs_3d.256.5dr.eq.dx
 
 # Scaling examples
-qsub -t 15 -n 512 -q prod --mode smp -A SNe_Ia_scaling main.Linux.xlf.mpi.omp.exe inputs_3d.768.5dr.eq.dx_96
-qsub -t 15 -n 1728 -q prod --mode smp -A SNe_Ia_scaling main.Linux.xlf.mpi.omp.exe inputs_3d.768.5dr.eq.dx_64
-qsub -t 15 -n 4096 -q prod --mode smp -A SNe_Ia_scaling main.Linux.xlf.mpi.omp.exe inputs_3d.768.5dr.eq.dx_48
+qsub -t 30 -n 512 -q prod --mode smp -A SNe_Ia_scaling main.Linux.xlf.mpi.omp.exe inputs_3d.768.5dr.eq.dx_96
+qsub -t 30 -n 1728 -q prod --mode smp -A SNe_Ia_scaling main.Linux.xlf.mpi.omp.exe inputs_3d.768.5dr.eq.dx_64
+qsub -t 30 -n 4096 -q prod --mode smp -A SNe_Ia_scaling main.Linux.xlf.mpi.omp.exe inputs_3d.768.5dr.eq.dx_48
+qsub -t 30 -n 13824 -q prod --mode smp -A SNe_Ia_scaling main.Linux.xlf.mpi.omp.exe inputs_3d.768.5dr.eq.dx_32
 
-qsub -t 15 -n 432 -q prod-devel --mode vn -A SNe_Ia_scaling main.Linux.xlf.mpi.exe inputs_3d.768.5dr.eq.dx_64
-qsub -t 15 -n 1024 -q prod --mode vn -A SNe_Ia_scaling main.Linux.xlf.mpi.exe inputs_3d.768.5dr.eq.dx_48
-qsub -t 15 -n 3456 -q prod --mode vn -A SNe_Ia_scaling main.Linux.xlf.mpi.exe inputs_3d.768.5dr.eq.dx_32
-qsub -t 15 -n 8192 -q prod --mode vn -A SNe_Ia_scaling main.Linux.xlf.mpi.exe inputs_3d.768.5dr.eq.dx_24
+qsub -t 30 -n 432 -q prod-devel --mode vn -A SNe_Ia_scaling main.Linux.xlf.mpi.exe inputs_3d.768.5dr.eq.dx_64
+qsub -t 30 -n 1024 -q prod --mode vn -A SNe_Ia_scaling main.Linux.xlf.mpi.exe inputs_3d.768.5dr.eq.dx_48
+qsub -t 30 -n 3456 -q prod --mode vn -A SNe_Ia_scaling main.Linux.xlf.mpi.exe inputs_3d.768.5dr.eq.dx_32
+qsub -t 30 -n 8192 -q prod --mode vn -A SNe_Ia_scaling main.Linux.xlf.mpi.exe inputs_3d.768.5dr.eq.dx_24
