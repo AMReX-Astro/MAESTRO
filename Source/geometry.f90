@@ -189,10 +189,10 @@ contains
     end do
 
     ! compute the coordinates of the base cutoff density
-    base_cutoff_density_coord(1) = r_end_coord(1,1)+1
+    base_cutoff_density_coord(1) = r_end_coord(1,1)
     do r=0,r_end_coord(1,1)
        if (rho0(1,r) .le. base_cutoff_density .and. &
-            base_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
+            base_cutoff_density_coord(1) .eq. r_end_coord(1,1)) then
           base_cutoff_density_coord(1) = r
           exit
        end if
