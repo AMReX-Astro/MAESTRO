@@ -81,7 +81,7 @@ contains
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              Xhe = rho_Xhe(i,j,k)/rho(i,j,k)
-             if (Xhe > 0.01_dp_t .and. rho(i,j,k) <= base_cutoff_density) then
+             if (Xhe > 0.01_dp_t .and. rho(i,j,k) >= base_cutoff_density) then
                 tagbox(i,j,k) = .true.
              end if
           end do
