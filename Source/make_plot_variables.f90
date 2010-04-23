@@ -9,7 +9,7 @@ module plot_variables_module
 
   private
 
-  public :: make_conductivity, make_cc_pi
+  public :: make_conductivity, make_pi_cc
   public :: make_tfromH, make_tfromp, make_entropypert
   public :: make_deltaT, make_divw0, make_vorticity, make_magvel, make_velr
 
@@ -168,7 +168,7 @@ contains
 
   end subroutine make_conductivity_3d
 
-  subroutine make_cc_pi(mla,pi,pi_cc)
+  subroutine make_pi_cc(mla,pi,pi_cc)
 
   use ml_layout_module
   use geometry, only: dm, nlevs
@@ -207,29 +207,29 @@ contains
           select case (dm)
           case (1)
              if (n .eq. nlevs) then
-                call make_cc_pi_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,1),ng_pc, &
+                call make_pi_cc_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,1),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n))
              else
                 mp => dataptr(mla%mask(n), i)
-                call make_cc_pi_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,1),ng_pc, &
+                call make_pi_cc_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,1),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n),mp(:,1,1,1))
              end if
           case (2)
              if (n .eq. nlevs) then
-                call make_cc_pi_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
+                call make_pi_cc_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n))
              else
                 mp => dataptr(mla%mask(n), i)
-                call make_cc_pi_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
+                call make_pi_cc_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n),mp(:,:,1,1))
              end if
           case (3)
              if (n .eq. nlevs) then
-                call make_cc_pi_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,1),ng_pc, &
+                call make_pi_cc_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,1),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n))
              else
                 mp => dataptr(mla%mask(n), i)
-                call make_cc_pi_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,1),ng_pc, &
+                call make_pi_cc_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,1),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n),mp(:,:,:,1))
              end if
           end select
@@ -259,9 +259,9 @@ contains
        call multifab_sub_sub_s(pi_cc(n),avg,ng_pc)
     end do
 
-  end subroutine make_cc_pi
+  end subroutine make_pi_cc
 
-  subroutine make_cc_pi_1d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
+  subroutine make_pi_cc_1d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
 
     real (kind=dp_t), intent(in   )           :: weight
     integer         , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc
@@ -292,9 +292,9 @@ contains
        
     end do
 
-  end subroutine make_cc_pi_1d
+  end subroutine make_pi_cc_1d
 
-  subroutine make_cc_pi_2d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
+  subroutine make_pi_cc_2d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
 
     real (kind=dp_t), intent(in   )           :: weight
     integer         , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc
@@ -327,9 +327,9 @@ contains
        end do
     end do
 
-  end subroutine make_cc_pi_2d
+  end subroutine make_pi_cc_2d
 
-  subroutine make_cc_pi_3d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
+  subroutine make_pi_cc_3d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
 
     real (kind=dp_t), intent(in   )           :: weight
     integer         , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc
@@ -365,7 +365,7 @@ contains
        end do
     end do
 
-  end subroutine make_cc_pi_3d
+  end subroutine make_pi_cc_3d
 
   subroutine make_tfromH(plotdata,comp_t,comp_tpert,comp_dp,state,p0,tempbar,dx)
 

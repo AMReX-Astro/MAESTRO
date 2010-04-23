@@ -398,7 +398,7 @@ contains
 
     ! new function that average the nodal pi to cell-centers, then
     ! normalized the entire signal to sum to 0
-    call make_cc_pi(mla,pi,pi_cc)
+    call make_pi_cc(mla,pi,pi_cc)
 
     do n=1,nlevs
 
