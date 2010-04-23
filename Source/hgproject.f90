@@ -735,14 +735,14 @@ contains
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
          gpi(0:nx) = gpi(0:nx) + gphi(0:nx)
-          pi(0:nx) =  pi(0:nx)  + phi(0:nx)
+          pi(0:nx+1) =  pi(0:nx+1)  + phi(0:nx+1)
 
       else if (proj_type .eq. regular_timestep_comp) then
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
          gpi(0:nx) = (ONE/dt) * gphi(0:nx)
-          pi(0:nx) = (ONE/dt) *  phi(0:nx)
+          pi(0:nx+1) = (ONE/dt) *  phi(0:nx+1)
 
       end if
 
@@ -790,14 +790,14 @@ contains
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
          gpi(0:nx,0:ny,:) = gpi(0:nx,0:ny,:) + gphi(0:nx,0:ny,:)
-         pi(0:nx,0:ny  ) =  pi(0:nx,0:ny  )  +  phi(0:nx,0:ny  )
+         pi(0:nx+1,0:ny+1) =  pi(0:nx+1,0:ny+1)  +  phi(0:nx+1,0:ny+1)
 
       else if (proj_type .eq. regular_timestep_comp) then
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
          gpi(0:nx,0:ny,:) = (ONE/dt) * gphi(0:nx,0:ny,:)
-         pi(0:nx,0:ny  ) = (ONE/dt) * phi(0:nx,0:ny  )
+         pi(0:nx+1,0:ny+1) = (ONE/dt) * phi(0:nx+1,0:ny+1)
 
       end if
 
@@ -866,6 +866,14 @@ contains
             do j=0,ny
                do i=0,nx
                   gpi(i,j,k,1:3) = gpi(i,j,k,1:3) + gphi(i,j,k,1:3)
+               end do
+            end do
+         end do
+!$omp end parallel do
+!$omp parallel do private(i,j,k)
+         do k=0,nz+1
+            do j=0,ny+1
+               do i=0,nx+1
                   pi(i,j,k) = pi(i,j,k) + phi(i,j,k)
                end do
             end do
@@ -881,6 +889,14 @@ contains
             do j=0,ny
                do i=0,nx
                   gpi(i,j,k,1:3) = (ONE/dt) * gphi(i,j,k,1:3)
+               end do
+            end do
+         end do
+!$omp end parallel do
+!$omp parallel do private(i,j,k)
+         do k=0,nz+1
+            do j=0,ny+1
+               do i=0,nx+1
                   pi(i,j,k) = (ONE/dt) * phi(i,j,k)
                end do
             end do
