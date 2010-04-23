@@ -26,7 +26,8 @@ Fmdirs := boxlib \
           extern/EOS/conducteos \
           extern/constants \
           extern/networks/triple_alpha \
-          extern/VODE 
+          extern/VODE \
+          extern/random
 
 
 # directories containing files that are 'include'-d via Fortran
