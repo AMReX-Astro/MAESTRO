@@ -206,7 +206,7 @@ contains
           hi =  upb(get_box(pi_cc(n), i))
           select case (dm)
           case (1)
-             if (n .eq. 1) then
+             if (n .eq. nlevs) then
                 call make_cc_pi_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,1),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n))
              else
@@ -215,7 +215,7 @@ contains
                                    lo,hi,ncell_proc(n),pisum_proc(n),mp(:,1,1,1))
              end if
           case (2)
-             if (n .eq. 1) then
+             if (n .eq. nlevs) then
                 call make_cc_pi_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n))
              else
@@ -224,7 +224,7 @@ contains
                                    lo,hi,ncell_proc(n),pisum_proc(n),mp(:,:,1,1))
              end if
           case (3)
-             if (n .eq. 1) then
+             if (n .eq. nlevs) then
                 call make_cc_pi_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,1),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n))
              else
