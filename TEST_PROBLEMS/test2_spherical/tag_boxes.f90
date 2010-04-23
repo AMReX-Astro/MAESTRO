@@ -19,16 +19,16 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine tag_boxes(mf,tagboxes,lev,tempbar,dx)
+  subroutine tag_boxes(mf,tagboxes,dx,lev,tempbar)
 
     use variables, only: temp_comp
     use geometry, only: dm, nr_fine, spherical
 
     type( multifab), intent(in   ) :: mf
     type(lmultifab), intent(inout) :: tagboxes
+    real(dp_t)     , intent(in   ) :: dx
     integer        , intent(in   ) :: lev
     real(dp_t)     , intent(in   ) :: tempbar(:,0:)
-    real(dp_t)     , intent(in   ) :: dx
 
     real(kind = dp_t), pointer :: sp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
