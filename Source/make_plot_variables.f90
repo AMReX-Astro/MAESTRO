@@ -199,7 +199,7 @@ contains
     do n=1,nlevs
        weight = 2.d0**(dm*(n-1))
        do i=1,pi_cc(n)%nboxes
-          if ( multifab_remote(pi(n), i) ) cycle
+          if ( multifab_remote(pi_cc(n), i) ) cycle
           ppn => dataptr(pi(n), i)
           ppc => dataptr(pi_cc(n), i)
           lo =  lwb(get_box(pi_cc(n), i))
