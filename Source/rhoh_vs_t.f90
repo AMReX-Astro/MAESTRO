@@ -177,7 +177,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_new(0:),rhoh0_new(0:),t0_new(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:),rhoh0_edge_new(0:),t0_edge_new(0:)
  
-    integer :: i,j
+    integer :: i
     real(kind=dp_t) :: t0_edge
     
     do i = lo(1), hi(1)+1
