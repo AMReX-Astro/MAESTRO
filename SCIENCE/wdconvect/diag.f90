@@ -723,56 +723,56 @@ contains
     ! information printing out in flush_diag() to make sure that we are storing
     ! the right information in the right order.
 
-    ! file1 -- wdconvect_radvel_diag.out
-    file1_data(index, 1) = vr(1)
-    file1_data(index, 2) = vr(2)
-    file1_data(index, 3) = vr(3)
-    file1_data(index, 4) = sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2)
-    file1_data(index, 5) = vr_max
-    file1_data(index, 6) = vr_favre(1)
-    file1_data(index, 7) = vr_favre(2)
-    file1_data(index, 8) = vr_favre(3)
-    file1_data(index, 9) = mass
-       
-
-    ! file2 -- wdconvect_temp_diag.out
-    file2_data(index, 1) = T_max
-    file2_data(index, 2) = coord_Tmax(1)
-    file2_data(index, 3) = coord_Tmax(2)
-    file2_data(index, 4) = coord_Tmax(3)
-    file2_data(index, 5) = vel_Tmax(1)
-    file2_data(index, 6) = vel_Tmax(2)
-    file2_data(index, 7) = vel_Tmax(3)
-    file2_data(index, 8) = Rloc_Tmax
-    file2_data(index, 9) = vr_Tmax
-    file2_data(index,10) = T_center
+    if (parallel_IOProcessor()) then
+       ! file1 -- wdconvect_radvel_diag.out
+       file1_data(index, 1) = vr(1)
+       file1_data(index, 2) = vr(2)
+       file1_data(index, 3) = vr(3)
+       file1_data(index, 4) = sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2)
+       file1_data(index, 5) = vr_max
+       file1_data(index, 6) = vr_favre(1)
+       file1_data(index, 7) = vr_favre(2)
+       file1_data(index, 8) = vr_favre(3)
+       file1_data(index, 9) = mass
 
 
-    ! file3 -- wdconvect_enuc_diag.out
-    file3_data(index, 1) = enuc_max
-    file3_data(index, 2) = coord_enucmax(1)
-    file3_data(index, 3) = coord_enucmax(2)
-    file3_data(index, 4) = coord_enucmax(3)
-    file3_data(index, 5) = vel_enucmax(1)
-    file3_data(index, 6) = vel_enucmax(2)
-    file3_data(index, 7) = vel_enucmax(3)
-    file3_data(index, 8) = Rloc_enucmax
-    file3_data(index, 9) = vr_enucmax
-    file3_data(index,10) = nuc_ener
+       ! file2 -- wdconvect_temp_diag.out
+       file2_data(index, 1) = T_max
+       file2_data(index, 2) = coord_Tmax(1)
+       file2_data(index, 3) = coord_Tmax(2)
+       file2_data(index, 4) = coord_Tmax(3)
+       file2_data(index, 5) = vel_Tmax(1)
+       file2_data(index, 6) = vel_Tmax(2)
+       file2_data(index, 7) = vel_Tmax(3)
+       file2_data(index, 8) = Rloc_Tmax
+       file2_data(index, 9) = vr_Tmax
+       file2_data(index,10) = T_center
 
 
-    ! file4 -- wdconvect_vel_diag.out
-    file4_data(index, 1) = U_max
-    file4_data(index, 2) = Mach_max
-    file4_data(index, 3) = kin_ener
-    file4_data(index, 4) = grav_ener
-    file4_data(index, 5) = int_ener
-    file4_data(index, 6) = vel_center(1)
-    file4_data(index, 7) = vel_center(2)
-    file4_data(index, 8) = vel_center(3)
-    file4_data(index, 9) = dt
+       ! file3 -- wdconvect_enuc_diag.out
+       file3_data(index, 1) = enuc_max
+       file3_data(index, 2) = coord_enucmax(1)
+       file3_data(index, 3) = coord_enucmax(2)
+       file3_data(index, 4) = coord_enucmax(3)
+       file3_data(index, 5) = vel_enucmax(1)
+       file3_data(index, 6) = vel_enucmax(2)
+       file3_data(index, 7) = vel_enucmax(3)
+       file3_data(index, 8) = Rloc_enucmax
+       file3_data(index, 9) = vr_enucmax
+       file3_data(index,10) = nuc_ener
 
 
+       ! file4 -- wdconvect_vel_diag.out
+       file4_data(index, 1) = U_max
+       file4_data(index, 2) = Mach_max
+       file4_data(index, 3) = kin_ener
+       file4_data(index, 4) = grav_ener
+       file4_data(index, 5) = int_ener
+       file4_data(index, 6) = vel_center(1)
+       file4_data(index, 7) = vel_center(2)
+       file4_data(index, 8) = vel_center(3)
+       file4_data(index, 9) = dt
+    end if
 
     !=========================================================================
     ! output, if needed
