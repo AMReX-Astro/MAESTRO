@@ -336,6 +336,7 @@ contains
                                  velpert_r_inner, velpert_r_outer, &
                                  alpha,beta,gamma,phix,phiy,phiz,normk)
 
+    use geometry, only: center
     use probin_module, only: prob_lo, prob_hi, &
          velpert_amplitude, velpert_steep, velpert_scale
 
@@ -364,9 +365,6 @@ contains
     real(kind=dp_t) :: cx(3,3,3), cy(3,3,3), cz(3,3,3)
     real(kind=dp_t) :: sx(3,3,3), sy(3,3,3), sz(3,3,3)
 
-    ! location of center of star
-    real(kind=dp_t) :: xc(3)
-
     ! radius, or distance, to center of star
     real(kind=dp_t) :: rloc
 
@@ -379,12 +377,6 @@ contains
     ! initialize the velocity to zero everywhere
     u = ZERO
 
-    ! define where center of star is
-    ! this currently assumes the star is at the center of the domain
-    xc(1) = 0.5d0*(prob_lo(1)+prob_hi(1))
-    xc(2) = 0.5d0*(prob_lo(2)+prob_hi(2))
-    xc(3) = 0.5d0*(prob_lo(3)+prob_hi(3))
-
     ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
        do jloc = lo(2),hi(2)
@@ -394,14 +386,14 @@ contains
              upert = ZERO
 
              ! compute where we physically are
-             xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1)
-             xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2)
-             xloc(3) = prob_lo(3) + (dble(kloc)+0.5d0)*dx(3)
+             xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1) - center(1)
+             xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2) - center(2)
+             xloc(3) = prob_lo(3) + (dble(kloc)+0.5d0)*dx(3) - center(3)
 
              ! compute distance to the center of the star
              rloc = ZERO
              do i=1,3
-                rloc = rloc + (xloc(i) - xc(i))**2
+                rloc = rloc + xloc(i)**2
              enddo
              rloc = sqrt(rloc)
 
