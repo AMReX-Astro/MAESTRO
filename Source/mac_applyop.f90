@@ -15,9 +15,9 @@ module mac_applyop_module
 contains
 
   subroutine mac_applyop(mla,res,phi,alpha,beta,dx,the_bc_tower,bc_comp,stencil_order,ref_ratio)
+
     use mg_module
-    use stencil_fill_module
-!   use coeffs_module
+    use stencil_fill_module, only: stencil_fill_cc
     use ml_cc_module, only: ml_cc_applyop
     use probin_module, only: cg_verbose, mg_verbose
     use geometry, only: dm, nlevs
@@ -34,17 +34,18 @@ contains
     type(layout  ) :: la
     type(box     ) :: pd
 
-    type(multifab), allocatable :: coeffs(:)
+    type(multifab) :: cell_coeffs
+    type(multifab) :: edge_coeffs(mla%dim)
 
     type(mg_tower)  :: mgt(mla%nlevel)
-    integer         :: i, ns
+    integer         ::  ns
 
     ! MG solver defaults
     integer :: bottom_solver, bottom_max_iter
     integer    :: max_iter
     integer    :: min_width
     integer    :: max_nlevel
-    integer    :: n, nu1, nu2, gamma, ncycle, smoother
+    integer    :: n, d, nu1, nu2, gamma, ncycle, smoother
     real(dp_t) :: eps,abs_eps,omega,bottom_solver_eps
     real(dp_t) ::  xa(dm),  xb(dm)
     real(dp_t) :: pxa(dm), pxb(dm)
@@ -102,17 +103,15 @@ contains
 
     do n = nlevs,1,-1
 
-       allocate(coeffs(mgt(n)%nlevels))
-
        la = mla%la(n)
 
-       call multifab_build(coeffs(mgt(n)%nlevels), la, 1+dm, 1)
-       call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1,1,ng=alpha(n)%ng)
-       call multifab_copy_c(coeffs(mgt(n)%nlevels),2,beta(n,1),1,1,ng=beta(n,1)%ng)
-       if (dm > 1) &
-          call multifab_copy_c(coeffs(mgt(n)%nlevels),3,beta(n,2),1,1,ng=beta(n,2)%ng)
-       if (dm > 2) &
-         call multifab_copy_c(coeffs(mgt(n)%nlevels),4,beta(n,3),1,1,ng=beta(n,3)%ng)
+       call multifab_build(cell_coeffs, la,          nc=1,ng=alpha(n)%ng)
+       call multifab_copy_c(cell_coeffs,1,alpha(n),1,nc=1,ng=alpha(n)%ng)
+
+       do d = 1,dm
+          call multifab_build_edge(edge_coeffs(d), la,      nc=1,ng=beta(n,1)%ng,dir=d)
+          call multifab_copy_c(edge_coeffs(d),1,beta(n,1),1,nc=1,ng=beta(n,1)%ng)
+       end do
 
        if (n > 1) then
           xa = HALF*ref_ratio(n-1,:)*mgt(n)%dh(:,mgt(n)%nlevels)
@@ -125,11 +124,16 @@ contains
        pxa = ZERO
        pxb = ZERO
 
-       call stencil_fill_cc_all_mglevels(mgt(n), coeffs, xa, xb, pxa, pxb, stencil_order, &
-                                         the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp))
+       call stencil_fill_cc(mgt(n)%ss(mgt(n)%nlevels), cell_coeffs, edge_coeffs, mgt(n)%dh(:,mgt(n)%nlevels), &
+                            mgt(n)%mm(mgt(n)%nlevels), xa, xb, pxa, pxb, stencil_order, &
+                            the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp))
 
-       call destroy(coeffs(mgt(n)%nlevels))
-       deallocate(coeffs)
+
+       call destroy(cell_coeffs)
+
+       do d = 1,dm
+          call destroy(edge_coeffs(d))
+       end do
 
     end do
 
