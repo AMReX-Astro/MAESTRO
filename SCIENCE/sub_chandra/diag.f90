@@ -512,40 +512,41 @@ contains
     ! information printing out in flush_diag() to make sure that we are storing
     ! the right information in the right order.
 
-    ! file1 -- we are not storing a file1, to maintain consistency with
-    ! the wdconvect diag.f90
+    if (parallel_IOProcessor()) then
+       ! file1 -- we are not storing a file1, to maintain consistency with
+       ! the wdconvect diag.f90
        
 
-    ! file2 -- subchandra_temp_diag.out
-    file2_data(index, 1) = T_max
-    file2_data(index, 2) = coord_Tmax(1)
-    file2_data(index, 3) = coord_Tmax(2)
-    file2_data(index, 4) = coord_Tmax(3)
-    file2_data(index, 5) = vel_Tmax(1)
-    file2_data(index, 6) = vel_Tmax(2)
-    file2_data(index, 7) = vel_Tmax(3)
-    file2_data(index, 8) = Rloc_Tmax
-    file2_data(index, 9) = vr_Tmax
+       ! file2 -- subchandra_temp_diag.out
+       file2_data(index, 1) = T_max
+       file2_data(index, 2) = coord_Tmax(1)
+       file2_data(index, 3) = coord_Tmax(2)
+       file2_data(index, 4) = coord_Tmax(3)
+       file2_data(index, 5) = vel_Tmax(1)
+       file2_data(index, 6) = vel_Tmax(2)
+       file2_data(index, 7) = vel_Tmax(3)
+       file2_data(index, 8) = Rloc_Tmax
+       file2_data(index, 9) = vr_Tmax
 
 
-    ! file3 -- subchandra_enuc_diag.out
-    file3_data(index, 1) = enuc_max
-    file3_data(index, 2) = coord_enucmax(1)
-    file3_data(index, 3) = coord_enucmax(2)
-    file3_data(index, 4) = coord_enucmax(3)
-    file3_data(index, 5) = vel_enucmax(1)
-    file3_data(index, 6) = vel_enucmax(2)
-    file3_data(index, 7) = vel_enucmax(3)
-    file3_data(index, 8) = Rloc_enucmax
-    file3_data(index, 9) = vr_enucmax
+       ! file3 -- subchandra_enuc_diag.out
+       file3_data(index, 1) = enuc_max
+       file3_data(index, 2) = coord_enucmax(1)
+       file3_data(index, 3) = coord_enucmax(2)
+       file3_data(index, 4) = coord_enucmax(3)
+       file3_data(index, 5) = vel_enucmax(1)
+       file3_data(index, 6) = vel_enucmax(2)
+       file3_data(index, 7) = vel_enucmax(3)
+       file3_data(index, 8) = Rloc_enucmax
+       file3_data(index, 9) = vr_enucmax
 
 
-    ! file4 -- subchandra_vel_diag.out
-    file4_data(index, 1) = U_max
-    file4_data(index, 2) = Mach_max
-    file4_data(index, 3) = Mach_max_domain
-    file4_data(index, 4) = dt
-
+       ! file4 -- subchandra_vel_diag.out
+       file4_data(index, 1) = U_max
+       file4_data(index, 2) = Mach_max
+       file4_data(index, 3) = Mach_max_domain
+       file4_data(index, 4) = dt
+    endif
 
 
     !=========================================================================
