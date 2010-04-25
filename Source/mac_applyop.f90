@@ -109,8 +109,8 @@ contains
        call multifab_copy_c(cell_coeffs,1,alpha(n),1,nc=1,ng=alpha(n)%ng)
 
        do d = 1,dm
-          call multifab_build_edge(edge_coeffs(d), la,      nc=1,ng=beta(n,1)%ng,dir=d)
-          call multifab_copy_c(edge_coeffs(d),1,beta(n,1),1,nc=1,ng=beta(n,1)%ng)
+          call multifab_build_edge(edge_coeffs(d), la,      nc=1,ng=beta(n,d)%ng,dir=d)
+          call multifab_copy_c(edge_coeffs(d),1,beta(n,d),1,nc=1,ng=beta(n,d)%ng)
        end do
 
        if (n > 1) then
