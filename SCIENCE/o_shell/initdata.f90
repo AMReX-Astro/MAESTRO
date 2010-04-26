@@ -24,6 +24,10 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
+    use average_module
+    use probin_module, only: octant
+
+
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
@@ -32,6 +36,7 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
+    real(kind=dp_t),  pointer :: phibar(:,:,:)
     integer :: lo(dm),hi(dm),ng
     integer :: i,n
     
@@ -58,6 +63,15 @@ contains
        end do
     enddo
 
+    if (octant) then
+       ! compute average scal(r) and use to fill ghost cells
+       allocate(phibar(nscal,1,0:nr_fine-1))
+
+       do i = 1, nscal
+          call average(mla,s,phibar(i,:,:),dx,i)
+       enddo
+    endif
+
     if (nlevs .eq. 1) then
 
        ! fill ghost cells for two adjacent grids at the same level
@@ -65,7 +79,8 @@ contains
        call multifab_fill_boundary(s(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(s(nlevs),rho_comp,dm+rho_comp,nscal,bc(nlevs))
+       call multifab_physbc(s(nlevs),rho_comp,dm+rho_comp,nscal,bc(nlevs), &
+                            phibar = phibar(:,1,:))
 
     else
 
@@ -80,7 +95,8 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
                                          bc(n-1),bc(n),rho_comp,dm+rho_comp,nscal, &
-                                         fill_crse_input=.false.)
+                                         fill_crse_input=.false., &
+                                         phibar = phibar(:,1,:))
 
        enddo
 
@@ -123,6 +139,7 @@ contains
 
     call multifab_fill_boundary(s)
 
+! CEG FIXME what to do here for phibar?
     call multifab_physbc(s,rho_comp,dm+rho_comp,nscal,bc)
 
   end subroutine initscalardata_on_level
@@ -174,6 +191,8 @@ contains
   subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
 
     use mt19937_module
+    use average_module
+    use probin_module, only: octant
     
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -183,6 +202,7 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
+    real(kind=dp_t), pointer:: phibar(:,:,:)
     integer :: lo(dm),hi(dm),ng
     integer :: i,j,k,n
 
@@ -261,6 +281,15 @@ contains
     
     enddo
 
+    if (octant) then
+       ! compute average u(r) and use to fill ghost cells
+       allocate(phibar(dm,1,0:nr_fine-1))
+
+       do i = 1, dm
+          call average(mla,u,phibar(i,:,:),dx,i)
+       enddo
+    endif
+
     if (nlevs .eq. 1) then
 
        ! fill ghost cells for two adjacent grids at the same level
@@ -268,7 +297,7 @@ contains
        call multifab_fill_boundary(u(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(u(nlevs),1,1,dm,bc(nlevs))
+       call multifab_physbc(u(nlevs),1,1,dm,bc(nlevs),phibar = phibar(:,1,:))
 
     else
 
@@ -282,7 +311,9 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(u(n),u(n-1),ng,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),1,1,dm,fill_crse_input=.false.)
+                                         bc(n-1),bc(n),1,1,dm, &
+                                         fill_crse_input=.false., &
+                                         phibar = phibar(:,1,:))
        enddo
        
     end if

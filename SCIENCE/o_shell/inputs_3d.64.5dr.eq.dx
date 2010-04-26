@@ -24,17 +24,17 @@
  prob_hi_y = 1.25d8
  prob_hi_z = 1.25d8
 
- prob_hi_x = 0.625d8
- prob_hi_y = 0.625d8
- prob_hi_z = 0.625d8
+ prob_hi_x = 0.3125d8
+ prob_hi_y = 0.3125d8
+ prob_hi_z = 0.3125d8
 
- max_step  = 0
+ max_step  = 100
  init_iter = 0
 
  stop_time = 30000.
 
- plot_base_name = "lor"
- plot_int  = 1
+ plot_base_name = "plt"
+ plot_int  = 10
  chk_int   = 100
 
  cflfac = 0.7d0

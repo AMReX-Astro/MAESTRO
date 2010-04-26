@@ -1036,15 +1036,24 @@ contains
        farg = farg + 1
     end do
 
+
+    !-------------------------------------------------------------------------
+    ! some sanity checks and set some defaults
+    !-------------------------------------------------------------------------
+
+    if (use_tfromp .and. dpdt_factor /= 0.0d0) then
+       call bl_error("ERROR: use_tfromp = T requires dpdt_factor = 0 to decouple enthalpy")
+    endif
+
     if (max_grid_size_base .eq. -1) then
        max_grid_size_base = max_grid_size
     end if
 
     if (do_smallscale) then
        if (parallel_IOProcessor()) then
-          print*,"************************************************************************"
-          print*,"WARNING: do_smallscale=T; Make sure your initialization sets p0=constant"
-          print*,"************************************************************************"
+          print *,"************************************************************************"
+          print *,"WARNING: do_smallscale=T; Make sure your initialization sets p0=constant"
+          print *,"************************************************************************"
        end if
        if (evolve_base_state) then
           call bl_error("do_smallscale requires evolve_base_state = F")

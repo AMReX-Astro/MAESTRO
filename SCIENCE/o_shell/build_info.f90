@@ -8,7 +8,7 @@ subroutine build_info(build_date, build_dir, build_machine)
   character (len=128) :: build_date, build_dir, build_machine
 
   build_date    = &
-   "Tue Apr 20 14:40:02 PDT 2010"
+   "Fri Apr 23 14:39:35 PDT 2010"
 
   build_dir     = &
     "/home/gilet/MAESTRO/fParallel/MAESTRO/o_shell"
