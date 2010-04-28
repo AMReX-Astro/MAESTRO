@@ -83,6 +83,7 @@ contains
     plot_names(icomp_gpi)         = "gpi_x"
     if (dm > 1) plot_names(icomp_gpi+1) = "gpi_y"
     if (dm > 2) plot_names(icomp_gpi+2) = "gpi_z"
+    plot_names(icomp_pioverp0)    = "pioverp0"
 
     if (plot_spec) then
        do comp = 1, nspec
@@ -194,10 +195,10 @@ contains
          
        end if
 
+       ! THERMAL = del dot kappa grad T
        if (use_thermal_diffusion) then
           call multifab_copy_c(plotdata(n),icomp_thermal,thermal(n),1)
        endif
-
 
        ! TRACER
        if (plot_trac .and. ntrac .ge. 1) then
@@ -332,7 +333,6 @@ contains
 
        ! make_tfromp -> RHOPERT, TFROMP, TPERT, MACHNUMBER, DELTAGAMMA, ENTROPY, AND RHOPERT
        ! make_tfromH -> TFROMP AND DELTA_P
-       ! make_conductivity -> CONDUCTIVITY
        if (spherical .eq. 1) then
           
           call make_tfromp(plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert, &
@@ -359,6 +359,7 @@ contains
        
     end do
 
+    ! CONDUCTIVITY
     if (use_thermal_diffusion) then
        do n=1,nlevs
           ! this just uses (rho, T, X_k) ---> conductivity
@@ -402,13 +403,13 @@ contains
 
     do n=1,nlevs
 
-       ! DIFF BETWEEN TFROMP AND TFROMH
+       ! DELTA_T
        call make_deltaT(plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
 
-       ! PERTURBATIONAL PRESSURE
+       ! PI
        call multifab_copy_c(plotdata(n),icomp_pi,pi_cc(n),1,1)
 
-       ! PERTURBATIONAL PRESSURE GRADIENT
+       ! GRAD PI
        call multifab_copy_c(plotdata(n),icomp_gpi,gpi(n),1,dm)
 
        ! SPONGE
@@ -416,6 +417,15 @@ contains
 
     end do
 
+    !PIOVERP0
+    if (plot_base) then
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),icomp_pioverp0,pi_cc(n),1,1)
+          call multifab_div_div_c(plotdata(n),icomp_pioverp0,plotdata(n),icomp_p0,1)
+       end do
+    end if
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! we just made the entropy above.  To compute s - sbar, we need to average
     ! the entropy first, and then compute that.
     ! an average quantity needs ghostcells, so copy entropy into
@@ -465,6 +475,7 @@ contains
        call ml_cc_restriction_c(plotdata(n-1),icomp_entropypert,plotdata(n), &
                                 icomp_entropypert,mla%mba%rr(n-1,:),1)
     end do
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
                                    mba%pd(1), prob_lo, prob_hi, time, dx(1,:), &
