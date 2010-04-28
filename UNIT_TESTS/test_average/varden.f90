@@ -174,6 +174,11 @@ subroutine varden()
      end do
   enddo
 
+  if (dump_phi_plotfile) then
+     call fabio_ml_multifab_write_d(phi,mla%mba%rr(:,1),"phi_pltfile")
+  endif
+
+
   if (nlevs .eq. 1) then
 
      ! fill ghost cells for two adjacent grids at the same level

@@ -32,7 +32,7 @@ Fmdirs := boxlib \
 Fmincludes := extern/EOS/helmeos
 
 # define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters
+PROBIN_PARAMETERS := ../_parameters ./_parameters.average
 
 
 # include the MAESTRO build stuff
