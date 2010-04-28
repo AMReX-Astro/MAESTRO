@@ -1,0 +1,2 @@
+# output a single-variable plotfile containing phi on the multi-d grid
+dump_phi_plotfile                  logical            .false.
