@@ -89,7 +89,7 @@ contains
                            bottom_max_iter = bottom_max_iter, &
                            bottom_solver_eps = bottom_solver_eps, &
                            max_iter = max_iter, &
-                           max_nlevel = max_nlevel, &
+                           max_nlevel = 1, &
                            min_width = min_width, &
                            eps = eps, &
                            abs_eps = abs_eps, &
