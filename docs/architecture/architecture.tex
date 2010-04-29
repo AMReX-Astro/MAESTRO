@@ -738,16 +738,20 @@ refinement.  The data type of a \multifab\ is:
 
 
 
-\subsection{\boxarray}
+\subsection{\boxarray\ and \mlboxarray}
 
-A \boxarray\ is an array of boxes
+A \boxarray\ is an array of boxes.  A \mlboxarray\ is a collection of
+\boxarray s at different levels of refinement.
 
-\subsection{\mlboxarray}
+\subsection{\layout\ and \mllayout}
 
-A \mlboxarray\ is a collection of \boxarray s at different levels of
-refinement.
-
-\subsection{\mllayout}
+A \layout\ is basically a \boxarray\ that knows information about other
+boxes, or box ``connectivity.''  It contains additional information
+that is used in filling ghost cells from other fine grids or from
+coarser grids.  This information is stored as long as the layout
+exists so that we don't have to recompute intersections every time we
+do some operation with two multifabs that have that layout, for
+example.
 
 
 \subsection{\bctower}
