@@ -4,6 +4,9 @@
 
  job_name = "96^3 2-level test run"
 
+ hg_bottom_solver = 4
+ mg_bottom_solver = 4
+
  max_levs = 2
  regrid_int = 2
 
