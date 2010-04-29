@@ -83,7 +83,8 @@ contains
     plot_names(icomp_gpi)         = "gpi_x"
     if (dm > 1) plot_names(icomp_gpi+1) = "gpi_y"
     if (dm > 2) plot_names(icomp_gpi+2) = "gpi_z"
-    plot_names(icomp_pioverp0)    = "pioverp0"
+    if (plot_base) &
+       plot_names(icomp_pioverp0)    = "pioverp0"
 
     if (plot_spec) then
        do comp = 1, nspec
