@@ -41,6 +41,7 @@ subroutine varden()
   integer    :: i,n,r,numcell
   integer    :: last_plt_written,last_chk_written
   real(dp_t) :: smin,smax
+  real(dp_t) :: umin,umax,vmin,vmax,wmin,wmax
   real(dp_t) :: time,dt,dtold
 
   type(ml_layout) :: mla
@@ -560,26 +561,40 @@ subroutine varden()
            if ( parallel_IOProcessor() ) print*, ''
 
            do n = 1,nlevs
-              smax = norm_inf(uold(n),1,1)
-              if ( parallel_IOProcessor()) then
-                 print *,'MAX OF UOLD ', smax,' AT LEVEL ',n
-              end if
-                   
-              if (dm > 1) then
-                 smax = norm_inf(uold(n),2,1)
+              umax = multifab_max_c(uold(n),1)
+              umin = multifab_min_c(uold(n),1)
+              if (dm.eq.1) then
                  if ( parallel_IOProcessor()) then
-                    print *,'MAX OF VOLD ', smax,' AT LEVEL ',n
+                    write(6,1001) n,umax
+                    write(6,1011) n,umin
                  end if
-              end if
-              
-              if (dm > 2) then
-                 smax = norm_inf(uold(n),3,1)
+              else if (dm .eq. 2) then
+                 vmax = multifab_max_c(uold(n),2)
+                 vmin = multifab_min_c(uold(n),2)
                  if ( parallel_IOProcessor()) then
-                    print *,'MAX OF WOLD ', smax,' AT LEVEL ',n
+                    write(6,1002) n,umax,vmax
+                    write(6,1012) n,umin,vmin
+                 end if
+              
+              else if (dm .eq. 3) then
+                 vmax = multifab_max_c(uold(n),2)
+                 vmin = multifab_min_c(uold(n),2)
+                 wmax = multifab_max_c(uold(n),3)
+                 wmin = multifab_min_c(uold(n),3)
+                 if ( parallel_IOProcessor()) then
+                    write(6,1003) n,umax,vmax,wmax
+                    write(6,1013) n,umin,vmin,wmin
                  end if
               end if
            end do
         end if
+
+1001 format('... level / max : old vels   ',i2,2x,e17.10)
+1011 format('... level / min : old vels   ',i2,2x,e17.10)
+1002 format('... level / max : old vels   ',i2,2x,e17.10,2x,e17.10)
+1012 format('... level / min : old vels   ',i2,2x,e17.10,2x,e17.10)
+1003 format('... level / max : old vels   ',i2,2x,e17.10,2x,e17.10,2x,e17.10)
+1013 format('... level / min : old vels   ',i2,2x,e17.10,2x,e17.10,2x,e17.10)
 
         !---------------------------------------------------------------------
         ! regrid

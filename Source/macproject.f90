@@ -44,7 +44,7 @@ contains
     type(bndry_reg) :: fine_flx(2:mla%nlevel)
 
     real(dp_t)                   :: umac_norm(mla%nlevel)
-    real(dp_t)                   :: unorm,vnorm,wnorm
+    real(dp_t)                   :: umin,umax,vmin,vmax,wmin,wmax
     integer                      :: stencil_order,i,n
     logical                      :: use_rhs, use_div_coeff_1d, use_div_coeff_3d
 
@@ -108,15 +108,32 @@ contains
     ! Print the norm of each component separately
     if (verbose .eq. 1) then
        do n = 1,nlevs
-          unorm = norm_inf(umac(n,1))
-          vnorm = norm_inf(umac(n,2))
-          if (dm.eq.3) wnorm = norm_inf(umac(n,3))
-          if (parallel_IOProcessor()) then
-            print *,'MAX OF UMAC AT LEVEL ',n,unorm
-            print *,'MAX OF VMAC AT LEVEL ',n,vnorm
-            if (dm.eq.3) print *,'MAX OF WMAC AT LEVEL ',n,wnorm
+          umin = multifab_max(umac(n,1))
+          umax = multifab_min(umac(n,1))
+          if (dm.eq.1) then
+             if (parallel_IOProcessor()) then
+                 write(6,1001) n, umax
+                 write(6,1101) n, umin
+             end if
+          else if (dm.eq.2) then
+             vmin = multifab_max(umac(n,2))
+             vmax = multifab_min(umac(n,2))
+             if (parallel_IOProcessor()) then
+                 write(6,1002) n, umax, vmax
+                 write(6,1102) n, umin, vmin
+             end if
+          else if (dm.eq.3) then
+             vmin = multifab_max(umac(n,2))
+             vmax = multifab_min(umac(n,2))
+             wmin = multifab_max(umac(n,3))
+             wmax = multifab_min(umac(n,3))
+             if (parallel_IOProcessor()) then
+                 write(6,1003) n, umax, vmax, wmax
+                 write(6,1103) n, umin, vmin, wmin
+             end if
           end if
        end do
+       if (parallel_IOProcessor()) print *,''
     end if
 
     call mk_mac_coeffs(mla,rho,beta,the_bc_tower)
@@ -151,13 +168,29 @@ contains
     ! Print the norm of each component separately
     if (verbose .eq. 1) then
        do n = 1,nlevs
-          unorm = norm_inf(umac(n,1))
-          vnorm = norm_inf(umac(n,2))
-          if (dm.eq.3) wnorm = norm_inf(umac(n,3))
-          if (parallel_IOProcessor()) then
-            print *,'MAX OF UMAC AT LEVEL ',n,unorm
-            print *,'MAX OF VMAC AT LEVEL ',n,vnorm
-            if (dm.eq.3) print *,'MAX OF WMAC AT LEVEL ',n,wnorm
+          umin = multifab_max(umac(n,1))
+          umax = multifab_min(umac(n,1))
+          if (dm.eq.1) then
+             if (parallel_IOProcessor()) then
+                 write(6,1001) n, umax
+                 write(6,1101) n, umin
+             end if
+          else if (dm.eq.2) then
+             vmin = multifab_max(umac(n,2))
+             vmax = multifab_min(umac(n,2))
+             if (parallel_IOProcessor()) then
+                 write(6,1002) n, umax, vmax
+                 write(6,1102) n, umin, vmin
+             end if
+          else if (dm.eq.3) then
+             vmin = multifab_max(umac(n,2))
+             vmax = multifab_min(umac(n,2))
+             wmin = multifab_max(umac(n,3))
+             wmax = multifab_min(umac(n,3))
+             if (parallel_IOProcessor()) then
+                 write(6,1003) n, umax, vmax, wmax
+                 write(6,1103) n, umin, vmin, wmin
+             end if
           end if
        end do
        if (parallel_IOProcessor()) print *,''
@@ -205,6 +238,13 @@ contains
     end do
 
     call destroy(bpt)
+
+1001 format('... level / max : MAC vels   ',i2,2x,e17.10)
+1101 format('... level / min : MAC vels   ',i2,2x,e17.10)
+1002 format('... level / max : MAC vels   ',i2,2x,e17.10,2x,e17.10)
+1102 format('... level / min : MAC vels   ',i2,2x,e17.10,2x,e17.10)
+1003 format('... level / max : MAC vels   ',i2,2x,e17.10,2x,e17.10,2x,e17.10)
+1103 format('... level / min : MAC vels   ',i2,2x,e17.10,2x,e17.10,2x,e17.10)
 
   contains
 
