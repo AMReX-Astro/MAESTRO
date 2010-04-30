@@ -161,11 +161,11 @@ contains
        end do
     else if (bc(1,2) .eq. REFLECT_EVEN) then
        do i = 1,ng
-          s(hi(1)+i,lo(2)-1:hi(2)+1) = s(hi(1)-i+1,lo(2)-1:hi(2)+1)
+          s(hi(1)+i,lo(2)-ng:hi(2)+ng) = s(hi(1)-i+1,lo(2)-ng:hi(2)+ng)
        end do
     else if (bc(1,2) .eq. REFLECT_ODD) then
        do i = 1,ng
-          s(hi(1)+i,lo(2)-1:hi(2)+1) = -s(hi(1)-i+1,lo(2)-1:hi(2)+1)
+          s(hi(1)+i,lo(2)-ng:hi(2)+ng) = -s(hi(1)-i+1,lo(2)-ng:hi(2)+ng)
        end do
     else if (bc(1,2) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
@@ -290,20 +290,14 @@ contains
           end do
        end do
     else if (bc(1,1) .eq. REFLECT_EVEN) then
-       do k = lo(3)-1,hi(3)+1
-          do j = lo(2)-1,hi(2)+1
-             do i = 1,ng
-                s(lo(1)-i,j,k) = s(lo(1)+i-1,j,k)
-             end do
-          end do
+       do i = 1,ng
+          s(lo(1)-i  ,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng) = &
+          s(lo(1)+i-1,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng)
        end do
     else if (bc(1,1) .eq. REFLECT_ODD) then
-       do k = lo(3)-1,hi(3)+1
-          do j = lo(2)-1,hi(2)+1
-             do i = 1,ng
-                s(lo(1)-i,j,k) = -s(lo(1)+i-1,j,k)
-             end do
-          end do
+       do i = 1,ng
+          s(lo(1)-i  ,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng) = &
+         -s(lo(1)+i-1,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng)
        end do
     else if (bc(1,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
@@ -341,20 +335,14 @@ contains
           end do
        end do
     else if (bc(1,2) .eq. REFLECT_EVEN) then
-       do k = lo(3)-1,hi(3)+1
-          do j = lo(2)-1,hi(2)+1
-             do i = 1,ng
-                s(hi(1)+i,j,k) = s(hi(1)-i+1,j,k)
-             end do
-          end do
+       do i = 1,ng
+          s(hi(1)+i  ,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng) = &
+          s(hi(1)-i+1,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng)
        end do
     else if (bc(1,2) .eq. REFLECT_ODD) then
-       do k = lo(3)-1,hi(3)+1
-          do j = lo(2)-1,hi(2)+1
-             do i = 1,ng
-                s(hi(1)+i,j,k) = -s(hi(1)-i+1,j,k)
-             end do
-          end do
+       do i = 1,ng
+          s(hi(1)+i  ,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng) = &
+         -s(hi(1)-i+1,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng)
        end do
     else if (bc(1,2) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
@@ -392,20 +380,14 @@ contains
           end do
        end do
     else if (bc(2,1) .eq. REFLECT_EVEN) then
-       do k = lo(3)-1,hi(3)+1
-          do i = lo(1)-ng,hi(1)+ng
-             do j = 1,ng
-                s(i,lo(2)-j,k) = s(i,lo(2)+j-1,k)
-             end do
-          end do
+       do j = 1,ng
+          s(lo(1)-ng:hi(1)+ng,lo(2)-j  ,lo(3)-ng:hi(3)+ng) = &
+          s(lo(1)-ng:hi(1)+ng,lo(2)+j-1,lo(3)-ng:hi(3)+ng)
        end do
     else if (bc(2,1) .eq. REFLECT_ODD) then
-       do k = lo(3)-1,hi(3)+1
-          do i = lo(1)-ng,hi(1)+ng
-             do j = 1,ng
-                s(i,lo(2)-j,k) = -s(i,lo(2)+j-1,k)
-             end do
-          end do
+       do j = 1,ng
+          s(lo(1)-ng:hi(1)+ng,lo(2)-j  ,lo(3)-ng:hi(3)+ng) = &
+         -s(lo(1)-ng:hi(1)+ng,lo(2)+j-1,lo(3)-ng:hi(3)+ng)
        end do
     else if (bc(2,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
@@ -443,20 +425,14 @@ contains
           end do
        end do
     else if (bc(2,2) .eq. REFLECT_EVEN) then
-       do k = lo(3)-1,hi(3)+1
-          do i = lo(1)-ng,hi(1)+ng
-             do j = 1,ng
-                s(i,hi(2)+j,k) = s(i,hi(2)-j+1,k)
-             end do
-          end do
+       do j = 1,ng
+          s(lo(1)-ng:hi(1)+ng,hi(2)+j  ,lo(3)-ng:hi(3)+ng) = &
+          s(lo(1)-ng:hi(1)+ng,hi(2)-j+1,lo(3)-ng:hi(3)+ng)
        end do
     else if (bc(2,2) .eq. REFLECT_ODD) then
-       do k = lo(3)-1,hi(3)+1
-          do i = lo(1)-ng,hi(1)+ng
-             do j = 1,ng
-                s(i,hi(2)+j,k) = -s(i,hi(2)-j+1,k)
-             end do
-          end do
+       do j = 1,ng
+          s(lo(1)-ng:hi(1)+ng,hi(2)+j  ,lo(3)-ng:hi(3)+ng) = &
+         -s(lo(1)-ng:hi(1)+ng,hi(2)-j+1,lo(3)-ng:hi(3)+ng)
        end do
     else if (bc(2,2) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
@@ -494,20 +470,14 @@ contains
           end do
        end do
     else if (bc(3,1) .eq. REFLECT_EVEN) then
-       do j = lo(2)-ng,hi(2)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             do k = 1,ng
-                s(i,j,lo(3)-k) = s(i,j,lo(3)+k-1)
-             end do
-          end do
+       do k = 1,ng
+          s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-k  ) = &
+          s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)+k-1)
        end do
     else if (bc(3,1) .eq. REFLECT_ODD) then
-       do j = lo(2)-ng,hi(2)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             do k = 1,ng
-                s(i,j,lo(3)-k) = -s(i,j,lo(3)+k-1)
-             end do
-          end do
+       do k = 1,ng
+          s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-k  ) = &
+         -s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)+k-1)
        end do
     else if (bc(3,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
