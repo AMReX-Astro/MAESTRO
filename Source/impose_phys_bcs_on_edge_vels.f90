@@ -80,45 +80,61 @@ contains
     ie = hi(1)
     je = hi(2)
     
-    ! impose lo j side bc's on uedge
+    ! impose lo j side bc's
     select case(phys_bc(2,1))
     case (INLET, SLIP_WALL, NO_SLIP_WALL)
        uedge(is:ie+1,js-1) = ZERO
-    case (OUTLET, SYMMETRY)
+    case (OUTLET)
        uedge(is:ie+1,js-1) = uedge(is:ie+1,js)
+       vedge(is:ie  ,js-1) = vedge(is:ie  ,js)
+    case (SYMMETRY)
+       uedge(is:ie+1,js-1) = uedge(is:ie+1,js  )
+       vedge(is:ie  ,js-1) = vedge(is:ie  ,js+1)
     case (INTERIOR, PERIODIC)
     case  default 
        call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(2,1)")
     end select
 
-    ! impose hi j side bc's on uedge
+    ! impose hi j side bc's
     select case(phys_bc(2,2))
     case (INLET, SLIP_WALL, NO_SLIP_WALL)
        uedge(is:ie+1,je+1) = ZERO
-    case (OUTLET, SYMMETRY)
+    case (OUTLET)
        uedge(is:ie+1,je+1) = uedge(is:ie+1,je)
+       vedge(is:ie  ,je+1) = vedge(is:ie  ,je)
+    case (SYMMETRY)
+       uedge(is:ie+1,je+1) = uedge(is:ie+1,je  )
+       vedge(is:ie  ,je+1) = vedge(is:ie  ,je-1)
     case (INTERIOR, PERIODIC)
     case  default 
        call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(2,2)")
     end select
 
-    ! impose lo i side bc's on vedge
+    ! impose lo i side bc's
     select case(phys_bc(1,1))
     case (INLET, SLIP_WALL, NO_SLIP_WALL)
        vedge(is-1,js:je+1) = ZERO
-    case (OUTLET, SYMMETRY)
+    case (OUTLET)
+       uedge(is-1,js:je  ) = uedge(is,js:je  )
        vedge(is-1,js:je+1) = vedge(is,js:je+1)
+    case (SYMMETRY)
+       uedge(is-1,js:je  ) = uedge(is+1,js:je  )
+       vedge(is-1,js:je+1) = vedge(is  ,js:je+1)
     case (INTERIOR, PERIODIC)
     case  default 
        call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(1,1)")
     end select
 
-    ! impose hi i side bc's on vedge
+    ! impose hi i side bc's
     select case(phys_bc(1,2))
     case (INLET, SLIP_WALL, NO_SLIP_WALL)
        vedge(ie+1,js:je+1) = ZERO
-    case (OUTLET, SYMMETRY)
+    case (OUTLET)
+       uedge(ie+1,js:je  ) = uedge(ie,js:je  )
        vedge(ie+1,js:je+1) = vedge(ie,js:je+1)
+    case (SYMMETRY)
+       uedge(ie+1,js:je  ) = uedge(ie-1,js:je  )
+       vedge(ie+1,js:je+1) = vedge(ie  ,js:je+1)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_2d: invalid boundary type phys_bc(1,2)")
@@ -146,79 +162,110 @@ contains
     je = hi(2)
     ke = hi(3)
 
-    ! impose lo k side bc's on uedge and vedge
+    ! impose lo k side bc's
     select case(phys_bc(3,1))
     case (INLET, SLIP_WALL, NO_SLIP_WALL)
-       uedge(is  :ie+1,js-1:je+1,ks-1) = ZERO
-       vedge(is-1:ie+1,js  :je+1,ks-1) = ZERO
-    case (OUTLET, SYMMETRY)
-       uedge(is  :ie+1,js-1:je+1,ks-1) = uedge(is  :ie+1,js-1:je+1,ks)
-       vedge(is-1:ie+1,js  :je+1,ks-1) = vedge(is-1:ie+1,js  :je+1,ks)
+       uedge(:,:,ks-1) = ZERO
+       vedge(:,:,ks-1) = ZERO
+    case (OUTLET)
+       uedge(:,:,ks-1) = uedge(:,:,ks)
+       vedge(:,:,ks-1) = vedge(:,:,ks)
+       wedge(:,:,ks-1) = wedge(:,:,ks)
+    case (SYMMETRY)
+       uedge(:,:,ks-1) = uedge(:,:,ks)
+       vedge(:,:,ks-1) = vedge(:,:,ks)
+       wedge(:,:,ks-1) = wedge(:,:,ks+1)
     case (INTERIOR, PERIODIC)
     case  default 
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(3,1)")
     end select
 
-    ! impose hi k side bc's on uedge and vedge
+    ! impose hi k side bc's
     select case(phys_bc(3,2))
     case (INLET, SLIP_WALL, NO_SLIP_WALL)
-       uedge(is  :ie+1,js-1:je+1,ke+1) = ZERO
-       vedge(is-1:ie+1,js  :je+1,ke+1) = ZERO
-    case (OUTLET, SYMMETRY)
-       uedge(is  :ie+1,js-1:je+1,ke+1) = uedge(is  :ie+1,js-1:je+1,ke)
-       vedge(is-1:ie+1,js  :je+1,ke+1) = vedge(is-1:ie+1,js  :je+1,ke)
+       uedge(:,:,ke+1) = ZERO
+       vedge(:,:,ke+1) = ZERO
+    case (OUTLET)
+       uedge(:,:,ke+1) = uedge(:,:,ke)
+       vedge(:,:,ke+1) = vedge(:,:,ke)
+       wedge(:,:,ke+1) = wedge(:,:,ke)
+    case (SYMMETRY)
+       uedge(:,:,ke+1) = uedge(:,:,ke)
+       vedge(:,:,ke+1) = vedge(:,:,ke)
+       wedge(:,:,ke+1) = wedge(:,:,ke-1)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(3,2)")
     end select
 
-    ! impose lo j side bc's on uedge and wedge
+    ! impose lo j side bc's
     select case(phys_bc(2,1))
     case (INLET, SLIP_WALL, NO_SLIP_WALL)
-       uedge(is  :ie+1,js-1,ks-1:ke+1) = ZERO
-       wedge(is-1:ie+1,js-1,ks  :ke+1) = ZERO
-    case (OUTLET, SYMMETRY)
-       uedge(is  :ie+1,js-1,ks-1:ke+1) = uedge(is  :ie+1,js,ks-1:ke+1)
-       wedge(is-1:ie+1,js-1,ks  :ke+1) = wedge(is-1:ie+1,js,ks  :ke+1)
+       uedge(:,js-1,:) = ZERO
+       wedge(:,js-1,:) = ZERO
+    case (OUTLET)
+       uedge(:,js-1,:) = uedge(:,js,:)
+       vedge(:,js-1,:) = vedge(:,js,:)
+       wedge(:,js-1,:) = wedge(:,js,:)
+    case (SYMMETRY)
+       uedge(:,js-1,:) = uedge(:,js  ,:)
+       vedge(:,js-1,:) = vedge(:,js+1,:)
+       wedge(:,js-1,:) = wedge(:,js  ,:)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(2,1)")
     end select
 
-    ! impose hi j side bc's on uedge and wedge
+    ! impose hi j side bc's
     select case(phys_bc(2,2))
     case (INLET, SLIP_WALL, NO_SLIP_WALL)
-       uedge(is  :ie+1,je+1,ks-1:ke+1) = ZERO
-       wedge(is-1:ie+1,je+1,ks  :ke+1) = ZERO
-    case (OUTLET, SYMMETRY)
-       uedge(is  :ie+1,je+1,ks-1:ke+1) = uedge(is  :ie+1,je,ks-1:ke+1)
-       wedge(is-1:ie+1,je+1,ks  :ke+1) = wedge(is-1:ie+1,je,ks  :ke+1)
+       uedge(:,je+1,:) = ZERO
+       wedge(:,je+1,:) = ZERO
+    case (OUTLET)
+       uedge(:,je+1,:) = uedge(:,je,:)
+       vedge(:,je+1,:) = vedge(:,je,:)
+       wedge(:,je+1,:) = wedge(:,je,:)
+    case (SYMMETRY)
+       uedge(:,je+1,:) = uedge(:,je  ,:)
+       vedge(:,je+1,:) = vedge(:,je-1,:)
+       wedge(:,je+1,:) = wedge(:,je  ,:)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(2,2)")
     end select
 
-    ! impose lo i side bc's on vedge and wedge
+    ! impose lo i side bc's
     select case(phys_bc(1,1))
     case (INLET, SLIP_WALL, NO_SLIP_WALL)
-       vedge(is-1,js  :je+1,ks-1:ke+1) = ZERO
-       wedge(is-1,js-1:je+1,ks  :ke+1) = ZERO
-    case (OUTLET, SYMMETRY)
-       vedge(is-1,js  :je+1,ks-1:ke+1) = vedge(is,js  :je+1,ks-1:ke+1)
-       wedge(is-1,js-1:je+1,ks  :ke+1) = wedge(is,js-1:je+1,ks  :ke+1)
+       vedge(is-1,:,:) = ZERO
+       wedge(is-1,:,:) = ZERO
+    case (OUTLET)
+       uedge(is-1,:,:) = uedge(is,:,:)
+       vedge(is-1,:,:) = vedge(is,:,:)
+       wedge(is-1,:,:) = wedge(is,:,:)
+    case (SYMMETRY)
+       uedge(is-1,:,:) = uedge(is+1,:,:)
+       vedge(is-1,:,:) = vedge(is  ,:,:)
+       wedge(is-1,:,:) = wedge(is  ,:,:)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(1,1)")
     end select
 
-    ! impose hi i side bc's on vedge and wedge
+    ! impose hi i side bc's
     select case(phys_bc(1,2))
     case (INLET, SLIP_WALL, NO_SLIP_WALL)
-       vedge(ie+1,js  :je+1,ks-1:ke+1) = ZERO
-       wedge(ie+1,js-1:je+1,ks  :ke+1) = ZERO
-    case (OUTLET, SYMMETRY)
-       vedge(ie+1,js  :je+1,ks-1:ke+1) = vedge(ie,js  :je+1,ks-1:ke+1)
-       wedge(ie+1,js-1:je+1,ks  :ke+1) = wedge(ie,js-1:je+1,ks  :ke+1)
+       vedge(ie+1,:,:) = ZERO
+       wedge(ie+1,:,:) = ZERO
+    case (OUTLET)
+       print *,'SETTING UEDGE ',ie+1,lo(3)-ng_ut
+       uedge(ie+1,:,:) = uedge(ie,:,:)
+       vedge(ie+1,:,:) = vedge(ie,:,:)
+       wedge(ie+1,:,:) = wedge(ie,:,:)
+    case (SYMMETRY)
+       uedge(ie+1,:,:) = uedge(ie-1,:,:)
+       vedge(ie+1,:,:) = vedge(ie  ,:,:)
+       wedge(ie+1,:,:) = wedge(ie  ,:,:)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("impose_phys_bcs_3d: invalid boundary type phys_bc(1,2)")
