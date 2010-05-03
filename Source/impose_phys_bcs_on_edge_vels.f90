@@ -258,7 +258,6 @@ contains
        vedge(ie+1,:,:) = ZERO
        wedge(ie+1,:,:) = ZERO
     case (OUTLET)
-       print *,'SETTING UEDGE ',ie+1,lo(3)-ng_ut
        uedge(ie+1,:,:) = uedge(ie,:,:)
        vedge(ie+1,:,:) = vedge(ie,:,:)
        wedge(ie+1,:,:) = wedge(ie,:,:)
