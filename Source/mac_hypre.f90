@@ -15,11 +15,10 @@ module mac_hypre_module
   public :: mac_hypre
  
 contains
-iii
+
   subroutine mac_hypre(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp, &
                        stencil_order,ref_ratio,umac_norm)
     use mg_module
-!   use coeffs_module
     use probin_module, only : verbose
     use geometry, only: dm, nlevs
 
@@ -31,7 +30,7 @@ iii
     real(dp_t)     , intent(in)           :: dx(:,:)
     type(bc_tower) , intent(in)           :: the_bc_tower
     integer        , intent(in   )        :: bc_comp
-    type(multifab) , intent(in   )        :: alpha(:), beta(:)
+    type(multifab) , intent(in   )        :: alpha(:), beta(:,:)
     type(multifab) , intent(inout)        ::    rh(:),  phi(:)
     type(bndry_reg), intent(inout)        :: fine_flx(2:)
     real(dp_t)     , intent(in), optional :: umac_norm(:)
@@ -44,7 +43,7 @@ iii
 
     integer(kind=8) :: grid
     integer(kind=8) :: A,b,x
-    integer(kind=8) :: stencil
+    integer(kind=8) :: hypre_stencil
     integer(kind=8) :: solver,precond
 
     integer         :: ierr
@@ -111,13 +110,13 @@ iii
 
     call HYPRE_StructGridAssemble(grid,ierr)
 
-    call HYPRE_StructStencilCreate(dm,ns,stencil,ierr)
+    call HYPRE_StructStencilCreate(dm,ns,hypre_stencil,ierr)
 
     do i = 1, ns
-       call HYPRE_StructStencilSetElement(stencil,i-1,offsets(1,i),ierr);
+       call HYPRE_StructStencilSetElement(hypre_stencil,i-1,offsets(1,i),ierr);
     end do
 
-    call HYPRE_StructMatrixCreate(MPI_COMM_WORLD,grid,stencil,A,ierr)
+    call HYPRE_StructMatrixCreate(MPI_COMM_WORLD,grid,hypre_stencil,A,ierr)
     call HYPRE_StructMatrixInitialize(A,ierr)
 
     do n = 1,nlevs
@@ -243,7 +242,7 @@ iii
 !   call HYPRE_StructPFMGDestroy(precond, ierr)
 !   call HYPRE_StructPCGDestroy(solver);
 !   call HYPRE_StructGridDestroy(grid);
-!   call HYPRE_StructStencilDestroy(stencil);
+!   call HYPRE_StructStencilDestroy(hypre_stencil);
 !   call HYPRE_StructMatrixDestroy(A);
 !   call HYPRE_StructVectorDestroy(b);
 !   call HYPRE_StructVectorDestroy(x);
