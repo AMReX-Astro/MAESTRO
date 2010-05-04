@@ -24,6 +24,7 @@ contains
                         divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
 
     use mac_multigrid_module
+!   use mac_hypre_module
     use geometry, only: dm, nlevs, spherical
     use probin_module, only: verbose, edge_nodal_flag
     use variables, only: press_comp
@@ -156,6 +157,8 @@ contains
 
     call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
                        the_bc_tower,press_comp,stencil_order,mla%mba%rr,umac_norm)
+!   call mac_hypre(mla,rh,phi,fine_flx,alpha,beta,dx,&
+!                  the_bc_tower,press_comp,stencil_order,mla%mba%rr,umac_norm)
 
     call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,mla%mba%rr)
 
