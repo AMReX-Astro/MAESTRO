@@ -222,8 +222,8 @@ contains
           adv_bc_level(n,d,i,temp_comp+dm)                     = REFLECT_EVEN  ! temperature
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= REFLECT_EVEN  ! tracers
           adv_bc_level(n,d,i,press_comp)                       = REFLECT_EVEN  ! pressure
-          adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
-          adv_bc_level(n,d,i,hoextrap_comp)                    = HOEXTRAP      ! higher order extrap
+          adv_bc_level(n,d,i,foextrap_comp)                    = REFLECT_EVEN  ! first order extrap -- overridden by symmetry
+          adv_bc_level(n,d,i,hoextrap_comp)                    = REFLECT_EVEN  ! higher order extrap -- overridden by symmetry
        end if
     end do
     end do
