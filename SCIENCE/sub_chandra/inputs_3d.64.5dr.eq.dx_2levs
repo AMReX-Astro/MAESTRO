@@ -12,14 +12,19 @@
  n_cellz = 64
 
  max_step  = 100000000
- init_iter = 0
- init_divu_iter = 0
- do_initial_projection = F
+
+ stop_time = 30000.
+
+ init_iter = 1
+ init_divu_iter = 3
+ do_initial_projection = T
 
  max_grid_size = 32
 
  anelastic_cutoff = 1.d3
  base_cutoff_density = 1.d3
+
+ do_sponge = .true.
  sponge_center_density = 1.d3
  sponge_start_factor = 3.333d0
  sponge_kappa = 10.0d0
@@ -31,16 +36,10 @@
  spherical_in = 1
  octant = .true.
  dm_in = 3
- do_sponge = .true.
 
  prob_hi_x = 1.d9
  prob_hi_y = 1.d9
  prob_hi_z = 1.d9
-
- max_step  = 100000000
- init_iter = 1
-
- stop_time = 30000.
 
  plot_base_name = "sub_chandra_plt"
  plot_int  = -1
@@ -65,9 +64,6 @@
     verbose = 1
  mg_verbose = 1
  cg_verbose = 0
-
- do_initial_projection = T
- init_divu_iter = 3
 
  do_burning = T
 
