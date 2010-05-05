@@ -280,7 +280,7 @@ contains
        ! solve Riemann problem
        uavg = HALF*(umacl(i)+umacr(i))
        test = ((umacl(i) .le. ZERO .and. umacr(i) .ge. ZERO) .or. &
-            (abs(umacl(i)+umacr(i)) .lt. rel_eps))
+           (abs(umacl(i)+umacr(i)) .lt. rel_eps))
        umac(i) = merge(umacl(i),umacr(i),uavg .gt. ZERO)
        umac(i) = merge(ZERO,umac(i),test)
     enddo
@@ -584,7 +584,7 @@ contains
           ! solve Riemann problem
           uavg = HALF*(umacl(i,j)+umacr(i,j))
           test = ((umacl(i,j) .le. ZERO .and. umacr(i,j) .ge. ZERO) .or. &
-               (abs(umacl(i,j)+umacr(i,j)) .lt. rel_eps))
+              (abs(umacl(i,j)+umacr(i,j)) .lt. rel_eps))
           umac(i,j) = merge(umacl(i,j),umacr(i,j),uavg .gt. ZERO)
           umac(i,j) = merge(ZERO,umac(i,j),test)
        enddo
@@ -646,7 +646,7 @@ contains
           ! solve Riemann problem
           uavg = HALF*(vmacl(i,j)+vmacr(i,j))
           test = ((vmacl(i,j)+w0(j) .le. ZERO .and. vmacr(i,j)+w0(j) .ge. ZERO) .or. &
-               (abs(vmacl(i,j)+vmacr(i,j)+TWO*w0(j)) .lt. rel_eps))
+              (abs(vmacl(i,j)+vmacr(i,j)+TWO*w0(j)) .lt. rel_eps))
           vmac(i,j) = merge(vmacl(i,j),vmacr(i,j),uavg+w0(j) .gt. ZERO)
           vmac(i,j) = merge(ZERO,vmac(i,j),test)
        enddo
@@ -1666,8 +1666,8 @@ contains
 
                 uavg = HALF*(umacl(i,j,k)+umacr(i,j,k))
                 test = ((umacl(i,j,k)+w0macx(i,j,k) .le. ZERO .and. &
-                     umacr(i,j,k)+w0macx(i,j,k) .ge. ZERO) .or. &
-                     (abs(umacl(i,j,k)+umacr(i,j,k)+TWO*w0macx(i,j,k)) .lt. rel_eps))
+                         umacr(i,j,k)+w0macx(i,j,k) .ge. ZERO) .or. &
+                    (abs(umacl(i,j,k)+umacr(i,j,k)+TWO*w0macx(i,j,k)) .lt. rel_eps))
                 umac(i,j,k) = merge(umacl(i,j,k),umacr(i,j,k),uavg+w0macx(i,j,k) .gt. ZERO)
                 umac(i,j,k) = merge(ZERO,umac(i,j,k),test)
              enddo
@@ -1683,7 +1683,7 @@ contains
              do i=is,ie+1
                 uavg = HALF*(umacl(i,j,k)+umacr(i,j,k))
                 test = ((umacl(i,j,k) .le. ZERO .and. umacr(i,j,k) .ge. ZERO) .or. &
-                     (abs(umacl(i,j,k)+umacr(i,j,k)) .lt. rel_eps))
+                    (abs(umacl(i,j,k)+umacr(i,j,k)) .lt. rel_eps))
                 umac(i,j,k) = merge(umacl(i,j,k),umacr(i,j,k),uavg .gt. ZERO)
                 umac(i,j,k) = merge(ZERO,umac(i,j,k),test)
              enddo
@@ -1777,8 +1777,8 @@ contains
 
                 uavg = HALF*(vmacl(i,j,k)+vmacr(i,j,k))
                 test = ((vmacl(i,j,k)+w0macy(i,j,k) .le. ZERO .and. &
-                     vmacr(i,j,k)+w0macy(i,j,k) .ge. ZERO) .or. &
-                     (abs(vmacl(i,j,k)+vmacr(i,j,k)+TWO*w0macy(i,j,k)) .lt. rel_eps))
+                         vmacr(i,j,k)+w0macy(i,j,k) .ge. ZERO) .or. &
+                    (abs(vmacl(i,j,k)+vmacr(i,j,k)+TWO*w0macy(i,j,k)) .lt. rel_eps))
                 vmac(i,j,k) = merge(vmacl(i,j,k),vmacr(i,j,k),uavg+w0macy(i,j,k) .gt. ZERO)
                 vmac(i,j,k) = merge(ZERO,vmac(i,j,k),test)
 
@@ -1795,7 +1795,7 @@ contains
              do i=is,ie
                 uavg = HALF*(vmacl(i,j,k)+vmacr(i,j,k))
                 test = ((vmacl(i,j,k) .le. ZERO .and. vmacr(i,j,k) .ge. ZERO) .or. &
-                     (abs(vmacl(i,j,k)+vmacr(i,j,k)) .lt. rel_eps))
+                    (abs(vmacl(i,j,k)+vmacr(i,j,k)) .lt. rel_eps))
                 vmac(i,j,k) = merge(vmacl(i,j,k),vmacr(i,j,k),uavg .gt. ZERO)
                 vmac(i,j,k) = merge(ZERO,vmac(i,j,k),test)
              enddo
@@ -1887,8 +1887,8 @@ contains
 
                 uavg = HALF*(wmacl(i,j,k)+wmacr(i,j,k))
                 test = ((wmacl(i,j,k)+w0macz(i,j,k) .le. ZERO .and. &
-                     wmacr(i,j,k)+w0macz(i,j,k) .ge. ZERO) .or. &
-                     (abs(wmacl(i,j,k)+wmacr(i,j,k)+TWO*w0macz(i,j,k)) .lt. rel_eps))
+                         wmacr(i,j,k)+w0macz(i,j,k) .ge. ZERO) .or. &
+                    (abs(wmacl(i,j,k)+wmacr(i,j,k)+TWO*w0macz(i,j,k)) .lt. rel_eps))
                 wmac(i,j,k) = merge(wmacl(i,j,k),wmacr(i,j,k),uavg+w0macz(i,j,k) .gt. ZERO)
                 wmac(i,j,k) = merge(ZERO,wmac(i,j,k),test)
 
@@ -1921,8 +1921,8 @@ contains
 
                 uavg = HALF*(wmacl(i,j,k)+wmacr(i,j,k))
                 test = ((wmacl(i,j,k)+w0(k) .le. ZERO .and. &
-                     wmacr(i,j,k)+w0(k) .ge. ZERO) .or. &
-                     (abs(wmacl(i,j,k)+wmacr(i,j,k)+TWO*w0(k)) .lt. rel_eps))
+                         wmacr(i,j,k)+w0(k) .ge. ZERO) .or. &
+                    (abs(wmacl(i,j,k)+wmacr(i,j,k)+TWO*w0(k)) .lt. rel_eps))
                 wmac(i,j,k) = merge(wmacl(i,j,k),wmacr(i,j,k),uavg+w0(k) .gt. ZERO)
                 wmac(i,j,k) = merge(ZERO,wmac(i,j,k),test)
 
