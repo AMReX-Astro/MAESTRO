@@ -39,7 +39,18 @@
 
   The code is already instrumented with timers.  Simply compile with
   {\tt PROF=TRUE} in the {\tt GNUmakefile}, or equvalently do 
-  {\tt make PROF=t}
+  {\tt make PROF=t}.  A file containing a summary of the timings will
+  be output in the run directory.
+
+  An alternate way to get single-processor timings, when using 
+  the GCC compilers is to add {\tt -pg} to the compilation flags
+  for both {\tt gfortran} and {\tt gcc}.  Upon completion, a
+  file names {\tt gmon.out} will be produced.  This can be 
+  processed by {\tt gprof} running 
+
+  {\tt~~~ gprof} {\em exec-name}
+  
+  where {\em exec-name} is the name of the executable.
 
 \end{enumerate}
 
@@ -78,5 +89,27 @@
      .dump\_plotfile}.  At the end of each step, if the code finds
    that file, it will output a plotfile.  Simply delete the file to
    restore the code to its normal plotfile behavior.
+
+\end{enumerate}
+
+
+
+\section{Algorithm}
+
+\begin{enumerate}
+
+\item {\em In the final projection in the algorithm, we project
+  $U^{n+1}$, using a time-centered $\beta_0$, a time-centered $\rho_0$, but
+  an ``$n+1$''-centered $S$.  When then is the resulting $\phi$ (which then
+  defines $\pi$) is at ``$n+1/2$''?}
+
+  The short answer to this question is that you should think of this
+  as really projecting  $(U^{n+1} - U^n)$ and the right hand side as having
+  $(S^{n+1} - S^n)$.  This is because the pressure enters the dynamic equations as
+  $(U^{n+1} - U^n) = \ldots + \frac{1}{\rho^{n+1/2}} \nabla \pi^{n+1/2}$.
+  (We approximate $\pi^{n+1/2}$ by $\pi^{n-1/2}$ then do the projection to fix the
+  $\pi$ as well as the $U$.)
+
+  So everything is in fact time-centered.
 
 \end{enumerate}
