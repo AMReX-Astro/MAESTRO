@@ -26,7 +26,7 @@ contains
 
   subroutine regrid(mla,uold,sold,gpi,pi,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart)
 
-    use probin_module, only : nodal, pmask, regrid_int, max_grid_size, ref_ratio, max_levs, &
+    use probin_module, only : verbose, nodal, pmask, regrid_int, max_grid_size, ref_ratio, max_levs, &
          ppm_type
     use geometry, only: dm, nlevs, nlevs_radial, spherical
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp
@@ -422,6 +422,14 @@ contains
        enddo
 
     end if
+
+!   if (verbose .and. parallel_IOProcessor()) then
+!       print *,'New grids after regridding:'
+!       do n = 2, nlevs
+!          print *,'...at level ',n
+!          call print(mba%bas(n))
+!       end do
+!   end if
 
     call destroy(mba)
 
