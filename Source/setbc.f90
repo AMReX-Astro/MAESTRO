@@ -112,7 +112,7 @@ contains
     !--------------------------------------------------------------------------
     if (bc(1,1) .eq. EXT_DIR) then
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
-       s(lo(1)-ng:lo(1)-1,lo(2)-1:hi(2)+1) = 0.d0
+       s(lo(1)-ng:lo(1)-1,:) = 0.d0
     else if (bc(1,1) .eq. FOEXTRAP) then
        do j = lo(2)-1,hi(2)+1
           s(lo(1)-ng:lo(1)-1,j) = s(lo(1),j)
@@ -147,7 +147,7 @@ contains
     !--------------------------------------------------------------------------
     if (bc(1,2) .eq. EXT_DIR) then
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
-       s(hi(1)+1:hi(1)+ng,lo(2)-1:hi(2)+1) = 0.d0
+       s(hi(1)+1:hi(1)+ng,:) = 0.d0
     else if (bc(1,2) .eq. FOEXTRAP) then
        do j = lo(2)-1,hi(2)+1
           s(hi(1)+1:hi(1)+ng,j) = s(hi(1),j)
@@ -182,7 +182,7 @@ contains
     !--------------------------------------------------------------------------
     if (bc(2,1) .eq. EXT_DIR) then
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
-       s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = 0.d0
+       s(:,lo(2)-ng:lo(2)-1) = 0.d0
     else if (bc(2,1) .eq. FOEXTRAP) then
        do i = lo(1)-ng,hi(1)+ng
           s(i,lo(2)-ng:lo(2)-1) = s(i,lo(2))
@@ -217,7 +217,7 @@ contains
     !--------------------------------------------------------------------------
     if (bc(2,2) .eq. EXT_DIR) then
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
-       s(lo(1)-ng:hi(1)+ng,hi(2)+1:hi(2)+ng) = 0.d0
+       s(:,hi(2)+1:hi(2)+ng) = 0.d0
     else if (bc(2,2) .eq. FOEXTRAP) then
        do i = lo(1)-ng,hi(1)+ng
           s(i,hi(2)+1:hi(2)+ng) = s(i,hi(2))
@@ -314,35 +314,26 @@ contains
     !--------------------------------------------------------------------------
     if (bc(1,2) .eq. EXT_DIR) then
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
-       do k = lo(3)-1,hi(3)+1
-          do j = lo(2)-1,hi(2)+1
-             s(hi(1)+1:hi(1)+ng,j,k) = ZERO
-          end do
-       end do
+       s(hi(1)+1:hi(1)+ng,:,:) = ZERO
     else if (bc(1,2) .eq. FOEXTRAP) then
-       do k = lo(3)-1,hi(3)+1
-          do j = lo(2)-1,hi(2)+1
-             s(hi(1)+1:hi(1)+ng,j,k) = s(hi(1),j,k)
-          end do
+       do i = 1,ng
+          s(hi(1)+i,:,:) = s(hi(1),:,:)
        end do
     else if (bc(1,2) .eq. HOEXTRAP) then
-       do k = lo(3)-1,hi(3)+1
-          do j = lo(2)-1,hi(2)+1
-             s(hi(1)+1:hi(1)+ng,j,k) = &
-                  ( 15.d0 * s(hi(1)  ,j,k) &
-                   -10.d0 * s(hi(1)-1,j,k) &
-                   + 3.d0 * s(hi(1)-2,j,k) ) * EIGHTH
-          end do
+       s(hi(1)+1,:,:) = &
+         ( 15.d0 * s(hi(1)  ,:,:) &
+          -10.d0 * s(hi(1)-1,:,:) &
+          + 3.d0 * s(hi(1)-2,:,:) ) * EIGHTH
+       do i = 2,ng
+          s(hi(1)+i,:,:) = s(hi(1)+1,:,:)
        end do
     else if (bc(1,2) .eq. REFLECT_EVEN) then
        do i = 1,ng
-          s(hi(1)+i  ,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng) = &
-          s(hi(1)-i+1,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng)
+          s(hi(1)+i,:,:) =  s(hi(1)-i+1,:,:)
        end do
     else if (bc(1,2) .eq. REFLECT_ODD) then
        do i = 1,ng
-          s(hi(1)+i  ,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng) = &
-         -s(hi(1)-i+1,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng)
+          s(hi(1)+i,:,:) = -s(hi(1)-i+1,:,:)
        end do
     else if (bc(1,2) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
@@ -359,35 +350,26 @@ contains
     !--------------------------------------------------------------------------
     if (bc(2,1) .eq. EXT_DIR) then
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
-       do k = lo(3)-ng,hi(3)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,lo(2)-ng:lo(2)-1,k) = ZERO
-          end do
-       end do
+       s(:,lo(2)-ng:lo(2)-1,:) = ZERO
     else if (bc(2,1) .eq. FOEXTRAP) then
-       do k = lo(3)-1,hi(3)+1
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,lo(2)-ng:lo(2)-1,k) = s(i,lo(2),k)
-          end do
+       do j = 1,ng
+          s(:,lo(2)-j,:) = s(:,lo(2),:)
        end do
     else if (bc(2,1) .eq. HOEXTRAP) then
-       do k = lo(3)-1,hi(3)+1
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,lo(2)-ng:lo(2)-1,k) = &
-                  ( 15.d0 * s(i,lo(2)  ,k) &
-                   -10.d0 * s(i,lo(2)+1,k) &
-                   + 3.d0 * s(i,lo(2)+2,k) ) * EIGHTH
-          end do
+       s(:,lo(2)-1,:) = &
+            ( 15.d0 * s(:,lo(2)  ,:) &
+             -10.d0 * s(:,lo(2)+1,:) &
+             + 3.d0 * s(:,lo(2)+2,:) ) * EIGHTH
+       do j = 2,ng
+          s(:,lo(2)-j,:) = s(:,lo(2)-1,:)
        end do
     else if (bc(2,1) .eq. REFLECT_EVEN) then
        do j = 1,ng
-          s(lo(1)-ng:hi(1)+ng,lo(2)-j  ,lo(3)-ng:hi(3)+ng) = &
-          s(lo(1)-ng:hi(1)+ng,lo(2)+j-1,lo(3)-ng:hi(3)+ng)
+          s(:,lo(2)-j  ,:) =  s(:,lo(2)+j-1,:)
        end do
     else if (bc(2,1) .eq. REFLECT_ODD) then
        do j = 1,ng
-          s(lo(1)-ng:hi(1)+ng,lo(2)-j  ,lo(3)-ng:hi(3)+ng) = &
-         -s(lo(1)-ng:hi(1)+ng,lo(2)+j-1,lo(3)-ng:hi(3)+ng)
+          s(:,lo(2)-j  ,:) = -s(:,lo(2)+j-1,:)
        end do
     else if (bc(2,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
@@ -404,35 +386,26 @@ contains
     !--------------------------------------------------------------------------
     if (bc(2,2) .eq. EXT_DIR) then
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
-       do k = lo(3)-ng,hi(3)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,hi(2)+1:hi(2)+ng,k) = ZERO
-          end do
-       end do
+       s(:,hi(2)+1:hi(2)+ng,:) = ZERO
     else if (bc(2,2) .eq. FOEXTRAP) then
-       do k = lo(3)-1,hi(3)+1
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,hi(2)+1:hi(2)+ng,k) = s(i,hi(2),k)
-          end do
+       do j = 1,ng
+          s(:,hi(2)+j,:) = s(:,hi(2),:)
        end do
     else if (bc(2,2) .eq. HOEXTRAP) then
-       do k = lo(3)-1,hi(3)+1
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,hi(2)+1:hi(2)+ng,k) = &
-                  ( 15.d0 * s(i,hi(2)  ,k) &
-                   -10.d0 * s(i,hi(2)-1,k) &
-                   + 3.d0 * s(i,hi(2)-2,k) ) * EIGHTH
-          end do
+       s(:,hi(2)+1,:) = &
+            ( 15.d0 * s(:,hi(2)  ,:) &
+             -10.d0 * s(:,hi(2)-1,:) &
+             + 3.d0 * s(:,hi(2)-2,:) ) * EIGHTH
+       do j = 2,ng
+          s(:,hi(2)+j,:) = s(:,hi(2)+1,:)
        end do
     else if (bc(2,2) .eq. REFLECT_EVEN) then
        do j = 1,ng
-          s(lo(1)-ng:hi(1)+ng,hi(2)+j  ,lo(3)-ng:hi(3)+ng) = &
-          s(lo(1)-ng:hi(1)+ng,hi(2)-j+1,lo(3)-ng:hi(3)+ng)
+          s(:,hi(2)+j,:) =  s(:,hi(2)-j+1,:)
        end do
     else if (bc(2,2) .eq. REFLECT_ODD) then
        do j = 1,ng
-          s(lo(1)-ng:hi(1)+ng,hi(2)+j  ,lo(3)-ng:hi(3)+ng) = &
-         -s(lo(1)-ng:hi(1)+ng,hi(2)-j+1,lo(3)-ng:hi(3)+ng)
+          s(:,hi(2)+j,:) = -s(:,hi(2)-j+1,:)
        end do
     else if (bc(2,2) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
@@ -449,35 +422,26 @@ contains
     !--------------------------------------------------------------------------   
     if (bc(3,1) .eq. EXT_DIR) then
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
-       do j = lo(2)-ng,hi(2)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,j,lo(3)-ng:lo(3)-1) = ZERO
-          end do
-       end do
+       s(:,:,lo(3)-ng:lo(3)-1) = ZERO
     else if (bc(3,1) .eq. FOEXTRAP) then
-       do j = lo(2)-ng,hi(2)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,j,lo(3)-ng:lo(3)-1) = s(i,j,lo(3))
-          end do
+       do k = 1,ng
+          s(:,:,lo(3)-k) = s(:,:,lo(3))
        end do
     else if (bc(3,1) .eq. HOEXTRAP) then
-       do j = lo(2)-ng,hi(2)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,j,lo(3)-ng:lo(3)-1) = &
-                  ( 15.d0 * s(i,j,lo(3)  ) &
-                   -10.d0 * s(i,j,lo(3)+1) &
-                   + 3.d0 * s(i,j,lo(3)+2) ) * EIGHTH
-          end do
+       s(:,:,lo(3)-1) = &
+            ( 15.d0 * s(:,:,lo(3)  ) &
+             -10.d0 * s(:,:,lo(3)+1) &
+             + 3.d0 * s(:,:,lo(3)+2) ) * EIGHTH
+       do k = 2,ng
+          s(:,:,lo(3)-k) = s(:,:,lo(3)-1)
        end do
     else if (bc(3,1) .eq. REFLECT_EVEN) then
        do k = 1,ng
-          s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-k  ) = &
-          s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)+k-1)
+          s(:,:,lo(3)-k) =  s(:,:,lo(3)+k-1)
        end do
     else if (bc(3,1) .eq. REFLECT_ODD) then
        do k = 1,ng
-          s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-k  ) = &
-         -s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)+k-1)
+          s(:,:,lo(3)-k) = -s(:,:,lo(3)+k-1)
        end do
     else if (bc(3,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
@@ -494,41 +458,26 @@ contains
     !--------------------------------------------------------------------------
     if (bc(3,2) .eq. EXT_DIR) then
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
-       do j = lo(2)-ng,hi(2)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,j,hi(3)+1:hi(3)+ng) = ZERO
-          end do
-       end do
+       s(:,:,hi(3)+1:hi(3)+ng) = ZERO
     else if (bc(3,2) .eq. FOEXTRAP) then
-       do j = lo(2)-ng,hi(2)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,j,hi(3)+1:hi(3)+ng) = s(i,j,hi(3))
-          end do
+       do k = 1,ng
+          s(:,:,hi(3)+k) = s(:,:,hi(3))
        end do
     else if (bc(3,2) .eq. HOEXTRAP) then
-       do j = lo(2)-ng,hi(2)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,j,hi(3)+1:hi(3)+ng) = &
-                  ( 15.d0 * s(i,j,hi(3)  ) &
-                   -10.d0 * s(i,j,hi(3)-1) &
-                   + 3.d0 * s(i,j,hi(3)-2) ) * EIGHTH
-          end do
+       s(:,:,hi(3)+1) = &
+            ( 15.d0 * s(:,:,hi(3)  ) &
+             -10.d0 * s(:,:,hi(3)-1) &
+             + 3.d0 * s(:,:,hi(3)-2) ) * EIGHTH
+       do k = 2,ng
+          s(:,:,hi(3)+k) = s(:,:,hi(3)+1)
        end do
     else if (bc(3,2) .eq. REFLECT_EVEN) then
-       do j = lo(2)-ng,hi(2)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             do k = 1,ng
-                s(i,j,hi(3)+k) = s(i,j,hi(3)-k+1)
-             end do
-          end do
+       do k = 1,ng
+          s(:,:,hi(3)+k) =  s(:,:,hi(3)-k+1)
        end do
     else if (bc(3,2) .eq. REFLECT_ODD) then
-       do j = lo(2)-ng,hi(2)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             do k = 1,ng
-                s(i,j,hi(3)+k) = -s(i,j,hi(3)-k+1)
-             end do
-          end do
+       do k = 1,ng
+          s(:,:,hi(3)+k) = -s(:,:,hi(3)-k+1)
        end do
     else if (bc(3,2) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
