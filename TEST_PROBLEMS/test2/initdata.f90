@@ -466,15 +466,15 @@ contains
 
     x1 = 5.0d7
     y1 = 6.5d7
-    r1 = pert_rad_factor*sqrt( (x-x1)**2 +(y-y1)**2 ) / 2.5d6
+    r1 = sqrt( (x-x1)**2 +(y-y1)**2 ) / (2.5d6*pert_rad_factor)
     
     x2 = 1.2d8
     y2 = 8.5d7
-    r2 = pert_rad_factor*sqrt( (x-x2)**2 +(y-y2)**2 ) / 2.5d6
+    r2 = sqrt( (x-x2)**2 +(y-y2)**2 ) / (2.5d6*pert_rad_factor)
     
     x3 = 2.0d8
     y3 = 7.5d7
-    r3 = pert_rad_factor*sqrt( (x-x3)**2 +(y-y3)**2 ) / 2.5d6
+    r3 = sqrt( (x-x3)**2 +(y-y3)**2 ) / (2.5d6*pert_rad_factor)
 
     temp = t0 * (1.d0 + pert_temp_factor* &
                  (0.150d0 * (1.d0 + tanh(2.d0-r1)) + &
