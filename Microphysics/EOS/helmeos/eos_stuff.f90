@@ -191,8 +191,6 @@ contains
         p_eos(1) = P
       xn_eos(1,1:nspec) = X(1:nspec)
 
-      print *, 'calling EOS: ', temp_eos(1)
-
      call eos(eos_input_rp, den_eos, temp_eos, &
               npts, &
               xn_eos, &
