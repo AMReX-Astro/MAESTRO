@@ -1,9 +1,9 @@
 &PROBIN
- model_file = "model.hse.smalldomain"
+ model_file = "model.hse.cool.coulomb"
  spherical_in = 0
 
  do_small_domain = T
- max_dt_growth = 1.9d0
+ max_dt_growth = 2.d0
 
  ppm_type = 2
 
@@ -12,8 +12,11 @@
  n_celly = 256
  max_grid_size = 64
 
+ prob_lo_x = 0.d0
  prob_hi_x = 1.d0
- prob_hi_y = 1.d0
+
+ prob_lo_y = 85218750.d0
+ prob_hi_y = 85218751.d0
 
  anelastic_cutoff = 3.d6
  base_cutoff_density = 3.d6
