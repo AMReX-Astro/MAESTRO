@@ -56,6 +56,7 @@ contains
     ! local
     integer        :: n,ng_s
     real(dp_t)     :: halfdt,dt_temp,dt_hold
+    real(dp_t)     :: eps_divu
 
     type(multifab) :: s1(nlevs)  
     type(multifab) :: delta_gamma1_term(nlevs)
@@ -185,8 +186,15 @@ contains
        call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
+       if (istep_divu_iter .eq. 1) then
+          eps_divu = 1.d-4
+       else if (istep_divu_iter .eq. 2) then
+          eps_divu = 1.d-6
+       else 
+          eps_divu = 1.d-8
+       end if
        call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
-                      the_bc_tower,hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
+                      the_bc_tower,hgrhs,div_coeff_3d=div_coeff_3d,eps_in=eps_divu)
        
     else
        call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
