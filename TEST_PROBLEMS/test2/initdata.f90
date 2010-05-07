@@ -448,7 +448,7 @@ contains
   subroutine perturb_2d(x, y, p0_init, s0_init, dens_pert, rhoh_pert, rhoX_pert, &
                         temp_pert, trac_pert)
 
-    use probin_module, only: pert_temp_factor, pert_rad_factor
+    use probin_module, only: pert_temp_factor, pert_rad_factor, do_small_domain
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
@@ -460,7 +460,7 @@ contains
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
     real(kind=dp_t) :: temp,t0
-    real(kind=dp_t) :: x1, y1, r1, x2, y2, r2, x3, y3, r3
+    real(kind=dp_t) :: x1, y1, r1, x2, y2, r2, x3, y3, r3, x4, y4, r4
 
     t0 = s0_init(temp_comp)
 
@@ -476,10 +476,23 @@ contains
     y3 = 7.5d7
     r3 = sqrt( (x-x3)**2 +(y-y3)**2 ) / (2.5d6*pert_rad_factor)
 
-    temp = t0 * (1.d0 + pert_temp_factor* &
-                 (0.150d0 * (1.d0 + tanh(2.d0-r1)) + &
-                  0.300d0 * (1.d0 + tanh(2.d0-r2)) + &
-                  0.225d0 * (1.d0 + tanh(2.d0-r3))))
+    ! this is a tiny bubble for inputs_2d_smalldomain
+    x4 = 0.5d0
+    y4 = 0.25d0
+    r4 = sqrt( (x-x4)**2 +(y-y4)**2 ) / 2.5d-2
+
+    if (do_small_domain) then
+       temp = t0 * (1.d0 + pert_temp_factor* &
+            (0.150d0 * (1.d0 + tanh(2.d0-r1)) + &
+            0.300d0 * (1.d0 + tanh(2.d0-r2)) + &
+            0.225d0 * (1.d0 + tanh(2.d0-r3)) + &
+            0.300d0 * (1.d0 + tanh(2.d0-r4))))
+    else
+       temp = t0 * (1.d0 + pert_temp_factor* &
+            (0.150d0 * (1.d0 + tanh(2.d0-r1)) + &
+            0.300d0 * (1.d0 + tanh(2.d0-r2)) + &
+            0.225d0 * (1.d0 + tanh(2.d0-r3))))
+    end if
           
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
