@@ -275,10 +275,8 @@ contains
           end do
        end do
     else if (bc(1,1) .eq. FOEXTRAP) then
-       do k = lo(3)-1,hi(3)+1
-          do j = lo(2)-1,hi(2)+1
-             s(lo(1)-ng:lo(1)-1,j,k) = s(lo(1),j,k)
-          end do
+       do i = 1,ng
+          s(lo(1)-i,:,:) = s(lo(1),:,:)
        end do
     else if (bc(1,1) .eq. HOEXTRAP) then
        do k = lo(3)-1,hi(3)+1
