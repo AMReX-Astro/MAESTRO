@@ -76,14 +76,8 @@ contains
     bottom_max_iter   = mgt(nlevs)%bottom_max_iter
     min_width         = mgt(nlevs)%min_width
 
-    ! Note: put this here to minimize asymmetries - ASA
-    if (nlevs .eq. 1) then
-       eps = 1.d-12
-    else if (nlevs .eq. 2) then
-       eps = 1.d-11
-    else
-       eps = 1.d-10
-    end if
+    ! Not sure if we can get better than this...
+    eps = 1.d-10
 
     abs_eps = -1.0_dp_t
     if (present(phi_norm)) then
