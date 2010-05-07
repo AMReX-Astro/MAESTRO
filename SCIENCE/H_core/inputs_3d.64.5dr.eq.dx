@@ -8,11 +8,11 @@
  n_cellz = 64
  max_grid_size = 32
 
- anelastic_cutoff = 1.d-2
- base_cutoff_density = 1.d-2
- sponge_center_density = 1.d-2
- sponge_start_factor = 3.333d0
- sponge_kappa = 10.0d0
+ anelastic_cutoff = 5.d-2
+ base_cutoff_density = 5.d-2
+ sponge_center_density = 1.d-1
+ sponge_start_factor = 1.5d0
+ sponge_kappa = 5.0d0
 
  spherical_in = 1
  octant = .true.
@@ -20,9 +20,9 @@
  dm_in = 3
  do_sponge = .true.
 
- prob_hi_x = 2.5d11
- prob_hi_y = 2.5d11
- prob_hi_z = 2.5d11
+ prob_hi_x = 2.25d11
+ prob_hi_y = 2.25d11
+ prob_hi_z = 2.25d11
 
  max_step  = 10
  init_iter = 1
@@ -54,7 +54,7 @@
  do_initial_projection = T
  init_divu_iter = 1
 
- velpert_amplitude = .75d4
+ velpert_amplitude = .75d5
  velpert_radius = 8.2d10
  velpert_scale = 9.d10
  velpert_steep = 1.d5
