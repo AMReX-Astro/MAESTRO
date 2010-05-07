@@ -479,7 +479,7 @@ contains
     ! this is a tiny bubble for inputs_2d_smalldomain
     x4 = 0.5d0
     y4 = 0.25d0
-    r4 = sqrt( (x-x4)**2 +(y-y4)**2 ) / 2.5d-2
+    r4 = sqrt( (x-x4)**2 +(y-y4)**2 ) / (2.5d-2*pert_rad_factor)
 
     if (do_small_domain) then
        temp = t0 * (1.d0 + pert_temp_factor* &
