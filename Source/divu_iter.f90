@@ -178,6 +178,14 @@ contains
        call setval(rhohalf(n),ONE,1,1,all=.true.)
     end do
 
+    if (istep_divu_iter .eq. 1) then
+       eps_divu = 1.d-4
+    else if (istep_divu_iter .eq. 2) then
+       eps_divu = 1.d-6
+    else 
+       eps_divu = 1.d-8
+    end if
+
     if (spherical .eq. 1) then
        do n=1,nlevs
           call multifab_build(div_coeff_3d(n), mla%la(n), 1, 0)
@@ -185,14 +193,6 @@ contains
        
        call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
-
-       if (istep_divu_iter .eq. 1) then
-          eps_divu = 1.d-4
-       else if (istep_divu_iter .eq. 2) then
-          eps_divu = 1.d-6
-       else 
-          eps_divu = 1.d-8
-       end if
        call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
                       the_bc_tower,hgrhs,div_coeff_3d=div_coeff_3d,eps_in=eps_divu)
        
