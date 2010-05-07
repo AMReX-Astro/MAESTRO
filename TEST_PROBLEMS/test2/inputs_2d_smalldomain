@@ -3,6 +3,7 @@
  spherical_in = 0
 
  do_small_domain = T
+ max_dt_growth = 1.9d0
 
  ppm_type = 2
 
@@ -27,7 +28,7 @@
  max_step  = 100000000
  init_iter = 1
 
- stop_time = 2.5d0
+ stop_time = 2.d-4
 
  plot_base   = T
  plot_int    = 10
