@@ -8,9 +8,9 @@
  n_cellz = 64
  max_grid_size = 32
 
- anelastic_cutoff = 1.d-1
- base_cutoff_density = 1.d-1
- sponge_center_density = 1.d-1
+ anelastic_cutoff = 1.d-2
+ base_cutoff_density = 1.d-2
+ sponge_center_density = 1.d-2
  sponge_start_factor = 3.333d0
  sponge_kappa = 10.0d0
 
@@ -59,7 +59,7 @@
  velpert_scale = 9.d10
  velpert_steep = 1.d5
 
- do_burning = T
+ do_burning = F
 
  enthalpy_pred_type = 1
  evolve_base_state = T
