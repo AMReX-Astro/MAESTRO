@@ -121,11 +121,11 @@ contains
     call create_uvec_for_projection(unew,uold,rhohalf,gpi,dt,the_bc_tower,proj_type)
 
     if (use_div_coeff_1d) then
-       call mult_by_1d_coeff(unew,div_coeff_1d,.true.)
-       call mult_by_1d_coeff(rhohalf,div_coeff_1d,.false.)
+       call mult_cc_by_1d_coeff(unew,div_coeff_1d,.true.)
+       call mult_cc_by_1d_coeff(rhohalf,div_coeff_1d,.false.)
     else if (use_div_coeff_3d) then
-       call mult_by_3d_coeff(unew,div_coeff_3d,.true.)
-       call mult_by_3d_coeff(rhohalf,div_coeff_3d,.false.)
+       call mult_cc_by_3d_coeff(unew,div_coeff_3d,.true.)
+       call mult_cc_by_3d_coeff(rhohalf,div_coeff_3d,.false.)
     end if
 
     if (present(divu_rhs)) then
@@ -149,11 +149,11 @@ contains
     end if
 
     if (use_div_coeff_1d) then
-       call mult_by_1d_coeff(unew,div_coeff_1d,.false.)
-       call mult_by_1d_coeff(rhohalf,div_coeff_1d,.true.)
+       call mult_cc_by_1d_coeff(unew,div_coeff_1d,.false.)
+       call mult_cc_by_1d_coeff(rhohalf,div_coeff_1d,.true.)
     else if (use_div_coeff_3d) then
-       call mult_by_3d_coeff(unew,div_coeff_3d,.false.)
-       call mult_by_3d_coeff(rhohalf,div_coeff_3d,.true.)
+       call mult_cc_by_3d_coeff(unew,div_coeff_3d,.false.)
+       call mult_cc_by_3d_coeff(rhohalf,div_coeff_3d,.true.)
     end if
 
     do n = 1, nlevs
@@ -1453,7 +1453,7 @@ contains
 
   !   ********************************************************************************** !
 
-  subroutine mult_by_1d_coeff(u,div_coeff,do_mult)
+  subroutine mult_cc_by_1d_coeff(u,div_coeff,do_mult)
 
     use geometry, only: dm, nlevs
 
@@ -1482,21 +1482,21 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (1)
-             call mult_by_1d_coeff_1d(ump(:,1,1,1),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
+             call mult_cc_by_1d_coeff_1d(ump(:,1,1,1),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
           case (2)
-             call mult_by_1d_coeff_2d(ump(:,:,1,:),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
+             call mult_cc_by_1d_coeff_2d(ump(:,:,1,:),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
           case (3)
-             call mult_by_1d_coeff_3d(ump(:,:,:,:),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
+             call mult_cc_by_1d_coeff_3d(ump(:,:,:,:),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
           end select
        end do
 
     end do
 
-  end subroutine mult_by_1d_coeff
+  end subroutine mult_cc_by_1d_coeff
 
   !   ********************************************************************************** !
 
-  subroutine mult_by_1d_coeff_1d(u,ng_u,div_coeff,lo,hi,do_mult)
+  subroutine mult_cc_by_1d_coeff_1d(u,ng_u,div_coeff,lo,hi,do_mult)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_u
     real(kind=dp_t), intent(inout) :: u(lo(1)-ng_u:)
@@ -1515,11 +1515,11 @@ contains
        end do
     end if
 
-  end subroutine mult_by_1d_coeff_1d
+  end subroutine mult_cc_by_1d_coeff_1d
 
   !   ********************************************************************************** !
 
-  subroutine mult_by_1d_coeff_2d(u,ng_u,div_coeff,lo,hi,do_mult)
+  subroutine mult_cc_by_1d_coeff_2d(u,ng_u,div_coeff,lo,hi,do_mult)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_u
     real(kind=dp_t), intent(inout) :: u(lo(1)-ng_u:,lo(2)-ng_u:,:)
@@ -1538,11 +1538,11 @@ contains
        end do
     end if
 
-  end subroutine mult_by_1d_coeff_2d
+  end subroutine mult_cc_by_1d_coeff_2d
 
   !   ********************************************************************************** !
 
-  subroutine mult_by_1d_coeff_3d(u,ng_u,div_coeff,lo,hi,do_mult)
+  subroutine mult_cc_by_1d_coeff_3d(u,ng_u,div_coeff,lo,hi,do_mult)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_u
     real(kind=dp_t), intent(inout) :: u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
@@ -1565,11 +1565,11 @@ contains
 !$omp end parallel do
     end if
 
-  end subroutine mult_by_1d_coeff_3d
+  end subroutine mult_cc_by_1d_coeff_3d
 
   !   *********************************************************************************** !
 
-  subroutine mult_by_3d_coeff(u,div_coeff,do_mult)
+  subroutine mult_cc_by_3d_coeff(u,div_coeff,do_mult)
 
     use geometry, only: dm, nlevs
 
@@ -1593,17 +1593,17 @@ contains
           dp => dataptr(div_coeff(n),i)
           select case (dm)
           case (3)
-             call mult_by_3d_coeff_3d(ump(:,:,:,:), ng_u, dp(:,:,:,1), ng_d, do_mult)
+             call mult_cc_by_3d_coeff_3d(ump(:,:,:,:), ng_u, dp(:,:,:,1), ng_d, do_mult)
           end select
        end do
 
     end do
 
-  end subroutine mult_by_3d_coeff
+  end subroutine mult_cc_by_3d_coeff
 
   !   ********************************************************************************** !
   
-  subroutine mult_by_3d_coeff_3d(u,ng_u,div_coeff,ng_d,do_mult)
+  subroutine mult_cc_by_3d_coeff_3d(u,ng_u,div_coeff,ng_d,do_mult)
 
     integer        , intent(in   ) :: ng_u,ng_d
     real(kind=dp_t), intent(inout) ::         u(-ng_u:,-ng_u:,-ng_u:,:)
@@ -1641,7 +1641,7 @@ contains
        end do
     end if
 
-  end subroutine mult_by_3d_coeff_3d
+  end subroutine mult_cc_by_3d_coeff_3d
 
   !   ********************************************************************************** !
 

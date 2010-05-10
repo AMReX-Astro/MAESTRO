@@ -382,7 +382,7 @@ contains
     else
        call cell_to_edge(div_coeff_old,div_coeff_edge)
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
-                       macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
+                       macrhs,div_coeff_1d=div_coeff_old,div_coeff_edge_1d=div_coeff_edge)
     end if
 
     do n=1,nlevs
@@ -820,7 +820,7 @@ contains
     else
        call cell_to_edge(div_coeff_nph,div_coeff_edge)
        call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,macrhs, &
-                       div_coeff_1d=div_coeff_nph,div_coeff_half_1d=div_coeff_edge)
+                       div_coeff_1d=div_coeff_nph,div_coeff_edge_1d=div_coeff_edge)
     end if
 
     do n=1,nlevs

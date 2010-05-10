@@ -21,7 +21,7 @@ contains
   ! NOTE: this routine differs from that in varden because phi is passed in/out 
   !       rather than allocated here
   subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower, &
-                        divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
+                        divu_rhs,div_coeff_1d,div_coeff_edge_1d,div_coeff_3d)
 
     use mac_multigrid_module
 !   use mac_hypre_module
@@ -38,7 +38,7 @@ contains
 
     type(multifab ), intent(in   ), optional :: divu_rhs(:)
     real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:,:)
-    real(dp_t)     , intent(in   ), optional :: div_coeff_half_1d(:,:)
+    real(dp_t)     , intent(in   ), optional :: div_coeff_edge_1d(:,:)
     type(multifab ), intent(in   ), optional :: div_coeff_3d(:)
 
     type(multifab)  :: rh(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel,dm)
@@ -82,7 +82,7 @@ contains
 
     if (use_div_coeff_1d) then
        do n = 1,nlevs
-          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:),&
+          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_edge_1d(n,:),&
                                      .true.)
        end do
     else if (use_div_coeff_3d) then
@@ -141,7 +141,7 @@ contains
 
     if (use_div_coeff_1d) then
        do n = 1,nlevs
-          call mult_edge_by_1d_coeff(beta(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:),&
+          call mult_edge_by_1d_coeff(beta(n,:),div_coeff_1d(n,:),div_coeff_edge_1d(n,:),&
                                      .true.)
        end do
     else if (use_div_coeff_3d) then
@@ -201,7 +201,7 @@ contains
 
     if (use_div_coeff_1d) then
        do n = 1,nlevs
-          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:), &
+          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_edge_1d(n,:), &
                                      .false.)
        end do
     else if (use_div_coeff_3d) then
@@ -401,13 +401,13 @@ contains
 
     end subroutine divumac_3d
 
-    subroutine mult_edge_by_1d_coeff(edge,div_coeff,div_coeff_half,do_mult)
+    subroutine mult_edge_by_1d_coeff(edge,div_coeff,div_coeff_edge,do_mult)
 
       use geometry, only: dm
 
       type(multifab) , intent(inout) :: edge(:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
-      real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
+      real(dp_t)     , intent(in   ) :: div_coeff_edge(0:)
       logical        , intent(in   ) :: do_mult
 
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
@@ -425,28 +425,31 @@ contains
          lo =  lwb(get_box(edge(1), i))
          select case (dm)
          case (1)
-            call mult_by_1d_coeff_1d(ump(:,1,1,1), ng_um, &
-                                     div_coeff(lo(dm):), div_coeff_half(lo(dm):), do_mult)
+            call mult_edge_by_1d_coeff_1d(ump(:,1,1,1), ng_um, &
+                                          div_coeff(lo(dm):), div_coeff_edge(lo(dm):), &
+                                          do_mult)
          case (2)
             vmp => dataptr(edge(2), i)
-            call mult_by_1d_coeff_2d(ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
-                                     div_coeff(lo(dm):), div_coeff_half(lo(dm):), do_mult)
+            call mult_edge_by_1d_coeff_2d(ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+                                          div_coeff(lo(dm):), div_coeff_edge(lo(dm):), &
+                                          do_mult)
          case (3)
             vmp => dataptr(edge(2), i)
             wmp => dataptr(edge(3), i)
-            call mult_by_1d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                     div_coeff(lo(dm):), div_coeff_half(lo(dm):), do_mult)
+            call mult_edge_by_1d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                          div_coeff(lo(dm):), div_coeff_edge(lo(dm):), &
+                                          do_mult)
          end select
       end do
 
     end subroutine mult_edge_by_1d_coeff
 
-    subroutine mult_by_1d_coeff_1d(uedge,ng_um,div_coeff,div_coeff_half,do_mult)
+    subroutine mult_edge_by_1d_coeff_1d(uedge,ng_um,div_coeff,div_coeff_edge,do_mult)
 
       integer                        :: ng_um
       real(kind=dp_t), intent(inout) :: uedge(-ng_um:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
-      real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
+      real(dp_t)     , intent(in   ) :: div_coeff_edge(0:)
       logical        , intent(in   ) :: do_mult
 
       integer :: i,nx
@@ -455,23 +458,23 @@ contains
 
       if (do_mult) then
          do i = 0,nx
-            uedge(i) = uedge(i) * div_coeff_half(i)
+            uedge(i) = uedge(i) * div_coeff_edge(i)
          end do
       else
          do i = 0,nx
-            uedge(i) = uedge(i) / div_coeff_half(i)
+            uedge(i) = uedge(i) / div_coeff_edge(i)
          end do
       end if
 
-    end subroutine mult_by_1d_coeff_1d
+    end subroutine mult_edge_by_1d_coeff_1d
 
-    subroutine mult_by_1d_coeff_2d(uedge,vedge,ng_um,div_coeff,div_coeff_half,do_mult)
+    subroutine mult_edge_by_1d_coeff_2d(uedge,vedge,ng_um,div_coeff,div_coeff_edge,do_mult)
 
       integer                        :: ng_Um
       real(kind=dp_t), intent(inout) :: uedge(-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: vedge(-ng_um:,-ng_um:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
-      real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
+      real(dp_t)     , intent(in   ) :: div_coeff_edge(0:)
       logical        , intent(in   ) :: do_mult
 
       integer :: j,ny
@@ -483,27 +486,28 @@ contains
             uedge(:,j) = uedge(:,j) * div_coeff(j)
          end do
          do j = 0,ny
-            vedge(:,j) = vedge(:,j) * div_coeff_half(j)
+            vedge(:,j) = vedge(:,j) * div_coeff_edge(j)
          end do
       else
          do j = 0,ny-1 
             uedge(:,j) = uedge(:,j) / div_coeff(j)
          end do
          do j = 0,ny
-            vedge(:,j) = vedge(:,j) / div_coeff_half(j)
+            vedge(:,j) = vedge(:,j) / div_coeff_edge(j)
          end do
       end if
 
-    end subroutine mult_by_1d_coeff_2d
+    end subroutine mult_edge_by_1d_coeff_2d
 
-    subroutine mult_by_1d_coeff_3d(uedge,vedge,wedge,ng_um,div_coeff,div_coeff_half,do_mult)
+    subroutine mult_edge_by_1d_coeff_3d(uedge,vedge,wedge,ng_um,div_coeff,div_coeff_edge, &
+                                        do_mult)
 
       integer                        :: ng_um
       real(kind=dp_t), intent(inout) :: uedge(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: vedge(-ng_um:,-ng_um:,-ng_um:)
       real(kind=dp_t), intent(inout) :: wedge(-ng_um:,-ng_um:,-ng_um:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
-      real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
+      real(dp_t)     , intent(in   ) :: div_coeff_edge(0:)
       logical        , intent(in   ) :: do_mult
 
       integer :: k,nz
@@ -519,7 +523,7 @@ contains
 !$omp end parallel do
 !$omp parallel do private(k)
          do k = 0,nz
-            wedge(:,:,k) = wedge(:,:,k) * div_coeff_half(k)
+            wedge(:,:,k) = wedge(:,:,k) * div_coeff_edge(k)
          end do
 !$omp end parallel do
       else
@@ -531,12 +535,12 @@ contains
 !$omp end parallel do
 !$omp parallel do private(k)
          do k = 0,nz
-            wedge(:,:,k) = wedge(:,:,k) / div_coeff_half(k)
+            wedge(:,:,k) = wedge(:,:,k) / div_coeff_edge(k)
          end do
 !$omp end parallel do
       end if
 
-    end subroutine mult_by_1d_coeff_3d
+    end subroutine mult_edge_by_1d_coeff_3d
 
     subroutine mult_edge_by_3d_coeff(edge,div_coeff,domain,do_mult)
 
@@ -568,14 +572,15 @@ contains
          hi =  upb(get_box(edge(1), i))
          select case (dm)
          case (3)
-            call mult_by_3d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                     dp(:,:,:,1), lo, hi, domlo, domhi, do_mult)
+            call mult_edge_by_3d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                          dp(:,:,:,1), lo, hi, domlo, domhi, do_mult)
          end select
       end do
 
     end subroutine mult_edge_by_3d_coeff
 
-    subroutine mult_by_3d_coeff_3d(uedge,vedge,wedge,div_coeff,lo,hi,domlo,domhi,do_mult)
+    subroutine mult_edge_by_3d_coeff_3d(uedge,vedge,wedge,div_coeff,lo,hi,domlo,domhi, &
+                                        do_mult)
 
       integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
       real(kind=dp_t), intent(inout) ::      uedge(lo(1)-1:,lo(2)-1:,lo(3)-1:)
@@ -724,7 +729,7 @@ contains
 
       end if
 
-    end subroutine mult_by_3d_coeff_3d
+    end subroutine mult_edge_by_3d_coeff_3d
 
     subroutine mk_mac_coeffs(mla,rho,beta,the_bc_tower)
 
