@@ -19,6 +19,7 @@ module inlet_bc_module
   real(dp_t), save :: INLET_RHO
   real(dp_t), save :: INLET_RHOH
   real(dp_t), save :: INLET_TEMP
+  real(dp_t), save :: INLET_MACH
 
   logical, save :: inlet_bc_initialized = .false.
 
@@ -36,10 +37,10 @@ contains
     ! here we would initialize the parameters that are module variables.
     ! this routine is called when the base state is defined initially,
     ! and upon restart, just after the base state is read in.
-    ! given P, T, and X, compute rho
-    den_eos(1) = 0.9d0
-    p_eos(1) = 1.1d0
-    temp_eos(1) = 1.d-8
+    ! given rho, P, and X, compute T
+    temp_eos(1) = 10.d0
+    den_eos(1) = 5.d-4
+    p_eos(1) = 1.d6
     xn_eos(1,:) = 1.d-12
     xn_eos(1,ia) = 1.d0-1.d-12
 
@@ -57,6 +58,7 @@ contains
     INLET_RHO = den_eos(1)
     INLET_RHOH = den_eos(1)*h_eos(1)
     INLET_TEMP = temp_eos(1)
+    INLET_MACH = cs_eos(1)
 
     inlet_bc_initialized = .true.
 

@@ -29,6 +29,8 @@ contains
 
   subroutine setbc_2d(s,lo,hi,ng,bc,icomp)    
 
+    use geometry, only: dr_fine
+
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:)
     integer        , intent(in   ) :: bc(:,:)
@@ -36,6 +38,11 @@ contains
 
     !     Local variables
     integer :: i
+
+    real(kind=dp_t) :: A,B,x
+
+    A = 4.5d-2
+    B = 1.d2
 
     if (ng == 0) return
 
@@ -72,22 +79,29 @@ contains
        ! xvel
        if (icomp .eq. 1) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = 0.d0
        ! yvel
-       if (icomp .eq. 2) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = 1.d0
+       if (icomp .eq. 2) then
+          do i=lo(1)-ng,hi(1)+ng
+             x = (dble(i)+0.5d0)*dr_fine
+             ! inflow is Mach number 0.01 front with a Mach number 0.1 bump in the middle
+             s(i,lo(2)-ng:lo(2)-1) = &
+                  INLET_MACH*(1.d-2 + A*(tanh(B*(x-0.25d0)) + tanh(B*(0.75d0-x))))
+          end do
+       end if
        ! rho
        if (icomp .eq. 3) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHO
        ! rhoh
        if (icomp .eq. 4) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOH
        ! first species
-       if (icomp .eq. 5) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = ONE-1.d-12
+       if (icomp .eq. 5) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHO*(ONE-1.d-12)
        ! second species   
-       if (icomp .eq. 6) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = 1.d-12
+       if (icomp .eq. 6) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHO*1.d-12
        ! temperature
        if (icomp .eq. 7) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_TEMP
        ! tracer
        if (icomp .eq. 8) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = 0.d0
     else if (bc(2,1) .eq. FOEXTRAP) then
-       do i = lo(1)-ng,hi(1)+ng
-          s(i,hi(2)+1:hi(2)+ng) = s(i,hi(2))
+       do i=lo(1)-ng,hi(1)+ng
+          s(i,lo(2)-ng:lo(2)-1) = s(i,lo(2))
        end do
     else if (bc(2,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
@@ -100,11 +114,11 @@ contains
     ! upper Y
     !--------------------------------------------------------------------------
     if (bc(2,2) .eq. FOEXTRAP) then
-       do i = lo(1)-ng,hi(1)+ng
+       do i=lo(1)-ng,hi(1)+ng
           s(i,hi(2)+1:hi(2)+ng) = s(i,hi(2))
        end do
     else if (bc(2,2) .eq. HOEXTRAP) then
-       do i = lo(1)-ng,hi(1)+ng
+       do i=lo(1)-ng,hi(1)+ng
           s(i,hi(2)+1:hi(2)+ng) = &
                ( 15.d0 * s(i,hi(2)  ) &
                 -10.d0 * s(i,hi(2)-1) &

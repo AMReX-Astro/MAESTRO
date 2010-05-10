@@ -66,9 +66,9 @@ contains
     do r=0,nr(n)-1
 
        ! use the EOS to make the state consistent
-       temp_eos(1) = 1.d-8
-       den_eos(1)  = 1.d0
-       p_eos(1)    = 1.d0
+       temp_eos(1) = 10.d0
+       den_eos(1)  = 1.d-3
+       p_eos(1)    = 1.d6
        xn_eos(1,:) = 1.d-12
        xn_eos(1,ia) = 1.d0-1.d-12
 
