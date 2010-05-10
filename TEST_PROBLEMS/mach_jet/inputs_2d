@@ -1,5 +1,4 @@
 &PROBIN
- model_file = "model"
  spherical_in = 0
 
  max_levs = 1
