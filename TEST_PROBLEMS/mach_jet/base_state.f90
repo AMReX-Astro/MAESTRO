@@ -20,8 +20,7 @@ contains
     use eos_module
     use network, only: spec_names, network_species_index
     use probin_module, only: base_cutoff_density, anelastic_cutoff, &
-                             buoyancy_cutoff_factor, &
-                             small_temp, small_dens, grav_const
+                             buoyancy_cutoff_factor
 
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm
@@ -47,8 +46,6 @@ contains
     real(kind=dp_t) :: dpdr, rhog
     real(kind=dp_t) :: max_hse_error
 
-    real(kind=dp_t), parameter :: SMALL = 1.d-12
-
     call build(bpt, "init_base_state")
 
     if (spherical .eq. 1) then
@@ -72,8 +69,8 @@ contains
        temp_eos(1) = 1.d-8
        den_eos(1)  = 1.d0
        p_eos(1)    = 1.d0
-       xn_eos(1,:) = SMALL
-       xn_eos(1,ia) = ONE - (nspec-1)*SMALL
+       xn_eos(1,:) = 1.d-12
+       xn_eos(1,ia) = 1.d0-1.d-12
 
        ! (rho,p) --> T, h
        call eos(eos_input_rp, den_eos, temp_eos, &
