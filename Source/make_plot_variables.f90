@@ -193,6 +193,9 @@ contains
     ncell(:) = 0.d0
     pisum(:) = 0.d0
 
+    ncell_proc(:) = 0.d0
+    pisum_proc(:) = 0.d0
+
     ng_pn = pi(1)%ng
     ng_pc = pi_cc(1)%ng
 
@@ -237,6 +240,7 @@ contains
        
        source_buffer = ncell_proc(n)
        call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+
        ncell(n) = target_buffer
 
        source_buffer = pisum_proc(n)
