@@ -32,7 +32,7 @@
 
  bcx_lo = -1
  bcx_hi = -1
- bcy_lo = 14
+ bcy_lo = 11
  bcy_hi = 12
 
     verbose = 1

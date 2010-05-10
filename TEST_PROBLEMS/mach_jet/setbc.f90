@@ -23,6 +23,8 @@ contains
     integer        , intent(in   ) :: bc(:,:)
     integer        , intent(in   ) :: icomp
 
+    call bl_error("setbc_1d not written")
+
   end subroutine setbc_1d
 
   subroutine setbc_2d(s,lo,hi,ng,bc,icomp)    
@@ -35,7 +37,7 @@ contains
     !     Local variables
     integer :: i
 
-    if(ng == 0) return
+    if (ng == 0) return
 
     !-------------------------------------------------------------------------- 
     ! lower X                                                                  
@@ -83,10 +85,10 @@ contains
        if (icomp .eq. 7) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_TEMP
        ! tracer
        if (icomp .eq. 8) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = 0.d0
-
-
-       ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
-       s(:,lo(2)-ng:lo(2)-1) = 0.d0
+    else if (bc(2,1) .eq. FOEXTRAP) then
+       do i = lo(1)-ng,hi(1)+ng
+          s(i,hi(2)+1:hi(2)+ng) = s(i,hi(2))
+       end do
     else if (bc(2,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
@@ -123,6 +125,8 @@ contains
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     integer        , intent(in   ) :: bc(:,:)
     integer        , intent(in   ) :: icomp
+
+    call bl_error("setbc_3d not written")
 
   end subroutine setbc_3d
 
