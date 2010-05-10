@@ -312,8 +312,10 @@ contains
 
       end if
 
-      if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL) unew(-1) = ZERO
-      if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL) unew(nx) = ZERO
+      if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL .or. &
+          phys_bc(1,1)==SYMMETRY ) unew(-1) = ZERO
+      if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL .or. &
+          phys_bc(1,2)==SYMMETRY ) unew(nx) = ZERO
 
     end subroutine create_uvec_1d
 
@@ -369,10 +371,14 @@ contains
 
       end if
 
-      if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL) unew(-1,:,:) = ZERO
-      if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL) unew(nx,:,:) = ZERO
-      if (phys_bc(2,1)==SLIP_WALL .or. phys_bc(2,1)==NO_SLIP_WALL) unew(:,-1,:) = ZERO
-      if (phys_bc(2,2)==SLIP_WALL .or. phys_bc(2,2)==NO_SLIP_WALL) unew(:,ny,:) = ZERO
+      if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL .or. &
+          phys_bc(1,1)==SYMMETRY ) unew(-1,:,:) = ZERO
+      if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL .or. &
+          phys_bc(1,2)==SYMMETRY ) unew(nx,:,:) = ZERO
+      if (phys_bc(2,1)==SLIP_WALL .or. phys_bc(2,1)==NO_SLIP_WALL .or. &
+          phys_bc(2,1)==SYMMETRY ) unew(:,-1,:) = ZERO
+      if (phys_bc(2,2)==SLIP_WALL .or. phys_bc(2,2)==NO_SLIP_WALL .or. &
+          phys_bc(2,2)==SYMMETRY ) unew(:,ny,:) = ZERO
 
     end subroutine create_uvec_2d
 
@@ -443,12 +449,18 @@ contains
 
       end if
 
-      if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL) unew(-1,:,:,:) = ZERO
-      if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL) unew(nx,:,:,:) = ZERO
-      if (phys_bc(2,1)==SLIP_WALL .or. phys_bc(2,1)==NO_SLIP_WALL) unew(:,-1,:,:) = ZERO
-      if (phys_bc(2,2)==SLIP_WALL .or. phys_bc(2,2)==NO_SLIP_WALL) unew(:,ny,:,:) = ZERO
-      if (phys_bc(3,1)==SLIP_WALL .or. phys_bc(3,1)==NO_SLIP_WALL) unew(:,:,-1,:) = ZERO
-      if (phys_bc(3,2)==SLIP_WALL .or. phys_bc(3,2)==NO_SLIP_WALL) unew(:,:,nz,:) = ZERO
+      if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL .or. &
+          phys_bc(1,1)==SYMMETRY) unew(-1,:,:,:) = ZERO
+      if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL .or. &
+          phys_bc(1,2)==SYMMETRY) unew(nx,:,:,:) = ZERO
+      if (phys_bc(2,1)==SLIP_WALL .or. phys_bc(2,1)==NO_SLIP_WALL .or. &
+          phys_bc(2,1)==SYMMETRY) unew(:,-1,:,:) = ZERO
+      if (phys_bc(2,2)==SLIP_WALL .or. phys_bc(2,2)==NO_SLIP_WALL .or. &
+          phys_bc(2,2)==SYMMETRY) unew(:,ny,:,:) = ZERO
+      if (phys_bc(3,1)==SLIP_WALL .or. phys_bc(3,1)==NO_SLIP_WALL .or. &
+          phys_bc(3,1)==SYMMETRY) unew(:,:,-1,:) = ZERO
+      if (phys_bc(3,2)==SLIP_WALL .or. phys_bc(3,2)==NO_SLIP_WALL .or. &
+          phys_bc(3,2)==SYMMETRY) unew(:,:,nz,:) = ZERO
 
     end subroutine create_uvec_3d
 
