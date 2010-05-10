@@ -187,32 +187,33 @@ contains
           end do
        enddo
 
-    end if
 
-    ! fill ghostcells for delta_gamma1_term again, since it was just updated
-    if (nlevs .eq. 1) then
+       ! fill ghostcells for delta_gamma1_term again, since it was just updated
+       if (nlevs .eq. 1) then
 
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(delta_gamma1_term(nlevs))
+          ! fill ghost cells for two adjacent grids at the same level
+          ! this includes periodic domain boundary ghost cells
+          call multifab_fill_boundary(delta_gamma1_term(nlevs))
 
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(delta_gamma1_term(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
+          ! fill non-periodic domain boundary ghost cells
+          call multifab_physbc(delta_gamma1_term(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
 
-    else
+       else
 
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
+          ! the loop over nlevs must count backwards to make sure the finer grids are done first
+          do n=nlevs,2,-1
 
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(delta_gamma1_term(n-1),delta_gamma1_term(n), &
-                                 mla%mba%rr(n-1,:))
+             ! set level n-1 data to be the average of the level n data covering it
+             call ml_cc_restriction(delta_gamma1_term(n-1),delta_gamma1_term(n), &
+                                    mla%mba%rr(n-1,:))
 
-          call multifab_fill_ghost_cells(delta_gamma1_term(n),delta_gamma1_term(n-1), &
-                                         ng_dt,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1), the_bc_level(n), &
-                                         1,foextrap_comp,1,fill_crse_input=.false.)
-       enddo
+             call multifab_fill_ghost_cells(delta_gamma1_term(n),delta_gamma1_term(n-1), &
+                                            ng_dt,mla%mba%rr(n-1,:), &
+                                            the_bc_level(n-1), the_bc_level(n), &
+                                            1,foextrap_comp,1,fill_crse_input=.false.)
+          enddo
+
+       end if
 
     end if
 
