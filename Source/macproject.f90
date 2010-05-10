@@ -109,25 +109,25 @@ contains
     ! Print the norm of each component separately
     if (verbose .eq. 1) then
        do n = 1,nlevs
-          umin = multifab_max(umac(n,1))
-          umax = multifab_min(umac(n,1))
+          umax = multifab_max(umac(n,1))
+          umin = multifab_min(umac(n,1))
           if (dm.eq.1) then
              if (parallel_IOProcessor()) then
                  write(6,1001) n, umax
                  write(6,1101) n, umin
              end if
           else if (dm.eq.2) then
-             vmin = multifab_max(umac(n,2))
-             vmax = multifab_min(umac(n,2))
+             vmax = multifab_max(umac(n,2))
+             vmin = multifab_min(umac(n,2))
              if (parallel_IOProcessor()) then
                  write(6,1002) n, umax, vmax
                  write(6,1102) n, umin, vmin
              end if
           else if (dm.eq.3) then
-             vmin = multifab_max(umac(n,2))
-             vmax = multifab_min(umac(n,2))
-             wmin = multifab_max(umac(n,3))
-             wmax = multifab_min(umac(n,3))
+             vmax = multifab_max(umac(n,2))
+             vmin = multifab_min(umac(n,2))
+             wmax = multifab_max(umac(n,3))
+             wmin = multifab_min(umac(n,3))
              if (parallel_IOProcessor()) then
                  write(6,1003) n, umax, vmax, wmax
                  write(6,1103) n, umin, vmin, wmin
