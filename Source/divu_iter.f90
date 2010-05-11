@@ -179,12 +179,12 @@ contains
     end do
 
     if (spherical .eq. 1) then
-       if (istep_divu_iter .eq. 1) then
-          eps_divu = 1.d-6
-       else if (istep_divu_iter .eq. 2) then
-          eps_divu = 1.d-8
-       else 
+       if (istep_divu_iter .eq. init_divu_iter) then
           eps_divu = 1.d-10
+       else if (istep_divu_iter .eq. init_divu_iter-1) then
+          eps_divu = 1.d-8
+       else if (istep_divu_iter .le. init_divu_iter-2) then
+          eps_divu = 1.d-6
        end if
     else
        eps_divu = 1.d-12
