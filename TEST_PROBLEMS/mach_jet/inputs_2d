@@ -9,8 +9,8 @@
  prob_hi_x = 1.0
  prob_hi_y = 1.0
 
- anelastic_cutoff = 1.d-4
- base_cutoff_density = 1.d-4
+ anelastic_cutoff = 1.d-10
+ base_cutoff_density = 1.d-10
 
  grav_const = 0.0
 

@@ -27,13 +27,6 @@ contains
 
   subroutine set_inlet_bcs()
 
-    ! local
-    integer ia, ib
-
-    ! set the compositions
-    ia = network_species_index("A")
-    ib = network_species_index("B")
-
     ! here we would initialize the parameters that are module variables.
     ! this routine is called when the base state is defined initially,
     ! and upon restart, just after the base state is read in.
@@ -41,8 +34,7 @@ contains
     temp_eos(1) = 10.d0
     den_eos(1) = 5.d-4
     p_eos(1) = 1.d6
-    xn_eos(1,:) = 1.d-12
-    xn_eos(1,ia) = 1.d0-1.d-12
+    xn_eos(1,:) = 1.d0
 
     call eos(eos_input_rp, den_eos, temp_eos, &
              npts, &

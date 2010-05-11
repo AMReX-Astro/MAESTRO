@@ -153,10 +153,8 @@ contains
           s(i,j,rho_comp)  = s0_init(j,rho_comp)
           s(i,j,rhoh_comp) = s0_init(j,rhoh_comp)
           s(i,j,temp_comp) = s0_init(j,temp_comp)
-          s(i,j,spec_comp:spec_comp+nspec-1) = &
-               s0_init(j,spec_comp:spec_comp+nspec-1)
-          s(i,j,trac_comp:trac_comp+ntrac-1) = &
-               s0_init(j,trac_comp:trac_comp+ntrac-1)
+          s(i,j,spec_comp) = s0_init(j,spec_comp)
+          s(i,j,trac_comp) = s0_init(j,trac_comp)
        enddo
     enddo
     

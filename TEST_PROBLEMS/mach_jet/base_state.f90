@@ -34,12 +34,9 @@ contains
 
     ! local
     integer         :: r
-    real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
+    real(kind=dp_t) :: d_ambient,t_ambient,p_ambient
 
-    real(kind=dp_t) :: xn_temp(nspec)
-    integer :: ia, ib
-
-    real(kind=dp_t) :: min_dens, max_dens, min_temp, max_temp
+    real(kind=dp_t) :: max_dens, min_temp, max_temp
 
     type(bl_prof_timer), save :: bpt
     
@@ -49,18 +46,14 @@ contains
     call build(bpt, "init_base_state")
 
     if (spherical .eq. 1) then
-       call bl_error("ERROR: Mach jet base_state is not valid for spherical")
+       call bl_error("ERROR: base_state.f90 is not valid for spherical")
     endif
 
-    min_dens = 1.d0
+    min_dens = 1.d-4
 
     if (anelastic_cutoff > min_dens .or. base_cutoff_density > min_dens) then
        call bl_error("ERROR: cutoff densitiy > min(rho)")
     endif
-
-    ! set the compositions
-    ia = network_species_index("A")
-    ib = network_species_index("B")
 
     ! fill the base state arrays
     do r=0,nr(n)-1
@@ -69,8 +62,7 @@ contains
        temp_eos(1) = 10.d0
        den_eos(1)  = 1.d-3
        p_eos(1)    = 1.d6
-       xn_eos(1,:) = 1.d-12
-       xn_eos(1,ia) = 1.d0-1.d-12
+       xn_eos(1,:) = 1.d0
 
        ! (rho,p) --> T, h
        call eos(eos_input_rp, den_eos, temp_eos, &
@@ -86,13 +78,11 @@ contains
 
        s0_init(r, rho_comp) = den_eos(1)
        s0_init(r,rhoh_comp) = den_eos(1)*h_eos(1)
-       s0_init(r,spec_comp:spec_comp+nspec-1) = den_eos(1) * xn_eos(1,:)
+       s0_init(r,spec_comp) = den_eos(1)
        s0_init(r,temp_comp) = temp_eos(1)
-       p0_init(r) = p_eos(1)
+       s0_init(r,trac_comp) = ZERO
 
-       if (ntrac .gt. 0) then
-          s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
-       end if
+       p0_init(r) = p_eos(1)
 
     end do
 

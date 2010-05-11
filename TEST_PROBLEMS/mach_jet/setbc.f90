@@ -91,14 +91,12 @@ contains
        if (icomp .eq. 3) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHO
        ! rhoh
        if (icomp .eq. 4) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOH
-       ! first species
-       if (icomp .eq. 5) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHO*(ONE-1.d-12)
-       ! second species   
-       if (icomp .eq. 6) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHO*1.d-12
+       ! species
+       if (icomp .eq. 5) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHO
        ! temperature
-       if (icomp .eq. 7) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_TEMP
+       if (icomp .eq. 6) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_TEMP
        ! tracer
-       if (icomp .eq. 8) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = 0.d0
+       if (icomp .eq. 7) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = 0.d0
     else if (bc(2,1) .eq. FOEXTRAP) then
        do i=lo(1)-ng,hi(1)+ng
           s(i,lo(2)-ng:lo(2)-1) = s(i,lo(2))

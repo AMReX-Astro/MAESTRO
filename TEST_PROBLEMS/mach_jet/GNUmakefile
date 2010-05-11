@@ -25,7 +25,7 @@ Fmdirs := boxlib \
           extern/EOS/gamma_law_general \
           extern/EOS/conducteos \
           extern/constants \
-          extern/networks/simple \
+          extern/networks/gammalaw \
           extern/VODE
 
 # directories containing files that are 'include'-d via Fortran
