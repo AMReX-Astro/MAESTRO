@@ -306,6 +306,7 @@ contains
   subroutine initveldata_3d_sphr(u,lo,hi,ng,dx,s0_init,p0_init, &
                                  alpha,beta,gamma,phix,phiy,phiz,normk)
 
+    use geometry, only: center
     use probin_module, only: prob_lo, prob_hi, &
          velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
 
@@ -348,11 +349,9 @@ contains
     u = ZERO
 
     ! define where center of star is
-    ! this currently assumes the star center is at prob_lo
-    ! CEG :: maybe should use center here??
-    xc(1) = prob_lo(1)
-    xc(2) = prob_lo(2)
-    xc(3) = prob_lo(3)
+    xc(1) = center(1)
+    xc(2) = center(2)
+    xc(3) = center(3)
 
     ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
@@ -414,7 +413,10 @@ contains
 
              ! apply the cutoff function to the perturbational velocity
              do i=1,3
-                upert(i) = velpert_amplitude*upert(i) &
+!                upert(i) = velpert_amplitude*upert(i) &
+!                     *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
+! CEG FIXME!!! 
+                upert(i) = velpert_amplitude &
                      *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
              enddo
 

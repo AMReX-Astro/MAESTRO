@@ -6,25 +6,25 @@
  n_cellx = 64
  n_celly = 64
  n_cellz = 64
- max_grid_size = 32
+ max_grid_size = 64
 
- anelastic_cutoff = 5.d-2
- base_cutoff_density = 5.d-2
+ anelastic_cutoff = 1.d-1
+ base_cutoff_density = 1.d-1
  sponge_center_density = 1.d-1
  sponge_start_factor = 1.5d0
  sponge_kappa = 5.0d0
 
  spherical_in = 1
- octant = .true.
+ octant = .false.
 
  dm_in = 3
  do_sponge = .true.
 
- prob_hi_x = 2.25d11
- prob_hi_y = 2.25d11
- prob_hi_z = 2.25d11
+ prob_hi_x = 4.5d11
+ prob_hi_y = 4.5d11
+ prob_hi_z = 4.5d11
 
- max_step  = 10
+ max_step  = 0
  init_iter = 1
 
  stop_time = 30000.
@@ -39,9 +39,9 @@
  use_soundspeed_firstdt = T
  use_divu_firstdt = T
 
- bcx_lo = 13
- bcy_lo = 13
- bcz_lo = 13
+ bcx_lo = 12
+ bcy_lo = 12
+ bcz_lo = 12
 
  bcx_hi = 12
  bcy_hi = 12
@@ -57,12 +57,12 @@
  velpert_amplitude = .75d5
  velpert_radius = 8.2d10
  velpert_scale = 9.d10
- velpert_steep = 1.d5
+ velpert_steep = 1.d10
 
  do_burning = F
 
  enthalpy_pred_type = 1
- evolve_base_state = T
+ evolve_base_state = F
 
  dpdt_factor = 0.0d0
 
