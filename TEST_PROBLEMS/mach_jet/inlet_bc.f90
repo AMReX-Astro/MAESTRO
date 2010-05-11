@@ -21,9 +21,6 @@ module inlet_bc_module
   real(dp_t), save :: INLET_TEMP
   real(dp_t), save :: INLET_CS
 
-  real(dp_t), save :: INLET_RHOPERT
-  real(dp_t), save :: INLET_RHOHPERT
-
   logical, save :: inlet_bc_initialized = .false.
 
 contains

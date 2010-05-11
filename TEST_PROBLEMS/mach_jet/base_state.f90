@@ -78,9 +78,6 @@ contains
 
     call set_inlet_bcs()
 
-    INLET_RHOPERT = INLET_RHO - den_eos(1)
-    INLET_RHOHPERT = INLET_RHOH - den_eos(1)*h_eos(1)
-
     call destroy(bpt)
 
   end subroutine init_base_state
