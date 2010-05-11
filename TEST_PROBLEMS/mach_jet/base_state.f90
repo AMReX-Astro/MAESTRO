@@ -34,14 +34,9 @@ contains
 
     ! local
     integer         :: r
-    real(kind=dp_t) :: d_ambient,t_ambient,p_ambient
-
-    real(kind=dp_t) :: max_dens, min_temp, max_temp
+    real(kind=dp_t) :: min_dens
 
     type(bl_prof_timer), save :: bpt
-    
-    real(kind=dp_t) :: dpdr, rhog
-    real(kind=dp_t) :: max_hse_error
 
     call build(bpt, "init_base_state")
 
