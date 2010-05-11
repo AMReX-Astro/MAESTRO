@@ -245,6 +245,7 @@ contains
 
     do n=1,nlevs
        call multifab_sub_sub_c(s(n),comp,base_3d(n),1,1,ng)
+       call multifab_destroy(base_3d(n))
     end do
 
     call destroy(bpt)
