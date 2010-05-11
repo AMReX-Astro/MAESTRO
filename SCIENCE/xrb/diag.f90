@@ -6,6 +6,7 @@
 !        peak nuclear energy generation rate (erg / g / s)
 !        x/y/z location of peak 
 !        total mass of C12
+!        total mass of O16 (if using the triple_alpha_plus_cago network
 !
 !    xrb_temp_diag.out:
 !        peak temperature in the helium layer
@@ -28,6 +29,7 @@ module diag_module
   use multifab_module
   use ml_layout_module
   use define_bc_module
+  use network, only: network_species_index
 
   implicit none
 
@@ -84,6 +86,8 @@ contains
 
     real(kind=dp_t) :: total_c12_mass, total_c12_mass_level, &
                        total_c12_mass_local
+    real(kind=dp_t) :: total_o16_mass, total_o16_mass_level, &
+                       total_o16_mass_local
 
     real(kind=dp_t) :: vel_max, vel_max_level, vel_max_local
     real(kind=dp_t) :: coord_vel_max(dm), coord_vel_max_level(dm), &
@@ -100,7 +104,7 @@ contains
     real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(dm)
     real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
 
-    real(kind=dp_t) :: mass_sum_data_level(1), mass_sum_data_local(1)
+    real(kind=dp_t) :: mass_sum_data_level(2), mass_sum_data_local(2)
 
     real(kind=dp_t) :: vel_max_data_local(1), vel_max_coords_local(dm)
     real(kind=dp_t), allocatable :: vel_max_data(:), vel_max_coords(:)
@@ -117,7 +121,13 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
+    logical, save :: network_contains_oxygen = .false.
+
     call build(bpt, "diagnostics")
+
+    ! find out if we are using the triple_alpha_plus_cago network
+    if (firstCall .and. network_species_index("oxygen-16") .ne. -1) &
+         network_contains_oxygen = .true.
 
     ng_s = s(1)%ng
     ng_u = u(1)%ng
@@ -134,6 +144,10 @@ contains
     coord_enuc_max(:) = ZERO
 
     total_c12_mass = ZERO
+
+    if (network_contains_oxygen) then
+       total_o16_mass = ZERO
+    endif
 
     vel_max          = ZERO
     coord_vel_max(:) = ZERO
@@ -159,6 +173,11 @@ contains
        
        total_c12_mass_local = ZERO
        total_c12_mass_level = ZERO
+
+       if (network_contains_oxygen) then
+          total_o16_mass_local = ZERO
+          total_o16_mass_level = ZERO
+       endif
        
        vel_max_local = ZERO
        vel_max_level = ZERO
@@ -171,6 +190,7 @@ contains
 
        coord_Machno_max_level(:) = ZERO
        coord_Machno_max_local(:) = ZERO
+
 
        ! loop over the boxes at the current level
        do i = 1, s(n)%nboxes
@@ -189,98 +209,206 @@ contains
           case (2)
              ! only do those boxes that aren't masked
              if (n .eq. nlevs) then
+
+                if (network_contains_oxygen) then
                 
-                call diag_2d(n,time,dt,dx(n,:), &
-                             sp(:,:,1,:),ng_s, &
-                             rhnp(:,:,1,1),ng_rhn, &
-                             rhep(:,:,1,1),ng_rhe, &
-                             rho0(n,:),rhoh0(n,:), &
-                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                             up(:,:,1,:),ng_u, &
-                             w0(n,:), &
-                             lo,hi, &
-                             T_max_local, &
-                             coord_T_max_local, &
-                             enuc_max_local, &
-                             coord_enuc_max_local, &
-                             total_c12_mass_local, &
-                             vel_max_local, &
-                             coord_vel_max_local, &
-                             Machno_max_local, &
-                             coord_Machno_max_local)
+                   call diag_2d(n,time,dt,dx(n,:), &
+                                sp(:,:,1,:),ng_s, &
+                                rhnp(:,:,1,1),ng_rhn, &
+                                rhep(:,:,1,1),ng_rhe, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,1,:),ng_u, &
+                                w0(n,:), &
+                                lo,hi, &
+                                T_max_local, &
+                                coord_T_max_local, &
+                                enuc_max_local, &
+                                coord_enuc_max_local, &
+                                total_c12_mass_local, &
+                                vel_max_local, &
+                                coord_vel_max_local, &
+                                Machno_max_local, &
+                                coord_Machno_max_local, &
+                                o16_mass=total_o16_mass_local)
+
+                else
+
+                   call diag_2d(n,time,dt,dx(n,:), &
+                                sp(:,:,1,:),ng_s, &
+                                rhnp(:,:,1,1),ng_rhn, &
+                                rhep(:,:,1,1),ng_rhe, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,1,:),ng_u, &
+                                w0(n,:), &
+                                lo,hi, &
+                                T_max_local, &
+                                coord_T_max_local, &
+                                enuc_max_local, &
+                                coord_enuc_max_local, &
+                                total_c12_mass_local, &
+                                vel_max_local, &
+                                coord_vel_max_local, &
+                                Machno_max_local, &
+                                coord_Machno_max_local)
+                endif
 
              else
                 mp => dataptr(mla%mask(n),i)
-                call diag_2d(n,time,dt,dx(n,:), &
-                             sp(:,:,1,:),ng_s, &
-                             rhnp(:,:,1,1),ng_rhn, &
-                             rhep(:,:,1,1),ng_rhe, &
-                             rho0(n,:),rhoh0(n,:), &
-                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                             up(:,:,1,:),ng_u, &
-                             w0(n,:), &
-                             lo,hi, &
-                             T_max_local, &
-                             coord_T_max_local, &
-                             enuc_max_local, &
-                             coord_enuc_max_local, &
-                             total_c12_mass_local, &
-                             vel_max_local, &
-                             coord_vel_max_local, &
-                             Machno_max_local, &
-                             coord_Machno_max_local, &
-                             mp(:,:,1,1))
+
+                if (network_contains_oxygen) then
+
+                   call diag_2d(n,time,dt,dx(n,:), &
+                                sp(:,:,1,:),ng_s, &
+                                rhnp(:,:,1,1),ng_rhn, &
+                                rhep(:,:,1,1),ng_rhe, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,1,:),ng_u, &
+                                w0(n,:), &
+                                lo,hi, &
+                                T_max_local, &
+                                coord_T_max_local, &
+                                enuc_max_local, &
+                                coord_enuc_max_local, &
+                                total_c12_mass_local, &
+                                vel_max_local, &
+                                coord_vel_max_local, &
+                                Machno_max_local, &
+                                coord_Machno_max_local, &
+                                o16_mass=total_o16_mass_local, &
+                                mask=mp(:,:,1,1))
+
+                else
+
+                   call diag_2d(n,time,dt,dx(n,:), &
+                                sp(:,:,1,:),ng_s, &
+                                rhnp(:,:,1,1),ng_rhn, &
+                                rhep(:,:,1,1),ng_rhe, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,1,:),ng_u, &
+                                w0(n,:), &
+                                lo,hi, &
+                                T_max_local, &
+                                coord_T_max_local, &
+                                enuc_max_local, &
+                                coord_enuc_max_local, &
+                                total_c12_mass_local, &
+                                vel_max_local, &
+                                coord_vel_max_local, &
+                                Machno_max_local, &
+                                coord_Machno_max_local, &
+                                mask=mp(:,:,1,1))
+                endif
              endif
           case (3)
              ! only do those boxes that aren't masked
              if (n .eq. nlevs) then
 
-                call diag_3d(n,time,dt,dx(n,:), &
-                             sp(:,:,:,:),ng_s, &
-                             rhnp(:,:,:,1),ng_rhn, &
-                             rhep(:,:,:,1),ng_rhe, &
-                             rho0(n,:),rhoh0(n,:), &
-                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                             up(:,:,:,:),ng_u, &
-                             w0(n,:), &
-                             lo,hi, &
-                             T_max_local, &
-                             coord_T_max_local, &
-                             enuc_max_local, &
-                             coord_enuc_max_local, &
-                             total_c12_mass_local, &
-                             vel_max_local, &
-                             coord_vel_max_local, &
-                             Machno_max_local, &
-                             coord_Machno_max_local)
+                if (network_contains_oxygen) then
+
+                   call diag_3d(n,time,dt,dx(n,:), &
+                                sp(:,:,:,:),ng_s, &
+                                rhnp(:,:,:,1),ng_rhn, &
+                                rhep(:,:,:,1),ng_rhe, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,:,:),ng_u, &
+                                w0(n,:), &
+                                lo,hi, &
+                                T_max_local, &
+                                coord_T_max_local, &
+                                enuc_max_local, &
+                                coord_enuc_max_local, &
+                                total_c12_mass_local, &
+                                vel_max_local, &
+                                coord_vel_max_local, &
+                                Machno_max_local, &
+                                coord_Machno_max_local, &
+                                o16_mass=total_o16_mass_local)
+
+                else
+
+                   call diag_3d(n,time,dt,dx(n,:), &
+                                sp(:,:,:,:),ng_s, &
+                                rhnp(:,:,:,1),ng_rhn, &
+                                rhep(:,:,:,1),ng_rhe, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,:,:),ng_u, &
+                                w0(n,:), &
+                                lo,hi, &
+                                T_max_local, &
+                                coord_T_max_local, &
+                                enuc_max_local, &
+                                coord_enuc_max_local, &
+                                total_c12_mass_local, &
+                                vel_max_local, &
+                                coord_vel_max_local, &
+                                Machno_max_local, &
+                                coord_Machno_max_local)
+
+                endif
 
              else
                 mp => dataptr(mla%mask(n),i)
-                call diag_3d(n,time,dt,dx(n,:), &
-                             sp(:,:,:,:),ng_s, &
-                             rhnp(:,:,:,1),ng_rhn, &
-                             rhep(:,:,:,1),ng_rhe, &
-                             rho0(n,:),rhoh0(n,:), &
-                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                             up(:,:,:,:),ng_u, &
-                             w0(n,:), &
-                             lo,hi, &
-                             T_max_local, &
-                             coord_T_max_local, &
-                             enuc_max_local, &
-                             coord_enuc_max_local, &
-                             total_c12_mass_local, &
-                             vel_max_local, &
-                             coord_vel_max_local, &
-                             Machno_max_local, &
-                             coord_Machno_max_local, &
-                             mp(:,:,:,1))
+
+                if (network_contains_oxygen) then
+
+                   call diag_3d(n,time,dt,dx(n,:), &
+                                sp(:,:,:,:),ng_s, &
+                                rhnp(:,:,:,1),ng_rhn, &
+                                rhep(:,:,:,1),ng_rhe, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,:,:),ng_u, &
+                                w0(n,:), &
+                                lo,hi, &
+                                T_max_local, &
+                                coord_T_max_local, &
+                                enuc_max_local, &
+                                coord_enuc_max_local, &
+                                total_c12_mass_local, &
+                                vel_max_local, &
+                                coord_vel_max_local, &
+                                Machno_max_local, &
+                                coord_Machno_max_local, &
+                                o16_mass=total_o16_mass_local, &
+                                mask=mp(:,:,:,1))
+
+                else
+                   
+                   call diag_3d(n,time,dt,dx(n,:), &
+                                sp(:,:,:,:),ng_s, &
+                                rhnp(:,:,:,1),ng_rhn, &
+                                rhep(:,:,:,1),ng_rhe, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,:,:),ng_u, &
+                                w0(n,:), &
+                                lo,hi, &
+                                T_max_local, &
+                                coord_T_max_local, &
+                                enuc_max_local, &
+                                coord_enuc_max_local, &
+                                total_c12_mass_local, &
+                                vel_max_local, &
+                                coord_vel_max_local, &
+                                Machno_max_local, &
+                                coord_Machno_max_local, &
+                                mask=mp(:,:,:,1))
+
+                endif
+
              endif
+
           end select
+
        end do
 
        ! build the level data
-       
        ! get the maximum temperature and its location
        ! gather all the T_max data into an array; find the index of the maximum
        allocate(T_max_data(parallel_nprocs()))
@@ -330,13 +458,17 @@ contains
 
        deallocate(enuc_max_data, enuc_max_coords)
 
-       ! get the total c12 mass
+       ! get the total c12 and o16 masses
        mass_sum_data_local(1) = total_c12_mass_local
+       if (network_contains_oxygen) &
+            mass_sum_data_local(2) = total_o16_mass_local
 
        call parallel_reduce(mass_sum_data_level, mass_sum_data_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
        
        total_c12_mass_level = mass_sum_data_level(1)
+       if (network_contains_oxygen) &
+            total_o16_mass_level = mass_sum_data_level(2)
 
        ! get the maximum of vel and its location
        allocate(vel_max_data(parallel_nprocs()))
@@ -402,6 +534,8 @@ contains
           endif
 
           total_c12_mass = total_c12_mass + total_c12_mass_level
+          if (network_contains_oxygen) &
+               total_o16_mass = total_o16_mass + total_o16_mass_level
 
           if (vel_max_level > vel_max) then
              vel_max = vel_max_level
@@ -424,7 +558,17 @@ contains
     ! normalize the mass
     ! we weight things in the loop over zones by the coarse level resolution
     total_c12_mass = total_c12_mass * dx(1,1) * dx(1,2)
-    if (dm>2) total_c12_mass = total_c12_mass * dx(1,3)
+
+    if (network_contains_oxygen) &
+         total_o16_mass = total_o16_mass * dx(1,1) * dx(1,2)
+
+    if (dm>2) then
+       total_c12_mass = total_c12_mass * dx(1,3)
+
+       if (network_contains_oxygen) &
+            total_o16_mass = total_o16_mass * dx(1,3)
+
+    endif
 
 1000 format(1x,10(g20.10,1x))
 1001 format("#",10(a18,1x))
@@ -462,15 +606,33 @@ contains
 
        ! print the headers
        if(firstCall) then
+          
           if (dm > 2) then
              write(un , 1001) "time", "max{T}", "x_loc", "y_loc", "z_loc"
-             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc", "z_loc", &
-                  "mass_c12"
+
+             if (network_contains_oxygen) then
+                write(un2, 1001) "time", "max{enuc}", &
+                                 "x_loc", "y_loc", "z_loc", &
+                                 "mass_c12", "mass_o16"
+             else
+                write(un2, 1001) "time", "max{enuc}", &
+                                 "x_loc", "y_loc", "z_loc", &
+                                 "mass_c12"
+             endif
+                
              write(un3, 1001) "time", "max{vel}", "x_loc", "y_loc", "z_loc", &
                   "max{Machno}", "x_loc", "y_loc", "z_loc"
           else
              write(un , 1001) "time", "max{T}", "x_loc", "y_loc"
-             write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc", "mass_c12"
+             
+             if (network_contains_oxygen) then
+                write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc", &
+                                 "mass_c12", "mass_o16"
+             else
+                write(un2, 1001) "time", "max{enuc}", "x_loc", "y_loc", &
+                                 "mass_c12"
+             endif
+
              write(un3, 1001) "time", "max{vel}", "x_loc", "y_loc", &
                   "max{Machno}", "x_loc", "y_loc"
           endif
@@ -480,8 +642,15 @@ contains
 
        ! print the data
        write(un,  1000) time, T_max, (coord_T_max(i), i=1,dm)
-       write(un2, 1000) time, enuc_max, (coord_enuc_max(i), i=1,dm), &
-            total_c12_mass
+
+       if (network_contains_oxygen) then
+          write(un2, 1000) time, enuc_max, (coord_enuc_max(i), i=1,dm), &
+                           total_c12_mass, total_o16_mass
+       else
+          write(un2, 1000) time, enuc_max, (coord_enuc_max(i), i=1,dm), &
+                           total_c12_mass
+       endif
+
        write(un3, 1000) time, vel_max, (coord_vel_max(i), i=1,dm), &
             Machno_max, (coord_Machno_max(i), i=1,dm)
 
@@ -521,6 +690,7 @@ contains
                      coord_vel_max, &
                      Machno_max, &
                      coord_Machno_max, &
+                     o16_mass, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
@@ -543,6 +713,7 @@ contains
     real (kind=dp_t), intent(inout) :: c12_mass
     real (kind=dp_t), intent(inout) :: vel_max, Machno_max
     real (kind=dp_t), intent(inout) :: coord_vel_max(2), coord_Machno_max(2)
+    real (kind=dp_t), intent(inout), optional :: o16_mass
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
     !     Local variables
@@ -603,6 +774,10 @@ contains
              ! c12 mass diagnostic
              c12_mass = c12_mass + weight*s(i,j,spec_comp+1)
 
+             ! o16 mass diagnostic
+             if (present(o16_mass)) &
+                  o16_mass = o16_mass + weight*s(i,j,spec_comp+2)
+
              ! vel diagnostic
              vel = sqrt(u(i,j,1)**2 + (u(i,j,2) + w0_cent)**2)
              if (vel > vel_max) then
@@ -662,6 +837,7 @@ contains
                      coord_vel_max, &
                      Machno_max, &
                      coord_Machno_max, &
+                     o16_mass, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
@@ -684,6 +860,7 @@ contains
     real (kind=dp_t), intent(inout) :: c12_mass
     real (kind=dp_t), intent(inout) :: vel_max, Machno_max
     real (kind=dp_t), intent(inout) :: coord_vel_max(3), coord_Machno_max(3)
+    real (kind=dp_t), intent(inout), optional :: o16_mass
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
@@ -748,6 +925,10 @@ contains
 
                 ! c12 mass diagnostic
                 c12_mass = c12_mass + weight*s(i,j,k,spec_comp+1)
+
+                ! o16 mass diagnostic
+                if (present(o16_mass)) &
+                     o16_mass = o16_mass + weight*s(i,j,k,spec_comp+2)
 
                 ! vel diagnostic
                 vel = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + &
