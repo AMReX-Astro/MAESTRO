@@ -14,6 +14,8 @@ module init_module
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
+! CEG FIXME remove me
+  use fabio_module
 
   implicit none
 
@@ -265,6 +267,8 @@ contains
     
     enddo
 
+    call fabio_multifab_write_d(u(1),'.','vin')
+
     if (nlevs .eq. 1) then
 
        ! fill ghost cells for two adjacent grids at the same level
@@ -345,6 +349,8 @@ contains
     ! perturbational velocity to add
     real(kind=dp_t) :: upert(3)
 
+    real(kind=dp_t) :: theta,phi
+
     ! initialize the velocity to zero everywhere
     u = ZERO
 
@@ -373,50 +379,56 @@ contains
              enddo
              rloc = sqrt(rloc)
 
-             ! loop over the 27 combinations of fourier components
-             do i=1,3
-                do j=1,3
-                   do k=1,3
-                      ! compute cosines and sines
-                      cx(i,j,k) = cos(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
-                      cy(i,j,k) = cos(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
-                      cz(i,j,k) = cos(2.0d0*M_PI*dble(k)*xloc(3)/velpert_scale + phiz(i,j,k))
-                      sx(i,j,k) = sin(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
-                      sy(i,j,k) = sin(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
-                      sz(i,j,k) = sin(2.0d0*M_PI*dble(k)*xloc(3)/velpert_scale + phiz(i,j,k))
-                   enddo
-                enddo
-             enddo
+             theta = (xloc(3)-xc(3))/rloc
+             theta = dacos(theta)
+             phi = datan2((xloc(2)-xc(2)),(xloc(1)-xc(1)))
 
              ! loop over the 27 combinations of fourier components
-             do i=1,3
-                do j=1,3
-                   do k=1,3
-                      ! compute contribution from perturbation velocity from each mode
-                      upert(1) = upert(1) + &
-                           (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
-                             +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
-                            / normk(i,j,k)
+!              do i=1,3
+!                 do j=1,3
+!                    do k=1,3
+!                       ! compute cosines and sines
+!                       cx(i,j,k) = cos(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
+!                       cy(i,j,k) = cos(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
+!                       cz(i,j,k) = cos(2.0d0*M_PI*dble(k)*xloc(3)/velpert_scale + phiz(i,j,k))
+!                       sx(i,j,k) = sin(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
+!                       sy(i,j,k) = sin(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
+!                       sz(i,j,k) = sin(2.0d0*M_PI*dble(k)*xloc(3)/velpert_scale + phiz(i,j,k))
+!                    enddo
+!                 enddo
+!              enddo
 
-                      upert(2) = upert(2) + &
-                           (gamma(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
-                           -alpha(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
-                            / normk(i,j,k)
+!              ! loop over the 27 combinations of fourier components
+!              do i=1,3
+!                 do j=1,3
+!                    do k=1,3
+!                       ! compute contribution from perturbation velocity from each mode
+!                       upert(1) = upert(1) + &
+!                            (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
+!                              +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
+!                             / normk(i,j,k)
 
-                      upert(3) = upert(3) + &
-                           ( -beta(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
-                            +alpha(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k)) &
-                            / normk(i,j,k)
-                   enddo
-                enddo
-             enddo
+!                       upert(2) = upert(2) + &
+!                            (gamma(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
+!                            -alpha(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
+!                             / normk(i,j,k)
+
+!                       upert(3) = upert(3) + &
+!                            ( -beta(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
+!                             +alpha(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k)) &
+!                             / normk(i,j,k)
+!                    enddo
+!                 enddo
+!              enddo
+
+                upert(1) = velpert_amplitude * dsin(theta) * dcos(phi) 
+                upert(2) = velpert_amplitude * dsin(theta) * dsin(phi) 
+                upert(3) = velpert_amplitude * dcos(theta)
 
              ! apply the cutoff function to the perturbational velocity
              do i=1,3
-!                upert(i) = velpert_amplitude*upert(i) &
-!                     *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
-! CEG FIXME!!! 
-                upert(i) = velpert_amplitude &
+!                upert(i) = velpert_amplitude *upert(i) &
+                upert(i) = upert(i) &
                      *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
              enddo
 
@@ -428,7 +440,7 @@ contains
           enddo
        enddo
     enddo
-      
+     
   end subroutine initveldata_3d_sphr
 
 end module init_module
