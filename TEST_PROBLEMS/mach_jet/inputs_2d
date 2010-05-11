@@ -12,6 +12,8 @@
  anelastic_cutoff = 1.d-10
  base_cutoff_density = 1.d-10
 
+ evolve_base_state = F
+
  grav_const = 0.0
 
  max_step  = 500
