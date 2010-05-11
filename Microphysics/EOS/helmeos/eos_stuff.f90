@@ -51,6 +51,7 @@ module eos_module
   integer, parameter :: eos_input_tp = 3   ! temperature, pressure are inputs
   integer, parameter :: eos_input_rp = 4   ! density, pressure are inputs
   integer, parameter :: eos_input_re = 5   ! density, internal energy are inputs
+  integer, parameter :: eos_input_ps = 6   ! pressure, entropy are inputs
  
 
   logical, save, private :: do_coulomb
@@ -340,6 +341,41 @@ contains
 
   end subroutine eos_given_TPX
 
+  subroutine eos_given_PSX(S, P, X, e, R, T, pt_index)
+    
+    ! In/out variables
+    real(kind=dp_t), intent(  out) :: e, R, T
+    real(kind=dp_T), intent(in   ) :: S, P, X(:)
+    integer, optional, intent(in  ) :: pt_index(:)
+
+    ! Local variables
+    logical :: do_diag
+
+    do_diag = .false.
+
+    s_eos(1)    = S
+    p_eos(1)    = P
+    den_eos(1)  = R
+    temp_eos(1) = T
+    xn_eos(1,1:nspec) = X(1:nspec)
+
+    call eos(eos_input_ps, den_eos, temp_eos, &
+             npts, &
+             xn_eos, &
+             p_eos, h_eos, e_eos, &
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
+             do_diag)
+
+    R = den_eos(1)
+    T = temp_eos(1)
+    e = e_eos(1)
+
+  end subroutine eos_given_PSX
+
 
   !---------------------------------------------------------------------------
   ! The main interface -- this is used directly by MAESTRO
@@ -391,6 +427,7 @@ contains
 !       = 3 means temp, pres    , and xmass are inputs, return dens    , etc
 !       = 4 means dens, pres    , and xmass are inputs, return temp    , etc
 !       = 5 means dens, eint    , and xmass are inputs, return temp    , etc
+!       = 6 means pres, entropy , and xmass are inputs, return dens    , etc
 !
 !
 ! derivatives wrt X_k:
@@ -425,7 +462,7 @@ contains
     real(kind=dp_t), intent(inout) :: dens(npoints), temp(npoints)
     real(kind=dp_t), intent(in)    :: xmass(npoints,nspec)
     real(kind=dp_t), intent(inout) :: pres(npoints), enthalpy(npoints), &
-                                      eint(npoints)
+                                      eint(npoints), entropy(npoints)
 
     ! these quantities are always outputs
     real(kind=dp_t), intent(out) :: c_v(npoints), c_p(npoints)
@@ -433,7 +470,7 @@ contains
     real(kind=dp_t), intent(out) :: dPdT(npoints), dPdR(npoints), &
                                     dedT(npoints), dedR(npoints)
     real(kind=dp_t), intent(out) :: gam1(npoints)
-    real(kind=dp_t), intent(out) :: entropy(npoints), cs(npoints)
+    real(kind=dp_t), intent(out) :: cs(npoints)
     real(kind=dp_t), intent(out) :: dPdX(npoints,nspec), &
                                     dhdX(npoints,nspec)
     real(kind=dp_t), intent(out) :: dsdT(npoints), dsdR(npoints)
@@ -446,12 +483,13 @@ contains
     integer :: i, k, n, iter, niter, max_newton
     parameter (max_newton = 100)
     
-    real(kind=dp_t) :: error
+    real(kind=dp_t) :: error, error2
     real(kind=dp_t) :: ymass(npoints,nspec)
     real(kind=dp_t) :: abar(npoints), zbar(npoints)
     real(kind=dp_t) :: energy_want(npoints)
     real(kind=dp_t) :: enthalpy_want(npoints)
     real(kind=dp_t) :: pres_want(npoints)
+    real(kind=dp_t) :: entropy_want(npoints)
     real(kind=dp_t) :: dhdt(npoints)
     real(kind=dp_t) :: tnew(npoints)
     real(kind=dp_t) :: dnew(npoints)
@@ -459,7 +497,8 @@ contains
     real(kind=dp_t) :: ener1(npoints)
     real(kind=dp_t) :: dedX(npoints,nspec)
 
-    real(kind=dp_t) :: dpdd, pres1
+    real(kind=dp_t) :: dpdd, pres1, entr1
+    real(kind=dp_t) :: f, g, dfdd, dfdt, dgdd, dgdt, deld
 
     real(kind=dp_t) :: ttol
     parameter (ttol = 1.0d-8)
@@ -1267,6 +1306,216 @@ contains
 !          cs(k) =   cs_row(k)
           cs(k) =   sqrt(gam1(k)*pres(k)/dens(k))
           entropy(k) = stot_row(k)
+          dsdT(k) = dst_row(k)
+          dsdR(k) = dsd_row(k)
+
+          do n = 1, nspec
+             dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
+                                      (aion(n) - abar(k)) + &
+                         dpz_row(k) * (abar(k)/aion(n))* &
+                                      (zion(n) - zbar(k))
+
+             dEdX(k,n) = dea_row(k) * (abar(k)/aion(n))* &
+                                      (aion(n) - abar(k)) + &
+                         dez_row(k) * (abar(k)/aion(n))* &
+                                      (zion(n) - zbar(k))
+
+             ! create the enthalpy derivatives wrt average composition --
+             ! hold pressure constant!!!
+             dhdX(k,n) = dEdX(k,n) + &
+                  (pres(k)/dens(k)**2 - dEdR(k))*dpdX(k,n)/dPdr(k)
+
+          enddo
+
+       enddo
+
+    else if (input .EQ. eos_input_ps) then
+!---------------------------------------------------------------------------
+! input = 6: pres, entropy, and xmass are inputs
+!---------------------------------------------------------------------------
+
+       ! load the initial guess
+       do k = 1, npoints
+          temp_row(k) = temp(k)
+          den_row(k)  = dens(k)
+          abar_row(k) = abar(k)
+          zbar_row(k) = zbar(k)
+
+          if (do_eos_diag) print*,'T/D INIT ',temp(k),dens(k)
+
+          ! we want to converge to the given entropy and pressure
+          entropy_want(k) = entropy(k)
+          pres_want(k)    = pres(k)
+
+          if (entropy_want(k) < ZERO) then
+             if (present(pt_index)) then
+                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                call bl_error('ERROR: entropy < 0 in the EOS', err_string)
+             else
+                call bl_error('ERROR: entropy < 0 in the EOS')
+             endif
+          endif
+
+          if (pres_want(k) < ZERO) then
+             if (present(pt_index)) then
+                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                call bl_error('ERROR: pressure < 0 in the EOS', err_string)
+             else
+                call bl_error('ERROR: pressure < 0 in the EOS')
+             endif
+          endif
+
+          if (do_eos_diag) then
+             print*,'WANT s ',entropy_want(k)
+             print*,'WANT pres', pres_want(k)
+          endif
+       enddo
+
+       call helmeos(do_coulomb,npoints, eosfail, &
+                    temp_row, den_row, abar_row, zbar_row, &
+                    etot_row, ptot_row, &
+                    cv_row, cp_row, xne_row, xnp_row, etaele_row, &
+                    pele_row, ppos_row, &
+                    dpd_row, dpt_row, dpa_row, dpz_row, &
+                    ded_row, det_row, dea_row, dez_row, &
+                    gam1_row, cs_row, stot_row, &
+                    dsd_row, dst_row)
+
+       if (eosfail) then
+          if (present(pt_index)) then
+             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             call bl_error('EOS: error in the EOS', err_string)
+          else
+             call bl_error('EOS: error in the EOS')
+          endif
+       endif
+
+       do iter = 1, max_newton
+
+          niter = iter
+
+          ! correct density and temperature
+          do k = 1, npoints
+
+             pres1 = ptot_row(k)
+             entr1 = stot_row(k)
+
+             if (do_eos_diag) then
+                print*,'PRES1 ',iter,pres1
+                print*,'ENTR1 ',iter,entr1
+             end if
+
+             ! two functions, f and g, to iterate over
+             f = pres_want(k) - pres1
+             dfdd = -dpd_row(k)
+             dfdt = -dpt_row(k)
+             
+             g = entropy_want(k) - entr1
+             dgdd = -dsd_row(k)
+             dgdt = -dst_row(k)
+             !
+             ! 0 = f + dfdd * deld + dfdt * delt
+             ! 0 = g + dgdd * deld + dgdt * delt
+             !
+             deld = (f*dgdt - g*dfdt) / (dgdd*dfdt - dgdt*dfdd)
+
+             dnew(k) = den_row(k) + deld
+
+             tnew(k) = temp_row(k) - (f + dfdd*deld) / dfdt
+
+             if (do_eos_diag) then
+                print *, 'DNEW FIRST ', den_row(k), ' + ', &
+                     f*dgdt - g*dfdt, ' / ', dgdd*dfdt - dgdt*dfdd
+                print *, 'TNEW FIRST ', temp_row(k), ' - ', &
+                     f + dfdd*deld, ' / ', dfdt
+             endif
+
+             ! don't let the temperature or density change by more
+             ! than a factor of two
+             tnew(k) = max(HALF*temp_row(k), &
+                           min(tnew(k), TWO*temp_row(k)))
+             dnew(k) = max(HALF*den_row(k), &
+                           min(dnew(k), TWO*den_row(k)))
+
+             ! don't let us freeze or evacuate
+             tnew(k) = max(smallt, tnew(k))
+             dnew(k) = max(smalld, dnew(k))
+
+             if (do_eos_diag) then
+                print*,'DNEW AFTER ',iter,dnew(1)
+                print*,'TNEW AFTER ',iter,tnew(1)
+             endif
+          enddo
+
+          ! compute the errors
+          error = ZERO
+          error2 = ZERO
+          do k = 1, npoints
+             error  = max(error ,abs(dnew(k) - den_row(k))/den_row(k))
+             error2 = max(error2,abs(tnew(k) - temp_row(k))/temp_row(k))
+
+             ! store the new temperature and density
+             den_row(k) = dnew(k)
+             temp_row(k) = tnew(k)
+          enddo
+
+          if (error .LT. dtol .and. error2 .LT. ttol) goto 370
+        
+          call helmeos(do_coulomb,npoints, eosfail, &
+                       temp_row, den_row, abar_row, zbar_row, &
+                       etot_row, ptot_row, &
+                       cv_row, cp_row, xne_row, xnp_row, etaele_row, &
+                       pele_row, ppos_row, &
+                       dpd_row, dpt_row, dpa_row, dpz_row, &
+                       ded_row, det_row, dea_row, dez_row, &
+                       gam1_row, cs_row, stot_row, &
+                       dsd_row, dst_row)
+
+          if (eosfail) then
+             if (present(pt_index)) then
+                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                call bl_error('EOS: error in the EOS', err_string)
+             else
+                call bl_error('EOS: error in the EOS')
+             endif
+          endif
+        
+       enddo
+
+       ! Land here if too many iterations are needed
+
+       continue
+
+       if (present(pt_index)) then
+          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          call bl_error('EOS: Newton-Raphson failed:2: too many iterations', err_string)
+       else
+          call bl_error('EOS: Newton-Raphson failed:2: too many iterations')
+       endif
+
+370     continue
+
+       ! store the end result
+       do k = 1, npoints
+          dens(k) = dnew(k)
+          temp(k) = tnew(k)
+          
+          c_v(k) = cv_row(k)
+          c_p(k) = cp_row(k)
+
+          ! store the number density of electrons and positrons, the degeneracy
+          ! parameter, and the total electron/positron pressure
+          ne(k)   = xne_row(k) + xnp_row(k)
+          eta(k)  = etaele_row(k)
+          pele(k) = pele_row(k) + ppos_row(k)
+          
+          dPdR(k) = dpd_row(k)
+          dPdT(k) = dpt_row(k)
+          dEdR(k) = ded_row(k)
+          dEdT(k) = det_row(k)   ! c_v
+          gam1(k) = gam1_row(k)
+!          cs(k) =   cs_row(k)
+          cs(k) =   sqrt(gam1(k)*pres(k)/dens(k))
           dsdT(k) = dst_row(k)
           dsdR(k) = dsd_row(k)
 
