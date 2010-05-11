@@ -509,6 +509,7 @@ contains
   subroutine sum_phi_3d_sphr(radii,nr_irreg,phi,phisum,lo,hi,ng,dx,ncell,incomp,mask)
 
     use geometry, only: dr, center, nlevs, dm
+    use probin_module, only: prob_lo
     use ml_layout_module
     use bl_constants_module
 
@@ -530,13 +531,13 @@ contains
 !*************
 !!$omp parallel do private(i,j,k,x,y,z,cell_valid,radius,index) reduction(+:phisum,ncell)
     do k=lo(3),hi(3)
-       z = (dble(k) + HALF)*dx(3) - center(3)
+       z = prob_lo(3) + (dble(k) + HALF)*dx(3) - center(3)
        
        do j=lo(2),hi(2)
-          y = (dble(j) + HALF)*dx(2) - center(2)
+          y = prob_lo(2) + (dble(j) + HALF)*dx(2) - center(2)
           
           do i=lo(1),hi(1)
-             x = (dble(i) + HALF)*dx(1) - center(1)
+             x = prob_lo(1) + (dble(i) + HALF)*dx(1) - center(1)
              
              ! make sure the cell isn't covered by finer cells
              cell_valid = .true.
