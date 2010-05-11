@@ -170,15 +170,6 @@ subroutine varden()
      call bl_error("spherical = 1 and dm != 3")
   end if
   
-  ! check to make sure prob_lo for spherical is properly defined
-  if(spherical .eq. 1) then
-     do i=1,dm
-        if(prob_lo(i) .ne. ZERO) then
-           call bl_error('Error: prob_lo for spherical is not zero')
-        end if
-     end do
-  end if
-
   ! check to make sure our grid is square -- the solvers assume this
   if (dm == 2) then
      if (abs(dx(1,1) - dx(1,2)) > SMALL) then
@@ -250,7 +241,11 @@ subroutine varden()
   call compute_cutoff_coords(rho0_old)
 
   if (do_sponge) then
-     call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
+     if (spherical .eq. 0) then
+        call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
+     else
+        call init_sponge(rho0_old(1,:),dx(nlevs,:),ZERO)
+     end if
   end if
 
   call make_grav_cell(grav_cell,rho0_old)
@@ -818,7 +813,11 @@ subroutine varden()
         !---------------------------------------------------------------------
         init_mode = .false.
         if (do_sponge) then
-           call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
+           if (spherical .eq. 0) then
+              call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
+           else
+              call init_sponge(rho0_old(1,:),dx(nlevs,:),ZERO)
+           end if
            call make_sponge(sponge,dx,dt,mla)
         end if
         runtime1 = parallel_wtime()
