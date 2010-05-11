@@ -41,7 +41,7 @@
  init_shrink = 0.1
  max_dt_growth = 1.1
  use_soundspeed_firstdt = F
- use_divu_firstdt = T
+ use_divu_firstdt = F
 
  bcx_lo = -1
  bcx_hi = -1
@@ -80,5 +80,5 @@
 
  limit_conductivity = F
 
- xrb_pert_height = 6300.d0
+ xrb_pert_height = 6160.d0
 /

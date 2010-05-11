@@ -40,8 +40,8 @@
  cflfac = 0.7
  init_shrink = 0.1
  max_dt_growth = 1.1
- use_soundspeed_firstdt = T
- use_divu_firstdt = T
+ use_soundspeed_firstdt = F
+ use_divu_firstdt = F
 
  bcx_lo = -1
  bcx_hi = -1
@@ -62,7 +62,7 @@
  base_cutoff_density = 1.d4
  anelastic_cutoff = 1.d4
 
- perturb_model = F
+ perturb_model = T
  xrb_pert_size = 50
  xrb_pert_factor = 1.0d-5
  xrb_pert_type = 1
@@ -80,5 +80,5 @@
 
  limit_conductivity = F
 
- xrb_pert_height = 2500.d0
+ xrb_pert_height = 6160.d0
 /
