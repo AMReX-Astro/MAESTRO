@@ -168,14 +168,16 @@ contains
 
   end subroutine make_conductivity_3d
 
-  subroutine make_pi_cc(mla,pi,pi_cc)
+  subroutine make_pi_cc(mla,pi,pi_cc,the_bc_level)
 
-  use ml_layout_module
-  use geometry, only: dm, nlevs
+    use ml_layout_module
+    use geometry, only: dm, nlevs
+    use bc_module
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: pi(:)
     type(multifab) , intent(inout) :: pi_cc(:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     real(kind=dp_t), pointer :: ppn(:,:,:,:)
     real(kind=dp_t), pointer :: ppc(:,:,:,:)
@@ -237,7 +239,7 @@ contains
              end if
           end select
        end do
-       
+
        source_buffer = ncell_proc(n)
        call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
 
@@ -258,10 +260,13 @@ contains
     ! divide the sum by the number of cells
     avg = pisum(1)/ncell(1)
 
-    ! normalize pi_cc
-    do n=1,nlevs
-       call multifab_sub_sub_s(pi_cc(n),avg,ng_pc)
-    end do
+    if (.not.(any(the_bc_level(1)%phys_bc_level_array(:,:,:) .eq. OUTLET))) then
+       ! if there are no outlet boundary conditions, normalize pi_cc so the
+       ! sum over the domain is zero
+       do n=1,nlevs
+          call multifab_sub_sub_s(pi_cc(n),avg,ng_pc)
+       end do
+    end if
 
   end subroutine make_pi_cc
 

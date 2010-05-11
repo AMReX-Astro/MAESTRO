@@ -400,7 +400,7 @@ contains
 
     ! new function that average the nodal pi to cell-centers, then
     ! normalized the entire signal to sum to 0
-    call make_pi_cc(mla,pi,pi_cc)
+    call make_pi_cc(mla,pi,pi_cc,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
 
