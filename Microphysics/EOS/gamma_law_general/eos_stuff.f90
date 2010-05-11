@@ -99,7 +99,7 @@ contains
     if (present(gamma_in)) then
        gamma_const = gamma_in
     else
-       gamma_const = 1.4d0
+       gamma_const = 5.d0/3.d0
     end if
  
     ! small temperature and density parameters
