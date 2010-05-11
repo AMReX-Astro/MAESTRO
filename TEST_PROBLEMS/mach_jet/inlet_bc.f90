@@ -21,6 +21,9 @@ module inlet_bc_module
   real(dp_t), save :: INLET_TEMP
   real(dp_t), save :: INLET_CS
 
+  real(dp_t), save :: INLET_RHOPERT
+  real(dp_t), save :: INLET_RHOHPERT
+
   logical, save :: inlet_bc_initialized = .false.
 
 contains
@@ -47,7 +50,7 @@ contains
              dsdt_eos, dsdr_eos, &
              .false.)
 
-    INLET_RHO = den_eos(1)
+    INLET_RHO  = den_eos(1)
     INLET_RHOH = den_eos(1)*h_eos(1)
     INLET_TEMP = temp_eos(1)
     INLET_CS   = cs_eos(1)

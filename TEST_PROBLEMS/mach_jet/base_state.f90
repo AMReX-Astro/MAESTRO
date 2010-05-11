@@ -24,7 +24,7 @@ contains
 
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm
-    use inlet_bc_module, only: set_inlet_bcs
+    use inlet_bc_module
     
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
@@ -50,38 +50,36 @@ contains
        call bl_error("ERROR: cutoff densitiy > min(rho)")
     endif
 
-    ! fill the base state arrays
-    do r=0,nr(n)-1
+    ! use the EOS to make the state consistent
+    temp_eos(1) = 10.d0
+    den_eos(1)  = 1.d-3
+    p_eos(1)    = 1.d6
+    xn_eos(1,:) = 1.d0
 
-       ! use the EOS to make the state consistent
-       temp_eos(1) = 10.d0
-       den_eos(1)  = 1.d-3
-       p_eos(1)    = 1.d6
-       xn_eos(1,:) = 1.d0
+    ! (rho,p) --> T, h
+    call eos(eos_input_rp, den_eos, temp_eos, &
+             npts, &
+             xn_eos, &
+             p_eos, h_eos, e_eos, &
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
+             .false.)
 
-       ! (rho,p) --> T, h
-       call eos(eos_input_rp, den_eos, temp_eos, &
-                npts, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false.)
-
-       s0_init(r, rho_comp) = den_eos(1)
-       s0_init(r,rhoh_comp) = den_eos(1)*h_eos(1)
-       s0_init(r,spec_comp) = den_eos(1)
-       s0_init(r,temp_comp) = temp_eos(1)
-       s0_init(r,trac_comp) = ZERO
-
-       p0_init(r) = p_eos(1)
-
-    end do
+    s0_init(0:nr(n)-1, rho_comp) = den_eos(1)
+    s0_init(0:nr(n)-1,rhoh_comp) = den_eos(1)*h_eos(1)
+    s0_init(0:nr(n)-1,spec_comp) = den_eos(1)
+    s0_init(0:nr(n)-1,temp_comp) = temp_eos(1)
+    s0_init(0:nr(n)-1,trac_comp) = ZERO
+    
+    p0_init(0:nr(n)-1) = p_eos(1)
 
     call set_inlet_bcs()
+
+    INLET_RHOPERT = INLET_RHO - den_eos(1)
+    INLET_RHOHPERT = INLET_RHOH - den_eos(1)*h_eos(1)
 
     call destroy(bpt)
 
