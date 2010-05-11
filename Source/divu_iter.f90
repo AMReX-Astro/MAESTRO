@@ -178,36 +178,30 @@ contains
        call setval(rhohalf(n),ONE,1,1,all=.true.)
     end do
 
-    if (istep_divu_iter .eq. 1) then
-       eps_divu = 1.d-6
-    else if (istep_divu_iter .eq. 2) then
-       eps_divu = 1.d-8
-    else 
-       eps_divu = 1.d-10
-    end if
-
     if (spherical .eq. 1) then
-       do n=1,nlevs
-          call multifab_build(div_coeff_3d(n), mla%la(n), 1, 0)
-       end do
-       
-       call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
-       call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
-                      the_bc_tower,hgrhs,div_coeff_3d=div_coeff_3d,eps_in=eps_divu)
-       
+       if (istep_divu_iter .eq. 1) then
+          eps_divu = 1.d-6
+       else if (istep_divu_iter .eq. 2) then
+          eps_divu = 1.d-8
+       else 
+          eps_divu = 1.d-10
+       end if
     else
-       call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
-                      the_bc_tower,hgrhs,div_coeff_1d=div_coeff_old)
+       eps_divu = 1.d-12
     end if
 
-    if(spherical .eq. 1) then
-       do n=1,nlevs
-          call destroy(div_coeff_3d(n))
-       end do
-    end if
+    do n=1,nlevs
+       call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
+    end do
+       
+    call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
+                              .false.,dx,the_bc_tower%bc_tower_array,mla)
+
+    call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
+                   the_bc_tower,div_coeff_3d,hgrhs,eps_divu)
     
     do n=1,nlevs
+       call destroy(div_coeff_3d(n))
        call destroy(rhohalf(n))
     end do
 

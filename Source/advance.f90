@@ -1231,26 +1231,18 @@ contains
        call destroy(delta_gamma1_term(n))
     end do
 
-    if (spherical .eq. 1) then
-       do n=1,nlevs
-          call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
-       end do
+    do n=1,nlevs
+       call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
+    end do
        
-       call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
+    call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
+                              .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-       call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
-                      hgrhs,div_coeff_3d=div_coeff_3d)
-
-       do n=1,nlevs
-          call destroy(div_coeff_3d(n))
-       end do
-    else
-       call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
-                      hgrhs,div_coeff_1d=div_coeff_nph)
-    end if
+    call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
+                   div_coeff_3d,hgrhs)
 
     do n=1,nlevs
+       call destroy(div_coeff_3d(n))
        call destroy(rhohalf(n))
     end do
     

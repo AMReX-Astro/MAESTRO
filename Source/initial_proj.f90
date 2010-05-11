@@ -43,7 +43,7 @@ contains
 
     ! local
     integer    :: n
-    real(dp_t) :: dt_temp
+    real(dp_t) :: dt_temp,eps_init
 
     type(multifab) :: delta_gamma1_term(nlevs)
     type(multifab) :: delta_gamma1(nlevs)
@@ -148,30 +148,25 @@ contains
     ! dt doesn't matter for the initial projection since we're throwing
     ! away the pi and gpi anyway
     dt_temp = ONE
-
-    if (spherical .eq. 1) then
-       do n=1,nlevs
-          call multifab_build(div_coeff_3d(n), mla%la(n), 1, 0)
-       end do
-
-       call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
-
-       call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pi,gpi,dx, &
-                      dt_temp,the_bc_tower,hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
-       
-    else
-       call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pi,gpi,dx, &
-                      dt_temp,the_bc_tower,hgrhs,div_coeff_1d=div_coeff_old)
-    end if
-
-    if(spherical .eq. 1) then
-       do n=1,nlevs
-          call destroy(div_coeff_3d(n))
-       end do
-    end if
     
     do n=1,nlevs
+       call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
+    end do
+    
+    call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
+                              .false.,dx,the_bc_tower%bc_tower_array,mla)
+
+    if (spherical .eq. 1) then
+       eps_init = 1.d-10
+    else
+       eps_init = 1.d-12
+    end if
+
+    call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pi,gpi,dx, &
+                   dt_temp,the_bc_tower,div_coeff_3d,hgrhs,eps_init)
+    
+    do n=1,nlevs
+       call destroy(div_coeff_3d(n))
        call destroy(rhohalf(n))
     end do
 

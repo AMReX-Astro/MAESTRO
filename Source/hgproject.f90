@@ -14,7 +14,7 @@ module hgproject_module
 contains 
 
   subroutine hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
-                       divu_rhs,div_coeff_1d,div_coeff_3d,eps_in)
+                       div_coeff_3d,divu_rhs,eps_in)
 
     use bc_module
     use bl_prof_module
@@ -35,19 +35,17 @@ contains
     type(multifab ), intent(inout) :: gpi(:)
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
     type(bc_tower ), intent(in   ) :: the_bc_tower
+    type(multifab ), intent(in   ) :: div_coeff_3d(:)
 
     type(multifab ), intent(inout), optional :: divu_rhs(:)
-    real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:,:)
-    type(multifab ), intent(in   ), optional :: div_coeff_3d(:)
     real(dp_t)     , intent(in   ), optional :: eps_in
 
     ! Local  
     type(multifab) :: phi(mla%nlevel)
     type(multifab) :: gphi(mla%nlevel)
 
-    integer                   :: n,stencil_type
+    integer                   :: n,d,stencil_type
     real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
-    logical                   :: use_div_coeff_1d, use_div_coeff_3d
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "hgproject")
@@ -66,24 +64,6 @@ contains
        case (ST_DENSE)
           print *,'PROJ_TYPE IN HGPROJECT: ST_DENSE'
        end select
-    end if
-
-    use_div_coeff_1d = .false.
-    if (present(div_coeff_1d)) use_div_coeff_1d = .true.
-
-    use_div_coeff_3d = .false.
-    if (present(div_coeff_3d)) use_div_coeff_3d = .true.
-
-    if (use_div_coeff_1d .and. use_div_coeff_3d) then
-       call bl_error('CANT HAVE 1D and 3D DIV_COEFF IN HGPROJECT')
-    end if
-
-    if (spherical .eq. 1 .and. use_div_coeff_1d) then
-       call bl_error('CANT HAVE SPHERICAL .eq. 1 and 1D DIV_COEFF IN HGPROJECT')
-    end if
-
-    if (spherical .eq. 0 .and. use_div_coeff_3d) then
-       call bl_error('CANT HAVE SPHERICAL .eq. 0 and 3D DIV_COEFF IN HGPROJECT')
     end if
 
     if (verbose .ge. 1) then
@@ -120,13 +100,12 @@ contains
 
     call create_uvec_for_projection(unew,uold,rhohalf,gpi,dt,the_bc_tower,proj_type)
 
-    if (use_div_coeff_1d) then
-       call mult_cc_by_1d_coeff(unew,div_coeff_1d,.true.)
-       call mult_cc_by_1d_coeff(rhohalf,div_coeff_1d,.false.)
-    else if (use_div_coeff_3d) then
-       call mult_cc_by_3d_coeff(unew,div_coeff_3d,.true.)
-       call mult_cc_by_3d_coeff(rhohalf,div_coeff_3d,.false.)
-    end if
+    do n=1,nlevs
+       do d=1,dm
+          call multifab_mult_mult_c(unew(n),d,div_coeff_3d(n),1,1,div_coeff_3d(n)%ng)
+       end do
+       call multifab_div_div_c(rhohalf(n),1,div_coeff_3d(n),1,1,div_coeff_3d(n)%ng)
+    end do
 
     if (present(divu_rhs)) then
        call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
@@ -148,13 +127,12 @@ contains
                          stencil_type,divu_rhs)
     end if
 
-    if (use_div_coeff_1d) then
-       call mult_cc_by_1d_coeff(unew,div_coeff_1d,.false.)
-       call mult_cc_by_1d_coeff(rhohalf,div_coeff_1d,.true.)
-    else if (use_div_coeff_3d) then
-       call mult_cc_by_3d_coeff(unew,div_coeff_3d,.false.)
-       call mult_cc_by_3d_coeff(rhohalf,div_coeff_3d,.true.)
-    end if
+    do n=1,nlevs
+       do d=1,dm
+          call multifab_div_div_c(unew(n),d,div_coeff_3d(n),1,1,div_coeff_3d(n)%ng)
+       end do
+       call multifab_mult_mult_c(rhohalf(n),1,div_coeff_3d(n),1,1,div_coeff_3d(n)%ng)
+    end do
 
     do n = 1, nlevs
        call multifab_build(gphi(n), mla%la(n), dm, 0)
@@ -1450,199 +1428,5 @@ contains
 !$omp end parallel do
 
   end subroutine mkcoeffs_3d
-
-  !   ********************************************************************************** !
-
-  subroutine mult_cc_by_1d_coeff(u,div_coeff,do_mult)
-
-    use geometry, only: dm, nlevs
-
-    type(multifab), intent(inout)           :: u(:)
-    real(dp_t)    , intent(in   )           :: div_coeff(:,:)
-    logical       , intent(in   ), optional :: do_mult
-
-    ! local
-    real(kind=dp_t), pointer :: ump(:,:,:,:) 
-    integer :: i,ng_u,n
-    integer :: lo(dm),hi(dm)
-    logical :: local_do_mult
-
-    local_do_mult = .true.
-    if (present(do_mult)) local_do_mult = do_mult
-
-    ng_u = u(1)%ng
-
-    do n = 1, nlevs
-
-       ! Multiply u by div coeff
-       do i = 1, u(n)%nboxes
-          if ( multifab_remote(u(n),i) ) cycle
-          ump => dataptr(u(n),i)
-          lo =  lwb(get_box(u(n),i))
-          hi =  upb(get_box(u(n),i))
-          select case (dm)
-          case (1)
-             call mult_cc_by_1d_coeff_1d(ump(:,1,1,1),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
-          case (2)
-             call mult_cc_by_1d_coeff_2d(ump(:,:,1,:),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
-          case (3)
-             call mult_cc_by_1d_coeff_3d(ump(:,:,:,:),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
-          end select
-       end do
-
-    end do
-
-  end subroutine mult_cc_by_1d_coeff
-
-  !   ********************************************************************************** !
-
-  subroutine mult_cc_by_1d_coeff_1d(u,ng_u,div_coeff,lo,hi,do_mult)
-
-    integer        , intent(in   ) :: lo(:),hi(:),ng_u
-    real(kind=dp_t), intent(inout) :: u(lo(1)-ng_u:)
-    real(dp_t)     , intent(in   ) :: div_coeff(0:)
-    logical        , intent(in   ) :: do_mult
-
-    integer :: i
-
-    if (do_mult) then
-       do i = lo(1),hi(1)
-          u(i) = u(i) * div_coeff(i)
-       end do
-    else
-       do i = lo(1),hi(1)
-          u(i) = u(i) / div_coeff(i)
-       end do
-    end if
-
-  end subroutine mult_cc_by_1d_coeff_1d
-
-  !   ********************************************************************************** !
-
-  subroutine mult_cc_by_1d_coeff_2d(u,ng_u,div_coeff,lo,hi,do_mult)
-
-    integer        , intent(in   ) :: lo(:),hi(:),ng_u
-    real(kind=dp_t), intent(inout) :: u(lo(1)-ng_u:,lo(2)-ng_u:,:)
-    real(dp_t)     , intent(in   ) :: div_coeff(0:)
-    logical        , intent(in   ) :: do_mult
-
-    integer :: j
-
-    if (do_mult) then
-       do j = lo(2),hi(2)
-          u(:,j,:) = u(:,j,:) * div_coeff(j)
-       end do
-    else
-       do j = lo(2),hi(2)
-          u(:,j,:) = u(:,j,:) / div_coeff(j)
-       end do
-    end if
-
-  end subroutine mult_cc_by_1d_coeff_2d
-
-  !   ********************************************************************************** !
-
-  subroutine mult_cc_by_1d_coeff_3d(u,ng_u,div_coeff,lo,hi,do_mult)
-
-    integer        , intent(in   ) :: lo(:),hi(:),ng_u
-    real(kind=dp_t), intent(inout) :: u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
-    real(dp_t)     , intent(in   ) :: div_coeff(0:)
-    logical        , intent(in   ) :: do_mult
-
-    integer :: k
-
-    if (do_mult) then
-!$omp parallel do private(k)
-       do k = lo(3),hi(3)
-          u(:,:,k,:) = u(:,:,k,:) * div_coeff(k)
-       end do
-!$omp end parallel do
-    else
-!$omp parallel do private(k)
-       do k = lo(3),hi(3)
-          u(:,:,k,:) = u(:,:,k,:) / div_coeff(k)
-       end do
-!$omp end parallel do
-    end if
-
-  end subroutine mult_cc_by_1d_coeff_3d
-
-  !   *********************************************************************************** !
-
-  subroutine mult_cc_by_3d_coeff(u,div_coeff,do_mult)
-
-    use geometry, only: dm, nlevs
-
-    type(multifab) , intent(inout) :: u(:)
-    type(multifab) , intent(in   ) :: div_coeff(:)
-    logical        , intent(in   ) :: do_mult
-
-    ! local
-    real(kind=dp_t), pointer :: ump(:,:,:,:) 
-    real(kind=dp_t), pointer ::  dp(:,:,:,:) 
-    integer :: i,ng_u,ng_d,n
-
-    ng_u = u(1)%ng
-    ng_d = div_coeff(1)%ng
-
-    do n = 1, nlevs
-       ! Multiply u by div coeff
-       do i = 1, u(n)%nboxes
-          if ( multifab_remote(u(n),i) ) cycle
-          ump => dataptr(u(n),i)
-          dp => dataptr(div_coeff(n),i)
-          select case (dm)
-          case (3)
-             call mult_cc_by_3d_coeff_3d(ump(:,:,:,:), ng_u, dp(:,:,:,1), ng_d, do_mult)
-          end select
-       end do
-
-    end do
-
-  end subroutine mult_cc_by_3d_coeff
-
-  !   ********************************************************************************** !
-  
-  subroutine mult_cc_by_3d_coeff_3d(u,ng_u,div_coeff,ng_d,do_mult)
-
-    integer        , intent(in   ) :: ng_u,ng_d
-    real(kind=dp_t), intent(inout) ::         u(-ng_u:,-ng_u:,-ng_u:,:)
-    real(dp_t)     , intent(in   ) :: div_coeff(-ng_d:,-ng_d:,-ng_d:)
-    logical        , intent(in   ) :: do_mult
-
-    integer :: i,j,k,m,nx,ny,nz
-    nx = size(u,dim=1) - 2*ng_u
-    ny = size(u,dim=2) - 2*ng_u
-    nz = size(u,dim=3) - 2*ng_u
-
-    if (do_mult) then
-       do m = 1, size(u,dim=4)
-!$omp parallel do private(i,j,k)
-          do k = 0,nz-1 
-             do j = 0,ny-1 
-                do i = 0,nx-1 
-                   u(i,j,k,m) = u(i,j,k,m) * div_coeff(i,j,k)
-                end do
-             end do
-          end do
-!$omp end parallel do
-       end do
-    else
-       do m = 1, size(u,dim=4)
-!$omp parallel do private(i,j,k)
-          do k = 0,nz-1 
-             do j = 0,ny-1 
-                do i = 0,nx-1 
-                   u(i,j,k,m) = u(i,j,k,m) / div_coeff(i,j,k)
-                end do
-             end do
-          end do
-!$omp end parallel do
-       end do
-    end if
-
-  end subroutine mult_cc_by_3d_coeff_3d
-
-  !   ********************************************************************************** !
 
 end module hgproject_module
