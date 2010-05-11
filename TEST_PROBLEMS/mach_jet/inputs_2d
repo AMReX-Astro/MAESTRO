@@ -22,7 +22,7 @@
  do_initial_projection = T
  init_divu_iter = 1
 
- stop_time = 2.5d0
+ stop_time = 2.d-4
 
  plot_base   = T
 
