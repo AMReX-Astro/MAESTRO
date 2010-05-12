@@ -398,7 +398,7 @@ contains
     use fill_3d_module
     use bl_constants_module
     use geometry,  only: omega, center
-    use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
+    use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor, prob_lo
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_n,ng_uo,ng_um,ng_wc,ng_wm
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
@@ -435,11 +435,11 @@ contains
 
 !$omp parallel do private(i,j,k,xx,yy,zz,rhopert,centrifugal_term,coriolis_term)
     do k = lo(3),hi(3)
-       zz = (dble(k) + HALF)*dx(3) - center(3)
+       zz = prob_lo(3) + (dble(k) + HALF)*dx(3) - center(3)
        do j = lo(2),hi(2)
-          yy = (dble(j) + HALF)*dx(2) - center(2)
+          yy = prob_lo(2) + (dble(j) + HALF)*dx(2) - center(2)
           do i = lo(1),hi(1)
-             xx = (dble(i) + HALF)*dx(1) - center(1)
+             xx = prob_lo(1) + (dble(i) + HALF)*dx(1) - center(1)
 
              rhopert = rho(i,j,k) - rho0_cart(i,j,k,1)
 
