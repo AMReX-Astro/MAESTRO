@@ -67,7 +67,8 @@ contains
   subroutine init_plot_variables()
 
     use network, only: nspec
-    use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion
+    use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
+         plot_omegadot
     use geometry, only: spherical, dm
 
     icomp_vel      = get_next_plot_index(dm)
@@ -112,7 +113,7 @@ contains
        icomp_pioverp0    = get_next_plot_index(1)
     end if
 
-    if (plot_spec) then
+    if (plot_omegadot) then
       icomp_omegadot = get_next_plot_index(nspec)
       icomp_enuc     = get_next_plot_index(1)
     end if

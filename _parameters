@@ -153,6 +153,9 @@ perturb_model                       logical            .false.
 # plot species and omegadot in plotfile
 plot_spec                           logical            .true.              
 
+# plot omegadot in plotfile 
+plot_omegadot                       logical            .true.              
+
 # plot tracers in plotfile
 plot_trac                           logical            .false.             
 

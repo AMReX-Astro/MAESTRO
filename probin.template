@@ -178,6 +178,8 @@ contains
     ! some sanity checks and set some defaults
     !-------------------------------------------------------------------------
 
+    if (plot_spec .eqv. .false.) plot_omegadot = .false.
+
     if (use_tfromp .and. dpdt_factor /= 0.0d0) then
        call bl_error("ERROR: use_tfromp = T requires dpdt_factor = 0 to decouple enthalpy")
     endif

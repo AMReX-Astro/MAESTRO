@@ -17,7 +17,8 @@ contains
     use plot_variables_module
     use variables
     use network, only: nspec, short_spec_names
-    use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion
+    use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
+         plot_omegadot
     use geometry, only: spherical, dm
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -86,7 +87,7 @@ contains
     if (plot_base) &
        plot_names(icomp_pioverp0)    = "pioverp0"
 
-    if (plot_spec) then
+    if (plot_omegadot) then
        do comp = 1, nspec
           plot_names(icomp_omegadot+comp-1) = &
                "omegadot(" // trim(short_spec_names(comp)) // ")"
@@ -111,6 +112,7 @@ contains
     use plot_variables_module
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base, &
+         plot_omegadot, &
          single_prec_plotfiles, edge_nodal_flag, do_smallscale, use_thermal_diffusion, &
          evolve_base_state, prob_lo, prob_hi
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
@@ -183,6 +185,10 @@ contains
           do comp=1,nspec
              call multifab_div_div_c(plotdata(n),icomp_spec+comp-1,s(n),rho_comp,1)
           end do
+
+       endif
+
+       if (plot_omegadot) then
 
           ! OMEGADOT
           call multifab_copy_c(plotdata(n),icomp_omegadot,rho_omegadot(n),1,nspec)
