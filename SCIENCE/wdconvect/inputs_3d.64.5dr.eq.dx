@@ -22,14 +22,14 @@
  prob_hi_y = 5.d8
  prob_hi_z = 5.d8
 
- max_step  = 100
+ max_step  = 2
  init_iter = 1
 
  stop_time = 30000.
 
  plot_int  = -1
  plot_deltat = 10.0d0
- chk_int   = 100
+ chk_int   = 25
 
  cflfac = 0.7d0
  init_shrink = 0.1d0

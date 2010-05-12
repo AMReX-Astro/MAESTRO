@@ -1,7 +1,6 @@
 subroutine varden()
 
   use BoxLib
-  use omp_module
   use f2kcli
   use list_box_module
   use ml_boxarray_module

@@ -4,7 +4,6 @@
 module tag_boxes_module
 
   use BoxLib
-  use omp_module
   use f2kcli
   use list_box_module
   use boxarray_module
