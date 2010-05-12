@@ -3,9 +3,9 @@
  drdxfac = 5
 
  max_levs = 1
- n_cellx = 32
- n_celly = 32
- n_cellz = 32
+ n_cellx = 64
+ n_celly = 64
+ n_cellz = 64
  max_grid_size = 64
 
  anelastic_cutoff = 1.d-1
@@ -15,10 +15,14 @@
  sponge_kappa = 5.0d0
 
  spherical_in = 1
- octant = .true.
+ octant = .false.
 
  dm_in = 3
  do_sponge = .true.
+
+ prob_lo_x = -2.25d11
+ prob_lo_y = -2.25d11
+ prob_lo_z = -2.25d11
 
  prob_hi_x = 2.25d11
  prob_hi_y = 2.25d11
@@ -29,7 +33,7 @@
 
  stop_time = 30000.
 
- plot_base_name = "oct"
+ plot_base_name = "plo"
  plot_int  = 1
  chk_int   = 100
 
@@ -39,9 +43,9 @@
  use_soundspeed_firstdt = T
  use_divu_firstdt = T
 
- bcx_lo = 13
- bcy_lo = 13
- bcz_lo = 13
+ bcx_lo = 12
+ bcy_lo = 12
+ bcz_lo = 12
 
  bcx_hi = 12
  bcy_hi = 12
