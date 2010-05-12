@@ -133,11 +133,11 @@ contains
        dr(1) = dr_fine
 
        do i=0,nr_fine-1
-          r_cc_loc(1,i) = prob_lo(dm) + (dble(i)+HALF)*dr(1)
+          r_cc_loc(1,i) = (dble(i)+HALF)*dr(1)
        end do
        
        do i=0,nr_fine
-          r_edge_loc(1,i) = prob_lo(dm) + (dble(i))*dr(1)
+          r_edge_loc(1,i) = (dble(i))*dr(1)
        end do
 
     end if
