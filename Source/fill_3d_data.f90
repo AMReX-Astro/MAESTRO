@@ -253,7 +253,7 @@ contains
 
     use bl_constants_module
     use geometry, only: dr, center, r_cc_loc, nr_fine, r_edge_loc
-    use probin_module, only: s0_interp_type, w0_interp_type
+    use probin_module, only: s0_interp_type, w0_interp_type, prob_lo, prob_hi
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s
     logical        , intent(in   ) :: is_input_edge_centered,is_output_a_vector
@@ -281,11 +281,11 @@ contains
 
           !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,rfac,s0_cart_val)
           do k = lo(3),hi(3)
-             z = (dble(k)+HALF)*dx(3) - center(3)
+             z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
-                y = (dble(j)+HALF)*dx(2) - center(2)
+                y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
                 do i = lo(1),hi(1)
-                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                    radius = sqrt(x**2 + y**2 + z**2)
                    index  = int(radius / dr(1))
 
@@ -314,11 +314,11 @@ contains
 
           !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,rfac,s0_cart_val)
           do k = lo(3),hi(3)
-             z = (dble(k)+HALF)*dx(3) - center(3)
+             z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
-                y = (dble(j)+HALF)*dx(2) - center(2)
+                y = prob_lo(2) +(dble(j)+HALF)*dx(2) - center(2)
                 do i = lo(1),hi(1)
-                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   x = prob_lo(1) +(dble(i)+HALF)*dx(1) - center(1)
                    radius = sqrt(x**2 + y**2 + z**2)
                    index  = int(radius / dr(1))
 
@@ -347,11 +347,11 @@ contains
 
           !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,s0_cart_val)
           do k = lo(3),hi(3)
-             z = (dble(k)+HALF)*dx(3) - center(3)
+             z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
-                y = (dble(j)+HALF)*dx(2) - center(2)
+                y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
                 do i = lo(1),hi(1)
-                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                    radius = sqrt(x**2 + y**2 + z**2)
                    index  = int(radius / dr(1))
 
@@ -399,11 +399,11 @@ contains
 
           !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,s0_cart_val)
           do k = lo(3),hi(3)
-             z = (dble(k)+HALF)*dx(3) - center(3)
+             z = prob_lo(3) +(dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
-                y = (dble(j)+HALF)*dx(2) - center(2)
+                y = prob_lo(2) +(dble(j)+HALF)*dx(2) - center(2)
                 do i = lo(1),hi(1)
-                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                    radius = sqrt(x**2 + y**2 + z**2)
                    index  = int(radius / dr(1))
 
@@ -426,11 +426,11 @@ contains
 
           !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,s0_cart_val)
           do k = lo(3),hi(3)
-             z = (dble(k)+HALF)*dx(3) - center(3)
+             z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
-                y = (dble(j)+HALF)*dx(2) - center(2)
+                y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
                 do i = lo(1),hi(1)
-                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                    radius = sqrt(x**2 + y**2 + z**2)
                    index  = int(radius / dr(1))
 
@@ -469,11 +469,11 @@ contains
 
           !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,s0_cart_val)
           do k = lo(3),hi(3)
-             z = (dble(k)+HALF)*dx(3) - center(3)
+             z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
              do j = lo(2),hi(2)
-                y = (dble(j)+HALF)*dx(2) - center(2)
+                y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
                 do i = lo(1),hi(1)
-                   x = (dble(i)+HALF)*dx(1) - center(1)
+                   x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                    radius = sqrt(x**2 + y**2 + z**2)
                    index  = int(radius / dr(1))
 
@@ -666,11 +666,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+1
-          z = (dble(k)+HALF)*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
-             y = (dble(j)+HALF)*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+2
-                x = (dble(i)     )*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)     )*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -691,11 +691,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+1
-          z = (dble(k)+HALF)*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+2
-             y = (dble(j)     )*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)     )*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+1
-                x = (dble(i)+HALF)*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -716,11 +716,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+2
-          z = (dble(k)     )*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)     )*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
-             y = (dble(j)+HALF)*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+1
-                x = (dble(i)+HALF)*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -747,11 +747,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+1
-          z = (dble(k)+HALF)*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
-             y = (dble(j)+HALF)*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+2
-                x = (dble(i)     )*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)     )*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -779,11 +779,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+1
-          z = (dble(k)+HALF)*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+2
-             y = (dble(j)     )*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)     )*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+1
-                x = (dble(i)+HALF)*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -811,11 +811,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+2
-          z = (dble(k)     )*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)     )*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
-             y = (dble(j)+HALF)*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+1
-                x = (dble(i)+HALF)*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -849,11 +849,11 @@ contains
 
        !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index,rfac,w0_cart_val)
        do k = lo(3)-1,hi(3)+2
-          z = (dble(k))*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k))*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+2
-             y = (dble(j))*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j))*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+2
-                x = (dble(i))*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i))*dx(1) - center(1)
 
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
@@ -1059,11 +1059,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+1
-          z = (dble(k)+HALF)*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
-             y = (dble(j)+HALF)*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+2
-                x = (dble(i)     )*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)     )*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -1092,11 +1092,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+1
-          z = (dble(k)+HALF)*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+2
-             y = (dble(j)     )*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)     )*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+1
-                x = (dble(i)+HALF)*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -1125,11 +1125,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+2
-          z = (dble(k)     )*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)     )*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
-             y = (dble(j)+HALF)*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+1
-                x = (dble(i)+HALF)*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -1164,11 +1164,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+1
-          z = (dble(k)+HALF)*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
-             y = (dble(j)+HALF)*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+2
-                x = (dble(i)     )*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)     )*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -1192,11 +1192,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+1
-          z = (dble(k)+HALF)*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+2
-             y = (dble(j)     )*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)     )*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+1
-                x = (dble(i)+HALF)*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -1220,11 +1220,11 @@ contains
 
        !$OMP DO
        do k = lo(3)-1,hi(3)+2
-          z = (dble(k)     )*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)     )*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
-             y = (dble(j)+HALF)*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
              do i = lo(1)-1,hi(1)+1
-                x = (dble(i)+HALF)*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(1))
 
@@ -1299,11 +1299,11 @@ contains
 
        !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius)
        do k = lo(3)-ng,hi(3)+ng
-          z = (dble(k)+HALF)*dx(3) - center(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-ng,hi(2)+ng
-             y = (dble(j)+HALF)*dx(2) - center(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
              do i = lo(1)-ng,hi(1)+ng
-                x = (dble(i)+HALF)*dx(1) - center(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
 
                 radius = sqrt(x**2 + y**2 + z**2)
 
@@ -1685,11 +1685,11 @@ contains
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius,index)
     do k = lo(3),hi(3)
-       z = (dble(k)+HALF)*dx(3) - center(3)
+       z = prob_lo(3) + (dble(k)+HALF)*dx(3) - center(3)
        do j = lo(2),hi(2)
-          y = (dble(j)+HALF)*dx(2) - center(2)
+          y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
           do i = lo(1),hi(1)
-             x = (dble(i)+HALF)*dx(1) - center(1)
+             x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
              radius = sqrt(x**2 + y**2 + z**2)
 
              ! figure out which radii index this point maps into
