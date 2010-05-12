@@ -603,7 +603,7 @@ contains
 
     use bl_constants_module
     use geometry, only: dr, center, nr_fine, r_edge_loc
-    use probin_module, only: w0mac_interp_type
+    use probin_module, only: w0mac_interp_type, prob_lo, prob_hi
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_w0,ng_wc
     real(kind=dp_t), intent(in   ) :: w0(0:)
@@ -997,7 +997,7 @@ contains
 
     use bl_constants_module
     use geometry, only: dr, center, nr_fine, r_cc_loc
-    use probin_module, only: s0mac_interp_type
+    use probin_module, only: s0mac_interp_type, prob_lo, prob_hi
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sm,ng_s0
     real(kind=dp_t), intent(in   ) :: s0(0:)
@@ -1287,6 +1287,7 @@ contains
 
     use bl_constants_module
     use geometry, only: spherical, center
+    use probin_module, only: prob_lo, prob_hi
     
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -1668,7 +1669,7 @@ contains
 
     use bl_constants_module
     use geometry, only: dr, center, r_cc_loc, nr_fine, r_edge_loc, nr_irreg
-    use probin_module, only: s0_interp_type, w0_interp_type
+    use probin_module, only: s0_interp_type, w0_interp_type, prob_lo, prob_hi
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s
     real(kind=dp_t), intent(in   ) :: s0(0:),radii(0:)
