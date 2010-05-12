@@ -379,9 +379,9 @@ contains
              enddo
              rloc = sqrt(rloc)
 
-             theta = (xloc(3)-xc(3))/rloc
-             theta = dacos(theta)
-             phi = datan2((xloc(2)-xc(2)),(xloc(1)-xc(1)))
+!             theta = (xloc(3)-xc(3))/rloc
+!             theta = dacos(theta)
+!             phi = datan2((xloc(2)-xc(2)),(xloc(1)-xc(1)))
 
              ! loop over the 27 combinations of fourier components
 !              do i=1,3
@@ -421,21 +421,21 @@ contains
 !                 enddo
 !              enddo
 
-                upert(1) = velpert_amplitude * dsin(theta) * dcos(phi) 
-                upert(2) = velpert_amplitude * dsin(theta) * dsin(phi) 
-                upert(3) = velpert_amplitude * dcos(theta)
+!                upert(1) = velpert_amplitude * dsin(theta) * dcos(phi) 
+!                upert(2) = velpert_amplitude * dsin(theta) * dsin(phi) 
+!                upert(3) = velpert_amplitude * dcos(theta)
 
              ! apply the cutoff function to the perturbational velocity
-             do i=1,3
+!             do i=1,3
 !                upert(i) = velpert_amplitude *upert(i) &
-                upert(i) = upert(i) &
-                     *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
-             enddo
+!                upert(i) = upert(i) &
+!                     *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
+!             enddo
 
              ! add perturbational velocity to background velocity
-             do i=1,3
-                u(iloc,jloc,kloc,i) = u(iloc,jloc,kloc,i) + upert(i)
-             enddo
+!             do i=1,3
+!                u(iloc,jloc,kloc,i) = u(iloc,jloc,kloc,i) + upert(i)
+!             enddo
 
           enddo
        enddo

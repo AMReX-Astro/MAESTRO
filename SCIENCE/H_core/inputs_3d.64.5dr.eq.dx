@@ -6,7 +6,7 @@
  n_cellx = 64
  n_celly = 64
  n_cellz = 64
- max_grid_size = 64
+ max_grid_size = 32
 
  anelastic_cutoff = 1.d-1
  base_cutoff_density = 1.d-1
@@ -24,13 +24,13 @@
  prob_hi_y = 4.5d11
  prob_hi_z = 4.5d11
 
- max_step  = 0
+ max_step  = 1000
  init_iter = 1
 
- stop_time = 30000.
+ stop_time = 30000000.
 
  plot_base_name = "plt"
- plot_int  = 1
+ plot_int  = 100
  chk_int   = 100
 
  cflfac = 0.7d0
