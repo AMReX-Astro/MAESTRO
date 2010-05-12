@@ -552,7 +552,6 @@ subroutine varden()
            call print(syncassoc_mem_stats(),   "   syncassoc")
            call print(copyassoc_mem_stats(),   "   copyassoc")
            call print(fluxassoc_mem_stats(),   "   fluxassoc")
-           call print(aveassoc_mem_stats(),    "    aveassoc")
            if ( parallel_IOProcessor() ) print*, ''
 
            do n = 1,nlevs
@@ -851,7 +850,6 @@ subroutine varden()
            call print(syncassoc_mem_stats(),   "   syncassoc")
            call print(copyassoc_mem_stats(),   "   copyassoc")
            call print(fluxassoc_mem_stats(),   "   fluxassoc")
-           call print(aveassoc_mem_stats(),    "    aveassoc")
            if ( parallel_IOProcessor() ) print*, ''
 
            do n = 1,nlevs
