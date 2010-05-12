@@ -84,7 +84,7 @@ contains
              x = (dble(i)+0.5d0)*dr_fine
              ! inflow is Mach number 0.01 front with a Mach number 0.1 bump in the middle
              s(i,lo(2)-ng:lo(2)-1) = &
-                  INLET_CS*(1.d-2 + A*(tanh(B*(x-0.25d0)) + tanh(B*(0.75d0-x))))
+                  INLET_CS*(1.d-2 + A*(tanh(B*(x-0.40d0)) + tanh(B*(0.6d0-x))))
           end do
        end if
        ! rho
