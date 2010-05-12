@@ -71,6 +71,7 @@ module eos_module
   integer, parameter :: eos_input_tp = 3   ! temperature, pressure are inputs
   integer, parameter :: eos_input_rp = 4   ! density, pressure are inputs
   integer, parameter :: eos_input_re = 5   ! density, internal energy are inputs
+  integer, parameter :: eos_input_ps = 6   ! pressure, entropy are inputs
  
 
   real(kind=dp_t), save, private :: smallt
@@ -315,6 +316,39 @@ contains
 
   end subroutine eos_given_TPX
 
+  subroutine eos_given_PSX(P, S, X, R, T, e, pt_index)
+
+    ! In/out variables
+    real(kind=dp_t), intent(  out) :: e, R, T
+    real(kind=dp_t), intent(in   ) :: P, S, X(:)
+    integer, optional, intent(in   ) :: pt_index(:)
+
+    ! Local variables
+    logical :: do_diag
+
+    do_diag = .false.
+
+    p_eos(1) = P
+    s_eos(1) = S
+    xn_eos(1,1:nspec) = X(1:nspec)
+
+    call eos(eos_input_tp, den_eos, temp_eos, &
+             npts, &
+             xn_eos, &
+             p_eos, h_eos, e_eos, &
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
+             do_diag)
+
+    R = den_eos(1)
+    T = temp_eos(1)
+    e = e_eos(1)
+
+  end subroutine eos_given_PSX
+
 
   !---------------------------------------------------------------------------
   ! The main interface -- this is used directly by MAESTRO
@@ -365,6 +399,7 @@ contains
 !       = 3 means temp, pres    , and xmass are inputs, return dens    , etc
 !       = 4 means dens, pres    , and xmass are inputs, return temp    , etc
 !       = 5 means dens, eint    , and xmass are inputs, return temp    , etc
+!       = 6 means pres, entr    , and xmass are inputs, return temp    , etc
 !
 !
 ! derivatives wrt X_k:
@@ -491,6 +526,25 @@ contains
           ! Solve for the temperature
           ! e = k T / [(mu m_nucleon)*(gamma-1)]
           temp(k) = eint(k)*mu(k)*m_nucleon*(gamma_const-1.0)/k_B
+
+       enddo
+
+    else if (input .EQ. eos_input_ps) then
+       
+       ! pressure and entropy are inputs
+       do k = 1, npoints
+
+          ! Solve for the temperature
+          ! Invert Sackur-Tetrode eqn (below) using 
+          ! rho = p mu m_nucleon / (k T)
+          temp(k) = pres(k)**(2.0_dp_t/5.0_dp_t) * &
+                    ( 2.0_dp_t*M_PI*hbar*hbar/(mu(k)*m_nucleon) )**(3.0_dp_t/5.0_dp_t) * &
+                    dexp(2.0_dp_t*mu(k)*m_nucleon*entropy(k)/(5.0_dp_t*k_B) - 1.0_dp_t) / &
+                    k_B
+
+          ! Solve for the density
+          ! rho = p mu m_nucleon / (k T)
+          dens(k) = pres(k)*mu(k)*m_nucleon/(k_B*temp(k))
 
        enddo
     
