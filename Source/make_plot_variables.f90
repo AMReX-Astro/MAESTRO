@@ -260,19 +260,13 @@ contains
     ! divide the sum by the number of cells
     avg = pisum(1)/ncell(1)
 
-    ! normalize pi_cc so the sum over the domain is zero
-    do n=1,nlevs
-       call multifab_sub_sub_s(pi_cc(n),avg,ng_pc)
-    end do
-
-!    ! if there are no outlet boundary conditions, normalize pi_cc so the
-!    ! sum over the domain is zero
-!    if (.not.(any(the_bc_level(1)%phys_bc_level_array(:,:,:) .eq. OUTLET))) then
-!
-!       do n=1,nlevs
-!          call multifab_sub_sub_s(pi_cc(n),avg,ng_pc)
-!       end do
-!    end if
+    ! if there are no outlet boundary conditions, normalize pi_cc so the
+    ! sum over the domain is zero
+    if (.not.(any(the_bc_level(1)%phys_bc_level_array(:,:,:) .eq. OUTLET))) then
+       do n=1,nlevs
+          call multifab_sub_sub_s(pi_cc(n),avg,ng_pc)
+       end do
+    end if
 
   end subroutine make_pi_cc
 
