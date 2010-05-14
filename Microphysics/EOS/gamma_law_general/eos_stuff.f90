@@ -332,7 +332,7 @@ contains
     s_eos(1) = S
     xn_eos(1,1:nspec) = X(1:nspec)
 
-    call eos(eos_input_tp, den_eos, temp_eos, &
+    call eos(eos_input_ps, den_eos, temp_eos, &
              npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
