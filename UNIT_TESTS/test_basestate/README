@@ -1,6 +1,25 @@
-This is a test problem for base-state expansion in a full white-dwarf environment.
-We have a gaussinan bump of heating at the center of the star, and a null reaction network.
+spherical test problem from multilevel paper:
 
-This is a 1D version of spherical_heat.
+  inputs-spherical_heat is the inputs file
+ 
+  This is a test problem for base-state expansion in a full
+  white-dwarf environment.  We have a gaussinan bump of heating at the
+  center of the star, and a null reaction network.
 
-inputs and inputs-planar were used for paper III and are now defunct.
+  This is a 1D version of spherical_heat.
+
+  Castro output is:
+
+    castro_2sec_den
+    castro_2sec_pres
+    castro_2sec_temp
+
+  run with the hydrostatic_adjust Castro setup.
+
+
+
+plane-parallel test problem:
+
+  inputs-planar approximates what was done in paper II, but this
+  should be revisited.
+
