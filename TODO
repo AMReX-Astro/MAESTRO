@@ -48,5 +48,8 @@
    the spherical octant will be useful for shell burning.  The planar
    1/r**2 gravity will be useful for the novae.
 
+-- always force rho_0 = <rho> after initialization (not just if we
+   do a perturbation) and recompute the corresponding p_0 -- this will
+   ensure that we are in HSE at t = 0.
 
    
