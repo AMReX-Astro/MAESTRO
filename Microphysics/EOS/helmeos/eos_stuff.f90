@@ -132,14 +132,14 @@ contains
  
   end subroutine eos_get_small_dens
 
-  subroutine eos_given_ReX(G, P, C, T, dpdr, dpde, R, e, X, pt_index)
+  subroutine eos_given_ReX(G, P, C, T, dpdr_e, dpde, R, e, X, pt_index)
 
-    ! note: here, dpdr is partial p / partial rho at constant e 
-    !       and   dpde is partial p / partial e   at constant rho
+    ! note: here, dpdr_e is partial p / partial rho at constant e 
+    !       and   dpde   is partial p / partial e   at constant rho
 
 
      ! In/out variables
-     real(kind=dp_t), intent(  out) :: G, P, C, dpdr, dpde
+     real(kind=dp_t), intent(  out) :: G, P, C, dpdr_e, dpde
      real(kind=dp_t), intent(inout) :: T
      real(kind=dp_t), intent(in   ) :: R, e, X(:)
      integer, optional, intent(in   ) :: pt_index(:)
@@ -169,7 +169,7 @@ contains
     P  =    p_eos(1)
     C  =   cs_eos(1)
     T  = temp_eos(1)
-    dpdr = dpdr_eos(1) - dpdt_eos(1)*dedr_eos(1)/dedt_eos(1)
+    dpdr_e = dpdr_eos(1) - dpdt_eos(1)*dedr_eos(1)/dedt_eos(1)
     dpde = dpdt_eos(1) / dedt_eos(1)
 
   end subroutine eos_given_ReX
@@ -276,31 +276,35 @@ contains
 
   subroutine eos_dpdr_given_RTX(e, P, R, T, X, dpdr, pt_index)
 
-     ! In/out variables
-     real(kind=dp_t), intent(  out) :: e, P, dpdr
-     real(kind=dp_t), intent(in   ) :: R, T, X(:)
-     integer, optional, intent(in   ) :: pt_index(:)
+    ! note: here, dpdr is partial p / partial rho at constant T
+    ! this is different than the dpdr_e that Castro uses for source
+    ! terms in the primitive variable formulation.
 
-     ! Local variables
-     logical :: do_diag
+    ! In/out variables
+    real(kind=dp_t), intent(  out) :: e, P, dpdr
+    real(kind=dp_t), intent(in   ) :: R, T, X(:)
+    integer, optional, intent(in   ) :: pt_index(:)
 
-     do_diag = .false.
+    ! Local variables
+    logical :: do_diag
 
-      den_eos(1) = R
-     temp_eos(1) = T
-      xn_eos(1,1:nspec) = X(1:nspec)
+    do_diag = .false.
 
-     call eos(eos_input_rt, den_eos, temp_eos, &
-              npts, &
-              xn_eos, &
-              p_eos, h_eos, e_eos, &
-              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-              dpdX_eos, dhdX_eos, &
-              gam1_eos, cs_eos, s_eos, &
-              dsdt_eos, dsdr_eos, &
-              do_diag)
+    den_eos(1) = R
+    temp_eos(1) = T
+    xn_eos(1,1:nspec) = X(1:nspec)
 
+    call eos(eos_input_rt, den_eos, temp_eos, &
+             npts, &
+             xn_eos, &
+             p_eos, h_eos, e_eos, &
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
+             do_diag)
+    
     P  =    p_eos(1)
     e  =    e_eos(1)
     dpdr =  dpdr_eos(1)
