@@ -15,7 +15,7 @@
 
  cflfac = 0.9d0
 
- heating_peak = 1.d16
+ heating_peak = 1.d17
 
  model_file = "model.planar.768"
 
