@@ -468,19 +468,8 @@ contains
     y1 = 0.2d0
     r1 = sqrt( (x-x1)**2 +(y-y1)**2 ) / (0.025d0)
     
-!   x2 = 1.2d8
-!   y2 = 8.5d7
-!   r2 = sqrt( (x-x2)**2 +(y-y2)**2 ) / 2.5d6
-    
-!   x3 = 2.0d8
-!   y3 = 7.5d7
-!   r3 = sqrt( (x-x3)**2 +(y-y3)**2 ) / 2.5d6
-
-!   Large perturbation
-!   temp = t0 * (1.d0 + &
-!               (1.0d0 * (1.d0 + tanh(2.d0-r1))))
-
-!   Small perturbation
+    ! temperature perturbation -- pert_factor sets the amplitude
+    ! of the perturbation (higher values means larger perturbation)
     temp = t0 * (1.d0 + (pert_factor * (1.d0 + tanh(2.d0-r1))))
           
     ! Use the EOS to make this temperature perturbation occur at constant 
