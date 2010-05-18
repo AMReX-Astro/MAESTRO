@@ -2,18 +2,14 @@
  spherical_in = 0
 
  max_step  = 1000
- max_step  = 0
  stop_time = 5.e-5
- stop_time = 1.1e-4
-
- fixed_dt = 1.5e-7
 
  cflfac = 0.9
 
  max_levs = 1
  n_cellx = 256
  n_celly = 128
- max_grid_size = 256
+ max_grid_size = 128
 
  prob_hi_x = 2.0
  prob_hi_y = 1.0
@@ -25,10 +21,10 @@
 
  grav_const = -1.d9
 
- init_iter = 1
+ init_iter = 3
 
  do_initial_projection = T
- init_divu_iter = 1
+ init_divu_iter = 3
 
  plot_int = 10
  chk_int  = 10000

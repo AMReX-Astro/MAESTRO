@@ -448,6 +448,8 @@ contains
   subroutine perturb_2d(x, y, p0_init, s0_init, dens_pert, rhoh_pert, rhoX_pert, &
                         temp_pert, trac_pert)
 
+    use probin_module, only: pert_factor
+
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
@@ -479,8 +481,7 @@ contains
 !               (1.0d0 * (1.d0 + tanh(2.d0-r1))))
 
 !   Small perturbation
-    temp = t0 * (1.d0 + &
-                 (0.1d0 * (1.d0 + tanh(2.d0-r1))))
+    temp = t0 * (1.d0 + (pert_factor * (1.d0 + tanh(2.d0-r1))))
           
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
