@@ -17,10 +17,10 @@
  grav_const = 0.0
 
  max_step  = 400
- init_iter = 1
+ init_iter = 3
 
  do_initial_projection = T
- init_divu_iter = 1
+ init_divu_iter = 3
 
  stop_time = 4.d-4
  fixed_dt = 1.d-6
