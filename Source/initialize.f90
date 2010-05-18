@@ -535,7 +535,7 @@ contains
        end do
        deallocate(normal)
 
-    end if
+    end if ! end spherical restart_into_finer initialization
 
     call destroy(mba)
 
@@ -557,6 +557,8 @@ contains
     use average_module
     use restrict_base_module
     use probin_module, only : drdxfac, octant
+    use make_grav_module
+    use enforce_HSE_module
     
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
@@ -705,47 +707,30 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
-    if (evolve_base_state) then
+    if (do_smallscale) then
+       ! leave rho0_old = rhoh0_old = ZERO
+       ! but we still need p0
+       p0_old = p0_init
+    else
+       ! set rho0 to be the average
+       call average(mla,sold,rho0_old,dx,rho_comp)
+       call restrict_base(rho0_old,.true.)
+       call fill_ghost_base(rho0_old,.true.)
 
-       if (perturb_model) then
-          ! force rho0 to be the average density
-          call average(mla,sold,rho0_old,dx,rho_comp)
-       else
-          ! s0_init already contains the average
-          rho0_old = s0_init(:,:,rho_comp)
-          call restrict_base(rho0_old,.true.)
-          call fill_ghost_base(rho0_old,.true.)
-       end if
-
-       ! this will be overwritten if we are multilevel or if perturb_model = T
-       ! but we copy it anyway so s0_init can remain local
-       rhoh0_old = s0_init(:,:,rhoh_comp)
+       ! set rhoh0 to be the average
+       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
        call restrict_base(rhoh0_old,.true.)
        call fill_ghost_base(rhoh0_old,.true.)
 
-       ! this will be overwritten if we are multilevel or if perturb_model = T
-       ! but we copy it anyway for the initial condition
+       ! compute p0 with HSE
        p0_old = p0_init
-       call restrict_base(p0_old,.true.)
-       call fill_ghost_base(p0_old,.true.)
-
-    else
-
-       if (do_smallscale) then
-          ! leave rho0_old = rhoh0_old ZERO
-          ! but we still need p0
-          p0_old = p0_init
-       else
-          rho0_old = s0_init(:,:,rho_comp)
-          rhoh0_old = s0_init(:,:,rhoh_comp)
-          p0_old = p0_init
-       end if
-
+       call compute_cutoff_coords(rho0_old)
+       call make_grav_cell(grav_cell,rho0_old)
+       call enforce_HSE(rho0_old,p0_old,grav_cell)
     end if
 
-    ! this will be overwritten if we are multilevel or if perturb_model = T
-    ! but we copy it anyway for the initial condition
-    tempbar = s0_init(:,:,temp_comp)
+    ! set tempbar to be the average
+    call average(mla,sold,tempbar,dx,temp_comp)
     call restrict_base(tempbar,.true.)
     call fill_ghost_base(tempbar,.true.)
     
@@ -774,7 +759,8 @@ contains
     use multifab_physbc_module
     use ml_restriction_module
     use multifab_fill_ghost_module
-
+    use make_grav_module
+    use enforce_HSE_module
 
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
@@ -1038,47 +1024,30 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
-    if (evolve_base_state) then
+    if (do_smallscale) then
+       ! leave rho0_old = rhoh0_old = ZERO
+       ! but we still need p0
+       p0_old = p0_init
+    else
+       ! set rho0 to be the average
+       call average(mla,sold,rho0_old,dx,rho_comp)
+       call restrict_base(rho0_old,.true.)
+       call fill_ghost_base(rho0_old,.true.)
 
-       if (perturb_model) then
-          ! force rho0 to be the average density
-          call average(mla,sold,rho0_old,dx,rho_comp)
-       else
-          ! s0_init already contains the average
-          rho0_old = s0_init(:,:,rho_comp)
-          call restrict_base(rho0_old,.true.)
-          call fill_ghost_base(rho0_old,.true.)
-       end if
-
-       ! this will be overwritten if we are multilevel or if perturb_model = T
-       ! but we copy it anyway so s0_init can remain local
-       rhoh0_old = s0_init(:,:,rhoh_comp)
+       ! set rhoh0 to be the average
+       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
        call restrict_base(rhoh0_old,.true.)
        call fill_ghost_base(rhoh0_old,.true.)
 
-       ! this will be overwritten if we are multilevel or if perturb_model = T
-       ! but we copy it anyway for the initial condition
+       ! compute p0 with HSE
        p0_old = p0_init
-       call restrict_base(p0_old,.true.)
-       call fill_ghost_base(p0_old,.true.)
-
-    else
-
-       if (do_smallscale) then
-          ! leave rho0_old = rhoh0_old ZERO
-          ! but we still need p0
-          p0_old = p0_init
-       else
-          rho0_old = s0_init(:,:,rho_comp)
-          rhoh0_old = s0_init(:,:,rhoh_comp)
-          p0_old = p0_init
-       end if
-
+       call compute_cutoff_coords(rho0_old)
+       call make_grav_cell(grav_cell,rho0_old)
+       call enforce_HSE(rho0_old,p0_old,grav_cell)
     end if
 
-    ! this will be overwritten if we are multilevel or if perturb_model = T
-    ! but we copy it anyway for the initial condition
-    tempbar = s0_init(:,:,temp_comp)
+    ! set tempbar to be the average
+    call average(mla,sold,tempbar,dx,temp_comp)
     call restrict_base(tempbar,.true.)
     call fill_ghost_base(tempbar,.true.)
 
