@@ -277,7 +277,11 @@ contains
     endif
 
     if (min_dens + eps > base_cutoff_density .or. min_dens + eps > anelastic_cutoff) then
-       call bl_error("minimum model density is larger than, or very close to the cutoff density.")
+       if ( parallel_IOProcessor() .and. n == 1) then
+          print *, ' '
+          print *, 'WARNING: minimum model density is larger than, or very close to '
+          print *,'          the cutoff density.' 
+       end if
     end if
 
     if (min_temp < small_temp) then
@@ -475,10 +479,7 @@ contains
           dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
           rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*g
 
-!          write(*,1000) r, dpdr, rhog, abs(dpdr - rhog)/abs(dpdr), s0_init(r,rho_comp)
-1000      format(1x,6(g20.10))
-
-          max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
+          max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(rhog))
 
        end if
 
