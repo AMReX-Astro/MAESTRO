@@ -11,9 +11,11 @@
 
  max_step  = 100000000
 
- stop_time = 5
+ stop_time = 5.d0
 
- cflfac = 0.9
+ cflfac = 0.9d0
+
+ heating_peak = 1.d16
 
  model_file = "model.planar.768"
 

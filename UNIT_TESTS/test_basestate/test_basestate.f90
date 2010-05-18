@@ -10,26 +10,20 @@ contains
   subroutine get_heating(Hbar,time,dt)
   
     use geometry, ONLY : nr, spherical, r_cc_loc
-    use probin_module, ONLY : t_stop
+    use probin_module, ONLY : heating_time, heating_rad, heating_peak, heating_sigma
 
     real(dp_t), intent(inout) :: Hbar(0:)
     real(dp_t), intent(in   ) :: time,dt
 
-    real(dp_t) :: y_0, fac
+    real(dp_t) :: fac
     integer :: r
-
-!   For heating away from the center
-!   y_0 = 5.d7
-
-!   For heating at the center
-    y_0 = 0.d0
 
     Hbar(:) = 0.d0
     
-    if (time .le. t_stop) then
+    if (time .le. heating_time) then
 
-       if ( (time+dt) .gt. t_stop ) then
-           fac = (t_stop - time) / dt
+       if ( (time+dt) .gt. heating_time ) then
+           fac = (heating_time - time) / dt
        else
            fac = 1.d0
        end if
@@ -37,10 +31,12 @@ contains
        do r = 0, nr(1)-1
           if (spherical .eq. 0) then
              ! plane-parallel -- do the heating term in paper II (section 4)
-             Hbar(r) = 1.d17 * exp(-((r_cc_loc(1,r) - y_0)**2)/ 1.d14)
+             Hbar(r) = fac * heating_peak * &
+                  exp(-((r_cc_loc(1,r) - heating_rad)**2)/ heating_sigma)
           else
              ! spherical -- lower amplitude heating term
-             Hbar(r) = fac * 1.0d16 * exp(-((r_cc_loc(1,r) - y_0)**2)/ 1.d14)
+             Hbar(r) = fac * heating_peak * &
+                  exp(-((r_cc_loc(1,r) - heating_rad)**2)/ heating_sigma)
           endif
        enddo
     end if

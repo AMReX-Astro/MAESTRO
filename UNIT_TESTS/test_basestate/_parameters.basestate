@@ -1,2 +1,4 @@
-t_stop          real           0.5d0
-
+heating_time          real           0.5d0
+heating_rad           real           0.d0
+heating_peak          real           1.d17
+heating_sigma         real           1.d14
