@@ -25,12 +25,12 @@ module regrid_module
 
 contains
 
-  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,dx,the_bc_tower,rho0,rhoh0)
+  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart)
 
     use probin_module, only : nodal, pmask, regrid_int, max_grid_size, ref_ratio, max_levs, &
          ppm_type
     use geometry, only: dm, nlevs, nlevs_radial, spherical, nr_fine
-    use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp
+    use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp, temp_comp
     use network, only: nspec
     use average_module
 
@@ -40,6 +40,7 @@ contains
     real(dp_t)    ,  pointer       :: dx(:,:)
     type(bc_tower),  intent(inout) :: the_bc_tower
     real(kind=dp_t), intent(in   ) :: rho0(:,0:),rhoh0(:,0:)
+    logical        , intent(in   ) :: is_restart
 
     ! local
     logical           :: new_grid
