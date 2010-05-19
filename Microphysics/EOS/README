@@ -14,9 +14,9 @@ collapse:
    Adam Burrow's nuclear EOS for core-collapse supernova simulations
 
 
-gamma_law_eos_abar:
+gamma_law:
 
-   a simply gamma-law EOS with a hard-coded composition.  It assumes a
+   a simple gamma-law EOS with a hard-coded composition.  It assumes a
    completely ionized solar composition, and gives a meaningful
    temperature as a result.
 
@@ -35,7 +35,11 @@ gamma_law_general:
 
 helmeos:
    
-   Frank Timmes' general stellar EOS.
+   Frank Timmes' general stellar EOS.  This is modified from the
+   publically available version (although the changes should not
+   affect the results).  The major changes are related to
+   thread-safety.  The common blocks no longer pass the state to/from
+   the EOS, instead we use the argument list.
 
 
 hma_eos:
