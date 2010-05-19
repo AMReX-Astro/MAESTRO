@@ -1,4 +1,4 @@
-subroutine write_job_info(dirname)
+subroutine write_job_info(dirname, mba)
 
   ! write out some basic information about the way the job was run
   ! to a file called job_info in the directory dir_name.  Usually
@@ -8,9 +8,12 @@ subroutine write_job_info(dirname)
   use parallel
   use probin_module, only: job_name, probin
   use bl_system_module, only: BL_CWD_SIZE, get_cwd 
+  use ml_boxarray_module
 
   implicit none
-  character (len=*)   :: dirname
+
+  character (len=*), intent(in) :: dirname
+  type(ml_boxarray), intent(in) :: mba
 
   ! NOTE: the length of build_date, ... should be the same
   ! as the strings allocated in build_info.f90
@@ -20,6 +23,8 @@ subroutine write_job_info(dirname)
   character (len=16) :: date, time
   integer, dimension(8) :: values
   character (len=BL_CWD_SIZE) :: cwd
+
+  integer :: i, n
 
   call build_info(build_date, build_dir, build_machine)
   call date_and_time(date, time, VALUES=values)
@@ -47,13 +52,28 @@ subroutine write_job_info(dirname)
      write (99,*) " "
      write (99,*) " "
 
+
      write (99,*) "Build Information"
      write (99,1000)
      write (99,1001) "build date:    ", trim(build_date)
      write (99,1001) "build machine: ", trim(build_machine)
      write (99,1001) "build dir:     ", trim(build_dir)
+
      write (99,*) " "
      write (99,*) " "
+
+
+     write (99,*) "Grid Information"
+     write (99,1000)
+     do n = 1, mba%nlevel
+        write (99,*) "level: ", n
+        write (99,*) "   number of boxes = ", nboxes(mba, n)
+        write (99,*) "   maximum zones   = ", (extent(mba%pd(n),i),i=1,mba%dim)
+     end do
+
+     write (99,*) " "
+     write (99,*) " "
+
 
      write (99,*) "Runtime Parameter Information"
      write (99,1000)
