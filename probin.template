@@ -188,6 +188,20 @@ contains
        max_grid_size_base = max_grid_size
     end if
 
+
+    ! make sure that the buffer width for tagging is atleast as big as
+    ! the regrid interval
+    if (regrid_int > 0 .and. amr_buf_width < regrid_int) then
+       if (parallel_IOProcessor()) then
+          print *,"************************************************************************"
+          print *,"WARNING: regrid_int > 0 but amr_buf_width < regrid_int"
+          print *,"         setting amr_buf_width = regrid_int"
+          print *,"************************************************************************"          
+       endif
+       amr_buf_width = regrid_int
+    endif
+
+
     if (do_smallscale) then
        if (parallel_IOProcessor()) then
           print *,"************************************************************************"

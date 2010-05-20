@@ -749,7 +749,8 @@ contains
                                             p0_old,p0_new,w0,etarho_ec,etarho_cc, &
                                             psi,tempbar,grav_cell)
 
-    use probin_module, only: n_cellx, n_celly, n_cellz, regrid_int, max_grid_size, &
+    use probin_module, only: n_cellx, n_celly, n_cellz, &
+         regrid_int, amr_buf_width, max_grid_size, &
          max_grid_size_base, ref_ratio, max_levs, octant
     use init_module
     use average_module
@@ -785,7 +786,7 @@ contains
     type(box)    :: bxs
 
     real(dp_t) :: lenx,leny,lenz,max_dist
-    integer    :: buf_wid,n,ng_s,nl
+    integer    :: n,ng_s,nl
     integer    :: lo(dm), hi(dm)
     logical    :: new_grid
 
@@ -793,7 +794,6 @@ contains
     time = ZERO
     dt = 1.d20
 
-    buf_wid = regrid_int
 
     ! set up hi & lo to carry indexing info
     lo = 0
@@ -926,7 +926,7 @@ contains
           endif
 
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
-                              buf_wid,ref_ratio,nl,max_grid_size)
+                              amr_buf_width,ref_ratio,nl,max_grid_size)
           
           if (new_grid) then
               

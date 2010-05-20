@@ -27,7 +27,9 @@ contains
 
   subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart)
 
-    use probin_module, only : nodal, pmask, regrid_int, max_grid_size, ref_ratio, max_levs, &
+    use probin_module, only : nodal, pmask, &
+         regrid_int, amr_buf_width, &
+         max_grid_size, ref_ratio, max_levs, &
          ppm_type
     use geometry, only: dm, nlevs, nlevs_radial, spherical, nr_fine
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp, temp_comp
@@ -44,7 +46,7 @@ contains
 
     ! local
     logical           :: new_grid
-    integer           :: n, nl, buf_wid, d, ng_s
+    integer           :: n, nl, d, ng_s
     type(layout)      :: la_array(max_levs)
     type(ml_layout)   :: mla_old
     type(ml_boxarray) :: mba
@@ -95,8 +97,6 @@ contains
     end do
 
     call destroy(mla)
-
-    buf_wid = regrid_int
 
     ! mba is big enough to hold max_levs levels
     ! even though we know we had nlevs last time, we might 
@@ -156,7 +156,7 @@ contains
 
        call average_one_level(nl,sold,tempbar,temp_comp)
 
-       call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1),buf_wid,&
+       call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1),amr_buf_width,&
                            ref_ratio,nl,max_grid_size,tempbar)
 
        if (new_grid) then

@@ -26,7 +26,9 @@ contains
 
   subroutine regrid(mla,uold,sold,gpi,pi,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart)
 
-    use probin_module, only : verbose, nodal, pmask, regrid_int, max_grid_size, ref_ratio, max_levs, &
+    use probin_module, only : verbose, nodal, pmask, &
+         regrid_int, amr_buf_width, &
+         max_grid_size, ref_ratio, max_levs, &
          ppm_type
     use geometry, only: dm, nlevs, nlevs_radial, spherical
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp
@@ -42,7 +44,7 @@ contains
 
     ! local
     logical           :: new_grid
-    integer           :: n, nl, buf_wid, d, ng_s
+    integer           :: n, nl, d, ng_s
     type(layout)      :: la_array(max_levs)
     type(ml_layout)   :: mla_old
     type(ml_boxarray) :: mba
@@ -137,8 +139,6 @@ contains
     call multifab_copy_c(  dSdt(1),1,  dSdt_temp(1), 1,    1)
     call multifab_copy_c(   src(1),1,   src_temp(1), 1,    1)
 
-    ! buf_wid needed in make_new_grids
-    buf_wid = regrid_int
 
     nl       = 1
     new_grid = .true.
@@ -152,7 +152,7 @@ contains
        call multifab_physbc(sold(nl),rho_comp,dm+rho_comp,nscal, &
                             the_bc_tower%bc_tower_array(nl))
 
-       call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1),buf_wid,&
+       call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1),amr_buf_width,&
                            ref_ratio,nl,max_grid_size)
 
        if (new_grid) then
