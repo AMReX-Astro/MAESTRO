@@ -16,6 +16,8 @@
  cflfac = 0.9d0
 
  heating_peak = 1.d17
+ heating_time = 5.d0
+ heating_rad = 4.d7
 
  model_file = "model.planar.768"
 
