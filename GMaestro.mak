@@ -35,3 +35,20 @@ probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
 	$(FPARALLEL)/MAESTRO/write_probin.py -t $(PROBIN_TEMPLATE) $(PROBIN_PARAMETERS)
 
 
+
+.build_info_tmpfile:
+	touch .build_info_tmpfile
+
+$(odir)/build_info.o: .build_info_tmpfile $
+	$(FPARALLEL)/scripts/make_build_info
+	$(COMPILE.f90) $(OUTPUT_OPTION) build_info.f90
+	rm -f .build_info_tmpfile
+
+# unsure why this method does not work right -- it gives circular dependencies
+# but this would force build_info.f90 to only be rebuilt if another source
+# file changed.
+
+#$(odir)/build_info.o: $(fsources) $(f90sources) $(csources)
+#       $(FPARALLEL)/scripts/make_build_info
+#       $(COMPILE.f90) $(OUTPUT_OPTION) build_info.f90
+
