@@ -302,6 +302,10 @@ max_grid_size_base                  integer            -1
 # How often we regrid.
 regrid_int                          integer            -1                  
 
+# the number of buffer zones surrounding a cell tagged for refinement.
+# note that this needs to be >= regrid_int
+amr_buf_width                       integer            -1
+
 # Refinement ratio for multilevel problems
 ref_ratio                           integer            2                   
 
