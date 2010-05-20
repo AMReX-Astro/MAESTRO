@@ -46,3 +46,5 @@
 
 -- store the name of the inputs file used in job_info
 
+-- convert build_info into a module
+
