@@ -40,7 +40,7 @@ probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
 	touch .build_info_tmpfile
 
 $(odir)/build_info.o: .build_info_tmpfile $
-	$(FPARALLEL)/scripts/make_build_info
+	$(FPARALLEL)/scripts/make_build_info "$(Fmdirs)"
 	$(COMPILE.f90) $(OUTPUT_OPTION) build_info.f90
 	rm -f .build_info_tmpfile
 

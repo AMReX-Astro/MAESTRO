@@ -44,3 +44,5 @@
    the spherical octant will be useful for shell burning.  The planar
    1/r**2 gravity will be useful for the novae.
 
+-- store the name of the inputs file used in job_info
+

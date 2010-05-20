@@ -17,7 +17,7 @@ subroutine write_job_info(dirname, mba)
 
   ! NOTE: the length of build_date, ... should be the same
   ! as the strings allocated in build_info.f90
-  character (len=128) :: build_date, build_dir, build_machine
+  character (len=128) :: build_date, build_dir, build_machine, module_list
 
   character (len=256) :: out_name
   character (len=16) :: date, time
@@ -26,7 +26,7 @@ subroutine write_job_info(dirname, mba)
 
   integer :: i, n
 
-  call build_info(build_date, build_dir, build_machine)
+  call build_info(build_date, build_dir, build_machine, module_list)
   call date_and_time(date, time, VALUES=values)
   call get_cwd(cwd)
  
@@ -58,6 +58,8 @@ subroutine write_job_info(dirname, mba)
      write (99,1001) "build date:    ", trim(build_date)
      write (99,1001) "build machine: ", trim(build_machine)
      write (99,1001) "build dir:     ", trim(build_dir)
+     write (99,*) " "
+     write (99,1001) "modules used:  ", trim(module_list)
 
      write (99,*) " "
      write (99,*) " "
