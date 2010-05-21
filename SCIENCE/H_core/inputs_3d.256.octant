@@ -56,11 +56,6 @@
  do_initial_projection = T
  init_divu_iter = 1
 
- velpert_amplitude = .75d5
- velpert_radius = 8.2d10
- velpert_scale = 9.d10
- velpert_steep = 1.d10
-
  do_burning = F
 
  enthalpy_pred_type = 1

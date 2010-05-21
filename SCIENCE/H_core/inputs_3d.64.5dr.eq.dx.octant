@@ -1,11 +1,11 @@
 &PROBIN
- model_file = "s15-hburn.hse.1109"
+ model_file = "s15-hburn.hse.555"
  drdxfac = 5
 
  max_levs = 1
- n_cellx = 128
- n_celly = 128
- n_cellz = 128
+ n_cellx = 64
+ n_celly = 64
+ n_cellz = 64
  max_grid_size = 32
 
  anelastic_cutoff = 1.d-4
@@ -55,11 +55,6 @@
 
  do_initial_projection = T
  init_divu_iter = 1
-
- velpert_amplitude = .75d5
- velpert_radius = 8.2d10
- velpert_scale = 9.d10
- velpert_steep = 1.d10
 
  do_burning = F
 
