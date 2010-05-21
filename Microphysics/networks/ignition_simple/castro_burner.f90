@@ -13,6 +13,8 @@ contains
 
   subroutine burner(dens, temp, Xin, ein, dt, time_in, Xout, eout)
 
+    use burner_aux_module, only : dens_pass, c_p_pass, dhdx_pass, X_O16_pass
+
     implicit none
 
     real(kind=dp_t), intent(in   ) :: dens, temp, Xin(nspec), ein, dt, time_in
@@ -194,12 +196,6 @@ contains
     ! since this version of the network only evolves C12, we can
     ! compute the energy release easily
     enuc = (ebin(img24) - ebin(ic12))*(Xout(ic12) - Xin(ic12))
-
-    ! alsocompute the density-weighted creation rates, rho_omegadot
-    do n = 1, nspec
-       dX = Xout(n) - Xin(n) 
-       rho_omegadot(n) = dens * dX / dt
-    enddo
     
     eout = ein + enuc
 
