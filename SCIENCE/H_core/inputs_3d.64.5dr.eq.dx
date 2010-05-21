@@ -1,18 +1,21 @@
 &PROBIN
- model_file = "s15-hburn.hse.320"
+ model_file = "s15-hburn.hse.555"
  drdxfac = 5
 
  max_levs = 1
- n_cellx = 64
- n_celly = 64
- n_cellz = 64
+ n_cellx = 128
+ n_celly = 128
+ n_cellz = 128
  max_grid_size = 32
 
- anelastic_cutoff = 1.d-1
- base_cutoff_density = 1.d-1
- sponge_center_density = 1.d-1
+ anelastic_cutoff = 1.d-4
+ base_cutoff_density = 1.d-4
+! sponge_center_density = 3.d-2
+! sponge_start_factor = 2.d0
+! sponge_kappa = 1.0d-3
+ sponge_center_density = 5.d-1
  sponge_start_factor = 1.5d0
- sponge_kappa = 5.0d0
+ sponge_kappa = 1.5d-3
 
  spherical_in = 1
  octant = .false.
@@ -20,17 +23,17 @@
  dm_in = 3
  do_sponge = .true.
 
- prob_hi_x = 4.5d11
- prob_hi_y = 4.5d11
- prob_hi_z = 4.5d11
+ prob_hi_x = 4.d11
+ prob_hi_y = 4.d11
+ prob_hi_z = 4.d11
 
- max_step  = 1000
+ max_step  = 5000
  init_iter = 1
 
  stop_time = 30000000.
 
- plot_base_name = "plt"
- plot_int  = 100
+ plot_base_name = "ful"
+ plot_int  = 5
  chk_int   = 100
 
  cflfac = 0.7d0
@@ -71,6 +74,7 @@
  single_prec_plotfiles = T
 
  use_eos_coulomb = T
+ small_temp = 5.d5
 
  plot_trac = F
 
