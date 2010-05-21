@@ -9,15 +9,15 @@ subroutine write_job_info(dirname, mba)
   use probin_module, only: job_name, probin
   use bl_system_module, only: BL_CWD_SIZE, get_cwd 
   use ml_boxarray_module
+  use build_info_module, only: build_date, build_dir, build_machine, &
+                               module_list
 
   implicit none
 
   character (len=*), intent(in) :: dirname
   type(ml_boxarray), intent(in) :: mba
 
-  ! NOTE: the length of build_date, ... should be the same
-  ! as the strings allocated in build_info.f90
-  character (len=128) :: build_date, build_dir, build_machine, module_list
+
 
   character (len=256) :: out_name
   character (len=16) :: date, time
@@ -26,7 +26,6 @@ subroutine write_job_info(dirname, mba)
 
   integer :: i, n
 
-  call build_info(build_date, build_dir, build_machine, module_list)
   call date_and_time(date, time, VALUES=values)
   call get_cwd(cwd)
  
