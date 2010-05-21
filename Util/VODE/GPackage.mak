@@ -17,14 +17,13 @@ fsources += dumach.f
 fsources += iumach.f
 
 fsources += dacopy.f
-fsources += dcopy.f
-fsources += daxpy.f
-fsources += ddot.f
 fsources += dgbfa.f
 fsources += dgbsl.f
 fsources += dgefa.f
 fsources += dgesl.f
-fsources += dscal.f
-fsources += idamax.f
 # xsetf.f
 # xsetun.f
+
+include $(FPARALLEL)/extern/BLAS/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/extern/BLAS
+
