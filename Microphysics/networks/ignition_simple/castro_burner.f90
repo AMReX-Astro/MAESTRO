@@ -25,24 +25,17 @@ contains
 
     ! set the number of independent variables -- this should be temperature
     ! + the number of species
-    integer, parameter :: NEQ = 1 + nspec
+    integer, parameter :: NEQ = 1 + nspec_advance
+
 
     ! allocate storage for the input state
     real(kind=dp_t), dimension(NEQ) :: y
 
-    ! density, specific heat at constant pressure, c_p, and dhdX are needed
-    ! in the righthand side routine, so we will pass these in through common
-    ! Since evaluating the EOS is expensive, we don't call it for every RHS
-    ! call -- T_eos and dT_crit control the frequency (see below)
-    real(kind=dp_t) :: dens_zone, c_p_pass, dhdx_pass(nspec), T_eos, dT_crit
-    common /zone_state/ dens_zone, c_p_pass, dhdx_pass, T_eos, dT_crit
 
     ! we will always refer to the species by integer indices that come from
     ! the network module -- this makes things robust to a shuffling of the 
     ! species ordering
     integer, save :: ic12, io16, img24
-    integer :: ic12_pass, io16_pass, img24_pass
-    common /species_index/ ic12_pass, io16_pass, img24_pass
 
     ! our problem is stiff, tell ODEPACK that. 21 means stiff, jacobian 
     ! function is supplied, 22 means stiff, figure out my jacobian through 
@@ -115,34 +108,13 @@ contains
        firstCall = .false.
     endif
 
-    ic12_pass  = ic12
-    io16_pass  = io16
-    img24_pass = img24
-
-    ! set the parameters regarding how often to re-evaluate the 
-    ! thermodynamics.  T_eos will always store the temperature
-    ! that was used for the last EOS call.  dT_crit is the 
-    ! relative temperature change beyond which we need to re-evaluate
-    ! the thermodynamics
-    !
-    ! **NOTE** if the burner is not converging (and the temperatures
-    ! are shooting up to unrealistically high values), you likely
-    ! need to reduce dT_crit to ensure more frequent EOS calls.
-    T_eos = temp
-    dT_crit = 1.d20
-
-
     ! set the tolerances.  We will be more relaxed on the temperature
     ! since it is only used in evaluating the rates.  
-    !
-    ! **NOTE** if you reduce these tolerances, you probably will need
-    ! to (a) decrease dT_crit, (b) increase the maximum number of 
-    ! steps allowed.
-    atol(1:nspec) = 1.d-12    ! mass fractions
-    atol(nspec+1) = 1.d-8     ! temperature
+    atol(1:nspec_advance) = 1.d-12    ! mass fractions
+    atol(nspec_advance+1) = 1.d-8     ! temperature
        
-    rtol(1:nspec) = 1.d-12    ! mass fractions
-    rtol(nspec+1) = 1.d-5     ! temperature
+    rtol(1:nspec_advance) = 1.d-12    ! mass fractions
+    rtol(nspec_advance+1) = 1.d-5     ! temperature
     
 
     ! we want VODE to re-initialize each time we call it
@@ -158,16 +130,20 @@ contains
     ! initialize the integration time
     integration_time = ZERO
     
-    ! abundances are the first nspec values and temperature is the last
+    ! abundances are the first nspec_advance values and temperature is the last
     y(ic12) = Xin(ic12)
-    y(io16) = Xin(io16)
-    y(img24) = Xin(img24)
-    y(nspec+1) = temp
+    y(nspec_advance+1) = temp
 
-    ! set the thermodynamics that are passed via common to the RHS routine --
-    ! these will be updated in f_rhs if the relative temperature change 
-    ! exceeds dT_crit
-    dens_zone = dens
+    ! density, specific heat at constant pressure, c_p, and dhdX are needed
+    ! in the righthand side routine, so we will pass these in through the
+    ! burner_aux module.
+    !
+    ! Since evaluating the EOS is expensive, we don't call it for every RHS
+    ! call -- instead we freeze these values over the timestep.
+    ! Since we are only integrating C12, we will need the O16 mass fraction
+    ! in the RHS routine to compute the screening (and we know that the
+    ! Mg24 abundance is constraint so things add to 1).
+    dens_pass = dens
     
     ! we need the specific heat at constant pressure and dhdX |_p.  Take
     ! T, rho, Xin as input
@@ -189,6 +165,8 @@ contains
     c_p_pass = cp_eos(1)
     dhdx_pass(:) = dhdX_eos(1,:)
 
+    X_O16_pass = Xin(io16)
+
     ! call the integration routine
     call dvode(f_rhs, NEQ, y, integration_time, dt, ITOL, rtol, atol, ITASK, &
                istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
@@ -206,16 +184,21 @@ contains
     ! here and instead compute the energy release from the binding
     ! energy -- make sure that they are positive
     Xout(ic12)  = max(y(ic12), ZERO)
-    Xout(io16)  = max(y(io16), ZERO)
-    Xout(img24) = max(y(img24), ZERO)
+    Xout(io16)  = Xin(io16)
+    Xout(img24) = ONE - Xout(ic12) - Xout(io16)
 
     ! compute the energy release and update the enthalpy.  Our convention
     ! is that the binding energies are negative, so the energy release is
     ! - sum_k { (Xout(k) - Xin(k)) ebin(k) }
-    enuc = 0.0_dp_t
+    !
+    ! since this version of the network only evolves C12, we can
+    ! compute the energy release easily
+    enuc = (ebin(img24) - ebin(ic12))*(Xout(ic12) - Xin(ic12))
+
+    ! alsocompute the density-weighted creation rates, rho_omegadot
     do n = 1, nspec
        dX = Xout(n) - Xin(n) 
-       enuc = enuc - ebin(n) * dX
+       rho_omegadot(n) = dens * dX / dt
     enddo
     
     eout = ein + enuc
