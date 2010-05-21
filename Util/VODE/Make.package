@@ -30,6 +30,5 @@ fEXE_sources += idamax.f
 # xsetun.f
 fEXE_headers += vode.H
 
-include $(FPARALLEL)/extern/BLAS/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/BLAS
+
 
