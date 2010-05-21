@@ -384,58 +384,58 @@ contains
 !             phi = datan2((xloc(2)-xc(2)),(xloc(1)-xc(1)))
 
              ! loop over the 27 combinations of fourier components
-!              do i=1,3
-!                 do j=1,3
-!                    do k=1,3
-!                       ! compute cosines and sines
-!                       cx(i,j,k) = cos(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
-!                       cy(i,j,k) = cos(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
-!                       cz(i,j,k) = cos(2.0d0*M_PI*dble(k)*xloc(3)/velpert_scale + phiz(i,j,k))
-!                       sx(i,j,k) = sin(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
-!                       sy(i,j,k) = sin(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
-!                       sz(i,j,k) = sin(2.0d0*M_PI*dble(k)*xloc(3)/velpert_scale + phiz(i,j,k))
-!                    enddo
-!                 enddo
-!              enddo
+             do i=1,3
+                do j=1,3
+                   do k=1,3
+                      ! compute cosines and sines
+                      cx(i,j,k) = cos(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
+                      cy(i,j,k) = cos(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
+                      cz(i,j,k) = cos(2.0d0*M_PI*dble(k)*xloc(3)/velpert_scale + phiz(i,j,k))
+                      sx(i,j,k) = sin(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
+                      sy(i,j,k) = sin(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
+                      sz(i,j,k) = sin(2.0d0*M_PI*dble(k)*xloc(3)/velpert_scale + phiz(i,j,k))
+                   enddo
+                enddo
+             enddo
 
-!              ! loop over the 27 combinations of fourier components
-!              do i=1,3
-!                 do j=1,3
-!                    do k=1,3
-!                       ! compute contribution from perturbation velocity from each mode
-!                       upert(1) = upert(1) + &
-!                            (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
-!                              +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
-!                             / normk(i,j,k)
+             ! loop over the 27 combinations of fourier components
+             do i=1,3
+                do j=1,3
+                   do k=1,3
+                      ! compute contribution from perturbation velocity from each mode
+                      upert(1) = upert(1) + &
+                           (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
+                             +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
+                            / normk(i,j,k)
 
-!                       upert(2) = upert(2) + &
-!                            (gamma(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
-!                            -alpha(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
-!                             / normk(i,j,k)
+                      upert(2) = upert(2) + &
+                           (gamma(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
+                           -alpha(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
+                            / normk(i,j,k)
 
-!                       upert(3) = upert(3) + &
-!                            ( -beta(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
-!                             +alpha(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k)) &
-!                             / normk(i,j,k)
-!                    enddo
-!                 enddo
-!              enddo
+                      upert(3) = upert(3) + &
+                           ( -beta(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
+                            +alpha(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k)) &
+                            / normk(i,j,k)
+                   enddo
+                enddo
+             enddo
 
 !                upert(1) = velpert_amplitude * dsin(theta) * dcos(phi) 
 !                upert(2) = velpert_amplitude * dsin(theta) * dsin(phi) 
 !                upert(3) = velpert_amplitude * dcos(theta)
 
              ! apply the cutoff function to the perturbational velocity
-!             do i=1,3
-!                upert(i) = velpert_amplitude *upert(i) &
-!                upert(i) = upert(i) &
-!                     *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
-!             enddo
+            do i=1,3
+               upert(i) = velpert_amplitude *upert(i) &
+!               upert(i) = upert(i) &
+                    *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
+            enddo
 
              ! add perturbational velocity to background velocity
-!             do i=1,3
-!                u(iloc,jloc,kloc,i) = u(iloc,jloc,kloc,i) + upert(i)
-!             enddo
+             do i=1,3
+                u(iloc,jloc,kloc,i) = u(iloc,jloc,kloc,i) + upert(i)
+             enddo
 
           enddo
        enddo
