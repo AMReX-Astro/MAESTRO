@@ -6,7 +6,7 @@ subroutine write_job_info(dirname, mba)
   ! directory
 
   use parallel
-  use probin_module, only: job_name, probin
+  use probin_module, only: job_name, probin, inputs_file_used
   use bl_system_module, only: BL_CWD_SIZE, get_cwd 
   use ml_boxarray_module
   use build_info_module, only: build_date, build_dir, build_machine, &
@@ -42,7 +42,9 @@ subroutine write_job_info(dirname, mba)
      
      write (99,*) "Job Information"
      write (99,1000)
-     write (99,1001) "job name: ", trim(job_name)
+     write (99,1001) "job name:    ", trim(job_name)
+     write (99,1001) "inputs file: ", trim(inputs_file_used)
+     write (99,*) " "     
      write (99,1002) "number of processors: ", parallel_nprocs()
      write (99,1003) "output date:          ", values(1), values(2), values(3)
      write (99,1004) "output time:          ", values(5), values(6), values(7)
