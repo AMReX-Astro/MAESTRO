@@ -154,7 +154,12 @@ subroutine varden()
      call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),dx(n,:))
   enddo
 
+  write(*,*)'prob_type = ',prob_type
+  write(*,*)'initial_dt = ',initial_dt
+
   ! output
+  write(*,*)
+  write(*,*)'writing initial data to base.orig'
   open(unit=10,file="base.orig")
   do r=0,nr_fine-1
      write(10,1000) r_cc_loc(1,r), s0_old(1,r,rho_comp), s0_old(1,r,temp_comp), p0_old(1,r)
@@ -195,7 +200,7 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
  
   time  = ZERO
-  dt    = 1.d-3
+  dt    = initial_dt
   dtold = dt
 
   iter = 0
@@ -208,7 +213,7 @@ subroutine varden()
      ! compute the heating term and Sbar
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      do n = 1, nlevs
-        call get_heating(Hext_bar(n,0:),time,dt)
+        call get_heating(Hext_bar(n,0:),s0_old(n,:,:),time,dt)
      enddo
 
 
