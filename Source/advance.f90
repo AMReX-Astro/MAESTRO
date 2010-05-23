@@ -151,6 +151,10 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
+    real(kind=dp_t) :: advect_time, advect_time_start, advect_time_max
+    real(kind=dp_t) :: proj_time,   proj_time_start,   proj_time_max
+    real(kind=dp_t) :: react_time,  react_time_start,  react_time_max
+
     call build(bpt, "advance_timestep")
 
     allocate(       grav_cell_nph(nlevs_radial,0:nr_fine-1))
@@ -198,6 +202,8 @@ contains
 !! STEP 1 -- react the full state and then base state through dt/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    react_time_start = parallel_wtime()
+
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP  1 : react state     '
     end if
@@ -218,9 +224,13 @@ contains
        call destroy(rho_Hext(n))
     end do
 
+    react_time = parallel_wtime() - react_time_start
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 2 -- define average expansion at time n+1/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    advect_time_start = parallel_wtime()
     
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< CALLING advance_timestep with dt =',dt 
@@ -545,6 +555,9 @@ contains
        call destroy(scal_force(n))
     end do
 
+    advect_time = parallel_wtime() - advect_time_start
+
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -584,6 +597,8 @@ contains
 !! STEP 5 -- react the full state and then base state through dt/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
+    react_time_start = parallel_wtime()
+
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP  5 : react state     '
     end if
@@ -598,6 +613,8 @@ contains
     do n=1,nlevs
        call destroy(s2(n))
     end do
+
+    react_time = react_time + parallel_wtime() - react_time_start
     
     do n=1,nlevs
        call multifab_build(gamma1(n), mla%la(n), 1, 0)
@@ -617,6 +634,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 6 -- define a new average expansion rate at n+1/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    advect_time_start = parallel_wtime()
     
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP  6 : make new S and new w0 >>> '
@@ -766,7 +785,8 @@ contains
     end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! STEP 7 -- redo the construction of the advective velocity using the current w0
+!! STEP 7 -- redo the construction of the advective velocity using the 
+!! current w0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -964,6 +984,9 @@ contains
        call destroy(thermal1(n))
     end do
 
+    advect_time = advect_time + parallel_wtime() - advect_time_start
+
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1020,6 +1043,8 @@ contains
 !! STEP 9 -- react the full state and then base state through dt/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    react_time_start = parallel_wtime()
+
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP  9 : react state '
     end if
@@ -1034,6 +1059,8 @@ contains
     do n=1,nlevs
        call destroy(s2(n))
     end do
+
+    react_time = react_time + parallel_wtime() - react_time_start
 
     do n=1,nlevs
        call multifab_build(gamma1(n), mla%la(n), 1, 0)
@@ -1053,6 +1080,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 10 -- compute S^{n+1} for the final projection
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    proj_time_start = parallel_wtime()
     
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP 10 : make new S >>>'
@@ -1254,6 +1283,8 @@ contains
        end do
     end if
 
+    proj_time = parallel_wtime() - proj_time_start
+
     if (.not. init_mode) then
        
        grav_cell_old = grav_cell_new
@@ -1276,6 +1307,23 @@ contains
     enddo
 
     call destroy(bpt)
+
+    call parallel_reduce(advect_time_max, advect_time, MPI_MAX, &
+                         proc=parallel_IOProcessorNode())
+
+    call parallel_reduce(proj_time_max,   proj_time, MPI_MAX, &
+                         proc=parallel_IOProcessorNode())
+
+    call parallel_reduce(react_time_max,  react_time, MPI_MAX, &
+                         proc=parallel_IOProcessorNode())
+
+    if (parallel_IOProcessor()) then
+       print *, 'Timing summary:'
+       print *, '   Advection:  ', advect_time_max, ' seconds'
+       print *, '   Projection: ', proj_time_max, ' seconds'
+       print *, '   Reactions:  ', react_time_max, ' seconds'
+       print *, ' '
+    endif
     
   end subroutine advance_timestep
 
