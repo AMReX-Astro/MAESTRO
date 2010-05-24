@@ -23,7 +23,7 @@ contains
     
   subroutine initialize_from_restart(mla,restart,time,dt,pmask,dx,uold,sold,gpres,pres, &
                                      dSdt,Source_old,Source_new, &
-                                     rho_omegadot2,rho_Hnuc2,thermal2,the_bc_tower, &
+                                     rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
                                      div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                                      s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                      p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
@@ -42,7 +42,7 @@ contains
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
     type(multifab), pointer       :: Source_old(:),Source_new(:)
-    type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),thermal2(:)
+    type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
@@ -64,6 +64,7 @@ contains
     type(multifab), pointer :: chk_src_new(:)
     type(multifab), pointer :: chk_rho_omegadot2(:)
     type(multifab), pointer :: chk_rho_Hnuc2(:)
+    type(multifab), pointer :: chk_rho_Hext(:)
     type(multifab), pointer :: chk_thermal2(:)
 
     character(len=5)   :: check_index
@@ -72,7 +73,7 @@ contains
 
     ! create mba, chk stuff, time, and dt
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
-                           chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, &
+                           chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, chk_rho_Hext, &
                            chk_thermal2, time, dt)
 
     ! create mla
@@ -96,7 +97,7 @@ contains
     ! allocate states
     allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
     allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs))
-    allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),thermal2(nlevs))
+    allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),rho_Hext(nlevs),thermal2(nlevs))
 
     if (ppm_type .eq. 2) then
        ng_s = 4
@@ -115,6 +116,7 @@ contains
        call multifab_build(   Source_new(n), mla%la(n),     1, 1)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
+       call multifab_build(    rho_Hext(n), mla%la(n),     1, 0)
        call multifab_build(     thermal2(n), mla%la(n),     1, 1)
     end do
 
@@ -150,7 +152,7 @@ contains
        call destroy(chk_src_new(n))
     end do
     
-    ! Note: rho_omegadot2, rho_Hnuc2, and thermal2 are not actually needed other
+    ! Note: rho_omegadot2, rho_Hnuc2, rho_Hext and thermal2 are not actually needed other
     ! than to have them available when we print a plotfile immediately after
     ! restart.  They are recomputed before they are used.
 
@@ -165,6 +167,19 @@ contains
        call destroy(chk_rho_Hnuc2(n)%la)
        call destroy(chk_rho_Hnuc2(n))
     end do
+
+    if (plot_Hext) then
+       do n=1,nlevs
+          call multifab_copy_c(rho_Hext(n),1,chk_rho_Hext(n),1,1)
+          call destroy(chk_rho_Hext(n)%la)
+          call destroy(chk_rho_Hext(n))
+       end do
+       deallocate(chk_rho_Hext)
+    else
+       do n=1,nlevs
+          call setval(rho_Hext(n),ZERO,all=.true.)
+       end do
+    end if
 
     if (use_thermal_diffusion) then
        do n=1,nlevs
@@ -285,7 +300,7 @@ contains
 
   subroutine initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
                                          dSdt,Source_old,Source_new, &
-                                         rho_omegadot2,rho_Hnuc2,thermal2, &
+                                         rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                          the_bc_tower,div_coeff_old,div_coeff_new, &
                                          gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
                                          rhoh0_old,rho0_new,rhoh0_new,p0_init, &
@@ -304,7 +319,7 @@ contains
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
     type(multifab), pointer       :: Source_old(:),Source_new(:)
-    type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),thermal2(:)
+    type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
@@ -347,7 +362,7 @@ contains
     ! allocate states
     allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
     allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs))
-    allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),thermal2(nlevs))
+    allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),rho_Hext(nlevs),thermal2(nlevs))
 
     if (ppm_type .eq. 2) then
        ng_s = 4
@@ -366,6 +381,7 @@ contains
        call multifab_build(   Source_new(n), mla%la(n),     1, 1)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
+       call multifab_build(    rho_Hext(n), mla%la(n),     1, 0)
        call multifab_build(     thermal2(n), mla%la(n),     1, 1)
 
        call setval(         uold(n), ZERO, all=.true.)
@@ -377,6 +393,7 @@ contains
        call setval(         dSdt(n), ZERO, all=.true.)
        call setval(rho_omegadot2(n), ZERO, all=.true.)
        call setval(    rho_Hnuc2(n), ZERO, all=.true.)
+       call setval(    rho_Hext(n), ZERO, all=.true.)
        call setval(     thermal2(n), ZERO, all=.true.)
     end do
     ! initialize dx
@@ -481,7 +498,7 @@ contains
 
   subroutine initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
                                             dSdt,Source_old,Source_new, &
-                                            rho_omegadot2,rho_Hnuc2,thermal2, &
+                                            rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                             the_bc_tower,div_coeff_old,div_coeff_new, &
                                             gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
                                             rhoh0_old,rho0_new,rhoh0_new,p0_init, &
@@ -507,7 +524,7 @@ contains
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
     type(multifab), pointer       :: Source_old(:),Source_new(:)
-    type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),thermal2(:)
+    type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
@@ -550,7 +567,7 @@ contains
     ! allocate states
     allocate(uold(max_levs),sold(max_levs),gpres(max_levs),pres(max_levs))
     allocate(dSdt(max_levs),Source_old(max_levs),Source_new(max_levs))
-    allocate(rho_omegadot2(max_levs),rho_Hnuc2(max_levs),thermal2(max_levs))
+    allocate(rho_omegadot2(max_levs),rho_Hnuc2(max_levs),rho_Hext(max_levs),thermal2(max_levs))
 
     ! Build the level 1 boxarray
     call box_build_2(bxs,lo,hi)
@@ -728,6 +745,7 @@ contains
        call multifab_build(   Source_new(n), mla%la(n),     1, 1)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
+       call multifab_build(    rho_Hext(n), mla%la(n),     1, 0)
        call multifab_build(     thermal2(n), mla%la(n),     1, 1)
 
        call setval(         uold(n), ZERO, all=.true.)
@@ -739,6 +757,7 @@ contains
        call setval(         dSdt(n), ZERO, all=.true.)
        call setval(rho_omegadot2(n), ZERO, all=.true.)
        call setval(    rho_Hnuc2(n), ZERO, all=.true.)
+       call setval(    rho_Hext(n), ZERO, all=.true.)
        call setval(     thermal2(n), ZERO, all=.true.)
     end do
 
