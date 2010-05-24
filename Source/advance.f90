@@ -831,6 +831,10 @@ contains
     call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart_vec, &
                         rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
+    advect_time = advect_time + parallel_wtime() - advect_time_start
+
+    proj_time_start = parallel_wtime()
+
     do n=1,nlevs
        call multifab_build(macrhs(n), mla%la(n), 1, 0)
     end do
@@ -878,9 +882,13 @@ contains
        call destroy(macphi(n))
     end do
 
+    proj_time = proj_time + parallel_wtime() - proj_time_start
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 8 -- advect the base state and full state through dt
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    advect_time_start = parallel_wtime()
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP  8 : advect base   '
