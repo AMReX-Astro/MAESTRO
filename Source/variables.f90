@@ -18,7 +18,7 @@ module variables
   integer, save :: icomp_machno,icomp_dg,icomp_pi,icomp_gpi,icomp_pioverp0
   integer, save :: icomp_entropy,icomp_entropypert
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
-  integer, save :: icomp_omegadot,icomp_enuc,icomp_sponge
+  integer, save :: icomp_omegadot,icomp_enuc,icomp_Hext, icomp_sponge
   integer, save :: icomp_thermal, icomp_conductivity
 
   ! the total number of plot components
@@ -68,7 +68,7 @@ contains
 
     use network, only: nspec
     use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
-         plot_omegadot
+         plot_omegadot, plot_Hext
     use geometry, only: spherical, dm
 
     icomp_vel      = get_next_plot_index(dm)
@@ -116,6 +116,10 @@ contains
     if (plot_omegadot) then
       icomp_omegadot = get_next_plot_index(nspec)
       icomp_enuc     = get_next_plot_index(1)
+    end if
+
+    if (plot_Hext) then
+      icomp_Hext     = get_next_plot_index(1)
     end if
 
     if (use_thermal_diffusion) then

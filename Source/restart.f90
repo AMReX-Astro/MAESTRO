@@ -13,7 +13,8 @@ module restart_module
 contains
 
   subroutine fill_restart_data(restart_int,mba,chkdata,chk_p,chk_dsdt,chk_src_old, &
-                               chk_src_new,chk_rho_omegadot2,chk_rho_Hnuc2,chk_thermal2, &
+                               chk_src_new,chk_rho_omegadot2,chk_rho_Hnuc2, &
+                               chk_rho_Hext,chk_thermal2, &
                                time,dt)
 
     use parallel
@@ -33,6 +34,7 @@ contains
     type(multifab)   , pointer        :: chk_src_new(:)
     type(multifab)   , pointer        :: chk_rho_omegadot2(:)
     type(multifab)   , pointer        :: chk_rho_Hnuc2(:)
+    type(multifab)   , pointer        :: chk_rho_Hext(:)
     type(multifab)   , pointer        :: chk_thermal2(:)
     character(len=5)                  :: check_index
     character(len=6)                  :: check_index6
@@ -54,7 +56,8 @@ contains
     if ( parallel_IOProcessor()) &
       print *,'Reading ', trim(check_file_name), ' to get state data for restart'
     call checkpoint_read(chkdata, chk_p, chk_dsdt, chk_src_old, chk_src_new, &
-                         chk_rho_omegadot2, chk_rho_Hnuc2, chk_thermal2, check_file_name, &
+                         chk_rho_omegadot2, chk_rho_Hnuc2, chk_rho_Hext, &
+                         chk_thermal2, check_file_name, &
                          time, dt, nlevs_local)
 
     call build(mba,nlevs_local,dm)

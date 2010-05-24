@@ -11,7 +11,8 @@ contains
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpi,pi,normal,rho0_old,rhoh0_old, &
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
-                              rho_omegadot2,rho_Hnuc2,thermal2,div_coeff_old,div_coeff_new, &
+                              rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,&
+                              div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
                               dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
                               psi,sponge,hgrhs)
@@ -76,6 +77,7 @@ contains
     real(dp_t)    ,  intent(inout) ::        w0(:,0:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
     type(multifab),  intent(inout) :: rho_Hnuc2(:)
+    type(multifab),  intent(inout) :: rho_Hext(:)
     type(multifab),  intent(inout) ::  thermal2(:)
     real(dp_t)    ,  intent(inout) :: div_coeff_old(:,0:)
     real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
@@ -106,7 +108,6 @@ contains
     type(multifab) ::      delta_gamma1(mla%nlevel)
     type(multifab) ::     rho_omegadot1(mla%nlevel)
     type(multifab) ::         rho_Hnuc1(mla%nlevel)
-    type(multifab) ::          rho_Hext(mla%nlevel)
     type(multifab) ::      div_coeff_3d(mla%nlevel)
     type(multifab) ::            gamma1(mla%nlevel)
     type(multifab) ::        etarhoflux(mla%nlevel)
@@ -222,7 +223,6 @@ contains
        call multifab_build(s1(n),            mla%la(n), nscal, sold(n)%ng)
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
        call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
-       call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
     end do
 
     call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old,halfdt,dx, &
@@ -1359,10 +1359,6 @@ contains
                  mla,the_bc_tower)
 
     end if
-
-    do n=1,nlevs
-       call destroy(rho_Hext(n))
-    enddo
 
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
