@@ -17,8 +17,8 @@ contains
     use plot_variables_module
     use variables
     use network, only: nspec, short_spec_names
-    use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
-         plot_omegadot
+    use probin_module, only: plot_spec, plot_trac, plot_base, &
+                             use_thermal_diffusion, plot_omegadot, plot_Hext
     use geometry, only: spherical, dm
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -95,6 +95,10 @@ contains
        plot_names(icomp_enuc) = "enucdot"
     end if
 
+    if (plot_Hext) then
+       plot_names(icomp_Hext) = "Hext"
+    endif
+
     if (use_thermal_diffusion) then
        plot_names(icomp_thermal) = "thermal"
        plot_names(icomp_conductivity) = "conductivity"
@@ -102,7 +106,8 @@ contains
 
   end subroutine get_plot_names
 
-  subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot,rho_Hnuc,thermal,Source, &
+  subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot,rho_Hnuc, &
+                           rho_Hext,thermal,Source, &
                            sponge,mba,plot_names,time,dx,the_bc_tower,w0,rho0,rhoh0,p0, &
                            tempbar,gamma1bar,normal)
 
@@ -111,10 +116,11 @@ contains
     use variables
     use plot_variables_module
     use fill_3d_module
-    use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base, &
-         plot_omegadot, &
-         single_prec_plotfiles, edge_nodal_flag, do_smallscale, use_thermal_diffusion, &
-         evolve_base_state, prob_lo, prob_hi
+    use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, & 
+                             plot_base, plot_omegadot, plot_Hext, &
+                             single_prec_plotfiles, edge_nodal_flag, &
+                             do_smallscale, use_thermal_diffusion, &
+                             evolve_base_state, prob_lo, prob_hi
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use average_module
     use ml_restriction_module
@@ -131,6 +137,7 @@ contains
     type(multifab)   , intent(in   ) :: gpi(:)
     type(multifab)   , intent(in   ) :: rho_omegadot(:)
     type(multifab)   , intent(in   ) :: rho_Hnuc(:)
+    type(multifab)   , intent(in   ) :: rho_Hext(:)
     type(multifab)   , intent(in   ) :: thermal(:)
     type(multifab)   , intent(in   ) :: Source(:)
     type(multifab)   , intent(in   ) :: sponge(:)
@@ -200,6 +207,11 @@ contains
           call multifab_copy_c(plotdata(n),icomp_enuc,rho_Hnuc(n),1)
           call multifab_div_div_c(plotdata(n),icomp_enuc,s(n),rho_comp,1)
          
+       end if
+
+       if (plot_Hext) then
+          call multifab_copy_c(plotdata(n),icomp_Hext,rho_Hext(n),1)
+          call multifab_div_div_c(plotdata(n),icomp_Hext,s(n),rho_comp,1)
        end if
 
        ! THERMAL = del dot kappa grad T
