@@ -87,6 +87,7 @@ contains
     use bl_constants_module
     use geometry, only: center
     use variables, only: rho_comp
+    use probin_module, only: heating_time, heating_rad, heating_peak, heating_sigma
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
@@ -94,19 +95,14 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),time,dt
 
     integer :: i, j, k
-    real(kind=dp_t) :: x, y, z, r, y_0, fac, t_stop
-
-    t_stop = 0.5d0
-
-!    y_0 = 4.d7
-    y_0 = 0.d0
+    real(kind=dp_t) :: x, y, z, r, fac
 
     rho_Hext = 0.d0
 
-    if (time .lt. t_stop) then
+    if (time .lt. heating_time) then
 
-       if ( (time+dt) .gt. t_stop ) then
-          fac = (t_stop - time) / dt
+       if ( (time+dt) .gt. heating_time ) then
+          fac = (heating_time - time) / dt
        else
           fac = 1.d0
        end if
@@ -122,7 +118,8 @@ contains
 
                 r = sqrt(x**2 + y**2 + z**2)
 
-                rho_Hext(i,j,k) = fac * s(i,j,k,rho_comp)* 1.d16*exp(-(r-y_0)**2/1.d14)
+                rho_Hext(i,j,k) = fac * s(i,j,k,rho_comp) * heating_peak &
+                     * exp(-(r-heating_rad)**2/heating_sigma)
 
              enddo
           enddo
