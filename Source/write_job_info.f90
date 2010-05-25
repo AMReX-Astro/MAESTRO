@@ -10,7 +10,8 @@ subroutine write_job_info(dirname, mba)
   use bl_system_module, only: BL_CWD_SIZE, get_cwd 
   use ml_boxarray_module
   use build_info_module, only: build_date, build_dir, build_machine, &
-                               module_list
+                               module_list, f90_compile_line, f_compile_line, &
+                               C_compile_line, link_line
 
   implicit none
 
@@ -61,6 +62,15 @@ subroutine write_job_info(dirname, mba)
      write (99,1001) "build dir:     ", trim(build_dir)
      write (99,*) " "
      write (99,1001) "modules used:  ", trim(module_list)
+     write (99,*) " "
+     write (99,1001) "F90 compile line: ", trim(f90_compile_line)
+     write (99,*) " "
+     write (99,1001) "F77 compile line: ", trim(f_compile_line)
+     write (99,*) " "     
+     write (99,1001) "C compile line:   ", trim(C_compile_line)
+     write (99,*) " "
+     write (99,1001) "linker line:      ", trim(link_line)
+
 
      write (99,*) " "
      write (99,*) " "

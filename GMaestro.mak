@@ -37,7 +37,7 @@ probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
 deppairs: build_info.f90
 
 build_info.f90: 
-	$(FPARALLEL)/scripts/make_build_info "$(Fmdirs)"
+	$(FPARALLEL)/scripts/make_build_info "$(Fmdirs)" "$(COMPILE.f90)" "$(COMPILE.f)" "$(COMPILE.c)" "$(LINK.f90)"
 
 
 $(odir)/build_info.o: build_info.f90
