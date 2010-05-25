@@ -502,7 +502,11 @@ contains
        call compute_cutoff_coords(rho0_new)
     end if
 
-    call make_grav_cell(grav_cell_new,rho0_new)
+    if (evolve_base_state) then
+       call make_grav_cell(grav_cell_new,rho0_new)
+    else
+       grav_cell_new = grav_cell_old
+    end if
 
     if (evolve_base_state) then
 
@@ -643,16 +647,21 @@ contains
     
     misc_time_start = parallel_wtime()
 
-    do n=1,nlevs
-       call multifab_build(gamma1(n), mla%la(n), 1, 0)
-    end do
-       
-    call make_gamma(mla,gamma1,snew,p0_new,dx)
-    call average(mla,gamma1,gamma1bar,dx,1)
+    ! compute gamma1bar
+    if (evolve_base_state) then
 
-    do n=1,nlevs
-       call destroy(gamma1(n))
-    end do
+       do n=1,nlevs
+          call multifab_build(gamma1(n), mla%la(n), 1, 0)
+       end do
+       
+       call make_gamma(mla,gamma1,snew,p0_new,dx)
+       call average(mla,gamma1,gamma1bar,dx,1)
+
+       do n=1,nlevs
+          call destroy(gamma1(n))
+       end do
+
+    end if
 
     call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
     
@@ -952,13 +961,15 @@ contains
        call compute_cutoff_coords(rho0_new)
     end if
 
-    call make_grav_cell(grav_cell_new,rho0_new)
-
-    ! Define base state at half time for use in velocity advance
-    rho0_nph = HALF*(rho0_old+rho0_new)
-
-    ! Define gravity at half time for use in velocity advance
-    call make_grav_cell(grav_cell_nph,rho0_nph)
+    if (evolve_base_state) then
+       call make_grav_cell(grav_cell_new,rho0_new)
+       rho0_nph = HALF*(rho0_old+rho0_new)
+       call make_grav_cell(grav_cell_nph,rho0_nph)
+    else
+       grav_cell_new = grav_cell_old
+       rho0_nph = rho0_old
+       grav_cell_nph = grav_cell_old
+    end if
 
     if (evolve_base_state) then
        
@@ -1108,16 +1119,21 @@ contains
 
     misc_time_start = parallel_wtime()
 
-    do n=1,nlevs
-       call multifab_build(gamma1(n), mla%la(n), 1, 0)
-    end do
+    ! compute gamma1bar
+    if (evolve_base_state) then
 
-    call make_gamma(mla,gamma1,snew,p0_new,dx)
-    call average(mla,gamma1,gamma1bar,dx,1)
+       do n=1,nlevs
+          call multifab_build(gamma1(n), mla%la(n), 1, 0)
+       end do
 
-    do n=1,nlevs
-       call destroy(gamma1(n))
-    end do
+       call make_gamma(mla,gamma1,snew,p0_new,dx)
+       call average(mla,gamma1,gamma1bar,dx,1)
+
+       do n=1,nlevs
+          call destroy(gamma1(n))
+       end do
+       
+    end if
 
     call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
 
