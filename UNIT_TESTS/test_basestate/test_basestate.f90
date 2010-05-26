@@ -78,7 +78,7 @@ contains
           g14 = 1.0_dp_t + tmp1 + tmp2 + tmp3
           tmp1 = 8.67d27 * g14 * X_CNO * X_1 * rho / T_6_third**2
           tmp2 = dexp(-1.5228d2 / T_6_third)
-          Hbar(r) = rho * tmp1 * tmp2
+          Hbar(r) = tmp1 * tmp2
        enddo
 
     else
