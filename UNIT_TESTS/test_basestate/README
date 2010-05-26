@@ -16,10 +16,18 @@ spherical test problem from multilevel paper:
 
   run with the hydrostatic_adjust Castro setup.
 
+  Note that heating_time controls when the heating turns off, which
+  will result in w0 going to zero after heating_time seconds of the 
+  simulation. 
 
+  Note that total run time is set to a time > heating_time because 
+  CASTRO takes additional time to equilibrate after heating is shut off.
 
 plane-parallel test problem:
 
   inputs-planar approximates what was done in paper II, but this
   should be revisited.
 
+analytical CNO cycle test problem:
+
+  make sure to change the nework in GNUmakefile to H_core_null
