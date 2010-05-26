@@ -44,6 +44,7 @@ subroutine varden()
   real(dp_t), allocatable ::              p0_old(:,:)
   real(dp_t), allocatable ::              p0_new(:,:)
   real(dp_t), allocatable ::                  w0(:,:)
+  real(dp_t), allocatable ::              w0_tmp(:,:)
   real(dp_t), allocatable ::                 psi(:,:)
   real(dp_t), allocatable ::           etarho_ec(:,:)
   real(dp_t), allocatable ::           etarho_cc(:,:)
@@ -134,6 +135,7 @@ subroutine varden()
   allocate(             p0_old(nlevs_radial,0:nr_fine-1))
   allocate(             p0_new(nlevs_radial,0:nr_fine-1))
   allocate(                 w0(nlevs_radial,0:nr_fine))
+  allocate(             w0_tmp(nlevs_radial,0:nr_fine))
   allocate(                psi(nlevs_radial,0:nr_fine-1))
   allocate(          etarho_ec(nlevs_radial,0:nr_fine))
   allocate(          etarho_cc(nlevs_radial,0:nr_fine-1))
@@ -254,7 +256,9 @@ subroutine varden()
      ! compute w_0
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     call make_w0(w0,w0,w0_force,Sbar_old,s0_old(:,:,rho_comp),s0_old(:,:,rho_comp), &
+     w0_tmp = w0
+
+     call make_w0(w0,w0_tmp,w0_force,Sbar_old,s0_old(:,:,rho_comp),s0_old(:,:,rho_comp), &
                   p0_old,p0_old,gamma1bar_old,gamma1bar_old,p0_minus_pthermbar,psi, &
                   etarho_ec,etarho_cc,dt,dtold)
 
@@ -421,9 +425,20 @@ subroutine varden()
      ! compute w_0
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     call make_w0(w0,w0,w0_force,Sbar_nph,s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
+     w0_tmp = w0
+
+     call make_w0(w0,w0_tmp,w0_force,Sbar_nph,s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
                   p0_old,p0_new,gamma1bar_old,gamma1bar_new,p0_minus_pthermbar,psi, &
                   etarho_ec,etarho_cc,dt,dtold)
+
+     if (iter .eq. 1) then
+        open(unit=10,file="base.orig_w0")
+        write(10,*) "ONE=r_edge, TWO=w0"
+        do r=0,nr_fine
+           write(10,1000) r_edge_loc(1,r), w0(1,r)
+        enddo
+        close(unit=10)
+     end if
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! update density and compute rho0_predicted_edge
