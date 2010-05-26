@@ -203,11 +203,11 @@ subroutine varden()
   dt    = initial_dt
   dtold = dt
 
-  iter = 0
+  iter = 1
 
-  do while (time < stop_time)
+  do while (time < stop_time .and. iter .le. max_step)
 
-     print *, 'time = ', time
+     print *, 'step, time = ', iter, time
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the heating term and Sbar
