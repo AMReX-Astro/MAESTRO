@@ -68,7 +68,8 @@ subroutine varden()
 
   call network_init()
   print *, 'use_eos_coulomb = ', use_eos_coulomb
-  call eos_init(use_eos_coulomb=use_eos_coulomb)
+  print *, 'EOS temp cutoff = ', small_temp
+  call eos_init(use_eos_coulomb=use_eos_coulomb, small_temp=small_temp)
 
   nlevs = 1
   nlevs_radial = 1
@@ -76,6 +77,10 @@ subroutine varden()
   ! we get the number of points for the base state directly from
   ! the model file and use this to set the resolution.  It should be the 
   ! case that prob_hi(1) agrees with the maximum radius for the model file.
+  !
+  ! CEG: for a 3d octant problem with box side length of prob_hi it should
+  !      be the case that the maxium radius >= sqrt(3) * prob_hi
+  !      Just compute dr_fine the same way it is done in initialize.f90
   nr_fine = get_model_npts(model_file)
   print *, 'number of points in model file: ', nr_fine
 
@@ -88,7 +93,13 @@ subroutine varden()
   allocate(numdisjointchunks(nlevs))
   numdisjointchunks(:) = 1
 
-  dr_fine = (prob_hi(1) - prob_lo(1))/nr_fine
+  if (prob_type .eq. 1) then
+     dr_fine = (prob_hi(1) - prob_lo(1))/nr_fine
+  else 
+     ! need to compute it this way to agree with how the initial model was 
+     !  computed
+     dr_fine = prob_hi(1) / (drdxfac * n_cellx)
+  endif
 
   allocate(dx(nlevs,1))
   dx(1,1) = dr_fine
@@ -161,9 +172,26 @@ subroutine varden()
   write(*,*)
   write(*,*)'writing initial data to base.orig'
   open(unit=10,file="base.orig")
-  do r=0,nr_fine-1
-     write(10,1000) r_cc_loc(1,r), s0_old(1,r,rho_comp), s0_old(1,r,temp_comp), p0_old(1,r)
-  enddo
+  if (prob_type .eq. 1) then
+     do r=0,nr_fine-1
+        write(10,1000) r_cc_loc(1,r), s0_old(1,r,rho_comp), &
+             s0_old(1,r,temp_comp),p0_old(1,r)
+     enddo
+  elseif (prob_type .eq. 2) then
+     do n = 1, nlevs
+        call get_heating(Hext_bar(n,0:),s0_old(n,:,:),time,dt)
+     enddo
+
+     do r=0,nr_fine-1
+        write(10,1000) r_cc_loc(1,r), s0_old(1,r,rho_comp), &
+             s0_old(1,r,temp_comp),p0_old(1,r), Hext_bar(1,r),&
+             s0_old(1,r,spec_comp),s0_old(1,r,spec_comp+3),&
+             s0_old(1,r,spec_comp+4),s0_old(1,r,spec_comp+5)
+     enddo
+  else
+     write(*,*)'prob_type not yet supported'
+     stop
+  end if
   close(unit=10)
 
   call compute_cutoff_coords(s0_old(:,:,rho_comp))
@@ -603,11 +631,24 @@ subroutine varden()
 
   ! output
   open(unit=10,file="base.new")
-  write(10,*) "ONE=r_cc, TWO=rho, THREE=temp, FOUR=p0"
-  do r=0,nr_fine-1
-     write(10,1000) r_cc_loc(1,r), s0_new(1,r,rho_comp), s0_new(1,r,temp_comp), &
-          p0_new(1,r)
-  enddo
+  if (prob_type .eq. 1) then 
+     write(10,*) "ONE=r_cc, TWO=rho, THREE=temp, FOUR=p0"
+     do r=0,nr_fine-1
+        write(10,1000) r_cc_loc(1,r), s0_new(1,r,rho_comp), &
+             s0_new(1,r,temp_comp),p0_new(1,r)
+     enddo
+  elseif (prob_type .eq. 2) then
+     write(10,*) "ONE=r_cc, TWO=rho, THREE=temp, FOUR=p0  FIVE=Hext SIX+=H1 C N O" 
+     do r=0,nr_fine-1
+        write(10,1000) r_cc_loc(1,r), s0_new(1,r,rho_comp), &
+             s0_new(1,r,temp_comp),p0_new(1,r), Hext_bar(1,r), &
+             s0_old(1,r,spec_comp),s0_old(1,r,spec_comp+3),&
+             s0_old(1,r,spec_comp+4),s0_old(1,r,spec_comp+5)
+     enddo
+  else 
+     write(*,*)'prob_type not yet supported'
+     stop
+  end if
   close(unit=10)
 
   open(unit=10,file="base.new_w0")
@@ -617,7 +658,7 @@ subroutine varden()
   enddo
   close(unit=10)
 
-1000 format(1x,6(g20.10))
+1000 format(1x,11(g20.10))
 
   deallocate(r_start_coord,r_end_coord,numdisjointchunks)
   deallocate(dx,dr,nr,r_cc_loc,r_edge_loc)
