@@ -31,7 +31,6 @@ subroutine varden()
   integer :: n,r,comp,comp2,iter
 
   real(dp_t) :: frac,delta,sumX,time,dt,dtold
-  real(dp_t) :: factor,divw,w0dpdr_nph,w0dpdr_nph_1,w0dpdr_nph_2
 
   real(dp_t), allocatable ::                  dx(:,:)
   real(dp_t), allocatable ::           grav_cell(:,:)
