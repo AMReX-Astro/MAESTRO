@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "stan_t3.67e8_lo_0.5cm.hse"
+ model_file = "stan_t3.67e8_lo_5cm.hse"
  spherical_in = 0
  plot_base = T
 
