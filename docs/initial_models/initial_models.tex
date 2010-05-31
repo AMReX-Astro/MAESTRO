@@ -2,10 +2,16 @@ Here we briefly describe the various routines for generating initial models
 for the main MAESTRO problems and how the initial model is used to initialize
 both the base state and the full Cartesian state.
 
+\MarginPar{I think it would be a good idea to mention some where in here that MAESTRO outputs info that's useful to check --dr of base state and dr of the input file, which should be the same at the finest level; and Maximum HSE Error, which should be some small number.}
+
 \section{Creating the Model Data from Raw Data}\label{Sec:Creating the Model Data from Raw Data}
 \label{sec:initial_models_main}
 
-We begin with raw data, $\rho^{\raw}, T^{\raw}, p^{\raw}$, and
+MAESTRO needs to be given model data with the same resolution as the base state.
+(Note that for spherical problems we set 
+$\Delta r = \Delta x/\mathtt{drdxfac}$.)  
+We need to generate this from the raw data,
+ $\rho^{\raw}, T^{\raw}, p^{\raw}$, and
 $X^{\raw}$.  Here is the raw data file for each test problem:
 \begin{eqnarray}
 {\tt test2} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \nonumber \\
@@ -14,9 +20,8 @@ $X^{\raw}$.  Here is the raw data file for each test problem:
 {\tt spherical\_heat} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \\
 {\tt xrb} & \rightarrow & {\tt initial\_models/xrb/sorted\_xrb.raw} \nonumber
 \end{eqnarray}
-Using the raw data, we need to generate model data with the same
-resolution as the base state.  Note that for spherical problems we set
-$\Delta r = \Delta x/\mathtt{drdxfac}$.  We use a fortran subroutine
+
+We use a fortran subroutine
 to interpolate the raw data, yielding the model data, $\rho^{\model},
 T^{\model}, p^{\model}$, and $X^{\model}$.  The fortran subroutine
 then uses an iterative procedure to modify the model data so that it
@@ -37,6 +42,8 @@ to a user defined tolerance.  Here are the fortran subroutines for each test pro
 The model data is not generated at run-time - it must be generated in
 advance of running any MAESTRO examples.  The inputs file should point
 to the file containing the model data.
+
+During runtime, MAESTRO will outout information about the Check that ``dr of MAESTRO base state'' and ``dr of input file data''
 
 \subsection{Multilevel Plane-Parallel}
 We do the same thing as the single-level case except that we generate
