@@ -22,6 +22,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
+    use probin_module, only: max_levs, drdxfac
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp
@@ -53,6 +54,8 @@ contains
     real(kind=dp_t), allocatable :: target_buffer(:)
 
     type(bl_prof_timer), save :: bpt
+
+    logical :: limit
 
     call build(bpt, "average")
 
@@ -283,7 +286,7 @@ contains
        ! compute phibar
        stencil_coord(:) = 0
 
-!$omp parallel do private(r,radius,j) firstprivate(stencil_coord)
+!$omp parallel do private(r,radius,j,limit) firstprivate(stencil_coord)
        do r=0,nr_fine-1
 
          radius = (dble(r)+HALF)*dr(1)
@@ -304,6 +307,12 @@ contains
          stencil_coord(which_lev(r)) = min(stencil_coord(which_lev(r)), &
                                            max_rcoord(which_lev(r))-1)
 
+         if (r > nr_fine - 1 -drdxfac*max_levs) then
+            limit = .false. 
+         else 
+            limit = .true.
+         end if
+
          call quad_interp(radius, &
                           radii(which_lev(r),stencil_coord(which_lev(r))-1), &
                           radii(which_lev(r),stencil_coord(which_lev(r))  ), &
@@ -311,7 +320,7 @@ contains
                           phibar(1,r), &
                           phisum(which_lev(r),stencil_coord(which_lev(r))-1), &
                           phisum(which_lev(r),stencil_coord(which_lev(r))  ), &
-                          phisum(which_lev(r),stencil_coord(which_lev(r))+1))
+                          phisum(which_lev(r),stencil_coord(which_lev(r))+1), limit)
 
       end do
 !$omp end parallel do
@@ -676,16 +685,20 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine quad_interp(x,x0,x1,x2,y,y0,y1,y2)
+  subroutine quad_interp(x,x0,x1,x2,y,y0,y1,y2,limit)
 
     real(kind=dp_t), intent(in   ) :: x,x0,x1,x2,y0,y1,y2
     real(kind=dp_t), intent(  out) :: y
+    logical,         intent(in   ) :: limit
     
     y = y0 + (y1-y0)/(x1-x0)*(x-x0) &
            + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(x-x0)*(x-x1)
 
-    if (y .gt. max(y0,y1,y2)) y = max(y0,y1,y2)
-    if (y .lt. min(y0,y1,y2)) y = min(y0,y1,y2)
+
+    if (limit) then
+       if (y .gt. max(y0,y1,y2)) y = max(y0,y1,y2)
+       if (y .lt. min(y0,y1,y2)) y = min(y0,y1,y2)
+    end if
 
   end subroutine quad_interp
 
