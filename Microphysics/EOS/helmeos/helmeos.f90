@@ -105,14 +105,13 @@
 
 !..for the interpolations
       integer          iat,jat
-      double precision tsav,dsav,free,df_d,df_t,df_dd,df_tt,df_dt
-      double precision dth,dt2,dti,dt2i,dd,dd2,ddi,dd2i,xt,xd,mxt,mxd, &
+      double precision free,df_d,df_t,df_tt,df_dt
+      double precision xt,xd,mxt,mxd, &
                        si0t,si1t,si2t,si0mt,si1mt,si2mt, &
                        si0d,si1d,si2d,si0md,si1md,si2md, &
                        dsi0t,dsi1t,dsi2t,dsi0mt,dsi1mt,dsi2mt, &
                        dsi0d,dsi1d,dsi2d,dsi0md,dsi1md,dsi2md, &
                        ddsi0t,ddsi1t,ddsi2t,ddsi0mt,ddsi1mt,ddsi2mt, &
-                       ddsi0d,ddsi1d,ddsi2d,ddsi0md,ddsi1md,ddsi2md, &
                        z,psi0,dpsi0,ddpsi0,psi1,dpsi1,ddpsi1,psi2, &
                        dpsi2,ddpsi2,din,h5,fi(36), &
                        xpsi0,xdpsi0,xpsi1,xdpsi1,h3, &
@@ -127,8 +126,7 @@
                        plasg,plasgdd,plasgdt,plasgda,plasgdz,     &
                        ecoul,decouldd,decouldt,decoulda,decouldz, &
                        pcoul,dpcouldd,dpcouldt,dpcoulda,dpcouldz, &
-                       scoul,dscouldd,dscouldt,dscoulda,dscouldz, &
-                       tmelt,tfermi,rhocond,z2,x1,x2
+                       scoul,dscouldd,dscouldt,dscoulda,dscouldz
 
       double precision  a1,b1,c1,d1,e1,a2,b2,c2,third,esqu
       parameter        (a1    = -0.898004d0, &
