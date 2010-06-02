@@ -1,16 +1,20 @@
-This is a test problem for base-state expansion in a full white-dwarf environment.
-We have a gaussinan bump of heating at the center of the star, and a null reaction network.
+This is 3D version of test_basestate. It tests base-state expansion with a 
+spherically symmetric analytic heating term.
 
-This is 3D version of test_basestate.
+prob_type 1 is for a full white-dwarf environment.  We have a gaussian bump 
+of heating at the center of the star, and a null reaction network.
 
-Note: If you would like to force Utilde=0, several tweaks need to be added to the code
-to fix for numerical noise coming from the fact that "X - Avg(X)" should be ZERO,
-but isn't due to roundoff.
+prob_type 2 is for hydrogen core convection with an analytic expression for 
+the CNO cycle
 
-In subroutne make_hgrhs_3d, set rhs=0.d0
+Note: Several tweaks are used in the code to force Utilde=0.  These are needed 
+because "X - Avg(X)" should be ZERO, but isn't due to roundoff.  These tweaks 
+are:
 
-In subroutine make_macrhs_3d_sphr, set rhs=0.d0
+In subroutne make_hgrhs_3d, rhs=0.d0
 
-In subroutine mk_vel_force_3d_sphr, set rhopert = 0.d0
+In subroutine make_macrhs_3d_sphr, rhs=0.d0
 
-In subroutine add_w0_force_3d_sphr, comment out the w0_force contribution
+In subroutine mk_vel_force_3d_sphr, rhopert = 0.d0
+
+In subroutine add_w0_force_3d_sphr, the w0_force contribution is commented out
