@@ -17,7 +17,7 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state(n,model_file,s0_init,p0_init)
+  subroutine init_base_state(n,model_file,s0_init,p0_init,dx)
 
     use bl_prof_module
     use parallel
@@ -39,6 +39,7 @@ contains
     character(len=256), intent(in   ) :: model_file
     real(kind=dp_t)   , intent(inout) :: s0_init(0:,:)
     real(kind=dp_t)   , intent(inout) :: p0_init(0:)
+    real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! local
     integer         :: i,j,r,comp
