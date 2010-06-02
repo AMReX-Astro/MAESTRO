@@ -106,10 +106,9 @@ contains
           select case (dm)
           case (1)
              call makeHfromRhoT_edge_1d(sepx(:,1,1,:), ng_se, &
-                                        rho0_old(n,:), rhoh0_old(n,:), t0_old(n,:), &
                                         rho0_edge_old(n,:), rhoh0_edge_old(n,:), &
-                                        t0_edge_old(n,:), rho0_new(n,:), rhoh0_new(n,:), &
-                                        t0_new(n,:), rho0_edge_new(n,:), &
+                                        t0_edge_old(n,:), &
+                                        rho0_edge_new(n,:), &
                                         rhoh0_edge_new(n,:), t0_edge_new(n,:), lo, hi)
 
           case (2)
@@ -157,9 +156,7 @@ contains
   end subroutine makeHfromRhoT_edge
 
   subroutine makeHfromRhoT_edge_1d(sx,ng_se, &
-                                   rho0_old,rhoh0_old,t0_old, &
                                    rho0_edge_old,rhoh0_edge_old,t0_edge_old, &
-                                   rho0_new,rhoh0_new,t0_new, &
                                    rho0_edge_new,rhoh0_edge_new,t0_edge_new, &
                                    lo,hi)
 
@@ -172,9 +169,7 @@ contains
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_se
     real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,:)
-    real(kind=dp_t), intent(in   ) :: rho0_old(0:),rhoh0_old(0:),t0_old(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:),rhoh0_edge_old(0:),t0_edge_old(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_new(0:),rhoh0_new(0:),t0_new(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:),rhoh0_edge_new(0:),t0_edge_new(0:)
  
     integer :: i

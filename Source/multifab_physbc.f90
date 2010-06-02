@@ -44,19 +44,19 @@ contains
           do scomp = start_scomp,start_scomp+num_comp-1
              bccomp = start_bccomp + scomp - start_scomp
              call setbc_1d(sp(:,1,1,scomp), lo, hi, ng, &
-                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp))
           end do
        case (2)
           do scomp = start_scomp,start_scomp+num_comp-1
              bccomp = start_bccomp + scomp - start_scomp
              call setbc_2d(sp(:,:,1,scomp), lo, hi, ng, &
-                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp))
           end do
        case (3)
           do scomp = start_scomp,start_scomp+num_comp-1
              bccomp = start_bccomp + scomp - start_scomp
              call setbc_3d(sp(:,:,:,scomp), lo, hi, ng, &
-                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp))
           end do
        end select
     end do

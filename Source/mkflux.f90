@@ -587,12 +587,8 @@ contains
                                           ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                           w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_w0, &
                                           r0mxop(:,:,:,1),r0myop(:,:,:,1),r0mzop(:,:,:,1), &
-                                          rh0mxop(:,:,:,1),rh0myop(:,:,:,1), &
-                                          rh0mzop(:,:,:,1), &
                                           h0mxop(:,:,:,1),h0myop(:,:,:,1),h0mzop(:,:,:,1), &
                                           r0mxnp(:,:,:,1),r0mynp(:,:,:,1),r0mznp(:,:,:,1), &
-                                          rh0mxnp(:,:,:,1),rh0mynp(:,:,:,1), &
-                                          rh0mznp(:,:,:,1), &
                                           h0mxnp(:,:,:,1),h0mynp(:,:,:,1),h0mznp(:,:,:,1), &
                                           ng_0m,lo,hi)
              endif
@@ -877,10 +873,8 @@ contains
                                   umac,vmac,wmac,ng_um, &
                                   w0macx,w0macy,w0macz,ng_w0, &
                                   rho0macx_old,rho0macy_old,rho0macz_old, &
-                                  rhoh0macx_old,rhoh0macy_old,rhoh0macz_old, &
                                   h0macx_old,h0macy_old,h0macz_old, &
                                   rho0macx_new,rho0macy_new,rho0macz_new, &
-                                  rhoh0macx_new,rhoh0macy_new,rhoh0macz_new, &
                                   h0macx_new,h0macy_new,h0macz_new, &
                                   ng_0m,lo,hi)
 
@@ -907,18 +901,12 @@ contains
     real(kind=dp_t), intent(in   ) ::  rho0macx_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
     real(kind=dp_t), intent(in   ) ::  rho0macy_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
     real(kind=dp_t), intent(in   ) ::  rho0macz_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
-    real(kind=dp_t), intent(in   ) :: rhoh0macx_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
-    real(kind=dp_t), intent(in   ) :: rhoh0macy_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
-    real(kind=dp_t), intent(in   ) :: rhoh0macz_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
     real(kind=dp_t), intent(in   ) ::    h0macx_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
     real(kind=dp_t), intent(in   ) ::    h0macy_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
     real(kind=dp_t), intent(in   ) ::    h0macz_old(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
     real(kind=dp_t), intent(in   ) ::  rho0macx_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
     real(kind=dp_t), intent(in   ) ::  rho0macy_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
     real(kind=dp_t), intent(in   ) ::  rho0macz_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
-    real(kind=dp_t), intent(in   ) :: rhoh0macx_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
-    real(kind=dp_t), intent(in   ) :: rhoh0macy_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
-    real(kind=dp_t), intent(in   ) :: rhoh0macz_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
     real(kind=dp_t), intent(in   ) ::    h0macx_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
     real(kind=dp_t), intent(in   ) ::    h0macy_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)
     real(kind=dp_t), intent(in   ) ::    h0macz_new(lo(1)-ng_0m:,lo(2)-ng_0m:,lo(3)-ng_0m:)

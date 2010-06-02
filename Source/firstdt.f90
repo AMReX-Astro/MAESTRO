@@ -22,7 +22,7 @@ module firstdt_module
 
 contains
 
-  subroutine firstdt(mla,the_bc_level,u,gpi,s,divU,normal,rho0,p0,grav,gamma1bar, &
+  subroutine firstdt(mla,the_bc_level,u,gpi,s,divU,rho0,p0,grav,gamma1bar, &
                      dx,cflfac,dt)
 
     use geometry, only: dm, nlevs, spherical, nr_fine
@@ -37,7 +37,6 @@ contains
     type(multifab) , intent(in   ) ::  gpi(:)
     type(multifab) , intent(in   ) ::      s(:)
     type(multifab) , intent(in   ) ::   divU(:)
-    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) ::      rho0(:,0:)
     real(kind=dp_t), intent(in   ) ::        p0(:,0:)
     real(kind=dp_t), intent(in   ) ::      grav(:,0:)
@@ -76,7 +75,7 @@ contains
 
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      u,umac_dummy,w0_dummy,gpi,s,rho_comp,normal, &
+                      u,umac_dummy,w0_dummy,gpi,s,rho_comp, &
                       rho0,grav,dx,the_bc_level,mla)
 
     do n=1,nlevs

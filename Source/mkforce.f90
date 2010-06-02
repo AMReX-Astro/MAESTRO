@@ -20,7 +20,7 @@ module mk_vel_force_module
 contains
 
   subroutine mk_vel_force(vel_force,is_final_update, &
-                          uold,umac,w0,gpi,s,index_rho,normal, &
+                          uold,umac,w0,gpi,s,index_rho, &
                           rho0,grav,dx,the_bc_level,mla)
 
     ! index_rho refers to the index into s where the density lives.
@@ -46,7 +46,6 @@ contains
     type(multifab) , intent(in   ) :: gpi(:)
     type(multifab) , intent(in   ) :: s(:)
     integer                        :: index_rho  
-    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(in   ) :: grav(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -64,9 +63,8 @@ contains
     real(kind=dp_t), pointer ::  gpp(:,:,:,:)
     real(kind=dp_t), pointer ::   fp(:,:,:,:)
     real(kind=dp_t), pointer ::   rp(:,:,:,:)
-    real(kind=dp_t), pointer ::   np(:,:,:,:)
     integer                  :: i,comp,lo(dm),hi(dm)
-    integer                  :: ng_s,ng_f,ng_n,ng_gp,n,ng_uo,ng_um
+    integer                  :: ng_s,ng_f,ng_gp,n,ng_uo,ng_um
    
     type(multifab) :: w0_cart(mla%nlevel)
     type(multifab) :: w0mac(mla%nlevel,dm)
@@ -136,8 +134,6 @@ contains
              wmp => dataptr(umac(n,3),i)
 
              if (spherical .eq. 1) then
-                ng_n = normal(1)%ng
-                np => dataptr(normal(n), i)
                 w0cp  => dataptr(w0_cart(n), i)
                 w0xp  => dataptr(w0mac(n,1),i)
                 w0yp  => dataptr(w0mac(n,2),i)
@@ -148,7 +144,7 @@ contains
                                           w0cp(:,:,:,:),ng_wc, &
                                           w0xp(:,:,:,1),w0yp(:,:,:,1),ng_wm, &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,index_rho),ng_s, &
-                                          np(:,:,:,:),ng_n,rho0(1,:),grav(1,:),lo,hi,dx(n,:))
+                                          rho0(1,:),grav(1,:),lo,hi,dx(n,:))
              else
                 call mk_vel_force_3d_cart(fp(:,:,:,:),ng_f,is_final_update, &
                                           uop(:,:,:,:),ng_uo, &
@@ -393,14 +389,14 @@ contains
                                   w0_cart,ng_wc, &
                                   w0macx,w0macy,ng_wm, &
                                   gpi,ng_gp,rho,ng_s, &
-                                  normal,ng_n,rho0,grav,lo,hi,dx)
+                                  rho0,grav,lo,hi,dx)
 
     use fill_3d_module
     use bl_constants_module
     use geometry,  only: omega, center
     use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor, prob_lo
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_n,ng_uo,ng_um,ng_wc,ng_wm
+    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_uo,ng_um,ng_wc,ng_wm
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     logical        , intent(in   ) :: is_final_update
     real(kind=dp_t), intent(in   ) ::      uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
@@ -411,7 +407,6 @@ contains
     real(kind=dp_t), intent(in   ) ::    w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
     real(kind=dp_t), intent(in   ) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
-    real(kind=dp_t), intent(in   ) ::    normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) ::   dx(:)
