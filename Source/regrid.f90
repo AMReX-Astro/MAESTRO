@@ -200,7 +200,8 @@ contains
                          1,1,foextrap_comp,1)
 
           ! We interpolate p differently because it is nodal, not cell-centered
-          call ml_prolongation(pi(nl+1),pi(nl),mba%rr(nl,:))
+          call ml_prolongation(pi(nl+1),pi(nl),layout_get_pd(la_array(nl+1)), &
+                               mba%rr(nl,:))
 
           ! Copy from old data at current level, if it exists
           if (mla_old%nlevel .ge. nl+1) then
@@ -328,7 +329,7 @@ contains
                       1,1,foextrap_comp,1)
 
        ! We interpolate p differently because it is nodal, not cell-centered
-       call ml_prolongation(pi(nl+1),pi(nl),mba%rr(nl,:))
+       call ml_prolongation(pi(nl+1),pi(nl),layout_get_pd(mla%la(nl+1)),mba%rr(nl,:))
 
        ! Copy from old data at current level, if it exists
        if (mla_old%nlevel .ge. nl+1) then
