@@ -25,6 +25,6 @@ fEXE_sources += dgesl.f
 # xsetun.f
 fEXE_headers += vode.H
 
-include $(FPARALLEL)/extern/BLAS/Make.package
-VPATH_LOCATIONS += $(FPARALLEL)/extern/BLAS
+include $(FBOXLIB_HOME)/extern/BLAS/Make.package
+VPATH_LOCATIONS += $(FBOXLIB_HOME)/extern/BLAS
 
