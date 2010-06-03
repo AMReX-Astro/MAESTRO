@@ -438,37 +438,6 @@ contains
 
              rhopert = rho(i,j,k) - rho0_cart(i,j,k,1)
 
-             if (k .eq. 63 .and. j .eq. 63 .and. i .eq. 63) then
-                write(*,*)'(63,63,63):'
-                write(*,*)'rho = ', rho(i,j,k)
-                write(*,*)'rho0_cart = ',rho0_cart(i,j,k,1)
-                write(*,*)'rhopert = ', rhopert
-             end if
-             if (k .eq. 62 .and. j .eq. 62 .and. i .eq. 62) then
-                write(*,*)'(62,62,62):'
-                write(*,*)'rho = ', rho(i,j,k)
-                write(*,*)'rho0_cart = ',rho0_cart(i,j,k,1)
-                write(*,*)'rhopert = ', rhopert
-             end if
-             if (k .eq. 62 .and. j .eq. 63 .and. i .eq. 63) then
-                write(*,*)'(63,63,62):'
-                write(*,*)'rho = ', rho(i,j,k)
-                write(*,*)'rho0_cart = ',rho0_cart(i,j,k,1)
-                write(*,*)'rhopert = ', rhopert
-             end if
-             if (k .eq. 63 .and. j .eq. 62 .and. i .eq. 63) then
-                write(*,*)'(63,62,63):'
-                write(*,*)'rho = ', rho(i,j,k)
-                write(*,*)'rho0_cart = ',rho0_cart(i,j,k,1)
-                write(*,*)'rhopert = ', rhopert
-             end if
-             if (k .eq. 63 .and. j .eq. 63 .and. i .eq. 62) then
-                write(*,*)'(62,63,63):'
-                write(*,*)'rho = ', rho(i,j,k)
-                write(*,*)'rho0_cart = ',rho0_cart(i,j,k,1)
-                write(*,*)'rhopert = ', rhopert
-             end if
-
 ! hack to force U-tilde = ZERO
              rhopert = 0.d0
 
