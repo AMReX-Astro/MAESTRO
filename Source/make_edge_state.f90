@@ -278,13 +278,13 @@ contains
                     sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
                     if (r .ge. 2 .and. r .le. nr(n)-2) then
                        ! limit sedge
-                       if ((sedge(n,r)-s(n,r-1))*(s(n,r)-sedge(n,r)) .lt. ZERO) then
+                       if ((sedgel(n,r)-s(n,r-1))*(s(n,r)-sedgel(n,r)) .lt. ZERO) then
                           D2  = THREE*(s(n,r-1)-TWO*sedgel(n,r)+s(n,r))
                           D2L = s(n,r-2)-TWO*s(n,r-1)+s(n,r)
                           D2R = s(n,r-1)-TWO*s(n,r)+s(n,r+1)
                           sgn = sign(ONE,D2)
                           D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
-                          sedge(n,r) = HALF*(s(n,r-1)+s(n,r)) - SIXTH*D2LIM
+                          sedgel(n,r) = HALF*(s(n,r-1)+s(n,r)) - SIXTH*D2LIM
                        end if
                     end if
                  end if
@@ -370,8 +370,8 @@ contains
                        ! centered values for a change in sign in the differences adjacent to
                        ! the cell. We use the pair of differences whose minimum magnitude is 
                        ! the largest, and thus least susceptible to sensitivity to roundoff.
-                       dafacem = sedge(n,r) - sedge(n,r-1)
-                       dafacep = sedge(n,r+2) - sedge(n,r+1)
+                       dafacem = sedgel(n,r) - sedgel(n,r-1)
+                       dafacep = sedgel(n,r+2) - sedgel(n,r+1)
                        dabarm = s(n,r) - s(n,r-1)
                        dabarp = s(n,r+1) - s(n,r)
                        dafacemin = min(abs(dafacem),abs(dafacep))
