@@ -925,9 +925,9 @@ Here are the steps for the $x$-direction.  For simplicity, we replace the vector
 
 \begin{itemize}
 \item {\bf Step 1:} Compute $s_{i,+}$ and $s_{i,-}$, which are spatial interpolations of
-$s$ to the hi and lo side of the face, respectively.  See Sections \ref{Sec:ColellaWoodward} 
-and \ref{Sec:ColellaSekora} for the two options.
-\item {\bf Step 2:} Construct quadratic profiles.
+$s$ to the hi and lo faces of cell $i$, respectively.  See Sections 
+\ref{Sec:ColellaWoodward} and \ref{Sec:ColellaSekora} for the two options.
+\item {\bf Step 2:} Construct a quadratic profile within each cell.
 \begin{equation}
 s_i^I(x) = s_{i,-} + \xi\left[s_{i,+} - s_{i,-} + s_{6,i}(1-\xi)\right],\label{Quadratic Interp}
 \end{equation}
@@ -937,7 +937,8 @@ s_{6,i}= 6s_{i} - 3\left(s_{i,-}+s_{i,+}\right),
 \begin{equation}
 \xi = \frac{x - (i-\myhalf)h}{h}, ~ 0 \le \xi \le 1.
 \end{equation}
-\item {\bf Step 3:} Integrate quadratic profiles.\\ \\
+\item {\bf Step 3:} Integrate quadratic profiles to get the average value swept over the face
+over time.\\ \\
 Define the following integrals, where $\sigma = |u|\Delta t/h$:
 \begin{eqnarray}
 \mathcal{I}_{i,+}(\sigma) &=& \frac{1}{\sigma h}\int_{(i+\myhalf)h-\sigma h}^{(i+\myhalf)h}s_i^I(x)dx \\
