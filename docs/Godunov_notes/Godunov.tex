@@ -932,10 +932,10 @@ and \ref{Sec:ColellaSekora} for the two options.
 s_i^I(x) = s_{i,-} + \xi\left[s_{i,+} - s_{i,-} + s_{6,i}(1-\xi)\right],\label{Quadratic Interp}
 \end{equation}
 \begin{equation}
-s_6 = 6s_{i} - 3\left(s_{i,-}+s_{i,+}\right),
+s_{6,i}= 6s_{i} - 3\left(s_{i,-}+s_{i,+}\right),
 \end{equation}
 \begin{equation}
-\xi = \frac{x - ih}{h}, ~ 0 \le \xi \le 1.
+\xi = \frac{x - (i-\myhalf)h}{h}, ~ 0 \le \xi \le 1.
 \end{equation}
 \item {\bf Step 3:} Integrate quadratic profiles.\\ \\
 Define the following integrals, where $\sigma = |u|\Delta t/h$:
@@ -954,12 +954,12 @@ left and right edge states.  Add the source terms later if desired/necessary.\\ 
 \begin{eqnarray}
 s_{L,\ib-\myhalf\eb_x} &=&
 \begin{cases}
-s_{\ib-\eb_x} + \mathcal{I}_{\ib-\eb_x,+}(\sigma), & u_{\ib-\eb_x} ~ \text{or} ~ u_{\ib-\myhalf\eb_x}^{\mac} > 0 \\
+\mathcal{I}_{\ib-\eb_x,+}(\sigma), & u_{\ib-\eb_x} ~ \text{or} ~ u_{\ib-\myhalf\eb_x}^{\mac} > 0 \\
 s_{\ib-\eb_x}, & \text{else}.
 \end{cases}\\
 s_{R,\ib-\myhalf\eb_x} &=& 
 \begin{cases}
-s_{\ib} + \mathcal{I}_{\ib,-}(\sigma), & u_{\ib} ~ \text{or} ~ u_{\ib-\myhalf\eb_x}^{\mac} < 0 \\
+\mathcal{I}_{\ib,-}(\sigma), & u_{\ib} ~ \text{or} ~ u_{\ib-\myhalf\eb_x}^{\mac} < 0 \\
 s_{\ib}, & \text{else}.
 \end{cases}
 \end{eqnarray}
