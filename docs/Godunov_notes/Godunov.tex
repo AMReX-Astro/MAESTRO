@@ -907,7 +907,7 @@ The PPM method is an improvement over the piecewise-linear method.
 Using our notation, we modify equations (\ref{3D predict s to left}) and 
 (\ref{3D predict s to right}) in Section 
 \ref{Scalar Edge State Prediction in MAESTRO} to obtain better estimates
-for the time-centered 1D edge states, $s_{L/R,\ib-\myhalf}$.  Once these states 
+for the time-centered 1D edge states, $s_{L/R,\ib-\myhalf\eb_x}$, etc..  Once these states 
 are obtained, we continue with the full-dimensional extrapolations as 
 described before.\\ \\
 The PPM method is described in a series of papers:
@@ -953,15 +953,15 @@ Plugging in (\ref{Quadratic Interp}) gives:
 Perform a 1D extrapolation, without source terms, to get 
 left and right edge states.  Add the source terms later if desired/necessary.\\ \\
 \begin{eqnarray}
-s_{L,\ib-\myhalf\eb_x} &=&
+s_{L,i-\myhalf} &=&
 \begin{cases}
-\mathcal{I}_{\ib-\eb_x,+}(\sigma), & u_{\ib-\eb_x} ~ \text{or} ~ u_{\ib-\myhalf\eb_x}^{\mac} > 0 \\
-s_{\ib-\eb_x}, & \text{else}.
+\mathcal{I}_{i-1,+}(\sigma), & u_{i-1} ~ \text{or} ~ u_{i-\myhalf}^{\mac} > 0 \\
+s_{i-1}, & \text{else}.
 \end{cases}\\
-s_{R,\ib-\myhalf\eb_x} &=& 
+s_{R,i-\myhalf} &=& 
 \begin{cases}
-\mathcal{I}_{\ib,-}(\sigma), & u_{\ib} ~ \text{or} ~ u_{\ib-\myhalf\eb_x}^{\mac} < 0 \\
-s_{\ib}, & \text{else}.
+\mathcal{I}_{i,-}(\sigma), & u_{i} ~ \text{or} ~ u_{i-\myhalf}^{\mac} < 0 \\
+s_{i}, & \text{else}.
 \end{cases}
 \end{eqnarray}
 \end{itemize}
