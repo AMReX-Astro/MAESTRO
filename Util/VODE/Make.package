@@ -8,7 +8,6 @@ fEXE_sources += dvnlsd.f
 fEXE_sources += dvnorm.f
 fEXE_sources += dvset.f
 fEXE_sources += dvsol.f
-# dvsrco.f
 fEXE_sources += dvstep.f
 fEXE_sources += xerrwd.f
 fEXE_sources += dewset.f
@@ -21,10 +20,5 @@ fEXE_sources += dgbfa.f
 fEXE_sources += dgbsl.f
 fEXE_sources += dgefa.f
 fEXE_sources += dgesl.f
-# xsetf.f
-# xsetun.f
 fEXE_headers += vode.H
-
-include $(FBOXLIB_HOME)/extern/BLAS/Make.package
-VPATH_LOCATIONS += $(FBOXLIB_HOME)/extern/BLAS
 
