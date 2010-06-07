@@ -26,7 +26,7 @@ Fmdirs := boxlib \
           extern/EOS/conducteos \
           extern/constants \
           extern/networks/H_core_null \
-          extern/VODE \
+          extern/VODE extern/LAPACK \
           extern/random
 
 
