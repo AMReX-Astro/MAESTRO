@@ -14,23 +14,17 @@ FPARALLEL := ../..
 include $(FPARALLEL)/mk/GMakedefs.mak
 
 
-# define the packages to build this problem
-#   note: we only need to include the problem's directory if there are 
-#   unique files there (as specified in a GPackage.mak).  The problem 
-#   directory is always placed at the start of the vpath by the 
-#   GMakerules.mak.
-Fmdirs := MAESTRO/test_advect \
-	  boxlib \
-          mg \
-          MAESTRO \
-          extern/EOS/gamma_law_general \
-          extern/EOS/conducteos \
-          extern/constants \
-          extern/networks/null \
-          extern/VODE
+# define the physics packages to build this problem
+EOS_DIR := extern/EOS/gamma_law_general
+CONDUCTIVITY_DIR := extern/EOS/conducteos
+NETWORK_DIR := extern/networks/null
 
-# directories containing files that are 'include'-d via Fortran
-Fmincludes := 
+# define the special directories needed to build this problem.  Note:
+# we only need to include the problem's directory if there are unique
+# files there (as specified in a GPackage.mak).  The problem directory
+# is always placed at the start of the vpath by the GMakerules.mak.
+EXTRA_DIR := MAESTRO/test_advect
+
 
 # define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters ./_parameters.advect

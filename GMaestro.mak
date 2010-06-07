@@ -8,6 +8,36 @@
 # The directories listed in Fmincludes contain files that are included
 # in source files, and thus specified using -I in the compiler flags.
 
+# core MAESTRO directories
+MAESTRO_CORE := boxlib \
+                mg \
+                MAESTRO \
+                extern/constants \
+                extern/LAPACK
+
+
+
+# add in the problem specific stuff ("extras"), EOS, network, and
+# conductivity
+Fmdirs += $(EXTRA_DIR) \
+          $(EOS_DIR) \
+          $(NETWORK_DIR) \
+          $(CONDUCTIVITY_DIR) \
+          $(MAESTRO_CORE)
+
+
+# networks in general need the VODE + other packages
+ifneq ($(findstring null, $(NETWORK_DIR)), null)
+	Fmdirs += extern/VODE 
+endif
+
+
+# the helmeos has an include file
+ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
+	Fmincludes := extern/EOS/helmeos
+endif
+
+
 Fmpack := $(foreach dir, $(Fmdirs), $(FPARALLEL)/$(dir)/GPackage.mak)
 Fmlocs := $(foreach dir, $(Fmdirs), $(FPARALLEL)/$(dir))
 Fmincs := $(foreach dir, $(Fmincludes), $(FPARALLEL)/$(dir))
@@ -53,3 +83,4 @@ $(odir)/build_info.o: build_info.f90
 #       $(FPARALLEL)/scripts/make_build_info
 #       $(COMPILE.f90) $(OUTPUT_OPTION) build_info.f90
 
+print-%: ; @echo $* is $($*).

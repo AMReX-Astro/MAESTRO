@@ -14,19 +14,17 @@ FPARALLEL := ../..
 include $(FPARALLEL)/mk/GMakedefs.mak
 
 
-# define the packages to build this problem
-#   note: we only need to include the problem's directory if there are 
-#   unique files there (as specified in a GPackage.mak).  The problem 
-#   directory is always placed at the start of the vpath by the 
-#   GMakerules.mak.
-Fmdirs := extern/EOS/helmeos \
-          extern/EOS/conducteos \
-          extern/networks/triple_alpha 
+# define the physics packages to build this problem 
+EOS_DIR := extern/EOS/helmeos
+CONDUCTIVITY_DIR := extern/EOS/conducteos
+NETWORK_DIR := extern/networks/triple_alpha 
 
-include ../Make.MAESTRO
+# define the special directories needed to build this problem.  Note:
+# we only need to include the problem's directory if there are unique
+# files there (as specified in a GPackage.mak).  The problem directory
+# is always placed at the start of the vpath by the GMakerules.mak.
+EXTRA_DIR :=
 
-# directories containing files that are 'include'-d via Fortran
-Fmincludes := extern/EOS/helmeos
 
 # define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters 

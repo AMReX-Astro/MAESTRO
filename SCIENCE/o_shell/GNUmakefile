@@ -14,24 +14,17 @@ FPARALLEL := ../..
 include $(FPARALLEL)/mk/GMakedefs.mak
 
 
-# define the packages to build this problem
-#   note: we only need to include the problem's directory if there are 
-#   unique files there (as specified in a GPackage.mak).  The problem 
-#   directory is always placed at the start of the vpath by the 
-#   GMakerules.mak.
-Fmdirs := boxlib \
-          mg \
-          MAESTRO \
-          extern/EOS/helmeos \
-          extern/EOS/conducteos \
-          extern/constants \
-          extern/networks/ignition_chamulak \
-          extern/VODE \
-          extern/random
+# define the physics packages to build this problem
+EOS_DIR := extern/EOS/helmeos 
+CONDUCTIVITY_DIR := extern/EOS/conducteos 
+NETWORK_DIR := extern/networks/ignition_chamulak 
 
+# define the special directories needed to build this problem.  Note:
+# we only need to include the problem's directory if there are unique
+# files there (as specified in a GPackage.mak).  The problem directory
+# is always placed at the start of the vpath by the GMakerules.mak.
+EXTRA_DIR := extern/random
 
-# directories containing files that are 'include'-d via Fortran
-Fmincludes := extern/EOS/helmeos
 
 # define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters ./_parameters.wdconvect
