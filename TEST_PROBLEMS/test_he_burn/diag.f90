@@ -27,7 +27,7 @@ module diag_module
 
   private
 
-  public :: diag
+  public :: diag, flush_diag
 
 contains
 
@@ -645,5 +645,12 @@ contains
     enddo
 
   end subroutine diag_3d
+
+  subroutine flush_diag()
+    ! flush_diag is called before checkpointing.  If you want to buffer the 
+    ! results of the diag routines and write out a lot of timesteps at once,
+    ! flush_diag() is the routine that should do the writing
+
+  end subroutine flush_diag
 
 end module diag_module
