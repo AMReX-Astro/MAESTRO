@@ -27,7 +27,7 @@ Fmdirs := MAESTRO/test_smallscale \
           extern/EOS/conducteos \
           extern/constants \
           extern/networks/ignition \
-          extern/VODE 
+          extern/VODE extern/LAPACK
 
 # directories containing files that are 'include'-d via Fortran
 Fmincludes := extern/EOS/helmeos
