@@ -26,8 +26,7 @@ Fmdirs := boxlib \
           extern/EOS/conducteos \
           extern/constants \
           extern/networks/null \
-          extern/VODE
-
+          extern/VODE extern/LAPACK
 
 # directories containing files that are 'include'-d via Fortran
 Fmincludes := extern/EOS/helmeos
