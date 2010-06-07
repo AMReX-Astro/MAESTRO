@@ -9,7 +9,6 @@ MKVERBOSE := t
 # define the location of the fParallel root directory
 FPARALLEL := ../..
 
-
 # include the main Makefile stuff
 include $(FPARALLEL)/mk/GMakedefs.mak
 
@@ -26,16 +25,14 @@ Fmdirs := boxlib \
           extern/EOS/conducteos \
           extern/constants \
           extern/networks/triple_alpha \
-          extern/VODE \
-          extern/random
-
+          extern/VODE extern/LAPACK \
+          extern/random 
 
 # directories containing files that are 'include'-d via Fortran
 Fmincludes := extern/EOS/helmeos
 
 # define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters ./_parameters.sub_chandra
-
 
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
