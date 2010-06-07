@@ -21,7 +21,7 @@ module initialize_module
 
 contains
     
-  subroutine initialize_from_restart(mla,restart,time,dt,pmask,dx,uold,sold,gpres,pres, &
+  subroutine initialize_from_restart(mla,restart,time,dt,pmask,dx,uold,sold,gpi,pi, &
                                      dSdt,Source_old,Source_new, &
                                      rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
                                      div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -33,14 +33,23 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only : drdxfac
+    use probin_module, only : drdxfac, restart_into_finer, octant
+    use average_module
+    use make_grav_module
+    use enforce_HSE_module
+    use rhoh_vs_t_module
+    use make_gamma_module
+    use make_div_coeff_module
+    use fill_3d_module
+    use estdt_module
+    use regrid_module
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(in   ) :: restart
     real(dp_t)    , intent(  out) :: time,dt
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
-    type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
+    type(multifab), pointer       :: uold(:),sold(:),gpi(:),pi(:),dSdt(:)
     type(multifab), pointer       :: Source_old(:),Source_new(:)
     type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
@@ -52,10 +61,12 @@ contains
 
     ! local
     type(ml_boxarray) :: mba
+    type(box)         :: domain
+    integer           :: domhi(dm)
 
-    real(dp_t) :: lenx,leny,lenz,max_dist
+    real(dp_t) :: lenx,leny,lenz,max_dist,p0_temp
 
-    integer :: n,ng_s
+    integer :: n,ng_s,nr_fine_old,r
 
     type(multifab), pointer :: chkdata(:)
     type(multifab), pointer :: chk_p(:)
@@ -67,14 +78,22 @@ contains
     type(multifab), pointer :: chk_rho_Hext(:)
     type(multifab), pointer :: chk_thermal2(:)
 
+    type(multifab), allocatable :: gamma1(:)
+    type(multifab), allocatable :: normal(:)
+
+    real(dp_t), allocatable :: psi_temp(:,:)
+    real(dp_t), allocatable :: etarho_cc_temp(:,:)
+    real(dp_t), allocatable :: etarho_ec_temp(:,:)
+    real(dp_t), allocatable :: w0_temp(:,:)
+  
     character(len=5)   :: check_index
     character(len=6)   :: check_index6
     character(len=256) :: check_file_name
 
     ! create mba, chk stuff, time, and dt
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
-                           chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, chk_rho_Hext, &
-                           chk_thermal2, time, dt)
+                           chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, &
+                           chk_rho_Hext,chk_thermal2, time, dt)
 
     ! create mla
     call ml_layout_build(mla,mba,pmask)
@@ -95,9 +114,9 @@ contains
     end do
 
     ! allocate states
-    allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
-    allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs))
-    allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),rho_Hext(nlevs),thermal2(nlevs))
+    allocate(uold(max_levs),sold(max_levs),gpi(max_levs),pi(max_levs))
+    allocate(dSdt(max_levs),Source_old(max_levs),Source_new(max_levs))
+    allocate(rho_omegadot2(max_levs),rho_Hnuc2(max_levs),rho_Hext(max_levs),thermal2(max_levs))
 
     if (ppm_type .eq. 2) then
        ng_s = 4
@@ -109,27 +128,27 @@ contains
     do n = 1,nlevs
        call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
        call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
-       call multifab_build(        gpres(n), mla%la(n),    dm, 1)
-       call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
+       call multifab_build(          gpi(n), mla%la(n),    dm, 1)
+       call multifab_build(           pi(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(   Source_old(n), mla%la(n),     1, 1)
        call multifab_build(   Source_new(n), mla%la(n),     1, 1)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
-       call multifab_build(    rho_Hext(n), mla%la(n),     1, 0)
+       call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
        call multifab_build(     thermal2(n), mla%la(n),     1, 1)
     end do
 
     do n=1,nlevs
        call multifab_copy_c( uold(n),1,chkdata(n),1                ,dm)
        call multifab_copy_c( sold(n),1,chkdata(n),rho_comp+dm      ,nscal)
-       call multifab_copy_c(gpres(n),1,chkdata(n),rho_comp+dm+nscal,dm)
+       call multifab_copy_c(  gpi(n),1,chkdata(n),rho_comp+dm+nscal,dm)
        call destroy(chkdata(n)%la)
        call destroy(chkdata(n))
     end do
     
     do n=1,nlevs
-       call multifab_copy_c(pres(n),1,chk_p(n),1,1)       
+       call multifab_copy_c(pi(n),1,chk_p(n),1,1)       
        call destroy(chk_p(n)%la)
        call destroy(chk_p(n))
     end do
@@ -152,7 +171,8 @@ contains
        call destroy(chk_src_new(n))
     end do
     
-    ! Note: rho_omegadot2, rho_Hnuc2, rho_Hext and thermal2 are not actually needed other
+    ! Note: rho_omegadot2, rho_Hnuc2, rho_Hext, and thermal2 are not actually 
+    ! needed other
     ! than to have them available when we print a plotfile immediately after
     ! restart.  They are recomputed before they are used.
 
@@ -175,10 +195,6 @@ contains
           call destroy(chk_rho_Hext(n))
        end do
        deallocate(chk_rho_Hext)
-    else
-       do n=1,nlevs
-          call setval(rho_Hext(n),ZERO,all=.true.)
-       end do
     end if
 
     if (use_thermal_diffusion) then
@@ -198,7 +214,7 @@ contains
     deallocate(chk_rho_omegadot2, chk_rho_Hnuc2)
 
     ! initialize dx
-    call initialize_dx(dx,mba,nlevs)
+    call initialize_dx(dx,mla%mba,nlevs)
 
     ! initialize cutoff arrays
     call init_cutoff(nlevs)
@@ -206,16 +222,29 @@ contains
     ! now that we have dx we can initialize nr_fine and dr_fine
     if (spherical .eq. 1) then
 
-       ! for spherical, we will now require that dr_fine = dx
        dr_fine = dx(nlevs,1) / dble(drdxfac)
        
-       lenx = HALF * (prob_hi(1) - prob_lo(1))
-       leny = HALF * (prob_hi(2) - prob_lo(2))
-       lenz = HALF * (prob_hi(3) - prob_lo(3))
+       if (.not. octant) then
+          lenx = HALF * (prob_hi(1) - prob_lo(1))
+          leny = HALF * (prob_hi(2) - prob_lo(2))
+          lenz = HALF * (prob_hi(3) - prob_lo(3))
+       else
+          lenx = prob_hi(1) - prob_lo(1)
+          leny = prob_hi(2) - prob_lo(2)
+          lenz = prob_hi(3) - prob_lo(3)
+       end if
        
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
-       
+
+       ! compute nr_irreg
+       domain = layout_get_pd(sold(nlevs)%la)
+       domhi  = upb(domain)+1
+       if (.not. octant) then
+          nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+       else
+          nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
+       endif
     else
        
        nr_fine = extent(mla%mba%pd(nlevs),dm)
@@ -227,7 +256,7 @@ contains
     call init_multilevel(sold)
 
     ! now that we have nr_fine and dr_fine we can create nr, dr, r_cc_loc, r_edge_loc
-    call init_radial(nlevs,mba)
+    call init_radial(nlevs,mla%mba)
 
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -292,15 +321,247 @@ contains
        
     end if
 
+    if (restart_into_finer .and. spherical .eq. 0) then
+       call bl_error('restart_into_finer only currently supported for spherical')
+    end if
+
+    if (restart_into_finer .and. time .eq. 0) then
+       call bl_error('restart_into_finer does not work if time = 0')
+    end if
+
+    if (restart_into_finer .and. spherical .eq. 1) then
+
+       nr_fine_old = nr_fine
+       
+       allocate(psi_temp      (1,0:nr_fine_old-1))
+       allocate(etarho_cc_temp(1,0:nr_fine_old-1))
+       allocate(etarho_ec_temp(1,0:nr_fine_old))
+       allocate(w0_temp       (1,0:nr_fine_old))
+       
+       ! deallocate the following:
+       ! bct%bc_tower_array(i)%phys_bc_level_array
+       ! bct%bc_tower_array(i)%adv_bc_level_array
+       ! bct%bc_tower_array(i)%ell_bc_level_array
+       ! bct%bc_tower_array
+       ! bct%domain_bc
+       call bc_tower_destroy(the_bc_tower)
+
+       ! this calls bc_tower_init sets bct%nlevels, bct%dim, allocates
+       ! bcg%bc_tower_array and bct%domain_bc.  Then bct%bc_tower_array(n)%ngrids
+       ! is set to a null value, and bct%domain_bc(:,:) = phys_bc_in(:,:)
+       call initialize_bc(the_bc_tower,max_levs,pmask)
+
+       ! build the bc_tower for level 1 only
+       call bc_tower_level_build(the_bc_tower,1,mla%la(1))
+
+       ! destroy these before we reset nlevs
+       do n=1,nlevs
+          call multifab_destroy(Source_new(n))
+          call multifab_destroy(rho_omegadot2(n))
+          call multifab_destroy(rho_Hnuc2(n))
+          call multifab_destroy(rho_Hext(n))
+          call multifab_destroy(thermal2(n))
+       end do
+
+       ! regrid
+       ! this also rebuilds mla and the_bc_tower
+       call regrid(mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
+                   rho0_old,rhoh0_old,.true.)
+
+       ! rebuild these with the new ml_layout
+       do n=1,nlevs
+          call multifab_build(   Source_new(n), mla%la(n),     1, 1)
+          call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
+          call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
+          call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
+          call multifab_build(     thermal2(n), mla%la(n),     1, 1)
+       end do
+
+       ! we set these to zero because they won't affect the solution
+       ! they only affect an immediately generated plotfile
+       do n=1,nlevs
+          call setval(   Source_new(n),ZERO,all=.true.)
+          call setval(rho_omegadot2(n),ZERO,all=.true.)
+          call setval(    rho_Hnuc2(n),ZERO,all=.true.)
+          call setval(     rho_Hext(n),ZERO,all=.true.)
+          call setval(     thermal2(n),ZERO,all=.true.)
+       end do
+
+       ! compute dx at the new level
+       deallocate(dx)
+       call initialize_dx(dx,mla%mba,nlevs)
+
+       ! compute dr_fine and nr_fine assuming a finer dx
+       dr_fine = dx(nlevs,1) / dble(drdxfac)
+
+       if (.not. octant) then
+          lenx = HALF * (prob_hi(1) - prob_lo(1))
+          leny = HALF * (prob_hi(2) - prob_lo(2))
+          lenz = HALF * (prob_hi(3) - prob_lo(3))
+       else
+          lenx = prob_hi(1) - prob_lo(1)
+          leny = prob_hi(2) - prob_lo(2)
+          lenz = prob_hi(3) - prob_lo(3)
+       end if
+
+       max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
+       nr_fine = int(max_dist / dr_fine) + 1
+       
+       ! compute nr_irreg
+       domain = layout_get_pd(sold(nlevs)%la)
+       domhi  = upb(domain)+1
+       if (.not. octant) then
+          nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+       else
+          nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
+       endif
+
+
+       ! deallocate arrays in geometry.f90 including:
+       ! dr,r_cc_loc,r_edge_loc,r_start_coord,r_end_coord,nr,numdisjointchunks,
+       ! anelastic_cutoff_coord,base_cutoff_density_coord,burning_cutoff_density_coord
+       call destroy_geometry()
+
+       ! set numdisjointchunks = 1
+       ! set r_start_coord(1,1) = 0
+       ! set r_end_coord(1,1) = nr_fine-1
+       call init_multilevel(sold)
+
+       ! initialize arrays in geometry.f90
+       call init_radial(nlevs,mla%mba)
+       call init_cutoff(nlevs)
+
+       ! make temporary copy of old psi, etarho_cc, etarho_ec, and w0
+       psi_temp       = psi
+       etarho_cc_temp = etarho_cc
+       etarho_ec_temp = etarho_ec
+       w0_temp        = w0
+
+       ! copy outer pressure for reference
+       p0_temp = p0_old(1,nr_fine_old-1)
+
+       ! deallocate 1D arrays
+       deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
+       deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec)
+       deallocate(etarho_cc,psi,tempbar,grav_cell)
+
+       ! reallocate 1D arrays
+       call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar, &
+                                 gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
+                                 rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
+                                 psi,tempbar,grav_cell)
+
+       ! copy outer pressure for reference
+       p0_old(1,nr_fine-1) = p0_temp
+
+       ! fill psi and etarho_cc using linear interpolation
+       do r=0,nr_fine-1
+          if (r .eq. 0) then
+             psi      (1,0) = psi_temp      (1,0)
+             etarho_cc(1,0) = etarho_cc_temp(1,0)
+          else if ((r+1)/2 .ge. nr_fine_old) then
+             psi      (1,r) = psi_temp      (1,nr_fine_old-1)
+             etarho_cc(1,r) = etarho_cc_temp(1,nr_fine_old-1)
+          else
+             if (mod(r,2) .eq. 0) then
+                psi      (1,r) = 0.75d0*psi_temp      (1,r/2)+0.25d0*psi_temp      (1,r/2-1)
+                etarho_cc(1,r) = 0.75d0*etarho_cc_temp(1,r/2)+0.25d0*etarho_cc_temp(1,r/2-1)
+             else
+                psi      (1,r) = 0.75d0*psi_temp      (1,r/2)+0.25d0*psi_temp      (1,r/2+1)
+                etarho_cc(1,r) = 0.75d0*etarho_cc_temp(1,r/2)+0.25d0*etarho_cc_temp(1,r/2+1)
+             end if
+          end if
+       end do
+
+       ! fill etarho_ec and w0 using linear interpolation
+       do r=0,nr_fine
+          if (r .gt. 2*nr_fine_old) then
+             etarho_ec(1,r) = etarho_ec_temp(1,nr_fine_old)
+             w0       (1,r) = w0_temp       (1,nr_fine_old)
+          else
+             if (mod(r,2) .eq. 0) then
+                etarho_ec(1,r) = etarho_ec_temp(1,r/2)
+                w0       (1,r) = w0_temp       (1,r/2)
+             else
+                etarho_ec(1,r) = 0.5d0*etarho_ec_temp(1,r/2)+0.5d0*etarho_ec_temp(1,r/2+1)
+                w0       (1,r) = 0.5d0*w0_temp       (1,r/2)+0.5d0*w0_temp       (1,r/2+1)
+             end if
+          end if
+       end do
+
+       ! compute rho0 by calling average
+       call average(mla,sold,rho0_old,dx,rho_comp)
+
+       ! compute cutoff coordinates
+       call compute_cutoff_coords(rho0_old)
+
+       ! compute gravity
+       call make_grav_cell(grav_cell,rho0_old)
+
+       ! compute p0 by HSE
+       call enforce_HSE(rho0_old,p0_old,grav_cell)
+
+       ! compute temperature with EOS
+       if (use_tfromp) then
+          ! compute full state T = T(rho,p0,X)
+          call makeTfromRhoP(sold,p0_old,mla,the_bc_tower%bc_tower_array,dx)
+       else
+          ! compute full state T = T(rho,h,X)
+          call makeTfromRhoH(sold,mla,the_bc_tower%bc_tower_array)
+       end if
+
+       ! force tempbar to be the average of temp
+       call average(mla,sold,tempbar,dx,temp_comp)
+
+       ! compute gamma1 (just for use in computing gamma1bar)
+       allocate(gamma1(nlevs))
+       do n=1,nlevs
+          call multifab_build(gamma1(n), mla%la(n), 1, 0)
+       end do
+       call make_gamma(mla,gamma1,sold,p0_old,dx)
+
+       ! compute gamma1bar
+       call average(mla,gamma1,gamma1bar,dx,1)
+
+       ! deallocate gamma1
+       do n=1,nlevs
+          call destroy(gamma1(n))
+       end do
+       deallocate(gamma1)
+     
+       ! compute div_coeff_old
+       call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
+
+       ! compute normal (just for use in computing time step)
+       allocate(normal(nlevs))
+       do n = 1,nlevs
+          call multifab_build(normal(n), mla%la(n),    dm, 1)
+       end do
+       call make_normal(normal,dx)
+
+       ! recompute time step
+       dt = 1.d20
+       call estdt(mla,the_bc_tower,uold,sold,gpi,Source_old,dSdt, &
+                  normal,w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
+
+       ! deallocate normal
+       do n = 1,nlevs
+          call multifab_destroy(normal(n))
+       end do
+       deallocate(normal)
+
+    end if ! end spherical restart_into_finer initialization
+
     call destroy(mba)
 
   end subroutine initialize_from_restart
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
+  subroutine initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpi,pi, &
                                          dSdt,Source_old,Source_new, &
-                                         rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
+                                         rho_omegadot2,rho_Hnuc2,rho_Hext, &
+                                         thermal2, &
                                          the_bc_tower,div_coeff_old,div_coeff_new, &
                                          gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
                                          rhoh0_old,rho0_new,rhoh0_new,p0_init, &
@@ -311,13 +572,15 @@ contains
     use init_module
     use average_module
     use restrict_base_module
-    use probin_module, only : drdxfac
+    use probin_module, only : drdxfac, octant
+    use make_grav_module
+    use enforce_HSE_module
     
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
-    type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
+    type(multifab), pointer       :: uold(:),sold(:),gpi(:),pi(:),dSdt(:)
     type(multifab), pointer       :: Source_old(:),Source_new(:)
     type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
@@ -329,6 +592,8 @@ contains
 
     ! local
     type(ml_boxarray) :: mba
+    type(box)         :: domain
+    integer           :: domhi(dm)
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
@@ -360,7 +625,7 @@ contains
     end do
 
     ! allocate states
-    allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
+    allocate(uold(nlevs),sold(nlevs),gpi(nlevs),pi(nlevs))
     allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs))
     allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),rho_Hext(nlevs),thermal2(nlevs))
 
@@ -374,26 +639,26 @@ contains
     do n = 1,nlevs
        call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
        call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
-       call multifab_build(        gpres(n), mla%la(n),    dm, 1)
-       call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
+       call multifab_build(          gpi(n), mla%la(n),    dm, 1)
+       call multifab_build(           pi(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(   Source_old(n), mla%la(n),     1, 1)
        call multifab_build(   Source_new(n), mla%la(n),     1, 1)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
-       call multifab_build(    rho_Hext(n), mla%la(n),     1, 0)
+       call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
        call multifab_build(     thermal2(n), mla%la(n),     1, 1)
 
        call setval(         uold(n), ZERO, all=.true.)
        call setval(         sold(n), ZERO, all=.true.)
-       call setval(        gpres(n), ZERO, all=.true.)
-       call setval(         pres(n), ZERO, all=.true.)
+       call setval(          gpi(n), ZERO, all=.true.)
+       call setval(           pi(n), ZERO, all=.true.)
        call setval(   Source_old(n), ZERO, all=.true.)
        call setval(   Source_new(n), ZERO, all=.true.)
        call setval(         dSdt(n), ZERO, all=.true.)
        call setval(rho_omegadot2(n), ZERO, all=.true.)
        call setval(    rho_Hnuc2(n), ZERO, all=.true.)
-       call setval(    rho_Hext(n), ZERO, all=.true.)
+       call setval(     rho_Hext(n), ZERO, all=.true.)
        call setval(     thermal2(n), ZERO, all=.true.)
     end do
     ! initialize dx
@@ -405,16 +670,30 @@ contains
     ! now that we have dx we can initialize nr_fine and dr_fine
     if (spherical .eq. 1) then
 
-       ! for spherical, we will now require that dr_fine = dx
        dr_fine = dx(nlevs,1) / dble(drdxfac)
        
-       lenx = HALF * (prob_hi(1) - prob_lo(1))
-       leny = HALF * (prob_hi(2) - prob_lo(2))
-       lenz = HALF * (prob_hi(3) - prob_lo(3))
+       if (.not. octant) then
+          lenx = HALF * (prob_hi(1) - prob_lo(1))
+          leny = HALF * (prob_hi(2) - prob_lo(2))
+          lenz = HALF * (prob_hi(3) - prob_lo(3))
+       else
+          lenx = prob_hi(1) - prob_lo(1)
+          leny = prob_hi(2) - prob_lo(2)
+          lenz = prob_hi(3) - prob_lo(3)
+       end if
        
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
-       
+
+       ! compute nr_irreg
+       domain = layout_get_pd(sold(nlevs)%la)
+       domhi  = upb(domain)+1
+       if (.not.octant) then
+          nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+       else
+          nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
+       endif
+
     else
        
        nr_fine = extent(mla%mba%pd(nlevs),dm)
@@ -446,47 +725,30 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
-    if (evolve_base_state) then
+    if (do_smallscale) then
+       ! leave rho0_old = rhoh0_old = ZERO
+       ! but we still need p0
+       p0_old = p0_init
+    else
+       ! set rho0 to be the average
+       call average(mla,sold,rho0_old,dx,rho_comp)
+       call restrict_base(rho0_old,.true.)
+       call fill_ghost_base(rho0_old,.true.)
 
-       if (perturb_model) then
-          ! force rho0 to be the average density
-          call average(mla,sold,rho0_old,dx,rho_comp)
-       else
-          ! s0_init already contains the average
-          rho0_old = s0_init(:,:,rho_comp)
-          call restrict_base(rho0_old,.true.)
-          call fill_ghost_base(rho0_old,.true.)
-       end if
-
-       ! this will be overwritten if we are multilevel or if perturb_model = T
-       ! but we copy it anyway so s0_init can remain local
-       rhoh0_old = s0_init(:,:,rhoh_comp)
+       ! set rhoh0 to be the average
+       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
        call restrict_base(rhoh0_old,.true.)
        call fill_ghost_base(rhoh0_old,.true.)
 
-       ! this will be overwritten if we are multilevel or if perturb_model = T
-       ! but we copy it anyway for the initial condition
+       ! compute p0 with HSE
        p0_old = p0_init
-       call restrict_base(p0_old,.true.)
-       call fill_ghost_base(p0_old,.true.)
-
-    else
-
-       if (do_smallscale) then
-          ! leave rho0_old = rhoh0_old ZERO
-          ! but we still need p0
-          p0_old = p0_init
-       else
-          rho0_old = s0_init(:,:,rho_comp)
-          rhoh0_old = s0_init(:,:,rhoh_comp)
-          p0_old = p0_init
-       end if
-
+       call compute_cutoff_coords(rho0_old)
+       call make_grav_cell(grav_cell,rho0_old)
+       call enforce_HSE(rho0_old,p0_old,grav_cell)
     end if
 
-    ! this will be overwritten if we are multilevel or if perturb_model = T
-    ! but we copy it anyway for the initial condition
-    tempbar = s0_init(:,:,temp_comp)
+    ! set tempbar to be the average
+    call average(mla,sold,tempbar,dx,temp_comp)
     call restrict_base(tempbar,.true.)
     call fill_ghost_base(tempbar,.true.)
     
@@ -496,9 +758,10 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
+  subroutine initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpi,pi, &
                                             dSdt,Source_old,Source_new, &
-                                            rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
+                                            rho_omegadot2,rho_Hnuc2,rho_Hext, &
+                                            thermal2, &
                                             the_bc_tower,div_coeff_old,div_coeff_new, &
                                             gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
                                             rhoh0_old,rho0_new,rhoh0_new,p0_init, &
@@ -507,7 +770,7 @@ contains
 
     use probin_module, only: n_cellx, n_celly, n_cellz, &
          regrid_int, amr_buf_width, max_grid_size, &
-         max_grid_size_base, ref_ratio, max_levs
+         max_grid_size_base, ref_ratio, max_levs, octant
     use init_module
     use average_module
     use restrict_base_module
@@ -516,13 +779,14 @@ contains
     use multifab_physbc_module
     use ml_restriction_module
     use multifab_fill_ghost_module
-
+    use make_grav_module
+    use enforce_HSE_module
 
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
-    type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
+    type(multifab), pointer       :: uold(:),sold(:),gpi(:),pi(:),dSdt(:)
     type(multifab), pointer       :: Source_old(:),Source_new(:)
     type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
@@ -534,6 +798,8 @@ contains
 
     ! local
     type(ml_boxarray) :: mba
+    type(box)         :: domain
+    integer           :: domhi(dm)
 
     type(layout) :: la_array(max_levs)
     type(box)    :: bxs
@@ -565,7 +831,7 @@ contains
     enddo
 
     ! allocate states
-    allocate(uold(max_levs),sold(max_levs),gpres(max_levs),pres(max_levs))
+    allocate(uold(max_levs),sold(max_levs),gpi(max_levs),pi(max_levs))
     allocate(dSdt(max_levs),Source_old(max_levs),Source_new(max_levs))
     allocate(rho_omegadot2(max_levs),rho_Hnuc2(max_levs),rho_Hext(max_levs),thermal2(max_levs))
 
@@ -595,12 +861,17 @@ contains
     ! now that we have dx we can initialize nr_fine and dr_fine
     if (spherical .eq. 1) then
 
-       ! for spherical, we will now require that dr_fine = dx
        dr_fine = dx(max_levs,1) / dble(drdxfac)
 
-       lenx = HALF * (prob_hi(1) - prob_lo(1))
-       leny = HALF * (prob_hi(2) - prob_lo(2))
-       lenz = HALF * (prob_hi(3) - prob_lo(3))
+       if (.not. octant) then
+          lenx = HALF * (prob_hi(1) - prob_lo(1))
+          leny = HALF * (prob_hi(2) - prob_lo(2))
+          lenz = HALF * (prob_hi(3) - prob_lo(3))
+       else
+          lenx = prob_hi(1) - prob_lo(1)
+          leny = prob_hi(2) - prob_lo(2)
+          lenz = prob_hi(3) - prob_lo(3)
+       end if
 
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
@@ -629,8 +900,6 @@ contains
           call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
        end do
     end if
-
-    tempbar = s0_init(:,:,temp_comp)
 
     ! Initialize bc's
     call initialize_bc(the_bc_tower,max_levs,pmask)
@@ -738,28 +1007,37 @@ contains
     do n = 1,nlevs
        call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
        call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
-       call multifab_build(        gpres(n), mla%la(n),    dm, 1)
-       call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
+       call multifab_build(          gpi(n), mla%la(n),    dm, 1)
+       call multifab_build(           pi(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(   Source_old(n), mla%la(n),     1, 1)
        call multifab_build(   Source_new(n), mla%la(n),     1, 1)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
-       call multifab_build(    rho_Hext(n), mla%la(n),     1, 0)
+       call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
        call multifab_build(     thermal2(n), mla%la(n),     1, 1)
 
        call setval(         uold(n), ZERO, all=.true.)
        call setval(         sold(n), ZERO, all=.true.)
-       call setval(        gpres(n), ZERO, all=.true.)
-       call setval(         pres(n), ZERO, all=.true.)
+       call setval(          gpi(n), ZERO, all=.true.)
+       call setval(           pi(n), ZERO, all=.true.)
        call setval(   Source_old(n), ZERO, all=.true.)
        call setval(   Source_new(n), ZERO, all=.true.)
        call setval(         dSdt(n), ZERO, all=.true.)
        call setval(rho_omegadot2(n), ZERO, all=.true.)
        call setval(    rho_Hnuc2(n), ZERO, all=.true.)
-       call setval(    rho_Hext(n), ZERO, all=.true.)
+       call setval(     rho_Hext(n), ZERO, all=.true.)
        call setval(     thermal2(n), ZERO, all=.true.)
     end do
+
+    ! compute nr_irreg
+    domain = layout_get_pd(sold(nlevs)%la)
+    domhi  = upb(domain)+1
+    if (.not. octant) then
+       nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+    else
+       nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
+    endif
 
     ! create numdisjointchunks, r_start_coord, r_end_coord
     call init_multilevel(sold)
@@ -767,47 +1045,30 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
-    if (evolve_base_state) then
+    if (do_smallscale) then
+       ! leave rho0_old = rhoh0_old = ZERO
+       ! but we still need p0
+       p0_old = p0_init
+    else
+       ! set rho0 to be the average
+       call average(mla,sold,rho0_old,dx,rho_comp)
+       call restrict_base(rho0_old,.true.)
+       call fill_ghost_base(rho0_old,.true.)
 
-       if (perturb_model) then
-          ! force rho0 to be the average density
-          call average(mla,sold,rho0_old,dx,rho_comp)
-       else
-          ! s0_init already contains the average
-          rho0_old = s0_init(:,:,rho_comp)
-          call restrict_base(rho0_old,.true.)
-          call fill_ghost_base(rho0_old,.true.)
-       end if
-
-       ! this will be overwritten if we are multilevel or if perturb_model = T
-       ! but we copy it anyway so s0_init can remain local
-       rhoh0_old = s0_init(:,:,rhoh_comp)
+       ! set rhoh0 to be the average
+       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
        call restrict_base(rhoh0_old,.true.)
        call fill_ghost_base(rhoh0_old,.true.)
 
-       ! this will be overwritten if we are multilevel or if perturb_model = T
-       ! but we copy it anyway for the initial condition
+       ! compute p0 with HSE
        p0_old = p0_init
-       call restrict_base(p0_old,.true.)
-       call fill_ghost_base(p0_old,.true.)
-
-    else
-
-       if (do_smallscale) then
-          ! leave rho0_old = rhoh0_old ZERO
-          ! but we still need p0
-          p0_old = p0_init
-       else
-          rho0_old = s0_init(:,:,rho_comp)
-          rhoh0_old = s0_init(:,:,rhoh_comp)
-          p0_old = p0_init
-       end if
-
+       call compute_cutoff_coords(rho0_old)
+       call make_grav_cell(grav_cell,rho0_old)
+       call enforce_HSE(rho0_old,p0_old,grav_cell)
     end if
 
-    ! this will be overwritten if we are multilevel or if perturb_model = T
-    ! but we copy it anyway for the initial condition
-    tempbar = s0_init(:,:,temp_comp)
+    ! set tempbar to be the average
+    call average(mla,sold,tempbar,dx,temp_comp)
     call restrict_base(tempbar,.true.)
     call fill_ghost_base(tempbar,.true.)
 
