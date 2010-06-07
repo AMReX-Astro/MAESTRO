@@ -1,0 +1,5 @@
+Fmdirs += boxlib \
+          mg \
+          MAESTRO \
+          extern/constants \
+          extern/VODE  extern/LAPACK
