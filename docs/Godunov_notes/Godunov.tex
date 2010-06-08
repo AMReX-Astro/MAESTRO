@@ -970,15 +970,27 @@ s_{i}, & \text{else}.
 Spatially interpolate $s$ to edges.
 Use a 4th-order interpolation in space with van Leer limiting to obtain edge values:
 \begin{equation}
-s_{i+\myhalf} = \frac{1}{2}\left(s_{i} + s_{i+1}\right) - \frac{1}{6}\left(\delta s_{i+1}^{vL} - \delta s_{i}^{vL}\right),
+s_{i+\myhalf} = \frac{1}{2}\left(s_{i} + s_{i+1}\right) - \frac{1}{6}\left(\delta s_{i+1}^{vL} - \delta s_{i}^{vL}\right),\label{eq:CW Edge}
 \end{equation}
 \begin{equation}
-\delta s_i = \frac{1}{2}\left(s_{i+1}-s_{i-1}\right),
+\delta s_i = 
+\frac{1}{2}\left(s_{i+1}-s_{i-1}\right),
 \end{equation}
 \begin{equation}
-\delta s_i^{vL} = \text{sign}(\delta s_i)\min\left(|\delta s_i|, ~ 2|s_{i+1}-s_{i}|, ~ 2|s_i-s_{i-1}|\right).
+\delta s_i^{vL} =
+\begin{cases}
+\text{sign}(\delta s_i)\min\left(|\delta s_i|, ~ 2|s_{i+1}-s_{i}|, ~ 2|s_i-s_{i-1}|\right), & {\rm if} ~ (s_{i+1}-s_i)(s_i-s_{i-1}) > 0,\\
+0, & {\rm otherwise}.
+\end{cases}
 \end{equation}
-Without the limiters, this is the familiar 4th-order spatial interpolation formula:
+A more compact way of writing this is
+\begin{equation}
+s = \text{sign}(\delta s_i),
+\end{equation}
+\begin{equation}
+\delta s_i^{vL} = s\max\left\{\min\left[s\delta s_i, 2s(s_{i+1}-s_i),2s(s_i-s_{i-1})\right],0\right\}
+\end{equation}
+Without the limiters, equation (\ref{eq:CW Edge}) is the familiar 4th-order spatial interpolation formula:
 \begin{equation}
 s_{i+\myhalf} = \frac{7}{12}\left(s_{i+1}+s_i\right) - \frac{1}{12}\left(s_{i+2}+s_{i-1}\right).
 \end{equation}
