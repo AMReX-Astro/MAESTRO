@@ -22,7 +22,7 @@
  prob_hi_y = 5.d8
  prob_hi_z = 5.d8
 
- max_step  = 2
+ max_step  = 100
  init_iter = 1
 
  stop_time = 30000.
