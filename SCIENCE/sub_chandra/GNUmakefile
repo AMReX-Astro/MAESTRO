@@ -32,6 +32,4 @@ PROBIN_PARAMETERS := ../_parameters ./_parameters.sub_chandra
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
 
-# include the Makefile rules
-include $(FPARALLEL)/mk/GMakerules.mak
 
