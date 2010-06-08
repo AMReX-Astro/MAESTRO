@@ -1,6 +1,24 @@
 module conductivity
 
+  use bl_types
+  implicit none
+
+  real (kind=dp_t), save :: conductivity_constant
+
 contains
+
+  subroutine conductivity_init(cond_const)
+
+    real (kind=dp_t), optional :: cond_const
+
+    if (present(cond_const)) then
+       conductivity_constant = cond_const
+    else
+       conductivity_constant = 1.0_dp_t
+    endif
+
+  end subroutine conductivity_init
+
 
   subroutine conducteos(input, dens, temp, &
                         npoints, nspecies, & 

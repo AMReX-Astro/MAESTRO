@@ -1,6 +1,16 @@
 module conductivity
 
+  use bl_types
+  implicit none
+
 contains
+
+  subroutine conductivity_init(cond_const)
+
+    real (kind=dp_t), optional :: cond_const
+
+  end subroutine conductivity_init
+
 
   subroutine conducteos(input, dens, temp, &
                         npoints, nspecies, &
