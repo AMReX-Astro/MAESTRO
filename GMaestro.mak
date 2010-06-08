@@ -86,4 +86,4 @@ include $(FPARALLEL)/mk/GMakerules.mak
 # for debugging, comment out this line, and do, eg, "make
 # print-Fmlocs" to have make print out the contents of 
 # the Fmlocs variable
-print-%: ; @echo $* is $($*).
+print-%: ; @echo $* is $($*)
