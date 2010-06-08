@@ -11,10 +11,16 @@
 # core MAESTRO directories
 MAESTRO_CORE := boxlib \
                 mg \
-                MAESTRO/Source \
                 extern/constants \
                 extern/LAPACK
 
+# a unit test tests only a single component of the MAESTRO algorithm,
+# so we don't, in general, want to build all of the source in the
+# MAESTRO/Source directory.  So, for unit tests, we leave it off the
+# list of core directories
+ifndef UNIT_TEST
+       MAESTRO_CORE += MAESTRO/Source
+endif
 
 
 # add in the problem specific stuff ("extras"), EOS, network, and
@@ -48,6 +54,14 @@ include $(Fmpack)
 
 # vpath defines the directories to search for the source files
 VPATH_LOCATIONS += $(Fmlocs)
+
+# we always want to search the MAESTRO/Source directory, even for
+# unit tests, since they may build individual files there.
+ifdef UNIT_TEST
+      VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO/Source
+endif
+
+
 
 # list of directories to put in the Fortran include path
 FINCLUDE_LOCATIONS += $(Fmincs)

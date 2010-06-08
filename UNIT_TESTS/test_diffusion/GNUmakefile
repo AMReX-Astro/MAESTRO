@@ -25,6 +25,7 @@ NETWORK_DIR := extern/networks/triple_alpha
 # is always placed at the start of the vpath by the GMakerules.mak.
 EXTRA_DIR := MAESTRO/test_diffusion
 
+UNIT_TEST := t
 
 # define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters ./_parameters
