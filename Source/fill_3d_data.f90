@@ -57,6 +57,9 @@ contains
           lo =  lwb(get_box(s0_cart(n), i))
           hi =  upb(get_box(s0_cart(n), i))
           select case (dm)
+          case (1)
+             call put_1d_array_on_cart_1d(is_input_edge_centered,is_output_a_vector, &
+                                          s0(n,:),sp(:,1,1,:),lo,hi,ng_s)
           case (2)
              call put_1d_array_on_cart_2d(is_input_edge_centered,is_output_a_vector, &
                                           s0(n,:),sp(:,:,1,:),lo,hi,ng_s)
@@ -133,6 +136,44 @@ contains
     call destroy(bpt)
     
   end subroutine put_1d_array_on_cart
+
+  subroutine put_1d_array_on_cart_1d(is_input_edge_centered,is_output_a_vector,s0,s0_cart, &
+                                     lo,hi,ng_s)
+
+    use bl_constants_module
+    use geometry, only: dr
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s
+    logical        , intent(in   ) :: is_input_edge_centered,is_output_a_vector
+    real(kind=dp_t), intent(in   ) :: s0(0:)
+    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,:)
+
+    integer :: i
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_1d_array_on_cart_1d")
+
+    s0_cart = ZERO
+
+    if (is_input_edge_centered) then
+
+       ! we don't do anything different in 1-d if it is a vector
+       do i=lo(1),hi(1)
+          s0_cart(i,1) = HALF * (s0(i) + s0(i+1))
+       end do
+
+    else
+       
+       do i=lo(1),hi(1)
+          s0_cart(i,1) = s0(i)
+       end do
+
+    end if
+
+    call destroy(bpt)
+
+  end subroutine put_1d_array_on_cart_1d
 
   subroutine put_1d_array_on_cart_2d(is_input_edge_centered,is_output_a_vector,s0,s0_cart, &
                                      lo,hi,ng_s)
