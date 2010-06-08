@@ -32,7 +32,6 @@ contains
                         do_eos_diag, &
                         conductivity)
 
-    use probin_module, only: thermal_conductivity
     use eos_module
 
     implicit none
@@ -66,7 +65,7 @@ contains
              do_eos_diag)
 
     ! fill the conductivity
-    conductivity(1) = thermal_conductivity
+    conductivity(1) = conductivity_constant
 
   end subroutine conducteos
 
