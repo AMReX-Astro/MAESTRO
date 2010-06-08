@@ -55,7 +55,7 @@ contains
      ! cell based indexing
      real(kind=dp_t) :: slope(nlevs_radial,0:nr_fine-1)
      real(kind=dp_t) :: dxscr(nlevs_radial,0:nr_fine-1,4)
-     real(kind=dp_t) ::  dxvl(nlevs_radial,-1:nr_fine)
+     real(kind=dp_t) ::  dsvl(nlevs_radial,-1:nr_fine)
      real(kind=dp_t) ::    sp(nlevs_radial,0:nr_fine-1)
      real(kind=dp_t) ::    sm(nlevs_radial,0:nr_fine-1)
      real(kind=dp_t) ::    Ip(nlevs_radial,0:nr_fine-1)
@@ -68,7 +68,7 @@ contains
      dth = HALF*dt
      dtdr = dt/dr(1)
 
-     dxvl = ZERO
+     dsvl = ZERO
 
      ! constant used in Colella 2008
      C = 1.25d0
@@ -182,33 +182,32 @@ contains
      else if (ppm_type .eq. 1) then
 
         ! interpolate s to radial edges, store these temporary values into sedgel
-
         do n=1,nlevs_radial
            do i=1,numdisjointchunks(n)
 
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
         
-              ! compute van Leer slopes away from domain boundaries
-              ! leave van Leer slopes at domain boundaries set to zero
+              ! compute van Leer slopes
 !$omp parallel do private(r,del,dmin,dpls)
               do r=lo-1,hi+1
                  if (r .eq. 0) then
                     if (spherical .eq. 1) then
                        ! slope of quadratic interpolant with neumann bc at center of star
-                       dxvl(n,r) = half*(s(n,r+1)-s(n,r))
+                       dsvl(n,r) = half*(s(n,r+1)-s(n,r))
                     else
                        ! one-sided difference
-                       dxvl(n,r) = s(n,r+1)-s(n,r)
+                       dsvl(n,r) = s(n,r+1)-s(n,r)
                     end if
                  else if (r .eq. nr(n)-1) then
                     ! one-sided difference
-                    dxvl(n,r) = s(n,r)-s(n,r-1)
+                    dsvl(n,r) = s(n,r)-s(n,r-1)
                  else if (r .gt. 0 .and. r .lt. nr(n)-1) then
                     del  = HALF * (s(n,r+1) - s(n,r-1))
                     dmin = TWO  * (s(n,r  ) - s(n,r-1))
                     dpls = TWO  * (s(n,r+1) - s(n,r  ))
-                    dxvl(n,r) = sign(ONE,del)*min(abs(del),abs(dmin),abs(dpls))
+                    if (dmin*dpls .gt. ZERO) &
+                         dsvl(n,r) = sign(ONE,del)*min(abs(del),abs(dmin),abs(dpls))
                  end if
               end do
 !$omp end parallel do
@@ -217,13 +216,13 @@ contains
               do r=lo,hi+1
                  if (r .eq. 0) then
                     ! 2nd order interpolation to boundary face
-                    sedgel(n,r) = s(n,r) - half*dxvl(n,r)
+                    sedgel(n,r) = s(n,r) - half*dsvl(n,r)
                  else if (r .eq. nr(n)) then
                     ! 2nd order interpolation to boundary face
-                    sedgel(n,r) = s(n,r-1) + half*dxvl(n,r)
+                    sedgel(n,r) = s(n,r-1) + half*dsvl(n,r)
                  else
                     ! 4th order interpolation of s to radial faces
-                    sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
+                    sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dsvl(n,r)-dsvl(n,r-1))
                     ! make sure sedgel lies in between adjacent cell-centered values
                     sedgel(n,r) = max(sedgel(n,r),min(s(n,r),s(n,r-1)))
                     sedgel(n,r) = min(sedgel(n,r),max(s(n,r),s(n,r-1)))
@@ -244,23 +243,23 @@ contains
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
 
-              ! store centered differences in dxvl
+              ! store centered differences in dsvl
 !$omp parallel do private(r)
               do r=lo-3,hi+3
                  if (r .eq. 0) then
                     if (spherical .eq. 1) then
                        ! slope of quadratic interpolant with neumann bc at center of star
-                       dxvl(n,r) = half*(s(n,r+1)-s(n,r))
+                       dsvl(n,r) = half*(s(n,r+1)-s(n,r))
                     else
                        ! one-sided difference
-                       dxvl(n,r) = s(n,r+1)-s(n,r)
+                       dsvl(n,r) = s(n,r+1)-s(n,r)
                     end if
                  else if (r .eq. nr(n)-1) then
                     ! one-sided difference
-                    dxvl(n,r) = s(n,r)-s(n,r-1)
+                    dsvl(n,r) = s(n,r)-s(n,r-1)
                  else if (r .gt. 0 .and. r .lt. nr(n)-1) then
                     ! centered difference
-                    dxvl(n,r) = HALF * (s(n,r+1) - s(n,r-1))
+                    dsvl(n,r) = HALF * (s(n,r+1) - s(n,r-1))
                  end if
               end do
 !$omp end parallel do
@@ -269,13 +268,13 @@ contains
               do r=lo-2,hi+3
                  if (r .eq. 0) then
                     ! 2nd order interpolation to boundary face
-                    sedgel(n,r) = s(n,r) - half*dxvl(n,r)
+                    sedgel(n,r) = s(n,r) - half*dsvl(n,r)
                  else if (r .eq. nr(n)) then
                     ! 2nd order interpolation to boundary face
-                    sedgel(n,r) = s(n,r-1) + half*dxvl(n,r)
+                    sedgel(n,r) = s(n,r-1) + half*dsvl(n,r)
                  else if (r .gt. 0 .and. r .lt. nr(n)) then
                     ! 4th order interpolation of s to radial faces
-                    sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dxvl(n,r)-dxvl(n,r-1))
+                    sedgel(n,r) = HALF*(s(n,r)+s(n,r-1)) - SIXTH*(dsvl(n,r)-dsvl(n,r-1))
                     if (r .ge. 2 .and. r .le. nr(n)-2) then
                        ! limit sedge
                        if ((sedgel(n,r)-s(n,r-1))*(s(n,r)-sedgel(n,r)) .lt. ZERO) then

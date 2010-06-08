@@ -72,11 +72,12 @@ contains
     if (ppm_type .eq. 1) then
 
        ! compute van Leer slopes in x-direction
+       dsvl = ZERO
        do i=lo(1)-2,hi(1)+2
           dsc = HALF * (s(i+1) - s(i-1))
           dsl = TWO  * (s(i  ) - s(i-1))
           dsr = TWO  * (s(i+1) - s(i  ))
-          dsvl(i) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+          if (dsl*dsr .gt. ZERO) dsvl(i) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
        end do
        
        ! interpolate s to x-edges
@@ -549,11 +550,12 @@ contains
     if (ppm_type .eq. 1) then
 
        ! compute van Leer slopes in x-direction
+       dsvl = ZERO
        do i=lo(1)-2,hi(1)+2
           dsc = HALF * (s(i+1) - s(i-1))
           dsl = TWO  * (s(i  ) - s(i-1))
           dsr = TWO  * (s(i+1) - s(i  ))
-          dsvl(i) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+          if (dsl*dsr .gt. ZERO) dsvl(i) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
        end do
        
        ! interpolate s to x-edges
@@ -1031,12 +1033,13 @@ contains
     if (ppm_type .eq. 1) then
 
        ! compute van Leer slopes in x-direction
+       dsvl = ZERO
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-2,hi(1)+2
              dsc = HALF * (s(i+1,j) - s(i-1,j))
              dsl = TWO  * (s(i  ,j) - s(i-1,j))
              dsr = TWO  * (s(i+1,j) - s(i  ,j))
-             dsvl(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+             if (dsl*dsr .gt. 0) dsvl(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
           end do
        end do
        
@@ -1502,12 +1505,13 @@ contains
     if (ppm_type .eq. 1) then
 
        ! compute van Leer slopes in y-direction
+       dsvl = ZERO
        do j=lo(2)-2,hi(2)+2
           do i=lo(1)-1,hi(1)+1
              dsc = HALF * (s(i,j+1) - s(i,j-1))
              dsl = TWO  * (s(i,j  ) - s(i,j-1))
              dsr = TWO  * (s(i,j+1) - s(i,j  ))
-             dsvl(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+             if (dsl*dsr .gt. ZERO) dsvl(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
           end do
        end do
        
@@ -2017,12 +2021,13 @@ contains
     if (ppm_type .eq. 1) then
 
        ! compute van Leer slopes in x-direction
+       dsvl = ZERO
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-2,hi(1)+2
              dsc = HALF * (s(i+1,j) - s(i-1,j))
              dsl = TWO  * (s(i  ,j) - s(i-1,j))
              dsr = TWO  * (s(i+1,j) - s(i  ,j))
-             dsvl(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+             if (dsl*dsr .gt. ZERO) dsvl(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
           end do
        end do
        
@@ -2489,12 +2494,13 @@ contains
     if (ppm_type .eq. 1) then
 
        ! compute van Leer slopes in y-direction
+       dsvl = ZERO
        do j=lo(2)-2,hi(2)+2
           do i=lo(1)-1,hi(1)+1
              dsc = HALF * (s(i,j+1) - s(i,j-1))
              dsl = TWO  * (s(i,j  ) - s(i,j-1))
              dsr = TWO  * (s(i,j+1) - s(i,j  ))
-             dsvl(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+             if (dsl*dsr .gt. ZERO) dsvl(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
           end do
        end do
        
@@ -3012,6 +3018,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in x-direction
+       dsvl = ZERO
 !$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
@@ -3019,7 +3026,8 @@ contains
                 dsc = HALF * (s(i+1,j,k) - s(i-1,j,k))
                 dsl = TWO  * (s(i  ,j,k) - s(i-1,j,k))
                 dsr = TWO  * (s(i+1,j,k) - s(i  ,j,k))
-                dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) &
+                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
@@ -3586,6 +3594,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in y-direction
+       dsvl = ZERO
 !$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-2,hi(2)+2
@@ -3593,7 +3602,8 @@ contains
                 dsc = HALF * (s(i,j+1,k) - s(i,j-1,k))
                 dsl = TWO  * (s(i,j  ,k) - s(i,j-1,k))
                 dsr = TWO  * (s(i,j+1,k) - s(i,j  ,k))
-                dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) &
+                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
@@ -4158,6 +4168,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in z-direction
+       dsvl = ZERO
 !$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-2,hi(3)+2
           do j=lo(2)-1,hi(2)+1
@@ -4165,7 +4176,8 @@ contains
                 dsc = HALF * (s(i,j,k+1) - s(i,j,k-1))
                 dsl = TWO  * (s(i,j,k  ) - s(i,j,k-1))
                 dsr = TWO  * (s(i,j,k+1) - s(i,j,k  ))
-                dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) &
+                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
@@ -4798,6 +4810,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in x-direction
+       dsvl = ZERO
 !$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
@@ -4805,7 +4818,8 @@ contains
                 dsc = HALF * (s(i+1,j,k) - s(i-1,j,k))
                 dsl = TWO  * (s(i  ,j,k) - s(i-1,j,k))
                 dsr = TWO  * (s(i+1,j,k) - s(i  ,j,k))
-                dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) &
+                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
@@ -5373,6 +5387,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in y-direction
+       dsvl = ZERO
 !$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-2,hi(2)+2
@@ -5380,7 +5395,8 @@ contains
                 dsc = HALF * (s(i,j+1,k) - s(i,j-1,k))
                 dsl = TWO  * (s(i,j  ,k) - s(i,j-1,k))
                 dsr = TWO  * (s(i,j+1,k) - s(i,j  ,k))
-                dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) &
+                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
@@ -5946,6 +5962,7 @@ contains
     if (ppm_type .eq. 1) then
        
        ! compute van Leer slopes in z-direction
+       dsvl = ZERO
 !$omp parallel do private(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-2,hi(3)+2
           do j=lo(2)-1,hi(2)+1
@@ -5953,7 +5970,8 @@ contains
                 dsc = HALF * (s(i,j,k+1) - s(i,j,k-1))
                 dsl = TWO  * (s(i,j,k  ) - s(i,j,k-1))
                 dsr = TWO  * (s(i,j,k+1) - s(i,j,k  ))
-                dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) &
+                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
