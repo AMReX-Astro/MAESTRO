@@ -1,6 +1,6 @@
 EPStoPDF = epstopdf
 
-ALL: paper.ps paper.pdf 
+ALL: MaestroUsersGuide.ps MaestroUsersGuide.pdf 
 
 eps_source = $(wildcard *.eps) \
              $(wildcard lo_density/*.eps) \
@@ -33,21 +33,21 @@ section_sources = maestro_doc.bib \
                   analysis/analysis.tex \
                   thermo_notes/thermo_notes.tex
 
-paper.dvi: paper.tex $(eps_source) $(section_sources) $(eps_source) 
-	latex paper.tex < /dev/null
-	bibtex paper
-	latex paper.tex < /dev/null
-	latex paper.tex < /dev/null
-	latex paper.tex < /dev/null
+MaestroUsersGuide.dvi: MaestroUsersGuide.tex $(eps_source) $(section_sources) $(eps_source) 
+	latex MaestroUsersGuide.tex < /dev/null
+	bibtex MaestroUsersGuide
+	latex MaestroUsersGuide.tex < /dev/null
+	latex MaestroUsersGuide.tex < /dev/null
+	latex MaestroUsersGuide.tex < /dev/null
 
-paper.pdf: paper.tex $(pdf_source) $(section_sources) $(pdf_source)
-	pdflatex paper.tex < /dev/null
-	bibtex paper
-	pdflatex paper.tex < /dev/null
-	pdflatex paper.tex < /dev/null
-	pdflatex paper.tex < /dev/null
+MaestroUsersGuide.pdf: MaestroUsersGuide.tex $(pdf_source) $(section_sources) $(pdf_source)
+	pdflatex MaestroUsersGuide.tex < /dev/null
+	bibtex MaestroUsersGuide
+	pdflatex MaestroUsersGuide.tex < /dev/null
+	pdflatex MaestroUsersGuide.tex < /dev/null
+	pdflatex MaestroUsersGuide.tex < /dev/null
 
-pdf:	paper.pdf 
+pdf:	MaestroUsersGuide.pdf 
 
 %.ps: %.dvi
 	dvips -t letter -o $@ $<
@@ -56,9 +56,10 @@ pdf:	paper.pdf
 	$(EPStoPDF) $<
 
 clean:
-	$(RM) $(pdf_source) paper.dvi 
-	$(RM) paper.blg paper.log
-	$(RM) paper.aux paper.ps paper.bbl
+	$(RM) $(pdf_source) MaestroUsersGuide.dvi 
+	$(RM) MaestroUsersGuide.blg MaestroUsersGuide.log 
+	$(RM) MaestroUsersGuide.toc MaestroUsersGuide.lof
+	$(RM) MaestroUsersGuide.aux MaestroUsersGuide.ps MaestroUsersGuide.bbl
 	$(RM) *~
 
 .PHONY: clean
