@@ -484,11 +484,10 @@ case, its parameter file should also appear in {\tt
   PROBIN_PARAMETERS := ../_parameters
 \end{verbatim}
 
-The final lines in the {\tt GNUmakefile} include the rules to actually
+The final line in the {\tt GNUmakefile} include the rules to actually
 build the executable.
 \begin{verbatim}
   include $(FPARALLEL)/MAESTRO/GMaestro.mak
-  include $(FPARALLEL)/mk/GMakerules.mak
 \end{verbatim}
 
 As mentioned above, any source files placed in the problem directory
