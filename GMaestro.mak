@@ -11,7 +11,7 @@
 # core MAESTRO directories
 MAESTRO_CORE := boxlib \
                 mg \
-                MAESTRO \
+                MAESTRO/Source \
                 extern/constants \
                 extern/LAPACK
 
