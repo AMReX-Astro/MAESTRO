@@ -45,6 +45,9 @@
    1/r**2 gravity will be useful for the novae.
 
 
+-- sync the Coulomb corrections bust check in helmeos up with the main
+   version (i.e. check etot and stot as well).
+
 
 
 
