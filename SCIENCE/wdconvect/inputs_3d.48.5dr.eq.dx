@@ -8,6 +8,8 @@
  n_cellz = 48
  max_grid_size = 24
 
+ ppm_type = 2
+
  anelastic_cutoff = 1.d6
  base_cutoff_density = 1.d5
  sponge_center_density = 3.d6
@@ -23,13 +25,12 @@
  prob_hi_z = 5.d8
 
  max_step  = 100
- init_iter = 1
+ init_iter = 0
 
  stop_time = 30000.
 
  plot_int  = -1
- plot_deltat = 10.0d0
- chk_int   = 10
+ chk_int   = -1
 
  cflfac = 0.7d0
  init_shrink = 0.1d0
@@ -49,8 +50,8 @@
  mg_verbose = 1
  cg_verbose = 0
 
- do_initial_projection = T
- init_divu_iter = 3
+ do_initial_projection = F
+ init_divu_iter = 0
 
  velpert_amplitude = 1.d5
  velpert_radius = 2.d7
