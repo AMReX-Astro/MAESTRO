@@ -145,10 +145,17 @@ contains
 
         end if ! which slope order
 
+        ! compute sedgel and sedger
+        do r=lo,hi
+           u = HALF*(w0(1,r)+w0(1,r+1))
+           ubardth = dth*u/dr(n)
+           sedgel(r+1)= s(1,r) + (HALF-ubardth)*slope(r) + dth*force(1,r)
+           sedger(r  )= s(1,r) - (HALF+ubardth)*slope(r) + dth*force(1,r)
+        end do
+
      else if (ppm_type .eq. 1) then
 
         ! interpolate s to radial edges, store these temporary values into sedgel
-
 !$omp parallel do private(r,del,dmin,dpls)
         do r=lo-1,hi+1
            ! compute van Leer slopes
@@ -171,10 +178,31 @@ contains
            sedgel(r) = min(sedgel(r),max(s_ghost(r),s_ghost(r-1)))
         end do
 !$omp end parallel do
+
+!$omp parallel do private(r)     
+        do r=lo,hi
+
+           ! first copy sedgel into sp and sm
+           sp(r) = sedgel(r+1)
+           sm(r) = sedgel(r  )
+
+           ! modify using quadratic limiters
+           if ((sp(r)-s(1,r))*(s(1,r)-sm(r)) .le. ZERO) then
+              sp(r) = s(1,r)
+              sm(r) = s(1,r)
+           else if (abs(sp(r)-s(1,r)) .ge. TWO*abs(sm(r)-s(1,r))) then
+              sp(r) = THREE*s(1,r) - TWO*sm(r)
+           else if (abs(sm(r)-s(1,r)) .ge. TWO*abs(sp(r)-s(1,r))) then
+              sm(r) = THREE*s(1,r) - TWO*sp(r)
+           end if
+
+        end do
+!$omp end parallel do
         
      else if (ppm_type .eq. 2) then
 
         ! interpolate s to radial edges, store these temporary values into sedgel
+!$omp parallel do private(r,D2,D2L,D2R,sgn,D2LIM)
         do r=lo-1,hi+2
            
            ! fourth-order stencil
@@ -192,35 +220,7 @@ contains
            end if
 
         end do
-        
-     end if
-
-     ! compute sp and sm
-     if (ppm_type .eq. 1) then
-
-!$omp parallel do private(r)     
-        do r=lo,hi
-           ! first copy sedgel into sp and sm
-           sp(r) = sedgel(r+1)
-           sm(r) = sedgel(r  )
-        end do
 !$omp end parallel do
-
-!$omp parallel do private(r)
-        do r=lo,hi
-           ! modify using quadratic limiters
-           if ((sp(r)-s(1,r))*(s(1,r)-sm(r)) .le. ZERO) then
-              sp(r) = s(1,r)
-              sm(r) = s(1,r)
-           else if (abs(sp(r)-s(1,r)) .ge. TWO*abs(sm(r)-s(1,r))) then
-              sp(r) = THREE*s(1,r) - TWO*sm(r)
-           else if (abs(sm(r)-s(1,r)) .ge. TWO*abs(sp(r)-s(1,r))) then
-              sm(r) = THREE*s(1,r) - TWO*sp(r)
-           end if
-        end do
-!$omp end parallel do
-
-     else if (ppm_type .eq. 2) then
 
 !$omp parallel do private(r,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
 !$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM, &
@@ -300,25 +300,14 @@ contains
 
         end do ! loop over r
 !$omp end parallel do
-
+        
      end if
 
-     ! compute sedgel and sedger
-     if (ppm_type .eq. 0) then
-
-        ! use taylor series
-        do r=lo,hi
-           u = HALF*(w0(1,r)+w0(1,r+1))
-           ubardth = dth*u/dr(n)
-           sedgel(r+1)= s(1,r) + (HALF-ubardth)*slope(r) + dth*force(1,r)
-           sedger(r  )= s(1,r) - (HALF+ubardth)*slope(r) + dth*force(1,r)
-        end do
-
-     else if (ppm_type .ge. 1) then
+     if (ppm_type .ge. 1) then
 
 !$omp parallel do private(r,sigmap,sigmam,s6)
         do r=lo,hi
-           ! first compute Ip and Im
+           ! compute Ip and Im
            sigmap = abs(w0(1,r+1))*dt/dr(1)
            sigmam = abs(w0(1,r  ))*dt/dr(1)
            s6 = SIX*s(1,r) - THREE*(sm(r)+sp(r))
@@ -332,6 +321,8 @@ contains
            else
               Im(r) = s(1,r)
            end if
+
+           ! compute sedgel and sedger
            sedgel(r+1) = Ip(r) + dth*force(1,r)
            sedger(r  ) = Im(r) + dth*force(1,r)
         end do
@@ -496,6 +487,23 @@ contains
            end do ! loop over disjointchunks
         end do ! loop over levels
 
+        ! compute sedgel and sedger
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
+
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
+
+              do r = lo,hi
+                 u = HALF*(w0(n,r)+w0(n,r+1))
+                 ubardth = dth*u/dr(n)
+                 sedgel(n,r+1)= s(n,r) + (HALF-ubardth)*slope(n,r) + dth * force(n,r)
+                 sedger(n,r  )= s(n,r) - (HALF+ubardth)*slope(n,r) + dth * force(n,r)
+              end do
+
+           end do ! loop over disjointchunks
+        end do ! loop over levels
+
      else if (ppm_type .eq. 1) then
 
         ! interpolate s to radial edges, store these temporary values into sedgel
@@ -545,10 +553,36 @@ contains
            end do ! loop over disjointchunks
         end do ! loop over levels
         
+        ! copy sedgel into sp and sm
+        do n=1,nlevs_radial
+           do i=1,numdisjointchunks(n)
+              
+              lo = r_start_coord(n,i)
+              hi = r_end_coord(n,i)
+
+!$omp parallel do private(r)     
+              do r=lo,hi
+                 sp(n,r) = sedgel(n,r+1)
+                 sm(n,r) = sedgel(n,r  )
+              end do
+
+              ! modify using quadratic limiters
+              if ((sp(n,r)-s(n,r))*(s(n,r)-sm(n,r)) .le. ZERO) then
+                 sp(n,r) = s(n,r)
+                 sm(n,r) = s(n,r)
+              else if (abs(sp(n,r)-s(n,r)) .ge. TWO*abs(sm(n,r)-s(n,r))) then
+                 sp(n,r) = THREE*s(n,r) - TWO*sm(n,r)
+              else if (abs(sm(n,r)-s(n,r)) .ge. TWO*abs(sp(n,r)-s(n,r))) then
+                 sm(n,r) = THREE*s(n,r) - TWO*sp(n,r)
+              end if
+!$omp end parallel do
+
+           end do ! loop over disjointchunks
+        end do ! loop over levels
+
      else if (ppm_type .eq. 2) then
 
         ! interpolate s to radial edges, store these temporary values into sedgel
-
         do n=1,nlevs_radial
            do i=1,numdisjointchunks(n)
 
@@ -599,53 +633,6 @@ contains
 
            end do ! loop over disjointchunks
         end do ! loop over levels
-
-     end if
-
-     ! compute sp and sm
-     if (ppm_type .eq. 1) then
-
-        ! copy sedgel into sp and sm
-        do n=1,nlevs_radial
-           do i=1,numdisjointchunks(n)
-              
-              lo = r_start_coord(n,i)
-              hi = r_end_coord(n,i)
-
-!$omp parallel do private(r)     
-              do r=lo,hi
-                 sp(n,r) = sedgel(n,r+1)
-                 sm(n,r) = sedgel(n,r  )
-              end do
-!$omp end parallel do
-              
-           end do ! loop over disjointchunks
-        end do ! loop over levels
-
-        ! modify using quadratic limiters
-        do n=1,nlevs_radial
-           do i=1,numdisjointchunks(n)
-
-              lo = r_start_coord(n,i)
-              hi = r_end_coord(n,i)
-
-!$omp parallel do private(r)
-              do r=lo,hi
-                 if ((sp(n,r)-s(n,r))*(s(n,r)-sm(n,r)) .le. ZERO) then
-                    sp(n,r) = s(n,r)
-                    sm(n,r) = s(n,r)
-                 else if (abs(sp(n,r)-s(n,r)) .ge. TWO*abs(sm(n,r)-s(n,r))) then
-                    sp(n,r) = THREE*s(n,r) - TWO*sm(n,r)
-                 else if (abs(sm(n,r)-s(n,r)) .ge. TWO*abs(sp(n,r)-s(n,r))) then
-                    sm(n,r) = THREE*s(n,r) - TWO*sp(n,r)
-                 end if
-              end do
-!$omp end parallel do
-
-           end do ! loop over disjointchunks
-        end do ! loop over levels
-
-     else if (ppm_type .eq. 2) then
 
         ! use Colella 2008 limiters
         ! This is a new version of the algorithm 
@@ -770,52 +757,15 @@ contains
                  else
                     Im(n,r) = s(n,r)
                  end if
-              end do
-!$omp end parallel do
 
-           end do ! loop over disjointchunks
-        end do ! loop over levels
-
-     end if
-
-     ! compute sedgel and sedger
-     if (ppm_type .eq. 0) then
-        
-        ! use taylor series
-        do n=1,nlevs_radial
-           do i=1,numdisjointchunks(n)
-
-              lo = r_start_coord(n,i)
-              hi = r_end_coord(n,i)
-
-              do r = lo,hi
-                 u = HALF*(w0(n,r)+w0(n,r+1))
-                 ubardth = dth*u/dr(n)
-                 sedgel(n,r+1)= s(n,r) + (HALF-ubardth)*slope(n,r) + dth * force(n,r)
-                 sedger(n,r  )= s(n,r) - (HALF+ubardth)*slope(n,r) + dth * force(n,r)
-              end do
-
-           end do ! loop over disjointchunks
-        end do ! loop over levels
-
-     else
-
-        ! now extrapolate to faces
-        do n=1,nlevs_radial
-           do i=1,numdisjointchunks(n)
-
-              lo = r_start_coord(n,i)
-              hi = r_end_coord(n,i)
-
-!$omp parallel do private(r)
-              do r=lo,hi
+                 ! compute sedgel and sedger
                  sedgel(n,r+1) = Ip(n,r) + dth * force(n,r)
                  sedger(n,r  ) = Im(n,r) + dth * force(n,r)
               end do
 !$omp end parallel do
 
-           end do
-        end do
+           end do ! loop over disjointchunks
+        end do ! loop over levels
 
      end if
 
