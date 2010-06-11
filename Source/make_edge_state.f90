@@ -26,10 +26,342 @@ module make_edge_state_module
   
 contains
 
-   subroutine make_edge_state_1d(s,sedge,w0,force,dt)
+  subroutine make_edge_state_1d(s,sedge,w0,force,dt)
+
+    use geometry, only: spherical
+
+    real(kind=dp_t), intent(in   ) ::     s(:,0:)
+    real(kind=dp_t), intent(inout) :: sedge(:,0:)
+    real(kind=dp_t), intent(in   ) ::    w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: force(:,0:)
+    real(kind=dp_t), intent(in   ) :: dt
+
+    if (spherical .eq. 1) then
+       call make_edge_state_1d_sphr(s,sedge,w0,force,dt)
+    else
+       call make_edge_state_1d_planar(s,sedge,w0,force,dt)
+    end if
+
+  end subroutine make_edge_state_1d
+
+  subroutine make_edge_state_1d_sphr(s,sedge,w0,force,dt)
+
+    use geometry, only: nr_fine, dr
+    use probin_module, only: slope_order, ppm_type
+    use bl_constants_module
+    use variables, only: rel_eps
+
+    real(kind=dp_t), intent(in   ) ::     s(:,0:)
+    real(kind=dp_t), intent(inout) :: sedge(:,0:)
+    real(kind=dp_t), intent(in   ) ::    w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: force(:,0:)
+    real(kind=dp_t), intent(in   ) :: dt
+
+    real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag,ubardth,dth,savg,u
+    real(kind=dp_t) :: sigmap,sigmam,s6,D2,D2L,D2R,D2C,D2LIM,C,alphap,alpham,sgn
+    real(kind=dp_t) :: dafacem,dafacep,dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp
+    real(kind=dp_t) :: amax,delam,delap
+
+    integer :: n,r,lo,hi
+
+    logical :: extremum, bigp, bigm
+
+    integer        , parameter :: cen=1, lim=2, flag=3, fromm=4
+    real(kind=dp_t), parameter :: FOURTHIRDS = FOUR/THREE
+
+    ! cell based indexing
+    real(kind=dp_t) :: dsscr(-1:nr_fine,4)
+    real(kind=dp_t) :: slope(0:nr_fine-1)
+    real(kind=dp_t) ::    sp(0:nr_fine-1)
+    real(kind=dp_t) ::    sm(0:nr_fine-1)
+    real(kind=dp_t) ::    Ip(0:nr_fine-1)
+    real(kind=dp_t) ::    Im(0:nr_fine-1)
+
+    ! edge based indexing
+    real(kind=dp_t) :: sedgel(-1:nr_fine+1)
+    real(kind=dp_t) :: sedger(-1:nr_fine+1)
+
+    real(kind=dp_t) :: s_ghost(-3:nr_fine+2)
+
+    ! copy valid data into array with ghost cells
+    s_ghost(0:nr_fine-1) = s(1,0:nr_fine-1)
+
+    ! symmetry boundary condition at center
+    s_ghost(-1) = s(1,0)
+    s_ghost(-2) = s(1,1)
+    s_ghost(-3) = s(1,2)
+
+    ! first-order extrapolation at top of star
+    s_ghost(nr_fine  ) = s(1,nr_fine-1)
+    s_ghost(nr_fine+1) = s(1,nr_fine-1)
+    s_ghost(nr_fine+2) = s(1,nr_fine-1)
+
+     ! constant used in Colella 2008
+     C = 1.25d0
+
+     dth = HALF*dt
+
+     lo = 0
+     hi = nr_fine-1
+
+     if (ppm_type .eq. 0) then
+        
+        ! compute slopes
+        if (slope_order .eq. 0) then
+
+           slope = ZERO
+
+        else if (slope_order .eq. 2) then
+
+           do r=lo,hi
+              ! do standard limiting on interior cells
+              del = half*(s_ghost(r+1) - s_ghost(r-1))
+              dpls = two*(s_ghost(r+1) - s_ghost(r  ))
+              dmin = two*(s_ghost(r  ) - s_ghost(r-1))
+              slim = min(abs(dpls), abs(dmin))
+              slim = merge(slim, ZERO, dpls*dmin.gt.ZERO)
+              sflag = sign(ONE,del)
+              slope(r)= sflag*min(slim,abs(del))
+           end do
+
+        else if (slope_order .eq. 4) then
+
+           do r=lo-1,hi+1
+              ! do standard limiting to compute temporary slopes
+              dsscr(r,cen) = half*(s_ghost(r+1)-s_ghost(r-1))
+              dpls = two*(s_ghost(r+1)-s_ghost(r  ))
+              dmin = two*(s_ghost(r  )-s_ghost(r-1))
+              dsscr(r,lim)= min(abs(dmin),abs(dpls))
+              dsscr(r,lim) = merge(dsscr(r,lim),ZERO,dpls*dmin.gt.ZERO)
+              dsscr(r,flag) = sign(ONE,dsscr(r,cen))
+              dsscr(r,fromm)= dsscr(r,flag)*min(dsscr(r,lim),abs(dsscr(r,cen)))
+           end do
+                 
+           do r=lo,hi
+              ! fourth-order limited slopes
+              ds = FOURTHIRDS*dsscr(r,cen) - SIXTH*(dsscr(r+1,fromm)+dsscr(r-1,fromm))
+              slope(r) = dsscr(r,flag)*min(abs(ds),dsscr(r,lim))
+           end do
+
+        end if ! which slope order
+
+     else if (ppm_type .eq. 1) then
+
+        ! interpolate s to radial edges, store these temporary values into sedgel
+
+!$omp parallel do private(r,del,dmin,dpls)
+        do r=lo-1,hi+1
+           ! compute van Leer slopes
+           del  = HALF * (s_ghost(r+1) - s_ghost(r-1))
+           dmin = TWO  * (s_ghost(r  ) - s_ghost(r-1))
+           dpls = TWO  * (s_ghost(r+1) - s_ghost(r  ))
+           if (dmin*dpls .gt. ZERO) then
+              dsscr(r,1) = sign(ONE,del)*min(abs(del),abs(dmin),abs(dpls))
+           end if
+        end do
+!$omp end parallel do
+
+!$omp parallel do private(r)
+        do r=lo,hi+1
+           ! 4th order interpolation of s to radial faces
+           sedgel(r) = &
+                HALF*(s_ghost(r)+s_ghost(r-1))-SIXTH*(dsscr(r,1)-dsscr(r-1,1))
+           ! make sure sedgel lies in between adjacent cell-centered values
+           sedgel(r) = max(sedgel(r),min(s_ghost(r),s_ghost(r-1)))
+           sedgel(r) = min(sedgel(r),max(s_ghost(r),s_ghost(r-1)))
+        end do
+!$omp end parallel do
+        
+     else if (ppm_type .eq. 2) then
+
+        ! interpolate s to radial edges, store these temporary values into sedgel
+        do r=lo-1,hi+2
+           
+           ! fourth-order stencil
+           sedgel(r) = (7.d0/12.d0)*(s_ghost(r-1)+s_ghost(r)) &
+                - (1.d0/12.d0)*(s_ghost(r-2)+s_ghost(r+1))
+
+           ! limit sedge
+           if ((sedgel(r)-s_ghost(r-1))*(s_ghost(r)-sedgel(r)) .lt. ZERO) then
+              D2  = THREE*(s_ghost(r-1)-TWO*sedgel(r)+s_ghost(r))
+              D2L = s_ghost(r-2)-TWO*s_ghost(r-1)+s_ghost(r)
+              D2R = s_ghost(r-1)-TWO*s_ghost(r)+s_ghost(r+1)
+              sgn = sign(ONE,D2)
+              D2LIM = sgn*max(min(C*sgn*D2L,C*sgn*D2R,sgn*D2),ZERO)
+              sedgel(r) = HALF*(s_ghost(r-1)+s_ghost(r)) - SIXTH*D2LIM
+           end if
+
+        end do
+        
+     end if
+
+     ! compute sp and sm
+     if (ppm_type .eq. 1) then
+
+!$omp parallel do private(r)     
+        do r=lo,hi
+           ! first copy sedgel into sp and sm
+           sp(r) = sedgel(r+1)
+           sm(r) = sedgel(r  )
+        end do
+!$omp end parallel do
+
+!$omp parallel do private(r)
+        do r=lo,hi
+           ! modify using quadratic limiters
+           if ((sp(r)-s(1,r))*(s(1,r)-sm(r)) .le. ZERO) then
+              sp(r) = s(1,r)
+              sm(r) = s(1,r)
+           else if (abs(sp(r)-s(1,r)) .ge. TWO*abs(sm(r)-s(1,r))) then
+              sp(r) = THREE*s(1,r) - TWO*sm(r)
+           else if (abs(sm(r)-s(1,r)) .ge. TWO*abs(sp(r)-s(1,r))) then
+              sm(r) = THREE*s(1,r) - TWO*sp(r)
+           end if
+        end do
+!$omp end parallel do
+
+     else if (ppm_type .eq. 2) then
+
+!$omp parallel do private(r,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
+!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM, &
+!$omp amax,delam,delap)
+        do r=lo,hi
+
+           ! use Colella 2008 limiters
+           ! This is a new version of the algorithm 
+           ! to eliminate sensitivity to roundoff.
+           alphap = sedgel(r+1)-s_ghost(r)
+           alpham = sedgel(r  )-s_ghost(r)
+           bigp = abs(alphap).gt.TWO*abs(alpham)
+           bigm = abs(alpham).gt.TWO*abs(alphap)
+           extremum = .false.
+
+           if (alpham*alphap .ge. ZERO) then
+              extremum = .true.
+           else if (bigp .or. bigm) then
+              ! Possible extremum. We look at cell centered values and face
+              ! centered values for a change in sign in the differences adjacent to
+              ! the cell. We use the pair of differences whose minimum magnitude is 
+              ! the largest, and thus least susceptible to sensitivity to roundoff.
+              dafacem = sedgel(r) - sedgel(r-1)
+              dafacep = sedgel(r+2) - sedgel(r+1)
+              dabarm = s_ghost(r) - s_ghost(r-1)
+              dabarp = s_ghost(r+1) - s_ghost(r)
+              dafacemin = min(abs(dafacem),abs(dafacep))
+              dabarmin= min(abs(dabarm),abs(dabarp))
+              if (dafacemin.ge.dabarmin) then
+                 dachkm = dafacem
+                 dachkp = dafacep
+              else
+                 dachkm = dabarm
+                 dachkp = dabarp
+              endif
+              extremum = (dachkm*dachkp .le. 0.d0)
+           end if
+
+           if (extremum) then
+              D2  = SIX*(alpham + alphap)
+              D2L = s_ghost(r-2)-TWO*s_ghost(r-1)+s_ghost(r)
+              D2R = s_ghost(r)-TWO*s_ghost(r+1)+s_ghost(r+2)
+              D2C = s_ghost(r-1)-TWO*s_ghost(r)+s_ghost(r+1)
+              sgn = sign(ONE,D2)
+              D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
+              alpham = alpham*D2LIM/max(abs(D2),1.d-10)
+              alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+           else
+              if (bigp) then
+                 sgn = sign(ONE,alpham)
+                 amax = -alphap**2 / (4*(alpham + alphap))
+                 delam = s_ghost(r-1) - s_ghost(r)
+                 if (sgn*amax .ge. sgn*delam) then
+                    if (sgn*(delam - alpham).ge.1.d-10) then
+                       alphap = (-TWO*delam - TWO*sgn*sqrt(delam**2 - delam*alpham))
+                    else 
+                       alphap = -TWO*alpham
+                    endif
+                 endif
+              end if
+              if (bigm) then
+                 sgn = sign(ONE,alphap)
+                 amax = -alpham**2 / (4*(alpham + alphap))
+                 delap = s_ghost(r+1) - s_ghost(r)
+                 if (sgn*amax .ge. sgn*delap) then
+                    if (sgn*(delap - alphap).ge.1.d-10) then
+                       alpham = (-TWO*delap - TWO*sgn*sqrt(delap**2 - delap*alphap))
+                    else
+                       alpham = -TWO*alphap
+                    endif
+                 endif
+              end if
+           end if
+
+           sm(r) = s_ghost(r) + alpham
+           sp(r) = s_ghost(r) + alphap
+
+        end do ! loop over r
+!$omp end parallel do
+
+     end if
+
+     ! compute sedgel and sedger
+     if (ppm_type .eq. 0) then
+
+        ! use taylor series
+        do r=lo,hi
+           u = HALF*(w0(1,r)+w0(1,r+1))
+           ubardth = dth*u/dr(n)
+           sedgel(r+1)= s(1,r) + (HALF-ubardth)*slope(r) + dth*force(1,r)
+           sedger(r  )= s(1,r) - (HALF+ubardth)*slope(r) + dth*force(1,r)
+        end do
+
+     else if (ppm_type .ge. 1) then
+
+!$omp parallel do private(r,sigmap,sigmam,s6)
+        do r=lo,hi
+           ! first compute Ip and Im
+           sigmap = abs(w0(1,r+1))*dt/dr(1)
+           sigmam = abs(w0(1,r  ))*dt/dr(1)
+           s6 = SIX*s(1,r) - THREE*(sm(r)+sp(r))
+           if (w0(1,r+1) .gt. rel_eps) then
+              Ip(r) = sp(r) - (sigmap/TWO)*(sp(r)-sm(r)-(ONE-TWO3RD*sigmap)*s6)
+           else
+              Ip(r) = s(1,r)
+           end if
+           if (w0(1,r) .lt. -rel_eps) then
+              Im(r) = sm(r) + (sigmam/TWO)*(sp(r)-sm(r)+(ONE-TWO3RD*sigmam)*s6)
+           else
+              Im(r) = s(1,r)
+           end if
+           sedgel(r+1) = Ip(r) + dth*force(1,r)
+           sedger(r  ) = Im(r) + dth*force(1,r)
+        end do
+!$omp end parallel do
+
+     end if
+
+     ! Fix center and edge of star by reflecting the extrapolated state.
+     ! An alternate way would be to compute these values using the entire algorithm,
+     ! but that would require more ghost cells at several stages.
+     ! By symmetry arguments, this would make no difference at the center of the star
+     ! and the accuracy at the edge of the star is not important here
+     sedgel(0)       = sedger(0)
+     sedger(nr_fine) = sedgel(nr_fine)
+
+!$omp parallel do private(r,savg)
+     do r=lo,hi+1
+        ! solve Riemann problem to get final edge state
+        sedge(1,r)=merge(sedgel(r),sedger(r),w0(1,r).gt.ZERO)
+        savg = HALF*(sedger(r) + sedgel(r))
+        sedge(1,r)=merge(savg,sedge(1,r),abs(w0(1,r)) .lt. rel_eps)
+     end do
+!$omp end parallel do
+
+   end subroutine make_edge_state_1d_sphr
+
+   subroutine make_edge_state_1d_planar(s,sedge,w0,force,dt)
 
      use geometry, only: r_start_coord, r_end_coord, nr_fine, nr, numdisjointchunks, &
-          nlevs_radial, dr, spherical
+          nlevs_radial, dr
      use probin_module, only: slope_order, ppm_type
      use bl_constants_module
      use variables, only: rel_eps
@@ -105,13 +437,8 @@ contains
 
                  do r=lo,hi
                     if (r .eq. 0) then
-                       if (spherical .eq. 1) then
-                          ! slope of quadratic interpolant with neumann bc at center of star
-                          slope(n,r) = half*(s(n,r+1)-s(n,r))
-                       else
-                          ! one-sided difference
-                          slope(n,r) = s(n,r+1)-s(n,r)
-                       end if
+                       ! one-sided difference
+                       slope(n,r) = s(n,r+1)-s(n,r)
                     else if (r .eq. nr(n)-1) then
                        ! one-sided difference
                        slope(n,r) = s(n,r)-s(n,r-1)
@@ -131,13 +458,8 @@ contains
 
                  do r=lo-1,hi+1
                     if (r .eq. 0) then
-                       if (spherical .eq. 1) then
-                          ! slope of quadratic interpolant with neumann bc at center of star
-                          dxscr(n,r,fromm) = half*(s(n,r+1)-s(n,r))
-                       else
-                          ! one-sided difference
-                          dxscr(n,r,fromm) = s(n,r+1)-s(n,r)
-                       end if
+                       ! one-sided difference
+                       dxscr(n,r,fromm) = s(n,r+1)-s(n,r)
                     else if (r .eq. nr(n)-1) then
                        ! one-sided difference
                        dxscr(n,r,fromm) = s(n,r)-s(n,r-1)
@@ -156,13 +478,8 @@ contains
 
                  do r=lo,hi
                     if (r .eq. 0) then
-                       if (spherical .eq. 1) then
-                          ! slope of quadratic interpolant with neumann bc at center of star
-                          slope(n,r) = half*(s(n,r+1)-s(n,r))
-                       else
-                          ! one-sided difference
-                          slope(n,r) = s(n,r+1)-s(n,r)
-                       end if
+                       ! one-sided difference
+                       slope(n,r) = s(n,r+1)-s(n,r)
                     else if (r .eq. nr(n)-1) then
                        ! one-sided difference
                        slope(n,r) = s(n,r)-s(n,r-1)
@@ -192,13 +509,8 @@ contains
 !$omp parallel do private(r,del,dmin,dpls)
               do r=lo-1,hi+1
                  if (r .eq. 0) then
-                    if (spherical .eq. 1) then
-                       ! slope of quadratic interpolant with neumann bc at center of star
-                       dsvl(n,r) = half*(s(n,r+1)-s(n,r))
-                    else
-                       ! one-sided difference
-                       dsvl(n,r) = s(n,r+1)-s(n,r)
-                    end if
+                    ! one-sided difference
+                    dsvl(n,r) = s(n,r+1)-s(n,r)
                  else if (r .eq. nr(n)-1) then
                     ! one-sided difference
                     dsvl(n,r) = s(n,r)-s(n,r-1)
@@ -247,13 +559,8 @@ contains
 !$omp parallel do private(r)
               do r=lo-3,hi+3
                  if (r .eq. 0) then
-                    if (spherical .eq. 1) then
-                       ! slope of quadratic interpolant with neumann bc at center of star
-                       dsvl(n,r) = half*(s(n,r+1)-s(n,r))
-                    else
-                       ! one-sided difference
-                       dsvl(n,r) = s(n,r+1)-s(n,r)
-                    end if
+                    ! one-sided difference
+                    dsvl(n,r) = s(n,r+1)-s(n,r)
                  else if (r .eq. nr(n)-1) then
                     ! one-sided difference
                     dsvl(n,r) = s(n,r)-s(n,r-1)
@@ -563,6 +870,6 @@ contains
         end do  ! loop over disjointchunks
      end do ! loop over levels
 
-   end subroutine make_edge_state_1d
+   end subroutine make_edge_state_1d_planar
    
  end module make_edge_state_module
