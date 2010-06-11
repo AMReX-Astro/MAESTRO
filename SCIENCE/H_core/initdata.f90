@@ -14,8 +14,6 @@ module init_module
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
-! CEG FIXME remove me
-  use fabio_module
 
   implicit none
 
@@ -266,8 +264,6 @@ contains
        end do
     
     enddo
-
-    call fabio_multifab_write_d(u(1),'.','vin')
 
     if (nlevs .eq. 1) then
 
