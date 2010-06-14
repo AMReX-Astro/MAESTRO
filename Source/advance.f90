@@ -207,6 +207,7 @@ contains
 
     call compute_cutoff_coords(rho0_old)
 
+    if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -234,6 +235,7 @@ contains
        call destroy(rho_Hext(n))
     end do
 
+    if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -371,6 +373,7 @@ contains
        call setval(delta_gamma1_term(n), ZERO, all=.true.)
     end do
 
+    if (barrier_timers) call parallel_barrier()
     advect_time = advect_time + parallel_wtime() - advect_time_start
 
     proj_time_start = parallel_wtime()
@@ -413,6 +416,7 @@ contains
        call destroy(macrhs(n))
     end do
 
+    if (barrier_timers) call parallel_barrier()
     proj_time = proj_time + parallel_wtime() - proj_time_start
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -577,6 +581,7 @@ contains
        call destroy(scal_force(n))
     end do
 
+    if (barrier_timers) call parallel_barrier()
     advect_time = advect_time + parallel_wtime() - advect_time_start
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -594,6 +599,7 @@ contains
                             s2,p0_old,p0_new,the_bc_tower)
     end if
 
+    if (barrier_timers) call parallel_barrier()
     proj_time = proj_time + parallel_wtime() - proj_time_start
 
     misc_time_start = parallel_wtime()
@@ -620,6 +626,7 @@ contains
 
     end if
 
+    if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -643,6 +650,7 @@ contains
        call destroy(s2(n))
     end do
 
+    if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
     
     misc_time_start = parallel_wtime()
@@ -667,6 +675,7 @@ contains
     
     div_coeff_nph = HALF*(div_coeff_old + div_coeff_new)
 
+    if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -840,6 +849,7 @@ contains
     call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart_vec, &
                         rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
+    if (barrier_timers) call parallel_barrier()
     advect_time = advect_time + parallel_wtime() - advect_time_start
 
     proj_time_start = parallel_wtime()
@@ -891,6 +901,7 @@ contains
        call destroy(macphi(n))
     end do
 
+    if (barrier_timers) call parallel_barrier()
     proj_time = proj_time + parallel_wtime() - proj_time_start
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1032,6 +1043,7 @@ contains
        call destroy(thermal1(n))
     end do
 
+    if (barrier_timers) call parallel_barrier()
     advect_time = advect_time + parallel_wtime() - advect_time_start
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1072,6 +1084,7 @@ contains
        end do
     end if
 
+    if (barrier_timers) call parallel_barrier()
     proj_time = proj_time + parallel_wtime() - proj_time_start
 
     misc_time_start = parallel_wtime()
@@ -1092,6 +1105,7 @@ contains
        call destroy(s1(n))
     end do
 
+    if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1115,6 +1129,7 @@ contains
        call destroy(s2(n))
     end do
 
+    if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
 
     misc_time_start = parallel_wtime()
@@ -1139,6 +1154,7 @@ contains
 
     div_coeff_nph = HALF*(div_coeff_old+div_coeff_new)
 
+    if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1209,6 +1225,7 @@ contains
        call multifab_div_div_s(dSdt(n),dt)
     end do
 
+    if (barrier_timers) call parallel_barrier()
     proj_time = proj_time + parallel_wtime() - proj_time_start
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1252,6 +1269,7 @@ contains
        end do
     end if
 
+    if (barrier_timers) call parallel_barrier()
     advect_time = advect_time + parallel_wtime() - advect_time_start
        
     proj_time_start = parallel_wtime()
@@ -1355,6 +1373,7 @@ contains
        end do
     end if
 
+    if (barrier_timers) call parallel_barrier()
     proj_time = proj_time + parallel_wtime() - proj_time_start
 
     misc_time_start = parallel_wtime()
@@ -1376,6 +1395,7 @@ contains
 
     end if
 
+    if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
     call destroy(bpt)

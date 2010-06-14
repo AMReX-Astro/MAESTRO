@@ -365,3 +365,6 @@ burner_threshold_cutoff             real               1.d-10
 # (note: not implemented for all problems)
 diag_buf_size                       integer            10
 
+# Call a parallel_barrier before each of the simple timers we have coded
+# in advance.f90.  Might cause a very slight overall performance hit.
+barrier_timers                      logical            .false.
