@@ -161,7 +161,9 @@ contains
 
                    ! Redo the anelastic cutoff part
                    do r=anelastic_cutoff_coord(i),nr(i)
-                      div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
+                      if (rho0(i,r-1) /= ZERO) then
+                         div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
+                      endif
                    end do
 
                    ! This next piece of coded is needed for the case when the anelastic 
