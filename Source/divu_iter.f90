@@ -187,7 +187,7 @@ contains
           eps_divu = 1.d-6
        end if
     else
-       eps_divu = 1.d-12
+       eps_divu = min(1.d-10, 1.d-12*10**(nlevs-1) )
     end if
 
     do n=1,nlevs
@@ -196,6 +196,7 @@ contains
        
     call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
+
 
     call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
                    the_bc_tower,div_coeff_3d,hgrhs,eps_divu)

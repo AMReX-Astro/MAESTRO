@@ -1063,6 +1063,11 @@ contains
 
     ! Note: put this here to minimize asymmetries - ASA
     eps = 1.d-12
+    if (present(eps_in)) then
+       eps = eps_in
+    endif
+
+    print *, 'in hgproject, eps_in = ', eps_in, eps
 
     if ( hg_bottom_solver >= 0 ) then
         if (hg_bottom_solver == 4 .and. phi(1)%nboxes == 1) then

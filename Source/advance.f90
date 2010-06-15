@@ -157,6 +157,9 @@ contains
     real(kind=dp_t) :: react_time,  react_time_start,  react_time_max
     real(kind=dp_t) :: misc_time,   misc_time_start,   misc_time_max
 
+    real(kind=dp_t) :: eps
+
+
     call build(bpt, "advance_timestep")
 
     advect_time = 0.d0
@@ -1357,8 +1360,10 @@ contains
     call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
+    eps = min(1.d-10, 1.d-12*10**(nlevs-1) )
+
     call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
-                   div_coeff_3d,hgrhs)
+                   div_coeff_3d,hgrhs, eps_in = eps)
 
     do n=1,nlevs
        call destroy(div_coeff_3d(n))
