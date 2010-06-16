@@ -34,6 +34,28 @@
 \end{verbatim}
 
 
+\item {\em  MAESTRO crashes because the multigrid algorithm fails to
+    converge---how do I get around this?}
+
+  Setting general convergence criteria for multigrid is as much
+  art as science. 
+  First, it is important to determine if the multigrd solver is
+  close to convergence and just dancing around near the desired
+  tolerance, but never reaching it, or if it is no where near 
+  convergence.  For the latter, it may be that the multigrid
+  solver was fed bad data and the problem arose in one of the earlier
+  steps.  To get more detail information from the multigrid solver,
+  set {\tt mg\_verbose} to a positive integer from 1-4 (the higher
+  the number the more information you receive.
+
+  If the multigrid solver is failing during one of the initial
+  ``divu'' iterations, it may be because the velocity is initially
+  zero, so there is no velocity magnitude to use as a reference for
+  convergence, and that ($S - \bar{S}$) is very small (or zero).  In
+  this case, it is usually a good idea to perturb the initial state
+  slightly, so the righthand side is non-zero.
+
+
 
 \item {\em How can I obtain profiling infomation for my run?}
 
