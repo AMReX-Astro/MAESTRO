@@ -562,19 +562,20 @@ contains
 
 !$omp parallel do private(r)     
               do r=lo,hi
+
                  sp(n,r) = sedgel(n,r+1)
                  sm(n,r) = sedgel(n,r  )
-              end do
 
-              ! modify using quadratic limiters
-              if ((sp(n,r)-s(n,r))*(s(n,r)-sm(n,r)) .le. ZERO) then
-                 sp(n,r) = s(n,r)
-                 sm(n,r) = s(n,r)
-              else if (abs(sp(n,r)-s(n,r)) .ge. TWO*abs(sm(n,r)-s(n,r))) then
-                 sp(n,r) = THREE*s(n,r) - TWO*sm(n,r)
-              else if (abs(sm(n,r)-s(n,r)) .ge. TWO*abs(sp(n,r)-s(n,r))) then
-                 sm(n,r) = THREE*s(n,r) - TWO*sp(n,r)
-              end if
+                 ! modify using quadratic limiters
+                 if ((sp(n,r)-s(n,r))*(s(n,r)-sm(n,r)) .le. ZERO) then
+                    sp(n,r) = s(n,r)
+                    sm(n,r) = s(n,r)
+                 else if (abs(sp(n,r)-s(n,r)) .ge. TWO*abs(sm(n,r)-s(n,r))) then
+                    sp(n,r) = THREE*s(n,r) - TWO*sm(n,r)
+                 else if (abs(sm(n,r)-s(n,r)) .ge. TWO*abs(sp(n,r)-s(n,r))) then
+                    sm(n,r) = THREE*s(n,r) - TWO*sp(n,r)
+                 end if
+              end do
 !$omp end parallel do
 
            end do ! loop over disjointchunks
