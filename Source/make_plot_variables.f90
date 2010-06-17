@@ -140,6 +140,7 @@ contains
     ! local
     integer :: i, j, k
 
+!$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -165,6 +166,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
   end subroutine make_conductivity_3d
 
@@ -340,18 +342,19 @@ contains
 
   subroutine make_pi_cc_3d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
 
-    real (kind=dp_t), intent(in   )           :: weight
-    integer         , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc
-    real (kind=dp_t), intent(in   )           ::    pi(lo(1)-ng_pn:,lo(2)-ng_pn:,lo(3)-ng_pn:)
-    real (kind=dp_t), intent(inout)           :: pi_cc(lo(1)-ng_pc:,lo(2)-ng_pc:,lo(3)-ng_pc:)
-    real (kind=dp_t), intent(inout)           :: ncell,pisum
-    logical         , intent(in   ), optional ::  mask(lo(1):      ,lo(2):      ,lo(3):      )
+    real(kind=dp_t), intent(in   )           :: weight
+    integer        , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc
+    real(kind=dp_t), intent(in   )           ::    pi(lo(1)-ng_pn:,lo(2)-ng_pn:,lo(3)-ng_pn:)
+    real(kind=dp_t), intent(inout)           :: pi_cc(lo(1)-ng_pc:,lo(2)-ng_pc:,lo(3)-ng_pc:)
+    real(kind=dp_t), intent(inout)           :: ncell,pisum
+    logical        , intent(in   ), optional ::  mask(lo(1):      ,lo(2):      ,lo(3):      )
 
     ! local
     integer :: i,j,k
 
     logical :: cell_valid
 
+!$omp parallel do private(i,j,k,cell_valid) reduction(+:pisum,ncell)
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
@@ -373,6 +376,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
   end subroutine make_pi_cc_3d
 
@@ -602,13 +606,13 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
 
+!$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
              den_eos(1)  = state(i,j,k,rho_comp)
              h_eos(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
-             p_eos(1)    = p0_cart(i,j,k,1)
              temp_eos(1) = state(i,j,k,temp_comp)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
@@ -635,6 +639,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(p0_cart,tempbar_cart)
 
@@ -958,11 +963,12 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,gamma1bar,gamma1bar_cart,lo,hi,dx,0)
 
-    ! Then compute the perturbation and Mach number
+!$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
+             ! Then compute the perturbation and Mach number
              den_eos(1) = s(i,j,k,rho_comp)
              temp_eos(1) = s(i,j,k,temp_comp)
              p_eos(1) = p0_cart(i,j,k,1)
@@ -997,6 +1003,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(rho0_cart,rhoh0_cart,tempbar_cart,p0_cart,gamma1bar_cart)
 
@@ -1125,15 +1132,17 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,entropybar,entropybar_cart, &
                                       lo,hi,dx,0)
 
-    ! Compute entropy-entropybar
+!$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
+             ! Compute entropy-entropybar
              entropypert(i,j,k) = &
                   (entropy(i,j,k) - entropybar_cart(i,j,k,1))/entropybar_cart(i,j,k,1)
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     deallocate(entropybar_cart)
 
@@ -1216,6 +1225,7 @@ contains
     !     Local variables
     integer :: i, j, k
 
+!$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1223,6 +1233,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
   end subroutine make_deltaT_3d
 
@@ -1331,6 +1342,7 @@ contains
     ! Local variables
     integer :: i,j,k
 
+!$omp parallel do private(i,j,k)
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
@@ -1340,6 +1352,7 @@ contains
           end do
        end do
     end do
+!$omp end parallel do
 
   end subroutine make_divw0_3d_sphr
 
@@ -1465,6 +1478,7 @@ contains
     logical :: fix_lo_x,fix_hi_x,fix_lo_y,fix_hi_y,fix_lo_z,fix_hi_z
     real (kind = dp_t) :: wy,vz,uz,wx,vx,uy
 
+!$omp parallel do private(i,j,k,uy,uz,vx,vz,wx,wy)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1478,6 +1492,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
     fix_lo_x = ( bc(1,1) .eq. INLET .or. bc(1,1) .eq. NO_SLIP_WALL )
     fix_hi_x = ( bc(1,2) .eq. INLET .or. bc(1,2) .eq. NO_SLIP_WALL )
@@ -1493,6 +1508,7 @@ contains
     !
     if (fix_lo_x) then
        i = lo(1)
+!$omp parallel do private(j,k,uy,uz,vx,vz,wx,wy)
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              vx = vxlo(i,j,k)
@@ -1504,10 +1520,12 @@ contains
              vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
           end do
        end do
+!$omp end parallel do
     end if
 
     if (fix_hi_x) then
        i = hi(1)
+!$omp parallel do private(j,k,uy,uz,vx,vz,wx,wy)
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              vx = vxhi(i,j,k)
@@ -1519,10 +1537,12 @@ contains
              vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
           end do
        end do
+!$omp end parallel do
     end if
 
     if (fix_lo_y) then
        j = lo(2)
+!$omp parallel do private(i,k,uy,uz,vx,vz,wx,wy)
        do k = lo(3),hi(3)
           do i = lo(1),hi(1)
              vx = vxcen(i,j,k)
@@ -1534,10 +1554,12 @@ contains
              vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
           end do
        end do
+!$omp end parallel do
     end if
 
     if (fix_hi_y) then
        j = hi(2)
+!$omp parallel do private(i,k,uy,uz,vx,vz,wx,wy)
        do k = lo(3),hi(3)
           do i = lo(1),hi(1)
              vx = vxcen(i,j,k)
@@ -1549,10 +1571,12 @@ contains
              vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
           end do
        end do
+!$omp end parallel do
     end if
 
     if (fix_lo_z) then
        k = lo(3)
+!$omp parallel do private(i,j,uy,uz,vx,vz,wx,wy)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              vx = vxcen(i,j,k)
@@ -1564,10 +1588,12 @@ contains
              vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
           end do
        end do
+!$omp end parallel do
     end if
 
     if (fix_hi_z) then
        k = hi(3)
+!$omp parallel do private(i,j,uy,uz,vx,vz,wx,wy)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              vx = vxcen(i,j,k)
@@ -1579,6 +1605,7 @@ contains
              vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
           end do
        end do
+!$omp end parallel do
     end if
     !
     !     Next do all the edges
@@ -1586,6 +1613,7 @@ contains
     if (fix_lo_x .and. fix_lo_y) then
        i = lo(1)
        j = lo(2)
+!$omp parallel do private(k,uy,uz,vx,vz,wx,wy)
        do k = lo(3),hi(3)
           vx = vxlo(i,j,k)
           wx = wxlo(i,j,k)
@@ -1595,11 +1623,13 @@ contains
           vz = vzcen(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
 
     if (fix_hi_x .and. fix_lo_y) then
        i = hi(1)
        j = lo(2)
+!$omp parallel do private(k,uy,uz,vx,vz,wx,wy)
        do k = lo(3),hi(3)
           vx = vxhi(i,j,k)
           wx = wxhi(i,j,k)
@@ -1609,11 +1639,13 @@ contains
           vz = vzcen(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
 
     if (fix_lo_x .and. fix_hi_y) then
        i = lo(1)
        j = hi(2)
+!$omp parallel do private(k,uy,uz,vx,vz,wx,wy)
        do k = lo(3),hi(3)
           vx = vxlo(i,j,k)
           wx = wxlo(i,j,k)
@@ -1623,11 +1655,13 @@ contains
           vz = vzcen(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
 
     if (fix_hi_x .and. fix_hi_y) then
        i = hi(1)
        j = hi(2)
+!$omp parallel do private(k,uy,uz,vx,vz,wx,wy)
        do k = lo(3),hi(3)
           vx = vxhi(i,j,k)
           wx = wxhi(i,j,k)
@@ -1637,11 +1671,13 @@ contains
           vz = vzcen(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
 
     if (fix_lo_x .and. fix_lo_z) then
        i = lo(1)
        k = lo(3)
+!$omp parallel do private(j,uy,uz,vx,vz,wx,wy)
        do j = lo(2),hi(2)
           vx = vxlo(i,j,k)
           wx = wxlo(i,j,k)
@@ -1651,11 +1687,13 @@ contains
           vz = vzlo(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
 
     if (fix_hi_x .and. fix_lo_z) then
        i = hi(1)
        k = lo(3)
+!$omp parallel do private(j,uy,uz,vx,vz,wx,wy)
        do j = lo(2),hi(2)
           vx = vxhi(i,j,k)
           wx = wxhi(i,j,k)
@@ -1665,11 +1703,13 @@ contains
           vz = vzlo(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
 
     if (fix_lo_x .and. fix_hi_z) then
        i = lo(1)
        k = hi(3)
+!$omp parallel do private(j,uy,uz,vx,vz,wx,wy)
        do j = lo(2),hi(2)
           vx = vxlo(i,j,k)
           wx = wxlo(i,j,k)
@@ -1679,11 +1719,13 @@ contains
           vz = vzhi(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
 
     if (fix_hi_x .and. fix_hi_z) then
        i = hi(1)
        k = hi(3)
+!$omp parallel do private(j,uy,uz,vx,vz,wx,wy)
        do j = lo(2),hi(2)
           vx = vxhi(i,j,k)
           wx = wxhi(i,j,k)
@@ -1693,11 +1735,13 @@ contains
           vz = vzhi(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
 
     if (fix_lo_y .and. fix_lo_z) then
        j = lo(2)
        k = lo(3)
+!$omp parallel do private(i,uy,uz,vx,vz,wx,wy)
        do i = lo(1),hi(1)
           vx = vxcen(i,j,k)
           wx = wxcen(i,j,k)
@@ -1707,11 +1751,13 @@ contains
           vz = vzlo(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
 
     if (fix_hi_y .and. fix_lo_z) then
        j = hi(2)
        k = lo(3)
+!$omp parallel do private(i,uy,uz,vx,vz,wx,wy)
        do i = lo(1),hi(1)
           vx = vxcen(i,j,k)
           wx = wxcen(i,j,k)
@@ -1721,11 +1767,13 @@ contains
           vz = vzlo(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
 
     if (fix_lo_y .and. fix_hi_z) then
        j = lo(2)
        k = hi(3)
+!$omp parallel do private(i,uy,uz,vx,vz,wx,wy)
        do i = lo(1),hi(1)
           vx = vxcen(i,j,k)
           wx = wxcen(i,j,k)
@@ -1735,11 +1783,13 @@ contains
           vz = vzhi(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
 
     if (fix_hi_y .and. fix_hi_z) then
        j = hi(2)
        k = hi(3)
+!$omp parallel do private(i,uy,uz,vx,vz,wx,wy)
        do i = lo(1),hi(1)
           vx = vxcen(i,j,k)
           wx = wxcen(i,j,k)
@@ -1749,6 +1799,7 @@ contains
           vz = vzhi(i,j,k)
           vort(i,j,k) = vorfun(uy,uz,vx,vz,wx,wy)
        end do
+!$omp end parallel do
     end if
     !
     !     Finally do all the corners
@@ -2011,9 +2062,11 @@ contains
        hi =  upb(get_box(u, i))
        select case (dm)
        case (1)
-          call makemagvel_1d(pp(:,1,1,comp_magvel),pp(:,1,1,comp_mom),ng_p,sp(:,1,1,rho_comp),ng_s,up(:,1,1,1),ng_u,w0,lo,hi)
+          call makemagvel_1d(pp(:,1,1,comp_magvel),pp(:,1,1,comp_mom),ng_p, &
+                             sp(:,1,1,rho_comp),ng_s,up(:,1,1,1),ng_u,w0,lo,hi)
        case (2)
-          call makemagvel_2d(pp(:,:,1,comp_magvel),pp(:,:,1,comp_mom),ng_p,sp(:,:,1,rho_comp),ng_s,up(:,:,1,:),ng_u,w0,lo,hi)
+          call makemagvel_2d(pp(:,:,1,comp_magvel),pp(:,:,1,comp_mom),ng_p, &
+                             sp(:,:,1,rho_comp),ng_s,up(:,:,1,:),ng_u,w0,lo,hi)
        case (3)
           if (spherical .eq. 1) then
              wxp => dataptr(w0mac(1), i)
@@ -2106,7 +2159,8 @@ contains
 
   end subroutine makemagvel_3d_cart
 
-  subroutine makemagvel_3d_sphr(magvel,mom,ng_p,rho,ng_s,u,ng_u,w0macx,w0macy,w0macz,ng_w,lo,hi)
+  subroutine makemagvel_3d_sphr(magvel,mom,ng_p,rho,ng_s,u,ng_u, &
+                                w0macx,w0macy,w0macz,ng_w,lo,hi)
 
 
     use bl_constants_module
@@ -2123,6 +2177,7 @@ contains
     !     Local variables
     integer :: i, j, k
 
+!$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -2133,6 +2188,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
   end subroutine makemagvel_3d_sphr
 
@@ -2194,6 +2250,7 @@ contains
     !     Local variables
     integer :: i, j, k
 
+!$omp parallel do private(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -2204,6 +2261,7 @@ contains
           enddo
        enddo
     enddo
+!$omp end parallel do
 
   end subroutine makevelr_3d_sphr
 
