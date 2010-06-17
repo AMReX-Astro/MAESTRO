@@ -187,7 +187,13 @@ contains
           eps_divu = 1.d-6
        end if
     else
-       eps_divu = min(1.d-10, 1.d-12*10**(nlevs-1) )
+       if (istep_divu_iter .eq. init_divu_iter) then
+          eps_divu = min(1.d-10, 1.d-12*10**(nlevs-1) )
+       else if (istep_divu_iter .eq. init_divu_iter-1) then
+          eps_divu = min(1.d-8, 1.d-10*10**(nlevs-1) )
+       else if (istep_divu_iter .eq. init_divu_iter-2) then
+          eps_divu = min(1.d-6, 1.d-8*10**(nlevs-1) )
+       endif
     end if
 
     do n=1,nlevs
