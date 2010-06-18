@@ -14,7 +14,7 @@ include $(FPARALLEL)/mk/GMakedefs.mak
 
 # define the physics packages to build this problem
 EOS_DIR := extern/EOS/gamma_law_general 
-CONDUCTIVITY_DIR := extern/EOS/conducteos
+CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
 NETWORK_DIR := extern/networks/simple 
 
 # define the special directories needed to build this problem.  Note:
