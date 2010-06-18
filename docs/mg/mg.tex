@@ -1,0 +1,100 @@
+\section{Multigrid Solver Tolerances}
+
+Beginning at the start of execution, there are several places where either cell-centered
+multigrid or node-centered multigrid solves are performed.
+
+\begin{itemize}
+
+\item {\em initial projection} ({\tt initial\_proj} called from {\tt varden})
+
+  The initial projection creates a first approximation to the velocity
+  field by forcing the initial velocity field set by {\tt initveldata}
+  to satisfy the elliptic constraint equation.  Since the initial
+  velocity may be zero, there is no guarantee that a well-defined
+  timestep can be computed at this point, so the source term, $S$,
+  used here only involves thermal diffusion and any external heating
+  term, $\Hext$---no reactions are included (see paper~III, \S 3.3).
+
+  The initial projection can be disabled with the {\tt do\_initial\_projection}
+  runtime parameter.
+
+  The tolerance, $\epsilon$ is set in {\tt initial\_proj} and is:
+   \begin{center}
+   \begin{tabular}{ll}
+   Cartesian:   & $\epsilon = 10^{-12}$ \\
+   spherical:   & $\epsilon = 10^{-10}$ \\
+   \end{tabular}
+   \end{center}
+
+
+\item {\em ``divu'' iterations} ({\tt divu\_iter} called from {\tt varden})
+
+  The ``divu'' iterations projects the velocity field from the initial
+  projection to satisfy the full constraint (including reactions).
+  This is an iterative process since the reactions depend on the
+  timestep and the timestep depends on the velocity field (see
+  paper~III, \S 3.3).  The number of iterations to take is set through
+  the {\tt init\_divu\_iter} runtime parameter.
+
+  The tolerance, $\epsilon_\mathrm{divu}$ depends on the iteration, $i$.
+  We start with a loose tolerance and progressively get tighter.  The
+  tolerances (set in {\tt divu\_iter}) are:
+   \begin{center}
+   \begin{tabular}{ll}
+   Cartesian:   & $\epsilon = \left  \{ \begin{array}{ll} 
+                   \min  (10^{-6\phantom{0}}, 10^{-8\phantom{0}} \cdot 10^{(\mathrm{nlevs - 1})} ) & 
+                           \quad \mathrm{for}~ i \le \mathrm{init\_divu\_iter} - 2 \\
+                   \min  (10^{-8\phantom{0}}, 10^{-10} \cdot 10^{(\mathrm{nlevs - 1})} ) & 
+                           \quad \mathrm{for}~ i = \mathrm{init\_divu\_iter} - 1  \\
+                   \min  (10^{-10}, 10^{-12} \cdot 10^{(\mathrm{nlevs - 1})} ) & 
+                           \quad \mathrm{for}~ i = \mathrm{init\_divu\_iter}   \\
+                                 \end{array}
+                  \right .$ \\[10mm]
+   spherical:   & $\epsilon = \left  \{ \begin{array}{ll} 
+                    10^{-6\phantom{0}}  &
+                           \quad \mathrm{for}~ i \le \mathrm{init\_divu\_iter} - 2 \, \\
+                    10^{-8\phantom{0}}  &
+                           \quad \mathrm{for}~ i = \mathrm{init\_divu\_iter} - 1 \, \\
+                    10^{-10}  &
+                           \quad \mathrm{for}~ i = \mathrm{init\_divu\_iter} \, )\\
+                  \end{array}
+                  \right .$ \\
+   \end{tabular}
+   \end{center}
+
+
+\end{itemize}
+
+In the main algorithm, mulitgrid solves come in during the two MAC projections,
+two (optional) thermal diffusion solves, and the final velocity projection.
+
+\begin{itemize}
+
+\item {\em MAC projection}  
+
+  The MAC projection forces the edge-centered, half-time advective
+  velocities to obey the elliptic constraint.  This is done both in
+  the predictor and corrector portions of the main algorithm.
+
+  There are 3 tolerances here: a relative tolerance of $\epsilon =
+  10^{-10}$, an absolute tolerance of $\epsilon_\mathrm{abs} =
+  \epsilon \cdot ||U^\mathrm{ADV}||_\infty / \Delta x$, and a bottom
+  solver tolerance of $\epsilon_\mathrm{bottom} = 10^{-3}$ (these are
+  all hard-coded in {\tt mac\_multigrid}).
+
+
+\item {\em thermal diffusion}
+
+  This uses the same {\tt mac\_multigrid} routine as the MAC
+  projection, so it uses the same tolerances.  The only difference is
+  that the absolute tolerance is based on the norm of $h$ now, instead
+  of $U^\mathrm{ADV}$.
+
+\item {\em velocity projection}
+
+  The final velocity projection uses a tolerance of $\epsilon = \min(
+  10^{-10}, 10^{-12} \cdot 10^{(\mathrm{nlevs} - 1)} )$.  This tolerance
+  is set in {\tt advance} and passed into {\tt hgproject}.
+
+\end{itemize}
+
