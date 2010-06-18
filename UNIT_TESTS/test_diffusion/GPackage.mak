@@ -1,5 +1,3 @@
-fsources += conducteos.f
-
 f90sources += average.f90
 f90sources += base_io.f90
 f90sources += base_state.f90

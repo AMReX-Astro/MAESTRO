@@ -15,6 +15,7 @@ subroutine varden()
   use make_explicit_thermal_module
   use thermal_conduct_module
   use estdt_module
+  use conductivity_module, only: conductivity_init
 
   implicit none
 
@@ -52,6 +53,8 @@ subroutine varden()
 
   call network_init()
   call eos_init(use_eos_coulomb=use_eos_coulomb,gamma_in=FIVE3RD)
+
+  call conductivity_init(cond_const=thermal_conductivity)
 
   ! setup some names for the data fab's
   allocate(names(nscal))
