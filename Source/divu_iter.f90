@@ -1,3 +1,9 @@
+! The ``divu'' iterations projects the velocity field from the initial
+! projection to satisfy the full constraint (including reactions).  This
+! is an iterative process since the reactions depend on the timestep and
+! the timestep depends on the velocity field.  The number of iterations
+! to take is set through the init_divu_iter runtime parameter.
+
 module divu_iter_module
 
   implicit none

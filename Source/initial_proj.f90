@@ -1,3 +1,13 @@
+! The initial projection creates a first approximation to the velocity
+! field by forcing the initial velocity field set by initveldata to
+! satisfy the elliptic constraint equation.  Since the initial
+! velocity may be zero, there is no guarantee that a well-defined
+! timestep can be computed at this point, so the source term, S, used
+! here only involves thermal diffusion and any external heating term,
+! H_ext---no reactions are included.
+!
+! see paper III, section 3.3
+
 module initial_proj_module
 
   implicit none
