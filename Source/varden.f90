@@ -23,6 +23,7 @@ subroutine varden()
   use define_bc_module
   use fill_3d_module
   use eos_module
+  use conductivity_module
   use divu_iter_module
   use initial_proj_module
   use make_gamma_module
@@ -120,8 +121,10 @@ subroutine varden()
   call init_variables()
   call init_plot_variables()
 
+  ! initialize the microphysics modules
   call network_init()
   call eos_init(use_eos_coulomb=use_eos_coulomb,small_temp=small_temp,small_dens=small_dens)
+  call conductivity_init(cond_const=conductivity_constant)
 
   allocate(plot_names(n_plot_comps))
   call get_plot_names(plot_names)

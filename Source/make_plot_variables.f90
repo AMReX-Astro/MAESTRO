@@ -57,6 +57,7 @@ contains
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
+    use conductivity_module
     use network, only: nspec
 
     integer,         intent(in   ) :: lo(:), hi(:), ng_c, ng_s
@@ -93,6 +94,7 @@ contains
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
+    use conductivity_module
     use network, only: nspec
 
     integer,         intent(in   ) :: lo(:), hi(:), ng_c, ng_s
@@ -131,6 +133,7 @@ contains
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
+    use conductivity_module
     use network, only: nspec
 
     integer,         intent(in   ) :: lo(:), hi(:), ng_c, ng_s
