@@ -1,9 +1,9 @@
-module conductivity
+module conductivity_module
 
   use bl_types
   implicit none
 
-  real (kind=dp_t), save :: conductivity_constant
+  real (kind=dp_t), save, private :: conductivity_constant
 
 contains
 
@@ -69,5 +69,5 @@ contains
 
   end subroutine conducteos
 
-end module conductivity
+end module conductivity_module
 

@@ -1,4 +1,4 @@
-module conductivity
+module conductivity_module
 
   use bl_types
   implicit none
@@ -432,4 +432,4 @@ contains
     return 
   end subroutine sig99
 
-end module conductivity
+end module conductivity_module
