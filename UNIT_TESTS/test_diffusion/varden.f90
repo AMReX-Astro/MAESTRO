@@ -245,8 +245,8 @@ contains
 
     close(unit)
 
-100 format (A,"=",G)
-101 format ("f",I5.5,"(x)=(hp-h0)*(t0/(",G,"+t0))*exp(-x*x/(4.0e0*D*(",G,"+t0)))+h0")
+100 format (A,"=",G15.10)
+101 format ("f",I5.5,"(x)=(hp-h0)*(t0/(",G15.10,"+t0))*exp(-x*x/(4.0e0*D*(",G15.10,"+t0)))+h0")
 
   end subroutine dump_gnuplot_analysis
     
