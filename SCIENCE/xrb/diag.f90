@@ -20,6 +20,15 @@
 !        peak Mach number
 !        x/y/z location of peak Mach number
 !
+! optional output files:
+!
+!  if do_deltap_diag .eq. T:
+!    xrb_deltap_diag.out:
+!        peak deltap
+!        location of peak deltap
+!        average deltap
+!        
+!
 
 
 module diag_module
@@ -30,12 +39,15 @@ module diag_module
   use ml_layout_module
   use define_bc_module
   use network, only: network_species_index
+  use probin_module, only: do_deltap_diag
 
   implicit none
 
   private
 
   public :: diag, flush_diag
+
+  logical, save :: network_contains_oxygen = .false.
 
 contains
 
@@ -97,6 +109,13 @@ contains
     real(kind=dp_t) :: coord_Machno_max(dm), coord_Machno_max_level(dm), &
                        coord_Machno_max_local(dm)
 
+    real(kind=dp_t) :: deltap_max, deltap_max_level, deltap_max_local
+    real(kind=dp_t) :: coord_deltap_max(dm), coord_deltap_max_level(dm), &
+                       coord_deltap_max_local(dm)
+
+    real(kind=dp_t) :: deltap_avg, deltap_avg_level, deltap_avg_local
+    real(kind=dp_t) :: nzones, nzones_level, nzones_local
+
     ! buffers
     real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(dm)
     real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
@@ -104,7 +123,8 @@ contains
     real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(dm)
     real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
 
-    real(kind=dp_t) :: mass_sum_data_level(2), mass_sum_data_local(2)
+    real(kind=dp_t), allocatable :: sum_data_level(:), sum_data_local(:)
+    integer :: nsums
 
     real(kind=dp_t) :: vel_max_data_local(1), vel_max_coords_local(dm)
     real(kind=dp_t), allocatable :: vel_max_data(:), vel_max_coords(:)
@@ -112,16 +132,18 @@ contains
     real(kind=dp_t) :: Machno_max_data_local(1), Machno_max_coords_local(dm)
     real(kind=dp_t), allocatable :: Machno_max_data(:), Machno_max_coords(:)
 
+    real(kind=dp_t) :: deltap_max_data_local(1), deltap_max_coords_local(dm)
+    real(kind=dp_t), allocatable :: deltap_max_data(:), deltap_max_coords(:)
+
     integer :: lo(dm),hi(dm),ng_s,ng_u,ng_rhn,ng_rhe
-    integer :: i,n, index_max
-    integer :: un, un2, un3
+    integer :: i,n, index_max, isum
+    integer :: un, un2, un3, un4
     logical :: lexist
 
     logical, save :: firstCall = .true.
 
     type(bl_prof_timer), save :: bpt
 
-    logical, save :: network_contains_oxygen = .false.
 
     call build(bpt, "diagnostics")
 
@@ -145,8 +167,11 @@ contains
 
     total_c12_mass = ZERO
 
+    nsums = 1
+
     if (network_contains_oxygen) then
        total_o16_mass = ZERO
+       nsums = nsums + 1
     endif
 
     vel_max          = ZERO
@@ -154,6 +179,18 @@ contains
 
     Machno_max          = ZERO
     coord_Machno_max(:) = ZERO
+
+    if (do_deltap_diag) then
+       deltap_max = ZERO
+       coord_deltap_max(:) = ZERO
+       
+       deltap_avg = ZERO
+
+       nzones = 0
+
+       ! one for the avg and one for the number of zones
+       nsums = nsums + 2
+    endif
 
     ! loop over the levels and calculate global quantities
     do n = 1, nlevs
@@ -191,6 +228,21 @@ contains
        coord_Machno_max_level(:) = ZERO
        coord_Machno_max_local(:) = ZERO
 
+       if (do_deltap_diag) then
+          deltap_max_level = ZERO
+          deltap_max_local = ZERO
+          
+          coord_deltap_max_level(:) = ZERO
+          coord_deltap_max_local(:) = ZERO
+
+          deltap_avg_level = ZERO
+          deltap_avg_local = ZERO
+
+          nzones_level = 0
+          nzones_local = 0
+       endif
+
+       allocate(sum_data_local(nsums), sum_data_level(nsums))
 
        ! loop over the boxes at the current level
        do i = 1, s(n)%nboxes
@@ -210,197 +262,114 @@ contains
              ! only do those boxes that aren't masked
              if (n .eq. nlevs) then
 
-                if (network_contains_oxygen) then
-                
-                   call diag_2d(n,time,dt,dx(n,:), &
-                                sp(:,:,1,:),ng_s, &
-                                rhnp(:,:,1,1),ng_rhn, &
-                                rhep(:,:,1,1),ng_rhe, &
-                                rho0(n,:),rhoh0(n,:), &
-                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                up(:,:,1,:),ng_u, &
-                                w0(n,:), &
-                                lo,hi, &
-                                T_max_local, &
-                                coord_T_max_local, &
-                                enuc_max_local, &
-                                coord_enuc_max_local, &
-                                total_c12_mass_local, &
-                                vel_max_local, &
-                                coord_vel_max_local, &
-                                Machno_max_local, &
-                                coord_Machno_max_local, &
-                                o16_mass=total_o16_mass_local)
-
-                else
-
-                   call diag_2d(n,time,dt,dx(n,:), &
-                                sp(:,:,1,:),ng_s, &
-                                rhnp(:,:,1,1),ng_rhn, &
-                                rhep(:,:,1,1),ng_rhe, &
-                                rho0(n,:),rhoh0(n,:), &
-                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                up(:,:,1,:),ng_u, &
-                                w0(n,:), &
-                                lo,hi, &
-                                T_max_local, &
-                                coord_T_max_local, &
-                                enuc_max_local, &
-                                coord_enuc_max_local, &
-                                total_c12_mass_local, &
-                                vel_max_local, &
-                                coord_vel_max_local, &
-                                Machno_max_local, &
-                                coord_Machno_max_local)
-                endif
+                call diag_2d(n,time,dt,dx(n,:), &
+                             sp(:,:,1,:),ng_s, &
+                             rhnp(:,:,1,1),ng_rhn, &
+                             rhep(:,:,1,1),ng_rhe, &
+                             rho0(n,:),rhoh0(n,:), &
+                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                             up(:,:,1,:),ng_u, &
+                             w0(n,:), &
+                             lo,hi, &
+                             T_max_local, &
+                             coord_T_max_local, &
+                             enuc_max_local, &
+                             coord_enuc_max_local, &
+                             total_c12_mass_local, &
+                             vel_max_local, &
+                             coord_vel_max_local, &
+                             Machno_max_local, &
+                             coord_Machno_max_local, &
+                             total_o16_mass_local, &
+                             deltap_max_local, &
+                             coord_deltap_max_local, &
+                             deltap_avg_local, &
+                             nzones_local)
 
              else
                 mp => dataptr(mla%mask(n),i)
 
-                if (network_contains_oxygen) then
+                call diag_2d(n,time,dt,dx(n,:), &
+                             sp(:,:,1,:),ng_s, &
+                             rhnp(:,:,1,1),ng_rhn, &
+                             rhep(:,:,1,1),ng_rhe, &
+                             rho0(n,:),rhoh0(n,:), &
+                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                             up(:,:,1,:),ng_u, &
+                             w0(n,:), &
+                             lo,hi, &
+                             T_max_local, &
+                             coord_T_max_local, &
+                             enuc_max_local, &
+                             coord_enuc_max_local, &
+                             total_c12_mass_local, &
+                             vel_max_local, &
+                             coord_vel_max_local, &
+                             Machno_max_local, &
+                             coord_Machno_max_local, &
+                             total_o16_mass_local, &
+                             deltap_max_local, &
+                             coord_deltap_max_local, &
+                             deltap_avg_local, &
+                             nzones_local, &
+                             mask=mp(:,:,1,1))
 
-                   call diag_2d(n,time,dt,dx(n,:), &
-                                sp(:,:,1,:),ng_s, &
-                                rhnp(:,:,1,1),ng_rhn, &
-                                rhep(:,:,1,1),ng_rhe, &
-                                rho0(n,:),rhoh0(n,:), &
-                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                up(:,:,1,:),ng_u, &
-                                w0(n,:), &
-                                lo,hi, &
-                                T_max_local, &
-                                coord_T_max_local, &
-                                enuc_max_local, &
-                                coord_enuc_max_local, &
-                                total_c12_mass_local, &
-                                vel_max_local, &
-                                coord_vel_max_local, &
-                                Machno_max_local, &
-                                coord_Machno_max_local, &
-                                o16_mass=total_o16_mass_local, &
-                                mask=mp(:,:,1,1))
-
-                else
-
-                   call diag_2d(n,time,dt,dx(n,:), &
-                                sp(:,:,1,:),ng_s, &
-                                rhnp(:,:,1,1),ng_rhn, &
-                                rhep(:,:,1,1),ng_rhe, &
-                                rho0(n,:),rhoh0(n,:), &
-                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                up(:,:,1,:),ng_u, &
-                                w0(n,:), &
-                                lo,hi, &
-                                T_max_local, &
-                                coord_T_max_local, &
-                                enuc_max_local, &
-                                coord_enuc_max_local, &
-                                total_c12_mass_local, &
-                                vel_max_local, &
-                                coord_vel_max_local, &
-                                Machno_max_local, &
-                                coord_Machno_max_local, &
-                                mask=mp(:,:,1,1))
-                endif
              endif
           case (3)
              ! only do those boxes that aren't masked
              if (n .eq. nlevs) then
 
-                if (network_contains_oxygen) then
-
-                   call diag_3d(n,time,dt,dx(n,:), &
-                                sp(:,:,:,:),ng_s, &
-                                rhnp(:,:,:,1),ng_rhn, &
-                                rhep(:,:,:,1),ng_rhe, &
-                                rho0(n,:),rhoh0(n,:), &
-                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                up(:,:,:,:),ng_u, &
-                                w0(n,:), &
-                                lo,hi, &
-                                T_max_local, &
-                                coord_T_max_local, &
-                                enuc_max_local, &
-                                coord_enuc_max_local, &
-                                total_c12_mass_local, &
-                                vel_max_local, &
-                                coord_vel_max_local, &
-                                Machno_max_local, &
-                                coord_Machno_max_local, &
-                                o16_mass=total_o16_mass_local)
-
-                else
-
-                   call diag_3d(n,time,dt,dx(n,:), &
-                                sp(:,:,:,:),ng_s, &
-                                rhnp(:,:,:,1),ng_rhn, &
-                                rhep(:,:,:,1),ng_rhe, &
-                                rho0(n,:),rhoh0(n,:), &
-                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                up(:,:,:,:),ng_u, &
-                                w0(n,:), &
-                                lo,hi, &
-                                T_max_local, &
-                                coord_T_max_local, &
-                                enuc_max_local, &
-                                coord_enuc_max_local, &
-                                total_c12_mass_local, &
-                                vel_max_local, &
-                                coord_vel_max_local, &
-                                Machno_max_local, &
-                                coord_Machno_max_local)
-
-                endif
+                call diag_3d(n,time,dt,dx(n,:), &
+                             sp(:,:,:,:),ng_s, &
+                             rhnp(:,:,:,1),ng_rhn, &
+                             rhep(:,:,:,1),ng_rhe, &
+                             rho0(n,:),rhoh0(n,:), &
+                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                             up(:,:,:,:),ng_u, &
+                             w0(n,:), &
+                             lo,hi, &
+                             T_max_local, &
+                             coord_T_max_local, &
+                             enuc_max_local, &
+                             coord_enuc_max_local, &
+                             total_c12_mass_local, &
+                             vel_max_local, &
+                             coord_vel_max_local, &
+                             Machno_max_local, &
+                             coord_Machno_max_local, &
+                             total_o16_mass_local, &
+                             deltap_max_local, &
+                             coord_deltap_max_local, &
+                             deltap_avg_local, &
+                             nzones_local)
 
              else
                 mp => dataptr(mla%mask(n),i)
 
-                if (network_contains_oxygen) then
-
-                   call diag_3d(n,time,dt,dx(n,:), &
-                                sp(:,:,:,:),ng_s, &
-                                rhnp(:,:,:,1),ng_rhn, &
-                                rhep(:,:,:,1),ng_rhe, &
-                                rho0(n,:),rhoh0(n,:), &
-                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                up(:,:,:,:),ng_u, &
-                                w0(n,:), &
-                                lo,hi, &
-                                T_max_local, &
-                                coord_T_max_local, &
-                                enuc_max_local, &
-                                coord_enuc_max_local, &
-                                total_c12_mass_local, &
-                                vel_max_local, &
-                                coord_vel_max_local, &
-                                Machno_max_local, &
-                                coord_Machno_max_local, &
-                                o16_mass=total_o16_mass_local, &
-                                mask=mp(:,:,:,1))
-
-                else
-                   
-                   call diag_3d(n,time,dt,dx(n,:), &
-                                sp(:,:,:,:),ng_s, &
-                                rhnp(:,:,:,1),ng_rhn, &
-                                rhep(:,:,:,1),ng_rhe, &
-                                rho0(n,:),rhoh0(n,:), &
-                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                up(:,:,:,:),ng_u, &
-                                w0(n,:), &
-                                lo,hi, &
-                                T_max_local, &
-                                coord_T_max_local, &
-                                enuc_max_local, &
-                                coord_enuc_max_local, &
-                                total_c12_mass_local, &
-                                vel_max_local, &
-                                coord_vel_max_local, &
-                                Machno_max_local, &
-                                coord_Machno_max_local, &
-                                mask=mp(:,:,:,1))
-
-                endif
+                call diag_3d(n,time,dt,dx(n,:), &
+                             sp(:,:,:,:),ng_s, &
+                             rhnp(:,:,:,1),ng_rhn, &
+                             rhep(:,:,:,1),ng_rhe, &
+                             rho0(n,:),rhoh0(n,:), &
+                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                             up(:,:,:,:),ng_u, &
+                             w0(n,:), &
+                             lo,hi, &
+                             T_max_local, &
+                             coord_T_max_local, &
+                             enuc_max_local, &
+                             coord_enuc_max_local, &
+                             total_c12_mass_local, &
+                             vel_max_local, &
+                             coord_vel_max_local, &
+                             Machno_max_local, &
+                             coord_Machno_max_local, &
+                             total_o16_mass_local, &
+                             deltap_max_local, &
+                             coord_deltap_max_local, &
+                             deltap_avg_local, &
+                             nzones_local, &
+                             mask=mp(:,:,:,1))
 
              endif
 
@@ -409,6 +378,37 @@ contains
        end do
 
        ! build the level data
+       
+       ! pack the summed quantities to reduce communications
+       isum = 1
+       sum_data_local(isum) = total_c12_mass_local
+       if (network_contains_oxygen) then
+          isum = isum + 1
+          sum_data_local(isum) = total_o16_mass_local
+       endif
+       if (do_deltap_diag) then
+          isum = isum + 1
+          sum_data_local(isum) = deltap_avg_local
+          isum = isum + 1
+          sum_data_local(isum) = nzones_local
+       endif
+
+       call parallel_reduce(sum_data_level, sum_data_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
+
+       isum = 1
+       total_c12_mass_level = sum_data_level(isum)
+       if (network_contains_oxygen) then
+          isum = isum + 1
+          total_o16_mass_level = sum_data_level(isum)
+       endif
+       if (do_deltap_diag) then
+          isum = isum + 1
+          deltap_avg_level = sum_data_level(isum)
+          isum = isum + 1
+          nzones_level = sum_data_level(isum)
+       endif
+
        ! get the maximum temperature and its location
        ! gather all the T_max data into an array; find the index of the maximum
        allocate(T_max_data(parallel_nprocs()))
@@ -458,18 +458,6 @@ contains
 
        deallocate(enuc_max_data, enuc_max_coords)
 
-       ! get the total c12 and o16 masses
-       mass_sum_data_local(1) = total_c12_mass_local
-       if (network_contains_oxygen) &
-            mass_sum_data_local(2) = total_o16_mass_local
-
-       call parallel_reduce(mass_sum_data_level, mass_sum_data_local, MPI_SUM, &
-                            proc = parallel_IOProcessorNode())
-       
-       total_c12_mass_level = mass_sum_data_level(1)
-       if (network_contains_oxygen) &
-            total_o16_mass_level = mass_sum_data_level(2)
-
        ! get the maximum of vel and its location
        allocate(vel_max_data(parallel_nprocs()))
        vel_max_data_local(1) = vel_max_local
@@ -516,6 +504,33 @@ contains
 
        deallocate(Machno_max_data, Machno_max_coords)
 
+       ! get the maximum of deltap and its location
+       if (do_deltap_diag) then
+          allocate(deltap_max_data(parallel_nprocs()))
+          deltap_max_data_local(1) = deltap_max_local
+
+          call parallel_gather(deltap_max_data_local, deltap_max_data, 1, &
+                               root = parallel_IOProcessorNode())
+
+          index_max = maxloc(deltap_max_data, dim=1)
+
+          allocate(deltap_max_coords(dm*parallel_nprocs()))
+          deltap_max_coords_local(:) = coord_deltap_max_local(:)
+
+          call parallel_gather(deltap_max_coords_local, deltap_max_coords, &
+                               dm, &
+                               root = parallel_IOProcessorNode())
+
+          deltap_max_level = deltap_max_data(index_max)
+
+          coord_deltap_max_level(1) = deltap_max_coords(dm*(index_max-1) + 1)
+          coord_deltap_max_level(2) = deltap_max_coords(dm*(index_max-1) + 2)
+          if (dm>2) coord_deltap_max_level(3) = deltap_max_coords(dm*(index_max-1) + 3)
+
+          deallocate(deltap_max_data, deltap_max_coords)
+
+       endif
+
        ! reduce the current level's data with the global data
        if (parallel_IOProcessor()) then
 
@@ -551,11 +566,26 @@ contains
 
           endif
 
+          if (do_deltap_diag) then
+
+             nzones     = nzones + nzones_level
+             deltap_avg = deltap_avg + deltap_avg_level
+             
+             if (deltap_max_level > deltap_max) then
+
+                deltap_max = deltap_max_level
+
+                coord_deltap_max(:) = coord_deltap_max_level(:)
+                
+             endif
+
+          endif
+
        endif
 
     end do
 
-    ! normalize the mass
+    ! normalize 
     ! we weight things in the loop over zones by the coarse level resolution
     total_c12_mass = total_c12_mass * dx(1,1) * dx(1,2)
 
@@ -569,6 +599,8 @@ contains
             total_o16_mass = total_o16_mass * dx(1,3)
 
     endif
+
+    if (do_deltap_diag) deltap_avg = deltap_avg / nzones
 
 1000 format(1x,10(g20.10,1x))
 1001 format("#",10(a18,1x))
@@ -604,6 +636,19 @@ contains
           open(unit=un3, file="xrb_vel_diag.out", status="new")
        endif
 
+       if (do_deltap_diag) then
+          un4 = unit_new()
+
+          inquire(file="xrb_deltap_diag.out", exist=lexist)
+          if (lexist) then
+             open(unit=un4, file="xrb_deltap_diag.out", &
+                  status="old", position="append")
+          else
+             open(unit=un4, file="xrb_deltap_diag.out", status="new")
+          endif
+
+       endif
+
        ! print the headers
        if(firstCall) then
           
@@ -622,6 +667,11 @@ contains
                 
              write(un3, 1001) "time", "max{vel}", "x_loc", "y_loc", "z_loc", &
                   "max{Machno}", "x_loc", "y_loc", "z_loc"
+
+             if (do_deltap_diag) &
+                write(un4, 1001) "time", "max{deltap}", &
+                     "x_loc", "y_loc", "z_loc", "avg{deltap}"
+
           else
              write(un , 1001) "time", "max{T}", "x_loc", "y_loc"
              
@@ -635,6 +685,10 @@ contains
 
              write(un3, 1001) "time", "max{vel}", "x_loc", "y_loc", &
                   "max{Machno}", "x_loc", "y_loc"
+
+             if (do_deltap_diag) &
+                  write(un4, 1001) "time", "max{deltap}", "x_loc", "y_loc", &
+                                   "avg{deltap}"
           endif
 
           firstCall = .false.
@@ -654,9 +708,14 @@ contains
        write(un3, 1000) time, vel_max, (coord_vel_max(i), i=1,dm), &
             Machno_max, (coord_Machno_max(i), i=1,dm)
 
+       if (do_deltap_diag) &
+            write(un4, 1000) time, deltap_max, (coord_deltap_max(i), i=1,dm), &
+                             deltap_avg
+
        close(un )
        close(un2)
        close(un3)
+       if (do_deltap_diag) close(un4)
     endif
 
     call destroy(bpt)
@@ -691,6 +750,10 @@ contains
                      Machno_max, &
                      coord_Machno_max, &
                      o16_mass, &
+                     deltap_max, &
+                     coord_deltap_max, &
+                     deltap_avg, &
+                     nzones, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
@@ -713,7 +776,9 @@ contains
     real (kind=dp_t), intent(inout) :: c12_mass
     real (kind=dp_t), intent(inout) :: vel_max, Machno_max
     real (kind=dp_t), intent(inout) :: coord_vel_max(2), coord_Machno_max(2)
-    real (kind=dp_t), intent(inout), optional :: o16_mass
+    real (kind=dp_t), intent(inout) :: o16_mass
+    real (kind=dp_t), intent(inout) :: deltap_max, coord_deltap_max(2)
+    real (kind=dp_t), intent(inout) :: deltap_avg, nzones
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
     !     Local variables
@@ -722,7 +787,7 @@ contains
     real (kind=dp_t) :: enuc_local
     logical :: cell_valid
     real (kind=dp_t) :: weight
-    real (kind=dp_t) :: w0_cent, vel, Mach
+    real (kind=dp_t) :: w0_cent, vel, Mach, deltap
 
     ! weight is the volume of a cell at the current level divided by the
     ! volume of a cell at the COARSEST level
@@ -775,7 +840,7 @@ contains
              c12_mass = c12_mass + weight*s(i,j,spec_comp+1)
 
              ! o16 mass diagnostic
-             if (present(o16_mass)) &
+             if (network_contains_oxygen) &
                   o16_mass = o16_mass + weight*s(i,j,spec_comp+2)
 
              ! vel diagnostic
@@ -814,6 +879,26 @@ contains
                 coord_Machno_max(2) = y
              endif
 
+             ! deltap diagnostic
+             if (do_deltap_diag) then
+                ! here we mirror what we do in make_tfromH
+                ! we already have the pressure from the above eos call
+                deltap = abs(p_eos(1) - p0(j)) / p0(j)
+
+                if (deltap > deltap_max) then
+                   
+                   deltap_max = deltap
+
+                   coord_deltap_max(1) = x
+                   coord_deltap_max(2) = y
+
+                endif
+
+                deltap_avg = deltap_avg + weight*deltap
+                nzones = nzones + weight
+                
+             endif
+
           endif
 
        enddo
@@ -838,6 +923,10 @@ contains
                      Machno_max, &
                      coord_Machno_max, &
                      o16_mass, &
+                     deltap_max, &
+                     coord_deltap_max, &
+                     deltap_avg, &
+                     nzones, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
@@ -860,7 +949,9 @@ contains
     real (kind=dp_t), intent(inout) :: c12_mass
     real (kind=dp_t), intent(inout) :: vel_max, Machno_max
     real (kind=dp_t), intent(inout) :: coord_vel_max(3), coord_Machno_max(3)
-    real (kind=dp_t), intent(inout), optional :: o16_mass
+    real (kind=dp_t), intent(inout) :: o16_mass
+    real (kind=dp_t), intent(inout) :: deltap_max, coord_deltap_max(3)
+    real (kind=dp_t), intent(inout) :: deltap_avg, nzones
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
@@ -869,7 +960,7 @@ contains
     real (kind=dp_t) :: enuc_local
     logical :: cell_valid
     real (kind=dp_t) :: weight
-    real (kind=dp_t) :: w0_cent, vel, Mach
+    real (kind=dp_t) :: w0_cent, vel, Mach, deltap
 
 
     ! weight is the volume of a cell at the current level divided by the
@@ -927,7 +1018,7 @@ contains
                 c12_mass = c12_mass + weight*s(i,j,k,spec_comp+1)
 
                 ! o16 mass diagnostic
-                if (present(o16_mass)) &
+                if (network_contains_oxygen) &
                      o16_mass = o16_mass + weight*s(i,j,k,spec_comp+2)
 
                 ! vel diagnostic
@@ -970,7 +1061,27 @@ contains
                    coord_Machno_max(3) = z
 
                 endif
-                
+
+                ! deltap diagnostic
+                if (do_deltap_diag) then
+                   ! here we mirror what we do in make_tfromH
+                   ! we already have the pressure from the above eos call
+                   deltap = abs(p_eos(1) - p0(k)) / p0(k)
+
+                   if (deltap > deltap_max) then
+                   
+                      deltap_max = deltap
+
+                      coord_deltap_max(1) = x
+                      coord_deltap_max(2) = y
+                      coord_deltap_max(3) = z
+
+                   endif
+
+                   deltap_avg = deltap_avg + weight*deltap
+                   nzones = nzones + weight
+                   
+                endif
 
              endif
 
