@@ -1,7 +1,12 @@
 \section{Multigrid Solver Tolerances}
 
-Beginning at the start of execution, there are several places where either cell-centered
-multigrid or node-centered multigrid solves are performed.
+Beginning at the start of execution, there are several places where
+either cell-centered multigrid or node-centered multigrid solves are
+performed.  The outline below lists the solves one encounters, in order,
+from the start of execution.  The values of the tolerances lists here
+are defined in the {\tt mg\_eps} module.  To set problem-specific values
+of these tolerances, place a local copy of {\tt mg\_eps.f90} in your
+problem directory.
 
 \begin{itemize}
 
