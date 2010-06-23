@@ -36,6 +36,7 @@ contains
     use multifab_module
     use ml_layout_module
     use heating_module
+    use mg_eps_module, only: eps_init_proj_cart, eps_init_proj_sph
 
     type(multifab) , intent(inout) :: uold(:)
     type(multifab) , intent(in   ) :: sold(:)
@@ -167,9 +168,9 @@ contains
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
     if (spherical .eq. 1) then
-       eps_init = 1.d-10
+       eps_init = eps_init_proj_sph
     else
-       eps_init = 1.d-12
+       eps_init = eps_init_proj_cart
     end if
 
     call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pi,gpi,dx, &

@@ -56,6 +56,7 @@ contains
     use probin_module
     use diag_module
     use enforce_HSE_module
+    use mg_eps_module, only: eps_hg, eps_hg_min, hg_level_factor
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -1360,7 +1361,7 @@ contains
     call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-    eps = min(1.d-10, 1.d-12*10**(nlevs-1) )
+    eps = min(eps_hg_min, eps_hg*hg_level_factor**(nlevs-1) )
 
     call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
                    div_coeff_3d,hgrhs, eps_in = eps)

@@ -36,6 +36,8 @@ contains
     use multifab_module
     use ml_layout_module
     use make_w0_module
+    use mg_eps_module, only: eps_divu_cart, eps_divu_sph, &
+         divu_iter_factor, divu_level_factor
 
     integer        , intent(in   ) :: istep_divu_iter
     type(multifab) , intent(inout) :: uold(:)
@@ -186,19 +188,27 @@ contains
 
     if (spherical .eq. 1) then
        if (istep_divu_iter .eq. init_divu_iter) then
-          eps_divu = 1.d-10
+          eps_divu = eps_divu_sph
+
        else if (istep_divu_iter .eq. init_divu_iter-1) then
-          eps_divu = 1.d-8
+          eps_divu = eps_divu_sph*divu_iter_factor
+
        else if (istep_divu_iter .le. init_divu_iter-2) then
-          eps_divu = 1.d-6
+          eps_divu = eps_divu_sph*divu_iter_factor**2
        end if
+
     else
        if (istep_divu_iter .eq. init_divu_iter) then
-          eps_divu = min(1.d-10, 1.d-12*10**(nlevs-1) )
+          eps_divu = min(eps_divu_cart*divu_level_factor**(nlevs-1), &
+                         eps_divu_cart*divu_level_factor**2)
+
        else if (istep_divu_iter .eq. init_divu_iter-1) then
-          eps_divu = min(1.d-8, 1.d-10*10**(nlevs-1) )
+          eps_divu = min(eps_divu_cart*divu_iter_factor*divu_level_factor**(nlevs-1), &
+                         eps_divu_cart*divu_iter_factor*divu_level_factor**2)
+
        else if (istep_divu_iter .le. init_divu_iter-2) then
-          eps_divu = min(1.d-6, 1.d-8*10**(nlevs-1) )
+          eps_divu = min(eps_divu_cart*divu_iter_factor**2*divu_level_factor**(nlevs-1), &
+                         eps_divu_cart*divu_iter_factor**2*divu_level_factor**2)
        endif
     end if
 

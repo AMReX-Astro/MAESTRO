@@ -23,6 +23,8 @@ contains
     use ml_solve_module
     use probin_module, only : mg_bottom_solver, max_mg_bottom_nlevels, verbose, mg_verbose, cg_verbose
     use geometry, only: dm, nlevs
+    use mg_eps_module, only: eps_mac, eps_mac_bottom
+
 
     type(ml_layout), intent(in   )        :: mla
     integer        , intent(in   )        :: stencil_order
@@ -77,7 +79,7 @@ contains
     min_width         = mgt(nlevs)%min_width
 
     ! Not sure if we can get better than this...
-    eps = 1.d-10
+    eps = eps_mac
 
     abs_eps = -1.0_dp_t
     if (present(phi_norm)) then
@@ -103,7 +105,7 @@ contains
         end if
     end if
 
-    bottom_solver_eps = 1.d-3
+    bottom_solver_eps = eps_mac_bottom
 
     ! Note: put this here for robustness
     max_iter = 100
