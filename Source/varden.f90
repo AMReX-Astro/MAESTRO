@@ -330,9 +330,13 @@ subroutine varden()
      !------------------------------------------------------------------------
      ! do the initial iterations to define a velocity field consistent with S
      !------------------------------------------------------------------------
+111 format(78('-'))
 
      if ( parallel_IOProcessor() ) then
+        print *, ' '
+        write (*,111)
         print *, 'DOING',init_divu_iter ,'INITIAL DIVU ITERATIONS'
+        write (*,111)
         print *, ' '
      end if
 
@@ -417,7 +421,10 @@ subroutine varden()
 
      if (init_iter > 0) then
         if (parallel_IOProcessor() .and. verbose .ge. 1) then
+           print *,''
+           write (*,111)
            print*,'DOING',init_iter,'INITIAL PRESSURE ITERATIONS'
+           write (*,111)
            print*,''
         end if
 
