@@ -1,3 +1,6 @@
+! set the tolerances used in the various multigrid solves throughout
+! the algorithm.  This is described in MAESTRO/docs/mg/.
+
 module mg_eps_module
 
   use bl_types
