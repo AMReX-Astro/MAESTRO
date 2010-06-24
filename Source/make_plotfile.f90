@@ -61,6 +61,7 @@ contains
 
     if (spherical .eq. 1) then
        plot_names(icomp_velr) = "radial_velocity"
+       plot_names(icomp_velc) = "circum_velocity"
     endif
 
     plot_names(icomp_magvel)      = "magvel"
@@ -323,9 +324,9 @@ contains
 
     do n = 1,nlevs
 
-       ! RADIAL VELOCITY (spherical only)
+       ! RADIAL AND CIRCUMFERENTIAL VELOCITY (spherical only)
        if (spherical .eq. 1) then
-          call make_velr(plotdata(n),icomp_velr,u(n),w0r_cart(n),normal(n))
+          call make_velrc(plotdata(n),icomp_velr,u(n),w0r_cart(n),normal(n))
        endif
 
        ! MAGVEL = |U + w0|

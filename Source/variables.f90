@@ -12,7 +12,7 @@ module variables
   integer, save :: foextrap_comp, hoextrap_comp
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
   integer, save :: icomp_w0, icomp_divw0, icomp_rho0, icomp_rhoh0, icomp_h0
-  integer, save :: icomp_p0, icomp_velr
+  integer, save :: icomp_p0, icomp_velr, icomp_velc
   integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_divu
   integer, save :: icomp_enthalpy,icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert
   integer, save :: icomp_machno,icomp_dg,icomp_pi,icomp_gpi,icomp_pioverp0
@@ -87,7 +87,10 @@ contains
        icomp_p0    = get_next_plot_index(1)
     end if
 
-    if (spherical .eq. 1) icomp_velr = get_next_plot_index(1)
+    if (spherical .eq. 1) then
+       icomp_velr = get_next_plot_index(1)
+       icomp_velc = get_next_plot_index(1)
+    end if
 
     icomp_magvel      = get_next_plot_index(1)
     icomp_mom         = get_next_plot_index(1)

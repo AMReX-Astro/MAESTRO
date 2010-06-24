@@ -11,7 +11,7 @@ module plot_variables_module
 
   public :: make_conductivity, make_pi_cc
   public :: make_tfromH, make_tfromp, make_entropypert
-  public :: make_deltaT, make_divw0, make_vorticity, make_magvel, make_velr
+  public :: make_deltaT, make_divw0, make_vorticity, make_magvel, make_velrc
 
 contains
 
@@ -2196,7 +2196,7 @@ contains
   end subroutine makemagvel_3d_sphr
 
 
-  subroutine make_velr(plotdata,comp_velr,u,w0r_cart,normal)
+  subroutine make_velrc(plotdata,comp_velr,u,w0r_cart,normal)
 
     use bc_module
     use bl_constants_module
@@ -2222,7 +2222,7 @@ contains
     ng_w = w0r_cart%ng
 
     if (spherical .ne. 1) then
-       call bl_error("unable to create radial velocity -- not spherical geometry")
+       call bl_error("unable to create radial and circumferential velocity -- not spherical geometry")
     endif
 
     do i = 1, u%nboxes
@@ -2236,16 +2236,18 @@ contains
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
 
-       call makevelr_3d_sphr(pp(:,:,:,comp_velr),ng_p,up(:,:,:,:),ng_u, &
-                             w0rp(:,:,:,1),ng_w,np(:,:,:,:),ng_n,lo,hi)
+       call makevelrc_3d_sphr(pp(:,:,:,comp_velr),pp(:,:,:,comp_velr+1),&
+                              ng_p,up(:,:,:,:),ng_u, &
+                              w0rp(:,:,:,1),ng_w,np(:,:,:,:),ng_n,lo,hi)
     end do
 
-  end subroutine make_velr
+  end subroutine make_velrc
 
-  subroutine makevelr_3d_sphr(velr,ng_p,u,ng_u,w0r,ng_w,normal,ng_n,lo,hi)
+  subroutine makevelrc_3d_sphr(velr,velc,ng_p,u,ng_u,w0r,ng_w,normal,ng_n,lo,hi)
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, ng_w
     real (kind = dp_t), intent(  out) ::   velr(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(  out) ::   velc(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
     real (kind = dp_t), intent(in   ) ::    w0r(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
     real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)  
@@ -2261,12 +2263,21 @@ contains
                            u(i,j,k,2)*normal(i,j,k,2) + &
                            u(i,j,k,3)*normal(i,j,k,3) + &
                            w0r(i,j,k)
+             velc(i,j,k) = (u(i,j,k,1)-velr(i,j,k)*normal(i,j,k,1)) * &
+                           (u(i,j,k,1)-velr(i,j,k)*normal(i,j,k,1))
+             velc(i,j,k) = velc(i,j,k) + &
+                           (u(i,j,k,2)-velr(i,j,k)*normal(i,j,k,2)) * &
+                           (u(i,j,k,2)-velr(i,j,k)*normal(i,j,k,2))
+             velc(i,j,k) = velc(i,j,k) + &
+                           (u(i,j,k,3)-velr(i,j,k)*normal(i,j,k,3)) * &
+                           (u(i,j,k,3)-velr(i,j,k)*normal(i,j,k,3))
+             velc(i,j,k) = sqrt(velc(i,j,k))
           enddo
        enddo
     enddo
 !$omp end parallel do
 
-  end subroutine makevelr_3d_sphr
+  end subroutine makevelrc_3d_sphr
 
 end module plot_variables_module
 
