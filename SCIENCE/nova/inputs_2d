@@ -35,8 +35,8 @@
  plot_int        = -1
  plot_deltat     = 5.d0
  chk_int         = 1000
- check_base_name = "/gpfs/scratch2/bkrueger/data/nova/test_pphotcno/pphotcno_network/chk"
- plot_base_name  = "/gpfs/scratch2/bkrueger/data/nova/test_pphotcno/pphotcno_network/plt"
+ check_base_name = "chk"
+ plot_base_name  = "plt"
 
  cflfac = 0.9d0
  init_shrink = 1.d0
