@@ -34,7 +34,7 @@ contains
          numdisjointchunks, nlevs, nlevs_radial
     use variables,     only: nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, edge_nodal_flag, &
-         verbose, use_tfromp
+         verbose
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
