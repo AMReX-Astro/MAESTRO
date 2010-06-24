@@ -519,7 +519,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
-    real(kind=dp_t) :: sgn, sigmam, sigmap, s6, w0lo, w0hi, amax, delam, delap
+    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, amax, delam, delap
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! s_{\ib,+}, s_{\ib,-}
@@ -950,27 +950,30 @@ contains
     end if
 
     ! compute x-component of Ip and Im
-    do i=lo(1)-1,hi(1)+1
+    do i=lo(1)-1,hi(1)
        if (i .lt. 0) then
-          w0lo = w0(0)
           w0hi = w0(0)
-       else if (i .gt. nr(n)-1) then
-          w0lo = w0(nr(n))
-          w0hi = w0(nr(n))
        else
-          w0lo = w0(i)
           w0hi = w0(i+1)
        end if
-       sigmap = abs(umac(i+1)+w0hi)*dt/dx(1)
-       sigmam = abs(umac(i  )+w0lo)*dt/dx(1)
+       sigma = abs(umac(i+1)+w0hi)*dt/dx(1)
        s6 = SIX*s(i) - THREE*(sm(i)+sp(i))
        if (umac(i+1)+w0hi .gt. rel_eps) then
-          Ip(i) = sp(i) - (sigmap/TWO)*(sp(i)-sm(i)-(ONE-TWO3RD*sigmap)*s6)
+          Ip(i) = sp(i) - (sigma/TWO)*(sp(i)-sm(i)-(ONE-TWO3RD*sigma)*s6)
        else 
           Ip(i) = s(i)
        end if
+    end do
+    do i=lo(1),hi(1)+1
+       if (i .gt. nr(n)-1) then
+          w0lo = w0(nr(n))
+       else
+          w0lo = w0(i)
+       end if
+       sigma = abs(umac(i  )+w0lo)*dt/dx(1)
+       s6 = SIX*s(i) - THREE*(sm(i)+sp(i))
        if (umac(i)+w0lo .lt. -rel_eps) then
-          Im(i) = sm(i) + (sigmam/TWO)*(sp(i)-sm(i)+(ONE-TWO3RD*sigmam)*s6)
+          Im(i) = sm(i) + (sigma/TWO)*(sp(i)-sm(i)+(ONE-TWO3RD*sigma)*s6)
        else
           Im(i) = s(i)
        end if
@@ -2004,7 +2007,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
-    real(kind=dp_t) :: sgn, sigmam, sigmap, s6, w0lo, w0hi, amax, delam, delap
+    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, amax, delam, delap
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! s_{\ib,+}, s_{\ib,-}
@@ -2478,17 +2481,20 @@ contains
 
     ! compute x-component of Ip and Im
     do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
-          sigmap = abs(umac(i+1,j))*dt/dx(1)
-          sigmam = abs(umac(i,j))*dt/dx(1)
+       do i=lo(1)-1,hi(1)
+          sigma = abs(umac(i+1,j))*dt/dx(1)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
           if (umac(i+1,j) .gt. rel_eps) then
-             Ip(i,j,1) = sp(i,j) - (sigmap/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigmap)*s6)
+             Ip(i,j,1) = sp(i,j) - (sigma/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigma)*s6)
           else
              Ip(i,j,1) = s(i,j)
           end if
+       end do
+       do i=lo(1),hi(1)+1
+          sigma = abs(umac(i,j))*dt/dx(1)
+          s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
           if (umac(i,j) .lt. -rel_eps) then
-             Im(i,j,1) = sm(i,j) + (sigmam/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigmam)*s6)
+             Im(i,j,1) = sm(i,j) + (sigma/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigma)*s6)
           else
              Im(i,j,1) = s(i,j)
           end if
@@ -2941,29 +2947,35 @@ contains
     end if
 
     ! compute y-component of Ip and Im
-    do j=lo(2)-1,hi(2)+1
+    do j=lo(2)-1,hi(2)
        ! compute effect of w0
        if (j .lt. 0) then
-          w0lo = w0(0)
           w0hi = w0(0)
-       else if (j .gt. nr(n)-1) then
-          w0lo = w0(nr(n))
-          w0hi = w0(nr(n))
        else
-          w0lo = w0(j)
           w0hi = w0(j+1)
        end if
        do i=lo(1)-1,hi(1)+1
-          sigmap = abs(vmac(i,j+1)+w0hi)*dt/dx(2)
-          sigmam = abs(vmac(i,j  )+w0lo)*dt/dx(2)
+          sigma = abs(vmac(i,j+1)+w0hi)*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
           if (vmac(i,j+1)+w0hi .gt. rel_eps) then
-             Ip(i,j,2) = sp(i,j) - (sigmap/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigmap)*s6)
+             Ip(i,j,2) = sp(i,j) - (sigma/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigma)*s6)
           else
              Ip(i,j,2) = s(i,j)
           end if
+       end do
+    end do
+    do j=lo(2),hi(2)+1
+       ! compute effect of w0
+       if (j .gt. nr(n)-1) then
+          w0lo = w0(nr(n))
+       else
+          w0lo = w0(j)
+       end if
+       do i=lo(1)-1,hi(1)+1
+          sigma = abs(vmac(i,j  )+w0lo)*dt/dx(2)
+          s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
           if (vmac(i,j)+w0lo .lt. -rel_eps) then
-             Im(i,j,2) = sm(i,j) + (sigmam/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigmam)*s6)
+             Im(i,j,2) = sm(i,j) + (sigma/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigma)*s6)
           else
              Im(i,j,2) = s(i,j)
           end if
@@ -4833,7 +4845,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
-    real(kind=dp_t) :: sgn, sigmam, sigmap, s6, w0lo, w0hi, vello, velhi
+    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, vel
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
     real(kind=dp_t) :: amax, delam, delap
 
@@ -5400,27 +5412,33 @@ contains
     end if
     
     ! compute x-component of Ip and Im
-!$omp parallel do private(i,j,k,velhi,vello,sigmap,sigmam,s6)
+!$omp parallel do private(i,j,k,vel,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+1
+          do i=lo(1)-1,hi(1)
              if (spherical .eq. 1) then
-                velhi = umac(i+1,j,k) + w0macx(i+1,j,k)
-                vello = umac(i  ,j,k) + w0macx(i  ,j,k)
+                vel = umac(i+1,j,k) + w0macx(i+1,j,k)
              else
-                velhi = umac(i+1,j,k)
-                vello = umac(i  ,j,k)
+                vel = umac(i+1,j,k)
              end if
-             sigmap = abs(velhi)*dt/dx(1)
-             sigmam = abs(vello)*dt/dx(1)
+             sigma = abs(vel)*dt/dx(1)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velhi .gt. rel_eps) then
-                Ip(i,j,k,1) = sp(i,j,k) - (sigmap/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigmap)*s6)
+             if (vel .gt. rel_eps) then
+                Ip(i,j,k,1) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
              else
                 Ip(i,j,k,1) = s(i,j,k)
              end if
-             if (vello .lt. -rel_eps) then
-                Im(i,j,k,1) = sm(i,j,k) + (sigmam/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigmam)*s6)
+          end do
+          do i=lo(1),hi(1)+1
+             if (spherical .eq. 1) then
+                vel = umac(i  ,j,k) + w0macx(i  ,j,k)
+             else
+                vel = umac(i  ,j,k)
+             end if
+             sigma = abs(vel)*dt/dx(1)
+             s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
+             if (vel .lt. -rel_eps) then
+                Im(i,j,k,1) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
                 Im(i,j,k,1) = s(i,j,k)
              end if
@@ -5975,27 +5993,35 @@ contains
     end if
 
     ! compute y-component of Ip and Im
-!$omp parallel do private(i,j,k,velhi,vello,sigmap,sigmam,s6)
+!$omp parallel do private(i,j,k,vel,sigma,s6)
     do k=lo(3)-1,hi(3)+1
-       do j=lo(2)-1,hi(2)+1
+       do j=lo(2)-1,hi(2)
           do i=lo(1)-1,hi(1)+1
              if (spherical .eq. 1) then
-                velhi = vmac(i,j+1,k) + w0macy(i,j+1,k)
-                vello = vmac(i,j  ,k) + w0macy(i,j  ,k)
+                vel = vmac(i,j+1,k) + w0macy(i,j+1,k)
              else
-                velhi = vmac(i,j+1,k)
-                vello = vmac(i,j  ,k)
+                vel = vmac(i,j+1,k)
              end if
-             sigmap = abs(velhi)*dt/dx(2)
-             sigmam = abs(vello)*dt/dx(2)
+             sigma = abs(vel)*dt/dx(2)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velhi .gt. rel_eps) then
-                Ip(i,j,k,2) = sp(i,j,k) - (sigmap/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigmap)*s6)
+             if (vel .gt. rel_eps) then
+                Ip(i,j,k,2) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
              else
                 Ip(i,j,k,2) = s(i,j,k)
              end if
-             if (vello .lt. -rel_eps) then
-                Im(i,j,k,2) = sm(i,j,k) + (sigmam/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigmam)*s6)
+          end do
+       end do
+       do j=lo(2),hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if (spherical .eq. 1) then
+                vel = vmac(i,j  ,k) + w0macy(i,j  ,k)
+             else
+                vel = vmac(i,j  ,k)
+             end if
+             sigma = abs(vel)*dt/dx(2)
+             s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
+             if (vel .lt. -rel_eps) then
+                Im(i,j,k,2) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
                 Im(i,j,k,2) = s(i,j,k)
              end if
@@ -6557,40 +6583,55 @@ contains
     end if
 
     ! compute z-component of Ip and Im
-!$omp parallel do private(i,j,k,w0lo,w0hi,velhi,vello,sigmap,sigmam,s6)
-    do k=lo(3)-1,hi(3)+1
+!$omp parallel do private(i,j,k,w0hi,vel,sigma,s6)
+    do k=lo(3)-1,hi(3)
        ! compute effect of w0 in plane-parallel
        if (spherical .eq. 0) then
           if (k .lt. 0) then
-             w0lo = w0(0)
              w0hi = w0(0)
-          else if (k .gt. nr(n)-1) then
-             w0lo = w0(nr(n))
-             w0hi = w0(nr(n))
           else
-             w0lo = w0(k)
              w0hi = w0(k+1)
           end if
        end if
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
              if (spherical .eq. 1) then
-                velhi = wmac(i,j,k+1) + w0macz(i,j,k+1)
-                vello = wmac(i,j,k  ) + w0macz(i,j,k  )
+                vel = wmac(i,j,k+1) + w0macz(i,j,k+1)
              else
-                velhi = wmac(i,j,k+1) + w0hi
-                vello = wmac(i,j,k  ) + w0lo
+                vel = wmac(i,j,k+1) + w0hi
              end if
-             sigmap = abs(velhi)*dt/dx(2)
-             sigmam = abs(vello)*dt/dx(2)
+             sigma = abs(vel)*dt/dx(2)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velhi .gt. rel_eps) then
-                Ip(i,j,k,3) = sp(i,j,k) - (sigmap/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigmap)*s6)
+             if (vel .gt. rel_eps) then
+                Ip(i,j,k,3) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
              else
                 Ip(i,j,k,3) = s(i,j,k)
              end if
-             if (vello .lt. -rel_eps) then
-                Im(i,j,k,3) = sm(i,j,k) + (sigmam/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigmam)*s6)
+          end do
+       end do
+    end do
+!$omp end parallel do
+!$omp parallel do private(i,j,k,w0lo,vel,sigma,s6)
+    do k=lo(3),hi(3)+1
+       ! compute effect of w0 in plane-parallel
+       if (spherical .eq. 0) then
+          if (k .gt. nr(n)-1) then
+             w0lo = w0(nr(n))
+          else
+             w0lo = w0(k)
+          end if
+       end if
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if (spherical .eq. 1) then
+                vel = wmac(i,j,k  ) + w0macz(i,j,k  )
+             else
+                vel = wmac(i,j,k  ) + w0lo
+             end if
+             sigma = abs(vel)*dt/dx(2)
+             s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
+             if (vel .lt. -rel_eps) then
+                Im(i,j,k,3) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
                 Im(i,j,k,3) = s(i,j,k)
              end if
