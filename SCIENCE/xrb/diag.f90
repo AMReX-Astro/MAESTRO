@@ -855,11 +855,13 @@ contains
              
              ! Mach number diagnostic
              ! call the EOS to get the sound speed
+             den_eos(1) = s(i,j,rho_comp)
              temp_eos(1) = s(i,j,temp_comp)
-             den_eos(1)  = s(i,j,rho_comp)
+             h_eos(1) = s(i,j,rhoh_comp) / s(i,j,rho_comp)
+
              xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
-             call eos(eos_input_rt, den_eos, temp_eos, &
+             call eos(eos_input_rh, den_eos, temp_eos, &
                       npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
