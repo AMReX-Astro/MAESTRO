@@ -465,24 +465,31 @@ contains
     end if
 
     ! compute x-component of Ip and Im
-    do i=lo(1)-1,hi(1)+1
+    do i=lo(1)-1,hi(1)
        if (i .le. 0) then
           w0cc = w0(0)
-       else if (i .ge. nr(n)) then
-          w0cc = w0(nr(n))
        else
-          w0cc = HALF*(w0(i)+w0(I+1))
+          w0cc = HALF*(w0(i)+w0(i+1))
        end if
        sigma = abs(u(i)+w0cc)*dt/dx(1)
        s6 = SIX*s(i) - THREE*(sm(i)+sp(i))
        if (u(i)+w0cc .gt. rel_eps) then
           Ip(i) = sp(i) - (sigma/TWO)*(sp(i)-sm(i)-(ONE-TWO3RD*sigma)*s6)
-          Im(i) = s(i)
-       else if (u(i)+w0cc .lt. -rel_eps) then
-          Ip(i) = s(i)
-          Im(i) = sm(i) + (sigma/TWO)*(sp(i)-sm(i)+(ONE-TWO3RD*sigma)*s6)
        else
           Ip(i) = s(i)
+       end if
+    end do
+    do i=lo(1),hi(1)+1
+       if (i .ge. nr(n)) then
+          w0cc = w0(nr(n))
+       else
+          w0cc = HALF*(w0(i)+w0(i+1))
+       end if
+       sigma = abs(u(i)+w0cc)*dt/dx(1)
+       s6 = SIX*s(i) - THREE*(sm(i)+sp(i))
+       if (u(i)+w0cc .lt. -rel_eps) then
+          Im(i) = sm(i) + (sigma/TWO)*(sp(i)-sm(i)+(ONE-TWO3RD*sigma)*s6)
+       else
           Im(i) = s(i)
        end if
     end do
@@ -1469,17 +1476,21 @@ contains
 
     ! compute x-component of Ip and Im
     do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
+       do i=lo(1)-1,hi(1)
           sigma = abs(u(i,j,1))*dt/dx(1)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
           if (u(i,j,1) .gt. rel_eps) then
              Ip(i,j,1) = sp(i,j) - (sigma/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigma)*s6)
-             Im(i,j,1) = s(i,j)
-          else if (u(i,j,1) .lt. -rel_eps) then
-             Ip(i,j,1) = s(i,j)
-             Im(i,j,1) = sm(i,j) + (sigma/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigma)*s6)
           else
              Ip(i,j,1) = s(i,j)
+          end if
+       end do
+       do i=lo(1),hi(1)+1
+          sigma = abs(u(i,j,1))*dt/dx(1)
+          s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
+          if (u(i,j,1) .lt. -rel_eps) then
+             Im(i,j,1) = sm(i,j) + (sigma/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigma)*s6)
+          else
              Im(i,j,1) = s(i,j)
           end if
        end do
@@ -1931,12 +1942,10 @@ contains
     end if
 
     ! compute y-component of Ip and Im
-    do j=lo(2)-1,hi(2)+1
+    do j=lo(2)-1,hi(2)
        ! compute effect of w0
        if (j .le. 0) then
           w0cc = w0(0)
-       else if (j .ge. nr(n)) then
-          w0cc = w0(nr(n))
        else
           w0cc = HALF*(w0(j)+w0(j+1))
        end if
@@ -1945,12 +1954,24 @@ contains
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
           if (u(i,j,2)+w0cc .gt. rel_eps) then
              Ip(i,j,2) = sp(i,j) - (sigma/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigma)*s6)
-             Im(i,j,2) = s(i,j)
-          else if (u(i,j,2)+w0cc .lt. -rel_eps) then
-             Ip(i,j,2) = s(i,j)
-             Im(i,j,2) = sm(i,j) + (sigma/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigma)*s6)
           else
              Ip(i,j,2) = s(i,j)
+          end if
+       end do
+    end do
+    do j=lo(2),hi(2)+1
+       ! compute effect of w0
+       if (j .ge. nr(n)) then
+          w0cc = w0(nr(n))
+       else
+          w0cc = HALF*(w0(j)+w0(j+1))
+       end if
+       do i=lo(1)-1,hi(1)+1
+          sigma = abs(u(i,j,2)+w0cc)*dt/dx(2)
+          s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
+          if (u(i,j,2)+w0cc .lt. -rel_eps) then
+             Im(i,j,2) = sm(i,j) + (sigma/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigma)*s6)
+          else
              Im(i,j,2) = s(i,j)
           end if
        end do
@@ -3549,7 +3570,7 @@ contains
 !$omp parallel do private(i,j,k,velcc,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+1
+          do i=lo(1)-1,hi(1)
              if (spherical .eq. 1) then
                 velcc = u(i,j,k,1)+HALF*(w0macx(i+1,j,k)+w0macx(i,j,k))
              else
@@ -3560,13 +3581,22 @@ contains
              if (velcc .gt. rel_eps) then
                 Ip(i,j,k,1) = sp(i,j,k) - &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
-                Im(i,j,k,1) = s(i,j,k)
-             else if (velcc .lt. -rel_eps) then
+             else
                 Ip(i,j,k,1) = s(i,j,k)
+             end if
+          end do
+          do i=lo(1),hi(1)+1
+             if (spherical .eq. 1) then
+                velcc = u(i,j,k,1)+HALF*(w0macx(i+1,j,k)+w0macx(i,j,k))
+             else
+                velcc = u(i,j,k,1)
+             end if
+             sigma = abs(velcc)*dt/dx(1)
+             s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
+             if (velcc .lt. -rel_eps) then
                 Im(i,j,k,1) = sm(i,j,k) + &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
-                Ip(i,j,k,1) = s(i,j,k)
                 Im(i,j,k,1) = s(i,j,k)
              end if
           end do
@@ -4122,7 +4152,7 @@ contains
     ! compute y-component of Ip and Im
 !$omp parallel do private(i,j,k,velcc,sigma,s6)
     do k=lo(3)-1,hi(3)+1
-       do j=lo(2)-1,hi(2)+1
+       do j=lo(2)-1,hi(2)
           do i=lo(1)-1,hi(1)+1
              if (spherical .eq. 1) then
                 velcc = u(i,j,k,2)+HALF*(w0macy(i,j+1,k)+w0macy(i,j,k))
@@ -4134,13 +4164,24 @@ contains
              if (velcc .gt. rel_eps) then
                 Ip(i,j,k,2) = sp(i,j,k) - &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
-                Im(i,j,k,2) = s(i,j,k)
-             else if (velcc .lt. -rel_eps) then
+             else
                 Ip(i,j,k,2) = s(i,j,k)
+             end if
+          end do
+       end do
+       do j=lo(2),hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if (spherical .eq. 1) then
+                velcc = u(i,j,k,2)+HALF*(w0macy(i,j+1,k)+w0macy(i,j,k))
+             else
+                velcc = u(i,j,k,2)
+             end if
+             sigma = abs(velcc)*dt/dx(2)
+             s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
+             if (velcc .lt. -rel_eps) then
                 Im(i,j,k,2) = sm(i,j,k) + &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
-                Ip(i,j,k,2) = s(i,j,k)
                 Im(i,j,k,2) = s(i,j,k)
              end if
           end do
@@ -4702,13 +4743,11 @@ contains
 
     ! compute z-component of Ip and Im
 !$omp parallel do private(i,j,k,w0cc,velcc,sigma,s6)
-    do k=lo(3)-1,hi(3)+1
+    do k=lo(3)-1,hi(3)
        ! compute effect of w0 in plane-parallel
        if (spherical .eq. 0) then
           if (k .le. 0) then
              w0cc = w0(0)
-          else if (k .ge. nr(n)) then
-             w0cc = w0(nr(n))
           else
              w0cc = HALF*(w0(k)+w0(k+1))
           end if
@@ -4725,13 +4764,36 @@ contains
              if (velcc .gt. rel_eps) then
                 Ip(i,j,k,3) = sp(i,j,k) - &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
-                Im(i,j,k,3) = s(i,j,k)
-             else if (velcc .lt. -rel_eps) then
+             else
                 Ip(i,j,k,3) = s(i,j,k)
+             end if
+          end do
+       end do
+    end do
+!$omp end parallel do
+!$omp parallel do private(i,j,k,w0cc,velcc,sigma,s6)
+    do k=lo(3),hi(3)+1
+       ! compute effect of w0 in plane-parallel
+       if (spherical .eq. 0) then
+          if (k .ge. nr(n)) then
+             w0cc = w0(nr(n))
+          else
+             w0cc = HALF*(w0(k)+w0(k+1))
+          end if
+       end if
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if (spherical .eq. 1) then
+                velcc = u(i,j,k,3)+HALF*(w0macz(i,j,k+1)+w0macz(i,j,k))
+             else
+                velcc = u(i,j,k,3) + w0cc
+             end if
+             sigma = abs(velcc)*dt/dx(3)
+             s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
+             if (velcc .lt. -rel_eps) then
                 Im(i,j,k,3) = sm(i,j,k) + &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
-                Ip(i,j,k,3) = s(i,j,k)
                 Im(i,j,k,3) = s(i,j,k)
              end if
           end do
