@@ -1,0 +1,65 @@
+&PROBIN
+ model_file = "model.hse"
+ spherical_in = 0
+
+ max_levs = 3
+ n_cellx = 128
+ n_celly = 256
+ max_grid_size = 64
+ max_grid_size_base = 64
+ regrid_int = 2	
+
+ 
+ max_mg_bottom_nlevels = 3
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
+
+ prob_lo_x = 0.0000d8
+ prob_hi_x = 0.8192d8
+ prob_lo_y = 4.6808d8
+ prob_hi_y = 6.3192d8
+
+ anelastic_cutoff = 2.0d1
+ base_cutoff_density = 2.0d1
+
+ do_sponge = T
+ sponge_center_density = 5.5d1
+ sponge_start_factor = 1.4d0
+ sponge_kappa = 100.d0
+
+ grav_const = -4.4d8
+
+ burner_threshold_species = "H1"
+ burner_threshold_cutoff = 2.d-10
+
+ max_step  = 999999
+ init_iter = 1
+
+ stop_time = 5.d2
+
+ plot_base       = T
+ plot_int        = -1
+ plot_deltat     = 5.d0
+ chk_int         = 1000
+ check_base_name = "chk"
+ plot_base_name  = "plt"
+
+ cflfac = 0.9d0
+ init_shrink = 1.d0
+
+ bcx_lo = -1
+ bcx_hi = -1
+ bcy_lo = 14
+ bcy_hi = 12
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+ do_initial_projection = T
+ init_divu_iter = 4
+
+ use_eos_coulomb = T
+
+ perturb_model= T
+/
