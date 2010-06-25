@@ -1067,7 +1067,7 @@ contains
        eps = eps_in
     endif
 
-    if (parallel_IOProcessor()) print *, 'in hgproject, eps_in = ', eps_in, eps
+    if (parallel_IOProcessor()) print *, 'doing hgproject with tolerance, eps = ', eps
 
     if ( hg_bottom_solver >= 0 ) then
         if (hg_bottom_solver == 4 .and. phi(1)%nboxes == 1) then
