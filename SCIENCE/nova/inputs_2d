@@ -5,7 +5,7 @@
  max_levs = 1
  n_cellx = 512
  n_celly = 1024
- max_grid_size = 64
+ max_grid_size = 128
 
  max_mg_bottom_nlevels = 3
  mg_bottom_solver = 4
@@ -25,6 +25,9 @@
  sponge_kappa = 100.d0
 
  grav_const = -4.4d8
+
+ burner_threshold_species = "H1"
+ burner_threshold_cutoff = 2.d-10
 
  max_step  = 999999
  init_iter = 1
