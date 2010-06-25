@@ -2,7 +2,7 @@ NDEBUG := t
 MPI    := t
 OMP    :=
 
-COMP := Xlf
+COMP := Intel
 
 MKVERBOSE := t
 
