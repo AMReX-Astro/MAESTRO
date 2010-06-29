@@ -24,6 +24,10 @@
  sponge_start_factor = 10.d0
  sponge_kappa = 10.d0
 
+ max_mg_bottom_nlevels = 5
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
+
  grav_const = -1.5e10
 
  max_step  = 100000000
