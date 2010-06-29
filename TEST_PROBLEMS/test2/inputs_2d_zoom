@@ -3,6 +3,7 @@
  spherical_in = 0
 
  ppm_type = 2
+ do_burning = F
 
  max_levs = 1
  n_cellx = 512
