@@ -34,8 +34,9 @@
  stop_time = 2.d-4
 
  plot_base   = T
- plot_int    = 10
- chk_int     = 10
+ plot_deltat = 5.d-5
+ plot_int    = -1
+ chk_int     = -1
 
  cflfac = 0.9
  init_shrink = 1.
