@@ -26,6 +26,8 @@
 
  evolve_base_state = T
 
+ ppm_type = 2
+
  grav_const = -1.d9
 
  init_iter = 3
