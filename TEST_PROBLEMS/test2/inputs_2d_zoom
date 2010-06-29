@@ -32,7 +32,7 @@
 
  plot_base   = T
  plot_deltat = 0.5d0
- chk_int     = -1
+ chk_int     = 100
 
  cflfac = 0.9
  init_shrink = 1.
