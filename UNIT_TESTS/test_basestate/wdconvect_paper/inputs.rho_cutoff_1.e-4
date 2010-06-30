@@ -7,7 +7,7 @@
  dm_in = 1
 
  ! end of heating
- t_stop = 5.0d0
+ heating_time = 5.0d0
 
  prob_lo_x = 0.0
  prob_hi_x = 5.e8
