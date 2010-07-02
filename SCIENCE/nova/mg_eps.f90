@@ -12,7 +12,7 @@ module mg_eps_module
   real (kind=dp_t) :: eps_divu_cart = 1.d-12
   real (kind=dp_t) :: eps_divu_sph  = 1.d-10
 
-  real (kind=dp_t) :: divu_iter_factor = 100.d0
+  real (kind=dp_t) :: divu_iter_factor = 1000.d0
   real (kind=dp_t) :: divu_level_factor = 10.d0
 
 
@@ -22,7 +22,7 @@ module mg_eps_module
 
 
   ! tolerances for the HG projection
-  real (kind=dp_t) :: eps_hg = 1.d-11
+  real (kind=dp_t) :: eps_hg = 1.d-10
 
   real (kind=dp_t) :: eps_hg_min = 1.d-10
   real (kind=dp_t) :: hg_level_factor = 10.d0
