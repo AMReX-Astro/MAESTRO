@@ -1,5 +1,8 @@
 &PROBIN
- model_file = "model.hse"
+ burner_threshold_species = "H1"
+ burner_threshold_cutoff = 2.0d-10
+
+ model_file = "glasner_nova_32km.hse"
  spherical_in = 0
 
  max_levs = 3
@@ -15,25 +18,22 @@
  hg_bottom_solver = 4
 
  prob_lo_x = 0.0000d8
- prob_hi_x = 0.8192d8
- prob_lo_y = 4.6808d8
- prob_hi_y = 6.3192d8
+ prob_hi_x = 0.32768d8
+ prob_lo_y = 3.58464d8
+ prob_hi_y = 4.24000d8
 
- anelastic_cutoff = 2.0d1
- base_cutoff_density = 2.0d1
+ anelastic_cutoff = 1.0d0
+ base_cutoff_density = 1.0d0
 
  do_sponge = T
- sponge_center_density = 5.5d1
- sponge_start_factor = 1.4d0
+ sponge_center_density = 1.0d1
+ sponge_start_factor = 2.0d0
  sponge_kappa = 100.d0
 
- grav_const = -4.4d8
-
- burner_threshold_species = "H1"
- burner_threshold_cutoff = 2.d-10
+ grav_const = -1.04263053d9
 
  max_step  = 999999
- init_iter = 1
+ init_iter = 4
 
  stop_time = 5.d2
 
@@ -62,4 +62,9 @@
  use_eos_coulomb = T
 
  perturb_model= T
+
+ nova_pert_factor = 1.0d-2
+ nova_pert_size = 1.0d7
+ nova_pert_type = 1
+ nova_pert_height = 3.9d8
 /
