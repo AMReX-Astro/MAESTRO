@@ -21,13 +21,13 @@
  prob_lo_y = 3.5d8
  prob_hi_y = 5.1384d8
 
- anelastic_cutoff = 10.d0
- base_cutoff_density = 5.0d0
+ anelastic_cutoff = 25.d0
+ base_cutoff_density = 10.0d0
 
  do_sponge = T
  sponge_center_density = 10.d0
- sponge_start_factor = 2.0d0
- sponge_kappa = 100.d0
+ sponge_start_factor = 2.5d0
+ sponge_kappa = 1000.d0
 
  grav_const = -1.04263053d9
 
