@@ -2263,14 +2263,20 @@ contains
                            u(i,j,k,2)*normal(i,j,k,2) + &
                            u(i,j,k,3)*normal(i,j,k,3) + &
                            w0r(i,j,k)
-             velc(i,j,k) = (u(i,j,k,1)-velr(i,j,k)*normal(i,j,k,1)) * &
-                           (u(i,j,k,1)-velr(i,j,k)*normal(i,j,k,1))
+             velc(i,j,k) = (u(i,j,k,1)+w0r(i,j,k)*normal(i,j,k,1)  &
+                                     -velr(i,j,k)*normal(i,j,k,1)) * &
+                           (u(i,j,k,1)+w0r(i,j,k)*normal(i,j,k,1)  &
+                                     -velr(i,j,k)*normal(i,j,k,1))
              velc(i,j,k) = velc(i,j,k) + &
-                           (u(i,j,k,2)-velr(i,j,k)*normal(i,j,k,2)) * &
-                           (u(i,j,k,2)-velr(i,j,k)*normal(i,j,k,2))
+                           (u(i,j,k,2)+w0r(i,j,k)*normal(i,j,k,2)  &
+                                     -velr(i,j,k)*normal(i,j,k,2)) * &
+                           (u(i,j,k,2)+w0r(i,j,k)*normal(i,j,k,2)  &
+                                     -velr(i,j,k)*normal(i,j,k,2))
              velc(i,j,k) = velc(i,j,k) + &
-                           (u(i,j,k,3)-velr(i,j,k)*normal(i,j,k,3)) * &
-                           (u(i,j,k,3)-velr(i,j,k)*normal(i,j,k,3))
+                           (u(i,j,k,3)+w0r(i,j,k)*normal(i,j,k,3)  &
+                                     -velr(i,j,k)*normal(i,j,k,3)) * &
+                           (u(i,j,k,3)+w0r(i,j,k)*normal(i,j,k,3)  &
+                                     -velr(i,j,k)*normal(i,j,k,3))
              velc(i,j,k) = sqrt(velc(i,j,k))
           enddo
        enddo
