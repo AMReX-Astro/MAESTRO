@@ -535,18 +535,22 @@ contains
 
     ! compute the radial gradient of X_H
     do n = 1,nr_fine-2
-       grad_XH(n) = (XH_avg(1,n+1) - XH_avg(1,n-1))/(TWO*dr(1)) 
+       grad_XH(n) = abs((XH_avg(1,n+1) - XH_avg(1,n-1))/(TWO*dr(1))) 
+       write(11,*)n, XH_avg(1,n), grad_XH(n)
     end do
 
     r_cz = ZERO
+    i_cz = -1
     do n = 1,nr_fine-2
        if ( grad_XH(n) > r_cz ) then
           r_cz = grad_XH(n)
           i_cz = n
        end if
     end do
+    write(*,*) i, r_cz
     r_cz = dr(1)*(dble(i_cz) + HALF)
-
+    write(*,*)r_cz
+    stop
     !-------------------------------------------------------------------------
     ! compute the gravitational potential energy too.
     !-------------------------------------------------------------------------
@@ -659,10 +663,10 @@ contains
 
 
        ! file2 -- hcore_ener_diag.out
-       file4_data(index, 1) = kin_ener
-       file4_data(index, 2) = grav_ener
-       file4_data(index, 3) = int_ener
-       file4_data(index, 4) = dt
+       file2_data(index, 1) = kin_ener
+       file2_data(index, 2) = grav_ener
+       file2_data(index, 3) = int_ener
+       file2_data(index, 4) = dt
 
 
        ! file3 -- hcore_cz_diag.out
@@ -670,11 +674,11 @@ contains
 
 
        ! file4 -- hcore_vel_diag.out
-       file2_data(index, 1) = U_max
-       file2_data(index, 2) = coord_Umax(1)
-       file2_data(index, 3) = coord_Umax(2)
-       file2_data(index, 4) = coord_Umax(3)
-       file2_data(index, 5) = sqrt( (coord_Umax(1) - center(1))**2 + &
+       file4_data(index, 1) = U_max
+       file4_data(index, 2) = coord_Umax(1)
+       file4_data(index, 3) = coord_Umax(2)
+       file4_data(index, 4) = coord_Umax(3)
+       file4_data(index, 5) = sqrt( (coord_Umax(1) - center(1))**2 + &
                                     (coord_Umax(2) - center(2))**2 + &
                                     (coord_Umax(3) - center(3))**2 )
        file4_data(index, 6) = Mach_max
@@ -803,9 +807,9 @@ contains
           write (un1, 802) "output dir:  ", trim(cwd)
           write (un1, 999) trim(job_name)
           write (un1, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
-                            "max{|vr|}", "<|vr|/|vtot|> "&
+                            "max{|vr|}", "<|vr|/|vtot|>", &
                             "int{rhovr_x}/mass", "int{rhovr_y}/mass", "int{rhovr_z}/mass", &
-                            "<vc_x>", "<vc_y>", "<vc_z>", "<vc", &
+                            "<vc_x>", "<vc_y>", "<vc_z>", "<vc>", &
                             "max{|vc|}", &
                             "int{rhovc_x}/mass", "int{rhovc_y}/mass", "int{rhovc_z}/mass", &
                             "mass"
@@ -834,7 +838,7 @@ contains
           write (un4, 802) "output dir:  ", trim(cwd)
           write (un4, 999) trim(job_name)
           write (un4,1001) "time", "max{|U + w0|}",  &
-               "x(max{V})", "y(max{V})", "z(max{V})", "R{max{V})"&
+               "x(max{V})", "y(max{V})", "z(max{V})", "R{max{V})", &
                "max{Mach #}", "dt"
   
           firstCall = .false.
@@ -979,7 +983,7 @@ contains
 
              ! we only consider cells inside of where the sponging begins
              if (cell_valid .and. &
-                  s(i,j,k,rho_comp) >= sponge_start_factor*sponge_center_density) then
+                  s(i,j,k,rho_comp) > sponge_start_factor*sponge_center_density) then
                    
                 ! velr is the projection of the velocity (including w0 below) 
                 ! onto the radial unit vector 
