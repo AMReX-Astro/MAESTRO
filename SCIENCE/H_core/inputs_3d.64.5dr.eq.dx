@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "s15-hburn.hse.555"
+ model_file = "s15-hburn.hybrid.hse.605"
  drdxfac = 5
 
  max_levs = 1
@@ -32,7 +32,7 @@
 
  stop_time = 30000000.
 
- plot_base_name = "ful"
+ plot_base_name = "plt"
  plot_int  = 5
  chk_int   = 100
 

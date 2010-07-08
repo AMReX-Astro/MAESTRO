@@ -8,17 +8,19 @@
  n_cellz = 256
  max_grid_size = 64
 
+ buoyancy_cutoff_factor = 4.e2
  anelastic_cutoff = 1.d-4
  base_cutoff_density = 1.d-4
- sponge_center_density = 5.d-1
- sponge_start_factor = 1.5d0
- sponge_kappa = 1.5d-3
-
+ 
  spherical_in = 1
  octant = .true.
 
  dm_in = 3
+ 
  do_sponge = .true.
+ sponge_center_density = 2.d-1
+ sponge_start_factor = 1.5d0
+ sponge_kappa = 1.5d-3
 
  prob_hi_x = 2.d11
  prob_hi_y = 2.d11
@@ -26,7 +28,7 @@
 
 ! restart = 100
 
- max_step  = 1000
+ max_step  = 5000
  init_iter = 1
 
  stop_time = 300000000.
@@ -38,7 +40,7 @@
  cflfac = 0.7d0
  init_shrink = 0.1d0
  max_dt_growth = 1.1d0
- use_soundspeed_firstdt = T
+ use_soundspeed_firstdt = F
  use_divu_firstdt = T
 
  bcx_lo = 13
@@ -70,6 +72,7 @@
  use_eos_coulomb = T
 
  plot_trac = F
-! plot_omegadot = F 
+ plot_omegadot = F 
+ plto_Hext = T
 
 /
