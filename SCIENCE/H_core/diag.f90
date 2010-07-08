@@ -146,7 +146,7 @@ contains
 
     ! buffers
     real(kind=dp_t) :: max_data_level(3), max_data_local(3)
-    real(kind=dp_t) :: sum_data_level(2*dm+9), sum_data_local(2*dm+9)
+    real(kind=dp_t) :: sum_data_level(4*dm+9), sum_data_local(4*dm+9)
 
     real(kind=dp_t) :: U_max_data_local(1), U_max_coords_local(2*dm)
     real(kind=dp_t), allocatable :: U_max_data(:), U_max_coords(:)
@@ -531,12 +531,11 @@ contains
        call multifab_div_div_c(XH(n), 1, s(n), rho_comp, 1, s(n)%ng)
     enddo
 
-    call average(mla,XH,XH_avg,dx,spec_comp)
+    call average(mla,XH,XH_avg,dx,1)
 
     ! compute the radial gradient of X_H
     do n = 1,nr_fine-2
        grad_XH(n) = abs((XH_avg(1,n+1) - XH_avg(1,n-1))/(TWO*dr(1))) 
-       write(11,*)n, XH_avg(1,n), grad_XH(n)
     end do
 
     r_cz = ZERO
@@ -547,10 +546,8 @@ contains
           i_cz = n
        end if
     end do
-    write(*,*) i, r_cz
     r_cz = dr(1)*(dble(i_cz) + HALF)
-    write(*,*)r_cz
-    stop
+
     !-------------------------------------------------------------------------
     ! compute the gravitational potential energy too.
     !-------------------------------------------------------------------------
@@ -684,6 +681,8 @@ contains
        file4_data(index, 6) = Mach_max
        file4_data(index, 7) = dt
     end if
+
+    write(*,*)'file1 data',file1_data(index,6)
 
     !=========================================================================
     ! output, if needed
@@ -963,9 +962,9 @@ contains
        call bl_error("ERROR: geometry not spherical in diag")
     endif
 
-!$omp parallel do private(i,j,k,x,y,z,cell_valid,velr,vel,vrvt) &
+!$omp parallel do private(i,j,k,x,y,z,cell_valid,velr,vel) &
 !$omp reduction(max:vr_max,U_max,Mach_max) &
-!$omp reduction(vr_x,vr_y,vr_z,rhovr_x,rhovr_y,rhovr_z, &
+!$omp reduction(vr_x,vr_y,vr_z,rhovr_x,rhovr_y,rhovr_z, vrvt, &
 !$omp           vc_x,vc_y,vc_z,rhovc_x,rhovc_y,rhovc_z,mass,nzones,kin_ener,int_ener)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
@@ -1001,14 +1000,14 @@ contains
 
 
                 ! diagnostics
-                vc_max = max(vc_max,abs(velc))
+                vc_max = max(vc_max,velc)
 
                 vc_x = vc_x + weight*(u(i,j,k,1)-velr*normal(i,j,k,1))
                 vc_y = vc_y + weight*(u(i,j,k,2)-velr*normal(i,j,k,2))
                 vc_z = vc_z + weight*(u(i,j,k,3)-velr*normal(i,j,k,3))
                 
                 rhovc_x = rhovc_x + weight*s(i,j,k,rho_comp)*(u(i,j,k,1)-velr*normal(i,j,k,1))
-                rhovc_y = rhovc_y + weight*s(i,j,k,rho_comp)*(u(i,k,j,2)-velr*normal(i,j,k,2))
+                rhovc_y = rhovc_y + weight*s(i,j,k,rho_comp)*(u(i,j,k,2)-velr*normal(i,j,k,2))
                 rhovc_z = rhovc_z + weight*s(i,j,k,rho_comp)*(u(i,j,k,3)-velr*normal(i,j,k,3))
 
 
@@ -1017,7 +1016,7 @@ contains
 
                 vr_max = max(vr_max,abs(velr))
                 
-                vrvt = vrvt + weight*velr/vel
+                vrvt = vrvt + weight*abs(velr)/vel
 
                 vr_x = vr_x + weight*velr*normal(i,j,k,1)
                 vr_y = vr_y + weight*velr*normal(i,j,k,2)
