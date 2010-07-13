@@ -159,6 +159,9 @@ plot_omegadot                       logical            .true.
 # plot external heating (Hext) in plotfile 
 plot_Hext                           logical            .false.              
 
+# plot eta_rho in plotfile 
+plot_eta                            logical            .false.              
+
 # plot tracers in plotfile
 plot_trac                           logical            .false.             
 

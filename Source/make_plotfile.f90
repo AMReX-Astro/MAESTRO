@@ -18,7 +18,7 @@ contains
     use variables
     use network, only: nspec, short_spec_names
     use probin_module, only: plot_spec, plot_trac, plot_base, &
-                             use_thermal_diffusion, plot_omegadot, plot_Hext
+                             use_thermal_diffusion, plot_omegadot, plot_Hext, plot_eta
     use geometry, only: spherical, dm
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -100,6 +100,10 @@ contains
        plot_names(icomp_Hext) = "Hext"
     endif
 
+    if (plot_eta) then
+       plot_names(icomp_eta) = "eta_rho"
+    endif
+
     if (use_thermal_diffusion) then
        plot_names(icomp_thermal) = "thermal"
        plot_names(icomp_conductivity) = "conductivity"
@@ -107,10 +111,12 @@ contains
 
   end subroutine get_plot_names
 
-  subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot,rho_Hnuc, &
-                           rho_Hext,thermal,Source, &
-                           sponge,mba,plot_names,time,dx,the_bc_tower,w0,rho0,rhoh0,p0, &
-                           tempbar,gamma1bar,normal)
+  subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot, &
+                           rho_Hnuc,rho_Hext, &
+                           thermal,Source,sponge,mba,plot_names,time,dx, &
+                           the_bc_tower,w0,rho0,rhoh0,p0, &
+                           tempbar,gamma1bar,etarho_cc, &
+                           normal)
 
     use bl_prof_module
     use fabio_module
@@ -118,7 +124,7 @@ contains
     use plot_variables_module
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, & 
-                             plot_base, plot_omegadot, plot_Hext, &
+                             plot_base, plot_omegadot, plot_Hext, plot_eta, &
                              single_prec_plotfiles, edge_nodal_flag, &
                              do_smallscale, use_thermal_diffusion, &
                              evolve_base_state, prob_lo, prob_hi
@@ -152,6 +158,7 @@ contains
     real(dp_t)       , intent(in   ) :: p0(:,0:)
     real(dp_t)       , intent(in   ) :: tempbar(:,0:)
     real(dp_t)       , intent(in   ) :: gamma1bar(:,0:)
+    real(dp_t)       , intent(in   ) :: etarho_cc(:,0:)
     type(multifab)   , intent(in   ) :: normal(:)
     
     type(multifab) :: plotdata(nlevs)
@@ -321,6 +328,15 @@ contains
        end do
 
     end if
+
+    if (plot_eta) then
+       call put_1d_array_on_cart(etarho_cc,tempfab,foextrap_comp,.false.,.false.,dx, &
+                                 the_bc_tower%bc_tower_array,mla)
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),icomp_eta,tempfab(n),1,1)
+       end do
+    endif
+
 
     do n = 1,nlevs
 
