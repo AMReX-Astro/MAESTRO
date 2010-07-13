@@ -67,7 +67,7 @@ contains
     plot_names(icomp_magvel)      = "magvel"
     plot_names(icomp_mom)         = "momentum"
     plot_names(icomp_vort)        = "vort"
-    plot_names(icomp_divu)        = "divu"
+    plot_names(icomp_src)         = "S"
     plot_names(icomp_enthalpy)    = "enthalpy"
     plot_names(icomp_rhopert)     = "rhopert"
     plot_names(icomp_rhohpert)    = "rhohpert"
@@ -341,7 +341,7 @@ contains
                            the_bc_tower%bc_tower_array(n))
 
        ! DIVU
-       call multifab_copy_c(plotdata(n),icomp_divu,Source(n),1,1)
+       call multifab_copy_c(plotdata(n),icomp_src,Source(n),1,1)
 
        ! ENTHALPY 
        call multifab_copy_c(plotdata(n),icomp_enthalpy,s(n),rhoh_comp)

@@ -13,7 +13,7 @@ module variables
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
   integer, save :: icomp_w0, icomp_divw0, icomp_rho0, icomp_rhoh0, icomp_h0
   integer, save :: icomp_p0, icomp_velr, icomp_velc
-  integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_divu
+  integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_src
   integer, save :: icomp_enthalpy,icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert
   integer, save :: icomp_machno,icomp_dg,icomp_pi,icomp_gpi,icomp_pioverp0
   integer, save :: icomp_entropy,icomp_entropypert
@@ -95,7 +95,7 @@ contains
     icomp_magvel      = get_next_plot_index(1)
     icomp_mom         = get_next_plot_index(1)
     icomp_vort        = get_next_plot_index(1)
-    icomp_divu        = get_next_plot_index(1)
+    icomp_src         = get_next_plot_index(1)
     icomp_enthalpy    = get_next_plot_index(1)
     icomp_rhopert     = get_next_plot_index(1)
     icomp_rhohpert    = get_next_plot_index(1)
