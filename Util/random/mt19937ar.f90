@@ -143,9 +143,9 @@ contains
     type(box) :: r
     type(box), intent(in) :: world
     integer, intent(in) :: mn, mx
-    real(kind=dp_t) :: aa(world%dim,2)
-    integer ::  spot(world%dim)
-    integer :: hwide(world%dim)
+    real(kind=dp_t) :: aa(get_dim(world),2)
+    integer ::  spot(get_dim(world))
+    integer :: hwide(get_dim(world))
 
     if ( present(mt) ) then
        call mt_random_number(mt, aa)
