@@ -265,7 +265,7 @@ contains
        allocate(numdisjointchunks(nlevs))
        
        do n=1,nlevs
-          numdisjointchunks(n) = diffboxarray(n)%nboxes + 1
+          numdisjointchunks(n) = nboxes(diffboxarray(n)) + 1
        end do
        
        maxdisjointchunks = 1
@@ -289,8 +289,8 @@ contains
           r_start_coord(n,1) = lo(dm)
           r_end_coord(n,1)   = hi(dm)
 
-          if (diffboxarray(n)%nboxes .gt. 0) then
-             do i=1,diffboxarray(n)%nboxes
+          if (nboxes(diffboxarray(n)) .gt. 0) then
+             do i=1,nboxes(diffboxarray(n))
                 lo = lwb(boxarray_get_box(diffboxarray(n),i))
                 hi = upb(boxarray_get_box(diffboxarray(n),i))
                 r_start_coord(n,i+1) = hi(dm)+1
@@ -298,8 +298,8 @@ contains
              end do
 
              ! sort start and end coords
-             do i=1,diffboxarray(n)%nboxes+1
-                do j=1,diffboxarray(n)%nboxes+1-i
+             do i=1,nboxes(diffboxarray(n))+1
+                do j=1,nboxes(diffboxarray(n))+1-i
 
                    if (r_start_coord(n,j) .gt. r_start_coord(n,j+1)) then
                       temp = r_start_coord(n,j+1)
