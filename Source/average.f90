@@ -243,18 +243,20 @@ contains
          which_lev(r)=1
          do n=2,nlevs
             
-            min1 = min(ncell(n,rcoord(n)-1),ncell(n,rcoord(n)),ncell(n,rcoord(n)+1))
+            min1 = min(ncell(n,rcoord(n)-1), &
+                       ncell(n,rcoord(n)  ), &
+                       ncell(n,rcoord(n)+1))
 
             min2 = min(ncell(which_lev(r),rcoord(which_lev(r))-1),&
-                 ncell(which_lev(r),rcoord(which_lev(r))), &
-                 ncell(which_lev(r),rcoord(which_lev(r))+1))
+                       ncell(which_lev(r),rcoord(which_lev(r))  ), &
+                       ncell(which_lev(r),rcoord(which_lev(r))+1))
 
             ! if no interpolation points are found, expand the search until we find one
             j = 2
             do while(min1 .eq. 0 .and. min2 .eq. 0)
-               min1 = min(ncell(n,max(1,rcoord(n)-j)), &
+               min1 = max(ncell(n,max(1,rcoord(n)-j)), &
                           ncell(n,min(rcoord(n)+j,nr_irreg-1)))
-               min2 = min(ncell(which_lev(r),max(1,rcoord(n)-j)), &
+               min2 = max(ncell(which_lev(r),max(1,rcoord(n)-j)), &
                           ncell(which_lev(r),min(rcoord(n)+j,nr_irreg-1)))
                j = j+1
             end do
