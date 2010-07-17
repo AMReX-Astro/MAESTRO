@@ -62,25 +62,27 @@ contains
     type(multifab)  ::  rho0_cart(nlevs)
     type(multifab)  :: rhoh0_cart(nlevs)
     type(multifab)  ::    t0_cart(nlevs)
+    type(layout)    :: la
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "makeHfromRhoT_edge")
 
-    ng_u = u(1)%ng
-    ng_se = sedge(1,1)%ng
+    ng_u  = nghost(u(1))
+    ng_se = nghost(sedge(1,1))
 
     if (spherical .eq. 1) then
 
        do n=1,nlevs
-          call multifab_build( rho0_cart(n),u(n)%la,1,2)
-          call multifab_build(rhoh0_cart(n),u(n)%la,1,2)
-          call multifab_build(   t0_cart(n),u(n)%la,1,2)
+          la=get_layout(u(n))
+          call multifab_build( rho0_cart(n),la,1,2)
+          call multifab_build(rhoh0_cart(n),la,1,2)
+          call multifab_build(   t0_cart(n),la,1,2)
        end do
 
-       ng_r0 = rho0_cart(1)%ng
-       ng_rh0 = rhoh0_cart(1)%ng
-       ng_t0  = t0_cart(1)%ng
+       ng_r0  = nghost(rho0_cart(1))
+       ng_rh0 = nghost(rhoh0_cart(1))
+       ng_t0  = nghost(t0_cart(1))
 
        do r=0,nr_fine-1
           rho0_halftime(1,r)  = HALF * (rho0_old(1,r)  + rho0_new(1,r)  )
@@ -98,7 +100,7 @@ contains
 
    do n=1,nlevs
 
-       do i=1,u(n)%nboxes
+       do i=1,nboxes(u(n))
           if ( multifab_remote(u(n),i) ) cycle
           sepx => dataptr(sedge(n,1), i)
           lo = lwb(get_box(u(n),i))
@@ -649,11 +651,11 @@ contains
 
     call build(bpt, "makeTfromRhoH")
 
-    ng = state(1)%ng
+    ng = nghost(state(1))
 
     do n=1,nlevs
 
-       do i=1,state(n)%nboxes
+       do i=1,nboxes(state(n))
           if (multifab_remote(state(n),i)) cycle
           sp => dataptr(state(n),i)
           lo = lwb(get_box(state(n),i))
@@ -860,11 +862,11 @@ contains
 
     call build(bpt, "makeTfromRhoP")
 
-    ng = state(1)%ng
+    ng = nghost(state(1))
 
     do n=1,nlevs
 
-       do i=1,state(n)%nboxes
+       do i=1,nboxes(state(n))
           if (multifab_remote(state(n),i)) cycle
           sp => dataptr(state(n),i)
           lo = lwb(get_box(state(n),i))
@@ -1134,13 +1136,13 @@ contains
 
     call build(bpt, "makePfromRhoH")
 
-    ng_s  = state(1)%ng
-    ng_so = sold(1)%ng
-    ng_p  = peos(1)%ng
+    ng_s  = nghost(state(1))
+    ng_so = nghost(sold(1))
+    ng_p  = nghost(peos(1))
 
     do n=1,nlevs
 
-       do i=1,state(n)%nboxes
+       do i=1,nboxes(state(n))
           if (multifab_remote(state(n),i)) cycle
           snp => dataptr(state(n),i)
           sop => dataptr(sold(n),i)
@@ -1356,10 +1358,10 @@ contains
 
     call build(bpt, "makeTHfromRhoP")
 
-    ng_s = s(1)%ng
+    ng_s = nghost(s(1))
 
     do n=1,nlevs
-       do i = 1, s(n)%nboxes
+       do i = 1, nboxes(s(n))
           if ( multifab_remote(s(n),i) ) cycle
           sop => dataptr(s(n),i)
           lo =  lwb(get_box(s(n),i))

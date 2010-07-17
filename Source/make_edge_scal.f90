@@ -72,16 +72,16 @@ contains
     call build(bpt, "make_edge_scal")
 
     do n=1,nlevs
-       call multifab_build(gradw0_cart(n),s(n)%la,1,1)
+       call multifab_build(gradw0_cart(n),get_layout(s(n)),1,1)
     end do
 
-    ng_s = s(1)%ng
-    ng_se = sedge(1,1)%ng
-    ng_um = umac(1,1)%ng
-    ng_f = force(1)%ng
-    ng_w0 = w0mac(1,1)%ng
-    ng_n = normal(1)%ng
-    ng_gw = gradw0_cart(1)%ng
+    ng_s  = nghost(s(1))
+    ng_se = nghost(sedge(1,1))
+    ng_um = nghost(umac(1,1))
+    ng_f  = nghost(force(1))
+    ng_w0 = nghost(w0mac(1,1))
+    ng_n  = nghost(normal(1))
+    ng_gw = nghost(gradw0_cart(1))
 
     ! make a Cartesian version of dw0/dr
     if (spherical .eq. 1 .and. is_vel) then
@@ -97,7 +97,7 @@ contains
     endif
 
     do n=1,nlevs
-       do i = 1, s(n)%nboxes
+       do i = 1, nboxes(s(n))
           if ( multifab_remote(s(n),i) ) cycle
           sop  => dataptr(s(n),i)
           sepx => dataptr(sedge(n,1),i)

@@ -48,6 +48,7 @@ contains
     type(multifab) :: rhs_cc(nlevs)
     type(multifab) :: Sbar_cart(nlevs)
     type(multifab) :: div_coeff_cart(nlevs)
+    type(layout  ) :: la
 
     real(kind=dp_t), pointer:: hp(:,:,:,:),gp(:,:,:,:),rp(:,:,:,:)
     real(kind=dp_t), pointer:: dp(:,:,:,:),sp(:,:,:,:),sbp(:,:,:,:)
@@ -57,17 +58,16 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_hgrhs")
-    
-    if(spherical .eq. 1) then
+
+    if (spherical .eq. 1) then
        do n = 1, nlevs
-          call multifab_build(Sbar_cart(n),Source(n)%la,1,0)
-          call multifab_build(div_coeff_cart(n),Source(n)%la,1,0)
-          call setval(Sbar_cart(n),ZERO,all=.true.)
+          la = get_layout(Source(n))
+          call multifab_build(Sbar_cart(n),     la,1,0)
+          call multifab_build(div_coeff_cart(n),la,1,0)
+          call setval(Sbar_cart(n),     ZERO,all=.true.)
           call setval(div_coeff_cart(n),ZERO,all=.true.)
        end do
-    end if
-    
-    if (spherical .eq. 1) then
+
        call put_1d_array_on_cart(div_coeff,div_coeff_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
        call put_1d_array_on_cart(Sbar,Sbar_cart,foextrap_comp,.false., &
@@ -75,19 +75,19 @@ contains
     end if
 
     do n = 1, nlevs
-       call multifab_build(rhs_cc(n),Source(n)%la,1,1)
+       call multifab_build(rhs_cc(n),get_layout(Source(n)),1,1)
        call setval(rhs_cc(n),ZERO,all=.true.)
     end do
 
-    ng_rh = rhs_cc(1)%ng
-    ng_sr = Source(1)%ng
-    ng_dg = delta_gamma1_term(1)%ng
-    ng_dc = div_coeff_cart(1)%ng
-    ng_sb = Sbar_cart(1)%ng
-    ng_hg = hgrhs(1)%ng
+    ng_rh = nghost(rhs_cc(1))
+    ng_sr = nghost(Source(1))
+    ng_dg = nghost(delta_gamma1_term(1))
+    ng_dc = nghost(div_coeff_cart(1))
+    ng_sb = nghost(Sbar_cart(1))
+    ng_hg = nghost(hgrhs(1))
 
     do n = 1, nlevs
-       do i = 1, Source(n)%nboxes
+       do i = 1, nboxes(Source(n))
           if ( multifab_remote(Source(n), i) ) cycle
           rp => dataptr(rhs_cc(n), i)
           sp => dataptr(Source(n), i)
@@ -145,7 +145,7 @@ contains
        
     do n=1,nlevs
        call setval(hgrhs(n),ZERO,all=.true.)
-       do i = 1, Source(n)%nboxes
+       do i = 1, nboxes(Source(n))
           if ( multifab_remote(Source(n), i) ) cycle
           hp => dataptr(hgrhs(n), i)
           rp => dataptr(rhs_cc(n), i)
@@ -363,6 +363,8 @@ contains
     type(multifab) :: div_coeff_cart(nlevs)
     type(multifab) :: rho0_cart(nlevs)
 
+    type(layout)   :: la
+
     real(kind=dp_t), pointer :: ptp(:,:,:,:), ccp(:,:,:,:), cnp(:,:,:,:)
     real(kind=dp_t), pointer :: gbp(:,:,:,:), p0p(:,:,:,:), dcp(:,:,:,:)
     real(kind=dp_t), pointer :: r0p(:,:,:,:)
@@ -373,20 +375,19 @@ contains
 
     call build(bpt, "correct_hgrhs")
     
-    if(spherical .eq. 1) then
-       do n = 1, nlevs
-          call multifab_build(gamma1bar_cart(n),delta_p_term(n)%la,1,0)
-          call multifab_build(p0_cart(n),delta_p_term(n)%la,1,0)
-          call multifab_build(div_coeff_cart(n),delta_p_term(n)%la,1,0)
-          call multifab_build(rho0_cart(n),delta_p_term(n)%la,1,0)
-          call setval(gamma1bar_cart(n),ZERO,all=.true.)
-          call setval(p0_cart(n),ZERO,all=.true.)
-          call setval(div_coeff_cart(n),ZERO,all=.true.)
-          call setval(rho0_cart(n),ZERO,all=.true.)
-       end do
-    end if
-    
     if (spherical .eq. 1) then
+       do n = 1, nlevs
+          la = get_layout(delta_p_term(n))
+          call multifab_build(gamma1bar_cart(n),la,1,0)
+          call multifab_build(p0_cart(n),       la,1,0)
+          call multifab_build(div_coeff_cart(n),la,1,0)
+          call multifab_build(rho0_cart(n),     la,1,0)
+          call setval(gamma1bar_cart(n),ZERO,all=.true.)
+          call setval(p0_cart(n),       ZERO,all=.true.)
+          call setval(div_coeff_cart(n),ZERO,all=.true.)
+          call setval(rho0_cart(n),     ZERO,all=.true.)
+       end do
+
        call put_1d_array_on_cart(gamma1bar,gamma1bar_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
        call put_1d_array_on_cart(p0,p0_cart,foextrap_comp,.false., &
@@ -395,26 +396,26 @@ contains
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
        call put_1d_array_on_cart(rho0,rho0_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
-
     end if
 
     do n = 1, nlevs
-       call multifab_build(correction_cc(n),delta_p_term(n)%la,1,1)
-       call setval(correction_cc(n),ZERO,all=.true.)
-       call multifab_build(correction_nodal(n),delta_p_term(n)%la,1,0,nodal)
+       la = get_layout(delta_p_term(n))
+       call multifab_build(correction_cc(n),   la,1,1)
+       call multifab_build(correction_nodal(n),la,1,0,nodal)
+       call setval(correction_cc(n),   ZERO,all=.true.)
        call setval(correction_nodal(n),ZERO,all=.true.)
     end do
 
-    ng_cc = correction_cc(1)%ng
-    ng_dp = delta_p_term(1)%ng
-    ng_gb = gamma1bar_cart(1)%ng
-    ng_p0 = p0_cart(1)%ng
-    ng_dc = div_coeff_cart(1)%ng
-    ng_r0 = rho0_cart(1)%ng
-    ng_cn = correction_nodal(1)%ng
+    ng_cc = nghost(correction_cc(1))
+    ng_dp = nghost(delta_p_term(1))
+    ng_gb = nghost(gamma1bar_cart(1))
+    ng_p0 = nghost(p0_cart(1))
+    ng_dc = nghost(div_coeff_cart(1))
+    ng_r0 = nghost(rho0_cart(1))
+    ng_cn = nghost(correction_nodal(1))
 
     do n = 1, nlevs
-       do i = 1, delta_p_term(n)%nboxes
+       do i = 1, nboxes(delta_p_term(n))
           if ( multifab_remote(delta_p_term(n), i) ) cycle
           ccp => dataptr(correction_cc(n), i)
           ptp => dataptr(delta_p_term(n), i)
@@ -478,7 +479,7 @@ contains
        
     do n=1,nlevs
        call setval(correction_nodal(n),ZERO,all=.true.)
-       do i = 1, delta_p_term(n)%nboxes
+       do i = 1, nboxes(delta_p_term(n))
           if ( multifab_remote(delta_p_term(n), i) ) cycle
           cnp => dataptr(correction_nodal(n), i)
           ccp => dataptr(correction_cc(n), i)

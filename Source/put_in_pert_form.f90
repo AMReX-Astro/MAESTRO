@@ -48,7 +48,7 @@ contains
 
     call build(bpt, "put_in_pert_form")
 
-    ng = s(1)%ng
+    ng = nghost(s(1))
 
     ! the reason I go through this dx_temp thing is because when you
     ! restart into finer, we haven't initialized dx when we add the base state
@@ -59,7 +59,7 @@ contains
     end do
 
     do n=1,nlevs
-       do i = 1, s(n)%nboxes
+       do i = 1, nboxes(s(n))
           if ( multifab_remote(s(n),i) ) cycle
           sp => dataptr(s(n),i)
           lo =  lwb(get_box(s(n),i))
@@ -96,7 +96,7 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(s(n),s(n-1), &
-                                         s(n)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(s(n)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
                                          comp,bc_comp,1,fill_crse_input=.false.)
        end do

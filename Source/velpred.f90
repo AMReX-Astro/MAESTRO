@@ -58,16 +58,16 @@ contains
     call build(bpt, "velpred")
 
     do n=1,nlevs
-       call multifab_build(gradw0_cart(n),u(n)%la,1,1)
+       call multifab_build(gradw0_cart(n),get_layout(u(n)),1,1)
     end do
 
-    ng_u = u(1)%ng
-    ng_um = umac(1,1)%ng
-    ng_ut = utrans(1,1)%ng
-    ng_f = force(1)%ng
-    ng_w0 = w0mac(1,1)%ng
-    ng_n = normal(1)%ng
-    ng_gw = gradw0_cart(1)%ng
+    ng_u  = nghost(u(1))
+    ng_um = nghost(umac(1,1))
+    ng_ut = nghost(utrans(1,1))
+    ng_f  = nghost(force(1))
+    ng_w0 = nghost(w0mac(1,1))
+    ng_n  = nghost(normal(1))
+    ng_gw = nghost(gradw0_cart(1))
 
     ! make a Cartesian version of dw0/dr
     if (spherical .eq. 1) then
@@ -83,7 +83,7 @@ contains
     endif
 
     do n=1,nlevs
-       do i = 1, u(n)%nboxes
+       do i = 1, nboxes(u(n))
           if ( multifab_remote(u(n),i) ) cycle
           uop  => dataptr(u(n),i)
           ump  => dataptr(umac(n,1),i)

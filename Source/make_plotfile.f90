@@ -493,7 +493,7 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(tempfab(n),tempfab(n-1), &
-                                         tempfab(n)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(tempfab(n)),mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n), &
                                          1,foextrap_comp,1,fill_crse_input=.false.)

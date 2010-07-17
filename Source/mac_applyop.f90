@@ -95,7 +95,7 @@ contains
                            abs_eps = abs_eps, &
                            verbose = mg_verbose, &
                            cg_verbose = cg_verbose, &
-                           nodal = res(nlevs)%nodal)
+                           nodal = nodal_flags(res(nlevs)))
 
     end do
 
@@ -105,12 +105,12 @@ contains
 
        la = mla%la(n)
 
-       call multifab_build(cell_coeffs, la,          nc=1,ng=alpha(n)%ng)
-       call multifab_copy_c(cell_coeffs,1,alpha(n),1,nc=1,ng=alpha(n)%ng)
+       call multifab_build(cell_coeffs, la,          nc=1,ng=nghost(alpha(n)))
+       call multifab_copy_c(cell_coeffs,1,alpha(n),1,nc=1,ng=nghost(alpha(n)))
 
        do d = 1,dm
-          call multifab_build_edge(edge_coeffs(d), la,      nc=1,ng=beta(n,d)%ng,dir=d)
-          call multifab_copy_c(edge_coeffs(d),1,beta(n,d),1,nc=1,ng=beta(n,d)%ng)
+          call multifab_build_edge(edge_coeffs(d), la,      nc=1,ng=nghost(beta(n,d)),dir=d)
+          call multifab_copy_c(edge_coeffs(d),1,beta(n,d),1,nc=1,ng=nghost(beta(n,d)))
        end do
 
        if (n > 1) then

@@ -102,11 +102,11 @@ contains
        call make_s0mac(mla,p0_nph,p0mac,dx,foextrap_comp,the_bc_level)
     end if
 
-    ng_f  = scal_force(1)%ng
-    ng_um = umac(1,1)%ng
-    ng_th = thermal(1)%ng
-    ng_pm = p0mac(1,1)%ng
-    ng_p0 = p0_cart(1)%ng
+    ng_f  = nghost(scal_force(1))
+    ng_um = nghost(umac(1,1))
+    ng_th = nghost(thermal(1))
+    ng_pm = nghost(p0mac(1,1))
+    ng_p0 = nghost(p0_cart(1))
 
     rho0 = HALF*(rho0_old + rho0_new)
 
@@ -114,7 +114,7 @@ contains
     
     do n=1,nlevs
 
-       do i=1,scal_force(n)%nboxes
+       do i=1, nboxes(scal_force(n))
           if ( multifab_remote(scal_force(n),i) ) cycle
           fp => dataptr(scal_force(n), i)
           tp  => dataptr(thermal(n),i)
@@ -190,7 +190,7 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
-                                         scal_force(n)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(scal_force(n)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
                                          rhoh_comp,foextrap_comp,1,fill_crse_input=.false.)
        end do
@@ -561,10 +561,10 @@ contains
        call bl_error("ERROR: should not call mkhprimeforce if enthalpy_pred_type .ne. predict_hprime")
     endif
 
-    ng_f  = scal_force(1)%ng
-    ng_um = umac(1,1)%ng
-    ng_th = thermal(1)%ng
-    ng_s = sold(1)%ng
+    ng_f  = nghost(scal_force(1))
+    ng_um = nghost(umac(1,1))
+    ng_th = nghost(thermal(1))
+    ng_s  = nghost(sold(1))
 
     if (spherical .eq. 1) then
        do n = 1,nlevs
@@ -586,7 +586,7 @@ contains
 
        
 
-       do i=1,scal_force(n)%nboxes
+       do i=1, nboxes(scal_force(n))
           if ( multifab_remote(scal_force(n),i) ) cycle
           fp => dataptr(scal_force(n), i)
           ump => dataptr(umac(n,1),i)
@@ -648,7 +648,7 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
-                                         scal_force(n)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(scal_force(n)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
                                          rhoh_comp,foextrap_comp,1,fill_crse_input=.false.)
        end do
@@ -818,10 +818,10 @@ contains
 
     call build(bpt, "mktempforce")
 
-    ng_f  = temp_force(1)%ng
-    ng_um = umac(1,1)%ng
-    ng_s  = s(1)%ng
-    ng_th = thermal(1)%ng
+    ng_f  = nghost(temp_force(1))
+    ng_um = nghost(umac(1,1))
+    ng_s  = nghost(s(1))
+    ng_th = nghost(thermal(1))
 
     if (spherical .eq. 1) then
        do n = 1,nlevs
@@ -834,7 +834,7 @@ contains
 
     do n=1,nlevs
 
-       do i=1,temp_force(n)%nboxes
+       do i=1, nboxes(temp_force(n))
           if ( multifab_remote(temp_force(n),i) ) cycle
           fp  => dataptr(temp_force(n),i)
           ump => dataptr(umac(n,1),i)
@@ -894,7 +894,7 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(temp_force(n),temp_force(n-1), &
-                                         temp_force(n)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(temp_force(n)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
                                          temp_comp,foextrap_comp,1,fill_crse_input=.false.)
        enddo

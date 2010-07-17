@@ -42,13 +42,13 @@ contains
 
     call build(bpt, "mkutrans")
 
-    ng_u  = u(1)%ng
-    ng_ut = utrans(1,1)%ng
-    ng_w0 = w0mac(1,1)%ng
+    ng_u  = nghost(u(1))
+    ng_ut = nghost(utrans(1,1))
+    ng_w0 = nghost(w0mac(1,1))
 
     do n=1,nlevs
 
-       do i=1,u(n)%nboxes
+       do i=1, nboxes(u(n))
           if ( multifab_remote(u(n),i) ) cycle
           up => dataptr(u(n),i)
           utp => dataptr(utrans(n,1),i)

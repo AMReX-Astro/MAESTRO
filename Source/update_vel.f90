@@ -60,18 +60,18 @@ contains
 
     call build(bpt, "update_velocity")
 
-    ng_uo = uold(1)%ng
-    ng_un = unew(1)%ng
-    ng_um = umac(1,1)%ng ! note we are assuming that ng is the same for all directions
-    ng_ue = uedge(1,1)%ng
-    ng_sp = sponge(1)%ng
-    ng_f  = force(1)%ng
-    ng_n  = normal(1)%ng
-    ng_w0 = w0mac(1,1)%ng
+    ng_uo = nghost(uold(1))
+    ng_un = nghost(unew(1))
+    ng_um = nghost(umac(1,1)) ! note we are assuming that ng is the same for all directions
+    ng_ue = nghost(uedge(1,1))
+    ng_sp = nghost(sponge(1))
+    ng_f  = nghost(force(1))
+    ng_n  = nghost(normal(1))
+    ng_w0 = nghost(w0mac(1,1))
 
     do n = 1, nlevs
 
-       do i = 1, uold(n)%nboxes
+       do i = 1, nboxes(uold(n))
           if ( multifab_remote(uold(n),i) ) cycle
           uop  => dataptr(uold(n),i)
           unp  => dataptr(unew(n),i)

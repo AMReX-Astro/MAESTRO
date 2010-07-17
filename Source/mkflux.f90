@@ -71,16 +71,16 @@ contains
 
     call build(bpt, "mk_rhoX_flux")
 
-    ng_sf = sflux(1,1)%ng
-    ng_ef = etarhoflux(1)%ng
-    ng_se = sedge(1,1)%ng
-    ng_um = umac(1,1)%ng
-    ng_w0 = w0mac(1,1)%ng
-    ng_ro = rho0mac_old(1,1)%ng
-    ng_rn = rho0mac_new(1,1)%ng
+    ng_sf = nghost(sflux(1,1))
+    ng_ef = nghost(etarhoflux(1))
+    ng_se = nghost(sedge(1,1))
+    ng_um = nghost(umac(1,1))
+    ng_w0 = nghost(w0mac(1,1))
+    ng_ro = nghost(rho0mac_old(1,1))
+    ng_rn = nghost(rho0mac_new(1,1))
     
     do n=1,nlevs
-       do i=1, sold(n)%nboxes
+       do i=1, nboxes(sold(n))
           if ( multifab_remote(sold(n),i) ) cycle
           sfxp => dataptr(sflux(n,1),i)
           efp  => dataptr(etarhoflux(n),i)
@@ -507,14 +507,14 @@ contains
 
     call build(bpt, "mk_rhoh_flux")
 
-    ng_sf = sflux(1,1)%ng
-    ng_se = sedge(1,1)%ng
-    ng_um = umac(1,1)%ng
-    ng_w0 = w0mac(1,1)%ng
-    ng_0m = rho0mac_old(1,1)%ng
+    ng_sf = nghost(sflux(1,1))
+    ng_se = nghost(sedge(1,1))
+    ng_um = nghost(umac(1,1))
+    ng_w0 = nghost(w0mac(1,1))
+    ng_0m = nghost(rho0mac_old(1,1))
     
     do n=1,nlevs
-       do i=1, sold(n)%nboxes
+       do i=1, nboxes(sold(n))
           if ( multifab_remote(sold(n),i) ) cycle
           sfxp => dataptr(sflux(n,1),i)
           sexp => dataptr(sedge(n,1),i)

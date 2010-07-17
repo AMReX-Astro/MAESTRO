@@ -49,14 +49,14 @@ contains
 
     call build(bpt, "make_macrhs")
 
-    ng_rh = macrhs(1)%ng
-    ng_sr = Source(1)%ng
-    ng_dg = delta_gamma1_term(1)%ng
-    ng_dp = delta_p_term(1)%ng
+    ng_rh = nghost(macrhs(1))
+    ng_sr = nghost(Source(1))
+    ng_dg = nghost(delta_gamma1_term(1))
+    ng_dp = nghost(delta_p_term(1))
 
     do n = 1, nlevs
 
-       do i = 1, Source(n)%nboxes
+       do i = 1, nboxes(Source(n))
           if ( multifab_remote(Source(n), i) ) cycle
           mp => dataptr(macrhs(n), i)
           sp => dataptr(Source(n), i)

@@ -40,16 +40,16 @@ contains
 
     call build(bpt, "make_S_at_halftime")
 
-    ng_h = shalf(1)%ng
-    ng_o = sold(1)%ng
-    ng_n = snew(1)%ng
+    ng_h = nghost(shalf(1))
+    ng_o = nghost(sold(1))
+    ng_n = nghost(snew(1))
 
     in_comp = 1
     out_comp = 1
 
     do n = 1, nlevs
 
-       do i = 1, shalf(n)%nboxes
+       do i = 1, nboxes(shalf(n))
           if ( multifab_remote(shalf(n), i) ) cycle
           shp => dataptr(shalf(n), i)
           sop => dataptr(sold(n), i)
@@ -127,12 +127,12 @@ contains
     integer   :: lo(dm),hi(dm)
     integer   :: ng_h,ng_o,ng_n,i,n
 
-    ng_h = phihalf(1)%ng
-    ng_o = sold(1)%ng
-    ng_n = snew(1)%ng
+    ng_h = nghost(phihalf(1))
+    ng_o = nghost(sold(1))
+    ng_n = nghost(snew(1))
 
     do n = 1, nlevs
-       do i = 1, phihalf(n)%nboxes
+       do i = 1, nboxes(phihalf(n))
           if ( multifab_remote(phihalf(n), i) ) cycle
           rhp => dataptr(phihalf(n), i)
           rop => dataptr(sold(n), i)

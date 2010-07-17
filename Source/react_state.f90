@@ -50,7 +50,7 @@ contains
 
     ! pass temperature through for seeding the temperature update eos call
     do n=1,nlevs
-       call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,sold(n)%ng)
+       call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,nghost(sold(n)))
     end do
 
     ! now update temperature
@@ -83,7 +83,7 @@ contains
           ! n-1 data note that multifab_fill_boundary and
           ! multifab_physbc are called for both levels n-1 and n
           call multifab_fill_ghost_cells(snew(n),snew(n-1), &
-                                         snew(1)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(snew(1)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1), &
                                          the_bc_level(n  ), &
                                          temp_comp,dm+temp_comp,1,fill_crse_input=.false.)
@@ -131,14 +131,14 @@ contains
 
     call build(bpt, "burner_loop")
 
-    ng_si = sold(1)%ng
-    ng_so = snew(1)%ng
-    ng_rw = rho_omegadot(1)%ng
-    ng_hn = rho_Hnuc(1)%ng
-    ng_he = rho_Hext(1)%ng
+    ng_si = nghost(sold(1))
+    ng_so = nghost(snew(1))
+    ng_rw = nghost(rho_omegadot(1))
+    ng_hn = nghost(rho_Hnuc(1))
+    ng_he = nghost(rho_Hext(1))
 
     do n = 1, nlevs
-       do i = 1, sold(n)%nboxes
+       do i = 1, nboxes(sold(n))
           if ( multifab_remote(sold(n), i) ) cycle
           snp => dataptr(sold(n) , i)
           sop => dataptr(snew(n), i)

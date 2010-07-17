@@ -55,18 +55,18 @@ contains
 
     call build(bpt, "modify_scal_force")
     
-    ng_s = s(1)%ng
-    ng_f = force(1)%ng
-    ng_um = umac(1,1)%ng
-    ng_b = base_cart(1)%ng
+    ng_s  = nghost(s(1))
+    ng_f  = nghost(force(1))
+    ng_um = nghost(umac(1,1))
+    ng_b  = nghost(base_cart(1))
 
     do n=1,nlevs
 
-       domain = layout_get_pd(s(n)%la)
-       domlo = lwb(domain)
-       domhi = upb(domain)
+       domain = get_pd(get_layout(s(n)))
+       domlo  = lwb(domain)
+       domhi  = upb(domain)
        
-       do i=1,force(n)%nboxes
+       do i=1, nboxes(force(n))
           if ( multifab_remote(force(n),i) ) cycle
           fp => dataptr(force(n),i)
           sp => dataptr(s(n),i)
@@ -126,7 +126,7 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(force(n),force(n-1), &
-                                         force(n)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(force(n)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
                                          comp,foextrap_comp,1,fill_crse_input=.false.)
 

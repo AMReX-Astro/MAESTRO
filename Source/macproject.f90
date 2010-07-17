@@ -272,8 +272,8 @@ contains
       integer :: i,lo(dm),hi(dm)
       integer :: ng_um, ng_rh
 
-      ng_um = umac(1,1)%ng
-      ng_rh = rh(1)%ng
+      ng_um = nghost(umac(1,1))
+      ng_rh = nghost(rh(1))
 
       do n = nlevs,2,-1
          do i = 1,dm
@@ -282,7 +282,7 @@ contains
       end do
 
       do n = 1,nlevs
-         do i = 1, rh(n)%nboxes
+         do i = 1, nboxes(rh(n))
             if ( multifab_remote(rh(n), i) ) cycle
             ump => dataptr(umac(n,1), i)
             rhp => dataptr(rh(n)    , i)
@@ -416,10 +416,10 @@ contains
       integer                  :: lo(dm)
       integer                  :: i,ng_um
 
-      ng_um = edge(1)%ng
+      ng_um = nghost(edge(1))
 
       ! Multiply edge velocities by div coeff
-      do i = 1, edge(1)%nboxes
+      do i = 1, nboxes(edge(1))
          if ( multifab_remote(edge(1), i) ) cycle
          ump => dataptr(edge(1), i)
          lo =  lwb(get_box(edge(1), i))
@@ -562,7 +562,7 @@ contains
       domhi =  upb(domain)
 
       ! Multiply edge velocities by div coeff
-      do i = 1, edge(1)%nboxes
+      do i = 1, nboxes(edge(1))
          if ( multifab_remote(edge(1), i) ) cycle
          ump => dataptr(edge(1), i)
          vmp => dataptr(edge(2), i)
@@ -747,11 +747,11 @@ contains
       real(kind=dp_t), pointer :: rp(:,:,:,:) 
       integer :: i,ng_r,ng_b,lo(dm),hi(dm)
 
-      ng_r = rho(1)%ng
-      ng_b = beta(1,1)%ng
+      ng_r = nghost(rho(1))
+      ng_b = nghost(beta(1,1))
 
       do n = 1, nlevs
-         do i = 1, rho(n)%nboxes
+         do i = 1, nboxes(rho(n))
             if ( multifab_remote(rho(n), i) ) cycle
             rp => dataptr(rho(n) , i)
             bxp => dataptr(beta(n,1), i)
@@ -897,13 +897,13 @@ contains
       real(kind=dp_t), pointer :: hzp(:,:,:,:) 
 
 
-      ng_um = umac(1,1)%ng
-      ng_p = phi(1)%ng
-      ng_b = beta(1,1)%ng
+      ng_um = nghost(umac(1,1))
+      ng_p = nghost(phi(1))
+      ng_b = nghost(beta(1,1))
 
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
-         do i = 1, rh(n)%nboxes
+         do i = 1, nboxes(rh(n))
             if ( multifab_remote(rh(n), i) ) cycle
             ump => dataptr(umac(n,1), i)
             php => dataptr( phi(n), i)

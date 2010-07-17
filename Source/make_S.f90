@@ -59,18 +59,18 @@ contains
 
     call build(bpt, "make_S")
 
-    ng_sr = Source(1)%ng
-    ng_dt = delta_gamma1_term(1)%ng
-    ng_dg = delta_gamma1(1)%ng
-    ng_s  = state(1)%ng
-    ng_u  = u(1)%ng
-    ng_rw = rho_omegadot(1)%ng
-    ng_he = rho_Hext(1)%ng
-    ng_hn = rho_Hnuc(1)%ng
-    ng_th = thermal(1)%ng
+    ng_sr = nghost(Source(1))
+    ng_dt = nghost(delta_gamma1_term(1))
+    ng_dg = nghost(delta_gamma1(1))
+    ng_s  = nghost(state(1))
+    ng_u  = nghost(u(1))
+    ng_rw = nghost(rho_omegadot(1))
+    ng_he = nghost(rho_Hext(1))
+    ng_hn = nghost(rho_Hnuc(1))
+    ng_th = nghost(thermal(1))
 
     do n = 1, nlevs
-       do i = 1, state(n)%nboxes
+       do i = 1, nboxes(state(n))
           if ( multifab_remote(state(n), i) ) cycle
           srcp => dataptr(Source(n), i)
           dgtp     => dataptr(delta_gamma1_term(n), i)
@@ -113,7 +113,6 @@ contains
           end select
        end do
     enddo
-
 
     ! fill the ghostcells for delta_gamma1_term and Source
     if (nlevs .eq. 1) then
@@ -159,7 +158,7 @@ contains
        call average(mla,delta_gamma1_term,delta_gamma1_termbar,dx,1)
 
        do n = 1, nlevs
-          do i = 1, state(n)%nboxes
+          do i = 1, nboxes(state(n))
              if ( multifab_remote(state(n), i) ) cycle
              dgtp   => dataptr(delta_gamma1_term(n), i)
              dgp    => dataptr(delta_gamma1(n), i)
@@ -186,7 +185,6 @@ contains
              end select
           end do
        enddo
-
 
        ! fill ghostcells for delta_gamma1_term again, since it was just updated
        if (nlevs .eq. 1) then

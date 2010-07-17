@@ -191,7 +191,7 @@ subroutine varden()
      print *, 'number of dimensions = ', dm
      do n = 1, nlevs
         print *, 'level: ', n
-        print *, '   number of boxes = ', uold(n)%nboxes
+        print *, '   number of boxes = ', nboxes(uold(n))
         print *, '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
      end do
      print *, ''
@@ -226,8 +226,8 @@ subroutine varden()
   allocate(normal(nlevs))
 
   do n = 1,nlevs
-     call multifab_build(      unew(n), mla%la(n),    dm, uold(n)%ng)
-     call multifab_build(      snew(n), mla%la(n), nscal, sold(n)%ng)
+     call multifab_build(      unew(n), mla%la(n),    dm, nghost(uold(n)))
+     call multifab_build(      snew(n), mla%la(n), nscal, nghost(sold(n)))
      call multifab_build(    sponge(n), mla%la(n),     1, 0)
      call multifab_build(     hgrhs(n), mla%la(n),     1, 0, nodal)
      if (dm .eq. 3) then
@@ -389,8 +389,8 @@ subroutine varden()
 
   do n = 1,nlevs
      ! This is done to impose any Dirichlet bc's on unew or snew.
-     call multifab_copy_c(unew(n),1,uold(n),1,dm   ,uold(n)%ng)
-     call multifab_copy_c(snew(n),1,sold(n),1,nscal,uold(n)%ng)
+     call multifab_copy_c(unew(n),1,uold(n),1,dm   ,nghost(uold(n)))
+     call multifab_copy_c(snew(n),1,sold(n),1,nscal,nghost(uold(n)))
   end do
 
   if (restart < 0) then 
@@ -715,8 +715,8 @@ subroutine varden()
            call init_multilevel(sold)
 
            do n = 1,nlevs
-              call multifab_build(      unew(n),    mla%la(n),    dm, uold(n)%ng)
-              call multifab_build(      snew(n),    mla%la(n), nscal, sold(n)%ng)
+              call multifab_build(      unew(n),    mla%la(n),    dm, nghost(uold(n)))
+              call multifab_build(      snew(n),    mla%la(n), nscal, nghost(sold(n)))
               call multifab_build(    sponge(n),    mla%la(n),     1, 0)
               call multifab_build(     hgrhs(n),    mla%la(n),     1, 0, nodal)
               call multifab_build(Source_new(n),    mla%la(n),     1, 1)
@@ -931,8 +931,8 @@ subroutine varden()
         !---------------------------------------------------------------------
 
         do n = 1,nlevs
-           call multifab_copy_c(uold(n),      1,unew(n),      1,dm,   uold(n)%ng)
-           call multifab_copy_c(sold(n),      1,snew(n),      1,nscal,uold(n)%ng)
+           call multifab_copy_c(uold(n),      1,unew(n),      1,dm,   nghost(uold(n)))
+           call multifab_copy_c(sold(n),      1,snew(n),      1,nscal,nghost(uold(n)))
            call multifab_copy_c(Source_old(n),1,Source_new(n),1,1)
         end do
 

@@ -28,13 +28,13 @@ contains
 
     type(bl_prof_timer), save :: bpt
     
-    ng = s%ng
+    ng = nghost(s)
 
     if (ng == 0) return
 
     call build(bpt, "multifab_physbc")
     
-    do i=1,s%nboxes
+    do i=1,nboxes(s)
        if ( multifab_remote(s,i) ) cycle
        sp => dataptr(s,i)
        lo = lwb(get_box(s,i))

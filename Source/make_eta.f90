@@ -64,7 +64,7 @@ contains
 
     call build(bpt, "make_etarho")
 
-    ng_e = etarhoflux(1)%ng
+    ng_e = nghost(etarhoflux(1))
 
     ncell           = ZERO
     etarhosum_proc  = ZERO
@@ -295,19 +295,19 @@ contains
 
     ! construct a multifab containing  [ rho' (U dot e_r) ] 
     ! and another containing [ rho' ]
-    ng_so = sold(1)%ng
-    ng_sn = snew(1)%ng
-    ng_um = umac(1,1)%ng
-    ng_n  = normal(1)%ng
-    ng_wm = w0mac(1,1)%ng
+    ng_so = nghost(sold(1))
+    ng_sn = nghost(snew(1))
+    ng_um = nghost(umac(1,1))
+    ng_n  = nghost(normal(1))
+    ng_wm = nghost(w0mac(1,1))
 
     do n=1,nlevs
 
-       call multifab_build(     eta_cart(n), sold(n)%la, 1, 1)
+       call multifab_build( eta_cart(n), get_layout(sold(n)), 1, 1)
 
-       ng_e = eta_cart(n)%ng
+       ng_e = nghost(eta_cart(n))
 
-       do i=1,eta_cart(n)%nboxes
+       do i=1, nboxes(eta_cart(n))
           if ( multifab_remote(eta_cart(n),i) ) cycle
           ep  => dataptr(eta_cart(n), i)
           sop => dataptr(sold(n), i)

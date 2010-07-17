@@ -41,11 +41,11 @@ contains
 
     call build(bpt, "make_gamma")
 
-    ng_g = gamma(1)%ng
-    ng_s = s(1)%ng
+    ng_g = nghost(gamma(1))
+    ng_s = nghost(s(1))
 
     do n = 1, nlevs
-       do i = 1, s(n)%nboxes
+       do i = 1, nboxes(s(n))
           if ( multifab_remote(s(n), i) ) cycle
           gamp => dataptr(gamma(n), i)
           sp   => dataptr(s(n), i)

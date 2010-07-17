@@ -297,11 +297,11 @@ contains
 
     call build(bpt, "make_thermal_coeffs")
 
-    ng_s = s(1)%ng
-    ng_T = Tcoeff(1)%ng
-    ng_h = hcoeff(1)%ng
-    ng_X = Xkcoeff(1)%ng
-    ng_p = pcoeff(1)%ng
+    ng_s = nghost(s(1))
+    ng_T = nghost(Tcoeff(1))
+    ng_h = nghost(hcoeff(1))
+    ng_X = nghost(Xkcoeff(1))
+    ng_p = nghost(pcoeff(1))
 
     ! create Tcoeff = -kth, 
     !        hcoeff = -kth/cp, 
@@ -310,7 +310,7 @@ contains
     do n=1,nlevs
        if (parallel_IOProcessor()) write (6, 999) n
 
-       do i=1,s(n)%nboxes
+       do i=1,nboxes(s(n))
           if (multifab_remote(s(n),i)) cycle
           sp       => dataptr(s(n),i)
           Tcoeffp  => dataptr(Tcoeff(n),i)

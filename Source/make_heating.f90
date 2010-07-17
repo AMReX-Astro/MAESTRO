@@ -37,12 +37,12 @@ contains
 
     call build(bpt, "get_rho_Hext")
 
-    ng_s = s(1)%ng
-    ng_h = rho_Hext(1)%ng
+    ng_s = nghost(s(1))
+    ng_h = nghost(rho_Hext(1))
 
     do n=1,nlevs
 
-       do i = 1, s(n)%nboxes
+       do i = 1, nboxes(s(n))
           if ( multifab_remote(s(n), i) ) cycle
           sp => dataptr(s(n) , i)
           hp => dataptr(rho_Hext(n) , i)

@@ -99,10 +99,10 @@ contains
     integer :: i,n,ng_sp
     integer :: lo(dm),hi(dm)
 
-    ng_sp = sponge(1)%ng
+    ng_sp = nghost(sponge(1))
 
     do n=1,nlevs
-       do i = 1, sponge(n)%nboxes
+       do i = 1, nboxes(sponge(n))
           if ( multifab_remote(sponge(n), i) ) cycle
           sp => dataptr(sponge(n), i)
           lo =  lwb(get_box(sponge(n), i))

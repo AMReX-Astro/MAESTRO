@@ -67,7 +67,7 @@ contains
     use fundamental_constants_module, only: Gconst
 
     use fab_module, only: lwb, upb
-    use multifab_module, only: multifab, multifab_build, destroy, &
+    use multifab_module, only: multifab, multifab_build, destroy, nghost, nboxes, &
                                multifab_remote, dataptr, setval, get_box
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_tower
@@ -240,13 +240,13 @@ contains
 
     endif
 
-    ng_s = s(1)%ng
-    ng_u = u(1)%ng
-    ng_n = normal(1)%ng
-    ng_w = w0r_cart(1)%ng
-    ng_wm = w0mac(1,1)%ng
-    ng_rhn = rho_Hnuc(1)%ng
-    ng_rhe = rho_Hext(1)%ng
+    ng_s   = nghost(s(1))
+    ng_u   = nghost(u(1))
+    ng_n   = nghost(normal(1))
+    ng_w   = nghost(w0r_cart(1))
+    ng_wm  = nghost(w0mac(1,1))
+    ng_rhn = nghost(rho_Hnuc(1))
+    ng_rhe = nghost(rho_Hext(1))
 
     !=========================================================================
     ! initialize
@@ -348,7 +348,7 @@ contains
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
        !----------------------------------------------------------------------
-       do i = 1, s(n)%nboxes
+       do i = 1, nboxes(s(n))
           if ( multifab_remote(s(n), i) ) cycle
           sp => dataptr(s(n) , i)
           rhnp => dataptr(rho_Hnuc(n), i)

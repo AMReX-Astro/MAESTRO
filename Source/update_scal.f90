@@ -53,15 +53,15 @@ contains
 
     call build(bpt, "update_scal")
 
-    ng_so = sold(1)%ng
-    ng_sn = snew(1)%ng
-    ng_sf = sflux(1,1)%ng ! note we are assuming that ng is the same for all directions
-    ng_f  = scal_force(1)%ng
-    ng_p  = p0_new_cart(1)%ng
+    ng_so = nghost(sold(1))
+    ng_sn = nghost(snew(1))
+    ng_sf = nghost(sflux(1,1))
+    ng_f  = nghost(scal_force(1))
+    ng_p  = nghost(p0_new_cart(1))
 
     do n=1,nlevs
 
-       do i = 1, sold(n)%nboxes
+       do i = 1, nboxes(sold(n))
           if ( multifab_remote(sold(n),i) ) cycle
           sop => dataptr(sold(n),i)
           snp => dataptr(snew(n),i)

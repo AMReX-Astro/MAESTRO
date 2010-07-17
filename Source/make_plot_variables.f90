@@ -28,10 +28,10 @@ contains
     integer :: lo(dm), hi(dm), ng_s, ng_c
     integer :: i
 
-    ng_s = state%ng
-    ng_c = plotdata%ng
+    ng_s = nghost(state)
+    ng_c = nghost(plotdata)
 
-    do i = 1, state%nboxes
+    do i = 1, nboxes(state)
        if (multifab_remote(state, i)) cycle
        sp => dataptr(state,i)
        cp => dataptr(plotdata,i)
@@ -203,12 +203,12 @@ contains
     ncell_proc(:) = 0.d0
     pisum_proc(:) = 0.d0
 
-    ng_pn = pi(1)%ng
-    ng_pc = pi_cc(1)%ng
+    ng_pn = nghost(pi(1))
+    ng_pc = nghost(pi_cc(1))
 
     do n=1,nlevs
        weight = 2.d0**(dm*(n-1))
-       do i=1,pi_cc(n)%nboxes
+       do i=1,nboxes(pi_cc(n))
           if ( multifab_remote(pi_cc(n), i) ) cycle
           ppn => dataptr(pi(n), i)
           ppc => dataptr(pi_cc(n), i)
@@ -398,10 +398,10 @@ contains
     integer :: lo(dm),hi(dm),ng_s,ng_p
     integer :: i
 
-    ng_s = state%ng
-    ng_p = plotdata%ng
+    ng_s = nghost(state)
+    ng_p = nghost(plotdata)
 
-    do i = 1, state%nboxes
+    do i = 1, nboxes(state)
        if ( multifab_remote(state, i) ) cycle
        sp => dataptr(state, i)
        tp => dataptr(plotdata, i)
@@ -669,10 +669,10 @@ contains
     integer :: lo(dm),hi(dm),i
     integer :: ng_p,ng_s
 
-    ng_p = plotdata%ng
-    ng_s = s%ng
+    ng_p = nghost(plotdata)
+    ng_s = nghost(s)
 
-    do i = 1, s%nboxes
+    do i = 1, nboxes(s)
        if ( multifab_remote(s, i) ) cycle
        tp => dataptr(plotdata, i)
        sp => dataptr(s, i)
@@ -1025,10 +1025,10 @@ contains
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     integer                  :: lo(dm),hi(dm),ng_p,n,i
 
-    ng_p = plotdata(1)%ng
+    ng_p = nghost(plotdata(1))
 
     do n=1,nlevs
-       do i = 1, plotdata(n)%nboxes
+       do i = 1, nboxes(plotdata(n))
           if ( multifab_remote(plotdata(n), i) ) cycle
           tp => dataptr(plotdata(n), i)
           lo =  lwb(get_box(plotdata(n), i))
@@ -1162,9 +1162,9 @@ contains
     integer :: lo(dm),hi(dm)
     integer :: i,ng_p
 
-    ng_p = plotdata%ng
+    ng_p = nghost(plotdata)
 
-    do i = 1, plotdata%nboxes
+    do i = 1, nboxes(plotdata)
        if ( multifab_remote(plotdata, i) ) cycle
        tp => dataptr(plotdata, i)
        lo =  lwb(get_box(plotdata, i))
@@ -1257,9 +1257,9 @@ contains
     integer                  :: lo(dm),hi(dm)
     integer                  :: i,ng_w0,ng_dw
 
-    ng_dw = divw0%ng
+    ng_dw = nghost(divw0)
 
-    do i=1,divw0%nboxes
+    do i=1,nboxes(divw0)
        if ( multifab_remote(divw0, i) ) cycle
        dwp => dataptr(divw0, i)
        lo = lwb(get_box(divw0, i))
@@ -1271,7 +1271,7 @@ contains
           call make_divw0_2d(w0, dwp(:,:,1,comp_divw0), ng_dw, lo, hi, dx)
        case (3)
           if(spherical .eq. 1) then
-             ng_w0 = w0mac(1)%ng
+             ng_w0 = nghost(w0mac(1))
              w0xp => dataptr(w0mac(1), i)
              w0yp => dataptr(w0mac(2), i)
              w0zp => dataptr(w0mac(3), i)
@@ -1379,10 +1379,10 @@ contains
 
     call build(bpt, "make_vort")
 
-    ng_u = u%ng
-    ng_v = vort%ng
+    ng_u = nghost(u)
+    ng_v = nghost(vort)
 
-    do i = 1, u%nboxes
+    do i = 1, nboxes(u)
        if ( multifab_remote(u, i) ) cycle
        up => dataptr(u, i)
        vp => dataptr(vort, i)
@@ -2052,11 +2052,11 @@ contains
     integer :: lo(dm),hi(dm),ng_p,ng_s,ng_u,ng_w
     integer :: i
 
-    ng_s = s%ng
-    ng_u = u%ng
-    ng_p = plotdata%ng
+    ng_s = nghost(s)
+    ng_u = nghost(u)
+    ng_p = nghost(plotdata)
 
-    do i = 1, u%nboxes
+    do i = 1, nboxes(u)
        if ( multifab_remote(u, i) ) cycle
        pp => dataptr(plotdata, i)
        sp => dataptr(s, i)
@@ -2075,7 +2075,7 @@ contains
              wxp => dataptr(w0mac(1), i)
              wyp => dataptr(w0mac(2), i)
              wzp => dataptr(w0mac(3), i)
-             ng_w = w0mac(1)%ng
+             ng_w = nghost(w0mac(1))
              call makemagvel_3d_sphr(pp(:,:,:,comp_magvel),pp(:,:,:,comp_mom),ng_p, &
                                      sp(:,:,:,rho_comp),ng_s,up(:,:,:,:),ng_u, &
                                      wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w,lo,hi)
@@ -2216,16 +2216,16 @@ contains
     integer :: lo(dm),hi(dm),ng_p,ng_u,ng_n,ng_w
     integer :: i
 
-    ng_u = u%ng
-    ng_p = plotdata%ng
-    ng_n = normal%ng
-    ng_w = w0r_cart%ng
+    ng_u = nghost(u)
+    ng_p = nghost(plotdata)
+    ng_n = nghost(normal)
+    ng_w = nghost(w0r_cart)
 
     if (spherical .ne. 1) then
        call bl_error("unable to create radial and circumferential velocity -- not spherical geometry")
     endif
 
-    do i = 1, u%nboxes
+    do i = 1, nboxes(u)
 
        if ( multifab_remote(u, i) ) cycle
 

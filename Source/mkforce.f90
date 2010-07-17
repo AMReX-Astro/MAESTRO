@@ -74,9 +74,9 @@ contains
 
     call build(bpt, "mk_vel_force")
 
-    ng_s = s(1)%ng
-    ng_f = vel_force(1)%ng
-    ng_gp = gpi(1)%ng
+    ng_s  = nghost(s(1))
+    ng_f  = nghost(vel_force(1))
+    ng_gp = nghost(gpi(1))
 
     ! put w0 on cart both cell-centered and on edges
     if (spherical .eq. 1) then
@@ -95,8 +95,8 @@ contains
           
        enddo       
    
-       ng_wm = w0mac(1,1)%ng
-       ng_wc = w0_cart(1)%ng
+       ng_wm = nghost(w0mac(1,1))
+       ng_wc = nghost(w0_cart(1))
 
        if (evolve_base_state) then
           ! fill the edge-centered w0mac
@@ -110,7 +110,7 @@ contains
     endif
 
     do n=1,nlevs
-       do i=1,s(n)%nboxes
+       do i=1,nboxes(s(n))
           if ( multifab_remote(s(n), i) ) cycle
           fp  => dataptr(vel_force(n),i)
           gpp => dataptr(gpi(n),i)
@@ -125,10 +125,10 @@ contains
              call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp,rp(:,:,1,index_rho), &
                                   ng_s,rho0(n,:),grav(n,:),lo,hi)
           case (3)
-             ng_uo = uold(1)%ng
+             ng_uo = nghost(uold(1))
              uop => dataptr(uold(n),i)
 
-             ng_um = umac(1,1)%ng
+             ng_um = nghost(umac(1,1))
              ump => dataptr(umac(n,1),i)
              vmp => dataptr(umac(n,2),i)
              wmp => dataptr(umac(n,3),i)
@@ -531,10 +531,10 @@ contains
 
     call build(bpt, "add_w0_force")
 
-    ng_f = vel_force(1)%ng
+    ng_f = nghost(vel_force(1))
 
     do n=1,nlevs
-       do i=1,vel_force(n)%nboxes
+       do i=1,nboxes(vel_force(n))
           if ( multifab_remote(vel_force(n), i) ) cycle
           fp => dataptr(vel_force(n),i)
           lo = lwb(get_box(vel_force(n),i))
@@ -546,7 +546,7 @@ contains
              call add_w0_force_2d(fp(:,:,1,:),ng_f,w0_force(n,:),lo,hi)
           case (3)
              if (spherical .eq. 1) then
-                ng_w = w0_force_cart(1)%ng
+                ng_w = nghost(w0_force_cart(1))
                 w0p => dataptr(w0_force_cart(n), i)
                 call add_w0_force_3d_sphr(fp(:,:,:,:),ng_f,w0p(:,:,:,:),ng_w,lo,hi)
              else
