@@ -243,7 +243,7 @@ contains
        ! this even includes the empty spaces if there are gaps between grids
        do n=1,nlevs
           boundingbox(n) = get_box(mf(n),1)
-          do i=2, mf(n)%nboxes
+          do i=2, nboxes(mf(n))
              boundingbox(n) = box_bbox(boundingbox(n),get_box(mf(n),i))
           end do
        end do

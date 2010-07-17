@@ -225,7 +225,7 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(s1(n),            mla%la(n), nscal, sold(n)%ng)
+       call multifab_build(s1(n),            mla%la(n), nscal, nghost(sold(n)))
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
        call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
     end do
@@ -465,10 +465,10 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(s2(n), mla%la(n), nscal, sold(n)%ng)
+       call multifab_build(s2(n), mla%la(n), nscal, nghost(sold(n)))
        ! copy temperature into s2 for seeding eos calls only
        ! temperature will be overwritten later after enthalpy advance
-       call multifab_copy_c(s2(n), temp_comp, s1(n), temp_comp, 1, sold(n)%ng)
+       call multifab_copy_c(s2(n), temp_comp, s1(n), temp_comp, 1, nghost(sold(n)))
     end do
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -610,7 +610,7 @@ contains
 
     ! pass temperature through for seeding the temperature update eos call
     do n=1,nlevs
-       call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,sold(n)%ng)
+       call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,nghost(sold(n)))
     end do
 
     ! now update temperature
@@ -624,8 +624,8 @@ contains
        ! make a copy of s2star since these are needed to compute
        ! coefficients in the call to thermal_conduct_full_alg
        do n=1,nlevs
-          call multifab_build(s2star(n), mla%la(n), nscal, sold(n)%ng)
-          call multifab_copy_c(s2star(n), 1, s2(n), 1, nscal, sold(n)%ng)
+          call multifab_build(s2star(n), mla%la(n), nscal, nghost(sold(n)))
+          call multifab_copy_c(s2star(n), 1, s2(n), 1, nscal, nghost(sold(n)))
        end do
 
     end if
@@ -926,10 +926,10 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(s2(n), mla%la(n), nscal, sold(n)%ng)
+       call multifab_build(s2(n), mla%la(n), nscal, nghost(sold(n)))
        ! copy temperature into s2 for seeding eos calls only
        ! temperature will be overwritten later after enthalpy advance
-       call multifab_copy_c(s2(n), temp_comp, s1(n), temp_comp, 1, sold(n)%ng)
+       call multifab_copy_c(s2(n), temp_comp, s1(n), temp_comp, 1, nghost(sold(n)))
 
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
@@ -1095,7 +1095,7 @@ contains
 
     ! pass temperature through for seeding the temperature update eos call
     do n=1,nlevs
-       call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,sold(n)%ng)
+       call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,nghost(sold(n)))
     end do
 
     ! now update temperature

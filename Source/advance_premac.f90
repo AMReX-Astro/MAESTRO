@@ -51,7 +51,7 @@ contains
     call build(bpt, "advance_premac")
 
     do n=1,nlevs
-       call multifab_build(force(n),uold(n)%la,dm,1)
+       call multifab_build(force(n),get_layout(uold(n)),dm,1)
     end do
 
     !*************************************************************

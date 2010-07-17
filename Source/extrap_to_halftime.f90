@@ -37,13 +37,13 @@ contains
     integer :: lo(dm),hi(dm),ng_h,ng_o,ng_dS
     integer :: i,n
       
-    ng_h = Source_nph(1)%ng
-    ng_o = Source_old(1)%ng
-    ng_dS = dSdt(1)%ng
+    ng_h  = nghost(Source_nph(1))
+    ng_o  = nghost(Source_old(1))
+    ng_dS = nghost(dSdt(1))
 
     do n = 1, nlevs
 
-       do i = 1, Source_nph(n)%nboxes
+       do i = 1, nboxes(Source_nph(n))
           if ( multifab_remote(Source_nph(n), i) ) cycle
           Snphp => dataptr(Source_nph(n), i)
           Soldp => dataptr(Source_old(n), i)

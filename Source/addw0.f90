@@ -35,11 +35,11 @@ contains
 
     call build(bpt, "addw0")
 
-    ng_um = umac(1,1)%ng    ! here we are assuming all components have the 
-                            ! same # of ghostcells
+    ng_um = nghost(umac(1,1)) ! here we are assuming all components have the 
+                              ! same # of ghostcells
 
     do n = 1, nlevs
-       do i = 1, umac(n,dm)%nboxes
+       do i = 1, nboxes(umac(n,dm))
           if ( multifab_remote(umac(n,dm), i) ) cycle
           wmp  => dataptr(umac(n,dm), i)
           lo =  lwb(get_box(umac(n,dm), i))
@@ -59,7 +59,7 @@ contains
                 w0xp  => dataptr(w0mac(n,1), i)
                 w0yp  => dataptr(w0mac(n,2), i)
                 w0zp  => dataptr(w0mac(n,3), i)
-                ng_w0 = w0mac(n,1)%ng
+                ng_w0 = nghost(w0mac(n,1))
                 call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
                                    w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_w0, &
                                    lo,hi,mult)

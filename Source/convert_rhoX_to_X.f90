@@ -90,7 +90,7 @@ contains
              ! note that multifab_fill_boundary and multifab_physbc are called for
              ! both levels n-1 and n
              call multifab_fill_ghost_cells(s(n),s(n-1), &
-                                            s(n)%ng,mla%mba%rr(n-1,:), &
+                                            nghost(s(n)),mla%mba%rr(n-1,:), &
                                             the_bc_level(n-1),the_bc_level(n), &
                                             comp,bc_comp,1,fill_crse_input=.false.)
           end do
@@ -168,7 +168,7 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(s(n),s(n-1), &
-                                         s(n)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(s(n)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
                                          rhoh_comp,bc_comp,1,fill_crse_input=.false.)
        end do

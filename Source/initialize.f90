@@ -81,6 +81,8 @@ contains
     type(multifab), allocatable :: gamma1(:)
     type(multifab), allocatable :: normal(:)
 
+    type(layout) :: la
+
     real(dp_t), allocatable :: psi_temp(:,:)
     real(dp_t), allocatable :: etarho_cc_temp(:,:)
     real(dp_t), allocatable :: etarho_ec_temp(:,:)
@@ -143,31 +145,36 @@ contains
        call multifab_copy_c( uold(n),1,chkdata(n),1                ,dm)
        call multifab_copy_c( sold(n),1,chkdata(n),rho_comp+dm      ,nscal)
        call multifab_copy_c(  gpi(n),1,chkdata(n),rho_comp+dm+nscal,dm)
-       call destroy(chkdata(n)%la)
+       la = get_layout(chkdata(n))
+       call destroy(la)
        call destroy(chkdata(n))
     end do
     
     do n=1,nlevs
-       call multifab_copy_c(pi(n),1,chk_p(n),1,1)       
-       call destroy(chk_p(n)%la)
+       call multifab_copy_c(pi(n),1,chk_p(n),1,1)
+       la = get_layout(chk_p(n))
+       call destroy(la)
        call destroy(chk_p(n))
     end do
     
     do n=1,nlevs
        call multifab_copy_c(dSdt(n),1,chk_dsdt(n),1,1)
-       call destroy(chk_dsdt(n)%la)
+       la = get_layout(chk_dsdt(n))
+       call destroy(la)
        call destroy(chk_dsdt(n))
     end do
     
     do n=1,nlevs
        call multifab_copy_c(Source_old(n),1,chk_src_old(n),1,1)
-       call destroy(chk_src_old(n)%la)
+       la = get_layout(chk_src_old(n))
+       call destroy(la)
        call destroy(chk_src_old(n))
     end do
 
     do n=1,nlevs
        call multifab_copy_c(Source_new(n),1,chk_src_new(n),1,1)
-       call destroy(chk_src_new(n)%la)
+       la = get_layout(chk_src_new(n))
+       call destroy(la)
        call destroy(chk_src_new(n))
     end do
     
@@ -178,20 +185,23 @@ contains
 
     do n=1,nlevs
        call multifab_copy_c(rho_omegadot2(n),1,chk_rho_omegadot2(n),1,nspec)
-       call destroy(chk_rho_omegadot2(n)%la)
+       la = get_layout(chk_rho_omegadot2(n))
+       call destroy(la)
        call destroy(chk_rho_omegadot2(n))
     end do
 
     do n=1,nlevs
        call multifab_copy_c(rho_Hnuc2(n),1,chk_rho_Hnuc2(n),1,1)
-       call destroy(chk_rho_Hnuc2(n)%la)
+       la = get_layout(chk_rho_Hnuc2(n))
+       call destroy(la)
        call destroy(chk_rho_Hnuc2(n))
     end do
 
     if (plot_Hext) then
        do n=1,nlevs
           call multifab_copy_c(rho_Hext(n),1,chk_rho_Hext(n),1,1)
-          call destroy(chk_rho_Hext(n)%la)
+          la = get_layout(chk_rho_Hext(n))
+          call destroy(la)
           call destroy(chk_rho_Hext(n))
        end do
        deallocate(chk_rho_Hext)
@@ -200,7 +210,8 @@ contains
     if (use_thermal_diffusion) then
        do n=1,nlevs
           call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,1)
-          call destroy(chk_thermal2(n)%la)
+          la = get_layout(chk_thermal2(n))
+          call destroy(la)
           call destroy(chk_thermal2(n))
        end do
        deallocate(chk_thermal2)
@@ -238,7 +249,7 @@ contains
        nr_fine = int(max_dist / dr_fine) + 1
 
        ! compute nr_irreg
-       domain = layout_get_pd(sold(nlevs)%la)
+       domain = get_pd(get_layout(sold(nlevs)))
        domhi  = upb(domain)+1
        if (.not. octant) then
           nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
@@ -308,12 +319,12 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(uold(n),uold(n-1), &
-                                         uold(n)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(uold(n)),mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
                                          1,1,dm,fill_crse_input=.false.)
           call multifab_fill_ghost_cells(sold(n),sold(n-1), &
-                                         sold(n)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(sold(n)),mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
                                          rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
@@ -408,7 +419,7 @@ contains
        nr_fine = int(max_dist / dr_fine) + 1
        
        ! compute nr_irreg
-       domain = layout_get_pd(sold(nlevs)%la)
+       domain = get_pd(get_layout(sold(nlevs)))
        domhi  = upb(domain)+1
        if (.not. octant) then
           nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
@@ -686,7 +697,7 @@ contains
        nr_fine = int(max_dist / dr_fine) + 1
 
        ! compute nr_irreg
-       domain = layout_get_pd(sold(nlevs)%la)
+       domain = get_pd(get_layout(sold(nlevs)))
        domhi  = upb(domain)+1
        if (.not.octant) then
           nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
@@ -936,7 +947,7 @@ contains
              do n=nl,2,-1
                 call ml_cc_restriction(sold(n-1),sold(n),mba%rr(n-1,:))
                 call multifab_fill_ghost_cells(sold(n),sold(n-1), &
-                                               sold(n)%ng,mba%rr(n-1,:), &
+                                               nghost(sold(n)),mba%rr(n-1,:), &
                                                the_bc_tower%bc_tower_array(n-1), &
                                                the_bc_tower%bc_tower_array(n), &
                                                rho_comp,dm+rho_comp,nscal, &
@@ -1031,7 +1042,7 @@ contains
     end do
 
     ! compute nr_irreg
-    domain = layout_get_pd(sold(nlevs)%la)
+    domain = get_pd(get_layout(sold(nlevs)))
     domhi  = upb(domain)+1
     if (.not. octant) then
        nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0

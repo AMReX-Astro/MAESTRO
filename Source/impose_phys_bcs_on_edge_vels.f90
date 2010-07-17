@@ -33,11 +33,11 @@ contains
 
     call build(bpt, "impose_phys_bcs_on_edges")
 
-    ng_ut = uedge(1,1)%ng
+    ng_ut = nghost(uedge(1,1))
 
     do n=1,nlevs
 
-       do i=1,u(n)%nboxes
+       do i=1,nboxes(u(n))
           if ( multifab_remote(u(n),i) ) cycle
           utp => dataptr(uedge(n,1),i)
           vtp => dataptr(uedge(n,2),i)

@@ -96,7 +96,7 @@ contains
 
     if (spherical .eq. 1) then
        do n=1,nlevs
-          call build(rho0_old_cart(n), sold(n)%la, 1, 1)
+          call build(rho0_old_cart(n), get_layout(sold(n)), 1, 1)
        end do
        call put_1d_array_on_cart(rho0_old,rho0_old_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
@@ -258,7 +258,7 @@ contains
 
     if (spherical .eq. 1) then
        do n=1,nlevs
-          call build(p0_new_cart(n), sold(n)%la, 1, 1)          
+          call build(p0_new_cart(n), get_layout(sold(n)), 1, 1)          
        end do
        call put_1d_array_on_cart(p0_new,p0_new_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_level,mla)

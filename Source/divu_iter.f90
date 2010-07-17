@@ -100,7 +100,7 @@ contains
     p0_minus_pthermbar = ZERO
 
     halfdt = HALF*dt
-    ng_s = sold(1)%ng
+    ng_s   = nghost(sold(1))
 
     do n = 1,nlevs
        call multifab_build(s1(n),            mla%la(n), nscal, ng_s)      

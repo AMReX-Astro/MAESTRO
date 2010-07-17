@@ -102,9 +102,9 @@ contains
 
     do n=1,nlevs
        do d=1,dm
-          call multifab_mult_mult_c(unew(n),d,div_coeff_3d(n),1,1,div_coeff_3d(n)%ng)
+          call multifab_mult_mult_c(unew(n),d,div_coeff_3d(n),1,1,nghost(div_coeff_3d(n)))
        end do
-       call multifab_div_div_c(rhohalf(n),1,div_coeff_3d(n),1,1,div_coeff_3d(n)%ng)
+       call multifab_div_div_c(rhohalf(n),1,div_coeff_3d(n),1,1,nghost(div_coeff_3d(n)))
     end do
 
     if (present(divu_rhs)) then
@@ -129,9 +129,9 @@ contains
 
     do n=1,nlevs
        do d=1,dm
-          call multifab_div_div_c(unew(n),d,div_coeff_3d(n),1,1,div_coeff_3d(n)%ng)
+          call multifab_div_div_c(unew(n),d,div_coeff_3d(n),1,1,nghost(div_coeff_3d(n)))
        end do
-       call multifab_mult_mult_c(rhohalf(n),1,div_coeff_3d(n),1,1,div_coeff_3d(n)%ng)
+       call multifab_mult_mult_c(rhohalf(n),1,div_coeff_3d(n),1,1,nghost(div_coeff_3d(n)))
     end do
 
     do n = 1, nlevs
@@ -211,14 +211,14 @@ contains
 
       call build(bpt, "create_uvec_for_projection")
   
-      ng_un = unew(1)%ng
-      ng_uo = uold(1)%ng
-      ng_rh = rhohalf(1)%ng
-      ng_gp = gpi(1)%ng
+      ng_un = nghost(unew(1))
+      ng_uo = nghost(uold(1))
+      ng_rh = nghost(rhohalf(1))
+      ng_gp = nghost(gpi(1))
   
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
-         do i = 1, unew(n)%nboxes
+         do i = 1, nboxes(unew(n))
             if ( multifab_remote(unew(n), i) ) cycle
             unp => dataptr(unew(n)     , i) 
             uop => dataptr(uold(n)     , i) 
@@ -459,12 +459,12 @@ contains
 
       call build(bpt, "mkgphi")
 
-      ng_p = phi(1)%ng
-      ng_gp = gphi(1)%ng
+      ng_p  = nghost(phi(1))
+      ng_gp = nghost(gphi(1))
 
       do n = 1, nlevs
 
-         do i = 1, phi(n)%nboxes
+         do i = 1, nboxes(phi(n))
             if ( multifab_remote(phi(n),i) ) cycle
             gph => dataptr(gphi(n),i)
             pp  => dataptr(phi(n),i)
@@ -602,17 +602,17 @@ contains
 
       call build(bpt, "hg_update")
 
-      ng_un = unew(1)%ng
-      ng_uo = uold(1)%ng
-      ng_gp = gpi(1)%ng
-      ng_gh = gphi(1)%ng
-      ng_rh = rhohalf(1)%ng
-      ng_p = pi(1)%ng
-      ng_h = phi(1)%ng
+      ng_un = nghost(unew(1))
+      ng_uo = nghost(uold(1))
+      ng_gp = nghost(gpi(1))
+      ng_gh = nghost(gphi(1))
+      ng_rh = nghost(rhohalf(1))
+      ng_p  = nghost(pi(1))
+      ng_h  = nghost(phi(1))
 
       do n = 1, nlevs
 
-         do i = 1, unew(n)%nboxes
+         do i = 1, nboxes(unew(n))
             if ( multifab_remote(unew(n),i) ) cycle
             upn => dataptr(unew(n),i)
             uon => dataptr(uold(n),i)
@@ -669,7 +669,7 @@ contains
             ! fill level n ghost cells using interpolation from level n-1 data
             ! note that multifab_fill_boundary and multifab_physbc are called for
             ! both levels n-1 and n
-            call multifab_fill_ghost_cells(unew(n),unew(n-1),unew(n)%ng,mla%mba%rr(n-1,:), &
+            call multifab_fill_ghost_cells(unew(n),unew(n-1),nghost(unew(n)),mla%mba%rr(n-1,:), &
                                            the_bc_level(n-1),the_bc_level(n),1,1,dm, &
                                            fill_crse_input=.false.)
             do i=1,dm
@@ -908,11 +908,11 @@ contains
       type(bc_level) :: bc
       real(kind=dp_t), pointer :: divp(:,:,:,:) 
 
-      ng_d = divu_rhs(1)%ng
+      ng_d = nghost(divu_rhs(1))
 
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
-         do i = 1, divu_rhs(n)%nboxes
+         do i = 1, nboxes(divu_rhs(n))
             if ( multifab_remote(divu_rhs(n), i) ) cycle
             divp => dataptr(divu_rhs(n)     , i)
             select case (dm)
@@ -1070,7 +1070,7 @@ contains
     if (parallel_IOProcessor()) print *, 'doing hgproject with tolerance, eps = ', eps
 
     if ( hg_bottom_solver >= 0 ) then
-        if (hg_bottom_solver == 4 .and. phi(1)%nboxes == 1) then
+        if (hg_bottom_solver == 4 .and. nboxes(phi(1)) == 1) then
            if (parallel_IOProcessor()) then
               print *,'Dont use hg_bottom_solver == 4 with only one grid -- '
               print *,'  Reverting to default bottom solver ',bottom_solver
@@ -1342,10 +1342,10 @@ contains
     real(kind=dp_t), pointer :: rp(:,:,:,:)
     integer :: i,ng_r,ng_c
 
-    ng_r = rho%ng
-    ng_c = coeffs%ng
+    ng_r = nghost(rho)
+    ng_c = nghost(coeffs)
 
-    do i = 1, rho%nboxes
+    do i = 1, nboxes(rho)
        if ( multifab_remote(rho, i) ) cycle
        rp => dataptr(rho   , i)
        cp => dataptr(coeffs, i)

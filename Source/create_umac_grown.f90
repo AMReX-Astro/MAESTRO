@@ -70,7 +70,7 @@ contains
     type(fgassoc)  :: fgasc
     type(boxarray) :: f_ba,c_ba,tba
     type(multifab) :: f_mf,c_mf,tcrse,tfine
-    type(layout)   :: f_la,c_la,tla
+    type(layout)   :: f_la,c_la,tla,fine_la
 
     real(kind=dp_t), pointer :: fp(:,:,:,:), cp(:,:,:,:)
 
@@ -87,7 +87,8 @@ contains
     end if
 
     ! Grab the cached boxarray of all ghost cells not covered by valid region.
-    fgasc = layout_fgassoc(fine(1)%la, 1)
+    fine_la = get_layout(fine(1))
+    fgasc = layout_fgassoc(fine_la, 1)
 
     call boxarray_build_copy(f_ba,fgasc%ba)
     call boxarray_build_copy(c_ba,fgasc%ba)
@@ -99,23 +100,23 @@ contains
 
     do i=1,dm
 
-       call build(f_la,f_ba,get_pd(fine(i)%la),get_pmask(fine(i)%la))
-       call build(c_la,c_ba,get_pd(crse(i)%la),get_pmask(crse(i)%la), &
+       call build(f_la,f_ba,get_pd(get_layout(fine(i))),get_pmask(get_layout(fine(i))))
+       call build(c_la,c_ba,get_pd(get_layout(crse(i))),get_pmask(get_layout(crse(i))), &
                   explicit_mapping=get_proc(f_la))
 
        ! Create c_mf and f_mf on the same proc.
-       call build(f_mf,f_la,1,0,fine(i)%nodal)
-       call build(c_mf,c_la,1,0,crse(i)%nodal)
+       call build(f_mf,f_la,1,0,nodal_flags(fine(i)))
+       call build(c_mf,c_la,1,0,nodal_flags(crse(i)))
 
        ! Update c_mf with valid and ghost regions from crse.
        call boxarray_build_copy(tba, get_boxarray(crse(i)))
        do j=1,nboxes(tba)
           call set_box(tba,j,grow(get_box(crse(i),j),1))
        end do
-       call build(tla, tba, get_pd(crse(i)%la), get_pmask(crse(i)%la), &
-                  explicit_mapping=get_proc(crse(i)%la))
+       call build(tla, tba, get_pd(get_layout(crse(i))), get_pmask(get_layout(crse(i))), &
+                  explicit_mapping = get_proc(get_layout(crse(i))))
        call destroy(tba)
-       call build(tcrse, tla, 1, 0, crse(i)%nodal)
+       call build(tcrse, tla, 1, 0, nodal_flags(crse(i)))
        do j=1,nboxes(tcrse)
           if ( remote(tcrse,j) ) cycle
           fp => dataptr(tcrse,  j)
@@ -128,8 +129,8 @@ contains
        call destroy(tcrse)
        call destroy(tla)
        
-       ng_f = f_mf%ng
-       ng_c = c_mf%ng
+       ng_f = nghost(f_mf)
+       ng_c = nghost(c_mf)
 
        ! Fill in some of the fine ghost cells from crse.
        do j=1,nboxes(f_mf)
@@ -172,10 +173,10 @@ contains
        do j = 1, nboxes(tba)
           call set_box(tba,j,grow(get_box(fine(i),j),1))
        end do
-       call build(tla, tba, get_pd(fine(i)%la), get_pmask(fine(i)%la), &
-                  explicit_mapping=get_proc(fine(i)%la))
+       call build(tla, tba, get_pd(get_layout(fine(i))), get_pmask(get_layout(fine(i))), &
+                  explicit_mapping=get_proc(get_layout(fine(i))))
        call destroy(tba)
-       call build(tfine, tla, 1, 0, fine(i)%nodal)
+       call build(tfine, tla, 1, 0, nodal_flags(fine(i)))
 
        call copy(tfine, f_mf)
 
@@ -196,12 +197,12 @@ contains
        call destroy(tfine)
        call destroy(tla)
 
-       ng_f = fine(1)%ng
+       ng_f = nghost(fine(1))
 
        call multifab_fill_boundary(fine(i))
 
        ! now fix up umac grown due to the low order interpolation we used
-       do j=1,fine(i)%nboxes
+       do j=1, nboxes(fine(i))
           if ( multifab_remote(fine(i), j) ) cycle
           fp => dataptr(fine(i), j)
           f_lo = lwb(get_box(fine(i), j))
@@ -758,11 +759,11 @@ contains
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
 
-    ng_um = umac(1,1)%ng
+    ng_um = nghost(umac(1,1))
 
     ! we only need to do this for fine levels
     do n=2,nlevs
-       do i=1,umac(n,1)%nboxes
+       do i=1, nboxes(umac(n,1))
           if ( multifab_remote(umac(n,1), i) ) cycle
           ump => dataptr(umac(n,1), i)
           vmp => dataptr(umac(n,2), i)

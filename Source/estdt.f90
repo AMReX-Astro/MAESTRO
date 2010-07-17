@@ -121,11 +121,11 @@ contains
 
     end if
 
-    ng_u = u(1)%ng
-    ng_s = s(1)%ng
-    ng_f = force(1)%ng
-    ng_dU = divU(1)%ng
-    ng_dS = dSdt(1)%ng
+    ng_u  = nghost(u(1))
+    ng_s  = nghost(s(1))
+    ng_f  = nghost(force(1))
+    ng_dU = nghost(divU(1))
+    ng_dS = nghost(dSdt(1))
 
     do n=1,nlevs
        
@@ -135,7 +135,7 @@ contains
        umax_grid    = 0.d0
        umax_proc    = 0.d0
 
-       do i = 1, u(n)%nboxes
+       do i = 1, nboxes(u(n))
           if ( multifab_remote(u(n), i) ) cycle
           uop   => dataptr(u(n), i)
           sop   => dataptr(s(n), i)
@@ -163,7 +163,7 @@ contains
                            dx(n,:), rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
           case (3)
              if (spherical .eq. 1) then
-                ng_w = w0mac(1,1)%ng
+                ng_w = nghost(w0mac(1,1))
                 wxp => dataptr(w0mac(n,1), i)
                 wyp => dataptr(w0mac(n,2), i)
                 wzp => dataptr(w0mac(n,3), i)

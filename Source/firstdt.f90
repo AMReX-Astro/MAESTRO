@@ -84,10 +84,10 @@ contains
        end do
     end do
 
-    ng_u  =     u(1)%ng
-    ng_s  =     s(1)%ng
-    ng_f  = force(1)%ng
-    ng_dU =  divU(1)%ng
+    ng_u  = nghost(u(1))
+    ng_s  = nghost(s(1))
+    ng_f  = nghost(force(1))
+    ng_dU = nghost(divU(1))
 
     do n=1,nlevs
 
@@ -96,7 +96,7 @@ contains
        umax_proc = 0.d0
        umax_grid = 0.d0
        
-       do i = 1, u(n)%nboxes
+       do i = 1, nboxes(u(n))
           if ( multifab_remote(u(n), i) ) cycle
           uop   => dataptr(u(n), i)
           sop   => dataptr(s(n), i)

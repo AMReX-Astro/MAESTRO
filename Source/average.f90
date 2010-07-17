@@ -96,7 +96,7 @@ contains
 
     end if
 
-    ng = phi(1)%ng
+    ng = nghost(phi(1))
 
     phibar       = ZERO
     ncell        = 0
@@ -111,7 +111,7 @@ contains
 
        do n=1,nlevs
 
-          domain = layout_get_pd(phi(n)%la)
+          domain = get_pd(get_layout(phi(n)))
           domlo  = lwb(domain)
           domhi  = upb(domain)
 
@@ -123,7 +123,7 @@ contains
              ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
           end if
 
-          do i=1,phi(n)%nboxes
+          do i=1, nboxes(phi(n))
              if ( multifab_remote(phi(n), i) ) cycle
              pp => dataptr(phi(n), i)
              lo =  lwb(get_box(phi(n), i))
@@ -166,7 +166,7 @@ contains
        ! bin in phisum.
        do n=nlevs,1,-1
 
-          do i=1,phi(n)%nboxes
+          do i=1, nboxes(phi(n))
              if ( multifab_remote(phi(n), i) ) cycle
              pp => dataptr(phi(n), i)
              lo =  lwb(get_box(phi(n), i))
@@ -411,7 +411,7 @@ contains
     end do
     radii(:,nr_irreg+1) = 1.d99
 
-    ng = phi(1)%ng
+    ng = nghost(phi(1))
 
     phibar_irreg = ZERO
     ncell        = 0
@@ -428,7 +428,7 @@ contains
     ! bin in phisum.
     do n=nlevs,1,-1
 
-       do i=1,phi(n)%nboxes
+       do i=1, nboxes(phi(n))
           if ( multifab_remote(phi(n), i) ) cycle
           pp => dataptr(phi(n), i)
           lo =  lwb(get_box(phi(n), i))
@@ -623,7 +623,7 @@ contains
 
     call build(bpt, "average_one_level")
 
-    ng = phi(1)%ng
+    ng = nghost(phi(1))
 
     phibar = ZERO
 
@@ -633,7 +633,7 @@ contains
 
     if (spherical .eq. 0) then
        
-       domain = layout_get_pd(phi(n)%la)
+       domain = get_pd(get_layout(phi(n)))
        domlo  = lwb(domain)
        domhi  = upb(domain)
 
@@ -645,7 +645,7 @@ contains
           ncell = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
        end if
 
-       do i=1,phi(n)%nboxes
+       do i=1, nboxes(phi(n))
           if ( multifab_remote(phi(n), i) ) cycle
           pp => dataptr(phi(n), i)
           lo =  lwb(get_box(phi(n), i))

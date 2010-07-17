@@ -47,11 +47,11 @@ contains
 
     call build(bpt, "put_1d_array_on_cart")
 
-    ng_s = s0_cart(1)%ng
+    ng_s = nghost(s0_cart(1))
     
     do n=1,nlevs
        
-       do i = 1, s0_cart(n)%nboxes
+       do i = 1, nboxes(s0_cart(n))
           if ( multifab_remote(s0_cart(n), i) ) cycle
           sp => dataptr(s0_cart(n), i)
           lo =  lwb(get_box(s0_cart(n), i))
@@ -612,15 +612,15 @@ contains
        call put_1d_array_on_cart(w0,w0_cart,1,.true.,.true.,dx,the_bc_level,mla)
     end if
 
-    ng_w0 = w0mac(1,1)%ng
-    ng_wc = w0_cart(1)%ng
+    ng_w0 = nghost(w0mac(1,1))
+    ng_wc = nghost(w0_cart(1))
 
     if (ng_w0 .ne. 1) then
        call bl_error('Error: make_w0mac_3d_sphr assumes one ghost cell')
     end if
     
     do n=1,nlevs
-       do i=1,w0mac(n,1)%nboxes
+       do i=1, nboxes(w0mac(n,1))
           if ( multifab_remote(w0mac(n,1), i) ) cycle
           w0xp => dataptr(w0mac(n,1), i)
           w0yp => dataptr(w0mac(n,2), i)
@@ -1005,15 +1005,15 @@ contains
        call put_1d_array_on_cart(s0,s0_cart,bccomp,.false.,.false.,dx,the_bc_level,mla)
     end if
 
-    ng_sm = s0mac(1,1)%ng
-    ng_s0 = s0_cart(1)%ng
+    ng_sm = nghost(s0mac(1,1))
+    ng_s0 = nghost(s0_cart(1))
 
     if (ng_sm .ne. 1) then
        call bl_error('Error: make_s0mac assumes one ghost cell in s0mac')
     end if
 
     do n=1,nlevs
-       do i=1,s0mac(n,1)%nboxes
+       do i=1, nboxes(s0mac(n,1))
           if ( multifab_remote(s0mac(n,1), i) ) cycle
           s0xp => dataptr(s0mac(n,1), i)
           s0yp => dataptr(s0mac(n,2), i)
@@ -1309,11 +1309,11 @@ contains
     integer             :: n,i,ng_n
     real(dp_t), pointer :: nop(:,:,:,:)
         
-    ng_n = normal(1)%ng
+    ng_n = nghost(normal(1))
 
     if (spherical .eq. 1) then
        do n = 1,nlevs
-          do i = 1, normal(n)%nboxes
+          do i = 1, nboxes(normal(n))
              if ( multifab_remote(normal(n), i) ) cycle
              nop => dataptr(normal(n), i)
              lo =  lwb(get_box(normal(n), i))
@@ -1389,12 +1389,12 @@ contains
 
     call build(bpt, "put_data_on_faces")
 
-    ng_c = ccfab(1)%ng
-    ng_b = beta(1,1)%ng
+    ng_c = nghost(ccfab(1))
+    ng_b = nghost(beta(1,1))
 
     ! setup beta = ccfab on faces
     do n=1,nlevs
-       do i=1,ccfab(n)%nboxes
+       do i=1, nboxes(ccfab(n))
           if (multifab_remote(ccfab(n),i)) cycle
           ccfabp => dataptr(ccfab(n),i)
           bxp   => dataptr(beta(n,1),i)
@@ -1659,7 +1659,7 @@ contains
 
     call build(bpt, "put_1d_array_on_cart")
 
-    ng_s = s0_cart(1)%ng
+    ng_s = nghost(s0_cart(1))
     
     ! radii contains every possible distance that a cell-center at the finest
     ! level can map into
@@ -1670,7 +1670,7 @@ contains
 
     do n=1,nlevs
        
-       do i = 1, s0_cart(n)%nboxes
+       do i = 1, nboxes(s0_cart(n))
           if ( multifab_remote(s0_cart(n), i) ) cycle
           sp => dataptr(s0_cart(n), i)
           lo =  lwb(get_box(s0_cart(n), i))
