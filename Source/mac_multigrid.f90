@@ -90,7 +90,7 @@ contains
     end if
 
     if ( mg_bottom_solver >= 0 ) then
-        if (mg_bottom_solver == 4 .and. phi(1)%nboxes == 1) then
+        if (mg_bottom_solver == 4 .and. nboxes(phi(1)) == 1) then
            if (parallel_IOProcessor()) then
               print *,'Dont use mg_bottom_solver == 4 with only one grid -- '
               print *,'  Reverting to default bottom solver ',bottom_solver
@@ -131,7 +131,7 @@ contains
           end if
        end if
 
-       pd = layout_get_pd(mla%la(n))
+       pd = get_pd(mla%la(n))
 
 !      if (dm .eq. 1) omega = 4.d0 / 3.d0
 
@@ -157,8 +157,7 @@ contains
                            abs_eps = abs_eps, &
                            verbose = mg_verbose, &
                            cg_verbose = cg_verbose, &
-                           nodal = rh(nlevs)%nodal)
-
+                           nodal = nodal_flags(rh(nlevs)))
     end do
 
     !! Fill coefficient array
@@ -170,11 +169,11 @@ contains
        la = mla%la(n)
 
        call multifab_build(cell_coeffs(mgt(n)%nlevels),la,1,1)
-       call multifab_copy_c(cell_coeffs(mgt(n)%nlevels),1,alpha(n),1, 1,ng=alpha(n)%ng)
+       call multifab_copy_c(cell_coeffs(mgt(n)%nlevels),1,alpha(n),1, 1,ng=nghost(alpha(n)))
 
        do d = 1, dm
           call multifab_build_edge(edge_coeffs(mgt(n)%nlevels,d),la,1,1,d)
-          call multifab_copy_c(edge_coeffs(mgt(n)%nlevels,d),1,beta(n,d),1,1,ng=beta(n,d)%ng)
+          call multifab_copy_c(edge_coeffs(mgt(n)%nlevels,d),1,beta(n,d),1,1,ng=nghost(beta(n,d)))
        end do
 
        if (n > 1) then
