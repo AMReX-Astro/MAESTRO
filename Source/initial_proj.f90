@@ -10,6 +10,10 @@
 
 module initial_proj_module
 
+  use bl_constants_module
+  use ml_layout_module
+  use define_bc_module
+
   implicit none
 
   private
@@ -22,8 +26,6 @@ contains
 
     use variables, only: foextrap_comp, rho_comp
     use network, only: nspec
-    use define_bc_module
-    use bl_constants_module
     use probin_module
     use geometry, only: spherical, nr_fine, nlevs, nlevs_radial
     use proj_parameters, only: initial_projection_comp
@@ -34,7 +36,6 @@ contains
     use fill_3d_module
     use hgproject_module
     use multifab_module
-    use ml_layout_module
     use heating_module
     use mg_eps_module, only: eps_init_proj_cart, eps_init_proj_sph
 
