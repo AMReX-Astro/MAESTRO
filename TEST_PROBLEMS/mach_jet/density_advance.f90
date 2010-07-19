@@ -31,7 +31,7 @@ contains
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
-    use probin_module, only: verbose, edge_nodal_flag
+    use probin_module, only: verbose
     use modify_scal_force_module
     use convert_rhoX_to_X_module
 
@@ -171,8 +171,7 @@ contains
        if (spherical .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
-                call multifab_build(rho0mac_old(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
+                call multifab_build_edge(rho0mac_old(n,comp),mla%la(n),1,1,comp)
              end do
           end do
 
@@ -208,10 +207,8 @@ contains
        if (spherical .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
-                call multifab_build(rho0mac_old(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
-                call multifab_build(rho0mac_new(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
+                call multifab_build_edge(rho0mac_old(n,comp),mla%la(n),1,1,comp)
+                call multifab_build_edge(rho0mac_new(n,comp),mla%la(n),1,1,comp)
              end do
           end do
 
