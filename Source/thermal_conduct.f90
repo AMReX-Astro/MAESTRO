@@ -9,8 +9,6 @@ module thermal_conduct_module
   use bl_constants_module
   use define_bc_module
   use ml_layout_module
-  use bndry_reg_module
-  use fill_3d_module
 
   implicit none
 
@@ -27,18 +25,21 @@ contains
   subroutine thermal_conduct(mla,dx,dt,s1,hcoeff1,Xkcoeff1,pcoeff1, &
                              hcoeff2,Xkcoeff2,pcoeff2,s2,p0_old,p0_new,the_bc_tower)
 
-    use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
-    use mac_multigrid_module
-    use mac_applyop_module
-    use network, only: nspec
-    use rhoh_vs_t_module
-    use probin_module, ONLY: thermal_diffusion_type, use_tfromp, edge_nodal_flag
     use bl_prof_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
-    use ml_restriction_module, only: ml_cc_restriction_c
-    use geometry, only: dm, nlevs
+    use bndry_reg_module
+    use mac_multigrid_module
+    use mac_applyop_module, only : mac_applyop
+    use rhoh_vs_t_module
     use make_explicit_thermal_module
+    use fill_3d_module       , only : put_1d_array_on_cart
+    use ml_restriction_module, only : ml_cc_restriction_c
+
+    use variables    , only : foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
+    use network      , only : nspec
+    use probin_module, only : thermal_diffusion_type, use_tfromp, edge_nodal_flag
+    use geometry     , only : dm, nlevs
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:),dt

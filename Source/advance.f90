@@ -1,5 +1,11 @@
 module advance_timestep_module
 
+  use bl_types
+  use bl_constants_module
+  use multifab_module
+  use ml_layout_module
+  use define_bc_module
+
   implicit none
 
   private
@@ -17,18 +23,14 @@ contains
                               dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
                               psi,sponge,hgrhs)
 
-    use bl_prof_module
-    use ml_layout_module
-    use bl_constants_module
-    use multifab_module
     use pre_advance_module
     use velocity_advance_module
     use density_advance_module
     use enthalpy_advance_module
     use macrhs_module
     use macproject_module
-    use hgrhs_module
     use hgproject_module
+    use hgrhs_module
     use proj_parameters
     use bc_module
     use box_util_module
@@ -50,13 +52,14 @@ contains
     use make_psi_module
     use fill_3d_module
     use cell_to_edge_module
-    use define_bc_module
     use make_gamma_module
     use rhoh_vs_t_module
     use probin_module
     use diag_module
     use enforce_HSE_module
     use mg_eps_module, only: eps_hg, eps_hg_min, hg_level_factor
+
+    use bl_prof_module
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -151,8 +154,6 @@ contains
     integer    :: n,comp,proj_type,numcell
     real(dp_t) :: halfdt
 
-    type(bl_prof_timer), save :: bpt
-
     real(kind=dp_t) :: advect_time, advect_time_start, advect_time_max
     real(kind=dp_t) :: proj_time,   proj_time_start,   proj_time_max
     real(kind=dp_t) :: react_time,  react_time_start,  react_time_max
@@ -160,6 +161,7 @@ contains
 
     real(kind=dp_t) :: eps
 
+    type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advance_timestep")
 

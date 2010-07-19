@@ -6,6 +6,11 @@
 
 module divu_iter_module
 
+  use bl_prof_module
+  use bl_constants_module
+  use ml_layout_module
+  use define_bc_module
+
   implicit none
 
   private
@@ -20,8 +25,6 @@ contains
 
     use variables, only: nscal, foextrap_comp, rho_comp
     use network, only: nspec
-    use define_bc_module
-    use bl_constants_module
     use probin_module
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use proj_parameters, only: divu_iters_comp
@@ -34,7 +37,6 @@ contains
     use hgproject_module
     use estdt_module
     use multifab_module
-    use ml_layout_module
     use make_w0_module
     use mg_eps_module, only: eps_divu_cart, eps_divu_sph, &
          divu_iter_factor, divu_level_factor

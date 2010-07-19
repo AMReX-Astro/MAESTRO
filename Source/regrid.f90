@@ -7,14 +7,6 @@ module regrid_module
   use restart_module
   use init_module
   use box_util_module
-  use make_new_grids_module
-  use fillpatch_module
-  use ml_prolongation_module
-  use multifab_physbc_module
-  use multifab_fill_ghost_module
-  use ml_restriction_module
-  use pert_form_module
-  use convert_rhoX_to_X_module
 
   implicit none
 
@@ -25,6 +17,15 @@ module regrid_module
 contains
 
   subroutine regrid(mla,uold,sold,gpi,pi,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart)
+
+    use fillpatch_module
+    use ml_prolongation_module
+    use multifab_physbc_module
+    use multifab_fill_ghost_module
+    use ml_restriction_module
+    use make_new_grids_module
+    use convert_rhoX_to_X_module
+    use pert_form_module
 
     use probin_module, only : verbose, nodal, pmask, &
          regrid_int, amr_buf_width, &
