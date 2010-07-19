@@ -23,7 +23,7 @@ contains
     use bl_constants_module
     use mk_vel_force_module
     use make_edge_scal_module
-    use probin_module, only: verbose, edge_nodal_flag
+    use probin_module, only: verbose
     use variables, only: rho_comp
     use geometry, only: dm, nlevs
 
@@ -88,7 +88,7 @@ contains
     
     do n=1,nlevs
        do comp=1,dm
-          call multifab_build(uedge(n,comp),mla%la(n),dm,0,nodal=edge_nodal_flag(comp,:))
+          call multifab_build_edge(uedge(n,comp),mla%la(n),dm,0,comp)
        end do
     end do
 
