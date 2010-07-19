@@ -19,7 +19,6 @@ contains
     use velpred_module
     use mkutrans_module
     use mk_vel_force_module
-    use probin_module, only: edge_nodal_flag
     use geometry, only: dm, nlevs
     use addw0_module
     use bl_constants_module
@@ -70,7 +69,7 @@ contains
 
     do n=1,nlevs
        do comp=1,dm
-          call multifab_build(utrans(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+          call multifab_build_edge(utrans(n,comp), mla%la(n),1,1,comp)
        end do
     end do
 
