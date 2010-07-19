@@ -125,7 +125,7 @@ contains
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, & 
                              plot_base, plot_omegadot, plot_Hext, plot_eta, &
-                             single_prec_plotfiles, 
+                             single_prec_plotfiles, &
                              do_smallscale, use_thermal_diffusion, &
                              evolve_base_state, prob_lo, prob_hi
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
