@@ -37,7 +37,7 @@ contains
 
     use variables    , only : foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
     use network      , only : nspec
-    use probin_module, only : thermal_diffusion_type, use_tfromp, edge_nodal_flag
+    use probin_module, only : thermal_diffusion_type, use_tfromp
     use geometry     , only : dm, nlevs
 
     type(ml_layout), intent(inout) :: mla
@@ -102,7 +102,7 @@ contains
 
     do n=1,nlevs
        do i = 1,dm
-          call multifab_build(rhsbeta(n,i), mla%la(n), 1, 1, nodal=edge_nodal_flag(i,:))
+          call multifab_build_edge(rhsbeta(n,i), mla%la(n), 1, 1, i)
        end do
     end do
 
@@ -314,7 +314,7 @@ contains
 
     do n=1,nlevs
        do i = 1,dm
-          call multifab_build(lhsbeta(n,i), mla%la(n), 1, 1, nodal=edge_nodal_flag(i,:))
+          call multifab_build_edge(lhsbeta(n,i), mla%la(n), 1, 1, i)
        end do
     end do
 

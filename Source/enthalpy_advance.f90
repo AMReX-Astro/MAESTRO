@@ -33,8 +33,7 @@ contains
     use geometry,      only: spherical, nr_fine, dm, r_start_coord, r_end_coord, &
          numdisjointchunks, nlevs, nlevs_radial
     use variables,     only: nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
-    use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, edge_nodal_flag, &
-         verbose
+    use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
@@ -278,12 +277,9 @@ contains
        if (spherical .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
-                call multifab_build(rho0mac_old(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
-                call multifab_build(rhoh0mac_old(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
-                call multifab_build(h0mac_old(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
+                call multifab_build_edge(rho0mac_old(n,comp),mla%la(n),1,1,comp)
+                call multifab_build_edge(rhoh0mac_old(n,comp),mla%la(n),1,1,comp)
+                call multifab_build_edge(h0mac_old(n,comp),mla%la(n),1,1,comp)
              end do
           end do
 
@@ -323,18 +319,12 @@ contains
        if (spherical .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
-                call multifab_build(rho0mac_old(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
-                call multifab_build(rhoh0mac_old(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
-                call multifab_build(h0mac_old(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
-                call multifab_build(rho0mac_new(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
-                call multifab_build(rhoh0mac_new(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
-                call multifab_build(h0mac_new(n,comp),mla%la(n),1,1, &
-                                    nodal=edge_nodal_flag(comp,:))
+                call multifab_build_edge( rho0mac_old(n,comp),mla%la(n),1,1,comp)
+                call multifab_build_edge(rhoh0mac_old(n,comp),mla%la(n),1,1,comp)
+                call multifab_build_edge(   h0mac_old(n,comp),mla%la(n),1,1,comp)
+                call multifab_build_edge( rho0mac_new(n,comp),mla%la(n),1,1,comp)
+                call multifab_build_edge(rhoh0mac_new(n,comp),mla%la(n),1,1,comp)
+                call multifab_build_edge(   h0mac_new(n,comp),mla%la(n),1,1,comp)
              end do
           end do
 

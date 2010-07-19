@@ -28,7 +28,7 @@ contains
     use geometry, only: dm, nlevs, spherical, nr_fine
     use variables, only: rel_eps, rho_comp
     use bl_constants_module
-    use probin_module, only: init_shrink, verbose, edge_nodal_flag
+    use probin_module, only: init_shrink, verbose
     use mk_vel_force_module
 
     type(ml_layout), intent(inout) :: mla
@@ -66,7 +66,7 @@ contains
        ! create an empty umac so we can call the vel force routine --
        ! this will not be used
        do comp=1,dm
-          call multifab_build(umac_dummy(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+          call multifab_build_edge(umac_dummy(n,comp), mla%la(n),1,1,comp)
           call setval(umac_dummy(n,comp), ZERO, all=.true.)
        end do
 

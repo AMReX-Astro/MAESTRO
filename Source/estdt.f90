@@ -35,7 +35,7 @@ contains
     use bl_constants_module
     use mk_vel_force_module
     use fill_3d_module
-    use probin_module, only: edge_nodal_flag, evolve_base_state
+    use probin_module, only: evolve_base_state
 
     type(ml_layout), intent(inout) :: mla
     type(bc_tower) , intent(in ) :: the_bc_tower
@@ -87,8 +87,7 @@ contains
        ! create an empty umac so we can call the vel force routine --
        ! this will not be used
        do comp=1,dm
-          call multifab_build(umac_dummy(n,comp), mla%la(n),1,1, &
-                              nodal=edge_nodal_flag(comp,:))
+          call multifab_build_edge(umac_dummy(n,comp), mla%la(n),1,1,comp)
           call setval(umac_dummy(n,comp), ZERO, all=.true.)
        end do
  
@@ -109,8 +108,7 @@ contains
 
        do n=1,nlevs
           do comp=1,dm
-             call multifab_build(w0mac(n,comp),mla%la(n),1,1, &
-                  nodal=edge_nodal_flag(comp,:))
+             call multifab_build_edge(w0mac(n,comp),mla%la(n),1,1,comp)
              call setval(w0mac(n,comp), ZERO, all=.true.)
           end do
        end do

@@ -47,7 +47,6 @@ subroutine varden()
                            ppm_type, &
                            cflfac, &
                            stop_time, &
-                           edge_nodal_flag, &
                            probin_init, probin_close
   use initialize_module, only: initialize_bc, initialize_dx
   use bl_constants_module
@@ -153,7 +152,7 @@ subroutine varden()
      call multifab_build(sold(n), mla%la(n), nscal, ng_s)
      call multifab_build(snew(n), mla%la(n), nscal, ng_s)
      do comp=1,dm
-        call multifab_build(umac(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+        call multifab_build_edge(umac(n,comp), mla%la(n),1,1,comp)
      end do
   end do
 
@@ -237,18 +236,14 @@ subroutine varden()
 
   do n=1,nlevs
      do comp = 1,dm
-        call multifab_build(sedge(n,comp),mla%la(n),nscal,0, &
-                            nodal=edge_nodal_flag(comp,:))
-        call multifab_build(sflux(n,comp),mla%la(n),nscal,0, &
-                            nodal=edge_nodal_flag(comp,:))
-        call multifab_build(w0mac(n,comp),mla%la(n),1,1, &
-                            nodal=edge_nodal_flag(comp,:))
+        call multifab_build_edge(sedge(n,comp),mla%la(n),nscal,0,comp)
+        call multifab_build_edge(sflux(n,comp),mla%la(n),nscal,0,comp)
+        call multifab_build_edge(w0mac(n,comp),mla%la(n),1,1,comp)
         call setval(w0mac(n,comp),ZERO,all=.true.)
      end do
 
      call multifab_build(scal_force(n), mla%la(n), nscal, 1)
-     call multifab_build(etarhoflux(n), mla%la(n), 1, &
-                         nodal=edge_nodal_flag(dm,:))
+     call multifab_build_edge(etarhoflux(n), mla%la(n), 1, 0, dm)
      call setval(scal_force(n),ZERO,all=.true.)
      call setval(etarhoflux(n),ZERO,all=.true.)
   end do

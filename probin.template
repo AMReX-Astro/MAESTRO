@@ -24,7 +24,6 @@ module probin_module
 
 
   ! These will be allocated and defined below
-  logical,    allocatable, save :: edge_nodal_flag(:,:)
   logical,    allocatable, save :: nodal(:)
   logical,    allocatable, save :: pmask(:)
   real(dp_t), allocatable, save :: prob_lo(:)
@@ -232,13 +231,6 @@ contains
     ! for the moment, set the cutoff for burning to be base_cutoff_density
     burning_cutoff_density = base_cutoff_density
 
-    ! initialize edge_nodal_flag
-    allocate(edge_nodal_flag(dm_in,dm_in))
-    edge_nodal_flag = .false.
-    do i = 1,dm_in
-       edge_nodal_flag(i,i) = .true.
-    end do
-
     ! initialize nodal
     allocate(nodal(dm_in))
     nodal = .true.
@@ -283,7 +275,6 @@ contains
 
   subroutine probin_close()
 
-    deallocate(edge_nodal_flag)
     deallocate(nodal)
     deallocate(pmask)
     deallocate(prob_lo)

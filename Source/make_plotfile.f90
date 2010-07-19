@@ -125,7 +125,7 @@ contains
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, & 
                              plot_base, plot_omegadot, plot_Hext, plot_eta, &
-                             single_prec_plotfiles, edge_nodal_flag, &
+                             single_prec_plotfiles, 
                              do_smallscale, use_thermal_diffusion, &
                              evolve_base_state, prob_lo, prob_hi
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
@@ -241,7 +241,7 @@ contains
           do comp=1,dm
              ! w0mac will contain an edge-centered w0 on a Cartesian grid,
              ! for use in computing divergences.
-             call multifab_build(w0mac(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+             call multifab_build_edge(w0mac(n,comp), mla%la(n),1,1,comp)
              call setval(w0mac(n,comp), ZERO, all=.true.)
           enddo
 

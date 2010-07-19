@@ -37,7 +37,7 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use make_grav_module
-    use probin_module, only: enthalpy_pred_type, edge_nodal_flag
+    use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
     type(multifab) , intent(inout) :: scal_force(:)
@@ -92,7 +92,7 @@ contains
        do n = 1,nlevs
           call multifab_build(p0_cart(n),mla%la(n),1,1)
           do comp=1,dm
-             call multifab_build(p0mac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+             call multifab_build_edge(p0mac(n,comp),mla%la(n),1,1,comp)
           end do
        end do
 

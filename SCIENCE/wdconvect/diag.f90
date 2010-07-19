@@ -78,7 +78,6 @@ contains
     use fill_3d_module, only: put_1d_array_on_cart, make_w0mac
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
-                             edge_nodal_flag, &
                              base_cutoff_density, &
                              diag_buf_size, octant
 
@@ -213,8 +212,7 @@ contains
           do comp=1,dm
              ! w0mac will contain an edge-centered w0 on a Cartesian grid,   
              ! for use in computing divergences.                            
-             call multifab_build(w0mac(n,comp), mla%la(n),1,1, &
-                                 nodal=edge_nodal_flag(comp,:))
+             call multifab_build_edge(w0mac(n,comp), mla%la(n),1,1,comp)
              call setval(w0mac(n,comp), ZERO, all=.true.)
           enddo
 
