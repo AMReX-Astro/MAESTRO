@@ -23,43 +23,46 @@ contains
                               dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
                               psi,sponge,hgrhs)
 
-    use pre_advance_module
-    use velocity_advance_module
-    use density_advance_module
-    use enthalpy_advance_module
-    use macrhs_module
-    use macproject_module
-    use hgproject_module
-    use hgrhs_module
-    use proj_parameters
-    use bc_module
-    use box_util_module
-    use make_div_coeff_module
-    use make_w0_module
-    use advect_base_module
-    use react_state_module
-    use make_S_module
-    use average_module
-    use phihalf_module
-    use extraphalf_module
-    use thermal_conduct_module
-    use make_explicit_thermal_module
-    use variables, only: nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
-    use geometry
-    use network, only: nspec
-    use make_grav_module
-    use make_eta_module
-    use make_psi_module
-    use fill_3d_module
-    use cell_to_edge_module
-    use make_gamma_module
-    use rhoh_vs_t_module
-    use probin_module
-    use diag_module
-    use enforce_HSE_module
-    use mg_eps_module, only: eps_hg, eps_hg_min, hg_level_factor
-
     use bl_prof_module
+    use bc_module
+
+    use      pre_advance_module     , only : advance_premac
+    use velocity_advance_module     , only : velocity_advance
+    use  density_advance_module     , only : density_advance
+    use enthalpy_advance_module     , only : enthalpy_advance
+    use make_div_coeff_module       , only : make_div_coeff
+    use make_w0_module              , only : make_w0
+    use advect_base_module          , only : advect_base_dens, advect_base_enthalpy
+    use react_state_module          , only : react_state
+    use make_S_module               , only : make_S
+    use average_module              , only : average
+    use phihalf_module              , only : make_S_at_halftime, make_at_halftime
+    use extraphalf_module           , only : extrap_to_halftime
+    use thermal_conduct_module      , only : thermal_conduct
+    use make_explicit_thermal_module, only : make_explicit_thermal, make_thermal_coeffs 
+    use make_grav_module            , only : make_grav_cell
+    use make_eta_module             , only : make_etarho_planar, make_etarho_spherical
+    use make_psi_module             , only : make_psi_planar, make_psi_spherical
+    use fill_3d_module              , only : put_1d_array_on_cart, make_w0mac
+    use cell_to_edge_module         , only : cell_to_edge
+    use make_gamma_module           , only : make_gamma
+    use rhoh_vs_t_module            , only : makePfromRhoH, makeTfromRhoP, makeTfromRhoH
+    use diag_module                 , only : diag
+    use enforce_HSE_module          , only : enforce_HSE
+
+    use macrhs_module               , only : make_macrhs
+    use macproject_module           , only : macproject
+
+    use hgrhs_module                , only : make_hgrhs, correct_hgrhs
+    use hgproject_module            , only : hgproject
+    use proj_parameters
+
+    use variables                   , only : nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
+    use geometry                    , only : nlevs, nlevs_radial, spherical, dm, nr_fine
+    use network                     , only : nspec
+    use mg_eps_module               , only : eps_hg, eps_hg_min, hg_level_factor
+    use probin_module               , only : barrier_timers, evolve_base_state, use_etarho, dpdt_factor, verbose, &
+                                             use_tfromp, use_thermal_diffusion, use_delta_gamma1_term, nodal
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -319,7 +322,7 @@ contains
           call multifab_build(w0_force_cart_vec(n),mla%la(n),dm,1)
           call setval(w0_force_cart_vec(n),ZERO,all=.true.)
           do comp=1,dm
-             call multifab_build(w0mac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+             call multifab_build_edge(w0mac(n,comp),mla%la(n),1,1,comp)
              call setval(w0mac(n,comp),ZERO,all=.true.)
           end do
 
@@ -360,7 +363,7 @@ contains
 
     do n=1,nlevs
        do comp=1,dm
-          call multifab_build(  umac(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+          call multifab_build_edge(umac(n,comp), mla%la(n),1,1,comp)
        end do
     end do
     
@@ -480,11 +483,11 @@ contains
 
     do n=1,nlevs
        do comp = 1,dm
-          call multifab_build(sedge(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
-          call multifab_build(sflux(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
+          call multifab_build_edge(sedge(n,comp),mla%la(n),nscal,0,comp)
+          call multifab_build_edge(sflux(n,comp),mla%la(n),nscal,0,comp)
        end do
        call multifab_build(scal_force(n), mla%la(n), nscal, 1)
-       call multifab_build(etarhoflux(n), mla%la(n), 1, nodal=edge_nodal_flag(dm,:))
+       call multifab_build_edge(etarhoflux(n), mla%la(n), 1, 0, dm)
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
@@ -848,7 +851,7 @@ contains
 
     do n=1,nlevs
        do comp=1,dm
-          call multifab_build(umac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+          call multifab_build_edge(umac(n,comp),mla%la(n),1,1,comp)
        end do
     end do
 
@@ -944,8 +947,8 @@ contains
     ! Build the sedge array.
     do n=1,nlevs
        do comp = 1,dm
-          call multifab_build(sedge(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
-          call multifab_build(sflux(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
+          call multifab_build_edge(sedge(n,comp),mla%la(n),nscal,0,comp)
+          call multifab_build_edge(sflux(n,comp),mla%la(n),nscal,0,comp)
        end do
        call multifab_build(scal_force(n), mla%la(n), nscal, 1)
     end do
