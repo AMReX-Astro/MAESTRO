@@ -58,7 +58,7 @@ contains
     use proj_parameters
 
     use variables                   , only : nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
-    use geometry                    , only : nlevs, nlevs_radial, spherical, dm, nr_fine
+    use geometry                    , only : nlevs, nlevs_radial, spherical, dm, nr_fine, compute_cutoff_coords
     use network                     , only : nspec
     use mg_eps_module               , only : eps_hg, eps_hg_min, hg_level_factor
     use probin_module               , only : barrier_timers, evolve_base_state, use_etarho, dpdt_factor, verbose, &
