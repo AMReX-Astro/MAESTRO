@@ -26,7 +26,7 @@ contains
     use mac_multigrid_module
 !   use mac_hypre_module
     use geometry, only: dm, nlevs, spherical
-    use probin_module, only: verbose, edge_nodal_flag
+    use probin_module, only: verbose
     use variables, only: press_comp
 
     type(ml_layout), intent(in   ) :: mla
@@ -75,7 +75,7 @@ contains
        call multifab_build(   rh(n), mla%la(n),  1, 0)
        call multifab_build(alpha(n), mla%la(n),  1, 1)
        do i = 1,dm
-          call multifab_build(beta(n,i),mla%la(n),1,1,nodal=edge_nodal_flag(i,:))
+          call multifab_build_edge(beta(n,i),mla%la(n),1,1,i)
        end do
        call setval(alpha(n),ZERO,all=.true.)
     end do

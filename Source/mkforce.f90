@@ -35,7 +35,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only: edge_nodal_flag, evolve_base_state
+    use probin_module, only: evolve_base_state
     use fill_3d_module, only : make_w0mac, put_1d_array_on_cart
 
     type(multifab) , intent(inout) :: vel_force(:)
@@ -84,7 +84,7 @@ contains
           do comp=1,dm
              ! w0mac will contain an edge-centered w0 on a Cartesian grid,
              ! for use in computing the Coriolis term in the final update
-             call multifab_build(w0mac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+             call multifab_build_edge(w0mac(n,comp),mla%la(n),1,1,comp)
              call setval(w0mac(n,comp),ZERO,all=.true.)
           enddo
 
