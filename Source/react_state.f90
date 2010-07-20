@@ -16,14 +16,12 @@ contains
   subroutine react_state(mla,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,p0, &
                          dt,dx,the_bc_level,time)
 
-    use heating_module
     use probin_module, only: use_tfromp
-    use rhoh_vs_t_module
     use geometry, only: nlevs, dm
     use variables, only: temp_comp
     use multifab_fill_ghost_module
-    use ml_restriction_module
-    use multifab_physbc_module
+    use ml_restriction_module, only : ml_cc_restriction_c
+    use multifab_physbc_module, only : multifab_physbc
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: sold(:)
@@ -93,7 +91,7 @@ contains
     
 
 
-    call destroy(bpt)
+     call destroy(bpt)
 
   end subroutine react_state
 
