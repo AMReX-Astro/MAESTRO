@@ -68,7 +68,8 @@ contains
 
     use fab_module, only: lwb, upb
     use multifab_module, only: multifab, multifab_build, destroy, nghost, nboxes, &
-                               multifab_remote, dataptr, setval, get_box
+                               multifab_remote, dataptr, setval, get_box, &
+                               multifab_build_edge
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_tower
 
