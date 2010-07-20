@@ -19,9 +19,12 @@ contains
     use probin_module, only: use_tfromp
     use geometry, only: nlevs, dm
     use variables, only: temp_comp
+
     use multifab_fill_ghost_module
-    use ml_restriction_module, only : ml_cc_restriction_c
     use multifab_physbc_module, only : multifab_physbc
+    use ml_restriction_module , only : ml_cc_restriction_c
+    use heating_module        , only : get_rho_Hext 
+    use rhoh_vs_t_module      , only : makeTfromRhoP, makeTfromRhoH
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: sold(:)
