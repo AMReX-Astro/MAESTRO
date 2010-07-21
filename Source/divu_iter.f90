@@ -28,7 +28,6 @@ contains
     use probin_module
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use proj_parameters, only: divu_iters_comp
-    use heating_module,  only: get_rho_Hext
     use react_state_module
     use make_explicit_thermal_module
     use make_S_module
@@ -111,9 +110,6 @@ contains
        call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
     end do
-
-    ! get heating term
-    call get_rho_Hext(mla,sold,rho_Hext,dx,time,halfdt,the_bc_tower%bc_tower_array)
 
     ! burn to define rho_omegadot and rho_Hnuc -- needed to make S
     call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old, &

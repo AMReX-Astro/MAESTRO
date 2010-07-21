@@ -33,7 +33,6 @@ contains
     use make_div_coeff_module       , only : make_div_coeff
     use make_w0_module              , only : make_w0
     use advect_base_module          , only : advect_base_dens, advect_base_enthalpy
-    use heating_module              , only : get_rho_Hext
     use react_state_module          , only : react_state
     use make_S_module               , only : make_S
     use average_module              , only : average
@@ -235,9 +234,6 @@ contains
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
        call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
     end do
-
-    ! get heating term
-    call get_rho_Hext(mla,sold,rho_Hext,dx,time,halfdt,the_bc_tower%bc_tower_array)
 
     call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
@@ -655,9 +651,6 @@ contains
     do n=1,nlevs
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
-
-    ! get heating term
-    call get_rho_Hext(mla,s2,rho_Hext,dx,time,halfdt,the_bc_tower%bc_tower_array)
     
     call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
@@ -1137,9 +1130,6 @@ contains
     do n=1,nlevs
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
-
-    ! get heating term
-    call get_rho_Hext(mla,s2,rho_Hext,dx,time,halfdt,the_bc_tower%bc_tower_array)
 
     call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
