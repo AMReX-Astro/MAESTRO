@@ -58,12 +58,19 @@ are:
 
 \item {\tt MAESTRO/}
 
- The main MAESTRO algorithm files.  Here you will find the main driver,
- the advection routines, etc.
+ The main MAESTRO algorithm directory.  The individual problem directories
+ lie under here, and all of the main MAESTRO source lives in the {\tt Source/}
+ sub-directory.
 
  Important directories under {\tt MAESTRO/} include:
 
  \begin{itemize}
+
+ \item {\tt Source}
+
+   The main MAESTRO source.  Here you will find the driver routine, the
+   advection routines, etc.  All MAESTRO problems will compile this
+   source.
 
  \item {\tt initial\_models}
 
@@ -72,7 +79,7 @@ are:
    mapping onto the MAESTRO grid.  See \S~\ref{sec:initial_models}
    for details.
 
- \item problem directories: {\tt test}, {\tt test2}, {\tt
+ \item problem directories: {\tt test2}, {\tt
    test\_spherical}, $\ldots$
 
    Each problem in MAESTRO gets it own subdirectory.  The {\tt
