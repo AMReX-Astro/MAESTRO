@@ -6,8 +6,6 @@ module mac_multigrid_module
   use multifab_module
   use bndry_reg_module
   use bl_constants_module
-  use create_umac_grown_module
-  use impose_phys_bcs_on_edges_module
 
   implicit none
 
@@ -16,26 +14,31 @@ module mac_multigrid_module
   public :: mac_multigrid
 
 contains 
-  subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp, &
-                           stencil_order,ref_ratio,phi_norm)
-    use mg_module
-    use stencil_fill_module
-    use ml_solve_module
+
+  subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
+                           the_bc_tower,bc_comp,stencil_order,ref_ratio,&
+                           rel_solver_eps,abs_solver_eps)
+
+    use stencil_fill_module, only : stencil_fill_cc_all_mglevels
+    use mg_module          , only : mg_tower, mg_tower_build, mg_tower_destroy
+    use ml_solve_module    , only : ml_cc_solve
+    use probin_module      , only : mg_verbose, cg_verbose
+
     use probin_module, only : mg_bottom_solver, max_mg_bottom_nlevels, verbose, mg_verbose, cg_verbose
     use geometry, only: dm, nlevs
-    use mg_eps_module, only: eps_mac, eps_mac_bottom
+    use mg_eps_module, only: eps_mac_bottom
 
-
-    type(ml_layout), intent(in   )        :: mla
-    integer        , intent(in   )        :: stencil_order
-    integer        , intent(in   )        :: ref_ratio(:,:)
-    real(dp_t)     , intent(in)           :: dx(:,:)
-    type(bc_tower) , intent(in)           :: the_bc_tower
-    integer        , intent(in   )        :: bc_comp
-    type(multifab) , intent(in   )        :: alpha(:), beta(:,:)
-    type(multifab) , intent(inout)        ::    rh(:),  phi(:)
-    type(bndry_reg), intent(inout)        :: fine_flx(2:)
-    real(dp_t)     , intent(in), optional :: phi_norm(:)
+    type(ml_layout), intent(in   ) :: mla
+    type(multifab) , intent(inout) :: rh(:),phi(:)
+    type(bndry_reg), intent(inout) :: fine_flx(2:)
+    type(multifab) , intent(in   ) :: alpha(:), beta(:,:)
+    real(dp_t)     , intent(in   ) :: dx(:,:)
+    type(bc_tower) , intent(in   ) :: the_bc_tower
+    integer        , intent(in   ) :: bc_comp
+    integer        , intent(in   ) :: stencil_order
+    integer        , intent(in   ) :: ref_ratio(:,:)
+    real(dp_t)     , intent(in   ) :: rel_solver_eps
+    real(dp_t)     , intent(in   ) :: abs_solver_eps
 
     type(layout  ) :: la
     type(box     ) :: pd
@@ -47,11 +50,14 @@ contains
     integer         :: ns
 
     ! MG solver defaults
-    integer    :: bottom_solver, bottom_max_iter
-    integer    :: max_iter, min_width, max_nlevel, max_bottom_nlevel
-    integer    :: n, d, nu1, nu2, nub, gamma, cycle_type, smoother
-    integer    :: max_nlevel_in, do_diagnostics
-    real(dp_t) :: eps,abs_eps,omega,bottom_solver_eps
+    integer :: bottom_solver, bottom_max_iter
+    integer    :: max_iter
+    integer    :: min_width
+    integer    :: max_nlevel
+    integer    :: d, n, nu1, nu2, nub, gamma, cycle_type, smoother
+    integer    :: max_nlevel_in
+    integer    :: do_diagnostics
+    real(dp_t) :: omega,bottom_solver_eps
     real(dp_t) ::  xa(dm),  xb(dm)
     real(dp_t) :: pxa(dm), pxb(dm)
 
@@ -62,10 +68,7 @@ contains
     !! Defaults:
 
     max_nlevel        = mgt(nlevs)%max_nlevel
-    max_bottom_nlevel = mgt(nlevs)%max_bottom_nlevel
     max_iter          = mgt(nlevs)%max_iter
-    eps               = mgt(nlevs)%eps
-    abs_eps           = mgt(nlevs)%abs_eps
     smoother          = mgt(nlevs)%smoother
     nu1               = mgt(nlevs)%nu1
     nu2               = mgt(nlevs)%nu2
@@ -77,17 +80,6 @@ contains
     bottom_solver_eps = mgt(nlevs)%bottom_solver_eps
     bottom_max_iter   = mgt(nlevs)%bottom_max_iter
     min_width         = mgt(nlevs)%min_width
-
-    ! Not sure if we can get better than this...
-    eps = eps_mac
-
-    abs_eps = -1.0_dp_t
-    if (present(phi_norm)) then
-       do n = 1,nlevs
-          abs_eps = max(abs_eps, phi_norm(n) / dx(n,1))
-       end do
-       abs_eps = eps * abs_eps
-    end if
 
     if ( mg_bottom_solver >= 0 ) then
         if (mg_bottom_solver == 4 .and. nboxes(phi(1)) == 1) then
@@ -131,7 +123,7 @@ contains
           end if
        end if
 
-       pd = get_pd(mla%la(n))
+       pd = layout_get_pd(mla%la(n))
 
 !      if (dm .eq. 1) omega = 4.d0 / 3.d0
 
@@ -152,10 +144,10 @@ contains
                            max_iter = max_iter, &
                            max_nlevel = max_nlevel_in, &
                            max_bottom_nlevel = max_mg_bottom_nlevels, &
-                           min_width = min_width, &
-                           eps = eps, &
-                           abs_eps = abs_eps, &
-                           verbose = mg_verbose, &
+                           min_width  = min_width, &
+                           eps        = rel_solver_eps, &
+                           abs_eps    = abs_solver_eps, &
+                           verbose    = mg_verbose, &
                            cg_verbose = cg_verbose, &
                            nodal = nodal_flags(rh(nlevs)))
     end do
@@ -205,7 +197,11 @@ contains
        do_diagnostics = 0
     end if
 
-    call ml_cc_solve(mla, mgt, rh, phi, fine_flx, ref_ratio, do_diagnostics)
+    call ml_cc_solve(mla, mgt, rh, phi, fine_flx, ref_ratio, do_diagnostics,rel_solver_eps)
+
+    do n = 1, nlevs
+       call multifab_fill_boundary(phi(n))
+    end do
 
     do n = 1, nlevs
        call mg_tower_destroy(mgt(n))

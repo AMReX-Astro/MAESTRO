@@ -28,11 +28,11 @@ f90sources += initial_proj.f90
 f90sources += initialize.f90
 f90sources += mac_applyop.f90
 f90sources += mac_multigrid.f90
-#ifdef HYPRE
+ifdef HYPRE
 f90sources += mac_hypre.f90
-#else
-f90sources += mac_hypre_stubs.f90
-#endif
+else
+f90sources += mac_hypre_stub.f90
+endif
 f90sources += macproject.f90
 f90sources += main.f90
 f90sources += make_at_halftime.f90

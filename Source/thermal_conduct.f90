@@ -38,6 +38,7 @@ contains
     use variables    , only : foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
     use network      , only : nspec
     use probin_module, only : thermal_diffusion_type, use_tfromp
+    use mg_eps_module, only : eps_mac
     use geometry     , only : dm, nlevs
 
     type(ml_layout), intent(inout) :: mla
@@ -61,7 +62,7 @@ contains
     integer                     :: stencil_order
     integer                     :: i,n,comp
     type(bndry_reg)             :: fine_flx(2:mla%nlevel)
-    real(dp_t)                  :: h_norm(mla%nlevel)
+    real(dp_t)                  :: abs_eps, abs_solver_eps, rel_solver_eps
 
     type(bl_prof_timer), save :: bpt
 
@@ -354,16 +355,19 @@ contains
        call multifab_copy_c(lhsalpha(n),1,s2(n),rho_comp,1,1)
     enddo
 
-    ! Compute h_norm to be used inside the MG solver as part of a stopping criterion
-    h_norm = -1.d0
+    ! Compute norm(phi) to be used inside the MG solver as part of a stopping criterion
+    abs_eps = -1.d0
     do n = 1,nlevs
-          h_norm(n) = max(h_norm(n),norm_inf(phi(n)))
+       abs_eps = max(abs_eps, norm_inf(phi(n)) / dx(n,1))
     end do
+    abs_solver_eps = eps_mac * abs_eps
+
+    rel_solver_eps = eps_mac
 
     ! Call the solver to obtain h^(2) (it will be stored in phi)
     ! solves (alpha - nabla dot beta nabla)phi = rhs
     call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
-                       dm+rhoh_comp,stencil_order,mla%mba%rr,h_norm)
+                       dm+rhoh_comp,stencil_order,mla%mba%rr,rel_solver_eps,abs_solver_eps)
 
     do n=2,nlevs
        call destroy(fine_flx(n))

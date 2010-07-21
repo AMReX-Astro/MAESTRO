@@ -7,8 +7,6 @@ module macproject_module
   use multifab_module
   use bndry_reg_module
   use bl_constants_module
-  use create_umac_grown_module
-  use impose_phys_bcs_on_edges_module
 
   implicit none
 
@@ -23,11 +21,16 @@ contains
   subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower, &
                         divu_rhs,div_coeff_1d,div_coeff_edge_1d,div_coeff_3d)
 
-    use mac_multigrid_module
-!   use mac_hypre_module
+    use mac_hypre_module               , only : mac_hypre
+    use mac_multigrid_module           , only : mac_multigrid
+    use create_umac_grown_module       , only : create_umac_grown
+    use impose_phys_bcs_on_edges_module, only : impose_phys_bcs_on_edges
+
     use geometry, only: dm, nlevs, spherical
-    use probin_module, only: verbose
+    use probin_module, only: verbose, use_hypre
     use variables, only: press_comp
+
+    use mg_eps_module, only: eps_mac
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
@@ -46,6 +49,8 @@ contains
 
     real(dp_t)                   :: umac_norm(mla%nlevel)
     real(dp_t)                   :: umin,umax,vmin,vmax,wmin,wmax
+    real(dp_t)                   :: rel_solver_eps
+    real(dp_t)                   :: abs_solver_eps
     integer                      :: stencil_order,i,n
     logical                      :: use_rhs, use_div_coeff_1d, use_div_coeff_3d
 
@@ -155,10 +160,25 @@ contains
        call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
     end do
 
-    call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
-                       the_bc_tower,press_comp,stencil_order,mla%mba%rr,umac_norm)
-!   call mac_hypre(mla,rh,phi,fine_flx,alpha,beta,dx,&
-!                  the_bc_tower,press_comp,stencil_order,mla%mba%rr,umac_norm)
+    abs_solver_eps = -1.0_dp_t
+!   if (present(umac_norm)) then
+!      do n = 1,nlevs
+!         abs_eps = max(abs_eps, umac_norm(n) / dx(n,1))
+!      end do
+!      abs_solver_eps = eps * abs_eps
+!   end if
+
+    rel_solver_eps = eps_mac
+
+    if (use_hypre .eq. 1) then
+       call mac_hypre(mla,rh,phi,fine_flx,alpha,beta,dx,&
+                      the_bc_tower,press_comp,stencil_order,mla%mba%rr,&
+                      rel_solver_eps,abs_solver_eps)
+    else
+       call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
+                          the_bc_tower,press_comp,stencil_order,mla%mba%rr,&
+                          rel_solver_eps,abs_solver_eps)
+    endif
 
     call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,mla%mba%rr)
 
