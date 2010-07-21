@@ -23,7 +23,7 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module, only : multifab_physbc
     use ml_restriction_module , only : ml_cc_restriction_c
-!   use heating_module        , only : get_rho_Hext 
+    use heating_module        , only : get_rho_Hext 
     use rhoh_vs_t_module      , only : makeTfromRhoP, makeTfromRhoH
 
     type(ml_layout), intent(in   ) :: mla
@@ -43,8 +43,8 @@ contains
 
     call build(bpt, "react_state")
 
-    ! get heating term -- this is now done in the calling routine
-    ! call get_rho_Hext(mla,sold,rho_Hext,dx,time,dt,the_bc_level)
+    ! get heating term
+    call get_rho_Hext(mla,sold,rho_Hext,dx,time,dt,the_bc_level)
 
     ! do the burning
     call burner_loop(mla,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dt,the_bc_level)
