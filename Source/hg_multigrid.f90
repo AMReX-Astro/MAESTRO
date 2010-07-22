@@ -222,15 +222,15 @@ contains
        call subtract_divu_from_rh(nlevs,mgt,rh,divu_rhs)
     end if
 
+    ! ********************************************************************************
+    ! Call the solver
+    ! ********************************************************************************
+
     if ( mg_verbose >= 3 ) then
        do_diagnostics = 1
     else
        do_diagnostics = 0
     end if
-
-    ! ********************************************************************************
-    ! Call the solver
-    ! ********************************************************************************
 
     call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,&
                      rel_solver_eps,abs_solver_eps)
