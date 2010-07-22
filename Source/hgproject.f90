@@ -25,12 +25,13 @@ contains
     use hg_multigrid_module        , only : hg_multigrid
     use hg_hypre_module            , only : hg_hypre
 
-    use probin_module , only: verbose, mg_verbose, cg_verbose, hg_dense_stencil, nodal, &
-                              use_hypre
-    use geometry      , only: dm, nlevs, spherical
+    use mg_eps_module              , only : eps_hg, eps_hg_min, hg_level_factor
+    use probin_module              , only: verbose, mg_verbose, cg_verbose, hg_dense_stencil, nodal, &
+                                           use_hypre
+    use geometry                   , only: dm, nlevs, spherical
 
     integer        , intent(in   ) :: proj_type
-    type(ml_layout), intent(inout) :: mla
+    type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: unew(:)
     type(multifab ), intent(in   ) :: uold(:)
     type(multifab ), intent(inout) :: rhohalf(:)
@@ -50,6 +51,8 @@ contains
 
     integer                   :: n,d,stencil_type
     real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
+    real(dp_t)                :: rel_solver_eps
+    real(dp_t)                :: abs_solver_eps
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "hgproject")
@@ -124,24 +127,33 @@ contains
 
 !   if (dm .eq. 1) then
 !      call hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,divu_rhs)
-!   else if (present(eps_in)) then
+!   else 
+
     if (present(eps_in)) then
-       if (use_hypre .eq. 1) then 
-          call hg_hypre(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
-                        stencil_type,divu_rhs,eps_in)
-       else
-          call hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
-                            stencil_type,divu_rhs,eps_in)
-       endif
-    else 
-       if (use_hypre .eq. 1) then 
-          call hg_hypre(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
-                        stencil_type,divu_rhs)
-       else
-          call hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
-                            stencil_type,divu_rhs)
-       end if
+       rel_solver_eps = eps_in
+    else
+       rel_solver_eps = min( eps_hg_min, eps_hg*hg_level_factor**(nlevs-1) )
     end if
+
+    abs_solver_eps = -1.d0
+
+    if (use_hypre .eq. 1) then 
+       if (present(divu_rhs)) then
+          call hg_hypre(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
+                        stencil_type,rel_solver_eps,abs_solver_eps,divu_rhs)
+       else
+          call hg_hypre(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
+                        stencil_type,rel_solver_eps,abs_solver_eps)
+       end if
+    else
+       if (present(divu_rhs)) then
+          call hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
+                            stencil_type,rel_solver_eps,abs_solver_eps,divu_rhs)
+       else
+          call hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
+                            stencil_type,rel_solver_eps,abs_solver_eps)
+       end if
+    endif
 
     do n = 1,nlevs
        call destroy(rh(n))
@@ -603,7 +615,7 @@ contains
       type(multifab) , intent(inout) :: pi(:)
       type(multifab) , intent(in   ) :: phi(:)
       real(kind=dp_t), intent(in   ) :: dt
-      type(ml_layout), intent(inout) :: mla
+      type(ml_layout), intent(in   ) :: mla
       type(bc_level) , intent(in   ) :: the_bc_level(:)
 
       ! local
