@@ -1439,7 +1439,8 @@ contains
        print *, '   Advection       : ', advect_time_max , ' seconds'
        print *, '   MAC   Projection: ', macproj_time_max, ' seconds'
        print *, '   Nodal Projection: ', ndproj_time_max , ' seconds'
-       print *, '   Thermal         : ', thermal_time_max, ' seconds'
+       if (use_thermal_diffusion) &
+          print *, '   Thermal         : ', thermal_time_max, ' seconds'
        print *, '   Reactions       : ', react_time_max  , ' seconds'
        print *, '   Misc            : ', misc_time_max   , ' seconds'
        print *, ' '
