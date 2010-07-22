@@ -16,7 +16,7 @@ module hg_multigrid_module
 contains 
 
   subroutine hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
-                          stencil_type,divu_rhs,eps_in)
+                          stencil_type,rel_solver_eps,abs_solver_eps,divu_rhs)
 
     use bl_prof_module
 
@@ -30,7 +30,7 @@ contains
     use geometry, only: dm, nlevs
     use variables, only: press_comp
 
-    type(ml_layout), intent(inout) :: mla
+    type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: rh(:)
     type(multifab ), intent(inout) :: unew(:)
     type(multifab ), intent(in   ) :: rhohalf(:)
@@ -38,9 +38,10 @@ contains
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
     integer        , intent(in   ) :: stencil_type
+    real(dp_t)     , intent(in   ) :: rel_solver_eps
+    real(dp_t)     , intent(in   ) :: abs_solver_eps
 
     type(multifab ), intent(inout), optional :: divu_rhs(:)
-    real(dp_t)     , intent(in)   , optional :: eps_in 
 
     ! Local variables
     type(box     )  :: pd
@@ -53,7 +54,6 @@ contains
     type(multifab), allocatable :: coeffs(:)
 
     real(dp_t) :: bottom_solver_eps
-    real(dp_t) :: eps
     real(dp_t) :: omega
 
     integer :: i, ns
@@ -73,7 +73,6 @@ contains
     !! Defaults:
     max_nlevel        = mgt(nlevs)%max_nlevel
     max_iter          = mgt(nlevs)%max_iter
-    eps               = mgt(nlevs)%eps
     smoother          = mgt(nlevs)%smoother
     nu1               = mgt(nlevs)%nu1
     nu2               = mgt(nlevs)%nu2
@@ -86,13 +85,7 @@ contains
     bottom_max_iter   = mgt(nlevs)%bottom_max_iter
     min_width         = mgt(nlevs)%min_width
 
-    ! Note: put this here to minimize asymmetries - ASA
-    eps = 1.d-12
-    if (present(eps_in)) then
-       eps = eps_in
-    endif
-
-    if (parallel_IOProcessor()) print *, 'doing hgproject with tolerance, eps = ', eps
+    if (parallel_IOProcessor()) print *, 'doing hgproject with tolerance, eps = ', rel_solver_eps
 
     if ( hg_bottom_solver >= 0 ) then
         if (hg_bottom_solver == 4 .and. nboxes(phi(1)) == 1) then
@@ -164,7 +157,7 @@ contains
        end if
 
        call mg_tower_build(mgt(n), mla%la(n), pd, &
-                       the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,press_comp), &
+                           the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,press_comp), &
                            dh = dx(n,:), &
                            ns = ns, &
                            smoother = smoother, &
@@ -181,7 +174,8 @@ contains
                            max_nlevel = max_nlevel_in, &
                            max_bottom_nlevel = max_mg_bottom_nlevels, &
                            min_width = min_width, &
-                           eps = eps, &
+                           eps = rel_solver_eps, &
+                           abs_eps = abs_solver_eps, &
                            verbose = mg_verbose, &
                            cg_verbose = cg_verbose, &
                            nodal = nodal)
@@ -238,11 +232,7 @@ contains
     ! Call the solver
     ! ********************************************************************************
 
-    if (present(eps_in)) then
-       call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,eps_in=eps_in)
-    else
-       call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics)
-    end if
+    call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,eps_in=rel_solver_eps)
 
     ! ********************************************************************************
     ! Clean-up ...
