@@ -60,7 +60,6 @@ contains
     use variables                   , only : nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry                    , only : nlevs, nlevs_radial, spherical, dm, nr_fine, compute_cutoff_coords
     use network                     , only : nspec
-    use mg_eps_module               , only : eps_hg, eps_hg_min, hg_level_factor
     use probin_module               , only : barrier_timers, evolve_base_state, use_etarho, dpdt_factor, verbose, &
                                              use_tfromp, use_thermal_diffusion, use_delta_gamma1_term, nodal
     
@@ -1366,10 +1365,7 @@ contains
     call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-    eps = min(eps_hg_min, eps_hg*hg_level_factor**(nlevs-1) )
-
-    call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
-                   div_coeff_3d,hgrhs, eps_in = eps)
+    call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower,div_coeff_3d,hgrhs)
 
     do n=1,nlevs
        call destroy(div_coeff_3d(n))
