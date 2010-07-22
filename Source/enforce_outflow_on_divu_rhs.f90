@@ -16,6 +16,8 @@ contains
 
     subroutine enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
 
+      use geometry, only : dm,nlevs
+
       type(multifab) , intent(inout) :: divu_rhs(:)
       type(bc_tower) , intent(in   ) :: the_bc_tower
 
