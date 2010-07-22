@@ -46,6 +46,7 @@ contains
     ! Local  
     type(multifab) :: phi(mla%nlevel)
     type(multifab) :: gphi(mla%nlevel)
+    type(multifab) ::   rh(mla%nlevel)
 
     integer                   :: n,d,stencil_type
     real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
@@ -116,7 +117,9 @@ contains
 
     do n = 1, nlevs
        call multifab_build(phi(n), mla%la(n), 1, 1, nodal)
+       call multifab_build( rh(n), mla%la(n), 1, 1, nodal)
        call setval(phi(n),ZERO,all=.true.)
+       call setval( rh(n),ZERO,all=.true.)
     end do
 
 !   if (dm .eq. 1) then
@@ -124,21 +127,25 @@ contains
 !   else if (present(eps_in)) then
     if (present(eps_in)) then
        if (use_hypre .eq. 1) then 
-          call hg_hypre(mla,unew,rhohalf,phi,dx,the_bc_tower, &
+          call hg_hypre(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
                         stencil_type,divu_rhs,eps_in)
        else
-          call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
+          call hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
                             stencil_type,divu_rhs,eps_in)
        endif
     else 
        if (use_hypre .eq. 1) then 
-          call hg_hypre(mla,unew,rhohalf,phi,dx,the_bc_tower, &
+          call hg_hypre(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
                         stencil_type,divu_rhs)
        else
-          call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
+          call hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
                             stencil_type,divu_rhs)
        end if
     end if
+
+    do n = 1,nlevs
+       call destroy(rh(n))
+    end do
 
     do n=1,nlevs
        do d=1,dm
@@ -1005,7 +1012,7 @@ contains
 
   ! ******************************************************************************** !
 
-  subroutine hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,divu_rhs)
+  subroutine hg_1d_solver(mla,rh,unew,rhohalf,phi,dx,the_bc_tower,divu_rhs)
 
     use bl_prof_module
     use bl_constants_module
@@ -1017,6 +1024,7 @@ contains
     use variables, only: press_comp
 
     type(ml_layout), intent(inout) :: mla
+    type(multifab ), intent(inout) :: rh(:)
     type(multifab ), intent(inout) :: unew(:)
     type(multifab ), intent(in   ) :: rhohalf(:)
     type(multifab ), intent(inout) :: phi(:)
@@ -1029,8 +1037,6 @@ contains
     type(box     ) :: pd
     type(  layout) :: la
     type(mg_tower) :: mgt(mla%nlevel)
-
-    type(multifab) :: rh(mla%nlevel)
 
     type(multifab), allocatable :: coeffs(:)
 
@@ -1070,11 +1076,6 @@ contains
 
     end do
 
-    do n = 1, nlevs
-       call multifab_build(rh(n),mla%la(n),1,1,nodal)
-       call setval(rh(n),ZERO,all=.true.)
-    end do
-
     call divu(nlevs,mgt,unew,rh,mla%mba%rr,nodal)
 
     ! Do rh = rh - divu_rhs (this routine preserves rh=0 on
@@ -1091,7 +1092,6 @@ contains
     do n = 1, nlevs
        call destroy(coeffs(n))
        call mg_tower_destroy(mgt(n))
-       call destroy(rh(n))
     end do
     deallocate(coeffs)
 

@@ -27,7 +27,7 @@ contains
     type(bc_tower ), intent(in   ) :: the_bc_tower
     integer        , intent(in   ) :: stencil_type
 
-    type(multifab ), intent(in   ), optional :: divu_rhs(:)
+    type(multifab ), intent(inout), optional :: divu_rhs(:)
     real(dp_t)     , intent(in)   , optional :: eps_in 
 
     call hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &

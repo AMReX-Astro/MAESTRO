@@ -5,6 +5,7 @@ module hg_multigrid_module
   use multifab_module
   use ml_layout_module
   use define_bc_module
+  use bl_constants_module
 
   implicit none
 
@@ -14,20 +15,23 @@ module hg_multigrid_module
 
 contains 
 
-  subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
+  subroutine hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
                           stencil_type,divu_rhs,eps_in)
 
     use bl_prof_module
-    use bl_constants_module
-    use stencil_fill_module
-    use ml_solve_module
-    use nodal_divu_module
-    use probin_module, only : hg_bottom_solver, max_mg_bottom_nlevels, &
-                              verbose, mg_verbose, cg_verbose, nodal
+
+    use enforce_outflow_on_divu_rhs_module, only : enforce_outflow_on_divu_rhs
+
+    use stencil_fill_module , only : stencil_fill_nodal_all_mglevels, stencil_fill_one_sided
+    use ml_solve_module     , only : ml_nd_solve
+    use nodal_divu_module   , only : divu, subtract_divu_from_rh
+    use probin_module       , only : hg_bottom_solver, max_mg_bottom_nlevels, &
+                                     verbose, mg_verbose, cg_verbose, nodal
     use geometry, only: dm, nlevs
     use variables, only: press_comp
 
     type(ml_layout), intent(inout) :: mla
+    type(multifab ), intent(inout) :: rh(:)
     type(multifab ), intent(inout) :: unew(:)
     type(multifab ), intent(in   ) :: rhohalf(:)
     type(multifab ), intent(inout) :: phi(:)
@@ -35,7 +39,7 @@ contains
     type(bc_tower ), intent(in   ) :: the_bc_tower
     integer        , intent(in   ) :: stencil_type
 
-    type(multifab ), intent(in   ), optional :: divu_rhs(:)
+    type(multifab ), intent(inout), optional :: divu_rhs(:)
     real(dp_t)     , intent(in)   , optional :: eps_in 
 
     ! Local variables
@@ -44,7 +48,6 @@ contains
 
     type(mg_tower) :: mgt(mla%nlevel)
 
-    type(multifab) :: rh(mla%nlevel)
     type(multifab) :: one_sided_ss(2:mla%nlevel)
 
     type(multifab), allocatable :: coeffs(:)
@@ -212,17 +215,18 @@ contains
 
     end do
 
-    do n = 1, nlevs
-       call multifab_build(rh(n),mla%la(n),1,1,nodal)
-       call setval(rh(n),ZERO,all=.true.)
-    end do
+    ! ********************************************************************************
+    ! Create the rhs
+    ! ********************************************************************************
 
     call divu(nlevs,mgt,unew,rh,mla%mba%rr,nodal)
 
     ! Do rh = rh - divu_rhs (this routine preserves rh=0 on
     !  nodes which have bc_dirichlet = true.
-    if (present(divu_rhs)) &
+    if (present(divu_rhs)) then
+       call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
        call subtract_divu_from_rh(nlevs,mgt,rh,divu_rhs)
+    end if
 
     if ( mg_verbose >= 3 ) then
        do_diagnostics = 1
@@ -230,11 +234,19 @@ contains
        do_diagnostics = 0
     end if
 
+    ! ********************************************************************************
+    ! Call the solver
+    ! ********************************************************************************
+
     if (present(eps_in)) then
        call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,eps_in=eps_in)
     else
        call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics)
     end if
+
+    ! ********************************************************************************
+    ! Clean-up ...
+    ! ********************************************************************************
 
     do n = nlevs,1,-1
        call multifab_fill_boundary(phi(n))
@@ -242,7 +254,6 @@ contains
 
     do n = 1, nlevs
        call mg_tower_destroy(mgt(n))
-       call destroy(rh(n))
     end do
 
     if (stencil_type .ne. ST_DENSE) then
