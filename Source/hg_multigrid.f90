@@ -232,7 +232,8 @@ contains
     ! Call the solver
     ! ********************************************************************************
 
-    call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,eps_in=rel_solver_eps)
+    call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,&
+                     rel_solver_eps,abs_solver_eps)
 
     ! ********************************************************************************
     ! Clean-up ...
