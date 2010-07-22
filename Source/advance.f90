@@ -156,10 +156,12 @@ contains
     integer    :: n,comp,proj_type,numcell
     real(dp_t) :: halfdt
 
-    real(kind=dp_t) :: advect_time, advect_time_start, advect_time_max
-    real(kind=dp_t) :: proj_time,   proj_time_start,   proj_time_max
-    real(kind=dp_t) :: react_time,  react_time_start,  react_time_max
-    real(kind=dp_t) :: misc_time,   misc_time_start,   misc_time_max
+    real(kind=dp_t) :: advect_time , advect_time_start , advect_time_max
+    real(kind=dp_t) :: macproj_time, macproj_time_start, macproj_time_max
+    real(kind=dp_t) :: ndproj_time , ndproj_time_start , ndproj_time_max
+    real(kind=dp_t) :: thermal_time, thermal_time_start, thermal_time_max
+    real(kind=dp_t) :: react_time  , react_time_start  , react_time_max
+    real(kind=dp_t) :: misc_time   , misc_time_start   , misc_time_max
 
     real(kind=dp_t) :: eps
 
@@ -167,10 +169,11 @@ contains
 
     call build(bpt, "advance_timestep")
 
-    advect_time = 0.d0
-    proj_time   = 0.d0
-    react_time  = 0.d0
-    misc_time   = 0.d0
+    advect_time  = 0.d0
+    macproj_time = 0.d0
+    ndproj_time  = 0.d0
+    react_time   = 0.d0
+    misc_time    = 0.d0
 
     misc_time_start = parallel_wtime()
 
@@ -384,7 +387,7 @@ contains
     if (barrier_timers) call parallel_barrier()
     advect_time = advect_time + parallel_wtime() - advect_time_start
 
-    proj_time_start = parallel_wtime()
+    macproj_time_start = parallel_wtime()
 
     call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar,div_coeff_old,dx, &
                      gamma1bar_old,gamma1bar_old,p0_old,p0_old,delta_p_term,dt)
@@ -425,7 +428,7 @@ contains
     end do
 
     if (barrier_timers) call parallel_barrier()
-    proj_time = proj_time + parallel_wtime() - proj_time_start
+    macproj_time = macproj_time + (parallel_wtime() - macproj_time_start)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4 -- advect the base state and full state through dt
@@ -596,7 +599,7 @@ contains
 !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
-    proj_time_start = parallel_wtime()
+    thermal_time_start = parallel_wtime()
 
     if (use_thermal_diffusion) then
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -608,7 +611,7 @@ contains
     end if
 
     if (barrier_timers) call parallel_barrier()
-    proj_time = proj_time + parallel_wtime() - proj_time_start
+    thermal_time = thermal_time + (parallel_wtime() - thermal_time_start)
 
     misc_time_start = parallel_wtime()
 
@@ -860,7 +863,7 @@ contains
     if (barrier_timers) call parallel_barrier()
     advect_time = advect_time + parallel_wtime() - advect_time_start
 
-    proj_time_start = parallel_wtime()
+    macproj_time_start = parallel_wtime()
 
     do n=1,nlevs
        call multifab_build(macrhs(n), mla%la(n), 1, 0)
@@ -910,7 +913,7 @@ contains
     end do
 
     if (barrier_timers) call parallel_barrier()
-    proj_time = proj_time + parallel_wtime() - proj_time_start
+    macproj_time = macproj_time + (parallel_wtime() - macproj_time_start)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 8 -- advect the base state and full state through dt
@@ -1058,7 +1061,7 @@ contains
 !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    proj_time_start = parallel_wtime()
+    ndproj_time_start = parallel_wtime()
 
     if (use_thermal_diffusion) then
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -1093,7 +1096,7 @@ contains
     end if
 
     if (barrier_timers) call parallel_barrier()
-    proj_time = proj_time + parallel_wtime() - proj_time_start
+    ndproj_time = ndproj_time + (parallel_wtime() - ndproj_time_start)
 
     misc_time_start = parallel_wtime()
 
@@ -1169,7 +1172,7 @@ contains
 !! STEP 10 -- compute S^{n+1} for the final projection
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    proj_time_start = parallel_wtime()
+    thermal_time_start = parallel_wtime()
     
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP 10 : make new S >>>'
@@ -1207,6 +1210,10 @@ contains
        call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
     end do
 
+    thermal_time = thermal_time + (parallel_wtime() - thermal_time_start)
+
+    ndproj_time_start = parallel_wtime()
+
     ! p0 is only used for the delta_gamma1_term
     call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                 rho_Hnuc2,rho_Hext,thermal2,p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
@@ -1234,7 +1241,7 @@ contains
     end do
 
     if (barrier_timers) call parallel_barrier()
-    proj_time = proj_time + parallel_wtime() - proj_time_start
+    ndproj_time = ndproj_time + parallel_wtime() - ndproj_time_start
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 11 -- update the velocity
@@ -1280,7 +1287,7 @@ contains
     if (barrier_timers) call parallel_barrier()
     advect_time = advect_time + parallel_wtime() - advect_time_start
        
-    proj_time_start = parallel_wtime()
+    ndproj_time_start = parallel_wtime()
 
     ! Project the new velocity field.
     if (init_mode) then
@@ -1381,7 +1388,7 @@ contains
     end if
 
     if (barrier_timers) call parallel_barrier()
-    proj_time = proj_time + parallel_wtime() - proj_time_start
+    ndproj_time = ndproj_time + (parallel_wtime() - ndproj_time_start)
 
     misc_time_start = parallel_wtime()
 
@@ -1410,7 +1417,10 @@ contains
     call parallel_reduce(advect_time_max, advect_time, MPI_MAX, &
                          proc=parallel_IOProcessorNode())
 
-    call parallel_reduce(proj_time_max,   proj_time, MPI_MAX, &
+    call parallel_reduce(macproj_time_max,   macproj_time, MPI_MAX, &
+                         proc=parallel_IOProcessorNode())
+
+    call parallel_reduce(ndproj_time_max,   ndproj_time, MPI_MAX, &
                          proc=parallel_IOProcessorNode())
 
     call parallel_reduce(react_time_max,  react_time, MPI_MAX, &
@@ -1419,12 +1429,19 @@ contains
     call parallel_reduce(misc_time_max,  misc_time, MPI_MAX, &
                          proc=parallel_IOProcessorNode())
 
+    if(use_thermal_diffusion) then
+      call parallel_reduce(thermal_time_max,  thermal_time, MPI_MAX, &
+                           proc=parallel_IOProcessorNode())
+    end if
+
     if (parallel_IOProcessor()) then
        print *, 'Timing summary:'
-       print *, '   Advection:  ', advect_time_max, ' seconds'
-       print *, '   Projection: ', proj_time_max, ' seconds'
-       print *, '   Reactions:  ', react_time_max, ' seconds'
-       print *, '   Misc:       ', misc_time_max, ' seconds'
+       print *, '   Advection       : ', advect_time_max , ' seconds'
+       print *, '   MAC   Projection: ', macproj_time_max, ' seconds'
+       print *, '   Nodal Projection: ', ndproj_time_max , ' seconds'
+       print *, '   Thermal         : ', thermal_time_max, ' seconds'
+       print *, '   Reactions       : ', react_time_max  , ' seconds'
+       print *, '   Misc            : ', misc_time_max   , ' seconds'
        print *, ' '
     endif
     
