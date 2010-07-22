@@ -14,11 +14,12 @@ module hg_hypre_module
 
 contains 
 
-  subroutine hg_hypre(mla,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,divu_rhs,eps_in)
+  subroutine hg_hypre(mla,rh,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,divu_rhs,eps_in)
  
     use hg_multigrid_module, only : hg_multigrid
 
     type(ml_layout), intent(inout) :: mla
+    type(multifab ), intent(inout) ::   rh(:)
     type(multifab ), intent(inout) :: unew(:)
     type(multifab ), intent(in   ) :: rhohalf(:)
     type(multifab ), intent(inout) :: phi(:)
@@ -29,7 +30,7 @@ contains
     type(multifab ), intent(in   ), optional :: divu_rhs(:)
     real(dp_t)     , intent(in)   , optional :: eps_in 
 
-    call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
+    call hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
                       stencil_type,divu_rhs,eps_in)
 
   end subroutine hg_hypre
