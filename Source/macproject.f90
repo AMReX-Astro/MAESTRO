@@ -809,7 +809,7 @@ contains
       real(kind=dp_t), intent(inout) :: betax(lo(1)-ng_b:)
       real(kind=dp_t), intent(inout) ::   rho(lo(1)-ng_r:)
 
-      integer :: i,j
+      integer :: i
 
       do i = lo(1),hi(1)+1
          betax(i) = TWO / (rho(i) + rho(i-1))

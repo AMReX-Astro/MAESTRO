@@ -736,7 +736,7 @@ contains
       real(kind=dp_t), intent(in   ) ::     phi(-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
-      integer         :: nx,j
+      integer         :: nx
 
       nx = size(gphi,dim=1)-1
 
@@ -788,8 +788,7 @@ contains
       real(kind=dp_t), intent(in   ) ::     phi(-ng_h :,-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
-      integer         :: j
-      integer         :: nx,ny
+      integer :: nx,ny
 
       nx = size(gphi,dim=1)-1
       ny = size(gphi,dim=2)-1
@@ -936,7 +935,7 @@ contains
       type(multifab) , intent(inout) :: divu_rhs(:)
       type(bc_tower) , intent(in   ) :: the_bc_tower
 
-      integer        :: i,n,ng,ng_d
+      integer        :: i,n,ng_d
       type(bc_level) :: bc
       real(kind=dp_t), pointer :: divp(:,:,:,:) 
 

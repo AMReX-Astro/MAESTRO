@@ -399,7 +399,7 @@ C-----------------------------------------------------------------------
       GO TO 720
  690  ETAMAX = ETAMX3
       IF (NST .LE. 10) ETAMAX = ETAMX2
- 700  R = ONE/TQ(2)
+      R = ONE/TQ(2)
       CALL DSCAL (N, R, ACOR, 1)
  720  JSTART = 1
       RETURN

@@ -123,7 +123,7 @@
  60   h12w=z1*z2*qlam0z
       dh12wdt=h12w*dqlam0zdt/qlam0z
 
- 20   h12=h12w
+      h12=h12w
       dh12dt=dh12wdt
       if(gamef.gt.0.3d0) go to 30
       go to 40

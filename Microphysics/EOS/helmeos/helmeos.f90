@@ -64,7 +64,7 @@
 
 
 !..declare local variables
-      integer          i,j
+      integer          j
       double precision x,y,zz,zzi,deni,tempi,xni,dxnidd,dxnida, &
                        dpepdt,dpepdd,deepdt,deepdd,dsepdd,dsepdt, &
                        dpraddd,dpraddt,deraddd,deraddt,dpiondd,dpiondt, &
@@ -164,7 +164,7 @@
       ddpsi2(z) = 0.5d0*(z*( z * (-20.0d0*z + 36.0d0) - 18.0d0) + 2.0d0)
 
 !..biquintic hermite polynomial statement function
-      h5(i,j,w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md)= &
+      h5(w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md)= &
              fi(1)  *w0d*w0t   + fi(2)  *w0md*w0t &
            + fi(3)  *w0d*w0mt  + fi(4)  *w0md*w0mt &
            + fi(5)  *w0d*w1t   + fi(6)  *w0md*w1t &
@@ -197,7 +197,7 @@
 
 
 !..bicubic hermite polynomial statement function
-      h3(i,j,w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md) =  &
+      h3(w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md) =  &
              fi(1)  *w0d*w0t   +  fi(2)  *w0md*w0t  &
            + fi(3)  *w0d*w0mt  +  fi(4)  *w0md*w0mt &
            + fi(5)  *w0d*w1t   +  fi(6)  *w0md*w1t  &
@@ -211,9 +211,6 @@
 
 ! Dont allow multi-streaming of this function on CRAY X1
 !DIR$  NOSTREAM
-
-!..popular format statements
-01    format(1x,5(a,1pe11.3))
 
 !..start of vectorization loop, normal executaion starts here
       eosfail = .false.
@@ -474,32 +471,32 @@
 
 
 !..the free energy
-       free  = h5(iat,jat, &
+       free  = h5( &
                si0t,   si1t,   si2t,   si0mt,   si1mt,   si2mt, &
                si0d,   si1d,   si2d,   si0md,   si1md,   si2md)
 
 !..derivative with respect to density
-       df_d  = h5(iat,jat, &
+       df_d  = h5( &
                si0t,   si1t,   si2t,   si0mt,   si1mt,   si2mt, &
                dsi0d,  dsi1d,  dsi2d,  dsi0md,  dsi1md,  dsi2md)
 
 !..derivative with respect to temperature
-       df_t = h5(iat,jat, &
+       df_t = h5( &
                dsi0t,  dsi1t,  dsi2t,  dsi0mt,  dsi1mt,  dsi2mt, &
                si0d,   si1d,   si2d,   si0md,   si1md,   si2md)
 
 !..derivative with respect to density**2
-!       df_dd = h5(iat,jat, &
+!       df_dd = h5( &
 !               si0t,   si1t,   si2t,   si0mt,   si1mt,   si2mt, &
 !               ddsi0d, ddsi1d, ddsi2d, ddsi0md, ddsi1md, ddsi2md)
 
 !..derivative with respect to temperature**2
-       df_tt = h5(iat,jat, &
+       df_tt = h5( &
              ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt, &
                si0d,   si1d,   si2d,   si0md,   si1md,   si2md)
 
 !..derivative with respect to temperature and density
-       df_dt = h5(iat,jat, &
+       df_dt = h5( &
                dsi0t,  dsi1t,  dsi2t,  dsi0mt,  dsi1mt,  dsi2mt, &
                dsi0d,  dsi1d,  dsi2d,  dsi0md,  dsi1md,  dsi2md)
 
@@ -554,8 +551,7 @@
        fi(16) = dpdfdt(iat+1,jat+1)
 
 !..pressure derivative with density
-       dpepdd  = h3(iat,jat, &
-                       si0t,   si1t,   si0mt,   si1mt, &
+       dpepdd  = h3(   si0t,   si1t,   si0mt,   si1mt, &
                        si0d,   si1d,   si0md,   si1md)
        dpepdd  = max(ye * dpepdd,0.0d0)
 
@@ -581,19 +577,16 @@
 
 
 !..electron chemical potential etaele
-       etaele  = h3(iat,jat, &
-                     si0t,   si1t,   si0mt,   si1mt, &
+       etaele  = h3( si0t,   si1t,   si0mt,   si1mt, &
                      si0d,   si1d,   si0md,   si1md)
 
 !..derivative with respect to density
-       x       = h3(iat,jat, &
-                     si0t,   si1t,   si0mt,   si1mt, &
-                    dsi0d,  dsi1d,  dsi0md,  dsi1md)
+       x       = h3( si0t,   si1t,   si0mt,   si1mt, &
+                     dsi0d,  dsi1d,  dsi0md,  dsi1md)
        detadd  = ye * x
 
 !..derivative with respect to temperature
-       detadt  = h3(iat,jat, &
-                    dsi0t,  dsi1t,  dsi0mt,  dsi1mt, &
+       detadt  = h3( dsi0t,  dsi1t,  dsi0mt,  dsi1mt, &
                      si0d,   si1d,   si0md,   si1md)
 
 !..derivative with respect to abar and zbar
@@ -619,20 +612,17 @@
        fi(16) = xfdt(iat+1,jat+1)
 
 !..electron + positron number densities
-      xnefer   = h3(iat,jat, &
-                     si0t,   si1t,   si0mt,   si1mt, &
+      xnefer   = h3( si0t,   si1t,   si0mt,   si1mt, &
                      si0d,   si1d,   si0md,   si1md)
 
 !..derivative with respect to density
-      x        = h3(iat,jat, &
-                     si0t,   si1t,   si0mt,   si1mt, &
-                    dsi0d,  dsi1d,  dsi0md,  dsi1md)
+      x        = h3( si0t,   si1t,   si0mt,   si1mt, &
+                     dsi0d,  dsi1d,  dsi0md,  dsi1md)
       x = max(x,0.0d0)
       dxnedd   = ye * x
 
 !..derivative with respect to temperature
-      dxnedt   = h3(iat,jat, &
-                    dsi0t,  dsi1t,  dsi0mt,  dsi1mt, &
+      dxnedt   = h3( dsi0t,  dsi1t,  dsi0mt,  dsi1mt, &
                      si0d,   si1d,   si0md,   si1md)
 
 !..derivative with respect to abar and zbar
