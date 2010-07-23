@@ -170,7 +170,7 @@ contains
 
     rel_solver_eps = eps_mac
 
-    if (use_hypre .eq. 1) then
+    if (use_hypre) then
        call mac_hypre(mla,rh,phi,fine_flx,alpha,beta,dx,&
                       the_bc_tower,press_comp,stencil_order,mla%mba%rr,&
                       rel_solver_eps,abs_solver_eps)

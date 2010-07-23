@@ -137,7 +137,7 @@ contains
 
     abs_solver_eps = -1.d0
 
-    if (use_hypre .eq. 1) then 
+    if (use_hypre) then 
        if (present(divu_rhs)) then
           call hg_hypre(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
                         stencil_type,rel_solver_eps,abs_solver_eps,divu_rhs)
