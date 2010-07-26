@@ -20,7 +20,7 @@ contains
 
     use bl_prof_module
 
-    use enforce_outflow_on_divu_rhs_module, only : enforce_outflow_on_divu_rhs
+    use enforce_outflow_on_divu_module, only : enforce_outflow_on_divu_rhs
 
     use stencil_fill_module , only : stencil_fill_nodal_all_mglevels, stencil_fill_one_sided
     use ml_solve_module     , only : ml_nd_solve

@@ -1,4 +1,4 @@
-module enforce_outflow_on_divu_rhs_module
+module enforce_outflow_on_divu_module
 
   use bl_types
   use bc_module
@@ -103,4 +103,4 @@ contains
 
     end subroutine enforce_outflow_3d
 
-end module enforce_outflow_on_divu_rhs_module
+end module enforce_outflow_on_divu_module
