@@ -71,9 +71,9 @@ contains
     use fundamental_constants_module, only: Gconst
 
     use fab_module, only: lwb, upb
-    use multifab_module, only: multifab, multifab_build, destroy, &
-                               multifab_remote, dataptr, setval, get_box, &
-                               multifab_div_div_c, multifab_copy_c
+    use multifab_module, only: multifab, multifab_build, multifab_build_edge, &
+                               destroy, multifab_remote, dataptr, setval, &
+                               get_box, multifab_div_div_c, multifab_copy_c
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_tower
 
