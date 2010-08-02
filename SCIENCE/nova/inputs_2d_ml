@@ -3,11 +3,11 @@
 
  spherical_in = 0
 
- max_levs = 4
- n_cellx = 64
- n_celly = 128
+ max_levs = 3
+ n_cellx = 128
+ n_celly = 256
 
- max_grid_size = 64
+ max_grid_size = 32
  max_grid_size_base = 32
 
  regrid_int = 2	
@@ -59,7 +59,8 @@
  mg_verbose = 1
  cg_verbose = 0
 
- dpdt_factor = 0.3d0
+ use_tfromp = T
+ dpdt_factor = 0.0d0
  use_eos_coulomb = T
 
  burner_threshold_species = "H1"
