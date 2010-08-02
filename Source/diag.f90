@@ -71,6 +71,8 @@ contains
     type(multifab) ::    w0mac(mla%nlevel,dm)
 
     real(kind=dp_t) :: Mach_max, Mach_max_level, Mach_max_local
+    real(kind=dp_t) :: temp_max, temp_max_level, temp_max_local
+    real(kind=dp_t) :: enuc_max, enuc_max_level, enuc_max_local
 
     integer :: lo(dm),hi(dm)
     integer :: ng_s,ng_u,ng_n,ng_rhn,ng_rhe,ng_rw,ng_w,ng_wm
@@ -130,6 +132,8 @@ contains
     ! initialize
     !=========================================================================
     Mach_max = ZERO
+    temp_max = ZERO
+    enuc_max = ZERO
 
 
     !=========================================================================
@@ -141,6 +145,13 @@ contains
        Mach_max_level = ZERO
        Mach_max_local = ZERO
 
+       temp_max_level = ZERO
+       temp_max_local = ZERO
+
+       enuc_max_level = ZERO
+       enuc_max_local = ZERO
+
+       
 
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
@@ -171,7 +182,7 @@ contains
                              up(:,1,1,:),ng_u, &
                              w0(n,:), &
                              lo,hi, &
-                             Mach_max_local)
+                             Mach_max_local,temp_max_local,enuc_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_1d(n,time,dt,dx(n,:), &
@@ -184,7 +195,7 @@ contains
                              up(:,1,1,:),ng_u, &
                              w0(n,:), &
                              lo,hi, &
-                             Mach_max_local, &
+                             Mach_max_local,temp_max_local,enuc_max_local, &
                              mp(:,1,1,1))
              endif
 
@@ -200,7 +211,7 @@ contains
                              up(:,:,1,:),ng_u, &
                              w0(n,:), &
                              lo,hi, &
-                             Mach_max_local)
+                             Mach_max_local,temp_max_local,enuc_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_2d(n,time,dt,dx(n,:), &
@@ -213,7 +224,7 @@ contains
                              up(:,:,1,:),ng_u, &
                              w0(n,:), &
                              lo,hi, &
-                             Mach_max_local, &
+                             Mach_max_local,temp_max_local,enuc_max_local, &
                              mp(:,:,1,1))
              endif
 
@@ -239,7 +250,7 @@ contains
                                     w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
                                     np(:,:,:,:),ng_n, &
                                     lo,hi, &
-                                    Mach_max_local)
+                                    Mach_max_local,temp_max_local,enuc_max_local)
                 else
                    mp => dataptr(mla%mask(n), i)
                    call diag_3d_sph(n,time,dt,dx(n,:), &
@@ -254,7 +265,7 @@ contains
                                     w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
                                     np(:,:,:,:),ng_n, &
                                     lo,hi, &
-                                    Mach_max_local, &
+                                    Mach_max_local,temp_max_local,enuc_max_local, &
                                     mp(:,:,:,1))
                 endif
 
@@ -270,7 +281,7 @@ contains
                                 up(:,:,:,:),ng_u, &
                                 w0(n,:), &
                                 lo,hi, &
-                                Mach_max_local)
+                                Mach_max_local,temp_max_local,enuc_max_local)
                 else
                    mp => dataptr(mla%mask(n), i)
                    call diag_3d(n,time,dt,dx(n,:), &
@@ -283,7 +294,7 @@ contains
                                 up(:,:,:,:),ng_u, &
                                 w0(n,:), &
                                 lo,hi, &
-                                Mach_max_local, &
+                                Mach_max_local,temp_max_local,enuc_max_local, &
                                 mp(:,:,:,1))
                 endif
 
@@ -299,12 +310,20 @@ contains
        call parallel_reduce(Mach_max_level, Mach_max_local, MPI_MAX, &
                             proc = parallel_IOProcessorNode())
 
+       call parallel_reduce(temp_max_level, temp_max_local, MPI_MAX, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(enuc_max_level, enuc_max_local, MPI_MAX, &
+                            proc = parallel_IOProcessorNode())
+
 
        !----------------------------------------------------------------------
        ! reduce the current level's data with the global data
        !----------------------------------------------------------------------
        if (parallel_IOProcessor()) then
           Mach_max = max(Mach_max, Mach_max_level)
+          Mach_max = max(temp_max, temp_max_level)
+          Mach_max = max(enuc_max, enuc_max_level)
        endif
 
     end do
@@ -344,13 +363,13 @@ contains
           ! radvel
           write (un, *) " "
           write (un, 999) trim(job_name)
-          write (un, 1001) "time", "max Mach #"
+          write (un, 1001) "time", "max Mach #", "max T (K)", "max enuc (erg/g/s)"
 
           firstCall_io = .false.
        endif
 
        ! write out the data
-       write (un,1000) time, Mach_max
+       write (un,1000) time, Mach_max, temp_max, enuc_max
 
        close(un)
 
@@ -381,7 +400,7 @@ contains
                      u,ng_u, &
                      w0, &
                      lo,hi, &
-                     Mach_max, &
+                     Mach_max,temp_max,enuc_max, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp
@@ -400,7 +419,7 @@ contains
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
-    real (kind=dp_t), intent(inout) :: Mach_max
+    real (kind=dp_t), intent(inout) :: Mach_max, temp_max, enuc_max
     logical,          intent(in   ), optional :: mask(lo(1):)
 
     !     Local variables
@@ -449,6 +468,11 @@ contains
           ! max Mach number                                       
           Mach_max = max(Mach_max,vel/cs_eos(1))
 
+
+          ! max temp and enuc
+          temp_max = max(temp_max,s(i,temp_comp))
+          enuc_max = max(enuc_max,rho_Hnuc(i)/s(i,rho_comp))
+
        endif  ! cell valid
 
     enddo
@@ -466,7 +490,7 @@ contains
                      u,ng_u, &
                      w0, &
                      lo,hi, &
-                     Mach_max, &
+                     Mach_max,temp_max,enuc_max, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp
@@ -485,7 +509,7 @@ contains
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
-    real (kind=dp_t), intent(inout) :: Mach_max
+    real (kind=dp_t), intent(inout) :: Mach_max, temp_max, enuc_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
     !     Local variables
@@ -538,6 +562,10 @@ contains
              ! max Mach number                                       
              Mach_max = max(Mach_max,vel/cs_eos(1))
 
+             ! max temp and enuc
+             temp_max = max(temp_max,s(i,j,temp_comp))
+             enuc_max = max(enuc_max,rho_Hnuc(i,j)/s(i,j,rho_comp))
+
           endif  ! cell valid
 
        enddo
@@ -556,7 +584,7 @@ contains
                      u,ng_u, &
                      w0, &
                      lo,hi, &
-                     Mach_max, &
+                     Mach_max,temp_max,enuc_max, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp
@@ -575,7 +603,7 @@ contains
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
-    real (kind=dp_t), intent(inout) :: Mach_max
+    real (kind=dp_t), intent(inout) :: Mach_max, temp_max, enuc_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
@@ -632,6 +660,10 @@ contains
                 ! max Mach number                                       
                 Mach_max = max(Mach_max,vel/cs_eos(1))
 
+                ! max temp and enuc
+                temp_max = max(temp_max,s(i,j,k,temp_comp))
+                enuc_max = max(enuc_max,rho_Hnuc(i,j,k)/s(i,j,k,rho_comp))
+
              endif  ! cell valid
 
           enddo
@@ -653,7 +685,7 @@ contains
                          w0macx,w0macy,w0macz,ng_wm, &
                          normal,ng_n, &
                          lo,hi, &                         
-                         Mach_max, &
+                         Mach_max,temp_max,enuc_max, &
                          mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp
@@ -676,7 +708,7 @@ contains
     real (kind=dp_t), intent(in   ) ::   w0macz(lo(1)-ng_wm: ,lo(2)-ng_wm: ,lo(3)-ng_wm:)
     real (kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n:  ,lo(2)-ng_n:  ,lo(3)-ng_n:,:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
-    real (kind=dp_t), intent(inout) :: Mach_max
+    real (kind=dp_t), intent(inout) :: Mach_max, temp_max, enuc_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
@@ -732,6 +764,10 @@ contains
 
                 ! max Mach number                                       
                 Mach_max = max(Mach_max,vel/cs_eos(1))
+
+                ! max temp and enuc
+                temp_max = max(temp_max,s(i,j,k,temp_comp))
+                enuc_max = max(enuc_max,rho_Hnuc(i,j,k)/s(i,j,k,rho_comp))
 
              endif  ! cell valid
 
