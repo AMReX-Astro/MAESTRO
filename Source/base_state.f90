@@ -56,7 +56,7 @@ contains
     integer, parameter :: ispec_model = 4
 
     integer, parameter :: MAX_VARNAME_LENGTH=80
-    integer :: npts_model, nvars_model_file
+    integer :: npts_model, nvars_model_file, ierr
 
     real(kind=dp_t) :: min_dens, max_dens, min_temp, max_temp, eps
 
@@ -99,7 +99,12 @@ contains
 
     ! composition is assumed to be in terms of mass fractions
 
-    open(99,file=model_file)
+    open(99,file=model_file,status='old',iostat=ierr)
+ 
+    if (ierr .ne. 0) then
+       print *,'Couldnt open model_file: ',model_file
+       call bl_error('Aborting now -- please supply model_file')
+    end if
 
     ! the first line has the number of points in the model
     read (99, '(a256)') header_line
