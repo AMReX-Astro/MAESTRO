@@ -51,10 +51,15 @@ N=60
 # directory.  This then hides them from the script, so if the system
 # later purges the files in the pltXXXXX directory and the .processed
 # file, we don't overwrite our archived data with a tarred empty
-# directory structure
+# directory structure.  We do the same with the checkpoint files (using
+# checkfiles/)
 
 if [ ! -d plotfiles ]; then
   mkdir plotfiles
+fi
+
+if [ ! -d checkfiles ]; then
+  mkdir checkfiles
 fi
 
 
@@ -80,8 +85,9 @@ function process_files
 
   # Take all but the final plt file -- we want to ensure they're completely 
   # written to disk.  Strip out any tar files that are lying around as well 
-  # as pltXXXXX.processed files.
-  #pltlist=$(ls -d ${plt_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
+  # as pltXXXXX.processed files.  We restrict the find command to a depth of 
+  # 1 to avoid catching any already-processed files in the plotfiles/
+  # directory
   pltlist5=$(find . -maxdepth 1 -type d -name "${plt_prefix}?????" -print | sort)
   pltlist6=$(find . -maxdepth 1 -type d -name "${plt_prefix}??????" -print | sort)
 
@@ -102,6 +108,8 @@ function process_files
   do
     if [ -d ${dir} ]; then
 
+      # only work on the file if there is not a .processed file in the
+      # main directory or the plotfiles/ directory
       if [ ! -f ${dir}.processed ] && [ ! -f plotfiles/${dir}.processed ]; then
 
         # do processing
@@ -116,7 +124,7 @@ function process_files
 	# status of grep
 	grep "HTAR: HTAR SUCCESSFUL" ${dir}.htar >> /dev/null
 
-	# $? holds the exit status of the previous command
+	# The variable $? holds the exit status of the previous command
 	if [ $? -eq 0 ]; then
 	    
           # mark this file as processed so we skip it next time
@@ -133,9 +141,7 @@ function process_files
 	  # move the plotfile into the plotfiles directory
 	  mv ${dir} plotfiles/
 
-	  # the find command will find the plotfiles even in their 
-	  # subdirectory, so we need to move the corresponding .processed 
-	  # file there too.
+	  # ..and the corresponding .processed file too.
 	  mv ${dir}.processed plotfiles/
 
         fi
@@ -151,8 +157,9 @@ function process_files
 
   # Take all but the final chk file -- we want to ensure they're completely 
   # written to disk.  Strip out any tar files that are lying around as well 
-  # as chkXXXXX.processed files.
-  #chklist=$(ls -d ${chk_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
+  # as chkXXXXX.processed files.  We restrict the find command to a depth of
+  # 1 to avoid catching any already-processed files in the checkfiles/ 
+  # directory
   chklist5=$(find . -maxdepth 1 -type d -name "${chk_prefix}??[05]00" -print | sort)
   chklist6=$(find . -maxdepth 1 -type d -name "${chk_prefix}???[05]00" -print | sort)
 
@@ -173,7 +180,7 @@ function process_files
   do
     if [ -d ${dir} ]; then
 
-      if [ ! -f ${dir}.processed ]; then
+      if [ ! -f ${dir}.processed ] && [ ! -f checkfiles/${dir}.processed ]; then
 
         # store the file on HPSS
         ${HTAR} -H copies=2 -cvf ${HPSS_DIR}/${dir}.tar ${dir} > ${dir}.htar
@@ -185,9 +192,7 @@ function process_files
 	# status of grep
         grep "HTAR: HTAR SUCCESSFUL" ${dir}.htar >> /dev/null
 
-	# htar's exit status is 0 if it was successful.  The variable $? 
-	# holds the exit status of the previous command
-
+	# The variable $? holds the exit status of the previous command
 	if [ $? -eq 0 ]; then
 
           # mark this file as processed so we skip it next time
@@ -195,6 +200,12 @@ function process_files
 
           # remove the htar temporary file
           rm ${dir}.htar
+
+	  # move the checkpoint file into the checkfiles directory
+	  mv ${dir} checkfiles/
+
+	  # ..and the corresponding .processed file too.
+	  mv ${dir}.processed checkfiles/
 
         fi
 
@@ -213,9 +224,10 @@ function process_files
 # the date string, to make sure that we don't overwrite anything
 datestr=$(date +"%Y%m%d_%H%M_%S")
 diag_files=$(find . -maxdepth 1 -name "*_diag.out" -print)
+ftime_files=$(find . -maxdepth 1 -name "ftime.out" -print)
 
-if [ "${diag_files}" ]; then
-    ${HTAR} -cvf ${HPSS_DIR}/diag_files_${datestr}.tar ${diag_files} >> /dev/null
+if [ "${diag_files}" ] || [ "${ftime_files}" ]; then
+    ${HTAR} -cvf ${HPSS_DIR}/diag_files_${datestr}.tar ${diag_files} ${ftime_files} >> /dev/null
 fi
 
 
