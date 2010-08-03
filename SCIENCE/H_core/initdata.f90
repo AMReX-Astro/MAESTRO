@@ -232,7 +232,7 @@ contains
           enddo
        enddo
 
-       if (octant .eq. .true.) then
+       if (octant) then
           phix(:,:,:) = M_PI/2.d0
           phiy(:,:,:) = M_PI/2.d0
           phiz(:,:,:) = M_PI/2.d0
