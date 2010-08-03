@@ -1,20 +1,19 @@
 &PROBIN
- model_file = "s15-hburn.modelB.oct128.1159"
+ model_file = "s15-hburn.modelB.oct32.328"
  drdxfac = 5
 
  max_levs = 1
- n_cellx = 256
- n_celly = 256
- n_cellz = 256
+ n_cellx = 128
+ n_celly = 128
+ n_cellz = 128
  max_grid_size = 32
-
-!FIXME
- velpert_amplitude = 1.d3
-! buoyancy_cutoff_factor = 2.d3
- buoyancy_cutoff_factor = 5.d2
 
  anelastic_cutoff = 1.d-4
  base_cutoff_density = 1.d-4
+! sponge_center_density = 3.d-2
+! sponge_start_factor = 2.d0
+! sponge_kappa = 1.0d-3
+! sponge_center_density = 3.5d-1
  sponge_center_density = 5.d-1
  sponge_start_factor = 1.5d0
  sponge_kappa = 1.5d-3
@@ -25,28 +24,21 @@
  dm_in = 3
  do_sponge = .true.
 
- prob_hi_x = 2.d11
- prob_hi_y = 2.d11
- prob_hi_z = 2.d11
+ prob_hi_x = 4.d11
+ prob_hi_y = 4.d11
+ prob_hi_z = 4.d11
 
- prob_lo_x = -2.d11
- prob_lo_y = -2.d11
- prob_lo_z = -2.d11
-
-! restart = 400
-
- max_step  = 10000
+ max_step  = 5000
  init_iter = 1
 
- stop_time = 5.72d10
+ stop_time = 30000000.
 
  plot_base_name = "plt"
- check_base_name = "chk"
- plot_int  = 100
+ plot_int  = 5
  chk_int   = 100
 
  cflfac = 0.7d0
- init_shrink = 1.0d0
+ init_shrink = 0.1d0
  max_dt_growth = 1.1d0
  use_soundspeed_firstdt = T
  use_divu_firstdt = T
@@ -78,9 +70,8 @@
  single_prec_plotfiles = T
 
  use_eos_coulomb = T
+ small_temp = 5.d5
 
  plot_trac = F
- plot_omegadot = F 
- plot_Hext = T
 
 /

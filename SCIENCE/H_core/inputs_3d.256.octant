@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "s15-hburn.hse.2218"
+ model_file = "s15-hburn.modelB.oct256.2268"
  drdxfac = 5
 
  max_levs = 1
@@ -18,7 +18,7 @@
  dm_in = 3
  
  do_sponge = .true.
- sponge_center_density = 2.d-1
+ sponge_center_density = 5.d-1
  sponge_start_factor = 1.5d0
  sponge_kappa = 1.5d-3
 
