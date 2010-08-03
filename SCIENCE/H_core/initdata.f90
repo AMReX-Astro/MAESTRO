@@ -232,6 +232,12 @@ contains
           enddo
        enddo
 
+       if (octant .eq. .true.) then
+          phix(:,:,:) = M_PI/2.d0
+          phiy(:,:,:) = M_PI/2.d0
+          phiz(:,:,:) = M_PI/2.d0
+       end if
+
        ! compute the norm of k
        do i=1,3
           do j=1,3
