@@ -21,7 +21,7 @@ HTAR=/opt/public/bin/htar
 
 # path to the ftime executable -- used for making a simple ftime.out file
 # listing the name of the plotfile and its simulation time
-FTIME_EXE=./ftime.PathScale.Intel.exe
+FTIME_EXE=./ftime.Linux.PathScale.exe
 
 
 #----------------------------------------------------------------------------
