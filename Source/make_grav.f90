@@ -13,8 +13,9 @@ contains
   subroutine make_grav_cell(grav_cell,rho0)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, r_cc_loc, r_edge_loc
-    use probin_module, only: grav_const, base_cutoff_density
+    use geometry, only: spherical, nr_fine, r_cc_loc, r_edge_loc, nlevs_radial, nr
+    use probin_module, only: grav_const, base_cutoff_density, &
+         do_planar_invsq_grav, planar_invsq_mass
     use fundamental_constants_module, only: Gconst
 
     ! compute the base state gravitational acceleration at the cell
@@ -25,52 +26,67 @@ contains
     real(kind=dp_t), intent(in   ) ::      rho0(:,0:)
 
     ! Local variables
-    integer                      :: r
+    integer                      :: r, n
     real(kind=dp_t), allocatable :: m(:)
     real(kind=dp_t)              :: term1, term2
 
     if (spherical .eq. 0) then
 
-       grav_cell = grav_const
+       if (.not. do_planar_invsq_grav)  then
+          grav_cell = grav_const
        
-    else
+       else
+
+          ! we are doing a plane-parallel geometry with a 1/r**2
+          ! gravitational acceleration.  The mass is assumed to be
+          ! at the origin.  The mass in the computational domain
+          ! does not contribute to the gravitational acceleration.
+          do n=1,nlevs_radial
+             do r = 0, nr(n)-1
+                grav_cell(n,r) = -Gconst*planar_invsq_mass / r_cc_loc(n,r)**2
+             enddo
+          enddo
+
+       endif
+
+    else  ! spherical = 1
 
        allocate(m(0:nr_fine-1))
-
+          
        m(0) = FOUR3RD*M_PI*rho0(1,0)*r_cc_loc(1,0)**3
        grav_cell(1,0) = -Gconst * m(0) / r_cc_loc(1,0)**2
-
+       
        do r=1,nr_fine-1
 
-          ! the mass is defined at the cell-centers, so to compute the
-          ! mass at the current center, we need to add the contribution of
-          ! the upper half of the zone below us and the lower half of the
-          ! current zone.
-
-          ! don't add any contributions from outside the star -- i.e.
-          ! rho < base_cutoff_density
+          ! the mass is defined at the cell-centers, so to compute
+          ! the mass at the current center, we need to add the
+          ! contribution of the upper half of the zone below us and
+          ! the lower half of the current zone.
+          
+          ! don't add any contributions from outside the star --
+          ! i.e.  rho < base_cutoff_density
           if (rho0(1,r-1) > base_cutoff_density) then
              term1 = FOUR3RD*M_PI*rho0(1,r-1) * &
-               (r_edge_loc(1,r) - r_cc_loc(1,r-1)) * &
-               (r_edge_loc(1,r)**2 + &
-                r_edge_loc(1,r)*r_cc_loc(1,r-1) + &
-                r_cc_loc(1,r-1)**2)
+                  (r_edge_loc(1,r) - r_cc_loc(1,r-1)) * &
+                  (r_edge_loc(1,r)**2 + &
+                   r_edge_loc(1,r)*r_cc_loc(1,r-1) + &
+                   r_cc_loc(1,r-1)**2)
           else
              term1 = ZERO
           endif
 
           if (rho0(1,r) > base_cutoff_density) then
              term2 = FOUR3RD*M_PI*rho0(1,r  )*&
-               (r_cc_loc(1,r) - r_edge_loc(1,r  )) * &
-               (r_cc_loc(1,r)**2 + &
-                r_cc_loc(1,r)*r_edge_loc(1,r  ) + &
-                r_edge_loc(1,r  )**2)          
+                  (r_cc_loc(1,r) - r_edge_loc(1,r  )) * &
+                  (r_cc_loc(1,r)**2 + &
+                   r_cc_loc(1,r)*r_edge_loc(1,r  ) + &
+                   r_edge_loc(1,r  )**2)          
           else
              term2 = ZERO
           endif
-
+          
           m(r) = m(r-1) + term1 + term2
-
+          
           grav_cell(1,r) = -Gconst * m(r) / r_cc_loc(1,r)**2
 
        enddo
@@ -84,8 +100,9 @@ contains
   subroutine make_grav_edge(grav_edge,rho0)
 
   use bl_constants_module
-  use geometry, only: spherical, r_edge_loc, nr_fine
-  use probin_module, only: grav_const, base_cutoff_density
+  use geometry, only: spherical, r_edge_loc, nr_fine, nlevs_radial, nr
+  use probin_module, only: grav_const, base_cutoff_density, &
+       do_planar_invsq_grav, planar_invsq_mass
   use fundamental_constants_module, only: Gconst
 
     ! compute the base state gravity at the cell edges (grav_edge(1)
@@ -96,13 +113,28 @@ contains
     real(kind=dp_t), intent(in   ) ::      rho0(:,0:)
 
     ! Local variables
-    integer                      :: r
+    integer                      :: r, n
     real(kind=dp_t)              :: mencl
     
     if (spherical .eq. 0) then
+
+       if (.not. do_planar_invsq_grav)  then       
+          grav_edge = grav_const
        
-       grav_edge = grav_const
-       
+       else
+
+          ! we are doing a plane-parallel geometry with a 1/r**2
+          ! gravitational acceleration.  The mass is assumed to be
+          ! at the origin.  The mass in the computational domain
+          ! does not contribute to the gravitational acceleration.
+          do n=1,nlevs_radial
+             do r = 0, nr(n)-1
+                grav_edge(n,r) = -Gconst*planar_invsq_mass / r_edge_loc(n,r)**2
+             enddo
+          enddo
+
+       endif
+
     else
        
        grav_edge(1,0) = zero 
