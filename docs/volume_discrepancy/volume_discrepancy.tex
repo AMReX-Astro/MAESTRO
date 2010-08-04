@@ -37,4 +37,23 @@ and
 \label{eq:Utconstraint_vd}
 \end{equation}
 
+In solving the $w_0$ evolution equation
+(Eq.~[\ref{eq:w0constraint_vd}]), we expand the divergence, giving
+\begin{equation}
+\nablab \cdotb (w_0 \er)  = \overline{S} - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} - 
+w_0 \er  \cdotb \frac{1}{\beta_0} \nablab \beta_0  - \frac{f}{\gammabar p_0} \frac{p_0 - \overline{p_\mathrm{EOS}}}{\Delta t} \enskip .
+\end{equation}
+Recalling that 
+\begin{equation*}
+\frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial r} = 
+ \frac{1}{\beta_0} \frac{\partial \beta_0}{\partial r}
+\end{equation*}
+(see Paper~I), and that $\psi \equiv D_0 p_0 / Dt \equiv \partial p_0 / \partial t + 
+w_0 \partial p_0 / \partial r$, we have
+\begin{equation}
+\nablab \cdotb (w_0 \er)  = \overline{S} - \frac{1}{\gammabar p_0} \psi -
+ \frac{f}{\gammabar p_0} \frac{p_0 - \overline{p_\mathrm{EOS}}}{\Delta t} \enskip .
+\end{equation}
+This is the form that is solved in {\tt make\_w0}.
+
 
