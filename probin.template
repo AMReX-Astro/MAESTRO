@@ -200,6 +200,14 @@ contains
        max_grid_size_base = max_grid_size
     end if
 
+    if (spherical_in == 1 .and. do_planar_invsq_grav) then
+       call bl_error("ERROR: do_planar_invsq_grav invalid for spherical geometries")
+    endif
+
+    if (do_planar_invsq_grav .and. prob_lo(dm_in) <= ZERO) then
+       call bl_error("ERROR: do_planar_invsq_grav requires prob_lo(dm) > 0")
+    endif
+
 
     ! make sure that the buffer width for tagging is atleast as big as
     ! the regrid interval

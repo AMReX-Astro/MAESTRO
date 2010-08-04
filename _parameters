@@ -140,6 +140,12 @@ dpdt_factor                         real               0.d0
 # set to 1 if you are doing a spherical problem
 spherical_in                        integer            0                   
 
+# are we doing 1/r$^2$ gravity for plane-parallel
+do_planar_invsq_grav                logical            .false.
+
+# the point mass for planar 1/r$^2$ gravity
+planar_invsq_mass                   real               0.d0
+
 # set octant = T if you just want to model an octant of a sphere
 # (note: only takes effect for spherical geometry)
 octant                              logical            .false.
