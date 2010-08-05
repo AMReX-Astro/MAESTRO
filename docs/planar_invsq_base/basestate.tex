@@ -146,6 +146,19 @@ differencing:
    - \left ( \gammabar p_0 \frac{\partial \dw}{\partial r} \right )_{j-1} 
 \right \}
 \end{equation}
+Expanding the $\partial \dw / \partial r$ terms results in a equation depending on $\dw$ at
+4 different edge locations---this no longer fits into the tri-diagonal format used in the
+uniform grid case.  In detail, it becomes:
+\begin{eqnarray}
+\frac{\partial}{\partial r} \left [ \gammabar p_0 \frac{\partial \dw}{\partial r} \right ]_{j-\half} &=& 
+\frac{1}{\dr_c} \left \{  \frac{1}{2} \left [
+      \left ( \gammabar p_0 \right )_{j+1} \frac{(\dw)_{j+\thalf} - (\dw)_{j+\half}}{\dr_f} +
+      \left ( \gammabar p_0 \right )_{j}   \frac{(\dw)_{j+\half} - (\dw)_{j-\half}}{\dr_f}  \right ] \right .  \nonumber \\
+&& \qquad \left .  - \left ( \gammabar p_0 \right )_{j-1} \frac{(\dw)_{j-\half} - (\dw)_{j-\thalf}}{\dr_c}  
+\right \}
+\end{eqnarray}
+which has terms proportional to $(\dw)_{j-\thalf}$, $(\dw)_{j-\half}$, $(\dw)_{j+\half}$, and $(\dw)_{j+\thalf}$
+
 
 \subsection{Boundary Conditions}
 
