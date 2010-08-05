@@ -71,8 +71,9 @@
 
  use_eos_coulomb = T
 
+ plot_base = T
  plot_trac = F
  plot_omegadot = F 
- plto_Hext = T
+ plot_Hext = T
 
 /
