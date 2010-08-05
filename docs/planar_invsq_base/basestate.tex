@@ -14,7 +14,7 @@ the underlying star contributes to the gravitational acceleration.
 
 We begin with the $w_0$ constraint equation (derived elsewhere), including the volume-discrepancy term:
 \begin{equation}
-\nabla \cdot  ({w_0 \er}) = \bar{S} - \frac{1}{\gammabar p_0} \psi - \frac{f}{\gammabar p_0} \frac{p_0 - \overline{{p_0}_\mathrm{EOS}}}{\Delta t}
+\nabla \cdot  ({w_0 \er}) = \bar{S} - \frac{1}{\gammabar p_0} \psi - \frac{f}{\gammabar p_0} \frac{p_0 - \overline{{p_0}_\mathrm{EOS}}}{\dt}
 \end{equation}
 where
 \[ \psi = \frac{D_0 p_0}{D t} = \frac{\partial p_0}{\partial t} + w_0 \frac{\partial p_0}{\partial t}. \]
@@ -24,7 +24,7 @@ Let us now define $\ow$ and $\dw$ such that
 \[ w_0 = \ow + \dw \]
 We take $\ow$ to satisfy
 \begin{equation}
-\frac{\partial \ow}{\partial t} = \bar{S} - \frac{f}{\gammabar p_0} \frac{p_0 - \overline{{p_0}_\mathrm{EOS}}}{\Delta t} ,
+\frac{\partial \ow}{\partial t} = \bar{S} - \frac{f}{\gammabar p_0} \frac{p_0 - \overline{{p_0}_\mathrm{EOS}}}{\dt} ,
 \end{equation}
 leaving the equation
 \begin{equation}
@@ -79,10 +79,9 @@ Substituting in this expression gives our final result:
 \begin{equation}
 \frac{\partial}{\partial r}{} \left[ \gammabar p_0 \frac{\partial}{\partial r}{({\dw})} \right]
    = - \frac{2 w_0 \rho_0 g}{r} - g \frac{\partial \etarho}{\partial r}
-   = \frac{2 w_0}{r} \frac{\partial p_0}{\partial r} - g \frac{\partial \etarho}{\partial r}.
 \end{equation}
 
-\subsection{Discretization}
+\subsection{Uniform $\dr$ Discretization}
 
 Collecting all of the $\dw$ terms on the left side, our constraint equation
 appears as:
@@ -117,12 +116,36 @@ A_j (\dw)_{j-\thalf} + B_j (\dw)_{j-\myhalf} + C_j (\dw)_{j+\myhalf} = F_j,
 \end{equation}
 then:
 \begin{eqnarray}
-A_j &=& \frac{1}{\Delta r^2} \left( {\gammabar p_0}\right)_{j-1}, \\
-B_j &=& -\frac{1}{\Delta r^2} \left[ \left( {\gammabar p_0}\right)_{j}  + \left( {\gammabar p_0}\right)_{j-1} \right] +  \frac{2}{r_{j-\myhalf}} \left (\rho_0 g \right )_{j-\half}  , \\
-C_j &=& \frac{1}{\Delta r^2} \left( {\gammabar p_0}\right)_{j}  , \\
-F_j &=&  -\frac{2}{r_{j-\myhalf}} (\rho_0 g)_{j-\half}   (\ow)_{j-\half} - \frac{g_{j-\half}}{\Delta r} \left[ \left( \etarho \right)_{j} - \left( \etarho \right)_{j-1} \right] 
+A_j &=& \frac{1}{\dr^2} \left( {\gammabar p_0}\right)_{j-1}, \\
+B_j &=& -\frac{1}{\dr^2} \left[ \left( {\gammabar p_0}\right)_{j}  + \left( {\gammabar p_0}\right)_{j-1} \right] +  \frac{2}{r_{j-\myhalf}} \left (\rho_0 g \right )_{j-\half}  , \\
+C_j &=& \frac{1}{\dr^2} \left( {\gammabar p_0}\right)_{j}  , \\
+F_j &=&  -\frac{2}{r_{j-\myhalf}} (\rho_0 g)_{j-\half}   (\ow)_{j-\half} - \frac{g_{j-\half}}{\dr} \left[ \left( \etarho \right)_{j} - \left( \etarho \right)_{j-1} \right] 
 \end{eqnarray}
 
+
+\subsection{Non-Uniform $\dr$ Discretization}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=4in]{\planeinvsqfigpath/grid2}
+\end{figure}
+
+Consider the above non-uniform grid spacing,
+where $\dr_c = 2 \dr_f$.  Here, the discretization of the Laplacian-like term is more complex.
+We want to compute
+\begin{equation}
+\frac{\partial}{\partial r} \left [ \gammabar p_0 \frac{\partial \dw}{\partial r} \right ]_{j-\half}
+\end{equation}
+This is to be centered at $j-\half$, which we accomplish by averaging the two fine grids and then
+differencing:
+\begin{equation}
+\frac{\partial}{\partial r} \left [ \gammabar p_0 \frac{\partial \dw}{\partial r} \right ]_{j-\half} =
+\frac{1}{\dr_c} \left \{ \frac{1}{2} \left [
+      \left ( \gammabar p_0 \frac{\partial \dw}{\partial r} \right )_{j+1} +
+      \left ( \gammabar p_0 \frac{\partial \dw}{\partial r} \right )_{j} \right ]
+   - \left ( \gammabar p_0 \frac{\partial \dw}{\partial r} \right )_{j-1} 
+\right \}
+\end{equation}
 
 \subsection{Boundary Conditions}
 
