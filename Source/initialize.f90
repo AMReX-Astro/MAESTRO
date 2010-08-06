@@ -756,6 +756,9 @@ contains
        call compute_cutoff_coords(rho0_old)
        call make_grav_cell(grav_cell,rho0_old)
        call enforce_HSE(rho0_old,p0_old,grav_cell)
+
+       ! call eos with r,p as input to recompute T,h
+       call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
     end if
 
     ! set tempbar to be the average
@@ -1076,6 +1079,9 @@ contains
        call compute_cutoff_coords(rho0_old)
        call make_grav_cell(grav_cell,rho0_old)
        call enforce_HSE(rho0_old,p0_old,grav_cell)
+
+       ! call eos with r,p as input to recompute T,h
+       call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
     end if
 
     ! set tempbar to be the average
