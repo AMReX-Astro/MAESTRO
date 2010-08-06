@@ -19,7 +19,8 @@ contains
   subroutine prolong_base_to_uniform(base_ml, base_fine)
 
     use bl_prof_module
-    use geometry, only: r_start_coord, r_end_coord, numdisjointchunks, nlevs_radial
+    use bl_error_module
+    use geometry, only: r_start_coord, r_end_coord, numdisjointchunks, nlevs_radial, nr_fine
 
     real(kind=dp_t), intent(in   ) :: base_ml(:,0:)
     real(kind=dp_t), intent(inout) :: base_fine(0:)
@@ -36,7 +37,7 @@ contains
     ! the mask array will keep track of whether we've filled in data
     ! in a corresponding radial bin.  .false. indicates that we've
     ! already output there.
-    allocate(imask_fine(0:nlevs_radial-1))
+    allocate(imask_fine(0:nr_fine-1))
     imask_fine(:) = .true.
 
     ! r1 is the factor between the current level grid spacing and the
