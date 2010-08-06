@@ -34,17 +34,6 @@
 -- add the ability in _parameters to check to make sure that runtime
    parameters are valid (e.g. cflfac should be <= 1).
 
--- expand the geometry types to include:
-
-    o plane parallel
-    o spherical
-    o spherical_octant
-    o planar 1/r**2 gravity
-
-   the spherical octant will be useful for shell burning.  The planar
-   1/r**2 gravity will be useful for the novae.
-
-
 -- sync the Coulomb corrections bust check in helmeos up with the main
    version (i.e. check etot and stot as well).
 
@@ -63,3 +52,7 @@
    means that we need to use numdisjointchunks() and r_start_coord and
    r_end_coord.
 
+-- split initdata.f90 into 3 separate routines, one for
+   initscalardata, initveldata, and perturb.  This allows for easier
+   use of the main Source/ versions of these routines, and will keep
+   us better in sync.
