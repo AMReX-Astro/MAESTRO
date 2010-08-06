@@ -73,6 +73,7 @@ f90sources += react_state.f90
 f90sources += regrid.f90
 f90sources += restart.f90
 f90sources += restrict_base.f90
+f90sources += prolong_base_to_uniform.f90
 f90sources += rhoh_vs_t.f90
 f90sources += setbc.f90
 f90sources += slope.f90
