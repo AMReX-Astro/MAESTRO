@@ -99,11 +99,11 @@ contains
 
   subroutine make_grav_edge(grav_edge,rho0)
 
-  use bl_constants_module
-  use geometry, only: spherical, r_edge_loc, nr_fine, nlevs_radial, nr
-  use probin_module, only: grav_const, base_cutoff_density, &
-       do_planar_invsq_grav, planar_invsq_mass
-  use fundamental_constants_module, only: Gconst
+    use bl_constants_module
+    use geometry, only: spherical, r_edge_loc, nr_fine, nlevs_radial, nr
+    use probin_module, only: grav_const, base_cutoff_density, &
+         do_planar_invsq_grav, planar_invsq_mass
+    use fundamental_constants_module, only: Gconst
 
     ! compute the base state gravity at the cell edges (grav_edge(1)
     ! is the gravitational acceleration at the left edge of zone 1).
@@ -159,5 +159,73 @@ contains
     end if
     
   end subroutine make_grav_edge
+
+
+  subroutine make_grav_edge_uniform(grav_edge_fine,rho0_fine)
+
+    ! a special version of the make_grav_edge routine that takes a
+    ! uniformly-gridded, single level density array at the finest base
+    ! state resolution and returns the uniformly-gridded, single-level
+    ! gravity at the same resolution
+
+    use bl_constants_module
+    use geometry, only: spherical, r_edge_loc, nr_fine, nlevs_radial, nr
+    use probin_module, only: grav_const, base_cutoff_density, &
+         do_planar_invsq_grav, planar_invsq_mass
+    use fundamental_constants_module, only: Gconst
+
+    ! compute the base state gravity at the cell edges (grav_edge(1)
+    ! is the gravitational acceleration at the left edge of zone 1).
+    ! The base state uses 0-based indexing, so grav_edge does too.
+
+    real(kind=dp_t), intent(  out) :: grav_edge_fine(0:)
+    real(kind=dp_t), intent(in   ) ::      rho0_fine(0:)
+
+    ! Local variables
+    integer                      :: r, n
+    real(kind=dp_t)              :: mencl
+    
+    if (spherical .eq. 0) then
+
+       if (.not. do_planar_invsq_grav)  then       
+          grav_edge_fine(:) = grav_const
+       
+       else
+
+          ! we are doing a plane-parallel geometry with a 1/r**2
+          ! gravitational acceleration.  The mass is assumed to be
+          ! at the origin.  The mass in the computational domain
+          ! does not contribute to the gravitational acceleration.
+          do r = 0, nr(nlevs_radial)-1
+             grav_edge_fine(r) = -Gconst*planar_invsq_mass / &
+                  r_edge_loc(nlevs_radial,r)**2
+          enddo
+
+       endif
+
+    else
+       
+       grav_edge_fine(0) = ZERO
+       mencl = ZERO
+
+       do r=1,nr_fine-1
+
+          ! only add to the enclosed mass if the density is 
+          ! > base_cutoff_density
+          if (rho0_fine(r-1) > base_cutoff_density) then
+             mencl = mencl + FOUR3RD*M_PI * &
+                  (r_edge_loc(nlevs_radial,r) - r_edge_loc(nlevs_radial,r-1)) * &
+                  (r_edge_loc(nlevs_radial,r)**2 + &
+                   r_edge_loc(nlevs_radial,r)*r_edge_loc(nlevs_radial,r-1) + &
+                   r_edge_loc(nlevs_radial,r-1)**2) * rho0_fine(r-1)
+          endif
+          
+          grav_edge_fine(r) = -Gconst * mencl / r_edge_loc(nlevs_radial,r)**2
+
+       end do
+       
+    end if
+    
+  end subroutine make_grav_edge_uniform
   
 end module make_grav_module
