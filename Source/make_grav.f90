@@ -6,7 +6,7 @@ module make_grav_module
 
   private
 
-  public :: make_grav_cell, make_grav_edge
+  public :: make_grav_cell, make_grav_edge, make_grav_edge_uniform
 
 contains
 
