@@ -139,11 +139,17 @@ contains
     real(kind=dp_t),    intent(in   ) :: p0_init(0:)
 
     !     Local variables
-    integer :: comp
+    integer :: comp,i,j,k
+    real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
+    real(kind=dp_t) :: temp, t0
+    real(kind=dp_t) :: x0, y0, z0, r0
+    real(kind=dp_t) :: x, y, z
 
-    if (perturb_model) then
-       call bl_error('perturb_model not written for initscalardata_3d_sphr')
-    end if
+
+    ! if we are spherical, we want to make sure that p0 is good, since that is
+    ! what is needed for HSE.  Therefore, we will put p0 onto a cart array and
+    ! then initialize h from rho, X, and p0.
+    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     ! initial the domain with the base state
     s = ZERO
@@ -164,11 +170,69 @@ contains
                                          s(:,:,:,comp:),lo,hi,dx,ng)
     end do
 
+    ! initialize p0_cart
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0_init(:), &
+                                      p0_cart(:,:,:,1:),lo,hi,dx,0)
+
     ! initialize tracers
     do comp = trac_comp, trac_comp+ntrac-1
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
                                          s(:,:,:,comp:),lo,hi,dx,ng)
     end do
+
+    if (perturb_model) then
+
+       x0 = center(1) + 2.5d10
+       y0 = center(2) + 2.5d10
+       z0 = center(3) + 3.0d10
+       
+       ! add an optional perturbation
+       do k = lo(3), hi(3)
+          z = prob_lo(3) + (dble(k)+HALF) * dx(3)
+
+          do j = lo(2), hi(2)
+             y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+
+             do i = lo(1), hi(1)
+                x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+
+
+                t0 = s(i,j,k,temp_comp)
+
+                ! Tanh bubbles
+                r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) / 2.5d8
+    
+                ! This case works
+                temp = t0 * (ONE + TWO*(.150_dp_t * 0.5_dp_t * & 
+                     (1.0_dp_t + tanh((2.0_dp_t-r0)))))
+
+                ! Use the EOS to make this temperature perturbation occur at 
+                ! constant pressure
+                temp_eos(1) = temp
+                p_eos(1) = p0_cart(i,j,k,1)
+                den_eos(1) = s(i,j,k,rho_comp)
+                xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,k,rho_comp)
+
+                call eos(eos_input_tp, den_eos, temp_eos, &
+                     npts, &
+                     xn_eos, &
+                     p_eos, h_eos, e_eos, &
+                     cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                     dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                     dpdX_eos, dhdX_eos, &
+                     gam1_eos, cs_eos, s_eos, &
+                     dsdt_eos, dsdr_eos, &
+                     .false.)
+
+                s(i,j,k,rho_comp) = den_eos(1)
+                s(i,j,k,spec_comp:spec_comp+nspec-1) = den_eos(1)*xn_eos(1,:)
+                s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+                s(i,j,k,temp_comp) = temp
+             enddo
+          enddo
+       enddo
+
+    end if
 
   end subroutine initscalardata_3d_sphr
 
@@ -381,10 +445,6 @@ contains
              enddo
              rloc = sqrt(rloc)
 
-!             theta = (xloc(3)-xc(3))/rloc
-!             theta = dacos(theta)
-!             phi = datan2((xloc(2)-xc(2)),(xloc(1)-xc(1)))
-
              ! loop over the 27 combinations of fourier components
              do i=1,3
                 do j=1,3
@@ -423,16 +483,11 @@ contains
                 enddo
              enddo
 
-!                upert(1) = velpert_amplitude * dsin(theta) * dcos(phi) 
-!                upert(2) = velpert_amplitude * dsin(theta) * dsin(phi) 
-!                upert(3) = velpert_amplitude * dcos(theta)
-
              ! apply the cutoff function to the perturbational velocity
-            do i=1,3
-               upert(i) = velpert_amplitude *upert(i) &
-!               upert(i) = upert(i) &
-                    *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
-            enddo
+             do i=1,3
+                upert(i) = velpert_amplitude *upert(i) &
+                     *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
+             enddo
 
              ! add perturbational velocity to background velocity
              do i=1,3
@@ -443,6 +498,49 @@ contains
        enddo
     enddo
      
+    ! A spherically symmetric velocity "perturbation"
+!     do iloc = lo(1),hi(1)
+!        do jloc = lo(2),hi(2)
+!           do kloc = lo(3),hi(3)
+
+!              ! set perturbational velocity to zero
+!              upert = ZERO
+
+!              ! compute where we physically are
+!              xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1)
+!              xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2)
+!              xloc(3) = prob_lo(3) + (dble(kloc)+0.5d0)*dx(3)
+
+!              ! compute distance to the center of the star
+!              rloc = ZERO
+!              do i=1,3
+!                 rloc = rloc + (xloc(i) - xc(i))**2
+!              enddo
+!              rloc = sqrt(rloc)
+
+!              theta = (xloc(3)-xc(3))/rloc
+!              theta = dacos(theta)
+!              phi = datan2((xloc(2)-xc(2)),(xloc(1)-xc(1)))
+
+!              upert(1) = velpert_amplitude * dsin(theta) * dcos(phi) 
+!              upert(2) = velpert_amplitude * dsin(theta) * dsin(phi) 
+!              upert(3) = velpert_amplitude * dcos(theta)
+
+!              ! apply the cutoff function to the perturbational velocity
+!              do i=1,3
+!                 upert(i) = upert(i) &
+!                      *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
+!              enddo
+
+!              ! add perturbational velocity to background velocity
+!              do i=1,3
+!                 u(iloc,jloc,kloc,i) = u(iloc,jloc,kloc,i) + upert(i)
+!              enddo
+
+!           enddo
+!        enddo
+!     enddo
+
   end subroutine initveldata_3d_sphr
 
 end module init_module
