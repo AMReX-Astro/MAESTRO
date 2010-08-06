@@ -586,6 +586,7 @@ contains
     use probin_module, only : drdxfac, octant
     use make_grav_module
     use enforce_HSE_module
+    use rhoh_vs_t_module
     
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
@@ -795,6 +796,7 @@ contains
     use multifab_fill_ghost_module
     use make_grav_module
     use enforce_HSE_module
+    use rhoh_vs_t_module
 
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
