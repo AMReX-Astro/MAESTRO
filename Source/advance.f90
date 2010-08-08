@@ -172,6 +172,7 @@ contains
     advect_time  = 0.d0
     macproj_time = 0.d0
     ndproj_time  = 0.d0
+    thermal_time = 0.d0
     react_time   = 0.d0
     misc_time    = 0.d0
 
