@@ -32,7 +32,9 @@
 \endlastfoot
 
 
+\verb=  amr_buf_width  = &   the number of buffer zones surrounding a cell tagged for refinement. note that this needs to be >= regrid\_int  &  -1 \\
 \verb=  anelastic_cutoff  = &   The density below which we modify the constraint to look like the anelastic constraint, instead of the low Mach constraint.  This prevents velocities from getting out of hand at the edge of the star. Refer to Section \ref{Sec:Anelastic Cutoff}.  &  3.d6 \\
+\verb=  barrier_timers  = &   Call a parallel\_barrier before each of the simple timers we have coded in advance.f90.  Might cause a very slight overall performance hit.  &  .false. \\
 \verb=  base_cutoff_density  = &   The density below which we keep the initial model constant. Refer to Section \ref{Sec:Base Cutoff Density}  &  3.d6 \\
 \verb=  bcx_hi  = &   $+x$ boundary condition (valid values are listed in {\tt  boxlib/bc.f90})  &  SLIP\_WALL \\
 \verb=  bcx_lo  = &   $-x$ boundary condition  &  SLIP\_WALL \\
@@ -50,16 +52,18 @@
 \verb=  chk_int  = &   Number of timesteps between writing a checkpoint file  &  0 \\
 \verb=  cluster_min_width  = &   The minimum size on a side for a grid created using make\_new\_grids.  &  16 \\
 \verb=  co_latitude  = &   latitude, in radians, for problems with rotation where the domain is only a subset of a full star.  &  ZERO \\
+\verb=  conductivity_constant  = &   the constant conductivity (only applies if the conductivity/constant module is used)  &  1.0d0 \\
 \verb=  diag_buf_size  = &   number of timesteps to buffer diagnostic output information before writing (note: not implemented for all problems)  &  10 \\
 \verb=  dm_in  = &   dimensionality (valid values are 2 or 3)  &  2 \\
 \verb=  do_alltoallv  = &    &  .false. \\
 \verb=  do_burning  = &   turn on (.true.) or off (.false.) burning  &  .true. \\
 \verb=  do_eos_h_above_cutoff  = &   After the advective enthalpy update, recompute the enthalpy if we are below the base cutoff density.  &  .true. \\
 \verb=  do_initial_projection  = &   Do the initial projection.  &  .true. \\
+\verb=  do_planar_invsq_grav  = &   are we doing 1/r$^2$ gravity for plane-parallel  &  .false. \\
 \verb=  do_smallscale  = &   force $\rho_0 = (\rho h)_0 = 0$, {\tt evolve\_base\_state = F} and {\tt beta\_type} = 3  &  .false. \\
 \verb=  do_sponge  = &   Use sponging.  &  .false. \\
 \verb=  dpdt_factor  = &   factor in front of the volume discrepancy term (0.0 = off)  &  0.d0 \\
-\verb=  drdxfac  = &   ratio of radial base state cells to Cartesian full state cells for spherical geometry, (i.e. $\Delta r = \Delta x/ \mathtt{drdxfac}$)  &  1 \\
+\verb=  drdxfac  = &   ratio of radial base state zones to Cartesian full state zones for spherical geometry  &  1 \\
 \verb=  enthalpy_pred_type  = &   predict\_rhohprime = 1; \newline predict\_h = 2; \newline predict\_T\_then\_rhohprime = 3; \newline predict\_T\_then\_h = 4; \newline predict\_hprime = 5; \newline predict\_Tprime\_then\_h = 6.  &  predict\_rhohprime \\
 \verb=  evolve_base_state  = &   turn on (.true.) or off (.false.) basestate evolution  &  .true. \\
 \verb=  fixed_dt  = &   Fix the time step.  If -1.0, then use the standard time step.  &  -1.0d0 \\
@@ -85,11 +89,16 @@
 \verb=  n_cellx  = &   Number of cells for the base level in the x-direction  &  -1 \\
 \verb=  n_celly  = &   Number of cells for the base level in the y-direction  &  -1 \\
 \verb=  n_cellz  = &   Number of cells for the base level in the z-direction  &  -1 \\
+\verb=  octant  = &   set octant = T if you just want to model an octant of a sphere (note: only takes effect for spherical geometry)  &  .false. \\
 \verb=  perturb_model  = &   Turn on a perturbation in the initial data.  Problem specific.  &  .false. \\
+\verb=  planar_invsq_mass  = &   the point mass for planar 1/r$^2$ gravity  &  0.d0 \\
+\verb=  plot_Hext  = &   plot external heating (Hext) in plotfile  &  .false. \\
 \verb=  plot_base  = &   plot w0\_x, w0\_y, w0\_z, divw0, rho0, rhoh0, h0, and p0 in plotfile  &  .false. \\
 \verb=  plot_base_name  = &   prefix to use in plotfile file names  &  "plt" \\
 \verb=  plot_deltat  = &   rather than use a plot interva, plot a file after the solution has advanced past plot\_deltat in time  &  0.d0 \\
+\verb=  plot_eta  = &   plot $\etarho$ in plotfile  &  .false. \\
 \verb=  plot_int  = &   plot interval  &  0 \\
+\verb=  plot_omegadot  = &   plot omegadot in plotfile  &  .true. \\
 \verb=  plot_spec  = &   plot species and omegadot in plotfile  &  .true. \\
 \verb=  plot_trac  = &   plot tracers in plotfile  &  .false. \\
 \verb=  ppm_type  = &   0 = no ppm \newline 1 = 1985 ppm \newline 2 = 2009 ppm  &  1 \\
@@ -125,8 +134,9 @@
 \verb=  thermal_diffusion_type  = &   In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.  &  1 \\
 \verb=  use_delta_gamma1_term  = &   turns on second order correction to delta gamma1 term  &  .false. \\
 \verb=  use_divu_firstdt  = &   Use the divu constraint when computing the first time step.  &  .false. \\
-\verb=  use_eos_coulomb  = &    &  .true. \\
-\verb=  use_etarho  = &   turn on the $\etarho$ term as described in the flow chart  &  .true. \\
+\verb=  use_eos_coulomb  = &   use the Coulomb corrections between ions (if supported by the EOS)  &  .true. \\
+\verb=  use_etarho  = &   turn on the etarho term as described in flow chart  &  .true. \\
+\verb=  use_hypre  = &   use the hypre library  &  .false. \\
 \verb=  use_soundspeed_firstdt  = &   Use the soundspeed constraint when computing the first time step.  &  .false. \\
 \verb=  use_tfromp  = &   When updating temperature, use $T=T(\rho,p_0,X) $ rather than $T=T(\rho,h,X)$.  &  .false. \\
 \verb=  use_thermal_diffusion  = &   Use thermal diffusion.  &  .false. \\
