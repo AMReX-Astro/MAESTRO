@@ -165,7 +165,7 @@ plot_omegadot                       logical            .true.
 # plot external heating (Hext) in plotfile 
 plot_Hext                           logical            .false.              
 
-# plot eta_rho in plotfile 
+# plot $\etarho$ in plotfile 
 plot_eta                            logical            .false.              
 
 # plot tracers in plotfile
@@ -320,7 +320,7 @@ max_grid_size_base                  integer            -1
 regrid_int                          integer            -1                  
 
 # the number of buffer zones surrounding a cell tagged for refinement.
-# note that this needs to be >= regrid_int
+# note that this needs to be >= regrid\_int
 amr_buf_width                       integer            -1
 
 # Refinement ratio for multilevel problems
@@ -379,7 +379,7 @@ burner_threshold_cutoff             real               1.d-10
 # (note: not implemented for all problems)
 diag_buf_size                       integer            10
 
-# Call a parallel_barrier before each of the simple timers we have coded
+# Call a parallel\_barrier before each of the simple timers we have coded
 # in advance.f90.  Might cause a very slight overall performance hit.
 barrier_timers                      logical            .false.
 
