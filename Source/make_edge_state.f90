@@ -96,6 +96,9 @@ contains
     s_ghost(nr_fine+1) = s(1,nr_fine-1)
     s_ghost(nr_fine+2) = s(1,nr_fine-1)
 
+    ! Need to initialize this because it's not always set.
+    dsscr = ZERO
+
      ! constant used in Colella 2008
      C = 1.25d0
 
