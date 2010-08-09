@@ -77,6 +77,9 @@ def write_probin(probinTemplate, paramFiles):
 
     params = []
 
+    print " "
+    print "write_probin.py: creating probin.f90"
+
     #-------------------------------------------------------------------------
     # read the parameters defined in the parameter files
     #-------------------------------------------------------------------------
@@ -84,12 +87,14 @@ def write_probin(probinTemplate, paramFiles):
 
         try: f = open(file, "r")
         except IOError:
-            print "ERROR: file ", file, " does not exist"
+            print "write_probin.py: ERROR: file ", file, " does not exist"
             sys.exit(2)
         else:
             f.close()
 
         f = open(file, "r")
+
+        print "write_probin.py: working on parameter file ", file, "..."
 
         line = getNextLine(f)
 
@@ -100,7 +105,7 @@ def write_probin(probinTemplate, paramFiles):
 
             if (not (len(fields) == 3)):
                 print line
-                print "ERROR: missing one or more fields in parameter definition"
+                print "write_probin.py: ERROR: missing one or more fields in parameter definition"
                 sys.exit(1)
         
             currentParam = parameter()
@@ -112,7 +117,7 @@ def write_probin(probinTemplate, paramFiles):
             index = getParamIndex(params, currentParam.var)
 
             if (index >= 0):
-                print "WARNING: parameter %s already defined.  Using new values." % (currentParam.var)
+                print "write_probin.py: WARNING: parameter %s already defined.  Using new values." % (currentParam.var)
                 oldParam = params.pop(index)
                 
             
@@ -126,7 +131,7 @@ def write_probin(probinTemplate, paramFiles):
     #-------------------------------------------------------------------------
     try: ftemplate = open(probinTemplate, "r")
     except IOError:
-        print "ERROR: file ", ftemplate, " does not exist"
+        print "write_probin.py: ERROR: file ", ftemplate, " does not exist"
         sys.exit(2)
     else:
         ftemplate.close()
@@ -182,7 +187,7 @@ def write_probin(probinTemplate, paramFiles):
                                    (indent, params[n].var))
 
                     else:
-                        print "invalid datatype for variable ", params[n].var
+                        print "write_probin.py: invalid datatype for variable ", params[n].var
 
                     n += 1
 
@@ -241,7 +246,7 @@ def write_probin(probinTemplate, paramFiles):
 
 
     
-
+    print " "
     fout.close()
 
 
@@ -252,7 +257,7 @@ if __name__ == "__main__":
     try: opts, next = getopt.getopt(sys.argv[1:], "t:")
 
     except getopt.GetoptError:
-        print "invalid calling sequence"
+        print "write_probin.py: invalid calling sequence"
         sys.exit(2)
 
 
@@ -263,7 +268,7 @@ if __name__ == "__main__":
 
 
     if len(next) == 0:
-        print "no parameter files specified"
+        print "write_probin.py: no parameter files specified"
         sys.exit(2)
 
 
