@@ -28,7 +28,8 @@ contains
     use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo, prob_hi, &
                              buoyancy_cutoff_factor, sponge_start_factor, &
                              sponge_center_density, &
-                             small_temp, small_dens, grav_const
+                             small_temp, small_dens, grav_const, planar_invsq_mass, &
+                             do_planar_invsq_grav
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm
     use inlet_bc_module, only: set_inlet_bcs
@@ -478,7 +479,11 @@ contains
              mencl = mencl &
                   + four3rd*m_pi*dr(n)*(r_l**2+r_l*r_r+r_r**2)*s0_init(r,rho_comp)
           else
-             g = grav_const
+             if (.not. do_planar_invsq_grav) then
+                g = grav_const
+             else
+                g = -Gconst*planar_invsq_mass / r_l**2
+             endif
           endif
 
           dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
