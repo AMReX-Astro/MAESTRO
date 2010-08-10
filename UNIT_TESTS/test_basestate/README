@@ -23,11 +23,22 @@ spherical test problem from multilevel paper:
   Note that total run time is set to a time > heating_time because 
   CASTRO takes additional time to equilibrate after heating is shut off.
 
+
 plane-parallel test problem:
 
   inputs-planar approximates what was done in paper II, but this
   should be revisited.
 
+
 analytical CNO cycle test problem:
 
   make sure to change the nework in GNUmakefile to H_core_null
+
+
+planar 1/r**2 gravity nova test problem
+
+   The initial model here was created using initial_models/toy_atm/
+   with _params.nova.invsq
+
+   Use the pphotcno network to get the required species
+
