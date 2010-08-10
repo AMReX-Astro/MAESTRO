@@ -2196,13 +2196,13 @@ contains
   end subroutine makemagvel_3d_sphr
 
 
-  subroutine make_velrc(plotdata,comp_velr,u,w0r_cart,normal)
+  subroutine make_velrc(plotdata,comp_velr,comp_velc,u,w0r_cart,normal)
 
     use bc_module
     use bl_constants_module
     use geometry, only: spherical, dm
 
-    integer        , intent(in   ) :: comp_velr
+    integer        , intent(in   ) :: comp_velr, comp_velc
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: u
     type(multifab) , intent(in   ) :: w0r_cart
@@ -2236,7 +2236,7 @@ contains
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
 
-       call makevelrc_3d_sphr(pp(:,:,:,comp_velr),pp(:,:,:,comp_velr+1),&
+       call makevelrc_3d_sphr(pp(:,:,:,comp_velr),pp(:,:,:,comp_velc),&
                               ng_p,up(:,:,:,:),ng_u, &
                               w0rp(:,:,:,1),ng_w,np(:,:,:,:),ng_n,lo,hi)
     end do

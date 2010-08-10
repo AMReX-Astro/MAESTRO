@@ -350,7 +350,7 @@ contains
 
        ! RADIAL AND CIRCUMFERENTIAL VELOCITY (spherical only)
        if (spherical .eq. 1) then
-          call make_velrc(plotdata(n),icomp_velr,u(n),w0r_cart(n),normal(n))
+          call make_velrc(plotdata(n),icomp_velr,icomp_velc,u(n),w0r_cart(n),normal(n))
        endif
 
        ! MAGVEL = |U + w0|
