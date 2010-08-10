@@ -163,7 +163,7 @@ contains
               dpdX_eos, dhdX_eos, &
               gam1_eos, cs_eos, s_eos, &
               dsdt_eos, dsdr_eos, &
-              do_diag)
+              do_diag, pt_index)
 
     G  = gam1_eos(1)
     P  =    p_eos(1)
@@ -201,7 +201,7 @@ contains
               dpdX_eos, dhdX_eos, &
               gam1_eos, cs_eos, s_eos, &
               dsdt_eos, dsdr_eos, &
-              do_diag)
+              do_diag, pt_index)
 
     e  =    e_eos(1)
     T  = temp_eos(1)
@@ -236,7 +236,7 @@ contains
               dpdX_eos, dhdX_eos, &
               gam1_eos, cs_eos, s_eos, &
               dsdt_eos, dsdr_eos, &
-              do_diag)
+              do_diag, pt_index)
 
     S  = s_eos(1)
 
@@ -267,7 +267,7 @@ contains
               dpdX_eos, dhdX_eos, &
               gam1_eos, cs_eos, s_eos, &
               dsdt_eos, dsdr_eos, &
-              do_diag)
+              do_diag, pt_index)
 
     P  =    p_eos(1)
     e  =    e_eos(1)
@@ -303,7 +303,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             do_diag, pt_index)
     
     P  =    p_eos(1)
     e  =    e_eos(1)
@@ -338,7 +338,7 @@ contains
               dpdX_eos, dhdX_eos, &
               gam1_eos, cs_eos, s_eos, &
               dsdt_eos, dsdr_eos, &
-              do_diag)
+              do_diag, pt_index)
 
     R  =    den_eos(1)
     e  =    e_eos(1)
@@ -372,7 +372,7 @@ contains
              dpdX_eos, dhdX_eos, &
              gam1_eos, cs_eos, s_eos, &
              dsdt_eos, dsdr_eos, &
-             do_diag)
+             do_diag, pt_index)
 
     R = den_eos(1)
     T = temp_eos(1)
@@ -512,10 +512,10 @@ contains
     parameter (stol = 1.0d-8)
 
     logical eosfail
+    integer dim_ptindex
 
     ! err_string is used to convert the pt_index information into a string
     character (len=64) :: err_string  
-
 
 !     ::::: Input/Output arrays for call to helmeos
     real(kind=dp_t) :: temp_row(npoints), den_row(npoints), abar_row(npoints), &
@@ -528,8 +528,9 @@ contains
                      dez_row(npoints), &
                      stot_row(npoints), dsd_row(npoints), dst_row(npoints)
     real(kind=dp_t) :: gam1_row(npoints), cs_row(npoints)
-      
 
+    if (present(pt_index)) dim_ptindex = size(pt_index,dim=1)
+      
 ! Dont allow multi-streaming of this function on CRAY X1
 !DIR$  NOSTREAM
     if (.not. initialized) call bl_error('EOS: not initialized')
@@ -540,7 +541,9 @@ contains
 
     ! this format statement is for writing into err_string -- make sure that
     ! the len of err_string can accomodate this format specifier
-1000 format(1x,"zone index info: i = ", i5, '  j = ', i5, '  k = ', i5)
+1001 format(1x,"zone index info: i = ", i5)
+1002 format(1x,"zone index info: i = ", i5, '  j = ', i5)
+1003 format(1x,"zone index info: i = ", i5, '  j = ', i5, '  k = ', i5)
 
 
 !      print*,'EOS with npoints, nspec = ',npoints,nspec
@@ -605,7 +608,13 @@ contains
 
        if (eosfail) then
           if (present(pt_index)) then
-             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
              call bl_error('EOS: error in the EOS', err_string)
           else
              call bl_error('EOS: error in the EOS')
@@ -692,7 +701,13 @@ contains
 
        if (eosfail) then
           if (present(pt_index)) then
-             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
              call bl_error('EOS: error in the EOS', err_string)
           else
              call bl_error('EOS: error in the EOS')
@@ -753,7 +768,13 @@ contains
 
           if (eosfail) then
              if (present(pt_index)) then
-                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                if (dim_ptindex .eq. 1) then 
+                   write (err_string,1001) pt_index(1)
+                else if (dim_ptindex .eq. 2) then 
+                   write (err_string,1002) pt_index(1), pt_index(2)
+                else if (dim_ptindex .eq. 3) then 
+                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+                end if
                 call bl_error('EOS: error in the EOS', err_string)
              else
                 call bl_error('EOS: error in the EOS')
@@ -767,7 +788,13 @@ contains
        continue
 
        if (present(pt_index)) then
-          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          if (dim_ptindex .eq. 1) then 
+             write (err_string,1001) pt_index(1)
+          else if (dim_ptindex .eq. 2) then 
+             write (err_string,1002) pt_index(1), pt_index(2)
+          else if (dim_ptindex .eq. 3) then 
+             write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+          end if
           call bl_error('EOS: Newton-Raphson failed:2: too many iterations', err_string)
        else
           call bl_error('EOS: Newton-Raphson failed:2: too many iterations')
@@ -839,7 +866,13 @@ contains
 
           if (pres_want(k) < ZERO) then
              if (present(pt_index)) then
-                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                if (dim_ptindex .eq. 1) then 
+                   write (err_string,1001) pt_index(1)
+                else if (dim_ptindex .eq. 2) then 
+                   write (err_string,1002) pt_index(1), pt_index(2)
+                else if (dim_ptindex .eq. 3) then 
+                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+                end if
                 call bl_error('ERROR: pressure < 0 in the EOS', err_string)
              else
                 call bl_error('ERROR: pressure < 0 in the EOS')
@@ -859,7 +892,13 @@ contains
        
        if (eosfail) then
           if (present(pt_index)) then
-             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
              call bl_error('EOS: error in the EOS', err_string)
           else
              call bl_error('EOS: error in the EOS')
@@ -917,7 +956,13 @@ contains
         
           if (eosfail) then
              if (present(pt_index)) then
-                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                if (dim_ptindex .eq. 1) then 
+                   write (err_string,1001) pt_index(1)
+                else if (dim_ptindex .eq. 2) then 
+                   write (err_string,1002) pt_index(1), pt_index(2)
+                else if (dim_ptindex .eq. 3) then 
+                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+                end if
                 call bl_error('EOS: error in the EOS', err_string)
              else
                 call bl_error('EOS: error in the EOS')
@@ -929,7 +974,13 @@ contains
        ! Land here if too many iterations are needed
 
        if (present(pt_index)) then
-          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          if (dim_ptindex .eq. 1) then 
+             write (err_string,1001) pt_index(1)
+          else if (dim_ptindex .eq. 2) then 
+             write (err_string,1002) pt_index(1), pt_index(2)
+          else if (dim_ptindex .eq. 3) then 
+             write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+          end if
           call bl_error('EOS: Newton-Raphson failed:3: too many iterations', err_string)         
        else
           call bl_error('EOS: Newton-Raphson failed:3: too many iterations')         
@@ -1006,7 +1057,13 @@ contains
 
           if (pres_want(k) < ZERO) then
              if (present(pt_index)) then
-                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                if (dim_ptindex .eq. 1) then 
+                   write (err_string,1001) pt_index(1)
+                else if (dim_ptindex .eq. 2) then 
+                   write (err_string,1002) pt_index(1), pt_index(2)
+                else if (dim_ptindex .eq. 3) then 
+                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+                end if
                 call bl_error('ERROR: pressure < 0 in the EOS', err_string)
              else
                 call bl_error('ERROR: pressure < 0 in the EOS')
@@ -1027,7 +1084,13 @@ contains
 
        if (eosfail) then
           if (present(pt_index)) then
-             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
              call bl_error('EOS: error in the EOS', err_string)
           else
              call bl_error('EOS: error in the EOS')
@@ -1085,7 +1148,13 @@ contains
 
           if (eosfail) then
              if (present(pt_index)) then
-                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                if (dim_ptindex .eq. 1) then 
+                   write (err_string,1001) pt_index(1)
+                else if (dim_ptindex .eq. 2) then 
+                   write (err_string,1002) pt_index(1), pt_index(2)
+                else if (dim_ptindex .eq. 3) then 
+                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+                end if
                 call bl_error('EOS: error in the EOS', err_string)
              else
                 call bl_error('EOS: error in the EOS')
@@ -1104,7 +1173,13 @@ contains
        enddo
 
        if (present(pt_index)) then
-          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          if (dim_ptindex .eq. 1) then 
+             write (err_string,1001) pt_index(1)
+          else if (dim_ptindex .eq. 2) then 
+             write (err_string,1002) pt_index(1), pt_index(2)
+          else if (dim_ptindex .eq. 3) then 
+             write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+          end if
           call bl_error('EOS: Newton-Raphson failed:4: too many iterations', err_string)          
        else
           call bl_error('EOS: Newton-Raphson failed:4: too many iterations')          
@@ -1182,8 +1257,15 @@ contains
           energy_want(k) = eint(k)
 
           if (energy_want(k) < ZERO) then
+             print *,'BAD HERE ',pt_index(1)
              if (present(pt_index)) then
-                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                if (dim_ptindex .eq. 1) then 
+                   write (err_string,1001) pt_index(1)
+                else if (dim_ptindex .eq. 2) then 
+                   write (err_string,1002) pt_index(1), pt_index(2)
+                else if (dim_ptindex .eq. 3) then 
+                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+                end if
                 call bl_error('ERROR: energy < 0 in the EOS', err_string)
              else
                 call bl_error('ERROR: energy < 0 in the EOS')
@@ -1205,7 +1287,13 @@ contains
 
        if (eosfail) then
           if (present(pt_index)) then
-             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
              call bl_error('EOS: error in the EOS', err_string)
           else
              call bl_error('EOS: error in the EOS')
@@ -1266,7 +1354,13 @@ contains
 
           if (eosfail) then
              if (present(pt_index)) then
-                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                if (dim_ptindex .eq. 1) then 
+                   write (err_string,1001) pt_index(1)
+                else if (dim_ptindex .eq. 2) then 
+                   write (err_string,1002) pt_index(1), pt_index(2)
+                else if (dim_ptindex .eq. 3) then 
+                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+                end if
                 call bl_error('EOS: error in the EOS', err_string)
              else
                 call bl_error('EOS: error in the EOS')
@@ -1280,7 +1374,13 @@ contains
        continue
 
        if (present(pt_index)) then
-          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          if (dim_ptindex .eq. 1) then 
+             write (err_string,1001) pt_index(1)
+          else if (dim_ptindex .eq. 2) then 
+             write (err_string,1002) pt_index(1), pt_index(2)
+          else if (dim_ptindex .eq. 3) then 
+             write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+          end if
           call bl_error('EOS: Newton-Raphson failed:2: too many iterations', err_string)
        else
           call bl_error('EOS: Newton-Raphson failed:2: too many iterations')
@@ -1353,7 +1453,13 @@ contains
 
           if (entropy_want(k) < ZERO) then
              if (present(pt_index)) then
-                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                if (dim_ptindex .eq. 1) then 
+                   write (err_string,1001) pt_index(1)
+                else if (dim_ptindex .eq. 2) then 
+                   write (err_string,1002) pt_index(1), pt_index(2)
+                else if (dim_ptindex .eq. 3) then 
+                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+                end if
                 call bl_error('ERROR: entropy < 0 in the EOS', err_string)
              else
                 call bl_error('ERROR: entropy < 0 in the EOS')
@@ -1362,7 +1468,13 @@ contains
 
           if (pres_want(k) < ZERO) then
              if (present(pt_index)) then
-                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                if (dim_ptindex .eq. 1) then 
+                   write (err_string,1001) pt_index(1)
+                else if (dim_ptindex .eq. 2) then 
+                   write (err_string,1002) pt_index(1), pt_index(2)
+                else if (dim_ptindex .eq. 3) then 
+                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+                end if
                 call bl_error('ERROR: pressure < 0 in the EOS', err_string)
              else
                 call bl_error('ERROR: pressure < 0 in the EOS')
@@ -1387,7 +1499,13 @@ contains
 
        if (eosfail) then
           if (present(pt_index)) then
-             write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
              call bl_error('EOS: error in the EOS', err_string)
           else
              call bl_error('EOS: error in the EOS')
@@ -1477,7 +1595,13 @@ contains
 
           if (eosfail) then
              if (present(pt_index)) then
-                write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+                if (dim_ptindex .eq. 1) then 
+                   write (err_string,1001) pt_index(1)
+                else if (dim_ptindex .eq. 2) then 
+                   write (err_string,1002) pt_index(1), pt_index(2)
+                else if (dim_ptindex .eq. 3) then 
+                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+                end if
                 call bl_error('EOS: error in the EOS', err_string)
              else
                 call bl_error('EOS: error in the EOS')
@@ -1491,7 +1615,13 @@ contains
        continue
 
        if (present(pt_index)) then
-          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          if (dim_ptindex .eq. 1) then 
+             write (err_string,1001) pt_index(1)
+          else if (dim_ptindex .eq. 2) then 
+             write (err_string,1002) pt_index(1), pt_index(2)
+          else if (dim_ptindex .eq. 3) then 
+             write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+          end if
           call bl_error('EOS: Newton-Raphson failed:2: too many iterations', err_string)
        else
           call bl_error('EOS: Newton-Raphson failed:2: too many iterations')
@@ -1546,7 +1676,13 @@ contains
     else 
 
        if (present(pt_index)) then
-          write (err_string,1000) pt_index(1), pt_index(2), pt_index(3)
+          if (dim_ptindex .eq. 1) then 
+             write (err_string,1001) pt_index(1)
+          else if (dim_ptindex .eq. 2) then 
+             write (err_string,1002) pt_index(1), pt_index(2)
+          else if (dim_ptindex .eq. 3) then 
+             write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+          end if
           call bl_error('EOS: invalid input', err_string)
        else
           call bl_error('EOS: invalid input')
