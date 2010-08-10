@@ -629,7 +629,11 @@ subroutine varden()
            mencl = mencl &
                 + four3rd*m_pi*dr(1)*(r_l**2+r_l*r_r+r_r**2)*s0_new(1,r,rho_comp)
         else
-           g = grav_const
+           if (.not. do_planar_invsq_grav) then
+              g = grav_const
+           else
+              g = -Gconst*planar_invsq_mass/r_l**2
+           endif
         endif
 
         dpdr = (p0_new(1,r) - p0_new(1,r-1))/dr(1)
