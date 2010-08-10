@@ -165,6 +165,9 @@ plot_omegadot                       logical            .true.
 # plot external heating (Hext) in plotfile 
 plot_Hext                           logical            .false.              
 
+# plot nuclear energy generation rate (Hnuc) in plotfile 
+plot_Hnuc                           logical            .true.
+
 # plot $\etarho$ in plotfile 
 plot_eta                            logical            .false.              
 

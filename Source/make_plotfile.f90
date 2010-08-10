@@ -18,7 +18,8 @@ contains
     use variables
     use network, only: nspec, short_spec_names
     use probin_module, only: plot_spec, plot_trac, plot_base, &
-                             use_thermal_diffusion, plot_omegadot, plot_Hext, plot_eta
+                             use_thermal_diffusion, plot_omegadot, plot_Hnuc, plot_Hext, &
+                             plot_eta
     use geometry, only: spherical, dm
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -93,6 +94,9 @@ contains
           plot_names(icomp_omegadot+comp-1) = &
                "omegadot(" // trim(short_spec_names(comp)) // ")"
        end do
+    endif
+
+    if (plot_Hnuc) then
        plot_names(icomp_enuc) = "enucdot"
     end if
 
@@ -124,7 +128,8 @@ contains
     use plot_variables_module
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, & 
-                             plot_base, plot_omegadot, plot_Hext, plot_eta, &
+                             plot_base, plot_omegadot, plot_Hext, plot_Hnuc, &
+                             plot_eta, &
                              single_prec_plotfiles, &
                              do_smallscale, use_thermal_diffusion, &
                              evolve_base_state, prob_lo, prob_hi
@@ -210,7 +215,10 @@ contains
           do comp=1,nspec
              call multifab_div_div_c(plotdata(n),icomp_omegadot+comp-1,s(n),rho_comp,1)
           end do
+          
+       endif
 
+       if (plot_Hnuc) then
           ! ENUCDOT
           call multifab_copy_c(plotdata(n),icomp_enuc,rho_Hnuc(n),1)
           call multifab_div_div_c(plotdata(n),icomp_enuc,s(n),rho_comp,1)
