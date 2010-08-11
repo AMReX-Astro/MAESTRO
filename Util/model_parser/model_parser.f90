@@ -55,6 +55,7 @@ contains
   subroutine read_model_file(model_file)
 
     use bl_constants_module
+    use bl_error_module
 
     character(len=256), intent(in   ) :: model_file
 
