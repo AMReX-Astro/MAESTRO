@@ -12,6 +12,7 @@
 MAESTRO_CORE := boxlib \
                 mg \
                 extern/constants \
+		extern/model_parser \
                 extern/LAPACK
 
 # a unit test tests only a single component of the MAESTRO algorithm,

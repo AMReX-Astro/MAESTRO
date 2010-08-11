@@ -13,7 +13,7 @@ module base_state_module
 
   private
 
-  public :: init_base_state, get_model_npts
+  public :: init_base_state
 
 contains
 
@@ -34,7 +34,7 @@ contains
     use geometry, only: dr, spherical, nr, dm
     use inlet_bc_module, only: set_inlet_bcs
     use fundamental_constants_module, only: Gconst
-
+    use model_parser_module
     
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
@@ -48,26 +48,7 @@ contains
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
     real(kind=dp_t) :: sumX
 
-    ! these indices define how the initial model is stored in the 
-    ! base_state array
-    integer, parameter :: nvars_model = 3 + nspec
-    integer, parameter :: idens_model = 1
-    integer, parameter :: itemp_model = 2
-    integer, parameter :: ipres_model = 3
-    integer, parameter :: ispec_model = 4
-
-    integer, parameter :: MAX_VARNAME_LENGTH=80
-    integer :: npts_model, nvars_model_file, ierr
-
     real(kind=dp_t) :: min_dens, max_dens, min_temp, max_temp, eps
-
-    real(kind=dp_t), allocatable :: base_state(:,:), base_r(:)
-    real(kind=dp_t), allocatable :: vars_stored(:)
-    character(len=MAX_VARNAME_LENGTH), allocatable :: varnames_stored(:)
-    logical :: found_model, found_dens, found_temp, found_pres
-    logical :: found_spec(nspec)
-    integer :: ipos
-    character (len=256) :: header_line
 
     type(bl_prof_timer), save :: bpt
     
@@ -78,166 +59,19 @@ contains
 
     call build(bpt, "init_base_state")
 
-    ! open the model file and read in the header
-    ! the model file is assumed to be of the follow form:
-    ! # npts = 896
-    ! # num of variables = 6
-    ! # density
-    ! # temperature
-    ! # pressure
-    ! # carbon-12
-    ! # oxygen-16
-    ! # magnesium-24
-    ! 195312.5000  5437711139.  8805500.952   .4695704813E+28  0.3  0.7  0
-    ! 585937.5000  5410152416.  8816689.836  0.4663923963E+28  0.3  0.7  0
-
-    ! we read in the number of variables and their order and use this to map 
-    ! them into the base_state array.  We ignore anything other than density, 
-    ! temperature, pressure and composition.  
-
-    ! Presently, we take density, temperature, and composition as the 
-    ! independent variables and use them to define the thermodynamic state.
-
-    ! composition is assumed to be in terms of mass fractions
-
-    open(99,file=model_file,status='old',iostat=ierr)
- 
-    if (ierr .ne. 0) then
-       print *,'Couldnt open model_file: ',model_file
-       call bl_error('Aborting now -- please supply model_file')
-    end if
-
-    ! the first line has the number of points in the model
-    read (99, '(a256)') header_line
-    ipos = index(header_line, '=') + 1
-    read (header_line(ipos:),*) npts_model
-
-    ! now read in the number of variables
-    read (99, '(a256)') header_line
-    ipos = index(header_line, '=') + 1
-    read (header_line(ipos:),*) nvars_model_file
-
-    allocate (vars_stored(nvars_model_file))
-    allocate (varnames_stored(nvars_model_file))
-
-    ! now read in the names of the variables
-    do i = 1, nvars_model_file
-       read (99, '(a256)') header_line
-       ipos = index(header_line, '#') + 1
-       varnames_stored(i) = trim(adjustl(header_line(ipos:)))
-    enddo
-
-    ! allocate storage for the model data
-    allocate (base_state(npts_model, nvars_model))
-    allocate (base_r(npts_model))
-
-
 887 format(78('-'))
 888 format(a60,g18.10)
 889 format(a60)
 
-    if ( parallel_IOProcessor() .and. n == 1) then
-       write (*,889) ' '
-       write (*,887) 
-       write (*,*)   'reading initial model'
-       write (*,*)   npts_model, 'points found in the initial model file'
-       write (*,*)   nvars_model_file, ' variables found in the initial model file'
-    endif
-
-
-
-    do i = 1, npts_model
-       read(99,*) base_r(i), (vars_stored(j), j = 1, nvars_model_file)
-
-       base_state(i,:) = ZERO
-
-       ! make sure that each of the variables that MAESTRO cares about are found
-       found_dens = .false.
-       found_temp = .false.
-       found_pres = .false.
-       found_spec(:) = .false.
-
-       do j = 1,nvars_model_file
-
-          ! keep track of whether the current variable from the model file is 
-          ! one that MAESTRO cares about
-          found_model = .false.
-
-
-          if (trim(varnames_stored(j)) == "density") then
-             base_state(i,idens_model) = vars_stored(j)
-             found_model = .true.
-             found_dens  = .true.
-
-          else if (trim(varnames_stored(j)) == "temperature") then
-             base_state(i,itemp_model) = vars_stored(j)
-             found_model = .true.
-             found_temp  = .true.
-
-          else if (trim(varnames_stored(j)) == "pressure") then
-             base_state(i,ipres_model) = vars_stored(j)
-             found_model = .true.
-             found_pres  = .true.
-          else
-             do comp = 1, nspec
-                if (trim(varnames_stored(j)) == spec_names(comp)) then
-                   base_state(i,ispec_model-1+comp) = vars_stored(j)
-                   found_model = .true.
-                   found_spec(comp) = .true.
-                   exit
-                endif
-             enddo
-          endif
-
-          ! is the current variable from the model file one that we care about?
-          if (.NOT. found_model .and. i == 1 .and. n == 1) then
-             if ( parallel_IOProcessor() ) then
-                print *, 'WARNING: variable not found: ', trim(varnames_stored(j))
-             end if
-          endif
-
-       enddo   ! end loop over nvars_model_file
-
-       ! were all the variables we care about provided?
-       if (i == 1 .and. n == 1) then
-          if (.not. found_dens) then
-             if ( parallel_IOProcessor() ) then
-                print *, 'WARNING: density not provided in inputs file'
-             end if
-          endif
-
-          if (.not. found_temp) then
-             if ( parallel_IOProcessor() ) then
-                print *, 'WARNING: temperature not provided in inputs file'
-             end if
-          endif
-
-          if (.not. found_pres) then
-             if ( parallel_IOProcessor() ) then
-                print *, 'WARNING: pressure not provided in inputs file'
-             end if
-          endif
-
-          do comp = 1, nspec
-             if (.not. found_spec(comp)) then
-                if ( parallel_IOProcessor() ) then
-                   print *, 'WARNING: ', trim(spec_names(comp)), ' not provided in inputs file'
-                end if
-             endif
-          enddo
-       endif
-
-    end do   ! end loop over npts_model
-
-    close(99)
+    call read_model_file(model_file)
 
     eps = 1.d-8
 
-    max_dens = maxval(base_state(:,idens_model))
-    min_dens = minval(base_state(:,idens_model))
+    max_dens = maxval(model_state(:,idens_model))
+    min_dens = minval(model_state(:,idens_model))
 
-    max_temp = maxval(base_state(:,itemp_model))
-    min_temp = minval(base_state(:,itemp_model))
+    max_temp = maxval(model_state(:,itemp_model))
+    min_temp = minval(model_state(:,itemp_model))
 
     if ( parallel_IOProcessor() .and. n == 1) then
        write (*,889) ' '
@@ -319,8 +153,8 @@ contains
        write (*,*)   ' '
     end if
 
-    dr_in = (base_r(npts_model) - base_r(1)) / dble(npts_model-1)
-    rmax = base_r(npts_model)
+    dr_in = (model_r(npts_model) - model_r(1)) / dble(npts_model-1)
+    rmax = model_r(npts_model)
 
     if ( parallel_IOProcessor() ) then
        write (*,887)
@@ -389,14 +223,14 @@ contains
 
        else
 
-          d_ambient = interpolate(rloc, npts_model, base_r, base_state(:,idens_model))
-          t_ambient = interpolate(rloc, npts_model, base_r, base_state(:,itemp_model))
-          p_ambient = interpolate(rloc, npts_model, base_r, base_state(:,ipres_model))
+          d_ambient = interpolate(rloc, npts_model, model_r, model_state(:,idens_model))
+          t_ambient = interpolate(rloc, npts_model, model_r, model_state(:,itemp_model))
+          p_ambient = interpolate(rloc, npts_model, model_r, model_state(:,ipres_model))
 
           sumX = ZERO
           do comp = 1, nspec
              xn_ambient(comp) = max(ZERO,min(ONE, &
-                  interpolate(rloc, npts_model, base_r, base_state(:,ispec_model-1+comp))))
+                  interpolate(rloc, npts_model, model_r, model_state(:,ispec_model-1+comp))))
              sumX = sumX + xn_ambient(comp)
           enddo
           xn_ambient = xn_ambient/sumX
@@ -508,9 +342,6 @@ contains
     ! initialize any inlet BC parameters
     call set_inlet_bcs()
 
-    deallocate(vars_stored,varnames_stored)
-    deallocate(base_state,base_r)
-
     call destroy(bpt)
 
   end subroutine init_base_state
@@ -605,29 +436,5 @@ contains
     return
 
   end function interpolate
-
-
-  function get_model_npts(model_file)
-
-    ! look in the model file and return the number of points
-    real(kind=dp_t) :: get_model_npts
-
-    character(len=256), intent(in   ) :: model_file
-
-    character (len=256) :: header_line
-    integer :: ipos
-
-    open(99,file=model_file)
-
-    ! the first line has the number of points in the model
-    read (99, '(a256)') header_line
-    ipos = index(header_line, '=') + 1
-    read (header_line(ipos:),*) get_model_npts
-
-    close(99)
-
-    return
-
-  end function get_model_npts
 
 end module base_state_module
