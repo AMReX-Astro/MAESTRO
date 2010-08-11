@@ -409,6 +409,8 @@ contains
           nzones_level = sum_data_level(isum)
        endif
 
+       deallocate(sum_data_local,sum_data_level)
+
        ! get the maximum temperature and its location
        ! gather all the T_max data into an array; find the index of the maximum
        allocate(T_max_data(parallel_nprocs()))
@@ -717,6 +719,7 @@ contains
        close(un3)
        if (do_deltap_diag) close(un4)
     endif
+
 
     call destroy(bpt)
 
