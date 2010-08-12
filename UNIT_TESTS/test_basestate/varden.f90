@@ -25,6 +25,7 @@ subroutine varden()
   use make_psi_module
   use fundamental_constants_module, only: Gconst
   use test_basestate_module
+  use model_parser_module, only: get_model_npts
 
   implicit none
 
