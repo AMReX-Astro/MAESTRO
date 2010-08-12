@@ -57,7 +57,7 @@ contains
     use bl_constants_module
     use bl_error_module
 
-    character(len=256), intent(in   ) :: model_file
+    character(len=*), intent(in   ) :: model_file
 
     ! local variables
     integer :: nvars_model_file
@@ -74,7 +74,7 @@ contains
 
 
     ! open the model file
-    open(99,file=model_file,status='old',iostat=ierr)
+    open(99,file=trim(model_file),status='old',iostat=ierr)
 
     if (ierr .ne. 0) then
        print *,'Couldnt open model_file: ',model_file
