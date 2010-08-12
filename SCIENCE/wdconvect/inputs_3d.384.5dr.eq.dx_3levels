@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "model_6.e8.hybrid.chamulak.hse.1920"
+ model_file = "kepler_new_6.25e8.hybrid.hse.1920"
  drdxfac = 5
 
  max_levs = 3
@@ -10,16 +10,13 @@
  max_grid_size_base = 16
  regrid_int = 2
 
- tag_density_1 = 1.d5
- tag_density_2 = 1.d8
-
  anelastic_cutoff = 1.d6
  base_cutoff_density = 1.d5
  sponge_center_density = 3.d6
  sponge_start_factor = 3.333d0
  sponge_kappa = 10.0d0
 
- max_mg_bottom_nlevels = 2
+ max_mg_bottom_nlevels = 3
  mg_bottom_solver = 4
  hg_bottom_solver = 4
 
@@ -61,7 +58,7 @@
  do_initial_projection = T
  init_divu_iter = 3
 
- velpert_amplitude = 1.d5
+ velpert_amplitude = 1.d6
  velpert_radius = 2.d7
  velpert_scale = 1.d7
  velpert_steep = 1.d5
