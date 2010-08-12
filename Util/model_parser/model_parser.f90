@@ -63,7 +63,7 @@ contains
     integer :: nvars_model_file
     integer :: ierr
 
-    integer :: i, j, n, comp
+    integer :: i, j, comp
 
     real(kind=dp_t), allocatable :: vars_stored(:)
     character(len=MAX_VARNAME_LENGTH), allocatable :: varnames_stored(:)
@@ -109,7 +109,7 @@ contains
 888 format(a60,g18.10)
 889 format(a60)
 
-    if ( parallel_IOProcessor() .and. n == 1) then
+    if ( parallel_IOProcessor()) then
        write (*,889) ' '
        write (*,887)
        write (*,*)   'reading initial model'
@@ -166,7 +166,7 @@ contains
 
           ! is the current variable from the model file one that we
           ! care about?
-          if (.NOT. found_model .and. i == 1 .and. n == 1) then
+          if (.NOT. found_model .and. i == 1) then
              if ( parallel_IOProcessor() ) then
                 print *, 'WARNING: variable not found: ', &
                      trim(varnames_stored(j))
@@ -176,7 +176,7 @@ contains
        enddo   ! end loop over nvars_model_file
 
        ! were all the variables we care about provided?
-       if (i == 1 .and. n == 1) then
+       if (i == 1) then
           if (.not. found_dens) then
              if ( parallel_IOProcessor() ) then
                 print *, 'WARNING: density not provided in inputs file'
