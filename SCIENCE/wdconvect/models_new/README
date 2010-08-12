@@ -1,5 +1,7 @@
 Models generated using new (2009-08-27) Kepler data from Stan
 
+generated from fParallel/MAESTRO/initial_models/kepler_hybrid
+
 Note: the Kepler initial model was ~ 0.5 C, 0.5 O with small,
 O(1.e-3), amounts of Ne20 and smaller, O(1.e-5), amounts of Mg24. We
 merge those to species together and call them 'ash'.  This changes
