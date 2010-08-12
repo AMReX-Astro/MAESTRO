@@ -8,6 +8,10 @@
 
  do_planar_invsq_grav = T
 
+ ! the gravity we would have it we were constant
+ ! grav_const = -1.04263053d9
+
+
  planar_invsq_mass = 2.38e33
 
  prob_lo_x = 3.5d8
@@ -15,16 +19,18 @@
 
  max_step  = 100000000
 
- stop_time = 1.d0
+ stop_time = 4.d0
 
  cflfac = 0.9d0
 
  heating_peak  = 1.d15
- heating_time  = 1.d0
+ heating_time  = 2.d0
  heating_rad   = 4.1e8
  heating_sigma = 4.d14
 
  model_file = "toy_nova_invsq.hse.1280"
 
  use_eos_coulomb = T
+ small_temp = 1.d6
+
 /
