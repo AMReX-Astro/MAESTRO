@@ -9,11 +9,283 @@ module plot_variables_module
 
   private
 
+  public :: make_ad_excess
   public :: make_conductivity, make_pi_cc
   public :: make_tfromH, make_tfromp, make_entropypert
   public :: make_deltaT, make_divw0, make_vorticity, make_magvel, make_velrc
 
 contains
+
+  subroutine make_ad_excess(plotdata,comp_ad_excess,state)
+
+    use geometry, only: spherical, dm
+
+    type(multifab), intent(inout) :: plotdata
+    integer,        intent(in   ) :: comp_ad_excess
+    type(multifab), intent(in   ) :: state
+    
+    real(kind=dp_t), pointer :: sp(:,:,:,:), cp(:,:,:,:)
+    integer :: lo(dm), hi(dm), ng_s, ng_c
+    integer :: i
+
+    ng_c = nghost(plotdata)
+    ng_s = nghost(state)
+
+    do i = 1, nboxes(state)
+       if (multifab_remote(state, i)) cycle
+       sp => dataptr(state, i)
+       cp => dataptr(plotdata, i)
+       lo = lwb(get_box(state, i))
+       hi = upb(get_box(state, i))
+       select case (dm)
+       case (1)
+          call make_ad_excess_1d(cp(:,1,1,comp_ad_excess), ng_c, &
+                                 sp(:,1,1,:), ng_s, &
+                                 lo, hi)
+       case (2)
+          call make_ad_excess_2d(cp(:,:,1,comp_ad_excess), ng_c, &
+                                 sp(:,:,1,:), ng_s, &
+                                 lo, hi)
+       case (3)
+          if (spherical .eq. 1) &
+               call bl_error("adiabatic excess not currently supported for spherical")
+          call make_ad_excess_3d(cp(:,:,:,comp_ad_excess), ng_c, &
+                                 sp(:,:,:,:), ng_s, &
+                                 lo, hi)
+       end select
+
+    enddo
+  end subroutine make_ad_excess
+  
+  subroutine make_ad_excess_1d(ad_excess, ng_ad, state, ng_s, lo, hi)
+
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use eos_module
+    use network, only: nspec
+    use probin_module, only: base_cutoff_density
+
+    integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
+    real(kind=dp_t), intent(  out) :: ad_excess(lo(1)-ng_ad:)
+    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,:)
+
+    real(kind=dp_t) :: pres(lo(1):hi(1)), nabla_ad(lo(1):hi(1))
+    real(kind=dp_t) :: chi_rho, chi_t, dt, dp, nabla
+
+    integer :: i
+    
+    do i = lo(1), hi(1)
+
+       den_eos(1) = state(i,rho_comp)
+       temp_eos(1) = state(i,temp_comp)
+       xn_eos(1,:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+       pt_index_eos(:) = (/i, -1, -1/)       
+
+       call eos(eos_input_rt, den_eos, temp_eos, &
+                npts, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                .false., &
+                pt_index_eos)       
+       
+       pres(i) = p_eos(1)
+
+       chi_rho = den_eos(1) * dpdr_eos(1) / p_eos(1)
+       chi_t = temp_eos(1) * dpdt_eos(1) / p_eos(1)
+       nabla_ad(i) = (gam1_eos(1) - chi_rho) / (chi_t * gam1_eos(1))
+
+    enddo
+
+    do i = lo(1), hi(1)
+       if (state(i,j,rho_comp) <= base_cutoff_density) then
+          nabla = ZERO
+       else
+          ! forward difference
+          if (i == lo(1)) then
+             dt = state(i+1,temp_comp) - state(i,temp_comp)
+             dp = pres(i+1) - pres(i)
+             ! backward difference
+          else if (i == hi(1)) then
+             dt = state(i,temp_comp) - state(i-1,temp_comp)
+             dp = pres(i) - pres(i-1)
+             ! centered difference
+          else
+             dt = state(i+1,temp_comp) - state(i-1,temp_comp)
+             dp = pres(i+1) - pres(i-1)
+          endif
+
+          nabla = pres(i) * dt / (dp * state(i,temp_comp))
+       endif
+
+       ad_excess(i) = nabla - nabla_ad(i)
+    enddo
+
+  end subroutine make_ad_excess_1d
+
+  subroutine make_ad_excess_2d(ad_excess, ng_ad, state, ng_s, lo, hi)
+
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use eos_module
+    use network, only: nspec
+    use probin_module, only: base_cutoff_density
+
+    integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
+    real(kind=dp_t), intent(  out) :: ad_excess(lo(1)-ng_ad:,lo(2)-ng_ad:)
+    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,:)
+
+    real(kind=dp_t) :: pres(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: nabla_ad(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: chi_rho, chi_t, dt, dp, nabla
+
+    integer :: i, j
+    
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+
+          den_eos(1) = state(i,j,rho_comp)
+          temp_eos(1) = state(i,j,temp_comp)
+          xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+          pt_index_eos(:) = (/i, j, -1/)       
+
+          call eos(eos_input_rt, den_eos, temp_eos, &
+                   npts, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, &
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
+                   .false., &
+                   pt_index_eos)       
+       
+          pres(i,j) = p_eos(1)
+
+          chi_rho = den_eos(1) * dpdr_eos(1) / p_eos(1)
+          chi_t = temp_eos(1) * dpdt_eos(1) / p_eos(1)
+          nabla_ad(i,j) = (gam1_eos(1) - chi_rho) / (chi_t * gam1_eos(1))
+
+       enddo
+    enddo
+
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+          if (state(i,j,rho_comp) <= base_cutoff_density) then
+             nabla = ZERO
+          else
+             ! forward difference
+             if (j == lo(2)) then
+                dt = state(i,j+1,temp_comp) - state(i,j,temp_comp)
+                dp = pres(i,j+1) - pres(i,j)
+                ! backward difference
+             else if (j == hi(2)) then
+                dt = state(i,j,temp_comp) - state(i,j-1,temp_comp)
+                dp = pres(i,j) - pres(i,j-1)
+                ! centered difference
+             else
+                dt = state(i,j+1,temp_comp) - state(i,j-1,temp_comp)
+                dp = pres(i,j+1) - pres(i,j-1)
+             endif
+
+             nabla = pres(i,j) * dt / (dp * state(i,j,temp_comp))
+          endif
+
+          ad_excess(i,j) = nabla - nabla_ad(i,j)
+       enddo
+    enddo
+
+  end subroutine make_ad_excess_2d
+
+  subroutine make_ad_excess_3d(ad_excess, ng_ad, state, ng_s, lo, hi)
+
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use eos_module
+    use network, only: nspec
+    use probin_module, only: base_cutoff_density
+
+    integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
+    real(kind=dp_t), intent(  out) :: ad_excess(lo(1)-ng_ad:,lo(2)-ng_ad:,lo(3)-ng_ad:)
+    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+
+    real(kind=dp_t) :: pres(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
+    real(kind=dp_t) :: nabla_ad(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
+    real(kind=dp_t) :: chi_rho, chi_t, dt, dp, nabla
+
+    integer :: i, j, k
+
+!$omp parallel do private(i,j,k)    
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             den_eos(1) = state(i,j,k,rho_comp)
+             temp_eos(1) = state(i,j,k,temp_comp)
+             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+             pt_index_eos(:) = (/i, j, k/)       
+
+             call eos(eos_input_rt, den_eos, temp_eos, &
+                      npts, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      .false., &
+                      pt_index_eos)       
+       
+             pres(i,j,k) = p_eos(1)
+
+             chi_rho = den_eos(1) * dpdr_eos(1) / p_eos(1)
+             chi_t = temp_eos(1) * dpdt_eos(1) / p_eos(1)
+             nabla_ad(i,j,k) = (gam1_eos(1) - chi_rho) / (chi_t * gam1_eos(1))
+
+          enddo
+       enddo
+    enddo
+!$omp end parallel do
+
+!$omp parallel do private(i,j,k)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             if (state(i,j,k,rho_comp) <= base_cutoff_density) then
+                nabla = ZERO
+             else
+                ! forward difference
+                if (k == lo(3)) then
+                   dt = state(i,j,k+1,temp_comp) - state(i,j,k,temp_comp)
+                   dp = pres(i,j,k+1) - pres(i,j,k)
+                   ! backward difference
+                else if (k == hi(3)) then
+                   dt = state(i,j,k,temp_comp) - state(i,j,k-1,temp_comp)
+                   dp = pres(i,j,k) - pres(i,j,k-1)
+                   ! centered difference
+                else
+                   dt = state(i,j,k+1,temp_comp) - state(i,j,k-1,temp_comp)
+                   dp = pres(i,j,k+1) - pres(i,j,k-1)
+                endif
+
+                nabla = pres(i,j,k) * dt / (dp * state(i,j,k,temp_comp))
+             endif
+
+             ad_excess(i,j,k) = nabla - nabla_ad(i,j,k)
+          enddo
+       enddo
+    enddo
+!$omp end parallel do
+
+  end subroutine make_ad_excess_3d
+
 
   subroutine make_conductivity(plotdata,comp_cond,state)
 
@@ -2194,7 +2466,6 @@ contains
 !$omp end parallel do
 
   end subroutine makemagvel_3d_sphr
-
 
   subroutine make_velrc(plotdata,comp_velr,comp_velc,u,w0r_cart,normal)
 

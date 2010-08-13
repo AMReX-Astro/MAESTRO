@@ -20,6 +20,7 @@ module variables
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
   integer, save :: icomp_omegadot,icomp_enuc,icomp_Hext, icomp_eta, icomp_sponge
   integer, save :: icomp_thermal, icomp_conductivity
+  integer, save :: icomp_ad_excess
 
   ! the total number of plot components
   integer, save :: n_plot_comps = 0
@@ -68,7 +69,7 @@ contains
 
     use network, only: nspec
     use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
-         plot_omegadot, plot_Hnuc, plot_Hext, plot_eta
+         plot_omegadot, plot_Hnuc, plot_Hext, plot_eta, plot_ad_excess
     use geometry, only: spherical, dm
 
     icomp_vel      = get_next_plot_index(dm)
@@ -135,6 +136,10 @@ contains
     if (use_thermal_diffusion) then
        icomp_thermal = get_next_plot_index(1)
        icomp_conductivity = get_next_plot_index(1)
+    endif
+
+    if (plot_ad_excess) then
+       icomp_ad_excess = get_next_plot_index(1)
     endif
 
 

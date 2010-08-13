@@ -18,8 +18,8 @@ contains
     use variables
     use network, only: nspec, short_spec_names
     use probin_module, only: plot_spec, plot_trac, plot_base, &
-                             use_thermal_diffusion, plot_omegadot, plot_Hnuc, plot_Hext, &
-                             plot_eta
+                             use_thermal_diffusion, plot_omegadot, plot_Hnuc, &
+                             plot_Hext, plot_eta, plot_ad_excess
     use geometry, only: spherical, dm
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -94,7 +94,7 @@ contains
           plot_names(icomp_omegadot+comp-1) = &
                "omegadot(" // trim(short_spec_names(comp)) // ")"
        end do
-    endif
+    end if
 
     if (plot_Hnuc) then
        plot_names(icomp_enuc) = "enucdot"
@@ -113,6 +113,10 @@ contains
        plot_names(icomp_conductivity) = "conductivity"
     endif
 
+    if (plot_ad_excess) then
+       plot_names(icomp_ad_excess) = "ad_excess"
+    endif
+
   end subroutine get_plot_names
 
   subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot, &
@@ -128,8 +132,8 @@ contains
     use plot_variables_module
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, & 
-                             plot_base, plot_omegadot, plot_Hext, plot_Hnuc, &
-                             plot_eta, &
+                             plot_base, plot_omegadot, plot_Hnuc, plot_Hext, &
+                             plot_eta, plot_ad_excess, &
                              single_prec_plotfiles, &
                              do_smallscale, use_thermal_diffusion, &
                              evolve_base_state, prob_lo, prob_hi
@@ -215,10 +219,11 @@ contains
           do comp=1,nspec
              call multifab_div_div_c(plotdata(n),icomp_omegadot+comp-1,s(n),rho_comp,1)
           end do
-          
-       endif
+
+       end if
 
        if (plot_Hnuc) then
+
           ! ENUCDOT
           call multifab_copy_c(plotdata(n),icomp_enuc,rho_Hnuc(n),1)
           call multifab_div_div_c(plotdata(n),icomp_enuc,s(n),rho_comp,1)
@@ -411,6 +416,13 @@ contains
           call make_conductivity(plotdata(n),icomp_conductivity,s(n))
        end do
     end if
+
+    ! ADIABATIC EXCESS
+    if (plot_ad_excess) then
+       do n = 1, nlevs
+          call make_ad_excess(plotdata(n),icomp_ad_excess,s(n))
+       enddo
+    endif
 
     ! the loop over nlevs must count backwards to make sure the finer grids are done first
     do n=nlevs,2,-1

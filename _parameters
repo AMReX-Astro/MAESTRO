@@ -397,3 +397,5 @@ barrier_timers                      logical            .false.
 # use the hypre library
 use_hypre                           logical            .false.
 
+# plot the adiabatic excess
+plot_ad_excess                      logical            .false.
