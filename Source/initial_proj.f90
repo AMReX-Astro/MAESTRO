@@ -26,7 +26,7 @@ contains
 
     use variables, only: foextrap_comp, rho_comp
     use network, only: nspec
-    use probin_module
+    use probin_module, only: use_thermal_diffusion, evolve_base_state
     use geometry, only: spherical, nr_fine, nlevs, nlevs_radial
     use proj_parameters, only: initial_projection_comp
     use make_explicit_thermal_module
