@@ -1,6 +1,6 @@
 &PROBIN
 
- anelastic_cutoff = 1.0
+ anelastic_cutoff = 1.e-4
  base_cutoff_density = 1.e-4
 
  spherical_in = 0
@@ -19,12 +19,12 @@
 
  max_step  = 100000000
 
- stop_time = 4.d0
+ stop_time = 100.d0
 
  cflfac = 0.9d0
 
- heating_peak  = 1.d15
- heating_time  = 2.d0
+ heating_peak  = 1.d14
+ heating_time  = 50.d0
  heating_rad   = 4.1e8
  heating_sigma = 4.d14
 
