@@ -25,7 +25,8 @@ contains
 
     use variables, only: nscal, foextrap_comp, rho_comp
     use network, only: nspec
-    use probin_module
+    use probin_module, only: use_thermal_diffusion, evolve_base_state, &
+         init_divu_iter, cflfac, verbose, init_shrink, fixed_dt
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use proj_parameters, only: divu_iters_comp
     use react_state_module
