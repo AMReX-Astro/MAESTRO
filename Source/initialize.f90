@@ -784,8 +784,8 @@ contains
                                             psi,tempbar,grav_cell)
 
     use probin_module, only: n_cellx, n_celly, n_cellz, &
-         regrid_int, amr_buf_width, max_grid_size, &
-         max_grid_size_base, ref_ratio, max_levs, octant
+         regrid_int, amr_buf_width, max_grid_size_1, max_grid_size_2, max_grid_size_3, &
+         ref_ratio, max_levs, octant
     use init_module
     use average_module
     use restrict_base_module
@@ -854,7 +854,7 @@ contains
     ! Build the level 1 boxarray
     call box_build_2(bxs,lo,hi)
     call boxarray_build_bx(mba%bas(1),bxs)
-    call boxarray_maxsize(mba%bas(1),max_grid_size_base)
+    call boxarray_maxsize(mba%bas(1),max_grid_size_1)
 
     ! build pd(:)
     mba%pd(1) = bxs
@@ -960,8 +960,13 @@ contains
              enddo
           endif
 
-          call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
-                              amr_buf_width,ref_ratio,nl,max_grid_size)
+          if (nl .eq. 1) then
+             call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                                 amr_buf_width,ref_ratio,nl,max_grid_size_2)
+          else
+             call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                                 amr_buf_width,ref_ratio,nl,max_grid_size_3)
+          end if
           
           if (new_grid) then
               
@@ -1001,7 +1006,7 @@ contains
 
        ! check for proper nesting
        if (nlevs .ge. 3) then
-          call enforce_proper_nesting(mba,la_array,max_grid_size)
+          call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
        end if
        
     else

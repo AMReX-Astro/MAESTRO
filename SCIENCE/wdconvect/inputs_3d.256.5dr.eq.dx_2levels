@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "model_6.e8.hybrid.chamulak.hse.1280"
+ model_file = "kepler_new_6.25e8.hybrid.hse.1280"
  drdxfac = 5
 
  max_levs = 2

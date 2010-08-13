@@ -317,7 +317,15 @@ max_grid_size                       integer            64
 
 # The largest grid size that will be created using make\_new\_grids for the
 # coarsest level.  Defaults to {\tt max\_grid\_size}.
-max_grid_size_base                  integer            -1                  
+max_grid_size_1                     integer            -1                  
+
+# The largest grid size that will be created using make\_new\_grids for
+# level 2 (the first refined level).  Defaults to {\tt max\_grid\_size}.
+max_grid_size_2                     integer            -1 
+
+# The largest grid size that will be created using make\_new\_grids for
+# level 3 (the second refined level) and beyond.  Defaults to {\tt max\_grid\_size}.
+max_grid_size_3                     integer            -1
 
 # How often we regrid.
 regrid_int                          integer            -1                  

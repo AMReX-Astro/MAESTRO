@@ -196,8 +196,16 @@ contains
        call bl_error("ERROR: use_tfromp = T requires dpdt_factor = 0 to decouple enthalpy")
     endif
 
-    if (max_grid_size_base .eq. -1) then
-       max_grid_size_base = max_grid_size
+    if (max_grid_size_1 .eq. -1) then
+       max_grid_size_1 = max_grid_size
+    end if
+
+    if (max_grid_size_2 .eq. -1) then
+       max_grid_size_2 = max_grid_size
+    end if
+
+    if (max_grid_size_3 .eq. -1) then
+       max_grid_size_3 = max_grid_size
     end if
 
     if (spherical_in == 1 .and. do_planar_invsq_grav) then

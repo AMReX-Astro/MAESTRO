@@ -29,7 +29,7 @@ contains
 
     use probin_module, only : verbose, nodal, pmask, &
          regrid_int, amr_buf_width, &
-         max_grid_size, ref_ratio, max_levs, &
+         max_grid_size_2, max_grid_size_3, ref_ratio, max_levs, &
          ppm_type
     use geometry, only: dm, nlevs, nlevs_radial, spherical
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp
@@ -153,8 +153,13 @@ contains
        call multifab_physbc(sold(nl),rho_comp,dm+rho_comp,nscal, &
                             the_bc_tower%bc_tower_array(nl))
 
-       call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1),amr_buf_width,&
-                           ref_ratio,nl,max_grid_size)
+       if (nl .eq. 1) then
+          call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                              amr_buf_width,ref_ratio,nl,max_grid_size_2)
+       else
+          call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                              amr_buf_width,ref_ratio,nl,max_grid_size_3)
+       end if
 
        if (new_grid) then
 
@@ -256,7 +261,7 @@ contains
 
     ! check for proper nesting
     if (nlevs .ge. 3) then
-       call enforce_proper_nesting(mba,la_array,max_grid_size)
+       call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
     end if
 
     do n = 1,nl
