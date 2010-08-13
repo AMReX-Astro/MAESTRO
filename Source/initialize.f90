@@ -4,7 +4,6 @@ module initialize_module
   use ml_layout_module
   use multifab_module
   use bc_module
-  use probin_module
   use variables, only: nscal, rho_comp, rhoh_comp, temp_comp
   use geometry
   use network, only: nspec
@@ -33,7 +32,10 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only : drdxfac, restart_into_finer, octant
+    use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
+         ppm_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
+         check_base_name, use_tfromp, cflfac
+
     use average_module
     use make_grav_module
     use enforce_HSE_module
@@ -178,10 +180,10 @@ contains
        call destroy(chk_src_new(n))
     end do
     
-    ! Note: rho_omegadot2, rho_Hnuc2, rho_Hext, and thermal2 are not actually 
-    ! needed other
-    ! than to have them available when we print a plotfile immediately after
-    ! restart.  They are recomputed before they are used.
+    ! Note: rho_omegadot2, rho_Hnuc2, rho_Hext, and thermal2 are not
+    ! actually needed other than to have them available when we print
+    ! a plotfile immediately after restart.  They are recomputed
+    ! before they are used.
 
     do n=1,nlevs
        call multifab_copy_c(rho_omegadot2(n),1,chk_rho_omegadot2(n),1,nspec)
@@ -583,7 +585,8 @@ contains
     use init_module
     use average_module
     use restrict_base_module
-    use probin_module, only : drdxfac, octant
+    use probin_module, only : drdxfac, octant, test_set, ppm_type, nodal, &
+         prob_lo, prob_hi, model_file, do_smallscale
     use make_grav_module
     use enforce_HSE_module
     use rhoh_vs_t_module
@@ -790,7 +793,8 @@ contains
     use average_module
     use restrict_base_module
     use make_new_grids_module
-    use probin_module, only : drdxfac
+    use probin_module, only : drdxfac, ppm_type, prob_lo, prob_hi, do_smallscale, &
+         model_file, nodal
     use multifab_physbc_module
     use ml_restriction_module
     use multifab_fill_ghost_module
@@ -1147,6 +1151,8 @@ contains
   end subroutine initialize_bc
 
   subroutine initialize_dx(dx,mba,num_levs)
+
+    use probin_module, only: prob_lo, prob_hi
 
     real(dp_t)       , pointer     :: dx(:,:)
     type(ml_boxarray), intent(in ) :: mba
