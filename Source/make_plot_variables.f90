@@ -102,7 +102,7 @@ contains
     enddo
 
     do i = lo(1), hi(1)
-       if (state(i,j,rho_comp) <= base_cutoff_density) then
+       if (state(i,rho_comp) <= base_cutoff_density) then
           nabla = ZERO
        else
           ! forward difference
