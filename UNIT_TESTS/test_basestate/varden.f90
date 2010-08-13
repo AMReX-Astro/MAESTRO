@@ -59,6 +59,7 @@ subroutine varden()
   real(dp_t), allocatable ::            Hext_bar(:,:)
 
   real(dp_t) :: mencl, max_hse_error, starting_rad, rloc, r_r, r_l, g, dpdr, rhog
+  real(dp_t) :: max_Mach
 
   call probin_init()
   call init_dm()
@@ -534,7 +535,9 @@ subroutine varden()
      p0_new = p0_old
      call enforce_HSE(s0_new(:,:,rho_comp),p0_new,grav_cell)
 
-     ! compute gamma1bar_new
+     ! compute gamma1bar_new and compute the maximum Mach #
+     max_Mach = -ONE
+
      do r=0,nr_fine-1
 
         ! (rho, p) --> gamma1bar
@@ -556,7 +559,10 @@ subroutine varden()
 
         gamma1bar_new(1,r) = gam1_eos(1)
 
+        max_Mach = max(max_Mach, abs(w0(1,r)/cs_eos(1)) )
      end do
+
+     print *, 'maximum Mach # = ', max_Mach
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! update temperature
