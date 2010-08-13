@@ -171,19 +171,19 @@ def write_probin(probinTemplate, paramFiles):
                     type = params[n].type
 
                     if (type == "real"):
-                        fout.write("%sreal (kind=dp_t), save :: %s\n" % 
+                        fout.write("%sreal (kind=dp_t), save, public :: %s\n" % 
                                    (indent, params[n].var))
 
                     elif (type == "character"):
-                        fout.write("%scharacter (len=256), save :: %s\n" % 
+                        fout.write("%scharacter (len=256), save, public :: %s\n" % 
                                    (indent, params[n].var))
 
                     elif (type == "integer"):
-                        fout.write("%sinteger, save :: %s\n" % 
+                        fout.write("%sinteger, save, public :: %s\n" % 
                                    (indent, params[n].var))
 
                     elif (type == "logical"):
-                        fout.write("%slogical, save :: %s\n" % 
+                        fout.write("%slogical, save, public :: %s\n" % 
                                    (indent, params[n].var))
 
                     else:

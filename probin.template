@@ -12,26 +12,30 @@ module probin_module
 
   implicit none
 
+  private
 
   @@declarations@@
 
-  real(dp_t), save         :: burning_cutoff_density  ! note: presently not runtime parameter
+  real(dp_t), save, public    :: burning_cutoff_density  ! note: presently not runtime parameter
 
 
   ! Keep track of the inputs file that was used to read in runtime
   ! parameters.  This filename will be written into the job_info file.
-  character (len=128), save :: inputs_file_used = ""
+  character (len=128), save, public :: inputs_file_used = ""
 
 
   ! These will be allocated and defined below
-  logical,    allocatable, save :: nodal(:)
-  logical,    allocatable, save :: pmask(:)
-  real(dp_t), allocatable, save :: prob_lo(:)
-  real(dp_t), allocatable, save :: prob_hi(:)
+  logical,    allocatable, save, public :: nodal(:)
+  logical,    allocatable, save, public :: pmask(:)
+  real(dp_t), allocatable, save, public :: prob_lo(:)
+  real(dp_t), allocatable, save, public :: prob_hi(:)
 
 
   @@namelist@@
 
+
+  public :: probin
+  public :: probin_init, probin_close
 
 contains
 
