@@ -365,7 +365,7 @@ the_copy_cache_max                  integer            50
 min_eff                             real               0.7d0               
 
 # The minimum size on a side for a grid created using make\_new\_grids.
-cluster_min_width                   integer            16                  
+cluster_min_width                   integer            8
 
 # rotational frequency used for computing centrifugal term in rotation problems.
 rotational_frequency                real               ZERO                
