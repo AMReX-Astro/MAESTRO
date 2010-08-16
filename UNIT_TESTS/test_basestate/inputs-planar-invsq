@@ -24,7 +24,7 @@
  cflfac = 0.9d0
 
  heating_peak  = 1.d14
- heating_time  = 50.d0
+ heating_time  = 75.d0
  heating_rad   = 4.1e8
  heating_sigma = 4.d14
 
