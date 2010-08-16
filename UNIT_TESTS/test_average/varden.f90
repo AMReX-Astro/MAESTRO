@@ -79,8 +79,8 @@ subroutine varden()
   ! initialize nlevs
   nlevs = mla%nlevel
   nlevs_radial = merge(1, nlevs, spherical .eq. 1)
-
-  print *, 'nlevs = ', nlevs
+  if ( parallel_IOProcessor() ) &
+       print *, 'nlevs = ', nlevs
 
   ! initialize boundary conditions
   call initialize_bc(the_bc_tower,nlevs,pmask)
