@@ -37,7 +37,7 @@ contains
     type(box)                    :: domain
     integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
     integer                      :: max_rcoord(nlevs),rcoord(nlevs),stencil_coord(nlevs)
-    integer                      :: i,j,r,n,ng,min1,min2
+    integer                      :: i,j,r,n,ng,min_all,min_lev
     real(kind=dp_t)              :: radius
 
     integer, allocatable ::  ncell_proc(:,:)
@@ -216,7 +216,7 @@ contains
           rcoord(n) = 0
        end do
 
-!$omp parallel do private(r,radius,n,j,min1,min2) firstprivate(rcoord)
+!$omp parallel do private(r,radius,n,j,min_all,min_lev) firstprivate(rcoord)
        do r=0,nr_fine-1
 
          radius = (dble(r)+HALF)*dr(1)
@@ -241,27 +241,17 @@ contains
          
          ! choose the level with the largest min over the ncell interpolation points
          which_lev(r)=1
+         min_all = min(ncell(1,rcoord(1)-1), &
+                       ncell(1,rcoord(1)), &
+                       ncell(1,rcoord(1)+1))
+
          do n=2,nlevs
+            min_lev = min(ncell(n,rcoord(n)-1), &
+                          ncell(n,rcoord(n)), &
+                          ncell(n,rcoord(n)+1))
             
-            min1 = min(ncell(n,rcoord(n)-1), &
-                       ncell(n,rcoord(n)  ), &
-                       ncell(n,rcoord(n)+1))
-
-            min2 = min(ncell(which_lev(r),rcoord(which_lev(r))-1),&
-                       ncell(which_lev(r),rcoord(which_lev(r))  ), &
-                       ncell(which_lev(r),rcoord(which_lev(r))+1))
-
-            ! if no interpolation points are found, expand the search until we find one
-            j = 2
-            do while(min1 .eq. 0 .and. min2 .eq. 0)
-               min1 = max(ncell(n,max(1,rcoord(n)-j)), &
-                          ncell(n,min(rcoord(n)+j,nr_irreg-1)))
-               min2 = max(ncell(which_lev(r),max(1,rcoord(n)-j)), &
-                          ncell(which_lev(r),min(rcoord(n)+j,nr_irreg-1)))
-               j = j+1
-            end do
-
-            if (min1 .gt. min2) then
+            if (min_lev .gt. min_all) then
+               min_all = min_lev
                which_lev(r) = n
             end if
          end do
