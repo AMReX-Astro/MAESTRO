@@ -106,13 +106,18 @@ two (optional) thermal diffusion solves, and the final velocity projection.
   velocities to obey the elliptic constraint.  This is done both in
   the predictor and corrector portions of the main algorithm.
 
-  There are 2 tolerances here: a relative tolerance of $\epsilon =
-  \mathtt{eps\_mac} \cdot \mathtt{mac\_level\_factor}^{(\mathtt{nlevs}-1)}$, and a bottom
-  solver tolerance of $\epsilon_\mathrm{bottom} = \mathtt{eps\_mac\_bottom}$.  These
-  parameters are set in {\tt mg\_eps.f90} and have the default values:
+  There are two tolerances here.  The norm of the residual is required
+  to be reduced by a relative tolerance of $\epsilon =
+  \min \{ \mathtt{eps\_mac\_max}, \mathtt{eps\_mac} \cdot
+  \mathtt{mac\_level\_factor}^{(\mathtt{nlevs}-1)} \}$. A separate
+  tolerance is used for the bottom
+  solver, $\epsilon_\mathrm{bottom} =
+  \mathtt{eps\_mac\_bottom}$.  These parameters are set in {\tt
+    mg\_eps.f90} and have the default values:
    \begin{center}
    \begin{tabular}{ll}
    {\tt eps\_mac}           &= $10^{-10}$ \\
+   {\tt eps\_mac\_max}           &= $10^{-8}$ \\
    {\tt mac\_level\_factor} &= 10 \\
    {\tt eps\_mac\_bottom}   &= $10^{-3}$
    \end{tabular}
