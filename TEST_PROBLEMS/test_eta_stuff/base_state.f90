@@ -1,7 +1,7 @@
 module base_state_module
 
   use bl_types
-
+  use network, only: nspec
   implicit none
 
   private
@@ -19,6 +19,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
+    use network, only: spec_names
     use probin_module, only: base_cutoff_density, anelastic_cutoff, grav_const, prob_lo
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical, dm
