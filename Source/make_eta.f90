@@ -416,6 +416,7 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0_new,rho0_new_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0_nph,rho0_nph_cart,lo,hi,dx,0)
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k,U_dot_er)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -434,6 +435,7 @@ contains
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
 
     deallocate(rho0_new_cart,rho0_nph_cart)
     
