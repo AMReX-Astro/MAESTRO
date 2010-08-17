@@ -471,14 +471,12 @@ contains
 
     real(kind=dp_t) :: weight,avg
 
-    ncell(:) = 0.d0
-    pisum(:) = 0.d0
-
-    ncell_proc(:) = 0.d0
-    pisum_proc(:) = 0.d0
-
-    ng_pn = nghost(pi(1))
-    ng_pc = nghost(pi_cc(1))
+    ncell      = 0.d0
+    pisum      = 0.d0
+    ncell_proc = 0.d0
+    pisum_proc = 0.d0
+    ng_pn      = nghost(pi(1))
+    ng_pc      = nghost(pi_cc(1))
 
     do n=1,nlevs
        weight = 2.d0**(dm*(n-1))
@@ -486,8 +484,8 @@ contains
           if ( multifab_remote(pi_cc(n), i) ) cycle
           ppn => dataptr(pi(n), i)
           ppc => dataptr(pi_cc(n), i)
-          lo =  lwb(get_box(pi_cc(n), i))
-          hi =  upb(get_box(pi_cc(n), i))
+          lo  =  lwb(get_box(pi_cc(n), i))
+          hi  =  upb(get_box(pi_cc(n), i))
           select case (dm)
           case (1)
              if (n .eq. nlevs) then
@@ -518,10 +516,10 @@ contains
              end if
           end select
        end do
-
-       call parallel_reduce(ncell(n), ncell_proc(n), MPI_SUM)
-       call parallel_reduce(pisum(n), pisum_proc(n), MPI_SUM)
     end do
+
+    call parallel_reduce(ncell, ncell_proc, MPI_SUM)
+    call parallel_reduce(pisum, pisum_proc, MPI_SUM)
 
     ! now ncell will contain the total number of cells over all levels
     ! now picum will contain the sum of (volume weighted) pi over all levels
