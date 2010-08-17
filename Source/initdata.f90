@@ -38,11 +38,12 @@ contains
     ng = s(1)%ng
 
     do n=1,nlevs
-       do i = 1, s(n)%nboxes
+       do i = 1, nboxes(s(n))
           if ( multifab_remote(s(n),i) ) cycle
           sop => dataptr(s(n),i)
           lo =  lwb(get_box(s(n),i))
           hi =  upb(get_box(s(n),i))
+
           select case (dm)
           case (2)
              call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
@@ -103,9 +104,9 @@ contains
     integer                  :: lo(dm),hi(dm)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
 
-    ng = s%ng
+    ng = nghost(s)
 
-    do i = 1, s%nboxes
+    do i = 1, nboxes(s)
        if ( multifab_remote(s,i) ) cycle
        sop => dataptr(s,i)
        lo =  lwb(get_box(s,i))
@@ -115,10 +116,10 @@ contains
           call initscalardata_2d(sop(:,:,1,:),lo,hi,ng,dx,s0_init,p0_init)
        case (3)
           if (spherical .eq. 1) then
-                call initscalardata_3d_sphr(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_init)
-             else
-                call initscalardata_3d(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_init)
-             end if
+             call initscalardata_3d_sphr(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_init)
+          else
+             call initscalardata_3d(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_init)
+          end if
        end select
     end do
 
@@ -364,10 +365,11 @@ contains
     integer :: lo(dm),hi(dm),ng
     integer :: i,n
     
-    ng = u(1)%ng
+    ng = nghost(u(1))
 
     do n=1,nlevs
-       do i = 1, u(n)%nboxes
+
+       do i = 1, nboxes(u(n))
           if ( multifab_remote(u(n),i) ) cycle
           uop => dataptr(u(n),i)
           lo =  lwb(get_box(u(n),i))
@@ -386,6 +388,7 @@ contains
              end if
           end select
        end do
+
     enddo
 
     if (nlevs .eq. 1) then
@@ -396,6 +399,7 @@ contains
 
        ! fill non-periodic domain boundary ghost cells
        call multifab_physbc(u(nlevs),1,1,dm,bc(nlevs))
+
     else
     
        ! the loop over nlevs must count backwards to make sure the finer grids are done first
