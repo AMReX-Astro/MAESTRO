@@ -77,11 +77,11 @@ contains
        ! radii contains every possible distance that a cell-center at the finest
        ! level can map into
        do n=1,nlevs
-!$omp parallel do private(r)
+          !$OMP PARALLEL DO PRIVATE(r)
           do r=0,nr_irreg
              radii(r,n) = sqrt(0.75d0+2.d0*r)*dx(n,1)
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end do
        radii(nr_irreg+1,:) = 1.d99
 
@@ -180,19 +180,19 @@ contains
              end if
           end do
 
-          call parallel_reduce(ncell(0:,n), ncell_proc(:,n), MPI_SUM)
+          call parallel_reduce(ncell (0:,n), ncell_proc (:,n), MPI_SUM)
           call parallel_reduce(phisum(0:,n), phisum_proc(:,n), MPI_SUM)
        end do
 
        ! normalize phisum so it actually stores the average at a radius
        do n=1,nlevs
-!$omp parallel do private(r)
+          !$OMP PARALLEL DO PRIVATE(r)
           do r=0,nr_irreg
              if (ncell(r,n) .ne. 0.d0) then
                 phisum(r,n) = phisum(r,n) / dble(ncell(r,n))
              end if
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end do
 
        ! compute center point for the finest level
@@ -205,7 +205,7 @@ contains
           rcoord(n) = 0
        end do
 
-!$omp parallel do private(r,radius,n,j,min_all,min_lev) firstprivate(rcoord)
+       !$OMP PARALLEL DO PRIVATE(r,radius,n,j,min_all,min_lev) FIRSTPRIVATE(rcoord)
        do r=0,nr_fine-1
 
          radius = (dble(r)+HALF)*dr(1)
@@ -260,7 +260,7 @@ contains
          end do
 
       end do
-!$omp end parallel do
+      !$OMP END PARALLEL DO
 
        ! squish the list at each level down to exclude points with no contribution
        do n=1,nlevs
@@ -290,9 +290,9 @@ contains
        end do
 
        ! compute phibar
-       stencil_coord(:) = 0
+       stencil_coord = 0
 
-!$omp parallel do private(r,radius,j,limit) firstprivate(stencil_coord)
+       !$OMP PARALLEL DO PRIVATE(r,radius,j,limit) FIRSTPRIVATE(stencil_coord)
        do r=0,nr_fine-1
 
          radius = (dble(r)+HALF)*dr(1)
@@ -329,7 +329,7 @@ contains
                           phisum(stencil_coord(which_lev(r))+1,which_lev(r)), limit)
 
       end do
-!$omp end parallel do
+      !$OMP END PARALLEL DO
 
    end if
 
@@ -407,15 +407,9 @@ contains
     integer, allocatable ::  ncell_proc(:,:)
     integer, allocatable ::       ncell(:,:)
 
-    integer, allocatable :: which_lev(:)
-
     real(kind=dp_t), allocatable :: phisum_proc(:,:)
     real(kind=dp_t), allocatable ::      phisum(:,:)
-
     real(kind=dp_t), allocatable :: radii(:,:)
-
-    real(kind=dp_t), allocatable :: source_buffer(:)
-    real(kind=dp_t), allocatable :: target_buffer(:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -425,28 +419,23 @@ contains
        call bl_error("average_irreg only written for spherical")
     end if
     
-    allocate(ncell_proc (nlevs, 0:nr_irreg))
-    allocate(ncell      (nlevs,-1:nr_irreg))
-
-    allocate(which_lev(0:nr_fine-1))
-
-    allocate(phisum_proc(nlevs, 0:nr_irreg))
-    allocate(phisum     (nlevs,-1:nr_irreg))
-    allocate(radii      (nlevs,-1:nr_irreg+1))
-
-    allocate(source_buffer(0:nr_irreg))
-    allocate(target_buffer(0:nr_irreg))
-
+    allocate(ncell_proc ( 0:nr_irreg  ,nlevs))
+    allocate(ncell      (-1:nr_irreg  ,nlevs))
+    allocate(phisum_proc( 0:nr_irreg  ,nlevs))
+    allocate(phisum     (-1:nr_irreg  ,nlevs))
+    allocate(radii      (-1:nr_irreg+1,nlevs))
+    !
     ! radii contains every possible distance that a cell-center at the finest
     ! level can map into
+    !
     do n=1,nlevs
-!$omp parallel do private(r)
+       !$OMP PARALLEL DO PRIVATE(r)
        do r=0,nr_irreg
-          radii(n,r) = sqrt(0.75d0+2.d0*r)*dx(n,1)
+          radii(r,n) = sqrt(0.75d0+2.d0*r)*dx(n,1)
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end do
-    radii(:,nr_irreg+1) = 1.d99
+    radii(nr_irreg+1,:) = 1.d99
 
     ng = nghost(phi(1))
 
@@ -455,7 +444,7 @@ contains
     ncell_proc   = 0
     phisum       = ZERO       
     phisum_proc  = ZERO
-    
+    !
     ! For spherical, we construct a 1D array, phisum, that has space
     ! allocated for every possible radius that a cell-center at the finest
     ! level can map into.  The radius locations have been precomputed and stored
@@ -463,6 +452,7 @@ contains
     
     ! For cells at the non-finest level, map a weighted contribution into the nearest
     ! bin in phisum.
+    !
     do n=nlevs,1,-1
 
        do i=1, nboxes(phi(n))
@@ -472,37 +462,31 @@ contains
           hi =  upb(get_box(phi(n), i))
 
           if (n .eq. nlevs) then
-             call sum_phi_3d_sphr(radii(n,0:),nr_irreg,pp(:,:,:,:),phisum_proc(n,:), &
-                                  lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp)
+             call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
+                                  lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp)
           else
              ! we include the mask so we don't double count; i.e., we only consider
              ! cells that we can "see" when constructing the sum
              mp => dataptr(mla%mask(n), i)
-             call sum_phi_3d_sphr(radii(n,0:),nr_irreg,pp(:,:,:,:),phisum_proc(n,:), &
-                                  lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp, &
+             call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
+                                  lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp, &
                                   mp(:,:,:,1))
           end if
        end do
 
-       source_buffer = ncell_proc(n,:)
-       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-       ncell(n,0:) = target_buffer
-
-       source_buffer = phisum_proc(n,:)
-       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-       phisum(n,0:) = target_buffer
-
+       call parallel_reduce(ncell (0:,n), ncell_proc (:,n), MPI_SUM)
+       call parallel_reduce(phisum(0:,n), phisum_proc(:,n), MPI_SUM)
     end do
 
     ! compute phibar_irreg
     do n=1,nlevs
-!$omp parallel do private(r)
+       !$OMP PARALLEL DO PRIVATE(r)
        do r=0,nr_irreg
-          if (ncell(n,r) .ne. 0.d0) then
-             phibar_irreg(n,r) = phisum(n,r) / dble(ncell(n,r))
+          if (ncell(r,n) .ne. 0.d0) then
+             phibar_irreg(n,r) = phisum(r,n) / dble(ncell(r,n))
           end if
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end do
 
    call destroy(bpt)
@@ -553,6 +537,7 @@ contains
 
     integer :: i,j,k
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
@@ -560,6 +545,7 @@ contains
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
 
   end subroutine sum_phi_3d
 
@@ -591,7 +577,7 @@ contains
     !!!          list causes compilation and/or runtime errors using Pathscale
     !!!          on franklin or jaguar
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !!!$omp parallel do private(i,j,k,x,y,z,cell_valid,radius,index)
+    !!!$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,cell_valid,radius,index)
     do k=lo(3),hi(3)
        z = prob_lo(3) + (dble(k) + HALF)*dx(3) - center(3)
        
@@ -622,17 +608,17 @@ contains
                    end if
                 end if
                 
-                !!!$omp critical (sum_phi_3d_sphr_critical)
+                !!!$OMP CRITICAL (sum_phi_3d_sphr_critical)
                 phisum(index) = phisum(index) + phi(i,j,k,incomp)
                 ncell(index)  = ncell(index) + 1
-                !!!$omp end critical (sum_phi_3d_sphr_critical)
+                !!!$OMP END CRITICAL (sum_phi_3d_sphr_critical)
 
              end if
              
           end do
        end do
     end do
-    !!!$omp end parallel do
+    !!!$OMP END PARALLEL DO
 
   end subroutine sum_phi_3d_sphr
 
