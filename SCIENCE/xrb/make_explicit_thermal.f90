@@ -297,20 +297,24 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
+999 format('... Level ', i1, ' create thermal coeffs:')
+
     call build(bpt, "make_thermal_coeffs")
 
-    ng_s = s(1)%ng
-    ng_T = Tcoeff(1)%ng
-    ng_h = hcoeff(1)%ng
-    ng_X = Xkcoeff(1)%ng
-    ng_p = pcoeff(1)%ng
+    ng_s = nghost(s(1))
+    ng_T = nghost(Tcoeff(1))
+    ng_h = nghost(hcoeff(1))
+    ng_X = nghost(Xkcoeff(1))
+    ng_p = nghost(pcoeff(1))
 
     ! create Tcoeff = -kth, 
     !        hcoeff = -kth/cp, 
     !        Xkcoeff = xik*kth/cp, 
     !        pcoeff = hp*kth/cp
     do n=1,nlevs
-       do i=1,s(n)%nboxes
+       if (parallel_IOProcessor()) write (6, 999) n
+
+       do i=1,nboxes(s(n))
           if (multifab_remote(s(n),i)) cycle
           sp       => dataptr(s(n),i)
           Tcoeffp  => dataptr(Tcoeff(n),i)
@@ -351,9 +355,9 @@ contains
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
+    use conductivity_module
     use network, only: nspec
     use probin_module, only: buoyancy_cutoff_factor, base_cutoff_density, limit_conductivity
-    use conductivity_module
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_T,ng_h,ng_X,ng_p
     real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,:)
@@ -422,9 +426,9 @@ contains
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
+    use conductivity_module
     use network, only: nspec
     use probin_module, only: buoyancy_cutoff_factor, base_cutoff_density, limit_conductivity
-    use conductivity_module
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_T,ng_h,ng_X,ng_p
     real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,lo(2)-ng_s:,:)
@@ -496,11 +500,11 @@ contains
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
+    use conductivity_module
     use network, only: nspec
     use geometry, only: spherical
     use fill_3d_module
     use probin_module, only: buoyancy_cutoff_factor, base_cutoff_density, limit_conductivity
-    use conductivity_module
     
     integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_T,ng_h,ng_X,ng_p
     real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
