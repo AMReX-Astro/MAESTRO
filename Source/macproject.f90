@@ -30,7 +30,7 @@ contains
     use probin_module, only: verbose, use_hypre
     use variables, only: press_comp
 
-    use mg_eps_module, only: eps_mac, mac_level_factor
+    use mg_eps_module, only: eps_mac, eps_mac_max, mac_level_factor
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
@@ -168,7 +168,7 @@ contains
 !      abs_solver_eps = eps * abs_eps
 !   end if
 
-    rel_solver_eps = eps_mac*mac_level_factor**(nlevs-1)
+    rel_solver_eps = min(eps_mac*mac_level_factor**(nlevs-1), eps_mac_max)
 
     if (use_hypre) then
        call mac_hypre(mla,rh,phi,fine_flx,alpha,beta,dx,&
