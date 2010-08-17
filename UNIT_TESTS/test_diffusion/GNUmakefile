@@ -10,10 +10,6 @@ MKVERBOSE := t
 FPARALLEL := ../..
 
 
-# include the main Makefile stuff
-include $(FPARALLEL)/mk/GMakedefs.mak
-
-
 # define the physics packages to build this problem
 EOS_DIR := extern/EOS/gamma_law_general
 CONDUCTIVITY_DIR := extern/conductivity/constant
