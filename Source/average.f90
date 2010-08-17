@@ -59,16 +59,22 @@ contains
 
     call build(bpt, "average")
 
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! NOTE: The indices for ncell_proc, etc., are switched in this subroutine
+    !       to have the number of levels second because due to memory ordering, 
+    !       it will run much faster for larger problems
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     if (spherical .eq. 1) then
 
-       allocate(ncell_proc (nlevs, 0:nr_irreg))
-       allocate(ncell      (nlevs,-1:nr_irreg))
+       allocate(ncell_proc ( 0:nr_irreg,nlevs))
+       allocate(ncell      (-1:nr_irreg,nlevs))
 
        allocate(which_lev(0:nr_fine-1))
 
-       allocate(phisum_proc(nlevs, 0:nr_irreg))
-       allocate(phisum     (nlevs,-1:nr_irreg))
-       allocate(radii      (nlevs,-1:nr_irreg+1))
+       allocate(phisum_proc(0:nr_irreg,nlevs))
+       allocate(phisum     (-1:nr_irreg,nlevs))
+       allocate(radii      (-1:nr_irreg+1,nlevs))
 
        allocate(source_buffer(0:nr_irreg))
        allocate(target_buffer(0:nr_irreg))
@@ -78,18 +84,18 @@ contains
        do n=1,nlevs
 !$omp parallel do private(r)
           do r=0,nr_irreg
-             radii(n,r) = sqrt(0.75d0+2.d0*r)*dx(n,1)
+             radii(r,n) = sqrt(0.75d0+2.d0*r)*dx(n,1)
           end do
 !$omp end parallel do
        end do
-       radii(:,nr_irreg+1) = 1.d99
+       radii(nr_irreg+1,:) = 1.d99
 
     else
 
-       allocate(ncell_proc (nlevs,0:nr_fine-1))
-       allocate(ncell      (nlevs,0:nr_fine-1))
-       allocate(phisum_proc(nlevs,0:nr_fine-1))
-       allocate(phisum     (nlevs,0:nr_fine-1))
+       allocate(ncell_proc (0:nr_fine-1,nlevs))
+       allocate(ncell      (0:nr_fine-1,nlevs))
+       allocate(phisum_proc(0:nr_fine-1,nlevs))
+       allocate(phisum     (0:nr_fine-1,nlevs))
 
        allocate(source_buffer(0:nr_fine-1))
        allocate(target_buffer(0:nr_fine-1))
@@ -116,11 +122,11 @@ contains
           domhi  = upb(domain)
 
           if (dm .eq. 1) then
-             ncell(n,:) = 1
+             ncell(:,n) = 1
           else if (dm .eq. 2) then
-             ncell(n,:) = domhi(1)-domlo(1)+1
+             ncell(:,n) = domhi(1)-domlo(1)+1
           else if (dm .eq. 3) then
-             ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+             ncell(:,n) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
           end if
 
           do i=1, nboxes(phi(n))
@@ -130,23 +136,23 @@ contains
              hi =  upb(get_box(phi(n), i))
              select case (dm)
              case (1)
-                call sum_phi_1d(pp(:,1,1,:),phisum_proc(n,:),lo,hi,ng,incomp)
+                call sum_phi_1d(pp(:,1,1,:),phisum_proc(:,n),lo,hi,ng,incomp)
              case (2)
-                call sum_phi_2d(pp(:,:,1,:),phisum_proc(n,:),lo,hi,ng,incomp)
+                call sum_phi_2d(pp(:,:,1,:),phisum_proc(:,n),lo,hi,ng,incomp)
              case (3)
-                call sum_phi_3d(pp(:,:,:,:),phisum_proc(n,:),lo,hi,ng,incomp)
+                call sum_phi_3d(pp(:,:,:,:),phisum_proc(:,n),lo,hi,ng,incomp)
              end select
           end do
 
           ! gather phisum
-          source_buffer = phisum_proc(n,:)
+          source_buffer = phisum_proc(:,n)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          phisum(n,:) = target_buffer
+          phisum(:,n) = target_buffer
 
           ! compute phibar by normalizing phisum
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)
-                phibar(n,r) = phisum(n,r) / dble(ncell(n,r))
+                phibar(n,r) = phisum(r,n) / dble(ncell(r,n))
              end do
           end do
 
@@ -173,25 +179,25 @@ contains
              hi =  upb(get_box(phi(n), i))
 
              if (n .eq. nlevs) then
-                call sum_phi_3d_sphr(radii(n,0:),nr_irreg,pp(:,:,:,:),phisum_proc(n,:), &
-                                     lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp)
+                call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
+                                     lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp)
              else
                 ! we include the mask so we don't double count; i.e., we only consider
                 ! cells that we can "see" when constructing the sum
                 mp => dataptr(mla%mask(n), i)
-                call sum_phi_3d_sphr(radii(n,0:),nr_irreg,pp(:,:,:,:),phisum_proc(n,:), &
-                                     lo,hi,ng,dx(n,:),ncell_proc(n,:),incomp, &
+                call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
+                                     lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp, &
                                      mp(:,:,:,1))
              end if
           end do
 
-          source_buffer = ncell_proc(n,:)
+          source_buffer = ncell_proc(:,n)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          ncell(n,0:) = target_buffer
+          ncell(0:,n) = target_buffer
 
-          source_buffer = phisum_proc(n,:)
+          source_buffer = phisum_proc(:,n)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          phisum(n,0:) = target_buffer
+          phisum(0:,n) = target_buffer
 
        end do
 
@@ -199,17 +205,17 @@ contains
        do n=1,nlevs
 !$omp parallel do private(r)
           do r=0,nr_irreg
-             if (ncell(n,r) .ne. 0.d0) then
-                phisum(n,r) = phisum(n,r) / dble(ncell(n,r))
+             if (ncell(r,n) .ne. 0.d0) then
+                phisum(r,n) = phisum(r,n) / dble(ncell(r,n))
              end if
           end do
 !$omp end parallel do
        end do
 
        ! compute center point for the finest level
-       phisum(nlevs,-1) = (11.d0/8.d0)*phisum(nlevs,0) - (3.d0/8.d0)*phisum(nlevs,1)
-       radii (nlevs,-1) = 0.d0
-       ncell (nlevs,-1) = 1
+       phisum(-1,nlevs) = (11.d0/8.d0)*phisum(0,nlevs) - (3.d0/8.d0)*phisum(1,nlevs)
+       radii (-1,nlevs) = 0.d0
+       ncell (-1,nlevs) = 1
 
        ! choose which level to interpolate from
        do n=1,nlevs
@@ -224,7 +230,7 @@ contains
          ! for each level, find the closest coordinate
          do n=1,nlevs
             do j=rcoord(n),nr_irreg
-               if (abs(radius-radii(n,j)) .lt. abs(radius-radii(n,j+1))) then
+               if (abs(radius-radii(j,n)) .lt. abs(radius-radii(j+1,n))) then
                   rcoord(n) = j
                   exit
                end if
@@ -241,14 +247,14 @@ contains
          
          ! choose the level with the largest min over the ncell interpolation points
          which_lev(r)=1
-         min_all = min(ncell(1,rcoord(1)-1), &
-                       ncell(1,rcoord(1)), &
-                       ncell(1,rcoord(1)+1))
+         min_all = min(ncell(rcoord(1)-1,1), &
+                       ncell(rcoord(1)  ,1), &
+                       ncell(rcoord(1)+1,1))
 
          do n=2,nlevs
-            min_lev = min(ncell(n,rcoord(n)-1), &
-                          ncell(n,rcoord(n)), &
-                          ncell(n,rcoord(n)+1))
+            min_lev = min(ncell(rcoord(n)-1,n), &
+                          ncell(rcoord(n)  ,n), &
+                          ncell(rcoord(n)+1,n))
             
             if (min_lev .gt. min_all) then
                min_all = min_lev
@@ -263,21 +269,21 @@ contains
        do n=1,nlevs
           j=0
           do r=0,nr_irreg
-             do while(ncell(n,j) .eq. 0)
+             do while(ncell(j,n) .eq. 0)
                 j = j+1
                 if (j .gt. nr_irreg) then
                    exit
                 end if
              end do
              if (j .gt. nr_irreg) then
-                phisum(n,r:nr_irreg)   = 1.d99
-                radii (n,r:nr_irreg+1) = 1.d99
+                phisum(r:nr_irreg,n)   = 1.d99
+                radii (r:nr_irreg+1,n) = 1.d99
                 max_rcoord(n) = r-1
                 exit
              end if
-             phisum(n,r) = phisum(n,j)
-             radii (n,r) = radii (n,j)
-             ncell (n,r) = ncell (n,j)
+             phisum(r,n) = phisum(j,n)
+             radii (r,n) = radii (j,n)
+             ncell (r,n) = ncell (j,n)
              j = j+1
              if (j .gt. nr_irreg) then
                 max_rcoord(n) = r
@@ -296,8 +302,8 @@ contains
 
          ! find the closest coordinate
          do j=stencil_coord(which_lev(r)),max_rcoord(which_lev(r))
-            if (abs(radius-radii(which_lev(r),j  )) .lt. &
-                abs(radius-radii(which_lev(r),j+1))) then
+            if (abs(radius-radii(j  ,which_lev(r))) .lt. &
+                abs(radius-radii(j+1,which_lev(r)))) then
                stencil_coord(which_lev(r)) = j
                exit
             end if
@@ -317,13 +323,13 @@ contains
          end if
 
          call quad_interp(radius, &
-                          radii(which_lev(r),stencil_coord(which_lev(r))-1), &
-                          radii(which_lev(r),stencil_coord(which_lev(r))  ), &
-                          radii(which_lev(r),stencil_coord(which_lev(r))+1), &
+                          radii(stencil_coord(which_lev(r))-1,which_lev(r)), &
+                          radii(stencil_coord(which_lev(r))  ,which_lev(r)), &
+                          radii(stencil_coord(which_lev(r))+1,which_lev(r)), &
                           phibar(1,r), &
-                          phisum(which_lev(r),stencil_coord(which_lev(r))-1), &
-                          phisum(which_lev(r),stencil_coord(which_lev(r))  ), &
-                          phisum(which_lev(r),stencil_coord(which_lev(r))+1), limit)
+                          phisum(stencil_coord(which_lev(r))-1,which_lev(r)), &
+                          phisum(stencil_coord(which_lev(r))  ,which_lev(r)), &
+                          phisum(stencil_coord(which_lev(r))+1,which_lev(r)), limit)
 
       end do
 !$omp end parallel do
@@ -539,7 +545,7 @@ contains
     logical          :: cell_valid
 
 !*************
-! Note: This omp call is commented out because for some reason it crashes PathScale on franklin
+! Note: This omp call is commented out because for some reason it crashes PathScale on franklin and jaguar
 !*************
 !!$omp parallel do private(i,j,k,x,y,z,cell_valid,radius,index) reduction(+:phisum,ncell)
     do k=lo(3),hi(3)
