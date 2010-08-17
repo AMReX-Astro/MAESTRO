@@ -585,6 +585,12 @@ contains
     integer          :: i, j, k, index
     logical          :: cell_valid
 
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!! Warning: These OMP directives actually slow down this loop for
+    !!!          large problems.  Adding phisum and/or ncell to the private
+    !!!          list causes compilation and/or runtime errors using Pathscale
+    !!!          on franklin or jaguar
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!!$omp parallel do private(i,j,k,x,y,z,cell_valid,radius,index)
     do k=lo(3),hi(3)
        z = prob_lo(3) + (dble(k) + HALF)*dx(3) - center(3)
