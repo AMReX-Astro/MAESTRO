@@ -1,3 +1,4 @@
+!
 ! Compute eta_rho = Avg { rho' U dot e_r }  (see paper III, Eq. 30)
 !
 ! We keep make three quantities here: 
@@ -13,7 +14,7 @@
 !      use the average routine to put it in cell-centers 
 !      on the base state to get etarho_cc.  We compute etarho from these 
 !      cell-centered quantites by averaging to the center.  
-
+!
 
 module make_eta_module
 
@@ -47,18 +48,13 @@ contains
     ! local
     real(kind=dp_t), pointer :: efp(:,:,:,:)
     
-    real(kind=dp_t) ::          ncell(nlevs,0:nr_fine)
-    real(kind=dp_t) :: etarhosum_proc(nlevs,0:nr_fine)
-    real(kind=dp_t) ::      etarhosum(nlevs,0:nr_fine)
-
-    real(kind=dp_t) :: source_buffer(0:nr_fine)
-    real(kind=dp_t) :: target_buffer(0:nr_fine)
+    real(kind=dp_t) ::          ncell(0:nr_fine,nlevs)
+    real(kind=dp_t) :: etarhosum_proc(0:nr_fine,nlevs)
+    real(kind=dp_t) ::      etarhosum(0:nr_fine,nlevs)
 
     type(box) :: domain
 
-    integer :: domlo(dm),domhi(dm)
-    integer :: lo(dm),hi(dm)
-    integer :: i,r,n,ng_e
+    integer :: domlo(dm),domhi(dm),lo(dm),hi(dm),i,r,n,ng_e
 
     type(bl_prof_timer), save :: bpt
 
@@ -78,13 +74,13 @@ contains
     
     do n=1,nlevs
        domain = layout_get_pd(mla%la(n))
-       domlo = lwb(domain)
-       domhi = upb(domain)
+       domlo  = lwb(domain)
+       domhi  = upb(domain)
 
        if (dm .eq. 2) then
-          ncell(n,:) = domhi(1)-domlo(1)+1
+          ncell(:,n) = domhi(1)-domlo(1)+1
        else if(dm .eq. 3) then
-          ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+          ncell(:,n) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
        end if
 
        do i=1,layout_nboxes(mla%la(n))
@@ -94,22 +90,19 @@ contains
           hi =  upb(get_box(mla%la(n), i))
           select case (dm)
           case (1)
-             call sum_etarho_1d(n,lo,hi,efp(:,1,1,1),ng_e,etarhosum_proc(n,:))
+             call sum_etarho_1d(n,lo,hi,efp(:,1,1,1),ng_e,etarhosum_proc(:,n))
           case (2)
-             call sum_etarho_2d(n,lo,hi,efp(:,:,1,1),ng_e,etarhosum_proc(n,:))
+             call sum_etarho_2d(n,lo,hi,efp(:,:,1,1),ng_e,etarhosum_proc(:,n))
           case (3)
-             call sum_etarho_3d(n,lo,hi,efp(:,:,:,1),ng_e,etarhosum_proc(n,:))
+             call sum_etarho_3d(n,lo,hi,efp(:,:,:,1),ng_e,etarhosum_proc(:,n))
           end select
        end do
 
-       ! gather etarhosum
-       source_buffer = etarhosum_proc(n,:)
-       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-       etarhosum(n,:) = target_buffer
+       call parallel_reduce(etarhosum(:,n), etarhosum_proc(:,n), MPI_SUM)
 
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)+1
-             etarho_ec(n,r) = etarhosum(n,r) / dble(ncell(n,r))
+             etarho_ec(n,r) = etarhosum(r,n) / dble(ncell(r,n))
           end do
        end do
 
