@@ -8,6 +8,9 @@ are defined in the {\tt mg\_eps} module.  To set problem-specific values
 of these tolerances, place a local copy of {\tt mg\_eps.f90} in your
 problem directory.
 
+In the initialization, multigrid comes in during the initial projection
+and the ``divu'' iterations.
+
 \begin{itemize}
 
 \item {\em initial projection} ({\tt initial\_proj} called from {\tt varden})
@@ -23,11 +26,13 @@ problem directory.
   The initial projection can be disabled with the {\tt do\_initial\_projection}
   runtime parameter.
 
-  The tolerance, $\epsilon$ is set in {\tt initial\_proj} and is:
+  The tolerances, {\tt eps\_init\_proj\_cart} and {\tt eps\_init\_proj\_sph}
+  (for Cartesian and spherical respectively) are set in {\tt mg\_eps.f90}
+  and have the default values of:
    \begin{center}
-   \begin{tabular}{ll}
-   Cartesian:   & $\epsilon = 10^{-12}$ \\
-   spherical:   & $\epsilon = 10^{-10}$ \\
+   \begin{tabular}{lll}
+   Cartesian:   &  {\tt eps\_init\_proj\_cart} &= $10^{-12}$ \\
+   spherical:   &  {\tt eps\_init\_proj\_sph}  &= $10^{-10}$
    \end{tabular}
    \end{center}
 
@@ -41,32 +46,52 @@ problem directory.
   paper~III, \S 3.3).  The number of iterations to take is set through
   the {\tt init\_divu\_iter} runtime parameter.
 
-  The tolerance, $\epsilon_\mathrm{divu}$ depends on the iteration, $i$.
+  The overall tolerance, $\epsilon_\mathrm{divu}$ depends on the iteration, $i$.
   We start with a loose tolerance and progressively get tighter.  The
-  tolerances (set in {\tt divu\_iter}) are:
+  tolerances (set in {\tt divu\_iter}) are, for Cartesian:
+  {\small
    \begin{center}
-   \begin{tabular}{ll}
-   Cartesian:   & $\epsilon = \left  \{ \begin{array}{ll} 
-                   \min  (10^{-6\phantom{0}}, 10^{-8\phantom{0}} \cdot 10^{(\mathrm{nlevs - 1})} ) & 
-                           \quad \mathrm{for}~ i \le \mathrm{init\_divu\_iter} - 2 \\
-                   \min  (10^{-8\phantom{0}}, 10^{-10} \cdot 10^{(\mathrm{nlevs - 1})} ) & 
-                           \quad \mathrm{for}~ i = \mathrm{init\_divu\_iter} - 1  \\
-                   \min  (10^{-10}, 10^{-12} \cdot 10^{(\mathrm{nlevs - 1})} ) & 
-                           \quad \mathrm{for}~ i = \mathrm{init\_divu\_iter}   \\
+   \begin{tabular}{lll}
+   $\epsilon_\mathrm{divu} = \left  \{ \begin{array}{lll} 
+                   \min\, \{& \!\!\!\mathtt{eps\_divu\_cart} \cdot \mathtt{divu\_iter\_factor}^2 \cdot \mathtt{divu\_level\_factor}^{(\mathtt{nlevs}-1)}, \\
+                            & \!\!\!\mathtt{eps\_divu\_cart} \cdot \mathtt{divu\_iter\_factor}^2 \cdot \mathtt{divu\_level\_factor}^2 \, \} & 
+                           \quad \mathrm{for}~ i \le \mathtt{init\_divu\_iter} - 2 \\[2mm]
+                   \min\, \{& \!\!\!\mathtt{eps\_divu\_cart} \cdot \mathtt{divu\_iter\_factor} \cdot \mathtt{divu\_level\_factor}^{(\mathtt{nlevs}-1)}, \\
+                            & \!\!\!\mathtt{eps\_divu\_cart} \cdot \mathtt{divu\_iter\_factor} \cdot \mathtt{divu\_level\_factor}^2 \, \} & 
+                           \quad \mathrm{for}~ i = \mathtt{init\_divu\_iter} - 1  \\[2mm]
+                   \min\, \{& \!\!\!\mathtt{eps\_divu\_cart} \cdot \mathtt{divu\_level\_factor}^{(\mathtt{nlevs}-1)}, \\
+                            & \!\!\!\mathtt{eps\_divu\_cart} \cdot \mathtt{divu\_level\_factor}^2 \, \} & 
+                           \quad \mathrm{for}~ i = \mathtt{init\_divu\_iter}   \\
                                  \end{array}
                   \right .$ \\[10mm]
-   spherical:   & $\epsilon = \left  \{ \begin{array}{ll} 
-                    10^{-6\phantom{0}}  &
-                           \quad \mathrm{for}~ i \le \mathrm{init\_divu\_iter} - 2 \, \\
-                    10^{-8\phantom{0}}  &
-                           \quad \mathrm{for}~ i = \mathrm{init\_divu\_iter} - 1 \, \\
-                    10^{-10}  &
-                           \quad \mathrm{for}~ i = \mathrm{init\_divu\_iter} \, )\\
+   \end{tabular}
+   \end{center}
+   }
+   and for spherical:
+   {\small 
+   \begin{center}
+   \begin{tabular}{ll}
+   $\epsilon_\mathrm{divu} = \left  \{ \begin{array}{ll} 
+                     \mathtt{eps\_divu\_sph} \cdot \mathtt{divu\_iter\_factor}^2 &
+                           \quad \mathrm{for}~ i \le \mathtt{init\_divu\_iter} - 2 \, \\[2mm]
+                    \mathtt{eps\_divu\_sph} \cdot \mathtt{divu\_iter\_factor}  & 
+                           \quad \mathrm{for}~ i = \mathtt{init\_divu\_iter} - 1 \, \\[2mm]
+                    \mathtt{eps\_divu\_sph}  &
+                           \quad \mathrm{for}~ i = \mathtt{init\_divu\_iter} \, )\\
                   \end{array}
                   \right .$ \\
    \end{tabular}
    \end{center}
-
+   }
+   The various parameters are set in {\tt mg\_eps.f90} and have the default values of:
+   \begin{center}
+   \begin{tabular}{ll}
+   {\tt eps\_divu\_cart}     &= $10^{-12}$ \\
+   {\tt eps\_divu\_sph}      &= $10^{-10}$ \\
+   {\tt divu\_iter\_factor}  &= 100 \\
+   {\tt divu\_level\_factor} &= 10 
+   \end{tabular}
+   \end{center}
 
 \end{itemize}
 
@@ -81,12 +106,21 @@ two (optional) thermal diffusion solves, and the final velocity projection.
   velocities to obey the elliptic constraint.  This is done both in
   the predictor and corrector portions of the main algorithm.
 
-  There are 3 tolerances here: a relative tolerance of $\epsilon =
-  10^{-10}$, an absolute tolerance of $\epsilon_\mathrm{abs} =
-  \epsilon \cdot ||U^\mathrm{ADV}||_\infty / \Delta x$, and a bottom
-  solver tolerance of $\epsilon_\mathrm{bottom} = 10^{-3}$ (these are
-  all hard-coded in {\tt mac\_multigrid}).
+  There are 2 tolerances here: a relative tolerance of $\epsilon =
+  \mathtt{eps\_mac} \cdot \mathtt{mac\_level\_factor}^{(\mathtt{nlevs}-1)}$, and a bottom
+  solver tolerance of $\epsilon_\mathrm{bottom} = \mathtt{eps\_mac\_bottom}$.  These
+  parameters are set in {\tt mg\_eps.f90} and have the default values:
+   \begin{center}
+   \begin{tabular}{ll}
+   {\tt eps\_mac}           &= $10^{-10}$ \\
+   {\tt mac\_level\_factor} &= 10 \\
+   {\tt eps\_mac\_bottom}   &= $10^{-3}$
+   \end{tabular}
+   \end{center}
 
+
+  %an absolute tolerance of $\epsilon_\mathrm{abs} =
+  %\epsilon \cdot ||U^\mathrm{ADV}||_\infty / \Delta x$
 
 \item {\em thermal diffusion}
 
@@ -97,9 +131,17 @@ two (optional) thermal diffusion solves, and the final velocity projection.
 
 \item {\em velocity projection}
 
-  The final velocity projection uses a tolerance of $\epsilon = \min(
-  10^{-10}, 10^{-12} \cdot 10^{(\mathrm{nlevs} - 1)} )$.  This tolerance
-  is set in {\tt advance} and passed into {\tt hgproject}.
+  The final velocity projection uses a tolerance of $\epsilon = \min \{
+  \mathtt{eps\_hg\_max}, \mathtt{eps\_hg} \cdot \mathtt{hg\_level\_factor}^{(\mathtt{nlevs} - 1)} \}$.  This tolerance
+  is set in {\tt hgproject} using the parameter values specified in {\tt mg\_eps.f90}.  The default 
+  parameter values are:
+   \begin{center}
+   \begin{tabular}{ll}
+   {\tt eps\_hg}     &= $10^{-12}$ \\
+   {\tt eps\_hg\_max}      &= $10^{-10}$ \\
+   {\tt hg\_level\_factor}  &= 10 \\
+   \end{tabular}
+   \end{center}
 
 \end{itemize}
 
