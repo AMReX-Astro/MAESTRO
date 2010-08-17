@@ -63,6 +63,7 @@ contains
     use eos_module
     use network, only: nspec
     use probin_module, only: base_cutoff_density
+    use bl_constants_module
 
     integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
     real(kind=dp_t), intent(  out) :: ad_excess(lo(1)-ng_ad:)
@@ -133,6 +134,7 @@ contains
     use eos_module
     use network, only: nspec
     use probin_module, only: base_cutoff_density
+    use bl_constants_module
 
     integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
     real(kind=dp_t), intent(  out) :: ad_excess(lo(1)-ng_ad:,lo(2)-ng_ad:)
@@ -208,6 +210,7 @@ contains
     use eos_module
     use network, only: nspec
     use probin_module, only: base_cutoff_density
+    use bl_constants_module
 
     integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
     real(kind=dp_t), intent(  out) :: ad_excess(lo(1)-ng_ad:,lo(2)-ng_ad:,lo(3)-ng_ad:)
