@@ -23,6 +23,7 @@ module mg_eps_module
   real (kind=dp_t) :: eps_mac = 1.d-10
   real (kind=dp_t) :: eps_mac_bottom = 1.d-3
 
+  real (kind=dp_t) :: mac_level_factor = 10.d0
 
   ! tolerances for the HG projection
   real (kind=dp_t) :: eps_hg = 1.d-12
