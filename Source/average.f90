@@ -11,6 +11,7 @@ module average_module
   implicit none
 
   private
+
   public :: average, average_irreg, average_one_level
 
 contains
@@ -50,9 +51,6 @@ contains
 
     real(kind=dp_t), allocatable :: radii(:,:)
 
-    real(kind=dp_t), allocatable :: source_buffer(:)
-    real(kind=dp_t), allocatable :: target_buffer(:)
-
     type(bl_prof_timer), save :: bpt
 
     logical :: limit
@@ -76,9 +74,6 @@ contains
        allocate(phisum     (-1:nr_irreg,nlevs))
        allocate(radii      (-1:nr_irreg+1,nlevs))
 
-       allocate(source_buffer(0:nr_irreg))
-       allocate(target_buffer(0:nr_irreg))
-
        ! radii contains every possible distance that a cell-center at the finest
        ! level can map into
        do n=1,nlevs
@@ -96,9 +91,6 @@ contains
        allocate(ncell      (0:nr_fine-1,nlevs))
        allocate(phisum_proc(0:nr_fine-1,nlevs))
        allocate(phisum     (0:nr_fine-1,nlevs))
-
-       allocate(source_buffer(0:nr_fine-1))
-       allocate(target_buffer(0:nr_fine-1))
 
     end if
 
@@ -144,10 +136,7 @@ contains
              end select
           end do
 
-          ! gather phisum
-          source_buffer = phisum_proc(:,n)
-          call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          phisum(:,n) = target_buffer
+          call parallel_reduce(phisum(:,n), phisum_proc(:,n), MPI_SUM)
 
           ! compute phibar by normalizing phisum
           do i=1,numdisjointchunks(n)
@@ -191,14 +180,8 @@ contains
              end if
           end do
 
-          source_buffer = ncell_proc(:,n)
-          call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          ncell(0:,n) = target_buffer
-
-          source_buffer = phisum_proc(:,n)
-          call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          phisum(0:,n) = target_buffer
-
+          call parallel_reduce(ncell(0:,n), ncell_proc(:,n), MPI_SUM)
+          call parallel_reduce(phisum(0:,n), phisum_proc(:,n), MPI_SUM)
        end do
 
        ! normalize phisum so it actually stores the average at a radius
@@ -351,6 +334,50 @@ contains
    end if
 
    call destroy(bpt)
+
+ contains
+
+   subroutine cubic_interp(x,x0,x1,x2,x3,y,y0,y1,y2,y3)
+
+     real(kind=dp_t), intent(in   ) :: x,x0,x1,x2,x3,y0,y1,y2,y3
+     real(kind=dp_t), intent(  out) :: y
+
+     y = y0 + (y1-y0)/(x1-x0)*(x-x0) &
+          + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(x-x0)*(x-x1) &
+          + ( ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0) &
+          -((y3-y2)/(x3-x2)-(y2-y1)/(x2-x1))/(x3-x1) ) / (x3-x0) &
+          *(x-x0)*(x-x1)*(x-x2)
+
+     if (y .gt. max(y0,y1,y2,y3)) y = max(y0,y1,y2,y3)
+     if (y .lt. min(y0,y1,y2,y3)) y = min(y0,y1,y2,y3)
+
+   end subroutine cubic_interp
+
+   subroutine quad_interp(x,x0,x1,x2,y,y0,y1,y2,limit)
+
+     real(kind=dp_t), intent(in   ) :: x,x0,x1,x2,y0,y1,y2
+     real(kind=dp_t), intent(  out) :: y
+     logical,         intent(in   ) :: limit
+
+     y = y0 + (y1-y0)/(x1-x0)*(x-x0) &
+          + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(x-x0)*(x-x1)
+
+
+     if (limit) then
+        if (y .gt. max(y0,y1,y2)) y = max(y0,y1,y2)
+        if (y .lt. min(y0,y1,y2)) y = min(y0,y1,y2)
+     end if
+
+   end subroutine quad_interp
+
+   subroutine lin_interp(x,x0,x1,y,y0,y1)
+
+     real(kind=dp_t), intent(in   ) :: x,x0,x1,y0,y1
+     real(kind=dp_t), intent(  out) :: y
+
+     y = y0 + (y1-y0)/(x1-x0)*(x-x0)
+
+   end subroutine lin_interp
 
  end subroutine average
 
@@ -558,10 +585,7 @@ contains
     integer          :: i, j, k, index
     logical          :: cell_valid
 
-!*************
-! Note: This omp call is commented out because for some reason it crashes PathScale on franklin and jaguar
-!*************
-!!$omp parallel do private(i,j,k,x,y,z,cell_valid,radius,index) reduction(+:phisum,ncell)
+    !!!$omp parallel do private(i,j,k,x,y,z,cell_valid,radius,index)
     do k=lo(3),hi(3)
        z = prob_lo(3) + (dble(k) + HALF)*dx(3) - center(3)
        
@@ -592,16 +616,17 @@ contains
                    end if
                 end if
                 
-                ! update phisum and ncell
+                !!!$omp critical (sum_phi_3d_sphr_critical)
                 phisum(index) = phisum(index) + phi(i,j,k,incomp)
                 ncell(index)  = ncell(index) + 1
+                !!!$omp end critical (sum_phi_3d_sphr_critical)
 
              end if
              
           end do
        end do
     end do
-!!$omp end parallel do
+    !!!$omp end parallel do
 
   end subroutine sum_phi_3d_sphr
 
@@ -626,8 +651,6 @@ contains
 
     real(kind=dp_t) ::   phisum_proc(0:nr_fine-1)
     real(kind=dp_t) ::        phisum(0:nr_fine-1)
-    real(kind=dp_t) :: source_buffer(0:nr_fine-1)
-    real(kind=dp_t) :: target_buffer(0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 
@@ -670,10 +693,8 @@ contains
           end select
        end do
 
-       ! gather phisum
-       source_buffer = phisum_proc
-       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-       phisum = target_buffer
+       call parallel_reduce(phisum, phisum_proc, MPI_SUM)
+
        do r=0,nr(n)-1
           phibar(n,r) = phisum(r) / dble(ncell)
        end do
@@ -687,55 +708,5 @@ contains
     call destroy(bpt)
 
   end subroutine average_one_level
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  subroutine cubic_interp(x,x0,x1,x2,x3,y,y0,y1,y2,y3)
-
-    real(kind=dp_t), intent(in   ) :: x,x0,x1,x2,x3,y0,y1,y2,y3
-    real(kind=dp_t), intent(  out) :: y
-    
-    y = y0 + (y1-y0)/(x1-x0)*(x-x0) &
-           + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(x-x0)*(x-x1) &
-           + ( ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0) &
-              -((y3-y2)/(x3-x2)-(y2-y1)/(x2-x1))/(x3-x1) ) / (x3-x0) &
-            *(x-x0)*(x-x1)*(x-x2)
-
-    if (y .gt. max(y0,y1,y2,y3)) y = max(y0,y1,y2,y3)
-    if (y .lt. min(y0,y1,y2,y3)) y = min(y0,y1,y2,y3)
-
-  end subroutine cubic_interp
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  subroutine quad_interp(x,x0,x1,x2,y,y0,y1,y2,limit)
-
-    real(kind=dp_t), intent(in   ) :: x,x0,x1,x2,y0,y1,y2
-    real(kind=dp_t), intent(  out) :: y
-    logical,         intent(in   ) :: limit
-    
-    y = y0 + (y1-y0)/(x1-x0)*(x-x0) &
-           + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(x-x0)*(x-x1)
-
-
-    if (limit) then
-       if (y .gt. max(y0,y1,y2)) y = max(y0,y1,y2)
-       if (y .lt. min(y0,y1,y2)) y = min(y0,y1,y2)
-    end if
-
-  end subroutine quad_interp
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  subroutine lin_interp(x,x0,x1,y,y0,y1)
-
-    real(kind=dp_t), intent(in   ) :: x,x0,x1,y0,y1
-    real(kind=dp_t), intent(  out) :: y
-    
-    y = y0 + (y1-y0)/(x1-x0)*(x-x0)
-
-  end subroutine lin_interp
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 end module average_module
