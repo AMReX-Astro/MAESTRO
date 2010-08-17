@@ -58,9 +58,13 @@ subroutine varden()
 
   ! setup some names for the data fab's
   allocate(names(nscal))
-  names(:) = (/ "density", "rhoh", &
-       "X(He4)*rho", "X(C12)*rho", "X(Fe56)*rho", &
-       "temp", "trac" /)
+  names(1) = "density"
+  names(2) = "rhoh"
+  names(3) = "X(He4)*rho"
+  names(4) = "X(C12)*rho"
+  names(5) = "X(Fe56)*rho"
+  names(6) = "temp"
+  names(7) = "trac"
 
  ! we only use fixed grids
  if (test_set /= '') then

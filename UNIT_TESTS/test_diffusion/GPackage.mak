@@ -17,6 +17,7 @@ f90sources += main.f90
 f90sources += make_explicit_thermal.f90
 f90sources += make_plotfile.f90
 f90sources += make_plot_variables.f90
+f90sources += mg_eps.f90
 f90sources += ml_solve.f90
 f90sources += multifab_fill_ghost_cells.f90
 f90sources += multifab_physbc.f90
