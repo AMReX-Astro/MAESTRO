@@ -279,8 +279,9 @@ contains
     if (dm_in > 1) prob_hi(2) = prob_hi_y
     if (dm_in > 2) prob_hi(3) = prob_hi_z
 
+    call cluster_set_minwidth(minwidth)
+    call cluster_set_blocking_factor(blocking_factor)
     call cluster_set_min_eff(min_eff)
-    call cluster_set_minwidth(cluster_min_width)
 
     if (do_alltoallv) call multifab_set_alltoallv(.true.)
     
