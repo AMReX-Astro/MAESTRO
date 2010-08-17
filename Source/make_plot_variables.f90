@@ -468,7 +468,6 @@ contains
 
     real(kind=dp_t) :: ncell_proc(nlevs), ncell(nlevs)
     real(kind=dp_t) :: pisum_proc(nlevs), pisum(nlevs)
-    real(kind=dp_t) :: source_buffer, target_buffer
 
     real(kind=dp_t) :: weight,avg
 
@@ -520,14 +519,8 @@ contains
           end select
        end do
 
-       source_buffer = ncell_proc(n)
-       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-
-       ncell(n) = target_buffer
-
-       source_buffer = pisum_proc(n)
-       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-       pisum(n) = target_buffer
+       call parallel_reduce(ncell(n), ncell_proc(n), MPI_SUM)
+       call parallel_reduce(pisum(n), pisum_proc(n), MPI_SUM)
     end do
 
     ! now ncell will contain the total number of cells over all levels
