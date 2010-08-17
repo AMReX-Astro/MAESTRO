@@ -34,4 +34,7 @@ module mg_eps_module
 
   real (kind=dp_t) :: hg_level_factor = 10.d0
 
+  real (kind=dp_t) :: eps_hg_bottom = 1.d-4
+ 
+
 end module mg_eps_module

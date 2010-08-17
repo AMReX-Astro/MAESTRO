@@ -29,6 +29,7 @@ contains
                                      verbose, mg_verbose, cg_verbose, nodal
     use geometry, only: dm, nlevs
     use variables, only: press_comp
+    use mg_eps_module, only: eps_hg_bottom
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: rh(:)
@@ -85,7 +86,9 @@ contains
     bottom_max_iter   = mgt(nlevs)%bottom_max_iter
     min_width         = mgt(nlevs)%min_width
 
-    if (parallel_IOProcessor()) print *, 'doing hgproject with tolerance, eps = ', rel_solver_eps
+    if (parallel_IOProcessor()) then
+       print *, 'doing hgproject with tolerance, eps = ', rel_solver_eps
+    end if
 
     if ( hg_bottom_solver >= 0 ) then
         if (hg_bottom_solver == 4 .and. nboxes(phi(1)) == 1) then
@@ -103,7 +106,7 @@ contains
         end if
     end if
 
-    min_width = 2
+    bottom_solver_eps = eps_hg_bottom
 
     ! Note: put this here for robustness
     max_iter = 100
