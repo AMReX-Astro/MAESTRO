@@ -191,7 +191,7 @@ subroutine varden()
      print *, 'number of dimensions = ', dm
      do n = 1, nlevs
         print *, 'level: ', n
-        print *, '   number of boxes = ', nboxes(uold(n))
+        print *, '   number of boxes = ', nboxes(pi(n))
         print *, '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
      end do
      print *, ''
@@ -711,6 +711,32 @@ subroutine varden()
            ! create new grids and fill in data on those grids
            call regrid(mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
                        rho0_old,rhoh0_old,.false.)
+           
+           if (parallel_IOProcessor()) then
+              print *, ''
+              print *, 'after regridding'
+              do n = 1, nlevs
+                 print *, 'level: ', n
+                 print *, '   number of boxes = ', nboxes(pi(n))
+                 print *, '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
+              end do
+           end if
+
+           if (verbose .ge. 1) then
+              do n=1,nlevs
+                 numcell = multifab_volume(pi(n),.false.)
+                 if (parallel_IOProcessor()) then
+                    print*,"Number of valid cells at level        ",n,numcell
+                 end if
+                 numcell = multifab_volume(pi(n),.true.)
+                 if (parallel_IOProcessor()) then
+                    print*,"Number of valid + ghost cells at level",n,numcell
+                 end if
+              end do
+              if (parallel_IOProcessor()) then
+                 print*,""
+              end if
+           end if
 
            call init_multilevel(sold)
 
