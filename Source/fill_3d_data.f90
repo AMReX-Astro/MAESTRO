@@ -1664,9 +1664,12 @@ contains
     ! radii contains every possible distance that a cell-center at the finest
     ! level can map into
     allocate(radii(0:nr_irreg))
+
+!$omp parallel do private(r)
     do r=0,nr_irreg
        radii(r) = sqrt(0.75d0+2.d0*r)*dx(nlevs,1)
     end do
+!$omp end parallel do
 
     do n=1,nlevs
        
