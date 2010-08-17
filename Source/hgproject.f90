@@ -25,7 +25,7 @@ contains
     use hg_multigrid_module        , only : hg_multigrid
     use hg_hypre_module            , only : hg_hypre
 
-    use mg_eps_module              , only : eps_hg, eps_hg_min, hg_level_factor
+    use mg_eps_module              , only : eps_hg, eps_hg_max, hg_level_factor
     use probin_module              , only: verbose, mg_verbose, cg_verbose, hg_dense_stencil, nodal, &
                                            use_hypre
     use geometry                   , only: dm, nlevs, spherical
@@ -132,7 +132,7 @@ contains
     if (present(eps_in)) then
        rel_solver_eps = eps_in
     else
-       rel_solver_eps = min( eps_hg_min, eps_hg*hg_level_factor**(nlevs-1) )
+       rel_solver_eps = min( eps_hg_max, eps_hg*hg_level_factor**(nlevs-1) )
     end if
 
     abs_solver_eps = -1.d0
