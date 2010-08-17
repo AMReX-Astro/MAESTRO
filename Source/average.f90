@@ -262,6 +262,20 @@ contains
             end if
          end do
 
+         j = 1
+         do while (min_all .eq. 0)
+            j = j+1
+            do n=1,nlevs
+               min_lev = max(ncell(max(1,rcoord(n)-j),n), &
+                             ncell(min(rcoord(n)+j,nr_irreg-1),n))
+               if (min_lev .ne. 0) then
+                  which_lev(r) = n
+                  min_all = min_lev
+                  exit
+               end if
+            end do
+         end do
+
       end do
 !$omp end parallel do
 
