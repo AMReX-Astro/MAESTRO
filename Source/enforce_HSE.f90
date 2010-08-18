@@ -27,6 +27,8 @@ contains
     real(kind=dp_t) :: grav_edge(nlevs_radial,0:nr_fine-1)
     real(kind=dp_t) ::    p0_old(nlevs_radial,0:nr_fine-1)
 
+    offset = 0.d0
+
     call make_grav_edge(grav_edge,rho0)
 
     ! create a copy of the input pressure to help us with initial conditions
