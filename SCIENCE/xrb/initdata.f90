@@ -42,14 +42,13 @@ contains
     ng = s(1)%ng
 
     do n=1,nlevs
-
-       do i = 1, s(n)%nboxes
-
+       do i = 1, nboxes(s(n))
           if ( multifab_remote(s(n),i) ) cycle
 
           sop => dataptr(s(n),i)
           lo =  lwb(get_box(s(n),i))
           hi =  upb(get_box(s(n),i))
+
           select case (dm)
           case (2)
 
@@ -74,7 +73,6 @@ contains
           end select
 
        enddo
-
     enddo
 
     if (nlevs .eq. 1) then
@@ -125,10 +123,9 @@ contains
     integer                    :: lo(dm),hi(dm)
     real(kind=dp_t), pointer   :: sop(:,:,:,:)
 
+    ng = nghost(s)
 
-    ng = s%ng
-
-    do i = 1, s%nboxes
+    do i = 1, nboxes(s)
 
        if ( multifab_remote(s,i) ) cycle
 
@@ -177,7 +174,6 @@ contains
 
     ! initialize the scalars
     do j = lo(2), hi(2)
-
        do i = lo(1), hi(1)
 
           s(i,j,rho_comp)  = s0_init(j,rho_comp)
@@ -189,7 +185,6 @@ contains
                s0_init(j,trac_comp:trac_comp+ntrac-1)
 
        enddo
-
     enddo
     
     ! add an optional perturbation
@@ -217,9 +212,7 @@ contains
              s(i,j,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
 
           enddo
-
        enddo
-
     endif
     
   end subroutine initscalardata_2d
@@ -345,10 +338,10 @@ contains
     enddo
     
     
-    ng = u(1)%ng
+    ng = nghost(u(1))
 
     do n=1,nlevs
-       do i = 1, u(n)%nboxes
+       do i = 1, nboxes(u(n))
           if ( multifab_remote(u(n),i) ) cycle
           uop => dataptr(u(n),i)
           lo =  lwb(get_box(u(n),i))
