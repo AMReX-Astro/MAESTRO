@@ -34,55 +34,60 @@ module eos_module
 
   implicit none
 
-  integer, parameter :: NP = 1
-  integer, parameter :: npts = 1
+  private
 
-  real(kind=dp_t) :: xn_eos(NP,nspec)
+  integer, parameter, public :: NP = 1
+  integer, parameter, public :: npts = 1
 
-  real(kind=dp_t) :: temp_eos(NP)
-  real(kind=dp_t) :: den_eos(NP)
-  real(kind=dp_t) :: abar_eos(NP)
-  real(kind=dp_t) :: zbar_eos(NP)
-  real(kind=dp_t) :: e_eos(NP)
-  real(kind=dp_t) :: p_eos(NP)
-  real(kind=dp_t) :: h_eos(NP)
-  real(kind=dp_t) :: cv_eos(NP)
-  real(kind=dp_t) :: cp_eos(NP)
-  real(kind=dp_t) :: xne_eos(NP)
-  real(kind=dp_t) :: eta_eos(NP)
-  real(kind=dp_t) :: pele_eos(NP)
-  real(kind=dp_t) :: dpdt_eos(NP)
-  real(kind=dp_t) :: dpdr_eos(NP)
-  real(kind=dp_t) :: dedr_eos(NP)
-  real(kind=dp_t) :: dedt_eos(NP)
-  real(kind=dp_t) :: gam1_eos(NP)
-  real(kind=dp_t) ::   cs_eos(NP)
-  real(kind=dp_t) ::    s_eos(NP)
-  real(kind=dp_t) :: dsdt_eos(NP)
-  real(kind=dp_t) :: dsdr_eos(NP)
-  real(kind=dp_t) :: dpdX_eos(NP,nspec)
-  real(kind=dp_t) :: dhdX_eos(NP,nspec)
-  real(kind=dp_t) :: conduct_eos(NP)
+  real(kind=dp_t), public :: xn_eos(NP,nspec)
+  real(kind=dp_t), public :: temp_eos(NP)
+  real(kind=dp_t), public :: den_eos(NP)
+  real(kind=dp_t), public :: abar_eos(NP)
+  real(kind=dp_t), public :: zbar_eos(NP)
+  real(kind=dp_t), public :: e_eos(NP)
+  real(kind=dp_t), public :: p_eos(NP)
+  real(kind=dp_t), public :: h_eos(NP)
+  real(kind=dp_t), public :: cv_eos(NP)
+  real(kind=dp_t), public :: cp_eos(NP)
+  real(kind=dp_t), public :: xne_eos(NP)
+  real(kind=dp_t), public :: eta_eos(NP)
+  real(kind=dp_t), public :: pele_eos(NP)
+  real(kind=dp_t), public :: dpdt_eos(NP)
+  real(kind=dp_t), public :: dpdr_eos(NP)
+  real(kind=dp_t), public :: dedr_eos(NP)
+  real(kind=dp_t), public :: dedt_eos(NP)
+  real(kind=dp_t), public :: gam1_eos(NP)
+  real(kind=dp_t), public ::   cs_eos(NP)
+  real(kind=dp_t), public ::    s_eos(NP)
+  real(kind=dp_t), public :: dsdt_eos(NP)
+  real(kind=dp_t), public :: dsdr_eos(NP)
+  real(kind=dp_t), public :: dpdX_eos(NP,nspec)
+  real(kind=dp_t), public :: dhdX_eos(NP,nspec)
+  real(kind=dp_t), public :: conduct_eos(NP)
 
-  integer         :: pt_index_eos(MAX_SPACEDIM)
+  integer, public         :: pt_index_eos(MAX_SPACEDIM)
 
-  integer, parameter :: eos_input_rt = 1   ! density, temperature are inputs
-  integer, parameter :: eos_input_rh = 2   ! density, enthalpy are inputs
-  integer, parameter :: eos_input_tp = 3   ! temperature, pressure are inputs
-  integer, parameter :: eos_input_rp = 4   ! density, pressure are inputs
-  integer, parameter :: eos_input_re = 5   ! density, internal energy are inputs
-  integer, parameter :: eos_input_ps = 6   ! pressure, entropy are inputs
+  integer, parameter, public :: eos_input_rt = 1   ! density, temperature are inputs
+  integer, parameter, public :: eos_input_rh = 2   ! density, enthalpy are inputs
+  integer, parameter, public :: eos_input_tp = 3   ! temperature, pressure are inputs
+  integer, parameter, public :: eos_input_rp = 4   ! density, pressure are inputs
+  integer, parameter, public :: eos_input_re = 5   ! density, internal energy are inputs
+  integer, parameter, public :: eos_input_ps = 6   ! pressure, entropy are inputs
  
 
   real(kind=dp_t), save, private :: smallt
   real(kind=dp_t), save, private :: smalld
-  real(kind=dp_t), save          :: gamma_const
+  real(kind=dp_t), save, public  :: gamma_const
 
   logical, save, private :: initialized = .false.
 
-  logical, parameter :: eos_assume_neutral = .true.
+  logical, parameter, private :: eos_assume_neutral = .true.
 
   private nspec, aion, zion
+
+  public eos_init, eos_get_small_temp, eos_get_small_dens, eos_given_ReX, &
+       eos_e_given_RPX, eos_S_given_ReX, eos_given_RTX, eos_dpdr_given_RTX, &
+       eos_given_TPX, eos_given_PSX, eos
 
 contains
 
