@@ -35,7 +35,7 @@ contains
     integer :: lo(dm),hi(dm),ng
     integer :: i,n
     
-    ng = s(1)%ng
+    ng = nghost(s(1))
 
     do n=1,nlevs
        do i = 1, nboxes(s(n))
