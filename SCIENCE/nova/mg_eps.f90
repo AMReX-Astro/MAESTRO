@@ -1,3 +1,6 @@
+! set the tolerances used in the various multigrid solves throughout
+! the algorithm.  This is described in MAESTRO/docs/mg/.
+
 module mg_eps_module
 
   use bl_types
@@ -18,13 +21,20 @@ module mg_eps_module
 
   ! tolerances for the MAC projection
   real (kind=dp_t) :: eps_mac = 1.d-9
+  real (kind=dp_t) :: eps_mac_max = 1.d-8
+
+  real (kind=dp_t) :: mac_level_factor = 10.d0
+
   real (kind=dp_t) :: eps_mac_bottom = 1.d-3
 
 
   ! tolerances for the HG projection
   real (kind=dp_t) :: eps_hg = 1.d-10
+  real (kind=dp_t) :: eps_hg_max = 1.d-10
 
-  real (kind=dp_t) :: eps_hg_min = 1.d-10
   real (kind=dp_t) :: hg_level_factor = 10.d0
+
+  real (kind=dp_t) :: eps_hg_bottom = 1.d-4
+
 
 end module mg_eps_module
