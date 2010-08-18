@@ -163,8 +163,6 @@ contains
     real(kind=dp_t) :: react_time  , react_time_start  , react_time_max
     real(kind=dp_t) :: misc_time   , misc_time_start   , misc_time_max
 
-    real(kind=dp_t) :: eps
-
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advance_timestep")

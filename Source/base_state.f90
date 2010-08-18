@@ -43,7 +43,7 @@ contains
     real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! local
-    integer         :: i,j,r,comp
+    integer         :: r,comp
     real(kind=dp_t) :: rloc,dr_in,rmax,starting_rad,mod_dr
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
     real(kind=dp_t) :: sumX
@@ -291,6 +291,8 @@ contains
     end do
 
     ! check whether we are in HSE
+
+    mencl = zero
     
     if (spherical .eq. 1) then
        mencl = four3rd*m_pi*dr(n)**3*s0_init(0,rho_comp)

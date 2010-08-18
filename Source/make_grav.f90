@@ -182,7 +182,7 @@ contains
     real(kind=dp_t), intent(in   ) ::      rho0_fine(0:)
 
     ! Local variables
-    integer                      :: r, n
+    integer                      :: r
     real(kind=dp_t)              :: mencl
     
     if (spherical .eq. 0) then

@@ -62,7 +62,7 @@ contains
     real(kind=dp_t) :: dafacem,dafacep,dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp
     real(kind=dp_t) :: amax,delam,delap
 
-    integer :: n,r,lo,hi
+    integer :: r,lo,hi
 
     logical :: extremum, bigp, bigm
 

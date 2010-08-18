@@ -3033,6 +3033,8 @@ contains
     ! constant used in Colella 2008
     C = 1.25d0
 
+    w0cc = ZERO
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4865,6 +4867,8 @@ contains
 
     ! constant used in Colella 2008
     C = 1.25d0
+
+    w0lo = ZERO; w0hi = ZERO
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction

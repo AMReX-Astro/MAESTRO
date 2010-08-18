@@ -21,7 +21,7 @@ contains
       type(multifab) , intent(inout) :: divu_rhs(:)
       type(bc_tower) , intent(in   ) :: the_bc_tower
 
-      integer        :: i,n,ng,ng_d
+      integer        :: i,n,ng_d
       type(bc_level) :: bc
       real(kind=dp_t), pointer :: divp(:,:,:,:) 
 
