@@ -45,7 +45,7 @@ contains
 
     do n=1,nlevs
 
-       do i = 1, s(n)%nboxes
+       do i = 1, nboxes(s(n))
 
           if ( multifab_remote(s(n),i) ) cycle
 
@@ -128,9 +128,9 @@ contains
     real(kind=dp_t), pointer   :: sop(:,:,:,:)
 
 
-    ng = s%ng
+    ng = nghost(s)
 
-    do i = 1, s%nboxes
+    do i = 1, nboxes(s)
 
        if ( multifab_remote(s,i) ) cycle
 
@@ -347,10 +347,10 @@ contains
     enddo
     
     
-    ng = u(1)%ng
+    ng = nghost(u(1))
 
     do n=1,nlevs
-       do i = 1, u(n)%nboxes
+       do i = 1, nboxes(u(n))
           if ( multifab_remote(u(n),i) ) cycle
           uop => dataptr(u(n),i)
           lo =  lwb(get_box(u(n),i))
