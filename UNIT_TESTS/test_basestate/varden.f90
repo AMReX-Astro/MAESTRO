@@ -6,7 +6,6 @@ subroutine varden()
   use ml_boxarray_module
   use layout_module
   use multifab_module
-  use init_module
   use base_state_module
   use box_util_module
   use bl_IO_module

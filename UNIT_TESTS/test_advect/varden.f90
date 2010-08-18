@@ -21,7 +21,6 @@ subroutine varden()
   use ml_boxarray_module
   use layout_module
   use multifab_module
-  use init_module
   use base_state_module
   use ml_restriction_module
   use bc_module
