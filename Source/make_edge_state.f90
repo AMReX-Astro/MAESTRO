@@ -151,7 +151,7 @@ contains
         ! compute sedgel and sedger
         do r=lo,hi
            u = HALF*(w0(1,r)+w0(1,r+1))
-           ubardth = dth*u/dr(n)
+           ubardth = dth*u/dr(1)
            sedgel(r+1)= s(1,r) + (HALF-ubardth)*slope(r) + dth*force(1,r)
            sedger(r  )= s(1,r) - (HALF+ubardth)*slope(r) + dth*force(1,r)
         end do
