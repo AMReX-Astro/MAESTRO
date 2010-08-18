@@ -44,7 +44,7 @@ contains
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     real(kind=dp_t), pointer:: fp(:,:,:,:)
-    real(kind=dp_t), pointer:: np(:,:,:,:)
+    real(kind=dp_t), pointer:: nop(:,:,:,:)
     real(kind=dp_t), pointer:: dUp(:,:,:,:)
     real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
     
@@ -91,11 +91,11 @@ contains
                         dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac)
        case (3)
           if (spherical .eq. 1) then
-             np => dataptr(normal, i)
+             nop => dataptr(normal, i)
              ng_n = normal%ng
              call estdt_3d_sphr(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
                                 fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
-                                dSdtp(:,:,:,1), ng_dS, np(:,:,:,:), ng_n, &
+                                dSdtp(:,:,:,1), ng_dS, nop(:,:,:,:), ng_n, &
                                 w0, p0, gamma1bar, lo, hi, dx, &
                                 rho_min, dt_adv_grid, dt_divu_grid, cflfac)
           else

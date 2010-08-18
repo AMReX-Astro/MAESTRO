@@ -60,7 +60,7 @@ contains
     real(kind=dp_t), pointer::  rhep(:,:,:,:)
     real(kind=dp_t), pointer::  rwp(:,:,:,:)
     real(kind=dp_t), pointer::  up(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
+    real(kind=dp_t), pointer :: nop(:,:,:,:)
     real(kind=dp_t), pointer :: w0rp(:,:,:,:)
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
@@ -231,7 +231,7 @@ contains
           case (3)
              if (spherical == 1) then
 
-                np => dataptr(normal(n) , i)
+                nop => dataptr(normal(n) , i)
                 w0rp => dataptr(w0r_cart(n), i)
                 w0xp => dataptr(w0mac(n,1), i)
                 w0yp => dataptr(w0mac(n,2), i)
@@ -248,7 +248,7 @@ contains
                                     up(:,:,:,:),ng_u, &
                                     w0rp(:,:,:,1), ng_w, &
                                     w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
-                                    np(:,:,:,:),ng_n, &
+                                    nop(:,:,:,:),ng_n, &
                                     lo,hi, &
                                     Mach_max_local,temp_max_local,enuc_max_local)
                 else
@@ -263,7 +263,7 @@ contains
                                     up(:,:,:,:),ng_u, &
                                     w0rp(:,:,:,1), ng_w, &
                                     w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
-                                    np(:,:,:,:),ng_n, &
+                                    nop(:,:,:,:),ng_n, &
                                     lo,hi, &
                                     Mach_max_local,temp_max_local,enuc_max_local, &
                                     mp(:,:,:,1))

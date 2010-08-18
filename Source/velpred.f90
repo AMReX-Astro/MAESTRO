@@ -47,7 +47,7 @@ contains
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
+    real(kind=dp_t), pointer :: nop(:,:,:,:)
     real(kind=dp_t), pointer :: gw0p(:,:,:,:)
 
     real(kind=dp_t) :: gradw0_rad(1,0:nr_fine-1)
@@ -117,12 +117,12 @@ contains
              w0yp  => dataptr(w0mac(n,2),i)
              w0zp  => dataptr(w0mac(n,3),i)
              gw0p => dataptr(gradw0_cart(n),i)
-             np => dataptr(normal(n),i)
+             nop => dataptr(normal(n),i)
              if (spherical .eq. 1) then
                 call velpred_3d(n, uop(:,:,:,:), ng_u, &
                                 ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                 utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
-                                fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
+                                fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
                                 w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
                                 ng_w0, gw0p(:,:,:,1), ng_gw, lo, hi, dx(n,:), dt, &
                                 the_bc_level(n)%phys_bc_level_array(i,:,:), &
@@ -131,7 +131,7 @@ contains
                 call velpred_3d(n, uop(:,:,:,:), ng_u, &
                                 ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                 utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
-                                fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
+                                fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
                                 w0(n,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
                                 ng_w0, gw0p(:,:,:,1), ng_gw, lo, hi, dx(n,:), dt, &
                                 the_bc_level(n)%phys_bc_level_array(i,:,:), &

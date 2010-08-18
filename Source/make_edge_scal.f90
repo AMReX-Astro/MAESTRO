@@ -62,7 +62,7 @@ contains
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: gw0p(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
+    real(kind=dp_t), pointer :: nop(:,:,:,:)
 
     real(kind=dp_t) :: gradw0_rad(1,0:nr_fine-1)
     type(multifab)  :: gradw0_cart(nlevs)
@@ -142,7 +142,7 @@ contains
              w0xp => dataptr(w0mac(n,1),i)
              w0yp => dataptr(w0mac(n,2),i)
              w0zp => dataptr(w0mac(n,3),i)
-             np   => dataptr(normal(n), i)
+             nop   => dataptr(normal(n), i)
              gw0p => dataptr(gradw0_cart(n), i)
              do scomp = start_scomp, start_scomp + num_comp - 1
                bccomp = start_bccomp + scomp - start_scomp
@@ -150,7 +150,7 @@ contains
                   call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         ng_um, fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
+                                         ng_um, fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
                                          w0(1,:), w0xp(:,:,:,1), w0yp(:,:,:,1), &
                                          w0zp(:,:,:,1), ng_w0, gw0p(:,:,:,1), ng_gw, lo, &
                                          hi, dx(n,:), dt, is_vel, &
@@ -161,7 +161,7 @@ contains
                   call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         ng_um, fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
+                                         ng_um, fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
                                          w0(n,:), w0xp(:,:,:,1), w0yp(:,:,:,1), &
                                          w0zp(:,:,:,1), ng_w0, gw0p(:,:,:,1), ng_gw, lo, &
                                          hi, dx(n,:), dt, is_vel, &

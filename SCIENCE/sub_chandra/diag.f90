@@ -97,7 +97,7 @@ contains
     real(kind=dp_t), pointer :: rhnp(:,:,:,:)
     real(kind=dp_t), pointer :: rhep(:,:,:,:)
     real(kind=dp_t), pointer :: up(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
+    real(kind=dp_t), pointer :: nop(:,:,:,:)
     real(kind=dp_t), pointer :: w0rp(:,:,:,:)
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
@@ -279,7 +279,7 @@ contains
           rhnp => dataptr(rho_Hnuc(n), i)
           rhep => dataptr(rho_Hext(n), i)
           up => dataptr(u(n) , i)
-          np => dataptr(normal(n) , i)
+          nop => dataptr(normal(n) , i)
           w0rp => dataptr(w0r_cart(n), i)
           w0xp => dataptr(w0mac(n,1), i)
           w0yp => dataptr(w0mac(n,2), i)
@@ -300,7 +300,7 @@ contains
                              up(:,:,:,:),ng_u, &
                              w0rp(:,:,:,1), ng_w, &
                              w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, & 
-                             np(:,:,:,:),ng_n, &
+                             nop(:,:,:,:),ng_n, &
                              lo,hi, &
                              T_max_local, coord_Tmax_local, vel_Tmax_local, &
                              enuc_max_local, coord_enucmax_local, vel_enucmax_local, &
@@ -315,7 +315,7 @@ contains
                              up(:,:,:,:),ng_u, &
                              w0rp(:,:,:,1), ng_w, &
                              w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, & 
-                             np(:,:,:,:),ng_n, &
+                             nop(:,:,:,:),ng_n, &
                              lo,hi, &
                              T_max_local, coord_Tmax_local, vel_Tmax_local, &
                              enuc_max_local, coord_enucmax_local, vel_enucmax_local, &

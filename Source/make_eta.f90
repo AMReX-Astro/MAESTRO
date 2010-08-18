@@ -277,7 +277,7 @@ contains
     real(kind=dp_t), pointer :: sop(:,:,:,:), snp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:), wmp(:,:,:,:)
     real(kind=dp_t), pointer :: wxp(:,:,:,:), wyp(:,:,:,:), wzp(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
+    real(kind=dp_t), pointer :: nop(:,:,:,:)
 
     integer :: n,i,lo(dm),hi(dm),ng_so,ng_sn,ng_um,ng_n,ng_e,ng_wm
     integer :: r
@@ -311,14 +311,14 @@ contains
           wxp => dataptr(w0mac(n,1), i)
           wyp => dataptr(w0mac(n,2), i)
           wzp => dataptr(w0mac(n,3), i)
-          np  => dataptr(normal(n), i)
+          nop  => dataptr(normal(n), i)
           lo = lwb(get_box(eta_cart(n),i))
           hi = upb(get_box(eta_cart(n),i))
           call construct_eta_cart(sop(:,:,:,rho_comp), ng_so, &
                                   snp(:,:,:,rho_comp), ng_sn, &
                                   ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                   wxp(:,:,:,1), wyp(:,:,:,1), wzp(:,:,:,1), ng_wm, &
-                                  np(:,:,:,:), ng_n, ep(:,:,:,1), ng_e, &
+                                  nop(:,:,:,:), ng_n, ep(:,:,:,1), ng_e, &
                                   rho0_old(1,:), rho0_new(1,:), &
                                   dx(n,:), lo, hi)
        enddo

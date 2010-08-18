@@ -51,7 +51,7 @@ contains
     real(kind=dp_t), pointer:: uepz(:,:,:,:)
     real(kind=dp_t), pointer:: spp(:,:,:,:)
     real(kind=dp_t), pointer:: fp(:,:,:,:)
-    real(kind=dp_t), pointer:: np(:,:,:,:)
+    real(kind=dp_t), pointer:: nop(:,:,:,:)
     real(kind=dp_t), pointer:: w0xp(:,:,:,:)
     real(kind=dp_t), pointer:: w0yp(:,:,:,:)
     real(kind=dp_t), pointer:: w0zp(:,:,:,:)
@@ -104,19 +104,19 @@ contains
              w0xp   => dataptr(w0mac(n,1),i)
              w0yp   => dataptr(w0mac(n,2),i)
              w0zp   => dataptr(w0mac(n,3),i)
-             np   =>  dataptr(normal(n),i)
+             nop   =>  dataptr(normal(n),i)
              if (spherical .eq. 1) then
                 call update_velocity_3d(uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                         uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
-                                        fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, w0(1,:), &
+                                        fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, w0(1,:), &
                                         w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
                                         ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
              else
                 call update_velocity_3d(uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                         uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
-                                        fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, w0(n,:), &
+                                        fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, w0(n,:), &
                                         w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
                                         ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
              end if

@@ -2476,7 +2476,7 @@ contains
     ! local
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
-    real(kind=dp_t), pointer:: np(:,:,:,:)
+    real(kind=dp_t), pointer:: nop(:,:,:,:)
     real(kind=dp_t), pointer:: w0rp(:,:,:,:)
     integer :: lo(dm),hi(dm),ng_p,ng_u,ng_n,ng_w
     integer :: i
@@ -2496,14 +2496,14 @@ contains
 
        pp => dataptr(plotdata, i)
        up => dataptr(u, i)
-       np => dataptr(normal, i)
+       nop => dataptr(normal, i)
        w0rp => dataptr(w0r_cart, i)
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
 
        call makevelrc_3d_sphr(pp(:,:,:,comp_velr),pp(:,:,:,comp_velc),&
                               ng_p,up(:,:,:,:),ng_u, &
-                              w0rp(:,:,:,1),ng_w,np(:,:,:,:),ng_n,lo,hi)
+                              w0rp(:,:,:,1),ng_w,nop(:,:,:,:),ng_n,lo,hi)
     end do
 
   end subroutine make_velrc
