@@ -153,7 +153,7 @@ contains
     real(kind=dp_t), allocatable ::       div_coeff_edge(:,:)
     real(kind=dp_t), allocatable ::  rho0_predicted_edge(:,:)
 
-    integer    :: n,comp,proj_type,numcell
+    integer    :: i,n,comp,proj_type,numcell
     real(dp_t) :: halfdt
 
     real(kind=dp_t) :: advect_time , advect_time_start , advect_time_max
@@ -196,18 +196,27 @@ contains
     allocate( rho0_predicted_edge(nlevs_radial,0:nr_fine))
 
     if (verbose .ge. 1) then
+
+       if (parallel_IOProcessor()) then
+          do n = 1, nlevs
+             print *, 'level: ', n
+             print *, '   number of boxes = ', nboxes(pi(n))
+             print *, '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
+          end do
+       end if
+
        do n=1,nlevs
           numcell = multifab_volume(pi(n),.false.)
           if (parallel_IOProcessor()) then
-             print*,"Number of valid cells at level        ",n,numcell
+             print*,'Number of valid cells at level        ',n,numcell
           end if
           numcell = multifab_volume(pi(n),.true.)
           if (parallel_IOProcessor()) then
-             print*,"Number of valid + ghost cells at level",n,numcell
+             print*,'Number of valid + ghost cells at level',n,numcell
           end if
        end do
        if (parallel_IOProcessor()) then
-          print*,""
+          print*,''
        end if
     end if
 
