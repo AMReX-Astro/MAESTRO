@@ -751,11 +751,6 @@ contains
        call restrict_base(rho0_old,.true.)
        call fill_ghost_base(rho0_old,.true.)
 
-       ! set rhoh0 to be the average
-       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
-       call restrict_base(rhoh0_old,.true.)
-       call fill_ghost_base(rhoh0_old,.true.)
-
        ! compute p0 with HSE
        p0_old = p0_init
        call compute_cutoff_coords(rho0_old)
@@ -764,6 +759,12 @@ contains
 
        ! call eos with r,p as input to recompute T,h
        call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
+
+       ! set rhoh0 to be the average
+       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
+       call restrict_base(rhoh0_old,.true.)
+       call fill_ghost_base(rhoh0_old,.true.)
+
     end if
 
     ! set tempbar to be the average
@@ -1082,11 +1083,6 @@ contains
        call restrict_base(rho0_old,.true.)
        call fill_ghost_base(rho0_old,.true.)
 
-       ! set rhoh0 to be the average
-       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
-       call restrict_base(rhoh0_old,.true.)
-       call fill_ghost_base(rhoh0_old,.true.)
-
        ! compute p0 with HSE
        p0_old = p0_init
        call compute_cutoff_coords(rho0_old)
@@ -1095,6 +1091,12 @@ contains
 
        ! call eos with r,p as input to recompute T,h
        call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
+
+       ! set rhoh0 to be the average
+       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
+       call restrict_base(rhoh0_old,.true.)
+       call fill_ghost_base(rhoh0_old,.true.)
+
     end if
 
     ! set tempbar to be the average
