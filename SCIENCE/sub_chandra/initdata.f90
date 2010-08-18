@@ -35,10 +35,10 @@ contains
     integer :: lo(dm),hi(dm),ng
     integer :: i,n
     
-    ng = s(1)%ng
+    ng = nghost(s(1))
 
     do n=1,nlevs
-       do i = 1, s(n)%nboxes
+       do i = 1, nboxes(s(n))
           if ( multifab_remote(s(n),i) ) cycle
           sop => dataptr(s(n),i)
           lo =  lwb(get_box(s(n),i))
@@ -102,9 +102,9 @@ contains
     integer                  :: lo(dm),hi(dm)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
 
-    ng = s%ng
+    ng = nghost(s)
 
-    do i = 1, s%nboxes
+    do i = 1, nboxes(s)
        if ( multifab_remote(s,i) ) cycle
        sop => dataptr(s,i)
        lo =  lwb(get_box(s,i))
@@ -209,7 +209,7 @@ contains
 
     ihe4 = network_species_index("helium-4")
 
-    ng = u(1)%ng
+    ng = nghost(u(1))
 
 
     ! compute the radial bounds of the perturbation
@@ -273,7 +273,7 @@ contains
 
     do n=1,nlevs
 
-       do i = 1, u(n)%nboxes
+       do i = 1, nboxes(u(n))
           if ( multifab_remote(u(n),i) ) cycle
           uop => dataptr(u(n),i)
           lo =  lwb(get_box(u(n),i))
