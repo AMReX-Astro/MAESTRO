@@ -1,4 +1,4 @@
-module init_module
+module init_vel_module
 
   use bl_types
   use bl_constants_module
@@ -18,161 +18,16 @@ module init_module
   implicit none
 
   private
-  public :: initscalardata, initscalardata_on_level, initveldata
+  public :: initveldata
 
 contains
 
-  subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
-
-    type(multifab) , intent(inout) :: s(:)
-    real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
-    type(bc_level) , intent(in   ) :: bc(:)
-    type(ml_layout), intent(inout) :: mla
-
-    real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
-    
-    ng = nghost(s(1))
-
-    do n=1,nlevs
-       do i = 1, nboxes(s(n))
-          if ( multifab_remote(s(n),i) ) cycle
-          sop => dataptr(s(n),i)
-          lo =  lwb(get_box(s(n),i))
-          hi =  upb(get_box(s(n),i))
-          
-          select case (dm)
-          case (2)
-             call bl_error('initscalardata_2d not written')
-          case (3)
-             if (spherical .eq. 1) then
-                call initscalardata_3d_sphr(sop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                            s0_init(1,:,:), p0_init(1,:))
-             else
-                call bl_error('initscalardata_3d not written')
-             end if
-          end select
-       end do
-    enddo
-
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(s(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(s(nlevs),rho_comp,dm+rho_comp,nscal,bc(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),rho_comp,dm+rho_comp,nscal, &
-                                         fill_crse_input=.false.)
-
-       enddo
-
-    end if
-       
-  end subroutine initscalardata
-
-  subroutine initscalardata_on_level(n,s,s0_init,p0_init,dx,bc)
-
-    integer        , intent(in   ) :: n
-    type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_init(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    type(bc_level) , intent(in   ) :: bc
-
-    ! local
-    integer                  :: ng,i
-    integer                  :: lo(dm),hi(dm)
-    real(kind=dp_t), pointer :: sop(:,:,:,:)
-
-    ng = nghost(s)
-
-    do i = 1, nboxes(s)
-       if ( multifab_remote(s,i) ) cycle
-       sop => dataptr(s,i)
-       lo =  lwb(get_box(s,i))
-       hi =  upb(get_box(s,i))
-       select case (dm)
-       case (2)
-          call bl_error('initscalardata_2d not written')
-       case (3)
-          if (spherical .eq. 1) then
-             call initscalardata_3d_sphr(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_init)
-          else
-             call bl_error('initscalardata_3d not written')
-          end if
-       end select
-    end do
-
-    call multifab_fill_boundary(s)
-
-    call multifab_physbc(s,rho_comp,dm+rho_comp,nscal,bc)
-
-  end subroutine initscalardata_on_level
-
-  subroutine initscalardata_3d_sphr(s,lo,hi,ng,dx,s0_init,p0_init)
-
-    use probin_module, only: prob_lo, perturb_model
-
-    integer           , intent(in   ) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t),    intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t),    intent(in   ) :: p0_init(0:)
-
-    !     Local variables
-    integer :: comp
-
-    if (perturb_model) then
-       call bl_error('perturb_model not written for initscalardata_3d_sphr')
-    end if
-
-    ! initial the domain with the base state
-    s = ZERO
-
-    ! initialize the scalars
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,rho_comp), &
-                                      s(:,:,:,rho_comp:),lo,hi,dx,ng)
-
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,rhoh_comp), &
-                                      s(:,:,:,rhoh_comp:),lo,hi,dx,ng)
-
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,temp_comp), &
-                                      s(:,:,:,temp_comp:),lo,hi,dx,ng)
-
-    ! initialize species
-    do comp = spec_comp, spec_comp+nspec-1
-       call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
-                                         s(:,:,:,comp:),lo,hi,dx,ng)
-    end do
-
-    ! initialize tracers
-    do comp = trac_comp, trac_comp+ntrac-1
-       call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
-                                         s(:,:,:,comp:),lo,hi,dx,ng)
-    end do
-
-  end subroutine initscalardata_3d_sphr
-
   subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
 
+    use variables, ONLY: rho_comp, spec_comp
+    use network, ONLY: network_species_index
+    use geometry, ONLY: r_cc_loc
+    use probin_module, ONLY: sponge_start_factor, sponge_center_density
     use mt19937_module
     
     type(multifab) , intent(inout) :: u(:)
@@ -198,7 +53,36 @@ contains
     ! random number
     real(kind=dp_t) :: rand
     
+    ! velocity perturbation radius limits
+    real(kind=dp_t) :: velpert_r_inner, velpert_r_outer
+    
+    integer :: ihe4
+
+    ihe4 = network_species_index("helium-4")
+
     ng = nghost(u(1))
+
+
+    ! compute the radial bounds of the perturbation
+    do i = 0, nr_fine-1
+       if (s0_init(1,i,rho_comp) < sponge_start_factor*sponge_center_density) then
+          velpert_r_outer = r_cc_loc(1,i)
+          exit
+       endif
+    enddo
+
+    do i = 0, nr_fine-1
+       if (s0_init(1,i,spec_comp-1+ihe4) > 0.9_dp_t) then
+          velpert_r_inner = r_cc_loc(1,i)
+          exit
+       endif
+    enddo
+
+    ! adjust velpert_r_outer to be halfway between the base of the He layer and
+    ! where the sponge turns on
+    velpert_r_outer = velpert_r_inner + HALF*(velpert_r_outer - velpert_r_inner)
+
+
 
     ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
     if (dm .eq. 3 .and. spherical .eq. 1) then
@@ -252,6 +136,7 @@ contains
              if (spherical .eq. 1) then
                 call initveldata_3d_sphr(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
                                          s0_init(1,:,:), p0_init(1,:), &
+                                         velpert_r_inner, velpert_r_outer, &
                                          alpha, beta, gamma, phix, phiy, phiz, normk)
              else
                 call bl_error('initveldata_3d not written')
@@ -299,16 +184,20 @@ contains
   ! relative amplitude of the modes is controlled by
   ! "velpert_amplitude".
   subroutine initveldata_3d_sphr(u,lo,hi,ng,dx,s0_init,p0_init, &
+                                 velpert_r_inner, velpert_r_outer, &
                                  alpha,beta,gamma,phix,phiy,phiz,normk)
 
+    use geometry, only: center
     use probin_module, only: prob_lo, prob_hi, &
-         velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
+         velpert_amplitude, velpert_steep, velpert_scale
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in ) :: dx(:)
     real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0_init(0:)
+    real(kind=dp_t), intent(in   ) :: velpert_r_inner, velpert_r_outer
+
 
     ! random numbers between -1 and 1
     real(kind=dp_t), intent(in) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
@@ -327,9 +216,6 @@ contains
     real(kind=dp_t) :: cx(3,3,3), cy(3,3,3), cz(3,3,3)
     real(kind=dp_t) :: sx(3,3,3), sy(3,3,3), sz(3,3,3)
 
-    ! location of center of star
-    real(kind=dp_t) :: xc(3)
-
     ! radius, or distance, to center of star
     real(kind=dp_t) :: rloc
 
@@ -342,12 +228,6 @@ contains
     ! initialize the velocity to zero everywhere
     u = ZERO
 
-    ! define where center of star is
-    ! this currently assumes the star is at the center of the domain
-    xc(1) = 0.5d0*(prob_lo(1)+prob_hi(1))
-    xc(2) = 0.5d0*(prob_lo(2)+prob_hi(2))
-    xc(3) = 0.5d0*(prob_lo(3)+prob_hi(3))
-
     ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
        do jloc = lo(2),hi(2)
@@ -357,14 +237,14 @@ contains
              upert = ZERO
 
              ! compute where we physically are
-             xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1)
-             xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2)
-             xloc(3) = prob_lo(3) + (dble(kloc)+0.5d0)*dx(3)
+             xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1) - center(1)
+             xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2) - center(2)
+             xloc(3) = prob_lo(3) + (dble(kloc)+0.5d0)*dx(3) - center(3)
 
              ! compute distance to the center of the star
              rloc = ZERO
              do i=1,3
-                rloc = rloc + (xloc(i) - xc(i))**2
+                rloc = rloc + xloc(i)**2
              enddo
              rloc = sqrt(rloc)
 
@@ -408,8 +288,9 @@ contains
 
              ! apply the cutoff function to the perturbational velocity
              do i=1,3
-                upert(i) = velpert_amplitude*upert(i) &
-                     *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
+                upert(i) = velpert_amplitude*upert(i) * &
+                     HALF*(ONE + tanh((velpert_r_outer - velpert_steep - rloc)/velpert_steep))* &
+                     HALF*(ONE + tanh((rloc - velpert_r_inner - velpert_steep)/velpert_steep))
              enddo
 
              ! add perturbational velocity to background velocity
@@ -423,4 +304,4 @@ contains
       
   end subroutine initveldata_3d_sphr
 
-end module init_module
+end module init_vel_module

@@ -1,4 +1,4 @@
-module init_module
+module init_scalar_module
 
   use bl_types
   use bl_constants_module
@@ -191,5 +191,4 @@ contains
     
   end subroutine initscalardata_2d
 
-
-end module init_module
+end module init_scalar_module

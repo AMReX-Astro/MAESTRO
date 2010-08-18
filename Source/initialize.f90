@@ -582,7 +582,8 @@ contains
                                          psi,tempbar,grav_cell)
 
     use box_util_module
-    use init_module
+    use init_scalar_module
+    use init_vel_module
     use average_module
     use restrict_base_module
     use probin_module, only : drdxfac, octant, test_set, ppm_type, nodal, &
@@ -789,7 +790,8 @@ contains
     use probin_module, only: n_cellx, n_celly, n_cellz, &
          regrid_int, amr_buf_width, max_grid_size_1, max_grid_size_2, max_grid_size_3, &
          ref_ratio, max_levs, octant
-    use init_module
+    use init_scalar_module
+    use init_vel_module
     use average_module
     use restrict_base_module
     use make_new_grids_module
