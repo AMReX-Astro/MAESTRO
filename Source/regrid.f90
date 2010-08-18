@@ -5,7 +5,6 @@ module regrid_module
   use ml_layout_module
   use define_bc_module
   use restart_module
-  use init_module
   use box_util_module
 
   implicit none

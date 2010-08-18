@@ -3,7 +3,6 @@ subroutine varden()
   use variables
   use network
   use geometry
-  use init_module
   use base_state_module
   use base_io_module
   use estdt_module
