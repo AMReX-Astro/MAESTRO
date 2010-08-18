@@ -36,7 +36,7 @@ module eos_module
 
   private
 
-  integer, parameter, public :: NP = 1
+  integer, parameter :: NP = 1
   integer, parameter, public :: npts = 1
 
   real(kind=dp_t), public :: xn_eos(NP,nspec)
