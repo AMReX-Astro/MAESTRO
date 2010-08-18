@@ -52,7 +52,3 @@
    means that we need to use numdisjointchunks() and r_start_coord and
    r_end_coord.
 
--- split initdata.f90 into 3 separate routines, one for
-   initscalardata, initveldata, and perturb.  This allows for easier
-   use of the main Source/ versions of these routines, and will keep
-   us better in sync.
