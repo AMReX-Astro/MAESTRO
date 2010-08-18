@@ -27,7 +27,7 @@ contains
                                          diffusion_coefficient)
 
     use box_util_module
-    use init_module
+    use init_scalar_module
     use average_module
     use restrict_base_module
     
