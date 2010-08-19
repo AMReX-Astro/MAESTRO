@@ -33,6 +33,7 @@ subroutine varden()
   use regrid_module
   use make_eta_module
   use diag_module, only: flush_diag
+  use omp_module
 
   implicit none
 
@@ -187,6 +188,7 @@ subroutine varden()
 
   if (parallel_IOProcessor()) then
      print *, 'number of MPI processes = ', parallel_nprocs()
+     print *, 'number of threads       = ', omp_get_max_threads()
      print *, 'number of dimensions    = ', dm
      do n = 1, nlevs
         print *, 'level: ', n
