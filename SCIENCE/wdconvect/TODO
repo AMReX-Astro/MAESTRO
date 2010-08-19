@@ -1,9 +1,0 @@
--- lower cutoff densities to 1.e5 -- this gets the base state expansion
-   a lot better
-
-   -- deal with higher velocities at the edge of the star through sponging.
-      Make the factor over base_cutoff_density that the sponge starts at a
-      runtime variable.
-
--- rotation runs at 1%, 2%, and 3%
-
