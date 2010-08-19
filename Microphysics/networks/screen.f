@@ -130,7 +130,7 @@
       
  30   c=0.896434d0*gamp*zhat-3.44740d0*gamp**x14*zhat2- 
      1     0.5551d0*(log(gamp)+x53*log(z1*z2/(z1+z2)))-2.996d0
-      dcdt=0.896434d0*dgampdt*zhat-                                          
+      dcdt=0.896434d0*dgampdt*zhat-
      1     3.44740d0*x14*gamp**(x14-1.0d0)*zhat2*dgampdt-
      2     0.5551d0*dgampdt/gamp
 
