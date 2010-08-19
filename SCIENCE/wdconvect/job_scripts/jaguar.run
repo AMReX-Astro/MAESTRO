@@ -1,9 +1,13 @@
 #!/bin/ksh
-#PBS -A ast006
+#PBS -A ast706
 #PBS -N wdconvect
 #PBS -j oe
 #PBS -q batch
-#PBS -l walltime=04:00:00,size=1728
+#PBS -l walltime=12:00:00,size=10368
+
+setenv PSC_OMP_AFFINITY FALSE
+
+setenv OMP_NUM_THREADS 6
 
 cd $PBS_O_WORKDIR
 
@@ -54,7 +58,7 @@ else
     restartString="--restart ${restartNum}"
 fi
 
-aprun -n 1728 ./main.Linux.PathScale.mpi.exe inputs_3d.384.5dr.eq.dx ${restartString}
+aprun -n 1728 -S 1 -d 6 ./main.Linux.PathScale.mpi.omp.exe inputs_3d.576.5dr.eq.dx ${restartString}
 
 
 rm -f process.pid
