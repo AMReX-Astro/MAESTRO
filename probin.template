@@ -56,7 +56,7 @@ contains
     character(len=128) :: probin_env
 
     logical    :: lexist, need_inputs
-    integer    :: i, natonce, myproc, nprocs, nsets, myset, iset, ibuff(1)
+    integer    :: natonce, myproc, nprocs, nsets, myset, iset, ibuff(1)
     integer    :: wakeuppid, waitforpid, tag, un, ierr
     real(dp_t) :: pistart, piend, pitotal, pistartall, piendall, pitotalall
     real(dp_t) :: pitotal_max, pitotalall_max
