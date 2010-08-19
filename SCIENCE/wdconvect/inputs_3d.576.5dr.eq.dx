@@ -9,11 +9,10 @@
  n_celly = 576
  n_cellz = 576
  max_grid_size = 48
- regrid_int = 2
 
+ !regrid_int = 2
  !tag_density_1 = 5.d7
  !tag_density_2 = 5.d8
-
  !cluster_min_width = 8
  !min_eff = 0.9d0
 
@@ -41,8 +40,8 @@
  stop_time = 30000.
 
  plot_base_name = "wd_576_base_plt"
- plot_int  = -1
- chk_int   = 5.0d0
+ plot_int = -1
+ plot_deltat = 5.0d0
 
  check_base_name = "wd_576_base_chk"
  chk_int   = 100
