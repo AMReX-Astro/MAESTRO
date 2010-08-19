@@ -186,8 +186,8 @@ subroutine varden()
   end if
 
   if (parallel_IOProcessor()) then
-     print *, 'number of processors = ', parallel_nprocs()
-     print *, 'number of dimensions = ', dm
+     print *, 'number of MPI processes = ', parallel_nprocs()
+     print *, 'number of dimensions    = ', dm
      do n = 1, nlevs
         print *, 'level: ', n
         print *, '   number of boxes = ', nboxes(pi(n))

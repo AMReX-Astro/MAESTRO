@@ -46,10 +46,10 @@ subroutine write_job_info(dirname, mba)
      write (99,1001) "job name:    ", trim(job_name)
      write (99,1001) "inputs file: ", trim(inputs_file_used)
      write (99,*) " "     
-     write (99,1002) "number of processors: ", parallel_nprocs()
-     write (99,1003) "output date:          ", values(1), values(2), values(3)
-     write (99,1004) "output time:          ", values(5), values(6), values(7)
-     write (99,1001) "output dir:           ", trim(cwd)
+     write (99,1002) "number of MPI processes ", parallel_nprocs()
+     write (99,1003) "output date:            ", values(1), values(2), values(3)
+     write (99,1004) "output time:            ", values(5), values(6), values(7)
+     write (99,1001) "output dir:             ", trim(cwd)
 
      write (99,*) " "
      write (99,*) " "
