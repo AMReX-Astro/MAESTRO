@@ -148,8 +148,8 @@ contains
 
     integer :: i,j,k
 
-!$omp parallel private(i,j,k)
-!$omp do
+    !$OMP PARALLEL PRIVATE(i,j,k)
+    !$OMP DO
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)+1
@@ -157,8 +157,8 @@ contains
           end do
        end do
     end do
-!$omp end do nowait
-!$omp do
+    !$OMP END DO NOWAIT
+    !$OMP DO
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)+1
           do i = lo(1),hi(1)
@@ -166,8 +166,8 @@ contains
           end do
        end do
     end do
-!$omp end do nowait
-!$omp do
+    !$OMP END DO NOWAIT
+    !$OMP DO
     do k = lo(3),hi(3)+1
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -175,8 +175,8 @@ contains
           end do
        end do
     end do
-!$omp end do
-!$omp end parallel
+    !$OMP END DO
+    !$OMP END PARALLEL
 
   end subroutine addw0_3d_sphr
 

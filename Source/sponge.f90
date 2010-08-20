@@ -200,7 +200,7 @@ contains
 
     sponge = ONE
     
-!$omp parallel do private(i,j,k,x,y,z,r,smdamp)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,r,smdamp)
     do k = lo(3),hi(3)
        z = prob_lo(3) + (dble(k)+HALF)*dx(3)
 
@@ -238,7 +238,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
   end subroutine mk_sponge_3d
 

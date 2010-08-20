@@ -1665,11 +1665,11 @@ contains
     ! level can map into
     allocate(radii(0:nr_irreg))
 
-!$omp parallel do private(r)
+    !$OMP PARALLEL DO PRIVATE(r)
     do r=0,nr_irreg
        radii(r) = sqrt(0.75d0+2.d0*r)*dx(nlevs,1)
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     do n=1,nlevs
        

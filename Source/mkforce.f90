@@ -328,7 +328,7 @@ contains
     centrifugal_term(3) = omega**2 * rotation_radius * cos_theta * sin_theta &
                           - omega**2 * rotation_radius
 
-!$omp parallel do private(i,j,k,rhopert,coriolis_term)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,rhopert,coriolis_term)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -379,7 +379,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
   end subroutine mk_vel_force_3d_cart
 
@@ -428,7 +428,7 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0,rho0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.true.,grav,grav_cart,lo,hi,dx,0)
 
-!$omp parallel do private(i,j,k,xx,yy,zz,rhopert,centrifugal_term,coriolis_term)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,xx,yy,zz,rhopert,centrifugal_term,coriolis_term)
     do k = lo(3),hi(3)
        zz = prob_lo(3) + (dble(k) + HALF)*dx(3) - center(3)
        do j = lo(2),hi(2)
@@ -499,7 +499,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(rho0_cart,grav_cart)
 
@@ -637,7 +637,7 @@ contains
 
     integer         :: i,j,k
 
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -645,7 +645,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
   end subroutine add_w0_force_3d_cart
 
@@ -659,7 +659,7 @@ contains
 
     integer         :: i,j,k
 
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -667,7 +667,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
   end subroutine add_w0_force_3d_sphr
 

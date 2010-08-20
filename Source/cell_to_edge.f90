@@ -28,7 +28,7 @@ contains
 
     do n=1,nlevs
        do i=1,numdisjointchunks(n)
-!$omp parallel do private(r,tmp,s0min,s0max)
+          !$OMP PARALLEL DO PRIVATE(r,tmp,s0min,s0max)
           do r=r_start_coord(n,i),r_end_coord(n,i)+1
              
              if (r .eq. 0) then
@@ -55,7 +55,7 @@ contains
              end if
              
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end do
     end do
 

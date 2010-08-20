@@ -353,7 +353,7 @@ contains
     ny = size(coeffs,dim=2) - 2
     nz = size(coeffs,dim=3) - 2
 
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k = 1,nz
        do j = 1,ny
           do i = 1,nx
@@ -361,7 +361,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
   end subroutine mkcoeffs_3d
 

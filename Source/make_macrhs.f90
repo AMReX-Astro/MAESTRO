@@ -201,7 +201,7 @@ contains
     integer :: i, j, k
     real(kind=dp_t) :: gamma1bar_p0_avg
     
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -210,10 +210,10 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
     
     if (dpdt_factor .gt. 0.0d0) then
-!$omp parallel do private(i,j,k,gamma1bar_p0_avg)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,gamma1bar_p0_avg)
        do k = lo(3),hi(3)
           if (k .lt. base_cutoff_density_coord(n)) then
              gamma1bar_p0_avg = 0.25d0 * (gamma1bar_old(k) + gamma1bar_new(k)) * &
@@ -226,7 +226,7 @@ contains
              end do
           end if
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
        
   end subroutine make_macrhs_3d
@@ -269,7 +269,7 @@ contains
     allocate(Sbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,Sbar,Sbar_cart,lo,hi,dx,0)
     
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -278,7 +278,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
     
     deallocate(Sbar_cart)
     
@@ -301,7 +301,7 @@ contains
        allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0,rho0_cart,lo,hi,dx,0)
        
-!$omp parallel do private(i,j,k,gamma1bar_p0_avg)       
+       !$OMP PARALLEL DO PRIVATE(i,j,k,gamma1bar_p0_avg)       
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)                
              do i = lo(1),hi(1)
@@ -315,7 +315,7 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
        
        deallocate(gamma1bar_old_cart,gamma1bar_new_cart,p0_old_cart,p0_new_cart,rho0_cart)
        

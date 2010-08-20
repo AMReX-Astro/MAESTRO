@@ -298,7 +298,7 @@ contains
 
     ! 1) Subtract (Utilde dot grad) Utilde term from old Utilde
     ! 2) Add forcing term to new Utilde
-!$omp parallel do private(i,j,k,ubar,vbar,wbar,ugradu,ugradv,ugradw)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,ubar,vbar,wbar,ugradu,ugradv,ugradw)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -329,7 +329,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     if (spherical .eq. 0) then
 
@@ -366,17 +366,17 @@ contains
        allocate(gradw0_rad(0:nr_fine-1))
        allocate(gradw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
 
-!$omp parallel do private(r)
+       !$OMP PARALLEL DO PRIVATE(r)
        do r=0,nr_fine-1
           gradw0_rad(r) = (w0(r+1) - w0(r)) / dr(1)
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        call put_1d_array_on_cart_3d_sphr(.false.,.true.,gradw0_rad,gradw0_cart, &
                                          lo,hi,dx,0)
 
-!$omp parallel do private(i,j,k,Utilde_dot_er,gradux,gradvx,gradwx,graduy,gradvy,gradwy, &
-!$omp graduz,gradvz,gradwz,w0_gradur,w0_gradvr,w0_gradwr)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,Utilde_dot_er,gradux,gradvx,gradwx,graduy,gradvy,gradwy) &
+       !$OMP PRIVATE(graduz,gradvz,gradwz,w0_gradur,w0_gradvr,w0_gradwr)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -427,7 +427,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        deallocate (gradw0_cart, gradw0_rad)
 

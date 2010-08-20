@@ -1058,7 +1058,7 @@ contains
     
     ! loop over appropriate x-faces
     if (ppm_type .gt. 0) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -1068,9 +1068,9 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -1080,7 +1080,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     ! impose lo side bc's
@@ -1145,7 +1145,7 @@ contains
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,2)")
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks-1,ke+1
        do j=js-1,je+1
           do i=is,ie+1
@@ -1156,7 +1156,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! Normal predictor states.
     ! Allocated from lo:hi+1 in the normal direction
@@ -1167,7 +1167,7 @@ contains
 
     ! loop over appropriate y-faces
     if (ppm_type .gt. 0) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -1177,9 +1177,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -1189,7 +1189,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     ! impose lo side bc's
@@ -1254,7 +1254,7 @@ contains
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,2)")
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is-1,ie+1
@@ -1265,7 +1265,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! Normal predictor states.
     ! Allocated from lo:hi+1 in the normal direction
@@ -1276,7 +1276,7 @@ contains
 
     ! loop over appropriate z-faces
     if (ppm_type .gt. 0) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
@@ -1286,9 +1286,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
@@ -1298,7 +1298,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(slopex,slopey,slopez,Ip,Im)
@@ -1365,7 +1365,7 @@ contains
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,2)")
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is-1,ie+1
@@ -1376,7 +1376,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     !******************************************************************
     ! Create s_{\i-\half\e_x}^{x|y}, etc.
@@ -1388,7 +1388,7 @@ contains
 
     ! loop over appropriate xy faces
     if (is_conservative) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js,je
              do i=is,ie+1
@@ -1402,9 +1402,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js,je
              do i=is,ie+1
@@ -1418,7 +1418,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     ! impose lo side bc's
@@ -1483,7 +1483,7 @@ contains
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,2)")
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks-1,ke+1
        do j=js,je
           do i=is,ie+1
@@ -1494,7 +1494,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(slxy,srxy)
 
@@ -1509,7 +1509,7 @@ contains
     allocate(simhxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
 
     if (is_conservative) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js-1,je+1
              do i=is,ie+1
@@ -1523,9 +1523,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js-1,je+1
              do i=is,ie+1
@@ -1539,7 +1539,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     ! impose lo side bc's
@@ -1604,7 +1604,7 @@ contains
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,2)")
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks,ke
        do j=js-1,je+1
           do i=is,ie+1
@@ -1615,7 +1615,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(slxz,srxz)
 
@@ -1630,7 +1630,7 @@ contains
     allocate(simhyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
     if (is_conservative) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is,ie
@@ -1644,9 +1644,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is,ie
@@ -1660,7 +1660,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     ! impose lo side bc's
@@ -1725,7 +1725,7 @@ contains
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,2)")
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is,ie
@@ -1736,7 +1736,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(slyx,sryx)
 
@@ -1751,7 +1751,7 @@ contains
     allocate(simhyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
 
     if (is_conservative) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je+1
              do i=is-1,ie+1
@@ -1765,9 +1765,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je+1
              do i=is-1,ie+1
@@ -1781,7 +1781,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(simhz)
@@ -1848,7 +1848,7 @@ contains
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,2)")
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks,ke
        do j=js,je+1
           do i=is-1,ie+1
@@ -1859,7 +1859,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(slyz,sryz)
 
@@ -1874,7 +1874,7 @@ contains
     allocate(simhzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
     if (is_conservative) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is,ie
@@ -1888,9 +1888,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is,ie
@@ -1904,7 +1904,7 @@ contains
              enddo
           enddo
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(simhx)
@@ -1971,7 +1971,7 @@ contains
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,2)")
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is,ie
@@ -1982,7 +1982,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(slzx,srzx)
 
@@ -1997,7 +1997,7 @@ contains
     allocate(simhzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
 
     if (is_conservative) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js,je
              do i=is-1,ie+1
@@ -2011,9 +2011,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js,je
              do i=is-1,ie+1
@@ -2027,7 +2027,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(simhy)
@@ -2094,7 +2094,7 @@ contains
        call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,2)")
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks,ke+1
        do j=js,je
           do i=is-1,ie+1
@@ -2105,7 +2105,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(slzy,srzy)
 
@@ -2121,7 +2121,7 @@ contains
 
     ! loop over appropriate x-faces
     if (is_conservative) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -2143,9 +2143,9 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -2165,7 +2165,7 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(slx,srx,simhyz,simhzy)
@@ -2175,7 +2175,7 @@ contains
        ! add the (Utilde . e_r) d w_0 /dr e_r term here
        if (spherical .eq. 0 .and. comp .eq. 3) then
 
-!$omp parallel do private(i,j,k)
+          !$OMP PARALLEL DO PRIVATE(i,j,k)
           do k=ks,ke
              do j=js,je
                 do i=is,ie+1
@@ -2189,11 +2189,11 @@ contains
                 enddo
              enddo
           enddo
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
        else if (spherical .eq. 1) then
 
-!$omp parallel do private(i,j,k,Ut_dot_er)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er)
           do k=ks,ke
              do j=js,je
                 do i=is,ie+1
@@ -2222,13 +2222,13 @@ contains
                 enddo
              enddo
           enddo
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
        end if
 
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks,ke
        do j=js,je
           do i=is,ie+1
@@ -2240,7 +2240,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -2303,7 +2303,7 @@ contains
 
     ! loop over appropriate y-faces
     if (is_conservative) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -2325,9 +2325,9 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -2347,7 +2347,7 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(sly,sry,simhxz,simhzx)
@@ -2357,7 +2357,7 @@ contains
        ! add the (Utilde . e_r) d w_0 /dr e_r term here
        if (spherical .eq. 0 .and. comp .eq. 3) then
 
-!$omp parallel do private(i,j,k)
+          !$OMP PARALLEL DO PRIVATE(i,j,k)
           do k=ks,ke
              do j=js,je+1
                 do i=is,ie
@@ -2371,11 +2371,11 @@ contains
                 enddo
              enddo
           enddo
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
        else if (spherical .eq. 1) then
 
-!$omp parallel do private(i,j,k,Ut_dot_er)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er)
           do k=ks,ke
              do j=js,je+1
                 do i=is,ie
@@ -2404,13 +2404,13 @@ contains
                 enddo
              enddo
           enddo
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
        end if
 
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks,ke
        do j=js,je+1
           do i=is,ie
@@ -2422,7 +2422,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -2485,7 +2485,7 @@ contains
 
     ! loop over appropriate z-faces
     if (is_conservative) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -2507,9 +2507,9 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -2529,7 +2529,7 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(slz,srz,simhxy,simhyx)
@@ -2539,7 +2539,7 @@ contains
        ! add the (Utilde . e_r) d w_0 /dr e_r term here
        if (spherical .eq. 0 .and. comp .eq. 3) then
 
-!$omp parallel do private(i,j,k)
+          !$OMP PARALLEL DO PRIVATE(i,j,k)
           do k=ks,ke+1
              do j=js,je
                 do i=is,ie
@@ -2565,11 +2565,11 @@ contains
                 enddo
              enddo
           enddo
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
        else if (spherical .eq. 1) then
 
-!$omp parallel do private(i,j,k,Ut_dot_er)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er)
           do k=ks,ke+1
              do j=js,je
                 do i=is,ie
@@ -2598,13 +2598,13 @@ contains
                 enddo
              enddo
           enddo
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
        end if
 
     end if
 
-!$omp parallel do private(i,j,k,savg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks,ke+1
        do j=js,je
           do i=is,ie
@@ -2616,7 +2616,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then

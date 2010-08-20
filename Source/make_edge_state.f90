@@ -159,7 +159,7 @@ contains
      else if (ppm_type .eq. 1) then
 
         ! interpolate s to radial edges, store these temporary values into sedgel
-!$omp parallel do private(r,del,dmin,dpls)
+        !$OMP PARALLEL DO PRIVATE(r,del,dmin,dpls)
         do r=lo-1,hi+1
            ! compute van Leer slopes
            del  = HALF * (s_ghost(r+1) - s_ghost(r-1))
@@ -169,9 +169,9 @@ contains
               dsscr(r,1) = sign(ONE,del)*min(abs(del),abs(dmin),abs(dpls))
            end if
         end do
-!$omp end parallel do
+        !$OMP END PARALLEL DO
 
-!$omp parallel do private(r)
+        !$OMP PARALLEL DO PRIVATE(r)
         do r=lo,hi+1
            ! 4th order interpolation of s to radial faces
            sedgel(r) = &
@@ -180,9 +180,9 @@ contains
            sedgel(r) = max(sedgel(r),min(s_ghost(r),s_ghost(r-1)))
            sedgel(r) = min(sedgel(r),max(s_ghost(r),s_ghost(r-1)))
         end do
-!$omp end parallel do
+        !$OMP END PARALLEL DO
 
-!$omp parallel do private(r)     
+        !$OMP PARALLEL DO PRIVATE(r)     
         do r=lo,hi
 
            ! first copy sedgel into sp and sm
@@ -200,12 +200,12 @@ contains
            end if
 
         end do
-!$omp end parallel do
+        !$OMP END PARALLEL DO
         
      else if (ppm_type .eq. 2) then
 
         ! interpolate s to radial edges, store these temporary values into sedgel
-!$omp parallel do private(r,D2,D2L,D2R,sgn,D2LIM)
+        !$OMP PARALLEL DO PRIVATE(r,D2,D2L,D2R,sgn,D2LIM)
         do r=lo-1,hi+2
            
            ! fourth-order stencil
@@ -223,11 +223,11 @@ contains
            end if
 
         end do
-!$omp end parallel do
+        !$OMP END PARALLEL DO
 
-!$omp parallel do private(r,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM, &
-!$omp amax,delam,delap)
+        !$OMP PARALLEL DO PRIVATE(r,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+        !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM) &
+        !$OMP PRIVATE(amax,delam,delap)
         do r=lo,hi
 
            ! use Colella 2008 limiters
@@ -302,13 +302,13 @@ contains
            sp(r) = s_ghost(r) + alphap
 
         end do ! loop over r
-!$omp end parallel do
+        !$OMP END PARALLEL DO
         
      end if
 
      if (ppm_type .ge. 1) then
 
-!$omp parallel do private(r,sigmap,sigmam,s6)
+        !$OMP PARALLEL DO PRIVATE(r,sigmap,sigmam,s6)
         do r=lo,hi
            ! compute Ip and Im
            sigmap = abs(w0(1,r+1))*dt/dr(1)
@@ -329,7 +329,7 @@ contains
            sedgel(r+1) = Ip(r) + dth*force(1,r)
            sedger(r  ) = Im(r) + dth*force(1,r)
         end do
-!$omp end parallel do
+        !$OMP END PARALLEL DO
 
      end if
 
@@ -341,14 +341,14 @@ contains
      sedgel(0)       = sedger(0)
      sedger(nr_fine) = sedgel(nr_fine)
 
-!$omp parallel do private(r,savg)
+     !$OMP PARALLEL DO PRIVATE(r,savg)
      do r=lo,hi+1
         ! solve Riemann problem to get final edge state
         sedge(1,r)=merge(sedgel(r),sedger(r),w0(1,r).gt.ZERO)
         savg = HALF*(sedger(r) + sedgel(r))
         sedge(1,r)=merge(savg,sedge(1,r),abs(w0(1,r)) .lt. rel_eps)
      end do
-!$omp end parallel do
+     !$OMP END PARALLEL DO
 
    end subroutine make_edge_state_1d_sphr
 
@@ -517,7 +517,7 @@ contains
               hi = r_end_coord(n,i)
         
               ! compute van Leer slopes
-!$omp parallel do private(r,del,dmin,dpls)
+              !$OMP PARALLEL DO PRIVATE(r,del,dmin,dpls)
               do r=lo-1,hi+1
                  if (r .eq. 0) then
                     ! one-sided difference
@@ -533,9 +533,9 @@ contains
                          dsvl(n,r) = sign(ONE,del)*min(abs(del),abs(dmin),abs(dpls))
                  end if
               end do
-!$omp end parallel do
+              !$OMP END PARALLEL DO
 
-!$omp parallel do private(r)
+              !$OMP PARALLEL DO PRIVATE(r)
               do r=lo,hi+1
                  if (r .eq. 0) then
                     ! 2nd order interpolation to boundary face
@@ -551,7 +551,7 @@ contains
                     sedgel(n,r) = min(sedgel(n,r),max(s(n,r),s(n,r-1)))
                  end if
               end do
-!$omp end parallel do
+              !$OMP END PARALLEL DO
 
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -563,7 +563,7 @@ contains
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
 
-!$omp parallel do private(r)     
+              !$OMP PARALLEL DO PRIVATE(r)     
               do r=lo,hi
 
                  sp(n,r) = sedgel(n,r+1)
@@ -579,7 +579,7 @@ contains
                     sm(n,r) = THREE*s(n,r) - TWO*sp(n,r)
                  end if
               end do
-!$omp end parallel do
+              !$OMP END PARALLEL DO
 
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -594,7 +594,7 @@ contains
               hi = r_end_coord(n,i)
 
               ! store centered differences in dsvl
-!$omp parallel do private(r)
+              !$OMP PARALLEL DO PRIVATE(r)
               do r=lo-3,hi+3
                  if (r .eq. 0) then
                     ! one-sided difference
@@ -607,9 +607,9 @@ contains
                     dsvl(n,r) = HALF * (s(n,r+1) - s(n,r-1))
                  end if
               end do
-!$omp end parallel do
+              !$OMP END PARALLEL DO
 
-!$omp parallel do private(r,D2,D2L,D2R,sgn,D2LIM)
+              !$OMP PARALLEL DO PRIVATE(r,D2,D2L,D2R,sgn,D2LIM)
               do r=lo-2,hi+3
                  if (r .eq. 0) then
                     ! 2nd order interpolation to boundary face
@@ -633,7 +633,7 @@ contains
                     end if
                  end if
               end do
-!$omp end parallel do
+              !$OMP END PARALLEL DO
 
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -647,9 +647,9 @@ contains
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
 
-!$omp parallel do private(r,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM, &
-!$omp amax,delam,delap)
+              !$OMP PARALLEL DO PRIVATE(r,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+              !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM) &
+              !$OMP PRIVATE(amax,delam,delap)
               do r=lo,hi
 
                  if (r .ge. 2 .and. r .le. nr(n)-3) then
@@ -730,7 +730,7 @@ contains
                  end if ! test (r .ge. 2 .and. r .le. nr(n)-3)
 
               end do ! loop over r
-!$omp end parallel do
+              !$OMP END PARALLEL DO
 
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -746,7 +746,7 @@ contains
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
 
-!$omp parallel do private(r,sigmap,sigmam,s6)
+              !$OMP PARALLEL DO PRIVATE(r,sigmap,sigmam,s6)
               do r=lo,hi
                  sigmap = abs(w0(n,r+1))*dtdr
                  sigmam = abs(w0(n,r  ))*dtdr
@@ -766,7 +766,7 @@ contains
                  sedgel(n,r+1) = Ip(n,r) + dth * force(n,r)
                  sedger(n,r  ) = Im(n,r) + dth * force(n,r)
               end do
-!$omp end parallel do
+              !$OMP END PARALLEL DO
 
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -804,7 +804,7 @@ contains
            lo = r_start_coord(n,i)
            hi = r_end_coord(n,i)
 
-!$omp parallel do private(r,savg)
+           !$OMP PARALLEL DO PRIVATE(r,savg)
            do r=lo,hi+1
               if (r .eq. 0) then
                  ! pick interior state at lo domain boundary
@@ -819,7 +819,7 @@ contains
                  sedge(n,r)=merge(savg,sedge(n,r),abs(w0(n,r)) .lt. rel_eps)
               end if
            end do
-!$omp end parallel do
+           !$OMP END PARALLEL DO
 
         end do  ! loop over disjointchunks
      end do ! loop over levels

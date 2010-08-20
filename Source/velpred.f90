@@ -804,12 +804,12 @@ contains
        call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ipw,Imw,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,3),dx,dt)
     else
-!$omp parallel do private(k)
+       !$OMP PARALLEL DO PRIVATE(k)
        do k = lo(3)-1,hi(3)+1
           call slopex_2d(u(:,:,k,:),slopex(:,:,k,:),lo,hi,ng_u,3,adv_bc)
           call slopey_2d(u(:,:,k,:),slopey(:,:,k,:),lo,hi,ng_u,3,adv_bc)
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
        call slopez_3d(u,slopez,lo,hi,ng_u,3,adv_bc)
     end if
 
@@ -824,7 +824,7 @@ contains
     allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -840,9 +840,9 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k,ulo,uhi)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,ulo,uhi)
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -867,7 +867,7 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(slopex)
@@ -920,7 +920,7 @@ contains
 
     allocate(uimhx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
-!$omp parallel do private(i,j,k,uavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,uavg)
     do k=ks-1,ke+1
        do j=js-1,je+1
           do i=is,ie+1
@@ -936,7 +936,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 ! normal predictor states
     ! Allocated from lo:hi+1 in the normal direction
     ! lo-1:hi+1 in the transverse directions
@@ -944,7 +944,7 @@ contains
     allocate(ury(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -960,9 +960,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k,vlo,vhi)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,vlo,vhi)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -987,7 +987,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(slopey)
@@ -1040,7 +1040,7 @@ contains
 
     allocate(uimhy(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
 
-!$omp parallel do private(i,j,k,uavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,uavg)
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is-1,ie+1
@@ -1056,7 +1056,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! normal predictor states
     ! Allocated from lo:hi+1 in the normal direction
@@ -1065,7 +1065,7 @@ contains
     allocate(urz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
@@ -1081,9 +1081,9 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k,wlo,whi)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,wlo,whi)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
@@ -1116,7 +1116,7 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(slopez,Ipu,Imu,Ipv,Imv,Ipw,Imw)
@@ -1169,7 +1169,7 @@ contains
 
     allocate(uimhz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
 
-!$omp parallel do private(i,j,k,uavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,uavg)
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is-1,ie+1
@@ -1185,7 +1185,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     !******************************************************************
     ! Create u_{\i-\half\e_y}^{y|z}, etc.
@@ -1200,7 +1200,7 @@ contains
     allocate(uimhyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
 
     ! uimhyz loop
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=ks,ke
        do j=js,je+1
           do i=is-1,ie+1
@@ -1212,7 +1212,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! impose lo side bc's
     select case(phys_bc(2,1))
@@ -1244,7 +1244,7 @@ contains
        call bl_error("velpred_3d: invalid boundary type phys_bc(2,2)")
     end select
 
-!$omp parallel do private(i,j,k,uavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,uavg)
     do k=ks,ke
        do j=js,je+1
           do i=is-1,ie+1
@@ -1255,7 +1255,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(ulyz,uryz)
 
@@ -1268,7 +1268,7 @@ contains
     allocate(uimhzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
 
     ! uimhzy loop
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=ks,ke+1
        do j=js,je
           do i=is-1,ie+1
@@ -1280,7 +1280,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! impose lo side bc's
     select case(phys_bc(3,1))
@@ -1312,7 +1312,7 @@ contains
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,2)")
     end select
 
-!$omp parallel do private(i,j,k,uavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,uavg)
     do k=ks,ke+1
        do j=js,je
           do i=is-1,ie+1
@@ -1323,7 +1323,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(ulzy,urzy)
 
@@ -1335,7 +1335,7 @@ contains
     allocate(vrxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
 
     ! vimhxz loop
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=ks,ke
        do j=js-1,je+1
           do i=is,ie+1
@@ -1347,7 +1347,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(uimhz)
 
@@ -1383,7 +1383,7 @@ contains
 
     allocate(vimhxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
 
-!$omp parallel do private(i,j,k,uavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,uavg)
     do k=ks,ke
        do j=js-1,je+1
           do i=is,ie+1
@@ -1394,7 +1394,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(vlxz,vrxz)
 
@@ -1407,7 +1407,7 @@ contains
     allocate(vimhzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
     ! vimhzx loop
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is,ie
@@ -1419,7 +1419,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! impose lo side bc's
     select case(phys_bc(3,1))
@@ -1451,7 +1451,7 @@ contains
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,2)")
     end select
 
-!$omp parallel do private(i,j,k,uavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,uavg)
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is,ie
@@ -1462,7 +1462,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(vlzx,vrzx)
 
@@ -1474,7 +1474,7 @@ contains
     allocate(wrxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
 
     ! wimhxy loop
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=ks-1,ke+1
        do j=js,je
           do i=is,ie+1
@@ -1486,7 +1486,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(uimhy)
 
@@ -1522,7 +1522,7 @@ contains
 
     allocate(wimhxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
 
-!$omp parallel do private(i,j,k,uavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,uavg)
     do k=ks-1,ke+1
        do j=js,je
           do i=is,ie+1
@@ -1533,7 +1533,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(wlxy,wrxy)
 
@@ -1545,7 +1545,7 @@ contains
     allocate(wryx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
     ! wimhyx loop
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is,ie
@@ -1557,7 +1557,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(uimhx)
 
@@ -1593,7 +1593,7 @@ contains
 
     allocate(wimhyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
-!$omp parallel do private(i,j,k,uavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,uavg)
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is,ie
@@ -1604,7 +1604,7 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(wlyx,wryx)
 
@@ -1618,7 +1618,7 @@ contains
     allocate(umacl(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
     allocate(umacr(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
 
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=ks,ke
        do j=js,je
           do i=is,ie+1
@@ -1638,13 +1638,13 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! add the (Utilde . e_r) d w_0 /dr e_r term here
     ! u/v/w trans contains w0 so subtract it off
     if (spherical .eq. 1) then
 
-!$omp parallel do private(i,j,k,Ut_dot_er,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er,uavg,test)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -1673,11 +1673,11 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
     else
 
-!$omp parallel do private(i,j,k,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -1689,7 +1689,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
     end if
 
@@ -1729,7 +1729,7 @@ contains
     allocate(vmacl(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
     allocate(vmacr(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
 
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=ks,ke
        do j=js,je+1
           do i=is,ie
@@ -1749,13 +1749,13 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! add the (Utilde . e_r) d w_0 /dr e_r term here
     ! u/v/w trans contains w0 so subtract it off
     if (spherical .eq. 1) then
 
-!$omp parallel do private(i,j,k,Ut_dot_er,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er,uavg,test)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -1785,11 +1785,11 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
     else
 
-!$omp parallel do private(i,j,k,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -1801,7 +1801,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
     end if
 
@@ -1841,7 +1841,7 @@ contains
     allocate(wmacl(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
     allocate(wmacr(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
 
-!$omp parallel do private(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=ks,ke+1
        do j=js,je
           do i=is,ie
@@ -1861,13 +1861,13 @@ contains
           enddo
        enddo
     enddo
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     ! add the (Utilde . e_r) d w_0 /dr e_r term here
     ! u/v/w trans contains w0 so subtract it off
     if (spherical .eq. 1) then
 
-!$omp parallel do private(i,j,k,Ut_dot_er,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er,uavg,test)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -1895,11 +1895,11 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
     else
 
-!$omp parallel do private(i,j,k,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -1929,7 +1929,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
     end if
 

@@ -33,9 +33,12 @@ contains
     integer :: i
     logical :: extremum, bigp, bigm
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
     real(kind=dp_t) :: sgn, sigma, s6, w0cc, amax, delam, delap
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
+
+    ! constant used in Colella 2008
+    real(kind=dp_t), parameter :: C = 1.25d0
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:)
@@ -50,9 +53,6 @@ contains
     ! cell-centered indexing
     allocate(sp(lo(1)-1:hi(1)+1))
     allocate(sm(lo(1)-1:hi(1)+1))
-
-    ! constant used in Colella 2008
-    C = 1.25d0
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
@@ -518,9 +518,12 @@ contains
     integer :: i
     logical :: extremum, bigp, bigm
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
     real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, amax, delam, delap
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
+
+    ! constant used in Colella 2008
+    real(kind=dp_t), parameter :: C = 1.25d0
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:)
@@ -535,9 +538,6 @@ contains
     ! cell-centered indexing
     allocate(sp(lo(1)-1:hi(1)+1))
     allocate(sm(lo(1)-1:hi(1)+1))
-
-    ! constant used in Colella 2008
-    C = 1.25d0
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
@@ -1004,9 +1004,12 @@ contains
 
     logical :: extremum, bigp, bigm
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
     real(kind=dp_t) :: sgn, sigma, s6, w0cc, amax, delam, delap
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
+
+    ! constant used in Colella 2008
+    real(kind=dp_t), parameter :: C = 1.25d0
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:)
@@ -1021,9 +1024,6 @@ contains
     ! cell-centered indexing
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
-
-    ! constant used in Colella 2008
-    C = 1.25d0
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
@@ -2006,9 +2006,12 @@ contains
 
     logical :: extremum, bigp, bigm
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
     real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, amax, delam, delap
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
+
+    ! constant used in Colella 2008
+    real(kind=dp_t), parameter :: C = 1.25d0
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:)
@@ -2023,9 +2026,6 @@ contains
     ! cell-centered indexing
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
-
-    ! constant used in Colella 2008
-    C = 1.25d0
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
@@ -3011,10 +3011,13 @@ contains
 
     logical :: extremum, bigp, bigm
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
     real(kind=dp_t) :: sgn, sigma, s6, w0cc, velcc
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
     real(kind=dp_t) :: amax, delam, delap
+
+    ! constant used in Colella 2008
+    real(kind=dp_t), parameter :: C = 1.25d0
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:,:)
@@ -3029,9 +3032,6 @@ contains
     ! cell-centered indexing
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-
-    ! constant used in Colella 2008
-    C = 1.25d0
 
     w0cc = ZERO
 
@@ -3052,53 +3052,46 @@ contains
     ! compute s at x-edges
     if (ppm_type .eq. 1) then
        
-       ! compute van Leer slopes in x-direction
        dsvl = ZERO
-!$omp parallel do private(i,j,k,dsc,dsl,dsr)
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-2,hi(1)+2
+                ! compute van Leer slopes in x-direction
                 dsc = HALF * (s(i+1,j,k) - s(i-1,j,k))
                 dsl = TWO  * (s(i  ,j,k) - s(i-1,j,k))
                 dsr = TWO  * (s(i+1,j,k) - s(i  ,j,k))
-                if (dsl*dsr .gt. ZERO) &
-                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
-!$omp end parallel do
-       
-       ! interpolate s to x-edges
-!$omp parallel do private(i,j,k)
+       !$OMP END PARALLEL DO
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+2
+                ! interpolate s to x-edges
                 sedge(i,j,k) = HALF*(s(i,j,k)+s(i-1,j,k)) - SIXTH*(dsvl(i,j,k)-dsvl(i-1,j,k))
+
                 ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,k) = max(sedge(i,j,k),min(s(i,j,k),s(i-1,j,k)))
                 sedge(i,j,k) = min(sedge(i,j,k),max(s(i,j,k),s(i-1,j,k)))
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
-       ! copy sedge into sp and sm
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sp and sm
                 sp(i,j,k) = sedge(i+1,j,k)
                 sm(i,j,k) = sedge(i  ,j,k)
-             end do
-          end do
-       end do
-!$omp end parallel do
 
-       ! modify using quadratic limiters
-!$omp parallel do private(i,j,k)
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -3110,53 +3103,38 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
-       
+       !$OMP END PARALLEL DO
+
        ! different stencil needed for x-component of EXT_DIR and HOEXTRAP bc's
        if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
+          
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
                s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(j,k)
+          i = lo(1)+1
+
+          !$OMP PARALLEL DO PRIVATE(j,k)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(lo(1)+1,j,k) = -FIFTH        *s(lo(1)-1,j,k) &
                                      + (THREE/FOUR)*s(lo(1)  ,j,k) &
                                      + HALF        *s(lo(1)+1,j,k) &
                                      - (ONE/20.0d0)*s(lo(1)+2,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(lo(1)+1,j,k) = max(sedge(lo(1)+1,j,k),min(s(lo(1)+1,j,k),s(lo(1),j,k)))
                 sedge(lo(1)+1,j,k) = min(sedge(lo(1)+1,j,k),max(s(lo(1)+1,j,k),s(lo(1),j,k)))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
                 ! copy sedge into sp and sm
                 sp(lo(1)  ,j,k) = sedge(lo(1)+1,j,k)
                 sm(lo(1)+1,j,k) = sedge(lo(1)+1,j,k)
+
                 ! reset sp on second interior edge
                 sp(lo(1)+1,j,k) = sedge(lo(1)+2,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! modify using quadratic limiters
-          i = lo(1)+1
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -3167,53 +3145,39 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
        if (bc(1,2) .eq. EXT_DIR  .or. bc(1,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(hi(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
                s(hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(j,k)
+          i = hi(1)-1
+
+          !$OMP PARALLEL DO PRIVATE(j,k)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(hi(1),j,k) = -FIFTH        *s(hi(1)+1,j,k) &
                                    + (THREE/FOUR)*s(hi(1)  ,j,k) &
                                    + HALF        *s(hi(1)-1,j,k) &
                                    - (ONE/20.0d0)*s(hi(1)-2,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(hi(1),j,k) = max(sedge(hi(1),j,k),min(s(hi(1)-1,j,k),s(hi(1),j,k)))
                 sedge(hi(1),j,k) = min(sedge(hi(1),j,k),max(s(hi(1)-1,j,k),s(hi(1),j,k)))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
                 ! copy sedge into sp and sm
                 sp(hi(1)-1,j,k) = sedge(hi(1),j,k)
                 sm(hi(1)  ,j,k) = sedge(hi(1),j,k)
+
                 ! reset sm on second interior edge
                 sm(hi(1)-1,j,k) = sedge(hi(1)-1,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! modify using quadratic limiters
-          i = hi(1)-1
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -3224,7 +3188,8 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
     else if (ppm_type .eq. 2) then
@@ -3233,13 +3198,14 @@ contains
           call bl_error("Need 4 ghost cells for ppm_type=2")
        end if
 
-       ! interpolate s to x-edges
-!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-2,hi(1)+3
+                ! interpolate s to x-edges
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i-1,j,k)+s(i,j,k)) &
                      - (1.d0/12.d0)*(s(i-2,j,k)+s(i+1,j,k))
+
                 ! limit sedge
                 if ((sedge(i,j,k)-s(i-1,j,k))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
                    D2  = THREE*(s(i-1,j,k)-TWO*sedge(i,j,k)+s(i,j,k))
@@ -3252,14 +3218,14 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+       !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+       !$OMP PRIVATE(delam,delap)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -3335,52 +3301,41 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! different stencil needed for x-component of EXT_DIR and HOEXTRAP bc's
        if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)    = &
                s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
           sedge(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
                s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(j,k)
+          !$OMP PARALLEL DO PRIVATE(j,k)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(lo(1)+1,j,k) = -FIFTH        *s(lo(1)-1,j,k) &
                                      + (THREE/FOUR)*s(lo(1)  ,j,k) &
                                      + HALF        *s(lo(1)+1,j,k) &
                                      - (ONE/20.0d0)*s(lo(1)+2,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(lo(1)+1,j,k) = max(sedge(lo(1)+1,j,k),min(s(lo(1)+1,j,k),s(lo(1),j,k)))
                 sedge(lo(1)+1,j,k) = min(sedge(lo(1)+1,j,k),max(s(lo(1)+1,j,k),s(lo(1),j,k)))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sp
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! copy sedge into sp
                 sp(lo(1)  ,j,k) = sedge(lo(1)+1,j,k)
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
                 do i=lo(1)+1,lo(1)+2
@@ -3456,50 +3411,39 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
        if (bc(1,2) .eq. EXT_DIR  .or. bc(1,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(hi(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
                s(hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(j,k)
+          !$OMP PARALLEL DO PRIVATE(j,k)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(hi(1),j,k) = -FIFTH        *s(hi(1)+1,j,k) &
                                    + (THREE/FOUR)*s(hi(1)  ,j,k) &
                                    + HALF        *s(hi(1)-1,j,k) &
                                    - (ONE/20.0d0)*s(hi(1)-2,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(hi(1),j,k) = max(sedge(hi(1),j,k),min(s(hi(1)-1,j,k),s(hi(1),j,k)))
                 sedge(hi(1),j,k) = min(sedge(hi(1),j,k),max(s(hi(1)-1,j,k),s(hi(1),j,k)))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sm
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! copy sedge into sm
                 sm(hi(1)  ,j,k) = sedge(hi(1),j,k)
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
                 do i=hi(1)-2,hi(1)-1
@@ -3575,13 +3519,13 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
     end if
     
     ! compute x-component of Ip and Im
-!$omp parallel do private(i,j,k,velcc,sigma,s6)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,velcc,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)
@@ -3616,7 +3560,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(sedge,dsvl)
 
@@ -3636,54 +3580,47 @@ contains
 
     ! compute s at y-edges
     if (ppm_type .eq. 1) then
-       
-       ! compute van Leer slopes in y-direction
+
        dsvl = ZERO
-!$omp parallel do private(i,j,k,dsc,dsl,dsr)
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-2,hi(2)+2
              do i=lo(1)-1,hi(1)+1
+                ! compute van Leer slopes in y-direction
                 dsc = HALF * (s(i,j+1,k) - s(i,j-1,k))
                 dsl = TWO  * (s(i,j  ,k) - s(i,j-1,k))
                 dsr = TWO  * (s(i,j+1,k) - s(i,j  ,k))
-                if (dsl*dsr .gt. ZERO) &
-                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
-       ! interpolate s to y-edges
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+2
              do i=lo(1)-1,hi(1)+1
+                ! interpolate s to y-edges
                 sedge(i,j,k) = HALF*(s(i,j,k)+s(i,j-1,k)) - SIXTH*(dsvl(i,j,k)-dsvl(i,j-1,k))
+
                 ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,k) = max(sedge(i,j,k),min(s(i,j,k),s(i,j-1,k)))
                 sedge(i,j,k) = min(sedge(i,j,k),max(s(i,j,k),s(i,j-1,k)))
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
-       ! copy sedge into sp and sm
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sp and sm
                 sp(i,j,k) = sedge(i,j+1,k)
                 sm(i,j,k) = sedge(i,j  ,k)
-             end do
-          end do
-       end do
-!$omp end parallel do
 
-       ! modify using quadratic limiters
-!$omp parallel do private(i,j,k)
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -3695,53 +3632,38 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
        
        ! different stencil needed for y-component of EXT_DIR and HOEXTRAP bc's
        if (bc(2,1) .eq. EXT_DIR  .or. bc(2,1) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1)-1:hi(1)+1,lo(2),lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,k)
+          j = lo(2)+1
+
+          !$OMP PARALLEL DO PRIVATE(i,k)
           do k=lo(3)-1,hi(3)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,lo(2)+1,k) = -FIFTH        *s(i,lo(2)-1,k) &
                                      + (THREE/FOUR)*s(i,lo(2)  ,k) &
                                      + HALF        *s(i,lo(2)+1,k) &
                                      - (ONE/20.0d0)*s(i,lo(2)+2,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,lo(2)+1,k) = max(sedge(i,lo(2)+1,k),min(s(i,lo(2)+1,k),s(i,lo(2),k)))
                 sedge(i,lo(2)+1,k) = min(sedge(i,lo(2)+1,k),max(s(i,lo(2)+1,k),s(i,lo(2),k)))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
                 ! copy sedge into sp and sm
                 sp(i,lo(2)  ,k) = sedge(i,lo(2)+1,k)
                 sm(i,lo(2)+1,k) = sedge(i,lo(2)+1,k)
+
                 ! reset sp on second interior edge
                 sp(i,lo(2)+1,k) = sedge(i,lo(2)+2,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! modify using quadratic limiters
-          j = lo(2)+1
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -3752,53 +3674,39 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
        if (bc(2,2) .eq. EXT_DIR  .or. bc(2,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(lo(1)-1:hi(1)+1,hi(2),lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,k)
+          j = hi(2)-1
+
+          !$OMP PARALLEL DO PRIVATE(i,k)
           do k=lo(3)-1,hi(3)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,hi(2),k) = -FIFTH        *s(i,hi(2)+1,k) &
                                    + (THREE/FOUR)*s(i,hi(2)  ,k) &
                                    + HALF        *s(i,hi(2)-1,k) &
                                    - (ONE/20.0d0)*s(i,hi(2)-2,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,hi(2),k) = max(sedge(i,hi(2),k),min(s(i,hi(2)-1,k),s(i,hi(2),k)))
                 sedge(i,hi(2),k) = min(sedge(i,hi(2),k),max(s(i,hi(2)-1,k),s(i,hi(2),k)))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
                 ! copy sedge into sp and sm
                 sp(i,hi(2)-1,k) = sedge(i,hi(2),k)
                 sm(i,hi(2)  ,k) = sedge(i,hi(2),k)
+
                 ! reset sm on second interior edge
                 sm(i,hi(2)-1,k) = sedge(i,hi(2)-1,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! modify using quadratic limiters
-          j = hi(2)-1
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -3809,18 +3717,20 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
     else if (ppm_type .eq. 2) then
 
-       ! interpolate s to y-edges
-!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-2,hi(2)+3
              do i=lo(1)-1,hi(1)+1
+                ! interpolate s to y-edges
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i,j-1,k)+s(i,j,k)) &
                      - (1.d0/12.d0)*(s(i,j-2,k)+s(i,j+1,k))
+
                 ! limit sedge
                 if ((sedge(i,j,k)-s(i,j-1,k))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
                    D2  = THREE*(s(i,j-1,k)-TWO*sedge(i,j,k)+s(i,j,k))
@@ -3833,14 +3743,14 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+       !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+       !$OMP PRIVATE(delam,delap)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -3916,52 +3826,41 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! different stencil needed for y-component of EXT_DIR and HOEXTRAP bc's
        if (bc(2,1) .eq. EXT_DIR  .or. bc(2,1) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1)-1:hi(1)+1,lo(2),lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1)
           sedge(lo(1)-1:hi(1)+1,lo(2),lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,k)
+          !$OMP PARALLEL DO PRIVATE(i,k)
           do k=lo(3)-1,hi(3)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,lo(2)+1,k) = -FIFTH        *s(i,lo(2)-1,k) &
                                      + (THREE/FOUR)*s(i,lo(2)  ,k) &
                                      + HALF        *s(i,lo(2)+1,k) &
                                      - (ONE/20.0d0)*s(i,lo(2)+2,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,lo(2)+1,k) = max(sedge(i,lo(2)+1,k),min(s(i,lo(2)+1,k),s(i,lo(2),k)))
                 sedge(i,lo(2)+1,k) = min(sedge(i,lo(2)+1,k),max(s(i,lo(2)+1,k),s(i,lo(2),k)))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sp
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sp
                 sp(i,lo(2)  ,k) = sedge(i,lo(2)+1,k)
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)+1,lo(2)+2
                 do i=lo(1)-1,hi(1)+1
@@ -4037,52 +3936,41 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
        if (bc(2,2) .eq. EXT_DIR  .or. bc(2,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(lo(1)-1:hi(1)+1,hi(2),lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,hi(2)+1,lo(3)-1:hi(3)+1)
           sedge(lo(1)-1:hi(1)+1,hi(2)+1,lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,k)
+          !$OMP PARALLEL DO PRIVATE(i,k)
           do k=lo(3)-1,hi(3)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,hi(2),k) = -FIFTH        *s(i,hi(2)+1,k) &
                                    + (THREE/FOUR)*s(i,hi(2)  ,k) &
                                    + HALF        *s(i,hi(2)-1,k) &
                                    - (ONE/20.0d0)*s(i,hi(2)-2,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,hi(2),k) = max(sedge(i,hi(2),k),min(s(i,hi(2)-1,k),s(i,hi(2),k)))
                 sedge(i,hi(2),k) = min(sedge(i,hi(2),k),max(s(i,hi(2)-1,k),s(i,hi(2),k)))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sm
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sm
                 sm(i,hi(2)  ,k) = sedge(i,hi(2),k)
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do k=lo(3)-1,hi(3)+1
              do j=hi(2)-2,hi(2)-1
                 do i=lo(1)-1,hi(1)+1
@@ -4158,13 +4046,13 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
     end if
 
     ! compute y-component of Ip and Im
-!$omp parallel do private(i,j,k,velcc,sigma,s6)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,velcc,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)
           do i=lo(1)-1,hi(1)+1
@@ -4201,7 +4089,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(sedge,dsvl)
 
@@ -4222,53 +4110,46 @@ contains
     ! compute s at z-edges
     if (ppm_type .eq. 1) then
        
-       ! compute van Leer slopes in z-direction
        dsvl = ZERO
-!$omp parallel do private(i,j,k,dsc,dsl,dsr)
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-2,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! compute van Leer slopes in z-direction
                 dsc = HALF * (s(i,j,k+1) - s(i,j,k-1))
                 dsl = TWO  * (s(i,j,k  ) - s(i,j,k-1))
                 dsr = TWO  * (s(i,j,k+1) - s(i,j,k  ))
-                if (dsl*dsr .gt. ZERO) &
-                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
-       ! interpolate s to z-edges
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! interpolate s to z-edges
                 sedge(i,j,k) = HALF*(s(i,j,k)+s(i,j,k-1)) - SIXTH*(dsvl(i,j,k)-dsvl(i,j,k-1))
+
                 ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,k) = max(sedge(i,j,k),min(s(i,j,k),s(i,j,k-1)))
                 sedge(i,j,k) = min(sedge(i,j,k),max(s(i,j,k),s(i,j,k-1)))
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
-       ! copy sedge into sp and sm
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sp and sm
                 sp(i,j,k) = sedge(i,j,k+1)
                 sm(i,j,k) = sedge(i,j,k  )
-             end do
-          end do
-       end do
-!$omp end parallel do
 
-       ! modify using quadratic limiters
-!$omp parallel do private(i,j,k)
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -4280,60 +4161,38 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
        
        ! different stencil needed for z-component of EXT_DIR and HOEXTRAP bc's
        if (bc(3,1) .eq. EXT_DIR  .or. bc(3,1) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,j)
+          k = lo(3)+1
+
+          !$OMP PARALLEL DO PRIVATE(i,j)
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,j,lo(3)+1) = -FIFTH        *s(i,j,lo(3)-1) &
                                      + (THREE/FOUR)*s(i,j,lo(3)  ) &
                                      + HALF        *s(i,j,lo(3)+1) &
                                      - (ONE/20.0d0)*s(i,j,lo(3)+2)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,lo(3)+1) = max(sedge(i,j,lo(3)+1),min(s(i,j,lo(3)+1),s(i,j,lo(3))))
                 sedge(i,j,lo(3)+1) = min(sedge(i,j,lo(3)+1),max(s(i,j,lo(3)+1),s(i,j,lo(3))))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
                 ! copy sedge into sp and sm
                 sp(i,j,lo(3)  ) = sedge(i,j,lo(3)+1)
                 sm(i,j,lo(3)+1) = sedge(i,j,lo(3)+1)
+
                 ! reset sp on second interior edge
                 sp(i,j,lo(3)+1) = sedge(i,j,lo(3)+2)
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
-             end do
-          end do
-!$omp end parallel do
-
-          ! modify using quadratic limiters
-          k = lo(3)+1
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -4344,53 +4203,39 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
        if (bc(3,2) .eq. EXT_DIR  .or. bc(3,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,j)
+          k = hi(3)-1
+
+          !$OMP PARALLEL DO PRIVATE(i,j)
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,j,hi(3)) = -FIFTH        *s(i,j,hi(3)+1) &
                                    + (THREE/FOUR)*s(i,j,hi(3)  ) &
                                    + HALF        *s(i,j,hi(3)-1) &
                                    - (ONE/20.0d0)*s(i,j,hi(3)-2)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,hi(3)) = max(sedge(i,j,hi(3)),min(s(i,j,hi(3)-1),s(i,j,hi(3))))
                 sedge(i,j,hi(3)) = min(sedge(i,j,hi(3)),max(s(i,j,hi(3)-1),s(i,j,hi(3))))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
                 ! copy sedge into sp and sm
                 sp(i,j,hi(3)-1) = sedge(i,j,hi(3))
                 sm(i,j,hi(3)  ) = sedge(i,j,hi(3))
+
                 ! reset sm on second interior edge
                 sm(i,j,hi(3)-1) = sedge(i,j,hi(3)-1)
-             end do
-          end do
-!$omp end parallel do
 
-          ! modify using quadratic limiters
-          k = hi(3)-1
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -4401,18 +4246,20 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
     else if (ppm_type .eq. 2) then
 
-       ! interpolate s to z-edges
-!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-2,hi(3)+3
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! interpolate s to z-edges
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i,j,k-1)+s(i,j,k)) &
                      - (1.d0/12.d0)*(s(i,j,k-2)+s(i,j,k+1))
+
                 ! limit sedge
                 if ((sedge(i,j,k)-s(i,j,k-1))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
                    D2  = THREE*(s(i,j,k-1)-TWO*sedge(i,j,k)+s(i,j,k))
@@ -4425,14 +4272,14 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+       !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+       !$OMP PRIVATE(delam,delap)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -4508,52 +4355,41 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! different stencil needed for z-component of EXT_DIR and HOEXTRAP bc's
        if (bc(3,1) .eq. EXT_DIR  .or. bc(3,1) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1)
           sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,j)
+          !$OMP PARALLEL DO PRIVATE(i,j)
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,j,lo(3)+1) = -FIFTH        *s(i,j,lo(3)-1) &
                                      + (THREE/FOUR)*s(i,j,lo(3)  ) &
                                      + HALF        *s(i,j,lo(3)+1) &
                                      - (ONE/20.0d0)*s(i,j,lo(3)+2)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,lo(3)+1) = max(sedge(i,j,lo(3)+1),min(s(i,j,lo(3)+1),s(i,j,lo(3))))
                 sedge(i,j,lo(3)+1) = min(sedge(i,j,lo(3)+1),max(s(i,j,lo(3)+1),s(i,j,lo(3))))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sp
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sp
                 sp(i,j,lo(3)  ) = sedge(i,j,lo(3)+1)
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
           
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do j=lo(2)-1,hi(2)+1
              do k=lo(3)+1,lo(3)+2
                 do i=lo(1)-1,hi(1)+1
@@ -4629,52 +4465,41 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
        if (bc(3,2) .eq. EXT_DIR  .or. bc(3,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+1)
           sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,j)
+          !$OMP PARALLEL DO PRIVATE(i,j)
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,j,hi(3)) = -FIFTH        *s(i,j,hi(3)+1) &
                                    + (THREE/FOUR)*s(i,j,hi(3)  ) &
                                    + HALF        *s(i,j,hi(3)-1) &
                                    - (ONE/20.0d0)*s(i,j,hi(3)-2)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,hi(3)) = max(sedge(i,j,hi(3)),min(s(i,j,hi(3)-1),s(i,j,hi(3))))
                 sedge(i,j,hi(3)) = min(sedge(i,j,hi(3)),max(s(i,j,hi(3)-1),s(i,j,hi(3))))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sm
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sm
                 sm(i,j,hi(3)  ) = sedge(i,j,hi(3))
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do j=lo(2)-1,hi(2)+1
              do k=hi(3)-2,hi(3)-1
                 do i=lo(1)-1,hi(1)+1
@@ -4750,13 +4575,13 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
     end if
 
     ! compute z-component of Ip and Im
-!$omp parallel do private(i,j,k,w0cc,velcc,sigma,s6)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,w0cc,velcc,sigma,s6)
     do k=lo(3)-1,hi(3)
        ! compute effect of w0 in plane-parallel
        if (spherical .eq. 0) then
@@ -4784,8 +4609,9 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
-!$omp parallel do private(i,j,k,w0cc,velcc,sigma,s6)
+    !$OMP END PARALLEL DO
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,w0cc,velcc,sigma,s6)
     do k=lo(3),hi(3)+1
        ! compute effect of w0 in plane-parallel
        if (spherical .eq. 0) then
@@ -4813,7 +4639,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(sp,sm,dsvl,sedge)
 
@@ -4846,10 +4672,13 @@ contains
 
     logical :: extremum, bigp, bigm
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
     real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, vel
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
     real(kind=dp_t) :: amax, delam, delap
+
+    ! constant used in Colella 2008
+    real(kind=dp_t), parameter :: C = 1.25d0
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:,:)
@@ -4864,9 +4693,6 @@ contains
     ! cell-centered indexing
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-
-    ! constant used in Colella 2008
-    C = 1.25d0
 
     w0lo = ZERO; w0hi = ZERO
 
@@ -4887,53 +4713,47 @@ contains
     ! compute s at x-edges
     if (ppm_type .eq. 1) then
        
-       ! compute van Leer slopes in x-direction
        dsvl = ZERO
-!$omp parallel do private(i,j,k,dsc,dsl,dsr)
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-2,hi(1)+2
+                ! compute van Leer slopes in x-direction
                 dsc = HALF * (s(i+1,j,k) - s(i-1,j,k))
                 dsl = TWO  * (s(i  ,j,k) - s(i-1,j,k))
                 dsr = TWO  * (s(i+1,j,k) - s(i  ,j,k))
-                if (dsl*dsr .gt. ZERO) &
-                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
        
-       ! interpolate s to x-edges
-!$omp parallel do private(i,j,k)
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+2
+                ! interpolate s to x-edges
                 sedge(i,j,k) = HALF*(s(i,j,k)+s(i-1,j,k)) - SIXTH*(dsvl(i,j,k)-dsvl(i-1,j,k))
+
                 ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,k) = max(sedge(i,j,k),min(s(i,j,k),s(i-1,j,k)))
                 sedge(i,j,k) = min(sedge(i,j,k),max(s(i,j,k),s(i-1,j,k)))
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
-       ! copy sedge into sp and sm
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sp and sm
                 sp(i,j,k) = sedge(i+1,j,k)
                 sm(i,j,k) = sedge(i  ,j,k)
-             end do
-          end do
-       end do
-!$omp end parallel do
 
-       ! modify using quadratic limiters
-!$omp parallel do private(i,j,k)
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -4945,53 +4765,38 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
        
        ! different stencil needed for x-component of EXT_DIR and HOEXTRAP bc's
        if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
                s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(j,k)
+          i = lo(1)+1
+
+          !$OMP PARALLEL DO PRIVATE(j,k)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(lo(1)+1,j,k) = -FIFTH        *s(lo(1)-1,j,k) &
                                      + (THREE/FOUR)*s(lo(1)  ,j,k) &
                                      + HALF        *s(lo(1)+1,j,k) &
                                      - (ONE/20.0d0)*s(lo(1)+2,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(lo(1)+1,j,k) = max(sedge(lo(1)+1,j,k),min(s(lo(1)+1,j,k),s(lo(1),j,k)))
                 sedge(lo(1)+1,j,k) = min(sedge(lo(1)+1,j,k),max(s(lo(1)+1,j,k),s(lo(1),j,k)))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
                 ! copy sedge into sp and sm
                 sp(lo(1)  ,j,k) = sedge(lo(1)+1,j,k)
                 sm(lo(1)+1,j,k) = sedge(lo(1)+1,j,k)
+
                 ! reset sp on second interior edge
                 sp(lo(1)+1,j,k) = sedge(lo(1)+2,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! modify using quadratic limiters
-          i = lo(1)+1
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -5002,53 +4807,39 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
        if (bc(1,2) .eq. EXT_DIR  .or. bc(1,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(hi(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
                s(hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(j,k)
+          i = hi(1)-1
+
+          !$OMP PARALLEL DO PRIVATE(j,k)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(hi(1),j,k) = -FIFTH        *s(hi(1)+1,j,k) &
                                    + (THREE/FOUR)*s(hi(1)  ,j,k) &
                                    + HALF        *s(hi(1)-1,j,k) &
                                    - (ONE/20.0d0)*s(hi(1)-2,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(hi(1),j,k) = max(sedge(hi(1),j,k),min(s(hi(1)-1,j,k),s(hi(1),j,k)))
                 sedge(hi(1),j,k) = min(sedge(hi(1),j,k),max(s(hi(1)-1,j,k),s(hi(1),j,k)))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
                 ! copy sedge into sp and sm
                 sp(hi(1)-1,j,k) = sedge(hi(1),j,k)
                 sm(hi(1)  ,j,k) = sedge(hi(1),j,k)
+
                 ! reset sm on second interior edge
                 sm(hi(1)-1,j,k) = sedge(hi(1)-1,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! modify using quadratic limiters
-          i = hi(1)-1
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -5059,7 +4850,8 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
     else if (ppm_type .eq. 2) then
@@ -5068,13 +4860,14 @@ contains
           call bl_error("Need 4 ghost cells for ppm_type=2")
        end if
 
-       ! interpolate s to x-edges
-!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-2,hi(1)+3
+                ! interpolate s to x-edges
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i-1,j,k)+s(i,j,k)) &
                      - (1.d0/12.d0)*(s(i-2,j,k)+s(i+1,j,k))
+
                 ! limit sedge
                 if ((sedge(i,j,k)-s(i-1,j,k))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
                    D2  = THREE*(s(i-1,j,k)-TWO*sedge(i,j,k)+s(i,j,k))
@@ -5087,14 +4880,14 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+       !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+       !$OMP PRIVATE(delam,delap)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -5170,52 +4963,41 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! different stencil needed for x-component of EXT_DIR and HOEXTRAP bc's
        if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)    = &
                s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
           sedge(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
                s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(j,k)
+          !$OMP PARALLEL DO PRIVATE(j,k)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(lo(1)+1,j,k) = -FIFTH        *s(lo(1)-1,j,k) &
                                      + (THREE/FOUR)*s(lo(1)  ,j,k) &
                                      + HALF        *s(lo(1)+1,j,k) &
                                      - (ONE/20.0d0)*s(lo(1)+2,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(lo(1)+1,j,k) = max(sedge(lo(1)+1,j,k),min(s(lo(1)+1,j,k),s(lo(1),j,k)))
                 sedge(lo(1)+1,j,k) = min(sedge(lo(1)+1,j,k),max(s(lo(1)+1,j,k),s(lo(1),j,k)))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sp
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! copy sedge into sp
                 sp(lo(1)  ,j,k) = sedge(lo(1)+1,j,k)
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
                 do i=lo(1)+1,lo(1)+2
@@ -5291,50 +5073,39 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
        if (bc(1,2) .eq. EXT_DIR  .or. bc(1,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(hi(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
                s(hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(j,k)
+          !$OMP PARALLEL DO PRIVATE(j,k)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(hi(1),j,k) = -FIFTH        *s(hi(1)+1,j,k) &
                                    + (THREE/FOUR)*s(hi(1)  ,j,k) &
                                    + HALF        *s(hi(1)-1,j,k) &
                                    - (ONE/20.0d0)*s(hi(1)-2,j,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(hi(1),j,k) = max(sedge(hi(1),j,k),min(s(hi(1)-1,j,k),s(hi(1),j,k)))
                 sedge(hi(1),j,k) = min(sedge(hi(1),j,k),max(s(hi(1)-1,j,k),s(hi(1),j,k)))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sm
-!$omp parallel do private(j,k)
-          do k=lo(3)-1,hi(3)+1
-             do j=lo(2)-1,hi(2)+1
+                ! copy sedge into sm
                 sm(hi(1)  ,j,k) = sedge(hi(1),j,k)
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
                 do i=hi(1)-2,hi(1)-1
@@ -5410,13 +5181,13 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
     end if
     
     ! compute x-component of Ip and Im
-!$omp parallel do private(i,j,k,vel,sigma,s6)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,vel,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)
@@ -5449,7 +5220,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(sedge,dsvl)
 
@@ -5470,53 +5241,46 @@ contains
     ! compute s at y-edges
     if (ppm_type .eq. 1) then
        
-       ! compute van Leer slopes in y-direction
        dsvl = ZERO
-!$omp parallel do private(i,j,k,dsc,dsl,dsr)
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-2,hi(2)+2
              do i=lo(1)-1,hi(1)+1
+                ! compute van Leer slopes in y-direction
                 dsc = HALF * (s(i,j+1,k) - s(i,j-1,k))
                 dsl = TWO  * (s(i,j  ,k) - s(i,j-1,k))
                 dsr = TWO  * (s(i,j+1,k) - s(i,j  ,k))
-                if (dsl*dsr .gt. ZERO) &
-                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
-       ! interpolate s to y-edges
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+2
              do i=lo(1)-1,hi(1)+1
+                ! interpolate s to y-edges
                 sedge(i,j,k) = HALF*(s(i,j,k)+s(i,j-1,k)) - SIXTH*(dsvl(i,j,k)-dsvl(i,j-1,k))
+
                 ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,k) = max(sedge(i,j,k),min(s(i,j,k),s(i,j-1,k)))
                 sedge(i,j,k) = min(sedge(i,j,k),max(s(i,j,k),s(i,j-1,k)))
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
-       ! copy sedge into sp and sm
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sp and sm
                 sp(i,j,k) = sedge(i,j+1,k)
                 sm(i,j,k) = sedge(i,j  ,k)
-             end do
-          end do
-       end do
-!$omp end parallel do
 
-       ! modify using quadratic limiters
-!$omp parallel do private(i,j,k)
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -5528,53 +5292,38 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
        
        ! different stencil needed for y-component of EXT_DIR and HOEXTRAP bc's
        if (bc(2,1) .eq. EXT_DIR  .or. bc(2,1) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1)-1:hi(1)+1,lo(2),lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,k)
+          j = lo(2)+1
+
+          !$OMP PARALLEL DO PRIVATE(i,k)
           do k=lo(3)-1,hi(3)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,lo(2)+1,k) = -FIFTH        *s(i,lo(2)-1,k) &
                                      + (THREE/FOUR)*s(i,lo(2)  ,k) &
                                      + HALF        *s(i,lo(2)+1,k) &
                                      - (ONE/20.0d0)*s(i,lo(2)+2,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,lo(2)+1,k) = max(sedge(i,lo(2)+1,k),min(s(i,lo(2)+1,k),s(i,lo(2),k)))
                 sedge(i,lo(2)+1,k) = min(sedge(i,lo(2)+1,k),max(s(i,lo(2)+1,k),s(i,lo(2),k)))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
                 ! copy sedge into sp and sm
                 sp(i,lo(2)  ,k) = sedge(i,lo(2)+1,k)
                 sm(i,lo(2)+1,k) = sedge(i,lo(2)+1,k)
+
                 ! reset sp on second interior edge
                 sp(i,lo(2)+1,k) = sedge(i,lo(2)+2,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! modify using quadratic limiters
-          j = lo(2)+1
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -5585,53 +5334,39 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
        if (bc(2,2) .eq. EXT_DIR  .or. bc(2,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(lo(1)-1:hi(1)+1,hi(2),lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,k)
+          j = hi(2)-1
+
+          !$OMP PARALLEL DO PRIVATE(i,k)
           do k=lo(3)-1,hi(3)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,hi(2),k) = -FIFTH        *s(i,hi(2)+1,k) &
                                    + (THREE/FOUR)*s(i,hi(2)  ,k) &
                                    + HALF        *s(i,hi(2)-1,k) &
                                    - (ONE/20.0d0)*s(i,hi(2)-2,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,hi(2),k) = max(sedge(i,hi(2),k),min(s(i,hi(2)-1,k),s(i,hi(2),k)))
                 sedge(i,hi(2),k) = min(sedge(i,hi(2),k),max(s(i,hi(2)-1,k),s(i,hi(2),k)))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
                 ! copy sedge into sp and sm
                 sp(i,hi(2)-1,k) = sedge(i,hi(2),k)
                 sm(i,hi(2)  ,k) = sedge(i,hi(2),k)
+
                 ! reset sm on second interior edge
                 sm(i,hi(2)-1,k) = sedge(i,hi(2)-1,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! modify using quadratic limiters
-          j = hi(2)-1
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -5642,18 +5377,20 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
     else if (ppm_type .eq. 2) then
 
-       ! interpolate s to y-edges
-!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-2,hi(2)+3
              do i=lo(1)-1,hi(1)+1
+                ! interpolate s to y-edges
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i,j-1,k)+s(i,j,k)) &
                      - (1.d0/12.d0)*(s(i,j-2,k)+s(i,j+1,k))
+
                 ! limit sedge
                 if ((sedge(i,j,k)-s(i,j-1,k))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
                    D2  = THREE*(s(i,j-1,k)-TWO*sedge(i,j,k)+s(i,j,k))
@@ -5666,14 +5403,14 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+       !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+       !$OMP PRIVATE(delam,delap)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -5749,52 +5486,41 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! different stencil needed for y-component of EXT_DIR and HOEXTRAP bc's
        if (bc(2,1) .eq. EXT_DIR  .or. bc(2,1) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1)-1:hi(1)+1,lo(2),lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1)
           sedge(lo(1)-1:hi(1)+1,lo(2),lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,k)
+          !$OMP PARALLEL DO PRIVATE(i,k)
           do k=lo(3)-1,hi(3)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,lo(2)+1,k) = -FIFTH        *s(i,lo(2)-1,k) &
                                      + (THREE/FOUR)*s(i,lo(2)  ,k) &
                                      + HALF        *s(i,lo(2)+1,k) &
                                      - (ONE/20.0d0)*s(i,lo(2)+2,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,lo(2)+1,k) = max(sedge(i,lo(2)+1,k),min(s(i,lo(2)+1,k),s(i,lo(2),k)))
                 sedge(i,lo(2)+1,k) = min(sedge(i,lo(2)+1,k),max(s(i,lo(2)+1,k),s(i,lo(2),k)))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sp
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sp
                 sp(i,lo(2)  ,k) = sedge(i,lo(2)+1,k)
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)+1,lo(2)+2
                 do i=lo(1)-1,hi(1)+1
@@ -5870,52 +5596,41 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
        if (bc(2,2) .eq. EXT_DIR  .or. bc(2,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(lo(1)-1:hi(1)+1,hi(2),lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,hi(2)+1,lo(3)-1:hi(3)+1)
           sedge(lo(1)-1:hi(1)+1,hi(2)+1,lo(3)-1:hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,hi(2)+1,lo(3)-1:hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,k)
+          !$OMP PARALLEL DO PRIVATE(i,k)
           do k=lo(3)-1,hi(3)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,hi(2),k) = -FIFTH        *s(i,hi(2)+1,k) &
                                    + (THREE/FOUR)*s(i,hi(2)  ,k) &
                                    + HALF        *s(i,hi(2)-1,k) &
                                    - (ONE/20.0d0)*s(i,hi(2)-2,k)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,hi(2),k) = max(sedge(i,hi(2),k),min(s(i,hi(2)-1,k),s(i,hi(2),k)))
                 sedge(i,hi(2),k) = min(sedge(i,hi(2),k),max(s(i,hi(2)-1,k),s(i,hi(2),k)))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sm
-!$omp parallel do private(i,k)
-          do k=lo(3)-1,hi(3)+1
-             do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sm
                 sm(i,hi(2)  ,k) = sedge(i,hi(2),k)
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do k=lo(3)-1,hi(3)+1
              do j=hi(2)-2,hi(2)-1
                 do i=lo(1)-1,hi(1)+1
@@ -5991,13 +5706,13 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
     end if
 
     ! compute y-component of Ip and Im
-!$omp parallel do private(i,j,k,vel,sigma,s6)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,vel,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)
           do i=lo(1)-1,hi(1)+1
@@ -6032,7 +5747,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(sedge,dsvl)
 
@@ -6053,53 +5768,46 @@ contains
     ! compute s at z-edges
     if (ppm_type .eq. 1) then
        
-       ! compute van Leer slopes in z-direction
        dsvl = ZERO
-!$omp parallel do private(i,j,k,dsc,dsl,dsr)
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k,dsc,dsl,dsr)
        do k=lo(3)-2,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! compute van Leer slopes in z-direction
                 dsc = HALF * (s(i,j,k+1) - s(i,j,k-1))
                 dsl = TWO  * (s(i,j,k  ) - s(i,j,k-1))
                 dsr = TWO  * (s(i,j,k+1) - s(i,j,k  ))
-                if (dsl*dsr .gt. ZERO) &
-                     dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                if (dsl*dsr .gt. ZERO) dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
-       ! interpolate s to z-edges
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! interpolate s to z-edges
                 sedge(i,j,k) = HALF*(s(i,j,k)+s(i,j,k-1)) - SIXTH*(dsvl(i,j,k)-dsvl(i,j,k-1))
+
                 ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,k) = max(sedge(i,j,k),min(s(i,j,k),s(i,j,k-1)))
                 sedge(i,j,k) = min(sedge(i,j,k),max(s(i,j,k),s(i,j,k-1)))
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
-       ! copy sedge into sp and sm
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sp and sm
                 sp(i,j,k) = sedge(i,j,k+1)
                 sm(i,j,k) = sedge(i,j,k  )
-             end do
-          end do
-       end do
-!$omp end parallel do
 
-       ! modify using quadratic limiters
-!$omp parallel do private(i,j,k)
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -6111,60 +5819,37 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
        
        ! different stencil needed for z-component of EXT_DIR and HOEXTRAP bc's
        if (bc(3,1) .eq. EXT_DIR  .or. bc(3,1) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,j)
+          k = lo(3)+1
+          !$OMP PARALLEL DO PRIVATE(i,j)
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,j,lo(3)+1) = -FIFTH        *s(i,j,lo(3)-1) &
                                      + (THREE/FOUR)*s(i,j,lo(3)  ) &
                                      + HALF        *s(i,j,lo(3)+1) &
                                      - (ONE/20.0d0)*s(i,j,lo(3)+2)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,lo(3)+1) = max(sedge(i,j,lo(3)+1),min(s(i,j,lo(3)+1),s(i,j,lo(3))))
                 sedge(i,j,lo(3)+1) = min(sedge(i,j,lo(3)+1),max(s(i,j,lo(3)+1),s(i,j,lo(3))))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
                 ! copy sedge into sp and sm
                 sp(i,j,lo(3)  ) = sedge(i,j,lo(3)+1)
                 sm(i,j,lo(3)+1) = sedge(i,j,lo(3)+1)
+
                 ! reset sp on second interior edge
                 sp(i,j,lo(3)+1) = sedge(i,j,lo(3)+2)
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
-             end do
-          end do
-!$omp end parallel do
-
-          ! modify using quadratic limiters
-          k = lo(3)+1
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -6175,53 +5860,39 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
        if (bc(3,2) .eq. EXT_DIR  .or. bc(3,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,j)
+          k = hi(3)-1
+
+          !$OMP PARALLEL DO PRIVATE(i,j)
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,j,hi(3)) = -FIFTH        *s(i,j,hi(3)+1) &
                                    + (THREE/FOUR)*s(i,j,hi(3)  ) &
                                    + HALF        *s(i,j,hi(3)-1) &
                                    - (ONE/20.0d0)*s(i,j,hi(3)-2)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,hi(3)) = max(sedge(i,j,hi(3)),min(s(i,j,hi(3)-1),s(i,j,hi(3))))
                 sedge(i,j,hi(3)) = min(sedge(i,j,hi(3)),max(s(i,j,hi(3)-1),s(i,j,hi(3))))
-             end do
-          end do
-!$omp end parallel do
 
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
                 ! copy sedge into sp and sm
                 sp(i,j,hi(3)-1) = sedge(i,j,hi(3))
                 sm(i,j,hi(3)  ) = sedge(i,j,hi(3))
+
                 ! reset sm on second interior edge
                 sm(i,j,hi(3)-1) = sedge(i,j,hi(3)-1)
-             end do
-          end do
-!$omp end parallel do
 
-          ! modify using quadratic limiters
-          k = hi(3)-1
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! modify using quadratic limiters
                 if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
                    sp(i,j,k) = s(i,j,k)
                    sm(i,j,k) = s(i,j,k)
@@ -6232,18 +5903,20 @@ contains
                 end if
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
+
        end if
 
     else if (ppm_type .eq. 2) then
 
-       ! interpolate s to z-edges
-!$omp parallel do private(i,j,k,D2,D2L,D2R,sgn,D2LIM)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,D2,D2L,D2R,sgn,D2LIM)
        do k=lo(3)-2,hi(3)+3
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! interpolate s to z-edges
                 sedge(i,j,k) = (7.d0/12.d0)*(s(i,j,k-1)+s(i,j,k)) &
                      - (1.d0/12.d0)*(s(i,j,k-2)+s(i,j,k+1))
+
                 ! limit sedge
                 if ((sedge(i,j,k)-s(i,j,k-1))*(s(i,j,k)-sedge(i,j,k)) .lt. ZERO) then
                    D2  = THREE*(s(i,j,k-1)-TWO*sedge(i,j,k)+s(i,j,k))
@@ -6256,14 +5929,14 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! use Colella 2008 limiters
        ! This is a new version of the algorithm 
        ! to eliminate sensitivity to roundoff.
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+       !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+       !$OMP PRIVATE(delam,delap)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -6339,52 +6012,41 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
        ! different stencil needed for z-component of EXT_DIR and HOEXTRAP bc's
        if (bc(3,1) .eq. EXT_DIR  .or. bc(3,1) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1)
           sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,j)
+          !$OMP PARALLEL DO PRIVATE(i,j)
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,j,lo(3)+1) = -FIFTH        *s(i,j,lo(3)-1) &
                                      + (THREE/FOUR)*s(i,j,lo(3)  ) &
                                      + HALF        *s(i,j,lo(3)+1) &
                                      - (ONE/20.0d0)*s(i,j,lo(3)+2)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,lo(3)+1) = max(sedge(i,j,lo(3)+1),min(s(i,j,lo(3)+1),s(i,j,lo(3))))
                 sedge(i,j,lo(3)+1) = min(sedge(i,j,lo(3)+1),max(s(i,j,lo(3)+1),s(i,j,lo(3))))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sp
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sp
                 sp(i,j,lo(3)  ) = sedge(i,j,lo(3)+1)
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
           
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do j=lo(2)-1,hi(2)+1
              do k=lo(3)+1,lo(3)+2
                 do i=lo(1)-1,hi(1)+1
@@ -6460,52 +6122,42 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
        if (bc(3,2) .eq. EXT_DIR  .or. bc(3,2) .eq. HOEXTRAP) then
+
           ! the value in the first cc ghost cell represents the edge value
           sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+1)
           sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+1) = &
                s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+1)
 
-          ! use a modified stencil to get sedge on the first interior edge
-!$omp parallel do private(i,j)
+          !$OMP PARALLEL DO PRIVATE(i,j)
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
+                ! use a modified stencil to get sedge on the first interior edge
                 sedge(i,j,hi(3)) = -FIFTH        *s(i,j,hi(3)+1) &
                                    + (THREE/FOUR)*s(i,j,hi(3)  ) &
                                    + HALF        *s(i,j,hi(3)-1) &
                                    - (ONE/20.0d0)*s(i,j,hi(3)-2)
-             end do
-          end do
-!$omp end parallel do
 
-          ! make sure sedge lies in between adjacent cell-centered values
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! make sure sedge lies in between adjacent cell-centered values
                 sedge(i,j,hi(3)) = max(sedge(i,j,hi(3)),min(s(i,j,hi(3)-1),s(i,j,hi(3))))
                 sedge(i,j,hi(3)) = min(sedge(i,j,hi(3)),max(s(i,j,hi(3)-1),s(i,j,hi(3))))
-             end do
-          end do
-!$omp end parallel do
 
-          ! copy sedge into sm
-!$omp parallel do private(i,j)
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+                ! copy sedge into sm
                 sm(i,j,hi(3)  ) = sedge(i,j,hi(3))
+
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
 
           ! apply Colella 2008 limiters to compute sm and sp in the second
           ! and third inner cells
-!$omp parallel do private(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep, &
-!$omp dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax, &
-!$omp delam,delap)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
+          !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
+          !$OMP PRIVATE(delam,delap)
           do j=lo(2)-1,hi(2)+1
              do k=hi(3)-2,hi(3)-1
                 do i=lo(1)-1,hi(1)+1
@@ -6581,13 +6233,13 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
     end if
 
     ! compute z-component of Ip and Im
-!$omp parallel do private(i,j,k,w0hi,vel,sigma,s6)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,w0hi,vel,sigma,s6)
     do k=lo(3)-1,hi(3)
        ! compute effect of w0 in plane-parallel
        if (spherical .eq. 0) then
@@ -6614,8 +6266,9 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
-!$omp parallel do private(i,j,k,w0lo,vel,sigma,s6)
+    !$OMP END PARALLEL DO
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,w0lo,vel,sigma,s6)
     do k=lo(3),hi(3)+1
        ! compute effect of w0 in plane-parallel
        if (spherical .eq. 0) then
@@ -6642,7 +6295,7 @@ contains
           end do
        end do
     end do
-!$omp end parallel do
+    !$OMP END PARALLEL DO
 
     deallocate(sp,sm,dsvl,sedge)
 

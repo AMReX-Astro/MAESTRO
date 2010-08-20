@@ -395,7 +395,7 @@ contains
 
     if (ppm_type .gt. 0) then
 
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -405,12 +405,12 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
     else
        
        if (spherical .eq. 1) then
-!$omp parallel do private(i,j,k,ulo,uhi)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,ulo,uhi)
           do k=ks,ke
              do j=js,je
                 do i=is,ie+1
@@ -423,9 +423,9 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        else
-!$omp parallel do private(i,j,k,ulo,uhi)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,ulo,uhi)
           do k=ks,ke
              do j=js,je
                 do i=is,ie+1
@@ -438,7 +438,7 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
     end if
@@ -478,7 +478,7 @@ contains
     end select
 
     if (spherical .eq. 1) then
-!$omp parallel do private(i,j,k,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -492,9 +492,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -507,7 +507,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(ulx,urx)
@@ -526,7 +526,7 @@ contains
 
     if (ppm_type .gt. 0) then
 
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -536,12 +536,12 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
     else
 
        if (spherical .eq. 1) then
-!$omp parallel do private(i,j,k,vlo,vhi)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,vlo,vhi)
           do k=ks,ke
              do j=js,je+1
                 do i=is,ie
@@ -554,9 +554,9 @@ contains
                 enddo
              enddo
           enddo
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        else
-!$omp parallel do private(i,j,k,vlo,vhi)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,vlo,vhi)
           do k=ks,ke
              do j=js,je+1
                 do i=is,ie
@@ -569,7 +569,7 @@ contains
                 enddo
              enddo
           enddo
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
     end if
@@ -609,7 +609,7 @@ contains
     end select
     
     if (spherical .eq. 1) then
-!$omp parallel do private(i,j,k,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -623,9 +623,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -638,7 +638,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(vly,vry)
@@ -656,7 +656,7 @@ contains
     allocate(wrz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
     if (ppm_type .gt. 0) then
-!$omp parallel do private(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -666,12 +666,12 @@ contains
              end do
           end do
        end do
-!$omp end parallel do
+       !$OMP END PARALLEL DO
 
     else
 
        if (spherical .eq. 1) then
-!$omp parallel do private(i,j,k,wlo,whi)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,wlo,whi)
           do k=ks,ke+1
              do j=js,je
                 do i=is,ie
@@ -684,9 +684,9 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        else
-!$omp parallel do private(i,j,k,wlo,whi)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,wlo,whi)
           do k=ks,ke+1
              do j=js,je
                 do i=is,ie
@@ -707,7 +707,7 @@ contains
                 end do
              end do
           end do
-!$omp end parallel do
+          !$OMP END PARALLEL DO
        end if
 
     end if
@@ -747,7 +747,7 @@ contains
     end select
     
     if (spherical .eq. 1) then
-!$omp parallel do private(i,j,k,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -761,9 +761,9 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     else
-!$omp parallel do private(i,j,k,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -776,7 +776,7 @@ contains
              enddo
           enddo
        enddo
-!$omp end parallel do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(wlz,wrz)
