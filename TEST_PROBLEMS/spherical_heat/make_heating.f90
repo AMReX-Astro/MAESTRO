@@ -14,7 +14,7 @@ module heating_module
   
 contains
 
-  subroutine get_rho_Hext(mla,s,rho_Hext,dx,time,dt,the_bc_level)
+  subroutine get_rho_Hext(mla,s,rho_Hext,dx,time,dt)
 
     use geometry, only: nlevs
     use multifab_module
@@ -27,7 +27,6 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),time,dt
-    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
     integer                  :: n,i,ng_s,ng_h
