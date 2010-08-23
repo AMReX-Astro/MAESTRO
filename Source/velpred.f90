@@ -766,7 +766,7 @@ contains
     real(kind=dp_t) :: hx, hy, hz, dt2, dt4, dt6, uavg
     real(kind=dp_t) :: ulo, uhi, vlo, vhi, wlo, whi, Ut_dot_er
 
-    integer :: i,j,k,is,js,ie,je,ks,ke
+    integer :: i,j,k,is,js,ie,je,ks,ke,ung
 
     logical :: test
 
@@ -804,10 +804,13 @@ contains
        call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ipw,Imw,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,3),dx,dt)
     else
-       !$OMP PARALLEL DO PRIVATE(k)
+
+       ung = ng_u
+
+       !$OMP PARALLEL DO PRIVATE(k) FIRSTPRIVATE(ung)
        do k = lo(3)-1,hi(3)+1
-          call slopex_2d(u(:,:,k,:),slopex(:,:,k,:),lo,hi,ng_u,3,adv_bc)
-          call slopey_2d(u(:,:,k,:),slopey(:,:,k,:),lo,hi,ng_u,3,adv_bc)
+          call slopex_2d(u(:,:,k,:),slopex(:,:,k,:),lo,hi,ung,3,adv_bc)
+          call slopey_2d(u(:,:,k,:),slopey(:,:,k,:),lo,hi,ung,3,adv_bc)
        end do
        !$OMP END PARALLEL DO
        call slopez_3d(u,slopez,lo,hi,ng_u,3,adv_bc)

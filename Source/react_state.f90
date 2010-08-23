@@ -418,7 +418,7 @@ contains
 
     !     Local variables
     integer            :: i, j, k
-    real (kind = dp_t) :: rho,T_in
+    real (kind = dp_t) :: rho,T_in,ldt
 
     real (kind = dp_t) :: x_in(nspec)
     real (kind = dp_t) :: x_out(nspec)
@@ -433,7 +433,9 @@ contains
        firstCall = .false.
     endif
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH)
+    ldt = dt
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH) FIRSTPRIVATE(ldt)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -461,7 +463,7 @@ contains
                    x_test > burner_threshold_cutoff)                     &
                  )                                                       &
                  ) then
-                call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
+                call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
              else
                 x_out = x_in
                 rhowdot = 0.d0
@@ -480,7 +482,7 @@ contains
 
              ! update the enthalpy -- include the change due to external heating
              snew(i,j,k,rhoh_comp) = sold(i,j,k,rhoh_comp) &
-                  + dt*rho_Hnuc(i,j,k) + dt*rho_Hext(i,j,k)
+                  + ldt*rho_Hnuc(i,j,k) + ldt*rho_Hext(i,j,k)
 
              ! pass the tracers through
              snew(i,j,k,trac_comp:trac_comp+ntrac-1) = &

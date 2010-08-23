@@ -2065,7 +2065,7 @@ contains
     !
     if (fix_lo_x) then
        i = lo(1)
-       !$OMP PARALLEL DO PRIVATE(j,k,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(j,k,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(i)
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              vx = vxlo(i,j,k)
@@ -2082,7 +2082,7 @@ contains
 
     if (fix_hi_x) then
        i = hi(1)
-       !$OMP PARALLEL DO PRIVATE(j,k,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(j,k,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(i)
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              vx = vxhi(i,j,k)
@@ -2099,7 +2099,7 @@ contains
 
     if (fix_lo_y) then
        j = lo(2)
-       !$OMP PARALLEL DO PRIVATE(i,k,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(i,k,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(j)
        do k = lo(3),hi(3)
           do i = lo(1),hi(1)
              vx = vxcen(i,j,k)
@@ -2116,7 +2116,7 @@ contains
 
     if (fix_hi_y) then
        j = hi(2)
-       !$OMP PARALLEL DO PRIVATE(i,k,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(i,k,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(j)
        do k = lo(3),hi(3)
           do i = lo(1),hi(1)
              vx = vxcen(i,j,k)
@@ -2133,7 +2133,7 @@ contains
 
     if (fix_lo_z) then
        k = lo(3)
-       !$OMP PARALLEL DO PRIVATE(i,j,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(i,j,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(k)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              vx = vxcen(i,j,k)
@@ -2150,7 +2150,7 @@ contains
 
     if (fix_hi_z) then
        k = hi(3)
-       !$OMP PARALLEL DO PRIVATE(i,j,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(i,j,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(k)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              vx = vxcen(i,j,k)
@@ -2170,7 +2170,7 @@ contains
     if (fix_lo_x .and. fix_lo_y) then
        i = lo(1)
        j = lo(2)
-       !$OMP PARALLEL DO PRIVATE(k,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(k,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(i,j)
        do k = lo(3),hi(3)
           vx = vxlo(i,j,k)
           wx = wxlo(i,j,k)
@@ -2186,7 +2186,7 @@ contains
     if (fix_hi_x .and. fix_lo_y) then
        i = hi(1)
        j = lo(2)
-       !$OMP PARALLEL DO PRIVATE(k,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(k,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(i,j)
        do k = lo(3),hi(3)
           vx = vxhi(i,j,k)
           wx = wxhi(i,j,k)
@@ -2202,7 +2202,7 @@ contains
     if (fix_lo_x .and. fix_hi_y) then
        i = lo(1)
        j = hi(2)
-       !$OMP PARALLEL DO PRIVATE(k,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(k,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(i,j)
        do k = lo(3),hi(3)
           vx = vxlo(i,j,k)
           wx = wxlo(i,j,k)
@@ -2218,7 +2218,7 @@ contains
     if (fix_hi_x .and. fix_hi_y) then
        i = hi(1)
        j = hi(2)
-       !$OMP PARALLEL DO PRIVATE(k,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(k,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(i,j)
        do k = lo(3),hi(3)
           vx = vxhi(i,j,k)
           wx = wxhi(i,j,k)
@@ -2234,7 +2234,7 @@ contains
     if (fix_lo_x .and. fix_lo_z) then
        i = lo(1)
        k = lo(3)
-       !$OMP PARALLEL DO PRIVATE(j,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(j,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(i,k)
        do j = lo(2),hi(2)
           vx = vxlo(i,j,k)
           wx = wxlo(i,j,k)
@@ -2250,7 +2250,7 @@ contains
     if (fix_hi_x .and. fix_lo_z) then
        i = hi(1)
        k = lo(3)
-       !$OMP PARALLEL DO PRIVATE(j,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(j,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(i,k)
        do j = lo(2),hi(2)
           vx = vxhi(i,j,k)
           wx = wxhi(i,j,k)
@@ -2266,7 +2266,7 @@ contains
     if (fix_lo_x .and. fix_hi_z) then
        i = lo(1)
        k = hi(3)
-       !$OMP PARALLEL DO PRIVATE(j,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(j,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(i,k)
        do j = lo(2),hi(2)
           vx = vxlo(i,j,k)
           wx = wxlo(i,j,k)
@@ -2282,7 +2282,7 @@ contains
     if (fix_hi_x .and. fix_hi_z) then
        i = hi(1)
        k = hi(3)
-       !$OMP PARALLEL DO PRIVATE(j,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(j,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(i,k)
        do j = lo(2),hi(2)
           vx = vxhi(i,j,k)
           wx = wxhi(i,j,k)
@@ -2298,7 +2298,7 @@ contains
     if (fix_lo_y .and. fix_lo_z) then
        j = lo(2)
        k = lo(3)
-       !$OMP PARALLEL DO PRIVATE(i,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(i,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(j,k)
        do i = lo(1),hi(1)
           vx = vxcen(i,j,k)
           wx = wxcen(i,j,k)
@@ -2314,7 +2314,7 @@ contains
     if (fix_hi_y .and. fix_lo_z) then
        j = hi(2)
        k = lo(3)
-       !$OMP PARALLEL DO PRIVATE(i,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(i,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(j,k)
        do i = lo(1),hi(1)
           vx = vxcen(i,j,k)
           wx = wxcen(i,j,k)
@@ -2330,7 +2330,7 @@ contains
     if (fix_lo_y .and. fix_hi_z) then
        j = lo(2)
        k = hi(3)
-       !$OMP PARALLEL DO PRIVATE(i,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(i,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(j,k)
        do i = lo(1),hi(1)
           vx = vxcen(i,j,k)
           wx = wxcen(i,j,k)
@@ -2346,7 +2346,7 @@ contains
     if (fix_hi_y .and. fix_hi_z) then
        j = hi(2)
        k = hi(3)
-       !$OMP PARALLEL DO PRIVATE(i,uy,uz,vx,vz,wx,wy)
+       !$OMP PARALLEL DO PRIVATE(i,uy,uz,vx,vz,wx,wy) FIRSTPRIVATE(j,k)
        do i = lo(1),hi(1)
           vx = vxcen(i,j,k)
           wx = wxcen(i,j,k)
