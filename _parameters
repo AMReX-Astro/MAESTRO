@@ -156,6 +156,10 @@ dm_in                               integer            2
 # Turn on a perturbation in the initial data.  Problem specific.
 perturb_model                       logical            .false.             
 
+# Turn on storing of enthalpy-based quantities in the plotfile
+# when we are running with use_tfromp
+plot_h_with_use_tfromp              logical            .true.
+
 # plot species and omegadot in plotfile
 plot_spec                           logical            .true.              
 

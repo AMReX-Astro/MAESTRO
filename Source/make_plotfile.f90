@@ -19,7 +19,8 @@ contains
     use network, only: nspec, short_spec_names
     use probin_module, only: plot_spec, plot_trac, plot_base, &
                              use_thermal_diffusion, plot_omegadot, plot_Hnuc, &
-                             plot_Hext, plot_eta, plot_ad_excess
+                             plot_Hext, plot_eta, plot_ad_excess, &
+                             use_tfromp, plot_h_with_use_tfromp
     use geometry, only: spherical, dm
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -35,7 +36,9 @@ contains
        plot_names(icomp_vel+2) = "z_vel"
     end if
     plot_names(icomp_rho)  = "density"
-    plot_names(icomp_rhoh) = "rhoh"
+
+    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
+         plot_names(icomp_rhoh) = "rhoh"
 
     if (plot_spec) then
        do comp = 1, nspec
@@ -69,18 +72,22 @@ contains
     plot_names(icomp_mom)         = "momentum"
     plot_names(icomp_vort)        = "vort"
     plot_names(icomp_src)         = "S"
-    plot_names(icomp_enthalpy)    = "enthalpy"
     plot_names(icomp_rhopert)     = "rhopert"
-    plot_names(icomp_rhohpert)    = "rhohpert"
+    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
+       plot_names(icomp_enthalpy)    = "enthalpy"
+       plot_names(icomp_rhohpert)    = "rhohpert"
+    endif
     plot_names(icomp_tfromp)      = "tfromp"
-    plot_names(icomp_tfromH)      = "tfromh"
+    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
+       plot_names(icomp_tfromH)      = "tfromh"
+       plot_names(icomp_dT)          = "deltaT"
+       plot_names(icomp_dp)          = "deltap"
+    endif
     plot_names(icomp_tpert)       = "tpert"
     plot_names(icomp_machno)      = "Machnumber"
-    plot_names(icomp_dp)          = "deltap"
     plot_names(icomp_dg)          = "deltagamma"
     plot_names(icomp_entropy)     = "entropy"
     plot_names(icomp_entropypert) = "entropypert"
-    plot_names(icomp_dT)          = "deltaT"
     plot_names(icomp_sponge)      = "sponge"
     plot_names(icomp_pi)          = "pi"
     plot_names(icomp_gpi)         = "gpi_x"
@@ -136,7 +143,8 @@ contains
                              plot_eta, plot_ad_excess, &
                              single_prec_plotfiles, &
                              do_smallscale, use_thermal_diffusion, &
-                             evolve_base_state, prob_lo, prob_hi
+                             evolve_base_state, prob_lo, prob_hi, &
+                             use_tfromp, plot_h_with_use_tfromp
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use average_module
     use ml_restriction_module
@@ -200,8 +208,25 @@ contains
        call multifab_copy_c(plotdata(n),icomp_vel,u(n),1,dm)
 
        ! DENSITY AND (RHO H) 
-       call multifab_copy_c(plotdata(n),icomp_rho,s(n),rho_comp,2)
-       
+       call multifab_copy_c(plotdata(n),icomp_rho,s(n),rho_comp,1)
+       if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
+            call multifab_copy_c(plotdata(n),icomp_rhoh,s(n),rhoh_comp,1)
+
+
+       ! RHOPERT and RHOHPERT
+       if (spherical .eq. 1) then
+          call make_rhopert( plotdata(n),icomp_rhopert, s(n), rho0(1,:),dx(n,:))
+
+          if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &          
+               call make_rhohpert(plotdata(n),icomp_rhohpert,s(n),rhoh0(1,:),dx(n,:))
+       else
+          call make_rhopert( plotdata(n),icomp_rhopert, s(n), rho0(n,:),dx(n,:))
+
+          if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
+               call make_rhohpert(plotdata(n),icomp_rhohpert,s(n),rhoh0(n,:),dx(n,:))
+       endif
+
+
        if (plot_spec) then
           
           ! SPECIES
@@ -373,8 +398,11 @@ contains
        call multifab_copy_c(plotdata(n),icomp_src,Source(n),1,1)
 
        ! ENTHALPY 
-       call multifab_copy_c(plotdata(n),icomp_enthalpy,s(n),rhoh_comp)
-       call multifab_div_div_c(plotdata(n),icomp_enthalpy,s(n),rho_comp,1)
+       if (.not. use_tfromp .or. &
+            (use_tfromp .and. plot_h_with_use_tfromp)) then
+          call multifab_copy_c(plotdata(n),icomp_enthalpy,s(n),rhoh_comp)
+          call multifab_div_div_c(plotdata(n),icomp_enthalpy,s(n),rho_comp,1)
+       endif
 
     end do
 
@@ -384,25 +412,27 @@ contains
        ! make_tfromH -> TFROMP AND DELTA_P
        if (spherical .eq. 1) then
           
-          call make_tfromp(plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert, &
-                           icomp_rhohpert,icomp_machno,icomp_dg,icomp_entropy, &
-                           icomp_magvel, &
+          call make_tfromp(plotdata(n), &
+                           icomp_tfromp,icomp_tpert,icomp_machno, &
+                           icomp_dg,icomp_entropy,icomp_magvel, &
                            s(n), &
-                           rho0(1,:),rhoh0(1,:),tempbar(1,:),gamma1bar(1,:),p0(1,:),dx(n,:))
+                           tempbar(1,:),gamma1bar(1,:),p0(1,:),dx(n,:))
 
-          call make_tfromH(plotdata(n),icomp_tfromH,icomp_tpert,icomp_dp,s(n),p0(1,:), &
-                           tempbar(1,:),dx(n,:))
+          if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
+               call make_tfromH(plotdata(n),icomp_tfromH,icomp_tpert,icomp_dp,s(n),p0(1,:), &
+                                tempbar(1,:),dx(n,:))
 
        else
 
-          call make_tfromp(plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert, &
-                           icomp_rhohpert,icomp_machno,icomp_dg,icomp_entropy, &
-                           icomp_magvel, &
+          call make_tfromp(plotdata(n), &
+                           icomp_tfromp,icomp_tpert,icomp_machno, &
+                           icomp_dg,icomp_entropy,icomp_magvel, &
                            s(n), &
-                           rho0(n,:),rhoh0(n,:),tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
+                           tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
 
-          call make_tfromH(plotdata(n),icomp_tfromH,icomp_tpert,icomp_dp,s(n),p0(n,:), &
-                           tempbar(n,:),dx(n,:))
+          if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
+               call make_tfromH(plotdata(n),icomp_tfromH,icomp_tpert,icomp_dp,s(n),p0(n,:), &
+                                tempbar(n,:),dx(n,:))
 
        end if
        
@@ -460,7 +490,8 @@ contains
     do n=1,nlevs
 
        ! DELTA_T
-       call make_deltaT(plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
+       if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
+            call make_deltaT(plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
 
        ! PI
        call multifab_copy_c(plotdata(n),icomp_pi,pi_cc(n),1,1)

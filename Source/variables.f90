@@ -69,12 +69,14 @@ contains
 
     use network, only: nspec
     use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
-         plot_omegadot, plot_Hnuc, plot_Hext, plot_eta, plot_ad_excess
+         plot_omegadot, plot_Hnuc, plot_Hext, plot_eta, plot_ad_excess, &
+         use_tfromp, plot_h_with_use_tfromp
     use geometry, only: spherical, dm
 
     icomp_vel      = get_next_plot_index(dm)
     icomp_rho      = get_next_plot_index(1)
-    icomp_rhoh     = get_next_plot_index(1)
+    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
+         icomp_rhoh     = get_next_plot_index(1)
 
     if (plot_spec) icomp_spec = get_next_plot_index(nspec)
     if (plot_trac) icomp_trac = get_next_plot_index(ntrac)
@@ -97,15 +99,22 @@ contains
     icomp_mom         = get_next_plot_index(1)
     icomp_vort        = get_next_plot_index(1)
     icomp_src         = get_next_plot_index(1)
-    icomp_enthalpy    = get_next_plot_index(1)
     icomp_rhopert     = get_next_plot_index(1)
-    icomp_rhohpert    = get_next_plot_index(1)
+
+    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
+       icomp_enthalpy    = get_next_plot_index(1)
+       icomp_rhohpert    = get_next_plot_index(1)
+    endif
+
     icomp_tfromp      = get_next_plot_index(1)
-    icomp_tfromH      = get_next_plot_index(1)
+    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
+       icomp_tfromH      = get_next_plot_index(1)
+       icomp_dT          = get_next_plot_index(1)
+       icomp_dp          = get_next_plot_index(1)
+    endif
+
     icomp_tpert       = get_next_plot_index(1)
-    icomp_dT          = get_next_plot_index(1)
     icomp_machno      = get_next_plot_index(1)
-    icomp_dp          = get_next_plot_index(1)
     icomp_dg          = get_next_plot_index(1)
     icomp_entropy     = get_next_plot_index(1)
     icomp_entropypert = get_next_plot_index(1)
