@@ -227,7 +227,7 @@ contains
 
     integer :: i, j, k
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)    
+    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t)    
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -261,7 +261,7 @@ contains
     enddo
     !$OMP END PARALLEL DO
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,dt,dp,nabla)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
