@@ -223,6 +223,9 @@ contains
        endif
     endif
 
+    if (max_mg_bottom_nlevels .lt. 2) then
+       call bl_error("ERROR: max_mg_bottom_nlevels must be greater than 1")
+    endif
 
     ! make sure that the buffer width for tagging is atleast as big as
     ! the regrid interval
