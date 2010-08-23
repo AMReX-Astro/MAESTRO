@@ -20,7 +20,7 @@ contains
     use probin_module, only: plot_spec, plot_trac, plot_base, &
                              use_thermal_diffusion, plot_omegadot, plot_Hnuc, &
                              plot_Hext, plot_eta, plot_ad_excess, &
-                             use_tfromp, plot_h_with_use_tfromp
+                             use_tfromp, plot_h_with_use_tfromp, plot_gpi
     use geometry, only: spherical, dm
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -89,12 +89,15 @@ contains
     plot_names(icomp_entropy)     = "entropy"
     plot_names(icomp_entropypert) = "entropypert"
     plot_names(icomp_sponge)      = "sponge"
+
     plot_names(icomp_pi)          = "pi"
-    plot_names(icomp_gpi)         = "gpi_x"
-    if (dm > 1) plot_names(icomp_gpi+1) = "gpi_y"
-    if (dm > 2) plot_names(icomp_gpi+2) = "gpi_z"
+    if (plot_gpi) then
+       plot_names(icomp_gpi)         = "gpi_x"
+       if (dm > 1) plot_names(icomp_gpi+1) = "gpi_y"
+       if (dm > 2) plot_names(icomp_gpi+2) = "gpi_z"
+    endif
     if (plot_base) &
-       plot_names(icomp_pioverp0)    = "pioverp0"
+         plot_names(icomp_pioverp0)    = "pioverp0"
 
     if (plot_omegadot) then
        do comp = 1, nspec
@@ -144,7 +147,7 @@ contains
                              single_prec_plotfiles, &
                              do_smallscale, use_thermal_diffusion, &
                              evolve_base_state, prob_lo, prob_hi, &
-                             use_tfromp, plot_h_with_use_tfromp
+                             use_tfromp, plot_h_with_use_tfromp, plot_gpi
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use average_module
     use ml_restriction_module
@@ -496,8 +499,11 @@ contains
        ! PI
        call multifab_copy_c(plotdata(n),icomp_pi,pi_cc(n),1,1)
 
+          
        ! GRAD PI
-       call multifab_copy_c(plotdata(n),icomp_gpi,gpi(n),1,dm)
+       if (plot_gpi) then
+          call multifab_copy_c(plotdata(n),icomp_gpi,gpi(n),1,dm)
+       endif
 
        ! SPONGE
        call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)

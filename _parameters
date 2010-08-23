@@ -181,6 +181,9 @@ plot_trac                           logical            .false.
 # plot w0\_x, w0\_y, w0\_z, divw0, rho0, rhoh0, h0, and p0 in plotfile
 plot_base                           logical            .false.
 
+# plot pi and grad(pi)
+plot_gpi                             logical            .true.
+
 # prefix to use in plotfile file names
 plot_base_name                      character          "plt"               
 
