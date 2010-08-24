@@ -182,7 +182,7 @@ contains
     call build(bpt, "diagnostics")
 
 
-    if (firstCall) then
+    if ( firstCall ) then
        
        ! allocate the storage space for the buffers -- diag_buf_size
        ! is a runtime parameter that specifies how many steps we
@@ -206,7 +206,7 @@ contains
     endif
 
        
-    if (spherical .eq. 1) then
+    if ( spherical .eq. 1 ) then
 
        do n=1,nlevs
 
@@ -366,7 +366,7 @@ contains
           case (2)
              call bl_error("ERROR: 2-d diag not implmented")
           case (3)
-             if (n .eq. nlevs) then
+             if ( n .eq. nlevs ) then
                 call diag_3d(n,time,dt,dx(n,:), &
                              sp(:,:,:,:),ng_s, &
                              rhnp(:,:,:,1), ng_rhn, &
@@ -552,7 +552,7 @@ contains
        !----------------------------------------------------------------------
        ! reduce the current level's data with the global data
        !----------------------------------------------------------------------
-       if (parallel_IOProcessor()) then
+       if ( parallel_IOProcessor() ) then
           vr       = vr     + vr_level
           rhovr    = rhovr  + rhovr_level
 
@@ -569,7 +569,7 @@ contains
           Mach_max = max(Mach_max, Mach_max_level)
           
           ! if T_max_level is the new max, then copy the location as well
-          if (T_max_level > T_max) then
+          if ( T_max_level > T_max ) then
              T_max = T_max_level
 
              coord_Tmax(:) = coord_Tmax_level(:)
@@ -591,7 +591,7 @@ contains
           endif
 
           ! if enuc_max_level is the new max, then copy the location as well
-          if (enuc_max_level > enuc_max) then
+          if ( enuc_max_level > enuc_max ) then
              enuc_max = enuc_max_level
 
              coord_enucmax(:) = coord_enucmax_level(:)
@@ -645,7 +645,7 @@ contains
        
        ! don't add any contributions from outside the star -- i.e.
        ! rho < base_cutoff_density
-       if (rho0(1,r-1) > base_cutoff_density) then
+       if ( rho0(1,r-1) > base_cutoff_density ) then
           term1 = FOUR3RD*M_PI*rho0(1,r-1) * &
                (r_edge_loc(1,r) - r_cc_loc(1,r-1)) * &
                (r_edge_loc(1,r)**2 + &
@@ -655,7 +655,7 @@ contains
           term1 = ZERO
        endif
 
-       if (rho0(1,r) > base_cutoff_density) then
+       if ( rho0(1,r) > base_cutoff_density ) then
           term2 = FOUR3RD*M_PI*rho0(1,r  )*&
                (r_cc_loc(1,r) - r_edge_loc(1,r  )) * &
                (r_cc_loc(1,r)**2 + &
@@ -680,7 +680,7 @@ contains
     !=========================================================================
     ! normalize
     !=========================================================================
-    if (parallel_IOProcessor()) then
+    if ( parallel_IOProcessor() ) then
 
        vr(:) = vr(:)/nzones
        vr_favre(:) = rhovr(:)/mass    ! note: common dV normalization cancels
@@ -722,7 +722,7 @@ contains
     ! information printing out in flush_diag() to make sure that we are storing
     ! the right information in the right order.
 
-    if (parallel_IOProcessor()) then
+    if ( parallel_IOProcessor() ) then
        ! file1 -- wdconvect_radvel_diag.out
        file1_data(index, 1) = vr(1)
        file1_data(index, 2) = vr(2)
@@ -778,7 +778,7 @@ contains
     !=========================================================================
 
     ! if we've filled the buffers, flush them
-    if (index == diag_buf_size) then
+    if ( index == diag_buf_size ) then
        call flush_diag()
     endif
 
@@ -786,7 +786,7 @@ contains
     !=========================================================================
     ! clean-up
     !=========================================================================
-    if (spherical .eq. 1) then
+    if ( spherical .eq. 1 ) then
        do n=1,nlevs
           call destroy(w0r_cart(n))
           do comp=1,dm
@@ -826,7 +826,7 @@ contains
 
 
     ! if the buffers are empty, move on
-    if (nstored == 0) return
+    if ( nstored == 0 ) return
 
 
     ! IMPORTANT: make sure that there are enough entries in the format
@@ -838,13 +838,13 @@ contains
 801 format("# ",a,i2.2,':',i2.2,':',i2.2)
 802 format("# ",a,a)
 
-    if (parallel_IOProcessor()) then
+    if ( parallel_IOProcessor() ) then
 
        ! open the diagnostic files for output, taking care not to overwrite
        ! an existing file
        un1 = unit_new()
        inquire(file="wdconvect_radvel_diag.out", exist=lexist)
-       if (lexist) then
+       if ( lexist ) then
           open(unit=un1, file="wdconvect_radvel_diag.out", &
                status="old", position="append")
        else
@@ -853,7 +853,7 @@ contains
 
        un2 = unit_new()
        inquire(file="wdconvect_temp_diag.out", exist=lexist)
-       if (lexist) then
+       if ( lexist ) then
           open(unit=un2, file="wdconvect_temp_diag.out", &
                status="old", position="append")
        else
@@ -862,7 +862,7 @@ contains
 
        un3 = unit_new()
        inquire(file="wdconvect_enuc_diag.out", exist=lexist)
-       if (lexist) then
+       if ( lexist ) then
           open(unit=un3, file="wdconvect_enuc_diag.out", &
                status="old", position="append")
        else
@@ -871,7 +871,7 @@ contains
 
        un4 = unit_new()
        inquire(file="wdconvect_vel_diag.out", exist=lexist)
-       if (lexist) then
+       if ( lexist ) then
           open(unit=un4, file="wdconvect_vel_diag.out", &
                status="old", position="append")
        else
@@ -880,7 +880,7 @@ contains
 
 
        ! write out the headers
-       if (firstCall) then
+       if ( firstCall ) then
 
           ! get the data and time
           call date_and_time(date_str, time_str, VALUES=values)
@@ -1063,14 +1063,15 @@ contains
     ! level of refinement.
     weight = 1.d0 / 8.d0**(n-1)
 
-    if (.not. spherical == 1) then
+    if ( .not. spherical == 1 ) then
        call bl_error("ERROR: geometry not spherical in diag")
     endif
 
-!$omp parallel do private(i,j,k,x,y,z,cell_valid,velr,vel) &
-!$omp reduction(max:vr_max,U_max,Mach_max) &
-!$omp reduction(+:ncenter,T_center,velx_center,vely_center,velz_center,vr_x,vr_y,vr_z, &
-!$omp             rhovr_x,rhovr_y,rhovr_z,mass,nzones,kin_ener,int_ener,nuc_ener)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,cell_valid,velr,vel) &
+    !$OMP SHARED(T_max,enuc_max,coord_Tmax,vel_Tmax,coord_enucmax,vel_enucmax) &
+    !$OMP REDUCTION(max:vr_max,U_max,Mach_max) &
+    !$OMP REDUCTION(+:ncenter,T_center,velx_center,vely_center,velz_center,vr_x,vr_y,vr_z) &
+    !$OMP REDUCTION(+:rhovr_x,rhovr_y,rhovr_z,mass,nzones,kin_ener,int_ener,nuc_ener)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
@@ -1081,18 +1082,18 @@ contains
              x = prob_lo(1) + (dble(i)+HALF) * dx(1)
                 
              cell_valid = .true.
-             if (present(mask)) then
+             if ( present(mask) ) then
                 if ( (.not. mask(i,j,k)) ) cell_valid = .false.
              end if
 
              ! we only consider cells inside of where the sponging begins
-             if (cell_valid .and. &
-                  s(i,j,k,rho_comp) >= sponge_start_factor*sponge_center_density) then
+             if ( cell_valid .and. &
+                  s(i,j,k,rho_comp) >= sponge_start_factor*sponge_center_density ) then
                    
                 ! is it one of the 8 zones surrounding the center?
-                if (abs(x - center(1)) < dx(1)  .and. &
-                    abs(y - center(2)) < dx(2)  .and. &
-                    abs(z - center(3)) < dx(3)) then
+                if ( abs(x - center(1)) < dx(1)  .and. &
+                     abs(y - center(2)) < dx(2)  .and. &
+                     abs(z - center(3)) < dx(3) ) then
 
                    ncenter = ncenter + 1
 
@@ -1134,30 +1135,46 @@ contains
                 ! normalization quantities
                 mass = mass + weight*s(i,j,k,rho_comp)
                 nzones = nzones + weight
-
-!$omp critical
+                !
                 ! max T, location, and velocity at that location (including w0)
-                if (s(i,j,k,temp_comp) > T_max) then
-                   T_max = s(i,j,k,temp_comp)
-                   coord_Tmax(1) = x
-                   coord_Tmax(2) = y
-                   coord_Tmax(3) = z
-                   vel_Tmax(1) = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
-                   vel_Tmax(2) = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
-                   vel_Tmax(3) = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
-                endif
-
+                !
+                !$OMP FLUSH(T_max)
+                !
+                if ( s(i,j,k,temp_comp) > T_max ) then
+                   !
+                   !$OMP CRITICAL (diagnostics_T_max)
+                   !
+                   if ( s(i,j,k,temp_comp) > T_max ) then
+                      T_max         = s(i,j,k,temp_comp)
+                      coord_Tmax(1) = x
+                      coord_Tmax(2) = y
+                      coord_Tmax(3) = z
+                      vel_Tmax(1)   = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
+                      vel_Tmax(2)   = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
+                      vel_Tmax(3)   = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
+                   endif
+                   !$OMP END CRITICAL (diagnostics_T_max)
+                end if
+                !
                 ! max enuc
-                if (rho_Hnuc(i,j,k)/s(i,j,k,rho_comp) > enuc_max) then
-                   enuc_max = rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
-                   coord_enucmax(1) = x
-                   coord_enucmax(2) = y
-                   coord_enucmax(3) = z
-                   vel_enucmax(1) = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
-                   vel_enucmax(2) = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
-                   vel_enucmax(3) = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
-                endif
-!$omp end critical
+                !
+                !$OMP FLUSH(enuc_max)
+                !
+                if ( rho_Hnuc(i,j,k)/s(i,j,k,rho_comp) > enuc_max ) then
+                   !
+                   !$OMP CRITICAL (diagnostics_enuc_max)
+                   !
+                   if ( rho_Hnuc(i,j,k)/s(i,j,k,rho_comp) > enuc_max ) then
+                      enuc_max         = rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
+                      coord_enucmax(1) = x
+                      coord_enucmax(2) = y
+                      coord_enucmax(3) = z
+                      vel_enucmax(1)   = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
+                      vel_enucmax(2)   = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
+                      vel_enucmax(3)   = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
+                   endif
+                   !$OMP END CRITICAL (diagnostics_enuc_max)
+                end if
 
                 ! call the EOS to get the sound speed and internal energy
                 temp_eos(1) = s(i,j,k,temp_comp)
@@ -1190,6 +1207,7 @@ contains
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
 
   end subroutine diag_3d
 
