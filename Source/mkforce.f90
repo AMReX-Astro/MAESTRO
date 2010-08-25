@@ -657,17 +657,19 @@ contains
     real(kind=dp_t), intent(inout) :: vel_force    (lo(1)-ng_f:,lo(2)-ng_f:,lo(3)-ng_f:,:)
     real(kind=dp_t), intent(inout) :: w0_force_cart(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:,:)
 
-    integer         :: i,j,k
+    integer         :: i,j,k,m
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
-    do k = lo(3),hi(3)
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             vel_force(i,j,k,:) = vel_force(i,j,k,:) - w0_force_cart(i,j,k,:)
+    do m = lbound(vel_force,4),ubound(vel_force,4)
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k = lo(3),hi(3)
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)
+                vel_force(i,j,k,m) = vel_force(i,j,k,m) - w0_force_cart(i,j,k,m)
+             end do
           end do
        end do
+       !$OMP END PARALLEL DO
     end do
-    !$OMP END PARALLEL DO
 
   end subroutine add_w0_force_3d_sphr
 

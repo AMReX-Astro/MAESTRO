@@ -408,7 +408,7 @@ contains
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
-      integer :: nx,ny,nz,i,j,k
+      integer :: nx,ny,nz,i,j,k,m
 
       nx = size(gpi,dim=1) - 2
       ny = size(gpi,dim=2) - 2
@@ -430,28 +430,32 @@ contains
       ! quantity projected is (Ustar - Un)
       else if (proj_type .eq. pressure_iters_comp) then
 
-         !$OMP PARALLEL DO PRIVATE(i,j,k)
-         do k=-1,nz
-            do j=-1,ny
-               do i=-1,nx
-                  unew(i,j,k,1:3) = (unew(i,j,k,1:3) - uold(i,j,k,1:3)) / dt
+         do m=1,3
+            !$OMP PARALLEL DO PRIVATE(i,j,k)
+            do k=-1,nz
+               do j=-1,ny
+                  do i=-1,nx
+                     unew(i,j,k,m) = (unew(i,j,k,m) - uold(i,j,k,m)) / dt
+                  end do
                end do
             end do
+            !$OMP END PARALLEL DO
          end do
-         !$OMP END PARALLEL DO
 
       ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
 
-         !$OMP PARALLEL DO PRIVATE(i,j,k)
-         do k=-1,nz
-            do j=-1,ny
-               do i=-1,nx
-                  unew(i,j,k,1:3) = unew(i,j,k,1:3) + dt*gpi(i,j,k,1:3)/rhohalf(i,j,k)
+         do m=1,3
+            !$OMP PARALLEL DO PRIVATE(i,j,k)
+            do k=-1,nz
+               do j=-1,ny
+                  do i=-1,nx
+                     unew(i,j,k,m) = unew(i,j,k,m) + dt*gpi(i,j,k,m)/rhohalf(i,j,k)
+                  end do
                end do
             end do
+            !$OMP END PARALLEL DO
          end do
-         !$OMP END PARALLEL DO
 
       else
 
@@ -842,34 +846,40 @@ contains
       real(kind=dp_t), intent(in   ) ::     phi(-ng_h :,-ng_h :,-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
-      integer         :: nx,ny,nz,i,j,k
+      integer         :: nx,ny,nz,i,j,k,m
 
       nx = size(gphi,dim=1)-1
       ny = size(gphi,dim=2)-1
       nz = size(gphi,dim=3)-1
 
       ! Subtract off the density-weighted gradient
-      !$OMP PARALLEL DO PRIVATE(i,j,k)
-      do k=0,nz
-         do j=0,ny
-            do i=0,nx
-               unew(i,j,k,1:3) = unew(i,j,k,1:3) - gphi(i,j,k,1:3)/rhohalf(i,j,k)
-            end do
-         end do
-      end do
-      !$OMP END PARALLEL DO
-
-      if (proj_type .eq. pressure_iters_comp) then
-         ! unew held the projection of (ustar-uold)
+      do m=1,3
          !$OMP PARALLEL DO PRIVATE(i,j,k)
          do k=0,nz
             do j=0,ny
                do i=0,nx
-                  unew(i,j,k,1:3) = uold(i,j,k,1:3) + dt*unew(i,j,k,1:3)
+                  unew(i,j,k,m) = unew(i,j,k,m) - gphi(i,j,k,m)/rhohalf(i,j,k)
                end do
             end do
          end do
          !$OMP END PARALLEL DO
+      end do
+
+      if (proj_type .eq. pressure_iters_comp) then
+         !
+         ! unew held the projection of (ustar-uold)
+         !
+         do m=1,3
+            !$OMP PARALLEL DO PRIVATE(i,j,k)
+            do k=0,nz
+               do j=0,ny
+                  do i=0,nx
+                     unew(i,j,k,m) = uold(i,j,k,m) + dt*unew(i,j,k,m)
+                  end do
+               end do
+            end do
+            !$OMP END PARALLEL DO
+         end do
       end if
 
       if ( (proj_type .eq. initial_projection_comp) .or. &
@@ -882,15 +892,19 @@ contains
 
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
-         !$OMP PARALLEL DO PRIVATE(i,j,k)
-         do k=0,nz
-            do j=0,ny
-               do i=0,nx
-                  gpi(i,j,k,1:3) = gpi(i,j,k,1:3) + gphi(i,j,k,1:3)
+
+         do m=1,3
+            !$OMP PARALLEL DO PRIVATE(i,j,k)
+            do k=0,nz
+               do j=0,ny
+                  do i=0,nx
+                     gpi(i,j,k,m) = gpi(i,j,k,m) + gphi(i,j,k,m)
+                  end do
                end do
             end do
+            !$OMP END PARALLEL DO
          end do
-         !$OMP END PARALLEL DO
+
          !$OMP PARALLEL DO PRIVATE(i,j,k)
          do k=0,nz+1
             do j=0,ny+1
@@ -905,20 +919,24 @@ contains
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
-         !$OMP PARALLEL DO PRIVATE(i,j,k)
-         do k=0,nz
-            do j=0,ny
-               do i=0,nx
-                  gpi(i,j,k,1:3) = (ONE/dt) * gphi(i,j,k,1:3)
+
+         do m=1,3
+            !$OMP PARALLEL DO PRIVATE(i,j,k)
+            do k=0,nz
+               do j=0,ny
+                  do i=0,nx
+                     gpi(i,j,k,m) = gphi(i,j,k,m) / dt
+                  end do
                end do
             end do
+            !$OMP END PARALLEL DO
          end do
-         !$OMP END PARALLEL DO
+
          !$OMP PARALLEL DO PRIVATE(i,j,k)
          do k=0,nz+1
             do j=0,ny+1
                do i=0,nx+1
-                  pi(i,j,k) = (ONE/dt) * phi(i,j,k)
+                  pi(i,j,k) = phi(i,j,k) / dt
                end do
             end do
          end do
