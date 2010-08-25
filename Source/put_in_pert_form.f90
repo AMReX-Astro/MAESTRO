@@ -115,21 +115,19 @@ contains
     logical        , intent(in   ) :: flag
 
     ! Local variables
-    integer         :: i,j
+    integer         :: i,j,mult
 
     if (flag) then
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             s(i,j,comp) = s(i,j,comp) - s0(j)
-          end do
-       end do
+       mult = -1
     else
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             s(i,j,comp) = s(i,j,comp) + s0(j)
-          end do
-       end do
+       mult = +1
     end if
+
+    do j = lo(2),hi(2)
+       do i = lo(1),hi(1)
+          s(i,j,comp) = s(i,j,comp) + mult*s0(j)
+       end do
+    end do
 
   end subroutine pert_form_2d
 
@@ -141,25 +139,21 @@ contains
     logical        , intent(in   ) :: flag
 
     ! Local variables
-    integer         :: i,j,k
+    integer         :: i,j,k,mult
 
     if (flag) then
-       do k = lo(3),hi(3)
-          do j = lo(2),hi(2)
-             do i = lo(1),hi(1)
-                s(i,j,k,comp) = s(i,j,k,comp) - s0(k)
-             end do
-          end do
-       end do
+       mult = -1
     else
-       do k = lo(3),hi(3)
-          do j = lo(2),hi(2)
-             do i = lo(1),hi(1)
-                s(i,j,k,comp) = s(i,j,k,comp) + s0(k)
-             end do
+       mult = +1
+    end if
+
+    do k = lo(3),hi(3)
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
+             s(i,j,k,comp) = s(i,j,k,comp) + mult*s0(k)
           end do
        end do
-    end if
+    end do
 
   end subroutine pert_form_3d_cart
 
@@ -174,7 +168,7 @@ contains
     logical        , intent(in   ) :: flag
 
     ! local
-    integer :: i,j,k
+    integer :: i,j,k,mult
 
     real(kind=dp_t), allocatable :: s0_cart(:,:,:,:)
 
@@ -183,26 +177,20 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0,s0_cart,lo,hi,dx,0)
 
     if (flag) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
-       do k = lo(3),hi(3)
-          do j = lo(2),hi(2)
-             do i = lo(1),hi(1)
-                s(i,j,k,comp) = s(i,j,k,comp) - s0_cart(i,j,k,1)
-             end do
-          end do
-       end do
-       !$OMP END PARALLEL DO
+       mult = -1
     else
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
-       do k = lo(3),hi(3)
-          do j = lo(2),hi(2)
-             do i = lo(1),hi(1)
-                s(i,j,k,comp) = s(i,j,k,comp) + s0_cart(i,j,k,1)
-             end do
+       mult = +1
+    end if
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    do k = lo(3),hi(3)
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
+             s(i,j,k,comp) = s(i,j,k,comp) + mult*s0_cart(i,j,k,1)
           end do
        end do
-       !$OMP END PARALLEL DO
-    end if
+    end do
+    !$OMP END PARALLEL DO
 
     deallocate(s0_cart)
 
