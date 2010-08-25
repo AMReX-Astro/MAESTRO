@@ -52,3 +52,9 @@
    means that we need to use numdisjointchunks() and r_start_coord and
    r_end_coord.
 
+-- add profiles to diag.f90 -- for instance, Delta T', Delta rho' vs. r.
+   dump out every ~100 timesteps.
+
+-- switch ignition_chamulak over to using a burner_aux module instead of
+   common blocks for passing stuff into the RHS.
+
