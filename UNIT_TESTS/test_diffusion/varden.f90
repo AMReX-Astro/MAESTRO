@@ -236,16 +236,21 @@ contains
     if (istep == 0) then
        open(unit=unit, file=gnuplot_outputfile, status='replace')
 
-       write(unit,100) "t0", t0
-       write(unit,100) "D", diffusion_coefficient
-       write(unit,100) "hp", peak_h
-       write(unit,100) "h0", ambient_h
+!       write(unit,100) "t0", t0
+!       write(unit,100) "D", diffusion_coefficient
+!       write(unit,100) "hp", peak_h
+!       write(unit,100) "h0", ambient_h
+       write(unit,*) t0
+       write(unit,*) diffusion_coefficient
+       write(unit,*) peak_h
+       write(unit,*) ambient_h
 
     else
        open(unit=unit, file=gnuplot_outputfile,status='old',position='append')
     endif
 
-    write(unit,101) istep,time,time
+!    write(unit,101) istep,time,time
+    write(unit,*) time
 
     close(unit)
 
