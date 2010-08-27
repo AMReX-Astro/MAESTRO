@@ -22,6 +22,7 @@
 !          peak Mach number
 !
 !   hcore_energy_diag.out:
+!          total luminosity (Integral(H_ext dV))
 !          total kinetic energy
 !          total internal energy
 !          gravitational potential energy
@@ -47,7 +48,7 @@ module diag_module
                                         file3_data(:,:), file4_data(:,:)
 
   integer, parameter :: n_file1 = 18 
-  integer, parameter :: n_file2 = 4
+  integer, parameter :: n_file2 = 5
   integer, parameter :: n_file3 = 1
   integer, parameter :: n_file4 = 7
 
@@ -310,6 +311,9 @@ contains
        vc_max_level = ZERO
        vc_max_local = ZERO
        
+       nuc_ener_level = ZERO
+       nuc_ener_local = ZERO
+
        kin_ener_level = ZERO
        kin_ener_local = ZERO
 
@@ -368,7 +372,7 @@ contains
                              vc_local(1),vc_local(2),vc_local(3),vc_max_local, &
                              rhovc_local(1), rhovc_local(2), rhovc_local(3), &
                              mass_local, &
-                             kin_ener_local, int_ener_local, &
+                             nuc_ener_local,kin_ener_local, int_ener_local, &
                              U_max_local, coord_Umax_local, & 
                              Mach_max_local)
              else
@@ -389,7 +393,7 @@ contains
                              vc_local(1),vc_local(2),vc_local(3),vc_max_local, &
                              rhovc_local(1), rhovc_local(2), rhovc_local(3), &
                              mass_local, &
-                             kin_ener_local, int_ener_local, &
+                             nuc_ener_local,kin_ener_local, int_ener_local, &
                              U_max_local,  coord_Umax_local, & 
                              Mach_max_local, mp(:,:,:,1))
              end if
@@ -412,9 +416,10 @@ contains
        sum_data_local(3*dm+1:4*dm) = rhovc_local(:)
        sum_data_local(4*dm+1)    = mass_local
        sum_data_local(4*dm+2)    = nzones_local
-       sum_data_local(4*dm+3)    = kin_ener_local
-       sum_data_local(4*dm+4)    = int_ener_local
-       sum_data_local(4*dm+5)    = vrvt_local
+       sum_data_local(4*dm+3)    = nuc_ener_local
+       sum_data_local(4*dm+4)    = kin_ener_local
+       sum_data_local(4*dm+5)    = int_ener_local
+       sum_data_local(4*dm+6)    = vrvt_local
 
 
        call parallel_reduce(sum_data_level, sum_data_local, MPI_SUM, &
@@ -426,9 +431,10 @@ contains
        rhovc_level(:)      = sum_data_level(3*dm+1:4*dm)
        mass_level          = sum_data_level(4*dm+1)
        nzones_level        = sum_data_level(4*dm+2)
-       kin_ener_level      = sum_data_level(4*dm+3)
-       int_ener_level      = sum_data_level(4*dm+4)
-       vrvt_level          = sum_data_level(4*dm+5)
+       nuc_ener_level      = sum_data_level(4*dm+3)
+       kin_ener_level      = sum_data_level(4*dm+4)
+       int_ener_level      = sum_data_level(4*dm+5)
+       vrvt_level          = sum_data_level(4*dm+6)
 
 
        ! pack the quantities that we are taking the max of into a vector
@@ -501,6 +507,7 @@ contains
 
           vc_max   = max(vc_max,   vc_max_level)
 
+          nuc_ener = nuc_ener + nuc_ener_level
           kin_ener = kin_ener + kin_ener_level
           int_ener = int_ener + int_ener_level
 
@@ -615,6 +622,7 @@ contains
        ! was with reference to the coarse level
 
        mass = mass*dx(1,1)*dx(1,2)*dx(1,3)
+       nuc_ener = nuc_ener*dx(1,1)*dx(1,2)*dx(1,3)
        kin_ener = kin_ener*dx(1,1)*dx(1,2)*dx(1,3)
        int_ener = int_ener*dx(1,1)*dx(1,2)*dx(1,3)
 
@@ -658,10 +666,11 @@ contains
 
 
        ! file2 -- hcore_ener_diag.out
-       file2_data(index, 1) = kin_ener
-       file2_data(index, 2) = grav_ener
-       file2_data(index, 3) = int_ener
-       file2_data(index, 4) = dt
+       file2_data(index, 1) = nuc_ener
+       file2_data(index, 2) = kin_ener
+       file2_data(index, 3) = grav_ener
+       file2_data(index, 4) = int_ener
+       file2_data(index, 5) = dt
 
 
        ! file3 -- hcore_cz_diag.out
@@ -815,7 +824,7 @@ contains
           write (un2, 801) "output time: ", values(5), values(6), values(7)
           write (un2, 802) "output dir:  ", trim(cwd)
           write (un2, 999) trim(job_name)
-          write (un2,1001) "time", "tot kin energy", "grav pot energy", &
+          write (un2,1001) "time", "tot nuc energy", "tot kin energy", "grav pot energy", &
                "tot int energy", "dt"
 
           ! convective boundary
@@ -910,7 +919,7 @@ contains
                      vc_x,vc_y,vc_z,vc_max, &
                      rhovc_x,rhovc_y,rhovc_z, &
                      mass, &
-                     kin_ener,int_ener, &
+                     nuc_ener,kin_ener,int_ener, &
                      U_max, coord_Umax, Mach_max, &
                      mask)
 
@@ -939,7 +948,7 @@ contains
     real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, vrvt
     real (kind=dp_t), intent(inout) :: vc_x, vc_y, vc_z, vc_max
     real (kind=dp_t), intent(inout) :: rhovc_x, rhovc_y, rhovc_z, mass, nzones
-    real (kind=dp_t), intent(inout) :: kin_ener, int_ener
+    real (kind=dp_t), intent(inout) :: nuc_ener,kin_ener, int_ener
     real (kind=dp_t), intent(inout) :: U_max, coord_Umax(:)
     real (kind=dp_t), intent(inout) :: Mach_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
@@ -962,7 +971,8 @@ contains
 !$omp parallel do private(i,j,k,x,y,z,cell_valid,velr,vel) &
 !$omp reduction(max:vr_max,U_max,Mach_max) &
 !$omp reduction(vr_x,vr_y,vr_z,rhovr_x,rhovr_y,rhovr_z, vrvt, &
-!$omp           vc_x,vc_y,vc_z,rhovc_x,rhovc_y,rhovc_z,mass,nzones,kin_ener,int_ener)
+!$omp           vc_x,vc_y,vc_z,rhovc_x,rhovc_y,rhovc_z,mass,nzones,&
+!$omp           nuc_ener,kin_ener,int_ener)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
@@ -1064,6 +1074,7 @@ contains
 
 
                 ! kinetic, internal, and nuclear energies
+                nuc_ener = nuc_ener + weight*rho_Hext(i,j,k)
                 kin_ener = kin_ener + weight*s(i,j,k,rho_comp)*vel**2
                 int_ener = int_ener + weight*s(i,j,k,rho_comp)*e_eos(1)
 
