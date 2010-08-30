@@ -64,6 +64,8 @@ subroutine varden()
 
   call conductivity_init(cond_const=thermal_conductivity)
 
+  time = ZERO
+
   ! setup some names for the data fab's
   allocate(names(nscal))
   names(1) = "density"
@@ -201,14 +203,12 @@ subroutine varden()
                      time=time, problo=prob_lo, probhi=prob_hi, dx=dx(1,:))
 
  ! loop
- do while (istep < max_step)
+ do while (time < stop_time)
 
     istep = istep+1
 
     if (parallel_IOProcessor()) print *, 'Working on step', istep
 
-    time = time + dt
-    if (parallel_IOProcessor()) print *, '... time = ', time
 
     ! build the coeffs
     if (parallel_IOProcessor()) print *, '... building thermal coefficients'
@@ -233,6 +233,10 @@ subroutine varden()
 
     ! update temperature
     call makeTfromRhoH(s_new,mla,the_bc_tower%bc_tower_array)
+
+
+    ! solution advanced -- update the time
+    time = time + dt
 
     ! calculate the error
     call make_analytic_solution(analytic(nlevs), dx(nlevs,:), time)
@@ -288,6 +292,13 @@ subroutine varden()
      enddo
 
     if (parallel_IOProcessor()) print *, ''
+
+    if (time + dt > stop_time) then
+       dt = stop_time - time
+    endif
+
+    if (parallel_IOProcessor()) print *, '... time = ', time
+
  enddo
 
  close(uout)
