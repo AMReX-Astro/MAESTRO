@@ -1,3 +1,5 @@
+! THIS PROBLEM DOESN"T SUPPORT MULTILEVEL
+!
 subroutine varden()
 
   use variables
@@ -16,6 +18,7 @@ subroutine varden()
   use thermal_conduct_module
   use estdt_module
   use conductivity_module, only: conductivity_init
+  use bl_IO_module
 
   implicit none
 
@@ -31,6 +34,9 @@ subroutine varden()
   type(multifab), allocatable :: s_new(:)
   type(multifab), allocatable :: Tcoeff1(:), hcoeff1(:), Xkcoeff1(:), pcoeff1(:)
   type(multifab), allocatable :: Tcoeff2(:), hcoeff2(:), Xkcoeff2(:), pcoeff2(:)
+  type(multifab), allocatable :: analytic(:), error(:)
+
+  real(kind=dp_t) :: L1norm, L2norm
 
   real(kind=dp_t), pointer :: p0(:,:), s0_init(:,:,:)
   real(kind=dp_t), pointer :: dx(:,:)
@@ -42,6 +48,8 @@ subroutine varden()
   real(kind=dp_t), parameter :: FIVE3RD = FIVE/THREE 
   
   real(kind=dp_t) :: diffusion_coefficient
+
+  integer :: uout
 
   ! initialize some things
   call probin_init()
@@ -92,6 +100,8 @@ subroutine varden()
     call bl_error('zones must be square')
  endif
 
+ if (nlevs > 1) call bl_error("code not properly set up for multilevel")
+
  if (parallel_IOProcessor()) then
     print *, 'number of processors = ', parallel_nprocs()
     print *, 'number of dimensions = ', dm
@@ -106,11 +116,14 @@ subroutine varden()
  ! initialize remaining arrays
  allocate(s_new(nlevs),&
           Tcoeff1(nlevs),hcoeff1(nlevs),Xkcoeff1(nlevs),pcoeff1(nlevs),&
-          Tcoeff2(nlevs),hcoeff2(nlevs),Xkcoeff2(nlevs),pcoeff2(nlevs))
+          Tcoeff2(nlevs),hcoeff2(nlevs),Xkcoeff2(nlevs),pcoeff2(nlevs),&
+          analytic(nlevs), error(nlevs))
 
  do n = 1, nlevs
+    ! new state 
     call build(s_new(n),   mla%la(n), nscal, s_old(n)%ng)
 
+    ! coefficients for diffusion
     call build(Tcoeff1(n),  mla%la(n),     1,           1)
     call build(hcoeff1(n),  mla%la(n),     1,           1)
     call build(Xkcoeff1(n), mla%la(n), nspec,           1)
@@ -120,17 +133,53 @@ subroutine varden()
     call build(Xkcoeff2(n), mla%la(n), nspec,           1)
     call build(pcoeff2(n),  mla%la(n),     1,           1)
 
+    ! variables for calculating the norms
+    call build(analytic(n), mla%la(n),     1,           0)
+    call build(error(n),    mla%la(n),     1,           0)
+
 
     ! for now just copy the state data to s_new
     call multifab_copy_c(s_new(n), 1, s_old(n), 1, nscal, s_old(n)%ng)
+    
+    ! calculate the error
+    ! build the analytic solution
+    call make_analytic_solution(analytic(n), dx(n,:), time)
+
+    ! the error is (enthalpy - analytic)
+    ! build the enthalpy from the state data
+    call multifab_copy_c(error(n), 1, s_new(n), rhoh_comp, 1, 0)
+    call multifab_div_div_c(error(n), 1, s_new(n), rho_comp, 1, 0)
+
+    ! subtract the analytic solution from the enthalpy
+    call multifab_sub_sub(error(n), analytic(n))
+
+    ! compute the norms
+!    L1norm = multifab_norm_l1(error(n))/real(nr_fine**2,kind=dp_t)
+!    L2norm = multifab_norm_l2(error(n))/real(nr_fine**2,kind=dp_t)
+    L1norm = multifab_norm_l1(error(n))/multifab_norm_l1(analytic(n))
+    L2norm = multifab_norm_l2(error(n))/multifab_norm_l2(analytic(n))
+
  enddo
 
- ! calculate the explicit timestep
- call estdt(dx, diffusion_coefficient, dt)
+ if (parallel_IOProcessor()) then
+    uout = unit_new()
+    open(unit=uout,file=outputfile,status='replace')
+    write(uout,*) time, L1norm, L2norm
+    print *, time, L1norm, L2norm
+ endif
+
+ ! calculate the timestep
+ ! use fixed dt
+ if (fixed_dt > ZERO) then
+    dt = fixed_dt
+ else ! use the explicit timestep size
+    call estdt(dx, diffusion_coefficient, dt)
+ endif
+
  if (parallel_IOProcessor()) then
     print *, '... estdt gives dt =', dt    
  endif
-    
+
  dt = dt * dt_mult_factor
     
  if (parallel_IOProcessor()) &
@@ -146,9 +195,10 @@ subroutine varden()
                      names=names, time=time, &
                      problo=prob_lo, probhi=prob_hi, &
                      dx=dx(1,:))
-
- ! dump some parameters for the analytic comparison
- if (parallel_IOProcessor()) call dump_gnuplot_analysis(istep,time)
+ call fabio_ml_write(analytic, mla%mba%rr(:,1), 'analytic'//sstep, &
+                     time=time, problo=prob_lo, probhi=prob_hi, dx=dx(1,:))
+ call fabio_ml_write(error, mla%mba%rr(:,1), 'error'//sstep, &
+                     time=time, problo=prob_lo, probhi=prob_hi, dx=dx(1,:))
 
  ! loop
  do while (istep < max_step)
@@ -184,11 +234,29 @@ subroutine varden()
     ! update temperature
     call makeTfromRhoH(s_new,mla,the_bc_tower%bc_tower_array)
 
+    ! calculate the error
+    call make_analytic_solution(analytic(nlevs), dx(nlevs,:), time)
+
+    call multifab_copy_c(error(nlevs), 1, s_new(nlevs), rhoh_comp, 1, 0)
+    call multifab_div_div_c(error(nlevs), 1, s_new(nlevs), rho_comp, 1, 0)
+
+    call multifab_sub_sub(error(nlevs), analytic(nlevs))
+
+!    L1norm = multifab_norm_l1(error(nlevs))/real(nr_fine**2,kind=dp_t)
+!    L2norm = multifab_norm_l2(error(nlevs))/real(nr_fine**2,kind=dp_t)
+    L1norm = multifab_norm_l1(error(nlevs))/multifab_norm_l1(analytic(nlevs))
+    L2norm = multifab_norm_l2(error(nlevs))/multifab_norm_l2(analytic(nlevs))
+
+    if (parallel_IOProcessor()) then
+       write(uout,*) time, L1norm, L2norm
+       print *, time, L1norm, L2norm
+    endif
+
     ! dump data if needed
     if (mod(istep,plot_int) .eq. 0) then
 
        ! dump the analytic comparison
-       if (parallel_IOProcessor()) call dump_gnuplot_analysis(istep,time)
+!       if (parallel_IOProcessor()) call dump_gnuplot_analysis(istep,time)
 
        write(unit=sstep,fmt='(i5.5)')istep
        outdir = trim(plot_base_name) // sstep
@@ -199,6 +267,12 @@ subroutine varden()
        call fabio_ml_write(s_new, mla%mba%rr(:,1), trim(outdir), &
                            names=names, time=time, &
                            problo=prob_lo, probhi=prob_hi, &
+                           dx=dx(1,:))
+       call fabio_ml_write(analytic, mla%mba%rr(:,1), 'analytic'//sstep, &
+                           time=time, problo=prob_lo, probhi=prob_hi, &
+                           dx=dx(1,:))
+       call fabio_ml_write(error, mla%mba%rr(:,1), 'error'//sstep, &
+                           time=time, problo=prob_lo, probhi=prob_hi, &
                            dx=dx(1,:))
     endif
 
@@ -216,52 +290,58 @@ subroutine varden()
     if (parallel_IOProcessor()) print *, ''
  enddo
 
+ close(uout)
+
 contains
   
-  subroutine dump_gnuplot_analysis(istep,time)
+  subroutine make_analytic_solution(solution, dx, time)
 
-    use bl_IO_module
-    
-    implicit none
-
-    integer        , intent(in   ) :: istep
+    type(multifab),  intent(inout) :: solution
+    real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: time
+
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+
+    integer :: lo(dm), hi(dm)
+    integer :: n, i, j, ii, jj
+    real(kind=dp_t) :: xx, yy, dist
     
-!    character(len=10) :: outputfile = "params.out"
+    do i = 1, solution%nboxes
+       if (multifab_remote(solution,i)) cycle
+       sp => dataptr(solution,i)
+       lo = lwb(get_box(solution,i))
+       hi = upb(get_box(solution,i))
 
-    integer :: unit
+       sp = ZERO
 
-    ! dump info to the outputfile
-    unit = unit_new()
-    if (istep == 0) then
-       open(unit=unit, file=gnuplot_outputfile, status='replace')
+       do jj = lo(2), hi(2)
 
-!       write(unit,100) "t0", t0
-!       write(unit,100) "D", diffusion_coefficient
-!       write(unit,100) "hp", peak_h
-!       write(unit,100) "h0", ambient_h
-       write(unit,*) t0
-       write(unit,*) diffusion_coefficient
-       write(unit,*) peak_h
-       write(unit,*) ambient_h
+          yy = prob_lo(2) + (dble(jj)+HALF) * dx(2)
 
-    else
-       open(unit=unit, file=gnuplot_outputfile,status='old',position='append')
-    endif
+          do ii = lo(1), hi(1)
 
-!    write(unit,101) istep,time,time
-    write(unit,*) time
+             xx = prob_lo(1) + (dble(ii)+HALF) * dx(1)
 
-    close(unit)
+             dist = sqrt((xx-center(1))**2 + (yy-center(2))**2)
 
-100 format (A,"=",G15.10)
-101 format ("f",I5.5,"(x)=(hp-h0)*(t0/(",G15.10,"+t0))*exp(-x*x/(4.0e0*D*(",G15.10,"+t0)))+h0")
+             sp(ii,jj,1,1) = f(time,dist)
 
-  end subroutine dump_gnuplot_analysis
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine make_analytic_solution
     
+  function f(t,x) result(r)
+    real(kind=dp_t) :: t, x
+    real(kind=dp_t) :: r
 
-    
- 
+    r = (peak_h-ambient_h)*(t0/(t+t0)) * &
+         dexp(-x*x/(FOUR*diffusion_coefficient*(t+t0))) + ambient_h
+
+  end function f
+
 end subroutine varden
 
 

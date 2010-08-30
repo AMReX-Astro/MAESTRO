@@ -1,6 +1,6 @@
 &PROBIN
  model_file = ""
- test_set = "mygrid"
+ test_set = "mygrid2"
 
  spherical_in = 0
  plot_base = T
@@ -9,11 +9,13 @@
 
  thermal_conductivity = 1.d7
 
- dt_mult_factor = 1.0d2
+ fixed_dt = 1.0d-3
 
- plot_base_name = "test"
+ dt_mult_factor = 1.0d0
 
- gnuplot_outputfile = "analytic.out"
+ plot_base_name = "solution"
+
+ outputfile = "norms.out"
 
  t0 = 1.0d-1
 
@@ -40,8 +42,8 @@
 
  grav_const = 0.0d0
 
- max_step  = 10
- plot_int  = 1
+ max_step  = 60
+ plot_int  = 20
 
  stop_time = 2.5
 

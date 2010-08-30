@@ -15,7 +15,7 @@ contains
     real(kind=dp_t), intent(  out) :: dt
 
     ! calculate the timestep
-    dt = minval(HALF*dx*dx / diffusion_coefficient)
+    dt = minval(dx*dx / diffusion_coefficient)
 
   end subroutine estdt
   

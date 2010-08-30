@@ -27,5 +27,8 @@ ambient_fe56                        real               0.d0
 dt_mult_factor                      real               1.d0
 
 # output file name for gnuplot file containing the analytic solution
-gnuplot_outputfile                  character          "params.out"
+outputfile                  character          "params.out"
+
+# specify the timestep size - if negative we use the explicit timestep size
+fixed_dt                            real              -1.d0
 
