@@ -1,0 +1,62 @@
+&PROBIN
+ model_file = ""
+ test_set = "mygrid-64"
+
+ spherical_in = 0
+ plot_base = T
+
+ thermal_diffusion_type = 1
+
+ thermal_conductivity = 1.d7
+
+ fixed_dt = 1.0d-3
+
+ dt_mult_factor = 1.0d0
+
+ plot_base_name = "solution"
+
+ outputfile = "norms.out"
+
+ t0 = 1.0d-1
+
+ peak_h = 1.0d1
+ ambient_h = 1.0d0
+
+ ambient_dens = 1.0d0
+
+ ambient_he4 = 0.5d0
+ ambient_c12 = 0.25d0
+ ambient_fe56 = 0.25d0
+
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
+ max_mg_bottom_nlevels = 4
+
+ use_eos_coulomb = T
+
+ prob_lo_x = 0.0d0
+ prob_lo_y = 0.0d0
+
+ prob_hi_x = 2.0d0
+ prob_hi_y = 2.0d0
+
+ grav_const = 0.0d0
+
+ max_step  = 1000
+ plot_int  = 20
+
+ stop_time = 0.02
+
+ bcx_lo = 12
+ bcx_hi = 12
+ bcy_lo = 12
+ bcy_hi = 12
+
+
+    verbose = 1
+ mg_verbose = 0
+ cg_verbose = 0
+
+ use_thermal_diffusion = T
+
+/
