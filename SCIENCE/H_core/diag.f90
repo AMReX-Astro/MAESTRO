@@ -930,7 +930,6 @@ contains
     use geometry, only: spherical, center
     use probin_module, only: base_cutoff_density, prob_lo, sponge_start_factor, &
          sponge_center_density
-    use sponge_module, only: r_sp
     use eos_module
 
     integer,          intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
@@ -957,7 +956,7 @@ contains
     integer            :: i, j, k
     real (kind=dp_t)   :: velr, velc, vel, weight
     logical            :: cell_valid
-    real (kind=dp_t)   :: x, y, z, r_loc
+    real (kind=dp_t)   :: x, y, z
 
     ! weight is the factor by which the volume of a cell at the
     ! current level relates to the volume of a cell at the coarsest
@@ -988,13 +987,8 @@ contains
              end if
 
              ! we only consider cells inside of where the sponging begins
-             ! CEG:: changed this to test on r rather that rho,
-             !       since the radius where the sponge starts is fixed at the
-             !       beginning 
-             r_loc = sqrt((x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2)
              if (cell_valid .and. &
-!                  s(i,j,k,rho_comp) > sponge_start_factor*sponge_center_density) then
-                  r_loc < r_sp) then
+                  s(i,j,k,rho_comp) > sponge_start_factor*sponge_center_density) then
 
                 ! velr is the projection of the velocity (including w0 below) 
                 ! onto the radial unit vector 
