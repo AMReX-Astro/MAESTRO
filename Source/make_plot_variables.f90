@@ -935,13 +935,13 @@ contains
   ! make_tfromp
   !---------------------------------------------------------------------------
   subroutine make_tfromp(plotdata,comp_tfromp,comp_tpert, &
-                         comp_machno,comp_deltag,comp_entropy, comp_magvel, &
+                         comp_machno,comp_cs,comp_deltag,comp_entropy, comp_magvel, &
                          s,tempbar,gamma1bar,p0,dx)
 
     use geometry, only: spherical, dm
 
     integer        , intent(in   ) :: comp_tfromp,comp_tpert
-    integer        , intent(in   ) :: comp_machno
+    integer        , intent(in   ) :: comp_machno,comp_cs
     integer        , intent(in   ) :: comp_deltag, comp_entropy, comp_magvel
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: s
@@ -965,14 +965,16 @@ contains
        select case (dm)
        case (1)
           call make_tfromp_1d(tp(:,1,1,comp_tfromp  ),tp(:,1,1,comp_tpert), &
-                              tp(:,1,1,comp_machno  ),tp(:,1,1,comp_deltag), &
+                              tp(:,1,1,comp_machno  ), tp(:,1,1,comp_cs  ), &
+                              tp(:,1,1,comp_deltag), &
                               tp(:,1,1,comp_entropy ),tp(:,1,1,comp_magvel), &
                               ng_p, &
                               sp(:,1,1,:), ng_s, &
                               lo, hi, tempbar, gamma1bar, p0)
        case (2)
           call make_tfromp_2d(tp(:,:,1,comp_tfromp),tp(:,:,1,comp_tpert), &
-                              tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
+                              tp(:,:,1,comp_machno  ), tp(:,:,1,comp_cs), &
+                              tp(:,:,1,comp_deltag), &
                               tp(:,:,1,comp_entropy ),tp(:,:,1,comp_magvel), &
                               ng_p, &
                               sp(:,:,1,:), ng_s, &
@@ -980,14 +982,16 @@ contains
        case (3)
           if (spherical .eq. 1) then
              call make_tfromp_3d_sphr(tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
-                                      tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
+                                      tp(:,:,:,comp_machno  ), tp(:,:,:,comp_cs), &
+                                      tp(:,:,:,comp_deltag), &
                                       tp(:,:,:,comp_entropy ),tp(:,:,:,comp_magvel), &
                                       ng_p, &
                                       sp(:,:,:,:), ng_s, &
                                       lo, hi, tempbar, gamma1bar, p0, dx)
           else
              call make_tfromp_3d_cart(tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
-                                      tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
+                                      tp(:,:,:,comp_machno  ), tp(:,:,:,comp_cs), &
+                                      tp(:,:,:,comp_deltag), &
                                       tp(:,:,:,comp_entropy ),tp(:,:,:,comp_magvel), &
                                       ng_p, &
                                       sp(:,:,:,:), ng_s, &
@@ -998,17 +1002,19 @@ contains
 
   end subroutine make_tfromp
 
-  subroutine make_tfromp_1d(t,tpert,machno,deltagamma,entropy,magvel, &
+  subroutine make_tfromp_1d(t,tpert,machno,cs,deltagamma,entropy,magvel, &
                             ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0)
 
     use eos_module
     use network, only: nspec
     use variables, only: rho_comp, spec_comp, temp_comp
+    use probin_module, only: plot_cs
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:)  
     real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:)  
     real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:)  
+    real (kind=dp_t), intent(  out) ::         cs(lo(1)-ng_p:)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:)  
     real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:)
@@ -1046,6 +1052,8 @@ contains
        t(i) = temp_eos(1)
        if (use_tfromp) tpert(i) = temp_eos(1) - tempbar(i)
 
+       if (plot_cs) cs(i) = cs_eos(1)
+
        machno(i) = magvel(i) / cs_eos(1)
        deltagamma(i) = gam1_eos(1) - gamma1bar(i)
 
@@ -1054,17 +1062,19 @@ contains
 
   end subroutine make_tfromp_1d
 
-  subroutine make_tfromp_2d(t,tpert,machno,deltagamma,entropy,magvel, &
+  subroutine make_tfromp_2d(t,tpert,machno,cs,deltagamma,entropy,magvel, &
                             ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0)
 
     use eos_module
     use network, only: nspec
     use variables, only: rho_comp, spec_comp, temp_comp
+    use probin_module, only: plot_cs
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:,lo(2)-ng_p:)  
+    real (kind=dp_t), intent(  out) ::         cs(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:,lo(2)-ng_p:)
@@ -1103,6 +1113,8 @@ contains
           t(i,j) = temp_eos(1)
           if (use_tfromp) tpert(i,j) = temp_eos(1) - tempbar(j)
 
+          if (plot_cs) cs(i,j) = cs_eos(1)
+
           machno(i,j) = magvel(i,j) / cs_eos(1)
 
           deltagamma(i,j) = gam1_eos(1) - gamma1bar(j)
@@ -1113,17 +1125,19 @@ contains
 
   end subroutine make_tfromp_2d
 
-  subroutine make_tfromp_3d_cart(t,tpert,machno,deltagamma,entropy,magvel, &
+  subroutine make_tfromp_3d_cart(t,tpert,machno,cs,deltagamma,entropy,magvel, &
                                  ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0)
 
     use variables, only: rho_comp, spec_comp, temp_comp
     use eos_module
     use network, only: nspec
+    use probin_module, only: plot_cs
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
+    real (kind=dp_t), intent(  out) ::         cs(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
@@ -1163,6 +1177,8 @@ contains
              t(i,j,k) = temp_eos(1)
              if (use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar(k)
 
+             if (plot_cs) cs(i,j,k) = cs_eos(1)
+
              machno(i,j,k) = magvel(i,j,k) / cs_eos(1)
 
              deltagamma(i,j,k) = gam1_eos(1) - gamma1bar(k)
@@ -1174,18 +1190,20 @@ contains
 
   end subroutine make_tfromp_3d_cart
 
-  subroutine make_tfromp_3d_sphr(t,tpert,machno,deltagamma,entropy,magvel, &
+  subroutine make_tfromp_3d_sphr(t,tpert,machno,cs,deltagamma,entropy,magvel, &
                                  ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0,dx)
 
     use variables, only: rho_comp, spec_comp, temp_comp
     use eos_module
     use network, only: nspec
     use fill_3d_module
+    use probin_module, only: plot_cs
 
     integer         , intent(in   ) :: lo(:),hi(:),ng_p,ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
+    real (kind=dp_t), intent(  out) ::         cs(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
@@ -1239,6 +1257,8 @@ contains
 
              t(i,j,k) = temp_eos(1)
              if (use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar_cart(i,j,k,1)
+
+             if (plot_cs) cs(i,j,k) = cs_eos(1)
 
              machno(i,j,k) = magvel(i,j,k) / cs_eos(1)
 

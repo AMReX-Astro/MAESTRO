@@ -15,7 +15,8 @@ module variables
   integer, save :: icomp_p0, icomp_velr, icomp_velc
   integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_src
   integer, save :: icomp_enthalpy,icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert
-  integer, save :: icomp_machno,icomp_dg,icomp_pi,icomp_gpi,icomp_pioverp0
+  integer, save :: icomp_machno,icomp_cs
+  integer, save :: icomp_dg,icomp_pi,icomp_gpi,icomp_pioverp0
   integer, save :: icomp_entropy,icomp_entropypert
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
   integer, save :: icomp_omegadot,icomp_enuc,icomp_Hext, icomp_eta, icomp_sponge
@@ -70,7 +71,7 @@ contains
     use network, only: nspec
     use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
          plot_omegadot, plot_Hnuc, plot_Hext, plot_eta, plot_ad_excess, &
-         use_tfromp, plot_h_with_use_tfromp, plot_gpi
+         use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs
     use geometry, only: spherical, dm
 
     icomp_vel      = get_next_plot_index(dm)
@@ -115,6 +116,9 @@ contains
 
     icomp_tpert       = get_next_plot_index(1)
     icomp_machno      = get_next_plot_index(1)
+    if (plot_cs) then
+       icomp_cs          = get_next_plot_index(1)
+    end if
     icomp_dg          = get_next_plot_index(1)
     icomp_entropy     = get_next_plot_index(1)
     icomp_entropypert = get_next_plot_index(1)

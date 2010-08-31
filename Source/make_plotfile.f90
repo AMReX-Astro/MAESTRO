@@ -20,7 +20,7 @@ contains
     use probin_module, only: plot_spec, plot_trac, plot_base, &
                              use_thermal_diffusion, plot_omegadot, plot_Hnuc, &
                              plot_Hext, plot_eta, plot_ad_excess, &
-                             use_tfromp, plot_h_with_use_tfromp, plot_gpi
+                             use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs
     use geometry, only: spherical, dm
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -85,6 +85,9 @@ contains
     endif
     plot_names(icomp_tpert)       = "tpert"
     plot_names(icomp_machno)      = "Machnumber"
+    if (plot_cs) then
+       plot_names(icomp_cs)          = "soundspeed"
+    end if
     plot_names(icomp_dg)          = "deltagamma"
     plot_names(icomp_entropy)     = "entropy"
     plot_names(icomp_entropypert) = "entropypert"
@@ -147,7 +150,8 @@ contains
                              single_prec_plotfiles, &
                              do_smallscale, use_thermal_diffusion, &
                              evolve_base_state, prob_lo, prob_hi, &
-                             use_tfromp, plot_h_with_use_tfromp, plot_gpi
+                             use_tfromp, plot_h_with_use_tfromp, plot_gpi, &
+                             plot_cs
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use average_module
     use ml_restriction_module
@@ -416,7 +420,7 @@ contains
        if (spherical .eq. 1) then
           
           call make_tfromp(plotdata(n), &
-                           icomp_tfromp,icomp_tpert,icomp_machno, &
+                           icomp_tfromp,icomp_tpert,icomp_machno,icomp_cs, &
                            icomp_dg,icomp_entropy,icomp_magvel, &
                            s(n), &
                            tempbar(1,:),gamma1bar(1,:),p0(1,:),dx(n,:))
@@ -428,7 +432,7 @@ contains
        else
 
           call make_tfromp(plotdata(n), &
-                           icomp_tfromp,icomp_tpert,icomp_machno, &
+                           icomp_tfromp,icomp_tpert,icomp_machno,icomp_cs, &
                            icomp_dg,icomp_entropy,icomp_magvel, &
                            s(n), &
                            tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
@@ -470,6 +474,10 @@ contains
                                 mla%mba%rr(n-1,:),1)
        call ml_cc_restriction_c(plotdata(n-1),icomp_machno,plotdata(n),icomp_machno, &
                                 mla%mba%rr(n-1,:),1)
+       if (plot_cs) then
+          call ml_cc_restriction_c(plotdata(n-1),icomp_cs,plotdata(n),icomp_cs, &
+                                   mla%mba%rr(n-1,:),1)
+       end if
        call ml_cc_restriction_c(plotdata(n-1),icomp_dg,plotdata(n),icomp_dg, &
                                 mla%mba%rr(n-1,:),1)
        call ml_cc_restriction_c(plotdata(n-1),icomp_entropy,plotdata(n),icomp_entropy, &

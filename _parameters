@@ -184,6 +184,9 @@ plot_base                           logical            .false.
 # plot pi and grad(pi)
 plot_gpi                             logical            .true.
 
+# plot soundspeed
+plot_cs                              logical            .false.
+
 # prefix to use in plotfile file names
 plot_base_name                      character          "plt"               
 
