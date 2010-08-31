@@ -31,7 +31,7 @@
  do_planar_invsq_grav = T
  planar_invsq_mass = 2.283993873322d33
 
- max_step  = 5
+ max_step  = 10000000
 
  do_initial_projection = T
  init_divu_iter = 4
@@ -47,7 +47,7 @@
  chk_int         = 50
  check_base_name = "chk"
 
- cflfac = 0.9d0
+ cflfac = 0.7d0
  init_shrink = 1.d0
 
  bcx_lo = -1
