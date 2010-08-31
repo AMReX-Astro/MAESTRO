@@ -367,9 +367,7 @@ contains
        spdr = max(spdr ,abs(w0(j)))
     enddo
 
-    umax = max(umax,spdx)
-    umax = max(umax,spdy)
-    umax = max(umax,spdr)
+    umax = max(umax,spdx,spdy,spdr)
 
     if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
     if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
@@ -492,10 +490,7 @@ contains
        spdr = max(spdr ,abs(w0(k)))
     enddo
 
-    umax = max(umax,spdx)
-    umax = max(umax,spdy)
-    umax = max(umax,spdz)
-    umax = max(umax,spdr)
+    umax = max(umax,spdx,spdy,spdz,spdr)
 
     if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
     if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
@@ -638,10 +633,7 @@ contains
        spdr = max(spdr ,abs(w0(k)))
     enddo
 
-    umax = max(umax,spdx)
-    umax = max(umax,spdy)
-    umax = max(umax,spdz)
-    umax = max(umax,spdr)
+    umax = max(umax,spdx,spdy,spdz,spdr)
 
     if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
     if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)

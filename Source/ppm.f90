@@ -34,7 +34,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0cc, amax, delam, delap
+    real(kind=dp_t) :: sgn, sigma, s6, w0cc, amax, delam, delap, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! constant used in Colella 2008
@@ -236,8 +236,9 @@ contains
              D2C = s(i-1)-TWO*s(i)+s(i+1)
              sgn = sign(ONE,D2)
              D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-             alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-             alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+             D2ABS = max(abs(D2),1.d-10)
+             alpham = alpham*D2LIM/D2ABS
+             alphap = alphap*D2LIM/D2ABS
           else
              if (bigp) then
                 sgn = sign(ONE,alpham)
@@ -330,8 +331,9 @@ contains
                 D2C = s(i-1)-TWO*s(i)+s(i+1)
                 sgn = sign(ONE,D2)
                 D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                D2ABS = max(abs(D2),1.d-10)
+                alpham = alpham*D2LIM/D2ABS
+                alphap = alphap*D2LIM/D2ABS
              else
                 if (bigp) then
                    sgn = sign(ONE,alpham)
@@ -427,8 +429,9 @@ contains
                 D2C = s(i-1)-TWO*s(i)+s(i+1)
                 sgn = sign(ONE,D2)
                 D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                D2ABS = max(abs(D2),1.d-10)
+                alpham = alpham*D2LIM/D2ABS
+                alphap = alphap*D2LIM/D2ABS
              else
                 if (bigp) then
                    sgn = sign(ONE,alpham)
@@ -519,7 +522,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, amax, delam, delap
+    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, amax, delam, delap, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! constant used in Colella 2008
@@ -721,8 +724,9 @@ contains
              D2C = s(i-1)-TWO*s(i)+s(i+1)
              sgn = sign(ONE,D2)
              D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-             alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-             alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+             D2ABS = max(abs(D2),1.d-10)
+             alpham = alpham*D2LIM/D2ABS
+             alphap = alphap*D2LIM/D2ABS
           else
              if (bigp) then
                 sgn = sign(ONE,alpham)
@@ -815,8 +819,9 @@ contains
                 D2C = s(i-1)-TWO*s(i)+s(i+1)
                 sgn = sign(ONE,D2)
                 D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                D2ABS = max(abs(D2),1.d-10)
+                alpham = alpham*D2LIM/D2ABS
+                alphap = alphap*D2LIM/D2ABS
              else
                 if (bigp) then
                    sgn = sign(ONE,alpham)
@@ -912,8 +917,9 @@ contains
                 D2C = s(i-1)-TWO*s(i)+s(i+1)
                 sgn = sign(ONE,D2)
                 D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                D2ABS = max(abs(D2),1.d-10)
+                alpham = alpham*D2LIM/D2ABS
+                alphap = alphap*D2LIM/D2ABS
              else
                 if (bigp) then
                    sgn = sign(ONE,alpham)
@@ -1005,7 +1011,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0cc, amax, delam, delap
+    real(kind=dp_t) :: sgn, sigma, s6, w0cc, amax, delam, delap, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! constant used in Colella 2008
@@ -1234,8 +1240,9 @@ contains
                 D2C = s(i-1,j)-TWO*s(i,j)+s(i+1,j)
                 sgn = sign(ONE,D2)
                 D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                D2ABS = max(abs(D2),1.d-10)
+                alpham = alpham*D2LIM/D2ABS
+                alphap = alphap*D2LIM/D2ABS
              else
                 if (bigp) then
                    sgn = sign(ONE,alpham)
@@ -1334,8 +1341,9 @@ contains
                    D2C = s(i-1,j)-TWO*s(i,j)+s(i+1,j)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -1439,8 +1447,9 @@ contains
                    D2C = s(i-1,j)-TWO*s(i,j)+s(i+1,j)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -1706,8 +1715,9 @@ contains
                 D2C = s(i,j-1)-TWO*s(i,j)+s(i,j+1)
                 sgn = sign(ONE,D2)
                 D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                D2ABS = max(abs(D2),1.d-10)
+                alpham = alpham*D2LIM/D2ABS
+                alphap = alphap*D2LIM/D2ABS
              else
                 if (bigp) then
                    sgn = sign(ONE,alpham)
@@ -1806,8 +1816,9 @@ contains
                    D2C = s(i,j-1)-TWO*s(i,j)+s(i,j+1)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -1906,8 +1917,9 @@ contains
                    D2C = s(i,j-1)-TWO*s(i,j)+s(i,j+1)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -2007,7 +2019,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, amax, delam, delap
+    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, amax, delam, delap, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! constant used in Colella 2008
@@ -2236,8 +2248,9 @@ contains
                 D2C = s(i-1,j)-TWO*s(i,j)+s(i+1,j)
                 sgn = sign(ONE,D2)
                 D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                D2ABS = max(abs(D2),1.d-10)
+                alpham = alpham*D2LIM/D2ABS
+                alphap = alphap*D2LIM/D2ABS
              else
                 if (bigp) then
                    sgn = sign(ONE,alpham)
@@ -2336,8 +2349,9 @@ contains
                    D2C = s(i-1,j)-TWO*s(i,j)+s(i+1,j)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -2441,8 +2455,9 @@ contains
                    D2C = s(i-1,j)-TWO*s(i,j)+s(i+1,j)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -2708,8 +2723,9 @@ contains
                 D2C = s(i,j-1)-TWO*s(i,j)+s(i,j+1)
                 sgn = sign(ONE,D2)
                 D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                D2ABS = max(abs(D2),1.d-10)
+                alpham = alpham*D2LIM/D2ABS
+                alphap = alphap*D2LIM/D2ABS
              else
                 if (bigp) then
                    sgn = sign(ONE,alpham)
@@ -2808,8 +2824,9 @@ contains
                    D2C = s(i,j-1)-TWO*s(i,j)+s(i,j+1)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -2908,8 +2925,9 @@ contains
                    D2C = s(i,j-1)-TWO*s(i,j)+s(i,j+1)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -3012,7 +3030,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0cc, velcc
+    real(kind=dp_t) :: sgn, sigma, s6, w0cc, velcc, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
     real(kind=dp_t) :: amax, delam, delap
 
@@ -3225,7 +3243,7 @@ contains
        ! to eliminate sensitivity to roundoff.
        !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
        !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-       !$OMP PRIVATE(delam,delap)
+       !$OMP PRIVATE(delam,delap,D2ABS)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -3266,8 +3284,9 @@ contains
                    D2C = s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -3335,7 +3354,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
                 do i=lo(1)+1,lo(1)+2
@@ -3376,8 +3395,9 @@ contains
                       D2C = s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)
@@ -3443,7 +3463,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
                 do i=hi(1)-2,hi(1)-1
@@ -3484,8 +3504,9 @@ contains
                       D2C = s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)
@@ -3750,7 +3771,7 @@ contains
        ! to eliminate sensitivity to roundoff.
        !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
        !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-       !$OMP PRIVATE(delam,delap)
+       !$OMP PRIVATE(delam,delap,D2ABS)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -3791,8 +3812,9 @@ contains
                    D2C = s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -3860,7 +3882,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)+1,lo(2)+2
                 do i=lo(1)-1,hi(1)+1
@@ -3901,8 +3923,9 @@ contains
                       D2C = s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)
@@ -3970,7 +3993,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do k=lo(3)-1,hi(3)+1
              do j=hi(2)-2,hi(2)-1
                 do i=lo(1)-1,hi(1)+1
@@ -4011,8 +4034,9 @@ contains
                       D2C = s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)
@@ -4279,7 +4303,7 @@ contains
        ! to eliminate sensitivity to roundoff.
        !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
        !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-       !$OMP PRIVATE(delam,delap)
+       !$OMP PRIVATE(delam,delap,D2ABS)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -4320,8 +4344,9 @@ contains
                    D2C = s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -4389,7 +4414,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do j=lo(2)-1,hi(2)+1
              do k=lo(3)+1,lo(3)+2
                 do i=lo(1)-1,hi(1)+1
@@ -4430,8 +4455,9 @@ contains
                       D2C = s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)
@@ -4499,7 +4525,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do j=lo(2)-1,hi(2)+1
              do k=hi(3)-2,hi(3)-1
                 do i=lo(1)-1,hi(1)+1
@@ -4540,8 +4566,9 @@ contains
                       D2C = s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)
@@ -4673,7 +4700,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, vel
+    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, vel, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
     real(kind=dp_t) :: amax, delam, delap
 
@@ -4887,7 +4914,7 @@ contains
        ! to eliminate sensitivity to roundoff.
        !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
        !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-       !$OMP PRIVATE(delam,delap)
+       !$OMP PRIVATE(delam,delap,D2ABS)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -4928,8 +4955,9 @@ contains
                    D2C = s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -4997,7 +5025,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
                 do i=lo(1)+1,lo(1)+2
@@ -5038,8 +5066,9 @@ contains
                       D2C = s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)
@@ -5105,7 +5134,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)-1,hi(2)+1
                 do i=hi(1)-2,hi(1)-1
@@ -5146,8 +5175,9 @@ contains
                       D2C = s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)
@@ -5410,7 +5440,7 @@ contains
        ! to eliminate sensitivity to roundoff.
        !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
        !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-       !$OMP PRIVATE(delam,delap)
+       !$OMP PRIVATE(delam,delap,D2ABS)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -5451,8 +5481,9 @@ contains
                    D2C = s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -5520,7 +5551,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do k=lo(3)-1,hi(3)+1
              do j=lo(2)+1,lo(2)+2
                 do i=lo(1)-1,hi(1)+1
@@ -5561,8 +5592,9 @@ contains
                       D2C = s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)
@@ -5630,7 +5662,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do k=lo(3)-1,hi(3)+1
              do j=hi(2)-2,hi(2)-1
                 do i=lo(1)-1,hi(1)+1
@@ -5671,8 +5703,9 @@ contains
                       D2C = s(i,j-1,k)-TWO*s(i,j,k)+s(i,j+1,k)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)
@@ -5936,7 +5969,7 @@ contains
        ! to eliminate sensitivity to roundoff.
        !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
        !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-       !$OMP PRIVATE(delam,delap)
+       !$OMP PRIVATE(delam,delap,D2ABS)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -5977,8 +6010,9 @@ contains
                    D2C = s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1)
                    sgn = sign(ONE,D2)
                    D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                   alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                   alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                   D2ABS = max(abs(D2),1.d-10)
+                   alpham = alpham*D2LIM/D2ABS
+                   alphap = alphap*D2LIM/D2ABS
                 else
                    if (bigp) then
                       sgn = sign(ONE,alpham)
@@ -6046,7 +6080,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do j=lo(2)-1,hi(2)+1
              do k=lo(3)+1,lo(3)+2
                 do i=lo(1)-1,hi(1)+1
@@ -6087,8 +6121,9 @@ contains
                       D2C = s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)
@@ -6157,7 +6192,7 @@ contains
           ! and third inner cells
           !$OMP PARALLEL DO PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
           !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
-          !$OMP PRIVATE(delam,delap)
+          !$OMP PRIVATE(delam,delap,D2ABS)
           do j=lo(2)-1,hi(2)+1
              do k=hi(3)-2,hi(3)-1
                 do i=lo(1)-1,hi(1)+1
@@ -6198,8 +6233,9 @@ contains
                       D2C = s(i,j,k-1)-TWO*s(i,j,k)+s(i,j,k+1)
                       sgn = sign(ONE,D2)
                       D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                      alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                      alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                      D2ABS = max(abs(D2),1.d-10)
+                      alpham = alpham*D2LIM/D2ABS
+                      alphap = alphap*D2LIM/D2ABS
                    else
                       if (bigp) then
                          sgn = sign(ONE,alpham)

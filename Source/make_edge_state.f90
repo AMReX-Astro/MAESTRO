@@ -58,9 +58,9 @@ contains
     real(kind=dp_t), intent(in   ) :: dt
 
     real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag,ubardth,dth,savg,u
-    real(kind=dp_t) :: sigmap,sigmam,s6,D2,D2L,D2R,D2C,D2LIM,C,alphap,alpham,sgn
+    real(kind=dp_t) :: sigmap,sigmam,s6,D2,D2L,D2R,D2C,D2LIM,alphap,alpham,sgn
     real(kind=dp_t) :: dafacem,dafacep,dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp
-    real(kind=dp_t) :: amax,delam,delap
+    real(kind=dp_t) :: amax,delam,delap,D2ABS
 
     integer :: r,lo,hi
 
@@ -68,6 +68,9 @@ contains
 
     integer        , parameter :: cen=1, lim=2, flag=3, fromm=4
     real(kind=dp_t), parameter :: FOURTHIRDS = FOUR/THREE
+
+    ! constant used in Colella 2008
+    real(kind=dp_t), parameter :: C = 1.25d0
 
     ! cell based indexing
     real(kind=dp_t) :: dsscr(-1:nr_fine,4)
@@ -98,9 +101,6 @@ contains
 
     ! Need to initialize this because it's not always set.
     dsscr = ZERO
-
-     ! constant used in Colella 2008
-     C = 1.25d0
 
      dth = HALF*dt
 
@@ -227,7 +227,7 @@ contains
 
         !$OMP PARALLEL DO PRIVATE(r,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
         !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM) &
-        !$OMP PRIVATE(amax,delam,delap)
+        !$OMP PRIVATE(amax,delam,delap,D2ABS)
         do r=lo,hi
 
            ! use Colella 2008 limiters
@@ -269,8 +269,9 @@ contains
               D2C = s_ghost(r-1)-TWO*s_ghost(r)+s_ghost(r+1)
               sgn = sign(ONE,D2)
               D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-              alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-              alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+              D2ABS = max(abs(D2),1.d-10)
+              alpham = alpham*D2LIM/D2ABS
+              alphap = alphap*D2LIM/D2ABS
            else
               if (bigp) then
                  sgn = sign(ONE,alpham)
@@ -367,9 +368,9 @@ contains
      real(kind=dp_t), intent(in   ) :: dt
      
      real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag,ubardth,dth,dtdr,savg,u
-     real(kind=dp_t) :: sigmap,sigmam,s6,D2,D2L,D2R,D2C,D2LIM,C,alphap,alpham,sgn
+     real(kind=dp_t) :: sigmap,sigmam,s6,D2,D2L,D2R,D2C,D2LIM,alphap,alpham,sgn
      real(kind=dp_t) :: dafacem,dafacep,dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp
-     real(kind=dp_t) :: amax,delam,delap
+     real(kind=dp_t) :: amax,delam,delap,D2ABS
      
      integer :: r,lo,hi,n,i
 
@@ -377,6 +378,9 @@ contains
 
      integer        , parameter :: cen=1, lim=2, flag=3, fromm=4
      real(kind=dp_t), parameter :: FOURTHIRDS = FOUR/THREE
+
+     ! constant used in Colella 2008
+     real(kind=dp_t), parameter :: C = 1.25d0
         
      ! cell based indexing
      real(kind=dp_t) :: slope(nlevs_radial,0:nr_fine-1)
@@ -395,9 +399,6 @@ contains
      dtdr = dt/dr(1)
 
      dsvl = ZERO
-
-     ! constant used in Colella 2008
-     C = 1.25d0
 
      ! error checking to make sure that there is a 2 cell buffer at the top and bottom
      ! of the domain for finer levels in planar geometry.  This can be removed if
@@ -649,7 +650,7 @@ contains
 
               !$OMP PARALLEL DO PRIVATE(r,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
               !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM) &
-              !$OMP PRIVATE(amax,delam,delap)
+              !$OMP PRIVATE(amax,delam,delap,D2ABS)
               do r=lo,hi
 
                  if (r .ge. 2 .and. r .le. nr(n)-3) then
@@ -690,8 +691,9 @@ contains
                        D2C = s(n,r-1)-TWO*s(n,r)+s(n,r+1)
                        sgn = sign(ONE,D2)
                        D2LIM = max(min(sgn*D2,C*sgn*D2L,C*sgn*D2R,C*sgn*D2C),ZERO)
-                       alpham = alpham*D2LIM/max(abs(D2),1.d-10)
-                       alphap = alphap*D2LIM/max(abs(D2),1.d-10)
+                       D2ABS = max(abs(D2),1.d-10)
+                       alpham = alpham*D2LIM/D2ABS
+                       alphap = alphap*D2LIM/D2ABS
                     else
                        if (bigp) then
                           sgn = sign(ONE,alpham)

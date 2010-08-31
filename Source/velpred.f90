@@ -246,7 +246,7 @@ contains
        urx(is) = ZERO
     case (OUTLET)
        ulx(is) = min(urx(is),ZERO)
-       urx(is) = min(urx(is),ZERO)
+       urx(is) = ulx(is)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_1d: invalid boundary type phys_bc(1,1)")
@@ -262,7 +262,7 @@ contains
        urx(ie+1) = ZERO
     case (OUTLET)
        ulx(ie+1) = max(ulx(ie+1),ZERO)
-       urx(ie+1) = max(ulx(ie+1),ZERO)
+       urx(ie+1) = ulx(ie+1)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_1d: invalid boundary type phys_bc(1,2)")
@@ -356,7 +356,7 @@ contains
     real(kind=dp_t), allocatable :: umacl(:,:),umacr(:,:)
     real(kind=dp_t), allocatable :: vmacl(:,:),vmacr(:,:)
 
-    real(kind=dp_t) :: hx, hy, dt2, dt4, uavg, vlo, vhi
+    real(kind=dp_t) :: hx, hy, dt2, dt4, uavg, vlo, vhi, maxu, minu
 
     integer :: i,j,is,js,ie,je
 
@@ -418,12 +418,14 @@ contains
     else
        do j=js-1,je+1
           do i=is,ie+1
+             maxu = max(ZERO,u(i-1,j,1))
+             minu = min(ZERO,u(i  ,j,1))
              ! extrapolate both components of velocity to left face
-             ulx(i,j,1) = u(i-1,j,1) + (HALF - (dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,1)
-             ulx(i,j,2) = u(i-1,j,2) + (HALF - (dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,2)
+             ulx(i,j,1) = u(i-1,j,1) + (HALF - (dt2/hx)*maxu)*slopex(i-1,j,1)
+             ulx(i,j,2) = u(i-1,j,2) + (HALF - (dt2/hx)*maxu)*slopex(i-1,j,2)
              ! extrapolate both components of velocity to right face
-             urx(i,j,1) = u(i  ,j,1) - (HALF + (dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,1)
-             urx(i,j,2) = u(i  ,j,2) - (HALF + (dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,2)
+             urx(i,j,1) = u(i  ,j,1) - (HALF + (dt2/hx)*minu)*slopex(i  ,j,1)
+             urx(i,j,2) = u(i  ,j,2) - (HALF + (dt2/hx)*minu)*slopex(i  ,j,2)
           end do
        end do
     end if
@@ -442,7 +444,7 @@ contains
        urx(is,js-1:je+1,1:2) = ZERO
     case (OUTLET)
        ulx(is,js-1:je+1,1) = min(urx(is,js-1:je+1,1),ZERO)
-       urx(is,js-1:je+1,1) = min(urx(is,js-1:je+1,1),ZERO)
+       urx(is,js-1:je+1,1) = ulx(is,js-1:je+1,1)
        ulx(is,js-1:je+1,2) = urx(is,js-1:je+1,2)
     case (INTERIOR, PERIODIC)
     case  default
@@ -463,7 +465,7 @@ contains
        urx(ie+1,js-1:je+1,1:2) = ZERO
     case (OUTLET)
        ulx(ie+1,js-1:je+1,1) = max(ulx(ie+1,js-1:je+1,1),ZERO)
-       urx(ie+1,js-1:je+1,1) = max(ulx(ie+1,js-1:je+1,1),ZERO)
+       urx(ie+1,js-1:je+1,1) = ulx(ie+1,js-1:je+1,2)
        urx(ie+1,js-1:je+1,2) = ulx(ie+1,js-1:je+1,2)
     case (INTERIOR, PERIODIC)
     case  default
@@ -505,12 +507,14 @@ contains
              vhi = HALF*(w0(j)+w0(j+1))
           end if
           do i=is-1,ie+1
+             maxu = max(ZERO,u(i,j-1,2)+vlo)
+             minu = min(ZERO,u(i,j  ,2)+vhi)
              ! extrapolate both components of velocity to left face
-             uly(i,j,1) = u(i,j-1,1) + (HALF-(dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
-             uly(i,j,2) = u(i,j-1,2) + (HALF-(dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,2)
+             uly(i,j,1) = u(i,j-1,1) + (HALF-(dt2/hy)*maxu)*slopey(i,j-1,1)
+             uly(i,j,2) = u(i,j-1,2) + (HALF-(dt2/hy)*maxu)*slopey(i,j-1,2)
              ! extrapolate both components of velocity to right face
-             ury(i,j,1) = u(i,j  ,1) - (HALF+(dt2/hy)*min(ZERO,u(i,j,2)+vhi))*slopey(i,j  ,1)
-             ury(i,j,2) = u(i,j  ,2) - (HALF+(dt2/hy)*min(ZERO,u(i,j,2)+vhi))*slopey(i,j  ,2)
+             ury(i,j,1) = u(i,j  ,1) - (HALF+(dt2/hy)*minu)*slopey(i,j  ,1)
+             ury(i,j,2) = u(i,j  ,2) - (HALF+(dt2/hy)*minu)*slopey(i,j  ,2)
           end do
        end do
     end if
@@ -530,7 +534,7 @@ contains
     case (OUTLET)
        uly(is-1:ie+1,js,1) = ury(is-1:ie+1,js,1)
        uly(is-1:ie+1,js,2) = min(ury(is-1:ie+1,js,2),ZERO)
-       ury(is-1:ie+1,js,2) = min(ury(is-1:ie+1,js,2),ZERO)
+       ury(is-1:ie+1,js,2) = uly(is-1:ie+1,js,2)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(2,1)")
@@ -551,7 +555,7 @@ contains
     case (OUTLET)
        ury(is-1:ie+1,je+1,1) = uly(is-1:ie+1,je+1,1)
        uly(is-1:ie+1,je+1,2) = max(uly(is-1:ie+1,je+1,2),ZERO)
-       ury(is-1:ie+1,je+1,2) = max(uly(is-1:ie+1,je+1,2),ZERO)
+       ury(is-1:ie+1,je+1,2) = uly(is-1:ie+1,je+1,2)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(2,2)")
@@ -763,7 +767,7 @@ contains
     real(kind=dp_t), allocatable:: vmacl(:,:,:),vmacr(:,:,:)
     real(kind=dp_t), allocatable:: wmacl(:,:,:),wmacr(:,:,:)
 
-    real(kind=dp_t) :: hx, hy, hz, dt2, dt4, dt6, uavg
+    real(kind=dp_t) :: hx, hy, hz, dt2, dt4, dt6, uavg, maxu, minu
     real(kind=dp_t) :: ulo, uhi, vlo, vhi, wlo, whi, Ut_dot_er
 
     integer :: i,j,k,is,js,ie,je,ks,ke,ung
@@ -845,7 +849,7 @@ contains
        end do
        !$OMP END PARALLEL DO
     else
-       !$OMP PARALLEL DO PRIVATE(i,j,k,ulo,uhi)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,ulo,uhi,maxu,minu)
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -858,15 +862,18 @@ contains
                    uhi = u(i  ,j,k,1)
                 end if
 
+                maxu = (HALF - dt2*max(ZERO,ulo)/hx)
+                minu = (HALF + dt2*min(ZERO,uhi)/hx)
+
                 ! extrapolate all components of velocity to left face
-                ulx(i,j,k,1) = u(i-1,j,k,1) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,1)
-                ulx(i,j,k,2) = u(i-1,j,k,2) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,2)
-                ulx(i,j,k,3) = u(i-1,j,k,3) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,3)
+                ulx(i,j,k,1) = u(i-1,j,k,1) + maxu * slopex(i-1,j,k,1)
+                ulx(i,j,k,2) = u(i-1,j,k,2) + maxu * slopex(i-1,j,k,2)
+                ulx(i,j,k,3) = u(i-1,j,k,3) + maxu * slopex(i-1,j,k,3)
 
                 ! extrapolate all components of velocity to right face
-                urx(i,j,k,1) = u(i,j,k,1) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i,j,k,1)
-                urx(i,j,k,2) = u(i,j,k,2) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i,j,k,2)
-                urx(i,j,k,3) = u(i,j,k,3) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i,j,k,3)
+                urx(i,j,k,1) = u(i,j,k,1) - minu * slopex(i,j,k,1)
+                urx(i,j,k,2) = u(i,j,k,2) - minu * slopex(i,j,k,2)
+                urx(i,j,k,3) = u(i,j,k,3) - minu * slopex(i,j,k,3)
              end do
           end do
        end do
@@ -890,7 +897,7 @@ contains
        urx(is,js-1:je+1,ks-1:ke+1,1:3) = ZERO
     case (OUTLET)
        ulx(is,js-1:je+1,ks-1:ke+1,1) = min(urx(is,js-1:je+1,ks-1:ke+1,1),ZERO)
-       urx(is,js-1:je+1,ks-1:ke+1,1) = min(urx(is,js-1:je+1,ks-1:ke+1,1),ZERO)
+       urx(is,js-1:je+1,ks-1:ke+1,1) = ulx(is,js-1:je+1,ks-1:ke+1,1)
        ulx(is,js-1:je+1,ks-1:ke+1,2) = urx(is,js-1:je+1,ks-1:ke+1,2)
        ulx(is,js-1:je+1,ks-1:ke+1,3) = urx(is,js-1:je+1,ks-1:ke+1,3)
     case (INTERIOR, PERIODIC)
@@ -913,7 +920,7 @@ contains
        urx(ie+1,js-1:je+1,ks-1:ke+1,1:3) = ZERO
     case (OUTLET)
        ulx(ie+1,js-1:je+1,ks-1:ke+1,1) = max(ulx(ie+1,js-1:je+1,ks-1:ke+1,1),ZERO)
-       urx(ie+1,js-1:je+1,ks-1:ke+1,1) = max(ulx(ie+1,js-1:je+1,ks-1:ke+1,1),ZERO)
+       urx(ie+1,js-1:je+1,ks-1:ke+1,1) = ulx(ie+1,js-1:je+1,ks-1:ke+1,1)
        urx(ie+1,js-1:je+1,ks-1:ke+1,2) = ulx(ie+1,js-1:je+1,ks-1:ke+1,2)
        urx(ie+1,js-1:je+1,ks-1:ke+1,3) = ulx(ie+1,js-1:je+1,ks-1:ke+1,3)
     case (INTERIOR, PERIODIC)
@@ -965,7 +972,7 @@ contains
        enddo
        !$OMP END PARALLEL DO
     else
-       !$OMP PARALLEL DO PRIVATE(i,j,k,vlo,vhi)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,vlo,vhi,minu,maxu)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -978,15 +985,18 @@ contains
                    vhi = u(i,j  ,k,2)
                 end if
 
+                maxu = (HALF - dt2*max(ZERO,vlo)/hy)
+                minu = (HALF + dt2*min(ZERO,vhi)/hy)
+
                 ! extrapolate all components of velocity to left face
-                uly(i,j,k,1) = u(i,j-1,k,1) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,1)
-                uly(i,j,k,2) = u(i,j-1,k,2) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,2)
-                uly(i,j,k,3) = u(i,j-1,k,3) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,3)
+                uly(i,j,k,1) = u(i,j-1,k,1) + maxu * slopey(i,j-1,k,1)
+                uly(i,j,k,2) = u(i,j-1,k,2) + maxu * slopey(i,j-1,k,2)
+                uly(i,j,k,3) = u(i,j-1,k,3) + maxu * slopey(i,j-1,k,3)
 
                 ! extrapolate all components of velocity to right face
-                ury(i,j,k,1) = u(i,j,k,1) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j,k,1)
-                ury(i,j,k,2) = u(i,j,k,2) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j,k,2)
-                ury(i,j,k,3) = u(i,j,k,3) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j,k,3)
+                ury(i,j,k,1) = u(i,j,k,1) - minu * slopey(i,j,k,1)
+                ury(i,j,k,2) = u(i,j,k,2) - minu * slopey(i,j,k,2)
+                ury(i,j,k,3) = u(i,j,k,3) - minu * slopey(i,j,k,3)
              enddo
           enddo
        enddo
@@ -1011,7 +1021,7 @@ contains
     case (OUTLET)
        uly(is-1:ie+1,js,ks-1:ke+1,1) = ury(is-1:ie+1,js,ks-1:ke+1,1)
        uly(is-1:ie+1,js,ks-1:ke+1,2) = min(ury(is-1:ie+1,js,ks-1:ke+1,2),ZERO)
-       ury(is-1:ie+1,js,ks-1:ke+1,2) = min(ury(is-1:ie+1,js,ks-1:ke+1,2),ZERO)
+       ury(is-1:ie+1,js,ks-1:ke+1,2) = uly(is-1:ie+1,js,ks-1:ke+1,2)
        uly(is-1:ie+1,js,ks-1:ke+1,3) = ury(is-1:ie+1,js,ks-1:ke+1,3) 
     case (INTERIOR, PERIODIC)
     case  default
@@ -1034,7 +1044,7 @@ contains
     case (OUTLET)
        ury(is-1:ie+1,je+1,ks-1:ke+1,1) = uly(is-1:ie+1,je+1,ks-1:ke+1,1)
        uly(is-1:ie+1,je+1,ks-1:ke+1,2) = max(uly(is-1:ie+1,je+1,ks-1:ke+1,2),ZERO)
-       ury(is-1:ie+1,je+1,ks-1:ke+1,2) = max(uly(is-1:ie+1,je+1,ks-1:ke+1,2),ZERO)
+       ury(is-1:ie+1,je+1,ks-1:ke+1,2) = uly(is-1:ie+1,je+1,ks-1:ke+1,2)
        ury(is-1:ie+1,je+1,ks-1:ke+1,3) = uly(is-1:ie+1,je+1,ks-1:ke+1,3)
     case (INTERIOR, PERIODIC)
     case  default
@@ -1086,7 +1096,7 @@ contains
        end do
        !$OMP END PARALLEL DO
     else
-       !$OMP PARALLEL DO PRIVATE(i,j,k,wlo,whi)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,wlo,whi,minu,maxu)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
@@ -1107,15 +1117,18 @@ contains
                    end if
                 end if
 
+                maxu = (HALF - dt2*max(ZERO,wlo)/hz)
+                minu = (HALF + dt2*min(ZERO,whi)/hz)
+
                 ! extrapolate all components of velocity to left face
-                ulz(i,j,k,1) = u(i,j,k-1,1) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,1)
-                ulz(i,j,k,2) = u(i,j,k-1,2) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,2)
-                ulz(i,j,k,3) = u(i,j,k-1,3) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,3)
+                ulz(i,j,k,1) = u(i,j,k-1,1) + maxu * slopez(i,j,k-1,1)
+                ulz(i,j,k,2) = u(i,j,k-1,2) + maxu * slopez(i,j,k-1,2)
+                ulz(i,j,k,3) = u(i,j,k-1,3) + maxu * slopez(i,j,k-1,3)
 
                 ! extrapolate all components of velocity to right face
-                urz(i,j,k,1) = u(i,j,k,1) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k,1)
-                urz(i,j,k,2) = u(i,j,k,2) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k,2)
-                urz(i,j,k,3) = u(i,j,k,3) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k,3)
+                urz(i,j,k,1) = u(i,j,k,1) - minu * slopez(i,j,k,1)
+                urz(i,j,k,2) = u(i,j,k,2) - minu * slopez(i,j,k,2)
+                urz(i,j,k,3) = u(i,j,k,3) - minu * slopez(i,j,k,3)
              end do
           end do
        end do
@@ -1141,7 +1154,7 @@ contains
        ulz(is-1:ie+1,js-1:je+1,ks,1) = urz(is-1:ie+1,js-1:je+1,ks,1)
        ulz(is-1:ie+1,js-1:je+1,ks,2) = urz(is-1:ie+1,js-1:je+1,ks,2)
        ulz(is-1:ie+1,js-1:je+1,ks,3) = min(urz(is-1:ie+1,js-1:je+1,ks,3),ZERO)
-       urz(is-1:ie+1,js-1:je+1,ks,3) = min(urz(is-1:ie+1,js-1:je+1,ks,3),ZERO)
+       urz(is-1:ie+1,js-1:je+1,ks,3) = ulz(is-1:ie+1,js-1:je+1,ks,3)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,1)")
@@ -1164,7 +1177,7 @@ contains
        urz(is-1:ie+1,js-1:je+1,ke+1,1) = ulz(is-1:ie+1,js-1:je+1,ke+1,1)
        urz(is-1:ie+1,js-1:je+1,ke+1,2) = ulz(is-1:ie+1,js-1:je+1,ke+1,2)
        ulz(is-1:ie+1,js-1:je+1,ke+1,3) = max(ulz(is-1:ie+1,js-1:je+1,ke+1,3),ZERO)
-       urz(is-1:ie+1,js-1:je+1,ke+1,3) = max(ulz(is-1:ie+1,js-1:je+1,ke+1,3),ZERO)
+       urz(is-1:ie+1,js-1:je+1,ke+1,3) = ulz(is-1:ie+1,js-1:je+1,ke+1,3)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,2)")

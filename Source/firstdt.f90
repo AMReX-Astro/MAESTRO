@@ -344,8 +344,7 @@ contains
        enddo
     enddo
     
-    umax = max(umax,ux)
-    umax = max(umax,uy)
+    umax = max(umax,ux,uy)
 
     ux = ux / dx(1)
     uy = uy / dx(2)
@@ -483,9 +482,7 @@ contains
        enddo
     enddo
 
-    umax = max(umax,ux)
-    umax = max(umax,uy)
-    umax = max(umax,uz)
+    umax = max(umax,ux,uy,uz)
 
     ux = ux / dx(1)
     uy = uy / dx(2)
@@ -634,9 +631,7 @@ contains
        enddo
     enddo
 
-    umax = max(umax,ux)
-    umax = max(umax,uy)
-    umax = max(umax,uz)
+    umax = max(umax,ux,uy,uz)
 
     ux = ux / dx(1)
     uy = uy / dx(2)
