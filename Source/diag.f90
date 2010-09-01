@@ -321,7 +321,9 @@ contains
        ! reduce the current level's data with the global data
        !----------------------------------------------------------------------
        if (parallel_IOProcessor()) then
-          Mach_max = max(Mach_max,Mach_max_level,temp_max_level,enuc_max_level)
+          Mach_max = max(Mach_max, Mach_max_level)
+          temp_max = max(temp_max, temp_max_level)
+          enuc_max = max(enuc_max, enuc_max_level)
        endif
 
     end do
