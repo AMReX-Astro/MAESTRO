@@ -174,7 +174,7 @@ Next we integrate up from the coarse-fine interface to the fine-cell center:
 \end{equation}
 We can rewrite this as an expression for the pressure at the fine-cell center:
 \begin{equation}
-p_r^l = p_{r-\myhalf}^l + \frac{\Delta r^l g}{8}
+p_r^l = p_{r-\myhalf}^l + \frac{\Delta r^l}{8}
   \left(\rho_r^l + \rho_{r-\myhalf}^l\right)
   \left(g_r^l + g_{r-\myhalf}^l\right).
   \label{eq:itof}
@@ -203,7 +203,7 @@ p_r^l = p_{\sfrac{r}{2}-1}^{l-1} &+&
    \frac{\Delta r^l}{4}\left(\frac{2}{3}\rho_r^l + 
                              \frac{4}{3}\rho_{\sfrac{r}{2}-1}^{l-1} \right)
                        \left(   g_{r-\myhalf}^l +    g_{\sfrac{r}{2}-1}^{l-1}\right) \nonumber \\
-  &+& \frac{\Delta r^l g}{8}\left(\frac{5}{3}\rho_r^l + 
+  &+& \frac{\Delta r^l}{8}\left(\frac{5}{3}\rho_r^l + 
                                   \frac{1}{3}\rho_{\sfrac{r}{2}-1}^{l-1}\right) 
                        \left(   g_r^l +    g_{r-\myhalf}^l\right) \enskip .
 \end{eqnarray}
@@ -225,7 +225,7 @@ p_{(r+1)/2}^{l-1} = p_{r}^l &+&
    \frac{\Delta r^l}{4}\left(\frac{2}{3}\rho_r^l + 
                              \frac{4}{3}\rho_{(r+1)/2}^{l-1} \right)
                        \left(   g_{(r+1)/2 -\myhalf}^{l-1} +    g_{(r+1)/2}^{l-1}\right) \nonumber \\
-  &+& \frac{\Delta r^l g}{8}\left(\frac{5}{3}\rho_r^l + 
+  &+& \frac{\Delta r^l}{8}\left(\frac{5}{3}\rho_r^l + 
                                   \frac{1}{3}\rho_{(r+1)/2}^{l-1}\right) 
                        \left(   g_r^l +    g_{(r+1)/2 -\myhalf}^{l-1} \right) \enskip .
 \end{eqnarray}
