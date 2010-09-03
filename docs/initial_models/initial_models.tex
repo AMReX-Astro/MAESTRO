@@ -44,7 +44,7 @@ to the file containing the model data.
 In {\tt base\_state.f90}, using the subroutine {\tt
   init\_base\_state} (which is actually a terrible name since we
 are computing 1D initial data, which is not quite the same thing 
-as the base satte), we set the initiail
+as the base satte), we set the initial
 data $\rho^{\init}, T^{\init}, p^{\init}$ and $X^{\init}$ equal to the
 model data.  Then, we set $p^{\init},h^{\init} =
 p,h(\rho^{\init},T^{\init},X^{\init})$ through the EOS.  Note that 
@@ -78,6 +78,12 @@ these on the base state and full state later.
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+We deal with the edge of the star by tracking the first coarse cell 
+in which the density falls below {\tt base\_cutoff\_density}.  We note 
+the radius of this cell center, and the values of $\rho$, $\rho h$, $X_k$, 
+$p$, and $T$ in this cells.  Then, at every level, if current cell-center 
+is above this radius, we set the state equal to this stored state.  This 
+ensures a consistent treatment of the edge of the star at all levels.
 
 \section{Creating the Base State and Full State}\label{Sec:Creating the Base State and Full State}
 
@@ -91,42 +97,20 @@ state is thermodynamically consistent with $p_0$.  Overall we do:
 \begin{enumerate}
 \item Fill $\rho^{\init}, h^{\init}, X^{\init}$, and $T^{\init}$ onto a 
   multifab to obtain the full state $\rho, h, X$, and $T$.
-\item If {\tt perturb\_model} = F, skip the remaining steps and
-  instead set $p_0 = p^{\init}$ and $\rho_0 = \rho^{\init}$.
-\item Perturb $T$, then compute $\rho,h = \rho,h(p^{\init},T,X)$.
+\item If {\tt perturb\_model} = T, a user-defined perturbation is
+  added.  This routine should make sure that the EOS is called so that
+  there is some sense of thermodynamic consistency.
 \item Set $\rho_0 = \overline\rho$.
-\item Compute $p_0$ using equation (\ref{HSE Discretization}), using
-  the $p^{\init}$ at the top of the domain as the one required boundary 
-  condition.  Note that we still integrate upwards from the bottom, but then
-  offset the final pressure so the pressure at the top of the domain
-  remains unchanged.
-\item Compute the full state $T,h = T,h(\rho,p_0,X)$.
+\item Compute $p_0$ using {\tt enforce\_HSE}.
+\item Compute $T,h = T,h(\rho,p_0,X_k)$.
 \item Set $(\rho h)_0 = \overline{(\rho h)}$.
+\item Compute $\overline{T}$.  Note that we only use $\overline{T}$ as
+  a diagnostic and as a seed for EOS calls.
 \end{enumerate}
 Now $\rho_0 = \overline\rho$, the base state is in HSE, and the full
 state is thermodynamically consistent with $p_0$.
 
-\subsection{Multilevel Plane-Parallel}
-\begin{enumerate}
-\item Fill $\rho^{\init}, h^{\init}, X^{\init}$, and $T^{\init}$ onto
-  a multifab to obtain the full state $\rho, h, X$, and $T$.
-\item If {\tt perturb\_model} = F, skip the next two steps and instead
-  set $\rho_0 = \rho^{\init}$.
-\item Perturb $T$, then compute $\rho,h = \rho,h(p^{\init},T,X)$.
-\item Set $\rho_0 = \overline\rho$.
-\item Compute $p_0$ using equation (\ref{HSE Discretization}), using
-  the pressure at the top of the domain as the initial condition.
-  Note that we still integrate upwards from the bottom, but then
-  offset the final pressure so the pressure at the top of the domain
-  remains unchanged.  Use the coarse-fine interface discretizations
-  given in \S~\ref{Sec:Coarse-Fine HSE Discretization}.
-\item Compute the full state $T,h = T,h(\rho,p_0,X)$.
-\item Set $(\rho h)_0 = \overline{(\rho h)}$.
-\end{enumerate}
-Now $\rho_0 = \overline\rho$, the base state is in HSE, and the full
-state is thermodynamically consistent with $p_0$.
-
-\subsection{Coarse-Fine HSE Discretization}\label{Sec:Coarse-Fine HSE Discretization}
+\subsection{Coarse-Fine {\tt enforce\_HSE} Discretization}\label{Sec:Coarse-Fine HSE Discretization}
 When integrating the HSE discretization upward, we must use a different
 differencing procedure at coarse-fine interfaces.  Figure~\ref{fig:ctof} shows
 the transition from coarse (level $l-1$) to fine (level $l$), with the zone
