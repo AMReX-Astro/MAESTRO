@@ -457,7 +457,7 @@ contains
     ! ADIABATIC EXCESS
     if (plot_ad_excess) then
        do n = 1, nlevs
-          call make_ad_excess(plotdata(n),icomp_ad_excess,s(n))
+          call make_ad_excess(plotdata(n),icomp_ad_excess,s(n),normal(n))
        enddo
     endif
 

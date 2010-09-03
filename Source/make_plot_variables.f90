@@ -21,25 +21,28 @@ contains
   !---------------------------------------------------------------------------
   ! make_ad_excess
   !---------------------------------------------------------------------------
-  subroutine make_ad_excess(plotdata,comp_ad_excess,state)
+  subroutine make_ad_excess(plotdata,comp_ad_excess,state,normal)
 
     use geometry, only: spherical, dm
 
     type(multifab), intent(inout) :: plotdata
     integer,        intent(in   ) :: comp_ad_excess
     type(multifab), intent(in   ) :: state
+    type(multifab), intent(in   ) :: normal
     
-    real(kind=dp_t), pointer :: sp(:,:,:,:), cp(:,:,:,:)
-    integer :: lo(dm), hi(dm), ng_s, ng_c
+    real(kind=dp_t), pointer :: sp(:,:,:,:), cp(:,:,:,:), np(:,:,:,:)
+    integer :: lo(dm), hi(dm), ng_s, ng_c, ng_n
     integer :: i
 
     ng_c = nghost(plotdata)
     ng_s = nghost(state)
+    ng_n = nghost(normal)
 
     do i = 1, nboxes(state)
        if (multifab_remote(state, i)) cycle
        sp => dataptr(state, i)
        cp => dataptr(plotdata, i)
+       np => dataptr(normal, i)
        lo = lwb(get_box(state, i))
        hi = upb(get_box(state, i))
        select case (dm)
@@ -52,11 +55,15 @@ contains
                                  sp(:,:,1,:), ng_s, &
                                  lo, hi)
        case (3)
-          if (spherical .eq. 1) &
-               call bl_error("adiabatic excess not currently supported for spherical")
-          call make_ad_excess_3d(cp(:,:,:,comp_ad_excess), ng_c, &
-                                 sp(:,:,:,:), ng_s, &
-                                 lo, hi)
+          if (spherical .eq. 1) then
+             call make_ad_excess_3d_sphr(cp(:,:,:,comp_ad_excess), ng_c, &
+                                         sp(:,:,:,:), ng_s, &
+                                         np(:,:,:,:), ng_n, lo, hi)
+          else
+             call make_ad_excess_3d(cp(:,:,:,comp_ad_excess), ng_c, &
+                                    sp(:,:,:,:), ng_s, &
+                                    lo, hi)
+          endif
        end select
 
     enddo
@@ -293,6 +300,130 @@ contains
     !$OMP END PARALLEL DO
 
   end subroutine make_ad_excess_3d
+
+  subroutine make_ad_excess_3d_sphr(ad_excess, ng_ad, state, ng_s, &
+                                    normal, ng_n, lo, hi)
+
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use eos_module
+    use network, only: nspec
+    use probin_module, only: base_cutoff_density
+    use bl_constants_module
+
+    integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s, ng_n
+    real(kind=dp_t), intent(  out) :: ad_excess(lo(1)-ng_ad:,lo(2)-ng_ad:,lo(3)-ng_ad:)
+    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)  
+
+    real(kind=dp_t) :: pres(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
+    real(kind=dp_t) :: nabla_ad(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
+    real(kind=dp_t) :: chi_rho, chi_t, nabla
+    real(kind=dp_t) :: dp(4), dt(4)
+
+    integer :: i, j, k, c
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t)    
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             den_eos(1) = state(i,j,k,rho_comp)
+             temp_eos(1) = state(i,j,k,temp_comp)
+             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+             pt_index_eos(:) = (/i, j, k/)       
+
+             call eos(eos_input_rt, den_eos, temp_eos, &
+                      npts, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      .false., &
+                      pt_index_eos)       
+       
+             pres(i,j,k) = p_eos(1)
+
+             chi_rho = den_eos(1) * dpdr_eos(1) / p_eos(1)
+             chi_t = temp_eos(1) * dpdt_eos(1) / p_eos(1)
+             nabla_ad(i,j,k) = (gam1_eos(1) - chi_rho) / (chi_t * gam1_eos(1))
+
+          enddo
+       enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,dt,dp,nabla)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             if (state(i,j,k,rho_comp) <= base_cutoff_density) then
+                nabla = ZERO
+             else
+                ! compute gradient
+
+                ! forward difference
+                if (k == lo(3)) then
+                   dt(3) = state(i,j,k+1,temp_comp) - state(i,j,k,temp_comp)
+                   dp(3) = pres(i,j,k+1) - pres(i,j,k)
+                   ! backward difference
+                else if (k == hi(3)) then
+                   dt(3) = state(i,j,k,temp_comp) - state(i,j,k-1,temp_comp)
+                   dp(3) = pres(i,j,k) - pres(i,j,k-1)
+                   ! centered difference
+                else
+                   dt(3) = state(i,j,k+1,temp_comp) - state(i,j,k-1,temp_comp)
+                   dp(3) = pres(i,j,k+1) - pres(i,j,k-1)
+                endif
+
+                if (j == lo(2)) then
+                   dt(2) = state(i,j+1,k,temp_comp) - state(i,j,k,temp_comp)
+                   dp(2) = pres(i,j+1,k) - pres(i,j,k)
+                   ! backward difference
+                else if (j == hi(2)) then
+                   dt(2) = state(i,j,k,temp_comp) - state(i,j-1,k,temp_comp)
+                   dp(2) = pres(i,j,k) - pres(i,j-1,k)
+                   ! centered difference
+                else
+                   dt(2) = state(i,j+1,k,temp_comp) - state(i,j-1,k,temp_comp)
+                   dp(2) = pres(i,j+1,k) - pres(i,j-1,k)
+                endif
+
+                if (i == lo(1)) then
+                   dt(1) = state(i+1,j,k,temp_comp) - state(i,j,k,temp_comp)
+                   dp(1) = pres(i+1,j,k) - pres(i,j,k)
+                   ! backward difference
+                else if (i == hi(1)) then
+                   dt(1) = state(i,j,k,temp_comp) - state(i-1,j,k,temp_comp)
+                   dp(1) = pres(i,j,k) - pres(i-1,j,k)
+                   ! centered difference
+                else
+                   dt(1) = state(i+1,j,k,temp_comp) - state(i-1,j,k,temp_comp)
+                   dp(1) = pres(i+1,j,k) - pres(i-1,j,k)
+                endif
+
+                ! dot into normal to get d/dr
+                dp(4) = 0.d0
+                dt(4) = 0.d0
+                do c = 1,3
+                   dp(4) = dp(4) + dp(c)*normal(i,j,k,c) 
+                   dt(4) = dt(4) + dt(c)*normal(i,j,k,c) 
+                enddo
+
+                nabla = pres(i,j,k)*dt(4) / (dp(4)*state(i,j,k,temp_comp))
+             endif
+
+             ad_excess(i,j,k) = nabla - nabla_ad(i,j,k)
+          enddo
+       enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+  end subroutine make_ad_excess_3d_sphr
 
 
   !---------------------------------------------------------------------------
@@ -2842,23 +2973,19 @@ contains
           do i = lo(1), hi(1)
              velr(i,j,k) = u(i,j,k,1)*normal(i,j,k,1) + &
                            u(i,j,k,2)*normal(i,j,k,2) + &
-                           u(i,j,k,3)*normal(i,j,k,3) + &
-                           w0r(i,j,k)
-             velc(i,j,k) = (u(i,j,k,1)+w0r(i,j,k)*normal(i,j,k,1)  &
-                                     -velr(i,j,k)*normal(i,j,k,1)) * &
-                           (u(i,j,k,1)+w0r(i,j,k)*normal(i,j,k,1)  &
-                                     -velr(i,j,k)*normal(i,j,k,1))
+                           u(i,j,k,3)*normal(i,j,k,3) 
+
+             velc(i,j,k) = (u(i,j,k,1)-velr(i,j,k)*normal(i,j,k,1)) * &
+                           (u(i,j,k,1)-velr(i,j,k)*normal(i,j,k,1))
              velc(i,j,k) = velc(i,j,k) + &
-                           (u(i,j,k,2)+w0r(i,j,k)*normal(i,j,k,2)  &
-                                     -velr(i,j,k)*normal(i,j,k,2)) * &
-                           (u(i,j,k,2)+w0r(i,j,k)*normal(i,j,k,2)  &
-                                     -velr(i,j,k)*normal(i,j,k,2))
+                           (u(i,j,k,2)-velr(i,j,k)*normal(i,j,k,2)) * &
+                           (u(i,j,k,2)-velr(i,j,k)*normal(i,j,k,2))
              velc(i,j,k) = velc(i,j,k) + &
-                           (u(i,j,k,3)+w0r(i,j,k)*normal(i,j,k,3)  &
-                                     -velr(i,j,k)*normal(i,j,k,3)) * &
-                           (u(i,j,k,3)+w0r(i,j,k)*normal(i,j,k,3)  &
-                                     -velr(i,j,k)*normal(i,j,k,3))
+                           (u(i,j,k,3)-velr(i,j,k)*normal(i,j,k,3)) * &
+                           (u(i,j,k,3)-velr(i,j,k)*normal(i,j,k,3))
              velc(i,j,k) = sqrt(velc(i,j,k))
+
+             velr(i,j,k) = velr(i,j,k) + w0r(i,j,k)
           enddo
        enddo
     enddo
