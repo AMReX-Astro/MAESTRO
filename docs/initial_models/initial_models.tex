@@ -7,12 +7,9 @@ both the base state and the full Cartesian state.
 \section{Creating the Model Data from Raw Data}\label{Sec:Creating the Model Data from Raw Data}
 \label{sec:initial_models_main}
 
-MAESTRO needs to be given model data with the same resolution as the base state.
-(Note that for spherical problems we set 
-$\Delta r = \Delta x/\mathtt{drdxfac}$.)  
-We need to generate this from the raw data,
- $\rho^{\raw}, T^{\raw}, p^{\raw}$, and
-$X^{\raw}$.  Here is the raw data file for each test problem:
+We have found that for the best performance, the MAESTRO initialization procedure should be given model data with the same resolution as the base state resolution, $\Delta r$.  For planar problems, $\Delta r = \Delta x$.  For multilevel planar problems, we use $\Delta r$ equal to $\Delta x$ at the finest resolution.  For spherical problems we set $\Delta r = \Delta x/\mathtt{drdxfac}$.  We generate our initial model either analytically or from raw data,
+ $\rho^{\raw}, T^{\raw}, p^{\raw}$, and $X^{\raw}$.  
+Here is the raw data file for each test problem:
 \begin{eqnarray}
 {\tt test2} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \nonumber \\
 {\tt test\_convect} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \nonumber \\
@@ -29,7 +26,7 @@ is thermodynamically consistent with the {\tt MAESTRO} equation of
 state (EOS), and also satisfies our chosen hydrostatic equilibrium
 (HSE) discretization,
 \begin{equation}
-\frac{p_r - p_{r-1}}{\Delta r} = \frac{\rho_r + \rho_{r-1}}{2}g,\label{HSE Discretization}
+\frac{p_r - p_{r-1}}{\Delta r} = \frac{\rho_r + \rho_{r-1}}{2}g_{r-\myhalf},\label{HSE Discretization}
 \end{equation}
 to a user defined tolerance.  Here are the fortran subroutines for each test problem:
 \begin{eqnarray}
@@ -43,27 +40,21 @@ The model data is not generated at run-time - it must be generated in
 advance of running any MAESTRO examples.  The inputs file should point
 to the file containing the model data.
 
-\subsection{Multilevel Plane-Parallel}
-We do the same thing as the single-level case except that we generate
-model data with the same resolution as the finest base state
-resolution.
-
-
 \section{Creating the Initial Data from the Model Data}
 In {\tt base\_state.f90}, using the subroutine {\tt
   init\_base\_state} (which is actually a terrible name since we
-are setting the initial data, not the base state), we set the initial
+are computing 1D initial data, which is not quite the same thing 
+as the base satte), we set the initiail
 data $\rho^{\init}, T^{\init}, p^{\init}$ and $X^{\init}$ equal to the
-model data.  Then, we set $h^{\init} =
-h(\rho^{\init},T^{\init},X^{\init})$ through the EOS.  Note that in the code,
-$p^{\init}$ is also overwritten, but the value of $p^{\init}$ does not
-change since we called $p^{\model} =
-p^{\model}(\rho^{\model},T^{\model},X^{\model})$ at the end of the
-initial model generation routines in \S~\ref{Sec:Creating the Model Data from Raw
-  Data}.
+model data.  Then, we set $p^{\init},h^{\init} =
+p,h(\rho^{\init},T^{\init},X^{\init})$ through the EOS.  Note that 
+we overwrite the existing value of $p^{\init}$ but this should not change
+the value since we called 
+$p^{\model} = p^{\model}(\rho^{\model},T^{\model},X^{\model})$ at the end of the
+initial model generation routines in 
+\S~\ref{Sec:Creating the Model Data from Raw Data}.
 
-\subsection{Multilevel Plane-Parallel}
-We do the same thing as the single-level case except that we generate
+For multilevel planar problems, we generate
 initial data at the non-finest levels by using linear interpolation
 from the two nearest model points (see Figure \ref{Fig:Multilevel
   Initialization}).  Note that the initial data is not in HSE nor is
