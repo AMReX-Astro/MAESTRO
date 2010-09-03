@@ -136,34 +136,84 @@ Now $\rho_0 = \overline\rho$, the base state is in HSE, and the full
 state is thermodynamically consistent with $p_0$.
 
 \subsection{Coarse-Fine HSE Discretization}\label{Sec:Coarse-Fine HSE Discretization}
-Integrating the HSE discretization upward, when we encounter a change
-from coarse to fine, here is an equation to integrate up to the
-coarse-fine interface ($l$ is the ``finer'' level, $l-1$ is the
-``coarser'' level)
+When integrating the HSE discretization upward, we must use a different
+differencing procedure at coarse-fine interfaces.  Figure~\ref{fig:ctof} shows
+the transition from coarse (level $l-1$) to fine (level $l$), with the zone
+center indices noted.  
+\begin{figure}[t]
+\centering
+\includegraphics[width=2.5in,angle=90]{\figpath/ctof}
+\caption{\label{fig:ctof} A coarse-fine interface in the 1-d base state}
+\end{figure}
+
+To find the zone-centered pressure in the first fine zone, $p_r^l$, from
+the zone-centered pressure in the coarse zone just below the coarse-fine interface,
+$p_{\sfrac{r}{2}-1}^{l-1}$, we integrate in 2 steps.  We allow for a spatially
+changing gravitational acceleration, for complete generality.
+
+First we integrate up to the
+coarse-fine interface from the coarse-cell center as:
 \begin{equation}
-\frac{p_{r-\myhalf}^l - p_{\sfrac{r}{2}-1}^{l-1}}{\Delta r^{l-1}/2} = \frac{\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}}{2}g ~~~ \rightarrow ~~~ p_{r-\myhalf}^l = p_{\sfrac{r}{2}-1}^{l-1} + \frac{\Delta r^{l-1} g}{4}\left(\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}\right).
+\frac{p_{r-\myhalf}^l - p_{\sfrac{r}{2}-1}^{l-1}}{\Delta r^{l-1}/2} = 
+  \frac{\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}}{2}  \,
+  \frac{g_{r-\myhalf}^l + g_{\sfrac{r}{2}-1}^{l-1}}{2} 
 \end{equation}
-Here is an equation to integrate from the coarse-fine interface up to
-the cell center
+We can rewrite this as an expression for the pressure at the coarse-fine interface:
 \begin{equation}
-\frac{p_r^l - p_{r-\myhalf}^l}{\Delta r^l/2} = \frac{\rho_r^l + \rho_{r-\myhalf}^l}{2}g ~~~ \rightarrow ~~~ p_r^l = p_{r-\myhalf}^l + \frac{\Delta r^l g}{4}\left(\rho_r^l + \rho_{r-\myhalf}^l\right).
+ p_{r-\myhalf}^l = p_{\sfrac{r}{2}-1}^{l-1} + \frac{\Delta r^{l-1}}{8}
+  \left(\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}\right)
+  \left(g_{r-\myhalf}^l + g_{\sfrac{r}{2}-1}^{l-1}\right).
+  \label{eq:ctoi}
 \end{equation}
-Combining equations gives
+
+Next we integrate up from the coarse-fine interface to the fine-cell center:
 \begin{equation}
-p_r^l = p_{\sfrac{r}{2}-1}^{l-1} + \frac{\Delta r^{l-1} g}{4}\left(\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}\right) + \frac{\Delta r^l g}{4}\left(\rho_r^l + \rho_{r-\myhalf}^l\right).
+\frac{p_r^l - p_{r-\myhalf}^l}{\Delta r^l/2} = 
+  \frac{\rho_r^l + \rho_{r-\myhalf}^l}{2} \,
+  \frac{g_r^l + g_{r-\myhalf}^l}{2}
 \end{equation}
+We can rewrite this as an expression for the pressure at the fine-cell center:
+\begin{equation}
+p_r^l = p_{r-\myhalf}^l + \frac{\Delta r^l g}{8}
+  \left(\rho_r^l + \rho_{r-\myhalf}^l\right)
+  \left(g_r^l + g_{r-\myhalf}^l\right).
+  \label{eq:itof}
+\end{equation}
+Combining equations \ref{eq:ctoi} and \ref{eq:itof} gives
+\begin{eqnarray}
+p_r^l = p_{\sfrac{r}{2}-1}^{l-1} &+& 
+     \frac{\Delta r^{l-1}}{8} \left(\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}\right)
+                                \left(   g_{r-\myhalf}^l +    g_{\sfrac{r}{2}-1}^{l-1}\right) \nonumber \\
+ &+& \frac{\Delta r^l}{8} \left(\rho_r^l + \rho_{r-\myhalf}^l\right)
+                            \left(   g_r^l +    g_{r-\myhalf}^l\right).
+\end{eqnarray}
 We can simplify using
 \begin{equation}
 \Delta r^{l-1} = 2\Delta r^l,
 \end{equation}
+and by interpolating the cell-centered densities to the coarse-fine interface as:
 \begin{equation}
 \rho_{r-\myhalf}^l = \frac{2}{3}\rho_r^l + \frac{1}{3}\rho_{\sfrac{r}{2}-1}^{l-1}.
 \end{equation}
-Simplifying
+Because we carry both the cell- and edge-centered gravitational accelerations, we
+do not need to interpolate $g$ to the interface.
+Simplifying, we have
 \begin{eqnarray}
-p_r^l &=& p_{\sfrac{r}{2}-1}^{l-1} + \frac{\Delta r^l g}{2}\left(\frac{2}{3}\rho_r^l + \frac{1}{3}\rho_{\sfrac{r}{2}-1}^{l-1} + \rho_{\sfrac{r}{2}-1}^{l-1}\right) + \frac{\Delta r^l g}{4}\left(\rho_r^l + \frac{2}{3}\rho_r^l + \frac{1}{3}\rho_{\sfrac{r}{2}-1}^{l-1}\right) \nonumber \\
-&=& p_{\sfrac{r}{2}-1}^{l-1} + \frac{3\Delta r^l g}{4}\left(\rho_{\sfrac{r}{2}-1}^{l-1} + \rho_r^l\right).\label{Coarse-Fine Stencil}
+p_r^l = p_{\sfrac{r}{2}-1}^{l-1} &+& 
+   \frac{\Delta r^l}{4}\left(\frac{2}{3}\rho_r^l + 
+                             \frac{1}{3}\rho_{\sfrac{r}{2}-1}^{l-1} + 
+                             \rho_{\sfrac{r}{2}-1}^{l-1}\right) 
+                       \left(   g_{r-\myhalf}^l +    g_{\sfrac{r}{2}-1}^{l-1}\right) \nonumber \\
+  &+& \frac{\Delta r^l g}{8}\left(\rho_r^l + 
+                                  \frac{2}{3}\rho_r^l + 
+                                  \frac{1}{3}\rho_{\sfrac{r}{2}-1}^{l-1}\right) 
+                       \left(   g_r^l +    g_{r-\myhalf}^l\right) \enskip .
 \end{eqnarray}
+Finally, we note for constant $g$, this simplifies to:
+\begin{equation}
+p_r^l = p_{\sfrac{r}{2}-1}^{l-1} + 
+  \frac{3\Delta r^l g}{4}\left(\rho_{\sfrac{r}{2}-1}^{l-1} + \rho_r^l\right).\label{Coarse-Fine Stencil}
+\end{equation}
 When we encounter a change from fine to coarse, analogously
 \begin{equation}
 p_{(r+1)/2}^{l-1} = p_{r}^l + \frac{3\Delta r^l g}{4}\left(\rho_{r}^l+\rho_{(r+1)/2}^{l-1}\right).\label{Fine-Coarse Stencil}
