@@ -107,7 +107,9 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call bl_error('initveldata_2d not written')
+             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
+                                 s0_init(n,:,:), p0_init(n,:))
+!             call bl_error('initveldata_2d not written')
           case (3)
              if (spherical .eq. 1) then
                 call initveldata_3d_sphr(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
@@ -149,6 +151,21 @@ contains
     end if
 
   end subroutine initveldata
+
+  subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init)
+
+    integer           , intent(in   ) :: lo(:),hi(:),ng
+    real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
+    real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
+
+    ! Local variables
+
+    ! initial the velocity
+    u = ZERO
+
+  end subroutine initveldata_2d
 
   ! the velocity is initialized to zero plus a perturbation which is a
   ! summation of 27 fourier modes with random amplitudes and phase

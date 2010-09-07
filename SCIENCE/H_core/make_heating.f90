@@ -92,7 +92,8 @@ contains
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),time
 
-    call bl_error('2d external heating not written yet')
+!    call bl_error('2d external heating not written yet')
+    rho_Hext = 0.0_dp_t
 
   end subroutine get_rho_Hext_2d
   
@@ -117,33 +118,33 @@ contains
     real(kind=dp_t)                :: tmp1, tmp2, tmp3
 !..............................................................................
     
-    !rho_Hext = 0.0_dp_t
+    rho_Hext = 0.0_dp_t
 
 !..............................................................................
-    h1_comp = spec_comp - 1 + network_species_index("hydrogen-1")
-    c12_comp = spec_comp - 1 + network_species_index("carbon-12")
-    n14_comp = spec_comp - 1 + network_species_index("nitrogen-14")
-    o16_comp = spec_comp - 1 + network_species_index("oxygen-16")
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             rho = s(i,j,k,rho_comp)
-             T_6_third = (s(i,j,k,temp_comp) / 1.0d6) ** THIRD
-             tmp1 = s(i,j,k,c12_comp)
-             tmp2 = s(i,j,k,n14_comp)
-             tmp3 = s(i,j,k,o16_comp)
-             X_CNO = (tmp1 + tmp2 + tmp3) / rho
-             X_1 = s(i,j,k,h1_comp) / rho
-             tmp1 =   2.7d-3 * T_6_third
-             tmp2 = -7.78d-3 * T_6_third**2
-             tmp3 = -1.49d-4 * T_6_third**3
-             g14 = 1.0_dp_t + tmp1 + tmp2 + tmp3
-             tmp1 = 8.67d27 * g14 * X_CNO * X_1 * rho / T_6_third**2
-             tmp2 = dexp(-1.5228d2 / T_6_third)
-             rho_Hext(i,j,k) = rho * tmp1 * tmp2
-          enddo
-      enddo
-    enddo
+!     h1_comp = spec_comp - 1 + network_species_index("hydrogen-1")
+!     c12_comp = spec_comp - 1 + network_species_index("carbon-12")
+!     n14_comp = spec_comp - 1 + network_species_index("nitrogen-14")
+!     o16_comp = spec_comp - 1 + network_species_index("oxygen-16")
+!     do k = lo(3), hi(3)
+!        do j = lo(2), hi(2)
+!           do i = lo(1), hi(1)
+!              rho = s(i,j,k,rho_comp)
+!              T_6_third = (s(i,j,k,temp_comp) / 1.0d6) ** THIRD
+!              tmp1 = s(i,j,k,c12_comp)
+!              tmp2 = s(i,j,k,n14_comp)
+!              tmp3 = s(i,j,k,o16_comp)
+!              X_CNO = (tmp1 + tmp2 + tmp3) / rho
+!              X_1 = s(i,j,k,h1_comp) / rho
+!              tmp1 =   2.7d-3 * T_6_third
+!              tmp2 = -7.78d-3 * T_6_third**2
+!              tmp3 = -1.49d-4 * T_6_third**3
+!              g14 = 1.0_dp_t + tmp1 + tmp2 + tmp3
+!              tmp1 = 8.67d27 * g14 * X_CNO * X_1 * rho / T_6_third**2
+!              tmp2 = dexp(-1.5228d2 / T_6_third)
+!              rho_Hext(i,j,k) = rho * tmp1 * tmp2
+!           enddo
+!       enddo
+!     enddo
 !..............................................................................
     
   end subroutine get_rho_Hext_3d

@@ -47,7 +47,8 @@ contains
           
           select case (dm)
           case (2)
-             call bl_error('initscalardata_2d not written')
+             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
+                                    p0_init(n,:))
           case (3)
              if (spherical .eq. 1) then
                 call initscalardata_3d_sphr(sop(:,:,:,:), lo, hi, ng, dx(n,:), &
@@ -128,6 +129,96 @@ contains
 
   end subroutine initscalardata_on_level
 
+  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
+
+    use probin_module, only: prob_lo, perturb_model
+    use init_perturb_module
+
+    integer           , intent(in   ) :: lo(:),hi(:),ng
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
+    real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
+
+    ! Local variables
+    integer         :: i,j
+    real(kind=dp_t) :: x,y
+    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
+    real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
+
+    real(kind=dp_t) :: x0,y0, r0
+    real(kind=dp_t) :: rho, rho0
+
+
+    ! initial the domain with the base state
+    s = ZERO
+
+    ! initialize the scalars
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+          s(i,j,rho_comp)  = s0_init(j,rho_comp)
+          s(i,j,rhoh_comp) = s0_init(j,rhoh_comp)
+          s(i,j,temp_comp) = s0_init(j,temp_comp)
+          s(i,j,spec_comp:spec_comp+nspec-1) = &
+               s0_init(j,spec_comp:spec_comp+nspec-1)
+          s(i,j,trac_comp:trac_comp+ntrac-1) = &
+               s0_init(j,trac_comp:trac_comp+ntrac-1)
+       enddo
+    enddo
+    
+    ! add an optional perturbation
+    if (perturb_model) then
+
+!       x0 = center(1) + 7.35d9
+!       y0 = 7.35d9
+       x0 = 2.d10
+       y0 = 2.d10
+
+       ! add an optional perturbation
+       do j = lo(2), hi(2)
+          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+          
+          do i = lo(1), hi(1)
+             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+
+             
+             rho0 = s(i,j,rho_comp)
+
+             ! Tanh bubbles
+             r0 = sqrt( (x-x0)**2 + (y-y0)**2 ) / 2.e9
+             
+             ! This case works
+             rho = rho0 - 3.d-6*tanh(2.0_dp_t-r0)
+             
+             ! Use the EOS to make this temperature perturbation occur at
+             ! constant pressure
+             temp_eos(1) = s(i,j,temp_comp)
+             p_eos(1) = p0_init(j)
+             den_eos(1) = rho
+             xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/s(i,j,rho_comp)
+             
+             call eos(eos_input_rp, den_eos, temp_eos, &
+                  npts, &
+                  xn_eos, &
+                  p_eos, h_eos, e_eos, &
+                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                  dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                  dpdX_eos, dhdX_eos, &
+                  gam1_eos, cs_eos, s_eos, &
+                  dsdt_eos, dsdr_eos, &
+                  .false.)
+             
+             s(i,j,rho_comp) = rho
+             s(i,j,spec_comp:spec_comp+nspec-1) = rho*xn_eos(1,:)
+             s(i,j,rhoh_comp) = rho*h_eos(1)
+             s(i,j,temp_comp) = temp_eos(1)
+          enddo
+       enddo
+
+    end if
+
+  end subroutine initscalardata_2d
+
   subroutine initscalardata_3d_sphr(s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo, perturb_model
@@ -182,9 +273,9 @@ contains
 
     if (perturb_model) then
 
-       x0 = center(1) + 2.5d10
-       y0 = center(2) + 2.5d10
-       z0 = center(3) + 3.0d10
+       x0 = center(1) 
+       y0 = center(2) + 1.04d10
+       z0 = center(3) 
        
        ! add an optional perturbation
        do k = lo(3), hi(3)
@@ -200,11 +291,12 @@ contains
                 t0 = s(i,j,k,temp_comp)
 
                 ! Tanh bubbles
-                r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) / 2.5d8
+                r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) / 1.15d10
     
                 ! This case works
-                temp = t0 * (ONE + TWO*(.150_dp_t * 0.5_dp_t * & 
-                     (1.0_dp_t + tanh((2.0_dp_t-r0)))))
+!                temp = t0 * (ONE + TWO*(.150_dp_t * 0.5_dp_t * & 
+!                     (1.0_dp_t + tanh((2.0_dp_t-r0)))))
+                temp = t0 - 3.d-6 * tanh(2.0_dp_t-r0)
 
                 ! Use the EOS to make this temperature perturbation occur at 
                 ! constant pressure
