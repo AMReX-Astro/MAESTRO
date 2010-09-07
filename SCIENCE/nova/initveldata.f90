@@ -43,14 +43,17 @@ contains
     real(kind=dp_t) :: xloc_vortices(num_vortices)
     real(kind=dp_t) :: offset
 
+    if (mod(num_vortices,2) == 1) then
+       call bl_error("ERROR: num_vortices must be even")
+    endif
+
     ! for now, this is calculated even if we don't use the velocity field in
     ! the initveldata_2d routine below
-    offset = (prob_hi(1) - prob_lo(1)) / (num_vortices + 1)
+    offset = (prob_hi(1) - prob_lo(1)) / (num_vortices)
 
     do i = 1, num_vortices
-       xloc_vortices(i) = dble(i) * offset
+       xloc_vortices(i) = (dble(i-1) + 0.5d0) * offset + prob_lo(1)
     enddo
-    
     
     ng = nghost(u(1))
 
@@ -152,12 +155,13 @@ contains
                 ! we set things up so that every other vortex has the same
                 ! orientation
                 upert(1) = upert(1) - ydist * &
-                     velpert_amplitude * exp( -r**2/(TWO*velpert_scale)) &
+                     velpert_amplitude * exp( -r**2/(TWO*velpert_scale**2)) &
                      * (-ONE)**vortex
 
                 upert(2) = upert(2) + xdist * &
-                     velpert_amplitude * exp(-r**2/(TWO*velpert_scale)) &
+                     velpert_amplitude * exp(-r**2/(TWO*velpert_scale**2)) &
                      * (-ONE)**vortex
+
              enddo
 
              u(i,j,:) = u(i,j,:) + upert(:)
