@@ -42,7 +42,6 @@ contains
        if (multifab_remote(state, i)) cycle
        sp => dataptr(state, i)
        cp => dataptr(plotdata, i)
-       np => dataptr(normal, i)
        lo = lwb(get_box(state, i))
        hi = upb(get_box(state, i))
        select case (dm)
@@ -56,6 +55,7 @@ contains
                                  lo, hi)
        case (3)
           if (spherical .eq. 1) then
+             np => dataptr(normal, i)       
              call make_ad_excess_3d_sphr(cp(:,:,:,comp_ad_excess), ng_c, &
                                          sp(:,:,:,:), ng_s, &
                                          np(:,:,:,:), ng_n, lo, hi)
