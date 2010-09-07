@@ -3,7 +3,7 @@
 
  spherical_in = 0
 
- max_levs = 3
+ max_levs = 2
  n_cellx = 128
  n_celly = 256
 
@@ -33,9 +33,9 @@
 
  max_step  = 10000000
 
- do_initial_projection = T
- init_divu_iter = 4
- init_iter = 1
+ do_initial_projection = F
+ init_divu_iter = 0
+ init_iter = 0
 
  stop_time = 5.d2
 
@@ -66,10 +66,17 @@
  burner_threshold_species = "H1"
  burner_threshold_cutoff = 2.0d-10
 
- perturb_model= T
+ perturb_model= F
+
+ apply_vel_field = T
+ velpert_scale = 5.0d6
+ velpert_amplitude = 1.d5
+ velpert_height_loc = 4.65d8
+ num_vortices = 8
 
  nova_pert_factor = 1.0d-2
  nova_pert_size = 1.0d7
  nova_pert_type = 1
  nova_pert_height = 4.6d8
 /
+
