@@ -169,9 +169,7 @@ contains
     ! add an optional perturbation
     if (perturb_model) then
 
-!       x0 = center(1) + 7.35d9
-!       y0 = 7.35d9
-       x0 = 2.d10
+       x0 = center(1) + 2.d10
        y0 = 2.d10
 
        ! add an optional perturbation

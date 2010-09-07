@@ -9,7 +9,7 @@
  max_grid_size = 64
 
  velpert_amplitude = 0.d0
- perturb_model = T
+ perturb_model = F
 
  base_cutoff_density = 1.d-4
  anelastic_cutoff = 1.d-4
@@ -29,7 +29,7 @@
 
 ! restart = 500
 
- max_step  = 1
+ max_step  = 500
  init_iter = 1
  init_divu_iter = 1
  do_initial_projection = T

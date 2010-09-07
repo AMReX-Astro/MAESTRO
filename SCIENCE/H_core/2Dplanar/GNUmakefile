@@ -28,12 +28,5 @@ EXTRA_DIR := extern/random
 PROBIN_PARAMETERS := ../../_parameters ./_parameters.hcore
 
 
-VPATH_LOCATIONS := ..
-
-
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
-
-
-dog : 
-	echo $(VPATH_LOCATIONS)
