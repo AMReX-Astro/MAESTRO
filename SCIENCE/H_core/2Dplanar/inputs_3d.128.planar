@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "s15-hburn.modelB.stableCore.15.planar128.232"
+ model_file = "s15-hburn.modelB.planar128.232"
  drdxfac = 1
 
  max_levs = 1
