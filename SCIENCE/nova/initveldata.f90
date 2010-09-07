@@ -154,11 +154,11 @@ contains
                 ! e.g. Calder et al. ApJSS 143, 201-229 (2002)
                 ! we set things up so that every other vortex has the same
                 ! orientation
-                upert(1) = upert(1) - ydist * &
+                upert(1) = upert(1) - (ydist/velpert_scale) * &
                      velpert_amplitude * exp( -r**2/(TWO*velpert_scale**2)) &
                      * (-ONE)**vortex
 
-                upert(2) = upert(2) + xdist * &
+                upert(2) = upert(2) + (xdist/velpert_scale) * &
                      velpert_amplitude * exp(-r**2/(TWO*velpert_scale**2)) &
                      * (-ONE)**vortex
 
