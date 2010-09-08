@@ -50,7 +50,7 @@ module diag_module
   integer, parameter :: n_file1 = 18 
   integer, parameter :: n_file2 = 5
   integer, parameter :: n_file3 = 1
-  integer, parameter :: n_file4 = 7
+  integer, parameter :: n_file4 = 18
 
   integer, save :: nstored = 0
 
@@ -731,7 +731,7 @@ contains
        file1_data(index, 15) = vtot_favre(1)
        file1_data(index, 16) = vtot_favre(2)
        file1_data(index, 17) = vtot_favre(3)
-       file4_data(index, 7) = dt
+       file4_data(index, 18) = dt
     end if
 
     !=========================================================================
