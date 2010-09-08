@@ -131,6 +131,10 @@ contains
     real(kind=dp_t) :: vc_max,    vc_max_level,    vc_max_local
     real(kind=dp_t) :: rhovc(dm), rhovc_level(dm), rhovc_local(dm)
 
+    real(kind=dp_t) :: vtot(dm),    vtot_level(dm),    vtot_local(dm)
+    real(kind=dp_t) :: vtot_max,    vtot_max_level,    vtot_max_local
+    real(kind=dp_t) :: rhovtot(dm), rhovtot_level(dm), rhovtot_local(dm)
+
     real(kind=dp_t) :: mass,      mass_level,      mass_local
     real(kind=dp_t) :: nzones,    nzones_level,    nzones_local
 
@@ -163,6 +167,7 @@ contains
 
     real(kind=dp_t) :: vr_favre(dm)
     real(kind=dp_t) :: vc_favre(dm)
+    real(kind=dp_t) :: vtot_favre(dm)
 
     real(kind=dp_t) :: grav_ener, term1, term2
     real(kind=dp_t), allocatable :: m(:)
@@ -258,12 +263,17 @@ contains
     vc(:)    = ZERO
     rhovc(:) = ZERO
 
+    vtot(:)    = ZERO
+    rhotot(:) = ZERO
+
     mass     = ZERO
     nzones   = ZERO
 
     vr_max   = ZERO
 
     vc_max   = ZERO
+
+    vtot_max   = ZERO
 
     kin_ener = ZERO
     int_ener = ZERO
@@ -298,6 +308,12 @@ contains
        
        rhovc_level(:) = ZERO
        rhovc_local(:) = ZERO
+
+       vtot_level(:) = ZERO
+       vtot_local(:) = ZERO
+       
+       rhovtot_level(:) = ZERO
+       rhovtot_local(:) = ZERO
        
        mass_level = ZERO
        mass_local = ZERO
@@ -310,6 +326,9 @@ contains
 
        vc_max_level = ZERO
        vc_max_local = ZERO
+
+       vtot_max_level = ZERO
+       vtot_max_local = ZERO
        
        nuc_ener_level = ZERO
        nuc_ener_local = ZERO
@@ -371,6 +390,8 @@ contains
                              vrvt_local, &
                              vc_local(1),vc_local(2),vc_local(3),vc_max_local, &
                              rhovc_local(1), rhovc_local(2), rhovc_local(3), &
+                             vtot_local(1),vtot_local(2),vtot_local(3),vtot_max_local, &
+                             rhovtot_local(1), rhovtot_local(2), rhovtot_local(3), &
                              mass_local, &
                              nuc_ener_local,kin_ener_local, int_ener_local, &
                              U_max_local, coord_Umax_local, & 
@@ -392,6 +413,8 @@ contains
                              vrvt_local, &
                              vc_local(1),vc_local(2),vc_local(3),vc_max_local, &
                              rhovc_local(1), rhovc_local(2), rhovc_local(3), &
+                             vtot_local(1),vtot_local(2),vtot_local(3),vtot_max_local, &
+                             rhovtot_local(1), rhovtot_local(2), rhovtot_local(3), &
                              mass_local, &
                              nuc_ener_local,kin_ener_local, int_ener_local, &
                              U_max_local,  coord_Umax_local, & 
@@ -414,12 +437,14 @@ contains
        sum_data_local(dm+1:2*dm) = rhovr_local(:)
        sum_data_local(2*dm+1:3*dm) = vc_local(:)
        sum_data_local(3*dm+1:4*dm) = rhovc_local(:)
-       sum_data_local(4*dm+1)    = mass_local
-       sum_data_local(4*dm+2)    = nzones_local
-       sum_data_local(4*dm+3)    = nuc_ener_local
-       sum_data_local(4*dm+4)    = kin_ener_local
-       sum_data_local(4*dm+5)    = int_ener_local
-       sum_data_local(4*dm+6)    = vrvt_local
+       sum_data_local(4*dm+1:5*dm) = vtot_local(:)
+       sum_data_local(5*dm+1:6*dm) = rhovtot_local(:)
+       sum_data_local(6*dm+1)    = mass_local
+       sum_data_local(6*dm+2)    = nzones_local
+       sum_data_local(6*dm+3)    = nuc_ener_local
+       sum_data_local(6*dm+4)    = kin_ener_local
+       sum_data_local(6*dm+5)    = int_ener_local
+       sum_data_local(6*dm+6)    = vrvt_local
 
 
        call parallel_reduce(sum_data_level, sum_data_local, MPI_SUM, &
@@ -429,26 +454,30 @@ contains
        rhovr_level(:)      = sum_data_level(dm+1:2*dm)
        vc_level(:)         = sum_data_level(2*dm+1:3*dm)
        rhovc_level(:)      = sum_data_level(3*dm+1:4*dm)
-       mass_level          = sum_data_level(4*dm+1)
-       nzones_level        = sum_data_level(4*dm+2)
-       nuc_ener_level      = sum_data_level(4*dm+3)
-       kin_ener_level      = sum_data_level(4*dm+4)
-       int_ener_level      = sum_data_level(4*dm+5)
-       vrvt_level          = sum_data_level(4*dm+6)
+       vc_level(:)         = sum_data_level(4*dm+1:5*dm)
+       rhovc_level(:)      = sum_data_level(5*dm+1:6*dm)
+       mass_level          = sum_data_level(6*dm+1)
+       nzones_level        = sum_data_level(6*dm+2)
+       nuc_ener_level      = sum_data_level(6*dm+3)
+       kin_ener_level      = sum_data_level(6*dm+4)
+       int_ener_level      = sum_data_level(6*dm+5)
+       vrvt_level          = sum_data_level(6*dm+6)
 
 
        ! pack the quantities that we are taking the max of into a vector
        ! to reduce communication
        max_data_local(1) = vr_max_local
        max_data_local(2) = vc_max_local
-       max_data_local(3) = Mach_max_local
+       max_data_local(3) = vtot_max_local
+       max_data_local(4) = Mach_max_local
 
        call parallel_reduce(max_data_level, max_data_local, MPI_MAX, &
                             proc = parallel_IOProcessorNode())
 
        vr_max_level   = max_data_level(1)
        vc_max_level   = max_data_level(2)
-       Mach_max_level = max_data_level(3)
+       vtot_max_level   = max_data_level(3)
+       Mach_max_level = max_data_level(4)
 
 
        ! for U_max, we want to know where the spot is, so we do a
@@ -500,12 +529,17 @@ contains
           vc       = vc     + vc_level
           rhovc    = rhovc  + rhovc_level
 
+          vtot       = vtot     + vtot_level
+          rhovtot    = rhovtot  + rhovtot_level
+
           mass     = mass   + mass_level
           nzones   = nzones + nzones_level
 
           vr_max   = max(vr_max,   vr_max_level)
 
           vc_max   = max(vc_max,   vc_max_level)
+
+          vtot_max = max(vtot_max, vtot_max_level)
 
           nuc_ener = nuc_ener + nuc_ener_level
           kin_ener = kin_ener + kin_ener_level
@@ -617,6 +651,9 @@ contains
        vc(:) = vc(:)/nzones
        vc_favre(:) = rhovc(:)/mass    ! note: common dV normalization cancels
 
+       vtot(:) = vtot(:)/nzones
+       vtot_favre(:) = rhovtot(:)/mass ! note: common dV normalization cancels
+
        ! the volume we normalize with is that of a single coarse-level
        ! zone.  This is because the weight used in the loop over cells
        ! was with reference to the coarse level
@@ -686,6 +723,14 @@ contains
                                     (coord_Umax(2) - center(2))**2 + &
                                     (coord_Umax(3) - center(3))**2 )
        file4_data(index, 6) = Mach_max
+       file1_data(index, 10) = vtot(1)
+       file1_data(index, 11) = vtot(2)
+       file1_data(index, 12) = vtot(3)
+       file1_data(index, 13) = sqrt(vtot(1)**2 + vtot(2)**2 + vtot(3)**2)
+       file1_data(index, 14) = vtot_max
+       file1_data(index, 15) = vtot_favre(1)
+       file1_data(index, 16) = vtot_favre(2)
+       file1_data(index, 17) = vtot_favre(3)
        file4_data(index, 7) = dt
     end if
 
@@ -843,7 +888,11 @@ contains
           write (un4, 999) trim(job_name)
           write (un4,1001) "time", "max{|U + w0|}",  &
                "x(max{V})", "y(max{V})", "z(max{V})", "R{max{V})", &
-               "max{Mach #}", "dt"
+               "max{Mach #}",&
+               "<vtot_x>", "<vtot_y>", "<vtot_z>", "<vtot>", &
+               "max{|vtot|}", &
+               "int{rhovtot_x}/mass", "int{rhovtot_y}/mass", "int{rhovtot_z}/mass", &
+               "dt"
   
           firstCall = .false.
        endif
@@ -918,6 +967,8 @@ contains
                      rhovr_x,rhovr_y,rhovr_z, vrvt, &
                      vc_x,vc_y,vc_z,vc_max, &
                      rhovc_x,rhovc_y,rhovc_z, &
+                     vtot_x,vtot_y,vtot_z,vtot_max, &
+                     rhovtot_x,rhovtot_y,rhovtot_z, &
                      mass, &
                      nuc_ener,kin_ener,int_ener, &
                      U_max, coord_Umax, Mach_max, &
@@ -947,6 +998,8 @@ contains
     real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, vrvt
     real (kind=dp_t), intent(inout) :: vc_x, vc_y, vc_z, vc_max
     real (kind=dp_t), intent(inout) :: rhovc_x, rhovc_y, rhovc_z, mass, nzones
+    real (kind=dp_t), intent(inout) :: vtot_x, vtot_y, vtot_z, vtot_max
+    real (kind=dp_t), intent(inout) :: rhovtot_x, rhovtot_y, rhovtot_z, mass, nzones
     real (kind=dp_t), intent(inout) :: nuc_ener,kin_ener, int_ener
     real (kind=dp_t), intent(inout) :: U_max, coord_Umax(:)
     real (kind=dp_t), intent(inout) :: Mach_max
@@ -957,6 +1010,7 @@ contains
     real (kind=dp_t)   :: velr, velc, vel, weight
     logical            :: cell_valid
     real (kind=dp_t)   :: x, y, z
+    real (kind=dp_t)   :: vx, vy, vz
 
     ! weight is the factor by which the volume of a cell at the
     ! current level relates to the volume of a cell at the coarsest
@@ -970,7 +1024,9 @@ contains
 !$omp parallel do private(i,j,k,x,y,z,cell_valid,velr,vel) &
 !$omp reduction(max:vr_max,U_max,Mach_max) &
 !$omp reduction(vr_x,vr_y,vr_z,rhovr_x,rhovr_y,rhovr_z, vrvt, &
-!$omp           vc_x,vc_y,vc_z,rhovc_x,rhovc_y,rhovc_z,mass,nzones,&
+!$omp           vc_x,vc_y,vc_z,rhovc_x,rhovc_y,rhovc_z,&
+!$omp           vtot_x,vtot_y,vtot_z,rhovtot_x,rhovtot_y,rhovtot_z,&
+!$omp           mass,nzones,&
 !$omp           nuc_ener,kin_ener,int_ener)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
@@ -997,15 +1053,34 @@ contains
                        u(i,j,k,3)*normal(i,j,k,3) 
 
                 ! vel is the magnitude of the velocity, including w0
-                vel = sqrt( (u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))**2 + &
-                            (u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))**2 + &
-                            (u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))**2)
+                vx = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
+                vy = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
+                vz = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
+                vel = sqrt( vx*vx + vy*vy + vz*vz)
+
+                !velc is the angular component of the velocity 
                 velc = sqrt( (u(i,j,k,1) - velr*normal(i,j,k,1))**2 + &
                              (u(i,j,k,2) - velr*normal(i,j,k,2))**2 + &
                              (u(i,j,k,3) - velr*normal(i,j,k,3))**2)
 
 
                 ! diagnostics
+
+
+                ! total velocity
+                vtot_max = max(vtot_max,vel)
+
+                vtot_x = vtot_x + weight*vx
+                vtot_y = vtot_y + weight*vy
+                vtot_z = vtot_z + weight*vz
+                
+                rhovtot_x = rhovtot_x + weight*s(i,j,k,rho_comp)*vx
+                rhovtot_y = rhovtot_y + weight*s(i,j,k,rho_comp)*vy
+                rhovtot_z = rhovtot_z + weight*s(i,j,k,rho_comp)*vz
+
+
+
+                ! "circumferential" velocity
                 vc_max = max(vc_max,velc)
 
                 vc_x = vc_x + weight*(u(i,j,k,1)-velr*normal(i,j,k,1))
