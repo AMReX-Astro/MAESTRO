@@ -378,7 +378,7 @@ minwidth                            integer            8
 blocking_factor                     integer            8                    
 
 # parameter for cluster algorithm for making new grids in adaptive problems
-min_eff                             real               0.7d0     
+min_eff                             real               0.9d0
 
 # rotational frequency used for computing centrifugal term in rotation problems.
 rotational_frequency                real               ZERO                
