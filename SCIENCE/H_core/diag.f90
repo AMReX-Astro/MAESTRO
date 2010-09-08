@@ -149,8 +149,8 @@ contains
     real(kind=dp_t) :: r_cz
 
     ! buffers
-    real(kind=dp_t) :: max_data_level(3), max_data_local(3)
-    real(kind=dp_t) :: sum_data_level(4*dm+9), sum_data_local(4*dm+9)
+    real(kind=dp_t) :: max_data_level(4), max_data_local(4)
+    real(kind=dp_t) :: sum_data_level(6*dm+9), sum_data_local(6*dm+9)
 
     real(kind=dp_t) :: U_max_data_local(1), U_max_coords_local(2*dm)
     real(kind=dp_t), allocatable :: U_max_data(:), U_max_coords(:)
@@ -241,7 +241,7 @@ contains
 
     else
 
-       call bl_error("ERROR: hcore/diag.f90: geometry not spherical")
+!       call bl_error("ERROR: hcore/diag.f90: geometry not spherical")
 
     endif
 
@@ -264,7 +264,7 @@ contains
     rhovc(:) = ZERO
 
     vtot(:)    = ZERO
-    rhotot(:) = ZERO
+    rhovtot(:) = ZERO
 
     mass     = ZERO
     nzones   = ZERO
@@ -997,9 +997,10 @@ contains
     real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max
     real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, vrvt
     real (kind=dp_t), intent(inout) :: vc_x, vc_y, vc_z, vc_max
-    real (kind=dp_t), intent(inout) :: rhovc_x, rhovc_y, rhovc_z, mass, nzones
+    real (kind=dp_t), intent(inout) :: rhovc_x, rhovc_y, rhovc_z
     real (kind=dp_t), intent(inout) :: vtot_x, vtot_y, vtot_z, vtot_max
-    real (kind=dp_t), intent(inout) :: rhovtot_x, rhovtot_y, rhovtot_z, mass, nzones
+    real (kind=dp_t), intent(inout) :: rhovtot_x, rhovtot_y, rhovtot_z
+    real (kind=dp_t), intent(inout) ::  mass, nzones
     real (kind=dp_t), intent(inout) :: nuc_ener,kin_ener, int_ener
     real (kind=dp_t), intent(inout) :: U_max, coord_Umax(:)
     real (kind=dp_t), intent(inout) :: Mach_max
