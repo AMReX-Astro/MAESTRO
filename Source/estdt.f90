@@ -678,6 +678,7 @@ contains
 
     call put_1d_array_on_cart_3d_sphr(.true.,.true.,gp0,gp0_cart,lo,hi,dx,0)
     
+    !$OMP PARALLEL DO PRIVATE(i,j,k,a,b,c,gp_dot_u,denom) REDUCTION(min:dt_divu)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -691,14 +692,6 @@ contains
              if (denom > ZERO) then
                 dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
              endif
-             
-          enddo
-       enddo
-    enddo
-    
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)           
              !
              ! An additional dS/dt timestep constraint originally
              ! used in nova
@@ -714,10 +707,11 @@ contains
                 c = rho_min - s(i,j,k,rho_comp)
                 dt_divu = min(dt_divu,0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
              endif
-             
+                          
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
 
     deallocate(gp0_cart)
 

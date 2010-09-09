@@ -366,11 +366,9 @@ contains
        allocate(gradw0_rad(0:nr_fine-1))
        allocate(gradw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
 
-       !$OMP PARALLEL DO PRIVATE(r)
        do r=0,nr_fine-1
           gradw0_rad(r) = (w0(r+1) - w0(r)) / dr(1)
        enddo
-       !$OMP END PARALLEL DO
 
        call put_1d_array_on_cart_3d_sphr(.false.,.true.,gradw0_rad,gradw0_cart, &
                                          lo,hi,dx,0)

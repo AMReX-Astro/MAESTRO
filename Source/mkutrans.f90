@@ -395,7 +395,6 @@ contains
 
     if (ppm_type .gt. 0) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -405,7 +404,6 @@ contains
              end do
           end do
        end do
-       !$OMP END PARALLEL DO
 
     else
        
@@ -526,7 +524,6 @@ contains
 
     if (ppm_type .gt. 0) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -536,7 +533,6 @@ contains
              enddo
           enddo
        enddo
-       !$OMP END PARALLEL DO
 
     else
 
@@ -656,7 +652,7 @@ contains
     allocate(wrz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
     if (ppm_type .gt. 0) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -666,7 +662,6 @@ contains
              end do
           end do
        end do
-       !$OMP END PARALLEL DO
 
     else
 

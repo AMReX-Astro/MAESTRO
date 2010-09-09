@@ -831,7 +831,7 @@ contains
     allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -847,7 +847,7 @@ contains
              end do
           end do
        end do
-       !$OMP END PARALLEL DO
+
     else
        !$OMP PARALLEL DO PRIVATE(i,j,k,ulo,uhi,maxu,minu)
        do k=ks-1,ke+1
@@ -947,14 +947,16 @@ contains
        enddo
     enddo
     !$OMP END PARALLEL DO
-! normal predictor states
+
+    ! normal predictor states
+
     ! Allocated from lo:hi+1 in the normal direction
     ! lo-1:hi+1 in the transverse directions
     allocate(uly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(ury(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -970,7 +972,7 @@ contains
              enddo
           enddo
        enddo
-       !$OMP END PARALLEL DO
+
     else
        !$OMP PARALLEL DO PRIVATE(i,j,k,vlo,vhi,minu,maxu)
        do k=ks-1,ke+1
@@ -1078,7 +1080,7 @@ contains
     allocate(urz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
 
     if (ppm_type .gt. 0) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
@@ -1094,7 +1096,7 @@ contains
              end do
           end do
        end do
-       !$OMP END PARALLEL DO
+
     else
        !$OMP PARALLEL DO PRIVATE(i,j,k,wlo,whi,minu,maxu)
        do k=ks,ke+1

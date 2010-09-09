@@ -444,25 +444,19 @@ contains
 
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
 
-    real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
     real(kind=dp_t) :: divup, p0divu
     integer         :: i,j,k
-
-    ! Here we make u grad p = div (u p) - p div (u) 
+    !
+    ! Here we make u grad p = div (u p) - p div (u)
+    !
+    !$OMP PARALLEL DO PRIVATE(i,j,k,divup,p0divu)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
 
-             p0_lox = p0macx(i,j,k)
-             p0_hix = p0macx(i+1,j,k)
-             p0_loy = p0macy(i,j,k)
-             p0_hiy = p0macy(i,j+1,k)
-             p0_loz = p0macz(i,j,k)
-             p0_hiz = p0macz(i,j,k+1)
-
-             divup = (umac(i+1,j,k) * p0_hix - umac(i,j,k) * p0_lox) / dx(1) + &
-                     (vmac(i,j+1,k) * p0_hiy - vmac(i,j,k) * p0_loy) / dx(2) + &
-                     (wmac(i,j,k+1) * p0_hiz - wmac(i,j,k) * p0_loz) / dx(3)
+             divup = (umac(i+1,j,k) * p0macx(i+1,j,k) - umac(i,j,k) * p0macx(i,j,k)) / dx(1) + &
+                     (vmac(i,j+1,k) * p0macy(i,j+1,k) - vmac(i,j,k) * p0macy(i,j,k)) / dx(2) + &
+                     (wmac(i,j,k+1) * p0macz(i,j,k+1) - wmac(i,j,k) * p0macz(i,j,k)) / dx(3)
 
              p0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
                         (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
@@ -473,14 +467,17 @@ contains
           end do
        end do
     end do
-
+    !$OMP END PARALLEL DO
+    !
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
     ! (rho h)', but should be there if we are predicting h
+    !
     if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
          (.NOT. is_prediction)) then
 
        allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
        do k = lo(3),hi(3)
