@@ -169,8 +169,11 @@ contains
     ! add an optional perturbation
     if (perturb_model) then
 
-       x0 = center(1) + 2.d10
-       y0 = 2.d10
+       x0 = center(1) + 5.d10
+       y0 = 7.35d9
+
+!       x0 = center(1) + 2.d10
+!       y0 = 2.d10
 
        ! add an optional perturbation
        do j = lo(2), hi(2)
@@ -186,7 +189,7 @@ contains
              r0 = sqrt( (x-x0)**2 + (y-y0)**2 ) / 2.e9
              
              ! This case works
-             rho = rho0 - 3.d-6*tanh(2.0_dp_t-r0)
+             rho = rho0 - 3.d-7*tanh(2.0_dp_t-r0)
              
              ! Use the EOS to make this temperature perturbation occur at
              ! constant pressure
