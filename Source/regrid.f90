@@ -53,8 +53,8 @@ contains
     type(multifab) :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
     type(multifab) :: pi_temp(max_levs), dSdt_temp(max_levs), src_temp(max_levs)
 
-    if (verbose .and. parallel_IOProcessor()) then
-       print*,'Calling regrid'
+    if (verbose .ge. 1) then
+       if (parallel_IOProcessor()) print*,'Calling regrid'
     end if
 
     if (ppm_type .eq. 2) then
