@@ -61,40 +61,7 @@ contains
        call makeTfromRhoH(snew,mla,the_bc_level)
     end if
 
-    ! fill the temperature ghostcells
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(snew(nlevs),temp_comp,1)
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(snew(nlevs),temp_comp,dm+temp_comp,1, &
-                            the_bc_level(nlevs))
-    else
-
-       ! the loop over nlevs must count backwards to make sure the
-       ! finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(snew(n-1),temp_comp,snew(n),temp_comp,mla%mba%rr(n-1,:),1)
-          
-          ! fill level n ghost cells using interpolation from level
-          ! n-1 data note that multifab_fill_boundary and
-          ! multifab_physbc are called for both levels n-1 and n
-          call multifab_fill_ghost_cells(snew(n),snew(n-1), &
-                                         nghost(snew(1)),mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1), &
-                                         the_bc_level(n  ), &
-                                         temp_comp,dm+temp_comp,1,fill_crse_input=.false.)
-       end do
-          
-    end if
-    
-
-
-     call destroy(bpt)
+    call destroy(bpt)
 
   end subroutine react_state
 
@@ -185,27 +152,9 @@ contains
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-
-          ! density
           call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         rho_comp,dm+rho_comp,1,fill_crse_input=.false.)
-
-          ! enthalpy
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         rhoh_comp,dm+rhoh_comp,1,fill_crse_input=.false.)
-
-          ! species
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         spec_comp,dm+spec_comp,nspec,fill_crse_input=.false.)
-
-          ! tracers
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         trac_comp,dm+trac_comp,ntrac,fill_crse_input=.false.)
-
+                                         rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
        enddo
 
     end if

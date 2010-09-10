@@ -369,12 +369,6 @@ subroutine varden()
 
   end if
 
-  do n = 1,nlevs
-     ! This is done to impose any Dirichlet bc's on unew or snew.
-     call multifab_copy_c(unew(n),1,uold(n),1,dm   ,nghost(uold(n)))
-     call multifab_copy_c(snew(n),1,sold(n),1,nscal,nghost(uold(n)))
-  end do
-
   if (restart < 0) then 
      istep = 0
   else 
