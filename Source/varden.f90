@@ -243,8 +243,6 @@ subroutine varden()
   ! Create normal now that we have defined center and dx
   call make_normal(normal,dx)
 
-  call compute_cutoff_coords(rho0_old)
-
   if (do_sponge) then
      if (spherical .eq. 0) then
         call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))

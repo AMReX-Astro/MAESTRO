@@ -504,8 +504,6 @@ contains
 
        ! compute rho0 by calling average
        call average(mla,sold,rho0_old,dx,rho_comp)
-
-       ! compute cutoff coordinates
        call compute_cutoff_coords(rho0_old)
 
        ! compute gravity
@@ -748,12 +746,11 @@ contains
     else
        ! set rho0 to be the average
        call average(mla,sold,rho0_old,dx,rho_comp)
-       call restrict_base(rho0_old,.true.)
-       call fill_ghost_base(rho0_old,.true.)
+       call compute_cutoff_coords(rho0_old)
 
        ! compute p0 with HSE
        p0_old = p0_init
-       call compute_cutoff_coords(rho0_old)
+
        call make_grav_cell(grav_cell,rho0_old)
        call enforce_HSE(rho0_old,p0_old,grav_cell)
 
@@ -762,15 +759,10 @@ contains
 
        ! set rhoh0 to be the average
        call average(mla,sold,rhoh0_old,dx,rhoh_comp)
-       call restrict_base(rhoh0_old,.true.)
-       call fill_ghost_base(rhoh0_old,.true.)
-
     end if
 
     ! set tempbar to be the average
     call average(mla,sold,tempbar,dx,temp_comp)
-    call restrict_base(tempbar,.true.)
-    call fill_ghost_base(tempbar,.true.)
     
     call destroy(mba)
 
@@ -1080,12 +1072,11 @@ contains
     else
        ! set rho0 to be the average
        call average(mla,sold,rho0_old,dx,rho_comp)
-       call restrict_base(rho0_old,.true.)
-       call fill_ghost_base(rho0_old,.true.)
+       call compute_cutoff_coords(rho0_old)
 
        ! compute p0 with HSE
        p0_old = p0_init
-       call compute_cutoff_coords(rho0_old)
+
        call make_grav_cell(grav_cell,rho0_old)
        call enforce_HSE(rho0_old,p0_old,grav_cell)
 
@@ -1094,15 +1085,10 @@ contains
 
        ! set rhoh0 to be the average
        call average(mla,sold,rhoh0_old,dx,rhoh_comp)
-       call restrict_base(rhoh0_old,.true.)
-       call fill_ghost_base(rhoh0_old,.true.)
-
     end if
 
     ! set tempbar to be the average
     call average(mla,sold,tempbar,dx,temp_comp)
-    call restrict_base(tempbar,.true.)
-    call fill_ghost_base(tempbar,.true.)
 
     call destroy(mba)
 

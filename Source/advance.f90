@@ -224,8 +224,6 @@ contains
 
     halfdt = half*dt
 
-    call compute_cutoff_coords(rho0_old)
-
     if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
     
