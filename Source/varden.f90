@@ -109,6 +109,10 @@ subroutine varden()
 
   logical :: dump_plotfile, dump_checkpoint
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! initialization
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   last_plt_written = -1
   last_chk_written = -1
 
@@ -143,7 +147,8 @@ subroutine varden()
 
      call initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                       Source_old,Source_new, &
-                                      rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
+                                      rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
+                                      the_bc_tower, &
                                       div_coeff_old,div_coeff_new,gamma1bar, &
                                       gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
                                       rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
@@ -153,7 +158,8 @@ subroutine varden()
 
      call initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                          Source_old,Source_new, &
-                                         rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
+                                         rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
+                                         the_bc_tower, &
                                          div_coeff_old,div_coeff_new,gamma1bar, &
                                          gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
                                          rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
@@ -186,6 +192,10 @@ subroutine varden()
      end if
   end if
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! print processor and grid info
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   if (parallel_IOProcessor()) then
      print *, 'number of MPI processes = ', parallel_nprocs()
      print *, 'number of threads       = ', omp_get_max_threads()
@@ -214,7 +224,7 @@ subroutine varden()
   end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Initialize all remaining arrays
+! Initialize all remaining arrays and multifabs
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   allocate(       psi_temp(max_levs,0:nr_fine-1))
