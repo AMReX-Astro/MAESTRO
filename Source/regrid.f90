@@ -53,6 +53,10 @@ contains
     type(multifab) :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
     type(multifab) :: pi_temp(max_levs), dSdt_temp(max_levs), src_temp(max_levs)
 
+    if (verbose .and. parallel_IOProcessor()) then
+       print*,'Calling regrid'
+    end if
+
     if (ppm_type .eq. 2) then
        ng_s = 4
     else
