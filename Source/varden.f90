@@ -255,33 +255,7 @@ subroutine varden()
 
   call make_grav_cell(grav_cell,rho0_old)
 
-  ! enforce HSE and then ensure state is thermodynamically consistens
   if (restart < 0) then
-
-     ! this section is not needed for spherical since there is only
-     ! one level of refinement of the base state, no matter what nlevs is
-     if (spherical .eq. 0) then
-
-        ! we need to update p0 to account for either:
-        ! 1) the fact that rho0 has changed due to the perturbation 
-        ! 2) we need a consistent definition of HSE across multiple levels
-        if ( (perturb_model .or. nlevs .gt. 1) .and. evolve_base_state) then
-
-           ! enforce HSE
-           call enforce_HSE(rho0_old,p0_old,grav_cell)
-
-           ! recompute T,h = T,h(rho,p0_old,X)
-           call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
-           
-           ! force rhoh0 to be the average of rhoh
-           call average(mla,sold,rhoh0_old,dx,rhoh_comp)
-           
-           ! force tempbar to be the average of temp
-           call average(mla,sold,tempbar,dx,temp_comp)
-
-        end if
-        
-     end if
 
      !----------------------------------------------------------------------
      ! Do an initial projection with omegadot = 0 and rho_Hext = 0
