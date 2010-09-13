@@ -48,7 +48,7 @@
  check_base_name = "chk"
 
  cflfac = 0.7d0
- init_shrink = 1.d0
+ init_shrink = 0.1d0
 
  bcx_lo = -1
  bcx_hi = -1
@@ -68,15 +68,14 @@
 
  plot_ad_excess = T
 
- perturb_model= F
-
- apply_vel_field = T
+ apply_vel_field = F
  velpert_scale = 5.0d6
  velpert_amplitude = 1.d5
  velpert_height_loc = 4.65d8
  num_vortices = 8
 
- nova_pert_factor = 1.0d-2
+ perturb_model= T
+ nova_pert_factor = 1.0d-5
  nova_pert_size = 1.0d7
  nova_pert_type = 1
  nova_pert_height = 4.6d8
