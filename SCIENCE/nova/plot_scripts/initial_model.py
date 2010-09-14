@@ -1,9 +1,9 @@
 # a simple script to plot the initial density and location of cutoff density and
 # sponge parameters
 
-anelastic_cutoff = 1.0
-sponge_center_density = 1.0e1
-sponge_start_factor = 2.0
+anelastic_cutoff = 100.0
+sponge_center_density = 100.0
+sponge_start_factor = 2.5
 
 
 
@@ -14,7 +14,7 @@ import string
 
 def initial_model():
 
-    initialModel = "glasner_nova_32km.hse"
+    initialModel = "glasner_T5_Ginvsq_Snone.hse"
 
     # read in the initial model and store the data in 
     # initialData
@@ -112,7 +112,7 @@ def initial_model():
     pylab.xlabel("r (cm)")
     pylab.ylabel(r"density (g cm$^{-3}$)")
 
-    pylab.xlim(3.5e8,4.5e8)
+    pylab.xlim(4.1e8,5.1e8)
     pylab.ylim(1.e-3,1.e7)
 
     # sponge plot
@@ -145,7 +145,7 @@ def initial_model():
     ax.xaxis.set_major_formatter(pylab.ScalarFormatter(useMathText=True))
     #ax.yaxis.set_major_formatter(pylab.ScalarFormatter(useMathText=True))
 
-    pylab.xlim(3.5e8,4.5e8)
+    pylab.xlim(4.1e8,5.1e8)
     pylab.ylim(-0.1,1.1)
 
 
