@@ -25,17 +25,16 @@ contains
     use bl_constants_module
     use eos_module
     use network, only: spec_names
-    use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo, prob_hi, &
-                             buoyancy_cutoff_factor, sponge_start_factor, &
-                             sponge_center_density, &
-                             small_temp, small_dens, grav_const, planar_invsq_mass, &
+    use probin_module, only: base_cutoff_density, prob_lo, prob_hi, &
+                             grav_const, planar_invsq_mass, &
                              do_planar_invsq_grav
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr, dm
     use inlet_bc_module, only: set_inlet_bcs
     use fundamental_constants_module, only: Gconst
     use model_parser_module
-    
+
+
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
     real(kind=dp_t)   , intent(inout) :: s0_init(0:,:)
@@ -49,7 +48,6 @@ contains
     real(kind=dp_t) :: sumX
 
     real(kind=dp_t) :: min_dens, max_dens, min_temp, max_temp
-    real(kind=dp_t), parameter :: eps = 1.d-8
 
     type(bl_prof_timer), save :: bpt
     
@@ -71,92 +69,6 @@ contains
        ! only need to read in the initial model once -- model_parser_module
        ! stores the model data
        call read_model_file(model_file)
-
-       max_dens = maxval(model_state(:,idens_model))
-       min_dens = minval(model_state(:,idens_model))
-       
-       max_temp = maxval(model_state(:,itemp_model))
-       min_temp = minval(model_state(:,itemp_model))
-
-       if ( parallel_IOProcessor() .and. n == 1) then
-          write (*,889) ' '
-          write (*,888) '    minimum density of model =                        ', &
-               min_dens
-          write (*,888) '    maximum density of model =                        ', &
-               max_dens
-          write (*,*)   ' '
-          write (*,888) '    minimum temperature of model =                    ', &
-               min_temp
-          write (*,888) '    maximum temperature of model =                    ', &
-               max_temp
-          write (*,887)
-          write (*,889) ' '
-       endif
-
-
-       if ( parallel_IOProcessor() .and. n == 1) then
-          ! output block for cutoff density information
-          write (*,887)
-          write (*,*)   'cutoff densities:'
-          write (*,888) '    low density cutoff (for mapping the model) =      ', &
-               base_cutoff_density
-          write (*,888) '    buoyancy cutoff density                           '
-          write (*,888) '        (for zeroing rho - rho_0, centrifugal term) = ', &
-               buoyancy_cutoff_factor*base_cutoff_density
-          write (*,888) '    anelastic cutoff =                                ', &
-               anelastic_cutoff
-          write (*,888) '    sponge start density =                            ', &
-               sponge_start_factor*sponge_center_density
-          write (*,888) '    sponge center density =                           ', &
-               sponge_center_density
-          write (*,888) ' '
-       end if
-
-       if (min_dens < base_cutoff_density .OR. min_dens < anelastic_cutoff) then
-          if ( parallel_IOProcessor() .and. n == 1) then
-             print *, ' '
-             print *, 'WARNING: minimum model density is lower than one of the cutoff densities'
-             print *, '         make sure that the cutoff densities are lower than any density'
-             print *, '         of dynamical interest'
-          end if
-       endif
-       
-       if (min_dens + eps > base_cutoff_density .or. min_dens + eps > anelastic_cutoff) then
-          if ( parallel_IOProcessor() .and. n == 1) then
-             print *, ' '
-             print *, 'WARNING: minimum model density is larger than, or very close to '
-             print *,'          the cutoff density.' 
-          end if
-       end if
-
-       if (min_temp < small_temp) then
-          if ( parallel_IOProcessor() .and. n == 1) then
-             print *, ' '
-             print *, 'WARNING: minimum model temperature is lower than the EOS cutoff'
-             print *, '         temperature, small_temp'
-          endif
-       endif
-
-       if (min_dens < small_dens) then
-          if ( parallel_IOProcessor() .and. n == 1) then
-             print *, ' '
-             print *, 'WARNING: minimum model density is lower than the EOS cutoff'
-             print *, '         density, small_dens'
-          endif
-       endif
-
-       
-       if (anelastic_cutoff < base_cutoff_density) then
-          print *, 'ERROR: anelastic cutoff should be at a higher density than the base state'
-          print *, '       cutoff density.'
-          call bl_error("anelastic cutoff < base_cutoff_density")
-       endif
-
-       if ( parallel_IOProcessor() .and. n == 1) then
-          ! close the cutoff density output block
-          write (*,887)
-          write (*,*)   ' '
-       end if
 
        firstCall = .false.
     endif

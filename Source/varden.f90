@@ -34,6 +34,7 @@ subroutine varden()
   use make_eta_module
   use diag_module, only: flush_diag
   use omp_module
+  use check_cutoff_module, only: check_cutoff_values
 
   implicit none
 
@@ -199,12 +200,14 @@ subroutine varden()
   if (parallel_IOProcessor()) then
      print *, 'number of MPI processes = ', parallel_nprocs()
      print *, 'number of threads       = ', omp_get_max_threads()
+     print *, ' '
      print *, 'number of dimensions    = ', dm
      do n = 1, nlevs
         print *, 'level: ', n
         print *, '   number of boxes = ', nboxes(pi(n))
         print *, '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
      end do
+     print *, ' '
   end if
 
   if (verbose .ge. 1) then
@@ -262,6 +265,19 @@ subroutine varden()
   end if
 
   call make_grav_cell(grav_cell,rho0_old)
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Print out some diagnostics and warnings about cutoff / sponge parameter
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  call check_cutoff_values()
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Initialization
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   if (restart < 0) then
 
@@ -512,9 +528,10 @@ subroutine varden()
 
   end if ! end if (restart < 0)
 
-  !------------------------------------------------------------------------
-  ! Main evolution loop
-  !------------------------------------------------------------------------
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Main evolution loop
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   if (restart < 0) then
      init_step = 1
@@ -1010,14 +1027,15 @@ subroutine varden()
            if (time >= stop_time) goto 999
         end if
 
-     end do
+     end do  ! end main evolution loop
 
 999  continue
      if (istep > max_step) istep = max_step
 
-     !---------------------------------------------------------------------
-     ! write the final checkpoint and plotfile
-     !---------------------------------------------------------------------
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! write the final checkpoint and plotfile
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 1000 format('STEP = ',i6,1x,' TIME = ',es16.10,1x,' DT = ',es16.10)
 
@@ -1085,6 +1103,11 @@ subroutine varden()
         call write_job_info(plot_file_name, mla%mba)
      end if
   end if
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! clean-up
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   do n=1,nlevs
      call destroy(uold(n))
