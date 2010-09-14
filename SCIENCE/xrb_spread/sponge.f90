@@ -10,6 +10,14 @@ module sponge_module
 
   real(dp_t), save :: topsponge_lo_r, topsponge_hi_r, botsponge_lo_r, botsponge_hi_r
 
+  ! the sponge_start_density should be the density below which the
+  ! sponge first turns on.  Different problems may compute this in
+  ! different ways (i.e. not using sponge_center_density and
+  ! sponge_start_factor), so we provide this public module variable to
+  ! ensure that the rest of the code always knows at what density the
+  ! sponge begins.
+  real(dp_t), save, public :: sponge_start_density
+
   private
 
   public :: init_sponge, make_sponge
@@ -31,6 +39,8 @@ contains
 
     r_top = prob_lo_r + dble(r_end_coord(1,1)+1) * dr(1)
     topsponge_lo_r = r_top
+
+    sponge_start_density = 25.d0*anelastic_cutoff
 
     do r=0,r_end_coord(1,1)
        rloc = prob_lo_r + (dble(r)+HALF) * dr(1)

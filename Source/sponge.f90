@@ -12,6 +12,14 @@ module sponge_module
   real(dp_t), save :: r_sp, r_md, r_tp
   real(dp_t), save :: r_sp_outer, r_tp_outer
 
+  ! the sponge_start_density should be the density below which the
+  ! sponge first turns on.  Different problems may compute this in
+  ! different ways (i.e. not using sponge_center_density and
+  ! sponge_start_factor), so we provide this public module variable to
+  ! ensure that the rest of the code always knows at what density the
+  ! sponge begins.
+  real(dp_t), save, public :: sponge_start_density
+  
   private
 
   public :: init_sponge, make_sponge
@@ -45,10 +53,12 @@ contains
     r_top = prob_lo_r + dble(r_end_coord(1,1)+1) * dr(1)
     r_sp = r_top
 
+    sponge_start_density = sponge_start_factor*sponge_center_density
+
     ! set r_sp
     do r=0,r_end_coord(1,1)
        rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
-       if (rho0(r) < sponge_start_factor*sponge_center_density) then
+       if (rho0(r) < sponge_start_density) then
           r_sp = rloc
           exit
        endif
