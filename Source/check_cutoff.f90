@@ -11,6 +11,7 @@ contains
     use probin_module, only: buoyancy_cutoff_factor, base_cutoff_density, anelastic_cutoff, &
          small_dens, small_temp
     use model_parser_module
+    use bl_error_module
 
     real (kind=dp_t) :: min_dens, max_dens
     real (kind=dp_t) :: min_temp, max_temp
