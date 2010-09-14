@@ -14,7 +14,6 @@ module sponge_module
 
   private
 
-  public :: r_sp
   public :: init_sponge, make_sponge
 
 contains
