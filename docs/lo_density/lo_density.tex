@@ -44,6 +44,9 @@ Note that saying $r\ge$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\
 
 \section{anelastic\_cutoff}\label{Sec:Anelastic Cutoff}
 
+The {\tt anelastic\_cutoff} is the density below which we modify the constraint.
+
+
 \begin{itemize}
 
 \item In {\tt probin}, {\tt anelastic\_cutoff} is set to $3\times 10^6$ by default.
@@ -65,6 +68,8 @@ Note that saying $r\ge$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\
 \end{itemize}
 
 \section{base\_cutoff\_density}\label{Sec:Base Cutoff Density}
+
+The {\tt base\_cutoff\_density} is the lowest density that we model.
 
 \begin{itemize}
 
@@ -112,6 +117,10 @@ Note that saying $r\ge$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\
 
 \section{burning\_cutoff}
 
+The burning cutoff determines where we call the reaction network to
+get the nuclear energy generation rate and composition changes.  For
+densities below the burning cutoff, we do not call the network.
+
 \begin{itemize}
 
 \item In {\tt probin}, {\tt burning\_cutoff\_density} is set to 
@@ -121,5 +130,33 @@ Note that saying $r\ge$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\
 \item In {\tt react\_state}, we only call the burner if 
   $\rho >$ {\tt burning\_cutoff\_density}.
 
+
 \end{itemize}
+
+
+\section{buoyancy\_cutoff\_factor}
+
+The {\tt buoyancy\_cutoff\_factor} is used to zero out the forcing terms
+to the velocity equation at low densities.
+
+\begin{itemize}
+
+\item In {\tt init\_base\_state} we print out the value of the
+   the density at which the buoyancy cutoff would take effect,
+   {\tt buoyancy\_cutoff\_factor * base\_cutoff\_density}.
+
+\item In {\tt mk\_vel\_force}, we zero out {\tt rhopert}, the
+   perturbational density used in computing the buoyancy force,
+   if $\rho < \mathtt{buoyancy\_cutoff\_factor * base\_cutoff\_density}$.
+
+\item In {\tt mk\_vel\_force}, for spherical problems, we 
+   zero out {\tt centrifugal\_term}, the centrifugal force for
+   rotating stars, if $\rho < \mathtt{buoyancy\_cutoff\_factor *
+   base\_cutoff\_density}$.
+
+\end{itemize}
+
+
+
+
 
