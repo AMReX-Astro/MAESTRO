@@ -85,34 +85,10 @@ contains
        call setval(alpha(n),ZERO,all=.true.)
     end do
 
-    if (use_div_coeff_1d) then
-       do n = 1,nlevs
-          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_edge_1d(n,:),&
-                                     .true.)
-       end do
-    else if (use_div_coeff_3d) then
-       do n = 1,nlevs
-          call mult_edge_by_3d_coeff(umac(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n),&
-                                     .true.)
-       end do
-    end if
-
-    ! Compute umac_norm to be used inside the MG solver as part of a stopping criterion
-    umac_norm = -1.0_dp_t
-    do n = 1,nlevs
-       do i = 1,dm
-          umac_norm(n) = max(umac_norm(n),norm_inf(umac(n,i)))
-       end do
-    end do
-
-    if (use_rhs) then
-       call divumac(umac,rh,dx,mla%mba%rr,.true.,divu_rhs)
-    else
-       call divumac(umac,rh,dx,mla%mba%rr,.true.)
-    end if
-
-    ! Print the norm of each component separately
+    ! Print the norm of each component separately -- make sure to do this before we multiply
+    !       the velocities by the div_coeff.                                 
     if (verbose .eq. 1) then
+       if (parallel_IOProcessor()) print *,''
        do n = 1,nlevs
           umax = multifab_max(umac(n,1))
           umin = multifab_min(umac(n,1))
@@ -139,7 +115,32 @@ contains
              end if
           end if
        end do
-       if (parallel_IOProcessor()) print *,''
+    end if
+
+    if (use_div_coeff_1d) then
+       do n = 1,nlevs
+          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_edge_1d(n,:),&
+                                     .true.)
+       end do
+    else if (use_div_coeff_3d) then
+       do n = 1,nlevs
+          call mult_edge_by_3d_coeff(umac(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n),&
+                                     .true.)
+       end do
+    end if
+
+    ! Compute umac_norm to be used inside the MG solver as part of a stopping criterion
+    umac_norm = -1.0_dp_t
+    do n = 1,nlevs
+       do i = 1,dm
+          umac_norm(n) = max(umac_norm(n),norm_inf(umac(n,i)))
+       end do
+    end do
+
+    if (use_rhs) then
+       call divumac(umac,rh,dx,mla%mba%rr,.true.,divu_rhs)
+    else
+       call divumac(umac,rh,dx,mla%mba%rr,.true.)
     end if
 
     call mk_mac_coeffs(mla,rho,beta,the_bc_tower)
@@ -188,7 +189,20 @@ contains
        call divumac(umac,rh,dx,mla%mba%rr,.false.)
     end if
 
-    ! Print the norm of each component separately
+    if (use_div_coeff_1d) then
+       do n = 1,nlevs
+          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_edge_1d(n,:), &
+                                     .false.)
+       end do
+    else if (use_div_coeff_3d) then
+       do n = 1,nlevs
+          call mult_edge_by_3d_coeff(umac(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n), &
+                                     .false.)
+       end do
+    end if
+
+    ! Print the norm of each component separately -- make sure to do this after we divide
+    !       the velocities by the div_coeff.                                 
     if (verbose .eq. 1) then
        do n = 1,nlevs
           umin = multifab_max(umac(n,1))
@@ -217,18 +231,6 @@ contains
           end if
        end do
        if (parallel_IOProcessor()) print *,''
-    end if
-
-    if (use_div_coeff_1d) then
-       do n = 1,nlevs
-          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_edge_1d(n,:), &
-                                     .false.)
-       end do
-    else if (use_div_coeff_3d) then
-       do n = 1,nlevs
-          call mult_edge_by_3d_coeff(umac(n,:),div_coeff_3d(n),ml_layout_get_pd(mla,n), &
-                                     .false.)
-       end do
     end if
 
     if (nlevs .gt. 1) then
