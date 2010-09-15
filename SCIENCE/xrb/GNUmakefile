@@ -13,7 +13,8 @@ FPARALLEL := ../..
 # define the physics packages to build this problem 
 EOS_DIR := extern/EOS/helmeos
 CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
-NETWORK_DIR := extern/networks/triple_alpha
+#NETWORK_DIR := extern/networks/triple_alpha
+NETWORK_DIR := extern/networks/hotcno
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique

@@ -8,10 +8,11 @@
 !        total mass of C12
 !        total mass of O16 (if using the triple_alpha_plus_cago network
 !
-!    xrb_temp_diag.out:
-!        peak temperature in the helium layer
-!            helium layer defined by X(He4) >= diag_define_he_layer where 
-!            diag_define_he_layer is a xrb _parameter
+!    xrb_temp_diag.out: 
+!
+!        peak temperature in the burning layer burning layer defined
+!          by X(spec_comp) >= diag_define_layer; spec_comp is H1 for mixed 
+!          H/He bursts and it is He4 for pure He bursts
 !        x/y/z location of peak
 !
 !    xrb_vel_diag.out:
@@ -48,6 +49,9 @@ module diag_module
   public :: diag, flush_diag
 
   logical, save :: network_contains_oxygen = .false.
+  ! these are used to determine where c12 and o16 fall in the nuclide chain
+  ! this is different for each network (i.e. mixed bursts vs pure he4 bursts)
+  integer, save :: ic12, io16
 
 contains
 
@@ -60,6 +64,7 @@ contains
     use bl_prof_module
     use geometry, only: dm, nlevs
     use bl_constants_module
+    use bl_error_module
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(multifab) , intent(in   ) :: s(:)
@@ -148,8 +153,17 @@ contains
     call build(bpt, "diagnostics")
 
     ! find out if we are using the triple_alpha_plus_cago network
-    if (firstCall .and. network_species_index("oxygen-16") .ne. -1) &
-         network_contains_oxygen = .true.
+    if (firstCall) then
+
+       ic12 = network_species_index("carbon-12")
+
+       if (ic12 < 0) call bl_error("ERROR: carbon-12 not found in network")
+
+       io16 = network_species_index("oxygen-16")
+
+       if (io16 > 0) network_contains_oxygen = .true.
+
+    endif
 
     ng_s = s(1)%ng
     ng_u = u(1)%ng
@@ -158,7 +172,7 @@ contains
 
     ! initialize
     ! note that T_max corresponds to the maximum temperature in the 
-    ! helium layer defined by X(He4) >= diag_define_he_layer
+    ! burning layer defined by X >= diag_define_layer
     T_max          = ZERO
     coord_T_max(:) = ZERO
 
@@ -761,7 +775,7 @@ contains
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
-    use probin_module, only: diag_define_he_layer, prob_lo, base_cutoff_density
+    use probin_module, only: diag_define_layer, prob_lo, base_cutoff_density
     use bl_constants_module, only: HALF, ONE, FOUR
     use eos_module
 
@@ -812,11 +826,13 @@ contains
 
           if (cell_valid .and. s(i,j,rho_comp) > base_cutoff_density) then
 
-             ! temperature diagnostic
-             ! check to see if we are in the helium layer
+             ! temperature diagnostic check to see if we are in the
+             ! burning layer 
+             ! we check against spec_comp; this is He for the triple
+             ! alpha and H for the hotcno networks
              ! if we are, then get T_max and its loc
              if ( s(i,j,spec_comp) .ge. &
-		  diag_define_he_layer * s(i,j,rho_comp) ) then
+		  diag_define_layer * s(i,j,rho_comp) ) then
 
                 if (s(i,j,temp_comp) > T_max) then
                 
@@ -840,11 +856,11 @@ contains
              endif
 
              ! c12 mass diagnostic
-             c12_mass = c12_mass + weight*s(i,j,spec_comp+1)
+             c12_mass = c12_mass + weight*s(i,j,spec_comp+ic12-1)
 
              ! o16 mass diagnostic
              if (network_contains_oxygen) &
-                  o16_mass = o16_mass + weight*s(i,j,spec_comp+2)
+                  o16_mass = o16_mass + weight*s(i,j,spec_comp+io16-1)
 
              ! vel diagnostic
              vel = sqrt(u(i,j,1)**2 + (u(i,j,2) + w0_cent)**2)
@@ -937,7 +953,7 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
     use bl_constants_module, only: HALF, ONE, EIGHT
-    use probin_module, only: diag_define_he_layer, prob_lo, base_cutoff_density
+    use probin_module, only: diag_define_layer, prob_lo, base_cutoff_density
     use eos_module
 
     integer, intent(in) :: n,lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
@@ -990,11 +1006,14 @@ contains
 
              if (cell_valid .and. s(i,j,k,rho_comp) > base_cutoff_density) then
 
-                ! temperature diagnostic
-                ! check to see if we are in the helium layer
-                ! if we are, then get T_max
+
+                ! temperature diagnostic check to see if we are in the
+                ! burning layer 
+                ! we check against spec_comp; this is He for the triple
+                ! alpha and H for the hotcno networks
+                ! if we are, then get T_max and its loc
                 if ( s(i,j,k,spec_comp) .ge. &
-                     diag_define_he_layer * s(i,j,k,rho_comp) ) then
+                     diag_define_layer * s(i,j,k,rho_comp) ) then
 
                    if (s(i,j,k,temp_comp) > T_max) then
                    
@@ -1020,11 +1039,11 @@ contains
                 endif
 
                 ! c12 mass diagnostic
-                c12_mass = c12_mass + weight*s(i,j,k,spec_comp+1)
+                c12_mass = c12_mass + weight*s(i,j,k,spec_comp+ic12-1)
 
                 ! o16 mass diagnostic
                 if (network_contains_oxygen) &
-                     o16_mass = o16_mass + weight*s(i,j,k,spec_comp+2)
+                     o16_mass = o16_mass + weight*s(i,j,k,spec_comp+io16-1)
 
                 ! vel diagnostic
                 vel = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + &
