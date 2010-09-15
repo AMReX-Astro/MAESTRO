@@ -68,6 +68,7 @@
  xrb_pert_type = 1
 
  do_sponge = T
+ sponge_start_factor = 25
 
 !restart = 50
 
