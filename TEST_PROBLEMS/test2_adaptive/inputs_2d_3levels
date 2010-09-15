@@ -5,9 +5,9 @@
  max_levs = 3
  n_cellx = 64
  n_celly = 160
- max_grid_size = 640
+ max_grid_size = 32
  regrid_int = 4
- cluster_min_width = 4
+ minwidth = 4
 
  prob_hi_x = 1.44e8
  prob_hi_y = 3.60e8

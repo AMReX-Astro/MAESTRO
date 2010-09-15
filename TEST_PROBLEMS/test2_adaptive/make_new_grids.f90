@@ -15,7 +15,8 @@ module make_new_grids_module
 
   contains
 
-    subroutine make_new_grids(new_grid_flag,la_crse,la_fine,mf,dx_crse,buf_wid,ref_ratio,lev,max_grid_size,tempbar)
+    subroutine make_new_grids(new_grid_flag,la_crse,la_fine,mf,dx_crse,buf_wid,ref_ratio, &
+                              lev,max_grid_size,tempbar)
 
        logical            , intent(  out) :: new_grid_flag
        type(layout)       , intent(in   ) :: la_crse
@@ -74,7 +75,7 @@ module make_new_grids_module
 
       llev = 1; if (present(lev)) llev = lev
 
-      call lmultifab_build(tagboxes,mf%la,1,0) 
+      call lmultifab_build(tagboxes,get_layout(mf),1,0) 
       call setval(tagboxes, .false.)
 
       call tag_boxes(mf,tagboxes,dx_crse,llev,tempbar)
@@ -129,20 +130,21 @@ module make_new_grids_module
 
     end subroutine buffer
 
-    subroutine enforce_proper_nesting(mba,la_array,max_grid_size)
+    subroutine enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3_in)
 
       implicit none
 
       type(ml_boxarray), intent(inout) :: mba
       type(layout)     , intent(inout) :: la_array(:)
-      integer          , intent(in   ) :: max_grid_size
+      integer          , intent(in   ) :: max_grid_size_2
+      integer          , intent(in   ), optional  :: max_grid_size_3_in
 
       integer                        :: nl,n,i,j,ng_buffer,nlevs
       integer                        :: counter
       integer                        :: ref_ratio(mba%dim)
       logical                        :: pmask(mba%dim)
       logical                        :: all_properly_nested
-      type(box)                      :: pd
+      type(box)                      :: pd, bx
       type(list_box)                 :: bl
       type(box_intersector), pointer :: bi(:)
       type(boxarray)                 :: ba_new
@@ -152,6 +154,14 @@ module make_new_grids_module
       type(boxarray)                 :: ba_old_comp
       type(lmultifab)                :: tagboxes
          
+      integer :: max_grid_size_3
+
+      if (present (max_grid_size_3_in)) then
+         max_grid_size_3 = max_grid_size_3_in
+      else
+         max_grid_size_3 = max_grid_size_2
+      end if
+
       nlevs = mba%nlevel
 
       pmask = get_pmask(la_array(1))
@@ -189,18 +199,22 @@ module make_new_grids_module
                 ! LA_LOCAL ==> bypass processor distribution calculation.
 
                 ! Start to load bl with the boxes we had before in ba_old (aka mba%bas(nl)).
-                do i = 1, mba%bas(nl)%nboxes
-                   call push_back(bl,  mba%bas(nl)%bxs(i))
+                do i = 1, nboxes(mba%bas(nl))
+                   call push_back(bl, get_box(mba%bas(nl),i))
                 end do
 
                 ! split up ba_new so the number of intersections per
                 ! box isn't to big. i.e., there is more than one box in ba_new
-                call boxarray_maxsize(ba_new,max_grid_size)
+                if (nl .eq. 2) then
+                   call boxarray_maxsize(ba_new,max_grid_size_2)
+                else
+                   call boxarray_maxsize(ba_new,max_grid_size_3)
+                end if
 
                 ! Now load with the new boxes that are the intersection of 
                 !  ba_new with the complement of ba_old (aka mba%bas(nl))
-                do j = 1, ba_new%nboxes
-                   bi => layout_get_box_intersector(la_old_comp, ba_new%bxs(j))
+                do j = 1, nboxes(ba_new)
+                   bi => layout_get_box_intersector(la_old_comp, get_box(ba_new,j))
                    do i = 1, size(bi)
                       call push_back(bl, bi(i)%bx)
                    end do
@@ -209,7 +223,12 @@ module make_new_grids_module
 
                 call build(ba_newest,bl)
                 call boxarray_simplify(ba_newest)
-                call boxarray_maxsize(ba_newest,max_grid_size)
+
+                if (nl .eq. 2) then
+                   call boxarray_maxsize(ba_newest,max_grid_size_2)
+                else
+                   call boxarray_maxsize(ba_newest,max_grid_size_3)
+                end if
 
                 ! Do some cleanup.
                 call destroy(bl)
@@ -235,7 +254,11 @@ module make_new_grids_module
                 call destroy(ba_crse_fine)
                 call cluster(ba_new, tagboxes, 0)
                 call destroy(tagboxes)
-                call boxarray_maxsize(ba_new,max_grid_size/ref_ratio)
+                if (nl .eq. 2) then
+                   call boxarray_maxsize(ba_new,max_grid_size_2/ref_ratio)
+                else
+                   call boxarray_maxsize(ba_new,max_grid_size_3/ref_ratio)
+                end if
                 call boxarray_refine(ba_new,ref_ratio)
 
                 ! Destroy the old boxarray level and put ba_new there.
@@ -271,8 +294,19 @@ module make_new_grids_module
             do j = 1,mba%dim
                if (.not. pmask(j)) then
                   do i = 1, nboxes(mba,n)
-                     if ( (mba%bas(n)%bxs(i)%lo(j) - pd%lo(j)) .le. 2) mba%bas(n)%bxs(i)%lo(j) = pd%lo(j) 
-                     if ( (pd%hi(j) - mba%bas(n)%bxs(i)%hi(j)) .le. 2) mba%bas(n)%bxs(i)%hi(j) = pd%hi(j) 
+
+                     if ( (  lwb(get_box(mba%bas(n),i),j) - lwb(pd,j)) .le. 2) then
+                        bx = get_box(mba%bas(n),i)
+                        call set_lwb(bx,j,lwb(pd,j))
+                        call set_box(mba%bas(n),i,bx)
+                     end if
+
+                     if ( (upb(pd,j) - upb(get_box(mba%bas(n),i),j)) .le. 2) then
+                        bx = get_box(mba%bas(n),i)
+                        call set_upb(bx,j,upb(pd,j))
+                        call set_box(mba%bas(n),i,bx)
+                     end if
+
                   end do
                end if
             end do

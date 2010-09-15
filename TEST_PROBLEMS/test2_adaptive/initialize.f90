@@ -4,7 +4,6 @@ module initialize_module
   use ml_layout_module
   use multifab_module
   use bc_module
-  use probin_module
   use variables, only: nscal, rho_comp, rhoh_comp, temp_comp
   use geometry
   use network, only: nspec
@@ -33,7 +32,10 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only : drdxfac, restart_into_finer, octant
+    use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
+         ppm_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
+         check_base_name, use_tfromp, cflfac
+
     use average_module
     use make_grav_module
     use enforce_HSE_module
@@ -80,6 +82,8 @@ contains
 
     type(multifab), allocatable :: gamma1(:)
     type(multifab), allocatable :: normal(:)
+
+    type(layout) :: la
 
     real(dp_t), allocatable :: psi_temp(:,:)
     real(dp_t), allocatable :: etarho_cc_temp(:,:)
@@ -143,55 +147,63 @@ contains
        call multifab_copy_c( uold(n),1,chkdata(n),1                ,dm)
        call multifab_copy_c( sold(n),1,chkdata(n),rho_comp+dm      ,nscal)
        call multifab_copy_c(  gpi(n),1,chkdata(n),rho_comp+dm+nscal,dm)
-       call destroy(chkdata(n)%la)
+       la = get_layout(chkdata(n))
+       call destroy(la)
        call destroy(chkdata(n))
     end do
     
     do n=1,nlevs
-       call multifab_copy_c(pi(n),1,chk_p(n),1,1)       
-       call destroy(chk_p(n)%la)
+       call multifab_copy_c(pi(n),1,chk_p(n),1,1)
+       la = get_layout(chk_p(n))
+       call destroy(la)
        call destroy(chk_p(n))
     end do
     
     do n=1,nlevs
        call multifab_copy_c(dSdt(n),1,chk_dsdt(n),1,1)
-       call destroy(chk_dsdt(n)%la)
+       la = get_layout(chk_dsdt(n))
+       call destroy(la)
        call destroy(chk_dsdt(n))
     end do
     
     do n=1,nlevs
        call multifab_copy_c(Source_old(n),1,chk_src_old(n),1,1)
-       call destroy(chk_src_old(n)%la)
+       la = get_layout(chk_src_old(n))
+       call destroy(la)
        call destroy(chk_src_old(n))
     end do
 
     do n=1,nlevs
        call multifab_copy_c(Source_new(n),1,chk_src_new(n),1,1)
-       call destroy(chk_src_new(n)%la)
+       la = get_layout(chk_src_new(n))
+       call destroy(la)
        call destroy(chk_src_new(n))
     end do
     
-    ! Note: rho_omegadot2, rho_Hnuc2, rho_Hext, and thermal2 are not actually 
-    ! needed other
-    ! than to have them available when we print a plotfile immediately after
-    ! restart.  They are recomputed before they are used.
+    ! Note: rho_omegadot2, rho_Hnuc2, rho_Hext, and thermal2 are not
+    ! actually needed other than to have them available when we print
+    ! a plotfile immediately after restart.  They are recomputed
+    ! before they are used.
 
     do n=1,nlevs
        call multifab_copy_c(rho_omegadot2(n),1,chk_rho_omegadot2(n),1,nspec)
-       call destroy(chk_rho_omegadot2(n)%la)
+       la = get_layout(chk_rho_omegadot2(n))
+       call destroy(la)
        call destroy(chk_rho_omegadot2(n))
     end do
 
     do n=1,nlevs
        call multifab_copy_c(rho_Hnuc2(n),1,chk_rho_Hnuc2(n),1,1)
-       call destroy(chk_rho_Hnuc2(n)%la)
+       la = get_layout(chk_rho_Hnuc2(n))
+       call destroy(la)
        call destroy(chk_rho_Hnuc2(n))
     end do
 
     if (plot_Hext) then
        do n=1,nlevs
           call multifab_copy_c(rho_Hext(n),1,chk_rho_Hext(n),1,1)
-          call destroy(chk_rho_Hext(n)%la)
+          la = get_layout(chk_rho_Hext(n))
+          call destroy(la)
           call destroy(chk_rho_Hext(n))
        end do
        deallocate(chk_rho_Hext)
@@ -200,7 +212,8 @@ contains
     if (use_thermal_diffusion) then
        do n=1,nlevs
           call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,1)
-          call destroy(chk_thermal2(n)%la)
+          la = get_layout(chk_thermal2(n))
+          call destroy(la)
           call destroy(chk_thermal2(n))
        end do
        deallocate(chk_thermal2)
@@ -238,7 +251,7 @@ contains
        nr_fine = int(max_dist / dr_fine) + 1
 
        ! compute nr_irreg
-       domain = layout_get_pd(sold(nlevs)%la)
+       domain = get_pd(get_layout(sold(nlevs)))
        domhi  = upb(domain)+1
        if (.not. octant) then
           nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
@@ -308,12 +321,12 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(uold(n),uold(n-1), &
-                                         uold(n)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(uold(n)),mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
                                          1,1,dm,fill_crse_input=.false.)
           call multifab_fill_ghost_cells(sold(n),sold(n-1), &
-                                         sold(n)%ng,mla%mba%rr(n-1,:), &
+                                         nghost(sold(n)),mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
                                          rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
@@ -408,7 +421,7 @@ contains
        nr_fine = int(max_dist / dr_fine) + 1
        
        ! compute nr_irreg
-       domain = layout_get_pd(sold(nlevs)%la)
+       domain = get_pd(get_layout(sold(nlevs)))
        domhi  = upb(domain)+1
        if (.not. octant) then
           nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
@@ -491,8 +504,6 @@ contains
 
        ! compute rho0 by calling average
        call average(mla,sold,rho0_old,dx,rho_comp)
-
-       ! compute cutoff coordinates
        call compute_cutoff_coords(rho0_old)
 
        ! compute gravity
@@ -569,12 +580,15 @@ contains
                                          psi,tempbar,grav_cell)
 
     use box_util_module
-    use init_module
+    use init_scalar_module
+    use init_vel_module
     use average_module
     use restrict_base_module
-    use probin_module, only : drdxfac, octant
+    use probin_module, only : drdxfac, octant, test_set, ppm_type, nodal, &
+         prob_lo, prob_hi, model_file, do_smallscale
     use make_grav_module
     use enforce_HSE_module
+    use rhoh_vs_t_module
     
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
@@ -686,7 +700,7 @@ contains
        nr_fine = int(max_dist / dr_fine) + 1
 
        ! compute nr_irreg
-       domain = layout_get_pd(sold(nlevs)%la)
+       domain = get_pd(get_layout(sold(nlevs)))
        domhi  = upb(domain)+1
        if (.not.octant) then
           nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
@@ -732,25 +746,23 @@ contains
     else
        ! set rho0 to be the average
        call average(mla,sold,rho0_old,dx,rho_comp)
-       call restrict_base(rho0_old,.true.)
-       call fill_ghost_base(rho0_old,.true.)
-
-       ! set rhoh0 to be the average
-       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
-       call restrict_base(rhoh0_old,.true.)
-       call fill_ghost_base(rhoh0_old,.true.)
+       call compute_cutoff_coords(rho0_old)
 
        ! compute p0 with HSE
        p0_old = p0_init
-       call compute_cutoff_coords(rho0_old)
+
        call make_grav_cell(grav_cell,rho0_old)
        call enforce_HSE(rho0_old,p0_old,grav_cell)
+
+       ! call eos with r,p as input to recompute T,h
+       call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
+
+       ! set rhoh0 to be the average
+       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
     end if
 
     ! set tempbar to be the average
     call average(mla,sold,tempbar,dx,temp_comp)
-    call restrict_base(tempbar,.true.)
-    call fill_ghost_base(tempbar,.true.)
     
     call destroy(mba)
 
@@ -769,18 +781,21 @@ contains
                                             psi,tempbar,grav_cell)
 
     use probin_module, only: n_cellx, n_celly, n_cellz, &
-         regrid_int, amr_buf_width, max_grid_size, &
-         max_grid_size_base, ref_ratio, max_levs, octant
-    use init_module
+         regrid_int, amr_buf_width, max_grid_size_1, max_grid_size_2, max_grid_size_3, &
+         ref_ratio, max_levs, octant
+    use init_scalar_module
+    use init_vel_module
     use average_module
     use restrict_base_module
     use make_new_grids_module
-    use probin_module, only : drdxfac
+    use probin_module, only : drdxfac, ppm_type, prob_lo, prob_hi, do_smallscale, &
+         model_file, nodal
     use multifab_physbc_module
     use ml_restriction_module
     use multifab_fill_ghost_module
     use make_grav_module
     use enforce_HSE_module
+    use rhoh_vs_t_module
 
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
@@ -838,7 +853,7 @@ contains
     ! Build the level 1 boxarray
     call box_build_2(bxs,lo,hi)
     call boxarray_build_bx(mba%bas(1),bxs)
-    call boxarray_maxsize(mba%bas(1),max_grid_size_base)
+    call boxarray_maxsize(mba%bas(1),max_grid_size_1)
 
     ! build pd(:)
     mba%pd(1) = bxs
@@ -936,7 +951,7 @@ contains
              do n=nl,2,-1
                 call ml_cc_restriction(sold(n-1),sold(n),mba%rr(n-1,:))
                 call multifab_fill_ghost_cells(sold(n),sold(n-1), &
-                                               sold(n)%ng,mba%rr(n-1,:), &
+                                               nghost(sold(n)),mba%rr(n-1,:), &
                                                the_bc_tower%bc_tower_array(n-1), &
                                                the_bc_tower%bc_tower_array(n), &
                                                rho_comp,dm+rho_comp,nscal, &
@@ -944,8 +959,13 @@ contains
              enddo
           endif
 
-          call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
-                              amr_buf_width,ref_ratio,nl,max_grid_size,tempbar)
+          if (nl .eq. 1) then
+             call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                                 amr_buf_width,ref_ratio,nl,max_grid_size_2,tempbar)
+          else
+             call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                                 amr_buf_width,ref_ratio,nl,max_grid_size_3,tempbar)
+          end if
           
           if (new_grid) then
               
@@ -985,7 +1005,7 @@ contains
 
        ! check for proper nesting
        if (nlevs .ge. 3) then
-          call enforce_proper_nesting(mba,la_array,max_grid_size)
+          call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
        end if
        
     else
@@ -1031,7 +1051,7 @@ contains
     end do
 
     ! compute nr_irreg
-    domain = layout_get_pd(sold(nlevs)%la)
+    domain = get_pd(get_layout(sold(nlevs)))
     domhi  = upb(domain)+1
     if (.not. octant) then
        nr_irreg = (3*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
@@ -1052,25 +1072,23 @@ contains
     else
        ! set rho0 to be the average
        call average(mla,sold,rho0_old,dx,rho_comp)
-       call restrict_base(rho0_old,.true.)
-       call fill_ghost_base(rho0_old,.true.)
-
-       ! set rhoh0 to be the average
-       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
-       call restrict_base(rhoh0_old,.true.)
-       call fill_ghost_base(rhoh0_old,.true.)
+       call compute_cutoff_coords(rho0_old)
 
        ! compute p0 with HSE
        p0_old = p0_init
-       call compute_cutoff_coords(rho0_old)
+
        call make_grav_cell(grav_cell,rho0_old)
        call enforce_HSE(rho0_old,p0_old,grav_cell)
+
+       ! call eos with r,p as input to recompute T,h
+       call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
+
+       ! set rhoh0 to be the average
+       call average(mla,sold,rhoh0_old,dx,rhoh_comp)
     end if
 
     ! set tempbar to be the average
     call average(mla,sold,tempbar,dx,temp_comp)
-    call restrict_base(tempbar,.true.)
-    call fill_ghost_base(tempbar,.true.)
 
     call destroy(mba)
 
@@ -1123,6 +1141,8 @@ contains
   end subroutine initialize_bc
 
   subroutine initialize_dx(dx,mba,num_levs)
+
+    use probin_module, only: prob_lo, prob_hi
 
     real(dp_t)       , pointer     :: dx(:,:)
     type(ml_boxarray), intent(in ) :: mba

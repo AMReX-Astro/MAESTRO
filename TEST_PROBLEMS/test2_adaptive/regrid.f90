@@ -5,16 +5,7 @@ module regrid_module
   use ml_layout_module
   use define_bc_module
   use restart_module
-  use init_module
   use box_util_module
-  use make_new_grids_module
-  use fillpatch_module
-  use ml_prolongation_module
-  use multifab_physbc_module
-  use multifab_fill_ghost_module
-  use ml_restriction_module
-  use pert_form_module
-  use convert_rhoX_to_X_module
 
   implicit none
 
@@ -26,14 +17,23 @@ contains
 
   subroutine regrid(mla,uold,sold,gpi,pi,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart)
 
+    use fillpatch_module
+    use ml_prolongation_module
+    use multifab_physbc_module
+    use multifab_fill_ghost_module
+    use ml_restriction_module
+    use make_new_grids_module
+    use convert_rhoX_to_X_module
+    use pert_form_module
+
     use probin_module, only : verbose, nodal, pmask, &
          regrid_int, amr_buf_width, &
-         max_grid_size, ref_ratio, max_levs, &
+         max_grid_size_2, max_grid_size_3, ref_ratio, max_levs, &
          ppm_type
     use geometry, only: dm, nlevs, nlevs_radial, spherical, nr_fine
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp, temp_comp
     use network, only: nspec
-    use average_module
+    use average_module, only: average_one_level
 
     type(ml_layout), intent(inout) :: mla
     type(multifab),  pointer       :: uold(:),sold(:),gpi(:),pi(:)
@@ -55,6 +55,10 @@ contains
     type(multifab) :: pi_temp(max_levs), dSdt_temp(max_levs), src_temp(max_levs)
 
     real(kind=dp_t)   :: tempbar(max_levs,0:nr_fine-1)
+
+    if (verbose .ge. 1) then
+       if (parallel_IOProcessor()) print*,'Calling regrid'
+    end if
 
     if (ppm_type .eq. 2) then
        ng_s = 4
@@ -157,8 +161,13 @@ contains
 
        call average_one_level(nl,sold,tempbar,temp_comp)
 
-       call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1),amr_buf_width,&
-                           ref_ratio,nl,max_grid_size,tempbar)
+       if (nl .eq. 1) then
+          call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                              amr_buf_width,ref_ratio,nl,max_grid_size_2,tempbar)
+       else
+          call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                              amr_buf_width,ref_ratio,nl,max_grid_size_3,tempbar)
+       end if
 
        if (new_grid) then
 
@@ -260,7 +269,7 @@ contains
 
     ! check for proper nesting
     if (nlevs .ge. 3) then
-       call enforce_proper_nesting(mba,la_array,max_grid_size)
+       call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
     end if
 
     do n = 1,nl
