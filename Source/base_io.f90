@@ -98,7 +98,7 @@ contains
     use bl_prof_module
     use variables, only: rho_comp, rhoh_comp
     use network, only: nspec
-    use geometry, only : dr, nr, nlevs_radial
+    use geometry, only : dr, nr, nlevs_radial, compute_cutoff
     use bl_constants_module
     use restrict_base_module, only: fill_ghost_base
     use inlet_bc_module, only: set_inlet_bcs
@@ -144,6 +144,8 @@ contains
        end do
     end do
     close(99)
+
+    call compute_cutoff_coords(rho0_old)
 
     ! read in edge-centered 1D data
     out_name = trim(chk_name) // "/" // trim(w0_name)
