@@ -959,6 +959,8 @@ contains
              enddo
           endif
 
+          call average_one_level(nl,sold,tempbar,temp_comp)
+
           if (nl .eq. 1) then
              call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
                                  amr_buf_width,ref_ratio,nl,max_grid_size_2,tempbar)
