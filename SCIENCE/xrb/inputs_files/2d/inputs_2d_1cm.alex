@@ -16,7 +16,7 @@
  hg_bottom_solver = 4
  max_mg_bottom_nlevels = 4
 
- burner_threshold_species = "He4"
+ burner_threshold_species = "H1"
  
  use_eos_coulomb = T
 
