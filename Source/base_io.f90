@@ -98,7 +98,7 @@ contains
     use bl_prof_module
     use variables, only: rho_comp, rhoh_comp
     use network, only: nspec
-    use geometry, only : dr, nr, nlevs_radial, compute_cutoff
+    use geometry, only : dr, nr, nlevs_radial, compute_cutoff_coords
     use bl_constants_module
     use restrict_base_module, only: fill_ghost_base
     use inlet_bc_module, only: set_inlet_bcs
