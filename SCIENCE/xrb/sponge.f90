@@ -28,7 +28,7 @@ contains
 
     use geometry, only: dr, r_end_coord
     use bl_constants_module
-    use probin_module, only: anelastic_cutoff, prob_hi
+    use probin_module, only: anelastic_cutoff, prob_hi, sponge_start_factor
 
     real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -40,11 +40,12 @@ contains
     r_top = prob_lo_r + dble(r_end_coord(1,1)+1) * dr(1)
     topsponge_lo_r = r_top
 
-    sponge_start_density = 25.d0*anelastic_cutoff
+    ! we do things differently than what is in Source/spong.f90 
+    sponge_start_density = sponge_start_factor*anelastic_cutoff
 
     do r=0,r_end_coord(1,1)
        rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
-       if (rho0(r) < 25.d0*anelastic_cutoff) then
+       if (rho0(r) < sponge_start_density) then
           topsponge_lo_r = rloc
           exit
        endif
