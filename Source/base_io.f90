@@ -145,7 +145,7 @@ contains
     end do
     close(99)
 
-    call compute_cutoff_coords(rho0_old)
+    call compute_cutoff_coords(rho0)
 
     ! read in edge-centered 1D data
     out_name = trim(chk_name) // "/" // trim(w0_name)
