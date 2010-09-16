@@ -95,6 +95,8 @@ contains
 
   subroutine radialtag_2d(radialtag,he,rho,lo,ng,lev)
 
+    use probin_module, only: tag_minval, tag_maxval
+
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) ::  he(lo(1)-ng:,lo(2)-ng:)
@@ -114,7 +116,7 @@ contains
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. 1.d-4 .and. Xhe .lt. 0.99d0) then
+             if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
                 radialtag(j) = .true.
              end if
           end do
@@ -123,7 +125,7 @@ contains
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. 1.d-4 .and. Xhe .lt. 0.99d0) then
+             if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
                 radialtag(j) = .true.
              end if
           end do
@@ -132,7 +134,7 @@ contains
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. 1.d-4 .and. Xhe .lt. 0.99d0) then
+             if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
                 radialtag(j) = .true.
              end if
           end do
@@ -144,6 +146,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine radialtag_3d(radialtag,he,rho,lo,ng,lev)
+
+    use probin_module, only: tag_minval, tag_maxval
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
@@ -166,7 +170,7 @@ contains
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
                 Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. 1.d-4 .and. Xhe .lt. 0.99d0) then
+                if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
                    radialtag(k) = .true.
                 end if
              end do
@@ -177,7 +181,7 @@ contains
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
                 Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. 1.d-4 .and. Xhe .lt. 0.99d0) then
+                if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
                    radialtag(k) = .true.
                 end if
              end do
@@ -188,7 +192,7 @@ contains
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
                 Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. 1.d-4 .and. Xhe .lt. 0.99d0) then
+                if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
                    radialtag(k) = .true.
                 end if
              end do

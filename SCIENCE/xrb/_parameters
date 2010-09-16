@@ -40,3 +40,9 @@ limit_conductivity                  logical            .false.
 
 # look at the deltap diagnostic
 do_deltap_diag                      logical            .false.
+
+# minimum value to use for species in tag_boxes
+tag_minval                          real               1.0d-4
+
+# maximum value to use for species in tag_boxes
+tag_maxval                          real               0.99d0
