@@ -3,6 +3,8 @@
  spherical_in = 0
  plot_base = T
 
+ tag_maxval = 0.75
+
  max_levs = 1
  n_cellx = 256
  n_celly = 2048
