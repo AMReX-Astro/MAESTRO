@@ -20,7 +20,8 @@ contains
     use probin_module, only: plot_spec, plot_trac, plot_base, &
                              use_thermal_diffusion, plot_omegadot, plot_Hnuc, &
                              plot_Hext, plot_eta, plot_ad_excess, &
-                             use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs
+                             use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, &
+                             plot_sponge_fdamp
     use geometry, only: spherical, dm
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -91,7 +92,11 @@ contains
     plot_names(icomp_dg)          = "deltagamma"
     plot_names(icomp_entropy)     = "entropy"
     plot_names(icomp_entropypert) = "entropypert"
-    plot_names(icomp_sponge)      = "sponge"
+    if (plot_sponge_fdamp) then
+       plot_names(icomp_sponge)      = "sponge_fdamp"
+    else
+       plot_names(icomp_sponge)      = "sponge"
+    end if
 
     plot_names(icomp_pi)          = "pi"
     if (plot_gpi) then
@@ -137,7 +142,7 @@ contains
                            thermal,Source,sponge,mba,plot_names,time,dx, &
                            the_bc_tower,w0,rho0,rhoh0,p0, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal)
+                           normal,dt)
 
     use bl_prof_module
     use fabio_module
@@ -151,7 +156,7 @@ contains
                              do_smallscale, use_thermal_diffusion, &
                              evolve_base_state, prob_lo, prob_hi, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, &
-                             plot_cs
+                             plot_cs, sponge_kappa, plot_sponge_fdamp
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use average_module
     use ml_restriction_module
@@ -174,7 +179,7 @@ contains
     type(multifab)   , intent(in   ) :: sponge(:)
     type(ml_boxarray), intent(in   ) :: mba
     character(len=20), intent(in   ) :: plot_names(:)
-    real(dp_t)       , intent(in   ) :: time,dx(:,:)
+    real(dp_t)       , intent(in   ) :: dt,time,dx(:,:)
     type(bc_tower)   , intent(in   ) :: the_bc_tower
     real(dp_t)       , intent(in   ) :: w0(:,0:)
     real(dp_t)       , intent(in   ) :: rho0(:,0:)
@@ -193,6 +198,8 @@ contains
 
     real(dp_t) :: entropybar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         h0(nlevs_radial,0:nr_fine-1)
+
+    real(dp_t) :: tempval
 
     integer :: n,prec,comp
 
@@ -507,16 +514,36 @@ contains
        ! PI
        call multifab_copy_c(plotdata(n),icomp_pi,pi_cc(n),1,1)
 
-          
        ! GRAD PI
        if (plot_gpi) then
           call multifab_copy_c(plotdata(n),icomp_gpi,gpi(n),1,dm)
        endif
 
-       ! SPONGE
-       call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)
-
     end do
+
+    ! SPONGE
+    if (plot_sponge_fdamp) then
+       tempval = dt*sponge_kappa
+       do n=1,nlevs
+          ! compute f_damp assuming sponge=1/(1+dt*kappa*fdamp)
+          ! therefore fdamp = (1/sponge-1)/(dt*kappa)
+
+          ! plotdata = 1
+          call multifab_setval_c(plotdata(n),ONE,icomp_sponge,1)
+          ! tempfab = 1
+          call multifab_setval(tempfab(n),ONE)
+          ! plotdata = 1/sponge
+          call multifab_div_div_c(plotdata(n),icomp_sponge,sponge(n),1,1)
+          ! plotdata = 1/sponge-1
+          call multifab_sub_sub_c(plotdata(n),icomp_sponge,tempfab(n),1,1)
+          ! plotdata = (1/sponge-1)/(dt*kappa)
+          call multifab_div_div_s_c(plotdata(n),icomp_sponge,tempval,1)
+       end do
+    else
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)
+       end do
+    end if
 
     !PIOVERP0
     if (plot_base) then

@@ -115,6 +115,10 @@ sponge_center_density               real               3.d6
 # The sponge begins at sponge\_center\_density * sponge\_start\_factor.
 sponge_start_factor                 real               3.333d0
 
+# plot fdamp rather than sponge
+# assumes sponge has the form 1/(1+dt*sponge_kappa*fdamp)
+plot_sponge_fdamp                   logical            .false.
+
 # In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point 
 # Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 
 # 7-point Laplacian (.false.).
