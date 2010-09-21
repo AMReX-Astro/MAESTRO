@@ -2,13 +2,15 @@
  model_file = "s15-hburn.modelB.planar128.232"
  drdxfac = 1
 
+! beta_type = 2
+
  max_levs = 1
  n_cellx = 128
  n_celly = 128
  n_cellz = 128
  max_grid_size = 64
 
- velpert_amplitude = 0.d0
+ velpert_amplitude = 1.d2
  perturb_model = F
 
  base_cutoff_density = 1.d-4
@@ -27,12 +29,12 @@
  prob_hi_x = 2.d11
  prob_hi_y = 2.d11
 
-! restart = 500
+! restart = 10
 
- max_step  = 500
- init_iter = 1
- init_divu_iter = 1
- do_initial_projection = T
+ max_step  = 1
+ init_iter = 0
+ init_divu_iter = 0
+ do_initial_projection = F
 
  stop_time = 5.72d10
 
