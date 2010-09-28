@@ -93,7 +93,9 @@ contains
     do n=1,nlevs
        do comp=1,dm
           call destroy(umac_dummy(n,comp))
-          call destroy(w0mac_dummy(n,comp))
+          if (spherical .eq. 1) then
+             call destroy(w0mac_dummy(n,comp))
+          end if
        end do
     end do
 
