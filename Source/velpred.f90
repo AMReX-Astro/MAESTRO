@@ -1819,15 +1819,15 @@ contains
              do i=is,ie
 
                 Ut_dot_er = HALF*(utrans(i,j,k-1)-w0macx(i,j,k-1)+utrans(i+1,j,k-1)-w0macx(i+1,j,k-1))*normal(i,j,k-1,1) + &
-                     HALF*(vtrans(i,j,k-1)-w0macy(i,j,k-1)+vtrans(i,j+1,k-1)-w0macy(i,j+1,k-1))*normal(i,j,k-1,2) + &
-                     HALF*(wtrans(i,j,k-1)-w0macz(i,j,k-1)+wtrans(i,j  ,k  )-w0macz(i,j  ,k  ))*normal(i,j,k-1,3)
+                            HALF*(vtrans(i,j,k-1)-w0macy(i,j,k-1)+vtrans(i,j+1,k-1)-w0macy(i,j+1,k-1))*normal(i,j,k-1,2) + &
+                            HALF*(wtrans(i,j,k-1)-w0macz(i,j,k-1)+wtrans(i,j  ,k  )-w0macz(i,j  ,k  ))*normal(i,j,k-1,3)
 
                 wmacl(i,j,k) = wmacl(i,j,k) &
                      - dt2*Ut_dot_er*gradw0_cart(i,j,k-1)*normal(i,j,k-1,3)
 
                 Ut_dot_er = HALF*(utrans(i,j,k)-w0macx(i,j,k)+utrans(i+1,j,k)-w0macx(i+1,j,k))*normal(i,j,k,1) + &
-                     HALF*(vtrans(i,j,k)-w0macy(i,j,k)+vtrans(i,j+1,k)-w0macy(i,j+1,k))*normal(i,j,k,2) + &
-                     HALF*(wtrans(i,j,k)-w0macz(i,j,k)+wtrans(i,j,k+1)-w0macz(i,j,k+1))*normal(i,j,k,3)
+                            HALF*(vtrans(i,j,k)-w0macy(i,j,k)+vtrans(i,j+1,k)-w0macy(i,j+1,k))*normal(i,j,k,2) + &
+                            HALF*(wtrans(i,j,k)-w0macz(i,j,k)+wtrans(i,j,k+1)-w0macz(i,j,k+1))*normal(i,j,k,3)
 
                 wmacr(i,j,k) = wmacr(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
 
