@@ -56,15 +56,6 @@ contains
        call multifab_build(ufull(n),get_layout(uold(n)),dm,nghost(uold(n)))
     end do
 
-    !*************************************************************
-    !     Create force, initializing with pressure gradient and buoyancy terms.
-    !*************************************************************
-    is_final_update = .false.
-    call mk_vel_force(force,is_final_update, &
-                      uold,umac,w0,w0mac,gpi,sold,rho_comp, &
-                      rho0(:,:),grav_cell,dx,w0_force,w0_force_cart_vec, &
-                      the_bc_level,mla)
-
     ! create fullu = uold + w0
     call put_1d_array_on_cart(w0,ufull,1,.true.,.true.,dx,the_bc_level,mla)
     do n=1,nlevs
@@ -84,6 +75,15 @@ contains
     if (dm > 1) then
        call mkutrans(uold,ufull,utrans,w0,w0mac,dx,dt,the_bc_level)
     end if
+
+    !*************************************************************
+    !     Create force, initializing with pressure gradient and buoyancy terms.
+    !*************************************************************
+    is_final_update = .false.
+    call mk_vel_force(force,is_final_update, &
+                      uold,utrans,w0,w0mac,gpi,sold,rho_comp, &
+                      rho0(:,:),grav_cell,dx,w0_force,w0_force_cart_vec, &
+                      the_bc_level,mla)
 
     !*************************************************************
     !     Add w0 to trans velocities.
