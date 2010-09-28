@@ -30,7 +30,7 @@ contains
                    grav,dx,cflfac,dt)
 
     use bl_prof_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical, dm, nlevs, nlevs_radial, nr_fine
     use variables, only: rel_eps, rho_comp
     use bl_constants_module
     use mk_vel_force_module
@@ -57,8 +57,11 @@ contains
     type(multifab) ::      force(nlevs)
     type(multifab) ::      w0mac(nlevs,dm)
     type(multifab) :: umac_dummy(nlevs,dm)
+    type(multifab) :: w0_force_cart_dummy(nlevs)
 
     logical :: is_final_update
+
+    real(kind=dp_t), allocatable :: w0_force_dummy(:,:)
 
     real(kind=dp_t), pointer::   uop(:,:,:,:)
     real(kind=dp_t), pointer::   sop(:,:,:,:)
@@ -81,8 +84,13 @@ contains
 
     call build(bpt, "estdt")
     
+    allocate(w0_force_dummy(nlevs_radial,0:nr_fine-1))
+    w0_force_dummy = 0.d0
+
     do n=1,nlevs
        call multifab_build(force(n), mla%la(n), dm, 1)
+       call multifab_build(w0_force_cart_dummy(n),mla%la(n),dm,1)
+       call setval(w0_force_cart_dummy(n),0.d0,all=.true.)
 
        ! create an empty umac so we can call the vel force routine --
        ! this will not be used
@@ -111,9 +119,11 @@ contains
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
                       u,umac_dummy,w0,w0mac,gpi,s,rho_comp, &
-                      rho0,grav,dx,the_bc_tower%bc_tower_array,mla)
+                      rho0,grav,dx,w0_force_dummy,w0_force_cart_dummy, &
+                      the_bc_tower%bc_tower_array,mla)
 
     do n=1,nlevs
+       call destroy(w0_force_cart_dummy(n))
        do comp=1,dm
           call destroy(umac_dummy(n,comp))
        end do
@@ -219,6 +229,8 @@ contains
            end do
         end do
      end if
+
+    deallocate(w0_force_dummy)
 
     call destroy(bpt)
 

@@ -25,7 +25,7 @@ contains
   subroutine firstdt(mla,the_bc_level,u,gpi,s,divU,rho0,p0,grav,gamma1bar, &
                      dx,cflfac,dt)
 
-    use geometry, only: dm, nlevs, spherical, nr_fine
+    use geometry, only: dm, nlevs, nlevs_radial, spherical, nr_fine
     use variables, only: rel_eps, rho_comp
     use bl_constants_module
     use probin_module, only: init_shrink, verbose
@@ -48,8 +48,12 @@ contains
     type(multifab) :: force(nlevs)
     type(multifab) :: umac_dummy(nlevs,dm)
     type(multifab) :: w0mac_dummy(nlevs,dm)
-    real(kind=dp_t) :: w0_dummy(nlevs,0:nr_fine)
+    type(multifab) :: w0_force_cart_dummy(nlevs)
+
     logical :: is_final_update
+
+    real(kind=dp_t), allocatable :: w0_dummy(:,:)
+    real(kind=dp_t), allocatable :: w0_force_dummy(:,:)
     
     real(kind=dp_t), pointer::   uop(:,:,:,:)
     real(kind=dp_t), pointer::   sop(:,:,:,:)
@@ -61,8 +65,15 @@ contains
     real(kind=dp_t) :: dt_proc,dt_grid,dt_lev
     real(kind=dp_t) :: umax,umax_proc,umax_grid
 
+    allocate(w0_force_dummy(nlevs_radial,0:nr_fine-1))
+    allocate(w0_dummy      (nlevs       ,0:nr_fine))
+    w0_force_dummy = 0.d0
+    w0_dummy = 0.d0
+
     do n=1,nlevs
        call multifab_build(force(n), mla%la(n), dm, 1)
+       call multifab_build(w0_force_cart_dummy(n),mla%la(n),dm,1)
+       call setval(w0_force_cart_dummy(n),0.d0,all=.true.)
 
        ! create an empty umac so we can call the vel force routine --
        ! this will not be used
@@ -88,9 +99,10 @@ contains
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
                       u,umac_dummy,w0_dummy,w0mac_dummy,gpi,s,rho_comp, &
-                      rho0,grav,dx,the_bc_level,mla)
+                      rho0,grav,dx,w0_force_dummy,w0_force_cart_dummy,the_bc_level,mla)
 
     do n=1,nlevs
+       call destroy(w0_force_cart_dummy(n))
        do comp=1,dm
           call destroy(umac_dummy(n,comp))
           if (spherical .eq. 1) then
@@ -168,7 +180,9 @@ contains
      do n=1,nlevs
         call destroy(force(n))
      end do
-    
+
+     deallocate(w0_force_dummy,w0_dummy)
+
   end subroutine firstdt
 
   subroutine firstdt_1d(n,u,ng_u,s,ng_s,force,ng_f,divu,ng_dU,p0,gamma1bar,lo,hi,dx,dt, &
@@ -714,6 +728,8 @@ contains
        dt = min(dt,dt_divu)
 
     end if
+
+    deallocate(gp0_cart)
 
   end subroutine firstdt_3d_sphr
   

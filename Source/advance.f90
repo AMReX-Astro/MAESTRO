@@ -101,7 +101,7 @@ contains
 
     ! local
     type(multifab) ::           rhohalf(mla%nlevel)
-    type(multifab) :: w0_force_cart_vec(mla%nlevel)
+    type(multifab) ::     w0_force_cart(mla%nlevel)
     type(multifab) ::            macrhs(mla%nlevel)
     type(multifab) ::            macphi(mla%nlevel)
     type(multifab) ::         hgrhs_old(mla%nlevel)
@@ -327,8 +327,8 @@ contains
 
     if (dm .eq. 3) then
        do n=1,nlevs
-          call multifab_build(w0_force_cart_vec(n),mla%la(n),dm,1)
-          call setval(w0_force_cart_vec(n),ZERO,all=.true.)
+          call multifab_build(w0_force_cart(n),mla%la(n),dm,1)
+          call setval(w0_force_cart(n),ZERO,all=.true.)
           do comp=1,dm
              call multifab_build_edge(w0mac(n,comp),mla%la(n),1,1,comp)
              call setval(w0mac(n,comp),ZERO,all=.true.)
@@ -349,7 +349,7 @@ contains
        end if
 
        if (dm .eq. 3) then
-          call put_1d_array_on_cart(w0_force,w0_force_cart_vec,foextrap_comp,.false., &
+          call put_1d_array_on_cart(w0_force,w0_force_cart,foextrap_comp,.false., &
                                     .true.,dx,the_bc_tower%bc_tower_array,mla)
        end if
 
@@ -375,12 +375,12 @@ contains
        end do
     end do
     
-    call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart_vec, &
+    call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart, &
                         rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
     if (dm .eq. 3) then
        do n=1,nlevs
-          call destroy(w0_force_cart_vec(n))
+          call destroy(w0_force_cart(n))
        end do
     end if
 
@@ -820,8 +820,8 @@ contains
 
     if (dm .eq. 3) then
        do n=1,nlevs
-          call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
-          call setval(w0_force_cart_vec(n),ZERO,all=.true.)
+          call multifab_build(w0_force_cart(n), mla%la(n), dm, 1)
+          call setval(w0_force_cart(n),ZERO,all=.true.)
        end do
     end if
 
@@ -843,7 +843,7 @@ contains
        end if
 
        if (dm .eq. 3) then
-          call put_1d_array_on_cart(w0_force,w0_force_cart_vec,foextrap_comp,.false., &
+          call put_1d_array_on_cart(w0_force,w0_force_cart,foextrap_comp,.false., &
                                     .true.,dx,the_bc_tower%bc_tower_array,mla)
        end if
     end if
@@ -863,7 +863,7 @@ contains
        end do
     end do
 
-    call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart_vec, &
+    call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart, &
                         rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
     if (barrier_timers) call parallel_barrier()
@@ -1267,7 +1267,7 @@ contains
     call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
     
     call velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpi,normal,w0,w0mac,w0_force, &
-                          w0_force_cart_vec,rho0_old,rho0_nph,grav_cell_old,grav_cell_nph, &
+                          w0_force_cart,rho0_old,rho0_nph,grav_cell_old,grav_cell_nph, &
                           dx,dt,the_bc_tower%bc_tower_array,sponge)
 
     if (init_mode) then
@@ -1286,7 +1286,7 @@ contains
           do comp=1,dm
              call destroy(w0mac(n,comp))
           end do
-          call destroy(w0_force_cart_vec(n))
+          call destroy(w0_force_cart(n))
        end do
     end if
 
