@@ -23,6 +23,7 @@ contains
     use addw0_module
     use bl_constants_module
     use variables, only: rho_comp
+    use fill_3d_module, only: put_1d_array_on_cart
 
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(in   ) :: sold(:)
@@ -42,6 +43,7 @@ contains
     ! local
     type(multifab) ::  force(nlevs)
     type(multifab) :: utrans(nlevs,dm)
+    type(multifab) :: ufull(nlevs)
     integer        :: n,comp
     logical        :: is_final_update
 
@@ -51,6 +53,7 @@ contains
 
     do n=1,nlevs
        call multifab_build(force(n),get_layout(uold(n)),dm,1)
+       call multifab_build(ufull(n),get_layout(uold(n)),dm,nghost(uold(n)))
     end do
 
     !*************************************************************
@@ -63,6 +66,12 @@ contains
 
     call add_w0_force(force,w0_force,w0_force_cart_vec,the_bc_level,mla)
 
+    ! create fullu = uold + w0
+    call put_1d_array_on_cart(w0,ufull,1,.true.,.true.,dx,the_bc_level,mla)
+    do n=1,nlevs
+       call multifab_plus_plus_c(ufull(n),1,uold(n),1,3,nghost(uold(n)))
+    end do    
+
     !*************************************************************
     !     Create utrans.
     !*************************************************************
@@ -73,24 +82,27 @@ contains
        end do
     end do
 
-    if (dm > 1) &
-       call mkutrans(uold,utrans,w0,w0mac,dx,dt,the_bc_level)
+    if (dm > 1) then
+       call mkutrans(uold,ufull,utrans,w0,w0mac,dx,dt,the_bc_level)
+    end if
 
     !*************************************************************
     !     Add w0 to trans velocities.
     !*************************************************************
     
-    if (dm > 1) &
+    if (dm > 1) then
        call addw0(utrans,w0,w0mac,mult=ONE)
+    end if
 
     !*************************************************************
     !     Create the edge states to be used for the MAC velocity 
     !*************************************************************
 
-    call velpred(uold,umac,utrans,force,normal,w0,w0mac,dx,dt,the_bc_level,mla)
+    call velpred(uold,ufull,umac,utrans,force,normal,w0,w0mac,dx,dt,the_bc_level,mla)
 
     do n = 1,nlevs
        call destroy(force(n))
+       call destroy(ufull(n))
        do comp=1,dm
           call destroy(utrans(n,comp))
        end do

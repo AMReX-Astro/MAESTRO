@@ -13,7 +13,7 @@ module velpred_module
 
 contains
 
-  subroutine velpred(u,umac,utrans,force,normal,w0,w0mac,dx,dt,the_bc_level,mla)
+  subroutine velpred(u,ufull,umac,utrans,force,normal,w0,w0mac,dx,dt,the_bc_level,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -24,6 +24,7 @@ contains
     use ml_restriction_module, only : ml_edge_restriction_c
 
     type(multifab) , intent(in   ) :: u(:)
+    type(multifab) , intent(in   ) :: ufull(:)
     type(multifab) , intent(inout) :: umac(:,:)
     type(multifab) , intent(in   ) :: utrans(:,:),force(:)
     type(multifab) , intent(in   ) :: normal(:)
@@ -34,9 +35,10 @@ contains
     type(ml_layout), intent(in   ) :: mla
 
     integer                  :: i,r,n,n_1d
-    integer                  :: ng_u,ng_um,ng_ut,ng_f,ng_w0,ng_gw,ng_n
+    integer                  :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0,ng_gw,ng_n
     integer                  :: lo(dm), hi(dm)
     real(kind=dp_t), pointer :: uop(:,:,:,:)
+    real(kind=dp_t), pointer :: ufp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
@@ -62,6 +64,7 @@ contains
     end do
 
     ng_u  = nghost(u(1))
+    ng_uf = nghost(ufull(1))
     ng_um = nghost(umac(1,1))
     ng_ut = nghost(utrans(1,1))
     ng_f  = nghost(force(1))
@@ -86,6 +89,7 @@ contains
        do i = 1, nboxes(u(n))
           if ( multifab_remote(u(n),i) ) cycle
           uop  => dataptr(u(n),i)
+          ufp  => dataptr(ufull(n),i)
           ump  => dataptr(umac(n,1),i)
           utp  => dataptr(utrans(n,1),i)
           fp   => dataptr(force(n),i)
@@ -94,6 +98,7 @@ contains
           select case (dm)
           case (1)
              call velpred_1d(n, uop(:,1,1,:), ng_u, &
+                             ufp(:,1,1,:), ng_uf, &
                              ump(:,1,1,1), ng_um, &
                              fp(:,1,1,1), ng_f, w0(n,:), lo, hi, dx(n,:), dt, &
                              the_bc_level(n)%phys_bc_level_array(i,:,:), &
@@ -102,6 +107,7 @@ contains
              vtp  => dataptr(utrans(n,2),i)
              vmp  => dataptr(  umac(n,2),i)
              call velpred_2d(n, uop(:,:,1,:), ng_u, &
+                             ufp(:,:,1,:), ng_uf, &
                              utp(:,:,1,1), vtp(:,:,1,1), ng_ut, &
                              ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                              fp(:,:,1,:), ng_f, w0(n,:), lo, hi, dx(n,:), dt, &
@@ -124,6 +130,7 @@ contains
                 n_1d = n
              end if
              call velpred_3d(n, uop(:,:,:,:), ng_u, &
+                             ufp(:,:,:,:), ng_uf, &
                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
                              fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
@@ -149,7 +156,7 @@ contains
 
   end subroutine velpred
 
-  subroutine velpred_1d(n,u,ng_u,umac,ng_um,force,ng_f, &
+  subroutine velpred_1d(n,u,ng_u,ufull,ng_uf,umac,ng_um,force,ng_f, &
                         w0,lo,hi,dx,dt,phys_bc,adv_bc)
 
     use geometry, only: nr
@@ -160,8 +167,9 @@ contains
     use probin_module, only: ppm_type
     use ppm_module
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_um,ng_f
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_uf,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :)
     real(kind=dp_t), intent(in   ) ::     w0(0:)
@@ -269,7 +277,7 @@ contains
 
   end subroutine velpred_1d
 
-  subroutine velpred_2d(n,u,ng_u,utrans,vtrans,ng_ut,umac,vmac,ng_um,force,ng_f, &
+  subroutine velpred_2d(n,u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,umac,vmac,ng_um,force,ng_f, &
                         w0,lo,hi,dx,dt,phys_bc,adv_bc)
 
     use geometry, only: nr
@@ -280,8 +288,9 @@ contains
     use probin_module, only: ppm_type
     use ppm_module
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_um,ng_ut,ng_f
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_uf,ng_um,ng_ut,ng_f
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(in   ) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(in   ) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:)
@@ -640,7 +649,7 @@ contains
 
   end subroutine velpred_2d
 
-  subroutine velpred_3d(n,u,ng_u, &
+  subroutine velpred_3d(n,u,ng_u,ufull,ng_uf, &
                         umac,vmac,wmac,ng_um,utrans,vtrans,wtrans,ng_ut, &
                         force,ng_f,normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0, &
                         gradw0_cart,ng_gw,lo,hi,dx,dt,phys_bc,adv_bc)
@@ -654,8 +663,9 @@ contains
     use ppm_module
 
     integer        , intent(in   ) :: n,lo(:),hi(:)
-    integer        , intent(in   ) :: ng_u,ng_um,ng_ut,ng_f,ng_n,ng_w0,ng_gw
+    integer        , intent(in   ) :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_n,ng_w0,ng_gw
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(inout) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(inout) ::   wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)

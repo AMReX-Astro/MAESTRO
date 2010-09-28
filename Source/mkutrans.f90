@@ -14,13 +14,14 @@ module mkutrans_module
 
 contains
 
-  subroutine mkutrans(u,utrans,w0,w0mac,dx,dt,the_bc_level)
+  subroutine mkutrans(u,ufull,utrans,w0,w0mac,dx,dt,the_bc_level)
 
     use bl_prof_module
     use create_umac_grown_module
     use geometry, only: dm, nlevs, spherical
 
     type(multifab) , intent(in   ) :: u(:)
+    type(multifab) , intent(in   ) :: ufull(:)
     type(multifab) , intent(inout) :: utrans(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
@@ -29,6 +30,7 @@ contains
 
     ! local
     real(kind=dp_t), pointer :: up(:,:,:,:)
+    real(kind=dp_t), pointer :: ufp(:,:,:,:)
     real(kind=dp_t), pointer :: utp(:,:,:,:)
     real(kind=dp_t), pointer :: vtp(:,:,:,:)
     real(kind=dp_t), pointer :: wtp(:,:,:,:)
@@ -36,13 +38,14 @@ contains
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     integer                  :: lo(dm),hi(dm)
-    integer                  :: i,n,n_1d,ng_u,ng_ut,ng_w0
+    integer                  :: i,n,n_1d,ng_u,ng_uf,ng_ut,ng_w0
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mkutrans")
 
     ng_u  = nghost(u(1))
+    ng_uf = nghost(ufull(1))
     ng_ut = nghost(utrans(1,1))
     ng_w0 = nghost(w0mac(1,1))
 
@@ -51,6 +54,7 @@ contains
        do i=1, nboxes(u(n))
           if ( multifab_remote(u(n),i) ) cycle
           up => dataptr(u(n),i)
+          ufp => dataptr(ufull(n),i)
           utp => dataptr(utrans(n,1),i)
           vtp => dataptr(utrans(n,2),i)
           lo =  lwb(get_box(u(n),i))
@@ -58,6 +62,7 @@ contains
           select case (dm)
           case (2)
              call mkutrans_2d(n,up(:,:,1,:), ng_u, &
+                              ufp(:,:,1,:), ng_uf, &
                               utp(:,:,1,1), vtp(:,:,1,1), ng_ut, w0(n,:), &
                               lo,hi,dx(n,:),dt,&
                               the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
@@ -73,6 +78,7 @@ contains
                 n_1d = n
              end if
              call mkutrans_3d(n, up(:,:,:,:), ng_u, &
+                              ufp(:,:,:,:), ng_uf, &
                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
                               w0(n_1d,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1),&
                               ng_w0, lo, hi, dx(n,:), dt, &
@@ -101,7 +107,8 @@ contains
 
   end subroutine mkutrans
 
-  subroutine mkutrans_2d(n,u,ng_u,utrans,vtrans,ng_ut,w0,lo,hi,dx,dt,adv_bc,phys_bc)
+  subroutine mkutrans_2d(n,u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,w0, &
+                         lo,hi,dx,dt,adv_bc,phys_bc)
 
     use bc_module
     use slope_module
@@ -110,8 +117,9 @@ contains
     use probin_module, only: ppm_type
     use ppm_module
 
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng_u,ng_ut
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_u,ng_uf,ng_ut
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(inout) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(in   ) :: w0(0:)    
@@ -154,7 +162,7 @@ contains
     hy = dx(2)
     
     if (ppm_type .gt. 0) then
-       call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_2d(n,u(:,:,1),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
        call slopey_2d(u(:,:,2:),slopey,lo,hi,ng_u,1,adv_bc(:,:,2:))
@@ -176,8 +184,8 @@ contains
        do j=js,je
           do i=is,ie+1
              ! extrapolate to edges
-             ulx(i,j) = u(i-1,j,1) + (HALF-(dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,1)
-             urx(i,j) = u(i  ,j,1) - (HALF+(dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,1)
+             ulx(i,j) = u(i-1,j,1) + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,j,1)))*slopex(i-1,j,1)
+             urx(i,j) = u(i  ,j,1) - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,j,1)))*slopex(i  ,j,1)
           end do
        end do
     end if
@@ -230,7 +238,7 @@ contains
     !******************************************************************
 
     if (ppm_type .gt. 0) then
-       call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_2d(n,u(:,:,2),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
        
     if (ppm_type .gt. 0) then
@@ -243,22 +251,10 @@ contains
        end do
     else
        do j=js,je+1
-          ! compute effect of w0
-          if (j .eq. 0) then
-             vlo = w0(j)
-             vhi = HALF*(w0(j)+w0(j+1))
-          else if (j .eq. nr(n)) then
-             vlo = HALF*(w0(j-1)+w0(j))
-             vhi = w0(j)
-          else
-             vlo = HALF*(w0(j-1)+w0(j))
-             vhi = HALF*(w0(j)+w0(j+1))
-          end if
-
           do i=is,ie
              ! extrapolate to edges
-             vly(i,j) = u(i,j-1,2) + (HALF-(dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
-             vry(i,j) = u(i,j  ,2) - (HALF+(dt2/hy)*min(ZERO,u(i,j  ,2)+vhi))*slopey(i,j  ,1)
+             vly(i,j) = u(i,j-1,2) + (HALF-(dt2/hy)*max(ZERO,ufull(i,j-1,2)))*slopey(i,j-1,1)
+             vry(i,j) = u(i,j  ,2) - (HALF+(dt2/hy)*min(ZERO,ufull(i,j  ,2)))*slopey(i,j  ,1)
           end do
        end do
     end if
@@ -311,8 +307,8 @@ contains
 
   end subroutine mkutrans_2d
   
-  subroutine mkutrans_3d(n,u,ng_u,utrans,vtrans,wtrans,ng_ut,w0,w0macx,w0macy,w0macz, &
-                         ng_w0,lo,hi,dx,dt,adv_bc,phys_bc)
+  subroutine mkutrans_3d(n,u,ng_u,ufull,ng_uf,utrans,vtrans,wtrans,ng_ut, &
+                         w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx,dt,adv_bc,phys_bc)
 
     use bc_module
     use slope_module
@@ -321,8 +317,9 @@ contains
     use probin_module, only: ppm_type
     use ppm_module
     
-    integer,         intent(in)    :: n,lo(:),hi(:),ng_u,ng_ut,ng_w0    
+    integer,         intent(in)    :: n,lo(:),hi(:),ng_u,ng_uf,ng_ut,ng_w0    
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
     real(kind=dp_t), intent(inout) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
     real(kind=dp_t), intent(inout) :: wtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
@@ -372,7 +369,7 @@ contains
     hz = dx(3)
     
     if (ppm_type .gt. 0) then
-       call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_3d(n,u(:,:,:,1),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        do k = lo(3)-1,hi(3)+1
           call slopex_2d(u(:,:,k,1:),slopex(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,1:))
@@ -389,7 +386,6 @@ contains
     allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
 
     if (ppm_type .gt. 0) then
-
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -399,41 +395,20 @@ contains
              end do
           end do
        end do
-
     else
-       
-       if (spherical .eq. 1) then
-          !$OMP PARALLEL DO PRIVATE(i,j,k,ulo,uhi)
-          do k=ks,ke
-             do j=js,je
-                do i=is,ie+1
-                   ! compute effect of w0
-                   ulo = u(i-1,j,k,1) + HALF * (w0macx(i-1,j,k)+w0macx(i  ,j,k))
-                   uhi = u(i  ,j,k,1) + HALF * (w0macx(i  ,j,k)+w0macx(i+1,j,k))
-                   ! extrapolate to edges
-                   ulx(i,j,k) = u(i-1,j,k,1) + (HALF-dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,1)
-                   urx(i,j,k) = u(i  ,j,k,1) - (HALF+dt2*min(ZERO,uhi)/hx)*slopex(i  ,j,k,1)
-                end do
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k=ks,ke
+          do j=js,je
+             do i=is,ie+1
+                ! extrapolate to edges
+                ulx(i,j,k) = u(i-1,j,k,1) &
+                     + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,j,k,1)))*slopex(i-1,j,k,1)
+                urx(i,j,k) = u(i  ,j,k,1) &
+                     - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,j,k,1)))*slopex(i  ,j,k,1)
              end do
           end do
-          !$OMP END PARALLEL DO
-       else
-          !$OMP PARALLEL DO PRIVATE(i,j,k,ulo,uhi)
-          do k=ks,ke
-             do j=js,je
-                do i=is,ie+1
-                   ! compute effect of w0
-                   ulo = u(i-1,j,k,1)
-                   uhi = u(i  ,j,k,1)
-                   ! extrapolate to edges
-                   ulx(i,j,k) = u(i-1,j,k,1) + (HALF-dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,1)
-                   urx(i,j,k) = u(i  ,j,k,1) - (HALF+dt2*min(ZERO,uhi)/hx)*slopex(i  ,j,k,1)
-                end do
-             end do
-          end do
-          !$OMP END PARALLEL DO
-       end if
-
+       end do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(slopex)
@@ -510,14 +485,13 @@ contains
     !******************************************************************
 
     if (ppm_type .gt. 0) then
-       call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_3d(n,u(:,:,:,2),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
 
     allocate(vly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
     allocate(vry(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
     if (ppm_type .gt. 0) then
-
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -527,41 +501,20 @@ contains
              enddo
           enddo
        enddo
-
     else
-
-       if (spherical .eq. 1) then
-          !$OMP PARALLEL DO PRIVATE(i,j,k,vlo,vhi)
-          do k=ks,ke
-             do j=js,je+1
-                do i=is,ie
-                   ! compute effect of w0
-                   vlo = u(i,j-1,k,2) + HALF * (w0macy(i,j-1,k)+w0macy(i,j  ,k))
-                   vhi = u(i,j  ,k,2) + HALF * (w0macy(i,j  ,k)+w0macy(i,j+1,k))
-                   ! extrapolate to edges
-                   vly(i,j,k) = u(i,j-1,k,2) + (HALF-dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,1)
-                   vry(i,j,k) = u(i,j  ,k,2) - (HALF+dt2*min(ZERO,vhi)/hy)*slopey(i,j  ,k,1)
-                enddo
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k=ks,ke
+          do j=js,je+1
+             do i=is,ie
+                ! extrapolate to edges
+                vly(i,j,k) = u(i,j-1,k,2) &
+                     + (HALF-(dt2/hy)*max(ZERO,ufull(i,j-1,k,2)))*slopey(i,j-1,k,1)
+                vry(i,j,k) = u(i,j  ,k,2) &
+                     - (HALF+(dt2/hy)*min(ZERO,ufull(i,j  ,k,2)))*slopey(i,j  ,k,1)
              enddo
           enddo
-          !$OMP END PARALLEL DO
-       else
-          !$OMP PARALLEL DO PRIVATE(i,j,k,vlo,vhi)
-          do k=ks,ke
-             do j=js,je+1
-                do i=is,ie
-                   ! compute effect of w0
-                   vlo = u(i,j-1,k,2)
-                   vhi = u(i,j  ,k,2)
-                   ! extrapolate to edges
-                   vly(i,j,k) = u(i,j-1,k,2) + (HALF-dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,1)
-                   vry(i,j,k) = u(i,j  ,k,2) - (HALF+dt2*min(ZERO,vhi)/hy)*slopey(i,j  ,k,1)
-                enddo
-             enddo
-          enddo
-          !$OMP END PARALLEL DO
-       end if
-
+       enddo
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(slopey)
@@ -638,14 +591,13 @@ contains
     !******************************************************************
 
     if (ppm_type .gt. 0) then
-       call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ip,Im,lo,hi,adv_bc(:,:,3),dx,dt)
+       call ppm_3d(n,u(:,:,:,3),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,3),dx,dt)
     end if
 
     allocate(wlz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
     allocate(wrz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
     if (ppm_type .gt. 0) then
-
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
@@ -655,49 +607,20 @@ contains
              end do
           end do
        end do
-
     else
-
-       if (spherical .eq. 1) then
-          !$OMP PARALLEL DO PRIVATE(i,j,k,wlo,whi)
-          do k=ks,ke+1
-             do j=js,je
-                do i=is,ie
-                   ! compute effect of w0
-                   wlo = u(i,j,k-1,3) + HALF * (w0macz(i,j,k-1)+w0macz(i,j,k  ))
-                   whi = u(i,j,k  ,3) + HALF * (w0macz(i,j,k  )+w0macz(i,j,k+1))
-                   ! extrapolate to edges
-                   wlz(i,j,k) = u(i,j,k-1,3) + (HALF-dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,1)
-                   wrz(i,j,k) = u(i,j,k  ,3) - (HALF+dt2*min(ZERO,whi)/hz)*slopez(i,j,k  ,1)
-                end do
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k=ks,ke+1
+          do j=js,je
+             do i=is,ie
+                ! extrapolate to edges
+                wlz(i,j,k) = u(i,j,k-1,3) &
+                     + (HALF-(dt2/hz)*max(ZERO,ufull(i,j,k-1,3)))*slopez(i,j,k-1,1)
+                wrz(i,j,k) = u(i,j,k  ,3) &
+                     - (HALF+(dt2/hz)*min(ZERO,ufull(i,j,k  ,3)))*slopez(i,j,k  ,1)
              end do
           end do
-          !$OMP END PARALLEL DO
-       else
-          !$OMP PARALLEL DO PRIVATE(i,j,k,wlo,whi)
-          do k=ks,ke+1
-             do j=js,je
-                do i=is,ie
-                   ! compute effect of w0
-                   if (k .eq. 0) then
-                      wlo = u(i,j,k-1,3) + w0(k)
-                      whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
-                   else if (k .eq. nr(n)) then
-                      wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
-                      whi = u(i,j,k  ,3) + w0(k)
-                   else
-                      wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
-                      whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
-                   end if
-                   ! extrapolate to edges
-                   wlz(i,j,k) = u(i,j,k-1,3) + (HALF-dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,1)
-                   wrz(i,j,k) = u(i,j,k  ,3) - (HALF+dt2*min(ZERO,whi)/hz)*slopez(i,j,k  ,1)
-                end do
-             end do
-          end do
-          !$OMP END PARALLEL DO
-       end if
-
+       end do
+       !$OMP END PARALLEL DO
     end if
 
     deallocate(slopez,Ip,Im)
