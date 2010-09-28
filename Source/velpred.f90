@@ -1854,16 +1854,16 @@ contains
                 if (k .eq. 0) then
                    ! wmacl unchanged since dw_0 / dr = 0
                    wmacr(i,j,k) = wmacr(i,j,k) - &
-                        (dt4/hz)*(wtrans(i,j,k+1)+wtrans(i,j,k  ))*(w0(k+1)-w0(k))
+                        (dt4/hz)*(wtrans(i,j,k+1)-w0(k+1)+wtrans(i,j,k  )-w0(k  ))*(w0(k+1)-w0(k))
                 else if (k .eq. nr(n)) then
                    wmacl(i,j,k) = wmacl(i,j,k) - &
-                        (dt4/hz)*(wtrans(i,j,k  )+wtrans(i,j,k-1))*(w0(k)-w0(k-1))
+                        (dt4/hz)*(wtrans(i,j,k  )-w0(k  )+wtrans(i,j,k-1)-w0(k-1))*(w0(k)-w0(k-1))
                    ! wmacr unchanged since dw_0 / dr = 0
                 else
                    wmacl(i,j,k) = wmacl(i,j,k) - &
-                        (dt4/hz)*(wtrans(i,j,k  )+wtrans(i,j,k-1))*(w0(k)-w0(k-1))
+                        (dt4/hz)*(wtrans(i,j,k  )-w0(  k)+wtrans(i,j,k-1)-w0(k-1))*(w0(k)-w0(k-1))
                    wmacr(i,j,k) = wmacr(i,j,k) - &
-                        (dt4/hz)*(wtrans(i,j,k+1)+wtrans(i,j,k  ))*(w0(k+1)-w0(k))
+                        (dt4/hz)*(wtrans(i,j,k+1)-w0(k+1)+wtrans(i,j,k  )-w0(k))*(w0(k+1)-w0(k))
                 end if
 
                 ! solve Riemann problem using full velocity
