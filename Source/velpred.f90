@@ -80,6 +80,7 @@ contains
        call put_1d_array_on_cart(gradw0_rad,gradw0_cart,foextrap_comp,.false.,.false.,dx, &
                                  the_bc_level,mla)
     else
+       ! for planar we compute this on the fly within velpred_xd()
        do n=1,nlevs
           call setval(gradw0_cart(n),ZERO,all=.true.)
        end do
@@ -210,7 +211,7 @@ contains
     hx = dx(1)
 
     if (ppm_type .gt. 0) then
-       call ppm_1d(n,u(:,1),ng_u,u(:,1),ng_u,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_1d(n,u(:,1),ng_u,ufull(:,1),ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_1d(u,slopex,lo,hi,ng_u,1,adv_bc)
     end if
@@ -224,25 +225,25 @@ contains
           ! extrapolate velocity to left face
           umacl(i) = Ipu(i-1) + dt2*force(i-1)
           ! extrapolate velocity to right face
-          umacr(i) = Imu(i) + dt2*force(i)
+          umacr(i) = Imu(i  ) + dt2*force(i  )
        end do
     else
        do i=is,ie+1
           ! extrapolate velocity to left face
-          umacl(i) = u(i-1,1) + (HALF - (dt2/hx)*max(ZERO,u(i-1,1)))*slopex(i-1,1) &
+          umacl(i) = u(i-1,1) + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,1)))*slopex(i-1,1) &
                + dt2*force(i-1)
           ! extrapolate velocity to right face
-          umacr(i) = u(i,1) - (HALF + (dt2/hx)*min(ZERO,u(i,1)))*slopex(i,1) &
-               + dt2*force(i)
+          umacr(i) = u(i  ,1) - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,1)))*slopex(i  ,1) &
+               + dt2*force(i  )
        end do
     end if
 
     do i=is,ie+1
-       ! solve Riemann problem
+       ! solve Riemann problem using full velocity
        uavg = HALF*(umacl(i)+umacr(i))
-       test = ((umacl(i) .le. ZERO .and. umacr(i) .ge. ZERO) .or. &
-           (abs(umacl(i)+umacr(i)) .lt. rel_eps))
-       umac(i) = merge(umacl(i),umacr(i),uavg .gt. ZERO)
+       test = ((umacl(i)+w0(i) .le. ZERO .and. umacr(i)+w0(i) .ge. ZERO) .or. &
+           (abs(umacl(i)+umacr(i)+TWO*w0(i)) .lt. rel_eps))
+       umac(i) = merge(umacl(i),umacr(i),uavg+w0(i) .gt. ZERO)
        umac(i) = merge(ZERO,umac(i),test)
     enddo
 
@@ -355,8 +356,8 @@ contains
     hy = dx(2)
 
     if (ppm_type .gt. 0) then
-       call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_2d(n,u(:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_2d(n,u(:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
     else
        call slopex_2d(u,slopex,lo,hi,ng_u,2,adv_bc)
        call slopey_2d(u,slopey,lo,hi,ng_u,2,adv_bc)
@@ -380,8 +381,8 @@ contains
     else
        do j=js-1,je+1
           do i=is,ie+1
-             maxu = max(ZERO,u(i-1,j,1))
-             minu = min(ZERO,u(i  ,j,1))
+             maxu = max(ZERO,ufull(i-1,j,1))
+             minu = min(ZERO,ufull(i  ,j,1))
              ! extrapolate both components of velocity to left face
              ulx(i,j,1) = u(i-1,j,1) + (HALF - (dt2/hx)*maxu)*slopex(i-1,j,1)
              ulx(i,j,2) = u(i-1,j,2) + (HALF - (dt2/hx)*maxu)*slopex(i-1,j,2)
@@ -437,7 +438,8 @@ contains
     do j=js-1,je+1
        do i=is,ie+1
           ! No need to compute uimhx(:,:,1) since it's equal to utrans-w0
-          ! upwind to get transverse component of uimhx
+          ! upwind using full velocity to get transverse component of uimhx
+          ! Note: utrans already contains w0
           uimhx(i,j,2) = merge(ulx(i,j,2),urx(i,j,2),utrans(i,j).gt.ZERO)
           uavg = HALF*(ulx(i,j,2)+urx(i,j,2))
           uimhx(i,j,2) = merge(uavg,uimhx(i,j,2),abs(utrans(i,j)).lt.rel_eps)
@@ -457,20 +459,9 @@ contains
        end do
     else
        do j=js,je+1
-          ! compute effect of w0
-          if (j .eq. 0) then
-             vlo = w0(j)
-             vhi = HALF*(w0(j)+w0(j+1))
-          else if (j .eq. nr(n)) then
-             vlo = HALF*(w0(j-1)+w0(j))
-             vhi = w0(j)
-          else
-             vlo = HALF*(w0(j-1)+w0(j))
-             vhi = HALF*(w0(j)+w0(j+1))
-          end if
           do i=is-1,ie+1
-             maxu = max(ZERO,u(i,j-1,2)+vlo)
-             minu = min(ZERO,u(i,j  ,2)+vhi)
+             maxu = max(ZERO,ufull(i,j-1,2))
+             minu = min(ZERO,ufull(i,j  ,2))
              ! extrapolate both components of velocity to left face
              uly(i,j,1) = u(i,j-1,1) + (HALF-(dt2/hy)*maxu)*slopey(i,j-1,1)
              uly(i,j,2) = u(i,j-1,2) + (HALF-(dt2/hy)*maxu)*slopey(i,j-1,2)
@@ -526,7 +517,8 @@ contains
     do j=js,je+1
        do i=is-1,ie+1
           ! No need to compute uimhy(:,:,2) since it's equal to vtrans-w0
-          ! upwind to get transverse component of uimhy
+          ! upwind using full velocity to get transverse component of uimhy
+          ! Note: vtrans already contains w0
           uimhy(i,j,1) = merge(uly(i,j,1),ury(i,j,1),vtrans(i,j).gt.ZERO)
           uavg = HALF*(uly(i,j,1)+ury(i,j,1))
           uimhy(i,j,1) = merge(uavg,uimhy(i,j,1),abs(vtrans(i,j)).lt.rel_eps)
@@ -547,7 +539,7 @@ contains
                - (dt4/hy)*(vtrans(i  ,j+1)+vtrans(i  ,j)) &
                * (uimhy(i  ,j+1,1)-uimhy(i  ,j,1)) + dt2*force(i  ,j,1)
 
-          ! solve Riemann problem
+          ! solve Riemann problem using full velocity
           uavg = HALF*(umacl(i,j)+umacr(i,j))
           test = ((umacl(i,j) .le. ZERO .and. umacr(i,j) .ge. ZERO) .or. &
               (abs(umacl(i,j)+umacr(i,j)) .lt. rel_eps))
@@ -609,7 +601,7 @@ contains
                   - (dt4/hy)*(vtrans(i,j+1)-w0(j+1)+vtrans(i,j  )-w0(j  ))*(w0(j+1)-w0(j))
           end if
 
-          ! solve Riemann problem
+          ! solve Riemann problem using full velocity
           uavg = HALF*(vmacl(i,j)+vmacr(i,j))
           test = ((vmacl(i,j)+w0(j) .le. ZERO .and. vmacr(i,j)+w0(j) .ge. ZERO) .or. &
               (abs(vmacl(i,j)+vmacr(i,j)+TWO*w0(j)) .lt. rel_eps))
@@ -764,9 +756,9 @@ contains
     hz = dx(3)
 
     if (ppm_type .gt. 0) then
-       call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
-       call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ipw,Imw,lo,hi,adv_bc(:,:,3),dx,dt)
+       call ppm_3d(n,u(:,:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_3d(n,u(:,:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_3d(n,u(:,:,:,3),ng_u,ufull,ng_uf,Ipw,Imw,lo,hi,adv_bc(:,:,3),dx,dt)
     else
 
        ung = ng_u
@@ -809,21 +801,13 @@ contains
        end do
 
     else
-       !$OMP PARALLEL DO PRIVATE(i,j,k,ulo,uhi,maxu,minu)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,maxu,minu)
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
-                ! compute effect of w0
-                if (spherical .eq. 1) then
-                   ulo = u(i-1,j,k,1) + HALF * (w0macx(i-1,j,k)+w0macx(i  ,j,k))
-                   uhi = u(i  ,j,k,1) + HALF * (w0macx(i  ,j,k)+w0macx(i+1,j,k))
-                else
-                   ulo = u(i-1,j,k,1)
-                   uhi = u(i  ,j,k,1)
-                end if
 
-                maxu = (HALF - dt2*max(ZERO,ulo)/hx)
-                minu = (HALF + dt2*min(ZERO,uhi)/hx)
+                maxu = (HALF - dt2*max(ZERO,ufull(i-1,j,k,1))/hx)
+                minu = (HALF + dt2*min(ZERO,ufull(i  ,j,k,1))/hx)
 
                 ! extrapolate all components of velocity to left face
                 ulx(i,j,k,1) = u(i-1,j,k,1) + maxu * slopex(i-1,j,k,1)
@@ -834,6 +818,7 @@ contains
                 urx(i,j,k,1) = u(i,j,k,1) - minu * slopex(i,j,k,1)
                 urx(i,j,k,2) = u(i,j,k,2) - minu * slopex(i,j,k,2)
                 urx(i,j,k,3) = u(i,j,k,3) - minu * slopex(i,j,k,3)
+
              end do
           end do
        end do
@@ -895,7 +880,8 @@ contains
        do j=js-1,je+1
           do i=is,ie+1
              ! No need to compute uimhx(:,:,:,1) since it's equal to utrans-w0
-             ! upwind to get transverse components of uimhx
+             ! upwind using full velocity to get transverse components of uimhx
+             ! Note: utrans already contains w0
              uimhx(i,j,k,2) = merge(ulx(i,j,k,2),urx(i,j,k,2),utrans(i,j,k).gt.ZERO)
              uavg = HALF*(ulx(i,j,k,2)+urx(i,j,k,2))
              uimhx(i,j,k,2) = merge(uavg,uimhx(i,j,k,2),abs(utrans(i,j,k)).lt.rel_eps)
@@ -934,21 +920,13 @@ contains
        enddo
 
     else
-       !$OMP PARALLEL DO PRIVATE(i,j,k,vlo,vhi,minu,maxu)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,minu,maxu)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
-                ! compute effect of w0
-                if (spherical .eq. 1) then
-                   vlo = u(i,j-1,k,2) + HALF * (w0macy(i,j-1,k)+w0macy(i,j  ,k))
-                   vhi = u(i,j  ,k,2) + HALF * (w0macy(i,j  ,k)+w0macy(i,j+1,k))
-                else
-                   vlo = u(i,j-1,k,2)
-                   vhi = u(i,j  ,k,2)
-                end if
 
-                maxu = (HALF - dt2*max(ZERO,vlo)/hy)
-                minu = (HALF + dt2*min(ZERO,vhi)/hy)
+                maxu = (HALF - dt2*max(ZERO,ufull(i,j-1,k,2))/hy)
+                minu = (HALF + dt2*min(ZERO,ufull(i,j  ,k,2))/hy)
 
                 ! extrapolate all components of velocity to left face
                 uly(i,j,k,1) = u(i,j-1,k,1) + maxu * slopey(i,j-1,k,1)
@@ -1020,7 +998,8 @@ contains
        do j=js,je+1
           do i=is-1,ie+1
              ! No need to compute uimhy(:,:,:,2) since it's equal to vtrans-w0
-             ! upwind to get transverse components of uimhy
+             ! upwind using full velocity to get transverse components of uimhy
+             ! Note: vtrans already contains w0
              uimhy(i,j,k,1) = merge(uly(i,j,k,1),ury(i,j,k,1),vtrans(i,j,k).gt.ZERO)
              uavg = HALF*(uly(i,j,k,1)+ury(i,j,k,1))
              uimhy(i,j,k,1) = merge(uavg,uimhy(i,j,k,1),abs(vtrans(i,j,k)).lt.rel_eps)
@@ -1058,29 +1037,13 @@ contains
        end do
 
     else
-       !$OMP PARALLEL DO PRIVATE(i,j,k,wlo,whi,minu,maxu)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,minu,maxu)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
-                ! compute effect of w0
-                if (spherical .eq. 1) then
-                   wlo = u(i,j,k-1,3) + HALF * (w0macz(i,j,k-1)+w0macz(i,j,k  ))
-                   whi = u(i,j,k  ,3) + HALF * (w0macz(i,j,k  )+w0macz(i,j,k+1))
-                else
-                   if (k .eq. 0) then
-                      wlo = u(i,j,k-1,3) + w0(k)
-                      whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
-                   else if (k .eq. nr(n)) then
-                      wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
-                      whi = u(i,j,k  ,3) + w0(k)
-                   else
-                      wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
-                      whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
-                   end if
-                end if
 
-                maxu = (HALF - dt2*max(ZERO,wlo)/hz)
-                minu = (HALF + dt2*min(ZERO,whi)/hz)
+                maxu = (HALF - dt2*max(ZERO,ufull(i,j,k-1,3))/hz)
+                minu = (HALF + dt2*min(ZERO,ufull(i,j,k  ,3))/hz)
 
                 ! extrapolate all components of velocity to left face
                 ulz(i,j,k,1) = u(i,j,k-1,1) + maxu * slopez(i,j,k-1,1)
@@ -1152,7 +1115,8 @@ contains
        do j=js-1,je+1
           do i=is-1,ie+1
              ! No need to compute uimhz(:,:,:,3) since it's equal to wtrans-w0
-             ! upwind to get transverse components of uimhz
+             ! upwind using full velocity to get transverse components of uimhz
+             ! Note: wtrans already contains w0
              uimhz(i,j,k,1) = merge(ulz(i,j,k,1),urz(i,j,k,1),wtrans(i,j,k).gt.ZERO)
              uavg = HALF*(ulz(i,j,k,1)+urz(i,j,k,1))
              uimhz(i,j,k,1) = merge(uavg,uimhz(i,j,k,1),abs(wtrans(i,j,k)).lt.rel_eps)
@@ -1226,7 +1190,7 @@ contains
     do k=ks,ke
        do j=js,je+1
           do i=is-1,ie+1
-             ! upwind
+             ! upwind using full velocity
              uimhyz(i,j,k) = merge(ulyz(i,j,k),uryz(i,j,k),vtrans(i,j,k).gt.ZERO)
              uavg = HALF*(ulyz(i,j,k)+uryz(i,j,k))
              uimhyz(i,j,k) = merge(uavg,uimhyz(i,j,k),abs(vtrans(i,j,k)).lt.rel_eps)
@@ -1294,7 +1258,7 @@ contains
     do k=ks,ke+1
        do j=js,je
           do i=is-1,ie+1
-             ! upwind
+             ! upwind using full velocity
              uimhzy(i,j,k) = merge(ulzy(i,j,k),urzy(i,j,k),wtrans(i,j,k).gt.ZERO)
              uavg = HALF*(ulzy(i,j,k)+urzy(i,j,k))
              uimhzy(i,j,k) = merge(uavg,uimhzy(i,j,k),abs(wtrans(i,j,k)).lt.rel_eps)
@@ -1365,7 +1329,7 @@ contains
     do k=ks,ke
        do j=js-1,je+1
           do i=is,ie+1
-             ! upwind
+             ! upwind using full velocity
              vimhxz(i,j,k) = merge(vlxz(i,j,k),vrxz(i,j,k),utrans(i,j,k).gt.ZERO)
              uavg = HALF*(vlxz(i,j,k)+vrxz(i,j,k))
              vimhxz(i,j,k) = merge(uavg,vimhxz(i,j,k),abs(utrans(i,j,k)).lt.rel_eps)
@@ -1433,7 +1397,7 @@ contains
     do k=ks,ke+1
        do j=js-1,je+1
           do i=is,ie
-             ! upwind
+             ! upwind using full velocity
              vimhzx(i,j,k) = merge(vlzx(i,j,k),vrzx(i,j,k),wtrans(i,j,k).gt.ZERO)
              uavg = HALF*(vlzx(i,j,k)+vrzx(i,j,k))
              vimhzx(i,j,k) = merge(uavg,vimhzx(i,j,k),abs(wtrans(i,j,k)).lt.rel_eps)
@@ -1504,7 +1468,7 @@ contains
     do k=ks-1,ke+1
        do j=js,je
           do i=is,ie+1
-             ! upwind
+             ! upwind using full velocity
              wimhxy(i,j,k) = merge(wlxy(i,j,k),wrxy(i,j,k),utrans(i,j,k).gt.ZERO)
              uavg = HALF*(wlxy(i,j,k)+wrxy(i,j,k))
              wimhxy(i,j,k) = merge(uavg,wimhxy(i,j,k),abs(utrans(i,j,k)).lt.rel_eps)
@@ -1575,7 +1539,7 @@ contains
     do k=ks-1,ke+1
        do j=js,je+1
           do i=is,ie
-             ! upwind
+             ! upwind using full velocity
              wimhyx(i,j,k) = merge(wlyx(i,j,k),wryx(i,j,k),vtrans(i,j,k).gt.ZERO)
              uavg = HALF*(wlyx(i,j,k)+wryx(i,j,k))
              wimhyx(i,j,k) = merge(uavg,wimhyx(i,j,k),abs(vtrans(i,j,k)).lt.rel_eps)
@@ -1642,6 +1606,7 @@ contains
 
                 umacr(i,j,k) = umacr(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
 
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(umacl(i,j,k)+umacr(i,j,k))
                 test = ((umacl(i,j,k)+w0macx(i,j,k) .le. ZERO .and. &
                          umacr(i,j,k)+w0macx(i,j,k) .ge. ZERO) .or. &
@@ -1659,6 +1624,7 @@ contains
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(umacl(i,j,k)+umacr(i,j,k))
                 test = ((umacl(i,j,k) .le. ZERO .and. umacr(i,j,k) .ge. ZERO) .or. &
                     (abs(umacl(i,j,k)+umacr(i,j,k)) .lt. rel_eps))
@@ -1753,6 +1719,7 @@ contains
 
                 vmacr(i,j,k) = vmacr(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
 
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(vmacl(i,j,k)+vmacr(i,j,k))
                 test = ((vmacl(i,j,k)+w0macy(i,j,k) .le. ZERO .and. &
                          vmacr(i,j,k)+w0macy(i,j,k) .ge. ZERO) .or. &
@@ -1771,6 +1738,7 @@ contains
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(vmacl(i,j,k)+vmacr(i,j,k))
                 test = ((vmacl(i,j,k) .le. ZERO .and. vmacr(i,j,k) .ge. ZERO) .or. &
                     (abs(vmacl(i,j,k)+vmacr(i,j,k)) .lt. rel_eps))
@@ -1863,6 +1831,7 @@ contains
 
                 wmacr(i,j,k) = wmacr(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
 
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(wmacl(i,j,k)+wmacr(i,j,k))
                 test = ((wmacl(i,j,k)+w0macz(i,j,k) .le. ZERO .and. &
                          wmacr(i,j,k)+w0macz(i,j,k) .ge. ZERO) .or. &
@@ -1897,6 +1866,7 @@ contains
                         (dt4/hz)*(wtrans(i,j,k+1)+wtrans(i,j,k  ))*(w0(k+1)-w0(k))
                 end if
 
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(wmacl(i,j,k)+wmacr(i,j,k))
                 test = ((wmacl(i,j,k)+w0(k) .le. ZERO .and. &
                          wmacr(i,j,k)+w0(k) .ge. ZERO) .or. &

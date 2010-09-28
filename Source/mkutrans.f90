@@ -224,7 +224,7 @@ contains
 
     do j=js,je
        do i=is,ie+1
-          ! upwind
+          ! solve Riemann problem using full velocity
           uavg = HALF*(ulx(i,j)+urx(i,j))
           test = ((ulx(i,j) .le. ZERO .and. urx(i,j) .ge. ZERO) .or. &
                (abs(ulx(i,j)+urx(i,j)) .lt. rel_eps))
@@ -293,7 +293,7 @@ contains
 
     do j=js,je+1
        do i=is,ie
-          ! upwind using full v
+          ! solve Riemann problem using full velocity
           uavg = HALF*(vly(i,j)+vry(i,j))
           test = ((vly(i,j)+w0(j) .le. ZERO .and. vry(i,j)+w0(j) .ge. ZERO) .or. &
                (abs(vly(i,j)+vry(i,j)+TWO*w0(j)) .lt. rel_eps))
@@ -450,7 +450,7 @@ contains
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
-                ! upwind using full u
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(ulx(i,j,k)+urx(i,j,k))
                 test = ((ulx(i,j,k)+w0macx(i,j,k) .le. ZERO .and. &
                      urx(i,j,k)+w0macx(i,j,k) .ge. ZERO) .or. &
@@ -466,7 +466,7 @@ contains
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
-                ! upwind
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(ulx(i,j,k)+urx(i,j,k))
                 test = ((ulx(i,j,k) .le. ZERO .and. urx(i,j,k) .ge. ZERO) .or. &
                      (abs(ulx(i,j,k)+urx(i,j,k)) .lt. rel_eps))
@@ -556,7 +556,7 @@ contains
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
-                ! upwind using full v
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(vly(i,j,k)+vry(i,j,k))
                 test = ((vly(i,j,k)+w0macy(i,j,k) .le. ZERO .and. &
                      vry(i,j,k)+w0macy(i,j,k) .ge. ZERO) .or. &
@@ -572,7 +572,7 @@ contains
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
-                ! upwind
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(vly(i,j,k)+vry(i,j,k))
                 test = ((vly(i,j,k) .le. ZERO .and. vry(i,j,k) .ge. ZERO) .or. &
                      (abs(vly(i,j,k)+vry(i,j,k)) .lt. rel_eps))
@@ -662,7 +662,7 @@ contains
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
-                ! upwind using full w
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(wlz(i,j,k)+wrz(i,j,k))
                 test = ((wlz(i,j,k)+w0macz(i,j,k) .le. ZERO .and. &
                      wrz(i,j,k)+w0macz(i,j,k) .ge. ZERO) .or. &
@@ -678,7 +678,7 @@ contains
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
-                ! upwind using full w
+                ! solve Riemann problem using full velocity
                 uavg = HALF*(wlz(i,j,k)+wrz(i,j,k))
                 test = ((wlz(i,j,k)+w0(k).le.ZERO .and. wrz(i,j,k)+w0(k).ge.ZERO) .or. &
                      (abs(wlz(i,j,k)+wrz(i,j,k)+TWO*w0(k)) .lt. rel_eps))
