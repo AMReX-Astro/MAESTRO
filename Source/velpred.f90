@@ -202,7 +202,7 @@ contains
     hx = dx(1)
 
     if (ppm_type .gt. 0) then
-       call ppm_1d(n,u(:,1),ng_u,u(:,1),ng_u,Ipu,Imu,w0,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_1d(n,u(:,1),ng_u,u(:,1),ng_u,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_1d(u,slopex,lo,hi,ng_u,1,adv_bc)
     end if
@@ -346,8 +346,8 @@ contains
     hy = dx(2)
 
     if (ppm_type .gt. 0) then
-       call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ipu,Imu,w0,lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ipv,Imv,w0,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
     else
        call slopex_2d(u,slopex,lo,hi,ng_u,2,adv_bc)
        call slopey_2d(u,slopey,lo,hi,ng_u,2,adv_bc)
@@ -754,12 +754,9 @@ contains
     hz = dx(3)
 
     if (ppm_type .gt. 0) then
-       call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ipu,Imu,w0,w0macx,w0macy,w0macz,ng_w0, &
-                   lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ipv,Imv,w0,w0macx,w0macy,w0macz,ng_w0, &
-                   lo,hi,adv_bc(:,:,2),dx,dt)
-       call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ipw,Imw,w0,w0macx,w0macy,w0macz,ng_w0, &
-                   lo,hi,adv_bc(:,:,3),dx,dt)
+       call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ipw,Imw,lo,hi,adv_bc(:,:,3),dx,dt)
     else
 
        ung = ng_u

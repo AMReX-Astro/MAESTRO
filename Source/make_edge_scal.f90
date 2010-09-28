@@ -250,7 +250,7 @@ contains
     ie = hi(1)
 
     if (ppm_type .gt. 0) then
-       call ppm_fpu_1d(n,s(:,comp),ng_s,umac,ng_um,Ip,Im,w0,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_fpu_1d(n,s(:,comp),ng_s,umac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_1d(s(:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
     end if
@@ -530,7 +530,7 @@ contains
     je = hi(2)
 
     if (ppm_type .gt. 0) then
-       call ppm_fpu_2d(n,s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,w0,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_fpu_2d(n,s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
        call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc)
@@ -1018,8 +1018,8 @@ contains
     ke = hi(3)
 
     if (ppm_type .gt. 0) then
-       call ppm_fpu_3d(n,s(:,:,:,comp),ng_s,umac,vmac,wmac,ng_um,Ip,Im,w0, &
-                       w0macx,w0macy,w0macz,ng_w0,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_fpu_3d(n,s(:,:,:,comp),ng_s,umac,vmac,wmac,ng_um,Ip,Im, &
+                       lo,hi,adv_bc(:,:,1),dx,dt)
     else
        do k = lo(3)-1,hi(3)+1
           call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,hi,ng_s,1,adv_bc)

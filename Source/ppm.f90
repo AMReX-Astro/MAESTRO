@@ -14,7 +14,7 @@ module ppm_module
 contains
 
   ! characteristics based on u
-  subroutine ppm_1d(n,s,ng_s,u,ng_u,Ip,Im,w0,lo,hi,bc,dx,dt)
+  subroutine ppm_1d(n,s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
@@ -25,7 +25,6 @@ contains
     real(kind=dp_t), intent(in   ) ::    u(lo(1)-ng_u:)
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :)
     real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
@@ -34,7 +33,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0cc, amax, delam, delap, D2ABS
+    real(kind=dp_t) :: sgn, sigma, s6, amax, delam, delap, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! constant used in Colella 2008
@@ -469,28 +468,18 @@ contains
 
     ! compute x-component of Ip and Im
     do i=lo(1)-1,hi(1)
-       if (i .le. 0) then
-          w0cc = w0(0)
-       else
-          w0cc = HALF*(w0(i)+w0(i+1))
-       end if
-       sigma = abs(u(i)+w0cc)*dt/dx(1)
+       sigma = abs(u(i))*dt/dx(1)
        s6 = SIX*s(i) - THREE*(sm(i)+sp(i))
-       if (u(i)+w0cc .gt. rel_eps) then
+       if (u(i) .gt. rel_eps) then
           Ip(i) = sp(i) - (sigma/TWO)*(sp(i)-sm(i)-(ONE-TWO3RD*sigma)*s6)
        else
           Ip(i) = s(i)
        end if
     end do
     do i=lo(1),hi(1)+1
-       if (i .ge. nr(n)) then
-          w0cc = w0(nr(n))
-       else
-          w0cc = HALF*(w0(i)+w0(i+1))
-       end if
-       sigma = abs(u(i)+w0cc)*dt/dx(1)
+       sigma = abs(u(i))*dt/dx(1)
        s6 = SIX*s(i) - THREE*(sm(i)+sp(i))
-       if (u(i)+w0cc .lt. -rel_eps) then
+       if (u(i) .lt. -rel_eps) then
           Im(i) = sm(i) + (sigma/TWO)*(sp(i)-sm(i)+(ONE-TWO3RD*sigma)*s6)
        else
           Im(i) = s(i)
@@ -502,7 +491,7 @@ contains
   end subroutine ppm_1d
 
   ! characteristics based on u
-  subroutine ppm_fpu_1d(n,s,ng_s,umac,ng_um,Ip,Im,w0,lo,hi,bc,dx,dt)
+  subroutine ppm_fpu_1d(n,s,ng_s,umac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
@@ -513,7 +502,6 @@ contains
     real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_um:)
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :)
     real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
@@ -522,7 +510,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, amax, delam, delap, D2ABS
+    real(kind=dp_t) :: sgn, sigma, s6, amax, delam, delap, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! constant used in Colella 2008
@@ -957,28 +945,18 @@ contains
 
     ! compute x-component of Ip and Im
     do i=lo(1)-1,hi(1)
-       if (i .lt. 0) then
-          w0hi = w0(0)
-       else
-          w0hi = w0(i+1)
-       end if
-       sigma = abs(umac(i+1)+w0hi)*dt/dx(1)
+       sigma = abs(umac(i+1))*dt/dx(1)
        s6 = SIX*s(i) - THREE*(sm(i)+sp(i))
-       if (umac(i+1)+w0hi .gt. rel_eps) then
+       if (umac(i+1) .gt. rel_eps) then
           Ip(i) = sp(i) - (sigma/TWO)*(sp(i)-sm(i)-(ONE-TWO3RD*sigma)*s6)
        else 
           Ip(i) = s(i)
        end if
     end do
     do i=lo(1),hi(1)+1
-       if (i .gt. nr(n)-1) then
-          w0lo = w0(nr(n))
-       else
-          w0lo = w0(i)
-       end if
-       sigma = abs(umac(i  )+w0lo)*dt/dx(1)
+       sigma = abs(umac(i))*dt/dx(1)
        s6 = SIX*s(i) - THREE*(sm(i)+sp(i))
-       if (umac(i)+w0lo .lt. -rel_eps) then
+       if (umac(i) .lt. -rel_eps) then
           Im(i) = sm(i) + (sigma/TWO)*(sp(i)-sm(i)+(ONE-TWO3RD*sigma)*s6)
        else
           Im(i) = s(i)
@@ -990,7 +968,7 @@ contains
   end subroutine ppm_fpu_1d
 
   ! characteristics based on u
-  subroutine ppm_2d(n,s,ng_s,u,ng_u,Ip,Im,w0,lo,hi,bc,dx,dt)
+  subroutine ppm_2d(n,s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
@@ -1001,7 +979,6 @@ contains
     real(kind=dp_t), intent(in   ) ::    u(lo(1)-ng_u:,lo(2)-ng_u:,:)
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,:)
     real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,:)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
@@ -1011,7 +988,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0cc, amax, delam, delap, D2ABS
+    real(kind=dp_t) :: sgn, sigma, s6, amax, delam, delap, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! constant used in Colella 2008
@@ -1958,16 +1935,10 @@ contains
 
     ! compute y-component of Ip and Im
     do j=lo(2)-1,hi(2)
-       ! compute effect of w0
-       if (j .le. 0) then
-          w0cc = w0(0)
-       else
-          w0cc = HALF*(w0(j)+w0(j+1))
-       end if
        do i=lo(1)-1,hi(1)+1
-          sigma = abs(u(i,j,2)+w0cc)*dt/dx(2)
+          sigma = abs(u(i,j,2))*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
-          if (u(i,j,2)+w0cc .gt. rel_eps) then
+          if (u(i,j,2) .gt. rel_eps) then
              Ip(i,j,2) = sp(i,j) - (sigma/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigma)*s6)
           else
              Ip(i,j,2) = s(i,j)
@@ -1975,16 +1946,10 @@ contains
        end do
     end do
     do j=lo(2),hi(2)+1
-       ! compute effect of w0
-       if (j .ge. nr(n)) then
-          w0cc = w0(nr(n))
-       else
-          w0cc = HALF*(w0(j)+w0(j+1))
-       end if
        do i=lo(1)-1,hi(1)+1
-          sigma = abs(u(i,j,2)+w0cc)*dt/dx(2)
+          sigma = abs(u(i,j,2))*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
-          if (u(i,j,2)+w0cc .lt. -rel_eps) then
+          if (u(i,j,2) .lt. -rel_eps) then
              Im(i,j,2) = sm(i,j) + (sigma/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigma)*s6)
           else
              Im(i,j,2) = s(i,j)
@@ -1997,7 +1962,7 @@ contains
   end subroutine ppm_2d
 
   ! characteristics based on umac
-  subroutine ppm_fpu_2d(n,s,ng_s,umac,vmac,ng_um,Ip,Im,w0,lo,hi,bc,dx,dt)
+  subroutine ppm_fpu_2d(n,s,ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
@@ -2009,7 +1974,6 @@ contains
     real(kind=dp_t), intent(in   ) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1    :,lo(2)-1    :,:)
     real(kind=dp_t), intent(inout) ::   Im(lo(1)-1    :,lo(2)-1    :,:)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
@@ -2019,7 +1983,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, amax, delam, delap, D2ABS
+    real(kind=dp_t) :: sgn, sigma, s6, amax, delam, delap, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
 
     ! constant used in Colella 2008
@@ -2966,16 +2930,10 @@ contains
 
     ! compute y-component of Ip and Im
     do j=lo(2)-1,hi(2)
-       ! compute effect of w0
-       if (j .lt. 0) then
-          w0hi = w0(0)
-       else
-          w0hi = w0(j+1)
-       end if
        do i=lo(1)-1,hi(1)+1
-          sigma = abs(vmac(i,j+1)+w0hi)*dt/dx(2)
+          sigma = abs(vmac(i,j+1))*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
-          if (vmac(i,j+1)+w0hi .gt. rel_eps) then
+          if (vmac(i,j+1) .gt. rel_eps) then
              Ip(i,j,2) = sp(i,j) - (sigma/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigma)*s6)
           else
              Ip(i,j,2) = s(i,j)
@@ -2983,16 +2941,10 @@ contains
        end do
     end do
     do j=lo(2),hi(2)+1
-       ! compute effect of w0
-       if (j .gt. nr(n)-1) then
-          w0lo = w0(nr(n))
-       else
-          w0lo = w0(j)
-       end if
        do i=lo(1)-1,hi(1)+1
-          sigma = abs(vmac(i,j  )+w0lo)*dt/dx(2)
+          sigma = abs(vmac(i,j  ))*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
-          if (vmac(i,j)+w0lo .lt. -rel_eps) then
+          if (vmac(i,j) .lt. -rel_eps) then
              Im(i,j,2) = sm(i,j) + (sigma/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigma)*s6)
           else
              Im(i,j,2) = s(i,j)
@@ -3005,22 +2957,17 @@ contains
   end subroutine ppm_fpu_2d
 
   ! characteristics based on u
-  subroutine ppm_3d(n,s,ng_s,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz, &
-                    ng_w0,lo,hi,bc,dx,dt)
+  subroutine ppm_3d(n,s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
     use geometry, only: nr, spherical
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_w0
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(inout) ::     Ip(lo(1)-1    :,lo(2)-1    :,lo(3)-1    :,:)
     real(kind=dp_t), intent(inout) ::     Im(lo(1)-1    :,lo(2)-1    :,lo(3)-1    :,:)
-    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
@@ -3030,7 +2977,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0cc, velcc, D2ABS
+    real(kind=dp_t) :: sgn, sigma, s6, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
     real(kind=dp_t) :: amax, delam, delap
 
@@ -3050,8 +2997,6 @@ contains
     ! cell-centered indexing
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-
-    w0cc = ZERO
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
@@ -3595,18 +3540,13 @@ contains
     !
     ! Compute x-component of Ip and Im.
     !
-    !$OMP PARALLEL DO PRIVATE(i,j,k,velcc,sigma,s6)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)
-             if (spherical .eq. 1) then
-                velcc = u(i,j,k,1)+HALF*(w0macx(i+1,j,k)+w0macx(i,j,k))
-             else
-                velcc = u(i,j,k,1)
-             end if
-             sigma = abs(velcc)*dt/dx(1)
+             sigma = abs(u(i,j,k,1))*dt/dx(1)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velcc .gt. rel_eps) then
+             if (u(i,j,k,1) .gt. rel_eps) then
                 Ip(i,j,k,1) = sp(i,j,k) - &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
              else
@@ -3614,14 +3554,9 @@ contains
              end if
           end do
           do i=lo(1),hi(1)+1
-             if (spherical .eq. 1) then
-                velcc = u(i,j,k,1)+HALF*(w0macx(i+1,j,k)+w0macx(i,j,k))
-             else
-                velcc = u(i,j,k,1)
-             end if
-             sigma = abs(velcc)*dt/dx(1)
+             sigma = abs(u(i,j,k,1))*dt/dx(1)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velcc .lt. -rel_eps) then
+             if (u(i,j,k,1) .lt. -rel_eps) then
                 Im(i,j,k,1) = sm(i,j,k) + &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
@@ -4181,18 +4116,13 @@ contains
     !
     ! Compute y-component of Ip and Im.
     !
-    !$OMP PARALLEL DO PRIVATE(i,j,k,velcc,sigma,s6)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)
           do i=lo(1)-1,hi(1)+1
-             if (spherical .eq. 1) then
-                velcc = u(i,j,k,2)+HALF*(w0macy(i,j+1,k)+w0macy(i,j,k))
-             else
-                velcc = u(i,j,k,2)
-             end if
-             sigma = abs(velcc)*dt/dx(2)
+             sigma = abs(u(i,j,k,2))*dt/dx(2)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velcc .gt. rel_eps) then
+             if (u(i,j,k,2) .gt. rel_eps) then
                 Ip(i,j,k,2) = sp(i,j,k) - &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
              else
@@ -4202,14 +4132,9 @@ contains
        end do
        do j=lo(2),hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             if (spherical .eq. 1) then
-                velcc = u(i,j,k,2)+HALF*(w0macy(i,j+1,k)+w0macy(i,j,k))
-             else
-                velcc = u(i,j,k,2)
-             end if
-             sigma = abs(velcc)*dt/dx(2)
+             sigma = abs(u(i,j,k,2))*dt/dx(2)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velcc .lt. -rel_eps) then
+             if (u(i,j,k,2) .lt. -rel_eps) then
                 Im(i,j,k,2) = sm(i,j,k) + &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
@@ -4768,27 +4693,14 @@ contains
     !
     ! Compute z-component of Ip and Im.
     !
-    !$OMP PARALLEL PRIVATE(i,j,k,w0cc,velcc,sigma,s6)
+    !$OMP PARALLEL PRIVATE(i,j,k,sigma,s6)
     !$OMP DO
     do k=lo(3)-1,hi(3)
-       ! compute effect of w0 in plane-parallel
-       if (spherical .eq. 0) then
-          if (k .le. 0) then
-             w0cc = w0(0)
-          else
-             w0cc = HALF*(w0(k)+w0(k+1))
-          end if
-       end if
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             if (spherical .eq. 1) then
-                velcc = u(i,j,k,3)+HALF*(w0macz(i,j,k+1)+w0macz(i,j,k))
-             else
-                velcc = u(i,j,k,3) + w0cc
-             end if
-             sigma = abs(velcc)*dt/dx(3)
+             sigma = abs(u(i,j,k,3))*dt/dx(3)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velcc .gt. rel_eps) then
+             if (u(i,j,k,3) .gt. rel_eps) then
                 Ip(i,j,k,3) = sp(i,j,k) - &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
              else
@@ -4801,24 +4713,11 @@ contains
 
     !$OMP DO
     do k=lo(3),hi(3)+1
-       ! compute effect of w0 in plane-parallel
-       if (spherical .eq. 0) then
-          if (k .ge. nr(n)) then
-             w0cc = w0(nr(n))
-          else
-             w0cc = HALF*(w0(k)+w0(k+1))
-          end if
-       end if
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             if (spherical .eq. 1) then
-                velcc = u(i,j,k,3)+HALF*(w0macz(i,j,k+1)+w0macz(i,j,k))
-             else
-                velcc = u(i,j,k,3) + w0cc
-             end if
-             sigma = abs(velcc)*dt/dx(3)
+             sigma = abs(u(i,j,k,3))*dt/dx(3)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velcc .lt. -rel_eps) then
+             if (u(i,j,k,3) .lt. -rel_eps) then
                 Im(i,j,k,3) = sm(i,j,k) + &
                      (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
@@ -4835,24 +4734,19 @@ contains
   end subroutine ppm_3d
 
   ! characteristics based on umac
-  subroutine ppm_fpu_3d(n,s,ng_s,umac,vmac,wmac,ng_um,Ip,Im,w0,w0macx,w0macy,w0macz, &
-                        ng_w0,lo,hi,bc,dx,dt)
+  subroutine ppm_fpu_3d(n,s,ng_s,umac,vmac,wmac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
     use geometry, only: nr, spherical
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_um,ng_w0
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_um
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(inout) ::     Ip(lo(1)-1    :,lo(2)-1    :,lo(3)-1    :,:)
     real(kind=dp_t), intent(inout) ::     Im(lo(1)-1    :,lo(2)-1    :,lo(3)-1    :,:)
-    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
@@ -4862,7 +4756,7 @@ contains
     logical :: extremum, bigp, bigm
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, alphap, alpham
-    real(kind=dp_t) :: sgn, sigma, s6, w0lo, w0hi, vel, D2ABS
+    real(kind=dp_t) :: sgn, sigma, s6, D2ABS
     real(kind=dp_t) :: dafacem, dafacep, dabarm, dabarp, dafacemin, dabarmin, dachkm, dachkp
     real(kind=dp_t) :: amax, delam, delap
 
@@ -4882,8 +4776,6 @@ contains
     ! cell-centered indexing
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-
-    w0lo = ZERO; w0hi = ZERO
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
@@ -5433,32 +5325,22 @@ contains
     !
     ! Compute x-component of Ip and Im.
     !
-    !$OMP PARALLEL DO PRIVATE(i,j,k,vel,sigma,s6)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)
-             if (spherical .eq. 1) then
-                vel = umac(i+1,j,k) + w0macx(i+1,j,k)
-             else
-                vel = umac(i+1,j,k)
-             end if
-             sigma = abs(vel)*dt/dx(1)
+             sigma = abs(umac(i+1,j,k))*dt/dx(1)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (vel .gt. rel_eps) then
+             if (umac(i+1,j,k) .gt. rel_eps) then
                 Ip(i,j,k,1) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
              else
                 Ip(i,j,k,1) = s(i,j,k)
              end if
           end do
           do i=lo(1),hi(1)+1
-             if (spherical .eq. 1) then
-                vel = umac(i  ,j,k) + w0macx(i  ,j,k)
-             else
-                vel = umac(i  ,j,k)
-             end if
-             sigma = abs(vel)*dt/dx(1)
+             sigma = abs(umac(i,j,k))*dt/dx(1)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (vel .lt. -rel_eps) then
+             if (umac(i,j,k) .lt. -rel_eps) then
                 Im(i,j,k,1) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
                 Im(i,j,k,1) = s(i,j,k)
@@ -6017,18 +5899,13 @@ contains
     !
     ! Compute y-component of Ip and Im.
     !
-    !$OMP PARALLEL DO PRIVATE(i,j,k,vel,sigma,s6)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)
           do i=lo(1)-1,hi(1)+1
-             if (spherical .eq. 1) then
-                vel = vmac(i,j+1,k) + w0macy(i,j+1,k)
-             else
-                vel = vmac(i,j+1,k)
-             end if
-             sigma = abs(vel)*dt/dx(2)
+             sigma = abs(vmac(i,j+1,k))*dt/dx(2)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (vel .gt. rel_eps) then
+             if (vmac(i,j+1,k) .gt. rel_eps) then
                 Ip(i,j,k,2) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
              else
                 Ip(i,j,k,2) = s(i,j,k)
@@ -6037,14 +5914,9 @@ contains
        end do
        do j=lo(2),hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             if (spherical .eq. 1) then
-                vel = vmac(i,j  ,k) + w0macy(i,j  ,k)
-             else
-                vel = vmac(i,j  ,k)
-             end if
-             sigma = abs(vel)*dt/dx(2)
+             sigma = abs(vmac(i,j,k))*dt/dx(2)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (vel .lt. -rel_eps) then
+             if (vmac(i,j,k) .lt. -rel_eps) then
                 Im(i,j,k,2) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
                 Im(i,j,k,2) = s(i,j,k)
@@ -6604,27 +6476,14 @@ contains
     !
     ! Compute z-component of Ip and Im.
     !
-    !$OMP PARALLEL PRIVATE(i,j,k,w0hi,w0lo,vel,sigma,s6)
+    !$OMP PARALLEL PRIVATE(i,j,k,sigma,s6)
     !$OMP DO
     do k=lo(3)-1,hi(3)
-       ! compute effect of w0 in plane-parallel
-       if (spherical .eq. 0) then
-          if (k .lt. 0) then
-             w0hi = w0(0)
-          else
-             w0hi = w0(k+1)
-          end if
-       end if
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             if (spherical .eq. 1) then
-                vel = wmac(i,j,k+1) + w0macz(i,j,k+1)
-             else
-                vel = wmac(i,j,k+1) + w0hi
-             end if
-             sigma = abs(vel)*dt/dx(2)
+             sigma = abs(wmac(i,j,k+1))*dt/dx(2)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (vel .gt. rel_eps) then
+             if ( wmac(i,j,k+1).gt. rel_eps) then
                 Ip(i,j,k,3) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
              else
                 Ip(i,j,k,3) = s(i,j,k)
@@ -6636,24 +6495,11 @@ contains
 
     !$OMP DO
     do k=lo(3),hi(3)+1
-       ! compute effect of w0 in plane-parallel
-       if (spherical .eq. 0) then
-          if (k .gt. nr(n)-1) then
-             w0lo = w0(nr(n))
-          else
-             w0lo = w0(k)
-          end if
-       end if
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             if (spherical .eq. 1) then
-                vel = wmac(i,j,k  ) + w0macz(i,j,k  )
-             else
-                vel = wmac(i,j,k  ) + w0lo
-             end if
-             sigma = abs(vel)*dt/dx(2)
+             sigma = abs(wmac(i,j,k))*dt/dx(2)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (vel .lt. -rel_eps) then
+             if (wmac(i,j,k) .lt. -rel_eps) then
                 Im(i,j,k,3) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
                 Im(i,j,k,3) = s(i,j,k)

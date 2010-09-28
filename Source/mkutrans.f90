@@ -154,7 +154,7 @@ contains
     hy = dx(2)
     
     if (ppm_type .gt. 0) then
-       call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ip,Im,w0,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
        call slopey_2d(u(:,:,2:),slopey,lo,hi,ng_u,1,adv_bc(:,:,2:))
@@ -230,7 +230,7 @@ contains
     !******************************************************************
 
     if (ppm_type .gt. 0) then
-       call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ip,Im,w0,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
        
     if (ppm_type .gt. 0) then
@@ -372,8 +372,7 @@ contains
     hz = dx(3)
     
     if (ppm_type .gt. 0) then
-       call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
-                   lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        do k = lo(3)-1,hi(3)+1
           call slopex_2d(u(:,:,k,1:),slopex(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,1:))
@@ -511,8 +510,7 @@ contains
     !******************************************************************
 
     if (ppm_type .gt. 0) then
-       call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
-                   lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
 
     allocate(vly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
@@ -640,8 +638,7 @@ contains
     !******************************************************************
 
     if (ppm_type .gt. 0) then
-       call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
-                   lo,hi,adv_bc(:,:,3),dx,dt)
+       call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ip,Im,lo,hi,adv_bc(:,:,3),dx,dt)
     end if
 
     allocate(wlz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
