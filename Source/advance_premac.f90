@@ -69,7 +69,7 @@ contains
     ! create fullu = uold + w0
     call put_1d_array_on_cart(w0,ufull,1,.true.,.true.,dx,the_bc_level,mla)
     do n=1,nlevs
-       call multifab_plus_plus_c(ufull(n),1,uold(n),1,3,nghost(uold(n)))
+       call multifab_plus_plus_c(ufull(n),1,uold(n),1,dm,nghost(uold(n)))
     end do    
 
     !*************************************************************
