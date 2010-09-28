@@ -37,7 +37,7 @@ contains
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer :: i,n
+    integer :: i,n,n_1d
     integer :: lo(dm),hi(dm)
     integer :: ng_uo,ng_un,ng_um,ng_ue,ng_sp,ng_f,ng_n,ng_w0
 
@@ -106,20 +106,16 @@ contains
              w0zp   => dataptr(w0mac(n,3),i)
              nop   =>  dataptr(normal(n),i)
              if (spherical .eq. 1) then
-                call update_velocity_3d(uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
-                                        ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                        uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
-                                        fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, w0(1,:), &
-                                        w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
-                                        ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
+                n_1d = 1
              else
-                call update_velocity_3d(uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
-                                        ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                        uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
-                                        fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, w0(n,:), &
-                                        w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
-                                        ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
+                n_1d = n
              end if
+             call update_velocity_3d(uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
+                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                     uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
+                                     fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, w0(n_1d,:), &
+                                     w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
+                                     ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
           end select
        end do
 

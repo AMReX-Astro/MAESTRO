@@ -47,7 +47,7 @@ contains
     logical        , intent(in   ) :: is_conservative
     type(ml_layout), intent(in   ) :: mla
 
-    integer                  :: i,r,scomp,bccomp,n
+    integer                  :: i,r,scomp,bccomp,n,n_1d
     integer                  :: lo(dm), hi(dm)
     integer                  :: ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
     real(kind=dp_t), pointer :: sop(:,:,:,:)
@@ -145,31 +145,23 @@ contains
              nop   => dataptr(normal(n), i)
              gw0p => dataptr(gradw0_cart(n), i)
              do scomp = start_scomp, start_scomp + num_comp - 1
-               bccomp = start_bccomp + scomp - start_scomp
-               if (spherical .eq. 1) then
-                  call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                         ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         ng_um, fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
-                                         w0(1,:), w0xp(:,:,:,1), w0yp(:,:,:,1), &
-                                         w0zp(:,:,:,1), ng_w0, gw0p(:,:,:,1), ng_gw, lo, &
-                                         hi, dx(n,:), dt, is_vel, &
-                                         the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                                         the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-                                         scomp, is_conservative)
-               else
-                  call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                         ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         ng_um, fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
-                                         w0(n,:), w0xp(:,:,:,1), w0yp(:,:,:,1), &
-                                         w0zp(:,:,:,1), ng_w0, gw0p(:,:,:,1), ng_gw, lo, &
-                                         hi, dx(n,:), dt, is_vel, &
-                                         the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                                         the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-                                         scomp, is_conservative)
-               end if
-            end do
+                bccomp = start_bccomp + scomp - start_scomp
+                if (spherical .eq. 1) then
+                   n_1d = 1
+                else
+                   n_1d = n
+                end if
+                call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
+                                       sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                       ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                       ng_um, fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
+                                       w0(n_1d,:), w0xp(:,:,:,1), w0yp(:,:,:,1), &
+                                       w0zp(:,:,:,1), ng_w0, gw0p(:,:,:,1), ng_gw, lo, &
+                                       hi, dx(n,:), dt, is_vel, &
+                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
+                                       scomp, is_conservative)
+             end do
           end select
        end do
     end do

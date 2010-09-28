@@ -36,7 +36,7 @@ contains
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     integer                  :: lo(dm),hi(dm)
-    integer                  :: i,n,ng_u,ng_ut,ng_w0
+    integer                  :: i,n,n_1d,ng_u,ng_ut,ng_w0
 
     type(bl_prof_timer), save :: bpt
 
@@ -68,20 +68,16 @@ contains
              w0yp => dataptr(w0mac(n,2), i)
              w0zp => dataptr(w0mac(n,3), i)
              if (spherical .eq. 1) then
-                call mkutrans_3d(n, up(:,:,:,:), ng_u, &
-                                 utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
-                                 w0(1,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1),&
-                                 ng_w0, lo, hi, dx(n,:), dt, &
-                                 the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
-                                 the_bc_level(n)%phys_bc_level_array(i,:,:))
+                n_1d = 1
              else
-                call mkutrans_3d(n, up(:,:,:,:), ng_u, &
-                                 utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
-                                 w0(n,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1),&
-                                 ng_w0, lo, hi, dx(n,:), dt, &
-                                 the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
-                                 the_bc_level(n)%phys_bc_level_array(i,:,:))
+                n_1d = n
              end if
+             call mkutrans_3d(n, up(:,:,:,:), ng_u, &
+                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
+                              w0(n_1d,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1),&
+                              ng_w0, lo, hi, dx(n,:), dt, &
+                              the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                              the_bc_level(n)%phys_bc_level_array(i,:,:))
           end select
        end do
 

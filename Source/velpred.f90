@@ -33,7 +33,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(in   ) :: mla
 
-    integer                  :: i,r,n
+    integer                  :: i,r,n,n_1d
     integer                  :: ng_u,ng_um,ng_ut,ng_f,ng_w0,ng_gw,ng_n
     integer                  :: lo(dm), hi(dm)
     real(kind=dp_t), pointer :: uop(:,:,:,:)
@@ -119,24 +119,18 @@ contains
              gw0p => dataptr(gradw0_cart(n),i)
              nop => dataptr(normal(n),i)
              if (spherical .eq. 1) then
-                call velpred_3d(n, uop(:,:,:,:), ng_u, &
-                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
-                                fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
-                                w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
-                                ng_w0, gw0p(:,:,:,1), ng_gw, lo, hi, dx(n,:), dt, &
-                                the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                                the_bc_level(n)%adv_bc_level_array(i,:,:,:))
+                n_1d = 1
              else
-                call velpred_3d(n, uop(:,:,:,:), ng_u, &
-                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
-                                fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
-                                w0(n,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
-                                ng_w0, gw0p(:,:,:,1), ng_gw, lo, hi, dx(n,:), dt, &
-                                the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                                the_bc_level(n)%adv_bc_level_array(i,:,:,:))
+                n_1d = n
              end if
+             call velpred_3d(n, uop(:,:,:,:), ng_u, &
+                             ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                             utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
+                             fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
+                             w0(n_1d,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
+                             ng_w0, gw0p(:,:,:,1), ng_gw, lo, hi, dx(n,:), dt, &
+                             the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                             the_bc_level(n)%adv_bc_level_array(i,:,:,:))
           end select
        end do
     end do
@@ -934,7 +928,7 @@ contains
     do k=ks-1,ke+1
        do j=js-1,je+1
           do i=is,ie+1
-             ! No need to compute uimhx(:,:,:,1) since it's equal to vtrans-w0
+             ! No need to compute uimhx(:,:,:,1) since it's equal to utrans-w0
              ! upwind to get transverse components of uimhx
              uimhx(i,j,k,2) = merge(ulx(i,j,k,2),urx(i,j,k,2),utrans(i,j,k).gt.ZERO)
              uavg = HALF*(ulx(i,j,k,2)+urx(i,j,k,2))

@@ -201,7 +201,7 @@ contains
 
     real(dp_t) :: tempval
 
-    integer :: n,prec,comp
+    integer :: n,n_1d,prec,comp
 
     type(bl_prof_timer), save :: bpt
 
@@ -333,15 +333,14 @@ contains
        end do
 
        ! divw0
-       if (spherical .eq. 1) then
-          do n=1,nlevs
-             call make_divw0(plotdata(n),icomp_divw0,w0(1,:),w0mac(n,:),dx(n,:))
-          end do
-       else
-          do n=1,nlevs
-             call make_divw0(plotdata(n),icomp_divw0,w0(n,:),w0mac(n,:),dx(n,:))
-          end do
-       end if
+       do n=1,nlevs
+          if (spherical .eq. 1) then
+             n_1d = 1
+          else
+             n_1d = n
+          end if
+          call make_divw0(plotdata(n),icomp_divw0,w0(n_1d,:),w0mac(n,:),dx(n,:))
+       end do
 
        ! rho0
        call put_1d_array_on_cart(rho0,tempfab,dm+rho_comp,.false.,.false.,dx, &
@@ -392,17 +391,19 @@ contains
 
     do n = 1,nlevs
 
+       if (spherical .eq. 1) then
+          n_1d = 1
+       else
+          n_1d = n
+       end if
+
        ! RADIAL AND CIRCUMFERENTIAL VELOCITY (spherical only)
        if (spherical .eq. 1) then
           call make_velrc(plotdata(n),icomp_velr,icomp_velc,u(n),w0r_cart(n),normal(n))
        endif
 
        ! MAGVEL = |U + w0|
-       if (spherical .eq. 1) then
-          call make_magvel(plotdata(n),icomp_magvel,icomp_mom,s(n),u(n),w0(1,:),w0mac(n,:))
-       else
-          call make_magvel(plotdata(n),icomp_magvel,icomp_mom,s(n),u(n),w0(n,:),w0mac(n,:))
-       end if
+       call make_magvel(plotdata(n),icomp_magvel,icomp_mom,s(n),u(n),w0(n_1d,:),w0mac(n,:))
 
        ! VORTICITY
        call make_vorticity(plotdata(n),icomp_vort,u(n),dx(n,:), &
