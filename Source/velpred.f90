@@ -190,9 +190,6 @@ contains
     allocate(Ipu(lo(1)-1:hi(1)+1))
     allocate(Imu(lo(1)-1:hi(1)+1))
 
-    allocate(  ulx(lo(1):hi(1)+1))
-    allocate(  urx(lo(1):hi(1)+1))
-
     allocate(umacl(lo(1):hi(1)+1))
     allocate(umacr(lo(1):hi(1)+1))
 
@@ -209,68 +206,30 @@ contains
     else
        call slopex_1d(u,slopex,lo,hi,ng_u,1,adv_bc)
     end if
-       
-    !******************************************************************
-    ! Create u_{\i-\half\e_x}^x, etc.
-    !******************************************************************
-
-    if (ppm_type .gt. 0) then
-       do i=is,ie+1
-          ! extrapolate velocity to left face
-          ulx(i) = Ipu(i-1)
-          ! extrapolate velocity to right face
-          urx(i) = Imu(i)
-       end do
-    else
-       do i=is,ie+1
-          ! extrapolate velocity to left face
-          ulx(i) = u(i-1,1) + (HALF - (dt2/hx)*max(ZERO,u(i-1,1)))*slopex(i-1,1)
-          ! extrapolate velocity to right face
-          urx(i) = u(i,1) - (HALF + (dt2/hx)*min(ZERO,u(i,1)))*slopex(i,1)
-       end do
-    end if
-    
-    ! impose lo side bc's
-    select case(phys_bc(1,1))
-    case (INLET)
-       ulx(is) = u(is-1,1)
-       urx(is) = u(is-1,1)
-    case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
-       ulx(is) = ZERO
-       urx(is) = ZERO
-    case (OUTLET)
-       ulx(is) = min(urx(is),ZERO)
-       urx(is) = ulx(is)
-    case (INTERIOR, PERIODIC)
-    case  default
-       call bl_error("velpred_1d: invalid boundary type phys_bc(1,1)")
-    end select
-
-    ! impose hi side bc's
-    select case(phys_bc(1,2))
-    case (INLET)
-       ulx(ie+1) = u(ie+1,1)
-       urx(ie+1) = u(ie+1,1)
-    case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
-       ulx(ie+1) = ZERO
-       urx(ie+1) = ZERO
-    case (OUTLET)
-       ulx(ie+1) = max(ulx(ie+1),ZERO)
-       urx(ie+1) = ulx(ie+1)
-    case (INTERIOR, PERIODIC)
-    case  default
-       call bl_error("velpred_1d: invalid boundary type phys_bc(1,2)")
-    end select
 
     !******************************************************************
     ! Create umac 
     !******************************************************************
 
-    do i=is,ie+1
-       ! extrapolate to edges
-       umacl(i) = ulx(i) + dt2*force(i-1)
-       umacr(i) = urx(i) + dt2*force(i)
+    if (ppm_type .gt. 0) then
+       do i=is,ie+1
+          ! extrapolate velocity to left face
+          umacl(i) = Ipu(i-1) + dt2*force(i-1)
+          ! extrapolate velocity to right face
+          umacr(i) = Imu(i) + dt2*force(i)
+       end do
+    else
+       do i=is,ie+1
+          ! extrapolate velocity to left face
+          umacl(i) = u(i-1,1) + (HALF - (dt2/hx)*max(ZERO,u(i-1,1)))*slopex(i-1,1) &
+               + dt2*force(i-1)
+          ! extrapolate velocity to right face
+          umacr(i) = u(i,1) - (HALF + (dt2/hx)*min(ZERO,u(i,1)))*slopex(i,1) &
+               + dt2*force(i)
+       end do
+    end if
 
+    do i=is,ie+1
        ! solve Riemann problem
        uavg = HALF*(umacl(i)+umacr(i))
        test = ((umacl(i) .le. ZERO .and. umacr(i) .ge. ZERO) .or. &
@@ -305,7 +264,7 @@ contains
        call bl_error("velpred_1d: invalid boundary type phys_bc(1,2)")
     end select
 
-    deallocate(ulx,urx,umacl,umacr)
+    deallocate(umacl,umacr)
     deallocate(Ipu,Imu)
 
   end subroutine velpred_1d
