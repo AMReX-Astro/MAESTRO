@@ -224,21 +224,11 @@ contains
     ! these correspond to s_L^x, etc.
     real(kind=dp_t), allocatable:: slx(:),srx(:)
 
-    ! these correspond to s_{\i-\half\e_x}^x, etc.
-    real(kind=dp_t), allocatable:: simhx(:)
-
     ! these correspond to \mathrm{sedge}_L^x, etc.
     real(kind=dp_t), allocatable:: sedgelx(:),sedgerx(:)
 
     allocate(Ip(lo(1)-1:hi(1)+1))
     allocate(Im(lo(1)-1:hi(1)+1))
-
-    ! Normal predictor states.
-    ! Allocated from lo:hi+1 in the normal direction
-    ! lo-1:hi+1 in the transverse direction
-    allocate(slx  (lo(1):hi(1)+1))
-    allocate(srx  (lo(1):hi(1)+1))
-    allocate(simhx(lo(1):hi(1)+1))
 
     ! Final edge states.
     ! lo:hi+1 in the normal direction
@@ -259,112 +249,39 @@ contains
     dt4 = dt/4.0d0
 
     hx = dx(1)
-    
-    !******************************************************************
-    ! Create s_{\i-\half\e_x}^x, etc.
-    !******************************************************************
-
-    ! loop over appropriate x-faces    
-    if (ppm_type .gt. 0) then
-       do i=is,ie+1
-          ! make slx, srx with 1D extrapolation
-          slx(i) = Ip(i-1)
-          srx(i) = Im(i  )
-       end do
-    else
-       do i=is,ie+1
-          ! make slx, srx with 1D extrapolation
-          slx(i) = s(i-1,comp) + (HALF - dt2*umac(i)/hx)*slopex(i-1,1)
-          srx(i) = s(i  ,comp) - (HALF + dt2*umac(i)/hx)*slopex(i  ,1)
-       enddo
-    end if
-
-    ! impose lo side bc's
-    if (phys_bc(1,1) .eq. INLET) then
-       slx(is) = s(is-1,comp)
-       srx(is) = s(is-1,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          slx(is) = ZERO
-          srx(is) = ZERO
-       else
-          slx(is) = srx(is)
-       end if
-    else if (phys_bc(1,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slx(is) = ZERO
-          srx(is) = ZERO
-       else
-          slx(is) = srx(is)
-       end if
-    else if (phys_bc(1,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 1) then
-          slx(is) = min(srx(is),ZERO)
-          srx(is) = slx(is)
-       else
-          slx(is) = srx(is)
-       end if
-    else if (phys_bc(1,1) .eq. INTERIOR) then
-    else if (phys_bc(1,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_1d: invalid boundary type phys_bc(1,1)")
-    end if
-
-    ! impose hi side bc's
-    if (phys_bc(1,2) .eq. INLET) then
-       slx(ie+1) = s(ie+1,comp)
-       srx(ie+1) = s(ie+1,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          slx(ie+1) = ZERO
-          srx(ie+1) = ZERO
-       else
-          srx(ie+1) = slx(ie+1)
-       end if
-    else if (phys_bc(1,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slx(ie+1) = ZERO
-          srx(ie+1) = ZERO
-       else
-          srx(ie+1) = slx(ie+1)
-       end if
-    else if (phys_bc(1,2) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 1) then
-          slx(ie+1) = max(slx(ie+1),ZERO)
-          srx(ie+1) = max(slx(ie+1),ZERO)
-       else
-          srx(ie+1) = slx(ie+1)
-       end if
-    else if (phys_bc(1,2) .eq. INTERIOR) then
-    else if (phys_bc(1,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_1d: invalid boundary type phys_bc(1,2)")
-    end if
-
-    do i=is,ie+1
-       ! make simhx by solving Riemann problem
-       simhx(i) = merge(slx(i),srx(i),umac(i) .gt. ZERO)
-       savg = HALF*(slx(i)+srx(i))
-       simhx(i) = merge(simhx(i),savg,abs(umac(i)) .gt. rel_eps)
-    enddo
 
     !******************************************************************
     ! Create sedgelx, etc.
     !******************************************************************
 
+    ! loop over appropriate x-faces    
+    if (ppm_type .gt. 0) then
+       do i=is,ie+1
+          ! make sedgelx, sedgerx with 1D extrapolation
+          sedgelx(i) = Ip(i-1)
+          sedgerx(i) = Im(i  )
+       end do
+    else
+       do i=is,ie+1
+          ! make sedgelx, sedgerx with 1D extrapolation
+          sedgelx(i) = s(i-1,comp) + (HALF - dt2*umac(i)/hx)*slopex(i-1,1)
+          sedgerx(i) = s(i  ,comp) - (HALF + dt2*umac(i)/hx)*slopex(i  ,1)
+       enddo
+    end if
+
     ! loop over appropriate x-faces
     do i=is,ie+1
        ! make sedgelx, sedgerx
        if(is_conservative) then
-          sedgelx(i) = slx(i) &
+          sedgelx(i) = sedgelx(i) &
                - (dt2/hx)*s(i-1,comp)*(umac(i  )-umac(i-1)) &
                + dt2*force(i-1,comp)
-          sedgerx(i) = srx(i) &
+          sedgerx(i) = sedgerx(i) &
                - (dt2/hx)*s(i  ,comp)*(umac(i+1)-umac(i  )) &
                + dt2*force(i  ,comp)
        else
-          sedgelx(i) = slx(i) + dt2*force(i-1,comp)
-          sedgerx(i) = srx(i) + dt2*force(i  ,comp)
+          sedgelx(i) = sedgelx(i) + dt2*force(i-1,comp)
+          sedgerx(i) = sedgerx(i) + dt2*force(i  ,comp)
        end if
 
        ! add the (Utilde . e_r) d w_0 /dr e_r term here
@@ -448,7 +365,7 @@ contains
        call bl_error("make_edge_scal_1d: invalid boundary type phys_bc(1,2)")
     end if
 
-    deallocate(slx,srx,simhx,sedgelx,sedgerx)
+    deallocate(sedgelx,sedgerx)
     deallocate(Ip,Im)
 
   end subroutine make_edge_scal_1d
