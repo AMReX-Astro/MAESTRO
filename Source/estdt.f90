@@ -92,17 +92,6 @@ contains
        end do
  
     end do
-    
-    is_final_update = .false.
-    call mk_vel_force(force,is_final_update, &
-                      u,umac_dummy,w0,gpi,s,rho_comp, &
-                      rho0,grav,dx,the_bc_tower%bc_tower_array,mla)
-
-    do n=1,nlevs
-       do comp=1,dm
-          call destroy(umac_dummy(n,comp))
-       end do
-    end do
 
     if (spherical .eq. 1) then
 
@@ -118,6 +107,17 @@ contains
        end if
 
     end if
+    
+    is_final_update = .false.
+    call mk_vel_force(force,is_final_update, &
+                      u,umac_dummy,w0,w0mac,gpi,s,rho_comp, &
+                      rho0,grav,dx,the_bc_tower%bc_tower_array,mla)
+
+    do n=1,nlevs
+       do comp=1,dm
+          call destroy(umac_dummy(n,comp))
+       end do
+    end do
 
     ng_u  = nghost(u(1))
     ng_s  = nghost(s(1))

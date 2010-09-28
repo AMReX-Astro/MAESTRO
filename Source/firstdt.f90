@@ -47,6 +47,7 @@ contains
 
     type(multifab) :: force(nlevs)
     type(multifab) :: umac_dummy(nlevs,dm)
+    type(multifab) :: w0mac_dummy(nlevs,dm)
     real(kind=dp_t) :: w0_dummy(nlevs,0:nr_fine)
     logical :: is_final_update
     
@@ -73,14 +74,26 @@ contains
     end do
     w0_dummy(:,:) = ZERO
 
+    if (spherical .eq. 1) then
+
+       do n=1,nlevs
+          do comp=1,dm
+             call multifab_build_edge(w0mac_dummy(n,comp),mla%la(n),1,1,comp)
+             call setval(w0mac_dummy(n,comp), ZERO, all=.true.)
+          end do
+       end do
+
+    end if
+
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      u,umac_dummy,w0_dummy,gpi,s,rho_comp, &
+                      u,umac_dummy,w0_dummy,w0mac_dummy,gpi,s,rho_comp, &
                       rho0,grav,dx,the_bc_level,mla)
 
     do n=1,nlevs
        do comp=1,dm
           call destroy(umac_dummy(n,comp))
+          call destroy(w0mac_dummy(n,comp))
        end do
     end do
 

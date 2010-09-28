@@ -20,7 +20,7 @@ module mk_vel_force_module
 contains
 
   subroutine mk_vel_force(vel_force,is_final_update, &
-                          uold,umac,w0,gpi,s,index_rho, &
+                          uold,umac,w0,w0mac,gpi,s,index_rho, &
                           rho0,grav,dx,the_bc_level,mla)
 
     ! index_rho refers to the index into s where the density lives.
@@ -43,6 +43,7 @@ contains
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
+    type(multifab) , intent(in   ) :: w0mac(:,:)
     type(multifab) , intent(in   ) :: gpi(:)
     type(multifab) , intent(in   ) :: s(:)
     integer                        :: index_rho  
@@ -67,7 +68,6 @@ contains
     integer                  :: ng_s,ng_f,ng_gp,n,ng_uo,ng_um
    
     type(multifab) :: w0_cart(mla%nlevel)
-    type(multifab) :: w0mac(mla%nlevel,dm)
     integer :: ng_wc, ng_wm
 
     type(bl_prof_timer), save :: bpt
@@ -78,30 +78,18 @@ contains
     ng_f  = nghost(vel_force(1))
     ng_gp = nghost(gpi(1))
 
-    ! put w0 on cart both cell-centered and on edges
+    ! put w0 on cell centers
     if (spherical .eq. 1) then
        do n=1,nlevs
-          do comp=1,dm
-             ! w0mac will contain an edge-centered w0 on a Cartesian grid,
-             ! for use in computing the Coriolis term in the final update
-             call multifab_build_edge(w0mac(n,comp),mla%la(n),1,1,comp)
-             call setval(w0mac(n,comp),ZERO,all=.true.)
-          enddo
-
-          ! w0_cart will contain the cell-centered Cartesian components
-          ! of w0, for use in computing the Coriolis term in the prediction
+          ! w0_cart will contain the cell-centered Cartesian components of w0, 
+          ! for use in computing the Coriolis term in the prediction
+          ! w0mac is passed in and is used to compute the Coriolis term
+          ! in the cell update
           call build(w0_cart(n),mla%la(n),dm,0)
           call setval(w0_cart(n), ZERO, all=.true.)
-          
        enddo       
-   
-       ng_wm = nghost(w0mac(1,1))
-       ng_wc = nghost(w0_cart(1))
 
        if (evolve_base_state) then
-          ! fill the edge-centered w0mac
-          call make_w0mac(mla,w0,w0mac,dx,the_bc_level)
-
           ! fill the all dm components of the cell-centered w0_cart
           call put_1d_array_on_cart(w0,w0_cart,foextrap_comp,.true.,.true.,dx, &
                                     the_bc_level,mla)
@@ -125,19 +113,19 @@ contains
              call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp,rp(:,:,1,index_rho), &
                                   ng_s,rho0(n,:),grav(n,:),lo,hi)
           case (3)
-             ng_uo = nghost(uold(1))
              uop => dataptr(uold(n),i)
-
-             ng_um = nghost(umac(1,1))
              ump => dataptr(umac(n,1),i)
              vmp => dataptr(umac(n,2),i)
              wmp => dataptr(umac(n,3),i)
+             ng_uo = nghost(uold(1))
+             ng_um = nghost(umac(1,1))
 
              if (spherical .eq. 1) then
                 w0cp  => dataptr(w0_cart(n), i)
                 w0xp  => dataptr(w0mac(n,1),i)
                 w0yp  => dataptr(w0mac(n,2),i)
-
+                ng_wm = nghost(w0mac(1,1))
+                ng_wc = nghost(w0_cart(1))
                 call mk_vel_force_3d_sphr(fp(:,:,:,:),ng_f,is_final_update, &
                                           uop(:,:,:,:),ng_uo, &
                                           ump(:,:,:,1),vmp(:,:,:,1),ng_um, &
@@ -159,9 +147,6 @@ contains
 
     if (spherical .eq. 1) then
        do n=1,nlevs
-          do comp=1,dm
-             call destroy(w0mac(n,comp))
-          end do
           call destroy(w0_cart(n))
        end do
     end if
