@@ -43,7 +43,7 @@ contains
     use make_grav_module            , only : make_grav_cell
     use make_eta_module             , only : make_etarho_planar, make_etarho_spherical
     use make_psi_module             , only : make_psi_planar, make_psi_spherical
-    use fill_3d_module              , only : put_1d_array_on_cart, make_w0mac
+    use fill_3d_module              , only : put_1d_array_on_cart, make_w0mac, make_s0mac
     use cell_to_edge_module         , only : cell_to_edge
     use make_gamma_module           , only : make_gamma
     use rhoh_vs_t_module            , only : makePfromRhoH, makeTfromRhoP, makeTfromRhoH
@@ -115,6 +115,7 @@ contains
     type(multifab) ::     rho_omegadot1(mla%nlevel)
     type(multifab) ::         rho_Hnuc1(mla%nlevel)
     type(multifab) ::      div_coeff_3d(mla%nlevel)
+    type(multifab) :: div_coeff_cart_edge(mla%nlevel,dm)
     type(multifab) ::            gamma1(mla%nlevel)
     type(multifab) ::        etarhoflux(mla%nlevel)
     type(multifab) ::          peos_old(mla%nlevel)
@@ -412,21 +413,26 @@ contains
     ! MAC projection !
     if (spherical .eq. 1) then
        do n=1,nlevs
-          call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
+          do comp=1,dm
+             call multifab_build_edge(div_coeff_cart_edge(n,comp), mla%la(n),1,1,comp)
+          end do
        end do
 
-       call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
+       call make_s0mac(mla,div_coeff_old,div_coeff_cart_edge,dx,foextrap_comp, &
+                       the_bc_tower%bc_tower_array)
 
-       call macproject(mla,umac,macphi,sold,dx,the_bc_tower,macrhs,div_coeff_3d=div_coeff_3d)
+       call macproject(mla,umac,macphi,sold,dx,the_bc_tower,macrhs, &
+                       div_coeff_cart_edge=div_coeff_cart_edge)
 
        do n=1,nlevs
-          call destroy(div_coeff_3d(n))
+          do comp=1,dm
+             call destroy(div_coeff_cart_edge(n,comp))
+          end do
        end do
     else
        call cell_to_edge(div_coeff_old,div_coeff_edge)
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
-                       macrhs,div_coeff_1d=div_coeff_old,div_coeff_edge_1d=div_coeff_edge)
+                       macrhs,div_coeff_1d=div_coeff_old,div_coeff_1d_edge=div_coeff_edge)
     end if
 
     do n=1,nlevs
@@ -894,22 +900,26 @@ contains
     ! MAC projection !
     if (spherical .eq. 1) then
        do n=1,nlevs
-          call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
+          do comp=1,dm
+             call multifab_build_edge(div_coeff_cart_edge(n,comp), mla%la(n),1,1,comp)
+          end do
        end do
 
-       call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
+       call make_s0mac(mla,div_coeff_nph,div_coeff_cart_edge,dx,foextrap_comp, &
+                       the_bc_tower%bc_tower_array)
 
        call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,macrhs, &
-                       div_coeff_3d=div_coeff_3d)
+                       div_coeff_cart_edge=div_coeff_cart_edge)
 
        do n=1,nlevs
-          call destroy(div_coeff_3d(n))
+          do comp=1,dm
+             call destroy(div_coeff_cart_edge(n,comp))
+          end do
        end do
     else
        call cell_to_edge(div_coeff_nph,div_coeff_edge)
        call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,macrhs, &
-                       div_coeff_1d=div_coeff_nph,div_coeff_edge_1d=div_coeff_edge)
+                       div_coeff_1d=div_coeff_nph,div_coeff_1d_edge=div_coeff_edge)
     end if
 
     do n=1,nlevs
