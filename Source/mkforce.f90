@@ -560,7 +560,6 @@ contains
        do i=1, nboxes(vel_force(n))
           if ( multifab_remote(vel_force(n),i) ) cycle
           fp   => dataptr(vel_force(n),i)
-          np   => dataptr(normal(n),i)
           ump  => dataptr(umac(n,1),i)
           lo   =  lwb(get_box(vel_force(n),i))
           hi   =  upb(get_box(vel_force(n),i))
@@ -576,6 +575,7 @@ contains
           vmp  => dataptr(umac(n,2),i)
           wmp  => dataptr(umac(n,3),i)
           gwp  => dataptr(gradw0_cart(n),i)
+          np   => dataptr(normal(n),i)
           if (spherical .eq. 1) then
              n_1d = 1
           else
