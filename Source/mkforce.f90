@@ -503,9 +503,9 @@ contains
 
   end subroutine mk_vel_force_3d_sphr
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-  subroutine add_utilde_force(vel_force,normal,umac,w0,w0mac,dx,the_bc_level,mla)
+  subroutine add_utilde_force(vel_force,normal,umac,w0,dx,the_bc_level,mla)
 
     use geometry, only: spherical, nr_fine, dr, dm, nlevs
     use fill_3d_module, only: put_1d_array_on_cart
@@ -516,21 +516,17 @@ contains
     type(multifab) , intent(in   ) ::      umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    type(multifab) , intent(in   ) ::     w0mac(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(in   ) :: mla
     
     ! local
     integer :: n,r,i
-    integer :: ng_f, ng_u, ng_w, ng_w0, ng_n
+    integer :: ng_f, ng_u, ng_w0, ng_n
 
     real(kind=dp_t), pointer ::  fp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: u0p(:,:,:,:)
-    real(kind=dp_t), pointer :: v0p(:,:,:,:)
-    real(kind=dp_t), pointer :: w0p(:,:,:,:)
     real(kind=dp_t), pointer :: gwp(:,:,:,:)
     real(kind=dp_t), pointer ::  np(:,:,:,:)
 
@@ -558,7 +554,6 @@ contains
     ng_f = nghost(vel_force(1))
     ng_n = nghost(normal(1))
     ng_u = nghost(umac(1,1))
-    ng_w = nghost(w0mac(1,1))
     ng_w0 = nghost(gradw0_cart(1))
 
     do n=1,nlevs
@@ -571,15 +566,14 @@ contains
           hi   =  upb(get_box(vel_force(n),i))
           select case (dm)
           case (1)
-
+          call add_utilde_force_1d(n, lo, hi, fp(:,1,1,:), ng_f, &
+                                   ump(:,1,1,1), ng_u, w0(n,:))
           case (2)
           vmp  => dataptr(umac(n,2),i)
-
+          call add_utilde_force_2d(n, lo, hi, fp(:,:,1,:), ng_f, &
+                                   ump(:,:,1,1), vmp(:,:,1,1), ng_u, w0(n,:))
           case (3)
           wmp  => dataptr(umac(n,3),i)
-          u0p  => dataptr(w0mac(n,1),i)
-          v0p  => dataptr(w0mac(n,2),i)
-          w0p  => dataptr(w0mac(n,3),i)
           gwp  => dataptr(gradw0_cart(n),i)
           if (spherical .eq. 1) then
              n_1d = 1
@@ -588,7 +582,6 @@ contains
           end if
           call add_utilde_force_3d(n, lo, hi, fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
                                    ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_u, &
-                                   u0p(:,:,:,1), v0p(:,:,:,1), w0p(:,:,:,1), ng_w, &
                                    gwp(:,:,:,1), ng_w0, w0(n_1d,:))
           end select
        end do
@@ -602,21 +595,76 @@ contains
 
   end subroutine add_utilde_force
 
-  subroutine add_utilde_force_3d(n,lo,hi,force,ng_f,normal,ng_n,umac,vmac,wmac,ng_u, &
-                                 w0macx,w0macy,w0macz,ng_w,gradw0_cart,ng_w0,w0)
+  subroutine add_utilde_force_1d(n,lo,hi,force,ng_f,umac,ng_u,w0)
 
     use geometry, only: spherical, nr, dr
     use bl_constants_module
 
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_n,ng_u,ng_w,ng_w0
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_u
+    real(kind=dp_t), intent(inout) ::       force(lo(1)-ng_f :,:)
+    real(kind=dp_t), intent(in   ) ::        umac(lo(1)-ng_u :)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    
+    integer :: i
+
+    do i=lo(1)-1,hi(1)+1
+
+       if (i .eq. -1) then
+          ! do not modify force since dw0/dr=0
+       else if (i .eq. nr(n)) then
+          ! do not modify force since dw0/dr=0
+       else
+          force(i,1) = force(i,1) &
+               - (umac(i+1)+umac(i))*(w0(i+1)-w0(i)) / (TWO*dr(n))
+       end if
+
+    end do
+
+  end subroutine add_utilde_force_1d
+
+  subroutine add_utilde_force_2d(n,lo,hi,force,ng_f,umac,vmac,ng_u,w0)
+
+    use geometry, only: spherical, nr, dr
+    use bl_constants_module
+
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_u
+    real(kind=dp_t), intent(inout) ::       force(lo(1)-ng_f :,lo(2)-ng_f :,:)
+    real(kind=dp_t), intent(in   ) ::        umac(lo(1)-ng_u :,lo(2)-ng_u :)
+    real(kind=dp_t), intent(in   ) ::        vmac(lo(1)-ng_u :,lo(2)-ng_u :)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    
+    integer :: i,j
+
+
+    do j=lo(2)-1,hi(2)+1
+       do i=lo(1)-1,hi(1)+1
+
+          if (j .eq. -1) then
+             ! do not modify force since dw0/dr=0
+          else if (j .eq. nr(n)) then
+             ! do not modify force since dw0/dr=0
+          else
+             force(i,j,2) = force(i,j,2) &
+                  - (vmac(i,j+1)+vmac(i,j))*(w0(j+1)-w0(j)) / (TWO*dr(n))
+          end if
+
+       end do
+    end do
+
+  end subroutine add_utilde_force_2d
+
+  subroutine add_utilde_force_3d(n,lo,hi,force,ng_f,normal,ng_n,umac,vmac,wmac,ng_u, &
+                                 gradw0_cart,ng_w0,w0)
+
+    use geometry, only: spherical, nr, dr
+    use bl_constants_module
+
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_n,ng_u,ng_w0
     real(kind=dp_t), intent(inout) ::       force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     real(kind=dp_t), intent(in   ) ::      normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
     real(kind=dp_t), intent(in   ) ::        umac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
     real(kind=dp_t), intent(in   ) ::        vmac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
     real(kind=dp_t), intent(in   ) ::        wmac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
-    real(kind=dp_t), intent(in   ) ::      w0macx(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
-    real(kind=dp_t), intent(in   ) ::      w0macy(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
-    real(kind=dp_t), intent(in   ) ::      w0macz(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
     real(kind=dp_t), intent(in   ) :: gradw0_cart(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
 
@@ -631,9 +679,9 @@ contains
              do i=lo(1)-1,hi(1)+1
 
                 Ut_dot_er = &
-                     HALF*(umac(i-1,j,k)-w0macx(i-1,j,k)+umac(i  ,j  ,k)-w0macx(i  ,j  ,k))*normal(i-1,j,k,1) + &
-                     HALF*(vmac(i-1,j,k)-w0macy(i-1,j,k)+vmac(i-1,j+1,k)-w0macy(i-1,j+1,k))*normal(i-1,j,k,2) + &
-                     HALF*(wmac(i-1,j,k)-w0macz(i-1,j,k)+wmac(i-1,j,k+1)-w0macz(i-1,j,k+1))*normal(i-1,j,k,3)
+                     HALF*(umac(i-1,j,k)+umac(i  ,j  ,k))*normal(i-1,j,k,1) + &
+                     HALF*(vmac(i-1,j,k)+vmac(i-1,j+1,k))*normal(i-1,j,k,2) + &
+                     HALF*(wmac(i-1,j,k)+wmac(i-1,j,k+1))*normal(i-1,j,k,3)
 
                 force(i,j,k,1) = force(i,j,k,1) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
                 force(i,j,k,2) = force(i,j,k,2) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
@@ -654,7 +702,8 @@ contains
                 else if (k .eq. nr(n)) then
                    ! do not modify force since dw0/dr=0
                 else
-                   force(i,j,k,3) = force(i,j,k,3) - (wmac(i,j,k+1)+wmac(i,j,k))*(w0(k+1)-w0(k)) / (TWO*dr(n))
+                   force(i,j,k,3) = force(i,j,k,3) &
+                        - (wmac(i,j,k+1)+wmac(i,j,k))*(w0(k+1)-w0(k)) / (TWO*dr(n))
                 end if
 
              end do
