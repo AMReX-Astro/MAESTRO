@@ -675,6 +675,7 @@ contains
 
     if (spherical .eq. 1) then
 
+       !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -691,9 +692,11 @@ contains
              end do
           end do
        end do
+       !$OMP END PARALLEL DO
 
     else
 
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
@@ -710,6 +713,7 @@ contains
              end do
           end do
        end do
+       !$OMP END PARALLEL DO
 
     end if
 
