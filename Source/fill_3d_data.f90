@@ -608,7 +608,6 @@ contains
     end do
 
     if (w0mac_interp_type .eq. 1) then
-!       call put_1d_array_on_cart(w0,w0_cart,foextrap_comp,.true.,.true.,dx,the_bc_level,mla)
        call put_1d_array_on_cart(w0,w0_cart,1,.true.,.true.,dx,the_bc_level,mla)
     end if
 

@@ -103,7 +103,7 @@ contains
           call make_w0mac(mla,w0,w0mac,dx,the_bc_level)
 
           ! fill the all dm components of the cell-centered w0_cart
-          call put_1d_array_on_cart(w0,w0_cart,foextrap_comp,.true.,.true.,dx, &
+          call put_1d_array_on_cart(w0,w0_cart,1,.true.,.true.,dx, &
                                     the_bc_level,mla)
        end if
 
