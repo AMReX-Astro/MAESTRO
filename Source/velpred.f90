@@ -35,7 +35,7 @@ contains
     type(ml_layout), intent(in   ) :: mla
 
     integer                  :: i,r,n,n_1d
-    integer                  :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0,ng_gw,ng_n
+    integer                  :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0,ng_n
     integer                  :: lo(dm), hi(dm)
     real(kind=dp_t), pointer :: uop(:,:,:,:)
     real(kind=dp_t), pointer :: ufp(:,:,:,:)
@@ -50,18 +50,10 @@ contains
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: nop(:,:,:,:)
-    real(kind=dp_t), pointer :: gw0p(:,:,:,:)
-
-    real(kind=dp_t) :: gradw0_rad(1,0:nr_fine-1)
-    type(multifab)  :: gradw0_cart(nlevs)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "velpred")
-
-    do n=1,nlevs
-       call multifab_build(gradw0_cart(n),get_layout(u(n)),1,1)
-    end do
 
     ng_u  = nghost(u(1))
     ng_uf = nghost(ufull(1))
@@ -70,21 +62,6 @@ contains
     ng_f  = nghost(force(1))
     ng_w0 = nghost(w0mac(1,1))
     ng_n  = nghost(normal(1))
-    ng_gw = nghost(gradw0_cart(1))
-
-    ! make a Cartesian version of dw0/dr
-    if (spherical .eq. 1) then
-       do r=0,nr_fine-1
-          gradw0_rad(1,r) = (w0(1,r+1) - w0(1,r)) / dr(1)
-       enddo
-       call put_1d_array_on_cart(gradw0_rad,gradw0_cart,foextrap_comp,.false.,.false.,dx, &
-                                 the_bc_level,mla)
-    else
-       ! for planar we compute this on the fly within velpred_xd()
-       do n=1,nlevs
-          call setval(gradw0_cart(n),ZERO,all=.true.)
-       end do
-    endif
 
     do n=1,nlevs
        do i = 1, nboxes(u(n))
@@ -123,7 +100,6 @@ contains
              w0xp  => dataptr(w0mac(n,1),i)
              w0yp  => dataptr(w0mac(n,2),i)
              w0zp  => dataptr(w0mac(n,3),i)
-             gw0p => dataptr(gradw0_cart(n),i)
              nop => dataptr(normal(n),i)
              if (spherical .eq. 1) then
                 n_1d = 1
@@ -136,7 +112,7 @@ contains
                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
                              fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
                              w0(n_1d,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
-                             ng_w0, gw0p(:,:,:,1), ng_gw, lo, hi, dx(n,:), dt, &
+                             ng_w0, lo, hi, dx(n,:), dt, &
                              the_bc_level(n)%phys_bc_level_array(i,:,:), &
                              the_bc_level(n)%adv_bc_level_array(i,:,:,:))
           end select
@@ -148,10 +124,6 @@ contains
           call ml_edge_restriction_c(umac(n-1,i),1,umac(n,i),1,mla%mba%rr(n-1,:),i,1)
        enddo
     enddo
-
-    do n=1,nlevs
-       call destroy(gradw0_cart(n))
-    end do
 
     call destroy(bpt)
 
@@ -584,23 +556,6 @@ contains
                - (dt4/hx)*(utrans(i+1,j  )+utrans(i,j  )) &
                * (uimhx(i+1,j  ,2)-uimhx(i,j  ,2)) + dt2*force(i,j  ,2)
 
-          ! add the (Utilde . e_r) d w_0 /dr e_r term here
-          ! vtrans contains w0 so subtract it off
-          if (j .eq. 0) then
-             ! vmacl unchanged since dw_0 / dr = 0
-             vmacr(i,j) = vmacr(i,j) &
-                  - (dt4/hy)*(vtrans(i,j+1)-w0(j+1)+vtrans(i,j  )-w0(j  ))*(w0(j+1)-w0(j))
-          else if (j .eq. nr(n)) then
-             vmacl(i,j) = vmacl(i,j) &
-                  - (dt4/hy)*(vtrans(i,j  )-w0(j  )+vtrans(i,j-1)-w0(j-1))*(w0(j)-w0(j-1))
-             ! vmacr unchanged since dw_0 / dr = 0
-          else
-             vmacl(i,j) = vmacl(i,j) &
-                  - (dt4/hy)*(vtrans(i,j  )-w0(j  )+vtrans(i,j-1)-w0(j-1))*(w0(j)-w0(j-1))
-             vmacr(i,j) = vmacr(i,j) &
-                  - (dt4/hy)*(vtrans(i,j+1)-w0(j+1)+vtrans(i,j  )-w0(j  ))*(w0(j+1)-w0(j))
-          end if
-
           ! solve Riemann problem using full velocity
           uavg = HALF*(vmacl(i,j)+vmacr(i,j))
           test = ((vmacl(i,j)+w0(j) .le. ZERO .and. vmacr(i,j)+w0(j) .ge. ZERO) .or. &
@@ -644,7 +599,7 @@ contains
   subroutine velpred_3d(n,u,ng_u,ufull,ng_uf, &
                         umac,vmac,wmac,ng_um,utrans,vtrans,wtrans,ng_ut, &
                         force,ng_f,normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0, &
-                        gradw0_cart,ng_gw,lo,hi,dx,dt,phys_bc,adv_bc)
+                        lo,hi,dx,dt,phys_bc,adv_bc)
 
     use bc_module
     use slope_module
@@ -655,7 +610,7 @@ contains
     use ppm_module
 
     integer        , intent(in   ) :: n,lo(:),hi(:)
-    integer        , intent(in   ) :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_n,ng_w0,ng_gw
+    integer        , intent(in   ) :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_n,ng_w0
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
@@ -670,7 +625,6 @@ contains
     real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)    
-    real(kind=dp_t), intent(in   ) :: gradw0_cart(lo(1)-ng_gw:,lo(2)-ng_gw:,lo(3)-ng_gw:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
@@ -1582,30 +1536,12 @@ contains
     enddo
     !$OMP END PARALLEL DO
 
-    ! add the (Utilde . e_r) d w_0 /dr e_r term here
-    ! u/v/w trans contains w0 so subtract it off
     if (spherical .eq. 1) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
-
-                Ut_dot_er = &
-                     HALF*(utrans(i-1,j,k)-w0macx(i-1,j,k)+utrans(i  ,j  ,k)-w0macx(i  ,j  ,k))*normal(i-1,j,k,1) + &
-                     HALF*(vtrans(i-1,j,k)-w0macy(i-1,j,k)+vtrans(i-1,j+1,k)-w0macy(i-1,j+1,k))*normal(i-1,j,k,2) + &
-                     HALF*(wtrans(i-1,j,k)-w0macz(i-1,j,k)+wtrans(i-1,j,k+1)-w0macz(i-1,j,k+1))*normal(i-1,j,k,3)
-
-                umacl(i,j,k) = umacl(i,j,k) &
-                     - dt2*Ut_dot_er*gradw0_cart(i-1,j,k)*normal(i-1,j,k,1)
-
-                Ut_dot_er = &
-                     HALF*(utrans(i,j,k)-w0macx(i,j,k)+utrans(i+1,j,k)-w0macx(i+1,j,k))*normal(i,j,k,1) + &
-                     HALF*(vtrans(i,j,k)-w0macy(i,j,k)+vtrans(i,j+1,k)-w0macy(i,j+1,k))*normal(i,j,k,2) + &
-                     HALF*(wtrans(i,j,k)-w0macz(i,j,k)+wtrans(i,j,k+1)-w0macz(i,j,k+1))*normal(i,j,k,3)
-
-                umacr(i,j,k) = umacr(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
-
                 ! solve Riemann problem using full velocity
                 uavg = HALF*(umacl(i,j,k)+umacr(i,j,k))
                 test = ((umacl(i,j,k)+w0macx(i,j,k) .le. ZERO .and. &
@@ -1695,30 +1631,12 @@ contains
     enddo
     !$OMP END PARALLEL DO
 
-    ! add the (Utilde . e_r) d w_0 /dr e_r term here
-    ! u/v/w trans contains w0 so subtract it off
     if (spherical .eq. 1) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
-
-                Ut_dot_er = &
-                     HALF*(utrans(i,j-1,k)-w0macx(i,j-1,k)+utrans(i+1,j-1,k)-w0macx(i+1,j-1,k))*normal(i,j-1,k,1) + &
-                     HALF*(vtrans(i,j-1,k)-w0macy(i,j-1,k)+vtrans(i,j  ,k  )-w0macy(i,j  ,k  ))*normal(i,j-1,k,2) + &
-                     HALF*(wtrans(i,j-1,k)-w0macz(i,j-1,k)+wtrans(i,j-1,k+1)-w0macz(i,j-1,k+1))*normal(i,j-1,k,3)
-
-                vmacl(i,j,k) = vmacl(i,j,k) &
-                     - dt2*Ut_dot_er*gradw0_cart(i,j-1,k)*normal(i,j-1,k,2)
-
-                Ut_dot_er = &
-                     HALF*(utrans(i,j,k)-w0macx(i,j,k)+utrans(i+1,j,k)-w0macx(i+1,j,k))*normal(i,j,k,1) + &
-                     HALF*(vtrans(i,j,k)-w0macy(i,j,k)+vtrans(i,j+1,k)-w0macy(i,j+1,k))*normal(i,j,k,2) + &
-                     HALF*(wtrans(i,j,k)-w0macz(i,j,k)+wtrans(i,j,k+1)-w0macz(i,j,k+1))*normal(i,j,k,3)
-
-                vmacr(i,j,k) = vmacr(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
-
                 ! solve Riemann problem using full velocity
                 uavg = HALF*(vmacl(i,j,k)+vmacr(i,j,k))
                 test = ((vmacl(i,j,k)+w0macy(i,j,k) .le. ZERO .and. &
@@ -1726,7 +1644,6 @@ contains
                     (abs(vmacl(i,j,k)+vmacr(i,j,k)+TWO*w0macy(i,j,k)) .lt. rel_eps))
                 vmac(i,j,k) = merge(vmacl(i,j,k),vmacr(i,j,k),uavg+w0macy(i,j,k) .gt. ZERO)
                 vmac(i,j,k) = merge(ZERO,vmac(i,j,k),test)
-
              enddo
           enddo
        enddo
@@ -1809,28 +1726,12 @@ contains
     enddo
     !$OMP END PARALLEL DO
 
-    ! add the (Utilde . e_r) d w_0 /dr e_r term here
-    ! u/v/w trans contains w0 so subtract it off
     if (spherical .eq. 1) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er,uavg,test)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,uavg,test)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
-
-                Ut_dot_er = HALF*(utrans(i,j,k-1)-w0macx(i,j,k-1)+utrans(i+1,j,k-1)-w0macx(i+1,j,k-1))*normal(i,j,k-1,1) + &
-                            HALF*(vtrans(i,j,k-1)-w0macy(i,j,k-1)+vtrans(i,j+1,k-1)-w0macy(i,j+1,k-1))*normal(i,j,k-1,2) + &
-                            HALF*(wtrans(i,j,k-1)-w0macz(i,j,k-1)+wtrans(i,j  ,k  )-w0macz(i,j  ,k  ))*normal(i,j,k-1,3)
-
-                wmacl(i,j,k) = wmacl(i,j,k) &
-                     - dt2*Ut_dot_er*gradw0_cart(i,j,k-1)*normal(i,j,k-1,3)
-
-                Ut_dot_er = HALF*(utrans(i,j,k)-w0macx(i,j,k)+utrans(i+1,j,k)-w0macx(i+1,j,k))*normal(i,j,k,1) + &
-                            HALF*(vtrans(i,j,k)-w0macy(i,j,k)+vtrans(i,j+1,k)-w0macy(i,j+1,k))*normal(i,j,k,2) + &
-                            HALF*(wtrans(i,j,k)-w0macz(i,j,k)+wtrans(i,j,k+1)-w0macz(i,j,k+1))*normal(i,j,k,3)
-
-                wmacr(i,j,k) = wmacr(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
-
                 ! solve Riemann problem using full velocity
                 uavg = HALF*(wmacl(i,j,k)+wmacr(i,j,k))
                 test = ((wmacl(i,j,k)+w0macz(i,j,k) .le. ZERO .and. &
@@ -1838,7 +1739,6 @@ contains
                     (abs(wmacl(i,j,k)+wmacr(i,j,k)+TWO*w0macz(i,j,k)) .lt. rel_eps))
                 wmac(i,j,k) = merge(wmacl(i,j,k),wmacr(i,j,k),uavg+w0macz(i,j,k) .gt. ZERO)
                 wmac(i,j,k) = merge(ZERO,wmac(i,j,k),test)
-
              enddo
           enddo
        enddo
@@ -1850,22 +1750,6 @@ contains
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
-
-                if (k .eq. 0) then
-                   ! wmacl unchanged since dw_0 / dr = 0
-                   wmacr(i,j,k) = wmacr(i,j,k) - &
-                        (dt4/hz)*(wtrans(i,j,k+1)-w0(k+1)+wtrans(i,j,k  )-w0(k  ))*(w0(k+1)-w0(k))
-                else if (k .eq. nr(n)) then
-                   wmacl(i,j,k) = wmacl(i,j,k) - &
-                        (dt4/hz)*(wtrans(i,j,k  )-w0(k  )+wtrans(i,j,k-1)-w0(k-1))*(w0(k)-w0(k-1))
-                   ! wmacr unchanged since dw_0 / dr = 0
-                else
-                   wmacl(i,j,k) = wmacl(i,j,k) - &
-                        (dt4/hz)*(wtrans(i,j,k  )-w0(  k)+wtrans(i,j,k-1)-w0(k-1))*(w0(k)-w0(k-1))
-                   wmacr(i,j,k) = wmacr(i,j,k) - &
-                        (dt4/hz)*(wtrans(i,j,k+1)-w0(k+1)+wtrans(i,j,k  )-w0(k))*(w0(k+1)-w0(k))
-                end if
-
                 ! solve Riemann problem using full velocity
                 uavg = HALF*(wmacl(i,j,k)+wmacr(i,j,k))
                 test = ((wmacl(i,j,k)+w0(k) .le. ZERO .and. &

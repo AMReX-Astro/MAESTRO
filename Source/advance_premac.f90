@@ -85,6 +85,8 @@ contains
                       rho0(:,:),grav_cell,dx,w0_force,w0_force_cart_vec, &
                       the_bc_level,mla)
 
+    call add_utilde_force(force,normal,utrans,w0,dx,the_bc_level,mla)
+
     !*************************************************************
     !     Add w0 to trans velocities.
     !*************************************************************
