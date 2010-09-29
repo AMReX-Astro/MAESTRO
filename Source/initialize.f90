@@ -33,7 +33,7 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
-         ppm_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
+         ppm_type, bds_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
          check_base_name, use_tfromp, cflfac
 
     use average_module
@@ -120,9 +120,10 @@ contains
     ! allocate states
     allocate(uold(max_levs),sold(max_levs),gpi(max_levs),pi(max_levs))
     allocate(dSdt(max_levs),Source_old(max_levs),Source_new(max_levs))
-    allocate(rho_omegadot2(max_levs),rho_Hnuc2(max_levs),rho_Hext(max_levs),thermal2(max_levs))
+    allocate(rho_omegadot2(max_levs),rho_Hnuc2(max_levs),rho_Hext(max_levs))
+    allocate(thermal2(max_levs))
 
-    if (ppm_type .eq. 2) then
+    if (ppm_type .eq. 2 .or. bds_type .eq. 1) then
        ng_s = 4
     else
        ng_s = 3
@@ -584,7 +585,7 @@ contains
     use init_vel_module
     use average_module
     use restrict_base_module
-    use probin_module, only : drdxfac, octant, test_set, ppm_type, nodal, &
+    use probin_module, only : drdxfac, octant, test_set, ppm_type, bds_type, nodal, &
          prob_lo, prob_hi, model_file, do_smallscale
     use make_grav_module
     use enforce_HSE_module
@@ -643,7 +644,7 @@ contains
     allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs))
     allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),rho_Hext(nlevs),thermal2(nlevs))
 
-    if (ppm_type .eq. 2) then
+    if (ppm_type .eq. 2 .or. bds_type .eq. 1) then
        ng_s = 4
     else
        ng_s = 3
@@ -788,7 +789,7 @@ contains
     use average_module
     use restrict_base_module
     use make_new_grids_module
-    use probin_module, only : drdxfac, ppm_type, prob_lo, prob_hi, do_smallscale, &
+    use probin_module, only : drdxfac, ppm_type, bds_type, prob_lo, prob_hi, do_smallscale, &
          model_file, nodal
     use multifab_physbc_module
     use ml_restriction_module
@@ -867,7 +868,7 @@ contains
     ! initialize cutoff arrays
     call init_cutoff(max_levs)
 
-    if (ppm_type .eq. 2) then
+    if (ppm_type .eq. 2 .or. bds_type .eq. 1) then
        ng_s = 4
     else
        ng_s = 3

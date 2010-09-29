@@ -196,10 +196,10 @@ contains
     is = lo(1)
     ie = hi(1)
 
-    if (ppm_type .gt. 0) then
-       call ppm_fpu_1d(n,s(:,comp),ng_s,umac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
-    else
+    if (ppm_type .eq. 0) then
        call slopex_1d(s(:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       call ppm_fpu_1d(n,s(:,comp),ng_s,umac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     end if
 
     dt2 = HALF*dt
@@ -211,19 +211,19 @@ contains
     ! Create sedgelx, etc.
     !******************************************************************
 
-    ! loop over appropriate x-faces    
-    if (ppm_type .gt. 0) then
-       do i=is,ie+1
-          ! make sedgelx, sedgerx with 1D extrapolation
-          sedgelx(i) = Ip(i-1)
-          sedgerx(i) = Im(i  )
-       end do
-    else
+    ! loop over appropriate x-faces   
+    if (ppm_type .eq. 0) then
        do i=is,ie+1
           ! make sedgelx, sedgerx with 1D extrapolation
           sedgelx(i) = s(i-1,comp) + (HALF - dt2*umac(i)/hx)*slopex(i-1,1)
           sedgerx(i) = s(i  ,comp) - (HALF + dt2*umac(i)/hx)*slopex(i  ,1)
        enddo
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do i=is,ie+1
+          ! make sedgelx, sedgerx with 1D extrapolation
+          sedgelx(i) = Ip(i-1)
+          sedgerx(i) = Im(i  )
+       end do
     end if
 
     ! loop over appropriate x-faces
@@ -382,11 +382,11 @@ contains
     js = lo(2)
     je = hi(2)
 
-    if (ppm_type .gt. 0) then
-       call ppm_fpu_2d(n,s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
-    else
+    if (ppm_type .eq. 0) then
        call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
        call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc)
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       call ppm_fpu_2d(n,s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     end if
 
     dt2 = HALF*dt
@@ -399,8 +399,16 @@ contains
     ! Create s_{\i-\half\e_x}^x, etc.
     !******************************************************************
 
-    ! loop over appropriate x-faces    
-    if (ppm_type .gt. 0) then
+    ! loop over appropriate x-faces
+    if (ppm_type .eq. 0) then
+       do j=js-1,je+1
+          do i=is,ie+1
+             ! make slx, srx with 1D extrapolation
+             slx(i,j) = s(i-1,j,comp) + (HALF - dt2*umac(i,j)/hx)*slopex(i-1,j,1)
+             srx(i,j) = s(i  ,j,comp) - (HALF + dt2*umac(i,j)/hx)*slopex(i  ,j,1)
+          enddo
+       enddo       
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        do j=js-1,je+1
           do i=is,ie+1
              ! make slx, srx with 1D extrapolation
@@ -408,14 +416,6 @@ contains
              srx(i,j) = Im(i  ,j,1)
           end do
        end do
-    else
-       do j=js-1,je+1
-          do i=is,ie+1
-             ! make slx, srx with 1D extrapolation
-             slx(i,j) = s(i-1,j,comp) + (HALF - dt2*umac(i,j)/hx)*slopex(i-1,j,1)
-             srx(i,j) = s(i  ,j,comp) - (HALF + dt2*umac(i,j)/hx)*slopex(i  ,j,1)
-          enddo
-       enddo
     end if
 
     ! impose lo side bc's
@@ -490,20 +490,20 @@ contains
     enddo
 
     ! loop over appropriate y-faces
-    if (ppm_type .gt. 0) then
-       do j=js,je+1
-          do i=is-1,ie+1
-             ! make sly, sry with 1D extrapolation
-             sly(i,j) = Ip(i,j-1,2)
-             sry(i,j) = Im(i,j  ,2)
-          enddo
-       enddo
-    else
+    if (ppm_type .eq. 0) then
        do j=js,je+1
           do i=is-1,ie+1
              ! make sly, sry with 1D extrapolation
              sly(i,j) = s(i,j-1,comp) + (HALF - dt2*vmac(i,j)/hy)*slopey(i,j-1,1)
              sry(i,j) = s(i,j  ,comp) - (HALF + dt2*vmac(i,j)/hy)*slopey(i,j  ,1)
+          enddo
+       enddo
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do j=js,je+1
+          do i=is-1,ie+1
+             ! make sly, sry with 1D extrapolation
+             sly(i,j) = Ip(i,j-1,2)
+             sry(i,j) = Im(i,j  ,2)
           enddo
        enddo
     end if
@@ -835,15 +835,15 @@ contains
     ks = lo(3)
     ke = hi(3)
 
-    if (ppm_type .gt. 0) then
-       call ppm_fpu_3d(n,s(:,:,:,comp),ng_s,umac,vmac,wmac,ng_um,Ip,Im, &
-                       lo,hi,adv_bc(:,:,1),dx,dt)
-    else
+    if (ppm_type .eq. 0) then
        do k = lo(3)-1,hi(3)+1
           call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,hi,ng_s,1,adv_bc)
           call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,hi,ng_s,1,adv_bc)
        end do
        call slopez_3d(s(:,:,:,comp:),slopez,lo,hi,ng_s,1,adv_bc)
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       call ppm_fpu_3d(n,s(:,:,:,comp),ng_s,umac,vmac,wmac,ng_um,Ip,Im, &
+                       lo,hi,adv_bc(:,:,1),dx,dt)
     end if
 
     dt2 = HALF*dt
@@ -867,19 +867,7 @@ contains
     allocate(simhx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     
     ! loop over appropriate x-faces
-    if (ppm_type .gt. 0) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
-       do k=ks-1,ke+1
-          do j=js-1,je+1
-             do i=is,ie+1
-                ! make slx, srx with 1D extrapolation
-                slx(i,j,k) = Ip(i-1,j,k,1)
-                srx(i,j,k) = Im(i  ,j,k,1)
-             end do
-          end do
-       end do
-       !$OMP END PARALLEL DO
-    else
+    if (ppm_type .eq. 0) then
        !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js-1,je+1
@@ -890,6 +878,18 @@ contains
              enddo
           enddo
        enddo
+       !$OMP END PARALLEL DO
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k=ks-1,ke+1
+          do j=js-1,je+1
+             do i=is,ie+1
+                ! make slx, srx with 1D extrapolation
+                slx(i,j,k) = Ip(i-1,j,k,1)
+                srx(i,j,k) = Im(i  ,j,k,1)
+             end do
+          end do
+       end do
        !$OMP END PARALLEL DO
     end if
 
@@ -976,19 +976,7 @@ contains
     allocate(simhy(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
     ! loop over appropriate y-faces
-    if (ppm_type .gt. 0) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
-       do k=ks-1,ke+1
-          do j=js,je+1
-             do i=is-1,ie+1
-                ! make sly, sry with 1D extrapolation
-                sly(i,j,k) = Ip(i,j-1,k,2)
-                sry(i,j,k) = Im(i,j  ,k,2)
-             enddo
-          enddo
-       enddo
-       !$OMP END PARALLEL DO
-    else
+    if (ppm_type .eq. 0) then
        !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks-1,ke+1
           do j=js,je+1
@@ -996,6 +984,18 @@ contains
                 ! make sly, sry with 1D extrapolation
                 sly(i,j,k) = s(i,j-1,k,comp) + (HALF - dt2*vmac(i,j,k)/hy)*slopey(i,j-1,k,1)
                 sry(i,j,k) = s(i,j  ,k,comp) - (HALF + dt2*vmac(i,j,k)/hy)*slopey(i,j  ,k,1)
+             enddo
+          enddo
+       enddo
+       !$OMP END PARALLEL DO
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k=ks-1,ke+1
+          do j=js,je+1
+             do i=is-1,ie+1
+                ! make sly, sry with 1D extrapolation
+                sly(i,j,k) = Ip(i,j-1,k,2)
+                sry(i,j,k) = Im(i,j  ,k,2)
              enddo
           enddo
        enddo
@@ -1085,19 +1085,7 @@ contains
     allocate(simhz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
     ! loop over appropriate z-faces
-    if (ppm_type .gt. 0) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
-       do k=ks,ke+1
-          do j=js-1,je+1
-             do i=is-1,ie+1
-                ! make slz, srz with 1D extrapolation
-                slz(i,j,k) = Ip(i,j,k-1,3)
-                srz(i,j,k) = Im(i,j,k  ,3)
-             enddo
-          enddo
-       enddo
-       !$OMP END PARALLEL DO
-    else
+    if (ppm_type .eq. 0) then
        !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js-1,je+1
@@ -1105,6 +1093,18 @@ contains
                 ! make slz, srz with 1D extrapolation
                 slz(i,j,k) = s(i,j,k-1,comp) + (HALF - dt2*wmac(i,j,k)/hz)*slopez(i,j,k-1,1)
                 srz(i,j,k) = s(i,j,k  ,comp) - (HALF + dt2*wmac(i,j,k)/hz)*slopez(i,j,k  ,1)
+             enddo
+          enddo
+       enddo
+       !$OMP END PARALLEL DO
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k=ks,ke+1
+          do j=js-1,je+1
+             do i=is-1,ie+1
+                ! make slz, srz with 1D extrapolation
+                slz(i,j,k) = Ip(i,j,k-1,3)
+                srz(i,j,k) = Im(i,j,k  ,3)
              enddo
           enddo
        enddo

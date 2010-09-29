@@ -239,6 +239,13 @@ contains
        amr_buf_width = regrid_int
     endif
 
+    if (ppm_type .lt. 0 .or. ppm_type .gt. 2) then
+       call bl_error("invalid ppm_type")
+    end if
+
+    if (bds_type .lt. 0 .or. bds_type .gt. 1) then
+       call bl_error("invalid bds_type")
+    end if
 
     if (do_smallscale) then
        if (parallel_IOProcessor()) then

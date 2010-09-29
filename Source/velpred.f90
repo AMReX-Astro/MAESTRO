@@ -182,24 +182,17 @@ contains
 
     hx = dx(1)
 
-    if (ppm_type .gt. 0) then
-       call ppm_1d(n,u(:,1),ng_u,ufull(:,1),ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
-    else
+    if (ppm_type .eq. 0) then
        call slopex_1d(u,slopex,lo,hi,ng_u,1,adv_bc)
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       call ppm_1d(n,u(:,1),ng_u,ufull(:,1),ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
     end if
 
     !******************************************************************
     ! Create umac 
     !******************************************************************
 
-    if (ppm_type .gt. 0) then
-       do i=is,ie+1
-          ! extrapolate velocity to left face
-          umacl(i) = Ipu(i-1) + dt2*force(i-1)
-          ! extrapolate velocity to right face
-          umacr(i) = Imu(i  ) + dt2*force(i  )
-       end do
-    else
+    if (ppm_type .eq. 0) then
        do i=is,ie+1
           ! extrapolate velocity to left face
           umacl(i) = u(i-1,1) + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,1)))*slopex(i-1,1) &
@@ -207,6 +200,13 @@ contains
           ! extrapolate velocity to right face
           umacr(i) = u(i  ,1) - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,1)))*slopex(i  ,1) &
                + dt2*force(i  )
+       end do
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do i=is,ie+1
+          ! extrapolate velocity to left face
+          umacl(i) = Ipu(i-1) + dt2*force(i-1)
+          ! extrapolate velocity to right face
+          umacr(i) = Imu(i  ) + dt2*force(i  )
        end do
     end if
 
@@ -327,30 +327,19 @@ contains
     hx = dx(1)
     hy = dx(2)
 
-    if (ppm_type .gt. 0) then
-       call ppm_2d(n,u(:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_2d(n,u(:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
-    else
+    if (ppm_type .eq. 0) then
        call slopex_2d(u,slopex,lo,hi,ng_u,2,adv_bc)
        call slopey_2d(u,slopey,lo,hi,ng_u,2,adv_bc)
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       call ppm_2d(n,u(:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_2d(n,u(:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
        
     !******************************************************************
     ! Create u_{\i-\half\e_x}^x, etc.
     !******************************************************************
 
-    if (ppm_type .gt. 0) then
-       do j=js-1,je+1
-          do i=is,ie+1
-             ! extrapolate both components of velocity to left face
-             ulx(i,j,1) = Ipu(i-1,j,1)
-             ulx(i,j,2) = Ipv(i-1,j,1)
-             ! extrapolate both components of velocity to right face
-             urx(i,j,1) = Imu(i,j,1)
-             urx(i,j,2) = Imv(i,j,1)
-          end do
-       end do
-    else
+    if (ppm_type .eq. 0) then
        do j=js-1,je+1
           do i=is,ie+1
              maxu = max(ZERO,ufull(i-1,j,1))
@@ -361,6 +350,17 @@ contains
              ! extrapolate both components of velocity to right face
              urx(i,j,1) = u(i  ,j,1) - (HALF + (dt2/hx)*minu)*slopex(i  ,j,1)
              urx(i,j,2) = u(i  ,j,2) - (HALF + (dt2/hx)*minu)*slopex(i  ,j,2)
+          end do
+       end do
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do j=js-1,je+1
+          do i=is,ie+1
+             ! extrapolate both components of velocity to left face
+             ulx(i,j,1) = Ipu(i-1,j,1)
+             ulx(i,j,2) = Ipv(i-1,j,1)
+             ! extrapolate both components of velocity to right face
+             urx(i,j,1) = Imu(i,j,1)
+             urx(i,j,2) = Imv(i,j,1)
           end do
        end do
     end if
@@ -418,18 +418,7 @@ contains
        enddo
     enddo
 
-    if (ppm_type .gt. 0) then
-       do j=js,je+1
-          do i=is-1,ie+1
-             ! extrapolate both components of velocity to left face
-             uly(i,j,1) = Ipu(i,j-1,2)
-             uly(i,j,2) = Ipv(i,j-1,2)
-             ! extrapolate both components of velocity to right face
-             ury(i,j,1) = Imu(i,j,2)
-             ury(i,j,2) = Imv(i,j,2)
-          end do
-       end do
-    else
+    if (ppm_type .eq. 0) then
        do j=js,je+1
           do i=is-1,ie+1
              maxu = max(ZERO,ufull(i,j-1,2))
@@ -440,6 +429,17 @@ contains
              ! extrapolate both components of velocity to right face
              ury(i,j,1) = u(i,j  ,1) - (HALF+(dt2/hy)*minu)*slopey(i,j  ,1)
              ury(i,j,2) = u(i,j  ,2) - (HALF+(dt2/hy)*minu)*slopey(i,j  ,2)
+          end do
+       end do
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do j=js,je+1
+          do i=is-1,ie+1
+             ! extrapolate both components of velocity to left face
+             uly(i,j,1) = Ipu(i,j-1,2)
+             uly(i,j,2) = Ipv(i,j-1,2)
+             ! extrapolate both components of velocity to right face
+             ury(i,j,1) = Imu(i,j,2)
+             ury(i,j,2) = Imv(i,j,2)
           end do
        end do
     end if
@@ -709,14 +709,8 @@ contains
     hy = dx(2)
     hz = dx(3)
 
-    if (ppm_type .gt. 0) then
-       call ppm_3d(n,u(:,:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_3d(n,u(:,:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
-       call ppm_3d(n,u(:,:,:,3),ng_u,ufull,ng_uf,Ipw,Imw,lo,hi,adv_bc(:,:,3),dx,dt)
-    else
-
+    if (ppm_type .eq. 0) then
        ung = ng_u
-
        !$OMP PARALLEL DO PRIVATE(k) FIRSTPRIVATE(ung)
        do k = lo(3)-1,hi(3)+1
           call slopex_2d(u(:,:,k,:),slopex(:,:,k,:),lo,hi,ung,3,adv_bc)
@@ -724,6 +718,10 @@ contains
        end do
        !$OMP END PARALLEL DO
        call slopez_3d(u,slopez,lo,hi,ng_u,3,adv_bc)
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       call ppm_3d(n,u(:,:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_3d(n,u(:,:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_3d(n,u(:,:,:,3),ng_u,ufull,ng_uf,Ipw,Imw,lo,hi,adv_bc(:,:,3),dx,dt)
     end if
 
     !******************************************************************
@@ -736,8 +734,28 @@ contains
     allocate(ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
-    if (ppm_type .gt. 0) then
+    if (ppm_type .eq. 0) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k,maxu,minu)
+       do k=ks-1,ke+1
+          do j=js-1,je+1
+             do i=is,ie+1
+                maxu = (HALF - dt2*max(ZERO,ufull(i-1,j,k,1))/hx)
+                minu = (HALF + dt2*min(ZERO,ufull(i  ,j,k,1))/hx)
 
+                ! extrapolate all components of velocity to left face
+                ulx(i,j,k,1) = u(i-1,j,k,1) + maxu * slopex(i-1,j,k,1)
+                ulx(i,j,k,2) = u(i-1,j,k,2) + maxu * slopex(i-1,j,k,2)
+                ulx(i,j,k,3) = u(i-1,j,k,3) + maxu * slopex(i-1,j,k,3)
+
+                ! extrapolate all components of velocity to right face
+                urx(i,j,k,1) = u(i,j,k,1) - minu * slopex(i,j,k,1)
+                urx(i,j,k,2) = u(i,j,k,2) - minu * slopex(i,j,k,2)
+                urx(i,j,k,3) = u(i,j,k,3) - minu * slopex(i,j,k,3)
+             end do
+          end do
+       end do
+       !$OMP END PARALLEL DO
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -753,30 +771,6 @@ contains
              end do
           end do
        end do
-
-    else
-       !$OMP PARALLEL DO PRIVATE(i,j,k,maxu,minu)
-       do k=ks-1,ke+1
-          do j=js-1,je+1
-             do i=is,ie+1
-
-                maxu = (HALF - dt2*max(ZERO,ufull(i-1,j,k,1))/hx)
-                minu = (HALF + dt2*min(ZERO,ufull(i  ,j,k,1))/hx)
-
-                ! extrapolate all components of velocity to left face
-                ulx(i,j,k,1) = u(i-1,j,k,1) + maxu * slopex(i-1,j,k,1)
-                ulx(i,j,k,2) = u(i-1,j,k,2) + maxu * slopex(i-1,j,k,2)
-                ulx(i,j,k,3) = u(i-1,j,k,3) + maxu * slopex(i-1,j,k,3)
-
-                ! extrapolate all components of velocity to right face
-                urx(i,j,k,1) = u(i,j,k,1) - minu * slopex(i,j,k,1)
-                urx(i,j,k,2) = u(i,j,k,2) - minu * slopex(i,j,k,2)
-                urx(i,j,k,3) = u(i,j,k,3) - minu * slopex(i,j,k,3)
-
-             end do
-          end do
-       end do
-       !$OMP END PARALLEL DO
     end if
 
     deallocate(slopex)
@@ -855,30 +849,11 @@ contains
     allocate(uly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(ury(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
 
-    if (ppm_type .gt. 0) then
-
-       do k=ks-1,ke+1
-          do j=js,je+1
-             do i=is-1,ie+1
-                ! extrapolate all components of velocity to left face
-                uly(i,j,k,1) = Ipu(i,j-1,k,2)
-                uly(i,j,k,2) = Ipv(i,j-1,k,2)
-                uly(i,j,k,3) = Ipw(i,j-1,k,2)
-
-                ! extrapolate all components of velocity to right face
-                ury(i,j,k,1) = Imu(i,j,k,2)
-                ury(i,j,k,2) = Imv(i,j,k,2)
-                ury(i,j,k,3) = Imw(i,j,k,2)
-             enddo
-          enddo
-       enddo
-
-    else
+    if (ppm_type .eq. 0) then
        !$OMP PARALLEL DO PRIVATE(i,j,k,minu,maxu)
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
-
                 maxu = (HALF - dt2*max(ZERO,ufull(i,j-1,k,2))/hy)
                 minu = (HALF + dt2*min(ZERO,ufull(i,j  ,k,2))/hy)
 
@@ -895,6 +870,22 @@ contains
           enddo
        enddo
        !$OMP END PARALLEL DO
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do k=ks-1,ke+1
+          do j=js,je+1
+             do i=is-1,ie+1
+                ! extrapolate all components of velocity to left face
+                uly(i,j,k,1) = Ipu(i,j-1,k,2)
+                uly(i,j,k,2) = Ipv(i,j-1,k,2)
+                uly(i,j,k,3) = Ipw(i,j-1,k,2)
+
+                ! extrapolate all components of velocity to right face
+                ury(i,j,k,1) = Imu(i,j,k,2)
+                ury(i,j,k,2) = Imv(i,j,k,2)
+                ury(i,j,k,3) = Imw(i,j,k,2)
+             enddo
+          enddo
+       enddo
     end if
 
     deallocate(slopey)
@@ -972,30 +963,11 @@ contains
     allocate(ulz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
     allocate(urz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
 
-    if (ppm_type .gt. 0) then
-
-       do k=ks,ke+1
-          do j=js-1,je+1
-             do i=is-1,ie+1
-                ! extrapolate all components of velocity to left face
-                ulz(i,j,k,1) = Ipu(i,j,k-1,3)
-                ulz(i,j,k,2) = Ipv(i,j,k-1,3)
-                ulz(i,j,k,3) = Ipw(i,j,k-1,3)
-
-                ! extrapolate all components of velocity to right face
-                urz(i,j,k,1) = Imu(i,j,k,3)
-                urz(i,j,k,2) = Imv(i,j,k,3)
-                urz(i,j,k,3) = Imw(i,j,k,3)
-             end do
-          end do
-       end do
-
-    else
+    if (ppm_type .eq. 0) then
        !$OMP PARALLEL DO PRIVATE(i,j,k,minu,maxu)
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
-
                 maxu = (HALF - dt2*max(ZERO,ufull(i,j,k-1,3))/hz)
                 minu = (HALF + dt2*min(ZERO,ufull(i,j,k  ,3))/hz)
 
@@ -1012,6 +984,22 @@ contains
           end do
        end do
        !$OMP END PARALLEL DO
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do k=ks,ke+1
+          do j=js-1,je+1
+             do i=is-1,ie+1
+                ! extrapolate all components of velocity to left face
+                ulz(i,j,k,1) = Ipu(i,j,k-1,3)
+                ulz(i,j,k,2) = Ipv(i,j,k-1,3)
+                ulz(i,j,k,3) = Ipw(i,j,k-1,3)
+
+                ! extrapolate all components of velocity to right face
+                urz(i,j,k,1) = Imu(i,j,k,3)
+                urz(i,j,k,2) = Imv(i,j,k,3)
+                urz(i,j,k,3) = Imw(i,j,k,3)
+             end do
+          end do
+       end do
     end if
 
     deallocate(slopez,Ipu,Imu,Ipv,Imv,Ipw,Imw)

@@ -63,7 +63,7 @@ contains
     ! edge-centered indexing for x-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+2))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-2:hi(1)+3))
     end if
 
@@ -540,7 +540,7 @@ contains
     ! edge-centered indexing for x-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+2))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-2:hi(1)+3))
     end if
 
@@ -1018,7 +1018,7 @@ contains
     ! edge-centered indexing for x-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-2:hi(1)+3,lo(2)-1:hi(2)+1))
     end if
 
@@ -1497,7 +1497,7 @@ contains
     ! edge-centered indexing for y-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+3))
     end if
 
@@ -2013,7 +2013,7 @@ contains
     ! edge-centered indexing for x-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-2:hi(1)+3,lo(2)-1:hi(2)+1))
     end if
 
@@ -2492,7 +2492,7 @@ contains
     ! edge-centered indexing for y-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+3))
     end if
 
@@ -3008,7 +3008,7 @@ contains
     ! edge-centered indexing for x-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-2:hi(1)+3,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     end if
 
@@ -3579,7 +3579,7 @@ contains
     ! edge-centered indexing for y-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+1))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+3,lo(3)-1:hi(3)+1))
     end if
     !
@@ -4157,7 +4157,7 @@ contains
     ! edge-centered indexing for z-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+2))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-2:hi(3)+3))
     end if
     !
@@ -4787,7 +4787,7 @@ contains
     ! edge-centered indexing for x-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-2:hi(1)+3,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     end if
     !
@@ -5362,7 +5362,7 @@ contains
     ! edge-centered indexing for y-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+1))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+3,lo(3)-1:hi(3)+1))
     end if
     !
@@ -5938,7 +5938,7 @@ contains
     ! edge-centered indexing for z-faces
     if (ppm_type .eq. 1) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+2))
-    else
+    else if (ppm_type .eq. 2) then
        allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-2:hi(3)+3))
     end if
     !

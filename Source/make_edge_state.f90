@@ -307,7 +307,7 @@ contains
         
      end if
 
-     if (ppm_type .ge. 1) then
+     if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
 
         !$OMP PARALLEL DO PRIVATE(r,sigmap,sigmam,s6)
         do r=lo,hi
@@ -403,7 +403,7 @@ contains
      ! error checking to make sure that there is a 2 cell buffer at the top and bottom
      ! of the domain for finer levels in planar geometry.  This can be removed if
      ! blocking_factor is implemented at set > 1.
-     if (ppm_type .ge. 1) then
+     if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
         do n=2,nlevs_radial
            do i=1,numdisjointchunks(n)
               if (r_start_coord(n,i) .eq. 2) then
@@ -740,7 +740,7 @@ contains
      end if
 
      ! compute Ip and Im
-     if (ppm_type .ge. 1) then
+     if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
         
         do n=1,nlevs_radial
            do i=1,numdisjointchunks(n)

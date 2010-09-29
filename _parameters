@@ -314,8 +314,12 @@ the_knapsack_verbosity              logical            .false.
 
 # 0 = no ppm @@
 # 1 = 1985 ppm @@
-# 2 = 2009 ppm   
-ppm_type                            integer            1                   
+# 2 = Hybrid Sekora/Colella McCorquodale Colella 2009/2010 ppm
+ppm_type                            integer            1
+
+# 0 = use ppm instead for multi-d integrator @@
+# 1 = bilinear
+bds_type                            integer            0
 
 # what type of coefficient to use inside the velocity divergence constraint. @@
 # {\tt beta\_type} = 1 uses $\beta_0$; @@

@@ -161,31 +161,31 @@ contains
     hx = dx(1)
     hy = dx(2)
     
-    if (ppm_type .gt. 0) then
-       call ppm_2d(n,u(:,:,1),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
-    else
+    if (ppm_type .eq. 0) then
        call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
        call slopey_2d(u(:,:,2:),slopey,lo,hi,ng_u,1,adv_bc(:,:,2:))
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       call ppm_2d(n,u(:,:,1),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     end if
 
     !******************************************************************
     ! create utrans
     !******************************************************************
 
-    if (ppm_type .gt. 0) then
-       do j=js,je
-          do i=is,ie+1
-             ! extrapolate to edges
-             ulx(i,j) = Ip(i-1,j,1)
-             urx(i,j) = Im(i  ,j,1)
-          end do
-       end do
-    else
+    if (ppm_type .eq. 0) then
        do j=js,je
           do i=is,ie+1
              ! extrapolate to edges
              ulx(i,j) = u(i-1,j,1) + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,j,1)))*slopex(i-1,j,1)
              urx(i,j) = u(i  ,j,1) - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,j,1)))*slopex(i  ,j,1)
+          end do
+       end do
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do j=js,je
+          do i=is,ie+1
+             ! extrapolate to edges
+             ulx(i,j) = Ip(i-1,j,1)
+             urx(i,j) = Im(i  ,j,1)
           end do
        end do
     end if
@@ -237,24 +237,25 @@ contains
     ! create vtrans
     !******************************************************************
 
-    if (ppm_type .gt. 0) then
+    if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        call ppm_2d(n,u(:,:,2),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
        
-    if (ppm_type .gt. 0) then
-       do j=js,je+1
-          do i=is,ie
-             ! extrapolate to edges
-             vly(i,j) = Ip(i,j-1,2)
-             vry(i,j) = Im(i,j  ,2)
-          end do
-       end do
-    else
+    if (ppm_type .eq. 0) then
        do j=js,je+1
           do i=is,ie
              ! extrapolate to edges
              vly(i,j) = u(i,j-1,2) + (HALF-(dt2/hy)*max(ZERO,ufull(i,j-1,2)))*slopey(i,j-1,1)
              vry(i,j) = u(i,j  ,2) - (HALF+(dt2/hy)*min(ZERO,ufull(i,j  ,2)))*slopey(i,j  ,1)
+          end do
+       end do
+
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do j=js,je+1
+          do i=is,ie
+             ! extrapolate to edges
+             vly(i,j) = Ip(i,j-1,2)
+             vry(i,j) = Im(i,j  ,2)
           end do
        end do
     end if
@@ -368,14 +369,14 @@ contains
     hy = dx(2)
     hz = dx(3)
     
-    if (ppm_type .gt. 0) then
-       call ppm_3d(n,u(:,:,:,1),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
-    else
+    if (ppm_type .eq. 0) then
        do k = lo(3)-1,hi(3)+1
           call slopex_2d(u(:,:,k,1:),slopex(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,1:))
           call slopey_2d(u(:,:,k,2:),slopey(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,2:))
        end do
        call slopez_3d(u(:,:,:,3:),slopez,lo,hi,ng_u,1,adv_bc(:,:,3:))
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       call ppm_3d(n,u(:,:,:,1),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     end if
     
     !******************************************************************
@@ -385,17 +386,7 @@ contains
     allocate(ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
 
-    if (ppm_type .gt. 0) then
-       do k=ks,ke
-          do j=js,je
-             do i=is,ie+1
-                ! extrapolate to edges
-                ulx(i,j,k) = Ip(i-1,j,k,1)
-                urx(i,j,k) = Im(i  ,j,k,1)
-             end do
-          end do
-       end do
-    else
+    if (ppm_type .eq. 0) then
        !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je
@@ -409,6 +400,16 @@ contains
           end do
        end do
        !$OMP END PARALLEL DO
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do k=ks,ke
+          do j=js,je
+             do i=is,ie+1
+                ! extrapolate to edges
+                ulx(i,j,k) = Ip(i-1,j,k,1)
+                urx(i,j,k) = Im(i  ,j,k,1)
+             end do
+          end do
+       end do
     end if
 
     deallocate(slopex)
@@ -484,24 +485,14 @@ contains
     ! create vtrans
     !******************************************************************
 
-    if (ppm_type .gt. 0) then
+    if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        call ppm_3d(n,u(:,:,:,2),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
 
     allocate(vly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
     allocate(vry(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
 
-    if (ppm_type .gt. 0) then
-       do k=ks,ke
-          do j=js,je+1
-             do i=is,ie
-                ! extrapolate to edges
-                vly(i,j,k) = Ip(i,j-1,k,2)
-                vry(i,j,k) = Im(i,j  ,k,2)
-             enddo
-          enddo
-       enddo
-    else
+    if (ppm_type .eq. 0) then
        !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke
           do j=js,je+1
@@ -515,6 +506,16 @@ contains
           enddo
        enddo
        !$OMP END PARALLEL DO
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do k=ks,ke
+          do j=js,je+1
+             do i=is,ie
+                ! extrapolate to edges
+                vly(i,j,k) = Ip(i,j-1,k,2)
+                vry(i,j,k) = Im(i,j  ,k,2)
+             enddo
+          enddo
+       enddo
     end if
 
     deallocate(slopey)
@@ -590,24 +591,14 @@ contains
     ! create wtrans
     !******************************************************************
 
-    if (ppm_type .gt. 0) then
+    if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        call ppm_3d(n,u(:,:,:,3),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,3),dx,dt)
     end if
 
     allocate(wlz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
     allocate(wrz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
-    if (ppm_type .gt. 0) then
-       do k=ks,ke+1
-          do j=js,je
-             do i=is,ie
-                ! extrapolate to edges
-                wlz(i,j,k) = Ip(i,j,k-1,3)
-                wrz(i,j,k) = Im(i,j,k  ,3)
-             end do
-          end do
-       end do
-    else
+    if (ppm_type .eq. 0) then
        !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=ks,ke+1
           do j=js,je
@@ -621,6 +612,16 @@ contains
           end do
        end do
        !$OMP END PARALLEL DO
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do k=ks,ke+1
+          do j=js,je
+             do i=is,ie
+                ! extrapolate to edges
+                wlz(i,j,k) = Ip(i,j,k-1,3)
+                wrz(i,j,k) = Im(i,j,k  ,3)
+             end do
+          end do
+       end do
     end if
 
     deallocate(slopez,Ip,Im)
