@@ -112,6 +112,8 @@ contains
                       rho0_nph,grav_cell_nph,dx, &
                       w0_force,w0_force_cart_vec,the_bc_level,mla)
 
+    call add_utilde_force(force,normal,umac,w0,dx,the_bc_level,mla)
+
     !********************************************************
     !     Update the velocity with convective differencing
     !********************************************************

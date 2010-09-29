@@ -184,8 +184,9 @@ contains
        ! update with (Utilde dot grad) Utilde and force
        unew(i,1) = uold(i,1) - dt * ugradu + dt * force(i,1)
 
-       ! subtract (Utilde dot er) dw0/dr er term from wtilde only
-       unew(i,1) = unew(i,1) - dt * ubar*(w0(i+1) - w0(i))/dx(1)
+       ! subtract (w0 dot grad) Utilde term
+       ubar = HALF*(w0(i) + w0(i+1))
+       unew(i,1) = unew(i,1) - dt * ubar*(uedgex(i+1,1) - uedgex(i,1))/dx(1)
 
        ! Add the sponge
        if (do_sponge) unew(i,:) = unew(i,:) * sponge(i)
@@ -234,9 +235,6 @@ contains
           ! update with (Utilde dot grad) Utilde and force
           unew(i,j,1) = uold(i,j,1) - dt * ugradu + dt * force(i,j,1)
           unew(i,j,2) = uold(i,j,2) - dt * ugradv + dt * force(i,j,2)
-
-          ! subtract (Utilde dot er) dw0/dr er term from wtilde only
-          unew(i,j,2) = unew(i,j,2) - dt * vbar*(w0(j+1) - w0(j))/dx(2)
 
           ! subtract (w0 dot grad) Utilde term
           vbar = HALF*(w0(j) + w0(j+1))
@@ -287,10 +285,7 @@ contains
     real (kind = dp_t) :: gradvx,gradvy,gradvz
     real (kind = dp_t) :: gradwx,gradwy,gradwz
     real (kind = dp_t) :: w0_gradur,w0_gradvr,w0_gradwr
-    real (kind = dp_t) :: gradw0
     real (kind = dp_t) :: Utilde_dot_er
-    real (kind = dp_t), allocatable :: gradw0_rad(:)
-    real (kind = dp_t), allocatable :: gradw0_cart(:,:,:,:)
 
     ! 1) Subtract (Utilde dot grad) Utilde term from old Utilde
     ! 2) Add forcing term to new Utilde
@@ -331,16 +326,6 @@ contains
 
        do k = lo(3), hi(3)
 
-          ! subtract (Utilde dot er) dw0/dr er term from wtilde only
-          gradw0 = (w0(k+1) - w0(k)) /dx(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                wbar = HALF*(wmac(i,j,k) + wmac(i,j,k+1))
-                unew(i,j,k,3) = unew(i,j,k,3) - dt * wbar * gradw0
-             enddo
-          enddo
-
-
           ! subtract (w0 dot grad) Utilde term
           wbar = HALF*(w0(k) + w0(k+1))
           do j = lo(2), hi(2)
@@ -359,34 +344,13 @@ contains
 
     else
 
-       allocate(gradw0_rad(0:nr_fine-1))
-       allocate(gradw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
-
-       do r=0,nr_fine-1
-          gradw0_rad(r) = (w0(r+1) - w0(r)) / dr(1)
-       enddo
-
-       call put_1d_array_on_cart_3d_sphr(.false.,.true.,gradw0_rad,gradw0_cart, &
-                                         lo,hi,dx,0)
-
-       !$OMP PARALLEL DO PRIVATE(i,j,k,Utilde_dot_er,gradux,gradvx,gradwx,graduy,gradvy,gradwy) &
+       !$OMP PARALLEL DO PRIVATE(i,j,k,gradux,gradvx,gradwx,graduy,gradvy,gradwy) &
        !$OMP PRIVATE(graduz,gradvz,gradwz,w0_gradur,w0_gradvr,w0_gradwr)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
-                ! subtract (Utilde dot er) dw0/dr er term from new Utilde.
-                Utilde_dot_er = HALF*(umac(i,j,k) + umac(i+1,j,k)) * normal(i,j,k,1) + &
-                                HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * normal(i,j,k,2) + &
-                                HALF*(wmac(i,j,k) + wmac(i,j,k+1)) * normal(i,j,k,3)
-
-
-                unew(i,j,k,1) = unew(i,j,k,1) - dt * Utilde_dot_er * gradw0_cart(i,j,k,1)
-                unew(i,j,k,2) = unew(i,j,k,2) - dt * Utilde_dot_er * gradw0_cart(i,j,k,2)
-                unew(i,j,k,3) = unew(i,j,k,3) - dt * Utilde_dot_er * gradw0_cart(i,j,k,3)
-
-
-                ! B) Subtract (w0 dot grad) Utilde term from new Utilde
+                ! Subtract (w0 dot grad) Utilde term from new Utilde
                 gradux = (uedgex(i+1,j,k,1) - uedgex(i,j,k,1))/dx(1)
                 gradvx = (uedgex(i+1,j,k,2) - uedgex(i,j,k,2))/dx(1)
                 gradwx = (uedgex(i+1,j,k,3) - uedgex(i,j,k,3))/dx(1)
@@ -422,8 +386,6 @@ contains
           enddo
        enddo
        !$OMP END PARALLEL DO
-
-       deallocate (gradw0_cart, gradw0_rad)
 
     end if
 
