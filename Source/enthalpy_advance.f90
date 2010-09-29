@@ -223,8 +223,8 @@ contains
        pred_comp = rhoh_comp
     end if
 
-    call make_edge_scal(sold,sedge,umac,scal_force,normal, &
-                        w0,w0mac,dx,dt,is_vel,the_bc_level, &
+    call make_edge_scal(sold,sedge,umac,scal_force, &
+                        dx,dt,is_vel,the_bc_level, &
                         pred_comp,dm+pred_comp,1,.false.,mla)
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then

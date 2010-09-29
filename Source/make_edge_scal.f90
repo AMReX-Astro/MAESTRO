@@ -22,7 +22,7 @@ module make_edge_scal_module
   
 contains
 
-  subroutine make_edge_scal(s,sedge,umac,force,normal,w0,w0mac,dx,dt,is_vel,the_bc_level, &
+  subroutine make_edge_scal(s,sedge,umac,force,dx,dt,is_vel,the_bc_level, &
                             start_scomp,start_bccomp,num_comp,is_conservative,mla)
 
     use bl_prof_module
@@ -37,9 +37,6 @@ contains
     type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: force(:)
-    type(multifab) , intent(in   ) :: normal(:)
-    real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     logical        , intent(in   ) :: is_vel
     type(bc_level) , intent(in   ) :: the_bc_level(:)
@@ -49,7 +46,7 @@ contains
 
     integer                  :: i,r,scomp,bccomp,n,n_1d
     integer                  :: lo(dm), hi(dm)
-    integer                  :: ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
+    integer                  :: ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
@@ -57,44 +54,16 @@ contains
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0xp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0yp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
-    real(kind=dp_t), pointer :: gw0p(:,:,:,:)
-    real(kind=dp_t), pointer :: nop(:,:,:,:)
-
-    real(kind=dp_t) :: gradw0_rad(1,0:nr_fine-1)
-    type(multifab)  :: gradw0_cart(nlevs)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_edge_scal")
 
-    do n=1,nlevs
-       call multifab_build(gradw0_cart(n),get_layout(s(n)),1,1)
-    end do
-
     ng_s  = nghost(s(1))
     ng_se = nghost(sedge(1,1))
     ng_um = nghost(umac(1,1))
     ng_f  = nghost(force(1))
-    ng_w0 = nghost(w0mac(1,1))
-    ng_n  = nghost(normal(1))
-    ng_gw = nghost(gradw0_cart(1))
-
-    ! make a Cartesian version of dw0/dr
-    if (spherical .eq. 1 .and. is_vel) then
-       do r=0,nr_fine-1
-          gradw0_rad(1,r) = (w0(1,r+1) - w0(1,r)) / dr(1)
-       enddo
-       call put_1d_array_on_cart(gradw0_rad,gradw0_cart,foextrap_comp,.false.,.false.,dx, &
-                                 the_bc_level,mla)
-    else
-       do n=1,nlevs
-          call setval(gradw0_cart(n),ZERO,all=.true.)
-       end do
-    endif
 
     do n=1,nlevs
        do i = 1, nboxes(s(n))
@@ -112,7 +81,7 @@ contains
                 call make_edge_scal_1d(n, sop(:,1,1,:), ng_s, &
                                        sepx(:,1,1,:), ng_se, &
                                         ump(:,1,1,1), ng_um, &
-                                       fp(:,1,1,:), ng_f, w0(n,:), &
+                                       fp(:,1,1,:), ng_f, &
                                        lo, hi, dx(n,:), dt, is_vel, &
                                        the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                        the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
@@ -127,7 +96,7 @@ contains
                 call make_edge_scal_2d(n, sop(:,:,1,:), ng_s, &
                                        sepx(:,:,1,:), sepy(:,:,1,:), ng_se, &
                                        ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
-                                       fp(:,:,1,:), ng_f, w0(n,:), &
+                                       fp(:,:,1,:), ng_f, &
                                        lo, hi, dx(n,:), dt, is_vel, &
                                        the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                        the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
@@ -139,11 +108,6 @@ contains
              wmp  => dataptr(  umac(n,3),i)
              sepy => dataptr(sedge(n,2),i)
              sepz => dataptr( sedge(n,3),i)
-             w0xp => dataptr(w0mac(n,1),i)
-             w0yp => dataptr(w0mac(n,2),i)
-             w0zp => dataptr(w0mac(n,3),i)
-             nop   => dataptr(normal(n), i)
-             gw0p => dataptr(gradw0_cart(n), i)
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
                 if (spherical .eq. 1) then
@@ -154,10 +118,8 @@ contains
                 call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
                                        sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                        ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                       ng_um, fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
-                                       w0(n_1d,:), w0xp(:,:,:,1), w0yp(:,:,:,1), &
-                                       w0zp(:,:,:,1), ng_w0, gw0p(:,:,:,1), ng_gw, lo, &
-                                       hi, dx(n,:), dt, is_vel, &
+                                       ng_um, fp(:,:,:,:), ng_f,  &
+                                       lo, hi, dx(n,:), dt, is_vel, &
                                        the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                        the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
                                        scomp, is_conservative)
@@ -178,16 +140,12 @@ contains
        enddo
     end if
 
-    do n=1,nlevs
-       call destroy(gradw0_cart(n))
-    end do
-
     call destroy(bpt)
     
   end subroutine make_edge_scal
   
   subroutine make_edge_scal_1d(n,s,ng_s,sedgex,ng_se,umac,ng_um, &
-                               force,ng_f,w0,lo,hi,dx,dt,is_vel,phys_bc,adv_bc, &
+                               force,ng_f,lo,hi,dx,dt,is_vel,phys_bc,adv_bc, &
                                comp,is_conservative)
 
     use geometry, only: nr
@@ -203,7 +161,6 @@ contains
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,:)
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_um:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,:)
-    real(kind=dp_t), intent(in   ) ::     w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
     integer        , intent(in   ) :: phys_bc(:,:)
@@ -284,26 +241,6 @@ contains
           sedgerx(i) = sedgerx(i) + dt2*force(i  ,comp)
        end if
 
-       ! add the (Utilde . e_r) d w_0 /dr e_r term here
-       ! umac contains w0 so we need to subtract it off
-
-       if (is_vel .and. comp .eq. 1) then
-          if (i .eq. 0) then
-             ! sedgelx unchanged since dw_0 / dr = 0
-             sedgerx(i) = sedgerx(i) &
-                  -(dt4/hx)*(umac(i+1)-w0(i+1)+umac(i)-w0(i))*(w0(i+1)-w0(i))
-          else if (i .eq. nr(n)) then
-             sedgelx(i) = sedgelx(i) &
-                  -(dt4/hx)*(umac(i)-w0(i)+umac(i-1)-w0(i-1))*(w0(i)-w0(i-1))
-             ! sedgerx unchanged since dw_0 / dr = 0
-          else
-             sedgelx(i) = sedgelx(i) &
-                  -(dt4/hx)*(umac(i)-w0(i)+umac(i-1)-w0(i-1))*(w0(i)-w0(i-1))
-             sedgerx(i) = sedgerx(i) &
-                  -(dt4/hx)*(umac(i+1)-w0(i+1)+umac(i)-w0(i))*(w0(i+1)-w0(i))
-          end if
-       end if
-
        ! make sedgex by solving Riemann problem
        ! boundary conditions enforced outside of i loop
        sedgex(i,comp) = merge(sedgelx(i),sedgerx(i),umac(i) .gt. ZERO)
@@ -371,7 +308,7 @@ contains
   end subroutine make_edge_scal_1d
   
   subroutine make_edge_scal_2d(n,s,ng_s,sedgex,sedgey,ng_se,umac,vmac,ng_um, &
-                               force,ng_f,w0,lo,hi,dx,dt,is_vel,phys_bc,adv_bc, &
+                               force,ng_f,lo,hi,dx,dt,is_vel,phys_bc,adv_bc, &
                                comp,is_conservative)
 
     use geometry, only: nr
@@ -389,7 +326,6 @@ contains
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)
-    real(kind=dp_t), intent(in   ) ::     w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
     integer        , intent(in   ) :: phys_bc(:,:)
@@ -669,15 +605,6 @@ contains
                   + dt2*force(i  ,j,comp)
           end if
 
-          ! add the (Utilde . e_r) d w_0 /dr e_r term here
-          ! vmac contains w0 so we need to subtract it off
-          if (is_vel .and. comp .eq. 2) then
-             sedgelx(i,j) = sedgelx(i,j) &
-                  -(dt4/hy)*(vmac(i-1,j)-w0(j)+vmac(i-1,j+1)-w0(j+1))*(w0(j+1)-w0(j))
-             sedgerx(i,j) = sedgerx(i,j) &
-                  -(dt4/hy)*(vmac(i  ,j)-w0(j)+vmac(i  ,j+1)-w0(j+1))*(w0(j+1)-w0(j))
-          end if
-
           ! make sedgex by solving Riemann problem
           ! boundary conditions enforced outside of i,j loop
           sedgex(i,j,comp) = merge(sedgelx(i,j),sedgerx(i,j),umac(i,j) .gt. ZERO)
@@ -762,25 +689,6 @@ contains
                   + dt2*force(i,j  ,comp)
           end if
 
-          ! add the (Utilde . e_r) d w_0 /dr e_r term here
-          ! vmac contains w0 so we need to subtract it off
-          if (is_vel .and. comp .eq. 2) then
-             if (j .eq. 0) then
-                ! sedgely unchanged since dw_0 / dr = 0
-                sedgery(i,j) = sedgery(i,j) &
-                     -(dt4/hy)*(vmac(i,j+1)-w0(j+1)+vmac(i,j  )-w0(j  ))*(w0(j+1)-w0(j  ))
-             else if (j .eq. nr(n)) then
-                sedgely(i,j) = sedgely(i,j) &
-                     -(dt4/hy)*(vmac(i,j  )-w0(j  )+vmac(i,j-1)-w0(j-1))*(w0(j  )-w0(j-1))
-                ! sedgery unchanged since dw_0 / dr = 0
-             else
-                sedgely(i,j) = sedgely(i,j) &
-                     -(dt4/hy)*(vmac(i,j  )-w0(j  )+vmac(i,j-1)-w0(j-1))*(w0(j  )-w0(j-1))
-                sedgery(i,j) = sedgery(i,j) &
-                     -(dt4/hy)*(vmac(i,j+1)-w0(j+1)+vmac(i,j  )-w0(j  ))*(w0(j+1)-w0(j  ))
-             end if
-          end if
-
           ! make sedgey by solving Riemann problem
           ! boundary conditions enforced outside of i,j loop
           sedgey(i,j,comp) = merge(sedgely(i,j),sedgery(i,j),vmac(i,j) .gt. ZERO)
@@ -849,8 +757,7 @@ contains
   end subroutine make_edge_scal_2d
 
   subroutine make_edge_scal_3d(n,s,ng_s,sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
-                               force,ng_f,normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0, &
-                               gradw0_cart,ng_gw,lo,hi,dx,dt,is_vel,phys_bc,adv_bc,comp, &
+                               force,ng_f,lo,hi,dx,dt,is_vel,phys_bc,adv_bc,comp, &
                                is_conservative)
 
     use geometry, only: spherical, nr
@@ -861,7 +768,7 @@ contains
     use ppm_module
     use probin_module, only: ppm_type
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
@@ -870,12 +777,6 @@ contains
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
-    real(kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
-    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: gradw0_cart(lo(1)-ng_gw:,lo(2)-ng_gw:,lo(3)-ng_gw:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
     integer        , intent(in   ) :: phys_bc(:,:)
@@ -2079,64 +1980,6 @@ contains
 
     deallocate(slx,srx,simhyz,simhzy)
 
-    if (is_vel) then
-       
-       ! add the (Utilde . e_r) d w_0 /dr e_r term here
-       if (spherical .eq. 0 .and. comp .eq. 3) then
-
-          !$OMP PARALLEL DO PRIVATE(i,j,k)
-          do k=ks,ke
-             do j=js,je
-                do i=is,ie+1
-                   ! wmac contains w0 so we need to subtract it off
-                   sedgelx(i,j,k) = sedgelx(i,j,k) &
-                        -(dt4/hz)*(wmac(i-1,j,k)-w0(k)+wmac(i-1,j,k+1)-w0(k+1))* &
-                        (w0(k+1)-w0(k))
-                   sedgerx(i,j,k) = sedgerx(i,j,k) &
-                        -(dt4/hz)*(wmac(i  ,j,k)-w0(k)+wmac(i  ,j,k+1)-w0(k+1))* &
-                        (w0(k+1)-w0(k))
-                enddo
-             enddo
-          enddo
-          !$OMP END PARALLEL DO
-
-       else if (spherical .eq. 1) then
-
-          !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er)
-          do k=ks,ke
-             do j=js,je
-                do i=is,ie+1
-                   ! u/v/wmac contain w0, so we need to subtract it off.
-                   ! left face centered about (i-1,j,k)
-                   Ut_dot_er = (HALF*(umac(i-1,j,k) + umac(i,j,k)) - &
-                        HALF*(w0macx(i-1,j,k)+w0macx(i,j,k)))*normal(i-1,j,k,1) + &
-                        (HALF*(vmac(i-1,j,k) + vmac(i-1,j+1,k)) - &
-                        HALF*(w0macy(i-1,j,k)+w0macy(i-1,j+1,k)))*normal(i-1,j,k,2) + &
-                        (HALF*(wmac(i-1,j,k) + wmac(i-1,j,k+1)) - &
-                        HALF*(w0macz(i-1,j,k)+w0macz(i-1,j,k+1)))*normal(i-1,j,k,3)
-
-                   sedgelx(i,j,k) = sedgelx(i,j,k) &
-                        - dt2*Ut_dot_er*gradw0_cart(i-1,j,k)*normal(i-1,j,k,comp)
-
-                   ! right face centered about (i,j,k)
-                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                        HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
-                        (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                        HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
-                        (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                        HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
-
-                   sedgerx(i,j,k) = sedgerx(i,j,k) &
-                        - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
-                enddo
-             enddo
-          enddo
-          !$OMP END PARALLEL DO
-
-       end if
-
-    end if
-
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks,ke
        do j=js,je
@@ -2261,64 +2104,6 @@ contains
 
     deallocate(sly,sry,simhxz,simhzx)
 
-    if (is_vel) then
-       
-       ! add the (Utilde . e_r) d w_0 /dr e_r term here
-       if (spherical .eq. 0 .and. comp .eq. 3) then
-
-          !$OMP PARALLEL DO PRIVATE(i,j,k)
-          do k=ks,ke
-             do j=js,je+1
-                do i=is,ie
-                   ! wmac contains w0 so we need to subtract it off
-                   sedgely(i,j,k) = sedgely(i,j,k) &
-                        -(dt4/hz)*(wmac(i,j-1,k)-w0(k)+wmac(i,j-1,k+1)-w0(k+1)) &
-                        *(w0(k+1)-w0(k))
-                   sedgery(i,j,k) = sedgery(i,j,k) &
-                        -(dt4/hz)*(wmac(i,j  ,k)-w0(k)+wmac(i,j  ,k+1)-w0(k+1)) &
-                        *(w0(k+1)-w0(k))
-                enddo
-             enddo
-          enddo
-          !$OMP END PARALLEL DO
-
-       else if (spherical .eq. 1) then
-
-          !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er)
-          do k=ks,ke
-             do j=js,je+1
-                do i=is,ie
-                   ! u/v/wmac contain w0, so we need to subtract it off.  
-                   ! left face centered about (i,j-1,k)
-                   Ut_dot_er = (HALF*(umac(i,j-1,k) + umac(i+1,j-1,k)) - &
-                        HALF*(w0macx(i,j-1,k)+w0macx(i+1,j-1,k)))*normal(i,j-1,k,1) + &
-                        (HALF*(vmac(i,j-1,k) + vmac(i,j,k)) - &
-                        HALF*(w0macy(i,j-1,k)+w0macy(i,j,k)))*normal(i,j-1,k,2) + &
-                        (HALF*(wmac(i,j-1,k) + wmac(i,j-1,k+1)) - &
-                        HALF*(w0macz(i,j-1,k)+w0macz(i,j-1,k+1)))*normal(i,j-1,k,3)
-
-                   sedgely(i,j,k) = sedgely(i,j,k) &
-                        - dt2*Ut_dot_er*gradw0_cart(i,j-1,k)*normal(i,j-1,k,comp)
-
-                   ! right face centered about (i,j,k)
-                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                        HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
-                        (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                        HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
-                        (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                        HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
-
-                   sedgery(i,j,k) = sedgery(i,j,k) &
-                        - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
-                enddo
-             enddo
-          enddo
-          !$OMP END PARALLEL DO
-
-       end if
-
-    end if
-
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks,ke
        do j=js,je+1
@@ -2442,76 +2227,6 @@ contains
     end if
 
     deallocate(slz,srz,simhxy,simhyx)
-
-    if (is_vel) then
-       
-       ! add the (Utilde . e_r) d w_0 /dr e_r term here
-       if (spherical .eq. 0 .and. comp .eq. 3) then
-
-          !$OMP PARALLEL DO PRIVATE(i,j,k)
-          do k=ks,ke+1
-             do j=js,je
-                do i=is,ie
-                   ! wmac contains w0 so we need to subtract it off
-                   if (k .eq. 0) then
-                      ! sedgelz unchanged since dw_0 / dr = 0
-                      sedgerz(i,j,k) = sedgerz(i,j,k) &
-                           -(dt4/hz)*(wmac(i,j,k)-w0(k)+wmac(i,j,k+1)-w0(k+1)) &
-                           *(w0(k+1)-w0(k  ))                      
-                   else if (k .eq. nr(n)) then
-                      sedgelz(i,j,k) = sedgelz(i,j,k) &
-                           -(dt4/hz)*(wmac(i,j,k)-w0(k)+wmac(i,j,k-1)-w0(k-1)) &
-                           *(w0(k  )-w0(k-1))
-                      ! sedgerz unchanged since dw_0 / dr = 0
-                   else
-                      sedgelz(i,j,k) = sedgelz(i,j,k) &
-                           -(dt4/hz)*(wmac(i,j,k)-w0(k)+wmac(i,j,k-1)-w0(k-1)) &
-                           *(w0(k  )-w0(k-1))
-                      sedgerz(i,j,k) = sedgerz(i,j,k) &
-                           -(dt4/hz)*(wmac(i,j,k)-w0(k)+wmac(i,j,k+1)-w0(k+1)) &
-                           *(w0(k+1)-w0(k  ))
-                   end if
-                enddo
-             enddo
-          enddo
-          !$OMP END PARALLEL DO
-
-       else if (spherical .eq. 1) then
-
-          !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er)
-          do k=ks,ke+1
-             do j=js,je
-                do i=is,ie
-                   ! u/v/wmac contain w0, so we need to subtract it off.  
-                   ! left face centered about (i,j,k-1)
-                   Ut_dot_er = (HALF*(umac(i,j,k-1) + umac(i+1,j,k-1)) - &
-                        HALF*(w0macx(i,j,k-1)+w0macx(i+1,j,k-1)))*normal(i,j,k-1,1) + &
-                        (HALF*(vmac(i,j,k-1) + vmac(i,j+1,k-1)) - &
-                        HALF*(w0macy(i,j,k-1)+w0macy(i,j+1,k-1)))*normal(i,j,k-1,2) + &
-                        (HALF*(wmac(i,j,k-1) + wmac(i,j,k)) - &
-                        HALF*(w0macz(i,j,k-1)+w0macz(i,j,k)))*normal(i,j,k-1,3)
-
-                   sedgelz(i,j,k) = sedgelz(i,j,k) &
-                        - dt2*Ut_dot_er*gradw0_cart(i,j,k-1)*normal(i,j,k-1,comp)
-
-                   ! right face centered about (i,j,k)
-                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                        HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
-                        (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                        HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
-                        (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                        HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
-
-                   sedgerz(i,j,k) = sedgerz(i,j,k) &
-                        - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
-                enddo
-             enddo
-          enddo
-          !$OMP END PARALLEL DO
-
-       end if
-
-    end if
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
     do k=ks,ke+1

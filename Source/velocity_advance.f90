@@ -75,6 +75,8 @@ contains
                       rho0_old,grav_cell_old,dx, &
                       w0_force,w0_force_cart_vec,the_bc_level,mla)
 
+    call add_utilde_force(force,normal,umac,w0,dx,the_bc_level,mla)
+
     !********************************************************
     !     Add w0 to MAC velocities (trans velocities already have w0).
     !********************************************************
@@ -91,7 +93,7 @@ contains
        end do
     end do
 
-    call make_edge_scal(uold,uedge,umac,force,normal,w0,w0mac, &
+    call make_edge_scal(uold,uedge,umac,force, &
                         dx,dt,is_vel,the_bc_level,1,1,dm,.false.,mla)
 
     !********************************************************

@@ -129,13 +129,13 @@ contains
     call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,foextrap_comp,.true.,the_bc_level)
 
     ! predict X at the edges
-    call make_edge_scal(sold,sedge,umac,scal_force,normal, &
-                        w0,w0mac,dx,dt,is_vel,the_bc_level, &
+    call make_edge_scal(sold,sedge,umac,scal_force, &
+                        dx,dt,is_vel,the_bc_level, &
                         spec_comp,dm+spec_comp,nspec,.false.,mla)
 
     ! predict rho' at the edges
-    call make_edge_scal(sold,sedge,umac,scal_force,normal, &
-                        w0,w0mac,dx,dt,is_vel,the_bc_level, &
+    call make_edge_scal(sold,sedge,umac,scal_force, &
+                        dx,dt,is_vel,the_bc_level, &
                         rho_comp,dm+rho_comp,1,.false.,mla)
 
     ! convert rho' -> rho in sold
@@ -148,8 +148,8 @@ contains
     !     Create edge states of tracers
     !**************************************************************************
     if (ntrac .ge. 1) then
-       call make_edge_scal(sold,sedge,umac,scal_force,normal, &
-                           w0,w0mac,dx,dt,is_vel,the_bc_level, &
+       call make_edge_scal(sold,sedge,umac,scal_force, &
+                           dx,dt,is_vel,the_bc_level, &
                            trac_comp,dm+trac_comp,ntrac,.false.,mla)
     end if
 
