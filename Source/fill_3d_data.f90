@@ -598,7 +598,7 @@ contains
 
     call build(bpt, "make_w0mac")
 
-    if (dm .eq. 2 .or. spherical .eq. 0) then
+    if (spherical .eq. 0) then
        call bl_error('Error: only call make_w0mac for spherical')
     end if
 
@@ -991,7 +991,7 @@ contains
 
     call build(bpt, "make_s0mac")
 
-    if (dm .eq. 2 .or. spherical .eq. 0) then
+    if (spherical .eq. 0) then
        call bl_error('Error: only call make_s0mac for spherical')
     end if
 
