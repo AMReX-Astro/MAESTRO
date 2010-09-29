@@ -537,7 +537,7 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
-    call build(bpt, "mk_vel_force")
+    call build(bpt, "add_utilde_force")
 
     do n=1,nlevs
        call multifab_build(gradw0_cart(n),get_layout(vel_force(n)),1,1)
@@ -573,6 +573,7 @@ contains
           call add_utilde_force_2d(n, lo, hi, fp(:,:,1,:), ng_f, &
                                    ump(:,:,1,1), vmp(:,:,1,1), ng_u, w0(n,:))
           case (3)
+          vmp  => dataptr(umac(n,2),i)
           wmp  => dataptr(umac(n,3),i)
           gwp  => dataptr(gradw0_cart(n),i)
           if (spherical .eq. 1) then
@@ -679,9 +680,9 @@ contains
              do i=lo(1)-1,hi(1)+1
 
                 Ut_dot_er = &
-                     HALF*(umac(i-1,j,k)+umac(i  ,j  ,k))*normal(i-1,j,k,1) + &
-                     HALF*(vmac(i-1,j,k)+vmac(i-1,j+1,k))*normal(i-1,j,k,2) + &
-                     HALF*(wmac(i-1,j,k)+wmac(i-1,j,k+1))*normal(i-1,j,k,3)
+                     HALF*(umac(i,j,k)+umac(i+1,j  ,k  ))*normal(i,j,k,1) + &
+                     HALF*(vmac(i,j,k)+vmac(i  ,j+1,k  ))*normal(i,j,k,2) + &
+                     HALF*(wmac(i,j,k)+wmac(i  ,j,  k+1))*normal(i,j,k,3)
 
                 force(i,j,k,1) = force(i,j,k,1) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
                 force(i,j,k,2) = force(i,j,k,2) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
