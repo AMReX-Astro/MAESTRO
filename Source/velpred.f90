@@ -72,7 +72,7 @@ contains
           hi   =  upb(get_box(u(n),i))
           select case (dm)
           case (1)
-             call velpred_1d(n, uop(:,1,1,:), ng_u, &
+             call velpred_1d(uop(:,1,1,:), ng_u, &
                              ufp(:,1,1,:), ng_uf, &
                              ump(:,1,1,1), ng_um, &
                              fp(:,1,1,1), ng_f, w0(n,:), lo, hi, dx(n,:), dt, &
@@ -81,7 +81,7 @@ contains
           case (2)
              vtp  => dataptr(utrans(n,2),i)
              vmp  => dataptr(  umac(n,2),i)
-             call velpred_2d(n, uop(:,:,1,:), ng_u, &
+             call velpred_2d(uop(:,:,1,:), ng_u, &
                              ufp(:,:,1,:), ng_uf, &
                              utp(:,:,1,1), vtp(:,:,1,1), ng_ut, &
                              ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
@@ -102,7 +102,7 @@ contains
              else
                 n_1d = n
              end if
-             call velpred_3d(n, uop(:,:,:,:), ng_u, &
+             call velpred_3d(uop(:,:,:,:), ng_u, &
                              ufp(:,:,:,:), ng_uf, &
                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
@@ -125,7 +125,7 @@ contains
 
   end subroutine velpred
 
-  subroutine velpred_1d(n,u,ng_u,ufull,ng_uf,umac,ng_um,force,ng_f, &
+  subroutine velpred_1d(u,ng_u,ufull,ng_uf,umac,ng_um,force,ng_f, &
                         w0,lo,hi,dx,dt,phys_bc,adv_bc)
 
     use bc_module
@@ -135,7 +135,7 @@ contains
     use probin_module, only: ppm_type
     use ppm_module
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_uf,ng_um,ng_f
+    integer        , intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:)
@@ -242,7 +242,7 @@ contains
 
   end subroutine velpred_1d
 
-  subroutine velpred_2d(n,u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,umac,vmac,ng_um,force,ng_f, &
+  subroutine velpred_2d(u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,umac,vmac,ng_um,force,ng_f, &
                         w0,lo,hi,dx,dt,phys_bc,adv_bc)
 
     use bc_module
@@ -252,7 +252,7 @@ contains
     use probin_module, only: ppm_type
     use ppm_module
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_uf,ng_um,ng_ut,ng_f
+    integer        , intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_um,ng_ut,ng_f
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(in   ) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
@@ -587,7 +587,7 @@ contains
 
   end subroutine velpred_2d
 
-  subroutine velpred_3d(n,u,ng_u,ufull,ng_uf, &
+  subroutine velpred_3d(u,ng_u,ufull,ng_uf, &
                         umac,vmac,wmac,ng_um,utrans,vtrans,wtrans,ng_ut, &
                         force,ng_f,w0,w0macx,w0macy,w0macz,ng_w0, &
                         lo,hi,dx,dt,phys_bc,adv_bc)
@@ -600,7 +600,7 @@ contains
     use probin_module, only: ppm_type
     use ppm_module
 
-    integer        , intent(in   ) :: n,lo(:),hi(:)
+    integer        , intent(in   ) :: lo(:),hi(:)
     integer        , intent(in   ) :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)

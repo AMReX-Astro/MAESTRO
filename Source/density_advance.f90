@@ -14,7 +14,7 @@ module density_advance_module
 contains
 
   subroutine density_advance(mla,which_step,sold,snew,sedge,sflux,scal_force,&
-                             umac,w0,w0mac,etarhoflux,normal, &
+                             umac,w0,w0mac,etarhoflux, &
                              rho0_old,rho0_new,p0_new, &
                              rho0_predicted_edge,dx,dt,the_bc_level)
 
@@ -46,7 +46,6 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
     type(multifab) , intent(inout) :: etarhoflux(:)
-    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)

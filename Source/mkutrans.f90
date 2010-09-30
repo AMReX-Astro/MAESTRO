@@ -61,7 +61,7 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call mkutrans_2d(n,up(:,:,1,:), ng_u, &
+             call mkutrans_2d(up(:,:,1,:), ng_u, &
                               ufp(:,:,1,:), ng_uf, &
                               utp(:,:,1,1), vtp(:,:,1,1), ng_ut, w0(n,:), &
                               lo,hi,dx(n,:),dt,&
@@ -77,7 +77,7 @@ contains
              else
                 n_1d = n
              end if
-             call mkutrans_3d(n, up(:,:,:,:), ng_u, &
+             call mkutrans_3d(up(:,:,:,:), ng_u, &
                               ufp(:,:,:,:), ng_uf, &
                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
                               w0(n_1d,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1),&
@@ -107,7 +107,7 @@ contains
 
   end subroutine mkutrans
 
-  subroutine mkutrans_2d(n,u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,w0, &
+  subroutine mkutrans_2d(u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,w0, &
                          lo,hi,dx,dt,adv_bc,phys_bc)
 
     use bc_module
@@ -116,7 +116,7 @@ contains
     use probin_module, only: ppm_type
     use ppm_module
 
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng_u,ng_uf,ng_ut
+    integer,         intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_ut
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
@@ -307,7 +307,7 @@ contains
 
   end subroutine mkutrans_2d
   
-  subroutine mkutrans_3d(n,u,ng_u,ufull,ng_uf,utrans,vtrans,wtrans,ng_ut, &
+  subroutine mkutrans_3d(u,ng_u,ufull,ng_uf,utrans,vtrans,wtrans,ng_ut, &
                          w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx,dt,adv_bc,phys_bc)
 
     use bc_module
@@ -317,7 +317,7 @@ contains
     use probin_module, only: ppm_type
     use ppm_module
     
-    integer,         intent(in)    :: n,lo(:),hi(:),ng_u,ng_uf,ng_ut,ng_w0    
+    integer,         intent(in)    :: lo(:),hi(:),ng_u,ng_uf,ng_ut,ng_w0    
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)

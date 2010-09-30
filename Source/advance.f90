@@ -506,7 +506,7 @@ contains
     end do
 
     call density_advance(mla,1,s1,s2,sedge,sflux,scal_force,umac,w0,w0mac,etarhoflux, &
-                         normal,rho0_old,rho0_new,p0_new,rho0_predicted_edge, &
+                         rho0_old,rho0_new,p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
 
     ! Now compute the new etarho
@@ -972,7 +972,7 @@ contains
     end do
 
     call density_advance(mla,2,s1,s2,sedge,sflux,scal_force,umac,w0,w0mac,etarhoflux, &
-                         normal,rho0_old,rho0_new,p0_new,rho0_predicted_edge,dx,dt, &
+                         rho0_old,rho0_new,p0_new,rho0_predicted_edge,dx,dt, &
                          the_bc_tower%bc_tower_array)
 
     ! Now compute the new etarho
