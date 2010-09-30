@@ -13,11 +13,11 @@ module velpred_module
 
 contains
 
-  subroutine velpred(u,ufull,umac,utrans,force,normal,w0,w0mac,dx,dt,the_bc_level,mla)
+  subroutine velpred(u,ufull,umac,utrans,force,w0,w0mac,dx,dt,the_bc_level,mla)
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: nr_fine, dr, spherical, dm, nlevs
+    use geometry, only: spherical, dm, nlevs
     use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
@@ -27,15 +27,14 @@ contains
     type(multifab) , intent(in   ) :: ufull(:)
     type(multifab) , intent(inout) :: umac(:,:)
     type(multifab) , intent(in   ) :: utrans(:,:),force(:)
-    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(in   ) :: mla
 
-    integer                  :: i,r,n,n_1d
-    integer                  :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0,ng_n
+    integer                  :: i,n,n_1d
+    integer                  :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0
     integer                  :: lo(dm), hi(dm)
     real(kind=dp_t), pointer :: uop(:,:,:,:)
     real(kind=dp_t), pointer :: ufp(:,:,:,:)
@@ -49,7 +48,6 @@ contains
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
-    real(kind=dp_t), pointer :: nop(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -61,7 +59,6 @@ contains
     ng_ut = nghost(utrans(1,1))
     ng_f  = nghost(force(1))
     ng_w0 = nghost(w0mac(1,1))
-    ng_n  = nghost(normal(1))
 
     do n=1,nlevs
        do i = 1, nboxes(u(n))
@@ -100,7 +97,6 @@ contains
              w0xp  => dataptr(w0mac(n,1),i)
              w0yp  => dataptr(w0mac(n,2),i)
              w0zp  => dataptr(w0mac(n,3),i)
-             nop => dataptr(normal(n),i)
              if (spherical .eq. 1) then
                 n_1d = 1
              else
@@ -110,7 +106,7 @@ contains
                              ufp(:,:,:,:), ng_uf, &
                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
-                             fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, &
+                             fp(:,:,:,:), ng_f, &
                              w0(n_1d,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
                              ng_w0, lo, hi, dx(n,:), dt, &
                              the_bc_level(n)%phys_bc_level_array(i,:,:), &
@@ -132,7 +128,6 @@ contains
   subroutine velpred_1d(n,u,ng_u,ufull,ng_uf,umac,ng_um,force,ng_f, &
                         w0,lo,hi,dx,dt,phys_bc,adv_bc)
 
-    use geometry, only: nr
     use bc_module
     use slope_module
     use bl_constants_module
@@ -155,9 +150,6 @@ contains
 
     real(kind=dp_t), allocatable :: Ipu(:)
     real(kind=dp_t), allocatable :: Imu(:)
-
-    ! these correspond to u_L^x, etc.
-    real(kind=dp_t), allocatable :: ulx(:),urx(:)
 
     ! these correspond to umac_L, etc.
     real(kind=dp_t), allocatable :: umacl(:),umacr(:)
@@ -185,7 +177,7 @@ contains
     if (ppm_type .eq. 0) then
        call slopex_1d(u,slopex,lo,hi,ng_u,1,adv_bc)
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_1d(n,u(:,1),ng_u,ufull(:,1),ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_1d(u(:,1),ng_u,ufull(:,1),ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
     end if
 
     !******************************************************************
@@ -253,7 +245,6 @@ contains
   subroutine velpred_2d(n,u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,umac,vmac,ng_um,force,ng_f, &
                         w0,lo,hi,dx,dt,phys_bc,adv_bc)
 
-    use geometry, only: nr
     use bc_module
     use slope_module
     use bl_constants_module
@@ -291,7 +282,7 @@ contains
     real(kind=dp_t), allocatable :: umacl(:,:),umacr(:,:)
     real(kind=dp_t), allocatable :: vmacl(:,:),vmacr(:,:)
 
-    real(kind=dp_t) :: hx, hy, dt2, dt4, uavg, vlo, vhi, maxu, minu
+    real(kind=dp_t) :: hx, hy, dt2, dt4, uavg, maxu, minu
 
     integer :: i,j,is,js,ie,je
 
@@ -331,8 +322,8 @@ contains
        call slopex_2d(u,slopex,lo,hi,ng_u,2,adv_bc)
        call slopey_2d(u,slopey,lo,hi,ng_u,2,adv_bc)
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_2d(n,u(:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_2d(n,u(:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_2d(u(:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_2d(u(:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
        
     !******************************************************************
@@ -598,19 +589,19 @@ contains
 
   subroutine velpred_3d(n,u,ng_u,ufull,ng_uf, &
                         umac,vmac,wmac,ng_um,utrans,vtrans,wtrans,ng_ut, &
-                        force,ng_f,normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0, &
+                        force,ng_f,w0,w0macx,w0macy,w0macz,ng_w0, &
                         lo,hi,dx,dt,phys_bc,adv_bc)
 
     use bc_module
     use slope_module
     use bl_constants_module
-    use geometry, only: spherical, nr
+    use geometry, only: spherical
     use variables, only: rel_eps
     use probin_module, only: ppm_type
     use ppm_module
 
     integer        , intent(in   ) :: n,lo(:),hi(:)
-    integer        , intent(in   ) :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_n,ng_w0
+    integer        , intent(in   ) :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
@@ -620,7 +611,6 @@ contains
     real(kind=dp_t), intent(in   ) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
     real(kind=dp_t), intent(in   ) :: wtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
-    real(kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
@@ -677,7 +667,6 @@ contains
     real(kind=dp_t), allocatable:: wmacl(:,:,:),wmacr(:,:,:)
 
     real(kind=dp_t) :: hx, hy, hz, dt2, dt4, dt6, uavg, maxu, minu
-    real(kind=dp_t) :: ulo, uhi, vlo, vhi, wlo, whi, Ut_dot_er
 
     integer :: i,j,k,is,js,ie,je,ks,ke,ung
 
@@ -719,9 +708,9 @@ contains
        !$OMP END PARALLEL DO
        call slopez_3d(u,slopez,lo,hi,ng_u,3,adv_bc)
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(n,u(:,:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_3d(n,u(:,:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
-       call ppm_3d(n,u(:,:,:,3),ng_u,ufull,ng_uf,Ipw,Imw,lo,hi,adv_bc(:,:,3),dx,dt)
+       call ppm_3d(u(:,:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_3d(u(:,:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_3d(u(:,:,:,3),ng_u,ufull,ng_uf,Ipw,Imw,lo,hi,adv_bc(:,:,3),dx,dt)
     end if
 
     !******************************************************************

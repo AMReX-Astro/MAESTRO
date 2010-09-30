@@ -19,7 +19,7 @@ module divu_iter_module
 
 contains
 
-  subroutine divu_iter(istep_divu_iter,uold,sold,pi,gpi,normal,thermal, &
+  subroutine divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
                        w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
@@ -47,7 +47,6 @@ contains
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(inout) :: pi(:)
     type(multifab) , intent(inout) :: gpi(:)
-    type(multifab) , intent(in   ) :: normal(:)
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
@@ -240,7 +239,7 @@ contains
     dt      = HUGE(dt)
 
     call estdt(mla,the_bc_tower,uold,sold,gpi,Source_old,dSdt, &
-               normal,w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
+               w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        print*,"Call to estdt at end of istep_divu_iter =",istep_divu_iter

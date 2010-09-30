@@ -118,7 +118,7 @@ contains
     !     Update the velocity with convective differencing
     !********************************************************
     
-    call update_velocity(uold,unew,umac,uedge,force,normal,w0,w0mac, &
+    call update_velocity(uold,unew,umac,uedge,force,w0,w0mac, &
                          dx,dt,sponge,mla,the_bc_level)
 
     do n = 1, nlevs

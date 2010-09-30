@@ -12,7 +12,7 @@ module update_vel_module
 
 contains
 
-  subroutine update_velocity(uold,unew,umac,uedge,force,normal,w0,w0mac,dx,dt, &
+  subroutine update_velocity(uold,unew,umac,uedge,force,w0,w0mac,dx,dt, &
                              sponge,mla,the_bc_level)
 
     use bl_prof_module
@@ -27,7 +27,6 @@ contains
     type(multifab)    , intent(in   ) :: umac(:,:)
     type(multifab)    , intent(in   ) :: uedge(:,:)
     type(multifab)    , intent(in   ) :: force(:)
-    type(multifab)    , intent(in   ) :: normal(:)
     real (kind = dp_t), intent(in   ) :: w0(:,0:)
     type(multifab)    , intent(in   ) :: w0mac(:,:)
     real (kind = dp_t), intent(in   ) :: dx(:,:)
@@ -39,7 +38,7 @@ contains
     ! local
     integer :: i,n,n_1d
     integer :: lo(dm),hi(dm)
-    integer :: ng_uo,ng_un,ng_um,ng_ue,ng_sp,ng_f,ng_n,ng_w0
+    integer :: ng_uo,ng_un,ng_um,ng_ue,ng_sp,ng_f,ng_w0
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     real(kind=dp_t), pointer:: unp(:,:,:,:)
@@ -51,7 +50,6 @@ contains
     real(kind=dp_t), pointer:: uepz(:,:,:,:)
     real(kind=dp_t), pointer:: spp(:,:,:,:)
     real(kind=dp_t), pointer:: fp(:,:,:,:)
-    real(kind=dp_t), pointer:: nop(:,:,:,:)
     real(kind=dp_t), pointer:: w0xp(:,:,:,:)
     real(kind=dp_t), pointer:: w0yp(:,:,:,:)
     real(kind=dp_t), pointer:: w0zp(:,:,:,:)
@@ -66,7 +64,6 @@ contains
     ng_ue = nghost(uedge(1,1))
     ng_sp = nghost(sponge(1))
     ng_f  = nghost(force(1))
-    ng_n  = nghost(normal(1))
     ng_w0 = nghost(w0mac(1,1))
 
     do n = 1, nlevs
@@ -104,7 +101,6 @@ contains
              w0xp   => dataptr(w0mac(n,1),i)
              w0yp   => dataptr(w0mac(n,2),i)
              w0zp   => dataptr(w0mac(n,3),i)
-             nop   =>  dataptr(normal(n),i)
              if (spherical .eq. 1) then
                 n_1d = 1
              else
@@ -113,7 +109,7 @@ contains
              call update_velocity_3d(uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
                                      ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                      uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
-                                     fp(:,:,:,:), ng_f, nop(:,:,:,:), ng_n, w0(n_1d,:), &
+                                     fp(:,:,:,:), ng_f, w0(n_1d,:), &
                                      w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
                                      ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
           end select
@@ -250,7 +246,7 @@ contains
 
   subroutine update_velocity_3d(uold,ng_uo,unew,ng_un,umac,vmac,wmac,ng_um, &
                                 uedgex,uedgey,uedgez,ng_ue,force,ng_f, &
-                                normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx,dt, &
+                                w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx,dt, &
                                 sponge,ng_sp)
 
     use fill_3d_module
@@ -259,7 +255,7 @@ contains
     use probin_module, only: do_sponge
 
     integer, intent(in) :: lo(:), hi(:)
-    integer, intent(in) :: ng_uo, ng_un, ng_um, ng_ue, ng_f, ng_n, ng_w0, ng_sp
+    integer, intent(in) :: ng_uo, ng_un, ng_um, ng_ue, ng_f, ng_w0, ng_sp
     real (kind = dp_t), intent(in   ) ::    uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
     real (kind = dp_t), intent(  out) ::    unew(lo(1)-ng_un:,lo(2)-ng_un:,lo(3)-ng_un:,:)
     real (kind = dp_t), intent(in   ) ::    umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
@@ -269,7 +265,6 @@ contains
     real (kind = dp_t), intent(in   ) ::  uedgey(lo(1)-ng_ue:,lo(2)-ng_ue:,lo(3)-ng_ue:,:)
     real (kind = dp_t), intent(in   ) ::  uedgez(lo(1)-ng_ue:,lo(2)-ng_ue:,lo(3)-ng_ue:,:)
     real (kind = dp_t), intent(in   ) ::   force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
-    real (kind = dp_t), intent(in   ) ::  normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
     real (kind = dp_t), intent(in   ) ::  sponge(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:) 
     real (kind = dp_t), intent(in   ) ::      w0(0:)
     real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
@@ -278,14 +273,13 @@ contains
     real (kind = dp_t), intent(in   ) ::      dx(:)
     real (kind = dp_t), intent(in   ) :: dt
 
-    integer :: i, j, k, r
+    integer :: i, j, k
     real (kind = dp_t) ubar,vbar,wbar
     real (kind = dp_t) ugradu,ugradv,ugradw
     real (kind = dp_t) :: gradux,graduy,graduz
     real (kind = dp_t) :: gradvx,gradvy,gradvz
     real (kind = dp_t) :: gradwx,gradwy,gradwz
     real (kind = dp_t) :: w0_gradur,w0_gradvr,w0_gradwr
-    real (kind = dp_t) :: Utilde_dot_er
 
     ! 1) Subtract (Utilde dot grad) Utilde term from old Utilde
     ! 2) Add forcing term to new Utilde

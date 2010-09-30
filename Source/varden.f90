@@ -340,7 +340,7 @@ subroutine varden()
 
      do istep_divu_iter=1,init_divu_iter
 
-        call divu_iter(istep_divu_iter,uold,sold,pi,gpi,normal,thermal2, &
+        call divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal2, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old, &
                        gamma1bar,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
@@ -783,7 +783,7 @@ subroutine varden()
            dt = 1.d20
 
            call estdt(mla,the_bc_tower,uold,sold,gpi,Source_old,dSdt, &
-                      normal,w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
+                      w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
 
            if (parallel_IOProcessor() .and. verbose .ge. 1) then
               print*,''

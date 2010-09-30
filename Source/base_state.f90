@@ -47,8 +47,6 @@ contains
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
     real(kind=dp_t) :: sumX
 
-    real(kind=dp_t) :: min_dens, max_dens, min_temp, max_temp
-
     type(bl_prof_timer), save :: bpt
     
     real(kind=dp_t), parameter :: TINY = 1.0d-10
@@ -62,7 +60,6 @@ contains
 
 887 format(78('-'))
 888 format(a60,g18.10)
-889 format(a60)
 
     if (firstCall) then
 

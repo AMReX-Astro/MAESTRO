@@ -67,7 +67,7 @@ contains
     real(kind=dp_t), pointer ::   fp(:,:,:,:)
     real(kind=dp_t), pointer ::   rp(:,:,:,:)
     real(kind=dp_t), pointer ::  w0p(:,:,:,:)
-    integer                  :: i,comp,lo(dm),hi(dm)
+    integer                  :: i,lo(dm),hi(dm)
     integer                  :: ng_s,ng_f,ng_gp,n,ng_uo,ng_um
    
     type(multifab) :: w0_cart(mla%nlevel)
@@ -570,7 +570,7 @@ contains
           case (2)
           vmp  => dataptr(umac(n,2),i)
           call add_utilde_force_2d(n, lo, hi, fp(:,:,1,:), ng_f, &
-                                   ump(:,:,1,1), vmp(:,:,1,1), ng_u, w0(n,:))
+                                   vmp(:,:,1,1), ng_u, w0(n,:))
           case (3)
           vmp  => dataptr(umac(n,2),i)
           wmp  => dataptr(umac(n,3),i)
@@ -623,14 +623,13 @@ contains
 
   end subroutine add_utilde_force_1d
 
-  subroutine add_utilde_force_2d(n,lo,hi,force,ng_f,umac,vmac,ng_u,w0)
+  subroutine add_utilde_force_2d(n,lo,hi,force,ng_f,vmac,ng_u,w0)
 
     use geometry, only: spherical, nr, dr
     use bl_constants_module
 
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_u
     real(kind=dp_t), intent(inout) ::       force(lo(1)-ng_f :,lo(2)-ng_f :,:)
-    real(kind=dp_t), intent(in   ) ::        umac(lo(1)-ng_u :,lo(2)-ng_u :)
     real(kind=dp_t), intent(in   ) ::        vmac(lo(1)-ng_u :,lo(2)-ng_u :)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     

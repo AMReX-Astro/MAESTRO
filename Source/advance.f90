@@ -592,7 +592,7 @@ contains
     end if
 
     call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,thermal1,umac,w0,w0mac, &
-                          normal,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
+                          rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                           tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
     do n = 1, nlevs
@@ -1058,7 +1058,7 @@ contains
     end if
 
     call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,thermal1,umac,w0,w0mac, &
-                          normal,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
+                          rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                           tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs

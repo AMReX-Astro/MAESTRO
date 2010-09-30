@@ -26,7 +26,7 @@ module estdt_module
 
 contains
 
-  subroutine estdt(mla,the_bc_tower,u,s,gpi,divU,dSdt,normal,w0,rho0,p0,gamma1bar, &
+  subroutine estdt(mla,the_bc_tower,u,s,gpi,divU,dSdt,w0,rho0,p0,gamma1bar, &
                    grav,dx,cflfac,dt)
 
     use bl_prof_module
@@ -44,7 +44,6 @@ contains
     type(multifab) , intent(in ) :: gpi(:)
     type(multifab) , intent(in ) :: divU(:)
     type(multifab) , intent(in ) :: dSdt(:)
-    type(multifab) , intent(in ) :: normal(:)
     real(kind=dp_t), intent(in ) :: w0(:,0:)
     real(kind=dp_t), intent(in ) :: rho0(:,0:)
     real(kind=dp_t), intent(in ) :: p0(:,0:)

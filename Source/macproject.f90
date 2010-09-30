@@ -144,7 +144,7 @@ contains
        call divumac(umac,rh,dx,mla%mba%rr,.true.)
     end if
 
-    call mk_mac_coeffs(mla,rho,beta,the_bc_tower)
+    call mk_mac_coeffs(mla,rho,beta)
 
     if (use_div_coeff_1d) then
        do n = 1,nlevs
@@ -451,7 +451,7 @@ contains
          select case (dm)
          case (1)
             call mult_edge_by_1d_coeff_1d(ump(:,1,1,1), ng_um, &
-                                          div_coeff(lo(dm):), div_coeff_edge(lo(dm):), &
+                                          div_coeff_edge(lo(dm):), &
                                           do_mult)
          case (2)
             vmp => dataptr(edge(2), i)
@@ -469,11 +469,10 @@ contains
 
     end subroutine mult_edge_by_1d_coeff
 
-    subroutine mult_edge_by_1d_coeff_1d(uedge,ng_um,div_coeff,div_coeff_edge,do_mult)
+    subroutine mult_edge_by_1d_coeff_1d(uedge,ng_um,div_coeff_edge,do_mult)
 
       integer                        :: ng_um
       real(kind=dp_t), intent(inout) :: uedge(-ng_um:)
-      real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_edge(0:)
       logical        , intent(in   ) :: do_mult
 
@@ -571,7 +570,7 @@ contains
 
     end subroutine mult_edge_by_1d_coeff_3d
 
-    subroutine mk_mac_coeffs(mla,rho,beta,the_bc_tower)
+    subroutine mk_mac_coeffs(mla,rho,beta)
 
       use geometry, only: dm
       use ml_restriction_module, only: ml_edge_restriction
@@ -579,7 +578,6 @@ contains
       type(ml_layout), intent(in   ) :: mla
       type(multifab ), intent(in   ) :: rho(:)
       type(multifab ), intent(inout) :: beta(:,:)
-      type(bc_tower ), intent(in   ) :: the_bc_tower
 
       real(kind=dp_t), pointer :: bxp(:,:,:,:) 
       real(kind=dp_t), pointer :: byp(:,:,:,:) 

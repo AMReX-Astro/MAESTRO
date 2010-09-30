@@ -14,13 +14,12 @@ module ppm_module
 contains
 
   ! characteristics based on u
-  subroutine ppm_1d(n,s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_1d(s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
-    use geometry, only: nr
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_u
     real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s:)
     real(kind=dp_t), intent(in   ) ::    u(lo(1)-ng_u:)
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :)
@@ -491,13 +490,12 @@ contains
   end subroutine ppm_1d
 
   ! characteristics based on u
-  subroutine ppm_fpu_1d(n,s,ng_s,umac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_fpu_1d(s,ng_s,umac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
-    use geometry, only: nr
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_um
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_um
     real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s:)
     real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_um:)
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :)
@@ -968,13 +966,12 @@ contains
   end subroutine ppm_fpu_1d
 
   ! characteristics based on u
-  subroutine ppm_2d(n,s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_2d(s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
-    use geometry, only: nr
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_u
     real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s:,lo(2)-ng_s:)
     real(kind=dp_t), intent(in   ) ::    u(lo(1)-ng_u:,lo(2)-ng_u:,:)
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,:)
@@ -1962,13 +1959,12 @@ contains
   end subroutine ppm_2d
 
   ! characteristics based on umac
-  subroutine ppm_fpu_2d(n,s,ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_fpu_2d(s,ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
-    use geometry, only: nr
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_um
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_um
     real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s :,lo(2)-ng_s :)
     real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:)
@@ -2957,13 +2953,12 @@ contains
   end subroutine ppm_fpu_2d
 
   ! characteristics based on u
-  subroutine ppm_3d(n,s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_3d(s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
-    use geometry, only: nr, spherical
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_u
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(inout) ::     Ip(lo(1)-1    :,lo(2)-1    :,lo(3)-1    :,:)
@@ -4734,13 +4729,12 @@ contains
   end subroutine ppm_3d
 
   ! characteristics based on umac
-  subroutine ppm_fpu_3d(n,s,ng_s,umac,vmac,wmac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_fpu_3d(s,ng_s,umac,vmac,wmac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
-    use geometry, only: nr, spherical
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_um
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_um
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)

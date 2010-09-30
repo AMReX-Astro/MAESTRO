@@ -65,7 +65,7 @@ contains
                                     rho0_old,rho0_new,p0_old,p0_new, &
                                     gamma1bar_old,gamma1bar_new, &
                                     p0_minus_pthermbar, &
-                                    etarho_ec,etarho_cc,w0_force, &
+                                    etarho_cc,w0_force, &
                                     dt,dtold)
        endif
 
@@ -256,7 +256,7 @@ contains
                                   rho0_old,rho0_new,p0_old,p0_new, &
                                   gamma1bar_old,gamma1bar_new, &
                                   p0_minus_pthermbar, &
-                                  etarho_ec,etarho_cc,w0_force, &
+                                  etarho_cc,w0_force, &
                                   dt,dtold)
 
     use geometry, only: r_cc_loc, nr_fine, nlevs_radial, r_edge_loc, dr, &
@@ -279,7 +279,6 @@ contains
     real(kind=dp_t), intent(in   ) ::      gamma1bar_old(:,0:)
     real(kind=dp_t), intent(in   ) ::      gamma1bar_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
-    real(kind=dp_t), intent(in   ) ::          etarho_ec(:,0:)
     real(kind=dp_t), intent(in   ) ::          etarho_cc(:,0:)
     real(kind=dp_t), intent(  out) ::           w0_force(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold

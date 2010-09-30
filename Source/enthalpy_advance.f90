@@ -14,7 +14,7 @@ module enthalpy_advance_module
 contains
 
   subroutine enthalpy_advance(mla,which_step,uold,sold,snew,sedge,sflux,scal_force,&
-                              thermal,umac,w0,w0mac,normal, &
+                              thermal,umac,w0,w0mac, &
                               rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                               tempbar,psi,dx,dt,the_bc_level)
 
@@ -50,7 +50,6 @@ contains
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
-    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_new(:,0:)

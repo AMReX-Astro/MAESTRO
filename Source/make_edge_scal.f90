@@ -27,7 +27,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, dr, dm, nlevs
+    use geometry, only: spherical, dm, nlevs
     use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
@@ -44,7 +44,7 @@ contains
     logical        , intent(in   ) :: is_conservative
     type(ml_layout), intent(in   ) :: mla
 
-    integer                  :: i,r,scomp,bccomp,n,n_1d
+    integer                  :: i,scomp,bccomp,n,n_1d
     integer                  :: lo(dm), hi(dm)
     integer                  :: ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), pointer :: sop(:,:,:,:)
@@ -78,7 +78,7 @@ contains
           case (1)
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
-                call make_edge_scal_1d(n, sop(:,1,1,:), ng_s, &
+                call make_edge_scal_1d(sop(:,1,1,:), ng_s, &
                                        sepx(:,1,1,:), ng_se, &
                                         ump(:,1,1,1), ng_um, &
                                        fp(:,1,1,:), ng_f, &
@@ -93,7 +93,7 @@ contains
              sepy => dataptr(sedge(n,2),i)
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
-                call make_edge_scal_2d(n, sop(:,:,1,:), ng_s, &
+                call make_edge_scal_2d(sop(:,:,1,:), ng_s, &
                                        sepx(:,:,1,:), sepy(:,:,1,:), ng_se, &
                                        ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                        fp(:,:,1,:), ng_f, &
@@ -115,7 +115,7 @@ contains
                 else
                    n_1d = n
                 end if
-                call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
+                call make_edge_scal_3d(sop(:,:,:,:), ng_s, &
                                        sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                        ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                        ng_um, fp(:,:,:,:), ng_f,  &
@@ -144,11 +144,10 @@ contains
     
   end subroutine make_edge_scal
   
-  subroutine make_edge_scal_1d(n,s,ng_s,sedgex,ng_se,umac,ng_um, &
+  subroutine make_edge_scal_1d(s,ng_s,sedgex,ng_se,umac,ng_um, &
                                force,ng_f,lo,hi,dx,dt,is_vel,phys_bc,adv_bc, &
                                comp,is_conservative)
 
-    use geometry, only: nr
     use bc_module
     use slope_module
     use bl_constants_module
@@ -156,7 +155,7 @@ contains
     use ppm_module
     use probin_module, only: ppm_type
 
-    integer        , intent(in   ) :: lo(:),hi(:),n,ng_s,ng_se,ng_um,ng_f
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,:)
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_um:)
@@ -178,9 +177,6 @@ contains
     real(kind=dp_t), allocatable :: Ip(:)
     real(kind=dp_t), allocatable :: Im(:)
 
-    ! these correspond to s_L^x, etc.
-    real(kind=dp_t), allocatable:: slx(:),srx(:)
-
     ! these correspond to \mathrm{sedge}_L^x, etc.
     real(kind=dp_t), allocatable:: sedgelx(:),sedgerx(:)
 
@@ -199,7 +195,7 @@ contains
     if (ppm_type .eq. 0) then
        call slopex_1d(s(:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_fpu_1d(n,s(:,comp),ng_s,umac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_fpu_1d(s(:,comp),ng_s,umac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     end if
 
     dt2 = HALF*dt
@@ -307,11 +303,10 @@ contains
 
   end subroutine make_edge_scal_1d
   
-  subroutine make_edge_scal_2d(n,s,ng_s,sedgex,sedgey,ng_se,umac,vmac,ng_um, &
+  subroutine make_edge_scal_2d(s,ng_s,sedgex,sedgey,ng_se,umac,vmac,ng_um, &
                                force,ng_f,lo,hi,dx,dt,is_vel,phys_bc,adv_bc, &
                                comp,is_conservative)
 
-    use geometry, only: nr
     use bc_module
     use slope_module
     use bl_constants_module
@@ -319,7 +314,7 @@ contains
     use ppm_module
     use probin_module, only: ppm_type
 
-    integer        , intent(in   ) :: lo(:),hi(:),n,ng_s,ng_se,ng_um,ng_f
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,:)
@@ -386,7 +381,7 @@ contains
        call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
        call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc)
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_fpu_2d(n,s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_fpu_2d(s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     end if
 
     dt2 = HALF*dt
@@ -756,11 +751,11 @@ contains
 
   end subroutine make_edge_scal_2d
 
-  subroutine make_edge_scal_3d(n,s,ng_s,sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
+  subroutine make_edge_scal_3d(s,ng_s,sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
                                force,ng_f,lo,hi,dx,dt,is_vel,phys_bc,adv_bc,comp, &
                                is_conservative)
 
-    use geometry, only: spherical, nr
+    use geometry, only: spherical
     use bc_module
     use slope_module
     use bl_constants_module
@@ -768,7 +763,7 @@ contains
     use ppm_module
     use probin_module, only: ppm_type
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_se,ng_um,ng_f
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
@@ -791,7 +786,6 @@ contains
 
     real(kind=dp_t) :: hx,hy,hz,dt2,dt3,dt4,dt6
     real(kind=dp_t) :: savg
-    real(kind=dp_t) :: Ut_dot_er
 
     integer :: i,j,k,is,js,ks,ie,je,ke
 
@@ -842,7 +836,7 @@ contains
        end do
        call slopez_3d(s(:,:,:,comp:),slopez,lo,hi,ng_s,1,adv_bc)
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_fpu_3d(n,s(:,:,:,comp),ng_s,umac,vmac,wmac,ng_um,Ip,Im, &
+       call ppm_fpu_3d(s(:,:,:,comp),ng_s,umac,vmac,wmac,ng_um,Ip,Im, &
                        lo,hi,adv_bc(:,:,1),dx,dt)
     end if
 

@@ -58,7 +58,7 @@ contains
           hi =  upb(get_box(s0_cart(n), i))
           select case (dm)
           case (1)
-             call put_1d_array_on_cart_1d(is_input_edge_centered,is_output_a_vector, &
+             call put_1d_array_on_cart_1d(is_input_edge_centered, &
                                           s0(n,:),sp(:,1,1,:),lo,hi,ng_s)
           case (2)
              call put_1d_array_on_cart_2d(is_input_edge_centered,is_output_a_vector, &
@@ -137,14 +137,14 @@ contains
     
   end subroutine put_1d_array_on_cart
 
-  subroutine put_1d_array_on_cart_1d(is_input_edge_centered,is_output_a_vector,s0,s0_cart, &
+  subroutine put_1d_array_on_cart_1d(is_input_edge_centered,s0,s0_cart, &
                                      lo,hi,ng_s)
 
     use bl_constants_module
     use geometry, only: dr
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s
-    logical        , intent(in   ) :: is_input_edge_centered,is_output_a_vector
+    logical        , intent(in   ) :: is_input_edge_centered
     real(kind=dp_t), intent(in   ) :: s0(0:)
     real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,:)
 

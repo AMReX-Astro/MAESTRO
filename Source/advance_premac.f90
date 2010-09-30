@@ -99,7 +99,7 @@ contains
     !     Create the edge states to be used for the MAC velocity 
     !*************************************************************
 
-    call velpred(uold,ufull,umac,utrans,force,normal,w0,w0mac,dx,dt,the_bc_level,mla)
+    call velpred(uold,ufull,umac,utrans,force,w0,w0mac,dx,dt,the_bc_level,mla)
 
     do n = 1,nlevs
        call destroy(force(n))

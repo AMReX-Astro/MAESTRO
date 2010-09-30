@@ -81,7 +81,6 @@ contains
     type(multifab), pointer :: chk_thermal2(:)
 
     type(multifab), allocatable :: gamma1(:)
-    type(multifab), allocatable :: normal(:)
 
     type(layout) :: la
 
@@ -544,23 +543,10 @@ contains
        ! compute div_coeff_old
        call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
 
-       ! compute normal (just for use in computing time step)
-       allocate(normal(nlevs))
-       do n = 1,nlevs
-          call multifab_build(normal(n), mla%la(n),    dm, 1)
-       end do
-       call make_normal(normal,dx)
-
        ! recompute time step
        dt = 1.d20
        call estdt(mla,the_bc_tower,uold,sold,gpi,Source_old,dSdt, &
-                  normal,w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
-
-       ! deallocate normal
-       do n = 1,nlevs
-          call multifab_destroy(normal(n))
-       end do
-       deallocate(normal)
+                  w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
 
     end if ! end spherical restart_into_finer initialization
 

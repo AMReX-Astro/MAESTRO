@@ -112,7 +112,6 @@ contains
 
     use bc_module
     use slope_module
-    use geometry, only: nr
     use variables, only: rel_eps
     use probin_module, only: ppm_type
     use ppm_module
@@ -136,7 +135,7 @@ contains
     real(kind=dp_t), allocatable :: ulx(:,:),urx(:,:)
     real(kind=dp_t), allocatable :: vly(:,:),vry(:,:)
 
-    real(kind=dp_t) hx,hy,dt2,uavg,vlo,vhi
+    real(kind=dp_t) hx,hy,dt2,uavg
 
     integer :: i,j,is,js,ie,je
 
@@ -165,7 +164,7 @@ contains
        call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
        call slopey_2d(u(:,:,2:),slopey,lo,hi,ng_u,1,adv_bc(:,:,2:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_2d(n,u(:,:,1),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_2d(u(:,:,1),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     end if
 
     !******************************************************************
@@ -238,7 +237,7 @@ contains
     !******************************************************************
 
     if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_2d(n,u(:,:,2),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_2d(u(:,:,2),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
        
     if (ppm_type .eq. 0) then
@@ -313,7 +312,7 @@ contains
 
     use bc_module
     use slope_module
-    use geometry, only: nr, spherical
+    use geometry, only: spherical
     use variables, only: rel_eps
     use probin_module, only: ppm_type
     use ppm_module
@@ -339,7 +338,7 @@ contains
     real(kind=dp_t), allocatable :: Ip(:,:,:,:)
     real(kind=dp_t), allocatable :: Im(:,:,:,:)
 
-    real(kind=dp_t) hx,hy,hz,dt2,uavg,uhi,ulo,vhi,vlo,whi,wlo
+    real(kind=dp_t) hx,hy,hz,dt2,uavg
     
     logical :: test
 
@@ -376,7 +375,7 @@ contains
        end do
        call slopez_3d(u(:,:,:,3:),slopez,lo,hi,ng_u,1,adv_bc(:,:,3:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(n,u(:,:,:,1),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_3d(u(:,:,:,1),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
     end if
     
     !******************************************************************
@@ -486,7 +485,7 @@ contains
     !******************************************************************
 
     if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(n,u(:,:,:,2),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_3d(u(:,:,:,2),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
 
     allocate(vly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
@@ -592,7 +591,7 @@ contains
     !******************************************************************
 
     if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(n,u(:,:,:,3),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,3),dx,dt)
+       call ppm_3d(u(:,:,:,3),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,3),dx,dt)
     end if
 
     allocate(wlz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
