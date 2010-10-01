@@ -48,7 +48,7 @@ contains
     type(multifab)  :: rh(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel,dm)
     type(bndry_reg) :: fine_flx(2:mla%nlevel)
 
-    real(dp_t)                   :: umac_norm(mla%nlevel)
+!    real(dp_t)                   :: umac_norm(mla%nlevel)
     real(dp_t)                   :: umin,umax,vmin,vmax,wmin,wmax
     real(dp_t)                   :: rel_solver_eps
     real(dp_t)                   :: abs_solver_eps
@@ -132,12 +132,12 @@ contains
     end if
 
     ! Compute umac_norm to be used inside the MG solver as part of a stopping criterion
-    umac_norm = -1.0_dp_t
-    do n = 1,nlevs
-       do i = 1,dm
-          umac_norm(n) = max(umac_norm(n),norm_inf(umac(n,i)))
-       end do
-    end do
+!    umac_norm = -1.0_dp_t
+!    do n = 1,nlevs
+!       do i = 1,dm
+!          umac_norm(n) = max(umac_norm(n),norm_inf(umac(n,i)))
+!       end do
+!    end do
 
     if (use_rhs) then
        call divumac(umac,rh,dx,mla%mba%rr,.true.,divu_rhs)
@@ -186,12 +186,6 @@ contains
 
     call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,mla%mba%rr)
 
-    if (use_rhs) then
-       call divumac(umac,rh,dx,mla%mba%rr,.false.,divu_rhs)
-    else
-       call divumac(umac,rh,dx,mla%mba%rr,.false.)
-    end if
-
     if (use_div_coeff_1d) then
        do n = 1,nlevs
           call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_1d_edge(n,:), &
@@ -205,6 +199,38 @@ contains
        end do
     end if
 
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+      do i=1,dm
+          call multifab_fill_boundary(umac(nlevs,i))
+       enddo
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc_edgevel(umac(nlevs,:),the_bc_tower%bc_tower_array(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          do i=1,dm
+             call ml_edge_restriction(umac(n-1,i),umac(n,i),mla%mba%rr(n-1,:),i)
+          enddo
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc_edgevel are called for
+          ! level n and level 1 (if n=2)
+          call create_umac_grown(n,umac(n,:),umac(n-1,:), &
+                                 the_bc_tower%bc_tower_array(n-1), &
+                                 the_bc_tower%bc_tower_array(n))
+
+       end do
+
+    end if
+    
     ! Print the norm of each component separately -- make sure to do this after we divide
     !       the velocities by the div_coeff.                                 
     if (verbose .eq. 1) then
@@ -237,37 +263,6 @@ contains
        if (parallel_IOProcessor()) print *,''
     end if
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-      do i=1,dm
-          call multifab_fill_boundary(umac(nlevs,i))
-       enddo
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc_edgevel(umac(nlevs,:),the_bc_tower%bc_tower_array(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          do i=1,dm
-             call ml_edge_restriction(umac(n-1,i),umac(n,i),mla%mba%rr(n-1,:),i)
-          enddo
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc_edgevel are called for
-          ! level n and level 1 (if n=2)
-          call create_umac_grown(n,umac(n,:),umac(n-1,:), &
-                                 the_bc_tower%bc_tower_array(n-1),the_bc_tower%bc_tower_array(n))
-
-       end do
-
-    end if
-    
     do n = 1, nlevs
        call destroy(rh(n))
        call destroy(alpha(n))
@@ -717,7 +712,6 @@ contains
 
     subroutine mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,ref_ratio)
 
-      use ml_restriction_module, only: ml_edge_restriction
       use geometry, only: dm, nlevs
       use variables, only: press_comp
 
@@ -812,12 +806,6 @@ contains
                                          lzp(:,:,:,1),hzp(:,:,:,1),lo,hi,dx(n,:))
                end if
             end select
-         end do
-      end do
-
-      do n = nlevs,2,-1
-         do i = 1,dm
-            call ml_edge_restriction(umac(n-1,i),umac(n,i),ref_ratio(n-1,:),i)
          end do
       end do
 
