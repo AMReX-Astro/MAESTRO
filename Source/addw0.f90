@@ -11,15 +11,19 @@ module addw0_module
 
 contains
 
-  subroutine addw0(umac,the_bc_level,w0,w0mac,mult)
+  subroutine addw0(umac,the_bc_level,mla,w0,w0mac,mult)
 
     use bl_prof_module
     use create_umac_grown_module
     use geometry, only: spherical, dm, nlevs
     use define_bc_module
+    use ml_layout_module
+    use ml_restriction_module, only: ml_edge_restriction_c
+    use multifab_physbc_edgevel_module, only: multifab_physbc_edgevel
     
     type(multifab) , intent(inout) :: umac(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
+    type(ml_layout), intent(inout) :: mla
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: mult
@@ -70,14 +74,34 @@ contains
        end do
     end do
 
-    if (nlevs .gt. 1) then
-       do n=2,nlevs
-          call create_umac_grown(n,umac(n,:),umac(n-1,:),the_bc_level(n-1),the_bc_level(n))
-       end do
-    else
-       do i=1,dm
-          call multifab_fill_boundary(umac(1,i))
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+      do i=1,dm
+          call multifab_fill_boundary(umac(nlevs,i))
        enddo
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc_edgevel(umac(nlevs,:),the_bc_level(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          do i=1,dm
+             call ml_edge_restriction_c(umac(n-1,i),1,umac(n,i),1,mla%mba%rr(n-1,:),i,1)
+          enddo
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc_edgevel are called for
+          ! level n and level 1 (if n=2)
+          call create_umac_grown(n,umac(n,:),umac(n-1,:),the_bc_level(n-1),the_bc_level(n))
+
+       end do
+
     end if
 
     call destroy(bpt)

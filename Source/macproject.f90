@@ -29,6 +29,7 @@ contains
     use geometry, only: dm, nlevs, spherical
     use probin_module, only: verbose, use_hypre
     use variables, only: press_comp
+    use ml_restriction_module, only: ml_edge_restriction_c
 
     use mg_eps_module, only: eps_mac, eps_mac_max, mac_level_factor
 
@@ -236,26 +237,35 @@ contains
        if (parallel_IOProcessor()) print *,''
     end if
 
-    if (nlevs .gt. 1) then
-       do n=2,nlevs
-          call create_umac_grown(n,umac(n,:),umac(n-1,:), &
-                                 the_bc_tower%bc_tower_array(n-1), &
-                                 the_bc_tower%bc_tower_array(n))
-       end do
-    else
-       do n=1,nlevs
-          do i=1,dm
-             call multifab_fill_boundary(umac(n,i))
-          end do
-       end do
-    end if
+    if (nlevs .eq. 1) then
 
-    ! This fills the same edges that create_umac_grown does but fills them from 
-    !  physical boundary conditions rather than from coarser grids
-    if (dm > 1) then
-       do n=1,nlevs
-          call multifab_physbc_edgevel(umac(nlevs,:),the_bc_tower%bc_tower_array(nlevs))
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+      do i=1,dm
+          call multifab_fill_boundary(umac(nlevs,i))
+       enddo
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc_edgevel(umac(nlevs,:),the_bc_tower%bc_tower_array(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          do i=1,dm
+             call ml_edge_restriction_c(umac(n-1,i),1,umac(n,i),1,mla%mba%rr(n-1,:),i,1)
+          enddo
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc_edgevel are called for
+          ! level n and level 1 (if n=2)
+          call create_umac_grown(n,umac(n,:),umac(n-1,:), &
+                                 the_bc_tower%bc_tower_array(n-1),the_bc_tower%bc_tower_array(n))
+
        end do
+
     end if
     
     do n = 1, nlevs

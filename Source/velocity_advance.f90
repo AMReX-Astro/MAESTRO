@@ -81,7 +81,7 @@ contains
     !     Add w0 to MAC velocities (trans velocities already have w0).
     !********************************************************
     
-    call addw0(umac,the_bc_level,w0,w0mac,mult=ONE)
+    call addw0(umac,the_bc_level,mla,w0,w0mac,mult=ONE)
     
     !********************************************************
     !     Create the edge states of velocity using the MAC velocity plus w0 on edges. 
@@ -100,7 +100,7 @@ contains
     !     Subtract w0 from MAC velocities.
     !********************************************************
 
-    call addw0(umac,the_bc_level,w0,w0mac,mult=-ONE)
+    call addw0(umac,the_bc_level,mla,w0,w0mac,mult=-ONE)
 
     !********************************************************
     !     Now create the force at half-time using rhohalf 

@@ -92,7 +92,7 @@ contains
     !*************************************************************
     
     if (dm > 1) then
-       call addw0(utrans,the_bc_level,w0,w0mac,mult=ONE)
+       call addw0(utrans,the_bc_level,mla,w0,w0mac,mult=ONE)
     end if
 
     !*************************************************************
