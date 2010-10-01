@@ -24,7 +24,7 @@ contains
     use mac_hypre_module               , only : mac_hypre
     use mac_multigrid_module           , only : mac_multigrid
     use create_umac_grown_module       , only : create_umac_grown
-    use impose_phys_bcs_on_edges_module, only : impose_phys_bcs_on_edges
+    use multifab_physbc_edgevel_module , only : multifab_physbc_edgevel
 
     use geometry, only: dm, nlevs, spherical
     use probin_module, only: verbose, use_hypre
@@ -254,7 +254,7 @@ contains
     !  physical boundary conditions rather than from coarser grids
     if (dm > 1) then
        do n=1,nlevs
-          call impose_phys_bcs_on_edges(umac(nlevs,:),the_bc_tower%bc_tower_array(nlevs))
+          call multifab_physbc_edgevel(umac(nlevs,:),the_bc_tower%bc_tower_array(nlevs))
        end do
     end if
     

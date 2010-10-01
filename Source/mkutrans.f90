@@ -5,7 +5,6 @@ module mkutrans_module
   use multifab_module
   use ml_layout_module
   use define_bc_module
-  use impose_phys_bcs_on_edges_module
 
   implicit none
 
@@ -20,7 +19,8 @@ contains
     use bl_prof_module
     use create_umac_grown_module
     use geometry, only: dm, nlevs, spherical
-    use ml_restriction_module, only : ml_edge_restriction_c
+    use ml_restriction_module, only: ml_edge_restriction_c
+    use multifab_physbc_edgevel_module, only: multifab_physbc_edgevel
 
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: ufull(:)
@@ -101,7 +101,7 @@ contains
        enddo
 
        ! fill non-periodic domain boundary ghost cells
-       call impose_phys_bcs_on_edges(utrans(nlevs,:),the_bc_level(nlevs))
+       call multifab_physbc_edgevel(utrans(nlevs,:),the_bc_level(nlevs))
 
     else
 
@@ -113,7 +113,7 @@ contains
           enddo
 
           ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and impose_phys_bcs_on_edges are called for
+          ! note that multifab_fill_boundary and multifab_physbc_edgevel are called for
           ! both levels n-1 and n
           call create_umac_grown(n,utrans(n,:),utrans(n-1,:),the_bc_level(n-1),the_bc_level(n))
 
