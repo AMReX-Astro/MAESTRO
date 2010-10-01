@@ -29,7 +29,7 @@ contains
     use geometry, only: dm, nlevs, spherical
     use probin_module, only: verbose, use_hypre
     use variables, only: press_comp
-    use ml_restriction_module, only: ml_edge_restriction_c
+    use ml_restriction_module, only: ml_edge_restriction
 
     use mg_eps_module, only: eps_mac, eps_mac_max, mac_level_factor
 
@@ -255,7 +255,7 @@ contains
 
           ! set level n-1 data to be the average of the level n data covering it
           do i=1,dm
-             call ml_edge_restriction_c(umac(n-1,i),1,umac(n,i),1,mla%mba%rr(n-1,:),i,1)
+             call ml_edge_restriction(umac(n-1,i),umac(n,i),mla%mba%rr(n-1,:),i)
           enddo
 
           ! fill level n ghost cells using interpolation from level n-1 data

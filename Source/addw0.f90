@@ -18,7 +18,7 @@ contains
     use geometry, only: spherical, dm, nlevs
     use define_bc_module
     use ml_layout_module
-    use ml_restriction_module, only: ml_edge_restriction_c
+    use ml_restriction_module, only: ml_edge_restriction
     use multifab_physbc_edgevel_module, only: multifab_physbc_edgevel
     
     type(multifab) , intent(inout) :: umac(:,:)
@@ -92,7 +92,7 @@ contains
 
           ! set level n-1 data to be the average of the level n data covering it
           do i=1,dm
-             call ml_edge_restriction_c(umac(n-1,i),1,umac(n,i),1,mla%mba%rr(n-1,:),i,1)
+             call ml_edge_restriction(umac(n-1,i),umac(n,i),mla%mba%rr(n-1,:),i)
           enddo
 
           ! fill level n ghost cells using interpolation from level n-1 data

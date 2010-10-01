@@ -19,7 +19,7 @@ contains
     use bl_prof_module
     use create_umac_grown_module
     use geometry, only: dm, nlevs, spherical
-    use ml_restriction_module, only: ml_edge_restriction_c
+    use ml_restriction_module, only: ml_edge_restriction
     use multifab_physbc_edgevel_module, only: multifab_physbc_edgevel
 
     type(multifab) , intent(in   ) :: u(:)
@@ -110,7 +110,7 @@ contains
 
           ! set level n-1 data to be the average of the level n data covering it
           do i=1,dm
-             call ml_edge_restriction_c(utrans(n-1,i),1,utrans(n,i),1,mla%mba%rr(n-1,:),i,1)
+             call ml_edge_restriction(utrans(n-1,i),utrans(n,i),mla%mba%rr(n-1,:),i)
           enddo
 
           ! fill level n ghost cells using interpolation from level n-1 data
