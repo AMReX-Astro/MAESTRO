@@ -115,7 +115,7 @@ contains
     !     Add w0 to MAC velocities (trans velocities already have w0).
     !**************************************************************************
 
-    call addw0(umac,w0,w0mac,mult=ONE)
+    call addw0(umac,the_bc_level,w0,w0mac,mult=ONE)
 
     !**************************************************************************
     !     Create the edge states of (rho X)' or X and rho'
@@ -156,7 +156,7 @@ contains
     !     Subtract w0 from MAC velocities.
     !**************************************************************************
 
-    call addw0(umac,w0,w0mac,mult=-ONE)
+    call addw0(umac,the_bc_level,w0,w0mac,mult=-ONE)
 
     !**************************************************************************
     !     Compute fluxes

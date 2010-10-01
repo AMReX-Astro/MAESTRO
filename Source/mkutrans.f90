@@ -115,7 +115,7 @@ contains
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and impose_phys_bcs_on_edges are called for
           ! both levels n-1 and n
-          call create_umac_grown(n,utrans(n,:),utrans(n-1,:))
+          call create_umac_grown(n,utrans(n,:),utrans(n-1,:),the_bc_level(n-1),the_bc_level(n))
 
        end do
 

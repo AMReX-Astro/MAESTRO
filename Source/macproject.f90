@@ -238,7 +238,9 @@ contains
 
     if (nlevs .gt. 1) then
        do n=2,nlevs
-          call create_umac_grown(n,umac(n,:),umac(n-1,:))
+          call create_umac_grown(n,umac(n,:),umac(n-1,:), &
+                                 the_bc_tower%bc_tower_array(n-1), &
+                                 the_bc_tower%bc_tower_array(n))
        end do
     else
        do n=1,nlevs

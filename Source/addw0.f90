@@ -11,13 +11,15 @@ module addw0_module
 
 contains
 
-  subroutine addw0(umac,w0,w0mac,mult)
+  subroutine addw0(umac,the_bc_level,w0,w0mac,mult)
 
     use bl_prof_module
     use create_umac_grown_module
     use geometry, only: spherical, dm, nlevs
+    use define_bc_module
     
     type(multifab) , intent(inout) :: umac(:,:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: mult
@@ -70,7 +72,7 @@ contains
 
     if (nlevs .gt. 1) then
        do n=2,nlevs
-          call create_umac_grown(n,umac(n,:),umac(n-1,:))
+          call create_umac_grown(n,umac(n,:),umac(n-1,:),the_bc_level(n-1),the_bc_level(n))
        end do
     else
        do i=1,dm
