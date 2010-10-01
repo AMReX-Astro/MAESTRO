@@ -250,8 +250,11 @@ contains
 
     ! This fills the same edges that create_umac_grown does but fills them from 
     !  physical boundary conditions rather than from coarser grids
-    if (dm > 1) &
-       call impose_phys_bcs_on_edges(umac,the_bc_tower%bc_tower_array)
+    if (dm > 1) then
+       do n=1,nlevs
+          call impose_phys_bcs_on_edges(umac(nlevs,:),the_bc_tower%bc_tower_array(nlevs))
+       end do
+    end if
     
     do n = 1, nlevs
        call destroy(rh(n))

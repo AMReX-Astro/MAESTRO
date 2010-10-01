@@ -16,46 +16,39 @@ contains
   subroutine impose_phys_bcs_on_edges(uedge,the_bc_level)
 
     use bl_prof_module
-    use geometry, only: dm, nlevs
+    use geometry, only: dm
 
-    type(multifab) , intent(inout) :: uedge(:,:)
-    type(bc_level) , intent(in   ) :: the_bc_level(:)
+    type(multifab) , intent(inout) :: uedge(:)
+    type(bc_level) , intent(in   ) :: the_bc_level
 
     ! Local variables
     real(kind=dp_t), pointer :: utp(:,:,:,:)
     real(kind=dp_t), pointer :: vtp(:,:,:,:)
     real(kind=dp_t), pointer :: wtp(:,:,:,:)
     integer                  :: lo(dm),hi(dm)
-    integer                  :: i,n,ng_ut
+    integer                  :: i,ng_ut
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "impose_phys_bcs_on_edges")
 
-    ng_ut = nghost(uedge(1,1))
+    ng_ut = nghost(uedge(1))
 
-    do n=1,nlevs
-
-       do i=1,nboxes(uedge(n,1))
-          if ( multifab_remote(uedge(n,1),i) ) cycle
-          utp => dataptr(uedge(n,1),i)
-          vtp => dataptr(uedge(n,2),i)
-          lo =  lwb(get_box(uedge(n,1),i))
-          hi =  upb(get_box(uedge(n,1),i))
-          select case (dm)
-          case (2)
-             call impose_phys_bcs_2d( &
-                              utp(:,:,1,1), vtp(:,:,1,1), ng_ut, lo,hi, &
-                              the_bc_level(n)%phys_bc_level_array(i,:,:))
-          case (3)
-             wtp => dataptr(uedge(n,3), i)
-             call impose_phys_bcs_3d( &
-                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
-                              lo, hi, &
-                              the_bc_level(n)%phys_bc_level_array(i,:,:))
-          end select
-       end do
-
+    do i=1,nboxes(uedge(1))
+       if ( multifab_remote(uedge(1),i) ) cycle
+       utp => dataptr(uedge(1),i)
+       vtp => dataptr(uedge(2),i)
+       lo =  lwb(get_box(uedge(1),i))
+       hi =  upb(get_box(uedge(1),i))
+       select case (dm)
+       case (2)
+          call impose_phys_bcs_2d(utp(:,:,1,1), vtp(:,:,1,1), ng_ut, lo,hi, &
+                                  the_bc_level%phys_bc_level_array(i,:,:))
+       case (3)
+          wtp => dataptr(uedge(3), i)
+          call impose_phys_bcs_3d(utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
+                                  lo, hi, the_bc_level%phys_bc_level_array(i,:,:))
+       end select
     end do
 
     call destroy(bpt)
