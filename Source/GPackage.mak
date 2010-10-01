@@ -64,6 +64,7 @@ f90sources += ml_solve.f90
 f90sources += modify_scal_force.f90
 f90sources += multifab_fill_ghost_cells.f90
 f90sources += multifab_physbc.f90
+f90sources += multifab_physbc_edgevel.f90
 f90sources += ppm.f90
 f90sources += pred_parameters.f90
 f90sources += probin.f90
