@@ -184,7 +184,7 @@ contains
                           rel_solver_eps,abs_solver_eps)
     endif
 
-    call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,mla%mba%rr)
+    call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower)
 
     if (use_div_coeff_1d) then
        do n = 1,nlevs
@@ -710,7 +710,7 @@ contains
 
     end subroutine mk_mac_coeffs_3d
 
-    subroutine mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,ref_ratio)
+    subroutine mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower)
 
       use geometry, only: dm, nlevs
       use variables, only: press_comp
@@ -722,7 +722,6 @@ contains
       type(bndry_reg),intent(in   ) :: fine_flx(2:)
       real(dp_t)    , intent(in   ) :: dx(:,:)
       type(bc_tower), intent(in   ) :: the_bc_tower
-      integer       , intent(in   ) :: ref_ratio(:,:)
 
       integer :: i
       integer :: ng_um,ng_p,ng_b
