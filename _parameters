@@ -231,6 +231,9 @@ enthalpy_pred_type                  integer            predict_rhohprime
 # time step.
 max_dt_growth                       real               1.1d0
 
+# This is the maximum dt that is allowed
+max_dt                              real               1.0d33
+
 # Fix the time step.  If -1.0, then use the standard time step.
 fixed_dt                            real               -1.0d0              
 

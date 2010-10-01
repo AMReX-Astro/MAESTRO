@@ -325,6 +325,13 @@ subroutine varden()
         end if
      end if
 
+     if(dt .gt. max_dt) then
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+           print*,'max_dt limits the new dt =',max_dt
+        end if
+        dt = max_dt
+     end if
+
      !------------------------------------------------------------------------
      ! do the initial iterations to define a velocity field consistent with S
      !------------------------------------------------------------------------
@@ -796,6 +803,13 @@ subroutine varden()
               if (parallel_IOProcessor() .and. verbose .ge. 1) then
                  print*,'dt_growth factor limits the new dt =',dt
               end if
+           end if
+
+           if(dt .gt. max_dt) then
+              if (parallel_IOProcessor() .and. verbose .ge. 1) then
+                 print*,'max_dt limits the new dt =',max_dt
+              end if
+              dt = max_dt
            end if
 
            if(fixed_dt .ne. -1.0d0) then
