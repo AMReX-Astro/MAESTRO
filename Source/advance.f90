@@ -48,6 +48,7 @@ contains
     use make_gamma_module           , only : make_gamma
     use rhoh_vs_t_module            , only : makePfromRhoH, makeTfromRhoP, makeTfromRhoH
     use diag_module                 , only : diag
+    use sanity_module               , only : sanity_check
     use enforce_HSE_module          , only : enforce_HSE
 
     use macrhs_module               , only : make_macrhs
@@ -60,8 +61,10 @@ contains
     use variables                   , only : nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry                    , only : nlevs, nlevs_radial, spherical, dm, nr_fine, compute_cutoff_coords
     use network                     , only : nspec
-    use probin_module               , only : barrier_timers, evolve_base_state, use_etarho, dpdt_factor, verbose, &
-                                             use_tfromp, use_thermal_diffusion, use_delta_gamma1_term, nodal
+    use probin_module               , only : barrier_timers, evolve_base_state, &
+                                             use_etarho, dpdt_factor, verbose, &
+                                             use_tfromp, use_thermal_diffusion, &
+                                             use_delta_gamma1_term, nodal, mach_max_abort
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -1422,6 +1425,16 @@ contains
                  gamma1bar,div_coeff_new, &
                  unew,w0,normal, &
                  mla,the_bc_tower)
+
+
+       ! perform sanity checks, if desired
+       if (mach_max_abort > ZERO) then
+          call sanity_check(time+dt,dx,snew, &
+                 rho0_new,rhoh0_new,p0_new,tempbar, &
+                 gamma1bar,div_coeff_new, &
+                 unew,w0,normal, &
+                 mla,the_bc_tower)
+       endif
 
     end if
 
