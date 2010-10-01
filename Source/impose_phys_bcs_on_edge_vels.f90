@@ -13,12 +13,11 @@ module impose_phys_bcs_on_edges_module
 
 contains
 
-  subroutine impose_phys_bcs_on_edges(u,uedge,the_bc_level)
+  subroutine impose_phys_bcs_on_edges(uedge,the_bc_level)
 
     use bl_prof_module
     use geometry, only: dm, nlevs
 
-    type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: uedge(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
@@ -37,12 +36,12 @@ contains
 
     do n=1,nlevs
 
-       do i=1,nboxes(u(n))
-          if ( multifab_remote(u(n),i) ) cycle
+       do i=1,nboxes(uedge(n,1))
+          if ( multifab_remote(uedge(n,1),i) ) cycle
           utp => dataptr(uedge(n,1),i)
           vtp => dataptr(uedge(n,2),i)
-          lo =  lwb(get_box(u(n),i))
-          hi =  upb(get_box(u(n),i))
+          lo =  lwb(get_box(uedge(n,1),i))
+          hi =  upb(get_box(uedge(n,1),i))
           select case (dm)
           case (2)
              call impose_phys_bcs_2d( &

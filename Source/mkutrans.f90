@@ -3,6 +3,7 @@ module mkutrans_module
   use bl_types
   use bl_constants_module
   use multifab_module
+  use ml_layout_module
   use define_bc_module
   use impose_phys_bcs_on_edges_module
 
@@ -14,11 +15,12 @@ module mkutrans_module
 
 contains
 
-  subroutine mkutrans(u,ufull,utrans,w0,w0mac,dx,dt,the_bc_level)
+  subroutine mkutrans(u,ufull,utrans,w0,w0mac,dx,dt,the_bc_level,mla)
 
     use bl_prof_module
     use create_umac_grown_module
     use geometry, only: dm, nlevs, spherical
+    use ml_restriction_module, only : ml_edge_restriction_c
 
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: ufull(:)
@@ -27,6 +29,7 @@ contains
     type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
+    type(ml_layout), intent(in   ) :: mla
 
     ! local
     real(kind=dp_t), pointer :: up(:,:,:,:)
@@ -89,19 +92,34 @@ contains
 
     end do
 
-    if (nlevs .gt. 1) then
-       do n=2,nlevs
-          call create_umac_grown(n,utrans(n,:),utrans(n-1,:))
-       end do
-    else
-       do i=1,dm
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+      do i=1,dm
           call multifab_fill_boundary(utrans(1,i))
        enddo
-    end if
 
-    ! This fills the same edges that create_umac_grown does but fills them from 
-    !  physical boundary conditions rather than from coarser grids
-    call impose_phys_bcs_on_edges(u,utrans,the_bc_level)
+       ! fill non-periodic domain boundary ghost cells
+       call impose_phys_bcs_on_edges(utrans,the_bc_level)
+
+    else
+
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          do i=1,dm
+             call ml_edge_restriction_c(utrans(n-1,i),1,utrans(n,i),1,mla%mba%rr(n-1,:),i,1)
+          enddo
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and impose_phys_bcs_on_edges are called for
+          ! both levels n-1 and n
+          call create_umac_grown(n,utrans(n,:),utrans(n-1,:))
+
+       end do
+
+    end if
 
     call destroy(bpt)
 
