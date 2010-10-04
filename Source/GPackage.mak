@@ -5,6 +5,7 @@ f90sources += advect_base.f90
 f90sources += average.f90
 f90sources += base_state.f90
 f90sources += base_io.f90
+f90sources += bds.f90
 f90sources += cell_to_edge.f90
 f90sources += checkpoint.f90
 f90sources += constants.f90
