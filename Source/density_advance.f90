@@ -132,26 +132,24 @@ contains
 
     ! predict X at the edges
     if (bds_type .eq. 0) then
-       call bds(sold,sedge,umac,scal_force, &
-                dx,dt,is_vel,the_bc_level, &
-                spec_comp,dm+spec_comp,nspec,.false.,mla)
-
-    else if (bds_type .eq. 1) then
        call make_edge_scal(sold,sedge,umac,scal_force, &
                            dx,dt,is_vel,the_bc_level, &
                            spec_comp,dm+spec_comp,nspec,.false.,mla)
+    else if (bds_type .eq. 1) then
+       call bds(sold,sedge,umac,scal_force, &
+                dx,dt,is_vel,the_bc_level, &
+                spec_comp,dm+spec_comp,nspec,.false.,mla)
     end if
 
     ! predict rho' at the edges
     if (bds_type .eq. 0) then
-       call bds(sold,sedge,umac,scal_force, &
-                dx,dt,is_vel,the_bc_level, &
-                rho_comp,dm+rho_comp,1,.false.,mla)
-
-    else if (bds_type .eq. 1) then
        call make_edge_scal(sold,sedge,umac,scal_force, &
                            dx,dt,is_vel,the_bc_level, &
                            rho_comp,dm+rho_comp,1,.false.,mla)
+    else if (bds_type .eq. 1) then
+       call bds(sold,sedge,umac,scal_force, &
+                dx,dt,is_vel,the_bc_level, &
+                rho_comp,dm+rho_comp,1,.false.,mla)
     end if
 
     ! convert rho' -> rho in sold
@@ -165,14 +163,13 @@ contains
     !**************************************************************************
     if (ntrac .ge. 1) then
        if (bds_type .eq. 0) then
-          call bds(sold,sedge,umac,scal_force, &
-                   dx,dt,is_vel,the_bc_level, &
-                   trac_comp,dm+trac_comp,ntrac,.false.,mla)
-
-       else if (bds_type .eq. 1) then
           call make_edge_scal(sold,sedge,umac,scal_force, &
                               dx,dt,is_vel,the_bc_level, &
                               trac_comp,dm+trac_comp,ntrac,.false.,mla)
+       else if (bds_type .eq. 1) then
+          call bds(sold,sedge,umac,scal_force, &
+                   dx,dt,is_vel,the_bc_level, &
+                   trac_comp,dm+trac_comp,ntrac,.false.,mla)
        end if
     end if
 
