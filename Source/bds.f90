@@ -13,26 +13,28 @@ module bds_module
 
 contains
 
-  subroutine bds(mla,s,sn,umac,dx,dt,is_conserv)
+  subroutine bds(mla,s,sedge,umac,dx,dt,is_conservative)
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: s(:)
-    type(multifab) , intent(inout) :: sn(:)
+    type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
-    logical        , intent(in   ) :: is_conserv(:)
+    logical        , intent(in   ) :: is_conservative
 
     ! this will hold slx, sly, slxy, etc.
     type(multifab) :: slope(mla%nlevel)
 
     real(kind=dp_t), pointer ::    sop(:,:,:,:)
-    real(kind=dp_t), pointer ::    snp(:,:,:,:)
+    real(kind=dp_t), pointer ::   sepx(:,:,:,:)
+    real(kind=dp_t), pointer ::   sepy(:,:,:,:)
+    real(kind=dp_t), pointer ::   sepz(:,:,:,:)
     real(kind=dp_t), pointer :: slopep(:,:,:,:)
-    real(kind=dp_t), pointer ::  uadvp(:,:,:,:)
-    real(kind=dp_t), pointer ::  vadvp(:,:,:,:)
-    real(kind=dp_t), pointer ::  wadvp(:,:,:,:)
+    real(kind=dp_t), pointer ::  umacp(:,:,:,:)
+    real(kind=dp_t), pointer ::  vmacp(:,:,:,:)
+    real(kind=dp_t), pointer ::  wmacp(:,:,:,:)
 
-    integer :: dm,ng_s,ng_c,ng_u,n,i,comp,nlevs
+    integer :: dm,ng_s,ng_c,ng_u,ng_se,n,i,comp,nlevs
     integer :: lo(mla%dim),hi(mla%dim)
 
     nlevs = mla%nlevel
@@ -63,15 +65,17 @@ contains
     ng_s = s(1)%ng
     ng_c = slope(1)%ng
     ng_u = umac(1,1)%ng
+    ng_se = sedge(1,1)%ng
 
     do n=1,nlevs
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n), i) ) cycle
-          sop    => dataptr(s(n) , i)
-          snp    => dataptr(sn(n), i)
+          sop    => dataptr(s(n), i)
+          sepx   => dataptr(sedge(n,1), i)
+          sepy   => dataptr(sedge(n,2), i)
           slopep => dataptr(slope(n), i)
-          uadvp  => dataptr(umac(n,1), i)
-          vadvp  => dataptr(umac(n,2), i)
+          umacp  => dataptr(umac(n,1), i)
+          vmacp  => dataptr(umac(n,2), i)
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
           select case (dm)
@@ -83,13 +87,15 @@ contains
                                  dx(n,:)) 
 
                 call bdsconc_2d(lo, hi, &
-                                sop(:,:,1,comp), snp(:,:,1,comp), ng_s, &
+                                sop(:,:,1,comp), ng_s, &
                                 slopep(:,:,1,:), ng_c, &
-                                uadvp(:,:,1,1), vadvp(:,:,1,1), ng_u, &
-                                dx(n,:), dt, is_conserv(comp))
+                                umacp(:,:,1,1), vmacp(:,:,1,1), ng_u, &
+                                sepx(:,:,1,1), sepy(:,:,1,1), ng_se, &
+                                dx(n,:), dt, is_conservative)
              end do
           case (3)
-             wadvp  => dataptr(umac(n,3), i)
+             wmacp  => dataptr(umac(n,3), i)
+             sepz   => dataptr(sedge(n,3), i)
              do comp=1,s(n)%nc
                 call bdsslope_3d(lo, hi, &
                                  sop(:,:,:,comp), ng_s, &
@@ -97,10 +103,11 @@ contains
                                  dx(n,:))
 
                 call bdsconc_3d(lo, hi, &
-                                sop(:,:,:,comp), snp(:,:,:,comp), ng_s, &
+                                sop(:,:,:,comp), ng_s, &
                                 slopep(:,:,:,:), ng_c, &
-                                uadvp(:,:,:,1), vadvp(:,:,:,1), wadvp(:,:,:,1), ng_u, &
-                                dx(n,:), dt, is_conserv(comp))
+                                umacp(:,:,:,1), vmacp(:,:,:,1), wmacp(:,:,:,1), ng_u, &
+                                sepx(:,:,:,1), sepy(:,:,:,1), sepz(:,:,:,1), ng_se, &
+                                dx(n,:), dt, is_conservative)
              end do
           end select
        end do
@@ -112,128 +119,11 @@ contains
 
   end subroutine bds
 
-  subroutine bds_velpred(u,umac,force,dx,dt,the_bc_level,mla)
-
-    use ml_restriction_module, only: ml_edge_restriction
-    use create_umac_grown_module
-
-    type(multifab) , intent(in   ) :: u(:)
-    type(multifab) , intent(inout) :: umac(:,:)
-    type(multifab) , intent(in   ) :: force(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
-    type(bc_level) , intent(in   ) :: the_bc_level(:)
-    type(ml_layout), intent(in   ) :: mla
-
-    ! this will hold slx, sly, slxy, etc.
-    type(multifab) :: slopeu(mla%nlevel)
-    type(multifab) :: slopev(mla%nlevel)
-    type(multifab) :: slopew(mla%nlevel)
-
-    real(kind=dp_t), pointer :: up(:,:,:,:)
-    real(kind=dp_t), pointer :: ump(:,:,:,:)
-    real(kind=dp_t), pointer :: vmp(:,:,:,:)
-    real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: sup(:,:,:,:)
-    real(kind=dp_t), pointer :: svp(:,:,:,:)
-    real(kind=dp_t), pointer :: swp(:,:,:,:)
-    real(kind=dp_t), pointer :: fp(:,:,:,:)
-
-    integer :: nlevs,dm,n,i,comp
-    integer :: ng_u,ng_um,ng_f,ng_s
-    integer :: lo(mla%dim),hi(mla%dim)
-
-    nlevs = mla%nlevel
-    dm = u(1)%dim
-
-    if (dm .eq. 2) then
-       ! 3 components and 2 ghost cells
-       ! component 1 = slx
-       ! component 2 = sly
-       ! component 3 = slxy
-       do n=1,nlevs
-          call multifab_build(slopeu(n),mla%la(n),3,2)
-          call multifab_build(slopev(n),mla%la(n),3,2)
-       end do
-    else if (dm .eq. 3) then
-       ! 7 components and 2 ghost cells
-       ! component 1 = slx
-       ! component 2 = sly
-       ! component 3 = slz
-       ! component 4 = slxy
-       ! component 5 = slxz
-       ! component 6 = slyz
-       ! component 7 = slxyz
-       do n=1,nlevs
-          call multifab_build(slopeu(n),mla%la(n),7,2)
-          call multifab_build(slopev(n),mla%la(n),7,2)
-          call multifab_build(slopew(n),mla%la(n),7,2)
-       end do
-    end if
-
-    ng_u  = u(1)%ng
-    ng_um = umac(1,1)%ng
-    ng_f  = force(1)%ng
-    ng_s  = slopeu(1)%ng
-
-    do n=1,nlevs
-       do i=1,u(n)%nboxes
-          if ( multifab_remote(u(n), i) ) cycle
-          up  => dataptr(u(n), i)
-          sup => dataptr(slopeu(n), i)
-          svp => dataptr(slopev(n), i)
-          ump => dataptr(umac(n,1), i)
-          vmp => dataptr(umac(n,2), i)
-          fp  => dataptr(force(n), i)
-          lo =  lwb(get_box(u(n), i))
-          hi =  upb(get_box(u(n), i))
-          select case(dm)
-          case (2)
-             call bdsslope_2d(lo, hi, up(:,:,1,1), ng_u, sup(:,:,1,:), ng_s, dx(n,:))
-             call bdsslope_2d(lo, hi, up(:,:,1,2), ng_u, svp(:,:,1,:), ng_s, dx(n,:))
-
-             call bds_velpred_2d(lo, hi, dx(n,:), dt, up(:,:,1,:), ng_u, &
-                                 sup(:,:,1,:), svp(:,:,1,:), ng_s, &
-                                 ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
-                                 fp(:,:,1,:), ng_f)
-
-          case (3)
-             swp => dataptr(slopew(n), i)
-             wmp => dataptr(umac(n,3), i)
-             call bdsslope_3d(lo, hi, up(:,:,:,1), ng_u, sup(:,:,:,:), ng_s, dx(n,:))
-             call bdsslope_3d(lo, hi, up(:,:,:,2), ng_u, svp(:,:,:,:), ng_s, dx(n,:))
-             call bdsslope_3d(lo, hi, up(:,:,:,3), ng_u, swp(:,:,:,:), ng_s, dx(n,:))
-
-             call bl_error("bds_velpred_3d not written yet")
-
-          end select
-       end do
-    end do
-
-    if (nlevs .gt. 1) then
-       do n=2,nlevs
-          call create_umac_grown(n,umac(n,:),umac(n-1,:),the_bc_level(n-1),the_bc_level(n))
-       end do
-    else
-       do n=1,nlevs
-          do comp=1,dm
-             call multifab_fill_boundary(umac(n,comp))
-          enddo
-       end do
-    end if
-
-    do n = nlevs,2,-1
-       do comp = 1,dm
-          call ml_edge_restriction(umac(n-1,comp),umac(n,comp),mla%mba%rr(n-1,:),comp)
-       end do
-    end do
-
-  end subroutine bds_velpred
-
   subroutine bdsslope_2d(lo,hi,s,ng_s,slope,ng_c,dx)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_c
-    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,lo(2)-ng_s:)
-    real(kind=dp_t), intent(inout) :: slope(lo(1)-ng_c:,lo(2)-ng_c:,:)
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :)
+    real(kind=dp_t), intent(inout) ::  slope(lo(1)-ng_c :,lo(2)-ng_c :,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     ! local variables
@@ -681,34 +571,30 @@ contains
 
   end subroutine bdsslope_3d
 
-  subroutine bdsconc_2d(lo,hi,s,sn,ng_s,slope,ng_c,uadv,vadv,ng_u,dx,dt,is_conserv)
+  subroutine bdsconc_2d(lo,hi,s,ng_s,slope,ng_c,umac,vmac,ng_u,sedgex,sedgey,ng_se, &
+                        dx,dt,is_conservative)
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_c,ng_u
-    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,lo(2)-ng_s:)
-    real(kind=dp_t), intent(inout) ::    sn(lo(1)-ng_s:,lo(2)-ng_s:)
-    real(kind=dp_t), intent(in   ) :: slope(lo(1)-ng_c:,lo(2)-ng_c:,:)
-    real(kind=dp_t), intent(in   ) ::  uadv(lo(1)-ng_u:,lo(2)-ng_u:)
-    real(kind=dp_t), intent(in   ) ::  vadv(lo(1)-ng_u:,lo(2)-ng_u:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_c,ng_u,ng_se
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::  slope(lo(1)-ng_c :,lo(2)-ng_c :,:)
+    real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_u :,lo(2)-ng_u :)
+    real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_u :,lo(2)-ng_u :)
+    real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:)
+    real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
-    logical        , intent(in   ) :: is_conserv
+    logical        , intent(in   ) :: is_conservative
 
     ! local variables
     integer i,j,ioff,joff,ll
 
-    real(kind=dp_t), allocatable :: sedgex(:,:)
-    real(kind=dp_t), allocatable :: sedgey(:,:)
-
     real(kind=dp_t), allocatable :: ux(:,:)
     real(kind=dp_t), allocatable :: vy(:,:)
 
-    real(kind=dp_t) :: isign,jsign,hx,hy,uconv,vconv
+    real(kind=dp_t) :: isign,jsign,hx,hy
     real(kind=dp_t) :: del(2),p1(2),p2(2),p3(2)
     real(kind=dp_t) :: val1,val2,val3
-    real(kind=dp_t) :: u,v,uu,vv,gamma
+    real(kind=dp_t) :: u,v,gamma
     real(kind=dp_t) :: dt2,dt3,half
-
-    allocate(sedgex(lo(1):hi(1)+1,lo(2):hi(2)  ))
-    allocate(sedgey(lo(1):hi(1)  ,lo(2):hi(2)+1))
 
     allocate(ux(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
     allocate(vy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
@@ -724,8 +610,8 @@ contains
     ! compute cell-centered ux and vy
     do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)+1
-          ux(i,j) = (uadv(i+1,j) - uadv(i,j)) / hx
-          vy(i,j) = (vadv(i,j+1) - vadv(i,j)) / hy
+          ux(i,j) = (umac(i+1,j) - umac(i,j)) / hx
+          vy(i,j) = (vmac(i,j+1) - vmac(i,j)) / hy
        end do
     end do
 
@@ -737,7 +623,7 @@ contains
           ! compute sedgex without transverse corrections
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-          if (uadv(i,j) .gt. 0) then
+          if (umac(i,j) .gt. 0) then
              isign = 1.d0
              ioff = -1
           else
@@ -746,7 +632,7 @@ contains
           endif
 
           ! centroid of rectangular volume
-          del(1) = isign*0.5d0*hx - 0.5d0*uadv(i,j)*dt
+          del(1) = isign*0.5d0*hx - 0.5d0*umac(i,j)*dt
           del(2) = 0.d0
           call eval_2d(s(i+ioff,j),slope(i+ioff,j,:),del,sedgex(i,j))
 
@@ -757,7 +643,7 @@ contains
           ! compute \Gamma^{y+}
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-          if (vadv(i+ioff,j+1) .gt. 0) then
+          if (vmac(i+ioff,j+1) .gt. 0) then
              jsign = 1.d0
              joff = 0
           else
@@ -766,18 +652,18 @@ contains
           endif
 
           u = 0.d0
-          if (uadv(i,j)*uadv(i,j+joff) .gt. 0) then
-             u = uadv(i,j+joff)
+          if (umac(i,j)*umac(i,j+joff) .gt. 0) then
+             u = umac(i,j+joff)
           endif
 
           p1(1) = isign*0.5d0*hx
           p1(2) = jsign*0.5d0*hy
 
-          p2(1) = isign*0.5d0*hx - uadv(i,j)*dt
+          p2(1) = isign*0.5d0*hx - umac(i,j)*dt
           p2(2) = jsign*0.5d0*hy
 
           p3(1) = isign*0.5d0*hx - u*dt
-          p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j+1)*dt
+          p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j+1)*dt
 
           do ll=1,2
              del(ll) = (p2(ll)+p3(ll))/2.d0
@@ -804,14 +690,14 @@ contains
           ! correct sedgex with \Gamma^{y+}
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-          gamma = gamma * vadv(i+ioff,j+1)
+          gamma = gamma * vmac(i+ioff,j+1)
           sedgex(i,j) = sedgex(i,j) - dt*gamma/(2.d0*hy)
           
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! compute \Gamma^{y-}
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           
-          if (vadv(i+ioff,j) .gt. 0) then
+          if (vmac(i+ioff,j) .gt. 0) then
              jsign = 1.d0
              joff = -1
           else
@@ -820,18 +706,18 @@ contains
           endif
 
           u = 0.d0
-          if (uadv(i,j)*uadv(i,j+joff) .gt. 0) then
-             u = uadv(i,j+joff)
+          if (umac(i,j)*umac(i,j+joff) .gt. 0) then
+             u = umac(i,j+joff)
           endif
 
           p1(1) = isign*0.5d0*hx
           p1(2) = jsign*0.5d0*hy
 
-          p2(1) = isign*0.5d0*hx - uadv(i,j)*dt
+          p2(1) = isign*0.5d0*hx - umac(i,j)*dt
           p2(2) = jsign*0.5d0*hy
 
           p3(1) = isign*0.5d0*hx - u*dt
-          p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j)*dt
+          p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j)*dt
 
           do ll=1,2
              del(ll) = (p2(ll)+p3(ll))/2.d0
@@ -858,7 +744,7 @@ contains
           ! correct sedgex with \Gamma^{y-}
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-          gamma = gamma * vadv(i+ioff,j)
+          gamma = gamma * vmac(i+ioff,j)
           sedgex(i,j) = sedgex(i,j) + dt*gamma/(2.d0*hy)
 
        end do
@@ -873,7 +759,7 @@ contains
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
           ! centroid of rectangular volume
-          if (vadv(i,j) .gt. 0) then
+          if (vmac(i,j) .gt. 0) then
              jsign = 1.d0
              joff = -1
           else
@@ -882,7 +768,7 @@ contains
           endif
 
           del(1) = 0.d0
-          del(2) = jsign*0.5d0*hy - 0.5d0*vadv(i,j)*dt
+          del(2) = jsign*0.5d0*hy - 0.5d0*vmac(i,j)*dt
           call eval_2d(s(i,j+joff),slope(i,j+joff,:),del,sedgey(i,j))
 
           ! source term
@@ -892,7 +778,7 @@ contains
           ! compute \Gamma^{x+} without corner corrections
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-          if (uadv(i+1,j+joff) .gt. 0) then
+          if (umac(i+1,j+joff) .gt. 0) then
              isign = 1.d0
              ioff = 0
           else
@@ -901,17 +787,17 @@ contains
           endif
 
           v = 0.d0
-          if (vadv(i,j)*vadv(i+ioff,j) .gt. 0) then
-             v = vadv(i+ioff,j)
+          if (vmac(i,j)*vmac(i+ioff,j) .gt. 0) then
+             v = vmac(i+ioff,j)
           endif
 
           p1(1) = isign*0.5d0*hx
           p1(2) = jsign*0.5d0*hy
 
           p2(1) = isign*0.5d0*hx
-          p2(2) = jsign*0.5d0*hy - vadv(i,j)*dt
+          p2(2) = jsign*0.5d0*hy - vmac(i,j)*dt
 
-          p3(1) = isign*0.5d0*hx - uadv(i+1,j+joff)*dt
+          p3(1) = isign*0.5d0*hx - umac(i+1,j+joff)*dt
           p3(2) = jsign*0.5d0*hy - v*dt
 
           do ll=1,2
@@ -939,14 +825,14 @@ contains
           ! correct sedgey with \Gamma^{x+}
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              
-          gamma = gamma * uadv(i+1,j+joff)
+          gamma = gamma * umac(i+1,j+joff)
           sedgey(i,j) = sedgey(i,j) - dt*gamma/(2.d0*hx)
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! compute \Gamma^{x-}
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           
-          if (uadv(i,j+joff) .gt. 0) then
+          if (umac(i,j+joff) .gt. 0) then
              isign = 1.d0
              ioff = -1
           else
@@ -955,17 +841,17 @@ contains
           endif
 
           v = 0.d0
-          if (vadv(i,j)*vadv(i+ioff,j) .gt. 0) then
-             v = vadv(i+ioff,j)
+          if (vmac(i,j)*vmac(i+ioff,j) .gt. 0) then
+             v = vmac(i+ioff,j)
           endif
 
           p1(1) = isign*0.5d0*hx
           p1(2) = jsign*0.5d0*hy
 
           p2(1) = isign*0.5d0*hx
-          p2(2) = jsign*0.5d0*hy - vadv(i,j)*dt
+          p2(2) = jsign*0.5d0*hy - vmac(i,j)*dt
 
-          p3(1) = isign*0.5d0*hx - uadv(i,j+joff)*dt
+          p3(1) = isign*0.5d0*hx - umac(i,j+joff)*dt
           p3(2) = jsign*0.5d0*hy - v*dt
 
           do ll=1,2
@@ -993,76 +879,43 @@ contains
           ! correct sedgey with \Gamma^{x-}
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-          gamma = gamma * uadv(i,j+joff)
+          gamma = gamma * umac(i,j+joff)
           sedgey(i,j) = sedgey(i,j) + dt*gamma/(2.d0*hx)
 
        end do
     end do
-    
-    ! advance solution
-    if (is_conserv) then
 
-       ! conservative update
-       do j = lo(2),hi(2) 
-          do i = lo(1),hi(1) 
-             sn(i,j) = s(i,j) - dt*(  &
-                  (sedgex(i+1,j)*uadv(i+1,j)-sedgex(i,j)*uadv(i,j))/hx +  &
-                  (sedgey(i,j+1)*vadv(i,j+1)-sedgey(i,j)*vadv(i,j))/hy )
-          enddo
-       enddo
-
-    else 
-
-       ! non-conservative update
-       do j = lo(2),hi(2) 
-          do i = lo(1),hi(1) 
-             uconv = 0.5d0 * (uadv(i+1,j)+uadv(i,j))
-             vconv = 0.5d0 * (vadv(i,j+1)+vadv(i,j))
-
-             sn(i,j) = s(i,j) - dt*( &
-                  uconv * (sedgex(i+1,j) - sedgex(i,j)) / hx + &
-                  vconv * (sedgey(i,j+1) - sedgey(i,j)) / hy )
-          enddo
-       enddo
-
-    endif
-
-    deallocate(sedgex,sedgey,ux,vy)
+    deallocate(ux,vy)
 
   end subroutine bdsconc_2d
 
-  subroutine bdsconc_3d(lo,hi,s,sn,ng_s,slope,ng_c,uadv,vadv,wadv,ng_u,dx,dt,is_conserv)
+  subroutine bdsconc_3d(lo,hi,s,ng_s,slope,ng_c,umac,vmac,wmac,ng_u, &
+                        sedgex,sedgey,sedgez,ng_se,dx,dt,is_conservative)
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_c,ng_u
-    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:)
-    real(kind=dp_t), intent(inout) ::    sn(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:)
-    real(kind=dp_t), intent(in   ) :: slope(lo(1)-ng_c:,lo(2)-ng_c:,lo(3)-ng_c:,:)
-    real(kind=dp_t), intent(in   ) ::  uadv(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:)
-    real(kind=dp_t), intent(in   ) ::  vadv(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:)
-    real(kind=dp_t), intent(in   ) ::  wadv(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_c,ng_u,ng_se
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::  slope(lo(1)-ng_c :,lo(2)-ng_c :,lo(3)-ng_c :,:)
+    real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
+    real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
+    real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
+    real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:)
+    real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:)
+    real(kind=dp_t), intent(inout) :: sedgez(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
-    logical        , intent(in   ) :: is_conserv
+    logical        , intent(in   ) :: is_conservative
 
     ! local variables
     integer i,j,k,ioff,joff,koff,ll
-
-    real(kind=dp_t), allocatable :: sedgex(:,:,:)
-    real(kind=dp_t), allocatable :: sedgey(:,:,:)
-    real(kind=dp_t), allocatable :: sedgez(:,:,:)
 
     real(kind=dp_t), allocatable :: ux(:,:,:)
     real(kind=dp_t), allocatable :: vy(:,:,:)
     real(kind=dp_t), allocatable :: wz(:,:,:)
 
-    real(kind=dp_t) :: isign,jsign,ksign,hx,hy,hz,uconv,vconv,wconv
+    real(kind=dp_t) :: isign,jsign,ksign,hx,hy,hz
     real(kind=dp_t) :: del(3),p1(3),p2(3),p3(3),p4(3)
     real(kind=dp_t) :: val1,val2,val3,val4,val5
     real(kind=dp_t) :: u,v,w,uu,vv,ww,gamma,gamma2
     real(kind=dp_t) :: dt2,dt3,dt4,half,sixth
-
-    allocate(sedgex(lo(1):hi(1)+1,lo(2):hi(2)  ,lo(3):hi(3)  ))
-    allocate(sedgey(lo(1):hi(1)  ,lo(2):hi(2)+1,lo(3):hi(3)  ))
-    allocate(sedgez(lo(1):hi(1)  ,lo(2):hi(2)  ,lo(3):hi(3)+1))
 
     allocate(ux(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     allocate(vy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
@@ -1083,9 +936,9 @@ contains
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             ux(i,j,k) = (uadv(i+1,j,k) - uadv(i,j,k)) / hx
-             vy(i,j,k) = (vadv(i,j+1,k) - vadv(i,j,k)) / hy
-             wz(i,j,k) = (wadv(i,j,k+1) - wadv(i,j,k)) / hz
+             ux(i,j,k) = (umac(i+1,j,k) - umac(i,j,k)) / hx
+             vy(i,j,k) = (vmac(i,j+1,k) - vmac(i,j,k)) / hy
+             wz(i,j,k) = (wmac(i,j,k+1) - wmac(i,j,k)) / hz
           end do
        end do
     end do
@@ -1099,7 +952,7 @@ contains
              ! compute sedgex without transverse corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i,j,k) .gt. 0) then
+             if (umac(i,j,k) .gt. 0) then
                 isign = 1.d0
                 ioff = -1
              else
@@ -1108,7 +961,7 @@ contains
              endif
 
              ! centroid of rectangular volume
-             del(1) = isign*0.5d0*hx - 0.5d0*uadv(i,j,k)*dt
+             del(1) = isign*0.5d0*hx - 0.5d0*umac(i,j,k)*dt
              del(2) = 0.d0
              del(3) = 0.d0
              call eval_3d(s(i+ioff,j,k),slope(i+ioff,j,k,:),del,sedgex(i,j,k))
@@ -1120,7 +973,7 @@ contains
              ! compute \Gamma^{y+} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i+ioff,j+1,k) .gt. 0) then
+             if (vmac(i+ioff,j+1,k) .gt. 0) then
                 jsign = 1.d0
                 joff = 0
              else
@@ -1129,20 +982,20 @@ contains
              endif
 
              u = 0.d0
-             if (uadv(i,j,k)*uadv(i,j+joff,k) .gt. 0) then
-                u = uadv(i,j+joff,k)
+             if (umac(i,j,k)*umac(i,j+joff,k) .gt. 0) then
+                u = umac(i,j+joff,k)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = jsign*0.5d0*hy
              p1(3) = 0.d0
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = jsign*0.5d0*hy
              p2(3) = 0.d0
 
              p3(1) = isign*0.5d0*hx - u*dt
-             p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j+1,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j+1,k)*dt
              p3(3) = 0.d0
 
              do ll=1,3
@@ -1170,7 +1023,7 @@ contains
              ! correct \Gamma^{y+} with \Gamma^{y+,z+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i+ioff,j+joff,k+1) .gt. 0) then
+             if (wmac(i+ioff,j+joff,k+1) .gt. 0) then
                 ksign = 1.d0
                 koff = 0
              else
@@ -1179,30 +1032,30 @@ contains
              endif
 
              uu = 0.d0
-             if (uadv(i,j,k)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j,k)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              vv = 0.d0
-             if (vadv(i+ioff,j+1,k)*vadv(i+ioff,j+1,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j+1,k+koff)
+             if (vmac(i+ioff,j+1,k)*vmac(i+ioff,j+1,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j+1,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = jsign*0.5d0*hy
              p1(3) = ksign*0.5d0*hz
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = jsign*0.5d0*hy
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
-             p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j+1,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j+1,k)*dt
              p3(3) = ksign*0.5d0*hz
 
              p4(1) = isign*0.5d0*hx - uu*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
-             p4(3) = ksign*0.5d0*hz - wadv(i+ioff,j+joff,k+1)*dt
+             p4(3) = ksign*0.5d0*hz - wmac(i+ioff,j+joff,k+1)*dt
 
              do ll=1,3
                 del(ll) = (p1(ll)+p2(ll)+p3(ll)+p4(ll))/4.d0
@@ -1236,7 +1089,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * wadv(i+ioff,j+joff,k+1)
+             gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
 
              gamma = gamma - dt*gamma2/(3.d0*hz)
 
@@ -1244,7 +1097,7 @@ contains
              ! correct \Gamma^{y+} with \Gamma^{y+,z-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i+ioff,j+joff,k) .gt. 0) then
+             if (wmac(i+ioff,j+joff,k) .gt. 0) then
                 ksign = 1.d0
                 koff = -1
              else
@@ -1253,30 +1106,30 @@ contains
              endif
 
              uu = 0.d0
-             if (uadv(i,j,k)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j,k)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              vv = 0.d0
-             if (vadv(i+ioff,j+1,k)*vadv(i+ioff,j+1,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j+1,k+koff)
+             if (vmac(i+ioff,j+1,k)*vmac(i+ioff,j+1,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j+1,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = jsign*0.5d0*hy
              p1(3) = ksign*0.5d0*hz
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = jsign*0.5d0*hy
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
-             p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j+1,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j+1,k)*dt
              p3(3) = ksign*0.5d0*hz
 
              p4(1) = isign*0.5d0*hx - uu*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
-             p4(3) = ksign*0.5d0*hz - wadv(i+ioff,j+joff,k)*dt
+             p4(3) = ksign*0.5d0*hz - wmac(i+ioff,j+joff,k)*dt
 
              do ll=1,3
                 del(ll) = (p1(ll)+p2(ll)+p3(ll)+p4(ll))/4.d0
@@ -1310,7 +1163,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * wadv(i+ioff,j+joff,k)
+             gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
 
              gamma = gamma + dt*gamma2/(3.d0*hz)
 
@@ -1318,14 +1171,14 @@ contains
              ! correct sedgex with \Gamma^{y+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             gamma = gamma * vadv(i+ioff,j+1,k)
+             gamma = gamma * vmac(i+ioff,j+1,k)
              sedgex(i,j,k) = sedgex(i,j,k) - dt*gamma/(2.d0*hy)
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{y-} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i+ioff,j,k) .gt. 0) then
+             if (vmac(i+ioff,j,k) .gt. 0) then
                 jsign = 1.d0
                 joff = -1
              else
@@ -1334,20 +1187,20 @@ contains
              endif
 
              u = 0.d0
-             if (uadv(i,j,k)*uadv(i,j+joff,k) .gt. 0) then
-                u = uadv(i,j+joff,k)
+             if (umac(i,j,k)*umac(i,j+joff,k) .gt. 0) then
+                u = umac(i,j+joff,k)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = jsign*0.5d0*hy
              p1(3) = 0.d0
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = jsign*0.5d0*hy
              p2(3) = 0.d0
 
              p3(1) = isign*0.5d0*hx - u*dt
-             p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j,k)*dt
              p3(3) = 0.d0
 
              do ll=1,3
@@ -1375,7 +1228,7 @@ contains
              ! correct \Gamma^{y-} with \Gamma^{y-,z+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i+ioff,j+joff,k+1) .gt. 0) then
+             if (wmac(i+ioff,j+joff,k+1) .gt. 0) then
                 ksign = 1.d0
                 koff = 0
              else
@@ -1384,30 +1237,30 @@ contains
              endif
 
              uu = 0.d0
-             if (uadv(i,j,k)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j,k)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              vv = 0.d0
-             if (vadv(i+ioff,j,k)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i+ioff,j,k)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = jsign*0.5d0*hy
              p1(3) = ksign*0.5d0*hz
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = jsign*0.5d0*hy
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
-             p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j,k)*dt
              p3(3) = ksign*0.5d0*hz
 
              p4(1) = isign*0.5d0*hx - uu*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
-             p4(3) = ksign*0.5d0*hz - wadv(i+ioff,j+joff,k+1)*dt
+             p4(3) = ksign*0.5d0*hz - wmac(i+ioff,j+joff,k+1)*dt
 
              do ll=1,3
                 del(ll) = (p1(ll)+p2(ll)+p3(ll)+p4(ll))/4.d0
@@ -1441,7 +1294,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * wadv(i+ioff,j+joff,k+1)
+             gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
 
              gamma = gamma - dt*gamma2/(3.d0*hz)
 
@@ -1449,7 +1302,7 @@ contains
              ! correct \Gamma^{y-} with \Gamma^{y-,z-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i+ioff,j+joff,k) .gt. 0) then
+             if (wmac(i+ioff,j+joff,k) .gt. 0) then
                 ksign = 1.d0
                 koff = -1
              else
@@ -1458,30 +1311,30 @@ contains
              endif
 
              uu = 0.d0
-             if (uadv(i,j,k)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j,k)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              vv = 0.d0
-             if (vadv(i+ioff,j,k)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i+ioff,j,k)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = jsign*0.5d0*hy
              p1(3) = ksign*0.5d0*hz
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = jsign*0.5d0*hy
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
-             p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j,k)*dt
              p3(3) = ksign*0.5d0*hz
 
              p4(1) = isign*0.5d0*hx - uu*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
-             p4(3) = ksign*0.5d0*hz - wadv(i+ioff,j+joff,k)*dt
+             p4(3) = ksign*0.5d0*hz - wmac(i+ioff,j+joff,k)*dt
 
              do ll=1,3
                 del(ll) = (p1(ll)+p2(ll)+p3(ll)+p4(ll))/4.d0
@@ -1515,7 +1368,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * wadv(i+ioff,j+joff,k)
+             gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
 
              gamma = gamma + dt*gamma2/(3.d0*hz)
 
@@ -1523,14 +1376,14 @@ contains
              ! correct sedgex with \Gamma^{y-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             gamma = gamma * vadv(i+ioff,j,k)
+             gamma = gamma * vmac(i+ioff,j,k)
              sedgex(i,j,k) = sedgex(i,j,k) + dt*gamma/(2.d0*hy)
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{z+} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i+ioff,j,k+1) .gt. 0) then
+             if (wmac(i+ioff,j,k+1) .gt. 0) then
                 ksign = 1.d0
                 koff = 0
              else
@@ -1539,21 +1392,21 @@ contains
              endif
 
              u = 0.d0
-             if (uadv(i,j,k)*uadv(i,j,k+koff) .gt. 0) then
-                u = uadv(i,j,k+koff)
+             if (umac(i,j,k)*umac(i,j,k+koff) .gt. 0) then
+                u = umac(i,j,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = 0.d0
              p1(3) = ksign*0.5d0*hz
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = 0.d0
              p2(3) = ksign*0.5d0*hz
 
              p3(1) = isign*0.5d0*hx - u*dt
              p3(2) = 0.d0
-             p3(3) = ksign*0.5d0*hz - wadv(i+ioff,j,k+1)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i+ioff,j,k+1)*dt
 
              do ll=1,3
                 del(ll) = (p2(ll)+p3(ll))/2.d0
@@ -1580,7 +1433,7 @@ contains
              ! correct \Gamma^{z+} with \Gamma^{z+,y+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i+ioff,j+1,k+koff) .gt. 0) then
+             if (vmac(i+ioff,j+1,k+koff) .gt. 0) then
                 jsign = 1.d0
                 joff = 0
              else
@@ -1589,29 +1442,29 @@ contains
              endif
 
              uu = 0.d0
-             if (uadv(i,j,k)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j,k)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              ww = 0.d0
-             if (wadv(i+ioff,j,k+1)*wadv(i+ioff,j+joff,k+1) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k+1)
+             if (wmac(i+ioff,j,k+1)*wmac(i+ioff,j+joff,k+1) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k+1)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = jsign*0.5d0*hy
              p1(3) = ksign*0.5d0*hz
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = jsign*0.5d0*hy
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p3(2) = jsign*0.5d0*hy
-             p3(3) = ksign*0.5d0*hz - wadv(i+ioff,j,k+1)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i+ioff,j,k+1)*dt
 
              p4(1) = isign*0.5d0*hx - uu*dt
-             p4(2) = jsign*0.5d0*hy - vadv(i+ioff,j+1,k+koff)*dt
+             p4(2) = jsign*0.5d0*hy - vmac(i+ioff,j+1,k+koff)*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
              do ll=1,3
@@ -1646,7 +1499,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * vadv(i+ioff,j+1,k+koff)
+             gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
 
              gamma = gamma - dt*gamma2/(3.d0*hy)
 
@@ -1654,7 +1507,7 @@ contains
              ! correct \Gamma^{z+} with \Gamma^{z+,y-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i+ioff,j,k+koff) .gt. 0) then
+             if (vmac(i+ioff,j,k+koff) .gt. 0) then
                 jsign = 1.d0
                 joff = -1
              else
@@ -1663,29 +1516,29 @@ contains
              endif
 
              uu = 0.d0
-             if (uadv(i,j,k)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j,k)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              ww = 0.d0
-             if (wadv(i+ioff,j,k+1)*wadv(i+ioff,j+joff,k+1) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k+1)
+             if (wmac(i+ioff,j,k+1)*wmac(i+ioff,j+joff,k+1) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k+1)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = jsign*0.5d0*hy
              p1(3) = ksign*0.5d0*hz
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = jsign*0.5d0*hy
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p3(2) = jsign*0.5d0*hy
-             p3(3) = ksign*0.5d0*hz - wadv(i+ioff,j,k+1)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i+ioff,j,k+1)*dt
 
              p4(1) = isign*0.5d0*hx - uu*dt
-             p4(2) = jsign*0.5d0*hy - vadv(i+ioff,j,k+koff)*dt
+             p4(2) = jsign*0.5d0*hy - vmac(i+ioff,j,k+koff)*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
              do ll=1,3
@@ -1720,7 +1573,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * vadv(i+ioff,j,k+koff)
+             gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
 
              gamma = gamma + dt*gamma2/(3.d0*hy)
 
@@ -1728,14 +1581,14 @@ contains
              ! correct sedgex with \Gamma^{z+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             gamma = gamma * wadv(i+ioff,j,k+1)
+             gamma = gamma * wmac(i+ioff,j,k+1)
              sedgex(i,j,k) = sedgex(i,j,k) - dt*gamma/(2.d0*hz)
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{z-} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i+ioff,j,k) .gt. 0) then
+             if (wmac(i+ioff,j,k) .gt. 0) then
                 ksign = 1.d0
                 koff = -1
              else
@@ -1744,21 +1597,21 @@ contains
              endif
 
              u = 0.d0
-             if (uadv(i,j,k)*uadv(i,j,k+koff) .gt. 0) then
-                u = uadv(i,j,k+koff)
+             if (umac(i,j,k)*umac(i,j,k+koff) .gt. 0) then
+                u = umac(i,j,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = 0.d0
              p1(3) = ksign*0.5d0*hz
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = 0.d0
              p2(3) = ksign*0.5d0*hz
 
              p3(1) = isign*0.5d0*hx - u*dt
              p3(2) = 0.d0
-             p3(3) = ksign*0.5d0*hz - wadv(i+ioff,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i+ioff,j,k)*dt
 
              do ll=1,3
                 del(ll) = (p2(ll)+p3(ll))/2.d0
@@ -1785,7 +1638,7 @@ contains
              ! correct \Gamma^{z-} with \Gamma^{z-,y+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i+ioff,j+1,k+koff) .gt. 0) then
+             if (vmac(i+ioff,j+1,k+koff) .gt. 0) then
                 jsign = 1.d0
                 joff = 0
              else
@@ -1794,29 +1647,29 @@ contains
              endif
 
              uu = 0.d0
-             if (uadv(i,j,k)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j,k)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              ww = 0.d0
-             if (wadv(i+ioff,j,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i+ioff,j,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = jsign*0.5d0*hy
              p1(3) = ksign*0.5d0*hz
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = jsign*0.5d0*hy
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p3(2) = jsign*0.5d0*hy
-             p3(3) = ksign*0.5d0*hz - wadv(i+ioff,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i+ioff,j,k)*dt
 
              p4(1) = isign*0.5d0*hx - uu*dt
-             p4(2) = jsign*0.5d0*hy - vadv(i+ioff,j+1,k+koff)*dt
+             p4(2) = jsign*0.5d0*hy - vmac(i+ioff,j+1,k+koff)*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
              do ll=1,3
@@ -1851,7 +1704,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * vadv(i+ioff,j+1,k+koff)
+             gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
 
              gamma = gamma - dt*gamma2/(3.d0*hy)
 
@@ -1859,7 +1712,7 @@ contains
              ! correct \Gamma^{z-} with \Gamma^{z-,y-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i+ioff,j,k+koff) .gt. 0) then
+             if (vmac(i+ioff,j,k+koff) .gt. 0) then
                 jsign = 1.d0
                 joff = -1
              else
@@ -1868,29 +1721,29 @@ contains
              endif
 
              uu = 0.d0
-             if (uadv(i,j,k)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j,k)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              ww = 0.d0
-             if (wadv(i+ioff,j,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i+ioff,j,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              p1(1) = isign*0.5d0*hx
              p1(2) = jsign*0.5d0*hy
              p1(3) = ksign*0.5d0*hz
 
-             p2(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p2(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p2(2) = jsign*0.5d0*hy
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j,k)*dt
              p3(2) = jsign*0.5d0*hy
-             p3(3) = ksign*0.5d0*hz - wadv(i+ioff,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i+ioff,j,k)*dt
 
              p4(1) = isign*0.5d0*hx - uu*dt
-             p4(2) = jsign*0.5d0*hy - vadv(i+ioff,j,k+koff)*dt
+             p4(2) = jsign*0.5d0*hy - vmac(i+ioff,j,k+koff)*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
              do ll=1,3
@@ -1925,7 +1778,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * vadv(i+ioff,j,k+koff)
+             gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
 
              gamma = gamma + dt*gamma2/(3.d0*hy)
 
@@ -1933,7 +1786,7 @@ contains
              ! correct sedgex with \Gamma^{z-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             gamma = gamma * wadv(i+ioff,j,k)
+             gamma = gamma * wmac(i+ioff,j,k)
              sedgex(i,j,k) = sedgex(i,j,k) + dt*gamma/(2.d0*hz)
 
           enddo
@@ -1950,7 +1803,7 @@ contains
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
              ! centroid of rectangular volume
-             if (vadv(i,j,k) .gt. 0) then
+             if (vmac(i,j,k) .gt. 0) then
                 jsign = 1.d0
                 joff = -1
              else
@@ -1959,7 +1812,7 @@ contains
              endif
 
              del(1) = 0.d0
-             del(2) = jsign*0.5d0*hy - 0.5d0*vadv(i,j,k)*dt
+             del(2) = jsign*0.5d0*hy - 0.5d0*vmac(i,j,k)*dt
              del(3) = 0.d0
              call eval_3d(s(i,j+joff,k),slope(i,j+joff,k,:),del,sedgey(i,j,k))
 
@@ -1970,7 +1823,7 @@ contains
              ! compute \Gamma^{x+} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i+1,j+joff,k) .gt. 0) then
+             if (umac(i+1,j+joff,k) .gt. 0) then
                 isign = 1.d0
                 ioff = 0
              else
@@ -1979,8 +1832,8 @@ contains
              endif
 
              v = 0.d0
-             if (vadv(i,j,k)*vadv(i+ioff,j,k) .gt. 0) then
-                v = vadv(i+ioff,j,k)
+             if (vmac(i,j,k)*vmac(i+ioff,j,k) .gt. 0) then
+                v = vmac(i+ioff,j,k)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -1988,10 +1841,10 @@ contains
              p1(3) = 0.d0
 
              p2(1) = isign*0.5d0*hx
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = 0.d0
 
-             p3(1) = isign*0.5d0*hx - uadv(i+1,j+joff,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i+1,j+joff,k)*dt
              p3(2) = jsign*0.5d0*hy - v*dt
              p3(3) = 0.d0
 
@@ -2020,7 +1873,7 @@ contains
              ! correct \Gamma^{x+} with \Gamma^{x+,z+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i+ioff,j+joff,k+1) .gt. 0) then
+             if (wmac(i+ioff,j+joff,k+1) .gt. 0) then
                 ksign = 1.d0
                 koff = 0
              else
@@ -2029,13 +1882,13 @@ contains
              endif
 
              vv = 0.d0
-             if (vadv(i,j,k)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i,j,k)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              uu = 0.d0
-             if (uadv(i+1,j+joff,k)*uadv(i+1,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i+1,j+joff,k+koff)
+             if (umac(i+1,j+joff,k)*umac(i+1,j+joff,k+koff) .gt. 0) then
+                uu = umac(i+1,j+joff,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2043,16 +1896,16 @@ contains
              p1(3) = ksign*0.5d0*hz
 
              p2(1) = isign*0.5d0*hx
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i+1,j+joff,k)*dt
-             p3(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i+1,j+joff,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p3(3) = ksign*0.5d0*hz
 
              p4(1) = isign*0.5d0*hx - uu*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
-             p4(3) = ksign*0.5d0*hz - wadv(i+ioff,j+joff,k+1)*dt
+             p4(3) = ksign*0.5d0*hz - wmac(i+ioff,j+joff,k+1)*dt
 
              do ll=1,3
                 del(ll) = (p1(ll)+p2(ll)+p3(ll)+p4(ll))/4.d0
@@ -2086,7 +1939,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * wadv(i+ioff,j+joff,k+1)
+             gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
 
              gamma = gamma - dt*gamma2/(3.d0*hz)
 
@@ -2094,7 +1947,7 @@ contains
              ! correct \Gamma^{x+} with \Gamma^{x+,z-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i+ioff,j+joff,k) .gt. 0) then
+             if (wmac(i+ioff,j+joff,k) .gt. 0) then
                 ksign = 1.d0
                 koff = -1
              else
@@ -2103,13 +1956,13 @@ contains
              endif
 
              vv = 0.d0
-             if (vadv(i,j,k)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i,j,k)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              uu = 0.d0
-             if (uadv(i+1,j+joff,k)*uadv(i+1,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i+1,j+joff,k+koff)
+             if (umac(i+1,j+joff,k)*umac(i+1,j+joff,k+koff) .gt. 0) then
+                uu = umac(i+1,j+joff,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2117,16 +1970,16 @@ contains
              p1(3) = ksign*0.5d0*hz
 
              p2(1) = isign*0.5d0*hx
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i+1,j+joff,k)*dt
-             p3(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i+1,j+joff,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p3(3) = ksign*0.5d0*hz
 
              p4(1) = isign*0.5d0*hx - uu*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
-             p4(3) = ksign*0.5d0*hz - wadv(i+ioff,j+joff,k)*dt
+             p4(3) = ksign*0.5d0*hz - wmac(i+ioff,j+joff,k)*dt
 
              do ll=1,3
                 del(ll) = (p1(ll)+p2(ll)+p3(ll)+p4(ll))/4.d0
@@ -2160,7 +2013,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * wadv(i+ioff,j+joff,k)
+             gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
 
              gamma = gamma + dt*gamma2/(3.d0*hz)
 
@@ -2168,14 +2021,14 @@ contains
              ! correct sedgey with \Gamma^{x+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              
-             gamma = gamma * uadv(i+1,j+joff,k)
+             gamma = gamma * umac(i+1,j+joff,k)
              sedgey(i,j,k) = sedgey(i,j,k) - dt*gamma/(2.d0*hx)
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{x-} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i,j+joff,k) .gt. 0) then
+             if (umac(i,j+joff,k) .gt. 0) then
                 isign = 1.d0
                 ioff = -1
              else
@@ -2184,8 +2037,8 @@ contains
              endif
 
              v = 0.d0
-             if (vadv(i,j,k)*vadv(i+ioff,j,k) .gt. 0) then
-                v = vadv(i+ioff,j,k)
+             if (vmac(i,j,k)*vmac(i+ioff,j,k) .gt. 0) then
+                v = vmac(i+ioff,j,k)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2193,10 +2046,10 @@ contains
              p1(3) = 0.d0
 
              p2(1) = isign*0.5d0*hx
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = 0.d0
 
-             p3(1) = isign*0.5d0*hx - uadv(i,j+joff,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j+joff,k)*dt
              p3(2) = jsign*0.5d0*hy - v*dt
              p3(3) = 0.d0
 
@@ -2225,7 +2078,7 @@ contains
              ! correct \Gamma^{x-} with \Gamma^{x-,z+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i+ioff,j+joff,k+1) .gt. 0) then
+             if (wmac(i+ioff,j+joff,k+1) .gt. 0) then
                 ksign = 1.d0
                 koff = 0
              else
@@ -2234,13 +2087,13 @@ contains
              endif
 
              vv = 0.d0
-             if (vadv(i,j,k)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i,j,k)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              uu = 0.d0
-             if (uadv(i,j+joff,k)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j+joff,k)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2248,16 +2101,16 @@ contains
              p1(3) = ksign*0.5d0*hz
 
              p2(1) = isign*0.5d0*hx
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j+joff,k)*dt
-             p3(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j+joff,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p3(3) = ksign*0.5d0*hz
 
              p4(1) = isign*0.5d0*hx - uu*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
-             p4(3) = ksign*0.5d0*hz - wadv(i+ioff,j+joff,k+1)*dt
+             p4(3) = ksign*0.5d0*hz - wmac(i+ioff,j+joff,k+1)*dt
 
              do ll=1,3
                 del(ll) = (p1(ll)+p2(ll)+p3(ll)+p4(ll))/4.d0
@@ -2291,7 +2144,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * wadv(i+ioff,j+joff,k+1)
+             gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
 
              gamma = gamma - dt*gamma2/(3.d0*hz)
 
@@ -2299,7 +2152,7 @@ contains
              ! correct \Gamma^{x-} with \Gamma^{x-,z-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i+ioff,j+joff,k) .gt. 0) then
+             if (wmac(i+ioff,j+joff,k) .gt. 0) then
                 ksign = 1.d0
                 koff = -1
              else
@@ -2308,13 +2161,13 @@ contains
              endif
 
              vv = 0.d0
-             if (vadv(i,j,k)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i,j,k)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              uu = 0.d0
-             if (uadv(i,j+joff,k)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j+joff,k)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2322,16 +2175,16 @@ contains
              p1(3) = ksign*0.5d0*hz
 
              p2(1) = isign*0.5d0*hx
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = ksign*0.5d0*hz
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j+joff,k)*dt
-             p3(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j+joff,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p3(3) = ksign*0.5d0*hz
 
              p4(1) = isign*0.5d0*hx - uu*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
-             p4(3) = ksign*0.5d0*hz - wadv(i+ioff,j+joff,k)*dt
+             p4(3) = ksign*0.5d0*hz - wmac(i+ioff,j+joff,k)*dt
 
              do ll=1,3
                 del(ll) = (p1(ll)+p2(ll)+p3(ll)+p4(ll))/4.d0
@@ -2365,7 +2218,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * wadv(i+ioff,j+joff,k)
+             gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
 
              gamma = gamma + dt*gamma2/(3.d0*hz)
 
@@ -2373,14 +2226,14 @@ contains
              ! correct sedgey with \Gamma^{x-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             gamma = gamma * uadv(i,j+joff,k)
+             gamma = gamma * umac(i,j+joff,k)
              sedgey(i,j,k) = sedgey(i,j,k) + dt*gamma/(2.d0*hx)
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{z+} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i,j+joff,k+1) .gt. 0) then
+             if (wmac(i,j+joff,k+1) .gt. 0) then
                 ksign = 1.d0
                 koff = 0
              else
@@ -2389,8 +2242,8 @@ contains
              endif
 
              v = 0.d0
-             if (vadv(i,j,k)*vadv(i,j,k+koff) .gt. 0) then
-                v = vadv(i,j,k+koff)
+             if (vmac(i,j,k)*vmac(i,j,k+koff) .gt. 0) then
+                v = vmac(i,j,k+koff)
              endif
 
              p1(1) = 0.d0
@@ -2398,12 +2251,12 @@ contains
              p1(3) = ksign*0.5d0*hz
 
              p2(1) = 0.d0
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = ksign*0.5d0*hz
 
              p3(1) = 0.d0
              p3(2) = jsign*0.5d0*hy - v*dt
-             p3(3) = ksign*0.5d0*hz - wadv(i,j+joff,k+1)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j+joff,k+1)*dt
 
              do ll=1,3
                 del(ll) = (p2(ll)+p3(ll))/2.d0
@@ -2430,7 +2283,7 @@ contains
              ! correct \Gamma^{z+} with \Gamma^{z+,x+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i+1,j+joff,k+koff) .gt. 0) then
+             if (umac(i+1,j+joff,k+koff) .gt. 0) then
                 isign = 1.d0
                 ioff = 0
              else
@@ -2439,13 +2292,13 @@ contains
              endif
 
              vv = 0.d0
-             if (vadv(i,j,k)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i,j,k)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              ww = 0.d0
-             if (wadv(i,j+joff,k+1)*wadv(i+ioff,j+joff,k+1) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k+1)
+             if (wmac(i,j+joff,k+1)*wmac(i+ioff,j+joff,k+1) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k+1)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2453,14 +2306,14 @@ contains
              p1(3) = ksign*0.5d0*hz
 
              p2(1) = isign*0.5d0*hx
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = ksign*0.5d0*hz
              
              p3(1) = isign*0.5d0*hx
-             p3(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
-             p3(3) = ksign*0.5d0*hz - wadv(i,j+joff,k+1)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j+joff,k+1)*dt
 
-             p4(1) = isign*0.5d0*hx - uadv(i+1,j+joff,k+koff)*dt
+             p4(1) = isign*0.5d0*hx - umac(i+1,j+joff,k+koff)*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
@@ -2496,7 +2349,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * uadv(i+1,j+joff,k+koff)
+             gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
 
              gamma = gamma - dt*gamma2/(3.d0*hx)
 
@@ -2504,7 +2357,7 @@ contains
              ! correct \Gamma^{z+} with \Gamma^{z+,x-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i,j+joff,k+koff) .gt. 0) then
+             if (umac(i,j+joff,k+koff) .gt. 0) then
                 isign = 1.d0
                 ioff = -1
              else
@@ -2513,13 +2366,13 @@ contains
              endif
 
              vv = 0.d0
-             if (vadv(i,j,k)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i,j,k)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              ww = 0.d0
-             if (wadv(i,j+joff,k+1)*wadv(i+ioff,j+joff,k+1) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k+1)
+             if (wmac(i,j+joff,k+1)*wmac(i+ioff,j+joff,k+1) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k+1)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2527,14 +2380,14 @@ contains
              p1(3) = ksign*0.5d0*hz
 
              p2(1) = isign*0.5d0*hx
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = ksign*0.5d0*hz
              
              p3(1) = isign*0.5d0*hx
-             p3(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
-             p3(3) = ksign*0.5d0*hz - wadv(i,j+joff,k+1)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j+joff,k+1)*dt
 
-             p4(1) = isign*0.5d0*hx - uadv(i,j+joff,k+koff)*dt
+             p4(1) = isign*0.5d0*hx - umac(i,j+joff,k+koff)*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
@@ -2570,7 +2423,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * uadv(i,j+joff,k+koff)
+             gamma2 = gamma2 * umac(i,j+joff,k+koff)
 
              gamma = gamma + dt*gamma2/(3.d0*hx)
 
@@ -2578,14 +2431,14 @@ contains
              ! correct sedgey with \Gamma^{z+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             gamma = gamma * wadv(i,j+joff,k+1)
+             gamma = gamma * wmac(i,j+joff,k+1)
              sedgey(i,j,k) = sedgey(i,j,k) - dt*gamma/(2.d0*hz)
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{z-} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (wadv(i,j+joff,k) .gt. 0) then
+             if (wmac(i,j+joff,k) .gt. 0) then
                 ksign = 1.d0
                 koff = -1
              else
@@ -2594,8 +2447,8 @@ contains
              endif
 
              v = 0.d0
-             if (vadv(i,j,k)*vadv(i,j,k+koff) .gt. 0) then
-                v = vadv(i,j,k+koff)
+             if (vmac(i,j,k)*vmac(i,j,k+koff) .gt. 0) then
+                v = vmac(i,j,k+koff)
              endif
 
              p1(1) = 0.d0
@@ -2603,12 +2456,12 @@ contains
              p1(3) = ksign*0.5d0*hz
 
              p2(1) = 0.d0
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = ksign*0.5d0*hz
 
              p3(1) = 0.d0
              p3(2) = jsign*0.5d0*hy - v*dt
-             p3(3) = ksign*0.5d0*hz - wadv(i,j+joff,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j+joff,k)*dt
 
              do ll=1,3
                 del(ll) = (p2(ll)+p3(ll))/2.d0
@@ -2635,7 +2488,7 @@ contains
              ! correct \Gamma^{z-} with \Gamma^{z-,x+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i+1,j+joff,k+koff) .gt. 0) then
+             if (umac(i+1,j+joff,k+koff) .gt. 0) then
                 isign = 1.d0
                 ioff = 0
              else
@@ -2644,13 +2497,13 @@ contains
              endif
 
              vv = 0.d0
-             if (vadv(i,j,k)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i,j,k)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              ww = 0.d0
-             if (wadv(i,j+joff,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i,j+joff,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2658,14 +2511,14 @@ contains
              p1(3) = ksign*0.5d0*hz
 
              p2(1) = isign*0.5d0*hx
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = ksign*0.5d0*hz
              
              p3(1) = isign*0.5d0*hx
-             p3(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
-             p3(3) = ksign*0.5d0*hz - wadv(i,j+joff,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j+joff,k)*dt
 
-             p4(1) = isign*0.5d0*hx - uadv(i+1,j+joff,k+koff)*dt
+             p4(1) = isign*0.5d0*hx - umac(i+1,j+joff,k+koff)*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
@@ -2701,7 +2554,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * uadv(i+1,j+joff,k+koff)
+             gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
 
              gamma = gamma - dt*gamma2/(3.d0*hx)
 
@@ -2709,7 +2562,7 @@ contains
              ! correct \Gamma^{z-} with \Gamma^{z-,x-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i,j+joff,k+koff) .gt. 0) then
+             if (umac(i,j+joff,k+koff) .gt. 0) then
                 isign = 1.d0
                 ioff = -1
              else
@@ -2718,13 +2571,13 @@ contains
              endif
 
              vv = 0.d0
-             if (vadv(i,j,k)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i,j,k)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              ww = 0.d0
-             if (wadv(i,j+joff,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i,j+joff,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2732,14 +2585,14 @@ contains
              p1(3) = ksign*0.5d0*hz
 
              p2(1) = isign*0.5d0*hx
-             p2(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
+             p2(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
              p2(3) = ksign*0.5d0*hz
              
              p3(1) = isign*0.5d0*hx
-             p3(2) = jsign*0.5d0*hy - vadv(i,j,k)*dt
-             p3(3) = ksign*0.5d0*hz - wadv(i,j+joff,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j+joff,k)*dt
 
-             p4(1) = isign*0.5d0*hx - uadv(i,j+joff,k+koff)*dt
+             p4(1) = isign*0.5d0*hx - umac(i,j+joff,k+koff)*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
@@ -2775,7 +2628,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * uadv(i,j+joff,k+koff)
+             gamma2 = gamma2 * umac(i,j+joff,k+koff)
 
              gamma = gamma + dt*gamma2/(3.d0*hx)
 
@@ -2783,7 +2636,7 @@ contains
              ! correct sedgey with \Gamma^{z-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             gamma = gamma * wadv(i,j+joff,k)
+             gamma = gamma * wmac(i,j+joff,k)
              sedgey(i,j,k) = sedgey(i,j,k) + dt*gamma/(2.d0*hz)
 
           enddo
@@ -2800,7 +2653,7 @@ contains
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
              ! centroid of rectangular volume
-             if (wadv(i,j,k) .gt. 0) then
+             if (wmac(i,j,k) .gt. 0) then
                 ksign = 1.d0
                 koff = -1
              else
@@ -2810,7 +2663,7 @@ contains
 
              del(1) = 0.d0
              del(2) = 0.d0
-             del(3) = ksign*0.5d0*hz - 0.5d0*wadv(i,j,k)*dt
+             del(3) = ksign*0.5d0*hz - 0.5d0*wmac(i,j,k)*dt
              call eval_3d(s(i,j,k+koff),slope(i,j,k+koff,:),del,sedgez(i,j,k))
 
              ! source term
@@ -2820,7 +2673,7 @@ contains
              ! compute \Gamma^{x+} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i+1,j,k+koff) .gt. 0) then
+             if (umac(i+1,j,k+koff) .gt. 0) then
                 isign = 1.d0
                 ioff = 0
              else
@@ -2829,8 +2682,8 @@ contains
              endif
 
              w = 0.d0
-             if (wadv(i,j,k)*wadv(i+ioff,j,k) .gt. 0) then
-                w = wadv(i+ioff,j,k)
+             if (wmac(i,j,k)*wmac(i+ioff,j,k) .gt. 0) then
+                w = wmac(i+ioff,j,k)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2839,9 +2692,9 @@ contains
 
              p2(1) = isign*0.5d0*hx
              p2(2) = 0.d0
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
-             p3(1) = isign*0.5d0*hx - uadv(i+1,j,k+koff)*dt
+             p3(1) = isign*0.5d0*hx - umac(i+1,j,k+koff)*dt
              p3(2) = 0.d0
              p3(3) = ksign*0.5d0*hz - w*dt
 
@@ -2870,7 +2723,7 @@ contains
              ! correct \Gamma^{x+} with \Gamma^{x+,y+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i+ioff,j+1,k+koff) .gt. 0) then
+             if (vmac(i+ioff,j+1,k+koff) .gt. 0) then
                 jsign = 1.d0
                 joff = 0
              else
@@ -2879,13 +2732,13 @@ contains
              endif
 
              ww = 0.d0
-             if (wadv(i,j,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i,j,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              uu = 0.d0
-             if (uadv(i+1,j,k+koff)*uadv(i+1,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i+1,j+joff,k+koff)
+             if (umac(i+1,j,k+koff)*umac(i+1,j+joff,k+koff) .gt. 0) then
+                uu = umac(i+1,j+joff,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2894,14 +2747,14 @@ contains
 
              p2(1) = isign*0.5d0*hx
              p2(2) = jsign*0.5d0*hy
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
              
-             p3(1) = isign*0.5d0*hx - uadv(i+1,j+joff,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i+1,j+joff,k)*dt
              p3(2) = jsign*0.5d0*hy
-             p3(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
              p4(1) = isign*0.5d0*hx - uu*dt
-             p4(2) = jsign*0.5d0*hy - vadv(i+ioff,j+1,k+koff)*dt
+             p4(2) = jsign*0.5d0*hy - vmac(i+ioff,j+1,k+koff)*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
              do ll=1,3
@@ -2936,7 +2789,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * vadv(i+ioff,j+1,k+koff)
+             gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
 
              gamma = gamma - dt*gamma2/(3.d0*hy)
 
@@ -2944,7 +2797,7 @@ contains
              ! correct \Gamma^{x+} with \Gamma^{x+,y-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i+ioff,j,k+koff) .gt. 0) then
+             if (vmac(i+ioff,j,k+koff) .gt. 0) then
                 jsign = 1.d0
                 joff = -1
              else
@@ -2953,13 +2806,13 @@ contains
              endif
 
              ww = 0.d0
-             if (wadv(i,j,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i,j,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              uu = 0.d0
-             if (uadv(i+1,j,k+koff)*uadv(i+1,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i+1,j+joff,k+koff)
+             if (umac(i+1,j,k+koff)*umac(i+1,j+joff,k+koff) .gt. 0) then
+                uu = umac(i+1,j+joff,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -2968,14 +2821,14 @@ contains
 
              p2(1) = isign*0.5d0*hx
              p2(2) = jsign*0.5d0*hy
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
              
-             p3(1) = isign*0.5d0*hx - uadv(i+1,j+joff,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i+1,j+joff,k)*dt
              p3(2) = jsign*0.5d0*hy
-             p3(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
              p4(1) = isign*0.5d0*hx - uu*dt
-             p4(2) = jsign*0.5d0*hy - vadv(i+ioff,j,k+koff)*dt
+             p4(2) = jsign*0.5d0*hy - vmac(i+ioff,j,k+koff)*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
              do ll=1,3
@@ -3010,7 +2863,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * vadv(i+ioff,j,k+koff)
+             gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
 
              gamma = gamma + dt*gamma2/(3.d0*hy)
 
@@ -3018,14 +2871,14 @@ contains
              ! correct sedgez with \Gamma^{x+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             gamma = gamma * uadv(i+1,j,k+koff)
+             gamma = gamma * umac(i+1,j,k+koff)
              sedgez(i,j,k) = sedgez(i,j,k) - dt*gamma/(2.d0*hx)
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{x-} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i,j,k+koff) .gt. 0) then
+             if (umac(i,j,k+koff) .gt. 0) then
                 isign = 1.d0
                 ioff = -1
              else
@@ -3034,8 +2887,8 @@ contains
              endif
 
              w = 0.d0
-             if (wadv(i,j,k)*wadv(i+ioff,j,k) .gt. 0) then
-                w = wadv(i+ioff,j,k)
+             if (wmac(i,j,k)*wmac(i+ioff,j,k) .gt. 0) then
+                w = wmac(i+ioff,j,k)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -3044,9 +2897,9 @@ contains
 
              p2(1) = isign*0.5d0*hx
              p2(2) = 0.d0
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
-             p3(1) = isign*0.5d0*hx - uadv(i,j,k+koff)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j,k+koff)*dt
              p3(2) = 0.d0
              p3(3) = ksign*0.5d0*hz - w*dt
 
@@ -3075,7 +2928,7 @@ contains
              ! correct \Gamma^{x-} with \Gamma^{x-,y+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i+ioff,j+1,k+koff) .gt. 0) then
+             if (vmac(i+ioff,j+1,k+koff) .gt. 0) then
                 jsign = 1.d0
                 joff = 0
              else
@@ -3084,13 +2937,13 @@ contains
              endif
 
              ww = 0.d0
-             if (wadv(i,j,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i,j,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              uu = 0.d0
-             if (uadv(i,j,k+koff)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j,k+koff)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -3099,14 +2952,14 @@ contains
 
              p2(1) = isign*0.5d0*hx
              p2(2) = jsign*0.5d0*hy
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j+joff,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j+joff,k)*dt
              p3(2) = jsign*0.5d0*hy
-             p3(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
              p4(1) = isign*0.5d0*hx - uu*dt
-             p4(2) = jsign*0.5d0*hy - vadv(i+ioff,j+1,k+koff)*dt
+             p4(2) = jsign*0.5d0*hy - vmac(i+ioff,j+1,k+koff)*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
              do ll=1,3
@@ -3141,7 +2994,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * vadv(i+ioff,j+1,k+koff)
+             gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
 
              gamma = gamma - dt*gamma2/(3.d0*hy)
 
@@ -3149,7 +3002,7 @@ contains
              ! correct \Gamma^{x-} with \Gamma^{x-,y-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i+ioff,j,k+koff) .gt. 0) then
+             if (vmac(i+ioff,j,k+koff) .gt. 0) then
                 jsign = 1.d0
                 joff = -1
              else
@@ -3158,13 +3011,13 @@ contains
              endif
 
              ww = 0.d0
-             if (wadv(i,j,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i,j,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              uu = 0.d0
-             if (uadv(i,j,k+koff)*uadv(i,j+joff,k+koff) .gt. 0) then
-                uu = uadv(i,j+joff,k+koff)
+             if (umac(i,j,k+koff)*umac(i,j+joff,k+koff) .gt. 0) then
+                uu = umac(i,j+joff,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -3173,14 +3026,14 @@ contains
 
              p2(1) = isign*0.5d0*hx
              p2(2) = jsign*0.5d0*hy
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
              
-             p3(1) = isign*0.5d0*hx - uadv(i,j+joff,k)*dt
+             p3(1) = isign*0.5d0*hx - umac(i,j+joff,k)*dt
              p3(2) = jsign*0.5d0*hy
-             p3(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
              p4(1) = isign*0.5d0*hx - uu*dt
-             p4(2) = jsign*0.5d0*hy - vadv(i+ioff,j,k+koff)*dt
+             p4(2) = jsign*0.5d0*hy - vmac(i+ioff,j,k+koff)*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
              do ll=1,3
@@ -3215,7 +3068,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * vadv(i+ioff,j,k+koff)
+             gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
 
              gamma = gamma + dt*gamma2/(3.d0*hy)
 
@@ -3223,14 +3076,14 @@ contains
              ! correct sedgez with \Gamma^{x-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             gamma = gamma * uadv(i,j,k+koff)
+             gamma = gamma * umac(i,j,k+koff)
              sedgez(i,j,k) = sedgez(i,j,k) + dt*gamma/(2.d0*hx)
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{y+} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i,j+1,k+koff) .gt. 0) then
+             if (vmac(i,j+1,k+koff) .gt. 0) then
                 jsign = 1.d0
                 joff = 0
              else
@@ -3239,8 +3092,8 @@ contains
              endif
 
              w = 0.d0
-             if (wadv(i,j,k)*wadv(i,j+joff,k) .gt. 0) then
-                w = wadv(i,j+joff,k)
+             if (wmac(i,j,k)*wmac(i,j+joff,k) .gt. 0) then
+                w = wmac(i,j+joff,k)
              endif
 
              p1(1) = 0.d0
@@ -3249,10 +3102,10 @@ contains
 
              p2(1) = 0.d0
              p2(2) = jsign*0.5d0*hy
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
              p3(1) = 0.d0
-             p3(2) = jsign*0.5d0*hy - vadv(i,j+1,k+koff)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i,j+1,k+koff)*dt
              p3(3) = ksign*0.5d0*hz - w*dt
 
              do ll=1,3
@@ -3280,7 +3133,7 @@ contains
              ! correct \Gamma^{y+} with \Gamma^{y+,x+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i+1,j+joff,k+koff) .gt. 0) then
+             if (umac(i+1,j+joff,k+koff) .gt. 0) then
                 isign = 1.d0
                 ioff = 0
              else
@@ -3289,13 +3142,13 @@ contains
              endif
 
              ww = 0.d0
-             if (wadv(i,j,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i,j,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              vv = 0.d0
-             if (vadv(i,j+1,k+koff)*vadv(i+ioff,j+1,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j+1,k+koff)
+             if (vmac(i,j+1,k+koff)*vmac(i+ioff,j+1,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j+1,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -3304,13 +3157,13 @@ contains
 
              p2(1) = isign*0.5d0*hx
              p2(2) = jsign*0.5d0*hy
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
              
              p3(1) = isign*0.5d0*hx
-             p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j+1,k)*dt
-             p3(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j+1,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
-             p4(1) = isign*0.5d0*hx - uadv(i+1,j+joff,k+koff)*dt
+             p4(1) = isign*0.5d0*hx - umac(i+1,j+joff,k+koff)*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
@@ -3346,7 +3199,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * uadv(i+1,j+joff,k+koff)
+             gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
 
              gamma = gamma - dt*gamma2/(3.d0*hx)
 
@@ -3354,7 +3207,7 @@ contains
              ! correct \Gamma^{y+} with \Gamma^{y+,x-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i,j+joff,k+koff) .gt. 0) then
+             if (umac(i,j+joff,k+koff) .gt. 0) then
                 isign = 1.d0
                 ioff = -1
              else
@@ -3363,13 +3216,13 @@ contains
              endif
 
              ww = 0.d0
-             if (wadv(i,j,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i,j,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              vv = 0.d0
-             if (vadv(i,j+1,k+koff)*vadv(i+ioff,j+1,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j+1,k+koff)
+             if (vmac(i,j+1,k+koff)*vmac(i+ioff,j+1,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j+1,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -3378,13 +3231,13 @@ contains
 
              p2(1) = isign*0.5d0*hx
              p2(2) = jsign*0.5d0*hy
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
              
              p3(1) = isign*0.5d0*hx
-             p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j+1,k)*dt
-             p3(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j+1,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
-             p4(1) = isign*0.5d0*hx - uadv(i,j+joff,k+koff)*dt
+             p4(1) = isign*0.5d0*hx - umac(i,j+joff,k+koff)*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
@@ -3420,7 +3273,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * uadv(i,j+joff,k+koff)
+             gamma2 = gamma2 * umac(i,j+joff,k+koff)
 
              gamma = gamma + dt*gamma2/(3.d0*hx)
 
@@ -3428,14 +3281,14 @@ contains
              ! correct sedgez with \Gamma^{y+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              
-             gamma = gamma * vadv(i,j+1,k+koff)
+             gamma = gamma * vmac(i,j+1,k+koff)
              sedgez(i,j,k) = sedgez(i,j,k) - dt*gamma/(2.d0*hy)
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{y-} without corner corrections
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (vadv(i,j,k+koff) .gt. 0) then
+             if (vmac(i,j,k+koff) .gt. 0) then
                 jsign = 1.d0
                 joff = -1
              else
@@ -3444,8 +3297,8 @@ contains
              endif
 
              w = 0.d0
-             if (wadv(i,j,k)*wadv(i,j+joff,k) .gt. 0) then
-                w = wadv(i,j+joff,k)
+             if (wmac(i,j,k)*wmac(i,j+joff,k) .gt. 0) then
+                w = wmac(i,j+joff,k)
              endif
 
              p1(1) = 0.d0
@@ -3454,10 +3307,10 @@ contains
 
              p2(1) = 0.d0
              p2(2) = jsign*0.5d0*hy
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
              p3(1) = 0.d0
-             p3(2) = jsign*0.5d0*hy - vadv(i,j,k+koff)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i,j,k+koff)*dt
              p3(3) = ksign*0.5d0*hz - w*dt
 
              do ll=1,3
@@ -3485,7 +3338,7 @@ contains
              ! correct \Gamma^{y-} with \Gamma^{y-,x+}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i+1,j+joff,k+koff) .gt. 0) then
+             if (umac(i+1,j+joff,k+koff) .gt. 0) then
                 isign = 1.d0
                 ioff = 0
              else
@@ -3494,13 +3347,13 @@ contains
              endif
 
              ww = 0.d0
-             if (wadv(i,j,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i,j,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              vv = 0.d0
-             if (vadv(i,j,k+koff)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i,j,k+koff)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -3509,13 +3362,13 @@ contains
 
              p2(1) = isign*0.5d0*hx
              p2(2) = jsign*0.5d0*hy
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
              
              p3(1) = isign*0.5d0*hx
-             p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j,k)*dt
-             p3(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
-             p4(1) = isign*0.5d0*hx - uadv(i+1,j+joff,k+koff)*dt
+             p4(1) = isign*0.5d0*hx - umac(i+1,j+joff,k+koff)*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
@@ -3551,7 +3404,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * uadv(i+1,j+joff,k+koff)
+             gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
 
              gamma = gamma - dt*gamma2/(3.d0*hx)
 
@@ -3559,7 +3412,7 @@ contains
              ! correct \Gamma^{y-} with \Gamma^{y-,x-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             if (uadv(i,j+joff,k+koff) .gt. 0) then
+             if (umac(i,j+joff,k+koff) .gt. 0) then
                 isign = 1.d0
                 ioff = -1
              else
@@ -3568,13 +3421,13 @@ contains
              endif
 
              ww = 0.d0
-             if (wadv(i,j,k)*wadv(i+ioff,j+joff,k) .gt. 0) then
-                ww = wadv(i+ioff,j+joff,k)
+             if (wmac(i,j,k)*wmac(i+ioff,j+joff,k) .gt. 0) then
+                ww = wmac(i+ioff,j+joff,k)
              endif
 
              vv = 0.d0
-             if (vadv(i,j,k+koff)*vadv(i+ioff,j,k+koff) .gt. 0) then
-                vv = vadv(i+ioff,j,k+koff)
+             if (vmac(i,j,k+koff)*vmac(i+ioff,j,k+koff) .gt. 0) then
+                vv = vmac(i+ioff,j,k+koff)
              endif
 
              p1(1) = isign*0.5d0*hx
@@ -3583,13 +3436,13 @@ contains
 
              p2(1) = isign*0.5d0*hx
              p2(2) = jsign*0.5d0*hy
-             p2(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p2(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
              
              p3(1) = isign*0.5d0*hx
-             p3(2) = jsign*0.5d0*hy - vadv(i+ioff,j,k)*dt
-             p3(3) = ksign*0.5d0*hz - wadv(i,j,k)*dt
+             p3(2) = jsign*0.5d0*hy - vmac(i+ioff,j,k)*dt
+             p3(3) = ksign*0.5d0*hz - wmac(i,j,k)*dt
 
-             p4(1) = isign*0.5d0*hx - uadv(i,j+joff,k+koff)*dt
+             p4(1) = isign*0.5d0*hx - umac(i,j+joff,k+koff)*dt
              p4(2) = jsign*0.5d0*hy - vv*dt
              p4(3) = ksign*0.5d0*hz - ww*dt
 
@@ -3625,7 +3478,7 @@ contains
                                       +gamma2*vy(i+ioff,j+joff,k+koff) &
                                       +gamma2*wz(i+ioff,j+joff,k+koff))
 
-             gamma2 = gamma2 * uadv(i,j+joff,k+koff)
+             gamma2 = gamma2 * umac(i,j+joff,k+koff)
 
              gamma = gamma + dt*gamma2/(3.d0*hx)
 
@@ -3633,52 +3486,133 @@ contains
              ! correct sedgez with \Gamma^{y-}
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-             gamma = gamma * vadv(i,j,k+koff)
+             gamma = gamma * vmac(i,j,k+koff)
              sedgez(i,j,k) = sedgez(i,j,k) + dt*gamma/(2.d0*hy)
 
           enddo
        enddo
     enddo
 
-    ! advance solution
-    if (is_conserv) then
-
-       ! conservative update
-       do k = lo(3),hi(3)
-          do j = lo(2),hi(2) 
-             do i = lo(1),hi(1) 
-                sn(i,j,k) = s(i,j,k) - dt*(  &
-                     (sedgex(i+1,j,k)*uadv(i+1,j,k)-sedgex(i,j,k)*uadv(i,j,k))/hx +  &
-                     (sedgey(i,j+1,k)*vadv(i,j+1,k)-sedgey(i,j,k)*vadv(i,j,k))/hy + &
-                     (sedgez(i,j,k+1)*wadv(i,j,k+1)-sedgez(i,j,k)*wadv(i,j,k))/hz )
-             enddo
-          enddo
-       enddo
-
-    else 
-
-       ! non-conservative update
-       do k = lo(3),hi(3)
-          do j = lo(2),hi(2) 
-             do i = lo(1),hi(1) 
-                uconv = 0.5d0 * (uadv(i+1,j,k)+uadv(i,j,k))
-                vconv = 0.5d0 * (vadv(i,j+1,k)+vadv(i,j,k))
-                wconv = 0.5d0 * (wadv(i,j,k+1)+wadv(i,j,k))
-
-                sn(i,j,k) = s(i,j,k) - dt*( &
-                     uconv * (sedgex(i+1,j,k) - sedgex(i,j,k)) / hx + &
-                     vconv * (sedgey(i,j+1,k) - sedgey(i,j,k)) / hy + &
-                     wconv * (sedgez(i,j,k+1) - sedgez(i,j,k)) / hz )
-             enddo
-          enddo
-       enddo
-
-    endif
-
-    deallocate(sedgex,sedgey,sedgez)
     deallocate(ux,vy,wz)
 
   end subroutine bdsconc_3d
+
+  subroutine bds_velpred(u,umac,force,dx,dt,the_bc_level,mla)
+
+    use ml_restriction_module, only: ml_edge_restriction
+    use create_umac_grown_module
+
+    type(multifab) , intent(in   ) :: u(:)
+    type(multifab) , intent(inout) :: umac(:,:)
+    type(multifab) , intent(in   ) :: force(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
+    type(ml_layout), intent(in   ) :: mla
+
+    ! this will hold slx, sly, slxy, etc.
+    type(multifab) :: slopeu(mla%nlevel)
+    type(multifab) :: slopev(mla%nlevel)
+    type(multifab) :: slopew(mla%nlevel)
+
+    real(kind=dp_t), pointer :: up(:,:,:,:)
+    real(kind=dp_t), pointer :: ump(:,:,:,:)
+    real(kind=dp_t), pointer :: vmp(:,:,:,:)
+    real(kind=dp_t), pointer :: wmp(:,:,:,:)
+    real(kind=dp_t), pointer :: sup(:,:,:,:)
+    real(kind=dp_t), pointer :: svp(:,:,:,:)
+    real(kind=dp_t), pointer :: swp(:,:,:,:)
+    real(kind=dp_t), pointer :: fp(:,:,:,:)
+
+    integer :: nlevs,dm,n,i,comp
+    integer :: ng_u,ng_um,ng_f,ng_s
+    integer :: lo(mla%dim),hi(mla%dim)
+
+    nlevs = mla%nlevel
+    dm = u(1)%dim
+
+    if (dm .eq. 2) then
+       ! 3 components and 2 ghost cells
+       ! component 1 = slx
+       ! component 2 = sly
+       ! component 3 = slxy
+       do n=1,nlevs
+          call multifab_build(slopeu(n),mla%la(n),3,2)
+          call multifab_build(slopev(n),mla%la(n),3,2)
+       end do
+    else if (dm .eq. 3) then
+       ! 7 components and 2 ghost cells
+       ! component 1 = slx
+       ! component 2 = sly
+       ! component 3 = slz
+       ! component 4 = slxy
+       ! component 5 = slxz
+       ! component 6 = slyz
+       ! component 7 = slxyz
+       do n=1,nlevs
+          call multifab_build(slopeu(n),mla%la(n),7,2)
+          call multifab_build(slopev(n),mla%la(n),7,2)
+          call multifab_build(slopew(n),mla%la(n),7,2)
+       end do
+    end if
+
+    ng_u  = u(1)%ng
+    ng_um = umac(1,1)%ng
+    ng_f  = force(1)%ng
+    ng_s  = slopeu(1)%ng
+
+    do n=1,nlevs
+       do i=1,u(n)%nboxes
+          if ( multifab_remote(u(n), i) ) cycle
+          up  => dataptr(u(n), i)
+          sup => dataptr(slopeu(n), i)
+          svp => dataptr(slopev(n), i)
+          ump => dataptr(umac(n,1), i)
+          vmp => dataptr(umac(n,2), i)
+          fp  => dataptr(force(n), i)
+          lo =  lwb(get_box(u(n), i))
+          hi =  upb(get_box(u(n), i))
+          select case(dm)
+          case (2)
+             call bdsslope_2d(lo, hi, up(:,:,1,1), ng_u, sup(:,:,1,:), ng_s, dx(n,:))
+             call bdsslope_2d(lo, hi, up(:,:,1,2), ng_u, svp(:,:,1,:), ng_s, dx(n,:))
+
+             call bds_velpred_2d(lo, hi, dx(n,:), dt, up(:,:,1,:), ng_u, &
+                                 sup(:,:,1,:), svp(:,:,1,:), ng_s, &
+                                 ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+                                 fp(:,:,1,:), ng_f)
+
+          case (3)
+             swp => dataptr(slopew(n), i)
+             wmp => dataptr(umac(n,3), i)
+             call bdsslope_3d(lo, hi, up(:,:,:,1), ng_u, sup(:,:,:,:), ng_s, dx(n,:))
+             call bdsslope_3d(lo, hi, up(:,:,:,2), ng_u, svp(:,:,:,:), ng_s, dx(n,:))
+             call bdsslope_3d(lo, hi, up(:,:,:,3), ng_u, swp(:,:,:,:), ng_s, dx(n,:))
+
+             call bl_error("bds_velpred_3d not written yet")
+
+          end select
+       end do
+    end do
+
+    if (nlevs .gt. 1) then
+       do n=2,nlevs
+          call create_umac_grown(n,umac(n,:),umac(n-1,:),the_bc_level(n-1),the_bc_level(n))
+       end do
+    else
+       do n=1,nlevs
+          do comp=1,dm
+             call multifab_fill_boundary(umac(n,comp))
+          enddo
+       end do
+    end if
+
+    do n = nlevs,2,-1
+       do comp = 1,dm
+          call ml_edge_restriction(umac(n-1,comp),umac(n,comp),mla%mba%rr(n-1,:),comp)
+       end do
+    end do
+
+  end subroutine bds_velpred
 
   subroutine bds_velpred_2d(lo,hi,dx,dt,u,ng_u,uslope,vslope,ng_s,umac,vmac,ng_um,force,ng_f)
 
