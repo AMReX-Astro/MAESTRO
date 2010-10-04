@@ -14,10 +14,10 @@ contains
   subroutine addw0(umac,the_bc_level,mla,w0,w0mac,mult)
 
     use bl_prof_module
-    use create_umac_grown_module
+    use create_umac_grown_module, only: create_umac_grown
     use geometry, only: spherical, dm, nlevs
-    use define_bc_module
-    use ml_layout_module
+    use define_bc_module, only: bc_level
+    use ml_layout_module, only: ml_layout
     use ml_restriction_module, only: ml_edge_restriction
     use multifab_physbc_edgevel_module, only: multifab_physbc_edgevel
     
