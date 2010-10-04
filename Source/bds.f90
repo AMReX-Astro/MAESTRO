@@ -13,14 +13,19 @@ module bds_module
 
 contains
 
-  subroutine bds(mla,s,sedge,umac,dx,dt,is_conservative)
+  subroutine bds(s,sedge,umac,force,dx,dt,is_vel,the_bc_level, &
+                 start_scomp,start_bccomp,num_comp,is_conservative,mla)
 
-    type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(in   ) :: umac(:,:)
+    type(multifab) , intent(in   ) :: force(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
+    logical        , intent(in   ) :: is_vel
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
+    integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
     logical        , intent(in   ) :: is_conservative
+    type(ml_layout), intent(in   ) :: mla
 
     ! this will hold slx, sly, slxy, etc.
     type(multifab) :: slope(mla%nlevel)
@@ -67,51 +72,43 @@ contains
     ng_u = umac(1,1)%ng
     ng_se = sedge(1,1)%ng
 
-    do n=1,nlevs
-       do i = 1, s(n)%nboxes
-          if ( multifab_remote(s(n), i) ) cycle
-          sop    => dataptr(s(n), i)
-          sepx   => dataptr(sedge(n,1), i)
-          sepy   => dataptr(sedge(n,2), i)
-          slopep => dataptr(slope(n), i)
-          umacp  => dataptr(umac(n,1), i)
-          vmacp  => dataptr(umac(n,2), i)
-          lo =  lwb(get_box(s(n), i))
-          hi =  upb(get_box(s(n), i))
-          select case (dm)
-          case (2)
-             do comp=1,s(n)%nc
-                call bdsslope_2d(lo, hi, &
-                                 sop(:,:,1,comp), ng_s, &
-                                 slopep(:,:,1,:), ng_c, &
-                                 dx(n,:)) 
+    do comp=start_scomp,start_scomp+num_comp-1
+       do n=1,nlevs
+          do i = 1, s(n)%nboxes
+             if ( multifab_remote(s(n), i) ) cycle
+             sop    => dataptr(s(n), i)
+             sepx   => dataptr(sedge(n,1), i)
+             sepy   => dataptr(sedge(n,2), i)
+             slopep => dataptr(slope(n), i)
+             umacp  => dataptr(umac(n,1), i)
+             vmacp  => dataptr(umac(n,2), i)
+             lo =  lwb(get_box(s(n), i))
+             hi =  upb(get_box(s(n), i))
+             select case (dm)
+             case (2)
+                call bdsslope_2d(lo, hi, sop(:,:,1,comp), ng_s, &
+                                 slopep(:,:,1,:), ng_c, dx(n,:)) 
 
-                call bdsconc_2d(lo, hi, &
-                                sop(:,:,1,comp), ng_s, &
+                call bdsconc_2d(lo, hi, sop(:,:,1,comp), ng_s, &
                                 slopep(:,:,1,:), ng_c, &
                                 umacp(:,:,1,1), vmacp(:,:,1,1), ng_u, &
                                 sepx(:,:,1,1), sepy(:,:,1,1), ng_se, &
                                 dx(n,:), dt, is_conservative)
-             end do
-          case (3)
-             wmacp  => dataptr(umac(n,3), i)
-             sepz   => dataptr(sedge(n,3), i)
-             do comp=1,s(n)%nc
-                call bdsslope_3d(lo, hi, &
-                                 sop(:,:,:,comp), ng_s, &
-                                 slopep(:,:,:,:), ng_c, &
-                                 dx(n,:))
+             case (3)
+                wmacp  => dataptr(umac(n,3), i)
+                sepz   => dataptr(sedge(n,3), i)
+                call bdsslope_3d(lo, hi, sop(:,:,:,comp), ng_s, &
+                                 slopep(:,:,:,:), ng_c, dx(n,:))
 
-                call bdsconc_3d(lo, hi, &
-                                sop(:,:,:,comp), ng_s, &
+                call bdsconc_3d(lo, hi, sop(:,:,:,comp), ng_s, &
                                 slopep(:,:,:,:), ng_c, &
                                 umacp(:,:,:,1), vmacp(:,:,:,1), wmacp(:,:,:,1), ng_u, &
                                 sepx(:,:,:,1), sepy(:,:,:,1), sepz(:,:,:,1), ng_se, &
                                 dx(n,:), dt, is_conservative)
-             end do
-          end select
-       end do
-    end do
+             end select
+          end do ! loop over boxes
+       end do ! loop over levels
+    end do ! loop over components
 
     do n=1,nlevs
        call multifab_destroy(slope(n))

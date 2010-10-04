@@ -23,9 +23,10 @@ contains
     use bl_constants_module
     use mk_vel_force_module
     use make_edge_scal_module
-    use probin_module, only: verbose
+    use probin_module, only: verbose, bds_type
     use variables, only: rho_comp
-    use geometry, only: dm, nlevs
+    use geometry, only: nlevs
+    use bds_module
 
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(in   ) :: uold(:)
@@ -48,10 +49,10 @@ contains
     type(multifab) , intent(in   ) :: sponge(:)
 
     type(multifab)  :: force(nlevs)
-    type(multifab)  :: uedge(nlevs,dm)
+    type(multifab)  :: uedge(nlevs,mla%dim)
     logical         :: is_vel
     logical         :: is_final_update
-    integer         :: velpred,n,comp
+    integer         :: velpred,n,comp,dm
     real(kind=dp_t) :: smin,smax
 
     type(bl_prof_timer), save :: bpt
@@ -60,6 +61,7 @@ contains
 
     is_vel  = .true.
     velpred = 0
+    dm = mla%dim
 
     do n = 1, nlevs
        call multifab_build(force(n),get_layout(uold(n)),dm,1)
@@ -93,8 +95,14 @@ contains
        end do
     end do
 
-    call make_edge_scal(uold,uedge,umac,force, &
-                        dx,dt,is_vel,the_bc_level,1,1,dm,.false.,mla)
+    if (bds_type .eq. 0) then
+       call make_edge_scal(uold,uedge,umac,force, &
+                           dx,dt,is_vel,the_bc_level,1,1,dm,.false.,mla)
+    else if (bds_type .eq. 1) then
+       call bds(uold,uedge,umac,force, &
+                dx,dt,is_vel,the_bc_level,1,1,dm,.false.,mla)
+
+    end if
 
     !********************************************************
     !     Subtract w0 from MAC velocities.

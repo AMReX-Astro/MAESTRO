@@ -21,6 +21,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use make_edge_scal_module
+    use bds_module
     use mkflux_module
     use update_scal_module
     use addw0_module
@@ -29,9 +30,9 @@ contains
     use pert_form_module
     use cell_to_edge_module
     use network,       only: nspec, spec_names
-    use geometry,      only: spherical, nr_fine, dm, nlevs, nlevs_radial
+    use geometry,      only: spherical, nr_fine, nlevs, nlevs_radial
     use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
-    use probin_module, only: verbose
+    use probin_module, only: verbose, bds_type
     use modify_scal_force_module
     use convert_rhoX_to_X_module
 
@@ -56,10 +57,10 @@ contains
     type(multifab) :: rho0_old_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
-    type(multifab) :: rho0mac_old(mla%nlevel,dm)
-    type(multifab) :: rho0mac_new(mla%nlevel,dm)
+    type(multifab) :: rho0mac_old(mla%nlevel,mla%dim)
+    type(multifab) :: rho0mac_new(mla%nlevel,mla%dim)
 
-    integer    :: comp,n
+    integer    :: comp,n,dm
     logical    :: is_vel
     real(dp_t) :: smin,smax
 
@@ -71,6 +72,8 @@ contains
     call build(bpt, "density_advance")
 
     is_vel  = .false.
+
+    dm = mla%dim
 
     if (spherical .eq. 0) then
 
@@ -128,14 +131,28 @@ contains
     call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,foextrap_comp,.true.,the_bc_level)
 
     ! predict X at the edges
-    call make_edge_scal(sold,sedge,umac,scal_force, &
-                        dx,dt,is_vel,the_bc_level, &
-                        spec_comp,dm+spec_comp,nspec,.false.,mla)
+    if (bds_type .eq. 0) then
+       call bds(sold,sedge,umac,scal_force, &
+                dx,dt,is_vel,the_bc_level, &
+                spec_comp,dm+spec_comp,nspec,.false.,mla)
+
+    else if (bds_type .eq. 1) then
+       call make_edge_scal(sold,sedge,umac,scal_force, &
+                           dx,dt,is_vel,the_bc_level, &
+                           spec_comp,dm+spec_comp,nspec,.false.,mla)
+    end if
 
     ! predict rho' at the edges
-    call make_edge_scal(sold,sedge,umac,scal_force, &
-                        dx,dt,is_vel,the_bc_level, &
-                        rho_comp,dm+rho_comp,1,.false.,mla)
+    if (bds_type .eq. 0) then
+       call bds(sold,sedge,umac,scal_force, &
+                dx,dt,is_vel,the_bc_level, &
+                rho_comp,dm+rho_comp,1,.false.,mla)
+
+    else if (bds_type .eq. 1) then
+       call make_edge_scal(sold,sedge,umac,scal_force, &
+                           dx,dt,is_vel,the_bc_level, &
+                           rho_comp,dm+rho_comp,1,.false.,mla)
+    end if
 
     ! convert rho' -> rho in sold
     call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,dm+rho_comp,.false.,the_bc_level)
@@ -147,9 +164,16 @@ contains
     !     Create edge states of tracers
     !**************************************************************************
     if (ntrac .ge. 1) then
-       call make_edge_scal(sold,sedge,umac,scal_force, &
-                           dx,dt,is_vel,the_bc_level, &
-                           trac_comp,dm+trac_comp,ntrac,.false.,mla)
+       if (bds_type .eq. 0) then
+          call bds(sold,sedge,umac,scal_force, &
+                   dx,dt,is_vel,the_bc_level, &
+                   trac_comp,dm+trac_comp,ntrac,.false.,mla)
+
+       else if (bds_type .eq. 1) then
+          call make_edge_scal(sold,sedge,umac,scal_force, &
+                              dx,dt,is_vel,the_bc_level, &
+                              trac_comp,dm+trac_comp,ntrac,.false.,mla)
+       end if
     end if
 
     !**************************************************************************

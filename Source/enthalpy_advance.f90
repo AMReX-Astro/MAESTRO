@@ -21,6 +21,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use make_edge_scal_module
+    use bds_module
     use mkflux_module
     use mkscalforce_module
     use update_scal_module
@@ -30,10 +31,10 @@ contains
     use pert_form_module
     use cell_to_edge_module
     use rhoh_vs_t_module
-    use geometry,      only: spherical, nr_fine, dm, r_start_coord, r_end_coord, &
+    use geometry,      only: spherical, nr_fine, r_start_coord, r_end_coord, &
          numdisjointchunks, nlevs, nlevs_radial
     use variables,     only: nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
-    use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose
+    use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose, bds_type
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
@@ -64,14 +65,14 @@ contains
     type(multifab) :: rhoh0_old_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
-    type(multifab) :: rho0mac_old(mla%nlevel,dm)
-    type(multifab) :: rho0mac_new(mla%nlevel,dm)
-    type(multifab) :: rhoh0mac_old(mla%nlevel,dm)
-    type(multifab) :: rhoh0mac_new(mla%nlevel,dm)
-    type(multifab) :: h0mac_old(mla%nlevel,dm)
-    type(multifab) :: h0mac_new(mla%nlevel,dm)
+    type(multifab) :: rho0mac_old(mla%nlevel,mla%dim)
+    type(multifab) :: rho0mac_new(mla%nlevel,mla%dim)
+    type(multifab) :: rhoh0mac_old(mla%nlevel,mla%dim)
+    type(multifab) :: rhoh0mac_new(mla%nlevel,mla%dim)
+    type(multifab) :: h0mac_old(mla%nlevel,mla%dim)
+    type(multifab) :: h0mac_new(mla%nlevel,mla%dim)
 
-    integer    :: pred_comp,n,r,i,comp
+    integer    :: pred_comp,n,r,i,comp,dm
     logical    :: is_vel
     real(dp_t) :: smin,smax
     logical    :: is_prediction
@@ -104,6 +105,7 @@ contains
     allocate(    t0_edge_new(nlevs_radial,0:nr_fine))
 
     is_vel  = .false.
+    dm = mla%dim
 
     if (spherical .eq. 0) then
        call cell_to_edge(rho0_old,rho0_edge_old)
@@ -222,9 +224,15 @@ contains
        pred_comp = rhoh_comp
     end if
 
-    call make_edge_scal(sold,sedge,umac,scal_force, &
-                        dx,dt,is_vel,the_bc_level, &
-                        pred_comp,dm+pred_comp,1,.false.,mla)
+    if (bds_type .eq. 0) then
+       call make_edge_scal(sold,sedge,umac,scal_force, &
+                           dx,dt,is_vel,the_bc_level, &
+                           pred_comp,dm+pred_comp,1,.false.,mla)
+    else if (bds_type .eq. 1) then
+       call bds(sold,sedge,umac,scal_force, &
+                dx,dt,is_vel,the_bc_level, &
+                pred_comp,dm+pred_comp,1,.false.,mla)
+    end if
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        ! convert (rho h)' -> (rho h)
