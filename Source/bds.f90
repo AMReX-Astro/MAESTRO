@@ -38,8 +38,10 @@ contains
     real(kind=dp_t), pointer ::  umacp(:,:,:,:)
     real(kind=dp_t), pointer ::  vmacp(:,:,:,:)
     real(kind=dp_t), pointer ::  wmacp(:,:,:,:)
+    real(kind=dp_t), pointer ::     fp(:,:,:,:)
 
-    integer :: dm,ng_s,ng_c,ng_u,ng_se,n,i,comp,nlevs
+    integer :: dm,ng_s,ng_c,ng_u,ng_se,ng_f
+    integer :: n,i,comp,nlevs
     integer :: lo(mla%dim),hi(mla%dim)
 
     nlevs = mla%nlevel
@@ -70,6 +72,7 @@ contains
     ng_s = s(1)%ng
     ng_c = slope(1)%ng
     ng_u = umac(1,1)%ng
+    ng_f = force(1)%ng
     ng_se = sedge(1,1)%ng
 
     do comp=start_scomp,start_scomp+num_comp-1
@@ -82,6 +85,7 @@ contains
              slopep => dataptr(slope(n), i)
              umacp  => dataptr(umac(n,1), i)
              vmacp  => dataptr(umac(n,2), i)
+             fp     => dataptr(force(n) ,i)
              lo =  lwb(get_box(s(n), i))
              hi =  upb(get_box(s(n), i))
              select case (dm)
@@ -92,7 +96,8 @@ contains
                 call bdsconc_2d(lo, hi, sop(:,:,1,comp), ng_s, &
                                 slopep(:,:,1,:), ng_c, &
                                 umacp(:,:,1,1), vmacp(:,:,1,1), ng_u, &
-                                sepx(:,:,1,1), sepy(:,:,1,1), ng_se, &
+                                fp(:,:,1,comp), ng_f, &
+                                sepx(:,:,1,comp), sepy(:,:,1,comp), ng_se, &
                                 dx(n,:), dt, is_conservative)
              case (3)
                 wmacp  => dataptr(umac(n,3), i)
@@ -103,7 +108,8 @@ contains
                 call bdsconc_3d(lo, hi, sop(:,:,:,comp), ng_s, &
                                 slopep(:,:,:,:), ng_c, &
                                 umacp(:,:,:,1), vmacp(:,:,:,1), wmacp(:,:,:,1), ng_u, &
-                                sepx(:,:,:,1), sepy(:,:,:,1), sepz(:,:,:,1), ng_se, &
+                                fp(:,:,:,comp), ng_f, &
+                                sepx(:,:,:,comp), sepy(:,:,:,comp), sepz(:,:,:,comp), ng_se, &
                                 dx(n,:), dt, is_conservative)
              end select
           end do ! loop over boxes
@@ -568,14 +574,15 @@ contains
 
   end subroutine bdsslope_3d
 
-  subroutine bdsconc_2d(lo,hi,s,ng_s,slope,ng_c,umac,vmac,ng_u,sedgex,sedgey,ng_se, &
-                        dx,dt,is_conservative)
+  subroutine bdsconc_2d(lo,hi,s,ng_s,slope,ng_c,umac,vmac,ng_u,force,ng_f, &
+                        sedgex,sedgey,ng_se,dx,dt,is_conservative)
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_c,ng_u,ng_se
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_c,ng_u,ng_f,ng_se
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :)
     real(kind=dp_t), intent(in   ) ::  slope(lo(1)-ng_c :,lo(2)-ng_c :,:)
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_u :,lo(2)-ng_u :)
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_u :,lo(2)-ng_u :)
+    real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
@@ -886,15 +893,16 @@ contains
 
   end subroutine bdsconc_2d
 
-  subroutine bdsconc_3d(lo,hi,s,ng_s,slope,ng_c,umac,vmac,wmac,ng_u, &
+  subroutine bdsconc_3d(lo,hi,s,ng_s,slope,ng_c,umac,vmac,wmac,ng_u,force,ng_f, &
                         sedgex,sedgey,sedgez,ng_se,dx,dt,is_conservative)
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_c,ng_u,ng_se
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_c,ng_u,ng_f,ng_se
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::  slope(lo(1)-ng_c :,lo(2)-ng_c :,lo(3)-ng_c :,:)
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
+    real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:)
     real(kind=dp_t), intent(inout) :: sedgez(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:)
