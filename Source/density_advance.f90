@@ -74,7 +74,7 @@ contains
     is_vel  = .false.
 
     dm = mla%dim
-    nlevs = mla%dim
+    nlevs = mla%nlevel
 
     if (spherical .eq. 0) then
 
