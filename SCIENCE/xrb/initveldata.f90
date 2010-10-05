@@ -9,7 +9,7 @@ module init_vel_module
   use eos_module
   use variables
   use network
-  use geometry, only: nr, spherical, dm, nlevs
+  use geometry, only: nr, spherical, nlevs
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -35,11 +35,13 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
+    integer :: lo(mla%dim),hi(mla%dim),ng,dm
     integer :: i,n
 
     real(kind=dp_t) :: xloc_vortices(num_vortices)
     real(kind=dp_t) :: offset
+
+    dm = mla%dim
 
     ! for now, this is calculated even if we don't use the velocity field in
     ! the initveldata_2d routine below

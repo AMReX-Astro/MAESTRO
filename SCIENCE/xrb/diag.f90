@@ -62,7 +62,7 @@ contains
                   mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: dm, nlevs
+    use geometry, only: nlevs
     use bl_constants_module
     use bl_error_module
 
@@ -94,12 +94,12 @@ contains
 
 
     real(kind=dp_t) :: T_max, T_max_level, T_max_local
-    real(kind=dp_t) :: coord_T_max(dm), coord_T_max_level(dm), &
-                       coord_T_max_local(dm)
+    real(kind=dp_t) :: coord_T_max(mla%dim), coord_T_max_level(mla%dim), &
+                       coord_T_max_local(mla%dim)
 
     real(kind=dp_t) :: enuc_max, enuc_max_level, enuc_max_local
-    real(kind=dp_t) :: coord_enuc_max(dm), coord_enuc_max_level(dm), &
-                       coord_enuc_max_local(dm)
+    real(kind=dp_t) :: coord_enuc_max(mla%dim), coord_enuc_max_level(mla%dim), &
+                       coord_enuc_max_local(mla%dim)
 
     real(kind=dp_t) :: total_c12_mass, total_c12_mass_level, &
                        total_c12_mass_local
@@ -107,40 +107,40 @@ contains
                        total_o16_mass_local
 
     real(kind=dp_t) :: vel_max, vel_max_level, vel_max_local
-    real(kind=dp_t) :: coord_vel_max(dm), coord_vel_max_level(dm), &
-                       coord_vel_max_local(dm)
+    real(kind=dp_t) :: coord_vel_max(mla%dim), coord_vel_max_level(mla%dim), &
+                       coord_vel_max_local(mla%dim)
 
     real(kind=dp_t) :: Machno_max, Machno_max_level, Machno_max_local
-    real(kind=dp_t) :: coord_Machno_max(dm), coord_Machno_max_level(dm), &
-                       coord_Machno_max_local(dm)
+    real(kind=dp_t) :: coord_Machno_max(mla%dim), coord_Machno_max_level(mla%dim), &
+                       coord_Machno_max_local(mla%dim)
 
     real(kind=dp_t) :: deltap_max, deltap_max_level, deltap_max_local
-    real(kind=dp_t) :: coord_deltap_max(dm), coord_deltap_max_level(dm), &
-                       coord_deltap_max_local(dm)
+    real(kind=dp_t) :: coord_deltap_max(mla%dim), coord_deltap_max_level(mla%dim), &
+                       coord_deltap_max_local(mla%dim)
 
     real(kind=dp_t) :: deltap_avg, deltap_avg_level, deltap_avg_local
     real(kind=dp_t) :: nzones, nzones_level, nzones_local
 
     ! buffers
-    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(dm)
+    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(mla%dim)
     real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
 
-    real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(dm)
+    real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(mla%dim)
     real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
 
     real(kind=dp_t), allocatable :: sum_data_level(:), sum_data_local(:)
     integer :: nsums
 
-    real(kind=dp_t) :: vel_max_data_local(1), vel_max_coords_local(dm)
+    real(kind=dp_t) :: vel_max_data_local(1), vel_max_coords_local(mla%dim)
     real(kind=dp_t), allocatable :: vel_max_data(:), vel_max_coords(:)
     
-    real(kind=dp_t) :: Machno_max_data_local(1), Machno_max_coords_local(dm)
+    real(kind=dp_t) :: Machno_max_data_local(1), Machno_max_coords_local(mla%dim)
     real(kind=dp_t), allocatable :: Machno_max_data(:), Machno_max_coords(:)
 
-    real(kind=dp_t) :: deltap_max_data_local(1), deltap_max_coords_local(dm)
+    real(kind=dp_t) :: deltap_max_data_local(1), deltap_max_coords_local(mla%dim)
     real(kind=dp_t), allocatable :: deltap_max_data(:), deltap_max_coords(:)
 
-    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_rhn,ng_rhe
+    integer :: lo(mla%dim),hi(mla%dim),ng_s,ng_u,ng_rhn,ng_rhe,dm
     integer :: i,n, index_max, isum
     integer :: un, un2, un3, un4
     logical :: lexist
@@ -149,8 +149,9 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
-
     call build(bpt, "diagnostics")
+
+    dm = mla%dim
 
     ! find out if we are using the triple_alpha_plus_cago network
     if (firstCall) then

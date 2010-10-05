@@ -32,8 +32,10 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
+    integer :: lo(get_dim(u(1))),hi(get_dim(u(1))),ng,dm
     integer :: i,n
+
+    dm = get_dim(u(1))
 
     ng = u(1)%ng
 
@@ -105,8 +107,8 @@ contains
 
     do j=lo(2),hi(2)
 
-       loloc = prob_lo(2) +  dble(j)     *dx(dm) - flameloc
-       hiloc = prob_lo(2) + (dble(j)+ONE)*dx(dm) - flameloc
+       loloc = prob_lo(2) +  dble(j)     *dx(2) - flameloc
+       hiloc = prob_lo(2) + (dble(j)+ONE)*dx(2) - flameloc
 
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
@@ -138,8 +140,8 @@ contains
 
     do k=lo(3),hi(3)
 
-       loloc = prob_lo(3) +  dble(k)     *dx(dm)
-       hiloc = prob_lo(3) + (dble(k)+ONE)*dx(dm)
+       loloc = prob_lo(3) +  dble(k)     *dx(3)
+       hiloc = prob_lo(3) + (dble(k)+ONE)*dx(3)
 
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 

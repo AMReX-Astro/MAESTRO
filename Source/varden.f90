@@ -40,7 +40,7 @@ subroutine varden()
 
   integer    :: init_step,istep
   integer    :: istep_divu_iter,istep_init_iter
-  integer    :: i,n,r,numcell
+  integer    :: i,n,r,numcell,dm
   integer    :: last_plt_written,last_chk_written
   real(dp_t) :: smin,smax
   real(dp_t) :: umin,umax,vmin,vmax,wmin,wmax
@@ -118,7 +118,6 @@ subroutine varden()
   last_chk_written = -1
 
   call probin_init()
-  call init_dm()
   call init_spherical()
   call init_center()
   call init_rotation()
@@ -171,6 +170,8 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! error checking
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  dm = dm_in
 
   ! check to make sure dimensionality is consistent in the inputs file
   if (dm .ne. get_dim(mla%mba)) then 

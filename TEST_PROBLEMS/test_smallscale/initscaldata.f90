@@ -32,7 +32,9 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng,i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng,i,n,dm
+
+    dm = mla%dim
 
     ng = s(1)%ng
 
@@ -94,8 +96,10 @@ contains
 
     ! local
     integer                  :: ng,i
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: lo(get_dim(s)),hi(get_dim(s)),dm
     real(kind=dp_t), pointer :: sop(:,:,:,:)
+
+    dm = get_dim(s)
 
     ng = s%ng
 

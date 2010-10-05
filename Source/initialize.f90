@@ -5,7 +5,8 @@ module initialize_module
   use multifab_module
   use bc_module
   use variables, only: nscal, rho_comp, rhoh_comp, temp_comp
-  use geometry
+  use geometry, only: spherical, nr_irreg, nr_fine, dr_fine, nlevs, nlevs_radial, &
+       init_cutoff, init_multilevel, init_radial, destroy_geometry, compute_cutoff_coords
   use network, only: nspec
   use bl_constants_module
   use base_state_module
@@ -34,8 +35,7 @@ contains
     use multifab_physbc_module
     use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
          ppm_type, bds_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
-         check_base_name, use_tfromp, cflfac
-
+         check_base_name, use_tfromp, cflfac, dm_in
     use average_module
     use make_grav_module
     use enforce_HSE_module
@@ -64,11 +64,11 @@ contains
     ! local
     type(ml_boxarray) :: mba
     type(box)         :: domain
-    integer           :: domhi(dm)
+    integer           :: domhi(dm_in)
 
     real(dp_t) :: lenx,leny,lenz,max_dist,p0_temp
 
-    integer :: n,ng_s,nr_fine_old,r
+    integer :: n,ng_s,nr_fine_old,r,dm
 
     type(multifab), pointer :: chkdata(:)
     type(multifab), pointer :: chk_p(:)
@@ -100,6 +100,8 @@ contains
 
     ! create mla
     call ml_layout_build(mla,mba,pmask)
+
+    dm = mla%dim
 
     ! check for proper nesting
     if (.not. ml_boxarray_properly_nested(mla%mba, 3, pmask)) then
@@ -572,7 +574,7 @@ contains
     use average_module
     use restrict_base_module
     use probin_module, only : drdxfac, octant, test_set, ppm_type, bds_type, nodal, &
-         prob_lo, prob_hi, model_file, do_smallscale
+         prob_lo, prob_hi, model_file, do_smallscale, dm_in
     use make_grav_module
     use enforce_HSE_module
     use rhoh_vs_t_module
@@ -594,11 +596,11 @@ contains
     ! local
     type(ml_boxarray) :: mba
     type(box)         :: domain
-    integer           :: domhi(dm)
+    integer           :: domhi(dm_in)
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
-    integer :: n,ng_s
+    integer :: n,ng_s,dm
     
     ! set time and dt
     time = ZERO
@@ -610,6 +612,8 @@ contains
     ! create mla
     call ml_layout_build(mla,mba,pmask)
     
+    dm = mla%dim
+
     ! check for proper nesting
     if (.not. ml_boxarray_properly_nested(mla%mba, 3, pmask)) then
        call bl_error('fixed_grids not properly nested')
@@ -776,7 +780,7 @@ contains
     use restrict_base_module
     use make_new_grids_module
     use probin_module, only : drdxfac, ppm_type, bds_type, prob_lo, prob_hi, do_smallscale, &
-         model_file, nodal
+         model_file, nodal, dm_in
     use multifab_physbc_module
     use ml_restriction_module
     use multifab_fill_ghost_module
@@ -801,20 +805,21 @@ contains
     ! local
     type(ml_boxarray) :: mba
     type(box)         :: domain
-    integer           :: domhi(dm)
+    integer           :: domhi(dm_in)
 
     type(layout) :: la_array(max_levs)
     type(box)    :: bxs
 
     real(dp_t) :: lenx,leny,lenz,max_dist
     integer    :: n,ng_s,nl
-    integer    :: lo(dm), hi(dm)
+    integer    :: lo(dm_in), hi(dm_in), dm
     logical    :: new_grid
 
     ! set time and dt
     time = ZERO
     dt = 1.d20
 
+    dm = dm_in
 
     ! set up hi & lo to carry indexing info
     lo = 0
@@ -1092,7 +1097,9 @@ contains
     integer       , intent(in   ) :: num_levs
     logical       , intent(in   ) :: pmask(:)
     
-    integer :: domain_phys_bc(dm,2)
+    integer :: domain_phys_bc(size(pmask),2), dm
+
+    dm = size(pmask)
 
     ! Define the physical boundary conditions on the domain
     ! Put the bc values from the inputs file into domain_phys_bc
@@ -1135,7 +1142,9 @@ contains
     type(ml_boxarray), intent(in ) :: mba
     integer          , intent(in ) :: num_levs
     
-    integer :: n,d
+    integer :: n,d,dm
+
+    dm = mba%dim
     
     allocate(dx(num_levs,dm))
     

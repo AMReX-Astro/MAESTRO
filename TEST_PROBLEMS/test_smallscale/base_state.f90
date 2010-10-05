@@ -17,9 +17,9 @@ contains
     use bl_constants_module
     use eos_module
     use network, only: spec_names, nspec
-    use probin_module, ONLY: prob_lo
+    use probin_module, ONLY: prob_lo, dm_in
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp
-    use geometry, only: dr, spherical, nr, dm
+    use geometry, only: dr, spherical, nr
     use inlet_bc_module
 
     integer,             intent(in   ) :: n
@@ -29,11 +29,13 @@ contains
     real(kind=dp_t),     intent(in   ) :: dx(:)
 
     ! local
-    integer :: ndum,r,comp
+    integer :: ndum,r,comp,dm
     parameter (ndum = 30)
 
     real(kind=dp_t) :: state1d(ndum),Pamb,starting_rad
     real(kind=dp_t) :: loloc,hiloc,flameloc
+
+    dm = dm_in
 
     ! set bottom of domain
     starting_rad = prob_lo(dm)

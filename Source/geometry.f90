@@ -13,7 +13,6 @@ module geometry
 
   integer   , save :: nlevs,nlevs_radial
   integer   , save :: spherical
-  integer   , save :: dm
   real(dp_t), save :: center(3)
   integer   , save :: nr_fine, nr_irreg
   real(dp_t), save :: dr_fine
@@ -27,7 +26,7 @@ module geometry
 
   private
 
-  public :: nlevs, nlevs_radial, spherical, dm, center, nr_fine, dr_fine, nr_irreg
+  public :: nlevs, nlevs_radial, spherical, center, nr_fine, dr_fine, nr_irreg
   public :: dr, r_cc_loc, r_edge_loc
   public :: numdisjointchunks
   public :: r_start_coord, r_end_coord, nr
@@ -36,20 +35,10 @@ module geometry
   public :: burning_cutoff_density_coord
   public :: sin_theta, cos_theta, omega
 
-  public :: init_dm, init_spherical, init_center, init_radial, init_cutoff, &
+  public :: init_spherical, init_center, init_radial, init_cutoff, &
        compute_cutoff_coords, init_multilevel, init_rotation, destroy_geometry
 
 contains
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  subroutine init_dm()
-
-    use probin_module, only: dm_in
-
-    dm = dm_in
-
-  end subroutine init_dm
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -65,19 +54,19 @@ contains
 
   subroutine init_center()
 
-    use probin_module, only: prob_lo, prob_hi, octant
+    use probin_module, only: prob_lo, prob_hi, octant, dm_in
     use bl_constants_module
 
     if (.not. octant) then
-       center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
+       center(1:dm_in) = HALF * (prob_lo(1:dm_in) + prob_hi(1:dm_in))
     else
-       if (.not. (spherical == 1 .and. dm == 3 .and. &
+       if (.not. (spherical == 1 .and. dm_in == 3 .and. &
                   prob_lo(1) == ZERO .and. &
                   prob_lo(2) == ZERO .and. &
                   prob_lo(3) == ZERO)) then
           call bl_error("ERROR: octant requires spherical with prob_lo = 0.0")
        endif
-       center(1:dm) = ZERO
+       center(1:dm_in) = ZERO
     endif
 
   end subroutine init_center
@@ -108,16 +97,16 @@ contains
        nr(num_levs) = nr_fine
        dr(num_levs) = dr_fine
        do n=num_levs-1,1,-1
-          nr(n) = nr(n+1)/mba%rr(n,dm)
-          dr(n) = dr(n+1)*dble(mba%rr(n,dm))
+          nr(n) = nr(n+1)/mba%rr(n,mba%dim)
+          dr(n) = dr(n+1)*dble(mba%rr(n,mba%dim))
        enddo
        
        do n=1,num_levs
           do i = 0,nr(n)-1
-             r_cc_loc(n,i) = prob_lo(dm) + (dble(i)+HALF)*dr(n)
+             r_cc_loc(n,i) = prob_lo(mba%dim) + (dble(i)+HALF)*dr(n)
           end do
           do i = 0,nr(n)
-             r_edge_loc(n,i) = prob_lo(dm) + (dble(i))*dr(n)
+             r_edge_loc(n,i) = prob_lo(mba%dim) + (dble(i))*dr(n)
           end do
        enddo
 
@@ -228,14 +217,16 @@ contains
     type(multifab) , intent(in   ) :: mf(:)
 
     ! local
-    integer :: i,j,n,maxdisjointchunks,temp
+    integer :: i,j,n,maxdisjointchunks,temp,dm
 
-    integer :: lo(dm),hi(dm)
+    integer :: lo(get_dim(mf(1))),hi(get_dim(mf(1)))
 
     type(boxarray) :: validboxarr(nlevs)
     type(boxarray) :: diffboxarray(nlevs)
     type(box)      :: boundingbox(nlevs)
     
+    dm = get_dim(mf(1))
+
     if (spherical .eq. 0) then
     
        ! create a "bounding box" for each level

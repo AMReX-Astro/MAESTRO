@@ -11,7 +11,7 @@ module init_scalar_module
   use eos_module
   use variables
   use network
-  use geometry, only: nr, spherical, dm, nlevs
+  use geometry, only: nr, spherical, nlevs
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -37,9 +37,10 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
+    integer :: lo(mla%dim),hi(mla%dim),ng,dm
     integer :: i,n,r
 
+    dm = mla%dim
 
     ng = s(1)%ng
 
@@ -124,9 +125,10 @@ contains
 
     ! local
     integer                    :: ng,i,r
-    integer                    :: lo(dm),hi(dm)
+    integer                    :: lo(get_dim(s)),hi(get_dim(s)),dm
     real(kind=dp_t), pointer   :: sop(:,:,:,:)
 
+    dm = get_dim(s)
 
     ng = nghost(s)
 
