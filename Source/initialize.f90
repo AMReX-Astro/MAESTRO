@@ -5,7 +5,7 @@ module initialize_module
   use multifab_module
   use bc_module
   use variables, only: nscal, rho_comp, rhoh_comp, temp_comp
-  use geometry, only: spherical, nr_irreg, nr_fine, dr_fine, nlevs, nlevs_radial, &
+  use geometry, only: spherical, nr_irreg, nr_fine, dr_fine, nlevs_radial, &
        init_cutoff, init_multilevel, init_radial, destroy_geometry, compute_cutoff_coords
   use network, only: nspec
   use bl_constants_module
@@ -68,7 +68,7 @@ contains
 
     real(dp_t) :: lenx,leny,lenz,max_dist,p0_temp
 
-    integer :: n,ng_s,nr_fine_old,r,dm
+    integer :: n,ng_s,nr_fine_old,r,dm,nlevs
 
     type(multifab), pointer :: chkdata(:)
     type(multifab), pointer :: chk_p(:)
@@ -600,7 +600,7 @@ contains
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
-    integer :: n,ng_s,dm
+    integer :: n,ng_s,dm,nlevs
     
     ! set time and dt
     time = ZERO
@@ -812,7 +812,7 @@ contains
 
     real(dp_t) :: lenx,leny,lenz,max_dist
     integer    :: n,ng_s,nl
-    integer    :: lo(dm_in), hi(dm_in), dm
+    integer    :: lo(dm_in), hi(dm_in), dm, nlevs
     logical    :: new_grid
 
     ! set time and dt

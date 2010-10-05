@@ -40,7 +40,7 @@ subroutine varden()
 
   integer    :: init_step,istep
   integer    :: istep_divu_iter,istep_init_iter
-  integer    :: i,n,r,numcell,dm
+  integer    :: i,n,r,numcell,dm,nlevs
   integer    :: last_plt_written,last_chk_written
   real(dp_t) :: smin,smax
   real(dp_t) :: umin,umax,vmin,vmax,wmin,wmax
@@ -172,6 +172,7 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   dm = dm_in
+  nlevs = mla%nlevel
 
   ! check to make sure dimensionality is consistent in the inputs file
   if (dm .ne. get_dim(mla%mba)) then 

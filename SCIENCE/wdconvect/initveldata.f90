@@ -34,8 +34,8 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(get_dim(u(1))),hi(get_dim(u(1))),ng,dm
-    integer :: i,j,k,n
+    integer :: lo(mla%dim),hi(mla%dim),ng,dm
+    integer :: i,j,k,n,nlevs
 
     ! random numbers between -1 and 1
     real(kind=dp_t) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
@@ -49,7 +49,8 @@ contains
     ! random number
     real(kind=dp_t) :: rand
     
-    dm = get_dim(u(1))
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng = nghost(u(1))
 

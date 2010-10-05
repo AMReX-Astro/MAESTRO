@@ -62,7 +62,6 @@ contains
                   mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: nlevs
     use bl_constants_module
     use bl_error_module
 
@@ -140,7 +139,7 @@ contains
     real(kind=dp_t) :: deltap_max_data_local(1), deltap_max_coords_local(mla%dim)
     real(kind=dp_t), allocatable :: deltap_max_data(:), deltap_max_coords(:)
 
-    integer :: lo(mla%dim),hi(mla%dim),ng_s,ng_u,ng_rhn,ng_rhe,dm
+    integer :: lo(mla%dim),hi(mla%dim),ng_s,ng_u,ng_rhn,ng_rhe,dm,nlevs
     integer :: i,n, index_max, isum
     integer :: un, un2, un3, un4
     logical :: lexist
@@ -152,6 +151,7 @@ contains
     call build(bpt, "diagnostics")
 
     dm = mla%dim
+    nlevs = mla%nlevel
 
     ! find out if we are using the triple_alpha_plus_cago network
     if (firstCall) then

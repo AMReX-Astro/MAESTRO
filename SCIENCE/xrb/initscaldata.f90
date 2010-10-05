@@ -9,7 +9,7 @@ module init_scalar_module
   use eos_module
   use variables
   use network
-  use geometry, only: nr, spherical, nlevs
+  use geometry, only: nr, spherical
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -35,10 +35,11 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(mla%dim),hi(mla%dim),ng,dm
+    integer :: lo(mla%dim),hi(mla%dim),ng,dm,nlevs
     integer :: i,n,r
 
     dm = mla%dim
+    nlevs = mla%nlevel
 
     ng = s(1)%ng
 

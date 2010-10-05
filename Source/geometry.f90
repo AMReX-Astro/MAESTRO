@@ -11,7 +11,7 @@ module geometry
 
   implicit none
 
-  integer   , save :: nlevs,nlevs_radial
+  integer   , save :: nlevs_radial
   integer   , save :: spherical
   real(dp_t), save :: center(3)
   integer   , save :: nr_fine, nr_irreg
@@ -26,7 +26,7 @@ module geometry
 
   private
 
-  public :: nlevs, nlevs_radial, spherical, center, nr_fine, dr_fine, nr_irreg
+  public :: nlevs_radial, spherical, center, nr_fine, dr_fine, nr_irreg
   public :: dr, r_cc_loc, r_edge_loc
   public :: numdisjointchunks
   public :: r_start_coord, r_end_coord, nr
@@ -217,15 +217,16 @@ contains
     type(multifab) , intent(in   ) :: mf(:)
 
     ! local
-    integer :: i,j,n,maxdisjointchunks,temp,dm
+    integer :: i,j,n,maxdisjointchunks,temp,dm,nlevs
 
     integer :: lo(get_dim(mf(1))),hi(get_dim(mf(1)))
 
-    type(boxarray) :: validboxarr(nlevs)
-    type(boxarray) :: diffboxarray(nlevs)
-    type(box)      :: boundingbox(nlevs)
+    type(boxarray) ::  validboxarr(size(mf))
+    type(boxarray) :: diffboxarray(size(mf))
+    type(box)      ::  boundingbox(size(mf))
     
     dm = get_dim(mf(1))
+    nlevs = size(mf)
 
     if (spherical .eq. 0) then
     

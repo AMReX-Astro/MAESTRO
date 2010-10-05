@@ -36,7 +36,6 @@ contains
     use variables, only: temp_comp, rho_comp, rhoh_comp, spec_comp, foextrap_comp
     use multifab_physbc_module
     use fill_3d_module
-    use geometry, only: nlevs
     use probin_module, only: temp_diffusion_formulation
 
 
@@ -55,13 +54,14 @@ contains
     type(multifab) :: phi(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel,mla%dim)
     type(multifab) :: resid(mla%nlevel)
 
-    integer                     :: comp,i,n,stencil_order,dm
+    integer                     :: comp,i,n,stencil_order,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_explicit_thermal")
 
     dm = mla%dim
+    nlevs = mla%nlevel
 
     stencil_order = 2
 
@@ -279,7 +279,6 @@ contains
     !
     ! note: we explicitly fill the ghostcells by looping over them directly
     ! in the _2d and _3d routines below.
-    use geometry, only: nlevs
 
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: Tcoeff(:)
@@ -290,7 +289,7 @@ contains
     ! local
     integer :: n,i
     integer :: ng_s,ng_T,ng_h,ng_X,ng_p
-    integer :: lo(get_dim(s(1))),hi(get_dim(s(1))),dm
+    integer :: lo(get_dim(s(1))),hi(get_dim(s(1))),dm,nlevs
 
     real(kind=dp_t), pointer    :: sp(:,:,:,:)
     real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
@@ -299,6 +298,7 @@ contains
     type(bl_prof_timer), save :: bpt
 
     dm = get_dim(s(1))
+    nlevs = size(s)
 
 999 format('... Level ', i1, ' create thermal coeffs:')
 

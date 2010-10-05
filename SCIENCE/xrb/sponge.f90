@@ -86,7 +86,6 @@ contains
 
     use bl_constants_module
     use ml_restriction_module, only: ml_cc_restriction
-    use geometry, only: nlevs
 
     type(multifab) , intent(inout) :: sponge(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
@@ -95,9 +94,10 @@ contains
     ! Local variables
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     integer :: i,n,ng_sp
-    integer :: lo(get_dim(sponge(1))),hi(get_dim(sponge(1))),dm
+    integer :: lo(get_dim(sponge(1))),hi(get_dim(sponge(1))),dm,nlevs
 
     dm = get_dim(sponge(1))
+    nlevs = mla%nlevel
 
     ng_sp = sponge(1)%ng
 
