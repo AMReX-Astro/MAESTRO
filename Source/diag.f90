@@ -26,7 +26,7 @@ contains
                   mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: dm, nlevs, spherical
+    use geometry, only: spherical
     use bl_constants_module
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
@@ -68,13 +68,13 @@ contains
     logical        , pointer::  mp(:,:,:,:)
 
     type(multifab) :: w0r_cart(mla%nlevel)
-    type(multifab) ::    w0mac(mla%nlevel,dm)
+    type(multifab) ::    w0mac(mla%nlevel,mla%dim)
 
     real(kind=dp_t) :: Mach_max, Mach_max_level, Mach_max_local
     real(kind=dp_t) :: temp_max, temp_max_level, temp_max_local
     real(kind=dp_t) :: enuc_max, enuc_max_level, enuc_max_local
 
-    integer :: lo(dm),hi(dm)
+    integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: ng_s,ng_u,ng_n,ng_rhn,ng_rhe,ng_rw,ng_w,ng_wm
     integer :: i,n,comp
     integer :: un
@@ -86,6 +86,8 @@ contains
 
     call build(bpt, "diagnostics")
 
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (spherical .eq. 1) then
 

@@ -146,7 +146,6 @@ contains
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, &
          foextrap_comp, hoextrap_comp, ntrac
     use network, only: nspec
-    use geometry, only: dm
 
     ! define boundary conditions for the advection problem
 
@@ -154,9 +153,11 @@ contains
     integer  , intent(in   ) :: phys_bc_level(0:,:,:)
     integer  , intent(in   ) :: default_value
 
-    integer :: n,d,i
+    integer :: n,d,i,dm
 
     adv_bc_level = default_value
+
+    dm = size(adv_bc_level,dim=2)
 
 !    *** 2-D ***
 !   COMP = 1     : x-velocity
@@ -236,7 +237,6 @@ contains
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, &
          foextrap_comp, hoextrap_comp, ntrac
     use network, only: nspec
-    use geometry, only: dm
 
     ! define boundary conditions for the elliptic problem
 
@@ -246,7 +246,9 @@ contains
     integer  , intent(in   ) :: phys_bc_level(0:,:,:)
     integer  , intent(in   ) :: default_value
 
-    integer :: n,d,i
+    integer :: n,d,i,dm
+
+    dm = size(ell_bc_level,dim=2)
 
     ell_bc_level = default_value
 

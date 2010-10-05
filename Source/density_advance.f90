@@ -30,7 +30,7 @@ contains
     use pert_form_module
     use cell_to_edge_module
     use network,       only: nspec, spec_names
-    use geometry,      only: spherical, nr_fine, nlevs, nlevs_radial
+    use geometry,      only: spherical, nr_fine, nlevs_radial
     use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
     use probin_module, only: verbose, bds_type
     use modify_scal_force_module
@@ -60,7 +60,7 @@ contains
     type(multifab) :: rho0mac_old(mla%nlevel,mla%dim)
     type(multifab) :: rho0mac_new(mla%nlevel,mla%dim)
 
-    integer    :: comp,n,dm
+    integer    :: comp,n,dm,nlevs
     logical    :: is_vel
     real(dp_t) :: smin,smax
 
@@ -74,6 +74,7 @@ contains
     is_vel  = .false.
 
     dm = mla%dim
+    nlevs = mla%dim
 
     if (spherical .eq. 0) then
 

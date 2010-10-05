@@ -25,7 +25,6 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use geometry, only: dm, nlevs
 
     type(multifab) , intent(inout) :: s(:)
     logical        , intent(in   ) :: flag
@@ -33,11 +32,14 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    integer :: n,comp,bc_comp
+    integer :: n,comp,bc_comp,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "convert_rhoX_to_X")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (flag) then
        do n=1,nlevs
@@ -111,7 +113,6 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use geometry, only: dm, nlevs
 
     type(multifab) , intent(inout) :: s(:)
     logical        , intent(in   ) :: flag
@@ -119,11 +120,14 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    integer :: n,bc_comp
+    integer :: n,bc_comp,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "convert_rhoh_to_h")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (flag) then
        do n=1,nlevs
