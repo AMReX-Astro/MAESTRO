@@ -15,19 +15,20 @@ contains
 
     use setbc_module
     use bl_prof_module
-    use geometry, only: dm
 
     type(multifab) , intent(inout) :: s
     integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
     type(bc_level) , intent(in   ) :: the_bc_level
 
     ! Local
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: lo(get_dim(s)),hi(get_dim(s)),dm
     integer                  :: i,ng,scomp,bccomp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
     
+    dm = get_dim(s)
+
     ng = nghost(s)
 
     if (ng == 0) return

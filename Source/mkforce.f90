@@ -29,7 +29,7 @@ contains
     ! multifab array, so index_rho may be different.
 
     use bl_prof_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use variables, only: foextrap_comp
     use bl_constants_module
     use ml_restriction_module, only: ml_cc_restriction
@@ -67,7 +67,7 @@ contains
     real(kind=dp_t), pointer ::   fp(:,:,:,:)
     real(kind=dp_t), pointer ::   rp(:,:,:,:)
     real(kind=dp_t), pointer ::  w0p(:,:,:,:)
-    integer                  :: i,lo(dm),hi(dm)
+    integer                  :: i,lo(mla%dim),hi(mla%dim),dm,nlevs
     integer                  :: ng_s,ng_f,ng_gp,n,ng_uo,ng_um
    
     type(multifab) :: w0_cart(mla%nlevel)
@@ -76,6 +76,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mk_vel_force")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s  = nghost(s(1))
     ng_f  = nghost(vel_force(1))
@@ -507,7 +510,7 @@ contains
 
   subroutine add_utilde_force(vel_force,normal,umac,w0,dx,the_bc_level,mla)
 
-    use geometry, only: spherical, nr_fine, dr, dm, nlevs
+    use geometry, only: spherical, nr_fine, dr
     use fill_3d_module, only: put_1d_array_on_cart
     use variables, only: foextrap_comp
 
@@ -532,12 +535,15 @@ contains
 
     ! stuff for spherical only
     real(kind=dp_t) :: gradw0_rad(1,0:nr_fine-1)
-    type(multifab)  :: gradw0_cart(nlevs)
-    integer         :: lo(dm), hi(dm), n_1d
+    type(multifab)  :: gradw0_cart(mla%nlevel)
+    integer         :: lo(mla%dim), hi(mla%dim), dm, nlevs, n_1d
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "add_utilde_force")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     do n=1,nlevs
        call multifab_build(gradw0_cart(n),get_layout(vel_force(n)),1,1)

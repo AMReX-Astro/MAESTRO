@@ -30,7 +30,7 @@ contains
          regrid_int, amr_buf_width, &
          max_grid_size_2, max_grid_size_3, ref_ratio, max_levs, &
          ppm_type, bds_type
-    use geometry, only: dm, nlevs, nlevs_radial, spherical
+    use geometry, only: nlevs, nlevs_radial, spherical
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp
     use network, only: nspec
 
@@ -44,7 +44,7 @@ contains
 
     ! local
     logical           :: new_grid
-    integer           :: n, nl, d, ng_s
+    integer           :: n, nl, d, ng_s, dm
     type(layout)      :: la_array(max_levs)
     type(ml_layout)   :: mla_old
     type(ml_boxarray) :: mba
@@ -52,6 +52,8 @@ contains
     ! These are copies to hold the old data.
     type(multifab) :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
     type(multifab) :: pi_temp(max_levs), dSdt_temp(max_levs), src_temp(max_levs)
+
+    dm = mla%dim
 
     if (verbose .ge. 1) then
        if (parallel_IOProcessor()) print*,'Calling regrid'

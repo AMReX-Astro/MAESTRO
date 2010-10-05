@@ -17,7 +17,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use variables, only: foextrap_comp
     use multifab_physbc_module
     use ml_restriction_module
@@ -39,8 +39,8 @@ contains
     
     ! local
     integer :: i,ng_f,ng_s,ng_um,ng_b,n
-    integer :: lo(dm),hi(dm)
-    integer :: domlo(dm),domhi(dm)    
+    integer :: lo(mla%dim),hi(mla%dim)
+    integer :: domlo(mla%dim),domhi(mla%dim),dm,nlevs
 
     type(box) :: domain
 
@@ -55,6 +55,9 @@ contains
 
     call build(bpt, "modify_scal_force")
     
+    dm = mla%dim
+    nlevs = mla%nlevel
+
     ng_s  = nghost(s(1))
     ng_f  = nghost(force(1))
     ng_um = nghost(umac(1,1))

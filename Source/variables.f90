@@ -45,7 +45,7 @@ contains
 
   subroutine init_variables()
 
-    use geometry, only: dm
+    use probin_module, only: dm_in
     use network, only: nspec
 
     rho_comp    = 1
@@ -59,7 +59,7 @@ contains
     ! The "3" here refers to rho, rhoh, and temp
     nscal = nspec + ntrac + 3
 
-    press_comp  = dm + nscal + 1
+    press_comp  = dm_in + nscal + 1
 
     foextrap_comp = press_comp + 1
     hoextrap_comp = foextrap_comp + 1
@@ -71,10 +71,10 @@ contains
     use network, only: nspec
     use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
          plot_omegadot, plot_Hnuc, plot_Hext, plot_eta, plot_ad_excess, &
-         use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs
-    use geometry, only: spherical, dm
+         use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, dm_in
+    use geometry, only: spherical
 
-    icomp_vel      = get_next_plot_index(dm)
+    icomp_vel      = get_next_plot_index(dm_in)
     icomp_rho      = get_next_plot_index(1)
     if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
          icomp_rhoh     = get_next_plot_index(1)
@@ -83,7 +83,7 @@ contains
     if (plot_trac) icomp_trac = get_next_plot_index(ntrac)
 
     if (plot_base) then
-       icomp_w0    = get_next_plot_index(dm)
+       icomp_w0    = get_next_plot_index(dm_in)
        icomp_divw0 = get_next_plot_index(1)
        icomp_rho0  = get_next_plot_index(1)
        icomp_rhoh0 = get_next_plot_index(1)
@@ -126,7 +126,7 @@ contains
 
     icomp_pi          = get_next_plot_index(1)
     if (plot_gpi) then
-       icomp_gpi         = get_next_plot_index(dm)
+       icomp_gpi         = get_next_plot_index(dm_in)
     endif
 
     if (plot_base) then

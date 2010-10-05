@@ -98,7 +98,6 @@ contains
 
     use bl_constants_module
     use ml_restriction_module, only: ml_cc_restriction
-    use geometry, only: dm, nlevs
 
     type(multifab) , intent(inout) :: sponge(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
@@ -107,7 +106,10 @@ contains
     ! Local variables
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     integer :: i,n,ng_sp
-    integer :: lo(dm),hi(dm)
+    integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_sp = nghost(sponge(1))
 

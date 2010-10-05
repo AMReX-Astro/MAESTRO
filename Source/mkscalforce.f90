@@ -31,7 +31,7 @@ contains
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
-    use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
+    use geometry, only: spherical, nr_fine, nlevs_radial
     use ml_restriction_module, only: ml_cc_restriction_c
     use fill_3d_module
     use multifab_fill_ghost_module
@@ -56,7 +56,7 @@ contains
 
     ! local
     integer                  :: i,n,comp,ng_f,ng_um,ng_th,ng_p0,ng_pm
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: lo(mla%dim),hi(mla%dim),dm,nlevs
 
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
@@ -69,7 +69,7 @@ contains
     real(kind=dp_t), pointer :: pmz(:,:,:,:)
 
     type(multifab) :: p0_cart(mla%nlevel)
-    type(multifab) :: p0mac(mla%nlevel,dm)
+    type(multifab) :: p0mac(mla%nlevel,mla%dim)
 
     real(kind=dp_t) :: p0_nph(nlevs_radial,0:nr_fine-1)
     real(kind=dp_t) ::   rho0(nlevs_radial,0:nr_fine-1)
@@ -78,6 +78,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mkrhohforce")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ! if we are doing the prediction, then it only makes sense to be in
     ! this routine if the quantity we are predicting is (rho h)' or h
@@ -507,7 +510,7 @@ contains
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp, rho_comp
-    use geometry, only: spherical, nr_fine, dm, nlevs
+    use geometry, only: spherical, nr_fine
     use ml_restriction_module, only: ml_cc_restriction_c
     use fill_3d_module, only: put_1d_array_on_cart
     use multifab_fill_ghost_module
@@ -530,7 +533,7 @@ contains
 
     ! local
     integer                  :: i,n
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer                  :: ng_f,ng_um,ng_th,ng_s
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
@@ -542,11 +545,11 @@ contains
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: snp(:,:,:,:)
 
-    type(multifab)  :: p0_cart(nlevs)
-    type(multifab)  :: h0_cart(nlevs)
+    type(multifab)  :: p0_cart(mla%nlevel)
+    type(multifab)  :: h0_cart(mla%nlevel)
 
-    real(kind=dp_t) :: p0_nph(nlevs,0:nr_fine-1)
-    real(kind=dp_t) :: h0_nph(nlevs,0:nr_fine-1)
+    real(kind=dp_t) :: p0_nph(mla%nlevel,0:nr_fine-1)
+    real(kind=dp_t) :: h0_nph(mla%nlevel,0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 
@@ -557,6 +560,9 @@ contains
     if (is_prediction .AND. enthalpy_pred_type .ne. predict_hprime) then
        call bl_error("ERROR: should not call mkhprimeforce if enthalpy_pred_type .ne. predict_hprime")
     endif
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_f  = nghost(scal_force(1))
     ng_um = nghost(umac(1,1))
@@ -780,7 +786,7 @@ contains
 
     use bl_prof_module
     use variables, only: foextrap_comp, temp_comp
-    use geometry, only: spherical, nr_fine, dm, nlevs
+    use geometry, only: spherical, nr_fine
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
@@ -801,7 +807,7 @@ contains
     integer         :: i,n,ng_f,ng_um,ng_s,ng_th
     type(multifab)  :: p0_cart(mla%nlevel)
     real(kind=dp_t) :: p0_nph(mla%nlevel,0:nr_fine-1)
-    integer         :: lo(dm),hi(dm)
+    integer         :: lo(mla%dim),hi(mla%dim),dm,nlevs
 
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:)
@@ -814,6 +820,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mktempforce")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_f  = nghost(temp_force(1))
     ng_um = nghost(umac(1,1))

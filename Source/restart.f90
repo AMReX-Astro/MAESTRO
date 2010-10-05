@@ -20,8 +20,7 @@ contains
     use parallel
     use bl_prof_module
     use checkpoint_module
-    use geometry, only: dm
-    use probin_module, only: check_base_name, max_levs
+    use probin_module, only: check_base_name, max_levs, dm_in
 
     integer          , intent(in   ) :: restart_int
     real(dp_t)       , intent(  out) :: time,dt
@@ -60,7 +59,7 @@ contains
                          chk_thermal2, check_file_name, &
                          time, dt, nlevs_local)
 
-    call build(mba,nlevs_local,dm)
+    call build(mba,nlevs_local,dm_in)
     mba%pd(1) =  bbox(get_boxarray(chkdata(1)))
     do n = 2,nlevs_local
       mba%pd(n) = refine(mba%pd(n-1),2)

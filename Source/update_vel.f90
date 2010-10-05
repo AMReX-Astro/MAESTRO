@@ -20,7 +20,7 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
 
     type(multifab)    , intent(in   ) :: uold(:)
     type(multifab)    , intent(inout) :: unew(:)
@@ -37,7 +37,7 @@ contains
 
     ! local
     integer :: i,n,n_1d
-    integer :: lo(dm),hi(dm)
+    integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: ng_uo,ng_un,ng_um,ng_ue,ng_sp,ng_f,ng_w0
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
@@ -57,6 +57,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "update_velocity")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_uo = nghost(uold(1))
     ng_un = nghost(unew(1))

@@ -24,7 +24,7 @@ contains
                           mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: dm, nlevs, spherical
+    use geometry, only: spherical
     use bl_constants_module
     use network, only: network_species_index
     use inlet_bc_module
@@ -57,11 +57,11 @@ contains
     logical        , pointer::  mp(:,:,:,:)
 
     type(multifab) :: w0r_cart(mla%nlevel)
-    type(multifab) ::    w0mac(mla%nlevel,dm)
+    type(multifab) ::    w0mac(mla%nlevel,mla%dim)
 
     real(kind=dp_t) :: Mach_max, Mach_max_level, Mach_max_local
 
-    integer :: lo(dm),hi(dm)
+    integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: ng_s,ng_u,ng_n,ng_rhn,ng_rhe,ng_rw,ng_w,ng_wm
     integer :: i,n,comp
     integer :: un
@@ -73,6 +73,8 @@ contains
 
     call build(bpt, "sanity check")
 
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (spherical .eq. 1) then
 

@@ -25,7 +25,6 @@ contains
     use make_edge_scal_module
     use probin_module, only: verbose, bds_type
     use variables, only: rho_comp
-    use geometry, only: nlevs
     use bds_module
 
     type(ml_layout), intent(inout) :: mla
@@ -48,16 +47,18 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(multifab) , intent(in   ) :: sponge(:)
 
-    type(multifab)  :: force(nlevs)
-    type(multifab)  :: uedge(nlevs,mla%dim)
+    type(multifab)  :: force(mla%nlevel)
+    type(multifab)  :: uedge(mla%nlevel,mla%dim)
     logical         :: is_vel
     logical         :: is_final_update
-    integer         :: velpred,n,comp,dm
+    integer         :: velpred,n,comp,dm,nlevs
     real(kind=dp_t) :: smin,smax
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "velocity_advance")
+
+    nlevs = mla%nlevel
 
     is_vel  = .true.
     velpred = 0

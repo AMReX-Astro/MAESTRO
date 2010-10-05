@@ -17,7 +17,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
@@ -35,7 +35,7 @@ contains
 
     integer                  :: i,n,n_1d
     integer                  :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0
-    integer                  :: lo(dm), hi(dm)
+    integer                  :: lo(mla%dim), hi(mla%dim),dm,nlevs
     real(kind=dp_t), pointer :: uop(:,:,:,:)
     real(kind=dp_t), pointer :: ufp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:)
@@ -52,6 +52,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "velpred")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_u  = nghost(u(1))
     ng_uf = nghost(ufull(1))

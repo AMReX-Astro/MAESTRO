@@ -23,7 +23,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use ml_restriction_module, only: ml_edge_restriction_c
     use variables, only: spec_comp
     use network, only: nspec
@@ -43,9 +43,8 @@ contains
     integer        , intent(in   ) :: startcomp,endcomp
 
     ! local    
-    integer :: i,n,lo(dm),hi(dm)
+    integer :: i,n,lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: ng_sf,ng_ef,ng_se,ng_um,ng_w0,ng_ro,ng_rn
-
 
     real(kind=dp_t), pointer :: sfxp(:,:,:,:)
     real(kind=dp_t), pointer :: sfyp(:,:,:,:)
@@ -70,6 +69,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mk_rhoX_flux")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_sf = nghost(sflux(1,1))
     ng_ef = nghost(etarhoflux(1))
@@ -451,7 +453,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use ml_restriction_module, only: ml_edge_restriction_c
     use variables, only: rhoh_comp
 
@@ -471,7 +473,7 @@ contains
     type(multifab) , intent(in   ) :: h0mac_old(:,:),h0mac_new(:,:)
 
     ! local    
-    integer :: i,n,lo(dm),hi(dm)
+    integer :: i,n,lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: ng_sf,ng_se,ng_um,ng_w0,ng_0m
 
     real(kind=dp_t), pointer :: sfxp(:,:,:,:)
@@ -508,6 +510,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mk_rhoh_flux")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_sf = nghost(sflux(1,1))
     ng_se = nghost(sedge(1,1))

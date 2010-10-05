@@ -29,7 +29,7 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp
-    use geometry, only: dm, nlevs, spherical
+    use geometry, only: spherical
 
     type(multifab) , intent(inout) :: Source(:)
     type(multifab) , intent(inout) :: delta_gamma1_term(:)
@@ -52,12 +52,15 @@ contains
     real(kind=dp_t), pointer:: tp(:,:,:,:),dgp(:,:,:,:)
     real(kind=dp_t), pointer:: omegap(:,:,:,:), hep(:,:,:,:), hnp(:,:,:,:)
 
-    integer :: lo(dm),hi(dm)
+    integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: i,n,ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_S")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_sr = nghost(Source(1))
     ng_dt = nghost(delta_gamma1_term(1))

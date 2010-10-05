@@ -22,7 +22,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, dm, nlevs
+    use geometry, only: spherical, nr_fine
     use variables
     use network
     use fill_3d_module
@@ -47,8 +47,8 @@ contains
     type(ml_layout), intent(in   ) :: mla
     
     ! local
-    integer :: i,r,n,ng_u,ng_se,ng_r0,ng_rh0,ng_t0
-    integer :: lo(dm),hi(dm)
+    integer :: i,r,n,ng_u,ng_se,ng_r0,ng_rh0,ng_t0,dm,nlevs
+    integer :: lo(mla%dim),hi(mla%dim)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
     real(kind=dp_t), pointer :: sepz(:,:,:,:)
@@ -59,14 +59,17 @@ contains
     real(kind=dp_t) ::  rho0_halftime(1,0:nr_fine-1)
     real(kind=dp_t) :: rhoh0_halftime(1,0:nr_fine-1)
     real(kind=dp_t) ::    t0_halftime(1,0:nr_fine-1)
-    type(multifab)  ::  rho0_cart(nlevs)
-    type(multifab)  :: rhoh0_cart(nlevs)
-    type(multifab)  ::    t0_cart(nlevs)
+    type(multifab)  ::  rho0_cart(mla%nlevel)
+    type(multifab)  :: rhoh0_cart(mla%nlevel)
+    type(multifab)  ::    t0_cart(mla%nlevel)
     type(layout)    :: la
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "makeHfromRhoT_edge")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_u  = nghost(u(1))
     ng_se = nghost(sedge(1,1))
@@ -636,7 +639,6 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
-    use geometry, only: dm, nlevs
 
     type(multifab)    , intent(inout) :: state(:)
     type(ml_layout)   , intent(in   ) :: mla
@@ -644,12 +646,15 @@ contains
 
     ! local
     integer                  :: i,ng,n
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: lo(mla%dim),hi(mla%dim),dm,nlevs
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "makeTfromRhoH")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng = nghost(state(1))
 
@@ -845,7 +850,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
-    use geometry, only: dm, nlevs, spherical
+    use geometry, only: spherical
 
     type(multifab)    , intent(inout) :: state(:)
     real (kind = dp_t), intent(in   ) :: p0(:,0:)
@@ -855,12 +860,15 @@ contains
 
     ! local
     integer                  :: i,ng,n
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: lo(mla%dim),hi(mla%dim),dm,nlevs
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "makeTfromRhoP")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng = nghost(state(1))
 
@@ -1117,7 +1125,6 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
-    use geometry, only: dm, nlevs
 
     type(multifab)    , intent(in   ) :: state(:)
     type(multifab)    , intent(in   ) :: sold(:)
@@ -1127,7 +1134,7 @@ contains
 
     ! local
     integer                  :: i,ng_s,ng_so,ng_p,n
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: lo(mla%dim),hi(mla%dim),dm,nlevs
     real(kind=dp_t), pointer :: snp(:,:,:,:)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: pnp(:,:,:,:)
@@ -1135,6 +1142,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "makePfromRhoH")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s  = nghost(state(1))
     ng_so = nghost(sold(1))
@@ -1341,7 +1351,7 @@ contains
     use multifab_fill_ghost_module
     use variables, only: rhoh_comp, temp_comp
     use multifab_physbc_module
-    use geometry, only: dm, nlevs, spherical
+    use geometry, only: spherical
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
@@ -1352,11 +1362,14 @@ contains
     ! local
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     integer                  :: i,n,ng_s
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: lo(mla%dim),hi(mla%dim),dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "makeTHfromRhoP")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s = nghost(s(1))
 

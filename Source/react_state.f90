@@ -17,7 +17,6 @@ contains
                          dt,dx,the_bc_level,time)
 
     use probin_module, only: use_tfromp
-    use geometry, only: nlevs, dm
     use variables, only: temp_comp
 
     use multifab_fill_ghost_module
@@ -39,9 +38,11 @@ contains
     ! Local
     type(bl_prof_timer), save :: bpt
 
-    integer :: n
+    integer :: n,nlevs
 
     call build(bpt, "react_state")
+
+    nlevs = mla%nlevel
 
     ! get heating term
     call get_rho_Hext(mla,sold,rho_Hext,dx,time,dt)
@@ -69,7 +70,6 @@ contains
 
   subroutine burner_loop(mla,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dt,the_bc_level)
 
-    use geometry, only: dm, nlevs
     use variables, only: rho_comp, rhoh_comp, spec_comp, nscal, ntrac, trac_comp
     use multifab_fill_ghost_module
     use ml_restriction_module
@@ -92,12 +92,15 @@ contains
     real(kind=dp_t), pointer::  hnp(:,:,:,:)
     real(kind=dp_t), pointer::  hep(:,:,:,:)
 
-    integer :: lo(dm),hi(dm),ng_si,ng_so,ng_rw,ng_he,ng_hn
+    integer :: lo(mla%dim),hi(mla%dim),ng_si,ng_so,ng_rw,ng_he,ng_hn,dm,nlevs
     integer :: i,n
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "burner_loop")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_si = nghost(sold(1))
     ng_so = nghost(snew(1))

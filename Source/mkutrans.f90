@@ -18,7 +18,7 @@ contains
 
     use bl_prof_module
     use create_umac_grown_module
-    use geometry, only: dm, nlevs, spherical
+    use geometry, only: spherical
     use ml_restriction_module, only: ml_edge_restriction
     use multifab_physbc_edgevel_module, only: multifab_physbc_edgevel
 
@@ -40,12 +40,15 @@ contains
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer                  :: i,n,n_1d,ng_u,ng_uf,ng_ut,ng_w0
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mkutrans")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_u  = nghost(u(1))
     ng_uf = nghost(ufull(1))

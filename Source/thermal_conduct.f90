@@ -39,7 +39,6 @@ contains
     use network      , only : nspec
     use probin_module, only : thermal_diffusion_type, use_tfromp
     use mg_eps_module, only : eps_mac
-    use geometry     , only : dm, nlevs
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
@@ -56,10 +55,10 @@ contains
 
     ! Local
     type(multifab) :: rhsalpha(mla%nlevel),lhsalpha(mla%nlevel)
-    type(multifab) :: rhsbeta(mla%nlevel,dm),lhsbeta(mla%nlevel,dm)
+    type(multifab) :: rhsbeta(mla%nlevel,mla%dim),lhsbeta(mla%nlevel,mla%dim)
     type(multifab) :: phi(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
 
-    integer                     :: stencil_order
+    integer                     :: stencil_order,dm,nlevs
     integer                     :: i,n,comp
     type(bndry_reg)             :: fine_flx(2:mla%nlevel)
     real(dp_t)                  :: abs_eps, abs_solver_eps, rel_solver_eps
@@ -67,6 +66,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "therm_cond_full_alg")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     stencil_order = 2
 

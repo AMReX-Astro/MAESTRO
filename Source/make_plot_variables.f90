@@ -23,7 +23,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_ad_excess(plotdata,comp_ad_excess,state,normal)
 
-    use geometry, only: spherical, dm
+    use geometry, only: spherical
 
     type(multifab), intent(inout) :: plotdata
     integer,        intent(in   ) :: comp_ad_excess
@@ -31,8 +31,10 @@ contains
     type(multifab), intent(in   ) :: normal
     
     real(kind=dp_t), pointer :: sp(:,:,:,:), cp(:,:,:,:), np(:,:,:,:)
-    integer :: lo(dm), hi(dm), ng_s, ng_c, ng_n
-    integer :: i
+    integer :: lo(get_dim(plotdata)), hi(get_dim(plotdata)), ng_s, ng_c, ng_n
+    integer :: i, dm
+
+    dm = get_dim(plotdata)
 
     ng_c = nghost(plotdata)
     ng_s = nghost(state)
@@ -431,7 +433,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_conductivity(plotdata,comp_cond,state)
 
-    use geometry, only: spherical, dm
+    use geometry, only: spherical
 
     type(multifab),  intent(inout) :: plotdata
     integer,         intent(in   ) :: comp_cond
@@ -439,8 +441,10 @@ contains
 
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: cp(:,:,:,:)
-    integer :: lo(dm), hi(dm), ng_s, ng_c
-    integer :: i
+    integer :: lo(get_dim(plotdata)), hi(get_dim(plotdata)), ng_s, ng_c
+    integer :: i,dm
+
+    dm = get_dim(plotdata)
 
     ng_s = nghost(state)
     ng_c = nghost(plotdata)
@@ -594,7 +598,6 @@ contains
   subroutine make_pi_cc(mla,pi,pi_cc,the_bc_level)
 
     use ml_layout_module
-    use geometry, only: dm, nlevs
     use bc_module
 
     type(ml_layout), intent(in   ) :: mla
@@ -606,13 +609,16 @@ contains
     real(kind=dp_t), pointer :: ppc(:,:,:,:)
     logical,         pointer ::  mp(:,:,:,:)
 
-    integer :: i,n,ng_pn,ng_pc
-    integer :: lo(dm),hi(dm)
+    integer :: i,n,ng_pn,ng_pc,dm,nlevs
+    integer :: lo(mla%dim),hi(mla%dim)
 
-    real(kind=dp_t) :: ncell_proc(nlevs), ncell(nlevs)
-    real(kind=dp_t) :: pisum_proc(nlevs), pisum(nlevs)
+    real(kind=dp_t) :: ncell_proc(mla%nlevel), ncell(mla%nlevel)
+    real(kind=dp_t) :: pisum_proc(mla%nlevel), pisum(mla%nlevel)
 
     real(kind=dp_t) :: weight,avg
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ncell      = 0.d0
     pisum      = 0.d0
@@ -798,7 +804,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_tfromH(plotdata,comp_t,comp_tpert,comp_dp,state,p0,tempbar,dx)
 
-    use geometry, only: spherical, dm
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: comp_t,comp_tpert,comp_dp
     type(multifab) , intent(inout) :: plotdata
@@ -808,8 +814,10 @@ contains
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: tp(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng_s,ng_p
-    integer :: i
+    integer :: lo(get_dim(plotdata)),hi(get_dim(plotdata)),ng_s,ng_p
+    integer :: i,dm
+
+    dm = get_dim(plotdata)
 
     ng_s = nghost(state)
     ng_p = nghost(plotdata)
@@ -1069,7 +1077,7 @@ contains
                          comp_machno,comp_cs,comp_deltag,comp_entropy, comp_magvel, &
                          s,tempbar,gamma1bar,p0,dx)
 
-    use geometry, only: spherical, dm
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: comp_tfromp,comp_tpert
     integer        , intent(in   ) :: comp_machno,comp_cs
@@ -1081,8 +1089,10 @@ contains
     real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:)
-    integer :: lo(dm),hi(dm),i
-    integer :: ng_p,ng_s
+    integer :: lo(get_dim(plotdata)),hi(get_dim(plotdata)),i
+    integer :: ng_p,ng_s,dm
+
+    dm = get_dim(plotdata)
 
     ng_p = nghost(plotdata)
     ng_s = nghost(s)
@@ -1411,7 +1421,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_rhopert(plotdata,comp_rhopert,s,rho0,dx)
 
-    use geometry, only: spherical, dm
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: comp_rhopert
     type(multifab) , intent(inout) :: plotdata
@@ -1419,8 +1429,10 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:)
-    integer :: lo(dm),hi(dm),i
-    integer :: ng_p,ng_s
+    integer :: lo(get_dim(plotdata)),hi(get_dim(plotdata)),i
+    integer :: ng_p,ng_s,dm
+
+    dm = get_dim(plotdata)
 
     ng_p = nghost(plotdata)
     ng_s = nghost(s)
@@ -1559,7 +1571,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_rhohpert(plotdata,comp_rhohpert,s,rhoh0,dx)
 
-    use geometry, only: spherical, dm
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: comp_rhohpert
     type(multifab) , intent(inout) :: plotdata
@@ -1567,8 +1579,10 @@ contains
     real(kind=dp_t), intent(in   ) :: rhoh0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:)
-    integer :: lo(dm),hi(dm),i
-    integer :: ng_p,ng_s
+    integer :: lo(get_dim(plotdata)),hi(get_dim(plotdata)),i
+    integer :: ng_p,ng_s,dm
+
+    dm = get_dim(plotdata)
 
     ng_p = nghost(plotdata)
     ng_s = nghost(s)
@@ -1707,7 +1721,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_entropypert(plotdata,comp_entropy,comp_entropypert,entropybar,dx)
 
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: comp_entropy,comp_entropypert
     type(multifab) , intent(inout) :: plotdata(:)
@@ -1716,7 +1730,11 @@ contains
 
     ! local
     real(kind=dp_t), pointer :: tp(:,:,:,:)
-    integer                  :: lo(dm),hi(dm),ng_p,n,i
+    integer                  :: lo(get_dim(plotdata(1))),hi(get_dim(plotdata(1)))
+    integer                  :: ng_p,n,i,dm,nlevs
+
+    dm = get_dim(plotdata(1))
+    nlevs = size(plotdata)
 
     ng_p = nghost(plotdata(1))
 
@@ -1850,14 +1868,14 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_deltaT(plotdata,comp_dT,comp_tfromH,comp_tfromp)
 
-    use geometry, only: dm
-
     integer        , intent(in   ) :: comp_dT, comp_tfromH, comp_tfromp
     type(multifab) , intent(inout) :: plotdata
 
     real(kind=dp_t), pointer:: tp(:,:,:,:)
-    integer :: lo(dm),hi(dm)
-    integer :: i,ng_p
+    integer :: lo(get_dim(plotdata)),hi(get_dim(plotdata))
+    integer :: i,ng_p,dm
+
+    dm = get_dim(plotdata)
 
     ng_p = nghost(plotdata)
 
@@ -1943,7 +1961,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_divw0(divw0,comp_divw0,w0,w0mac,dx)
 
-    use geometry, only: spherical, dm
+    use geometry, only: spherical
 
     type(multifab) , intent(inout) :: divw0
     integer        , intent(in   ) :: comp_divw0
@@ -1955,8 +1973,10 @@ contains
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: dwp(:,:,:,:)
-    integer                  :: lo(dm),hi(dm)
-    integer                  :: i,ng_w0,ng_dw
+    integer                  :: lo(get_dim(divw0)),hi(get_dim(divw0))
+    integer                  :: i,ng_w0,ng_dw,dm
+
+    dm = get_dim(divw0)
 
     ng_dw = nghost(divw0)
 
@@ -2067,7 +2087,6 @@ contains
   subroutine make_vorticity(vort,comp,u,dx,bc)
 
     use bl_prof_module
-    use geometry, only: dm
 
     integer        , intent(in   ) :: comp
     type(multifab) , intent(inout) :: vort
@@ -2077,12 +2096,14 @@ contains
 
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: vp(:,:,:,:)
-    integer :: lo(dm),hi(dm)
-    integer :: i,ng_u,ng_v
+    integer :: lo(get_dim(vort)),hi(get_dim(vort))
+    integer :: i,ng_u,ng_v,dm
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_vort")
+
+    dm = get_dim(vort)
 
     ng_u = nghost(u)
     ng_v = nghost(vort)
@@ -2742,7 +2763,7 @@ contains
 
     use bc_module
     use bl_constants_module
-    use geometry, only : spherical, dm
+    use geometry, only : spherical
     use variables, only : rho_comp
 
     integer        , intent(in   ) :: comp_magvel, comp_mom
@@ -2758,8 +2779,10 @@ contains
     real(kind=dp_t), pointer:: wyp(:,:,:,:)
     real(kind=dp_t), pointer:: wzp(:,:,:,:)
 
-    integer :: lo(dm),hi(dm),ng_p,ng_s,ng_u,ng_w
-    integer :: i
+    integer :: lo(get_dim(plotdata)),hi(get_dim(plotdata)),ng_p,ng_s,ng_u,ng_w
+    integer :: i,dm
+
+    dm = get_dim(plotdata)
 
     ng_s = nghost(s)
     ng_u = nghost(u)
@@ -2912,7 +2935,7 @@ contains
 
     use bc_module
     use bl_constants_module
-    use geometry, only: spherical, dm
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: comp_velr, comp_velc
     type(multifab) , intent(inout) :: plotdata
@@ -2925,8 +2948,10 @@ contains
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: nop(:,:,:,:)
     real(kind=dp_t), pointer:: w0rp(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng_p,ng_u,ng_n,ng_w
-    integer :: i
+    integer :: lo(get_dim(plotdata)),hi(get_dim(plotdata)),ng_p,ng_u,ng_n,ng_w
+    integer :: i,dm
+
+    dm = get_dim(plotdata)
 
     ng_u = nghost(u)
     ng_p = nghost(plotdata)
