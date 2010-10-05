@@ -1,17 +1,9 @@
 module init_vel_module
 
-  use bl_types
-  use bl_constants_module
-  use bc_module
-  use multifab_physbc_module
-  use define_bc_module
   use multifab_module
-  use fill_3d_module
-  use eos_module
-  use variables
-  use network
-  use geometry
   use ml_layout_module
+  use bl_constants_module
+  use multifab_physbc_module
   use ml_restriction_module
   use multifab_fill_ghost_module
 
@@ -24,6 +16,8 @@ contains
 
   subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
 
+    use geometry, only: spherical
+
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
@@ -32,9 +26,12 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,n,dm,nlevs
     
+    dm = mla%dim
+    nlevs = mla%nlevel
+
     ng = nghost(u(1))
 
     do n=1,nlevs

@@ -1,19 +1,15 @@
 module init_scalar_module
 
-  use bl_types
-  use bl_constants_module
-  use bc_module
-  use multifab_physbc_module
-  use define_bc_module
   use multifab_module
-  use fill_3d_module
+  use ml_layout_module
+  use bl_constants_module
+  use multifab_physbc_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
   use eos_module
   use variables
   use network
-  use geometry
-  use ml_layout_module
-  use ml_restriction_module
-  use multifab_fill_ghost_module
+  use fill_3d_module, only: put_1d_array_on_cart_3d_sphr
 
   implicit none
 
@@ -24,6 +20,8 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
+    use geometry, only: spherical
+
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
@@ -32,9 +30,12 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,n,dm,nlevs
     
+    dm = mla%dim
+    nlevs = mla%nlevel
+
     ng = nghost(s(1))
 
     do n=1,nlevs
@@ -92,6 +93,8 @@ contains
 
   subroutine initscalardata_on_level(n,s,s0_init,p0_init,dx,bc)
 
+    use geometry, only: spherical
+
     integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in   ) :: s0_init(0:,:)
@@ -100,9 +103,11 @@ contains
     type(bc_level) , intent(in   ) :: bc
 
     ! local
-    integer                  :: ng,i
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: ng,i,dm
+    integer                  :: lo(get_dim(s)),hi(get_dim(s))
     real(kind=dp_t), pointer :: sop(:,:,:,:)
+
+    dm = get_dim(s)
 
     ng = nghost(s)
 
