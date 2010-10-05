@@ -27,7 +27,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: dm, nlevs, spherical
+    use geometry, only: spherical
 
     type(multifab) , intent(inout) :: macrhs(:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
@@ -42,12 +42,15 @@ contains
 
     real(kind=dp_t), pointer:: mp(:,:,:,:),sp(:,:,:,:),gp(:,:,:,:),pop(:,:,:,:)
 
-    integer :: lo(dm),hi(dm)
+    integer :: lo(get_dim(macrhs(1))),hi(get_dim(macrhs(1))),dm,nlevs
     integer :: i,n,ng_rh,ng_sr,ng_dg,ng_dp
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_macrhs")
+
+    dm = get_dim(macrhs(1))
+    nlevs = size(macrhs)
 
     ng_rh = nghost(macrhs(1))
     ng_sr = nghost(Source(1))

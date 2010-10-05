@@ -21,8 +21,8 @@ contains
                              use_thermal_diffusion, plot_omegadot, plot_Hnuc, &
                              plot_Hext, plot_eta, plot_ad_excess, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, &
-                             plot_sponge_fdamp
-    use geometry, only: spherical, dm
+                             plot_sponge_fdamp, dm_in
+    use geometry, only: spherical
 
     character(len=20), intent(inout) :: plot_names(:)
 
@@ -30,10 +30,10 @@ contains
     integer :: comp
 
     plot_names(icomp_vel  ) = "x_vel"
-    if (dm > 1) then
+    if (dm_in > 1) then
        plot_names(icomp_vel+1) = "y_vel"
     end if
-    if (dm > 2) then
+    if (dm_in > 2) then
        plot_names(icomp_vel+2) = "z_vel"
     end if
     plot_names(icomp_rho)  = "density"
@@ -55,8 +55,8 @@ contains
 
     if (plot_base) then
        plot_names(icomp_w0)   = "w0_x"
-       if (dm > 1) plot_names(icomp_w0+1) = "w0_y"
-       if (dm > 2) plot_names(icomp_w0+2) = "w0_z"
+       if (dm_in > 1) plot_names(icomp_w0+1) = "w0_y"
+       if (dm_in > 2) plot_names(icomp_w0+2) = "w0_z"
        plot_names(icomp_divw0) = "divw0"
        plot_names(icomp_rho0)  = "rho0"
        plot_names(icomp_rhoh0) = "rhoh0"
@@ -101,8 +101,8 @@ contains
     plot_names(icomp_pi)          = "pi"
     if (plot_gpi) then
        plot_names(icomp_gpi)         = "gpi_x"
-       if (dm > 1) plot_names(icomp_gpi+1) = "gpi_y"
-       if (dm > 2) plot_names(icomp_gpi+2) = "gpi_z"
+       if (dm_in > 1) plot_names(icomp_gpi+1) = "gpi_y"
+       if (dm_in > 2) plot_names(icomp_gpi+2) = "gpi_z"
     endif
     if (plot_base) &
          plot_names(icomp_pioverp0)    = "pioverp0"
@@ -157,7 +157,7 @@ contains
                              evolve_base_state, prob_lo, prob_hi, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, &
                              plot_cs, sponge_kappa, plot_sponge_fdamp
-    use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
+    use geometry, only: spherical, nr_fine, nlevs_radial
     use average_module
     use ml_restriction_module
     use multifab_physbc_module
@@ -190,22 +190,25 @@ contains
     real(dp_t)       , intent(in   ) :: etarho_cc(:,0:)
     type(multifab)   , intent(in   ) :: normal(:)
     
-    type(multifab) :: plotdata(nlevs)
-    type(multifab) ::  tempfab(nlevs)
-    type(multifab) ::    w0mac(nlevs,dm)
-    type(multifab) :: w0r_cart(nlevs)
-    type(multifab) ::    pi_cc(nlevs)
+    type(multifab) :: plotdata(mla%nlevel)
+    type(multifab) ::  tempfab(mla%nlevel)
+    type(multifab) ::    w0mac(mla%nlevel,mla%dim)
+    type(multifab) :: w0r_cart(mla%nlevel)
+    type(multifab) ::    pi_cc(mla%nlevel)
 
     real(dp_t) :: entropybar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         h0(nlevs_radial,0:nr_fine-1)
 
     real(dp_t) :: tempval
 
-    integer :: n,n_1d,prec,comp
+    integer :: n,n_1d,prec,comp,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_plotfile")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (single_prec_plotfiles) then
        prec = FABIO_SINGLE

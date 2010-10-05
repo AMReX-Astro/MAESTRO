@@ -27,7 +27,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
@@ -44,8 +44,8 @@ contains
     logical        , intent(in   ) :: is_conservative
     type(ml_layout), intent(in   ) :: mla
 
-    integer                  :: i,scomp,bccomp,n,n_1d
-    integer                  :: lo(dm), hi(dm)
+    integer                  :: i,scomp,bccomp,n,n_1d,dm,nlevs
+    integer                  :: lo(mla%dim), hi(mla%dim)
     integer                  :: ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
@@ -59,6 +59,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_edge_scal")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s  = nghost(s(1))
     ng_se = nghost(sedge(1,1))

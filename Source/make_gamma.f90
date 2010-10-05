@@ -23,8 +23,7 @@ contains
     use ml_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
-    use geometry, only: dm, nlevs, spherical
-
+    use geometry, only: spherical
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: gamma(:)
@@ -33,13 +32,16 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
 
     real(kind=dp_t), pointer:: gamp(:,:,:,:),sp(:,:,:,:)
-    integer :: lo(dm),hi(dm)
-    integer :: i,n
+    integer :: lo(mla%dim),hi(mla%dim)
+    integer :: i,n,dm,nlevs
     integer :: ng_g, ng_s
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_gamma")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_g = nghost(gamma(1))
     ng_s = nghost(s(1))

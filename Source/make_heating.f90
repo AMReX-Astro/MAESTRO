@@ -18,8 +18,6 @@ contains
     use multifab_module
     use ml_layout_module
     use ml_restriction_module, only : ml_cc_restriction
-
-    use geometry , only: dm, nlevs
     use variables, only: foextrap_comp
 
     type(ml_layout), intent(in   ) :: mla
@@ -28,13 +26,16 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),time,dt
 
     ! local
-    integer                  :: n,i,ng_s,ng_h
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: n,i,ng_s,ng_h,dm,nlevs
+    integer                  :: lo(mla%dim),hi(mla%dim)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "get_rho_Hext")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s = nghost(s(1))
     ng_h = nghost(rho_Hext(1))

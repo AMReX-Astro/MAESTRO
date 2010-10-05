@@ -22,7 +22,6 @@ contains
     use ml_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp
-    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: shalf(:)
@@ -33,12 +32,15 @@ contains
     real(kind=dp_t), pointer:: shp(:,:,:,:)
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     real(kind=dp_t), pointer:: snp(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng_h,ng_o,ng_n
-    integer :: i,in_comp,out_comp,n
+    integer :: lo(mla%dim),hi(mla%dim),ng_h,ng_o,ng_n
+    integer :: i,in_comp,out_comp,n,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_S_at_halftime")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_h = nghost(shalf(1))
     ng_o = nghost(sold(1))
@@ -112,7 +114,6 @@ contains
     use multifab_physbc_module
     use ml_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
-    use geometry, only: dm, nlevs
 
     type(multifab) , intent(inout) :: phihalf(:)
     type(multifab) , intent(in   ) :: sold(:)
@@ -124,8 +125,11 @@ contains
     real(kind=dp_t), pointer:: rhp(:,:,:,:)
     real(kind=dp_t), pointer:: rop(:,:,:,:)
     real(kind=dp_t), pointer:: rnp(:,:,:,:)
-    integer   :: lo(dm),hi(dm)
-    integer   :: ng_h,ng_o,ng_n,i,n
+    integer   :: lo(mla%dim),hi(mla%dim)
+    integer   :: ng_h,ng_o,ng_n,i,n,dm,nlevs
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_h = nghost(phihalf(1))
     ng_o = nghost(sold(1))

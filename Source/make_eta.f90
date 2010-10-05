@@ -36,8 +36,7 @@ contains
   subroutine make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks, &
-         dr, dm, nlevs
+    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks, dr
     use restrict_base_module
 
     real(kind=dp_t)   , intent(  out) :: etarho_ec(:,0:)
@@ -48,17 +47,21 @@ contains
     ! local
     real(kind=dp_t), pointer :: efp(:,:,:,:)
     
-    real(kind=dp_t) ::          ncell(0:nr_fine,nlevs)
-    real(kind=dp_t) :: etarhosum_proc(0:nr_fine,nlevs)
-    real(kind=dp_t) ::      etarhosum(0:nr_fine,nlevs)
+    real(kind=dp_t) ::          ncell(0:nr_fine,mla%nlevel)
+    real(kind=dp_t) :: etarhosum_proc(0:nr_fine,mla%nlevel)
+    real(kind=dp_t) ::      etarhosum(0:nr_fine,mla%nlevel)
 
     type(box) :: domain
 
-    integer :: domlo(dm),domhi(dm),lo(dm),hi(dm),i,r,n,ng_e
+    integer :: domlo(mla%dim),domhi(mla%dim),lo(mla%dim),hi(mla%dim)
+    integer :: i,r,n,ng_e,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_etarho")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_e = nghost(etarhoflux(1))
 
@@ -253,7 +256,7 @@ contains
                                    dx,normal,etarho_ec,etarho_cc,mla,the_bc_level)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, dm, nlevs
+    use geometry, only: spherical, nr_fine
     use variables
     use average_module
     use ml_restriction_module
@@ -279,8 +282,11 @@ contains
     real(kind=dp_t), pointer :: wxp(:,:,:,:), wyp(:,:,:,:), wzp(:,:,:,:)
     real(kind=dp_t), pointer :: nop(:,:,:,:)
 
-    integer :: n,i,lo(dm),hi(dm),ng_so,ng_sn,ng_um,ng_n,ng_e,ng_wm
-    integer :: r
+    integer :: n,i,lo(mla%dim),hi(mla%dim),ng_so,ng_sn,ng_um,ng_n,ng_e,ng_wm
+    integer :: r,dm,nlevs
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (spherical .eq. 0) then
        call bl_error("ERROR: make_eta_spherical should not be called for plane-parallel")

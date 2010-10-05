@@ -29,7 +29,7 @@ contains
     use ml_layout_module
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use fill_3d_module
     use variables, only: foextrap_comp
     use ml_restriction_module
@@ -45,19 +45,22 @@ contains
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
-    type(multifab) :: rhs_cc(nlevs)
-    type(multifab) :: Sbar_cart(nlevs)
-    type(multifab) :: div_coeff_cart(nlevs)
+    type(multifab) ::         rhs_cc(mla%nlevel)
+    type(multifab) ::      Sbar_cart(mla%nlevel)
+    type(multifab) :: div_coeff_cart(mla%nlevel)
     type(layout  ) :: la
 
     real(kind=dp_t), pointer:: hp(:,:,:,:),gp(:,:,:,:),rp(:,:,:,:)
     real(kind=dp_t), pointer:: dp(:,:,:,:),sp(:,:,:,:),sbp(:,:,:,:)
-    integer :: lo(dm),hi(dm),i,n
+    integer :: lo(mla%dim),hi(mla%dim),i,n,dm,nlevs
     integer :: ng_rh,ng_sr,ng_dg,ng_dc,ng_sb,ng_hg
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_hgrhs")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (spherical .eq. 1) then
        do n = 1, nlevs
@@ -337,7 +340,7 @@ contains
     use ml_layout_module
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use fill_3d_module
     use variables, only: foextrap_comp, rho_comp
     use ml_restriction_module
@@ -355,26 +358,28 @@ contains
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     type(multifab) , intent(in   ) :: delta_p_term(:)
     
-    type(multifab) :: correction_cc(nlevs)
-    type(multifab) :: correction_nodal(nlevs)
-
-    type(multifab) :: gamma1bar_cart(nlevs)
-    type(multifab) :: p0_cart(nlevs)
-    type(multifab) :: div_coeff_cart(nlevs)
-    type(multifab) :: rho0_cart(nlevs)
+    type(multifab) ::    correction_cc(mla%nlevel)
+    type(multifab) :: correction_nodal(mla%nlevel)
+    type(multifab) ::   gamma1bar_cart(mla%nlevel)
+    type(multifab) ::          p0_cart(mla%nlevel)
+    type(multifab) ::   div_coeff_cart(mla%nlevel)
+    type(multifab) ::        rho0_cart(mla%nlevel)
 
     type(layout)   :: la
 
     real(kind=dp_t), pointer :: ptp(:,:,:,:), ccp(:,:,:,:), cnp(:,:,:,:)
     real(kind=dp_t), pointer :: gbp(:,:,:,:), p0p(:,:,:,:), dcp(:,:,:,:)
     real(kind=dp_t), pointer :: r0p(:,:,:,:)
-    integer :: lo(dm),hi(dm),i,n
+    integer :: lo(mla%dim),hi(mla%dim),i,n,dm,nlevs
     integer :: ng_cc, ng_dp, ng_gb, ng_p0, ng_dc, ng_r0, ng_cn
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "correct_hgrhs")
     
+    dm = mla%dim
+    nlevs = mla%nlevel
+
     if (spherical .eq. 1) then
        do n = 1, nlevs
           la = get_layout(delta_p_term(n))
