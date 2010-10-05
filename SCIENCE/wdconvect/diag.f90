@@ -73,7 +73,7 @@ contains
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_tower
 
-    use geometry, only: dm, nlevs, spherical, nr_fine, &
+    use geometry, only: spherical, nr_fine, &
                         r_cc_loc, r_edge_loc, dr, center
     use variables, only: foextrap_comp
     use fill_3d_module, only: put_1d_array_on_cart, make_w0mac
@@ -113,11 +113,11 @@ contains
     logical,         pointer :: mp(:,:,:,:)
 
     type(multifab) :: w0r_cart(mla%nlevel)
-    type(multifab) ::    w0mac(mla%nlevel,dm)
+    type(multifab) ::    w0mac(mla%nlevel,mla%dim)
 
-    real(kind=dp_t) :: vr(dm),    vr_level(dm),    vr_local(dm)
+    real(kind=dp_t) :: vr(mla%dim),    vr_level(mla%dim),    vr_local(mla%dim)
     real(kind=dp_t) :: vr_max,    vr_max_level,    vr_max_local
-    real(kind=dp_t) :: rhovr(dm), rhovr_level(dm), rhovr_local(dm)
+    real(kind=dp_t) :: rhovr(mla%dim), rhovr_level(mla%dim), rhovr_local(mla%dim)
 
     real(kind=dp_t) :: mass,      mass_level,      mass_local
     real(kind=dp_t) :: nzones,    nzones_level,    nzones_local
@@ -132,44 +132,44 @@ contains
     real(kind=dp_t) :: U_max,     U_max_level,     U_max_local
     real(kind=dp_t) :: Mach_max,  Mach_max_level,  Mach_max_local
 
-    real(kind=dp_t) :: coord_Tmax_local(dm), coord_Tmax_level(dm), coord_Tmax(dm)
+    real(kind=dp_t) :: coord_Tmax_local(mla%dim), coord_Tmax_level(mla%dim), coord_Tmax(mla%dim)
     real(kind=dp_t) :: Rloc_Tmax
-    real(kind=dp_t) :: vel_Tmax_local(dm), vel_Tmax_level(dm), vel_Tmax(dm)
+    real(kind=dp_t) :: vel_Tmax_local(mla%dim), vel_Tmax_level(mla%dim), vel_Tmax(mla%dim)
     real(kind=dp_t) :: vr_Tmax
     
-    real(kind=dp_t) :: coord_enucmax_local(dm), coord_enucmax_level(dm), coord_enucmax(dm)
+    real(kind=dp_t) :: coord_enucmax_local(mla%dim), coord_enucmax_level(mla%dim), coord_enucmax(mla%dim)
     real(kind=dp_t) :: Rloc_enucmax
-    real(kind=dp_t) :: vel_enucmax_local(dm), vel_enucmax_level(dm), vel_enucmax(dm)
+    real(kind=dp_t) :: vel_enucmax_local(mla%dim), vel_enucmax_level(mla%dim), vel_enucmax(mla%dim)
     real(kind=dp_t) :: vr_enucmax
 
-    real(kind=dp_t) :: vel_center_local(dm), vel_center_level(dm), vel_center(dm)
+    real(kind=dp_t) :: vel_center_local(mla%dim), vel_center_level(mla%dim), vel_center(mla%dim)
     real(kind=dp_t) :: T_center_local, T_center_level, T_center
 
     integer         :: ncenter_local, ncenter_level, ncenter
 
     ! buffers
-    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(2*dm)
+    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(2*mla%dim)
     real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
 
-    real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(2*dm)
+    real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(2*mla%dim)
     real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
 
     real(kind=dp_t) :: max_data_level(3), max_data_local(3)
-    real(kind=dp_t) :: sum_data_level(2*dm+9), sum_data_local(2*dm+9)
+    real(kind=dp_t) :: sum_data_level(2*mla%dim+9), sum_data_local(2*mla%dim+9)
 
     integer :: index
 
     integer :: index_max
 
-    real(kind=dp_t) :: vr_favre(dm)
+    real(kind=dp_t) :: vr_favre(mla%dim)
 
     real(kind=dp_t) :: grav_ener, term1, term2
     real(kind=dp_t), allocatable :: m(:)
 
 
-    integer :: lo(dm),hi(dm)
+    integer :: lo(mla%dim),hi(mla%dim)
     integer :: ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
-    integer :: i,n, comp, r
+    integer :: i,n, comp, r, dm, nlevs
 
     type(bl_prof_timer), save :: bpt
 
@@ -181,6 +181,8 @@ contains
 
     call build(bpt, "diagnostics")
 
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if ( firstCall ) then
        

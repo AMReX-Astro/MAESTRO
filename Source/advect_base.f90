@@ -45,7 +45,7 @@ contains
 
     use bl_constants_module
     use make_edge_state_module
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs, dr
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, dr
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
@@ -54,11 +54,13 @@ contains
     real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
-    integer :: r, n, i
+    integer :: r, n, i, nlevs
     
-    real (kind=dp_t) :: force(nlevs,0:nr_fine-1)
-    real (kind=dp_t) ::  edge(nlevs,0:nr_fine)
+    real (kind=dp_t) :: force(size(w0,dim=1),0:nr_fine-1)
+    real (kind=dp_t) ::  edge(size(w0,dim=1),0:nr_fine)
    
+    nlevs = size(w0,dim=1)
+
     rho0_predicted_edge = ZERO
 
     ! zero the new density so we don't leave a non-zero density in fine radial
@@ -184,7 +186,7 @@ contains
 
     use bl_constants_module
     use make_edge_state_module
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs, dr
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, dr
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
@@ -197,11 +199,13 @@ contains
     real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
-    integer :: r, i, n
+    integer :: r, i, n, nlevs
     
-    real (kind=dp_t) :: force(nlevs,0:nr_fine-1)
-    real (kind=dp_t) ::    h0(nlevs,0:nr_fine-1)
-    real (kind=dp_t) ::  edge(nlevs,0:nr_fine)
+    real (kind=dp_t) :: force(size(w0,dim=1),0:nr_fine-1)
+    real (kind=dp_t) ::    h0(size(w0,dim=1),0:nr_fine-1)
+    real (kind=dp_t) ::  edge(size(w0,dim=1),0:nr_fine)
+
+    nlevs = size(w0,dim=1)
 
     ! zero the new enthalpy so we don't leave a non-zero enthalpy in fine radial
     ! regions that no longer have a corresponding full state

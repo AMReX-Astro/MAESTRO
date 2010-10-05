@@ -19,7 +19,6 @@ contains
     use multifab_module
     use ml_layout_module
     use ml_restriction_module
-    use geometry, only: dm, nlevs
     use variables, only: foextrap_comp
 
     type(ml_layout), intent(in   ) :: mla
@@ -29,12 +28,15 @@ contains
 
     ! local
     integer                  :: n,i,ng_s,ng_h
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: lo(mla%dim),hi(mla%dim),dm,nlevs
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "get_rho_Hext")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s = s(1)%ng
     ng_h = rho_Hext(1)%ng
