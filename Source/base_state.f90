@@ -29,7 +29,7 @@ contains
                              grav_const, planar_invsq_mass, &
                              do_planar_invsq_grav
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, spherical, nr, dm
+    use geometry, only: dr, spherical, nr
     use inlet_bc_module, only: set_inlet_bcs
     use fundamental_constants_module, only: Gconst
     use model_parser_module
@@ -109,7 +109,7 @@ contains
     end if
 
     if (spherical .eq. 0) then
-       starting_rad = prob_lo(dm)
+       starting_rad = prob_lo(size(dx))
     else
        starting_rad = ZERO
     endif

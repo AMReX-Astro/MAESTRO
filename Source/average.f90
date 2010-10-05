@@ -19,7 +19,7 @@ contains
   subroutine average(mla,phi,phibar,dx,incomp)
 
     use geometry, only: nr_fine, nr_irreg, r_start_coord, r_end_coord, spherical, &
-         numdisjointchunks, dm, nlevs, dr
+         numdisjointchunks, dr
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
@@ -36,8 +36,8 @@ contains
     logical, pointer             :: mp(:,:,:,:)
 
     type(box)                    :: domain
-    integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
-    integer                      :: max_rcoord(nlevs),rcoord(nlevs),stencil_coord(nlevs)
+    integer                      :: domlo(mla%dim),domhi(mla%dim),lo(mla%dim),hi(mla%dim),dm,nlevs
+    integer                      :: max_rcoord(mla%nlevel),rcoord(mla%nlevel),stencil_coord(mla%nlevel)
     integer                      :: i,j,r,n,ng,min_all,min_lev
     real(kind=dp_t)              :: radius
 
@@ -56,6 +56,9 @@ contains
     logical :: limit
 
     call build(bpt, "average")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! NOTE: The indices for ncell_proc, etc., are switched in this subroutine
@@ -386,7 +389,7 @@ contains
   subroutine average_irreg(mla,phi,phibar_irreg,dx,incomp)
 
     use geometry, only: nr_fine, nr_irreg, r_start_coord, r_end_coord, spherical, &
-         numdisjointchunks, dm, nlevs, dr
+         numdisjointchunks, dr
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
@@ -401,7 +404,7 @@ contains
     real(kind=dp_t), pointer     :: pp(:,:,:,:)
     logical, pointer             :: mp(:,:,:,:)
 
-    integer                      :: lo(dm),hi(dm)
+    integer                      :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer                      :: i,r,n,ng
 
     integer, allocatable ::  ncell_proc(:,:)
@@ -414,6 +417,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "average_irreg")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (spherical .eq. 0) then
        call bl_error("average_irreg only written for spherical")
@@ -553,7 +559,7 @@ contains
 
   subroutine sum_phi_3d_sphr(radii,nr_irreg,phi,phisum,lo,hi,ng,dx,ncell,incomp,mask)
 
-    use geometry, only: dr, center, nlevs, dm
+    use geometry, only: dr, center
     use probin_module, only: prob_lo
     use ml_layout_module
     use bl_constants_module
@@ -626,7 +632,7 @@ contains
 
   subroutine average_one_level(n,phi,phibar,incomp)
 
-    use geometry, only: nr_fine, nr, spherical, dm
+    use geometry, only: nr_fine, nr, spherical
     use bl_prof_module
     use bl_constants_module
 
@@ -637,9 +643,9 @@ contains
     ! local
     real(kind=dp_t), pointer :: pp(:,:,:,:)
     type(box)                :: domain
-    integer                  :: domlo(dm),domhi(dm)
-    integer                  :: lo(dm),hi(dm)
-    integer                  :: i,r,ng,ncell
+    integer                  :: domlo(get_dim(phi(1))),domhi(get_dim(phi(1)))
+    integer                  :: lo(get_dim(phi(1))),hi(get_dim(phi(1)))
+    integer                  :: i,r,ng,ncell,dm
 
     real(kind=dp_t) ::   phisum_proc(0:nr_fine-1)
     real(kind=dp_t) ::        phisum(0:nr_fine-1)
@@ -648,6 +654,7 @@ contains
 
     call build(bpt, "average_one_level")
 
+    dm = get_dim(phi(1))
     ng = nghost(phi(1))
 
     phibar = ZERO

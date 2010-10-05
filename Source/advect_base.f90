@@ -13,7 +13,7 @@ contains
   subroutine advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
 
     use bl_prof_module
-    use geometry, only: spherical, nlevs
+    use geometry, only: spherical
     use restrict_base_module
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
@@ -146,7 +146,7 @@ contains
                                   psi,dt)
 
     use bl_prof_module
-    use geometry, only: spherical, nlevs
+    use geometry, only: spherical
     use restrict_base_module
     use multifab_module
 
