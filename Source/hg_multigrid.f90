@@ -27,7 +27,6 @@ contains
     use nodal_divu_module   , only : divu, subtract_divu_from_rh
     use probin_module       , only : hg_bottom_solver, max_mg_bottom_nlevels, &
                                      verbose, mg_verbose, cg_verbose, nodal
-    use geometry, only: dm, nlevs
     use variables, only: press_comp
     use mg_eps_module, only: eps_hg_bottom
 
@@ -57,7 +56,7 @@ contains
     real(dp_t) :: bottom_solver_eps
     real(dp_t) :: omega
 
-    integer :: i, ns
+    integer :: i, ns, dm, nlevs
     integer :: bottom_solver, bottom_max_iter
     integer :: max_iter
     integer :: min_width
@@ -70,6 +69,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "hg_multigrid")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     !! Defaults:
     max_nlevel        = mgt(nlevs)%max_nlevel
@@ -264,14 +266,14 @@ contains
 
   subroutine mkcoeffs(rho,coeffs)
 
-    use geometry, only: dm
-
     type(multifab) , intent(in   ) :: rho
     type(multifab) , intent(inout) :: coeffs
 
     real(kind=dp_t), pointer :: cp(:,:,:,:)
     real(kind=dp_t), pointer :: rp(:,:,:,:)
-    integer :: i,ng_r,ng_c
+    integer :: i,ng_r,ng_c,dm
+
+    dm = get_dim(rho)
 
     ng_r = nghost(rho)
     ng_c = nghost(coeffs)

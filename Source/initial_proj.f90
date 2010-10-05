@@ -27,7 +27,7 @@ contains
     use variables, only: foextrap_comp, rho_comp
     use network, only: nspec
     use probin_module, only: use_thermal_diffusion, evolve_base_state
-    use geometry, only: spherical, nr_fine, nlevs, nlevs_radial
+    use geometry, only: spherical, nr_fine, nlevs_radial
     use proj_parameters, only: initial_projection_comp
     use make_explicit_thermal_module
     use make_S_module
@@ -54,24 +54,26 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     ! local
-    integer    :: n
+    integer    :: n,nlevs
     real(dp_t) :: dt_temp,eps_init
 
-    type(multifab) :: delta_gamma1_term(nlevs)
-    type(multifab) :: delta_gamma1(nlevs)
-    type(multifab) :: rhohalf(nlevs)
-    type(multifab) :: rho_omegadot1(nlevs)
-    type(multifab) :: rho_Hnuc1(nlevs)
-    type(multifab) :: rho_Hext(nlevs)
-    type(multifab) :: div_coeff_3d(nlevs)
-    type(multifab) :: Tcoeff(nlevs)
-    type(multifab) :: hcoeff(nlevs)
-    type(multifab) :: Xkcoeff(nlevs)
-    type(multifab) :: pcoeff(nlevs)
+    type(multifab) :: delta_gamma1_term(mla%nlevel)
+    type(multifab) :: delta_gamma1(mla%nlevel)
+    type(multifab) :: rhohalf(mla%nlevel)
+    type(multifab) :: rho_omegadot1(mla%nlevel)
+    type(multifab) :: rho_Hnuc1(mla%nlevel)
+    type(multifab) :: rho_Hext(mla%nlevel)
+    type(multifab) :: div_coeff_3d(mla%nlevel)
+    type(multifab) :: Tcoeff(mla%nlevel)
+    type(multifab) :: hcoeff(mla%nlevel)
+    type(multifab) :: Xkcoeff(mla%nlevel)
+    type(multifab) :: pcoeff(mla%nlevel)
 
     real(dp_t) ::                  psi(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::                 Sbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) :: delta_gamma1_termbar(nlevs_radial,0:nr_fine-1)
+
+    nlevs = mla%nlevel
 
     Sbar = ZERO
     psi = ZERO

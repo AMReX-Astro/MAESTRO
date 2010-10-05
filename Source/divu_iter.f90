@@ -27,7 +27,7 @@ contains
     use network, only: nspec
     use probin_module, only: use_thermal_diffusion, evolve_base_state, &
          init_divu_iter, cflfac, verbose, init_shrink, fixed_dt
-    use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
+    use geometry, only: spherical, nr_fine, nlevs_radial
     use proj_parameters, only: divu_iters_comp
     use react_state_module
     use make_explicit_thermal_module
@@ -64,22 +64,22 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     ! local
-    integer        :: n,ng_s
+    integer        :: n,ng_s,nlevs
     real(dp_t)     :: halfdt,dt_temp,dt_hold
     real(dp_t)     :: eps_divu
 
-    type(multifab) :: s1(nlevs)  
-    type(multifab) :: delta_gamma1_term(nlevs)
-    type(multifab) :: delta_gamma1(nlevs)
-    type(multifab) :: rhohalf(nlevs)
-    type(multifab) :: rho_omegadot1(nlevs)
-    type(multifab) :: rho_Hnuc1(nlevs)
-    type(multifab) :: rho_Hext(nlevs)
-    type(multifab) :: div_coeff_3d(nlevs)
-    type(multifab) :: Tcoeff(nlevs)
-    type(multifab) :: hcoeff(nlevs)
-    type(multifab) :: Xkcoeff(nlevs)
-    type(multifab) :: pcoeff(nlevs)
+    type(multifab) :: s1(mla%nlevel)  
+    type(multifab) :: delta_gamma1_term(mla%nlevel)
+    type(multifab) :: delta_gamma1(mla%nlevel)
+    type(multifab) :: rhohalf(mla%nlevel)
+    type(multifab) :: rho_omegadot1(mla%nlevel)
+    type(multifab) :: rho_Hnuc1(mla%nlevel)
+    type(multifab) :: rho_Hext(mla%nlevel)
+    type(multifab) :: div_coeff_3d(mla%nlevel)
+    type(multifab) :: Tcoeff(mla%nlevel)
+    type(multifab) :: hcoeff(mla%nlevel)
+    type(multifab) :: Xkcoeff(mla%nlevel)
+    type(multifab) :: pcoeff(mla%nlevel)
 
     real(dp_t) ::            etarho_ec(nlevs_radial,0:nr_fine)
     real(dp_t) ::                 Sbar(nlevs_radial,0:nr_fine-1)
@@ -92,6 +92,8 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "divu_iter")
+
+    nlevs = mla%nlevel
 
     etarho_ec = ZERO
     Sbar = ZERO

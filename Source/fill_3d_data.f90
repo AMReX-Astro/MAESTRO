@@ -23,7 +23,7 @@ contains
 
     use bl_constants_module
     use define_bc_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use ml_layout_module
     use multifab_physbc_module
     use ml_restriction_module, only: ml_cc_restriction_c
@@ -38,14 +38,16 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(in   ) :: mla
     
-    integer :: lo(dm)
-    integer :: hi(dm)
+    integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: i,n,ng_s,comp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_1d_array_on_cart")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s = nghost(s0_cart(1))
     
@@ -141,7 +143,6 @@ contains
                                      lo,hi,ng_s)
 
     use bl_constants_module
-    use geometry, only: dr
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s
     logical        , intent(in   ) :: is_input_edge_centered
@@ -179,7 +180,6 @@ contains
                                      lo,hi,ng_s)
 
     use bl_constants_module
-    use geometry, only: dr
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s
     logical        , intent(in   ) :: is_input_edge_centered,is_output_a_vector
@@ -236,7 +236,6 @@ contains
                                      lo,hi,ng_s)
 
     use bl_constants_module
-    use geometry, only: dr
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s
     logical        , intent(in   ) :: is_input_edge_centered,is_output_a_vector
@@ -571,7 +570,7 @@ contains
   subroutine make_w0mac(mla,w0,w0mac,dx,the_bc_level)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, dm, nlevs
+    use geometry, only: spherical, nr_fine
     use probin_module, only: w0mac_interp_type
     use variables, only: foextrap_comp
     use define_bc_module
@@ -583,8 +582,8 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    integer         :: lo(dm),hi(dm)
-    integer         :: i,n,ng_w0,ng_wc
+    integer         :: lo(mla%dim),hi(mla%dim)
+    integer         :: i,n,ng_w0,ng_wc,dm,nlevs
 
     ! Local pointers
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
@@ -601,6 +600,9 @@ contains
     if (spherical .eq. 0) then
        call bl_error('Error: only call make_w0mac for spherical')
     end if
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ! we first need to construct a cart version of w0
     do n=1,nlevs
@@ -964,7 +966,7 @@ contains
   subroutine make_s0mac(mla,s0,s0mac,dx,bccomp,the_bc_level)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, dm, nlevs
+    use geometry, only: spherical, nr_fine
     use define_bc_module
     use probin_module, only: s0mac_interp_type
 
@@ -976,8 +978,8 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    integer         :: lo(dm),hi(dm)
-    integer         :: i,n,ng_sm,ng_s0
+    integer         :: lo(mla%dim),hi(mla%dim)
+    integer         :: i,n,ng_sm,ng_s0,dm,nlevs
 
     ! Local pointers
     real(kind=dp_t), pointer :: s0xp(:,:,:,:)
@@ -990,6 +992,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_s0mac")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (spherical .eq. 0) then
        call bl_error('Error: only call make_s0mac for spherical')
@@ -1299,16 +1304,18 @@ contains
 
   subroutine make_normal(normal,dx)
 
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
 
     type(multifab) , intent(inout) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
         
-    integer             :: lo(dm),hi(dm)
-    integer             :: n,i,ng_n
+    integer             :: lo(get_dim(normal(1))),hi(get_dim(normal(1)))
+    integer             :: n,i,ng_n,dm,nlevs
     real(dp_t), pointer :: nop(:,:,:,:)
         
     ng_n = nghost(normal(1))
+    dm = get_dim(normal(1))
+    nlevs = size(normal)
 
     if (spherical .eq. 1) then
        do n = 1,nlevs
@@ -1366,7 +1373,6 @@ contains
 
   subroutine put_data_on_faces(mla,ccfab,comp,beta,harmonic_avg)
 
-    use geometry, only: nlevs, dm
     use ml_restriction_module, only: ml_edge_restriction
 
     type(ml_layout), intent(in   ) :: mla
@@ -1376,8 +1382,8 @@ contains
     logical        , intent(in   ) :: harmonic_avg
 
     ! local
-    integer :: n,i,ng_c,ng_b
-    integer :: lo(dm),hi(dm)
+    integer :: n,i,ng_c,ng_b,dm,nlevs
+    integer :: lo(mla%dim),hi(mla%dim)
 
     real(kind=dp_t), pointer :: ccfabp(:,:,:,:)
     real(kind=dp_t), pointer :: bxp(:,:,:,:)
@@ -1387,6 +1393,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_data_on_faces")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_c = nghost(ccfab(1))
     ng_b = nghost(beta(1,1))
@@ -1634,7 +1643,7 @@ contains
 
     use bl_constants_module
     use define_bc_module
-    use geometry, only: spherical, dm, nlevs, nr_irreg
+    use geometry, only: spherical, nr_irreg
     use ml_layout_module
     use multifab_physbc_module
     use ml_restriction_module, only: ml_cc_restriction_c
@@ -1647,9 +1656,8 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(in   ) :: mla
     
-    integer :: lo(dm)
-    integer :: hi(dm)
-    integer :: i,n,r,ng_s
+    integer :: lo(mla%dim),hi(mla%dim)
+    integer :: i,n,r,ng_s,dm,nlevs
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     real(kind=dp_t), allocatable :: radii(:)
@@ -1657,6 +1665,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_1d_array_on_cart")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s = nghost(s0_cart(1))
     

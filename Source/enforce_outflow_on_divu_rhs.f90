@@ -16,14 +16,15 @@ contains
 
     subroutine enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
 
-      use geometry, only : dm,nlevs
-
       type(multifab) , intent(inout) :: divu_rhs(:)
       type(bc_tower) , intent(in   ) :: the_bc_tower
 
-      integer        :: i,n,ng_d
+      integer        :: i,n,ng_d,dm,nlevs
       type(bc_level) :: bc
       real(kind=dp_t), pointer :: divp(:,:,:,:) 
+
+      dm = get_dim(divu_rhs(1))
+      nlevs = size(divu_rhs)
 
       ng_d = nghost(divu_rhs(1))
 

@@ -30,7 +30,7 @@ contains
                    grav,dx,cflfac,dt)
 
     use bl_prof_module
-    use geometry, only: spherical, dm, nlevs, nlevs_radial, nr_fine
+    use geometry, only: spherical, nlevs_radial, nr_fine
     use variables, only: rel_eps, rho_comp
     use bl_constants_module
     use mk_vel_force_module
@@ -53,10 +53,10 @@ contains
     real(kind=dp_t), intent(in ) :: cflfac
     real(kind=dp_t), intent(out) :: dt
     
-    type(multifab) ::      force(nlevs)
-    type(multifab) ::      w0mac(nlevs,dm)
-    type(multifab) :: umac_dummy(nlevs,dm)
-    type(multifab) :: w0_force_cart_dummy(nlevs)
+    type(multifab) ::      force(mla%nlevel)
+    type(multifab) ::      w0mac(mla%nlevel,mla%dim)
+    type(multifab) :: umac_dummy(mla%nlevel,mla%dim)
+    type(multifab) :: w0_force_cart_dummy(mla%nlevel)
 
     logical :: is_final_update
 
@@ -71,7 +71,7 @@ contains
     real(kind=dp_t), pointer::   wyp(:,:,:,:)
     real(kind=dp_t), pointer::   wzp(:,:,:,:)
     
-    integer :: lo(dm),hi(dm),i,n,comp
+    integer :: lo(mla%dim),hi(mla%dim),i,n,comp,dm,nlevs
     integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_w
     real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start,dt_lev
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
@@ -82,6 +82,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "estdt")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
     
     allocate(w0_force_dummy(nlevs_radial,0:nr_fine-1))
     w0_force_dummy = 0.d0

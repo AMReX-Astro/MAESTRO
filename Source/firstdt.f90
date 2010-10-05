@@ -25,7 +25,7 @@ contains
   subroutine firstdt(mla,the_bc_level,u,gpi,s,divU,rho0,p0,grav,gamma1bar, &
                      dx,cflfac,dt)
 
-    use geometry, only: dm, nlevs, nlevs_radial, spherical, nr_fine
+    use geometry, only: nlevs_radial, spherical, nr_fine
     use variables, only: rel_eps, rho_comp
     use bl_constants_module
     use probin_module, only: init_shrink, verbose
@@ -45,10 +45,10 @@ contains
     real(kind=dp_t), intent(in   ) :: cflfac
     real(kind=dp_t), intent(  out) :: dt
 
-    type(multifab) :: force(nlevs)
-    type(multifab) :: umac_dummy(nlevs,dm)
-    type(multifab) :: w0mac_dummy(nlevs,dm)
-    type(multifab) :: w0_force_cart_dummy(nlevs)
+    type(multifab) :: force(mla%nlevel)
+    type(multifab) :: umac_dummy(mla%nlevel,mla%dim)
+    type(multifab) :: w0mac_dummy(mla%nlevel,mla%dim)
+    type(multifab) :: w0_force_cart_dummy(mla%nlevel)
 
     logical :: is_final_update
 
@@ -60,10 +60,13 @@ contains
     real(kind=dp_t), pointer::    fp(:,:,:,:)
     real(kind=dp_t), pointer:: divup(:,:,:,:)
 
-    integer         :: lo(dm),hi(dm),ng_u,ng_s,ng_f,ng_dU,i,n
-    integer         :: comp
+    integer         :: lo(mla%dim),hi(mla%dim),ng_u,ng_s,ng_f,ng_dU,i,n
+    integer         :: comp,dm,nlevs
     real(kind=dp_t) :: dt_proc,dt_grid,dt_lev
     real(kind=dp_t) :: umax,umax_proc,umax_grid
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     allocate(w0_force_dummy(nlevs_radial,0:nr_fine-1))
     allocate(w0_dummy      (nlevs       ,0:nr_fine))
@@ -433,7 +436,7 @@ contains
   subroutine firstdt_3d(n,u,ng_u,s,ng_s,force,ng_f,divU,ng_dU,p0,gamma1bar,lo,hi,dx,dt, &
                         umax,cfl)
 
-    use geometry,  only: spherical, nr, dr, nr_fine
+    use geometry,  only: spherical, nr
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
     use network, only: nspec

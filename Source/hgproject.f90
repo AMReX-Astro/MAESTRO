@@ -28,7 +28,6 @@ contains
     use mg_eps_module              , only : eps_hg, eps_hg_max, hg_level_factor
     use probin_module              , only: verbose, mg_verbose, cg_verbose, hg_dense_stencil, nodal, &
                                            use_hypre
-    use geometry                   , only: dm, nlevs, spherical
 
     integer        , intent(in   ) :: proj_type
     type(ml_layout), intent(in   ) :: mla
@@ -49,13 +48,16 @@ contains
     type(multifab) :: gphi(mla%nlevel)
     type(multifab) ::   rh(mla%nlevel)
 
-    integer                   :: n,d,stencil_type
+    integer                   :: n,d,stencil_type,dm,nlevs
     real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
     real(dp_t)                :: rel_solver_eps
     real(dp_t)                :: abs_solver_eps
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "hgproject")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (hg_dense_stencil) then
        stencil_type = ST_DENSE
@@ -1048,7 +1050,6 @@ contains
     use ml_solve_module
     use nodal_divu_module
     use probin_module, only : nodal
-    use geometry, only: dm, nlevs
     use probin_module, only : verbose, nodal
     use variables, only: press_comp
 
@@ -1069,12 +1070,15 @@ contains
 
     type(multifab), allocatable :: coeffs(:)
 
-    integer :: n, ns
+    integer :: n, ns, dm, nlevs
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "hg_1d_solver")
     
+    dm = mla%dim
+    nlevs = mla%nlevel
+
     ns = 3
 
     do n = nlevs, 1, -1
@@ -1132,14 +1136,14 @@ contains
 
   subroutine mkcoeffs(rho,coeffs)
 
-    use geometry, only: dm
-
     type(multifab) , intent(in   ) :: rho
     type(multifab) , intent(inout) :: coeffs
 
     real(kind=dp_t), pointer :: cp(:,:,:,:)
     real(kind=dp_t), pointer :: rp(:,:,:,:)
-    integer :: i,ng_r,ng_c
+    integer :: i,ng_r,ng_c,dm
+
+    dm = get_dim(rho)
 
     ng_r = nghost(rho)
     ng_c = nghost(coeffs)

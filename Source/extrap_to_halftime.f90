@@ -24,7 +24,6 @@ contains
     use ml_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
-    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: Source_nph(:), dSdt(:), Source_old(:)
@@ -34,9 +33,12 @@ contains
     real(kind=dp_t), pointer:: Snphp(:,:,:,:)
     real(kind=dp_t), pointer:: Soldp(:,:,:,:)
     real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng_h,ng_o,ng_dS
-    integer :: i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng_h,ng_o,ng_dS
+    integer :: i,n,dm,nlevs
       
+    dm = mla%dim
+    nlevs = mla%nlevel
+
     ng_h  = nghost(Source_nph(1))
     ng_o  = nghost(Source_old(1))
     ng_dS = nghost(dSdt(1))

@@ -32,7 +32,7 @@ contains
     use cell_to_edge_module
     use rhoh_vs_t_module
     use geometry,      only: spherical, nr_fine, r_start_coord, r_end_coord, &
-         numdisjointchunks, nlevs, nlevs_radial
+         numdisjointchunks, nlevs_radial
     use variables,     only: nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose, bds_type
     use pred_parameters
@@ -72,7 +72,7 @@ contains
     type(multifab) :: h0mac_old(mla%nlevel,mla%dim)
     type(multifab) :: h0mac_new(mla%nlevel,mla%dim)
 
-    integer    :: pred_comp,n,r,i,comp,dm
+    integer    :: pred_comp,n,r,i,comp,dm,nlevs
     logical    :: is_vel
     real(dp_t) :: smin,smax
     logical    :: is_prediction
@@ -106,6 +106,7 @@ contains
 
     is_vel  = .false.
     dm = mla%dim
+    nlevs = mla%nlevel
 
     if (spherical .eq. 0) then
        call cell_to_edge(rho0_old,rho0_edge_old)
