@@ -26,7 +26,7 @@ contains
     use create_umac_grown_module       , only : create_umac_grown
     use multifab_physbc_edgevel_module , only : multifab_physbc_edgevel
 
-    use geometry, only: dm, nlevs, spherical
+    use geometry, only: spherical
     use probin_module, only: verbose, use_hypre
     use variables, only: press_comp
     use ml_restriction_module, only: ml_edge_restriction
@@ -45,19 +45,22 @@ contains
     real(dp_t)     , intent(in   ), optional :: div_coeff_1d_edge(:,:)
     type(multifab ), intent(in   ), optional :: div_coeff_cart_edge(:,:)
 
-    type(multifab)  :: rh(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel,dm)
+    type(multifab)  :: rh(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel,mla%dim)
     type(bndry_reg) :: fine_flx(2:mla%nlevel)
 
 !    real(dp_t)                   :: umac_norm(mla%nlevel)
     real(dp_t)                   :: umin,umax,vmin,vmax,wmin,wmax
     real(dp_t)                   :: rel_solver_eps
     real(dp_t)                   :: abs_solver_eps
-    integer                      :: stencil_order,i,n,comp
+    integer                      :: stencil_order,i,n,comp,dm,nlevs
     logical                      :: use_rhs, use_div_coeff_1d, use_div_coeff_cart_edge
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "macproject")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     use_rhs          = .false. ; if (present(divu_rhs)    ) use_rhs          = .true.
     use_div_coeff_1d = .false. ; if (present(div_coeff_1d)) use_div_coeff_1d = .true.
@@ -290,7 +293,6 @@ contains
 
       use ml_restriction_module, only: ml_cc_restriction, ml_edge_restriction
       use probin_module, only: verbose
-      use geometry, only: dm
 
       type(multifab) , intent(inout) :: umac(:,:)
       type(multifab) , intent(inout) :: rh(:)
@@ -304,8 +306,10 @@ contains
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
       real(kind=dp_t), pointer :: rhp(:,:,:,:) 
       real(kind=dp_t)          :: rhmax
-      integer :: i,lo(dm),hi(dm)
-      integer :: ng_um, ng_rh
+      integer :: i,lo(get_dim(rh(1))),hi(get_dim(rh(1)))
+      integer :: ng_um,ng_rh,dm
+
+      dm = get_dim(rh(1))
 
       ng_um = nghost(umac(1,1))
       ng_rh = nghost(rh(1))
@@ -438,8 +442,6 @@ contains
 
     subroutine mult_edge_by_1d_coeff(edge,div_coeff,div_coeff_edge,do_mult)
 
-      use geometry, only: dm
-
       type(multifab) , intent(inout) :: edge(:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_edge(0:)
@@ -448,9 +450,10 @@ contains
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
       real(kind=dp_t), pointer :: vmp(:,:,:,:) 
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
-      integer                  :: lo(dm)
-      integer                  :: i,ng_um
+      integer                  :: lo(get_dim(edge(1)))
+      integer                  :: i,ng_um,dm
 
+      dm = get_dim(edge(1))
       ng_um = nghost(edge(1))
 
       ! Multiply edge velocities by div coeff
@@ -582,7 +585,6 @@ contains
 
     subroutine mk_mac_coeffs(mla,rho,beta)
 
-      use geometry, only: dm
       use ml_restriction_module, only: ml_edge_restriction
 
       type(ml_layout), intent(in   ) :: mla
@@ -593,8 +595,9 @@ contains
       real(kind=dp_t), pointer :: byp(:,:,:,:) 
       real(kind=dp_t), pointer :: bzp(:,:,:,:) 
       real(kind=dp_t), pointer :: rp(:,:,:,:) 
-      integer :: i,ng_r,ng_b,lo(dm),hi(dm)
+      integer :: i,ng_r,ng_b,lo(mla%dim),hi(mla%dim),dm
 
+      dm = mla%dim
       ng_r = nghost(rho(1))
       ng_b = nghost(beta(1,1))
 
@@ -712,7 +715,6 @@ contains
 
     subroutine mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower)
 
-      use geometry, only: dm, nlevs
       use variables, only: press_comp
 
       type(multifab), intent(inout) :: umac(:,:)
@@ -725,7 +727,7 @@ contains
 
       integer :: i
       integer :: ng_um,ng_p,ng_b
-      integer :: lo(dm),hi(dm)
+      integer :: lo(get_dim(rh(1))),hi(get_dim(rh(1))),dm
 
       type(bc_level)           :: bc
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
@@ -742,6 +744,8 @@ contains
       real(kind=dp_t), pointer :: lzp(:,:,:,:) 
       real(kind=dp_t), pointer :: hzp(:,:,:,:) 
 
+      dm = get_dim(rh(1))
+      nlevs = size(rh)
 
       ng_um = nghost(umac(1,1))
       ng_p = nghost(phi(1))

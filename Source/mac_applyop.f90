@@ -20,7 +20,6 @@ contains
     use stencil_fill_module, only: stencil_fill_cc
     use ml_cc_module, only: ml_cc_applyop
     use probin_module, only: cg_verbose, mg_verbose
-    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: stencil_order
@@ -38,21 +37,24 @@ contains
     type(multifab) :: edge_coeffs(mla%dim)
 
     type(mg_tower)  :: mgt(mla%nlevel)
-    integer         ::  ns
+    integer         :: ns,dm,nlevs
 
     ! MG solver defaults
-    integer :: bottom_solver, bottom_max_iter
+    integer    :: bottom_solver, bottom_max_iter
     integer    :: max_iter
     integer    :: min_width
     integer    :: max_nlevel
     integer    :: n, d, nu1, nu2, gamma, ncycle, smoother
     real(dp_t) :: eps,abs_eps,omega,bottom_solver_eps
-    real(dp_t) ::  xa(dm),  xb(dm)
-    real(dp_t) :: pxa(dm), pxb(dm)
+    real(dp_t) ::  xa(mla%dim),  xb(mla%dim)
+    real(dp_t) :: pxa(mla%dim), pxb(mla%dim)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mac_applyop")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     max_nlevel        = mgt(nlevs)%max_nlevel
     max_iter          = mgt(nlevs)%max_iter

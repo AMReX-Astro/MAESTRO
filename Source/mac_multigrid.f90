@@ -25,7 +25,6 @@ contains
     use probin_module      , only : mg_verbose, cg_verbose
 
     use probin_module, only : mg_bottom_solver, max_mg_bottom_nlevels, verbose, mg_verbose, cg_verbose
-    use geometry, only: dm, nlevs
     use mg_eps_module, only: eps_mac_bottom
 
     type(ml_layout), intent(in   ) :: mla
@@ -47,7 +46,7 @@ contains
     type(multifab), allocatable :: edge_coeffs(:,:)
 
     type(mg_tower)  :: mgt(mla%nlevel)
-    integer         :: ns
+    integer         :: ns,dm,nlevs
 
     ! MG solver defaults
     integer :: bottom_solver, bottom_max_iter
@@ -58,15 +57,17 @@ contains
     integer    :: max_nlevel_in
     integer    :: do_diagnostics
     real(dp_t) :: omega,bottom_solver_eps
-    real(dp_t) ::  xa(dm),  xb(dm)
-    real(dp_t) :: pxa(dm), pxb(dm)
+    real(dp_t) ::  xa(mla%dim),  xb(mla%dim)
+    real(dp_t) :: pxa(mla%dim), pxb(mla%dim)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mac_multigrid")
 
-    !! Defaults:
+    dm = mla%dim
+    nlevs = mla%nlevel
 
+    !! Defaults:
     max_nlevel        = mgt(nlevs)%max_nlevel
     max_iter          = mgt(nlevs)%max_iter
     smoother          = mgt(nlevs)%smoother
