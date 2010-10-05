@@ -59,7 +59,7 @@ contains
     use proj_parameters
 
     use variables                   , only : nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
-    use geometry                    , only : nlevs, nlevs_radial, spherical, dm, nr_fine, compute_cutoff_coords
+    use geometry                    , only : nlevs_radial, spherical, nr_fine, compute_cutoff_coords
     use network                     , only : nspec
     use probin_module               , only : barrier_timers, evolve_base_state, &
                                              use_etarho, dpdt_factor, verbose, &
@@ -103,42 +103,42 @@ contains
     type(multifab),  intent(inout) ::  hgrhs(:)
 
     ! local
-    type(multifab) ::           rhohalf(mla%nlevel)
-    type(multifab) ::     w0_force_cart(mla%nlevel)
-    type(multifab) ::            macrhs(mla%nlevel)
-    type(multifab) ::            macphi(mla%nlevel)
-    type(multifab) ::         hgrhs_old(mla%nlevel)
-    type(multifab) ::        Source_nph(mla%nlevel)
-    type(multifab) ::          thermal1(mla%nlevel)
-    type(multifab) ::            s2star(mla%nlevel)
-    type(multifab) ::                s1(mla%nlevel)
-    type(multifab) ::                s2(mla%nlevel)
-    type(multifab) :: delta_gamma1_term(mla%nlevel)
-    type(multifab) ::      delta_gamma1(mla%nlevel)
-    type(multifab) ::     rho_omegadot1(mla%nlevel)
-    type(multifab) ::         rho_Hnuc1(mla%nlevel)
-    type(multifab) ::      div_coeff_3d(mla%nlevel)
-    type(multifab) :: div_coeff_cart_edge(mla%nlevel,dm)
-    type(multifab) ::            gamma1(mla%nlevel)
-    type(multifab) ::        etarhoflux(mla%nlevel)
-    type(multifab) ::          peos_old(mla%nlevel)
-    type(multifab) ::          peos_nph(mla%nlevel)
-    type(multifab) ::          peos_new(mla%nlevel)
-    type(multifab) ::      peosbar_cart(mla%nlevel)
-    type(multifab) ::      delta_p_term(mla%nlevel)
-    type(multifab) ::           Tcoeff1(mla%nlevel)
-    type(multifab) ::           hcoeff1(mla%nlevel)
-    type(multifab) ::          Xkcoeff1(mla%nlevel)
-    type(multifab) ::           pcoeff1(mla%nlevel)
-    type(multifab) ::           Tcoeff2(mla%nlevel)
-    type(multifab) ::           hcoeff2(mla%nlevel)
-    type(multifab) ::          Xkcoeff2(mla%nlevel)
-    type(multifab) ::           pcoeff2(mla%nlevel)
-    type(multifab) ::        scal_force(mla%nlevel)
-    type(multifab) ::             w0mac(mla%nlevel,dm)
-    type(multifab) ::              umac(mla%nlevel,dm)
-    type(multifab) ::             sedge(mla%nlevel,dm)
-    type(multifab) ::             sflux(mla%nlevel,dm)
+    type(multifab) ::             rhohalf(mla%nlevel)
+    type(multifab) ::       w0_force_cart(mla%nlevel)
+    type(multifab) ::              macrhs(mla%nlevel)
+    type(multifab) ::              macphi(mla%nlevel)
+    type(multifab) ::           hgrhs_old(mla%nlevel)
+    type(multifab) ::          Source_nph(mla%nlevel)
+    type(multifab) ::            thermal1(mla%nlevel)
+    type(multifab) ::              s2star(mla%nlevel)
+    type(multifab) ::                  s1(mla%nlevel)
+    type(multifab) ::                  s2(mla%nlevel)
+    type(multifab) ::   delta_gamma1_term(mla%nlevel)
+    type(multifab) ::        delta_gamma1(mla%nlevel)
+    type(multifab) ::       rho_omegadot1(mla%nlevel)
+    type(multifab) ::           rho_Hnuc1(mla%nlevel)
+    type(multifab) ::        div_coeff_3d(mla%nlevel)
+    type(multifab) :: div_coeff_cart_edge(mla%nlevel,mla%dim)
+    type(multifab) ::              gamma1(mla%nlevel)
+    type(multifab) ::          etarhoflux(mla%nlevel)
+    type(multifab) ::            peos_old(mla%nlevel)
+    type(multifab) ::            peos_nph(mla%nlevel)
+    type(multifab) ::            peos_new(mla%nlevel)
+    type(multifab) ::        peosbar_cart(mla%nlevel)
+    type(multifab) ::        delta_p_term(mla%nlevel)
+    type(multifab) ::             Tcoeff1(mla%nlevel)
+    type(multifab) ::             hcoeff1(mla%nlevel)
+    type(multifab) ::            Xkcoeff1(mla%nlevel)
+    type(multifab) ::             pcoeff1(mla%nlevel)
+    type(multifab) ::             Tcoeff2(mla%nlevel)
+    type(multifab) ::             hcoeff2(mla%nlevel)
+    type(multifab) ::            Xkcoeff2(mla%nlevel)
+    type(multifab) ::             pcoeff2(mla%nlevel)
+    type(multifab) ::          scal_force(mla%nlevel)
+    type(multifab) ::               w0mac(mla%nlevel,mla%dim)
+    type(multifab) ::                umac(mla%nlevel,mla%dim)
+    type(multifab) ::               sedge(mla%nlevel,mla%dim)
+    type(multifab) ::               sflux(mla%nlevel,mla%dim)
 
     real(kind=dp_t), allocatable ::        grav_cell_nph(:,:)
     real(kind=dp_t), allocatable ::        grav_cell_new(:,:)
@@ -157,7 +157,7 @@ contains
     real(kind=dp_t), allocatable ::       div_coeff_edge(:,:)
     real(kind=dp_t), allocatable ::  rho0_predicted_edge(:,:)
 
-    integer    :: i,n,comp,proj_type,numcell
+    integer    :: i,n,comp,proj_type,numcell,nlevs,dm
     real(dp_t) :: halfdt
 
     real(kind=dp_t) :: advect_time , advect_time_start , advect_time_max
@@ -170,6 +170,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advance_timestep")
+
+    nlevs = mla%nlevel
+    dm = mla%dim
 
     advect_time  = 0.d0
     macproj_time = 0.d0

@@ -13,13 +13,13 @@ module pre_advance_module
 contains
 
   subroutine advance_premac(uold,sold,umac,gpi,normal,w0,w0mac, &
-                            w0_force,w0_force_cart_vec,rho0,grav_cell,dx,dt,the_bc_level,mla)
+                            w0_force,w0_force_cart_vec,rho0,grav_cell,dx,dt, &
+                            the_bc_level,mla)
 
     use bl_prof_module
     use velpred_module
     use mkutrans_module
     use mk_vel_force_module
-    use geometry, only: dm, nlevs
     use addw0_module
     use bl_constants_module
     use variables, only: rho_comp
@@ -41,15 +41,18 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     ! local
-    type(multifab) ::  force(nlevs)
-    type(multifab) :: utrans(nlevs,dm)
-    type(multifab) :: ufull(nlevs)
-    integer        :: n,comp
+    type(multifab) ::  force(mla%nlevel)
+    type(multifab) :: utrans(mla%nlevel,mla%dim)
+    type(multifab) ::  ufull(mla%nlevel)
+    integer        :: n,comp,dm,nlevs
     logical        :: is_final_update
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advance_premac")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     do n=1,nlevs
        call multifab_build(force(n),get_layout(uold(n)),dm,1)

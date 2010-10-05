@@ -15,7 +15,7 @@ contains
 
     use bl_prof_module
     use create_umac_grown_module, only: create_umac_grown
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use define_bc_module, only: bc_level
     use ml_layout_module, only: ml_layout
     use ml_restriction_module, only: ml_edge_restriction
@@ -29,7 +29,7 @@ contains
     real(kind=dp_t), intent(in   ) :: mult
 
     ! Local variables
-    integer :: i,lo(dm),hi(dm),n,ng_um,ng_w0
+    integer :: i,lo(mla%dim),hi(mla%dim),n,ng_um,ng_w0,dm,nlevs
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
@@ -40,6 +40,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "addw0")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_um = nghost(umac(1,1)) ! here we are assuming all components have the 
                               ! same # of ghostcells
