@@ -1,0 +1,40 @@
+The goal of $\beta_0$ is to capture the expansion of a displaced fluid
+element due to the stratification of the atmosphere.  MAESTRO computes
+$\beta_0$ as:
+\begin{equation}
+\beta_0(r,t) = \rho_0 \exp\left (  \int_0^r  \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial r^\prime} dr^\prime \right )
+\end{equation}
+
+\section{Constant Composition}
+Consider an isentropically stratified atmosphere, with a constant
+composition as a function of $r$.  If you displace a parcel of fluid,
+it will expand adabatically and continue to rise until its density
+matches the background density.  
+Even if $\gammabar$ is not constant in $r$, following from the
+definition of $\beta_0$,
+\begin{equation}
+\frac{1}{\beta_0} \frac{d\beta_0}{dr} = \frac{1}{\gammabar p_0} \frac{dp_0}{dr}
+\end{equation}
+and the definition of $\Gamma_1$,
+\begin{equation}
+\Gamma_1 = \left . \frac{d \log p}{d \log \rho} \right |_s
+\end{equation}
+So, at constant entropy, from the definition of $\Gamma_1$, it must hold
+that
+\begin{equation}
+\frac{1}{\rho} \frac{d \rho}{dr} = \frac{1}{\Gamma_1 p} \frac{d p}{dz} \enskip .
+\end{equation}
+Comparing to the defintion of $\beta_0$ then
+\begin{equation}
+\frac{1}{\beta_0} \frac{\beta_0}{dr} =\frac{1}{\gammabar p_0}\frac{dp_0}{dr} = \frac{1}{\rho_0} \frac{d\rho_0}{dr}  \enskip .
+\end{equation}
+Therefore, $\beta_0 = \rho_0$.  
+
+This means that if we have a constant composition and an
+isentropically stratified atmosphere, as we displace a fluid element,
+it will always remain neutrally buoyant.
+
+
+
+\section{Composition Gradient}
+
