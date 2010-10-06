@@ -33,9 +33,9 @@ subroutine varden()
   use setbc_module
   use variables, only: nscal, init_variables, rho_comp, spec_comp
   use fill_3d_module, only: make_normal
-  use geometry, only:  nlevs, nlevs_radial, spherical, dm, &
+  use geometry, only:  nlevs_radial, spherical, &
                        dr_fine, nr_fine, &
-                       init_dm, init_spherical, init_center, init_multilevel, init_radial, &
+                       init_spherical, init_center, init_multilevel, init_radial, &
                        init_cutoff, destroy_geometry
   use network, only: network_init, nspec
   use eos_module, only: eos_init
@@ -60,6 +60,7 @@ subroutine varden()
 
   integer :: i,n,comp
   integer :: ng_s
+  integer :: nlevs, dm
 
   integer :: idir, idim, itest_dir, index_t
 
@@ -102,7 +103,6 @@ subroutine varden()
 
   ! general Maestro initializations
   call probin_init()
-  call init_dm()
   call init_spherical()
   call init_center()
 
@@ -124,6 +124,9 @@ subroutine varden()
   ! initialize nlevs
   nlevs = mla%nlevel
   nlevs_radial = merge(1, nlevs, spherical .eq. 1)
+
+  ! initialize dm
+  dm = mla%dim
 
   ! initialize boundary conditions
   call initialize_bc(the_bc_tower,nlevs,pmask)
@@ -425,7 +428,7 @@ subroutine varden()
            ! advance density according to rho_t + (rho U)_x = 0
            call density_advance(mla,1,sold,snew,sedge,sflux, &
                                 scal_force,umac,w0,w0mac,etarhoflux, &
-                                normal,rho0_old,rho0_new,p0, &
+                                rho0_old,rho0_new,p0, &
                                 rho0_predicted_edge, &
                                 dx,dt,the_bc_tower%bc_tower_array)
           
