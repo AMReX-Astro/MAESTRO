@@ -4,11 +4,16 @@
 
 module diag_module
 
-  use bl_types
-  use bl_IO_module
-  use multifab_module
-  use ml_layout_module
-  use define_bc_module
+  use parallel, only: parallel_IOProcessor, parallel_IOProcessorNode, &
+                      parallel_reduce, MPI_MAX
+  use bl_types, only: dp_t
+  use bl_IO_module, only: unit_new
+  use box_module, only: lwb, upb
+  use multifab_module, only: multifab, multifab_build, multifab_build_edge, &
+                             dataptr, get_box, multifab_remote, &
+                             nghost, setval
+  use ml_layout_module, only: ml_layout
+  use define_bc_module, only: bc_tower
 
   implicit none
 
@@ -25,14 +30,13 @@ contains
                   u,w0,normal, &
                   mla,the_bc_tower)
 
-    use bl_prof_module
+    use bl_prof_module, only: bl_prof_timer, build, destroy
     use geometry, only: spherical
-    use bl_constants_module
+    use bl_constants_module, only: ZERO
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
                              job_name
     use network, only: network_species_index
-    use inlet_bc_module
     use fill_3d_module, only: put_1d_array_on_cart, make_w0mac
     use variables, only: foextrap_comp
 
@@ -406,7 +410,7 @@ contains
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp
-    use bl_constants_module
+    use bl_constants_module, only: HALF
     use network, only: nspec
     use probin_module, only: prob_lo
     use eos_module
@@ -496,7 +500,7 @@ contains
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp
-    use bl_constants_module
+    use bl_constants_module, only: HALF
     use network, only: nspec
     use probin_module, only: prob_lo
     use eos_module
@@ -590,7 +594,7 @@ contains
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp
-    use bl_constants_module
+    use bl_constants_module, only: HALF
     use network, only: nspec
     use probin_module, only: prob_lo
     use eos_module
