@@ -5,8 +5,13 @@
 module average_module
   
   use bl_types, only: dp_t
-  use multifab_module
-  use ml_layout_module
+  use box_module, only: lwb, upb, box
+  use multifab_module, only: multifab, multifab_remote, dataptr, &
+                             get_layout, get_box, nghost, nboxes, get_dim
+  use layout_module, only: get_pd
+  use ml_layout_module, only: ml_layout
+  use parallel, only: parallel_reduce, MPI_SUM
+  use bl_error_module, only: bl_error
 
   implicit none
 
@@ -19,7 +24,7 @@ contains
   subroutine average(mla,phi,phibar,dx,incomp)
 
     use geometry, only: nr_fine, nr_irreg, r_start_coord, r_end_coord, spherical, &
-         numdisjointchunks, dr
+                        numdisjointchunks, dr
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use bl_constants_module, only: ZERO, HALF
     use restrict_base_module, only: restrict_base, fill_ghost_base

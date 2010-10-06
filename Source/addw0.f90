@@ -1,7 +1,9 @@
 module addw0_module
 
   use bl_types, only: dp_t
-  use multifab_module
+  use box_module, only: upb, lwb
+  use multifab_module, only: multifab, multifab_remote, multifab_fill_boundary, &
+                             nboxes, nghost, dataptr, get_box
 
   implicit none
 

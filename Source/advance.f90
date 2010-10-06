@@ -31,8 +31,6 @@ contains
                               psi,sponge,hgrhs)
 
     use bl_prof_module              , only : bl_prof_timer, build, destroy
-    !use bc_module
-
     use      pre_advance_module     , only : advance_premac
     use velocity_advance_module     , only : velocity_advance
     use  density_advance_module     , only : density_advance
@@ -63,7 +61,7 @@ contains
 
     use hgrhs_module                , only : make_hgrhs, correct_hgrhs
     use hgproject_module            , only : hgproject
-    use proj_parameters
+    use proj_parameters             , only : pressure_iters_comp, regular_timestep_comp
 
     use variables                   , only : nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry                    , only : nlevs_radial, spherical, nr_fine, compute_cutoff_coords

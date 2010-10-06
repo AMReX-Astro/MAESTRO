@@ -1,7 +1,9 @@
 module pre_advance_module
 
   use bl_types, only: dp_t
-  use multifab_module
+  use multifab_module, only: multifab, multifab_build, multifab_build_edge, &
+                             multifab_plus_plus_c, &
+                             get_layout, nghost, destroy
   use ml_layout_module, only: ml_layout
   use define_bc_module, only: bc_level
 

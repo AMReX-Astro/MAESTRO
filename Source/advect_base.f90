@@ -263,11 +263,11 @@ contains
   subroutine advect_base_enthalpy_spherical(w0,rho0_old,rhoh0_old,rhoh0_new, &
                                             rho0_predicted_edge,psi,dt)
 
-    use bl_constants_module
-    use make_edge_state_module
+    use bl_constants_module, only: HALF
+    use make_edge_state_module, only: make_edge_state_1d
     use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine
     use probin_module, only: enthalpy_pred_type
-    use pred_parameters
+    use pred_parameters, only: predict_h, predict_T_then_h
 
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rhoh0_old(:,0:)
