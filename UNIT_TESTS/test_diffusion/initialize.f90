@@ -44,7 +44,7 @@ contains
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
-    integer :: n,ng_s
+    integer :: n,ng_s,dm,nlevs
 
     ! set time and dt
     time = ZERO
@@ -55,6 +55,8 @@ contains
 
     ! create mla
     call ml_layout_build(mla,mba,pmask)
+
+    dm = mla%dim
     
     ! check for proper nesting
     if (.not. ml_boxarray_properly_nested(mla%mba, 3, pmask)) then
@@ -159,7 +161,9 @@ contains
     integer       , intent(in   ) :: num_levs
     logical       , intent(in   ) :: pmask(:)
     
-    integer :: domain_phys_bc(dm,2)
+    integer :: domain_phys_bc(size(pmask),2), dm
+
+    dm = size(pmask)
 
     ! Define the physical boundary conditions on the domain
     ! Put the bc values from the inputs file into domain_phys_bc
@@ -200,7 +204,9 @@ contains
     type(ml_boxarray), intent(in ) :: mba
     integer          , intent(in ) :: num_levs
     
-    integer :: n,d
+    integer :: n,d,dm
+
+    dm = mba%dim
     
     allocate(dx(num_levs,dm))
     

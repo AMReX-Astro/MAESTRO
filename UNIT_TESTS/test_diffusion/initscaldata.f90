@@ -33,9 +33,12 @@ contains
     real(kind=dp_t), intent(in   ) :: diffusion_coefficient
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,n, dm,nlevs
     integer :: ii,jj
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng = s(1)%ng
 

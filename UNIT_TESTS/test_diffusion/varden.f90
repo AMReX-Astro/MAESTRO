@@ -23,7 +23,7 @@ subroutine varden()
   implicit none
 
   integer :: istep
-  integer :: i, n, r, comp
+  integer :: i, n, r, comp, nlevs, dm
 
   type(ml_layout)   :: mla
   type(bc_tower)    :: the_bc_tower
@@ -53,7 +53,6 @@ subroutine varden()
 
   ! initialize some things
   call probin_init()
-  call init_dm()
   call init_spherical()
   call init_center()
 
@@ -84,6 +83,9 @@ subroutine varden()
  else
     call bl_error('test_diffusion only implemented with fixed grids!')
  endif
+
+ dm = mla%dim
+ nlevs = mla%nlevel
 
  ! error checking
  if (.not. use_thermal_diffusion) then
