@@ -34,6 +34,7 @@ subroutine varden()
   real(dp_t) :: dist,lenx,leny,lenz,max_dist
 
   integer :: i,n,r
+  integer :: dm, nlevs
 
   type(ml_layout) :: mla
 
@@ -57,7 +58,6 @@ subroutine varden()
   type(bc_tower) ::  the_bc_tower
 
   call probin_init()
-  call init_dm()
   call init_spherical()
   call init_center()
 
@@ -80,6 +80,9 @@ subroutine varden()
   nlevs_radial = merge(1, nlevs, spherical .eq. 1)
   if ( parallel_IOProcessor() ) &
        print *, 'nlevs = ', nlevs
+
+  ! initialize dm
+  dm = mla%dim
 
   ! initialize boundary conditions
   call initialize_bc(the_bc_tower,nlevs,pmask)
