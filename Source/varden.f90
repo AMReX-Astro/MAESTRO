@@ -803,7 +803,7 @@ subroutine varden()
            end if
 
            if (nuclear_dt_scalefac .lt. 1.d0) then
-              dt = nuclear_dt_scalefac*dt
+              dt = nuclear_dt_scalefac*dtold
               if (parallel_IOProcessor()) then
                  print*, "Applying nuclear_dt_fac; new dt=",dt
               end if
