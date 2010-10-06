@@ -1,8 +1,9 @@
 module define_bc_module
 
-  use bl_types
-  use ml_layout_module
-  use bc_module
+  use box_module, only: box
+  use layout_module, only: layout, layout_get_pd, layout_get_box, layout_dim, layout_nboxes
+  use bc_module, only: BC_DIR, BC_NEU, BC_PER, &
+                       INLET, NO_SLIP_WALL, OUTLET, PERIODIC, SLIP_WALL, SYMMETRY
 
   type bc_level
 
