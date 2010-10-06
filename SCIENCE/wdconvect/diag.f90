@@ -5,9 +5,9 @@
 !   wdconvect_enuc_diag.out:
 !          peak nuc energy generation rate (erg / g / s)
 !          x/y/z location of peak enuc
-!          velocity components at location of peak enuc
-!          total nuclear energy release (erg / s)
+!          velocity components at location of peak enuc (including vr)
 !          radius of peak enuc
+!          total nuclear energy release (erg / s)
 !
 !   wdconvect_radvel_diag.out:
 !          radial velocity components (std. average & Favre average)
@@ -17,8 +17,9 @@
 !   wdconvect_temp_diag.out:          
 !          peak temperature
 !          x/y/z location of peak temperature
-!          velocity components at location of peak temperature
+!          velocity components at location of peak temperature (including vr)
 !          radius of peak temperature
+!          central temperature
 !
 !   wdconvect_vel_diag.out:
 !          peak total velocity
@@ -26,6 +27,7 @@
 !          total kinetic energy
 !          gravitational potential energy
 !          total internal energy
+!          velocity components at the center of the star
 !
 !
 ! We hold many timesteps-worth of diagnostic information in a buffer
