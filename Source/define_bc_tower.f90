@@ -2,8 +2,11 @@ module define_bc_module
 
   use box_module, only: box
   use layout_module, only: layout, layout_get_pd, layout_get_box, layout_dim, layout_nboxes
-  use bc_module, only: BC_DIR, BC_NEU, BC_PER, &
+  use bc_module, only: EXT_DIR, FOEXTRAP, HOEXTRAP, REFLECT_EVEN, REFLECT_ODD, BC_DIR, &
+                       BC_NEU, BC_PER, BC_INT, INTERIOR, &
                        INLET, NO_SLIP_WALL, OUTLET, PERIODIC, SLIP_WALL, SYMMETRY
+
+  implicit none
 
   type bc_level
 
@@ -33,8 +36,6 @@ module define_bc_module
 contains
 
   subroutine bc_tower_init(bct,num_levs,dm,phys_bc_in)
-
-    implicit none
 
     type(bc_tower ), intent(  out) :: bct
     integer        , intent(in   ) :: num_levs
@@ -240,8 +241,6 @@ contains
     use network, only: nspec
 
     ! define boundary conditions for the elliptic problem
-
-    implicit none
 
     integer  , intent(inout) ::  ell_bc_level(0:,:,:,:)
     integer  , intent(in   ) :: phys_bc_level(0:,:,:)
