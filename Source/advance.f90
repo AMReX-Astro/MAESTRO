@@ -1,10 +1,17 @@
 module advance_timestep_module
 
-  use bl_types
-  use bl_constants_module
-  use multifab_module
-  use ml_layout_module
-  use define_bc_module
+  use bl_types           , only: dp_t
+  use bl_constants_module, only: ZERO, HALF, TWO
+  use multifab_module    , only: multifab, multifab_build, multifab_build_edge, &
+                                 destroy, setval, nghost, &
+                                 extent, multifab_volume, nboxes, &
+                                 multifab_copy, multifab_copy_c, &
+                                 multifab_sub_sub, multifab_div_div_s, multifab_plus_plus
+  use ml_layout_module   , only: ml_layout
+  use define_bc_module   , only: bc_tower
+  use parallel           , only: parallel_IOProcessor, parallel_IOProcessorNode, &
+                                 parallel_wtime, parallel_reduce, parallel_barrier, &
+                                 MPI_MAX
 
   implicit none
 
@@ -23,8 +30,8 @@ contains
                               dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
                               psi,sponge,hgrhs)
 
-    use bl_prof_module
-    use bc_module
+    use bl_prof_module              , only : bl_prof_timer, build, destroy
+    !use bc_module
 
     use      pre_advance_module     , only : advance_premac
     use velocity_advance_module     , only : velocity_advance

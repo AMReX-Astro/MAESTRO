@@ -1,9 +1,9 @@
 module pre_advance_module
 
-  use bl_types
+  use bl_types, only: dp_t
   use multifab_module
-  use ml_layout_module
-  use define_bc_module
+  use ml_layout_module, only: ml_layout
+  use define_bc_module, only: bc_level
 
   implicit none
 
@@ -16,12 +16,12 @@ contains
                             w0_force,w0_force_cart_vec,rho0,grav_cell,dx,dt, &
                             the_bc_level,mla)
 
-    use bl_prof_module
-    use velpred_module
-    use mkutrans_module
-    use mk_vel_force_module
-    use addw0_module
-    use bl_constants_module
+    use bl_prof_module, only: bl_prof_timer, build, destroy
+    use velpred_module, only: velpred
+    use mkutrans_module, only: mkutrans
+    use mk_vel_force_module, only: mk_vel_force, add_utilde_force
+    use addw0_module, only: addw0
+    use bl_constants_module, only: ONE
     use variables, only: rho_comp
     use fill_3d_module, only: put_1d_array_on_cart
 
