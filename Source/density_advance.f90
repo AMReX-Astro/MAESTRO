@@ -1,9 +1,12 @@
 module density_advance_module
 
-  use bl_types
-  use multifab_module
-  use ml_layout_module
-  use define_bc_module
+  use parallel, only: parallel_IOProcessor
+  use bl_types, only: dp_t
+  use multifab_module, only: multifab, multifab_max_c, multifab_min_c, get_layout, &
+                             build, destroy, setval, multifab_build_edge, &
+                             multifab_div_div_c, multifab_mult_mult_c
+  use ml_layout_module, only: ml_layout
+  use define_bc_module, only: bc_level
 
   implicit none
 
@@ -18,23 +21,22 @@ contains
                              rho0_old,rho0_new,p0_new, &
                              rho0_predicted_edge,dx,dt,the_bc_level)
 
-    use bl_prof_module
-    use bl_constants_module
-    use make_edge_scal_module
-    use bds_module
-    use mkflux_module
-    use update_scal_module
-    use addw0_module
-    use define_bc_module
-    use fill_3d_module
-    use pert_form_module
-    use cell_to_edge_module
+    use bl_prof_module, only: bl_prof_timer, build, destroy
+    use bl_constants_module, only: ZERO, ONE
+    use make_edge_scal_module, only: make_edge_scal
+    use bds_module, only: bds
+    use mkflux_module, only: mk_rhoX_flux
+    use update_scal_module, only: update_scal
+    use addw0_module, only: addw0
+    use fill_3d_module, only: put_1d_array_on_cart, make_s0mac
+    use pert_form_module, only: put_in_pert_form
+    use cell_to_edge_module, only: cell_to_edge
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr_fine, nlevs_radial
     use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
     use probin_module, only: verbose, bds_type
-    use modify_scal_force_module
-    use convert_rhoX_to_X_module
+    use modify_scal_force_module, only: modify_scal_force
+    use convert_rhoX_to_X_module, only: convert_rhoX_to_X
 
     type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: which_step
