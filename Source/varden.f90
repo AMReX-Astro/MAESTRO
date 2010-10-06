@@ -42,7 +42,7 @@ subroutine varden()
   integer    :: istep_divu_iter,istep_init_iter
   integer    :: i,n,r,numcell,dm,nlevs
   integer    :: last_plt_written,last_chk_written
-  real(dp_t) :: smin,smax
+  real(dp_t) :: smin,smax,smaxold,nuclear_dt_scalefac
   real(dp_t) :: umin,umax,vmin,vmax,wmin,wmax
   real(dp_t) :: time,dt,dtold
 
@@ -537,7 +537,6 @@ subroutine varden()
 
   end if ! end if (restart < 0)
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Main evolution loop
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -553,6 +552,9 @@ subroutine varden()
      print*,"BEGIN MAIN EVOLUTION LOOP WITH dt =",dt
      print*,""
   end if
+
+  ! we'd eventually like to read this in from checkpoint if we are restarting
+  nuclear_dt_scalefac = 1.d0
 
   if ( (max_step >= init_step) .and. (time < stop_time .or. stop_time < 0.d0) ) then
 
@@ -800,6 +802,13 @@ subroutine varden()
               print*,"gives dt =",dt
            end if
 
+           if (nuclear_dt_scalefac .lt. 1.d0) then
+              dt = nuclear_dt_scalefac*dt
+              if (parallel_IOProcessor()) then
+                 print*, "Applying nuclear_dt_fac; new dt=",dt
+              end if
+           end if
+
            if(dt .gt. max_dt_growth*dtold) then
               dt = max_dt_growth*dtold
               if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -856,6 +865,20 @@ subroutine varden()
                               div_coeff_old,div_coeff_new, &
                               grav_cell,dx,time,dt,dtold,the_bc_tower,dSdt,Source_old, &
                               Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs)
+
+        if (nuclear_dt_fac .gt. 0.d0) then
+           smaxold = 0.d0
+           smax    = 0.d0
+           do n=1,nlevs
+              smaxold = max(smaxold,multifab_norm_inf_c(sold(n),temp_comp,1))
+              smax    = max(smax   ,multifab_norm_inf_c(snew(n),temp_comp,1))
+           end do
+           if (smax .gt. smaxold) then
+              nuclear_dt_scalefac = nuclear_dt_fac*( smaxold / (smax-smaxold) )
+           else
+              nuclear_dt_scalefac = 1.d0
+           end if
+        end if
 
         runtime2 = parallel_wtime() - runtime1
         call parallel_reduce(runtime1, runtime2, MPI_MAX, proc = parallel_IOProcessorNode())

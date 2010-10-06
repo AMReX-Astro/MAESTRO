@@ -237,6 +237,12 @@ max_dt                              real               1.0d33
 # Fix the time step.  If -1.0, then use the standard time step.
 fixed_dt                            real               -1.0d0              
 
+# If T_{max)^n > T_{max}^{n-1}
+# set the new dt = 
+#   min[dt, dt*nuclear_dt_fac*( T_{max}^{n-1} / (T_{max)^n-T_{max}^{n-1}) ) ]
+# not checkpoint-compatible yet since it wouldn't be backwards compatible
+nuclear_dt_fac                      real               -1.0d0
+
 # turn on (.true.) or off (.false.) burning
 do_burning                          logical            .true.              
 
