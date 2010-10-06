@@ -29,6 +29,7 @@ subroutine varden()
   implicit none
 
   integer :: n,r,comp,comp2,iter
+  integer :: dm, nlevs
 
   real(dp_t) :: frac,delta,sumX,time,dt,dtold
 
@@ -61,7 +62,6 @@ subroutine varden()
   real(dp_t) :: max_Mach
 
   call probin_init()
-  call init_dm()
   call init_spherical()
   center(1) = ZERO
 
@@ -74,6 +74,7 @@ subroutine varden()
 
   nlevs = 1
   nlevs_radial = 1
+  dm = dm_in
 
   ! we get the number of points for the base state directly from
   ! the model file and use this to set the resolution.  It should be the 
