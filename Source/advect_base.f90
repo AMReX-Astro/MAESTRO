@@ -1,6 +1,6 @@
 module advect_base_module
 
-  use bl_types
+  use bl_types, only: dp_t
 
   implicit none
 
@@ -12,9 +12,9 @@ contains
 
   subroutine advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
 
-    use bl_prof_module
+    use bl_prof_module, only: bl_prof_timer, build, destroy
     use geometry, only: spherical
-    use restrict_base_module
+    use restrict_base_module, only: restrict_base, fill_ghost_base
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
@@ -43,8 +43,8 @@ contains
 
   subroutine advect_base_dens_planar(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
 
-    use bl_constants_module
-    use make_edge_state_module
+    use bl_constants_module, only: ZERO
+    use make_edge_state_module, only: make_edge_state_1d
     use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, dr
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
@@ -99,8 +99,8 @@ contains
 
   subroutine advect_base_dens_spherical(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
 
-    use bl_constants_module
-    use make_edge_state_module
+    use bl_constants_module, only: HALF
+    use make_edge_state_module, only: make_edge_state_1d
     use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine
     
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
@@ -147,10 +147,9 @@ contains
   subroutine advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new,rho0_predicted_edge, &
                                   psi,dt)
 
-    use bl_prof_module
+    use bl_prof_module, only: bl_prof_timer, build, destroy
     use geometry, only: spherical
-    use restrict_base_module
-    use multifab_module
+    use restrict_base_module, only: restrict_base, fill_ghost_base
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
@@ -184,11 +183,11 @@ contains
   subroutine advect_base_enthalpy_planar(w0,rho0_old,rhoh0_old,rhoh0_new, &
                                          rho0_predicted_edge,psi,dt)
 
-    use bl_constants_module
-    use make_edge_state_module
+    use bl_constants_module, only: ZERO
+    use make_edge_state_module, only: make_edge_state_1d
     use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, dr
     use probin_module, only: enthalpy_pred_type
-    use pred_parameters
+    use pred_parameters, only: predict_h, predict_T_then_h
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
     real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)

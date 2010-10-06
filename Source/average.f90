@@ -4,7 +4,7 @@
 
 module average_module
   
-  use bl_types
+  use bl_types, only: dp_t
   use multifab_module
   use ml_layout_module
 
@@ -20,9 +20,9 @@ contains
 
     use geometry, only: nr_fine, nr_irreg, r_start_coord, r_end_coord, spherical, &
          numdisjointchunks, dr
-    use bl_prof_module
-    use bl_constants_module
-    use restrict_base_module
+    use bl_prof_module, only: bl_prof_timer, build, destroy
+    use bl_constants_module, only: ZERO, HALF
+    use restrict_base_module, only: restrict_base, fill_ghost_base
     use probin_module, only: max_levs, drdxfac
 
     type(ml_layout), intent(in   ) :: mla
@@ -390,9 +390,9 @@ contains
 
     use geometry, only: nr_fine, nr_irreg, r_start_coord, r_end_coord, spherical, &
          numdisjointchunks, dr
-    use bl_prof_module
-    use bl_constants_module
-    use restrict_base_module
+    use bl_prof_module, only: bl_prof_timer, build, destroy
+    use bl_constants_module, only: ZERO
+    use restrict_base_module, only: restrict_base, fill_ghost_base
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp
@@ -561,8 +561,7 @@ contains
 
     use geometry, only: dr, center
     use probin_module, only: prob_lo
-    use ml_layout_module
-    use bl_constants_module
+    use bl_constants_module, only: HALF
 
     integer         , intent(in   )           :: lo(:), hi(:), ng, incomp, nr_irreg
     real (kind=dp_t), intent(in   )           :: radii(0:)
@@ -633,8 +632,8 @@ contains
   subroutine average_one_level(n,phi,phibar,incomp)
 
     use geometry, only: nr_fine, nr, spherical
-    use bl_prof_module
-    use bl_constants_module
+    use bl_prof_module, only: bl_prof_timer, build, destroy
+    use bl_constants_module, only: ZERO
 
     integer        , intent(in   ) :: n,incomp
     type(multifab) , intent(in   ) :: phi(:)

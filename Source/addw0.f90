@@ -1,6 +1,6 @@
 module addw0_module
 
-  use bl_types
+  use bl_types, only: dp_t
   use multifab_module
 
   implicit none
@@ -13,7 +13,7 @@ contains
 
   subroutine addw0(umac,the_bc_level,mla,w0,w0mac,mult)
 
-    use bl_prof_module
+    use bl_prof_module, only: bl_prof_timer, build, destroy
     use create_umac_grown_module, only: create_umac_grown
     use geometry, only: spherical
     use define_bc_module, only: bc_level
@@ -163,8 +163,6 @@ contains
   end subroutine addw0_3d
 
   subroutine addw0_3d_sphr(umac,vmac,wmac,ng_um,w0macx,w0macy,w0macz,ng_w0,lo,hi,mult)
-
-    use bl_constants_module
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_um,ng_w0
     real(kind=dp_t), intent(inout) ::    umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
