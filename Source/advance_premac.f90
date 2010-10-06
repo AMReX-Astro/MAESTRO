@@ -1,3 +1,7 @@
+! advance_premac is the driver routine that orchestrates the creation
+! of the edge-centered, 1/2-time advective velocities, without enforcing
+! the divergence constraint.
+
 module pre_advance_module
 
   use bl_types, only: dp_t

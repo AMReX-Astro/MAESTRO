@@ -1,3 +1,6 @@
+! the advect_base_module contains the routines that advect the base
+! state density and enthalpy using the base state velocity, w0.
+
 module advect_base_module
 
   use bl_types, only: dp_t

@@ -1,3 +1,6 @@
+! addw0 adds or subtracts the base state velocity, w0, to the MAC
+! velocities (which are originally constructed from Utilde).  
+
 module addw0_module
 
   use bl_types, only: dp_t

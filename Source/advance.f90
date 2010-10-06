@@ -1,3 +1,7 @@
+! advance_timestep advances the solution through one timestep,
+! proceeding through the 12 steps described in the multilevel paper
+! (Nonaka et al. 2010).
+
 module advance_timestep_module
 
   use bl_types           , only: dp_t
