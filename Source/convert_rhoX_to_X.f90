@@ -5,8 +5,9 @@
 
 module convert_rhoX_to_X_module
 
-  use multifab_module
-  use bl_prof_module
+  use multifab_module, only: multifab, nghost, multifab_div_div_c, multifab_mult_mult_c, &
+                             multifab_fill_boundary_c
+  use bl_prof_module, only: bl_prof_timer, build, destroy
 
   implicit none
 
@@ -20,11 +21,11 @@ contains
 
     use network, only: nspec
     use variables, only: spec_comp, foextrap_comp, rho_comp
-    use ml_layout_module
-    use define_bc_module
+    use ml_layout_module, only: ml_layout
+    use define_bc_module, only: bc_level
     use ml_restriction_module, only: ml_cc_restriction_c
-    use multifab_fill_ghost_module
-    use multifab_physbc_module
+    use multifab_fill_ghost_module, only: multifab_fill_ghost_cells
+    use multifab_physbc_module, only: multifab_physbc
 
     type(multifab) , intent(inout) :: s(:)
     logical        , intent(in   ) :: flag
@@ -108,11 +109,11 @@ contains
   subroutine convert_rhoh_to_h(s,flag,mla,the_bc_level)
 
     use variables, only: rho_comp, rhoh_comp, foextrap_comp
-    use ml_layout_module
-    use define_bc_module
+    use ml_layout_module, only: ml_layout
+    use define_bc_module, only: bc_level
     use ml_restriction_module, only: ml_cc_restriction_c
-    use multifab_fill_ghost_module
-    use multifab_physbc_module
+    use multifab_fill_ghost_module, only: multifab_fill_ghost_cells
+    use multifab_physbc_module, only: multifab_physbc
 
     type(multifab) , intent(inout) :: s(:)
     logical        , intent(in   ) :: flag

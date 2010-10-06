@@ -1,7 +1,7 @@
 module cell_to_edge_module
 
-  use bl_types
-  use bl_error_module
+  use bl_types, only: dp_t
+  use bl_error_module, only: bl_error
 
   implicit none
   
@@ -13,8 +13,9 @@ contains
   
   subroutine cell_to_edge(s0_cell,s0_edge)
 
-    use bl_constants_module
-    use geometry, only: r_start_coord, r_end_coord, nr, numdisjointchunks, spherical
+    use bl_constants_module, only: HALF
+    use geometry, only: r_start_coord, r_end_coord, nr, &
+                        numdisjointchunks, spherical
 
     real(kind=dp_t), intent(in   ) :: s0_cell(:,0:)
     real(kind=dp_t), intent(inout) :: s0_edge(:,0:)

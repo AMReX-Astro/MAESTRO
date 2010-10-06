@@ -1,6 +1,6 @@
 module checkpoint_module
 
-  use bl_types
+  use bl_types, only: dp_t
   use multifab_module
 
   implicit none
@@ -15,10 +15,10 @@ contains
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
                               rrs, time, dt)
 
-    use parallel
-    use bl_IO_module
-    use fabio_module
-    use bl_prof_module
+    use parallel, only: parallel_IOProcessor, parallel_barrier
+    use bl_IO_module, only: unit_new
+    use fabio_module, only: fabio_mkdir, fabio_ml_multifab_write_d
+    use bl_prof_module, only: bl_prof_timer, build, destroy
     use probin_module, only: verbose, nOutFiles, lUsingNFiles, &
                              use_thermal_diffusion, plot_Hext
     use variables, only: rel_eps
@@ -139,10 +139,9 @@ contains
   subroutine checkpoint_read(mfs, mfs_nodal, dSdt, Source_old, Source_new, rho_omegadot2, &
                              rho_Hnuc2, rho_Hext, thermal2, dirname, time_out, dt_out, nlevs_out)
 
-    use parallel
-    use bl_IO_module
-    use fabio_module
-    use bl_prof_module
+    use bl_IO_module, only: unit_new
+    use fabio_module, only: fabio_ml_multifab_read_d
+    use bl_prof_module, only: bl_prof_timer, build, destroy
     use variables, only: rel_eps
     use probin_module, only: use_thermal_diffusion, plot_Hext
 

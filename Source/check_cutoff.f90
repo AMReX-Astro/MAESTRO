@@ -1,17 +1,19 @@
 module check_cutoff_module
 
+  use bl_types, only: dp_t
   implicit none
 
 contains
 
   subroutine check_cutoff_values()
 
-    use parallel
+    use parallel, only: parallel_IOProcessor
     use sponge_module, only: sponge_start_density
-    use probin_module, only: buoyancy_cutoff_factor, base_cutoff_density, anelastic_cutoff, &
-         small_dens, small_temp
-    use model_parser_module
-    use bl_error_module
+    use probin_module, only: buoyancy_cutoff_factor, base_cutoff_density, &
+                             anelastic_cutoff, small_dens, small_temp
+    use model_parser_module, only: model_initialized, model_state, &
+                                   idens_model, itemp_model
+    use bl_error_module, only: bl_error
 
     real (kind=dp_t) :: model_min_dens, model_max_dens
     real (kind=dp_t) :: model_min_temp, model_max_temp
