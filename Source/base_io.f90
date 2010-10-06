@@ -1,6 +1,6 @@
 module base_io_module
 
-  use bl_types
+  use bl_types, only: dp_t
 
   implicit none
 
@@ -14,12 +14,12 @@ contains
                               rho0,rhoh0,p0,gamma1bar,w0,etarho_ec,etarho_cc, &
                               div_coeff,psi,tempbar,problo)
     
-    use parallel
-    use bl_prof_module
+    use parallel, only: parallel_IOProcessor
+    use bl_prof_module, only: bl_prof_timer, build, destroy
     use geometry, only : dr, nr, nlevs_radial
     use network, only: nspec
     use variables, only: rho_comp, rhoh_comp
-    use bl_constants_module
+    use bl_constants_module, only: HALF
 
     integer          , intent(in) :: istep
     character(len=*) , intent(in) :: chk_name
@@ -94,12 +94,11 @@ contains
                              rho0,rhoh0,p0,gamma1bar,w0, &
                              etarho_ec,etarho_cc,div_coeff,psi,tempbar)
 
-    use parallel
-    use bl_prof_module
+    use parallel, only: parallel_IOProcessor
+    use bl_prof_module, only: bl_prof_timer, build, destroy
     use variables, only: rho_comp, rhoh_comp
     use network, only: nspec
     use geometry, only : dr, nr, nlevs_radial, compute_cutoff_coords
-    use bl_constants_module
     use restrict_base_module, only: fill_ghost_base
     use inlet_bc_module, only: set_inlet_bcs
     

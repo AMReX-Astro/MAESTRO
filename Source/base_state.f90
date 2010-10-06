@@ -1,6 +1,6 @@
 module base_state_module
 
-  use bl_types
+  use bl_types, only: dp_t
   use network, only: nspec
   
   implicit none
@@ -19,10 +19,9 @@ contains
 
   subroutine init_base_state(n,model_file,s0_init,p0_init,dx)
 
-    use bl_prof_module
-    use parallel
-    use bl_error_module
-    use bl_constants_module
+    use bl_prof_module, only: bl_prof_timer, build, destroy
+    use parallel, only: parallel_IOProcessor
+    use bl_constants_module, only: ZERO, HALF, ONE, FOUR3RD, M_PI
     use eos_module
     use network, only: spec_names
     use probin_module, only: base_cutoff_density, prob_lo, prob_hi, &
@@ -32,7 +31,8 @@ contains
     use geometry, only: dr, spherical, nr
     use inlet_bc_module, only: set_inlet_bcs
     use fundamental_constants_module, only: Gconst
-    use model_parser_module
+    use model_parser_module, only: read_model_file, npts_model, model_r, model_state, &
+                                   idens_model, itemp_model, ipres_model, ispec_model
 
 
     integer           , intent(in   ) :: n
@@ -269,8 +269,6 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   function interpolate(r, npts, model_r, model_var)
-
-    use bl_constants_module
 
     ! given the array of model coordinates (model_r), and variable (model_var),
     ! find the value of model_var at point r using linear interpolation.
