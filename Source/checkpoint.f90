@@ -1,3 +1,7 @@
+! checkpoint_write and checkpoint_read write/read the full state of
+! the simulation to/from a restart file.  A separate set of routines
+! (in base_io_module) are used to store the base state).
+
 module checkpoint_module
 
   use bl_types, only: dp_t

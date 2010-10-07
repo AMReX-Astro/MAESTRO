@@ -1,3 +1,8 @@
+! check_cutoff_values performs some simple checks at the start of a
+! run to ensure that the various cutoff parameters
+! (base_cutoff_density, anelastic_cutoff, buoyancy_cutoff_factor, ...)
+! are reasonable.
+
 module check_cutoff_module
 
   use bl_types, only: dp_t

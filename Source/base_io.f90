@@ -1,3 +1,7 @@
+! the base_io routines read/write the base state from/to the
+! checkpoint file directory.  This is used for restarting the
+! calculation.
+
 module base_io_module
 
   use bl_types, only: dp_t

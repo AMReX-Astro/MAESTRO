@@ -1,3 +1,13 @@
+! init_base_state is used to initialize the base state arrays from the
+! model file.  The actual reading of the model file is handled by the
+! model_parser_module in extern/.  
+!
+! Note: The initial base state quantities returned from this routine
+! are only a temporary base state.  These quantities are mapped onto
+! the full 2- or 3-d state in initscaldata.f90 and a new base state is
+! created after initialization by averaging the density and calling
+! enforce_HSE in initialize.f90.
+
 module base_state_module
 
   use bl_types, only: dp_t
