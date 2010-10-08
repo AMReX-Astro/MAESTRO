@@ -641,7 +641,11 @@ contains
           call eval_2d(s(i+ioff,j),slope(i+ioff,j,:),del,sedgex(i,j))
 
           ! source term
-          sedgex(i,j) = sedgex(i,j) - dt2*sedgex(i,j)*ux(i+ioff,j)
+          if (is_conservative) then
+             sedgex(i,j) = sedgex(i,j)*(1.d0 - dt2*ux(i+ioff,j)) + dt2*force(i+ioff,j)
+          else
+             sedgex(i,j) = sedgex(i,j)*(1.d0 + dt2*vy(i+ioff,j)) + dt2*force(i+ioff,j)
+          end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! compute \Gamma^{y+}
@@ -688,7 +692,9 @@ contains
           gamma = (val1+val2+val3)/3.d0
 
           ! source term
-          gamma = gamma - dt3*(gamma*ux(i+ioff,j+joff) + gamma*vy(i+ioff,j+joff))
+          if (is_conservative) then
+             gamma = gamma - dt3*(gamma*ux(i+ioff,j+joff) + gamma*vy(i+ioff,j+joff))
+          end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! correct sedgex with \Gamma^{y+}
@@ -742,7 +748,9 @@ contains
           gamma = (val1+val2+val3)/3.d0
 
           ! source term
-          gamma = gamma - dt3*(gamma*ux(i+ioff,j+joff) + gamma*vy(i+ioff,j+joff))
+          if (is_conservative) then
+             gamma = gamma - dt3*(gamma*ux(i+ioff,j+joff) + gamma*vy(i+ioff,j+joff))
+          end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! correct sedgex with \Gamma^{y-}
@@ -776,7 +784,11 @@ contains
           call eval_2d(s(i,j+joff),slope(i,j+joff,:),del,sedgey(i,j))
 
           ! source term
-          sedgey(i,j) = sedgey(i,j) - dt2*sedgey(i,j)*vy(i,j+joff)
+          if (is_conservative) then
+             sedgey(i,j) = sedgey(i,j)*(1.d0 - dt2*vy(i,j+joff)) + dt2*force(i,j+joff)
+          else
+             sedgey(i,j) = sedgey(i,j)*(1.d0 + dt2*ux(i,j+joff)) + dt2*force(i,j+joff)
+          end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! compute \Gamma^{x+} without corner corrections
@@ -823,7 +835,9 @@ contains
           gamma = (val1+val2+val3)/3.d0
 
           ! source term
-          gamma = gamma - dt3*(gamma*vy(i+ioff,j+joff) + gamma*ux(i+ioff,j+joff))
+          if (is_conservative) then
+             gamma = gamma - dt3*(gamma*vy(i+ioff,j+joff) + gamma*ux(i+ioff,j+joff))
+          end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! correct sedgey with \Gamma^{x+}
@@ -877,7 +891,9 @@ contains
           gamma = (val1+val2+val3)/3.d0
 
           ! source term
-          gamma = gamma - dt3*(gamma*vy(i+ioff,j+joff) + gamma*ux(i+ioff,j+joff))
+          if (is_conservative) then
+             gamma = gamma - dt3*(gamma*vy(i+ioff,j+joff) + gamma*ux(i+ioff,j+joff))
+          end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! correct sedgey with \Gamma^{x-}
@@ -972,7 +988,13 @@ contains
              call eval_3d(s(i+ioff,j,k),slope(i+ioff,j,k,:),del,sedgex(i,j,k))
 
              ! source term
-             sedgex(i,j,k) = sedgex(i,j,k) - dt2*sedgex(i,j,k)*ux(i+ioff,j,k)
+             if (is_conservative) then
+                sedgex(i,j,k) = sedgex(i,j,k)* &
+                     (1.d0 - dt2*ux(i+ioff,j,k)) + dt2*force(i+ioff,j,k)
+             else
+                sedgex(i,j,k) = sedgex(i,j,k)* &
+                     (1.d0 + dt2*(vy(i+ioff,j,k)+wz(i+ioff,j,k))) + dt2*force(i+ioff,j,k)
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{y+} without corner corrections
@@ -1022,7 +1044,11 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*ux(i+ioff,j+joff,k) + gamma*vy(i+ioff,j+joff,k))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(ux(i+ioff,j+joff,k)+vy(i+ioff,j+joff,k)))
+             else
+                gamma = gamma*(1.d0 + dt3*wz(i+ioff,j+joff,k))
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{y+} with \Gamma^{y+,z+}
@@ -1090,9 +1116,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
 
@@ -1164,9 +1192,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
 
@@ -1227,7 +1257,11 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*ux(i+ioff,j+joff,k) + gamma*vy(i+ioff,j+joff,k))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(ux(i+ioff,j+joff,k)+vy(i+ioff,j+joff,k)))
+             else
+                gamma = gamma*(1.d0 + dt3*wz(i+ioff,j+joff,k))
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{y-} with \Gamma^{y-,z+}
@@ -1295,9 +1329,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
 
@@ -1369,9 +1405,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
 
@@ -1432,7 +1470,12 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*ux(i+ioff,j,k+koff) + gamma*wz(i+ioff,j,k+koff))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(ux(i+ioff,j,k+koff)+wz(i+ioff,j,k+koff)))
+             else
+                gamma = gamma*(1.d0 + dt3*vy(i+ioff,j,k+koff))
+
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{z+} with \Gamma^{z+,y+}
@@ -1500,9 +1543,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
 
@@ -1574,9 +1619,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
 
@@ -1637,7 +1684,11 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*ux(i+ioff,j,k+koff) + gamma*wz(i+ioff,j,k+koff))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(ux(i+ioff,j,k+koff)+wz(i+ioff,j,k+koff)))
+             else
+                gamma = gamma*(1.d0 + dt3*vy(i+ioff,j,k+koff))
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{z-} with \Gamma^{z-,y+}
@@ -1705,9 +1756,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
 
@@ -1779,9 +1832,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
 
@@ -1822,7 +1877,13 @@ contains
              call eval_3d(s(i,j+joff,k),slope(i,j+joff,k,:),del,sedgey(i,j,k))
 
              ! source term
-             sedgey(i,j,k) = sedgey(i,j,k) - dt2*sedgey(i,j,k)*vy(i,j+joff,k)
+             if (is_conservative) then
+                sedgey(i,j,k) = sedgey(i,j,k)* &
+                     (1.d0 - dt2*vy(i,j+joff,k)) + dt2*force(i,j+joff,k)
+             else
+                sedgey(i,j,k) = sedgey(i,j,k)* &
+                     (1.d0 + dt2*(ux(i,j+joff,k)+wz(i,j+joff,k))) + dt2*force(i,j+joff,k)
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{x+} without corner corrections
@@ -1872,7 +1933,11 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*vy(i+ioff,j+joff,k) + gamma*ux(i+ioff,j+joff,k))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(vy(i+ioff,j+joff,k)+ux(i+ioff,j+joff,k)))
+             else
+                gamma = gamma*(1.d0 + dt3*wz(i+ioff,j+joff,k))
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{x+} with \Gamma^{x+,z+}
@@ -1940,9 +2005,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
 
@@ -2014,9 +2081,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
 
@@ -2077,7 +2146,11 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*vy(i+ioff,j+joff,k) + gamma*ux(i+ioff,j+joff,k))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(vy(i+ioff,j+joff,k)+ux(i+ioff,j+joff,k)))
+             else
+                gamma = gamma*(1.d0 + dt3*wz(i+ioff,j+joff,k))
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{x-} with \Gamma^{x-,z+}
@@ -2145,9 +2218,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
 
@@ -2219,9 +2294,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
 
@@ -2282,7 +2359,11 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*vy(i,j+joff,k+koff) + gamma*wz(i,j+joff,k+koff))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(vy(i,j+joff,k+koff)+wz(i,j+joff,k+koff)))
+             else
+                gamma = gamma*(1.d0 + dt3*ux(i,j+joff,k+koff))
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{z+} with \Gamma^{z+,x+}
@@ -2350,9 +2431,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
 
@@ -2424,9 +2507,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * umac(i,j+joff,k+koff)
 
@@ -2487,7 +2572,11 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*vy(i,j+joff,k+koff) + gamma*wz(i,j+joff,k+koff))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(vy(i,j+joff,k+koff)+wz(i,j+joff,k+koff)))
+             else
+                gamma = gamma*(1.d0 + dt3*ux(i,j+joff,k+koff))
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{z-} with \Gamma^{z-,x+}
@@ -2555,9 +2644,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
 
@@ -2629,9 +2720,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * umac(i,j+joff,k+koff)
 
@@ -2672,7 +2765,13 @@ contains
              call eval_3d(s(i,j,k+koff),slope(i,j,k+koff,:),del,sedgez(i,j,k))
 
              ! source term
-             sedgez(i,j,k) = sedgez(i,j,k) - dt2*sedgez(i,j,k)*wz(i,j,k+koff)
+             if (is_conservative) then
+                sedgez(i,j,k) = sedgez(i,j,k)* &
+                     (1.d0 - dt2*wz(i,j,k+koff)) + dt2*force(i,j,k+koff)
+             else
+                sedgez(i,j,k) = sedgez(i,j,k)* &
+                     (1.d0 + dt2*(ux(i,j,k+koff)+vy(i,j,k+koff))) + dt2*force(i,j,k+koff)
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! compute \Gamma^{x+} without corner corrections
@@ -2722,7 +2821,11 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*wz(i+ioff,j,k+koff) + gamma*ux(i+ioff,j,k+koff))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(wz(i+ioff,j,k+koff)+ux(i+ioff,j,k+koff)))
+             else
+                gamma = gamma*(1.d0 + dt3*vy(i+ioff,j,k+koff))
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{x+} with \Gamma^{x+,y+}
@@ -2790,9 +2893,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
 
@@ -2864,9 +2969,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
 
@@ -2927,7 +3034,11 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*wz(i+ioff,j,k+koff) + gamma*ux(i+ioff,j,k+koff))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(wz(i+ioff,j,k+koff)+ux(i+ioff,j,k+koff)))
+             else
+                gamma = gamma*(1.d0 + dt3*vy(i+ioff,j,k+koff))
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{x-} with \Gamma^{x-,y+}
@@ -2995,9 +3106,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
 
@@ -3069,9 +3182,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
 
@@ -3132,7 +3247,11 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*wz(i,j+joff,k+koff) + gamma*vy(i,j+joff,k+koff))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(wz(i,j+joff,k+koff)+vy(i,j+joff,k+koff)))
+             else
+                gamma = gamma*(1.d0 + dt3*ux(i,j+joff,k+koff))
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{y+} with \Gamma^{y+,x+}
@@ -3200,9 +3319,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
 
@@ -3274,9 +3395,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * umac(i,j+joff,k+koff)
 
@@ -3337,7 +3460,11 @@ contains
              gamma = (val1+val2+val3)/3.d0
 
              ! source term
-             gamma = gamma - dt3*(gamma*wz(i,j+joff,k+koff) + gamma*vy(i,j+joff,k+koff))
+             if (is_conservative) then
+                gamma = gamma*(1.d0 - dt3*(wz(i,j+joff,k+koff)+vy(i,j+joff,k+koff)))
+             else
+                gamma = gamma*(1.d0 + dt3*ux(i,j+joff,k+koff))
+             end if
 
              !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              ! correct \Gamma^{y-} with \Gamma^{y-,x+}
@@ -3405,9 +3532,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
 
@@ -3479,9 +3608,11 @@ contains
              gamma2 = -0.8d0*val1 + 0.45d0*(val2+val3+val4+val5)
 
              ! source term
-             gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                      +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                      +gamma2*wz(i+ioff,j+joff,k+koff))
+             if (is_conservative) then
+                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
+                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
+                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+             end if
 
              gamma2 = gamma2 * umac(i,j+joff,k+koff)
 
