@@ -693,7 +693,7 @@ contains
 
           ! source term
           if (is_conservative) then
-             gamma = gamma - dt3*(gamma*ux(i+ioff,j+joff) + gamma*vy(i+ioff,j+joff))
+             gamma = gamma*(1.d0 - dt3*(ux(i+ioff,j+joff)+vy(i+ioff,j+joff)))
           end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -749,7 +749,7 @@ contains
 
           ! source term
           if (is_conservative) then
-             gamma = gamma - dt3*(gamma*ux(i+ioff,j+joff) + gamma*vy(i+ioff,j+joff))
+             gamma = gamma*(1.d0 - dt3*(ux(i+ioff,j+joff)+vy(i+ioff,j+joff)))
           end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -836,7 +836,7 @@ contains
 
           ! source term
           if (is_conservative) then
-             gamma = gamma - dt3*(gamma*vy(i+ioff,j+joff) + gamma*ux(i+ioff,j+joff))
+             gamma = gamma*(1.d0 - dt3*(vy(i+ioff,j+joff)+ux(i+ioff,j+joff)))
           end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -892,7 +892,7 @@ contains
 
           ! source term
           if (is_conservative) then
-             gamma = gamma - dt3*(gamma*vy(i+ioff,j+joff) + gamma*ux(i+ioff,j+joff))
+             gamma = gamma*(1.d0 - dt3*(vy(i+ioff,j+joff)+ux(i+ioff,j+joff)))
           end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
