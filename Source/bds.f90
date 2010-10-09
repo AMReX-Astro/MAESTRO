@@ -591,8 +591,10 @@ contains
     ! local variables
     integer i,j,ioff,joff,ll
 
-    real(kind=dp_t), allocatable :: ux(:,:)
-    real(kind=dp_t), allocatable :: vy(:,:)
+    real(kind=dp_t), allocatable ::   ux(:,:)
+    real(kind=dp_t), allocatable ::   vy(:,:)
+    real(kind=dp_t), allocatable :: divu(:,:)
+
 
     real(kind=dp_t) :: isign,jsign,hx,hy
     real(kind=dp_t) :: del(2),p1(2),p2(2),p3(2)
@@ -600,8 +602,9 @@ contains
     real(kind=dp_t) :: u,v,gamma
     real(kind=dp_t) :: dt2,dt3,half
 
-    allocate(ux(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
-    allocate(vy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
+    allocate(  ux(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
+    allocate(  vy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
+    allocate(divu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
 
     hx = dx(1)
     hy = dx(2)
@@ -616,6 +619,7 @@ contains
        do i=lo(1)-1,hi(1)+1
           ux(i,j) = (umac(i+1,j) - umac(i,j)) / hx
           vy(i,j) = (vmac(i,j+1) - vmac(i,j)) / hy
+          divu(i,j) = ux(i,j) + vy(i,j)
        end do
     end do
 
@@ -693,7 +697,7 @@ contains
 
           ! source term
           if (is_conservative) then
-             gamma = gamma*(1.d0 - dt3*(ux(i+ioff,j+joff)+vy(i+ioff,j+joff)))
+             gamma = gamma*(1.d0 - dt3*divu(i+ioff,j+joff))
           end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -749,7 +753,7 @@ contains
 
           ! source term
           if (is_conservative) then
-             gamma = gamma*(1.d0 - dt3*(ux(i+ioff,j+joff)+vy(i+ioff,j+joff)))
+             gamma = gamma*(1.d0 - dt3*divu(i+ioff,j+joff))
           end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -836,7 +840,7 @@ contains
 
           ! source term
           if (is_conservative) then
-             gamma = gamma*(1.d0 - dt3*(vy(i+ioff,j+joff)+ux(i+ioff,j+joff)))
+             gamma = gamma*(1.d0 - dt3*divu(i+ioff,j+joff))
           end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -892,7 +896,7 @@ contains
 
           ! source term
           if (is_conservative) then
-             gamma = gamma*(1.d0 - dt3*(vy(i+ioff,j+joff)+ux(i+ioff,j+joff)))
+             gamma = gamma*(1.d0 - dt3*divu(i+ioff,j+joff))
           end if
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -905,7 +909,7 @@ contains
        end do
     end do
 
-    deallocate(ux,vy)
+    deallocate(ux,vy,divu)
 
   end subroutine bdsconc_2d
 
@@ -928,9 +932,10 @@ contains
     ! local variables
     integer i,j,k,ioff,joff,koff,ll
 
-    real(kind=dp_t), allocatable :: ux(:,:,:)
-    real(kind=dp_t), allocatable :: vy(:,:,:)
-    real(kind=dp_t), allocatable :: wz(:,:,:)
+    real(kind=dp_t), allocatable ::   ux(:,:,:)
+    real(kind=dp_t), allocatable ::   vy(:,:,:)
+    real(kind=dp_t), allocatable ::   wz(:,:,:)
+    real(kind=dp_t), allocatable :: divu(:,:,:)
 
     real(kind=dp_t) :: isign,jsign,ksign,hx,hy,hz
     real(kind=dp_t) :: del(3),p1(3),p2(3),p3(3),p4(3)
@@ -938,9 +943,10 @@ contains
     real(kind=dp_t) :: u,v,w,uu,vv,ww,gamma,gamma2
     real(kind=dp_t) :: dt2,dt3,dt4,half,sixth
 
-    allocate(ux(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(vy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-    allocate(wz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(  ux(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(  vy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(  wz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(divu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
 
     hx = dx(1)
     hy = dx(2)
@@ -960,6 +966,7 @@ contains
              ux(i,j,k) = (umac(i+1,j,k) - umac(i,j,k)) / hx
              vy(i,j,k) = (vmac(i,j+1,k) - vmac(i,j,k)) / hy
              wz(i,j,k) = (wmac(i,j,k+1) - wmac(i,j,k)) / hz
+             divu(i,j,k) = ux(i,j,k) + vy(i,j,k) + wz(i,j,k)
           end do
        end do
     end do
@@ -1117,9 +1124,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
@@ -1193,9 +1198,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
@@ -1330,9 +1333,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
@@ -1406,9 +1407,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
@@ -1544,9 +1543,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
@@ -1620,9 +1617,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
@@ -1757,9 +1752,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
@@ -1833,9 +1826,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
@@ -2006,9 +1997,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
@@ -2082,9 +2071,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
@@ -2219,9 +2206,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k+1)
@@ -2295,9 +2280,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * wmac(i+ioff,j+joff,k)
@@ -2432,9 +2415,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
@@ -2508,9 +2489,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * umac(i,j+joff,k+koff)
@@ -2645,9 +2624,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
@@ -2721,9 +2698,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * umac(i,j+joff,k+koff)
@@ -2894,9 +2869,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
@@ -2970,9 +2943,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
@@ -3107,9 +3078,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * vmac(i+ioff,j+1,k+koff)
@@ -3183,9 +3152,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * vmac(i+ioff,j,k+koff)
@@ -3320,9 +3287,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
@@ -3396,9 +3361,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * umac(i,j+joff,k+koff)
@@ -3533,9 +3496,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * umac(i+1,j+joff,k+koff)
@@ -3609,9 +3570,7 @@ contains
 
              ! source term
              if (is_conservative) then
-                gamma2 = gamma2 - dt4 * ( gamma2*ux(i+ioff,j+joff,k+koff) &
-                                         +gamma2*vy(i+ioff,j+joff,k+koff) &
-                                         +gamma2*wz(i+ioff,j+joff,k+koff))
+                gamma2 = gamma2*(1.d0 - dt4*divu(i+ioff,j+joff,k+koff))
              end if
 
              gamma2 = gamma2 * umac(i,j+joff,k+koff)
@@ -3629,7 +3588,7 @@ contains
        enddo
     enddo
 
-    deallocate(ux,vy,wz)
+    deallocate(ux,vy,wz,divu)
 
   end subroutine bdsconc_3d
 
