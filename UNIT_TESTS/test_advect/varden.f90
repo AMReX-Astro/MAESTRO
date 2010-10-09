@@ -43,7 +43,7 @@ subroutine varden()
                            prob_lo, prob_hi, pmask, drdxfac, &
                            use_eos_coulomb, &
                            test_set, &
-                           ppm_type, &
+                           ppm_type, bds_type, &
                            cflfac, &
                            stop_time, &
                            probin_init, probin_close
@@ -474,16 +474,20 @@ subroutine varden()
               outname = "dens_3d_"
            endif
   
-           select case (ppm_type)
-           case (0)
-              outname = trim(outname) // "ppm0_"
-     
-           case (1)
-              outname = trim(outname) // "ppm1_"
-              
-           case (2)
-              outname = trim(outname) // "ppm2_"
-           end select
+           if (bds_type == 1) then
+              outname = trim(outname) // "bds_"
+           else
+              select case (ppm_type)
+              case (0)
+                 outname = trim(outname) // "ppm0_"
+                 
+              case (1)
+                 outname = trim(outname) // "ppm1_"
+                 
+              case (2)
+                 outname = trim(outname) // "ppm2_"
+              end select
+           endif
 
 
            select case (itest_dir)
