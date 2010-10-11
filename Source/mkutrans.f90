@@ -650,8 +650,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(3,1))
     case (INLET)
-       wlz(is:ie,js:je,ks) = u(is:is,js:je,ks-1,3)
-       wrz(is:ie,js:je,ks) = u(is:is,js:je,ks-1,3)
+       wlz(is:ie,js:je,ks) = u(is:ie,js:je,ks-1,3)
+       wrz(is:ie,js:je,ks) = u(is:ie,js:je,ks-1,3)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        wlz(is:ie,js:je,ks) = ZERO
        wrz(is:ie,js:je,ks) = ZERO
