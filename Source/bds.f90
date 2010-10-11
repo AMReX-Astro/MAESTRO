@@ -27,6 +27,9 @@ contains
     logical        , intent(in   ) :: is_conservative
     type(ml_layout), intent(in   ) :: mla
 
+    ! Local
+    type(bl_prof_timer), save :: bpt
+
     ! this will hold slx, sly, slxy, etc.
     type(multifab) :: slope(mla%nlevel)
 
@@ -43,6 +46,8 @@ contains
     integer :: dm,ng_s,ng_c,ng_u,ng_se,ng_f
     integer :: n,i,comp,nlevs
     integer :: lo(mla%dim),hi(mla%dim)
+
+    call build(bpt, "bds")
 
     nlevs = mla%nlevel
     dm = mla%dim
@@ -119,6 +124,8 @@ contains
     do n=1,nlevs
        call multifab_destroy(slope(n))
     end do
+
+    call destroy(bpt)
 
   end subroutine bds
 
