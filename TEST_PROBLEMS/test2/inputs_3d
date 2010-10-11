@@ -1,7 +1,9 @@
 &PROBIN
- model_file = "model.hse.cool"
+ model_file = "model.hse.cool.coulomb"
  spherical_in = 0
  dm_in = 3
+
+ ppm_type = 2
 
  max_levs = 1
  n_cellx = 128
@@ -28,9 +30,9 @@
 
  stop_time = 2.5d0
 
- plot_base = T
- plot_int  = 10
- chk_int   = 100
+ plot_base   = T
+ plot_deltat = 0.5d0
+ chk_int     = 100
 
  cflfac = 0.9
  init_shrink = 1.
@@ -51,6 +53,4 @@
  init_divu_iter = 1
 
  perturb_model = T
-
- use_eos_coulomb = F
 /
