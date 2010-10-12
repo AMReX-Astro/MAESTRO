@@ -10,7 +10,6 @@ module init_scalar_module
   use eos_module
   use variables
   use network
-  use geometry
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -33,9 +32,12 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,n, nlevs, dm
     
+    nlevs = mla%nlevel
+    dm = mla%dim
+
     ng = s(1)%ng
 
     do n=1,nlevs
@@ -100,9 +102,12 @@ contains
     type(bc_level) , intent(in   ) :: bc
 
     ! local
-    integer                  :: ng,i
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: ng,i,dm
+    integer                  :: lo(get_dim(s)),hi(get_dim(s))
     real(kind=dp_t), pointer :: sop(:,:,:,:)
+
+
+    dm = get_dim(s)
 
     ng = s%ng
 
@@ -169,10 +174,11 @@ contains
     ! add an optional perturbation
     if (perturb_model) then
 
-!       x0 = center(1) + 7.35d9
-!       y0 = 7.35d9
-       x0 = 2.d10
-       y0 = 2.d10
+       x0 = center(1) + 5.d10
+       y0 = 7.35d9
+
+!       x0 = center(1) + 2.d10
+!       y0 = 2.d10
 
        ! add an optional perturbation
        do j = lo(2), hi(2)
@@ -188,7 +194,7 @@ contains
              r0 = sqrt( (x-x0)**2 + (y-y0)**2 ) / 2.e9
              
              ! This case works
-             rho = rho0 - 3.d-6*tanh(2.0_dp_t-r0)
+             rho = rho0 - 3.d-7*tanh(2.0_dp_t-r0)
              
              ! Use the EOS to make this temperature perturbation occur at
              ! constant pressure

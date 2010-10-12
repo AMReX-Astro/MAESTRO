@@ -10,7 +10,6 @@ module init_vel_module
   use eos_module
   use variables
   use network
-  use geometry
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -37,8 +36,8 @@ contains
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     real(kind=dp_t), pointer:: phibar(:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,j,k,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,j,k,n, dm, nlevs
 
     ! random numbers between -1 and 1
     real(kind=dp_t) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
@@ -52,6 +51,9 @@ contains
     ! random number
     real(kind=dp_t) :: rand
     
+    dm = mla%dim
+    nlevs = mla%nlevel
+
     ng = u(1)%ng
 
     ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
@@ -154,6 +156,9 @@ contains
 
   subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init)
 
+    use geometry, only: center
+    use probin_module, only: prob_lo
+
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
@@ -161,9 +166,39 @@ contains
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
 
     ! Local variables
+    integer         i,j
+    real(kind=dp_t) x,y,x0,y0,r0
 
     ! initial the velocity
     u = ZERO
+
+    if (.true.) then
+
+       x0 = center(1) + 5.d10
+       y0 = 7.35d9
+
+!       x0 = center(1) + 2.d10
+!       y0 = 2.d10
+    
+       ! add an optional perturbation
+       do j = lo(2), hi(2)
+          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+
+          do i = lo(1), hi(1)
+             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+
+             ! Tanh bubbles
+             r0 = sqrt( (x-x0)**2 + (y-y0)**2 ) / 2.e9
+
+             ! This case works
+             u(i,j,2) = 1.d2*tanh(2.0_dp_t-r0)
+
+          enddo
+
+       enddo	
+
+
+    endif	
 
   end subroutine initveldata_2d
 
