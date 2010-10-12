@@ -86,7 +86,7 @@ contains
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_tower
 
-    use geometry, only: dm, nlevs, spherical, nr_fine, &
+    use geometry, only: spherical, nr_fine, &
                         r_cc_loc, r_edge_loc, dr, center
     use variables, only: foextrap_comp, rho_comp, spec_comp
     use fill_3d_module, only: put_1d_array_on_cart, make_w0mac
@@ -128,28 +128,28 @@ contains
     logical,         pointer :: mp(:,:,:,:)
 
     type(multifab) :: w0r_cart(mla%nlevel)
-    type(multifab) ::    w0mac(mla%nlevel,dm)
+    type(multifab) ::    w0mac(mla%nlevel,mla%dim)
 
-    real(kind=dp_t) :: vr(dm+1),    vr_level(dm+1),    vr_local(dm+1)
+    real(kind=dp_t) :: vr(mla%dim+1),    vr_level(mla%dim+1),    vr_local(mla%dim+1)
     real(kind=dp_t) :: vr_max,    vr_max_level,    vr_max_local
-    real(kind=dp_t) :: rhovr(dm+1), rhovr_level(dm+1), rhovr_local(dm+1)
+    real(kind=dp_t) :: rhovr(mla%dim+1), rhovr_level(mla%dim+1), rhovr_local(mla%dim+1)
     real(kind=dp_t) :: vrvt,    vrvt_level,    vrvt_local
 
-    real(kind=dp_t) :: vc(dm+1),    vc_level(dm+1),    vc_local(dm+1)
+    real(kind=dp_t) :: vc(mla%dim+1),    vc_level(mla%dim+1),    vc_local(mla%dim+1)
     real(kind=dp_t) :: vc_max,    vc_max_level,    vc_max_local
-    real(kind=dp_t) :: rhovc(dm+1), rhovc_level(dm+1), rhovc_local(dm+1)
+    real(kind=dp_t) :: rhovc(mla%dim+1), rhovc_level(mla%dim+1), rhovc_local(mla%dim+1)
 
 ! this one is limited to the convective region
-    real(kind=dp_t) :: vtot(dm+1),    vtot_level(dm+1),    vtot_local(dm+1)
+    real(kind=dp_t) :: vtot(mla%dim+1),    vtot_level(mla%dim+1),    vtot_local(mla%dim+1)
     real(kind=dp_t) :: vtot_max,    vtot_max_level,    vtot_max_local
-    real(kind=dp_t) :: rhovtot(dm+1), rhovtot_level(dm+1), rhovtot_local(dm+1)
-    real(kind=dp_t) :: coord_vtot_local(dm), coord_vtot_level(dm), coord_vtot(dm)
+    real(kind=dp_t) :: rhovtot(mla%dim+1), rhovtot_level(mla%dim+1), rhovtot_local(mla%dim+1)
+    real(kind=dp_t) :: coord_vtot_local(mla%dim), coord_vtot_level(mla%dim), coord_vtot(mla%dim)
 
 ! this includes all the valid region (ie interior to the sponged region)
-    real(kind=dp_t) :: Utot(dm+1),    Utot_level(dm+1),    Utot_local(dm+1)
-    real(kind=dp_t) :: rhoUtot(dm+1), rhoUtot_level(dm+1), rhoUtot_local(dm+1)
+    real(kind=dp_t) :: Utot(mla%dim+1),    Utot_level(mla%dim+1),    Utot_local(mla%dim+1)
+    real(kind=dp_t) :: rhoUtot(mla%dim+1), rhoUtot_level(mla%dim+1), rhoUtot_local(mla%dim+1)
     real(kind=dp_t) :: U_max,     U_max_level,     U_max_local
-    real(kind=dp_t) :: coord_Umax_local(dm), coord_Umax_level(dm), coord_Umax(dm)
+    real(kind=dp_t) :: coord_Umax_local(mla%dim), coord_Umax_level(mla%dim), coord_Umax(mla%dim)
 
     real(kind=dp_t) :: mass,      mass_level,      mass_local
     real(kind=dp_t) :: nzones,    nzones_level,    nzones_local
@@ -167,12 +167,13 @@ contains
 
     ! buffers
     real(kind=dp_t) :: max_data_level(4), max_data_local(4)
-    real(kind=dp_t) :: sum_data_level(8*(dm+1)+8), sum_data_local(8*(dm+1)+8)
+    real(kind=dp_t) :: sum_data_level(8*(mla%dim+1)+8)
+    real(kind=dp_t) :: sum_data_local(8*(mla%dim+1)+8)
 
-    real(kind=dp_t) :: U_max_data_local(1), U_max_coords_local(2*dm)
+    real(kind=dp_t) :: U_max_data_local(1), U_max_coords_local(2*mla%dim)
     real(kind=dp_t), allocatable :: U_max_data(:), U_max_coords(:)
 
-    real(kind=dp_t) :: vtot_data_local(1), vtot_coords_local(2*dm)
+    real(kind=dp_t) :: vtot_data_local(1), vtot_coords_local(2*mla%dim)
     real(kind=dp_t), allocatable :: vtot_data(:), vtot_coords(:)
 
     type(multifab)  :: XH(mla%nlevel)
@@ -185,18 +186,19 @@ contains
 
     integer :: index_max
 
-    real(kind=dp_t) :: vr_favre(dm+1)
-    real(kind=dp_t) :: vc_favre(dm+1)
-    real(kind=dp_t) :: vtot_favre(dm+1)
-    real(kind=dp_t) :: Utot_favre(dm+1)
+    real(kind=dp_t) :: vr_favre(mla%dim+1)
+    real(kind=dp_t) :: vc_favre(mla%dim+1)
+    real(kind=dp_t) :: vtot_favre(mla%dim+1)
+    real(kind=dp_t) :: Utot_favre(mla%dim+1)
 
     real(kind=dp_t) :: grav_ener, term1, term2
     real(kind=dp_t), allocatable :: m(:)
 
 
-    integer :: lo(dm),hi(dm)
+    integer :: lo(mla%dim),hi(mla%dim)
     integer :: ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
     integer :: i,n, comp, r
+    integer :: dm, nlevs
 
     type(bl_prof_timer), save :: bpt
 
@@ -208,6 +210,8 @@ contains
 
     call build(bpt, "diagnostics")
 
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (firstCall) then
        
