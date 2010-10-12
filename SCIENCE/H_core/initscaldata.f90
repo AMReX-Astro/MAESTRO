@@ -23,6 +23,7 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
+    use geometry, only: spherical
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -93,6 +94,8 @@ contains
   end subroutine initscalardata
 
   subroutine initscalardata_on_level(n,s,s0_init,p0_init,dx,bc)
+
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: s

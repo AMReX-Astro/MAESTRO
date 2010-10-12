@@ -26,6 +26,7 @@ contains
     use mt19937_module
     use average_module
     use probin_module, only: octant
+    use geometry, only: spherical
     
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
