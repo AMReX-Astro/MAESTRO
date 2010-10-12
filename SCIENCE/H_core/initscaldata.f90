@@ -141,6 +141,7 @@ contains
 
     use probin_module, only: prob_lo, perturb_model
     use init_perturb_module
+    use geometry, only: center
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -231,6 +232,7 @@ contains
   subroutine initscalardata_3d_sphr(s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo, perturb_model
+    use geometry, only: center
 
     integer           , intent(in   ) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
