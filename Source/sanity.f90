@@ -285,7 +285,20 @@ contains
        call bl_error("ERROR: Mach number too high")
     end if
 
+
+    !=========================================================================
+    ! clean-up
+    !=========================================================================
     call destroy(bpt)
+
+    if (spherical == 1) then
+       do n = 1, nlevs
+          call destroy(w0r_cart(n))
+          do comp=1, dm
+             call destroy(w0mac(n,comp))
+          enddo
+       enddo
+    endif
 
   end subroutine sanity_check
 
