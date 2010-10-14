@@ -380,8 +380,20 @@ contains
        close(un)
 
     endif
-
+    
+    !=========================================================================
+    ! clean-up
+    !=========================================================================
     call destroy(bpt)
+
+    if (spherical.eq.1) then
+       do n = 1, nlevs
+          call destroy(w0r_cart(n)
+          do comp=1,dm
+             call destroy(w0mac(n,comp), mla%la(n),1,1,comp)
+          enddo
+       end do
+    endif
 
   end subroutine diag
 
