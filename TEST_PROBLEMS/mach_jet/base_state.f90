@@ -23,7 +23,7 @@ contains
                              buoyancy_cutoff_factor
 
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, spherical, nr, dm
+    use geometry, only: dr, spherical, nr
     use inlet_bc_module
     
     integer           , intent(in   ) :: n

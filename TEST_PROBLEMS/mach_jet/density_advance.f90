@@ -14,7 +14,7 @@ module density_advance_module
 contains
 
   subroutine density_advance(mla,which_step,sold,snew,sedge,sflux,scal_force,&
-                             umac,w0,w0mac,etarhoflux,normal, &
+                             umac,w0,w0mac,etarhoflux, &
                              rho0_old,rho0_new,p0_new, &
                              rho0_predicted_edge,dx,dt,the_bc_level)
 
@@ -29,7 +29,7 @@ contains
     use pert_form_module
     use cell_to_edge_module
     use network,       only: nspec, spec_names
-    use geometry,      only: spherical, nr_fine, dm, nlevs, nlevs_radial
+    use geometry,      only: spherical, nr_fine, nlevs_radial
     use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
     use probin_module, only: verbose
     use modify_scal_force_module
@@ -46,7 +46,6 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
     type(multifab) , intent(inout) :: etarhoflux(:)
-    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
@@ -57,10 +56,10 @@ contains
     type(multifab) :: rho0_old_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
-    type(multifab) :: rho0mac_old(mla%nlevel,dm)
-    type(multifab) :: rho0mac_new(mla%nlevel,dm)
+    type(multifab) :: rho0mac_old(mla%nlevel,mla%dim)
+    type(multifab) :: rho0mac_new(mla%nlevel,mla%dim)
 
-    integer    :: comp,n
+    integer    :: comp,n,dm,nlevs
     logical    :: is_vel
     real(dp_t) :: smin,smax
 
@@ -70,6 +69,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "density_advance")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     is_vel  = .false.
 
@@ -116,7 +118,7 @@ contains
     !     Add w0 to MAC velocities (trans velocities already have w0).
     !**************************************************************************
 
-    call addw0(umac,w0,w0mac,mult=ONE)
+    call addw0(umac,the_bc_level,mla,w0,w0mac,mult=ONE)
 
     !**************************************************************************
     !     Create the edge states of (rho X)' or X and rho'
@@ -130,13 +132,13 @@ contains
                                  the_bc_level)
 
     ! predict X at the edges
-    call make_edge_scal(sold,sedge,umac,scal_force,normal, &
-                        w0,w0mac,dx,dt,is_vel,the_bc_level, &
+    call make_edge_scal(sold,sedge,umac,scal_force, &
+                        dx,dt,is_vel,the_bc_level, &
                         spec_comp,dm+spec_comp,nspec,.false.,mla)
 
     ! predict rho' at the edges
-    call make_edge_scal(sold,sedge,umac,scal_force,normal, &
-                        w0,w0mac,dx,dt,is_vel,the_bc_level, &
+    call make_edge_scal(sold,sedge,umac,scal_force, &
+                        dx,dt,is_vel,the_bc_level, &
                         rho_comp,dm+rho_comp,1,.false.,mla)
 
     ! convert rho' -> rho in sold
@@ -149,8 +151,8 @@ contains
     !     Create edge states of tracers
     !**************************************************************************
     if (ntrac .ge. 1) then
-       call make_edge_scal(sold,sedge,umac,scal_force,normal, &
-                           w0,w0mac,dx,dt,is_vel,the_bc_level, &
+       call make_edge_scal(sold,sedge,umac,scal_force, &
+                           dx,dt,is_vel,the_bc_level, &
                            trac_comp,dm+trac_comp,ntrac,.false.,mla)
     end if
 
@@ -158,7 +160,7 @@ contains
     !     Subtract w0 from MAC velocities.
     !**************************************************************************
 
-    call addw0(umac,w0,w0mac,mult=-ONE)
+    call addw0(umac,the_bc_level,mla,w0,w0mac,mult=-ONE)
 
     !**************************************************************************
     !     Compute fluxes

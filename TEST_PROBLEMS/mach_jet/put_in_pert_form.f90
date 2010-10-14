@@ -21,7 +21,7 @@ contains
 
   subroutine put_in_pert_form(mla,s,base,dx,comp,bc_comp,flag,the_bc_level)
 
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use variables, only: foextrap_comp, nscal
     use ml_layout_module
     use define_bc_module
@@ -40,13 +40,16 @@ contains
 
     ! Local variables
     real(kind=dp_t), pointer :: sp(:,:,:,:)
-    integer :: lo(dm),hi(dm)
-    integer :: i,ng,n
-    real(kind=dp_t) :: dx_temp(nlevs,dm)
+    integer :: lo(mla%dim),hi(mla%dim)
+    integer :: i,ng,n,dm,nlevs
+    real(kind=dp_t) :: dx_temp(mla%nlevel,mla%dim)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_in_pert_form")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng = s(1)%ng
 
@@ -210,7 +213,6 @@ contains
 
   subroutine put_in_pert_form_inflow(mla,s,base,dx,comp,bc_comp,flag,the_bc_level)
 
-    use geometry, only: nlevs
     use variables, only: foextrap_comp
     use ml_layout_module
     use define_bc_module
@@ -226,13 +228,15 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    integer :: n,ng
+    integer :: n,ng,nlevs
 
     type(multifab) :: base_3d(mla%nlevel)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_in_pert_form_inflow")
+
+    nlevs = mla%nlevel
 
     ng = s(1)%ng
 
