@@ -11,7 +11,7 @@ module diag_module
   use box_module, only: lwb, upb
   use multifab_module, only: multifab, multifab_build, multifab_build_edge, &
                              dataptr, get_box, multifab_remote, &
-                             nghost, setval
+                             nghost, setval, destroy
   use ml_layout_module, only: ml_layout
   use define_bc_module, only: bc_tower
 
@@ -388,9 +388,9 @@ contains
 
     if (spherical.eq.1) then
        do n = 1, nlevs
-          call destroy(w0r_cart(n)
+          call destroy(w0r_cart(n))
           do comp=1,dm
-             call destroy(w0mac(n,comp), mla%la(n),1,1,comp)
+             call destroy(w0mac(n,comp))
           enddo
        end do
     endif
