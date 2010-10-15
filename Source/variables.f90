@@ -16,7 +16,7 @@ module variables
   integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_src
   integer, save :: icomp_enthalpy,icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert
   integer, save :: icomp_machno,icomp_cs
-  integer, save :: icomp_dg,icomp_pi,icomp_gpi,icomp_pioverp0
+  integer, save :: icomp_dg,icomp_pi,icomp_gpi,icomp_pioverp0,icomp_p0pluspi
   integer, save :: icomp_entropy,icomp_entropypert
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
   integer, save :: icomp_omegadot,icomp_enuc,icomp_Hext, icomp_eta, icomp_sponge
@@ -131,6 +131,7 @@ contains
 
     if (plot_base) then
        icomp_pioverp0    = get_next_plot_index(1)
+       icomp_p0pluspi    = get_next_plot_index(1)
     end if
 
     if (plot_omegadot) then

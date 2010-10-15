@@ -104,8 +104,10 @@ contains
        if (dm_in > 1) plot_names(icomp_gpi+1) = "gpi_y"
        if (dm_in > 2) plot_names(icomp_gpi+2) = "gpi_z"
     endif
-    if (plot_base) &
-         plot_names(icomp_pioverp0)    = "pioverp0"
+    if (plot_base) then
+       plot_names(icomp_pioverp0)    = "pioverp0"
+       plot_names(icomp_p0pluspi)    = "p0pluspi"
+    end if
 
     if (plot_omegadot) then
        do comp = 1, nspec
@@ -549,11 +551,13 @@ contains
        end do
     end if
 
-    !PIOVERP0
+    !PIOVERP0 and P0PLUSPI
     if (plot_base) then
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_pioverp0,pi_cc(n),1,1)
           call multifab_div_div_c(plotdata(n),icomp_pioverp0,plotdata(n),icomp_p0,1)
+          call multifab_copy_c(plotdata(n),icomp_p0pluspi,pi_cc(n),1,1)
+          call multifab_plus_plus_c(plotdata(n),icomp_p0pluspi,plotdata(n),icomp_p0,1)
        end do
     end if
 
