@@ -4,6 +4,7 @@
  cflfac = 0.8
 
  max_step  = 1000
+ stop_time = 1.e-4
 
  dens_base = 1.65e-3
  pres_base = 1.65e6
@@ -11,25 +12,20 @@
  y_pert_center = 0.7
  pert_width = 0.025
 
- ! max Mach number 0.09
+ ! max Mach number ~0.09
  pert_factor = 0.1d0
- stop_time = 1.e-4
 
- ! max Mach number 0.24
+ ! max Mach number ~0.25
  !pert_factor = 1.d0
- !stop_time = 5.e-5
 
- ! max Mach number 0.39
- !pert_factor = 20.d0
- !stop_time = 5.e-5
+ ! max Mach number ~0.35
+ !pert_factor = 10.d0
 
- ! max Mach number > 0.4 -- seems to break down
+ ! max Mach number ~0.4 to 0.45
+ !pert_factor = 50.d0
+
+ ! max Mach number >~ 0.45 -- needs smaller CFL with PPM2
  !pert_factor = 100.d0
- !stop_time = 5.e-5
-
- ! max Mach number > 0.4 -- seems to break down
- pert_factor = 500.d0
- stop_time = 5.e-5
 
 
  max_levs = 1
