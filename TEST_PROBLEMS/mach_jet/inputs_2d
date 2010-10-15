@@ -14,6 +14,8 @@
 
  evolve_base_state = F
 
+ ppm_type = 2
+
  grav_const = 0.0
 
  max_step  = 400
