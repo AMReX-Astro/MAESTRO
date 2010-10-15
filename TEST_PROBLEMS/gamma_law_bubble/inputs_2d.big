@@ -1,0 +1,75 @@
+&PROBIN
+ spherical_in = 0
+
+ cflfac = 0.8
+
+ max_step  = 1000
+
+ dens_base = 1.65e-3
+ pres_base = 1.65e6
+
+ y_pert_center = 0.7
+ pert_width = 0.025
+
+ ! max Mach number 0.09
+ pert_factor = 0.1d0
+ stop_time = 1.e-4
+
+ ! max Mach number 0.24
+ !pert_factor = 1.d0
+ !stop_time = 5.e-5
+
+ ! max Mach number 0.39
+ !pert_factor = 20.d0
+ !stop_time = 5.e-5
+
+ ! max Mach number > 0.4 -- seems to break down
+ !pert_factor = 100.d0
+ !stop_time = 5.e-5
+
+ ! max Mach number > 0.4 -- seems to break down
+ pert_factor = 500.d0
+ stop_time = 5.e-5
+
+
+ max_levs = 1
+ n_cellx = 256
+ n_celly = 256
+ max_grid_size = 128
+
+ prob_hi_x = 2.0
+ prob_hi_y = 2.0
+
+ anelastic_cutoff = 1.d-10
+ base_cutoff_density = 1.d-10
+
+ evolve_base_state = T
+
+ ppm_type = 2
+
+ grav_const = -1.d9
+
+ init_iter = 3
+
+ do_initial_projection = T
+ init_divu_iter = 3
+
+ plot_deltat = 2.d-6
+ plot_int = 10000
+ chk_int  = -1
+
+ plot_base   = T
+
+ bcx_lo = -1
+ bcx_hi = -1
+ bcy_lo = 14
+ bcy_hi = 12
+
+    verbose = 1
+ mg_verbose = 2
+ cg_verbose = 0
+
+ perturb_model = T
+
+
+/
