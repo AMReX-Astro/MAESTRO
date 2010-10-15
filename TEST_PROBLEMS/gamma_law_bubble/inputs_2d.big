@@ -1,7 +1,7 @@
 &PROBIN
  spherical_in = 0
 
- cflfac = 0.8
+ cflfac = 0.9d0
 
  max_step  = 1000
  stop_time = 1.e-4
@@ -27,7 +27,6 @@
  ! max Mach number >~ 0.45 -- needs smaller CFL with PPM2
  !pert_factor = 100.d0
 
-
  max_levs = 1
  n_cellx = 256
  n_celly = 256
@@ -50,8 +49,7 @@
  do_initial_projection = T
  init_divu_iter = 3
 
- plot_deltat = 2.d-6
- plot_int = 10000
+ plot_deltat = 1.d-5
  chk_int  = -1
 
  plot_base   = T
