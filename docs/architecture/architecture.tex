@@ -174,10 +174,22 @@ This test problem was discussed in \cite{lowMach4}.
 To build the MAESTRO executable, simply type `{\tt make}' in the
 problem directory.  The executable will have a name like
 {\tt main.Linux.Intel.exe}, where the specific parts of 
-the name depend on the compilers and OS used.  Each problem
-will have one or more inputs files (for example, {\tt test2/inputs\_2d})
-which override the default values for one or more runtime parameters.
-The code is run simply as:
+the name depend on the compilers and OS used.  MAESTRO can be built
+with support for parallelism (using MPI or OpenMPI), or compiled
+as a serial code.  The top portion
+of the {\tt GNUmakefile} can be editted to choose the build options.
+Setting {\tt MPI := t} will build the code to use MPI for parallelization.
+Setting {\tt OMP := t} will use OpenMP.  If desired, these are used together,
+with MPI distributing the grids across the processors and within a 
+shared-memory node, OpenMP is used to allow many cores to operate
+on the same grid.  A final build option determines whether to build
+the code with support for debugging.  Setting {\tt NDEBUG := t} disables
+debugging features.
+
+
+Each problem will have one or more inputs files (for example, {\tt
+  test2/inputs\_2d}) which override the default values for one or more
+runtime parameters.  The code is run simply as:
 \begin{verbatim}
   main.Linux.Intel.exe inputs_2d
 \end{verbatim}
@@ -323,6 +335,13 @@ directly from BoxLib plotfiles (to open a plotfile in VisIt, point to
 the {\tt Header} file inside the plotfile directory).  Details on
 visit can be found at {\tt https://wci.llnl.gov/codes/visit/home.html}\,.
 
+\subsubsection{Diagnostic Files}
+
+By default, MAESTRO outputs global diagnostics each timestep into a file
+called {\tt maestro\_diag.out}.  This includes the maximum Mach number,
+peak temperature, and peak nuclear energy generation rate.  Individual problems
+can provide their own {\tt diag.f90} file to produce custom diagnostic
+output.
 
 
 \subsection{Unit Tests}
