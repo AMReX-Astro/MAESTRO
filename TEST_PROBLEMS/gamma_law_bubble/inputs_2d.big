@@ -6,11 +6,7 @@
  max_step  = 1000
  stop_time = 1.e-4
 
- dens_base = 1.65e-3
- pres_base = 1.65e6
-
  y_pert_center = 0.7
- pert_width = 0.025
 
  ! max Mach number ~0.09
  pert_factor = 0.1d0

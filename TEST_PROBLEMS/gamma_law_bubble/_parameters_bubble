@@ -1,5 +1,5 @@
 pert_factor       real    0.1d0
-dens_base         real    1.d-3
-pres_base         real    1.d6
-y_pert_center     real    0.2
-pert_width        real    0.025
+dens_base         real    1.65d-3
+pres_base         real    1.65d6
+y_pert_center     real    0.2d0
+pert_width        real    0.025d0
