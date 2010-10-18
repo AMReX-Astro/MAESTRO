@@ -34,7 +34,7 @@
  anelastic_cutoff = 1.d-10
  base_cutoff_density = 1.d-10
 
- evolve_base_state = T
+ evolve_base_state = F
 
  ppm_type = 2
 
