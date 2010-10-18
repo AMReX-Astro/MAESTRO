@@ -35,6 +35,7 @@
  base_cutoff_density = 1.d-10
 
  evolve_base_state = F
+ fix_base_state = T
 
  ppm_type = 2
 

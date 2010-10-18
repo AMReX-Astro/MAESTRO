@@ -574,7 +574,7 @@ contains
     use average_module
     use restrict_base_module
     use probin_module, only : drdxfac, octant, test_set, ppm_type, bds_type, nodal, &
-         prob_lo, prob_hi, model_file, do_smallscale, dm_in
+         prob_lo, prob_hi, model_file, do_smallscale, dm_in, fix_base_state
     use make_grav_module
     use enforce_HSE_module
     use rhoh_vs_t_module
@@ -730,18 +730,26 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
+    p0_old    = p0_init
+    rho0_old  = s0_init(:,:,rho_comp)
+    rhoh0_old = s0_init(:,:,rhoh_comp)
+    tempbar   = s0_init(:,:,temp_comp)
+
+    if (fix_base_state) then
+       call compute_cutoff_coords(rho0_old)
+       call make_grav_cell(grav_cell,rho0_old)
+       call destroy(mba)
+       return
+    end if
+
     if (do_smallscale) then
        ! leave rho0_old = rhoh0_old = ZERO
-       ! but we still need p0
-       p0_old = p0_init
     else
        ! set rho0 to be the average
        call average(mla,sold,rho0_old,dx,rho_comp)
        call compute_cutoff_coords(rho0_old)
 
        ! compute p0 with HSE
-       p0_old = p0_init
-
        call make_grav_cell(grav_cell,rho0_old)
        call enforce_HSE(rho0_old,p0_old,grav_cell)
 
@@ -780,7 +788,7 @@ contains
     use restrict_base_module
     use make_new_grids_module
     use probin_module, only : drdxfac, ppm_type, bds_type, prob_lo, prob_hi, do_smallscale, &
-         model_file, nodal, dm_in
+         model_file, nodal, dm_in, fix_base_state
     use multifab_physbc_module
     use ml_restriction_module
     use multifab_fill_ghost_module
@@ -1057,18 +1065,26 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
+    p0_old = p0_init
+    rho0_old  = s0_init(:,:,rho_comp)
+    rhoh0_old = s0_init(:,:,rhoh_comp)
+    tempbar   = s0_init(:,:,temp_comp)
+
+    if (fix_base_state) then
+       call compute_cutoff_coords(rho0_old)
+       call make_grav_cell(grav_cell,rho0_old)
+       call destroy(mba)
+       return
+    end if
+
     if (do_smallscale) then
        ! leave rho0_old = rhoh0_old = ZERO
-       ! but we still need p0
-       p0_old = p0_init
     else
        ! set rho0 to be the average
        call average(mla,sold,rho0_old,dx,rho_comp)
        call compute_cutoff_coords(rho0_old)
 
        ! compute p0 with HSE
-       p0_old = p0_init
-
        call make_grav_cell(grav_cell,rho0_old)
        call enforce_HSE(rho0_old,p0_old,grav_cell)
 
