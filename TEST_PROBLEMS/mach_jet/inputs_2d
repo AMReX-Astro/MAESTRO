@@ -28,6 +28,7 @@
  stop_time = 4.d-4
 
  plot_deltat = 1.d-5
+ plot_int = 10000
  chk_int  = -1
 
  plot_base   = T
