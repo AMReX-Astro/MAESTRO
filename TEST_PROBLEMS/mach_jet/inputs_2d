@@ -19,17 +19,16 @@
 
  grav_const = 0.0
 
- max_step  = 400
+ max_step  = 1000
  init_iter = 3
 
  do_initial_projection = T
  init_divu_iter = 3
 
  stop_time = 4.d-4
- fixed_dt = 1.d-6
 
- plot_int = 2
- chk_int  = 100
+ plot_deltat = 1.d-5
+ chk_int  = -1
 
  plot_base   = T
 

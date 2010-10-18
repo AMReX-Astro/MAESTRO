@@ -45,7 +45,6 @@
  init_divu_iter = 3
 
  plot_deltat = 1.d-5
- plot_int = 10000
  chk_int  = -1
 
  plot_base   = T
