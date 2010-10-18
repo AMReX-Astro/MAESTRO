@@ -744,6 +744,8 @@ contains
 
     if (do_smallscale) then
        ! leave rho0_old = rhoh0_old = ZERO
+       rho0_old  = ZERO
+       rhoh0_old = ZERO
     else
        ! set rho0 to be the average
        call average(mla,sold,rho0_old,dx,rho_comp)
@@ -1079,6 +1081,8 @@ contains
 
     if (do_smallscale) then
        ! leave rho0_old = rhoh0_old = ZERO
+       rho0_old  = ZERO
+       rhoh0_old = ZERO
     else
        ! set rho0 to be the average
        call average(mla,sold,rho0_old,dx,rho_comp)
