@@ -707,10 +707,15 @@ contains
           call destroy(gamma1(n))
        end do
 
+       call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
+
+    else
+        
+       ! Just copy div_coeff_new from div_coeff_old if not evolving the base state
+       div_coeff_new = div_coeff_old
+
     end if
 
-    call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
-    
     div_coeff_nph = HALF*(div_coeff_old + div_coeff_new)
 
     if (barrier_timers) call parallel_barrier()
@@ -1189,10 +1194,11 @@ contains
        do n=1,nlevs
           call destroy(gamma1(n))
        end do
-       
-    end if
 
-    call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
+       !  We used to call this even if evolve_base was false,but we don't need to
+       call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
+
+    end if
 
     div_coeff_nph = HALF*(div_coeff_old+div_coeff_new)
 
