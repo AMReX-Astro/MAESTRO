@@ -40,7 +40,7 @@ contains
     r_top = prob_lo_r + dble(r_end_coord(1,1)+1) * dr(1)
     topsponge_lo_r = r_top
 
-    ! we do things differently than what is in Source/spong.f90 
+    ! we do things differently than what is in Source/sponge.f90 
     sponge_start_density = sponge_start_factor*anelastic_cutoff
 
     do r=0,r_end_coord(1,1)
@@ -129,35 +129,33 @@ contains
   subroutine mk_sponge_2d(sponge,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module
-    use probin_module, only: prob_lo, xrb_use_bottom_sponge
+    use probin_module, only: prob_lo, xrb_use_bottom_sponge, sponge_min
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sp
     real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     integer         :: j
-    real(kind=dp_t) :: y,spongemin
-
-    spongemin = 0.01d0
+    real(kind=dp_t) :: y
 
     if (xrb_use_bottom_sponge) then
 
        do j = lo(2),hi(2)
           y = prob_lo(2) + (dble(j)+HALF)*dx(2)
           if(y .le. botsponge_lo_r) then
-             sponge(:,j) = spongemin
+             sponge(:,j) = sponge_min
           else if(y .le. botsponge_hi_r) then
-             sponge(:,j) = -HALF*(ONE-spongemin) &
+             sponge(:,j) = -HALF*(ONE-sponge_min) &
                   * cos(M_PI*(y-botsponge_lo_r)/(botsponge_hi_r-botsponge_lo_r)) &
-                  + HALF*(ONE+spongemin)
+                  + HALF*(ONE+sponge_min)
           else if(y .le. topsponge_lo_r) then
              sponge(:,j) = ONE
           else if (y .le. topsponge_hi_r) then
-             sponge(:,j) = HALF*(ONE-spongemin) &
+             sponge(:,j) = HALF*(ONE-sponge_min) &
                   * cos(M_PI*(y-topsponge_lo_r)/(topsponge_hi_r-topsponge_lo_r)) &
-                  + HALF*(ONE+spongemin)
+                  + HALF*(ONE+sponge_min)
           else
-             sponge(:,j) = spongemin
+             sponge(:,j) = sponge_min
           end if
        end do
 
@@ -168,11 +166,11 @@ contains
           if(y .le. topsponge_lo_r) then
              sponge(:,j) = ONE
           else if (y .le. topsponge_hi_r) then
-             sponge(:,j) = HALF*(ONE-spongemin) &
+             sponge(:,j) = HALF*(ONE-sponge_min) &
                   * cos(M_PI*(y-topsponge_lo_r)/(topsponge_hi_r-topsponge_lo_r)) &
-                  + HALF*(ONE+spongemin)
+                  + HALF*(ONE+sponge_min)
           else
-             sponge(:,j) = spongemin
+             sponge(:,j) = sponge_min
           end if
        end do
 
@@ -183,35 +181,33 @@ contains
   subroutine mk_sponge_3d(sponge,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module
-    use probin_module, only: prob_lo, xrb_use_bottom_sponge
+    use probin_module, only: prob_lo, xrb_use_bottom_sponge, sponge_min
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sp
     real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     integer         :: k
-    real(kind=dp_t) :: z,spongemin
-
-    spongemin = 0.01d0
+    real(kind=dp_t) :: z
 
     if (xrb_use_bottom_sponge) then
 
        do k = lo(3),hi(3)
           z = prob_lo(3) + (dble(k)+HALF)*dx(3)
           if(z .le. botsponge_lo_r) then
-             sponge(:,:,k) = spongemin
+             sponge(:,:,k) = sponge_min
           else if(z .le. botsponge_hi_r) then
-             sponge(:,:,k) = -HALF*(ONE-spongemin) &
+             sponge(:,:,k) = -HALF*(ONE-sponge_min) &
                   * cos(M_PI*(z-botsponge_lo_r)/(botsponge_hi_r-botsponge_lo_r)) &
-                  + HALF*(ONE+spongemin)
+                  + HALF*(ONE+sponge_min)
           else if(z .le. topsponge_lo_r) then
              sponge(:,:,k) = ONE
           else if (z .le. topsponge_hi_r) then
-             sponge(:,:,k) = HALF*(ONE-spongemin) &
+             sponge(:,:,k) = HALF*(ONE-sponge_min) &
                   * cos(M_PI*(z-topsponge_lo_r)/(topsponge_hi_r-topsponge_lo_r)) &
-                  + HALF*(ONE+spongemin)
+                  + HALF*(ONE+sponge_min)
           else
-             sponge(:,:,k) = spongemin
+             sponge(:,:,k) = sponge_min
           end if
        end do
 
@@ -222,11 +218,11 @@ contains
           if(z .le. topsponge_lo_r) then
              sponge(:,:,k) = ONE
           else if (z .le. topsponge_hi_r) then
-             sponge(:,:,k) = HALF*(ONE-spongemin) &
+             sponge(:,:,k) = HALF*(ONE-sponge_min) &
                   * cos(M_PI*(z-topsponge_lo_r)/(topsponge_hi_r-topsponge_lo_r)) &
-                  + HALF*(ONE+spongemin)
+                  + HALF*(ONE+sponge_min)
           else
-             sponge(:,:,k) = spongemin
+             sponge(:,:,k) = sponge_min
           end if
        end do
 

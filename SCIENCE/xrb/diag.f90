@@ -6,13 +6,13 @@
 !        peak nuclear energy generation rate (erg / g / s)
 !        x/y/z location of peak 
 !        total mass of C12
-!        total mass of O16 (if using the triple_alpha_plus_cago network
+!        total mass of O16 (if using the triple_alpha_plus_cago network)
 !
 !    xrb_temp_diag.out: 
 !
 !        peak temperature in the burning layer burning layer defined
-!          by X(spec_comp) >= diag_define_layer; spec_comp is H1 for mixed 
-!          H/He bursts and it is He4 for pure He bursts
+!          by X(spec_comp) >= diag_define_layer; spec_comp is He4 for
+!          pure He bursts 
 !        x/y/z location of peak
 !
 !    xrb_vel_diag.out:
@@ -830,7 +830,7 @@ contains
              ! temperature diagnostic check to see if we are in the
              ! burning layer 
              ! we check against spec_comp; this is He for the triple
-             ! alpha and H for the hotcno networks
+             ! alpha networks
              ! if we are, then get T_max and its loc
              if ( s(i,j,spec_comp) .ge. &
 		  diag_define_layer * s(i,j,rho_comp) ) then
@@ -1011,7 +1011,7 @@ contains
                 ! temperature diagnostic check to see if we are in the
                 ! burning layer 
                 ! we check against spec_comp; this is He for the triple
-                ! alpha and H for the hotcno networks
+                ! alpha networks
                 ! if we are, then get T_max and its loc
                 if ( s(i,j,k,spec_comp) .ge. &
                      diag_define_layer * s(i,j,k,rho_comp) ) then
