@@ -1,13 +1,16 @@
 &PROBIN
- model_file = "model.hse.cool.coulomb.zoom"
+ model_file = "model.hse.cool.coulomb"
  spherical_in = 0
 
  ppm_type = 2
  do_burning = F
 
+ evolve_base_state = F
+ fix_base_state = T
+
  max_levs = 1
- n_cellx = 512
- n_celly = 512
+ n_cellx = 128
+ n_celly = 128
  max_grid_size = 64
 
  prob_lo_x = 8.4d7
@@ -36,7 +39,7 @@
  stop_time = 2.5d0
 
  plot_base   = T
- plot_deltat = 0.5d0
+ plot_deltat = 0.1d0
  chk_int     = 100
 
  cflfac = 0.9
