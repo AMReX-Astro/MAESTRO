@@ -1,0 +1,23 @@
+#!/bin/bash
+# This is a very simple batch script for use on Kraken
+#
+# the -l option below specifies the maximum number of cores to use
+# this should be a multiple of 12 on Kraken (12 sockets / node)
+#
+# use the "-M <address>" and "-m e" options to specify your email address
+# and have kraken send you an email when the job ends, respectively
+# other options to "-m" are to receive email on job "a"bort and "b"egin 
+#
+# use the "-N <name>" option to specify a job name; default is the name of 
+# this file
+
+#PBS -A TG-AST100037
+#PBS -l size=192,walltime=01:35:00
+#PBS -N xrb_mixed_1cm
+
+cd $PBS_O_WORKDIR
+
+# options to aprun:
+#  -n		Total number of MPI processes
+#  -N		Number of 
+aprun -n 192 ./main.Linux.PGI.mpi.exe inputs_2d_1cm.alex
