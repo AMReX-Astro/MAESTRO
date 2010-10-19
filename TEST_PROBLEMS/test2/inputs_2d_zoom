@@ -40,6 +40,7 @@
 
  plot_base   = T
  plot_deltat = 0.1d0
+ plot_int = 10000
  chk_int     = 100
 
  cflfac = 0.9
