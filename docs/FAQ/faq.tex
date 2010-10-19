@@ -55,7 +55,11 @@
   this case, it is usually a good idea to perturb the initial state
   slightly, so the righthand side is non-zero.
 
-
+  The tolerances used for the various multigrid solves in the code
+  can be overridden on a problem-by-problem basis by putting a
+  copy of {\tt MAESTRO/Source/mg\_eps.f90} into the problem directory
+  and resetting the tolerances.  The role of each of these tolerances
+  is described in {\tt MAESTRO/docs/mg/}.
 
 \item {\em How can I obtain profiling infomation for my run?}
 
@@ -133,5 +137,40 @@
   $\pi$ as well as the $U$.)
 
   So everything is in fact time-centered.
+
+
+\item {\em Why is $\gammabar$ computed as the average of the full state
+       $\Gamma_1$ instead of computed from the base state density and 
+       pressure via the equation of state?}
+
+ The primary reason is that there is no base state composition.  The
+ base state density is simply the average of the full state density,
+ and the base state pressure is the pressure required for hydrostatic
+ equilibrium.  There is no thermodynamic relationship enforced between
+ these base state quantities.
+
+\item {\em Can I run a full star in 2-d axisymmetric geometry?}
+
+ No.  This is a design decision.  There is no support for axisymmetric
+ coordinates in MAESTRO.  Spherical problems must be run in 3-d.
+
+
+\end{enumerate}
+
+
+\section{Analysis}
+
+\begin{enumerate}
+
+\item {\em I want to open a plotfile, derive a new quantity from
+ the data stored there, and write out a new plotfile with this derived 
+ data.  How do I do this?}
+
+ One implementation of this can be found in {\tt
+   fParallel/data\_processing/tutorial/fwrite2d.f90}.  This reads in
+ the plotfile data using the {\tt plotfile\_module} that the {\tt
+   data\_processing} routines rely on, but then builds a multifab
+   and writes the data out to a plotfile using the BoxLib write
+   routines.
 
 \end{enumerate}
