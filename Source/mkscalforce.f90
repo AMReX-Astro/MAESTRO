@@ -271,7 +271,7 @@ contains
   end subroutine mkrhohforce_1d
 
   subroutine mkrhohforce_2d(n,rhoh_force,ng_f,is_prediction, &
-                            wmac,ng_um,thermal,ng_th,lo,hi, &
+                            vmac,ng_um,thermal,ng_th,lo,hi, &
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr, base_cutoff_density_coord
@@ -287,7 +287,7 @@ contains
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th
     logical,         intent(in   ) :: is_prediction
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :)
-    real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
@@ -296,7 +296,7 @@ contains
     real(kind=dp_t), intent(in   ) :: psi(0:)
     logical        , intent(in   ) :: add_thermal
 
-    real(kind=dp_t) :: gradp0, wadv
+    real(kind=dp_t) :: gradp0, vadv
     integer :: i,j
 
 
@@ -317,8 +317,8 @@ contains
 
 
        do i = lo(1),hi(1)
-          wadv = HALF*(wmac(i,j)+wmac(i,j+1))
-          rhoh_force(i,j) =  wadv * gradp0           
+          vadv = HALF*(vmac(i,j)+vmac(i,j+1))
+          rhoh_force(i,j) =  vadv * gradp0           
        end do
     enddo
 
