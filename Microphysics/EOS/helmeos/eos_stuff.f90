@@ -538,8 +538,6 @@ contains
 
     if (present(pt_index)) dim_ptindex = size(pt_index,dim=1)
       
-! Dont allow multi-streaming of this function on CRAY X1
-!DIR$  NOSTREAM
     if (.not. initialized) call bl_error('EOS: not initialized')
       
     if (npoints > NP) then

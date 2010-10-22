@@ -207,11 +207,6 @@
            + fi(13) *w1d*w1t   +  fi(14) *w1md*w1t  &
            + fi(15) *w1d*w1mt  +  fi(16) *w1md*w1mt
 
-
-
-! Dont allow multi-streaming of this function on CRAY X1
-!DIR$  NOSTREAM
-
 !..start of vectorization loop, normal executaion starts here
       eosfail = .false.
       do j =1, npts
