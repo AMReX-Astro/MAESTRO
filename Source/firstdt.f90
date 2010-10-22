@@ -43,7 +43,7 @@ contains
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     real(kind=dp_t), intent(in   ) :: cflfac
-    real(kind=dp_t), intent(  out) :: dt
+    real(kind=dp_t), intent(inout) :: dt
 
     type(multifab) :: force(mla%nlevel)
     type(multifab) :: umac_dummy(mla%nlevel,mla%dim)

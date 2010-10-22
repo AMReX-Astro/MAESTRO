@@ -38,20 +38,20 @@ contains
     use probin_module, only: evolve_base_state
 
     type(ml_layout), intent(inout) :: mla
-    type(bc_tower) , intent(in ) :: the_bc_tower
-    type(multifab) , intent(in ) :: u(:)
-    type(multifab) , intent(in ) :: s(:)
-    type(multifab) , intent(in ) :: gpi(:)
-    type(multifab) , intent(in ) :: divU(:)
-    type(multifab) , intent(in ) :: dSdt(:)
-    real(kind=dp_t), intent(in ) :: w0(:,0:)
-    real(kind=dp_t), intent(in ) :: rho0(:,0:)
-    real(kind=dp_t), intent(in ) :: p0(:,0:)
-    real(kind=dp_t), intent(in ) :: gamma1bar(:,0:)
-    real(kind=dp_t), intent(in ) :: grav(:,0:)
-    real(kind=dp_t), intent(in ) :: dx(:,:)
-    real(kind=dp_t), intent(in ) :: cflfac
-    real(kind=dp_t), intent(out) :: dt
+    type(bc_tower) , intent(in   ) :: the_bc_tower
+    type(multifab) , intent(in   ) :: u(:)
+    type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(in   ) :: gpi(:)
+    type(multifab) , intent(in   ) :: divU(:)
+    type(multifab) , intent(in   ) :: dSdt(:)
+    real(kind=dp_t), intent(in   ) :: w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
+    real(kind=dp_t), intent(in   ) :: grav(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    real(kind=dp_t), intent(in   ) :: cflfac
+    real(kind=dp_t), intent(inout) :: dt
     
     type(multifab) ::      force(mla%nlevel)
     type(multifab) ::      w0mac(mla%nlevel,mla%dim)
