@@ -32,7 +32,7 @@ contains
                               div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
                               dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
-                              psi,sponge,hgrhs)
+                              psi,sponge,hgrhs,tempbar_init)
 
     use bl_prof_module              , only : bl_prof_timer, build, destroy
     use      pre_advance_module     , only : advance_premac
@@ -91,6 +91,7 @@ contains
     real(dp_t)    ,  intent(inout) ::    p0_old(:,0:)
     real(dp_t)    ,  intent(inout) ::    p0_new(:,0:)
     real(dp_t)    ,  intent(inout) ::   tempbar(:,0:)
+    real(dp_t)    ,  intent(inout) ::   tempbar_init(:,0:)
     real(dp_t)    ,  intent(inout) :: gamma1bar(:,0:)
     real(dp_t)    ,  intent(inout) ::        w0(:,0:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
@@ -259,7 +260,7 @@ contains
        call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
     end do
 
-    call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old,halfdt,dx, &
+    call react_state(mla,tempbar_init,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
     do n=1,nlevs
@@ -681,7 +682,7 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
     
-    call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
+    call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
     do n=1,nlevs
@@ -1169,7 +1170,7 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
 
-    call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
+    call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
     do n=1,nlevs

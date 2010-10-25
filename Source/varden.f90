@@ -107,6 +107,7 @@ subroutine varden()
   real(dp_t), allocatable :: etarho_cc_temp(:,:)
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
+  real(dp_t), allocatable :: tempbar_init(:,:)
 
   logical :: dump_plotfile, dump_checkpoint
 
@@ -166,6 +167,9 @@ subroutine varden()
                                          etarho_ec,etarho_cc,psi,tempbar,grav_cell)
 
   end if
+
+
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! error checking
@@ -236,6 +240,7 @@ subroutine varden()
   allocate( etarho_cc_temp(max_levs,0:nr_fine-1))
   allocate( etarho_ec_temp(max_levs,0:nr_fine))
   allocate(        w0_temp(max_levs,0:nr_fine))
+  allocate(   tempbar_init(max_levs,0:nr_fine-1))
 
   allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs))
   allocate(normal(nlevs))
@@ -267,6 +272,10 @@ subroutine varden()
   end if
 
   call make_grav_cell(grav_cell,rho0_old)
+
+
+  ! save the initial temperature for developing the convective field
+  tempbar_init = tempbar
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -351,7 +360,7 @@ subroutine varden()
 
         call divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal2, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old, &
-                       gamma1bar,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
+                       gamma1bar,tempbar_init,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
      end do
 
@@ -449,7 +458,7 @@ subroutine varden()
                                  rho_Hext,thermal2, &
                                  div_coeff_old,div_coeff_new,grav_cell,dx,time,dt,dtold, &
                                  the_bc_tower,dSdt,Source_old,Source_new,etarho_ec, &
-                                 etarho_cc,psi,sponge,hgrhs)
+                                 etarho_cc,psi,sponge,hgrhs,tempbar_init)
 
            runtime2 = parallel_wtime() - runtime1
            call parallel_reduce(runtime1, runtime2, MPI_MAX, proc=parallel_IOProcessorNode())
@@ -864,7 +873,7 @@ subroutine varden()
                               w0,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                               div_coeff_old,div_coeff_new, &
                               grav_cell,dx,time,dt,dtold,the_bc_tower,dSdt,Source_old, &
-                              Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs)
+                              Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init)
 
         if (nuclear_dt_fac .gt. 0.d0) then
            smaxold = 0.d0
