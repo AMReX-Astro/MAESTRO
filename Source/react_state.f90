@@ -211,6 +211,12 @@ contains
 
     call destroy(bpt)
 
+    if (spherical == 1) then
+       do n = 1, nlevs
+          call destroy(tempbar_init_cart(n))
+       enddo
+    endif
+
   end subroutine burner_loop
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

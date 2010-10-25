@@ -113,6 +113,12 @@ contains
 
     call destroy(bpt)
 
+    if (spherical == 1) then
+       do n = 1, nlevs
+          call destroy(tempbar_init_cart(n))
+       enddo
+    endif
+
   end subroutine get_rho_Hext
   
   subroutine get_rho_Hext_1d(tempbar_init,rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
