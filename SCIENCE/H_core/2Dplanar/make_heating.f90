@@ -5,7 +5,6 @@
 module heating_module
 
   use bl_types
-  use define_bc_module
   use bl_error_module
 
   implicit none
@@ -15,17 +14,20 @@ module heating_module
   
 contains
 
-  subroutine get_rho_Hext(mla,s,rho_Hext,dx,time,dt)
+  subroutine get_rho_Hext(mla,tempbar_init,s,rho_Hext,the_bc_level,dx,time,dt)
 
     use multifab_module
+    use define_bc_module
     use ml_layout_module
     use ml_restriction_module
     use geometry, only: dm, nlevs
     use variables, only: foextrap_comp
 
     type(ml_layout), intent(in   ) :: mla
+    real(kind=dp_t), intent(in   ) :: tempbar_init(:,0:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),time,dt
 
     ! local

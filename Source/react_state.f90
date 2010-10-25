@@ -46,7 +46,7 @@ contains
     nlevs = mla%nlevel
 
     ! get heating term
-    call get_rho_Hext(mla,sold,rho_Hext,dx,time,dt)
+    call get_rho_Hext(mla,tempbar_init,sold,rho_Hext,the_bc_level,dx,time,dt)
 
     ! do the burning
     call burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dx,dt,the_bc_level)
