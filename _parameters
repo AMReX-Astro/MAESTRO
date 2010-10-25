@@ -436,3 +436,4 @@ plot_ad_excess                      logical            .false.
 # maximum mach number before the code aborts
 mach_max_abort                      real               -1.d0
 
+drive_initial_convection            logical            .false.
