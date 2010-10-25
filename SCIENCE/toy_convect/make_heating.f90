@@ -19,8 +19,7 @@ contains
 
     use multifab_module
     use ml_layout_module
-    use ml_restriction_module
-    use geometry, only: dm, nlevs
+    use ml_restriction_module, only : ml_cc_restriction
     use variables, only: foextrap_comp
 
     type(ml_layout), intent(in   ) :: mla
@@ -29,20 +28,23 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),time,dt
 
     ! local
-    integer                  :: n,i,ng_s,ng_h
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: n,i,ng_s,ng_h,dm,nlevs
+    integer                  :: lo(mla%dim),hi(mla%dim)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "get_rho_Hext")
 
-    ng_s = s(1)%ng
-    ng_h = rho_Hext(1)%ng
+    dm = mla%dim
+    nlevs = mla%nlevel
+
+    ng_s = nghost(s(1))
+    ng_h = nghost(rho_Hext(1))
 
     do n=1,nlevs
 
-       do i = 1, s(n)%nboxes
+       do i = 1, nboxes(s(n))
           if ( multifab_remote(s(n), i) ) cycle
           sp => dataptr(s(n) , i)
           hp => dataptr(rho_Hext(n) , i)

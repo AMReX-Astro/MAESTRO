@@ -11,7 +11,7 @@ module init_vel_module
   use eos_module
   use variables
   use network
-  use geometry, only: nr, spherical, dm, nlevs
+  use geometry, only: nr, spherical
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -37,11 +37,14 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,n,dm,nlevs
 
     real(kind=dp_t) :: xloc_vortices(num_vortices)
     real(kind=dp_t) :: offset
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (mod(num_vortices,2) == 1) then
        call bl_error("ERROR: num_vortices must be even")

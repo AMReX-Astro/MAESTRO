@@ -21,7 +21,7 @@ contains
   subroutine tag_boxes(mf,tagboxes,dx,lev)
 
     use variables, only: rho_comp, spec_comp
-    use geometry, only: dm, nr_fine, nr
+    use geometry, only: nr_fine, nr
     use network, only: network_species_index
 
     type( multifab), intent(in   ) :: mf
@@ -31,7 +31,7 @@ contains
 
     real(kind = dp_t), pointer :: sp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
-    integer           :: i, j, lo(dm), ng_s
+    integer           :: i, j, lo(get_dim(mf)), ng_s, dm
     logical           ::      radialtag(0:nr_fine-1)
     logical           :: radialtag_proc(0:nr_fine-1)
     integer, parameter :: npad = 4
@@ -47,6 +47,8 @@ contains
 
     radialtag = .false.
     radialtag_proc = .false.
+
+    dm = get_dim(mf)
 
     ng_s = mf%ng
 
