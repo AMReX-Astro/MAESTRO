@@ -436,4 +436,9 @@ plot_ad_excess                      logical            .false.
 # maximum mach number before the code aborts
 mach_max_abort                      real               -1.d0
 
+# freeze the temperature used in the reaction network to the initial
+# value.  This is useful for developing an initial convective field
+# to carry away the energy, while preventing the reactions from going
+# nonlinear.
 drive_initial_convection            logical            .false.
+
