@@ -5,7 +5,6 @@
 module heating_module
 
   use bl_types
-  use define_bc_module
   use bl_error_module
 
   implicit none
@@ -15,16 +14,19 @@ module heating_module
   
 contains
 
-  subroutine get_rho_Hext(mla,s,rho_Hext,dx,time,dt)
+  subroutine get_rho_Hext(mla,tempbar_init,s,rho_Hext,the_bc_level,dx,time,dt)
 
     use multifab_module
+    use define_bc_module
     use ml_layout_module
     use ml_restriction_module, only : ml_cc_restriction
     use variables, only: foextrap_comp
 
     type(ml_layout), intent(in   ) :: mla
+    real(kind=dp_t), intent(in   ) :: tempbar_init(:,0:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),time,dt
 
     ! local
@@ -54,7 +56,9 @@ contains
           case (1)
              call bl_error("1-d heating not implemented")
           case (2)
-             call get_rho_Hext_2d(hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s,lo,hi,dx(n,:),time)
+             call get_rho_Hext_2d(tempbar_init(n,:), &
+                                  hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s, &
+                                  lo,hi,dx(n,:),time)
           case (3)
              call bl_error("3-d heating not implemented")
           end select
@@ -73,21 +77,23 @@ contains
   end subroutine get_rho_Hext
   
   
-  subroutine get_rho_Hext_2d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
+  subroutine get_rho_Hext_2d(tempbar_init,rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
 
     use bl_constants_module
     use variables
     use network
+    use probin_module, only: drive_initial_convection
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:)
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real(kind=dp_t), intent(in   ) :: tempbar_init(0:)
     real(kind=dp_t), intent(in   ) :: dx(:),time
 
     integer :: i, j
     integer, save :: ih1, ic12, in14, io16
 
-    real(kind=dp_t) :: rho, T6, T613, X_CNO, X_1, g14, eps_CNO
+    real(kind=dp_t) :: rho, temp, T6, T613, X_CNO, X_1, g14, eps_CNO
 
     logical, save :: firstCall = .true.
 
@@ -103,7 +109,14 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
           rho = s(i,j,rho_comp)
-          T6 = s(i,j,temp_comp) / 1.0e6_dp_t
+          
+          if (drive_initial_convection) then
+             temp = tempbar_init(j)
+          else
+             temp = s(i,j,temp_comp)
+          endif
+
+          T6 = temp / 1.0e6_dp_t
           T613 = T6**THIRD
 
           ! total CNO abundance
