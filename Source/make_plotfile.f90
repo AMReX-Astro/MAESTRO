@@ -483,21 +483,23 @@ contains
                                 mla%mba%rr(n-1,:),1)
        call ml_cc_restriction_c(plotdata(n-1),icomp_rhopert,plotdata(n),icomp_rhopert, &
                                 mla%mba%rr(n-1,:),1)
-       call ml_cc_restriction_c(plotdata(n-1),icomp_rhohpert,plotdata(n),icomp_rhohpert, &
-                                mla%mba%rr(n-1,:),1)
-       call ml_cc_restriction_c(plotdata(n-1),icomp_machno,plotdata(n),icomp_machno, &
-                                mla%mba%rr(n-1,:),1)
+       if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
+          call ml_cc_restriction_c(plotdata(n-1),icomp_rhohpert,plotdata(n),icomp_rhohpert, &
+                                   mla%mba%rr(n-1,:),1)
+          call ml_cc_restriction_c(plotdata(n-1),icomp_tfromH,plotdata(n),icomp_tfromH, &
+                                   mla%mba%rr(n-1,:),1)
+          call ml_cc_restriction_c(plotdata(n-1),icomp_dp,plotdata(n),icomp_dp, &
+                                   mla%mba%rr(n-1,:),1)
+       end if
        if (plot_cs) then
           call ml_cc_restriction_c(plotdata(n-1),icomp_cs,plotdata(n),icomp_cs, &
                                    mla%mba%rr(n-1,:),1)
        end if
+       call ml_cc_restriction_c(plotdata(n-1),icomp_machno,plotdata(n),icomp_machno, &
+                                mla%mba%rr(n-1,:),1)
        call ml_cc_restriction_c(plotdata(n-1),icomp_dg,plotdata(n),icomp_dg, &
                                 mla%mba%rr(n-1,:),1)
        call ml_cc_restriction_c(plotdata(n-1),icomp_entropy,plotdata(n),icomp_entropy, &
-                                mla%mba%rr(n-1,:),1)
-       call ml_cc_restriction_c(plotdata(n-1),icomp_tfromH,plotdata(n),icomp_tfromH, &
-                                mla%mba%rr(n-1,:),1)
-       call ml_cc_restriction_c(plotdata(n-1),icomp_dp,plotdata(n),icomp_dp, &
                                 mla%mba%rr(n-1,:),1)
     end do
 
