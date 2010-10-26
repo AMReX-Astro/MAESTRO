@@ -236,11 +236,19 @@ subroutine varden()
 ! Initialize all remaining arrays and multifabs
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  allocate(       psi_temp(max_levs,0:nr_fine-1))
-  allocate( etarho_cc_temp(max_levs,0:nr_fine-1))
-  allocate( etarho_ec_temp(max_levs,0:nr_fine))
-  allocate(        w0_temp(max_levs,0:nr_fine))
-  allocate(   tempbar_init(max_levs,0:nr_fine-1))
+  if (spherical .eq. 0) then
+     allocate(       psi_temp(max_levs,0:nr_fine-1))
+     allocate( etarho_cc_temp(max_levs,0:nr_fine-1))
+     allocate( etarho_ec_temp(max_levs,0:nr_fine))
+     allocate(        w0_temp(max_levs,0:nr_fine))
+     allocate(   tempbar_init(max_levs,0:nr_fine-1))
+  else
+     allocate(       psi_temp(1,0:nr_fine-1))
+     allocate( etarho_cc_temp(1,0:nr_fine-1))
+     allocate( etarho_ec_temp(1,0:nr_fine))
+     allocate(        w0_temp(1,0:nr_fine))
+     allocate(   tempbar_init(1,0:nr_fine-1))
+  end if
 
   allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs))
   allocate(normal(nlevs))
@@ -724,6 +732,9 @@ subroutine varden()
            ! create new grids and fill in data on those grids
            call regrid(mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
                        rho0_old,rhoh0_old,.false.)
+
+           ! nlevs is local so we need to reset it
+           nlevs = mla%nlevel
 
            call init_multilevel(sold)
 

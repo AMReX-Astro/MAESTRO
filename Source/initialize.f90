@@ -383,6 +383,9 @@ contains
        call regrid(mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
                    rho0_old,rhoh0_old,.true.)
 
+       ! nlevs is local so we need to reset it
+       nlevs = mla%nlevel
+
        ! rebuild these with the new ml_layout
        do n=1,nlevs
           call multifab_build(   Source_new(n), mla%la(n),     1, 1)
