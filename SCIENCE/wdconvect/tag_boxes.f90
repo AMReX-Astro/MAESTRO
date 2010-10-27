@@ -95,7 +95,8 @@ contains
 
   subroutine tag_boxes_3d(tagbox,mf,lo,ng,lev)
 
-    use probin_module, ONLY : base_cutoff_density, tag_density_1, tag_density_2
+    use probin_module, ONLY : base_cutoff_density, &
+         tag_density_1, tag_density_2, tag_density_3
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):,lo(3):)
@@ -130,6 +131,18 @@ contains
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
                 if (mf(i,j,k) .gt. tag_density_2) then
+                   tagbox(i,j,k) = .true.
+                end if
+             end do
+          end do
+       end do
+!$omp end parallel do
+       case (3)
+!$omp parallel do private(i,j,k)
+       do k = lo(3),lo(3)+nz-1
+          do j = lo(2),lo(2)+ny-1
+             do i = lo(1),lo(1)+nx-1
+                if (mf(i,j,k) .gt. tag_density_3) then
                    tagbox(i,j,k) = .true.
                 end if
              end do
