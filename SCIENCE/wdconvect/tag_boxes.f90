@@ -49,7 +49,8 @@ contains
 
   subroutine tag_boxes_2d(tagbox,mf,lo,ng,lev)
 
-    use probin_module, ONLY : base_cutoff_density, tag_density_1, tag_density_2
+    use probin_module, ONLY : base_cutoff_density, &
+         tag_density_1, tag_density_2, tag_density_3
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):)
@@ -76,6 +77,14 @@ contains
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              if (mf(i,j) .gt. tag_density_2) then
+                tagbox(i,j) = .true.
+             end if
+          end do
+       end do
+    case (3)
+       do j = lo(2),lo(2)+ny-1
+          do i = lo(1),lo(1)+nx-1
+             if (mf(i,j) .gt. tag_density_3) then
                 tagbox(i,j) = .true.
              end if
           end do
