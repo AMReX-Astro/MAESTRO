@@ -20,7 +20,7 @@ contains
     use eos_module
     use network, only: spec_names, network_species_index
     use probin_module, only: base_cutoff_density, anelastic_cutoff, &
-                             buoyancy_cutoff_factor, grav_const, dens_base, pres_base
+                             buoyancy_cutoff_factor, grav_const, dens_base, pres_base, do_isentropic
 
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr
@@ -33,7 +33,7 @@ contains
 
     ! local
     integer         :: r,j
-    real(kind=dp_t) :: H,z
+    real(kind=dp_t) :: H,z,const
 
     type(bl_prof_timer), save :: bpt
 
@@ -67,20 +67,43 @@ contains
        
        z = (dble(j)+HALF) * dr(1)
 
-       ! the density of an isothermal gamma-law atm is exponential
-       den_eos(1)  = dens_base * exp(-z/H)
+       if (.not. do_isentropic) then
+          ! the density of an isothermal gamma-law atm is exponential
+          den_eos(1)  = dens_base * exp(-z/H)
 
-       s0_init(j, rho_comp) = den_eos(1)
+          s0_init(j, rho_comp) = den_eos(1)
 
-       ! compute the pressure by discretizing HSE
-       if (j.gt.0) then
-          p0_init(j) = p0_init(j-1) - &
-               dr(1) * HALF * (s0_init(j,rho_comp) + s0_init(j-1,rho_comp)) * &
-               abs(grav_const)
+          ! compute the pressure by discretizing HSE
+          if (j.gt.0) then
+             p0_init(j) = p0_init(j-1) - &
+                  dr(1) * HALF * (s0_init(j,rho_comp) + s0_init(j-1,rho_comp)) * &
+                  abs(grav_const)
+             
+             p_eos(1) = p0_init(j)
+          end if
 
-          p_eos(1) = p0_init(j)
-       end if
+       else 
+          ! assume isentropic
+          ! an isentropic gas satisfies p ~ rho^gamma
+          const = pres_base/dens_base**gamma_const
 
+          ! we can integrate HSE with p = K rho^gamma analytically
+          den_eos(1) = dens_base*(grav_const*dens_base*(gamma_const - 1.0)*z/(gamma_const*pres_base) + 1.d0)**(1.d0/(gamma_const - 1.d0))
+          s0_init(j, rho_comp) = den_eos(1)
+
+          ! compute the pressure by discretizing HSE
+          if (j.gt.0) then
+             p0_init(j) = p0_init(j-1) - &
+                  dr(1) * HALF * (s0_init(j,rho_comp) + s0_init(j-1,rho_comp)) * &
+                  abs(grav_const)
+             
+             p_eos(1) = p0_init(j)
+          end if
+
+          print *, 'here'
+
+       endif
+          
        ! use the EOS to make the state consistent
 
        ! (rho,p) --> T, h
