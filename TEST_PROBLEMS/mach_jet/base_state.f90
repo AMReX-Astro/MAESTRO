@@ -77,9 +77,9 @@ contains
              p0_init(j) = p0_init(j-1) - &
                   dr(1) * HALF * (s0_init(j,rho_comp) + s0_init(j-1,rho_comp)) * &
                   abs(grav_const)
-             
-             p_eos(1) = p0_init(j)
           end if
+             
+          p_eos(1) = p0_init(j)
 
           ! use the EOS to make the state consistent
 
