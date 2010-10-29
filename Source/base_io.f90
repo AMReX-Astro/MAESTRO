@@ -16,7 +16,7 @@ contains
 
   subroutine write_base_state(istep,chk_name, &
                               rho0,rhoh0,p0,gamma1bar,w0,etarho_ec,etarho_cc, &
-                              div_coeff,psi,tempbar,problo)
+                              div_coeff,psi,tempbar,tempbar_init,problo)
     
     use parallel, only: parallel_IOProcessor
     use bl_prof_module, only: bl_prof_timer, build, destroy
@@ -29,7 +29,8 @@ contains
     character(len=*) , intent(in) :: chk_name
     real(kind=dp_t)  , intent(in) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(in) :: p0(:,0:),gamma1bar(:,0:)
-    real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:), tempbar(:,0:)
+    real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:)
+    real(kind=dp_t)  , intent(in) :: tempbar(:,0:), tempbar_init(:,0:)
     real(kind=dp_t)  , intent(in) :: w0(:,0:)
     real(kind=dp_t)  , intent(in) :: etarho_ec(:,0:),etarho_cc(:,0:)
 
@@ -64,8 +65,10 @@ contains
        do n=1,nlevs_radial
           do r=0,nr(n)-1
              base_r = problo + (dble(r)+HALF) * dr(n)
-             write(99,1000)  r, base_r, rho0(n,r), p0(n,r), gamma1bar(n,r), rhoh0(n,r), &
-                  div_coeff(n,r), psi(n,r), tempbar(n,r), etarho_cc(n,r)
+             write(99,1000)  r, base_r, &
+                             rho0(n,r), p0(n,r), gamma1bar(n,r), rhoh0(n,r), &
+                             div_coeff(n,r), psi(n,r), &
+                             tempbar(n,r), etarho_cc(n,r), tempbar_init(n,r)
           end do
        end do
        close(99)
@@ -96,7 +99,7 @@ contains
 
   subroutine read_base_state(restart,chk_name, &
                              rho0,rhoh0,p0,gamma1bar,w0, &
-                             etarho_ec,etarho_cc,div_coeff,psi,tempbar)
+                             etarho_ec,etarho_cc,div_coeff,psi,tempbar,tempbar_init)
 
     use parallel, only: parallel_IOProcessor
     use bl_prof_module, only: bl_prof_timer, build, destroy
@@ -110,7 +113,8 @@ contains
     character(len=*) , intent(in   ) :: chk_name    
     real(kind=dp_t)  , intent(inout) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(inout) :: p0(:,0:),gamma1bar(:,0:)
-    real(kind=dp_t)  , intent(inout) :: div_coeff(:,0:), psi(:,0:), tempbar(:,0:)
+    real(kind=dp_t)  , intent(inout) :: div_coeff(:,0:), psi(:,0:)
+    real(kind=dp_t)  , intent(inout) :: tempbar(:,0:), tempbar_init(:,0:)
     real(kind=dp_t)  , intent(inout) :: w0(:,0:)
     real(kind=dp_t)  , intent(inout) :: etarho_ec(:,0:),etarho_cc(:,0:)
 
@@ -142,8 +146,10 @@ contains
 
     do n=1,nlevs_radial
        do r=0,nr(n)-1
-          read(99,*) r_dummy_int, r_dummy, rho0(n,r), p0(n,r), gamma1bar(n,r), &
-               rhoh0(n,r), div_coeff(n,r), psi(n,r), tempbar(n,r), etarho_cc(n,r)
+          read(99,*) r_dummy_int, r_dummy, &
+                     rho0(n,r), p0(n,r), gamma1bar(n,r), rhoh0(n,r), &
+                     div_coeff(n,r), psi(n,r), &
+                     tempbar(n,r), etarho_cc(n,r), tempbar_init(n,r)
        end do
     end do
     close(99)

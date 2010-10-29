@@ -101,13 +101,13 @@ subroutine varden()
   real(dp_t), pointer :: etarho_cc(:,:)
   real(dp_t), pointer :: psi(:,:)
   real(dp_t), pointer :: tempbar(:,:)
+  real(dp_t), pointer :: tempbar_init(:,:)
   real(dp_t), pointer :: grav_cell(:,:)
 
   real(dp_t), allocatable :: psi_temp(:,:)
   real(dp_t), allocatable :: etarho_cc_temp(:,:)
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
-  real(dp_t), allocatable :: tempbar_init(:,:)
 
   logical :: dump_plotfile, dump_checkpoint
 
@@ -141,7 +141,8 @@ subroutine varden()
                                   rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
                                   div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                                   s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
-                                  p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar,grav_cell)
+                                  p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
+                                  tempbar,tempbar_init,grav_cell)
      
 
   else if (test_set /= '') then
@@ -153,7 +154,7 @@ subroutine varden()
                                       div_coeff_old,div_coeff_new,gamma1bar, &
                                       gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
                                       rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
-                                      etarho_ec,etarho_cc,psi,tempbar,grav_cell)
+                                      etarho_ec,etarho_cc,psi,tempbar,tempbar_init,grav_cell)
 
   else
 
@@ -164,7 +165,7 @@ subroutine varden()
                                          div_coeff_old,div_coeff_new,gamma1bar, &
                                          gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
                                          rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
-                                         etarho_ec,etarho_cc,psi,tempbar,grav_cell)
+                                         etarho_ec,etarho_cc,psi,tempbar,tempbar_init,grav_cell)
 
   end if
 
@@ -241,13 +242,11 @@ subroutine varden()
      allocate( etarho_cc_temp(max_levs,0:nr_fine-1))
      allocate( etarho_ec_temp(max_levs,0:nr_fine))
      allocate(        w0_temp(max_levs,0:nr_fine))
-     allocate(   tempbar_init(max_levs,0:nr_fine-1))
   else
      allocate(       psi_temp(1,0:nr_fine-1))
      allocate( etarho_cc_temp(1,0:nr_fine-1))
      allocate( etarho_ec_temp(1,0:nr_fine))
      allocate(        w0_temp(1,0:nr_fine))
-     allocate(   tempbar_init(1,0:nr_fine-1))
   end if
 
   allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs))
@@ -281,9 +280,6 @@ subroutine varden()
 
   call make_grav_cell(grav_cell,rho0_old)
 
-
-  ! save the initial temperature for developing the convective field
-  tempbar_init = tempbar
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -403,7 +399,7 @@ subroutine varden()
         call write_base_state(restart, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, prob_lo(dm))
+                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
         call write_job_info(plot_file_name, mla%mba)
 
@@ -512,7 +508,7 @@ subroutine varden()
         call write_base_state(istep, check_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, prob_lo(dm))
+                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
         last_chk_written = istep
 
@@ -546,7 +542,7 @@ subroutine varden()
         call write_base_state(istep, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, prob_lo(dm))
+                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
         call write_job_info(plot_file_name, mla%mba)
         last_plt_written = istep
@@ -1035,7 +1031,7 @@ subroutine varden()
               call write_base_state(istep, check_file_name, &
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
                                     w0, etarho_ec, etarho_cc, &
-                                    div_coeff_old, psi, tempbar, prob_lo(dm))
+                                    div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
               last_chk_written = istep
 
@@ -1075,7 +1071,7 @@ subroutine varden()
               call write_base_state(istep, plot_file_name, &
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
                                     w0, etarho_ec, etarho_cc, &
-                                    div_coeff_old, psi, tempbar, prob_lo(dm))
+                                    div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
               call write_job_info(plot_file_name, mla%mba)
               last_plt_written = istep
@@ -1128,7 +1124,7 @@ subroutine varden()
         call write_base_state(istep, check_file_name, &
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, prob_lo(dm))
+                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
         do n = 1,nlevs
            call destroy(chkdata(n))
@@ -1157,7 +1153,7 @@ subroutine varden()
         call write_base_state(istep, plot_file_name, &
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, prob_lo(dm))
+                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
         call write_job_info(plot_file_name, mla%mba)
      end if
@@ -1205,6 +1201,6 @@ subroutine varden()
   deallocate(thermal2,dx)
   deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)
-  deallocate(psi,tempbar,grav_cell)
+  deallocate(psi,tempbar,tempbar_init,grav_cell)
 
 end subroutine varden

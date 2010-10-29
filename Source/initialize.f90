@@ -27,7 +27,7 @@ contains
                                      div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                                      s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                      p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
-                                     tempbar,grav_cell)
+                                     tempbar,tempbar_init,grav_cell)
 
     use restart_module
     use ml_restriction_module
@@ -59,7 +59,7 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -276,7 +276,7 @@ contains
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                               s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
-                              p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar, &
+                              p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar,tempbar_init, &
                               grav_cell)
 
     ! now that we have nr we can read in the base state
@@ -291,7 +291,7 @@ contains
     ! note: still need to load/store tempbar
     call read_base_state(restart, check_file_name, &
                          rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
-                         etarho_ec, etarho_cc, div_coeff_old, psi, tempbar)
+                         etarho_ec, etarho_cc, div_coeff_old, psi, tempbar, tempbar_init)
 
     ! fill ghost cells
     ! this need to be done after read_base_state since in some problems, the inflow
@@ -461,13 +461,13 @@ contains
        ! deallocate 1D arrays
        deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
        deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec)
-       deallocate(etarho_cc,psi,tempbar,grav_cell)
+       deallocate(etarho_cc,psi,tempbar,tempbar_init,grav_cell)
 
        ! reallocate 1D arrays
        call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar, &
                                  gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
                                  rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                 psi,tempbar,grav_cell)
+                                 psi,tempbar,tempbar_init,grav_cell)
 
        ! copy outer pressure for reference
        p0_old(1,nr_fine-1) = p0_temp
@@ -528,6 +528,10 @@ contains
 
        ! force tempbar to be the average of temp
        call average(mla,sold,tempbar,dx,temp_comp)
+       
+       ! for restarting into finer, we lose the drive_initial_convection 
+       ! functionality, so we just set tempbar_init = tempbar
+       tempbar_init = tempbar
 
        ! compute gamma1 (just for use in computing gamma1bar)
        allocate(gamma1(nlevs))
@@ -569,7 +573,7 @@ contains
                                          gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
                                          rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                          p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                         psi,tempbar,grav_cell)
+                                         psi,tempbar,tempbar_init,grav_cell)
 
     use box_util_module
     use init_scalar_module
@@ -594,7 +598,7 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -718,7 +722,7 @@ contains
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                               s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
-                              p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar, &
+                              p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar,tempbar_init, &
                               grav_cell)
 
     ! now that we have dr and nr we can fill initial state
@@ -733,10 +737,11 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
-    p0_old    = p0_init
-    rho0_old  = s0_init(:,:,rho_comp)
-    rhoh0_old = s0_init(:,:,rhoh_comp)
-    tempbar   = s0_init(:,:,temp_comp)
+    p0_old       = p0_init
+    rho0_old     = s0_init(:,:,rho_comp)
+    rhoh0_old    = s0_init(:,:,rhoh_comp)
+    tempbar      = s0_init(:,:,temp_comp)
+    tempbar_init = s0_init(:,:,temp_comp)
 
     if (fix_base_state) then
        call compute_cutoff_coords(rho0_old)
@@ -767,7 +772,8 @@ contains
 
     ! set tempbar to be the average
     call average(mla,sold,tempbar,dx,temp_comp)
-    
+    tempbar_init = tempbar
+
     call destroy(mba)
 
   end subroutine initialize_with_fixed_grids
@@ -782,7 +788,7 @@ contains
                                             gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
                                             rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                             p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                            psi,tempbar,grav_cell)
+                                            psi,tempbar,tempbar_init,grav_cell)
 
     use probin_module, only: n_cellx, n_celly, n_cellz, &
          regrid_int, amr_buf_width, max_grid_size_1, max_grid_size_2, max_grid_size_3, &
@@ -813,7 +819,7 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -910,7 +916,7 @@ contains
     call initialize_1d_arrays(max_levs,div_coeff_old,div_coeff_new,gamma1bar, &
                               gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
                               rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                              psi,tempbar,grav_cell)
+                              psi,tempbar,tempbar_init,grav_cell)
 
     ! now that we have dr and nr we can fill initial state
     if (spherical .eq. 1) then
@@ -1070,10 +1076,11 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
-    p0_old = p0_init
-    rho0_old  = s0_init(:,:,rho_comp)
-    rhoh0_old = s0_init(:,:,rhoh_comp)
-    tempbar   = s0_init(:,:,temp_comp)
+    p0_old       = p0_init
+    rho0_old     = s0_init(:,:,rho_comp)
+    rhoh0_old    = s0_init(:,:,rhoh_comp)
+    tempbar      = s0_init(:,:,temp_comp)
+    tempbar_init = s0_init(:,:,temp_comp)
 
     if (fix_base_state) then
        call compute_cutoff_coords(rho0_old)
@@ -1104,6 +1111,7 @@ contains
 
     ! set tempbar to be the average
     call average(mla,sold,tempbar,dx,temp_comp)
+    tempbar_init = tempbar
 
     call destroy(mba)
 
@@ -1183,14 +1191,14 @@ contains
   subroutine initialize_1d_arrays(num_levs,div_coeff_old,div_coeff_new,gamma1bar, &
                                   gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
                                   rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                  psi,tempbar,grav_cell)
+                                  psi,tempbar,tempbar_init,grav_cell)
 
     integer    , intent(in) :: num_levs    
     real(dp_t) , pointer    :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
     real(dp_t) , pointer    :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t) , pointer    :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t) , pointer    :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:),etarho_cc(:,:)
-    real(dp_t) , pointer    :: psi(:,:),tempbar(:,:),grav_cell(:,:)
+    real(dp_t) , pointer    :: psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
     
     if (spherical .eq. 0) then
        allocate(div_coeff_old (num_levs,0:nr_fine-1))
@@ -1210,6 +1218,7 @@ contains
        allocate(etarho_cc     (num_levs,0:nr_fine-1))
        allocate(psi           (num_levs,0:nr_fine-1))
        allocate(tempbar       (num_levs,0:nr_fine-1))
+       allocate(tempbar_init  (num_levs,0:nr_fine-1))
        allocate(grav_cell     (num_levs,0:nr_fine-1))
     else
        allocate(div_coeff_old (1,0:nr_fine-1))
@@ -1229,6 +1238,7 @@ contains
        allocate(etarho_cc     (1,0:nr_fine-1))
        allocate(psi           (1,0:nr_fine-1))
        allocate(tempbar       (1,0:nr_fine-1))
+       allocate(tempbar_init  (1,0:nr_fine-1))
        allocate(grav_cell     (1,0:nr_fine-1))
     end if
 
@@ -1249,6 +1259,7 @@ contains
     etarho_cc = ZERO
     psi = ZERO
     tempbar = ZERO
+    tempbar_init = ZERO
     grav_cell = ZERO
 
   end subroutine initialize_1d_arrays
