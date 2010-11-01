@@ -65,7 +65,12 @@ contains
 
           z = (dble(j)+HALF) * dr(1)
 
-          den_eos(1) = 1.d-3*exp(-z/H)
+          if (do_isentropic) then
+             den_eos(1) = dens_base*(gravity*dens_base*(gamma_const - 1.0)*z/ &
+               (gamma_const*pres_base) + 1.d0)**(1.d0/(gamma_const - 1.d0))
+          else
+             den_eos(1) = 1.d-3*exp(-z/H)
+          end if
 
           s0_init(j, rho_comp) = den_eos(1)
 
