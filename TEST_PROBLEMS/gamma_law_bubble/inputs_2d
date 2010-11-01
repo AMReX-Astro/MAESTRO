@@ -3,6 +3,8 @@
 
  cflfac = 0.8d0
 
+ do_isentropic = T
+
  max_step  = 1000
  stop_time = 1.e-4
 
@@ -35,7 +37,7 @@
  evolve_base_state = F
  fix_base_state = T
 
- ppm_type = 2
+ ppm_type = 1
 
  grav_const = -1.d9
 
@@ -52,7 +54,7 @@
 
  bcx_lo = -1
  bcx_hi = -1
- bcy_lo = 14
+ bcy_lo = 12
  bcy_hi = 12
 
     verbose = 1
