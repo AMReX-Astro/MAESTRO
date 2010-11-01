@@ -19,7 +19,7 @@ contains
     use bl_constants_module
     use eos_module
     use network, only: spec_names, network_species_index
-    use probin_module, only: grav_const, do_stratified
+    use probin_module, only: grav_const, do_stratified, do_isentropic
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr
     use inlet_bc_module
@@ -66,8 +66,8 @@ contains
           z = (dble(j)+HALF) * dr(1)
 
           if (do_isentropic) then
-             den_eos(1) = dens_base*(gravity*dens_base*(gamma_const - 1.0)*z/ &
-               (gamma_const*pres_base) + 1.d0)**(1.d0/(gamma_const - 1.d0))
+             den_eos(1) = 1.d-3*(grav_const*1.d-3*(gamma_const - 1.0)*z/ &
+               (gamma_const*1.d6) + 1.d0)**(1.d0/(gamma_const - 1.d0))
           else
              den_eos(1) = 1.d-3*exp(-z/H)
           end if
