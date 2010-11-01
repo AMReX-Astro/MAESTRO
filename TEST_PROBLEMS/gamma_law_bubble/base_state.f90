@@ -88,7 +88,8 @@ contains
           const = pres_base/dens_base**gamma_const
 
           ! we can integrate HSE with p = K rho^gamma analytically
-          den_eos(1) = dens_base*(grav_const*dens_base*(gamma_const - 1.0)*z/(gamma_const*pres_base) + 1.d0)**(1.d0/(gamma_const - 1.d0))
+          den_eos(1) = dens_base*(grav_const*dens_base*(gamma_const - 1.0)*z/ &
+               (gamma_const*pres_base) + 1.d0)**(1.d0/(gamma_const - 1.d0))
           s0_init(j, rho_comp) = den_eos(1)
 
           ! compute the pressure by discretizing HSE
