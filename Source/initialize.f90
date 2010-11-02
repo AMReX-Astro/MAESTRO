@@ -21,7 +21,7 @@ module initialize_module
 
 contains
     
-  subroutine initialize_from_restart(mla,restart,time,dt,pmask,dx,uold,sold,gpi,pi, &
+  subroutine initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi,pi, &
                                      dSdt,Source_old,Source_new, &
                                      rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
                                      div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -45,10 +45,11 @@ contains
     use fill_3d_module
     use estdt_module
     use regrid_module
+    use time_module, only: time
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(in   ) :: restart
-    real(dp_t)    , intent(  out) :: time,dt
+    real(dp_t)    , intent(  out) :: dt
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpi(:),pi(:),dSdt(:)
@@ -96,7 +97,7 @@ contains
     ! create mba, chk stuff, time, and dt
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
                            chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, &
-                           chk_rho_Hext,chk_thermal2, time, dt)
+                           chk_rho_Hext,chk_thermal2, dt)
 
     ! create mla
     call ml_layout_build(mla,mba,pmask)
@@ -565,7 +566,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpi,pi, &
+  subroutine initialize_with_fixed_grids(mla,dt,pmask,dx,uold,sold,gpi,pi, &
                                          dSdt,Source_old,Source_new, &
                                          rho_omegadot2,rho_Hnuc2,rho_Hext, &
                                          thermal2, &
@@ -585,9 +586,10 @@ contains
     use make_grav_module
     use enforce_HSE_module
     use rhoh_vs_t_module
+    use time_module, only: time
     
     type(ml_layout),intent(out  ) :: mla
-    real(dp_t)    , intent(inout) :: time,dt
+    real(dp_t)    , intent(inout) :: dt
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpi(:),pi(:),dSdt(:)
@@ -780,7 +782,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpi,pi, &
+  subroutine initialize_with_adaptive_grids(mla,dt,pmask,dx,uold,sold,gpi,pi, &
                                             dSdt,Source_old,Source_new, &
                                             rho_omegadot2,rho_Hnuc2,rho_Hext, &
                                             thermal2, &
@@ -806,9 +808,10 @@ contains
     use make_grav_module
     use enforce_HSE_module
     use rhoh_vs_t_module
+    use time_module, only: time
 
     type(ml_layout),intent(out  ) :: mla
-    real(dp_t)    , intent(inout) :: time,dt
+    real(dp_t)    , intent(inout) :: dt
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpi(:),pi(:),dSdt(:)

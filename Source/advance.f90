@@ -30,7 +30,7 @@ contains
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,&
                               div_coeff_old,div_coeff_new, &
-                              grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
+                              grav_cell_old,dx,dt,dtold,the_bc_tower, &
                               dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
                               psi,sponge,hgrhs,tempbar_init)
 
@@ -74,6 +74,7 @@ contains
                                              use_etarho, dpdt_factor, verbose, &
                                              use_tfromp, use_thermal_diffusion, &
                                              use_delta_gamma1_term, nodal, mach_max_abort
+    use time_module                 , only : time
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -101,7 +102,7 @@ contains
     real(dp_t)    ,  intent(inout) :: div_coeff_old(:,0:)
     real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
     real(dp_t)    ,  intent(inout) :: grav_cell_old(:,0:)
-    real(dp_t)    ,  intent(in   ) :: dx(:,:),time,dt,dtold
+    real(dp_t)    ,  intent(in   ) :: dx(:,:),dt,dtold
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(multifab),  intent(inout) ::       dSdt(:)
     type(multifab),  intent(inout) :: Source_old(:)
@@ -261,7 +262,7 @@ contains
     end do
 
     call react_state(mla,tempbar_init,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old,halfdt,dx, &
-                     the_bc_tower%bc_tower_array,time)
+                     the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(rho_omegadot1(n))
@@ -683,7 +684,7 @@ contains
     end do
     
     call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
-                     the_bc_tower%bc_tower_array,time)
+                     the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(s2(n))
@@ -1171,7 +1172,7 @@ contains
     end do
 
     call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
-                     the_bc_tower%bc_tower_array,time)
+                     the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(s2(n))

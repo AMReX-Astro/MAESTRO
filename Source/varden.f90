@@ -35,6 +35,7 @@ subroutine varden()
   use diag_module, only: flush_diag
   use omp_module
   use check_cutoff_module, only: check_cutoff_values
+  use time_module, only: time
 
   implicit none
 
@@ -44,7 +45,7 @@ subroutine varden()
   integer    :: last_plt_written,last_chk_written
   real(dp_t) :: smin,smax,smaxold,nuclear_dt_scalefac
   real(dp_t) :: umin,umax,vmin,vmax,wmin,wmax
-  real(dp_t) :: time,dt,dtold
+  real(dp_t) :: dt,dtold
 
   type(ml_layout) :: mla
   type(bc_tower)  :: the_bc_tower
@@ -136,7 +137,7 @@ subroutine varden()
 
   if (restart >= 0) then
 
-     call initialize_from_restart(mla,restart,time,dt,pmask,dx,uold,sold,gpi,pi, &
+     call initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi,pi, &
                                   dSdt,Source_old,Source_new, &
                                   rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
                                   div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -147,7 +148,7 @@ subroutine varden()
 
   else if (test_set /= '') then
 
-     call initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
+     call initialize_with_fixed_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                       Source_old,Source_new, &
                                       rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                       the_bc_tower, &
@@ -158,7 +159,7 @@ subroutine varden()
 
   else
 
-     call initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
+     call initialize_with_adaptive_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                          Source_old,Source_new, &
                                          rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                          the_bc_tower, &
@@ -364,7 +365,7 @@ subroutine varden()
 
         call divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal2, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old, &
-                       gamma1bar,tempbar_init,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
+                       gamma1bar,tempbar_init,w0,grav_cell,dx,dt,the_bc_tower,mla)
 
      end do
 
@@ -391,7 +392,7 @@ subroutine varden()
 
         call make_plotfile(plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
                            rho_Hnuc2,rho_Hext, &
-                           thermal2,Source_old,sponge,mla%mba,plot_names,time,dx, &
+                           thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
                            tempbar,gamma1bar,etarho_cc, &
                            normal,dt)
@@ -460,7 +461,7 @@ subroutine varden()
                                  rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                                  tempbar,gamma1bar,w0,rho_omegadot2,rho_Hnuc2, &
                                  rho_Hext,thermal2, &
-                                 div_coeff_old,div_coeff_new,grav_cell,dx,time,dt,dtold, &
+                                 div_coeff_old,div_coeff_new,grav_cell,dx,dt,dtold, &
                                  the_bc_tower,dSdt,Source_old,Source_new,etarho_ec, &
                                  etarho_cc,psi,sponge,hgrhs,tempbar_init)
 
@@ -503,7 +504,7 @@ subroutine varden()
         call checkpoint_write(check_file_name, chkdata, &
                               pi, dSdt, Source_old, Source_new, &
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
-                              mla%mba%rr, time, dt)
+                              mla%mba%rr, dt)
 
         call write_base_state(istep, check_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
@@ -534,7 +535,7 @@ subroutine varden()
 
         call make_plotfile(plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
                            rho_Hnuc2,rho_Hext, &
-                           thermal2,Source_old,sponge,mla%mba,plot_names,time,dx, &
+                           thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
                            tempbar,gamma1bar,etarho_cc, &
                            normal,dt)
@@ -879,7 +880,7 @@ subroutine varden()
                               rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar, &
                               w0,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                               div_coeff_old,div_coeff_new, &
-                              grav_cell,dx,time,dt,dtold,the_bc_tower,dSdt,Source_old, &
+                              grav_cell,dx,dt,dtold,the_bc_tower,dSdt,Source_old, &
                               Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init)
 
         if (nuclear_dt_fac .gt. 0.d0) then
@@ -1026,7 +1027,7 @@ subroutine varden()
                                     pi, dSdt, Source_old, Source_new, &
                                     rho_omegadot2, rho_Hnuc2, rho_Hext, &
                                     thermal2, mla%mba%rr, &
-                                    time, dt)
+                                    dt)
 
               call write_base_state(istep, check_file_name, &
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
@@ -1063,7 +1064,7 @@ subroutine varden()
 
               call make_plotfile(plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
                                  rho_Hnuc2,rho_Hext, &
-                                 thermal2,Source_new,sponge,mla%mba,plot_names,time,dx, &
+                                 thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
                                  the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
                                  tempbar,gamma1bar,etarho_cc, &
                                  normal,dt)
@@ -1119,7 +1120,7 @@ subroutine varden()
         call checkpoint_write(check_file_name, chkdata, &
                               pi, dSdt, Source_old, Source_new, &
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
-                              mla%mba%rr, time, dt)
+                              mla%mba%rr, dt)
 
         call write_base_state(istep, check_file_name, &
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
@@ -1145,7 +1146,7 @@ subroutine varden()
 
         call make_plotfile(plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
                            rho_Hnuc2,rho_Hext, &
-                           thermal2,Source_new,sponge,mla%mba,plot_names,time,dx, &
+                           thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
                            tempbar,gamma1bar,etarho_cc, &
                            normal,dt)

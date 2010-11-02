@@ -21,7 +21,7 @@ contains
 
   subroutine divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
-                       tempbar_init,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
+                       tempbar_init,w0,grav_cell,dx,dt,the_bc_tower,mla)
 
     use variables, only: nscal, foextrap_comp, rho_comp
     use network, only: nspec
@@ -60,7 +60,6 @@ contains
     real(kind=dp_t), intent(in   ) :: grav_cell(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     real(kind=dp_t), intent(inout) :: dt
-    real(kind=dp_t), intent(in   ) :: time 
     type(bc_tower) , intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla
 
@@ -116,7 +115,7 @@ contains
 
     ! burn to define rho_omegadot and rho_Hnuc -- needed to make S
     call react_state(mla,tempbar_init,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old, &
-                     halfdt,dx,the_bc_tower%bc_tower_array,time)
+                     halfdt,dx,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(s1(n))

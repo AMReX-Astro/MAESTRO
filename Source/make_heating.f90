@@ -13,7 +13,7 @@ module heating_module
   
 contains
 
-  subroutine get_rho_Hext(mla,tempbar_init,s,rho_Hext,the_bc_level,dx,time,dt)
+  subroutine get_rho_Hext(mla,tempbar_init,s,rho_Hext,the_bc_level,dx,dt)
 
     use multifab_module
     use define_bc_module
@@ -31,7 +31,7 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:),time,dt
+    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
 
     ! local
     integer                  :: n,i,ng_s,ng_h,ng_tc,dm,nlevs
@@ -83,22 +83,22 @@ contains
           case (1)
              call get_rho_Hext_1d(tempbar_init(n,:), &
                                   hp(:,1,1,1),ng_h,sp(:,1,1,:),ng_s, &
-                                  lo,hi,dx(n,:),time)
+                                  lo,hi,dx(n,:))
           case (2)
              call get_rho_Hext_2d(tempbar_init(n,:), &
                                   hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s, &
-                                  lo,hi,dx(n,:),time)
+                                  lo,hi,dx(n,:))
           case (3)
              if (spherical == 1) then
                 tcp => dataptr(tempbar_init_cart(n), i)
                 ng_tc = nghost(tempbar_init_cart(1))
                 call get_rho_Hext_3d_sph(tcp(:,:,:,1),ng_tc, &
                                          hp(:,:,:,1),ng_h,sp(:,:,:,:),ng_s, &
-                                         lo,hi,dx(n,:),time)
+                                         lo,hi,dx(n,:))
              else
                 call get_rho_Hext_3d(tempbar_init(n,:), &
                                      hp(:,:,:,1),ng_h,sp(:,:,:,:),ng_s, &
-                                     lo,hi,dx(n,:),time)
+                                     lo,hi,dx(n,:))
              endif
           end select
        end do
@@ -121,7 +121,7 @@ contains
 
   end subroutine get_rho_Hext
   
-  subroutine get_rho_Hext_1d(tempbar_init,rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
+  subroutine get_rho_Hext_1d(tempbar_init,rho_Hext,ng_h,s,ng_s,lo,hi,dx)
     
     use bl_constants_module
     
@@ -129,13 +129,13 @@ contains
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:)
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,:)
     real(kind=dp_t), intent(in   ) :: tempbar_init(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:),time
+    real(kind=dp_t), intent(in   ) :: dx(:)
     
     rho_Hext = 0.0_dp_t
     
   end subroutine get_rho_Hext_1d
   
-  subroutine get_rho_Hext_2d(tempbar_init,rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
+  subroutine get_rho_Hext_2d(tempbar_init,rho_Hext,ng_h,s,ng_s,lo,hi,dx)
     
     use bl_constants_module
     
@@ -143,13 +143,13 @@ contains
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:)
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real(kind=dp_t), intent(in   ) :: tempbar_init(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:),time
+    real(kind=dp_t), intent(in   ) :: dx(:)
     
     rho_Hext = 0.0_dp_t
     
   end subroutine get_rho_Hext_2d
   
-  subroutine get_rho_Hext_3d(tempbar_init,rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
+  subroutine get_rho_Hext_3d(tempbar_init,rho_Hext,ng_h,s,ng_s,lo,hi,dx)
     
     use bl_constants_module
     
@@ -157,7 +157,7 @@ contains
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real(kind=dp_t), intent(in   ) :: tempbar_init(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:),time
+    real(kind=dp_t), intent(in   ) :: dx(:)
     
     rho_Hext = 0.0_dp_t
     
@@ -165,7 +165,7 @@ contains
 
   subroutine get_rho_Hext_3d_sph(tempbar_init_cart,ng_tc, &
                                  rho_Hext,ng_h,s,ng_s, &
-                                 lo,hi,dx,time)
+                                 lo,hi,dx)
     
     use bl_constants_module
     
@@ -173,7 +173,7 @@ contains
     real(kind=dp_t), intent(in   ) :: tempbar_init_cart(lo(1)-ng_tc:,lo(2)-ng_tc:,lo(3)-ng_tc:)    
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real(kind=dp_t), intent(in   ) :: dx(:),time
+    real(kind=dp_t), intent(in   ) :: dx(:)
     
     rho_Hext = 0.0_dp_t
     

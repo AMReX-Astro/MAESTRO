@@ -22,13 +22,13 @@ subroutine write_job_info(dirname, mba)
 
 
   character (len=256) :: out_name
-  character (len=16) :: date, time
+  character (len=16) :: date_in, time_in
   integer, dimension(8) :: values
   character (len=BL_CWD_SIZE) :: cwd
 
   integer :: i, n
 
-  call date_and_time(date, time, VALUES=values)
+  call date_and_time(date_in, time_in, VALUES=values)
   call get_cwd(cwd)
  
   out_name = trim(dirname) // "/job_info"

@@ -141,7 +141,7 @@ contains
 
   subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot, &
                            rho_Hnuc,rho_Hext, &
-                           thermal,Source,sponge,mba,plot_names,time,dx, &
+                           thermal,Source,sponge,mba,plot_names,dx, &
                            the_bc_tower,w0,rho0,rhoh0,p0, &
                            tempbar,gamma1bar,etarho_cc, &
                            normal,dt)
@@ -166,6 +166,7 @@ contains
     use multifab_fill_ghost_module
     use bl_constants_module
     use network, only: nspec
+    use time_module, only: time
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -181,7 +182,7 @@ contains
     type(multifab)   , intent(in   ) :: sponge(:)
     type(ml_boxarray), intent(in   ) :: mba
     character(len=20), intent(in   ) :: plot_names(:)
-    real(dp_t)       , intent(in   ) :: dt,time,dx(:,:)
+    real(dp_t)       , intent(in   ) :: dt,dx(:,:)
     type(bc_tower)   , intent(in   ) :: the_bc_tower
     real(dp_t)       , intent(in   ) :: w0(:,0:)
     real(dp_t)       , intent(in   ) :: rho0(:,0:)

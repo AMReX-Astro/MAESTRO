@@ -24,7 +24,7 @@ module diag_module
 contains
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine diag(time,dt,dx,s,rho_Hnuc,rho_Hext,thermal,rho_omegadot, &
+  subroutine diag(newtime,dt,dx,s,rho_Hnuc,rho_Hext,thermal,rho_omegadot, &
                   rho0,rhoh0,p0,tempbar, &
                   gamma1bar,div_coeff, &
                   u,w0,normal, &
@@ -40,7 +40,7 @@ contains
     use fill_3d_module, only: put_1d_array_on_cart, make_w0mac
     use variables, only: foextrap_comp
 
-    real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
+    real(kind=dp_t), intent(in   ) :: dt,dx(:,:),newtime
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: rho_Hnuc(:)
     type(multifab) , intent(in   ) :: rho_Hext(:)
@@ -178,7 +178,7 @@ contains
 
           case (1)
              if (n .eq. nlevs) then
-                call diag_1d(n,time,dt,dx(n,:), &
+                call diag_1d(n,newtime,dt,dx(n,:), &
                              sp(:,1,1,:),ng_s, &
                              rhnp(:,1,1,1),ng_rhn, &
                              rhep(:,1,1,1),ng_rhe, &
@@ -191,7 +191,7 @@ contains
                              Mach_max_local,temp_max_local,enuc_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
-                call diag_1d(n,time,dt,dx(n,:), &
+                call diag_1d(n,newtime,dt,dx(n,:), &
                              sp(:,1,1,:),ng_s, &
                              rhnp(:,1,1,1),ng_rhn, &
                              rhep(:,1,1,1),ng_rhe, &
@@ -207,7 +207,7 @@ contains
 
           case (2)
              if (n .eq. nlevs) then
-                call diag_2d(n,time,dt,dx(n,:), &
+                call diag_2d(n,newtime,dt,dx(n,:), &
                              sp(:,:,1,:),ng_s, &
                              rhnp(:,:,1,1),ng_rhn, &
                              rhep(:,:,1,1),ng_rhe, &
@@ -220,7 +220,7 @@ contains
                              Mach_max_local,temp_max_local,enuc_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
-                call diag_2d(n,time,dt,dx(n,:), &
+                call diag_2d(n,newtime,dt,dx(n,:), &
                              sp(:,:,1,:),ng_s, &
                              rhnp(:,:,1,1),ng_rhn, &
                              rhep(:,:,1,1),ng_rhe, &
@@ -244,7 +244,7 @@ contains
                 w0zp => dataptr(w0mac(n,3), i)
 
                 if (n .eq. nlevs) then
-                   call diag_3d_sph(n,time,dt,dx(n,:), &
+                   call diag_3d_sph(n,newtime,dt,dx(n,:), &
                                     sp(:,:,:,:),ng_s, &
                                     rhnp(:,:,:,1),ng_rhn, &
                                     rhep(:,:,:,1),ng_rhe, &
@@ -259,7 +259,7 @@ contains
                                     Mach_max_local,temp_max_local,enuc_max_local)
                 else
                    mp => dataptr(mla%mask(n), i)
-                   call diag_3d_sph(n,time,dt,dx(n,:), &
+                   call diag_3d_sph(n,newtime,dt,dx(n,:), &
                                     sp(:,:,:,:),ng_s, &
                                     rhnp(:,:,:,1),ng_rhn, &
                                     rhep(:,:,:,1),ng_rhe, &
@@ -277,7 +277,7 @@ contains
 
              else
                 if (n .eq. nlevs) then
-                   call diag_3d(n,time,dt,dx(n,:), &
+                   call diag_3d(n,newtime,dt,dx(n,:), &
                                 sp(:,:,:,:),ng_s, &
                                 rhnp(:,:,:,1),ng_rhn, &
                                 rhep(:,:,:,1),ng_rhe, &
@@ -290,7 +290,7 @@ contains
                                 Mach_max_local,temp_max_local,enuc_max_local)
                 else
                    mp => dataptr(mla%mask(n), i)
-                   call diag_3d(n,time,dt,dx(n,:), &
+                   call diag_3d(n,newtime,dt,dx(n,:), &
                                 sp(:,:,:,:),ng_s, &
                                 rhnp(:,:,:,1),ng_rhn, &
                                 rhep(:,:,:,1),ng_rhe, &
@@ -375,7 +375,7 @@ contains
        endif
 
        ! write out the data
-       write (un,1000) time, Mach_max, temp_max, enuc_max
+       write (un,1000) newtime, Mach_max, temp_max, enuc_max
 
        close(un)
 
@@ -409,7 +409,7 @@ contains
 
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine diag_1d(n,time,dt,dx, &
+  subroutine diag_1d(n,newtime,dt,dx, &
                      s,ng_s, &
                      rho_Hnuc,ng_rhn, &
                      rho_Hext,ng_rhe, &
@@ -436,7 +436,7 @@ contains
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
-    real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
+    real (kind=dp_t), intent(in   ) :: newtime, dt, dx(:)
     real (kind=dp_t), intent(inout) :: Mach_max, temp_max, enuc_max
     logical,          intent(in   ), optional :: mask(lo(1):)
 
@@ -499,7 +499,7 @@ contains
 
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine diag_2d(n,time,dt,dx, &
+  subroutine diag_2d(n,newtime,dt,dx, &
                      s,ng_s, &
                      rho_Hnuc,ng_rhn, &
                      rho_Hext,ng_rhe, &
@@ -526,7 +526,7 @@ contains
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
-    real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
+    real (kind=dp_t), intent(in   ) :: newtime, dt, dx(:)
     real (kind=dp_t), intent(inout) :: Mach_max, temp_max, enuc_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
@@ -593,7 +593,7 @@ contains
 
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine diag_3d(n,time,dt,dx, &
+  subroutine diag_3d(n,newtime,dt,dx, &
                      s,ng_s, &
                      rho_Hnuc,ng_rhn, &
                      rho_Hext,ng_rhe, &
@@ -620,7 +620,7 @@ contains
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
-    real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
+    real (kind=dp_t), intent(in   ) :: newtime, dt, dx(:)
     real (kind=dp_t), intent(inout) :: Mach_max, temp_max, enuc_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
@@ -692,7 +692,7 @@ contains
 
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine diag_3d_sph(n,time,dt,dx, &
+  subroutine diag_3d_sph(n,newtime,dt,dx, &
                          s,ng_s, &
                          rho_Hnuc,ng_rhn, &
                          rho_Hext,ng_rhe, &
@@ -725,7 +725,7 @@ contains
     real (kind=dp_t), intent(in   ) ::   w0macy(lo(1)-ng_wm: ,lo(2)-ng_wm: ,lo(3)-ng_wm:)
     real (kind=dp_t), intent(in   ) ::   w0macz(lo(1)-ng_wm: ,lo(2)-ng_wm: ,lo(3)-ng_wm:)
     real (kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n:  ,lo(2)-ng_n:  ,lo(3)-ng_n:,:)
-    real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
+    real (kind=dp_t), intent(in   ) :: newtime, dt, dx(:)
     real (kind=dp_t), intent(inout) :: Mach_max, temp_max, enuc_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 

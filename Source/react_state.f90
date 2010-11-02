@@ -14,7 +14,7 @@ module react_state_module
 contains
 
   subroutine react_state(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,p0, &
-                         dt,dx,the_bc_level,time)
+                         dt,dx,the_bc_level)
 
     use probin_module, only: use_tfromp
     use variables, only: temp_comp
@@ -33,7 +33,7 @@ contains
     type(multifab) , intent(inout) :: rho_Hext(:)
     real(dp_t)     , intent(in   ) :: p0(:,0:)
     real(dp_t)     , intent(in   ) :: tempbar_init(:,0:)
-    real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
+    real(kind=dp_t), intent(in   ) :: dt,dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local
@@ -46,7 +46,7 @@ contains
     nlevs = mla%nlevel
 
     ! get heating term
-    call get_rho_Hext(mla,tempbar_init,sold,rho_Hext,the_bc_level,dx,time,dt)
+    call get_rho_Hext(mla,tempbar_init,sold,rho_Hext,the_bc_level,dx,dt)
 
     ! do the burning
     call burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dx,dt,the_bc_level)

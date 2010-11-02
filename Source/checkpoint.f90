@@ -17,7 +17,7 @@ contains
 
   subroutine checkpoint_write(dirname, mfs, mfs_nodal, dSdt, Source_old, Source_new, &
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
-                              rrs, time, dt)
+                              rrs, dt)
 
     use parallel, only: parallel_IOProcessor, parallel_barrier
     use bl_IO_module, only: unit_new
@@ -26,13 +26,14 @@ contains
     use probin_module, only: verbose, nOutFiles, lUsingNFiles, &
                              use_thermal_diffusion, plot_Hext
     use variables, only: rel_eps
+    use time_module, only: time
 
     type(multifab)  , intent(in) :: mfs(:), mfs_nodal(:)
     type(multifab)  , intent(in) :: dSdt(:), Source_old(:), Source_new(:)
     type(multifab)  , intent(in) :: rho_omegadot2(:), rho_Hnuc2(:), rho_Hext(:), thermal2(:)
     integer         , intent(in) :: rrs(:,:)
     character(len=*), intent(in) :: dirname
-    real(kind=dp_t) , intent(in) :: time, dt
+    real(kind=dp_t) , intent(in) :: dt
 
     ! local
     integer :: un, nlevs
@@ -141,26 +142,27 @@ contains
   end subroutine checkpoint_write
 
   subroutine checkpoint_read(mfs, mfs_nodal, dSdt, Source_old, Source_new, rho_omegadot2, &
-                             rho_Hnuc2, rho_Hext, thermal2, dirname, time_out, dt_out, nlevs_out)
+                             rho_Hnuc2, rho_Hext, thermal2, dirname, dt_out, nlevs_out)
 
     use bl_IO_module, only: unit_new
     use fabio_module, only: fabio_ml_multifab_read_d
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use variables, only: rel_eps
     use probin_module, only: use_thermal_diffusion, plot_Hext
+    use time_module, only: time
 
     type(multifab  ),                pointer :: mfs(:), mfs_nodal(:)
     type(multifab  ),                pointer :: dSdt(:), Source_old(:), Source_new(:)
     type(multifab  ),                pointer :: rho_omegadot2(:), rho_Hnuc2(:), rho_Hext(:), thermal2(:)
     character(len=*), intent(in   )          :: dirname
     integer         , intent(  out)          :: nlevs_out
-    real(kind=dp_t) , intent(  out)          :: time_out, dt_out
+    real(kind=dp_t) , intent(  out)          :: dt_out
 
     ! local
     integer            :: un
     character(len=256) :: header, sd_name
     integer            :: nlevs
-    real(kind=dp_t)    :: time, dt
+    real(kind=dp_t)    :: dt_in
 
     namelist /chkpoint/ nlevs
 
@@ -177,13 +179,12 @@ contains
          action = "read")
     read(unit=un, nml = chkpoint)
 
-    read(unit=un,fmt=*) dt
+    read(unit=un,fmt=*) dt_in
     read(unit=un,fmt=*) time
     read(unit=un,fmt=*) rel_eps
     close(un)
 
-     time_out = time
-       dt_out = dt
+       dt_out = dt_in
     nlevs_out = nlevs
 
 !   Read the state data into a multilevel multifab.

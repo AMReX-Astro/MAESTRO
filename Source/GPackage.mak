@@ -6,13 +6,16 @@ f90sources += average.f90
 f90sources += base_state.f90
 f90sources += base_io.f90
 f90sources += bds.f90
+f90sources += build_info.f90
 f90sources += cell_to_edge.f90
+f90sources += check_cutoff.f90
 f90sources += checkpoint.f90
 f90sources += constants.f90
 f90sources += convert_rhoX_to_X.f90
 f90sources += create_umac_grown.f90
 f90sources += define_bc_tower.f90
 f90sources += density_advance.f90
+f90sources += diag.f90
 f90sources += divu_iter.f90
 f90sources += enforce_outflow_on_divu_rhs.f90
 f90sources += enforce_HSE.f90
@@ -30,15 +33,9 @@ f90sources += initveldata.f90
 f90sources += init_perturb.f90
 f90sources += initial_proj.f90
 f90sources += initialize.f90
+f90sources += inlet_bc.f90
 f90sources += mac_applyop.f90
 f90sources += mac_multigrid.f90
-ifdef HYPRE
-f90sources += mac_hypre.f90
-f90sources +=  hg_hypre.f90
-else
-f90sources += mac_hypre_stub.f90
-f90sources +=  hg_hypre_stub.f90
-endif
 f90sources += macproject.f90
 f90sources += main.f90
 f90sources += make_at_halftime.f90
@@ -58,6 +55,7 @@ f90sources += make_psi.f90
 f90sources += make_explicit_thermal.f90
 f90sources += make_S.f90
 f90sources += make_w0.f90
+f90sources += mg_eps.f90
 f90sources += mkflux.f90
 f90sources += mkforce.f90
 f90sources += mkscalforce.f90
@@ -70,17 +68,19 @@ f90sources += multifab_physbc_edgevel.f90
 f90sources += ppm.f90
 f90sources += pred_parameters.f90
 f90sources += probin.f90
+f90sources += prolong_base_to_uniform.f90
 f90sources += proj_parameters.f90
 f90sources += put_in_pert_form.f90
 f90sources += react_state.f90
 f90sources += regrid.f90
 f90sources += restart.f90
 f90sources += restrict_base.f90
-f90sources += prolong_base_to_uniform.f90
 f90sources += rhoh_vs_t.f90
+f90sources += sanity.f90
 f90sources += setbc.f90
 f90sources += slope.f90
 f90sources += sponge.f90
+f90sources += time.f90
 f90sources += thermal_conduct.f90
 f90sources += update_scal.f90
 f90sources += update_vel.f90
@@ -89,11 +89,10 @@ f90sources += variables.f90
 f90sources += velocity_advance.f90
 f90sources += velpred.f90
 f90sources += write_job_info.f90
-f90sources += diag.f90
-f90sources += sanity.f90
-f90sources += inlet_bc.f90
-f90sources += build_info.f90
-f90sources += mg_eps.f90
-f90sources += check_cutoff.f90
-
-
+ifdef HYPRE
+f90sources += mac_hypre.f90
+f90sources +=  hg_hypre.f90
+else
+f90sources += mac_hypre_stub.f90
+f90sources +=  hg_hypre_stub.f90
+endif
