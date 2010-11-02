@@ -18,7 +18,7 @@ module sanity_module
 contains
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine sanity_check(time,dx,s,rho0,rhoh0,p0,tempbar, &
+  subroutine sanity_check(newtime,dx,s,rho0,rhoh0,p0,tempbar, &
                           gamma1bar,div_coeff, &
                           u,w0,normal, &
                           mla,the_bc_tower)
@@ -32,7 +32,7 @@ contains
     use variables, only: foextrap_comp
     use probin_module, only: mach_max_abort
 
-    real(kind=dp_t), intent(in   ) :: dx(:,:),time
+    real(kind=dp_t), intent(in   ) :: dx(:,:),newtime
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: normal(:)
@@ -146,7 +146,7 @@ contains
 
           case (1)
              if (n .eq. nlevs) then
-                call sanity_1d(n,time,dx(n,:), &
+                call sanity_1d(n,newtime,dx(n,:), &
                                sp(:,1,1,:),ng_s, &
                                rho0(n,:),rhoh0(n,:), &
                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
@@ -156,7 +156,7 @@ contains
                                Mach_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
-                call sanity_1d(n,time,dx(n,:), &
+                call sanity_1d(n,newtime,dx(n,:), &
                                sp(:,1,1,:),ng_s, &
                                rho0(n,:),rhoh0(n,:), &
                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
@@ -169,7 +169,7 @@ contains
 
           case (2)
              if (n .eq. nlevs) then
-                call sanity_2d(n,time,dx(n,:), &
+                call sanity_2d(n,newtime,dx(n,:), &
                                sp(:,:,1,:),ng_s, &
                                rho0(n,:),rhoh0(n,:), &
                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
@@ -179,7 +179,7 @@ contains
                                Mach_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
-                call sanity_2d(n,time,dx(n,:), &
+                call sanity_2d(n,newtime,dx(n,:), &
                                sp(:,:,1,:),ng_s, &
                                rho0(n,:),rhoh0(n,:), &
                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
@@ -200,7 +200,7 @@ contains
                 w0zp => dataptr(w0mac(n,3), i)
 
                 if (n .eq. nlevs) then
-                   call sanity_3d_sph(n,time,dx(n,:), &
+                   call sanity_3d_sph(n,newtime,dx(n,:), &
                                       sp(:,:,:,:),ng_s, &
                                       rho0(n,:),rhoh0(n,:), &
                                       p0(n,:),tempbar(n,:),gamma1bar(n,:), &
@@ -212,7 +212,7 @@ contains
                                       Mach_max_local)
                 else
                    mp => dataptr(mla%mask(n), i)
-                   call sanity_3d_sph(n,time,dx(n,:), &
+                   call sanity_3d_sph(n,newtime,dx(n,:), &
                                       sp(:,:,:,:),ng_s, &
                                       rho0(n,:),rhoh0(n,:), &
                                       p0(n,:),tempbar(n,:),gamma1bar(n,:), &
@@ -227,7 +227,7 @@ contains
 
              else
                 if (n .eq. nlevs) then
-                   call sanity_3d(n,time,dx(n,:), &
+                   call sanity_3d(n,newtime,dx(n,:), &
                                   sp(:,:,:,:),ng_s, &
                                   rho0(n,:),rhoh0(n,:), &
                                   p0(n,:),tempbar(n,:),gamma1bar(n,:), &
@@ -237,7 +237,7 @@ contains
                                   Mach_max_local)
                 else
                    mp => dataptr(mla%mask(n), i)
-                   call sanity_3d(n,time,dx(n,:), &
+                   call sanity_3d(n,newtime,dx(n,:), &
                                   sp(:,:,:,:),ng_s, &
                                   rho0(n,:),rhoh0(n,:), &
                                   p0(n,:),tempbar(n,:),gamma1bar(n,:), &
@@ -305,7 +305,7 @@ contains
 
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine sanity_1d(n,time,dx, &
+  subroutine sanity_1d(n,newtime,dx, &
                        s,ng_s, &
                        rho0,rhoh0,p0,tempbar,gamma1bar, &
                        u,ng_u, &
@@ -326,7 +326,7 @@ contains
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
-    real (kind=dp_t), intent(in   ) :: time, dx(:)
+    real (kind=dp_t), intent(in   ) :: newtime, dx(:)
     real (kind=dp_t), intent(inout) :: Mach_max
     logical,          intent(in   ), optional :: mask(lo(1):)
 
@@ -377,7 +377,7 @@ contains
   
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine sanity_2d(n,time,dx, &
+  subroutine sanity_2d(n,newtime,dx, &
                        s,ng_s, &
                        rho0,rhoh0,p0,tempbar,gamma1bar, &
                        u,ng_u, &
@@ -398,7 +398,7 @@ contains
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
-    real (kind=dp_t), intent(in   ) :: time, dx(:)
+    real (kind=dp_t), intent(in   ) :: newtime, dx(:)
     real (kind=dp_t), intent(inout) :: Mach_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
@@ -452,7 +452,7 @@ contains
 
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine sanity_3d(n,time,dx, &
+  subroutine sanity_3d(n,newtime,dx, &
                        s,ng_s, &
                        rho0,rhoh0,p0,tempbar,gamma1bar, &
                        u,ng_u, &
@@ -473,7 +473,7 @@ contains
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
-    real (kind=dp_t), intent(in   ) :: time, dx(:)
+    real (kind=dp_t), intent(in   ) :: newtime, dx(:)
     real (kind=dp_t), intent(inout) :: Mach_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
@@ -530,7 +530,7 @@ contains
 
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine sanity_3d_sph(n,time,dx, &
+  subroutine sanity_3d_sph(n,newtime,dx, &
                            s,ng_s, &
                            rho0,rhoh0,p0,tempbar,gamma1bar, &
                            u,ng_u, &
@@ -557,7 +557,7 @@ contains
     real (kind=dp_t), intent(in   ) ::   w0macy(lo(1)-ng_wm: ,lo(2)-ng_wm: ,lo(3)-ng_wm:)
     real (kind=dp_t), intent(in   ) ::   w0macz(lo(1)-ng_wm: ,lo(2)-ng_wm: ,lo(3)-ng_wm:)
     real (kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n:  ,lo(2)-ng_n:  ,lo(3)-ng_n:,:)
-    real (kind=dp_t), intent(in   ) :: time, dx(:)
+    real (kind=dp_t), intent(in   ) :: newtime, dx(:)
     real (kind=dp_t), intent(inout) :: Mach_max
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
