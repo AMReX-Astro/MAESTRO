@@ -14,7 +14,7 @@ module heating_module
   
 contains
 
-  subroutine get_rho_Hext(mla,s,rho_Hext,dx,time,the_bc_level)
+  subroutine get_rho_Hext(mla,s,rho_Hext,dx,the_bc_level)
 
     use geometry, only: nlevs
     use multifab_module
@@ -26,7 +26,7 @@ contains
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:),time
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
@@ -51,9 +51,9 @@ contains
           hi =  upb(get_box(s(n), i))
           select case (dm)
           case (2)
-             call get_rho_Hext_2d(hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s,lo,hi,dx(n,:),time)
+             call get_rho_Hext_2d(hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s,lo,hi,dx(n,:))
           case (3)
-             call get_rho_Hext_3d(hp(:,:,:,1),ng_h,sp(:,:,:,:),ng_s,lo,hi,dx(n,:),time)
+             call get_rho_Hext_3d(hp(:,:,:,1),ng_h,sp(:,:,:,:),ng_s,lo,hi,dx(n,:))
           end select
        end do
 
@@ -69,7 +69,7 @@ contains
 
   end subroutine get_rho_Hext
   
-  subroutine get_rho_Hext_2d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
+  subroutine get_rho_Hext_2d(rho_Hext,ng_h,s,ng_s,lo,hi,dx)
     
     use bl_constants_module
     use variables, only: rho_comp
@@ -77,7 +77,7 @@ contains
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:)
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real(kind=dp_t), intent(in   ) :: dx(:),time
+    real(kind=dp_t), intent(in   ) :: dx(:)
     
     integer         :: i,j
     real(kind=dp_t) :: y,width
@@ -98,7 +98,7 @@ contains
    
   end subroutine get_rho_Hext_2d
   
-  subroutine get_rho_Hext_3d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
+  subroutine get_rho_Hext_3d(rho_Hext,ng_h,s,ng_s,lo,hi,dx)
     
     use bl_constants_module
     use geometry, only: center
@@ -107,7 +107,7 @@ contains
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real(kind=dp_t), intent(in   ) :: dx(:),time
+    real(kind=dp_t), intent(in   ) :: dx(:)
     
     rho_Hext = 0.d0
 

@@ -14,7 +14,7 @@ module heating_module
 
 contains
 
-  subroutine get_rho_Hext(mla,s,rho_Hext,dx,time,dt)
+  subroutine get_rho_Hext(mla,tempbar_init,s,rho_Hext,the_bc_level,dx,dt)
 
     use multifab_module
     use ml_layout_module
@@ -22,9 +22,11 @@ contains
     use variables, only: foextrap_comp
 
     type(ml_layout), intent(in   ) :: mla
+    real(kind=dp_t), intent(in   ) :: tempbar_init(:,0:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:),time,dt
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
 
     ! local
     integer                  :: n,i,ng_s,ng_h
@@ -51,9 +53,9 @@ contains
           hi =  upb(get_box(s(n), i))
           select case (dm)
           case (2)
-             call get_rho_Hext_2d(hp(:,:,1,1), ng_h, sp(:,:,1,:), ng_s, lo, hi, dx(n,:),time)
+             call get_rho_Hext_2d(hp(:,:,1,1), ng_h, sp(:,:,1,:), ng_s, lo, hi, dx(n,:))
           case (3)
-             call get_rho_Hext_3d(hp(:,:,:,1), ng_h, sp(:,:,:,:), ng_s, lo, hi, dx(n,:),time)
+             call get_rho_Hext_3d(hp(:,:,:,1), ng_h, sp(:,:,:,:), ng_s, lo, hi, dx(n,:))
           end select
        end do
 
@@ -69,16 +71,17 @@ contains
 
   end subroutine get_rho_Hext
 
-  subroutine get_rho_Hext_2d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
+  subroutine get_rho_Hext_2d(rho_Hext,ng_h,s,ng_s,lo,hi,dx)
 
     use bl_constants_module
     use variables, only: rho_comp
     use probin_module, only: prob_lo
+    use time_module, only: time
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:)
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real(kind=dp_t), intent(in   ) :: dx(:),time
+    real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer :: i,j
     real(kind=dp_t) :: x
@@ -119,17 +122,17 @@ contains
 
   end subroutine get_rho_Hext_2d
 
-  subroutine get_rho_Hext_3d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
+  subroutine get_rho_Hext_3d(rho_Hext,ng_h,s,ng_s,lo,hi,dx)
 
     use bl_constants_module
     use variables, only: rho_comp
     use probin_module, only: prob_lo
+    use time_module, only: time
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real(kind=dp_t), intent(in   ) :: dx(:),time
-
+    real(kind=dp_t), intent(in   ) :: dx(:)
     integer :: i,j,k
     real(kind=dp_t) :: x, y
     real(kind=dp_t) :: z,z_layer

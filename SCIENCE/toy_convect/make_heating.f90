@@ -14,7 +14,7 @@ module heating_module
   
 contains
 
-  subroutine get_rho_Hext(mla,tempbar_init,s,rho_Hext,the_bc_level,dx,time,dt)
+  subroutine get_rho_Hext(mla,tempbar_init,s,rho_Hext,the_bc_level,dx,dt)
 
     use multifab_module
     use define_bc_module
@@ -27,7 +27,7 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:),time,dt
+    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
 
     ! local
     integer                  :: n,i,ng_s,ng_h,dm,nlevs
@@ -58,7 +58,7 @@ contains
           case (2)
              call get_rho_Hext_2d(tempbar_init(n,:), &
                                   hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s, &
-                                  lo,hi,dx(n,:),time)
+                                  lo,hi,dx(n,:))
           case (3)
              call bl_error("3-d heating not implemented")
           end select
@@ -77,7 +77,7 @@ contains
   end subroutine get_rho_Hext
   
   
-  subroutine get_rho_Hext_2d(tempbar_init,rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
+  subroutine get_rho_Hext_2d(tempbar_init,rho_Hext,ng_h,s,ng_s,lo,hi,dx)
 
     use bl_constants_module
     use variables
@@ -88,7 +88,7 @@ contains
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:)
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real(kind=dp_t), intent(in   ) :: tempbar_init(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:),time
+    real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer :: i, j
     integer, save :: ih1, ic12, in14, io16
