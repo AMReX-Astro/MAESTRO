@@ -29,3 +29,4 @@ f90sources += setbc.f90
 f90sources += thermal_conduct.f90
 f90sources += varden.f90
 f90sources += variables.f90
+f90sources += time.f90
