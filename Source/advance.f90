@@ -70,7 +70,7 @@ contains
     use variables                   , only : nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry                    , only : nlevs_radial, spherical, nr_fine, compute_cutoff_coords
     use network                     , only : nspec
-    use probin_module               , only : barrier_timers, evolve_base_state, &
+    use probin_module               , only : barrier_timers, evolve_base_state, fix_base_state, &
                                              use_etarho, dpdt_factor, verbose, &
                                              use_tfromp, use_thermal_diffusion, &
                                              use_delta_gamma1_term, nodal, mach_max_abort
@@ -1435,8 +1435,10 @@ contains
        
        grav_cell_old = grav_cell_new
 
-       ! compute tempbar by "averaging"
-       call average(mla,snew,tempbar,dx,temp_comp)
+       if (.not. fix_base_state) then
+          ! compute tempbar by "averaging"
+          call average(mla,snew,tempbar,dx,temp_comp)
+       end if
 
        ! output any runtime diagnostics
        ! pass in the new time value, time+dt
