@@ -10,12 +10,6 @@
  n_cellz = 576
  max_grid_size = 48
 
- !regrid_int = 2
- !tag_density_1 = 5.d7
- !tag_density_2 = 5.d8
- !cluster_min_width = 8
- !min_eff = 0.9d0
-
  anelastic_cutoff = 1.d6
  base_cutoff_density = 1.d5
  sponge_center_density = 3.d6
