@@ -183,8 +183,12 @@ contains
 
     call build(bpt, "diagnostics")
 
-    dm = mla%dim
-    nlevs = mla%nlevel
+    dm           = mla%dim
+    nlevs        = mla%nlevel
+    vr_Tmax      = 0.d0
+    vr_enucmax   = 0.d0
+    Rloc_Tmax    = 0.d0
+    Rloc_enucmax = 0.d0
 
     if ( firstCall ) then
        

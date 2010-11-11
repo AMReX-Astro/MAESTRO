@@ -85,6 +85,8 @@ contains
     nprocs  = parallel_nprocs()
     nsets   = ((nprocs + (natonce - 1)) / natonce)
     myset   = (myproc / natonce)
+    pistart = 0.d0
+    piend   = 0.d0
 
     pistartall = parallel_wtime()
 

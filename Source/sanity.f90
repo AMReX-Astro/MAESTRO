@@ -64,7 +64,6 @@ contains
     integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: ng_s,ng_u,ng_n,ng_rhn,ng_rhe,ng_rw,ng_w,ng_wm
     integer :: i,n,comp
-    integer :: un
     logical :: lexist
 
     logical, save :: firstCall_io = .true.
