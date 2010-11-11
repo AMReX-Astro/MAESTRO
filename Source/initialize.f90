@@ -35,7 +35,8 @@ contains
     use multifab_physbc_module
     use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
          ppm_type, bds_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
-         check_base_name, use_tfromp, cflfac, dm_in
+         check_base_name, use_tfromp, cflfac, dm_in, restart_with_vel_field, &
+         model_file, do_smallscale, fix_base_state
     use average_module
     use make_grav_module
     use enforce_HSE_module
@@ -45,10 +46,11 @@ contains
     use fill_3d_module
     use estdt_module
     use regrid_module
+    use init_scalar_module
     use time_module, only: time
 
     type(ml_layout),intent(out)   :: mla
-    integer       , intent(in   ) :: restart
+    integer       , intent(inout) :: restart
     real(dp_t)    , intent(  out) :: dt
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
@@ -225,6 +227,23 @@ contains
           call setval(thermal2(n),ZERO,all=.true.)
        end do
     end if
+
+    ! reset the state data if restarting with vel information
+    if (restart_with_vel_field) then
+       do n = 1, nlevs
+          call setval(         sold(n), ZERO, all=.true.)
+          call setval(          gpi(n), ZERO, all=.true.)
+          call setval(           pi(n), ZERO, all=.true.)
+          call setval(   Source_old(n), ZERO, all=.true.)
+          call setval(   Source_new(n), ZERO, all=.true.)
+          call setval(         dSdt(n), ZERO, all=.true.)
+          call setval(rho_omegadot2(n), ZERO, all=.true.)
+          call setval(    rho_Hnuc2(n), ZERO, all=.true.)
+          call setval(     rho_Hext(n), ZERO, all=.true.)
+          call setval(     thermal2(n), ZERO, all=.true.)
+       end do
+
+     endif
     
     deallocate(chkdata, chk_p, chk_dsdt, chk_src_old, chk_src_new)
     deallocate(chk_rho_omegadot2, chk_rho_Hnuc2)
@@ -280,19 +299,77 @@ contains
                               p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar,tempbar_init, &
                               grav_cell)
 
-    ! now that we have nr we can read in the base state
-    if (restart <= 99999) then
-       write(unit=check_index,fmt='(i5.5)') restart
-       check_file_name = trim(check_base_name) // check_index
-    else
-       write(unit=check_index6,fmt='(i6.6)') restart
-       check_file_name = trim(check_base_name) // check_index6
-    endif
+    if (restart_with_vel_field) then
 
-    ! note: still need to load/store tempbar
-    call read_base_state(restart, check_file_name, &
-                         rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
-                         etarho_ec, etarho_cc, div_coeff_old, psi, tempbar, tempbar_init)
+       if (spherical .eq. 1) then
+          call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(max_levs,:))
+       else
+          do n=1,max_levs
+             call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
+          end do
+       end if
+
+       p0_old       = p0_init
+       rho0_old     = s0_init(:,:,rho_comp)
+       rhoh0_old    = s0_init(:,:,rhoh_comp)
+       tempbar      = s0_init(:,:,temp_comp)
+       tempbar_init = s0_init(:,:,temp_comp)
+
+       call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
+       
+       if (fix_base_state) then
+          call compute_cutoff_coords(rho0_old)
+          call make_grav_cell(grav_cell,rho0_old)
+          call destroy(mba)
+          return
+       end if
+
+       if (do_smallscale) then
+          ! leave rho0_old = rhoh0_old = ZERO
+          rho0_old  = ZERO
+          rhoh0_old = ZERO
+       else
+          ! set rho0 to be the average
+          call average(mla,sold,rho0_old,dx,rho_comp)
+          call compute_cutoff_coords(rho0_old)
+
+          ! compute p0 with HSE
+          call make_grav_cell(grav_cell,rho0_old)
+          call enforce_HSE(rho0_old,p0_old,grav_cell)
+
+          ! call eos with r,p as input to recompute T,h
+          call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
+
+          ! set rhoh0 to be the average
+          call average(mla,sold,rhoh0_old,dx,rhoh_comp)
+       end if
+
+       ! set tempbar to be the average
+       call average(mla,sold,tempbar,dx,temp_comp)
+       tempbar_init = tempbar
+
+       ! reset the time, timestep size, and restart integer
+       time = ZERO
+       dt = 1.d20
+       restart = -1
+
+    else
+
+       ! now that we have nr we can read in the base state
+       if (restart <= 99999) then
+          write(unit=check_index,fmt='(i5.5)') restart
+          check_file_name = trim(check_base_name) // check_index
+       else
+          write(unit=check_index6,fmt='(i6.6)') restart
+          check_file_name = trim(check_base_name) // check_index6
+       endif
+
+       ! note: still need to load/store tempbar
+       call read_base_state(restart, check_file_name, &
+            rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
+            etarho_ec, etarho_cc, div_coeff_old, psi, tempbar, tempbar_init)
+
+    endif
 
     ! fill ghost cells
     ! this need to be done after read_base_state since in some problems, the inflow
