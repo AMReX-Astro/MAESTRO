@@ -3,8 +3,6 @@
 
  cflfac = 0.8d0
 
- do_isentropic = T
-
  max_step  = 1000
  stop_time = 1.e-4
 
