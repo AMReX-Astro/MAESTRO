@@ -1,28 +1,6 @@
 &PROBIN
  spherical_in = 0
 
- cflfac = 0.8d0
-
- max_step  = 1000
- stop_time = 1.e-4
-
- y_pert_center = 0.7
-
- ! max Mach number ~0.09
- pert_factor = 0.1d0
-
- ! max Mach number ~0.25
- !pert_factor = 1.d0
-
- ! max Mach number ~0.35
- !pert_factor = 10.d0
-
- ! max Mach number ~0.4 to 0.45
- !pert_factor = 50.d0
-
- ! max Mach number >~ 0.45 -- needs smaller CFL with PPM2
- !pert_factor = 100.d0
-
  max_levs = 1
  n_cellx = 256
  n_celly = 256
@@ -30,6 +8,25 @@
 
  prob_hi_x = 2.0
  prob_hi_y = 2.0
+
+ cflfac = 0.8d0
+
+ max_step  = 100000
+
+ ! max Mach number ~0.05
+! pert_factor = 0.01d0
+! stop_time = 5.d-4
+! plot_deltat = 5.d-5
+
+ ! max Mach number ~0.16
+! pert_factor = 0.1d0
+! stop_time = 1.5d-4
+! plot_deltat = 1.5d-5
+
+ ! max Mach number ~0.48
+ pert_factor = 10.d0
+ stop_time = 5.d-5
+ plot_deltat = 5.d-6
 
  anelastic_cutoff = 1.d-10
  base_cutoff_density = 1.d-10
@@ -46,7 +43,6 @@
  do_initial_projection = T
  init_divu_iter = 3
 
- plot_deltat = 1.d-5
  plot_int = 10000
  chk_int  = -1
 
