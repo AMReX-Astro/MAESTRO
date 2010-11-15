@@ -2,9 +2,13 @@
  spherical_in = 0
 
  max_levs = 1
- n_cellx = 256
- n_celly = 256
- max_grid_size = 128
+ n_cellx = 512
+ n_celly = 512
+ max_grid_size = 64
+
+ max_mg_bottom_nlevels = 3
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
 
  prob_hi_x = 2.0
  prob_hi_y = 2.0
@@ -14,17 +18,17 @@
  max_step  = 100000
 
  ! max Mach number ~0.05
- pert_factor = 8.8d-3
+ pert_factor = 8.0d-3
  stop_time = 4.5d-4
  plot_deltat = 4.5d-5
 
  ! max Mach number ~0.15
-! pert_factor = 8.8d-2
+! pert_factor = 8.1d-2
 ! stop_time = 1.5d-4
 ! plot_deltat = 1.5d-5
 
  ! max Mach number ~0.45
-! pert_factor = 6.8d0
+! pert_factor = 3.5d0
 ! stop_time = 5.d-5
 ! plot_deltat = 5.d-6
 
