@@ -18,17 +18,17 @@
  max_step  = 100000
 
  ! max Mach number ~0.05
- pert_factor = 8.0d-3
+ pert_factor = 8.1d-3
  stop_time = 4.5d-4
  plot_deltat = 4.5d-5
 
  ! max Mach number ~0.15
-! pert_factor = 8.1d-2
+! pert_factor = 8.3d-2
 ! stop_time = 1.5d-4
 ! plot_deltat = 1.5d-5
 
  ! max Mach number ~0.45
-! pert_factor = 3.5d0
+! pert_factor = 3.47d0
 ! stop_time = 5.d-5
 ! plot_deltat = 5.d-6
 
