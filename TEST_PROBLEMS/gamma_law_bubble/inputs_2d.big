@@ -38,7 +38,7 @@
  evolve_base_state = F
  fix_base_state = T
 
- ppm_type = 1
+ ppm_type = 0
 
  grav_const = -1.d9
 
