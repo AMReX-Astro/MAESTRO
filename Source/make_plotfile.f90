@@ -38,8 +38,10 @@ contains
     end if
     plot_names(icomp_rho)  = "density"
 
-    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
-         plot_names(icomp_rhoh) = "rhoh"
+    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
+       plot_names(icomp_rhoh) = "rhoh"
+       plot_names(icomp_h)    = "h"
+    end if
 
     if (plot_spec) then
        do comp = 1, nspec
@@ -229,8 +231,11 @@ contains
 
        ! DENSITY AND (RHO H) 
        call multifab_copy_c(plotdata(n),icomp_rho,s(n),rho_comp,1)
-       if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
-            call multifab_copy_c(plotdata(n),icomp_rhoh,s(n),rhoh_comp,1)
+       if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
+          call multifab_copy_c(plotdata(n),icomp_rhoh,s(n),rhoh_comp,1)
+          call multifab_copy_c(plotdata(n),icomp_h,   s(n),rhoh_comp,1)
+          call multifab_div_div_c(plotdata(n),icomp_h,s(n),rho_comp,1)
+       end if
 
 
        ! RHOPERT and RHOHPERT

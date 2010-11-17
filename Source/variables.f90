@@ -10,7 +10,7 @@ module variables
 
   integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp
   integer, save :: foextrap_comp, hoextrap_comp
-  integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
+  integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_h, icomp_spec, icomp_trac
   integer, save :: icomp_w0, icomp_divw0, icomp_rho0, icomp_rhoh0, icomp_h0
   integer, save :: icomp_p0, icomp_velr, icomp_velc
   integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_src
@@ -76,8 +76,10 @@ contains
 
     icomp_vel      = get_next_plot_index(dm_in)
     icomp_rho      = get_next_plot_index(1)
-    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
-         icomp_rhoh     = get_next_plot_index(1)
+    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
+       icomp_rhoh     = get_next_plot_index(1)
+       icomp_h        = get_next_plot_index(1)
+    end if
 
     if (plot_spec) icomp_spec = get_next_plot_index(nspec)
     if (plot_trac) icomp_trac = get_next_plot_index(ntrac)
