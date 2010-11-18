@@ -65,18 +65,19 @@ contains
     ! by the EOS
     temp_eos(1) = 1000.d0
 
-
     do j = 0, nr(n)-1
-       
-       z = (dble(j)+HALF) * dr(1)
 
        if (do_isentropic) then
+
+          z = dble(j) * dr(1)
 
           ! we can integrate HSE with p = K rho^gamma analytically
           den_eos(1) = dens_base*(grav_const*dens_base*(gamma_const - 1.0)*z/ &
                (gamma_const*pres_base) + 1.d0)**(1.d0/(gamma_const - 1.d0))
 
        else
+      
+          z = (dble(j)+HALF) * dr(1)
 
           ! the density of an isothermal gamma-law atm is exponential
           den_eos(1)  = dens_base * exp(-z/H)
@@ -86,13 +87,7 @@ contains
        s0_init(j, rho_comp) = den_eos(1)
 
        ! compute the pressure by discretizing HSE
-       if (j.eq.0) then
-          p0_init(j) = p0_init(j) - &
-               dr(1) * HALF *s0_init(j,rho_comp) * &
-               abs(grav_const)
-             
-          p_eos(1) = p0_init(j)
-       else if (j.gt.0) then
+       if (j.gt.0) then
           p0_init(j) = p0_init(j-1) - &
                dr(1) * HALF * (s0_init(j,rho_comp) + s0_init(j-1,rho_comp)) * &
                abs(grav_const)
