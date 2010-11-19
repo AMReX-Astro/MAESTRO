@@ -30,7 +30,7 @@ contains
          anelastic_cutoff, base_cutoff_density, prob_lo, prob_hi, &
          temp_ash, temp_fuel
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, spherical, nr, dm, dr_fine
+    use geometry, only: dr, spherical, nr, dr_fine
     use inlet_bc_module, only: set_inlet_bcs
 
     integer,             intent(in   ) :: n
@@ -51,7 +51,7 @@ contains
     img24  = network_species_index("magnesium-24")    
 
     ! length of the domain
-    rlen = (prob_hi(dm) - prob_lo(dm))
+    rlen = (prob_hi(size(dx)) - prob_lo(size(dx)))
 
     ! figure out the thermodynamics of the fuel and ash state
 
@@ -109,11 +109,11 @@ contains
     ! adjust the thermodynamics
     do r=0,nr(n)-1
 
-       rloc = prob_lo(dm) + (dble(r)+0.5d0)*dr(n)
+       rloc = prob_lo(size(dx)) + (dble(r)+0.5d0)*dr(n)
 
        ! the flame propagates in the -y direction.  The fuel/ash division 
        ! is interface_pos_frac through the domain
-       if (rloc < prob_lo(dm) + interface_pos_frac*rlen) then
+       if (rloc < prob_lo(size(dx)) + interface_pos_frac*rlen) then
           
           ! fuel
           s0_init(r,rho_comp)  = dens_fuel
@@ -136,13 +136,13 @@ contains
        ! give the temperature a smooth profile
        s0_init(r,temp_comp) = temp_fuel + (temp_ash - temp_fuel) * &
             HALF * (ONE + &
-            tanh( (rloc - (prob_lo(dm) + interface_pos_frac*rlen)) / &
+            tanh( (rloc - (prob_lo(size(dx)) + interface_pos_frac*rlen)) / &
             (smooth_len_frac*rlen) ) )
 
        ! give the carbon mass fraction a smooth profile too
        xn_smooth(ic12) = xn_fuel(ic12) + (xn_ash(ic12) - xn_fuel(ic12)) * &
             HALF * (ONE + &
-            tanh( (rloc - (prob_lo(dm) + interface_pos_frac*rlen)) / &
+            tanh( (rloc - (prob_lo(size(dx)) + interface_pos_frac*rlen)) / &
             (smooth_len_frac*rlen) ) )
 
        xn_smooth(io16) = xn_fuel(io16)

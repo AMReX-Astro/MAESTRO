@@ -26,8 +26,6 @@ contains
 
   subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
 
-    use geometry, only: nlevs
-
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
@@ -36,10 +34,13 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,n,dm,nlevs
     
-    ng = u(1)%ng
+    dm = mla%dim
+    nlevs = mla%nlevel
+
+    ng = nghost(u(1))
 
     do n=1,nlevs
        do i = 1, u(n)%nboxes

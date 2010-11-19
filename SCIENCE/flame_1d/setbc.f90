@@ -42,14 +42,14 @@ contains
     use inlet_bc_module
     use network
     use variables
-    use geometry, ONLY: dm
-    
+
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:)
     integer        , intent(in   ) :: bc(:,:)
     integer        , intent(in   ) :: icomp
 
     character (len=256) err_string
+    integer :: dm
 
     if(ng == 0) return
 
@@ -58,6 +58,8 @@ contains
        call bl_error("ERROR: in setbc, but inlet BCs not initialized")
     endif
 
+    dm = 1
+    
 
     !--------------------------------------------------------------------------
     ! lower X
@@ -122,7 +124,6 @@ contains
     use inlet_bc_module
     use network
     use variables
-    use geometry, ONLY: dm
     
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:, lo(2)-ng:)
@@ -130,7 +131,7 @@ contains
     integer        , intent(in   ) :: icomp
 
     !     Local variables
-    integer         :: i
+    integer         :: i, dm
     
     character (len=256) err_string
 
@@ -143,6 +144,7 @@ contains
        call bl_error("ERROR: in setbc, but inlet BCs not initialized")
     endif
 
+    dm = 2
 
     !--------------------------------------------------------------------------
     ! lower X 
@@ -238,7 +240,6 @@ contains
     use inlet_bc_module
     use network
     use variables
-    use geometry, ONLY: dm
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:, lo(2)-ng:, lo(3)-ng:)
@@ -246,7 +247,7 @@ contains
     integer        , intent(in   ) :: icomp
 
     !     Local variables
-    integer :: i,j
+    integer :: i,j, dm
 
     character (len=256) err_string
 
@@ -261,6 +262,7 @@ contains
        call bl_error("ERROR: in setbc, but inlet BCs not initialized")
     endif
 
+    dm = 3
 
     !--------------------------------------------------------------------------
     ! lower X 
