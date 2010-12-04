@@ -65,10 +65,17 @@ contains
        do n=1,nlevs_radial
           do r=0,nr(n)-1
              base_r = problo + (dble(r)+HALF) * dr(n)
-             write(99,1000)  r, base_r, &
-                             rho0(n,r), p0(n,r), gamma1bar(n,r), rhoh0(n,r), &
-                             div_coeff(n,r), psi(n,r), &
-                             tempbar(n,r), etarho_cc(n,r), tempbar_init(n,r)
+             write(99,1000)  r, &                ! column 1
+                             base_r, &           ! column 2
+                             rho0(n,r), &        ! column 3
+                             p0(n,r), &          ! column 4
+                             gamma1bar(n,r), &   ! column 5
+                             rhoh0(n,r), &       ! column 6
+                             div_coeff(n,r), &   ! column 7
+                             psi(n,r), &         ! column 8
+                             tempbar(n,r), &     ! column 9
+                             etarho_cc(n,r), &   ! column 10
+                             tempbar_init(n,r)   ! column 11
           end do
        end do
        close(99)
@@ -81,7 +88,10 @@ contains
        do n=1,nlevs_radial
           do r=0,nr(n)
              base_r = problo + dble(r) * dr(n)
-             write(99,1000)  r, base_r, w0(n,r), etarho_ec(n,r)
+             write(99,1000)  r, &           ! column 1
+                             base_r, &      ! column 2
+                             w0(n,r), &     ! column 3
+                             etarho_ec(n,r) ! column 4
           end do
        end do
        close(99)
