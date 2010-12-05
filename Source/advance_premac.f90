@@ -81,9 +81,8 @@ contains
        end do
     end do
 
-    if (dm > 1) then
-       call mkutrans(uold,ufull,utrans,w0,w0mac,dx,dt,the_bc_level,mla)
-    end if
+    call mkutrans(uold,ufull,utrans,w0,w0mac,dx,dt,the_bc_level,mla)
+
 
     !*************************************************************
     !     Create force, initializing with pressure gradient and buoyancy terms.

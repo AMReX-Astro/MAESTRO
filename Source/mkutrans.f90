@@ -62,11 +62,18 @@ contains
           up => dataptr(u(n),i)
           ufp => dataptr(ufull(n),i)
           utp => dataptr(utrans(n,1),i)
-          vtp => dataptr(utrans(n,2),i)
           lo =  lwb(get_box(u(n),i))
           hi =  upb(get_box(u(n),i))
           select case (dm)
+          case (1)
+             call mkutrans_1d(up(:,1,1,:), ng_u, &
+                              ufp(:,1,1,:), ng_uf, &
+                              utp(:,1,1,1), ng_ut, w0(n,:), &
+                              lo,hi,dx(n,:),dt,&
+                              the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                              the_bc_level(n)%phys_bc_level_array(i,:,:))
           case (2)
+             vtp => dataptr(utrans(n,2),i)
              call mkutrans_2d(up(:,:,1,:), ng_u, &
                               ufp(:,:,1,:), ng_uf, &
                               utp(:,:,1,1), vtp(:,:,1,1), ng_ut, w0(n,:), &
@@ -74,6 +81,7 @@ contains
                               the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
           case (3)
+             vtp => dataptr(utrans(n,2),i)
              wtp => dataptr(utrans(n,3), i)
              w0xp => dataptr(w0mac(n,1), i)
              w0yp => dataptr(w0mac(n,2), i)
@@ -108,17 +116,20 @@ contains
 
     else
 
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       ! the loop over nlevs must count backwards to make sure the
+       ! finer grids are done first
        do n=nlevs,2,-1
 
-          ! set level n-1 data to be the average of the level n data covering it
+          ! set level n-1 data to be the average of the level n data
+          ! covering it
           do i=1,dm
              call ml_edge_restriction(utrans(n-1,i),utrans(n,i),mla%mba%rr(n-1,:),i)
           enddo
 
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc_edgevel are called for
-          ! level n and level 1 (if n=2)
+          ! fill level n ghost cells using interpolation from level
+          ! n-1 data note that multifab_fill_boundary and
+          ! multifab_physbc_edgevel are called for level n and level 1
+          ! (if n=2)
           call create_umac_grown(n,utrans(n,:),utrans(n-1,:),the_bc_level(n-1),the_bc_level(n))
 
        end do
@@ -128,6 +139,120 @@ contains
     call destroy(bpt)
 
   end subroutine mkutrans
+
+  subroutine mkutrans_1d(u,ng_u,ufull,ng_uf,utrans,ng_ut,w0, &
+                         lo,hi,dx,dt,adv_bc,phys_bc)
+
+    use bc_module
+    use slope_module
+    use variables, only: rel_eps
+    use probin_module, only: ppm_type
+    use ppm_module
+
+    integer,         intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_ut
+    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,:)
+    real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)    
+    real(kind=dp_t), intent(in   ) :: dt,dx(:)
+    integer        , intent(in   ) :: adv_bc(:,:,:)
+    integer        , intent(in   ) :: phys_bc(:,:)
+    
+    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,1)
+
+    real(kind=dp_t), allocatable :: Ip(:)
+    real(kind=dp_t), allocatable :: Im(:)
+    
+    real(kind=dp_t), allocatable :: ulx(:),urx(:)
+
+    real(kind=dp_t) hx,dt2,uavg
+
+    integer :: i,is,ie
+
+    logical :: test
+    
+    allocate(ulx(lo(1):hi(1)+1))
+    allocate(urx(lo(1):hi(1)+1))
+
+    allocate(Ip(lo(1)-1:hi(1)+1))
+    allocate(Im(lo(1)-1:hi(1)+1))
+
+    is = lo(1)
+    ie = hi(1)
+    
+    dt2 = HALF*dt
+    
+    hx = dx(1)
+    
+    if (ppm_type .eq. 0) then
+       call slopex_1d(u(:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       call ppm_1d(u(:,1),ng_u,ufull(:,1),ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
+    end if
+
+    !******************************************************************
+    ! create utrans
+    !******************************************************************
+
+    if (ppm_type .eq. 0) then
+       do i=is,ie+1
+          ! extrapolate to edges
+          ulx(i) = u(i-1,1) + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,1)))*slopex(i-1,1)
+          urx(i) = u(i  ,1) - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,1)))*slopex(i  ,1)
+       end do
+    else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
+       do i=is,ie+1
+          ! extrapolate to edges
+          ulx(i) = Ip(i-1)
+          urx(i) = Im(i  )
+       end do
+    end if
+
+    ! impose lo i side bc's
+    select case(phys_bc(1,1))
+    case (INLET)
+       ulx(is) = u(is-1,1)
+       urx(is) = u(is-1,1)
+    case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
+       ulx(is) = ZERO
+       urx(is) = ZERO
+    case (OUTLET)
+       ulx(is) = min(urx(is),ZERO)
+       urx(is) = ulx(is)
+    case (INTERIOR, PERIODIC) 
+    case  default
+       call bl_error("mkutrans_1d: invalid boundary type phys_bc(1,1)")
+    end select
+
+    ! impose hi i side bc's    
+    select case(phys_bc(1,2))
+    case (INLET)
+       ulx(ie+1) = u(ie+1,1)
+       urx(ie+1) = u(ie+1,1)
+    case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
+       ulx(ie+1) = ZERO
+       urx(ie+1) = ZERO
+    case (OUTLET)
+       ulx(ie+1) = max(ulx(ie+1),ZERO)
+       urx(ie+1) = ulx(ie+1)
+    case (INTERIOR, PERIODIC) 
+    case  default
+       call bl_error("mkutrans_1d: invalid boundary type phys_bc(1,2)")
+    end select
+
+    do i=is,ie+1
+       ! solve Riemann problem using full velocity
+       uavg = HALF*(ulx(i)+urx(i))
+       test = ((ulx(i)+w0(i) .le. ZERO .and. urx(i)+w0(i) .ge. ZERO) .or. &
+               (abs(ulx(i)+urx(i)+TWO*w0(i)) .lt. rel_eps))
+       utrans(i) = merge(ulx(i),urx(i),uavg+w0(i) .gt. ZERO)
+       utrans(i) = merge(ZERO,utrans(i),test)
+    end do
+
+    deallocate(ulx,urx)
+    deallocate(Ip,Im)
+
+  end subroutine mkutrans_1d
 
   subroutine mkutrans_2d(u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,w0, &
                          lo,hi,dx,dt,adv_bc,phys_bc)
