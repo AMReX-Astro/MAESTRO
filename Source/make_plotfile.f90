@@ -161,7 +161,8 @@ contains
                              evolve_base_state, prob_lo, prob_hi, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, &
                              plot_cs, sponge_kappa, plot_sponge_fdamp
-    use geometry, only: spherical, nr_fine, nlevs_radial
+    use geometry, only: spherical, nr_fine, nlevs_radial, numdisjointchunks, &
+         r_start_coord, r_end_coord
     use average_module
     use ml_restriction_module
     use multifab_physbc_module
@@ -206,7 +207,7 @@ contains
 
     real(dp_t) :: tempval
 
-    integer :: n,n_1d,prec,comp,dm,nlevs
+    integer :: n,r,j,n_1d,prec,comp,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
@@ -365,8 +366,26 @@ contains
        if (do_smallscale) then
           h0 = ZERO
        else
-          h0 = rhoh0 / rho0
+          if (spherical .eq. 1) then
+             ! only one level of base state so rho0 is defined everywhere
+             h0 = rhoh0 / rho0
+          else
+             ! for Cartesian, rho0 will be zero in index locations where 
+             ! there is no grid at that resolution.  Prevent dividing
+             ! by zero
+             h0(:,:) = ZERO
+
+             do n = 1, nlevs
+                do j = 1,numdisjointchunks(n)
+                   do r = r_start_coord(n,j), r_end_coord(n,j)
+                      h0(n,r) = rhoh0(n,r)/rho0(n,r)
+                   enddo
+                enddo
+             enddo
+          endif
+
        end if
+
        call put_1d_array_on_cart(rhoh0,tempfab,dm+rhoh_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla)
 
