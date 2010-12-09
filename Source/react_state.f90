@@ -51,11 +51,6 @@ contains
     ! do the burning
     call burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dx,dt,the_bc_level)
 
-    ! pass temperature through for seeding the temperature update eos call
-    do n=1,nlevs
-       call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,nghost(sold(n)))
-    end do
-
     ! now update temperature
     if (use_tfromp) then
        call makeTfromRhoP(snew,p0,mla,the_bc_level,dx)
@@ -72,7 +67,8 @@ contains
   subroutine burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dx,dt,the_bc_level)
 
     use bl_constants_module, only: ZERO
-    use variables, only: rho_comp, rhoh_comp, spec_comp, nscal, ntrac, trac_comp, foextrap_comp
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, &
+                         nscal, ntrac, trac_comp, foextrap_comp
     use multifab_fill_ghost_module
     use ml_restriction_module
     use multifab_physbc_module
@@ -178,6 +174,12 @@ contains
           end select
        end do
     end do
+
+    ! pass temperature through for seeding the temperature update eos call
+    do n=1,nlevs
+       call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,nghost(sold(n)))
+    end do
+
 
     if (nlevs .eq. 1) then
 
