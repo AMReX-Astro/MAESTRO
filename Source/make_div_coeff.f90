@@ -178,7 +178,9 @@ contains
                       end do
 
                       do r=(r_end_coord(n,j)+1)/refrat,nr(i)
-                         div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
+                         if (rho0(i,r-1) /= ZERO) then
+                            div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
+                         endif
                       end do
 
                    end if
