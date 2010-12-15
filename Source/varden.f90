@@ -775,7 +775,7 @@ subroutine varden()
            end do
 
            ! create new grids and fill in data on those grids
-           call regrid(mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
+           call regrid(istep,mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
                        rho0_old,rhoh0_old,.false.)
 
            ! nlevs is local so we need to reset it

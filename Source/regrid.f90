@@ -15,7 +15,7 @@ module regrid_module
 
 contains
 
-  subroutine regrid(mla,uold,sold,gpi,pi,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart)
+  subroutine regrid(nstep,mla,uold,sold,gpi,pi,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart)
 
     use fillpatch_module
     use ml_prolongation_module
@@ -29,11 +29,12 @@ contains
     use probin_module, only : verbose, nodal, pmask, &
          regrid_int, amr_buf_width, &
          max_grid_size_2, max_grid_size_3, ref_ratio, max_levs, &
-         ppm_type, bds_type
+         ppm_type, bds_type, dump_grid_file
     use geometry, only: nlevs_radial, spherical
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp
     use network, only: nspec
 
+    integer       ,  intent(in   ) :: nstep
     type(ml_layout), intent(inout) :: mla
     type(multifab),  pointer       :: uold(:),sold(:),gpi(:),pi(:)
     type(multifab),  pointer       :: dSdt(:),src(:)
@@ -48,6 +49,8 @@ contains
     type(layout)      :: la_array(max_levs)
     type(ml_layout)   :: mla_old
     type(ml_boxarray) :: mba
+    integer           :: un
+    logical           :: lexist
 
     ! These are copies to hold the old data.
     type(multifab) :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
@@ -433,6 +436,33 @@ contains
        enddo
 
     end if
+
+    ! optionally output details of the grid structure
+    if (dump_grid_file .and. parallel_IOProcessor()) then
+
+       un = unit_new()
+       inquire(file="grids.out", exist=lexist)
+
+       if (lexist .and. (nstep /= 1)) then
+          open(unit=un, file="grids.out", status="old", position="append")
+       else
+          open(unit=un, file="grids.out", status="unknown")
+       endif
+
+998    format(1x,"step = ", i7)
+999    format(1x,"level",4x,"        # valid cells",4x,"# valid + ghost cells")
+1000   format(1x,i5     ,4x, 11x, i10,              4x, 11x, i10)
+
+       
+       write (un, 998) nstep
+       write (un, 999) 
+       do n = 1, nlevs
+          write (un,1000) n, multifab_volume(sold(n),.false.), multifab_volume(sold(n),.true.)
+       enddo
+       write (un, *) " "
+       close (un)
+
+    endif
 
 !   if (verbose .and. parallel_IOProcessor()) then
 !       print *,'New grids after regridding:'
