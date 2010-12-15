@@ -448,3 +448,4 @@ drive_initial_convection            logical            .false.
 # time and timestep number are zeroed.
 restart_with_vel_field              logical            .false.
 
+dump_grid_file                      logical            .false.
