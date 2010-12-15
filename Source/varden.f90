@@ -107,6 +107,7 @@ subroutine varden()
 
   real(dp_t), allocatable :: psi_temp(:,:)
   real(dp_t), allocatable :: etarho_cc_temp(:,:)
+  real(dp_t), allocatable :: rho0_temp(:,:)
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
 
@@ -241,6 +242,7 @@ subroutine varden()
   if (spherical .eq. 0) then
      allocate(       psi_temp(max_levs,0:nr_fine-1))
      allocate( etarho_cc_temp(max_levs,0:nr_fine-1))
+     allocate(      rho0_temp(max_levs,0:nr_fine-1))
      allocate( etarho_ec_temp(max_levs,0:nr_fine))
      allocate(        w0_temp(max_levs,0:nr_fine))
   else
@@ -636,78 +638,123 @@ subroutine varden()
            ! contains 1 level of refinement.
            ! We do not regrid these if evolve_base_state=F since they are
            ! identically zero, set this way in initialize.
-           if (spherical .eq. 0 .and. evolve_base_state) then
+           if (spherical .eq. 0) then
+              if (evolve_base_state) then
               
-              ! copy the coarsest level only, interpolate to all the other levels
-              ! and then copy the valid data from the old arrays onto the new
-              ! this must be done before we call init_multilevel or else we lose track
-              ! of where the old valid data was
+                 ! copy the coarsest level only, interpolate to all
+                 ! the other levels and then copy the valid data from
+                 ! the old arrays onto the new this must be done
+                 ! before we call init_multilevel or else we lose
+                 ! track of where the old valid data was
               
-              ! copy the coarsest level of the real arrays into the temp arrays
-              psi_temp(1,:)        = psi(1,:)
-              etarho_cc_temp(1,:)  = etarho_cc(1,:)
-              etarho_ec_temp(1,:)  = etarho_ec(1,:)
-              w0_temp(1,:)         = w0(1,:)
+                 ! copy the coarsest level of the real arrays into the
+                 ! temp arrays
+                 psi_temp(1,:)        = psi(1,:)
+                 etarho_cc_temp(1,:)  = etarho_cc(1,:)
+                 etarho_ec_temp(1,:)  = etarho_ec(1,:)
+                 w0_temp(1,:)         = w0(1,:)
 
-              ! piecewise linear interpolation to fill the cc temp arrays
-              do n=2,max_levs
-                 do r=0,nr(n)-1
-                    if (r .eq. 0 .or. r .eq. nr(n)-1) then
-                       psi_temp(n,r) = psi_temp(n-1,r/2)
-                       etarho_cc_temp(n,r)  = etarho_cc_temp(n-1,r/2)
-                    else
-                       if (mod(r,2) .eq. 0) then
-                          psi_temp(n,r) = 0.75d0*psi_temp(n-1,r/2) &
-                               + 0.25d0*psi_temp(n-1,r/2-1)
-                          etarho_cc_temp(n,r) = 0.75d0*etarho_cc_temp(n-1,r/2) &
-                               + 0.25d0*etarho_cc_temp(n-1,r/2-1)
+                 ! piecewise linear interpolation to fill the cc temp arrays
+                 do n=2,max_levs
+                    do r=0,nr(n)-1
+                       if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                          psi_temp(n,r) = psi_temp(n-1,r/2)
+                          etarho_cc_temp(n,r)  = etarho_cc_temp(n-1,r/2)
                        else
-                          psi_temp(n,r) = 0.75d0*psi_temp(n-1,r/2) &
-                               + 0.25d0*psi_temp(n-1,r/2+1)
-                          etarho_cc_temp(n,r) = 0.75d0*etarho_cc_temp(n-1,r/2) &
-                               + 0.25d0*etarho_cc_temp(n-1,r/2+1)
+                          if (mod(r,2) .eq. 0) then
+                             psi_temp(n,r) = 0.75d0*psi_temp(n-1,r/2) &
+                                  + 0.25d0*psi_temp(n-1,r/2-1)
+                             etarho_cc_temp(n,r) = 0.75d0*etarho_cc_temp(n-1,r/2) &
+                                  + 0.25d0*etarho_cc_temp(n-1,r/2-1)
+                          else
+                             psi_temp(n,r) = 0.75d0*psi_temp(n-1,r/2) &
+                                  + 0.25d0*psi_temp(n-1,r/2+1)
+                             etarho_cc_temp(n,r) = 0.75d0*etarho_cc_temp(n-1,r/2) &
+                                  + 0.25d0*etarho_cc_temp(n-1,r/2+1)
+                          end if
                        end if
-                    end if
-                 end do
-              end do
-
-              ! piecewise linear interpolation to fill the edge-centered temp arrays
-              do n=2,max_levs
-                 do r=0,nr(n)
-                    if (mod(r,2) .eq. 0) then
-                       etarho_ec_temp(n,r) = etarho_ec_temp(n-1,r/2)
-                       w0_temp(n,r) = w0_temp(n-1,r/2)
-                    else
-                       etarho_ec_temp(n,r) = &
-                            HALF*(etarho_ec_temp(n-1,r/2)+etarho_ec_temp(n-1,r/2+1))
-                       w0_temp(n,r) = HALF*(w0_temp(n-1,r/2)+w0_temp(n-1,r/2+1))
-                    end if
-                 end do
-              end do
-
-              ! copy valid data into temp
-              do n=2,nlevs_radial
-                 do i=1,numdisjointchunks(n)
-                    do r=r_start_coord(n,i),r_end_coord(n,i)
-                       psi_temp(n,r)        = psi(n,r)
-                       etarho_cc_temp(n,r)  = etarho_cc(n,r)
                     end do
                  end do
-              end do
-              do n=2,nlevs_radial
-                 do i=1,numdisjointchunks(n)
-                    do r=r_start_coord(n,i),r_end_coord(n,i)+1
-                       etarho_ec_temp(n,r) = etarho_ec(n,r)
-                       w0_temp(n,r)        = w0(n,r)
+                 
+                 ! piecewise linear interpolation to fill the edge-centered temp arrays
+                 do n=2,max_levs
+                    do r=0,nr(n)
+                       if (mod(r,2) .eq. 0) then
+                          etarho_ec_temp(n,r) = etarho_ec_temp(n-1,r/2)
+                          w0_temp(n,r) = w0_temp(n-1,r/2)
+                       else
+                          etarho_ec_temp(n,r) = &
+                               HALF*(etarho_ec_temp(n-1,r/2)+etarho_ec_temp(n-1,r/2+1))
+                          w0_temp(n,r) = HALF*(w0_temp(n-1,r/2)+w0_temp(n-1,r/2+1))
+                       end if
                     end do
                  end do
-              end do
+                 
+                 ! copy valid data into temp
+                 do n=2,nlevs_radial
+                    do i=1,numdisjointchunks(n)
+                       do r=r_start_coord(n,i),r_end_coord(n,i)
+                          psi_temp(n,r)        = psi(n,r)
+                          etarho_cc_temp(n,r)  = etarho_cc(n,r)
+                       end do
+                    end do
+                 end do
+                 do n=2,nlevs_radial
+                    do i=1,numdisjointchunks(n)
+                       do r=r_start_coord(n,i),r_end_coord(n,i)+1
+                          etarho_ec_temp(n,r) = etarho_ec(n,r)
+                          w0_temp(n,r)        = w0(n,r)
+                       end do
+                    end do
+                 end do
 
-              ! copy temp array back into the real thing
-              psi        = psi_temp
-              etarho_cc  = etarho_cc_temp
-              etarho_ec  = etarho_ec_temp
-              w0         = w0_temp
+                 ! copy temp array back into the real thing
+                 psi        = psi_temp
+                 etarho_cc  = etarho_cc_temp
+                 etarho_ec  = etarho_ec_temp
+                 w0         = w0_temp
+
+              else 
+                 ! evolve_base_state = F.  
+
+                 ! Here we want to fill in the rho0 array so there is
+                 ! valid data in any new grid locations.
+
+                 ! copy the coarsest level of the real arrays into the
+                 ! temp arrays
+                 rho0_temp(1,:) = rho0_old(1,:)
+
+                 ! piecewise linear interpolation to fill the cc temp arrays
+                 do n=2,max_levs
+                    do r=0,nr(n)-1
+                       if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                          rho0_temp(n,r) = rho0_old(n-1,r/2)
+                       else
+                          if (mod(r,2) .eq. 0) then
+                             rho0_temp(n,r) = 0.75d0*rho0_temp(n-1,r/2) &
+                                  + 0.25d0*rho0_temp(n-1,r/2-1)
+                          else
+                             rho0_temp(n,r) = 0.75d0*rho0_temp(n-1,r/2) &
+                                  + 0.25d0*rho0_temp(n-1,r/2+1)
+                          end if
+                       end if
+                    end do
+                 end do
+                 
+                 ! copy valid data into temp -- this way we haven't
+                 ! overwritten any of the original information.
+                 do n=2,nlevs_radial
+                    do i=1,numdisjointchunks(n)
+                       do r=r_start_coord(n,i),r_end_coord(n,i)
+                          rho0_temp(n,r) = rho0_old(n,r)
+                       end do
+                    end do
+                 end do
+
+                 ! don't copy rho0_temp back into the rho0 array just
+                 ! yet.  Wait until we regrid
+
+              endif
 
            end if ! end regridding of base state
 
@@ -762,13 +809,37 @@ subroutine varden()
            if (evolve_base_state) then
               ! force rho0 to be the average of rho
               call average(mla,sold,rho0_old,dx,rho_comp)
-              call compute_cutoff_coords(rho0_old)
-           
-              call make_grav_cell(grav_cell,rho0_old)
 
-              ! enforce HSE
-              call enforce_HSE(rho0_old,p0_old,grav_cell)
-           end if
+           else
+              ! copy the old base state density with piecewise linear
+              ! interpolated data in the new positions
+              rho0_old = rho0_temp
+
+              ! zero out any data where there is no corresponding full
+              ! state array
+              do n=2,nlevs_radial
+                 do i=1,numdisjointchunks(n)
+                    if (i .eq. numdisjointchunks(n)) then
+                       do r=r_end_coord(n,i)+1,nr(n)-1
+                          rho0_old(n,r) = 0.d0
+                       end do
+                    else
+                       do r=r_end_coord(n,i)+1,r_start_coord(n,i+1)-1
+                          rho0_old(n,r) = 0.d0
+                       end do
+                    end if
+                 end do
+              end do
+              
+           endif
+
+           ! recompute p0 based on the new rho0 
+           call compute_cutoff_coords(rho0_old)
+           
+           call make_grav_cell(grav_cell,rho0_old)
+
+           ! enforce HSE
+           call enforce_HSE(rho0_old,p0_old,grav_cell)
 
            if (use_tfromp) then
               ! compute full state T = T(rho,p0,X)
@@ -795,6 +866,7 @@ subroutine varden()
            do n=1,nlevs
               call destroy(gamma1(n))
            end do
+
 
            ! div_coeff_old needs to be recomputed
            call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
