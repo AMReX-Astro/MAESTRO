@@ -63,7 +63,7 @@ contains
     integer         :: lo(mla%dim),hi(mla%dim),ng_u,ng_s,ng_f,ng_dU,i,n
     integer         :: comp,dm,nlevs
     real(kind=dp_t) :: dt_proc,dt_grid,dt_lev
-    real(kind=dp_t) :: umax,umax_proc,umax_grid
+    real(kind=dp_t) :: umax,umax_proc,umax_grid,umax_lev
 
     dm = mla%dim
     nlevs = mla%nlevel
@@ -72,6 +72,8 @@ contains
     allocate(w0_dummy      (nlevs       ,0:nr_fine))
     w0_force_dummy = 0.d0
     w0_dummy = 0.d0
+
+    umax = 0.d0
 
     do n=1,nlevs
        call multifab_build(force(n), mla%la(n), dm, 1)
@@ -161,9 +163,11 @@ contains
     
        end do
 
-       call parallel_reduce(dt_lev,   dt_proc, MPI_MIN)
-       call parallel_reduce(  umax, umax_proc, MPI_MAX)
+       call parallel_reduce(dt_lev,     dt_proc, MPI_MIN)
+       call parallel_reduce(umax_lev, umax_proc, MPI_MAX)
           
+       umax = max(umax,umax_lev)
+
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           print*,"Call to firstdt for level",n,"gives dt_lev =",dt_lev
        end if
@@ -175,10 +179,10 @@ contains
        end if
        
        dt = min(dt,dt_lev)
-       
-       rel_eps = 1.d-8*umax
 
     end do
+       
+    rel_eps = 1.d-8*umax
 
      do n=1,nlevs
         call destroy(force(n))

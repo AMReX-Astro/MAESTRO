@@ -75,7 +75,7 @@ contains
     integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_w
     real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start,dt_lev
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
-    real(kind=dp_t) :: umax,umax_grid,umax_proc
+    real(kind=dp_t) :: umax,umax_grid,umax_proc,umax_lev
     
     real(kind=dp_t), parameter :: rho_min = 1.d-20
 
@@ -88,6 +88,8 @@ contains
     
     allocate(w0_force_dummy(nlevs_radial,0:nr_fine-1))
     w0_force_dummy = 0.d0
+
+    umax = 0.d0
 
     do n=1,nlevs
        call multifab_build(force(n), mla%la(n), dm, 1)
@@ -201,9 +203,9 @@ contains
        ! This sets dt to be the min of dt_proc over all processors.
        call parallel_reduce( dt_adv,  dt_adv_proc, MPI_MIN)
        call parallel_reduce(dt_divu, dt_divu_proc, MPI_MIN)
-       call parallel_reduce(   umax,    umax_proc, MPI_MAX)
+       call parallel_reduce(umax_lev,    umax_proc, MPI_MAX)
 
-       rel_eps = 1.d-8*umax
+       umax = max(umax,umax_lev)
 
        dt_lev = min(dt_adv,dt_divu)
 
@@ -219,6 +221,8 @@ contains
        dt = min(dt,dt_lev)
 
     end do
+
+    rel_eps = 1.d-8*umax
 
      do n=1,nlevs
         call destroy(force(n))
