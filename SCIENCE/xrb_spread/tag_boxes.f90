@@ -18,15 +18,16 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine tag_boxes(mf,tagboxes,dx,lev)
+  subroutine tag_boxes(mf,tagboxes,dx,lev,aug_tag_mf)
 
     use variables, only: rho_comp, spec_comp
     use geometry, only: dm, nr_fine, nr
 
-    type( multifab), intent(in   ) :: mf
-    type(lmultifab), intent(inout) :: tagboxes
-    real(dp_t)     , intent(in   ) :: dx
-    integer        , intent(in   ) :: lev
+    type( multifab)          , intent(in   ) :: mf
+    type(lmultifab)          , intent(inout) :: tagboxes
+    real(dp_t)               , intent(in   ) :: dx
+    integer                  , intent(in   ) :: lev
+    type( multifab), optional, intent(in   ) :: aux_tag_mf
 
     real(kind = dp_t), pointer :: sp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)

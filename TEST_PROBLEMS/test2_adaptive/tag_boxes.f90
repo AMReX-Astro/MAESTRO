@@ -18,22 +18,26 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine tag_boxes(mf,tagboxes,dx,lev,tempbar)
+  subroutine tag_boxes(mf,tagboxes,dx,lev,tempbar,aux_tag_mf)
 
     use variables, only: temp_comp
-    use geometry, only: dm, nr_fine, spherical
+    use geometry, only: nr_fine, spherical
 
-    type( multifab), intent(in   ) :: mf
-    type(lmultifab), intent(inout) :: tagboxes
-    real(dp_t)     , intent(in   ) :: dx
-    integer        , intent(in   ) :: lev
-    real(dp_t)     , intent(in   ) :: tempbar(:,0:)
+    type( multifab)          , intent(in   ) :: mf
+    type(lmultifab)          , intent(inout) :: tagboxes
+    real(dp_t)               , intent(in   ) :: dx
+    integer                  , intent(in   ) :: lev
+    real(dp_t)               , intent(in   ) :: tempbar(:,0:)
+    type( multifab), optional, intent(in   ) :: aux_tag_mf
 
     real(kind = dp_t), pointer :: sp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
-    integer           :: i, lo(dm), hi(dm), ng_s
+    integer           :: i, lo(get_dim(mf)), hi(get_dim(mf)), ng_s
     logical           ::      radialtag(0:nr_fine-1)
     logical           :: radialtag_proc(0:nr_fine-1)
+    integer           :: dm
+
+    dm  = get_dim(mf)
 
     radialtag = .false.
     radialtag_proc = .false.
@@ -219,7 +223,6 @@ contains
   subroutine tag_boxes_3d_sphr(tagbox,mf,ng,tempbar,lo,hi,dx,lev)
 
     use fill_3d_module, only: put_1d_array_on_cart_3d_sphr
-    use geometry, only: dm
 
     integer          , intent(in   ) :: lo(:),hi(:),ng
     logical          , intent(  out) :: tagbox(lo(1)   :,lo(2)   :,lo(3)   :)
@@ -229,7 +232,7 @@ contains
     integer, optional, intent(in   ) :: lev
 
     integer    :: i,j,k,llev
-    real(dp_t) :: dx_vec(dm),x,y,z,dist
+    real(dp_t) :: dx_vec(size(lo)),x,y,z,dist
 
     real(kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
 

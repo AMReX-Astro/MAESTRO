@@ -17,14 +17,15 @@ module tag_boxes_module
 
 contains
 
-  subroutine tag_boxes(mf,tagboxes,dx,lev)
+  subroutine tag_boxes(mf,tagboxes,dx,lev,aux_tag_mf)
 
     use variables, ONLY: rho_comp
 
-    type( multifab), intent(in   ) :: mf
-    type(lmultifab), intent(inout) :: tagboxes
-    real(dp_t)     , intent(in   ) :: dx
-    integer        , intent(in   ) :: lev
+    type( multifab)          , intent(in   ) :: mf
+    type(lmultifab)          , intent(inout) :: tagboxes
+    real(dp_t)               , intent(in   ) :: dx
+    integer                  , intent(in   ) :: lev
+    type( multifab), optional, intent(in   ) :: aux_tag_mf
 
     real(kind = dp_t), pointer :: sp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
