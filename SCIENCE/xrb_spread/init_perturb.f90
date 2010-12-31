@@ -3,6 +3,7 @@ module init_perturb_module
   use variables
   use network, only: nspec
   use eos_module
+  use bl_constants_module
 
   implicit none
 
