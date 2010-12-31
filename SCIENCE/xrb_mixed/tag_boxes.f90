@@ -29,7 +29,7 @@ contains
     integer                  , intent(in   ) :: lev
     type( multifab), optional, intent(in   ) :: aux_tag_mf
 
-    real(kind = dp_t), pointer :: sp(:,:,:,:)
+    real(kind = dp_t), pointer :: sp(:,:,:,:),rhnp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
     integer           :: i, j, lo(get_dim(mf)), ng_s, dm
     logical           ::      radialtag(0:nr_fine-1)
@@ -43,15 +43,29 @@ contains
 
     ng_s = mf%ng
 
+!    if (parallel_IOProcessor() .and. present(aux_tag_mf)) &
+!         print *, ng_s, aux_tag_mf%ng
+
     do i = 1, mf%nboxes
        if ( multifab_remote(mf, i) ) cycle
        sp => dataptr(mf, i)
+       if (present(aux_tag_mf)) rhnp => dataptr(aux_tag_mf, i)
        lo =  lwb(get_box(tagboxes, i))
        select case (dm)
        case (2)
-          call radialtag_2d(radialtag_proc,sp(:,:,1,spec_comp),sp(:,:,1,rho_comp),lo,ng_s,lev)
+          if (present(aux_tag_mf)) then
+
+             call radialtag_2d(radialtag_proc,sp(:,:,1,spec_comp),sp(:,:,1,rho_comp),lo,ng_s,lev,rhnp(:,:,1,1))
+          else
+             call radialtag_2d(radialtag_proc,sp(:,:,1,spec_comp),sp(:,:,1,rho_comp),lo,ng_s,lev)
+          endif
        case  (3)
-          call radialtag_3d(radialtag_proc,sp(:,:,:,spec_comp),sp(:,:,:,rho_comp),lo,ng_s,lev)
+          if (present(aux_tag_mf)) then
+             call radialtag_3d(radialtag_proc,sp(:,:,:,spec_comp),sp(:,:,:,rho_comp),lo,ng_s,lev,rhnp(:,:,:,1))
+          else
+             call radialtag_3d(radialtag_proc,sp(:,:,:,spec_comp),sp(:,:,:,rho_comp),lo,ng_s,lev)
+          endif
+
        end select
     end do
 
@@ -96,7 +110,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine radialtag_2d(radialtag,he,rho,lo,ng,lev)
+  subroutine radialtag_2d(radialtag,he,rho,lo,ng,lev,rhoHnuc)
 
     use probin_module, only: tag_minval, tag_maxval
 
@@ -104,11 +118,14 @@ contains
     logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) ::  he(lo(1)-ng:,lo(2)-ng:)
     real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:)
+    ! NOTE: the number of guard cells is hard-coded here - no clean way to
+    ! pass this as an optional parameter
+    real(kind = dp_t),optional, intent(in   ) :: rhoHnuc(lo(1)-1:,lo(2)-1:)
     integer, optional, intent(in   ) :: lev
 
     ! local
     integer :: i,j,nx,ny,llev
-    real(kind=dp_t) :: Xhe
+    real(kind=dp_t) :: Hnuc, Xhe
 
     llev = 1; if (present(lev)) llev = lev
     nx = size(he,dim=1) - 2*ng
@@ -118,28 +135,50 @@ contains
     case (1)
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                radialtag(j) = .true.
-             end if
+             if (present(rhoHnuc)) then
+                Hnuc = rhoHnuc(i,j)/rho(i,j)
+!                print *, i, j, Hnuc
+                if (Hnuc .gt. tag_minval) then
+                   radialtag(j) = .true.
+                end if
+             else
+                Xhe = he(i,j)/rho(i,j)
+                if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
+                   radialtag(j) = .true.
+                endif
+             endif
           end do
        enddo
     case (2)
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                radialtag(j) = .true.
-             end if
+             if (present(rhoHnuc)) then
+                Hnuc = rhoHnuc(i,j)/rho(i,j)
+                if (Hnuc .gt. tag_minval) then
+                   radialtag(j) = .true.
+                end if
+             else
+                Xhe = he(i,j)/rho(i,j)
+                if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
+                   radialtag(j) = .true.
+                endif
+             endif
           end do
        end do
     case default
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                radialtag(j) = .true.
-             end if
+             if (present(rhoHnuc)) then
+                Hnuc = rhoHnuc(i,j)/rho(i,j)
+                if (Hnuc .gt. tag_minval) then
+                   radialtag(j) = .true.
+                end if
+             else
+                Xhe = he(i,j)/rho(i,j)
+                if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
+                   radialtag(j) = .true.
+                endif
+             endif
           end do
        end do
     end select
@@ -148,7 +187,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine radialtag_3d(radialtag,he,rho,lo,ng,lev)
+  subroutine radialtag_3d(radialtag,he,rho,lo,ng,lev,rhoHnuc)
 
     use probin_module, only: tag_minval, tag_maxval
 
@@ -156,11 +195,14 @@ contains
     logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) ::  he(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    ! NOTE: the number of guard cells is hard-coded here - no clean way to
+    ! pass this as an optional parameter
+    real(kind = dp_t), optional, intent(in   ) :: rhoHnuc(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     integer, optional, intent(in   ) :: lev
 
     ! local
     integer :: i,j,k,nx,ny,nz,llev
-    real(kind=dp_t) :: Xhe
+    real(kind=dp_t) :: Hnuc, Xhe
 
     llev = 1; if (present(lev)) llev = lev
     nx = size(he,dim=1) - 2*ng
@@ -172,10 +214,17 @@ contains
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                   radialtag(k) = .true.
-                end if
+                if (present(rhoHnuc)) then
+                   Hnuc = rhoHnuc(i,j,k)/rho(i,j,k)
+                   if (Hnuc .gt. tag_minval) then
+                      radialtag(k) = .true.
+                   end if
+                else
+                   Xhe = he(i,j,k)/rho(i,j,k)
+                   if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
+                      radialtag(k) = .true.
+                   endif
+                endif
              end do
           enddo
        end do
@@ -183,10 +232,17 @@ contains
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                   radialtag(k) = .true.
-                end if
+                if (present(rhoHnuc)) then
+                   Hnuc = rhoHnuc(i,j,k)/rho(i,j,k)
+                   if (Hnuc .gt. tag_minval) then
+                      radialtag(k) = .true.
+                   end if
+                else
+                   Xhe = he(i,j,k)/rho(i,j,k)
+                   if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
+                      radialtag(k) = .true.
+                   endif
+                endif
              end do
           end do
        end do
@@ -194,10 +250,17 @@ contains
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                   radialtag(k) = .true.
-                end if
+                if (present(rhoHnuc)) then
+                   Hnuc = rhoHnuc(i,j,k)/rho(i,j,k)
+                   if (Hnuc .gt. tag_minval) then
+                      radialtag(k) = .true.
+                   end if
+                else
+                   Xhe = he(i,j,k)/rho(i,j,k)
+                   if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
+                      radialtag(k) = .true.
+                   endif
+                endif
              end do
           end do
        end do
