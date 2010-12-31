@@ -434,7 +434,8 @@ contains
        call parallel_gather(T_max_data_local, T_max_data, 1, &
                             root = parallel_IOProcessorNode())
        
-       index_max = maxloc(T_max_data, dim=1)
+       if (parallel_IOProcessor()) &
+            index_max = maxloc(T_max_data, dim=1)
 
        ! gather all the T_max_coords into an array and use index_max to 
        ! get the correct location
@@ -444,11 +445,14 @@ contains
        call parallel_gather(T_max_coords_local , T_max_coords, dm, &
                             root = parallel_IOProcessorNode())
 
-       T_max_level = T_max_data(index_max)
+       if (parallel_IOProcessor()) then
+          T_max_level = T_max_data(index_max)
        
-       coord_T_max_level(1) = T_max_coords(dm*(index_max-1) + 1)
-       coord_T_max_level(2) = T_max_coords(dm*(index_max-1) + 2)
-       if (dm>2) coord_T_max_level(3) = T_max_coords(dm*(index_max-1) + 3)
+          coord_T_max_level(1) = T_max_coords(dm*(index_max-1) + 1)
+          coord_T_max_level(2) = T_max_coords(dm*(index_max-1) + 2)
+          if (dm>2) &
+               coord_T_max_level(3) = T_max_coords(dm*(index_max-1) + 3)
+       endif
 
        deallocate(T_max_data, T_max_coords)
 
@@ -459,7 +463,8 @@ contains
        call parallel_gather(enuc_max_data_local, enuc_max_data, 1, &
                             root = parallel_IOProcessorNode())
 
-       index_max = maxloc(enuc_max_data, dim=1)
+       if (parallel_IOProcessor()) &
+            index_max = maxloc(enuc_max_data, dim=1)
 
        allocate(enuc_max_coords(dm*parallel_nprocs()))
        enuc_max_coords_local(:) = coord_enuc_max_local(:)
@@ -467,11 +472,14 @@ contains
        call parallel_gather(enuc_max_coords_local, enuc_max_coords, dm, &
                             root = parallel_IOProcessorNode())
 
-       enuc_max_level = enuc_max_data(index_max)
+       if (parallel_IOProcessor()) then
+          enuc_max_level = enuc_max_data(index_max)
 
-       coord_enuc_max_level(1) = enuc_max_coords(dm*(index_max-1) + 1)
-       coord_enuc_max_level(2) = enuc_max_coords(dm*(index_max-1) + 2)
-       if(dm>2) coord_enuc_max_level(3) = enuc_max_coords(dm*(index_max-1) + 3)
+          coord_enuc_max_level(1) = enuc_max_coords(dm*(index_max-1) + 1)
+          coord_enuc_max_level(2) = enuc_max_coords(dm*(index_max-1) + 2)
+          if(dm>2) &
+               coord_enuc_max_level(3) = enuc_max_coords(dm*(index_max-1) + 3)
+       endif
 
        deallocate(enuc_max_data, enuc_max_coords)
 
@@ -482,7 +490,8 @@ contains
        call parallel_gather(vel_max_data_local, vel_max_data, 1, &
                             root = parallel_IOProcessorNode())
        
-       index_max = maxloc(vel_max_data, dim=1)
+       if (parallel_IOProcessor()) &
+            index_max = maxloc(vel_max_data, dim=1)
 
        allocate(vel_max_coords(dm*parallel_nprocs()))
        vel_max_coords_local(:) = coord_vel_max_local(:)
@@ -490,11 +499,14 @@ contains
        call parallel_gather(vel_max_coords_local, vel_max_coords, dm, &
                             root = parallel_IOProcessorNode())
 
-       vel_max_level = vel_max_data(index_max)
+       if (parallel_IOProcessor()) then
+          vel_max_level = vel_max_data(index_max)
 
-       coord_vel_max_level(1) = vel_max_coords(dm*(index_max-1) + 1)
-       coord_vel_max_level(2) = vel_max_coords(dm*(index_max-1) + 2)
-       if (dm>2) coord_vel_max_level(3) = vel_max_coords(dm*(index_max-1) + 3)
+          coord_vel_max_level(1) = vel_max_coords(dm*(index_max-1) + 1)
+          coord_vel_max_level(2) = vel_max_coords(dm*(index_max-1) + 2)
+          if (dm>2) &
+               coord_vel_max_level(3) = vel_max_coords(dm*(index_max-1) + 3)
+       endif
 
        deallocate(vel_max_data, vel_max_coords)
 
@@ -505,7 +517,8 @@ contains
        call parallel_gather(Machno_max_data_local, Machno_max_data, 1, &
                             root = parallel_IOProcessorNode())
 
-       index_max = maxloc(Machno_max_data, dim=1)
+       if (parallel_IOProcessor()) &
+            index_max = maxloc(Machno_max_data, dim=1)
 
        allocate(Machno_max_coords(dm*parallel_nprocs()))
        Machno_max_coords_local(:) = coord_Machno_max_local(:)
@@ -513,11 +526,14 @@ contains
        call parallel_gather(Machno_max_coords_local, Machno_max_coords, dm, &
                             root = parallel_IOProcessorNode())
 
-       Machno_max_level = Machno_max_data(index_max)
+       if (parallel_IOProcessor()) then
+          Machno_max_level = Machno_max_data(index_max)
 
-       coord_Machno_max_level(1) = Machno_max_coords(dm*(index_max-1) + 1)
-       coord_Machno_max_level(2) = Machno_max_coords(dm*(index_max-1) + 2)
-       if (dm>2) coord_Machno_max_level(3) = Machno_max_coords(dm*(index_max-1) + 3)
+          coord_Machno_max_level(1) = Machno_max_coords(dm*(index_max-1) + 1)
+          coord_Machno_max_level(2) = Machno_max_coords(dm*(index_max-1) + 2)
+          if (dm>2) &
+               coord_Machno_max_level(3) = Machno_max_coords(dm*(index_max-1) + 3)
+       endif
 
        deallocate(Machno_max_data, Machno_max_coords)
 
@@ -529,7 +545,8 @@ contains
           call parallel_gather(deltap_max_data_local, deltap_max_data, 1, &
                                root = parallel_IOProcessorNode())
 
-          index_max = maxloc(deltap_max_data, dim=1)
+          if (parallel_IOProcessor()) &
+               index_max = maxloc(deltap_max_data, dim=1)
 
           allocate(deltap_max_coords(dm*parallel_nprocs()))
           deltap_max_coords_local(:) = coord_deltap_max_local(:)
@@ -538,11 +555,14 @@ contains
                                dm, &
                                root = parallel_IOProcessorNode())
 
-          deltap_max_level = deltap_max_data(index_max)
+          if (parallel_IOProcessor()) then
+             deltap_max_level = deltap_max_data(index_max)
 
-          coord_deltap_max_level(1) = deltap_max_coords(dm*(index_max-1) + 1)
-          coord_deltap_max_level(2) = deltap_max_coords(dm*(index_max-1) + 2)
-          if (dm>2) coord_deltap_max_level(3) = deltap_max_coords(dm*(index_max-1) + 3)
+             coord_deltap_max_level(1) = deltap_max_coords(dm*(index_max-1) + 1)
+             coord_deltap_max_level(2) = deltap_max_coords(dm*(index_max-1) + 2)
+             if (dm>2) &
+                  coord_deltap_max_level(3) = deltap_max_coords(dm*(index_max-1) + 3)
+          endif
 
           deallocate(deltap_max_data, deltap_max_coords)
 

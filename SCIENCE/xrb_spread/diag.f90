@@ -38,7 +38,6 @@ contains
                   mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: dm, nlevs
     use bl_constants_module
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
@@ -69,26 +68,26 @@ contains
 
 
     real(kind=dp_t) :: T_max, T_max_level, T_max_local
-    real(kind=dp_t) :: coord_T_max(dm), coord_T_max_level(dm), &
-                       coord_T_max_local(dm)
+    real(kind=dp_t) :: coord_T_max(mla%dim), coord_T_max_level(mla%dim), &
+                       coord_T_max_local(mla%dim)
 
     real(kind=dp_t) :: enuc_max, enuc_max_level, enuc_max_local
-    real(kind=dp_t) :: coord_enuc_max(dm), coord_enuc_max_level(dm), &
-                       coord_enuc_max_local(dm)
+    real(kind=dp_t) :: coord_enuc_max(mla%dim), coord_enuc_max_level(mla%dim), &
+                       coord_enuc_max_local(mla%dim)
 
     real(kind=dp_t) :: total_c12_mass, total_c12_mass_level, &
                        total_c12_mass_local
 
     ! buffers
-    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(dm)
+    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(mla%dim)
     real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
 
-    real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(dm)
+    real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(mla%dim)
     real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
 
     real(kind=dp_t) :: sum_data_level(1), sum_data_local(1)
 
-    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_rhn,ng_rhe
+    integer :: lo(mla%dim),hi(mla%dim),ng_s,ng_u,ng_rhn,ng_rhe,dm,nlevs
     integer :: i,n, index_max
     integer :: un, un2
     logical :: lexist
@@ -98,6 +97,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "diagnostics")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s = s(1)%ng
     ng_u = u(1)%ng
@@ -234,7 +236,8 @@ contains
        call parallel_gather(T_max_data_local, T_max_data, 1, &
                             root = parallel_IOProcessorNode())
        
-       index_max = maxloc(T_max_data, dim=1)
+       if (parallel_IOProcessor()) &
+            index_max = maxloc(T_max_data, dim=1)
 
        ! gather all the T_max_coords into an array and use index_max to 
        ! get the correct location
@@ -244,11 +247,14 @@ contains
        call parallel_gather(T_max_coords_local , T_max_coords, dm, &
                             root = parallel_IOProcessorNode())
 
-       T_max_level = T_max_data(index_max)
+       if (parallel_IOProcessor()) then
+          T_max_level = T_max_data(index_max)
        
-       coord_T_max_level(1) = T_max_coords(dm*(index_max-1) + 1)
-       coord_T_max_level(2) = T_max_coords(dm*(index_max-1) + 2)
-       if (dm>2) coord_T_max_level(3) = T_max_coords(dm*(index_max-1) + 3)
+          coord_T_max_level(1) = T_max_coords(dm*(index_max-1) + 1)
+          coord_T_max_level(2) = T_max_coords(dm*(index_max-1) + 2)
+          if (dm>2) &
+               coord_T_max_level(3) = T_max_coords(dm*(index_max-1) + 3)
+       endif
 
        deallocate(T_max_data, T_max_coords)
 
@@ -259,7 +265,8 @@ contains
        call parallel_gather(enuc_max_data_local, enuc_max_data, 1, &
                             root = parallel_IOProcessorNode())
 
-       index_max = maxloc(enuc_max_data, dim=1)
+       if (parallel_IOProcessor()) &
+            index_max = maxloc(enuc_max_data, dim=1)
 
        allocate(enuc_max_coords(dm*parallel_nprocs()))
        enuc_max_coords_local(:) = coord_enuc_max_local(:)
@@ -267,11 +274,14 @@ contains
        call parallel_gather(enuc_max_coords_local, enuc_max_coords, dm, &
                             root = parallel_IOProcessorNode())
 
-       enuc_max_level = enuc_max_data(index_max)
+       if (parallel_IOProcessor()) then
+          enuc_max_level = enuc_max_data(index_max)
 
-       coord_enuc_max_level(1) = enuc_max_coords(dm*(index_max-1) + 1)
-       coord_enuc_max_level(2) = enuc_max_coords(dm*(index_max-1) + 2)
-       if(dm>2) coord_enuc_max_level(3) = enuc_max_coords(dm*(index_max-1) + 3)
+          coord_enuc_max_level(1) = enuc_max_coords(dm*(index_max-1) + 1)
+          coord_enuc_max_level(2) = enuc_max_coords(dm*(index_max-1) + 2)
+          if(dm>2) &
+               coord_enuc_max_level(3) = enuc_max_coords(dm*(index_max-1) + 3)
+       endif
 
        deallocate(enuc_max_data, enuc_max_coords)
 
