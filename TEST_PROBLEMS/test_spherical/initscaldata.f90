@@ -10,7 +10,6 @@ module init_scalar_module
   use eos_module
   use variables
   use network
-  use geometry
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -24,6 +23,8 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
+    use geometry, only: spherical
+
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
@@ -32,8 +33,11 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,n,nlevs,dm
+
+    nlevs = mla%nlevel
+    dm = mla%dim
     
     ng = nghost(s(1))
 
@@ -90,6 +94,8 @@ contains
 
   subroutine initscalardata_on_level(n,s,s0_init,p0_init,dx,bc)
 
+    use geometry, only: spherical
+
     integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in   ) :: s0_init(0:,:)
@@ -98,9 +104,11 @@ contains
     type(bc_level) , intent(in   ) :: bc
 
     ! local
-    integer                  :: ng,i
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: ng,i,dm
+    integer                  :: lo(s%dim),hi(s%dim)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
+
+    dm = s%dim
 
     ng = nghost(s)
 
