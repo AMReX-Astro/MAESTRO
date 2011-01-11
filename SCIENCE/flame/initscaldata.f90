@@ -26,8 +26,6 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
-    use geometry, only: nlevs
-
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
@@ -36,7 +34,11 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng,i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,n,dm,nlevs
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng = s(1)%ng
 
@@ -97,9 +99,11 @@ contains
     type(bc_level) , intent(in   ) :: bc
 
     ! local
-    integer                  :: ng,i
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: ng,i,dm
+    integer                  :: lo(get_dim(s)),hi(get_dim(s))
     real(kind=dp_t), pointer :: sop(:,:,:,:)
+
+    dm = get_dim(s)
 
     ng = s%ng
 

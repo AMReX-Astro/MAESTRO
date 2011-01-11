@@ -24,7 +24,7 @@ contains
   subroutine tag_boxes(mf,tagboxes,dx,lev,aux_tag_mf)
 
     use variables, only: rho_comp, spec_comp
-    use geometry, only: dm, nr_fine, nr
+    use geometry, only: nr_fine, nr
     use network
     use inlet_bc_module, only: INLET_RHOX, INLET_RHO
 
@@ -36,7 +36,7 @@ contains
 
     real(kind = dp_t), pointer :: sp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
-    integer           :: i, j, lo(dm), ng_s
+    integer           :: i, j, lo(get_dim(mf)), ng_s
     logical           ::      radialtag(0:nr_fine-1)
     logical           :: radialtag_proc(0:nr_fine-1)
 
@@ -44,6 +44,10 @@ contains
     integer, save :: ic12
     logical, save :: firstCall = .true.    
     integer, parameter :: npad = 4
+
+    integer :: dm
+
+    dm = get_dim(mf)
 
     if (firstCall) then
 
