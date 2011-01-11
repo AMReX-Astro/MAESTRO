@@ -42,7 +42,6 @@ contains
     use inlet_bc_module
     use network
     use variables
-    use geometry, ONLY: dm
     
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:)
@@ -53,6 +52,9 @@ contains
     integer         :: i
     
     character (len=256) err_string
+    integer :: dm
+
+    dm = 1
 
     if(ng == 0) return
 
@@ -128,7 +130,6 @@ contains
     use inlet_bc_module
     use network
     use variables
-    use geometry, ONLY: dm
     
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:, lo(2)-ng:)
@@ -139,6 +140,9 @@ contains
     integer         :: i
     
     character (len=256) err_string
+    integer :: dm
+
+    dm = 2 
 
     if(ng == 0) return
 
@@ -244,7 +248,6 @@ contains
     use inlet_bc_module
     use network
     use variables
-    use geometry, ONLY: dm
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:, lo(2)-ng:, lo(3)-ng:)
@@ -255,7 +258,10 @@ contains
     integer :: i,j
 
     character (len=256) err_string
+    integer :: dm
 
+    dm = 3
+    
     if (ng == 0) return
 
     if ( (bc(1,1) == EXT_DIR .or. &

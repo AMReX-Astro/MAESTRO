@@ -23,7 +23,7 @@ contains
                   mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: dm, nlevs, spherical
+    use geometry, only: spherical
     use bl_constants_module
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
@@ -68,7 +68,7 @@ contains
 
     real(kind=dp_t) :: flame_thickness
 
-    integer :: lo(dm),hi(dm)
+    integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: ng_s,ng_u,ng_n,ng_rhn,ng_rhe,ng_rw
     integer :: i,n
     integer :: un
@@ -81,6 +81,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "diagnostics")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (firstCall_params) then
 
