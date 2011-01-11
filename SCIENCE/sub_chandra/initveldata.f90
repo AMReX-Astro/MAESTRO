@@ -38,8 +38,8 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,j,k,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,j,k,n,dm,nlevs
 
     ! random numbers between -1 and 1
     real(kind=dp_t) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
@@ -59,6 +59,9 @@ contains
     integer :: ihe4
 
     ihe4 = network_species_index("helium-4")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng = nghost(u(1))
 
