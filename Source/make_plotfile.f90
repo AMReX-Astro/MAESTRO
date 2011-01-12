@@ -640,6 +640,11 @@ contains
     end do
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    if (parallel_IOProcessor()) then
+       print*,"Writing state to plotfile"
+       print*,""
+    end if
+
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
                                    mba%pd(1), prob_lo, prob_hi, time, dx(1,:), &
                                    nOutFiles = nOutFiles, &
