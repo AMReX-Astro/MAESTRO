@@ -1,0 +1,26 @@
+&PROBIN
+
+ test_set = "gr0_3d.4608_4levels"
+
+ drdxfac = 5
+
+ spherical_in = 1
+ dm_in = 3
+
+ prob_hi_x = 1.d0
+ prob_hi_y = 1.d0
+ prob_hi_z = 1.d0
+
+ bcx_lo = 12
+ bcx_hi = 12
+ bcy_lo = 12
+ bcy_hi = 12
+ bcz_lo = 12
+ bcz_hi = 12
+
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+/
