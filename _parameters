@@ -116,7 +116,7 @@ sponge_center_density               real               3.d6
 sponge_start_factor                 real               3.333d0
 
 # plot fdamp rather than sponge
-# assumes sponge has the form 1/(1+dt*sponge_kappa*fdamp)
+# assumes sponge has the form 1/(1+dt*{\tt sponge\_kappa}*fdamp)
 plot_sponge_fdamp                   logical            .false.
 
 # In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point 
@@ -161,7 +161,7 @@ dm_in                               integer            2
 perturb_model                       logical            .false.             
 
 # Turn on storing of enthalpy-based quantities in the plotfile
-# when we are running with use_tfromp
+# when we are running with {\tt use\_tfromp}
 plot_h_with_use_tfromp              logical            .true.
 
 # plot species and omegadot in plotfile
@@ -240,9 +240,9 @@ max_dt                              real               1.0d33
 # Fix the time step.  If -1.0, then use the standard time step.
 fixed_dt                            real               -1.0d0              
 
-# If T_{max)^n > T_{max}^{n-1}
+# If $T_{max}^n > T_{max}^{n-1}$
 # set the new dt = 
-#   min[dt, dt*nuclear_dt_fac*( T_{max}^{n-1} / (T_{max)^n-T_{max}^{n-1}) ) ]
+#   min[dt, dt*{\tt nuclear\_dt\_fac}*( $T_{max}^{n-1}$ / $(T_{max}^n-T_{max}^{n-1})$ ) ]
 # not checkpoint-compatible yet since it wouldn't be backwards compatible
 nuclear_dt_fac                      real               -1.0d0
 
@@ -442,7 +442,7 @@ mach_max_abort                      real               -1.d0
 # nonlinear.
 drive_initial_convection            logical            .false.
 
-# restart the simulation using a result from a drive_initial_convection = T run
+# restart the simulation using a result from a {\tt drive\_initial\_convection} = T run
 # note that this uses the restart variable to specify which file to restart
 # from.  After reading in the velocity information from the restart file, the
 # time and timestep number are zeroed.
