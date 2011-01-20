@@ -5,6 +5,10 @@ import sys
 header=r"""
 \section{Runtime Parameters}
 
+Table~\ref{table:runtime} lists the runtime parameters available to
+all MAESTRO problems.  Problem-specific runtime parameters are not
+shown here.
+
 %%%%%%%%%%%%%%%%
 % symbol table
 %%%%%%%%%%%%%%%%
