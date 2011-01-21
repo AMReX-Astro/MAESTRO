@@ -109,7 +109,7 @@ contains
 
   subroutine radialtag_2d(radialtag,he,rho,lo,ng,lev,rhoHnuc)
 
-    use probin_module, only: tag_minval, tag_maxval
+    use probin_module, only: tag_minval, tag_maxval, base_cutoff_density
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
@@ -131,12 +131,14 @@ contains
        do i = lo(1),lo(1)+nx-1
           if (present(rhoHnuc)) then
              Hnuc = rhoHnuc(i,j)/rho(i,j)
-             if (Hnuc .gt. tag_minval) then
+             if (Hnuc .gt. tag_minval .and. &
+                  rho(i,j) .gt. base_cutoff_density) then
                 radialtag(j) = .true.
              end if
           else
              Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
+             if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval &
+                  .and. rho(i,j) .gt. base_cutoff_density) then
                 radialtag(j) = .true.
              endif
           endif
@@ -149,7 +151,7 @@ contains
 
   subroutine radialtag_3d(radialtag,he,rho,lo,ng,lev,rhoHnuc)
 
-    use probin_module, only: tag_minval, tag_maxval
+    use probin_module, only: tag_minval, tag_maxval, base_cutoff_density
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
@@ -173,12 +175,14 @@ contains
           do i = lo(1),lo(1)+nx-1
              if (present(rhoHnuc)) then
                 Hnuc = rhoHnuc(i,j,k)/rho(i,j,k)
-                if (Hnuc .gt. tag_minval) then
+                if (Hnuc .gt. tag_minval .and. &
+                     rho(i,j,k) .gt. base_cutoff_density) then
                    radialtag(k) = .true.
                 end if
              else
                 Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
+                if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval &
+                     .and. rho(i,j,k) .gt. base_cutoff_density) then
                    radialtag(k) = .true.
                 endif
              endif
