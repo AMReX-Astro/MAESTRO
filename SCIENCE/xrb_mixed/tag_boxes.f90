@@ -43,9 +43,6 @@ contains
 
     ng_s = mf%ng
 
-!    if (parallel_IOProcessor() .and. present(aux_tag_mf)) &
-!         print *, ng_s, aux_tag_mf%ng
-
     do i = 1, mf%nboxes
        if ( multifab_remote(mf, i) ) cycle
        sp => dataptr(mf, i)
@@ -124,64 +121,27 @@ contains
     integer, optional, intent(in   ) :: lev
 
     ! local
-    integer :: i,j,nx,ny,llev
+    integer :: i,j,nx,ny
     real(kind=dp_t) :: Hnuc, Xhe
 
-    llev = 1; if (present(lev)) llev = lev
     nx = size(he,dim=1) - 2*ng
     ny = size(he,dim=2) - 2*ng
 
-    select case(llev)
-    case (1)
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             if (present(rhoHnuc)) then
-                Hnuc = rhoHnuc(i,j)/rho(i,j)
-!                print *, i, j, Hnuc
-                if (Hnuc .gt. tag_minval) then
-                   radialtag(j) = .true.
-                end if
-             else
-                Xhe = he(i,j)/rho(i,j)
-                if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
-                   radialtag(j) = .true.
-                endif
+    do j = lo(2),lo(2)+ny-1
+       do i = lo(1),lo(1)+nx-1
+          if (present(rhoHnuc)) then
+             Hnuc = rhoHnuc(i,j)/rho(i,j)
+             if (Hnuc .gt. tag_minval) then
+                radialtag(j) = .true.
+             end if
+          else
+             Xhe = he(i,j)/rho(i,j)
+             if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
+                radialtag(j) = .true.
              endif
-          end do
-       enddo
-    case (2)
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             if (present(rhoHnuc)) then
-                Hnuc = rhoHnuc(i,j)/rho(i,j)
-                if (Hnuc .gt. tag_minval) then
-                   radialtag(j) = .true.
-                end if
-             else
-                Xhe = he(i,j)/rho(i,j)
-                if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
-                   radialtag(j) = .true.
-                endif
-             endif
-          end do
+          endif
        end do
-    case default
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             if (present(rhoHnuc)) then
-                Hnuc = rhoHnuc(i,j)/rho(i,j)
-                if (Hnuc .gt. tag_minval) then
-                   radialtag(j) = .true.
-                end if
-             else
-                Xhe = he(i,j)/rho(i,j)
-                if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
-                   radialtag(j) = .true.
-                endif
-             endif
-          end do
-       end do
-    end select
+    enddo
 
   end subroutine radialtag_2d
 
@@ -201,70 +161,30 @@ contains
     integer, optional, intent(in   ) :: lev
 
     ! local
-    integer :: i,j,k,nx,ny,nz,llev
+    integer :: i,j,k,nx,ny,nz
     real(kind=dp_t) :: Hnuc, Xhe
 
-    llev = 1; if (present(lev)) llev = lev
     nx = size(he,dim=1) - 2*ng
     ny = size(he,dim=2) - 2*ng
     nz = size(he,dim=3) - 2*ng
 
-    select case(llev)
-    case (1)
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                if (present(rhoHnuc)) then
-                   Hnuc = rhoHnuc(i,j,k)/rho(i,j,k)
-                   if (Hnuc .gt. tag_minval) then
-                      radialtag(k) = .true.
-                   end if
-                else
-                   Xhe = he(i,j,k)/rho(i,j,k)
-                   if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
-                      radialtag(k) = .true.
-                   endif
+    do k = lo(3),lo(3)+nz-1
+       do j = lo(2),lo(2)+ny-1
+          do i = lo(1),lo(1)+nx-1
+             if (present(rhoHnuc)) then
+                Hnuc = rhoHnuc(i,j,k)/rho(i,j,k)
+                if (Hnuc .gt. tag_minval) then
+                   radialtag(k) = .true.
+                end if
+             else
+                Xhe = he(i,j,k)/rho(i,j,k)
+                if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
+                   radialtag(k) = .true.
                 endif
-             end do
-          enddo
-       end do
-    case (2)
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                if (present(rhoHnuc)) then
-                   Hnuc = rhoHnuc(i,j,k)/rho(i,j,k)
-                   if (Hnuc .gt. tag_minval) then
-                      radialtag(k) = .true.
-                   end if
-                else
-                   Xhe = he(i,j,k)/rho(i,j,k)
-                   if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
-                      radialtag(k) = .true.
-                   endif
-                endif
-             end do
+             endif
           end do
-       end do
-    case default
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                if (present(rhoHnuc)) then
-                   Hnuc = rhoHnuc(i,j,k)/rho(i,j,k)
-                   if (Hnuc .gt. tag_minval) then
-                      radialtag(k) = .true.
-                   end if
-                else
-                   Xhe = he(i,j,k)/rho(i,j,k)
-                   if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval) then
-                      radialtag(k) = .true.
-                   endif
-                endif
-             end do
-          end do
-       end do
-    end select
+       enddo
+    end do
 
   end subroutine radialtag_3d
 
