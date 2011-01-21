@@ -22,6 +22,6 @@ set xtics nomirror ("1296" 1296, "5000" 5000, "10000" 10000, "24576" 24576, "327
 
 set ytics nomirror 10
 
-plot 'mpi.txt'   using 1:2 with linespoints lw 1 pt 5 title "MPI",\
-     'omp6.txt'  using 1:2 with linespoints lw 1 pt 7 title "Hybrid MPI/OpenMP; 6 Threads", \
-     'omp12.txt' using 1:2 with linespoints lw 1 pt 9 title "Hybrid MPI/OpenMP; 12 Threads"
+plot 'mpi.txt'   using 1:3 with linespoints lw 1 pt 5 title "MPI",\
+     'omp6.txt'  using 1:3 with linespoints lw 1 pt 7 title "Hybrid MPI/OpenMP; 6 Threads", \
+     'omp12.txt' using 1:3 with linespoints lw 1 pt 9 title "Hybrid MPI/OpenMP; 12 Threads"
