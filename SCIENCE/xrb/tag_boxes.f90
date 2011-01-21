@@ -107,42 +107,20 @@ contains
     integer, optional, intent(in   ) :: lev
 
     ! local
-    integer :: i,j,nx,ny,llev
+    integer :: i,j,nx,ny
     real(kind=dp_t) :: Xhe
 
-    llev = 1; if (present(lev)) llev = lev
     nx = size(he,dim=1) - 2*ng
     ny = size(he,dim=2) - 2*ng
 
-    select case(llev)
-    case (1)
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                radialtag(j) = .true.
-             end if
-          end do
-       enddo
-    case (2)
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                radialtag(j) = .true.
-             end if
-          end do
-       end do
-    case default
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                radialtag(j) = .true.
-             end if
-          end do
-       end do
-    end select
+    do j = lo(2),lo(2)+ny-1
+       do i = lo(1),lo(1)+nx-1
+          Xhe = he(i,j)/rho(i,j)
+          if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
+             radialtag(j) = .true.
+           end if
+        end do
+     enddo
 
   end subroutine radialtag_2d
 
@@ -159,49 +137,23 @@ contains
     integer, optional, intent(in   ) :: lev
 
     ! local
-    integer :: i,j,k,nx,ny,nz,llev
+    integer :: i,j,k,nx,ny,nz
     real(kind=dp_t) :: Xhe
 
-    llev = 1; if (present(lev)) llev = lev
     nx = size(he,dim=1) - 2*ng
     ny = size(he,dim=2) - 2*ng
     nz = size(he,dim=3) - 2*ng
 
-    select case(llev)
-    case (1)
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                   radialtag(k) = .true.
-                end if
-             end do
-          enddo
-       end do
-    case (2)
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                   radialtag(k) = .true.
-                end if
-             end do
+    do k = lo(3),lo(3)+nz-1
+       do j = lo(2),lo(2)+ny-1
+          do i = lo(1),lo(1)+nx-1
+             Xhe = he(i,j,k)/rho(i,j,k)
+             if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
+                radialtag(k) = .true.
+             end if
           end do
-       end do
-    case default
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. tag_minval .and. Xhe .lt. tag_maxval) then
-                   radialtag(k) = .true.
-                end if
-             end do
-          end do
-       end do
-    end select
+       enddo
+    end do
 
   end subroutine radialtag_3d
 
