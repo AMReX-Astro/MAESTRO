@@ -4,11 +4,15 @@ OMP    :=
 
 COMP := gfortran
 
+#
+# Get particles.f90
+#
+PARTICLES := t
+
 MKVERBOSE := t
 
 # define the location of the fParallel root directory
 FPARALLEL := ../..
-
 
 # define the physics packages to build this problem
 EOS_DIR := extern/EOS/helmeos 
@@ -23,7 +27,6 @@ EXTRA_DIR := extern/random
 
 # define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters ./_parameters.test_particles
-
 
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
