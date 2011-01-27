@@ -115,6 +115,7 @@ subroutine varden()
   logical :: dump_plotfile, dump_checkpoint
 
   type(particle_container) :: particles
+  type(particle) :: p
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialization
@@ -578,7 +579,29 @@ subroutine varden()
   if (restart < 0) then
      init_step = 1
 
-     call init_random(particles,100,1771,mla,dx,prob_lo,prob_hi)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! initialize 100 particles at random location over the domain
+!     call init_random(particles,100,1771,mla,dx,prob_lo,prob_hi)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! initialize 1 particle at a specific point
+     p%pos(1) = 1.2d8
+     p%pos(2) = 8.5d7
+     if ( .not. particle_where(p,mla,dx,prob_lo) ) then
+        call bl_error('problem initializing particle')
+     end if
+       if ( local(mla%la(p%lev),p%grd) ) then
+          !
+          ! We own it.
+          !
+          p%id  = get_particle_id()
+          p%cpu = parallel_myproc()
+
+          call add(particles,p)
+       end if
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   else
      init_step = restart+1
   end if
@@ -976,10 +999,16 @@ subroutine varden()
                               div_coeff_old,div_coeff_new, &
                               grav_cell,dx,dt,dtold,the_bc_tower,dSdt,Source_old, &
                               Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init)
-        !
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! Move particles randomly and then redistribute'm.
-        !
-        call move_random(particles,mla,dx,prob_lo,prob_hi)
+        ! call move_random(particles,mla,dx,prob_lo,prob_hi)
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ! advect position = position + dt*velocity
+        call move_advect(particles,mla,uold,dx,dt,prob_lo,prob_hi)
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         call timestamp(particles, 'timestamp', sold, (/1,2,3,4,5,6/), time)
 
