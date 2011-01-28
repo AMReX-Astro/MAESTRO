@@ -1142,6 +1142,27 @@ etc. and norm, etc.
 
 \section{Filling Ghostcells}
 
+Ghostcells are filled through a variety of different routines, depending
+on the objective.
+
+\begin{itemize}
+
+\item {\tt multifab\_fill\_boundary} fills ghost cells for two
+  adjacent grids at the same level, which als includes periodic domain
+  boundary ghost cells.
+
+\item {\tt multifab\_physbc} fills ghostcells at the physical boundaries.
+
+\item {\tt multifab\_fill\_ghost\_cells} is used for multilevel
+  problems, and fills ghostcells in the finer grid (level {\tt n}) by
+  interpolating from data in the coarser grid (level {\tt n-1}).  
+
+  This call is usually preceded by a call to {\tt
+    ml\_cc\_restriction\_c} which sets the level {\tt n-1} data to be
+  the average of the level {\tt n} data covering it.
+   
+
+\end{itemize}
 
 \section{Boundary Conditions}
 
