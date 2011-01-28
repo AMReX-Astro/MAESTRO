@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "alex_mixed_t5.7e8_1cm.hse"
+ model_file = "alex_mixed_t7.49e8_1cm.hse"
  spherical_in = 0
 
 ! our plot specifications

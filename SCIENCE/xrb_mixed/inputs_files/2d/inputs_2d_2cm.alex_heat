@@ -1,19 +1,26 @@
 &PROBIN
- model_file = "alex_mixed_t5.7e8_1cm.hse"
+ model_file = "alex_mixed_t5.7e8_2cm.hse"
  spherical_in = 0
+
+! do analytic heating only
+ do_analytic_heating = T
+ do_burning = F
 
 ! our plot specifications
  plot_base = T
  plot_h_with_use_tfromp = T
- plot_cs = T
  plot_ad_excess = T
+ plot_cs = T
+ plot_Hext = T
+ plot_Hnuc = F
+ plot_omegadot = F
 
 ! we tag where rhoHnuc > tag_minval
  tag_minval = 3e15
 
  max_levs = 1
- n_cellx = 512
- n_celly = 2048
+ n_cellx = 256
+ n_celly = 1024
 
 ! 4x16 = 64
  max_grid_size = 64
