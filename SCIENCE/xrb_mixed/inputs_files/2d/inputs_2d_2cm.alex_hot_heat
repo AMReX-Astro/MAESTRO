@@ -15,8 +15,8 @@
  plot_Hnuc = F
  plot_omegadot = F
 
-! we tag where rhoHnuc > tag_minval
- tag_minval = 3e15
+! we tag where rhoHext > tag_minval
+ tag_minval = 1e15
 
  max_levs = 1
  n_cellx = 256
