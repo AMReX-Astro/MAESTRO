@@ -15,7 +15,7 @@ module regrid_module
 
 contains
 
-  subroutine regrid(nstep,mla,uold,sold,gpi,pi,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart,rhoHnuc)
+  subroutine regrid(nstep,mla,uold,sold,gpi,pi,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart,rhoHdot)
 
     use fillpatch_module
     use ml_prolongation_module
@@ -42,7 +42,7 @@ contains
     type(bc_tower),  intent(inout) :: the_bc_tower
     real(kind=dp_t), intent(in   ) :: rho0(:,0:),rhoh0(:,0:)
     logical        , intent(in   ) :: is_restart
-    type(multifab),  pointer       :: rhoHnuc(:)
+    type(multifab), pointer        :: rhoHdot(:)
 
     ! local
     logical           :: new_grid
@@ -56,7 +56,7 @@ contains
     ! These are copies to hold the old data.
     type(multifab) :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
     type(multifab) :: pi_temp(max_levs), dSdt_temp(max_levs), src_temp(max_levs)
-    type(multifab) :: rhoHnuc_temp(max_levs)
+    type(multifab) :: rhoHdot_temp(max_levs)
 
     dm = mla%dim
     nlevs = mla%nlevel
@@ -94,8 +94,8 @@ contains
        call multifab_copy_c(  dSdt_temp(n),1,  dSdt(n),1,    1)
        call multifab_copy_c(   src_temp(n),1,   src(n),1,    1)
 
-       call multifab_build(rhoHnuc_temp(n),mla_old%la(n),1,0)
-       call multifab_copy_c(rhoHnuc_temp(n),1, rhoHnuc(n),1,1)
+       call multifab_build(rhoHdot_temp(n),mla_old%la(n),1,0)
+       call multifab_copy_c(rhoHdot_temp(n),1, rhoHdot(n),1,1)
 
        ! Get rid of the old data structures so we can create new ones 
        ! with the same names.
@@ -106,7 +106,7 @@ contains
        call multifab_destroy(  dSdt(n))
        call multifab_destroy(   src(n))
 
-       call multifab_destroy(rhoHnuc(n))
+       call multifab_destroy(rhoHdot(n))
 
     end do
 
@@ -123,12 +123,12 @@ contains
 
     if (associated(uold)) then
        deallocate(uold,sold,pi,gpi,dSdt,src)
-       deallocate(rhoHnuc)
+       deallocate(rhoHdot)
     end if
 
     allocate(uold(max_levs),sold(max_levs),pi(max_levs),gpi(max_levs))
     allocate(dSdt(max_levs),src(max_levs))
-    allocate(rhoHnuc(max_levs))
+    allocate(rhoHdot(max_levs))
 
     ! Copy the level 1 boxarray
     call copy(mba%bas(1),mla_old%mba%bas(1))
@@ -158,8 +158,8 @@ contains
     call multifab_copy_c(  dSdt(1),1,  dSdt_temp(1), 1,    1)
     call multifab_copy_c(   src(1),1,   src_temp(1), 1,    1)
 
-    call multifab_build(rhoHnuc(1), la_array(1), 1, 0)
-    call multifab_copy_c(rhoHnuc(1),1,rhoHnuc_temp(1),1,1)
+    call multifab_build(rhoHdot(1), la_array(1), 1, 0)
+    call multifab_copy_c(rhoHdot(1),1,rhoHdot_temp(1),1,1)
 
     nl       = 1
     new_grid = .true.
@@ -175,10 +175,10 @@ contains
 
        if (nl .eq. 1) then
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
-                              amr_buf_width,ref_ratio,nl,max_grid_size_2,rhoHnuc(nl))
+                              amr_buf_width,ref_ratio,nl,max_grid_size_2,rhoHdot(nl))
        else
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
-                              amr_buf_width,ref_ratio,nl,max_grid_size_3,rhoHnuc(nl))
+                              amr_buf_width,ref_ratio,nl,max_grid_size_3,rhoHdot(nl))
        end if
 
        if (new_grid) then
@@ -193,7 +193,7 @@ contains
           call multifab_build(  dSdt(nl+1), la_array(nl+1),     1, 0)
           call multifab_build(   src(nl+1), la_array(nl+1),     1, 1)
 
-          call multifab_build(rhoHnuc(nl+1), la_array(nl+1), 1, 0)
+          call multifab_build(rhoHdot(nl+1), la_array(nl+1), 1, 0)
 
           ! Define bc_tower at level nl+1.
           call bc_tower_level_build(the_bc_tower,nl+1,la_array(nl+1))
@@ -227,7 +227,7 @@ contains
                          the_bc_tower%bc_tower_array(nl+1), &
                          1,1,foextrap_comp,1)
 
-          call fillpatch(rhoHnuc(nl+1),rhoHnuc(nl), &
+          call fillpatch(rhoHdot(nl+1),rhoHdot(nl), &
                          0,mba%rr(nl,:), &
                          the_bc_tower%bc_tower_array(nl  ), &
                          the_bc_tower%bc_tower_array(nl+1), &
@@ -245,7 +245,7 @@ contains
              call multifab_copy_c(  dSdt(nl+1),1,  dSdt_temp(nl+1),1,    1)
              call multifab_copy_c(   src(nl+1),1,   src_temp(nl+1),1,    1)
              
-             call multifab_copy_c(rhoHnuc(nl+1),1,rhoHnuc_temp(nl+1),1,1)
+             call multifab_copy_c(rhoHdot(nl+1),1,rhoHdot_temp(nl+1),1,1)
           end if
 
           nlevs = nl+1
@@ -283,7 +283,7 @@ contains
        call destroy(  dSdt(n))
        call destroy(   src(n))
 
-       call destroy(rhoHnuc(n))
+       call destroy(rhoHdot(n))
     end do
 
     nlevs = nl
@@ -320,8 +320,8 @@ contains
     call multifab_copy_c(  dSdt(1),1,  dSdt_temp(1), 1,    1)
     call multifab_copy_c(   src(1),1,   src_temp(1), 1,    1)
 
-    call multifab_build(rhoHnuc(1),mla%la(1),1,0)
-    call multifab_copy_c(rhoHnuc(1),1,rhoHnuc_temp(1),1,1)
+    call multifab_build(rhoHdot(1),mla%la(1),1,0)
+    call multifab_copy_c(rhoHdot(1),1,rhoHdot_temp(1),1,1)
 
     nlevs = mla%nlevel
     nlevs_radial = merge(1, nlevs, spherical .eq. 1)
@@ -336,7 +336,7 @@ contains
        call multifab_build(  dSdt(nl+1), mla%la(nl+1),     1, 0)
        call multifab_build(   src(nl+1), mla%la(nl+1),     1, 1)
 
-       call multifab_build(rhoHnuc(nl+1),mla%la(nl+1), 1,0)
+       call multifab_build(rhoHdot(nl+1),mla%la(nl+1), 1,0)
        
        ! Define bc_tower at level nl+1.
        call bc_tower_level_build(the_bc_tower,nl+1,mla%la(nl+1))
@@ -369,7 +369,8 @@ contains
                       the_bc_tower%bc_tower_array(nl  ), &
                       the_bc_tower%bc_tower_array(nl+1), &
                       1,1,foextrap_comp,1)
-       call fillpatch(rhoHnuc(nl+1),rhoHnuc(nl), &
+
+       call fillpatch(rhoHdot(nl+1),rhoHdot(nl), &
                       0,mba%rr(nl,:), &
                       the_bc_tower%bc_tower_array(nl  ), &
                       the_bc_tower%bc_tower_array(nl+1), &
@@ -387,7 +388,7 @@ contains
           call multifab_copy_c(  dSdt(nl+1),1,  dSdt_temp(nl+1),1,    1)
           call multifab_copy_c(   src(nl+1),1,   src_temp(nl+1),1,    1)
 
-          call multifab_copy_c(rhoHnuc(nl+1),1,rhoHnuc_temp(nl+1),1,1)
+          call multifab_copy_c(rhoHdot(nl+1),1,rhoHdot_temp(nl+1),1,1)
 
           call destroy(  uold_temp(nl+1))
           call destroy(  sold_temp(nl+1))
@@ -396,7 +397,7 @@ contains
           call destroy(  dSdt_temp(nl+1))
           call destroy(   src_temp(nl+1))
           
-          call destroy(rhoHnuc_temp(nl+1))
+          call destroy(rhoHdot_temp(nl+1))
        end if
 
     end do
@@ -518,7 +519,7 @@ contains
     call destroy(  dSdt_temp(1))
     call destroy(   src_temp(1))
 
-    call destroy(rhoHnuc_temp(1))
+    call destroy(rhoHdot_temp(1))
 
     call destroy(mla_old)
 

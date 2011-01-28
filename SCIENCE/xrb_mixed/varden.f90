@@ -59,6 +59,8 @@ subroutine varden()
   type(multifab), allocatable :: hgrhs(:)
   type(multifab), allocatable :: gamma1(:)
 
+  type(multifab), pointer :: tag_mf(:)
+
   ! these are pointers because they need to be allocated and built within 
   !   another function
   type(multifab), pointer :: uold(:)
@@ -202,6 +204,9 @@ subroutine varden()
      end if
   end if
 
+  if (do_analytic_heating .and. do_burning) &
+       call bl_error("We don't allow analytic heating and rxns")
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! print processor and grid info
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -255,6 +260,7 @@ subroutine varden()
 
   allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs))
   allocate(normal(nlevs))
+  allocate(tag_mf(nlevs))
 
   do n = 1,nlevs
      call multifab_build(      unew(n), mla%la(n),    dm, nghost(uold(n)))
@@ -264,11 +270,13 @@ subroutine varden()
      if (dm .eq. 3) then
         call multifab_build(normal(n), mla%la(n),    dm, 1)
      end if
+     call multifab_build(    tag_mf(n), mla%la(n), 1, 0)
 
      call setval(      unew(n), ZERO, all=.true.)
      call setval(      snew(n), ZERO, all=.true.)
      call setval(    sponge(n), ONE,  all=.true.)
      call setval(     hgrhs(n), ZERO, all=.true.)
+     call setval(    tag_mf(n), ZERO, all=.true.)
   end do
 
   ! Create normal now that we have defined center and dx
@@ -758,10 +766,21 @@ subroutine varden()
               endif
 
            end if ! end regridding of base state
+           
+           ! figure out if we are tagging off of heating or rxns
+           if (do_analytic_heating) then
+              do n = 1, nlevs
+                 call multifab_copy_c(tag_mf(n), 1, rho_Hext(n), 1, 1)
+              enddo
+           else
+              do n = 1, nlevs
+                 call multifab_copy_c(tag_mf(n), 1, rho_Hnuc2(n), 1, 1)
+              enddo
+           endif
 
            ! create new grids and fill in data on those grids
            call regrid(istep,mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
-                       rho0_old,rhoh0_old,.false.,rho_Hnuc2)
+                       rho0_old,rhoh0_old,.false.,tag_mf)
 
 
            do n=1,nlevs
@@ -1256,6 +1275,7 @@ subroutine varden()
      call destroy(rho_Hext(n))
      call destroy(thermal2(n))
      call destroy(sponge(n))
+     call destroy(tag_mf(n))
   end do
 
   if(dm .eq. 3) then
@@ -1273,7 +1293,7 @@ subroutine varden()
   call probin_close()
 
   deallocate(uold,sold,pi,gpi,dSdt,Source_old,Source_new,rho_omegadot2, &
-             rho_Hnuc2,rho_Hext)
+             rho_Hnuc2,rho_Hext,tag_mf)
   deallocate(thermal2,dx)
   deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)

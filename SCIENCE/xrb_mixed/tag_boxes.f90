@@ -29,9 +29,9 @@ contains
     integer                  , intent(in   ) :: lev
     type( multifab), optional, intent(in   ) :: aux_tag_mf
 
-    real(kind = dp_t), pointer :: sp(:,:,:,:),rhnp(:,:,:,:)
+    real(kind = dp_t), pointer :: sp(:,:,:,:),auxp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
-    integer           :: i, j, lo(get_dim(mf)), ng_s, dm
+    integer           :: i, j, lo(get_dim(mf)), ng_s, dm, ng_aux
     logical           ::      radialtag(0:nr_fine-1)
     logical           :: radialtag_proc(0:nr_fine-1)
     integer, parameter :: npad = 4
@@ -42,29 +42,39 @@ contains
     dm = get_dim(mf)
 
     ng_s = mf%ng
+    if (present(aux_tag_mf)) ng_aux = aux_tag_mf%ng
 
     do i = 1, mf%nboxes
        if ( multifab_remote(mf, i) ) cycle
        sp => dataptr(mf, i)
-       if (present(aux_tag_mf)) rhnp => dataptr(aux_tag_mf, i)
+       if (present(aux_tag_mf)) auxp => dataptr(aux_tag_mf, i)
        lo =  lwb(get_box(tagboxes, i))
        select case (dm)
        case (2)
-          if (present(aux_tag_mf)) then
+             call radialtag_2d(radialtag_proc, &
+                               sp(:,:,1,spec_comp),sp(:,:,1,rho_comp), &
+                               lo,ng_s,lev)
 
-             call radialtag_2d(radialtag_proc,sp(:,:,1,spec_comp),sp(:,:,1,rho_comp),lo,ng_s,lev,rhnp(:,:,1,1))
-          else
-             call radialtag_2d(radialtag_proc,sp(:,:,1,spec_comp),sp(:,:,1,rho_comp),lo,ng_s,lev)
-          endif
+             if (present(aux_tag_mf)) then
+                call update_radialtag_2d(radialtag_proc,&
+                                         sp(:,:,1,rho_comp), ng_s, &
+                                         auxp(:,:,1,1), ng_aux, lo)
+             endif
+                  
        case  (3)
-          if (present(aux_tag_mf)) then
-             call radialtag_3d(radialtag_proc,sp(:,:,:,spec_comp),sp(:,:,:,rho_comp),lo,ng_s,lev,rhnp(:,:,:,1))
-          else
-             call radialtag_3d(radialtag_proc,sp(:,:,:,spec_comp),sp(:,:,:,rho_comp),lo,ng_s,lev)
-          endif
+             call radialtag_3d(radialtag_proc, &
+                               sp(:,:,:,spec_comp),sp(:,:,:,rho_comp), &
+                               lo,ng_s,lev)
+
+             if (present(aux_tag_mf)) then
+                call update_radialtag_3d(radialtag_proc, &
+                                         sp(:,:,:,rho_comp), ng_s, &
+                                         auxp(:,:,:,1), ng_aux, lo)
+             endif
 
        end select
     end do
+
 
     ! gather radialtag
     call parallel_reduce(radialtag, radialtag_proc, MPI_LOR)
@@ -107,7 +117,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine radialtag_2d(radialtag,he,rho,lo,ng,lev,rhoHnuc)
+  subroutine radialtag_2d(radialtag,he,rho,lo,ng,lev)
 
     use probin_module, only: tag_minval, tag_maxval, base_cutoff_density
 
@@ -115,32 +125,21 @@ contains
     logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) ::  he(lo(1)-ng:,lo(2)-ng:)
     real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:)
-    ! NOTE: the number of guard cells is hard-coded here - no clean way to
-    ! pass this as an optional parameter
-    real(kind = dp_t),optional, intent(in   ) :: rhoHnuc(lo(1)-0:,lo(2)-0:)
     integer, optional, intent(in   ) :: lev
 
     ! local
     integer :: i,j,nx,ny
-    real(kind=dp_t) :: Hnuc, Xhe
+    real(kind=dp_t) :: Xhe
 
     nx = size(he,dim=1) - 2*ng
     ny = size(he,dim=2) - 2*ng
 
     do j = lo(2),lo(2)+ny-1
        do i = lo(1),lo(1)+nx-1
-          if (present(rhoHnuc)) then
-             Hnuc = rhoHnuc(i,j)/rho(i,j)
-             if (Hnuc .gt. tag_minval .and. &
-                  rho(i,j) .gt. base_cutoff_density) then
-                radialtag(j) = .true.
-             end if
-          else
-             Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval &
-                  .and. rho(i,j) .gt. base_cutoff_density) then
-                radialtag(j) = .true.
-             endif
+          Xhe = he(i,j)/rho(i,j)
+          if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval &
+               .and. rho(i,j) .gt. base_cutoff_density) then
+             radialtag(j) = .true.
           endif
        end do
     enddo
@@ -149,7 +148,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine radialtag_3d(radialtag,he,rho,lo,ng,lev,rhoHnuc)
+  subroutine radialtag_3d(radialtag,he,rho,lo,ng,lev)
 
     use probin_module, only: tag_minval, tag_maxval, base_cutoff_density
 
@@ -157,14 +156,11 @@ contains
     logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) ::  he(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-    ! NOTE: the number of guard cells is hard-coded here - no clean way to
-    ! pass this as an optional parameter
-    real(kind = dp_t), optional, intent(in   ) :: rhoHnuc(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     integer, optional, intent(in   ) :: lev
 
     ! local
     integer :: i,j,k,nx,ny,nz
-    real(kind=dp_t) :: Hnuc, Xhe
+    real(kind=dp_t) :: Xhe
 
     nx = size(he,dim=1) - 2*ng
     ny = size(he,dim=2) - 2*ng
@@ -173,24 +169,76 @@ contains
     do k = lo(3),lo(3)+nz-1
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (present(rhoHnuc)) then
-                Hnuc = rhoHnuc(i,j,k)/rho(i,j,k)
-                if (Hnuc .gt. tag_minval .and. &
-                     rho(i,j,k) .gt. base_cutoff_density) then
-                   radialtag(k) = .true.
-                end if
-             else
-                Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval &
-                     .and. rho(i,j,k) .gt. base_cutoff_density) then
-                   radialtag(k) = .true.
-                endif
+             Xhe = he(i,j,k)/rho(i,j,k)
+             if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval &
+                  .and. rho(i,j,k) .gt. base_cutoff_density) then
+                radialtag(k) = .true.
              endif
           end do
        enddo
     end do
 
   end subroutine radialtag_3d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine update_radialtag_2d(radialtag,rho,ng,aux,ng_aux,lo)
+
+    use probin_module, only: tag_minval, base_cutoff_density
+
+    integer          , intent(in   ) :: lo(:),ng,ng_aux
+    logical          , intent(inout) :: radialtag(0:)
+    real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:)
+    real(kind = dp_t), intent(in   ) :: aux(lo(1)-ng_aux:,lo(2)-ng_aux:)
+
+    ! local
+    integer :: i, j, nx, ny
+    real(kind = dp_t) :: Hdot
+
+    nx = size(rho,dim=1) - 2*ng
+    ny = size(rho,dim=2) - 2*ng
+
+    do j = lo(2), lo(2)+ny-1
+       do i = lo(1),lo(1)+nx-1
+          Hdot = aux(i,j)/rho(i,j)
+          if (Hdot .gt. tag_minval .and. rho(i,j) .gt. base_cutoff_density) &
+               radialtag(j) = .true.
+       enddo
+    enddo
+
+  end subroutine update_radialtag_2d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine update_radialtag_3d(radialtag,rho,ng,aux,ng_aux,lo)
+
+    use probin_module, only: tag_minval, base_cutoff_density
+
+    integer          , intent(in   ) :: lo(:),ng,ng_aux
+    logical          , intent(inout) :: radialtag(0:)
+    real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind = dp_t), intent(in   ) :: aux(lo(1)-ng_aux:,lo(2)-ng_aux:,lo(3)-ng_aux:)
+
+    ! local
+    integer :: i, j, k, nx, ny, nz
+    real(kind = dp_t) :: Hdot
+
+    nx = size(rho,dim=1) - 2*ng
+    ny = size(rho,dim=2) - 2*ng
+    nz = size(rho,dim=3) - 2*ng
+
+    do k = lo(3), lo(3)+nz-1
+       do j = lo(2), lo(2)+ny-1
+          do i = lo(1),lo(1)+nx-1
+             Hdot = aux(i,j,k)/rho(i,j,k)
+             if (Hdot .gt. tag_minval .and. &
+                  rho(i,j,k) .gt. base_cutoff_density) &
+                  radialtag(k) = .true.
+          enddo
+       enddo
+    enddo
+
+  end subroutine update_radialtag_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
