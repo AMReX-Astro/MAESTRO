@@ -117,7 +117,7 @@ contains
     real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:)
     ! NOTE: the number of guard cells is hard-coded here - no clean way to
     ! pass this as an optional parameter
-    real(kind = dp_t),optional, intent(in   ) :: rhoHnuc(lo(1)-1:,lo(2)-1:)
+    real(kind = dp_t),optional, intent(in   ) :: rhoHnuc(lo(1)-0:,lo(2)-0:)
     integer, optional, intent(in   ) :: lev
 
     ! local
