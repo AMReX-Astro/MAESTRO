@@ -101,7 +101,7 @@ contains
                             psi,w0_force,dt,dtold)
 
     use geometry, only: nr_fine, r_start_coord, r_end_coord, dr, &
-         base_cutoff_density_coord,numdisjointchunks, nr, nlevs
+         base_cutoff_density_coord,numdisjointchunks, nr
     use variables, only: rho_comp
     use bl_constants_module
     use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
@@ -120,9 +120,9 @@ contains
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     ! Local variables
-    integer         :: r, n, i, j, refrat
-    real(kind=dp_t) :: w0_old_cen(nlevs,0:nr_fine-1)
-    real(kind=dp_t) :: w0_new_cen(nlevs,0:nr_fine-1)
+    integer         :: r, n, i, j, refrat, nlevs
+    real(kind=dp_t) :: w0_old_cen( size(w0,dim=1),0:nr_fine-1)
+    real(kind=dp_t) :: w0_new_cen( size(w0,dim=1),0:nr_fine-1)
     real(kind=dp_t) :: w0_avg, div_avg, dt_avg, gamma1bar_p0_avg
     real(kind=dp_t) :: volume_discrepancy, offset
 
@@ -142,6 +142,8 @@ contains
     !   end do
     ! end do
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    nlevs = size(w0,dim=1)
 
     w0 = ZERO
     

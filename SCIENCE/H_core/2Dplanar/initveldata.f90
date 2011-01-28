@@ -10,7 +10,6 @@ module init_vel_module
   use eos_module
   use variables
   use network
-  use geometry
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -27,6 +26,7 @@ contains
     use mt19937_module
     use average_module
     use probin_module, only: octant
+    use geometry, only: spherical
     
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -37,8 +37,8 @@ contains
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     real(kind=dp_t), pointer:: phibar(:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,j,k,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,j,k,n, dm, nlevs
 
     ! random numbers between -1 and 1
     real(kind=dp_t) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
@@ -52,6 +52,9 @@ contains
     ! random number
     real(kind=dp_t) :: rand
     
+    dm = mla%dim
+    nlevs = mla%nlevel
+
     ng = u(1)%ng
 
     ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
@@ -170,7 +173,7 @@ contains
     ! initial the velocity
     u = ZERO
 
-    if (.true.) then
+    if (.false.) then
 
        x0 = center(1) + 5.d10
        y0 = 7.35d9

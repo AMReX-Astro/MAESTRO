@@ -18,7 +18,7 @@ contains
     use bl_error_module
     use make_grav_module
     use probin_module, only: do_planar_invsq_grav
-    use bl_constants_module, only: HALF, TWELVE, SEVEN
+    use bl_constants_module
 
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(inout) ::   p0(:,0:)
@@ -30,7 +30,7 @@ contains
     real(kind=dp_t) ::    p0_old(nlevs_radial,0:nr_fine-1)
 !FIXME
     real(kind=dp_t) ::    rho_cc(-2:nr_fine), rho_avg
-
+    real(kind=dp_t) :: lambda, kappa, del, dpls, dmin, slim, sflag
 
     rho_cc(-2) = rho0(1,1)
     rho_cc(-1) = rho0(1,0)
@@ -72,6 +72,36 @@ contains
 !                   rho_cc(r-2) - rho_cc(r+1) ) / TWELVE 
 !       p0(1,r) = p0(1,r-1) + dr(1)*rho_avg*grav_edge(1,r)
 !       write(15,*)r,dr(1)*(r+HALF),dr(1)*r,rho0(1,r),rho_avg
+
+! this didn't help any either
+!        if ( r .eq. nr(n)-1) then
+
+!           lambda = ZERO
+!           kappa = ZERO
+
+!        else
+
+!           del    = HALF* (rho0(1,r+1) - rho0(1,r-1))/dr(1)
+!           dpls   = TWO * (rho0(1,r+1) - rho0(1,r  ))/dr(1)
+!           dmin   = TWO * (rho0(1,r  ) - rho0(1,r-1))/dr(1)
+!           slim   = min(abs(dpls), abs(dmin))
+!           slim   = merge(slim, zero, dpls*dmin.gt.ZERO)
+!           sflag  = sign(ONE,del)
+!           lambda = sflag*min(slim,abs(del))
+
+!           del   = HALF* (grav_cell(1,r+1) - grav_cell(1,r-1))/dr(1)
+!           dpls  = TWO * (grav_cell(1,r+1) - grav_cell(1,r  ))/dr(1)
+!           dmin  = TWO * (grav_cell(1,r  ) - grav_cell(1,r-1))/dr(1)
+!           slim  = min(abs(dpls), abs(dmin))
+!           slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
+!           sflag = sign(ONE,del)
+!           kappa = sflag*min(slim,abs(del))
+
+!        endif
+
+!        p0(1,r) = p0(1,r-1) + THIRD*dr(1)**3*kappa*lambda + &
+!             HALF*dr(1)*dr(1)*(grav_cell(1,r-1)*lambda + kappa*rho0(1,r-1)) + &
+!             dr(1)*grav_cell(1,r-1)*rho0(1,r-1) 
 
        p0(1,r) = p0(1,r-1) + dr(1)*HALF*(rho0(1,r-1)+rho0(1,r))*grav_edge(1,r)
 

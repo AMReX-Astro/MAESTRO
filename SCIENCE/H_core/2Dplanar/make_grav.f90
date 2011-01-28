@@ -161,6 +161,7 @@ contains
                   (r_edge_loc(1,r)**2 + &
                    r_edge_loc(1,r)*r_edge_loc(1,r-1) + &
                    r_edge_loc(1,r-1)**2) * rho0(1,r-1)
+!                   * HALF*(rho0(1,r-1)+rho0(1,r))
           endif
           
           grav_edge(1,r) = -Gconst * mencl / r_edge_loc(1,r)**2

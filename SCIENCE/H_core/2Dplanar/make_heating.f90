@@ -20,7 +20,6 @@ contains
     use define_bc_module
     use ml_layout_module
     use ml_restriction_module
-    use geometry, only: dm, nlevs
     use variables, only: foextrap_comp
 
     type(ml_layout), intent(in   ) :: mla
@@ -31,13 +30,15 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
 
     ! local
-    integer                  :: n,i,ng_s,ng_h
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: n,i,ng_s,ng_h, nlevs
+    integer                  :: lo(mla%dim),hi(mla%dim)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "get_rho_Hext")
+
+    nlevs = mla%nlevel
 
     ng_s = s(1)%ng
     ng_h = rho_Hext(1)%ng
@@ -50,7 +51,7 @@ contains
           hp => dataptr(rho_Hext(n) , i)
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
-          select case (dm)
+          select case (mla%dim)
           case (1)
              call get_rho_Hext_1d(hp(:,1,1,1),ng_h,sp(:,1,1,:),ng_s,lo,hi,dx(n,:))
           case (2)
@@ -113,24 +114,30 @@ contains
 !     n14_comp = spec_comp - 1 + network_species_index("nitrogen-14")
 !     o16_comp = spec_comp - 1 + network_species_index("oxygen-16")
 
-!     do j = lo(2), hi(2)
-!        do i = lo(1), hi(1)
-!           rho = s(i,j,rho_comp)
-!           T_6_third = (s(i,j,temp_comp) / 1.0d6) ** THIRD
-!           tmp1 = s(i,j,c12_comp)
-!           tmp2 = s(i,j,n14_comp)
-!           tmp3 = s(i,j,o16_comp)
-!           X_CNO = (tmp1 + tmp2 + tmp3) / rho
-!           X_1 = s(i,j,h1_comp) / rho
-!           tmp1 =   2.7d-3 * T_6_third
-!           tmp2 = -7.78d-3 * T_6_third**2
-!           tmp3 = -1.49d-4 * T_6_third**3
-!           g14 = 1.0_dp_t + tmp1 + tmp2 + tmp3
-!           tmp1 = 8.67d27 * g14 * X_CNO * X_1 * rho / T_6_third**2
-!           tmp2 = dexp(-1.5228d2 / T_6_third)
-!           rho_Hext(i,j) = rho * tmp1 * tmp2
-!        enddo
-!     enddo
+! FIXME! HACK for anelastic comparison
+    X_CNO = 0.00952433417 !0.9524325640064698d-2
+    X_1   = 0.40137771765 !0.4013777831131446d0
+
+
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+          rho = s(i,j,rho_comp)
+          T_6_third = (s(i,j,temp_comp) / 1.0d6) ** THIRD
+! FIXME! HACK
+!          tmp1 = s(i,j,c12_comp)
+!          tmp2 = s(i,j,n14_comp)
+!          tmp3 = s(i,j,o16_comp)
+!          X_CNO = (tmp1 + tmp2 + tmp3) / rho
+!          X_1 = s(i,j,h1_comp) / rho
+          tmp1 =   2.7d-3 * T_6_third
+          tmp2 = -7.78d-3 * T_6_third**2
+          tmp3 = -1.49d-4 * T_6_third**3
+          g14 = 1.0_dp_t + tmp1 + tmp2 + tmp3
+          tmp1 = 8.67d27 * g14 * X_CNO * X_1 * rho / T_6_third**2
+          tmp2 = dexp(-1.5228d2 / T_6_third)
+          rho_Hext(i,j) = rho * tmp1 * tmp2
+       enddo
+    enddo
 !.............................................................................. 
 
   end subroutine get_rho_Hext_2d

@@ -10,7 +10,6 @@ module init_scalar_module
   use eos_module
   use variables
   use network
-  use geometry
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -24,6 +23,7 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
+    use geometry, only: spherical
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -33,9 +33,12 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,n, nlevs, dm
     
+    nlevs = mla%nlevel
+    dm = mla%dim
+
     ng = s(1)%ng
 
     do n=1,nlevs
@@ -92,6 +95,8 @@ contains
 
   subroutine initscalardata_on_level(n,s,s0_init,p0_init,dx,bc)
 
+    use geometry, only: spherical
+
     integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in   ) :: s0_init(0:,:)
@@ -100,9 +105,12 @@ contains
     type(bc_level) , intent(in   ) :: bc
 
     ! local
-    integer                  :: ng,i
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: ng,i,dm
+    integer                  :: lo(get_dim(s)),hi(get_dim(s))
     real(kind=dp_t), pointer :: sop(:,:,:,:)
+
+
+    dm = get_dim(s)
 
     ng = s%ng
 
@@ -133,6 +141,7 @@ contains
 
     use probin_module, only: prob_lo, perturb_model
     use init_perturb_module
+    use geometry, only: center
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -223,6 +232,7 @@ contains
   subroutine initscalardata_3d_sphr(s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo, perturb_model
+    use geometry, only: center
 
     integer           , intent(in   ) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  

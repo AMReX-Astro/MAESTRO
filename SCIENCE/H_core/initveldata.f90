@@ -24,7 +24,6 @@ contains
   subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
 
     use mt19937_module
-    use average_module
     use probin_module, only: octant
     use geometry, only: spherical
     

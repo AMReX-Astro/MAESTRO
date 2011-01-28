@@ -2,13 +2,15 @@ NDEBUG := t
 MPI    := t
 OMP    :=
 
-COMP := Intel
+COMP := gfortran
 
 MKVERBOSE := t
 
 # define the location of the fParallel root directory
 FPARALLEL := ../..
 
+# include the main Makefile stuff
+include $(FPARALLEL)/mk/GMakedefs.mak
 
 # define the physics packages to build this problem
 EOS_DIR := extern/EOS/helmeos 
@@ -28,5 +30,4 @@ PROBIN_PARAMETERS := ../_parameters ./_parameters.hcore
 
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
-
 

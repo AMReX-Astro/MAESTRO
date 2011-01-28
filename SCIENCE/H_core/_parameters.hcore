@@ -1,4 +1,4 @@
-small_temp                          real               5.d5
+small_temp                          real               5.d3
 velpert_amplitude                   real               1.d3                
 velpert_radius                      real               8.15d10              
 velpert_scale                       real               9.d10               

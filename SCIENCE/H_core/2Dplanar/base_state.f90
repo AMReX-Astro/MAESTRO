@@ -31,7 +31,7 @@ contains
                              small_temp, small_dens, grav_const, planar_invsq_mass, &
                              do_planar_invsq_grav
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, spherical, nr, dm
+    use geometry, only: dr, spherical, nr
     use inlet_bc_module, only: set_inlet_bcs
     use fundamental_constants_module, only: Gconst
     use model_parser_module
@@ -55,7 +55,7 @@ contains
     real(kind=dp_t), parameter :: TINY = 1.0d-10
 
     real(kind=dp_t) :: mencl, g, r_l, r_r, dpdr, rhog
-    real(kind=dp_t) :: max_hse_error
+    real(kind=dp_t) :: max_hse_error, max_hse_err_r
 
     call build(bpt, "init_base_state")
 
@@ -191,7 +191,7 @@ contains
     end if
 
     if (spherical .eq. 0) then
-       starting_rad = prob_lo(dm)
+       starting_rad = prob_lo(size(dx))
     else
        starting_rad = ZERO
     endif
@@ -292,6 +292,10 @@ contains
 
     ! check whether we are in HSE
 
+! FIXME!!!!!
+       open(unit=11,file='hse_error.dat',form = "formatted", access = "sequential",action="write")
+!!!!!!!!!!!!
+
     mencl = zero
 
 ! HACK   
@@ -325,15 +329,31 @@ contains
           dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
           rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*g
 
-          max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(rhog))
+! FIXME !!!!!!!!!!!!
+          write(11,1000)r,(r+HALF)*dr(n), abs(dpdr - rhog)/abs(rhog), &
+                        dpdr, rhog 
+1000 format(i8,32(e30.20,1x))
+!!!!!!!!!!!!!!!!!
+
+!          max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(rhog))
+          if ( abs(dpdr - rhog)/abs(rhog) .gt. max_hse_error ) then !&
+!               .and. rloc .lt. 8.15d10) then
+             max_hse_error = abs(dpdr - rhog)/abs(rhog)
+             max_hse_err_r = rloc
+          end if
 
        end if
 
     enddo
 
+! FIXME
+    close(11)
+!!!!!
+
     if ( parallel_IOProcessor() ) then
        write (*,*) ' '
        write (*,*) 'Maximum HSE Error = ', max_hse_error
+       write (*,*) '        at radius = ', max_hse_err_r
        write (*,*) '   (after putting initial model into base state arrays, and'
        write (*,*) '    for density < base_cutoff_density)'
        write (*,887)

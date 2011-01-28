@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "s15-hburn.modelB.planar128.232"
+ model_file = "s15-hburn.hse.232"
  drdxfac = 1
 
 ! beta_type = 2
@@ -10,7 +10,7 @@
  n_cellz = 128
  max_grid_size = 64
 
- velpert_amplitude = 1.d2
+! velpert_amplitude = 1.d2
  perturb_model = F
 
  base_cutoff_density = 1.d-4
@@ -31,20 +31,21 @@
 
 ! restart = 10
 
- max_step  = 1
- init_iter = 0
- init_divu_iter = 0
- do_initial_projection = F
+ max_step  = 500
+ init_iter = 1
+ init_divu_iter = 1
+ do_initial_projection = T
 
  stop_time = 5.72d10
 
  plot_base_name = "plt"
  plot_int  = 10
- chk_int   = 50
+ chk_int   = 500
 
  cflfac = 0.7d0
  init_shrink = 1.0d0
  max_dt_growth = 1.05d0
+! max_dt = 1.d0
  use_soundspeed_firstdt = T
  use_divu_firstdt = T
 
@@ -76,5 +77,6 @@
  plot_omegadot = F 
  plot_Hext = T
  plot_base = T
+ plot_ad_excess = T
 
 /
