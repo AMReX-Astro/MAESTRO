@@ -139,7 +139,7 @@ contains
 
     else
 
-       rho_Hext(i,j) = ZERO
+       rho_Hext(:,:) = ZERO
 
     endif
     
