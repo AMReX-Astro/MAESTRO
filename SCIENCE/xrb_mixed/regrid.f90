@@ -94,7 +94,7 @@ contains
        call multifab_copy_c(  dSdt_temp(n),1,  dSdt(n),1,    1)
        call multifab_copy_c(   src_temp(n),1,   src(n),1,    1)
 
-       call multifab_build(rhoHnuc_temp(n),mla_old%la(n),1,1)
+       call multifab_build(rhoHnuc_temp(n),mla_old%la(n),1,0)
        call multifab_copy_c(rhoHnuc_temp(n),1, rhoHnuc(n),1,1)
 
        ! Get rid of the old data structures so we can create new ones 
@@ -158,7 +158,7 @@ contains
     call multifab_copy_c(  dSdt(1),1,  dSdt_temp(1), 1,    1)
     call multifab_copy_c(   src(1),1,   src_temp(1), 1,    1)
 
-    call multifab_build(rhoHnuc(1), la_array(1), 1, 1)
+    call multifab_build(rhoHnuc(1), la_array(1), 1, 0)
     call multifab_copy_c(rhoHnuc(1),1,rhoHnuc_temp(1),1,1)
 
     nl       = 1
@@ -193,7 +193,7 @@ contains
           call multifab_build(  dSdt(nl+1), la_array(nl+1),     1, 0)
           call multifab_build(   src(nl+1), la_array(nl+1),     1, 1)
 
-          call multifab_build(rhoHnuc(nl+1), la_array(nl+1), 1, 1)
+          call multifab_build(rhoHnuc(nl+1), la_array(nl+1), 1, 0)
 
           ! Define bc_tower at level nl+1.
           call bc_tower_level_build(the_bc_tower,nl+1,la_array(nl+1))
@@ -228,7 +228,7 @@ contains
                          1,1,foextrap_comp,1)
 
           call fillpatch(rhoHnuc(nl+1),rhoHnuc(nl), &
-                         1,mba%rr(nl,:), &
+                         0,mba%rr(nl,:), &
                          the_bc_tower%bc_tower_array(nl  ), &
                          the_bc_tower%bc_tower_array(nl+1), &
                          1,1,foextrap_comp,1)
@@ -320,7 +320,7 @@ contains
     call multifab_copy_c(  dSdt(1),1,  dSdt_temp(1), 1,    1)
     call multifab_copy_c(   src(1),1,   src_temp(1), 1,    1)
 
-    call multifab_build(rhoHnuc(1),mla%la(1),1,1)
+    call multifab_build(rhoHnuc(1),mla%la(1),1,0)
     call multifab_copy_c(rhoHnuc(1),1,rhoHnuc_temp(1),1,1)
 
     nlevs = mla%nlevel
@@ -336,7 +336,7 @@ contains
        call multifab_build(  dSdt(nl+1), mla%la(nl+1),     1, 0)
        call multifab_build(   src(nl+1), mla%la(nl+1),     1, 1)
 
-       call multifab_build(rhoHnuc(nl+1),mla%la(nl+1), 1,1)
+       call multifab_build(rhoHnuc(nl+1),mla%la(nl+1), 1,0)
        
        ! Define bc_tower at level nl+1.
        call bc_tower_level_build(the_bc_tower,nl+1,mla%la(nl+1))
@@ -370,7 +370,7 @@ contains
                       the_bc_tower%bc_tower_array(nl+1), &
                       1,1,foextrap_comp,1)
        call fillpatch(rhoHnuc(nl+1),rhoHnuc(nl), &
-                      1,mba%rr(nl,:), &
+                      0,mba%rr(nl,:), &
                       the_bc_tower%bc_tower_array(nl  ), &
                       the_bc_tower%bc_tower_array(nl+1), &
                       1,1,foextrap_comp,1)
