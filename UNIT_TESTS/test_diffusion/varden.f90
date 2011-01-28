@@ -197,12 +197,12 @@ subroutine varden()
  ! we only give dx at coarsest level for now
  call fabio_ml_write(s_old, mla%mba%rr(:,1), trim(outdir), &
                      names=names, time=time, &
-                     problo=prob_lo, probhi=prob_hi, &
+                     prob_lo=prob_lo, prob_hi=prob_hi, &
                      dx=dx(1,:))
  call fabio_ml_write(analytic, mla%mba%rr(:,1), 'analytic'//sstep, &
-                     time=time, problo=prob_lo, probhi=prob_hi, dx=dx(1,:))
+                     time=time, prob_lo=prob_lo, prob_hi=prob_hi, dx=dx(1,:))
  call fabio_ml_write(error, mla%mba%rr(:,1), 'error'//sstep, &
-                     time=time, problo=prob_lo, probhi=prob_hi, dx=dx(1,:))
+                     time=time, prob_lo=prob_lo, prob_hi=prob_hi, dx=dx(1,:))
 
  ! loop
  do while (time < stop_time)
@@ -272,13 +272,13 @@ subroutine varden()
        ! we only give dx at the coarsest level for now
        call fabio_ml_write(s_new, mla%mba%rr(:,1), trim(outdir), &
                            names=names, time=time, &
-                           problo=prob_lo, probhi=prob_hi, &
+                           prob_lo=prob_lo, prob_hi=prob_hi, &
                            dx=dx(1,:))
        call fabio_ml_write(analytic, mla%mba%rr(:,1), 'analytic'//sstep, &
-                           time=time, problo=prob_lo, probhi=prob_hi, &
+                           time=time, prob_lo=prob_lo, prob_hi=prob_hi, &
                            dx=dx(1,:))
        call fabio_ml_write(error, mla%mba%rr(:,1), 'error'//sstep, &
-                           time=time, problo=prob_lo, probhi=prob_hi, &
+                           time=time, prob_lo=prob_lo, prob_hi=prob_hi, &
                            dx=dx(1,:))
     endif
 
