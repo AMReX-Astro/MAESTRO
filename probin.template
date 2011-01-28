@@ -241,6 +241,21 @@ contains
        amr_buf_width = regrid_int
     endif
 
+    ! For runs with >= 3 levels, if amr_buf_width < 4, then it is possible
+    ! for a level n grid to need data on the n-1 and n-2 grids when
+    ! filling ghostcells -- this is not currently supported.  Therefore, we make
+    ! sure that amr_buf_width >= 4
+    if (regrid_int > 0 .and. max_levs > 2 .and. amr_buf_width < 4) then
+       if (parallel_IOProcessor()) then
+          print *,"************************************************************************"
+          print *,"WARNING: For max_levs >= 3, we require amr_buf_width >= 4."
+          print *,"         setting amr_buf_width = max(4, regrid_int) = ", max(4, regrid_int)
+          print *,"************************************************************************"          
+       endif
+       amr_buf_width = max(4,regrid_int)
+    endif
+
+
     if (ppm_type .lt. 0 .or. ppm_type .gt. 2) then
        call bl_error("invalid ppm_type")
     end if
