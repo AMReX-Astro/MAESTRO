@@ -482,7 +482,7 @@ subroutine varden()
                                  rho_Hext,thermal2, &
                                  div_coeff_old,div_coeff_new,grav_cell,dx,dt,dtold, &
                                  the_bc_tower,dSdt,Source_old,Source_new,etarho_ec, &
-                                 etarho_cc,psi,sponge,hgrhs,tempbar_init)
+                                 etarho_cc,psi,sponge,hgrhs,tempbar_init,particles)
 
            runtime2 = parallel_wtime() - runtime1
            call parallel_reduce(runtime1, runtime2, MPI_MAX, proc=parallel_IOProcessorNode())
@@ -998,17 +998,8 @@ subroutine varden()
                               w0,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                               div_coeff_old,div_coeff_new, &
                               grav_cell,dx,dt,dtold,the_bc_tower,dSdt,Source_old, &
-                              Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init)
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! Move particles randomly and then redistribute'm.
-        ! call move_random(particles,mla,dx,prob_lo,prob_hi)
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! advect position = position + dt*velocity
-        call move_advect(particles,mla,uold,dx,dt,prob_lo,prob_hi)
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                              Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init, &
+                              particles)
 
         call timestamp(particles, 'timestamp', sold, (/1,2,3,4,5,6/), time)
 
