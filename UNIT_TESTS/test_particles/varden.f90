@@ -81,6 +81,10 @@ subroutine varden()
   character(len=256)             :: plot_file_name, check_file_name
   character(len=20), allocatable :: plot_names(:)
 
+  integer :: npartdata
+  integer, allocatable :: index_partdata(:)
+  character(len=16), allocatable :: names_partdata(:)
+
   real(dp_t), parameter :: SMALL = 1.d-13
   real(dp_t)            :: runtime1, runtime2
 
@@ -140,7 +144,26 @@ subroutine varden()
   allocate(plot_names(n_plot_comps))
   call get_plot_names(plot_names)
 
+  ! particle initialization
   call particle_setverbose(.true.)
+
+  ! collect the indices into the s multifab and the associate variable
+  ! names for the data we will store along with each particle.
+  npartdata = 2 + nspec
+  allocate(index_partdata(npartdata))
+  allocate(names_partdata(npartdata))
+  
+  index_partdata(1) = rho_comp
+  names_partdata(1) = "density"
+
+  index_partdata(2) = temp_comp
+  names_partdata(2) = "temperature"
+
+  do n = 1, nspec
+     index_partdata(2 + n) = spec_comp -1 + n
+     names_partdata(2 + n) = spec_names(n)
+  enddo
+
 
   if (restart >= 0) then
 
@@ -1108,7 +1131,7 @@ subroutine varden()
         !---------------------------------------------------------------------
 
         ! output any particle information
-        call timestamp(particles, 'timestamp', sold, (/1,2,3,4,5,6/), time)
+        call timestamp(particles, 'timestamp', sold, index_partdata, names_partdata, time)
 
 
         ! if the file .dump_checkpoint exists in our output directory, then
