@@ -992,7 +992,6 @@ subroutine varden()
                               Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init, &
                               particles)
 
-        call timestamp(particles, 'timestamp', sold, (/1,2,3,4,5,6/), time)
 
         if (nuclear_dt_fac .gt. 0.d0) then
            smaxold = 0.d0
@@ -1107,6 +1106,10 @@ subroutine varden()
         !---------------------------------------------------------------------
         ! output
         !---------------------------------------------------------------------
+
+        ! output any particle information
+        call timestamp(particles, 'timestamp', sold, (/1,2,3,4,5,6/), time)
+
 
         ! if the file .dump_checkpoint exists in our output directory, then
         ! automatically dump a plotfile
