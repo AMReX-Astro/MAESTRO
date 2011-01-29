@@ -115,7 +115,7 @@ subroutine varden()
   logical :: dump_plotfile, dump_checkpoint
 
   type(particle_container) :: particles
-  type(particle) :: p
+  real(kind=dp_t), allocatable :: point(:)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialization
@@ -196,6 +196,8 @@ subroutine varden()
 
   dm = dm_in
   nlevs = mla%nlevel
+
+  allocate(point(dm))
 
   ! check to make sure dimensionality is consistent in the inputs file
   if (dm .ne. get_dim(mla%mba)) then 
@@ -586,20 +588,9 @@ subroutine varden()
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialize 1 particle at a specific point
-     p%pos(1) = 1.2d8
-     p%pos(2) = 8.5d7
-     if ( .not. particle_where(p,mla,dx,prob_lo) ) then
-        call bl_error('problem initializing particle')
-     end if
-       if ( local(mla%la(p%lev),p%grd) ) then
-          !
-          ! We own it.
-          !
-          p%id  = get_particle_id()
-          p%cpu = parallel_myproc()
-
-          call add(particles,p)
-       end if
+     point(1) = 1.2d8
+     point(2) = 8.5d7
+     call add(particles,point,mla,dx,prob_lo)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   else
@@ -1326,6 +1317,6 @@ subroutine varden()
   deallocate(thermal2,dx)
   deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)
-  deallocate(psi,tempbar,tempbar_init,grav_cell)
+  deallocate(psi,tempbar,tempbar_init,grav_cell,point)
 
 end subroutine varden
