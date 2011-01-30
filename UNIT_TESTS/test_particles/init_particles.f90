@@ -134,7 +134,7 @@ contains
 
           Tpert = s(i,j,temp_comp) - tempbar(j)
 
-          if (Tpert > 1.e8_dp_t) then
+          if (Tpert > 2.2e8_dp_t) then
              point(1) = x
              point(2) = y
 

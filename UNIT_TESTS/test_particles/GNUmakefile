@@ -1,4 +1,4 @@
-NDEBUG := 
+NDEBUG := t
 MPI    := t
 OMP    :=
 
@@ -23,7 +23,7 @@ NETWORK_DIR := extern/networks/ignition
 # we only need to include the problem's directory if there are unique
 # files there (as specified in a GPackage.mak).  The problem directory
 # is always placed at the start of the vpath by the GMakerules.mak.
-EXTRA_DIR := extern/random
+EXTRA_DIR := extern/random MAESTRO/test_particles
 
 # define the runtime parameter files
 PROBIN_PARAMETERS := ../_parameters ./_parameters.test_particles

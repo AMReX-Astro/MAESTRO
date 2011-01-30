@@ -29,6 +29,7 @@ subroutine varden()
   use enforce_HSE_module
   use rhoh_vs_t_module
   use initialize_module
+  use init_particles_module
   use make_new_grids_module
   use regrid_module
   use make_eta_module
@@ -604,6 +605,11 @@ subroutine varden()
   if (restart < 0) then
      init_step = 1
 
+
+     ! initialize any passively-advected particles 
+     call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar, &
+                         mla,dx)
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialize 100 particles at random location over the domain
 !     call init_random(particles,100,1771,mla,dx,prob_lo,prob_hi)
@@ -611,9 +617,9 @@ subroutine varden()
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialize 1 particle at a specific point
-     point(1) = 1.2d8
-     point(2) = 8.5d7
-     call add(particles,point,mla,dx,prob_lo)
+!     point(1) = 1.2d8
+!     point(2) = 8.5d7
+!     call add(particles,point,mla,dx,prob_lo)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   else
