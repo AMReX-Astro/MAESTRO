@@ -151,11 +151,9 @@ contains
 
     ! now compare pressure in the last cell and offset to make sure we
     ! are integrating "from the top"
-    do n=1,nlevs_radial
-       if (r_end_coord(n,numdisjointchunks(n)) .eq. nr(n)-1) then
-          offset = p0(n,nr(n)-1) - p0_old(n,nr(n)-1)
-       end if
-    end do
+    ! we use the coarsest level as the reference point
+    offset = p0(n,nr(1)-1) - p0_old(n,nr(1)-1)
+
 
     ! offset level 1
     p0(1,:) = p0(1,:) - offset
