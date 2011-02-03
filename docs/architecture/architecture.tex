@@ -139,7 +139,7 @@ shows this geometry.
 \centering
 \includegraphics[height=2.0in]{base_grid} \hspace{0.5in}
 \includegraphics[height=2.0in]{base_spherical}
-\caption{\label{Fig:base_state} (Left) For multi-level problems
+\caption{\label{fig:base_state} (Left) For multi-level problems
   in planar geometry, we force a direct alignment between the radial
   array cell centers and the Cartesian grid cell centers by allowing
   the radial base state spacing to change with space and time.
@@ -907,7 +907,7 @@ flows \cite{harlowwelch:1965}).
 
 
 
-\begin{figure}[h]
+\begin{figure}[t]
 \centering
 \includegraphics[width=2.5in]{\archfigpath/mac2}
 \hspace{0.1in}
@@ -924,13 +924,13 @@ blue points) and the $y$-velocity is on the $y$-edges
 The MAC velocities are allocated at each level of refinement, {\tt n},
 by making a \multifab\ array where each of the {\tt dm} components is
 nodal in its respective direction:
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
   type(multifab) :: umac(dm)
 
   do comp=1,dm
      call multifab_build_edge(umac(n,comp), mla%la(n),1,1,comp)
   enddo
-\end{verbatim}
+\end{lstlisting}
 
 
 
@@ -939,6 +939,28 @@ nodal in its respective direction:
 The base state is defined by $\rho_0$, $p_0$, and $w_0$.  There is no
 base state composition.  Other arrays are defined as needed, such as
 $h_0$, the base state enthalpy.
+
+The base state arrays are 2-dimensional, with the first dimension
+giving the level in the AMR hierarchy and the second the radial index
+into the base state.  For spherical geometries, the base state only
+exists at a single level, so the first index will always be 1.  The
+radial index is 0-based, to be consistent with the indexing for the
+Cartesian state data.  For example, the base state density would be
+dimensioned: {\tt rho0(nlevs,0:nr\_fine-1)}.  Here, {\tt nlevs} is the
+number of levels of refinement and {\tt nr\_fine} is the number of
+cells in the radial direction at the finest level of refinement.
+
+For multilevel, plane-parallel geometry, all grids at the same height
+will have the same resolution so that the full state data is always
+aligned with the base state (see Figure~\ref{fig:base_state}).  Base
+state data on coarse grids that are covered by fine grids is not
+guaranteed to be valid.
+
+For spherical problems, the base state resolution, $\Delta r$, is
+generally picked to be finer than the Cartesian grid resolution,
+$\Delta x$, i.e.\ $\Delta r < \Delta x$.  The ratio is controlled
+by the parameter {\tt drdxfac}.
+
 
 \subsection{Other Quantities}
 
@@ -1004,9 +1026,9 @@ used by a problem is defined in the problem's {\tt GNUmakefile}.
 
 To find the location of a particular species (for instance, ``carbon-12'')
 in the allowed range of {\tt 1:nspec}, you do the following query:
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
   ic12 = network_species_index("carbon-12")
-\end{verbatim}
+\end{lstlisting}
 If the resulting index is {\tt -1}, then the requested species was not
 found.
 
