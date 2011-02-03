@@ -9,7 +9,8 @@ eps_source = $(wildcard *.eps) \
              $(wildcard initial_models/*.eps) \
              $(wildcard rotation/*.eps) \
              $(wildcard radial_base/*.eps) \
-             $(wildcard spherical_basestate/*.eps)
+             $(wildcard spherical_basestate/*.eps) \
+             $(wildcard visualization/*.eps)
 
 pdf_source = $(eps_source:.eps=.pdf)
 
@@ -31,7 +32,9 @@ section_sources = maestro_doc.bib \
                   spherical_basestate/basestate.tex \
                   FAQ/faq.tex \
                   analysis/analysis.tex \
-                  thermo_notes/thermo_notes.tex
+                  thermo_notes/thermo_notes.tex \
+                  visualization/visualization.tex
+
 
 MaestroUsersGuide.dvi: MaestroUsersGuide.tex $(eps_source) $(section_sources) $(eps_source) 
 	latex MaestroUsersGuide.tex < /dev/null
