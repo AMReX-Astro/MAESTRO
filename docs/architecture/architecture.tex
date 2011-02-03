@@ -33,6 +33,11 @@ are:
 
  Important subdirectories include:
  \begin{itemize}
+ \item {\tt conductivity/}
+
+ Various routines for computing the thermal conductivity used in the
+ thermal diffusion part of the algorithm.
+
  \item {\tt constants/}
 
  A simple module to define physical constants
@@ -42,6 +47,11 @@ are:
  A collection of various EOSes for use with the code.  The two
  important ones for MAESTRO are {\tt helmeos/} and {\tt
  gamma\_law\_general/}.
+
+ \item {\tt model\_parser/}
+
+ A simple Fortran module for reading in 1-d initial model files.  This
+ is used by the initialization routines to get the initial model data.
 
  \item {\tt networks/}
 
@@ -83,14 +93,15 @@ are:
    test\_spherical}, $\ldots$
 
    Each problem in MAESTRO gets it own subdirectory.  The {\tt
-   GNUmakefile} includes the instructions on how to build the
-   executable, including what modules in {\tt extern} are used.
+     GNUmakefile} in the problem directory includes the instructions
+   on how to build the executable, including what modules in {\tt
+     extern} are used.
 
    Any file that you place in a sub-directory here takes 
    precedence over a file of the same name in {\tt MAESTRO/}.
    This allows problems to have custom versions of the main
    MAESTRO routines (e.g.\ initial conditions via {\tt initdata.f90}.
-   See \S~\ref{sec:makefile} for details on the build system.
+   See \S~\ref{sec:makefile} for details on the build system).
 
  \end{itemize}
 
