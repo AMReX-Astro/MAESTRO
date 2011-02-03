@@ -122,11 +122,51 @@ are:
 \end{itemize}
 
 
+\section{MAESTRO Basics}
+
+MAESTRO models problems that are in tight hydrostatic equilibrium.
+The fluid state is decomposed into a 1-d radial base state that
+describes the hydrostatic structure of the star or atmosphere, and a
+2- or 3-d Cartesian full state, that captures the departures from
+hydrostatic equilibrium.  Two basic geometries are allowed.  A {\em plane-parallel}
+geometry assumes that the domain is thin compared to the radius of curvature
+of the star, and therefore the 1-d base state is perfectly aligned with
+the Cartesian state.  A {\em spherical} geometry is for modeling an entire star.  Here,
+the 1-d base state is not aligned with the Cartesian state.  Figure~\ref{fig:base_state}
+shows this geometry.
+
+\begin{figure}[tb]
+\centering
+\includegraphics[height=2.0in]{base_grid} \hspace{0.5in}
+\includegraphics[height=2.0in]{base_spherical}
+\caption{\label{Fig:base_state} (Left) For multi-level problems
+  in planar geometry, we force a direct alignment between the radial
+  array cell centers and the Cartesian grid cell centers by allowing
+  the radial base state spacing to change with space and time.
+  (Right) For multi-level problems in spherical geometry, since there
+  is no direct alignment between the radial array cell centers and
+  the Cartesian grid cell centers, we choose to fix the radial base
+  state spacing across levels. Figure taken from~\cite{multilevel}}
+\end{figure}
+
+
+MAESTRO can use adaptive mesh refinement to focus resolution on
+complex regions of flow.  For Cartesian/plane-parallel geometries, all
+cells at the same height must be at the same level of refinement.
+This restriction is to allow for the base state to directly align with
+the Cartesian state everywhere.  For spherical geometries, there is no
+such restriction (again, see Figure~\ref{Fig:base_state}).
+
+
+
+
+
 \section{Getting Started}
 
-In this section we describe some of the standard problems that come
-with MAESTRO, how to run the code, some basic runtime parameters, and
-how to look at the output.
+In this section we give an overview of MAESTRO, including some of the
+standard problems, how to run the code, some basic runtime parameters,
+and how to look at the output.
+
 
 \subsection{`Standard' Test Problems}
 
@@ -210,15 +250,18 @@ for a serial executable, and, depending on your MPI environment, something like:
 \end{verbatim}
 for the parallel code.
 
-As the code runs, it will output both plotfiles and checkpoints.
-By default, the plotfiles will be named {\tt plt}{\em nnnnn}, where
-the number {\em nnnnn} is the timestep number when the file was
-outputted.  Similarly, the checkpoints are named {\tt chk}{\em
-  nnnnn}.  BoxLib plotfiles and checkpoints are actually directories,
-with the data stored in subdirectories grouped by refinement level.
-Details of the simulation (number of processors used, output date,
-output directory, runtime parameter values, ...) are stored in
-the {\tt job\_info} file in each plotfile directory.
+As the code runs, it will output both plotfiles and checkpoints as
+well as one of more text diagnostic files (like {\tt
+  maestro\_diag.out}) with integral or extrema information (like
+maximum Mach number) from each timestep.  By default, the plotfiles
+will be named {\tt plt}{\em nnnnn}, where the number {\em nnnnn} is
+the timestep number when the file was outputted.  Similarly, the
+checkpoints are named {\tt chk}{\em nnnnn}.  BoxLib plotfiles and
+checkpoints are actually directories, with the data stored in
+subdirectories grouped by refinement level.  Details of the simulation
+(build information, number of processors used, output date, output
+directory, runtime parameter values, ...) are stored in the {\tt
+  job\_info} file in each plotfile directory.
 
 A large number of runtime parameters affect the code's behavior.  Any
 runtime parameter can be set either in the inputs file, as {\tt parameter
@@ -272,7 +315,7 @@ the types of boundaries, and the number of computational cells include:
 \begin{itemize}
 
 \item {\tt max\_levs } is the maximum number of grid levels in the AMR
-  hierarchy to us.  {\tt max\_levs = 1} indicates running with only a
+  hierarchy to use.  {\tt max\_levs = 1} indicates running with only a
   single level spanning the whole domain.
 
 \item {\tt n\_cellx }, {\tt n\_celly }, {\tt n\_cellz } the size of
@@ -281,6 +324,12 @@ the types of boundaries, and the number of computational cells include:
 
 \item {\tt max\_grid\_size } the maximum extend of a grid, in any
   coordinate direction, as measured in terms of number of cells.
+
+  For multilevel problems, the parameter {\tt max\_grid\_size\_1}
+  controls the maximum extent on level 1 (the base grid), {\tt
+    max\_grid\_size\_2} controls the maximum extent on level 2, and
+  {\tt max\_grid\_size\_3} controls the maximum extent on levels 3 and
+  higher.
 
 \item {\tt prob\_lo\_x }, {\tt prob\_lo\_y }, {\tt prob\_lo\_z } is
   the physical coordinate of the lower extent of the domain boundary
@@ -318,7 +367,7 @@ Note that grid cells must be square, i.e. $\Delta x = \Delta y = \Delta z$
 where $\Delta x$ on the base grid is computed as $({\tt prob\_hi\_x}
 - {\tt prob\_lo\_x})/{\tt n\_cellx}$. 
 
-\subsection{Refinement Criteria}
+
 
 \subsection{Working with the Output}
 
@@ -449,50 +498,57 @@ in the problem-directory.
 \label{sec:makefile}
 
 A basic {\tt GNUmakefile} begins with:
-\begin{verbatim}
+\begin{lstlisting}[language=bash,mathescape=false]
   NDEBUG := t
   MPI    :=
   OMP    :=
-\end{verbatim}
-Here, {\tt NDEBUG} is true is we are building an optimized executable.
+\end{lstlisting}
+Here, {\tt NDEBUG} is true if we are building an optimized executable.
 Otherwise, the debug version is built---this typically uses less
 optimization and adds various runtime checks through compiler flags.
 {\tt MPI} and {\tt OMP} are set to true if we want to use either MPI
-or OpenMP for parallelization.
+or OpenMP for parallelization.  If {\tt MPI := t}, you will need to
+have the MPI libraries installed, and their location may need to be 
+specified in {\tt MAESTRO/mk/GMakeMPI.mak}.
 
+The next line sets the compiler to be used for compilation:
+\begin{lstlisting}[language=bash,mathescape=false]
+  COMP := Intel
+\end{lstlisting}
 The MAESTRO build system knows what options to use for various
 compiler families.  The {\tt COMP} flag specifies which compiler to
-us.  Allowed values include {\tt Intel}, {\tt gfortran}, {\tt PGI},
+use.  Allowed values include {\tt Intel}, {\tt gfortran}, {\tt PGI},
 and {\tt PathScale}.  The specific details of these choices are
-defined in the {\tt MAESTRO/mk/} directory.
-\begin{verbatim}
-  COMP := Intel
-  MKVERBOSE := t
-\end{verbatim}
+defined in the {\tt MAESTRO/mk/comps/} directory.
+
 {\tt MKVERBOSE} set to true will echo the build commands to the
 terminal as the are executed.
+\begin{lstlisting}[language=bash,mathescape=false]
+  MKVERBOSE := t
+\end{lstlisting}
 
 The next two lines define where the top of the source tree is
 include the basic Makefile information (like compiler
 flags).
-\begin{verbatim}
+\begin{lstlisting}[language=bash,mathescape=false]
   FPARALLEL := ../..
 
   include $(FPARALLEL)/mk/GMakedefs.mak
-\end{verbatim}
+\end{lstlisting}
+%$
 
 A MAESTRO application is built from several pacakges (the
 multigrid solver, an EOS, a reaction network, etc.).  The core
 MAESTRO packages are always included, so a problem only needs
 to define the EOS, reaction network, and conductivities to
-use, as well as any extra, problem specific files.  
-\begin{verbatim}
+use, as well as any extra, problem-specific files.  
+\begin{lstlisting}[language=bash,mathescape=false]
 EOS_DIR := extern/EOS/helmeos   
-CONDUCTIVITY_DIR := extern/EOS/conducteos 
-NETWORK_DIR := extern/networks/ignition_chamulak 
+CONDUCTIVITY_DIR := extern/conductivity/constant
+NETWORK_DIR := extern/networks/ignition
 
 EXTRA_DIR := extern/random
-\end{verbatim}
+\end{lstlisting}
 Generally, one does not need to include the problem directory itself
 in {\tt EXTRA\_DIR}, unless there are unique source files found there,
 described in a {\tt GPackage.mak} file.  These variables are
@@ -504,7 +560,9 @@ files found in the {\tt Fmdirs} directories.  Furthermore, {\tt
 is the list of directories to search for source files.  The problem
 directory will always be put first in the {\tt VPATH}, so any source
 files placed there override those with the same name found elsewhere
-in the source tree.  Some packages (for instance, the {\tt helmeos}
+in the source tree.  
+
+Some packages (for instance, the {\tt helmeos}
 EOS) require Fortran include files.  The {\tt Fmincludes} variable
 lists all those directories that contain include files that are
 inserted into the Fortran source at compile time via the {\tt include}
@@ -520,25 +578,31 @@ variable {\tt PROBIN\_PARAMETERS} should list all of the files that
 contain runtime parameters for the current problem.  You must always
 include the main {\tt ../\_parameters} file (i.e.\ {\tt
   MAESTRO/\_parameters}).  Sometimes a problem defines their own
-runtime parameters (see \S~\ref{sec:def_runtime_param}), in which
+runtime parameters (for instance {\tt \_parameters.myproblem}), in which
 case, its parameter file should also appear in {\tt
-  PROBIN\_PARAMETERS}.
-\begin{verbatim}
+  PROBIN\_PARAMETERS} (see \S~\ref{sec:def_runtime_param}).
+\begin{lstlisting}[language=bash,mathescape=false]
   PROBIN_PARAMETERS := ../_parameters
-\end{verbatim}
+\end{lstlisting}
 
-The final line in the {\tt GNUmakefile} include the rules to actually
+The final line in the {\tt GNUmakefile} includes the rules to actually
 build the executable.
-\begin{verbatim}
+\begin{lstlisting}[language=bash,mathescape=false]
   include $(FPARALLEL)/MAESTRO/GMaestro.mak
-\end{verbatim}
+\end{lstlisting}
+%$
+
+
+\subsubsection{Handling Problem-Specific Source Files}
 
 As mentioned above, any source files placed in the problem directory
 override a files with the same name found elsewhere in the source
 tree.  This allows you to create a problem-specific version of any
 routine.  Source files that are unique to this problem (i.e.\ there is
 no file with the same name elsewhere in the source tree) need to be
-listed in a file {\tt GPackage.mak} in the problem directory.
+listed in a file {\tt GPackage.mak} in the problem directory, and
+the problem-directory needs to be explicitly listed in the {\tt EXTRA\_DIR}
+list in the {\tt GNUmakefile}.
 
 
 \subsection{Defining Runtime Parameters}
@@ -610,8 +674,8 @@ The {\tt toy\_atm} example provides a simple approximation for a thin
 of a star.  This can be used as the starting point for a more complex
 model.  
 
-MAESTRO initial models are read in by the {\tt init\_base\_state}
-routine.  This expects the initial model to contain a header giving
+MAESTRO initial models are read in by the {\tt extern/model\_parser}
+routines.  This expects the initial model to contain a header giving
 the number of variables and their names, followed by rows of data
 giving the coordinate and data values at that coordinate.  The initial
 model should contain the same species data (as mass fractions) as
@@ -808,6 +872,9 @@ multidimensional state and the 1D base state.  The full
 multidimensional state is stored in \multifab s while the base state
 is simply stored in Fortran arrays.  Here we describe the
 major MAESTRO data-structures.
+
+
+
 
 \subsection{`{\tt s}' \multifab s (fluid state)}
 
@@ -1247,3 +1314,11 @@ there is a $2\times 8$ block of $48^2$ grids.  The coarsest level of the multigr
 V-cycle contains $2\times 8$ grids that have $3^2$ cells, so the entire problem 
 domain has $6\times 24$ cells.  We see that $n=1$, so the program aborts since this grid
 structure is not appropriate for the fancy bottom solver.
+
+
+\section{Multilevel and Refinement Criteria}
+
+
+\section{Particles}
+
+
