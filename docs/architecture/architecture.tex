@@ -498,7 +498,7 @@ in the problem-directory.
 \label{sec:makefile}
 
 A basic {\tt GNUmakefile} begins with:
-\begin{lstlisting}[language=bash,mathescape=false]
+\begin{lstlisting}[language={[gnu]make},mathescape=false]
   NDEBUG := t
   MPI    :=
   OMP    :=
@@ -512,7 +512,7 @@ have the MPI libraries installed, and their location may need to be
 specified in {\tt MAESTRO/mk/GMakeMPI.mak}.
 
 The next line sets the compiler to be used for compilation:
-\begin{lstlisting}[language=bash,mathescape=false]
+\begin{lstlisting}[language={[gnu]make},mathescape=false]
   COMP := Intel
 \end{lstlisting}
 The MAESTRO build system knows what options to use for various
@@ -523,14 +523,14 @@ defined in the {\tt MAESTRO/mk/comps/} directory.
 
 {\tt MKVERBOSE} set to true will echo the build commands to the
 terminal as the are executed.
-\begin{lstlisting}[language=bash,mathescape=false]
+\begin{lstlisting}[language={[gnu]make},mathescape=false]
   MKVERBOSE := t
 \end{lstlisting}
 
 The next two lines define where the top of the source tree is
 include the basic Makefile information (like compiler
 flags).
-\begin{lstlisting}[language=bash,mathescape=false]
+\begin{lstlisting}[language={[gnu]make},mathescape=false]
   FPARALLEL := ../..
 
   include $(FPARALLEL)/mk/GMakedefs.mak
@@ -542,7 +542,7 @@ multigrid solver, an EOS, a reaction network, etc.).  The core
 MAESTRO packages are always included, so a problem only needs
 to define the EOS, reaction network, and conductivities to
 use, as well as any extra, problem-specific files.  
-\begin{lstlisting}[language=bash,mathescape=false]
+\begin{lstlisting}[language={[gnu]make},mathescape=false]
 EOS_DIR := extern/EOS/helmeos   
 CONDUCTIVITY_DIR := extern/conductivity/constant
 NETWORK_DIR := extern/networks/ignition
@@ -581,13 +581,13 @@ include the main {\tt ../\_parameters} file (i.e.\ {\tt
 runtime parameters (for instance {\tt \_parameters.myproblem}), in which
 case, its parameter file should also appear in {\tt
   PROBIN\_PARAMETERS} (see \S~\ref{sec:def_runtime_param}).
-\begin{lstlisting}[language=bash,mathescape=false]
+\begin{lstlisting}[language={[gnu]make},mathescape=false]
   PROBIN_PARAMETERS := ../_parameters
 \end{lstlisting}
 
 The final line in the {\tt GNUmakefile} includes the rules to actually
 build the executable.
-\begin{lstlisting}[language=bash,mathescape=false]
+\begin{lstlisting}[language={[gnu]make},mathescape=false]
   include $(FPARALLEL)/MAESTRO/GMaestro.mak
 \end{lstlisting}
 %$
@@ -1072,14 +1072,14 @@ In MAESTRO, the state data is stored in a multifab array (the array
 index refers to the AMR level).  A typical way to extract the state data
 array looks like:
 
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
   subroutine example(s,dx,dt)
 
     use bl_types
     use multifab_module
     use geometry, only: dm, nlevs
     use variables, only: rho_comp
-\end{verbatim}
+\end{lstlisting}
 
 \noindent Here, the {\tt bl\_types} and {\tt multifab\_module} modules
 bring in the basic BoxLib data types. Specifically, here, {\tt
@@ -1092,50 +1092,50 @@ module that provides integer keys for indexing the state arrays.  In
 this case the integer {\tt rho\_comp} refers to the location in the
 state array corresponding to density.
 
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
-\end{verbatim}
+\end{lstlisting}
 
 \noindent Next we declare the subroutine arguments.  Here, {\tt s(:)}
 is our \multifab\ array that holds the state data.  The array index
 in {\tt s} refers to the AMR level.
 
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
     ! Local variables
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     integer :: i,n,ng_sp
     integer :: lo(dm),hi(dm)
-\end{verbatim}
+\end{lstlisting}
 
 \noindent Amongst the local variables we define here are a pointer,
 {\tt sp}, that will point to a single \fab\ from the
 \multifab\ {\tt s}.
 
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
     ng_sp = nghost(s(1))
-\end{verbatim}
+\end{lstlisting}
 
 \noindent Here we get the number of ghostcells for this particular
 \multifab.  This will be needed to access the data stored in the
 \fab s.  Note that all levels in a \multifab\ will have the same
 number of ghostcells, so we can use {\tt s(1)} here.
 
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
     do n=1,nlevs
        do i = 1, s(n)%nboxes
-\end{verbatim}
+\end{lstlisting}
 
 \noindent To access the data, we loop over all the levels, and
 all the boxes in the given level.  {\tt s(n)\%nboxes} is simply
 the number of boxes in level {\tt n}.
 
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
           if ( multifab_remote(s(n), i) ) cycle
           sp => dataptr(s(n), i)
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
-\end{verbatim}
+\end{lstlisting}
 
 \noindent For parallel runs, there is no guarantee that the particular
 box is on the current processor.  The function {\tt multifab\_remote}
@@ -1150,7 +1150,7 @@ the \boxtype\ ({\tt i}) we want.  {\tt sp} is always four-dimensional:
 Finally, the index bounds of the box (just the data, not the ghostcells) are 
 stored in the {\tt dm}-dimensional arrays {\tt lo} and {\tt hi}
 
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
           select case (dm)
           case (2)
              call example_2d(sp(:,:,1,rho_comp),ng_sp,lo,hi,dx(n,:),dt)
@@ -1162,7 +1162,7 @@ stored in the {\tt dm}-dimensional arrays {\tt lo} and {\tt hi}
     enddo    ! end loop over levels
 
   end subroutine example
-\end{verbatim}
+\end{lstlisting}
 
 \noindent Finally, in this example, we call either the function
 {\tt example\_2d} for two-dimensional data or {\tt example\_3d}
@@ -1176,7 +1176,7 @@ This routine will be supplimented with {\tt example\_2d} and {\tt
 example\_3d}, which actually operate on the data.  The form of 
 these functions is:
 
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
   subroutine example_2d(density,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module
@@ -1202,7 +1202,7 @@ these functions is:
     enddo
 
   end subroutine example_2d
-\end{verbatim}
+\end{lstlisting}
 
 \noindent In this function, the bounds of the {\tt density} array
 take into account the {\tt ng\_sp} ghostcells.  The {\tt j} and {\tt i}
@@ -1213,9 +1213,9 @@ useful double-precision constants, like {\tt HALF} (0.5).
 
 The three-dimensional case is similar, with the {\tt density} array
 declared as 
-\begin{verbatim}
-  density(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp)
-\end{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
+  density(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:)
+\end{lstlisting}
 and an additional loop over the `z' coordinate (from {\tt lo(3)} to
 {\tt hi(3)}).
 
