@@ -1,5 +1,5 @@
 #PBS -q debug
-#PBS -l mppwidth=4
+#PBS -l mppwidth=1
 #PBS -l mppnppn=1
 #PBS -l mppdepth=4
 #PBS -l walltime=00:30:00
@@ -13,6 +13,6 @@ cd $PBS_O_WORKDIR
 
 echo Starting `date`
 
-aprun -n 4 -N 1 -d 4 ./main.Linux.PathScale.mpi.omp.exe inputs_1node >& output.$PBS_JOBID
+aprun -n 1 -N 1 -d 4 ./main.Linux.PathScale.mpi.omp.exe inputs_1node >& output.$PBS_JOBID
 
 echo Ending `date`
