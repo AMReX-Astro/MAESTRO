@@ -1,0 +1,13 @@
+#PBS -A ast006
+#PBS -N jaguarpf_test
+#PBS -j oe
+#PBS -q debug
+#PBS -l walltime=00:30:00,size=384
+
+setenv PSC_OMP_AFFINITY FALSE
+
+setenv OMP_NUM_THREADS 6
+
+cd $PBS_O_WORKDIR
+
+aprun -n 64 -S 1 -d 6 ./main.Linux.PathScale.mpi.omp.exe inputs_64mpi >& output.$PBS_JOBID
