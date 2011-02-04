@@ -1,0 +1,79 @@
+&PROBIN
+ model_file = "kepler_new_6.25e8.hybrid.hse.2560"
+ drdxfac = 5
+
+ max_levs = 2
+ n_cellx = 256
+ n_celly = 256
+ n_cellz = 256
+ max_grid_size = 64
+ regrid_int = 2
+
+ anelastic_cutoff = 1.d6
+ base_cutoff_density = 1.d5
+ sponge_center_density = 3.d6
+ sponge_start_factor = 3.333d0
+ sponge_kappa = 10.0d0
+
+ max_mg_bottom_nlevels = 3
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
+
+ spherical_in = 1
+ dm_in = 3
+ do_sponge = .true.
+
+ prob_hi_x = 5.d8
+ prob_hi_y = 5.d8
+ prob_hi_z = 5.d8
+
+ max_step  = 10
+ init_iter = 1
+
+ stop_time = 30000.
+
+ plot_int  = -1
+ chk_int   = -1
+
+ cflfac = 0.7d0
+ init_shrink = 0.1d0
+ max_dt_growth = 1.1d0
+ use_soundspeed_firstdt = T
+ use_divu_firstdt = T
+
+ bcx_lo = 12
+ bcx_hi = 12
+ bcy_lo = 12
+ bcy_hi = 12
+ bcz_lo = 12
+ bcz_hi = 12
+
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+ do_initial_projection = T
+ init_divu_iter = 3
+
+ velpert_amplitude = 1.d6
+ velpert_radius = 2.d7
+ velpert_scale = 1.d7
+ velpert_steep = 1.d5
+
+ do_burning = T
+
+ enthalpy_pred_type = 1
+ evolve_base_state = T
+
+ dpdt_factor = 0.0d0
+
+ use_tfromp = T
+
+ single_prec_plotfiles = T
+
+ use_eos_coulomb = T
+
+ plot_trac = F
+
+/

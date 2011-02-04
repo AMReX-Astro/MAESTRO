@@ -1,0 +1,18 @@
+#PBS -q debug
+#PBS -l mppwidth=1
+#PBS -l mppnppn=1
+#PBS -l mppdepth=4
+#PBS -l walltime=00:30:00
+#PBS -j eo
+
+setenv PSC_OMP_AFFINITY FALSE
+
+setenv OMP_NUM_THREADS 4
+
+cd $PBS_O_WORKDIR
+
+echo Starting `date`
+
+aprun -n 1 -N 1 -d 4 ./main.Linux.PathScale.mpi.omp.exe inputs_1mpi >& output.$PBS_JOBID
+
+echo Ending `date`
