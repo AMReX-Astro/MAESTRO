@@ -840,8 +840,12 @@ contains
     ! IMPORTANT: make sure that there are enough entries in the format
     ! statement to write out all of the data in each file.
 999 format("# job name: ",a)
-1000 format(1x,16(g20.10,1x))
-1001 format("#",16(a20,1x))
+1000 format(1x,16(g19.9,1x))
+1001 format("#",16(a19,1x))
+1002 format(1x,16(g18.8,1x))
+1003 format("#",16(a18,1x))
+1004 format(1x,16(g16.6,1x))
+1005 format("#",16(a16,1x))
 800 format("# ",a,i4.4,'-',i2.2,'-',i2.2)
 801 format("# ",a,i2.2,':',i2.2,':',i2.2)
 802 format("# ",a,a)
@@ -897,43 +901,23 @@ contains
           call get_cwd(cwd)
 
           ! radvel
-!          write (un1, *) " "
-!          write (un1, 800) "output date: ", values(1), values(2), values(3)
-!          write (un1, 801) "output time: ", values(5), values(6), values(7)
-!          write (un1, 802) "output dir:  ", trim(cwd)
-!          write (un1, 999) trim(job_name)
-          write (un1, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
+          write (un1, 1005) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
                             "max{|vr|}", &
                             "int{rhovr_x}/mass", "int{rhovr_y}/mass", "int{rhovr_z}/mass", &
                             "mass"
 
           ! temp
-!          write (un2, *) " "
-!          write (un2, 800) "output date: ", values(1), values(2), values(3)
-!          write (un2, 801) "output time: ", values(5), values(6), values(7)
-!          write (un2, 802) "output dir:  ", trim(cwd)
-!          write (un2, 999) trim(job_name)
           write (un2,1001) "time", "max{T}", "x(max{T})", "y(max{T})", "z(max{T})", &
                            "vx(max{T})", "vy(max{T})", "vz(max{T})", &
                            "R(max{T})", "vr(max{T})", "T_center"
 
           ! enuc
-!          write (un3, *) " "
-!          write (un3, 800) "output date: ", values(1), values(2), values(3)
-!          write (un3, 801) "output time: ", values(5), values(6), values(7)
-!          write (un3, 802) "output dir:  ", trim(cwd)
-!          write (un3, 999) trim(job_name)
-          write (un3,1001) "time", "max{enuc}", &
+          write (un3,1003) "time", "max{enuc}", &
                            "x(max{enuc})", "y(max{enuc})", "z(max{enuc})", &
                            "vx(max{enuc})", "vy(max{enuc})", "vz(max{enuc})", &
                            "R(max{enuc})", "vr(max{enuc})", "tot nuc ener (erg/s)"
 
           ! vel
-!          write (un4, *) " "
-!          write (un4, 800) "output date: ", values(1), values(2), values(3)
-!          write (un4, 801) "output time: ", values(5), values(6), values(7)
-!          write (un4, 802) "output dir:  ", trim(cwd)
-!          write (un4, 999) trim(job_name)
           write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", &
                            "tot kin energy", "grav pot energy", "tot int energy", &
                            "velx_center", "vely_center", "velz_center", "dt"
@@ -944,7 +928,7 @@ contains
        do n = 1, nstored
 
           ! write out the data
-          write (un1,1000) time_data(n), &
+          write (un1,1004) time_data(n), &
                file1_data(n,1), file1_data(n,2), file1_data(n,3), &
                file1_data(n,4), file1_data(n,5), &
                file1_data(n,6), file1_data(n,7), file1_data(n,8), file1_data(n,9)
@@ -956,7 +940,7 @@ contains
                file2_data(n,8), file2_data(n,9), &
                file2_data(n,10)
 
-          write (un3,1000) time_data(n), &
+          write (un3,1002) time_data(n), &
                file3_data(n,1), &
                file3_data(n,2), file3_data(n,3), file3_data(n,4), &
                file3_data(n,5), file3_data(n,6), file3_data(n,7), &
