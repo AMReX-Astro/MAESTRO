@@ -1,3 +1,4 @@
+#PBS -S /usr/bin/tcsh
 #PBS -A ast006
 #PBS -N jaguarpf_test
 #PBS -j oe

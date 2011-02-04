@@ -1,3 +1,4 @@
+#PBS -S /usr/bin/tcsh
 #PBS -A ast006
 #PBS -N jaguarpf_test
 #PBS -j oe
@@ -5,6 +6,7 @@
 #PBS -l walltime=00:30:00,size=48000
 
 setenv PSC_OMP_AFFINITY FALSE
+setenv MPICH_PTL_OTHER_EVENTS 16384
 
 setenv OMP_NUM_THREADS 6
 
