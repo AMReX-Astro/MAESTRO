@@ -338,6 +338,10 @@ def main(files):
         n += 1
 
 
+    print " "
+    print "maximum error = ", max(error)
+    print "L2 norm error = ", math.sqrt(numpy.dot(error,error)/len(particles))
+
 
 #-----------------------------------------------------------------------------
 if __name__== "__main__":
