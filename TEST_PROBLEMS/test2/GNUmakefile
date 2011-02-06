@@ -2,7 +2,9 @@ NDEBUG := t
 MPI    :=
 OMP    :=
 
-COMP := Intel
+COMP := gfortran
+
+PARTICLES := t
 
 MKVERBOSE := t
 
@@ -19,7 +21,7 @@ NETWORK_DIR := extern/networks/ignition
 # we only need to include the problem's directory if there are unique
 # files there (as specified in a GPackage.mak).  The problem directory
 # is always placed at the start of the vpath by the GMakerules.mak.
-EXTRA_DIR := 
+EXTRA_DIR := extern/random MAESTRO/test2
 
 
 # define the runtime parameter files
