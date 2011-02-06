@@ -152,7 +152,7 @@ contains
     ! now compare pressure in the last cell and offset to make sure we
     ! are integrating "from the top"
     ! we use the coarsest level as the reference point
-    offset = p0(n,nr(1)-1) - p0_old(n,nr(1)-1)
+    offset = p0(1,nr(1)-1) - p0_old(1,nr(1)-1)
 
 
     ! offset level 1
