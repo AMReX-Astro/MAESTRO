@@ -260,6 +260,11 @@ def parseParticleFile(MaestroParticleFile, particleList):
 #-----------------------------------------------------------------------------
 def main(files):
 
+    # domain information
+    xcenter = 0.5
+    ycenter = 0.5
+
+
     # the master list of particles -- each element will store a particle
     # object containing the complete history of that particle
     particles = []
@@ -279,16 +284,8 @@ def main(files):
     # print out some info and test the routines
     print "number of unique particles = ", len(particles)
 
-    # dump out info about every particle
-    #n = 0
-    #while (n < len(particles)):
-    #    print particles[n]
-    #    n += 1
 
-    # dump out info about particle 0 at the first instance
-    #print particles[0].history[0]
-
-    # make a plot
+    # make a plot of the particle paths
     pylab.clf()
 
     n = 0
@@ -314,51 +311,32 @@ def main(files):
     pylab.savefig("particle_paths.png")
 
 
-    # make an animation -- note: this assumes that all particles exist
-    # at all timesteps
+    # compute the relative change in the radius of the particle from
+    # start to end -- this is the error in the integration.
     pylab.clf()
 
-    nstep = 0
-    while (nstep < len(particles[0].history)):
+    # assume that all particles were around for all timesteps
+    nstep = len(particles[0].history)
 
-        pylab.clf()
+    error = numpy.zeros(len(particles), dtype=numpy.float64)
+    
+    n = 0
+    while (n < len(particles)):
 
-        n = 0
-        while (n < len(particles)):
+        # compute the relative change in radius
+        r_start = math.sqrt( (particles[n].history[0].x - xcenter)**2 +
+                             (particles[n].history[0].y - ycenter)**2)
 
-            # plot the position of the current particle (n) at the
-            # current step (nstep).  Color it by the velocity magnitude
-            pylab.scatter([particles[n].history[nstep].x], 
-                          [particles[n].history[nstep].y] , 
-                          marker="o", s=12.5, 
-                          c=particles[n].history[nstep].data["magvel"],
-                          vmin=0, 
-                          vmax=0.5)
+        r_end = math.sqrt( (particles[n].history[nstep-1].x - xcenter)**2 +
+                           (particles[n].history[nstep-1].y - ycenter)**2)
 
-            n += 1
+        error[n] = math.fabs(r_start - r_end)/r_start
+
+        print "particle: (%d, %d), r init = %f, rel error = %g" % \
+            (particles[n].pid, particles[n].originCPU, r_start, error[n])
         
-        # axis labels
-        pylab.xlabel("x")
-        pylab.ylabel("y")
+        n += 1
 
-        # color bar
-        cb = pylab.colorbar(orientation="horizontal")
-        cb.set_label(r"|v|")
-
-        pylab.axis([0,1,0,1])
-        a = pylab.gca()
-        a.set_aspect("equal")
-
-        a.xaxis.set_major_formatter(pylab.ScalarFormatter(useMathText=True))
-        a.yaxis.set_major_formatter(pylab.ScalarFormatter(useMathText=True))
-
-
-        f = pylab.gcf()
-        f.set_size_inches(6.0,6.0)
-
-        pylab.savefig("particles_%04d.png" % (nstep) )
-
-        nstep += 1
 
 
 #-----------------------------------------------------------------------------
