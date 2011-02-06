@@ -1,0 +1,23 @@
+&PROBIN
+ test_set = "gr0_2d_2lev_coarse"
+
+ cflfac = 0.7d0
+
+ stop_time = 6.28318531
+
+ spherical_in = 0
+ dm_in = 2
+
+ ppm_type = 0
+
+ verbose = 1
+
+ prob_hi_x = 1.0
+ prob_hi_y = 1.0
+
+ bcx_lo = -1
+ bcx_hi = -1
+ bcy_lo = -1
+ bcy_hi = -1
+
+/

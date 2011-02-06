@@ -1,12 +1,9 @@
-NDEBUG := t
-MPI    := t
+NDEBUG := 
+MPI    := 
 OMP    :=
 
 COMP := gfortran
 
-#
-# Get particles.f90
-#
 PARTICLES := t
 
 MKVERBOSE := t
@@ -14,19 +11,22 @@ MKVERBOSE := t
 # define the location of the fParallel root directory
 FPARALLEL := ../..
 
+
 # define the physics packages to build this problem
-EOS_DIR := extern/EOS/helmeos 
+EOS_DIR := extern/EOS/gamma_law_general
 CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
-NETWORK_DIR := extern/networks/ignition 
+NETWORK_DIR := extern/networks/null
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
 # files there (as specified in a GPackage.mak).  The problem directory
 # is always placed at the start of the vpath by the GMakerules.mak.
-EXTRA_DIR := extern/random MAESTRO/test_particles
+EXTRA_DIR := MAESTRO/test_particle_unit extern/random
+
 
 # define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters ./_parameters.test_particles
+PROBIN_PARAMETERS := ../_parameters ./_parameters.particles
+
 
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak

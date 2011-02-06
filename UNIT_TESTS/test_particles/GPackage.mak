@@ -1,1 +1,2 @@
-f90sources += init_particles.f90
+f90sources += test_particles.f90
+
