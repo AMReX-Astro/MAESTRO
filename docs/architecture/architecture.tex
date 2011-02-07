@@ -1,6 +1,47 @@
+\section{MAESTRO Basics}
+
+MAESTRO models problems that are in tight hydrostatic equilibrium.
+The fluid state is decomposed into a 1-d radial base state that
+describes the hydrostatic structure of the star or atmosphere, and a
+2- or 3-d Cartesian full state, that captures the departures from
+hydrostatic equilibrium.  Two basic geometries are allowed.  A {\em
+  plane-parallel} geometry assumes that the domain is thin compared to
+the radius of curvature of the star, and therefore the 1-d base state
+is perfectly aligned with the Cartesian state.  A {\em spherical}
+geometry is for modeling an entire star.  Here, the 1-d base state is
+not aligned with the Cartesian state.  Figure~\ref{fig:base_state}
+shows these geometries.
+
+\begin{figure}[tb]
+\centering
+\includegraphics[height=2.0in]{\archfigpath/base_grid} \hspace{0.5in}
+\includegraphics[height=2.0in]{\archfigpath/base_spherical}
+\caption{\label{fig:base_state} MAESTRO geometries, showing both the
+  1-d base state and the full Cartesian state.  (Left) For multi-level
+  problems in planar geometry, we force a direct alignment between the
+  radial array cell centers and the Cartesian grid cell centers by
+  allowing the radial base state spacing to change with space and
+  time.  (Right) For multi-level problems in spherical geometry, since
+  there is no direct alignment between the radial array cell centers
+  and the Cartesian grid cell centers, we choose to fix the radial
+  base state spacing across levels. Figure taken
+  from~\cite{multilevel}.}
+\end{figure}
+
+
+MAESTRO can use adaptive mesh refinement to focus resolution on
+complex regions of flow.  For Cartesian/plane-parallel geometries, all
+cells at the same height must be at the same level of refinement.
+This restriction is to allow for the base state to directly align with
+the Cartesian state everywhere.  For spherical geometries, there is no
+such restriction (again, see Figure~\ref{fig:base_state}).
+
+
+
+
 \section{MAESTRO Directory Structure}
 
-\begin{figure}[h]
+\begin{figure}[t]
 \centering
 \includegraphics[width=5.0in]{\archfigpath/maestro_directory2}
 \caption[MAESTRO directory structure]
@@ -8,8 +49,10 @@
 \end{figure}
 
 All the files needed to build MAESTRO are contained in the {\tt
-fParallel} directory structure.  Briefly, the sub-directories
-are:
+  fParallel} directory structure.  Problems piece together various
+MAESTRO directories, choosing a reaction network, equation of state,
+and conductivity routine to build an executable.  Briefly, the
+sub-directories are:
 \begin{itemize}
 \item {\tt boxlib/} 
 
@@ -107,7 +150,8 @@ are:
 
 \item {\tt mg/}
 
-  The multigrid solver.
+  The multigrid solver, with support for both cell-centered and
+  node-centered data.
 
 \item {\tt mk/}
 
@@ -120,42 +164,6 @@ are:
   maintaining MAESTRO.
 
 \end{itemize}
-
-
-\section{MAESTRO Basics}
-
-MAESTRO models problems that are in tight hydrostatic equilibrium.
-The fluid state is decomposed into a 1-d radial base state that
-describes the hydrostatic structure of the star or atmosphere, and a
-2- or 3-d Cartesian full state, that captures the departures from
-hydrostatic equilibrium.  Two basic geometries are allowed.  A {\em plane-parallel}
-geometry assumes that the domain is thin compared to the radius of curvature
-of the star, and therefore the 1-d base state is perfectly aligned with
-the Cartesian state.  A {\em spherical} geometry is for modeling an entire star.  Here,
-the 1-d base state is not aligned with the Cartesian state.  Figure~\ref{fig:base_state}
-shows this geometry.
-
-\begin{figure}[tb]
-\centering
-\includegraphics[height=2.0in]{\archfigpath/base_grid} \hspace{0.5in}
-\includegraphics[height=2.0in]{\archfigpath/base_spherical}
-\caption{\label{fig:base_state} (Left) For multi-level problems
-  in planar geometry, we force a direct alignment between the radial
-  array cell centers and the Cartesian grid cell centers by allowing
-  the radial base state spacing to change with space and time.
-  (Right) For multi-level problems in spherical geometry, since there
-  is no direct alignment between the radial array cell centers and
-  the Cartesian grid cell centers, we choose to fix the radial base
-  state spacing across levels. Figure taken from~\cite{multilevel}}
-\end{figure}
-
-
-MAESTRO can use adaptive mesh refinement to focus resolution on
-complex regions of flow.  For Cartesian/plane-parallel geometries, all
-cells at the same height must be at the same level of refinement.
-This restriction is to allow for the base state to directly align with
-the Cartesian state everywhere.  For spherical geometries, there is no
-such restriction (again, see Figure~\ref{Fig:base_state}).
 
 
 
@@ -223,20 +231,23 @@ This test problem was discussed in \cite{lowMach4}.
 \subsection{Compiling and Running}
 
 To build the MAESTRO executable, simply type `{\tt make}' in the
-problem directory.  The executable will have a name like
-{\tt main.Linux.Intel.exe}, where the specific parts of 
-the name depend on the compilers and OS used.  MAESTRO can be built
-with support for parallelism (using MPI or MPI+OpenMP), or compiled
-as a serial code.  The top portion
-of the {\tt GNUmakefile} can be editted to choose the build options.
-Setting {\tt MPI := t} will build the code to use MPI for parallelization.
-Setting {\tt OMP := t} will use OpenMP.  OpenMP is used together with MPI, 
-with MPI distributing the grids across the processors and within a 
-shared-memory node, OpenMP allows many cores to operate
-on the same grid.  A final build option determines whether to build
-the code with support for debugging.  Setting {\tt NDEBUG := t} disables
-debugging features.
+problem directory.  The executable will have a name like {\tt
+  main.Linux.Intel.exe}, where the specific parts of the name depend
+on the compilers and OS used.  MAESTRO can be built with support for
+parallelism (using MPI or MPI+OpenMP), or compiled as a serial code.
+The top portion of the {\tt GNUmakefile} can be editted to choose the
+build options.  Setting {\tt MPI := t} will build the code to use MPI
+for parallelization.  Setting {\tt OMP := t} will use OpenMP.  OpenMP
+is used together with MPI, with MPI distributing the grids across the
+processors and within a shared-memory node, OpenMP allows many cores
+to operate on the same grid.  A final build option determines whether
+to build the code with support for debugging.  Setting {\tt NDEBUG :=
+  t} disables debugging features.
 
+If the {\tt helmeos} equation of state is chosen for the problem, then
+the data table for the equation of state, {\tt
+  extern/EOS/helmeos/helm\_table.dat} needs to be copied to the
+directory in which the code is run.
 
 Each problem will have one or more inputs files (for example, {\tt
   test2/inputs\_2d}) which override the default values for one or more
@@ -469,6 +480,17 @@ specific MAESTRO routines directly.
   Gaussian when diffusing, so an explicit error can be computed
   by comparing to the analytic solution.  This test is 
   described in \cite{xrb}.
+
+
+\item {\tt test\_particles}
+
+  This test exercises the particle advection routine.  A simple
+  circular velocity field, with the magnitude increasing with radius
+  from the center is initialized.  A number of particles are then
+  initialized at various radii from the center and they are advected
+  for one period.  The particle paths should be perfect circles, and
+  the final particle position should overlap with the initial
+  position.
 
 \end{itemize}
 
@@ -710,7 +732,7 @@ cell-centered.  Fluxes are nodal in the direction they represent.
 A few quantities are nodal in all directions (e.g.\ $\phi$ used in
 the final velocity projection).
 
-\begin{figure}[h]
+\begin{figure}[t]
 \centering
 \includegraphics[width=6.5in]{\archfigpath/data_loc2}
 \caption[Data-centerings on the grid]
@@ -750,7 +772,7 @@ do not hold the state data themselves.  The datatype for a
 \end{itemize}
 
 
-\begin{figure}[h]
+\begin{figure}[t]
 \centering
 \includegraphics[width=4.0in]{\archfigpath/index_grid2}
 \caption[Single-level grid structure]
