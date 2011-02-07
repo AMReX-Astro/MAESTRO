@@ -9,8 +9,6 @@
  max_grid_size = 64
  regrid_int = 2
 
- tag_density_1 = 2.5d7
-
  anelastic_cutoff = 1.d6
  base_cutoff_density = 1.d5
  sponge_center_density = 3.d6
