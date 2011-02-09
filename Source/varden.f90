@@ -716,10 +716,11 @@ subroutine varden()
                  w0         = w0_temp
 
               else 
-                 ! evolve_base_state = F.  
+                 ! evolve_base_state == F and spherical == 0
 
                  ! Here we want to fill in the rho0 array so there is
-                 ! valid data in any new grid locations.
+                 ! valid data in any new grid locations that are created
+                 ! during the regrid.
 
                  ! copy the coarsest level of the real arrays into the
                  ! temp arrays
@@ -812,27 +813,34 @@ subroutine varden()
               call average(mla,sold,rho0_old,dx,rho_comp)
 
            else
-              ! copy the old base state density with piecewise linear
-              ! interpolated data in the new positions
-              rho0_old = rho0_temp
 
-              ! zero out any data where there is no corresponding full
-              ! state array
-              do n=2,nlevs_radial
-                 do i=1,numdisjointchunks(n)
-                    if (i .eq. numdisjointchunks(n)) then
-                       do r=r_end_coord(n,i)+1,nr(n)-1
-                          rho0_old(n,r) = 0.d0
-                       end do
-                    else
-                       do r=r_end_coord(n,i)+1,r_start_coord(n,i+1)-1
-                          rho0_old(n,r) = 0.d0
-                       end do
-                    end if
+              if (spherical .eq. 0) then
+                 ! copy the old base state density with piecewise linear
+                 ! interpolated data in the new positions -- this is 
+                 ! only necessary for evolve_base_state = F and
+                 ! spherical = 0.
+                 rho0_old = rho0_temp
+
+                 ! zero out any data where there is no corresponding full
+                 ! state array
+                 do n=2,nlevs_radial
+                    do i=1,numdisjointchunks(n)
+                       if (i .eq. numdisjointchunks(n)) then
+                          do r=r_end_coord(n,i)+1,nr(n)-1
+                             rho0_old(n,r) = 0.d0
+                          end do
+                       else
+                          do r=r_end_coord(n,i)+1,r_start_coord(n,i+1)-1
+                             rho0_old(n,r) = 0.d0
+                          end do
+                       end if
+                    end do
                  end do
-              end do
-              
+                 
+              endif
+
            endif
+
 
            ! recompute p0 based on the new rho0 
            call compute_cutoff_coords(rho0_old)
