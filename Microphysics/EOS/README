@@ -41,6 +41,11 @@ helmeos:
    thread-safety.  The common blocks no longer pass the state to/from
    the EOS, instead we use the argument list.
 
+helmeos_without_rad:
+
+   helmeos without radiation.  This is for radiation hydro simulations.
+   Since radiation is included in the system already, we should take
+   it out in EOS. 
 
 hma_eos:
 
