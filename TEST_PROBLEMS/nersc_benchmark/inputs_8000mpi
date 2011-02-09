@@ -1,12 +1,12 @@
 &PROBIN
- model_file = "kepler_new_6.25e8.hybrid.hse.25600"
+ model_file = "kepler_new_6.25e8.hybrid.hse.19200"
  drdxfac = 5
 
  max_levs = 3
- n_cellx = 1280
- n_celly = 1280
- n_cellz = 1280
- max_grid_size = 64
+ n_cellx = 960
+ n_celly = 960
+ n_cellz = 960
+ max_grid_size = 48
  regrid_int = 2
 
  anelastic_cutoff = 1.d6
