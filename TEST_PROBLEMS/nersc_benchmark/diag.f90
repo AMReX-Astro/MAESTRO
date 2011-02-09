@@ -1,13 +1,6 @@
 ! wdconvect-specific diagnostic routine
 ! 
-! currently, there are 4 output files:
-!
-!   nersc_benchmark_enuc_diag.out:
-!          peak nuc energy generation rate (erg / g / s)
-!          x/y/z location of peak enuc
-!          velocity components at location of peak enuc (including vr)
-!          radius of peak enuc
-!          total nuclear energy release (erg / s)
+! currently, there are 3 output files:
 !
 !   nersc_benchmark_radvel_diag.out:
 !          radial velocity components (std. average & Favre average)
@@ -821,7 +814,7 @@ contains
     use bl_system_module, only: BL_CWD_SIZE, get_cwd 
     use probin_module, only: job_name
 
-    integer :: un1,un2,un3,un4
+    integer :: un1,un2,un4
     logical :: lexist
 
     character (len=16) :: date_str, time_str
@@ -872,15 +865,6 @@ contains
           open(unit=un2, file="nersc_benchmark_temp_diag.out", status="new")
        endif
 
-       un3 = unit_new()
-       inquire(file="nersc_benchmark_enuc_diag.out", exist=lexist)
-       if ( lexist ) then
-          open(unit=un3, file="nersc_benchmark_enuc_diag.out", &
-               status="old", position="append")
-       else
-          open(unit=un3, file="nersc_benchmark_enuc_diag.out", status="new")
-       endif
-
        un4 = unit_new()
        inquire(file="nersc_benchmark_vel_diag.out", exist=lexist)
        if ( lexist ) then
@@ -911,12 +895,6 @@ contains
                            "vx(max{T})", "vy(max{T})", "vz(max{T})", &
                            "R(max{T})", "vr(max{T})", "T_center"
 
-          ! enuc
-          write (un3,1003) "time", "max{enuc}", &
-                           "x(max{enuc})", "y(max{enuc})", "z(max{enuc})", &
-                           "vx(max{enuc})", "vy(max{enuc})", "vz(max{enuc})", &
-                           "R(max{enuc})", "vr(max{enuc})", "tot nuc ener (erg/s)"
-
           ! vel
           write (un4,1001) "time", "max{|U + w0|}", "max{Mach #}", &
                            "tot kin energy", "grav pot energy", "tot int energy", &
@@ -940,12 +918,6 @@ contains
                file2_data(n,8), file2_data(n,9), &
                file2_data(n,10)
 
-          write (un3,1002) time_data(n), &
-               file3_data(n,1), &
-               file3_data(n,2), file3_data(n,3), file3_data(n,4), &
-               file3_data(n,5), file3_data(n,6), file3_data(n,7), &
-               file3_data(n,8), file3_data(n,9), &
-               file3_data(n,10)
 
           write (un4,1000) time_data(n), &
                file4_data(n,1), file4_data(n,2), file4_data(n,3), file4_data(n,4), file4_data(n,5), &
@@ -955,7 +927,6 @@ contains
 
        close(un1)
        close(un2)
-       close(un3)
        close(un4)
 
     endif
