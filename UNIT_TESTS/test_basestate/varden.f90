@@ -95,7 +95,7 @@ subroutine varden()
   allocate(numdisjointchunks(nlevs))
   numdisjointchunks(:) = 1
 
-  if (prob_type .eq. 1) then
+  if (spherical == 0) then
      dr_fine = (prob_hi(1) - prob_lo(1))/nr_fine
   else 
      ! need to compute it this way to agree with how the initial model was 
