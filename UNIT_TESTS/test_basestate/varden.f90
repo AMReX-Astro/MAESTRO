@@ -98,9 +98,14 @@ subroutine varden()
   if (spherical == 0) then
      dr_fine = (prob_hi(1) - prob_lo(1))/nr_fine
   else 
-     ! need to compute it this way to agree with how the initial model was 
-     !  computed
-     dr_fine = prob_hi(1) / (drdxfac * n_cellx)
+
+     if (prob_type == 1) then
+        dr_fine = (prob_hi(1) - prob_lo(1))/nr_fine
+     else
+        ! need to compute it this way to agree with how the initial model was 
+        !  computed
+        dr_fine = prob_hi(1) / (drdxfac * n_cellx)
+     endif
   endif
 
   allocate(dx(nlevs,1))
