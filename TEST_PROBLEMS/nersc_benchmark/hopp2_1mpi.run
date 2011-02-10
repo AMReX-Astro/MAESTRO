@@ -1,3 +1,4 @@
+#PBS -S /usr/bin/tcsh
 #PBS -q debug
 #PBS -l mppwidth=24
 #PBS -l walltime=00:30:00
