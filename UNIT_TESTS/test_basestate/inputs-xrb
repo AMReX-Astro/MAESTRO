@@ -1,0 +1,28 @@
+&PROBIN
+
+ anelastic_cutoff = 1.e4
+ base_cutoff_density = 1.e4
+
+ spherical_in = 0
+ dm_in = 1
+
+ prob_lo_x = 6500.0
+ prob_hi_x = 8548.0
+
+ grav_const = -2.45e14
+
+ max_step  = 100000000
+
+ stop_time = 0.10
+
+ cflfac = 0.5d0
+
+ ! use the analytic CNO heating
+ prob_type    = 2
+
+ heating_time = 0.03
+
+ model_file = "alex_mixed_t7.49e8_2cm.hse"
+
+ use_eos_coulomb = T
+/
