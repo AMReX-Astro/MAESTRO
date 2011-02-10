@@ -1,5 +1,6 @@
 #PBS -S /usr/bin/tcsh
-#PBS -q debug
+#PBS -N hopp2_test
+#PBS -q regular
 #PBS -l mppwidth=384
 #PBS -l walltime=00:30:00
 #PBS -e output.$PBS_JOBID.err

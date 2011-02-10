@@ -1,9 +1,10 @@
 #PBS -S /usr/bin/tcsh
 #PBS -A ast006
 #PBS -N jaguarpf_test
-#PBS -j oe
-#PBS -q debug
+#PBS -q batch
 #PBS -l walltime=00:30:00,size=48000
+#PBS -e output.$PBS_JOBID.err
+#PBS -o output.$PBS_JOBID.out
 
 setenv PSC_OMP_AFFINITY FALSE
 setenv MPICH_PTL_OTHER_EVENTS 16384
@@ -14,4 +15,4 @@ setenv OMP_NUM_THREADS 6
 
 cd $PBS_O_WORKDIR
 
-aprun -n 8000 -S 1 -d 6 ./main.Linux.PathScale.mpi.omp.exe inputs_8000mpi >& output.$PBS_JOBID
+aprun -n 8000 -S 1 -d 6 ./main.Linux.PathScale.mpi.omp.exe inputs_8000mpi
