@@ -16,19 +16,19 @@
  prob_lo_y = 3.5d8
  prob_hi_y = 5.d8
 
- anelastic_cutoff = 25.d0
- base_cutoff_density = 10.0d0
+ anelastic_cutoff = 50.d0
+ base_cutoff_density = 25.0d0
  buoyancy_cutoff_factor = 2.d0
 
  do_sponge = T
- sponge_center_density = 10.d0
- sponge_start_factor = 2.5d0
+ sponge_center_density = 25.d0
+ sponge_start_factor = 2.0d0
  sponge_kappa = 1000.d0
 
  grav_const = -1.04263053d9
 
  max_step  = 1000000
- stop_time = 5.d2
+ stop_time = 50.0
 
  do_initial_projection = T
  init_divu_iter = 4
@@ -69,7 +69,7 @@
 
  apply_vel_field = T
  velpert_height_loc = 3.95e8
- velpert_scale = 2.5d6
+ velpert_scale = 1.d6
  velpert_amplitude = 1.d3
  num_vortices = 6
 
