@@ -19,7 +19,7 @@ contains
     use parallel
     use bl_prof_module
     use checkpoint_module
-    use probin_module, only: check_base_name, max_levs, dm_in
+    use probin_module, only: check_base_name, dm_in
 
     integer          , intent(in   ) :: restart_int
     real(dp_t)       , intent(  out) :: dt
