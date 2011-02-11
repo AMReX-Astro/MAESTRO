@@ -110,6 +110,7 @@ subroutine varden()
   real(dp_t), allocatable :: rho0_temp(:,:)
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
+  real(dp_t), allocatable :: tempbar_init_temp(:,:)
 
   logical :: dump_plotfile, dump_checkpoint
 
@@ -240,17 +241,18 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   if (spherical .eq. 0) then
-     allocate(       psi_temp(max_levs,0:nr_fine-1))
-     allocate( etarho_cc_temp(max_levs,0:nr_fine-1))
-     allocate(      rho0_temp(max_levs,0:nr_fine-1))
-     allocate( etarho_ec_temp(max_levs,0:nr_fine))
-     allocate(        w0_temp(max_levs,0:nr_fine))
+     allocate(         psi_temp(max_levs,0:nr_fine-1))
+     allocate(   etarho_cc_temp(max_levs,0:nr_fine-1))
+     allocate(        rho0_temp(max_levs,0:nr_fine-1))
+     allocate(   etarho_ec_temp(max_levs,0:nr_fine))
+     allocate(          w0_temp(max_levs,0:nr_fine))
+     allocate(tempbar_init_temp(max_levs,0:nr_fine-1))
   else
-     allocate(       psi_temp(1,0:nr_fine-1))
-     allocate( etarho_cc_temp(1,0:nr_fine-1))
-     allocate(      rho0_temp(1,0:nr_fine-1))
-     allocate( etarho_ec_temp(1,0:nr_fine))
-     allocate(        w0_temp(1,0:nr_fine))
+     allocate(         psi_temp(1,0:nr_fine-1))
+     allocate(   etarho_cc_temp(1,0:nr_fine-1))
+     allocate(        rho0_temp(1,0:nr_fine-1))
+     allocate(   etarho_ec_temp(1,0:nr_fine))
+     allocate(tempbar_init_temp(1,0:nr_fine-1))
   end if
 
   allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs))
@@ -757,6 +759,44 @@ subroutine varden()
                  ! yet.  Wait until we regrid
 
               endif
+
+              ! regardless of evolve_base_state, if new grids were
+              ! created, we need to initialize tempbar_init there, in
+              ! case drive_initial_convection = T
+
+              ! copy the coarsest level of the real arrays into the
+              ! temp arrays
+              tempbar_init_temp(1,:)  = tempbar_init(1,:)
+
+              ! piecewise linear interpolation to fill the cc temp arrays
+              do n=2,max_levs
+                 do r=0,nr(n)-1
+                    if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                       tempbar_init_temp(n,r) = tempbar_init_temp(n-1,r/2)
+                    else
+                       if (mod(r,2) .eq. 0) then
+                          tempbar_init_temp(n,r) = 0.75d0*tempbar_init_temp(n-1,r/2) &
+                               + 0.25d0*tempbar_init_temp(n-1,r/2-1)
+                       else
+                          tempbar_init_temp(n,r) = 0.75d0*tempbar_init_temp(n-1,r/2) &
+                               + 0.25d0*tempbar_init_temp(n-1,r/2+1)
+                       end if
+                    end if
+                 end do
+              end do
+                 
+
+              ! copy valid data into temp
+              do n=2,nlevs_radial
+                 do i=1,numdisjointchunks(n)
+                    do r=r_start_coord(n,i),r_end_coord(n,i)
+                       tempbar_init_temp(n,r) = tempbar_init(n,r)
+                    end do
+                 end do
+              end do
+
+              ! copy temp array back into the real thing
+              tempbar_init = tempbar_init_temp
 
            end if ! end regridding of base state
 
