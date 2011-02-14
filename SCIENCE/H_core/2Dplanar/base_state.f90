@@ -43,6 +43,7 @@ contains
     real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! local
+    logical, save   :: firstCall = .true.
     integer         :: r,comp
     real(kind=dp_t) :: rloc,dr_in,rmax,starting_rad,mod_dr
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
@@ -63,7 +64,15 @@ contains
 888 format(a60,g18.10)
 889 format(a60)
 
-    call read_model_file(model_file)
+
+    if (firstCall) then
+
+       ! only need to read in the initial model once -- model_parser_module
+       ! stores the model data
+       call read_model_file(model_file)
+
+       firstCall = .false.
+    endif
 
     eps = 1.d-8
 
@@ -241,6 +250,8 @@ contains
           p_eos(1)    = p_ambient
           xn_eos(1,:) = xn_ambient(:)
 
+          write(10,*) rloc, d_ambient, t_ambient
+
           ! (rho,T) --> p,h
           call eos(eos_input_rt, den_eos, temp_eos, &
                    npts, &
@@ -259,6 +270,8 @@ contains
           p0_init(r) = p_eos(1)
 
           s0_init(r,temp_comp) = t_ambient
+
+          write(11,*) rloc, s0_init(r,rhoh_comp)
 
           if (ntrac .gt. 0) then
              s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO

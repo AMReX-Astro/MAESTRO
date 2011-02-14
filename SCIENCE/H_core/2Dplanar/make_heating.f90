@@ -21,7 +21,7 @@ contains
     use ml_layout_module
     use ml_restriction_module
     use variables, only: foextrap_comp, rho_comp, temp_comp, rhoh_comp
-    use geometry, only: nlevs_radial, nr, nr_fine
+    use geometry, only: nlevs_radial, nr_fine, nr, dr
     use average_module
     use fill_3d_module
 
@@ -39,7 +39,7 @@ contains
     real(kind=dp_t), pointer :: hp(:,:,:,:)
     type(bl_prof_timer), save :: bpt
 
-    logical, parameter :: symmetric_heat = .true.
+    logical, parameter :: symmetric_heat = .false.
     real(kind=dp_t), allocatable :: rho0(:,:)
     real(kind=dp_t), allocatable :: T0(:,:)
     real(kind=dp_t), allocatable :: rhoh0(:,:)
@@ -65,7 +65,7 @@ contains
        ! compute heating using base state
        do n=1,nlevs_radial
 
-          call get_symm_rho_Hext(rhoh0(n,:),rho0(n,:),T0(n,:),nr(n))
+          call get_symm_rho_Hext(rhoh0(n,:),rho0(n,:),T0(n,:),nr(n),dr(n))
        
        enddo
 
@@ -112,23 +112,26 @@ contains
 
   end subroutine get_rho_Hext
   
-  subroutine get_symm_rho_Hext(rho_Hext,rho0,T0,nr)
+  subroutine get_symm_rho_Hext(rho_Hext,rho0,T0,nr,dr)
     use bl_constants_module
     use variables
     use network
     
-    integer, intent(in) :: nr
+    integer        , intent(in   ) :: nr
     real(kind=dp_t), intent(inout) :: rho_Hext(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: T0(0:)
+    real(kind=dp_t), intent(in   ) :: dr
 
-    integer                        :: i
+    integer                        :: i, ibegin
     integer                        :: h1_comp
     integer                        :: c12_comp
     integer                        :: n14_comp
     integer                        :: o16_comp
     real(kind=dp_t)                :: rho, T_6_third, X_CNO, X_1, g14
     real(kind=dp_t)                :: tmp1, tmp2, tmp3
+    real(kind=dp_t)                :: intgrl
+
 
     rho_Hext = 0.0_dp_t
 
@@ -142,9 +145,12 @@ contains
     X_CNO = 0.00952433417 !0.9524325640064698d-2
     X_1   = 0.40137771765 !0.4013777831131446d0
 
+    ibegin = -1
+    intgrl = 0.d0
 
     do i = 0, nr-1
        rho = rho0(i)
+
        T_6_third = (T0(i) / 1.0d6) ** THIRD
 ! FIXME! HACK
 !          tmp1 = s(i,j,c12_comp)
@@ -159,7 +165,25 @@ contains
        tmp1 = 8.67d27 * g14 * X_CNO * X_1 * rho / T_6_third**2
        tmp2 = dexp(-1.5228d2 / T_6_third)
        rho_Hext(i) = rho * tmp1 * tmp2
-    enddo
+          
+       if (rho .gt. 5.944) then
+
+          intgrl = intgrl + rho_Hext(i)*(dble(i)+HALF)*dr*(dble(i)+HALF)*dr*dr
+
+          rho_Hext(i) = 0.d0
+
+       else
+
+          if (ibegin .lt. 0) then
+             ! add in a "surface flux"
+             rho_Hext(i) = rho_Hext(i) + 3.d0*intgrl / &
+                           (dr*dr*dr*(i*i*i + 3.d0*i*i + 3.d0*i +1))
+
+             ibegin = i
+          end if
+
+       end if
+    end do
 !.............................................................................. 
 
   end subroutine get_symm_rho_Hext

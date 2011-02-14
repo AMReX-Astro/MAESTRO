@@ -17,7 +17,8 @@ contains
     use restrict_base_module
     use bl_error_module
     use make_grav_module
-    use probin_module, only: do_planar_invsq_grav
+    use probin_module, only: do_planar_invsq_grav, prob_lo
+!FIXME
     use bl_constants_module
 
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
@@ -28,25 +29,11 @@ contains
     real(kind=dp_t) :: temp,offset
     real(kind=dp_t) :: grav_edge(nlevs_radial,0:nr_fine-1)
     real(kind=dp_t) ::    p0_old(nlevs_radial,0:nr_fine-1)
-!FIXME
-    real(kind=dp_t) ::    rho_cc(-2:nr_fine), rho_avg
-    real(kind=dp_t) :: lambda, kappa, del, dpls, dmin, slim, sflag
-
-    rho_cc(-2) = rho0(1,1)
-    rho_cc(-1) = rho0(1,0)
-    do r = 0, nr_fine-1
-       rho_cc(r) = rho0(1,r)
-    enddo
-    rho_cc(nr_fine) = rho0(1,nr_fine-1)
-!!!!!
-
 
     offset = 0.d0
 
     call make_grav_edge(grav_edge,rho0)
-! this change only make an improvement when using the wrong rho (rho(1,r-1)
-!    call make_grav_cell(grav_edge,rho0)
-
+     
     ! create a copy of the input pressure to help us with initial
     ! conditions
     p0_old = p0
@@ -63,48 +50,7 @@ contains
     ! now integrate upwards from the bottom later, we will offset the
     ! entire pressure so we have effectively integrated from the "top"
     do r=1,min(r_end_coord(1,1),base_cutoff_density_coord(1))
-! for testing using cc rho g rather than edge centered
-!       p0(1,r) = p0(1,r-1) + dr(1)*rho0(1,r-1)*grav_edge(1,r-1)
-
-! try 2nd order averaging
-! made very little difference
-!       rho_avg = ( SEVEN*(rho_cc(r-1)+rho_cc(r)) - &
-!                   rho_cc(r-2) - rho_cc(r+1) ) / TWELVE 
-!       p0(1,r) = p0(1,r-1) + dr(1)*rho_avg*grav_edge(1,r)
-!       write(15,*)r,dr(1)*(r+HALF),dr(1)*r,rho0(1,r),rho_avg
-
-! this didn't help any either
-!        if ( r .eq. nr(n)-1) then
-
-!           lambda = ZERO
-!           kappa = ZERO
-
-!        else
-
-!           del    = HALF* (rho0(1,r+1) - rho0(1,r-1))/dr(1)
-!           dpls   = TWO * (rho0(1,r+1) - rho0(1,r  ))/dr(1)
-!           dmin   = TWO * (rho0(1,r  ) - rho0(1,r-1))/dr(1)
-!           slim   = min(abs(dpls), abs(dmin))
-!           slim   = merge(slim, zero, dpls*dmin.gt.ZERO)
-!           sflag  = sign(ONE,del)
-!           lambda = sflag*min(slim,abs(del))
-
-!           del   = HALF* (grav_cell(1,r+1) - grav_cell(1,r-1))/dr(1)
-!           dpls  = TWO * (grav_cell(1,r+1) - grav_cell(1,r  ))/dr(1)
-!           dmin  = TWO * (grav_cell(1,r  ) - grav_cell(1,r-1))/dr(1)
-!           slim  = min(abs(dpls), abs(dmin))
-!           slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
-!           sflag = sign(ONE,del)
-!           kappa = sflag*min(slim,abs(del))
-
-!        endif
-
-!        p0(1,r) = p0(1,r-1) + THIRD*dr(1)**3*kappa*lambda + &
-!             HALF*dr(1)*dr(1)*(grav_cell(1,r-1)*lambda + kappa*rho0(1,r-1)) + &
-!             dr(1)*grav_cell(1,r-1)*rho0(1,r-1) 
-
-       p0(1,r) = p0(1,r-1) + dr(1)*HALF*(rho0(1,r-1)+rho0(1,r))*grav_edge(1,r)
-
+       p0(1,r) = p0(1,r-1) + (dr(1)/2.d0)*(rho0(1,r)+rho0(1,r-1))*grav_edge(1,r)
     end do
     do r=base_cutoff_density_coord(1)+1,r_end_coord(1,1)
        p0(1,r) = p0(1,r-1)
@@ -121,25 +67,23 @@ contains
           else if (r_start_coord(n,i) .le. base_cutoff_density_coord(n)) then
              ! we integrate upwards starting from the nearest coarse
              ! cell at a lower physical height
+!               p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
+!                   + grav_cell(n-1,r_start_coord(n,i)/2-1) * &
+!                   rho0(n-1,r_start_coord(n,i)/2-1) * dr(n)/2.d0 &
+!                   + grav_edge(n,r_start_coord(n,i)) * dr(n)/2.d0 * &
+!                   (rho0(n-1,r_start_coord(n,i)/2-1)+rho0(n,r_start_coord(n,i)))
+             p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
+                  + (dr(n)/4.d0)* &
+                  (2.d0*rho0(n,r_start_coord(n,i))/3.d0 + &
+                  4.d0*rho0(n-1,r_start_coord(n,i)/2-1)/3.d0)* &
+                  (grav_edge(n,r_start_coord(n,i)) + &
+                  grav_cell(n-1,r_start_coord(n,i)/2-1))  &
+                  + (dr(n)/8.d0)* &
+                  (5.d0*rho0(n,r_start_coord(n,i))/3.d0 + &
+                  1.d0*rho0(n-1,r_start_coord(n,i)/2-1)/3.d0)* &
+                  (grav_edge(n,r_start_coord(n,i)) + &
+                  grav_cell(n,r_start_coord(n,i)))
 
-             if (.not. do_planar_invsq_grav) then
-                ! assuming constant g here
-                p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
-                     + (3.d0*grav_cell(1,0)*dr(n)/4.d0)* &
-                     (rho0(n-1,r_start_coord(n,i)/2-1)+rho0(n,r_start_coord(n,i)))                      
-             else
-                p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
-                     + (dr(n)/4.d0)* &
-                      (2.d0*rho0(n,r_start_coord(n,i))/3.d0 + &
-                       4.d0*rho0(n-1,r_start_coord(n,i)/2-1)/3.d0)* &
-                      (grav_edge(n,r_start_coord(n,i)) + &
-                       grav_cell(n-1,r_start_coord(n,i)/2-1))  &
-                     + (dr(n)/8.d0)* &
-                      (5.d0*rho0(n,r_start_coord(n,i))/3.d0 + &
-                       1.d0*rho0(n-1,r_start_coord(n,i)/2-1)/3.d0)* &
-                      (grav_edge(n,r_start_coord(n,i)) + &
-                       grav_cell(n,r_start_coord(n,i)))
-             endif
           else
              ! copy pressure from below
              p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1)
@@ -166,25 +110,25 @@ contains
              offset = 0.d0
           else if (r_end_coord(n,i) .le. base_cutoff_density_coord(n)) then
              ! use fine -> coarse stencil in notes
-             if (.not. do_planar_invsq_grav) then
-                ! assuming constant g here
-                temp = p0(n,r_end_coord(n,i)) + (3.d0*grav_cell(1,0)*dr(n)/4.d0)* &
-                     (rho0(n,r_end_coord(n,i))+rho0(n-1,(r_end_coord(n,i)+1)/2))
-                offset = p0(n-1,(r_end_coord(n,i)+1)/2) - temp
-             else
-                temp = p0(n,r_end_coord(n,i)) &
-                     + (dr(n)/4.d0)* &
-                      (2.d0*rho0(n,r_end_coord(n,i))/3.d0 + &
-                       4.d0*rho0(n-1,(r_end_coord(n,i)+1)/2)/3.d0)* &
-                      (grav_edge(n-1,(r_end_coord(n,i)+1)/2) + &
-                       grav_cell(n-1,(r_end_coord(n,i)+1)/2)) &
-                     + (dr(n)/8.d0)* &
-                      (5.d0*rho0(n,r_end_coord(n,i))/3.d0 + &
-                       1.d0*rho0(n-1,(r_end_coord(n,i)+1)/2)/3.d0)* &
-                      (grav_cell(n,r_end_coord(n,i)) + &
-                       grav_edge(n-1,(r_end_coord(n,i)+1)/2))
-                offset = p0(n-1,(r_end_coord(n,i)+1)/2) - temp
-             endif
+!              temp = p0(n,r_end_coord(n,i)) &
+!                   + grav_edge(n-1,(r_end_coord(n,i)+1)/2)*dr(n)/2.d0 * &
+!                   (rho0(n-1,(r_end_coord(n,i)+1)/2)+rho0(n,r_end_coord(n,i)))&
+!                   + grav_cell(n-1,(r_end_coord(n,i)+1)/2)*dr(n)/2.d0 * &
+!                   rho0(n-1,r_start_coord(n,i)/2-1)
+!              offset = p0(n-1,(r_end_coord(n,i)+1)/2) - temp
+
+             temp = p0(n,r_end_coord(n,i)) &
+                  + (dr(n)/4.d0)* &
+                  (2.d0*rho0(n,r_end_coord(n,i))/3.d0 + &
+                  4.d0*rho0(n-1,(r_end_coord(n,i)+1)/2)/3.d0)* &
+                  (grav_edge(n-1,(r_end_coord(n,i)+1)/2) + &
+                  grav_cell(n-1,(r_end_coord(n,i)+1)/2)) &
+                  + (dr(n)/8.d0)* &
+                  (5.d0*rho0(n,r_end_coord(n,i))/3.d0 + &
+                  1.d0*rho0(n-1,(r_end_coord(n,i)+1)/2)/3.d0)* &
+                  (grav_cell(n,r_end_coord(n,i)) + &
+                  grav_edge(n-1,(r_end_coord(n,i)+1)/2))
+             offset = p0(n-1,(r_end_coord(n,i)+1)/2) - temp
           else
              ! copy pressure from below
              temp = p0(n,r_end_coord(n,i))
@@ -205,13 +149,12 @@ contains
 
     end do ! end loop over levels
 
+
     ! now compare pressure in the last cell and offset to make sure we
     ! are integrating "from the top"
-    do n=1,nlevs_radial
-       if (r_end_coord(n,numdisjointchunks(n)) .eq. nr(n)-1) then
-          offset = p0(n,nr(n)-1) - p0_old(n,nr(n)-1)
-       end if
-    end do
+    ! we use the coarsest level as the reference point
+    offset = p0(1,nr(1)-1) - p0_old(1,nr(1)-1)
+
 
     ! offset level 1
     p0(1,:) = p0(1,:) - offset
