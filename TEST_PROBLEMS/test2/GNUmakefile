@@ -4,8 +4,6 @@ OMP    :=
 
 COMP := gfortran
 
-PARTICLES := t
-
 MKVERBOSE := t
 
 # define the location of the fParallel root directory
@@ -21,7 +19,7 @@ NETWORK_DIR := extern/networks/ignition
 # we only need to include the problem's directory if there are unique
 # files there (as specified in a GPackage.mak).  The problem directory
 # is always placed at the start of the vpath by the GMakerules.mak.
-EXTRA_DIR := extern/random MAESTRO/test2
+EXTRA_DIR := 
 
 
 # define the runtime parameter files
