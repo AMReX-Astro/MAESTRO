@@ -22,7 +22,7 @@ set logscale y
 set xtics nomirror ("2K" 2000, "4K" 4000, "14K" 14000, "33K" 33000, "49K" 49000)
 set ytics nomirror ("5" 5, "" 6, "" 7, "" 8, "" 9, "10" 10, "20" 20, "" 30, "" 40, "50" 50)
 
-plot 'mpi.txt'   using 1:3 w lp lt 1 lc 1 lw 1 pt 5 title "MPI",\
-     66182./x lt 2 lc 1 ti "", \
-     'omp12.txt' using 1:3 w lp lt 1 lc 3 lw 1 pt 9 title "MPI+OpenMP; 12 Threads", \
-     130118./x lt 2 lc 3 ti ""
+plot 'mpi.txt'   using 1:3 w lp lt 1 lc 1 lw 1 pt 5 title "Pure MPI",\
+     66182./x lt 2 lc 1 ti "Ideal Scaling", \
+     'omp12.txt' using 1:3 w lp lt 1 lc 3 lw 1 pt 9 title "Hybrid MPI+OpenMP; 12 Threads", \
+     130118./x lt 2 lc 3 ti "Ideal Scaling"
