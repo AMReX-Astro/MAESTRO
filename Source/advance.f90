@@ -16,6 +16,7 @@ module advance_timestep_module
   use parallel           , only: parallel_IOProcessor, parallel_IOProcessorNode, &
                                  parallel_wtime, parallel_reduce, parallel_barrier, &
                                  MPI_MAX
+  use particle_module
 
   implicit none
 
@@ -32,7 +33,7 @@ contains
                               div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,dt,dtold,the_bc_tower, &
                               dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
-                              psi,sponge,hgrhs,tempbar_init)
+                              psi,sponge,hgrhs,tempbar_init,particles)
 
     use bl_prof_module              , only : bl_prof_timer, build, destroy
     use      pre_advance_module     , only : advance_premac
@@ -73,8 +74,10 @@ contains
     use probin_module               , only : barrier_timers, evolve_base_state, fix_base_state, &
                                              use_etarho, dpdt_factor, verbose, &
                                              use_tfromp, use_thermal_diffusion, &
-                                             use_delta_gamma1_term, nodal, mach_max_abort
+                                             use_delta_gamma1_term, nodal, mach_max_abort, &
+                                             prob_lo, prob_hi
     use time_module                 , only : time
+    use addw0_module                , only : addw0
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -112,6 +115,7 @@ contains
     real(dp_t)    ,  intent(inout) ::        psi(:,0:)
     type(multifab),  intent(in   ) :: sponge(:)
     type(multifab),  intent(inout) ::  hgrhs(:)
+    type(particle_container), intent(inout) :: particles
 
     ! local
     type(multifab) ::             rhohalf(mla%nlevel)
@@ -942,6 +946,21 @@ contains
        call cell_to_edge(div_coeff_nph,div_coeff_edge)
        call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,macrhs, &
                        div_coeff_1d=div_coeff_nph,div_coeff_1d_edge=div_coeff_edge)
+    end if
+
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !! advect the particles through dt using umac.  Then redistribute
+    !! them
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (.not. init_mode) then
+
+       call addw0(umac,the_bc_tower%bc_tower_array,mla,w0,w0mac,mult=1.d0)
+
+       call move_advect(particles,mla,umac,dx,dt,prob_lo,prob_hi)
+
+       call addw0(umac,the_bc_tower%bc_tower_array,mla,w0,w0mac,mult=-1.d0)
+
     end if
 
     do n=1,nlevs

@@ -30,6 +30,7 @@ f90sources += hgproject.f90
 f90sources += hg_multigrid.f90
 f90sources += initscaldata.f90
 f90sources += initveldata.f90
+f90sources += init_particles.f90
 f90sources += init_perturb.f90
 f90sources += initial_proj.f90
 f90sources += initialize.f90
