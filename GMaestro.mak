@@ -9,7 +9,8 @@ MAESTRO_CORE := boxlib \
                 mg \
                 extern/constants \
 		extern/model_parser \
-                extern/LAPACK
+                extern/LAPACK \
+                extern/random
 
 # a unit test tests only a single component of the MAESTRO algorithm,
 # so we don't, in general, want to build all of the source in the
@@ -19,6 +20,9 @@ ifndef UNIT_TEST
        MAESTRO_CORE += MAESTRO/Source
 endif
 
+
+# compile in support for particles
+PARTICLES := t
 
 # The directories listed in Fmdirs should contain a GPackage.mak,
 # which specifies to the MAESTRO build system the list of files
