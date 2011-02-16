@@ -32,7 +32,7 @@ contains
                         do_eos_diag, &
                         conductivity)
 
-    use eos_module
+!    use eos_module
 
     implicit none
 
@@ -53,16 +53,16 @@ contains
     double precision xmass_temp(nspecies)
 
     ! first things first, call the eos
-    call eos(input, dens, temp, &
-             npoints, &
-             xmass, &
-             pres, enthalpy, eint, &
-             c_v, c_p, ne, eta, pele, &
-             dPdT, dPdR, dEdT, dEdR, &
-             dPdX, dhdX, &
-             gam1, cs, entropy, &
-             dsdT, dsdR, &
-             do_eos_diag)
+!     call eos(input, dens, temp, &
+!              npoints, &
+!              xmass, &
+!              pres, enthalpy, eint, &
+!              c_v, c_p, ne, eta, pele, &
+!              dPdT, dPdR, dEdT, dEdR, &
+!              dPdX, dhdX, &
+!              gam1, cs, entropy, &
+!              dsdT, dsdR, &
+!              do_eos_diag)
 
     ! fill the conductivity
     conductivity(1) = conductivity_constant
