@@ -252,6 +252,7 @@ subroutine varden()
      allocate(   etarho_cc_temp(1,0:nr_fine-1))
      allocate(        rho0_temp(1,0:nr_fine-1))
      allocate(   etarho_ec_temp(1,0:nr_fine))
+     allocate(          w0_temp(1,0:nr_fine))
      allocate(tempbar_init_temp(1,0:nr_fine-1))
   end if
 
