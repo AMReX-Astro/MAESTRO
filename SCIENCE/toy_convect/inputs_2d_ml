@@ -1,9 +1,9 @@
 &PROBIN
- model_file = "toy_nova_constg.hse.512"
+ model_file = "toy_nova_constg.hse.1024"
 
  spherical_in = 0
 
- max_levs = 3
+ max_levs = 4
  n_cellx = 64
  n_celly = 128
 
@@ -72,5 +72,11 @@
  velpert_scale = 1.d6
  velpert_amplitude = 1.d3
  num_vortices = 6
+ 
+ evolve_base_state = T
+
+ 
+ particle_temp_threshold = 4.e7
+ particle_probability = 0.01
 
 /

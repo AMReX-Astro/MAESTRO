@@ -1,5 +1,5 @@
-NDEBUG := t
-MPI    := t
+NDEBUG := 
+MPI    := 
 OMP    :=
 
 COMP := gfortran
