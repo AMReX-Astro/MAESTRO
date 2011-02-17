@@ -20,8 +20,8 @@ contains
                         temp_pert, trac_pert)
 
     use mt19937_module
-    use probin_module, only: octant, &
-         velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
+    use probin_module, only: velpert_amplitude, velpert_radius, &
+         velpert_steep, velpert_scale
     use geometry, only: center
 
     real(kind=dp_t), intent(in ) :: x, y
@@ -230,6 +230,8 @@ contains
                              rhoX_pert, temp_pert, trac_pert)
 
     use geometry, only: center
+    use probin_module, only: velpert_amplitude, velpert_radius, &
+         velpert_steep, velpert_scale
     use mt19937_module
     
     real(kind=dp_t), intent(in ) :: x, y, z
