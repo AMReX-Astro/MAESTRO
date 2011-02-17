@@ -1,5 +1,5 @@
-NDEBUG := t  
-MPI    := t
+NDEBUG :=   
+MPI    := 
 OMP    :=
 
 COMP := gfortran
@@ -15,7 +15,7 @@ include $(FPARALLEL)/mk/GMakedefs.mak
 # define the physics packages to build this problem
 EOS_DIR := extern/EOS/helmeos 
 CONDUCTIVITY_DIR := extern/conductivity/constant
-NETWORK_DIR := extern/networks/H_core_null 
+NETWORK_DIR := extern/networks/H_core_anelastic
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
