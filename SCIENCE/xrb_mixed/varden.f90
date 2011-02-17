@@ -25,6 +25,7 @@ subroutine varden()
   use conductivity_module
   use divu_iter_module
   use initial_proj_module
+  use init_particles_module
   use make_gamma_module
   use enforce_HSE_module
   use rhoh_vs_t_module
@@ -36,6 +37,7 @@ subroutine varden()
   use omp_module
   use check_cutoff_module, only: check_cutoff_values
   use time_module, only: time
+  use particle_module
 
   implicit none
 
@@ -81,6 +83,10 @@ subroutine varden()
   character(len=6)               :: plot_index6, check_index6
   character(len=256)             :: plot_file_name, check_file_name
   character(len=20), allocatable :: plot_names(:)
+  
+  integer :: npartdata
+  integer, allocatable :: index_partdata(:)
+  character(len=16), allocatable :: names_partdata(:)
 
   real(dp_t), parameter :: SMALL = 1.d-13
   real(dp_t)            :: runtime1, runtime2
@@ -115,6 +121,8 @@ subroutine varden()
 
   logical :: dump_plotfile, dump_checkpoint
 
+  type(particle_container) :: particles
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialization
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -138,6 +146,26 @@ subroutine varden()
   allocate(plot_names(n_plot_comps))
   call get_plot_names(plot_names)
 
+  ! particle initialization
+  call particle_setverbose(.true.)
+
+  ! collect indices into the s multifab and their variable names for the 
+  ! data we want to store with each particle
+  npartdata = 2 + nspec
+  allocate(index_partdata(npartdata))
+  allocate(names_partdata(npartdata))
+
+  index_partdata(1) = rho_comp
+  names_partdata(1) = "density"
+  
+  index_partdata(2) = temp_comp
+  names_partdata(2) = "temperature"
+  
+  do n = 1, nspec
+     index_partdata(2+n) = spec_comp -1 + n
+     names_partdata(2+n) = spec_names(n)
+  enddo
+
   if (restart >= 0) then
 
      call initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi,pi, &
@@ -147,9 +175,20 @@ subroutine varden()
                                   s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                   p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
                                   tempbar,tempbar_init,grav_cell)
-     
 
+     if (restart <= 99999) then
+        write(unit=check_index,fmt='(i5.5)') restart
+        check_file_name = trim(check_base_name) // check_index
+     else
+        write(unit=check_index6,fmt='(i6.6)') restart
+        check_file_name = trim(check_base_name) // check_index6
+     endif
+
+     call particle_container_restart(particles,check_file_name,mla,dx,prob_lo)
+     
   else if (test_set /= '') then
+     
+     call build(particles)
 
      call initialize_with_fixed_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                       Source_old,Source_new, &
@@ -161,6 +200,8 @@ subroutine varden()
                                       etarho_ec,etarho_cc,psi,tempbar,tempbar_init,grav_cell)
 
   else
+
+     call build(particles)
 
      call initialize_with_adaptive_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                          Source_old,Source_new, &
@@ -474,7 +515,7 @@ subroutine varden()
                                  rho_Hext,thermal2, &
                                  div_coeff_old,div_coeff_new,grav_cell,dx,dt,dtold, &
                                  the_bc_tower,dSdt,Source_old,Source_new,etarho_ec, &
-                                 etarho_cc,psi,sponge,hgrhs,tempbar_init)
+                                 etarho_cc,psi,sponge,hgrhs,tempbar_init,particles)
 
            runtime2 = parallel_wtime() - runtime1
            call parallel_reduce(runtime1, runtime2, MPI_MAX, proc=parallel_IOProcessorNode())
@@ -528,6 +569,8 @@ subroutine varden()
            call destroy(chkdata(n))
         end do
         deallocate(chkdata)
+
+        call particle_container_checkpoint(particles,check_file_name,mla)
      end if
 
      if ( plot_int > 0 .or. plot_deltat > ZERO) then
@@ -568,6 +611,10 @@ subroutine varden()
 
   if (restart < 0) then
      init_step = 1
+
+     ! initialize any passively-advected particles
+     call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar,&
+                         mla,dx)
   else
      init_step = restart+1
   end if
@@ -893,6 +940,9 @@ subroutine varden()
            ! div_coeff_old needs to be recomputed
            call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
 
+           ! redistribute the particles to their new processor locations
+           call redistribute(particles,mla,dx,prob_lo)
+
         end if ! end regridding
 
         !---------------------------------------------------------------------
@@ -975,7 +1025,8 @@ subroutine varden()
                               w0,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                               div_coeff_old,div_coeff_new, &
                               grav_cell,dx,dt,dtold,the_bc_tower,dSdt,Source_old, &
-                              Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init)
+                              Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init, &
+                              particles)
 
         if (nuclear_dt_fac .gt. 0.d0) then
            smaxold = 0.d0
@@ -1091,6 +1142,9 @@ subroutine varden()
         ! output
         !---------------------------------------------------------------------
 
+        ! output any particle information
+        call timestamp(particles, "timestamp", sold, index_partdata, names_partdata, time)
+
         ! if the file .dump_checkpoint exists in our output directory, then
         ! automatically dump a plotfile
         inquire(file=".dump_checkpoint", exist=dump_checkpoint)
@@ -1134,6 +1188,8 @@ subroutine varden()
                  call destroy(chkdata(n))
               end do
               deallocate(chkdata)
+
+              call particle_container_checkpoint(particles,check_file_name,mla)
 
            end if
         end if
@@ -1225,6 +1281,8 @@ subroutine varden()
            call destroy(chkdata(n))
         end do
         deallocate(chkdata)
+
+        call particle_container_checkpoint(particles,check_file_name,mla)
 
      end if
 
