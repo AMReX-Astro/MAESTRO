@@ -333,10 +333,12 @@ contains
        enddo
     enddo
     
+    r0 = sqrt( (x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2 ) 
+
     ! apply the cutoff function to the perturbational velocity
     ! with 2D hack y is like radius
     temp = velpert_amplitude * temp &
-           *(0.5d0+0.5d0*tanh((velpert_radius - y)/velpert_steep))
+           *(0.5d0+0.5d0*tanh((velpert_radius - r0)/velpert_steep))
 
     
     ! add perturbational velocity to background velocity
@@ -366,8 +368,6 @@ contains
     p_eos(1) = p0_init
     den_eos(1) = s0_init(rho_comp)
     xn_eos(1,:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
-
-    r0 = sqrt( (x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2 ) 
 
     call eos(r0, eos_input_tp, den_eos, temp_eos, &
              npts, &
