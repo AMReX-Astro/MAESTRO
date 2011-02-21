@@ -75,7 +75,7 @@ contains
                                              use_etarho, dpdt_factor, verbose, &
                                              use_tfromp, use_thermal_diffusion, &
                                              use_delta_gamma1_term, nodal, mach_max_abort, &
-                                             prob_lo, prob_hi
+                                             prob_lo, prob_hi, use_particles
     use time_module                 , only : time
     use addw0_module                , only : addw0
     
@@ -953,7 +953,7 @@ contains
     !! advect the particles through dt using umac.  Then redistribute
     !! them
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    if (.not. init_mode) then
+    if (.not. init_mode .and. use_particles) then
 
        call addw0(umac,the_bc_tower%bc_tower_array,mla,w0,w0mac,mult=1.d0)
 

@@ -448,4 +448,9 @@ drive_initial_convection            logical            .false.
 # time and timestep number are zeroed.
 restart_with_vel_field              logical            .false.
 
+# dump out a file, named grids.out, containing the number of grids a each level.  A new line is
+# added each time regrid is called.  
 dump_grid_file                      logical            .false.
+
+# call the particle initialization, advection, etc. routines.
+use_particles                       logical            .false.
