@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "alex_mixed_t5.7e8_0.75cm.hse"
+ model_file = "alex_mixed_t5.7e8_8cm.hse"
  spherical_in = 0
 
 ! do analytic heating only
@@ -19,11 +19,11 @@
  tag_minval = 1e15
 
  max_levs = 1
- n_cellx = 512
- n_celly = 3072
+ n_cellx = 64
+ n_celly = 256
 
 ! 4x16 = 64
- max_grid_size = 64
+ max_grid_size = 16
 
  ppm_type = 2
 
@@ -36,10 +36,10 @@
  use_eos_coulomb = T
 
  prob_lo_x = 0.0d0
- prob_lo_y = 6499.5d0
+ prob_lo_y = 6496.0d0
 
- prob_hi_x = 384.0d0
- prob_hi_y = 8803.5d0
+ prob_hi_x = 512.0d0
+ prob_hi_y = 8544.0d0
 
  grav_const = -2.45e14
 
