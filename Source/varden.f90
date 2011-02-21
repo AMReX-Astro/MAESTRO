@@ -610,7 +610,7 @@ subroutine varden()
 
      ! initialize any passively-advected particles
      call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar, &
-                         mla,dx)
+                         mla,dx,1)
   else
      init_step = restart+1
   end if

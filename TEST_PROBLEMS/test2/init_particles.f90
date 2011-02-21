@@ -13,7 +13,7 @@ module init_particles_module
 
 contains
 
-  subroutine init_particles(particles,s,rho0,rhoh0,p0,tempbar,mla,dx)
+  subroutine init_particles(particles,s,rho0,rhoh0,p0,tempbar,mla,dx,init_mode)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs_radial, nr_fine
@@ -28,6 +28,7 @@ contains
     real(kind=dp_t),          intent(in   ) :: tempbar(:,0:)
     type(ml_layout),          intent(inout) :: mla
     real(kind=dp_t),          intent(in   ) :: dx(:,:)
+    integer,                  intent(in   ) :: init_mode
 
     real(kind=dp_t), pointer::   sop(:,:,:,:)
     

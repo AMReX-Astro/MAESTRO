@@ -1,3 +1,8 @@
+! these routines are used to initialize and update the particles.
+!
+! init_mode = 1 means that we are doing the t = 0 initialization.
+! init_mode = 2 is called during the normal evolution
+
 module init_particles_module
   
   use bl_types
@@ -13,7 +18,7 @@ module init_particles_module
 
 contains
 
-  subroutine init_particles(particles,s,rho0,rhoh0,p0,tempbar,mla,dx)
+  subroutine init_particles(particles,s,rho0,rhoh0,p0,tempbar,mla,dx,init_mode)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs_radial, nr_fine
@@ -28,7 +33,8 @@ contains
     real(kind=dp_t),          intent(in   ) :: tempbar(:,0:)
     type(ml_layout),          intent(inout) :: mla
     real(kind=dp_t),          intent(in   ) :: dx(:,:)
-
+    integer        ,          intent(in   ) :: init_mode
+    
     real(kind=dp_t), pointer::   sop(:,:,:,:)
     
     integer :: lo(mla%dim),hi(mla%dim),i,n,comp,dm,nlevs
@@ -55,13 +61,17 @@ contains
           select case (dm)
           case (1)
              call init_particles_1d(n, sop(:,1,1,:), ng_s, &
-                                    rho0(n,:), rhoh0(n,:), p0(n,:), tempbar(n,:), lo, hi, &
-                                    particles, dx, mla)
+                                    rho0(n,:), rhoh0(n,:), &
+                                    p0(n,:), tempbar(n,:), lo, hi, &
+                                    particles, dx, mla, &
+                                    init_mode)
 
           case (2)
              call init_particles_2d(n, sop(:,:,1,:), ng_s, &
-                                    rho0(n,:), rhoh0(n,:), p0(n,:), tempbar(n,:), lo, hi, &
-                                    particles, dx, mla)
+                                    rho0(n,:), rhoh0(n,:), &
+                                    p0(n,:), tempbar(n,:), lo, hi, &
+                                    particles, dx, mla, &
+                                    init_mode)
 
           case (3)
              if (spherical .eq. 1) then
@@ -69,8 +79,10 @@ contains
 
              else
                 call init_particles_3d_cart(n, sop(:,:,:,:), ng_s, &
-                                            rho0(n,:), rhoh0(n,:), p0(n,:), tempbar(n,:), lo, hi, &
-                                            particles, dx, mla)
+                                            rho0(n,:), rhoh0(n,:), &
+                                            p0(n,:), tempbar(n,:), lo, hi, &
+                                            particles, dx, mla, &
+                                            init_mode)
              end if
           end select
 
@@ -83,8 +95,10 @@ contains
   end subroutine init_particles
 
   subroutine init_particles_1d(n, s, ng_s, &
-                               rho0, rhoh0, p0, tempbar, lo, hi, &
-                               particles, dx, mla)
+                               rho0, rhoh0, &
+                               p0, tempbar, lo, hi, &
+                               particles, dx, mla, &
+                               init_mode)
 
     use probin_module, only: prob_lo
     use variables, only: rho_comp
@@ -95,6 +109,7 @@ contains
     type(particle_container), intent(inout) :: particles
     type(ml_layout),          intent(inout) :: mla
     real(kind=dp_t),          intent(in   ) :: dx(:,:)    
+    integer,                  intent(in   ) :: init_mode
 
     ! local variables
     integer :: i
@@ -114,8 +129,10 @@ contains
   end subroutine init_particles_1d
   
   subroutine init_particles_2d(n, s, ng_s, &
-                               rho0, rhoh0, p0, tempbar, lo, hi, &
-                               particles, dx, mla)
+                               rho0, rhoh0, &
+                               p0, tempbar, lo, hi, &
+                               particles, dx, mla, &
+                               init_mode)
 
     use probin_module, only : prob_lo
     use variables, only: temp_comp
@@ -126,6 +143,7 @@ contains
     type(particle_container), intent(inout) :: particles
     type(ml_layout),          intent(inout) :: mla
     real(kind=dp_t),          intent(in   ) :: dx(:,:)    
+    integer,                  intent(in   ) :: init_mode
 
     ! local variables
     integer :: i, j
@@ -150,8 +168,10 @@ contains
   end subroutine init_particles_2d
   
   subroutine init_particles_3d_cart(n, s, ng_s, &
-                                    rho0, rhoh0, p0, tempbar, lo, hi, &
-                                    particles, dx, mla)
+                                    rho0, rhoh0, &
+                                    p0, tempbar, lo, hi, &
+                                    particles, dx, mla, &
+                                    init_mode)
 
     use probin_module, only: prob_lo
     use variables, only: rho_comp
@@ -162,6 +182,7 @@ contains
     type(particle_container), intent(inout) :: particles
     type(ml_layout),          intent(inout) :: mla
     real(kind=dp_t),          intent(in   ) :: dx(:,:)    
+    integer,                  intent(in   ) :: init_mode
 
     ! local variables
     integer :: i, j, k
