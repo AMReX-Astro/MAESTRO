@@ -252,10 +252,12 @@ contains
   end subroutine initscalardata_3d
 
   subroutine initscalardata_3d_sphr(s,lo,hi,ng,dx,s0_init,p0_init)
-
-    use probin_module, only: prob_lo, perturb_model
     use init_perturb_module
-    use geometry, only: center    
+    use geometry, only: center
+    use probin_module, only: prob_lo, perturb_model, velpert_amplitude, &
+         velpert_radius, velpert_steep, velpert_scale
+    use mt19937_module
+
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -269,6 +271,27 @@ contains
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
+
+    ! random numbers between -1 and 1
+    real(kind=dp_t) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
+
+    ! random numbers between 0 and 2*pi
+    real(kind=dp_t) :: phix(3,3,3), phiy(3,3,3), phiz(3,3,3)
+
+    ! L2 norm of k
+    real(kind=dp_t) :: normk(3,3,3)
+
+    ! random number
+    real(kind=dp_t) :: rand
+    
+    integer :: ii, jj, kk
+
+    ! cos and sin of (2*pi*kx/L + phix), etc
+    real(kind=dp_t) :: cx(3,3,3), cy(3,3,3), cz(3,3,3)
+    real(kind=dp_t) :: sx(3,3,3), sy(3,3,3), sz(3,3,3)
+
+    real(kind=dp_t) :: theta,phi
+
 
     ! initial the domain with the base state
     s = ZERO
@@ -338,29 +361,149 @@ contains
     enddo
 
     if (perturb_model) then
-
        ! add an optional perturbation
-       do k = lo(3), hi(3)
-          z = prob_lo(3) + (dble(k)+HALF) * dx(3)
+       if (.false.) then
 
-          do j = lo(2), hi(2)
-             y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+          do k = lo(3), hi(3)
+             z = prob_lo(3) + (dble(k)+HALF) * dx(3)
+             
+             do j = lo(2), hi(2)
+                y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+                
+                do i = lo(1), hi(1)
+                   x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+                   
+                   call perturb_3d_sphr(x, y, z, p0_cart(i,j,k,1), s(i,j,k,:), &
+                        dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
-             do i = lo(1), hi(1)
-                x = prob_lo(1) + (dble(i)+HALF) * dx(1)
-
-                call perturb_3d_sphr(x, y, z, p0_cart(i,j,k,1), s(i,j,k,:), &
-                                     dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
-
-                s(i,j,k,rho_comp) = dens_pert
-                s(i,j,k,rhoh_comp) = rhoh_pert
-                s(i,j,k,temp_comp) = temp_pert
-                s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
-                s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
+                   s(i,j,k,rho_comp) = dens_pert
+                   s(i,j,k,rhoh_comp) = rhoh_pert
+                   s(i,j,k,temp_comp) = temp_pert
+                   s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
+                   s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
+                enddo
              enddo
           enddo
-       enddo
+          
+       else
+          ! random temperature fluctuations          
 
+          ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
+          call init_genrand(20908)
+          do i=1,3
+             do j=1,3
+                do k=1,3
+                   rand = genrand_real1()
+                   rand = 2.0d0*rand - 1.0d0
+                   alpha(i,j,k) = rand
+                   rand = genrand_real1()
+                   rand = 2.0d0*rand - 1.0d0
+                   beta(i,j,k) = rand
+                   rand = genrand_real1()
+                   rand = 2.0d0*rand - 1.0d0
+                   gamma(i,j,k) = rand
+                   rand = genrand_real1()
+                   rand = 2.0d0*M_PI*rand
+                   phix(i,j,k) = rand
+                   rand = genrand_real1()
+                   rand = 2.0d0*M_PI*rand
+                   phiy(i,j,k) = rand
+                   rand = genrand_real1()
+                   rand = 2.0d0*M_PI*rand
+                   phiz(i,j,k) = rand
+                enddo
+             enddo
+          enddo
+
+          ! compute the norm of k
+          do i=1,3
+             do j=1,3
+                do k=1,3
+                   normk(i,j,k) = sqrt(dble(i)**2+dble(j)**2+dble(k)**2)
+                enddo
+             enddo
+          enddo
+          
+          do k = lo(3), hi(3)
+             z = prob_lo(3) + (dble(k)+HALF) * dx(3)
+             
+             do j = lo(2), hi(2)
+                y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+                
+                do i = lo(1), hi(1)
+                   x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+
+                   temp_pert = ZERO
+                   
+                   ! loop over the 27 combinations of fourier components
+                   do ii=1,3
+                      do jj=1,3
+                         do kk=1,3
+                            ! compute cosiines and siines
+                            cx(ii,jj,kk) = cos(2.0d0*M_PI*dble(ii)*x/velpert_scale + phix(ii,jj,kk))
+                            cy(ii,jj,kk) = cos(2.0d0*M_PI*dble(jj)*y/velpert_scale + phiy(ii,jj,kk))
+                            cz(ii,jj,kk) = cos(2.0d0*M_PI*dble(kk)*z/velpert_scale + phiz(ii,jj,kk))
+                            sx(ii,jj,kk) = sin(2.0d0*M_PI*dble(ii)*x/velpert_scale + phix(ii,jj,kk))
+                            sy(ii,jj,kk) = sin(2.0d0*M_PI*dble(jj)*y/velpert_scale + phiy(ii,jj,kk))
+                            sz(ii,jj,kk) = sin(2.0d0*M_PI*dble(kk)*z/velpert_scale + phiz(ii,jj,kk))
+                         enddo
+                      enddo
+                   enddo
+
+                   ! loop over the 27 combiinatiions of fouriier components
+                   do ii=1,3
+                      do jj=1,3
+                         do kk=1,3
+                            ! compute contriibutiion from perturbatiion velociity from each mode
+                            temp_pert = temp_pert + &
+                                 (alpha(ii,jj,kk)*dble(ii)*cy(ii,jj,kk)*cz(ii,jj,kk)*sx(ii,jj,kk) &
+                                 -gamma(ii,jj,kk)*dble(jj)*cx(ii,jj,kk)*cz(ii,jj,kk)*sy(ii,jj,kk) &
+                                 +beta(ii,jj,kk)*dble(kk)*cx(ii,jj,kk)*cy(ii,jj,kk)*sz(ii,jj,kk) ) &
+                                 / normk(ii,jj,kk)
+                         enddo
+                      enddo
+                   enddo
+                   
+                   r = sqrt( (x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2 ) 
+
+                   ! apply the cutoff function to the perturbational velocity
+                   ! with 2D hack y is like radius
+                   temp_pert = velpert_amplitude * temp_pert &
+                        *(0.5d0+0.5d0*tanh((velpert_radius - r)/velpert_steep))
+                   
+                   ! add perturbational velocity to background velocity
+                   temp_pert = temp_pert + s(i,j,k,temp_comp)
+
+                   ! use the EOS to make this temperature perturbation occur at
+                   ! constant  pressure
+                   temp_eos(1) = temp_pert
+                   p_eos(1) = p0_cart(i,j,k,1)
+                   den_eos(1) = s(i,j,k,rho_comp)
+                   xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / &
+                        s(i,j,k,rho_comp)
+                   
+                   call eos(r, eos_input_tp, den_eos, temp_eos, &
+                        npts, &
+                        xn_eos, &
+                        p_eos, h_eos, e_eos, &
+                        cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                        dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                        dpdX_eos, dhdX_eos, &
+                        gam1_eos, cs_eos, s_eos, &
+                        dsdt_eos, dsdr_eos, &
+                        .false.)
+                   
+                   s(i,j,k,rho_comp) = den_eos(1)
+                   s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+                   s(i,j,k,temp_comp) = temp_pert
+                   s(i,j,k,spec_comp:spec_comp+nspec-1) = dens_pert*xn_eos(1,:)
+                   s(i,j,k,trac_comp:trac_comp+ntrac-1) = ZERO
+
+                enddo
+             enddo
+          enddo
+
+       endif
     end if
 
     deallocate(p0_cart)

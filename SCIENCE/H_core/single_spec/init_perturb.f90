@@ -228,11 +228,7 @@ contains
 
   subroutine perturb_3d_sphr(x, y, z, p0_init, s0_init, dens_pert, rhoh_pert, &
                              rhoX_pert, temp_pert, trac_pert)
-
-    use geometry, only: center
-    use probin_module, only: velpert_amplitude, velpert_radius, &
-         velpert_steep, velpert_scale
-    use mt19937_module
+    use geometry, only: center    
     
     real(kind=dp_t), intent(in ) :: x, y, z
     real(kind=dp_t), intent(in ) :: p0_init, s0_init(:)
@@ -243,124 +239,23 @@ contains
     real(kind=dp_t) :: rho, temp
     real(kind=dp_t) :: x0, y0, z0, r0
 
-    ! random numbers between -1 and 1
-    real(kind=dp_t) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
-
-    ! random numbers between 0 and 2*pi
-    real(kind=dp_t) :: phix(3,3,3), phiy(3,3,3), phiz(3,3,3)
-
-    ! L2 norm of k
-    real(kind=dp_t) :: normk(3,3,3)
-
-    ! random number
-    real(kind=dp_t) :: rand
-    
-    ! Local variables
-    integer :: i, j, k
-
-    ! cos and sin of (2*pi*kx/L + phix), etc
-    real(kind=dp_t) :: cx(3,3,3), cy(3,3,3), cz(3,3,3)
-    real(kind=dp_t) :: sx(3,3,3), sy(3,3,3), sz(3,3,3)
-
-    real(kind=dp_t) :: theta,phi
-
-
-    ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
-    call init_genrand(20908)
-    do i=1,3
-       do j=1,3
-          do k=1,3
-             rand = genrand_real1()
-             rand = 2.0d0*rand - 1.0d0
-             alpha(i,j,k) = rand
-             rand = genrand_real1()
-             rand = 2.0d0*rand - 1.0d0
-             beta(i,j,k) = rand
-             rand = genrand_real1()
-             rand = 2.0d0*rand - 1.0d0
-             gamma(i,j,k) = rand
-             rand = genrand_real1()
-             rand = 2.0d0*M_PI*rand
-             phix(i,j,k) = rand
-             rand = genrand_real1()
-             rand = 2.0d0*M_PI*rand
-             phiy(i,j,k) = rand
-             rand = genrand_real1()
-             rand = 2.0d0*M_PI*rand
-             phiz(i,j,k) = rand
-          enddo
-       enddo
-    enddo
-
-    ! compute the norm of k
-    do i=1,3
-       do j=1,3
-          do k=1,3
-             normk(i,j,k) = sqrt(dble(i)**2+dble(j)**2+dble(k)**2)
-          enddo
-       enddo
-    enddo
-
-
-! random temperature fluctuations
-    temp = ZERO
-
-    ! loop over the 27 combinations of fourier components
-    do i=1,3
-       do j=1,3
-          do k=1,3
-             ! compute cosines and sines
-             cx(i,j,k) = cos(2.0d0*M_PI*dble(i)*x/velpert_scale + phix(i,j,k))
-             cy(i,j,k) = cos(2.0d0*M_PI*dble(j)*y/velpert_scale + phiy(i,j,k))
-             cz(i,j,k) = cos(2.0d0*M_PI*dble(k)*z/velpert_scale + phiz(i,j,k))
-             sx(i,j,k) = sin(2.0d0*M_PI*dble(i)*x/velpert_scale + phix(i,j,k))
-             sy(i,j,k) = sin(2.0d0*M_PI*dble(j)*y/velpert_scale + phiy(i,j,k))
-             sz(i,j,k) = sin(2.0d0*M_PI*dble(k)*z/velpert_scale + phiz(i,j,k))
-          enddo
-       enddo
-    enddo
-
-    ! loop over the 27 combinations of fourier components
-    do i=1,3
-       do j=1,3
-          do k=1,3
-             ! compute contribution from perturbation velocity from each mode
-             temp = temp + &
-                    (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
-                     +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
-                    / normk(i,j,k)
-          enddo
-       enddo
-    enddo
-    
-    r0 = sqrt( (x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2 ) 
-
-    ! apply the cutoff function to the perturbational velocity
-    ! with 2D hack y is like radius
-    temp = velpert_amplitude * temp &
-           *(0.5d0+0.5d0*tanh((velpert_radius - r0)/velpert_steep))
-
-    
-    ! add perturbational velocity to background velocity
-    temp = temp + s0_init(temp_comp)
-
 
 ! tanh density perturbation
     rho = s0_init(rho_comp)
 
-!     temp = s0_init(temp_comp)
+    temp = s0_init(temp_comp)
 
-!     x0 = center(1) 
-!     y0 = center(2) + 1.04d10
-!     z0 = center(3) 
+    x0 = center(1) 
+    y0 = center(2) + 1.04d10
+    z0 = center(3) 
 
-!     ! Tanh bubbles
-!     r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) 
+    ! Tanh bubbles
+    r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) 
     
-!     ! This case works
-!     ! temp = t0 * (ONE + TWO*(.150_dp_t * 0.5_dp_t * & 
-! !                             (1.0_dp_t + tanh((2.0_dp_t-r0)))))
-!     temp = temp - 3.d-6 * tanh(2.0_dp_t - r0/1.15d10)
+    ! This case works
+    ! temp = t0 * (ONE + TWO*(.150_dp_t * 0.5_dp_t * & 
+!                             (1.0_dp_t + tanh((2.0_dp_t-r0)))))
+    temp = temp - 3.d-6 * tanh(2.0_dp_t - r0/1.15d10)
 
     ! use the EOS to make this temperature perturbation occur at constant 
     ! pressure
