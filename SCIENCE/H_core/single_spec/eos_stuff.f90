@@ -326,7 +326,6 @@ contains
 ! npoints = 1 as set at top of module
     call interpolate(radius, abar(1), zbar(1))
 
-
     if (input .EQ. eos_input_rt) then
 
 !---------------------------------------------------------------------------
@@ -1443,28 +1442,34 @@ contains
       
       subroutine interpolate(r, a, z)
         use model_parser_module, only: meanA, meanZ
-        use geometry, only: dr_fine, nr_fine, r_cc_loc
-  
+        use geometry, only: dr_fine, nr_fine, r_cc_loc, spherical
+        use probin_module, only: max_levs
+
         real(kind=dp_t), intent(in   ) :: r
         real(kind=dp_t), intent(inout) :: a, z
         
         !local
-        integer :: index
-        real(kind=dp_t) :: rfac
+        integer :: index,n
+!        real(kind=dp_t) :: rfac
    
         index  = int(r / dr_fine)
 
-        rfac = (radius - dble(index)*dr_fine) / dr_fine
+!        rfac = (radius - dble(index)*dr_fine) / dr_fine
 
-        if (r .ge. r_cc_loc(1,index)) then
+        ! FIXME: need to think about this more in the event of restart
+        if (spherical .eq. 1) then; n = 1
+        else; n = max_levs
+        endif
+
+        if (r .ge. r_cc_loc(n,index)) then
            if (index .ge. nr_fine-1) then
               a = meanA(nr_fine-1)
               z = meanZ(nr_fine-1)
            else
-              a = meanA(index+1)*(r-r_cc_loc(1,index))/dr_fine &
-                   + meanA(index)*(r_cc_loc(1,index+1)-r)/dr_fine
-              z = meanZ(index+1)*(r-r_cc_loc(1,index))/dr_fine &
-                   + meanZ(index)*(r_cc_loc(1,index+1)-r)/dr_fine
+              a = meanA(index+1)*(r-r_cc_loc(n,index))/dr_fine &
+                   + meanA(index)*(r_cc_loc(n,index+1)-r)/dr_fine
+              z = meanZ(index+1)*(r-r_cc_loc(n,index))/dr_fine &
+                   + meanZ(index)*(r_cc_loc(n,index+1)-r)/dr_fine
            endif
         else
            if (index .eq. 0) then
@@ -1474,10 +1479,10 @@ contains
               a = meanA(nr_fine-1)
               z = meanZ(nr_fine-1)
            else
-              a = meanA(index)*(r-r_cc_loc(1,index-1))/dr_fine &
-                   + meanA(index-1)*(r_cc_loc(1,index)-radius)/dr_fine
-              z = meanZ(index)*(r-r_cc_loc(1,index-1))/dr_fine &
-                   + meanZ(index-1)*(r_cc_loc(1,index)-radius)/dr_fine
+              a = meanA(index)*(r-r_cc_loc(n,index-1))/dr_fine &
+                   + meanA(index-1)*(r_cc_loc(n,index)-radius)/dr_fine
+              z = meanZ(index)*(r-r_cc_loc(n,index-1))/dr_fine &
+                   + meanZ(index-1)*(r_cc_loc(n,index)-radius)/dr_fine
            end if
         end if
                    
