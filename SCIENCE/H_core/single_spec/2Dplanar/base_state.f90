@@ -222,9 +222,10 @@ contains
 
     mencl = zero
     
-    if (spherical .eq. 1) then
+! FIXME! HACK to use spherical grav in 2D planar configuration
+!    if (spherical .eq. 1) then
        mencl = four3rd*m_pi*dr(n)**3*s0_init(0,rho_comp)
-    endif
+!    endif
 
     max_hse_error = -1.d30
 
@@ -254,7 +255,7 @@ contains
 
           max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(rhog))
 
-          write(*,*)r, dpdr, rhog, abs(dpdr - rhog)/abs(rhog)
+!          write(*,*)r, dpdr, rhog, abs(dpdr - rhog)/abs(rhog)
 
        end if
 
