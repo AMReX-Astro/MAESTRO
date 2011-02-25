@@ -10,11 +10,6 @@ import pylab
 #-----------------------------------------------------------------------------
 def main(files):
 
-    # domain information
-    xcenter = 0.5
-    ycenter = 0.5
-
-
     # this returns a dict whose keys are a unique identifier (based on 
     # id and CPU) and values are the actual particle objects
     particlesDict = parseparticles.parseParticleFile(files)
