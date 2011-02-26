@@ -475,13 +475,18 @@ contains
                    temp_pert = temp_pert + s(i,j,k,temp_comp)
 
                    ! use the EOS to make this temperature perturbation occur at
-                   ! constant  pressure
+                   ! constant  pressure -- this adjusts the base state density (rho0)
+                   ! In calling function will make sure HSE and EOS are satisfied by: 
+                   !   1. set rho0 to the the average of the 3D state s(rho_comp)
+                   !   2. adjust p0 so that HSE is satisfied (dp0/dr = g0*rho0)
+                   !   3. use 3D rho and p to recompute 3D T, h via the EOS
+                   !   4. set T0 to the average of the 3D T, h0 to average of 3D h
                    temp_eos(1) = temp_pert
                    p_eos(1) = p0_cart(i,j,k,1)
                    den_eos(1) = s(i,j,k,rho_comp)
                    xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / &
                         s(i,j,k,rho_comp)
-                   
+
                    call eos(r, eos_input_tp, den_eos, temp_eos, &
                         npts, &
                         xn_eos, &
@@ -496,7 +501,7 @@ contains
                    s(i,j,k,rho_comp) = den_eos(1)
                    s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
                    s(i,j,k,temp_comp) = temp_pert
-                   s(i,j,k,spec_comp:spec_comp+nspec-1) = dens_pert*xn_eos(1,:)
+                   s(i,j,k,spec_comp:spec_comp+nspec-1) = den_eos(1)*xn_eos(1,:)
                    s(i,j,k,trac_comp:trac_comp+ntrac-1) = ZERO
 
                 enddo
