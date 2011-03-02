@@ -1,4 +1,4 @@
-#PBS -A ast706
+#PBS -A ast006
 #PBS -N xrb
 #PBS -j oe
 #PBS -q debug
