@@ -1,13 +1,13 @@
 #!/bin/ksh
-#PBS -A ast706
+#PBS -A ast006
 #PBS -N wdconvect
 #PBS -j oe
 #PBS -q batch
-#PBS -l walltime=12:00:00,size=10368
+#PBS -l walltime=12:00:00,size=20736
 
 export PSC_OMP_AFFINITY=FALSE
 
-export OMP_NUM_THREADS=6
+export OMP_NUM_THREADS=12
 
 cd $PBS_O_WORKDIR
 
@@ -58,7 +58,7 @@ else
     restartString="--restart ${restartNum}"
 fi
 
-aprun -n 1728 -S 1 -d 6 ./main.Linux.PathScale.mpi.omp.exe inputs_3d.576.5dr.eq.dx ${restartString}
+aprun -n 1728 -d 12 ./main.Linux.PathScale.mpi.omp.exe inputs_3d.576.5dr.eq.dx ${restartString}
 
 
 rm -f process.pid
