@@ -1075,11 +1075,6 @@ contains
        call bl_error("ERROR: geometry not spherical in diag")
     endif
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,cell_valid,velr,vel) &
-    !$OMP SHARED(T_max,enuc_max,coord_Tmax,vel_Tmax,coord_enucmax,vel_enucmax) &
-    !$OMP REDUCTION(max:vr_max,U_max,Mach_max) &
-    !$OMP REDUCTION(+:ncenter,T_center,velx_center,vely_center,velz_center,vr_x,vr_y,vr_z) &
-    !$OMP REDUCTION(+:rhovr_x,rhovr_y,rhovr_z,mass,nzones,kin_ener,int_ener,nuc_ener)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
@@ -1146,42 +1141,26 @@ contains
                 !
                 ! max T, location, and velocity at that location (including w0)
                 !
-                !$OMP FLUSH(T_max)
-                !
                 if ( s(i,j,k,temp_comp) > T_max ) then
-                   !
-                   !$OMP CRITICAL (diagnostics_T_max)
-                   !
-                   if ( s(i,j,k,temp_comp) > T_max ) then
-                      T_max         = s(i,j,k,temp_comp)
-                      coord_Tmax(1) = x
-                      coord_Tmax(2) = y
-                      coord_Tmax(3) = z
-                      vel_Tmax(1)   = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
-                      vel_Tmax(2)   = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
-                      vel_Tmax(3)   = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
-                   endif
-                   !$OMP END CRITICAL (diagnostics_T_max)
+                   T_max         = s(i,j,k,temp_comp)
+                   coord_Tmax(1) = x
+                   coord_Tmax(2) = y
+                   coord_Tmax(3) = z
+                   vel_Tmax(1)   = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
+                   vel_Tmax(2)   = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
+                   vel_Tmax(3)   = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
                 end if
                 !
                 ! max enuc
                 !
-                !$OMP FLUSH(enuc_max)
-                !
                 if ( rho_Hnuc(i,j,k)/s(i,j,k,rho_comp) > enuc_max ) then
-                   !
-                   !$OMP CRITICAL (diagnostics_enuc_max)
-                   !
-                   if ( rho_Hnuc(i,j,k)/s(i,j,k,rho_comp) > enuc_max ) then
-                      enuc_max         = rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
-                      coord_enucmax(1) = x
-                      coord_enucmax(2) = y
-                      coord_enucmax(3) = z
-                      vel_enucmax(1)   = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
-                      vel_enucmax(2)   = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
-                      vel_enucmax(3)   = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
-                   endif
-                   !$OMP END CRITICAL (diagnostics_enuc_max)
+                   enuc_max         = rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
+                   coord_enucmax(1) = x
+                   coord_enucmax(2) = y
+                   coord_enucmax(3) = z
+                   vel_enucmax(1)   = u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))
+                   vel_enucmax(2)   = u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))
+                   vel_enucmax(3)   = u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
                 end if
 
                 ! call the EOS to get the sound speed and internal energy
@@ -1215,7 +1194,6 @@ contains
           enddo
        enddo
     enddo
-    !$OMP END PARALLEL DO
 
   end subroutine diag_3d
 
