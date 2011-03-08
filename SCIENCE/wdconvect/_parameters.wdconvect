@@ -5,6 +5,6 @@ velpert_steep                       real               1.d0
 tag_density_1                       real               5.d7
 tag_density_2                       real               1.d8
 tag_density_3                       real               1.d8
-
+max_grid_size_3                     integer            64
 particle_temp_cutoff                real               6.e8
 particle_tpert_threshold            real               2.e7
