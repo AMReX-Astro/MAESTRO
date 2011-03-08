@@ -3,11 +3,16 @@
 #PBS -N wdconvect
 #PBS -j oe
 #PBS -q batch
-#PBS -l walltime=12:00:00,size=20736
+#PBS -l walltime=12:00:00,size=10368
 
 export PSC_OMP_AFFINITY=FALSE
+export OMP_NUM_THREADS=6
 
-export OMP_NUM_THREADS=12
+# These are needed for very large MAESTRO runs, such as
+# inputs_3d.2304.5dr.eq.dx_3levels with 6 threads
+#export MPICH_PTL_OTHER_EVENTS 16384
+#export MPICH_UNEX_BUFFER_SIZE 100000000
+#export MPICH_MAX_SHORT_MSG_SIZE 10000
 
 cd $PBS_O_WORKDIR
 
@@ -58,7 +63,7 @@ else
     restartString="--restart ${restartNum}"
 fi
 
-aprun -n 1728 -d 12 ./main.Linux.PathScale.mpi.omp.exe inputs_3d.576.5dr.eq.dx ${restartString}
+aprun -n 1728 -S 1 -d 6 ./main.Linux.PathScale.mpi.omp.exe inputs_3d.576.5dr.eq.dx ${restartString}
 
 
 rm -f process.pid
