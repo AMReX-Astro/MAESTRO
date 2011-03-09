@@ -4,6 +4,8 @@
 
  job_name = "2304^3 production run"
 
+ diag_buf_size = 5
+
  max_levs = 3
  n_cellx = 576
  n_celly = 576
@@ -39,7 +41,7 @@
  plot_deltat = 5.0d0
 
  check_base_name = "wd_2304_base_chk"
- chk_int   = 100
+ chk_int   = 50
 
  cflfac = 0.7d0
  init_shrink = 0.1d0
