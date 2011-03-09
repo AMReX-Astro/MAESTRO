@@ -339,6 +339,11 @@ bds_type                            integer            0
 # {\tt beta\_type} = 3 uses 1 (small-scale combustion).
 beta_type                           integer            1                   
 
+# how to represent gravity in the beta0 integration: 
+# .true. = piecewise linear
+# .false. = piecewise constant
+use_linear_grav_in_beta             logical            .false.
+
 # Total number of levels.  1 = single level.
 max_levs                            integer            1                   
 

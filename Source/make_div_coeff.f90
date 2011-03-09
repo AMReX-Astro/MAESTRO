@@ -21,7 +21,7 @@ contains
     use geometry, only: nr_fine, dr, anelastic_cutoff_coord, r_start_coord, r_end_coord, &
          nr, numdisjointchunks, nlevs_radial
     use restrict_base_module
-    use probin_module, only: beta_type
+    use probin_module, only: beta_type, use_linear_grav_in_beta
 
     real(kind=dp_t), intent(  out) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:), p0(:,0:), gamma1bar(:,0:)
@@ -31,10 +31,14 @@ contains
     integer :: r, n, i, refrat, j
     real(kind=dp_t) :: integral
     real(kind=dp_t) :: beta0_edge(nlevs_radial,0:nr_fine)
-    real(kind=dp_t) :: lambda, mu, nu
-    real(kind=dp_t) :: denom, coeff1, coeff2
+    real(kind=dp_t) :: lambda, mu, nu, kappa
+    real(kind=dp_t) :: denom, coeff1, coeff2, coeff3
     real(kind=dp_t) :: del,dpls,dmin,slim,sflag
     real(kind=dp_t) :: offset
+
+    ! FIXME debugging
+    real(kind=dp_t) :: dbdr, rho_cc
+
 
     div_coeff = 0.d0
 
@@ -121,16 +125,45 @@ contains
 
                 else 
 
-                   denom = nu*gamma1bar(n,r) - mu*p0(n,r)
-                   coeff1 = lambda*gamma1bar(n,r)/mu - rho0(n,r)
-                   coeff2 = lambda*p0(n,r)/nu - rho0(n,r)
+                   if ( use_linear_grav_in_beta ) then
 
-                   integral = (abs(grav_center(n,r))/denom)* &
-                        (coeff1*log( (gamma1bar(n,r) + HALF*mu*dr(n))/ &
-                        (gamma1bar(n,r) - HALF*mu*dr(n))) - &
-                        coeff2*log( (p0(n,r) + HALF*nu*dr(n))/ &
-                        (p0(n,r) - HALF*nu*dr(n))) )
+                      del   = HALF* (grav_center(n,r+1) - grav_center(n,r-1))/dr(n)
+                      dpls  = TWO * (grav_center(n,r+1) - grav_center(n,r  ))/dr(n)
+                      dmin  = TWO * (grav_center(n,r  ) - grav_center(n,r-1))/dr(n)
+                      slim  = min(abs(dpls), abs(dmin))
+                      slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
+                      sflag = sign(ONE,del)
+                      kappa = sflag*min(slim,abs(del))
 
+                      denom = nu*gamma1bar(n,r) - mu*p0(n,r) 
+                      coeff1 = (lambda*gamma1bar(n,r) - mu*rho0(n,r)) * &
+                           (kappa *gamma1bar(n,r) + mu*abs(grav_center(n,r))) / &
+                           (mu*mu*denom)
+                      coeff2 = (lambda*p0(n,r) - nu*rho0(n,r))* &
+                           (-kappa*p0(n,r) - nu*abs(grav_center(n,r))) / &
+                           (nu*nu*denom)
+                      coeff3 = kappa*lambda / (mu*nu)
+
+                      integral =  &
+                           coeff1*log( (gamma1bar(n,r) + HALF*mu*dr(n))/ &
+                                       (gamma1bar(n,r) - HALF*mu*dr(n)) ) + &
+                           coeff2*log( (p0(n,r) + HALF*nu*dr(n))/ &
+                                       (p0(n,r) - HALF*nu*dr(n)) ) - &
+                           coeff3*dr(n)
+
+                   else
+
+                      denom = nu*gamma1bar(n,r) - mu*p0(n,r)
+                      coeff1 = lambda*gamma1bar(n,r)/mu - rho0(n,r)
+                      coeff2 = lambda*p0(n,r)/nu - rho0(n,r)
+                      
+                      integral = (abs(grav_center(n,r))/denom)* &
+                           (coeff1*log( (gamma1bar(n,r) + HALF*mu*dr(n))/ &
+                                        (gamma1bar(n,r) - HALF*mu*dr(n))) - &
+                            coeff2*log( (p0(n,r) + HALF*nu*dr(n))/ &
+                                        (p0(n,r) - HALF*nu*dr(n))) )
+
+                   end if
                 endif
 
                 beta0_edge(n,r+1) = beta0_edge(n,r) * exp(-integral)

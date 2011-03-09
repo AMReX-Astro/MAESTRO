@@ -48,6 +48,7 @@ shown here.
 \verb=  bcz_lo  = &   $-z$ boundary condition  &  SLIP\_WALL \\
 \verb=  bds_type  = &   0 = use ppm instead for multi-d integrator \newline 1 = bilinear  &  0 \\
 \verb=  beta_type  = &   what type of coefficient to use inside the velocity divergence constraint. \newline {\tt beta\_type} = 1 uses $\beta_0$; \newline {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); \newline {\tt beta\_type} = 3 uses 1 (small-scale combustion).  &  1 \\
+\verb=  use_linear_grav_in_beta  = &   when integrating $\beta_0$, use a piecewise linear (.true.) representation of gravity or piecewise constant (.false.)  &  .false. \\
 \verb=  blocking_factor  = &   grids must be an integer multiple of this number, if possible  &  8 \\
 \verb=  buoyancy_cutoff_factor  = &   The multiplicative factor (over base\_cutoff\_density) below which we do zero out the buoyancy term in the momentum equation.  &  5.0 \\
 \verb=  burner_threshold_cutoff  = &   Mass fraction cutoff for burner\_threshold\_species  used in burner threshold  &  1.d-10 \\
