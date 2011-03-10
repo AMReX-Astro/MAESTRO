@@ -10,9 +10,9 @@ export OMP_NUM_THREADS=6
 
 # These are needed for very large MAESTRO runs, such as
 # inputs_3d.2304.5dr.eq.dx_3levels with 6 threads
-#export MPICH_PTL_OTHER_EVENTS 16384
-#export MPICH_UNEX_BUFFER_SIZE 100000000
-#export MPICH_MAX_SHORT_MSG_SIZE 10000
+#export MPICH_PTL_OTHER_EVENTS=16384
+#export MPICH_UNEX_BUFFER_SIZE=100000000
+#export MPICH_MAX_SHORT_MSG_SIZE=10000
 
 cd $PBS_O_WORKDIR
 
