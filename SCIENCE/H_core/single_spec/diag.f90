@@ -62,6 +62,8 @@ module diag_module
 
   integer, save :: nstored = 0
 
+  real (kind=dp_t), parameter :: r_core = 7.6d10
+
   public :: diag, flush_diag
 
 contains
@@ -1322,7 +1324,7 @@ contains
 !$omp end critical
 
              ! only include in vtot if inside the core
-             if ( dsqrt(x*x + y*y ) .le. 7.6e10 ) then
+             if ( dsqrt(x*x + y*y ) .le. r_core ) then
                 
                 vtot_x = vtot_x + weight*vx
                 vtot_y = vtot_y + weight*vy
@@ -1586,7 +1588,7 @@ contains
 
                 rloc = dsqrt(x*x + y*y + z*z)
                 ! only include in vtot if inside the core
-                if ( rloc .le. 8.15e10 ) then
+                if ( rloc .le. r_core ) then
 
                    vtot_x = vtot_x + weight*vx
                    vtot_y = vtot_y + weight*vy
