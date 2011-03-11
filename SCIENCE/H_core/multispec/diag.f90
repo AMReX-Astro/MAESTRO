@@ -3,7 +3,26 @@
 ! currently, there are 4 output files:
 !
 !
-!   hcore_sphrvel_diag.out:
+!   hcore_vel_diag.out:
+!          velocity components (std. average & Favre average)
+!          avgerage magnitude of velocity
+!          peak total velocity
+!          x/y/z location of peak vel 
+!              including only points R <= r_core
+!          velocity components (std. average & Favre average)
+!          avgerage magnitude of velocity
+!          peak total velocity
+!          x/y/z location of peak vel 
+!          peak Mach number
+!              including all points inside sponged region 
+!
+!   hcore_energy_diag.out:
+!          total luminosity (Integral(H_ext dV))
+!          total kinetic energy
+!          total internal energy
+!          gravitational potential energy
+!
+!   hcore_sphrvel_diag.out (for 3D only):
 !          radial velocity components (std. average & Favre average)
 !          avgerage magnitude of radial velocity
 !          peak radial velocity
@@ -13,27 +32,8 @@
 !          peak circumferential velocity
 !          total mass
 !
-!   hcore_energy_diag.out:
-!          total luminosity (Integral(H_ext dV))
-!          total kinetic energy
-!          total internal energy
-!          gravitational potential energy
-!
-!   hcore_cz_diag.out:          
+!   hcore_cz_diag.out (for 3D only):          
 !          radius of convective boundary 
-!
-!   hcore_vel_diag.out:
-!          velocity components (std. average & Favre average)
-!          avgerage magnitude of velocity
-!          peak total velocity
-!          x/y/z location of peak vel 
-!              including only points R <= 8.15d10
-!          velocity components (std. average & Favre average)
-!          avgerage magnitude of velocity
-!          peak total velocity
-!          x/y/z location of peak vel 
-!          peak Mach number
-!              including all points inside sponged region 
 !
 !
 ! We hold many timesteps-worth of diagnostic information in a buffer
@@ -55,12 +55,14 @@ module diag_module
   real(kind=dp_t), allocatable, save :: file1_data(:,:), file2_data(:,:), &
                                         file3_data(:,:), file4_data(:,:)
 
-  integer, parameter :: n_file1 = 20 
+  integer, parameter :: n_file1 = 28
   integer, parameter :: n_file2 = 5
-  integer, parameter :: n_file3 = 1
-  integer, parameter :: n_file4 = 28
+  integer, parameter :: n_file3 = 20 
+  integer, parameter :: n_file4 = 1
 
   integer, save :: nstored = 0
+
+  real (kind=dp_t), parameter :: r_core = 7.6d0
 
   public :: diag, flush_diag
 
@@ -223,15 +225,19 @@ contains
        allocate(time_data(diag_buf_size))
        allocate(file1_data(diag_buf_size, MAX_FIELDS_PER_FILE))
        allocate(file2_data(diag_buf_size, MAX_FIELDS_PER_FILE))
-       allocate(file3_data(diag_buf_size, MAX_FIELDS_PER_FILE))
-       allocate(file4_data(diag_buf_size, MAX_FIELDS_PER_FILE))
 
        nstored = 0
        time_data(:) = ZERO
        file1_data(:,:) = ZERO
        file2_data(:,:) = ZERO
-       file3_data(:,:) = ZERO
-       file4_data(:,:) = ZERO
+
+       if (dm .eq. 3) then
+          allocate(file3_data(diag_buf_size, MAX_FIELDS_PER_FILE))
+          allocate(file4_data(diag_buf_size, MAX_FIELDS_PER_FILE))
+          
+          file3_data(:,:) = ZERO
+          file4_data(:,:) = ZERO
+       end if
 
        firstCall = .false.
     endif
@@ -263,10 +269,6 @@ contains
        ! expansion velocity)
        call put_1d_array_on_cart(w0,w0r_cart,foextrap_comp,.true.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla)
-
-    else
-
-       call bl_error("ERROR: hcore/diag.f90: geometry not spherical")
 
     endif
 
@@ -407,19 +409,57 @@ contains
           rhnp => dataptr(rho_Hnuc(n), i)
           rhep => dataptr(rho_Hext(n), i)
           up => dataptr(u(n) , i)
-          nop => dataptr(normal(n) , i)
-          w0rp => dataptr(w0r_cart(n), i)
-          w0xp => dataptr(w0mac(n,1), i)
-          w0yp => dataptr(w0mac(n,2), i)
-          w0zp => dataptr(w0mac(n,3), i)
 
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
 
           select case (dm)
           case (2)
-             call bl_error("ERROR: 2-d diag not implmented")
+             if (n .eq. nlevs) then
+                call diag_2d(n,time,dt,dx(n,:), &
+                             sp(:,:,1,:),ng_s, &
+                             rhnp(:,:,1,1), ng_rhn, &
+                             rhep(:,:,1,1), ng_rhe, &
+                             up(:,:,1,:),ng_u, &
+                             w0(n,:), &
+                             lo,hi, &
+                             nzones_local, nzones_core_local, &
+                             vtot_local(1),vtot_local(2),vtot_local(3), &
+                             vtot_max_local, coord_vtot_local, &
+                             rhovtot_local(1), rhovtot_local(2), rhovtot_local(3), &
+                             Utot_local(1),Utot_local(2),Utot_local(3), &
+                             rhoUtot_local(1), rhoUtot_local(2), rhoUtot_local(3), &
+                             U_max_local, coord_Umax_local, & 
+                             mass_local, mass_core_local, &
+                             nuc_ener_local,kin_ener_local, int_ener_local, &
+                             Mach_max_local)
+             else
+                mp => dataptr(mla%mask(n), i)
+                call diag_2d(n,time,dt,dx(n,:), &
+                             sp(:,:,1,:),ng_s, &
+                             rhnp(:,:,1,1), ng_rhn, &
+                             rhep(:,:,1,1), ng_rhe, &
+                             up(:,:,1,:),ng_u, &
+                             w0(n,:), &
+                             lo,hi, &
+                             nzones_local, nzones_core_local, &
+                             vtot_local(1),vtot_local(2),vtot_local(3), &
+                             vtot_max_local, coord_vtot_local, &
+                             rhovtot_local(1), rhovtot_local(2), rhovtot_local(3), &
+                             Utot_local(1),Utot_local(2),Utot_local(3), &
+                             rhoUtot_local(1), rhoUtot_local(2), rhoUtot_local(3), &
+                             U_max_local, coord_Umax_local, & 
+                             mass_local, mass_core_local, &
+                             nuc_ener_local,kin_ener_local, int_ener_local, &
+                             Mach_max_local, mp(:,:,1,1))
+             end if
           case (3)
+             nop => dataptr(normal(n) , i)
+             w0rp => dataptr(w0r_cart(n), i)
+             w0xp => dataptr(w0mac(n,1), i)
+             w0yp => dataptr(w0mac(n,2), i)
+             w0zp => dataptr(w0mac(n,3), i)
+
              if (n .eq. nlevs) then
                 call diag_3d(n,time,dt,dx(n,:), &
                              sp(:,:,:,:),ng_s, &
@@ -500,58 +540,64 @@ contains
        ! communication
 
        ! start with the real quantities...
-       sum_data_local(1:dm+1)      = vr_local(:)
-       sum_data_local(dm+2:2*(dm+1)) = rhovr_local(:)
-       sum_data_local(2*(dm+1)+1:3*(dm+1)) = vc_local(:)
-       sum_data_local(3*(dm+1)+1:4*(dm+1)) = rhovc_local(:)
-       sum_data_local(4*(dm+1)+1:5*(dm+1)) = vtot_local(:)
-       sum_data_local(5*(dm+1)+1:6*(dm+1)) = rhovtot_local(:)
-       sum_data_local(6*(dm+1)+1:7*(dm+1)) = Utot_local(:)
-       sum_data_local(7*(dm+1)+1:8*(dm+1)) = rhoUtot_local(:)
-       sum_data_local(8*(dm+1)+1)    = mass_local
-       sum_data_local(8*(dm+1)+2)    = nzones_local
-       sum_data_local(8*(dm+1)+3)    = mass_core_local
-       sum_data_local(8*(dm+1)+4)    = nzones_core_local
-       sum_data_local(8*(dm+1)+5)    = nuc_ener_local
-       sum_data_local(8*(dm+1)+6)    = kin_ener_local
-       sum_data_local(8*(dm+1)+7)    = int_ener_local
-       sum_data_local(8*(dm+1)+8)    = vrvt_local
-
+       sum_data_local(         1:   dm+1 ) = vtot_local(:)
+       sum_data_local(      dm+2:2*(dm+1)) = rhovtot_local(:)
+       sum_data_local(2*(dm+1)+1:3*(dm+1)) = Utot_local(:)
+       sum_data_local(3*(dm+1)+1:4*(dm+1)) = rhoUtot_local(:)
+       sum_data_local(4*(dm+1)+1)    = mass_local
+       sum_data_local(4*(dm+1)+2)    = nzones_local
+       sum_data_local(4*(dm+1)+3)    = mass_core_local
+       sum_data_local(4*(dm+1)+4)    = nzones_core_local
+       sum_data_local(4*(dm+1)+5)    = nuc_ener_local
+       sum_data_local(4*(dm+1)+6)    = kin_ener_local
+       sum_data_local(4*(dm+1)+7)    = int_ener_local
+       if (dm .eq. 3) then
+          sum_data_local(4*(dm+1)+8)    = vrvt_local
+          sum_data_local(4*(dm+1)+9:5*(dm+1)+8) = vr_local(:)
+          sum_data_local(5*(dm+1)+9:6*(dm+1)+8) = rhovr_local(:)
+          sum_data_local(6*(dm+1)+9:7*(dm+1)+8) = vc_local(:)
+          sum_data_local(7*(dm+1)+9:8*(dm+1)+8) = rhovc_local(:)
+       endif
 
        call parallel_reduce(sum_data_level, sum_data_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
-       vr_level(:)         = sum_data_level(1:(dm+1))
-       rhovr_level(:)      = sum_data_level(  (dm+1)+1:2*(dm+1))
-       vc_level(:)         = sum_data_level(2*(dm+1)+1:3*(dm+1))
-       rhovc_level(:)      = sum_data_level(3*(dm+1)+1:4*(dm+1))
-       vtot_level(:)       = sum_data_level(4*(dm+1)+1:5*(dm+1))
-       rhovtot_level(:)    = sum_data_level(5*(dm+1)+1:6*(dm+1))
-       Utot_level(:)       = sum_data_level(6*(dm+1)+1:7*(dm+1))
-       rhoUtot_level(:)    = sum_data_level(7*(dm+1)+1:8*(dm+1))
-       mass_level          = sum_data_level(8*(dm+1)+1)
-       nzones_level        = sum_data_level(8*(dm+1)+2)
-       mass_core_level     = sum_data_level(8*(dm+1)+3)
-       nzones_core_level   = sum_data_level(8*(dm+1)+4)
-       nuc_ener_level      = sum_data_level(8*(dm+1)+5)
-       kin_ener_level      = sum_data_level(8*(dm+1)+6)
-       int_ener_level      = sum_data_level(8*(dm+1)+7)
-       vrvt_level          = sum_data_level(8*(dm+1)+8)
+       vtot_level(:)       = sum_data_level(         1:  (dm+1))
+       rhovtot_level(:)    = sum_data_level(  (dm+1)+1:2*(dm+1))
+       Utot_level(:)       = sum_data_level(2*(dm+1)+1:3*(dm+1))
+       rhoUtot_level(:)    = sum_data_level(3*(dm+1)+1:4*(dm+1))
+       mass_level          = sum_data_level(4*(dm+1)+1)
+       nzones_level        = sum_data_level(4*(dm+1)+2)
+       mass_core_level     = sum_data_level(4*(dm+1)+3)
+       nzones_core_level   = sum_data_level(4*(dm+1)+4)
+       nuc_ener_level      = sum_data_level(4*(dm+1)+5)
+       kin_ener_level      = sum_data_level(4*(dm+1)+6)
+       int_ener_level      = sum_data_level(4*(dm+1)+7)
+       if (dm .eq. 3) then
+          vrvt_level       = sum_data_level(4*(dm+1)+8)
+          vr_level(:)      = sum_data_level(4*(dm+1)+9:5*(dm+1)+8)
+          rhovr_level(:)   = sum_data_level(5*(dm+1)+9:6*(dm+1)+8)
+          vc_level(:)      = sum_data_level(6*(dm+1)+9:7*(dm+1)+8)
+          rhovc_level(:)   = sum_data_level(7*(dm+1)+9:8*(dm+1)+8)
+       endif
 
 
        ! pack the quantities that we are taking the max of into a vector
        ! to reduce communication
-       max_data_local(1) = vr_max_local
-       max_data_local(2) = vc_max_local
-       max_data_local(3) = Mach_max_local
+       max_data_local(1) = Mach_max_local
+       if( dm .eq. 3) then
+          max_data_local(2) = vr_max_local
+          max_data_local(3) = vc_max_local
+       endif
 
        call parallel_reduce(max_data_level, max_data_local, MPI_MAX, &
                             proc = parallel_IOProcessorNode())
 
-       vr_max_level   = max_data_level(1)
-       vc_max_level   = max_data_level(2)
-       Mach_max_level = max_data_level(3)
-
+       Mach_max_level = max_data_level(1)
+       if( dm .eq. 3) then
+          vr_max_level   = max_data_level(2)
+          vc_max_level   = max_data_level(3)
+       endif
 
        ! for U_max, we want to know where the spot is, so we do a
        ! gather on U and find the index corresponding to
@@ -573,7 +619,7 @@ contains
        allocate(U_max_coords(dm*parallel_nprocs()))
        U_max_coords_local(1) = coord_Umax_local(1)
        U_max_coords_local(2) = coord_Umax_local(2)
-       U_max_coords_local(3) = coord_Umax_local(3)
+       if ( dm .eq. 3) U_max_coords_local(3) = coord_Umax_local(3)
        
        call parallel_gather(U_max_coords_local, U_max_coords, dm, &
                             root = parallel_IOProcessorNode())
@@ -583,7 +629,7 @@ contains
 
        coord_Umax_level(1) = U_max_coords(dm*(index_max-1)+1)
        coord_Umax_level(2) = U_max_coords(dm*(index_max-1)+2)
-       coord_Umax_level(3) = U_max_coords(dm*(index_max-1)+3)
+       if (dm .eq. 3) coord_Umax_level(3) = U_max_coords(dm*(index_max-1)+3)
 
 
        deallocate(U_max_data)
@@ -609,7 +655,7 @@ contains
        allocate(vtot_coords(dm*parallel_nprocs()))
        vtot_coords_local(1) = coord_vtot_local(1)
        vtot_coords_local(2) = coord_vtot_local(2)
-       vtot_coords_local(3) = coord_vtot_local(3)
+       if (dm .eq. 3) vtot_coords_local(3) = coord_vtot_local(3)
        
        call parallel_gather(vtot_coords_local, vtot_coords, dm, &
                             root = parallel_IOProcessorNode())
@@ -619,7 +665,7 @@ contains
 
        coord_vtot_level(1) = vtot_coords(dm*(index_max-1)+1)
        coord_vtot_level(2) = vtot_coords(dm*(index_max-1)+2)
-       coord_vtot_level(3) = vtot_coords(dm*(index_max-1)+3)
+       if (dm .eq. 3) coord_vtot_level(3) = vtot_coords(dm*(index_max-1)+3)
 
 
        deallocate(vtot_data)
@@ -631,13 +677,6 @@ contains
        ! reduce the current level's data with the global data
        !----------------------------------------------------------------------
        if (parallel_IOProcessor()) then
-          vr       = vr     + vr_level
-          rhovr    = rhovr  + rhovr_level
-          vrvt     = vrvt     + vrvt_level
-
-          vc       = vc     + vc_level
-          rhovc    = rhovc  + rhovc_level
-
           vtot       = vtot     + vtot_level
           rhovtot    = rhovtot  + rhovtot_level
 
@@ -650,9 +689,18 @@ contains
           mass_core   = mass_core   + mass_core_level
           nzones_core = nzones_core + nzones_core_level
 
-          vr_max   = max(vr_max,   vr_max_level)
+          if (dm .eq. 3) then
+             vr       = vr     + vr_level
+             rhovr    = rhovr  + rhovr_level
+             vrvt     = vrvt     + vrvt_level
 
-          vc_max   = max(vc_max,   vc_max_level)
+             vc       = vc     + vc_level
+             rhovc    = rhovc  + rhovc_level
+
+             vr_max   = max(vr_max,   vr_max_level)
+
+             vc_max   = max(vc_max,   vc_max_level)
+          end if
 
           nuc_ener = nuc_ener + nuc_ener_level
           kin_ener = kin_ener + kin_ener_level
@@ -681,38 +729,42 @@ contains
     end do
 
 
-    !-------------------------------------------------------------------------
-    ! compute the location of convection zone boundary
-    !-------------------------------------------------------------------------
-    ! get X_H by itself
-    do n = 1, nlevs
-       call multifab_build(XH(n), mla%la(n), 1, s(n)%ng)
-       call multifab_copy_c(XH(n),1,s(n),spec_comp, 1,s(n)%ng)
-       call multifab_div_div_c(XH(n), 1, s(n), rho_comp, 1, s(n)%ng)
-    enddo
+    if (dm .eq. 3) then
+       !-------------------------------------------------------------------------
+       ! compute the location of convection zone boundary
+       !-------------------------------------------------------------------------
+       ! get X_H by itself
+       do n = 1, nlevs
+          call multifab_build(XH(n), mla%la(n), 1, s(n)%ng)
+          call multifab_copy_c(XH(n),1,s(n),spec_comp, 1,s(n)%ng)
+          call multifab_div_div_c(XH(n), 1, s(n), rho_comp, 1, s(n)%ng)
+       enddo
 
-    call average(mla,XH,XH_avg,dx,1)
+       call average(mla,XH,XH_avg,dx,1)
 
-    ! compute the radial gradient of X_H
-    do n = 1,nr_fine-2
-       grad_XH(n) = abs((XH_avg(1,n+1) - XH_avg(1,n-1))/(TWO*dr(1))) 
-    end do
+       ! compute the radial gradient of X_H
+       do n = 1,nr_fine-2
+          grad_XH(n) = abs((XH_avg(1,n+1) - XH_avg(1,n-1))/(TWO*dr(1))) 
+       end do
 
-    r_cz = ZERO
-    i_cz = -1
-    do n = 1,nr_fine-2
-       if ( grad_XH(n) > r_cz ) then
-          r_cz = grad_XH(n)
-          i_cz = n
-       end if
-    end do
-    r_cz = dr(1)*(dble(i_cz) + HALF)
+       r_cz = ZERO
+       i_cz = -1
+       do n = 1,nr_fine-2
+          if ( grad_XH(n) > r_cz ) then
+             r_cz = grad_XH(n)
+             i_cz = n
+          end if
+       end do
+       r_cz = dr(1)*(dble(i_cz) + HALF)
+    end if
 
     !-------------------------------------------------------------------------
     ! compute the gravitational potential energy too.
     !-------------------------------------------------------------------------
     allocate(m(0:nr_fine-1))
     grav_ener = ZERO
+
+! FIXME! would need to think about this for 2D multilevel
 
     ! m(r) will contain mass enclosed by the center
     m(0) = FOUR3RD*M_PI*rho0(1,0)*r_cc_loc(1,0)**3
@@ -756,7 +808,7 @@ contains
             FOUR*M_PI*Gconst*m(r)*r_cc_loc(1,r)*rho0(1,r)*dr(1)
 
     enddo
-
+    deallocate(m)
 
     
 
@@ -765,27 +817,36 @@ contains
     !=========================================================================
     if (parallel_IOProcessor()) then
 
-       vr(:) = vr(:)/nzones
-       vr_favre(:) = rhovr(:)/mass    ! note: common dV normalization cancels
-       vrvt = vrvt/nzones
-
-       vc(:) = vc(:)/nzones
-       vc_favre(:) = rhovc(:)/mass    ! note: common dV normalization cancels
-
        vtot(:) = vtot(:)/nzones_core
        vtot_favre(:) = rhovtot(:)/mass_core ! note: common dV normalization cancels
 
        Utot(:) = Utot(:)/nzones
        Utot_favre(:) = rhoUtot(:)/mass ! note: common dV normalization cancels
 
+! FIXME! should think about this for 2D 
        ! the volume we normalize with is that of a single coarse-level
        ! zone.  This is because the weight used in the loop over cells
        ! was with reference to the coarse level
-       mass_core = mass_core*dx(1,1)*dx(1,2)*dx(1,3)
-       mass = mass*dx(1,1)*dx(1,2)*dx(1,3)
-       nuc_ener = nuc_ener*dx(1,1)*dx(1,2)*dx(1,3)
-       kin_ener = kin_ener*dx(1,1)*dx(1,2)*dx(1,3)
-       int_ener = int_ener*dx(1,1)*dx(1,2)*dx(1,3)
+       mass_core = mass_core*dx(1,1)*dx(1,2)
+       mass      = mass     *dx(1,1)*dx(1,2)
+       nuc_ener  = nuc_ener *dx(1,1)*dx(1,2)
+       kin_ener  = kin_ener *dx(1,1)*dx(1,2)
+       int_ener  = int_ener *dx(1,1)*dx(1,2)
+
+       if ( dm .eq. 3) then
+          vr(:) = vr(:)/nzones
+          vr_favre(:) = rhovr(:)/mass    ! note: common dV normalization cancels
+          vrvt = vrvt/nzones
+          
+          vc(:) = vc(:)/nzones
+          vc_favre(:) = rhovc(:)/mass    ! note: common dV normalization cancels
+
+          mass_core = mass_core*dx(1,3)
+          mass      = mass     *dx(1,3)
+          nuc_ener  = nuc_ener *dx(1,3)
+          kin_ener  = kin_ener *dx(1,3)
+          int_ener  = int_ener *dx(1,3)
+       end if
 
     endif
 
@@ -805,74 +866,105 @@ contains
     ! the right information in the right order.
 
     if (parallel_IOProcessor()) then
-       ! file1 -- hcore_sphrvel_diag.out
-       file1_data(index, 1) = vr(1)
-       file1_data(index, 2) = vr(2)
-       file1_data(index, 3) = vr(3)
-       file1_data(index, 4) = vr(4)
-       file1_data(index, 5) = vr_max
-       file1_data(index, 6) = vrvt
-       file1_data(index, 7) = vr_favre(1)
-       file1_data(index, 8) = vr_favre(2)
-       file1_data(index, 9) = vr_favre(3)
-       file1_data(index, 10) = vr_favre(4)
-       file1_data(index, 11) = vc(1)
-       file1_data(index, 12) = vc(2)
-       file1_data(index, 13) = vc(3)
-       file1_data(index, 14) = vc(4)
-       file1_data(index, 15) = vc_max
-       file1_data(index, 16) = vc_favre(1)
-       file1_data(index, 17) = vc_favre(2)
-       file1_data(index, 18) = vc_favre(3)
-       file1_data(index, 19) = vc_favre(4)
-       file1_data(index, 20) = mass
+       if (dm .eq. 2) then
+          ! file1 -- hcore_vel_diag.out
+          file1_data(index, 1) = vtot(1)
+          file1_data(index, 2) = vtot(2)
+          file1_data(index, 3) = vtot(3)
+          file1_data(index, 4) = vtot_favre(1)
+          file1_data(index, 5) = vtot_favre(2)
+          file1_data(index, 6) = vtot_favre(3)
+          file1_data(index, 7) = vtot_max 
+          file1_data(index, 8) = coord_vtot(1)
+          file1_data(index, 9) = coord_vtot(2)
+          file1_data(index, 10) = Utot(1)
+          file1_data(index, 11) = Utot(2)
+          file1_data(index, 12) = Utot(3)
+          file1_data(index, 13) = Utot_favre(1)
+          file1_data(index, 14) = Utot_favre(2)
+          file1_data(index, 15) = Utot_favre(3)
+          file1_data(index, 16) = U_max
+          file1_data(index, 17) = coord_Umax(1)
+          file1_data(index, 18) = coord_Umax(2)
+          file1_data(index, 19) = Mach_max
+          file1_data(index, 20) = dt
+
+          ! file2 -- hcore_ener_diag.out
+          file2_data(index, 1) = nuc_ener
+          file2_data(index, 2) = kin_ener
+          file2_data(index, 3) = grav_ener
+          file2_data(index, 4) = int_ener
+          file2_data(index, 5) = dt
+
+       else 
+          ! file1 -- hcore_vel_diag.out
+          file1_data(index, 1) = vtot(1)
+          file1_data(index, 2) = vtot(2)
+          file1_data(index, 3) = vtot(3)
+          file1_data(index, 4) = vtot(4)
+          file1_data(index, 5) = vtot_favre(1)
+          file1_data(index, 6) = vtot_favre(2)
+          file1_data(index, 7) = vtot_favre(3)
+          file1_data(index, 8) = vtot_favre(4) 
+          file1_data(index, 9) = vtot_max 
+          file1_data(index, 10) = coord_vtot(1)
+          file1_data(index, 11) = coord_vtot(2)
+          file1_data(index, 12) = coord_vtot(3)
+          file1_data(index, 13) = sqrt( (coord_vtot(1) - center(1))**2 + &
+               (coord_vtot(2) - center(2))**2 + &
+               (coord_vtot(3) - center(3))**2 )
+          file1_data(index, 14) = Utot(1)
+          file1_data(index, 15) = Utot(2)
+          file1_data(index, 16) = Utot(3)
+          file1_data(index, 17) = Utot(4)
+          file1_data(index, 18) = Utot_favre(1)
+          file1_data(index, 19) = Utot_favre(2)
+          file1_data(index, 20) = Utot_favre(3)
+          file1_data(index, 21) = Utot_favre(4)  
+          file1_data(index, 22) = U_max
+          file1_data(index, 23) = coord_Umax(1)
+          file1_data(index, 24) = coord_Umax(2)
+          file1_data(index, 25) = coord_Umax(3)
+          file1_data(index, 26) = sqrt( (coord_Umax(1) - center(1))**2 + &
+               (coord_Umax(2) - center(2))**2 + &
+               (coord_Umax(3) - center(3))**2 )
+          file1_data(index, 27) = Mach_max
+          file1_data(index, 28) = dt
 
 
-       ! file2 -- hcore_ener_diag.out
-       file2_data(index, 1) = nuc_ener
-       file2_data(index, 2) = kin_ener
-       file2_data(index, 3) = grav_ener
-       file2_data(index, 4) = int_ener
-       file2_data(index, 5) = dt
+          ! file2 -- hcore_ener_diag.out
+          file2_data(index, 1) = nuc_ener
+          file2_data(index, 2) = kin_ener
+          file2_data(index, 3) = grav_ener
+          file2_data(index, 4) = int_ener
+          file2_data(index, 5) = dt
 
 
-       ! file3 -- hcore_cz_diag.out
-       file3_data(index, 1) = r_cz
+          ! file3 -- hcore_sphrvel_diag.out
+          file3_data(index, 1) = vr(1)
+          file3_data(index, 2) = vr(2)
+          file3_data(index, 3) = vr(3)
+          file3_data(index, 4) = vr(4)
+          file3_data(index, 5) = vr_max
+          file3_data(index, 6) = vrvt
+          file3_data(index, 7) = vr_favre(1)
+          file3_data(index, 8) = vr_favre(2)
+          file3_data(index, 9) = vr_favre(3)
+          file3_data(index, 10) = vr_favre(4)
+          file3_data(index, 11) = vc(1)
+          file3_data(index, 12) = vc(2)
+          file3_data(index, 13) = vc(3)
+          file3_data(index, 14) = vc(4)
+          file3_data(index, 15) = vc_max
+          file3_data(index, 16) = vc_favre(1)
+          file3_data(index, 17) = vc_favre(2)
+          file3_data(index, 18) = vc_favre(3)
+          file3_data(index, 19) = vc_favre(4)
+          file3_data(index, 20) = mass
 
-
-       ! file4 -- hcore_vel_diag.out
-       file4_data(index, 1) = vtot(1)
-       file4_data(index, 2) = vtot(2)
-       file4_data(index, 3) = vtot(3)
-       file4_data(index, 4) = vtot(4)
-       file4_data(index, 5) = vtot_favre(1)
-       file4_data(index, 6) = vtot_favre(2)
-       file4_data(index, 7) = vtot_favre(3)
-       file4_data(index, 8) = vtot_favre(4) 
-       file4_data(index, 9) = vtot_max 
-       file4_data(index, 10) = coord_vtot(1)
-       file4_data(index, 11) = coord_vtot(2)
-       file4_data(index, 12) = coord_vtot(3)
-       file4_data(index, 13) = sqrt( (coord_vtot(1) - center(1))**2 + &
-                                    (coord_vtot(2) - center(2))**2 + &
-                                    (coord_vtot(3) - center(3))**2 )
-       file4_data(index, 14) = Utot(1)
-       file4_data(index, 15) = Utot(2)
-       file4_data(index, 16) = Utot(3)
-       file4_data(index, 17) = Utot(4)
-       file4_data(index, 18) = Utot_favre(1)
-       file4_data(index, 19) = Utot_favre(2)
-       file4_data(index, 20) = Utot_favre(3)
-       file4_data(index, 21) = Utot_favre(4)  
-       file4_data(index, 22) = U_max
-       file4_data(index, 23) = coord_Umax(1)
-       file4_data(index, 24) = coord_Umax(2)
-       file4_data(index, 25) = coord_Umax(3)
-       file4_data(index, 26) = sqrt( (coord_Umax(1) - center(1))**2 + &
-                                    (coord_Umax(2) - center(2))**2 + &
-                                    (coord_Umax(3) - center(3))**2 )
-       file4_data(index, 27) = Mach_max
-       file4_data(index, 28) = dt
+          ! file4 -- hcore_cz_diag.out
+          file4_data(index, 1) = r_cz
+       end if
 
     end if
 
@@ -882,7 +974,7 @@ contains
 
     ! if we've filled the buffers, flush them
     if (index == diag_buf_size) then
-       call flush_diag()
+       call flush_diag(dm)
     endif
 
 
@@ -891,6 +983,7 @@ contains
     !=========================================================================
     if (spherical .eq. 1) then
        do n=1,nlevs
+          call destroy(XH(n))
           call destroy(w0r_cart(n))
           do comp=1,dm
              call destroy(w0mac(n,comp))
@@ -908,13 +1001,15 @@ contains
   ! flush_diag -- the output routine.  When this routine is called, it 
   ! outputs all the stored information in the buffers and resets them.
   !===========================================================================
-  subroutine flush_diag()
+  subroutine flush_diag(dm)
 
     use parallel
     use bl_constants_module, only: ZERO
     use bl_IO_module, only: unit_new
     use bl_system_module, only: BL_CWD_SIZE, get_cwd 
     use probin_module, only: job_name
+
+    integer, intent(in   ) :: dm
 
     integer :: un1,un2,un3,un4
     logical :: lexist
@@ -946,12 +1041,12 @@ contains
        ! open the diagnostic files for output, taking care not to overwrite
        ! an existing file
        un1 = unit_new()
-       inquire(file="hcore_sphrvel_diag.out", exist=lexist)
+       inquire(file="hcore_vel_diag.out", exist=lexist)
        if (lexist) then
-          open(unit=un1, file="hcore_sphrvel_diag.out", &
+          open(unit=un1, file="hcore_vel_diag.out", &
                status="old", position="append")
        else
-          open(unit=un1, file="hcore_sphrvel_diag.out", status="new")
+          open(unit=un1, file="hcore_vel_diag.out", status="new")
        endif
 
        un2 = unit_new()
@@ -963,22 +1058,24 @@ contains
           open(unit=un2, file="hcore_ener_diag.out", status="new")
        endif
 
-       un3 = unit_new()
-       inquire(file="hcore_cz_diag.out", exist=lexist)
-       if (lexist) then
-          open(unit=un3, file="hcore_cz_diag.out", &
-               status="old", position="append")
-       else
-          open(unit=un3, file="hcore_cz_diag.out", status="new")
-       endif
+       if (dm .eq. 3) then
+          un3 = unit_new()
+          inquire(file="hcore_sphrvel_diag.out", exist=lexist)
+          if (lexist) then
+             open(unit=un3, file="hcore_sphrvel_diag.out", &
+                  status="old", position="append")
+          else
+             open(unit=un3, file="hcore_sphrvel_diag.out", status="new")
+          endif
 
-       un4 = unit_new()
-       inquire(file="hcore_vel_diag.out", exist=lexist)
-       if (lexist) then
-          open(unit=un4, file="hcore_vel_diag.out", &
-               status="old", position="append")
-       else
-          open(unit=un4, file="hcore_vel_diag.out", status="new")
+          un4 = unit_new()
+          inquire(file="hcore_cz_diag.out", exist=lexist)
+          if (lexist) then
+             open(unit=un4, file="hcore_cz_diag.out", &
+                  status="old", position="append")
+          else
+             open(unit=un4, file="hcore_cz_diag.out", status="new")
+          endif
        endif
 
 
@@ -991,49 +1088,16 @@ contains
           ! get the output directory
           call get_cwd(cwd)
 
-          ! sphrvel
+          ! vel
           write (un1, *) " "
           write (un1, 800) "output date: ", values(1), values(2), values(3)
           write (un1, 801) "output time: ", values(5), values(6), values(7)
           write (un1, 802) "output dir:  ", trim(cwd)
+          write (un1, *)   "# v corresponds to averages over the convection zone (R<=8.15d10)"
+          write (un1, *)   "# U corresponds to averages over the entire valid region"
+          write (un1, *)   "#   (ie, the region interior to the sponged region)"
           write (un1, 999) trim(job_name)
-          write (un1, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
-                            "max{|vr|}", "<|vr|/|vtot|>", &
-                            "int{rhovr_x}/mass", "int{rhovr_y}/mass", &
-                            "int{rhovr_z}/mass", "int{rhovr}/mass", &
-                            "<vc_x>", "<vc_y>", "<vc_z>", "<vc>", &
-                            "max{|vc|}", &
-                            "int{rhovc_x}/mass", "int{rhovc_y}/mass", &
-                            "int{rhovc_z}/mass", "int{rhovc}/mass", &
-                            "mass"
-
-          ! energy
-          write (un2, *) " "
-          write (un2, 800) "output date: ", values(1), values(2), values(3)
-          write (un2, 801) "output time: ", values(5), values(6), values(7)
-          write (un2, 802) "output dir:  ", trim(cwd)
-          write (un2, 999) trim(job_name)
-          write (un2,1001) "time", "tot nuc energy", "tot kin energy", "grav pot energy", &
-               "tot int energy", "dt"
-
-          ! convective boundary
-          write (un3, *) " "
-          write (un3, 800) "output date: ", values(1), values(2), values(3)
-          write (un3, 801) "output time: ", values(5), values(6), values(7)
-          write (un3, 802) "output dir:  ", trim(cwd)
-          write (un3, 999) trim(job_name)
-          write (un3,1001) "time", "radius of convective boundary"
-               
-          ! vel
-          write (un4, *) " "
-          write (un4, 800) "output date: ", values(1), values(2), values(3)
-          write (un4, 801) "output time: ", values(5), values(6), values(7)
-          write (un4, 802) "output dir:  ", trim(cwd)
-          write (un4, *)   "# v corresponds to averages over the convection zone (R<=8.15d10)"
-          write (un4, *)   "# U corresponds to averages over the entire valid region"
-          write (un4, *)   "#   (ie, the region interior to the sponged region)"
-          write (un4, 999) trim(job_name)
-          write (un4,1001) "time", &
+          write (un1,1001) "time", &
                            "<vtot_x>", "<vtot_y>", "<vtot_z>", "<vtot>", &
                            "int{rhovtot_x}/mass", "int{rhovtot_y}/mass", &
                            "int{rhovtot_z}/mass", "int{rhovtot}/mass", &
@@ -1046,7 +1110,42 @@ contains
                            "x(max{U})", "y(max{U})", "z(max{U})", "R{max{U})", &
                            "max{Mach #}",&
                            "dt"
-  
+
+          ! energy
+          write (un2, *) " "
+          write (un2, 800) "output date: ", values(1), values(2), values(3)
+          write (un2, 801) "output time: ", values(5), values(6), values(7)
+          write (un2, 802) "output dir:  ", trim(cwd)
+          write (un2, 999) trim(job_name)
+          write (un2,1001) "time", "tot nuc energy", "tot kin energy", "grav pot energy", &
+               "tot int energy", "dt"
+
+          if (dm .eq. 3) then
+             ! sphrvel
+             write (un3, *) " "
+             write (un3, 800) "output date: ", values(1), values(2), values(3)
+             write (un3, 801) "output time: ", values(5), values(6), values(7)
+             write (un3, 802) "output dir:  ", trim(cwd)
+             write (un3, 999) trim(job_name)
+             write (un3, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
+                  "max{|vr|}", "<|vr|/|vtot|>", &
+                  "int{rhovr_x}/mass", "int{rhovr_y}/mass", &
+                  "int{rhovr_z}/mass", "int{rhovr}/mass", &
+                  "<vc_x>", "<vc_y>", "<vc_z>", "<vc>", &
+                  "max{|vc|}", &
+                  "int{rhovc_x}/mass", "int{rhovc_y}/mass", &
+                  "int{rhovc_z}/mass", "int{rhovc}/mass", &
+                  "mass"
+             
+             ! convective boundary
+             write (un4, *) " "
+             write (un4, 800) "output date: ", values(1), values(2), values(3)
+             write (un4, 801) "output time: ", values(5), values(6), values(7)
+             write (un4, 802) "output dir:  ", trim(cwd)
+             write (un4, 999) trim(job_name)
+             write (un4,1001) "time", "radius of convective boundary"
+          end if
+
           firstCall = .false.
        endif
 
@@ -1059,29 +1158,33 @@ contains
           write (un2,1000) time_data(n), &
                (file2_data(n,i), i=1,n_file2)
 
-          write (un3,1000) time_data(n), &
-               (file3_data(n,i), i=1,n_file3)
-
-          write (un4,1000) time_data(n), &
-               (file4_data(n,i), i=1,n_file4)
+          if ( dm .eq. 3) then
+             write (un3,1000) time_data(n), &
+                  (file3_data(n,i), i=1,n_file3)
+             
+             write (un4,1000) time_data(n), &
+                  (file4_data(n,i), i=1,n_file4)
+          end if
 
        enddo
 
        close(un1)
        close(un2)
-       close(un3)
-       close(un4)
-
+       if (dm .eq. 3) then
+          close(un3)
+          close(un4)
+       end if
     endif
-
 
     ! reset the buffers
     nstored = 0
     time_data(:) = ZERO
     file1_data(:,:) = ZERO
     file2_data(:,:) = ZERO
-    file3_data(:,:) = ZERO
-    file4_data(:,:) = ZERO
+    if (dm .eq. 3) then
+       file3_data(:,:) = ZERO
+       file4_data(:,:) = ZERO
+    end if
 
   end subroutine flush_diag
 
@@ -1106,6 +1209,196 @@ contains
   !===========================================================================
   ! the actual diagnostic routine
   !===========================================================================
+  subroutine diag_2d(n,time,dt,dx, &
+                     s,ng_s, &
+                     rho_Hnuc,ng_rhn, &
+                     rho_Hext,ng_rhe, &
+                     u,ng_u, &
+                     w0, &
+                     lo,hi, &
+                     nzones, nzones_core, &
+                     vtot_x,vtot_y,vtot, &
+                     vtot_max, coord_vtot, &
+                     rhovtot_x,rhovtot_y,rhovtot, &
+                     Utot_x,Utot_y, Utot, &
+                     rhoUtot_x,rhoUtot_y, rhoUtot, &
+                     U_max, coord_Umax, &
+                     mass, mass_core, &
+                     nuc_ener,kin_ener,int_ener, &
+                     Mach_max, mask)
+
+
+    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
+    use bl_constants_module, only: HALF
+    use bl_error_module, only: bl_error
+    use network, only: nspec
+    use geometry, only: spherical, center
+    use probin_module, only: base_cutoff_density, prob_lo, sponge_start_factor, &
+         sponge_center_density
+    use eos_module
+
+    integer,          intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_rhn,ng_rhe
+    real (kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:  ,lo(2)-ng_s:  ,:)
+    real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:)
+    real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:)
+    real (kind=dp_t), intent(in   ) ::        u(lo(1)-ng_u:  ,lo(2)-ng_u:  ,:)
+    real (kind=dp_t), intent(in   ) ::       w0(0:)
+    real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
+    real (kind=dp_t), intent(inout) :: vtot_x, vtot_y, vtot
+    real (kind=dp_t), intent(inout) :: vtot_max, coord_vtot(:)
+    real (kind=dp_t), intent(inout) :: rhovtot_x, rhovtot_y, rhovtot
+    real (kind=dp_t), intent(inout) :: mass, mass_core, nzones, nzones_core
+    real (kind=dp_t), intent(inout) :: nuc_ener,kin_ener, int_ener
+    real (kind=dp_t), intent(inout) :: Utot_x, Utot_y, Utot
+    real (kind=dp_t), intent(inout) :: rhoUtot_x, rhoUtot_y, rhoUtot
+    real (kind=dp_t), intent(inout) :: U_max, coord_Umax(:)
+    real (kind=dp_t), intent(inout) :: Mach_max
+    logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
+
+    !     Local variables
+    integer            :: i, j, k
+    real (kind=dp_t)   :: vel, weight
+    logical            :: cell_valid
+    real (kind=dp_t)   :: x, y
+    real (kind=dp_t)   :: vx, vy
+
+    ! weight is the factor by which the volume of a cell at the
+    ! current level relates to the volume of a cell at the coarsest
+    ! level of refinement.
+    weight = 1.d0 / 8.d0**(n-1)
+
+!$omp parallel do private(i,j,x,y,cell_valid,vel) &
+!$omp reduction(max:U_max,Mach_max) &
+!$omp reduction(vtot_x,vtot_y,vtot, &
+!$omp           rhovtot_x,rhovtot_y,rhovtot, &
+!$omp           mass,nzones,mass_core, nzones_core, &
+!$omp           nuc_ener,kin_ener,int_ener)
+    do j = lo(2), hi(2)
+       y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+
+       do i = lo(1), hi(1) 
+          x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+                
+          cell_valid = .true.
+          if (present(mask)) then
+             if ( (.not. mask(i,j)) ) cell_valid = .false.
+          end if
+
+          ! we only consider cells inside of where the sponging begins
+          if (cell_valid .and. &
+               s(i,j,rho_comp) > sponge_start_factor*sponge_center_density) then
+             
+             ! vel is the magnitude of the velocity, including w0
+             vx = u(i,j,1)
+             vy = u(i,j,2)+w0(j)
+             vel = sqrt( vx*vx + vy*vy)
+             
+             
+             ! diagnostics
+             
+             
+             ! total velocity 
+             Utot_x = Utot_x + weight*vx
+             Utot_y = Utot_y + weight*vy
+             Utot  =  Utot   + weight*vel
+             
+             rhoUtot_x = rhoUtot_x + weight*s(i,j,rho_comp)*vx
+             rhoUtot_y = rhoUtot_y + weight*s(i,j,rho_comp)*vy
+             rhoUtot   = rhoUtot   + weight*s(i,j,rho_comp)*vel
+             
+             ! normalization quantities
+             mass = mass + weight*s(i,j,rho_comp)
+             nzones = nzones + weight
+
+!$omp critical
+             ! Mach number
+             Mach_max = max(Mach_max,vel/cs_eos(1))
+             
+             ! max U and  location
+             if (vel > U_max) then
+                U_max = vel
+                coord_Umax(1) = x
+                coord_Umax(2) = y
+             endif
+
+!$omp end critical
+
+             ! only include in vtot if inside the core
+             if ( dsqrt(x*x + y*y ) .le. r_core ) then
+                
+                vtot_x = vtot_x + weight*vx
+                vtot_y = vtot_y + weight*vy
+                vtot  =  vtot   + weight*vel
+                
+                rhovtot_x = rhovtot_x + weight*s(i,j,rho_comp)*vx
+                rhovtot_y = rhovtot_y + weight*s(i,j,rho_comp)*vy
+                rhovtot   = rhovtot   + weight*s(i,j,rho_comp)*vel
+
+! FIXME need to think about mass_core
+                ! normalization quantities
+                mass_core = mass_core + weight*s(i,j,rho_comp)
+                nzones_core = nzones_core + weight
+
+!$omp critical
+                ! max U and  location
+                if (vel > vtot_max) then
+                   vtot_max = vel
+                   coord_vtot(1) = x
+                   coord_vtot(2) = y
+                endif
+!$omp end critical
+
+             endif
+             
+             ! call the EOS to get the sound speed and internal energy
+             temp_eos(1) = s(i,j,temp_comp)
+             den_eos(1)  = s(i,j,rho_comp)
+             xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+             pt_index_eos(:) = (/i, j, -1/)       
+             
+             call eos(eos_input_rt, den_eos, temp_eos, &
+                      npts, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      .false.,pt_index_eos)
+
+
+             ! kinetic, internal, and nuclear energies
+             nuc_ener = nuc_ener + weight*rho_Hext(i,j)
+             kin_ener = kin_ener + weight*s(i,j,rho_comp)*vel**2
+             int_ener = int_ener + weight*s(i,j,rho_comp)*e_eos(1)
+             
+          endif  ! end cell_valid and density check
+          
+       enddo
+    enddo
+
+!     write(*,*)'nzones: ',nzones, nzones_core
+!     write(*,*)'mass:   ',mass, mass_core
+    
+!     write(*,*)'vr:    ',vr_x,vr_y,vr_z,vr_tot
+!     write(*,*)'rhovr: ',rhovr_x,rhovr_y,rhovr_z,rhovr_tot
+
+!     write(*,*)'vc:    ',vc_x,vc_y,vc_z,vc_tot
+!     write(*,*)'rhovc: ',rhovc_x,rhovc_y,rhovc_z,rhovc_tot
+    
+!     write(*,*)'vtot:    ',vtot_x,vtot_y,vtot_z,vtot
+!     write(*,*)'rhovtot: ',rhovtot_x,rhovtot_y,rhovtot_z,rhovtot
+
+!     write(*,*)'Utot:    ',Utot_x,Utot_y,Utot_z,Utot
+!     write(*,*)'rhoUtot: ',rhoUtot_x,rhoUtot_y,rhoUtot_z,rhoUtot
+    
+!     write(*,*)    
+
+
+  end subroutine diag_2d
+
   subroutine diag_3d(n,time,dt,dx, &
                      s,ng_s, &
                      rho_Hnuc,ng_rhn, &
@@ -1173,8 +1466,9 @@ contains
     integer            :: i, j, k
     real (kind=dp_t)   :: velr, velc, vel, weight
     logical            :: cell_valid
-    real (kind=dp_t)   :: x, y, z
+    real (kind=dp_t)   :: x, y, z, rloc
     real (kind=dp_t)   :: vx, vy, vz
+
 
     ! weight is the factor by which the volume of a cell at the
     ! current level relates to the volume of a cell at the coarsest
@@ -1293,8 +1587,9 @@ contains
 
 !$omp end critical
 
+                rloc = dsqrt(x*x + y*y + z*z)
                 ! only include in vtot if inside the core
-                if ( dsqrt(x*x + y*y + z*z) .le. 8.15e10 ) then
+                if ( rloc .le. r_core ) then
 
                    vtot_x = vtot_x + weight*vx
                    vtot_y = vtot_y + weight*vy
