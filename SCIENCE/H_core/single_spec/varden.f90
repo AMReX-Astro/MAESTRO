@@ -1079,7 +1079,7 @@ subroutine varden()
            if (mod(istep,chk_int) .eq. 0 .or. dump_checkpoint) then
 
               ! write out any buffered diagnostic information
-              call flush_diag(dm)
+              call flush_diag()
 
               allocate(chkdata(nlevs))
               do n = 1,nlevs
@@ -1173,7 +1173,7 @@ subroutine varden()
         !       This writes a checkpoint file.
 
         ! write out any buffered diagnostic information
-        call flush_diag(dm)
+        call flush_diag()
 
         allocate(chkdata(nlevs))
         do n = 1,nlevs

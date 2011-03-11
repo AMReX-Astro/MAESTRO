@@ -974,7 +974,7 @@ contains
 
     ! if we've filled the buffers, flush them
     if (index == diag_buf_size) then
-       call flush_diag(dm)
+       call flush_diag()
     endif
 
 
@@ -1001,7 +1001,7 @@ contains
   ! flush_diag -- the output routine.  When this routine is called, it 
   ! outputs all the stored information in the buffers and resets them.
   !===========================================================================
-  subroutine flush_diag(dm)
+  subroutine flush_diag()
 
     use parallel
     use bl_constants_module, only: ZERO
@@ -1009,7 +1009,6 @@ contains
     use bl_system_module, only: BL_CWD_SIZE, get_cwd 
     use probin_module, only: job_name
 
-    integer, intent(in   ) :: dm
 
     integer :: un1,un2,un3,un4
     logical :: lexist
@@ -1058,7 +1057,7 @@ contains
           open(unit=un2, file="hcore_ener_diag.out", status="new")
        endif
 
-       if (dm .eq. 3) then
+       if (allocated(file3_data)) then
           un3 = unit_new()
           inquire(file="hcore_sphrvel_diag.out", exist=lexist)
           if (lexist) then
@@ -1120,7 +1119,7 @@ contains
           write (un2,1001) "time", "tot nuc energy", "tot kin energy", "grav pot energy", &
                "tot int energy", "dt"
 
-          if (dm .eq. 3) then
+          if (allocated(file3_data)) then
              ! sphrvel
              write (un3, *) " "
              write (un3, 800) "output date: ", values(1), values(2), values(3)
@@ -1158,7 +1157,7 @@ contains
           write (un2,1000) time_data(n), &
                (file2_data(n,i), i=1,n_file2)
 
-          if ( dm .eq. 3) then
+          if ( allocated(file3_data)) then
              write (un3,1000) time_data(n), &
                   (file3_data(n,i), i=1,n_file3)
              
@@ -1170,7 +1169,7 @@ contains
 
        close(un1)
        close(un2)
-       if (dm .eq. 3) then
+       if (allocated(file3_data)) then
           close(un3)
           close(un4)
        end if
@@ -1181,7 +1180,7 @@ contains
     time_data(:) = ZERO
     file1_data(:,:) = ZERO
     file2_data(:,:) = ZERO
-    if (dm .eq. 3) then
+    if (allocated(file3_data)) then
        file3_data(:,:) = ZERO
        file4_data(:,:) = ZERO
     end if
