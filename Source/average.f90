@@ -194,13 +194,11 @@ contains
 
        ! normalize phisum so it actually stores the average at a radius
        do n=1,nlevs
-          !$OMP PARALLEL DO PRIVATE(r)
           do r=0,nr_irreg
              if (ncell(r,n) .ne. 0.d0) then
                 phisum(r,n) = phisum(r,n) / dble(ncell(r,n))
              end if
           end do
-          !$OMP END PARALLEL DO
        end do
 
        ! compute center point for the finest level
@@ -491,13 +489,11 @@ contains
 
     ! compute phibar_irreg
     do n=1,nlevs
-       !$OMP PARALLEL DO PRIVATE(r)
        do r=0,nr_irreg
           if (ncell(r,n) .ne. 0.d0) then
              phibar_irreg(n,r) = phisum(r,n) / dble(ncell(r,n))
           end if
        end do
-       !$OMP END PARALLEL DO
     end do
 
    call destroy(bpt)
@@ -548,7 +544,6 @@ contains
 
     integer :: i,j,k
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
@@ -556,7 +551,6 @@ contains
           end do
        end do
     end do
-    !$OMP END PARALLEL DO
 
   end subroutine sum_phi_3d
 
@@ -581,13 +575,6 @@ contains
     integer          :: i, j, k, index
     logical          :: cell_valid
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !!! Warning: These OMP directives actually slow down this loop for
-    !!!          large problems.  Adding phisum and/or ncell to the private
-    !!!          list causes compilation and/or runtime errors using Pathscale
-    !!!          on franklin or jaguar
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !!!$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,cell_valid,radius,index)
     do k=lo(3),hi(3)
        z = prob_lo(3) + (dble(k) + HALF)*dx(3) - center(3)
        
@@ -618,17 +605,14 @@ contains
                    end if
                 end if
                 
-                !!!$OMP CRITICAL (sum_phi_3d_sphr_critical)
                 phisum(index) = phisum(index) + phi(i,j,k,incomp)
                 ncell(index)  = ncell(index) + 1
-                !!!$OMP END CRITICAL (sum_phi_3d_sphr_critical)
 
              end if
              
           end do
        end do
     end do
-    !!!$OMP END PARALLEL DO
 
   end subroutine sum_phi_3d_sphr
 

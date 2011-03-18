@@ -435,7 +435,6 @@ contains
       else if (proj_type .eq. pressure_iters_comp) then
 
          do m=1,3
-            !$OMP PARALLEL DO PRIVATE(i,j,k)
             do k=-1,nz
                do j=-1,ny
                   do i=-1,nx
@@ -443,14 +442,12 @@ contains
                   end do
                end do
             end do
-            !$OMP END PARALLEL DO
          end do
 
       ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
 
          do m=1,3
-            !$OMP PARALLEL DO PRIVATE(i,j,k)
             do k=-1,nz
                do j=-1,ny
                   do i=-1,nx
@@ -458,7 +455,6 @@ contains
                   end do
                end do
             end do
-            !$OMP END PARALLEL DO
          end do
 
       else
@@ -858,7 +854,6 @@ contains
 
       ! Subtract off the density-weighted gradient
       do m=1,3
-         !$OMP PARALLEL DO PRIVATE(i,j,k)
          do k=0,nz
             do j=0,ny
                do i=0,nx
@@ -866,7 +861,6 @@ contains
                end do
             end do
          end do
-         !$OMP END PARALLEL DO
       end do
 
       if (proj_type .eq. pressure_iters_comp) then
@@ -874,7 +868,6 @@ contains
          ! unew held the projection of (ustar-uold)
          !
          do m=1,3
-            !$OMP PARALLEL DO PRIVATE(i,j,k)
             do k=0,nz
                do j=0,ny
                   do i=0,nx
@@ -882,7 +875,6 @@ contains
                   end do
                end do
             end do
-            !$OMP END PARALLEL DO
          end do
       end if
 
@@ -898,7 +890,6 @@ contains
          ! gphi held the gradient of (change in pressure)
 
          do m=1,3
-            !$OMP PARALLEL DO PRIVATE(i,j,k)
             do k=0,nz
                do j=0,ny
                   do i=0,nx
@@ -906,10 +897,8 @@ contains
                   end do
                end do
             end do
-            !$OMP END PARALLEL DO
          end do
 
-         !$OMP PARALLEL DO PRIVATE(i,j,k)
          do k=0,nz+1
             do j=0,ny+1
                do i=0,nx+1
@@ -917,7 +906,6 @@ contains
                end do
             end do
          end do
-         !$OMP END PARALLEL DO
 
       else if (proj_type .eq. regular_timestep_comp) then
 
@@ -925,7 +913,6 @@ contains
          ! gphi held the gradient of dt * (pressure)
 
          do m=1,3
-            !$OMP PARALLEL DO PRIVATE(i,j,k)
             do k=0,nz
                do j=0,ny
                   do i=0,nx
@@ -933,10 +920,8 @@ contains
                   end do
                end do
             end do
-            !$OMP END PARALLEL DO
          end do
 
-         !$OMP PARALLEL DO PRIVATE(i,j,k)
          do k=0,nz+1
             do j=0,ny+1
                do i=0,nx+1
@@ -944,7 +929,6 @@ contains
                end do
             end do
          end do
-         !$OMP END PARALLEL DO
 
       end if
 
@@ -1136,7 +1120,6 @@ contains
     ny = size(coeffs,dim=2) - 2
     nz = size(coeffs,dim=3) - 2
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k = 1,nz
        do j = 1,ny
           do i = 1,nx
@@ -1144,7 +1127,6 @@ contains
           end do
        end do
     end do
-    !$OMP END PARALLEL DO
 
   end subroutine mkcoeffs_3d
 

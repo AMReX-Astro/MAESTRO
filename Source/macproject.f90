@@ -552,33 +552,21 @@ contains
       nz = size(uedge,dim=3)-2*ng_um
 
       if (do_mult) then
-         !$OMP PARALLEL PRIVATE(k)
-         !$OMP DO
          do k = 0,nz-1 
             uedge(:,:,k) = uedge(:,:,k) * div_coeff(k)
             vedge(:,:,k) = vedge(:,:,k) * div_coeff(k)
          end do
-         !$OMP END DO NOWAIT
-         !$OMP DO
          do k = 0,nz
             wedge(:,:,k) = wedge(:,:,k) * div_coeff_edge(k)
          end do
-         !$OMP END DO
-         !$OMP END PARALLEL
       else
-         !$OMP PARALLEL PRIVATE(k)
-         !$OMP DO
          do k = 0,nz-1 
             uedge(:,:,k) = uedge(:,:,k) / div_coeff(k)
             vedge(:,:,k) = vedge(:,:,k) / div_coeff(k)
          end do
-         !$OMP END DO NOWAIT
-         !$OMP DO
          do k = 0,nz
             wedge(:,:,k) = wedge(:,:,k) / div_coeff_edge(k)
          end do
-         !$OMP END DO
-         !$OMP END PARALLEL
       end if
 
     end subroutine mult_edge_by_1d_coeff_3d
@@ -1164,34 +1152,26 @@ contains
 
       integer :: i,j,k
 
-      !$OMP PARALLEL PRIVATE(i,j,k)
-      !$OMP DO
       do k = lo(3),hi(3)
          do j = lo(2),hi(2)
             umac(lo(1)  ,j,k) = umac(lo(1)  ,j,k) - lo_x_flx(1,j,k) * dx(1)
             umac(hi(1)+1,j,k) = umac(hi(1)+1,j,k) + hi_x_flx(1,j,k) * dx(1)
          end do
       end do
-      !$OMP END DO NOWAIT
 
-      !$OMP DO
       do k = lo(3),hi(3)
          do i = lo(1),hi(1)
             vmac(i,lo(2)  ,k) = vmac(i,lo(2)  ,k) - lo_y_flx(i,1,k) * dx(2)
             vmac(i,hi(2)+1,k) = vmac(i,hi(2)+1,k) + hi_y_flx(i,1,k) * dx(2)
          end do
       end do
-      !$OMP END DO NOWAIT
 
-      !$OMP DO
       do j = lo(2),hi(2)
       do i = lo(1),hi(1)
          wmac(i,j,lo(3)  ) = wmac(i,j,lo(3)  ) - lo_z_flx(i,j,1) * dx(3)
          wmac(i,j,hi(3)+1) = wmac(i,j,hi(3)+1) + hi_z_flx(i,j,1) * dx(3)
       end do
       end do
-      !$OMP END DO
-      !$OMP END PARALLEL
 
     end subroutine correct_mkumac_3d
 

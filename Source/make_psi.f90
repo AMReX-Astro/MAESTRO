@@ -27,13 +27,11 @@ contains
 
     do n=1,nlevs_radial
        do i=1,numdisjointchunks(n)
-          !$OMP PARALLEL DO PRIVATE(r)
           do r = r_start_coord(n,i), r_end_coord(n,i)
              if (r .lt. base_cutoff_density_coord(n)) then
                 psi(n,r) = etarho_cc(n,r) * abs(grav_const)
              end if
           end do
-          !$OMP END PARALLEL DO
        end do
     end do
 
