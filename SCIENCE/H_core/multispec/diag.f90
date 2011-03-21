@@ -62,7 +62,7 @@ module diag_module
 
   integer, save :: nstored = 0
 
-  real (kind=dp_t), parameter :: r_core = 7.6d0
+  real (kind=dp_t), parameter :: r_core = 7.6d10
 
   public :: diag, flush_diag
 
