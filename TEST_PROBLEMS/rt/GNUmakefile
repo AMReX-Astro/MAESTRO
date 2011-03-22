@@ -2,7 +2,7 @@ NDEBUG := t
 MPI    :=
 OMP    :=
 
-COMP := Intel
+COMP := gfortran
 
 MKVERBOSE := t
 

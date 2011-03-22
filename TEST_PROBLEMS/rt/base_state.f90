@@ -26,7 +26,7 @@ contains
                              rho_1, rho_2, p0_base, do_SNe
 
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, spherical, nr, dm
+    use geometry, only: dr, spherical, nr
     use inlet_bc_module, only: set_inlet_bcs
     
     integer           , intent(in   ) :: n
@@ -101,7 +101,7 @@ contains
     end if
 
     ! rmid is the middle of the domain 
-    rmid = HALF*(prob_lo(dm) + prob_hi(dm))
+    rmid = HALF*(prob_lo(size(dx)) + prob_hi(size(dx)))
 
     ! p0_light is the pressure at the base of the light fluid (lower
     ! half of the domain)
@@ -111,7 +111,7 @@ contains
     ! of the domain).  To find this, we integrate dp/dr = rho g from the
     ! bottom of the domain (p = p0light) to the interface (y = rmid).  The
     ! density is constant in that region, rho = rho_1
-    p0_heavy = p0_base + rho_1*grav_const*(rmid - prob_lo(dm))
+    p0_heavy = p0_base + rho_1*grav_const*(rmid - prob_lo(size(dx)))
 
 
     ! set the compositions
@@ -152,7 +152,7 @@ contains
           if (do_SNe) then
              p_ambient = p0_base
           else
-             p_ambient = p0_light + rho_1*grav_const*(rloc - prob_lo(dm))
+             p_ambient = p0_light + rho_1*grav_const*(rloc - prob_lo(size(dx)))
           end if
           t_ambient = t_guess
           xn_ambient(:) = xn_light(:)
@@ -210,7 +210,7 @@ contains
 
     do r=1,nr(n)-1
 
-       rloc = prob_lo(dm) + (dble(r) + HALF)*dr(n)
+       rloc = prob_lo(size(dx)) + (dble(r) + HALF)*dr(n)
 
        dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
        rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*grav_const

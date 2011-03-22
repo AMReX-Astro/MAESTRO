@@ -32,9 +32,12 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
+    integer :: lo(mla%dim),hi(mla%dim),ng
+    integer :: i,n,dm,nlevs
     
+    dm = mla%dim
+    nlevs = mla%nlevel
+
     ng = s(1)%ng
 
     do n=1,nlevs
@@ -97,11 +100,12 @@ contains
     type(bc_level) , intent(in   ) :: bc
 
     ! local
-    integer                  :: ng,i
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: ng,i,dm
+    integer                  :: lo(get_dim(s)),hi(get_dim(s))
     real(kind=dp_t), pointer :: sop(:,:,:,:)
 
-    ng = s%ng
+    ng = nghost(s)
+    dm = get_dim(s)
 
     do i = 1, s%nboxes
        if ( multifab_remote(s,i) ) cycle
