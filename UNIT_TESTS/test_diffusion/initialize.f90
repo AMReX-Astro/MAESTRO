@@ -133,7 +133,8 @@ contains
        call init_base_state(1,model_file,s_init(1,:,:),p0(1,:),dx(nlevs,:),&
                             diffusion_coefficient)
     else
-       do n=1,nlevs
+       ! init_base_state requires loop backwards over levels
+       do n=nlevs,1,-1
           call init_base_state(n,model_file,s_init(n,:,:),p0(n,:),dx(n,:),&
                                diffusion_coefficient)
        end do

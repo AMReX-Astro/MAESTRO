@@ -67,6 +67,8 @@ contains
 
     if (firstCall) then
 
+       base_cutoff_density_loc = 1.d99
+
        ! only need to read in the initial model once -- model_parser_module
        ! stores the model data
        call read_model_file(model_file)
@@ -205,10 +207,6 @@ contains
        starting_rad = ZERO
     endif
 
-    if (n .eq. 1) then
-       base_cutoff_density_loc = 1.d99
-    end if
-    
     do r=0,nr(n)-1
 
        rloc = starting_rad + (dble(r) + HALF)*dr(n)
@@ -279,7 +277,7 @@ contains
 
           ! keep track of the height where we drop below the cutoff density
           if (s0_init(r,rho_comp) .le. base_cutoff_density .and. &
-               base_cutoff_density_loc .eq. 1.d99 .and. n .eq. 1) then
+               base_cutoff_density_loc .eq. 1.d99) then
 
              if ( parallel_IOProcessor() ) then
                 write (*,*) ' '

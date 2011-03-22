@@ -438,7 +438,8 @@ contains
     if (spherical .eq. 1) then
        call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(nlevs,:))
     else
-       do n=1,nlevs
+       ! init_base_state requires loop backwards over levels
+       do n=nlevs,1,-1
           call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
        end do
     end if
@@ -625,7 +626,8 @@ contains
     if (spherical .eq. 1) then
        call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(max_levs,:))
     else
-       do n=1,max_levs
+       ! init_base_state requires loop backwards over levels
+       do n=max_levs,1,-1
           call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
        end do
     end if

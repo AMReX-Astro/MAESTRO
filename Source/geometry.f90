@@ -162,46 +162,110 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
 
     ! local
-    integer :: n,r
+    integer :: i,n,r,which_lev
+    logical :: found
 
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! compute the coordinates of the anelastic cutoff
-    anelastic_cutoff_coord(1) = r_end_coord(1,1)+1
-    do r=0,r_end_coord(1,1)
-       if (rho0(1,r) .le. anelastic_cutoff .and. &
-            anelastic_cutoff_coord(1) .eq. r_end_coord(1,1)+1) then
-          anelastic_cutoff_coord(1) = r
-          exit
-       end if
+    found = .false.
+
+    do n=nlevs_radial,1,-1
+       do i=1,numdisjointchunks(n)
+
+          if (.not. found) then
+             do r=r_start_coord(n,i),r_end_coord(n,i)
+                if (rho0(n,r) .le. anelastic_cutoff) then
+                   anelastic_cutoff_coord(n) = r
+                   which_lev = n
+                   found = .true.
+                   exit
+                end if
+             end do
+          end if
+
+       end do
     end do
-    do n=2,nlevs_radial
+
+    do n=which_lev+1,nlevs_radial
        anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)
     end do
 
-    ! compute the coordinates of the base cutoff density
-    base_cutoff_density_coord(1) = r_end_coord(1,1)
-    do r=0,r_end_coord(1,1)
-       if (rho0(1,r) .le. base_cutoff_density .and. &
-            base_cutoff_density_coord(1) .eq. r_end_coord(1,1)) then
-          base_cutoff_density_coord(1) = r
-          exit
+    do n=which_lev-1,1,-1
+       if (mod(anelastic_cutoff_coord(n+1),2) .eq. 0) then
+          anelastic_cutoff_coord(n) = anelastic_cutoff_coord(n+1) / 2
+       else
+          anelastic_cutoff_coord(n) = anelastic_cutoff_coord(n+1) / 2 + 1
        end if
     end do
-    do n=2,nlevs_radial
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! compute the coordinates of the base cutoff density
+    found = .false.
+
+    do n=nlevs_radial,1,-1
+       do i=1,numdisjointchunks(n)
+
+          if (.not. found) then
+             do r=r_start_coord(n,i),r_end_coord(n,i)
+                if (rho0(n,r) .le. base_cutoff_density) then
+                   base_cutoff_density_coord(n) = r
+                   which_lev = n
+                   found = .true.
+                   exit
+                end if
+             end do
+          end if
+
+       end do
+    end do
+
+    do n=which_lev+1,nlevs_radial
        base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)
     end do
 
-    ! compute the coordinates of the burning cutoff density
-    burning_cutoff_density_coord(1) = r_end_coord(1,1)+1
-    do r=0,r_end_coord(1,1)
-       if (rho0(1,r) .le. burning_cutoff_density .and. &
-            burning_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
-          burning_cutoff_density_coord(1) = r
-          exit
+    do n=which_lev-1,1,-1
+       if (mod(base_cutoff_density_coord(n+1),2) .eq. 0) then
+          base_cutoff_density_coord(n) = base_cutoff_density_coord(n+1) / 2
+       else
+          base_cutoff_density_coord(n) = base_cutoff_density_coord(n+1) / 2 + 1
        end if
     end do
-    do n=2,nlevs_radial
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! compute the coordinates of the burning cutoff density
+    found = .false.
+
+    do n=nlevs_radial,1,-1
+       do i=1,numdisjointchunks(n)
+
+          if (.not. found) then
+             do r=r_start_coord(n,i),r_end_coord(n,i)
+                if (rho0(n,r) .le. burning_cutoff_density) then
+                   burning_cutoff_density_coord(n) = r
+                   which_lev = n
+                   found = .true.
+                   exit
+                end if
+             end do
+          end if
+
+       end do
+    end do
+
+    do n=which_lev+1,nlevs_radial
        burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)
     end do
+
+    do n=which_lev-1,1,-1
+       if (mod(burning_cutoff_density_coord(n+1),2) .eq. 0) then
+          burning_cutoff_density_coord(n) = burning_cutoff_density_coord(n+1) / 2
+       else
+          burning_cutoff_density_coord(n) = burning_cutoff_density_coord(n+1) / 2 + 1
+       end if
+    end do
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   end subroutine compute_cutoff_coords
 
