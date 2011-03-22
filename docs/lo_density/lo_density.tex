@@ -26,26 +26,74 @@ $\rho < \rho_{\rm base}$, recompute $h = h(\rho,p_0,X)$.
 \end{itemize}
 
 \section{Computing the Cutoff Values}
+We compute {\tt anelastic\_cutoff\_coord}(:), {\tt base\_cutoff\_density\_coord}(:), 
+and {\tt burning\_cutoff\_density\_coord}(:) in analogous fashion.
 
-At several points in the algorithm, we compute {\tt anelastic\_cutoff\_coord}(:), 
-{\tt base\_cutoff\_density\_coord}(:), and {\tt burning\_cutoff\_density\_coord}(:) by 
-setting the corresponding coordinate equal to $r$ as soon as $\rho_0(r)$ is less than 
-or equal to that particular cutoff value (see Figure \ref{Fig:Cutoff} for the
-single-level case).  Multilevel is more complicated.
-
-We set the coordinates at the following points in the code:
+\subsection{Single-Level Planar or any Spherical}
+Here the base state exists as a single one-dimensional array with constant grid
+spacing $\Delta r$.  Basically, we set the corresponding coordinate equal to $r$ as soon 
+as $\rho_0(r)$ is less than  or equal to that particular cutoff value.
+See Figure \ref{Fig:Cutoff} for a graphical representation.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure}[hpb]
 \centering
 \includegraphics[width=4.0in]{\lodensfigpath/cutoff}\hspace{0.2in}
-\begin{minipage}[b]{5.0in}
-\caption[Relation between cutoff density and cutoff coordinates]
-{Image of how the cutoff density and cutoff coordinates
-are related.  This is drawn assuming {\tt drdxfac}=5.\vspace{2em}}
-\end{minipage}
+\caption{Image of how the cutoff density and cutoff coordinates
+are related for single-level planar and all spherical problems.}
 \label{Fig:Cutoff}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Note that for single-level planar or any spherical problem, saying $r\ge$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\rho_0(r)\le$ {\tt anelastic\_cutoff}.  Also, saying $r<$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\rho_0(r)>$ {\tt anelastic\_cutoff}.  Ditto for {\tt base\_cutoff\_density} and {\tt base\_cutoff\_density\_coord}.
+
+\subsection{Multilevel Planar}
+In this case, the base state exists as several one-dimensional arrays, each with
+different grid spacing.  Refer to Figure \ref{Fig:Cutoff_Multi} in the following examples.
+The guiding principle is to check whether $\rho_0$ falls below $\rho_{\rm cutoff}$ on the finest
+grid first.  If not, check the next coarser level.  Continue until you reach the base grid,
+in which case $\rho_0$ must fall below $\rho_{\rm cutoff}$ somewhere.  Some examples are in order:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[hpb]
+\centering
+\includegraphics[width=2.0in]{\lodensfigpath/cutoff_multi}\hspace{0.2in}
+\caption{Multilevel cutoff density example.}
+\label{Fig:Cutoff_Multi}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+
+\item {\bf Example 1:} $\rho_{0,104} > \rho_{\rm cutoff}$ and $\rho_{0,105} < \rho_{\rm cutoff}$.\\ \\
+{\tt cutoff\_density\_coord}(1) = 105\\
+{\tt cutoff\_density\_coord}(2) = 210\\
+{\tt cutoff\_density\_coord}(3) = 420\\ \\
+This is the simplest case in which the cutoff transition happens on the coarsest level.
+In this case, the cutoff coordinates at the finer levels are simply propagated from the
+coarsest level, even though they do not correspond to a valid region.
+
+\item {\bf Example 2:} $\rho_{0,403} > \rho_{\rm cutoff}$ and $\rho_{0,404} < \rho_{\rm cutoff}$.\\ \\
+{\tt cutoff\_density\_coord}(1) = 101\\
+{\tt cutoff\_density\_coord}(2) = 202\\
+{\tt cutoff\_density\_coord}(3) = 404\\ \\
+In this case, the cutoff transition happens where the finest grid is present.  Happily, the
+transition occurs at a location where there is a common grid boundary between all three levels.
+Therefore, we simply propagate the cutoff density coordinate from the finest level downward.
+
+\item {\bf Example 3:} $\rho_{0,404} > \rho_{\rm cutoff}$ and $\rho_{0,405} < \rho_{\rm cutoff}$.\\ \\
+{\tt cutoff\_density\_coord}(1) = 102\\
+{\tt cutoff\_density\_coord}(2) = 203\\
+{\tt cutoff\_density\_coord}(3) = 405\\ \\
+In this case, the cutoff transition happens where the finest grid is present.  However, the
+transition occurs at a location where there NOT is a common grid boundary between all three 
+levels.  We choose to define the cutoff transition at the coarser levels as being at the
+corresponding boundary that is at a larger radius than the location on the finest grid.
+
+\end{itemize}
+
+\section{When are the Cutoff Coordinates Updated?}
+
+At several points in the algorithm, we compute {\tt anelastic\_cutoff\_coord}(:), 
+{\tt base\_cutoff\_density\_coord}(:), and {\tt burning\_cutoff\_density\_coord}(:):
 
 \begin{itemize}
 
@@ -64,11 +112,9 @@ are related.  This is drawn assuming {\tt drdxfac}=5.\vspace{2em}}
 
 \end{itemize}
 
-\section{Density vs. Coordinate}
+\section{Usage of Cutoff Densities}
 
-Note that saying $r\ge$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\rho_0(r)\le$ {\tt anelastic\_cutoff}.  Also, saying $r<$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\rho_0(r)>$ {\tt anelastic\_cutoff}.  Ditto for {\tt base\_cutoff\_density} and {\tt base\_cutoff\_density\_coord}.
-
-\section{anelastic\_cutoff}\label{Sec:Anelastic Cutoff}
+\subsection{anelastic\_cutoff}\label{Sec:Anelastic Cutoff}
 
 The {\tt anelastic\_cutoff} is the density below which we modify the constraint.
 
@@ -92,7 +138,7 @@ The {\tt anelastic\_cutoff} is the density below which we modify the constraint.
 
 \end{itemize}
 
-\section{base\_cutoff\_density}\label{Sec:Base Cutoff Density}
+\subsection{base\_cutoff\_density}\label{Sec:Base Cutoff Density}
 
 The {\tt base\_cutoff\_density} is the lowest density that we model.
 
@@ -140,7 +186,7 @@ The {\tt base\_cutoff\_density} is the lowest density that we model.
 
 \end{itemize}
 
-\section{burning\_cutoff}
+\subsection{burning\_cutoff}
 
 The burning cutoff determines where we call the reaction network to
 get the nuclear energy generation rate and composition changes.  For
@@ -159,7 +205,7 @@ densities below the burning cutoff, we do not call the network.
 \end{itemize}
 
 
-\section{buoyancy\_cutoff\_factor}
+\subsection{buoyancy\_cutoff\_factor}
 
 The {\tt buoyancy\_cutoff\_factor} is used to zero out the forcing terms
 to the velocity equation at low densities.
