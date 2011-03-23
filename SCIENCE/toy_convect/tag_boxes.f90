@@ -23,6 +23,7 @@ contains
     use variables, only: rho_comp, spec_comp
     use geometry, only: nr_fine, nr
     use network, only: network_species_index
+    use probin_module, only: npad
 
     type( multifab)          , intent(in   ) :: mf
     type(lmultifab)          , intent(inout) :: tagboxes
@@ -35,7 +36,6 @@ contains
     integer           :: i, j, lo(get_dim(mf)), ng_s, dm
     logical           ::      radialtag(0:nr_fine-1)
     logical           :: radialtag_proc(0:nr_fine-1)
-    integer, parameter :: npad = 4
 
     integer, save :: ih1
     logical, save :: firstCall = .true.
