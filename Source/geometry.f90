@@ -169,6 +169,8 @@ contains
     ! compute the coordinates of the anelastic cutoff
     found = .false.
 
+    ! find the finest level containing the anelastic cutoff density,
+    ! and set the anelastic cutoff coord for this level
     do n=nlevs_radial,1,-1
        do i=1,numdisjointchunks(n)
 
@@ -186,10 +188,19 @@ contains
        end do
     end do
 
+    ! if the anelastic cutoff density was not found anywhere, then set
+    ! it to the top of the domain on the finest level
+    if (.not. found) then
+       which_lev = nlevs_radial
+       anelastic_cutoff_coord(nlevs_radial) = nr(nlevs_radial)-1
+    endif
+
+    ! set the anelastic cutoff coordinate on the finer levels
     do n=which_lev+1,nlevs_radial
        anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)
     end do
 
+    ! set the anelastic cutoff coordinate on the coarser levels
     do n=which_lev-1,1,-1
        if (mod(anelastic_cutoff_coord(n+1),2) .eq. 0) then
           anelastic_cutoff_coord(n) = anelastic_cutoff_coord(n+1) / 2
@@ -203,6 +214,8 @@ contains
     ! compute the coordinates of the base cutoff density
     found = .false.
 
+    ! find the finest level containing the base cutoff density,
+    ! and set the base cutoff coord for this level
     do n=nlevs_radial,1,-1
        do i=1,numdisjointchunks(n)
 
@@ -220,10 +233,19 @@ contains
        end do
     end do
 
+    ! if the base cutoff density was not found anywhere, then set
+    ! it to the top of the domain on the finest level
+    if (.not. found) then
+       which_lev = nlevs_radial
+       base_cutoff_density_coord(nlevs_radial) = nr(nlevs_radial)-1
+    endif
+
+    ! set the base cutoff coordinate on the finer levels
     do n=which_lev+1,nlevs_radial
        base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)
     end do
 
+    ! set the base cutoff coordinate on the coarser levels
     do n=which_lev-1,1,-1
        if (mod(base_cutoff_density_coord(n+1),2) .eq. 0) then
           base_cutoff_density_coord(n) = base_cutoff_density_coord(n+1) / 2
@@ -237,6 +259,8 @@ contains
     ! compute the coordinates of the burning cutoff density
     found = .false.
 
+    ! find the finest level containing the burning cutoff density,
+    ! and set the burning cutoff coord for this level
     do n=nlevs_radial,1,-1
        do i=1,numdisjointchunks(n)
 
@@ -253,11 +277,20 @@ contains
 
        end do
     end do
+ 
+    ! if the burning cutoff density was not found anywhere, then set
+    ! it to the top of the domain on the finest level
+    if (.not. found) then
+       which_lev = nlevs_radial
+       burning_cutoff_density_coord(nlevs_radial) = nr(nlevs_radial)-1
+    endif
 
+    ! set the burning cutoff coordinate on the finer levels 
     do n=which_lev+1,nlevs_radial
        burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)
     end do
 
+    ! set the burning cutoff coordinate on the coarser levels
     do n=which_lev-1,1,-1
        if (mod(burning_cutoff_density_coord(n+1),2) .eq. 0) then
           burning_cutoff_density_coord(n) = burning_cutoff_density_coord(n+1) / 2
