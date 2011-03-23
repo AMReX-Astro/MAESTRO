@@ -189,10 +189,10 @@ contains
     end do
 
     ! if the anelastic cutoff density was not found anywhere, then set
-    ! it to the top of the domain on the finest level
+    ! it to above the top of the domain on the finest level
     if (.not. found) then
        which_lev = nlevs_radial
-       anelastic_cutoff_coord(nlevs_radial) = nr(nlevs_radial)-1
+       anelastic_cutoff_coord(nlevs_radial) = nr(nlevs_radial)
     endif
 
     ! set the anelastic cutoff coordinate on the finer levels
@@ -234,10 +234,10 @@ contains
     end do
 
     ! if the base cutoff density was not found anywhere, then set
-    ! it to the top of the domain on the finest level
+    ! it to above the top of the domain on the finest level
     if (.not. found) then
        which_lev = nlevs_radial
-       base_cutoff_density_coord(nlevs_radial) = nr(nlevs_radial)-1
+       base_cutoff_density_coord(nlevs_radial) = nr(nlevs_radial)
     endif
 
     ! set the base cutoff coordinate on the finer levels
@@ -279,10 +279,10 @@ contains
     end do
  
     ! if the burning cutoff density was not found anywhere, then set
-    ! it to the top of the domain on the finest level
+    ! it to above the top of the domain on the finest level
     if (.not. found) then
        which_lev = nlevs_radial
-       burning_cutoff_density_coord(nlevs_radial) = nr(nlevs_radial)-1
+       burning_cutoff_density_coord(nlevs_radial) = nr(nlevs_radial)
     endif
 
     ! set the burning cutoff coordinate on the finer levels 
