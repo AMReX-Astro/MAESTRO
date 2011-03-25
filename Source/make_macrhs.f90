@@ -204,6 +204,7 @@ contains
     integer :: i, j, k
     real(kind=dp_t) :: gamma1bar_p0_avg
     
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -212,6 +213,7 @@ contains
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
     
     if (dpdt_factor .gt. 0.0d0) then
        !$OMP PARALLEL DO PRIVATE(i,j,k,gamma1bar_p0_avg)

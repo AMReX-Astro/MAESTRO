@@ -182,6 +182,7 @@ contains
         end do
         !$OMP END PARALLEL DO
 
+        !$OMP PARALLEL DO PRIVATE(r)     
         do r=lo,hi
 
            ! first copy sedgel into sp and sm
@@ -199,6 +200,7 @@ contains
            end if
 
         end do
+        !$OMP END PARALLEL DO
         
      else if (ppm_type .eq. 2) then
 
@@ -340,12 +342,14 @@ contains
      sedgel(0)       = sedger(0)
      sedger(nr_fine) = sedgel(nr_fine)
 
+     !$OMP PARALLEL DO PRIVATE(r,savg)
      do r=lo,hi+1
         ! solve Riemann problem to get final edge state
         sedge(1,r)=merge(sedgel(r),sedger(r),w0(1,r).gt.ZERO)
         savg = HALF*(sedger(r) + sedgel(r))
         sedge(1,r)=merge(savg,sedge(1,r),abs(w0(1,r)) .lt. rel_eps)
      end do
+     !$OMP END PARALLEL DO
 
    end subroutine make_edge_state_1d_sphr
 
@@ -560,6 +564,7 @@ contains
               lo = r_start_coord(n,i)
               hi = r_end_coord(n,i)
 
+              !$OMP PARALLEL DO PRIVATE(r)     
               do r=lo,hi
 
                  sp(n,r) = sedgel(n,r+1)
@@ -575,6 +580,7 @@ contains
                     sm(n,r) = THREE*s(n,r) - TWO*sp(n,r)
                  end if
               end do
+              !$OMP END PARALLEL DO
 
            end do ! loop over disjointchunks
         end do ! loop over levels
@@ -589,6 +595,7 @@ contains
               hi = r_end_coord(n,i)
 
               ! store centered differences in dsvl
+              !$OMP PARALLEL DO PRIVATE(r)
               do r=lo-3,hi+3
                  if (r .eq. 0) then
                     ! one-sided difference
@@ -601,6 +608,7 @@ contains
                     dsvl(n,r) = HALF * (s(n,r+1) - s(n,r-1))
                  end if
               end do
+              !$OMP END PARALLEL DO
 
               !$OMP PARALLEL DO PRIVATE(r,D2,D2L,D2R,sgn,D2LIM)
               do r=lo-2,hi+3

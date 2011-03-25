@@ -81,16 +81,20 @@ contains
        allocate(phisum_proc(0:nr_irreg,nlevs))
        allocate(phisum     (-1:nr_irreg,nlevs))
        allocate(radii      (-1:nr_irreg+1,nlevs))
-
+       !
        ! radii contains every possible distance that a cell-center at the finest
        ! level can map into
+       !
+       !$OMP PARALLEL PRIVATE(r,n)
        do n=1,nlevs
-          !$OMP PARALLEL DO PRIVATE(r)
+          !$OMP DO
           do r=0,nr_irreg
              radii(r,n) = sqrt(0.75d0+2.d0*r)*dx(n,1)
           end do
-          !$OMP END PARALLEL DO
+          !$OMP END DO NOWAIT
        end do
+       !$OMP END PARALLEL
+
        radii(nr_irreg+1,:) = 1.d99
 
     else
@@ -437,13 +441,16 @@ contains
     ! radii contains every possible distance that a cell-center at the finest
     ! level can map into
     !
+    !$OMP PARALLEL PRIVATE(r,n)
     do n=1,nlevs
-       !$OMP PARALLEL DO PRIVATE(r)
+       !$OMP DO
        do r=0,nr_irreg
           radii(r,n) = sqrt(0.75d0+2.d0*r)*dx(n,1)
        end do
-       !$OMP END PARALLEL DO
+       !$OMP END DO NOWAIT
     end do
+    !$OMP END PARALLEL
+
     radii(nr_irreg+1,:) = 1.d99
 
     ng = nghost(phi(1))
@@ -544,6 +551,7 @@ contains
 
     integer :: i,j,k
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
@@ -551,6 +559,7 @@ contains
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
 
   end subroutine sum_phi_3d
 

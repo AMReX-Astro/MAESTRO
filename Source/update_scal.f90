@@ -577,11 +577,12 @@ contains
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
-
+    !
     ! is spherical
+    !
+    !$OMP PARALLEL PRIVATE(i,j,k,divterm,comp) 
     do comp = nstart, nstop
-
-       !$OMP PARALLEL DO PRIVATE(i,j,k,divterm)       
+       !$OMP DO
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -595,9 +596,9 @@ contains
              enddo
           enddo
        enddo
-       !$OMP END PARALLEL DO
-
+       !$OMP END DO NOWAIT
     end do
+    !$OMP END PARALLEL
 
     if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
