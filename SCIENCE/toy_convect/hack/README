@@ -1,0 +1,6 @@
+these files implement the prediction of (rho X)' instead of predicting
+rho' and X separately.  To support this mode, a base state (rho X)_0
+is computed by averaging the full state (rho X).  This base state (rho
+X)_0 is advected through dt and the (rho X) edge state is then
+computed using the cell_to_edge average of (rho X)_0 together with the
+predicted (rho X)'
