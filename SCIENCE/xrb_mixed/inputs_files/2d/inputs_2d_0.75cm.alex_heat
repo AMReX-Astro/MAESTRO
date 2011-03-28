@@ -3,7 +3,7 @@
  spherical_in = 0
 
 ! do analytic heating only
- do_analytic_heating = T
+ do_heating = T
  do_burning = F
 
 ! our plot specifications
