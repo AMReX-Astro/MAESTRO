@@ -134,7 +134,12 @@ contains
              dp = pres(i+1) - pres(i-1)
           endif
 
-          nabla = pres(i) * dt / (dp * state(i,temp_comp))
+          ! prevent Inf
+          if (dp == ZERO) then
+             nabla = -huge(ZERO)
+          else
+             nabla = pres(i) * dt / (dp * state(i,temp_comp))
+          endif
        endif
 
        ad_excess(i) = nabla - nabla_ad(i)
@@ -209,7 +214,12 @@ contains
                 dp = pres(i,j+1) - pres(i,j-1)
              endif
 
-             nabla = pres(i,j) * dt / (dp * state(i,j,temp_comp))
+             ! prevent Inf
+             if (dp == ZERO) then
+                nabla = -huge(ZERO)
+             else
+                nabla = pres(i,j) * dt / (dp * state(i,j,temp_comp))
+             endif
           endif
 
           ad_excess(i,j) = nabla - nabla_ad(i,j)
@@ -292,7 +302,12 @@ contains
                    dp = pres(i,j,k+1) - pres(i,j,k-1)
                 endif
 
-                nabla = pres(i,j,k) * dt / (dp * state(i,j,k,temp_comp))
+                ! prevent Inf
+                if (dp == ZERO) then
+                   nabla = -huge(ZERO)
+                else
+                   nabla = pres(i,j,k) * dt / (dp * state(i,j,k,temp_comp))
+                endif
              endif
 
              ad_excess(i,j,k) = nabla - nabla_ad(i,j,k)
@@ -416,7 +431,12 @@ contains
                    dt(4) = dt(4) + dt(c)*normal(i,j,k,c) 
                 enddo
 
-                nabla = pres(i,j,k)*dt(4) / (dp(4)*state(i,j,k,temp_comp))
+                ! prevent Inf
+                if (dp(4) == ZERO) then
+                   nabla = -huge(ZERO)
+                else
+                   nabla = pres(i,j,k)*dt(4) / (dp(4)*state(i,j,k,temp_comp))
+                endif
              endif
 
              ad_excess(i,j,k) = nabla - nabla_ad(i,j,k)
