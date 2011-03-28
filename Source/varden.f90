@@ -244,6 +244,15 @@ subroutine varden()
      end if
   end if
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! warn the user if we are burning and heating - this might not be what we want
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  if (do_burning .and. do_heating .and. parallel_IOProcessor()) then
+     print *, 'WARNING: attempting to apply heating and a reaction network'
+     print *, '         make sure this is what you want to do, otherwise check'
+     print *, '         the do_heating and do_burning flag settings.'
+  endif
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! print processor and grid info
