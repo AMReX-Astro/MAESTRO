@@ -245,7 +245,7 @@ subroutine varden()
      end if
   end if
 
-  if (do_analytic_heating .and. do_burning) &
+  if (do_heating .and. do_burning) &
        call bl_error("We don't allow analytic heating and rxns")
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -632,6 +632,9 @@ subroutine varden()
 
      do istep = init_step,max_step
 
+        if (drive_initial_convection .and. istep >= stop_initial_convection) &
+             drive_initial_convection = .false.
+
         if ( verbose .ge. 1 ) then
            if ( parallel_IOProcessor() ) then
               print *, 'MEMORY STATS AT START OF TIMESTEP ', istep
@@ -815,7 +818,7 @@ subroutine varden()
            end if ! end regridding of base state
            
            ! figure out if we are tagging off of heating or rxns
-           if (do_analytic_heating) then
+           if (do_heating) then
               do n = 1, nlevs
                  call multifab_copy_c(tag_mf(n), 1, rho_Hext(n), 1, 1)
               enddo

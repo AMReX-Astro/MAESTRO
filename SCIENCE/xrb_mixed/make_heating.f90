@@ -82,7 +82,7 @@ contains
     use bl_constants_module
     use variables
     use network
-    use probin_module, only: drive_initial_convection, do_analytic_heating
+    use probin_module, only: drive_initial_convection
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:)
@@ -97,51 +97,43 @@ contains
 
     logical, save :: firstCall = .true.
 
-    if (do_analytic_heating) then
+    if (firstCall) then
+       ih1 =  network_species_index("hydrogen-1")
+       ic12 = network_species_index("carbon-12")
+       in14 = network_species_index("nitrogen-14")
+       io16 = network_species_index("oxygen-16")
 
-       if (firstCall) then
-          ih1 =  network_species_index("hydrogen-1")
-          ic12 = network_species_index("carbon-12")
-          in14 = network_species_index("nitrogen-14")
-          io16 = network_species_index("oxygen-16")
-
-          firstCall = .false.
-       endif
-
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             rho = s(i,j,rho_comp)
-
-             if (drive_initial_convection) then
-                temp = tempbar_init(j)
-             else
-                temp = s(i,j,temp_comp)
-             endif
-
-             T6 = temp / 1.0e6_dp_t
-             T613 = T6**THIRD
-
-             ! total CNO abundance
-             X_CNO = (s(i,j,spec_comp-1+ic12) + &
-                  s(i,j,spec_comp-1+in14) + &
-                  s(i,j,spec_comp-1+io16)) / rho
-
-             ! H abundance
-             X_1 = s(i,j,spec_comp-1+ih1) / rho
-
-             ! CNO heating from Kippenhahn & Weigert, Eq. 18.65
-             g14 = 1.0_dp_t + 2.7d-3*T613 - 7.78d-3*T613**2 - 1.49d-4*T6
-             eps_CNO = 8.67e27_dp_t * g14 * X_CNO * X_1 * rho * exp(-152.28_dp_t/T613) / T613**2
-
-             rho_Hext(i,j) = rho * eps_CNO
-          enddo
-       enddo
-
-    else
-
-       rho_Hext(:,:) = ZERO
-
+       firstCall = .false.
     endif
+    
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+          rho = s(i,j,rho_comp)
+
+          if (drive_initial_convection) then
+             temp = tempbar_init(j)
+          else
+             temp = s(i,j,temp_comp)
+          endif
+
+          T6 = temp / 1.0e6_dp_t
+          T613 = T6**THIRD
+
+          ! total CNO abundance
+          X_CNO = (s(i,j,spec_comp-1+ic12) + &
+               s(i,j,spec_comp-1+in14) + &
+               s(i,j,spec_comp-1+io16)) / rho
+
+          ! H abundance
+          X_1 = s(i,j,spec_comp-1+ih1) / rho
+
+          ! CNO heating from Kippenhahn & Weigert, Eq. 18.65
+          g14 = 1.0_dp_t + 2.7d-3*T613 - 7.78d-3*T613**2 - 1.49d-4*T6
+          eps_CNO = 8.67e27_dp_t * g14 * X_CNO * X_1 * rho * exp(-152.28_dp_t/T613) / T613**2
+
+          rho_Hext(i,j) = rho * eps_CNO
+       enddo
+    enddo
     
   end subroutine get_rho_Hext_2d
   

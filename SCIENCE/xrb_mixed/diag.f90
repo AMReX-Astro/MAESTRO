@@ -42,7 +42,7 @@ module diag_module
   use ml_layout_module
   use define_bc_module
   use network, only: network_species_index
-  use probin_module, only: do_deltap_diag, do_analytic_heating
+  use probin_module, only: do_deltap_diag, do_heating
 
   implicit none
 
@@ -680,7 +680,7 @@ contains
           if (dm > 2) then
              write(un , 1001) "time", "max{T}", "x_loc", "y_loc", "z_loc"
 
-             if (do_analytic_heating) then
+             if (do_heating) then
                 write(un2, 1001) "time", "max{Hext}", &
                                  "x_loc", "y_loc", "z_loc", &
                                  "mass_c12", "mass_o16"
@@ -701,7 +701,7 @@ contains
           else
              write(un , 1001) "time", "max{T}", "x_loc", "y_loc"
              
-             if (do_analytic_heating) then
+             if (do_heating) then
                 write(un2, 1001) "time", "max{Hext}", "x_loc", "y_loc", &
                                  "mass_c12", "mass_o16"
              else
@@ -851,7 +851,7 @@ contains
 
              ! enuc diagnostic
              ! NOTE: we use rho_Hext if we are doing analytic heating
-             if (do_analytic_heating) then
+             if (do_heating) then
                 enuc_local = rho_Hext(i,j)/s(i,j,rho_comp)
              else
                 enuc_local = rho_Hnuc(i,j)/s(i,j,rho_comp)
@@ -1036,7 +1036,7 @@ contains
 
                 ! enuc diagnostic
                 ! NOTE: we use rhoHext if we are doing analytic heating
-                if (do_analytic_heating) then
+                if (do_heating) then
                    enuc_local = rho_Hext(i,j,k)/s(i,j,k,rho_comp)
                 else
                    enuc_local = rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)

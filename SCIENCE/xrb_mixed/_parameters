@@ -50,8 +50,3 @@ tag_minval                          real               1.0d-4
 # maximum value to use for species in tag_boxes
 tag_maxval                          real               0.99d0
 
-# do analytic CNO heating instead of network burn; note that if this is T and
-# {\tt do\_burning} = T the code will abort; we don't allow both heating and 
-# rxns
-do_analytic_heating                logical             .false.
-
