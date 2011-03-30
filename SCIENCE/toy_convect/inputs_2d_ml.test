@@ -64,6 +64,7 @@
  use_eos_coulomb = T
 
  do_burning = F
+ do_heating = T
 
  plot_Hext = T
  plot_ad_excess = T

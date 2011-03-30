@@ -30,7 +30,7 @@
  grav_const = -1.04263053d9
 
  max_step  = 1000000
- stop_time = 50.0
+ stop_time = 250.0
 
  do_initial_projection = T
  init_divu_iter = 4
@@ -65,6 +65,7 @@
  use_eos_coulomb = T
 
  do_burning = F
+ do_heating = T
 
  plot_Hext = T
  plot_ad_excess = T
