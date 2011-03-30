@@ -16,6 +16,7 @@ contains
     use bl_constants_module, only: HALF
     use geometry, only: r_start_coord, r_end_coord, nr, &
                         numdisjointchunks, spherical
+    use restrict_base_module
 
     real(kind=dp_t), intent(in   ) :: s0_cell(:,0:)
     real(kind=dp_t), intent(inout) :: s0_edge(:,0:)
@@ -61,6 +62,10 @@ contains
           !$OMP END PARALLEL DO
        end do
     end do
+
+
+    ! make the edge values synchronous across levels
+    call restrict_base(s0_edge, .false.)
 
   end subroutine cell_to_edge
   
