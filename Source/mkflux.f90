@@ -1,3 +1,20 @@
+! The mkflux routines take the predicted edges states of the scalars
+! and the MAC velocities and compute the fluxes through the
+! interfaces.
+
+! For the density fluxes, the incoming edge states can be make by
+! predicting rho' and X separately, or by predicting the full (rho X)
+! as one quantity.  If we are using the edge states of rho' and X,
+! then we need to make use of the base state to make the final fluxes
+! of (rho X).
+
+! For enthalpy, there are a wide range of quantities that we predict,
+! but they fall into 2 categories.  The enthalpy edge states either
+! contain predictions of h or (rho h)'.  If we have h, then we use
+! the predicted rho', and in both cases, we use the base state to
+! make the full (rho h) flux through the interface.
+
+
 module mkflux_module
 
   use bl_types
@@ -178,6 +195,7 @@ contains
     use network, only : nspec
     use variables, only : spec_comp, rho_comp
     use pred_parameters
+    use probin_module, only: species_pred_type
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_ef,ng_se,ng_um
     real(kind=dp_t), intent(inout) ::     sfluxx(lo(1)-ng_sf:,:)
@@ -194,14 +212,25 @@ contains
     integer         :: i
     real(kind=dp_t) :: rho0_edge
     
-    ! loop over components -- note the edges states are X
+
     do comp = startcomp, endcomp
 
        ! create x-fluxes
        do i = lo(1),hi(1)+1
-          rho0_edge = HALF*(rho0_edge_old(i)+rho0_edge_new(i))
-          sfluxx(i,comp) = &
-               (umac(i)+w0(i))*(rho0_edge+sedgex(i,rho_comp))*sedgex(i,comp)
+
+          if (species_pred_type == 1) then
+             ! edge states are rho' and X.  To make the (rho X) flux,
+             ! we need the edge state of rho0
+             rho0_edge = HALF*(rho0_edge_old(i)+rho0_edge_new(i))
+             sfluxx(i,comp) = &
+                  (umac(i)+w0(i))*(rho0_edge+sedgex(i,rho_comp))*sedgex(i,comp)
+
+          else if (species_pred_type == 2) then
+             ! edge states are (rho X)
+             sfluxx(i,comp) = &
+                  (umac(i)+w0(i))*sedgex(i,comp)             
+
+          endif
 
           if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
              etarhoflux(i) = etarhoflux(i) + sfluxx(i,comp)
@@ -223,6 +252,7 @@ contains
     use network, only : nspec
     use variables, only : spec_comp, rho_comp
     use pred_parameters
+    use probin_module, only: species_pred_type
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_ef,ng_se,ng_um
     real(kind=dp_t), intent(inout) ::     sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
@@ -243,15 +273,24 @@ contains
     integer         :: i,j
     real(kind=dp_t) :: rho0_edge
     
-    ! loop over components -- note the edges states are X
     do comp = startcomp, endcomp
 
        ! create x-fluxes
        do j=lo(2),hi(2)
           rho0_edge = HALF*(rho0_old(j)+rho0_new(j))
           do i=lo(1),hi(1)+1
-             sfluxx(i,j,comp) = umac(i,j)* &
-                  (rho0_edge+sedgex(i,j,rho_comp))*sedgex(i,j,comp)
+
+             if (species_pred_type == 1) then
+                ! edge states are rho' and X.  To make the (rho X) flux,
+                ! we need the edge state of rho0
+                sfluxx(i,j,comp) = umac(i,j)* &
+                     (rho0_edge+sedgex(i,j,rho_comp))*sedgex(i,j,comp)
+
+             else if (species_pred_type == 2) then
+                ! edge states are (rho X)
+                sfluxx(i,j,comp) = umac(i,j)*sedgex(i,j,comp)                
+             endif
+
           end do
        end do
              
@@ -259,8 +298,18 @@ contains
        do j = lo(2),hi(2)+1
           rho0_edge = HALF*(rho0_edge_old(j)+rho0_edge_new(j))
           do i = lo(1),hi(1)
-             sfluxy(i,j,comp) = &
-                  (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,comp)
+
+             if (species_pred_type == 1) then
+                ! edge states are rho' and X.  To make the (rho X) flux,
+                ! we need the edge state of rho0
+                sfluxy(i,j,comp) = &
+                     (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,comp)
+
+             else if (species_pred_type == 2) then
+                ! edge states are (rho X)
+                sfluxy(i,j,comp) = &
+                     (vmac(i,j)+w0(j))*sedgey(i,j,comp)
+             endif
 
              if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
                 etarhoflux(i,j) = etarhoflux(i,j) + sfluxy(i,j,comp)
@@ -284,6 +333,7 @@ contains
     use network, only : nspec
     use variables, only : spec_comp, rho_comp
     use pred_parameters
+    use probin_module, only: species_pred_type
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_ef,ng_se,ng_um
     real(kind=dp_t), intent(inout) ::     sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
@@ -307,23 +357,47 @@ contains
     integer         :: i,j,k
     real(kind=dp_t) :: rho0_edge
     
-    ! loop over components -- note the edges states are X
     do comp = startcomp, endcomp
 
        ! create x-fluxes and y-fluxes
        do k=lo(3),hi(3)
           rho0_edge = HALF*(rho0_old(k)+rho0_new(k))
+
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)+1
-                sfluxx(i,j,k,comp) = &
-                     umac(i,j,k)*(rho0_edge+sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
+
+                if (species_pred_type == 1) then
+                   ! edge states are rho' and X.  To make the (rho X)
+                   ! flux, we need the edge state of rho0
+                   sfluxx(i,j,k,comp) = &
+                        umac(i,j,k)*(rho0_edge+sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
+
+                else if (species_pred_type == 2) then
+                   ! edge states are (rho X)
+                   sfluxx(i,j,k,comp) = &
+                        umac(i,j,k)*sedgex(i,j,k,comp)                   
+
+                endif
+
              end do
           end do
           
           do j=lo(2),hi(2)+1
              do i=lo(1),hi(1)
-                sfluxy(i,j,k,comp) = &
-                     vmac(i,j,k)*(rho0_edge+sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
+
+                if (species_pred_type == 1) then
+                   ! edge states are rho' and X.  To make the (rho X)
+                   ! flux, we need the edge state of rho0
+                   sfluxy(i,j,k,comp) = &
+                        vmac(i,j,k)*(rho0_edge+sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
+
+                else if (species_pred_type == 2) then
+                   ! edge states are (rho X)
+                   sfluxy(i,j,k,comp) = &
+                        vmac(i,j,k)*sedgey(i,j,k,comp)
+                   
+                endif
+
              end do
           end do
        end do
@@ -333,8 +407,18 @@ contains
           rho0_edge = HALF*(rho0_edge_old(k)+rho0_edge_new(k))
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
-                sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))* &
+
+                if (species_pred_type == 1) then
+                   ! edge states are rho' and X.  To make the (rho X)
+                   ! flux, we need the edge state of rho0
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))* &
                      (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
+
+                else if (species_pred_type == 2) then
+                   ! edge states are (rho X)
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp)
+
+                endif
 
                 if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
                    etarhoflux(i,j,k) = etarhoflux(i,j,k) + sfluxz(i,j,k,comp)
@@ -363,7 +447,7 @@ contains
     use network, only: nspec
     use variables, only: spec_comp, rho_comp
     use pred_parameters
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: species_pred_type
 
     integer        , intent(in   ) :: lo(:),hi(:)
     integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_w0,ng_ro,ng_rn
@@ -392,7 +476,7 @@ contains
     integer         :: i,j,k
     real(kind=dp_t) :: rho0_edge
     
-    ! loop over components -- note the edges states are X
+
     do comp = startcomp, endcomp
 
        ! loop for x-fluxes
@@ -401,9 +485,19 @@ contains
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
-                rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
-                sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
-                     (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
+
+                if (species_pred_type == 1) then
+                   ! edge states are rho' and X.  To make the (rho X)
+                   ! flux, we need the edge state of rho0
+                   rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
+                   sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
+                        (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
+
+                else if (species_pred_type == 2) then
+                   ! edge states are (rho X)
+                   sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * sedgex(i,j,k,comp)                   
+                endif
+
              end do
           end do
        end do
@@ -414,9 +508,19 @@ contains
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
-                rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
-                sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
-                     (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
+
+                if (species_pred_type == 1) then
+                   ! edge states are rho' and X.  To make the (rho X)
+                   ! flux, we need the edge state of rho0
+                   rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
+                   sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
+                        (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
+
+                else if (species_pred_type == 2) then
+                   ! edge states are (rho X)
+                   sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * sedgey(i,j,k,comp)
+                endif
+
              end do
           end do
        end do
@@ -427,9 +531,20 @@ contains
        do k = lo(3), hi(3)+1
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
-                rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
-                sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
+
+                if (species_pred_type == 1) then
+                   ! edge states are rho' and X.  To make the (rho X)
+                   ! flux, we need the edge state of rho0
+                   rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
                      (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
+
+                else if (species_pred_type == 2) then
+                   ! edge states are (rho X)
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * sedgez(i,j,k,comp)
+
+                endif
+
              end do
           end do
        end do

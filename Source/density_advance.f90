@@ -34,7 +34,7 @@ contains
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr_fine, nlevs_radial
     use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
-    use probin_module, only: verbose, bds_type
+    use probin_module, only: verbose, bds_type, species_pred_type
     use modify_scal_force_module, only: modify_scal_force
     use convert_rhoX_to_X_module, only: convert_rhoX_to_X
 
@@ -62,7 +62,7 @@ contains
     type(multifab) :: rho0mac_old(mla%nlevel,mla%dim)
     type(multifab) :: rho0mac_new(mla%nlevel,mla%dim)
 
-    integer    :: comp,n,dm,nlevs
+    integer    :: comp,i,n,dm,nlevs
     logical    :: is_vel
     real(dp_t) :: smin,smax
 
@@ -107,9 +107,25 @@ contains
                                  .false.,dx,the_bc_level,mla)
     end if
 
-    ! Make source term for rho'
+    ! Make source term for rho' -- note we do this regardless of how
+    ! we are predicting the species, since some methods for the
+    ! enthalpy advancement need rho' edge states
     call modify_scal_force(scal_force,sold,umac,rho0_old, &
-                           rho0_edge_old,w0,dx,rho0_old_cart,rho_comp,mla,the_bc_level)
+                           rho0_edge_old,w0,dx,rho0_old_cart,rho_comp, &
+                           mla,the_bc_level)
+
+
+    ! Make source term for (rho X) -- note the base state density 
+    ! quantities that we pass in here are ignored since we are making
+    ! the force assuming a full form (not perturbational) of the 
+    ! species advection equation.
+    if (species_pred_type == 2) then
+       do i = 1, nspec
+          call modify_scal_force(scal_force,sold,umac,rho0_old, &
+                                 rho0_edge_old,w0,dx,rho0_old_cart,spec_comp-1+i,mla, &
+                                 the_bc_level,.true.)
+       enddo
+    endif
 
     if (spherical .eq. 1) then
        do n=1,nlevs
@@ -127,13 +143,22 @@ contains
     !     Create the edge states of (rho X)' or X and rho'
     !**************************************************************************
 
-    ! convert (rho X) --> X in sold 
-    call convert_rhoX_to_X(sold,.true.,mla,the_bc_level)
+    if (species_pred_type == 1) then
+       ! we are predicting X to the edges, so convert the scalar
+       ! data to those quantities
 
-    ! convert rho -> rho' in sold 
+       ! convert (rho X) --> X in sold 
+       call convert_rhoX_to_X(sold,.true.,mla,the_bc_level)
+    endif
+
+    ! convert rho -> rho' in sold -- we do this for all the
+    ! species_pred_types, since some methods for predicting enthalpy
+    ! will need rho' on edges
     call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,foextrap_comp,.true.,the_bc_level)
 
-    ! predict X at the edges
+
+    ! predict species at the edges -- note, either X or (rho X) will be
+    ! predicted here, depending on species_pred_type
     if (bds_type .eq. 0) then
        call make_edge_scal(sold,sedge,umac,scal_force, &
                            dx,dt,is_vel,the_bc_level, &
@@ -144,7 +169,8 @@ contains
                 spec_comp,dm+spec_comp,nspec,.false.,mla)
     end if
 
-    ! predict rho' at the edges
+    ! predict rho' at the edges -- we do this for all species_pred_types
+    ! since it is needed for enthalpy later
     if (bds_type .eq. 0) then
        call make_edge_scal(sold,sedge,umac,scal_force, &
                            dx,dt,is_vel,the_bc_level, &
@@ -158,8 +184,11 @@ contains
     ! convert rho' -> rho in sold
     call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,dm+rho_comp,.false.,the_bc_level)
 
-    ! convert X --> (rho X) in sold 
-    call convert_rhoX_to_X(sold,.false.,mla,the_bc_level)
+    if (species_pred_type == 1) then
+       ! convert X --> (rho X) in sold 
+       call convert_rhoX_to_X(sold,.false.,mla,the_bc_level)
+    endif
+
 
     !**************************************************************************
     !     Create edge states of tracers

@@ -13,7 +13,7 @@ module modify_scal_force_module
 contains
 
   subroutine modify_scal_force(force,s,umac,base,base_edge,w0,dx,base_cart, &
-                               comp,mla,the_bc_level)
+                               comp,mla,the_bc_level,fullform)
 
     use bl_prof_module
     use bl_constants_module
@@ -36,7 +36,8 @@ contains
     integer        , intent(in   ) :: comp
     type(ml_layout), intent(inout) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
-    
+    logical, optional, intent(in ) :: fullform
+
     ! local
     integer :: i,ng_f,ng_s,ng_um,ng_b,n
     integer :: lo(mla%dim),hi(mla%dim)
@@ -51,9 +52,14 @@ contains
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
     real(kind=dp_t), pointer :: bcp(:,:,:,:)
 
+    logical :: do_fullform
+
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "modify_scal_force")
+
+    do_fullform = .false. ; if (present(fullform)    ) do_fullform = fullform
+
     
     dm = mla%dim
     nlevs = mla%nlevel
@@ -80,12 +86,12 @@ contains
           case (1)
              call modify_scal_force_1d(fp(:,1,1,comp),ng_f,sp(:,1,1,comp),ng_s,lo,hi, &
                                        ump(:,1,1,1),ng_um,base(n,:), &
-                                       base_edge(n,:),w0(n,:),dx(n,:))
+                                       base_edge(n,:),w0(n,:),dx(n,:),do_fullform)
           case (2)
              vmp => dataptr(umac(n,2),i)
              call modify_scal_force_2d(fp(:,:,1,comp),ng_f,sp(:,:,1,comp),ng_s,lo,hi, &
                                        ump(:,:,1,1),vmp(:,:,1,1),ng_um,base(n,:), &
-                                       base_edge(n,:),w0(n,:),dx(n,:))
+                                       base_edge(n,:),w0(n,:),dx(n,:),do_fullform)
           case(3)
              vmp => dataptr(umac(n,2),i)
              wmp  => dataptr(umac(n,3), i)
@@ -95,13 +101,13 @@ contains
                                                lo,hi,domlo,domhi, &
                                                ump(:,:,:,1),vmp(:,:,:,1), &
                                                wmp(:,:,:,1),ng_um,bcp(:,:,:,1),ng_b, &
-                                               w0(1,:),dx(n,:))
+                                               w0(1,:),dx(n,:),do_fullform)
              else
                 call modify_scal_force_3d_cart(fp(:,:,:,comp),ng_f,sp(:,:,:,comp),ng_s, &
                                                lo,hi,ump(:,:,:,1), &
                                                vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
                                                base(n,:),base_edge(n,:), &
-                                               w0(n,:),dx(n,:))
+                                               w0(n,:),dx(n,:),do_fullform)
              end if
           end select
        end do
@@ -142,7 +148,7 @@ contains
   end subroutine modify_scal_force
   
   subroutine modify_scal_force_1d(force,ng_f,s,ng_s,lo,hi,umac,ng_um, &
-                                  base,base_edge,w0,dx)
+                                  base,base_edge,w0,dx,do_fullform)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um
     real(kind=dp_t), intent(  out) :: force(lo(1)-ng_f :)
@@ -151,6 +157,7 @@ contains
     real(kind=dp_t), intent(in   ) ::  base(0:), base_edge(0:)
     real(kind=dp_t), intent(in   ) ::    w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
+    logical,         intent(in   ) :: do_fullform
     
     integer :: i
     real(kind=dp_t) :: divu,divbaseu
@@ -159,20 +166,27 @@ contains
 
        ! umac does not contain w0
        divu =  (umac(i+1) - umac(i)) / dx(1)
-
+          
        ! add w0 contribution
        divu = divu + (w0(i+1)-w0(i))/dx(1)
 
-       divbaseu = (umac(i+1) * base_edge(i+1) - &
-                   umac(i  ) * base_edge(i  ) )/ dx(1)
+       if (do_fullform) then
+          force(i) = force(i) - s(i)*divu
+
+       else
+          
+          divbaseu = (umac(i+1) * base_edge(i+1) - &
+                      umac(i  ) * base_edge(i  ) )/ dx(1)
        
-       force(i) = force(i) - (s(i)-base(i))*divu - divbaseu 
+          force(i) = force(i) - (s(i)-base(i))*divu - divbaseu 
+       endif
+
     end do
           
   end subroutine modify_scal_force_1d
   
   subroutine modify_scal_force_2d(force,ng_f,s,ng_s,lo,hi,umac,vmac,ng_um, &
-                                  base,base_edge,w0,dx)
+                                  base,base_edge,w0,dx,do_fullform)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um
     real(kind=dp_t), intent(  out) :: force(lo(1)-ng_f :,lo(2)-ng_f :)
@@ -182,6 +196,7 @@ contains
     real(kind=dp_t), intent(in   ) ::  base(0:), base_edge(0:)
     real(kind=dp_t), intent(in   ) ::    w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
+    logical        , intent(in   ) :: do_fullform
     
     integer :: i,j
     real(kind=dp_t) :: divu,divbaseu
@@ -196,18 +211,25 @@ contains
           ! add w0 contribution
           divu = divu + (w0(j+1)-w0(j))/dx(2)
 
-          divbaseu = base(j)*(umac(i+1,j) - umac(i,j))/dx(1) &
-                            +(vmac(i,j+1) * base_edge(j+1) - &
-                              vmac(i,j  ) * base_edge(j  ) )/ dx(2)
+
+          if (do_fullform) then
+             force(i,j) = force(i,j) - s(i,j)*divu 
           
-          force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu 
+          else
+             divbaseu = base(j)*(umac(i+1,j) - umac(i,j))/dx(1) &
+                               +(vmac(i,j+1) * base_edge(j+1) - &
+                                 vmac(i,j  ) * base_edge(j  ) )/ dx(2)
+          
+             force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu 
+          endif
+
        end do
     end do
           
   end subroutine modify_scal_force_2d
   
   subroutine modify_scal_force_3d_cart(force,ng_f,s,ng_s,lo,hi,umac,vmac,wmac,ng_um, &
-                                       base,base_edge,w0,dx)
+                                       base,base_edge,w0,dx,do_fullform)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um
     real(kind=dp_t), intent(  out) :: force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
@@ -218,6 +240,7 @@ contains
     real(kind=dp_t), intent(in   ) :: base(0:), base_edge(0:)
     real(kind=dp_t), intent(in   ) ::   w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
+    logical        , intent(in   ) :: do_fullform
     
     integer :: i,j,k
     real(kind=dp_t) :: divu,divbaseu
@@ -235,12 +258,19 @@ contains
              ! add w0 contribution
              divu = divu + (w0(k+1)-w0(k))/dx(3)
 
-             divbaseu = base(k)*( (umac(i+1,j,k) - umac(i,j,k))/dx(1) &
-                                 +(vmac(i,j+1,k) - vmac(i,j,k))/dx(2) ) &
-                                 +(wmac(i,j,k+1) * base_edge(k+1) &
-                                 - wmac(i,j,k  ) * base_edge(k  ))/ dx(3)
+             if (do_fullform) then
+                force(i,j,k) = force(i,j,k) - s(i,j,k)*divu
 
-             force(i,j,k) = force(i,j,k) - (s(i,j,k)-base(k))*divu - divbaseu 
+             else
+
+                divbaseu = base(k)*( (umac(i+1,j,k) - umac(i,j,k))/dx(1) &
+                                    +(vmac(i,j+1,k) - vmac(i,j,k))/dx(2) ) &
+                                    +(wmac(i,j,k+1) * base_edge(k+1) &
+                                    - wmac(i,j,k  ) * base_edge(k  ))/ dx(3)
+
+                force(i,j,k) = force(i,j,k) - (s(i,j,k)-base(k))*divu - divbaseu 
+             endif
+
           end do
        end do
     end do
@@ -249,7 +279,7 @@ contains
   end subroutine modify_scal_force_3d_cart
   
   subroutine modify_scal_force_3d_sphr(force,ng_f,s,ng_s,lo,hi,domlo,domhi, &
-                                       umac,vmac,wmac,ng_um,base_cart,ng_b,w0,dx)
+                                       umac,vmac,wmac,ng_um,base_cart,ng_b,w0,dx,do_fullform)
 
     use geometry, only: nr_fine, r_edge_loc, dr, r_cc_loc
     use fill_3d_module
@@ -265,6 +295,7 @@ contains
     real(kind=dp_t), intent(in   ) :: base_cart(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
+    logical        , intent(in   ) :: do_fullform
     
     ! Local variables
     integer :: i,j,k,r
@@ -299,46 +330,55 @@ contains
              divumac = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
                       +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
                       +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
-             
-             if (i.lt.domhi(1)) then
-                base_xhi = HALF * (base_cart(i,j,k) + base_cart(i+1,j,k))
-             else
-                base_xhi = base_cart(i,j,k)
-             end if
-             if (i.gt.domlo(1)) then
-                base_xlo = HALF * (base_cart(i,j,k) + base_cart(i-1,j,k))
-             else
-                base_xlo = base_cart(i,j,k)
-             end if
 
-             if (j.lt.domhi(2)) then
-                base_yhi = HALF * (base_cart(i,j,k) + base_cart(i,j+1,k))
-             else
-                base_yhi = base_cart(i,j,k)
-             end if
-             if (j.gt.domlo(2)) then
-                base_ylo = HALF * (base_cart(i,j,k) + base_cart(i,j-1,k))
-             else
-                base_ylo = base_cart(i,j,k)
-             end if
 
-             if (k.lt.domhi(3)) then
-                base_zhi = HALF * (base_cart(i,j,k) + base_cart(i,j,k+1))
+             if (do_fullform) then
+
+                force(i,j,k) = force(i,j,k) - s(i,j,k)*(divumac+divu_cart(i,j,k,1))                 
              else
-                base_zhi = base_cart(i,j,k)
-             end if
-             if (k.gt.domlo(3)) then
-                base_zlo = HALF * (base_cart(i,j,k) + base_cart(i,j,k-1))
-             else
-                base_zlo = base_cart(i,j,k)
-             end if
              
-             divbaseu = (umac(i+1,j,k)*base_xhi - umac(i,j,k)*base_xlo)/dx(1) + &
-                        (vmac(i,j+1,k)*base_yhi - vmac(i,j,k)*base_ylo)/dx(2) + &
-                        (wmac(i,j,k+1)*base_zhi - wmac(i,j,k)*base_zlo)/dx(3)
+                if (i.lt.domhi(1)) then
+                   base_xhi = HALF * (base_cart(i,j,k) + base_cart(i+1,j,k))
+                else
+                   base_xhi = base_cart(i,j,k)
+                end if
+                if (i.gt.domlo(1)) then
+                   base_xlo = HALF * (base_cart(i,j,k) + base_cart(i-1,j,k))
+                else
+                   base_xlo = base_cart(i,j,k)
+                end if
+                
+                if (j.lt.domhi(2)) then
+                   base_yhi = HALF * (base_cart(i,j,k) + base_cart(i,j+1,k))
+                else
+                   base_yhi = base_cart(i,j,k)
+                end if
+                if (j.gt.domlo(2)) then
+                   base_ylo = HALF * (base_cart(i,j,k) + base_cart(i,j-1,k))
+                else
+                   base_ylo = base_cart(i,j,k)
+                end if
+                
+                if (k.lt.domhi(3)) then
+                   base_zhi = HALF * (base_cart(i,j,k) + base_cart(i,j,k+1))
+                else
+                   base_zhi = base_cart(i,j,k)
+                end if
+                if (k.gt.domlo(3)) then
+                   base_zlo = HALF * (base_cart(i,j,k) + base_cart(i,j,k-1))
+                else
+                   base_zlo = base_cart(i,j,k)
+                end if
+                
+                divbaseu = (umac(i+1,j,k)*base_xhi - umac(i,j,k)*base_xlo)/dx(1) + &
+                           (vmac(i,j+1,k)*base_yhi - vmac(i,j,k)*base_ylo)/dx(2) + &
+                           (wmac(i,j,k+1)*base_zhi - wmac(i,j,k)*base_zlo)/dx(3)
              
-             force(i,j,k) = force(i,j,k) - divbaseu &
-                  -(s(i,j,k)-base_cart(i,j,k))*(divumac+divu_cart(i,j,k,1)) 
+                force(i,j,k) = force(i,j,k) - divbaseu &
+                     -(s(i,j,k)-base_cart(i,j,k))*(divumac+divu_cart(i,j,k,1)) 
+
+             endif
+
           end do
        end do
     end do
