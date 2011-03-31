@@ -230,6 +230,13 @@ do_eos_h_above_cutoff               logical            .true.
 # predict\_Tprime\_then\_h = 6.
 enthalpy_pred_type                  integer            predict_rhohprime   
 
+# Which quantities do we predict to the edges for computing the ($\rho X$)
+# edge states?  {\tt species\_pred\_type} = 1 means predict $\rho^\prime$
+# and $X$ separately.  {\tt species\_pred\_type} = 2 means predict the
+# full ($\rho X$) iteself.
+species_pred_type                   integer            1
+
+
 # The maximum scale factor that the time step is allowed to grow by per 
 # time step.
 max_dt_growth                       real               1.1d0
