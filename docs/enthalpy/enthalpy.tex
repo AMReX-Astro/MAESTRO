@@ -1,8 +1,8 @@
-\section{Enthalpy Evolution}
+\section{Evolution Equations}
 
-In the low Mach number formulation, the continuity and momentum
-equations together with the constraint on the velocity field
-completely determine the solution.
+The compressible and low Mach number formulations of the governing
+equations both share the unapproximated continuity and momentum equations
+shown here (where $p = p_0 + \pi$).
 \begin{eqnarray}
 \frac{\partial(\rho X_k)}{\partial t} &=& -\nabla\cdot(\rho X_k\Ub) + 
 \rho\omegadot_k,\label{eq:species}\\
@@ -11,15 +11,91 @@ completely determine the solution.
   \frac{\rho-\rho_0}{\rho} g\eb_r,\label{eq:momentum}
 \end{eqnarray}
 
-The addition of an energy equation over-specifies the problem, but its
-solution can help us in providing a diagnostic capability for the
-solution.  Additionally, work from combustion suggests that low Mach
-number methods perform better when considering reactions if we use
-an enthalpy equation to determine the temperature.
+In the compressible formulation we complete the system with an energy
+equation as well as an equation of state; in the low Mach number
+formulation we can derive a constraint on the velocity by 
+setting $p_{EOS} = p(\rho,h,X_k) = p_0$ and
+differentiating the equation of state along particle paths.
+In this case adding the energy equation would over-constrain the system, 
+but its solution can help us in providing a diagnostic capability for the
+solution.  We can write the energy equation in terms of internal energy, $e$,
+or enthalpy, $h$; these two equations are analytically equivalent.
+\begin{eqnarray}
+\frac{\partial(\rho h)}{\partial t} + \nabla\cdot(\rho h\Ub) 
+ &=& \frac{Dp}{Dt} + \rho\Hnuc \nonumber \\
+%
+\frac{\partial(\rho e)}{\partial t} + \nabla\cdot(\rho e \Ub)
+ &=& - p\nabla\cdot \Ub + \rho\Hnuc \nonumber 
+\end{eqnarray}
+In low Mach number combustion, $Dp/Dt = 0,$ which makes the enthalpy equation
+preferable to the internal energy equation because we don't need to
+evaluate $p \nabla \cdot \Ub.$ 
 
-The velocity constraint equation was constructed by diffrentiating 
+\section{Derivation of Constraint Using Enthalpy Equation}
+
+The velocity constraint equation was constructed by differentiating 
 the pressure along particle paths, using the equation of state.  
+Specifically, we wrote $p_{EOS} = p(\rho,T,X_k) = p_0$
+and expressed $DT/Dt$ in terms of $Dh/Dt:$
+\begin{equation}
+\frac{DT}{Dt} = \frac{1}{\rho c_p} \left( (1 - \rho h_p) \frac{D p}{D t}
+- \sum_k \rho \xi_k \omegadot_k + \rho H \right) \enskip , \label{eq:dTdt}
+\end{equation}
+where $c_p = \left.\partial h/\partial T\right|_{p,X_k}$ is the
+specific heat at constant pressure,
+$\xi_k = \left.\partial h/\partial X_k \right|_{p,T}$,
+and $h_p = \left.\partial h/\partial p\right|_{T,X_k}$
+for convenience.
 
+Then we derived
+\begin{eqnarray*}
+\nabla \cdot \ubold &=& \frac{1}{\rho p_\rho} \left(
+- \frac{D p}{D t} + \frac{p_T}{\rho c_p}
+  \left( (1 - \rho h_p) \frac{D p}{D t} - \rho \sum_k \xi_k \omegadot_k + \rho H \right)
++ \sum_k p_{X_k} \omegadot_k \right)  \\
+                 &=& \frac{1}{\rho p_\rho}
+  \left( \frac{p_T}{\rho c_p}(1  - \rho h_p) - 1 \right) \frac{D p}{D t}
+ + \frac{1}{\rho p_\rho} \left(
+  \frac{p_T}{\rho c_p} (\rho H - \rho \sum_k \xi_k   \omegadot_k)
+                               + \sum_k p_{X_k} \omegadot_k \right) \enskip .
+\end{eqnarray*}
+When we derived this expression we explicitly retained the dependence of $h$ on $p$,
+as shown by the presence of the $h_p$ term.   
+
+Then, replacing $p$ by $p_0(r)$, $Dp/Dt$ becomes $\ubold \cdot
+\nabla p_0$, and, recalling the definition of $H$, the divergence constraint can
+be written
+\begin{equation}
+\nabla \cdot \ubold + \alpha \ubold \cdot \nabla p_0 =
+\frac{1}{\rho p_\rho} \left(
+   \frac{p_T}{\rho c_p} \left(\nabla \cdot (\kappa \nabla T)
+  - \sum_k\rho (q_k + \xi_k) \omegadot_k \right)
+ + \sum_k p_{X_k} \omegadot_k \right)  \equiv \tilde{S} \enskip \label{eq:full_divu_constraint} ,
+\end{equation}
+where we define
+\begin{equation}
+\alpha(\rho,T) \equiv - \left( \frac{(1 - \rho h_p )p_T - \rho c_p}{\rho^2
+  c_p p_\rho} \right) \enskip . \label{eq:alphadef}
+\end{equation}
+
+\section{Derivation of Constraint Using Energy Equation}
+
+We could also derive the constraint by again differentiating $p_{EOS} = p(\rho,T,X_k) = p_0$
+but this time writing $DT/Dt$ in terms of $De/Dt:$
+
+\begin{equation}
+\frac{DT}{Dt} = \frac{1}{\rho c_v} \left( -e_p \frac{D p}{D t}
+- \sum_k e_k \frac{D X_k}{D t} - p \nabla \cdot U 
++ \rho H \right) \enskip , \label{eq:dTdt}
+\end{equation}
+where $c_v = \left.\partial e/\partial T\right|_{p,X_k}$ is the
+specific heat at constant volume,
+and $e_p = \left.\partial e/\partial p\right|_{T,X_k}$
+for convenience.
+
+Then...
+
+\section{Enthalpy vs Energy Equation}
 
 The full enthalpy equation, with no approximations, appears as:
 \begin{equation}
@@ -34,8 +110,8 @@ we take $h$ and $\rho$ as inputs.  The equation of state is expressed
 in terms of $T$ and $\rho$, so it iterates until it finds the $h$ that
 we desire.  This $h$ will be of the form $h = e + p_\mathrm{EOS}/\rho$,
 where $p_\mathrm{EOS}$ is the pressure returned from the EOS.  Note that
-$p_\mathrm{EOS}$ may not be equal to $p_0$---this causes us to drive
-off of the constraint. \MarginPar{not completely sure what to say here}
+$p_\mathrm{EOS}$ may not be equal to $p_0$---this may be what
+causes us to drive off of the constraint. 
 
 The mismatch between the pressure implicit in the definition of $h$
 and $p_0$ can be seen by substituting $h = e + p/\rho$ into the
@@ -63,9 +139,10 @@ evolution equation, but with an additional forcing term: $D(p_0 - p)/Dt$.
    combustion.  There, stratification is not important and $Dp_0/Dt = 0$, so
    the enthalpy equation becomes a conservation equation for $(\rho h)$.
 
-\item We always say that to substituting $p$ by $p_0$ in the enthalpy equation
-   is what filters the acoustics from the system---did we ever prove this?
-
+\item We substitute $p$ for $p_0$ in two places: 1) in the derivation of the
+constraint, 2) in the enthalpy evolution equation.   Are these substitutions
+consistent with each other?  If they are not consistent, which of these 
+substitutions is responsible for filtering the acoustics from the system?
 
 \item In the EOS, we take $h$ and construct $e$ by subtracting off
   $p$---depending on the inputs to the EOS, we treat the `$p$' part of $h$
