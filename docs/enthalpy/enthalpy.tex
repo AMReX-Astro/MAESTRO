@@ -32,7 +32,7 @@ with $p_0$ in the $Dp/Dt$ term, however, the definition of enthalpy
 implicitly contains a pressure.  When calling the equation of state,
 we take $h$ and $\rho$ as inputs.  The equation of state is expressed
 in terms of $T$ and $\rho$, so it iterates until it finds the $h$ that
-we desire.  This $h$ will be of the form $h = e + p_\mathrm{EOS}/rho$,
+we desire.  This $h$ will be of the form $h = e + p_\mathrm{EOS}/\rho$,
 where $p_\mathrm{EOS}$ is the pressure returned from the EOS.  Note that
 $p_\mathrm{EOS}$ may not be equal to $p_0$---this causes us to drive
 off of the constraint. \MarginPar{not completely sure what to say here}
@@ -56,16 +56,19 @@ evolution equation, but with an additional forcing term: $D(p_0 - p)/Dt$.
 
 \section{Outstanding Questions}
 
-\begin{itemize}
+\begin{enumerate}
 \item Why do we want to start with enthalpy instead of internal energy?
 
+   We believe that the original desire stems from our experience with smallscale 
+   combustion.  There, stratification is not important and $Dp_0/Dt = 0$, so
+   the enthalpy equation becomes a conservation equation for $(\rho h)$.
 
 \item We always say that to substituting $p$ by $p_0$ in the enthalpy equation
    is what filters the acoustics from the system---did we ever prove this?
 
 
 \item In the EOS, we take $h$ and construct $e$ by subtracting off
-  $p$---depending on the inputs to the EOS, we treat the '$p$' part of $h$
+  $p$---depending on the inputs to the EOS, we treat the `$p$' part of $h$
   differently.
 
    if we come into the EOS with $\rho$, $T$, then we get $p$ and $e$ from
@@ -80,10 +83,10 @@ evolution equation, but with an additional forcing term: $D(p_0 - p)/Dt$.
    in the enthalpy equation.
 
 
-\item do we want to always insist that the '$p$' hidden in the definition of
+\item do we want to always insist that the `$p$' hidden in the definition of
    $h$ is $p_0$?
 
-\end{itemize}
+\end{enumerate}
 
 
 
