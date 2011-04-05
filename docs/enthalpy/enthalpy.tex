@@ -201,7 +201,7 @@ but if we solve the evolution equation for $e$ we are effectively solving
 
 The second equation subtracted from the first gives:
 \begin{equation}
-  \left \{ \frac{Dp_0}{Dt} - \frac{Dp}{Dt} \right \} + (p - p_0)  \nabla \cdot \Ub
+  -\frac{D (p - p_0)}{Dt} + (p - p_0)  \nabla \cdot \Ub
 \end{equation}
 
 Suppose we solve the current enthalpy equation, but when we call the EOS, we 
@@ -236,6 +236,13 @@ current evolution equation for $h$ serve to drive us back to the constraint?  Re
 our current "volume discrepancy factor" acts as a source term which modifies the
 divergence constraint, which effectively modifies both $\rho$ and $T$ (or $e$ or $h$).
 The term in the enthalpy equation only modifies $\rho.$  Is this relevant and/or useful??
+Recall that the current "volume discrepancy factor" takes the form of adding 
+to the r.h.s. of the constraint:
+\begin{equation}
+\nabla \cdot(\beta_0\Ub) = \beta_0\left(S-\frac{1}{\overline{\Gamma_1} p_0}
+       \frac{\partial p_0}{\partial t} - \frac{f}{\overline{\Gamma_1} p_0}
+       \frac{p_0-p_\text{EOS}}{\dt}\right) 
+\end{equation}
 
 %\item We substitute $p$ for $p_0$ in two places: 1) in the derivation of the
 %constraint, 2) in the enthalpy evolution equation.   Are these substitutions
