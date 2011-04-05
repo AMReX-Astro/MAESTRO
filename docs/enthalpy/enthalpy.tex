@@ -147,6 +147,12 @@ and the constraint derived using $e$ can be written
 + \left( \frac{\rho e_T + \rho e_p p_T}{\rho^2 e_T p_\rho + p p_T} \right) \frac{D p_0}{D t} = 0
 \end{equation}
 
+We note that if we evaluate both constraints for $p = \rho R T,$ with $h = c_p T,$ $e = c_v T,$
+$c_p = c_v + R$ and $\gamma = c_p / c_v,$ then both constraints reduce to 
+\begin{equation}
+\nabla \cdot \Ub + \frac{1}{\gamma p} \frac{D p_0}{D t} = 0
+\end{equation}
+
 \section{Enthalpy vs Energy Equation}
 
 The full enthalpy equation, with no approximations, appears as:
@@ -179,8 +185,39 @@ enthalpy equation, where we replace $p$ with $p_0$ in the $Dp/Dt$ term:
  -\nabla\cdot(\rho e\Ub) - p\nabla\cdot\Ub + \rho\Hnuc + 
   \left \{ \frac{Dp_0}{Dt} - \frac{Dp}{Dt} \right \} \nonumber 
 \end{eqnarray}
-We note that the last equation appears to be an internal energy
-evolution equation, but with an additional forcing term: $D(p_0 - p)/Dt$.
+However, if we solve the evolution equation for $e$ we would substitute 
+$p_0$ for $p$ in this equation as well.  Thus, we can pose the situation as the following.  
+If we solve the evolution equation for $h$ then we effectively are solving
+\begin{equation}
+\frac{\partial(\rho e)}{\partial t} +
+  \nabla\cdot(\rho e\Ub) = p \; \nabla\cdot\Ub + \rho\Hnuc + 
+  \left \{ \frac{Dp_0}{Dt} - \frac{Dp}{Dt} \right \} \nonumber 
+\end{equation}
+but if we solve the evolution equation for $e$ we are effectively solving
+\begin{equation}
+\frac{\partial(\rho e)}{\partial t} +
+  \nabla\cdot(\rho e\Ub) = p_0 \nabla\cdot\Ub + \rho\Hnuc \nonumber 
+\end{equation}
+
+The second equation subtracted from the first gives:
+\begin{equation}
+  \left \{ \frac{Dp_0}{Dt} - \frac{Dp}{Dt} \right \} + (p - p_0)  \nabla \cdot \Ub
+\end{equation}
+
+Suppose we solve the current enthalpy equation, but when we call the EOS, we 
+subtract $p_0$ from $\rho h$ and then call the EOS with $e$ instead of $h$.  This is equivalent
+to:
+\begin{eqnarray}
+\frac{\partial(\rho h)}{\partial t} &=& -\nabla\cdot(\rho h\Ub) +
+  \frac{Dp_0}{Dt} + \rho\Hnuc \nonumber \\
+%
+\frac{\partial(\rho e)}{\partial t} + \frac{\partial p_0}{\partial t} &=&
+ -\nabla\cdot(\rho e\Ub) -\nabla\cdot(p_0 \Ub) + \frac{Dp_0}{Dt} + \rho\Hnuc \nonumber \\
+%
+\frac{\partial(\rho e)}{\partial t} &=&
+ -\nabla\cdot(\rho e\Ub) - p_0 \nabla\cdot\Ub + \rho\Hnuc  \nonumber
+\end{eqnarray}
+which is identical to solving the energy equation.
 
 \section{Outstanding Questions}
 
@@ -191,29 +228,38 @@ evolution equation, but with an additional forcing term: $D(p_0 - p)/Dt$.
    combustion.  There, stratification is not important and $Dp_0/Dt = 0$, so
    the enthalpy equation becomes a conservation equation for $(\rho h)$.
 
-\item We substitute $p$ for $p_0$ in two places: 1) in the derivation of the
-constraint, 2) in the enthalpy evolution equation.   Are these substitutions
-consistent with each other?  If they are not consistent, which of these 
-substitutions is responsible for filtering the acoustics from the system?
+\item Should we call the EOS with $h$ as is, or call the EOS with $e = h - p_0 / \rho$?
 
-\item In the EOS, we take $h$ and construct $e$ by subtracting off
-  $p$---depending on the inputs to the EOS, we treat the `$p$' part of $h$
-  differently.
+\item When we stay on the constraint, i.e. $p_{EOS} = p_0$, then the equations for $e$ and
+for $h$ are identical.   However, once we are off the constraint, do the terms in the
+current evolution equation for $h$ serve to drive us back to the constraint?  Recall
+our current "volume discrepancy factor" acts as a source term which modifies the
+divergence constraint, which effectively modifies both $\rho$ and $T$ (or $e$ or $h$).
+The term in the enthalpy equation only modifies $\rho.$  Is this relevant and/or useful??
 
-   if we come into the EOS with $\rho$, $T$, then we get $p$ and $e$ from
-   the EOS and compute $h$.
+%\item We substitute $p$ for $p_0$ in two places: 1) in the derivation of the
+%constraint, 2) in the enthalpy evolution equation.   Are these substitutions
+%consistent with each other?  If they are not consistent, which of these 
+%substitutions is responsible for filtering the acoustics from the system?
 
-   if we come into the EOS with $\rho$, $h$, then we find a $T$ such that
-   $e + p(\rho,T)/\rho = h$, where $p(\rho,T)$ is the pressure from the EOS.
-   It is not necessarily equal to $p_0$.
+\item Suppose we corrected the $h$ (or $e$ equation) by using the full $p$ instead
+of $p_0$?  Would this be more or less consistent (one could imagine doing this as a 
+correction after solving for $\pi$ earlier in the timestep). 
 
-   if we come into the EOS with $\rho$, $p_0$, then find a $T$ that matches
-   $p_0$, and then $h = e + p_0/\rho$.  In this case, there is no mismatch
-   in the enthalpy equation.
-
-
-\item do we want to always insist that the `$p$' hidden in the definition of
-   $h$ is $p_0$?
+%\item In the EOS, we take $h$ and construct $e$ by subtracting off
+%  $p$---depending on the inputs to the EOS, we treat the `$p$' part of $h$
+%  differently.
+%
+%   if we come into the EOS with $\rho$, $T$, then we get $p$ and $e$ from
+%   the EOS and compute $h$.
+%
+%   if we come into the EOS with $\rho$, $h$, then we find a $T$ such that
+%   $e + p(\rho,T)/\rho = h$, where $p(\rho,T)$ is the pressure from the EOS.
+%   It is not necessarily equal to $p_0$.
+%
+%   if we come into the EOS with $\rho$, $p_0$, then find a $T$ that matches
+%   $p_0$, and then $h = e + p_0/\rho$.  In this case, there is no mismatch
+%   in the enthalpy equation.
 
 \end{enumerate}
 
