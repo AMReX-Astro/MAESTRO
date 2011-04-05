@@ -68,7 +68,7 @@ and $h_p = \left.\partial h/\partial p\right|_{T,X_k}.$
 
 We could then write,
 \begin{eqnarray*}
-\nabla \cdot \ubold &=& \frac{1}{\rho p_\rho} \left(
+\nabla \cdot \Ub &=& \frac{1}{\rho p_\rho} \left(
 - \frac{D p}{D t} + \frac{p_T}{\rho c_p}
   \left( (1 - \rho h_p) \frac{D p}{D t} - \rho \sum_k \xi_k \omegadot_k + \rho \Hnuc \right)
 + \sum_k p_{X_k} \omegadot_k \right)  \\
@@ -81,10 +81,10 @@ We could then write,
 When we derived this expression we explicitly retained the dependence of $h$ on $p$,
 as shown by the presence of the $h_p$ term.   
 
-Then, replacing $p$ by $p_0(r)$, $Dp/Dt$ becomes $\ubold \cdot
+Then, replacing $p$ by $p_0(r)$, $Dp/Dt$ becomes $\Ub \cdot
 \nabla p_0$, and the divergence constraint can be written
 \begin{equation}
-\nabla \cdot \ubold + \alpha \ubold \cdot \nabla p_0 =
+\nabla \cdot \Ub + \alpha \Ub \cdot \nabla p_0 =
 \frac{1}{\rho p_\rho} \left(
    \frac{p_T}{\rho c_p} \left(
   - \sum_k\rho  \xi_k \omegadot_k + \rho \Hnuc \right)
@@ -100,24 +100,24 @@ where we define
 
 Now writing $e = e(p,T,X_k)$ and expanding $De/Dt$ and using the energy evolution equation:
 \begin{equation}
-\rho \frac{D e}{Dt}  = \rho \left( e_p \frac{D p}{Dt} + c_v \frac{D T}{Dt} + \sum_k e_{X_k} \frac{D X_k}{Dt} \right)
+\rho \frac{D e}{Dt}  = \rho \left( e_p \frac{D p}{Dt} + e_T \frac{D T}{Dt} + \sum_k e_{X_k} \frac{D X_k}{Dt} \right)
                      = -p \nabla \cdot \Ub + \rho \Hnuc
 \end{equation}
 we can express $DT/Dt$ in terms of 
 \begin{eqnarray*}
-\frac{DT}{Dt} &=& \frac{1}{\rho c_v} \left(
+\frac{DT}{Dt} &=& \frac{1}{\rho e_T} \left(
                   -p \nabla \cdot \Ub + \rho \Hnuc
                  - \rho e_p \frac{D p}{Dt}
                  - \rho \sum_k e_{X_k} \omegadot_k   \right)
 \end{eqnarray*}
-where $c_v = \left.\partial e/\partial T\right|_{p,X_k}$ is the
+where $e_T = \left.\partial e/\partial T\right|_{p,X_k}$ is the
 specific heat at constant volume,
 and $e_p = \left.\partial e/\partial p\right|_{T,X_k}.$
 Then
 \begin{equation}
 -\rho \nabla \cdot \Ub = 
     \frac{1}{p_\rho} \left( \frac{D p}{Dt} 
-    - \frac{p_T}{\rho c_v} \left(
+    - \frac{p_T}{\rho e_T} \left(
                  -p \nabla \cdot \Ub + \rho \Hnuc
                  - \rho e_p \frac{D p}{Dt}
                  - \rho \sum_k e_{X_k} \omegadot_k   \right)
@@ -125,9 +125,9 @@ Then
 \end{equation}
 which leads to 
 \begin{equation}
-\left(-\rho -  \frac{p p_T}{\rho c_v p_\rho} \right) \nabla \cdot \Ub = 
-    \frac{1}{p_\rho} \left( (1 + \frac{e_p p_T}{c_v}) \frac{D p}{Dt} 
-                           - \frac{p_T}{\rho c_v} \left(
+\left(-\rho -  \frac{p p_T}{\rho e_T p_\rho} \right) \nabla \cdot \Ub = 
+    \frac{1}{p_\rho} \left( (1 + \frac{e_p p_T}{e_T}) \frac{D p}{Dt} 
+                           - \frac{p_T}{\rho e_T} \left(
                                         \rho \Hnuc
                                         - \rho \sum_k e_{X_k} \omegadot_k   \right)
     - \sum_k p_{X_k} {\omegadot}_k \right) \enskip ,
@@ -137,14 +137,14 @@ which leads to
 
 If we set $\omegadot_k = \Hnuc = 0$ for simplicity, then the constraint as derived using $h$ can be written 
 \begin{equation}
-\nabla \cdot \ubold
+\nabla \cdot \Ub
 - \left( \frac{(1 - \rho h_p )p_T - \rho c_p}{\rho^2
   c_p p_\rho} \right) \frac{D p_0}{D t} = 0
 \end{equation}
 and the constraint derived using $e$ can be written
 \begin{equation}
-\left(\rho p_\rho + \frac{p p_T}{\rho c_v} \right) \nabla \cdot \Ub +
-      (1 + \frac{e_p p_T}{c_v}) \frac{D p}{Dt} = 0 \enskip .
+\nabla \cdot \Ub 
++ \left( \frac{\rho e_T + \rho e_p p_T}{\rho^2 e_T p_\rho + p p_T} \right) \frac{D p_0}{D t} = 0
 \end{equation}
 
 \section{Enthalpy vs Energy Equation}
