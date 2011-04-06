@@ -200,8 +200,8 @@ but if we solve the evolution equation for $e$ we are effectively solving
 \end{equation}
 
 The second equation subtracted from the first gives:
-\begin{equation}
-  -\frac{D (p - p_0)}{Dt} + (p - p_0)  \nabla \cdot \Ub
+\begin{equation} \label{eq:difference between h and e equations}
+  \frac{D (p_0 - p)}{Dt} - (p_0 - p)  \nabla \cdot \Ub
 \end{equation}
 
 Suppose we solve the current enthalpy equation, but when we call the EOS, we 
@@ -218,6 +218,37 @@ to:
  -\nabla\cdot(\rho e\Ub) - p_0 \nabla\cdot\Ub + \rho\Hnuc  \nonumber
 \end{eqnarray}
 which is identical to solving the energy equation.
+
+\subsection{Constant $\gamma$ Gas}
+Going back to the constant $\gamma$, ideal gas EOS, we can rewrite the
+enthalpy equation as a pressure evolution equation
+\begin{eqnarray}
+  \frac{\partial\rho h}{\partial t} + \nabla\cdot\left(\rho h\Ub\right) &=& \frac{Dp_0}{Dt} + \rho H {} \nonumber\\
+  \frac{\gamma}{\gamma-1}\frac{\partial p}{\partial t} + \frac{\gamma}{\gamma-1}\nabla\cdot\left(p\Ub\right) &=& \frac{Dp_0}{Dt} + \rho H {} \nonumber\\
+  \frac{Dp}{Dt} &=& -p\nabla\cdot\Ub + \frac{\gamma}{\gamma-1}\left(\frac{Dp_0}{Dt}+\rho H\right) \label{eq:H:pressure evolution}.
+\end{eqnarray}
+Similarly, we can derive a pressure evolution equation from the energy equation
+\begin{equation}
+  \frac{Dp}{Dt} = -p\nabla\cdot\Ub - \left(\gamma-1\right)p_0\nabla\cdot\Ub + \rho H \label{eq:e:pressure evolution}
+\end{equation}
+Now, if we further make the assumption that $p_0$ is constant,
+$Dp_0/Dt = 0$, then the divergence constraint for such a gas reduces
+to
+\begin{equation}
+\nabla\cdot\Ub = \frac{\gamma-1}{\gamma p_0}H \label{eq:div constraint for constant gamma}.
+\end{equation}
+Plugging this back into either of \eqref{eq:H:pressure evolution} or \eqref{eq:e:pressure evolution} gives
+\begin{equation}
+  \frac{Dp}{Dt} = \frac{\gamma-1}{\gamma}\left(1-\frac{p}{p_0}\right)H. \label{eq:pressure evolution constant gamma}
+\end{equation}
+If $p_0$ is assumed constant and using \eqref{eq:div constraint for
+  constant gamma}, the difference between the enthalpy equation and
+the energy equation, \eqref{eq:difference between h and e equations},
+can be rewritten as
+\[
+-\frac{Dp}{Dt} - \frac{\gamma}{\gamma-1}\left(1-\frac{p}{p_0}\right)H = 0,
+\]
+where the equality holds from \eqref{eq:pressure evolution constant gamma}.
 
 \section{Outstanding Questions}
 
