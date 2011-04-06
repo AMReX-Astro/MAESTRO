@@ -323,22 +323,6 @@ contains
              do i = is-1,ie+1
                 slx(i,j,comp) = half*(s(i+1,j,comp) - s(i-1,j,comp))
              enddo
-
-             if (bc(1,1,comp) .eq. EXT_DIR  .or. bc(1,1,comp) .eq. HOEXTRAP) then
-
-                slx(is-1,j,comp) = zero
-                slx(is,j,comp) = (s(is+1,j,comp)+three*s(is,j,comp)- &
-                     four*s(is-1,j,comp) ) * third
-
-             endif
-
-             if (bc(1,2,comp) .eq. EXT_DIR  .or. bc(1,2,comp) .eq. HOEXTRAP) then
-
-                slx(ie+1,j,comp) = zero
-                slx(ie,j,comp) = -(s(ie-1,j,comp)+three*s(ie,j,comp)- &
-                     four*s(ie+1,j,comp) ) * third
-
-             endif
           enddo
        enddo
 
@@ -358,49 +342,6 @@ contains
                      sixth * (dxscr(i+1,fromm) + dxscr(i-1,fromm)) 
              enddo
 
-             ! still limiting here - fixme
-             if (bc(1,1,comp) .eq. EXT_DIR  .or. bc(1,1,comp) .eq. HOEXTRAP) then
-
-                slx(is-1,j,comp) = zero
-
-                del = -sixteen/fifteen*s(is-1,j,comp) + half*s(is,j,comp) + &
-                     two3rd*s(is+1,j,comp) - tenth*s(is+2,j,comp)
-                dmin = two*(s(is  ,j,comp)-s(is-1,j,comp))
-                dpls = two*(s(is+1,j,comp)-s(is  ,j,comp))
-                slim = min(abs(dpls), abs(dmin))
-                slim = merge(slim, zero, dpls*dmin.gt.ZERO)
-                sflag = sign(one,del)
-                slx(is,j,comp)= sflag*min(slim,abs(del))
-
-                !           Recalculate the slope at is+1 using the revised dxscr(is,fromm)
-                dxscr(is,fromm) = slx(is,j,comp)
-                ds = two * two3rd * dxscr(is+1,cen) - &
-                     sixth * (dxscr(is+2,fromm) + dxscr(is,fromm))
-                slx(is+1,j,comp) = dxscr(is+1,flag)*min(abs(ds),dxscr(is+1,lim))
-
-             endif
-
-             ! still limiting here - fixme
-             if (bc(1,2,comp) .eq. EXT_DIR  .or. bc(1,2,comp) .eq. HOEXTRAP) then
-
-                slx(ie+1,j,comp) = zero
-
-                del = -( -sixteen/fifteen*s(ie+1,j,comp) + half*s(ie,j,comp) +  &
-                     two3rd*s(ie-1,j,comp) - tenth*s(ie-2,j,comp) )
-                dmin = two*(s(ie  ,j,comp)-s(ie-1,j,comp))
-                dpls = two*(s(ie+1,j,comp)-s(ie  ,j,comp))
-                slim = min(abs(dpls), abs(dmin))
-                slim = merge(slim, zero, dpls*dmin.gt.ZERO)
-                sflag = sign(one,del)
-                slx(ie,j,comp)= sflag*min(slim,abs(del))
-
-                !           Recalculate the slope at ie-1 using the revised dxscr(ie,fromm)
-                dxscr(ie,fromm) = slx(ie,j,comp)
-                ds = two * two3rd * dxscr(ie-1,cen) - &
-                     sixth * (dxscr(ie-2,fromm) + dxscr(ie,fromm))
-                slx(ie-1,j,comp) = dxscr(ie-1,flag)*min(abs(ds),dxscr(ie-1,lim))
-
-             endif
           enddo
        enddo
 
@@ -586,31 +527,9 @@ contains
        do comp=1,nvar 
           do j = js-1,je+1 
              do i = is-1,ie+1 
-
                 sly(i,j,comp) = half*(s(i,j+1,comp) - s(i,j-1,comp))
-
              enddo
           enddo
-
-          if (bc(2,1,comp) .eq. EXT_DIR .or. bc(2,1,comp) .eq. HOEXTRAP) then
-
-             do i = is-1,ie+1 
-                sly(i,js-1,comp) = zero
-                sly(i,js,comp) = (s(i,js+1,comp)+three*s(i,js,comp)- &
-                     four*s(i,js-1,comp)) * third
-             enddo
-
-          endif
-
-          if (bc(2,2,comp) .eq. EXT_DIR .or. bc(2,2,comp) .eq. HOEXTRAP) then
-
-             do i = is-1, ie+1 
-                sly(i,je+1,comp) = zero
-                sly(i,je,comp) = -(s(i,je-1,comp)+three*s(i,je,comp)- &
-                     four*s(i,je+1,comp)) * third
-             enddo
-
-          endif
        enddo
 
     else 
@@ -628,48 +547,6 @@ contains
                 sly(i,j,comp) = two * two3rd * dyscr(j,cen) -  &
                      sixth * (dyscr(j+1,fromm) + dyscr(j-1,fromm))
              enddo
-
-             ! still limiting here - fixme
-             if (bc(2,1,comp) .eq. EXT_DIR .or. bc(2,1,comp) .eq. HOEXTRAP) then
-
-                sly(i,js-1,comp) = zero
-                del = -sixteen/fifteen*s(i,js-1,comp) +  half*s(i,js ,comp) +  &
-                     two3rd*s(i,js+1,comp) - tenth*s(i,js+2,comp)
-                dmin = two*(s(i,js  ,comp)-s(i,js-1,comp))
-                dpls = two*(s(i,js+1,comp)-s(i,js  ,comp))
-                slim = min(abs(dpls), abs(dmin))
-                slim = merge(slim, zero, dpls*dmin.gt.ZERO)
-                sflag = sign(one,del)
-                sly(i,js,comp)= sflag*min(slim,abs(del))
-
-                !           Recalculate the slope at js+1 using the revised dyscr(js,fromm)
-                dyscr(js,fromm) = sly(i,js,comp)
-                ds = two * two3rd * dyscr(js+1,cen) - &
-                     sixth * (dyscr(js+2,fromm) + dyscr(js,fromm))
-                sly(i,js+1,comp) = dyscr(js+1,flag)*min(abs(ds),dyscr(js+1,lim))
-
-             endif
-
-             ! still limiting here - fixme
-             if (bc(2,2,comp) .eq. EXT_DIR .or. bc(2,2,comp) .eq. HOEXTRAP) then
-
-                sly(i,je+1,comp) = zero
-                del = -( -sixteen/fifteen*s(i,je+1,comp) +  half*s(i,je  ,comp) + &
-                     two3rd*s(i,je-1,comp) - tenth*s(i,je-2,comp) )
-                dmin = two*(s(i,je ,comp)-s(i,je-1,comp))
-                dpls = two*(s(i,je+1,comp)-s(i,je ,comp))
-                slim = min(abs(dpls), abs(dmin))
-                slim = merge(slim, zero, dpls*dmin.gt.ZERO)
-                sflag = sign(one,del)
-                sly(i,je,comp)= sflag*min(slim,abs(del))
-
-                !           Recalculate the slope at js+1 using the revised dyscr(js,fromm)
-                dyscr(je,fromm) = sly(i,je,comp)
-                ds = two * two3rd * dyscr(je-1,cen) -  &
-                     sixth * (dyscr(je-2,fromm) + dyscr(je,fromm))
-                sly(i,je-1,comp) = dyscr(je-1,flag)*min(abs(ds),dyscr(je-1,lim))
-
-             endif
 
           enddo
        enddo
