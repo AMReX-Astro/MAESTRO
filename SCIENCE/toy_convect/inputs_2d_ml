@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "toy_nova_constg.hse.smooth_12.50.1024
+ model_file = "toy_nova_constg.hse.smooth_12.50.1024"
 
  spherical_in = 0
 
