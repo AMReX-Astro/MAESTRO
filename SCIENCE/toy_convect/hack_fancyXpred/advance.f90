@@ -1012,6 +1012,7 @@ contains
        do comp = 1,dm
           call multifab_build_edge(sedge(n,comp),mla%la(n),nscal,0,comp)
           call multifab_build_edge(sedge0(n,comp),mla%la(n),nscal,0,comp)
+          call setval(sedge0(n,comp),ZERO,all=.true.)
           call multifab_build_edge(sflux(n,comp),mla%la(n),nscal,0,comp)
        end do
        call multifab_build(scal_force(n), mla%la(n), nscal, 1)
