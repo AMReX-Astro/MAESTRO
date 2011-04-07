@@ -190,7 +190,7 @@ $p_0$ for $p$ in this equation as well.  Thus, we can pose the situation as the 
 If we solve the evolution equation for $h$ then we effectively are solving
 \begin{equation}
 \frac{\partial(\rho e)}{\partial t} +
-  \nabla\cdot(\rho e\Ub) = p \; \nabla\cdot\Ub + \rho\Hnuc + 
+  \nabla\cdot(\rho e\Ub) = -p \; \nabla\cdot\Ub + \rho\Hnuc + 
   \left \{ \frac{Dp_0}{Dt} - \frac{Dp}{Dt} \right \} \nonumber 
 \end{equation}
 but if we solve the evolution equation for $e$ we are effectively solving
@@ -201,8 +201,9 @@ but if we solve the evolution equation for $e$ we are effectively solving
 
 The second equation subtracted from the first gives:
 \begin{equation} \label{eq:difference between h and e equations}
-  \frac{D (p_0 - p)}{Dt} - (p_0 - p)  \nabla \cdot \Ub
+  \frac{D (p_0 - p)}{Dt} - (p_0 - p)  \nabla \cdot \Ub = 0,
 \end{equation}
+but this equation is only true, in general, if $p=p_0$.
 
 Suppose we solve the current enthalpy equation, but when we call the EOS, we 
 subtract $p_0$ from $\rho h$ and then call the EOS with $e$ instead of $h$.  This is equivalent
@@ -217,7 +218,7 @@ to:
 \frac{\partial(\rho e)}{\partial t} &=&
  -\nabla\cdot(\rho e\Ub) - p_0 \nabla\cdot\Ub + \rho\Hnuc  \nonumber
 \end{eqnarray}
-which is identical to solving the energy equation.
+which is identical to solving the energy equation with $p\to p_0$.
 
 \subsection{Constant $\gamma$ Gas}
 Going back to the constant $\gamma$, ideal gas EOS, we can rewrite the
@@ -248,7 +249,9 @@ can be rewritten as
 \[
 -\frac{Dp}{Dt} - \frac{\gamma}{\gamma-1}\left(1-\frac{p}{p_0}\right)\rho H = 0,
 \]
-where the equality holds from \eqref{eq:pressure evolution constant gamma}.
+where the equality holds from \eqref{eq:pressure evolution constant
+  gamma}. In other words, for the constant $\gamma$ gas we have
+$p=p_0$ as expected.
 
 \section{Outstanding Questions}
 
