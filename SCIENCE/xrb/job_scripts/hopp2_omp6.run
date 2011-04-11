@@ -1,5 +1,6 @@
+#PBS -N Flame3D
 #PBS -q debug
-#PBS -l mppwidth=72
+#PBS -l mppwidth=48
 #PBS -l walltime=00:30:00
 #PBS -e output.$PBS_JOBID.err
 #PBS -o output.$PBS_JOBID.out
@@ -12,6 +13,6 @@ cd $PBS_O_WORKDIR
 
 echo Starting `date`
 
-aprun -n 12 -N 4 -d 6 ./main.Linux.PathScale.mpi.omp.exe inputs_12mpi
+aprun -n 8 -N 4 -S 1 -ss -d 6 ./main.Linux.PathScale.mpi.omp.exe inputs_12mpi
 
 echo Ending `date`
