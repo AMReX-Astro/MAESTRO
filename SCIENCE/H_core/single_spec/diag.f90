@@ -1092,7 +1092,7 @@ contains
           write (un1, 800) "output date: ", values(1), values(2), values(3)
           write (un1, 801) "output time: ", values(5), values(6), values(7)
           write (un1, 802) "output dir:  ", trim(cwd)
-          write (un1, *)   "# v corresponds to averages over the convection zone (R<=8.15d10)"
+          write (un1, *)   "# v corresponds to averages over the convection zone R<=", r_core
           write (un1, *)   "# U corresponds to averages over the entire valid region"
           write (un1, *)   "#   (ie, the region interior to the sponged region)"
           write (un1, 999) trim(job_name)
