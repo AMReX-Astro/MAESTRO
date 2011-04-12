@@ -23,7 +23,7 @@ contains
                              buoyancy_cutoff_factor, &
                              prob_lo, prob_hi, &
                              small_temp, small_dens, grav_const, &
-                             rho_1, rho_2, p0_base, depth_frac
+                             rho_1, rho_2, p0_base, depth_frac, delta
 
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr
@@ -39,6 +39,7 @@ contains
     integer         :: i,j,r,comp
     real(kind=dp_t) :: rloc,rdepth
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
+    real(kind=dp_t) :: d_old, p_old
 
     real(kind=dp_t) :: p0_light, p0_heavy, t_guess
     real(kind=dp_t) :: xn_light(nspec), xn_heavy(nspec)
@@ -100,18 +101,9 @@ contains
        write (*,*)   ' '
     end if
 
-    ! rmid is the middle of the domain 
+    ! rdepth is the height at which we transition from dense fluid (below) to
+    ! less dense (above)
     rdepth = depth_frac*(prob_lo(size(dx)) + prob_hi(size(dx))) + prob_lo(size(dx))
-
-    ! p0_heavy is the pressure at the base of the heavy fluid (lower
-    ! half of the domain)
-    p0_heavy = p0_base
-
-    ! p0_light is the pressure at the base of the light fluid (top
-    ! half of the domain).  To find this, we integrate dp/dr = rho g
-    ! from the bottom of the domain (p = p0_heavy) to the interface (y
-    ! = rdepth).  The density is constant in that region, rho = rho_1
-    p0_light = p0_base + rho_1*grav_const*(rdepth - prob_lo(size(dx)))
 
 
     ! set the compositions
@@ -133,23 +125,24 @@ contains
        ! height above the bottom of the domain
        rloc = (dble(r) + HALF)*dr(n)
 
-       if (rloc > rdepth) then
+       d_ambient = rho_1 + HALF*(rho_2 - rho_1)* &
+            (ONE + tanh((rloc - rdepth)/delta))
 
-          ! top half -- light fluid
-          d_ambient = rho_2
-          p_ambient = p0_light + rho_2*grav_const*(rloc - rdepth)
-          t_ambient = t_guess
-          xn_ambient(:) = xn_light(:)
 
+       xn_ambient(:) = xn_heavy(:) + HALF*(xn_light(:) - xn_heavy(:))* &
+            (ONE + tanh((rloc - rdepth)/delta))
+
+       if (r == 0) then
+          p_ambient = p0_base
+          d_old = d_ambient
+          p_old = p_ambient
        else
-
-          ! lower half -- heavy fluid
-          d_ambient = rho_1
-          p_ambient = p0_heavy + rho_1*grav_const*(rloc - prob_lo(size(dx)))
-          t_ambient = t_guess
-          xn_ambient(:) = xn_heavy(:)
-
+          p_ambient = p_old + HALF*dr(n)*grav_const*(d_ambient + d_old)
+          d_old = d_ambient
+          p_old = p_ambient
        endif
+
+       print *, r, d_ambient, p_ambient
 
        ! use the EOS to make the state consistent
        temp_eos(1) = t_ambient

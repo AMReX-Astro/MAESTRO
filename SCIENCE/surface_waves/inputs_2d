@@ -14,12 +14,13 @@
 
  rho_1 = 100.0d0
  rho_2 = 5.0d0
+ delta = 0.005
 
- vel_amplitude = 0.1d0
+ vel_amplitude = 1.0d0
  vel_width = 0.05d0
  vel_lambda = 0.1d0
 
- p0_base = 1000.0d0
+ p0_base = 1.d6
 
  anelastic_cutoff = 1.d-10
  base_cutoff_density = 1.d-10
@@ -28,7 +29,7 @@
 
  do_sponge = F
 
- grav_const = -1.0
+ grav_const = -1000.0
 
  ppm_type = 0
 
@@ -40,7 +41,7 @@
  init_shrink = 0.1d0
 
  plot_base = T
- plot_int  = 1
+ plot_int  = 10
  chk_int   = 100
 
  cflfac = 0.9
