@@ -85,11 +85,11 @@ contains
           enddo
        enddo
 
-       if (octant) then
-          phix(:,:,:) = M_PI/2.d0
-          phiy(:,:,:) = M_PI/2.d0
-          phiz(:,:,:) = M_PI/2.d0
-       end if
+!        if (octant) then
+!           phix(:,:,:) = M_PI/2.d0
+!           phiy(:,:,:) = M_PI/2.d0
+!           phiz(:,:,:) = M_PI/2.d0
+!        end if
 
        ! compute the norm of k
        do i=1,3
@@ -112,7 +112,6 @@ contains
           case (2)
              call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
                                  s0_init(n,:,:), p0_init(n,:))
-!             call bl_error('initveldata_2d not written')
           case (3)
              if (spherical .eq. 1) then
                 call initveldata_3d_sphr(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
