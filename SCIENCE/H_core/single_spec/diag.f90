@@ -700,6 +700,10 @@ contains
              vr_max   = max(vr_max,   vr_max_level)
 
              vc_max   = max(vc_max,   vc_max_level)
+
+!             write(*,*)'PR rhovtot ', rhovtot
+!             write(*,*)'PR rhovr   ', rhovr
+!             write(*,*)
           end if
 
           nuc_ener = nuc_ener + nuc_ener_level
@@ -823,30 +827,39 @@ contains
        Utot(:) = Utot(:)/nzones
        Utot_favre(:) = rhoUtot(:)/mass ! note: common dV normalization cancels
 
+       if ( dm .eq. 3) then
+
+          vr(:) = vr(:)/nzones_core
+          vr_favre(:) = rhovr(:)/mass_core    ! note: common dV normalization cancels
+          vrvt = vrvt/nzones_core
+          
+          vc(:) = vc(:)/nzones_core
+          vc_favre(:) = rhovc(:)/mass_core    ! note: common dV normalization cancels
+
+          mass_core = mass_core*dx(1,3)
+          mass      = mass     *dx(1,3)
+
+          nuc_ener  = nuc_ener *dx(1,3)
+          kin_ener  = kin_ener *dx(1,3)
+          int_ener  = int_ener *dx(1,3)
+
+!          write(*,*)'final rhovtot ', vtot_favre
+!          write(*,*)'final rhovr   ', vr_favre
+!          write(*,*)'final rhovtot ', rhovtot
+!          write(*,*)'final rhovr   ', rhovr
+!          write(*,*)
+       end if
+
 ! FIXME! should think about this for 2D 
        ! the volume we normalize with is that of a single coarse-level
        ! zone.  This is because the weight used in the loop over cells
        ! was with reference to the coarse level
        mass_core = mass_core*dx(1,1)*dx(1,2)
        mass      = mass     *dx(1,1)*dx(1,2)
+
        nuc_ener  = nuc_ener *dx(1,1)*dx(1,2)
        kin_ener  = kin_ener *dx(1,1)*dx(1,2)
        int_ener  = int_ener *dx(1,1)*dx(1,2)
-
-       if ( dm .eq. 3) then
-          vr(:) = vr(:)/nzones
-          vr_favre(:) = rhovr(:)/mass    ! note: common dV normalization cancels
-          vrvt = vrvt/nzones
-          
-          vc(:) = vc(:)/nzones
-          vc_favre(:) = rhovc(:)/mass    ! note: common dV normalization cancels
-
-          mass_core = mass_core*dx(1,3)
-          mass      = mass     *dx(1,3)
-          nuc_ener  = nuc_ener *dx(1,3)
-          kin_ener  = kin_ener *dx(1,3)
-          int_ener  = int_ener *dx(1,3)
-       end if
 
     endif
 
@@ -1538,38 +1551,6 @@ contains
                 rhoUtot_z = rhoUtot_z + weight*s(i,j,k,rho_comp)*vz
                 rhoUtot   = rhoUtot   + weight*s(i,j,k,rho_comp)*vel
 
-
-                ! "circumferential" velocity
-                vc_max = max(vc_max,velc)
-
-                vc_x = vc_x + weight*(u(i,j,k,1)-velr*normal(i,j,k,1))
-                vc_y = vc_y + weight*(u(i,j,k,2)-velr*normal(i,j,k,2))
-                vc_z = vc_z + weight*(u(i,j,k,3)-velr*normal(i,j,k,3))
-                vc_tot = vc_tot + weight*velc
-                
-                rhovc_x = rhovc_x + weight*s(i,j,k,rho_comp)*(u(i,j,k,1)-velr*normal(i,j,k,1))
-                rhovc_y = rhovc_y + weight*s(i,j,k,rho_comp)*(u(i,j,k,2)-velr*normal(i,j,k,2))
-                rhovc_z = rhovc_z + weight*s(i,j,k,rho_comp)*(u(i,j,k,3)-velr*normal(i,j,k,3))
-                rhovc_tot = rhovc_tot + weight*s(i,j,k,rho_comp)*velc
-
-
-                ! add in w0 before computing radial velocity diagnostics
-                velr = velr + w0r(i,j,k)                
-
-                vr_max = max(vr_max,abs(velr))
-                
-                vrvt = vrvt + weight*abs(velr)/vel
-
-                vr_x = vr_x + weight*velr*normal(i,j,k,1)
-                vr_y = vr_y + weight*velr*normal(i,j,k,2)
-                vr_z = vr_z + weight*velr*normal(i,j,k,3)
-                vr_tot = vr_tot + weight*velr
-                
-                rhovr_x = rhovr_x + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,1)
-                rhovr_y = rhovr_y + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,2)
-                rhovr_z = rhovr_z + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,3)
-                rhovr_tot = rhovr_tot + weight*s(i,j,k,rho_comp)*velr
-                
                 ! normalization quantities
                 mass = mass + weight*s(i,j,k,rho_comp)
                 nzones = nzones + weight
@@ -1589,6 +1570,41 @@ contains
                 ! only include in vtot if inside the core
                 if ( rloc .le. r_core ) then
 
+                   ! "circumferential" velocity
+                   vc_max = max(vc_max,velc)
+                   
+                   vc_x = vc_x + weight*(u(i,j,k,1)-velr*normal(i,j,k,1))
+                   vc_y = vc_y + weight*(u(i,j,k,2)-velr*normal(i,j,k,2))
+                   vc_z = vc_z + weight*(u(i,j,k,3)-velr*normal(i,j,k,3))
+                   vc_tot = vc_tot + weight*velc
+                   
+                   rhovc_x = rhovc_x + weight*s(i,j,k,rho_comp)* &
+                                       (u(i,j,k,1)-velr*normal(i,j,k,1))
+                   rhovc_y = rhovc_y + weight*s(i,j,k,rho_comp)* &
+                                       (u(i,j,k,2)-velr*normal(i,j,k,2))
+                   rhovc_z = rhovc_z + weight*s(i,j,k,rho_comp)* &
+                                       (u(i,j,k,3)-velr*normal(i,j,k,3))
+                   rhovc_tot = rhovc_tot + weight*s(i,j,k,rho_comp)*velc
+
+
+                   ! add in w0 before computing radial velocity diagnostics
+                   velr = velr + w0r(i,j,k)                
+                   
+                   vr_max = max(vr_max,abs(velr))
+                   
+                   vrvt = vrvt + weight*abs(velr)/vel
+                   
+                   vr_x = vr_x + weight*velr*normal(i,j,k,1)
+                   vr_y = vr_y + weight*velr*normal(i,j,k,2)
+                   vr_z = vr_z + weight*velr*normal(i,j,k,3)
+                   vr_tot = vr_tot + weight*velr
+                
+                   rhovr_x = rhovr_x + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,1)
+                   rhovr_y = rhovr_y + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,2)
+                   rhovr_z = rhovr_z + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,3)
+                   rhovr_tot = rhovr_tot + weight*s(i,j,k,rho_comp)*velr
+                
+                   ! Cartesian velocity
                    vtot_x = vtot_x + weight*vx
                    vtot_y = vtot_y + weight*vy
                    vtot_z = vtot_z + weight*vz
@@ -1648,9 +1664,9 @@ contains
 
 !     write(*,*)'nzones: ',nzones, nzones_core
 !     write(*,*)'mass:   ',mass, mass_core
-    
-!     write(*,*)'vr:    ',vr_x,vr_y,vr_z,vr_tot
-!     write(*,*)'rhovr: ',rhovr_x,rhovr_y,rhovr_z,rhovr_tot
+   
+!     write(*,*)'vr:      ',vr_x,vr_y,vr_z,vr_tot
+!     write(*,*)'rhovr:   ',rhovr_x,rhovr_y,rhovr_z,rhovr_tot
 
 !     write(*,*)'vc:    ',vc_x,vc_y,vc_z,vc_tot
 !     write(*,*)'rhovc: ',rhovc_x,rhovc_y,rhovc_z,rhovc_tot
@@ -1658,8 +1674,8 @@ contains
 !     write(*,*)'vtot:    ',vtot_x,vtot_y,vtot_z,vtot
 !     write(*,*)'rhovtot: ',rhovtot_x,rhovtot_y,rhovtot_z,rhovtot
 
-!     write(*,*)'Utot:    ',Utot_x,Utot_y,Utot_z,Utot
-!     write(*,*)'rhoUtot: ',rhoUtot_x,rhoUtot_y,rhoUtot_z,rhoUtot
+!      write(*,*)'Utot:    ',Utot_x,Utot_y,Utot_z,Utot
+!      write(*,*)'rhoUtot: ',rhoUtot_x,rhoUtot_y,rhoUtot_z,rhoUtot
     
 !     write(*,*)    
 

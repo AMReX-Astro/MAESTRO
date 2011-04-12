@@ -823,16 +823,6 @@ contains
        Utot(:) = Utot(:)/nzones
        Utot_favre(:) = rhoUtot(:)/mass ! note: common dV normalization cancels
 
-! FIXME! should think about this for 2D 
-       ! the volume we normalize with is that of a single coarse-level
-       ! zone.  This is because the weight used in the loop over cells
-       ! was with reference to the coarse level
-       mass_core = mass_core*dx(1,1)*dx(1,2)
-       mass      = mass     *dx(1,1)*dx(1,2)
-       nuc_ener  = nuc_ener *dx(1,1)*dx(1,2)
-       kin_ener  = kin_ener *dx(1,1)*dx(1,2)
-       int_ener  = int_ener *dx(1,1)*dx(1,2)
-
        if ( dm .eq. 3) then
           vr(:) = vr(:)/nzones
           vr_favre(:) = rhovr(:)/mass    ! note: common dV normalization cancels
@@ -843,10 +833,22 @@ contains
 
           mass_core = mass_core*dx(1,3)
           mass      = mass     *dx(1,3)
+
           nuc_ener  = nuc_ener *dx(1,3)
           kin_ener  = kin_ener *dx(1,3)
           int_ener  = int_ener *dx(1,3)
        end if
+
+! FIXME! should think about this for 2D 
+       ! the volume we normalize with is that of a single coarse-level
+       ! zone.  This is because the weight used in the loop over cells
+       ! was with reference to the coarse level
+       mass_core = mass_core*dx(1,1)*dx(1,2)
+       mass      = mass     *dx(1,1)*dx(1,2)
+
+       nuc_ener  = nuc_ener *dx(1,1)*dx(1,2)
+       kin_ener  = kin_ener *dx(1,1)*dx(1,2)
+       int_ener  = int_ener *dx(1,1)*dx(1,2)
 
     endif
 
