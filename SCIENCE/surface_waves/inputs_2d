@@ -13,10 +13,10 @@
  depth_frac = 0.25d0
 
  rho_1 = 100.0d0
- rho_2 = 5.0d0
+ rho_2 = 1.0d0
  delta = 0.005
 
- vel_amplitude = 1.0d0
+ vel_amplitude = 5.0d0
  vel_width = 0.05d0
  vel_lambda = 0.1d0
 
