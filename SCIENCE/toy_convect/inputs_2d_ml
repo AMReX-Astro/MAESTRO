@@ -12,6 +12,7 @@
  max_grid_size_2 = 32
 
  regrid_int = 2	
+ amr_buf_width = 4
  
  prob_lo_x = 0.0d0
  prob_hi_x = 7.5d7
