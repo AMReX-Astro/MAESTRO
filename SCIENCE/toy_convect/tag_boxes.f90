@@ -23,7 +23,6 @@ contains
     use variables, only: rho_comp, spec_comp
     use geometry, only: nr_fine, nr
     use network, only: network_species_index
-    use probin_module, only: npad
 
     type( multifab)          , intent(in   ) :: mf
     type(lmultifab)          , intent(inout) :: tagboxes
@@ -72,27 +71,6 @@ contains
     ! gather radialtag
     call parallel_reduce(radialtag, radialtag_proc, MPI_LOR)
 
-    ! apply some padding                                                                                                  
-    do j = 1, npad
-
-       ! pad the start of a tagged region                                                                                 
-       do i = 1, nr(lev)-1
-          if (radialtag(i) .and. .not. radialtag(i-1)) then
-             ! found start of a tagged region                                                                             
-             radialtag(i-1) = .true.
-          endif
-       enddo
-
-       ! pad the end of a tagged region                                                                                   
-       do i = nr(lev)-1, 1, -1
-          if (radialtag(i) .and. .not. radialtag(i+1)) then
-             ! found end of a tagged region                                                                               
-             radialtag(i+1) = .true.
-          endif
-          enddo
-
-    enddo
-
 
     do i = 1, mf%nboxes
        if ( multifab_remote(mf, i) ) cycle
@@ -132,8 +110,7 @@ contains
        do i = lo(1),lo(1)+nx-1
           XH1 = H1(i,j)/rho(i,j)
 
-          if (XH1 > 1.d-4 .and. XH1 < 0.99d0 .and. &
-               rho(i,j) > base_cutoff_density) then
+          if (XH1 > 1.d-4 .and. rho(i,j) > 2.d0*base_cutoff_density) then
              radialtag(j) = .true.
           end if
 
@@ -168,8 +145,7 @@ contains
           do i = lo(1),lo(1)+nx-1
 
              XH1 = H1(i,j,k)/rho(i,j,k)
-             if (XH1 > 1.d-4 .and. XH1 < 0.99d0 .and. &
-                  rho(i,j,k) > base_cutoff_density) then
+             if (XH1 > 1.d-4 .and. rho(i,j,k) > 2.d0*base_cutoff_density) then
                 radialtag(k) = .true.
              end if
 
