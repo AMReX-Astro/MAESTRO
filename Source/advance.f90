@@ -172,8 +172,11 @@ contains
     real(kind=dp_t), allocatable ::       div_coeff_edge(:,:)
     real(kind=dp_t), allocatable ::  rho0_predicted_edge(:,:)
 
-    integer    :: i,n,comp,proj_type,numcell,nlevs,dm
+    integer    :: i,n,comp,proj_type,nlevs,dm
     real(dp_t) :: halfdt
+
+    ! need long int to store numbers greater than 2^31
+    integer(kind=ll_t) :: numcell
 
     real(kind=dp_t) :: advect_time , advect_time_start , advect_time_max
     real(kind=dp_t) :: macproj_time, macproj_time_start, macproj_time_max
