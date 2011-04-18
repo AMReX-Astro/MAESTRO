@@ -65,8 +65,8 @@
  plot_int        = -1
  plot_deltat     = 2.5d-1
  chk_int         = 70
- check_base_name = "output/chk"
- plot_base_name  = "output/plt"
+ check_base_name = "chk"
+ plot_base_name  = "plt"
 
  ! Solvers ....................................................................
  max_mg_bottom_nlevels = 3
@@ -82,7 +82,7 @@
 
  !dump_grid_file = T
 
-    verbose = 0
- mg_verbose = 0
+    verbose = 1
+ mg_verbose = 1
  cg_verbose = 0
 /
