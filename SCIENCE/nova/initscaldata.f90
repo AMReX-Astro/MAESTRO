@@ -27,7 +27,8 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
-    use probin_module, only: prob_lo, prob_hi, perturb_model, nova_pert_height
+    use probin_module, only: prob_lo, prob_hi, perturb_model, &
+                             nova_pert_height, CEBoundary
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -37,8 +38,9 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(mla%dim),hi(mla%dim),ng,dm,nlevs
+    integer :: lo(mla%dim),hi(mla%dim),ng
     integer :: i,n,r
+    integer :: dm,nlevs
 
     dm = mla%dim
     nlevs = mla%nlevel
@@ -126,8 +128,9 @@ contains
 
     ! local
     integer                    :: ng,i,r
-    integer                    :: lo(get_dim(s)),hi(get_dim(s)),dm
+    integer                    :: lo(get_dim(s)),hi(get_dim(s))
     real(kind=dp_t), pointer   :: sop(:,:,:,:)
+    integer :: dm
 
     dm = get_dim(s)
 
@@ -161,7 +164,8 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
 
-    use probin_module, only: prob_lo, prob_hi, perturb_model, nova_pert_height
+    use probin_module, only: prob_lo, prob_hi, perturb_model, &
+                             nova_pert_height, CEBoundary
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -177,13 +181,36 @@ contains
 
     real(kind=dp_t) :: xcen, ycen, dist
 
+    integer         :: C12_comp
+    integer         :: Jpeak
+    real(kind=dp_t) :: Ypeak
+    real(kind=dp_t) :: Tpeak
+    real(kind=dp_t) :: Ttemp
+    real(kind=dp_t) :: C12_cutoff
+    integer         :: Jboundary
+    real(kind=dp_t) :: Yboundary
+
+    Jpeak = lo(2)
+    Ypeak = prob_lo(2)
+    Tpeak = ZERO
+    C12_cutoff = 2.5d-1
+    C12_comp = spec_comp - 1 + network_species_index("carbon-12")
+
     ! initial the domain with the base state
     s = ZERO
 
     ! initialize the scalars
     do j = lo(2), hi(2)
+       y = prob_lo(2) + (dble(j) + HALF) * dx(2)
+
+       Ttemp = s0_init(j,temp_comp)
+       if (Ttemp > Tpeak) then
+          Ypeak = y
+          Tpeak = Ttemp
+       end if
 
        do i = lo(1), hi(1)
+          !x = prob_lo(1) + (dble(i) + HALF) * dx(1)
 
           s(i,j,rho_comp)  = s0_init(j,rho_comp)
           s(i,j,rhoh_comp) = s0_init(j,rhoh_comp)
@@ -196,6 +223,19 @@ contains
        enddo
 
     enddo
+
+    Jboundary = Jpeak
+    Yboundary = Ypeak
+    do j = Jpeak, lo(2), -1
+       if (s0_init(j,C12_comp) < 0.25) then
+          Jboundary = j
+          Yboundary = prob_lo(2) + (dble(j) + HALF) * dx(2)
+       else
+          exit
+       end if
+    end do
+
+    CEBoundary = Yboundary
     
     ! add an optional perturbation
     if (perturb_model) then
