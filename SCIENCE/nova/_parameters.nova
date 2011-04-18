@@ -34,7 +34,7 @@ velpert_amplitude                   real               1.0d2
 velpert_height_loc                  real               6.5d3
 
 # number of vortices 
-num_vortices                        integer            1
+num_vortices                        integer            2
 
 # apply the conductivity limiting
 limit_conductivity                  logical            .false.
