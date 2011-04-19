@@ -10,7 +10,6 @@ module initialize_module
   use network, only: nspec
   use bl_constants_module
   use base_state_module
-  use base_io_module
 
   implicit none
 
@@ -48,6 +47,8 @@ contains
     use regrid_module
     use init_scalar_module
     use time_module, only: time
+    use base_io_module
+    use aux_data_module
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(inout) :: restart
@@ -370,7 +371,11 @@ contains
             rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
             etarho_ec, etarho_cc, div_coeff_old, psi, tempbar, tempbar_init)
 
+       ! read in any auxillary data
+       call read_aux_data(restart, check_file_name)
+
     endif
+
 
     ! fill ghost cells
     ! this need to be done after read_base_state since in some problems, the inflow

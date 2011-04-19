@@ -2,6 +2,7 @@ f90sources += addw0.f90
 f90sources += advance.f90
 f90sources += advance_premac.f90
 f90sources += advect_base.f90
+f90sources += aux_data.f90
 f90sources += average.f90
 f90sources += base_state.f90
 f90sources += base_io.f90

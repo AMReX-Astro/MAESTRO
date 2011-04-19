@@ -5,6 +5,7 @@ subroutine varden()
   use geometry
   use base_state_module
   use base_io_module
+  use aux_data_module
   use estdt_module
   use firstdt_module
   use advance_timestep_module
@@ -457,7 +458,7 @@ subroutine varden()
         call write_base_state(restart, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))        
 
         call write_job_info(plot_file_name, mla%mba)
 
@@ -567,6 +568,8 @@ subroutine varden()
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+
+        call write_aux_data(istep, check_file_name)
 
         last_chk_written = istep
 
@@ -1229,6 +1232,8 @@ subroutine varden()
                                     w0, etarho_ec, etarho_cc, &
                                     div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
+              call write_aux_data(istep, check_file_name)
+
               last_chk_written = istep
 
               do n = 1,nlevs
@@ -1323,6 +1328,8 @@ subroutine varden()
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+
+        call write_aux_data(istep, check_file_name)
 
         do n = 1,nlevs
            call destroy(chkdata(n))
