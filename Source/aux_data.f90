@@ -14,7 +14,7 @@ module aux_data_module
   private
 
   integer, save, public :: naux = 0
-  real (kind=dp_t), allocatable, public :: aux_data(:)
+  real (kind=dp_t), allocatable, public, save :: aux_data(:)
 
   public :: init_aux_data, write_aux_data, read_aux_data
 
