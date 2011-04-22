@@ -713,7 +713,8 @@ contains
        gp0(      0) = gp0(        1)
        
        call put_1d_array_on_cart_3d_sphr(.true.,.true.,gp0,gp0_cart,lo,hi,dx,0)
-       
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k,gp_dot_u,denom) REDUCTION(MIN : dt_divu)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -731,6 +732,7 @@ contains
              enddo
           enddo
        enddo
+       !$OMP END PARALLEL DO
 
        dt = min(dt,dt_divu)
 

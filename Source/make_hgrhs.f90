@@ -598,7 +598,8 @@ contains
     ! Local variables
     integer :: i, j, k
     real(kind=dp_t) :: correction_factor
-    
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,correction_factor)
     do k = lo(3),hi(3)
        if(k .lt. base_cutoff_density_coord(n)) then
           correction_factor = div_coeff(k)*(dpdt_factor/(gamma1bar(k)*p0(k))) / dt
@@ -611,6 +612,7 @@ contains
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
     
   end subroutine create_correction_cc_3d_cart
 

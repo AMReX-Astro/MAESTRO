@@ -490,19 +490,26 @@ contains
     spdz = ZERO 
     spdr = ZERO
     umax = ZERO
-    
-    ! Limit dt based on velocity terms
+    !
+    ! Limit dt based on velocity terms.
+    !
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : spdx)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        spdx = max(spdx ,abs(u(i,j,k,1)))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : spdy)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        spdy = max(spdy ,abs(u(i,j,k,2)))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : spdz)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        spdz = max(spdz ,abs(u(i,j,k,3)+HALF*(w0(k)+w0(k+1))))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
     
     do k = lo(3),hi(3)
        spdr = max(spdr ,abs(w0(k)))
@@ -516,23 +523,30 @@ contains
     if (spdr > eps) dt_adv = min(dt_adv, dx(3)/spdr)
 
     dt_adv = dt_adv * cfl
-    
+    !
     ! Limit dt based on forcing terms
+    !
     fx = ZERO 
     fy = ZERO 
     fz = ZERO 
-    
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : fx)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        fx = max(fx,abs(force(i,j,k,1)))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : fy)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        fy = max(fy,abs(force(i,j,k,2)))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : fz)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        fz = max(fz,abs(force(i,j,k,3)))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
     
     if (fx > eps) &
        dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/fx))
@@ -542,8 +556,10 @@ contains
     
     if (fz > eps) &
        dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/fz))
-    
+    !
     ! divU constraint
+    !
+    !$OMP PARALLEL DO PRIVATE(i,j,k,gradp0,denom) REDUCTION(MIN : dt_divu)
     do k = lo(3), hi(3)
        
        if (k .eq. 0) then
@@ -567,7 +583,9 @@ contains
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
     
+    !$OMP PARALLEL DO PRIVATE(i,j,k,a,b,c) REDUCTION(MIN : dt_divu)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)           
@@ -633,19 +651,26 @@ contains
     spdz = ZERO 
     spdr = ZERO
     umax = ZERO
-
+    !
     ! Limit dt based on velocity terms
+    !
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : spdx)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        spdx = max(spdx ,abs(u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : spdy)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        spdy = max(spdy ,abs(u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : spdz)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        spdz = max(spdz ,abs(u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
     
     do k=0,nr_fine
        spdr = max(spdr ,abs(w0(k)))
@@ -664,18 +689,24 @@ contains
     fx = ZERO 
     fy = ZERO 
     fz = ZERO 
-    
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : fx)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        fx = max(fx,abs(force(i,j,k,1)))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : fy)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        fy = max(fy,abs(force(i,j,k,2)))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : fz)
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
        fz = max(fz,abs(force(i,j,k,3)))
     enddo; enddo; enddo
+    !$OMP END PARALLEL DO
     
     if (fx > eps) &
        dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/fx))
@@ -696,7 +727,7 @@ contains
 
     call put_1d_array_on_cart_3d_sphr(.true.,.true.,gp0,gp0_cart,lo,hi,dx,0)
     
-    !$OMP PARALLEL DO PRIVATE(i,j,k,a,b,c,gp_dot_u,denom) REDUCTION(min:dt_divu)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,a,b,c,gp_dot_u,denom) REDUCTION(MIN : dt_divu)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

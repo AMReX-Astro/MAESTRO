@@ -157,6 +157,7 @@ contains
 
     integer :: i,j,k
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k = lo(3),hi(3)+1
        do j = lo(2)-1,hi(2)+1
           do i = lo(1)-1,hi(1)+1
@@ -164,6 +165,7 @@ contains
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
 
   end subroutine addw0_3d
 
