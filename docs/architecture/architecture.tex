@@ -58,16 +58,13 @@ sub-directories are:
 
  BoxLib is a library for describing meshes consisting of a union
  of boxes.  The BoxLib modules define the basic datatypes used
- in MAESTRO.
+ in MAESTRO.  BoxLib also provides the routines that handle the
+ parallelization and I/O.
 
 \item {\tt data\_processing/}
 
  Simple Fortran-based analysis routines (e.g.\ extract a line from a
  multidimensional dataset) that operate on BoxLib datasets.
-
-\item {\tt doc/}
-
- Documentation describing the basic algorithm.
 
 \item {\tt extern/}
 
@@ -119,11 +116,10 @@ sub-directories are:
 
  \begin{itemize}
 
- \item {\tt Source}
+ \item {\tt docs/}
 
-   The main MAESTRO source.  Here you will find the driver routine, the
-   advection routines, etc.  All MAESTRO problems will compile this
-   source.
+   Documentation describing the basic algorithm (including this
+   document).
 
  \item {\tt initial\_models}
 
@@ -131,6 +127,12 @@ sub-directories are:
    1D initial conditions in hydrostatic equilibrium for 
    mapping onto the MAESTRO grid.  See \S~\ref{sec:initial_models}
    for details.
+
+ \item {\tt Source}
+
+   The main MAESTRO source.  Here you will find the driver routine, the
+   advection routines, etc.  All MAESTRO problems will compile this
+   source.
 
  \item problem directories: {\tt test2}, {\tt
    test\_spherical}, $\ldots$
