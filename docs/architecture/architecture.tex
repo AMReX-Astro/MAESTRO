@@ -713,6 +713,7 @@ both cases hydrostatic equilibrium is enforced as:
 \frac{p_{i+1} - p_i}{\Delta r} = \frac{1}{2} (\rho_i + \rho_{i+1})
 g_{i+1/2}
 \end{equation}
+Here, $g_{i+1/2}$ is the edge-centered gravitational acceleration.
 
 The {\tt toy\_atm} example provides a simple approximation for a thin
 (plane-parallel) convectively-unstable accreted layer on the surface
@@ -741,7 +742,9 @@ domain is broken into boxes.  At the coarsest (base) level of
 refinement, the entire computational domain is covered, either by one
 box or broken across many boxes.  Higher levels of refinement have
 finer zones (typically $2\times$).  Only a portion of the domain may
-be covered by the higher levels of refinement.  \MarginPar{Nesting?}
+be covered by the higher levels of refinement.  
+
+\MarginPar{Nesting?}
 For parallel computations, the boxes are spread across processors, in
 a fashion designed to put roughly equal amounts of work on each
 processor (load balancing).
@@ -777,23 +780,10 @@ data types below.
 \subsection{\boxtype}
 
 A \boxtype\ is simply a rectangular domain in space.  Note that boxes
-do not hold the state data themselves.  The datatype for a
-\boxtype\ is
-\begin{verbatim}
-  type box
-     integer :: dim  = 0
-     integer :: lo(MAX_SPACEDIM) =  Huge(1)
-     integer :: hi(MAX_SPACEDIM) = -Huge(1)
-  end type box
-\end{verbatim}
-
-\noindent Here:
-\begin{itemize}
-\item {\tt dim} is the dimensionality of the data
-\item {\tt lo} is the index of the lower bound of the box
-\item {\tt hi} is the index of the upper bound of the box
-\end{itemize}
-
+do not hold the state data themselves.  A \boxtype\ has a {\tt lo} 
+and {\tt hi} index in each coordinate direction that gives the
+location of the lower-left and upper-right corner with respect to
+a global index space.  
 
 \begin{figure}[t]
 \centering
@@ -808,9 +798,20 @@ do not hold the state data themselves.  The datatype for a
 The computational domain is divided into boxes.  The collection of
 boxes with the same resolution comprise a level.
 Figure~\ref{fig:boxes} shows three boxes in the same level of
-refinement.  The position of the boxes is with respect to a global
+refinement.  The position of the boxes is with respect to the global
 index space at that level.  For example, box 1 in the figure has {\tt
-  lo} = (3,7) and {\tt hi} = (9,12).
+  lo} = (3,7) and {\tt hi} = (9,12).  Note that the global indexing
+is 0-based.
+
+The global index space covers the entire domain at a given resolution.
+For a simulation setup with {\tt n\_cellx = 32} and {\tt n\_celly =
+  32}, the coarsest level (level 1) has $32 \times 32$ zones, and the
+global index space will run from $0, \ldots, 31$ in each coordinate
+direction.  Level 2 will have a global index space running from $0,
+\ldots, 63$ in each coordinate direction (corresponding to $64 \times
+64$ zones if fully refined), and level 3 will have a global index
+space running from $0, \ldots, 127$ in each coordinate direction
+(corresponding to $128\times 128$ zones if fully refined).
 
 
 \subsubsection{Common Operations on a \boxtype}
