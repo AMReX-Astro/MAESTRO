@@ -348,7 +348,8 @@ contains
     
     integer         :: i,j,k
     real(kind=dp_t) :: t0_edge
-    
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
@@ -388,7 +389,9 @@ contains
           enddo
        enddo
     enddo
-    
+    !$OMP END PARALLEL DO
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge)    
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)
@@ -428,7 +431,9 @@ contains
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge) 
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -469,6 +474,7 @@ contains
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
     
   end subroutine makeHfromRhoT_edge_3d_cart
 
@@ -1029,6 +1035,7 @@ contains
     ! Local variables
     integer :: i, j, k
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1059,6 +1066,7 @@ contains
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
     
   end subroutine makeTfromRhoP_3d
 
@@ -1531,6 +1539,7 @@ contains
     ! local
     integer    :: i,j,k
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
@@ -1560,6 +1569,7 @@ contains
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
 
   end subroutine makeTHfromRhoP_3d
 

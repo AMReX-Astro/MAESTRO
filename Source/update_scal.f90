@@ -438,8 +438,9 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
 
+    !$OMP PARALLEL PRIVATE(i,j,k,divterm,comp) 
     do comp = nstart, nstop
-
+       !$OMP DO
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -453,17 +454,19 @@ contains
              enddo
           enddo
        enddo
-
+       !$OMP END DO NOWAIT
     end do
-    
+    !$OMP END PARALLEL
     
     if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
                 if (snew(i,j,k,rho_comp) .le. base_cutoff_density) then
+
                    den_eos(1) = snew(i,j,k,rho_comp)
                    temp_eos(1) = sold(i,j,k,temp_comp)
                    p_eos(1) = p0(k)
@@ -491,6 +494,7 @@ contains
              enddo
           enddo
        enddo
+       !$OMP END PARALLEL DO
 
     end if
 
@@ -499,7 +503,8 @@ contains
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
 
        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
-       
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k,has_negative_species,comp,delta,sumX,comp2,frac)       
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -547,6 +552,7 @@ contains
              enddo
           enddo
        enddo
+       !$OMP END PARALLEL DO
 
     end if
 

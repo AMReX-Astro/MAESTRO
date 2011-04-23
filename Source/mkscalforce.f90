@@ -368,8 +368,10 @@ contains
 
     real(kind=dp_t) :: gradp0,wadv
     integer :: i,j,k
-
+    !
     ! Add wtilde d(p0)/dr
+    !
+    !$OMP PARALLEL DO PRIVATE(i,j,k,gradp0,wadv)
     do k = lo(3),hi(3)
 
        if (k .lt. base_cutoff_density_coord(n)) then
@@ -389,12 +391,13 @@ contains
           end do
        end do
     enddo
+    !$OMP END PARALLEL DO
 
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
     ! (rho h)', but should be there if we are predicting h
-    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
-         (.NOT. is_prediction)) then
+    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. (.NOT. is_prediction)) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
@@ -402,10 +405,12 @@ contains
              end do
           end do
        enddo
+       !$OMP END PARALLEL DO
     endif
        
 
     if (add_thermal) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3),hi(3)
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
@@ -413,6 +418,7 @@ contains
              end do
           end do
        end do
+       !$OMP END PARALLEL DO
     end if
 
   end subroutine mkrhohforce_3d
@@ -476,13 +482,13 @@ contains
     ! For prediction, it should not be in the force if we are predicting
     ! (rho h)', but should be there if we are predicting h
     !
-    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
-         (.NOT. is_prediction)) then
+    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. (.NOT. is_prediction)) then
 
        allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
@@ -490,10 +496,12 @@ contains
              enddo
           enddo
        enddo       
+       !$OMP END PARALLEL DO
        deallocate(psi_cart)
     endif
 
     if (add_thermal) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3),hi(3)
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
@@ -501,6 +509,7 @@ contains
              end do
           end do
        end do
+       !$OMP END PARALLEL DO
     end if
 
   end subroutine mkrhohforce_3d_sphr
@@ -586,8 +595,6 @@ contains
           call put_1d_array_on_cart(h0_nph,h0_cart,foextrap_comp,.false.,.false.,&
                                     dx,the_bc_level,mla)
        end if
-
-       
 
        do i=1, nboxes(scal_force(n))
           if ( multifab_remote(scal_force(n),i) ) cycle
@@ -696,8 +703,10 @@ contains
     real(kind=dp_t) :: divup, p0divu
     real(kind=dp_t) :: divuh, h0divu
     integer         :: i,j,k
-
-    ! Here we make u grad p = div (u p) - p div (u) 
+    !
+    ! Here we make u grad p = div (u p) - p div (u)
+    !
+    !$OMP PARALLEL DO PRIVATE(i,j,k,p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,divup,p0divu,rhoavg)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -724,8 +733,11 @@ contains
           end do
        end do
     end do
-
-    ! Here we make u grad h_0 = div (u h_0) - h_0 div (u) 
+    !$OMP END PARALLEL DO
+    !
+    ! Here we make u grad h_0 = div (u h_0) - h_0 div (u)
+    !
+    !$OMP PARALLEL DO PRIVATE(i,j,k,h0_lox,h0_hix,h0_loy,h0_hiy,h0_loz,h0_hiz,divuh,h0divu)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -754,12 +766,12 @@ contains
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
     ! (rho h)', but should be there if we are predicting h
-    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
-         (.NOT. is_prediction)) then
+    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. (.NOT. is_prediction)) then
 
        allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
@@ -767,10 +779,12 @@ contains
              enddo
           enddo
        enddo       
+       !$OMP END PARALLEL DO
        deallocate(psi_cart)
     endif
 
     if (add_thermal) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k=lo(3),hi(3)
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
@@ -778,6 +792,7 @@ contains
              end do
           end do
        end do
+       !$OMP END PARALLEL DO
     end if
 
   end subroutine mkhprimeforce_3d_sphr
@@ -1093,6 +1108,7 @@ contains
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k,dhdp,p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,divup,p0divu,ugradp)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -1145,6 +1161,7 @@ contains
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
 
     deallocate(psi_cart)
 

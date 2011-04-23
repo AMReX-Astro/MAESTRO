@@ -321,6 +321,7 @@ contains
 
     if (spherical .eq. 0) then
 
+       !$OMP PARALLEL DO PRIVATE(i,j,k,wbar)
        do k = lo(3), hi(3)
 
           ! subtract (w0 dot grad) Utilde term
@@ -338,6 +339,7 @@ contains
           enddo
 
        enddo
+       !$OMP END PARALLEL DO
 
     else
 

@@ -554,7 +554,8 @@ contains
     if (use_divu_firstdt) then
 
        dt_divu = 1.d99
-       
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k,gradp0,denom) REDUCTION(MIN : dt_divu)       
        do k = lo(3), hi(3)
           if (k .eq. 0) then
              gradp0 = (p0(k+1) - p0(k))/dx(3)
@@ -573,7 +574,8 @@ contains
              enddo
           enddo
        enddo
-       
+       !$OMP END PARALLEL DO
+
        dt = min(dt,dt_divu)
 
     end if
