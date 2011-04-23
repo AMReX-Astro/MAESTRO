@@ -76,6 +76,11 @@ provide usage examples.
   For each plotfile, simply print the simulation time.
 
 
+\item {\tt fvarnames.f90}
+
+  Simply print out the list of variables stored in a plotfile.
+
+
 \subsection{Data Processing Example}
 
 A well-commented example processing routine is provided in {\tt
@@ -87,6 +92,13 @@ at any physical location in the computational domain.
 
 {\tt fspeciesmass2d.f90} should provide a good starting point for
 writing a new analysis routine for BoxLib data.
+
+\subsection{Particle routines}
+
+The {\tt parseparticles.py} routine in the {\tt python/} subdirectory
+can read in MAESTRO particle files containing particle histories
+(usually named {\tt timestamp\_??}.  The driver {\tt test.py} shows
+shows how to use this module to plot particle histories.
 
 \end{itemize}
 
