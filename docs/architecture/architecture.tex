@@ -735,6 +735,18 @@ be found in \S~\ref{sec:initial_models_main}.
 
 \section{BoxLib Data Structures}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=6.5in]{\archfigpath/data_loc2}
+\caption[Data-centerings on the grid]
+  {\label{fig:dataloc} Some of the different data-centerings:
+  (a) cell-centered, (b) nodal in the $x$-direction, and (c) nodal in
+  both the $x$- and $y$-directions.  Note that for nodal data, the
+  integer index corresponds to the lower boundary in that direction.
+  In each of these centerings, the red point has the same indices:\ (1,2).
+  Not shown is the case where data is nodal in the $y$-direction only.}
+\end{figure}
+
 MAESTRO's gridding is handled by the BoxLib library.  The underlying
 idea in BoxLib is to allow for adaptive mesh refinement (AMR)---different
 regions of the domain can have different spatial resolutions.  The
@@ -757,20 +769,6 @@ data (density, enthalpy, velocity, $\ldots$) is generally
 cell-centered.  Fluxes are nodal in the direction they represent.
 A few quantities are nodal in all directions (e.g.\ $\phi$ used in
 the final velocity projection).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=6.5in]{\archfigpath/data_loc2}
-\caption[Data-centerings on the grid]
-  {\label{fig:dataloc} Some of the different data-centerings:
-  (a) cell-centered, (b) nodal in the $x$-direction, and (c) nodal in
-  both the $x$- and $y$-directions.  Note that for nodal data, the
-  integer index corresponds to the lower boundary in that direction.
-  In each of these centerings, the red point has the same indices:\ (1,2).
-  Not shown is the case where data is nodal in the $y$-direction only.}
-\end{figure}
-
-
 
 To simplify the description of the underlying AMR grid, BoxLib
 provides a number of Fortran types.  We briefly summarize the major
@@ -916,7 +914,7 @@ calling {\tt multifab\_destroy} on the \multifab.
 
 \subsection{\bctower}
 
-A \bctower holds the information about what boundary conditions are
+A \bctower\ holds the information about what boundary conditions are
 in effect for each variable in a MAESTRO simulation.  \MarginPar{better description?}
 
 \section{MAESTRO Data Organization}
