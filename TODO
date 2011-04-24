@@ -58,3 +58,5 @@
 -- switch ignition_chamulak over to using a burner_aux module instead of
    common blocks for passing stuff into the RHS.
 
+
+-- gamma_law_general should be OpenMP-ed
