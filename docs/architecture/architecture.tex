@@ -883,27 +883,30 @@ MAESTRO, the hierarchry of grids will be described by a single
 simulation using the \mllayout, thereby allocating space at every
 grid location in the simulation.  The sequence to build a \multifab\
 appears as
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
   type(multifab) :: mfab(nlevs)
   ...
   do n = 1, nlevs
      call multifab_build(mfab(n), mla%la(n), nc, ng)
   enddo
-\end{verbatim}
+\end{lstlisting}
 Here, {\tt nc} is the number of components and {\tt ng} is the number
 of ghostcells.  The \multifab\ is built one level at a time, using the
 \layout\ for that level taken from the \mllayout, {\tt mla}.
 
 A common operation on a \multifab\ is to initialize it to $0$
 everywhere.  This can be done (level-by-level) as
-\begin{verbatim}
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
 call setval(mfab(n), ZERO, all=.true.)
-\end{verbatim}
+\end{lstlisting}
 where {\tt ZERO} is the constant 0.0 from {\tt bl\_constants\_module}.
 
+The procedure for accessing the data in each grid managed by the \multifab\
+is shown in \S~\ref{sec:example}.  
 Subroutines to add, multiply, or divide two \multifab s exist, as do
 subroutines to copy from one \multifab\ to another---see {\tt boxlib/multifab.f90}
 for the full list of routines that work with \multifab s.
+
 
 When you are done working with a \multifab, its memory can be freed by
 calling {\tt multifab\_destroy} on the \multifab.
@@ -1013,8 +1016,6 @@ $\Delta x$, i.e.\ $\Delta r < \Delta x$.  The ratio is controlled
 by the parameter {\tt drdxfac}.
 
 
-\subsection{Other Quantities}
-
 
 \section{MAESTRO Helper Modules}
 
@@ -1023,6 +1024,10 @@ Below, we describe some of the more common functionality of the most
 popular modules.
 
 \subsection{\tt average}
+
+The {\tt average} module provides a routine {\tt average} that takes
+a multilevel \multifab\ array and averages the full Cartesian data
+onto the 1-d base state.
 
 \subsection{{\tt eos\_module}}
 
@@ -1056,12 +1061,39 @@ Presently there are 2 equations of state that work with MAESTRO:
      make this switch.
 \end{itemize}
 
-eos module variables
+The {\tt eos\_module} declares for convenience the variables that need
+appear in the {\tt eos} call argument list.  MAESTRO routines use
+these module variables in the EOS call to avoid having to declare 
+each quantity in each routine that calls the EOS.
 
-eos input types
+The first argument to the {\tt eos} call is an integer key that
+specifies which thermodynamic variables (in addition to the mass
+fractions) are used as input.  Options include:
+
+   \begin{center}
+   \begin{tabular}{lc}
+   \hline
+   key            & input quantities \\
+   \hline
+   eos\_input\_rt       & $\rho$, $T$ \\
+   eos\_input\_rh       & $\rho$, $h$ \\
+   eos\_input\_tp       & $T$, $p$ \\
+   eos\_input\_rp       & $\rho$, $p$ \\
+   eos\_input\_re       & $\rho$, $e$ \\
+   eos\_input\_ps       & $p$, $s$ \\
+   \hline
+   \end{tabular}
+   \end{center}
+
+
 
 
 \subsection{{\tt fill\_3d\_module}}
+
+The {\tt fill\_3d\_module} provides routines that map from the 1-d
+base state to the full Cartesian 2- or 3-d state.  Variations in the
+routines allow for cell-centered or edge-centered data on either the
+base state or full Cartesian state.
 
 \subsection{{\tt geometry}}
 
@@ -1139,7 +1171,7 @@ the most popular such modules.
 
 \subsection{{\tt parallel}}
 
-\section{Example: Accessing State Data}
+\section{\label{sec:example} Example: Accessing State Data}
 
 In MAESTRO, the state data is stored in a multifab array (the array
 index refers to the AMR level).  A typical way to extract the state data
@@ -1292,10 +1324,7 @@ declared as
 and an additional loop over the `z' coordinate (from {\tt lo(3)} to
 {\tt hi(3)}).
 
-\section{Working with Multifabs}
 
-need to describe the routines for adding two multifabs, subtracting,
-etc. and norm, etc.
 
 \section{Filling Ghostcells}
 
