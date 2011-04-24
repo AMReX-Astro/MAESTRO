@@ -744,7 +744,7 @@ box or broken across many boxes.  Higher levels of refinement have
 finer zones (typically $2\times$).  Only a portion of the domain may
 be covered by the higher levels of refinement.  
 
-\MarginPar{Nesting?}
+\MarginPar{Nesting? ghost cells?}
 For parallel computations, the boxes are spread across processors, in
 a fashion designed to put roughly equal amounts of work on each
 processor (load balancing).
@@ -816,11 +816,13 @@ space running from $0, \ldots, 127$ in each coordinate direction
 
 \subsubsection{Common Operations on a \boxtype}
 
-For a \boxtype\ declared as:
+A \boxtype\ declared as:
 \begin{verbatim}
   type(box) :: mybox
 \end{verbatim}
-
+%
+The upper and lower bounds of the box (in terms of the global
+index space) are found via:
 \begin{itemize}
 
 \item {\tt lo = lwb(mybox)} returns an array, {\tt lo(dm)}, with
@@ -830,64 +832,6 @@ For a \boxtype\ declared as:
      the box upper bounds
 
 \end{itemize}
-
-
-
-\subsection{\fab}
-
-A \fab\ is a ``Fortran Array Box''.  It contains the state data in a
-multidimensional array and several \boxtype-types to describe where in
-index-space it lives.  The datatype of a \fab\ is
-\begin{verbatim}
-  type fab
-     integer   :: dim = 0
-     type(box) :: bx
-     type(box) :: pbx
-     type(box) :: ibx
-     integer   :: nc = 1
-     real(kind = dp_t), pointer, dimension(:,:,:,:) :: p => Null()
-  end type fab
-\end{verbatim}
- 
-\noindent Here:
-\begin{itemize}
-\item {\tt dim} is the dimensionality of the data
-\item {\tt bx} is a \boxtype\ describing the index space for which this \fab\ is defined
-\item {\tt ibx} is a \boxtype\ that describes the index range of the valid data
-  for the \fab.  This differes from {\tt bx} when the box is nodal in one or more 
-  directions.
-\item {\tt pbx} is a \boxtype\ that extends {\tt ibx} to include
-  any ghostcells, or equivalently, the physical box for the \fab\
-\item {\tt nc} is the number of components (how many variables at  
-  each grid location)
-\item {\tt p} is a pointer to the data, in this case double precision
-  ({\tt kind=dp\_t}).  Other \fab\ types exists for other Fortran
-  data types.
-\end{itemize}
-
-
-Note that all state data is stored in a four-dimensional array,
-{\tt (nx,ny,nz,nc)} in size, regardless of the dimensionality of the
-problem.  For 2D problems, {\tt nz=1}.
-
-In MAESTRO, we don't usually deal with \fab s alone, but rather
-through \multifab s, described next.
-
-\subsection{\multifab}
-
-A \multifab\ is a collection of \fab s at the same level of
-refinement.  The data type of a \multifab\ is:
-\begin{verbatim}
-  type multifab
-     integer :: dim = 0
-     integer :: nboxes = 0
-     integer :: nc = 1
-     integer :: ng = 0
-     logical, pointer :: nodal(:) => Null()
-     type(layout) :: la
-     type(fab), pointer :: fbs(:) => Null()
-  end type multifab
-\end{verbatim}
 
 
 
@@ -908,8 +852,69 @@ do some operation with two multifabs that have that layout, for
 example.
 
 
+\subsection{\fab}
+
+A \fab\ is a ``Fortran Array Box''.  It contains the state data in a
+multidimensional array and several \boxtype-types to describe where in
+the global index-space it lives.  
+Note that all state data is stored in a four-dimensional array,
+{\tt (nx,ny,nz,nc)} in size, regardless of the dimensionality of the
+problem.  Here {\tt nc} is the number of components, for instance
+representing different fluid variables.  For 2D problems, {\tt nz=1}.
+
+A \fab\ would represent the data for a single box in the domain.
+In MAESTRO, we don't usually deal with \fab s alone, but rather
+we deal with \multifab s, described next.
+
+\subsection{\multifab}
+
+A \multifab\ is a collection of \fab s at the same level of
+refinement.  This is the primary data structure that MAESTRO
+routine operate on.  A multilevel simulation stores the 
+data in an array of multifabs, where the array index refers
+to the refinement level.
+
+\subsubsection{Working with \multifab s}
+
+To build a \multifab, we need to provide a \layout, the number of
+components to store in the multifab, and the number of ghostcells.  In
+MAESTRO, the hierarchry of grids will be described by a single
+\mllayout.  A \multifab\ can be declared and built at any time in a
+simulation using the \mllayout, thereby allocating space at every
+grid location in the simulation.  The sequence to build a \multifab\
+appears as
+\begin{verbatim}
+  type(multifab) :: mfab(nlevs)
+  ...
+  do n = 1, nlevs
+     call multifab_build(mfab(n), mla%la(n), nc, ng)
+  enddo
+\end{verbatim}
+Here, {\tt nc} is the number of components and {\tt ng} is the number
+of ghostcells.  The \multifab\ is built one level at a time, using the
+\layout\ for that level taken from the \mllayout, {\tt mla}.
+
+A common operation on a \multifab\ is to initialize it to $0$
+everywhere.  This can be done (level-by-level) as
+\begin{verbatim}
+call setval(mfab(n), ZERO, all=.true.)
+\end{verbatim}
+where {\tt ZERO} is the constant 0.0 from {\tt bl\_constants\_module}.
+
+Subroutines to add, multiply, or divide two \multifab s exist, as do
+subroutines to copy from one \multifab\ to another---see {\tt boxlib/multifab.f90}
+for the full list of routines that work with \multifab s.
+
+When you are done working with a \multifab, its memory can be freed by
+calling {\tt multifab\_destroy} on the \multifab.
+
+
+
+
 \subsection{\bctower}
 
+A \bctower holds the information about what boundary conditions are
+in effect for each variable in a MAESTRO simulation.  \MarginPar{better description?}
 
 \section{MAESTRO Data Organization}
 
