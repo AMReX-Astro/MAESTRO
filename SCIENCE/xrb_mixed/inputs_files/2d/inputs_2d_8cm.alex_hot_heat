@@ -25,7 +25,7 @@
 ! 4x16 = 64
  max_grid_size = 16
 
- ppm_type = 2
+ ppm_type = 1
 
  mg_bottom_solver = 4
  hg_bottom_solver = 4
