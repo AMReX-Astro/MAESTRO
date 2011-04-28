@@ -86,6 +86,10 @@ subroutine varden()
   ! initialize nlevs
   nlevs = mla%nlevel
 
+  if (nlevs .ne. max_levs) then
+     call bl_error('varden.f90: nlevs .ne. max_levs not supported yet')
+  end if
+
   ! initialize dm
   dm = mla%dim
 

@@ -87,6 +87,10 @@ subroutine varden()
  dm = mla%dim
  nlevs = mla%nlevel
 
+ if (nlevs .ne. max_levs) then
+    call bl_error('varden.f90: nlevs .ne. max_levs not supported yet')
+ end if
+
  ! error checking
  if (.not. use_thermal_diffusion) then
     call bl_error('use_thermal_diffusion = F')

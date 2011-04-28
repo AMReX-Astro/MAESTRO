@@ -381,6 +381,13 @@ contains
        call regrid(mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
                    rho0_old,rhoh0_old,.true.)
 
+       ! nlevs is local so we need to reset it
+       nlevs = mla%nlevel
+
+       if (nlevs .ne. max_levs) then
+          call bl_error('restart_into_finer: nlevs .ne. max_levs not supported yet')
+       end if
+
        ! rebuild these with the new ml_layout
        do n=1,nlevs
           call multifab_build(   Source_new(n), mla%la(n),     1, 1)
@@ -1029,6 +1036,11 @@ contains
     call ml_layout_restricted_build(mla,mba,nlevs,pmask)
     
     nlevs = mla%nlevel
+
+    if (nlevs .ne. max_levs) then
+       call bl_error('initialize_with_adaptive_grids: nlevs .ne. max_levs not supported yet')
+    end if
+
     nlevs_radial = merge(1, nlevs, spherical .eq. 1)
     
     do n = 1, nlevs

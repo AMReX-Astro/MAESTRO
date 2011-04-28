@@ -470,6 +470,10 @@ contains
        ! nlevs is local so we need to reset it
        nlevs = mla%nlevel
 
+       if (nlevs .ne. max_levs) then
+          call bl_error('restart_into_finer: nlevs .ne. max_levs not supported yet')
+       end if
+
        ! rebuild these with the new ml_layout
        do n=1,nlevs
           call multifab_build(   Source_new(n), mla%la(n),     1, 1)
@@ -665,7 +669,7 @@ contains
     use average_module
     use restrict_base_module
     use probin_module, only : drdxfac, octant, test_set, ppm_type, bds_type, nodal, &
-         prob_lo, prob_hi, model_file, do_smallscale, dm_in, fix_base_state
+         prob_lo, prob_hi, model_file, do_smallscale, dm_in, fix_base_state, max_levs
     use make_grav_module
     use enforce_HSE_module
     use rhoh_vs_t_module
@@ -1124,6 +1128,11 @@ contains
     call ml_layout_restricted_build(mla,mba,nlevs,pmask)
     
     nlevs = mla%nlevel
+
+    if (nlevs .ne. max_levs) then
+       call bl_error('initialize_with_adaptive_grids: nlevs .ne. max_levs not supported yet')
+    end if
+
     nlevs_radial = merge(1, nlevs, spherical .eq. 1)
     
     do n = 1, nlevs

@@ -852,6 +852,10 @@ subroutine varden()
            ! nlevs is local so we need to reset it
            nlevs = mla%nlevel
 
+           if (nlevs .ne. max_levs) then
+              call bl_error('varden.f90: nlevs .ne. max_levs not supported yet')
+           end if
+
            call init_multilevel(sold)
 
            do n = 1,nlevs

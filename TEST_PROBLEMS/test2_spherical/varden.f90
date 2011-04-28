@@ -683,6 +683,13 @@ subroutine varden()
            call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2, rho_Hext,&
                        thermal2,dx,the_bc_tower,tempbar)
 
+           ! nlevs is local so we need to reset it
+           nlevs = mla%nlevel
+
+           if (nlevs .ne. max_levs) then
+              call bl_error('varden.f90: nlevs .ne. max_levs not supported yet')
+           end if
+
            call init_multilevel(sold)
 
            do n = 1,nlevs

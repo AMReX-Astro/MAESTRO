@@ -160,6 +160,11 @@ subroutine varden()
        print *, 'pmask = ', pmask
 
   nlevs = mba%nlevel
+
+  if (nlevs .ne. max_levs) then
+     call bl_error('varden.f90: nlevs .ne. max_levs not supported yet')
+  end if
+
   call ml_layout_build(mla,mba,pmask)
 
   allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs),hgrhs(nlevs))

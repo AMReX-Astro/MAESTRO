@@ -77,6 +77,11 @@ subroutine varden()
 
   ! initialize nlevs
   nlevs = mla%nlevel
+
+  if (nlevs .ne. max_levs) then
+     call bl_error('varden.f90: nlevs .ne. max_levs not supported yet')
+  end if
+
   nlevs_radial = merge(1, nlevs, spherical .eq. 1)
   if ( parallel_IOProcessor() ) &
        print *, 'nlevs = ', nlevs
