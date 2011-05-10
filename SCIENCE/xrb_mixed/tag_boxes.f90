@@ -51,25 +51,27 @@ contains
        lo =  lwb(get_box(tagboxes, i))
        select case (dm)
        case (2)
-             call radialtag_2d(radialtag_proc, &
-                               sp(:,:,1,spec_comp),sp(:,:,1,rho_comp), &
-                               lo,ng_s,lev)
 
              if (present(aux_tag_mf)) then
                 call update_radialtag_2d(radialtag_proc,&
                                          sp(:,:,1,rho_comp), ng_s, &
                                          auxp(:,:,1,1), ng_aux, lo)
+             else
+                call radialtag_2d(radialtag_proc, &
+                                  sp(:,:,1,spec_comp),sp(:,:,1,rho_comp), &
+                                  lo,ng_s,lev)
              endif
                   
        case  (3)
-             call radialtag_3d(radialtag_proc, &
-                               sp(:,:,:,spec_comp),sp(:,:,:,rho_comp), &
-                               lo,ng_s,lev)
 
              if (present(aux_tag_mf)) then
                 call update_radialtag_3d(radialtag_proc, &
                                          sp(:,:,:,rho_comp), ng_s, &
                                          auxp(:,:,:,1), ng_aux, lo)
+             else
+                call radialtag_3d(radialtag_proc, &
+                                  sp(:,:,:,spec_comp),sp(:,:,:,rho_comp), &
+                                  lo,ng_s,lev)
              endif
 
        end select
@@ -117,27 +119,28 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine radialtag_2d(radialtag,he,rho,lo,ng,lev)
+  subroutine radialtag_2d(radialtag,spec,rho,lo,ng,lev)
 
-    use probin_module, only: tag_minval, tag_maxval, base_cutoff_density
+    use probin_module, only: tag_minval, tag_maxval, tag_xfac, &
+                             base_cutoff_density
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
-    real(kind = dp_t), intent(in   ) ::  he(lo(1)-ng:,lo(2)-ng:)
+    real(kind = dp_t), intent(in   ) ::  spec(lo(1)-ng:,lo(2)-ng:)
     real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:)
     integer, optional, intent(in   ) :: lev
 
     ! local
     integer :: i,j,nx,ny
-    real(kind=dp_t) :: Xhe
+    real(kind=dp_t) :: Xspec
 
-    nx = size(he,dim=1) - 2*ng
-    ny = size(he,dim=2) - 2*ng
+    nx = size(spec,dim=1) - 2*ng
+    ny = size(spec,dim=2) - 2*ng
 
     do j = lo(2),lo(2)+ny-1
        do i = lo(1),lo(1)+nx-1
-          Xhe = he(i,j)/rho(i,j)
-          if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval &
+          Xspec = spec(i,j)/rho(i,j)
+          if (Xspec .gt. tag_xfac*tag_minval .and. Xspec .lt. tag_maxval &
                .and. rho(i,j) .gt. base_cutoff_density) then
              radialtag(j) = .true.
           endif
@@ -148,29 +151,30 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine radialtag_3d(radialtag,he,rho,lo,ng,lev)
+  subroutine radialtag_3d(radialtag,spec,rho,lo,ng,lev)
 
-    use probin_module, only: tag_minval, tag_maxval, base_cutoff_density
+    use probin_module, only: tag_minval, tag_maxval, tag_xfac, &
+                             base_cutoff_density
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
-    real(kind = dp_t), intent(in   ) ::  he(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind = dp_t), intent(in   ) ::  spec(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     integer, optional, intent(in   ) :: lev
 
     ! local
     integer :: i,j,k,nx,ny,nz
-    real(kind=dp_t) :: Xhe
+    real(kind=dp_t) :: Xspec
 
-    nx = size(he,dim=1) - 2*ng
-    ny = size(he,dim=2) - 2*ng
-    nz = size(he,dim=3) - 2*ng
+    nx = size(spec,dim=1) - 2*ng
+    ny = size(spec,dim=2) - 2*ng
+    nz = size(spec,dim=3) - 2*ng
 
     do k = lo(3),lo(3)+nz-1
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             Xhe = he(i,j,k)/rho(i,j,k)
-             if (Xhe .gt. 1.e-16*tag_minval .and. Xhe .lt. tag_maxval &
+             Xspec = spec(i,j,k)/rho(i,j,k)
+             if (Xspec .gt. tag_xfac*tag_minval .and. Xspec .lt. tag_maxval &
                   .and. rho(i,j,k) .gt. base_cutoff_density) then
                 radialtag(k) = .true.
              endif
