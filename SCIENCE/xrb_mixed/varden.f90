@@ -184,11 +184,14 @@ subroutine varden()
         check_file_name = trim(check_base_name) // check_index6
      endif
 
-     call particle_container_restart(particles,check_file_name,mla,dx,prob_lo)
+     if (use_particles) then
+        call particle_container_restart(particles,check_file_name,&
+                                        mla,dx,prob_lo)
+     endif
      
   else if (test_set /= '') then
      
-     call build(particles)
+     if(use_particles) call build(particles)
 
      call initialize_with_fixed_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                       Source_old,Source_new, &
@@ -201,7 +204,7 @@ subroutine varden()
 
   else
 
-     call build(particles)
+     if (use_particles) call build(particles)
 
      call initialize_with_adaptive_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                          Source_old,Source_new, &
@@ -570,7 +573,9 @@ subroutine varden()
         end do
         deallocate(chkdata)
 
-        call particle_container_checkpoint(particles,check_file_name,mla)
+        if (use_particles) then
+           call particle_container_checkpoint(particles,check_file_name,mla)
+        endif
      end if
 
      if ( plot_int > 0 .or. plot_deltat > ZERO) then
@@ -613,8 +618,10 @@ subroutine varden()
      init_step = 1
 
      ! initialize any passively-advected particles
-     call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar,&
-                         mla,dx,1)
+     if (use_particles) then
+        call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar,&
+                            mla,dx,1)
+     endif
   else
      init_step = restart+1
   end if
@@ -948,7 +955,7 @@ subroutine varden()
            call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
 
            ! redistribute the particles to their new processor locations
-           call redistribute(particles,mla,dx,prob_lo)
+           if (use_particles) call redistribute(particles,mla,dx,prob_lo)
 
         end if ! end regridding
 
@@ -1150,7 +1157,10 @@ subroutine varden()
         !---------------------------------------------------------------------
 
         ! output any particle information
-        call timestamp(particles, "timestamp", sold, index_partdata, names_partdata, time)
+        if (use_particles) then
+           call timestamp(particles, "timestamp", sold, index_partdata, &
+                          names_partdata, time)
+        endif
 
         ! if the file .dump_checkpoint exists in our output directory, then
         ! automatically dump a plotfile
@@ -1196,7 +1206,9 @@ subroutine varden()
               end do
               deallocate(chkdata)
 
-              call particle_container_checkpoint(particles,check_file_name,mla)
+              if (use_particles) then
+                 call particle_container_checkpoint(particles,check_file_name,mla)
+              endif
 
            end if
         end if
@@ -1289,7 +1301,9 @@ subroutine varden()
         end do
         deallocate(chkdata)
 
-        call particle_container_checkpoint(particles,check_file_name,mla)
+        if (use_particles) then
+           call particle_container_checkpoint(particles,check_file_name,mla)
+        endif
 
      end if
 
