@@ -60,3 +60,37 @@
 
 
 -- gamma_law_general should be OpenMP-ed
+
+
+-- burner optimization.  For problems where reactions dominate the runtime,
+   we should only burn on the finest zones (look at the mask), and restrict
+   down the energy release otherwise.  We will still have to call the EOS
+   to get the updated temperature, but this can save ~20% in 2-d.
+
+
+-- EOS: remove the eos data in the eos_stuff module that is just
+   declared to allow us to pass data into/outof the EOS.
+   
+   instead define a new data type:
+
+      type(eos_data) :: eos_stuff
+
+      ...
+
+      eos_stuff%dens = s(i,j,k,rho_comp)
+      eos_stuff%temp = s(i,j,k,temp_comp)
+
+      call eos(eos_input_rt, eos_stuff)
+
+      h = eos_stuff%enthalpy
+
+   
+   This would make the threadsafe-ness easier, since we make eos_stuff
+   private in the calling function instead of creating a common block 
+   in the eos module and making that private.
+
+   This also means that we don't have to worry about remembering the
+   ordering of the arguments in the EOS call.
+
+   NOTE: this will affect CASTRO as well.
+
