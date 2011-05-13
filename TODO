@@ -62,12 +62,6 @@
 -- gamma_law_general should be OpenMP-ed
 
 
--- burner optimization.  For problems where reactions dominate the runtime,
-   we should only burn on the finest zones (look at the mask), and restrict
-   down the energy release otherwise.  We will still have to call the EOS
-   to get the updated temperature, but this can save ~20% in 2-d.
-
-
 -- EOS: remove the eos data in the eos_stuff module that is just
    declared to allow us to pass data into/outof the EOS.
    
