@@ -228,11 +228,20 @@ contains
                                  hnp(:,1,1,1),ng_hn,hep(:,1,1,1),ng_he, &
                                  dt,lo,hi)
           case (2)
-             call burner_loop_2d(tempbar_init(n,:), &
-                                 snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so, &
-                                 rp(:,:,1,:),ng_rw, &
-                                 hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
-                                 dt,lo,hi)
+             if (n .eq. nlevs) then
+                call burner_loop_2d(tempbar_init(n,:), &
+                                    snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so, &
+                                    rp(:,:,1,:),ng_rw, &
+                                    hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
+                                    dt,lo,hi)
+             else
+                mp => dataptr(mla%mask(n), i)
+                call burner_loop_2d(tempbar_init(n,:), &
+                                    snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so, &
+                                    rp(:,:,1,:),ng_rw, &
+                                    hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
+                                    dt,lo,hi,mp(:,:,1,1))
+             end if
           case (3)
              if (spherical == 1) then
                 tcp => dataptr(tempbar_init_cart(n), i)
@@ -252,11 +261,20 @@ contains
                                            dt,lo,hi,mp(:,:,:,1))
                 end if
              else
-                call burner_loop_3d(tempbar_init(n,:), &
-                                    snp(:,:,:,:),ng_si,sop(:,:,:,:),ng_so, &
-                                    rp(:,:,:,:),ng_rw, &
-                                    hnp(:,:,:,1),ng_hn,hep(:,:,:,1),ng_he, &
-                                    dt,lo,hi)
+                if (n .eq. nlevs) then
+                   call burner_loop_3d(tempbar_init(n,:), &
+                                       snp(:,:,:,:),ng_si,sop(:,:,:,:),ng_so, &
+                                       rp(:,:,:,:),ng_rw, &
+                                       hnp(:,:,:,1),ng_hn,hep(:,:,:,1),ng_he, &
+                                       dt,lo,hi)
+                else
+                   mp => dataptr(mla%mask(n), i)
+                   call burner_loop_3d(tempbar_init(n,:), &
+                                       snp(:,:,:,:),ng_si,sop(:,:,:,:),ng_so, &
+                                       rp(:,:,:,:),ng_rw, &
+                                       hnp(:,:,:,1),ng_hn,hep(:,:,:,1),ng_he, &
+                                       dt,lo,hi,mp(:,:,:,1))
+                end if
              endif
           end select
        end do
@@ -371,7 +389,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine burner_loop_2d(tempbar_init,sold,ng_si,snew,ng_so,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
-                            rho_Hext,ng_he,dt,lo,hi)
+                            rho_Hext,ng_he,dt,lo,hi,mask)
 
     use bl_constants_module
     use burner_module
@@ -388,6 +406,7 @@ contains
     real(kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:)
     real(kind=dp_t), intent(in   ) :: tempbar_init(0:)
     real(kind=dp_t), intent(in   ) :: dt
+    logical        , intent(in   ), optional :: mask(lo(1):,lo(2):)
 
     !     Local variables
     integer            :: i, j
@@ -397,6 +416,7 @@ contains
     real (kind = dp_t) :: rhowdot(nspec)
     real (kind = dp_t) :: rhoH
     real (kind = dp_t) :: x_test
+    logical            :: cell_valid
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
@@ -408,56 +428,63 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
           
-          rho = sold(i,j,rho_comp)
-          x_in(1:nspec) = sold(i,j,spec_comp:spec_comp+nspec-1) / rho
+          ! make sure the cell isn't covered by finer cells
+          cell_valid = .true.
+          if ( present(mask) ) then
+             if ( (.not. mask(i,j)) ) cell_valid = .false.
+          end if
+
+          if (cell_valid) then
+
+             rho = sold(i,j,rho_comp)
+             x_in(1:nspec) = sold(i,j,spec_comp:spec_comp+nspec-1) / rho
           
-          if (drive_initial_convection) then
-             T_in = tempbar_init(j)
-          else
-             T_in = sold(i,j,temp_comp)
-          endif
+             if (drive_initial_convection) then
+                T_in = tempbar_init(j)
+             else
+                T_in = sold(i,j,temp_comp)
+             endif
 
-          ! Fortran doesn't guarantee short-circuit evaluation of logicals so
-          ! we need to test the value of ispec_threshold before using it 
-          ! as an index in x_in
-          if (ispec_threshold > 0) then
-             x_test = x_in(ispec_threshold)
-          else
-             x_test = ZERO
-          endif
+             ! Fortran doesn't guarantee short-circuit evaluation of logicals so
+             ! we need to test the value of ispec_threshold before using it 
+             ! as an index in x_in
+             if (ispec_threshold > 0) then
+                x_test = x_in(ispec_threshold)
+             else
+                x_test = ZERO
+             endif
 
-          ! if the threshold species is not in the network, then we burn
-          ! normally.  if it is in the network, make sure the mass
-          ! fraction is above the cutoff.
-          if (rho > burning_cutoff_density .and.                      &
-              ( ispec_threshold < 0 .or.                              &
-               (ispec_threshold > 0 .and.                             &
-                x_test > burner_threshold_cutoff                      &
-               )                                                      &
-              )                                                       &
-             ) then
-             call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
-          else
-             x_out = x_in
-             rhowdot = 0.d0
-             rhoH = 0.d0
-          endif
+             ! if the threshold species is not in the network, then we burn
+             ! normally.  if it is in the network, make sure the mass
+             ! fraction is above the cutoff.
+             if (rho > burning_cutoff_density .and.           &
+                  ( ispec_threshold < 0 .or.                  &
+                  (ispec_threshold > 0 .and.                  &
+                  x_test > burner_threshold_cutoff ))) then
+                call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
+             else
+                x_out = x_in
+                rhowdot = 0.d0
+                rhoH = 0.d0
+             endif
+             
+             ! pass the density through
+             snew(i,j,rho_comp) = sold(i,j,rho_comp)
+             
+             ! update the species
+             snew(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
+             
+             ! store the energy generation and species creation quantities
+             rho_omegadot(i,j,1:nspec) = rhowdot(1:nspec)
+             rho_Hnuc(i,j) = rhoH
+             
+             ! update the enthalpy -- include the change due to external heating
+             snew(i,j,rhoh_comp) = sold(i,j,rhoh_comp) + dt*rho_Hnuc(i,j) + dt*rho_Hext(i,j)
+             
+             ! pass the tracers through
+             snew(i,j,trac_comp:trac_comp+ntrac-1) = sold(i,j,trac_comp:trac_comp+ntrac-1)   
 
-          ! pass the density through
-          snew(i,j,rho_comp) = sold(i,j,rho_comp)
-
-          ! update the species
-          snew(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
-
-          ! store the energy generation and species creation quantities
-          rho_omegadot(i,j,1:nspec) = rhowdot(1:nspec)
-          rho_Hnuc(i,j) = rhoH
-
-          ! update the enthalpy -- include the change due to external heating
-          snew(i,j,rhoh_comp) = sold(i,j,rhoh_comp) + dt*rho_Hnuc(i,j) + dt*rho_Hext(i,j)
-
-          ! pass the tracers through
-          snew(i,j,trac_comp:trac_comp+ntrac-1) = sold(i,j,trac_comp:trac_comp+ntrac-1)   
+          end if
           
        enddo
     enddo
@@ -467,7 +494,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine burner_loop_3d(tempbar_init,sold,ng_si,snew,ng_so,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
-                            rho_Hext,ng_he,dt,lo,hi)
+                            rho_Hext,ng_he,dt,lo,hi,mask)
 
     use bl_constants_module
     use burner_module
@@ -484,6 +511,7 @@ contains
     real(kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:,lo(3)-ng_he:)
     real(kind=dp_t), intent(in   ) :: tempbar_init(0:)
     real(kind=dp_t), intent(in   ) :: dt
+    logical        , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
     integer            :: i, j, k
@@ -494,6 +522,7 @@ contains
     real (kind = dp_t) :: rhowdot(nspec)
     real (kind = dp_t) :: rhoH
     real (kind = dp_t) :: x_test
+    logical            :: cell_valid
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
@@ -504,62 +533,69 @@ contains
 
     ldt = dt
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH) FIRSTPRIVATE(ldt)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH) FIRSTPRIVATE(ldt)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             rho = sold(i,j,k,rho_comp)
-             x_in = sold(i,j,k,spec_comp:spec_comp+nspec-1) / rho
+             cell_valid = .true.
+             if ( present(mask) ) then
+                if ( (.not. mask(i,j,k)) ) cell_valid = .false.
+             end if
 
-             if (drive_initial_convection) then
-                T_in = tempbar_init(k)
-             else
-                T_in = sold(i,j,k,temp_comp)
-             endif
-             
-             ! Fortran doesn't guarantee short-circuit evaluation of logicals 
-             ! so we need to test the value of ispec_threshold before using it 
-             ! as an index in x_in
-             if (ispec_threshold > 0) then
-                x_test = x_in(ispec_threshold)
-             else
-                x_test = ZERO
-             endif
+             if (cell_valid) then
 
-             ! if the threshold species is not in the network, then we burn
-             ! normally.  if it is in the network, make sure the mass
-             ! fraction is above the cutoff.
-             if (rho > burning_cutoff_density .and.                      &
-                 ( ispec_threshold < 0 .or.                              &
-                  (ispec_threshold > 0 .and.                             &
-                   x_test > burner_threshold_cutoff)                     &
-                 )                                                       &
-                 ) then
-                call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
-             else
-                x_out = x_in
-                rhowdot = 0.d0
-                rhoH = 0.d0
-             endif
-             
-             ! pass the density through
-             snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
+                rho = sold(i,j,k,rho_comp)
+                x_in = sold(i,j,k,spec_comp:spec_comp+nspec-1) / rho
 
-             ! update the species
-             snew(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
-             
-             ! store the energy generation and species create quantities
-             rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
-             rho_Hnuc(i,j,k) = rhoH
+                if (drive_initial_convection) then
+                   T_in = tempbar_init(k)
+                else
+                   T_in = sold(i,j,k,temp_comp)
+                endif
+                
+                ! Fortran doesn't guarantee short-circuit evaluation of logicals 
+                ! so we need to test the value of ispec_threshold before using it 
+                ! as an index in x_in
+                if (ispec_threshold > 0) then
+                   x_test = x_in(ispec_threshold)
+                else
+                   x_test = ZERO
+                endif
+                
+                ! if the threshold species is not in the network, then we burn
+                ! normally.  if it is in the network, make sure the mass
+                ! fraction is above the cutoff.
+                if (rho > burning_cutoff_density .and.                &
+                     ( ispec_threshold < 0 .or.                       &
+                     (ispec_threshold > 0 .and.                       &
+                     x_test > burner_threshold_cutoff))) then
+                   call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
+                else
+                   x_out = x_in
+                   rhowdot = 0.d0
+                   rhoH = 0.d0
+                endif
+                
+                ! pass the density through
+                snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
+                
+                ! update the species
+                snew(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
+                
+                ! store the energy generation and species create quantities
+                rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
+                rho_Hnuc(i,j,k) = rhoH
+                
+                ! update the enthalpy -- include the change due to external heating
+                snew(i,j,k,rhoh_comp) = sold(i,j,k,rhoh_comp) &
+                     + ldt*rho_Hnuc(i,j,k) + ldt*rho_Hext(i,j,k)
+                
+                ! pass the tracers through
+                snew(i,j,k,trac_comp:trac_comp+ntrac-1) = &
+                     sold(i,j,k,trac_comp:trac_comp+ntrac-1)
 
-             ! update the enthalpy -- include the change due to external heating
-             snew(i,j,k,rhoh_comp) = sold(i,j,k,rhoh_comp) &
-                  + ldt*rho_Hnuc(i,j,k) + ldt*rho_Hext(i,j,k)
-
-             ! pass the tracers through
-             snew(i,j,k,trac_comp:trac_comp+ntrac-1) = &
-                  sold(i,j,k,trac_comp:trac_comp+ntrac-1)
+             end if
              
           enddo
        enddo
