@@ -55,4 +55,4 @@ stop_initial_convection             integer            -1
 
 # factor to multiply the species by; for tagging off of spec
 # instead of EGR
-tag_xfac                           real                1.d-10
+tag_xfac                           real                1.d-16
