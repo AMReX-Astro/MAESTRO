@@ -1421,4 +1421,44 @@ structure is not appropriate for the fancy bottom solver.
 
 \section{Particles}
 
+MAESTRO has support for Lagrangian particles that are passively
+advected with the velocity field.  These are useful for diagnostics
+and post-processing.  To use particles, particles must be seeded into
+the domain by writing a problem-specific {\tt init\_particles.f90}
+routine.  This routine is called at the start of the simulation.  The
+{\tt init\_particles} routines add particles at specific locations by
+calling the {\tt particle\_module}'s {\tt add} routine when a given
+criteria is met by the fluid state.
+
+When you run the code, particles are enabled by setting {\tt
+  use\_particles = T}.  At the end of each timestep the locations of
+all the particles are written out into a series of files called {\tt
+  timestamp\_NN}, where {\tt NN} is the CPU number on which the
+particle {\em currently} resides.  Particles are always kept on the
+processor containing the state data corresponding to their present
+location.  Several bits of associated data (density, temperature, and
+mass fractions) are stored along with the particle ID and position.
+
+Some simple python scripts allow for the plotting of the particle
+positions.  For example, running {\tt test2} with particles enabled
+will seed particles in the initial hotspot.  To plot the results,
+first set your {\tt PYTHONPATH} environment variable to point to the
+{\tt fParallel/data\_processing/python/} directory, for example:
+\begin{verbatim}
+export PYTHONPATH="/home/username/development/MAESTRO/fParallel/data_processing/python"
+\end{verbatim}
+This will allow python to see the {\tt parseparticles.py} routine.
+For the {\tt test2} problem, the {\tt plotparticles.py} routine shows
+how to plot the particle histories and make an animation of the
+particles colored by the ash mass fraction.  This script is run as:
+\begin{verbatim}
+./plotparticles.py timestamp_*
+\end{verbatim}
+
+Note, these python routines require the NumPy and matplotlib packages.
+On a Fedora Linux system, the necessary routines can be installed via:
+\begin{verbatim}
+yum install python-matplotlib lyx-fonts stix-fonts
+\end{verbatim}
+
 
