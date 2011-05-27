@@ -25,7 +25,7 @@ subroutine varden()
   use probin_module, only: prob_lo, prob_hi, pmask, &
                            test_set, cflfac, &
                            stop_time, vel_amp, &
-                           probin_init, probin_close
+                           probin_init, probin_close, max_levs
   use initialize_module, only: initialize_bc, initialize_dx
   use bl_constants_module
   use particle_module

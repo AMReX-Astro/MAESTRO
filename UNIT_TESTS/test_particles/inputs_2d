@@ -1,4 +1,6 @@
 &PROBIN
+
+ max_levs = 2
  test_set = "gr0_2d_2lev_coarse"
 
  cflfac = 0.7d0
