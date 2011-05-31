@@ -12,12 +12,21 @@ MAESTRO_CORE := boxlib \
                 extern/LAPACK \
                 extern/random
 
-# a unit test tests only a single component of the MAESTRO algorithm,
-# so we don't, in general, want to build all of the source in the
-# MAESTRO/Source directory.  So, for unit tests, we leave it off the
-# list of core directories
+
+# if we are doing the SDC algorithm, then look first for source
+# files living in Source_SDC/ then look in Source/
+ifdef SDC
+  MAESTRO_CORE += MAESTRO/Source_SDC
+endif
+
+
+# next look for the files in Source/ itself
+#   Note: a unit test tests only a single component of the MAESTRO
+#   algorithm, so we don't, in general, want to build all of the
+#   source in the MAESTRO/Source directory.  So, for unit tests, we
+#   leave it off the list of core directories 
 ifndef UNIT_TEST
-       MAESTRO_CORE += MAESTRO/Source
+  MAESTRO_CORE += MAESTRO/Source 
 endif
 
 
@@ -62,6 +71,9 @@ Fmincs := $(foreach dir, $(Fmincludes), $(FPARALLEL)/$(dir))
 include $(Fmpack)
 
 # vpath defines the directories to search for the source files
+
+#  Note: GMakerules.mk will include '.' at the start of the
+#  VPATH_LOCATIONS to first search in the problem directory
 VPATH_LOCATIONS += $(Fmlocs)
 
 # we always want to search the MAESTRO/Source directory, even for
