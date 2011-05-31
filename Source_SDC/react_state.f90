@@ -78,7 +78,7 @@ contains
        ! we pass in rho_Hext so that we can add it to rhoh incase we 
        ! applied heating
        call burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc, &
-                        rho_Hext,sdc_source,dx,dt,the_bc_level)
+                        rho_Hext,sdc_source,dx,dt,p0,the_bc_level)
 
        ! pass temperature through for seeding the temperature update eos call
        do n=1,nlevs
@@ -146,7 +146,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext, &
-                         sdc_source,dx,dt,the_bc_level)
+                         sdc_source,dx,dt,p0,the_bc_level)
 
     use bl_constants_module, only: ZERO
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, &
@@ -165,6 +165,7 @@ contains
     type(multifab) , intent(in   ) :: sdc_source(:)
     real(kind=dp_t), intent(in   ) :: tempbar_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:)
+    real(dp_t)     , intent(in   ) :: p0(:,0:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local
@@ -240,6 +241,7 @@ contains
                                     rp(:,:,1,:),ng_rw, &
                                     hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
                                     sdcp(:,:,1,:),ng_sdc, &
+                                    p0(n,:), &
                                     dt,lo,hi)
              else
                 mp => dataptr(mla%mask(n), i)
@@ -248,6 +250,7 @@ contains
                                     rp(:,:,1,:),ng_rw, &
                                     hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
                                     sdcp(:,:,1,:),ng_sdc, &
+                                    p0(n,:), &
                                     dt,lo,hi,mp(:,:,1,1))
              end if
           case (3)
@@ -365,7 +368,7 @@ contains
                )                                                      &
               )                                                       &
              ) then
-             call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
+!             call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
           else
              x_out = x_in
              rhowdot = 0.d0
@@ -397,7 +400,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine burner_loop_2d(tempbar_init,sold,ng_si,snew,ng_so,rho_omegadot,ng_rw, &
-                            rho_Hnuc,ng_hn,rho_Hext,ng_he,sdc_source,ng_sdc,dt,lo,hi,mask)
+                            rho_Hnuc,ng_hn,rho_Hext,ng_he,sdc_source,ng_sdc, &
+                            p0,dt,lo,hi,mask)
 
     use bl_constants_module
     use burner_module
@@ -413,6 +417,7 @@ contains
     real(kind=dp_t), intent(  out) ::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:)
     real(kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:)
     real(kind=dp_t), intent(in   ) ::   sdc_source(lo(1)-ng_sdc:,lo(2)-ng_sdc:,:)
+    real(dp_t)     , intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: tempbar_init(0:)
     real(kind=dp_t), intent(in   ) :: dt
     logical        , intent(in   ), optional :: mask(lo(1):,lo(2):)
@@ -429,6 +434,11 @@ contains
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
+    real (kind = dp_t) :: sdc_rho
+    real (kind = dp_t) :: sdc_X(nspec)
+    real (kind = dp_t) :: p0_in
+
+
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
        firstCall = .false.
@@ -444,6 +454,10 @@ contains
           end if
 
           if (cell_valid) then
+
+             sdc_rho = sdc_source(i,j,rho_comp)
+             sdc_X(:) = sdc_source(i,j,spec_comp:spec_comp+nspec-1)
+             p0_in = p0(j)
 
              rho = sold(i,j,rho_comp)
              x_in(1:nspec) = sold(i,j,spec_comp:spec_comp+nspec-1) / rho
@@ -470,7 +484,7 @@ contains
                   ( ispec_threshold < 0 .or.                  &
                   (ispec_threshold > 0 .and.                  &
                   x_test > burner_threshold_cutoff ))) then
-                call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
+                call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH, sdc_rho, sdc_X, p0_in)
              else
                 x_out = x_in
                 rhowdot = 0.d0
@@ -579,7 +593,7 @@ contains
                      ( ispec_threshold < 0 .or.                       &
                      (ispec_threshold > 0 .and.                       &
                      x_test > burner_threshold_cutoff))) then
-                   call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
+!                   call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
                 else
                    x_out = x_in
                    rhowdot = 0.d0
@@ -699,7 +713,7 @@ contains
                      x_test > burner_threshold_cutoff)                     &
                      )                                                       &
                      ) then
-                   call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
+!                   call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
                 else
                    x_out = x_in
                    rhowdot = 0.d0
