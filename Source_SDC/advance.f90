@@ -783,8 +783,8 @@ contains
     end do
 
     ! SDC HACK - need to rewrite interface   
-!    call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
-!                     the_bc_tower%bc_tower_array)
+    call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
+                     dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
     ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] * dt
     ! first set density IR = 0
@@ -1336,8 +1336,8 @@ contains
     end do
 
     ! SDC HACK - need to rewrite interface 
-!    call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
-!                     the_bc_tower%bc_tower_array)
+    call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
+                     dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
 
     ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] * dt
