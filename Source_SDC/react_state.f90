@@ -78,7 +78,7 @@ contains
        ! we pass in rho_Hext so that we can add it to rhoh incase we 
        ! applied heating
        call burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc, &
-                        rho_Hext,dx,dt,the_bc_level)
+                        rho_Hext,sdc_source,dx,dt,the_bc_level)
 
        ! pass temperature through for seeding the temperature update eos call
        do n=1,nlevs
@@ -145,7 +145,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dx,dt,the_bc_level)
+  subroutine burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext, &
+                         sdc_source,dx,dt,the_bc_level)
 
     use bl_constants_module, only: ZERO
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, &
@@ -161,6 +162,7 @@ contains
     type(multifab) , intent(inout) :: rho_omegadot(:)
     type(multifab) , intent(inout) :: rho_Hnuc(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
+    type(multifab) , intent(in   ) :: sdc_source(:)
     real(kind=dp_t), intent(in   ) :: tempbar_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
@@ -172,12 +174,13 @@ contains
     real(kind=dp_t), pointer ::  hnp(:,:,:,:)
     real(kind=dp_t), pointer ::  hep(:,:,:,:)
     real(kind=dp_t), pointer ::  tcp(:,:,:,:)
+    real(kind=dp_t), pointer ::  sdcp(:,:,:,:)
     logical        , pointer ::   mp(:,:,:,:)
 
     type(multifab) :: tempbar_init_cart(mla%nlevel)
 
     integer :: lo(mla%dim),hi(mla%dim)
-    integer :: ng_si,ng_so,ng_rw,ng_he,ng_hn,ng_tc
+    integer :: ng_si,ng_so,ng_rw,ng_he,ng_hn,ng_tc,ng_sdc
     integer :: dm,nlevs
     integer :: i,n
 
@@ -193,6 +196,7 @@ contains
     ng_rw = nghost(rho_omegadot(1))
     ng_hn = nghost(rho_Hnuc(1))
     ng_he = nghost(rho_Hext(1))
+    ng_sdc = nghost(sdc_source(1))
 
     ! put tempbar_init on Cart
     if (spherical == 1) then
@@ -219,6 +223,7 @@ contains
           rp => dataptr(rho_omegadot(n), i)
           hnp => dataptr(rho_Hnuc(n), i)
           hep => dataptr(rho_Hext(n), i)
+          sdcp => dataptr(sdc_source(n), i)
           lo =  lwb(get_box(sold(n), i))
           hi =  upb(get_box(sold(n), i))
           select case (dm)
@@ -234,6 +239,7 @@ contains
                                     snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so, &
                                     rp(:,:,1,:),ng_rw, &
                                     hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
+                                    sdcp(:,:,1,:),ng_sdc, &
                                     dt,lo,hi)
              else
                 mp => dataptr(mla%mask(n), i)
@@ -241,6 +247,7 @@ contains
                                     snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so, &
                                     rp(:,:,1,:),ng_rw, &
                                     hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
+                                    sdcp(:,:,1,:),ng_sdc, &
                                     dt,lo,hi,mp(:,:,1,1))
              end if
           case (3)
@@ -389,8 +396,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine burner_loop_2d(tempbar_init,sold,ng_si,snew,ng_so,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
-                            rho_Hext,ng_he,dt,lo,hi,mask)
+  subroutine burner_loop_2d(tempbar_init,sold,ng_si,snew,ng_so,rho_omegadot,ng_rw, &
+                            rho_Hnuc,ng_hn,rho_Hext,ng_he,sdc_source,ng_sdc,dt,lo,hi,mask)
 
     use bl_constants_module
     use burner_module
@@ -399,12 +406,13 @@ contains
     use probin_module, ONLY: do_burning, burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
+    integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn,ng_sdc
     real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,lo(2)-ng_si:,:)
     real(kind=dp_t), intent(  out) ::         snew(lo(1)-ng_so:,lo(2)-ng_so:,:)
     real(kind=dp_t), intent(  out) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,:)
     real(kind=dp_t), intent(  out) ::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:)
     real(kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:)
+    real(kind=dp_t), intent(in   ) ::   sdc_source(lo(1)-ng_sdc:,lo(2)-ng_sdc:,:)
     real(kind=dp_t), intent(in   ) :: tempbar_init(0:)
     real(kind=dp_t), intent(in   ) :: dt
     logical        , intent(in   ), optional :: mask(lo(1):,lo(2):)
