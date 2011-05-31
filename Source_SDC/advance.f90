@@ -78,11 +78,12 @@ contains
                                              prob_lo, prob_hi, use_particles
     use time_module                 , only : time
     use addw0_module                , only : addw0
+    use convert_rhoX_to_X_module    , only: convert_rhoX_to_X
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
     type(multifab),  intent(in   ) ::   uold(:)
-    type(multifab),  intent(in   ) ::   sold(:)
+    type(multifab),  intent(inout) ::   sold(:)
     type(multifab),  intent(inout) ::   unew(:)
     type(multifab),  intent(inout) ::   snew(:)
     type(multifab),  intent(inout) ::  gpi(:)
@@ -329,7 +330,7 @@ contains
        call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
     end do
 
-    ! SDC HACK
+    ! SDC HACK - don't need this call anymore
 !    call react_state(mla,tempbar_init,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old,halfdt,dx, &
 !                     the_bc_tower%bc_tower_array)
 
@@ -746,13 +747,19 @@ contains
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
     ! SDC HACK
-    ! extract aofs = (snew - sold) / dt
+    ! extract aofs = (s2 - s1) / dt
+    ! convert (rho X) --> X
+    call convert_rhoX_to_X(s1,.true.,mla,the_bc_tower%bc_tower_array)
+    call convert_rhoX_to_X(s2,.true.,mla,the_bc_tower%bc_tower_array)
     do n=1,nlevs
        call multifab_build(aofs(n), mla%la(n), nscal, 0)
        call multifab_copy_c(aofs(n), 1, s2(n), 1, nscal, 0)
        call multifab_sub_sub_c(aofs(n), 1, s1(n), 1, nscal, 0)
        call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
     end do
+    ! convert X --> (rho X)
+    call convert_rhoX_to_X(s1,.false.,mla,the_bc_tower%bc_tower_array)
+    call convert_rhoX_to_X(s2,.false.,mla,the_bc_tower%bc_tower_array)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 5 -- react the full state and then base state through dt/2
@@ -768,26 +775,41 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
  
+    ! SDC HACK - compute sdc_source
+    do n=1,nlevs
+       call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
+       call setval(sdc_source(n), 0.d0)
+       call multifab_copy_c(sdc_source(n), spec_comp, aofs(n), spec_comp, nspec, 0)
+    end do
+
     ! SDC HACK - need to rewrite interface   
 !    call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
 !                     the_bc_tower%bc_tower_array)
 
-    ! SDC HACK - extract IR = (snew - sold) - dt*sdc_source
+    ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] * dt
     ! first set density IR = 0
     do n=1,nlevs
        call setval(intra(n),0.d0,rho_comp,1)
     end do
     ! next compute species IR
+    ! convert (rho X) --> X
+    call convert_rhoX_to_X(sold,.true.,mla,the_bc_tower%bc_tower_array)
+    call convert_rhoX_to_X(snew,.true.,mla,the_bc_tower%bc_tower_array)
     do n=1,nlevs
        call multifab_copy_c(intra(n), spec_comp, snew(n), spec_comp, nspec, 0)
        call multifab_sub_sub_c(intra(n), spec_comp, sold(n), spec_comp, nspec, 0)
        call multifab_div_div_s_c(intra(n), spec_comp, dt, nspec, 0)
        call multifab_sub_sub_c(intra(n), spec_comp, sdc_source(n), spec_comp, nspec, 0)
-       call multifab_mult_mult_s_c(intra(n), spec_comp, -1.d0, nspec, 0)
+       call multifab_mult_mult_s_c(intra(n), spec_comp, dt, nspec, 0)
     end do
+    ! convert X --> (rho X)
+    call convert_rhoX_to_X(sold,.false.,mla,the_bc_tower%bc_tower_array)
+    call convert_rhoX_to_X(snew,.false.,mla,the_bc_tower%bc_tower_array)
     ! next compute enthalpy IR
-    !
-    !
+    ! for now just set it to zero
+    do n=1,nlevs
+       call setval(intra(n),0.d0,rhoh_comp,1)
+    end do
 
     do n=1,nlevs
        call destroy(s2(n))
@@ -1279,6 +1301,20 @@ contains
     if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
+    ! SDC HACK
+    ! extract aofs = (s2 - s1) / dt
+    ! convert (rho X) --> X
+    call convert_rhoX_to_X(s1,.true.,mla,the_bc_tower%bc_tower_array)
+    call convert_rhoX_to_X(s2,.true.,mla,the_bc_tower%bc_tower_array)
+    do n=1,nlevs
+       call multifab_copy_c(aofs(n), 1, s2(n), 1, nscal, 0)
+       call multifab_sub_sub_c(aofs(n), 1, s1(n), 1, nscal, 0)
+       call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
+    end do
+    ! convert X --> (rho X) 
+    call convert_rhoX_to_X(s1,.false.,mla,the_bc_tower%bc_tower_array)
+    call convert_rhoX_to_X(s2,.false.,mla,the_bc_tower%bc_tower_array)
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 9 -- react the full state and then base state through dt/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1293,8 +1329,41 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
 
-    call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
-                     the_bc_tower%bc_tower_array)
+    ! SDC HACK - compute sdc_source
+    do n=1,nlevs
+       call setval(sdc_source(n), 0.d0)
+       call multifab_copy_c(sdc_source(n), spec_comp, aofs(n), spec_comp, nspec, 0)
+    end do
+
+    ! SDC HACK - need to rewrite interface 
+!    call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
+!                     the_bc_tower%bc_tower_array)
+
+
+    ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] * dt
+    ! first set density IR = 0
+    do n=1,nlevs
+       call setval(intra(n),0.d0,rho_comp,1)
+    end do
+    ! next compute species IR
+    ! convert (rho X) --> X
+    call convert_rhoX_to_X(sold,.true.,mla,the_bc_tower%bc_tower_array)
+    call convert_rhoX_to_X(snew,.true.,mla,the_bc_tower%bc_tower_array)
+    do n=1,nlevs
+       call multifab_copy_c(intra(n), spec_comp, snew(n), spec_comp, nspec, 0)
+       call multifab_sub_sub_c(intra(n), spec_comp, sold(n), spec_comp, nspec, 0)
+       call multifab_div_div_s_c(intra(n), spec_comp, dt, nspec, 0)
+       call multifab_sub_sub_c(intra(n), spec_comp, sdc_source(n), spec_comp, nspec, 0)
+       call multifab_mult_mult_s_c(intra(n), spec_comp, dt, nspec, 0)
+    end do
+    ! convert X --> (rho X)
+    call convert_rhoX_to_X(sold,.false.,mla,the_bc_tower%bc_tower_array)
+    call convert_rhoX_to_X(snew,.false.,mla,the_bc_tower%bc_tower_array)
+    ! next compute enthalpy IR
+    ! for now just set it to zero
+    do n=1,nlevs
+       call setval(intra(n),0.d0,rhoh_comp,1)
+    end do
 
     do n=1,nlevs
        call destroy(s2(n))
@@ -1330,6 +1399,11 @@ contains
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
     end do ! END MISDC LOOP
+
+    do n=1,nlevs
+       call destroy(aofs(n))
+       call destroy(sdc_source(n))
+    end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 10 -- compute S^{n+1} for the final projection
