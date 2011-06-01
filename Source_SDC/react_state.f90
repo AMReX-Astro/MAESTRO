@@ -492,7 +492,7 @@ contains
              endif
              
              ! pass the density through
-             snew(i,j,rho_comp) = sold(i,j,rho_comp)
+             snew(i,j,rho_comp) = rho
              
              ! update the species
              snew(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
