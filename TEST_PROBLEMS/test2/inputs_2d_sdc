@@ -51,7 +51,7 @@
  cg_verbose = 0
 
  do_initial_projection = T
- init_divu_iter = 1
+ init_divu_iter = 3
 
  perturb_model = T
 /
