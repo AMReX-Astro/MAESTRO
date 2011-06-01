@@ -695,9 +695,9 @@ contains
     call convert_rhoX_to_X(s2,.true.,mla,the_bc_tower%bc_tower_array)
     do n=1,nlevs
        call multifab_build(aofs(n), mla%la(n), nscal, 0)
-       call multifab_copy_c(aofs(n), 1, s2(n), 1, nscal, 0)
-       call multifab_sub_sub_c(aofs(n), 1, s1(n), 1, nscal, 0)
-       call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
+       call multifab_copy_c     (aofs(n), 1, s2(n), 1, nscal, 0)
+       call multifab_sub_sub_c  (aofs(n), 1, s1(n), 1, nscal, 0)
+       call multifab_div_div_s_c(aofs(n), 1, dt,       nscal, 0)
     end do
     ! convert X --> (rho X)
     call convert_rhoX_to_X(s1,.false.,mla,the_bc_tower%bc_tower_array)
@@ -720,9 +720,7 @@ contains
     ! SDC HACK - compute sdc_source
     do n=1,nlevs
        call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
-       call setval(sdc_source(n), 0.d0)
-       call multifab_copy_c(sdc_source(n),  rho_comp, aofs(n),  rho_comp,     1, 0)
-       call multifab_copy_c(sdc_source(n), spec_comp, aofs(n), spec_comp, nspec, 0)
+       call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
     end do
 
     ! SDC HACK - need to rewrite interface   
@@ -730,29 +728,19 @@ contains
                      dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
     ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] * dt
-    ! first set density IR = 0
-    do n=1,nlevs
-       call setval(intra(n),0.d0,rho_comp,1)
-    end do
-    ! next compute species IR
     ! convert (rho X) --> X
     call convert_rhoX_to_X(sold,.true.,mla,the_bc_tower%bc_tower_array)
     call convert_rhoX_to_X(snew,.true.,mla,the_bc_tower%bc_tower_array)
     do n=1,nlevs
-       call multifab_copy_c(intra(n), spec_comp, snew(n), spec_comp, nspec, 0)
-       call multifab_sub_sub_c(intra(n), spec_comp, sold(n), spec_comp, nspec, 0)
-       call multifab_div_div_s_c(intra(n), spec_comp, dt, nspec, 0)
-       call multifab_sub_sub_c(intra(n), spec_comp, sdc_source(n), spec_comp, nspec, 0)
-       call multifab_mult_mult_s_c(intra(n), spec_comp, dt, nspec, 0)
+       call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 0)
+       call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 0)
+       call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 0)
+       call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 0)
+       call multifab_mult_mult_s_c(intra(n), 1, dt,               nscal, 0)
     end do
     ! convert X --> (rho X)
     call convert_rhoX_to_X(sold,.false.,mla,the_bc_tower%bc_tower_array)
     call convert_rhoX_to_X(snew,.false.,mla,the_bc_tower%bc_tower_array)
-    ! next compute enthalpy IR
-    ! for now just set it to zero
-    do n=1,nlevs
-       call setval(intra(n),0.d0,rhoh_comp,1)
-    end do
 
     do n=1,nlevs
        call destroy(s2(n))
@@ -1239,9 +1227,9 @@ contains
     call convert_rhoX_to_X(s1,.true.,mla,the_bc_tower%bc_tower_array)
     call convert_rhoX_to_X(s2,.true.,mla,the_bc_tower%bc_tower_array)
     do n=1,nlevs
-       call multifab_copy_c(aofs(n), 1, s2(n), 1, nscal, 0)
-       call multifab_sub_sub_c(aofs(n), 1, s1(n), 1, nscal, 0)
-       call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
+       call multifab_copy_c     (aofs(n), 1, s2(n), 1, nscal, 0)
+       call multifab_sub_sub_c  (aofs(n), 1, s1(n), 1, nscal, 0)
+       call multifab_div_div_s_c(aofs(n), 1, dt,       nscal, 0)
     end do
     ! convert X --> (rho X) 
     call convert_rhoX_to_X(s1,.false.,mla,the_bc_tower%bc_tower_array)
@@ -1268,9 +1256,7 @@ contains
 
     ! SDC HACK - compute sdc_source
     do n=1,nlevs
-       call setval(sdc_source(n), 0.d0)
-       call multifab_copy_c(sdc_source(n), spec_comp, aofs(n), spec_comp, nspec, 0)
-       call multifab_copy_c(sdc_source(n),  rho_comp, aofs(n),  rho_comp,     1, 0)
+       call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
     end do
 
     ! SDC HACK - need to rewrite interface 
@@ -1278,29 +1264,19 @@ contains
                      dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
     ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] * dt
-    ! first set density IR = 0
-    do n=1,nlevs
-       call setval(intra(n),0.d0,rho_comp,1)
-    end do
-    ! next compute species IR
     ! convert (rho X) --> X
     call convert_rhoX_to_X(sold,.true.,mla,the_bc_tower%bc_tower_array)
     call convert_rhoX_to_X(snew,.true.,mla,the_bc_tower%bc_tower_array)
     do n=1,nlevs
-       call multifab_copy_c(intra(n), spec_comp, snew(n), spec_comp, nspec, 0)
-       call multifab_sub_sub_c(intra(n), spec_comp, sold(n), spec_comp, nspec, 0)
-       call multifab_div_div_s_c(intra(n), spec_comp, dt, nspec, 0)
-       call multifab_sub_sub_c(intra(n), spec_comp, sdc_source(n), spec_comp, nspec, 0)
-       call multifab_mult_mult_s_c(intra(n), spec_comp, dt, nspec, 0)
+       call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 0)
+       call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 0)
+       call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 0)
+       call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 0)
+       call multifab_mult_mult_s_c(intra(n), 1, dt,               nscal, 0)
     end do
     ! convert X --> (rho X)
     call convert_rhoX_to_X(sold,.false.,mla,the_bc_tower%bc_tower_array)
     call convert_rhoX_to_X(snew,.false.,mla,the_bc_tower%bc_tower_array)
-    ! next compute enthalpy IR
-    ! for now just set it to zero
-    do n=1,nlevs
-       call setval(intra(n),0.d0,rhoh_comp,1)
-    end do
 
     if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
