@@ -469,3 +469,6 @@ use_particles                       logical            .false.
 
 # use analytic heating
 do_heating                          logical            .false.
+
+# use analytic heating
+sdc_iters                           integer            4
