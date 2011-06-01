@@ -197,7 +197,7 @@ contains
     do n = 1, nspec
        dX = Xout(n) - Xin(n) 
        enuc = enuc - ebin(n) * dX
-       rho_omegadot(n) = dens * dX / dt
+       rho_omegadot(n) = dens * dX / dt - dens * sdc_X(n)
     enddo
 
     rho_Hnuc = dens*enuc/dt
