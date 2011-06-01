@@ -75,7 +75,7 @@ contains
                                              use_etarho, dpdt_factor, verbose, &
                                              use_tfromp, use_thermal_diffusion, &
                                              use_delta_gamma1_term, nodal, mach_max_abort, &
-                                             prob_lo, prob_hi, use_particles
+                                             prob_lo, prob_hi, use_particles, sdc_iters
     use time_module                 , only : time
     use addw0_module                , only : addw0
     use convert_rhoX_to_X_module    , only: convert_rhoX_to_X
@@ -1042,7 +1042,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! BEGIN SDC LOOP
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do misdc=1,4
+    do misdc=1,sdc_iters
 
     advect_time_start = parallel_wtime()
 
