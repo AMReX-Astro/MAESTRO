@@ -337,7 +337,7 @@ contains
     ! SDC HACK
     ! copy sold into s1
     do n=1,nlevs
-       call multifab_copy_c(s1(n),1,sold(n),1,nghost(sold(n)))
+       call multifab_copy_c(s1(n),1,sold(n),1,nscal,nghost(sold(n)))
     end do
 
     do n=1,nlevs
