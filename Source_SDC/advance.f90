@@ -1294,13 +1294,6 @@ contains
        call makeTfromRhoH(s2,mla,the_bc_tower%bc_tower_array)
     end if
 
-    do n=1,nlevs
-       call destroy(s1(n))
-    end do
-
-    if (barrier_timers) call parallel_barrier()
-    misc_time = misc_time + parallel_wtime() - misc_time_start
-
     ! SDC HACK
     ! extract aofs = (s2 - s1) / dt
     ! convert (rho X) --> X
@@ -1314,6 +1307,12 @@ contains
     ! convert X --> (rho X) 
     call convert_rhoX_to_X(s1,.false.,mla,the_bc_tower%bc_tower_array)
     call convert_rhoX_to_X(s2,.false.,mla,the_bc_tower%bc_tower_array)
+
+
+
+    if (barrier_timers) call parallel_barrier()
+    misc_time = misc_time + parallel_wtime() - misc_time_start
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 9 -- react the full state and then base state through dt/2
@@ -1365,10 +1364,6 @@ contains
        call setval(intra(n),0.d0,rhoh_comp,1)
     end do
 
-    do n=1,nlevs
-       call destroy(s2(n))
-    end do
-
     if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
 
@@ -1399,6 +1394,13 @@ contains
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
     end do ! END MISDC LOOP
+
+    do n=1,nlevs
+       call destroy(s1(n))
+       call destroy(s2(n))
+    end do
+
+
 
     do n=1,nlevs
        call destroy(aofs(n))
