@@ -721,6 +721,7 @@ contains
     do n=1,nlevs
        call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
        call setval(sdc_source(n), 0.d0)
+       call multifab_copy_c(sdc_source(n),  rho_comp, aofs(n),  rho_comp,     1, 0)
        call multifab_copy_c(sdc_source(n), spec_comp, aofs(n), spec_comp, nspec, 0)
     end do
 
@@ -1269,6 +1270,7 @@ contains
     do n=1,nlevs
        call setval(sdc_source(n), 0.d0)
        call multifab_copy_c(sdc_source(n), spec_comp, aofs(n), spec_comp, nspec, 0)
+       call multifab_copy_c(sdc_source(n),  rho_comp, aofs(n),  rho_comp,     1, 0)
     end do
 
     ! SDC HACK - need to rewrite interface 
