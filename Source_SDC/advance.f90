@@ -1103,7 +1103,7 @@ contains
     advect_time_start = parallel_wtime()
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-       write(6,*) '<<< STEP  8 : advect base   '
+       write(6,*) '<<< STEP  8 : advect base (MISDC iter = ', misdc, ')   '
     end if
 
     if (evolve_base_state) then
@@ -1316,7 +1316,8 @@ contains
     react_time_start = parallel_wtime()
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-       write(6,*) '<<< STEP  9 : react state '
+       write(6,*) '<<< STEP  9 : react state (MISDC iter = ', misdc, ') '
+       write(6,*) ' '
     end if
 
     do n=1,nlevs
