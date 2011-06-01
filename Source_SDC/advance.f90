@@ -75,7 +75,8 @@ contains
                                              use_etarho, dpdt_factor, verbose, &
                                              use_tfromp, use_thermal_diffusion, &
                                              use_delta_gamma1_term, nodal, mach_max_abort, &
-                                             prob_lo, prob_hi, use_particles, sdc_iters
+                                             prob_lo, prob_hi, use_particles, sdc_iters, &
+                                             enthalpy_pred_type, species_pred_type
     use time_module                 , only : time
     use addw0_module                , only : addw0
     use convert_rhoX_to_X_module    , only: convert_rhoX_to_X
@@ -192,6 +193,19 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advance_timestep")
+
+    if (evolve_base_state) then
+       call bl_error("evolve_base_state not supported with SDC")
+    end if
+    if (use_thermal_diffusion) then
+       call bl_error("use_thermal_diffusion not supported with SDC")
+    end if
+    if (enthalpy_pred_type .ne. 1) then
+       call bl_error("enthalpy_pred_type .ne. 1 not supported with SDC")
+    end if
+    if (species_pred_type .ne. 1) then
+       call bl_error("species_pred_type .ne. 1 not supported with SDC")
+    end if
 
     nlevs = mla%nlevel
     dm = mla%dim
@@ -627,7 +641,8 @@ contains
        write(6,*) '            : enthalpy_advance >>> '
     end if
 
-    call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,thermal1,umac,w0,w0mac, &
+    call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,intra, &
+                          thermal1,umac,w0,w0mac, &
                           rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                           tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
@@ -1151,7 +1166,8 @@ contains
        write(6,*) '            : enthalpy_advance >>>'
     end if
 
-    call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,thermal1,umac,w0,w0mac, &
+    call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,intra, &
+                          thermal1,umac,w0,w0mac, &
                           rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                           tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
