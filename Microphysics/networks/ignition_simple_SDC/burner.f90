@@ -195,9 +195,9 @@ contains
     ! also compute the density-weighted creation rates, rho_omegadot
     enuc = 0.0_dp_t
     do n = 1, nspec
-       dX = Xout(n) - Xin(n) 
+       dX = Xout(n) - Xin(n) - dt * sdc_X(n)
        enuc = enuc - ebin(n) * dX
-       rho_omegadot(n) = dens * dX / dt - dens * sdc_X(n)
+       rho_omegadot(n) = dens * dX / dt
     enddo
 
     rho_Hnuc = dens*enuc/dt
