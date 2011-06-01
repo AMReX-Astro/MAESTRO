@@ -59,11 +59,11 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
 
   dens = y(nspec+1)
 
+  ! compute temp with EOS -- note, here we are assuming use_tfromp = T
   den_eos(1) = dens
   xn_eos(1,:) = y(1:nspec)
   p_eos(1) = p0_pass
 
-  ! compute temp with EOS
   call eos(eos_input_rp, den_eos, temp_eos, &
            npts, &
            xn_eos, &
