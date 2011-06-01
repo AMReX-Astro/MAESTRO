@@ -24,7 +24,8 @@ contains
 
     implicit none
 
-    real(kind=dp_t), intent(in   ) :: dens, temp, Xin(nspec), dt
+    real(kind=dp_t), intent(inout) :: dens
+    real(kind=dp_t), intent(in   ) :: temp, Xin(nspec), dt
     real(kind=dp_t), intent(  out) :: Xout(nspec), rho_omegadot(nspec), rho_Hnuc
     real(kind=dp_t), intent(in   ) :: sdc_rho, sdc_X(nspec)
     real(kind=dp_t), intent(in   ) :: p0
@@ -185,6 +186,7 @@ contains
     Xout(io16)  = Xin(io16)
     Xout(img24) = ONE - Xout(ic12) - Xout(io16)
         
+    dens = y(nspec+1)
 
     ! compute the energy release.  Our convention is that the binding 
     ! energies are negative, so the energy release is
