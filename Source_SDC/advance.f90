@@ -1155,10 +1155,6 @@ contains
        endif
     end if
 
-    do n=1,nlevs
-       call destroy(etarhoflux(n))
-    end do
-
     ! Correct the base state using "averaging"
     if (use_etarho .and. evolve_base_state) then
        call average(mla,s2,rho0_new,dx,rho_comp)
@@ -1233,7 +1229,6 @@ contains
           call destroy(sflux(n,comp))
        end do
        call destroy(scal_force(n))
-       call destroy(thermal1(n))
     end do
 
     if (barrier_timers) call parallel_barrier()
@@ -1398,6 +1393,8 @@ contains
     do n=1,nlevs
        call destroy(s1(n))
        call destroy(s2(n))
+       call destroy(etarhoflux(n))
+       call destroy(thermal1(n))
     end do
 
 
