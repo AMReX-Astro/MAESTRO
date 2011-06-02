@@ -8,8 +8,8 @@ module burner_aux_module
 
   implicit none
 
-  real(kind=dp_t), save :: sdc_rho_pass
-  real(kind=dp_t), save :: sdc_X_pass(nspec)
+  real(kind=dp_t), save :: sdc_rhoX_pass(nspec)
+  real(kind=dp_t), save :: sdc_rhoh_pass
   real(kind=dp_t), save :: p0_pass  
 
 end module burner_aux_module

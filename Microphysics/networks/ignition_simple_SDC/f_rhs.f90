@@ -5,7 +5,9 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   use network
   use eos_module
   
-  use burner_aux_module, only : sdc_rho_pass, sdc_X_pass, p0_pass
+  use burner_aux_module, only : sdc_rhoX_pass, sdc_rhoh_pass, p0_pass
+
+  use probin_module, only: use_tfromp
 
   implicit none
 
@@ -40,6 +42,8 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
 
   integer, save :: ic12, io16, img24
 
+  real(kind=dp_t) :: X(nspec)
+
   logical, save :: firstCall = .true.
 
   if (firstCall) then
@@ -50,19 +54,24 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
      firstCall = .false.
   end if
 
+  ! define density
+  dens = y(1) + y(2) + y(3)
 
+  X(1:nspec) = y(1:nspec)/dens
 
   ! compute the molar fractions -- needed for the screening
-  ymass(ic12) = y(1)/aion(ic12)
-  ymass(io16) = y(2)/aion(io16)
-  ymass(img24) = y(3)/aion(img24)
-
-  dens = y(nspec+1)
+  ymass(ic12) = X(1)/aion(ic12)
+  ymass(io16) = X(2)/aion(io16)
+  ymass(img24) = X(3)/aion(img24)
 
   ! compute temp with EOS -- note, here we are assuming use_tfromp = T
   den_eos(1) = dens
-  xn_eos(1,:) = y(1:nspec)
+  xn_eos(1,:) = X(1:nspec)
   p_eos(1) = p0_pass
+
+  if (.not. use_tfromp) then
+     call bl_error("f_rhs.f90: use_tfromp = F not supported")
+  end if
 
   call eos(eos_input_rp, den_eos, temp_eos, &
            npts, &
@@ -132,12 +141,20 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   ! the network module -- this makes things robust to a shuffling of the 
   ! species ordering
 
-  xc12tmp = max(y(ic12),0.d0)
-  ydot(1) = -one_twelvth*dens*sc1212*rate*xc12tmp**2 + sdc_X_pass(1)
-  ydot(2) = sdc_X_pass(2)
-  ydot(3) = one_twelvth*dens*sc1212*rate*xc12tmp**2 + sdc_X_pass(3)
 
-  ydot(nspec+1) =  sdc_rho_pass
+  ! changes in X due to reactions only
+  xc12tmp = max(X(ic12),0.d0)
+  ydot(1) = -one_twelvth*dens*sc1212*rate*xc12tmp**2
+  ydot(2) = 0.d0
+  ydot(3) =  one_twelvth*dens*sc1212*rate*xc12tmp**2
+
+  ! now make ydots refer to rhoX and include the sdc sources
+  ydot(1) = dens*ydot(1) + sdc_rhoX_pass(1)
+  ydot(2) = dens*ydot(2) + sdc_rhoX_pass(2)
+  ydot(3) = dens*ydot(3) + sdc_rhoX_pass(3)
+
+  ! WRONG
+  ydot(nspec+1) =  sdc_rhoh_pass
 
   return
 

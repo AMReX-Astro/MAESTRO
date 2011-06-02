@@ -13,25 +13,26 @@ module burner_module
 
 contains
 
-  subroutine burner(dens, temp, Xin, dt, Xout, rho_omegadot, rho_Hnuc, sdc_rho, sdc_X, p0)
+  subroutine burner(rhoXin, rhohin, dt, rhoout, rhoXout, rhohout, rho_omegadot, rho_Hnuc, &
+                    sdc_rhoX, sdc_rhoh, p0)
 
     ! outputs:
     !   Xout are the mass fractions after burning through timestep dt
     !   rho_omegadot = rho dX/dt
     !   rho_Hnuc = - sum_k q_k rho_omegadot_k  [erg / cm^3 / s]
 
-    use burner_aux_module, only : sdc_rho_pass, sdc_X_pass, p0_pass
+    use burner_aux_module, only : sdc_rhoX_pass, sdc_rhoh_pass, p0_pass
 
     implicit none
 
-    real(kind=dp_t), intent(inout) :: dens
-    real(kind=dp_t), intent(in   ) :: temp, Xin(nspec), dt
-    real(kind=dp_t), intent(  out) :: Xout(nspec), rho_omegadot(nspec), rho_Hnuc
-    real(kind=dp_t), intent(in   ) :: sdc_rho, sdc_X(nspec)
+    real(kind=dp_t), intent(in   ) :: rhoXin(nspec), rhohin, dt
+    real(kind=dp_t), intent(  out) :: rhoout, rhoXout(nspec), rhohout, rho_omegadot(nspec)
+    real(kind=dp_t), intent(  out) :: rho_Hnuc
+    real(kind=dp_t), intent(in   ) :: sdc_rhoX(nspec), sdc_rhoh
     real(kind=dp_t), intent(in   ) :: p0
 
     integer :: n
-    real(kind=dp_t) :: enuc, dX
+    real(kind=dp_t) :: drhoX
 
     logical, parameter :: verbose = .false.
 
@@ -99,7 +100,6 @@ contains
     integer, parameter :: LIW = 30 + NEQ
     integer, dimension(LIW) :: iwork
     
-
     real(kind=dp_t) :: rpar
     integer :: ipar
 
@@ -126,11 +126,11 @@ contains
 
     ! set the tolerances.  We will be more relaxed on the temperature
     ! since it is only used in evaluating the rates.  
-    atol(1:nspec) = 1.d-12    ! mass fractions
-    atol(nspec+1) = 1.d-8     ! rho
+    atol(1:nspec) = 1.d-12    ! density-weighted mass fractions
+    atol(nspec+1) = 1.d-8     ! enthalpy
        
-    rtol(1:nspec) = 1.d-12    ! mass fractions
-    rtol(nspec+1) = 1.d-5     ! rho
+    rtol(1:nspec) = 1.d-12    ! density-weighted mass fractions
+    rtol(nspec+1) = 1.d-8     ! enthalpy
     
 
     ! we want VODE to re-initialize each time we call it
@@ -148,22 +148,18 @@ contains
     time = ZERO
     
     
-    ! abundances are the first nspec values and density is the last
-    y(ic12) = Xin(ic12)
-    y(io16) = Xin(io16)
-    y(img24) = Xin(img24)
-    y(nspec+1) = dens
+    ! density-weighted abundances are the first nspec values and rhoh is the last
+    y(ic12) = rhoXin(ic12)
+    y(io16) = rhoXin(io16)
+    y(img24) = rhoXin(img24)
+    y(nspec+1) = rhohin
 
-    ! sdc source terms (sdc_rho and sdc_X) are needed
+    ! sdc source terms (sdc_rhoX and sdc_rhoh) are needed
     ! in the righthand side routine, so we will pass these in through the
     ! burner_aux module.
     !
-    ! Since we are only integrating C12, we will need the O16 mass fraction
-    ! in the RHS routine to compute the screening (and we know that the
-    ! Mg24 abundance is constraint so things add to 1).
-
-    sdc_rho_pass = sdc_rho
-    sdc_X_pass(:) = sdc_X(:)
+    sdc_rhoX_pass(:) = sdc_rhoX(:)
+    sdc_rhoh_pass = sdc_rhoh
     p0_pass = p0
 
     ! call the integration routine
@@ -178,35 +174,37 @@ contains
        call bl_error("ERROR in burner: integration failed")
     endif
 
-
     ! store the new mass fractions -- note, we discard the temperature
     ! here and instead compute the energy release from the binding
     ! energy -- make sure that they are positive
-    Xout(ic12)  = max(y(ic12), ZERO)
-    Xout(io16)  = Xin(io16)
-    Xout(img24) = ONE - Xout(ic12) - Xout(io16)
+    rhoXout(ic12)  = max(y(ic12), ZERO)
+    rhoXout(io16)  = max(y(io16), ZERO)
+    rhoXout(img24) = max(y(img24),ZERO)
+
+    rhoout = rhoXout(ic12) + rhoXout(io16) + rhoXout(img24)
         
-    dens = y(nspec+1)
+    rhohout = y(nspec+1)
 
     ! compute the energy release.  Our convention is that the binding 
     ! energies are negative, so the energy release is
-    ! - sum_k { (Xout(k) - Xin(k)) ebin(k) }
+    ! - sum_k { drhoX_k ebin(k) }
+    ! where drhoX is the change in rhoX only due to the reactions
     !
     ! also compute the density-weighted creation rates, rho_omegadot
-    enuc = 0.0_dp_t
+    rho_Hnuc = 0.0_dp_t
     do n = 1, nspec
-       dX = Xout(n) - Xin(n) - dt * sdc_X(n)
-       enuc = enuc - ebin(n) * dX
-       rho_omegadot(n) = dens * dX / dt
+       drhoX = rhoXout(n) - rhoXin(n) - dt * sdc_rhoX(n)
+       rho_Hnuc = rho_Hnuc - ebin(n) * drhoX
+       rho_omegadot(n) = drhoX / dt
     enddo
 
-    rho_Hnuc = dens*enuc/dt
+    rho_Hnuc = rho_Hnuc/dt
 
     if (verbose) then
        
        ! print out some integration statistics, if desired
        print *, 'integration summary: '
-       print *, 'dens: ', dens, ' temp: ', temp
+       print *, 'rhoout: ', rhoout
        print *, 'number of steps taken: ', iwork(11)
        print *, 'number of f evaluations: ', iwork(12)
     endif
