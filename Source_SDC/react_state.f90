@@ -408,7 +408,7 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: do_burning, burning_cutoff_density, burner_threshold_species, &
-         burner_threshold_cutoff, drive_initial_convection
+         burner_threshold_cutoff, drive_initial_convection, do_heating
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn,ng_sdc
     real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,lo(2)-ng_si:,:)
@@ -424,20 +424,26 @@ contains
 
     !     Local variables
     integer            :: i, j
-    real (kind = dp_t) :: rho,T_in
-    real (kind = dp_t) :: x_in(nspec)
-    real (kind = dp_t) :: x_out(nspec)
-    real (kind = dp_t) :: rhowdot(nspec)
-    real (kind = dp_t) :: rhoH
+    real (kind = dp_t) :: rho_in,rho_out
+    real (kind = dp_t) :: rhox_in(nspec)
+    real (kind = dp_t) :: rhox_out(nspec)
+    real (kind = dp_t) :: rhowdot_out(nspec)
+    real (kind = dp_t) :: rho_Hnuc_out
     real (kind = dp_t) :: x_test
     logical            :: cell_valid
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
-    real (kind = dp_t) :: sdc_rho
-    real (kind = dp_t) :: sdc_X(nspec)
+    real (kind = dp_t) :: sdc_rhoX(nspec)
+    real (kind = dp_t) :: sdc_rhoh
     real (kind = dp_t) :: p0_in
 
+    if (do_heating) then
+       call bl_error("react_state.f90:do_heating not supported for enthalpy")
+    end if
+    if (drive_initial_convection) then
+       call bl_error("react_state.f90:drive_initial_convection not supported")
+    end if
 
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
@@ -455,24 +461,20 @@ contains
 
           if (cell_valid) then
 
-             sdc_rho = sdc_source(i,j,rho_comp)
-             sdc_X(:) = sdc_source(i,j,spec_comp:spec_comp+nspec-1)
+             sdc_rhoX(:) = sdc_source(i,j,spec_comp:spec_comp+nspec-1)
+             sdc_rhoh = sdc_source(i,j,rhoh_comp)
+
              p0_in = p0(j)
 
-             rho = sold(i,j,rho_comp)
-             x_in(1:nspec) = sold(i,j,spec_comp:spec_comp+nspec-1) / rho
+             rho_in = sold(i,j,rho_comp)
+             rhox_in(1:nspec) = sold(i,j,spec_comp:spec_comp+nspec-1)
+             rhoh_in = sold(i,j,rhoh_comp)
           
-             if (drive_initial_convection) then
-                T_in = tempbar_init(j)
-             else
-                T_in = sold(i,j,temp_comp)
-             endif
-
              ! Fortran doesn't guarantee short-circuit evaluation of logicals so
              ! we need to test the value of ispec_threshold before using it 
              ! as an index in x_in
              if (ispec_threshold > 0) then
-                x_test = x_in(ispec_threshold)
+                x_test = rhox_in(ispec_threshold) / rho_in
              else
                 x_test = ZERO
              endif
@@ -480,29 +482,32 @@ contains
              ! if the threshold species is not in the network, then we burn
              ! normally.  if it is in the network, make sure the mass
              ! fraction is above the cutoff.
-             if (rho > burning_cutoff_density .and.           &
+             if (rho_in > burning_cutoff_density .and.           &
                   ( ispec_threshold < 0 .or.                  &
                   (ispec_threshold > 0 .and.                  &
                   x_test > burner_threshold_cutoff ))) then
-                call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH, sdc_rho, sdc_X, p0_in)
+                call burner(rhox_in, rhoh_in, dt, rho_out, rhox_out, rhoh_out, &
+                            rhowdot_out, rho_Hnuc_out, sdc_rhoX, sdc_rhoh, p0_in)
              else
-                x_out = x_in
-                rhowdot = 0.d0
-                rhoH = 0.d0
+                rho_out = rho_in
+                rhox_out = rhox_in
+                rhoh_out = rhoh_in
+                rhowdot_out = 0.d0
+                rho_Hnuc_out = 0.d0
              endif
              
-             ! pass the density through
-             snew(i,j,rho_comp) = rho
+             ! update the density
+             snew(i,j,rho_comp) = rho_out
              
              ! update the species
-             snew(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
+             snew(i,j,spec_comp:spec_comp+nspec-1) = rhox_out(1:nspec)
              
              ! store the energy generation and species creation quantities
-             rho_omegadot(i,j,1:nspec) = rhowdot(1:nspec)
-             rho_Hnuc(i,j) = rhoH
+             rho_omegadot(i,j,1:nspec) = rhowdot_out(1:nspec)
+             rho_Hnuc(i,j) = rho_Hnuc_out
              
              ! update the enthalpy -- include the change due to external heating
-             snew(i,j,rhoh_comp) = sold(i,j,rhoh_comp) + dt*rho_Hnuc(i,j) + dt*rho_Hext(i,j)
+             snew(i,j,rhoh_comp) = rhoh_out
              
              ! pass the tracers through
              snew(i,j,trac_comp:trac_comp+ntrac-1) = sold(i,j,trac_comp:trac_comp+ntrac-1)   
