@@ -319,7 +319,7 @@ subroutine varden()
   allocate(intra(nlevs))
   do n=1,nlevs
      call multifab_build(intra(n), mla%la(n), nscal, 1)
-     call setval(intra(n),ZERO)
+     call setval(intra(n),ZERO,all=.true.)
   end do
 
   do n = 1,nlevs
