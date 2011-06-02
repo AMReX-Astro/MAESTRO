@@ -18,7 +18,7 @@ contains
 
     ! outputs:
     !   Xout are the mass fractions after burning through timestep dt
-    !   rho_omegadot = rho dX/dt
+    !   rho_omegadot = rho DX/Dt
     !   rho_Hnuc = - sum_k q_k rho_omegadot_k  [erg / cm^3 / s]
 
     use burner_aux_module, only : sdc_rhoX_pass, sdc_rhoh_pass, p0_pass
@@ -149,8 +149,8 @@ contains
     
     
     ! density-weighted abundances are the first nspec values and rhoh is the last
-    y(ic12) = rhoXin(ic12)
-    y(io16) = rhoXin(io16)
+    y(ic12)  = rhoXin(ic12)
+    y(io16)  = rhoXin(io16)
     y(img24) = rhoXin(img24)
     y(nspec+1) = rhohin
 
