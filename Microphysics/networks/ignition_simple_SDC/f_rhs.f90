@@ -4,6 +4,7 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   use bl_constants_module
   use network
   use eos_module
+  use bl_error_module
   
   use burner_aux_module, only : sdc_rhoX_pass, sdc_rhoh_pass, p0_pass
 
