@@ -424,7 +424,7 @@ contains
 
     !     Local variables
     integer            :: i, j
-    real (kind = dp_t) :: rho_in,rho_out
+    real (kind = dp_t) :: rho_in,rho_out,rhoh_in,rhoh_out
     real (kind = dp_t) :: rhox_in(nspec)
     real (kind = dp_t) :: rhox_out(nspec)
     real (kind = dp_t) :: rhowdot_out(nspec)
