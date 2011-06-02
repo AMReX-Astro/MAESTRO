@@ -42,8 +42,8 @@ due to the advection.  These are constructed by calling {\tt density\_advance}
 and {\tt enthalpy\_advance} in Maestro and passed into the network solver
 during the reaction step.  These terms provide approximate the following:
 \begin{eqnarray}
-A_{\rho X_k} &=& - \left [ \nabla \cdot (\rho X_k \Ub) \right ]^{n+1/2} \\
-A_{\rho h}   &=& - \left [ \nabla \cdot (\rho h U) + \frac{Dp_0}{Dt} \right ]^{n+1/2}
+A_{\rho X_k} &=&  \left [- \nabla \cdot (\rho X_k \Ub) \right ]^{n+1/2} \\
+A_{\rho h}   &=&  \left [- \nabla \cdot (\rho h U) + \frac{Dp_0}{Dt} \right ]^{n+1/2}
 \end{eqnarray}
 
 The RHS routine that the ODE solver operates on will first construct
