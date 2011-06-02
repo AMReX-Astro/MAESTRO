@@ -137,7 +137,7 @@ contains
 
     ! SDC HACK
     do n=1,nlevs
-       call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)
+       call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 1)
     end do
 
     !**************************************************************************

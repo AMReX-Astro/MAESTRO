@@ -705,18 +705,14 @@ contains
 
     ! SDC HACK
     ! extract aofs = (s2 - s1) / dt
-    ! convert (rho X) --> X
-    call convert_rhoX_to_X(s1,.true.,mla,the_bc_tower%bc_tower_array)
-    call convert_rhoX_to_X(s2,.true.,mla,the_bc_tower%bc_tower_array)
     do n=1,nlevs
-       call multifab_build(aofs(n), mla%la(n), nscal, 0)
-       call multifab_copy_c     (aofs(n), 1, s2(n), 1, nscal, 0)
-       call multifab_sub_sub_c  (aofs(n), 1, s1(n), 1, nscal, 0)
-       call multifab_div_div_s_c(aofs(n), 1, dt,       nscal, 0)
+       call multifab_build(aofs(n), mla%la(n), nscal, 1)
+       call multifab_build(sdc_source(n), mla%la(n), nscal, 1)
+       call multifab_copy_c     (aofs(n), 1, s2(n), 1, nscal, 1)
+       call multifab_sub_sub_c  (aofs(n), 1, s1(n), 1, nscal, 1)
+       call multifab_div_div_s_c(aofs(n), 1, dt,       nscal, 1)
+       call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 1)
     end do
-    ! convert X --> (rho X)
-    call convert_rhoX_to_X(s1,.false.,mla,the_bc_tower%bc_tower_array)
-    call convert_rhoX_to_X(s2,.false.,mla,the_bc_tower%bc_tower_array)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 5 -- react the full state and then base state through dt/2
@@ -731,31 +727,32 @@ contains
     do n=1,nlevs
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
- 
-    ! SDC HACK - compute sdc_source
-    do n=1,nlevs
-       call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
-       call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
-    end do
 
     ! SDC HACK - need to rewrite interface   
     call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
                      dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
     ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] * dt
-    ! convert (rho X) --> X
-    call convert_rhoX_to_X(sold,.true.,mla,the_bc_tower%bc_tower_array)
-    call convert_rhoX_to_X(snew,.true.,mla,the_bc_tower%bc_tower_array)
     do n=1,nlevs
-       call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 0)
-       call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 0)
-       call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 0)
-       call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 0)
-       call multifab_mult_mult_s_c(intra(n), 1, dt,               nscal, 0)
+       call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 1)
+       call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 1)
+       call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 1)
+       call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 1)
+       call multifab_mult_mult_s_c(intra(n), 1, dt,               nscal, 1)
     end do
-    ! convert X --> (rho X)
-    call convert_rhoX_to_X(sold,.false.,mla,the_bc_tower%bc_tower_array)
-    call convert_rhoX_to_X(snew,.false.,mla,the_bc_tower%bc_tower_array)
+    ! WE NEED TO MAKE INTRA IN TERMS OF X, NOT RHOX
+    do n=1,nlevs
+       call multifab_build(rhohalf(n), mla%la(n), 1, 1)
+    end do
+    call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
+    do n=1,nlevs
+       do comp=spec_comp,spec_comp+nspec-1
+          call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
+       end do
+    end do
+    do n=1,nlevs
+       call destroy(rhohalf(n))
+    end do
 
     do n=1,nlevs
        call destroy(s2(n))
@@ -1239,17 +1236,12 @@ contains
 
     ! SDC HACK
     ! extract aofs = (s2 - s1) / dt
-    ! convert (rho X) --> X
-    call convert_rhoX_to_X(s1,.true.,mla,the_bc_tower%bc_tower_array)
-    call convert_rhoX_to_X(s2,.true.,mla,the_bc_tower%bc_tower_array)
     do n=1,nlevs
-       call multifab_copy_c     (aofs(n), 1, s2(n), 1, nscal, 0)
-       call multifab_sub_sub_c  (aofs(n), 1, s1(n), 1, nscal, 0)
-       call multifab_div_div_s_c(aofs(n), 1, dt,       nscal, 0)
+       call multifab_copy_c     (aofs(n), 1, s2(n), 1, nscal, 1)
+       call multifab_sub_sub_c  (aofs(n), 1, s1(n), 1, nscal, 1)
+       call multifab_div_div_s_c(aofs(n), 1, dt,       nscal, 1)
+       call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 1)
     end do
-    ! convert X --> (rho X) 
-    call convert_rhoX_to_X(s1,.false.,mla,the_bc_tower%bc_tower_array)
-    call convert_rhoX_to_X(s2,.false.,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(s2(n))
@@ -1270,29 +1262,31 @@ contains
        write(6,*) ' '
     end if
 
-    ! SDC HACK - compute sdc_source
-    do n=1,nlevs
-       call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
-    end do
-
     ! SDC HACK - need to rewrite interface 
     call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
                      dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
     ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] * dt
-    ! convert (rho X) --> X
-    call convert_rhoX_to_X(sold,.true.,mla,the_bc_tower%bc_tower_array)
-    call convert_rhoX_to_X(snew,.true.,mla,the_bc_tower%bc_tower_array)
     do n=1,nlevs
-       call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 0)
-       call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 0)
-       call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 0)
-       call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 0)
-       call multifab_mult_mult_s_c(intra(n), 1, dt,               nscal, 0)
+       call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 1)
+       call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 1)
+       call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 1)
+       call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 1)
+       call multifab_mult_mult_s_c(intra(n), 1, dt,               nscal, 1)
     end do
-    ! convert X --> (rho X)
-    call convert_rhoX_to_X(sold,.false.,mla,the_bc_tower%bc_tower_array)
-    call convert_rhoX_to_X(snew,.false.,mla,the_bc_tower%bc_tower_array)
+    ! WE NEED TO MAKE INTRA IN TERMS OF X, NOT RHOX
+    do n=1,nlevs
+       call multifab_build(rhohalf(n), mla%la(n), 1, 1)
+    end do
+    call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
+    do n=1,nlevs
+       do comp=spec_comp,spec_comp+nspec-1
+          call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
+       end do
+    end do
+    do n=1,nlevs
+       call destroy(rhohalf(n))
+    end do
 
     if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
