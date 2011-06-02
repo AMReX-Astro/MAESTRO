@@ -1,0 +1,66 @@
+\section{Implementing an SDC-enabled reaction network (no diffusion)}
+
+Maestro integrates the following system of equations:
+\begin{eqnarray}
+\frac{\partial(\rho X_k)}{\partial t} &=& 
+    -\nabla\cdot(\rho X_k\Ub) + \rho\omegadot_k,\label{eq:species}\\
+\frac{\partial\Ub}{\partial t} &=& 
+    -\Ub\cdot\nabla\Ub  - \frac{1}{\rho}\nabla\pi 
+    - \frac{\rho-\rho_0}{\rho} g\eb_r,\label{eq:momentum}\\
+\frac{\partial(\rho h)}{\partial t} &=& 
+    -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt} 
+    + \rho\Hnuc ,\label{eq:enthalpy}
+\end{eqnarray}
+together with a constraint equation.
+
+In the Strang-split version of Maestro, the reaction network solves just
+the reaction portion of the species evolution equations along with a
+temperature evolution equation.  This is done using a standard ODE solver
+(like {\tt VODE}) on the system:
+\begin{eqnarray}
+\frac{dX_k}{dt} &=& \omegadot_k(\rho,X_k,T) \\
+\frac{dT}{dt}   &=& 
+    \frac{1}{c_p} \left ( -\sum_k \xi_k  \omegadot_k  + \Hnuc \right ).
+\end{eqnarray}
+Furthermore, we simplify the problem ``freezing'' the
+thermodynamics---i.e., $c_p$ is evaluating at the start of the
+integration and held constant thereafter.
+
+In the SDC version, the VODE integration at the end of an SDC
+iteration is responsible for updating all the thermodynamic quantities
+\{$\rho$, $(\rho h)$, and $(\rho X_k$)\}, including both the advective
+fluxes (incorporated via a piecewise constant advective flux source
+term) and the reactions.  This provides a much stronger coupling between
+the physical processes.  In particular, our system now looks like:
+\begin{eqnarray}
+\frac{d(\rho X_k)}{dt} &=& \rho \omegadot_k(\rho,X_k,T) + A_{\rho X_k} \\
+\frac{d(\rho h)}{dt}   &=& \rho \Hnuc + A_{\rho h}
+\end{eqnarray}
+Here, $A_{\rho X_k}$ and $A_{\rho h}$ are piecewise-constant (in time)
+approximations to the change in ${\rho X_k}$ and ${\rho h}$ (respectively)
+due to the advection.  These are constructed by calling {\tt density\_advance}
+and {\tt enthalpy\_advance} in Maestro and passed into the network solver
+during the reaction step.
+
+The RHS routine that the ODE solver operates on will first construct
+the density as:
+\begin{equation}
+\rho = \sum_k (\rho X_k)
+\end{equation}
+It will then derive the temperature from the equation of state.  If we
+are running with {\tt use\_tfromp = T}, then we do
+\begin{equation}
+T = T(\rho, p_0, X_k)
+\end{equation}
+otherwise, we do
+\begin{equation}
+T = T(\rho, h, X_k)
+\end{equation}
+Note that in constrast to the Strang-split version, here we call the EOS
+every time we enter the RHS routine.
+
+The major changes from the non-SDC-enabled burners is the addition of
+the advective terms to the system of ODEs, the fact that we integrate
+$(\rho X_k)$ instead of just $X_k$, and the need to derive the
+temperature from the input state for each RHS evaluation by {\tt
+  VODE}.
