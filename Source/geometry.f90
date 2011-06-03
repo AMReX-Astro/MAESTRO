@@ -189,7 +189,7 @@ contains
     end do
 
     ! if the anelastic cutoff density was not found anywhere, then set
-    ! it to above the top of the domain on the finest level
+    ! it to the top of the domain on the finest level
     if (.not. found) then
        which_lev = nlevs_radial
        anelastic_cutoff_coord(nlevs_radial) = nr(nlevs_radial)-1
@@ -197,7 +197,7 @@ contains
 
     ! set the anelastic cutoff coordinate on the finer levels
     do n=which_lev+1,nlevs_radial
-       anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)
+       anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)+1
     end do
 
     ! set the anelastic cutoff coordinate on the coarser levels
@@ -234,7 +234,7 @@ contains
     end do
 
     ! if the base cutoff density was not found anywhere, then set
-    ! it to above the top of the domain on the finest level
+    ! it to the top of the domain on the finest level
     if (.not. found) then
        which_lev = nlevs_radial
        base_cutoff_density_coord(nlevs_radial) = nr(nlevs_radial)-1
@@ -242,7 +242,7 @@ contains
 
     ! set the base cutoff coordinate on the finer levels
     do n=which_lev+1,nlevs_radial
-       base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)
+       base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)+1
     end do
 
     ! set the base cutoff coordinate on the coarser levels
@@ -279,7 +279,7 @@ contains
     end do
  
     ! if the burning cutoff density was not found anywhere, then set
-    ! it to above the top of the domain on the finest level
+    ! it to the top of the domain on the finest level
     if (.not. found) then
        which_lev = nlevs_radial
        burning_cutoff_density_coord(nlevs_radial) = nr(nlevs_radial)-1
@@ -287,7 +287,7 @@ contains
 
     ! set the burning cutoff coordinate on the finer levels 
     do n=which_lev+1,nlevs_radial
-       burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)
+       burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)+1
     end do
 
     ! set the burning cutoff coordinate on the coarser levels
