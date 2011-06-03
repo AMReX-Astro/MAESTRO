@@ -44,7 +44,6 @@
 
  evolve_base_state = F
  use_tfromp = T
- use_thermal_diffusion = F
 
     verbose = 1
  mg_verbose = 1
