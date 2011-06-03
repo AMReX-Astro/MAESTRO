@@ -778,7 +778,7 @@ contains
        !copy rho0 into rho_average
        do r = 0, nr_fine-1
           rho_avg(1,r) = rho0(1,r)
-       endif
+       end do
 
     end if
 
