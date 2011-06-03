@@ -1,9 +1,8 @@
-NDEBUG :=  
 NDEBUG := t
 MPI    :=
 OMP    :=
 
-COMP := Intel
+COMP := gfortran
 
 MKVERBOSE := t
 
@@ -22,6 +21,7 @@ Fmdirs := boxlib \
           extern/EOS/helmeos \
           extern/networks/ignition \
           extern/VODE \
+          extern/BLAS \
           extern/constants
 
 # directories containing files that are 'include'-d via Fortran
