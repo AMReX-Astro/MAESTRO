@@ -21,7 +21,7 @@ contains
                              use_thermal_diffusion, plot_omegadot, plot_Hnuc, &
                              plot_Hext, plot_eta, plot_ad_excess, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, &
-                             plot_sponge_fdamp, dm_in
+                             plot_sponge_fdamp, dm_in, evolve_base_state
     use geometry, only: spherical
 
     character(len=20), intent(inout) :: plot_names(:)

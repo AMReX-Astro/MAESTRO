@@ -95,7 +95,7 @@ contains
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
                              base_cutoff_density, &
-                             diag_buf_size, octant, &
+                             diag_buf_size, octant, evolve_base_state, &
                              sponge_start_factor, sponge_center_density
     use average_module, only: average
 
