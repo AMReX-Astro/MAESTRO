@@ -17,9 +17,13 @@ contains
                     sdc_rhoX, sdc_rhoh, p0)
 
     ! outputs:
-    !   Xout are the mass fractions after burning through timestep dt
-    !   rho_omegadot = rho DX/Dt
-    !   rho_Hnuc = - sum_k q_k rho_omegadot_k  [erg / cm^3 / s]
+    !   rhoout is the updated density
+    !   rhoXout are the updated density-weighted species (rho X_k)
+    !   rhohout is the updated (rho h)
+    !   rho_omegadot = rho DX/Dt (i.e. the change in rho X due to 
+    !       reactions only)
+    !   rho_Hnuc = - sum_k q_k rho_omegadot_k  [erg / cm^3 / s] 
+    !       (i.e. the energy generation rate per unit volume)
 
     use burner_aux_module, only : sdc_rhoX_pass, sdc_rhoh_pass, p0_pass
 
@@ -36,7 +40,7 @@ contains
 
     logical, parameter :: verbose = .false.
 
-    ! set the number of independent variables -- this should be density
+    ! set the number of independent variables -- this should be (rho h)
     ! + the number of species
     integer, parameter :: NEQ = 1 + nspec
   
