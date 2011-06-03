@@ -12,8 +12,9 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
 
   implicit none
 
-  ! our convention is that y(1:nspec) are the species (in the same
-  ! order as defined in network.f90, and y(nspec+1) is the density
+  ! our convention is that y(1:nspec) are the density-weighted species
+  ! (in the same order as defined in network.f90, and y(nspec+1) is
+  ! (rho h).
   integer :: n
   real(kind=dp_t) :: y(n), ydot(n)
 
@@ -55,7 +56,7 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
      firstCall = .false.
   end if
 
-  ! define density
+  ! define density and the mass fractions
   dens = y(1) + y(2) + y(3)
 
   X(1:nspec) = y(1:nspec)/dens
