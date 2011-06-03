@@ -56,14 +56,18 @@ contains
     end if
 
     if (plot_base) then
-       plot_names(icomp_w0)   = "w0_x"
-       if (dm_in > 1) plot_names(icomp_w0+1) = "w0_y"
-       if (dm_in > 2) plot_names(icomp_w0+2) = "w0_z"
-       plot_names(icomp_divw0) = "divw0"
+       if (evolve_base_state) then
+          plot_names(icomp_w0)   = "w0_x"
+          if (dm_in > 1) plot_names(icomp_w0+1) = "w0_y"
+          if (dm_in > 2) plot_names(icomp_w0+2) = "w0_z"
+          plot_names(icomp_divw0) = "divw0"
+       endif
        plot_names(icomp_rho0)  = "rho0"
        plot_names(icomp_rhoh0) = "rhoh0"
        plot_names(icomp_h0)    = "h0"
        plot_names(icomp_p0)    = "p0"
+       plot_names(icomp_pioverp0)    = "pioverp0"
+       plot_names(icomp_p0pluspi)    = "p0pluspi"
     end if
 
     if (spherical .eq. 1) then
@@ -106,10 +110,6 @@ contains
        if (dm_in > 1) plot_names(icomp_gpi+1) = "gpi_y"
        if (dm_in > 2) plot_names(icomp_gpi+2) = "gpi_z"
     endif
-    if (plot_base) then
-       plot_names(icomp_pioverp0)    = "pioverp0"
-       plot_names(icomp_p0pluspi)    = "p0pluspi"
-    end if
 
     if (plot_omegadot) then
        do comp = 1, nspec
@@ -338,25 +338,27 @@ contains
        if (evolve_base_state) then
           call put_1d_array_on_cart(w0,tempfab,1,.true.,.true.,dx, &
                                     the_bc_tower%bc_tower_array,mla)
-       else
+!        else
+!           do n=1,nlevs
+!              call setval(tempfab(n), ZERO, all=.true.)
+!           end do
+!        end if
+
           do n=1,nlevs
-             call setval(tempfab(n), ZERO, all=.true.)
+             call multifab_copy_c(plotdata(n),icomp_w0,tempfab(n),1,dm)
           end do
-       end if
 
-       do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_w0,tempfab(n),1,dm)
-       end do
+          ! divw0
+          do n=1,nlevs
+             if (spherical .eq. 1) then
+                n_1d = 1
+             else
+                n_1d = n
+             end if
+             call make_divw0(plotdata(n),icomp_divw0,w0(n_1d,:),w0mac(n,:),dx(n,:))
+          end do
 
-       ! divw0
-       do n=1,nlevs
-          if (spherical .eq. 1) then
-             n_1d = 1
-          else
-             n_1d = n
-          end if
-          call make_divw0(plotdata(n),icomp_divw0,w0(n_1d,:),w0mac(n,:),dx(n,:))
-       end do
+       endif !(evolve_base_state)
 
        ! rho0
        call put_1d_array_on_cart(rho0,tempfab,dm+rho_comp,.false.,.false.,dx, &
@@ -412,7 +414,15 @@ contains
           call multifab_copy_c(plotdata(n),icomp_p0,tempfab(n),1,1)
        end do
 
-    end if
+       !PIOVERP0 and P0PLUSPI
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),icomp_pioverp0,pi_cc(n),1,1)
+          call multifab_div_div_c(plotdata(n),icomp_pioverp0,plotdata(n),icomp_p0,1)
+          call multifab_copy_c(plotdata(n),icomp_p0pluspi,pi_cc(n),1,1)
+          call multifab_plus_plus_c(plotdata(n),icomp_p0pluspi,plotdata(n),icomp_p0,1)
+       end do
+
+    end if !(plot_base)
 
     if (plot_eta) then
        call put_1d_array_on_cart(etarho_cc,tempfab,foextrap_comp,.false.,.false.,dx, &
@@ -585,16 +595,6 @@ contains
     else
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)
-       end do
-    end if
-
-    !PIOVERP0 and P0PLUSPI
-    if (plot_base) then
-       do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_pioverp0,pi_cc(n),1,1)
-          call multifab_div_div_c(plotdata(n),icomp_pioverp0,plotdata(n),icomp_p0,1)
-          call multifab_copy_c(plotdata(n),icomp_p0pluspi,pi_cc(n),1,1)
-          call multifab_plus_plus_c(plotdata(n),icomp_p0pluspi,plotdata(n),icomp_p0,1)
        end do
     end if
 

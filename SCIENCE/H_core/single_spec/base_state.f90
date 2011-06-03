@@ -253,8 +253,6 @@ contains
 
           max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(rhog))
 
-!          write(*,*)r, dpdr, rhog, abs(dpdr - rhog)/abs(rhog)
-
        end if
 
     enddo

@@ -39,7 +39,7 @@ contains
     real(kind=dp_t), pointer :: hp(:,:,:,:)
     type(bl_prof_timer), save :: bpt
 
-    logical, parameter :: symmetric_heat = .true.
+    logical, parameter :: symmetric_heat = .false.
     real(kind=dp_t), allocatable :: rho0(:,:)
     real(kind=dp_t), allocatable :: T0(:,:)
     real(kind=dp_t), allocatable :: rhoh0(:,:)
@@ -174,45 +174,45 @@ contains
        rho_Hext(i) = rho * tmp1 * tmp2
           
 
-       if (spherical .eq. 1) then
+!        if (spherical .eq. 1) then
 
-          if (rho .gt. 5.944) then
+!           if (rho .gt. 5.944) then
              
-             intgrl = intgrl + rho_Hext(i)*(dble(i)+HALF)*dr*(dble(i)+HALF)*dr*dr
+!              intgrl = intgrl + rho_Hext(i)*(dble(i)+HALF)*dr*(dble(i)+HALF)*dr*dr
              
-             rho_Hext(i) = 0.d0
+!              rho_Hext(i) = 0.d0
              
-          else
+!           else
              
-             if (ibegin .lt. 1) then
-                ! add in a "surface flux", recall rho_Hext represents a cell average
-                rho_Hext(i) = rho_Hext(i) + 3.d0*intgrl / &
-                     (dr*dr*dr*(i*i*i + 3.d0*i*i + 3.d0*i +1))
+!              if (ibegin .lt. 1) then
+!                 ! add in a "surface flux", recall rho_Hext represents a cell average
+!                 rho_Hext(i) = rho_Hext(i) + 3.d0*intgrl / &
+!                      (dr*dr*dr*(i*i*i + 3.d0*i*i + 3.d0*i +1))
 
-                ibegin = i
-             end if
-          end if
+!                 ibegin = i
+!              end if
+!           end if
 
-       else
+!        else
 
-          if (rho .gt. 5.944) then
+!           if (rho .gt. 5.944) then
              
-             intgrl = intgrl + rho_Hext(i)*dr
+!              intgrl = intgrl + rho_Hext(i)*dr
              
-             rho_Hext(i) = 0.d0
+!              rho_Hext(i) = 0.d0
              
-          else
+!           else
              
-             if (ibegin .lt. 3) then
-                ! add in a "surface flux", recall rho_Hext represents a cell average
-                rho_Hext(i) = rho_Hext(i) + THIRD * intgrl / dr
+!              if (ibegin .lt. 3) then
+!                 ! add in a "surface flux", recall rho_Hext represents a cell average
+!                 rho_Hext(i) = rho_Hext(i) + THIRD * intgrl / dr
 
-                ibegin = ibegin + 1
-             end if
+!                 ibegin = ibegin + 1
+!              end if
 
-          end if
+!           end if
 
-       endif
+!        endif
 
     end do
 !.............................................................................. 

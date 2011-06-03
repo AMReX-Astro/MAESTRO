@@ -56,8 +56,8 @@ module diag_module
                                         file3_data(:,:), file4_data(:,:)
 
   integer, parameter :: n_file1 = 28
-  integer, parameter :: n_file2 = 5
-  integer, parameter :: n_file3 = 20 
+  integer, parameter :: n_file2 = 7
+  integer, parameter :: n_file3 = 19
   integer, parameter :: n_file4 = 1
 
   integer, save :: nstored = 0
@@ -88,7 +88,7 @@ contains
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_tower
 
-    use geometry, only: spherical, nr_fine, &
+    use geometry, only: spherical, nr_fine, nlevs_radial, &
                         r_cc_loc, r_edge_loc, dr, center
     use variables, only: foextrap_comp, rho_comp, spec_comp
     use fill_3d_module, only: put_1d_array_on_cart, make_w0mac
@@ -195,7 +195,7 @@ contains
 
     real(kind=dp_t) :: grav_ener, term1, term2
     real(kind=dp_t), allocatable :: m(:)
-
+    real(kind=dp_t), allocatable :: rho_avg(:,:)
 
     integer :: lo(mla%dim),hi(mla%dim)
     integer :: ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
@@ -700,10 +700,6 @@ contains
              vr_max   = max(vr_max,   vr_max_level)
 
              vc_max   = max(vc_max,   vc_max_level)
-
-!             write(*,*)'PR rhovtot ', rhovtot
-!             write(*,*)'PR rhovr   ', rhovr
-!             write(*,*)
           end if
 
           nuc_ener = nuc_ener + nuc_ener_level
@@ -769,12 +765,28 @@ contains
     grav_ener = ZERO
 
 ! FIXME! would need to think about this for 2D multilevel
+    if (.not. evolve_base_state) then
+       ! want to average the full density to get the true average density.
+       allocate( rho_avg(nlevs_radial,0:nr_fine-1))
+
+       ! average of rho and T isn't necessarily rho0 and T0 if the base state
+       !   is not evolved, but assume this is good enough for now.
+       ! rho0 is a 2D array with the first index being the level
+       call average(mla,s,rho_avg,dx,rho_comp)
+    else
+
+       !copy rho0 into rho_average
+       do r = 0, nr_fine-1
+          rho_avg(1,r) = rho0(1,r)
+       endif
+
+    end if
 
     ! m(r) will contain mass enclosed by the center
-    m(0) = FOUR3RD*M_PI*rho0(1,0)*r_cc_loc(1,0)**3
+    m(0) = FOUR3RD*M_PI*rho_avg(1,0)*r_cc_loc(1,0)**3
 
     ! dU = - G M dM / r;  dM = 4 pi r**2 rho dr  -->  dU = - 4 pi G r rho dr
-    grav_ener = -FOUR*M_PI*Gconst*m(0)*r_cc_loc(1,0)*rho0(1,0)*dr(1)
+    grav_ener = -FOUR*M_PI*Gconst*m(0)*r_cc_loc(1,0)*rho_avg(1,0)*dr(1)
 
     do r=1,nr_fine-1
 
@@ -784,8 +796,8 @@ contains
        ! the current zone.
        
        ! don't add any contributions from the sponged region
-       if (rho0(1,r-1) > sponge_start_factor*sponge_center_density) then
-          term1 = FOUR3RD*M_PI*rho0(1,r-1) * &
+      if (rho_avg(1,r-1) > sponge_start_factor*sponge_center_density) then
+          term1 = FOUR3RD*M_PI*rho_avg(1,r-1) * &
                (r_edge_loc(1,r) - r_cc_loc(1,r-1)) * &
                (r_edge_loc(1,r)**2 + &
                 r_edge_loc(1,r)*r_cc_loc(1,r-1) + &
@@ -794,22 +806,22 @@ contains
           term1 = ZERO
        endif
 
-       if (rho0(1,r) > sponge_start_factor*sponge_center_density) then
-          term2 = FOUR3RD*M_PI*rho0(1,r  )*&
+       if (rho_avg(1,r) > sponge_start_factor*sponge_center_density) then
+          term2 = FOUR3RD*M_PI*rho_avg(1,r  )*&
                (r_cc_loc(1,r) - r_edge_loc(1,r  )) * &
                (r_cc_loc(1,r)**2 + &
                 r_cc_loc(1,r)*r_edge_loc(1,r  ) + &
-                r_edge_loc(1,r  )**2)          
+                r_edge_loc(1,r  )**2)
        else
           term2 = ZERO
        endif
 
        m(r) = m(r-1) + term1 + term2
-          
-       ! dU = - G M dM / r;  
+
+       ! dU = - G M dM / r;
        ! dM = 4 pi r**2 rho dr  -->  dU = - 4 pi G r rho dr
        grav_ener = grav_ener - &
-            FOUR*M_PI*Gconst*m(r)*r_cc_loc(1,r)*rho0(1,r)*dr(1)
+            FOUR*M_PI*Gconst*m(r)*r_cc_loc(1,r)*rho_avg(1,r)*dr(1)
 
     enddo
     deallocate(m)
@@ -843,11 +855,6 @@ contains
           kin_ener  = kin_ener *dx(1,3)
           int_ener  = int_ener *dx(1,3)
 
-!          write(*,*)'final rhovtot ', vtot_favre
-!          write(*,*)'final rhovr   ', vr_favre
-!          write(*,*)'final rhovtot ', rhovtot
-!          write(*,*)'final rhovr   ', rhovr
-!          write(*,*)
        end if
 
 ! FIXME! should think about this for 2D 
@@ -907,6 +914,8 @@ contains
           file2_data(index, 2) = kin_ener
           file2_data(index, 3) = grav_ener
           file2_data(index, 4) = int_ener
+          file2_data(index, 5) = mass
+          file2_data(index, 6) = mass_core
           file2_data(index, 5) = dt
 
        else 
@@ -950,6 +959,8 @@ contains
           file2_data(index, 2) = kin_ener
           file2_data(index, 3) = grav_ener
           file2_data(index, 4) = int_ener
+          file2_data(index, 5) = mass
+          file2_data(index, 6) = mass_core
           file2_data(index, 5) = dt
 
 
@@ -973,7 +984,6 @@ contains
           file3_data(index, 17) = vc_favre(2)
           file3_data(index, 18) = vc_favre(3)
           file3_data(index, 19) = vc_favre(4)
-          file3_data(index, 20) = mass
 
           ! file4 -- hcore_cz_diag.out
           file4_data(index, 1) = r_cz
@@ -1102,10 +1112,11 @@ contains
 
           ! vel
           write (un1, *) " "
+          write (un1, *) " "
           write (un1, 800) "output date: ", values(1), values(2), values(3)
           write (un1, 801) "output time: ", values(5), values(6), values(7)
           write (un1, 802) "output dir:  ", trim(cwd)
-          write (un1, *)   "# v corresponds to averages over the convection zone R<=", r_core
+          write (un1, *)   "# v corresponds to averages over the convection zone, R<=",r_core
           write (un1, *)   "# U corresponds to averages over the entire valid region"
           write (un1, *)   "#   (ie, the region interior to the sponged region)"
           write (un1, 999) trim(job_name)
@@ -1125,6 +1136,7 @@ contains
 
           ! energy
           write (un2, *) " "
+          write (un2, *) " "
           write (un2, 800) "output date: ", values(1), values(2), values(3)
           write (un2, 801) "output time: ", values(5), values(6), values(7)
           write (un2, 802) "output dir:  ", trim(cwd)
@@ -1134,6 +1146,7 @@ contains
 
           if (allocated(file3_data)) then
              ! sphrvel
+             write (un3, *) " "
              write (un3, *) " "
              write (un3, 800) "output date: ", values(1), values(2), values(3)
              write (un3, 801) "output time: ", values(5), values(6), values(7)
@@ -1150,6 +1163,7 @@ contains
                   "mass"
              
              ! convective boundary
+             write (un4, *) " "
              write (un4, *) " "
              write (un4, 800) "output date: ", values(1), values(2), values(3)
              write (un4, 801) "output time: ", values(5), values(6), values(7)
@@ -1391,24 +1405,6 @@ contains
        enddo
     enddo
 
-!     write(*,*)'nzones: ',nzones, nzones_core
-!     write(*,*)'mass:   ',mass, mass_core
-    
-!     write(*,*)'vr:    ',vr_x,vr_y,vr_z,vr_tot
-!     write(*,*)'rhovr: ',rhovr_x,rhovr_y,rhovr_z,rhovr_tot
-
-!     write(*,*)'vc:    ',vc_x,vc_y,vc_z,vc_tot
-!     write(*,*)'rhovc: ',rhovc_x,rhovc_y,rhovc_z,rhovc_tot
-    
-!     write(*,*)'vtot:    ',vtot_x,vtot_y,vtot_z,vtot
-!     write(*,*)'rhovtot: ',rhovtot_x,rhovtot_y,rhovtot_z,rhovtot
-
-!     write(*,*)'Utot:    ',Utot_x,Utot_y,Utot_z,Utot
-!     write(*,*)'rhoUtot: ',rhoUtot_x,rhoUtot_y,rhoUtot_z,rhoUtot
-    
-!     write(*,*)    
-
-
   end subroutine diag_2d
 
   subroutine diag_3d(n,time,dt,dx, &
@@ -1475,9 +1471,10 @@ contains
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
-    integer            :: i, j, k
-    real (kind=dp_t)   :: velr, velc, vel, weight
     logical            :: cell_valid
+    integer            :: i, j, k
+    real (kind=dp_t), parameter   :: r_core = 7.47d10
+    real (kind=dp_t)   :: velr, velc, vel, weight
     real (kind=dp_t)   :: x, y, z, rloc
     real (kind=dp_t)   :: vx, vy, vz
 
@@ -1661,24 +1658,6 @@ contains
           enddo
        enddo
     enddo
-
-!     write(*,*)'nzones: ',nzones, nzones_core
-!     write(*,*)'mass:   ',mass, mass_core
-   
-!     write(*,*)'vr:      ',vr_x,vr_y,vr_z,vr_tot
-!     write(*,*)'rhovr:   ',rhovr_x,rhovr_y,rhovr_z,rhovr_tot
-
-!     write(*,*)'vc:    ',vc_x,vc_y,vc_z,vc_tot
-!     write(*,*)'rhovc: ',rhovc_x,rhovc_y,rhovc_z,rhovc_tot
-    
-!     write(*,*)'vtot:    ',vtot_x,vtot_y,vtot_z,vtot
-!     write(*,*)'rhovtot: ',rhovtot_x,rhovtot_y,rhovtot_z,rhovtot
-
-!      write(*,*)'Utot:    ',Utot_x,Utot_y,Utot_z,Utot
-!      write(*,*)'rhoUtot: ',rhoUtot_x,rhoUtot_y,rhoUtot_z,rhoUtot
-    
-!     write(*,*)    
-
 
   end subroutine diag_3d
 

@@ -258,6 +258,7 @@ contains
     ! initialize the velocity to zero everywhere
     u = ZERO
 
+    if (.true.) then
     ! define where center of star is
     xc(1) = center(1)
     xc(2) = center(2)
@@ -335,6 +336,7 @@ contains
           enddo
        enddo
     enddo
+ end if
      
     ! A spherically symmetric velocity "perturbation"
 !     do iloc = lo(1),hi(1)

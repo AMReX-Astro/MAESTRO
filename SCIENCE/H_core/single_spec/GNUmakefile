@@ -2,7 +2,7 @@ NDEBUG := t
 MPI    := t
 OMP    :=
 
-COMP := gfortran
+COMP := PathScale
 
 MKVERBOSE := t
 

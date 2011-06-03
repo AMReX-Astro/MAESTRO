@@ -57,7 +57,7 @@ module diag_module
 
   integer, parameter :: n_file1 = 28
   integer, parameter :: n_file2 = 7
-  integer, parameter :: n_file3 = 20 
+  integer, parameter :: n_file3 = 19
   integer, parameter :: n_file4 = 1
 
   integer, save :: nstored = 0
@@ -840,6 +840,7 @@ contains
        Utot_favre(:) = rhoUtot(:)/mass ! note: common dV normalization cancels
 
        if ( dm .eq. 3) then
+
           vr(:) = vr(:)/nzones
           vr_favre(:) = rhovr(:)/mass    ! note: common dV normalization cancels
           vrvt = vrvt/nzones
@@ -853,6 +854,7 @@ contains
           nuc_ener  = nuc_ener *dx(1,3)
           kin_ener  = kin_ener *dx(1,3)
           int_ener  = int_ener *dx(1,3)
+
        end if
 
 ! FIXME! should think about this for 2D 
@@ -982,7 +984,6 @@ contains
           file3_data(index, 17) = vc_favre(2)
           file3_data(index, 18) = vc_favre(3)
           file3_data(index, 19) = vc_favre(4)
-          file3_data(index, 20) = mass
 
           ! file4 -- hcore_cz_diag.out
           file4_data(index, 1) = r_cz
@@ -1104,7 +1105,6 @@ contains
        if (firstCall) then
 
           ! get the data and time
-          
           call date_and_time(date_str, time_str, VALUES=values)
 
           ! get the output directory
@@ -1136,7 +1136,7 @@ contains
 
           ! energy
           write (un2, *) " "
-          write (un1, *) " "
+          write (un2, *) " "
           write (un2, 800) "output date: ", values(1), values(2), values(3)
           write (un2, 801) "output time: ", values(5), values(6), values(7)
           write (un2, 802) "output dir:  ", trim(cwd)
@@ -1147,7 +1147,7 @@ contains
           if (allocated(file3_data)) then
              ! sphrvel
              write (un3, *) " "
-             write (un1, *) " "
+             write (un3, *) " "
              write (un3, 800) "output date: ", values(1), values(2), values(3)
              write (un3, 801) "output time: ", values(5), values(6), values(7)
              write (un3, 802) "output dir:  ", trim(cwd)
@@ -1164,7 +1164,7 @@ contains
              
              ! convective boundary
              write (un4, *) " "
-             write (un1, *) " "
+             write (un4, *) " "
              write (un4, 800) "output date: ", values(1), values(2), values(3)
              write (un4, 801) "output time: ", values(5), values(6), values(7)
              write (un4, 802) "output dir:  ", trim(cwd)
@@ -1404,24 +1404,6 @@ contains
           
        enddo
     enddo
-
-!     write(*,*)'nzones: ',nzones, nzones_core
-!     write(*,*)'mass:   ',mass, mass_core
-    
-!     write(*,*)'vr:    ',vr_x,vr_y,vr_z,vr_tot
-!     write(*,*)'rhovr: ',rhovr_x,rhovr_y,rhovr_z,rhovr_tot
-
-!     write(*,*)'vc:    ',vc_x,vc_y,vc_z,vc_tot
-!     write(*,*)'rhovc: ',rhovc_x,rhovc_y,rhovc_z,rhovc_tot
-    
-!     write(*,*)'vtot:    ',vtot_x,vtot_y,vtot_z,vtot
-!     write(*,*)'rhovtot: ',rhovtot_x,rhovtot_y,rhovtot_z,rhovtot
-
-!     write(*,*)'Utot:    ',Utot_x,Utot_y,Utot_z,Utot
-!     write(*,*)'rhoUtot: ',rhoUtot_x,rhoUtot_y,rhoUtot_z,rhoUtot
-    
-!     write(*,*)    
-
 
   end subroutine diag_2d
 
@@ -1673,24 +1655,6 @@ contains
           enddo
        enddo
     enddo
-
-!     write(*,*)'nzones: ',nzones, nzones_core
-!     write(*,*)'mass:   ',mass, mass_core
-    
-!     write(*,*)'vr:    ',vr_x,vr_y,vr_z,vr_tot
-!     write(*,*)'rhovr: ',rhovr_x,rhovr_y,rhovr_z,rhovr_tot
-
-!     write(*,*)'vc:    ',vc_x,vc_y,vc_z,vc_tot
-!     write(*,*)'rhovc: ',rhovc_x,rhovc_y,rhovc_z,rhovc_tot
-    
-!     write(*,*)'vtot:    ',vtot_x,vtot_y,vtot_z,vtot
-!     write(*,*)'rhovtot: ',rhovtot_x,rhovtot_y,rhovtot_z,rhovtot
-
-!     write(*,*)'Utot:    ',Utot_x,Utot_y,Utot_z,Utot
-!     write(*,*)'rhoUtot: ',rhoUtot_x,rhoUtot_y,rhoUtot_z,rhoUtot
-    
-!     write(*,*)    
-
 
   end subroutine diag_3d
 
