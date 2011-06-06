@@ -1105,7 +1105,7 @@ contains
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)             
 
        do j = lo(2),hi(2)
-          y = prob_lo(1) + (dble(j)+HALF) * dx(2)             
+          y = prob_lo(2) + (dble(j)+HALF) * dx(2)             
           
           do i = lo(1),hi(1)
              x = prob_lo(1) + (dble(i)+HALF) * dx(1)             
