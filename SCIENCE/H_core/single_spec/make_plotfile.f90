@@ -174,6 +174,8 @@ contains
     use bl_constants_module
     use network, only: nspec
     use time_module, only: time
+!FIXME
+    use layout_module
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -214,6 +216,9 @@ contains
     integer :: n,r,j,n_1d,prec,comp,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
+!FIXME
+    type(boxarray) :: dummy_ba
+
 
     call build(bpt, "make_plotfile")
 
@@ -332,6 +337,16 @@ contains
 
     end if
 
+    ! build a cell-centered multifab to hold pi
+    do n=1,nlevs
+       call multifab_build(pi_cc(n), mla%la(n), 1, 0)
+       call setval(pi_cc(n), ZERO, all=.true.)
+    end do
+    
+    ! new function that average the nodal pi to cell-centers, then
+    ! normalized the entire signal to sum to 0
+    call make_pi_cc(mla,pi,pi_cc,the_bc_tower%bc_tower_array)
+    
     if (plot_base) then
 
        ! w0
@@ -416,6 +431,7 @@ contains
 
        !PIOVERP0 and P0PLUSPI
        do n=1,nlevs
+
           call multifab_copy_c(plotdata(n),icomp_pioverp0,pi_cc(n),1,1)
           call multifab_div_div_c(plotdata(n),icomp_pioverp0,plotdata(n),icomp_p0,1)
           call multifab_copy_c(plotdata(n),icomp_p0pluspi,pi_cc(n),1,1)
@@ -547,16 +563,6 @@ contains
        call ml_cc_restriction_c(plotdata(n-1),icomp_entropy,plotdata(n),icomp_entropy, &
                                 mla%mba%rr(n-1,:),1)
     end do
-
-    ! build a cell-centered multifab to hold pi
-    do n=1,nlevs
-       call multifab_build(pi_cc(n), mla%la(n), 1, 0)
-       call setval(pi_cc(n), ZERO, all=.true.)
-    end do
-
-    ! new function that average the nodal pi to cell-centers, then
-    ! normalized the entire signal to sum to 0
-    call make_pi_cc(mla,pi,pi_cc,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
 
