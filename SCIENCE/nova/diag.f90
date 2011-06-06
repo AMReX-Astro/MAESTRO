@@ -86,6 +86,8 @@ contains
     real(kind=dp_t) :: Mtot_env_sum, Mtot_env_sum_level, Mtot_env_sum_local
     real(kind=dp_t) :: Mtot_tot_sum, Mtot_tot_sum_level, Mtot_tot_sum_local
     real(kind=dp_t) :: Qnuc_sum, Qnuc_sum_level, Qnuc_sum_local
+    real(kind=dp_t) :: Pbase_sum, Pbase_sum_level, Pbase_sum_local
+    integer         :: Nbase, Nbase_level, Nbase_local
     
     integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: ng_s,ng_u,ng_n,ng_rhn,ng_rhe,ng_rw,ng_w,ng_wm
@@ -178,26 +180,42 @@ contains
        enuc_max_level = ZERO
        enuc_max_local = ZERO
 
+       Qnuc_sum       = ZERO
        Qnuc_sum_level = ZERO
        Qnuc_sum_local = ZERO
 
+       Pbase_sum       = ZERO
+       Pbase_sum_level = ZERO
+       Pbase_sum_local = ZERO
+       Nbase           = 0
+       Nbase_level     = 0
+       Nbase_local     = 0
+
+       MC12_env_sum       = ZERO
        MC12_env_sum_level = ZERO
        MC12_env_sum_local = ZERO
+       MC12_tot_sum       = ZERO
        MC12_tot_sum_level = ZERO
        MC12_tot_sum_local = ZERO
 
+       MCNO_env_sum       = ZERO
        MCNO_env_sum_level = ZERO
        MCNO_env_sum_local = ZERO
+       MCNO_tot_sum       = ZERO
        MCNO_tot_sum_level = ZERO
        MCNO_tot_sum_local = ZERO
 
+       Mmtl_env_sum       = ZERO
        Mmtl_env_sum_level = ZERO
        Mmtl_env_sum_local = ZERO
+       Mmtl_tot_sum       = ZERO
        Mmtl_tot_sum_level = ZERO
        Mmtl_tot_sum_local = ZERO
 
+       Mtot_env_sum       = ZERO
        Mtot_env_sum_level = ZERO
        Mtot_env_sum_local = ZERO
+       Mtot_tot_sum       = ZERO
        Mtot_tot_sum_level = ZERO
        Mtot_tot_sum_local = ZERO
 
@@ -236,7 +254,7 @@ contains
                              MCNO_env_sum_local, MCNO_tot_sum_local, &
                              Mmtl_env_sum_local, Mmtl_tot_sum_local, &
                              Mtot_env_sum_local, Mtot_tot_sum_local, &
-                             Qnuc_sum_local)
+                             Qnuc_sum_local, Pbase_sum_local, Nbase_local)
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_1d(n,newtime,dt,dx(n,:), &
@@ -254,7 +272,8 @@ contains
                              MCNO_env_sum_local, MCNO_tot_sum_local, &
                              Mmtl_env_sum_local, Mmtl_tot_sum_local, &
                              Mtot_env_sum_local, Mtot_tot_sum_local, &
-                             Qnuc_sum_local, mp(:,1,1,1))
+                             Qnuc_sum_local, Pbase_sum_local, Nbase_local, &
+                             mp(:,1,1,1))
              endif
 
           case (2)
@@ -274,7 +293,7 @@ contains
                              MCNO_env_sum_local, MCNO_tot_sum_local, &
                              Mmtl_env_sum_local, Mmtl_tot_sum_local, &
                              Mtot_env_sum_local, Mtot_tot_sum_local, &
-                             Qnuc_sum_local)
+                             Qnuc_sum_local, Pbase_sum_local, Nbase_local)
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_2d(n,newtime,dt,dx(n,:), &
@@ -292,7 +311,8 @@ contains
                              MCNO_env_sum_local, MCNO_tot_sum_local, &
                              Mmtl_env_sum_local, Mmtl_tot_sum_local, &
                              Mtot_env_sum_local, Mtot_tot_sum_local, &
-                             Qnuc_sum_local, mp(:,:,1,1))
+                             Qnuc_sum_local, Pbase_sum_local, Nbase_local, &
+                             mp(:,:,1,1))
              endif
 
           case (3)
@@ -322,7 +342,7 @@ contains
                                     MCNO_env_sum_local, MCNO_tot_sum_local, &
                                     Mmtl_env_sum_local, Mmtl_tot_sum_local, &
                                     Mtot_env_sum_local, Mtot_tot_sum_local, &
-                                    Qnuc_sum_local)
+                                    Qnuc_sum_local, Pbase_sum_local, Nbase_local)
                 else
                    mp => dataptr(mla%mask(n), i)
                    call diag_3d_sph(n,newtime,dt,dx(n,:), &
@@ -342,7 +362,8 @@ contains
                                     MCNO_env_sum_local, MCNO_tot_sum_local, &
                                     Mmtl_env_sum_local, Mmtl_tot_sum_local, &
                                     Mtot_env_sum_local, Mtot_tot_sum_local, &
-                                    Qnuc_sum_local, mp(:,:,:,1))
+                                    Qnuc_sum_local, Pbase_sum_local, Nbase_local, &
+                                    mp(:,:,:,1))
                 endif
 
              else
@@ -362,7 +383,7 @@ contains
                                 MCNO_env_sum_local, MCNO_tot_sum_local, &
                                 Mmtl_env_sum_local, Mmtl_tot_sum_local, &
                                 Mtot_env_sum_local, Mtot_tot_sum_local, &
-                                Qnuc_sum_local)
+                                Qnuc_sum_local, Pbase_sum_local, Nbase_local)
                 else
                    mp => dataptr(mla%mask(n), i)
                    call diag_3d(n,newtime,dt,dx(n,:), &
@@ -380,7 +401,8 @@ contains
                                 MCNO_env_sum_local, MCNO_tot_sum_local, &
                                 Mmtl_env_sum_local, Mmtl_tot_sum_local, &
                                 Mtot_env_sum_local, Mtot_tot_sum_local, &
-                                Qnuc_sum_local, mp(:,:,:,1))
+                                Qnuc_sum_local, Pbase_sum_local, Nbase_local, &
+                                mp(:,:,:,1))
                 endif
 
              endif
@@ -402,6 +424,12 @@ contains
                             proc = parallel_IOProcessorNode())
 
        call parallel_reduce(Qnuc_sum_level, Qnuc_sum_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(Pbase_sum_level, Pbase_sum_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(Nbase_level, Nbase_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
        call parallel_reduce(MC12_env_sum_level, MC12_env_sum_local, MPI_SUM, &
@@ -438,6 +466,9 @@ contains
           enuc_max = max(enuc_max, enuc_max_level)
 
           Qnuc_sum = Qnuc_sum + Qnuc_sum_level
+
+          Pbase_sum = Pbase_sum + Pbase_sum_level
+          Nbase     = Nbase     + Nbase_level
 
           MC12_env_sum = MC12_env_sum + MC12_env_sum_level
           MCNO_env_sum = MCNO_env_sum + MCNO_env_sum_level
@@ -498,7 +529,8 @@ contains
                            "mass in envelope (g)",     &
                            "M(metal) in envelope (g)", &
                            "M(CNO) in envelope (g)",   &
-                           "M(C-12) in envelope (g)"
+                           "M(C-12) in envelope (g)",  &
+                           "pressure at base (ba)"
 
           firstCall_io = .false.
        endif
@@ -506,7 +538,8 @@ contains
        ! write out the data
        write (un,1000) newtime, Mach_max, temp_max, enuc_max, Qnuc_sum, &
                        Mtot_tot_sum, Mmtl_tot_sum, MCNO_tot_sum, MC12_tot_sum, &
-                       Mtot_env_sum, Mmtl_env_sum, MCNO_env_sum, MC12_env_sum
+                       Mtot_env_sum, Mmtl_env_sum, MCNO_env_sum, MC12_env_sum, &
+                       Pbase_sum / Nbase
 
        close(un)
 
@@ -554,13 +587,14 @@ contains
                      MCNO_env_sum, MCNO_tot_sum, &
                      Mmtl_env_sum, Mmtl_tot_sum, &
                      Mtot_env_sum, Mtot_tot_sum, &
-                     Qnuc_sum, mask)
+                     Qnuc_sum, Pbase_sum, Nbase, mask)
 
-    use variables, only: rho_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, press_comp
     use bl_constants_module, only: HALF
     use network, only: nspec, network_species_index
-    use probin_module, only: prob_lo, CEBoundary
+    use probin_module, only: prob_lo
     use eos_module
+    use aux_data_module, only: aux_data
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw
     real (kind=dp_t), intent(in   ) ::         s(lo(1)-ng_s:,:)
@@ -578,6 +612,8 @@ contains
     real (kind=dp_t), intent(inout) :: Mmtl_env_sum, Mmtl_tot_sum
     real (kind=dp_t), intent(inout) :: Mtot_env_sum, Mtot_tot_sum
     real (kind=dp_t), intent(inout) :: Qnuc_sum
+    real (kind=dp_t), intent(inout) :: Pbase_sum
+    integer,          intent(inout) :: Nbase
     logical,          intent(in   ), optional :: mask(lo(1):)
 
     !     Local variables
@@ -695,7 +731,7 @@ contains
           Mtot_tot_sum = Mtot_tot_sum + Mtot_cell
 
           ! accumulate mass into envelope if called for
-          if (x > CEBoundary) then
+          if (x > aux_data(1)) then
              MC12_env_sum = MC12_env_sum + MC12_cell
              MCNO_env_sum = MCNO_env_sum + MCNO_cell
              Mmtl_env_sum = Mmtl_env_sum + Mmtl_cell
@@ -704,6 +740,10 @@ contains
 
           ! accumulate Q
           Qnuc_sum = Qnuc_sum + Mtot_cell*rho_Hnuc(i)/s(i,rho_comp)
+
+          ! accumulate pressure
+          Pbase_sum = Pbase_sum + p0(i)
+          Nbase     = Nbase + 1
 
        endif  ! cell valid
 
@@ -727,13 +767,14 @@ contains
                      MCNO_env_sum, MCNO_tot_sum, &
                      Mmtl_env_sum, Mmtl_tot_sum, &
                      Mtot_env_sum, Mtot_tot_sum, &
-                     Qnuc_sum, mask)
+                     Qnuc_sum, Pbase_sum, Nbase, mask)
 
-    use variables, only: rho_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, press_comp
     use bl_constants_module, only: HALF
     use network, only: nspec, network_species_index
-    use probin_module, only: prob_lo, CEBoundary
+    use probin_module, only: prob_lo
     use eos_module
+    use aux_data_module, only: aux_data
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
@@ -751,6 +792,8 @@ contains
     real (kind=dp_t), intent(inout) :: Mmtl_env_sum, Mmtl_tot_sum
     real (kind=dp_t), intent(inout) :: Mtot_env_sum, Mtot_tot_sum
     real (kind=dp_t), intent(inout) :: Qnuc_sum
+    real (kind=dp_t), intent(inout) :: Pbase_sum
+    integer,          intent(inout) :: Nbase
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
 
     !     Local variables
@@ -871,7 +914,7 @@ contains
              Mtot_tot_sum = Mtot_tot_sum + Mtot_cell
 
              ! accumulate mass into envelope if called for
-             if (y > CEBoundary) then
+             if (y > aux_data(1)) then
                 MC12_env_sum = MC12_env_sum + MC12_cell
                 MCNO_env_sum = MCNO_env_sum + MCNO_cell
                 Mmtl_env_sum = Mmtl_env_sum + Mmtl_cell
@@ -880,6 +923,10 @@ contains
 
              ! accumulate Q
              Qnuc_sum = Qnuc_sum + Mtot_cell*rho_Hnuc(i,j)/s(i,j,rho_comp)
+
+             ! accumulate pressure
+             Pbase_sum = Pbase_sum + p0(j)
+             Nbase     = Nbase + 1
 
           endif  ! cell valid
 
@@ -904,13 +951,14 @@ contains
                      MCNO_env_sum, MCNO_tot_sum, &
                      Mmtl_env_sum, Mmtl_tot_sum, &
                      Mtot_env_sum, Mtot_tot_sum, &
-                     Qnuc_sum, mask)
+                     Qnuc_sum, Pbase_sum, Nbase, mask)
 
-    use variables, only: rho_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, press_comp
     use bl_constants_module, only: HALF
     use network, only: nspec, network_species_index
-    use probin_module, only: prob_lo, CEBoundary
+    use probin_module, only: prob_lo
     use eos_module
+    use aux_data_module, only: aux_data
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
@@ -928,6 +976,8 @@ contains
     real (kind=dp_t), intent(inout) :: Mmtl_env_sum, Mmtl_tot_sum
     real (kind=dp_t), intent(inout) :: Mtot_env_sum, Mtot_tot_sum
     real (kind=dp_t), intent(inout) :: Qnuc_sum
+    real (kind=dp_t), intent(inout) :: Pbase_sum
+    integer,          intent(inout) :: Nbase
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
@@ -1054,12 +1104,19 @@ contains
                 Mtot_tot_sum = Mtot_tot_sum + Mtot_cell
 
                 ! accumulate mass into envelope if called for
-                if (z > CEBoundary) then
+                if (z > aux_data(1)) then
                    MC12_env_sum = MC12_env_sum + MC12_cell
                    MCNO_env_sum = MCNO_env_sum + MCNO_cell
                    Mmtl_env_sum = Mmtl_env_sum + Mmtl_cell
                    Mtot_env_sum = Mtot_env_sum + Mtot_cell
                 end if
+
+                ! accumulate Q
+                Qnuc_sum = Qnuc_sum + Mtot_cell*rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
+
+                ! accumulate pressure
+                Pbase_sum = Pbase_sum + p0(j)
+                Nbase     = Nbase + 1
 
              endif  ! cell valid
 
@@ -1087,13 +1144,14 @@ contains
                          MCNO_env_sum, MCNO_tot_sum, &
                          Mmtl_env_sum, Mmtl_tot_sum, &
                          Mtot_env_sum, Mtot_tot_sum, &
-                         Qnuc_sum, mask)
+                        Qnuc_sum, Pbase_sum, Nbase, mask)
 
-    use variables, only: rho_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, press_comp
     use bl_constants_module
     use network, only: nspec, network_species_index
-    use probin_module, only: prob_lo, CEBoundary
+    use probin_module, only: prob_lo
     use eos_module
+    use aux_data_module, only: aux_data
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw, ng_w, ng_wm, ng_n
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
@@ -1115,6 +1173,8 @@ contains
     real (kind=dp_t), intent(inout) :: Mmtl_env_sum, Mmtl_tot_sum
     real (kind=dp_t), intent(inout) :: Mtot_env_sum, Mtot_tot_sum
     real (kind=dp_t), intent(inout) :: Qnuc_sum
+    real (kind=dp_t), intent(inout) :: Pbase_sum
+    integer,          intent(inout) :: Nbase
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
@@ -1241,12 +1301,19 @@ contains
                 Mtot_tot_sum = Mtot_tot_sum + Mtot_cell
 
                 ! accumulate mass into envelope if called for
-                if (z > CEBoundary) then
+                if (z > aux_data(1)) then
                    MC12_env_sum = MC12_env_sum + MC12_cell
                    MCNO_env_sum = MCNO_env_sum + MCNO_cell
                    Mmtl_env_sum = Mmtl_env_sum + Mmtl_cell
                    Mtot_env_sum = Mtot_env_sum + Mtot_cell
                 end if
+
+                ! accumulate Q
+                Qnuc_sum = Qnuc_sum + Mtot_cell*rho_Hnuc(i,j,k)/s(i,j,k,rho_comp)
+
+                ! accumulate pressure
+                Pbase_sum = Pbase_sum + s(i,j,k,press_comp)
+                Nbase     = Nbase + 1
 
              endif  ! cell valid
 
