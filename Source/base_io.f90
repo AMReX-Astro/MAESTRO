@@ -20,22 +20,23 @@ contains
     
     use parallel, only: parallel_IOProcessor
     use bl_prof_module, only: bl_prof_timer, build, destroy
-    use geometry, only : dr, nr, nlevs_radial
+    use geometry, only : dr, nr, nlevs_radial, spherical
     use network, only: nspec
     use variables, only: rho_comp, rhoh_comp
-    use bl_constants_module, only: HALF
+    use bl_constants_module, only: HALF, ZERO
 
     integer          , intent(in) :: istep
     character(len=*) , intent(in) :: chk_name
     real(kind=dp_t)  , intent(in) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(in) :: p0(:,0:),gamma1bar(:,0:)
+    real(kind=dp_t)  , intent(in) :: etarho_ec(:,0:),etarho_cc(:,0:)
     real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:)
     real(kind=dp_t)  , intent(in) :: tempbar(:,0:), tempbar_init(:,0:)
     real(kind=dp_t)  , intent(in) :: w0(:,0:)
-    real(kind=dp_t)  , intent(in) :: etarho_ec(:,0:),etarho_cc(:,0:)
+    real(kind=dp_t)  , intent(in) :: problo
 
     character(len=256) :: state_name, w0_name
-    real(kind=dp_t) :: base_r, problo
+    real(kind=dp_t) :: base_r, start_rad
     character(len=256) :: out_name
     integer :: n, r
 
@@ -52,6 +53,12 @@ contains
        write(unit=w0_name,fmt='("model_ec_",i6.6)') istep
     endif
     
+    if (spherical .eq. 0) then
+       start_rad = problo
+    else
+       start_rad = ZERO
+    endif
+
     if (parallel_IOProcessor()) then
 
        print*,"Writing 1D data to ", trim(chk_name)
@@ -64,7 +71,7 @@ contains
 
        do n=1,nlevs_radial
           do r=0,nr(n)-1
-             base_r = problo + (dble(r)+HALF) * dr(n)
+             base_r = start_rad + (dble(r)+HALF) * dr(n)
              write(99,1000)  r, &                ! column 1
                              base_r, &           ! column 2
                              rho0(n,r), &        ! column 3
