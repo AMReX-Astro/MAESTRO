@@ -7,4 +7,4 @@ symmetric_heat                      logical            .false.
 tag_density_1                       real               5.d0
 tag_density_2                       real               10.d0
 tag_density_3                       real               10.d0
-
+R_core_diag                         real               7.6d10

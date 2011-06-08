@@ -44,6 +44,7 @@
 module diag_module
 
   use bl_types, only: dp_t
+  use probin_module, only: R_core_diag
 
   implicit none
 
@@ -61,8 +62,6 @@ module diag_module
   integer, parameter :: n_file4 = 1
 
   integer, save :: nstored = 0
-
-  real (kind=dp_t), parameter :: r_core = 7.6d10
 
   public :: diag, flush_diag
 
@@ -1116,7 +1115,7 @@ contains
           write (un1, 800) "output date: ", values(1), values(2), values(3)
           write (un1, 801) "output time: ", values(5), values(6), values(7)
           write (un1, 802) "output dir:  ", trim(cwd)
-          write (un1, *)   "# v corresponds to averages over the convection zone, R<=",r_core
+          write (un1, *)   "# v corresponds to averages over the convection zone, R<=",R_core_diag
           write (un1, *)   "# U corresponds to averages over the entire valid region"
           write (un1, *)   "#   (ie, the region interior to the sponged region)"
           write (un1, 999) trim(job_name)
@@ -1350,7 +1349,7 @@ contains
 !$omp end critical
 
              ! only include in vtot if inside the core
-             if ( dsqrt(x*x + y*y ) .le. r_core ) then
+             if ( dsqrt(x*x + y*y ) .le. R_core_diag ) then
                 
                 vtot_x = vtot_x + weight*vx
                 vtot_y = vtot_y + weight*vy
@@ -1473,7 +1472,7 @@ contains
     !     Local variables
     logical            :: cell_valid
     integer            :: i, j, k
-    real (kind=dp_t), parameter   :: r_core = 7.47d10
+    real (kind=dp_t), parameter   :: R_core_diag = 7.47d10
     real (kind=dp_t)   :: velr, velc, vel, weight
     real (kind=dp_t)   :: x, y, z, rloc
     real (kind=dp_t)   :: vx, vy, vz
@@ -1565,7 +1564,7 @@ contains
 
                 rloc = dsqrt(x*x + y*y + z*z)
                 ! only include in vtot if inside the core
-                if ( rloc .le. r_core ) then
+                if ( rloc .le. R_core_diag ) then
 
                    ! "circumferential" velocity
                    vc_max = max(vc_max,velc)
