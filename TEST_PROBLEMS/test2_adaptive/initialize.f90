@@ -87,7 +87,6 @@ contains
 
     real(dp_t), allocatable :: psi_temp(:,:)
     real(dp_t), allocatable :: etarho_cc_temp(:,:)
-    real(dp_t), allocatable :: etarho_ec_temp(:,:)
     real(dp_t), allocatable :: w0_temp(:,:)
   
     character(len=5)   :: check_index
@@ -348,7 +347,6 @@ contains
        
        allocate(psi_temp      (1,0:nr_fine_old-1))
        allocate(etarho_cc_temp(1,0:nr_fine_old-1))
-       allocate(etarho_ec_temp(1,0:nr_fine_old))
        allocate(w0_temp       (1,0:nr_fine_old))
        
        ! deallocate the following:
@@ -451,10 +449,9 @@ contains
        call init_radial(nlevs,mla%mba)
        call init_cutoff(nlevs)
 
-       ! make temporary copy of old psi, etarho_cc, etarho_ec, and w0
+       ! make temporary copy of old psi, etarho_cc, and w0
        psi_temp       = psi
        etarho_cc_temp = etarho_cc
-       etarho_ec_temp = etarho_ec
        w0_temp        = w0
 
        ! copy outer pressure for reference
@@ -493,21 +490,29 @@ contains
           end if
        end do
 
-       ! fill etarho_ec and w0 using linear interpolation
+       ! fill w0 using linear interpolation
        do r=0,nr_fine
           if (r .gt. 2*nr_fine_old) then
-             etarho_ec(1,r) = etarho_ec_temp(1,nr_fine_old)
-             w0       (1,r) = w0_temp       (1,nr_fine_old)
+             w0(1,r) = w0_temp(1,nr_fine_old)
           else
              if (mod(r,2) .eq. 0) then
-                etarho_ec(1,r) = etarho_ec_temp(1,r/2)
-                w0       (1,r) = w0_temp       (1,r/2)
+                w0(1,r) = w0_temp(1,r/2)
              else
-                etarho_ec(1,r) = 0.5d0*etarho_ec_temp(1,r/2)+0.5d0*etarho_ec_temp(1,r/2+1)
-                w0       (1,r) = 0.5d0*w0_temp       (1,r/2)+0.5d0*w0_temp       (1,r/2+1)
+                w0(1,r) = 0.5d0*w0_temp(1,r/2)+0.5d0*w0_temp(1,r/2+1)
              end if
           end if
        end do
+
+       ! put eta on base state edges
+       ! note that in spherical the base state has no refinement
+       ! the 0th value of etarho = 0, since U dot . e_r must be 
+       ! zero at the center (since e_r is not defined there)
+       etarho_ec(1,0) = ZERO
+       do r=1,nr_fine-1
+          etarho_ec(1,r) = HALF*(etarho_cc(1,r) + etarho_cc(1,r-1))
+       enddo
+       ! probably should do some better extrapolation here eventually
+       etarho_ec(1,nr_fine) = etarho_cc(1,nr_fine-1)
 
        ! compute rho0 by calling average
        call average(mla,sold,rho0_old,dx,rho_comp)
