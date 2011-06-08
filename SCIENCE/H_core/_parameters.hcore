@@ -3,4 +3,8 @@ velpert_amplitude                   real               1.d3
 velpert_radius                      real               8.15d10              
 velpert_scale                       real               9.d10               
 velpert_steep                       real               1.d10
+symmetric_heat                      logical            .false.
+tag_density_1                       real               5.d0
+tag_density_2                       real               10.d0
+tag_density_3                       real               10.d0
 

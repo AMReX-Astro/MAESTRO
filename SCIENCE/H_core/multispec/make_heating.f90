@@ -24,6 +24,7 @@ contains
     use geometry, only: nlevs_radial, nr_fine, nr, dr, spherical
     use average_module
     use fill_3d_module
+    use probin_module, only: symmetric_heat
 
     type(ml_layout), intent(in   ) :: mla
     real(kind=dp_t), intent(in   ) :: tempbar_init(:,0:)
@@ -39,7 +40,6 @@ contains
     real(kind=dp_t), pointer :: hp(:,:,:,:)
     type(bl_prof_timer), save :: bpt
 
-    logical, parameter :: symmetric_heat = .false.
     real(kind=dp_t), allocatable :: rho0(:,:)
     real(kind=dp_t), allocatable :: T0(:,:)
     real(kind=dp_t), allocatable :: rhoh0(:,:)
@@ -257,29 +257,29 @@ contains
     rho_Hext = 0.0_dp_t
 
 !..............................................................................
-     h1_comp = spec_comp - 1 + network_species_index("hydrogen-1")
-     c12_comp = spec_comp - 1 + network_species_index("carbon-12")
-     n14_comp = spec_comp - 1 + network_species_index("nitrogen-14")
-     o16_comp = spec_comp - 1 + network_species_index("oxygen-16")
+!      h1_comp = spec_comp - 1 + network_species_index("hydrogen-1")
+!      c12_comp = spec_comp - 1 + network_species_index("carbon-12")
+!      n14_comp = spec_comp - 1 + network_species_index("nitrogen-14")
+!      o16_comp = spec_comp - 1 + network_species_index("oxygen-16")
 
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-          rho = s(i,j,rho_comp)
-          T_6_third = (s(i,j,temp_comp) / 1.0d6) ** THIRD
-          tmp1 = s(i,j,c12_comp)
-          tmp2 = s(i,j,n14_comp)
-          tmp3 = s(i,j,o16_comp)
-          X_CNO = (tmp1 + tmp2 + tmp3) / rho
-          X_1 = s(i,j,h1_comp) / rho
-          tmp1 =   2.7d-3 * T_6_third
-          tmp2 = -7.78d-3 * T_6_third**2
-          tmp3 = -1.49d-4 * T_6_third**3
-          g14 = 1.0_dp_t + tmp1 + tmp2 + tmp3
-          tmp1 = 8.67d27 * g14 * X_CNO * X_1 * rho / T_6_third**2
-          tmp2 = dexp(-1.5228d2 / T_6_third)
-          rho_Hext(i,j) = rho * tmp1 * tmp2
-       enddo
-    enddo
+!     do j = lo(2), hi(2)
+!        do i = lo(1), hi(1)
+!           rho = s(i,j,rho_comp)
+!           T_6_third = (s(i,j,temp_comp) / 1.0d6) ** THIRD
+!           tmp1 = s(i,j,c12_comp)
+!           tmp2 = s(i,j,n14_comp)
+!           tmp3 = s(i,j,o16_comp)
+!           X_CNO = (tmp1 + tmp2 + tmp3) / rho
+!           X_1 = s(i,j,h1_comp) / rho
+!           tmp1 =   2.7d-3 * T_6_third
+!           tmp2 = -7.78d-3 * T_6_third**2
+!           tmp3 = -1.49d-4 * T_6_third**3
+!           g14 = 1.0_dp_t + tmp1 + tmp2 + tmp3
+!           tmp1 = 8.67d27 * g14 * X_CNO * X_1 * rho / T_6_third**2
+!           tmp2 = dexp(-1.5228d2 / T_6_third)
+!           rho_Hext(i,j) = rho * tmp1 * tmp2
+!        enddo
+!     enddo
 !.............................................................................. 
 
   end subroutine get_rho_Hext_2d

@@ -24,6 +24,7 @@ contains
     use geometry, only: nlevs_radial, nr_fine, nr, dr, spherical
     use average_module
     use fill_3d_module
+    use probin_module, only: symmetric_heat
 
     type(ml_layout), intent(in   ) :: mla
     real(kind=dp_t), intent(in   ) :: tempbar_init(:,0:)
@@ -39,7 +40,6 @@ contains
     real(kind=dp_t), pointer :: hp(:,:,:,:)
     type(bl_prof_timer), save :: bpt
 
-    logical, parameter :: symmetric_heat = .false.
     real(kind=dp_t), allocatable :: rho0(:,:)
     real(kind=dp_t), allocatable :: T0(:,:)
     real(kind=dp_t), allocatable :: rhoh0(:,:)
@@ -69,7 +69,7 @@ contains
           
        ! compute heating using base state
        do n=1,nlevs_radial
-
+          write(*,*)'n ', n
           call get_symm_rho_Hext(rhoh0(n,:),rho0(n,:),T0(n,:),nr(n),dr(n))
        
        enddo
@@ -155,6 +155,7 @@ contains
     ibegin = 0
     intgrl = 0.d0
 
+    ! need to update this for multilevel.  look at enforce_hse.f90
     do i = 0, nr-1
        rho = rho0(i)
 
@@ -171,6 +172,7 @@ contains
        g14 = 1.0_dp_t + tmp1 + tmp2 + tmp3
        tmp1 = 8.67d27 * g14 * X_CNO * X_1 * rho / T_6_third**2
        tmp2 = dexp(-1.5228d2 / T_6_third)
+       write(*,*) i, rho, tmp1, tmp2
        rho_Hext(i) = rho * tmp1 * tmp2
           
 
