@@ -1294,12 +1294,6 @@ contains
     ! level of refinement.
     weight = 1.d0 / 8.d0**(n-1)
 
-!$omp parallel do private(i,j,x,y,cell_valid,vel) &
-!$omp reduction(max:U_max,Mach_max) &
-!$omp reduction(vtot_x,vtot_y,vtot, &
-!$omp           rhovtot_x,rhovtot_y,rhovtot, &
-!$omp           mass,nzones,mass_core, nzones_core, &
-!$omp           nuc_ener,kin_ener,int_ener)
     do j = lo(2), hi(2)
        y = prob_lo(2) + (dble(j)+HALF) * dx(2)
 
@@ -1337,7 +1331,6 @@ contains
              mass = mass + weight*s(i,j,rho_comp)
              nzones = nzones + weight
 
-!$omp critical
              ! Mach number
              Mach_max = max(Mach_max,vel/cs_eos(1))
              
@@ -1347,8 +1340,6 @@ contains
                 coord_Umax(1) = x
                 coord_Umax(2) = y
              endif
-
-!$omp end critical
 
              ! only include in vtot if inside the core
              if ( dsqrt(x*x + y*y ) .le. R_core_diag ) then
@@ -1366,14 +1357,12 @@ contains
                 mass_core = mass_core + weight*s(i,j,rho_comp)
                 nzones_core = nzones_core + weight
 
-!$omp critical
                 ! max U and  location
                 if (vel > vtot_max) then
                    vtot_max = vel
                    coord_vtot(1) = x
                    coord_vtot(2) = y
                 endif
-!$omp end critical
 
              endif
              
@@ -1488,17 +1477,6 @@ contains
        call bl_error("ERROR: geometry not spherical in diag")
     endif
 
-!$omp parallel do private(i,j,k,x,y,z,cell_valid,velr,vel,velc) &
-!$omp reduction(max:vr_max,vc_max,U_max,Mach_max) &
-!$omp reduction(vr_x,vr_y,vr_z,vr_tot, &
-!$omp           rhovr_x,rhovr_y,rhovr_z,rhovr_tot, &
-!$omp           vrvt, &
-!$omp           vc_x,vc_y,vc_z,vc_tot, &
-!$omp           rhovc_x,rhovc_y,rhovc_z,rhovc_tot, &
-!$omp           vtot_x,vtot_y,vtot_z,vtot, &
-!$omp           rhovtot_x,rhovtot_y,rhovtot_z,rhovtot, &
-!$omp           mass,nzones,mass_core, nzones_core, &
-!$omp           nuc_ener,kin_ener,int_ener)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
@@ -1585,7 +1563,6 @@ contains
                 mass = mass + weight*s(i,j,k,rho_comp)
                 nzones = nzones + weight
 
-!$omp critical
                 ! max U and  location
                 if (vel > U_max) then
                    U_max = vel
@@ -1593,8 +1570,6 @@ contains
                    coord_Umax(2) = y
                    coord_Umax(3) = z
                 endif
-
-!$omp end critical
 
                 rloc = dsqrt(x*x + y*y + z*z)
                 ! only include in vtot if inside the core
@@ -1614,7 +1589,6 @@ contains
                    mass_core = mass_core + weight*s(i,j,k,rho_comp)
                    nzones_core = nzones_core + weight
 
-!$omp critical
                    ! max U and  location
                    if (vel > vtot_max) then
                       vtot_max = vel
@@ -1622,7 +1596,6 @@ contains
                       coord_vtot(2) = y
                       coord_vtot(3) = z
                    endif
-!$omp end critical
 
                 endif
 

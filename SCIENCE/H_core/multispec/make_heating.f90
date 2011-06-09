@@ -308,11 +308,12 @@ contains
     rho_Hext = 0.0_dp_t
 
 !..............................................................................
-     h1_comp = spec_comp - 1 + network_species_index("hydrogen-1")
-     c12_comp = spec_comp - 1 + network_species_index("carbon-12")
-     n14_comp = spec_comp - 1 + network_species_index("nitrogen-14")
-     o16_comp = spec_comp - 1 + network_species_index("oxygen-16")
-
+    h1_comp = spec_comp - 1 + network_species_index("hydrogen-1")
+    c12_comp = spec_comp - 1 + network_species_index("carbon-12")
+    n14_comp = spec_comp - 1 + network_species_index("nitrogen-14")
+    o16_comp = spec_comp - 1 + network_species_index("oxygen-16")
+    
+    !$OMP PARALLEL DO PRIVATE(i,j,k,rho,T_6_third,tmp1,tmp2,tmp3,X_CNO,X_1,g14)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -331,8 +332,9 @@ contains
              tmp2 = dexp(-1.5228d2 / T_6_third)
              rho_Hext(i,j,k) = rho * tmp1 * tmp2
           enddo
-      enddo
+       enddo
     enddo
+    !$OMP END PARALLEL DO
 !..............................................................................
     
   end subroutine get_rho_Hext_3d
