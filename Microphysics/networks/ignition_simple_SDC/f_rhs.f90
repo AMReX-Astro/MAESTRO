@@ -171,8 +171,8 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   ! compute the enthalpy source from reactions (note: eventually, we
   ! we will to add rho_Hext here too)
   rho_Hnuc = 0.0d0
-  do n = 1, nspec
-     rho_Hnuc = rho_Hnuc - ebin(n)*dens*ydot(n)
+  do k = 1, nspec
+     rho_Hnuc = rho_Hnuc - ebin(k)*dens*ydot(k)
   enddo
 
   ! now make ydots refer to rhoX and include the sdc sources
