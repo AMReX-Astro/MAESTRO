@@ -1,0 +1,89 @@
+&PROBIN
+ model_file = "s15-hburn.hybrid.2268"
+ drdxfac = 5
+
+ n_cellx = 512
+ n_celly = 512
+ n_cellz = 512
+ max_grid_size = 32
+
+ base_cutoff_density = 1.d-4
+ anelastic_cutoff = 1.d-4
+ buoyancy_cutoff_factor = 5.d2
+
+ do_sponge = .true.
+ sponge_center_density = 5.d-1
+ sponge_start_factor = 1.5d0
+ sponge_kappa = 1.5d-3
+
+ max_mg_bottom_nlevels = 3
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
+
+ spherical_in = 1
+ octant = F
+
+ dm_in = 3
+
+ prob_hi_x = 2.d11
+ prob_hi_y = 2.d11
+ prob_hi_z = 2.d11
+
+ prob_lo_x = -2.d11
+ prob_lo_y = -2.d11
+ prob_lo_z = -2.d11
+
+! restart = 5100
+
+ max_step  = 99999
+ init_iter = 1
+ init_divu_iter = 1
+ do_initial_projection = T
+
+ stop_time = 5.72d10
+
+ plot_base_name = "plt"
+ plot_int  = 5
+ chk_int  = 100
+
+ cflfac = 0.7d0
+ init_shrink = 1.0d0
+ max_dt_growth = 1.05d0
+ max_dt = 7.5d2
+ use_soundspeed_firstdt = T
+ use_divu_firstdt = T
+
+ bcx_lo = 12
+ bcy_lo = 12
+ bcz_lo = 12
+
+ bcx_hi = 12
+ bcy_hi = 12
+ bcz_hi = 12
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+ do_burning = F
+
+ enthalpy_pred_type = 1
+ evolve_base_state = F
+
+ dpdt_factor = 0.0d0
+
+ use_tfromp = T
+
+ single_prec_plotfiles = T
+
+ use_eos_coulomb = T
+
+ plot_Hext = T
+ plot_omegadot = F 
+ plot_Hnuc = F
+ plot_base = F
+ plot_ad_excess = F
+ plot_gpi = F
+ plot_trac = F
+
+/
