@@ -2,6 +2,8 @@ NDEBUG := t
 MPI    := t
 OMP    :=
 
+SDC :=
+
 COMP := Intel
 
 MKVERBOSE := t
@@ -13,7 +15,12 @@ FPARALLEL := ../..
 # define the physics packages to build this problem 
 EOS_DIR := extern/EOS/helmeos
 CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
-NETWORK_DIR := extern/networks/hotcno
+
+ifdef SDC
+  NETWORK_DIR := extern/networks/approx8_SDC
+else
+  NETWORK_DIR := extern/networks/approx8
+endif
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique

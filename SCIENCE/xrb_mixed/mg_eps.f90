@@ -29,8 +29,11 @@ module mg_eps_module
 
 
   ! tolerances for the HG projection
-  real (kind=dp_t) :: eps_hg = 1.d-11
-  real (kind=dp_t) :: eps_hg_max = 1.d-10
+!  real (kind=dp_t) :: eps_hg = 1.d-10
+!  real (kind=dp_t) :: eps_hg_max = 1.d-10
+! SDC HACK because evolve_base_state = F
+  real (kind=dp_t) :: eps_hg = 4.d-10
+  real (kind=dp_t) :: eps_hg_max = 4.d-10
 
   real (kind=dp_t) :: hg_level_factor = 10.d0
 
