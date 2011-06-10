@@ -669,6 +669,7 @@ contains
 
     end if ! end spherical restart_into_finer initialization
 
+    call destroy(mba_old)
     call destroy(mba)
 
   end subroutine initialize_from_restart
