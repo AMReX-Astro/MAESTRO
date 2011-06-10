@@ -35,7 +35,8 @@ contains
     use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
          ppm_type, bds_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
          check_base_name, use_tfromp, cflfac, dm_in, restart_with_vel_field, &
-         model_file, do_smallscale, fix_base_state
+         model_file, do_smallscale, fix_base_state, max_grid_size_1, &
+         change_max_grid_size_1
     use average_module
     use make_grav_module
     use enforce_HSE_module
@@ -66,7 +67,7 @@ contains
     real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
 
     ! local
-    type(ml_boxarray) :: mba
+    type(ml_boxarray) :: mba, mba_old
     type(box)         :: domain
     integer           :: domhi(dm_in)
 
@@ -88,6 +89,8 @@ contains
 
     type(layout) :: la
 
+    type(box)    :: bxs
+
     real(dp_t), allocatable :: psi_temp(:,:)
     real(dp_t), allocatable :: etarho_cc_temp(:,:)
     real(dp_t), allocatable :: w0_temp(:,:)
@@ -97,9 +100,23 @@ contains
     character(len=256) :: check_file_name
 
     ! create mba, chk stuff, time, and dt
-    call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
+    call fill_restart_data(restart, mba_old, chkdata, chk_p, chk_dsdt, chk_src_old, &
                            chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, &
                            chk_rho_Hext,chk_thermal2, dt)
+
+    if (change_max_grid_size_1) then
+       ! Change max grid size if inputs file calls for it
+       ! rebuild level 1 box array 
+       ! for now just copy higher level boxarrays
+       ! regrid will take care of the higher levels when it's called
+       call ml_boxarray_copy(mba, mba_old)
+       call box_build_2(bxs,lwb(mba_old%pd(1)),upb(mba_old%pd(1)))
+       call destroy(mba%bas(1))
+       call boxarray_build_bx(mba%bas(1),bxs)
+       call boxarray_maxsize(mba%bas(1),max_grid_size_1)
+    else
+       call ml_boxarray_copy(mba, mba_old)       
+    end if
 
     ! create mla
     call ml_layout_build(mla,mba,pmask)

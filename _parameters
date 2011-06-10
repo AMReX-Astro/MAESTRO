@@ -369,6 +369,9 @@ max_grid_size_2                     integer            -1
 # level 3 (the second refined level) and beyond.  Defaults to {\tt max\_grid\_size}.
 max_grid_size_3                     integer            -1
 
+# Change the max grid size on the base level on restart 
+change_max_grid_size_1              logical            .false.  
+
 # How often we regrid.
 regrid_int                          integer            -1                  
 
