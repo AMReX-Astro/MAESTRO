@@ -91,17 +91,17 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer :: i, j
-    integer, save :: ih1, ic12, in14, io16
+    integer, save :: ilh1, ilc12, iln14, ilo16
 
     real(kind=dp_t) :: rho, temp, T6, T613, X_CNO, X_1, g14, eps_CNO
 
     logical, save :: firstCall = .true.
 
     if (firstCall) then
-       ih1 =  network_species_index("hydrogen-1")
-       ic12 = network_species_index("carbon-12")
-       in14 = network_species_index("nitrogen-14")
-       io16 = network_species_index("oxygen-16")
+       ilh1 =  network_species_index("hydrogen-1")
+       ilc12 = network_species_index("carbon-12")
+       iln14 = network_species_index("nitrogen-14")
+       ilo16 = network_species_index("oxygen-16")
 
        firstCall = .false.
     endif
@@ -120,12 +120,12 @@ contains
           T613 = T6**THIRD
 
           ! total CNO abundance
-          X_CNO = (s(i,j,spec_comp-1+ic12) + &
-               s(i,j,spec_comp-1+in14) + &
-               s(i,j,spec_comp-1+io16)) / rho
+          X_CNO = (s(i,j,spec_comp-1+ilc12) + &
+               s(i,j,spec_comp-1+iln14) + &
+               s(i,j,spec_comp-1+ilo16)) / rho
 
           ! H abundance
-          X_1 = s(i,j,spec_comp-1+ih1) / rho
+          X_1 = s(i,j,spec_comp-1+ilh1) / rho
 
           ! CNO heating from Kippenhahn & Weigert, Eq. 18.65
           g14 = 1.0_dp_t + 2.7d-3*T613 - 7.78d-3*T613**2 - 1.49d-4*T6
