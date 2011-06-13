@@ -6,7 +6,7 @@ include $(FPARALLEL)/mk/GMakedefs.mak
 
 # core MAESTRO directories
 MAESTRO_CORE := boxlib \
-                mg \
+                mg/source \
                 extern/constants \
 		extern/model_parser \
                 extern/LAPACK \
