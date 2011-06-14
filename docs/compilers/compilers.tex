@@ -1,0 +1,33 @@
+\section{Compilers}
+
+Here, we list notes on problems with specific compilers and Maestro.
+
+\subsection{Intel}
+
+Overall, these tend to be flaky. 
+
+\subsection{gfortran}
+
+Probably the best compilers for Maestro.  Versions 4.5 and 4.6 seem to work
+really well and the debugging features are very reliable.
+
+
+\subsection{PGI}
+
+(on Kraken) The bounds checking routines do not like the way some of
+the arrays are allocated and flag them as errors.  For instance, in
+{\tt layout.f90}, we allocate a box as:
+\begin{verbatim}
+    type(box) :: bxs(3**get_dim(b))
+\end{verbatim}
+but the bounds checking routine seems to fail on this.
+
+(on hopper) There are problems with code compiled with {\tt -fast}
+instead of just {\tt -O}.  gcc/gfortran seem to work better and 
+are only slighly slower.
+
+
+\subsection{PathScale}
+
+These are the prefered compilers on jaguar.
+
