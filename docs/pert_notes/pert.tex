@@ -30,19 +30,21 @@ resulting edge state is shown in the following table:
 
 \begin{table}[h]
 \centering
-\begin{tabular}{c|c}
+\begin{tabular}{l|c}
 \hline
 \hline
 {\tt species\_pred\_type} &   {$(\rho X_k)$ edge state} \\
 \hline \\[-3mm]
 1 / {\tt pred\_rhoprime\_and\_X}  &  $\left(\rho_0^{n+\myhalf,{\rm avg}}
 + \rho'_\mathrm{edge} \right)(X_k)_\mathrm{edge}$ \\[2mm]
-2 / {\tt pred\_rhoX}  &  $(\rho X_k)_\mathrm{edge}$ \\
+2 / {\tt pred\_rhoX}  &  $(\rho X_k)_\mathrm{edge}$ \\[2mm]
+3 / {\tt pred\_rho\_and\_X}  &  $\rho_\mathrm{edge} (X_k)_\mathrm{edge}$ \\
 \hline
 \end{tabular}
 \end{table}
-We note the labels {\tt pred\_rhoprime\_and\_X} and {\tt pred\_rhoX} are
-provided by the {\tt pred\_parameters} module.
+We note the labels {\tt pred\_rhoprime\_and\_X}, {\tt pred\_rhoX}, and
+{\tt pred\_rho\_and\_X} are provided by the {\tt pred\_parameters}
+module.
 
 
 
@@ -141,6 +143,7 @@ $\rho_0^{n+\myhalf,{\rm avg}}$ at radial edges before adding it to
 $\rho'$.
 
 \subsubsection{Predicting $X_k$ at edges}
+\label{sec:pert:predict_X}
 Predicting $X_k$ is straightforward.  We convert the cell-centered
 $(\rho X_k)$ to $X_k$ by dividing by $\rho$ in each zone and then we
 just call {\tt make\_edge\_scal} in {\tt density\_advance} on $X_k$.
@@ -155,7 +158,7 @@ $(\rho X_k)$ to the edges as a single quantity.  We start with
 Eq.~\ref{species equation}:
 \begin{equation}
 \frac{\partial(\rho X_k)}{\partial t} =
-  -\Ub\cdot\nabla(\rho X_k) - \underbrace{\rho X_k \nabla\cdot\Ub}_{``\rho X_k ~\text{force''}} + \rho \omegadot_k \, . \label{species equation labeled}
+  -\Ub\cdot\nabla(\rho X_k) \, \underbrace{-\rho X_k \nabla\cdot\Ub}_{``\rho X_k ~\text{force''}} + \rho \omegadot_k \, . \label{species equation labeled}
 \end{equation}
 The edge state is created by calling {\tt make\_edge\_scal} in {\tt
   density\_advance} with the underbraced term in (\ref{species
@@ -167,6 +170,25 @@ consider the $\omegadot_k$ term in the forcing when Strang-splitting.
 We note that even though it is not needed here, we still predict
 $\rho'$ to the edges since certain enthalpy formulations need it.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{{\tt species\_pred\_type} = {\tt pred\_rho\_and\_X}}
+
+Here we wish to construct $\rho_\mathrm{edge} (X_k)_\mathrm{edge}$
+by predicting $\rho$ and $X_k$ to the edges separately.
+
+Predicting $X_k$ to the edges proceeds exactly as described in
+\S~\ref{sec:pert:predict_X}.  
+
+Predicting the full $\rho$ begins with Eq.~\ref{rho equation}:
+\begin{equation}
+\frac{\partial\rho}{\partial t} 
+= -\Ub\cdot\nabla\rho \, \underbrace{- \rho\nabla\cdot\Ub}_{``\rho~\text{force''}} \, . \label{rho equation labeled}
+\end{equation}
+Using this, $\rho$ is predicted to the edges using {\tt
+  make\_edge\_scal} in {\tt density\_advance}, with the underbraced
+force computed in {\tt modify\_scal\_force} with {\tt fullform =
+  .true.}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Advancing $\rho X_k$}\label{Advancing rhoX_k}
@@ -186,6 +208,13 @@ associated discretization is \\
 \begin{equation}
 \frac{\partial\rho X_k}{\partial t} = -\nabla\cdot(\rho X_k\Ub) = 
 -\nabla\cdot\left\{\left[\left(\rho X_k \right)_\mathrm{edge} \right](\Ubt+w_0\eb_r)\right\}.
+\end{equation}
+
+
+\noindent {\tt species\_pred\_type = pred\_rho\_and\_X}:
+\begin{equation}
+\frac{\partial\rho X_k}{\partial t} = -\nabla\cdot(\rho X_k\Ub) = 
+-\nabla\cdot\left\{\left[\rho_\mathrm{edge} (X_k)_\mathrm{edge} \right](\Ubt+w_0\eb_r)\right\}.
 \end{equation}
 
 
