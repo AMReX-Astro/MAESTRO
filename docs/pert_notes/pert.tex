@@ -163,21 +163,40 @@ The edge state is created by calling {\tt make\_edge\_scal} in {\tt
 by {\tt modify\_scal\_force} with {\tt fullform = .true.}.  We do not
 consider the $\omegadot_k$ term in the forcing when Strang-splitting.
 
+
+We note that even though it is not needed here, we still predict
+$\rho'$ to the edges since certain enthalpy formulations need it.
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Advancing $\rho X_k$}\label{Advancing rhoX_k}
 The evolution equation for $\rho X_k$, ignoring the reaction terms
 that were already accounted for in {\tt react\_state}, and the
-associated discretization is
+associated discretization is \\
+
+\noindent {\tt species\_pred\_type = pred\_rhoprime\_and\_X}:
 \begin{equation}
 \frac{\partial\rho X_k}{\partial t} = -\nabla\cdot(\rho X_k\Ub) = 
--\nabla\cdot\left\{\left[\left(\rho_0^{n+\myhalf,{\rm avg}} 
-+ \rho'\right)X_k\right](\Ubt+w_0\eb_r)\right\}.
+-\nabla\cdot\left\{\left[\left({\rho_0}^{n+\myhalf,{\rm avg}}
++ \rho'_\mathrm{edge} \right)(X_k)_\mathrm{edge} \right](\Ubt+w_0\eb_r)\right\}.
+\end{equation} \\
+
+
+\noindent {\tt species\_pred\_type = pred\_rhoX}:
+\begin{equation}
+\frac{\partial\rho X_k}{\partial t} = -\nabla\cdot(\rho X_k\Ub) = 
+-\nabla\cdot\left\{\left[\left(\rho X_k \right)_\mathrm{edge} \right](\Ubt+w_0\eb_r)\right\}.
 \end{equation}
+
 
 %-----------------------------------------------------------------------------
 % energy
 %-----------------------------------------------------------------------------
 \section{Energy Evolution}
+
+Note: only the default {\tt enthalpy\_pred\_type = 1} is guaranteed to work
+with {\tt species\_pred\_type > 1}. \\
+
 We use {\tt enthalpy\_pred\_type} = 1, in which we predict $(\rho h)'$ at edges.
 The full enthalpy equation is
 \begin{eqnarray}
