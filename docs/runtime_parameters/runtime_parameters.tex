@@ -48,13 +48,13 @@ shown here.
 \verb=  bcz_lo  = &   $-z$ boundary condition  &  SLIP\_WALL \\
 \verb=  bds_type  = &   0 = use ppm instead for multi-d integrator \newline 1 = bilinear  &  0 \\
 \verb=  beta_type  = &   what type of coefficient to use inside the velocity divergence constraint. \newline {\tt beta\_type} = 1 uses $\beta_0$; \newline {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); \newline {\tt beta\_type} = 3 uses 1 (small-scale combustion).  &  1 \\
-\verb=  use_linear_grav_in_beta  = &   when integrating $\beta_0$, use a piecewise linear (.true.) representation of gravity or piecewise constant (.false.)  &  .false. \\
 \verb=  blocking_factor  = &   grids must be an integer multiple of this number, if possible  &  8 \\
 \verb=  buoyancy_cutoff_factor  = &   The multiplicative factor (over base\_cutoff\_density) below which we do zero out the buoyancy term in the momentum equation.  &  5.0 \\
 \verb=  burner_threshold_cutoff  = &   Mass fraction cutoff for burner\_threshold\_species  used in burner threshold  &  1.d-10 \\
 \verb=  burner_threshold_species  = &   Name of the species to be used in burner threshold  &  "" \\
 \verb=  cflfac  = &   CFL factor to use in the computation of the advection timestep constraint  &  0.5d0 \\
 \verb=  cg_verbose  = &   Verbosity of bottom solver  &  0 \\
+\verb=  change_max_grid_size_1  = &   Change the max grid size on the base level on restart  &  .false. \\
 \verb=  check_base_name  = &   prefix to use in checkpoint file names  &  "chk" \\
 \verb=  chk_int  = &   Number of timesteps between writing a checkpoint file  &  0 \\
 \verb=  co_latitude  = &   latitude, in radians, for problems with rotation where the domain is only a subset of a full star.  &  ZERO \\
@@ -64,6 +64,7 @@ shown here.
 \verb=  do_alltoallv  = &    &  .false. \\
 \verb=  do_burning  = &   turn on (.true.) or off (.false.) burning  &  .true. \\
 \verb=  do_eos_h_above_cutoff  = &   After the advective enthalpy update, recompute the enthalpy if we are below the base cutoff density.  &  .true. \\
+\verb=  do_heating  = &   use analytic heating  &  .false. \\
 \verb=  do_initial_projection  = &   Do the initial projection.  &  .true. \\
 \verb=  do_planar_invsq_grav  = &   are we doing 1/r$^2$ gravity for plane-parallel  &  .false. \\
 \verb=  do_smallscale  = &   force $\rho_0 = (\rho h)_0 = 0$, {\tt evolve\_base\_state = F} and {\tt beta\_type} = 3  &  .false. \\
@@ -71,7 +72,7 @@ shown here.
 \verb=  dpdt_factor  = &   factor in front of the volume discrepancy term (0.0 = off)  &  0.d0 \\
 \verb=  drdxfac  = &   ratio of radial base state zones to Cartesian full state zones for spherical geometry  &  1 \\
 \verb=  drive_initial_convection  = &   freeze the temperature used in the reaction network to the initial value.  This is useful for developing an initial convective field to carry away the energy, while preventing the reactions from going nonlinear.  &  .false. \\
-\verb=  dump_grid_file  = &    &  .false. \\
+\verb=  dump_grid_file  = &   dump out a file, named grids.out, containing the number of grids a each level.  A new line is added each time regrid is called.  &  .false. \\
 \verb=  enthalpy_pred_type  = &   predict\_rhohprime = 1; \newline predict\_h = 2; \newline predict\_T\_then\_rhohprime = 3; \newline predict\_T\_then\_h = 4; \newline predict\_hprime = 5; \newline predict\_Tprime\_then\_h = 6.  &  predict\_rhohprime \\
 \verb=  evolve_base_state  = &   turn on (.true.) or off (.false.) basestate evolution  &  .true. \\
 \verb=  fix_base_state  = &   if true, don't call average to reset the base state at all, even during initialization  &  .false. \\
@@ -91,7 +92,6 @@ shown here.
 \verb=  max_grid_size_1  = &   The largest grid size that will be created using make\_new\_grids for the coarsest level.  Defaults to {\tt max\_grid\_size}.  &  -1 \\
 \verb=  max_grid_size_2  = &   The largest grid size that will be created using make\_new\_grids for level 2 (the first refined level).  Defaults to {\tt max\_grid\_size}.  &  -1 \\
 \verb=  max_grid_size_3  = &   The largest grid size that will be created using make\_new\_grids for level 3 (the second refined level) and beyond.  Defaults to {\tt max\_grid\_size}.  &  -1 \\
-\verb=  change_max_grid_size_1  = &  On restart, change the max grid size on the base level to max\_grid\_size\_1.  &  .false. \\
 \verb=  max_levs  = &   Total number of levels.  1 = single level.  &  1 \\
 \verb=  max_mg_bottom_nlevels  = &   if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have  &  1000 \\
 \verb=  max_step  = &   Maximum number of steps in the simulation.  &  1 \\
@@ -139,10 +139,12 @@ shown here.
 \verb=  rotational_frequency  = &   rotational frequency used for computing centrifugal term in rotation problems.  &  ZERO \\
 \verb=  s0_interp_type  = &   The interpolation for filling a cell-centered multifab from a 1D bin-centered array. \newline 1 = piecewise constant; \newline 2 = piecewise linear; \newline 3 = quadratic  &  3 \\
 \verb=  s0mac_interp_type  = &   The interpolation for filling an edge based multifab from a 1D bin-centered array. \newline 1 = Interpolate s0 to cell centers (with s0\_interp\_type), then average to edges; \newline 2 = Interpolate s0 to edges directly using linear interpolation; \newline 3 = Interpolate s0 to edges directly using quadratic interpolation.  &  1 \\
+\verb=  sdc_iters  = &   how many SDC iteractions to take (requires the code be compiled with {\tt SDC := t}  &  4 \\
 \verb=  single_prec_plotfiles  = &    &  .false. \\
 \verb=  slope_order  = &   order of slopes in Godunov algorithm.  Options are 0, 2, or 4.  &  4 \\
 \verb=  small_dens  = &    &  1.d-5 \\
 \verb=  small_temp  = &    &  5.d6 \\
+\verb=  species_pred_type  = &   Which quantities do we predict to the edges for computing the ($\rho X$) edge states?  \newline {\tt species\_pred\_type} = 1 means predict $\rho^\prime$ and $X$ separately.  \newline {\tt species\_pred\_type} = 2 means predict the full ($\rho X$) itself. \newline {\tt species\_pred\_type} = 3 means predict $\rho$ and $X$ separately.  &  1 \\
 \verb=  spherical_in  = &   set to 1 if you are doing a spherical problem  &  0 \\
 \verb=  sponge_center_density  = &   Center of the inner sponge.  &  3.d6 \\
 \verb=  sponge_kappa  = &   Parameter for sponge.  Problem dependent.  &  10.d0 \\
@@ -160,6 +162,8 @@ shown here.
 \verb=  use_eos_coulomb  = &   use the Coulomb corrections between ions (if supported by the EOS)  &  .true. \\
 \verb=  use_etarho  = &   turn on the etarho term as described in flow chart  &  .true. \\
 \verb=  use_hypre  = &   use the hypre library  &  .false. \\
+\verb=  use_linear_grav_in_beta  = &   how to represent gravity in the beta0 integration: .true. = piecewise linear .false. = piecewise constant  &  .false. \\
+\verb=  use_particles  = &   call the particle initialization, advection, etc. routines.  &  .false. \\
 \verb=  use_soundspeed_firstdt  = &   Use the soundspeed constraint when computing the first time step.  &  .false. \\
 \verb=  use_tfromp  = &   When updating temperature, use $T=T(\rho,p_0,X) $ rather than $T=T(\rho,h,X)$.  &  .false. \\
 \verb=  use_thermal_diffusion  = &   Use thermal diffusion.  &  .false. \\
