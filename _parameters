@@ -231,9 +231,11 @@ do_eos_h_above_cutoff               logical            .true.
 enthalpy_pred_type                  integer            predict_rhohprime   
 
 # Which quantities do we predict to the edges for computing the ($\rho X$)
-# edge states?  {\tt species\_pred\_type} = 1 means predict $\rho^\prime$
-# and $X$ separately.  {\tt species\_pred\_type} = 2 means predict the
-# full ($\rho X$) iteself.
+# edge states?  @@
+# {\tt species\_pred\_type} = 1 means predict $\rho^\prime$
+# and $X$ separately.  @@
+# {\tt species\_pred\_type} = 2 means predict the full ($\rho X$) itself. @@
+# {\tt species\_pred\_type} = 3 means predict $\rho$ and $X$ separately.
 species_pred_type                   integer            1
 
 
