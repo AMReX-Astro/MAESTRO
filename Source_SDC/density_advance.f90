@@ -38,6 +38,7 @@ contains
     use probin_module, only: verbose, bds_type, species_pred_type
     use modify_scal_force_module, only: modify_scal_force
     use convert_rhoX_to_X_module, only: convert_rhoX_to_X
+    use pred_parameters
 
     type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: which_step
@@ -121,7 +122,7 @@ contains
     ! quantities that we pass in here are ignored since we are making
     ! the force assuming a full form (not perturbational) of the 
     ! species advection equation.
-    if (species_pred_type == 2) then
+    if (species_pred_type == predict_rhoX) then
        do i = 1, nspec
           call modify_scal_force(scal_force,sold,umac,rho0_old, &
                                  rho0_edge_old,w0,dx,rho0_old_cart,spec_comp-1+i,mla, &
@@ -150,7 +151,7 @@ contains
     !     Create the edge states of (rho X)' or X and rho'
     !**************************************************************************
 
-    if (species_pred_type == 1) then
+    if (species_pred_type == predict_rhoprime_and_X) then
        ! we are predicting X to the edges, so convert the scalar
        ! data to those quantities
 
@@ -191,7 +192,7 @@ contains
     ! convert rho' -> rho in sold
     call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,dm+rho_comp,.false.,the_bc_level)
 
-    if (species_pred_type == 1) then
+    if (species_pred_type == predict_rhoprime_and_X) then
        ! convert X --> (rho X) in sold 
        call convert_rhoX_to_X(sold,.false.,mla,the_bc_level)
     endif

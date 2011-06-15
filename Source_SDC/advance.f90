@@ -80,7 +80,8 @@ contains
     use time_module                 , only : time
     use addw0_module                , only : addw0
     use convert_rhoX_to_X_module    , only: convert_rhoX_to_X
-    
+    use pred_parameters
+
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
     type(multifab),  intent(in   ) ::   uold(:)
@@ -203,7 +204,7 @@ contains
     if (enthalpy_pred_type .ne. 1) then
        call bl_error("enthalpy_pred_type .ne. 1 not supported with SDC")
     end if
-    if (species_pred_type .ne. 1) then
+    if (species_pred_type .ne. predict_rhoprime_and_X) then
        call bl_error("species_pred_type .ne. 1 not supported with SDC")
     end if
 
