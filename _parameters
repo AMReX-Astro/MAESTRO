@@ -475,5 +475,6 @@ use_particles                       logical            .false.
 # use analytic heating
 do_heating                          logical            .false.
 
-# use analytic heating
+# how many SDC iteractions to take (requires the code be compiled with
+# {\tt SDC := t}
 sdc_iters                           integer            4
