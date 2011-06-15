@@ -55,12 +55,14 @@ For example, for a scalar $\phi$, obeying a conservation law with a source term,
 \end{equation}
 We write this in advective form as:
 \begin{equation}
-\frac{\partial \phi}{\partial t} = -\Ub \cdot \nabla \phi \, \underbrace{- \phi \nabla \cdot \Ub + f}_{\text{``advective force''}}
+\frac{\partial \phi}{\partial t} = -\Ub \cdot \nabla \phi \, \underbrace{- \phi \nabla \cdot \Ub}_{\text{``advective force''}} + f
 \end{equation}
 Here we identify the non-advection portion of the divergence of the
-flux together with the original force, $f$, as the ``force'' for the
+flux as the ``advective force'' for the
 advective equation.  In predicting the interface states, this advective
-force will be used in computing the interface states.
+force will be used in computing the interface states.  Depending on the
+nature of $f$, it may either appear in the prediction as well or be absent
+if the process it describes is incorporated by Strang-splitting.
 
 \subsection{{\tt species\_pred\_type} = {\tt pred\_rhoprime\_and\_X}}
 
@@ -148,6 +150,18 @@ The force seen by {\tt make\_edge\_scal} is 0.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{{\tt species\_pred\_type} = {\tt pred\_rhoX}}
 
+Here we wish to construct $(\rho X_k)_\mathrm{edge}$ by predicting
+$(\rho X_k)$ to the edges as a single quantity.  We start with
+Eq.~\ref{species equation}:
+\begin{equation}
+\frac{\partial(\rho X_k)}{\partial t} =
+  -\Ub\cdot\nabla(\rho X_k) - \underbrace{\rho X_k \nabla\cdot\Ub}_{``\rho X_k ~\text{force''}} + \rho \omegadot_k \, . \label{species equation labeled}
+\end{equation}
+The edge state is created by calling {\tt make\_edge\_scal} in {\tt
+  density\_advance} with the underbraced term in (\ref{species
+  equation labeled}) as the forcing.  This advective force is computed
+by {\tt modify\_scal\_force} with {\tt fullform = .true.}.  We do not
+consider the $\omegadot_k$ term in the forcing when Strang-splitting.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Advancing $\rho X_k$}\label{Advancing rhoX_k}
