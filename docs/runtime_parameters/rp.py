@@ -13,12 +13,14 @@ shown here.
 % symbol table
 %%%%%%%%%%%%%%%%
 
+\begin{landscape}
+
 {\small
 
 \renewcommand{\arraystretch}{1.5}
 %
 \begin{center}
-\begin{longtable}{|l|p{3.25in}|l|}
+\begin{longtable}{|l|p{5.25in}|l|}
 \caption[runtime parameters]{runtime parameters.} \label{table:runtime} \\
 %
 \hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
@@ -47,6 +49,8 @@ footer=r"""
 \end{center}
 
 } % ends \small
+
+\end{landscape}
 
 %
 
