@@ -13,6 +13,17 @@ Maestro integrates the following system of equations:
 \end{eqnarray}
 together with a constraint equation.
 
+\subsection{Strang-split version}
+
+In the Strang-split version of MAESTRO, the reaction and diffusion
+processes operate independent of one-another.  The species and
+enthalpy equations are updated through $\Delta t$ using the following
+sequence:
+
+\begin{itemize}
+
+\item React for $\Delta t/2$
+
 In the Strang-split version of Maestro, the reaction network solves just
 the reaction portion of the species evolution equations along with a
 temperature evolution equation.  This is done using a standard ODE solver
@@ -22,10 +33,39 @@ temperature evolution equation.  This is done using a standard ODE solver
 \frac{dT}{dt}   &=& 
     \frac{1}{c_p} \left ( -\sum_k \xi_k  \omegadot_k  + \Hnuc \right ).
 \end{eqnarray}
-Furthermore, we simplify the problem ``freezing'' the
-thermodynamics---i.e., $c_p$ is evaluating at the start of the
-integration and held constant thereafter.
+Here, $T$ is evolved solely to evaluate the reaction rates,
+$\omegadot_k(\rho,X_k,T)$.  Furthermore, we simplify the problem
+``freezing'' the thermodynamics---i.e., $c_p$ is evaluating at the
+start of the integration and held constant thereafter.
 
+We update the enthalpy at the end of the integration as:
+\begin{equation}
+h^\mathrm{new} = h^\mathrm{old} + \frac{\Delta t}{2} \Hnuc
+\end{equation}
+
+\item Advect for $\Delta t$
+
+Here we solve
+\begin{eqnarray}
+\frac{\partial(\rho X_k)}{\partial t} &=& 
+    -\nabla\cdot(\rho X_k\Ub) \\
+\frac{\partial(\rho h)}{\partial t} &=& 
+    -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt} 
+\end{eqnarray}
+
+Note that no explicit reaction terms appear here.  Since the advection
+takes place using the state updated from the reaction step, the effect
+of the reactions is implicitly contained in the advective update.
+
+\item React for $\Delta t/2$
+
+Finally, we react again, starting with the state left by the advection
+step.
+
+\end{itemize}
+
+
+\subsection{SDC version}
 In the SDC version, the VODE integration at the end of an SDC
 iteration is responsible for updating all the thermodynamic quantities
 \{$\rho$, $(\rho h)$, and $(\rho X_k$)\}, including both the advective
@@ -45,6 +85,10 @@ during the reaction step.  These terms approximate the following:
 A_{\rho X_k} &=&  \left [- \nabla \cdot (\rho X_k \Ub) \right ]^{n+1/2} \\
 A_{\rho h}   &=&  \left [- \nabla \cdot (\rho h U) + \frac{Dp_0}{Dt} \right ]^{n+1/2}
 \end{eqnarray}
+The construction of the interface states used in the advective terms
+uses an iteratively-lagged approximation to the reaction source terms
+in the interface prediction.  This explicitly couples the reaction
+process to the advection process.
 
 The RHS routine that the ODE solver operates on will first construct
 the density as:
@@ -63,6 +107,15 @@ T = T(\rho, h, X_k)
 Note that in constrast to the Strang-split version, here we call the EOS
 every time we enter the RHS routine.
 
+At the end of the integration, we define 
+\begin{eqnarray}
+I_{\rho X_k} &=& \frac{(\rho X_k)^\mathrm{new} - (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k} \\
+I_{\rho h}  &=& \frac{(\rho h)^\mathrm{new} - (\rho h)^\mathrm{old}}{\Delta t} - A_{\rho h}
+\end{eqnarray}
+These terms are used as the source terms for the advection step in the
+next SDC iteration.
+
+\subsection{Summary of Changes}
 The major changes from the non-SDC-enabled burners is the addition of
 the advective terms to the system of ODEs, the fact that we integrate
 $(\rho X_k)$ instead of just $X_k$, and the need to derive the
