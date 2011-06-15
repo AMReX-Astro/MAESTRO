@@ -37,6 +37,7 @@ contains
     use probin_module, only: verbose, bds_type, species_pred_type
     use modify_scal_force_module, only: modify_scal_force
     use convert_rhoX_to_X_module, only: convert_rhoX_to_X
+    use pred_parameters
 
     type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: which_step
