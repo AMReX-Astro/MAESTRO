@@ -218,14 +218,14 @@ contains
        ! create x-fluxes
        do i = lo(1),hi(1)+1
 
-          if (species_pred_type == 1) then
+          if (species_pred_type == predict_rhoprime_and_X) then
              ! edge states are rho' and X.  To make the (rho X) flux,
              ! we need the edge state of rho0
              rho0_edge = HALF*(rho0_edge_old(i)+rho0_edge_new(i))
              sfluxx(i,comp) = &
                   (umac(i)+w0(i))*(rho0_edge+sedgex(i,rho_comp))*sedgex(i,comp)
 
-          else if (species_pred_type == 2) then
+          else if (species_pred_type == predict_rhoX) then
              ! edge states are (rho X)
              sfluxx(i,comp) = &
                   (umac(i)+w0(i))*sedgex(i,comp)             
@@ -280,13 +280,13 @@ contains
           rho0_edge = HALF*(rho0_old(j)+rho0_new(j))
           do i=lo(1),hi(1)+1
 
-             if (species_pred_type == 1) then
+             if (species_pred_type == predict_rhoprime_and_X) then
                 ! edge states are rho' and X.  To make the (rho X) flux,
                 ! we need the edge state of rho0
                 sfluxx(i,j,comp) = umac(i,j)* &
                      (rho0_edge+sedgex(i,j,rho_comp))*sedgex(i,j,comp)
 
-             else if (species_pred_type == 2) then
+             else if (species_pred_type == predict_rhoX) then
                 ! edge states are (rho X)
                 sfluxx(i,j,comp) = umac(i,j)*sedgex(i,j,comp)                
              endif
@@ -299,13 +299,13 @@ contains
           rho0_edge = HALF*(rho0_edge_old(j)+rho0_edge_new(j))
           do i = lo(1),hi(1)
 
-             if (species_pred_type == 1) then
+             if (species_pred_type == predict_rhoprime_and_X) then
                 ! edge states are rho' and X.  To make the (rho X) flux,
                 ! we need the edge state of rho0
                 sfluxy(i,j,comp) = &
                      (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,comp)
 
-             else if (species_pred_type == 2) then
+             else if (species_pred_type == predict_rhoX) then
                 ! edge states are (rho X)
                 sfluxy(i,j,comp) = &
                      (vmac(i,j)+w0(j))*sedgey(i,j,comp)
@@ -366,13 +366,13 @@ contains
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)+1
 
-                if (species_pred_type == 1) then
+                if (species_pred_type == predict_rhoprime_and_X) then
                    ! edge states are rho' and X.  To make the (rho X)
                    ! flux, we need the edge state of rho0
                    sfluxx(i,j,k,comp) = &
                         umac(i,j,k)*(rho0_edge+sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
 
-                else if (species_pred_type == 2) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
                    sfluxx(i,j,k,comp) = &
                         umac(i,j,k)*sedgex(i,j,k,comp)                   
@@ -385,13 +385,13 @@ contains
           do j=lo(2),hi(2)+1
              do i=lo(1),hi(1)
 
-                if (species_pred_type == 1) then
+                if (species_pred_type == predict_rhoprime_and_X) then
                    ! edge states are rho' and X.  To make the (rho X)
                    ! flux, we need the edge state of rho0
                    sfluxy(i,j,k,comp) = &
                         vmac(i,j,k)*(rho0_edge+sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
 
-                else if (species_pred_type == 2) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
                    sfluxy(i,j,k,comp) = &
                         vmac(i,j,k)*sedgey(i,j,k,comp)
@@ -408,13 +408,13 @@ contains
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
 
-                if (species_pred_type == 1) then
+                if (species_pred_type == predict_rhoprime_and_X) then
                    ! edge states are rho' and X.  To make the (rho X)
                    ! flux, we need the edge state of rho0
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))* &
                      (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
 
-                else if (species_pred_type == 2) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp)
 
@@ -486,14 +486,14 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
 
-                if (species_pred_type == 1) then
+                if (species_pred_type == predict_rhoprime_and_X) then
                    ! edge states are rho' and X.  To make the (rho X)
                    ! flux, we need the edge state of rho0
                    rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
                    sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
                         (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
 
-                else if (species_pred_type == 2) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
                    sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * sedgex(i,j,k,comp)                   
                 endif
@@ -509,14 +509,14 @@ contains
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
 
-                if (species_pred_type == 1) then
+                if (species_pred_type == predict_rhoprime_and_X) then
                    ! edge states are rho' and X.  To make the (rho X)
                    ! flux, we need the edge state of rho0
                    rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
                    sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
                         (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
 
-                else if (species_pred_type == 2) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
                    sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * sedgey(i,j,k,comp)
                 endif
@@ -532,14 +532,14 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
-                if (species_pred_type == 1) then
+                if (species_pred_type == predict_rhoprime_and_X) then
                    ! edge states are rho' and X.  To make the (rho X)
                    ! flux, we need the edge state of rho0
                    rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
                    sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
                      (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
 
-                else if (species_pred_type == 2) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
                    sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * sedgez(i,j,k,comp)
 
