@@ -11,7 +11,7 @@ The full density evolution equation is
 The species are evolved according to
 \begin{eqnarray}
 \frac{\partial(\rho X_k)}{\partial t} &=& -\nabla\cdot(\rho\Ub X_k) + \rho \omegadot_k \nonumber \\
-&=& -\Ub\cdot\nabla\rho - \rho\nabla\cdot\Ub + \rho \omegadot_k \, . \label{species equation}
+&=& -\Ub\cdot\nabla(\rho X_k) - \rho X_k \nabla\cdot\Ub + \rho \omegadot_k \, . \label{species equation}
 \end{eqnarray}
 In practice, only the species evolution equation is evolved, and the
 total density is set as
@@ -83,7 +83,15 @@ perturbational density equation,
 - \nabla\cdot(\rho_0\Ubt)}_{\rho' ~ \text{force}},
 \label{rhoprime equation}
 \end{equation}
-where the underbraced "$\rho'$ force'' is computed in {\tt modify\_scal\_force}.
+where the underbraced ``$\rho'$ force'' is computed in {\tt modify\_scal\_force}.
+
+We also need $X_k$ at the edges.  Here, we subtract $X_k \times$
+Eq.~\ref{rho equation} from Eq.~\ref{species equation} to obtain
+\begin{equation}
+\frac{\partial X_k}{\partial t} = -\Ub \cdot \nabla X_k + \omegadot_k
+\end{equation}
+When using Strang-splitting, we ignore the $\omegadot_k$ source terms, and
+then the species equation is a pure advection equation with no force.
 
 \subsubsection{Predicting $\rho'$ at edges}
 We define $\rho' = \rho^{(1)} - \rho_0^n$.  Then we predict $\rho'$ to
@@ -131,6 +139,10 @@ $\rho_0^{n+\myhalf,{\rm avg}}$ at radial edges before adding it to
 $\rho'$.
 
 \subsubsection{Predicting $X_k$ at edges}
+Predicting $X_k$ is straightforward.  We convert the cell-centered
+$(\rho X_k)$ to $X_k$ by dividing by $\rho$ in each zone and then we
+just call {\tt make\_edge\_scal} in {\tt density\_advance} on $X_k$.
+The force seen by {\tt make\_edge\_scal} is 0.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
