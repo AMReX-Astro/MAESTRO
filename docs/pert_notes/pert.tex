@@ -6,14 +6,73 @@
 The full density evolution equation is
 \begin{eqnarray}
 \frac{\partial\rho}{\partial t} &=& -\nabla\cdot(\rho\Ub) \nonumber \\
-&=& -\Ub\cdot\nabla\rho - \rho\nabla\cdot\Ub. \label{rho equation}
+&=& -\Ub\cdot\nabla\rho - \rho\nabla\cdot\Ub \, . \label{rho equation}
 \end{eqnarray}
+The species are evolved according to
+\begin{eqnarray}
+\frac{\partial(\rho X_k)}{\partial t} &=& -\nabla\cdot(\rho\Ub X_k) + \rho \omegadot_k \nonumber \\
+&=& -\Ub\cdot\nabla\rho - \rho\nabla\cdot\Ub + \rho \omegadot_k \, . \label{species equation}
+\end{eqnarray}
+In practice, only the species evolution equation is evolved, and the
+total density is set as
+\begin{equation}
+\rho = \sum_k (\rho X_k)
+\end{equation}
+To advance $(\rho X_k)$ to the next timestep, we need to predict a
+time-centered, interface state.  Algebraically, there are multiple
+paths to get this interface state---we can predict $(\rho X)$ to the
+edges as a single quantity, or predict $\rho$ and $X$ separately
+(either in full or perturbation form).  In the notes below, we use the
+subscript `{\tt edge}' to indicate what quantity was predicted to the
+edges.  In MAESTRO, the different methods of computing $(\rho X)$ on
+edges are controlled by the {\tt species\_pred\_type} parameter.  The
+resulting edge state is shown in the following table:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{c|c}
+\hline
+\hline
+{\tt species\_pred\_type} &   {$(\rho X_k)$ edge state} \\
+\hline \\[-3mm]
+1 / {\tt pred\_rhoprime\_and\_X}  &  $\left(\rho_0^{n+\myhalf,{\rm avg}}
++ \rho'_\mathrm{edge} \right)(X_k)_\mathrm{edge}$ \\[2mm]
+2 / {\tt pred\_rhoX}  &  $(\rho X_k)_\mathrm{edge}$ \\
+\hline
+\end{tabular}
+\end{table}
+We note the labels {\tt pred\_rhoprime\_and\_X} and {\tt pred\_rhoX} are
+provided by the {\tt pred\_parameters} module.
+
+
+
+\subsection{Advective force for interface prediction}
+In predicting the interface states, we work with an advection-like
+equation, and call anything other than the advective term a ``force''.
+For example, for a scalar $\phi$, obeying a conservation law with a source term, $f$:
+\begin{equation}
+\frac{\partial \phi}{\partial t} = -\nabla \cdot (\phi \Ub) + f
+\end{equation}
+We write this in advective form as:
+\begin{equation}
+\frac{\partial \phi}{\partial t} = -\Ub \cdot \nabla \phi \, \underbrace{- \phi \nabla \cdot \Ub + f}_{\text{``advective force''}}
+\end{equation}
+Here we identify the non-advection portion of the divergence of the
+flux together with the original force, $f$, as the ``force'' for the
+advective equation.  In predicting the interface states, this advective
+force will be used in computing the interface states.
+
+\subsection{{\tt species\_pred\_type} = {\tt pred\_rhoprime\_and\_X}}
+
+Here we wish to construct $(\rho_0^{n+\myhalf,{\rm avg}}        
++ \rho'_\mathrm{edge})(X_k)_\mathrm{edge}$.
+
 We predict both $\rho'$ and $\rho_0$ to edges separately and later use them to 
 reconstruct $\rho$ at edges.  The base state density evolution equation is
 \begin{equation}
 \frac{\partial\rho_0}{\partial t} = -\nabla\cdot(\rho_0 w_0 \eb_r) = 
 -w_0\frac{\partial\rho_0}{\partial r} 
-\underbrace{-\rho_0\frac{\partial w_0}{\partial r}}_{"\rho_0 ~ \text{force}"}.
+\underbrace{-\rho_0\frac{\partial w_0}{\partial r}}_{``\rho_0 ~ \text{force"}}.
 \label{rho0 equation}
 \end{equation}
 Subtract (\ref{rho0 equation}) from (\ref{rho equation}) and rearrange
@@ -26,12 +85,12 @@ perturbational density equation,
 \end{equation}
 where the underbraced "$\rho'$ force'' is computed in {\tt modify\_scal\_force}.
 
-\subsection{Predicting $\rho'$ at edges}
+\subsubsection{Predicting $\rho'$ at edges}
 We define $\rho' = \rho^{(1)} - \rho_0^n$.  Then we predict $\rho'$ to
-edges using {\tt make\_edge\_scal} in {\tt scalar\_advance} and the
+edges using {\tt make\_edge\_scal} in {\tt density\_advance} and the
 underbraced term in (\ref{rhoprime equation}) as the forcing.
 
-\subsection{Predicting $\rho_0$ at edges}\label{Predicting rho0 at edges}
+\subsubsection{Predicting $\rho_0$ at edges}\label{Predicting rho0 at edges}
 There are two ways to predict $\rho_0$ at edges.
 \begin{enumerate}
 
@@ -54,13 +113,31 @@ $\rho$ at edges from $\rho'$ at edges, and
 this $\rho$ at edges is used to compute fluxes for $\rho X_k$.
 \end{enumerate}
 
-\subsection{Computing $\rho$ at edges}\label{Computing rho at edges}
+We note that in essence these choices reflect a hyperbolic (1)
+vs.\ elliptic (2) approach.  In MAESTRO, if we setup a problem with
+$\rho = \rho_0$ initially, and enforce a constraint $\nabla \cdot
+(\rho_0 \Ub) = 0$ (i.e.\ the anelastic constraint), then analytically,
+we should never generate a $\rho'$.  To realize this behavior
+numerically, we use $\rho_0^{n+\myhalf,{\rm avg}}$ in the prediction
+of $(\rho X_k)$ on the edges to be consistent with the use of the
+average of $\rho$ to the interfaces in the projection step at the end
+of the algorithm.
+
+\subsubsection{Computing $\rho$ at edges}\label{Computing rho at edges}
 For the non-radial edges, we directly add $\rho_0^{n+\myhalf,{\rm avg}}$
 to $\rho'$ since $\rho_0^{n+\myhalf,{\rm avg}}$ is a cell-centered
 quantity.  For the radial edges, we interpolate to obtain
 $\rho_0^{n+\myhalf,{\rm avg}}$ at radial edges before adding it to
 $\rho'$.
 
+\subsubsection{Predicting $X_k$ at edges}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{{\tt species\_pred\_type} = {\tt pred\_rhoX}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Advancing $\rho X_k$}\label{Advancing rhoX_k}
 The evolution equation for $\rho X_k$, ignoring the reaction terms
 that were already accounted for in {\tt react\_state}, and the
@@ -130,7 +207,7 @@ results, namely:
 
 \subsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
 We define $(\rho h)' = (\rho h)^{(1)} - (\rho h)_0^n$.  Then we predict 
-$(\rho h)'$ to edges using {\tt make\_edge\_scal} in {\tt scalar\_advance} 
+$(\rho h)'$ to edges using {\tt make\_edge\_scal} in {\tt enthalpy\_advance} 
 and the underbraced term in (\ref{rhohprime equation}) as the forcing.
 
 \subsection{Predicting $(\rho h)_0$ at edges}
