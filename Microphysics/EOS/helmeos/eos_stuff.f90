@@ -74,6 +74,8 @@ contains
   ! table with the electron component's properties.
   subroutine eos_init(use_eos_coulomb, small_temp, small_dens, gamma_in)
 
+    use parallel
+
     implicit none
  
     logical        , intent(in), optional :: use_eos_coulomb
@@ -110,6 +112,7 @@ contains
        smalld = 1.d-5
     endif
 
+    if (parallel_IOProcessor()) print *, 'Initializing helmeos...'
     ! call the helmeos initialization routine and read in the table 
     ! containing the electron contribution.
     call helmeos_init()
@@ -585,7 +588,6 @@ contains
        abar(k) = 1.0d0/dnew(k)
        zbar(k) = tnew(k) * abar(k)
     enddo
-
 
     if (input .EQ. eos_input_rt) then
 
