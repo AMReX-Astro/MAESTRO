@@ -50,6 +50,22 @@
                        stot_row(npts), dsd_row(npts), dst_row(npts)  
       double precision gam1_row(npts), cs_row(npts)
 
+! these directives are used by f2py to generate a python wrapper around this
+! fortran code
+!
+!f2py intent(in) :: do_coulomb,temp_row,den_row,abar_row,zbar_row,npts
+!f2py intent(out) :: eosfail,etot_row,ptot_row,cv_row,cp_row,xne_row
+!f2py intent(out) :: xnp_row,etaele_row,pele_row,ppos_row,dpd_row
+!f2py intent(out) :: dpt_row,dpa_row,dpz_row,ded_row,det_row,dea_row
+!f2py intent(out) :: dez_row,stot_row,dsd_row,dst_row,gam1_row,cs_row
+
+!f2py depend(npts) :: temp_row,den_row,abar_row,zbar_row
+!f2py depend(npts) :: etot_row,ptot_row,cv_row,cp_row,xne_row,xnp_row
+!f2py depend(npts) :: etaele_row,pele_row,ppos_row,dpd_row,dpt_row
+!f2py depend(npts) :: dpa_row,dpz_row,ded_row,det_row,dea_row,dez_row
+!f2py depend(npts) :: stot_row,dsd_row,dst_row,gam1_row,cs_row
+
+
 !..declare some parameters
       double precision pi,amu,kerg,clight,avo,qe,h,ssol,asol
       parameter       (pi      = 3.1415926535897932384d0, &
@@ -77,7 +93,7 @@
                        temp,den,abar,zbar,ytot1,ye
 
       double precision sioncon,forth,forpi,kergavo,ikavo,asoli3,light2
-      parameter        (sioncon = (2.0d0 * pi * amu * kerg)/(h*h), &
+      parameter        (sioncon = 2.0d0 * pi * amu * kerg/(h*h), &
                         forth   = 4.0d0/3.0d0, &
                         forpi   = 4.0d0 * pi, &
                         kergavo = kerg * avo,  &
@@ -921,7 +937,7 @@
 !     -----------------------------------------------------------------
       subroutine helmeos_init
       use bl_error_module
-      use parallel
+!      use parallel
       implicit none
       
       include 'vector_eos_f90.dek'
@@ -1013,14 +1029,14 @@
       end do
 
       close(unit=2)
-      if ( parallel_ioprocessor() ) then
-         write(6,*)
-         write(6,*) 'finished reading eos table'
-         write(6,04) 'imax=',imax,' jmax=',jmax
-         write(6,03) 'temp(1)   =',t(1),' temp(jmax)   =',t(jmax)
-         write(6,03) 'ye*den(1) =',d(1),' ye*den(imax) =',d(imax)
-         write(6,*)
-      end if
+!      if ( parallel_ioprocessor() ) then
+!         write(6,*)
+!         write(6,*) 'finished reading eos table'
+!         write(6,04) 'imax=',imax,' jmax=',jmax
+!         write(6,03) 'temp(1)   =',t(1),' temp(jmax)   =',t(jmax)
+!         write(6,03) 'ye*den(1) =',d(1),' ye*den(imax) =',d(imax)
+!         write(6,*)
+!      end if
 
       end
 
