@@ -480,7 +480,7 @@ Here we wish to construct $\left (\rho_0 + \rho'_\mathrm{edge} \right
 
 \subsubsection{Predicting $h$ at edges}
 
-We define $h = (rho h)^{(1)}/rho^{(1)}$.  Then we predict $h$ to edges
+We define $h = (\rho h)^{(1)}/\rho^{(1)}$.  Then we predict $h$ to edges
 using {\tt make\_edge\_scal} in {\tt enthalpy\_advance} and the
 underbraced term in Eq.~\ref{h equation labeled} as the forcing (see
 also table~\ref{table:pred:hforce}).  This force is computed by
@@ -491,7 +491,7 @@ the correct force for this type.
 \subsubsection{Computing $\rho h$ at edges}
 
 We use the same procedure described in Section \ref{Computing rho at
-  edges} to computing $\rho$ at edges from $\rho_0$ and
+  edges} to computing $\rho_\mathrm{edge}$ from $\rho_0$ and
 $\rho'_\mathrm{edge}$ and then multiply by $h_\mathrm{edge}$.
 
 
@@ -504,14 +504,76 @@ Here we wish to construct $\left [ (\rho h)_0 + (\rho
   h)'_\mathrm{edge} \right ]$ by predicting $T$ to the edges and then
 converting this to $(\rho h)'_\mathrm{edge}$ via the EOS.
 
+\subsubsection{Predicting $T$ at edges}
+
+We predict $T$ to edges using {\tt make\_edge\_scal} in {\tt
+  enthalpy\_advance} and the underbraced term in Eq.~\ref{T equation
+  labeled} as the forcing (see also table~\ref{table:pred:hforce}).
+This force is computed by {\tt mktempforce}.
+
+\subsubsection{Converting $T_\mathrm{edge}$ to $(\rho h)'_\mathrm{edge}$}
+
+We the use EOS in {\tt makeHfromRhoT\_edge} (called from {\tt
+  enthalpy\_advance}) to convert from $T_\mathrm{edge}$ to $(\rho
+h)'_\mathrm{edge}$.  For the EOS call, we need $X_\mathrm{edge}$ and
+$\rho_\mathrm{edge}$.  This construction depends on {\tt
+  species\_pred\_type}, since the species edge states may differ
+between the various prediction types (see the ``species quantity''
+column in table~\ref{table:pred:hoverview}).  The EOS inputs are
+constructed as:
+
+\begin{table*}[h]
+\centering
+\caption{EOS states in {\tt makeHfromRhoT\_edge}\newline}
+\label{table:pred:hforce}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{l|c|c}
+\hline
+\hline
+{\tt species\_pred\_type} & {$\rho$ edge state} &   {$X$ edge state}  \\
+\hline
+{\tt predict\_rhoprime\_and\_X} & 
+  $\rho_0^{n+\myhalf,\rm{avg}} + \rho'_\mathrm{edge}$ & 
+  $X_\mathrm{edge}$ \\
+{\tt predict\_rhoX} & 
+  $\rho_\mathrm{edge}$ & 
+  $(\rho X)_\mathrm{edge}/\rho_\mathrm{edge}$ \\
+\hline
+\end{tabular}
+\end{table*}
+
+The output of  {\tt makeHfromRhoT\_edge} is $(\rho h)'_\mathrm{edge}$.
+
+\subsubsection{Computing $\rho h$ at edges}
+
+The computation of the final $(\rho h)$ edge state is done identically
+as the {\tt predict\_rhohprime} version.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_rhohprime}}
+\subsection{{\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_h}}
 
 Here we wish to construct $\left (\rho_0 + \rho'_\mathrm{edge} \right
 ) h_\mathrm{edge}$ by predicting $T$ to the edges and then converting
 this to $h_\mathrm{edge}$ via the EOS.
+
+\subsubsection{Predicting $T$ at edges}
+
+The prediction of $T$ to the edges is done identically as the
+{\tt predict\_T\_then\_rhohprime} version.
+
+
+\subsubsection{Converting $T_\mathrm{edge}$ to $(\rho h)'_\mathrm{edge}$}
+
+This is identical to the {\tt predict\_T\_then\_rhohprime} version,
+except that on output, we compute $h_\mathrm{edge}$.
+
+\subsubsection{Computing $\rho h$ at edges}
+
+The computation of the final $(\rho h)$ edge state is done identically
+as the {\tt predict\_h} version.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -528,43 +590,43 @@ source terms accounted for in {\bf React State}.
 
 
 
-\begin{table*}[h]
-\begin{center}
-\caption{When predicting temp ... (conversion done by {\tt makeRhoHfromT}) \newline}
-\begin{tabular}{c|c|c|c}
-\hline
-\hline
-{type} & {Inputs } & {EOS inputs} & {output} \\
-\hline
-3 & $X$ and $\rho^\prime$ & $\rho = \rho_0 + \rho^\prime$ &  $(\rho h)^\prime = \rho h - (\rho h)_0$ \\
-   &                   & $   X = $ given & \\
-   &                   &                 & \\
- 4 & $X$ and $\rho^\prime$ & $\rho = \rho_0 + \rho^\prime$ & $h$ \\
-   &                   & $   X = $ given & \\
-   &                   &                 & \\
-\hline
-\end{tabular}
-\end{center}
-\end{table*}
+%% \begin{table*}[h]
+%% \begin{center}
+%% \caption{When predicting temp ... (conversion done by {\tt makeRhoHfromT}) \newline}
+%% \begin{tabular}{c|c|c|c}
+%% \hline
+%% \hline
+%% {type} & {Inputs } & {EOS inputs} & {output} \\
+%% \hline
+%% 3 & $X$ and $\rho^\prime$ & $\rho = \rho_0 + \rho^\prime$ &  $(\rho h)^\prime = \rho h - (\rho h)_0$ \\
+%%    &                   & $   X = $ given & \\
+%%    &                   &                 & \\
+%%  4 & $X$ and $\rho^\prime$ & $\rho = \rho_0 + \rho^\prime$ & $h$ \\
+%%    &                   & $   X = $ given & \\
+%%    &                   &                 & \\
+%% \hline
+%% \end{tabular}
+%% \end{center}
+%% \end{table*}
 
 
 
-\begin{table*}[h]
-\begin{center}
-\caption{Quantity that is created in {\tt mkflux} and passed into {\tt update\_scal}\newline\
-}
-\begin{tabular}{c|c|c|c|c}
-       &            &              &\multicolumn{2}{c}{Forcing Term} \\
-{type} & {Species } & {$(\rho h)$} & {$(\rho X)$} & {$(\rho h)$} \\
-\hline 
-1 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0)\left [(\rho h)_0 + (\rho h)^\prime\right]$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
-2 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
-3 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0)\left [(\rho h)_0 + (\rho h)^\prime\right]$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r}$ \\[2mm]
-4 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
-\hline
-\end{tabular}
-\end{center}
-\end{table*}
+%% \begin{table*}[h]
+%% \begin{center}
+%% \caption{Quantity that is created in {\tt mkflux} and passed into {\tt update\_scal}\newline\
+%% }
+%% \begin{tabular}{c|c|c|c|c}
+%%        &            &              &\multicolumn{2}{c}{Forcing Term} \\
+%% {type} & {Species } & {$(\rho h)$} & {$(\rho X)$} & {$(\rho h)$} \\
+%% \hline 
+%% 1 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0)\left [(\rho h)_0 + (\rho h)^\prime\right]$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
+%% 2 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
+%% 3 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0)\left [(\rho h)_0 + (\rho h)^\prime\right]$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r}$ \\[2mm]
+%% 4 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
+%% \hline
+%% \end{tabular}
+%% \end{center}
+%% \end{table*}
 
 
 
