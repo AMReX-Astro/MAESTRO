@@ -35,15 +35,15 @@ resulting edge state is shown in the following table:
 \hline
 {\tt species\_pred\_type} &   {$(\rho X_k)$ edge state} \\
 \hline \\[-3mm]
-1 / {\tt pred\_rhoprime\_and\_X}  &  $\left(\rho_0^{n+\myhalf,{\rm avg}}
+1 / {\tt predict\_rhoprime\_and\_X}  &  $\left(\rho_0^{n+\myhalf,{\rm avg}}
 + \rho'_\mathrm{edge} \right)(X_k)_\mathrm{edge}$ \\[2mm]
-2 / {\tt pred\_rhoX}  &  $(\rho X_k)_\mathrm{edge}$ \\[2mm]
-3 / {\tt pred\_rho\_and\_X}  &  $\rho_\mathrm{edge} (X_k)_\mathrm{edge}$ \\
+2 / {\tt predict\_rhoX}  &  $(\rho X_k)_\mathrm{edge}$ \\[2mm]
+3 / {\tt predict\_rho\_and\_X}  &  $\rho_\mathrm{edge} (X_k)_\mathrm{edge}$ \\
 \hline
 \end{tabular}
 \end{table}
-We note the labels {\tt pred\_rhoprime\_and\_X}, {\tt pred\_rhoX}, and
-{\tt pred\_rho\_and\_X} are provided by the {\tt pred\_parameters}
+We note the labels {\tt predict\_rhoprime\_and\_X}, {\tt predict\_rhoX}, and
+{\tt predict\_rho\_and\_X} are provided by the {\tt pred\_parameters}
 module.
 
 
@@ -66,7 +66,7 @@ force will be used in computing the interface states.  Depending on the
 nature of $f$, it may either appear in the prediction as well or be absent
 if the process it describes is incorporated by Strang-splitting.
 
-\subsection{{\tt species\_pred\_type} = {\tt pred\_rhoprime\_and\_X}}
+\subsection{{\tt species\_pred\_type} = {\tt predict\_rhoprime\_and\_X}}
 
 Here we wish to construct $(\rho_0^{n+\myhalf,{\rm avg}}        
 + \rho'_\mathrm{edge})(X_k)_\mathrm{edge}$.
@@ -151,7 +151,7 @@ The force seen by {\tt make\_edge\_scal} is 0.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt species\_pred\_type} = {\tt pred\_rhoX}}
+\subsection{{\tt species\_pred\_type} = {\tt predict\_rhoX}}
 
 Here we wish to construct $(\rho X_k)_\mathrm{edge}$ by predicting
 $(\rho X_k)$ to the edges as a single quantity.  We start with
@@ -172,7 +172,7 @@ $\rho'$ to the edges since certain enthalpy formulations need it.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt species\_pred\_type} = {\tt pred\_rho\_and\_X}}
+\subsection{{\tt species\_pred\_type} = {\tt predict\_rho\_and\_X}}
 
 Here we wish to construct $\rho_\mathrm{edge} (X_k)_\mathrm{edge}$
 by predicting $\rho$ and $X_k$ to the edges separately.
@@ -196,7 +196,7 @@ The evolution equation for $\rho X_k$, ignoring the reaction terms
 that were already accounted for in {\tt react\_state}, and the
 associated discretization is \\
 
-\noindent {\tt species\_pred\_type = pred\_rhoprime\_and\_X}:
+\noindent {\tt species\_pred\_type = predict\_rhoprime\_and\_X}:
 \begin{equation}
 \frac{\partial\rho X_k}{\partial t} = -\nabla\cdot(\rho X_k\Ub) = 
 -\nabla\cdot\left\{\left[\left({\rho_0}^{n+\myhalf,{\rm avg}}
@@ -204,14 +204,14 @@ associated discretization is \\
 \end{equation} \\
 
 
-\noindent {\tt species\_pred\_type = pred\_rhoX}:
+\noindent {\tt species\_pred\_type = predict\_rhoX}:
 \begin{equation}
 \frac{\partial\rho X_k}{\partial t} = -\nabla\cdot(\rho X_k\Ub) = 
 -\nabla\cdot\left\{\left[\left(\rho X_k \right)_\mathrm{edge} \right](\Ubt+w_0\eb_r)\right\}.
 \end{equation}
 
 
-\noindent {\tt species\_pred\_type = pred\_rho\_and\_X}:
+\noindent {\tt species\_pred\_type = predict\_rho\_and\_X}:
 \begin{equation}
 \frac{\partial\rho X_k}{\partial t} = -\nabla\cdot(\rho X_k\Ub) = 
 -\nabla\cdot\left\{\left[\rho_\mathrm{edge} (X_k)_\mathrm{edge} \right](\Ubt+w_0\eb_r)\right\}.
@@ -226,7 +226,7 @@ associated discretization is \\
 Note: only the default {\tt enthalpy\_pred\_type = 1} is guaranteed to work
 with {\tt species\_pred\_type > 1}. \\
 
-We use {\tt enthalpy\_pred\_type} = 1, in which we predict $(\rho h)'$ at edges.
+Maestro solves an enthalpy equation.  
 The full enthalpy equation is
 \begin{eqnarray}
 \frac{\partial(\rho h)}{\partial t} &=& -\nabla\cdot(\rho h \Ub) + \frac{Dp_0}{Dt} 
@@ -242,11 +242,12 @@ The full enthalpy equation is
 %+ (\Ubt \cdot \er )\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k 
 %+ \rho H_{\rm nuc} + \rho H_{\rm ext}\right\}.
 %\end{equation}
-Due to operator splitting, the call to {\tt react\_state} has already
-been made.  Hence, the goal is to compute an edge state enthalpy
-starting from $(\rho h)^{(1)}$ using an enthalpy equation that does
-not include the $\rho H_{\rm nuc}$ and $\rho H_{\rm ext}$ terms, where
-were already accounted for in {\tt react\_state}, so our equation becomes
+Due to Strang-splitting of the reactions,the call to {\tt
+  react\_state} has already been made.  Hence, the goal is to compute
+an edge state enthalpy starting from $(\rho h)^{(1)}$ using an
+enthalpy equation that does not include the $\rho H_{\rm nuc}$ and
+$\rho H_{\rm ext}$ terms, where were already accounted for in {\tt
+  react\_state}, so our equation becomes
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\Ub\cdot\nabla(\rho h) - \rho h\nabla\cdot\Ub 
 + \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T. \label{rhoh equation}
@@ -259,8 +260,8 @@ We define the base state enthalpy evolution equation as
 - \underbrace{(\rho h)_0\frac{\partial w_0}{\partial r}+ \psi}_{"(\rho h)_0 ~ \text{force}"}
 \enskip .\label{rhoh0 equation}
 \end{eqnarray}
-Subtracting (\ref{rhoh0 equation}) from (\ref{rhoh equation}) and rearranging terms gives 
-the perturbational enthalpy equation
+Subtracting (\ref{rhoh0 equation}) from (\ref{rhoh equation}) and
+rearranging terms gives the perturbational enthalpy equation
 \begin{eqnarray}
 \frac{\partial(\rho h)'}{\partial t} &=& -\nabla\cdot[(\rho h)'\Ub] 
 - \nabla\cdot[(\rho h)_0\Ubt] + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r} 
@@ -269,6 +270,103 @@ the perturbational enthalpy equation
 - \nabla\cdot[(\rho h)_0\Ubt] + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r}
 + \nabla\cdot\kth\nabla T}_{"(\rho h)' ~ \text{force}"}, \label{rhohprime equation}
 \end{eqnarray}
+
+Alternately, we can consider an temperature evolution equation, derived
+from enthalpy, as:
+\begin{equation}
+\frac{\partial T}{\partial t} = -\Ub\cdot\nabla T
++ \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi
++ (\Ubt \cdot \er )\frac{\partial p_0}{\partial r}\right] 
++ \nabla \cdot \kth \nabla T
+- \sum_k\rho\xi_k\omegadot_k 
++ \rho H_{\rm nuc} + \rho H_{\rm ext}\right\}.
+\end{equation}
+Again, we neglect the reaction terms, since that will be handled during
+the reaction step, so we can write this as:
+\begin{equation}
+\frac{\partial T}{\partial t} = -\Ub\cdot\nabla T
++ \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi
++ (\Ubt \cdot \er )\frac{\partial p_0}{\partial r}\right] 
++ \nabla \cdot \kth \nabla T \right \} \, .
+\end{equation}
+
+A final alternative is to consider an evolution equation for $h$
+alone.  This can be derived by expanding the derivative of $(\rho h)$
+in Eq.~\ref{rhoh equation} and subtracting off $h \times$ the
+continuity equation (Eq.~\ref{rho equation}):
+\begin{equation}
+\frac{\partial h}{\partial t} = -\Ub \cdot \nabla h + \frac{1}{\rho}
+\left \{ \psi + (\Ubt \cdot \er )\frac{\partial p_0}{\partial r}
++ \nabla \cdot \kth \nabla T \right \} \, .
+\end{equation}
+
+To update the enthalpy, we need to compute an interface state for
+$(\rho h)$.  As with the species evolution, there are multiple
+quantities we can predict to the interfaces to form this state,
+controlled by {\tt enthalpy\_pred\_type}.  A complexity of the
+enthalpy evolution is that the formation of this edge state will
+depend on {\tt species\_pred\_type}.  Table~\ref{table:pred:hoverview}
+gives a summary
+of the {\tt enthalpy\_pred\_type} behavior.
+
+\begin{landscape}
+\begin{table}[t]
+\renewcommand{\arraystretch}{1.5}
+{\small
+\centering
+\begin{tabular}{l|l|c|c|c|c}
+\hline
+\hline
+{\tt species\_pred\_type} &   
+{\tt enthalpy\_pred\_type} &
+{quantity predicted} &
+{intermediate} &
+{species quantity} &
+{final $(\rho h)$} \\[-5pt]
+ &
+ &
+{in {\tt make\_edge\_scal}} &
+{``enthalpy'' edge state} &
+{available in {\tt mkflux}} &
+{edge state} \\
+\hline 
+1 / {\tt predict\_rhoprime\_and\_X}  & 1 / {\tt predict\_rhohprime} &
+  $(\rho h)'$ & $(\rho h)'$ & $X$, $\rho'$ & 
+  $\left [ (\rho h)_0 + (\rho h)' \right ]$ \\
+1 / {\tt predict\_rhoprime\_and\_X}  & 2 / {\tt predict\_h} &
+  $h$ & $h$ & $X$, $\rho'$ & 
+  $\left ( \rho_0 + \rho' \right ) h$ \\
+1 / {\tt predict\_rhoprime\_and\_X}  & 3 / {\tt predict\_T\_then\_rhohprime} &
+  $T$ & $(\rho h)'$ & $X$, $\rho'$ & 
+  $\left [ (\rho h)_0 + (\rho h)' \right ]$ \\
+1 / {\tt predict\_rhoprime\_and\_X}  & 4 / {\tt predict\_T\_then\_h} &
+  $T$ & $h$ & $X$, $\rho'$ & 
+  $\left ( \rho_0 + \rho' \right ) h$ \\
+\hline
+\hline
+2 / {\tt predict\_rhoX}  & 1 / {\tt predict\_rhohprime} &
+  $(\rho h)'$ & $(\rho h)'$ & $(\rho X)$, $\rho'$ & 
+  $\left [ (\rho h)_0 + (\rho h)' \right ]$ \\
+2 / {\tt predict\_rhoX}  & 2 / {\tt predict\_h} &
+  $h$ & $h$ & $(\rho X)$, $\rho'$ & 
+  $\left ( \rho_0 + \rho' \right ) h$ \\
+2 / {\tt predict\_rhoX}  & 3 / {\tt predict\_T\_then\_rhohprime} &
+  $T$ & $(\rho h)'$ & $(\rho X)$, $\rho'$ & 
+  $\left [ (\rho h)_0 + (\rho h)' \right ]$ \\
+2 / {\tt predict\_rhoX}  & 4 / {\tt predict\_T\_then\_h} &
+  $T$ & $h$ & $(\rho X)$, $\rho'$ & 
+  $\left ( \rho_0 + \rho' \right ) h$ \\
+\hline
+\hline
+\end{tabular}
+} % end \small
+\end{table}
+\end{landscape}
+
+
+
+\subsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
+
 where the first two terms in $(\rho h)'$ force are computed in 
 {\tt modify\_scal\_force}, and the last two terms are accounted for in
 {\tt mkrhohforce}.  For spherical problems, we have found that a different 
@@ -279,7 +377,7 @@ results, namely:
 \nabla\cdot(\Ubt p_0) - p_0\nabla\cdot\Ubt.
 \end{equation}
 
-\subsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
+
 We define $(\rho h)' = (\rho h)^{(1)} - (\rho h)_0^n$.  Then we predict 
 $(\rho h)'$ to edges using {\tt make\_edge\_scal} in {\tt enthalpy\_advance} 
 and the underbraced term in (\ref{rhohprime equation}) as the forcing.
