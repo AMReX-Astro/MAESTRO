@@ -257,7 +257,7 @@ We define the base state enthalpy evolution equation as
 \frac{\partial(\rho h)_0}{\partial t} &=& -\nabla\cdot[(\rho h)_0 w_0\eb_r] 
 + \frac{D_0p_0}{Dt} \nonumber \\
 &=& -w_0\frac{\partial(\rho h)_0}{\partial r} 
-- \underbrace{(\rho h)_0\frac{\partial w_0}{\partial r}+ \psi}_{"(\rho h)_0 ~ \text{force}"}
+- \underbrace{(\rho h)_0\frac{\partial w_0}{\partial r}+ \psi}_{``(\rho h)_0 ~ \text{force}"}
 \enskip .\label{rhoh0 equation}
 \end{eqnarray}
 Subtracting (\ref{rhoh0 equation}) from (\ref{rhoh equation}) and
@@ -268,7 +268,7 @@ rearranging terms gives the perturbational enthalpy equation
 + \nabla\cdot\kth\nabla T\nonumber \\
 &=& -\Ub\cdot\nabla(\rho h)' \underbrace{- (\rho h)'\nabla\cdot\Ub 
 - \nabla\cdot[(\rho h)_0\Ubt] + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r}
-+ \nabla\cdot\kth\nabla T}_{"(\rho h)' ~ \text{force}"}, \label{rhohprime equation}
++ \nabla\cdot\kth\nabla T}_{``(\rho h)' ~ \text{force}"}, \label{rhohprime equation}
 \end{eqnarray}
 
 Alternately, we can consider an temperature evolution equation, derived
@@ -285,9 +285,11 @@ Again, we neglect the reaction terms, since that will be handled during
 the reaction step, so we can write this as:
 \begin{equation}
 \frac{\partial T}{\partial t} = -\Ub\cdot\nabla T
+\underbrace{
 + \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi
 + (\Ubt \cdot \er )\frac{\partial p_0}{\partial r}\right] 
-+ \nabla \cdot \kth \nabla T \right \} \, .
++ \nabla \cdot \kth \nabla T \right \} }_{``T~\text{force''}} \, .
+\label{T equation labeled}
 \end{equation}
 
 A final alternative is to consider an evolution equation for $h$
@@ -295,9 +297,11 @@ alone.  This can be derived by expanding the derivative of $(\rho h)$
 in Eq.~\ref{rhoh equation} and subtracting off $h \times$ the
 continuity equation (Eq.~\ref{rho equation}):
 \begin{equation}
-\frac{\partial h}{\partial t} = -\Ub \cdot \nabla h + \frac{1}{\rho}
+\frac{\partial h}{\partial t} = -\Ub \cdot \nabla h 
+\underbrace{+ \frac{1}{\rho}
 \left \{ \psi + (\Ubt \cdot \er )\frac{\partial p_0}{\partial r}
-+ \nabla \cdot \kth \nabla T \right \} \, .
++ \nabla \cdot \kth \nabla T \right \} }_{``h~\text{force''}} \, .
+\label{h equation labeled}
 \end{equation}
 
 To update the enthalpy, we need to compute an interface state for
@@ -309,8 +313,55 @@ depend on {\tt species\_pred\_type}.  Table~\ref{table:pred:hoverview}
 gives a summary
 of the {\tt enthalpy\_pred\_type} behavior.
 
+The general procedure for making the $(\rho h)$ edge state is as follows:
+\begin{enumerate}
+\item predict $(\rho h)'$, $h$, or $T$ to the edges (depending on {\tt
+  enthalpy\_pred\_type} ) using {\tt make\_edge\_scal} and the forces
+  identified in the appropriate evolution equation
+  (Eqs.~\ref{rhohprime equation}, \ref{T equation labeled}, or \ref{h
+    equation labeled} respectively).
+
+  The appropriate forces are summaried in table~\ref{table:pred:hforce}.
+
+\item if we predicted $T$, convert this predicted
+  edge state to an' intermediate ``enthalpy'' state (the quotes
+  indicate that it may be perturbational or full enthalpy) by calling
+  the EOS.
+ 
+\item construct the final enthalpy edge state in {\tt mkflux}.  The
+  precise construction depends on what species and enthalpy quantities
+  are input to {\tt mkflux}.
+
+\end{enumerate}
+
+\begin{table*}[h]
+\centering
+\caption{Forcing term into {\tt make\_edge\_scal} \newline}
+\label{table:pred:hforce}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{l|c}
+\hline
+\hline
+{\tt enthalpy\_pred\_type} &   {advective force} \\
+\hline
+1 / {\tt predict\_rhohprime} $((\rho h)^\prime)$ &  $(\Ubt \cdot \er) \frac{\partial p_0}{\partial r} - 
+ (\rho h)^\prime \; \nabla \cdot (\Ubt+w_0 \er) - 
+ \nabla \cdot (\Ubt (\rho h)_0) + \nabla \cdot \kth \nabla T$ \\
+2 / {\tt predict\_h}  $(h)$ & $\frac{1}{\rho} \left [\psi + (\Ubt \cdot \er)
+  \frac{\partial p_0}{\partial r} + \nabla \cdot \kth \nabla T \right ]$ \\
+3 / {\tt predict\_T\_then\_rhohprime} $(T)$ & $\frac{1}{\rho c_p} \left \{ (1 - \rho h_p) 
+   \left [\psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} \right ] + \nabla \cdot \kth \nabla T \right \}$ \\
+4 / {\tt predict\_T\_then\_h}  $(T)$ & $\frac{1}{\rho c_p} \left\{ (1 - \rho h_p) \left [\psi + (\Ubt \cdot \er)
+\frac{\partial p_0}{\partial r}\right ] +  \nabla \cdot \kth \nabla T \right\}$ \\
+\hline
+\end{tabular}
+\end{table*}
+
+
 \begin{landscape}
 \begin{table}[t]
+\caption{Summary of enthalpy edge state construction}
+\label{table:pred:hoverview}
 \renewcommand{\arraystretch}{1.5}
 {\small
 \centering
@@ -357,7 +408,6 @@ of the {\tt enthalpy\_pred\_type} behavior.
   $T$ & $h$ & $(\rho X)$, $\rho'$ & 
   $\left ( \rho_0 + \rho' \right ) h$ \\
 \hline
-\hline
 \end{tabular}
 } % end \small
 \end{table}
@@ -390,9 +440,10 @@ $(\rho h)_0^{n+\myhalf,{\rm avg}} = [(\rho h)_0^{n} + (\rho h)_0^{n+1}]/2$.
 
 \subsection{Computing $\rho h$ at edges}
 We use an analogous procedure described in Section \ref{Computing rho
-at edges} for computing $\rho$ at edges to compute $\rho h$ at edges.
-However, instead of computing $(\rho h)_0$ to edges directly, we compute $\rho$
-and $h$ separately, and multiply to get $(\rho h)_0$.
+  at edges} for computing $\rho$ at edges to compute $\rho h$ at
+edges.  For spherical, however, instead of computing $(\rho h)_0$ to
+edges directly, we compute $\rho$ and $h$ separately, and multiply to
+get $(\rho h)_0$.
 
 \subsection{Advancing $\rho h$}
 We update the enthalpy analogously to the species update in 
@@ -404,46 +455,8 @@ source terms accounted for in {\bf React State}.
 + (\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\} + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r} + \psi  \enskip .
 \end{equation}
 
-\subsection{Summary of Forcing}
 
-\begin{table*}[h]
-\begin{center}
-\caption{Forcing term into {\tt make\_edge\_scal} \newline}
-\begin{tabular}{c|c}
-\hline
-\hline
-{H PRED TYPE} &   {Force} \\
-\hline \\[-3mm]
-1  $((\rho h)^\prime)$ &  $(\Ubt \cdot \er) \frac{\partial p_0}{\partial r} - 
- (\rho h)^\prime \; \nabla \cdot (\Ubt+w_0 \er) - 
- \nabla \cdot (\Ubt (\rho h)_0) + \nabla \cdot \kth \nabla T$ \\[2 mm]
-2  $(h)$ & $\frac{1}{\rho} \left [\psi + (\Ubt \cdot \er)
-  \frac{\partial p_0}{\partial r} + \nabla \cdot \kth \nabla T \right ]$ \\[2 mm]
-3  $(T)$ & $\frac{1}{\rho c_p} \left \{ (1 - \rho h_p) 
-   \left [\psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} \right ] \nabla \cdot \kth \nabla T \right \}$ \\[2 mm]
-4  $(T)$ & $\frac{1}{\rho c_p} \left\{ (1 - \rho h_p) \left [\psi + (\Ubt \cdot \er)
-\frac{\partial p_0}{\partial r}\right ] \nabla \cdot \kth \nabla T \right\}$ \\[2 mm]
-\hline
-\end{tabular}
-\end{center}
-\end{table*}
 
-\begin{table*}[h]
-\begin{center}
-\caption{Quantity that goes into and out of {\tt make\_edge\_scal} \newline}
-\begin{tabular}{c|c}
-\hline
-\hline
-{h pred type} & {h/T } \\
-\hline \\[-3mm]
-1 & $(\rho h)^\prime$ \\
-2 & $h$  \\
-3 & $T$  \\
-4 & $T$  \\
-\hline
-\end{tabular}
-\end{center}
-\end{table*}
 
 \begin{table*}
 \begin{center}
@@ -465,22 +478,6 @@ source terms accounted for in {\bf React State}.
 \end{table*}
 
 
-\begin{table*}
-\begin{center}
-\caption{Quantity that goes into {\tt mkflux} on edges \newline}
-\begin{tabular}{c|c|c}
-\hline
-\hline
-{h pred type} & {Species } & {h/T } \\
-\hline
-1 & $X$ and $\rho^\prime$ & $(\rho h)^\prime$ \\
-2 & $X$ and $\rho^\prime$ & $h$ \\
-3 & $X$ and $\rho^\prime$ & $(\rho h)^\prime$ \\
-4 & $X$ and $\rho^\prime$ & $h$ \\
-\hline
-\end{tabular}
-\end{center}
-\end{table*}
 
 \begin{table*}
 \begin{center}
@@ -499,3 +496,39 @@ source terms accounted for in {\bf React State}.
 \end{center}
 \end{table*}
 
+
+
+%% \begin{table*}[h]
+%% \begin{center}
+%% \caption{Quantity that goes into and out of {\tt make\_edge\_scal} \newline}
+%% \begin{tabular}{c|c}
+%% \hline
+%% \hline
+%% {h pred type} & {h/T } \\
+%% \hline \\[-3mm]
+%% 1 & $(\rho h)^\prime$ \\
+%% 2 & $h$  \\
+%% 3 & $T$  \\
+%% 4 & $T$  \\
+%% \hline
+%% \end{tabular}
+%% \end{center}
+%% \end{table*}
+
+
+%% \begin{table*}
+%% \begin{center}
+%% \caption{Quantity that goes into {\tt mkflux} on edges \newline}
+%% \begin{tabular}{c|c|c}
+%% \hline
+%% \hline
+%% {h pred type} & {Species } & {h/T } \\
+%% \hline
+%% 1 & $X$ and $\rho^\prime$ & $(\rho h)^\prime$ \\
+%% 2 & $X$ and $\rho^\prime$ & $h$ \\
+%% 3 & $X$ and $\rho^\prime$ & $(\rho h)^\prime$ \\
+%% 4 & $X$ and $\rho^\prime$ & $h$ \\
+%% \hline
+%% \end{tabular}
+%% \end{center}
+%% \end{table*}
