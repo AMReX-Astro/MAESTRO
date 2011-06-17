@@ -530,14 +530,14 @@ constructed as:
 \begin{tabular}{l|c|c}
 \hline
 \hline
-{\tt species\_pred\_type} & {$\rho$ edge state} &   {$X$ edge state}  \\
+{\tt species\_pred\_type} & {$\rho$ edge state} &   {$X_k$ edge state}  \\
 \hline
 {\tt predict\_rhoprime\_and\_X} & 
   $\rho_0^{n+\myhalf,\rm{avg}} + \rho'_\mathrm{edge}$ & 
-  $X_\mathrm{edge}$ \\
+  $(X_k)_\mathrm{edge}$ \\
 {\tt predict\_rhoX} & 
-  $\rho_\mathrm{edge}$ & 
-  $(\rho X)_\mathrm{edge}/\rho_\mathrm{edge}$ \\
+  $\sum_k (\rho X_k)_\mathrm{edge}$ & 
+  $(\rho X_k)_\mathrm{edge}/\sum_k (\rho X_k)_\mathrm{edge}$ \\
 \hline
 \end{tabular}
 \end{table*}
