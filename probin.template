@@ -241,6 +241,10 @@ contains
        amr_buf_width = regrid_int
     endif
 
+    if ( max_levs > 1 .AND. test_set .eq. '' .AND. regrid_int < 0 ) then
+        call bl_error("ERROR: must set regrid_int to use AMR")
+    end	 if
+
     if (ppm_type .lt. 0 .or. ppm_type .gt. 2) then
        call bl_error("invalid ppm_type")
     end if
