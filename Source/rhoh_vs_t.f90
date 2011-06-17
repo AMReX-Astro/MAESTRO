@@ -27,7 +27,9 @@ contains
     use network
     use fill_3d_module
     use multifab_physbc_module
-
+    use probin_module, only: species_pred_type
+    use pred_parameters
+    
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: sedge(:,:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
@@ -70,6 +72,15 @@ contains
 
     dm = mla%dim
     nlevs = mla%nlevel
+
+    if (dm == 3 .and. &
+        species_pred_type == predict_rhoX) then
+       call bl_error("ERROR: species_pred_type == predict_rhoX not supported in makeHfromRhoT_edge for 3-d")
+    endif
+
+    if (species_pred_type == predict_rho_and_X) then
+       call bl_error("ERROR: species_pred_type == predict_rho_and_X not supported in makeHfromRhoT_edge")
+    endif
 
     ng_u  = nghost(u(1))
     ng_se = nghost(sedge(1,1))
@@ -169,7 +180,7 @@ contains
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
     use network,       only: nspec
-    use probin_module, only: enthalpy_pred_type, small_temp
+    use probin_module, only: enthalpy_pred_type, species_pred_type, small_temp
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_se
@@ -177,21 +188,43 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:),rhoh0_edge_old(0:),t0_edge_old(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:),rhoh0_edge_new(0:),t0_edge_new(0:)
  
-    integer :: i
+    integer :: i, n
     real(kind=dp_t) :: t0_edge
     
     do i = lo(1), hi(1)+1
 
+       ! get edge-centered temperature
        if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
           t0_edge = HALF*(t0_edge_old(i)+t0_edge_new(i))
           temp_eos(1) = max(sx(i,temp_comp)+t0_edge,small_temp)
        else
           temp_eos(1) = max(sx(i,temp_comp),small_temp)
        end if
-       den_eos(1)  = sx(i,rho_comp) + HALF * (rho0_edge_old(i) + rho0_edge_new(i))
 
-       ! sx(i,spec_comp:spec_comp+nspec-1) holds X
-       xn_eos(1,:) = sx(i,spec_comp:spec_comp+nspec-1)
+       ! get edge-centered density and species
+       if (species_pred_type .eq. predict_rhoprime_and_X) then
+          
+          ! interface states are rho' and X
+          den_eos(1)  = sx(i,rho_comp) + &
+               HALF * (rho0_edge_old(i) + rho0_edge_new(i))
+          
+          xn_eos(1,:) = sx(i,spec_comp:spec_comp+nspec-1)
+          
+       else if (species_pred_type .eq. predict_rhoX) then
+          
+          ! interface states are rho' and (rho X)
+          den_eos(1) = ZERO
+          do n = 1, nspec
+             den_eos(1) = den_eos(1) + sx(i,spec_comp+n-1)
+          enddo
+          
+          xn_eos(1,:) = sx(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+          
+       else if (species_pred_type .eq. predict_rho_and_X) then
+          
+          call bl_error("ERROR: predict_rho_and_X not supported in makeHfromRhoT_edge_1d")
+
+       endif
 
        pt_index_eos(:) = (/i, -1, -1/)
 
@@ -208,7 +241,7 @@ contains
                 pt_index_eos)
 
        if (enthalpy_pred_type .eq. predict_T_then_h .or. &
-            enthalpy_pred_type .eq. predict_Tprime_then_h) then
+           enthalpy_pred_type .eq. predict_Tprime_then_h) then
           sx(i,rhoh_comp) = h_eos(1) 
        else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
           sx(i,rhoh_comp) = den_eos(1)*h_eos(1) &
@@ -219,45 +252,67 @@ contains
 
   end subroutine makeHfromRhoT_edge_1d
 
-  subroutine makeHfromRhoT_edge_2d(sx,sy,ng_se, &
-                                   rho0_old,rhoh0_old,t0_old, &
-                                   rho0_edge_old,rhoh0_edge_old,t0_edge_old, &
-                                   rho0_new,rhoh0_new,t0_new, &
-                                   rho0_edge_new,rhoh0_edge_new,t0_edge_new, &
-                                   lo,hi)
+   subroutine makeHfromRhoT_edge_2d(sx,sy,ng_se, &
+                                    rho0_old,rhoh0_old,t0_old, &
+                                    rho0_edge_old,rhoh0_edge_old,t0_edge_old, &
+                                    rho0_new,rhoh0_new,t0_new, &
+                                    rho0_edge_new,rhoh0_edge_new,t0_edge_new, &
+                                    lo,hi)
 
-    use bl_constants_module
-    use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
-    use eos_module
-    use network,       only: nspec
-    use probin_module, only: enthalpy_pred_type, small_temp
-    use pred_parameters
+     use bl_constants_module
+     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
+     use eos_module
+     use network,       only: nspec
+     use probin_module, only: enthalpy_pred_type, species_pred_type, small_temp
+     use pred_parameters
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_se
-    real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,lo(2)-ng_se:,:)
-    real(kind=dp_t), intent(inout) :: sy(lo(1)-ng_se:,lo(2)-ng_se:,:)
-    real(kind=dp_t), intent(in   ) :: rho0_old(0:),rhoh0_old(0:),t0_old(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:),rhoh0_edge_old(0:),t0_edge_old(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_new(0:),rhoh0_new(0:),t0_new(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:),rhoh0_edge_new(0:),t0_edge_new(0:)
- 
-    integer :: i,j
-    real(kind=dp_t) :: t0_edge
-    
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)+1
-          
-          if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
-             t0_edge = HALF*(t0_old(j)+t0_new(j))
-             temp_eos(1) = max(sx(i,j,temp_comp)+t0_edge,small_temp)
-          else
-             temp_eos(1) = max(sx(i,j,temp_comp),small_temp)
-          end if
-          den_eos(1)  = sx(i,j,rho_comp) + HALF * (rho0_old(j) + rho0_new(j))
+     integer        , intent(in   ) :: lo(:),hi(:),ng_se
+     real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,lo(2)-ng_se:,:)
+     real(kind=dp_t), intent(inout) :: sy(lo(1)-ng_se:,lo(2)-ng_se:,:)
+     real(kind=dp_t), intent(in   ) :: rho0_old(0:),rhoh0_old(0:),t0_old(0:)
+     real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:),rhoh0_edge_old(0:),t0_edge_old(0:)
+     real(kind=dp_t), intent(in   ) :: rho0_new(0:),rhoh0_new(0:),t0_new(0:)
+     real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:),rhoh0_edge_new(0:),t0_edge_new(0:)
 
-          ! sx(i,j,spec_comp:spec_comp+nspec-1) holds X
-          xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
+     integer :: i,j, n
+     real(kind=dp_t) :: t0_edge
 
+     do j = lo(2), hi(2)
+        do i = lo(1), hi(1)+1
+
+           ! get edge-centered temperature
+           if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+              t0_edge = HALF*(t0_old(j)+t0_new(j))
+              temp_eos(1) = max(sx(i,j,temp_comp)+t0_edge,small_temp)
+           else
+              temp_eos(1) = max(sx(i,j,temp_comp),small_temp)
+           end if
+
+           ! get edge-centered density and species
+           if (species_pred_type .eq. predict_rhoprime_and_X) then
+
+              ! interface states are rho' and X
+              den_eos(1)  = sx(i,j,rho_comp) + &
+                   HALF * (rho0_old(j) + rho0_new(j))
+
+              xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
+
+           else if (species_pred_type .eq. predict_rhoX) then
+
+              ! interface states are rho' and (rho X)
+              den_eos(1) = ZERO
+              do n = 1, nspec
+                 den_eos(1) = den_eos(1) + sx(i,j,spec_comp+n-1)
+              enddo
+
+              xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+           else if (species_pred_type .eq. predict_rho_and_X) then
+
+              call bl_error("ERROR: predict_rho_and_X not supported in makeHfromRhoT_edge_1d")
+
+           endif
+             
           pt_index_eos(:) = (/i, j, -1/)
           
           call eos(eos_input_rt, den_eos, temp_eos, &
@@ -284,17 +339,40 @@ contains
     
     do j = lo(2), hi(2)+1
        do i = lo(1), hi(1)
-              
+           
+          ! get edge-centered temperature
           if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
              t0_edge = HALF*(t0_edge_old(j)+t0_edge_new(j))
              temp_eos(1) = max(sy(i,j,temp_comp)+t0_edge,small_temp)
           else
              temp_eos(1) = max(sy(i,j,temp_comp),small_temp)
           end if
-          den_eos(1)  = sy(i,j,rho_comp) + HALF * (rho0_edge_old(j) + rho0_edge_new(j))
-          
-          ! sy(i,j,spec_comp:spec_comp+nspec-1) holds X
-          xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
+
+          ! get edge-centered density and species
+          if (species_pred_type .eq. predict_rhoprime_and_X) then
+
+             ! interface states are rho' and X
+             den_eos(1)  = sy(i,j,rho_comp) + &
+                  HALF * (rho0_edge_old(j) + rho0_edge_new(j))
+
+             xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
+
+          else if (species_pred_type .eq. predict_rhoX) then
+
+             ! interface states are rho' and (rho X)
+             den_eos(1) = ZERO
+             do n = 1, nspec
+                den_eos(1) = den_eos(1) + sy(i,j,spec_comp+n-1)
+             enddo
+
+             xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+          else if (specieS_pred_type .eq. predict_rho_and_X) then
+             
+             call bl_error("ERROR: predict_rho_and_X not supported in makeHfromRhoT_edge_1d")
+
+          endif
+
 
           pt_index_eos(:) = (/i, j, -1/)
           
