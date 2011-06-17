@@ -1,4 +1,23 @@
 
+\section{General form of an advection equation}
+In predicting the interface states, we work with an advection-like
+equation, and call anything other than the advective term a ``force''.
+For example, for a scalar $\phi$, obeying a conservation law with a source term, $f$:
+\begin{equation}
+\frac{\partial \phi}{\partial t} = -\nabla \cdot (\phi \Ub) + f
+\end{equation}
+We write this in advective form as:
+\begin{equation}
+\frac{\partial \phi}{\partial t} = -\Ub \cdot \nabla \phi \, \underbrace{- \phi \nabla \cdot \Ub}_{\text{``advective force''}} + f
+\end{equation}
+Here we identify the non-advection portion of the divergence of the
+flux as the ``advective force'' for the advective equation.  This
+advective force will be used as a source when predicting the edge
+states.  Depending on the nature of $f$, it may either appear in the
+prediction as well or be absent if the process it describes is
+incorporated by Strang-splitting.
+
+
 %-----------------------------------------------------------------------------
 % density
 %-----------------------------------------------------------------------------
@@ -26,22 +45,33 @@ time-centered, interface state.  Algebraically, there are multiple
 paths to get this interface state---we can predict $(\rho X)$ to the
 edges as a single quantity, or predict $\rho$ and $X$ separately
 (either in full or perturbation form).  In the notes below, we use the
-subscript `{\tt edge}' to indicate what quantity was predicted to the
+subscript `{\tt edge}' to indicate what quantity was {\em predicted} to the
 edges.  In MAESTRO, the different methods of computing $(\rho X)$ on
 edges are controlled by the {\tt species\_pred\_type} parameter.  The
-resulting edge state is shown in the following table:
+quantities predicted to edges and the 
+resulting edge state are shown in the table~\ref{table:pred:species}
 
 \begin{table}[h]
 \centering
-\begin{tabular}{l|c}
+\caption{Summary of species edge state construction}
+\label{table:pred:species}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{l|c|c}
 \hline
 \hline
-{\tt species\_pred\_type} &   {$(\rho X_k)$ edge state} \\
-\hline \\[-3mm]
-1 / {\tt predict\_rhoprime\_and\_X}  &  $\left(\rho_0^{n+\myhalf,{\rm avg}}
-+ \rho'_\mathrm{edge} \right)(X_k)_\mathrm{edge}$ \\[2mm]
-2 / {\tt predict\_rhoX}  &  $(\rho X_k)_\mathrm{edge}$ \\[2mm]
-3 / {\tt predict\_rho\_and\_X}  &  $\rho_\mathrm{edge} (X_k)_\mathrm{edge}$ \\
+{\tt species\_pred\_type} &   {quantities predicted} & {$(\rho X_k)$ edge state} \\[-5pt]
+ & {in {\tt make\_edge\_scal}} & \\
+\hline 
+1 / {\tt predict\_rhoprime\_and\_X}  &  
+  $\rho'_\mathrm{edge}$, $(X_k)_\mathrm{edge}$ &
+  $\left(\rho_0^{n+\myhalf,{\rm avg}}  
+  + \rho'_\mathrm{edge} \right)(X_k)_\mathrm{edge}$ \\
+2 / {\tt predict\_rhoX}  &  
+  $\rho'_\mathrm{edge}$, $(\rho X_k)_\mathrm{edge}$ &
+  $(\rho X_k)_\mathrm{edge}$ \\
+3 / {\tt predict\_rho\_and\_X}  &  
+  $\rho_\mathrm{edge}$, $(X_k)_\mathrm{edge}$ &
+  $\rho_\mathrm{edge} (X_k)_\mathrm{edge}$ \\
 \hline
 \end{tabular}
 \end{table}
@@ -51,23 +81,6 @@ module.
 
 
 
-\subsection{Advective force for interface prediction}
-In predicting the interface states, we work with an advection-like
-equation, and call anything other than the advective term a ``force''.
-For example, for a scalar $\phi$, obeying a conservation law with a source term, $f$:
-\begin{equation}
-\frac{\partial \phi}{\partial t} = -\nabla \cdot (\phi \Ub) + f
-\end{equation}
-We write this in advective form as:
-\begin{equation}
-\frac{\partial \phi}{\partial t} = -\Ub \cdot \nabla \phi \, \underbrace{- \phi \nabla \cdot \Ub}_{\text{``advective force''}} + f
-\end{equation}
-Here we identify the non-advection portion of the divergence of the
-flux as the ``advective force'' for the
-advective equation.  In predicting the interface states, this advective
-force will be used in computing the interface states.  Depending on the
-nature of $f$, it may either appear in the prediction as well or be absent
-if the process it describes is incorporated by Strang-splitting.
 
 \subsection{{\tt species\_pred\_type} = {\tt predict\_rhoprime\_and\_X}}
 
@@ -87,10 +100,9 @@ terms, noting that $\Ub = \Ubt + w_o\eb_r$, to obtain the
 perturbational density equation,
 \begin{equation}
 \frac{\partial\rho'}{\partial t} = -\Ub\cdot\nabla\rho' \underbrace{- \rho'\nabla\cdot\Ub 
-- \nabla\cdot(\rho_0\Ubt)}_{\rho' ~ \text{force}},
+- \nabla\cdot(\rho_0\Ubt)}_{\rho' ~ \text{force}} \, .
 \label{rhoprime equation}
 \end{equation}
-where the underbraced ``$\rho'$ force'' is computed in {\tt modify\_scal\_force}.
 
 We also need $X_k$ at the edges.  Here, we subtract $X_k \times$
 Eq.~\ref{rho equation} from Eq.~\ref{species equation} to obtain
@@ -103,7 +115,8 @@ then the species equation is a pure advection equation with no force.
 \subsubsection{Predicting $\rho'$ at edges}
 We define $\rho' = \rho^{(1)} - \rho_0^n$.  Then we predict $\rho'$ to
 edges using {\tt make\_edge\_scal} in {\tt density\_advance} and the
-underbraced term in (\ref{rhoprime equation}) as the forcing.
+underbraced term in Eq.~\ref{rhoprime equation} as the forcing.  This
+force is computed in {\tt modify\_scal\_force}.
 
 \subsubsection{Predicting $\rho_0$ at edges}\label{Predicting rho0 at edges}
 There are two ways to predict $\rho_0$ at edges.
@@ -333,7 +346,7 @@ The general procedure for making the $(\rho h)$ edge state is as follows:
   The appropriate forces are summaried in table~\ref{table:pred:hforce}.
 
 \item if we predicted $T$, convert this predicted
-  edge state to an' intermediate ``enthalpy'' state (the quotes
+  edge state to an intermediate ``enthalpy'' state (the quotes
   indicate that it may be perturbational or full enthalpy) by calling
   the EOS.
  
@@ -387,43 +400,57 @@ of the {\tt enthalpy\_pred\_type} behavior.
 \hline
 {\tt species\_pred\_type} &   
 {\tt enthalpy\_pred\_type} &
-{quantity predicted} &
+{cell-centered} &
 {intermediate} &
 {species quantity} &
 {final $(\rho h)$} \\[-5pt]
  &
  &
-{in {\tt make\_edge\_scal}} &
-{``enthalpy'' edge state} &
+{quantity predicted} &
+{``enthalpy''} &
 {available in {\tt mkflux}} &
-{edge state} \\
+{edge state} \\[-5pt]
+ &
+ &
+{in {\tt make\_edge\_scal}} &
+{edge state} &
+ &
+ \\
 \hline 
 1 / {\tt predict\_rhoprime\_and\_X}  & 1 / {\tt predict\_rhohprime} &
-  $(\rho h)'$ & $(\rho h)'$ & $X$, $\rho'$ & 
-  $\left [ (\rho h)_0 + (\rho h)' \right ]$ \\
+  $(\rho h)'$ & $(\rho h)'_\mathrm{edge}$ & 
+  $X_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
+  $\left [ (\rho h)_0^{n+\myhalf,{\rm avg}} + (\rho h)'_\mathrm{edge} \right ]$ \\
 1 / {\tt predict\_rhoprime\_and\_X}  & 2 / {\tt predict\_h} &
-  $h$ & $h$ & $X$, $\rho'$ & 
-  $\left ( \rho_0 + \rho' \right ) h$ \\
+  $h$ & $h_\mathrm{edge}$ & 
+  $X_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
+  $\left ( \rho_0^{n+\myhalf,{\rm avg}} + \rho'_\mathrm{edge} \right ) h_\mathrm{edge}$ \\
 1 / {\tt predict\_rhoprime\_and\_X}  & 3 / {\tt predict\_T\_then\_rhohprime} &
-  $T$ & $(\rho h)'$ & $X$, $\rho'$ & 
-  $\left [ (\rho h)_0 + (\rho h)' \right ]$ \\
+  $T$ & $(\rho h)'_\mathrm{edge}$ & 
+  $X_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
+  $\left [ (\rho h)_0^{n+\myhalf,{\rm avg}} + (\rho h)'_\mathrm{edge} \right ]$ \\
 1 / {\tt predict\_rhoprime\_and\_X}  & 4 / {\tt predict\_T\_then\_h} &
-  $T$ & $h$ & $X$, $\rho'$ & 
-  $\left ( \rho_0 + \rho' \right ) h$ \\
+  $T$ & $h_\mathrm{edge}$ & 
+  $X_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
+  $\left ( \rho_0^{n+\myhalf,{\rm avg}} + \rho'_\mathrm{edge} \right ) h_\mathrm{edge}$ \\
 \hline
 \hline
 2 / {\tt predict\_rhoX}  & 1 / {\tt predict\_rhohprime} &
-  $(\rho h)'$ & $(\rho h)'$ & $(\rho X)$, $\rho'$ & 
-  $\left [ (\rho h)_0 + (\rho h)' \right ]$ \\
+  $(\rho h)'$ & $(\rho h)'_\mathrm{edge}$ & 
+  $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
+  $\left [ (\rho h)_0^{n+\myhalf,{\rm avg}} + (\rho h)'_\mathrm{edge} \right ]$ \\
 2 / {\tt predict\_rhoX}  & 2 / {\tt predict\_h} &
-  $h$ & $h$ & $(\rho X)$, $\rho'$ & 
-  $\left ( \rho_0 + \rho' \right ) h$ \\
+  $h$ & $h_\mathrm{edge}$ & 
+  $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
+  $\left ( \rho_0^{n+\myhalf,{\rm avg}} + \rho'_\mathrm{edge} \right ) h_\mathrm{edge}$ \\
 2 / {\tt predict\_rhoX}  & 3 / {\tt predict\_T\_then\_rhohprime} &
-  $T$ & $(\rho h)'$ & $(\rho X)$, $\rho'$ & 
-  $\left [ (\rho h)_0 + (\rho h)' \right ]$ \\
+  $T$ & $(\rho h)'_\mathrm{edge}$ & 
+  $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
+  $\left [ (\rho h)_0^{n+\myhalf,{\rm avg}} + (\rho h)'_\mathrm{edge} \right ]$ \\
 2 / {\tt predict\_rhoX}  & 4 / {\tt predict\_T\_then\_h} &
-  $T$ & $h$ & $(\rho X)$, $\rho'$ & 
-  $\left ( \rho_0 + \rho' \right ) h$ \\
+  $T$ & $h_\mathrm{edge}$ & 
+  $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
+  $\left ( \rho_0^{n+\myhalf,{\rm avg}} + \rho'_\mathrm{edge} \right ) h_\mathrm{edge}$ \\
 \hline
 \end{tabular}
 } % end \small
