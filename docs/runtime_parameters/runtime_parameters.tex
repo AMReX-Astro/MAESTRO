@@ -38,138 +38,205 @@ shown here.
 \endlastfoot
 
 
+\rowcolor{tableShade}
 \verb=  amr_buf_width  = &   the number of buffer zones surrounding a cell tagged for refinement. note that this needs to be >= regrid\_int  &  -1 \\
 \verb=  anelastic_cutoff  = &   The density below which we modify the constraint to look like the anelastic constraint, instead of the low Mach constraint.  This prevents velocities from getting out of hand at the edge of the star. Refer to Section \ref{Sec:Anelastic Cutoff}.  &  3.d6 \\
+\rowcolor{tableShade}
 \verb=  barrier_timers  = &   Call a parallel\_barrier before each of the simple timers we have coded in advance.f90.  Might cause a very slight overall performance hit.  &  .false. \\
 \verb=  base_cutoff_density  = &   The density below which we keep the initial model constant. Refer to Section \ref{Sec:Base Cutoff Density}  &  3.d6 \\
+\rowcolor{tableShade}
 \verb=  bcx_hi  = &   $+x$ boundary condition (valid values are listed in {\tt  boxlib/bc.f90})  &  SLIP\_WALL \\
 \verb=  bcx_lo  = &   $-x$ boundary condition  &  SLIP\_WALL \\
+\rowcolor{tableShade}
 \verb=  bcy_hi  = &   $+y$ boundary condition  &  SLIP\_WALL \\
 \verb=  bcy_lo  = &   $-y$ boundary condition  &  SLIP\_WALL \\
+\rowcolor{tableShade}
 \verb=  bcz_hi  = &   $+z$ boundary condition  &  SLIP\_WALL \\
 \verb=  bcz_lo  = &   $-z$ boundary condition  &  SLIP\_WALL \\
+\rowcolor{tableShade}
 \verb=  bds_type  = &   0 = use ppm instead for multi-d integrator \newline 1 = bilinear  &  0 \\
 \verb=  beta_type  = &   what type of coefficient to use inside the velocity divergence constraint. \newline {\tt beta\_type} = 1 uses $\beta_0$; \newline {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); \newline {\tt beta\_type} = 3 uses 1 (small-scale combustion).  &  1 \\
+\rowcolor{tableShade}
 \verb=  blocking_factor  = &   grids must be an integer multiple of this number, if possible  &  8 \\
 \verb=  buoyancy_cutoff_factor  = &   The multiplicative factor (over base\_cutoff\_density) below which we do zero out the buoyancy term in the momentum equation.  &  5.0 \\
+\rowcolor{tableShade}
 \verb=  burner_threshold_cutoff  = &   Mass fraction cutoff for burner\_threshold\_species  used in burner threshold  &  1.d-10 \\
 \verb=  burner_threshold_species  = &   Name of the species to be used in burner threshold  &  "" \\
+\rowcolor{tableShade}
 \verb=  cflfac  = &   CFL factor to use in the computation of the advection timestep constraint  &  0.5d0 \\
 \verb=  cg_verbose  = &   Verbosity of bottom solver  &  0 \\
+\rowcolor{tableShade}
 \verb=  change_max_grid_size_1  = &   Change the max grid size on the base level on restart  &  .false. \\
 \verb=  check_base_name  = &   prefix to use in checkpoint file names  &  "chk" \\
+\rowcolor{tableShade}
 \verb=  chk_int  = &   Number of timesteps between writing a checkpoint file  &  0 \\
 \verb=  co_latitude  = &   latitude, in radians, for problems with rotation where the domain is only a subset of a full star.  &  ZERO \\
+\rowcolor{tableShade}
 \verb=  conductivity_constant  = &   the constant conductivity (only applies if the conductivity/constant module is used)  &  1.0d0 \\
 \verb=  diag_buf_size  = &   number of timesteps to buffer diagnostic output information before writing (note: not implemented for all problems)  &  10 \\
+\rowcolor{tableShade}
 \verb=  dm_in  = &   dimensionality (valid values are 2 or 3)  &  2 \\
 \verb=  do_alltoallv  = &    &  .false. \\
+\rowcolor{tableShade}
 \verb=  do_burning  = &   turn on (.true.) or off (.false.) burning  &  .true. \\
 \verb=  do_eos_h_above_cutoff  = &   After the advective enthalpy update, recompute the enthalpy if we are below the base cutoff density.  &  .true. \\
+\rowcolor{tableShade}
 \verb=  do_heating  = &   use analytic heating  &  .false. \\
 \verb=  do_initial_projection  = &   Do the initial projection.  &  .true. \\
+\rowcolor{tableShade}
 \verb=  do_planar_invsq_grav  = &   are we doing 1/r$^2$ gravity for plane-parallel  &  .false. \\
 \verb=  do_smallscale  = &   force $\rho_0 = (\rho h)_0 = 0$, {\tt evolve\_base\_state = F} and {\tt beta\_type} = 3  &  .false. \\
+\rowcolor{tableShade}
 \verb=  do_sponge  = &   Use sponging.  &  .false. \\
 \verb=  dpdt_factor  = &   factor in front of the volume discrepancy term (0.0 = off)  &  0.d0 \\
+\rowcolor{tableShade}
 \verb=  drdxfac  = &   ratio of radial base state zones to Cartesian full state zones for spherical geometry  &  1 \\
 \verb=  drive_initial_convection  = &   freeze the temperature used in the reaction network to the initial value.  This is useful for developing an initial convective field to carry away the energy, while preventing the reactions from going nonlinear.  &  .false. \\
+\rowcolor{tableShade}
 \verb=  dump_grid_file  = &   dump out a file, named grids.out, containing the number of grids a each level.  A new line is added each time regrid is called.  &  .false. \\
 \verb=  enthalpy_pred_type  = &   predict\_rhohprime = 1; \newline predict\_h = 2; \newline predict\_T\_then\_rhohprime = 3; \newline predict\_T\_then\_h = 4; \newline predict\_hprime = 5; \newline predict\_Tprime\_then\_h = 6.  &  predict\_rhohprime \\
+\rowcolor{tableShade}
 \verb=  evolve_base_state  = &   turn on (.true.) or off (.false.) basestate evolution  &  .true. \\
 \verb=  fix_base_state  = &   if true, don't call average to reset the base state at all, even during initialization  &  .false. \\
+\rowcolor{tableShade}
 \verb=  fixed_dt  = &   Fix the time step.  If -1.0, then use the standard time step.  &  -1.0d0 \\
 \verb=  grav_const  = &   the gravitational acceleration (cm~s$^{-2}$) for plane-parallel geometry  &  -1.5d10 \\
+\rowcolor{tableShade}
 \verb=  hg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
 \verb=  hg_dense_stencil  = &   In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 7-point Laplacian (.false.).  &  .true. \\
+\rowcolor{tableShade}
 \verb=  init_divu_iter  = &   Number of initial divu iterations.  &  4 \\
 \verb=  init_iter  = &   Number of initial pressure iterations.  &  4 \\
+\rowcolor{tableShade}
 \verb=  init_shrink  = &   the multiplicative factor ($\le 1$) to reduce the initial timestep as computed by the various timestep estimators  &  1.d0 \\
 \verb=  job_name  = &   job name printed in output  &  "" \\
+\rowcolor{tableShade}
 \verb=  lUsingNFiles  = &   If .true., use nOutFiles processors to write checkpoint and plotfiles. Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  .true. \\
 \verb=  mach_max_abort  = &   maximum mach number before the code aborts  &  -1.d0 \\
+\rowcolor{tableShade}
 \verb=  max_dt  = &   This is the maximum dt that is allowed  &  1.0d33 \\
 \verb=  max_dt_growth  = &   The maximum scale factor that the time step is allowed to grow by per time step.  &  1.1d0 \\
+\rowcolor{tableShade}
 \verb=  max_grid_size  = &   The largest grid size that will be created using make\_new\_grids.  &  64 \\
 \verb=  max_grid_size_1  = &   The largest grid size that will be created using make\_new\_grids for the coarsest level.  Defaults to {\tt max\_grid\_size}.  &  -1 \\
+\rowcolor{tableShade}
 \verb=  max_grid_size_2  = &   The largest grid size that will be created using make\_new\_grids for level 2 (the first refined level).  Defaults to {\tt max\_grid\_size}.  &  -1 \\
 \verb=  max_grid_size_3  = &   The largest grid size that will be created using make\_new\_grids for level 3 (the second refined level) and beyond.  Defaults to {\tt max\_grid\_size}.  &  -1 \\
+\rowcolor{tableShade}
 \verb=  max_levs  = &   Total number of levels.  1 = single level.  &  1 \\
 \verb=  max_mg_bottom_nlevels  = &   if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have  &  1000 \\
+\rowcolor{tableShade}
 \verb=  max_step  = &   Maximum number of steps in the simulation.  &  1 \\
 \verb=  mg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
+\rowcolor{tableShade}
 \verb=  mg_verbose  = &   Verbsoity of the multigrid solver, but not the bottom solver.  &  0 \\
 \verb=  min_eff  = &   parameter for cluster algorithm for making new grids in adaptive problems  &  0.9d0 \\
+\rowcolor{tableShade}
 \verb=  minwidth  = &   The minimum size on a side for a grid created using make\_new\_grids.  &  8 \\
 \verb=  model_file  = &   input model file  &  "model.hse" \\
+\rowcolor{tableShade}
 \verb=  nOutFiles  = &   If lUsingNFiles = .true., use this many processors to write checkpoint and plotfiles.  Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  64 \\
 \verb=  n_cellx  = &   Number of cells for the base level in the x-direction  &  -1 \\
+\rowcolor{tableShade}
 \verb=  n_celly  = &   Number of cells for the base level in the y-direction  &  -1 \\
 \verb=  n_cellz  = &   Number of cells for the base level in the z-direction  &  -1 \\
+\rowcolor{tableShade}
 \verb=  nuclear_dt_fac  = &   If $T_{max}^n > T_{max}^{n-1}$ set the new dt =   min[dt, dt*{\tt nuclear\_dt\_fac}*( $T_{max}^{n-1}$ / $(T_{max}^n-T_{max}^{n-1})$ ) ] not checkpoint-compatible yet since it wouldn't be backwards compatible  &  -1.0d0 \\
 \verb=  octant  = &   set octant = T if you just want to model an octant of a sphere (note: only takes effect for spherical geometry)  &  .false. \\
+\rowcolor{tableShade}
 \verb=  perturb_model  = &   Turn on a perturbation in the initial data.  Problem specific.  &  .false. \\
 \verb=  planar_invsq_mass  = &   the point mass for planar 1/r$^2$ gravity  &  0.d0 \\
+\rowcolor{tableShade}
 \verb=  plot_Hext  = &   plot external heating (Hext) in plotfile  &  .false. \\
 \verb=  plot_Hnuc  = &   plot nuclear energy generation rate (Hnuc) in plotfile  &  .true. \\
+\rowcolor{tableShade}
 \verb=  plot_ad_excess  = &   plot the adiabatic excess  &  .false. \\
 \verb=  plot_base  = &   plot w0\_x, w0\_y, w0\_z, divw0, rho0, rhoh0, h0, and p0 in plotfile  &  .false. \\
+\rowcolor{tableShade}
 \verb=  plot_base_name  = &   prefix to use in plotfile file names  &  "plt" \\
 \verb=  plot_cs  = &   plot soundspeed  &  .false. \\
+\rowcolor{tableShade}
 \verb=  plot_deltat  = &   rather than use a plot interval, plot a file after the solution has advanced past plot\_deltat in time  &  -1.d0 \\
 \verb=  plot_eta  = &   plot $\etarho$ in plotfile  &  .false. \\
+\rowcolor{tableShade}
 \verb=  plot_gpi  = &   plot pi and grad(pi)  &  .true. \\
 \verb=  plot_h_with_use_tfromp  = &   Turn on storing of enthalpy-based quantities in the plotfile when we are running with {\tt use\_tfromp}  &  .true. \\
+\rowcolor{tableShade}
 \verb=  plot_int  = &   plot interval  &  0 \\
 \verb=  plot_omegadot  = &   plot omegadot in plotfile  &  .true. \\
+\rowcolor{tableShade}
 \verb=  plot_spec  = &   plot species and omegadot in plotfile  &  .true. \\
 \verb=  plot_sponge_fdamp  = &   plot fdamp rather than sponge assumes sponge has the form 1/(1+dt*{\tt sponge\_kappa}*fdamp)  &  .false. \\
+\rowcolor{tableShade}
 \verb=  plot_trac  = &   plot tracers in plotfile  &  .false. \\
 \verb=  ppm_type  = &   0 = no ppm \newline 1 = 1985 ppm \newline 2 = Hybrid Sekora/Colella McCorquodale Colella 2009/2010 ppm  &  1 \\
+\rowcolor{tableShade}
 \verb=  prob_hi_x  = &   physical coordinates of hi-x corner of problem domain  &  1.d0 \\
 \verb=  prob_hi_y  = &   physical coordinates of hi-y corner of problem domain  &  1.d0 \\
+\rowcolor{tableShade}
 \verb=  prob_hi_z  = &   physical coordinates of hi-z corner of problem domain  &  1.d0 \\
 \verb=  prob_lo_x  = &   physical coordinates of lo-x corner of problem domain  &  ZERO \\
+\rowcolor{tableShade}
 \verb=  prob_lo_y  = &   physical coordinates of lo-y corner of problem domain  &  ZERO \\
 \verb=  prob_lo_z  = &   physical coordinates of lo-z corner of problem domain  &  ZERO \\
+\rowcolor{tableShade}
 \verb=  ref_ratio  = &   Refinement ratio for multilevel problems  &  2 \\
 \verb=  regrid_int  = &   How often we regrid.  &  -1 \\
+\rowcolor{tableShade}
 \verb=  restart  = &   which file to restart from.  -1 means do not restart  &  -1 \\
 \verb=  restart_into_finer  = &   restart and add a level of refinement  &  .false. \\
+\rowcolor{tableShade}
 \verb=  restart_with_vel_field  = &   restart the simulation using a result from a {\tt drive\_initial\_convection} = T run note that this uses the restart variable to specify which file to restart from.  After reading in the velocity information from the restart file, the time and timestep number are zeroed.  &  .false. \\
 \verb=  rotation_radius  = &   radius used for computing centrifugal term in rotation problems  &  1.0d6 \\
+\rowcolor{tableShade}
 \verb=  rotational_frequency  = &   rotational frequency used for computing centrifugal term in rotation problems.  &  ZERO \\
 \verb=  s0_interp_type  = &   The interpolation for filling a cell-centered multifab from a 1D bin-centered array. \newline 1 = piecewise constant; \newline 2 = piecewise linear; \newline 3 = quadratic  &  3 \\
+\rowcolor{tableShade}
 \verb=  s0mac_interp_type  = &   The interpolation for filling an edge based multifab from a 1D bin-centered array. \newline 1 = Interpolate s0 to cell centers (with s0\_interp\_type), then average to edges; \newline 2 = Interpolate s0 to edges directly using linear interpolation; \newline 3 = Interpolate s0 to edges directly using quadratic interpolation.  &  1 \\
 \verb=  sdc_iters  = &   how many SDC iteractions to take (requires the code be compiled with {\tt SDC := t}  &  4 \\
+\rowcolor{tableShade}
 \verb=  single_prec_plotfiles  = &    &  .false. \\
 \verb=  slope_order  = &   order of slopes in Godunov algorithm.  Options are 0, 2, or 4.  &  4 \\
+\rowcolor{tableShade}
 \verb=  small_dens  = &    &  1.d-5 \\
 \verb=  small_temp  = &    &  5.d6 \\
+\rowcolor{tableShade}
 \verb=  species_pred_type  = &   Which quantities do we predict to the edges for computing the ($\rho X$) edge states?  \newline {\tt species\_pred\_type} = 1 means predict $\rho^\prime$ and $X$ separately.  \newline {\tt species\_pred\_type} = 2 means predict the full ($\rho X$) itself. \newline {\tt species\_pred\_type} = 3 means predict $\rho$ and $X$ separately.  &  1 \\
 \verb=  spherical_in  = &   set to 1 if you are doing a spherical problem  &  0 \\
+\rowcolor{tableShade}
 \verb=  sponge_center_density  = &   Center of the inner sponge.  &  3.d6 \\
 \verb=  sponge_kappa  = &   Parameter for sponge.  Problem dependent.  &  10.d0 \\
+\rowcolor{tableShade}
 \verb=  sponge_start_factor  = &   The sponge begins at sponge\_center\_density * sponge\_start\_factor.  &  3.333d0 \\
 \verb=  stop_time  = &   simulation stop time  &  -1.d0 \\
+\rowcolor{tableShade}
 \verb=  temp_diffusion_formulation  = &   How to compute the explicit thermal diffusion term.  \newline 1 = in terms of $T$; \newline 2 = in terms of $\rho,p_0,X$.  &  2 \\
 \verb=  test_set  = &   Fixed grid file.  &  '' \\
+\rowcolor{tableShade}
 \verb=  the_copy_cache_max  = &    Number of boxassoc layouts we keep in memory to avoid having to recompute the boxassoc, which is computationally expensive.  &  50 \\
 \verb=  the_knapsack_verbosity  = &   Verbosity of the knapscak processor-to-grid algorithm.  &  .false. \\
+\rowcolor{tableShade}
 \verb=  the_layout_verbosity  = &    &  0 \\
 \verb=  the_sfc_threshold  = &   When assigning processors for grids, this determines whether we use the sfc algorithm or knapsack algorithm.  If the total number of grids divided by the number of processors is greater than this number, use sfc.  &  5 \\
+\rowcolor{tableShade}
 \verb=  thermal_diffusion_type  = &   In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.  &  1 \\
 \verb=  use_delta_gamma1_term  = &   turns on second order correction to delta gamma1 term  &  .false. \\
+\rowcolor{tableShade}
 \verb=  use_divu_firstdt  = &   Use the divu constraint when computing the first time step.  &  .false. \\
 \verb=  use_eos_coulomb  = &   use the Coulomb corrections between ions (if supported by the EOS)  &  .true. \\
+\rowcolor{tableShade}
 \verb=  use_etarho  = &   turn on the etarho term as described in flow chart  &  .true. \\
 \verb=  use_hypre  = &   use the hypre library  &  .false. \\
+\rowcolor{tableShade}
 \verb=  use_linear_grav_in_beta  = &   how to represent gravity in the beta0 integration: .true. = piecewise linear .false. = piecewise constant  &  .false. \\
 \verb=  use_particles  = &   call the particle initialization, advection, etc. routines.  &  .false. \\
+\rowcolor{tableShade}
 \verb=  use_soundspeed_firstdt  = &   Use the soundspeed constraint when computing the first time step.  &  .false. \\
 \verb=  use_tfromp  = &   When updating temperature, use $T=T(\rho,p_0,X) $ rather than $T=T(\rho,h,X)$.  &  .false. \\
+\rowcolor{tableShade}
 \verb=  use_thermal_diffusion  = &   Use thermal diffusion.  &  .false. \\
 \verb=  verbose  = &   General verbosity  &  0 \\
+\rowcolor{tableShade}
 \verb=  w0_interp_type  = &   The interpolation for filling a cell-centered multifab from a 1D edge-centered array. \newline 1 = piecewise constant; \newline 2 = piecewise linear; \newline 3 = quadratic  &  2 \\
 \verb=  w0mac_interp_type  = &   The interpolation for putting w0 on edges.  We only compute the normal component. \newline 1 = Interpolate w0 to cell centers (with w0\_interp\_type), then average to edges; \newline 2 = Interpolate w0 to edges directly using linear interpolation; \newline 3 = Interpolate w0 to edges directly using quadratic interpolation; \newline 4 = Interpolate w0 to nodes using linear interpolation, then average to edges.  &  1 \\
 

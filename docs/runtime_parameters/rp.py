@@ -126,7 +126,14 @@ def make_tex_table():
     print header
 
     # sort the parameters and dump them in latex-fashion
+    odd = 1
     for param in sorted(paramsList):
+        if (odd == 1):
+            print "\\rowcolor{tableShade}"
+            odd = 0
+        else:
+            odd = 1
+
         print "\\verb= ", \
             paramsDict[param].var, \
             " = & ", \
