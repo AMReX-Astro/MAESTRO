@@ -66,7 +66,7 @@ resulting edge state are shown in the table~\ref{table:pred:species}
   $\rho'_\mathrm{edge}$, $(X_k)_\mathrm{edge}$ &
   $\left(\rho_0^{n+\myhalf,{\rm avg}}  
   + \rho'_\mathrm{edge} \right)(X_k)_\mathrm{edge}$ \\
-2 / {\tt predict\_rhoX}  &  
+2 / {\tt predict\_rhoprime\_and\_rhoX}  &  
   $\rho'_\mathrm{edge}$, $(\rho X_k)_\mathrm{edge}$ &
   $(\rho X_k)_\mathrm{edge}$ \\
 3 / {\tt predict\_rho\_and\_X}  &  
@@ -75,7 +75,7 @@ resulting edge state are shown in the table~\ref{table:pred:species}
 \hline
 \end{tabular}
 \end{table}
-We note the labels {\tt predict\_rhoprime\_and\_X}, {\tt predict\_rhoX}, and
+We note the labels {\tt predict\_rhoprime\_and\_X}, {\tt predict\_rhoprime\_and\_rhoX}, and
 {\tt predict\_rho\_and\_X} are provided by the {\tt pred\_parameters}
 module.
 
@@ -167,7 +167,7 @@ The force seen by {\tt make\_edge\_scal} is 0.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt species\_pred\_type} = {\tt predict\_rhoX}}
+\subsection{{\tt species\_pred\_type} = {\tt predict\_rhoprime\_and\_rhoX}}
 
 Here we wish to construct $(\rho X_k)_\mathrm{edge}$ by predicting
 $(\rho X_k)$ to the edges as a single quantity.  We start with
@@ -220,7 +220,7 @@ associated discretization is \\
 \end{equation} \\
 
 
-\noindent {\tt species\_pred\_type = predict\_rhoX}:
+\noindent {\tt species\_pred\_type = predict\_rhoprime\_and\_rhoX}:
 \begin{equation}
 \frac{\partial\rho X_k}{\partial t} = 
 -\nabla\cdot\left\{\left[\left(\rho X_k \right)_\mathrm{edge} \right](\Ubt+w_0\eb_r)\right\}.
@@ -408,13 +408,13 @@ of the {\tt enthalpy\_pred\_type} behavior.
  &
 {quantity predicted} &
 {``enthalpy''} &
-{available in {\tt mkflux}} &
+{available in} &
 {edge state} \\[-5pt]
  &
  &
 {in {\tt make\_edge\_scal}} &
 {edge state} &
- &
+{\tt mkflux} &
  \\
 \hline 
 1 / {\tt predict\_rhoprime\_and\_X}  & 1 / {\tt predict\_rhohprime} &
@@ -435,19 +435,19 @@ of the {\tt enthalpy\_pred\_type} behavior.
   $\left ( \rho_0^{n+\myhalf,{\rm avg}} + \rho'_\mathrm{edge} \right ) h_\mathrm{edge}$ \\
 \hline
 \hline
-2 / {\tt predict\_rhoX}  & 1 / {\tt predict\_rhohprime} &
+2 / {\tt predict\_rhoprime\_and\_rhoX}  & 1 / {\tt predict\_rhohprime} &
   $(\rho h)'$ & $(\rho h)'_\mathrm{edge}$ & 
   $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
   $\left [ (\rho h)_0^{n+\myhalf,{\rm avg}} + (\rho h)'_\mathrm{edge} \right ]$ \\
-2 / {\tt predict\_rhoX}  & 2 / {\tt predict\_h} &
+2 / {\tt predict\_rhoprime\_and\_rhoX}  & 2 / {\tt predict\_h} &
   $h$ & $h_\mathrm{edge}$ & 
   $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
   $\left ( \rho_0^{n+\myhalf,{\rm avg}} + \rho'_\mathrm{edge} \right ) h_\mathrm{edge}$ \\
-2 / {\tt predict\_rhoX}  & 3 / {\tt predict\_T\_then\_rhohprime} &
+2 / {\tt predict\_rhoprime\_and\_rhoX}  & 3 / {\tt predict\_T\_then\_rhohprime} &
   $T$ & $(\rho h)'_\mathrm{edge}$ & 
   $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
   $\left [ (\rho h)_0^{n+\myhalf,{\rm avg}} + (\rho h)'_\mathrm{edge} \right ]$ \\
-2 / {\tt predict\_rhoX}  & 4 / {\tt predict\_T\_then\_h} &
+2 / {\tt predict\_rhoprime\_and\_rhoX}  & 4 / {\tt predict\_T\_then\_h} &
   $T$ & $h_\mathrm{edge}$ & 
   $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
   $\left ( \rho_0^{n+\myhalf,{\rm avg}} + \rho'_\mathrm{edge} \right ) h_\mathrm{edge}$ \\
@@ -562,7 +562,7 @@ constructed as:
 {\tt predict\_rhoprime\_and\_X} & 
   $\rho_0^{n+\myhalf,\rm{avg}} + \rho'_\mathrm{edge}$ & 
   $(X_k)_\mathrm{edge}$ \\
-{\tt predict\_rhoX} & 
+{\tt predict\_rhoprime\_and\_rhoX} & 
   $\sum_k (\rho X_k)_\mathrm{edge}$ & 
   $(\rho X_k)_\mathrm{edge}/\sum_k (\rho X_k)_\mathrm{edge}$ \\
 \hline
