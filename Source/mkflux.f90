@@ -619,6 +619,8 @@ contains
     use geometry, only: spherical
     use ml_restriction_module, only: ml_edge_restriction_c
     use variables, only: rhoh_comp
+    use probin_module, only: enthalpy_pred_type, species_pred_type
+    use pred_parameters
 
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: sflux(:,:)
@@ -676,6 +678,13 @@ contains
 
     dm = mla%dim
     nlevs = mla%nlevel
+
+    if (dm == 3 .and. &
+        species_pred_type == predict_rhoprime_and_rhoX .and. &
+        (enthalpy_pred_type == predict_h .or. &
+         enthalpy_pred_type == predict_T_then_h)) then
+       call bl_error("ERROR: species_pred_type == predict_rhoprime_and_rhoX not supported with h on edges in mk_rhoh_flux for 3-d")
+    endif
 
     ng_sf = nghost(sflux(1,1))
     ng_se = nghost(sedge(1,1))
@@ -786,7 +795,7 @@ contains
     use bl_constants_module
     use network, only : nspec
     use variables, only : rho_comp, rhoh_comp
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type, species_pred_type
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_se,ng_um
@@ -813,11 +822,26 @@ contains
     ! create x-fluxes
     if (test) then
 
-       do i=lo(1),hi(1)+1
-          rho0_edge = HALF*(rho0_edge_old(i)+rho0_edge_new(i))
-          sfluxx(i,rhoh_comp) = &
-               (umac(i)+w0(i))*(rho0_edge+sedgex(i,rho_comp))*sedgex(i,rhoh_comp)
-       end do
+       ! enthalpy edge state is h
+       if (species_pred_type == predict_rhoprime_and_X .or. &
+           species_pred_type == predict_rhoprime_and_rhoX) then
+
+          ! density edge state is rho'
+          do i=lo(1),hi(1)+1
+             rho0_edge = HALF*(rho0_edge_old(i)+rho0_edge_new(i))
+             sfluxx(i,rhoh_comp) = &
+                  (umac(i)+w0(i))*(rho0_edge+sedgex(i,rho_comp))*sedgex(i,rhoh_comp)
+          end do
+          
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho
+          do i=lo(1),hi(1)+1
+             sfluxx(i,rhoh_comp) = &
+                  (umac(i)+w0(i))*sedgex(i,rho_comp)*sedgex(i,rhoh_comp)
+          end do
+
+       endif
 
     else if (test2) then
 
@@ -825,6 +849,7 @@ contains
 
     else
 
+       ! enthalpy edge state is (rho h)'
        do i=lo(1),hi(1)+1
           rhoh0_edge = HALF*(rhoh0_edge_old(i)+rhoh0_edge_new(i))
           sfluxx(i,rhoh_comp) = (umac(i)+w0(i))*(sedgex(i,rhoh_comp)+rhoh0_edge)
@@ -842,7 +867,7 @@ contains
     use bl_constants_module
     use network, only : nspec
     use variables, only : rho_comp, rhoh_comp
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type, species_pred_type
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_se,ng_um
@@ -872,13 +897,30 @@ contains
     ! create x-fluxes
     if (test) then
 
-       do j=lo(2),hi(2)
-          rho0_edge = HALF*(rho0_old(j)+rho0_new(j))
-          do i=lo(1),hi(1)+1
-             sfluxx(i,j,rhoh_comp) = &
-                  umac(i,j)*(rho0_edge+sedgex(i,j,rho_comp))*sedgex(i,j,rhoh_comp)
+       ! enthalpy edge state is h
+       if (species_pred_type == predict_rhoprime_and_X .or. &
+           species_pred_type == predict_rhoprime_and_rhoX) then
+
+          ! density edge state is rho'          
+          do j=lo(2),hi(2)
+             rho0_edge = HALF*(rho0_old(j)+rho0_new(j))
+             do i=lo(1),hi(1)+1
+                sfluxx(i,j,rhoh_comp) = &
+                     umac(i,j)*(rho0_edge+sedgex(i,j,rho_comp))*sedgex(i,j,rhoh_comp)
+             end do
           end do
-       end do
+
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)+1
+                sfluxx(i,j,rhoh_comp) = &
+                     umac(i,j)*sedgex(i,j,rho_comp)*sedgex(i,j,rhoh_comp)
+             end do
+          end do
+
+       endif
 
     else if (test2) then
 
@@ -886,6 +928,7 @@ contains
 
     else
 
+       ! enthalpy edge state is (rho h)'
        do j=lo(2),hi(2)
           rhoh0_edge = HALF*(rhoh0_old(j)+rhoh0_new(j))
           do i=lo(1),hi(1)+1
@@ -898,13 +941,30 @@ contains
     ! create y-fluxes
     if (test) then
 
-       do j=lo(2),hi(2)+1
-          rho0_edge = HALF*(rho0_edge_old(j)+rho0_edge_new(j))
-          do i=lo(1),hi(1)
-             sfluxy(i,j,rhoh_comp) = &
-                  (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,rhoh_comp)
+       ! enthalpy edge state is h
+       if (species_pred_type == predict_rhoprime_and_X .or. &
+           species_pred_type == predict_rhoprime_and_rhoX) then
+
+          ! density edge state is rho'
+          do j=lo(2),hi(2)+1
+             rho0_edge = HALF*(rho0_edge_old(j)+rho0_edge_new(j))
+             do i=lo(1),hi(1)
+                sfluxy(i,j,rhoh_comp) = &
+                     (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,rhoh_comp)
+             end do
           end do
-       end do
+          
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho
+          do j=lo(2),hi(2)+1
+             do i=lo(1),hi(1)
+                sfluxy(i,j,rhoh_comp) = &
+                     (vmac(i,j)+w0(j))*sedgey(i,j,rho_comp)*sedgey(i,j,rhoh_comp)
+             end do
+          end do
+
+       endif
 
     else if (test2) then
 
@@ -912,6 +972,7 @@ contains
 
     else
 
+       ! enthalpy edge state is (rho h)'
        do j=lo(2),hi(2)+1
           rhoh0_edge = HALF*(rhoh0_edge_old(j)+rhoh0_edge_new(j))
           do i=lo(1),hi(1)
