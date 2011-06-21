@@ -74,8 +74,8 @@ contains
     nlevs = mla%nlevel
 
     if (dm == 3 .and. &
-        species_pred_type == predict_rhoX) then
-       call bl_error("ERROR: species_pred_type == predict_rhoX not supported in makeHfromRhoT_edge for 3-d")
+        species_pred_type == predict_rhoprime_and_rhoX) then
+       call bl_error("ERROR: species_pred_type == predict_rhoprime_and_rhoX not supported in makeHfromRhoT_edge for 3-d")
     endif
 
     if (species_pred_type == predict_rho_and_X) then
@@ -210,7 +210,7 @@ contains
           
           xn_eos(1,:) = sx(i,spec_comp:spec_comp+nspec-1)
           
-       else if (species_pred_type .eq. predict_rhoX) then
+       else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
           
           ! interface states are rho' and (rho X)
           den_eos(1) = ZERO
@@ -297,7 +297,7 @@ contains
 
               xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
 
-           else if (species_pred_type .eq. predict_rhoX) then
+           else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
 
               ! interface states are rho' and (rho X)
               den_eos(1) = ZERO
@@ -357,7 +357,7 @@ contains
 
              xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
 
-          else if (species_pred_type .eq. predict_rhoX) then
+          else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
 
              ! interface states are rho' and (rho X)
              den_eos(1) = ZERO

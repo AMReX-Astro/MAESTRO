@@ -112,7 +112,7 @@ contains
 
     ! Make source term for rho or rho' 
     if ((species_pred_type == predict_rhoprime_and_X) .or. &
-        (species_pred_type == predict_rhoX)) then
+        (species_pred_type == predict_rhoprime_and_rhoX)) then
        ! rho' source term
        !   . this is needed for pred_rhoprime_and_X
        !   . we still do this for pred_rhoX since some methods for the
@@ -133,12 +133,12 @@ contains
     ! for species_pred_types predict_rhoprime_and_X and
     ! predict_rho_and_X, there is not force for X.
 
-    ! for predict_rhoX, the source term is the non-advective part of
+    ! for predict_rhoprime_and_rhoX, the source term is the non-advective part of
     ! the flux.  Note the base state density quantities that we pass
     ! in here are ignored since we are making the force assuming a
     ! full form (not perturbational) of the species advection
     ! equation.
-    if (species_pred_type == predict_rhoX) then
+    if (species_pred_type == predict_rhoprime_and_rhoX) then
        do i = 1, nspec
           call modify_scal_force(scal_force,sold,umac,rho0_old, &
                                  rho0_edge_old,w0,dx,rho0_old_cart,spec_comp-1+i,mla, &
@@ -172,7 +172,7 @@ contains
     endif
 
     if ((species_pred_type == predict_rhoprime_and_X) .or. &
-        (species_pred_type == predict_rhoX)) then
+        (species_pred_type == predict_rhoprime_and_rhoX)) then
        ! convert rho -> rho' in sold
        !   . this is needed for pred_rhoprime_and_X
        !   . we still do this for pred_rhoX since some methods for the
@@ -205,7 +205,7 @@ contains
     end if
 
     if ((species_pred_type == predict_rhoprime_and_X) .or. &
-        (species_pred_type == predict_rhoX)) then
+        (species_pred_type == predict_rhoprime_and_rhoX)) then
        ! convert rho' -> rho in sold 
        call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,dm+rho_comp,.false.,the_bc_level)
     endif

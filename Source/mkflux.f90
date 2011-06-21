@@ -225,7 +225,7 @@ contains
              sfluxx(i,comp) = &
                   (umac(i)+w0(i))*(rho0_edge+sedgex(i,rho_comp))*sedgex(i,comp)
 
-          else if (species_pred_type == predict_rhoX) then
+          else if (species_pred_type == predict_rhoprime_and_rhoX) then
              ! edge states are (rho X)
              sfluxx(i,comp) = &
                   (umac(i)+w0(i))*sedgex(i,comp)             
@@ -290,7 +290,7 @@ contains
                 sfluxx(i,j,comp) = umac(i,j)* &
                      (rho0_edge+sedgex(i,j,rho_comp))*sedgex(i,j,comp)
 
-             else if (species_pred_type == predict_rhoX) then
+             else if (species_pred_type == predict_rhoprime_and_rhoX) then
                 ! edge states are (rho X)
                 sfluxx(i,j,comp) = umac(i,j)*sedgex(i,j,comp)
 
@@ -315,7 +315,7 @@ contains
                 sfluxy(i,j,comp) = &
                      (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,comp)
 
-             else if (species_pred_type == predict_rhoX) then
+             else if (species_pred_type == predict_rhoprime_and_rhoX) then
                 ! edge states are (rho X)
                 sfluxy(i,j,comp) = &
                      (vmac(i,j)+w0(j))*sedgey(i,j,comp)
@@ -388,7 +388,7 @@ contains
                    sfluxx(i,j,k,comp) = &
                         umac(i,j,k)*(rho0_edge+sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoX) then
+                else if (species_pred_type == predict_rhoprime_and_rhoX) then
                    ! edge states are (rho X)
                    sfluxx(i,j,k,comp) = &
                         umac(i,j,k)*sedgex(i,j,k,comp)          
@@ -412,7 +412,7 @@ contains
                    sfluxy(i,j,k,comp) = &
                         vmac(i,j,k)*(rho0_edge+sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoX) then
+                else if (species_pred_type == predict_rhoprime_and_rhoX) then
                    ! edge states are (rho X)
                    sfluxy(i,j,k,comp) = &
                         vmac(i,j,k)*sedgey(i,j,k,comp)
@@ -440,7 +440,7 @@ contains
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))* &
                      (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoX) then
+                else if (species_pred_type == predict_rhoprime_and_rhoX) then
                    ! edge states are (rho X)
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp)
 
@@ -524,7 +524,7 @@ contains
                    sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
                         (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoX) then
+                else if (species_pred_type == predict_rhoprime_and_rhoX) then
                    ! edge states are (rho X)
                    sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * sedgex(i,j,k,comp)                   
 
@@ -553,7 +553,7 @@ contains
                    sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
                         (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoX) then
+                else if (species_pred_type == predict_rhoprime_and_rhoX) then
                    ! edge states are (rho X)
                    sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * sedgey(i,j,k,comp)
 
@@ -582,7 +582,7 @@ contains
                    sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
                      (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoX) then
+                else if (species_pred_type == predict_rhoprime_and_rhoX) then
                    ! edge states are (rho X)
                    sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * sedgez(i,j,k,comp)
 
