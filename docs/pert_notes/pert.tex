@@ -82,7 +82,7 @@ module.
 
 
 
-\subsection{{\tt species\_pred\_type} = {\tt predict\_rhoprime\_and\_X}}
+\subsection{Method 1: {\tt species\_pred\_type} = {\tt predict\_rhoprime\_and\_X}}
 
 Here we wish to construct $(\rho_0^{n+\myhalf,{\rm avg}}        
 + \rho'_\mathrm{edge})(X_k)_\mathrm{edge}$.
@@ -167,7 +167,7 @@ The force seen by {\tt make\_edge\_scal} is 0.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt species\_pred\_type} = {\tt predict\_rhoprime\_and\_rhoX}}
+\subsection{Method 2: {\tt species\_pred\_type} = {\tt predict\_rhoprime\_and\_rhoX}}
 
 Here we wish to construct $(\rho X_k)_\mathrm{edge}$ by predicting
 $(\rho X_k)$ to the edges as a single quantity.  We start with
@@ -188,7 +188,7 @@ $\rho'$ to the edges since certain enthalpy formulations need it.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt species\_pred\_type} = {\tt predict\_rho\_and\_X}}
+\subsection{Method 3: {\tt species\_pred\_type} = {\tt predict\_rho\_and\_X}}
 
 Here we wish to construct $\rho_\mathrm{edge} (X_k)_\mathrm{edge}$
 by predicting $\rho$ and $X_k$ to the edges separately.
@@ -356,8 +356,8 @@ The general procedure for making the $(\rho h)$ edge state is as follows:
 
 \end{enumerate}
 
-\noindent Note: the various {\tt enthalpy\_pred\_type}s are only
-guaranteed to work with {\tt species\_pred\_type = 1}.
+\noindent Note: the various {\tt enthalpy\_pred\_type}s have only been
+extensively tested with {\tt species\_pred\_type = 1}.
 
 Table~\ref{table:pred:hoverview}
 gives a summary
@@ -452,6 +452,24 @@ of the {\tt enthalpy\_pred\_type} behavior.
   $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
   $\left ( \rho_0^{n+\myhalf,{\rm avg}} + \rho'_\mathrm{edge} \right ) h_\mathrm{edge}$ \\
 \hline
+\hline
+3 / {\tt predict\_rho\_and\_X}  & 1 / {\tt predict\_rhohprime} &
+  $(\rho h)'$ & $(\rho h)'_\mathrm{edge}$ & 
+  $X_\mathrm{edge}$, $\rho_\mathrm{edge}$ & 
+  $\left [ (\rho h)_0^{n+\myhalf,{\rm avg}} + (\rho h)'_\mathrm{edge} \right ]$ \\
+3 / {\tt predict\_rho\_and\_X}  & 2 / {\tt predict\_h} &
+  $h$ & $h_\mathrm{edge}$ & 
+  $X_\mathrm{edge}$, $\rho_\mathrm{edge}$ & 
+  $\rho_\mathrm{edge} h_\mathrm{edge}$ \\
+3 / {\tt predict\_rho\_and\_X}  & 3 / {\tt predict\_T\_then\_rhohprime} &
+  $T$ & $(\rho h)'_\mathrm{edge}$ & 
+  $X_\mathrm{edge}$, $\rho_\mathrm{edge}$ & 
+  $\left [ (\rho h)_0^{n+\myhalf,{\rm avg}} + (\rho h)'_\mathrm{edge} \right ]$ \\
+3 / {\tt predict\_rho\_and\_X}  & 4 / {\tt predict\_T\_then\_h} &
+  $T$ & $h_\mathrm{edge}$ & 
+  $X_\mathrm{edge}$, $\rho_\mathrm{edge}$ & 
+  $\rho_\mathrm{edge} h_\mathrm{edge}$ \\
+\hline
 \end{tabular}
 } % end \small
 \end{table}
@@ -459,7 +477,7 @@ of the {\tt enthalpy\_pred\_type} behavior.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt enthalpy\_pred\_type} = {\tt predict\_rhohprime}}
+\subsection{Method 1: {\tt enthalpy\_pred\_type} = {\tt predict\_rhohprime}}
 
 Here we wish to construct $\left [ (\rho h)_0^{n+\myhalf,{\rm avg}} + (\rho
   h)'_\mathrm{edge} \right ]$ by predicting $(\rho h)'$ to the edges.
@@ -500,10 +518,19 @@ edges.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt enthalpy\_pred\_type} = {\tt predict\_h}}
+\subsection{Method 2: {\tt enthalpy\_pred\_type} = {\tt predict\_h}}
 
-Here we wish to construct $\left (\rho_0 + \rho'_\mathrm{edge} \right
-) h_\mathrm{edge}$ by predicting $h$ to the edges.
+Here, the construction of the interface state depends on what species 
+quantities are present.  In all cases, the enthalpy state is found
+by predicting $h$ to the edges.
+
+
+For {\tt species\_pred\_types}: {\tt predict\_rhoprime\_and\_X} or
+{\tt predict\_rhoprime\_and\_rhoX}, we wish to construct $(\rho_0 +
+\rho'_\mathrm{edge} ) h_\mathrm{edge}$.
+
+For {\tt species\_pred\_types}: {\tt predict\_rho\_and\_X}, we wish to
+construct $\rho_\mathrm{edge} h_\mathrm{edge}$.
 
 \subsubsection{Predicting $h$ at edges}
 
@@ -517,15 +544,23 @@ the correct force for this type.
 
 \subsubsection{Computing $\rho h$ at edges}
 
+{\tt species\_pred\_types}: {\tt predict\_rhoprime\_and\_X} or
+{\tt predict\_rhoprime\_and\_rhoX}:\\[1mm]
+%
 We use the same procedure described in Section \ref{Computing rho at
   edges} for computing $\rho_\mathrm{edge}$ from $\rho_0$ and
 $\rho'_\mathrm{edge}$ and then multiply by $h_\mathrm{edge}$.
 
+\ \\
+{\tt species\_pred\_types}: {\tt predict\_rho\_and\_X}:\\[1mm]
+%
+We already have $\rho_\mathrm{edge}$ and simply multiply by
+$h_\mathrm{edge}$.
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_rhohprime}}
+\subsection{Method 3: {\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_rhohprime}}
 
 Here we wish to construct $\left [ (\rho h)_0 + (\rho
   h)'_\mathrm{edge} \right ]$ by predicting $T$ to the edges and then
@@ -565,6 +600,9 @@ constructed as:
 {\tt predict\_rhoprime\_and\_rhoX} & 
   $\sum_k (\rho X_k)_\mathrm{edge}$ & 
   $(\rho X_k)_\mathrm{edge}/\sum_k (\rho X_k)_\mathrm{edge}$ \\
+{\tt predict\_rho\_and\_X} & 
+  $\rho_\mathrm{edge}$ & 
+  $(X_k)_\mathrm{edge}$ \\
 \hline
 \end{tabular}
 \end{table*}
@@ -580,11 +618,20 @@ as the {\tt predict\_rhohprime} version.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_h}}
+\subsection{Method 4: {\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_h}}
 
-Here we wish to construct $\left (\rho_0 + \rho'_\mathrm{edge} \right
-) h_\mathrm{edge}$ by predicting $T$ to the edges and then converting
-this to $h_\mathrm{edge}$ via the EOS.
+Here, the construction of the interface state depends on what species
+quantities are present.  In all cases, the enthalpy state is found by
+predicting $T$ to the edges and then converting this to
+$h_\mathrm{edge}$ via the EOS.
+
+For {\tt species\_pred\_types}: {\tt predict\_rhoprime\_and\_X} or
+{\tt predict\_rhoprime\_and\_rhoX}, we wish to construct $(\rho_0 +                                             \rho'_\mathrm{edge} ) h_\mathrm{edge}$.
+
+For {\tt species\_pred\_types}: {\tt predict\_rho\_and\_X}, we wish to
+construct $\rho_\mathrm{edge} h_\mathrm{edge}$.
+
+
 
 \subsubsection{Predicting $T$ at edges}
 
