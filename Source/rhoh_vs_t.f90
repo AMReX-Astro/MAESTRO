@@ -78,10 +78,6 @@ contains
        call bl_error("ERROR: species_pred_type == predict_rhoprime_and_rhoX not supported in makeHfromRhoT_edge for 3-d")
     endif
 
-    if (species_pred_type == predict_rho_and_X) then
-       call bl_error("ERROR: species_pred_type == predict_rho_and_X not supported in makeHfromRhoT_edge")
-    endif
-
     ng_u  = nghost(u(1))
     ng_se = nghost(sedge(1,1))
 
@@ -222,7 +218,10 @@ contains
           
        else if (species_pred_type .eq. predict_rho_and_X) then
           
-          call bl_error("ERROR: predict_rho_and_X not supported in makeHfromRhoT_edge_1d")
+          ! interface states are rho and X
+          den_eos(1) = sx(i,rho_comp)
+
+          xn_eos(1,:) = sx(i,spec_comp:spec_comp+nspec-1)
 
        endif
 
@@ -243,6 +242,7 @@ contains
        if (enthalpy_pred_type .eq. predict_T_then_h .or. &
            enthalpy_pred_type .eq. predict_Tprime_then_h) then
           sx(i,rhoh_comp) = h_eos(1) 
+
        else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
           sx(i,rhoh_comp) = den_eos(1)*h_eos(1) &
                - HALF*(rhoh0_edge_old(i) + rhoh0_edge_new(i))
@@ -309,7 +309,10 @@ contains
 
            else if (species_pred_type .eq. predict_rho_and_X) then
 
-              call bl_error("ERROR: predict_rho_and_X not supported in makeHfromRhoT_edge_1d")
+              ! interface states are rho and X
+              den_eos(1) = sx(i,j,rho_comp)
+              
+              xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
 
            endif
              
@@ -330,6 +333,7 @@ contains
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
               enthalpy_pred_type .eq. predict_Tprime_then_h) then
              sx(i,j,rhoh_comp) = h_eos(1)
+
           else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
              sx(i,j,rhoh_comp) = den_eos(1)*h_eos(1) - HALF*(rhoh0_old(j)+rhoh0_new(j))
           end if
@@ -367,9 +371,12 @@ contains
 
              xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
-          else if (specieS_pred_type .eq. predict_rho_and_X) then
+          else if (species_pred_type .eq. predict_rho_and_X) then
              
-             call bl_error("ERROR: predict_rho_and_X not supported in makeHfromRhoT_edge_1d")
+             ! interface states are rho and X
+             den_eos(1) = sy(i,j,rho_comp)
+
+             xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
 
           endif
 
@@ -391,6 +398,7 @@ contains
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
               enthalpy_pred_type .eq. predict_Tprime_then_h) then
              sy(i,j,rhoh_comp) = h_eos(1) 
+
           else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
              sy(i,j,rhoh_comp) = den_eos(1)*h_eos(1) &
                   - HALF*(rhoh0_edge_old(j) + rhoh0_edge_new(j))
