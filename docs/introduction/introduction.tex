@@ -2,7 +2,8 @@
 
 MAESTRO describes the evolution of low Mach number flows that are in
 hydrostatic equilibrium.  The idea for MAESTRO grew out of our success
-in applying low Mach number combustion methods to small-scale
+in applying low Mach number combustion methods developed for
+terrestrial flames~\cite{DayBell00} to small-scale
 astrophysical flows.  Our original small-scale astrophysical
 combustion algorithm is detailed in
 \begin{itemize}
@@ -48,7 +49,7 @@ multilevel paper:
   \& M. Zingale 2010, ApJS, 188, 358 (henceforth ``the multilevel paper'')
 \end{itemize}
 
-\noindent We have two papers that describe applications of the
+\noindent We have several papers that describe applications of the
 method to Type Ia supernovae and X-ray bursts:
 \begin{itemize}
 \item {\em Multidimensional Modeling of Type I X-ray Bursts,}
@@ -57,6 +58,9 @@ method to Type Ia supernovae and X-ray bursts:
 \item {\em The Convective Phase Preceding Type Ia Supernovae,}
   M. Zingale, A. S. Almgren, J. B. Bell, C. M. Malone, A. Nonaka, \& S. E. Woosley 2011,
   submitted to ApJ (henceforth paper V)
+\item {\em High-Resolution Simulations of Convection Preceding Ignition in
+  Type Ia Supernovae Using Adaptive Mesh Refinement,}
+  A. Nonaka, M. Zingale, A. J. Aspden, A. S. Almgren, J. B. Bell, \& S. E. Woosley
 \end{itemize}
 
 
@@ -109,13 +113,13 @@ $U$ will usually mean the vector of conserved quantities.  In
 incompressible / low speed papers, $U$ will mean the velocity vector.}
 %
 and $p$ is the dynamical pressure.  The time-evolution equation for
-the velocity (eq.~[\ref{eq:incompressible_u}]) can be solved using
+the velocity (Eq.~\ref{eq:incompressible_u}) can be solved using
 techniques similar to those developed for compressible hydrodynamics,
 updating the old velocity, $U^n$, to the new time-level, $U^\star$.
 Here the `$^\star$' indicates that the updated velocity does not, in
 general, satisfy the divergence constraint.  A projection method will
 take this updated velocity and force it to obey the constraint
-equation.  The basic idea follows from the idea that any vector
+equation.  The basic idea follows from the fact that any vector
 field can be expressed as the sum of a divergence-free quantity and
 the gradient of a scalar.  For the velocity, we can write:
 \begin{equation}
@@ -123,13 +127,13 @@ U^\star = U^d + \nabla \phi \label{eq:decomposition}
 \end{equation}
 where $U^d$ is the divergence free portion of the velocity vector,
 $U^\star$, and $\phi$ is a scalar.  Taking the divergence of
-eq~(\ref{eq:decomposition}), we have
+Eq.~(\ref{eq:decomposition}), we have
 \begin{equation}
 \nabla^2 \phi = \nabla \cdot U^\star
 \end{equation}
 (where we used $\nabla \cdot U^d = 0$).
 With appropriate boundary conditions, this Poisson equation can be
-solved for $\phi$, and the final, divergence free velocity can 
+solved for $\phi$, and the final, divergence-free velocity can 
 be computed as
 \begin{equation}
 U^{n+1} = U^\star - \nabla \phi
