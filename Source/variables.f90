@@ -14,7 +14,7 @@ module variables
   integer, save :: icomp_w0, icomp_divw0, icomp_rho0, icomp_rhoh0, icomp_h0
   integer, save :: icomp_p0, icomp_velr, icomp_velc
   integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_src
-  integer, save :: icomp_enthalpy,icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert
+  integer, save :: icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert
   integer, save :: icomp_machno,icomp_cs
   integer, save :: icomp_dg,icomp_pi,icomp_gpi,icomp_pioverp0,icomp_p0pluspi
   integer, save :: icomp_entropy,icomp_entropypert
@@ -105,7 +105,6 @@ contains
     icomp_rhopert     = get_next_plot_index(1)
 
     if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
-       icomp_enthalpy    = get_next_plot_index(1)
        icomp_rhohpert    = get_next_plot_index(1)
     endif
 
