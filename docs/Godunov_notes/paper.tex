@@ -7,37 +7,9 @@
 % Margins
 \usepackage[lmargin=0.5in,rmargin=0.5in,tmargin=0.75in,bmargin=0.75in]{geometry}
 
-\newcommand{\sfrac}[2]{\mathchoice
-  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
-  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
-  {\kern0em\raise.5ex\hbox{\the\scriptscriptfont0 #1}\kern-.2em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptscriptfont0 #2}}
-  {#1\!/#2}}
+\input ../maestrosymbols
 
-
-
-\def\half  {\frac{1}{2}}
-\newcommand{\myhalf}{\sfrac{1}{2}}
-\def\dt    {\Delta t}
-\def\kth   {k_{\rm th}}
-
-\def\edge  {\rm EDGE}
-\def\mac   {\rm MAC}
-\def\trans {\rm TRANS}
-
-\def\eb    {{\bf e}}
-\def\fb    {{\bf f}}
-\def\ib    {{\bf i}}
-\def\Ub    {{\bf U}}
-
-\def\Ubt   {\widetilde{\bf U}}
-\def\ut    {\tilde{u}}
-\def\vt    {\tilde{v}}
-\def\wt    {\tilde{w}}
-
-\title{Notes on the Godunov Step in {\tt MAESTRO} and {\tt VARDEN}}
+\title{Notes on the Godunov Step in \maestro\ and \varden}
 
 \setlength{\marginparwidth}{0.75in}
 \newcommand{\MarginPar}[1]{\marginpar{%

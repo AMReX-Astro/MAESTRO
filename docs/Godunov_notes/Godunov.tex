@@ -1,10 +1,10 @@
-These are working notes for the Godunov step in {\tt MAESTRO} 
-and {\tt VARDEN}.
+These are working notes for the Godunov step in \maestro\ 
+and \varden.
 
 %-----------------------------------------------------------------------------
 % Notation
 %-----------------------------------------------------------------------------
-\section{{\tt MAESTRO} Notation}
+\section{\maestro\ Notation}
 \begin{itemize}
 \item For 2D, $\Ub = (u,w)$ and $\Ubt = (\ut,\wt)$.  
   Note that $u = \ut$.  We will use the shorthand $\ib = (x,r)$.
@@ -55,7 +55,7 @@ using {\tt put\_1d\_array\_on\_cart\_3d\_sphr}.
 %-----------------------------------------------------------------------------
 % utrans
 %-----------------------------------------------------------------------------
-\section{Computing $\Ubt^{\trans}$ in {\tt MAESTRO}}
+\section{Computing $\Ubt^{\trans}$ in \maestro}
 In {\tt advance\_premac}, we call {\tt mkutrans}, to compute
 $\Ubt^{\trans}$.  We will only compute the normal
 component of velocity at each face.
@@ -150,7 +150,7 @@ perturbational velocity.
 %-----------------------------------------------------------------------------
 % Umac
 %-----------------------------------------------------------------------------
-\section{Computing $\Ubt^{\mac,*}$ in {\tt MAESTRO}}
+\section{Computing $\Ubt^{\mac,*}$ in \maestro}
 In {\tt advance\_premac}, we call {\tt velpred} to compute
 $\Ubt^{\mac,*}$.  We will only compute the normal component of
 velocity at each face.\\ \\
@@ -340,7 +340,7 @@ full velocity.
 %-----------------------------------------------------------------------------
 % edge states
 %-----------------------------------------------------------------------------
-\section{Computing $\rho^{'\edge}, X_k^{\edge},(\rho h)^{'\edge}$, and $\Ubt^{\edge}$ in {\tt MAESTRO}}\label{Scalar Edge State Prediction in MAESTRO}
+\section{Computing $\rho^{'\edge}, X_k^{\edge},(\rho h)^{'\edge}$, and $\Ubt^{\edge}$ in \maestro}\label{Scalar Edge State Prediction in MAESTRO}
 We call {\tt make\_edge\_scal} to compute $\rho^{'\edge}, X_k^{\edge}, 
 (\rho h)^{'\edge}$, and $\Ubt^{\edge}$ at each edge.
 The procedure is the same for each quantitiy, so we shall simply denote 
@@ -599,7 +599,7 @@ the full velocity.
 %-----------------------------------------------------------------------------
 % Umac in Varden
 %-----------------------------------------------------------------------------
-\section{Computing $\Ub^{\mac,*}$ in {\tt VARDEN}}
+\section{Computing $\Ub^{\mac,*}$ in \varden}
 
 \subsection{2D Cartesian Case}
 We do a 1D Taylor series extrapolation to get both components of velocity at the x-face:
@@ -695,11 +695,11 @@ $w_{\ib-\half\eb_z}^{\mac,*}$.
 %-----------------------------------------------------------------------------
 % Varden edge states
 %-----------------------------------------------------------------------------
-\section{Computing $\Ub^{\edge}$ and $\rho^{\edge}$ in {\tt VARDEN}}
-To compute $\Ub^{\edge}$, {\tt VARDEN} uses the exact same algorithm
-as the $s^{\edge}$ case in {\tt MAESTRO}.  The algorithm for
-$\rho^{\edge}$ in {\tt VARDEN} is slightly different than the
-$s^{\edge}$ case in {\tt MAESTRO} since it uses a ``conservative''
+\section{Computing $\Ub^{\edge}$ and $\rho^{\edge}$ in \varden}
+To compute $\Ub^{\edge}$, \varden\ uses the exact same algorithm
+as the $s^{\edge}$ case in \maestro.  The algorithm for
+$\rho^{\edge}$ in \varden\ is slightly different than the
+$s^{\edge}$ case in \maestro\ since it uses a ``conservative''
 formulation.  Here, $s$ is used in place of either $\rho, u, v$, or
 $w$ (in 3D).
 
