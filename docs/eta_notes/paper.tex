@@ -7,41 +7,7 @@
 % Margins
 \usepackage[lmargin=0.5in,rmargin=1.5in,tmargin=0.5in,bmargin=0.5in]{geometry}
 
-\newcommand{\sfrac}[2]{\mathchoice
-  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
-  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
-  {\kern0em\raise.5ex\hbox{\the\scriptscriptfont0 #1}\kern-.2em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptscriptfont0 #2}}
-  {#1\!/#2}}
-
-\def\half   {\frac{1}{2}}
-\def\myhalf {\sfrac{1}{2}}
-
-\def\eb         {{\bf e}}
-\def\ib         {{\bf i}}
-\def\Ub         {{\bf U}}
-
-\newcommand{\Ubt}{\widetilde{\Ub}}
-
-\def\etarho     {\eta_\rho}
-\def\etarhoec   {\etarho^{\rm ec}}
-\def\etarhocc   {\etarho^{\rm cc}}
-\def\etarhoflux {\etarho^{\rm flux}}
-\def\divetarho  {\nabla\cdot(\etarho\eb_r)}
-
-\newcommand{\nablab}{\mathbf{\nabla}}
-\newcommand{\cdotb}{\mathbf{\cdot}}
-
-\newcommand{\er}{\mathbf{e}_r}
-\newcommand{\rhop}{{\rho^{\prime}}}
-\newcommand{\ut}{\widetilde{\Ub}}
-\newcommand{\ow}{\overline{w}_0}
-\newcommand{\dw}{\delta w_0}
-\newcommand{\Sbar}{\overline{S}}
-\newcommand{\gammabar}{\overline{\Gamma}_1}
-
+\input ../maestrosymbols
 
 \title{Notes on $\etarho$}
 
