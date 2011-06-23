@@ -1,5 +1,5 @@
 Here we briefly describe the various routines for generating initial models
-for the main MAESTRO problems and how the initial model is used to initialize
+for the main \maestro\ problems and how the initial model is used to initialize
 both the base state and the full Cartesian state.
 
 \MarginPar{I think it would be a good idea to mention some where in here that MAESTRO outputs info that's useful to check --dr of base state and dr of the input file, which should be the same at the finest level; and Maximum HSE Error, which should be some small number.}
@@ -7,9 +7,15 @@ both the base state and the full Cartesian state.
 \section{Creating the Model Data from Raw Data}\label{Sec:Creating the Model Data from Raw Data}
 \label{sec:initial_models_main}
 
-We have found that for the best performance, the MAESTRO initialization procedure should be given model data with the same resolution as the base state resolution, $\Delta r$.  For planar problems, $\Delta r = \Delta x$.  For multilevel planar problems, we use $\Delta r$ equal to $\Delta x$ at the finest resolution.  For spherical problems we set $\Delta r = \Delta x/\mathtt{drdxfac}$.  We generate our initial model either analytically or from raw data,
- $\rho^{\raw}, T^{\raw}, p^{\raw}$, and $X^{\raw}$.  
-Here is the raw data file for each test problem:
+We have found that for the best performance, the \maestro\
+initialization procedure should be given model data with the same
+resolution as the base state resolution, $\Delta r$.  For planar
+problems, $\Delta r = \Delta x$.  For multilevel planar problems, we
+use $\Delta r$ equal to $\Delta x$ at the finest resolution.  For
+spherical problems we set $\Delta r = \Delta x/\mathtt{drdxfac}$.  We
+generate our initial model either analytically or from raw data,
+$\rho^{\raw}, T^{\raw}, p^{\raw}$, and $X^{\raw}$.  Here is the raw
+data file for each test problem:
 \begin{eqnarray}
 {\tt test2} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \nonumber \\
 {\tt test\_convect} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \nonumber \\
@@ -37,7 +43,7 @@ to a user defined tolerance.  Here are the fortran subroutines for each test pro
 {\tt xrb} & \rightarrow & {\tt initial\_models/xrb/init\_1d.f90} \nonumber
 \end{eqnarray}
 The model data is not generated at run-time - it must be generated in
-advance of running any MAESTRO examples.  The inputs file should point
+advance of running any \maestro\ examples.  The inputs file should point
 to the file containing the model data.
 
 \section{Creating the Initial Data from the Model Data}
