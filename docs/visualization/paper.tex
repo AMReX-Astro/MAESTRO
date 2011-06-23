@@ -11,20 +11,7 @@
 % Margins
 \usepackage[margin=1in]{geometry}
 
-\newcommand{\sfrac}[2]{\mathchoice
-  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
-  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
-  {\kern0em\raise.5ex\hbox{\the\scriptscriptfont0 #1}\kern-.2em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptscriptfont0 #2}}
-  {#1\!/#2}}
-
-\def\half  {\frac{1}{2}}
-\newcommand{\myhalf}{\sfrac{1}{2}}
-
-\def\ptl   {\partial}
-
+\input ../maestrosymbols
 
 \title{Notes on Visualizing {\tt MAESTRO} Data}
 
@@ -52,9 +39,6 @@
   emph={[3]Out}, emphstyle=[3]\color{orange},%
   mathescape=false}
 
-\newcommand{\amrvis}{{\tt AmrVis}\ }
-\newcommand{\visit}{{\tt VisIt}\ }
-\newcommand{\yt}{{\tt yt}\ }
 
 \begin{document}
 

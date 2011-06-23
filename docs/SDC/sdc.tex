@@ -1,6 +1,6 @@
 \section{Implementing an SDC-enabled reaction network (no diffusion)}
 
-Maestro integrates the following system of equations:
+\maestro\ integrates the following system of equations:
 \begin{eqnarray}
 \frac{\partial(\rho X_k)}{\partial t} &=& 
     -\nabla\cdot(\rho X_k\Ub) + \rho\omegadot_k,\label{eq:species}\\
@@ -15,7 +15,7 @@ together with a constraint equation.
 
 \subsection{Strang-split version}
 
-In the Strang-split version of MAESTRO, the reaction and advection
+In the Strang-split version of \maestro, the reaction and advection
 processes operate independent of one-another.  The species and
 enthalpy equations are updated through $\Delta t$ using the following
 sequence:
@@ -24,7 +24,7 @@ sequence:
 
 \item React for $\Delta t/2$
 
-In the Strang-split version of Maestro, the reaction network solves just
+In the Strang-split version of \maestro, the reaction network solves just
 the reaction portion of the species evolution equations along with a
 temperature evolution equation.  This is done using a standard ODE solver
 (like {\tt VODE}) on the system:
@@ -79,7 +79,7 @@ the physical processes.  In particular, our system now looks like:
 Here, $A_{\rho X_k}$ and $A_{\rho h}$ are piecewise-constant (in time)
 approximations to the change in ${\rho X_k}$ and ${\rho h}$ (respectively)
 due to the advection.  These are constructed by calling {\tt density\_advance}
-and {\tt enthalpy\_advance} in Maestro and passed into the network solver
+and {\tt enthalpy\_advance} in \maestro\ and passed into the network solver
 during the reaction step.  These terms approximate the following:
 \begin{eqnarray}
 A_{\rho X_k} &=&  \left [- \nabla \cdot (\rho X_k \Ub) \right ]^{n+1/2} \\

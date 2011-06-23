@@ -7,22 +7,9 @@
 % Margins
 \usepackage[lmargin=0.5in,rmargin=1.5in,tmargin=0.5in,bmargin=0.5in]{geometry}
 
-\newcommand{\sfrac}[2]{\mathchoice
-  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
-  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
-  {\kern0em\raise.5ex\hbox{\the\scriptscriptfont0 #1}\kern-.2em/
-   \kern-.15em\lower.25ex\hbox{\the\scriptscriptfont0 #2}}
-  {#1\!/#2}}
+\input ../maestrosymbols
 
-\def\half  {\frac{1}{2}}
-\newcommand{\myhalf}{\sfrac{1}{2}}
-
-\def\ptl   {\partial}
-
-
-\title{Notes on thermodnyamic relations in {\tt MAESTRO}}
+\title{Notes on thermodnyamic relations in \maestro}
 
 \setlength{\marginparwidth}{1.0in}
 \newcommand{\MarginPar}[1]{\marginpar{%
