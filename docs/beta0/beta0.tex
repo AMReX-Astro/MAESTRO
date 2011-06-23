@@ -1,5 +1,5 @@
 The goal of $\beta_0$ is to capture the expansion of a displaced fluid
-element due to the stratification of the atmosphere.  MAESTRO computes
+element due to the stratification of the atmosphere.  \maestro\ computes
 $\beta_0$ as:
 \begin{equation}\label{eq:beta_0}
 \beta_0(r,t) = \rho_0 \exp\left (  \int_0^r  \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial r^\prime} dr^\prime \right )
@@ -49,7 +49,7 @@ the path to equilibrium?
 \section{On the Effect of Chemical Potential}
 \label{Sec:On the Affect of Chemical Potential}
 
-In MAESTRO, we do things in an operator split fashion --- the hydro is
+In \maestro, we do things in an operator split fashion --- the hydro is
 de-coupled from the burning.  This means that during the hydro parts
 of the algorithm (where $\beta_0$ is used), the system is fixed in
 chemical equilibrium. For completeness, however, here we describe the
