@@ -3,8 +3,8 @@
 
 The {\tt fParallel/data\_processing/} directory contains a large
 number of Fortran-based analysis routines for BoxLib datasets.  Many
-of these can be used with both MAESTRO and the compressible
-astrophysics code, Castro.
+of these can be used with both \maestro\ and the compressible
+astrophysics code, \castro.
 
 To compile any of the individual routines, edit the {\tt GNUmakefile}
 add uncomment the line beginning with `{\tt programs +=}' containing
@@ -21,7 +21,7 @@ provide usage examples.
 \item {\tt faverage.f90}
 
   Laterally average each of the variables in a plotfile (works for
-  both 2-d and 3-d).  This is written with MAESTRO
+  both 2-d and 3-d).  This is written with \maestro\
   plane-parallel geometry plotfiles in mind, and the averaging is done
   over the coordinate direction(s) perpendicular to gravity.
 
@@ -85,21 +85,48 @@ provide usage examples.
 
 \subsection{Data Processing Example}
 
-A well-commented example processing routine is provided in {\tt
-  data\_processing/tutorial} as {\tt fspeciesmass2d.f90}.  This
-routine simply computes the total mass of a particular species on the
-entire domain for a 2-d dataset.  It is written to understand a
-multilevel (AMR) dataset, and only considers the finest-available data
-at any physical location in the computational domain.  
+The routine {\tt fspeciesmass2d.f90} in {\tt
+  data\_processing/tutorial} serves as a well-commented example of how
+to work with \maestro\ plotfile data.  This routine simply computes
+the total mass of a particular species on the entire domain for a 2-d
+dataset.  It is written to understand a multilevel (AMR) dataset, and
+only considers the finest-available data at any physical location in
+the computational domain.
 
 {\tt fspeciesmass2d.f90} should provide a good starting point for
 writing a new analysis routine for BoxLib data.
 
 \subsection{Particle routines}
 
+\label{analysis:sec:particles}
+
 The {\tt parseparticles.py} routine in the {\tt python/} subdirectory
-can read in MAESTRO particle files containing particle histories
-(usually named {\tt timestamp\_??}.  The driver {\tt test.py} shows
-shows how to use this module to plot particle histories.
+can read in \maestro\ particle files containing particle histories
+(usually named {\tt timestamp\_??}).  See the discussion in \S~\ref{arch:sec:particles} for details on initialization.  The driver {\tt
+  test\_parseparticles.py} shows shows how to use this module to plot
+particle histories.  
+
+As a concrete example, running {\tt test2} with particles enabled
+will seed particles in the initial hotspot.  To plot the results,
+first set your {\tt PYTHONPATH} environment variable to point to the
+{\tt fParallel/data\_processing/python/} directory, for example:
+\begin{verbatim}
+export PYTHONPATH="/home/username/development/MAESTRO/fParallel/data_processing/python"
+\end{verbatim}
+This will allow python to see the {\tt parseparticles.py} routine.
+For the {\tt test2} problem, the {\tt plotparticles.py} routine shows
+how to plot the particle histories and make an animation of the
+particles colored by the ash mass fraction.  This script is run as:
+\begin{verbatim}
+./plotparticles.py timestamp_*
+\end{verbatim}
+
+Note, these python routines require the NumPy and matplotlib packages.
+On a Fedora Linux system, the necessary routines can be installed via:
+\begin{verbatim}
+yum install python-matplotlib lyx-fonts stix-fonts
+\end{verbatim}
+
+
 
 
