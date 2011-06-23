@@ -1,6 +1,6 @@
-\section{MAESTRO Basics}
+\section{\maestro\ Basics}
 
-MAESTRO models problems that are in tight hydrostatic equilibrium.
+\maestro\ models problems that are in tight hydrostatic equilibrium.
 The fluid state is decomposed into a 1D radial base state that
 describes the hydrostatic structure of the star or atmosphere, and a
 2- or 3D Cartesian full state, that captures the departures from
@@ -16,7 +16,7 @@ shows these geometries.
 \centering
 \includegraphics[height=2.0in]{\archfigpath/base_grid} \hspace{0.5in}
 \includegraphics[height=2.0in]{\archfigpath/base_spherical}
-\caption[MAESTRO geometries]{\label{fig:base_state} MAESTRO geometries, showing both the
+\caption[\maestro\ geometries]{\label{fig:base_state} \maestro\ geometries, showing both the
   1D base state and the full Cartesian state.  (Left) For multi-level
   problems in planar geometry, we force a direct alignment between the
   radial array cell centers and the Cartesian grid cell centers by
@@ -29,7 +29,7 @@ shows these geometries.
 \end{figure}
 
 
-MAESTRO can use adaptive mesh refinement to focus resolution on
+\maestro\ can use adaptive mesh refinement to focus resolution on
 complex regions of flow.  For Cartesian/plane-parallel geometries, all
 cells at the same height must be at the same level of refinement.
 This restriction is to allow for the base state to directly align with
@@ -39,18 +39,18 @@ such restriction (again, see Figure~\ref{fig:base_state}).
 
 
 
-\section{MAESTRO Directory Structure}
+\section{\maestro\ Directory Structure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=5.0in]{\archfigpath/maestro_directory2}
-\caption[MAESTRO directory structure]
-{The basic MAESTRO directory structure}
+\caption[\maestro\ directory structure]
+{The basic \maestro\ directory structure}
 \end{figure}
 
-All the files needed to build MAESTRO are contained in the {\tt
+All the files needed to build \maestro\ are contained in the {\tt
   fParallel} directory structure.  Problems piece together various
-MAESTRO directories, choosing a reaction network, equation of state,
+\maestro\ directories, choosing a reaction network, equation of state,
 and conductivity routine to build an executable.  Briefly, the
 sub-directories are:
 \begin{itemize}
@@ -58,7 +58,7 @@ sub-directories are:
 
  BoxLib is a library for describing meshes consisting of a union
  of boxes.  The BoxLib modules define the basic datatypes used
- in MAESTRO.  BoxLib also provides the routines that handle the
+ in \maestro.  BoxLib also provides the routines that handle the
  parallelization and I/O.
 
 \item {\tt data\_processing/}
@@ -85,7 +85,7 @@ sub-directories are:
  \item {\tt EOS/}
 
  A collection of various EOSes for use with the code.  The two
- important ones for MAESTRO are {\tt helmeos/} and {\tt
+ important ones for \maestro\ are {\tt helmeos/} and {\tt
  gamma\_law\_general/}.
 
  \item {\tt model\_parser/}
@@ -95,7 +95,7 @@ sub-directories are:
 
  \item {\tt networks/}
 
- Various reaction networks for MAESTRO problems.  In addition to
+ Various reaction networks for \maestro\ problems.  In addition to
  providing a routine to evolve the nuclear species due to reactions,
  the networks also define the species that are advected by the code.
 
@@ -108,8 +108,8 @@ sub-directories are:
 
 \item {\tt MAESTRO/}
 
- The main MAESTRO algorithm directory.  The individual problem directories
- lie under here, and all of the main MAESTRO source lives in the {\tt Source/}
+ The main \maestro\ algorithm directory.  The individual problem directories
+ lie under here, and all of the main \maestro\ source lives in the {\tt Source/}
  sub-directory.
 
  Important directories under {\tt MAESTRO/} include:
@@ -125,19 +125,19 @@ sub-directories are:
 
    Several sub-directories containing routines to generate
    1D initial conditions in hydrostatic equilibrium for 
-   mapping onto the MAESTRO grid.  See \S~\ref{sec:initial_models}
+   mapping onto the \maestro\ grid.  See \S~\ref{sec:initial_models}
    for details.
 
  \item {\tt Source}
 
-   The main MAESTRO source.  Here you will find the driver routine, the
-   advection routines, etc.  All MAESTRO problems will compile this
+   The main \maestro\ source.  Here you will find the driver routine, the
+   advection routines, etc.  All \maestro\ problems will compile this
    source.
 
  \item problem directories: {\tt test2}, {\tt
    test\_spherical}, $\ldots$
 
-   Each problem in MAESTRO gets it own sub-directory.  The {\tt
+   Each problem in \maestro\ gets it own sub-directory.  The {\tt
      GNUmakefile} in the problem directory includes the instructions
    on how to build the executable, including what modules in {\tt
      extern} are used.
@@ -145,7 +145,7 @@ sub-directories are:
    Any file that you place in a sub-directory here takes 
    precedence over a file of the same name in {\tt MAESTRO/}.
    This allows problems to have custom versions of the main
-   MAESTRO routines (e.g.\ initial conditions via {\tt initdata.f90}.
+   \maestro\ routines (e.g.\ initial conditions via {\tt initdata.f90}.
    See \S~\ref{sec:makefile} for details on the build system).
 
  \end{itemize}
@@ -164,7 +164,7 @@ sub-directories are:
 \item {\tt scripts/}
 
   Some simple scripts that are useful for building, running,
-  maintaining MAESTRO.
+  maintaining \maestro.
 
 \end{itemize}
 
@@ -174,14 +174,14 @@ sub-directories are:
 
 \section{Getting Started}
 
-In this section we give an overview of MAESTRO, including some of the
+In this section we give an overview of \maestro, including some of the
 standard problems, how to run the code, some basic runtime parameters,
 and how to look at the output.
 
 
 \subsection{`Standard' Test Problems}
 
-Different problems in MAESTRO are contained in individual
+Different problems in \maestro\ are contained in individual
 sub-directories under {\tt MAESTRO/}.  The {\tt GNUmakefile}
 in each problem directory lists the components of {\tt MAESTRO}
 that are used to build the executable.  Full details of the
@@ -194,7 +194,7 @@ Some of the test problems available are:
 The {\tt flame} problem models a planar laminar flame.  Initially cool
 fuel and hot ash are put in pressure equilibrium.  Thermal diffusion
 transfers heat to the fuel, driving a burning front.  This problem
-does not use the traditional MAESTRO elliptic constraint, but
+does not use the traditional \maestro\ elliptic constraint, but
 rather enforces $\nabla \cdot U = S$ (through the runtime parameter
 {\tt do\_smallscale = T}) as discussed in \cite{SNe}.
 
@@ -233,10 +233,10 @@ This test problem was discussed in \cite{lowMach4}.
 
 \subsection{Compiling and Running}
 
-To build the MAESTRO executable, simply type `{\tt make}' in the
+To build the \maestro\ executable, simply type `{\tt make}' in the
 problem directory.  The executable will have a name like {\tt
   main.Linux.Intel.exe}, where the specific parts of the name depend
-on the compilers and OS used.  MAESTRO can be built with support for
+on the compilers and OS used.  \maestro\ can be built with support for
 parallelism (using MPI or MPI+OpenMP), or compiled as a serial code.
 The top portion of the {\tt GNUmakefile} can be edited to choose the
 build options.  Setting {\tt MPI := t} will build the code to use MPI
@@ -307,7 +307,7 @@ include:
 \noindent Parameters affecting output and restart include:
 \begin{itemize}
 
-\item {\tt restart} tells MAESTRO to restart from a checkpoint.  The
+\item {\tt restart} tells \maestro\ to restart from a checkpoint.  The
       value of this parameter should be the file number to restart from.
       For example, to restart from the checkpoint file {\tt chk00010},
       you would set {\tt restart = 10}.
@@ -400,7 +400,7 @@ with BoxLib-formatted plotfiles.
 2- and 3D datasets which can plot slices through 3D datasets as well
 as volume-renderings.  It can also very easily extract 1D lines
 through the dataset along any coordinate direction.  It is distributed
-separately from the MAESTRO distribution.
+separately from the \maestro\ distribution.
 
 
 \subsubsection{{\tt data\_processing} scripts}
@@ -430,7 +430,7 @@ visit can be found at {\tt https://wci.llnl.gov/codes/visit/home.html}\,.
 
 \subsubsection{Diagnostic Files}
 
-By default, MAESTRO outputs global diagnostics each timestep into a file
+By default, \maestro\ outputs global diagnostics each timestep into a file
 called {\tt maestro\_diag.out}.  This includes the maximum Mach number,
 peak temperature, and peak nuclear energy generation rate.  Individual problems
 can provide their own {\tt diag.f90} file to produce custom diagnostic
@@ -442,11 +442,11 @@ output.
 \label{sec:unit_tests}
 
 In addition to the problems described above which use the full
-capabilities of MAESTRO, there are a number of unit tests that
-exercise only specific components of the MAESTRO solvers.  The
+capabilities of \maestro, there are a number of unit tests that
+exercise only specific components of the \maestro\ solvers.  The
 tests have their own drivers (a custom {\tt varden.f90}) that
 initialize only the data needed for the specific test and call
-specific MAESTRO routines directly.
+specific \maestro\ routines directly.
 
 \begin{itemize}
 \item {\tt test\_advect} \\[-3mm]
@@ -489,7 +489,7 @@ specific MAESTRO routines directly.
 \item {\tt test\_diffusion}
 
   This test initializes a Gaussian temperature profile and calls
-  the thermal diffusion routines in MAESTRO to evolve the state 
+  the thermal diffusion routines in \maestro\ to evolve the state 
   considering only diffusion.  The driver estimates a timestep
   based on the explicit thermal diffusion timescale and loops
   over calls to the thermal diffusion solver.  A Gaussian remains
@@ -521,7 +521,7 @@ specific MAESTRO routines directly.
 \section{Adding A New Problem}
 \label{sec:adding_problems}
 
-Different MAESTRO problems are defined in sub-directories under
+Different \maestro\ problems are defined in sub-directories under
 {\tt MAESTRO/}.  To add a problem, start by creating a new
 sub-directory---this is where you will compile your problem and
 store all the problem-specific files.
@@ -560,7 +560,7 @@ The next line sets the compiler to be used for compilation:
 \begin{lstlisting}[language={[gnu]make},mathescape=false]
   COMP := Intel
 \end{lstlisting}
-The MAESTRO build system knows what options to use for various
+The \maestro\ build system knows what options to use for various
 compiler families.  The {\tt COMP} flag specifies which compiler to
 use.  Allowed values include {\tt Intel}, {\tt gfortran}, {\tt PGI},
 and {\tt PathScale}.  The specific details of these choices are
@@ -582,9 +582,9 @@ flags).
 \end{lstlisting}
 %$
 
-A MAESTRO application is built from several packages (the
+A \maestro\ application is built from several packages (the
 multigrid solver, an EOS, a reaction network, etc.).  The core
-MAESTRO packages are always included, so a problem only needs
+\maestro\ packages are always included, so a problem only needs
 to define the EOS, reaction network, and conductivities to
 use, as well as any extra, problem-specific files.  
 \begin{lstlisting}[language={[gnu]make},mathescape=false]
@@ -654,7 +654,7 @@ list in the {\tt GNUmakefile}.
 
 \label{sec:def_runtime_param}
 
-The runtime parameters for the core MAESTRO algorithm are listed
+The runtime parameters for the core \maestro\ algorithm are listed
 in {\tt MAESTRO/\_parameters}.  That file is parsed at compile-time
 by the {\tt MAESTRO/write\_probin.py} script
 (along with any other parameter files listed in the {\tt PROBIN\_PARAMETERS}
@@ -689,8 +689,8 @@ to the {\tt PROBIN\_PARAMETERS} variable in the {\tt GNUmakefile}.
 
 \label{sec:initial_models}
 
-MAESTRO models subsonic flows that are in hydrostatic equilibrium.
-The solution in MAESTRO is broken up into a 1D base state and the 2-
+\maestro\ models subsonic flows that are in hydrostatic equilibrium.
+The solution in \maestro\ is broken up into a 1D base state and the 2-
 or 3D full state.  The job of the 1D base state in the algorithm is
 to represent the hydrostatic structure.  The full, Cartesian state
 carries the departures from hydrostatic equilibrium.  The underlying
@@ -700,11 +700,11 @@ the initial model is read in and taken as the base state.  Therefore,
 any initial model needs to already be in hydrostatic equilibrium.
 
 The routines in {\tt MAESTRO/initial\_model/} prepare an initial model
-for MAESTRO.  There are two types of routines here, the first type
+for \maestro.  There are two types of routines here, the first type
 take an existing 1D initial model produced somewhere else (e.g.\ a
 1D stellar evolution code), and and map it onto a uniform grid, at
-the desired resolution, using the equation of state in MAESTRO, and
-using MAESTRO's discretization of hydrostatic equilibrium.  The second
+the desired resolution, using the equation of state in \maestro, and
+using \maestro's discretization of hydrostatic equilibrium.  The second
 type generate the initial model internally, by integrating the
 condition of hydrostatic equilibrium together with a simplifying
 assumption on the energy (e.g. isothermal or isentropic).  In
@@ -720,12 +720,12 @@ The {\tt toy\_atm} example provides a simple approximation for a thin
 of a star.  This can be used as the starting point for a more complex
 model.  
 
-MAESTRO initial models are read in by the {\tt extern/model\_parser}
+\maestro\ initial models are read in by the {\tt extern/model\_parser}
 routines.  This expects the initial model to contain a header giving
 the number of variables and their names, followed by rows of data
 giving the coordinate and data values at that coordinate.  The initial
 model should contain the same species data (as mass fractions) as
-defined in the {\tt network} module used by the MAESTRO problem.
+defined in the {\tt network} module used by the \maestro\ problem.
 
 Full details on which initial model routine matches each problem and
 how the initial models are used to initialize the full state data can
@@ -747,7 +747,7 @@ be found in \S~\ref{sec:initial_models_main}.
   Not shown is the case where data is nodal in the $y$-direction only.}
 \end{figure}
 
-MAESTRO's gridding is handled by the BoxLib library.  The underlying
+\maestro's gridding is handled by the BoxLib library.  The underlying
 idea in BoxLib is to allow for adaptive mesh refinement (AMR)---different
 regions of the domain can have different spatial resolutions.  The
 domain is broken into boxes.  At the coarsest (base) level of
@@ -764,7 +764,7 @@ processor (load balancing).
 On a grid, the data can be stored at cell-centers, on a face/edge, or
 on the corners.  In BoxLib, data that is on an edge is termed `nodal'
 in that direction (see Figure~\ref{fig:dataloc}).  Data that is on the
-corners is nodal in all spatial directions.  In MAESTRO, the state
+corners is nodal in all spatial directions.  In \maestro, the state
 data (density, enthalpy, velocity, $\ldots$) is generally
 cell-centered.  Fluxes are nodal in the direction they represent.
 A few quantities are nodal in all directions (e.g.\ $\phi$ used in
@@ -861,13 +861,13 @@ problem.  Here {\tt nc} is the number of components, for instance
 representing different fluid variables.  For 2D problems, {\tt nz=1}.
 
 A \fab\ would represent the data for a single box in the domain.
-In MAESTRO, we don't usually deal with \fab s alone, but rather
+In \maestro, we don't usually deal with \fab s alone, but rather
 we deal with \multifab s, described next.
 
 \subsection{\multifab}
 
 A \multifab\ is a collection of \fab s at the same level of
-refinement.  This is the primary data structure that MAESTRO
+refinement.  This is the primary data structure that \maestro\
 routine operate on.  A multilevel simulation stores the 
 data in an array of \multifab s, where the array index refers
 to the refinement level.
@@ -876,7 +876,7 @@ to the refinement level.
 
 To build a \multifab, we need to provide a \layout, the number of
 components to store in the \multifab\, and the number of ghostcells.  In
-MAESTRO, the hierarchy of grids will be described by a single
+\maestro\, the hierarchy of grids will be described by a single
 \mllayout.  A \multifab\ can be declared and built at any time in a
 simulation using the \mllayout, thereby allocating space at every
 grid location in the simulation.  The sequence to build a \multifab\
@@ -915,15 +915,15 @@ calling {\tt multifab\_destroy} on the \multifab.
 \subsection{\bctower}
 
 A \bctower\ holds the information about what boundary conditions are
-in effect for each variable in a MAESTRO simulation.  \MarginPar{better description?}
+in effect for each variable in a \maestro\ simulation.  \MarginPar{better description?}
 
-\section{MAESTRO Data Organization}
+\section{\maestro\ Data Organization}
 
-The state of the star in MAESTRO is described by both a
+The state of the star in \maestro\ is described by both a
 multidimensional state and the 1D base state.  The full
 multidimensional state is stored in \multifab s while the base state
 is simply stored in Fortran arrays.  Here we describe the
-major MAESTRO data-structures.
+major \maestro\ data-structures.
 
 
 
@@ -1020,9 +1020,9 @@ by the parameter {\tt drdxfac}.
 
 
 
-\section{MAESTRO Helper Modules}
+\section{\maestro\ Helper Modules}
 
-A number of MAESTRO modules appear frequently throughout the source.
+A number of \maestro\ modules appear frequently throughout the source.
 Below, we describe some of the more common functionality of the most
 popular modules.
 
@@ -1040,7 +1040,7 @@ gets the information about the fluid species from the {\tt network}
 module (for example, the atomic number, $Z$, and atomic weight, $A$,
 of the nuclei).
 
-Presently there are 2 equations of state that work with MAESTRO:
+Presently there are 2 equations of state that work with \maestro:
 \begin{itemize}
 \item {\tt extern/EOS/helmeos/} represents a general stellar equation 
       of state, consisting of nuclei (as an ideal gas), radiation,
@@ -1065,7 +1065,7 @@ Presently there are 2 equations of state that work with MAESTRO:
 \end{itemize}
 
 The {\tt eos\_module} declares for convenience the variables that need
-appear in the {\tt eos} call argument list.  MAESTRO routines use
+appear in the {\tt eos} call argument list.  \maestro\ routines use
 these module variables in the EOS call to avoid having to declare 
 each quantity in each routine that calls the EOS.
 
@@ -1104,7 +1104,7 @@ base state or full Cartesian state.
 
 The {\tt network} module defines the number species advected by the
 code ({\tt nspec}), their ordering, and gives their basic properties
-(like atomic number, $Z$, and atomic mass, $A$).  All MAESTRO problems
+(like atomic number, $Z$, and atomic mass, $A$).  All \maestro\ problems
 require a {\tt network} module, even if there are no reactions
 modeled.  Many different reaction modules (containing different sets
 of isotopes) exist in {\tt extern/networks}.  The particular network
@@ -1181,13 +1181,13 @@ the most popular such modules.
 
 \section{\label{sec:example} Example: Accessing State and MAC Data}
 
-In MAESTRO, the state data is stored in a cell-centered multifab array
+In \maestro, the state data is stored in a cell-centered multifab array
 (the array index refers to the AMR level) and the MAC velocities are
 stored in a 2D nodal multifab array (with indices referring to the AMR
 level and the velocity component).  Here we demonstrate a typical way
 to extract the state and MAC velocity data.
 
-All MAESTRO routines are contained in a module, to allow for compile-time
+All \maestro\ routines are contained in a module, to allow for compile-time
 argument checking.
 \begin{lstlisting}[language={[95]fortran},mathescape=false]
 module example_module
@@ -1214,7 +1214,7 @@ bring in the basic BoxLib data types. Specifically, here, {\tt
 declaring double precision data, and {\tt multifab\_module} defines
 the \multifab\ data type.  The {\tt ml\_layout\_module} defines the
 datatype for a \mllayout---many routines will take an \mllayout
-to allow us to fill ghostcells.  The {\tt variables} module is a MAESTRO
+to allow us to fill ghostcells.  The {\tt variables} module is a \maestro\
 module that provides integer keys for indexing the state arrays.  In
 this case the integer {\tt rho\_comp} refers to the location in the
 state array corresponding to density.
@@ -1452,7 +1452,7 @@ on the objective.
 
 \section{Multigrid}
 
-MAESTRO uses the multigrid solver to enforce the divergence constraint
+\maestro\ uses the multigrid solver to enforce the divergence constraint
 both on the half-time edge-centered advective velocities (the ``MAC
 projection'') and on the final cell-centered velocities (the ``HG
 projection'').  For the MAC projection, since the velocity data is
@@ -1520,7 +1520,7 @@ structure is not appropriate for the fancy bottom solver.
 
 \label{arch:sec:particles}
 
-MAESTRO has support for Lagrangian particles that are passively
+\maestro\ has support for Lagrangian particles that are passively
 advected with the velocity field.  These are useful for diagnostics
 and post-processing.  To use particles, particles must be seeded into
 the domain by writing a problem-specific {\tt init\_particles.f90}
@@ -1539,25 +1539,6 @@ location.  Several bits of associated data (density, temperature, and
 mass fractions) are stored along with the particle ID and position.
 
 Some simple python scripts allow for the plotting of the particle
-positions.  For example, running {\tt test2} with particles enabled
-will seed particles in the initial hotspot.  To plot the results,
-first set your {\tt PYTHONPATH} environment variable to point to the
-{\tt fParallel/data\_processing/python/} directory, for example:
-\begin{verbatim}
-export PYTHONPATH="/home/username/development/MAESTRO/fParallel/data_processing/python"
-\end{verbatim}
-This will allow python to see the {\tt parseparticles.py} routine.
-For the {\tt test2} problem, the {\tt plotparticles.py} routine shows
-how to plot the particle histories and make an animation of the
-particles colored by the ash mass fraction.  This script is run as:
-\begin{verbatim}
-./plotparticles.py timestamp_*
-\end{verbatim}
-
-Note, these python routines require the NumPy and matplotlib packages.
-On a Fedora Linux system, the necessary routines can be installed via:
-\begin{verbatim}
-yum install python-matplotlib lyx-fonts stix-fonts
-\end{verbatim}
+positions.  See \S~\ref{analysis:sec:particles} for details.
 
 
