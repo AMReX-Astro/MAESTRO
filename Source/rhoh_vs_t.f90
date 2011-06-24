@@ -94,11 +94,13 @@ contains
        ng_rh0 = nghost(rhoh0_cart(1))
        ng_t0  = nghost(t0_cart(1))
 
+       !$OMP PARALLEL DO PRIVATE(r)
        do r=0,nr_fine-1
           rho0_halftime(1,r)  = HALF * (rho0_old(1,r)  + rho0_new(1,r)  )
           rhoh0_halftime(1,r) = HALF * (rhoh0_old(1,r) + rhoh0_new(1,r) )
           t0_halftime(1,r)    = HALF * (t0_old(1,r)    + t0_new(1,r) )
        end do
+       !$OMP END PARALLEL DO
 
        call put_1d_array_on_cart(rho0_halftime,rho0_cart,dm+rho_comp,.false.,.false.,dx, &
                                  the_bc_level,mla)

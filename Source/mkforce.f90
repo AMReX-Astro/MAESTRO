@@ -550,9 +550,13 @@ contains
     end do
 
     if (spherical .eq. 1) then
+
+       !$OMP PARALLEL DO PRIVATE(r)
        do r=0,nr_fine-1
           gradw0_rad(1,r) = (w0(1,r+1) - w0(1,r)) / dr(1)
        enddo
+       !$OMP END PARALLEL DO
+
        call put_1d_array_on_cart(gradw0_rad,gradw0_cart,foextrap_comp, &
                                  .false.,.false.,dx,the_bc_level,mla)
     end if

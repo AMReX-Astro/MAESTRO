@@ -707,10 +707,12 @@ contains
        dt_divu = 1.d99
 
        ! spherical divU constraint
+       !$OMP PARALLEL DO PRIVATE(r,gamma1bar_p_avg)
        do r=1,nr_fine-1
           gamma1bar_p_avg = HALF * (gamma1bar(r)*p0(r) + gamma1bar(r-1)*p0(r-1))
           gp0(r) = ( (p0(r) - p0(r-1))/dr(1) ) / gamma1bar_p_avg
        end do
+       !$OMP END PARALLEL DO
        gp0(nr_fine) = gp0(nr_fine-1)
        gp0(      0) = gp0(        1)
        
