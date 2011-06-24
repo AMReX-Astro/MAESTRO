@@ -359,8 +359,10 @@ the types of boundaries, and the number of computational cells include:
       {\tt bcx\_hi }, {\tt bcy\_hi }, {\tt bcz\_hi } are the boundary
    condition types at the lower (`{\tt lo}') and upper (`{\tt hi}')
    domain boundaries in the $x$, $y$, and $z$ coordinate directions.
-   The different types are set via integer flags noted below: 
+   The different types are set via integer flags listed in table~\ref{arch:table:bcflags}.
 
+   \begin{table}[h]
+   \caption{\label{arch:table:bcflags} Boundary condition flags}  
    \begin{center}
    \begin{tabular}{ll}
    \hline
@@ -375,7 +377,7 @@ the types of boundaries, and the number of computational cells include:
    \hline
    \end{tabular}
    \end{center}
-
+   \end{table}
 
 \end{itemize}
 
@@ -1071,8 +1073,11 @@ each quantity in each routine that calls the EOS.
 
 The first argument to the {\tt eos} call is an integer key that
 specifies which thermodynamic variables (in addition to the mass
-fractions) are used as input.  Options include:
+fractions) are used as input.  EOS input options are listed 
+in table~\ref{arch:table:eosinput}.
 
+   \begin{table}[h]
+   \caption{\label{arch:table:eosinput} EOS input flags}
    \begin{center}
    \begin{tabular}{lc}
    \hline
@@ -1087,7 +1092,7 @@ fractions) are used as input.  Options include:
    \hline
    \end{tabular}
    \end{center}
-
+   \end{table}
 
 
 
@@ -1136,8 +1141,10 @@ described in \S~\ref{sec:def_runtime_param}.
 
 The {\tt variables} module provides integer keys to index the state
 multifabs and other arrays dealing with the scalar quantities.  The
-most commonly used keys are are:
+most commonly used keys are are list in table~\ref{arch:table:variables}.
 
+\begin{table}[h]
+\caption{\label{arch:table:variables} Common {\tt variables} module keys}
 \begin{center}
 \begin{tabular}{ll}
 \hline
@@ -1148,6 +1155,7 @@ most commonly used keys are are:
 \hline
 \end{tabular}
 \end{center}
+\end{table}
 
 The species indices are contiguous in the state array, spanning {\tt
   spec\_comp:spec\_comp-1+nspec}.  To find a particular species, a
