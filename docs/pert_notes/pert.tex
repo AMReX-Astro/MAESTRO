@@ -1,21 +1,64 @@
 
-\section{General form of an advection equation}
-In predicting the interface states, we work with an advection-like
-equation, and call anything other than the advective term a ``force''.
-For example, for a scalar $\phi$, obeying a conservation law with a source term, $f$:
+\section{Predicting interface states}
+
+The \maestro\ hyperbolic equations come in two forms: advective and conservative.
+The procedure for predicting interface states differs slightly depending on which
+form we are dealing with.
+
+\subsection{Advective form}
+
+Most of the time, we are dealing with equations in advective form.
+Here, a scalar, $\phi$, obeys:
 \begin{equation}
-\frac{\partial \phi}{\partial t} = -\nabla \cdot (\phi \Ub) + f
+\frac{\partial \phi}{\partial t} = -\Ub \cdot \nabla \phi + f
 \end{equation}
-We write this in advective form as:
+where $f$ is the force.  This is the form that the perturbation
+equations take, as well as the equation for $X_k$ itself.
+
+A piecewise linear prediction of $\phi$ to the interface 
+would appear as:
+\begin{eqnarray}
+\phi_{i+1/2,j}^{n+1/2} &=& \phi_{i,j}^n 
+    + \left . \frac{\Delta x}{2} \frac{\partial \phi}{\partial x} \right |_{i,j}
+    + \left . \frac{\Delta t}{2} \frac{\partial \phi}{\partial t} \right |_{i,j} \\
+ &=& \phi_{i,j}^n 
+    + \left . \frac{\Delta x}{2} \frac{\partial \phi}{\partial x} \right |_{i,j}
+    +  \frac{\Delta t}{2} \left ( -u \frac{\partial \phi}{\partial x} 
+                                         -v \frac{\partial \phi}{\partial y} + f \right ) \\
+ &=& \phi_{i,j}^n + \frac{\Delta x}{2} \left ( 1 - \frac{\Delta t}{\Delta x} u \right ) 
+           \frac{\partial \phi}{\partial x} 
+    \underbrace{- \frac{\Delta t}{2} v \frac{\partial \phi}{\partial y}}_{\mathrm{``transverse~term''}} + \frac{\Delta t}{2} f
+\end{eqnarray}
+(see the Godunov notes section for more details).  Here, the
+``transverse term'' is accounted for in {\tt make\_edge\_scal}.  Any
+additional forces should be added to $f$.  For the perturbation form
+of equations, we add additional advection-like terms to $f$ by calling
+{\tt modify\_scal\_force}.  This will be noted below.
+
+\subsection{Conservative form}
+
+A conservative equation takes the form:
 \begin{equation}
-\frac{\partial \phi}{\partial t} = -\Ub \cdot \nabla \phi \, \underbrace{- \phi \nabla \cdot \Ub}_{\text{``advective force''}} + f
+\frac{\partial \phi}{\partial t} = -\nabla \cdot ( \phi \Ub) + f
 \end{equation}
-Here we identify the non-advection portion of the divergence of the
-flux as the ``advective force'' for the advective equation.  This
-advective force will be used as a source when predicting the edge
-states.  Depending on the nature of $f$, it may either appear in the
-prediction as well or be absent if the process it describes is
-incorporated by Strang-splitting.
+%
+Now a piecewise linear prediction of $\phi$ to the interface is 
+\begin{eqnarray}
+\phi_{i+1/2,j}^{n+1/2} &=& \phi_{i,j}^n 
+    + \left . \frac{\Delta x}{2} \frac{\partial \phi}{\partial x} \right |_{i,j}
+    + \left . \frac{\Delta t}{2} \frac{\partial \phi}{\partial t} \right |_{i,j} \\
+ &=& \phi_{i,j}^n 
+    + \left . \frac{\Delta x}{2} \frac{\partial \phi}{\partial x} \right |_{i,j}
+    +  \frac{\Delta t}{2} \left ( -\frac{\partial (\phi u)}{\partial x} 
+                                  -\frac{\partial (\phi v)}{\partial y} + f \right ) \\
+ &=& \phi_{i,j}^n + \frac{\Delta x}{2} \left ( 1 - \frac{\Delta t}{\Delta x} u \right ) 
+           \frac{\partial \phi}{\partial x} 
+    \underbrace{- \frac{\Delta t}{2} \phi \frac{\partial u}{\partial x} 
+                - \frac{\Delta t}{2} \frac{\partial (\phi v)}{\partial y}}_{\mathrm{``transverse~term''}} + \frac{\Delta t}{2} f
+\end{eqnarray}
+Here the ``transverse term'' includes the non-advective portion of the $x$-flux (for the $x$-prediction).
+Both of the underbraced terms are accounted for in {\tt make\_edge\_scal} automatically when
+we call it with {\tt is\_conservative = .true.}.
 
 
 %-----------------------------------------------------------------------------
