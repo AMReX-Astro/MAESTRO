@@ -122,7 +122,8 @@ contains
   subroutine radialtag_2d(radialtag,spec,rho,lo,ng,lev)
 
     use probin_module, only: tag_minval, tag_maxval, tag_xfac, &
-                             base_cutoff_density
+                             base_cutoff_density, &
+                             do_dens_tagging, lo_dens_tag, hi_dens_tag
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
@@ -133,17 +134,38 @@ contains
     ! local
     integer :: i,j,nx,ny
     real(kind=dp_t) :: Xspec
+    integer :: llev
+
+    llev = 1; if (present(lev)) llev = lev
 
     nx = size(spec,dim=1) - 2*ng
     ny = size(spec,dim=2) - 2*ng
 
     do j = lo(2),lo(2)+ny-1
        do i = lo(1),lo(1)+nx-1
-          Xspec = spec(i,j)/rho(i,j)
-          if (Xspec .gt. tag_xfac*tag_minval .and. Xspec .lt. tag_maxval &
-               .and. rho(i,j) .gt. base_cutoff_density) then
-             radialtag(j) = .true.
+          if (.not. do_dens_tagging) then
+             Xspec = spec(i,j)/rho(i,j)
+             if (Xspec .gt. tag_xfac*tag_minval .and. Xspec .lt. tag_maxval &
+                  .and. rho(i,j) .gt. base_cutoff_density) then
+                radialtag(j) = .true.
+             endif
+          else ! tag based on density
+
+             select case(llev)
+             case (1)
+                if (rho(i,j) >= 0.5*lo_dens_tag .and. &
+                    rho(i,j) <= 2.0*hi_dens_tag) then
+                   radialtag(j) = .true.
+                endif
+             case(2)
+                if (rho(i,j) >= lo_dens_tag .and. &
+                    rho(i,j) <= hi_dens_tag) then
+                   radialtag(j) = .true.
+                endif
+             end select
+
           endif
+             
        end do
     enddo
 

@@ -638,6 +638,9 @@ subroutine varden()
   if ( (max_step >= init_step) .and. (time < stop_time .or. stop_time < 0.d0) ) then
 
      do istep = init_step,max_step
+     
+        if (drive_initial_convection .and. istep >= stop_initial_convection) &
+             drive_initial_convection = .false.
 
         if (drive_initial_convection .and. istep >= stop_initial_convection) &
              drive_initial_convection = .false.
