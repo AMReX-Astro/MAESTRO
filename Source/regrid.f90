@@ -211,11 +211,22 @@ contains
 
     enddo
 
+    nlevs = nl
+    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
+
+    ! Note: this build actually sets mla%la(n) = la_array(n) so we mustn't delete la_array(n)
+    call build(mla,mba,la_array,pmask,nlevs)
+
+    ! This makes sure the boundary conditions are properly defined everywhere
+    do n = 1, nlevs
+       call bc_tower_level_build(the_bc_tower,n,la_array(n))
+    end do
+
     if (spherical .eq. 1) then
 
        if (is_restart) nlevs = nlevs-1
 
-       ! convert (rho X) --> X in sold 
+       ! convert (rho X) --> X in sold_temp 
        call convert_rhoX_to_X(sold_temp,.true.,mla_old,the_bc_tower%bc_tower_array)
 
        ! convert rho -> rho' in sold_temp
@@ -226,61 +237,25 @@ contains
        call put_in_pert_form(mla_old,sold_temp,rhoh0,dx,rhoh_comp,foextrap_comp,.true., &
                              the_bc_tower%bc_tower_array)
 
+       ! Delete old multifabs so that we can rebuild them.
+       do n = 1, nlevs
+          call destroy(  sold(n))
+          call destroy(  uold(n))
+          call destroy(   gpi(n))
+          call destroy(    pi(n))
+          call destroy(  dSdt(n))
+          call destroy(   src(n))
+       end do
+
+       ! Rebuild using the perturbational form
+       do n = 1, nlevs
+          call build_and_fill_data(n,la_array(n),mla_old, &
+                                   uold     ,sold     ,gpi     ,pi     ,dSdt     ,src,&
+                                   uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, &
+                                   the_bc_tower,dm,ng_s,mba%rr(n-1,:))
+       end do
+
        if (is_restart) nlevs = nlevs+1
-
-    end if
-
-    do n = 1,nl
-       call destroy(  sold(n))
-       call destroy(  uold(n))
-       call destroy(   gpi(n))
-       call destroy(    pi(n))
-       call destroy(  dSdt(n))
-       call destroy(   src(n))
-    end do
-
-    nlevs = nl
-    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
-
-    do n = 1,nlevs
-       call destroy(la_array(n))
-    enddo
-
-    call ml_layout_restricted_build(mla,mba,nlevs,pmask)
-
-    nlevs = mla%nlevel
-    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
-
-    ! Now make the data for the final time -- need to redo this so the associated layout is mla%la(nl), not la_array(nl)
-    do nl = 1,nlevs
-       
-       ! Define bc_tower at level nl
-       call bc_tower_level_build(the_bc_tower,nl,mla%la(nl))
-
-       if (nl.eq.1) then
-          call build_and_fill_data(nl,mla%la(nl),mla_old, &
-                                   uold     ,sold     ,gpi     ,pi     ,dSdt     ,src,&
-                                   uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, &
-                                   the_bc_tower,dm,ng_s,mba%rr(nl,:))
-       else
-          call build_and_fill_data(nl,mla%la(nl),mla_old, &
-                                   uold     ,sold     ,gpi     ,pi     ,dSdt     ,src,&
-                                   uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, &
-                                   the_bc_tower,dm,ng_s,mba%rr(nl-1,:))
-       end if
-
-       if (mla_old%nlevel .ge. nl) then
-          call destroy(  uold_temp(nl))
-          call destroy(  sold_temp(nl))
-          call destroy(   gpi_temp(nl))
-          call destroy(    pi_temp(nl))
-          call destroy(  dSdt_temp(nl))
-          call destroy(   src_temp(nl))
-       end if
-
-    end do
-
-    if (spherical .eq. 1) then
 
        ! convert rho' -> rho in sold
        call put_in_pert_form(mla,sold,rho0,dx,rho_comp,dm+rho_comp,.false., &
@@ -294,6 +269,17 @@ contains
        call convert_rhoX_to_X(sold,.false.,mla,the_bc_tower%bc_tower_array)
 
     end if
+
+    do nl = 1,nlevs
+       if (mla_old%nlevel .ge. nl) then
+          call destroy(  uold_temp(nl))
+          call destroy(  sold_temp(nl))
+          call destroy(   gpi_temp(nl))
+          call destroy(    pi_temp(nl))
+          call destroy(  dSdt_temp(nl))
+          call destroy(   src_temp(nl))
+       end if
+    end do
 
     if (nlevs .eq. 1) then
 
