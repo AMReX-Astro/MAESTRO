@@ -242,6 +242,10 @@ contains
     nlevs = nl
     nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
+    do n = 1,nlevs
+       call destroy(la_array(n))
+    enddo
+
     call ml_layout_restricted_build(mla,mba,nlevs,pmask)
 
     nlevs = mla%nlevel
