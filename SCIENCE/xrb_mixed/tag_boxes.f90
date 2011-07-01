@@ -22,6 +22,7 @@ contains
 
     use variables, only: rho_comp, spec_comp
     use geometry, only: nr_fine, nr
+    use probin_module, only: do_dens_tagging
 
     type( multifab)          , intent(in   ) :: mf
     type(lmultifab)          , intent(inout) :: tagboxes
@@ -52,7 +53,7 @@ contains
        select case (dm)
        case (2)
 
-             if (present(aux_tag_mf)) then
+             if (present(aux_tag_mf) .and. (.not. do_dens_tagging)) then
                 call update_radialtag_2d(radialtag_proc,&
                                          sp(:,:,1,rho_comp), ng_s, &
                                          auxp(:,:,1,1), ng_aux, lo)
@@ -64,7 +65,7 @@ contains
                   
        case  (3)
 
-             if (present(aux_tag_mf)) then
+             if (present(aux_tag_mf) .and. (.not. do_dens_tagging)) then
                 call update_radialtag_3d(radialtag_proc, &
                                          sp(:,:,:,rho_comp), ng_s, &
                                          auxp(:,:,:,1), ng_aux, lo)
@@ -151,18 +152,10 @@ contains
              endif
           else ! tag based on density
 
-             select case(llev)
-             case (1)
-                if (rho(i,j) >= 0.5*lo_dens_tag .and. &
-                    rho(i,j) <= 2.0*hi_dens_tag) then
-                   radialtag(j) = .true.
-                endif
-             case(2)
-                if (rho(i,j) >= lo_dens_tag .and. &
-                    rho(i,j) <= hi_dens_tag) then
-                   radialtag(j) = .true.
-                endif
-             end select
+             if (rho(i,j) >= lo_dens_tag .and. &
+                 rho(i,j) <= hi_dens_tag) then
+                radialtag(j) = .true.
+             endif
 
           endif
              

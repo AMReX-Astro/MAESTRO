@@ -162,10 +162,10 @@ contains
 
        if (nl .eq. 1) then
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
-                              amr_buf_width,ref_ratio,nl,max_grid_size_2)
+                              amr_buf_width,ref_ratio,nl,max_grid_size_2,rhoHdot(nl))
        else
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
-                              amr_buf_width,ref_ratio,nl,max_grid_size_3)
+                              amr_buf_width,ref_ratio,nl,max_grid_size_3,rhoHdot(nl))
        end if
 
        if (new_grid) then
