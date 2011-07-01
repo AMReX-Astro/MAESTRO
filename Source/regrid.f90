@@ -46,7 +46,7 @@ contains
 
     ! local
     logical           :: new_grid
-    integer           :: n, nl, d, ng_s, dm, nlevs
+    integer           :: n, nl, d, ng_s, dm, nlevs, ng_buffer
     type(layout)      :: la_array(max_levs)
     type(ml_layout)   :: mla_old
     type(ml_boxarray) :: mba
@@ -143,6 +143,8 @@ contains
     nl       = 1
     new_grid = .true.
 
+    ng_buffer = 4
+
     do while ( (nl .lt. max_levs) .and. (new_grid) )
 
        ! Do we need finer grids?
@@ -168,31 +170,32 @@ contains
           !  fillpatch the new levels.
           if (nl .ge. 2) then
 
-             call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
+             ! Test on whether grids are already properly nested
+             if (.not. ml_boxarray_properly_nested(mba, ng_buffer, pmask, 2, nl+1)) then
 
-             ! FIXME -- ideally we would test here on whether the grids were changed by the call to enforce_proper_nesting
+                call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
 
-             ! Loop over all the lower levels which we might have changed when we enforced proper nesting.
-             do n = 2,nl
-
-                ! This makes sure the boundary conditions are properly defined everywhere
-                call bc_tower_level_build(the_bc_tower,n,la_array(n))
-
-                ! Delete old multifabs so that we can rebuild them.
-                call destroy(  sold(n))
-                call destroy(  uold(n))
-                call destroy(   gpi(n))
-                call destroy(    pi(n))
-                call destroy(  dSdt(n))
-                call destroy(   src(n))
-
-                ! Rebuild the lower level data again if it changed.
-                call build_and_fill_data(n,la_array(n),mla_old, &
-                                         uold     ,sold     ,gpi     ,pi     ,dSdt     ,src,&
-                                         uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, &
-                                         the_bc_tower,dm,ng_s,mba%rr(n-1,:))
-             end do
-
+                ! Loop over all the lower levels which we might have changed when we enforced proper nesting.
+                do n = 2,nl
+   
+                   ! This makes sure the boundary conditions are properly defined everywhere
+                   call bc_tower_level_build(the_bc_tower,n,la_array(n))
+   
+                   ! Delete old multifabs so that we can rebuild them.
+                   call destroy(  sold(n))
+                   call destroy(  uold(n))
+                   call destroy(   gpi(n))
+                   call destroy(    pi(n))
+                   call destroy(  dSdt(n))
+                   call destroy(   src(n))
+   
+                   ! Rebuild the lower level data again if it changed.
+                   call build_and_fill_data(n,la_array(n),mla_old, &
+                                            uold     ,sold     ,gpi     ,pi     ,dSdt     ,src,&
+                                            uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, &
+                                            the_bc_tower,dm,ng_s,mba%rr(n-1,:))
+                end do
+             end if
           end if
 
           ! Define bc_tower at level nl+1.
