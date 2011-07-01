@@ -228,6 +228,8 @@ contains
 
     if (spherical .eq. 1) then
 
+       ! this is here to save work - we don't need to do these operations at
+       ! the finest level
        if (init_into_finer) nlevs = nlevs-1
 
        ! convert (rho X) --> X in sold_temp 
