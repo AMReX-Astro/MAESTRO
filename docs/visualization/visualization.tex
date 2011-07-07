@@ -1,5 +1,147 @@
+\section{Plotfiles}
+
+\maestro\ outputs plotfile specifically for visualization and analysis.
+Table~\ref{vis:table:plotfile} lists the quantities stored in a plotfile.
+Not all of these may be present, dependent on what options were used in 
+creating the plotfile.
+
+By default, plotfiles store double precision data, but if {\tt
+  single\_prec\_plotfiles = .true.} is set, then the data is converted
+to single precision before outputting---this is done to reduce file
+sizes.
+
+\renewcommand{\arraystretch}{1.3}
+
+\begin{center}
+\begin{longtable}{|l|p{2.25in}|p{2.5in}|}
+\caption{Plotfile quantities}
+\label{vis:table:plotfile} \\
+%
+\hline \multicolumn{1}{|c|}{\textbf{plotfile variable name}} & 
+       \multicolumn{1}{|c|}{\textbf{description}} & 
+       \multicolumn{1}{|c|}{\textbf{runtime parameter controlling output}} \\ \hline
+\endfirsthead
+
+\multicolumn{3}{c}%          
+{{\tablename\ \thetable{}---continued}} \\
+\hline {plotfile variable name} & 
+       {description} & 
+       {runtime parameter controlling output} \\ \hline
+\endhead
+
+\multicolumn{3}{|r|}{{\em continued on next page}} \\ \hline
+\endfoot
+
+\hline
+\endlastfoot
+
+{\tt x\_vel}   & $\ut$  & -- \\
+\hline
+{\tt y\_vel}   & $\vt$  & -- \\
+\hline
+{\tt z\_vel}   & $\wt$  & 3-d runs online \\
+\hline
+{\tt density}  & $\rho$ & -- \\
+\hline
+{\tt rhoh}   & $(\rho h)$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+\hline
+{\tt h}      & $(\rho h)/\rho$   & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+\hline
+{\tt X(*)}   & $(\rho X_k)/\rho$ & {\tt plot\_spec} \\
+\hline
+{\tt tracer} & tracers           & {\tt plot\_trac} \\
+\hline
+{\tt w0\_x}  & $w_0 \er \cdot \ex$ & {\tt plot\_base} \\ 
+\hline
+{\tt w0\_y}  & $w_0 \er \cdot \ey$ & {\tt plot\_base} \\ 
+\hline
+{\tt w0\_z}  & $w_0 \er \cdot \ez$ & {\tt plot\_base} \\ 
+\hline
+{\tt divw0}  & $\nabla \cdot w_0$  & {\tt plot\_base} \\ 
+\hline
+{\tt rho0}   & $\rho_0$            & {\tt plot\_base} \\ 
+\hline
+{\tt rhoh0}  & $(\rho h)_0$         & {\tt plot\_base} \\ 
+\hline
+{\tt h0}     & $(\rho h)_0/\rho_0$  & {\tt plot\_base} \\ 
+\hline
+{\tt p0}     & $p_0$                & {\tt plot\_base} \\ 
+\hline
+{\tt radial\_velocity}  & $\Ubt \cdot \er + w_0$ & {\tt spherical == 1} \\
+\hline
+{\tt circum\_velocity}  & $| \Ubt - (\Ubt \cdot \er) \er |$ &  {\tt spherical == 1}  \\
+\hline
+{\tt magvel}              & $| \Ubt + w_0 \er |$  & -- \\
+\hline
+{\tt momentum}            & $\rho | \Ubt + w_0 \er |$  & -- \\
+\hline
+{\tt vort}                & $| \nabla \times \Ubt |$   & -- \\
+\hline
+{\tt S}                   & $S$   & -- \\
+\hline
+{\tt rhopert}             & $\rho - \rho_0$  & -- \\
+\hline
+{\tt rhohpert}          & $(\rho h) - (\rho h)_0$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+\hline
+{\tt tfromp}              & $T(\rho, p_0, X_k)$  & -- \\
+\hline
+{\tt tfromh}            & $T(\rho, h, X_k)$    & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+\hline
+{\tt deltaT}            & $[T(\rho, h, X_k) - T(\rho, p_0, X_k)]/T(\rho, h, X_k)$  & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+\hline
+{\tt deltap}            & $|p(\rho,h,X_k) - p_0|/p_0$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+\hline
+{\tt tpert}               & $T(\rho,h,X_k) - \overline{T}$ if {\tt use\_tfromp = F}; $T(\rho,p_0,X_k) - \overline{T}$ otherwise & -- \\
+\hline
+{\tt Machnumber}          & $| \Ubt + w_0 \er | / c(\rho,p_0,X_k)$ & -- \\
+\hline
+{\tt soundspeed}        & $c(\rho,p_0,X_k)$ & {\tt plot\_cs} \\
+\hline
+{\tt deltagamma}          & $\Gamma_1(\rho,p_0,X_k) - \gammabar$ & -- \\
+\hline
+{\tt entropy}             & $s(\rho,p_0,X_k)$ & -- \\
+\hline
+{\tt entropypert}         & $[s(\rho,p_0,X_k) - \overline{s}]/\overline{s}$ & -- \\
+\hline
+{\tt sponge} or {\tt sponge\_fdamp} & $1/(1 + \Delta t \kappa f_\mathrm{damp})$ by default; $f_\mathrm{damp}$ if {\tt plot\_sponge\_fdamp = T} & -- \\
+\hline
+{\tt pi}                 & $\pi$ & -- \\
+\hline
+{\tt gpi\_x}           & $\nabla \pi \cdot \ex$ & {\tt plot\_gpi} \\
+\hline 
+{\tt gpi\_y}           & $\nabla \pi \cdot \ey$ & {\tt plot\_gpi} \\
+\hline
+{\tt gpi\_z}           & $\nabla \pi \cdot \ez$ & {\tt plot\_gpi} \\
+\hline
+{\tt pioverp0}         & $\pi / p_0$ & {\tt plot\_base} \\
+\hline
+{\tt p0pluspi}         & $p_0 + \pi$ & {\tt plot\_base} \\
+\hline
+{\tt omegadot(*)}      & $(\rho X_k)/\rho$ & {\tt plot\_omegadot} \\
+\hline
+{\tt enucdot}          & $(\rho \Hnuc)/\rho$ & {\tt plot\_Hnuc} \\
+\hline
+{\tt Hext}             & $(\rho \Hext)/\rho$ & {\tt plot\_Hext} \\
+\hline
+{\tt eta\_rho}         & $\etarho$ & {\tt plot\_eta} \\
+\hline
+{\tt thermal}          & $\nabla \cdot \kappa \nabla T$ & {\tt use\_thermal\_diffusion} \\
+\hline
+{\tt conductivity}     & $\kappa(\rho, T, X_k)$ & {\tt use\_thermal\_diffusion} \\
+\hline
+{\tt ad\_excess}       & $\nabla - \nabla_\mathrm{ad}$ & {\tt plot\_ad\_excess} \\
+\hline
+\end{longtable}
+\end{center}
+
+\renewcommand{\arraystretch}{1.0}
+
 \section{Visualizing with \amrvis}
+
+
 \section{Visualizing with \visit}
+
+
 \section{Visualizing with \yt}
 \yt is a Python package for analyzing and visualizing simulation data.
 Originally \yt was written for the {\tt Enzo} code, with focus on
@@ -157,3 +299,4 @@ pc.save(``my_cool_images'')
 \end{lstlisting}
 
 \subsection{Volume Rendering}
+
