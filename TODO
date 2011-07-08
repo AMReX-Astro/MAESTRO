@@ -88,3 +88,10 @@
 
    NOTE: this will affect CASTRO as well.
 
+-- when predicting rho', we use the advective formulation instead
+   of conservative formulation in make_edge_state -- but we could
+   use conservative prediction here, and elimiate a lot of the
+   terms in modify_scal_force.  
+
+   Also, for species_pred_type = 2, we should do the (rho X)
+   prediction using conservative prediction
