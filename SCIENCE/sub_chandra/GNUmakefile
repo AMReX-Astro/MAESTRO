@@ -1,8 +1,8 @@
-NDEBUG := t
+NDEBUG := 
 MPI    := t
 OMP    :=
 
-COMP := PathScale
+COMP := gfortran
 
 MKVERBOSE := t
 
@@ -13,7 +13,7 @@ FPARALLEL := ../..
 # define the physics packages to build this problem
 EOS_DIR := extern/EOS/helmeos 
 CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
-NETWORK_DIR := extern/networks/triple_alpha 
+NETWORK_DIR := extern/networks/triple_alpha_plus_cago
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
