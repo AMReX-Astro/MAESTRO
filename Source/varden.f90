@@ -122,6 +122,7 @@ subroutine varden()
   logical :: dump_plotfile, dump_checkpoint
 
   type(particle_container) :: particles
+  integer :: numparticles
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialization
@@ -624,6 +625,14 @@ subroutine varden()
      if (use_particles) then
         call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar, &
                             mla,dx,1)
+
+        numparticles = particle_global_numparticles(particles)
+
+        if ( parallel_IOProcessor()) then
+           print *,""
+           print *,"number of particles initialized = ", numparticles
+           print *,""
+        endif
      endif
 
   else
