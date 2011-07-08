@@ -21,7 +21,7 @@ contains
                              use_thermal_diffusion, plot_omegadot, plot_Hnuc, &
                              plot_Hext, plot_eta, plot_ad_excess, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, &
-                             plot_sponge_fdamp, dm_in
+                             plot_sponge_fdamp, dm_in, use_particles
     use geometry, only: spherical
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -138,6 +138,10 @@ contains
        plot_names(icomp_ad_excess) = "ad_excess"
     endif
 
+    if (use_particles) then
+       plot_names(icomp_part) = "particle_count"
+    endif
+
   end subroutine get_plot_names
 
   subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot, &
@@ -145,7 +149,7 @@ contains
                            thermal,Source,sponge,mba,plot_names,dx, &
                            the_bc_tower,w0,rho0,rhoh0,p0, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt)
+                           normal,dt,particles)
 
     use bl_prof_module
     use fabio_module
@@ -159,7 +163,7 @@ contains
                              do_smallscale, use_thermal_diffusion, &
                              evolve_base_state, prob_lo, prob_hi, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, &
-                             plot_cs, sponge_kappa, plot_sponge_fdamp
+                             plot_cs, sponge_kappa, plot_sponge_fdamp, use_particles
     use geometry, only: spherical, nr_fine, nlevs_radial, numdisjointchunks, &
          r_start_coord, r_end_coord
     use average_module
@@ -169,6 +173,7 @@ contains
     use bl_constants_module
     use network, only: nspec
     use time_module, only: time
+    use particle_module, only: particle_container, make_particle_count
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -194,7 +199,8 @@ contains
     real(dp_t)       , intent(in   ) :: gamma1bar(:,0:)
     real(dp_t)       , intent(in   ) :: etarho_cc(:,0:)
     type(multifab)   , intent(in   ) :: normal(:)
-    
+    type(particle_container), intent(inout) :: particles
+
     type(multifab) :: plotdata(mla%nlevel)
     type(multifab) ::  tempfab(mla%nlevel)
     type(multifab) ::    w0mac(mla%nlevel,mla%dim)
@@ -493,6 +499,16 @@ contains
        enddo
     endif
 
+
+    ! PARTICLES
+    if (use_particles) then
+       do n = 1, nlevs
+          call multifab_setval_c(plotdata(n),ZERO,icomp_part,1)
+       enddo
+       call make_particle_count(mla,plotdata,icomp_part,particles)
+    endif
+
+
     ! the loop over nlevs must count backwards to make sure the finer grids are done first
     do n=nlevs,2,-1
        ! set level n-1 data to be the average of the level n data covering it
@@ -581,6 +597,7 @@ contains
           call multifab_plus_plus_c(plotdata(n),icomp_p0pluspi,plotdata(n),icomp_p0,1)
        end do
     end if
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! we just made the entropy above.  To compute s - sbar, we need to average
