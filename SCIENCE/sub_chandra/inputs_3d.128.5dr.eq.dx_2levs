@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "sub_chandra.M_WD-1.00.M_He-0.05.hse.C.2560"
+ model_file = "sub_chandra.M_WD-1.00.M_He-0.05.hse.C.2560.Tcutoff"
  drdxfac = 5
 
  job_name = "128^3 base, 2-level test run"
