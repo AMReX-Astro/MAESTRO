@@ -538,11 +538,27 @@ subroutine varden()
 
      end if ! end if (init_iter > 0)
 
+
+     ! initialize any passively-advected particles
+     if (use_particles) then
+        call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar, &
+                            mla,dx,1)
+
+        numparticles = particle_global_numparticles(particles)
+
+        if ( parallel_IOProcessor()) then
+           print *,""
+           print *,"number of particles initialized = ", numparticles
+           print *,""
+        endif
+     endif
+
+
      if ( chk_int > 0 ) then
 
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
         ! write a checkpoint file
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
 
         allocate(chkdata(nlevs))
         do n = 1,nlevs
@@ -584,9 +600,9 @@ subroutine varden()
 
      if ( plot_int > 0 .or. plot_deltat > ZERO) then
 
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
         ! write a plotfile
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
 
         if (istep <= 99999) then
            write(unit=plot_index,fmt='(i5.5)') istep
@@ -620,21 +636,6 @@ subroutine varden()
 
   if (restart < 0) then
      init_step = 1
-
-     ! initialize any passively-advected particles
-     if (use_particles) then
-        call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar, &
-                            mla,dx,1)
-
-        numparticles = particle_global_numparticles(particles)
-
-        if ( parallel_IOProcessor()) then
-           print *,""
-           print *,"number of particles initialized = ", numparticles
-           print *,""
-        endif
-     endif
-
   else
      init_step = restart+1
   end if
