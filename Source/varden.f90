@@ -1205,7 +1205,11 @@ subroutine varden()
 
         ! output any particle information
         if (use_particles) then
-           call timestamp(particles, 'timestamp', sold, index_partdata, names_partdata, time)
+           if (store_particle_vels) then
+              call timestamp(particles, 'timestamp', sold, index_partdata, names_partdata, time, uold)
+           else
+              call timestamp(particles, 'timestamp', sold, index_partdata, names_partdata, time)
+           endif
         endif
 
 

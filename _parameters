@@ -472,6 +472,9 @@ dump_grid_file                      logical            .false.
 # call the particle initialization, advection, etc. routines.
 use_particles                       logical            .false.
 
+# store the velocity of the particle?
+store_particle_vels                 logical            .false.
+
 # use analytic heating
 do_heating                          logical            .false.
 
