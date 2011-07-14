@@ -16,7 +16,7 @@ oldjob=$1
 
 for count in `seq 1 1 $2`
 do
-  echo starting job 1 to depend on $oldjob
+  echo starting job $count to depend on $oldjob
   aout=`qsub -W depend=afterany:$oldjob jaguar.run`
   echo "   " jobid: $aout
   echo " "
