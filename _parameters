@@ -481,3 +481,6 @@ do_heating                          logical            .false.
 # how many SDC iteractions to take (requires the code be compiled with
 # {\tt SDC := t}
 sdc_iters                           integer            4
+
+# create a field in the plotfile storing the processor number for each zone
+plot_processors                     logical            .false.

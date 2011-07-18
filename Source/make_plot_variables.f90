@@ -14,6 +14,7 @@ module plot_variables_module
   public :: make_tfromH, make_tfromp, make_entropypert
   public :: make_deltaT, make_divw0, make_vorticity, make_magvel, make_velrc
   public :: make_rhopert, make_rhohpert
+  public :: make_processor_number
 
 contains
 
@@ -3007,6 +3008,28 @@ contains
     !$OMP END PARALLEL DO
 
   end subroutine makevelrc_3d_sphr
+
+
+  !---------------------------------------------------------------------------
+  ! make_processor_number
+  !---------------------------------------------------------------------------
+  subroutine make_processor_number(plotdata,comp_proc)
+
+    type(multifab), intent(inout) :: plotdata
+    integer,        intent(in   ) :: comp_proc
+    
+    real(kind=dp_t), pointer :: pp(:,:,:,:)
+    integer :: i
+
+    do i = 1, nboxes(plotdata)
+       if (multifab_remote(plotdata, i)) cycle
+       pp => dataptr(plotdata, i)
+
+       pp(:,:,:,comp_proc) = parallel_myproc()
+
+    enddo
+  end subroutine make_processor_number
+
 
 end module plot_variables_module
 

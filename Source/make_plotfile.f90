@@ -21,7 +21,7 @@ contains
                              use_thermal_diffusion, plot_omegadot, plot_Hnuc, &
                              plot_Hext, plot_eta, plot_ad_excess, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, &
-                             plot_sponge_fdamp, dm_in, use_particles
+                             plot_sponge_fdamp, dm_in, use_particles, plot_processors
     use geometry, only: spherical
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -142,6 +142,10 @@ contains
        plot_names(icomp_part) = "particle_count"
     endif
 
+    if (plot_processors) then
+       plot_names(icomp_proc) = "processor_number"
+    endif
+
   end subroutine get_plot_names
 
   subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot, &
@@ -163,7 +167,8 @@ contains
                              do_smallscale, use_thermal_diffusion, &
                              evolve_base_state, prob_lo, prob_hi, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, &
-                             plot_cs, sponge_kappa, plot_sponge_fdamp, use_particles
+                             plot_cs, sponge_kappa, plot_sponge_fdamp, use_particles, &
+                             plot_processors
     use geometry, only: spherical, nr_fine, nlevs_radial, numdisjointchunks, &
          r_start_coord, r_end_coord
     use average_module
@@ -508,6 +513,14 @@ contains
        call make_particle_count(mla,plotdata,icomp_part,particles)
     endif
 
+
+    ! processor number
+    if (plot_processors) then
+       do n = 1, nlevs
+          call make_processor_number(plotdata(n),icomp_proc)
+       enddo
+    endif
+    
 
     ! the loop over nlevs must count backwards to make sure the finer grids are done first
     do n=nlevs,2,-1
