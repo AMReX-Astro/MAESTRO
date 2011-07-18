@@ -11,9 +11,10 @@ to single precision before outputting---this is done to reduce file
 sizes.
 
 \renewcommand{\arraystretch}{1.3}
-
+{\footnotesize
 \begin{center}
 \begin{longtable}{|l|p{2.25in}|p{2.5in}|}
+
 \caption{Plotfile quantities}
 \label{vis:table:plotfile} \\
 %
@@ -43,9 +44,9 @@ sizes.
 \hline
 {\tt density}  & $\rho$ & -- \\
 \hline
-{\tt rhoh}   & $(\rho h)$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+{\tt rhoh}   & $(\rho h)$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
 \hline
-{\tt h}      & $(\rho h)/\rho$   & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+{\tt h}      & $(\rho h)/\rho$   & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
 \hline
 {\tt X(*)}   & $(\rho X_k)/\rho$ & {\tt plot\_spec} \\
 \hline
@@ -81,15 +82,15 @@ sizes.
 \hline
 {\tt rhopert}             & $\rho - \rho_0$  & -- \\
 \hline
-{\tt rhohpert}          & $(\rho h) - (\rho h)_0$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+{\tt rhohpert}          & $(\rho h) - (\rho h)_0$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
 \hline
 {\tt tfromp}              & $T(\rho, p_0, X_k)$  & -- \\
 \hline
-{\tt tfromh}            & $T(\rho, h, X_k)$    & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+{\tt tfromh}            & $T(\rho, h, X_k)$    & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
 \hline
-{\tt deltaT}            & $[T(\rho, h, X_k) - T(\rho, p_0, X_k)]/T(\rho, h, X_k)$  & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+{\tt deltaT}            & $[T(\rho, h, X_k) - T(\rho, p_0, X_k)]/T(\rho, h, X_k)$  & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
 \hline
-{\tt deltap}            & $|p(\rho,h,X_k) - p_0|/p_0$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} amd {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+{\tt deltap}            & $|p(\rho,h,X_k) - p_0|/p_0$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
 \hline
 {\tt tpert}               & $T(\rho,h,X_k) - \overline{T}$ if {\tt use\_tfromp = F}; $T(\rho,p_0,X_k) - \overline{T}$ otherwise & -- \\
 \hline
@@ -133,6 +134,7 @@ sizes.
 \hline
 \end{longtable}
 \end{center}
+}
 
 \renewcommand{\arraystretch}{1.0}
 
