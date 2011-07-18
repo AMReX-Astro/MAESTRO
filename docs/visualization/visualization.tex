@@ -37,101 +37,104 @@ sizes.
 \endlastfoot
 
 {\tt x\_vel}   & $\ut$  & -- \\
-\hline
+%\hline
 {\tt y\_vel}   & $\vt$  & -- \\
-\hline
+%\hline
 {\tt z\_vel}   & $\wt$  & 3-d runs only \\
-\hline
+%\hline
 {\tt density}  & $\rho$ & -- \\
-\hline
+%\hline
 {\tt rhoh}   & $(\rho h)$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
-\hline
+%\hline
 {\tt h}      & $(\rho h)/\rho$   & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
-\hline
+%\hline
 {\tt X(*)}   & $(\rho X_k)/\rho$ & {\tt plot\_spec} \\
-\hline
+%\hline
 {\tt tracer} & tracers           & {\tt plot\_trac} \\
-\hline
+%\hline
 {\tt w0\_x}  & $w_0 \er \cdot \ex$ & {\tt plot\_base} \\ 
-\hline
+%\hline
 {\tt w0\_y}  & $w_0 \er \cdot \ey$ & {\tt plot\_base} \\ 
-\hline
+%\hline
 {\tt w0\_z}  & $w_0 \er \cdot \ez$ & {\tt plot\_base} \\ 
-\hline
+%\hline
 {\tt divw0}  & $\nabla \cdot w_0$  & {\tt plot\_base} \\ 
-\hline
+%\hline
 {\tt rho0}   & $\rho_0$            & {\tt plot\_base} \\ 
-\hline
+%\hline
 {\tt rhoh0}  & $(\rho h)_0$         & {\tt plot\_base} \\ 
-\hline
+%\hline
 {\tt h0}     & $(\rho h)_0/\rho_0$  & {\tt plot\_base} \\ 
-\hline
+%\hline
 {\tt p0}     & $p_0$                & {\tt plot\_base} \\ 
-\hline
+%\hline
 {\tt radial\_velocity}  & $\Ubt \cdot \er + w_0$ & {\tt spherical == 1} \\
-\hline
+%\hline
 {\tt circum\_velocity}  & $| \Ubt - (\Ubt \cdot \er) \er |$ &  {\tt spherical == 1}  \\
-\hline
+%\hline
 {\tt magvel}              & $| \Ubt + w_0 \er |$  & -- \\
-\hline
+%\hline
 {\tt momentum}            & $\rho | \Ubt + w_0 \er |$  & -- \\
-\hline
+%\hline
 {\tt vort}                & $| \nabla \times \Ubt |$   & -- \\
-\hline
+%\hline
 {\tt S}                   & $S$   & -- \\
-\hline
+%\hline
 {\tt rhopert}             & $\rho - \rho_0$  & -- \\
-\hline
+%\hline
 {\tt rhohpert}          & $(\rho h) - (\rho h)_0$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
-\hline
+%\hline
 {\tt tfromp}              & $T(\rho, p_0, X_k)$  & -- \\
-\hline
+%\hline
 {\tt tfromh}            & $T(\rho, h, X_k)$    & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
-\hline
+%\hline
 {\tt deltaT}            & $[T(\rho, h, X_k) - T(\rho, p_0, X_k)]/T(\rho, h, X_k)$  & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
-\hline
+%\hline
 {\tt deltap}            & $|p(\rho,h,X_k) - p_0|/p_0$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
-\hline
+%\hline
 {\tt tpert}               & $T(\rho,h,X_k) - \overline{T}$ if {\tt use\_tfromp = F}; $T(\rho,p_0,X_k) - \overline{T}$ otherwise & -- \\
-\hline
+%\hline
 {\tt Machnumber}          & $| \Ubt + w_0 \er | / c(\rho,p_0,X_k)$ & -- \\
-\hline
+%\hline
 {\tt soundspeed}        & $c(\rho,p_0,X_k)$ & {\tt plot\_cs} \\
-\hline
+%\hline
 {\tt deltagamma}          & $\Gamma_1(\rho,p_0,X_k) - \gammabar$ & -- \\
-\hline
+%\hline
 {\tt entropy}             & $s(\rho,p_0,X_k)$ & -- \\
-\hline
+%\hline
 {\tt entropypert}         & $[s(\rho,p_0,X_k) - \overline{s}]/\overline{s}$ & -- \\
-\hline
+%\hline
 {\tt sponge} or {\tt sponge\_fdamp} & $1/(1 + \Delta t \kappa f_\mathrm{damp})$ by default; $f_\mathrm{damp}$ if {\tt plot\_sponge\_fdamp = T} & -- \\
-\hline
+%\hline
 {\tt pi}                 & $\pi$ & -- \\
-\hline
+%\hline
 {\tt gpi\_x}           & $\nabla \pi \cdot \ex$ & {\tt plot\_gpi} \\
-\hline 
+%\hline 
 {\tt gpi\_y}           & $\nabla \pi \cdot \ey$ & {\tt plot\_gpi} \\
-\hline
+%\hline
 {\tt gpi\_z}           & $\nabla \pi \cdot \ez$ & {\tt plot\_gpi} \\
-\hline
+%\hline
 {\tt pioverp0}         & $\pi / p_0$ & {\tt plot\_base} \\
-\hline
+%\hline
 {\tt p0pluspi}         & $p_0 + \pi$ & {\tt plot\_base} \\
-\hline
+%\hline
 {\tt omegadot(*)}      & $(\rho X_k)/\rho$ & {\tt plot\_omegadot} \\
-\hline
+%\hline
 {\tt enucdot}          & $(\rho \Hnuc)/\rho$ & {\tt plot\_Hnuc} \\
-\hline
+%\hline
 {\tt Hext}             & $(\rho \Hext)/\rho$ & {\tt plot\_Hext} \\
-\hline
+%\hline
 {\tt eta\_rho}         & $\etarho$ & {\tt plot\_eta} \\
-\hline
+%\hline
 {\tt thermal}          & $\nabla \cdot \kappa \nabla T$ & {\tt use\_thermal\_diffusion} \\
-\hline
+%\hline
 {\tt conductivity}     & $\kappa(\rho, T, X_k)$ & {\tt use\_thermal\_diffusion} \\
-\hline
+%\hline
 {\tt ad\_excess}       & $\nabla - \nabla_\mathrm{ad}$ & {\tt plot\_ad\_excess} \\
-\hline
+%\hline
+{\tt particle\_count}  & number of particles in a cell & {\tt use\_particles} \\
+%\hline
+{\tt processor\_number} & processor number containing the cell's data & {\tt plot\_processors} \\
 \end{longtable}
 \end{center}
 }
