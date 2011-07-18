@@ -450,7 +450,7 @@ subroutine varden()
                            thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt)
+                           normal,dt,particles)
 
         call write_base_state(restart, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
@@ -597,7 +597,7 @@ subroutine varden()
                            thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt)
+                           normal,dt,particles)
 
         call write_base_state(istep, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
@@ -1239,7 +1239,7 @@ subroutine varden()
                                  thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
                                  the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
                                  tempbar,gamma1bar,etarho_cc, &
-                                 normal,dt)
+                                 normal,dt,particles)
 
               call write_base_state(istep, plot_file_name, &
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
@@ -1325,7 +1325,7 @@ subroutine varden()
                            thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt)
+                           normal,dt,particles)
         
         call write_base_state(istep, plot_file_name, &
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
