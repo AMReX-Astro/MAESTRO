@@ -46,6 +46,11 @@ def main(files):
     pylab.savefig("particle_paths.png")
 
 
+    # get the index in the associate data corresponding to Mg24 and density
+    # assume that all particles have the same data
+    img24 = particles[0].getVarIndex("magnesium-24")
+    idens = particles[0].getVarIndex("density")
+
     # make an animation -- note: this assumes that all particles exist
     # at all timesteps
     nstep = 0
@@ -65,8 +70,8 @@ def main(files):
             pylab.scatter([particles[n].history[nstep].xyz[0]],
                           [particles[n].history[nstep].xyz[1]] ,
                           marker="o", s=1.0,
-                          c=math.log10(particles[n].history[nstep].data["magnesium-24"]/
-                                       particles[n].history[nstep].data["density"]),
+                          c=math.log10(particles[n].history[nstep].data[img24]/
+                                       particles[n].history[nstep].data[idens]),
                           vmin=math.log10(XMg24_min),
                           vmax=math.log10(XMg24_max),
                           edgecolor="None")
