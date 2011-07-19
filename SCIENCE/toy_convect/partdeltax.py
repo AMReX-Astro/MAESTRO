@@ -46,12 +46,9 @@ def main(files):
     n = 0
     while (n < len(particles)):
 
-        print "working on ", n
-
         # get numpy arrays containing the time and coordinate
         # information for particle 0
         coords, time = particles[n].flatten()
-
 
         i = 1
         while (i < len(particles[n].history)):
