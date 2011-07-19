@@ -102,9 +102,18 @@ writing a new analysis routine for BoxLib data.
 
 The {\tt parseparticles.py} routine in the {\tt python/} subdirectory
 can read in \maestro\ particle files containing particle histories
-(usually named {\tt timestamp\_??}).  See the discussion in \S~\ref{arch:sec:particles} for details on initialization.  The driver {\tt
-  test\_parseparticles.py} shows shows how to use this module to plot
-particle histories.  
+(usually named {\tt timestamp\_??}).  See the discussion in
+\S~\ref{arch:sec:particles} for details on initializing particles in
+\maestro.  The driver {\tt test\_parseparticles.py} shows shows how to
+use this module to plot particle histories.  Additional documentation
+is available from the module itself.  In the python environment,
+type:
+\begin{lstlisting}[language=Python]
+import parseparticles
+help(parseparticles)
+\end{lstlisting}
+to get information on the classes and functions provided by the {\tt
+  parseparticles} module.
 
 As a concrete example, running {\tt test2} with particles enabled
 will seed particles in the initial hotspot.  To plot the results,
