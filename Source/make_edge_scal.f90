@@ -641,7 +641,7 @@ contains
     ! impose hi side bc's
     if (phys_bc(1,2) .eq. INLET) then
        sedgex(ie+1,js:je,comp) = s(ie+1,js:je,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SLIP_WALL) then
+    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 1) then
           sedgex(ie+1,js:je,comp) = ZERO
        else
@@ -698,7 +698,7 @@ contains
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
        sedgey(is:ie,js,comp) = s(is:ie,js-1,comp)
-    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SLIP_WALL) then
+    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SYMMETRY) then
        if (is_vel .and. comp .eq. 2) then
           sedgey(is:ie,js,comp) = ZERO
        else
@@ -725,7 +725,7 @@ contains
     ! impose hi side bc's
     if (phys_bc(2,2) .eq. INLET) then
        sedgey(is:ie,je+1,comp) = s(is:ie,je+1,comp)
-    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SLIP_WALL)  then
+    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SYMMETRY)  then
        if (is_vel .and. comp .eq. 2) then
           sedgey(is:ie,je+1,comp) = ZERO
        else
