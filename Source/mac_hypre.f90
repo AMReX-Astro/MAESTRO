@@ -19,9 +19,9 @@ contains
   subroutine mac_hypre(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp, &
                        stencil_order,ref_ratio,rel_solver_eps,abs_solver_eps)
 
-    use stencil_fill_module, only: stencil_fill_cc_all_mglevels
-    use mg_module          , only: mg_tower, mg_tower_build, mg_tower_destroy
-    use probin_module      , only : verbose, pmask
+    use cc_stencil_fill_module, only: stencil_fill_cc_all_mglevels
+    use mg_module             , only: mg_tower, mg_tower_build, mg_tower_destroy
+    use probin_module         , only : verbose, pmask
 
     include 'HYPREf.h'
 
