@@ -270,6 +270,7 @@ contains
     use prolong_base_to_uniform_module
     use restrict_base_module
     use make_grav_module
+    use tridiag_module, only: tridiag
 
     real(kind=dp_t), intent(  out) ::                 w0(:,0:)
     real(kind=dp_t), intent(in   ) ::             w0_old(:,0:)
@@ -517,6 +518,7 @@ contains
     use bl_constants_module
     use fundamental_constants_module, only: Gconst
     use probin_module, only: dpdt_factor, base_cutoff_density
+    use tridiag_module, only: tridiag
 
     real(kind=dp_t), intent(  out) ::                 w0(0:)
     real(kind=dp_t), intent(in   ) ::             w0_old(0:)
@@ -669,36 +671,5 @@ contains
     !$OMP END PARALLEL DO
 
   end subroutine make_w0_spherical
-
-  subroutine tridiag(a,b,c,r,u,n)
-
-    use bl_error_module
-
-    real(kind=dp_t), intent(in   ) :: a(:), b(:), c(:), r(:)
-    real(kind=dp_t), intent(  out) :: u(:)
-    integer, intent(in)            :: n
-
-    ! local
-    real(kind=dp_t) :: bet
-    real(kind=dp_t) :: gam(n)
-    integer         :: j
-
-    if ( b(1) .eq. 0 ) call bl_error('tridiag: CANT HAVE B(1) = ZERO')
-    
-    bet = b(1)
-    u(1) = r(1)/bet
-    
-    do j = 2,n
-       gam(j) = c(j-1)/bet
-       bet = b(j) - a(j)*gam(j)
-       if ( bet .eq. 0 ) call bl_error('tridiag: TRIDIAG FAILED')
-       u(j) = (r(j)-a(j)*u(j-1))/bet
-    end do
-    
-    do j = n-1,1,-1
-       u(j) = u(j) - gam(j+1)*u(j+1)
-    end do
-    
-  end subroutine tridiag
   
 end module make_w0_module
