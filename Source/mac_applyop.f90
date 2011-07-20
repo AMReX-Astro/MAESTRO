@@ -18,7 +18,7 @@ contains
 
     use mg_module
     use cc_stencil_fill_module, only: stencil_fill_cc
-    use ml_cc_module, only: ml_cc_applyop
+    use cc_applyop_module, only: ml_cc_applyop
     use probin_module, only: cg_verbose, mg_verbose
 
     type(ml_layout), intent(inout) :: mla
