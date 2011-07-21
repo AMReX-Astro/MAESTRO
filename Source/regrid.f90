@@ -400,7 +400,7 @@ contains
     type(layout)               , intent(in   ) :: la
     type(ml_layout)            , intent(in   ) :: mla_old
     type(bc_tower)             , intent(inout) :: the_bc_tower
-    type(multifab)   ,  pointer, intent(inout) :: uold(:),sold(:),gpi(:),pi(:),dSdt(:),src(:)
+    type(multifab)   ,  pointer :: uold(:),sold(:),gpi(:),pi(:),dSdt(:),src(:)
     type(multifab)             , intent(in   ) :: uold_temp(:),sold_temp(:),gpi_temp(:),pi_temp(:)
     type(multifab)             , intent(in   ) :: dSdt_temp(:),src_temp(:)
  
