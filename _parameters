@@ -252,6 +252,8 @@ fixed_dt                            real               -1.0d0
 # If $T_{max}^n > T_{max}^{n-1}$
 # set the new dt = 
 #   min[dt, dt*{\tt nuclear\_dt\_fac}*( $T_{max}^{n-1}$ / $(T_{max}^n-T_{max}^{n-1})$ ) ]
+# for example, nuclear_dt_fac = 0.01 means don't let the max temp grow more 
+# than approximately 1 percent
 # not checkpoint-compatible yet since it wouldn't be backwards compatible
 nuclear_dt_fac                      real               -1.0d0
 
