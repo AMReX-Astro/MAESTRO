@@ -1,75 +1,45 @@
-Here we outline the algorithm currently implemented in the code.  The latest
-published reference for MAESTRO is the multilevel paper \cite{multilevel}.  In
-this description, we make frequent reference to paper~I \cite{lowMach}, paper~II \cite{lowMach2},
-paper~III \cite{lowMach3}, and paper~IV \cite{lowMach4}.  We also make reference the BDRZW paper \cite{SNe}
-which describes the small-scale astrophysical combustion algrothm.
+Here we outline the algorithm currently implemented in the code.  The
+latest published reference for MAESTRO is the multilevel
+paper \cite{multilevel}.  In this description, we make frequent
+reference to paper~I \cite{lowMach}, paper~II \cite{lowMach2},
+paper~III \cite{lowMach3}, and paper~IV \cite{lowMach4}.
 
 
 
-\section{Changes Between Paper 3 and Paper 4}
-\begin{enumerate}
-\item We defined the mapping of data between a 1D radial array and the 3D Cartesian
-grid for spherical problems (which we improve upon in the multilevel paper).
-\item We update $T$ after the call to {\bf React State}.
-\item We have created a {\tt burning\_cutoff\_density}, where the burning does
-not happen below this density.  It is presently set to {\tt base\_cutoff\_density}.
-\item Use corner coupling in advection.
-\item We have an option, controlled by {\tt use\_tfromp}, to update temperature 
-using $T=T(\rho,X_k,p_0)$ rather than $T=T(\rho,h,X_k)$.  The former completely 
-decouples enthalpy from our system.  For spherical problems, we use 
-{\tt use\_tfromp = TRUE}, for planar problems, we use {\tt use\_tfromp = FALSE}.
-\item For spherical problems, we have changed the discretization of 
-$\Ubt\cdot\nabla p_0$ in the enthalpy update to 
-$\nabla\cdot(\Ubt p_0) - p_0\nabla\cdot\Ubt$.
-\item In paper III we discretized the enthalpy evolution equation in
-terms of $T$.  Since then we have discovered that 
-discretizing the enthalpy evolution in perturbational form, $(\rho h)'$,
-leads to better numerical properties.  We use {\tt enthalpy\_pred\_type = 1}.
-This is more like paper II.
-\item We have turned off the evolution of $h$ above the atmosphere and instead
-compute $h$ with the EOS using {\tt do\_eos\_h\_above\_cutoff = TRUE}.
-\end{enumerate}
-\section{Changes Between Paper 4 and the Multilevel Paper}
-See the multilevel paper for the latest.
-\section{Changes Between the Multilevel Paper and Paper 5}
-\begin{enumerate}
-\item Added rotation.
-\end{enumerate}
-\section{Changes Between Paper 5 and the XRB Paper}
-\begin{enumerate}
-\item We have added thermal diffusion, controlled by {\tt use\_thermal\_diffusion},
-{\tt temp\_diffusion\_formulation}, and {\tt thermal\_diffusion\_type}.
-\item We added the volume discrepancy term to the velocity constraint equation,
-controlled by the input parameter, {\tt dpdt\_factor}.
-\item For certain problems, we need to set {\tt do\_eos\_h\_above\_cutoff = FALSE}
-to prevent large, unphysical velocities from appearing near the edge of the star.
-\end{enumerate}
 
 %-----------------------------------------------------------------------------
-% Future Considerations
+% Equations Summary
 %-----------------------------------------------------------------------------
 
-\section{Future Considerations}
+\section{Summary of the \maestro\ Equation Set}
 
-\begin{itemize}
-\item Should we use a predictor-corrector for updating the full-state density?
-Specifically, after calling {\bf Correct Base}, should we do a full-state density 
-advance and {\bf Correct Base} using the more accurate estimate of $\rho_0^{n+1}$?
-\item We are still exploring the effects of {\tt use\_tfromp = FALSE} for spherical
-problems.  We would eventually like to run in this mode, but $T=T(\rho,X_k,p_0)$ 
-and $T=T(\rho,h,X_k)$ drift away from each other more than we would like.  Our
-attempts at incorporating a {\tt dpdt\_factor} for spherical problems have not 
-been successful.
-\end{itemize}
+Here we summarize the equations solved by \maestro.  We refer the reader
+to papers~I through IV and the multilevel paper for the derivation
+and motivation of the equation set.
+
+
 
 %-----------------------------------------------------------------------------
 % Time Advancement Algorithm
 %-----------------------------------------------------------------------------
 
+
+
 \section{Time Advancement Algorithm}\label{Sec:Time Advancement Algorithm}
-Here is the current description of the algorithm, based from the description
-in the multilevel paper.
-The initialization has also been included with more detail than was given in paper III.
+Here is the current description of the algorithm, based from the
+description in the multilevel paper.  The initialization has also been
+included with more detail than was given in paper III.  The main
+driver for a single step of the algorithm is {\tt advance.f90}---refer
+to that code to see the sequence of functions called to implement each
+ste.
+
+
+\subsection{Notation}
+
+
+
+\subsection{Single Step}
+
 
 \begin{description}
 
@@ -917,3 +887,72 @@ $\etarho^{-\myhalf}=0, \psi^{-\myhalf}=0, S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
     Finally, we define $S^1 = S^{1,N_{\rm iters}^\pi}.$
     
   \end{enumerate}
+
+
+%-----------------------------------------------------------------------------
+% changes
+%-----------------------------------------------------------------------------
+
+\section{Changes from Earlier Implementations}
+\subsection{Changes Between Paper 3 and Paper 4}
+\begin{enumerate}
+\item We defined the mapping of data between a 1D radial array and the 3D Cartesian
+grid for spherical problems (which we improve upon in the multilevel paper).
+\item We update $T$ after the call to {\bf React State}.
+\item We have created a {\tt burning\_cutoff\_density}, where the burning does
+not happen below this density.  It is presently set to {\tt base\_cutoff\_density}.
+\item Use corner coupling in advection.
+\item We have an option, controlled by {\tt use\_tfromp}, to update temperature 
+using $T=T(\rho,X_k,p_0)$ rather than $T=T(\rho,h,X_k)$.  The former completely 
+decouples enthalpy from our system.  For spherical problems, we use 
+{\tt use\_tfromp = TRUE}, for planar problems, we use {\tt use\_tfromp = FALSE}.
+\item For spherical problems, we have changed the discretization of 
+$\Ubt\cdot\nabla p_0$ in the enthalpy update to 
+$\nabla\cdot(\Ubt p_0) - p_0\nabla\cdot\Ubt$.
+\item In paper III we discretized the enthalpy evolution equation in
+terms of $T$.  Since then we have discovered that 
+discretizing the enthalpy evolution in perturbational form, $(\rho h)'$,
+leads to better numerical properties.  We use {\tt enthalpy\_pred\_type = 1}.
+This is more like paper II.
+\item We have turned off the evolution of $h$ above the atmosphere and instead
+compute $h$ with the EOS using {\tt do\_eos\_h\_above\_cutoff = TRUE}.
+\end{enumerate}
+
+
+\subsection{Changes Between Paper 4 and the Multilevel Paper}
+See the multilevel paper for the latest.
+
+
+\subsection{Changes Between the Multilevel Paper and Paper 5}
+\begin{enumerate}
+\item Added rotation.
+\end{enumerate}
+
+
+\subsection{Changes Between Paper 5 and the XRB Paper}
+\begin{enumerate}
+\item We have added thermal diffusion, controlled by {\tt use\_thermal\_diffusion},
+{\tt temp\_diffusion\_formulation}, and {\tt thermal\_diffusion\_type}.
+\item We added the volume discrepancy term to the velocity constraint equation,
+controlled by the input parameter, {\tt dpdt\_factor}.
+\item For certain problems, we need to set {\tt do\_eos\_h\_above\_cutoff = FALSE}
+to prevent large, unphysical velocities from appearing near the edge of the star.
+\end{enumerate}
+
+%-----------------------------------------------------------------------------
+% Future Considerations
+%-----------------------------------------------------------------------------
+
+\section{Future Considerations}
+
+\begin{itemize}
+\item Should we use a predictor-corrector for updating the full-state density?
+Specifically, after calling {\bf Correct Base}, should we do a full-state density 
+advance and {\bf Correct Base} using the more accurate estimate of $\rho_0^{n+1}$?
+\item We are still exploring the effects of {\tt use\_tfromp = FALSE} for spherical
+problems.  We would eventually like to run in this mode, but $T=T(\rho,X_k,p_0)$ 
+and $T=T(\rho,h,X_k)$ drift away from each other more than we would like.  Our
+attempts at incorporating a {\tt dpdt\_factor} for spherical problems have not 
+been successful.
+\end{itemize}
+
