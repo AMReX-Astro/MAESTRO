@@ -4,6 +4,8 @@
 
  drdxfac = 5
 
+ max_levs = 3
+
  spherical_in = 1
  dm_in = 3
 
