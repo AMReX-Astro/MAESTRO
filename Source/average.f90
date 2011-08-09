@@ -4,14 +4,14 @@
 
 module average_module
   
-  use bl_types, only: dp_t
-  use box_module, only: lwb, upb, box
-  use multifab_module, only: multifab, multifab_remote, dataptr, &
-                             get_layout, get_box, nghost, nboxes, get_dim
-  use layout_module, only: get_pd
+  use bl_types        , only: dp_t
+  use box_module      , only: lwb, upb, box
+  use multifab_module , only: multifab, multifab_remote, dataptr, &
+                              get_layout, get_box, nghost, nboxes, get_dim
+  use layout_module   , only: get_pd
   use ml_layout_module, only: ml_layout
-  use parallel, only: parallel_reduce, MPI_SUM
-  use bl_error_module, only: bl_error
+  use parallel        , only: parallel_reduce, MPI_SUM
+  use bl_error_module , only: bl_error
 
   implicit none
 
@@ -41,9 +41,10 @@ contains
     logical, pointer             :: mp(:,:,:,:)
 
     type(box)                    :: domain
-    integer                      :: domlo(mla%dim),domhi(mla%dim),lo(mla%dim),hi(mla%dim),dm,nlevs
-    integer                      :: max_rcoord(mla%nlevel),rcoord(mla%nlevel),stencil_coord(mla%nlevel)
-    integer                      :: i,j,r,n,ng,min_all,min_lev
+    integer                      :: domlo(mla%dim),domhi(mla%dim),lo(mla%dim),hi(mla%dim)
+    integer                      :: max_rcoord(mla%nlevel),rcoord(mla%nlevel)
+    integer                      :: stencil_coord(mla%nlevel)
+    integer                      :: dm,nlevs,i,j,r,n,ng,min_all,min_lev
     real(kind=dp_t)              :: radius
 
     integer, allocatable ::  ncell_proc(:,:)
@@ -164,13 +165,10 @@ contains
 
     else if(spherical .eq. 1) then
 
-       ! For spherical, we construct a 1D array, phisum, that has space
-       ! allocated for every possible radius that a cell-center at the finest
-       ! level can map into.  The radius locations have been precomputed and stored
-       ! in radii(:).
-
-       ! For cells at the non-finest level, map a weighted contribution into the nearest
-       ! bin in phisum.
+       ! For spherical, we construct a 1D array at each level, phisum(:,:), that has space
+       ! allocated for every possible radius that a cell-center at each
+       ! level can map into.  The radial locations have been precomputed and stored
+       ! in radii(:,:).
        do n=nlevs,1,-1
 
           do i=1, nboxes(phi(n))
@@ -184,7 +182,7 @@ contains
                                      lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp)
              else
                 ! we include the mask so we don't double count; i.e., we only consider
-                ! cells that we can "see" when constructing the sum
+                ! cells that are not covered by finer cells when constructing the sum
                 mp => dataptr(mla%mask(n), i)
                 call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
                                      lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp, &
@@ -255,6 +253,8 @@ contains
             end if
          end do
 
+         ! if the min hit count at all levels is zero, we expand the search
+         ! to find the closest instance of where the hitcount becomes nonzero
          j = 1
          do while (min_all .eq. 0)
             j = j+1
@@ -272,38 +272,38 @@ contains
       end do
       !$OMP END PARALLEL DO
 
-       ! squish the list at each level down to exclude points with no contribution
-       do n=1,nlevs
-          j=0
-          do r=0,nr_irreg
-             do while(ncell(j,n) .eq. 0)
-                j = j+1
-                if (j .gt. nr_irreg) then
-                   exit
-                end if
-             end do
-             if (j .gt. nr_irreg) then
-                phisum(r:nr_irreg,n)   = 1.d99
-                radii (r:nr_irreg+1,n) = 1.d99
-                max_rcoord(n) = r-1
-                exit
-             end if
-             phisum(r,n) = phisum(j,n)
-             radii (r,n) = radii (j,n)
-             ncell (r,n) = ncell (j,n)
-             j = j+1
-             if (j .gt. nr_irreg) then
-                max_rcoord(n) = r
-                exit
-             end if
-          end do
-       end do
+      ! squish the list at each level down to exclude points with no contribution
+      do n=1,nlevs
+         j=0
+         do r=0,nr_irreg
+            do while(ncell(j,n) .eq. 0)
+               j = j+1
+               if (j .gt. nr_irreg) then
+                  exit
+               end if
+            end do
+            if (j .gt. nr_irreg) then
+               phisum(r:nr_irreg,n)   = 1.d99
+               radii (r:nr_irreg+1,n) = 1.d99
+               max_rcoord(n) = r-1
+               exit
+            end if
+            phisum(r,n) = phisum(j,n)
+            radii (r,n) = radii (j,n)
+            ncell (r,n) = ncell (j,n)
+            j = j+1
+            if (j .gt. nr_irreg) then
+               max_rcoord(n) = r
+               exit
+            end if
+         end do
+      end do
 
-       ! compute phibar
-       stencil_coord = 0
+      ! compute phibar
+      stencil_coord = 0
 
-       !$OMP PARALLEL DO PRIVATE(r,radius,j,limit) FIRSTPRIVATE(stencil_coord)
-       do r=0,nr_fine-1
+      !$OMP PARALLEL DO PRIVATE(r,radius,j,limit) FIRSTPRIVATE(stencil_coord)
+      do r=0,nr_fine-1
 
          radius = (dble(r)+HALF)*dr(1)
 
