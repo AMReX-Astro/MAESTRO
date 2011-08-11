@@ -323,7 +323,7 @@ contains
          stencil_coord(which_lev(r)) = min(stencil_coord(which_lev(r)), &
                                            max_rcoord(which_lev(r))-1)
 
-         if (r > nr_fine - 1 -drdxfac*max_levs) then
+         if (r > nr_fine - 1 - drdxfac*2.d0**(max_levs-1)) then
             limit = .false. 
          else 
             limit = .true.
