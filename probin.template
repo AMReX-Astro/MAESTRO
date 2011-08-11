@@ -196,6 +196,10 @@ contains
     ! some sanity checks and set some defaults
     !-------------------------------------------------------------------------
 
+    if (ref_ratio .ne. 2) then
+       call bl_error("Only supporting ref_ratio = 2")
+    end if
+
     if (plot_spec .eqv. .false.) plot_omegadot = .false.
 
     if (use_tfromp .and. dpdt_factor /= 0.0d0) then
