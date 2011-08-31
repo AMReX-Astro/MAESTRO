@@ -36,7 +36,7 @@ contains
     use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
          ppm_type, bds_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
          check_base_name, use_tfromp, cflfac, dm_in, restart_with_vel_field, &
-         model_file, do_smallscale, fix_base_state
+         model_file, do_smallscale, fix_base_state, drive_initial_convection
     use average_module
     use make_grav_module
     use enforce_HSE_module
@@ -94,6 +94,11 @@ contains
     character(len=5)   :: check_index
     character(len=6)   :: check_index6
     character(len=256) :: check_file_name
+
+    ! sanity check
+    if (drive_initial_convection .and. restart_with_vel_field) then
+       call bl_error("drive_initial_convection and restart_with_vel_field both T")
+    endif
 
     ! create mba, chk stuff, time, and dt
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
