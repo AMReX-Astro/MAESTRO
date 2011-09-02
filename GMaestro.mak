@@ -1,16 +1,18 @@
 # A set of useful macros for putting together a MAESTRO application.
 
 # include the main Makefile stuff
-include $(FPARALLEL)/mk/GMakedefs.mak
+include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 
+# core BoxLib directories
+BOXLIB_CORE := Src/F_BaseLib \
+               Src/LinearSolvers/F_MG
 
 # core MAESTRO directories
-MAESTRO_CORE := boxlib \
-                mg/source \
-                extern/constants \
+MAESTRO_CORE := extern/constants \
 		extern/model_parser \
                 extern/LAPACK \
-                extern/random
+                extern/random \
+                extern/BLAS
 
 
 # if we are doing the SDC algorithm, then look first for source
@@ -66,6 +68,11 @@ Fmpack := $(foreach dir, $(Fmdirs), $(FPARALLEL)/$(dir)/GPackage.mak)
 Fmlocs := $(foreach dir, $(Fmdirs), $(FPARALLEL)/$(dir))
 Fmincs := $(foreach dir, $(Fmincludes), $(FPARALLEL)/$(dir))
 
+Fmpack += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir)/GPackage.mak)
+Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
+
+
+
 
 # include the necessary GPackage.mak files that define this setup
 include $(Fmpack)
@@ -104,7 +111,7 @@ probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
 deppairs: build_info.f90
 
 build_info.f90: 
-	$(FPARALLEL)/scripts/make_build_info \
+	$(BOXLIB_HOME)/Tools/F_scripts/make_build_info \
             "$(Fmdirs)" "$(COMPILE.f90)" "$(COMPILE.f)" \
             "$(COMPILE.c)" "$(LINK.f90)"
 
@@ -115,7 +122,7 @@ $(odir)/build_info.o: build_info.f90
 
 
 # include the fParallel Makefile rules
-include $(FPARALLEL)/mk/GMakerules.mak
+include $(BOXLIB_HOME)/Tools/F_mk/GMakerules.mak
 
 
 # for debugging, comment out this line, and do, eg, "make
