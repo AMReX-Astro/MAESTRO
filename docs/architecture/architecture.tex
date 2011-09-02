@@ -35,7 +35,8 @@ cells at the same height must be at the same level of refinement.
 This restriction is to allow for the base state to directly align with
 the Cartesian state everywhere.  For spherical geometries, there is no
 such restriction (again, see Figure~\ref{fig:base_state}).
-
+The \maestro\ grids are managed by the \boxlib\ library, which is
+distributed separately.
 
 
 
@@ -48,126 +49,161 @@ such restriction (again, see Figure~\ref{fig:base_state}).
 {The basic \maestro\ directory structure}
 \end{figure}
 
-All the files needed to build \maestro\ are contained in the {\tt
-  fParallel} directory structure.  Problems piece together various
-\maestro\ directories, choosing a reaction network, equation of state,
-and conductivity routine to build an executable.  Briefly, the
-sub-directories are:
+Building \maestro\ requires both the \maestro-specific source
+files (distributed in the {\tt MAESTRO/} directory), and the
+\boxlib\ library (distributed in the {\tt BoxLib/} directory.
+\boxlib\ provides both a C++ and a Fortran framework.  \maestro\
+only uses the Fortran framework.
+
+Problems piece together various \maestro\ directories, choosing a
+reaction network, equation of state, and conductivity routine to build
+an executable.  Briefly, the \maestro\ sub-directories are:
 \begin{itemize}
-\item {\tt boxlib/} 
-
- BoxLib is a library for describing meshes consisting of a union
- of boxes.  The BoxLib modules define the basic datatypes used
- in \maestro.  BoxLib also provides the routines that handle the
- parallelization and I/O.
-
 \item {\tt data\_processing/}
 
- Simple Fortran-based analysis routines (e.g.\ extract a line from a
- multidimensional dataset) that operate on BoxLib datasets.
+  Simple Fortran-based analysis routines (e.g.\ extract a line from a
+  multidimensional dataset) that operate on BoxLib datasets.
 
 \item {\tt extern/}
 
- External modules, like ODE integrators, equations of state, reaction
- networks
+  External modules, like ODE integrators, equations of state, reaction
+  networks
 
- Important sub-directories include:
- \begin{itemize}
- \item {\tt conductivity/}
-
- Various routines for computing the thermal conductivity used in the
- thermal diffusion part of the algorithm.
-
- \item {\tt constants/}
-
- A simple module to define physical constants
-
- \item {\tt EOS/}
-
- A collection of various EOSes for use with the code.  The two
- important ones for \maestro\ are {\tt helmeos/} and {\tt
- gamma\_law\_general/}.
-
- \item {\tt model\_parser/}
-
- A simple Fortran module for reading in 1D initial model files.  This
- is used by the initialization routines to get the initial model data.
-
- \item {\tt networks/}
-
- Various reaction networks for \maestro\ problems.  In addition to
- providing a routine to evolve the nuclear species due to reactions,
- the networks also define the species that are advected by the code.
-
- \item {\tt VODE/}
-
- An integration package for ODEs.  At the moment, this is used 
- for integrating various reaction networks.
+  Important sub-directories include:
  
- \end{itemize}
+  \begin{itemize}
+  \item {\tt conductivity/}
+
+    Various routines for computing the thermal conductivity used in the
+    thermal diffusion part of the algorithm.
+
+  \item {\tt constants/}
+
+    A simple module to define physical constants
+
+  \item {\tt EOS/}
+
+    A collection of various EOSes for use with the code.  The two
+    important ones for \maestro\ are {\tt helmeos/} and {\tt
+    gamma\_law\_general/}.
+
+  \item {\tt model\_parser/}
+
+    A simple Fortran module for reading in 1D initial model files.
+    This is used by the initialization routines to get the initial
+    model data.
+
+  \item {\tt networks/}
+
+    Various reaction networks for \maestro\ problems.  In addition to
+    providing a routine to evolve the nuclear species due to
+    reactions, the networks also define the species that are advected
+    by the code.
+
+  \item {\tt VODE/}
+
+    An integration package for ODEs.  At the moment, this is used for
+    integrating various reaction networks.
+ 
+  \end{itemize}
 
 \item {\tt MAESTRO/}
 
- The main \maestro\ algorithm directory.  The individual problem directories
- lie under here, and all of the main \maestro\ source lives in the {\tt Source/}
- sub-directory.
+  The main \maestro\ algorithm directory.  The individual problem
+  directories lie under here, and all of the main \maestro\ source
+  lives in the {\tt Source/} sub-directory.
 
- Important directories under {\tt MAESTRO/} include:
+  Important directories under {\tt MAESTRO/} include:
 
- \begin{itemize}
+  \begin{itemize}
 
- \item {\tt docs/}
+  \item {\tt docs/}
 
-   Documentation describing the basic algorithm (including this
-   document).
+    Documentation describing the basic algorithm (including this
+    document).
 
- \item {\tt initial\_models}
+  \item {\tt initial\_models}
 
-   Several sub-directories containing routines to generate
-   1D initial conditions in hydrostatic equilibrium for 
-   mapping onto the \maestro\ grid.  See \S~\ref{sec:initial_models}
-   for details.
+    Several sub-directories containing routines to generate 1D initial
+    conditions in hydrostatic equilibrium for mapping onto the
+    \maestro\ grid.  See \S~\ref{sec:initial_models} for details.
 
- \item {\tt Source}
+  \item {\tt Source}
 
-   The main \maestro\ source.  Here you will find the driver routine, the
-   advection routines, etc.  All \maestro\ problems will compile this
-   source.
+    The main \maestro\ source.  Here you will find the driver routine,
+    the advection routines, etc.  All \maestro\ problems will compile
+    this source.
 
- \item problem directories: {\tt test2}, {\tt
-   test\_spherical}, $\ldots$
+  \item problem directories: {\tt test2}, {\tt test\_spherical},
+    $\ldots$
 
-   Each problem in \maestro\ gets it own sub-directory.  The {\tt
-     GNUmakefile} in the problem directory includes the instructions
-   on how to build the executable, including what modules in {\tt
-     extern} are used.
+    Each problem in \maestro\ gets it own sub-directory.  The {\tt
+      GNUmakefile} in the problem directory includes the instructions
+    on how to build the executable, including what modules in {\tt
+      extern} are used.
 
-   Any file that you place in a sub-directory here takes 
-   precedence over a file of the same name in {\tt MAESTRO/}.
-   This allows problems to have custom versions of the main
-   \maestro\ routines (e.g.\ initial conditions via {\tt initdata.f90}.
-   See \S~\ref{sec:makefile} for details on the build system).
+    Any file that you place in a sub-directory here takes precedence
+    over a file of the same name in {\tt MAESTRO/}.  This allows
+    problems to have custom versions of the main \maestro\ routines
+    (e.g.\ initial conditions via {\tt initdata.f90}.  See
+    \S~\ref{sec:makefile} for details on the build system).
 
- \end{itemize}
-
-\item {\tt mg/}
-
-  The multigrid solver, with support for both cell-centered and
-  node-centered data.
-
-\item {\tt mk/}
-
-  The generic Makefiles that store the compilation flags for
-  various platforms.  Platform/compiler-specific options are stored
-  in the {\tt comps/} sub-directory.
-
-\item {\tt scripts/}
-
-  Some simple scripts that are useful for building, running,
-  maintaining \maestro.
+  \end{itemize}
 
 \end{itemize}
 
+The \boxlib\ directories that \maestro\ uses are:
+\begin{itemize}
+\item {Src/}
+
+  The main \boxlib\ source directory.  In \maestro, we only use the
+  Fortran source files.  The core directories are:
+
+  \begin{itemize}
+
+  \item {\tt F\_BaseLib/} 
+
+    The Fortran \boxlib\ files.  This is a library for describing
+    meshes consisting of a union of boxes.  The \boxlib\ modules
+    define the basic datatypes used in \maestro.  \boxlib\ also
+    provides the routines that handle the parallelization and I/O.
+
+  \item {\tt LinearSolvers/}
+
+    The \boxlib\ linear solvers---these are used to solve elliptic
+    problems in the \maestro\ algorithm.
+
+    \begin{itemize}
+
+    \item {\tt F\_MG}
+
+      The Fortran multigrid solver, with support for both
+      cell-centered and node-centered data.
+
+    \end{itemize}
+
+  \end{itemize}
+
+\item {\tt Tools/}
+
+  Various tools used for building \boxlib\ applications.  Here we use:
+
+  \begin{itemize}
+
+  \item {F\_mk/}
+
+    The generic Makefiles that store the compilation flags for various
+    platforms.  Platform/compiler-specific options are stored in the
+    {\tt comps/} sub-directory.
+
+  \item {\tt F\_scripts/}
+
+    Some simple scripts that are useful for building, running,
+    maintaining \maestro.
+
+  \end{itemize}
+
+\end{itemize}
 
 
 
