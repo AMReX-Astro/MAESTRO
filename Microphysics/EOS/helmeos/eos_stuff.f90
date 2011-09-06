@@ -1261,7 +1261,7 @@ contains
 
           if (do_eos_diag) print*,'T/D INIT ',temp(k),dens(k)
 
-          ! we want to converge to the given enthalpy
+          ! we want to converge to the given energy
           energy_want(k) = eint(k)
 
           if (energy_want(k) < ZERO) then
@@ -1400,9 +1400,11 @@ contains
        do k = 1, npoints
           temp(k) = tnew(k)
           pres(k) = ptot_row(k)
+          enthalpy(k) = eint(k) + ptot_row(k)/dens(k)
           
           c_v(k) = cv_row(k)
           c_p(k) = cp_row(k)
+
 
           ! store the number density of electrons and positrons, the degeneracy
           ! parameter, and the total electron/positron pressure
@@ -1641,6 +1643,9 @@ contains
        do k = 1, npoints
           dens(k) = dnew(k)
           temp(k) = tnew(k)
+          eint(k) = etot_row(k)
+          enthalpy(k) = eint(k) + ptot_row(k)/dens(k)
+
           
           c_v(k) = cv_row(k)
           c_p(k) = cp_row(k)
