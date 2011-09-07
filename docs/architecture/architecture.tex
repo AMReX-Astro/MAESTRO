@@ -355,15 +355,10 @@ terminal as the are executed.
   MKVERBOSE := t
 \end{lstlisting}
 
-The next two lines define where the top of the source tree is
-include the basic Makefile information (like compiler
-flags).
+The next line defines where the top of the source tree is located.
 \begin{lstlisting}[language={[gnu]make},mathescape=false]
   FPARALLEL := ../..
-
-  include $(FPARALLEL)/mk/GMakedefs.mak
 \end{lstlisting}
-%$
 
 A \maestro\ application is built from several packages (the
 multigrid solver, an EOS, a reaction network, etc.).  The core
