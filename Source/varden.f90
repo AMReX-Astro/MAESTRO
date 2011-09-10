@@ -806,7 +806,7 @@ subroutine varden()
                  do n=2,max_levs
                     do r=0,nr(n)-1
                        if (r .eq. 0 .or. r .eq. nr(n)-1) then
-                          rho0_temp(n,r) = rho0_old(n-1,r/2)
+                          rho0_temp(n,r) = rho0_temp(n-1,r/2)
                        else
                           if (mod(r,2) .eq. 0) then
                              rho0_temp(n,r) = 0.75d0*rho0_temp(n-1,r/2) &
