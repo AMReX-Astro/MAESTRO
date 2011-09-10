@@ -143,7 +143,7 @@ contains
              if (r_end_coord(n,i)+1 .ne. nr(n)) then
                 ! quadratic interpolation from the three closest points
                 s0(n,r_end_coord(n,i)+2) = -THIRD*s0(n,r_end_coord(n,i)) &
-                     + s0(n,r_end_coord(n,i)+1) + THIRD*s0(n-1,(r_end_coord(n,i)+2)/2)
+                     + s0(n,r_end_coord(n,i)+1) + THIRD*s0(n-1,(r_end_coord(n,i)+3)/2)
                 ! copy the next ghost cell value directly in from the coarser level
                 s0(n,r_end_coord(n,i)+3) = s0(n-1,(r_end_coord(n,i)+3)/2)
              end if
