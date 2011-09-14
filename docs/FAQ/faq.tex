@@ -14,6 +14,12 @@
    On IBM machines, for instance, using {\tt xlf90} instead of {\tt
      xlf95} for MAESTRO will produce memory leaks.
 
+\item {\em The code doesn't compile, but complains right away that there
+   is ``{\tt No rule to make target `fabio\_c.c', needed by `t/Linux.gfortran.mpi/c.depends'}''}
+
+   The environment variable {\tt BOXLIB\_HOME} needs to be the full path
+   to the {\tt BoxLib} directory.  You cannot use `{\tt $\sim$}' as a shortcut
+   for your home directory.
   
 
 \end{enumerate}
