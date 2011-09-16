@@ -28,7 +28,7 @@ contains
     use geometry, only: nlevs_radial, spherical, nr_fine
     use variables, only: rel_eps, rho_comp
     use bl_constants_module
-    use probin_module, only: init_shrink, verbose
+    use probin_module, only: init_shrink, verbose, small_dt
     use mk_vel_force_module
 
     type(ml_layout), intent(inout) :: mla
@@ -180,7 +180,11 @@ contains
        
        dt = min(dt,dt_lev)
 
-    end do
+    end do   ! end loop over levels
+
+    if (dt < small_dt) then
+       call bl_error("ERROR: timestep < small_dt")
+    endif
        
     rel_eps = 1.d-8*umax
 

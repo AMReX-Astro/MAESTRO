@@ -35,7 +35,7 @@ contains
     use bl_constants_module
     use mk_vel_force_module
     use fill_3d_module
-    use probin_module, only: evolve_base_state
+    use probin_module, only: evolve_base_state, small_dt
 
     type(ml_layout), intent(inout) :: mla
     type(bc_tower) , intent(in   ) :: the_bc_tower
@@ -220,7 +220,11 @@ contains
 
        dt = min(dt,dt_lev)
 
-    end do
+    end do   ! end loop over levels
+
+    if (dt < small_dt) then
+       call bl_error("ERROR: timestep < small_dt")
+    endif
 
     rel_eps = 1.d-8*umax
 

@@ -55,6 +55,9 @@ cflfac                              real               0.5d0
 # computed by the various timestep estimators
 init_shrink                         real               1.d0                 
 
+# the minimum allowed timestep -- we abort if dt drops below this value
+small_dt                            real               1.d-10
+
 # Fixed grid file.
 test_set                            character          ''                  
 
