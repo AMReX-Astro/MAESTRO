@@ -113,7 +113,7 @@ deppairs: build_info.f90
 build_info.f90: 
 	$(BOXLIB_HOME)/Tools/F_scripts/make_build_info \
             "$(Fmdirs)" "$(COMPILE.f90)" "$(COMPILE.f)" \
-            "$(COMPILE.c)" "$(LINK.f90)"
+            "$(COMPILE.c)" "$(LINK.f90)" "$(BOXLIB_HOME)"
 
 
 $(odir)/build_info.o: build_info.f90

@@ -9,7 +9,7 @@ subroutine write_job_info(dirname, mba)
   use probin_module, only: job_name, probin, inputs_file_used
   use bl_system_module, only: BL_CWD_SIZE, get_cwd 
   use ml_boxarray_module
-  use build_info_module, only: build_date, build_dir, build_machine, &
+  use build_info_module, only: build_date, build_dir, build_machine, boxlib_dir, &
                                module_list, f90_compile_line, f_compile_line, &
                                C_compile_line, link_line
   use omp_module
@@ -62,6 +62,7 @@ subroutine write_job_info(dirname, mba)
      write (99,1001) "build date:    ", trim(build_date)
      write (99,1001) "build machine: ", trim(build_machine)
      write (99,1001) "build dir:     ", trim(build_dir)
+     write (99,1001) "BoxLib dir:    ", trim(boxlib_dir)
      write (99,*) " "
      write (99,1001) "modules used:  ", trim(module_list)
      write (99,*) " "
