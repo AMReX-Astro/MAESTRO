@@ -91,7 +91,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer :: i, j
-    integer, save :: ilh1, ilc12, iln14, ilo16
+    integer, save :: ilh1, ilc12, iln14, ilo16, ihe4
 
     real(kind=dp_t) :: rho, temp, T6, T613, X_CNO, X_1, g14, eps_CNO
 
@@ -99,6 +99,7 @@ contains
 
     if (firstCall) then
        ilh1 =  network_species_index("hydrogen-1")
+       ihe4 =  network_species_index("helium-4")
        ilc12 = network_species_index("carbon-12")
        iln14 = network_species_index("nitrogen-14")
        ilo16 = network_species_index("oxygen-16")
@@ -129,13 +130,46 @@ contains
 
           ! CNO heating from Kippenhahn & Weigert, Eq. 18.65
           g14 = 1.0_dp_t + 2.7d-3*T613 - 7.78d-3*T613**2 - 1.49d-4*T6
-          eps_CNO = 8.67e27_dp_t * g14 * X_CNO * X_1 * rho * exp(-152.28_dp_t/T613) / T613**2
+!          eps_CNO = 8.67e27_dp_t * g14 * X_CNO * X_1 * rho * exp(-152.28_dp_t/T613) / T613**2
+          eps_CNO = HCNO_energy_generation(X_CNO)
+
+          eps_CNO = eps_CNO + triple_alpha_energy_generation(s(i,j,spec_comp+ihe4-1)/rho,rho,temp)
 
           rho_Hext(i,j) = rho * eps_CNO
        enddo
     enddo
     
   end subroutine get_rho_Hext_2d
-  
-  
+
+
+  ! the temperature-insensitive Hot CNO cycle energy generation
+  function HCNO_energy_generation(XCNO) result(r)
+    real(kind=dp_t), intent(in   ) :: XCNO
+    real(kind=dp_t) :: r
+
+    ! this factor is from Wallace & Woosley (1981) ApJS 45
+    real(kind=dp_t), parameter :: factor = 5.86e15
+    
+    r = factor * XCNO
+  end function HCNO_energy_generation
+
+  ! the triple alpha reaction energy generation
+  ! taken from Arnett's book pg 225
+  ! needs more accurate screening factor; just setting it to unity now
+  function triple_alpha_energy_generation(Y,rho,T) result(r)
+    real(kind=dp_t), intent(in   ) :: Y, rho, T
+    real(kind=dp_t) :: r
+
+    real(kind=dp_t), parameter :: eps_0 = 3.9e11, &
+                                  f3a = 1.0d0
+    real(kind=dp_t) :: t8i, t8i3
+
+    t8i = 1.e8/T
+    t8i3 = t8i*t8i*t8i
+      
+    r = eps_0*f3a*rho*rho*Y*Y*Y*exp(-42.94d0*t8i)*t8i3
+
+  end function triple_alpha_energy_generation
+    
+    
 end module heating_module

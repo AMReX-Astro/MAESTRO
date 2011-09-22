@@ -51,6 +51,7 @@ module diag_module
   public :: diag, flush_diag
 
   integer, save :: ic12, io16
+  logical, save :: do_mass_sums
 
 contains
 
@@ -155,11 +156,14 @@ contains
     ! find out if we are using the triple_alpha_plus_cago network
     if (firstCall) then
 
+       do_mass_sums = .true.
+
        ic12 = network_species_index("carbon-12")
        io16 = network_species_index("oxygen-16")
 
        if (ic12 < 0 .or. io16 < 0) &
-            call bl_error("ERROR in diag: species not found")
+            do_mass_sums = .false.
+!            call bl_error("ERROR in diag: species not found")
     endif
 
     ng_s = s(1)%ng
@@ -387,10 +391,10 @@ contains
        
        ! pack the summed quantities to reduce communications
        isum = 1
-       sum_data_local(isum) = total_c12_mass_local
+       if (do_mass_sums) sum_data_local(isum) = total_c12_mass_local
 
        isum = isum + 1
-       sum_data_local(isum) = total_o16_mass_local
+       if (do_mass_sums) sum_data_local(isum) = total_o16_mass_local
 
        if (do_deltap_diag) then
           isum = isum + 1
@@ -403,10 +407,10 @@ contains
                             proc = parallel_IOProcessorNode())
 
        isum = 1
-       total_c12_mass_level = sum_data_level(isum)
+       if (do_mass_sums) total_c12_mass_level = sum_data_level(isum)
 
        isum = isum + 1
-       total_o16_mass_level = sum_data_level(isum)
+       if (do_mass_sums) total_o16_mass_level = sum_data_level(isum)
 
        if (do_deltap_diag) then
           isum = isum + 1
@@ -576,9 +580,9 @@ contains
 
           endif
 
-          total_c12_mass = total_c12_mass + total_c12_mass_level
+          if (do_mass_sums) total_c12_mass = total_c12_mass + total_c12_mass_level
 
-          total_o16_mass = total_o16_mass + total_o16_mass_level
+          if (do_mass_sums) total_o16_mass = total_o16_mass + total_o16_mass_level
 
           if (vel_max_level > vel_max) then
              vel_max = vel_max_level
@@ -615,14 +619,16 @@ contains
 
     ! normalize 
     ! we weight things in the loop over zones by the coarse level resolution
-    total_c12_mass = total_c12_mass * dx(1,1) * dx(1,2)
+    if (do_mass_sums) total_c12_mass = total_c12_mass * dx(1,1) * dx(1,2)
 
-    total_o16_mass = total_o16_mass * dx(1,1) * dx(1,2)
+    if (do_mass_sums) total_o16_mass = total_o16_mass * dx(1,1) * dx(1,2)
 
-    if (dm>2) then
-       total_c12_mass = total_c12_mass * dx(1,3)
+    if (do_mass_sums) then
+       if (dm>2) then
+          total_c12_mass = total_c12_mass * dx(1,3)
 
-       total_o16_mass = total_o16_mass * dx(1,3)
+          total_o16_mass = total_o16_mass * dx(1,3)
+       endif
     endif
 
     if (do_deltap_diag) deltap_avg = deltap_avg / nzones
@@ -724,8 +730,12 @@ contains
        ! print the data
        write(un,  1000) time, T_max, (coord_T_max(i), i=1,dm)
 
-       write(un2, 1000) time, enuc_max, (coord_enuc_max(i), i=1,dm), &
-                        total_c12_mass, total_o16_mass
+       if (do_mass_sums) then
+          write(un2, 1000) time, enuc_max, (coord_enuc_max(i), i=1,dm), &
+               total_c12_mass, total_o16_mass
+       else
+          write(un2, 1000) time, enuc_max, (coord_enuc_max(i), i=1,dm)
+       endif
 
        write(un3, 1000) time, vel_max, (coord_vel_max(i), i=1,dm), &
             Machno_max, (coord_Machno_max(i), i=1,dm)
@@ -866,10 +876,10 @@ contains
              endif
 
              ! c12 mass diagnostic
-             c12_mass = c12_mass + weight*s(i,j,spec_comp+ic12-1)
+             if (do_mass_sums) c12_mass = c12_mass + weight*s(i,j,spec_comp+ic12-1)
 
              ! o16 mass diagnostic
-             o16_mass = o16_mass + weight*s(i,j,spec_comp+io16-1)
+             if (do_mass_sums) o16_mass = o16_mass + weight*s(i,j,spec_comp+io16-1)
 
              ! vel diagnostic
              vel = sqrt(u(i,j,1)**2 + (u(i,j,2) + w0_cent)**2)
@@ -1052,10 +1062,10 @@ contains
                 endif
 
                 ! c12 mass diagnostic
-                c12_mass = c12_mass + weight*s(i,j,k,spec_comp+ic12-1)
+                if (do_mass_sums) c12_mass = c12_mass + weight*s(i,j,k,spec_comp+ic12-1)
 
                 ! o16 mass diagnostic
-                o16_mass = o16_mass + weight*s(i,j,k,spec_comp+io16-1)
+                if (do_mass_sums) o16_mass = o16_mass + weight*s(i,j,k,spec_comp+io16-1)
 
                 ! vel diagnostic
                 vel = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + &
