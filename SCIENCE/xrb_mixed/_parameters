@@ -64,3 +64,4 @@ do_dens_tagging                    logical             .false.
 
 lo_dens_tag                        real                5.4d5
 hi_dens_tag                        real                1.75d6
+dens_tag_lev_fac                   real                1.0d0

@@ -124,7 +124,8 @@ contains
 
     use probin_module, only: tag_minval, tag_maxval, tag_xfac, &
                              base_cutoff_density, &
-                             do_dens_tagging, lo_dens_tag, hi_dens_tag
+                             do_dens_tagging, lo_dens_tag, hi_dens_tag, &
+                             dens_tag_lev_fac, max_levs
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
@@ -152,8 +153,8 @@ contains
              endif
           else ! tag based on density
 
-             if (rho(i,j) >= lo_dens_tag .and. &
-                 rho(i,j) <= hi_dens_tag) then
+             if (rho(i,j) >= lo_dens_tag*dens_tag_lev_fac**(llev-max_levs) .and. &
+                 rho(i,j) <= hi_dens_tag*dens_tag_lev_fac**(max_levs-llev)) then
                 radialtag(j) = .true.
              endif
 
