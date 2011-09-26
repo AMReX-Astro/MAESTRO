@@ -30,6 +30,7 @@ EXTRA_DIR := extern/random MAESTRO/H_core MAESTRO/H_core/multispec
 # define the runtime parameter files
 PROBIN_PARAMETERS := ../../../_parameters ../../_parameters.hcore
 
+Fmdirs += MAESTRO/H_core/multispec/2Dplanar
 
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak

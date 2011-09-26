@@ -21,7 +21,7 @@ contains
 
     use mt19937_module
     use probin_module, only: octant, &
-         velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
+         scalpert_amplitude, scalpert_radius, scalpert_steep, scalpert_scale
     use geometry, only: center
 
     real(kind=dp_t), intent(in ) :: x, y
@@ -56,97 +56,106 @@ contains
 
 
     ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
-    call init_genrand(20908)
-    do i=1,3
-       do j=1,3
-          do k=1,3
-             rand = genrand_real1()
-             rand = 2.0d0*rand - 1.0d0
-             alpha(i,j,k) = rand
-             rand = genrand_real1()
-             rand = 2.0d0*rand - 1.0d0
-             beta(i,j,k) = rand
-             rand = genrand_real1()
-             rand = 2.0d0*rand - 1.0d0
-             gamma(i,j,k) = rand
-             rand = genrand_real1()
-             rand = 2.0d0*M_PI*rand
-             phix(i,j,k) = rand
-             rand = genrand_real1()
-             rand = 2.0d0*M_PI*rand
-             phiy(i,j,k) = rand
-             rand = genrand_real1()
-             rand = 2.0d0*M_PI*rand
-             phiz(i,j,k) = rand
-          enddo
-       enddo
-    enddo
+!     call init_genrand(20908)
+!     do i=1,3
+!        do j=1,3
+!           do k=1,3
+!              rand = genrand_real1()
+!              rand = 2.0d0*rand - 1.0d0
+!              alpha(i,j,k) = rand
+!              rand = genrand_real1()
+!              rand = 2.0d0*rand - 1.0d0
+!              beta(i,j,k) = rand
+!              rand = genrand_real1()
+!              rand = 2.0d0*rand - 1.0d0
+!              gamma(i,j,k) = rand
+!              rand = genrand_real1()
+!              rand = 2.0d0*M_PI*rand
+!              phix(i,j,k) = rand
+!              rand = genrand_real1()
+!              rand = 2.0d0*M_PI*rand
+!              phiy(i,j,k) = rand
+!              rand = genrand_real1()
+!              rand = 2.0d0*M_PI*rand
+!              phiz(i,j,k) = rand
+!           enddo
+!        enddo
+!     enddo
 
-    ! compute the norm of k
-    do i=1,3
-       do j=1,3
-          do k=1,3
-             normk(i,j,k) = sqrt(dble(i)**2+dble(j)**2+dble(k)**2)
-          enddo
-       enddo
-    enddo
+!     ! compute the norm of k
+!     do i=1,3
+!        do j=1,3
+!           do k=1,3
+!              normk(i,j,k) = sqrt(dble(i)**2+dble(j)**2+dble(k)**2)
+!           enddo
+!        enddo
+!     enddo
 
 
-! random temperature fluctuations
-    temp = ZERO
+! ! random temperature fluctuations
+!     temp = ZERO
 
-    ! loop over the 27 combinations of fourier components
-    do i=1,3
-       do j=1,3
-          do k=1,3
-             ! compute cosines and sines
-             cx(i,j,k) = cos(2.0d0*M_PI*dble(i)*x/velpert_scale + phix(i,j,k))
-             cy(i,j,k) = cos(2.0d0*M_PI*dble(j)*y/velpert_scale + phiy(i,j,k))
-             cz(i,j,k) = cos(phiz(i,j,k))
-             sx(i,j,k) = sin(2.0d0*M_PI*dble(i)*x/velpert_scale + phix(i,j,k))
-             sy(i,j,k) = sin(2.0d0*M_PI*dble(j)*y/velpert_scale + phiy(i,j,k))
-             sz(i,j,k) = sin(phiz(i,j,k))
-          enddo
-       enddo
-    enddo
+!     ! loop over the 27 combinations of fourier components
+!     do i=1,3
+!        do j=1,3
+!           do k=1,3
+!              ! compute cosines and sines
+!              cx(i,j,k) = cos(2.0d0*M_PI*dble(i)*x/scalpert_scale + phix(i,j,k))
+!              cy(i,j,k) = cos(2.0d0*M_PI*dble(j)*y/scalpert_scale + phiy(i,j,k))
+!              cz(i,j,k) = cos(phiz(i,j,k))
+!              sx(i,j,k) = sin(2.0d0*M_PI*dble(i)*x/scalpert_scale + phix(i,j,k))
+!              sy(i,j,k) = sin(2.0d0*M_PI*dble(j)*y/scalpert_scale + phiy(i,j,k))
+!              sz(i,j,k) = sin(phiz(i,j,k))
+!           enddo
+!        enddo
+!     enddo
 
-    ! loop over the 27 combinations of fourier components
-    do i=1,3
-       do j=1,3
-          do k=1,3
-             ! compute contribution from perturbation velocity from each mode
-             temp = temp + &
-                    (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
-                     +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
-                    / normk(i,j,k)
-          enddo
-       enddo
-    enddo
+!     ! loop over the 27 combinations of fourier components
+!     do i=1,3
+!        do j=1,3
+!           do k=1,3
+!              ! compute contribution from perturbation scalar from each mode
+!              temp = temp + &
+!                     (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
+!                      +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
+!                     / normk(i,j,k)
+!           enddo
+!        enddo
+!     enddo
     
-    ! apply the cutoff function to the perturbational velocity
-    ! with 2D hack y is like radius
-    temp = velpert_amplitude * temp &
-           *(0.5d0+0.5d0*tanh((velpert_radius - y)/velpert_steep))
-
+!     ! apply the cutoff function to the perturbational scalar
+!     ! with 2D hack y is like radius
+!     temp = scalpert_amplitude * temp &
+!            *(0.5d0+0.5d0*tanh((scalpert_radius - y)/scalpert_steep))
     
-    ! add perturbational velocity to background velocity
-    temp = temp + s0_init(temp_comp)
+!     ! add perturbational velocity to background velocity
+!     temp = temp + s0_init(temp_comp)
 
 
 ! tanh density perturbation
-     rho = s0_init(rho_comp)
+    rho = s0_init(rho_comp)
 
-!     x0 = center(1) + 5.d10
-!     y0 = 7.35d9
+!    x0 = center(1) + 5.d10
+!    y0 = 7.35d9
 
-! !       x0 = center(1) + 2.d10
-! !       y0 = 2.d10
+    x0 = center(1) !+ 2.d10
+    y0 = 3.5d10
 
-!     ! Tanh bubbles
-!     r0 = sqrt( (x-x0)**2 + (y-y0)**2 ) / 2.e9
+    ! Tanh bubbles
+    r0 = sqrt( (x-x0)**2 + (y-y0)**2 ) / scalpert_scale !1.d9!8.e8
+!    r0 = (y-y0) / 1.e10
     
-!     ! This case works
-!     rho = rho - 3.d-7*tanh(2.0_dp_t-r0)
+!    temp = sin(TWO*M_PI*y/scalpert_scale) 
+!    temp = s0_init(temp_comp) + temp * scalpert_amplitude *  &
+!           (0.5d0+0.5d0*tanh((scalpert_radius - y)/scalpert_steep))
+!    temp = temp + 3.d3*(1.d0 + tanh(2.0_dp_t-r0))
+
+    ! This case works for a hot bubble - used for 2D v full test
+!    rho = rho - 3.d-2*(1.d0 + tanh(2.0_dp_t-r0))
+!    temp = s0_init(temp_comp) + 3.d5*(1.d0 + tanh(2.0_dp_t-r0))
+     temp = s0_init(temp_comp) + scalpert_amplitude *  &
+           (1.d0 + tanh((2.d0 - r0)/scalpert_steep))
+   
 
     ! use the EOS to make this temperature perturbation occur at
     ! constant pressure
@@ -161,6 +170,7 @@ contains
     pt_index_eos(:) = (/i, j, -1/)
 
     call eos(eos_input_tp, den_eos, temp_eos, &
+!    call eos(eos_input_rp, den_eos, temp_eos, &
              npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &

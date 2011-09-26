@@ -58,7 +58,7 @@ contains
     ng = u(1)%ng
 
     ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
-    if (dm .eq. 3 .and. spherical .eq. 1) then
+!    if (dm .eq. 3 .and. spherical .eq. 1) then
        call init_genrand(20908)
        do i=1,3
           do j=1,3
@@ -85,7 +85,7 @@ contains
           enddo
        enddo
 
-       if (octant) then
+       if (.false.) then
           phix(:,:,:) = M_PI/2.d0
           phiy(:,:,:) = M_PI/2.d0
           phiz(:,:,:) = M_PI/2.d0
@@ -99,7 +99,7 @@ contains
              enddo
           enddo
        enddo
-    end if
+!    end if
 
     do n=1,nlevs
 
@@ -111,7 +111,8 @@ contains
           select case (dm)
           case (2)
              call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
-                                 s0_init(n,:,:), p0_init(n,:))
+                                 s0_init(n,:,:), p0_init(n,:), &
+                                 alpha, beta, gamma, phix, phiy, phiz, normk)
 !             call bl_error('initveldata_2d not written')
           case (3)
              if (spherical .eq. 1) then
@@ -155,10 +156,12 @@ contains
 
   end subroutine initveldata
 
-  subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init)
+  subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init, &
+                            alpha,beta,gamma,phix,phiy,phiz,normk)
 
     use geometry, only: center
-    use probin_module, only: prob_lo
+    use probin_module, only: prob_lo, velpert_amplitude, velpert_steep, &
+         velpert_radius, velpert_scale, n_cellx
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -166,17 +169,133 @@ contains
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
 
-    ! Local variables
-    integer         i,j
-    real(kind=dp_t) x,y,x0,y0,r0
+    ! random numbers between -1 and 1
+    real(kind=dp_t), intent(in) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
 
+    ! random numbers between 0 and 2*pi
+    real(kind=dp_t), intent(in) :: phix(3,3,3), phiy(3,3,3), phiz(3,3,3)
+
+    ! L2 norm of k
+    real(kind=dp_t), intent(in) :: normk(3,3,3)
+
+    ! Local variables
+    integer         i,j,k
+    real(kind=dp_t) x,y,x0,y0,r0
+    integer :: iloc, jloc
+
+    ! cos and sin of (2*pi*kx/L + phix), etc
+    real(kind=dp_t) :: cx(3,3,3), cy(3,3,3), cz(3,3,3)
+    real(kind=dp_t) :: sx(3,3,3), sy(3,3,3), sz(3,3,3)
+
+    ! location of center of star
+    real(kind=dp_t) :: xc(2)
+
+    ! the point we're at
+    real(kind=dp_t) :: xloc(2)
+
+    ! perturbational velocity to add
+    real(kind=dp_t) :: upert(2)
+
+    real(kind=dp_t) :: theta,phi
+
+    ! initialize the velocity to zero everywhere
+    u = ZERO
+
+    ! define where center of star is
+    xc(1) = center(1)
+    xc(2) = center(2)
+
+    ! now do the big loop over all points in the domain
+    do iloc = lo(1),hi(1)
+       do jloc = lo(2),hi(2)
+
+          ! set perturbational velocity to zero
+          upert = ZERO
+
+          ! compute where we physically are
+          xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1)
+          xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2)
+
+          ! loop over the 27 combinations of fourier components
+          do i=1,3
+             do j=1,3
+                do k=1,3
+                   ! compute cosines and sines
+                   cx(i,j,k) = cos(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
+                   cy(i,j,k) = cos(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
+                   cz(i,j,k) = cos(2.0d0*M_PI*dble(k)*(xloc(2)+xloc(1))/velpert_scale + phiz(i,j,k))
+                   sx(i,j,k) = sin(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
+                   sy(i,j,k) = sin(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
+                   sz(i,j,k) = sin(2.0d0*M_PI*dble(k)*(xloc(1)+xloc(2))/velpert_scale + phiz(i,j,k))
+                enddo
+             enddo
+          enddo
+
+          ! loop over the 27 combinations of fourier components
+          do i=1,3
+             do j=1,3
+                do k=1,3
+                   ! compute contribution from perturbation velocity from each mode
+                   upert(1) = upert(1) + &
+                        (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
+                        +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
+                        / normk(i,j,k)
+                   
+                   upert(2) = upert(2) + &
+                        (gamma(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
+                        -alpha(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
+                        / normk(i,j,k)
+
+                enddo
+             enddo
+          enddo
+
+          ! apply the cutoff function to the perturbational velocity
+          do i=1,2
+             upert(i) = velpert_amplitude *upert(i) &
+                  *(0.5d0+0.5d0*tanh((velpert_radius-xloc(2))/velpert_steep))
+          enddo
+
+          ! add perturbational velocity to background velocity
+          do i=1,2
+             u(iloc,jloc,i) = u(iloc,jloc,i) + upert(i)
+          enddo
+          
+       enddo
+    enddo
+
+    if (.false.) then
     ! initial the velocity
     u = ZERO
+
+    !apply pert
+    do j = lo(2), hi(2)
+    do i = lo(1), hi(1)
+       y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+       ! compute "theta"
+       ! wierd mapping of oct to rectangle means dx = dx(r=y) 
+       x = prob_lo(1) + (dble(i)+HALF) * y * M_PI/(TWO*n_cellx)
+
+       upert(2) = sin(FOUR*x/y) * cos(TWO*M_PI*y/velpert_scale) 
+
+       !apply cutoff
+       u(i,j,2) = velpert_amplitude *upert(2) &
+            *(0.5d0+0.5d0*tanh((velpert_radius-y)/velpert_steep))
+
+       upert(1) = cos(FOUR*x/y) * sin(TWO*M_PI*y/velpert_scale) 
+
+       !apply cutoff
+       u(i,j,1) = velpert_amplitude *upert(1) &
+            *(0.5d0+0.5d0*tanh((velpert_radius-y)/velpert_steep))
+
+    enddo
+    enddo
+    end if
 
     if (.false.) then
 
        x0 = center(1) + 5.d10
-       y0 = 7.35d9
+       y0 = 7.5d9
 
 !       x0 = center(1) + 2.d10
 !       y0 = 2.d10
@@ -192,7 +311,7 @@ contains
              r0 = sqrt( (x-x0)**2 + (y-y0)**2 ) / 2.e9
 
              ! This case works
-             u(i,j,2) = 1.d2*tanh(2.0_dp_t-r0)
+             u(i,j,2) = 1.d2*(1 + tanh(2.0_dp_t-r0))
 
           enddo
 

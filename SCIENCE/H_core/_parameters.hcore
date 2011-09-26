@@ -3,8 +3,16 @@ velpert_amplitude                   real               1.d3
 velpert_radius                      real               8.15d10              
 velpert_scale                       real               9.d10               
 velpert_steep                       real               1.d10
-symmetric_heat                      logical            .false.
+scalpert_amplitude                  real               1.d3                
+scalpert_radius                     real               8.15d10              
+scalpert_scale                      real               9.d10               
+scalpert_steep                      real               1.d10
 tag_density_1                       real               5.d0
 tag_density_2                       real               10.d0
 tag_density_3                       real               10.d0
 R_core_diag                         real               7.6d10
+symmetric_heat                      logical            .false.
+HObetaAvg                           logical            .false.
+correctBeta00                       logical            .false.
+correctBetaI0                       logical            .false.
+beta_use_const_all                  logical            .false.

@@ -165,7 +165,7 @@ contains
 
 !FIXME
        icomp_stability = get_next_plot_index(1)
-       icomp_abar = get_next_plot_index(1)
+!       icomp_abar = get_next_plot_index(1)
 
   end subroutine init_plot_variables
 

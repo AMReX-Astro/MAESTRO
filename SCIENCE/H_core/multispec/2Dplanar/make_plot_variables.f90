@@ -669,6 +669,7 @@ contains
     real(kind=dp_t) :: chi_rho, chi_t, dt, dp, nabla
 
     integer :: i, j
+
     
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)

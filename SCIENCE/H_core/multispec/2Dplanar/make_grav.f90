@@ -19,6 +19,7 @@ contains
     use probin_module, only: grav_const, base_cutoff_density, &
          do_planar_invsq_grav, planar_invsq_mass,ref_ratio
     use fundamental_constants_module, only: Gconst
+    use restrict_base_module
 
     ! compute the base state gravitational acceleration at the cell
     ! centers.  The base state uses 0-based indexing, so grav_cell 
@@ -39,7 +40,6 @@ contains
 
 ! FIXME!!!  HACK to map octant onto planar geometry
 
-!       do n = 1, nlevs_radial
        n = 1
           m(n,0) = FOUR3RD*M_PI*rho0(n,0)*r_cc_loc(n,0)**3
           grav_cell(n,0) = -Gconst * m(n,0) / r_cc_loc(n,0)**2
@@ -78,7 +78,6 @@ contains
              grav_cell(n,r) = -Gconst * m(n,r) / r_cc_loc(n,r)**2
              
           enddo
-!       end do
 
        do n = 2, nlevs_radial
           do i=1,numdisjointchunks(n)
@@ -160,6 +159,19 @@ contains
           enddo
        end do
 
+       call restrict_base(grav_cell,.true.)
+       call fill_ghost_base(grav_cell,.true.)  
+
+! FIXME
+!         do n = 1, nlevs_radial
+!            do r = 0, nr(n)-1
+!               write(15,*)r,r*dr(n), grav_cell(n,r)
+!            end do
+!            write(15,*)
+!            write(15,*)
+!          end do
+!!
+
     else  ! spherical = 1
           
        m(1,0) = FOUR3RD*M_PI*rho0(1,0)*r_cc_loc(1,0)**3
@@ -215,6 +227,7 @@ contains
     use probin_module, only: grav_const, base_cutoff_density, &
          do_planar_invsq_grav, planar_invsq_mass, ref_ratio
     use fundamental_constants_module, only: Gconst
+    use restrict_base_module
 
     ! compute the base state gravity at the cell edges (grav_edge(1)
     ! is the gravitational acceleration at the left edge of zone 1).
@@ -228,31 +241,31 @@ contains
     real(kind=dp_t)              :: mencl
     real(kind=dp_t), allocatable :: m(:,:)
     
+
+    grav_edge = zero 
+
     if (spherical .eq. 0) then
 
 ! FIXME!!!  HACK to map octant onto planar geometry
        allocate(m(nlevs_radial,0:nr_fine))
 
-       n = 1
-       grav_edge(n,0) = zero 
-       m(n,0) = ZERO
+       m(1,0) = ZERO
 
-       do r=1,nr(n)-1
+       do r=1,nr(1)
 
           ! only add to the enclosed mass if the density is 
           ! > base_cutoff_density
-          if (rho0(n,r-1) > base_cutoff_density) then
-             m(n,r) = m(n,r-1) + FOUR3RD*M_PI * &
-                  (r_edge_loc(n,r) - r_edge_loc(n,r-1)) * &
-                  (r_edge_loc(n,r)**2 + &
-                  r_edge_loc(n,r)*r_edge_loc(n,r-1) + &
-                  r_edge_loc(n,r-1)**2) * rho0(n,r-1)
-             !                   * HALF*(rho0(n,r-1)+rho0(n,r))
+          if (rho0(1,r-1) > base_cutoff_density) then
+             m(1,r) = m(1,r-1) + FOUR3RD*M_PI * &
+                  (r_edge_loc(1,r) - r_edge_loc(1,r-1)) * &
+                  (r_edge_loc(1,r)**2 + &
+                  r_edge_loc(1,r)*r_edge_loc(1,r-1) + &
+                  r_edge_loc(1,r-1)**2) * rho0(1,r-1)
           else
-             m(n,r) = m(n,r-1)
+             m(1,r) = m(1,r-1)
           endif
 
-          grav_edge(n,r) = -Gconst * m(n,r) / r_edge_loc(n,r)**2
+          grav_edge(1,r) = -Gconst * m(1,r) / r_edge_loc(1,r)**2
 
        end do
 
@@ -260,7 +273,7 @@ contains
           do i=1,numdisjointchunks(n)
 
              if (r_start_coord(n,i) .eq. 0) then
-                grav_edge(n,0) = zero 
+
                 m(n,0) = ZERO
 
              else 
@@ -270,7 +283,7 @@ contains
 
              end if
 
-             do r=r_start_coord(n,i)+1,r_end_coord(n,i)
+             do r=r_start_coord(n,i)+1,r_end_coord(n,i)+1
 
                 ! only add to the enclosed mass if the density is 
                 ! > base_cutoff_density
@@ -280,7 +293,6 @@ contains
                         (r_edge_loc(n,r)**2 + &
                         r_edge_loc(n,r)*r_edge_loc(n,r-1) + &
                         r_edge_loc(n,r-1)**2) * rho0(n,r-1)
-!                   * HALF*(rho0(n,r-1)+rho0(n,r))
                 else
                    m(n,r) = m(n,r-1)
                 endif
@@ -293,14 +305,18 @@ contains
 
        deallocate(m)
 
+
+       call restrict_base(grav_edge,.false.)
+       call fill_ghost_base(grav_edge,.false.)
+
 ! FIXME
 !         do n = 1, nlevs_radial
-!            do r = 0, nr(n)-1
-!               write(14,*)r*dr(n), grav_edge(n,r)
+!            do r = 0, nr(n)
+!               write(15,*)r,r*dr(n), grav_edge(n,r)
 !            end do
-!            write(14,*)
-!            write(14,*)
-!         end do
+!            write(15,*)
+!            write(15,*)
+!          end do
 !!
 
        ! now overwrite the coarse cell with the data from the overlying 
@@ -317,7 +333,6 @@ contains
 
     else
        
-       grav_edge(1,0) = zero 
        mencl = ZERO
 
        do r=1,nr_fine-1

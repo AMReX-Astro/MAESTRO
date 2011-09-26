@@ -32,7 +32,7 @@ contains
 
     rho = s0_init(rho_comp)
 
-    x0 = center(1) + 5.d10
+    x0 = center(1) !+ 5.d10
     y0 = 7.35d9
 
 !       x0 = center(1) + 2.d10
@@ -138,12 +138,13 @@ contains
     z0 = center(3) 
 
     ! Tanh bubbles
-    r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) / 1.15d10
+    r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) 
     
     ! This case works
-    ! temp = t0 * (ONE + TWO*(.150_dp_t * 0.5_dp_t * & 
-!                             (1.0_dp_t + tanh((2.0_dp_t-r0)))))
-    temp = temp - 3.d-6 * tanh(2.0_dp_t-r0)
+!    temp = t0 * (ONE + TWO*(.150_dp_t * 0.5_dp_t * & 
+!                            (1.0_dp_t + tanh((2.0_dp_t-r0)))))
+    temp = temp - 3.d-6 * tanh(2.0_dp_t-r0/1.15d10)
+!    temp = temp - 3.d5 * tanh(2.0_dp_t - r0/1.15d10)
 
     ! use the EOS to make this temperature perturbation occur at constant 
     ! pressure
@@ -151,6 +152,8 @@ contains
     p_eos(1) = p0_init
     den_eos(1) = s0_init(rho_comp)
     xn_eos(1,:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
+
+!    write(*,*) 'radius ', r0
 
     call eos(eos_input_tp, den_eos, temp_eos, &
              npts, &

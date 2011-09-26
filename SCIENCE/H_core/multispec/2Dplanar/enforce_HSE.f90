@@ -18,8 +18,6 @@ contains
     use bl_error_module
     use make_grav_module
     use probin_module, only: do_planar_invsq_grav, prob_lo
-!FIXME
-    use bl_constants_module
 
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(inout) ::   p0(:,0:)
@@ -27,7 +25,7 @@ contains
 
     integer         :: n,l,i,r
     real(kind=dp_t) :: temp,offset
-    real(kind=dp_t) :: grav_edge(nlevs_radial,0:nr_fine-1)
+    real(kind=dp_t) :: grav_edge(nlevs_radial,0:nr_fine)
     real(kind=dp_t) ::    p0_old(nlevs_radial,0:nr_fine-1)
 
     offset = 0.d0
@@ -67,11 +65,6 @@ contains
           else if (r_start_coord(n,i) .le. base_cutoff_density_coord(n)) then
              ! we integrate upwards starting from the nearest coarse
              ! cell at a lower physical height
-!               p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
-!                   + grav_cell(n-1,r_start_coord(n,i)/2-1) * &
-!                   rho0(n-1,r_start_coord(n,i)/2-1) * dr(n)/2.d0 &
-!                   + grav_edge(n,r_start_coord(n,i)) * dr(n)/2.d0 * &
-!                   (rho0(n-1,r_start_coord(n,i)/2-1)+rho0(n,r_start_coord(n,i)))
              p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
                   + (dr(n)/4.d0)* &
                   (2.d0*rho0(n,r_start_coord(n,i))/3.d0 + &
@@ -110,13 +103,6 @@ contains
              offset = 0.d0
           else if (r_end_coord(n,i) .le. base_cutoff_density_coord(n)) then
              ! use fine -> coarse stencil in notes
-!              temp = p0(n,r_end_coord(n,i)) &
-!                   + grav_edge(n-1,(r_end_coord(n,i)+1)/2)*dr(n)/2.d0 * &
-!                   (rho0(n-1,(r_end_coord(n,i)+1)/2)+rho0(n,r_end_coord(n,i)))&
-!                   + grav_cell(n-1,(r_end_coord(n,i)+1)/2)*dr(n)/2.d0 * &
-!                   rho0(n-1,r_start_coord(n,i)/2-1)
-!              offset = p0(n-1,(r_end_coord(n,i)+1)/2) - temp
-
              temp = p0(n,r_end_coord(n,i)) &
                   + (dr(n)/4.d0)* &
                   (2.d0*rho0(n,r_end_coord(n,i))/3.d0 + &
@@ -185,6 +171,18 @@ contains
 
     call restrict_base(p0,.true.)
     call fill_ghost_base(p0,.true.)
+
+! FIXME
+!         do n = 1, nlevs_radial
+!            do r = 0, nr(n)
+!               write(16,*)r,(r+0.5d0)*dr(n), p0(n,r)
+!            end do
+!            write(16,*)
+!            write(16,*)
+!          end do
+! stop
+!!
+
 
   end subroutine enforce_HSE
 

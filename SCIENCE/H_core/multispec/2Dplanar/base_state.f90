@@ -31,7 +31,7 @@ contains
                              small_temp, small_dens, grav_const, planar_invsq_mass, &
                              do_planar_invsq_grav
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, spherical, nr
+    use geometry, only: dr, spherical, nr, nr_fine
     use inlet_bc_module, only: set_inlet_bcs
     use fundamental_constants_module, only: Gconst
     use model_parser_module
@@ -74,6 +74,7 @@ contains
        call read_model_file(model_file)
 
        firstCall = .false.
+
     endif
 
     eps = 1.d-8
@@ -248,8 +249,6 @@ contains
           p_eos(1)    = p_ambient
           xn_eos(1,:) = xn_ambient(:)
 
-          write(10,*) rloc, d_ambient, t_ambient
-
           ! (rho,T) --> p,h
           call eos(eos_input_rt, den_eos, temp_eos, &
                    npts, &
@@ -268,8 +267,6 @@ contains
           p0_init(r) = p_eos(1)
 
           s0_init(r,temp_comp) = t_ambient
-
-          write(11,*) rloc, s0_init(r,rhoh_comp)
 
           if (ntrac .gt. 0) then
              s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
@@ -386,8 +383,7 @@ contains
     use bl_constants_module
 
     ! given the array of model coordinates (model_r), and variable (model_var),
-    ! find the value of model_var at point r using linear interpolation.
-    ! Eventually, we can do something fancier here.
+    ! find the value of model_var at point r using interpolation.
 
     real(kind=dp_t) :: interpolate
     real(kind=dp_t), intent(in) :: r
@@ -396,6 +392,10 @@ contains
 
     real(kind=dp_t) :: slope
     real(kind=dp_t) :: minvar, maxvar
+
+    real(kind=dp_t) :: y,y0,y1,y2
+    real(kind=dp_t) :: x,x0,x1,x2
+    logical         :: limit
 
     integer :: i, id
 
@@ -414,55 +414,110 @@ contains
 
     id = i
 
-    if (id == 1) then
+    if (.false.) then
+       ! linear interpolation
 
-       slope = (model_var(id+1) - model_var(id))/(model_r(id+1) - model_r(id))
-       interpolate = slope*(r - model_r(id)) + model_var(id)
-
-       ! safety check to make sure interpolate lies within the bounding points
-       minvar = min(model_var(id+1),model_var(id))
-       maxvar = max(model_var(id+1),model_var(id))
-       interpolate = max(interpolate,minvar)
-       interpolate = min(interpolate,maxvar)
-
-    else if (id == npts) then
-
-       slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
-       interpolate = slope*(r - model_r(id)) + model_var(id)
-
-       ! safety check to make sure interpolate lies within the bounding points
-       minvar = min(model_var(id),model_var(id-1))
-       maxvar = max(model_var(id),model_var(id-1))
-       interpolate = max(interpolate,minvar)
-       interpolate = min(interpolate,maxvar)
-
-    else
-
-       if (r .ge. model_r(id)) then
-
-          ! we should not wind up in here
+       if (id == 1) then
 
           slope = (model_var(id+1) - model_var(id))/(model_r(id+1) - model_r(id))
           interpolate = slope*(r - model_r(id)) + model_var(id)
-          
+
+          ! I don't think we want to limit in this case
           ! safety check to make sure interpolate lies within the bounding points
-          minvar = min(model_var(id+1),model_var(id))
-          maxvar = max(model_var(id+1),model_var(id))
-          interpolate = max(interpolate,minvar)
-          interpolate = min(interpolate,maxvar)
-          
-       else
+          !        minvar = min(model_var(id+1),model_var(id))
+          !        maxvar = max(model_var(id+1),model_var(id))
+          !        interpolate = max(interpolate,minvar)
+          !        interpolate = min(interpolate,maxvar)
+
+       else if (id == npts) then
 
           slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
           interpolate = slope*(r - model_r(id)) + model_var(id)
-          
+
+          ! I don't think we want to limit in this case
           ! safety check to make sure interpolate lies within the bounding points
-          minvar = min(model_var(id),model_var(id-1))
-          maxvar = max(model_var(id),model_var(id-1))
-          interpolate = max(interpolate,minvar)
-          interpolate = min(interpolate,maxvar)
-          
+          !        minvar = min(model_var(id),model_var(id-1))
+          !        maxvar = max(model_var(id),model_var(id-1))
+          !        interpolate = max(interpolate,minvar)
+          !        interpolate = min(interpolate,maxvar)
+
+       else
+
+          if (r .ge. model_r(id)) then
+
+             ! we should not wind up in here
+
+             slope = (model_var(id+1) - model_var(id))/(model_r(id+1) - model_r(id))
+             interpolate = slope*(r - model_r(id)) + model_var(id)
+
+             ! safety check to make sure interpolate lies within the bounding points
+             minvar = min(model_var(id+1),model_var(id))
+             maxvar = max(model_var(id+1),model_var(id))
+             interpolate = max(interpolate,minvar)
+             interpolate = min(interpolate,maxvar)
+
+          else
+
+             slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
+             interpolate = slope*(r - model_r(id)) + model_var(id)
+
+             ! safety check to make sure interpolate lies within the bounding points
+             minvar = min(model_var(id),model_var(id-1))
+             maxvar = max(model_var(id),model_var(id-1))
+             interpolate = max(interpolate,minvar)
+             interpolate = min(interpolate,maxvar)
+
+          end if
+
        end if
+
+    else
+       !quadratic interpolation
+
+       if (id == 1) then
+          !enforce d/dr = 0 at origin
+          y1 = model_var(id)
+          y2 = model_var(id+1)
+          x1 = model_r(id) 
+          x2 = model_r(id+1)
+          
+          y = ( (y1*x2*x2-y2*x1*x1) + r*r*(y2-y1) )/(x2*x2-x1*x1)
+          
+          limit = .false.
+
+       else if (id == npts) then
+          y0 = model_var(id-2)
+          y1 = model_var(id-1)
+          y2 = model_var(id)
+          x0 = model_r(id-2)
+          x1 = model_r(id-1)
+          x2 = model_r(id)
+          
+          y = y0 + (y1-y0)/(x1-x0)*(r-x0) &
+               + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(r-x0)*(r-x1)
+          
+          limit = .false.
+
+       else
+          y0 = model_var(id-1)
+          y1 = model_var(id)
+          y2 = model_var(id+1)
+          x0 = model_r(id-1)
+          x1 = model_r(id)
+          x2 = model_r(id+1)
+          
+          y = y0 + (y1-y0)/(x1-x0)*(r-x0) &
+               + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(r-x0)*(r-x1)
+          
+          limit = .true.
+       endif
+
+       if (limit) then
+          if (y .gt. max(y0,y1,y2)) y = max(y0,y1,y2)
+          if (y .lt. min(y0,y1,y2)) y = min(y0,y1,y2)
+       end if
+
+       interpolate = y
 
     end if
 

@@ -141,7 +141,7 @@ contains
 
 ! FIXME -- looking at parcel stability
     plot_names(icomp_stability) = "rho_parcel-rho"
-    plot_names(icomp_abar) = "Abar_change"
+!    plot_names(icomp_abar) = "Abar_change"
     
 
   end subroutine get_plot_names
@@ -151,7 +151,7 @@ contains
                            thermal,Source,sponge,mba,plot_names,dx, &
                            the_bc_tower,w0,rho0,rhoh0,p0, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt)
+                           normal,dt,particles)
 
     use bl_prof_module
     use fabio_module
@@ -175,6 +175,7 @@ contains
     use bl_constants_module
     use network, only: nspec
     use time_module, only: time
+    use particle_module, only: particle_container, make_particle_count
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -215,6 +216,8 @@ contains
     integer :: n,r,j,n_1d,prec,comp,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
+
+    type(particle_container), intent(inout) :: particles
 
     call build(bpt, "make_plotfile")
 
@@ -508,9 +511,9 @@ contains
     do n = 1, nlevs
        call make_stability(plotdata(n),icomp_stability,s(n),normal(n))
     enddo
-    do n = 1, nlevs
-       call make_abar_change(plotdata(n),icomp_abar,s(n),normal(n))
-    enddo
+!    do n = 1, nlevs
+!       call make_abar_change(plotdata(n),icomp_abar,s(n),normal(n))
+!    enddo
 
 
 
