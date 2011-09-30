@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "toy_nova_constg.hse.smooth_12.50.1024"
+ model_file = "toy_nova_constg_tanh2.hse.smooth_3.00.1024"
 
  spherical_in = 0
 
@@ -62,6 +62,9 @@
  cg_verbose = 0
 
  use_tfromp = T
+ species_pred_type = 1
+ enthalpy_pred_type = 1
+
  dpdt_factor = 0.0d0
  use_eos_coulomb = T
 
