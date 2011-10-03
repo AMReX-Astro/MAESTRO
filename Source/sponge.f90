@@ -210,30 +210,50 @@ contains
     real(kind=dp_t) :: x,y,z,r,smdamp
 
     sponge = ONE
-    
-    !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,r,smdamp)
-    do k = lo(3),hi(3)
-       z = prob_lo(3) + (dble(k)+HALF)*dx(3)
 
-       do j = lo(2),hi(2)
-          y = prob_lo(2) + (dble(j)+HALF)*dx(2)
+    if (spherical .eq. 0) then
 
-          do i = lo(1),hi(1)
-             x = prob_lo(1) + (dble(i)+HALF)*dx(1)
+       !$OMP PARALLEL DO PRIVATE(k,z,smdamp)
+       do k = lo(3),hi(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3)
 
-             r = sqrt( (x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2 )
-
-             ! Inner sponge: damps velocities at edge of star
-             if (r >= r_sp) then
-                if (r < r_tp) then
-                   smdamp = HALF*(ONE - cos(M_PI*(r - r_sp)/(r_tp - r_sp)))
-                else
-                   smdamp = ONE
-                endif
-                sponge(i,j,k) = ONE / (ONE + dt * smdamp * sponge_kappa)
+          if (z >= r_sp) then
+             if (z < r_tp) then
+                smdamp = HALF*(ONE - cos(M_PI*(z - r_sp)/(r_tp - r_sp)))
+             else
+                smdamp = ONE
              endif
+             sponge(:,:,k) = ONE / (ONE + dt * smdamp* sponge_kappa)
+          endif
 
-             if (spherical .eq. 1) then
+       end do
+       !$OMP END PARALLEL DO
+
+    else
+
+       !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,r,smdamp)
+       do k = lo(3),hi(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3)
+
+          do j = lo(2),hi(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx(2)
+             
+             do i = lo(1),hi(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1)
+
+                r = sqrt( (x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2 )
+                
+                ! Inner sponge: damps velocities at edge of star
+                if (r >= r_sp) then
+                   if (r < r_tp) then
+                      smdamp = HALF*(ONE - cos(M_PI*(r - r_sp)/(r_tp - r_sp)))
+                   else
+                      smdamp = ONE
+                   endif
+                   sponge(i,j,k) = ONE / (ONE + dt * smdamp * sponge_kappa)
+                endif
+
+                ! Outer sponge: damps velocities in the corners of the domain
                 if (r >= r_sp_outer) then
                    if (r < r_tp_outer) then
                       smdamp = HALF * &
@@ -244,12 +264,13 @@ contains
                    sponge(i,j,k) = sponge(i,j,k) / &
                         (ONE + dt * smdamp * 10.d0 * sponge_kappa)
                 endif
-             end if
 
+             end do
           end do
        end do
-    end do
-    !$OMP END PARALLEL DO
+       !$OMP END PARALLEL DO
+
+    end if
 
   end subroutine mk_sponge_3d
 
