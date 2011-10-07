@@ -221,7 +221,8 @@ contains
          (enthalpy_pred_type .eq. predict_T_then_h) ) then
 
        ! here we predict h_0 on the edges
-       h0 = rhoh0_old/rho0_old
+       h0 = ZERO
+       where (rho0_old > ZERO) h0 = rhoh0_old/rho0_old
 
        ! The force should be Dp_0/Dt = psi, but since in plane-parallel
        ! this is equal to eta, and therefore only depends on compositional
