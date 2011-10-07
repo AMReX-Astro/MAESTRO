@@ -21,7 +21,7 @@ contains
 
     use multifab_fill_ghost_module
     use multifab_physbc_module, only : multifab_physbc
-    use ml_restriction_module , only : ml_cc_restriction_c
+    use ml_restriction_module , only : ml_cc_restriction
     use heating_module        , only : get_rho_Hext 
     use rhoh_vs_t_module      , only : makeTfromRhoP, makeTfromRhoH
     use bl_constants_module   , only: ZERO
