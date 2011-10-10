@@ -64,7 +64,7 @@ contains
        ! end do
        ! call restrict_base and fill_ghost_base
        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       
+
        do n=1,nlevs_radial
 
           do j=1,numdisjointchunks(n)
@@ -80,99 +80,108 @@ contains
 
              do r=r_start_coord(n,j),r_end_coord(n,j)
 
-                if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                if (r < anelastic_cutoff_coord(n)) then
 
-                   lambda = ZERO
-                   mu = ZERO
-                   nu = ZERO
+                   if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                      
+                      lambda = ZERO
+                      mu = ZERO
+                      nu = ZERO
+                      
+                   else
 
-                else
-
-                   del    = HALF* (rho0(n,r+1) - rho0(n,r-1))/dr(n)
-                   dpls   = TWO * (rho0(n,r+1) - rho0(n,r  ))/dr(n)
-                   dmin   = TWO * (rho0(n,r  ) - rho0(n,r-1))/dr(n)
-                   slim   = min(abs(dpls), abs(dmin))
-                   slim   = merge(slim, zero, dpls*dmin.gt.ZERO)
-                   sflag  = sign(ONE,del)
-                   lambda = sflag*min(slim,abs(del))
-
-                   del   = HALF* (gamma1bar(n,r+1) - gamma1bar(n,r-1))/dr(n)
-                   dpls  = TWO * (gamma1bar(n,r+1) - gamma1bar(n,r  ))/dr(n)
-                   dmin  = TWO * (gamma1bar(n,r  ) - gamma1bar(n,r-1))/dr(n)
-                   slim  = min(abs(dpls), abs(dmin))
-                   slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
-                   sflag = sign(ONE,del)
-                   mu    = sflag*min(slim,abs(del))
-
-                   del   = HALF* (p0(n,r+1) - p0(n,r-1))/dr(n)
-                   dpls  = TWO * (p0(n,r+1) - p0(n,r  ))/dr(n)
-                   dmin  = TWO * (p0(n,r  ) - p0(n,r-1))/dr(n)
-                   slim  = min(abs(dpls), abs(dmin))
-                   slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
-                   sflag = sign(ONE,del)
-                   nu    = sflag*min(slim,abs(del))
-
-                end if
-
-                if (nu .eq. ZERO .or. mu .eq. ZERO .or. &
-                     (nu*gamma1bar(n,r) - mu*p0(n,r)) .eq. ZERO .or. &
-                     ((gamma1bar(n,r) + HALF*mu*dr(n))/ &
-                     (gamma1bar(n,r) - HALF*mu*dr(n))) .le. ZERO .or. &
-                     ((p0(n,r) + HALF*nu*dr(n))/ &
-                     (p0(n,r) - HALF*nu*dr(n))) .le. ZERO) then
-
-                   integral = abs(grav_center(n,r))*rho0(n,r)*dr(n)/(p0(n,r)*gamma1bar(n,r))
-
-                else 
-
-                   if ( use_linear_grav_in_beta ) then
-
-                      del   = HALF* (grav_center(n,r+1) - grav_center(n,r-1))/dr(n)
-                      dpls  = TWO * (grav_center(n,r+1) - grav_center(n,r  ))/dr(n)
-                      dmin  = TWO * (grav_center(n,r  ) - grav_center(n,r-1))/dr(n)
+                      ! piecewise linear reconstruction of rho0,
+                      ! gamma1bar, and p0 -- see paper III, appendix C
+                      del    = HALF* (rho0(n,r+1) - rho0(n,r-1))/dr(n)
+                      dpls   = TWO * (rho0(n,r+1) - rho0(n,r  ))/dr(n)
+                      dmin   = TWO * (rho0(n,r  ) - rho0(n,r-1))/dr(n)
+                      slim   = min(abs(dpls), abs(dmin))
+                      slim   = merge(slim, zero, dpls*dmin.gt.ZERO)
+                      sflag  = sign(ONE,del)
+                      lambda = sflag*min(slim,abs(del))
+                      
+                      del   = HALF* (gamma1bar(n,r+1) - gamma1bar(n,r-1))/dr(n)
+                      dpls  = TWO * (gamma1bar(n,r+1) - gamma1bar(n,r  ))/dr(n)
+                      dmin  = TWO * (gamma1bar(n,r  ) - gamma1bar(n,r-1))/dr(n)
                       slim  = min(abs(dpls), abs(dmin))
                       slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
                       sflag = sign(ONE,del)
-                      kappa = sflag*min(slim,abs(del))
-
-                      denom = nu*gamma1bar(n,r) - mu*p0(n,r) 
-                      coeff1 = (lambda*gamma1bar(n,r) - mu*rho0(n,r)) * &
-                           (kappa *gamma1bar(n,r) + mu*abs(grav_center(n,r))) / &
-                           (mu*mu*denom)
-                      coeff2 = (lambda*p0(n,r) - nu*rho0(n,r))* &
-                           (-kappa*p0(n,r) - nu*abs(grav_center(n,r))) / &
-                           (nu*nu*denom)
-                      coeff3 = kappa*lambda / (mu*nu)
-
-                      integral =  &
-                           coeff1*log( (gamma1bar(n,r) + HALF*mu*dr(n))/ &
-                                       (gamma1bar(n,r) - HALF*mu*dr(n)) ) + &
-                           coeff2*log( (p0(n,r) + HALF*nu*dr(n))/ &
-                                       (p0(n,r) - HALF*nu*dr(n)) ) - &
-                           coeff3*dr(n)
-
-                   else
-
-                      denom = nu*gamma1bar(n,r) - mu*p0(n,r)
-                      coeff1 = lambda*gamma1bar(n,r)/mu - rho0(n,r)
-                      coeff2 = lambda*p0(n,r)/nu - rho0(n,r)
+                      mu    = sflag*min(slim,abs(del))
                       
-                      integral = (abs(grav_center(n,r))/denom)* &
-                           (coeff1*log( (gamma1bar(n,r) + HALF*mu*dr(n))/ &
-                                        (gamma1bar(n,r) - HALF*mu*dr(n))) - &
-                            coeff2*log( (p0(n,r) + HALF*nu*dr(n))/ &
-                                        (p0(n,r) - HALF*nu*dr(n))) )
+                      del   = HALF* (p0(n,r+1) - p0(n,r-1))/dr(n)
+                      dpls  = TWO * (p0(n,r+1) - p0(n,r  ))/dr(n)
+                      dmin  = TWO * (p0(n,r  ) - p0(n,r-1))/dr(n)
+                      slim  = min(abs(dpls), abs(dmin))
+                      slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
+                      sflag = sign(ONE,del)
+                      nu    = sflag*min(slim,abs(del))
 
                    end if
+
+                   if (nu .eq. ZERO .or. mu .eq. ZERO .or. &
+                        (nu*gamma1bar(n,r) - mu*p0(n,r)) .eq. ZERO .or. &
+                        ((gamma1bar(n,r) + HALF*mu*dr(n))/ &
+                        (gamma1bar(n,r) - HALF*mu*dr(n))) .le. ZERO .or. &
+                        ((p0(n,r) + HALF*nu*dr(n))/ &
+                        (p0(n,r) - HALF*nu*dr(n))) .le. ZERO) then
+                      
+                      ! just do piecewise constant integration
+                      integral = abs(grav_center(n,r))*rho0(n,r)*dr(n)/(p0(n,r)*gamma1bar(n,r))
+                      
+                   else 
+
+                      if ( use_linear_grav_in_beta ) then
+                         
+                         ! also do piecewise linear reconstruction of
+                         ! gravity -- not documented in publication yet.
+                         del   = HALF* (grav_center(n,r+1) - grav_center(n,r-1))/dr(n)
+                         dpls  = TWO * (grav_center(n,r+1) - grav_center(n,r  ))/dr(n)
+                         dmin  = TWO * (grav_center(n,r  ) - grav_center(n,r-1))/dr(n)
+                         slim  = min(abs(dpls), abs(dmin))
+                         slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
+                         sflag = sign(ONE,del)
+                         kappa = sflag*min(slim,abs(del))
+                         
+                         denom = nu*gamma1bar(n,r) - mu*p0(n,r) 
+                         coeff1 = (lambda*gamma1bar(n,r) - mu*rho0(n,r)) * &
+                              (kappa *gamma1bar(n,r) + mu*abs(grav_center(n,r))) / &
+                              (mu*mu*denom)
+                         coeff2 = (lambda*p0(n,r) - nu*rho0(n,r))* &
+                              (-kappa*p0(n,r) - nu*abs(grav_center(n,r))) / &
+                              (nu*nu*denom)
+                         coeff3 = kappa*lambda / (mu*nu)
+                         
+                         integral =  &
+                              coeff1*log( (gamma1bar(n,r) + HALF*mu*dr(n))/ &
+                                          (gamma1bar(n,r) - HALF*mu*dr(n)) ) + &
+                              coeff2*log( (p0(n,r) + HALF*nu*dr(n))/ &
+                                          (p0(n,r) - HALF*nu*dr(n)) ) - &
+                              coeff3*dr(n)
+
+                      else
+
+                         ! paper III, equation C2
+                         denom = nu*gamma1bar(n,r) - mu*p0(n,r)
+                         coeff1 = lambda*gamma1bar(n,r)/mu - rho0(n,r)
+                         coeff2 = lambda*p0(n,r)/nu - rho0(n,r)
+
+                         integral = (abs(grav_center(n,r))/denom)* &
+                              (coeff1*log( (gamma1bar(n,r) + HALF*mu*dr(n))/ &
+                                           (gamma1bar(n,r) - HALF*mu*dr(n))) - &
+                               coeff2*log( (p0(n,r) + HALF*nu*dr(n))/ &
+                                           (p0(n,r) - HALF*nu*dr(n))) )
+
+                      end if
+                   endif
+
+                   beta0_edge(n,r+1) = beta0_edge(n,r) * exp(-integral)
+                   div_coeff(n,r) = HALF*(beta0_edge(n,r) + beta0_edge(n,r+1))
+
+                else ! r > anelastic_cutoff
+
+                   div_coeff(n,r) = div_coeff(n,r-1) * (rho0(n,r)/rho0(n,r-1))                   
                 endif
 
-                beta0_edge(n,r+1) = beta0_edge(n,r) * exp(-integral)
-                div_coeff(n,r) = HALF*(beta0_edge(n,r) + beta0_edge(n,r+1))
-
-             end do
-
-             do r = anelastic_cutoff_coord(n),r_end_coord(n,j)
-                div_coeff(n,r) = div_coeff(n,r-1) * (rho0(n,r)/rho0(n,r-1))
              end do
 
              if (n .gt. 1) then
