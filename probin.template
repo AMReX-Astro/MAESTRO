@@ -271,6 +271,23 @@ contains
        end if
     end if
 
+    ! check species and enthalpy types
+    if (.not. (species_pred_type == predict_rhoprime_and_X .or. &
+               species_pred_type == predict_rhoprime_and_rhoX .or. &
+               species_pred_type == predict_rho_and_X)) then
+       call bl_error("invalid species_pred_type")
+    endif
+
+    if (.not. (enthalpy_pred_type == predict_rhohprime .or. &
+               enthalpy_pred_type == predict_h .or. &
+               enthalpy_pred_type == predict_T_then_rhohprime .or. &
+               enthalpy_pred_type == predict_T_then_h .or. &
+               enthalpy_pred_type == predict_hprime .or. &
+               enthalpy_pred_type == predict_Tprime_then_h)) then
+       call bl_error("invalid enthalpy_pred_type")
+    endif
+
+
     ! for the moment, set the cutoff for burning to be base_cutoff_density
     burning_cutoff_density = base_cutoff_density
 
