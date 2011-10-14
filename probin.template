@@ -288,6 +288,17 @@ contains
     endif
 
 
+    ! use_tfromp = T is not compatible with enthalpy_pred_types
+    ! predict_T_then_rhohprime or predict_T_then_h, since the
+    ! temperature update in react state doesn't 'see' the energy
+    ! release.
+    if (use_tfromp .and. &
+         (enthalpy_pred_type == predict_T_then_rhohprime .or. &
+          enthalpy_pred_type == predict_T_then_h)) then
+       call bl_error("use_tfromp not supported with enthalpy_pred_type predict_T_then_rhohprime or predict_T_then_h")
+    endif
+
+
     ! for the moment, set the cutoff for burning to be base_cutoff_density
     burning_cutoff_density = base_cutoff_density
 
@@ -315,6 +326,7 @@ contains
     prob_hi(1) = prob_hi_x
     if (dm_in > 1) prob_hi(2) = prob_hi_y
     if (dm_in > 2) prob_hi(3) = prob_hi_z
+
 
     call cluster_set_minwidth(minwidth)
     call cluster_set_blocking_factor(blocking_factor)
