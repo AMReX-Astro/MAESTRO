@@ -399,8 +399,22 @@ The general procedure for making the $(\rho h)$ edge state is as follows:
 
 \end{enumerate}
 
-\noindent Note: the various {\tt enthalpy\_pred\_type}s have only been
-extensively tested with {\tt species\_pred\_type = 1}.
+\noindent Note that the various {\tt enthalpy\_pred\_type}s have only been
+extensively tested with {\tt species\_pred\_type = 1}.  
+
+Finally, when \maestro\ is run with {\tt use\_tfromp = T}, the
+temperature is derived from the density, basestate pressure ($p_0$),
+and $X_k$.  When run with reactions or external heating, {\tt
+  react\_state} updates the temperature after the reaction/heating
+term is computed.  In {\tt use\_tfromp = T} mode, the temperature will
+not see the heat release, since the enthalpy does not feed in.  Only
+after the hydro update does the temperature gain the effects of the
+heat release due to the adjustment of the density (which in turn sees
+it through the velocity field and $S$).  As a result, the {\tt
+  enthalpy\_pred\_type}s that predict temperature to the interface
+({\tt predict\_T\_then\_rhoprime} and {\tt predict\_T\_then\_h}) will
+not work.  \maestro\ will abort if the code is run with this
+combination of parameters.
 
 Table~\ref{table:pred:hoverview}
 gives a summary
