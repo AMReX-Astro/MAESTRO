@@ -93,7 +93,7 @@ contains
 
 
 ! random temperature fluctuations
-    temp = ZERO
+     temp = ZERO
 
     ! loop over the 27 combinations of fourier components
     do i=1,3
@@ -130,26 +130,28 @@ contains
 
     
     ! add perturbational velocity to background velocity
-    temp = temp + s0_init(temp_comp)
+     temp = temp + s0_init(temp_comp)
 
 
 ! tanh density perturbation
      rho = s0_init(rho_comp)
 
-!     x0 = center(1) + 5.d10
-!     y0 = 7.35d9
+!     x0 = 2.5d10
+!     y0 = 5.d10
+! !    x0 = center(1) + 5.d10
+! !    y0 = 7.35d9
 
 ! !       x0 = center(1) + 2.d10
 ! !       y0 = 2.d10
 
 !     ! Tanh bubbles
-!     r0 = sqrt( (x-x0)**2 + (y-y0)**2 ) / 2.e9
+!     r0 = dsqrt( (x-x0)**2 + (y-y0)**2 ) / 2.e9
     
 !     ! This case works
-!     rho = rho - 3.d-7*tanh(2.0_dp_t-r0)
+!     rho = rho - 3.d-7*dtanh(2.0_dp_t-r0)
 
-    ! use the EOS to make this temperature perturbation occur at
-    ! constant pressure
+!    use the EOS to make this temperature perturbation occur at
+!    constant pressure
     temp_eos(1) = temp
     p_eos(1) = p0_init
     den_eos(1) = rho
@@ -161,6 +163,7 @@ contains
     pt_index_eos(:) = (/i, j, -1/)
 
     call eos(y, eos_input_tp, den_eos, temp_eos, &
+!    call eos(y, eos_input_rt, den_eos, temp_eos, &
              npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
@@ -179,6 +182,12 @@ contains
 
     trac_pert = ZERO
 
+! FIXME
+!     if( y .ge. 49609374999 .and. y .le. 50390625001 ) then
+!        if (x .ge. 18945312500 .and. x .le. 19540625001) then
+!           write(17,*) y, dens_pert 
+!        end if
+!     end if
   end subroutine perturb_2d
 
   subroutine perturb_3d(x, y, z, p0_init, s0_init, dens_pert, rhoh_pert, &
@@ -230,19 +239,17 @@ contains
                              rhoX_pert, temp_pert, trac_pert)
     use geometry, only: center    
     
-    real(kind=dp_t), intent(in ) :: x, y, z
+    real(kind=dp_t), intent(in ) :: x, y, z, rloc
     real(kind=dp_t), intent(in ) :: p0_init, s0_init(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
-    real(kind=dp_t) :: rho, temp
+    real(kind=dp_t) :: temp
     real(kind=dp_t) :: x0, y0, z0, r0
 
 
 ! tanh density perturbation
-    rho = s0_init(rho_comp)
-
     temp = s0_init(temp_comp)
 
     x0 = center(1) 
@@ -255,7 +262,7 @@ contains
     ! This case works
     ! temp = t0 * (ONE + TWO*(.150_dp_t * 0.5_dp_t * & 
 !                             (1.0_dp_t + tanh((2.0_dp_t-r0)))))
-    temp = temp - 3.d-6 * tanh(2.0_dp_t - r0/1.15d10)
+    temp = temp - 3.d5 * tanh(2.0_dp_t - r0/1.15d10)
 
     ! use the EOS to make this temperature perturbation occur at constant 
     ! pressure
@@ -264,7 +271,10 @@ contains
     den_eos(1) = s0_init(rho_comp)
     xn_eos(1,:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
 
-    call eos(r0, eos_input_tp, den_eos, temp_eos, &
+!    write(*,*) 'radius ', r0
+    rloc = sqrt( (x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2 ) 
+
+    call eos(rloc, eos_input_tp, den_eos, temp_eos, &
              npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
