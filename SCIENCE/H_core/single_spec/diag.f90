@@ -1562,7 +1562,8 @@ contains
 
 !$omp end critical
 
-                rloc = dsqrt(x*x + y*y + z*z)
+                rloc = dsqrt( (x-center(1))**2 + (y-center(2))**2 + &
+                     (z-center(3))**2 )
                 ! only include in vtot if inside the core
                 if ( rloc .le. R_core_diag ) then
 
