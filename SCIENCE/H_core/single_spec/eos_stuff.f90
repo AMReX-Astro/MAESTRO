@@ -324,7 +324,9 @@ contains
 !..mean nucleon charge     = zbar
 
 ! npoints = 1 as set at top of module
-    call interpolate(radius, abar(1), zbar(1))
+    call quad_interp(radius, abar(1), zbar(1))
+
+!    write(*,*)abar(1), zbar(1)
 
     if (input .EQ. eos_input_rt) then
 
@@ -1461,32 +1463,107 @@ contains
         else; n = max_levs
         endif
 
-        if (r .ge. r_cc_loc(n,index)) then
-           if (index .ge. nr_fine-1) then
-              a = meanA(nr_fine-1)
-              z = meanZ(nr_fine-1)
-           else
-              a = meanA(index+1)*(r-r_cc_loc(n,index))/dr_fine &
-                   + meanA(index)*(r_cc_loc(n,index+1)-r)/dr_fine
-              z = meanZ(index+1)*(r-r_cc_loc(n,index))/dr_fine &
-                   + meanZ(index)*(r_cc_loc(n,index+1)-r)/dr_fine
-           endif
+        if (index .ge. nr_fine-1) then
+           a = meanA(nr_fine-1)
+           z = meanZ(nr_fine-1)
+        else if (r .ge. r_cc_loc(n,index)) then
+           a = meanA(index+1)*(r-r_cc_loc(n,index))/dr_fine &
+                + meanA(index)*(r_cc_loc(n,index+1)-r)/dr_fine
+           z = meanZ(index+1)*(r-r_cc_loc(n,index))/dr_fine &
+                + meanZ(index)*(r_cc_loc(n,index+1)-r)/dr_fine
         else
            if (index .eq. 0) then
               a = meanA(index)
               z = meanZ(index)
-           else if (index .gt. nr_fine-1) then
-              a = meanA(nr_fine-1)
-              z = meanZ(nr_fine-1)
            else
               a = meanA(index)*(r-r_cc_loc(n,index-1))/dr_fine &
-                   + meanA(index-1)*(r_cc_loc(n,index)-radius)/dr_fine
+                   + meanA(index-1)*(r_cc_loc(n,index)-r)/dr_fine
               z = meanZ(index)*(r-r_cc_loc(n,index-1))/dr_fine &
-                   + meanZ(index-1)*(r_cc_loc(n,index)-radius)/dr_fine
+                   + meanZ(index-1)*(r_cc_loc(n,index)-r)/dr_fine
            end if
         end if
                    
       end subroutine interpolate
+
+      subroutine quad_interp(r, a, z)
+        use model_parser_module, only: meanA, meanZ
+        use geometry, only: dr_fine, nr_fine, r_cc_loc, spherical
+        use probin_module, only: max_levs
+
+        implicit none
+
+        real(kind=dp_t), intent(in   ) :: r
+        real(kind=dp_t), intent(inout) :: a, z
+
+        ! local
+        real(kind=dp_t) :: x0,x1,x2
+        real(kind=dp_t) :: y0,y1,y2
+        real(kind=dp_t) :: z0,z1,z2
+        integer :: i, id
+
+
+        ! FIXME: need to think about this more in the event of restart
+        if (spherical .eq. 1) then; n = 1
+        else; n = max_levs
+        endif
+
+        id  = int(r / dr_fine)
+
+        if ( id.eq.0 ) then 
+           x0 = r_cc_loc(n,id  )
+           x1 = r_cc_loc(n,id+1)
+           x2 = r_cc_loc(n,id+2)
+           y0 = meanA(id  )
+           y1 = meanA(id+1)
+           y2 = meanA(id+2)
+           z0 = meanZ(id  )
+           z1 = meanZ(id+1)
+           z2 = meanZ(id+2)
+        else if ( id.ge.nr_fine-1 ) then
+           id = nr_fine-1
+           x0 = r_cc_loc(n,id-2)
+           x1 = r_cc_loc(n,id-1)
+           x2 = r_cc_loc(n,id  )
+           y0 = meanA(id-2)
+           y1 = meanA(id-1)
+           y2 = meanA(id  )
+           z0 = meanZ(id-2)
+           z1 = meanZ(id-1)
+           z2 = meanZ(id  )
+        else
+           x0 = r_cc_loc(n,id-1)
+           x1 = r_cc_loc(n,id  )
+           x2 = r_cc_loc(n,id+1)
+           y0 = meanA(id-1)
+           y1 = meanA(id  )
+           y2 = meanA(id+1)
+           z0 = meanZ(id-1)
+           z1 = meanZ(id  )
+           z2 = meanZ(id+1)
+        endif
+
+        a = y0 + (y1-y0)/(x1-x0)*(r-x0) &
+             + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(r-x0)*(r-x1)
+        z = z0 + (z1-z0)/(x1-x0)*(r-x0) &
+             + ((z2-z1)/(x2-x1)-(z1-z0)/(x1-x0))/(x2-x0)*(r-x0)*(r-x1)
+
+        ! safety check
+        if (a .gt. max(y0,y1,y2) .and. r.gt.r_cc_loc(n,1) ) a = max(y0,y1,y2)
+        if (a .lt. min(y0,y1,y2)) a = min(y0,y1,y2)
+        if (z .gt. max(z0,z1,z2) .and. r.gt.r_cc_loc(n,1) ) z = max(z0,z1,z2)
+        if (z .lt. min(z0,z1,z2)) z = min(z0,z1,z2)
+
+        if ( a .le. 0.d0 .OR. z .le. 0.d0 ) then
+
+           write(*,*)'a, z, ', a, z
+           write(*,*) 'index ', id
+           stop
+
+        end if
+
+        return
+
+      end subroutine quad_interp
 
   end subroutine eos
 
