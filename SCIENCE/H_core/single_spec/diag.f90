@@ -840,12 +840,12 @@ contains
 
        if ( dm .eq. 3) then
 
-          vr(:) = vr(:)/nzones_core
-          vr_favre(:) = rhovr(:)/mass_core    ! note: common dV normalization cancels
-          vrvt = vrvt/nzones_core
+          vr(:) = vr(:)/nzones
+          vr_favre(:) = rhovr(:)/mass    ! note: common dV normalization cancels
+          vrvt = vrvt/nzones
           
-          vc(:) = vc(:)/nzones_core
-          vc_favre(:) = rhovc(:)/mass_core    ! note: common dV normalization cancels
+          vc(:) = vc(:)/nzones
+          vc_favre(:) = rhovc(:)/mass    ! note: common dV normalization cancels
 
           mass_core = mass_core*dx(1,3)
           mass      = mass     *dx(1,3)
@@ -915,7 +915,7 @@ contains
           file2_data(index, 4) = int_ener
           file2_data(index, 5) = mass
           file2_data(index, 6) = mass_core
-          file2_data(index, 5) = dt
+          file2_data(index, 7) = dt
 
        else 
           ! file1 -- hcore_vel_diag.out
@@ -960,7 +960,7 @@ contains
           file2_data(index, 4) = int_ener
           file2_data(index, 5) = mass
           file2_data(index, 6) = mass_core
-          file2_data(index, 5) = dt
+          file2_data(index, 7) = dt
 
 
           ! file3 -- hcore_sphrvel_diag.out
@@ -1472,7 +1472,6 @@ contains
     !     Local variables
     logical            :: cell_valid
     integer            :: i, j, k
-    real (kind=dp_t), parameter   :: R_core_diag = 7.47d10
     real (kind=dp_t)   :: velr, velc, vel, weight
     real (kind=dp_t)   :: x, y, z, rloc
     real (kind=dp_t)   :: vx, vy, vz
