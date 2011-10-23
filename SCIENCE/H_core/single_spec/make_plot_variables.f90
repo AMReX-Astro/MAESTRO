@@ -464,7 +464,7 @@ contains
     integer :: i, j, k
     real(kind=dp_t) :: z
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t)    
+    !$OMP PARALLEL DO PRIVATE(z,i,j,k,chi_rho,chi_t)    
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
@@ -557,7 +557,7 @@ contains
     integer :: i, j, k, c
     real(kind=dp_t) :: x,y,z,r
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t)    
+    !$OMP PARALLEL DO PRIVATE(x,y,z,r,i,j,k,chi_rho,chi_t)    
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
@@ -1289,7 +1289,7 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(x,y,z,r,i,j,k)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
        
@@ -1652,7 +1652,7 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,gamma1bar,gamma1bar_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(x,y,z,r,i,j,k)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
        

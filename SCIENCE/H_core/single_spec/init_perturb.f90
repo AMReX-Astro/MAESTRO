@@ -239,14 +239,14 @@ contains
                              rhoX_pert, temp_pert, trac_pert)
     use geometry, only: center    
     
-    real(kind=dp_t), intent(in ) :: x, y, z, rloc
+    real(kind=dp_t), intent(in ) :: x, y, z
     real(kind=dp_t), intent(in ) :: p0_init, s0_init(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
     real(kind=dp_t) :: temp
-    real(kind=dp_t) :: x0, y0, z0, r0
+    real(kind=dp_t) :: x0, y0, z0, r0, rloc
 
 
 ! tanh density perturbation

@@ -81,7 +81,6 @@ contains
     plot_names(icomp_src)         = "S"
     plot_names(icomp_rhopert)     = "rhopert"
     if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
-       plot_names(icomp_enthalpy)    = "enthalpy"
        plot_names(icomp_rhohpert)    = "rhohpert"
     endif
     plot_names(icomp_tfromp)      = "tfromp"
@@ -471,13 +470,6 @@ contains
 
        ! DIVU
        call multifab_copy_c(plotdata(n),icomp_src,Source(n),1,1)
-
-       ! ENTHALPY 
-       if (.not. use_tfromp .or. &
-            (use_tfromp .and. plot_h_with_use_tfromp)) then
-          call multifab_copy_c(plotdata(n),icomp_enthalpy,s(n),rhoh_comp)
-          call multifab_div_div_c(plotdata(n),icomp_enthalpy,s(n),rho_comp,1)
-       endif
 
     end do
 

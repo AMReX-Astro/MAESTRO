@@ -324,7 +324,7 @@ contains
 !..mean nucleon charge     = zbar
 
 ! npoints = 1 as set at top of module
-    call quad_interp(radius, abar(1), zbar(1))
+    call interpolate(radius, abar(1), zbar(1))
 
 !    write(*,*)abar(1), zbar(1)
 
@@ -1452,7 +1452,7 @@ contains
         
         !local
         integer :: index,n
-!        real(kind=dp_t) :: rfac
+        real(kind=dp_t) :: x0,x1,x2, y0,y1,y2 !, rfac
    
         index  = int(r / dr_fine)
 
@@ -1460,29 +1460,72 @@ contains
 
         ! FIXME: need to think about this more in the event of restart
         if (spherical .eq. 1) then; n = 1
+           ! this really ought to be nlevs
         else; n = max_levs
         endif
 
-        if (index .ge. nr_fine-1) then
-           a = meanA(nr_fine-1)
-           z = meanZ(nr_fine-1)
-        else if (r .ge. r_cc_loc(n,index)) then
-           a = meanA(index+1)*(r-r_cc_loc(n,index))/dr_fine &
-                + meanA(index)*(r_cc_loc(n,index+1)-r)/dr_fine
-           z = meanZ(index+1)*(r-r_cc_loc(n,index))/dr_fine &
-                + meanZ(index)*(r_cc_loc(n,index+1)-r)/dr_fine
-        else
-           if (index .eq. 0) then
-              a = meanA(index)
-              z = meanZ(index)
-           else
-              a = meanA(index)*(r-r_cc_loc(n,index-1))/dr_fine &
-                   + meanA(index-1)*(r_cc_loc(n,index)-r)/dr_fine
-              z = meanZ(index)*(r-r_cc_loc(n,index-1))/dr_fine &
-                   + meanZ(index-1)*(r_cc_loc(n,index)-r)/dr_fine
-           end if
-        end if
+        ! piecewise linear
+!         if (r .ge. r_cc_loc(n,index)) then
+!            if (index .ge. nr_fine-1) then
+!               a = meanA(nr_fine-1)
+!               z = meanZ(nr_fine-1)
+!            else
+!               a = meanA(index+1)*(r-r_cc_loc(n,index))/dr_fine &
+!                    + meanA(index)*(r_cc_loc(n,index+1)-r)/dr_fine
+!               z = meanZ(index+1)*(r-r_cc_loc(n,index))/dr_fine &
+!                    + meanZ(index)*(r_cc_loc(n,index+1)-r)/dr_fine
+!            endif
+!         else
+!            if (index .eq. 0) then
+!               a = meanA(index)
+!               z = meanZ(index)
+!            else if (index .gt. nr_fine-1) then
+!               a = meanA(nr_fine-1)
+!               z = meanZ(nr_fine-1)
+!            else
+!               a = meanA(index)*(r-r_cc_loc(n,index-1))/dr_fine &
+!                    + meanA(index-1)*(r_cc_loc(n,index)-radius)/dr_fine
+!               z = meanZ(index)*(r-r_cc_loc(n,index-1))/dr_fine &
+!                    + meanZ(index-1)*(r_cc_loc(n,index)-radius)/dr_fine
+!            end if
+!         end if
                    
+        ! quadratic interpolation
+
+        ! index refers to the center point in the quadratic stencil.
+        ! we need to modify this if we're too close to the edge
+        if (index .eq. 0) then
+           index = 1
+        else if (index .ge. nr_fine-1) then
+           index = nr_fine-2
+        end if
+
+        x0 = r_cc_loc(1,index-1)
+        x1 = r_cc_loc(1,index)
+        x2 = r_cc_loc(1,index+1)
+
+        ! get Abar
+        y0 = meanA(index-1) 
+        y1 = meanA(index)
+        y2 = meanA(index+1)
+
+        a = y0 + (y1-y0)/(x1-x0)*(r-x0) &
+           + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(r-x0)*(r-x1)
+
+        if (a .gt. max(y0,y1,y2)) a = max(y0,y1,y2)
+        if (a .lt. min(y0,y1,y2)) a = min(y0,y1,y2)
+
+        ! get Zbar
+        y0 = meanZ(index-1) 
+        y1 = meanZ(index)
+        y2 = meanZ(index+1)
+
+        z = y0 + (y1-y0)/(x1-x0)*(r-x0) &
+             + ((y2-y1)/(x2-x1)-(y1-y0)/(x1-x0))/(x2-x0)*(r-x0)*(r-x1)
+
+        if (z .gt. max(y0,y1,y2)) z = max(y0,y1,y2)
+        if (z .lt. min(y0,y1,y2)) z = min(y0,y1,y2)
+
       end subroutine interpolate
 
       subroutine quad_interp(r, a, z)

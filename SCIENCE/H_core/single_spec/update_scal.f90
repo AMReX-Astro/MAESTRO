@@ -616,7 +616,7 @@ contains
 
     if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,r0)
        do k = lo(3), hi(3) 
           z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 

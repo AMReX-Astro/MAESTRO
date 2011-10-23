@@ -1,6 +1,6 @@
-NDEBUG := t  
+NDEBUG := t
 MPI    := t
-OMP    :=
+OMP    := t
 
 COMP := PathScale
 

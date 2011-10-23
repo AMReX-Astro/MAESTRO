@@ -447,7 +447,7 @@ contains
 
     Source = zero
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,comp,sigma,xi_term,pres_term,gradp0)
+    !$OMP PARALLEL DO PRIVATE(z,i,j,k,comp,sigma,xi_term,pres_term,gradp0)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)             
 
@@ -544,7 +544,7 @@ contains
 
     Source = zero
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,comp,sigma,xi_term,pres_term)
+    !$OMP PARALLEL DO PRIVATE(x,y,z,r,i,j,k,comp,sigma,xi_term,pres_term)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)             
 

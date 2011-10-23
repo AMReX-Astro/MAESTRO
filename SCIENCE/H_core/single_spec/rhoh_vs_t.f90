@@ -510,7 +510,7 @@ contains
     integer :: i, j, k
     real(kind=dp_t) rho0_edge, rhoh0_edge, t0_edge, x,y,z,r
     
-    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge,x,y,z,r)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)) * dx(3)
 
@@ -562,7 +562,7 @@ contains
     enddo
     !$OMP END PARALLEL DO
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge)
+    !$OMP PARALLEL DO PRIVATE(x,y,z,r,i,j,k,t0_edge,rho0_edge,rhoh0_edge)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)) * dx(3)
 
@@ -615,7 +615,7 @@ contains
     enddo
     !$OMP END PARALLEL DO
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge)
+    !$OMP PARALLEL DO PRIVATE(x,y,z,r,i,j,k,t0_edge,rho0_edge,rhoh0_edge)
     do k = lo(3), hi(3)+1
        z = prob_lo(3) + (dble(k)) * dx(3)
 
@@ -860,7 +860,7 @@ contains
     integer :: i, j, k
     real (kind = dp_t) :: x,y,z,r
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(x,y,z,r,i,j,k)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
@@ -1161,7 +1161,7 @@ contains
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(x,y,z,r,i,j,k)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)      
 
@@ -1408,7 +1408,7 @@ contains
     integer :: i, j, k
     real (kind = dp_t) :: x,y,z,r
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(x,y,z,r,i,j,k)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
@@ -1711,7 +1711,7 @@ contains
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(x,y,z,r,i,j,k)
     do k=lo(3),hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)             
 
