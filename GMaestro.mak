@@ -7,20 +7,15 @@ include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 BOXLIB_CORE := Src/F_BaseLib \
                Src/LinearSolvers/F_MG
 
-# core MAESTRO directories
-MAESTRO_CORE := extern/constants \
-		extern/model_parser \
-                extern/LAPACK \
-                extern/random \
-                extern/BLAS
 
+# core MAESTRO directories
+MAESTRO_CORE := 
 
 # if we are doing the SDC algorithm, then look first for source
 # files living in Source_SDC/ then look in Source/
 ifdef SDC
   MAESTRO_CORE += MAESTRO/Source_SDC
 endif
-
 
 # next look for the files in Source/ itself
 #   Note: a unit test tests only a single component of the MAESTRO
@@ -30,6 +25,25 @@ endif
 ifndef UNIT_TEST
   MAESTRO_CORE += MAESTRO/Source 
 endif
+
+
+# core extern directories needed by every MAESTRO build
+EXTERN_CORE := extern/constants \
+	       extern/model_parser \
+               extern/LAPACK \
+               extern/random \
+               extern/BLAS 
+
+# add in the network, EOS, and conductivity
+EXTERN_CORE += $(EOS_DIR) \
+               $(NETWORK_DIR) \
+               $(CONDUCTIVITY_DIR) 
+
+# networks in general need the VODE 
+ifneq ($(findstring null, $(NETWORK_DIR)), null)
+  EXTERN_CORE += extern/VODE 
+endif
+
 
 
 # compile in support for particles
@@ -46,21 +60,13 @@ PARTICLES := t
 # add in the problem specific stuff ("extras"), EOS, network, and
 # conductivity
 Fmdirs += $(EXTRA_DIR) \
-          $(EOS_DIR) \
-          $(NETWORK_DIR) \
-          $(CONDUCTIVITY_DIR) \
+          $(EXTERN_CORE) \
           $(MAESTRO_CORE)
-
-
-# networks in general need the VODE + other packages
-ifneq ($(findstring null, $(NETWORK_DIR)), null)
-	Fmdirs += extern/VODE 
-endif
 
 
 # the helmeos has an include file
 ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
-	Fmincludes := extern/EOS/helmeos
+  Fmincludes := extern/EOS/helmeos
 endif
 
 
@@ -86,7 +92,7 @@ VPATH_LOCATIONS += $(Fmlocs)
 # we always want to search the MAESTRO/Source directory, even for
 # unit tests, since they may build individual files there.
 ifdef UNIT_TEST
-      VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO/Source
+  VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO/Source
 endif
 
 
