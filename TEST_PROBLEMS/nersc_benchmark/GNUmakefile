@@ -36,9 +36,6 @@ ifdef HYPRE
  
 endif
 
-# define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters ./_parameters.nersc_benchmark
-
 
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak

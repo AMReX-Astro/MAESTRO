@@ -22,10 +22,6 @@ NETWORK_DIR := extern/networks/ignition_simple
 EXTRA_DIR :=
 
 
-# define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters ./_parameters.flame
-
-
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
 

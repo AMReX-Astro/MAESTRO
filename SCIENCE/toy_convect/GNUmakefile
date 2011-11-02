@@ -22,10 +22,6 @@ NETWORK_DIR := extern/networks/hotcno
 EXTRA_DIR :=
 
 
-# define the runtime parameter files
-PROBIN_PARAMETERS := $(FPARALLEL)/MAESTRO/_parameters ./_parameters.toy_convect
-
-
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
 

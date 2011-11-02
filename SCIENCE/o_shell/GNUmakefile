@@ -22,10 +22,6 @@ NETWORK_DIR := extern/networks/ignition_chamulak
 EXTRA_DIR := extern/random
 
 
-# define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters ./_parameters.wdconvect
-
-
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
 

@@ -22,10 +22,6 @@ NETWORK_DIR := extern/networks/H_core_null
 EXTRA_DIR := MAESTRO/test_basestate
 
 
-# define the runtime parameter files                                            
-PROBIN_PARAMETERS := ../_parameters ./_parameters.basestate
-
-
 # include the MAESTRO build stuff                                               
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
 

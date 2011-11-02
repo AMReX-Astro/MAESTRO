@@ -22,9 +22,6 @@ NETWORK_DIR := extern/networks/simple
 EXTRA_DIR := extern/random
 
 
-# define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters ./_parameters.waves
-
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
 

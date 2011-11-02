@@ -22,10 +22,6 @@ NETWORK_DIR := extern/networks/null
 EXTRA_DIR := MAESTRO/test_advect
 
 
-# define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters ./_parameters.advect
-
-
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
 

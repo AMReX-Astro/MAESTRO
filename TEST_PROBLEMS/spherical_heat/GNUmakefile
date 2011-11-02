@@ -22,10 +22,6 @@ NETWORK_DIR := extern/networks/null
 EXTRA_DIR := extern/VODE
 
 
-# define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters ./_parameters.spherical_heat
-
-
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
 

@@ -3,11 +3,14 @@
 # include the main Makefile stuff
 include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 
+
+#-----------------------------------------------------------------------------
 # core BoxLib directories
 BOXLIB_CORE := Src/F_BaseLib \
                Src/LinearSolvers/F_MG
 
 
+#-----------------------------------------------------------------------------
 # core MAESTRO directories
 MAESTRO_CORE := 
 
@@ -27,6 +30,7 @@ ifndef UNIT_TEST
 endif
 
 
+#-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
 EXTERN_CORE := extern/constants \
 	       extern/model_parser \
@@ -45,10 +49,12 @@ ifneq ($(findstring null, $(NETWORK_DIR)), null)
 endif
 
 
-
+#-----------------------------------------------------------------------------
 # compile in support for particles
 PARTICLES := t
 
+
+#-----------------------------------------------------------------------------
 # The directories listed in Fmdirs should contain a GPackage.mak,
 # which specifies to the MAESTRO build system the list of files
 # to build.  These directories are also put in the vpath to define
@@ -57,8 +63,6 @@ PARTICLES := t
 # The directories listed in Fmincludes contain files that are included
 # in source files, and thus specified using -I in the compiler flags.
 
-# add in the problem specific stuff ("extras"), EOS, network, and
-# conductivity
 Fmdirs += $(EXTRA_DIR) \
           $(EXTERN_CORE) \
           $(MAESTRO_CORE)
@@ -101,13 +105,24 @@ endif
 FINCLUDE_LOCATIONS += $(Fmincs)
 
 
+#-----------------------------------------------------------------------------
 # define the build instructions for the executable
 main.$(suf).exe: $(objects)
 	$(HPCLINK) $(LINK.f90) -o main.$(suf).exe $(objects) $(libraries)
 	@echo SUCCESS
 
-# runtime parameter stuff
+
+#-----------------------------------------------------------------------------
+# runtime parameter stuff (probin.f90)
+
+# template used by write_probin.py to build probin.f90
 PROBIN_TEMPLATE := $(FPARALLEL)/MAESTRO/probin.template
+
+# list of the directories to search for _parameters files
+PROBIN_PARAMETER_DIRS = ./ ../
+
+# list of all valid _parameters files
+PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
 	$(BOXLIB_HOME)/Tools/F_scripts/write_probin.py \
@@ -115,6 +130,7 @@ probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
            $(PROBIN_PARAMETERS) 
 
 
+#-----------------------------------------------------------------------------
 # build_info stuff
 deppairs: build_info.f90
 
@@ -129,10 +145,12 @@ $(odir)/build_info.o: build_info.f90
 	rm -f build_info.f90
 
 
+#-----------------------------------------------------------------------------
 # include the fParallel Makefile rules
 include $(BOXLIB_HOME)/Tools/F_mk/GMakerules.mak
 
 
+#-----------------------------------------------------------------------------
 # for debugging.  To see the value of a Makefile variable,
 # e.g. Fmlocs, simply do "make print-Fmlocs".  This will
 # print out the value.
