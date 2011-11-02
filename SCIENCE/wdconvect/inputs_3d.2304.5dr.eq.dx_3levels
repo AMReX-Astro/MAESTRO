@@ -12,6 +12,7 @@
  n_cellz = 576
  regrid_int = 2
  max_grid_size = 48
+ max_grid_size_3 = 64
 
  anelastic_cutoff = 1.d6
  base_cutoff_density = 1.d5
