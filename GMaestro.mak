@@ -110,7 +110,9 @@ main.$(suf).exe: $(objects)
 PROBIN_TEMPLATE := $(FPARALLEL)/MAESTRO/probin.template
 
 probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
-	$(FPARALLEL)/MAESTRO/write_probin.py -t $(PROBIN_TEMPLATE) $(PROBIN_PARAMETERS)
+	$(FPARALLEL)/MAESTRO/write_probin.py \
+           -t $(PROBIN_TEMPLATE) -o probin.f90 -n probin \
+           $(PROBIN_PARAMETERS) 
 
 
 # build_info stuff
