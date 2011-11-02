@@ -1,5 +1,5 @@
 NDEBUG := t
-MPI    :=
+MPI    :=t
 OMP    :=
 
 SDC := 
@@ -30,7 +30,7 @@ EXTRA_DIR :=
 
 
 # define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters ./_parameters.test2
+PROBIN_PARAMETERS := ../_parameters ./_parameters
 
 
 # include the MAESTRO build stuff
