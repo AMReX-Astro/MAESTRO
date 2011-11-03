@@ -24,6 +24,7 @@ subroutine varden()
   use eos_module
   use fill_3d_module
   use probin_module
+  use runtime_init_module
   use bl_constants_module
   use initialize_module
   use multifab_physbc_module
@@ -57,7 +58,7 @@ subroutine varden()
 
   type(bc_tower) ::  the_bc_tower
 
-  call probin_init()
+  call runtime_init()
   call init_spherical()
   call init_center()
 
@@ -253,7 +254,7 @@ subroutine varden()
 
   call bc_tower_destroy(the_bc_tower)
 
-  call probin_close()
+  call runtime_close()
 
   deallocate(dr,r_cc_loc,r_edge_loc,r_start_coord,r_end_coord,nr,numdisjointchunks,dx)
 
