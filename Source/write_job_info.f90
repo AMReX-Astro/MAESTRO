@@ -6,7 +6,8 @@ subroutine write_job_info(dirname, mba)
   ! directory
 
   use parallel
-  use probin_module, only: job_name, probin, inputs_file_used
+  use probin_module, only: job_name, inputs_file_used
+  use runtime_init_module, only: probin
   use bl_system_module, only: BL_CWD_SIZE, get_cwd 
   use ml_boxarray_module
   use build_info_module, only: build_date, build_dir, build_machine, boxlib_dir, &

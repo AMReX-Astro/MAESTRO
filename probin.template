@@ -5,10 +5,6 @@ module probin_module
 
   use bl_types
   use bl_space
-  use pred_parameters
-  use multifab_module, only: multifab_set_alltoallv
-  use cluster_module
-  use layout_module
 
   implicit none
 
@@ -30,16 +26,27 @@ module probin_module
   real(dp_t), allocatable, save, public :: prob_lo(:)
   real(dp_t), allocatable, save, public :: prob_hi(:)
 
+end module probin_module
+
+
+module runtime_init_module
+
+  use bl_types
+  use probin_module
+
+  implicit none
 
   @@namelist@@
 
+  private
 
   public :: probin
-  public :: probin_init, probin_close
+
+  public :: runtime_init, runtime_close
 
 contains
 
-  subroutine probin_init()
+  subroutine runtime_init()
 
     use f2kcli
     use parallel
@@ -49,6 +56,10 @@ contains
     use bl_error_module
     use bl_constants_module
     use knapsack_module
+    use pred_parameters
+    use multifab_module, only: multifab_set_alltoallv
+    use cluster_module
+    use layout_module
     
     integer    :: narg, farg
 
@@ -63,7 +74,7 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
-    call build(bpt, "probin_init")
+    call build(bpt, "runtime_init")
 
     narg = command_argument_count()
 
@@ -342,19 +353,21 @@ contains
 
     call destroy(bpt)
     
-  end subroutine probin_init
+  end subroutine runtime_init
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine probin_close()
+  subroutine runtime_close()
+
+    use probin_module
 
     deallocate(nodal)
     deallocate(pmask)
     deallocate(prob_lo)
     deallocate(prob_hi)
 
-  end subroutine probin_close
+  end subroutine runtime_close
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-end module probin_module
+end module runtime_init_module
