@@ -18,6 +18,7 @@ subroutine varden()
   use make_grav_module
   use make_edge_state_module
   use probin_module
+  use runtime_init_module
   use bl_constants_module
   use initialize_module
   use enforce_HSE_module
@@ -61,7 +62,7 @@ subroutine varden()
   real(dp_t) :: mencl, max_hse_error, starting_rad, rloc, r_r, r_l, g, dpdr, rhog
   real(dp_t) :: max_Mach
 
-  call probin_init()
+  call runtime_init()
   call init_spherical()
   center(1) = ZERO
 
