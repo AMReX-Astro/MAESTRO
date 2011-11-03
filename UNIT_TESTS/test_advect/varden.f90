@@ -45,8 +45,8 @@ subroutine varden()
                            test_set, &
                            ppm_type, bds_type, &
                            cflfac, &
-                           stop_time, &
-                           probin_init, probin_close
+                           stop_time
+  use runtime_init_module, only: runtime_init, runtime_close
   use initialize_module, only: initialize_bc, initialize_dx
   use bl_constants_module
   use multifab_physbc_module
@@ -102,7 +102,7 @@ subroutine varden()
   logical :: wrote_init_file = .false.
 
   ! general Maestro initializations
-  call probin_init()
+  call runtime_init()
   call init_spherical()
   call init_center()
 
@@ -608,7 +608,7 @@ subroutine varden()
 
   call bc_tower_destroy(the_bc_tower)
 
-  call probin_close()
+  call runtime_close()
 
   call destroy_geometry()
 
