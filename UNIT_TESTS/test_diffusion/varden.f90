@@ -8,6 +8,7 @@ subroutine varden()
   use base_state_module
   use fabio_module
   use probin_module
+  use runtime_init_module
   use bl_constants_module
   use define_bc_module
   use eos_module
@@ -52,7 +53,7 @@ subroutine varden()
   integer :: uout
 
   ! initialize some things
-  call probin_init()
+  call runtime_init()
   call init_spherical()
   call init_center()
 
