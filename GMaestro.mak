@@ -121,13 +121,17 @@ PROBIN_TEMPLATE := $(FPARALLEL)/MAESTRO/probin.template
 # list of the directories to search for _parameters files
 PROBIN_PARAMETER_DIRS = ./ ../
 
-# list of all valid _parameters files
+# list of all valid _parameters files for probin
 PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
 
-probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
+# list of all valid _parameters files for extern
+EXTERN_PARAMETER_DIRS += $(foreach dir, $(EXTERN_CORE), $(FPARALLEL)/$(dir))
+EXTERN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
+
+probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
 	$(BOXLIB_HOME)/Tools/F_scripts/write_probin.py \
            -t $(PROBIN_TEMPLATE) -o probin.f90 -n probin \
-           $(PROBIN_PARAMETERS) 
+           --pa "$(PROBIN_PARAMETERS)" --pb "$(EXTERN_PARAMETERS)"
 
 
 #-----------------------------------------------------------------------------

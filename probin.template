@@ -10,7 +10,7 @@ module probin_module
 
   private
 
-  @@declarations@@
+  @@declarationsA@@
 
   real(dp_t), save, public    :: burning_cutoff_density  ! note: presently not runtime parameter
 
@@ -29,10 +29,25 @@ module probin_module
 end module probin_module
 
 
+module extern_probin_module
+
+  use bl_types
+  use bl_space
+
+  implicit none
+
+  private
+
+  @@declarationsB@@
+
+end module extern_probin_module
+
+
 module runtime_init_module
 
   use bl_types
   use probin_module
+  use extern_probin_module
 
   implicit none
 
