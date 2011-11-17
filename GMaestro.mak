@@ -159,3 +159,13 @@ include $(BOXLIB_HOME)/Tools/F_mk/GMakerules.mak
 # e.g. Fmlocs, simply do "make print-Fmlocs".  This will
 # print out the value.
 print-%: ; @echo $* is $($*)
+
+
+#-----------------------------------------------------------------------------
+# cleaning.  Add more actions to 'clean' and 'realclean' to remove 
+# probin.f90 -- this is where the '::' in make comes in handy
+clean::
+	$(RM) probin.f90
+
+
+
