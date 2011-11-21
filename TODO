@@ -95,3 +95,7 @@
 
    Also, for species_pred_type = 2, we should do the (rho X)
    prediction using conservative prediction
+
+-- have data_processing/fsnapshot make a plot with colorbar 
+   by using dislin to do the plots instead of the current
+   pnm stuff.
