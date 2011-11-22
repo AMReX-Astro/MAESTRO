@@ -513,6 +513,27 @@ be found in \S~\ref{sec:initial_models_main}.
 
 \section{BoxLib Data Structures}
 
+\maestro's gridding is handled by the BoxLib library, which
+contains the most fundamental objects used to construct parallel
+block-structured AMR applications---different
+regions of the domain can have different spatial resolutions.
+At each level of refinement, the region covered by that level is divided
+into grids, or boxes.  The entire computational domain is covered by
+the coarsest (base) level of refinement, often called level $\ell=0$, either by one
+grid or divided into many grids.
+Higher levels of refinement have cells that are finer by a ``refinement ratio''
+(typically 2).  The grids are properly nested in the sense that the union 
+of grids at level $\ell+1$ is contained in the union of grids at level $\ell$.
+Furthermore, the containment is strict in the sense that, except at physical 
+boundaries, the level $\ell$ grids are large enough to guarantee that there is
+a border at least $n_{\rm buffer}$ level $\ell$ cells wide surrounding each level
+$\ell +1$ grid (grids at all levels are allowed to extend to the physical
+boundaries so the proper nesting is not strict there).  
+For parallel computations, the boxes are spread across processors, in
+a fashion designed to put roughly equal amounts of work on each
+processor (load balancing).
+\MarginPar{ghost cells?}
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=6.5in]{\archfigpath/data_loc2}
@@ -524,21 +545,6 @@ be found in \S~\ref{sec:initial_models_main}.
   In each of these centerings, the red point has the same indices:\ (1,2).
   Not shown is the case where data is nodal in the $y$-direction only.}
 \end{figure}
-
-\maestro's gridding is handled by the BoxLib library.  The underlying
-idea in BoxLib is to allow for adaptive mesh refinement (AMR)---different
-regions of the domain can have different spatial resolutions.  The
-domain is broken into boxes.  At the coarsest (base) level of
-refinement, the entire computational domain is covered, either by one
-box or broken across many boxes.  Higher levels of refinement have
-finer zones (typically $2\times$).  Only a portion of the domain may
-be covered by the higher levels of refinement.  
-
-\MarginPar{Nesting? ghost cells?}
-For parallel computations, the boxes are spread across processors, in
-a fashion designed to put roughly equal amounts of work on each
-processor (load balancing).
-
 On a grid, the data can be stored at cell-centers, on a face/edge, or
 on the corners.  In BoxLib, data that is on an edge is termed `nodal'
 in that direction (see Figure~\ref{fig:dataloc}).  Data that is on the
