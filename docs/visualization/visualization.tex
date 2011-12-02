@@ -147,6 +147,32 @@ sizes.
 \section{Visualizing with \visit}
 
 
+\section{Visualizing with {\tt data\_processing} scripts}
+
+{\tt data\_processing/python\_plotfile} provide a simple commandline tool for doing 
+visualizations of 2-d BoxLib plotfiles.  The main driver
+is written in python and uses a set of Fortran routines, compiled with
+{\tt f2py} to interface with the plotfile data.  To use the routine,
+you will need to have {\tt matplotlib} and {\tt f2py} installed.  On
+a machine running Fedora linux, you can install these packages via
+\begin{verbatim}
+yum install python-matplotlib f2py
+\end{verbatim}
+
+The library required by the python routines can be built by typing
+'{\tt make}' in that directory.  If successful, you should find
+a library {\tt fsnapshot.so}.  A simple plot can be made via:
+\begin{verbatim}
+plotsinglevar.py --log -o test.png plt00000/ tfromp
+\end{verbatim}
+This will make a plot of ``tfromp'' from the plotfile {\tt plt00000} with log scaling,
+and store the output in {\tt test.png}.
+If you don't do `{\tt -o}', then a default output filename consisting of the
+plotfile name + component will be used.
+
+
+
+
 \section{Visualizing with \yt}
 \yt is a Python package for analyzing and visualizing simulation data.
 Originally \yt was written for the {\tt Enzo} code, with focus on
