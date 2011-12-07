@@ -51,8 +51,6 @@ tag_minval                          real               1.0d-4
 tag_maxval                          real               0.99d0
 
 # timestep beyond which we set drive_initial_convection = F
-stop_initial_convection             integer            -1
-
 stop_initial_convection            integer              -1
 
 # factor to multiply the species by; for tagging off of spec
