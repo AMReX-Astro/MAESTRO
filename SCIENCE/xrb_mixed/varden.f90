@@ -14,6 +14,7 @@ subroutine varden()
   use make_plotfile_module
   use restart_module
   use probin_module
+  use runtime_init_module
   use bl_constants_module
   use average_module
   use make_grav_module
@@ -130,7 +131,7 @@ subroutine varden()
   last_plt_written = -1
   last_chk_written = -1
 
-  call probin_init()
+  call runtime_init()
   call init_spherical()
   call init_center()
   call init_rotation()
@@ -149,8 +150,8 @@ subroutine varden()
   ! particle initialization
   call particle_setverbose(.true.)
 
-  ! collect indices into the s multifab and their variable names for the 
-  ! data we want to store with each particle
+  ! collect the indices into the s multifab and the associated variable
+  ! names for the data we will store along with each particle.
   npartdata = 2 + nspec
   allocate(index_partdata(npartdata))
   allocate(names_partdata(npartdata))
@@ -1372,7 +1373,7 @@ subroutine varden()
 
   call destroy_geometry()
 
-  call probin_close()
+  call runtime_close()
 
   deallocate(uold,sold,pi,gpi,dSdt,Source_old,Source_new,rho_omegadot2, &
              rho_Hnuc2,rho_Hext,tag_mf)
