@@ -845,8 +845,8 @@ contains
     ng_th = nghost(thermal(1))
 
     if (spherical .eq. 1) then
+       p0_nph(1,:) = HALF * (p0_old(1,:) + p0_new(1,:))
        do n = 1,nlevs
-          p0_nph(n,:) = HALF * (p0_old(n,:) + p0_new(n,:))
           call multifab_build(p0_cart(n),mla%la(n),1,1)
        end do
        call put_1d_array_on_cart(p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
