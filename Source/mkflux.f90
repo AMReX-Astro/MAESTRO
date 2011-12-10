@@ -186,7 +186,11 @@ contains
     call destroy(bpt)
     
   end subroutine mk_rhoX_flux
-  
+
+
+  !----------------------------------------------------------------------------
+  ! mk_rhoX_flux_1d
+  !----------------------------------------------------------------------------
   subroutine mk_rhoX_flux_1d(sfluxx,ng_sf,etarhoflux,ng_ef,sedgex,ng_se, &
                              umac,ng_um,rho0_edge_old,rho0_edge_new, &
                              rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
@@ -248,6 +252,9 @@ contains
 
   end subroutine mk_rhoX_flux_1d
   
+  !----------------------------------------------------------------------------
+  ! mk_rhoX_flux_2d
+  !----------------------------------------------------------------------------
   subroutine mk_rhoX_flux_2d(sfluxx,sfluxy,ng_sf,etarhoflux,ng_ef,sedgex,sedgey,ng_se, &
                              umac,vmac,ng_um,rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
                              rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
@@ -340,6 +347,9 @@ contains
 
   end subroutine mk_rhoX_flux_2d
 
+  !----------------------------------------------------------------------------
+  ! mk_rhoX_flux_3d_cart
+  !----------------------------------------------------------------------------
   subroutine mk_rhoX_flux_3d_cart(sfluxx,sfluxy,sfluxz,ng_sf,etarhoflux,ng_ef, &
                                   sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
                                   rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
@@ -466,6 +476,9 @@ contains
      
   end subroutine mk_rhoX_flux_3d_cart
 
+  !----------------------------------------------------------------------------
+  ! mk_rhoX_flux_3d_sphr
+  !----------------------------------------------------------------------------
   subroutine mk_rhoX_flux_3d_sphr(sfluxx,sfluxy,sfluxz,ng_sf,&
                                   sedgex,sedgey,sedgez,ng_se, &
                                   umac,vmac,wmac,ng_um, &
@@ -602,6 +615,8 @@ contains
     end do ! end loop over components
      
   end subroutine mk_rhoX_flux_3d_sphr
+
+
 
   !**************************************************************************
   ! enthalpy fluxes
@@ -787,6 +802,9 @@ contains
     
   end subroutine mk_rhoh_flux
 
+  !----------------------------------------------------------------------------
+  ! mk_rhoh_flux_1d
+  !----------------------------------------------------------------------------
   subroutine mk_rhoh_flux_1d(sfluxx,ng_sf,sedgex,ng_se, &
                              umac,ng_um,rho0_edge_old,rho0_edge_new, &
                              rhoh0_edge_old,rhoh0_edge_new, &
@@ -858,7 +876,10 @@ contains
     end if
 
   end subroutine mk_rhoh_flux_1d
-  
+
+  !----------------------------------------------------------------------------
+  ! mk_rhoh_flux_2d
+  !----------------------------------------------------------------------------
   subroutine mk_rhoh_flux_2d(sfluxx,sfluxy,ng_sf,sedgex,sedgey,ng_se, &
                              umac,vmac,ng_um,rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
                              rhoh0_old,rhoh0_edge_old,rhoh0_new,rhoh0_edge_new, &
@@ -984,6 +1005,9 @@ contains
 
   end subroutine mk_rhoh_flux_2d
 
+  !----------------------------------------------------------------------------
+  ! mk_rhoh_flux_3d_cart
+  !----------------------------------------------------------------------------
   subroutine mk_rhoh_flux_3d_cart(sfluxx,sfluxy,sfluxz,ng_sf,&
                                   sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
                                   rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
@@ -993,7 +1017,7 @@ contains
     use bl_constants_module
     use network, only : nspec
     use variables, only : rho_comp, rhoh_comp
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: species_pred_type, enthalpy_pred_type
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_se,ng_um
@@ -1026,22 +1050,49 @@ contains
     ! create x-fluxes and y-fluxes
     if (test) then
 
-       do k=lo(3),hi(3)
-          rho0_edge = HALF*(rho0_old(k)+rho0_new(k))
-          do j=lo(2),hi(2)
-             do i=lo(1),hi(1)+1
-                sfluxx(i,j,k,rhoh_comp) = &
-                     umac(i,j,k)*(rho0_edge+sedgex(i,j,k,rho_comp))*sedgex(i,j,k,rhoh_comp)
+       ! enthalpy edge state is h
+       if (species_pred_type == predict_rhoprime_and_X .or. &
+           species_pred_type == predict_rhoprime_and_rhoX) then
+
+          ! density edge state is rho'
+          do k=lo(3),hi(3)
+             rho0_edge = HALF*(rho0_old(k)+rho0_new(k))
+             do j=lo(2),hi(2)
+                do i=lo(1),hi(1)+1
+                   sfluxx(i,j,k,rhoh_comp) = &
+                        umac(i,j,k)*(rho0_edge+sedgex(i,j,k,rho_comp))*sedgex(i,j,k,rhoh_comp)
+                end do
+             end do
+
+             do j=lo(2),hi(2)+1
+                do i=lo(1),hi(1)
+                   sfluxy(i,j,k,rhoh_comp) = &
+                        vmac(i,j,k)*(rho0_edge+sedgey(i,j,k,rho_comp))*sedgey(i,j,k,rhoh_comp)
+                end do
              end do
           end do
 
-          do j=lo(2),hi(2)+1
-             do i=lo(1),hi(1)
-                sfluxy(i,j,k,rhoh_comp) = &
-                     vmac(i,j,k)*(rho0_edge+sedgey(i,j,k,rho_comp))*sedgey(i,j,k,rhoh_comp)
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho
+          do k=lo(3),hi(3)
+
+             do j=lo(2),hi(2)
+                do i=lo(1),hi(1)+1
+                   sfluxx(i,j,k,rhoh_comp) = &
+                        umac(i,j,k)*sedgex(i,j,k,rho_comp)*sedgex(i,j,k,rhoh_comp)
+                end do
+             end do
+
+             do j=lo(2),hi(2)+1
+                do i=lo(1),hi(1)
+                   sfluxy(i,j,k,rhoh_comp) = &
+                        vmac(i,j,k)*sedgey(i,j,k,rho_comp)*sedgey(i,j,k,rhoh_comp)
+                end do
              end do
           end do
-       end do
+
+       endif
 
     else if (test2) then
 
@@ -1069,15 +1120,34 @@ contains
     ! create z-fluxes
     if (test) then
 
-       do k=lo(3),hi(3)+1
-          rho0_edge = HALF*(rho0_edge_old(k)+rho0_edge_new(k))
-          do j=lo(2),hi(2)
-             do i=lo(1),hi(1)
-                sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k)+w0(k))* &
-                     (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,rhoh_comp)
+       ! enthalpy edge state is h
+       if (species_pred_type == predict_rhoprime_and_X .or. &
+           species_pred_type == predict_rhoprime_and_rhoX) then
+
+          ! density edge state is rho'
+          do k=lo(3),hi(3)+1
+             rho0_edge = HALF*(rho0_edge_old(k)+rho0_edge_new(k))
+             do j=lo(2),hi(2)
+                do i=lo(1),hi(1)
+                   sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k)+w0(k))* &
+                        (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,rhoh_comp)
+                end do
              end do
           end do
-       end do
+
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho
+          do k=lo(3),hi(3)+1
+             do j=lo(2),hi(2)
+                do i=lo(1),hi(1)
+                   sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k)+w0(k))* &
+                        sedgez(i,j,k,rho_comp)*sedgez(i,j,k,rhoh_comp)
+                end do
+             end do
+          end do
+
+       endif
 
     else if (test2) then
 
@@ -1099,6 +1169,9 @@ contains
 
   end subroutine mk_rhoh_flux_3d_cart
 
+  !----------------------------------------------------------------------------
+  ! mk_rhoh_flux_3d_sphr
+  !----------------------------------------------------------------------------
   subroutine mk_rhoh_flux_3d_sphr(sfluxx,sfluxy,sfluxz,ng_sf,&
                                   sedgex,sedgey,sedgez,ng_se, &
                                   umac,vmac,wmac,ng_um, &
@@ -1113,7 +1186,7 @@ contains
     use network, only: nspec
     use variables, only: rho_comp, rhoh_comp
     use pred_parameters
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: species_pred_type, enthalpy_pred_type
 
     integer        , intent(in   ) :: lo(:),hi(:)
     integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_w0,ng_0m
@@ -1154,29 +1227,56 @@ contains
     
     test2 = enthalpy_pred_type.eq.predict_hprime
     
-    ! loop for x-fluxes
+    ! create x-fluxes
     if (test) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge)
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)+1
+       ! enthalpy edge state is h
+       if (species_pred_type == predict_rhoprime_and_X .or. &
+           species_pred_type == predict_rhoprime_and_rhoX) then
 
-                rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
+          ! density edge state is rho' 
 
-                sfluxx(i,j,k,rhoh_comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
-                     (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,rhoh_comp)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge)
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)+1
 
+                   rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
+
+                   sfluxx(i,j,k,rhoh_comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
+                        (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,rhoh_comp)
+
+                end do
              end do
           end do
-       end do
-       !$OMP END PARALLEL DO
+          !$OMP END PARALLEL DO
+
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho 
+
+          !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge)
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)+1
+
+                   sfluxx(i,j,k,rhoh_comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
+                        sedgex(i,j,k,rho_comp)*sedgex(i,j,k,rhoh_comp)
+
+                end do
+             end do
+          end do
+          !$OMP END PARALLEL DO
+
+       endif
+
 
     else if (test2) then
 
-       ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
-       ! where h0 is computed from (rho h)_0 / rho_0
+       ! (rho h)_edge = (h' + h_0) * (rho' + rho_0) where h0 is
+       ! computed from (rho h)_0 / rho_0 
        ! sfluxx = (umac(i,j,k)+w0macx(i,j,k)) * (rho h)_edge
+
        !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -1201,9 +1301,10 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
 
-                ! Average (rho h) onto edges by averaging rho and h separately onto edges.
-                ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
-                ! where h_0 is computed from (rho h)_0 / rho_0
+                ! Average (rho h) onto edges by averaging rho and h
+                ! separately onto edges.  (rho h)_edge = (rho h)' +
+                ! (rho_0 * h_0) where h_0 is computed from (rho h)_0 /
+                ! rho_0
                 rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
 
                 h0_edge = HALF*(h0macx_old(i,j,k)+h0macx_new(i,j,k))
@@ -1212,9 +1313,9 @@ contains
                      (umac(i,j,k)+w0macx(i,j,k))*(rho0_edge*h0_edge+sedgex(i,j,k,rhoh_comp))
 
                 ! alternate options that needs further testing
-!                rhoh0_edge = HALF*(rhoh0macx_old(i,j,k)+rhoh0macx_new(i,j,k))
-!                sfluxx(i,j,k,rhoh_comp) = &
-!                     (umac(i,j,k)+w0macx(i,j,k))*(rhoh0_edge+sedgex(i,j,k,rhoh_comp))
+                ! rhoh0_edge = HALF*(rhoh0macx_old(i,j,k)+rhoh0macx_new(i,j,k))
+                ! sfluxx(i,j,k,rhoh_comp) = &
+                !    (umac(i,j,k)+w0macx(i,j,k))*(rhoh0_edge+sedgex(i,j,k,rhoh_comp))
 
              end do
           end do
@@ -1223,29 +1324,55 @@ contains
 
     endif
 
-    ! loop for y-fluxes
+    ! create y-fluxes
     if (test) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge)
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)+1
-             do i = lo(1), hi(1)
+       ! enthalpy edge state is h
+       if (species_pred_type == predict_rhoprime_and_X .or. &
+           species_pred_type == predict_rhoprime_and_rhoX) then
 
-                rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
+          ! density edge state is rho'
 
-                sfluxy(i,j,k,rhoh_comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
-                     (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,rhoh_comp)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge)
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
 
+                   rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
+
+                   sfluxy(i,j,k,rhoh_comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
+                        (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,rhoh_comp)
+
+                end do
              end do
           end do
-       end do
-       !$OMP END PARALLEL DO
+          !$OMP END PARALLEL DO
+
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho
+
+          !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge)
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
+
+                   sfluxy(i,j,k,rhoh_comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
+                        sedgey(i,j,k,rho_comp)*sedgey(i,j,k,rhoh_comp)
+
+                end do
+             end do
+          end do
+          !$OMP END PARALLEL DO
+
+       endif
 
     else if (test2) then
 
-       ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
-       ! where h0 is computed from (rho h)_0 / rho_0
+       ! (rho h)_edge = (h' + h_0) * (rho' + rho_0) where h0 is
+       ! computed from (rho h)_0 / rho_0 
        ! sfluxy = (vmac(i,j,k)+w0macy(i,j,k)) * (rho h)_edge
+
        !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)+1
@@ -1270,9 +1397,10 @@ contains
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
 
-                ! Average (rho h) onto edges by averaging rho and h separately onto edges.
-                ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
-                ! where h_0 is computed from (rho h)_0 / rho_0
+                ! Average (rho h) onto edges by averaging rho and h
+                ! separately onto edges.  (rho h)_edge = (rho h)' +
+                ! (rho_0 * h_0) where h_0 is computed from (rho h)_0 /
+                ! rho_0
                 rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
 
                 h0_edge = HALF*(h0macy_old(i,j,k)+h0macy_new(i,j,k))
@@ -1281,9 +1409,9 @@ contains
                      (vmac(i,j,k)+w0macy(i,j,k))*(rho0_edge*h0_edge+sedgey(i,j,k,rhoh_comp))
 
                 ! alternate options that needs further testing
-!                rhoh0_edge = HALF*(rhoh0macy_old(i,j,k)+rhoh0macy_new(i,j,k))
-!                sfluxy(i,j,k,rhoh_comp) = &
-!                     (vmac(i,j,k)+w0macy(i,j,k))*(rhoh0_edge+sedgey(i,j,k,rhoh_comp))
+                ! rhoh0_edge = HALF*(rhoh0macy_old(i,j,k)+rhoh0macy_new(i,j,k))
+                ! sfluxy(i,j,k,rhoh_comp) = &
+                !   (vmac(i,j,k)+w0macy(i,j,k))*(rhoh0_edge+sedgey(i,j,k,rhoh_comp))
 
              end do
           end do
@@ -1293,29 +1421,55 @@ contains
     endif
 
 
-    ! loop for z-fluxes
+    ! create z-fluxes
     if (test) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge)
-       do k = lo(3), hi(3)+1
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
+       ! enthalpy edge state is h
+       if (species_pred_type == predict_rhoprime_and_X .or. &
+           species_pred_type == predict_rhoprime_and_rhoX) then
 
-                rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
+          ! density edge state is rho'
 
-                sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
-                     (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,rhoh_comp)
+          !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge)
+          do k = lo(3), hi(3)+1
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
 
+                   rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
+
+                   sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
+                        (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,rhoh_comp)
+
+                end do
              end do
           end do
-       end do
-       !$OMP END PARALLEL DO
+          !$OMP END PARALLEL DO
+
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho
+
+          !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge)
+          do k = lo(3), hi(3)+1
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+
+                   sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
+                        sedgez(i,j,k,rho_comp)*sedgez(i,j,k,rhoh_comp)
+
+                end do
+             end do
+          end do
+          !$OMP END PARALLEL DO
+
+       endif
 
     else if (test2) then
 
        ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
        ! where h0 is computed from (rho h)_0 / rho_0
        ! sfluxz = (wmac(i,j,k)+w0macz(i,j,k)) * (rho h)_edge
+
        !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)+1
           do j = lo(2), hi(2)
@@ -1340,9 +1494,10 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
-                ! Average (rho h) onto edges by averaging rho and h separately onto edges.
-                ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
-                ! where h_0 is computed from (rho h)_0 / rho_0
+                ! Average (rho h) onto edges by averaging rho and h
+                ! separately onto edges.  (rho h)_edge = (rho h)' +
+                ! (rho_0 * h_0) where h_0 is computed from (rho h)_0 /
+                ! rho_0
                 rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
 
                 h0_edge = HALF*(h0macz_old(i,j,k)+h0macz_new(i,j,k))
@@ -1351,9 +1506,9 @@ contains
                      (wmac(i,j,k)+w0macz(i,j,k))*(rho0_edge*h0_edge+sedgez(i,j,k,rhoh_comp))
 
                 ! alternate options that needs further testing
-!                rhoh0_edge = HALF*(rhoh0macz_old(i,j,k)+rhoh0macz_new(i,j,k))
-!                sfluxz(i,j,k,rhoh_comp) = &
-!                     (wmac(i,j,k)+w0macz(i,j,k))*(rhoh0_edge+sedgez(i,j,k,rhoh_comp))
+                ! rhoh0_edge = HALF*(rhoh0macz_old(i,j,k)+rhoh0macz_new(i,j,k))
+                ! sfluxz(i,j,k,rhoh_comp) = &
+                !   (wmac(i,j,k)+w0macz(i,j,k))*(rhoh0_edge+sedgez(i,j,k,rhoh_comp))
 
              end do
           end do
