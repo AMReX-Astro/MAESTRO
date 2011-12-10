@@ -120,7 +120,7 @@ subroutine varden()
   real(dp_t), allocatable :: w0_temp(:,:)
   real(dp_t), allocatable :: tempbar_init_temp(:,:)
 
-  logical :: dump_plotfile, dump_checkpoint
+  logical :: dump_plotfile, dump_checkpoint, abort_maestro
 
   type(particle_container) :: particles
   integer :: numparticles
@@ -1300,6 +1300,15 @@ subroutine varden()
            end if
         end if
 
+
+        ! if the file .abort_maestro exists in our output directory, then
+        ! automatically end the run.  This has the effect of also dumping
+        ! a final checkpoint file.
+        inquire(file=".abort_maestro", exist=abort_maestro)        
+        if (abort_maestro) exit
+           
+
+        ! have we reached the stop time?
         if (stop_time >= 0.d0) then
            if (time >= stop_time) goto 999
         end if
