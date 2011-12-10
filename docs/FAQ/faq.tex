@@ -8,11 +8,11 @@
 
    On some machines it does---Fortran 95 specifies that any local
    allocated arrays are automatically deallocated when a subroutine
-   ends.  Fortran 90 does not do this.  Most MAESTRO routines rely 
+   ends.  Fortran 90 does not do this.  Most \maestro\ routines rely 
    on this Fortran 95 feature.  
 
    On IBM machines, for instance, using {\tt xlf90} instead of {\tt
-     xlf95} for MAESTRO will produce memory leaks.
+     xlf95} for \maestro\ will produce memory leaks.
 
 \item {\em The code doesn't compile, but complains right away that there
    is ``{\tt No rule to make target `fabio\_c.c', needed by `t/Linux.gfortran.mpi/c.depends'}''}
@@ -40,7 +40,7 @@
 \end{verbatim}
 
 
-\item {\em  MAESTRO crashes because the multigrid algorithm fails to
+\item {\em  \maestro\ crashes because the multigrid algorithm fails to
     converge---how do I get around this?}
 
   Setting general convergence criteria for multigrid is as much
@@ -84,6 +84,16 @@
   
   where {\em exec-name} is the name of the executable.
 
+\item{\em How can I force \maestro\ to abort?}
+
+  In the output directory, do `{\tt touch .abort\_maestro}'.  This 
+  will cause the code to write out a final checkpoint file, free up
+  any allocated memory, and gracefully exit.  Be sure to remove the 
+  {\tt .abort\_maestro} file before restarting the code in the 
+  same directory.
+
+
+
 \end{enumerate}
 
 
@@ -113,14 +123,17 @@
    date, as well as the value of every runtime parameter for the run.
 
 
-\item {\em How can I force the code to output a plotfile at the next
-   step?}
+\item {\em How can I force the code to output a plotfile / checkpoint
+  file at the next step?}
 
    In the output directory (where the code is running) do `{\tt touch
      .dump\_plotfile}'.  This will create an empty file called {\tt
      .dump\_plotfile}.  At the end of each step, if the code finds
    that file, it will output a plotfile.  Simply delete the file to
    restore the code to its normal plotfile behavior.
+
+   Similarly, creating the file {\tt .dump\_checkpoint} will force the
+   output of a checkpoint file.  
 
 \end{enumerate}
 
@@ -158,7 +171,7 @@
 \item {\em Can I run a full star in 2-d axisymmetric geometry?}
 
  No.  This is a design decision.  There is no support for axisymmetric
- coordinates in MAESTRO.  Spherical problems must be run in 3-d.
+ coordinates in \maestro.  Spherical problems must be run in 3-d.
 
 
 \end{enumerate}
