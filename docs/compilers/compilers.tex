@@ -14,7 +14,14 @@ really well and the debugging features are very reliable.
 
 \subsection{PGI}
 
-(on Kraken) The bounds checking routines do not like the way some of
+The general feeling with these compilers is that they produce slower
+code than the PathScale compilers.
+
+\ \\
+Machine-specific notes:
+\begin{itemize}
+
+\item (on Kraken) The bounds checking routines do not like the way some of
 the arrays are allocated and flag them as errors.  For instance, in
 {\tt layout.f90}, we allocate a box as:
 \begin{verbatim}
@@ -22,13 +29,33 @@ the arrays are allocated and flag them as errors.  For instance, in
 \end{verbatim}
 but the bounds checking routine seems to fail on this.
 
-(on hopper) There are problems with code compiled with {\tt -fast}
+\item (on hopper) There are problems with code compiled with {\tt -fast}
 instead of just {\tt -O}.  gcc/gfortran seem to work better and 
 are only slighly slower.
-
+\end{itemize}
 
 \subsection{PathScale}
 
-These are the prefered compilers on jaguar.
+These are the prefered compilers on jaguar, however, the PathScale
+compilers are no longer actively supported on the Crays and therefore
+should be considered depricated. 
 
-To run with BDS, change {\tt -Ofast} to {\tt -O2} in {\tt Linux\_pathscale.mak}
+
+\ \\
+Machine specific notes:
+\begin{itemize}
+
+\item  To run with BDS, change {\tt -Ofast} to {\tt -O2} in {\tt Linux\_pathscale.mak}
+
+\item (on jaguar) with OpenMP, the Pathscale compiler warns about
+  variables that are shared, but doesn't always give useful line
+  numbers.  In debug mode, add ``-fullwarn'' to the compilation to get
+  the compiler output to tell you where the problems are. 
+
+
+\end{itemize}
+
+
+\subsection{Cray}
+
+So far, no luck with these compilers (versions 7.4.3 and 8.0.0.135).
