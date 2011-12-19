@@ -133,18 +133,8 @@ contains
     ! for species_pred_types predict_rhoprime_and_X and
     ! predict_rho_and_X, there is not force for X.
 
-    ! for predict_rhoprime_and_rhoX, the source term is the non-advective part of
-    ! the flux.  Note the base state density quantities that we pass
-    ! in here are ignored since we are making the force assuming a
-    ! full form (not perturbational) of the species advection
-    ! equation.
-    if (species_pred_type == predict_rhoprime_and_rhoX) then
-       do i = 1, nspec
-          call modify_scal_force(scal_force,sold,umac,rho0_old, &
-                                 rho0_edge_old,w0,dx,rho0_old_cart,spec_comp-1+i,mla, &
-                                 the_bc_level,.true.)
-       enddo
-    endif
+    ! for predict_rhoprime_and_rhoX, we are predicting (rho X)
+    ! as a conservative equation, and there is not force.
 
     if (spherical .eq. 1) then
        do n=1,nlevs
@@ -183,15 +173,37 @@ contains
 
     ! predict species at the edges -- note, either X or (rho X) will be
     ! predicted here, depending on species_pred_type
-    if (bds_type .eq. 0) then
-       call make_edge_scal(sold,sedge,umac,scal_force, &
-                           dx,dt,is_vel,the_bc_level, &
-                           spec_comp,dm+spec_comp,nspec,.false.,mla)
-    else if (bds_type .eq. 1) then
-       call bds(sold,sedge,umac,scal_force, &
-                dx,dt,is_vel,the_bc_level, &
-                spec_comp,dm+spec_comp,nspec,.false.,mla)
-    end if
+
+    if ((species_pred_type == predict_rhoprime_and_X) .or. &
+        (species_pred_type == predict_rho_and_X)) then
+
+       ! we are predicting X to the edges, using the advective form of
+       ! the prediction
+       if (bds_type .eq. 0) then
+          call make_edge_scal(sold,sedge,umac,scal_force, &
+                              dx,dt,is_vel,the_bc_level, &
+                              spec_comp,dm+spec_comp,nspec,.false.,mla)
+       else if (bds_type .eq. 1) then
+          call bds(sold,sedge,umac,scal_force, &
+                   dx,dt,is_vel,the_bc_level, &
+                   spec_comp,dm+spec_comp,nspec,.false.,mla)
+       end if
+
+    else if (species_pred_type == predict_rhoprime_and_rhoX) then
+
+       ! we are predicting (rho X) to the edges, using the
+       ! conservative form of the prediction
+       if (bds_type .eq. 0) then
+          call make_edge_scal(sold,sedge,umac,scal_force, &
+                              dx,dt,is_vel,the_bc_level, &
+                              spec_comp,dm+spec_comp,nspec,.true.,mla)
+       else if (bds_type .eq. 1) then
+          call bds(sold,sedge,umac,scal_force, &
+                   dx,dt,is_vel,the_bc_level, &
+                   spec_comp,dm+spec_comp,nspec,.true.,mla)
+       end if
+
+    endif
 
     ! predict rho or rho' at the edges (depending on species_pred_type)
     if (bds_type .eq. 0) then
