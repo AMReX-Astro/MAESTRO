@@ -27,7 +27,7 @@ would appear as:
                                          -v \frac{\partial \phi}{\partial y} + f \right ) \\
  &=& \phi_{i,j}^n + \frac{\Delta x}{2} \left ( 1 - \frac{\Delta t}{\Delta x} u \right ) 
            \frac{\partial \phi}{\partial x} 
-    \underbrace{- \frac{\Delta t}{2} v \frac{\partial \phi}{\partial y}}_{\mathrm{``transverse~term''}} + \frac{\Delta t}{2} f
+    \underbrace{- \frac{\Delta t}{2} v \frac{\partial \phi}{\partial y}}_{\text{``transverse~term''}} + \frac{\Delta t}{2} f
 \end{eqnarray}
 (see the Godunov notes section for more details).  Here, the
 ``transverse term'' is accounted for in {\tt make\_edge\_scal}.  Any
@@ -53,12 +53,14 @@ Now a piecewise linear prediction of $\phi$ to the interface is
                                   -\frac{\partial (\phi v)}{\partial y} + f \right ) \\
  &=& \phi_{i,j}^n + \frac{\Delta x}{2} \left ( 1 - \frac{\Delta t}{\Delta x} u \right ) 
            \frac{\partial \phi}{\partial x} 
-    \underbrace{- \frac{\Delta t}{2} \phi \frac{\partial u}{\partial x} 
-                - \frac{\Delta t}{2} \frac{\partial (\phi v)}{\partial y}}_{\mathrm{``transverse~term''}} + \frac{\Delta t}{2} f
+    \underbrace{- \frac{\Delta t}{2} \phi \frac{\partial u}{\partial x} }_{\text{``non-advective~term''}}
+                \underbrace{- \frac{\Delta t}{2} \frac{\partial (\phi v)}{\partial y}}_{\text{``transverse~term''}} + \frac{\Delta t}{2} f
 \end{eqnarray}
-Here the ``transverse term'' includes the non-advective portion of the $x$-flux (for the $x$-prediction).
-Both of the underbraced terms are accounted for in {\tt make\_edge\_scal} automatically when
-we call it with {\tt is\_conservative = .true.}.
+Here the ``transverse term'' is now in conservative form, and an additional
+term, the non-advective portion of the
+$x$-flux (for the $x$-prediction) appears.  Both of the underbraced terms are
+accounted for in {\tt make\_edge\_scal} automatically when we call it
+with {\tt is\_conservative = .true.}.
 
 
 %-----------------------------------------------------------------------------
@@ -213,17 +215,16 @@ The force seen by {\tt make\_edge\_scal} is 0.
 \subsection{Method 2: {\tt species\_pred\_type} = {\tt predict\_rhoprime\_and\_rhoX}}
 
 Here we wish to construct $(\rho X_k)_\mathrm{edge}$ by predicting
-$(\rho X_k)$ to the edges as a single quantity.  We start with
+$(\rho X_k)$ to the edges as a single quantity.  We recall
 Eq.~\ref{species equation}:
 \begin{equation}
 \frac{\partial(\rho X_k)}{\partial t} =
-  -\Ub\cdot\nabla(\rho X_k) \, \underbrace{-\rho X_k \nabla\cdot\Ub}_{``\rho X_k ~\text{force''}} + \rho \omegadot_k \, . \label{species equation labeled}
+  -\nabla \cdot (\rho \Ub X_k) + \rho \omegadot_k \, . \nonumber
 \end{equation}
 The edge state is created by calling {\tt make\_edge\_scal} in {\tt
-  density\_advance} with the underbraced term in (\ref{species
-  equation labeled}) as the forcing.  This advective force is computed
-by {\tt modify\_scal\_force} with {\tt fullform = .true.}.  We do not
-consider the $\omegadot_k$ term in the forcing when Strang-splitting.
+  density\_advance} with {\tt is\_conservative = .true.}.
+We do not consider the $\rho \omegadot_k$ term in the forcing when
+Strang-splitting.
 
 
 We note that even though it is not needed here, we still predict
@@ -267,7 +268,7 @@ associated discretization is \\
 \begin{equation}
 \frac{\partial\rho X_k}{\partial t} = 
 -\nabla\cdot\left\{\left[\left(\rho X_k \right)_\mathrm{edge} \right](\Ubt+w_0\eb_r)\right\}.
-\end{equation}
+\end{equation} \\
 
 
 \noindent {\tt species\_pred\_type = predict\_rho\_and\_X}:
