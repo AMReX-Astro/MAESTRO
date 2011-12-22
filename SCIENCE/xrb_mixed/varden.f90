@@ -5,6 +5,7 @@ subroutine varden()
   use geometry
   use base_state_module
   use base_io_module
+  use aux_data_module
   use estdt_module
   use firstdt_module
   use advance_timestep_module
@@ -26,11 +27,11 @@ subroutine varden()
   use conductivity_module
   use divu_iter_module
   use initial_proj_module
-  use init_particles_module
   use make_gamma_module
   use enforce_HSE_module
   use rhoh_vs_t_module
   use initialize_module
+  use init_particles_module
   use make_new_grids_module
   use regrid_module
   use make_eta_module
@@ -120,9 +121,10 @@ subroutine varden()
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
 
-  logical :: dump_plotfile, dump_checkpoint
+  logical :: dump_plotfile, dump_checkpoint, abort_maestro
 
   type(particle_container) :: particles
+  integer :: numparticles
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialization
@@ -166,6 +168,7 @@ subroutine varden()
      index_partdata(2+n) = spec_comp -1 + n
      names_partdata(2+n) = spec_names(n)
   enddo
+
 
   if (restart >= 0) then
 
@@ -217,7 +220,6 @@ subroutine varden()
                                          etarho_ec,etarho_cc,psi,tempbar,tempbar_init,grav_cell)
 
   end if
-
 
 
 
@@ -535,11 +537,27 @@ subroutine varden()
 
      end if ! end if (init_iter > 0)
 
+
+     ! initialize any passively-advected particles
+     if (use_particles) then
+        call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar, &
+                            mla,dx,1)
+
+        numparticles = particle_global_numparticles(particles)
+
+        if ( parallel_IOProcessor()) then
+           print *,""
+           print *,"number of particles initialized = ", numparticles
+           print *,""
+        endif
+     endif
+
+
      if ( chk_int > 0 ) then
 
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
         ! write a checkpoint file
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
 
         allocate(chkdata(nlevs))
         do n = 1,nlevs
@@ -567,6 +585,8 @@ subroutine varden()
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
+        call write_aux_data(istep, check_file_name)
+
         last_chk_written = istep
 
         do n = 1,nlevs
@@ -581,9 +601,9 @@ subroutine varden()
 
      if ( plot_int > 0 .or. plot_deltat > ZERO) then
 
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
         ! write a plotfile
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
 
         if (istep <= 99999) then
            write(unit=plot_index,fmt='(i5.5)') istep
@@ -617,12 +637,6 @@ subroutine varden()
 
   if (restart < 0) then
      init_step = 1
-
-     ! initialize any passively-advected particles
-     if (use_particles) then
-        call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar,&
-                            mla,dx,1)
-     endif
   else
      init_step = restart+1
   end if
@@ -958,6 +972,7 @@ subroutine varden()
            ! div_coeff_old needs to be recomputed
            call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
 
+
            ! redistribute the particles to their new processor locations
            if (use_particles) call redistribute(particles,mla,dx,prob_lo)
 
@@ -1046,6 +1061,8 @@ subroutine varden()
                               Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init, &
                               particles)
 
+
+        ! limit the timestep if the temperature is changing too rapidly
         if (nuclear_dt_fac .gt. 0.d0) then
            smaxold = 0.d0
            smax    = 0.d0
@@ -1162,9 +1179,15 @@ subroutine varden()
 
         ! output any particle information
         if (use_particles) then
-           call timestamp(particles, "timestamp", sold, index_partdata, &
-                          names_partdata, time)
+           if (store_particle_vels) then
+              call timestamp(particles, "timestamp", sold, index_partdata, &
+                             names_partdata, time, uold)
+           else
+              call timestamp(particles, "timestamp", sold, index_partdata, &
+                             names_partdata, time)
+           endif
         endif
+
 
         ! if the file .dump_checkpoint exists in our output directory, then
         ! automatically dump a plotfile
@@ -1202,6 +1225,8 @@ subroutine varden()
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
                                     w0, etarho_ec, etarho_cc, &
                                     div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+
+              call write_aux_data(istep, check_file_name)
 
               last_chk_written = istep
 
@@ -1252,6 +1277,15 @@ subroutine varden()
            end if
         end if
 
+
+        ! if the file .abort_maestro exists in our output directory, then
+        ! automatically end the run.  This has the effect of also dumping
+        ! a final checkpoint file.
+        inquire(file=".abort_maestro", exist=abort_maestro)
+        if (abort_maestro) exit
+
+        
+        ! have we reached the stop time?
         if (stop_time >= 0.d0) then
            if (time >= stop_time) goto 999
         end if
@@ -1299,6 +1333,8 @@ subroutine varden()
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+
+        call write_aux_data(istep, check_file_name)
 
         do n = 1,nlevs
            call destroy(chkdata(n))
