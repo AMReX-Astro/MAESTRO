@@ -32,6 +32,7 @@ section_sources = maestro_doc.bib \
                   radial_base/radial_base.tex \
                   spherical_basestate/basestate.tex \
                   FAQ/faq.tex \
+                  compilers/compilers.tex \
                   analysis/analysis.tex \
                   thermo_notes/thermo_notes.tex \
                   visualization/visualization.tex
