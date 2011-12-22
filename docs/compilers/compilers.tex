@@ -2,38 +2,45 @@
 
 Here, we list notes on problems with specific compilers and \maestro.
 
-\subsection{Intel}
 
-Overall, these tend to be flaky. 
+%-----------------------------------------------------------------------------
+\subsection{Cray}
 
+So far, no luck with these compilers (versions 7.4.3 and 8.0.0.135).
+
+
+%-----------------------------------------------------------------------------
 \subsection{gfortran}
 
 Probably the best compilers for \maestro.  Versions 4.5 and 4.6 seem to work
 really well and the debugging features are very reliable.
 
 
-\subsection{PGI}
+%-----------------------------------------------------------------------------
+\subsection{IBM (xl* compilers)}
 
-The general feeling with these compilers is that they produce slower
-code than the PathScale compilers.
-
-\ \\
-Machine-specific notes:
+Recent versions of these compilers seem to work ok.  Some notes:
 \begin{itemize}
+\item You need to use {\tt xlf95}, not {\tt xlf90} to compile, since
+  MAESTRO relies on the Fortran 95 feature that arrays are
+  automatically deallocated when you leave a subroutine.
 
-\item (on Kraken) The bounds checking routines do not like the way some of
-the arrays are allocated and flag them as errors.  For instance, in
-{\tt layout.f90}, we allocate a box as:
-\begin{verbatim}
-    type(box) :: bxs(3**get_dim(b))
-\end{verbatim}
-but the bounds checking routine seems to fail on this.
+\item Many (all?) IBM machines have a different endian-ness than
+  Intel-like chips.  \boxlib\ plotfiles store information used to
+  dechipher the endian-ness of the data.  To do this properly on
+  the IBM machines, you need to set the preprocessor flag {\tt BL\_AIX},
+  which is interpretted by {\tt fabio\_c.c}.  This can be done for the
+  IBM compilers by adding {\tt -Wp,-DBL\_AIX} to the {\tt CFLAGS} variable.
 
-\item (on hopper) There are problems with code compiled with {\tt -fast}
-instead of just {\tt -O}.  gcc/gfortran seem to work better and 
-are only slighly slower.
 \end{itemize}
 
+%-----------------------------------------------------------------------------
+\subsection{Intel}
+
+Overall, these tend to be flaky. 
+
+
+%-----------------------------------------------------------------------------
 \subsection{PathScale}
 
 These are the prefered compilers on jaguar, however, the PathScale
@@ -56,6 +63,27 @@ Machine specific notes:
 \end{itemize}
 
 
-\subsection{Cray}
+%-----------------------------------------------------------------------------
+\subsection{PGI}
 
-So far, no luck with these compilers (versions 7.4.3 and 8.0.0.135).
+The general feeling with these compilers is that they produce slower
+code than the PathScale compilers.
+
+\ \\
+Machine-specific notes:
+\begin{itemize}
+
+\item (on Kraken) The bounds checking routines do not like the way some of
+the arrays are allocated and flag them as errors.  For instance, in
+{\tt layout.f90}, we allocate a box as:
+\begin{verbatim}
+    type(box) :: bxs(3**get_dim(b))
+\end{verbatim}
+but the bounds checking routine seems to fail on this.
+
+\item (on hopper) There are problems with code compiled with {\tt -fast}
+instead of just {\tt -O}.  gcc/gfortran seem to work better and 
+are only slighly slower.
+\end{itemize}
+
+
