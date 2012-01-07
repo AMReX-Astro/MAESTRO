@@ -5,7 +5,7 @@ import sys
 Mheader=r"""
 \section{Runtime Parameters}
 
-Table~\ref{table:runtime} lists the runtime parameters available to
+The following tables list the runtime parameters available to
 all MAESTRO problems.  Problem-specific runtime parameters are not
 shown here.
 
@@ -23,7 +23,7 @@ header=r"""
 %
 \begin{center}
 \begin{longtable}{|l|p{5.25in}|l|}
-\caption[@@catname@@]{@@catname@@} \label{table:runtime} \\
+\caption[@@catname@@]{@@catname@@} \label{table: @@catname@@ runtime} \\
 %
 \hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
        \multicolumn{1}{ c|}{\textbf{description}} & 
