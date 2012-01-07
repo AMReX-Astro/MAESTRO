@@ -23,7 +23,7 @@ header=r"""
 %
 \begin{center}
 \begin{longtable}{|l|p{5.25in}|l|}
-\caption[runtime parameters]{@@catname@@} \label{table:runtime} \\
+\caption[@@catname@@]{@@catname@@} \label{table:runtime} \\
 %
 \hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
        \multicolumn{1}{ c|}{\textbf{description}} & 
