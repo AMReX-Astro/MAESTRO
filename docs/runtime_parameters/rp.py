@@ -2,7 +2,7 @@
 import sys
 
 # tex format stuff
-header=r"""
+Mheader=r"""
 \section{Runtime Parameters}
 
 Table~\ref{table:runtime} lists the runtime parameters available to
@@ -14,14 +14,16 @@ shown here.
 %%%%%%%%%%%%%%%%
 
 \begin{landscape}
+"""
 
+header=r"""
 {\small
 
 \renewcommand{\arraystretch}{1.5}
 %
 \begin{center}
 \begin{longtable}{|l|p{5.25in}|l|}
-\caption[runtime parameters]{runtime parameters.} \label{table:runtime} \\
+\caption[runtime parameters]{@@catname@@} \label{table:runtime} \\
 %
 \hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
        \multicolumn{1}{ c|}{\textbf{description}} & 
@@ -49,7 +51,9 @@ footer=r"""
 \end{center}
 
 } % ends \small
+"""
 
+Mfooter=r"""
 \end{landscape}
 
 %
@@ -66,7 +70,14 @@ class Parameter:
         self.var=""
         self.default=""
         self.description=[]
+        self.category=""
 
+    def value(self):
+        """ the value is what we sort based on """
+        return self.category + "." + self.var
+
+    def __cmp__(self, other):
+        return cmp(self.value(), other.value())
 
 
 def make_tex_table():
@@ -78,22 +89,27 @@ def make_tex_table():
         sys.exit(2)
 
     # local storage for the parameters
-    paramsDict={}
     paramsList=[]
     descr=r""
+    category=""
 
     # read in the file
     # skip all lines before the first empty line
     foundFirstParam = False
 
-    for line in f:
+    line = f.readline()
+    while (line):
+
         if not foundFirstParam:
             if line.isspace():
                 # this is the first empty line and we begin reading the file 
                 # from here on out
                 foundFirstParam = True
+                line = f.readline()
                 continue
+
             # no blank line found yet, keep going
+            line = f.readline()
             continue
 
         # land here once we have found the first parameter
@@ -101,11 +117,33 @@ def make_tex_table():
         
         # skip blank lines
         if line.isspace(): 
+            line = f.readline()
             continue
 
+    
+        # look for category definition
+        elif line.startswith("#------"):
+
+            # the next line should be the category definition
+            line = f.readline()
+            index = line.find(":")
+            category = line[index+1:]
+
+            # following this is another #---------
+            line = f.readline()
+            if (not line.startswith("#------")):
+                print "ERROR: category block not formatted correctly"
+                sys.exit(2)
+
+            line = f.readline()
+            continue
+
+        # find the description
         elif line.startswith("#"):
+
             # handle descriptions here
             descr+=line[1:].rstrip().replace("@@",r"\newline")
+            line = f.readline()
             continue
 
         else:
@@ -115,19 +153,38 @@ def make_tex_table():
             currentParam.var=lineList[0]
             currentParam.default=lineList[2].replace("_","\_")
             currentParam.description=descr
+            currentParam.category=category
 
             descr=r""
 
-        paramsDict[currentParam.var]=currentParam
-        paramsList.append(currentParam.var)
+        
+        # store the current parameter in the list
+        paramsList.append(currentParam)
+        
+        
+        # get the next line
+        line = f.readline()
 
     
-    # dump the header
-    print header
+    # dump the main header
+    print Mheader
 
-    # sort the parameters and dump them in latex-fashion
-    odd = 1
+    # sort the parameters and dump them in latex-fashion.  Group things by category
+    currentCategory = ""
+    start = 1
+
     for param in sorted(paramsList):
+
+        if (not param.category == currentCategory):
+            if (not start == 1):
+                print footer
+
+            currentCategory = param.category
+            odd = 1
+            catHeader = header.replace("@@catname@@", param.category + " parameters.")
+            print catHeader
+            start = 0
+
         if (odd == 1):
             print "\\rowcolor{tableShade}"
             odd = 0
@@ -135,16 +192,16 @@ def make_tex_table():
             odd = 1
 
         print "\\verb= ", \
-            paramsDict[param].var, \
+            param.var, \
             " = & ", \
-            paramsDict[param].description, \
+            param.description, \
             " & ", \
-            paramsDict[param].default, \
+            param.default, \
             r"\\"
 
     # dump the footer
     print footer
-                
+    print Mfooter
 
 if __name__ == "__main__":
     make_tex_table()

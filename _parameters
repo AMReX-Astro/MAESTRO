@@ -5,11 +5,87 @@
 # problem-specific runtime parameters should be defined in a _parameters
 # file in the problem directory.
 
+
+#-----------------------------------------------------------------------------
+# category: general MAESTRO
+#-----------------------------------------------------------------------------
+
+# General verbosity
+verbose                             integer            0                   
+
+# use the MPI alltoallv call
+do_alltoallv                        logical            .false.             
+
+# Verbosity of the knapscak processor-to-grid algorithm.
+the_knapsack_verbosity              logical            .false.             
+
+# job name printed in output
+job_name                            character          ""                  
+
+# Call a parallel\_barrier before each of the simple timers we have coded
+# in advance.f90.  Might cause a very slight overall performance hit.
+barrier_timers                      logical            .false.
+
+
+#-----------------------------------------------------------------------------
+# category: problem initialization
+#-----------------------------------------------------------------------------
+
 # input model file
 model_file                          character          "model.hse"         
 
+# Turn on a perturbation in the initial data.  Problem specific.
+perturb_model                       logical            .false.             
+
+
+#-----------------------------------------------------------------------------
+# category: timestepping 
+#-----------------------------------------------------------------------------
+
 # simulation stop time
 stop_time                           real               -1.d0               
+
+# Maximum number of steps in the simulation.
+max_step                            integer            1                   
+
+# CFL factor to use in the computation of the advection timestep constraint
+cflfac                              real               0.5d0                 
+
+# the multiplicative factor ($\le 1$) to reduce the initial timestep as 
+# computed by the various timestep estimators
+init_shrink                         real               1.d0                 
+
+# the minimum allowed timestep -- we abort if dt drops below this value
+small_dt                            real               1.d-10
+
+# The maximum scale factor that the time step is allowed to grow by per 
+# time step.
+max_dt_growth                       real               1.1d0
+
+# This is the maximum dt that is allowed
+max_dt                              real               1.0d33
+
+# Fix the time step.  If -1.0, then use the standard time step.
+fixed_dt                            real               -1.0d0              
+
+# If $T_{max}^n > T_{max}^{n-1}$
+# set the new dt = 
+#   min[dt, dt*{\tt nuclear\_dt\_fac}*( $T_{max}^{n-1}$ / $(T_{max}^n-T_{max}^{n-1})$ ) ]
+# for example, {\tt nuclear\_dt\_fac} = 0.01 means don't let the max temp grow more 
+# than approximately 1 percent
+# not checkpoint-compatible yet since it wouldn't be backwards compatible
+nuclear_dt_fac                      real               -1.0d0
+
+# Use the soundspeed constraint when computing the first time step.
+use_soundspeed_firstdt              logical            .false.             
+
+# Use the divu constraint when computing the first time step. 
+use_divu_firstdt                    logical            .false.             
+
+
+#-----------------------------------------------------------------------------
+# category: grid
+#-----------------------------------------------------------------------------
 
 # physical coordinates of lo-x corner of problem domain
 prob_lo_x                           real               ZERO                
@@ -29,46 +105,8 @@ prob_hi_y                           real               1.d0
 # physical coordinates of hi-z corner of problem domain
 prob_hi_z                           real               1.d0                    
 
-# Maximum number of steps in the simulation.
-max_step                            integer            1                   
-
-# plot interval
-plot_int                            integer            0                   
-
-# rather than use a plot interval, plot a file after the solution has 
-# advanced past plot\_deltat in time
-plot_deltat                         real               -1.d0                 
-
-# Number of timesteps between writing a checkpoint file
-chk_int                             integer            0                   
-
-# Number of initial pressure iterations.
-init_iter                           integer            4                   
-
-# Number of initial divu iterations.
-init_divu_iter                      integer            4                   
-
-# CFL factor to use in the computation of the advection timestep constraint
-cflfac                              real               0.5d0                 
-
-# the multiplicative factor ($\le 1$) to reduce the initial timestep as 
-# computed by the various timestep estimators
-init_shrink                         real               1.d0                 
-
-# the minimum allowed timestep -- we abort if dt drops below this value
-small_dt                            real               1.d-10
-
 # Fixed grid file.
 test_set                            character          ''                  
-
-# which file to restart from.  -1 means do not restart
-restart                             integer            -1                  
-
-# restart and add a level of refinement
-restart_into_finer                  logical            .false.
-
-# Do the initial projection.
-do_initial_projection               logical            .true.              
 
 # $-x$ boundary condition
 bcx_lo                              integer            SLIP_WALL           
@@ -88,70 +126,8 @@ bcz_lo                              integer            SLIP_WALL
 # $+z$ boundary condition
 bcz_hi                              integer            SLIP_WALL           
 
-# General verbosity
-verbose                             integer            0                   
-
-# Verbsoity of the multigrid solver, but not the bottom solver.
-mg_verbose                          integer            0                   
-
-# Verbosity of bottom solver
-cg_verbose                          integer            0                   
-
-# valid values are $\le$ 0
-hg_bottom_solver                    integer            -1                  
-
-# valid values are $\le$ 0
-mg_bottom_solver                    integer            -1                  
-
-# if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have
-max_mg_bottom_nlevels               integer            1000
-
-# Use sponging.
-do_sponge                           logical            .false. 
-
-# Parameter for sponge.  Problem dependent.
-sponge_kappa                        real               10.d0
-
-# Center of the inner sponge.
-sponge_center_density               real               3.d6
-
-# The sponge begins at sponge\_center\_density * sponge\_start\_factor.
-sponge_start_factor                 real               3.333d0
-
-# plot fdamp rather than sponge
-# assumes sponge has the form 1/(1+dt*{\tt sponge\_kappa}*fdamp)
-plot_sponge_fdamp                   logical            .false.
-
-# In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point 
-# Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 
-# 7-point Laplacian (.false.).
-hg_dense_stencil                    logical            .true.              
-
-# The density below which we modify the constraint to look like
-# the anelastic constraint, instead of the low Mach constraint.  This
-# prevents velocities from getting out of hand at the edge of the star.
-# Refer to Section \ref{Sec:Anelastic Cutoff}.
-anelastic_cutoff                    real               3.d6                
-
-# The density below which we keep the initial model constant.
-# Refer to Section \ref{Sec:Base Cutoff Density}
-base_cutoff_density                 real               3.d6                
-
-# The multiplicative factor (over base\_cutoff\_density) below which we
-# do zero out the buoyancy term in the momentum equation.
-buoyancy_cutoff_factor              real               5.0
-
-# factor in front of the volume discrepancy term (0.0 = off)
-dpdt_factor                         real               0.d0               
-
 # set to 1 if you are doing a spherical problem
 spherical_in                        integer            0                   
-
-# are we doing 1/r$^2$ gravity for plane-parallel
-do_planar_invsq_grav                logical            .false.
-
-# the point mass for planar 1/r$^2$ gravity
-planar_invsq_mass                   real               0.d0
 
 # set octant = T if you just want to model an octant of a sphere
 # (note: only takes effect for spherical geometry)
@@ -159,204 +135,6 @@ octant                              logical            .false.
 
 # dimensionality (valid values are 2 or 3)
 dm_in                               integer            2                   
-
-# Turn on a perturbation in the initial data.  Problem specific.
-perturb_model                       logical            .false.             
-
-# Turn on storing of enthalpy-based quantities in the plotfile
-# when we are running with {\tt use\_tfromp}
-plot_h_with_use_tfromp              logical            .true.
-
-# plot species and omegadot in plotfile
-plot_spec                           logical            .true.              
-
-# plot omegadot in plotfile 
-plot_omegadot                       logical            .true.              
-
-# plot external heating (Hext) in plotfile 
-plot_Hext                           logical            .false.              
-
-# plot nuclear energy generation rate (Hnuc) in plotfile 
-plot_Hnuc                           logical            .true.
-
-# plot $\etarho$ in plotfile 
-plot_eta                            logical            .false.              
-
-# plot tracers in plotfile
-plot_trac                           logical            .false.             
-
-# plot w0\_x, w0\_y, w0\_z, divw0, rho0, rhoh0, h0, and p0 in plotfile
-plot_base                           logical            .false.
-
-# plot pi and grad(pi)
-plot_gpi                             logical            .true.
-
-# plot soundspeed
-plot_cs                              logical            .false.
-
-# prefix to use in plotfile file names
-plot_base_name                      character          "plt"               
-
-# prefix to use in checkpoint file names
-check_base_name                     character          "chk"               
-
-# turn on (.true.) or off (.false.) basestate evolution
-evolve_base_state                   logical            .true.              
-
-# if true, don't call average to reset the base state at all, even during initialization
-fix_base_state                      logical            .false.
-
-# force $\rho_0 = (\rho h)_0 = 0$, {\tt evolve\_base\_state = F} 
-# and {\tt beta\_type} = 3
-do_smallscale                       logical            .false.
-
-# Use thermal diffusion.
-use_thermal_diffusion               logical            .false.             
-
-# How to compute the explicit thermal diffusion term.  @@
-# 1 = in terms of $T$; @@
-# 2 = in terms of $\rho,p_0,X$.
-temp_diffusion_formulation          integer            2                   
-
-# In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.
-thermal_diffusion_type              integer            1                   
-
-# After the advective enthalpy update, recompute the enthalpy if we are 
-# below the base cutoff density.
-do_eos_h_above_cutoff               logical            .true.              
-
-# predict\_rhohprime = 1; @@
-# predict\_h = 2; @@
-# predict\_T\_then\_rhohprime = 3; @@
-# predict\_T\_then\_h = 4; @@
-# predict\_hprime = 5; @@
-# predict\_Tprime\_then\_h = 6.
-enthalpy_pred_type                  integer            predict_rhohprime   
-
-# Which quantities do we predict to the edges for computing the ($\rho X$)
-# edge states?  @@
-# {\tt species\_pred\_type} = 1 means predict $\rho^\prime$
-# and $X$ separately.  @@
-# {\tt species\_pred\_type} = 2 means predict the full ($\rho X$) itself. @@
-# {\tt species\_pred\_type} = 3 means predict $\rho$ and $X$ separately.
-species_pred_type                   integer            1
-
-
-# The maximum scale factor that the time step is allowed to grow by per 
-# time step.
-max_dt_growth                       real               1.1d0
-
-# This is the maximum dt that is allowed
-max_dt                              real               1.0d33
-
-# Fix the time step.  If -1.0, then use the standard time step.
-fixed_dt                            real               -1.0d0              
-
-# If $T_{max}^n > T_{max}^{n-1}$
-# set the new dt = 
-#   min[dt, dt*{\tt nuclear\_dt\_fac}*( $T_{max}^{n-1}$ / $(T_{max}^n-T_{max}^{n-1})$ ) ]
-# for example, nuclear_dt_fac = 0.01 means don't let the max temp grow more 
-# than approximately 1 percent
-# not checkpoint-compatible yet since it wouldn't be backwards compatible
-nuclear_dt_fac                      real               -1.0d0
-
-# turn on (.true.) or off (.false.) burning
-do_burning                          logical            .true.              
-
-# the gravitational acceleration (cm~s$^{-2}$) for plane-parallel geometry
-grav_const                          real               -1.5d10             
-
-# use the Coulomb corrections between ions (if supported by the EOS)
-use_eos_coulomb                     logical            .true.       
-
-# the constant conductivity (only applies if the conductivity/constant
-# module is used)
-conductivity_constant               real               1.0d0
-
-small_temp                          real               5.d6                
-
-small_dens                          real               1.d-5            
-
-# turns on second order correction to delta gamma1 term
-use_delta_gamma1_term               logical            .false.             
-
-# turn on the etarho term as described in flow chart
-use_etarho                          logical            .true.              
-
-# order of slopes in Godunov algorithm.  Options are 0, 2, or 4.
-slope_order                         integer            4                   
-
-# The interpolation for filling a cell-centered multifab from a 1D bin-centered array. @@
-# 1 = piecewise constant; @@
-# 2 = piecewise linear; @@
-# 3 = quadratic
-s0_interp_type                      integer            3
-
-# The interpolation for filling a cell-centered multifab from a 1D edge-centered array. @@
-# 1 = piecewise constant; @@
-# 2 = piecewise linear; @@
-# 3 = quadratic
-w0_interp_type                      integer            2
-                   
-# The interpolation for filling an edge based multifab from a 1D bin-centered array. @@
-# 1 = Interpolate s0 to cell centers (with s0\_interp\_type), then average to edges; @@
-# 2 = Interpolate s0 to edges directly using linear interpolation; @@
-# 3 = Interpolate s0 to edges directly using quadratic interpolation.
-s0mac_interp_type                   integer            1  
-
-# The interpolation for putting w0 on edges.  We only compute the normal component. @@
-# 1 = Interpolate w0 to cell centers (with w0\_interp\_type), then average to edges; @@
-# 2 = Interpolate w0 to edges directly using linear interpolation; @@
-# 3 = Interpolate w0 to edges directly using quadratic interpolation; @@
-# 4 = Interpolate w0 to nodes using linear interpolation, then average to edges. 
-w0mac_interp_type                   integer            1   
-
-# If lUsingNFiles = .true., use this many processors to write checkpoint 
-# and plotfiles.  Fortran has the unfortunate feature of each processor 
-# only being able to write out 1-2GB each without crashing.
-nOutFiles                           integer            64                  
-
-# If .true., use nOutFiles processors to write checkpoint and plotfiles.  
-# Fortran has the unfortunate feature of each processor only being able 
-# to write out 1-2GB each without crashing.
-lUsingNFiles                        logical            .true.              
-
-# When updating temperature, use $T=T(\rho,p_0,X) $ rather than
-# $T=T(\rho,h,X)$.
-use_tfromp                          logical            .false.             
-
-single_prec_plotfiles               logical            .false.             
-
-# Use the soundspeed constraint when computing the first time step.
-use_soundspeed_firstdt              logical            .false.             
-
-# Use the divu constraint when computing the first time step. 
-use_divu_firstdt                    logical            .false.             
-
-do_alltoallv                        logical            .false.             
-
-# Verbosity of the knapscak processor-to-grid algorithm.
-the_knapsack_verbosity              logical            .false.             
-
-# 0 = no ppm @@
-# 1 = 1985 ppm @@
-# 2 = Hybrid Sekora/Colella McCorquodale Colella 2009/2010 ppm
-ppm_type                            integer            1
-
-# 0 = use ppm instead for multi-d integrator @@
-# 1 = bilinear
-bds_type                            integer            0
-
-# what type of coefficient to use inside the velocity divergence constraint. @@
-# {\tt beta\_type} = 1 uses $\beta_0$; @@
-# {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); @@
-# {\tt beta\_type} = 3 uses 1 (small-scale combustion).
-beta_type                           integer            1                   
-
-# how to represent gravity in the beta0 integration: 
-# .true. = piecewise linear
-# .false. = piecewise constant
-use_linear_grav_in_beta             logical            .false.
 
 # Total number of levels.  1 = single level.
 max_levs                            integer            1                   
@@ -422,6 +200,245 @@ blocking_factor                     integer            8
 # parameter for cluster algorithm for making new grids in adaptive problems
 min_eff                             real               0.9d0
 
+# dump out a file, named grids.out, containing the number of grids a each level.  
+# A new line is added each time regrid is called.  
+dump_grid_file                      logical            .false.
+
+
+#-----------------------------------------------------------------------------
+# category: output
+#-----------------------------------------------------------------------------
+
+# plot interval
+plot_int                            integer            0                   
+
+# rather than use a plot interval, plot a file after the solution has 
+# advanced past plot\_deltat in time
+plot_deltat                         real               -1.d0                 
+
+# Number of timesteps between writing a checkpoint file
+chk_int                             integer            0                   
+
+# Turn on storing of enthalpy-based quantities in the plotfile
+# when we are running with {\tt use\_tfromp}
+plot_h_with_use_tfromp              logical            .true.
+
+# plot species and omegadot in plotfile
+plot_spec                           logical            .true.              
+
+# plot omegadot in plotfile 
+plot_omegadot                       logical            .true.              
+
+# plot external heating (Hext) in plotfile 
+plot_Hext                           logical            .false.              
+
+# plot nuclear energy generation rate (Hnuc) in plotfile 
+plot_Hnuc                           logical            .true.
+
+# plot $\etarho$ in plotfile 
+plot_eta                            logical            .false.              
+
+# plot tracers in plotfile
+plot_trac                           logical            .false.             
+
+# plot w0\_x, w0\_y, w0\_z, divw0, rho0, rhoh0, h0, and p0 in plotfile
+plot_base                           logical            .false.
+
+# plot pi and grad(pi)
+plot_gpi                             logical            .true.
+
+# plot soundspeed
+plot_cs                              logical            .false.
+
+# prefix to use in plotfile file names
+plot_base_name                      character          "plt"               
+
+# prefix to use in checkpoint file names
+check_base_name                     character          "chk"               
+
+# If lUsingNFiles = .true., use this many processors to write checkpoint 
+# and plotfiles.  Fortran has the unfortunate feature of each processor 
+# only being able to write out 1-2GB each without crashing.
+nOutFiles                           integer            64                  
+
+# If .true., use nOutFiles processors to write checkpoint and plotfiles.  
+# Fortran has the unfortunate feature of each processor only being able 
+# to write out 1-2GB each without crashing.
+lUsingNFiles                        logical            .true.              
+
+# store the state data in single precision
+single_prec_plotfiles               logical            .false.             
+
+# number of timesteps to buffer diagnostic output information before writing
+# (note: not implemented for all problems)
+diag_buf_size                       integer            10
+
+# plot the adiabatic excess
+plot_ad_excess                      logical            .false.
+
+# create a field in the plotfile storing the processor number for each zone
+plot_processors                     logical            .false.
+
+
+#-----------------------------------------------------------------------------
+# category: algorithm initialization
+#-----------------------------------------------------------------------------
+
+# Number of initial pressure iterations.
+init_iter                           integer            4                   
+
+# Number of initial divu iterations.
+init_divu_iter                      integer            4                   
+
+# which file to restart from.  -1 means do not restart
+restart                             integer            -1                  
+
+# restart and add a level of refinement
+restart_into_finer                  logical            .false.
+
+# Do the initial projection.
+do_initial_projection               logical            .true.              
+
+
+#-----------------------------------------------------------------------------
+# category: linear solvers
+#-----------------------------------------------------------------------------
+
+# Verbsoity of the multigrid solver, but not the bottom solver.
+mg_verbose                          integer            0                   
+
+# Verbosity of bottom solver
+cg_verbose                          integer            0                   
+
+# valid values are $\le$ 0
+hg_bottom_solver                    integer            -1                  
+
+# valid values are $\le$ 0
+mg_bottom_solver                    integer            -1                  
+
+# if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have
+max_mg_bottom_nlevels               integer            1000
+
+# In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point 
+# Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 
+# 7-point Laplacian (.false.).
+hg_dense_stencil                    logical            .true.              
+
+# use the hypre library
+use_hypre                           logical            .false.
+
+
+#-----------------------------------------------------------------------------
+# category: hydrodynamics
+#-----------------------------------------------------------------------------
+
+# Use sponging.
+do_sponge                           logical            .false. 
+
+# Parameter for sponge.  Problem dependent.
+sponge_kappa                        real               10.d0
+
+# Center of the inner sponge.
+sponge_center_density               real               3.d6
+
+# The sponge begins at sponge\_center\_density * sponge\_start\_factor.
+sponge_start_factor                 real               3.333d0
+
+# plot fdamp rather than sponge
+# assumes sponge has the form 1/(1+dt*{\tt sponge\_kappa}*fdamp)
+plot_sponge_fdamp                   logical            .false.
+
+
+# The density below which we modify the constraint to look like
+# the anelastic constraint, instead of the low Mach constraint.  This
+# prevents velocities from getting out of hand at the edge of the star.
+# Refer to Section \ref{Sec:Anelastic Cutoff}.
+anelastic_cutoff                    real               3.d6                
+
+# The density below which we keep the initial model constant.
+# Refer to Section \ref{Sec:Base Cutoff Density}
+base_cutoff_density                 real               3.d6                
+
+# The multiplicative factor (over base\_cutoff\_density) below which we
+# do zero out the buoyancy term in the momentum equation.
+buoyancy_cutoff_factor              real               5.0
+
+# factor in front of the volume discrepancy term (0.0 = off)
+dpdt_factor                         real               0.d0               
+
+# are we doing 1/r$^2$ gravity for plane-parallel
+do_planar_invsq_grav                logical            .false.
+
+# the point mass for planar 1/r$^2$ gravity
+planar_invsq_mass                   real               0.d0
+
+# turn on (.true.) or off (.false.) basestate evolution
+evolve_base_state                   logical            .true.              
+
+# if true, don't call average to reset the base state at all, even during 
+# initialization
+fix_base_state                      logical            .false.
+
+# force $\rho_0 = (\rho h)_0 = 0$, {\tt evolve\_base\_state = F} 
+# and {\tt beta\_type} = 3
+do_smallscale                       logical            .false.
+
+# After the advective enthalpy update, recompute the enthalpy if we are 
+# below the base cutoff density.
+do_eos_h_above_cutoff               logical            .true.              
+
+# predict\_rhohprime = 1; @@
+# predict\_h = 2; @@
+# predict\_T\_then\_rhohprime = 3; @@
+# predict\_T\_then\_h = 4; @@
+# predict\_hprime = 5; @@
+# predict\_Tprime\_then\_h = 6.
+enthalpy_pred_type                  integer            predict_rhohprime   
+
+# Which quantities do we predict to the edges for computing the ($\rho X$)
+# edge states?  @@
+# {\tt species\_pred\_type} = 1 means predict $\rho^\prime$
+# and $X$ separately.  @@
+# {\tt species\_pred\_type} = 2 means predict the full ($\rho X$) itself. @@
+# {\tt species\_pred\_type} = 3 means predict $\rho$ and $X$ separately.
+species_pred_type                   integer            1
+
+# turns on second order correction to delta gamma1 term
+use_delta_gamma1_term               logical            .false.             
+
+# turn on the etarho term as described in flow chart
+use_etarho                          logical            .true.              
+
+# order of slopes in Godunov algorithm.  Options are 0, 2, or 4.
+slope_order                         integer            4                   
+
+# the gravitational acceleration (cm~s$^{-2}$) for plane-parallel geometry
+grav_const                          real               -1.5d10             
+
+# When updating temperature, use $T=T(\rho,p_0,X) $ rather than
+# $T=T(\rho,h,X)$.
+use_tfromp                          logical            .false.             
+
+# 0 = no ppm @@
+# 1 = 1985 ppm @@
+# 2 = Hybrid Sekora/Colella McCorquodale Colella 2009/2010 ppm
+ppm_type                            integer            1
+
+# 0 = use ppm instead for multi-d integrator @@
+# 1 = bilinear
+bds_type                            integer            0
+
+# what type of coefficient to use inside the velocity divergence constraint. @@
+# {\tt beta\_type} = 1 uses $\beta_0$; @@
+# {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); @@
+# {\tt beta\_type} = 3 uses 1 (small-scale combustion).
+beta_type                           integer            1                   
+
+# how to represent gravity in the beta0 integration: 
+# .true. = piecewise linear
+# .false. = piecewise constant
+use_linear_grav_in_beta             logical            .false.
+
 # rotational frequency used for computing centrifugal term in rotation problems.
 rotational_frequency                real               ZERO                
 
@@ -431,29 +448,6 @@ co_latitude                         real               ZERO
 
 # radius used for computing centrifugal term in rotation problems
 rotation_radius                     real               1.0d6
-
-# job name printed in output
-job_name                            character          ""                  
-
-# Name of the species to be used in burner threshold
-burner_threshold_species            character          ""
-
-# Mass fraction cutoff for burner\_threshold\_species  used in burner threshold
-burner_threshold_cutoff             real               1.d-10
-
-# number of timesteps to buffer diagnostic output information before writing
-# (note: not implemented for all problems)
-diag_buf_size                       integer            10
-
-# Call a parallel\_barrier before each of the simple timers we have coded
-# in advance.f90.  Might cause a very slight overall performance hit.
-barrier_timers                      logical            .false.
-
-# use the hypre library
-use_hypre                           logical            .false.
-
-# plot the adiabatic excess
-plot_ad_excess                      logical            .false.
 
 # maximum mach number before the code aborts
 mach_max_abort                      real               -1.d0
@@ -470,9 +464,87 @@ drive_initial_convection            logical            .false.
 # time and timestep number are zeroed.
 restart_with_vel_field              logical            .false.
 
-# dump out a file, named grids.out, containing the number of grids a each level.  A new line is
-# added each time regrid is called.  
-dump_grid_file                      logical            .false.
+
+#-----------------------------------------------------------------------------
+# category: thermal diffusion
+#-----------------------------------------------------------------------------
+
+# Use thermal diffusion.
+use_thermal_diffusion               logical            .false.             
+
+# How to compute the explicit thermal diffusion term.  @@
+# 1 = in terms of $T$; @@
+# 2 = in terms of $\rho,p_0,X$.
+temp_diffusion_formulation          integer            2                   
+
+# In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.
+thermal_diffusion_type              integer            1                   
+
+# the constant conductivity (only applies if the conductivity/constant
+# module is used)
+conductivity_constant               real               1.0d0
+
+
+#-----------------------------------------------------------------------------
+# category: burning
+#-----------------------------------------------------------------------------
+
+# turn on (.true.) or off (.false.) burning
+do_burning                          logical            .true.              
+
+# Name of the species to be used in burner threshold
+burner_threshold_species            character          ""
+
+# Mass fraction cutoff for burner\_threshold\_species  used in burner threshold
+burner_threshold_cutoff             real               1.d-10
+
+
+
+#-----------------------------------------------------------------------------
+# category: EOS
+#-----------------------------------------------------------------------------
+
+# use the Coulomb corrections between ions (if supported by the EOS)
+use_eos_coulomb                     logical            .true.       
+
+small_temp                          real               5.d6                
+
+small_dens                          real               1.d-5            
+
+
+#-----------------------------------------------------------------------------
+# category: base state mapping
+#-----------------------------------------------------------------------------
+
+# The interpolation for filling a cell-centered multifab from a 1D bin-centered array. @@
+# 1 = piecewise constant; @@
+# 2 = piecewise linear; @@
+# 3 = quadratic
+s0_interp_type                      integer            3
+
+# The interpolation for filling a cell-centered multifab from a 1D edge-centered array. @@
+# 1 = piecewise constant; @@
+# 2 = piecewise linear; @@
+# 3 = quadratic
+w0_interp_type                      integer            2
+                   
+# The interpolation for filling an edge based multifab from a 1D bin-centered array. @@
+# 1 = Interpolate s0 to cell centers (with s0\_interp\_type), then average to edges; @@
+# 2 = Interpolate s0 to edges directly using linear interpolation; @@
+# 3 = Interpolate s0 to edges directly using quadratic interpolation.
+s0mac_interp_type                   integer            1  
+
+# The interpolation for putting w0 on edges.  We only compute the normal component. @@
+# 1 = Interpolate w0 to cell centers (with w0\_interp\_type), then average to edges; @@
+# 2 = Interpolate w0 to edges directly using linear interpolation; @@
+# 3 = Interpolate w0 to edges directly using quadratic interpolation; @@
+# 4 = Interpolate w0 to nodes using linear interpolation, then average to edges. 
+w0mac_interp_type                   integer            1   
+
+
+#-----------------------------------------------------------------------------
+# category: particles
+#-----------------------------------------------------------------------------
 
 # call the particle initialization, advection, etc. routines.
 use_particles                       logical            .false.
@@ -480,12 +552,20 @@ use_particles                       logical            .false.
 # store the velocity of the particle?
 store_particle_vels                 logical            .false.
 
+
+#-----------------------------------------------------------------------------
+# category: heating
+#-----------------------------------------------------------------------------
+
 # use analytic heating
 do_heating                          logical            .false.
+
+
+#-----------------------------------------------------------------------------
+# category: SDC
+#-----------------------------------------------------------------------------
 
 # how many SDC iteractions to take (requires the code be compiled with
 # {\tt SDC := t}
 sdc_iters                           integer            4
 
-# create a field in the plotfile storing the processor number for each zone
-plot_processors                     logical            .false.
