@@ -81,7 +81,7 @@ contains
 
     use bl_constants_module
     use variables
-    use network
+    use network, only: network_species_index
     use probin_module, only: drive_initial_convection
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
