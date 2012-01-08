@@ -115,8 +115,8 @@ contains
         (species_pred_type == predict_rhoprime_and_rhoX)) then
        ! rho' source term
        !   . this is needed for pred_rhoprime_and_X
-       !   . we still do this for pred_rhoX since some methods for the
-       !     enthalpy advancement need rho' edge states
+       !   . we still do this for predict_rhoprime_and_rhoX since some 
+       !     methods for the enthalpy advancement need rho' edge states
        call modify_scal_force(scal_force,sold,umac,rho0_old, &
                               rho0_edge_old,w0,dx,rho0_old_cart,rho_comp, &
                               mla,the_bc_level)
@@ -134,7 +134,7 @@ contains
     ! predict_rho_and_X, there is not force for X.
 
     ! for predict_rhoprime_and_rhoX, we are predicting (rho X)
-    ! as a conservative equation, and there is not force.
+    ! as a conservative equation, and there is no force.
 
     if (spherical .eq. 1) then
        do n=1,nlevs
@@ -164,9 +164,9 @@ contains
     if ((species_pred_type == predict_rhoprime_and_X) .or. &
         (species_pred_type == predict_rhoprime_and_rhoX)) then
        ! convert rho -> rho' in sold
-       !   . this is needed for pred_rhoprime_and_X
-       !   . we still do this for pred_rhoX since some methods for the
-       !     enthalpy advancement need rho' edge states 
+       !   . this is needed for predict_rhoprime_and_X
+       !   . we still do this for predict_rhoprime_and_rhoX since some 
+       !     methods for the enthalpy advancement need rho' edge states 
        call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,foextrap_comp,.true.,the_bc_level)
     endif
 
