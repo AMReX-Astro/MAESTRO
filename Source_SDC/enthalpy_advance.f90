@@ -198,7 +198,7 @@ contains
     call addw0(umac,the_bc_level,mla,w0,w0mac,mult=ONE)
 
     !**************************************************************************
-    !     Create the edge states of (rho h)' or h or T and (rho X)' or X and rho'
+    !     Create the edge states of (rho h)' or h or T 
     !**************************************************************************
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
