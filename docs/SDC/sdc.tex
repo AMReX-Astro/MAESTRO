@@ -1,5 +1,7 @@
 \section{Implementing an SDC-enabled reaction network (no diffusion)}
 
+\subsection{Introduction to SDC}
+
 \maestro\ integrates the following system of equations:
 \begin{eqnarray}
 \frac{\partial(\rho X_k)}{\partial t} &=& 
@@ -12,6 +14,30 @@
     + \rho\Hnuc ,\label{eq:enthalpy}
 \end{eqnarray}
 together with a constraint equation.
+
+By default, \maestro\ uses an operator-split approach to coupling
+the different physical processes together (hydro, reactions, diffusion).
+With operator-splitting, we
+react for a half timestep, then perform the hydrodynamics and thermal
+diffusion on this intermediate state, and finally react for the
+remaining half timestep to advance the solution.  For problems where
+the reactions greatly alter the energy balance or composition, this
+operator splitting approach can lead to inaccuracies in the solution.
+This can be more of an issue for low Mach number methods that can take
+large hydrodynamic time steps.
+
+An alternate approach to coupling is spectral deferred corrections
+(SDC). SDC is an iterative approach to couple the various operations
+together, with each operator seeing an iteratively lagged
+approximation of the other operations as a source term.  The SDC
+algorithm converges to an integral representation of the solution in
+time that couples all of the processes together in a self-consistent
+fashion, see \cite{Non11}.
+
+As a first attempt, we will work on coupling hydro and reactions only
+via SDC, with a time-independent base state.  
+
+
 
 \subsection{Strang-split version}
 
