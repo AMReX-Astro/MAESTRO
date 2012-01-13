@@ -1,0 +1,32 @@
+Date: 1/12/12
+
+Machine: jaguar phase 3 upgrade to Titan - XK6 interlagos architecture
+
+Each run performed with the following options to aprun: -S 1 -d 8
+
+Description of files/directories:
+
+  mods.txt: 
+    A `module list` at the time of compilation.
+
+  output_*: 
+    Directories containing the diag output files for each of
+    the nersc_benchmark test problems.
+
+  timing-info.txt:
+
+    Compilation of all the runtime information for each of the
+    nersc_benchmark test problems.  The table columns are: job name,
+    total time, time for first step, and average of remaining steps (2
+    through 10).  The total time is taken from the sum of the "Time to
+    advance timestep" numbers, not the total runtime listed at the end
+    of the output.  Timing information gathered using this script:
+
+----------------------------------------------------------------------
+#!/bin/bash
+
+awk 'BEGIN{sum=0.0;step=0}; 
+/advance timestep/ {step=step+1; sum=sum+$5; if(step==1) {first=$5};}
+/Run Time/ {total=$4}
+ END{print total, first, (sum-first)/(step-1)}' $1
+----------------------------------------------------------------------
