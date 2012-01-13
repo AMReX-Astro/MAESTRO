@@ -15,7 +15,7 @@
  sponge_start_factor = 3.333d0
  sponge_kappa = 10.0d0
 
- max_mg_bottom_nlevels = 3
+ max_mg_bottom_nlevels = 2
  mg_bottom_solver = 4
  hg_bottom_solver = 4
 

@@ -1,8 +1,8 @@
 &PROBIN
- model_file = "kepler_new_6.25e8.hybrid.hse.15360"
+ model_file = "kepler_new_6.25e8.hybrid.hse.7680"
  drdxfac = 5
 
- max_levs = 3
+ max_levs = 2
  n_cellx = 768
  n_celly = 768
  n_cellz = 768
@@ -27,7 +27,7 @@
  prob_hi_y = 5.d8
  prob_hi_z = 5.d8
 
- max_step  = 5
+ max_step  = 10
  init_iter = 1
 
  stop_time = 30000.
