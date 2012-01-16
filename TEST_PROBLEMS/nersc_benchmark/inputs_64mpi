@@ -64,7 +64,7 @@
  do_burning = T
 
  enthalpy_pred_type = 1
- evolve_base_state = T
+ evolve_base_state = F
 
  dpdt_factor = 0.0d0
 
