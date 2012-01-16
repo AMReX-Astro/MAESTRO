@@ -1,6 +1,7 @@
 Date: 1/12/12
 
 Machine: jaguar phase 3 upgrade to Titan - XK6 interlagos architecture
+Compiler: PathScale
 
 Each run performed with the following options to aprun: -S 1 -d 8
 
