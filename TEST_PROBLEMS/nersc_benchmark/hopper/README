@@ -1,0 +1,31 @@
+Date: 1/12/12
+
+Machine: hopper
+Compiler: PathScale
+
+Each run performed with the following options to aprun: -N 4 -d 6
+
+Description of files/directories:
+
+  mods.txt: 
+    A `module list` at the time of compilation.
+
+  output_*: 
+    Directories containing the diag output files for each of
+    the nersc_benchmark test problems.
+
+  timing-info.txt:
+
+    Compilation of all the runtime information for each of the
+    nersc_benchmark test problems.  The table columns are: job name,
+    min walltime for a timestep, max walltime for a timestep, and avg
+    walltime per timestep.  Timing information gathered
+    using this script:
+
+----------------------------------------------------------------------
+#!/bin/bash
+
+awk 'BEGIN{sum=0.0;step=0;tmax=0;tmin=1e6}; 
+/advance timestep/ {step=step+1; sum+=$5; if($5>tmax){tmax=$5}; if ($5<tmin){tmin=$5}};}
+ END{print tmin, tmax, sum/step}' $1
+----------------------------------------------------------------------
