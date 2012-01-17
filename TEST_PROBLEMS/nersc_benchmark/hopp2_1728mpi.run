@@ -14,6 +14,6 @@ cd $PBS_O_WORKDIR
 
 echo Starting `date`
 
-aprun -n 1728 -N 4 -d 6 ./main.Linux.Cray.mpi.omp.exe inputs_1728mpi
+aprun -n 1728 -N 4 -d 6 ./main.Linux.PathScale.mpi.omp.exe inputs_1728mpi
 
 echo Ending `date`
