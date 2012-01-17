@@ -4,7 +4,7 @@ OMP    := t
 
 HYPRE :=
 
-COMP := PathScale
+COMP := Cray
 
 MKVERBOSE := t
 
