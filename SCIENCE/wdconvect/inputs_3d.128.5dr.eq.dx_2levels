@@ -27,13 +27,15 @@
  prob_hi_y = 5.d8
  prob_hi_z = 5.d8
 
- max_step  = 100000000
+ max_step  = 100
  init_iter = 1
 
  stop_time = 30000.
 
- plot_int  = -1
- plot_deltat = 10.0d0
+ plot_base_name = "wd_128_base_plt"
+ plot_int  = 100
+
+ check_base_name = "wd_128_base_chk"
  chk_int   = 100
 
  cflfac = 0.7d0
