@@ -221,6 +221,8 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
+    real(dp_t) :: writetime1, writetime2
+
     call build(bpt, "make_plotfile")
 
     dm = mla%dim
@@ -665,14 +667,22 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if (parallel_IOProcessor()) then
-       print*,"Writing state to plotfile"
-       print*,""
+       write(6,*) 'Writing state to plotfile ',trim(dirname)
     end if
+
+    writetime1 = parallel_wtime()
 
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
                                    mba%pd(1), prob_lo, prob_hi, time, dx(1,:), &
                                    nOutFiles = nOutFiles, &
                                    lUsingNFiles = lUsingNFiles, prec = prec)
+
+    writetime2 = parallel_wtime() - writetime1
+    call parallel_reduce(writetime1, writetime2, MPI_MAX, proc=parallel_IOProcessorNode())
+    if (parallel_IOProcessor()) then
+       print*,'Time to write plotfile: ',writetime1,' seconds'
+       print*,''
+    end if
 
     do n = 1,nlevs
        call destroy(plotdata(n))

@@ -39,6 +39,8 @@ contains
     integer :: un, nlevs
     character(len=256) :: header, sd_name, sd_name_nodal
 
+    real(dp_t) :: writetime1, writetime2
+
     namelist /chkpoint/ nlevs
 
     type(bl_prof_timer), save :: bpt
@@ -50,6 +52,8 @@ contains
     end if
 
     call parallel_barrier()
+
+    writetime1 = parallel_wtime()
 
     write(unit=sd_name, fmt='(a,"/State")') trim(dirname)
     call fabio_ml_multifab_write_d(mfs, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
@@ -116,7 +120,6 @@ contains
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
       write(6,*) 'Writing state to checkpoint file ',trim(sd_name_nodal)
-      write(6,*)
     end if
 
     ! Note: parallel fails on Bassi if this is done on all processors
@@ -133,6 +136,13 @@ contains
        write(unit=un,fmt=1000) time
        write(unit=un,fmt=1000) rel_eps
        close(un)
+    end if
+
+    writetime2 = parallel_wtime() - writetime1
+    call parallel_reduce(writetime1, writetime2, MPI_MAX, proc=parallel_IOProcessorNode())
+    if (parallel_IOProcessor()) then
+       print*,'Time to write checkpoint: ',writetime1,' seconds'
+       print*,''
     end if
 
     call destroy(bpt)
