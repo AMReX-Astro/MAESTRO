@@ -12,8 +12,22 @@ So far, no luck with these compilers (versions 7.4.3 and 8.0.0.135).
 %-----------------------------------------------------------------------------
 \subsection{gfortran}
 
-Probably the best compilers for \maestro.  Versions 4.5 and 4.6 seem to work
-really well and the debugging features are very reliable.
+Probably the best compilers for \maestro.  
+Some notes:
+\begin{itemize}
+\item gfortran 4.5 has no known issues.
+\item gfortran 4.6.1 and 4.6.2 on Fedora (15 and 16) have a bug that 
+shows up in multi-processor runs ({\tt toy\_convect} on 4 processors, for instance).
+The symptom is a crash during initialization with the message that
+``message sizes do not match across processes in the collective'' in a
+{\tt parallel\_bcast} call.  This is in {\tt cluster\_f.f90}, and the issue seems
+to be a multiplication error in computing the size to allocate {\tt bxs}.
+The bug is not present when you compile in debug mode, so it seems to be
+related to optimization.
+\end{itemize}
+
+An added benefit of the gfortran compilers is that their debugging
+features are very reliable.
 
 
 %-----------------------------------------------------------------------------
