@@ -733,13 +733,12 @@ contains
     call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
                      dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
-    ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] * dt
+    ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] 
     do n=1,nlevs
        call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 1)
        call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 1)
        call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 1)
        call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 1)
-       call multifab_mult_mult_s_c(intra(n), 1, dt,               nscal, 1)
     end do
     ! WE NEED TO MAKE INTRA IN TERMS OF X, NOT RHOX
     do n=1,nlevs
@@ -1267,13 +1266,12 @@ contains
     call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
                      dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
-    ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] * dt
+    ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] 
     do n=1,nlevs
        call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 1)
        call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 1)
        call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 1)
        call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 1)
-       call multifab_mult_mult_s_c(intra(n), 1, dt,               nscal, 1)
     end do
     ! WE NEED TO MAKE INTRA IN TERMS OF X, NOT RHOX
     do n=1,nlevs
