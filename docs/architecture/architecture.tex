@@ -447,7 +447,11 @@ in the {\tt \_parameters} file has the form:
   integer}, {\tt logical}\}, and the {\em value} specifies the default
 value for the runtime parameter.  Comments are indicated by a `{\tt
   \#}' character and a used to produce documentation about the
-available runtime parameters.
+available runtime parameters.  For the documentation, runtime parameters are grouped together
+in the {\tt \_parameters} file into categories.  The category headings
+are defined by comments in the {\tt \_parameters} file and any comments
+following that heading are placed into that category.  The documentation
+is produced by the script {\tt MAESTRO/docs/runtime\_parameters/rp.py}.
 
 At runtime, the default values for the parameters can be overridden
 either through the inputs file (by adding a line of the form: {\tt
