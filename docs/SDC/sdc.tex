@@ -106,15 +106,24 @@ Here, $A_{\rho X_k}$ and $A_{\rho h}$ are piecewise-constant (in time)
 approximations to the change in ${\rho X_k}$ and ${\rho h}$ (respectively)
 due to the advection.  These are constructed by calling {\tt density\_advance}
 and {\tt enthalpy\_advance} in \maestro\ and passed into the network solver
-during the reaction step.  These terms approximate the following:
+during the reaction step.  
+
+\subsubsection{Advective Update}
+
+In the advective update, our goal is to compute $A_{\rho X_k}$ and
+$A_{\rho h}$.  These terms approximate the following:
 \begin{eqnarray}
 A_{\rho X_k} &=&  \left [- \nabla \cdot (\rho X_k \Ub) \right ]^{n+1/2} \\
 A_{\rho h}   &=&  \left [- \nabla \cdot (\rho h U) + \frac{Dp_0}{Dt} \right ]^{n+1/2}
 \end{eqnarray}
 The construction of the interface states used in the advective terms
 uses an iteratively-lagged approximation to the reaction source terms
-in the interface prediction.  This explicitly couples the reaction
-process to the advection process.
+($I_{\rho X_k}$ and $I_{\rho h}$, see below) in the interface
+prediction.  This explicitly couples the reaction process to the
+advection process.
+
+
+\subsubsection{Final Update}
 
 The RHS routine that the ODE solver operates on will first construct
 the density as:
@@ -133,13 +142,61 @@ T = T(\rho, h, X_k)
 Note that in constrast to the Strang-split version, here we call the EOS
 every time we enter the RHS routine.
 
-At the end of the integration, we define 
-\begin{eqnarray}
-I_{\rho X_k} &=& \frac{(\rho X_k)^\mathrm{new} - (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k} \\
-I_{\rho h}  &=& \frac{(\rho h)^\mathrm{new} - (\rho h)^\mathrm{old}}{\Delta t} - A_{\rho h}
-\end{eqnarray}
-These terms are used as the source terms for the advection step in the
-next SDC iteration.
+At the end of the integration, we define $I_{\rho X_k}$ and $I_{\rho
+  h}$.  The actual form of these depends on what we are predicting.
+We note that we only need $I_{\rho X_k}$ and $I_{\rho h}$ for the
+prediction of the interface states, not the final conservative update.
+That is because all we need from the advection solver is the
+approximation to $A_{\rho X_k}$ and $A_{\rho h}$, not the final
+updated state.
+
+\paragraph{Species Source Terms.}
+For the species prediction, the form of $I_{\rho X_k}$ depends on
+{\tt species\_pred\_type} (see \S \ref{sec:pred:density}):  
+\begin{itemize}
+\item {\tt species\_pred\_type} = 1 (predict $\rho'$ and $X_k$)
+%
+\begin{equation}
+I_{\rho X_k} = \frac{1}{\rho^{n+\half}} \left [ 
+      \frac{(\rho X_k)^\mathrm{new} - 
+            (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ]
+\end{equation}
+
+\item {\tt species\_pred\_type} = 2 (predict $\rho'$ and $(\rho X_k)$)
+%
+\begin{equation}
+I_{\rho X_k} = \frac{(\rho X_k)^\mathrm{new} - (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k} 
+\end{equation}
+
+\item {\tt species\_pred\_type} = 3 (predict $\rho$ and $X_k$)
+%
+\begin{equation}
+I_{\rho X_k} = \frac{1}{\rho^{n+\half}} \left [ 
+      \frac{(\rho X_k)^\mathrm{new} - 
+            (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ]
+\end{equation}
+
+\end{itemize}
+
+We note that there is no $I$ term for $\rho$ or $\rho'$ prediction, since
+the density evolution equation does not have a reaction source term.
+
+\paragraph{Enthalpy Source Terms.}
+For the enthalpy prediction, the form of $I_{\rho h}$ depends on
+{\tt enthalpy\_pred\_type} (see \S \ref{sec:pred:enthalpy}).:
+\begin{itemize}
+\item {\tt enthalpy\_pred\_type} = 1 \\
+not right -- should be pert form
+\begin{equation}
+I_{\rho h}  = \frac{(\rho h)^\mathrm{new} - (\rho h)^\mathrm{old}}{\Delta t} - A_{\rho h}
+\end{equation}
+\end{itemize}
+
+This is done in {\tt advance.f90} just after the call to {\tt react\_state},
+stored in the \multifab\ {\tt intra}.
+
+These terms are used as the source terms for the
+advection step in the next SDC iteration.
 
 \subsection{Summary of Changes}
 The major changes from the non-SDC-enabled burners is the addition of
