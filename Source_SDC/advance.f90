@@ -204,9 +204,6 @@ contains
     if (enthalpy_pred_type .ne. 1) then
        call bl_error("enthalpy_pred_type .ne. 1 not supported with SDC")
     end if
-    if (species_pred_type .ne. predict_rhoprime_and_X) then
-       call bl_error("species_pred_type .ne. 1 not supported with SDC")
-    end if
 
     nlevs = mla%nlevel
     dm = mla%dim
