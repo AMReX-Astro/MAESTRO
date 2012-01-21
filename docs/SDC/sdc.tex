@@ -192,9 +192,10 @@ I_{\rho h}  = \frac{(\rho h)^\mathrm{new} - (\rho h)^\mathrm{old}}{\Delta t} - A
 \end{equation}
 \end{itemize}
 
-This is done in {\tt advance.f90} just after the call to {\tt react\_state},
-stored in the \multifab\ {\tt intra}.
 
+\ \\
+This is done in {\tt advance.f90} just after the call to {\tt react\_state},
+stored in the \multifab\ called {\tt intra}.
 These terms are used as the source terms for the
 advection step in the next SDC iteration.
 

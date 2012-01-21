@@ -35,7 +35,8 @@ section_sources = maestro_doc.bib \
                   compilers/compilers.tex \
                   analysis/analysis.tex \
                   thermo_notes/thermo_notes.tex \
-                  visualization/visualization.tex
+                  visualization/visualization.tex \
+                  SDC/sdc.tex
 
 
 MaestroUsersGuide.dvi: MaestroUsersGuide.tex $(eps_source) $(section_sources) $(eps_source) 
