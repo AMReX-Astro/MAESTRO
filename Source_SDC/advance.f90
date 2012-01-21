@@ -740,19 +740,25 @@ contains
        call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 1)
        call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 1)
     end do
-    ! WE NEED TO MAKE INTRA IN TERMS OF X, NOT RHOX
-    do n=1,nlevs
-       call multifab_build(rhohalf(n), mla%la(n), 1, 1)
-    end do
-    call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
-    do n=1,nlevs
-       do comp=spec_comp,spec_comp+nspec-1
-          call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
+    ! for some species_pred_types, WE NEED TO MAKE INTRA IN TERMS OF
+    ! X, NOT RHOX
+    if ( (species_pred_type == predict_rhoprime_and_X) .or. &
+         (species_pred_type == predict_rho_and_X) ) then
+
+       do n=1,nlevs
+          call multifab_build(rhohalf(n), mla%la(n), 1, 1)
        end do
-    end do
-    do n=1,nlevs
-       call destroy(rhohalf(n))
-    end do
+       call make_at_halftime(rhohalf,sold,snew,rho_comp,1, &
+                             the_bc_tower%bc_tower_array,mla)
+       do n=1,nlevs
+          do comp=spec_comp,spec_comp+nspec-1
+             call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
+          end do
+       end do
+       do n=1,nlevs
+          call destroy(rhohalf(n))
+       end do
+    endif
 
     do n=1,nlevs
        call destroy(s2(n))
@@ -1273,19 +1279,24 @@ contains
        call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 1)
        call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 1)
     end do
-    ! WE NEED TO MAKE INTRA IN TERMS OF X, NOT RHOX
-    do n=1,nlevs
-       call multifab_build(rhohalf(n), mla%la(n), 1, 1)
-    end do
-    call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
-    do n=1,nlevs
-       do comp=spec_comp,spec_comp+nspec-1
-          call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
+    ! for some species_pred_types, WE NEED TO MAKE INTRA IN TERMS OF
+    ! X, NOT RHOX
+    if ( (species_pred_type == predict_rhoprime_and_X) .or. &
+         (species_pred_type == predict_rho_and_X) ) then
+       do n=1,nlevs
+          call multifab_build(rhohalf(n), mla%la(n), 1, 1)
        end do
-    end do
-    do n=1,nlevs
-       call destroy(rhohalf(n))
-    end do
+       call make_at_halftime(rhohalf,sold,snew,rho_comp,1, &
+                             the_bc_tower%bc_tower_array,mla)
+       do n=1,nlevs
+          do comp=spec_comp,spec_comp+nspec-1
+             call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
+          end do
+       end do
+       do n=1,nlevs
+          call destroy(rhohalf(n))
+       end do
+    endif
 
     if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
