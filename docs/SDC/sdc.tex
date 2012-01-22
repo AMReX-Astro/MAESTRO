@@ -106,7 +106,24 @@ Here, $A_{\rho X_k}$ and $A_{\rho h}$ are piecewise-constant (in time)
 approximations to the change in ${\rho X_k}$ and ${\rho h}$ (respectively)
 due to the advection.  These are constructed by calling {\tt density\_advance}
 and {\tt enthalpy\_advance} in \maestro\ and passed into the network solver
-during the reaction step.  
+during the reaction step.  A flowchart of the \maestro\ SDC algorithm is 
+shown in figure~\ref{fig:sdc:flowchart}.
+
+\begin{figure}[tb]
+\centering
+\includegraphics[scale=0.65]{\sdcfigpath/flowchart_SDC}
+\caption[Graphical flowchart of \maestro\ SDC]
+  {\label{fig:sdc:flowchart} A flowchart of the \maestro SDC algorithm.  The
+  thermodynamic state variables and local velocity are
+  indicated in each step.  The base state is not shown as it is time-independent.
+  Red text indicates that quantity was
+  updated during that step.  The predictor is 
+  outlined by the dotted box.  The blue text indicates state
+  variables that are the same in {\bf Step 6} as they are in
+  {\bf Step 2}, i.e., they are unchanged by the predictor steps.
+  The SDC loop is shown in the gray dotted box.}
+\end{figure}
+
 
 \subsubsection{Advective Update}
 
