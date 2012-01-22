@@ -157,7 +157,7 @@ For the species prediction, the form of $I_{\rho X_k}$ depends on
 \item {\tt species\_pred\_type} = 1 (predict $\rho'$ and $X_k$)
 %
 \begin{equation}
-I_{\rho X_k} = \frac{1}{\rho^{n+\half}} \left [ 
+I_{\rho X_k} = \frac{1}{\rho^{n+\myhalf}} \left [ 
       \frac{(\rho X_k)^\mathrm{new} - 
             (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ]
 \end{equation}
@@ -171,7 +171,7 @@ I_{\rho X_k} = \frac{(\rho X_k)^\mathrm{new} - (\rho X_k)^\mathrm{old}}{\Delta t
 \item {\tt species\_pred\_type} = 3 (predict $\rho$ and $X_k$)
 %
 \begin{equation}
-I_{\rho X_k} = \frac{1}{\rho^{n+\half}} \left [ 
+I_{\rho X_k} = \frac{1}{\rho^{n+\myhalf}} \left [ 
       \frac{(\rho X_k)^\mathrm{new} - 
             (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ]
 \end{equation}
@@ -187,6 +187,8 @@ For the enthalpy prediction, the form of $I_{\rho h}$ depends on
 \begin{itemize}
 \item {\tt enthalpy\_pred\_type} = 1 \\
 not right -- should be pert form
+if we do something in perturbational form, then don't we need to have
+the base state see the reaction term in its prediction?
 \begin{equation}
 I_{\rho h}  = \frac{(\rho h)^\mathrm{new} - (\rho h)^\mathrm{old}}{\Delta t} - A_{\rho h}
 \end{equation}
