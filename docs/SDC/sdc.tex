@@ -174,7 +174,7 @@ For the species prediction, the form of $I_{\rho X_k}$ depends on
 \item {\tt species\_pred\_type} = 1 (predict $\rho'$ and $X_k$)
 %
 \begin{equation}
-I_{\rho X_k} = \frac{1}{\rho^{n+\myhalf}} \left [ 
+I_{X_k} = \frac{1}{\rho^{n+\myhalf}} \left [ 
       \frac{(\rho X_k)^\mathrm{new} - 
             (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ]
 \end{equation}
@@ -183,12 +183,13 @@ I_{\rho X_k} = \frac{1}{\rho^{n+\myhalf}} \left [
 %
 \begin{equation}
 I_{\rho X_k} = \frac{(\rho X_k)^\mathrm{new} - (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k} 
+\label{eq:sdc:Irhoo}
 \end{equation}
 
 \item {\tt species\_pred\_type} = 3 (predict $\rho$ and $X_k$)
 %
 \begin{equation}
-I_{\rho X_k} = \frac{1}{\rho^{n+\myhalf}} \left [ 
+I_{X_k} = \frac{1}{\rho^{n+\myhalf}} \left [ 
       \frac{(\rho X_k)^\mathrm{new} - 
             (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ]
 \end{equation}
@@ -199,16 +200,82 @@ We note that there is no $I$ term for $\rho$ or $\rho'$ prediction, since
 the density evolution equation does not have a reaction source term.
 
 \paragraph{Enthalpy Source Terms.}
-For the enthalpy prediction, the form of $I_{\rho h}$ depends on
-{\tt enthalpy\_pred\_type} (see \S \ref{sec:pred:enthalpy}).:
-\begin{itemize}
-\item {\tt enthalpy\_pred\_type} = 1 \\
-not right -- should be pert form
-if we do something in perturbational form, then don't we need to have
-the base state see the reaction term in its prediction?
+The obvious analog to the above form for $I_{\rho X_k}$ is to define
 \begin{equation}
 I_{\rho h}  = \frac{(\rho h)^\mathrm{new} - (\rho h)^\mathrm{old}}{\Delta t} - A_{\rho h}
+\label{eq:sdc:Irhoh}
 \end{equation}
+This can be thought of as an approximation to $(\rho \Hnuc)$,
+but this does not match any of the quantities we predict for the
+enthalpy update ({\tt enthalpy\_pred\_type}, see \S
+\ref{sec:pred:enthalpy}).  The appropriate constructions
+are:
+
+\begin{itemize}
+\item {\tt enthalpy\_pred\_type} = {\tt predict\_rhoprime} 
+
+Not implemented.
+
+Here we need an $I_{\rho h}$ term for the $(\rho h)'$ evolution
+equation (see Eq.~\ref{rhohprime equation}).  Defining the source
+terms for this requires a base state enthalpy that knows about the
+source terms---this is currently not implemented.
+
+In particular, should $(\rho h)_0$ see a $\overline{(\rho \Hnuc)}$ term?
+what about an average thermal diffusion?
+
+
+
+\item {\tt enthalpy\_pred\_type} = {\tt predict\_h} 
+
+This is the most straightforward prediction type.  The SDC solver
+integrates the equation for $(\rho h)$:
+\begin{equation}
+\frac{\partial(\rho h)}{\partial t} = -\nabla\cdot(\rho h \Ub) + \frac{Dp_0}{Dt}  + \rho H_{\rm nuc} 
+\end{equation}
+(shown here without diffusion or external heat sources).  Expanding
+the time derivative and divergence, and using the continuity equation
+we see:
+\begin{equation}
+\frac{\partial h}{\partial t} = -\Ub \cdot \nabla h + \frac{1}{\rho} \frac{Dp_0}{Dt}  + \frac{1}{\rho} (\rho H_{\rm nuc}) \label{eq:sdc:h}
+\end{equation}
+Comparing these equations, we see that 
+\begin{equation}
+I_{h}  = \frac{1}{\rho^{n+\myhalf}} \left [
+    \frac{(\rho h)^\mathrm{new} - (\rho h)^\mathrm{old}}{\Delta t} - A_{\rho h} \right ]
+\end{equation}
+
+
+\item {\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_rhoprime} or 
+      {\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_h} 
+
+Both of these {\tt enthalpy\_pred\_type}s predict temperature.  Expressing
+$h = h(p_0,T,X_k)$ and differentiating along particle paths:
+\begin{eqnarray}
+\frac{Dh}{Dt} &=& \left . \frac{\partial h}{\partial T} \right |_{p,X_k} \frac{DT}{Dt} +
+                  \left . \frac{\partial h}{\partial p} \right |_{T,X_k} \frac{Dp_0}{Dt} +
+           \sum_k \left . \frac{\partial h}{\partial X_k} \right |_{p,T} \frac{DX_k}{Dt} \\
+              &=& c_p \frac{DT}{Dt} + h_p  \frac{Dp_0}{Dt} + \sum_k \xi_k \omegadot_k
+\end{eqnarray}
+where $c_p$, $h_p$, and $\xi_k$ are as defined in the table of symbols
+(Table~\ref{table:sym}), and we substitute $DX_k/Dt = \omegadot_k$ (from the species
+continuity equation, Eq.~\ref{species equation}).  Using Eq.~\ref{eq:sdc:h}, we have
+the familiar temperature evolution equation:
+\begin{equation}
+\rho c_p \frac{DT}{Dt} = \underbrace{(1 - \rho h_p) \frac{Dp_0}{Dt}}_{\begin{smallmatrix}\text{already~accounted~for} \\ \text{in~T~prediction}\end{smallmatrix}} - \sum_k \xi_k \rho \omegadot_k + \rho \Hnuc
+\end{equation}
+where the underbraced term is already present in {\tt mktempforce}.  Recognizing that
+Eq.~\ref{eq:sdc:Irhoh} is the SDC approximation to $(\rho \Hnuc)$ and Eq.~\ref{eq:sdc:Irhoo} is the 
+SDC approximation to $(\rho \omegadot_k)$, we can define
+\begin{equation}
+I_T = \frac{1}{\rho^{n+\myhalf} c_p^{n+\myhalf}} \left \{
+  \left [ \frac{(\rho h)^\mathrm{new} - (\rho h)^\mathrm{old}}{\Delta t} - A_{\rho h} \right ]
+  - \sum_k \xi_k^{n+\myhalf} \left [      \frac{(\rho X_k)^\mathrm{new} - 
+            (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ] \right \}
+\end{equation}
+
+
+
 \end{itemize}
 
 
