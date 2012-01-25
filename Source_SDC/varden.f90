@@ -15,6 +15,7 @@ subroutine varden()
   use make_plotfile_module
   use restart_module
   use probin_module
+  use runtime_init_module
   use bl_constants_module
   use average_module
   use make_grav_module
@@ -133,7 +134,7 @@ subroutine varden()
   last_plt_written = -1
   last_chk_written = -1
 
-  call probin_init()
+  call runtime_init()
   call init_spherical()
   call init_center()
   call init_rotation()
@@ -464,7 +465,7 @@ subroutine varden()
                            thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt)
+                           normal,dt,particles)
 
         call write_base_state(restart, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
@@ -611,7 +612,7 @@ subroutine varden()
                            thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt)
+                           normal,dt,particles)
 
         call write_base_state(istep, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
@@ -1284,7 +1285,7 @@ subroutine varden()
                                  thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
                                  the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
                                  tempbar,gamma1bar,etarho_cc, &
-                                 normal,dt)
+                                 normal,dt,particles)
 
               call write_base_state(istep, plot_file_name, &
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
@@ -1370,7 +1371,7 @@ subroutine varden()
                            thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt)
+                           normal,dt,particles)
         
         call write_base_state(istep, plot_file_name, &
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
@@ -1422,7 +1423,7 @@ subroutine varden()
 
   call destroy_geometry()
 
-  call probin_close()
+  call runtime_close()
 
   deallocate(uold,sold,pi,gpi,dSdt,Source_old,Source_new,rho_omegadot2, &
              rho_Hnuc2,rho_Hext)
