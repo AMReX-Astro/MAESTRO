@@ -81,6 +81,7 @@ contains
     use addw0_module                , only : addw0
     use convert_rhoX_to_X_module    , only: convert_rhoX_to_X
     use pred_parameters
+    use make_intra_coeffs_module    , only: make_intra_coeffs
 
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -123,6 +124,8 @@ contains
 
     ! local
     type(multifab) ::             rhohalf(mla%nlevel)
+    type(multifab) ::             cphalf(mla%nlevel)
+    type(multifab) ::             xihalf(mla%nlevel)
     type(multifab) ::       w0_force_cart(mla%nlevel)
     type(multifab) ::              macrhs(mla%nlevel)
     type(multifab) ::              macphi(mla%nlevel)
@@ -737,30 +740,92 @@ contains
        call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 1)
        call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 1)
     end do
-    ! for some species_pred_types, WE NEED TO MAKE INTRA IN TERMS OF
-    ! X, NOT RHOX
+
+    ! massage the rhoh intra term into the proper form, depending on
+    ! what we are predicting.  Note: we do this before we deal with
+    ! the species terms, since some enthalpy types need this default
+    ! species intra.
+
+    ! first create rhohalf -- a lot of forms need this.
+    do n=1,nlevs
+       call multifab_build(rhohalf(n), mla%la(n), 1, 1)
+    end do
+    call make_at_halftime(rhohalf,sold,snew,rho_comp,1, &
+                          the_bc_tower%bc_tower_array,mla)
+
+    if (enthalpy_pred_type == predict_rhohprime) then
+       call bl_error("enthalpy_pred_type = predict_rhohprime not supported")
+
+    else if (enthalpy_pred_type == predict_h) then
+
+       ! we want this in terms of h, not (rho h)
+       do n=1,nlevs
+          call multifab_div_div_c(intra(n),rhoh_comp,rhohalf(n),1,1,1)
+       end do
+
+
+    else if ((enthalpy_pred_type == predict_T_then_rhohprime) .or. &
+             (enthalpy_pred_type == predict_T_then_h)) then
+
+       ! for predict_T_*, the intra force needs to be in the temp_comp
+       ! slot, since temperature is what is predicted.
+
+       ! first make the thermodynamic coefficients at the half-time
+       do n=1,nlevs
+          call multifab_build(cphalf(n), mla%la(n), 1, 1)
+          call multifab_build(xihalf(n), mla%la(n), nspec, 1)
+       enddo
+
+       call make_intra_coeffs(sold,snew,cphalf,xihalf)
+
+       ! overwrite intra(temp_comp).  We want to create
+       ! I_T = (1 / (rho c_p)) [ (rhoh_new - rhoh_old)/dt - A_rhoh -
+       !     sum_k xi_k ( (rhoX_new - rhoX_old)/dt - A_rhoX ) ]
+       do n=1,nlevs
+          call multifab_copy_c(intra(n), temp_comp, intra(n), rhoh_comp, 1, 1)
+          do comp=1, nspec
+             ! multiple xi by intra and store in xi
+             call multifab_mult_mult_c(xihalf(n), comp, &
+                                       intra(n),  spec_comp+comp-1, 1, 1)
+
+             ! subtract from intra temp
+             call multifab_sub_sub_c(intra(n), temp_comp, xihalf(n), comp, 1, 1)
+             
+          enddo
+
+          call multifab_div_div_c(intra(n), temp_comp, rhohalf(n), 1, 1, 1)
+          call multifab_div_div_c(intra(n), temp_comp, cphalf(n),  1, 1, 1)
+
+       end do
+
+       ! clean-up
+       do n=1,nlevs
+          call destroy(cphalf(n))
+          call destroy(xihalf(n))
+       enddo
+
+    else
+       call bl_error("invalid enthalpy_pred_type")
+    endif
+     
+
+    ! for some species_pred_types, we need to make intra in terms of
+    ! X, NOT rhoX
     if ( (species_pred_type == predict_rhoprime_and_X) .or. &
          (species_pred_type == predict_rho_and_X) ) then
 
-       do n=1,nlevs
-          call multifab_build(rhohalf(n), mla%la(n), 1, 1)
-       end do
-       call make_at_halftime(rhohalf,sold,snew,rho_comp,1, &
-                             the_bc_tower%bc_tower_array,mla)
        do n=1,nlevs
           do comp=spec_comp,spec_comp+nspec-1
              call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
           end do
        end do
-       do n=1,nlevs
-          call destroy(rhohalf(n))
-       end do
     endif
 
     do n=1,nlevs
        call destroy(s2(n))
+       call destroy(rhohalf(n))
     end do
-
+       
     if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
     
@@ -1276,24 +1341,91 @@ contains
        call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 1)
        call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 1)
     end do
-    ! for some species_pred_types, WE NEED TO MAKE INTRA IN TERMS OF
-    ! X, NOT RHOX
+
+    ! massage the rhoh intra term into the proper form, depending on
+    ! what we are predicting.  Note: we do this before we deal with
+    ! the species terms, since some enthalpy types need this default
+    ! species intra.
+
+    ! first create rhohalf -- a lot of forms need this.
+
+    do n=1,nlevs
+       call multifab_build(rhohalf(n), mla%la(n), 1, 1)
+    end do
+    call make_at_halftime(rhohalf,sold,snew,rho_comp,1, &
+                          the_bc_tower%bc_tower_array,mla)
+
+    if (enthalpy_pred_type == predict_rhohprime) then
+       call bl_error("enthalpy_pred_type = predict_rhohprime not supported")
+
+    else if (enthalpy_pred_type == predict_h) then
+
+       ! we want this in terms of h, not (rho h)
+       do n=1,nlevs
+          call multifab_div_div_c(intra(n),rhoh_comp,rhohalf(n),1,1,1)
+       end do
+
+
+    else if ((enthalpy_pred_type == predict_T_then_rhohprime) .or. &
+             (enthalpy_pred_type == predict_T_then_h)) then
+
+       ! for predict_T_*, the intra force needs to be in the temp_comp
+       ! slot, since temperature is what is predicted.
+
+       ! first make the thermodynamic coefficients at the half-time
+       do n=1,nlevs
+          call multifab_build(cphalf(n), mla%la(n), 1, 1)
+          call multifab_build(xihalf(n), mla%la(n), nspec, 1)
+       enddo
+
+       call make_intra_coeffs(sold,snew,cphalf,xihalf)
+
+       ! overwrite intra(temp_comp).  We want to create
+       ! I_T = (1 / (rho c_p)) [ (rhoh_new - rhoh_old)/dt - A_rhoh -
+       !     sum_k xi_k ( (rhoX_new - rhoX_old)/dt - A_rhoX ) ]
+       do n=1,nlevs
+          call multifab_copy_c(intra(n), temp_comp, intra(n), rhoh_comp, 1, 1)
+          do comp=1, nspec
+             ! multiple xi by intra and store in xi
+             call multifab_mult_mult_c(xihalf(n), comp, &
+                                       intra(n),  spec_comp+comp-1, 1, 1)
+
+             ! subtract from intra temp
+             call multifab_sub_sub_c(intra(n), temp_comp, xihalf(n), comp, 1, 1)
+             
+          enddo
+
+          call multifab_div_div_c(intra(n), temp_comp, rhohalf(n), 1, 1, 1)
+          call multifab_div_div_c(intra(n), temp_comp, cphalf(n),  1, 1, 1)
+
+       end do
+
+       ! clean-up
+       do n=1,nlevs
+          call destroy(cphalf(n))
+          call destroy(xihalf(n))
+       enddo
+
+    else
+       call bl_error("invalid enthalpy_pred_type")
+    endif
+
+
+    ! for some species_pred_types, we need to make intra in terms of
+    ! X, NOT rhoX
     if ( (species_pred_type == predict_rhoprime_and_X) .or. &
          (species_pred_type == predict_rho_and_X) ) then
-       do n=1,nlevs
-          call multifab_build(rhohalf(n), mla%la(n), 1, 1)
-       end do
-       call make_at_halftime(rhohalf,sold,snew,rho_comp,1, &
-                             the_bc_tower%bc_tower_array,mla)
+
        do n=1,nlevs
           do comp=spec_comp,spec_comp+nspec-1
              call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
           end do
        end do
-       do n=1,nlevs
-          call destroy(rhohalf(n))
-       end do
     endif
+
+    do n=1,nlevs
+       call destroy(rhohalf(n))
+    enddo
 
     if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
