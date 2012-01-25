@@ -61,14 +61,14 @@ contains
 
           select case (dm)
           case (1)
-             call make_thermal_coeffs_1d(lo,hi,sop(:,1,1,:),ng_so,snp(:,1,1,:),ng_sn, &
-                                         cpp(:,1,1,1),ng_cp,xip(:,1,1,:),ng_xi)
+             call make_intra_coeffs_1d(lo,hi,sop(:,1,1,:),ng_so,snp(:,1,1,:),ng_sn, &
+                                       cpp(:,1,1,1),ng_cp,xip(:,1,1,:),ng_xi)
           case (2)
-             call make_thermal_coeffs_2d(lo,hi,sop(:,:,1,:),ng_so,snp(:,:,1,:),ng_sn, &
-                                         cpp(:,:,1,1),ng_cp,xip(:,:,1,:),ng_xi)
+             call make_intra_coeffs_2d(lo,hi,sop(:,:,1,:),ng_so,snp(:,:,1,:),ng_sn, &
+                                       cpp(:,:,1,1),ng_cp,xip(:,:,1,:),ng_xi)
           case (3)
-             call make_thermal_coeffs_3d(lo,hi,sop(:,:,:,:),ng_so,snp(:,:,:,:),ng_sn, &
-                                         cpp(:,:,:,1),ng_cp,xip(:,:,:,:),ng_xi)
+             call make_intra_coeffs_3d(lo,hi,sop(:,:,:,:),ng_so,snp(:,:,:,:),ng_sn, &
+                                       cpp(:,:,:,1),ng_cp,xip(:,:,:,:),ng_xi)
           end select
        end do
     enddo
