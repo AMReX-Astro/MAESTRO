@@ -204,8 +204,8 @@ contains
     if (use_thermal_diffusion) then
        call bl_error("use_thermal_diffusion not supported with SDC")
     end if
-    if (enthalpy_pred_type .ne. 1) then
-       call bl_error("enthalpy_pred_type .ne. 1 not supported with SDC")
+    if (enthalpy_pred_type == 1) then
+       call bl_error("enthalpy_pred_type == 1 not supported with SDC")
     end if
 
     nlevs = mla%nlevel
