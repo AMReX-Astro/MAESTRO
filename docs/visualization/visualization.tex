@@ -1,3 +1,6 @@
+%-----------------------------------------------------------------------------
+% plotfiles
+%-----------------------------------------------------------------------------
 \section{Plotfiles}
 
 \maestro\ outputs plotfile specifically for visualization and analysis.
@@ -141,20 +144,31 @@ sizes.
 
 \renewcommand{\arraystretch}{1.0}
 
+
+%-----------------------------------------------------------------------------
+% amrvis
+%-----------------------------------------------------------------------------
 \section{Visualizing with \amrvis}
 
 
+%-----------------------------------------------------------------------------
+% VisIt
+%-----------------------------------------------------------------------------
 \section{Visualizing with \visit}
 
 
+%-----------------------------------------------------------------------------
+% data_procesing
+%-----------------------------------------------------------------------------
 \section{Visualizing with {\tt data\_processing} scripts}
 
-{\tt data\_processing/python\_plotfile} provide a simple commandline tool for doing 
-visualizations of 2-d BoxLib plotfiles.  The main driver
-is written in python and uses a set of Fortran routines, compiled with
-{\tt f2py} to interface with the plotfile data.  To use the routine,
-you will need to have {\tt matplotlib} and {\tt f2py} installed.  On
-a machine running Fedora linux, you can install these packages via
+{\tt data\_processing/python\_plotfile} provide a simple commandline
+tool for doing visualizations of 2-d \boxlib\ plotfiles, and slices
+through 3-d \boxlib\ plotfiles.  The main driver is written in python
+and uses a set of Fortran routines, compiled with {\tt f2py} to
+interface with the plotfile data.  To use the routine, you will need
+to have {\tt matplotlib} and {\tt f2py} installed.  On a machine
+running Fedora linux, you can install these packages via
 \begin{verbatim}
 yum install python-matplotlib f2py
 \end{verbatim}
@@ -166,21 +180,48 @@ a library {\tt fsnapshot.so}.  A simple plot can be made via:
 plotsinglevar.py --log -o test.png plt00000/ tfromp
 \end{verbatim}
 This will make a plot of ``tfromp'' from the plotfile {\tt plt00000} with log scaling,
-and store the output in {\tt test.png}.
+and store the output in {\tt test.png}.  See Figure~\ref{fig:python}.
 If you don't do `{\tt -o}', then a default output filename consisting of the
 plotfile name + component will be used.
 
-\begin{figure}[!h]\label{fig:python}
+\begin{figure}[t]
 \centering
 \includegraphics[height=0.4\textheight]{\visfigpath/plt00000_tfromp}
-\caption{Plot of {\tt test2} done with the python script {\tt plotsinglevar.py}.}
+\caption{\label{fig:python} Plot of {\tt test2} done with the python
+  script {\tt plotsinglevar.py}.}
 \end{figure}
+
+If you list 2 different variables after the plotfile name, then they
+will be plotted side-by-side in a single figure.  For example, 
+\begin{verbatim}
+plotsinglevar.py plt00000/ tfromp enucdot
+\end{verbatim}
+produces the output shown in figure~\ref{fig:python_two}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[height=0.4\textheight]{\visfigpath/plt00000_tfromp_enucdot}
+\caption{\label{fig:python_two} Plot of {\tt test2} done with the
+  python script {\tt plotsinglevar.py} showing 2 variables plotted
+  from a single plotfile.}
+\end{figure}
+
 
 Additional options include `{\tt -m}' to specify the minimum data
 value, `{\tt -M}' to specify the maximum data value, and `{\tt --eps}'
-to make an EPS plot instead of PNG.
+to make an EPS plot instead of PNG.  Running the script with no parameters
+will give the full list available options.
 
 
+Limited 3-d support is available.  When run as with a plotfile name
+and variable, it will plot slices ($x$-$y$, $x$-$z$, and $y$-$z$) 
+through the center of the domain.  The option `{\tt --origin}'
+will put the slices through the origin.
+
+
+%-----------------------------------------------------------------------------
+% yt
+%-----------------------------------------------------------------------------
 \section{Visualizing with \yt}
 \yt is a Python package for analyzing and visualizing simulation data.
 Originally \yt was written for the {\tt Enzo} code, with focus on
