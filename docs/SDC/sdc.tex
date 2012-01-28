@@ -59,7 +59,7 @@ temperature evolution equation.  This is done using a standard ODE solver
 \end{eqnarray}
 Here, $T$ is evolved solely to evaluate the reaction rates,
 $\omegadot_k(\rho,X_k,T)$.  Furthermore, we simplify the problem
-``freezing'' the thermodynamics---i.e., $c_p$ is evaluating at the
+``freezing'' the thermodynamics---i.e., $c_p$ and $\xi_k$ are evaluated at the
 start of the integration and held constant thereafter.
 
 We update the enthalpy at the end of the integration as:
@@ -288,7 +288,8 @@ advection step in the next SDC iteration.
 \section{Summary of Changes}
 The major changes from the non-SDC-enabled burners is the addition of
 the advective terms to the system of ODEs, the fact that we integrate
-$(\rho X_k)$ instead of just $X_k$, and the need to derive the
+$(\rho X_k)$ instead of just $X_k$, integrate $(\rho h)$ instead
+of $T$, and the need to derive the
 temperature from the input state for each RHS evaluation by {\tt
   VODE}.
 
