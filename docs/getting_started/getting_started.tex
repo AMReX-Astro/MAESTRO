@@ -4,14 +4,230 @@ In this chapter we give an overview of \maestro, including some of the
 standard problems, how to run the code, some basic runtime parameters,
 and how to look at the output.
 
+%-----------------------------------------------------------------------------
+% Quick Start
+%-----------------------------------------------------------------------------
+\section{Quick Start}
+
+Here we will run the standard {\tt test2} problem (three reacting
+bubbles in a plane-parallel stratified atmosphere) on a single
+processor.  This test problem was shown in paper~3.  
+
+\begin{enumerate}
+
+\item Get a copy of \boxlib.
+
+\maestro\ requires the \boxlib\ library to manage the grids and 
+parallelization.  We also rely on the build system in \boxlib\ to
+build a \maestro\ executable.  \boxlib can be obtained via {\tt
+git}\footnote{{\tt git} is an open-source source code version control
+system.  It is a standard part of any Linux distribution.  You may
+need to use your system's package manager to install {\tt git} if it
+is not already present} as:
+\begin{verbatim}
+git clone https://ccse.lbl.gov/pub/Downloads/BoxLib.git
+\end{verbatim}
+
+
+\item Setup your shell environment.
+
+\maestro\ needs to know where to find \boxlib\, by specifying the 
+{\tt BOXLIB\_HOME} environment variable.  
+
+If you shell is {\tt Bash}, add
+\begin{verbatim}
+export BOXLIB_HOME="/path/to/BoxLib/"
+\end{verbatim}
+to your {\tt .bashrc}.  
+
+If your shell is{\tt Csh/Tcsh}, add
+\begin{verbatim}
+setenv BOXLIB_HOME /path/to/BoxLib/
+\end{verbatim}
+to your {\tt .cshrc}.  
+
+
+\item Setup the problem's {\tt GNUmakefile}.
+
+In MAESTRO, each problem gets their own sub-directory under {\tt
+MAESTRO/}.  This sub-directory will contain any problem-specific files
+as well as the {\tt GNUmakefile} that specifies how to build the executable.
+Note: we rely on features of GNU {\tt make}.  Full details of the
+{\tt GNUmakefile} can be found in \S~\ref{sec:adding_problems}.  Here
+we will configure for a serial build.
+
+We only need to worry about the options at the very top of the
+{\tt GNUmakefile} for now.  These should be set as follows:
+\begin{itemize}
+\item {\tt NDEBUG := t}
+
+This option determines whether we compile with support for debugging
+(usually also enabling some runtime checks).  Setting {\tt NDEBUG := t}
+turns off debugging.
+
+\item {\tt MPI := }
+
+This determines whether we are doing a parallel build, using the Message
+Passing Interface (MPI) library.  For now, we leave this option empty,
+disabling MPI.  This will build \maestro\ in serial mode, so no MPI
+library needs to be present on the host system.
+
+\item {\tt OMP := }
+
+This determines whether we are using OpenMP to do parallelism within a
+shared memory node.  OpenMP is used together with MPI, with MPI
+distributing the grids across the processors and within a
+shared-memory node, OpenMP allows many cores to operate on the same
+grid.  For now, we leave this option empty, disabling OpenMP.
+
+\item {\tt SDC := }
+
+This option determines whether we want to use the alternate SDC
+(Spectral Deferred Corrections) source for \maestro\ (see
+Chapter \ref{ch:sdc}).  This is experimental, and this option not present
+in all problems.  We leave this blank so we compile the
+default \maestro\ source.
+
+\item {\tt COMP := gfortran}
+
+This option specifies the Fortran compiler.  We will use {\tt gfortran}, which is
+the preferred compiler for \maestro.  Specifying this compiler will automatically
+pull in the compiler settings as specified in {\tt BOXLIB\_HOME/Tools/F\_mk/}.
+
+\end{itemize}
+
+
+\item Build the executable.
+
+Type {\tt make}.  The build system will first find the dependencies
+amongst all the source files and then build the executable.  When
+finished, the executable will have a name like {\tt
+main.Linux.gfortran.exe}, where the specific parts of the name depend
+on the compilers and OS used.
+
+
+\item Copy in auxillary files.
+
+This problem uses the {\tt helmeos} equation of state, so 
+we need to copy in the data table for the equation of state, {\tt
+  extern/EOS/helmeos/helm\_table.dat}.
+
+\begin{verbatim}
+cp ../../extern/EOS/helmeos/helm_table.dat .
+\end{verbatim}
+
+
+\item Run.
+
+Each problem requires an input file.  The inputs file consists of
+lines of the form {\em parameter = value}, where {\em parameter} is
+one of the many runtime parameters \maestro\ knows, and {\em value}
+overrides the default value for that parameter.  For the {\tt test2}
+problem, we will use the inputs file {\tt inputs\_2d}.  An overview of
+some of the more common runtime parameters is given
+in \S~\ref{sec:gettingstarted:runtime}, and a full list of
+all \maestro\ runtime parameters and their default values is given in
+Chapter~\ref{ch:runtimeparameters}.
+
+\maestro\ is run simply as:
+runtime parameters.  The code is run simply as:
+\begin{verbatim}
+ ./main.Linux.Intel.exe inputs_2d
+\end{verbatim}
+We can also override the default value of any runtime parameter by specifying
+it on the commandline as
+\begin{verbatim}
+ ./main.Linux.Intel.exe inputs_2d --parameter value
+\end{verbatim}
+
+As the code runs, a lot of information will pass through the screen.
+For each timestep, each of the steps 1 through 12 shown in
+the \maestro\ flowchart (Chapter~\ref{ch:flowchart}) will be shown
+along with diagnostic information about the solution.  Upon completion
+some memory usage information is printed.
+
+
+\item Examine the output.
+
+As the code runs, it will output both plotfiles and checkpoints as
+well as one of more text diagnostic files ({\tt maestro\_diag.out} by
+default) with integral or extrema information (like maximum Mach
+number) from each timestep.
+
+By default, the plotfiles will be named {\tt plt}{\em nnnnn}, where
+the number {\em nnnnn} is the timestep number when the file was
+outputted.  Similarly, the checkpoints are named {\tt chk}{\em
+nnnnn}.  \boxlib\ plotfiles and checkpoints are actually directories,
+with the data stored in sub-directories grouped by refinement level.
+Details of the simulation (build information, number of processors
+used, output date, output directory, runtime parameter values, ...)
+are stored in the {\tt job\_info} file in each plotfile directory.
+
+Visualization of results is described in the next section.
+
+
+\end{enumerate}
+
+
+\section{Working with the Output}
+
+Visualization and analysis are done with on the plotfiles.  A
+number of in-house and externally developed tools can work 
+with \boxlib-formatted plotfiles.
+
+
+\subsection{\tt Amrvis}
+
+{\tt Amrvis} is an easy-to-use visualization tool developed at LBL for
+2- and 3D datasets which can plot slices through 3D datasets as well
+as volume-renderings.  It can also very easily extract 1D lines
+through the dataset along any coordinate direction.  It is distributed
+separately from the \maestro\ distribution.
+
+
+\subsection{{\tt data\_processing} scripts}
+
+Several useful analysis scripts (written in Fortran 90) can be found
+in {\tt fParallel/data\_processing}.  The {\tt GNUmakefile} there
+needs to be edited to indicate which of the tools to build.  For
+example, to extract the density along a line from the center of a
+plotfile, {\tt plt00200}, in the $y$-direction:
+
+\begin{verbatim}
+fextract.Linux.gfortran.exe -d 2 -v "density" -p plt00200
+\end{verbatim}
+
+These routines are described in \S~\ref{sec:analysis}.
+
+
+
+
+\subsection{VisIt}
+
+VisIt is a powerful, DOE-supported visualization tool for 2- and 3D
+datasets.  It can do contouring, volume rendering, streamlines, ...\
+directly from \boxlib\ plotfiles (to open a plotfile in VisIt, point to
+the {\tt Header} file inside the plotfile directory).  Details on
+visit can be found at {\tt https://wci.llnl.gov/codes/visit/home.html}\,.
+
+\subsection{Diagnostic Files}
+
+By default, \maestro\ outputs global diagnostics each timestep into a file
+called {\tt maestro\_diag.out}.  This includes the maximum Mach number,
+peak temperature, and peak nuclear energy generation rate.  Individual problems
+can provide their own {\tt diag.f90} file to produce custom diagnostic
+output.
+
+
+
+
 
 \section{`Standard' Test Problems}
 
 Different problems in \maestro\ are contained in individual
 sub-directories under {\tt MAESTRO/}.  The {\tt GNUmakefile}
 in each problem directory lists the components of {\tt MAESTRO}
-that are used to build the executable.  Full details of the
-{\tt GNUmakefile} can be found in \S~\ref{sec:adding_problems}.
+that are used to build the executable.  
 
 Some of the test problems available are:
 \begin{itemize}
@@ -57,61 +273,10 @@ This test problem was discussed in \cite{lowMach4}.
 \end{itemize}
 
 
-\section{Compiling and Running}
-
-To build the \maestro\ executable, simply type `{\tt make}' in the
-problem directory.  The executable will have a name like {\tt
-  main.Linux.Intel.exe}, where the specific parts of the name depend
-on the compilers and OS used.  \maestro\ can be built with support for
-parallelism (using MPI or MPI+OpenMP), or compiled as a serial code.
-The top portion of the {\tt GNUmakefile} can be edited to choose the
-build options.  Setting {\tt MPI := t} will build the code to use MPI
-for parallelization.  Setting {\tt OMP := t} will use OpenMP.  OpenMP
-is used together with MPI, with MPI distributing the grids across the
-processors and within a shared-memory node, OpenMP allows many cores
-to operate on the same grid.  A final build option determines whether
-to build the code with support for debugging.  Setting {\tt NDEBUG :=
-  t} disables debugging features.
-
-If the {\tt helmeos} equation of state is chosen for the problem, then
-the data table for the equation of state, {\tt
-  extern/EOS/helmeos/helm\_table.dat} needs to be copied to the
-directory in which the code is run.
-
-Each problem will have one or more inputs files (for example, {\tt
-  test2/inputs\_2d}) which override the default values for one or more
-runtime parameters.  The code is run simply as:
-\begin{verbatim}
-  ./main.Linux.Intel.exe inputs_2d
-\end{verbatim}
-for a serial executable, and, depending on your MPI environment, something like:
-\begin{verbatim}
-  mpiexec -n 16 ./main.Linux.Intel.mpi.exe inputs_2d
-\end{verbatim}
-for the parallel code.
-
-As the code runs, it will output both plotfiles and checkpoints as
-well as one of more text diagnostic files (like {\tt
-  maestro\_diag.out}) with integral or extrema information (like
-maximum Mach number) from each timestep.  By default, the plotfiles
-will be named {\tt plt}{\em nnnnn}, where the number {\em nnnnn} is
-the timestep number when the file was outputted.  Similarly, the
-checkpoints are named {\tt chk}{\em nnnnn}.  BoxLib plotfiles and
-checkpoints are actually directories, with the data stored in
-sub-directories grouped by refinement level.  Details of the simulation
-(build information, number of processors used, output date, output
-directory, runtime parameter values, ...) are stored in the {\tt
-  job\_info} file in each plotfile directory.
-
-A large number of runtime parameters affect the code's behavior.  Any
-runtime parameter can be set either in the inputs file, as {\tt parameter
-  = value}, or on the command line by adding {\tt --parameter value} after
-listing the inputs file on the command line.  A full list of runtime
-parameters is detailed in \S~\ref{sec:runtime_parameters}.  Below we
-outline the most common runtime parameters.
 
 
 \section{Common Runtime Parameters}
+\label{sec:gettingstarted:runtime}
 
 \subsection{Controlling Timestepping and Output}
 
@@ -217,53 +382,4 @@ number of zones on the finest grid in the $x$ direction will be
 ${\tt n\_cellx} \cdot 2^{({\tt max\_levels} -1)}$.
 
 
-
-\section{Working with the Output}
-
-Visualization and analysis are done with on the plotfiles.  A
-number of in-house and externally developed tools can work 
-with BoxLib-formatted plotfiles.
-
-
-\subsection{\tt Amrvis}
-
-{\tt Amrvis} is an easy-to-use visualization tool developed at LBL for
-2- and 3D datasets which can plot slices through 3D datasets as well
-as volume-renderings.  It can also very easily extract 1D lines
-through the dataset along any coordinate direction.  It is distributed
-separately from the \maestro\ distribution.
-
-
-\subsection{{\tt data\_processing} scripts}
-
-Several useful analysis scripts (written in Fortran 90) can be found
-in {\tt fParallel/data\_processing}.  The {\tt GNUmakefile} there
-needs to be edited to indicate which of the tools to build.  For
-example, to extract the density along a line from the center of a
-plotfile, {\tt plt00200}, in the $y$-direction:
-
-\begin{verbatim}
-fextract.Linux.gfortran.exe -d 2 -v "density" -p plt00200
-\end{verbatim}
-
-These routines are described in \S~\ref{sec:analysis}.
-
-
-
-
-\subsection{VisIt}
-
-VisIt is a powerful, DOE-supported visualization tool for 2- and 3D
-datasets.  It can do contouring, volume rendering, streamlines, ...\
-directly from BoxLib plotfiles (to open a plotfile in VisIt, point to
-the {\tt Header} file inside the plotfile directory).  Details on
-visit can be found at {\tt https://wci.llnl.gov/codes/visit/home.html}\,.
-
-\subsection{Diagnostic Files}
-
-By default, \maestro\ outputs global diagnostics each timestep into a file
-called {\tt maestro\_diag.out}.  This includes the maximum Mach number,
-peak temperature, and peak nuclear energy generation rate.  Individual problems
-can provide their own {\tt diag.f90} file to produce custom diagnostic
-output.
 
