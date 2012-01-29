@@ -489,9 +489,9 @@ contains
                 call burner(rhox_in, rhoh_in, dt, rho_out, rhox_out, rhoh_out, &
                             rhowdot_out, rho_Hnuc_out, sdc_rhoX, sdc_rhoh, p0_in)
              else
-                rho_out = rho_in
-                rhox_out = rhox_in
-                rhoh_out = rhoh_in
+                rho_out = rho_in + sum(sdc_rhoX(1:nspec))*dt
+                rhox_out = rhox_in + sdc_rhoX*dt
+                rhoh_out = rhoh_in + sdc_rhoh*dt
                 rhowdot_out = 0.d0
                 rho_Hnuc_out = 0.d0
              endif
