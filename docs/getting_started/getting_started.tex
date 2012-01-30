@@ -15,7 +15,7 @@ processor.  This test problem was shown in paper~3.
 
 \begin{enumerate}
 
-\item Get a copy of \boxlib.
+\item {\em Get a copy of \boxlib}.
 
 \maestro\ requires the \boxlib\ library to manage the grids and 
 parallelization.  We also rely on the build system in \boxlib\ to
@@ -29,7 +29,7 @@ git clone https://ccse.lbl.gov/pub/Downloads/BoxLib.git
 \end{verbatim}
 
 
-\item Setup your shell environment.
+\item {\em Setup your shell environment}.
 
 \maestro\ needs to know where to find \boxlib\, by specifying the 
 {\tt BOXLIB\_HOME} environment variable.  
@@ -40,14 +40,14 @@ export BOXLIB_HOME="/path/to/BoxLib/"
 \end{verbatim}
 to your {\tt .bashrc}.  
 
-If your shell is{\tt Csh/Tcsh}, add
+If your shell is {\tt Csh/Tcsh}, add
 \begin{verbatim}
 setenv BOXLIB_HOME /path/to/BoxLib/
 \end{verbatim}
 to your {\tt .cshrc}.  
 
 
-\item Setup the problem's {\tt GNUmakefile}.
+\item {\em Setup the problem's {\tt GNUmakefile}}.
 
 In MAESTRO, each problem gets their own sub-directory under {\tt
 MAESTRO/}.  This sub-directory will contain any problem-specific files
@@ -56,6 +56,7 @@ Note: we rely on features of GNU {\tt make}.  Full details of the
 {\tt GNUmakefile} can be found in \S~\ref{sec:adding_problems}.  Here
 we will configure for a serial build.
 
+Change directory to {\tt MAESTRO/test2/}.    
 We only need to worry about the options at the very top of the
 {\tt GNUmakefile} for now.  These should be set as follows:
 \begin{itemize}
@@ -97,7 +98,7 @@ pull in the compiler settings as specified in {\tt BOXLIB\_HOME/Tools/F\_mk/}.
 \end{itemize}
 
 
-\item Build the executable.
+\item {\em Build the executable}.
 
 Type {\tt make}.  The build system will first find the dependencies
 amongst all the source files and then build the executable.  When
@@ -106,7 +107,7 @@ main.Linux.gfortran.exe}, where the specific parts of the name depend
 on the compilers and OS used.
 
 
-\item Copy in auxillary files.
+\item {\em Copy in auxillary files}.
 
 This problem uses the {\tt helmeos} equation of state, so 
 we need to copy in the data table for the equation of state, {\tt
@@ -117,7 +118,7 @@ cp ../../extern/EOS/helmeos/helm_table.dat .
 \end{verbatim}
 
 
-\item Run.
+\item {\em Run!}
 
 Each problem requires an input file.  The inputs file consists of
 lines of the form {\em parameter = value}, where {\em parameter} is
@@ -147,7 +148,7 @@ along with diagnostic information about the solution.  Upon completion
 some memory usage information is printed.
 
 
-\item Examine the output.
+\item {\em Examine the output}.
 
 As the code runs, it will output both plotfiles and checkpoints as
 well as one of more text diagnostic files ({\tt maestro\_diag.out} by
@@ -176,13 +177,31 @@ number of in-house and externally developed tools can work
 with \boxlib-formatted plotfiles.
 
 
-\subsection{\tt Amrvis}
+\subsection{\amrvis}
 
-{\tt Amrvis} is an easy-to-use visualization tool developed at LBL for
+\amrvis\ is an easy-to-use visualization tool developed at LBL for
 2- and 3D datasets which can plot slices through 3D datasets as well
 as volume-renderings.  It can also very easily extract 1D lines
 through the dataset along any coordinate direction.  It is distributed
 separately from the \maestro\ distribution.
+
+\amrvis\ can be obtained via git as:
+\begin{verbatim}
+git clone https://ccse.lbl.gov/pub/Downloads/Amrvis.git
+\end{verbatim}
+\amrvis\ is built in the C++ \boxlib\ framework (instead of the Fortran 
+\boxlib\ framework that \maestro\ uses).  The build systems are similar,
+but differ in a few ways.  
+
+\amrvis\ uses the {\tt Motif} library for defining the GUI.  On a Linux 
+system, you may need to install the {\tt lesstif} package and any
+related development packages (e.g.\ {\tt lesstif-devel}).  Depending
+on your Linux system, you may also need to install {\tt libXpm} 
+and related development packages (e.g.\ {\tt libXpm-devel}).
+
+%need to modify _f95_lib 
+
+library line
 
 
 \subsection{{\tt data\_processing} scripts}
@@ -199,16 +218,24 @@ fextract.Linux.gfortran.exe -d 2 -v "density" -p plt00200
 
 These routines are described in \S~\ref{sec:analysis}.
 
+There is also a python visualization method in {\tt
+fParallel/data\_processing/python\_plotfile}.  This is described
+in \S~\ref{sec:vis:python}.
 
 
+\subsection{\visit}
 
-\subsection{VisIt}
-
-VisIt is a powerful, DOE-supported visualization tool for 2- and 3D
+\visit\ is a powerful, DOE-supported visualization tool for 2- and 3D
 datasets.  It can do contouring, volume rendering, streamlines, ...\
-directly from \boxlib\ plotfiles (to open a plotfile in VisIt, point to
+directly from \boxlib\ plotfiles (to open a plotfile in \visit, point to
 the {\tt Header} file inside the plotfile directory).  Details on
-visit can be found at {\tt https://wci.llnl.gov/codes/visit/home.html}\,.
+\visit\ can be found at:\newline
+ {\tt https://wci.llnl.gov/codes/visit/home.html}\,. \newline
+The easiest way to get started with \visit\ is to download a precompiled
+binary from the \visit\ webpage.
+
+Once \visit\ is installed, you can open a \boxlib\ plotfile by pointing
+\visit\ to the {\tt Header} file in the plotfile directory.
 
 \subsection{Diagnostic Files}
 
