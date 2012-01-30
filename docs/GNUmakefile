@@ -20,6 +20,7 @@ section_sources = maestro_doc.bib \
                   introduction/introduction.tex \
                   flowchart/flowchart.tex \
                   preface/preface.tex \
+                  getting_started/getting_started.tex \
                   architecture/architecture.tex \
                   runtime_parameters/runtime_parameters.tex \
                   volume_discrepancy/volume_discrepancy.tex \
