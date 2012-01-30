@@ -250,7 +250,7 @@ Predicting the full $\rho$ begins with Eq.~\ref{rho equation}:
 Using this, $\rho$ is predicted to the edges using {\tt
   make\_edge\_scal} in {\tt density\_advance}, with the underbraced
 force computed in {\tt modify\_scal\_force} with {\tt fullform =
-  .true.}.
+  .true.}. \MarginPar{we need to switch this over to doing the conservative prediction}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Advancing $\rho X_k$}\label{Advancing rhoX_k}
@@ -589,7 +589,7 @@ by predicting $h$ to the edges.
 
 For {\tt species\_pred\_types}: {\tt predict\_rhoprime\_and\_X} or
 {\tt predict\_rhoprime\_and\_rhoX}, we wish to construct $(\rho_0 +
-\rho'_\mathrm{edge} ) h_\mathrm{edge}$.
+\rho'_\mathrm{edge} ) h_\mathrm{edge}$. \MarginPar{alternately, we could construct $\rho_\mathrm{edge} = \sum_k (\rho X_k)_\mathrm{edge}$ for s\_p\_t = 2}
 
 For {\tt species\_pred\_types}: {\tt predict\_rho\_and\_X}, we wish to
 construct $\rho_\mathrm{edge} h_\mathrm{edge}$.
