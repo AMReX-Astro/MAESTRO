@@ -95,6 +95,13 @@
 \usepackage{shorttoc}
 
 
+% spacing in the table of contents
+\usepackage[titles]{tocloft}
+
+\setlength{\cftbeforechapskip}{2ex}
+\setlength{\cftbeforesecskip}{0.25ex}
+
+
 % don't put a header on blank pages, see
 % http://www.latex-community.org/forum/viewtopic.php?f=4&p=51559
 % change ``plain'' to ``empty'' to eliminate the page number
@@ -106,6 +113,16 @@
 \newpage
 \if@twocolumn\hbox{}\newpage\fi\fi\fi}
 \makeatother
+
+
+% don't make the chapter/section headings uppercase.  See the fancyhdr
+% documentation (section 9)
+\usepackage{fancyhdr}
+\renewcommand{\chaptermark}[1]{%
+ \markboth{\chaptername
+\ \thechapter.\ #1}{}}
+
+\renewcommand{\sectionmark}[1]{\markright{\thesection---#1}}
 
 
 
@@ -190,6 +207,7 @@
 \clearpage
 
 \mainmatter
+
 
 %-----------------------------------------------------------------------------
 \part{Overview of the \maestro\ Algorithm}
