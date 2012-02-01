@@ -51,6 +51,19 @@ Recent versions of these compilers seem to work ok.  Some notes:
 
 Overall, these tend to be flaky. 
 
+Machine specific notes:
+
+\begin{itemize}
+\item on Hopper, with OpenMP:
+
+From NERSC support ``Intel OpenMP has an extra thread at run time
+beyond OpenMP threads.  This messes up the default affinity settings
+for aprun, since you have a spare thread waiting until all the other
+ones are completed.  You need to break the default affinity by adding
+either one of these arguments to aprun:''
+
+{\tt -cc none} or {\tt -cc numa\_node}.
+\end{itemize}
 
 %-----------------------------------------------------------------------------
 \section{PathScale}
