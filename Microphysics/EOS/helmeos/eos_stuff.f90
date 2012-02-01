@@ -9,34 +9,31 @@ module eos_module
 
   private 
 
-  integer, parameter :: NP = 1
-  integer, parameter, public :: npts = 1
-
-  real(kind=dp_t), public :: xn_eos(NP,nspec)
-  real(kind=dp_t), public :: temp_eos(NP)
-  real(kind=dp_t), public :: den_eos(NP)
-  real(kind=dp_t), public :: abar_eos(NP)
-  real(kind=dp_t), public :: zbar_eos(NP)
-  real(kind=dp_t), public :: e_eos(NP)
-  real(kind=dp_t), public :: p_eos(NP)
-  real(kind=dp_t), public :: h_eos(NP)
-  real(kind=dp_t), public :: cv_eos(NP)
-  real(kind=dp_t), public :: cp_eos(NP)
-  real(kind=dp_t), public :: xne_eos(NP)
-  real(kind=dp_t), public :: eta_eos(NP)
-  real(kind=dp_t), public :: pele_eos(NP)
-  real(kind=dp_t), public :: dpdt_eos(NP)
-  real(kind=dp_t), public :: dpdr_eos(NP)
-  real(kind=dp_t), public :: dedr_eos(NP)
-  real(kind=dp_t), public :: dedt_eos(NP)
-  real(kind=dp_t), public :: gam1_eos(NP)
-  real(kind=dp_t), public ::   cs_eos(NP)
-  real(kind=dp_t), public ::    s_eos(NP)
-  real(kind=dp_t), public :: dsdt_eos(NP)
-  real(kind=dp_t), public :: dsdr_eos(NP)
-  real(kind=dp_t), public :: dpdX_eos(NP,nspec)
-  real(kind=dp_t), public :: dhdX_eos(NP,nspec)
-  real(kind=dp_t), public :: conduct_eos(NP)
+  real(kind=dp_t), public :: xn_eos(nspec)
+  real(kind=dp_t), public :: temp_eos
+  real(kind=dp_t), public :: den_eos
+  real(kind=dp_t), public :: abar_eos
+  real(kind=dp_t), public :: zbar_eos
+  real(kind=dp_t), public :: e_eos
+  real(kind=dp_t), public :: p_eos
+  real(kind=dp_t), public :: h_eos
+  real(kind=dp_t), public :: cv_eos
+  real(kind=dp_t), public :: cp_eos
+  real(kind=dp_t), public :: xne_eos
+  real(kind=dp_t), public :: eta_eos
+  real(kind=dp_t), public :: pele_eos
+  real(kind=dp_t), public :: dpdt_eos
+  real(kind=dp_t), public :: dpdr_eos
+  real(kind=dp_t), public :: dedr_eos
+  real(kind=dp_t), public :: dedt_eos
+  real(kind=dp_t), public :: gam1_eos
+  real(kind=dp_t), public ::   cs_eos
+  real(kind=dp_t), public ::    s_eos
+  real(kind=dp_t), public :: dsdt_eos
+  real(kind=dp_t), public :: dsdr_eos
+  real(kind=dp_t), public :: dpdX_eos(nspec)
+  real(kind=dp_t), public :: dhdX_eos(nspec)
+  real(kind=dp_t), public :: conduct_eos
 
   integer, public         :: pt_index_eos(MAX_SPACEDIM)
 
@@ -157,13 +154,12 @@ contains
 
      do_diag = .false.
 
-     temp_eos(1) = T
-      den_eos(1) = R
-        e_eos(1) = e
-      xn_eos(1,1:nspec) = X(1:nspec)
+     temp_eos = T
+      den_eos = R
+        e_eos = e
+      xn_eos(1:nspec) = X(1:nspec)
 
      call eos(eos_input_re, den_eos, temp_eos, &
-              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -173,12 +169,12 @@ contains
               dsdt_eos, dsdr_eos, &
               do_diag, pt_index)
 
-    G  = gam1_eos(1)
-    P  =    p_eos(1)
-    C  =   cs_eos(1)
-    T  = temp_eos(1)
-    dpdr_e = dpdr_eos(1) - dpdt_eos(1)*dedr_eos(1)/dedt_eos(1)
-    dpde = dpdt_eos(1) / dedt_eos(1)
+    G  = gam1_eos
+    P  =    p_eos
+    C  =   cs_eos
+    T  = temp_eos
+    dpdr_e = dpdr_eos - dpdt_eos*dedr_eos/dedt_eos
+    dpde = dpdt_eos / dedt_eos
 
   end subroutine eos_given_ReX
 
@@ -195,13 +191,12 @@ contains
 
      do_diag = .false.
 
-     temp_eos(1) = T
-      den_eos(1) = R
-        p_eos(1) = P
-      xn_eos(1,1:nspec) = X(1:nspec)
+     temp_eos = T
+      den_eos = R
+        p_eos = P
+      xn_eos(1:nspec) = X(1:nspec)
 
      call eos(eos_input_rp, den_eos, temp_eos, &
-              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -211,8 +206,8 @@ contains
               dsdt_eos, dsdr_eos, &
               do_diag, pt_index)
 
-    e  =    e_eos(1)
-    T  = temp_eos(1)
+    e  =    e_eos
+    T  = temp_eos
 
   end subroutine eos_e_given_RPX
 
@@ -230,13 +225,12 @@ contains
 
      do_diag = .false.
 
-     temp_eos(1) = T
-      den_eos(1) = R
-        e_eos(1) = e
-      xn_eos(1,1:nspec) = X(1:nspec)
+     temp_eos = T
+      den_eos = R
+        e_eos = e
+      xn_eos(1:nspec) = X(1:nspec)
 
      call eos(eos_input_re, den_eos, temp_eos, &
-              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -246,7 +240,7 @@ contains
               dsdt_eos, dsdr_eos, &
               do_diag, pt_index)
 
-    S  = s_eos(1)
+    S  = s_eos
 
   end subroutine eos_S_given_ReX
 
@@ -262,12 +256,11 @@ contains
 
      do_diag = .false.
 
-      den_eos(1) = R
-     temp_eos(1) = T
-      xn_eos(1,1:nspec) = X(1:nspec)
+      den_eos = R
+     temp_eos = T
+      xn_eos(1:nspec) = X(1:nspec)
 
      call eos(eos_input_rt, den_eos, temp_eos, &
-              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -277,8 +270,8 @@ contains
               dsdt_eos, dsdr_eos, &
               do_diag, pt_index)
 
-    P  =    p_eos(1)
-    e  =    e_eos(1)
+    P  =    p_eos
+    e  =    e_eos
 
   end subroutine eos_given_RTX
 
@@ -298,12 +291,11 @@ contains
 
     do_diag = .false.
 
-    den_eos(1) = R
-    temp_eos(1) = T
-    xn_eos(1,1:nspec) = X(1:nspec)
+    den_eos = R
+    temp_eos = T
+    xn_eos(1:nspec) = X(1:nspec)
 
     call eos(eos_input_rt, den_eos, temp_eos, &
-             npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -313,9 +305,9 @@ contains
              dsdt_eos, dsdr_eos, &
              do_diag, pt_index)
     
-    P  =    p_eos(1)
-    e  =    e_eos(1)
-    dpdr =  dpdr_eos(1)
+    P  =    p_eos
+    e  =    e_eos
+    dpdr =  dpdr_eos
 
   end subroutine eos_dpdr_given_RTX
 
@@ -333,13 +325,12 @@ contains
      do_diag = .false.
 
      ! An initial guess of density needs to be given
-     den_eos(1) = R 
-     p_eos(1) = P
-     temp_eos(1) = T
-     xn_eos(1,1:nspec) = X(1:nspec)
+     den_eos = R 
+     p_eos = P
+     temp_eos = T
+     xn_eos(1:nspec) = X(1:nspec)
 
      call eos(eos_input_tp, den_eos, temp_eos, &
-              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -349,8 +340,8 @@ contains
               dsdt_eos, dsdr_eos, &
               do_diag, pt_index)
 
-    R  =    den_eos(1)
-    e  =    e_eos(1)
+    R  =    den_eos
+    e  =    e_eos
 
   end subroutine eos_given_TPX
 
@@ -367,14 +358,13 @@ contains
 
     do_diag = .false.
 
-    s_eos(1)    = S
-    p_eos(1)    = P
-    den_eos(1)  = R
-    temp_eos(1) = T
-    xn_eos(1,1:nspec) = X(1:nspec)
+    s_eos    = S
+    p_eos    = P
+    den_eos  = R
+    temp_eos = T
+    xn_eos(1:nspec) = X(1:nspec)
 
     call eos(eos_input_ps, den_eos, temp_eos, &
-             npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -384,9 +374,9 @@ contains
              dsdt_eos, dsdr_eos, &
              do_diag, pt_index)
 
-    R = den_eos(1)
-    T = temp_eos(1)
-    e = e_eos(1)
+    R = den_eos
+    T = temp_eos
+    e = e_eos
 
   end subroutine eos_given_PSX
 
@@ -395,7 +385,6 @@ contains
   ! The main interface -- this is used directly by MAESTRO
   !---------------------------------------------------------------------------
   subroutine eos(input, dens, temp, &
-                 npoints, &
                  xmass, &
                  pres, enthalpy, eint, &
                  c_v, c_p, ne, eta, pele, &
@@ -413,7 +402,6 @@ contains
 !
 ! dens     -- mass density (g/cc)
 ! temp     -- temperature (K)
-! npoints     -- the number of elements in input/output arrays
 ! xmass    -- the mass fractions of the individual isotopes
 ! pres     -- the pressure (dyn/cm**2)
 ! enthalpy -- the enthalpy (erg/g)
@@ -427,8 +415,8 @@ contains
 ! dPdR     -- d pressure/ d density
 ! dEdT     -- d energy/ d temperature
 ! dEdR     -- d energy/ d density
-! dPdX     -- d pressure / d xmass(k)
-! dhdX     -- d enthalpy / d xmass(k)  -- AT CONSTANT PRESSURE!!!
+! dPdX     -- d pressure / d xmass
+! dhdX     -- d enthalpy / d xmass  -- AT CONSTANT PRESSURE!!!
 ! gam1     -- first adiabatic index (d log P/ d log rho) |_s
 ! cs       -- sound speed -- note that this is the non-relativistic one
 !             (we compute it in this wrapper as sqrt(gam1 p /rho) instead
@@ -470,24 +458,24 @@ contains
 
 !     ::::: Arguments
     logical             :: do_eos_diag
-    integer, intent(in) :: input, npoints
+    integer, intent(in) :: input
 
     ! some of these quantites can be inputs or outputs
-    real(kind=dp_t), intent(inout) :: dens(npoints), temp(npoints)
-    real(kind=dp_t), intent(in)    :: xmass(npoints,nspec)
-    real(kind=dp_t), intent(inout) :: pres(npoints), enthalpy(npoints), &
-                                      eint(npoints), entropy(npoints)
+    real(kind=dp_t), intent(inout) :: dens, temp
+    real(kind=dp_t), intent(in)    :: xmass(nspec)
+    real(kind=dp_t), intent(inout) :: pres, enthalpy, &
+                                      eint, entropy
 
     ! these quantities are always outputs
-    real(kind=dp_t), intent(out) :: c_v(npoints), c_p(npoints)
-    real(kind=dp_t), intent(out) :: ne(npoints), eta(npoints), pele(npoints)
-    real(kind=dp_t), intent(out) :: dPdT(npoints), dPdR(npoints), &
-                                    dedT(npoints), dedR(npoints)
-    real(kind=dp_t), intent(out) :: gam1(npoints)
-    real(kind=dp_t), intent(out) :: cs(npoints)
-    real(kind=dp_t), intent(out) :: dPdX(npoints,nspec), &
-                                    dhdX(npoints,nspec)
-    real(kind=dp_t), intent(out) :: dsdT(npoints), dsdR(npoints)
+    real(kind=dp_t), intent(out) :: c_v, c_p
+    real(kind=dp_t), intent(out) :: ne, eta, pele
+    real(kind=dp_t), intent(out) :: dPdT, dPdR, &
+                                    dedT, dedR
+    real(kind=dp_t), intent(out) :: gam1
+    real(kind=dp_t), intent(out) :: cs
+    real(kind=dp_t), intent(out) :: dPdX(nspec), &
+                                    dhdX(nspec)
+    real(kind=dp_t), intent(out) :: dsdT, dsdR
 
     integer, optional, intent(in   ) :: pt_index(:)
 
@@ -498,18 +486,18 @@ contains
     parameter (max_newton = 100)
     
     real(kind=dp_t) :: error, error2
-    real(kind=dp_t) :: ymass(npoints,nspec)
-    real(kind=dp_t) :: abar(npoints), zbar(npoints)
-    real(kind=dp_t) :: energy_want(npoints)
-    real(kind=dp_t) :: enthalpy_want(npoints)
-    real(kind=dp_t) :: pres_want(npoints)
-    real(kind=dp_t) :: entropy_want(npoints)
-    real(kind=dp_t) :: dhdt(npoints)
-    real(kind=dp_t) :: tnew(npoints)
-    real(kind=dp_t) :: dnew(npoints)
-    real(kind=dp_t) :: enth1(npoints)
-    real(kind=dp_t) :: ener1(npoints)
-    real(kind=dp_t) :: dedX(npoints,nspec)
+    real(kind=dp_t) :: ymass(nspec)
+    real(kind=dp_t) :: abar, zbar
+    real(kind=dp_t) :: energy_want
+    real(kind=dp_t) :: enthalpy_want
+    real(kind=dp_t) :: pres_want
+    real(kind=dp_t) :: entropy_want
+    real(kind=dp_t) :: dhdt
+    real(kind=dp_t) :: tnew
+    real(kind=dp_t) :: dnew
+    real(kind=dp_t) :: enth1
+    real(kind=dp_t) :: ener1
+    real(kind=dp_t) :: dedX(nspec)
 
     real(kind=dp_t) :: dpdd, pres1, entr1
     real(kind=dp_t) :: f, g, dfdd, dfdt, dgdd, dgdt, deld
@@ -528,24 +516,20 @@ contains
     character (len=64) :: err_string  
 
 !     ::::: Input/Output arrays for call to helmeos
-    real(kind=dp_t) :: temp_row(npoints), den_row(npoints), abar_row(npoints), &
-                     zbar_row(npoints), etot_row(npoints), ptot_row(npoints), &
-                     cv_row(npoints), cp_row(npoints), &
-                     xne_row(npoints), xnp_row(npoints), etaele_row(npoints), &
-                     pele_row(npoints), ppos_row(npoints), dpd_row(npoints), &
-                     dpt_row(npoints), dpa_row(npoints), dpz_row(npoints), &
-                     ded_row(npoints), det_row(npoints), dea_row(npoints), &
-                     dez_row(npoints), &
-                     stot_row(npoints), dsd_row(npoints), dst_row(npoints)
-    real(kind=dp_t) :: gam1_row(npoints), cs_row(npoints)
+    real(kind=dp_t) :: temp_row, den_row, abar_row, &
+                     zbar_row, etot_row, ptot_row, &
+                     cv_row, cp_row, &
+                     xne_row, xnp_row, etaele_row, &
+                     pele_row, ppos_row, dpd_row, &
+                     dpt_row, dpa_row, dpz_row, &
+                     ded_row, det_row, dea_row, &
+                     dez_row, &
+                     stot_row, dsd_row, dst_row
+    real(kind=dp_t) :: gam1_row, cs_row
 
     if (present(pt_index)) dim_ptindex = size(pt_index,dim=1)
       
     if (.not. initialized) call bl_error('EOS: not initialized')
-      
-    if (npoints > NP) then
-       call bl_error('EOS: eos called with too large of a vector size')
-    endif
 
     ! this format statement is for writing into err_string -- make sure that
     ! the len of err_string can accomodate this format specifier
@@ -553,41 +537,17 @@ contains
 1002 format(1x,"zone index info: i = ", i5, '  j = ', i5)
 1003 format(1x,"zone index info: i = ", i5, '  j = ', i5, '  k = ', i5)
 
-
-!      print*,'EOS with npoints, nspec = ',npoints,nspec
-
-! get the average atomic mass and the average proton number for the current
-! composition
-! MLW: use tnew and dnew as scratch arrays for azbar
-!      call azbar(xmass,nxpts,aion,zion,npoints,nspec,ymass,
-!     +           abar,zbar,tnew,dnew)
-!
-!
-! MLW: use tnew and dnew as scratch arrays 
-!..mass fractions     = xmass
-!..number of nucleons = aion
-!..charge of nucleus  = zion
-!..output:
-!..molar abundances        = ymass
-!..mean number of nucleons = abar
-!..mean nucleon charge     = zbar
-    do k = 1, npoints
-       tnew(k)  = 0.0d0
-       dnew(k)   = 0.0d0
-    enddo
+    tnew  = 0.0d0
+    dnew   = 0.0d0
 
     do i=1,nspec
-       do k = 1, npoints
-          ymass(k,i) = xmass(k,i)/aion(i)
-          dnew(k)    = dnew(k) + ymass(k,i)
-          tnew(k)    = tnew(k) + zion(i) * ymass(k,i)
-       enddo
+       ymass(i) = xmass(i)/aion(i)
+       dnew    = dnew + ymass(i)
+       tnew    = tnew + zion(i) * ymass(i)
     enddo
 
-    do k = 1, npoints
-       abar(k) = 1.0d0/dnew(k)
-       zbar(k) = tnew(k) * abar(k)
-    enddo
+    abar = 1.0d0/dnew
+    zbar = tnew * abar
 
     if (input .EQ. eos_input_rt) then
 
@@ -596,15 +556,13 @@ contains
 !---------------------------------------------------------------------------
 
 ! we are taking density, temperature, and composition as given
-       do k = 1, npoints
-          temp_row(k) = temp(k)
-          den_row(k)  = dens(k)
-          abar_row(k) = abar(k)
-          zbar_row(k) = zbar(k)
-       enddo
+       temp_row = temp
+       den_row  = dens
+       abar_row = abar
+       zbar_row = zbar
          
 ! call the eos
-       call helmeos(do_coulomb,npoints,eosfail, &
+       call helmeos(do_coulomb,eosfail, &
                    temp_row, den_row, abar_row, zbar_row, &
                    etot_row, ptot_row, &
                    cv_row, cp_row, xne_row, xnp_row, etaele_row, &
@@ -629,50 +587,46 @@ contains
           endif
        endif
 
-
-! fill the outputs
-       do k = 1, npoints
-          pres(k) = ptot_row(k)
-          eint(k) = etot_row(k)
+       ! fill the outputs
+       pres = ptot_row
+       eint = etot_row
          
-          enthalpy(k) = eint(k) + pres(k)/dens(k)
+       enthalpy = eint + pres/dens
 
-          c_v(k) = cv_row(k)
-          c_p(k) = cp_row(k)
+       c_v = cv_row
+       c_p = cp_row
 
-! store the number density of electrons and positrons, the degeneracy
-! parameter, and the total electron/positron pressure
-          ne(k)   = xne_row(k) + xnp_row(k)
-          eta(k)  = etaele_row(k)
-          pele(k) = pele_row(k) + ppos_row(k)
+       ! store the number density of electrons and positrons, the degeneracy
+       ! parameter, and the total electron/positron pressure ne   = xne_row + xnp_row
+       eta  = etaele_row
+       pele = pele_row + ppos_row
 
-          dPdR(k) = dpd_row(k)
-          dPdT(k) = dpt_row(k)
-          dEdR(k) = ded_row(k)
-          dEdT(k) = det_row(k)
-          gam1(k) = gam1_row(k)
-!          cs(k) =   cs_row(k)
-          cs(k) =   sqrt(gam1(k)*pres(k)/dens(k))
-          entropy(k) = stot_row(k)
-          dsdT(k) = dst_row(k)
-          dsdR(k) = dsd_row(k)
+       dPdR = dpd_row
+       dPdT = dpt_row
+       dEdR = ded_row
+       dEdT = det_row
+       gam1 = gam1_row
+!       cs =   cs_row
+       cs =   sqrt(gam1*pres/dens)
+       entropy = stot_row
+       dsdT = dst_row
+       dsdR = dsd_row
 
-          do n = 1, nspec
-             dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dpz_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
+       do n = 1, nspec
+          dpdX(n) = dpa_row * (abar/aion(n))* &
+                              (aion(n) - abar) + &
+                    dpz_row * (abar/aion(n))* &
+                              (zion(n) - zbar)
 
-             dEdX(k,n) = dea_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dez_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
+          dEdX(n) = dea_row * (abar/aion(n))* &
+                              (aion(n) - abar) + &
+                    dez_row * (abar/aion(n))* &
+                              (zion(n) - zbar)
 
-             ! create the enthalpy derivatives wrt average composition --
-             ! hold pressure constant!!!
-             dhdX(k,n) = dEdX(k,n) + &
-                  (pres(k)/dens(k)**2 - dEdR(k))*dpdX(k,n)/dPdr(k)
-          enddo
+          ! create the enthalpy derivatives wrt average composition --
+          ! hold pressure constant!!!
+          dhdX(n) = dEdX(n) + &
+               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
 
        enddo
 
@@ -683,21 +637,19 @@ contains
 !---------------------------------------------------------------------------
 
        ! load the initial guess
-       do k = 1, npoints
-          temp_row(k) = temp(k)
-          den_row(k)  = dens(k)
-          abar_row(k) = abar(k)
-          zbar_row(k) = zbar(k)
+       temp_row = temp
+       den_row  = dens
+       abar_row = abar
+       zbar_row = zbar
 
-          if (do_eos_diag) print*,'T/D INIT ',temp(k),dens(k)
+       if (do_eos_diag) print*,'T/D INIT ',temp,dens
 
-          ! we want to converge to the given enthalpy
-          enthalpy_want(k) = enthalpy(k)
+       ! we want to converge to the given enthalpy
+       enthalpy_want = enthalpy
 
-          if (do_eos_diag) print*,'WANT H ',enthalpy(k)
-       enddo
+       if (do_eos_diag) print*,'WANT H ',enthalpy
 
-       call helmeos(do_coulomb,npoints, eosfail, &
+       call helmeos(do_coulomb,eosfail, &
                     temp_row, den_row, abar_row, zbar_row, &
                     etot_row, ptot_row, &
                     cv_row, cp_row, xne_row, xnp_row, etaele_row, &
@@ -727,44 +679,39 @@ contains
           niter = iter
 
           ! recompute the enthalpy and it's temperature derivative
-          do k = 1, npoints
+          enth1 = etot_row + ptot_row/dens
+          if (do_eos_diag) print*,'ENTH1 ',iter,enth1
 
-             enth1(k) = etot_row(k) + ptot_row(k)/dens(k)
-             if (do_eos_diag) print*,'ENTH1 ',iter,enth1(k)
+          dhdt = det_row + dpt_row/dens
+          if (do_eos_diag) print*,'DHDT ',iter,dhdt
 
-             dhdt(k) = det_row(k) + dpt_row(k)/dens(k)
-             if (do_eos_diag) print*,'DHDT ',iter,dhdt(k)
+          tnew = temp_row - &
+               (enth1 - enthalpy_want)/dhdt
 
-             tnew(k) = temp_row(k) - &
-                  (enth1(k) - enthalpy_want(k))/dhdt(k)
+          if (do_eos_diag) then
+             print *, 'TNEW FIRST ', temp_row, ' - ', &
+                  enth1 - enthalpy_want, ' / ', dhdt
+          endif
 
-             if (do_eos_diag) then
-                print *, 'TNEW FIRST ', temp_row(k), ' - ', &
-                     enth1(k) - enthalpy_want(k), ' / ', dhdt(k)
-             endif
+          ! don't let the temperature change by more than a factor of two
+          tnew = max(.5d0*temp_row, &
+                        min(tnew, 2.d0*temp_row))
 
-             ! don't let the temperature change by more than a factor of two
-             tnew(k) = max(.5d0*temp_row(k), &
-                           min(tnew(k), 2.d0*temp_row(k)))
+          ! don't let us freeze
+          tnew = max(smallt, tnew)
 
-             ! don't let us freeze
-             tnew(k) = max(smallt, tnew(k))
-
-             if (do_eos_diag) print*,'TNEW AFTER ',iter,tnew(1)
-          enddo
+          if (do_eos_diag) print*,'TNEW AFTER ',iter,tnew
 
           ! compute the error
           error = 0.0d0
-          do k = 1, npoints
-             error = max(error,abs(tnew(k) - temp_row(k))/temp_row(k))
+          error = max(error,abs(tnew - temp_row)/temp_row)
 
-             ! store the new temperature
-             temp_row(k) = tnew(k)
-          enddo
+          ! store the new temperature
+          temp_row = tnew
 
           if (error .LT. ttol) goto 70
         
-          call helmeos(do_coulomb,npoints, eosfail, &
+          call helmeos(do_coulomb,eosfail, &
                        temp_row, den_row, abar_row, zbar_row, &
                        etot_row, ptot_row, &
                        cv_row, cp_row, xne_row, xnp_row, etaele_row, &
@@ -811,48 +758,45 @@ contains
 70     continue
 
        ! store the end result
-       do k = 1, npoints
-          temp(k) = tnew(k)
-          pres(k) = ptot_row(k)
-          eint(k) = etot_row(k)
-          
-          c_v(k) = cv_row(k)
-          c_p(k) = cp_row(k)
+       temp = tnew
+       pres = ptot_row
+       eint = etot_row
+       
+       c_v = cv_row
+       c_p = cp_row
 
-          ! store the number density of electrons and positrons, the degeneracy
-          ! parameter, and the total electron/positron pressure
-          ne(k)   = xne_row(k) + xnp_row(k)
-          eta(k)  = etaele_row(k)
-          pele(k) = pele_row(k) + ppos_row(k)
-          
-          dPdR(k) = dpd_row(k)
-          dPdT(k) = dpt_row(k)
-          dEdR(k) = ded_row(k)
-          dEdT(k) = det_row(k)   ! c_v
-          gam1(k) = gam1_row(k)
-!          cs(k) =   cs_row(k)
-          cs(k) =   sqrt(gam1(k)*pres(k)/dens(k))
-          entropy(k) = stot_row(k)
-          dsdT(k) = dst_row(k)
-          dsdR(k) = dsd_row(k)
+       ! store the number density of electrons and positrons, the degeneracy
+       ! parameter, and the total electron/positron pressure
+       ne   = xne_row + xnp_row
+       eta  = etaele_row
+       pele = pele_row + ppos_row
+       
+       dPdR = dpd_row
+       dPdT = dpt_row
+       dEdR = ded_row
+       dEdT = det_row   ! c_v
+       gam1 = gam1_row
+!      cs =   cs_row
+       cs =   sqrt(gam1*pres/dens)
+       entropy = stot_row
+       dsdT = dst_row
+       dsdR = dsd_row
 
-          do n = 1, nspec
-             dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dpz_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
+       do n = 1, nspec
+          dpdX(n) = dpa_row * (abar/aion(n))* &
+                                 (aion(n) - abar) + &
+                    dpz_row * (abar/aion(n))* &
+                                 (zion(n) - zbar)
 
-             dEdX(k,n) = dea_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dez_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
+          dEdX(n) = dea_row * (abar/aion(n))* &
+                                 (aion(n) - abar) + &
+                    dez_row * (abar/aion(n))* &
+                                 (zion(n) - zbar)
 
-             ! create the enthalpy derivatives wrt average composition --
-             ! hold pressure constant!!!
-             dhdX(k,n) = dEdX(k,n) + &
-                  (pres(k)/dens(k)**2 - dEdR(k))*dpdX(k,n)/dPdr(k)
-
-          enddo
+          ! create the enthalpy derivatives wrt average composition --
+          ! hold pressure constant!!!
+          dhdX(n) = dEdX(n) + &
+               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
 
        enddo
 
@@ -863,32 +807,30 @@ contains
 !---------------------------------------------------------------------------
 
        ! load the initial guess
-       do k = 1, npoints
-          temp_row(k) = temp(k)
-          den_row(k)  = dens(k)
-          abar_row(k) = abar(k)
-          zbar_row(k) = zbar(k)
+       temp_row = temp
+       den_row  = dens
+       abar_row = abar
+       zbar_row = zbar
 
-          ! we want to converge to the given pressure
-          pres_want(k) = pres(k)
+       ! we want to converge to the given pressure
+       pres_want = pres
 
-          if (pres_want(k) < ZERO) then
-             if (present(pt_index)) then
-                if (dim_ptindex .eq. 1) then 
-                   write (err_string,1001) pt_index(1)
-                else if (dim_ptindex .eq. 2) then 
-                   write (err_string,1002) pt_index(1), pt_index(2)
-                else if (dim_ptindex .eq. 3) then 
-                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
-                end if
-                call bl_error('ERROR: pressure < 0 in the EOS', err_string)
-             else
-                call bl_error('ERROR: pressure < 0 in the EOS')
-             endif
+       if (pres_want < ZERO) then
+          if (present(pt_index)) then
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
+             call bl_error('ERROR: pressure < 0 in the EOS', err_string)
+          else
+             call bl_error('ERROR: pressure < 0 in the EOS')
           endif
-       enddo
+       endif
          
-       call helmeos(do_coulomb,npoints, eosfail, &
+       call helmeos(do_coulomb,eosfail, &
                     temp_row, den_row, abar_row, zbar_row, &
                     etot_row, ptot_row, &
                     cv_row, cp_row, xne_row, xnp_row, etaele_row, &
@@ -918,41 +860,33 @@ contains
           niter = iter
 
           ! recompute the density and it's temperature derivative
-          do k = 1, npoints
-             pres1 = ptot_row(k)
-             dpdd  = dpd_row(k)
-             
-             dnew(k) = den_row(k) - &
-                  (pres1 - pres_want(k))/dpdd
+          pres1 = ptot_row
+          dpdd  = dpd_row
+          
+          dnew = den_row - &
+               (pres1 - pres_want)/dpdd
 
-             ! don't let the density change by more than an order of magnitude
-             dnew(k) = max(.5d0*den_row(k), &
-                           min(dnew(k), 2.d0*den_row(k)))
+          ! don't let the density change by more than an order of magnitude
+          dnew = max(.5d0*den_row, &
+                        min(dnew, 2.d0*den_row))
 
-          enddo
-
+          ! compute the error
           error = 0.0d0
-          do k = 1, npoints
+          error = max(error,abs(dnew - den_row)/den_row)
 
-             ! compute the error
-             error = max(error,abs(dnew(k) - den_row(k))/den_row(k))
-
-             ! store the new density
-             den_row(k) = dnew(k)
-          enddo
+          ! store the new density
+          den_row = dnew
 
           ! check if we are evacuating, if so, set the density to smalld, and adjust
           ! the error so we iterate on this one
-          do k = 1, npoints
-             if (den_row(k) .LT. smalld) then
-                den_row(k) = smalld
-                error = 1.1d0*dtol
-             endif
-          enddo
+          if (den_row .LT. smalld) then
+             den_row = smalld
+             error = 1.1d0*dtol
+          endif
 
           if (error .LT. dtol) goto 170
         
-          call helmeos(do_coulomb,npoints, eosfail, &
+          call helmeos(do_coulomb,eosfail, &
                        temp_row, den_row, abar_row, zbar_row, &
                        etot_row, ptot_row, &
                        cv_row, cp_row, xne_row, xnp_row, etaele_row, &
@@ -997,49 +931,46 @@ contains
 170    continue
 
        ! store the end result
-       do k = 1, npoints
-          dens(k) = dnew(k)
-          temp(k) = temp_row(k)
-          eint(k) = etot_row(k)
-          enthalpy(k) = eint(k) + ptot_row(k)/dens(k)
+       dens = dnew
+       temp = temp_row
+       eint = etot_row
+       enthalpy = eint + ptot_row/dens
 
-          c_v(k) = cv_row(k)
-          c_p(k) = cp_row(k)
+       c_v = cv_row
+       c_p = cp_row
 
-          ! store the number density of electrons and positrons, the degeneracy
-          ! parameter, and the total electron/positron pressure
-          ne(k)   = xne_row(k) + xnp_row(k)
-          eta(k)  = etaele_row(k)
-          pele(k) = pele_row(k) + ppos_row(k)
-          
-          dPdR(k) = dpd_row(k)
-          dPdT(k) = dpt_row(k)
-          dEdR(k) = ded_row(k)
-          dEdT(k) = det_row(k)   ! c_v
-          gam1(k) = gam1_row(k)
-!          cs(k) =   cs_row(k)
-          cs(k) =   sqrt(gam1(k)*pres(k)/dens(k))
-          entropy(k) = stot_row(k)
-          dsdT(k) = dst_row(k)
-          dsdR(k) = dsd_row(k)
+       ! store the number density of electrons and positrons, the degeneracy
+       ! parameter, and the total electron/positron pressure
+       ne   = xne_row + xnp_row
+       eta  = etaele_row
+       pele = pele_row + ppos_row
+       
+       dPdR = dpd_row
+       dPdT = dpt_row
+       dEdR = ded_row
+       dEdT = det_row   ! c_v
+       gam1 = gam1_row
+!      cs =   cs_row
+       cs =   sqrt(gam1*pres/dens)
+       entropy = stot_row
+       dsdT = dst_row
+       dsdR = dsd_row
 
-          do n = 1, nspec
-             dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dpz_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
+       do n = 1, nspec
+          dpdX(n) = dpa_row * (abar/aion(n))* &
+                                 (aion(n) - abar) + &
+                    dpz_row * (abar/aion(n))* &
+                                 (zion(n) - zbar)
 
-             dEdX(k,n) = dea_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dez_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
+          dEdX(n) = dea_row * (abar/aion(n))* &
+                                 (aion(n) - abar) + &
+                    dez_row * (abar/aion(n))* &
+                                 (zion(n) - zbar)
 
-             ! create the enthalpy derivatives wrt average composition --
-             ! hold pressure constant!!!
-             dhdX(k,n) = dEdX(k,n) + &
-                  (pres(k)/dens(k)**2 - dEdR(k))*dpdX(k,n)/dPdr(k)
-
-          enddo
+          ! create the enthalpy derivatives wrt average composition --
+          ! hold pressure constant!!!
+          dhdX(n) = dEdX(n) + &
+               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
 
        enddo
 
@@ -1050,37 +981,33 @@ contains
 !---------------------------------------------------------------------------
 
        ! Load the initial guess
-       do k = 1, npoints
-          temp_row(k) = temp(k)
-          den_row(k)  = dens(k)
-          abar_row(k) = abar(k)
-          zbar_row(k) = zbar(k)
-          if (do_eos_diag) print*,'T/D INIT ',temp(k),dens(k)
-       enddo
+       temp_row = temp
+       den_row  = dens
+       abar_row = abar
+       zbar_row = zbar
+       if (do_eos_diag) print*,'T/D INIT ',temp,dens
 
        ! We want to converge to the given pressure
-       do k = 1, npoints
-          pres_want(k) = pres(k)
-          if (do_eos_diag) print*,'P WANT ',pres(k)
+       pres_want = pres
+       if (do_eos_diag) print*,'P WANT ',pres
 
-          if (pres_want(k) < ZERO) then
-             if (present(pt_index)) then
-                if (dim_ptindex .eq. 1) then 
-                   write (err_string,1001) pt_index(1)
-                else if (dim_ptindex .eq. 2) then 
-                   write (err_string,1002) pt_index(1), pt_index(2)
-                else if (dim_ptindex .eq. 3) then 
-                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
-                end if
-                call bl_error('ERROR: pressure < 0 in the EOS', err_string)
-             else
-                call bl_error('ERROR: pressure < 0 in the EOS')
-             endif
+       if (pres_want < ZERO) then
+          if (present(pt_index)) then
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
+             call bl_error('ERROR: pressure < 0 in the EOS', err_string)
+          else
+             call bl_error('ERROR: pressure < 0 in the EOS')
           endif
-       enddo
+       endif
 
        ! First pass
-       call helmeos(do_coulomb,npoints, eosfail, &
+       call helmeos(do_coulomb,eosfail, &
                     temp_row, den_row, abar_row, zbar_row, &
                     etot_row, ptot_row, &
                     cv_row, cp_row, xne_row, xnp_row, etaele_row, &
@@ -1110,41 +1037,36 @@ contains
           niter = iter
 
           ! recompute the temperature but dont allow it to change too much
-          do k = 1, npoints
-             tnew(k) = temp_row(k) - &
-                  (ptot_row(k) - pres_want(k))/dpt_row(k)
+          tnew = temp_row - &
+               (ptot_row - pres_want)/dpt_row
 
-             if (do_eos_diag) print*,'PRES ',ptot_row(k),pres_want(k)
-             if (do_eos_diag) print*,'PRES DIFF ',ptot_row(k)-pres_want(k)
-             
-             if (do_eos_diag) print*,'DPDT FAC ', 1.0/dpt_row(k)
+          if (do_eos_diag) print*,'PRES ',ptot_row,pres_want
+          if (do_eos_diag) print*,'PRES DIFF ',ptot_row-pres_want
+          
+          if (do_eos_diag) print*,'DPDT FAC ', 1.0/dpt_row
 
-             if (do_eos_diag) print*,'TNEW BEFORE MAX ',iter,tnew(k)
+          if (do_eos_diag) print*,'TNEW BEFORE MAX ',iter,tnew
 
-             ! don't let the temperature change by more than a factor of 2
-             tnew(k) = max(.5d0*temp_row(k), &
-                           min(tnew(k), 2.d0*temp_row(k)))
+          ! don't let the temperature change by more than a factor of 2
+          tnew = max(.5d0*temp_row, &
+                        min(tnew, 2.d0*temp_row))
 
-             ! don't let us freeze
-             tnew(k) = max(smallt, tnew(k))
+          ! don't let us freeze
+          tnew = max(smallt, tnew)
 
-             if (do_eos_diag) print*,'TNEW AFTER MAX ',iter,tnew(k)
-             if (do_eos_diag) print*,' '
-          enddo
-
-          error = 0.0d0
+          if (do_eos_diag) print*,'TNEW AFTER MAX ',iter,tnew
+          if (do_eos_diag) print*,' '
 
           ! compute the error and store the new temperature
-          do k = 1, npoints
-             error = max(error,abs(tnew(k) - temp_row(k))/temp_row(k))
-             if (do_eos_diag) print *,'ERROR  ',iter,error
-             if (do_eos_diag) print*,' '
-             temp_row(k) = tnew(k)
-          enddo
+          error = 0.0d0
+          error = max(error,abs(tnew - temp_row)/temp_row)
+          if (do_eos_diag) print *,'ERROR  ',iter,error
+          if (do_eos_diag) print*,' '
+          temp_row = tnew
 
           if (error .LT. ttol) goto 870
         
-          call helmeos(do_coulomb,npoints, eosfail, &
+          call helmeos(do_coulomb,eosfail, &
                        temp_row, den_row, abar_row, zbar_row, &
                        etot_row, ptot_row, &
                        cv_row, cp_row, xne_row, xnp_row, etaele_row, &
@@ -1168,17 +1090,13 @@ contains
                 call bl_error('EOS: error in the EOS')
              endif
           endif
-             
         
        end do
 
        ! Land here if too many iterations are needed
 
        print *, 'helmeos input==4 failed to converge, iter = ',niter
-       do k = 1, npoints
-          print *, 'k, error, temp_row(k), den_row(k) = ', &
-                k,error,temp_row(k),den_row(k)
-       enddo
+       print *, 'error, temp_row, den_row = ', error, temp_row, den_row
 
        if (present(pt_index)) then
           if (dim_ptindex .eq. 1) then 
@@ -1196,52 +1114,48 @@ contains
 870    continue
 
        ! store the end result
-       do k = 1, npoints
+       ! jbb
+       ! temp = tnew
+       temp = temp_row
+       dens = den_row
+       eint = etot_row
+       c_v = cv_row
+       c_p = cp_row
 
-          ! jbb
-          ! temp(k) = tnew(k)
-          temp(k) = temp_row(k)
-          dens(k) = den_row(k)
-          eint(k) = etot_row(k)
-          c_v(k) = cv_row(k)
-          c_p(k) = cp_row(k)
+       enthalpy = eint + ptot_row/dens
 
-          enthalpy(k) = eint(k) + ptot_row(k)/dens(k)
+       ! store the number density of electrons and positrons, the degeneracy
+       ! parameter, and the total electron/positron pressure
+       ne   = xne_row + xnp_row
+       eta  = etaele_row
+       pele = pele_row + ppos_row
+       
+       dPdR = dpd_row
+       dPdT = dpt_row
+       dEdR = ded_row
+       dEdT = det_row   ! c_v
+       gam1 = gam1_row
+!      cs =   cs_row
+       cs =   sqrt(gam1*pres/dens)
+       entropy = stot_row
+       dsdT = dst_row
+       dsdR = dsd_row
 
-          ! store the number density of electrons and positrons, the degeneracy
-          ! parameter, and the total electron/positron pressure
-          ne(k)   = xne_row(k) + xnp_row(k)
-          eta(k)  = etaele_row(k)
-          pele(k) = pele_row(k) + ppos_row(k)
-          
-          dPdR(k) = dpd_row(k)
-          dPdT(k) = dpt_row(k)
-          dEdR(k) = ded_row(k)
-          dEdT(k) = det_row(k)   ! c_v
-          gam1(k) = gam1_row(k)
-!          cs(k) =   cs_row(k)
-          cs(k) =   sqrt(gam1(k)*pres(k)/dens(k))
-          entropy(k) = stot_row(k)
-          dsdT(k) = dst_row(k)
-          dsdR(k) = dsd_row(k)
+       do n = 1, nspec
+          dpdX(n) = dpa_row * (abar/aion(n))* &
+                              (aion(n) - abar) + &
+                    dpz_row * (abar/aion(n))* &
+                              (zion(n) - zbar)
 
-          do n = 1, nspec
-             dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dpz_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
+          dEdX(n) = dea_row * (abar/aion(n))* &
+                              (aion(n) - abar) + &
+                    dez_row * (abar/aion(n))* &
+                              (zion(n) - zbar)
 
-             dEdX(k,n) = dea_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dez_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
-
-             ! create the enthalpy derivatives wrt average composition --
-             ! hold pressure constant!!!
-             dhdX(k,n) = dEdX(k,n) + &
-                  (pres(k)/dens(k)**2 - dEdR(k))*dpdX(k,n)/dPdr(k)
-
-          enddo
+          ! create the enthalpy derivatives wrt average composition --
+          ! hold pressure constant!!!
+          dhdX(n) = dEdX(n) + &
+               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
 
        enddo
 
@@ -1253,37 +1167,35 @@ contains
 
 !      do_eos_diag = .true.
        ! load the initial guess
-       do k = 1, npoints
-          temp_row(k) = temp(k)
-          den_row(k)  = dens(k)
-          abar_row(k) = abar(k)
-          zbar_row(k) = zbar(k)
+       temp_row = temp
+       den_row  = dens
+       abar_row = abar
+       zbar_row = zbar
 
-          if (do_eos_diag) print*,'T/D INIT ',temp(k),dens(k)
+       if (do_eos_diag) print*,'T/D INIT ',temp,dens
 
-          ! we want to converge to the given energy
-          energy_want(k) = eint(k)
+       ! we want to converge to the given energy
+       energy_want = eint
 
-          if (energy_want(k) < ZERO) then
-             print *,'BAD HERE ',pt_index(1)
-             if (present(pt_index)) then
-                if (dim_ptindex .eq. 1) then 
-                   write (err_string,1001) pt_index(1)
-                else if (dim_ptindex .eq. 2) then 
-                   write (err_string,1002) pt_index(1), pt_index(2)
-                else if (dim_ptindex .eq. 3) then 
-                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
-                end if
-                call bl_error('ERROR: energy < 0 in the EOS', err_string)
-             else
-                call bl_error('ERROR: energy < 0 in the EOS')
-             endif
+       if (energy_want < ZERO) then
+          print *,'BAD HERE ',pt_index(1)
+          if (present(pt_index)) then
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
+             call bl_error('ERROR: energy < 0 in the EOS', err_string)
+          else
+             call bl_error('ERROR: energy < 0 in the EOS')
           endif
+       endif
 
-          if (do_eos_diag) print*,'WANT e ',energy_want(k)
-       enddo
+       if (do_eos_diag) print*,'WANT e ',energy_want
 
-       call helmeos(do_coulomb,npoints, eosfail, &
+       call helmeos(do_coulomb,eosfail, &
                     temp_row, den_row, abar_row, zbar_row, &
                     etot_row, ptot_row, &
                     cv_row, cp_row, xne_row, xnp_row, etaele_row, &
@@ -1313,44 +1225,39 @@ contains
           niter = iter
 
           ! recompute the energy and its temperature derivative
-          do k = 1, npoints
+          ener1 = etot_row
 
-             ener1(k) = etot_row(k)
+          if (do_eos_diag) then
+             print*,'ENER1 ',iter,ener1
+             print*,'DEDT ',iter,det_row
+          end if
 
-             if (do_eos_diag) then
-                print*,'ENER1 ',iter,ener1(k)
-                print*,'DEDT ',iter,det_row(k)
-             end if
+          tnew = temp_row - (ener1-energy_want)/det_row
 
-             tnew(k) = temp_row(k) - (ener1(k)-energy_want(k))/det_row(k)
+          if (do_eos_diag) then
+             print *, 'TNEW FIRST ', temp_row, ' - ', &
+                  ener1 - energy_want, ' / ', det_row
+          endif
 
-             if (do_eos_diag) then
-                print *, 'TNEW FIRST ', temp_row(k), ' - ', &
-                     ener1(k) - energy_want(k), ' / ', det_row(k)
-             endif
+          ! don't let the temperature change by more than a factor of two
+          tnew = max(.5d0*temp_row, &
+                        min(tnew, 2.d0*temp_row))
 
-             ! don't let the temperature change by more than a factor of two
-             tnew(k) = max(.5d0*temp_row(k), &
-                           min(tnew(k), 2.d0*temp_row(k)))
+          ! don't let us freeze
+          tnew = max(smallt, tnew)
 
-             ! don't let us freeze
-             tnew(k) = max(smallt, tnew(k))
-
-             if (do_eos_diag) print*,'TNEW AFTER ',iter,tnew(1)
-          enddo
+          if (do_eos_diag) print*,'TNEW AFTER ',iter,tnew
 
           ! compute the error
           error = 0.0d0
-          do k = 1, npoints
-             error = max(error,abs(tnew(k) - temp_row(k))/temp_row(k))
+          error = max(error,abs(tnew - temp_row)/temp_row)
 
-             ! store the new temperature
-             temp_row(k) = tnew(k)
-          enddo
+          ! store the new temperature
+          temp_row = tnew
 
           if (error .LT. ttol) goto 270
         
-          call helmeos(do_coulomb,npoints, eosfail, &
+          call helmeos(do_coulomb,eosfail, &
                        temp_row, den_row, abar_row, zbar_row, &
                        etot_row, ptot_row, &
                        cv_row, cp_row, xne_row, xnp_row, etaele_row, &
@@ -1397,49 +1304,45 @@ contains
 270     continue
 
        ! store the end result
-       do k = 1, npoints
-          temp(k) = tnew(k)
-          pres(k) = ptot_row(k)
-          enthalpy(k) = eint(k) + ptot_row(k)/dens(k)
-          
-          c_v(k) = cv_row(k)
-          c_p(k) = cp_row(k)
+       temp = tnew
+       pres = ptot_row
+       enthalpy = eint + ptot_row/dens
+       
+       c_v = cv_row
+       c_p = cp_row
 
+       ! store the number density of electrons and positrons, the degeneracy
+       ! parameter, and the total electron/positron pressure
+       ne   = xne_row + xnp_row
+       eta  = etaele_row
+       pele = pele_row + ppos_row
+       
+       dPdR = dpd_row
+       dPdT = dpt_row
+       dEdR = ded_row
+       dEdT = det_row   ! c_v
+       gam1 = gam1_row
+!      cs =   cs_row
+       cs =   sqrt(gam1*pres/dens)
+       entropy = stot_row
+       dsdT = dst_row
+       dsdR = dsd_row
 
-          ! store the number density of electrons and positrons, the degeneracy
-          ! parameter, and the total electron/positron pressure
-          ne(k)   = xne_row(k) + xnp_row(k)
-          eta(k)  = etaele_row(k)
-          pele(k) = pele_row(k) + ppos_row(k)
-          
-          dPdR(k) = dpd_row(k)
-          dPdT(k) = dpt_row(k)
-          dEdR(k) = ded_row(k)
-          dEdT(k) = det_row(k)   ! c_v
-          gam1(k) = gam1_row(k)
-!          cs(k) =   cs_row(k)
-          cs(k) =   sqrt(gam1(k)*pres(k)/dens(k))
-          entropy(k) = stot_row(k)
-          dsdT(k) = dst_row(k)
-          dsdR(k) = dsd_row(k)
+       do n = 1, nspec
+          dpdX(n) = dpa_row * (abar/aion(n))* &
+                                 (aion(n) - abar) + &
+                    dpz_row * (abar/aion(n))* &
+                                 (zion(n) - zbar)
 
-          do n = 1, nspec
-             dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dpz_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
+          dEdX(n) = dea_row * (abar/aion(n))* &
+                                 (aion(n) - abar) + &
+                    dez_row * (abar/aion(n))* &
+                                 (zion(n) - zbar)
 
-             dEdX(k,n) = dea_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dez_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
-
-             ! create the enthalpy derivatives wrt average composition --
-             ! hold pressure constant!!!
-             dhdX(k,n) = dEdX(k,n) + &
-                  (pres(k)/dens(k)**2 - dEdR(k))*dpdX(k,n)/dPdr(k)
-
-          enddo
+          ! create the enthalpy derivatives wrt average composition --
+          ! hold pressure constant!!!
+          dhdX(n) = dEdX(n) + &
+               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
 
        enddo
 
@@ -1449,55 +1352,53 @@ contains
 !---------------------------------------------------------------------------
 
        ! load the initial guess
-       do k = 1, npoints
-          temp_row(k) = temp(k)
-          den_row(k)  = dens(k)
-          abar_row(k) = abar(k)
-          zbar_row(k) = zbar(k)
+       temp_row = temp
+       den_row  = dens
+       abar_row = abar
+       zbar_row = zbar
 
-          if (do_eos_diag) print*,'T/D INIT ',temp(k),dens(k)
+       if (do_eos_diag) print*,'T/D INIT ',temp,dens
 
-          ! we want to converge to the given entropy and pressure
-          entropy_want(k) = entropy(k)
-          pres_want(k)    = pres(k)
+       ! we want to converge to the given entropy and pressure
+       entropy_want = entropy
+       pres_want    = pres
 
-          if (entropy_want(k) < ZERO) then
-             if (present(pt_index)) then
-                if (dim_ptindex .eq. 1) then 
-                   write (err_string,1001) pt_index(1)
-                else if (dim_ptindex .eq. 2) then 
-                   write (err_string,1002) pt_index(1), pt_index(2)
-                else if (dim_ptindex .eq. 3) then 
-                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
-                end if
-                call bl_error('ERROR: entropy < 0 in the EOS', err_string)
-             else
-                call bl_error('ERROR: entropy < 0 in the EOS')
-             endif
+       if (entropy_want < ZERO) then
+          if (present(pt_index)) then
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
+             call bl_error('ERROR: entropy < 0 in the EOS', err_string)
+          else
+             call bl_error('ERROR: entropy < 0 in the EOS')
           endif
+       endif
 
-          if (pres_want(k) < ZERO) then
-             if (present(pt_index)) then
-                if (dim_ptindex .eq. 1) then 
-                   write (err_string,1001) pt_index(1)
-                else if (dim_ptindex .eq. 2) then 
-                   write (err_string,1002) pt_index(1), pt_index(2)
-                else if (dim_ptindex .eq. 3) then 
-                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
-                end if
-                call bl_error('ERROR: pressure < 0 in the EOS', err_string)
-             else
-                call bl_error('ERROR: pressure < 0 in the EOS')
-             endif
+       if (pres_want < ZERO) then
+          if (present(pt_index)) then
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
+             call bl_error('ERROR: pressure < 0 in the EOS', err_string)
+          else
+             call bl_error('ERROR: pressure < 0 in the EOS')
           endif
+       endif
 
-          if (do_eos_diag) then
-             print*,'WANT s ',entropy_want(k)
-             print*,'WANT pres', pres_want(k)
-          endif
-       enddo
+       if (do_eos_diag) then
+          print*,'WANT s ',entropy_want
+          print*,'WANT pres', pres_want
+       endif
 
-       call helmeos(do_coulomb,npoints, eosfail, &
+       call helmeos(do_coulomb,eosfail, &
                     temp_row, den_row, abar_row, zbar_row, &
                     etot_row, ptot_row, &
                     cv_row, cp_row, xne_row, xnp_row, etaele_row, &
@@ -1527,73 +1428,68 @@ contains
           niter = iter
 
           ! correct density and temperature
-          do k = 1, npoints
+          pres1 = ptot_row
+          entr1 = stot_row
 
-             pres1 = ptot_row(k)
-             entr1 = stot_row(k)
+          if (do_eos_diag) then
+             print*,'PRES1 ',iter,pres1
+             print*,'ENTR1 ',iter,entr1
+          end if
 
-             if (do_eos_diag) then
-                print*,'PRES1 ',iter,pres1
-                print*,'ENTR1 ',iter,entr1
-             end if
+          ! two functions, f and g, to iterate over
+          f = pres_want - pres1
+          dfdd = -dpd_row
+          dfdt = -dpt_row
+          
+          g = entropy_want - entr1
+          dgdd = -dsd_row
+          dgdt = -dst_row
+          !
+          ! 0 = f + dfdd * deld + dfdt * delt
+          ! 0 = g + dgdd * deld + dgdt * delt
+          !
+          deld = (f*dgdt - g*dfdt) / (dgdd*dfdt - dgdt*dfdd)
 
-             ! two functions, f and g, to iterate over
-             f = pres_want(k) - pres1
-             dfdd = -dpd_row(k)
-             dfdt = -dpt_row(k)
-             
-             g = entropy_want(k) - entr1
-             dgdd = -dsd_row(k)
-             dgdt = -dst_row(k)
-             !
-             ! 0 = f + dfdd * deld + dfdt * delt
-             ! 0 = g + dgdd * deld + dgdt * delt
-             !
-             deld = (f*dgdt - g*dfdt) / (dgdd*dfdt - dgdt*dfdd)
+          dnew = den_row + deld
 
-             dnew(k) = den_row(k) + deld
+          tnew = temp_row - (f + dfdd*deld) / dfdt
 
-             tnew(k) = temp_row(k) - (f + dfdd*deld) / dfdt
+          if (do_eos_diag) then
+             print *, 'DNEW FIRST ', den_row, ' + ', &
+                  f*dgdt - g*dfdt, ' / ', dgdd*dfdt - dgdt*dfdd
+             print *, 'TNEW FIRST ', temp_row, ' - ', &
+                  f + dfdd*deld, ' / ', dfdt
+          endif
 
-             if (do_eos_diag) then
-                print *, 'DNEW FIRST ', den_row(k), ' + ', &
-                     f*dgdt - g*dfdt, ' / ', dgdd*dfdt - dgdt*dfdd
-                print *, 'TNEW FIRST ', temp_row(k), ' - ', &
-                     f + dfdd*deld, ' / ', dfdt
-             endif
+          ! don't let the temperature or density change by more
+          ! than a factor of two
+          tnew = max(HALF*temp_row, &
+                        min(tnew, TWO*temp_row))
+          dnew = max(HALF*den_row, &
+                        min(dnew, TWO*den_row))
 
-             ! don't let the temperature or density change by more
-             ! than a factor of two
-             tnew(k) = max(HALF*temp_row(k), &
-                           min(tnew(k), TWO*temp_row(k)))
-             dnew(k) = max(HALF*den_row(k), &
-                           min(dnew(k), TWO*den_row(k)))
+          ! don't let us freeze or evacuate
+          tnew = max(smallt, tnew)
+          dnew = max(smalld, dnew)
 
-             ! don't let us freeze or evacuate
-             tnew(k) = max(smallt, tnew(k))
-             dnew(k) = max(smalld, dnew(k))
-
-             if (do_eos_diag) then
-                print*,'DNEW AFTER ',iter,dnew(1)
-                print*,'TNEW AFTER ',iter,tnew(1)
-             endif
-          enddo
+          if (do_eos_diag) then
+             print*,'DNEW AFTER ',iter,dnew
+             print*,'TNEW AFTER ',iter,tnew
+          endif
 
           ! compute the errors
           error = ZERO
           error2 = ZERO
-          do k = 1, npoints
-             error  = max(error ,abs(dnew(k) - den_row(k))/den_row(k))
-             error2 = max(error2,abs(tnew(k) - temp_row(k))/temp_row(k))
+          error  = max(error ,abs(dnew - den_row)/den_row)
+          error2 = max(error2,abs(tnew - temp_row)/temp_row)
 
-             ! store the new temperature and density
-             den_row(k) = dnew(k)
-             temp_row(k) = tnew(k)
-          enddo
+          ! store the new temperature and density
+          den_row = dnew
+          temp_row = tnew
 
           if (error .LT. dtol .and. error2 .LT. ttol) goto 370
-        
-          call helmeos(do_coulomb,npoints, eosfail, &
+     
+          call helmeos(do_coulomb,eosfail, &
                        temp_row, den_row, abar_row, zbar_row, &
                        etot_row, ptot_row, &
                        cv_row, cp_row, xne_row, xnp_row, etaele_row, &
@@ -1640,49 +1536,45 @@ contains
 370     continue
 
        ! store the end result
-       do k = 1, npoints
-          dens(k) = dnew(k)
-          temp(k) = tnew(k)
-          eint(k) = etot_row(k)
-          enthalpy(k) = eint(k) + ptot_row(k)/dens(k)
-
+       dens = dnew
+       temp = tnew
+       eint = etot_row
+       enthalpy = eint + ptot_row/dens
           
-          c_v(k) = cv_row(k)
-          c_p(k) = cp_row(k)
+       c_v = cv_row
+       c_p = cp_row
 
-          ! store the number density of electrons and positrons, the degeneracy
-          ! parameter, and the total electron/positron pressure
-          ne(k)   = xne_row(k) + xnp_row(k)
-          eta(k)  = etaele_row(k)
-          pele(k) = pele_row(k) + ppos_row(k)
-          
-          dPdR(k) = dpd_row(k)
-          dPdT(k) = dpt_row(k)
-          dEdR(k) = ded_row(k)
-          dEdT(k) = det_row(k)   ! c_v
-          gam1(k) = gam1_row(k)
-!          cs(k) =   cs_row(k)
-          cs(k) =   sqrt(gam1(k)*pres(k)/dens(k))
-          dsdT(k) = dst_row(k)
-          dsdR(k) = dsd_row(k)
+       ! store the number density of electrons and positrons, the degeneracy
+       ! parameter, and the total electron/positron pressure
+       ne   = xne_row + xnp_row
+       eta  = etaele_row
+       pele = pele_row + ppos_row
+       
+       dPdR = dpd_row
+       dPdT = dpt_row
+       dEdR = ded_row
+       dEdT = det_row   ! c_v
+       gam1 = gam1_row
+!      cs =   cs_row
+       cs =   sqrt(gam1*pres/dens)
+       dsdT = dst_row
+       dsdR = dsd_row
 
-          do n = 1, nspec
-             dpdX(k,n) = dpa_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dpz_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
+       do n = 1, nspec
+          dpdX(n) = dpa_row * (abar/aion(n))* &
+                                 (aion(n) - abar) + &
+                    dpz_row * (abar/aion(n))* &
+                                 (zion(n) - zbar)
 
-             dEdX(k,n) = dea_row(k) * (abar(k)/aion(n))* &
-                                      (aion(n) - abar(k)) + &
-                         dez_row(k) * (abar(k)/aion(n))* &
-                                      (zion(n) - zbar(k))
+          dEdX(n) = dea_row * (abar/aion(n))* &
+                                 (aion(n) - abar) + &
+                    dez_row * (abar/aion(n))* &
+                                 (zion(n) - zbar)
 
-             ! create the enthalpy derivatives wrt average composition --
-             ! hold pressure constant!!!
-             dhdX(k,n) = dEdX(k,n) + &
-                  (pres(k)/dens(k)**2 - dEdR(k))*dpdX(k,n)/dPdr(k)
-
-          enddo
+          ! create the enthalpy derivatives wrt average composition --
+          ! hold pressure constant!!!
+          dhdX(n) = dEdX(n) + &
+               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
 
        enddo
 
