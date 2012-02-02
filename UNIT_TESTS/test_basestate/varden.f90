@@ -212,13 +212,13 @@ subroutine varden()
   do r=0,nr_fine-1
 
      ! (rho, p) --> gamma1bar
-     den_eos(1)  = s0_old(1,r,rho_comp)
-     p_eos(1)    = p0_old(1,r)
-     xn_eos(1,:) = s0_old(1,r,spec_comp:spec_comp-1+nspec)/s0_old(1,r,rho_comp)
+     den_eos  = s0_old(1,r,rho_comp)
+     p_eos    = p0_old(1,r)
+     xn_eos(:) = s0_old(1,r,spec_comp:spec_comp-1+nspec)/s0_old(1,r,rho_comp)
      
-     temp_eos(1) = s0_old(1,r,temp_comp)
+     temp_eos = s0_old(1,r,temp_comp)
      
-     call eos(eos_input_rp, den_eos, temp_eos, npts, &
+     call eos(eos_input_rp, den_eos, temp_eos, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -228,7 +228,7 @@ subroutine varden()
               dsdt_eos, dsdr_eos, &
               .false.)
      
-     gamma1bar_old(1,r) = gam1_eos(1)
+     gamma1bar_old(1,r) = gam1_eos
 
   end do
 
@@ -366,13 +366,13 @@ subroutine varden()
      do r=0,nr_fine-1
 
         ! (rho, p) --> gamma1bar
-        den_eos(1)  = s0_new(1,r,rho_comp)
-        p_eos(1)    = p0_new(1,r)
-        xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+        den_eos  = s0_new(1,r,rho_comp)
+        p_eos    = p0_new(1,r)
+        xn_eos(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
 
-        temp_eos(1) = s0_old(1,r,temp_comp)
+        temp_eos = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos, npts, &
+        call eos(eos_input_rp, den_eos, temp_eos,  &
              xn_eos, &
              p_eos, h_eos, e_eos, &
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -382,7 +382,7 @@ subroutine varden()
              dsdt_eos, dsdr_eos, &
              .false.)
 
-        gamma1bar_new(1,r) = gam1_eos(1)
+        gamma1bar_new(1,r) = gam1_eos
 
      end do
 
@@ -393,13 +393,13 @@ subroutine varden()
      do r=0,nr_fine-1
 
         ! (rho,p) --> T,h, etc
-        den_eos(1)  = s0_new(1,r,rho_comp)
-        p_eos(1)    = p0_new(1,r)
-        xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+        den_eos  = s0_new(1,r,rho_comp)
+        p_eos    = p0_new(1,r)
+        xn_eos(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
 
-        temp_eos(1) = s0_old(1,r,temp_comp)
+        temp_eos = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos, npts, &
+        call eos(eos_input_rp, den_eos, temp_eos, &
                  xn_eos, &
                  p_eos, h_eos, e_eos, &
                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -409,7 +409,7 @@ subroutine varden()
                  dsdt_eos, dsdr_eos, &
                  .false.)
 
-        s0_new(1,r,temp_comp) = temp_eos(1)
+        s0_new(1,r,temp_comp) = temp_eos
 
      enddo
 
@@ -547,13 +547,13 @@ subroutine varden()
      do r=0,nr_fine-1
 
         ! (rho, p) --> gamma1bar
-        den_eos(1)  = s0_new(1,r,rho_comp)
-        p_eos(1)    = p0_new(1,r)
-        xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+        den_eos  = s0_new(1,r,rho_comp)
+        p_eos    = p0_new(1,r)
+        xn_eos(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
 
-        temp_eos(1) = s0_old(1,r,temp_comp)
+        temp_eos = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos, npts, &
+        call eos(eos_input_rp, den_eos, temp_eos, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -563,9 +563,9 @@ subroutine varden()
              dsdt_eos, dsdr_eos, &
              .false.)
 
-        gamma1bar_new(1,r) = gam1_eos(1)
+        gamma1bar_new(1,r) = gam1_eos
 
-        max_Mach = max(max_Mach, abs(w0(1,r)/cs_eos(1)) )
+        max_Mach = max(max_Mach, abs(w0(1,r)/cs_eos) )
      end do
 
      print *, 'maximum Mach # = ', max_Mach
@@ -577,13 +577,13 @@ subroutine varden()
      do r=0,nr_fine-1
 
         ! (rho,p) --> T,h, etc
-        den_eos(1)  = s0_new(1,r,rho_comp)
-        p_eos(1)    = p0_new(1,r)
-        xn_eos(1,:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+        den_eos  = s0_new(1,r,rho_comp)
+        p_eos    = p0_new(1,r)
+        xn_eos(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
 
-        temp_eos(1) = s0_old(1,r,temp_comp)
+        temp_eos = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos, npts, &
+        call eos(eos_input_rp, den_eos, temp_eos, &
                  xn_eos, &
                  p_eos, h_eos, e_eos, &
                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -593,7 +593,7 @@ subroutine varden()
                  dsdt_eos, dsdr_eos, &
                  .false.)
 
-        s0_new(1,r,temp_comp) = temp_eos(1)
+        s0_new(1,r,temp_comp) = temp_eos
 
      enddo
 

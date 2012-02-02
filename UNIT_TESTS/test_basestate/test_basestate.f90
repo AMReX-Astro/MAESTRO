@@ -106,11 +106,11 @@ contains
      do r=0,nr(1)-1
 
         ! (rho, T) --> p,h, etc
-        den_eos(1)  = s0(r,rho_comp)
-        temp_eos(1) = s0(r,temp_comp)
-        xn_eos(1,:) = s0(r,spec_comp:spec_comp-1+nspec)/s0(r,rho_comp)
+        den_eos  = s0(r,rho_comp)
+        temp_eos = s0(r,temp_comp)
+        xn_eos(:) = s0(r,spec_comp:spec_comp-1+nspec)/s0(r,rho_comp)
 
-        call eos(eos_input_rt, den_eos, temp_eos, npts, &
+        call eos(eos_input_rt, den_eos, temp_eos, &
                  xn_eos, &
                  p_eos, h_eos, e_eos, &
                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -120,7 +120,7 @@ contains
                  dsdt_eos, dsdr_eos, &
                  .false.)
 
-        Sbar(r) = Hbar(r) * dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
+        Sbar(r) = Hbar(r) * dpdt_eos / (den_eos * cp_eos * dpdr_eos)
 
      enddo
 
