@@ -40,16 +40,17 @@ contains
     ! now reset inflow boundary conditions
     call asin1d('flame_4.e7_screen_left.out', -.00125d0, 0.d0, state1d, ndum, .false.)
 
-    p_eos(1) = state1d(18)
-    den_eos(1) = state1d(3)
-    temp_eos(1) = state1d(9)
+       p_eos = state1d(18)
+     den_eos = state1d(3)
+    temp_eos = state1d(9)
+
     do comp=1,nspec
        if(spec_names(comp) .eq. "carbon-12") then
-          xn_eos(1,comp) = state1d(21)
+          xn_eos(comp) = state1d(21)
        else if(spec_names(comp) .eq. "magnesium-24") then
-          xn_eos(1,comp) = state1d(22)
+          xn_eos(comp) = state1d(22)
        else if(spec_names(comp) .eq. "oxygen-16") then
-          xn_eos(1,comp) = state1d(23)
+          xn_eos(comp) = state1d(23)
        else
           print*,"In initdata, spec_names(",comp,") invalid"
        endif
@@ -57,9 +58,7 @@ contains
 
     ! given P, T, and X, compute rho
     call eos(eos_input_tp, den_eos, temp_eos, &
-             npts, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, & 
+             xn_eos, p_eos, h_eos, e_eos, & 
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
              dpdX_eos, dhdX_eos, &
@@ -69,9 +68,7 @@ contains
 
     ! given rho, T, and X, compute h
     call eos(eos_input_rt, den_eos, temp_eos, &
-             npts, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, & 
+             xn_eos, p_eos, h_eos, e_eos, & 
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
              dpdX_eos, dhdX_eos, &
@@ -81,19 +78,19 @@ contains
 
     INLET_VN = 0.0d0
     INLET_VT = 0.0d0
-    INLET_RHO = den_eos(1)
-    INLET_RHOH = den_eos(1)*h_eos(1)
+    INLET_RHO = den_eos
+    INLET_RHOH = den_eos*h_eos
 
     do comp=1,nspec
        if(spec_names(comp) .eq. "carbon-12") then
-          INLET_RHOC12 = den_eos(1)*xn_eos(1,comp)
+          INLET_RHOC12 = den_eos*xn_eos(comp)
        else if(spec_names(comp) .eq. "magnesium-24") then
-          INLET_RHOMG24 = den_eos(1)*xn_eos(1,comp)
+          INLET_RHOMG24 = den_eos*xn_eos(comp)
        else if(spec_names(comp) .eq. "oxygen-16") then
-          INLET_RHOO16 = den_eos(1)*xn_eos(1,comp)
+          INLET_RHOO16 = den_eos*xn_eos(comp)
        endif
     enddo
-    INLET_TEMP = temp_eos(1)
+    INLET_TEMP = temp_eos
     INLET_TRA = 0.0d0
 
     inlet_bc_initialized = .true.

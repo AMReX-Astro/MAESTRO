@@ -57,24 +57,23 @@ contains
 
        call asin1d('flame_4.e7_screen_left.out', loloc, hiloc, state1d, ndum, .false.)
 
-       p_eos(1) = Pamb
-       den_eos(1) = state1d(3)
-       temp_eos(1) = state1d(9)
+          p_eos = Pamb
+        den_eos = state1d(3)
+       temp_eos = state1d(9)
+
        do comp=1,nspec
           if(spec_names(comp) .eq. "carbon-12") then
-             xn_eos(1,comp) = state1d(21)
+             xn_eos(comp) = state1d(21)
           else if(spec_names(comp) .eq. "magnesium-24") then
-             xn_eos(1,comp) = state1d(22)
+             xn_eos(comp) = state1d(22)
           else if(spec_names(comp) .eq. "oxygen-16") then
-             xn_eos(1,comp) = state1d(23)
+             xn_eos(comp) = state1d(23)
           endif
        enddo
 
        ! given P, T, and X, compute rho
        call eos(eos_input_tp, den_eos, temp_eos, &
-                npts, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
+                xn_eos, p_eos, h_eos, e_eos, & 
                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
                 dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
                 dpdX_eos, dhdX_eos, &
@@ -84,9 +83,7 @@ contains
 
        ! given rho, T, and X, compute h.
        call eos(eos_input_rt, den_eos, temp_eos, &
-                npts, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
+                xn_eos, p_eos, h_eos, e_eos, & 
                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
                 dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
                 dpdX_eos, dhdX_eos, &
@@ -94,14 +91,14 @@ contains
                 dsdt_eos, dsdr_eos, &
                 .false.)
 
-       s0_init(r,rho_comp) = den_eos(1)
-       s0_init(r,rhoh_comp) = den_eos(1)*h_eos(1)
+       s0_init(r,rho_comp) = den_eos
+       s0_init(r,rhoh_comp) = den_eos*h_eos
 
        do comp=1,nspec
-          s0_init(r,spec_comp+comp-1) = den_eos(1)*xn_eos(1,comp)
+          s0_init(r,spec_comp+comp-1) = den_eos*xn_eos(comp)
        enddo
        s0_init(r,trac_comp) = 0.0d0
-       s0_init(r,temp_comp) = temp_eos(1)
+       s0_init(r,temp_comp) = temp_eos
        p0_init(r) = pamb
 
     enddo
