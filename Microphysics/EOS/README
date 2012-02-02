@@ -6,32 +6,23 @@ EOSs with MAESTRO interfaces:
   -- helmeos
   -- gamma_law_general
 
+EOSs with CASTRO interfaces:
+
+  -- helmeos
+  -- gamma_law_general
+  -- helmeos_without_rad 
 
 Brief descriptions of the various EOSs:
 
-collapse:
-
-   Adam Burrow's nuclear EOS for core-collapse supernova simulations
-
-
-gamma_law:
-
-   a simple gamma-law EOS with a hard-coded composition.  It assumes a
-   completely ionized solar composition, and gives a meaningful
-   temperature as a result.
-
-
 gamma_law_general:
 
-   a new, general gamma-law EOS.  This computes the mean molecular
+   A general gamma-law EOS.  This computes the mean molecular
    weight from the mass fractions and the species properties defined
-   in the network module.  Eventually, this should be the default (and
-   only) gamma-law EOS.
+   in the network module.  
 
    NOTE: the entropy is currently only correct for a monatomic gas
    (gamma = 5/3).  A more general expression (than the Sactur-Tetrode
    equation) is needed for an arbitrary constant-gamma gas.
-
 
 helmeos:
    
@@ -43,28 +34,5 @@ helmeos:
 
 helmeos_without_rad:
 
-   helmeos without radiation.  This is for radiation hydro simulations.
-   Since radiation is included in the system already, we should take
-   it out in EOS. 
-
-lattimer_swesty:
-
-   the Lattimer-Swesty nuclear EOS for core-collapse simulations
-
-   NOTE: dpdr and dpde are both set to 0.  This will affect the use of
-   source terms.
-
-
-perfect_gas_with_rad:
-
-   Candace Church Joggerst's EOS that implements an ideal gas (with 
-   ionization) + radiation.
-
-   NOTE: dpdr was originally not set correctly in this EOS.  This will
-   affect the use of source terms.  There is a new version of the EOS
-   in use now, new_eos.f90.  It has not been evaluated.
-
-
-
-
-
+   helmeos without radiation for radiation hydro simulations.
+   Since radiation is included in the system already, we take it out of the EOS.
