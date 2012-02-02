@@ -52,15 +52,14 @@ contains
     if (ihe4 < 0 .or. ic12 < 0 .or. ife56 < 0) &
        call bl_error("Invalid species in init_base_state.")
 
-    h_eos(1) = ambient_h
-    den_eos(1)  = ambient_dens
+    h_eos = ambient_h
+    den_eos  = ambient_dens
     
-    xn_eos(1,ihe4)  = ambient_he4
-    xn_eos(1,ic12)  = ambient_c12
-    xn_eos(1,ife56) = ambient_fe56
+    xn_eos(ihe4)  = ambient_he4
+    xn_eos(ic12)  = ambient_c12
+    xn_eos(ife56) = ambient_fe56
 
     call eos(eos_input_rh, den_eos, temp_eos, &
-         npts, &
          xn_eos, &
          p_eos, h_eos, e_eos, &
          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &

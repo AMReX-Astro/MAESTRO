@@ -128,19 +128,18 @@ contains
 
           temp_zone = s0_init(j,temp_comp)
 
-          xn_eos(1,1:nspec) = s0_init(j,spec_comp:spec_comp+nspec-1) / &
+          xn_eos(1:nspec) = s0_init(j,spec_comp:spec_comp+nspec-1) / &
                               s0_init(j,rho_comp)
 
-          den_eos(1) = s0_init(j,rho_comp)
+          den_eos = s0_init(j,rho_comp)
 
           converged = .false.
 
           do iter = 1, max_iter
-             temp_eos(1) = temp_zone
+             temp_eos = temp_zone
 
              call eos(eos_input_rt, &
                       den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -150,9 +149,9 @@ contains
                       dsdt_eos, dsdr_eos, &
                       .false.)
 
-             dhdt = cv_eos(1) + dpdt_eos(1)/den_eos(1)
+             dhdt = cv_eos + dpdt_eos/den_eos
 
-             del_temp = -(h_eos(1) - h_zone) / dhdt
+             del_temp = -(h_eos - h_zone) / dhdt
 
              temp_zone = temp_zone + del_temp
 
@@ -166,11 +165,10 @@ contains
              call bl_error("iters did not converge in initscalars")
 
           ! call eos one last time
-          temp_eos(1) = temp_zone
+          temp_eos = temp_zone
 
           call eos(eos_input_rt, &
                    den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -180,14 +178,14 @@ contains
                    dsdt_eos, dsdr_eos, &
                    .false.)
 
-          s(i,j,rho_comp)  = den_eos(1)
-          s(i,j,rhoh_comp) = den_eos(1) * h_eos(1)
-          s(i,j,temp_comp) = temp_eos(1)
+          s(i,j,rho_comp)  = den_eos
+          s(i,j,rhoh_comp) = den_eos * h_eos
+          s(i,j,temp_comp) = temp_eos
           s(i,j,spec_comp:spec_comp+nspec-1) = &
-               xn_eos(1,1:nspec) * den_eos(1)
+               xn_eos(1:nspec) * den_eos
           s(i,j,trac_comp:trac_comp+ntrac-1) = &
                                   s0_init(j,trac_comp:trac_comp+ntrac-1)
-          p0_init(j) = p_eos(1)
+          p0_init(j) = p_eos
                     
        enddo
     enddo
