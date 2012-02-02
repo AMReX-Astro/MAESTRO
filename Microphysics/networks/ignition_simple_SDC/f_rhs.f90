@@ -69,12 +69,11 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   if (use_tfromp) then
 
      ! get T from (rho, p, X)
-     den_eos(1) = dens
-     xn_eos(1,:) = X(1:nspec)
-     p_eos(1) = p0_pass
+     den_eos = dens
+     xn_eos(:) = X(1:nspec)
+     p_eos = p0_pass
 
      call eos(eos_input_rp, den_eos, temp_eos, &
-              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -85,17 +84,16 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
               .false., &
               pt_index_eos)
 
-     temp = temp_eos(1)
+     temp = temp_eos
 
   else
 
      ! get T from (rho, h, X)
-     den_eos(1) = dens
-     xn_eos(1,:) = X(1:nspec)
-     h_eos(1) = rhoh/dens
+     den_eos = dens
+     xn_eos(:) = X(1:nspec)
+     h_eos = rhoh/dens
 
      call eos(eos_input_rh, den_eos, temp_eos, &
-              npts, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -106,7 +104,7 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
               .false., &
               pt_index_eos)
 
-     temp = temp_eos(1)
+     temp = temp_eos
 
   endif
 
