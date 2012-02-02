@@ -96,13 +96,12 @@ contains
     do i=lo(1)-1,hi(1)+1
           
        ! old state first
-       den_eos(1)  = sold(i,rho_comp)
-       temp_eos(1) = sold(i,temp_comp)
-       xn_eos(1,:) = sold(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       den_eos  = sold(i,rho_comp)
+       temp_eos = sold(i,temp_comp)
+       xn_eos(:) = sold(i,spec_comp:spec_comp+nspec-1)/den_eos
        
        ! dens, temp, and xmass are inputs
        call eos(eos_input_rt, den_eos, temp_eos, &
-                npts, &
                 xn_eos, &
                 p_eos, h_eos, e_eos, & 
                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -112,21 +111,20 @@ contains
                 dsdt_eos, dsdr_eos, &
                 .false.)
        
-       cp(i) = cp_eos(1)
+       cp(i) = cp_eos
 
        do comp=1,nspec
-          xi(i,comp) = dhdX_eos(1,comp)
+          xi(i,comp) = dhdX_eos(comp)
        enddo
 
 
        ! new state now -- average results
-       den_eos(1)  = snew(i,rho_comp)
-       temp_eos(1) = snew(i,temp_comp)
-       xn_eos(1,:) = snew(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       den_eos  = snew(i,rho_comp)
+       temp_eos = snew(i,temp_comp)
+       xn_eos(:) = snew(i,spec_comp:spec_comp+nspec-1)/den_eos
        
        ! dens, temp, and xmass are inputs
        call eos(eos_input_rt, den_eos, temp_eos, &
-                npts, &
                 xn_eos, &
                 p_eos, h_eos, e_eos, & 
                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -137,10 +135,10 @@ contains
                 .false.)
     
        ! average the current state with the old one
-       cp(i) = HALF*(cp_eos(1) + cp(i))
+       cp(i) = HALF*(cp_eos + cp(i))
 
        do comp=1,nspec
-          xi(i,comp) = HALF*(dhdX_eos(1,comp) + xi(i,comp))
+          xi(i,comp) = HALF*(dhdX_eos(comp) + xi(i,comp))
        enddo
 
     enddo
@@ -167,13 +165,12 @@ contains
        do i=lo(1)-1,hi(1)+1
     
           ! old state first
-          den_eos(1)  = sold(i,j,rho_comp)
-          temp_eos(1) = sold(i,j,temp_comp)
-          xn_eos(1,:) = sold(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+          den_eos  = sold(i,j,rho_comp)
+          temp_eos = sold(i,j,temp_comp)
+          xn_eos(:) = sold(i,j,spec_comp:spec_comp+nspec-1)/den_eos
           
           ! dens, temp, and xmass are inputs
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, & 
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -183,21 +180,20 @@ contains
                    dsdt_eos, dsdr_eos, &
                    .false.)
           
-          cp(i,j) = cp_eos(1)
+          cp(i,j) = cp_eos
           
           do comp=1,nspec
-             xi(i,j,comp) = dhdX_eos(1,comp)
+             xi(i,j,comp) = dhdX_eos(comp)
           enddo
 
 
           ! new state now -- average results
-          den_eos(1)  = snew(i,j,rho_comp)
-          temp_eos(1) = snew(i,j,temp_comp)
-          xn_eos(1,:) = snew(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+          den_eos  = snew(i,j,rho_comp)
+          temp_eos = snew(i,j,temp_comp)
+          xn_eos(:) = snew(i,j,spec_comp:spec_comp+nspec-1)/den_eos
           
           ! dens, temp, and xmass are inputs
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, & 
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -208,10 +204,10 @@ contains
                    .false.)
           
           ! average the current state with the old one
-          cp(i,j) = HALF*(cp_eos(1) + cp(i,j))
+          cp(i,j) = HALF*(cp_eos + cp(i,j))
           
           do comp=1,nspec
-             xi(i,j,comp) = HALF*(dhdX_eos(1,comp) + xi(i,j,comp))
+             xi(i,j,comp) = HALF*(dhdX_eos(comp) + xi(i,j,comp))
           enddo
 
        enddo
@@ -241,13 +237,12 @@ contains
           do i=lo(1)-1,hi(1)+1
              
              ! old state first
-             den_eos(1)  = sold(i,j,k,rho_comp)
-             temp_eos(1) = sold(i,j,k,temp_comp)
-             xn_eos(1,:) = sold(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos  = sold(i,j,k,rho_comp)
+             temp_eos = sold(i,j,k,temp_comp)
+             xn_eos(:) = sold(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
              
              ! dens, temp, and xmass are inputs
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -257,21 +252,20 @@ contains
                       dsdt_eos, dsdr_eos, &
                       .false.)
              
-             cp(i,j,k) = cp_eos(1)
+             cp(i,j,k) = cp_eos
              
              do comp=1,nspec
-                xi(i,j,k,comp) = dhdX_eos(1,comp)
+                xi(i,j,k,comp) = dhdX_eos(comp)
              enddo
 
 
              ! new state now -- average results
-             den_eos(1)  = snew(i,j,k,rho_comp)
-             temp_eos(1) = snew(i,j,k,temp_comp)
-             xn_eos(1,:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos  = snew(i,j,k,rho_comp)
+             temp_eos = snew(i,j,k,temp_comp)
+             xn_eos(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
              
              ! dens, temp, and xmass are inputs
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -281,10 +275,10 @@ contains
                       dsdt_eos, dsdr_eos, &
                       .false.)
              
-             cp(i,j,k) = HALF*(cp_eos(1) + cp(i,j,k))
+             cp(i,j,k) = HALF*(cp_eos + cp(i,j,k))
              
              do comp=1,nspec
-                xi(i,j,k,comp) = HALF*(dhdX_eos(1,comp) + xi(i,j,k,comp))
+                xi(i,j,k,comp) = HALF*(dhdX_eos(comp) + xi(i,j,k,comp))
              enddo
 
           enddo
