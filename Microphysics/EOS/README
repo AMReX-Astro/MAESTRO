@@ -47,12 +47,6 @@ helmeos_without_rad:
    Since radiation is included in the system already, we should take
    it out in EOS. 
 
-hma_eos:
-
-   Haito Ma's slighly tweaked version of the helmeos -- basically the
-   helmeos with a table look up for abar.
-
-
 lattimer_swesty:
 
    the Lattimer-Swesty nuclear EOS for core-collapse simulations
