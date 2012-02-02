@@ -163,20 +163,26 @@ sizes.
 \section{Visualizing with {\tt data\_processing} scripts}
 \label{sec:vis:python}
 
+
 {\tt data\_processing/python\_plotfile} provide a simple commandline
-tool for doing visualizations of 2-d \boxlib\ plotfiles, and slices
-through 3-d \boxlib\ plotfiles.  The main driver is written in python
-and uses a set of Fortran routines, compiled with {\tt f2py} to
-interface with the plotfile data.  To use the routine, you will need
-to have {\tt matplotlib} and {\tt f2py} installed.  On a machine
-running Fedora linux, you can install these packages via
-\begin{verbatim}
+tool for doing visualizations of \boxlib\ plotfiles.  The main drivers
+are written in python and use a set of Fortran routines, compiled with
+{\tt f2py} to interface with the plotfile data.  To use the routine,
+you will need to have {\tt matplotlib} and {\tt f2py} installed.  On a
+machine running Fedora linux, you can install these packages via
+\begin{verbatim}   
 yum install python-matplotlib f2py
 \end{verbatim}
-
+%
 The library required by the python routines can be built by typing
 '{\tt make}' in that directory.  If successful, you should find
-a library {\tt fsnapshot.so}.  A simple plot can be made via:
+a library {\tt fsnapshot.so}. 
+
+\subsection{\tt plotsinglevar.py}
+
+{\tt plotsinglevar.py} does visualizations of 2-d \boxlib\ plotfiles,
+and slices through 3-d \boxlib\ plotfiles.  A simple plot can be made
+via:
 \begin{verbatim}
 plotsinglevar.py --log -o test.png plt00000/ tfromp
 \end{verbatim}
@@ -220,6 +226,16 @@ Limited 3-d support is available.  When run as with a plotfile name
 and variable, it will plot slices ($x$-$y$, $x$-$z$, and $y$-$z$) 
 through the center of the domain.  The option `{\tt --origin}'
 will put the slices through the origin.
+
+
+\subsection{\tt contourcompare.py}
+
+{\tt contourcompare.py} takes 2 plotfiles and a variable as arguments
+and plots contours of the 2 datasets on the same set of axes.  This is 
+form comparisons of different runs.  Running the script with no parameters
+will give the full list available options.
+
+
 
 
 %-----------------------------------------------------------------------------
