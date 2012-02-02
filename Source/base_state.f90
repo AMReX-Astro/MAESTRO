@@ -163,14 +163,13 @@ contains
           xn_ambient = xn_ambient/sumX
 
           ! use the EOS to make the state consistent
-          temp_eos(1) = t_ambient
-          den_eos(1)  = d_ambient
-          p_eos(1)    = p_ambient
-          xn_eos(1,:) = xn_ambient(:)
+          temp_eos = t_ambient
+          den_eos  = d_ambient
+          p_eos    = p_ambient
+          xn_eos(:) = xn_ambient(:)
 
           ! (rho,T) --> p,h
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -181,9 +180,9 @@ contains
                    .false.)
 
           s0_init(r, rho_comp ) = d_ambient
-          s0_init(r,rhoh_comp ) = d_ambient * h_eos(1)
+          s0_init(r,rhoh_comp ) = d_ambient * h_eos
           s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-          p0_init(r) = p_eos(1)
+          p0_init(r) = p_eos
 
           s0_init(r,temp_comp) = t_ambient
 

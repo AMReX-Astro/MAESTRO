@@ -1164,12 +1164,11 @@ contains
                 end if
 
                 ! call the EOS to get the sound speed and internal energy
-                temp_eos(1) = s(i,j,k,temp_comp)
-                den_eos(1)  = s(i,j,k,rho_comp)
-                xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                temp_eos = s(i,j,k,temp_comp)
+                den_eos  = s(i,j,k,rho_comp)
+                xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
                 call eos(eos_input_rt, den_eos, temp_eos, &
-                         npts, &
                          xn_eos, &
                          p_eos, h_eos, e_eos, &
                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1182,12 +1181,12 @@ contains
 
                 ! kinetic, internal, and nuclear energies
                 kin_ener = kin_ener + weight*s(i,j,k,rho_comp)*vel**2
-                int_ener = int_ener + weight*s(i,j,k,rho_comp)*e_eos(1)
+                int_ener = int_ener + weight*s(i,j,k,rho_comp)*e_eos
                 nuc_ener = nuc_ener + weight*rho_Hnuc(i,j,k)
 
                 ! max vel and Mach number
                 U_max = max(U_max,vel)
-                Mach_max = max(Mach_max,vel/cs_eos(1))
+                Mach_max = max(Mach_max,vel/cs_eos)
 
              endif  ! end cell_valid and density check
 

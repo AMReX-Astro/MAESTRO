@@ -204,16 +204,15 @@ contains
        do i = lo(1), hi(1)
              
           if (snew(i,rho_comp) .le. base_cutoff_density) then
-             den_eos(1) = snew(i,rho_comp)
-             temp_eos(1) = sold(i,temp_comp)
-             p_eos(1) = p0(i)
-             xn_eos(1,:) = snew(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = snew(i,rho_comp)
+             temp_eos = sold(i,temp_comp)
+             p_eos = p0(i)
+             xn_eos(:) = snew(i,spec_comp:spec_comp+nspec-1)/den_eos
              
              pt_index_eos(:) = (/i, -1, -1/)
              
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -224,7 +223,7 @@ contains
                       .false., &
                       pt_index_eos)
              
-             snew(i,rhoh_comp) = snew(i,rho_comp) * h_eos(1)
+             snew(i,rhoh_comp) = snew(i,rho_comp) * h_eos
              
           end if
           
@@ -329,16 +328,15 @@ contains
           do i = lo(1), hi(1)
              
              if (snew(i,j,rho_comp) .le. base_cutoff_density) then
-                den_eos(1) = snew(i,j,rho_comp)
-                temp_eos(1) = sold(i,j,temp_comp)
-                p_eos(1) = p0(j)
-                xn_eos(1,:) = snew(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                den_eos = snew(i,j,rho_comp)
+                temp_eos = sold(i,j,temp_comp)
+                p_eos = p0(j)
+                xn_eos(:) = snew(i,j,spec_comp:spec_comp+nspec-1)/den_eos
 
                 pt_index_eos(:) = (/i, j, -1/)
                 
                 ! (rho,P) --> T,h
                 call eos(eos_input_rp, den_eos, temp_eos, &
-                         npts, &
                          xn_eos, &
                          p_eos, h_eos, e_eos, &
                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -349,7 +347,7 @@ contains
                          .false., &
                          pt_index_eos)
                 
-                snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * h_eos(1)
+                snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * h_eos
                 
              end if
              
@@ -467,16 +465,15 @@ contains
 
                 if (snew(i,j,k,rho_comp) .le. base_cutoff_density) then
 
-                   den_eos(1) = snew(i,j,k,rho_comp)
-                   temp_eos(1) = sold(i,j,k,temp_comp)
-                   p_eos(1) = p0(k)
-                   xn_eos(1,:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                   den_eos = snew(i,j,k,rho_comp)
+                   temp_eos = sold(i,j,k,temp_comp)
+                   p_eos = p0(k)
+                   xn_eos(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
                    pt_index_eos(:) = (/i, j, k/)
 
                    ! (rho,P) --> T,h
                    call eos(eos_input_rp, den_eos, temp_eos, &
-                            npts, &
                             xn_eos, &
                             p_eos, h_eos, e_eos, &
                             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -487,7 +484,7 @@ contains
                             .false., &
                             pt_index_eos)
 
-                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)
+                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos
 
                 end if
 
@@ -614,16 +611,15 @@ contains
              do i = lo(1), hi(1)
 
                 if (snew(i,j,k,rho_comp) .le. base_cutoff_density) then
-                   den_eos(1) = snew(i,j,k,rho_comp)
-                   temp_eos(1) = sold(i,j,k,temp_comp)
-                   p_eos(1) = p0_new_cart(i,j,k)
-                   xn_eos(1,:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                   den_eos = snew(i,j,k,rho_comp)
+                   temp_eos = sold(i,j,k,temp_comp)
+                   p_eos = p0_new_cart(i,j,k)
+                   xn_eos(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
                    pt_index_eos(:) = (/i, j, k/)
 
                    ! (rho,P) --> T,h
                    call eos(eos_input_rp, den_eos, temp_eos, &
-                            npts, &
                             xn_eos, &
                             p_eos, h_eos, e_eos, &
                             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -634,7 +630,7 @@ contains
                             .false., &
                             pt_index_eos)
 
-                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)
+                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos
 
                 end if
 

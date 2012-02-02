@@ -967,15 +967,14 @@ contains
 
        do i = lo(1),hi(1)
 
-          temp_eos(1) = s(i,j,temp_comp)
-           den_eos(1) = s(i,j,rho_comp)
-          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1) / s(i,j,rho_comp)
+          temp_eos = s(i,j,temp_comp)
+           den_eos = s(i,j,rho_comp)
+          xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1) / s(i,j,rho_comp)
 
           pt_index_eos(:) = (/i, -1, -1/)
 
           ! dens, temp, xmass inputs
          call eos(eos_input_rt, den_eos, temp_eos, &
-                  npts, &
                   xn_eos, &
                   p_eos, h_eos, e_eos, &
                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -986,15 +985,15 @@ contains
                   .false., &
                   pt_index_eos)
 
-         dhdp = ONE / s(i,j,rho_comp) + ( s(i,j,rho_comp) * dedr_eos(1) - &
-                                          p_eos(1) / s(i,j,rho_comp) ) &
-                                        / ( s(i,j,rho_comp) * dpdr_eos(1) )
+         dhdp = ONE / s(i,j,rho_comp) + ( s(i,j,rho_comp) * dedr_eos - &
+                                          p_eos / s(i,j,rho_comp) ) &
+                                        / ( s(i,j,rho_comp) * dpdr_eos )
 
          wadv = HALF*(wmac(i,j)+wmac(i,j+1))
 
          temp_force(i,j) =  thermal(i,j) + (ONE - s(i,j,rho_comp) * dhdp) * &
                             (wadv * gradp0 + psi(j))
-         temp_force(i,j) = temp_force(i,j) / (cp_eos(1) * s(i,j,rho_comp))
+         temp_force(i,j) = temp_force(i,j) / (cp_eos * s(i,j,rho_comp))
 
        end do
     end do
@@ -1040,15 +1039,14 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
 
-             temp_eos(1) = s(i,j,k,temp_comp)
-             den_eos(1) = s(i,j,k,rho_comp)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
+             temp_eos = s(i,j,k,temp_comp)
+             den_eos = s(i,j,k,rho_comp)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
 
              pt_index_eos(:) = (/i, j, -1/)
              
              ! dens, temp, xmass inputs
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1059,15 +1057,15 @@ contains
                       .false., &
                       pt_index_eos)
              
-             dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) - &
-                  p_eos(1) / s(i,j,k,rho_comp) ) / ( s(i,j,k,rho_comp) * dpdr_eos(1) )
+             dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos - &
+                  p_eos / s(i,j,k,rho_comp) ) / ( s(i,j,k,rho_comp) * dpdr_eos )
              
              wadv = HALF * (wmac(i,j,k+1) + wmac(i,j,k))
              
              temp_force(i,j,k) =  thermal(i,j,k) + &
                   (ONE - s(i,j,k,rho_comp) * dhdp) * (wadv * gradp0 + psi(k))
              
-             temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos(1) * s(i,j,k,rho_comp))
+             temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos * s(i,j,k,rho_comp))
              
           end do
        end do
@@ -1113,15 +1111,14 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              
-             temp_eos(1)   = s(i,j,k,temp_comp)
-             den_eos(1)   = s(i,j,k,rho_comp)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
+             temp_eos   = s(i,j,k,temp_comp)
+             den_eos   = s(i,j,k,rho_comp)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
 
              pt_index_eos(:) = (/i, j, k/)
              
              ! dens, temp, xmass inputs
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1132,9 +1129,9 @@ contains
                       .false., &
                       pt_index_eos)
              
-             dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) - &
-                                                p_eos(1) / s(i,j,k,rho_comp) ) &
-                                                / ( s(i,j,k,rho_comp) * dpdr_eos(1) )
+             dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos - &
+                                                p_eos / s(i,j,k,rho_comp) ) &
+                                                / ( s(i,j,k,rho_comp) * dpdr_eos )
 
              p0_lox = HALF * (p0_cart(i,j,k) + p0_cart(i-1,j,k)) 
              p0_hix = HALF * (p0_cart(i,j,k) + p0_cart(i+1,j,k)) 
@@ -1156,7 +1153,7 @@ contains
              temp_force(i,j,k) =  thermal(i,j,k) + &
                   (ONE - s(i,j,k,rho_comp) * dhdp) * (ugradp + psi_cart(i,j,k,1))
 
-             temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos(1) * s(i,j,k,rho_comp))
+             temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos * s(i,j,k,rho_comp))
              
           end do
        end do

@@ -305,13 +305,12 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             temp_eos(1) = s(i,j,k,temp_comp)
-             p_eos(1) = p0_cart(i,j,k,1)
-             den_eos(1) = s(i,j,k,rho_comp)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             temp_eos = s(i,j,k,temp_comp)
+             p_eos = p0_cart(i,j,k,1)
+             den_eos = s(i,j,k,rho_comp)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -321,8 +320,8 @@ contains
                       dsdt_eos, dsdr_eos, &
                       .false.)
 
-             s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
-             s(i,j,k,temp_comp) = temp_eos(1)
+             s(i,j,k,rhoh_comp) = den_eos*h_eos
+             s(i,j,k,temp_comp) = temp_eos
 
           enddo
        enddo

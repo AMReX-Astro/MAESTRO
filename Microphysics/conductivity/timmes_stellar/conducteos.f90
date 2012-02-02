@@ -13,7 +13,7 @@ contains
 
 
   subroutine conducteos(input, dens, temp, &
-                        npoints, nspecies, &
+                        nspecies, &
                         xmass, &
                         pres, enthalpy, eint, &
                         c_v, c_p, ne, eta, pele, &
@@ -30,19 +30,19 @@ contains
     implicit none
 
     ! arguments
-    integer input,npoints,nspecies
+    integer input,nspecies
     logical do_eos_diag
-    double precision dens(npoints), temp(npoints)
-    double precision xmass(npoints,nspecies)
-    double precision pres(npoints), enthalpy(npoints), eint(npoints)
-    double precision c_v(npoints), c_p(npoints)
-    double precision ne(npoints), eta(npoints), pele(npoints)
-    double precision dPdT(npoints), dPdR(npoints)
-    double precision dEdT(npoints), dEdR(npoints)
-    double precision gam1(npoints), entropy(npoints), cs(npoints)
-    double precision dPdX(npoints,nspecies), dhdX(npoints,nspecies)
-    double precision dsdT(npoints), dsdR(npoints)
-    double precision conductivity(npoints)
+    double precision dens, temp
+    double precision xmass(nspecies)
+    double precision pres, enthalpy, eint
+    double precision c_v, c_p
+    double precision ne, eta, pele
+    double precision dPdT, dPdR
+    double precision dEdT, dEdR
+    double precision gam1, entropy, cs
+    double precision dPdX(nspecies), dhdX(nspecies)
+    double precision dsdT, dsdR
+    double precision conductivity
     double precision xmass_temp(nspecies)
 
     double precision orad, ocond, opac
@@ -55,7 +55,6 @@ contains
     !..see the end of this file for how its brought in
 
     call eos(input, dens, temp, &
-             npoints, &
              xmass, & 
              pres, enthalpy, eint, &
              c_v, c_p, ne, eta, pele, &
@@ -72,17 +71,15 @@ contains
     !..and electron chemical potential from the eos
 
     !..call the opacity routine
-    do n=1,npoints
-       
-       ! this is done to be compatible with interface to sig99
-       do i=1,nspecies
-          xmass_temp(i) = xmass(n,i)
-       enddo
-
-       call sig99(temp(n),dens(n),xmass_temp,zion,aion,nspecies, &
-                  pele(n),ne(n),eta(n),orad,ocond,opac, &
-                  conductivity(n))
+      
+    ! this is done to be compatible with interface to sig99
+    do i=1,nspecies
+       xmass_temp(i) = xmass(i)
     enddo
+
+    call sig99(temp,dens,xmass_temp,zion,aion,nspecies, &
+               pele,ne,eta,orad,ocond,opac, &
+               conductivity)
 
   end subroutine conducteos
 

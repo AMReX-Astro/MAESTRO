@@ -235,15 +235,14 @@ contains
     do i = lo(1), hi(1)
           
        ! compute the sound speed from rho and temp
-       den_eos(1)  = s(i,rho_comp)
-       temp_eos(1) = s(i,temp_comp)
-       xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       den_eos  = s(i,rho_comp)
+       temp_eos = s(i,temp_comp)
+       xn_eos(:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos
        
        pt_index_eos(:) = (/i, -1, -1/)
 
        ! dens, temp, and xmass are inputs
        call eos(eos_input_rt, den_eos, temp_eos, &
-                npts, &
                 xn_eos, &
                 p_eos, h_eos, e_eos, & 
                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -254,7 +253,7 @@ contains
                 .false., &
                 pt_index_eos)
        
-       spdx    = max(spdx,cs_eos(1))
+       spdx    = max(spdx,cs_eos)
        pforcex = max(pforcex,abs(force(i)))
        ux      = max(ux,abs(u(i)))
 
@@ -355,15 +354,14 @@ contains
        do i = lo(1), hi(1)
           
           ! compute the sound speed from rho and temp
-          den_eos(1)  = s(i,j,rho_comp)
-          temp_eos(1) = s(i,j,temp_comp)
-          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+          den_eos  = s(i,j,rho_comp)
+          temp_eos = s(i,j,temp_comp)
+          xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
 
           pt_index_eos(:) = (/i, j, -1/)
           
           ! dens, temp, and xmass are inputs
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, & 
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -374,8 +372,8 @@ contains
                    .false., &
                    pt_index_eos)
           
-          spdx    = max(spdx,cs_eos(1))
-          spdy    = max(spdy,cs_eos(1))
+          spdx    = max(spdx,cs_eos)
+          spdy    = max(spdy,cs_eos)
           pforcex = max(pforcex,abs(force(i,j,1)))
           pforcey = max(pforcey,abs(force(i,j,2)))
           ux      = max(ux,abs(u(i,j,1)))
@@ -489,15 +487,14 @@ contains
           do i = lo(1), hi(1)
 
              ! compute the sound speed from rho and temp
-             den_eos(1) = s(i,j,k,rho_comp)
-             temp_eos(1) = s(i,j,k,temp_comp)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = s(i,j,k,rho_comp)
+             temp_eos = s(i,j,k,temp_comp)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              pt_index_eos(:) = (/i, j, k/)
              
              ! dens, temp, and xmass are inputs
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -508,9 +505,9 @@ contains
                       .false., &
                       pt_index_eos)
              
-             spdx    = max(spdx,cs_eos(1))
-             spdy    = max(spdy,cs_eos(1))
-             spdz    = max(spdz,cs_eos(1))
+             spdx    = max(spdx,cs_eos)
+             spdy    = max(spdy,cs_eos)
+             spdz    = max(spdz,cs_eos)
              pforcex = max(pforcex,abs(force(i,j,k,1)))
              pforcey = max(pforcey,abs(force(i,j,k,2)))
              pforcez = max(pforcez,abs(force(i,j,k,3)))
@@ -640,15 +637,14 @@ contains
           do i = lo(1), hi(1)
 
              ! compute the sound speed from rho and temp
-             den_eos(1) = s(i,j,k,rho_comp)
-             temp_eos(1) = s(i,j,k,temp_comp)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = s(i,j,k,rho_comp)
+             temp_eos = s(i,j,k,temp_comp)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              pt_index_eos(:) = (/i, j, k/)
              
              ! dens, temp, and xmass are inputs
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -659,9 +655,9 @@ contains
                       .false., &
                       pt_index_eos)
              
-             spdx    = max(spdx,cs_eos(1))
-             spdy    = max(spdy,cs_eos(1))
-             spdz    = max(spdz,cs_eos(1))
+             spdx    = max(spdx,cs_eos)
+             spdy    = max(spdy,cs_eos)
+             spdz    = max(spdz,cs_eos)
              pforcex = max(pforcex,abs(force(i,j,k,1)))
              pforcey = max(pforcey,abs(force(i,j,k,2)))
              pforcez = max(pforcez,abs(force(i,j,k,3)))

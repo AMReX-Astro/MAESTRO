@@ -257,15 +257,14 @@ contains
 
     do i = lo(1), hi(1)
 
-          den_eos(1) = s(i,rho_comp)
-          temp_eos(1) = s(i,temp_comp)
-          xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+          den_eos = s(i,rho_comp)
+          temp_eos = s(i,temp_comp)
+          xn_eos(:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos
 
           pt_index_eos(:) = (/i, -1, -1/)
 
           ! dens, temp, and xmass are inputs
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, & 
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -276,22 +275,22 @@ contains
                    .false., &
                    pt_index_eos)
 
-          sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
+          sigma = dpdt_eos / (den_eos * cp_eos * dpdr_eos)
 
           xi_term = ZERO
           pres_term = ZERO
           do comp = 1, nspec
              xi_term = xi_term - &
-                  dhdX_eos(1,comp)*rho_omegadot(i,comp)/den_eos(1) 
+                  dhdX_eos(comp)*rho_omegadot(i,comp)/den_eos 
 
              pres_term = pres_term + &
-                  dpdX_eos(1,comp)*rho_omegadot(i,comp)/den_eos(1)
+                  dpdX_eos(comp)*rho_omegadot(i,comp)/den_eos
           enddo
 
-          Source(i) = (sigma/den_eos(1)) * &
+          Source(i) = (sigma/den_eos) * &
                ( rho_Hext(i) + rho_Hnuc(i) + thermal(i) ) &
                + sigma*xi_term &
-               + pres_term/(den_eos(1)*dpdr_eos(1))
+               + pres_term/(den_eos*dpdr_eos)
 
           if (use_delta_gamma1_term .and. i < anelastic_cutoff_coord(n)) then
              if (i .eq. 0) then
@@ -302,10 +301,10 @@ contains
                 gradp0 = HALF*(p0(i+1) - p0(i-1))/dx(1)
              endif
 
-             delta_gamma1(i) = gam1_eos(1) - gamma1bar(i)
+             delta_gamma1(i) = gam1_eos - gamma1bar(i)
 
              delta_gamma1_term(i) = &
-                  (gam1_eos(1) - gamma1bar(i))*u(i)* &
+                  (gam1_eos - gamma1bar(i))*u(i)* &
                   gradp0/(gamma1bar(i)*gamma1bar(i)*p0(i))
           else
              delta_gamma1_term(i) = ZERO
@@ -352,15 +351,14 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          den_eos(1) = s(i,j,rho_comp)
-          temp_eos(1) = s(i,j,temp_comp)
-          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+          den_eos = s(i,j,rho_comp)
+          temp_eos = s(i,j,temp_comp)
+          xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
 
           pt_index_eos(:) = (/i, j, -1/)
 
           ! dens, temp, and xmass are inputs
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, & 
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -371,22 +369,22 @@ contains
                    .false., &
                    pt_index_eos)
 
-          sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
+          sigma = dpdt_eos / (den_eos * cp_eos * dpdr_eos)
 
           xi_term = ZERO
           pres_term = ZERO
           do comp = 1, nspec
              xi_term = xi_term - &
-                  dhdX_eos(1,comp)*rho_omegadot(i,j,comp)/den_eos(1) 
+                  dhdX_eos(comp)*rho_omegadot(i,j,comp)/den_eos 
 
              pres_term = pres_term + &
-                  dpdX_eos(1,comp)*rho_omegadot(i,j,comp)/den_eos(1)
+                  dpdX_eos(comp)*rho_omegadot(i,j,comp)/den_eos
           enddo
 
-          Source(i,j) = (sigma/den_eos(1)) * &
+          Source(i,j) = (sigma/den_eos) * &
                ( rho_Hext(i,j) + rho_Hnuc(i,j) + thermal(i,j) ) &
                + sigma*xi_term &
-               + pres_term/(den_eos(1)*dpdr_eos(1))
+               + pres_term/(den_eos*dpdr_eos)
 
           if (use_delta_gamma1_term .and. j < anelastic_cutoff_coord(n)) then
              if (j .eq. 0) then
@@ -397,10 +395,10 @@ contains
                 gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
              endif
 
-             delta_gamma1(i,j) = gam1_eos(1) - gamma1bar(j)
+             delta_gamma1(i,j) = gam1_eos - gamma1bar(j)
 
              delta_gamma1_term(i,j) = &
-                  (gam1_eos(1) - gamma1bar(j))*u(i,j,2)* &
+                  (gam1_eos - gamma1bar(j))*u(i,j,2)* &
                   gradp0/(gamma1bar(j)*gamma1bar(j)*p0(j))
           else
              delta_gamma1_term(i,j) = ZERO
@@ -449,15 +447,14 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos(1) = s(i,j,k,rho_comp)
-             temp_eos(1) = s(i,j,k,temp_comp)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = s(i,j,k,rho_comp)
+             temp_eos = s(i,j,k,temp_comp)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              pt_index_eos(:) = (/i, j, k/)
 
              ! dens, temp, and xmass are inputs
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -468,22 +465,22 @@ contains
                       .false., &
                       pt_index_eos)
 
-             sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
+             sigma = dpdt_eos / (den_eos * cp_eos * dpdr_eos)
 
              xi_term = ZERO
              pres_term = ZERO
              do comp = 1, nspec
                 xi_term = xi_term - &
-                     dhdX_eos(1,comp)*rho_omegadot(i,j,k,comp)/den_eos(1) 
+                     dhdX_eos(comp)*rho_omegadot(i,j,k,comp)/den_eos 
 
                 pres_term = pres_term + &
-                     dpdX_eos(1,comp)*rho_omegadot(i,j,k,comp)/den_eos(1)
+                     dpdX_eos(comp)*rho_omegadot(i,j,k,comp)/den_eos
              enddo
 
-             Source(i,j,k) = (sigma/den_eos(1)) * &
+             Source(i,j,k) = (sigma/den_eos) * &
                   ( rho_Hext(i,j,k) + rho_Hnuc(i,j,k) + thermal(i,j,k) ) &
                   + sigma*xi_term &
-                  + pres_term/(den_eos(1)*dpdr_eos(1))
+                  + pres_term/(den_eos*dpdr_eos)
 
              if (use_delta_gamma1_term .and. k < anelastic_cutoff_coord(n)) then
                 if (k .eq. 0) then
@@ -494,9 +491,9 @@ contains
                    gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
                 endif
                 
-                delta_gamma1(i,j,k) = gam1_eos(1) - gamma1bar(k)
+                delta_gamma1(i,j,k) = gam1_eos - gamma1bar(k)
                 
-                delta_gamma1_term(i,j,k) = (gam1_eos(1) - gamma1bar(k))*u(i,j,k,3)* &
+                delta_gamma1_term(i,j,k) = (gam1_eos - gamma1bar(k))*u(i,j,k,3)* &
                      gradp0/(gamma1bar(k)*gamma1bar(k)*p0(k))
              else
                 delta_gamma1_term(i,j,k) = ZERO
@@ -543,15 +540,14 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos(1) = s(i,j,k,rho_comp)
-             temp_eos(1) = s(i,j,k,temp_comp)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = s(i,j,k,rho_comp)
+             temp_eos = s(i,j,k,temp_comp)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              pt_index_eos(:) = (/i, j, k/)
 
              ! dens, temp, and xmass are inputs
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -562,22 +558,22 @@ contains
                       .false., &
                       pt_index_eos)
 
-             sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
+             sigma = dpdt_eos / (den_eos * cp_eos * dpdr_eos)
 
              xi_term = ZERO
              pres_term = ZERO
              do comp = 1, nspec
                 xi_term = xi_term - &
-                     dhdX_eos(1,comp)*rho_omegadot(i,j,k,comp)/den_eos(1) 
+                     dhdX_eos(comp)*rho_omegadot(i,j,k,comp)/den_eos 
 
                 pres_term = pres_term + &
-                     dpdX_eos(1,comp)*rho_omegadot(i,j,k,comp)/den_eos(1)
+                     dpdX_eos(comp)*rho_omegadot(i,j,k,comp)/den_eos
              enddo
 
-             Source(i,j,k) = (sigma/den_eos(1)) * &
+             Source(i,j,k) = (sigma/den_eos) * &
                   ( rho_Hext(i,j,k) + rho_Hnuc(i,j,k) + thermal(i,j,k) ) &
                   + sigma*xi_term &
-                  + pres_term/(den_eos(1)*dpdr_eos(1))
+                  + pres_term/(den_eos*dpdr_eos)
 
 
              if (use_delta_gamma1_term) then

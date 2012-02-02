@@ -369,13 +369,13 @@ contains
     
     do i=lo(1)-1,hi(1)+1
           
-       den_eos(1) = s(i,rho_comp)
-       temp_eos(1) = s(i,temp_comp)
-       xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       den_eos = s(i,rho_comp)
+       temp_eos = s(i,temp_comp)
+       xn_eos(:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos
        
        ! dens, temp, and xmass are inputs
        call conducteos(eos_input_rt, den_eos, temp_eos, &
-                       npts, nspec, &
+                       nspec, &
                        xn_eos, &
                        p_eos, h_eos, e_eos, & 
                        cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -385,14 +385,14 @@ contains
                        dsdt_eos, dsdr_eos, &
                        .false., conduct_eos)
        
-       Tcoeff(i) = -conduct_eos(1)
-       hcoeff(i) = -conduct_eos(1)/cp_eos(1)
-       pcoeff(i) = (conduct_eos(1)/cp_eos(1))* &
-            ((1.0d0/den_eos(1))* &
-            (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
+       Tcoeff(i) = -conduct_eos
+       hcoeff(i) = -conduct_eos/cp_eos
+       pcoeff(i) = (conduct_eos/cp_eos)* &
+            ((1.0d0/den_eos)* &
+            (1.0d0-p_eos/(den_eos*dpdr_eos))+dedr_eos/dpdr_eos)
        
        do comp=1,nspec
-          Xkcoeff(i,comp) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,comp)
+          Xkcoeff(i,comp) = (conduct_eos/cp_eos)*dhdX_eos(comp)
        enddo
 
     enddo
@@ -427,13 +427,13 @@ contains
     do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)+1
           
-          den_eos(1) = s(i,j,rho_comp)
-          temp_eos(1) = s(i,j,temp_comp)
-          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+          den_eos = s(i,j,rho_comp)
+          temp_eos = s(i,j,temp_comp)
+          xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
           
           ! dens, temp, and xmass are inputs
           call conducteos(eos_input_rt, den_eos, temp_eos, &
-                          npts, nspec, &
+                          nspec, &
                           xn_eos, &
                           p_eos, h_eos, e_eos, & 
                           cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -443,14 +443,14 @@ contains
                           dsdt_eos, dsdr_eos, &
                           .false., conduct_eos)
           
-          Tcoeff(i,j) = -conduct_eos(1)
-          hcoeff(i,j) = -conduct_eos(1)/cp_eos(1)
-          pcoeff(i,j) = (conduct_eos(1)/cp_eos(1))* &
-               ((1.0d0/den_eos(1))* &
-               (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
+          Tcoeff(i,j) = -conduct_eos
+          hcoeff(i,j) = -conduct_eos/cp_eos
+          pcoeff(i,j) = (conduct_eos/cp_eos)* &
+               ((1.0d0/den_eos)* &
+               (1.0d0-p_eos/(den_eos*dpdr_eos))+dedr_eos/dpdr_eos)
           
           do comp=1,nspec
-             Xkcoeff(i,j,comp) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,comp)
+             Xkcoeff(i,j,comp) = (conduct_eos/cp_eos)*dhdX_eos(comp)
           enddo
 
        enddo
@@ -490,13 +490,13 @@ contains
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
              
-             den_eos(1) = s(i,j,k,rho_comp)
-             temp_eos(1) = s(i,j,k,temp_comp)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = s(i,j,k,rho_comp)
+             temp_eos = s(i,j,k,temp_comp)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
              
              ! dens, temp, and xmass are inputs
              call conducteos(eos_input_rt, den_eos, temp_eos, &
-                             npts, nspec, &
+                             nspec, &
                              xn_eos, &
                              p_eos, h_eos, e_eos, & 
                              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -506,14 +506,14 @@ contains
                              dsdt_eos, dsdr_eos, &
                              .false., conduct_eos)
              
-             Tcoeff(i,j,k) = -conduct_eos(1)
-             hcoeff(i,j,k) = -conduct_eos(1)/cp_eos(1)
-             pcoeff(i,j,k) = (conduct_eos(1)/cp_eos(1))* &
-                  ((1.0d0/den_eos(1))* &
-                  (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
+             Tcoeff(i,j,k) = -conduct_eos
+             hcoeff(i,j,k) = -conduct_eos/cp_eos
+             pcoeff(i,j,k) = (conduct_eos/cp_eos)* &
+                  ((1.0d0/den_eos)* &
+                  (1.0d0-p_eos/(den_eos*dpdr_eos))+dedr_eos/dpdr_eos)
              
              do comp=1,nspec
-                Xkcoeff(i,j,k,comp) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,comp)
+                Xkcoeff(i,j,k,comp) = (conduct_eos/cp_eos)*dhdX_eos(comp)
              enddo
 
           enddo

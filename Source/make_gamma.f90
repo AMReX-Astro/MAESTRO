@@ -96,16 +96,15 @@ contains
 
     do i = lo(1), hi(1)
 
-       den_eos(1) = s(i,rho_comp)
-       p_eos(1) = p0(i)
-       xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
-       temp_eos(1) = s(i,temp_comp)
+       den_eos = s(i,rho_comp)
+       p_eos = p0(i)
+       xn_eos(:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos
+       temp_eos = s(i,temp_comp)
 
        pt_index_eos(:) = (/i, -1, -1/)
 
        ! dens, pres, and xmass are inputs
        call eos(eos_input_rp, den_eos, temp_eos, &
-                npts, &
                 xn_eos, &
                 p_eos, h_eos, e_eos, & 
                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -116,7 +115,7 @@ contains
                 .false., &
                 pt_index_eos)
 
-       gamma(i) = gam1_eos(1)
+       gamma(i) = gam1_eos
 
     end do
 
@@ -139,16 +138,15 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          den_eos(1) = s(i,j,rho_comp)
-          p_eos(1) = p0(j)
-          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
-          temp_eos(1) = s(i,j,temp_comp)
+          den_eos = s(i,j,rho_comp)
+          p_eos = p0(j)
+          xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+          temp_eos = s(i,j,temp_comp)
 
           pt_index_eos(:) = (/i, j, -1/)
 
           ! dens, pres, and xmass are inputs
           call eos(eos_input_rp, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, & 
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -159,7 +157,7 @@ contains
                    .false., &
                    pt_index_eos)
 
-          gamma(i,j) = gam1_eos(1)
+          gamma(i,j) = gam1_eos
 
        end do
     end do
@@ -186,16 +184,15 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos(1) = s(i,j,k,rho_comp)
-             p_eos(1) = p0(k)
-             temp_eos(1) = s(i,j,k,temp_comp)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = s(i,j,k,rho_comp)
+             p_eos = p0(k)
+             temp_eos = s(i,j,k,temp_comp)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              pt_index_eos(:) = (/i, j, k/)
 
              ! dens, pres, and xmass are inputs
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -206,7 +203,7 @@ contains
                       .false., &
                       pt_index_eos)
 
-             gamma(i,j,k) = gam1_eos(1)
+             gamma(i,j,k) = gam1_eos
 
           end do
        end do
@@ -241,16 +238,15 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos(1) = s(i,j,k,rho_comp)
-             p_eos(1) = p0_cart(i,j,k,1)
-             temp_eos(1) = s(i,j,k,temp_comp)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = s(i,j,k,rho_comp)
+             p_eos = p0_cart(i,j,k,1)
+             temp_eos = s(i,j,k,temp_comp)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              pt_index_eos(:) = (/i, j, k/)
 
              ! dens, pres, and xmass are inputs
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -261,7 +257,7 @@ contains
                       .false., &
                       pt_index_eos)
 
-             gamma(i,j,k) = gam1_eos(1)
+             gamma(i,j,k) = gam1_eos
 
           end do
        end do

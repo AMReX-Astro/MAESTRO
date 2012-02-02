@@ -91,14 +91,13 @@ contains
     
     do i = lo(1), hi(1)
 
-       den_eos(1) = state(i,rho_comp)
-       temp_eos(1) = state(i,temp_comp)
-       xn_eos(1,:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       den_eos = state(i,rho_comp)
+       temp_eos = state(i,temp_comp)
+       xn_eos(:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos
 
        pt_index_eos(:) = (/i, -1, -1/)       
 
        call eos(eos_input_rt, den_eos, temp_eos, &
-                npts, &
                 xn_eos, &
                 p_eos, h_eos, e_eos, &
                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -109,11 +108,11 @@ contains
                 .false., &
                 pt_index_eos)       
        
-       pres(i) = p_eos(1)
+       pres(i) = p_eos
 
-       chi_rho = den_eos(1) * dpdr_eos(1) / p_eos(1)
-       chi_t = temp_eos(1) * dpdt_eos(1) / p_eos(1)
-       nabla_ad(i) = (gam1_eos(1) - chi_rho) / (chi_t * gam1_eos(1))
+       chi_rho = den_eos * dpdr_eos / p_eos
+       chi_t = temp_eos * dpdt_eos / p_eos
+       nabla_ad(i) = (gam1_eos - chi_rho) / (chi_t * gam1_eos)
 
     enddo
 
@@ -169,14 +168,13 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          den_eos(1) = state(i,j,rho_comp)
-          temp_eos(1) = state(i,j,temp_comp)
-          xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+          den_eos = state(i,j,rho_comp)
+          temp_eos = state(i,j,temp_comp)
+          xn_eos(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos
 
           pt_index_eos(:) = (/i, j, -1/)       
 
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -187,11 +185,11 @@ contains
                    .false., &
                    pt_index_eos)       
        
-          pres(i,j) = p_eos(1)
+          pres(i,j) = p_eos
 
-          chi_rho = den_eos(1) * dpdr_eos(1) / p_eos(1)
-          chi_t = temp_eos(1) * dpdt_eos(1) / p_eos(1)
-          nabla_ad(i,j) = (gam1_eos(1) - chi_rho) / (chi_t * gam1_eos(1))
+          chi_rho = den_eos * dpdr_eos / p_eos
+          chi_t = temp_eos * dpdt_eos / p_eos
+          nabla_ad(i,j) = (gam1_eos - chi_rho) / (chi_t * gam1_eos)
 
        enddo
     enddo
@@ -252,14 +250,13 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos(1) = state(i,j,k,rho_comp)
-             temp_eos(1) = state(i,j,k,temp_comp)
-             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = state(i,j,k,rho_comp)
+             temp_eos = state(i,j,k,temp_comp)
+             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              pt_index_eos(:) = (/i, j, k/)       
 
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -270,11 +267,11 @@ contains
                       .false., &
                       pt_index_eos)       
        
-             pres(i,j,k) = p_eos(1)
+             pres(i,j,k) = p_eos
 
-             chi_rho = den_eos(1) * dpdr_eos(1) / p_eos(1)
-             chi_t = temp_eos(1) * dpdt_eos(1) / p_eos(1)
-             nabla_ad(i,j,k) = (gam1_eos(1) - chi_rho) / (chi_t * gam1_eos(1))
+             chi_rho = den_eos * dpdr_eos / p_eos
+             chi_t = temp_eos * dpdt_eos / p_eos
+             nabla_ad(i,j,k) = (gam1_eos - chi_rho) / (chi_t * gam1_eos)
 
           enddo
        enddo
@@ -345,14 +342,13 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos(1) = state(i,j,k,rho_comp)
-             temp_eos(1) = state(i,j,k,temp_comp)
-             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = state(i,j,k,rho_comp)
+             temp_eos = state(i,j,k,temp_comp)
+             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              pt_index_eos(:) = (/i, j, k/)       
 
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -363,11 +359,11 @@ contains
                       .false., &
                       pt_index_eos)       
        
-             pres(i,j,k) = p_eos(1)
+             pres(i,j,k) = p_eos
 
-             chi_rho = den_eos(1) * dpdr_eos(1) / p_eos(1)
-             chi_t = temp_eos(1) * dpdt_eos(1) / p_eos(1)
-             nabla_ad(i,j,k) = (gam1_eos(1) - chi_rho) / (chi_t * gam1_eos(1))
+             chi_rho = den_eos * dpdr_eos / p_eos
+             chi_t = temp_eos * dpdt_eos / p_eos
+             nabla_ad(i,j,k) = (gam1_eos - chi_rho) / (chi_t * gam1_eos)
 
           enddo
        enddo
@@ -508,12 +504,12 @@ contains
 
     do i = lo(1), hi(1)
 
-       den_eos(1)  = state(i,rho_comp)
-       temp_eos(1) = state(i,temp_comp)
-       xn_eos(1,:) = state(i,spec_comp:spec_comp+nspec-1) / den_eos(1)
+       den_eos  = state(i,rho_comp)
+       temp_eos = state(i,temp_comp)
+       xn_eos(:) = state(i,spec_comp:spec_comp+nspec-1) / den_eos
 
        call conducteos(eos_input_rt, den_eos, temp_eos, &
-                       npts, nspec, &
+                       nspec, &
                        xn_eos, &
                        p_eos, h_eos, e_eos, &
                        cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -523,7 +519,7 @@ contains
                        dsdt_eos, dsdr_eos, &
                        .false., conduct_eos)
 
-       cond(i) = conduct_eos(1)
+       cond(i) = conduct_eos
 
     enddo
 
@@ -546,12 +542,12 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          den_eos(1) = state(i,j,rho_comp)
-          temp_eos(1) = state(i,j,temp_comp)
-          xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1) / den_eos(1)
+          den_eos = state(i,j,rho_comp)
+          temp_eos = state(i,j,temp_comp)
+          xn_eos(:) = state(i,j,spec_comp:spec_comp+nspec-1) / den_eos
 
           call conducteos(eos_input_rt, den_eos, temp_eos, &
-                          npts, nspec, &
+                          nspec, &
                           xn_eos, &
                           p_eos, h_eos, e_eos, &
                           cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -561,7 +557,7 @@ contains
                           dsdt_eos, dsdr_eos, &
                           .false., conduct_eos)
 
-          cond(i,j) = conduct_eos(1)
+          cond(i,j) = conduct_eos
 
        enddo
     enddo
@@ -587,13 +583,13 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos(1)  = state(i,j,k,rho_comp)
-             temp_eos(1) = state(i,j,k,temp_comp)
-             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1) / &
-                           den_eos(1)
+             den_eos  = state(i,j,k,rho_comp)
+             temp_eos = state(i,j,k,temp_comp)
+             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1) / &
+                           den_eos
 
              call conducteos(eos_input_rt, den_eos, temp_eos, &
-                             npts, nspec, &
+                             nspec, &
                              xn_eos, &
                              p_eos, h_eos, e_eos, &
                              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -603,7 +599,7 @@ contains
                              dsdt_eos, dsdr_eos, &
                              .false., conduct_eos)
 
-             cond(i,j,k) = conduct_eos(1)
+             cond(i,j,k) = conduct_eos
 
           enddo
        enddo
@@ -893,16 +889,15 @@ contains
     do i = lo(1), hi(1)
 
        ! (rho, H) --> T, p
-       den_eos(1)  = state(i,rho_comp)
-       p_eos(1)    = p0(i)
-       temp_eos(1) = state(i,temp_comp)
-       xn_eos(1,:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
-       h_eos(1) = state(i,rhoh_comp) / state(i,rho_comp)
+       den_eos  = state(i,rho_comp)
+       p_eos    = p0(i)
+       temp_eos = state(i,temp_comp)
+       xn_eos(:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos
+       h_eos = state(i,rhoh_comp) / state(i,rho_comp)
 
        pt_index_eos(:) = (/i, -1, -1/)       
 
        call eos(eos_input_rh, den_eos, temp_eos, &
-                npts, &
                 xn_eos, &
                 p_eos, h_eos, e_eos, &
                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -913,10 +908,10 @@ contains
                 .false., &
                 pt_index_eos)
 
-       T(i) = temp_eos(1)
-       if (.not. use_tfromp) tpert(i) = temp_eos(1) - tempbar(i)
+       T(i) = temp_eos
+       if (.not. use_tfromp) tpert(i) = temp_eos - tempbar(i)
 
-       deltaP(i) = abs(p_eos(1)-p0(i))/ p0(i)
+       deltaP(i) = abs(p_eos-p0(i))/ p0(i)
 
     enddo
 
@@ -943,16 +938,15 @@ contains
        do i = lo(1), hi(1)
 
           ! (rho, H) --> T, p
-          den_eos(1)  = state(i,j,rho_comp)
-          p_eos(1)    = p0(j)
-          temp_eos(1) = state(i,j,temp_comp)
-          xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
-          h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
+          den_eos  = state(i,j,rho_comp)
+          p_eos    = p0(j)
+          temp_eos = state(i,j,temp_comp)
+          xn_eos(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+          h_eos = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
           pt_index_eos(:) = (/i, j, -1/)
 
           call eos(eos_input_rh, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -963,10 +957,10 @@ contains
                    .false., &
                    pt_index_eos)
 
-          T(i,j) = temp_eos(1)
-          if (.not. use_tfromp) tpert(i,j) = temp_eos(1) - tempbar(j)
+          T(i,j) = temp_eos
+          if (.not. use_tfromp) tpert(i,j) = temp_eos - tempbar(j)
 
-          deltaP(i,j) = abs(p_eos(1)-p0(j))/ p0(j)
+          deltaP(i,j) = abs(p_eos-p0(j))/ p0(j)
 
        enddo
     enddo
@@ -994,16 +988,15 @@ contains
           do i = lo(1), hi(1)
 
              ! (rho, H) --> T, p
-             den_eos(1)  = state(i,j,k,rho_comp)
-             p_eos(1)    = p0(k)
-             temp_eos(1) = state(i,j,k,temp_comp)
-             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
-             h_eos(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
+             den_eos  = state(i,j,k,rho_comp)
+             p_eos    = p0(k)
+             temp_eos = state(i,j,k,temp_comp)
+             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             h_eos = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
 
              pt_index_eos(:) = (/i, j, k/)
 
              call eos(eos_input_rh, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1014,10 +1007,10 @@ contains
                       .false., &
                       pt_index_eos)
 
-             T(i,j,k) = temp_eos(1)
-             if (.not. use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar(k)
+             T(i,j,k) = temp_eos
+             if (.not. use_tfromp) tpert(i,j,k) = temp_eos - tempbar(k)
 
-             deltaP(i,j,k) = (p_eos(1)-p0(k))/ p0(k)
+             deltaP(i,j,k) = (p_eos-p0(k))/ p0(k)
 
           enddo
        enddo
@@ -1056,16 +1049,15 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos(1)  = state(i,j,k,rho_comp)
-             h_eos(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
-             temp_eos(1) = state(i,j,k,temp_comp)
-             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos  = state(i,j,k,rho_comp)
+             h_eos    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+             temp_eos = state(i,j,k,temp_comp)
+             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              pt_index_eos(:) = (/i, j, k/)
 
              ! (rho, H) --> T, p
              call eos(eos_input_rh, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1076,10 +1068,10 @@ contains
                       .false., &
                       pt_index_eos)
 
-             T(i,j,k) = temp_eos(1)
-             if (.not. use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar_cart(i,j,k,1)
+             T(i,j,k) = temp_eos
+             if (.not. use_tfromp) tpert(i,j,k) = temp_eos - tempbar_cart(i,j,k,1)
              
-             deltaP(i,j,k) = (p_eos(1)-p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
+             deltaP(i,j,k) = (p_eos-p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
 
           enddo
        enddo
@@ -1191,16 +1183,15 @@ contains
     ! Then compute the perturbation
     do i = lo(1), hi(1)
 
-       den_eos(1) = s(i,rho_comp)
-       temp_eos(1) = s(i,temp_comp)
-       p_eos(1) = p0(i)
-       xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       den_eos = s(i,rho_comp)
+       temp_eos = s(i,temp_comp)
+       p_eos = p0(i)
+       xn_eos(:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos
 
        pt_index_eos(:) = (/i, -1, -1/)
 
        ! (rho,P) --> T,h
        call eos(eos_input_rp, den_eos, temp_eos, &
-                npts, &
                 xn_eos, &
                 p_eos, h_eos, e_eos, & 
                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1211,15 +1202,15 @@ contains
                 .false., &
                 pt_index_eos)
 
-       t(i) = temp_eos(1)
-       if (use_tfromp) tpert(i) = temp_eos(1) - tempbar(i)
+       t(i) = temp_eos
+       if (use_tfromp) tpert(i) = temp_eos - tempbar(i)
 
-       if (plot_cs) cs(i) = cs_eos(1)
+       if (plot_cs) cs(i) = cs_eos
 
-       machno(i) = magvel(i) / cs_eos(1)
-       deltagamma(i) = gam1_eos(1) - gamma1bar(i)
+       machno(i) = magvel(i) / cs_eos
+       deltagamma(i) = gam1_eos - gamma1bar(i)
 
-       entropy(i) = s_eos(1)
+       entropy(i) = s_eos
     enddo
 
   end subroutine make_tfromp_1d
@@ -1252,16 +1243,15 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          den_eos(1) = s(i,j,rho_comp)
-          temp_eos(1) = s(i,j,temp_comp)
-          p_eos(1) = p0(j)
-          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+          den_eos = s(i,j,rho_comp)
+          temp_eos = s(i,j,temp_comp)
+          p_eos = p0(j)
+          xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
 
           pt_index_eos(:) = (/i, j, -1/)
 
           ! (rho,P) --> T,h
           call eos(eos_input_rp, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, & 
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1272,16 +1262,16 @@ contains
                    .false., &
                    pt_index_eos)
 
-          t(i,j) = temp_eos(1)
-          if (use_tfromp) tpert(i,j) = temp_eos(1) - tempbar(j)
+          t(i,j) = temp_eos
+          if (use_tfromp) tpert(i,j) = temp_eos - tempbar(j)
 
-          if (plot_cs) cs(i,j) = cs_eos(1)
+          if (plot_cs) cs(i,j) = cs_eos
 
-          machno(i,j) = magvel(i,j) / cs_eos(1)
+          machno(i,j) = magvel(i,j) / cs_eos
 
-          deltagamma(i,j) = gam1_eos(1) - gamma1bar(j)
+          deltagamma(i,j) = gam1_eos - gamma1bar(j)
 
-          entropy(i,j) = s_eos(1)
+          entropy(i,j) = s_eos
        enddo
     enddo
 
@@ -1316,16 +1306,15 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos(1) = s(i,j,k,rho_comp)
-             temp_eos(1) = s(i,j,k,temp_comp)
-             p_eos(1) = p0(k)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = s(i,j,k,rho_comp)
+             temp_eos = s(i,j,k,temp_comp)
+             p_eos = p0(k)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              pt_index_eos(:) = (/i, j, k/)
 
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1336,16 +1325,16 @@ contains
                       .false., &
                       pt_index_eos)
 
-             t(i,j,k) = temp_eos(1)
-             if (use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar(k)
+             t(i,j,k) = temp_eos
+             if (use_tfromp) tpert(i,j,k) = temp_eos - tempbar(k)
 
-             if (plot_cs) cs(i,j,k) = cs_eos(1)
+             if (plot_cs) cs(i,j,k) = cs_eos
 
-             machno(i,j,k) = magvel(i,j,k) / cs_eos(1)
+             machno(i,j,k) = magvel(i,j,k) / cs_eos
 
-             deltagamma(i,j,k) = gam1_eos(1) - gamma1bar(k)
+             deltagamma(i,j,k) = gam1_eos - gamma1bar(k)
 
-             entropy(i,j,k) = s_eos(1)
+             entropy(i,j,k) = s_eos
           enddo
        enddo
     enddo
@@ -1397,16 +1386,15 @@ contains
           do i = lo(1), hi(1)
 
              ! Then compute the perturbation and Mach number
-             den_eos(1) = s(i,j,k,rho_comp)
-             temp_eos(1) = s(i,j,k,temp_comp)
-             p_eos(1) = p0_cart(i,j,k,1)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             den_eos = s(i,j,k,rho_comp)
+             temp_eos = s(i,j,k,temp_comp)
+             p_eos = p0_cart(i,j,k,1)
+             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
              pt_index_eos(:) = (/i, j, k/)
 
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, & 
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1417,16 +1405,16 @@ contains
                       .false., &
                       pt_index_eos)
 
-             t(i,j,k) = temp_eos(1)
-             if (use_tfromp) tpert(i,j,k) = temp_eos(1) - tempbar_cart(i,j,k,1)
+             t(i,j,k) = temp_eos
+             if (use_tfromp) tpert(i,j,k) = temp_eos - tempbar_cart(i,j,k,1)
 
-             if (plot_cs) cs(i,j,k) = cs_eos(1)
+             if (plot_cs) cs(i,j,k) = cs_eos
 
-             machno(i,j,k) = magvel(i,j,k) / cs_eos(1)
+             machno(i,j,k) = magvel(i,j,k) / cs_eos
 
-             deltagamma(i,j,k) = gam1_eos(1) - gamma1bar_cart(i,j,k,1)
+             deltagamma(i,j,k) = gam1_eos - gamma1bar_cart(i,j,k,1)
 
-             entropy(i,j,k) = s_eos(1)
+             entropy(i,j,k) = s_eos
           enddo
        enddo
     enddo
