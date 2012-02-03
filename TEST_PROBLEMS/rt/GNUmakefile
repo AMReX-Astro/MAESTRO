@@ -12,7 +12,7 @@ FPARALLEL := ../..
 
 # define the physics packages to build this problem
 EOS_DIR := extern/EOS/gamma_law_general 
-CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
+CONDUCTIVITY_DIR := extern/conductivity/constant
 NETWORK_DIR := extern/networks/simple 
 
 # define the special directories needed to build this problem.  Note:
