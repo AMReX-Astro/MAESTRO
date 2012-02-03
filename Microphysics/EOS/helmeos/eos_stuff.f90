@@ -482,7 +482,7 @@ contains
     
 !     ::::: Local variables and arrays
 
-    integer :: i, k, n, iter, niter, max_newton
+    integer :: i, n, iter, niter, max_newton
     parameter (max_newton = 100)
     
     real(kind=dp_t) :: error, error2
@@ -597,7 +597,8 @@ contains
        c_p = cp_row
 
        ! store the number density of electrons and positrons, the degeneracy
-       ! parameter, and the total electron/positron pressure ne   = xne_row + xnp_row
+       ! parameter, and the total electron/positron pressure
+       ne   = xne_row + xnp_row
        eta  = etaele_row
        pele = pele_row + ppos_row
 
