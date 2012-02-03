@@ -204,7 +204,7 @@ def write_network(networkTemplate, netFile, outFile):
                 n = 0
                 while (n < len(speciesList)):
 
-                    fout.write("%sname(%d) = \"%s\"\n" % 
+                    fout.write("%sspec_names(%d) = \"%s\"\n" % 
                                (indent, n+1, speciesList[n].name))
 
                     n += 1
@@ -215,8 +215,30 @@ def write_network(networkTemplate, netFile, outFile):
                 n = 0
                 while (n < len(speciesList)):
 
-                    fout.write("%sname(%d) = \"%s\"\n" % 
+                    fout.write("%sshort_spec_names(%d) = \"%s\"\n" % 
                                (indent, n+1, speciesList[n].shortName))
+
+                    n += 1
+
+
+            elif (keyword == "AION"):
+
+                n = 0
+                while (n < len(speciesList)):
+
+                    fout.write("%saion(%d) = %s\n" % 
+                               (indent, n+1, speciesList[n].A))
+
+                    n += 1
+
+
+            elif (keyword == "ZION"):
+
+                n = 0
+                while (n < len(speciesList)):
+
+                    fout.write("%szion(%d) = %s\n" % 
+                               (indent, n+1, speciesList[n].Z))
 
                     n += 1
 
