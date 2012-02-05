@@ -2,11 +2,11 @@
 
 \maestro\ integrates the following system of equations:
 \begin{eqnarray}
-\frac{\partial(\rho X_k)}{\partial t} &=& 
-    -\nabla\cdot(\rho X_k\Ub) + \rho\omegadot_k,\label{eq:species}\\
 \frac{\partial\Ub}{\partial t} &=& 
     -\Ub\cdot\nabla\Ub  - \frac{1}{\rho}\nabla\pi 
     - \frac{\rho-\rho_0}{\rho} g\eb_r,\label{eq:momentum}\\
+\frac{\partial(\rho X_k)}{\partial t} &=& 
+    -\nabla\cdot(\rho X_k\Ub) + \rho\omegadot_k,\label{eq:species}\\
 \frac{\partial(\rho h)}{\partial t} &=& 
     -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt} 
     + \rho\Hnuc ,\label{eq:enthalpy}
@@ -301,3 +301,32 @@ The {\tt ignition\_simple\_SDC} burner shows how to setup the system
 for {\tt use\_tfromp = T} or {\tt F}.  Presently, this implementation
 does not support {\tt evolve\_base\_state = T} (in particular, we 
 need to evolve $p_0$ in the RHS routine).
+
+\section{Algorithm Flowchart - ADR with Fixed Base State}
+
+{\bf Step 1:} ({\it Compute advection velocities})\\
+
+
+{\bf Step 2:} ({\it Advance thermodynamic variables})\\
+
+{\bf Step 2A:} ({\it Predictor})\\
+
+{\bf Step 2A-i:} Compute time-centered edge states for species, density, and enthalpy.  Use explicitly evaluated diffusion and time-lagged reaction source terms.  Use these to compute advective fluxes.\\
+
+{\bf Step 2A-ii:} Advance the species and density with the advective fluxes.  Solve a Crank-Nicolson diffusion equation to advance enthalpy, using base-time transport coefficients everywhere.\\
+
+{\bf Step 2A-iii:} Use VODE to advance $\rho X_k$ and $\rho h$, using piecewise-constant, time-centered advective and diffusive flux divergences.\\
+
+{\bf Step 2A-iv:} ({\it Optional}) Compute $S^{n+1,(0)}$, define $S^{n+\myhalf,(0)}$, and perform a MAC projection to obtain an updated advection velocity.\\
+
+{\bf Step 2B:} ({\it Corrector Loop})\\
+
+{\bf Step 2B-i:} Same as {\bf Step 2A-i}, but use iterative-lagged reaction source terms.
+
+{\bf Step 2B-ii:} Advance the species and density with the advective fluxes.  Solve a backward-Euler type correction equation for diffusion to advance $\rho h$.
+
+{\bf Step 2B-iii:} Use VODE to advance $\rho X_k$ and $\rho h$, using piecewise-constant, time-centered advective and diffusive flux divergences.  Skip to Step 3 if this is the final MISDC iteration.\\
+
+{\bf Step 2B-iv:} ({\it Optional}) Compute $S^{n+1,(0)}$, define $S^{n+\myhalf,(0)}$, and perform a MAC projection to obtain an updated advection velocity.  Then return to {\bf Step 2B-i}.\\
+
+{\bf Step 3:} ({\it Advance the velocity})\\
