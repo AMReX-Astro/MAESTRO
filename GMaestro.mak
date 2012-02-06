@@ -119,7 +119,7 @@ main.$(suf).exe: $(objects)
 PROBIN_TEMPLATE := $(FPARALLEL)/MAESTRO/probin.template
 
 # list of the directories to search for _parameters files
-PROBIN_PARAMETER_DIRS = ./ ../
+PROBIN_PARAMETER_DIRS = ./ ../ ../../
 
 # list of all valid _parameters files for probin
 PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
