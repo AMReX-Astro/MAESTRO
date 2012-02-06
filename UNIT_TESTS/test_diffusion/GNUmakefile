@@ -19,7 +19,7 @@ NETWORK_DIR := extern/networks/triple_alpha
 # we only need to include the problem's directory if there are unique
 # files there (as specified in a GPackage.mak).  The problem directory
 # is always placed at the start of the vpath by the GMakerules.mak.
-EXTRA_DIR := MAESTRO/test_diffusion
+EXTRA_DIR := MAESTRO/UNIT_TESTS/test_diffusion
 
 UNIT_TEST := t
 
