@@ -88,7 +88,6 @@ step.
 
 \end{itemize}
 
-
 \section{SDC Without Thermal Diffusion or Base State Evolution}
 In the SDC version, the VODE integration at the end of an SDC
 iteration is responsible for updating all the thermodynamic quantities
@@ -303,6 +302,18 @@ does not support {\tt evolve\_base\_state = T} (in particular, we
 need to evolve $p_0$ in the RHS routine).
 
 \section{Algorithm Flowchart - ADR with Fixed Base State}
+We now include thermal diffusion and assume the base state is fixed in time but not space:
+\begin{eqnarray}
+\frac{\partial\Ub}{\partial t} &=& 
+    -\Ub\cdot\nabla\Ub  - \frac{1}{\rho}\nabla\pi 
+    - \frac{\rho-\rho_0}{\rho} g\eb_r,\\
+\frac{\partial(\rho X_k)}{\partial t} &=& 
+    -\nabla\cdot(\rho X_k\Ub) + \rho\omegadot_k,\\
+\frac{\partial(\rho h)}{\partial t} &=&
+    -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt} 
+    + \rho\Hnuc
+    + \underbrace{\nabla\cdot\frac{\kth}{c_p}\nabla h - \sum_k\nabla\cdot\frac{\xi_k k_{\rm th}}{c_p}\nabla X_k - \nabla\cdot\frac{h_p k_{\rm th}}{c_p}\nabla p_0}_{\nabla\cdot k_{\rm th}\nabla T}.
+\end{eqnarray}
 
 {\bf Step 1:} ({\it Compute advection velocities})\\
 
