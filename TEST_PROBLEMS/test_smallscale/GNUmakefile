@@ -27,6 +27,6 @@ PROBIN_PARAMETERS := ../_parameters
 
 
 # include the MAESTRO build stuff
-include $(FPARALLEL)/MAESTRO/GMaestro.mak
+include $(FPARALLEL)/MAESTRO/TEST_SMALLSCALE/GMaestro.mak
 
 
