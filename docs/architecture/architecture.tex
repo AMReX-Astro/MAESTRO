@@ -63,12 +63,16 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 \item {\tt data\_processing/}
 
   Simple Fortran-based analysis routines (e.g.\ extract a line from a
-  multidimensional dataset) that operate on BoxLib datasets.
+  multidimensional dataset) that operate on BoxLib datasets.  These are
+  described in \S~\ref{sec:analysis}.
+
+  Several sub-directories with python-based routines are also here.
+  These are described both in \S~\ref{sec:analysis} and \S~\ref{sec:vis:python}.
 
 \item {\tt extern/}
 
   External modules, like ODE integrators, equations of state, reaction
-  networks
+  networks, etc.  Many of these routines were developed by other groups.
 
   Important sub-directories include:
  
@@ -103,16 +107,24 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
   \item {\tt VODE/}
 
-    An integration package for ODEs.  At the moment, this is used for
-    integrating various reaction networks.
+    The {\tt VODE} \cite{vode} package for integrating ODEs.  At the
+    moment, this is used for integrating various reaction networks.
  
   \end{itemize}
 
 \item {\tt MAESTRO/}
 
-  The main \maestro\ algorithm directory.  The individual problem
-  directories lie under here, and all of the main \maestro\ source
-  lives in the {\tt Source/} sub-directory.
+  The main \maestro\ algorithm directory.  
+
+  Each problem in \maestro\ gets it own sub-directory under {\tt
+    SCIENCE/}, {\tt TEST\_PROBLEMS/}, or {\tt UNIT\_TESTS/}.  The {\tt
+    GNUmakefile} in the problem directory includes the instructions on
+  how to build the executable, including what modules in {\tt extern}
+  are used.  Any file that you place in a sub-directory here takes
+  precedence over a file of the same name in {\tt MAESTRO/}.  This
+  allows problems to have custom versions of the main
+  \maestro\ routines (e.g.\ initial conditions via {\tt initdata.f90}.
+  See \S~\ref{sec:makefile} for details on the build system).
 
   Important directories under {\tt MAESTRO/} include:
 
@@ -129,25 +141,31 @@ an executable.  Briefly, the \maestro\ sub-directories are:
     conditions in hydrostatic equilibrium for mapping onto the
     \maestro\ grid.  See \S~\ref{sec:initial_models} for details.
 
+  \item {\tt SCIENCE/}
+
+    \maestro\ problem directories for science studies.  These are the
+    setups that have been used for science papers in the past, or are
+    the basis for current science studies.
+
   \item {\tt Source}
 
     The main \maestro\ source.  Here you will find the driver routine,
     the advection routines, etc.  All \maestro\ problems will compile
     this source.
 
-  \item problem directories: {\tt test2}, {\tt test\_spherical},
-    $\ldots$
+  \item {\tt TEST\_PROBLEMS}
+ 
+    \maestro\ problem directories for simple test problems that have
+    been used while developing \maestro.  Many of these problems have
+    appeared in the various papers describing the \maestro\ algorithm.
 
-    Each problem in \maestro\ gets it own sub-directory.  The {\tt
-      GNUmakefile} in the problem directory includes the instructions
-    on how to build the executable, including what modules in {\tt
-      extern} are used.
+  \item {\tt UNIT\_TESTS}
 
-    Any file that you place in a sub-directory here takes precedence
-    over a file of the same name in {\tt MAESTRO/}.  This allows
-    problems to have custom versions of the main \maestro\ routines
-    (e.g.\ initial conditions via {\tt initdata.f90}.  See
-    \S~\ref{sec:makefile} for details on the build system).
+    Special \maestro\ problem directories that test only a single component
+    of the \maestro\ algorithm.  These often have their own main drivers
+    ({\tt varden.f90}) that setup and initialize some data structures and
+    then call only a few of the \maestro\ routines.  See \S~\ref{sec:unit_tests}
+    for details.
 
   \end{itemize}
 
