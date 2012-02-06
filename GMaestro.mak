@@ -52,13 +52,6 @@ ifneq ($(findstring null, $(NETWORK_DIR)), null)
 endif
 
 
-# general_null is a special network -- the network.f90 is built at
-# compile time.  Remove it if we 'make clean'
-ifeq ($(findstring general_null, $(NETWORK_DIR)), general_null)
-clean::
-	$(RM) network.f90
-endif
-
 #-----------------------------------------------------------------------------
 # compile in support for particles
 PARTICLES := t
@@ -139,9 +132,13 @@ EXTERN_PARAMETER_DIRS += $(foreach dir, $(EXTERN_CORE), $(FPARALLEL)/$(dir))
 EXTERN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
+	@echo "---------------------------------------------------------------------------"
+	@echo "WRITING probin.f90"
 	$(BOXLIB_HOME)/Tools/F_scripts/write_probin.py \
            -t $(PROBIN_TEMPLATE) -o probin.f90 -n probin \
            --pa "$(PROBIN_PARAMETERS)" --pb "$(EXTERN_PARAMETERS)"
+	@echo "---------------------------------------------------------------------------"
+	@echo " "
 
 
 #-----------------------------------------------------------------------------
@@ -149,10 +146,13 @@ probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
 deppairs: build_info.f90
 
 build_info.f90: 
+	@echo "---------------------------------------------------------------------------"
+	@echo "WRITING build_info.f90"
 	$(BOXLIB_HOME)/Tools/F_scripts/make_build_info \
             "$(Fmdirs)" "$(COMPILE.f90)" "$(COMPILE.f)" \
             "$(COMPILE.c)" "$(LINK.f90)" "$(BOXLIB_HOME)"
-
+	@echo "---------------------------------------------------------------------------"
+	@echo " "
 
 $(odir)/build_info.o: build_info.f90
 	$(COMPILE.f90) $(OUTPUT_OPTION) build_info.f90
