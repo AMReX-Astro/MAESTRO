@@ -7,7 +7,7 @@ COMP := PathScale
 MKVERBOSE := t
 
 # define the location of the fParallel root directory
-FPARALLEL := ../../..
+FPARALLEL := ../../../..
 
 # include the main Makefile stuff
 include $(FPARALLEL)/mk/GMakedefs.mak

@@ -7,7 +7,7 @@ COMP := gfortran
 MKVERBOSE := t
 
 # define the location of the fParallel root directory
-FPARALLEL := ../..
+FPARALLEL := ../../..
 
 
 # define the physics packages to build this problem 
