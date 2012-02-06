@@ -3,6 +3,9 @@
 # include the main Makefile stuff
 include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 
+# default target (make just takes the one that appears first)
+ALL: main.$(suf).exe
+
 
 #-----------------------------------------------------------------------------
 # core BoxLib directories
@@ -48,6 +51,13 @@ ifneq ($(findstring null, $(NETWORK_DIR)), null)
   EXTERN_CORE += extern/VODE 
 endif
 
+
+# general_null is a special network -- the network.f90 is built at
+# compile time.  Remove it if we 'make clean'
+ifeq ($(findstring general_null, $(NETWORK_DIR)), general_null)
+clean::
+	$(RM) network.f90
+endif
 
 #-----------------------------------------------------------------------------
 # compile in support for particles
