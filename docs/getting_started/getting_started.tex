@@ -49,14 +49,16 @@ to your {\tt .cshrc}.
 
 \item {\em Setup the problem's {\tt GNUmakefile}}.
 
-In MAESTRO, each problem gets their own sub-directory under {\tt
-MAESTRO/}.  This sub-directory will contain any problem-specific files
-as well as the {\tt GNUmakefile} that specifies how to build the executable.
-Note: we rely on features of GNU {\tt make}.  Full details of the
-{\tt GNUmakefile} can be found in \S~\ref{sec:adding_problems}.  Here
-we will configure for a serial build.
+In \maestro, each problem lives under one of three sub-directories of
+{\tt MAESTRO/}: {\tt SCIENCE/}, {\tt TEST\_PROBLEMS/}, or {\tt
+UNIT\_TESTS/}.  This problem sub-directory will contain any
+problem-specific files as well as the {\tt GNUmakefile} that specifies
+how to build the executable.  Note: we rely on features of GNU {\tt
+make}.  Full details of the {\tt GNUmakefile} can be found
+in \S~\ref{sec:adding_problems}.  Here we will configure for a serial
+build.
 
-Change directory to {\tt MAESTRO/test2/}.    
+Change directory to {\tt MAESTRO/TEST\_PROBLEMS/test2/}.    
 We only need to worry about the options at the very top of the
 {\tt GNUmakefile} for now.  These should be set as follows:
 \begin{itemize}
@@ -114,7 +116,7 @@ we need to copy in the data table for the equation of state, {\tt
   extern/EOS/helmeos/helm\_table.dat}.
 
 \begin{verbatim}
-cp ../../extern/EOS/helmeos/helm_table.dat .
+cp ../../../extern/EOS/helmeos/helm_table.dat .
 \end{verbatim}
 
 
