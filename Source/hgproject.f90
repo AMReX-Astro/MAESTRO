@@ -995,6 +995,7 @@ contains
     type(multifab), allocatable :: coeffs(:)
 
     integer :: n, ns, dm, nlevs
+    integer :: lo_inflow(1),hi_inflow(1)
 
     type(bl_prof_timer), save :: bpt
 
@@ -1033,7 +1034,17 @@ contains
 
     end do
 
-    call divu(nlevs,mgt,unew,rh,mla%mba%rr,nodal)
+    ! Set the inflow array -- 1 if inflow, otherwise 0
+    lo_inflow(1) = 0
+    hi_inflow(1) = 0
+    if (the_bc_tower%bc_tower_array(1)%phys_bc_level_array(0,1,1) == INLET) then
+       lo_inflow(1) = 1
+    end if
+    if (the_bc_tower%bc_tower_array(1)%phys_bc_level_array(0,1,2) == INLET) then
+       hi_inflow(1) = 1
+    end if
+
+    call divu(nlevs,mgt,unew,rh,mla%mba%rr,nodal,lo_inflow,hi_inflow)
 
     ! Do rh = rh - divu_rhs (this routine preserves rh=0 on
     !  nodes which have bc_dirichlet = true.
