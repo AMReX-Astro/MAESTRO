@@ -1,0 +1,46 @@
+flame/
+
+   A simple setup to model astrophysical thermonuclear flames.  This
+   sets up a fuel and hot ash state in pressure equilibrium.
+   Diffusion from the hot ash heats up the fuel igniting a flame.
+   Inflow boundary conditions are used to keep the flame position
+   (roughly) stationary.
+
+   A special react_state in this problem averages the state laterally
+   and calls the burner only on this 1-d average state.  Since the
+   flame is (should be) laterially invariant, this is an optimization
+   to speed things up.
+
+   Currently this problem has issues with high densities (> 5.e7
+   g/cc).  Reducing the CFL number (to 0.1) helps.  Experiments with
+   the SNe code show that SDC can overcome these problems.
+
+
+flame_1d/
+
+   A pure 1-d version of the flame problem.  This can only be run with
+   1 grid on 1 processor, since it uses a special version of the
+   elliptic solve.
+  
+
+H_core
+
+nova
+
+ns_ocean
+
+o_shell
+
+sub_chandra
+
+surface_waves
+
+toy_convect
+
+wdconvect
+
+xrb
+
+xrb_mixed
+
+xrb_spread
