@@ -36,15 +36,14 @@ contains
     ic12  = network_species_index("carbon-12")
     io16  = network_species_index("oxygen-16")
 
-    den_eos(1)  = dens_fuel
-    temp_eos(1) = temp_fuel
+    den_eos  = dens_fuel
+    temp_eos = temp_fuel
 
-    xn_eos(1,:) = ZERO
-    xn_eos(1,ic12) = xc12_fuel
-    xn_eos(1,io16) = 1.d0 - xc12_fuel
+    xn_eos(:) = ZERO
+    xn_eos(ic12) = xc12_fuel
+    xn_eos(io16) = 1.d0 - xc12_fuel
 
     call eos(eos_input_rt, den_eos, temp_eos, &
-             npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -55,9 +54,9 @@ contains
              .false.)
 
     INLET_RHO     = dens_fuel
-    INLET_RHOH    = dens_fuel*h_eos(1)
+    INLET_RHOH    = dens_fuel*h_eos
     INLET_TEMP    = temp_fuel
-    INLET_RHOX(:) = dens_fuel*xn_eos(1,:)
+    INLET_RHOX(:) = dens_fuel*xn_eos(:)
     INLET_VEL     = vel_fuel
     INLET_TRA     = ZERO
 
