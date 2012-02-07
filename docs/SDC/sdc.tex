@@ -308,53 +308,84 @@ We now include thermal diffusion and assume the base state is constant in time b
     -\Ub\cdot\nabla\Ub  - \frac{1}{\rho}\nabla\pi 
     - \frac{\rho-\rho_0}{\rho} g\eb_r,\\
 \frac{\partial(\rho X_k)}{\partial t} &=& 
-    -\nabla\cdot(\rho X_k\Ub) + \rho\omegadot_k,\\
+    -\nabla\cdot(\rho X_k\Ub) + \rho\omegadot_k,\label{eq:sdc species}\\
 \frac{\partial(\rho h)}{\partial t} &=&
-    -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt} 
+    -\nabla\cdot(\rho h\Ub) + \underbrace{\Ub\cdot\nabla p_0}_{Dp_0/Dt}
     + \rho\Hnuc
-    + \underbrace{\nabla\cdot\frac{\kth}{c_p}\nabla h - \sum_k\nabla\cdot\frac{\xi_k k_{\rm th}}{c_p}\nabla X_k - \nabla\cdot\frac{h_p k_{\rm th}}{c_p}\nabla p_0}_{\nabla\cdot k_{\rm th}\nabla T}.
+    + \underbrace{\nabla\cdot\frac{\kth}{c_p}\nabla h - \sum_k\nabla\cdot\frac{\xi_k k_{\rm th}}{c_p}\nabla X_k - \nabla\cdot\frac{h_p k_{\rm th}}{c_p}\nabla p_0}_{\nabla\cdot k_{\rm th}\nabla T}.\label{eq:sdc enthalpy}
 \end{eqnarray}
 
 
 {\bf Step 1:} ({\it Advance thermodynamic variables}) In this step we integrate $(\rho, \rho X_k, \rho h)$ over the full time step.  We use a predictor-corrector approach, as explained below.\\
 
-{\bf Step 1A:} ({\it Predictor}) In the predictor, we compute a preliminary estimate of $(\rho, \rho X_k, \rho h)$ at the new time level in order to obtain time-advanced values of $S, \beta_0$, and the other thermodynamic coefficients used in the corrector.  In summary, we compute advection velocities using a Godunov method and a MAC projection, compute advective fluxes, use a Crank-Nicolson-like discretization to compute diffusive fluxes, and integrate the entire system with VODE.  The quantities $(S, \beta_0, k_{\rm th}, c_p, \xi_k, h_p)^n$ are computed from the the state at $t^n$.  Here are the details.\\
+{\bf Step 1A:} ({\it Predictor}) In the predictor, we compute an estimate of $(\rho, \rho X_k, \rho h)$ at the new time level to obtain time-advanced values of $S$, $\beta_0$, and transport coefficients that will be used in the corrector.  The quantities $(S, \beta_0, k_{\rm th}, c_p, \xi_k, h_p)^n$ are computed from the the thermodynamic variables at $t^n$.\\
 
-{\bf Step 1A-i:} ({\it Compute advection velocities}) Use $\Ub^n$ and a second-order Godunov method to compute time-centered edge velocities, $\uadvone$, with a lagged pressure gradient and explicit buoyancy forcing terms.  The $\star$ superscript indicates that this field does not satisfy the divergence constrain.  Compute $S^{n+\myhalf,{\rm pred}}$ by extrapolating in time,
+{\bf Step 1A-i:} ({\it Compute advection velocities}) Use $\Ub^n$ and a second-order Godunov method to compute time-centered edge velocities, $\uadvsdcstar$, with a lagged pressure gradient and explicit buoyancy forcing terms.  The $\star$ superscript indicates that this field does not satisfy the divergence constrain.  Compute $S^{n+\myhalf,{\rm pred}}$ by extrapolating in time,
 \begin{equation}
 S^{n+\myhalf,{\rm pred}} = S^n + \frac{\Delta t^n}{2}\frac{S^n - S^{n-1}}{\Delta t^{n-1}},
 \end{equation}
-and project $\uadvone$ to obtain $\uadvpred$, which satisfies
+and project $\uadvsdcstar$ to obtain $\uadvsdcpred$, which satisfies
 \begin{equation}
-\nabla\cdot\left(\beta_0^n\uadvpred\right) = S^{n+\myhalf,\rm{pred}}.
+\nabla\cdot\left(\beta_0^n\uadvsdcpred\right) = S^{n+\myhalf,\rm{pred}}.
 \end{equation}
 
-{\bf Step 1A-ii:} Use $\uadvpred$ and a second-order Godunov integrator to compute time-centered edge states, $(\rho X_k, \rho h)^{n+\myhalf,{\rm pred}}$, with time-lagged reaction processes and explicitly evaluated diffusion and thermodynamic pressure as source terms.  Advance the density using
+{\bf Step 1A-ii:} ({\it Compute advective fluxes}) Use $\uadvsdcpred$ and a second-order Godunov integrator to compute time-centered edge states, $(\rho X_k, \rho h)^{n+\myhalf,{\rm pred}}$, with time-lagged reactions, explicitly evaluated diffusion, and a time-centered thermodynamic pressure advective derivative as source terms.\\
+
+{\bf Step 1A-iii:} ({\it Compute diffusive fluxes}) Begin by compute a preliminary time-advanced density using
 \begin{equation}
-\frac{\rho^{n+1,{\rm pred}} - \rho^n}{\Delta t} = -\sum_m\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf,{\rm pred}}\uadvpred\right].
+\frac{\rho^{n+1,{\rm pred}} - \rho^n}{\Delta t} = -\sum_m\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf,{\rm pred}}\uadvsdcpred\right].
 \end{equation}
+Then, compute preliminary, time-advanced species using
+\begin{equation}
+\frac{\rho^{n+1,{\rm pred}}X_{k,{\rm AD}}^{n+1,{\rm pred}} - (\rho X_k)^n}{\Delta t} = -\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf,{\rm pred}}\uadvsdcpred\right] + I_{R,\rho X_k}^{\rm lagged}.\label{eq:sdc species 2}
+\end{equation}
+Then, solve a Crank-Nicolson-type diffusion equation for $h^{n+1,{\rm pred}}_{\rm AD}$, using transport coefficients evaluated at $t^n$ everywhere,
+\begin{eqnarray}
+\frac{\rho^{n+1,{\rm pred}}h^{n+1,{\rm pred}}_{\rm AD} - (\rho h)^n}{\Delta t} &=& -\nabla\cdot\left[\left(\rho h\right)^{n+\myhalf,{\rm pred}}\uadvsdcpred\right] + \uadvsdcpred\cdot\nabla p_0 + I_{R,\rho h}^{\rm lagged}\nonumber\\
+&& + \half\left(\nabla\cdot\frac{\kth^n}{c_p^n}\nabla h^n + \nabla\cdot\frac{\kth^n}{c_p^n}\nabla h_{\rm AD}^{n+1,{\rm pred}}\right)\nonumber\\
+&& + \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_{k,{\rm AD}}^{n+1,{\rm pred}}\right)\nonumber\\
+&& - \half\left(\nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0 + \nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0\right)\label{eq:sdc enthalpy 2}
+\end{eqnarray}
 
-{\bf Step 1A-iii:}   Solve a Crank-Nicolson diffusion equation to advance enthalpy, using base-time transport coefficients everywhere.\\
+{\bf Step 1A-iv:} ({\it Advance thermodynamic variables}) Define $Q_{\rho X_k}^{\rm pred}$ as the right hand side of (\ref{eq:sdc species 2}) without the $I_{R,\rho X_k}^{\rm lagged}$ term, and define $Q_{\rho h}^{\rm pred}$ as the right hand side of (\ref{eq:sdc enthalpy 2}) without the $I_{R,\rho h}^{\rm lagged}$ term.  Use VODE to integerate (\ref{eq:sdc species}) and (\ref{eq:sdc enthalpy}) over $\Delta t$ to advance $(\rho X_k, \rho h)^n$ to $(\rho X_k, \rho h)^{n+1,{\rm pred}}$ using the piecewise-constant advection and diffusion source terms:
+\begin{eqnarray}
+\frac{\partial(\rho X_k)}{\partial t} &=& Q_{\rho X_k}^{\rm pred} + \rho\dot\omega_k\\
+\frac{\partial(\rho h)}{\partial t} &=& Q_{\rho h}^{\rm pred} + \rho\Hnuc.
+\end{eqnarray}
 
-{\bf Step 1A-iv:} Use VODE to advance ($\rho X_k, \rho h$), using piecewise-constant, time-centered advective and diffusive flux divergences.\\
+{\bf Step 1B:} ({\it Corrector}) In the corrector, we use the time-advanced state from the predictor to perform a more accurate integration of the thermodynamic variables.  The quantities $(S, \beta_0, k_{\rm th}, c_p, \xi_k, h_p)^{n+1,{\rm pred}}$ are computed from $(\rho,\rho X_k,\rho h)^{n+1,{\rm pred}}$.\\
 
-{\bf Step 1B:} ({\it Corrector}) The quantities $(S, \beta_0, k_{\rm th}, c_p, \xi_k, h_p)^{n+1,{\rm pred}}$ are computed from the the state at $t^{n+1,{\rm pred}}$.  Here are the details.\\
-
-{\bf Step 1B-i:} ({\it Compute updated advection velocities}) First, compute $S^{n+\myhalf}$ and $\beta_0^{n+\myhalf}$ using
+{\bf Step 1B-i:} ({\it Compute advection velocities}) First, compute $S^{n+\myhalf}$ and $\beta_0^{n+\myhalf}$ using
 \begin{equation}
 S^{n+\myhalf} = \frac{S^n + S^{n+1,{\rm pred}}}{2}, \qquad \beta_0^{n+\myhalf} = \frac{\beta_0^n + \beta_0^{n+1,{\rm pred}}}{2}
 \end{equation}
-Then, project $\uadvone$ to obtain $\uadv$, which satisfies
+Then, project $\uadvsdcstar$ to obtain $\uadvsdc$, which satisfies
 \begin{equation}
-\nabla\cdot\left(\beta_0^{n+\myhalf}\uadv\right) = S^{n+\myhalf}.
+\nabla\cdot\left(\beta_0^{n+\myhalf}\uadvsdc\right) = S^{n+\myhalf}.
 \end{equation}
 
+{\bf Step 1B-ii:} ({\it Compute advective fluxes}) Use $\uadvsdc$ and a second-order Godunov integrator to compute time-centered edge states, $(\rho X_k, \rho h)^{n+\myhalf}$, with iteratively-lagged reactions, explicitly evaluated diffusion, and a time-centered thermodynamic pressure advective derivative as source terms.\\
 
+{\bf Step 1B-iii:} ({\it Compute diffusive fluxes}) Begin by compute a preliminary time-advanced density using
+\begin{equation}
+\frac{\rho^{n+1} - \rho^n}{\Delta t} = -\sum_m\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf}\uadvsdc\right].
+\end{equation}
+Then, compute preliminary, time-advanced species using
+\begin{equation}
+\frac{\rho^{n+1}X_{k,{\rm AD}}^{n+1} - (\rho X_k)^n}{\Delta t} = -\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf}\uadvsdc\right] + I_{R,\rho X_k}^{\rm pred}.\label{eq:sdc species 3}
+\end{equation}
+Then, solve a backward-Euler-type correction equation for $h^{n+1}_{\rm AD}$,
+\begin{eqnarray}
+\frac{\rho^{n+1}h^{n+1}_{\rm AD} - (\rho h)^n}{\Delta t} &=& -\nabla\cdot\left[\left(\rho h\right)^{n+\myhalf}\uadvsdc\right] + \uadvsdc\cdot\nabla p_0 + I_{R,\rho h}^{\rm pred}\nonumber\\
+&& + \nabla\cdot\frac{\kth^{n+1,{\rm pred}}}{c_p^{n+1,{\rm pred}}}\nabla h^{n+1}_{\rm AD} + \half\left(\nabla\cdot\frac{\kth^n}{c_p^n}\nabla h^n - \nabla\cdot\frac{\kth^{n+1,{\rm pred}}}{c_p^{n+1,{\rm pred}}}\nabla h^{n+1,{\rm pred}}\right)\nonumber\\
+&& + \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^{n+1,{\rm pred}} k_{\rm th}^{n+1,{\rm pred}}}{c_p^{n+1,{\rm pred}}}\nabla X_{k,{\rm AD}}^{n+1}\right)\nonumber\\
+&& - \half\left(\nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0 + \nabla\cdot\frac{h_p^{n+1,{\rm pred}}k_{\rm th}^{n+1,{\rm pred}}}{c_p^{n+1,{\rm pred}}}\nabla p_0\right)\label{eq:sdc enthalpy 3}
+\end{eqnarray}
 
-{\bf Step 1B-ii:} Advance the species and density with the advective fluxes.  Solve a backward-Euler type correction equation for diffusion to advance $\rho h$.
+{\bf Step 1B-iv:} ({\it Advance thermodynamic variables}) Define $Q_{\rho X_k}$ as the right hand side of (\ref{eq:sdc species 3}) without the $I_{R,\rho X_k}^{\rm pred}$ term, and define $Q_{\rho h}$ as the right hand side of (\ref{eq:sdc enthalpy 3}) without the $I_{R,\rho h}^{\rm pred}$ term.  Use VODE to integerate (\ref{eq:sdc species}) and (\ref{eq:sdc enthalpy}) over $\Delta t$ to advance $(\rho X_k, \rho h)^n$ to $(\rho X_k, \rho h)^{n+1}$ using the piecewise-constant advection and diffusion source terms:
+\begin{eqnarray}
+\frac{\partial(\rho X_k)}{\partial t} &=& Q_{\rho X_k} + \rho\dot\omega_k\\
+\frac{\partial(\rho h)}{\partial t} &=& Q_{\rho h} + \rho\Hnuc.
+\end{eqnarray}
 
-{\bf Step 1B-iii:} Use VODE to advance $\rho X_k$ and $\rho h$, using piecewise-constant, time-centered advective and diffusive flux divergences.  Skip to Step 3 if this is the final MISDC iteration.\\
-
-{\bf Step 1B-iv:} ({\it Optional}) Compute $S^{n+1,(0)}$, define $S^{n+\myhalf,(0)}$, and perform a MAC projection to obtain an updated advection velocity.  Then return to {\bf Step 2B-i}.\\
-
-{\bf Step 2:} ({\it Advance the velocity})\\
+{\bf Step 2:} ({\it Advance velocity and dynamic pressure})\\
