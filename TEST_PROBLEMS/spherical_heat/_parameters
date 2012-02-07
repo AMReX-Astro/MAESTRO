@@ -5,9 +5,6 @@ velpert_radius                      real               0.75d8
 velpert_scale                       real               0.8d8               
 velpert_steep                       real               1.d0                
 
-sponge_start_factor                 real               10.d0
-sponge_center_density               real               3.d6
-
 heating_time                        real               0.5d0
 heating_rad                         real               0.d0
 heating_peak                        real               1.d16
