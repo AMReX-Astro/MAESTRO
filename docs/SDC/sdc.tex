@@ -302,7 +302,7 @@ does not support {\tt evolve\_base\_state = T} (in particular, we
 need to evolve $p_0$ in the RHS routine).
 
 \section{Algorithm Flowchart - ADR with Fixed Base State}
-We now include thermal diffusion and assume the base state is fixed in time but not space:
+We now include thermal diffusion and assume the base state is constant in time but not space:
 \begin{eqnarray}
 \frac{\partial\Ub}{\partial t} &=& 
     -\Ub\cdot\nabla\Ub  - \frac{1}{\rho}\nabla\pi 
@@ -315,29 +315,46 @@ We now include thermal diffusion and assume the base state is fixed in time but 
     + \underbrace{\nabla\cdot\frac{\kth}{c_p}\nabla h - \sum_k\nabla\cdot\frac{\xi_k k_{\rm th}}{c_p}\nabla X_k - \nabla\cdot\frac{h_p k_{\rm th}}{c_p}\nabla p_0}_{\nabla\cdot k_{\rm th}\nabla T}.
 \end{eqnarray}
 
-{\bf Step 1:} ({\it Compute advection velocities})\\
+
+{\bf Step 1:} ({\it Advance thermodynamic variables}) In this step we integrate $(\rho, \rho X_k, \rho h)$ over the full time step.  We use a predictor-corrector approach, as explained below.\\
+
+{\bf Step 1A:} ({\it Predictor}) In the predictor, we compute a preliminary estimate of $(\rho, \rho X_k, \rho h)$ at the new time level in order to obtain time-advanced values of $S, \beta_0$, and the other thermodynamic coefficients used in the corrector.  In summary, we compute advection velocities using a Godunov method and a MAC projection, compute advective fluxes, use a Crank-Nicolson-like discretization to compute diffusive fluxes, and integrate the entire system with VODE.  The quantities $(S, \beta_0, k_{\rm th}, c_p, \xi_k, h_p)^n$ are computed from the the state at $t^n$.  Here are the details.\\
+
+{\bf Step 1A-i:} ({\it Compute advection velocities}) Use $\Ub^n$ and a second-order Godunov method to compute time-centered edge velocities, $\uadvone$, with a lagged pressure gradient and explicit buoyancy forcing terms.  The $\star$ superscript indicates that this field does not satisfy the divergence constrain.  Compute $S^{n+\myhalf,{\rm pred}}$ by extrapolating in time,
+\begin{equation}
+S^{n+\myhalf,{\rm pred}} = S^n + \frac{\Delta t^n}{2}\frac{S^n - S^{n-1}}{\Delta t^{n-1}},
+\end{equation}
+and project $\uadvone$ to obtain $\uadvpred$, which satisfies
+\begin{equation}
+\nabla\cdot\left(\beta_0^n\uadvpred\right) = S^{n+\myhalf,\rm{pred}}.
+\end{equation}
+
+{\bf Step 1A-ii:} Use $\uadvpred$ and a second-order Godunov integrator to compute time-centered edge states, $(\rho X_k, \rho h)^{n+\myhalf,{\rm pred}}$, with time-lagged reaction processes and explicitly evaluated diffusion and thermodynamic pressure as source terms.  Advance the density using
+\begin{equation}
+\frac{\rho^{n+1,{\rm pred}} - \rho^n}{\Delta t} = -\sum_m\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf,{\rm pred}}\uadvpred\right].
+\end{equation}
+
+{\bf Step 1A-iii:}   Solve a Crank-Nicolson diffusion equation to advance enthalpy, using base-time transport coefficients everywhere.\\
+
+{\bf Step 1A-iv:} Use VODE to advance ($\rho X_k, \rho h$), using piecewise-constant, time-centered advective and diffusive flux divergences.\\
+
+{\bf Step 1B:} ({\it Corrector}) The quantities $(S, \beta_0, k_{\rm th}, c_p, \xi_k, h_p)^{n+1,{\rm pred}}$ are computed from the the state at $t^{n+1,{\rm pred}}$.  Here are the details.\\
+
+{\bf Step 1B-i:} ({\it Compute updated advection velocities}) First, compute $S^{n+\myhalf}$ and $\beta_0^{n+\myhalf}$ using
+\begin{equation}
+S^{n+\myhalf} = \frac{S^n + S^{n+1,{\rm pred}}}{2}, \qquad \beta_0^{n+\myhalf} = \frac{\beta_0^n + \beta_0^{n+1,{\rm pred}}}{2}
+\end{equation}
+Then, project $\uadvone$ to obtain $\uadv$, which satisfies
+\begin{equation}
+\nabla\cdot\left(\beta_0^{n+\myhalf}\uadv\right) = S^{n+\myhalf}.
+\end{equation}
 
 
-{\bf Step 2:} ({\it Advance thermodynamic variables})\\
 
-{\bf Step 2A:} ({\it Predictor})\\
+{\bf Step 1B-ii:} Advance the species and density with the advective fluxes.  Solve a backward-Euler type correction equation for diffusion to advance $\rho h$.
 
-{\bf Step 2A-i:} Compute time-centered edge states for species, density, and enthalpy.  Use explicitly evaluated diffusion and time-lagged reaction source terms.  Use these to compute advective fluxes.\\
+{\bf Step 1B-iii:} Use VODE to advance $\rho X_k$ and $\rho h$, using piecewise-constant, time-centered advective and diffusive flux divergences.  Skip to Step 3 if this is the final MISDC iteration.\\
 
-{\bf Step 2A-ii:} Advance the species and density with the advective fluxes.  Solve a Crank-Nicolson diffusion equation to advance enthalpy, using base-time transport coefficients everywhere.\\
+{\bf Step 1B-iv:} ({\it Optional}) Compute $S^{n+1,(0)}$, define $S^{n+\myhalf,(0)}$, and perform a MAC projection to obtain an updated advection velocity.  Then return to {\bf Step 2B-i}.\\
 
-{\bf Step 2A-iii:} Use VODE to advance $\rho X_k$ and $\rho h$, using piecewise-constant, time-centered advective and diffusive flux divergences.\\
-
-{\bf Step 2A-iv:} ({\it Optional}) Compute $S^{n+1,(0)}$, define $S^{n+\myhalf,(0)}$, and perform a MAC projection to obtain an updated advection velocity.\\
-
-{\bf Step 2B:} ({\it Corrector Loop})\\
-
-{\bf Step 2B-i:} Same as {\bf Step 2A-i}, but use iterative-lagged reaction source terms.
-
-{\bf Step 2B-ii:} Advance the species and density with the advective fluxes.  Solve a backward-Euler type correction equation for diffusion to advance $\rho h$.
-
-{\bf Step 2B-iii:} Use VODE to advance $\rho X_k$ and $\rho h$, using piecewise-constant, time-centered advective and diffusive flux divergences.  Skip to Step 3 if this is the final MISDC iteration.\\
-
-{\bf Step 2B-iv:} ({\it Optional}) Compute $S^{n+1,(0)}$, define $S^{n+\myhalf,(0)}$, and perform a MAC projection to obtain an updated advection velocity.  Then return to {\bf Step 2B-i}.\\
-
-{\bf Step 3:} ({\it Advance the velocity})\\
+{\bf Step 2:} ({\it Advance the velocity})\\
