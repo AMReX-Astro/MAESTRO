@@ -23,24 +23,68 @@ flame_1d/
    elliptic solve.
   
 
-H_core
+H_core/
 
-nova
+   Models H core convection in massive stars.  See Candace for details.
 
-ns_ocean
 
-o_shell
+nova/
 
-sub_chandra
+   Model novae -- H burning on the surface of white dwarfs.  See
+   Brendan for details.
 
-surface_waves
 
-toy_convect
+ns_ocean/
 
-wdconvect
+   See Chris for details.
 
-xrb
 
-xrb_mixed
+o_shell/
 
-xrb_spread
+   See Candace for details.
+
+
+sub_chandra/
+
+   sub-Chandrasehkar model for SNe Ia.  This puts an He envelope on the 
+   surface of a white dwarf (using initial_models/sub_chandra/) and
+   models the reactions via 3-alpha burning.  Still in a developmental
+   state.  See Mike Z for details.
+
+
+surface_waves/
+
+   Simple problem to excite gravity waves.  See Mike Z for details.
+
+
+toy_convect/
+
+   A nova-like problem for studying convection.  This problem has seen
+   extensive use in understanding which prediction types are the best
+   when we have sharp species gradients.  See Mike Z or Ryan for
+   details.
+
+
+wdconvect/
+
+   Model convection leading up to ignition in the Chandraseskhar-mass
+   SNe Ia progenitor model.  This setup was the basis for Zingale et
+   al. 2009 (ApJ, 704, 196), Zingale et al. 2011 (ApJ, 740, 8), and
+   Nonaka et al. 2012 (ApJ, 745, 73).
+
+
+xrb/
+
+  The pure helium X-ray burst setup.  This was the basis for Malone
+  et al. 2011 (ApJ, 728, 118) and Chris's thesis.
+
+
+xrb_mixed/
+
+  Mixed H/He X-ray bursts.  See Chris for details.
+
+
+xrb_spread/
+
+   A simple experiment in the accreted layer on a neutron star -- put
+   in a hot spot and watch it spread away.
