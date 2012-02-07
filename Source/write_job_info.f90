@@ -14,6 +14,7 @@ subroutine write_job_info(dirname, mba)
                                module_list, f90_compile_line, f_compile_line, &
                                C_compile_line, link_line
   use omp_module
+  use network
 
   implicit none
 
@@ -39,6 +40,8 @@ subroutine write_job_info(dirname, mba)
 1002 format(a,i6)
 1003 format(a,i4.4,'-',i2.2,'-',i2.2)
 1004 format(a,i2.2,':',i2.2,':',i2.2)
+2001 format(a5,1x,a20,1x,a20,1x,a8,1x,a8)
+2002 format(i5,1x,a20,1x,a20,1x,f8.2,1x,f8.2)
 
   if (parallel_IOProcessor()) then
      open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
@@ -75,7 +78,6 @@ subroutine write_job_info(dirname, mba)
      write (99,*) " "
      write (99,1001) "linker line:      ", trim(link_line)
 
-
      write (99,*) " "
      write (99,*) " "
 
@@ -87,6 +89,18 @@ subroutine write_job_info(dirname, mba)
         write (99,*) "   number of boxes = ", nboxes(mba, n)
         write (99,*) "   maximum zones   = ", (extent(mba%pd(n),i),i=1,mba%dim)
      end do
+
+     write (99,*) " "
+     write (99,*) " "
+
+
+     write (99,*) "Species Information"
+     write (99,1000)
+     write (99,2001) "index", "name", "short name", "A", "Z"
+     write (99,1000)
+     do n = 1, nspec
+        write (99,2002), n, spec_names(n), short_spec_names(n), aion(n), zion(n)
+     enddo
 
      write (99,*) " "
      write (99,*) " "
