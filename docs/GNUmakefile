@@ -12,13 +12,8 @@ eps_source = $(wildcard *.eps) \
              $(wildcard spherical_basestate/*.eps) \
              $(wildcard visualization/*.eps) \
              $(wildcard planar_invsq_base/*.eps) \
-<<<<<<< GNUmakefile
              $(wildcard pert_notes/*.eps) \
              $(wildcard SDC/*.eps)
-=======
-             $(wildcard SDC/*.eps) \
-	     $(wildcard pert_notes/*.eps)
->>>>>>> 1.23
 
 pdf_source = $(eps_source:.eps=.pdf)
 
