@@ -250,7 +250,7 @@ Predicting the full $\rho$ begins with Eq.~\ref{rho equation}:
 Using this, $\rho$ is predicted to the edges using {\tt
   make\_edge\_scal} in {\tt density\_advance}, with the underbraced
 force computed in {\tt modify\_scal\_force} with {\tt fullform =
-  .true.}. \MarginPar{we need to switch this over to doing the conservative prediction}
+  .true.}.  \MarginPar{we need to switch this over to doing the conservative prediction}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Advancing $\rho X_k$}\label{Advancing rhoX_k}
@@ -732,6 +732,218 @@ and {\tt species\_pred\_type}.
 
 
 
-
+%-----------------------------------------------------------------------------
+% toy_convect
+%-----------------------------------------------------------------------------
 \section{Experience from {\tt toy\_convect}}
+
+\label{sec:toyconvect}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Why is {\tt toy\_convect} Interesting?}
+
+The {\tt toy\_convect} problem consists of a carbon-oxygen white dwarf with 
+an accreted layer of solar composition. There is a steep composition 
+gradient between the white dwarf and the accreted layer. The convection 
+that begins as a result of the accretion is extremely sensitive to the 
+amount of mixing.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Initial Observations}
+
+With {\tt use\_tfromp = T} and {\tt cflfac = 0.7} there is a large difference 
+between {\tt species\_pred\_type = 1} and {\tt species\_pred\_type = 2,3} as 
+seen in Figure \ref{fig:spec1_vs_23}. {\tt species\_pred\_type = 1} shows 
+quick heating (peak T vs. t) and there is ok agreement between {\tt tfromh} 
+and {\tt tfromp}. {\tt species\_pred\_type = 2,3} show cooling (peak T vs. t) 
+and {\tt tfromh} looks completely unphysical (see Figure 
+\ref{fig:tfromh_unphysical}). There are also strange filament type features in 
+the momentum plots shown in Figure \ref{fig:mom_filaments}.
+
+% compare spec 1 with spec 2,3
+%-----------------------------------------
+\begin{figure}[!h]
+\centering
+\includegraphics[height=0.3\textheight]{\pertfigpath/spec1_vs_23}
+\caption{Compare {\tt species\_pred\_type = 1,2,3} with {\tt use\_tfromp = 
+T, enthalpy\_pred\_type = 1, cflfac = 0.7}}
+\label{fig:spec1_vs_23}
+\end{figure}
+
+% tfromh is unphysical
+%-----------------------------------------
+\begin{figure}[!h]
+\begin{minipage}[b]{0.5\linewidth}
+\vspace{0pt}
+\centering
+\includegraphics[height=0.3\textheight]{\pertfigpath/tfromh_unphysical}
+\caption{{\tt tfromh} is unphysical when using {\tt species\_pred\_type = 
+2,3, enthalpy\_pred\_type = 1, cflfac = 0.7, use\_tfromp = T}. Shown above 
+is {\tt species\_pred\_type = 2}}
+\label{fig:tfromh_unphysical}
+\end{minipage}
+\hspace{0.5cm}
+% momentum filaments
+%-----------------------------------------
+\begin{minipage}[b]{0.5\linewidth}
+\vspace{0pt}
+\centering
+\includegraphics[height=0.3\textheight]{\pertfigpath/mom_filaments}
+\caption{There are strange filament type features at the bottom of the 
+domain. {\tt species\_pred\_type = 2, enthalpy\_pred\_type = 1, cflfac = 0.7, 
+use\_tfromp = T}}
+\label{fig:mom_filaments}
+\end{minipage}
+\end{figure}
+
+Using {\tt use\_tfromp = F} and {\tt dpdt\_factor $>$ 0} results in many runs 
+crashing very quickly and gives unphyiscal temperature profiles as seen in 
+Figure \ref{fig:tfrompF_unphys}.
+
+% unphysical temp profiles with use_tfromp = F dpdt > 0
+%-----------------------------------------
+\begin{figure}[!h]
+\begin{minipage}[b]{0.5\linewidth}
+\vspace{0pt}
+\centering
+\includegraphics[height=0.3\textheight]{\pertfigpath/tfrompF_unphys}
+\caption{Unphysical temperature profile with {\tt use\_tfromp = F} and 
+{\tt dpdt\_factor = 0.1}. {\tt dpdt\_factor = 0.2,0.3} lead to the code 
+crashing.}
+\label{fig:tfrompF_unphys}
+\end{minipage}
+\hspace{0.5cm}
+% temp vs time of castro ppm 0,1 and maestro spec = 2
+%----------------------------------------------
+\begin{minipage}[b]{0.5\linewidth}
+\vspace{0pt}
+\centering
+\includegraphics[height=0.3\textheight]{\pertfigpath/tfrompF_cfl_1vs7}
+\caption{Compare {\tt cflfac = 0.1} with {\tt cflfac = 0.7} for 
+{\tt use\_tfromp = F, dpdt\_factor = 0.0, species\_pred\_type = 2, 
+enthalpy\_pred\_type = 4}}
+\label{fig:tfrompF_cfl_1vs7}
+\end{minipage}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Change {\tt cflfac} and {\tt enthalpy\_pred\_type}}
+
+With {\tt species\_pred\_type = 1} and {\tt cflfac = 0.1}, 
+there is much less heating (peak T vs. t) than the {\tt cflfac = 0.7} 
+(default). There is also a lower overall Mach number (see Figure 
+\ref{fig:spec1_cfl_1vs7}) with the {\tt cflfac = 0.1} and excellent agreement 
+between {\tt tfromh} and {\tt tfromp}.
+
+{\tt use\_tfromp = F, dpdt\_factor = 0.0, enthalpy\_pred\_type = 3,4 and 
+species\_pred\_type = 2,3} shows cooling (as seen in {\tt use\_tfromp = T}) 
+with a comparable rate of cooling (see Figure \ref{fig:compare_tfromp}) 
+to the {\tt use\_tfromp = T} case. The 
+largest difference between the two runs is that the {\tt use\_tfromp = F} 
+case shows excellent agreement between {\tt tfromh} and {\tt tfromp} with 
+{\tt cflfac = 0.7}. The filaments in the momentum plot of Figure 
+\ref{fig:mom_filaments} are still present.
+
+% Mach number of cfl 0.1 vs cfl 0.7
+%-----------------------------------------
+\begin{figure}[!h]
+\begin{minipage}[!b]{0.5\linewidth}
+\vspace{0pt}
+\centering
+\includegraphics[height=0.3\textheight]{\pertfigpath/spec1_cfl_1vs7}
+\caption{Comparing the Mach number of {\tt cflfac = 0.1} and 
+{\tt cflfac = 0.7}. {\tt species\_pred\_type = 1, enthalpy\_pred\_type = 1}}
+\label{fig:spec1_cfl_1vs7}
+\end{minipage}
+\hspace{0.5cm}
+% comparable cooling rates between tfromp = T and tfromp = F
+%-----------------------------------------
+\begin{minipage}[!b]{0.5\linewidth}
+\vspace{0pt}
+\centering
+\includegraphics[height=0.3\textheight]{\pertfigpath/compare_tfromp}
+\caption{Illustrate the comparable cooling rates between 
+{\tt use\_tfromp = T} and {\tt use\_tfromp = F with dpdt\_factor = 0.0} 
+using {\tt species\_pred\_type = 2, enthalpy\_pred\_type = 3,1}}
+\label{fig:compare_tfromp}
+\end{minipage}
+\end{figure}
+
+For a given {\tt enthalpy\_pred\_type} and {\tt use\_tfromp = F}, 
+{\tt species\_pred\_type = 2} has a lower Mach number (vs. t) compared to 
+{\tt species\_pred\_type = 3}.
+
+Any {\tt species\_pred\_type} with {\tt use\_tfromp = F, dpdt\_factor = 0.0} 
+and {\tt enthalpy\_pred\_type = 1} shows significant heating, although 
+the onset of the heating is delayed in {\tt species\_pred\_type = 2,3} (see 
+Figure \ref{fig:compare_tF_d0_h1_s123}). Only 
+{\tt species\_pred\_type = 1} gives good agreement between {\tt tfromh} and 
+{\tt tfromp}.
+
+Comparing {\tt cflfac = 0.7} and {\tt cflfac = 0.1} with 
+{\tt use\_tfromp = F, dpdt\_factor = 0.0, species\_pred\_type = 2} and 
+{\tt enthalpy\_pred\_type = 4} shows good agreement overall (see Figure 
+\ref{fig:tfrompF_cfl_1vs7}).
+
+% compare tfromp=F%, dpdt=0, h=1, spec=1,2,3
+%-----------------------------------------
+\begin{figure}[!h]
+\begin{minipage}[b]{0.5\linewidth}
+\vspace{0pt}
+\centering
+\includegraphics[height=0.3\textheight]{\pertfigpath/compare_tF_d0_h1_s123}
+\caption{Compare various {\tt species\_pred\_type} with {\tt use\_tfromp = F, 
+dpdt\_factor = 0.0, enthalpy\_pred\_type = 1}}
+\label{fig:compare_tF_d0_h1_s123}
+\end{minipage}
+\hspace{0.5cm}
+% compare tfromp=F,dpdt=0,spec=2,h=4, cfl=0.1,0.7
+%-----------------------------------------
+\begin{minipage}[b]{0.5\linewidth}
+\vspace{0pt}
+\centering
+\includegraphics[height=0.3\textheight]{\pertfigpath/compare_castro}
+\caption{Compare the {\tt castro.ppm\_type CASTRO} runs with the 
+{\tt species\_pred\_type MAESTRO} runs.}
+\label{fig:compare_castro}
+\end{minipage}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Additional Runs}
+
+\subsubsection{{\tt bds\_type = 1}}
+
+Using {\tt bds\_type = 1, use\_tfromp = F, dpdt\_factor = 0.0, 
+species\_pred\_type = 2, enthalpy\_pred\_type = 4} and 
+{\tt cflfac = 0.7} seems to cool off faster, perhaps due to less mixing. 
+There is also no momentum filaments in the bottom of the domain.
+
+\subsubsection{{\tt evolve\_base\_state = F}}
+
+Using {\tt evolve\_base\_state = F, use\_tfromp = F, dpdt\_factor = 0.0, 
+species\_pred\_type = 2} and {\tt enthalpy\_pred\_type = 4} seems to agree 
+well with the normal {\tt evolve\_base\_state = T} run.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{{\tt toy\_convect} in {\tt CASTRO}}
+
+{\tt toy\_convect} was also run using {\tt CASTRO} with 
+{\tt castro.ppm\_type = 0,1}. These runs show temperatures that cool 
+off rather than increase (see Figure \ref{fig:compare_castro}) which 
+suggests using {\tt species\_pred\_type = 2,3} instead of 
+{\tt species\_pred\_type = 1}. 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Recommendations}
+
+All of these runs suggest that running under {\tt species\_pred\_type = 
+2 or 3, enthalpy\_pred\_type = 3 or 4} with either {{\tt use\_tfromp = F} and 
+{\tt dpdt\_factor = 0.0}} or {\tt use\_tfromp = T} gives the most 
+consistent results.
+
+
 
