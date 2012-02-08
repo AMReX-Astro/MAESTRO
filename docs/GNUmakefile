@@ -26,6 +26,7 @@ section_sources = maestro_doc.bib \
                   runtime_parameters/runtime_parameters.tex \
                   volume_discrepancy/volume_discrepancy.tex \
                   eos_notes/eos_notes.tex \
+                  networks/networks.tex \
                   eta_notes/eta.tex \
                   pert_notes/pert.tex \
                   Godunov_notes/Godunov.tex \
