@@ -12,7 +12,8 @@ eps_source = $(wildcard *.eps) \
              $(wildcard spherical_basestate/*.eps) \
              $(wildcard visualization/*.eps) \
              $(wildcard planar_invsq_base/*.eps) \
-             $(wildcard SDC/*.eps)
+             $(wildcard SDC/*.eps) \
+	     $(wildcard pert_notes/*.eps)
 
 pdf_source = $(eps_source:.eps=.pdf)
 
