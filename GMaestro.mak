@@ -92,7 +92,7 @@ include $(Fmpack)
 
 # vpath defines the directories to search for the source files
 
-#  Note: GMakerules.mk will include '.' at the start of the
+#  Note: GMakerules.mak will include '.' at the start of the
 #  VPATH_LOCATIONS to first search in the problem directory
 VPATH_LOCATIONS += $(Fmlocs)
 
