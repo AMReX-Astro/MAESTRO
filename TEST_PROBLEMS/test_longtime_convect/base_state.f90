@@ -19,9 +19,10 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
+    use network, only: nspec, spec_names
     use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, nr, spherical, dm
+    use geometry, only: dr, nr, spherical
 
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
@@ -197,7 +198,7 @@ contains
        print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)) * dr(n)
     end if
 
-    starting_rad = prob_lo(dm)
+    starting_rad = prob_lo(size(dx))
 
     j_cutoff = nr(n)
     max_speed = 0.d0
@@ -235,14 +236,13 @@ contains
           xn_ambient(:) = xn_ambient(:)/sum
 
           ! use the EOS to make the state consistent
-          temp_eos(1) = t_ambient
-          den_eos(1)  = d_ambient
-          p_eos(1)    = p_ambient
-          xn_eos(1,:) = xn_ambient(:)
+          temp_eos  = t_ambient
+          den_eos   = d_ambient
+          p_eos     = p_ambient
+          xn_eos(:) = xn_ambient(:)
 
           ! (rho,T) --> p,h
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -251,13 +251,13 @@ contains
                    gam1_eos, cs_eos, s_eos, &
                    dsdt_eos, dsdr_eos, &
                    .false.)
-          max_speed = max(max_speed,cs_eos(1))
+          max_speed = max(max_speed,cs_eos)
 !         print *,'CS ',j,cs_eos(1)
 
           s0_init(j, rho_comp ) = d_ambient
-          s0_init(j,rhoh_comp ) = d_ambient * h_eos(1)
+          s0_init(j,rhoh_comp ) = d_ambient * h_eos
           s0_init(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-          p0_init(j)    = p_eos(1)
+          p0_init(j)    = p_eos
 
           s0_init(j,temp_comp) = t_ambient
 

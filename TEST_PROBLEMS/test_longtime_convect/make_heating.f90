@@ -5,7 +5,6 @@
 module heating_module
 
   use bl_types
-  use define_bc_module
 
   implicit none
 
@@ -14,36 +13,39 @@ module heating_module
 
 contains
 
-  subroutine get_rho_Hext(nlevs,mla,s,rho_Hext,dx,the_bc_level)
+  subroutine get_rho_Hext(mla,tempbar_init,s,rho_Hext,the_bc_level,dx,dt)
 
     use multifab_module
+    use define_bc_module
     use ml_layout_module
-    use ml_restriction_module
-    use geometry, only: dm
+    use ml_restriction_module, only : ml_cc_restriction
     use variables, only: foextrap_comp
 
-    integer, intent(in) :: nlevs
     type(ml_layout), intent(in   ) :: mla
+    real(kind=dp_t), intent(in   ) :: tempbar_init(:,0:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
 
     ! local
-    integer                  :: n,i,ng_s,ng_h
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: n,i,ng_s,ng_h,dm,nlevs
+    integer                  :: lo(mla%dim),hi(mla%dim)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "get_rho_Hext")
 
-    ng_s = s(1)%ng
-    ng_h = rho_Hext(1)%ng
+    dm = mla%dim
+    nlevs = mla%nlevel
+
+    ng_s = nghost(s(1))
+    ng_h = nghost(rho_Hext(1))
 
     do n=1,nlevs
 
-       do i = 1, s(n)%nboxes
+       do i = 1, nboxes(s(n))
           if ( multifab_remote(s(n), i) ) cycle
           sp => dataptr(s(n) , i)
           hp => dataptr(rho_Hext(n) , i)
@@ -51,15 +53,18 @@ contains
           hi =  upb(get_box(s(n), i))
           select case (dm)
           case (2)
-             call get_rho_Hext_2d(hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s,lo,hi,dx(n,:))
+             call get_rho_Hext_2d(hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s, &
+                                  lo,hi,dx(n,:))
           case (3)
-             call get_rho_Hext_3d(hp(:,:,:,1),ng_h,sp(:,:,:,:),ng_s,lo,hi,dx(n,:))
+             call get_rho_Hext_3d(hp(:,:,:,1),ng_h,sp(:,:,:,:),ng_s, &
+                                  lo,hi,dx(n,:))
           end select
        end do
 
     end do
 
-    ! the loop over nlevs must count backwards to make sure the finer grids are done first
+    ! the loop over nlevs must count backwards to make sure the finer
+    ! grids are done first
     do n=nlevs,2,-1
        ! set level n-1 data to be the average of the level n data covering it
        call ml_cc_restriction(rho_Hext(n-1), rho_Hext(n), mla%mba%rr(n-1,:))
