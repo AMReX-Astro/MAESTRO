@@ -355,13 +355,12 @@ contains
 
     end select
 
-    temp_eos(1) = temp
-    p_eos(1) = p0_init
-    den_eos(1) = dens
-    xn_eos(1,:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
+    temp_eos = temp
+    p_eos = p0_init
+    den_eos = dens
+    xn_eos(:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
 
     call eos(eos_input_flag, den_eos, temp_eos, &
-             npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -371,11 +370,11 @@ contains
              dsdt_eos, dsdr_eos, &
              .false.)
 
-    dens_pert = den_eos(1)
-    rhoh_pert = den_eos(1)*h_eos(1)
-    rhoX_pert(:) = dens_pert*xn_eos(1,:)
+    dens_pert = den_eos
+    rhoh_pert = den_eos*h_eos
+    rhoX_pert(:) = dens_pert*xn_eos(:)
 
-    temp_pert = temp_eos(1)
+    temp_pert = temp_eos
     
     trac_pert(:) = ZERO
 

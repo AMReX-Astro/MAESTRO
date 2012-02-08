@@ -895,14 +895,13 @@ contains
              
              ! Mach number diagnostic
              ! call the EOS to get the sound speed
-             den_eos(1) = s(i,j,rho_comp)
-             temp_eos(1) = s(i,j,temp_comp)
-             h_eos(1) = s(i,j,rhoh_comp) / s(i,j,rho_comp)
+             den_eos = s(i,j,rho_comp)
+             temp_eos = s(i,j,temp_comp)
+             h_eos = s(i,j,rhoh_comp) / s(i,j,rho_comp)
 
-             xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
 
              call eos(eos_input_rh, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -912,7 +911,7 @@ contains
                       dsdt_eos, dsdr_eos, &
                       .false.)
 
-             Mach = vel/cs_eos(1)
+             Mach = vel/cs_eos
              if (Mach > Machno_max) then
 
                 Machno_max = Mach
@@ -925,7 +924,7 @@ contains
              if (do_deltap_diag) then
                 ! here we mirror what we do in make_tfromH
                 ! we already have the pressure from the above eos call
-                deltap = abs(p_eos(1) - p0(j)) / p0(j)
+                deltap = abs(p_eos - p0(j)) / p0(j)
 
                 if (deltap > deltap_max) then
                    
@@ -1081,12 +1080,11 @@ contains
 
                 ! Mach number diagnostic
                 ! call the EOS to get the sound speed
-                temp_eos(1) = s(i,j,k,temp_comp)
-                den_eos(1)  = s(i,j,k,rho_comp)
-                xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                temp_eos = s(i,j,k,temp_comp)
+                den_eos  = s(i,j,k,rho_comp)
+                xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
                 call eos(eos_input_rt, den_eos, temp_eos, &
-                         npts, &
                          xn_eos, &
                          p_eos, h_eos, e_eos, &
                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1096,7 +1094,7 @@ contains
                          dsdt_eos, dsdr_eos, &
                          .false.)
 
-                Mach = vel/cs_eos(1)
+                Mach = vel/cs_eos
                 if (Mach > Machno_max) then
 
                    Machno_max = Mach
@@ -1111,7 +1109,7 @@ contains
                 if (do_deltap_diag) then
                    ! here we mirror what we do in make_tfromH
                    ! we already have the pressure from the above eos call
-                   deltap = abs(p_eos(1) - p0(k)) / p0(k)
+                   deltap = abs(p_eos - p0(k)) / p0(k)
 
                    if (deltap > deltap_max) then
                    
