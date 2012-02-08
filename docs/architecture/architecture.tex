@@ -336,7 +336,7 @@ by searching the directories listed in the {\tt GNUmakefile}.
 Customized versions of any source files placed in the problem-directory
 override those with the same name found elsewhere.  Any unique
 source files (and not simply a custom version of a file found
-elsewhere) needs to be listed in a file call {\tt GPackage.mak}
+elsewhere) needs to be listed in a file called {\tt GPackage.mak}
 in the problem-directory.
 
 \subsection{The {\tt GNUmakefile}}
@@ -464,7 +464,7 @@ in the {\tt \_parameters} file has the form:
 {\em data-type} is one of \{{\tt character}, {\tt real}, {\tt
   integer}, {\tt logical}\}, and the {\em value} specifies the default
 value for the runtime parameter.  Comments are indicated by a `{\tt
-  \#}' character and a used to produce documentation about the
+  \#}' character and are used to produce documentation about the
 available runtime parameters.  For the documentation, runtime parameters are grouped together
 in the {\tt \_parameters} file into categories.  The category headings
 are defined by comments in the {\tt \_parameters} file and any comments
@@ -478,7 +478,7 @@ form: {\tt --parameter value}).  The {\tt probin\_module} makes the
 values of the runtime parameters available to the various functions
 in the code (see \S~\ref{sec:probin}).
 
-Problem-specify runtime parameters should be defined in the
+Problem-specific runtime parameters should be defined in the
 problem-directory in a file called {\tt
   \_parameters}\{{\em.problem-name}\}.  This file should be added
 to the {\tt PROBIN\_PARAMETERS} variable in the {\tt GNUmakefile}.
@@ -501,8 +501,8 @@ any initial model needs to already be in hydrostatic equilibrium.
 
 The routines in {\tt MAESTRO/initial\_model/} prepare an initial model
 for \maestro.  There are two types of routines here, the first type
-take an existing 1D initial model produced somewhere else (e.g.\ a
-1D stellar evolution code), and and map it onto a uniform grid, at
+modify an existing 1D initial model produced somewhere else (e.g.\ a
+1D stellar evolution code), and map it onto a uniform grid, at
 the desired resolution, using the equation of state in \maestro, and
 using \maestro's discretization of hydrostatic equilibrium.  The second
 type generate the initial model internally, by integrating the
@@ -524,7 +524,7 @@ model.
 routines.  This expects the initial model to contain a header giving
 the number of variables and their names, followed by rows of data
 giving the coordinate and data values at that coordinate.  The initial
-model should contain the same species data (as mass fractions) as
+model should contain the same species data (in the form of mass fractions) as
 defined in the {\tt network} module used by the \maestro\ problem.
 
 Full details on which initial model routine matches each problem and

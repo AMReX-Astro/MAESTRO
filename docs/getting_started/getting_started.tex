@@ -34,7 +34,7 @@ git clone https://ccse.lbl.gov/pub/Downloads/BoxLib.git
 \maestro\ needs to know where to find \boxlib\, by specifying the 
 {\tt BOXLIB\_HOME} environment variable.  
 
-If you shell is {\tt Bash}, add
+If your shell is {\tt Bash}, add
 \begin{verbatim}
 export BOXLIB_HOME="/path/to/BoxLib/"
 \end{verbatim}
@@ -133,7 +133,6 @@ all \maestro\ runtime parameters and their default values is given in
 Chapter~\ref{ch:runtimeparameters}.
 
 \maestro\ is run simply as:
-runtime parameters.  The code is run simply as:
 \begin{verbatim}
  ./main.Linux.Intel.exe inputs_2d
 \end{verbatim}
@@ -153,7 +152,7 @@ some memory usage information is printed.
 \item {\em Examine the output}.
 
 As the code runs, it will output both plotfiles and checkpoints as
-well as one of more text diagnostic files ({\tt maestro\_diag.out} by
+well as one or more text diagnostic files ({\tt maestro\_diag.out} by
 default) with integral or extrema information (like maximum Mach
 number) from each timestep.
 
@@ -174,7 +173,7 @@ Visualization of results is described in the next section.
 
 \section{Working with the Output}
 
-Visualization and analysis are done with on the plotfiles.  A
+Visualization and analysis are done on the plotfiles.  A
 number of in-house and externally developed tools can work 
 with \boxlib-formatted plotfiles.
 
@@ -228,7 +227,7 @@ in \S~\ref{sec:vis:python}.
 \subsection{\visit}
 
 \visit\ is a powerful, DOE-supported visualization tool for 2- and 3D
-datasets.  It can do contouring, volume rendering, streamlines, ...\
+datasets.  It can do contouring, volume rendering, streamlines, ...\, ,
 directly from \boxlib\ plotfiles (to open a plotfile in \visit, point to
 the {\tt Header} file inside the plotfile directory).  Details on
 \visit\ can be found at:\newline
@@ -283,7 +282,7 @@ problem was discussed in \cite{multilevel}.
 \item {\tt test2} \\[-3mm]
 
 {\tt test2} places 3 hots spots in a plane-parallel atmosphere.
-Burning makes these buoyant bubbles which role up.  This problem was
+Burning makes these bubbles buoyant, and then roll up.  This problem was
 used in \cite{lowMach3} to compare with compressible solvers.
 
 \item {\tt test\_convect} \\[-3mm]
