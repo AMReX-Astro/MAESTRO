@@ -2,7 +2,7 @@ f90sources += network.f90
 f90sources += burner.f90
 
 # network.f90 is created at build time for this network
-network.f90:   $(FPARALLEL)/extern/networks/general_null/network.template
+network.f90:   $(GENERAL_NET_INPUTS) $(FPARALLEL)/extern/networks/general_null/network.template
 	@echo "---------------------------------------------------------------------------"
 	@echo "WRITING network.f90:"
 	$(FPARALLEL)/extern/networks/general_null/write_network.py \
