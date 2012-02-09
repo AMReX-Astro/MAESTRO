@@ -15,7 +15,7 @@ EOS_DIR := extern/EOS/helmeos
 CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
 
 NETWORK_DIR := extern/networks/general_null
-GENERAL_NET_INPUTS := ignition.net
+GENERAL_NET_INPUTS := $(NETWORK_DIR)/ignition.net
 
 
 # define the special directories needed to build this problem.  Note:
