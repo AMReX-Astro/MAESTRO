@@ -38,7 +38,6 @@ contains
                   mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: dm, nlevs
     use bl_constants_module
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
@@ -73,7 +72,7 @@ contains
     real(kind=dp_t) :: x_Tmax_level, y_Tmax_level, z_Tmax_level
     real(kind=dp_t) :: x_Tmax, y_Tmax, z_Tmax
     ! buffers
-    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(dm)
+    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(mla%dim)
     real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
 
     real(kind=dp_t) :: enuc_max, enuc_max_local, enuc_max_level
@@ -81,7 +80,7 @@ contains
     real(kind=dp_t) :: x_enucmax_level, y_enucmax_level, z_enucmax_level
     real(kind=dp_t) :: x_enucmax, y_enucmax, z_enucmax
     ! buffers
-    real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(dm)
+    real(kind=dp_t) :: enuc_max_data_local(1), enuc_max_coords_local(mla%dim)
     real(kind=dp_t), allocatable :: enuc_max_data(:), enuc_max_coords(:)
 
     real(kind=dp_t) :: ratio_max, ratio_max_local, ratio_max_level
@@ -89,10 +88,10 @@ contains
     real(kind=dp_t) :: x_ratiomax_level, y_ratiomax_level, z_ratiomax_level
     real(kind=dp_t) :: x_ratiomax, y_ratiomax, z_ratiomax
     ! buffers
-    real(kind=dp_t) :: ratio_max_data_local(1), ratio_max_coords_local(dm)
+    real(kind=dp_t) :: ratio_max_data_local(1), ratio_max_coords_local(mla%dim)
     real(kind=dp_t), allocatable :: ratio_max_data(:), ratio_max_coords(:)
 
-    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_rhn,ng_rhe, ng_th
+    integer :: lo(mla%dim),hi(mla%dim),ng_s,ng_u,ng_rhn,ng_rhe, ng_th, dm,nlevs
     integer :: i,n, index_max
     integer :: un, un2
     logical :: lexist
@@ -102,6 +101,9 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "diagnostics")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s = s(1)%ng
     ng_u = u(1)%ng
