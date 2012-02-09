@@ -15,7 +15,7 @@ EOS_DIR := extern/EOS/gamma_law_general
 CONDUCTIVITY_DIR := extern/conductivity/constant
 
 NETWORK_DIR := extern/networks/general_null
-GENERAL_NET_INPUTS := simple.net
+GENERAL_NET_INPUTS := $(NETWORK_DIR)/simple.net
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
