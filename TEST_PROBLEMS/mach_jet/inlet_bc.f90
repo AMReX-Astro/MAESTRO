@@ -30,13 +30,12 @@ contains
   ! and upon restart, just after the base state is read in.
   subroutine set_inlet_bcs()
 
-    temp_eos(1) = 10.d0
-    den_eos(1) = 1.d-3
-    p_eos(1) = 1.d6
-    xn_eos(1,:) = 1.d0
+    temp_eos = 10.d0
+    den_eos = 1.d-3
+    p_eos = 1.d6
+    xn_eos(:) = 1.d0
 
     call eos(eos_input_rp, den_eos, temp_eos, &
-             npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, & 
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -46,15 +45,14 @@ contains
              dsdt_eos, dsdr_eos, &
              .false.)
 
-    INLET_CS   = cs_eos(1)
+    INLET_CS   = cs_eos
 
-    temp_eos(1) = 10.d0
-    den_eos(1) = 5.d-4
-    p_eos(1) = 1.d6
-    xn_eos(1,:) = 1.d0
+    temp_eos = 10.d0
+    den_eos = 5.d-4
+    p_eos = 1.d6
+    xn_eos(:) = 1.d0
 
     call eos(eos_input_rp, den_eos, temp_eos, &
-             npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, & 
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -64,9 +62,9 @@ contains
              dsdt_eos, dsdr_eos, &
              .false.)
 
-    INLET_RHO  = den_eos(1)
-    INLET_RHOH = den_eos(1)*h_eos(1)
-    INLET_TEMP = temp_eos(1)
+    INLET_RHO  = den_eos
+    INLET_RHOH = den_eos*h_eos
+    INLET_TEMP = temp_eos
 
     inlet_bc_initialized = .true.
 

@@ -48,14 +48,14 @@ contains
     const = pres_base/dens_base**gamma_const
 
     ! use the EOS to make the state consistent
-    den_eos(1)  = dens_base
-    p_eos(1)    = pres_base
+    den_eos  = dens_base
+    p_eos    = pres_base
 
     ! only initialize the first species
-    xn_eos(1,:) = ZERO
-    xn_eos(1,1) = 1.d0
+    xn_eos(:) = ZERO
+    xn_eos(1) = 1.d0
 
-    p0_init(0) = p_eos(1)
+    p0_init(0) = p_eos
 
     ! compute the pressure scale height (for an isothermal, ideal-gas
     ! atmosphere)
@@ -63,7 +63,7 @@ contains
 
     ! set an initial guess for the temperature -- this will be reset
     ! by the EOS
-    temp_eos(1) = 1000.d0
+    temp_eos = 1000.d0
 
     do j = 0, nr(n)-1
 
@@ -72,7 +72,7 @@ contains
           z = dble(j) * dr(1)
 
           ! we can integrate HSE with p = K rho^gamma analytically
-          den_eos(1) = dens_base*(grav_const*dens_base*(gamma_const - 1.0)*z/ &
+          den_eos = dens_base*(grav_const*dens_base*(gamma_const - 1.0)*z/ &
                (gamma_const*pres_base) + 1.d0)**(1.d0/(gamma_const - 1.d0))
 
        else
@@ -80,11 +80,11 @@ contains
           z = (dble(j)+HALF) * dr(1)
 
           ! the density of an isothermal gamma-law atm is exponential
-          den_eos(1)  = dens_base * exp(-z/H)
+          den_eos  = dens_base * exp(-z/H)
 
        end if
 
-       s0_init(j, rho_comp) = den_eos(1)
+       s0_init(j, rho_comp) = den_eos
 
        ! compute the pressure by discretizing HSE
        if (j.gt.0) then
@@ -92,14 +92,13 @@ contains
                dr(1) * HALF * (s0_init(j,rho_comp) + s0_init(j-1,rho_comp)) * &
                abs(grav_const)
           
-          p_eos(1) = p0_init(j)
+          p_eos = p0_init(j)
        end if
        
        ! use the EOS to make the state consistent
 
        ! (rho,p) --> T, h
        call eos(eos_input_rp, den_eos, temp_eos, &
-                npts, &
                 xn_eos, &
                 p_eos, h_eos, e_eos, &
                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -109,13 +108,13 @@ contains
                 dsdt_eos, dsdr_eos, &
                 .false.)
 
-       s0_init(j, rho_comp) = den_eos(1)
-       s0_init(j,rhoh_comp) = den_eos(1)*h_eos(1)
+       s0_init(j, rho_comp) = den_eos
+       s0_init(j,rhoh_comp) = den_eos*h_eos
 
        s0_init(j,spec_comp:spec_comp-1+nspec) = ZERO
-       s0_init(j,spec_comp) = den_eos(1)
+       s0_init(j,spec_comp) = den_eos
 
-       s0_init(j,temp_comp) = temp_eos(1)
+       s0_init(j,temp_comp) = temp_eos
        s0_init(j,trac_comp) = ZERO
 
     end do
