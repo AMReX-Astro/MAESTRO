@@ -9,7 +9,7 @@ module init_scalar_module
   use eos_module
   use variables
   use network
-  use geometry, only: nr, spherical, dm, nlevs
+  use geometry, only: nr, spherical
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -35,9 +35,12 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
+    integer :: lo(get_dim(s(1))),hi(get_dim(s(1))),ng,dm,nlevs
     integer :: i,n,r
 
+
+    dm = get_dim(s(1))
+    nlevs = mla%nlevel
 
     ng = s(1)%ng
 
@@ -120,8 +123,10 @@ contains
 
     ! local
     integer                    :: ng,i,r
-    integer                    :: lo(dm),hi(dm)
+    integer                    :: lo(get_dim(s)),hi(get_dim(s)),dm
     real(kind=dp_t), pointer   :: sop(:,:,:,:)
+
+    dm = get_dim(s)
 
     ng = nghost(s)
 
@@ -337,15 +342,14 @@ contains
     
     XO = XO0 * (ONE + ns_pert_factor * dexp(-distance**2 / rad_pert))
 
-    temp_eos(1) = s0_init(temp_comp)
-    den_eos(1) = s0_init(rho_comp)
+    temp_eos = s0_init(temp_comp)
+    den_eos = s0_init(rho_comp)
 
-    xn_eos(1,:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
-    xn_eos(1,io16) = XO
+    xn_eos(:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
+    xn_eos(io16) = XO
 
 
     call eos(eos_input_rt, den_eos, temp_eos, &
-             npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -355,11 +359,11 @@ contains
              dsdt_eos, dsdr_eos, &
              .false.)
 
-    dens_pert = den_eos(1)
-    rhoh_pert = den_eos(1)*h_eos(1)
-    rhoX_pert(:) = dens_pert*xn_eos(1,:)
+    dens_pert = den_eos
+    rhoh_pert = den_eos*h_eos
+    rhoX_pert(:) = dens_pert*xn_eos(:)
 
-    temp_pert = temp_eos(1)
+    temp_pert = temp_eos
     
     trac_pert(:) = ZERO
 
