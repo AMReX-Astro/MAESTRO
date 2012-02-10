@@ -1,5 +1,11 @@
 \section{SDC Overview}
 
+Spectral deferred corrections (SDC) is an iterative scheme used to integrate
+the thermodynamic variables, $(\rho X_k,\rho h)$, over a time step.  It has
+been shown to be more accurate and efficient than Strang splitting in a
+terrestrial, non-stratified, low Mach number reacting flow solver \cite{Non11},
+so we would like to develop an SDC version of \maestro.
+
 \maestro\ integrates the following system of equations:
 \begin{eqnarray}
 \frac{\partial\Ub}{\partial t} &=& 
@@ -9,51 +15,51 @@
     -\nabla\cdot(\rho X_k\Ub) + \rho\omegadot_k,\label{eq:species}\\
 \frac{\partial(\rho h)}{\partial t} &=& 
     -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt} 
-    + \rho\Hnuc ,\label{eq:enthalpy}
+    + \rho\Hnuc + \nabla\cdot k_{\rm th}\nabla T,\label{eq:enthalpy}
 \end{eqnarray}
-together with a constraint equation.
+together with base state evolution equations and a constraint equation.
+By default, \maestro\ advances the thermodynamic variables by coupling
+the different physical processes together (advection, diffusion, reactions) using
+Strang splitting.  Specifically, we integrate the reaction terms 
+over half a time step ignoring contributions from advection and diffusion,
+then from this intermediate state we integrate the advection and diffusion terms over
+a full time step (while ignoring reactions), and finally
+integrate the reactions over a half time step (ignoring advection and diffusion).
+For problems where
+the reactions and/or diffusion greatly alter the energy balance or composition 
+as compared to advection, this operator splitting approach can lead to large 
+splitting errors and highly inaccurate solutions.
+This issue is can be particularly exasperating 
+for low Mach number methods that can take large advection-based time steps.
 
-By default, \maestro\ uses an operator-split approach to coupling
-the different physical processes together (hydro, reactions, diffusion).
-With operator-splitting, we
-react for a half timestep, then perform the hydrodynamics and thermal
-diffusion on this intermediate state, and finally react for the
-remaining half timestep to advance the solution.  For problems where
-the reactions greatly alter the energy balance or composition, this
-operator splitting approach can lead to inaccuracies in the solution.
-This can be more of an issue for low Mach number methods that can take
-large hydrodynamic time steps.
-
-An alternate approach to coupling is spectral deferred corrections
-(SDC). SDC is an iterative approach to couple the various operations
-together, with each operator seeing an iteratively lagged
-approximation of the other operations as a source term.  The SDC
+An alternate approach to advancing the thermodynamic variables is SDC. 
+SDC is an iterative approach to couple the various processes
+together, with each process seeing an 
+approximation of the other processes as a source term.  The SDC
 algorithm converges to an integral representation of the solution in
 time that couples all of the processes together in a self-consistent
 fashion, see \cite{Non11}.
 
-As a first attempt, we will work on coupling hydro and reactions only
-via SDC, with a time-independent base state.  
+As a first attempt, we will work on coupling advection and reactions only
+via SDC, with a base state that is fixed in time, but not space.
 
+\section{Strang-Splitting Without Thermal Diffusion or Base State Evolution}
 
-
-\section{Strang-split Overview}
-
-In the Strang-split version of \maestro, the reaction and advection
+In the Strang splitting version of \maestro, the reaction and advection
 processes operate independent of one-another.  The species and
-enthalpy equations are updated through $\Delta t$ using the following
+enthalpy equations are integrated over $\Delta t$ using the following
 sequence:
 
 \begin{itemize}
 
-\item React for $\Delta t/2$
+\item React for $\Delta t/2$:
 
-In the Strang-split version of \maestro, the reaction network solves just
+In the Strang splitting version of \maestro, the reaction network solves just
 the reaction portion of the species evolution equations along with a
-temperature evolution equation.  This is done using a standard ODE solver
-(like {\tt VODE}) on the system:
+temperature evolution equation.  This is done using a standard stiff ODE solver
+package (like {\tt VODE}) on the system:
 \begin{eqnarray}
-\frac{dX_k}{dt} &=& \omegadot_k(\rho,X_k,T) \\
+\frac{dX_k}{dt} &=& \omegadot_k(\rho,X_k,T), \\
 \frac{dT}{dt}   &=& 
     \frac{1}{c_p} \left ( -\sum_k \xi_k  \omegadot_k  + \Hnuc \right ).
 \end{eqnarray}
@@ -61,43 +67,48 @@ Here, $T$ is evolved solely to evaluate the reaction rates,
 $\omegadot_k(\rho,X_k,T)$.  Furthermore, we simplify the problem
 ``freezing'' the thermodynamics---i.e., $c_p$ and $\xi_k$ are evaluated at the
 start of the integration and held constant thereafter.
-
-We update the enthalpy at the end of the integration as:
+The density remains constant during this step, i.e., 
+$\rho^\mathrm{new} = \rho^\mathrm{old}$, and we
+update the enthalpy at the end of the integration as:
 \begin{equation}
-h^\mathrm{new} = h^\mathrm{old} + \frac{\Delta t}{2} \Hnuc
+h^\mathrm{new} = h^\mathrm{old} + \frac{\Delta t}{2} \Hnuc.
 \end{equation}
 
-\item Advect for $\Delta t$
+\item Advect for $\Delta t$:
 
-Here we solve
+Beginning with the results from the previous reaction half time step, we integrate
+that state using the equations
 \begin{eqnarray}
 \frac{\partial(\rho X_k)}{\partial t} &=& 
-    -\nabla\cdot(\rho X_k\Ub) \\
+    -\nabla\cdot(\rho X_k\Ub), \\
 \frac{\partial(\rho h)}{\partial t} &=& 
-    -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt} 
+    -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt}.
 \end{eqnarray}
-
-Note that no explicit reaction terms appear here.  Since the advection
+Note that no reaction terms appear here.  Since the advection
 takes place using the state updated from the reaction step, the effect
 of the reactions is implicitly contained in the advective update.
 
-\item React for $\Delta t/2$
+\item React for $\Delta t/2$:
 
 Finally, we react again, starting with the state left by the advection
 step.
 
 \end{itemize}
 
+Note that \maestro\ uses a predictor-corrector approach.  After integrating $(\rho X_k,\rho h)$ over
+the time step, we use this time-advanced state to get a better estimate of a time-centered $\beta_0$
+and $S$.  We re-compute the advective velocities using an updated divergence constraint and repeat 
+the thermodynamic variable advance.
+
 \section{SDC Without Thermal Diffusion or Base State Evolution}
-In the SDC version, the VODE integration at the end of an SDC
+In the SDC version, the {\tt VODE} integration at the end of an SDC
 iteration is responsible for updating all the thermodynamic quantities
-\{$\rho$, $(\rho h)$, and $(\rho X_k$)\}, including both the advective
-fluxes (incorporated via a piecewise constant advective flux source
-term) and the reactions.  This provides a much stronger coupling between
+including both the advection (incorporated via a piecewise constant advective 
+flux divergence source term) and the reactions.  This provides a much stronger coupling between
 the physical processes.  In particular, our system now looks like:
 \begin{eqnarray}
-\frac{d(\rho X_k)}{dt} &=& \rho \omegadot_k(\rho,X_k,T) + A_{\rho X_k} \label{eq:sdc:rhoX} \\
-\frac{d(\rho h)}{dt}   &=& \rho \Hnuc + A_{\rho h} \label{eq:sdc:rhoh}
+\frac{d(\rho X_k)}{dt} &=& \rho \omegadot_k(\rho,X_k,T) + \underbrace{\nabla\cdot(\rho X_k\Ub)}_{A_{\rho X_k}}\label{eq:sdc:rhoX} \\
+\frac{d(\rho h)}{dt}   &=& \rho \Hnuc + \underbrace{\nabla\cdot(\rho h\Ub)}_{A_{\rho h}} \label{eq:sdc:rhoh}
 \end{eqnarray}
 Here, $A_{\rho X_k}$ and $A_{\rho h}$ are piecewise-constant (in time)
 approximations to the change in ${\rho X_k}$ and ${\rho h}$ (respectively)
@@ -128,11 +139,11 @@ In the advective update, our goal is to compute $A_{\rho X_k}$ and
 $A_{\rho h}$.  These terms approximate the following:
 \begin{eqnarray}
 A_{\rho X_k} &=&  \left [- \nabla \cdot (\rho X_k \Ub) \right ]^{n+1/2} \\
-A_{\rho h}   &=&  \left [- \nabla \cdot (\rho h U) + \frac{Dp_0}{Dt} \right ]^{n+1/2}
+A_{\rho h}   &=&  \left [- \nabla \cdot (\rho h \Ub) + \frac{Dp_0}{Dt} \right ]^{n+1/2}
 \end{eqnarray}
 The construction of the interface states used in the advective terms
-uses an iteratively-lagged approximation to the reaction source terms
-($I_{\rho X_k}$ and $I_{\rho h}$, see below) in the interface
+uses either a time-lagged or iteratively-lagged approximation to the reaction
+terms ($I_{\rho X_k}$ and $I_{\rho h}$, see below) as a source term in the interface
 prediction.  This explicitly couples the reaction process to the
 advection process.
 
@@ -153,16 +164,18 @@ otherwise, we do
 \begin{equation}
 T = T(\rho, h, X_k)
 \end{equation}
-Note that in constrast to the Strang-split version, here we call the EOS
-every time we enter the RHS routine.
+Note that in contrast to the Strang splitting version, here we call the EOS
+every time we enter the RHS routine, but here we call the EOS to compute temperature
+rather than thermodynamic coefficients.
 
 Finally we integrate the ODE system (Eqs.~\ref{eq:sdc:rhoX} and \ref{eq:sdc:rhoh}).
-At the end of the integration, we define $I_{\rho X_k}$ and $I_{\rho
-  h}$.  The actual form of these depends on what we are predicting.
-We note that we only need $I_{\rho X_k}$ and $I_{\rho h}$ for the
-prediction of the interface states, not the final conservative update.
-That is because all we need from the advection solver is the
-approximation to $A_{\rho X_k}$ and $A_{\rho h}$, not the final
+At the end of the integration, we define $I_{\rho X_k}$ and $I_{\rho h}$.  The actual 
+form of these depends on what quantities we predict to edges during 
+the construction of the advective fluxes.
+Note that we only need $I_{\rho X_k}$ and $I_{\rho h}$ for the
+prediction of the interface states, and not the {\tt VODE} integration.
+This is because all we need from the advection solver is the
+approximation to $A_{\rho X_k}$ and $A_{\rho h}$ and not the final
 updated state.
 
 \subsubsection{Species Source Terms.}
@@ -289,12 +302,11 @@ The major changes from the non-SDC-enabled burners is the addition of
 the advective terms to the system of ODEs, the fact that we integrate
 $(\rho X_k)$ instead of just $X_k$, integrate $(\rho h)$ instead
 of $T$, and the need to derive the
-temperature from the input state for each RHS evaluation by {\tt
-  VODE}.
+temperature from the input state for each RHS evaluation by {\tt VODE}.
 
 Note also that the SDC integration by {\tt VODE} does not operate on 
 the velocities at all.  That update is handled in the same fashion 
-as the Strang-split version of the code.
+as the Strang splitting version of the code.
 
 The {\tt ignition\_simple\_SDC} burner shows how to setup the system
 for {\tt use\_tfromp = T} or {\tt F}.  Presently, this implementation
@@ -312,7 +324,8 @@ We now include thermal diffusion and assume the base state is constant in time b
 \frac{\partial(\rho h)}{\partial t} &=&
     -\nabla\cdot(\rho h\Ub) + \underbrace{\Ub\cdot\nabla p_0}_{Dp_0/Dt}
     + \rho\Hnuc
-    + \underbrace{\nabla\cdot\frac{\kth}{c_p}\nabla h - \sum_k\nabla\cdot\frac{\xi_k k_{\rm th}}{c_p}\nabla X_k - \nabla\cdot\frac{h_p k_{\rm th}}{c_p}\nabla p_0}_{\nabla\cdot k_{\rm th}\nabla T}.\label{eq:sdc enthalpy}
+    + \underbrace{\nabla\cdot\frac{\kth}{c_p}\nabla h - \sum_k\nabla\cdot\frac{\xi_k k_{\rm th}}{c_p}\nabla X_k - \nabla\cdot\frac{h_p k_{\rm th}}{c_p}\nabla p_0}_{\nabla\cdot k_{\rm th}\nabla T}.\nonumber\\
+\label{eq:sdc enthalpy}
 \end{eqnarray}
 
 The time-advancement is divided into three major steps.  The first step is the predictor, where we integrate the thermodynamic variables over the full time step.  The second step is corrector, where we use the results from the predictor to perform a more accurate temporal integration of the thermodynamic variables.  The third step is the velocity and dynamic pressure update.
@@ -346,7 +359,7 @@ Then, solve a Crank-Nicolson-type diffusion equation for $h^{n+1,{\rm pred}}_{\r
 && - \half\left(\nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0 + \nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0\right)\label{eq:sdc enthalpy 2}
 \end{eqnarray}
 
-{\bf Step 1D:} ({\it Advance thermodynamic variables}) Define $Q_{\rho X_k}^{\rm pred}$ as the right hand side of (\ref{eq:sdc species 2}) without the $I_{R,\rho X_k}^{\rm lagged}$ term, and define $Q_{\rho h}^{\rm pred}$ as the right hand side of (\ref{eq:sdc enthalpy 2}) without the $I_{R,\rho h}^{\rm lagged}$ term.  Use VODE to integerate (\ref{eq:sdc species}) and (\ref{eq:sdc enthalpy}) over $\Delta t$ to advance $(\rho X_k, \rho h)^n$ to $(\rho X_k, \rho h)^{n+1,{\rm pred}}$ using the piecewise-constant advection and diffusion source terms:
+{\bf Step 1D:} ({\it Advance thermodynamic variables}) Define $Q_{\rho X_k}^{\rm pred}$ as the right hand side of (\ref{eq:sdc species 2}) without the $I_{R,\rho X_k}^{\rm lagged}$ term, and define $Q_{\rho h}^{\rm pred}$ as the right hand side of (\ref{eq:sdc enthalpy 2}) without the $I_{R,\rho h}^{\rm lagged}$ term.  Use {\tt VODE} to integerate (\ref{eq:sdc species}) and (\ref{eq:sdc enthalpy}) over $\Delta t$ to advance $(\rho X_k, \rho h)^n$ to $(\rho X_k, \rho h)^{n+1,{\rm pred}}$ using the piecewise-constant advection and diffusion source terms:
 \begin{eqnarray}
 \frac{\partial(\rho X_k)}{\partial t} &=& Q_{\rho X_k}^{\rm pred} + \rho\dot\omega_k\\
 \frac{\partial(\rho h)}{\partial t} &=& Q_{\rho h}^{\rm pred} + \rho\Hnuc.
@@ -381,7 +394,7 @@ Then, solve a backward-Euler-type correction equation for $h^{n+1}_{\rm AD}$,
 && - \half\left(\nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0 + \nabla\cdot\frac{h_p^{n+1,{\rm pred}}k_{\rm th}^{n+1,{\rm pred}}}{c_p^{n+1,{\rm pred}}}\nabla p_0\right)\label{eq:sdc enthalpy 3}
 \end{eqnarray}
 
-{\bf Step 2D:} ({\it Advance thermodynamic variables}) Define $Q_{\rho X_k}$ as the right hand side of (\ref{eq:sdc species 3}) without the $I_{R,\rho X_k}^{\rm pred}$ term, and define $Q_{\rho h}$ as the right hand side of (\ref{eq:sdc enthalpy 3}) without the $I_{R,\rho h}^{\rm pred}$ term.  Use VODE to integerate (\ref{eq:sdc species}) and (\ref{eq:sdc enthalpy}) over $\Delta t$ to advance $(\rho X_k, \rho h)^n$ to $(\rho X_k, \rho h)^{n+1}$ using the piecewise-constant advection and diffusion source terms:
+{\bf Step 2D:} ({\it Advance thermodynamic variables}) Define $Q_{\rho X_k}$ as the right hand side of (\ref{eq:sdc species 3}) without the $I_{R,\rho X_k}^{\rm pred}$ term, and define $Q_{\rho h}$ as the right hand side of (\ref{eq:sdc enthalpy 3}) without the $I_{R,\rho h}^{\rm pred}$ term.  Use {\tt VODE} to integerate (\ref{eq:sdc species}) and (\ref{eq:sdc enthalpy}) over $\Delta t$ to advance $(\rho X_k, \rho h)^n$ to $(\rho X_k, \rho h)^{n+1}$ using the piecewise-constant advection and diffusion source terms:
 \begin{eqnarray}
 \frac{\partial(\rho X_k)}{\partial t} &=& Q_{\rho X_k} + \rho\dot\omega_k\\
 \frac{\partial(\rho h)}{\partial t} &=& Q_{\rho h} + \rho\Hnuc.
