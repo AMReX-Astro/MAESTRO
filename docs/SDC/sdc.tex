@@ -190,6 +190,25 @@ I_{X_k} = \frac{1}{\rho^{n+\myhalf}} \left [
             (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ]
 \end{equation}
 
+(Andy's Idea) Define $I_{X_k}$ using
+\begin{equation}
+I_{X_k} = \frac{X_k^\mathrm{new} - X_k^\mathrm{old}}{\Delta t} - A_{X_k},
+\end{equation}
+where we first define a state that has only been updated with advection:
+\begin{equation}
+\frac{(\rho X_k)^{(1)} - (\rho X_k)^\mathrm{old}}{\Delta t} = A_{\rho X_k},
+\end{equation}
+and then define the species mass fractions,
+\begin{equation}
+X_k^{(1)} = (\rho X_k)^{(1)} / \sum_k (\rho X_k)^{(1)}, \quad 
+X_k^\mathrm{old} = (\rho X_k)^\mathrm{old} / \sum_k (\rho X_k)^\mathrm{old}, \quad 
+X_k^\mathrm{new} = (\rho X_k)^\mathrm{new} / \sum_k (\rho X_k)^\mathrm{new},
+\end{equation}
+and finally define $A_{X_k}$ using
+\begin{equation}
+\frac{X^{(1)} - X^\mathrm{old}}{\Delta t}= A_{X_k}.
+\end{equation}
+
 \item {\tt species\_pred\_type} = 2 (predict $\rho'$ and $(\rho X_k)$)
 %
 \begin{equation}
