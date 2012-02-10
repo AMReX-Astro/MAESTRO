@@ -10,10 +10,6 @@ MKVERBOSE := t
 FPARALLEL := ../../..
 
 
-# include the main Makefile stuff
-include $(FPARALLEL)/mk/GMakedefs.mak
-
-
 # define the physics packages to build this problem 
 EOS_DIR := extern/EOS/helmeos
 CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
@@ -27,9 +23,6 @@ GENERAL_NET_INPUTS := ns_ocean.net
 # is always placed at the start of the vpath by the GMakerules.mak.
 EXTRA_DIR :=
 
-
-# define the runtime parameter files
-PROBIN_PARAMETERS := $(FPARALLEL)/MAESTRO/_parameters ./_parameters
 
 
 # include the MAESTRO build stuff
