@@ -867,12 +867,11 @@ contains
                 endif   ! end density check
 
                 ! call the EOS to get the sound speed and internal energy
-                temp_eos(1) = s(i,j,k,temp_comp)
-                den_eos(1)  = s(i,j,k,rho_comp)
-                xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                temp_eos = s(i,j,k,temp_comp)
+                den_eos  = s(i,j,k,rho_comp)
+                xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
                 call eos(eos_input_rt, den_eos, temp_eos, &
-                         npts, &
                          xn_eos, &
                          p_eos, h_eos, e_eos, &
                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -886,10 +885,10 @@ contains
                 U_max = max(U_max,vel)
 
                 if (s(i,j,k,rho_comp) >= sponge_start_factor*sponge_center_density) then
-                   Mach_max = max(Mach_max,vel/cs_eos(1))
+                   Mach_max = max(Mach_max,vel/cs_eos)
                 endif
 
-                Mach_max_domain = max(Mach_max_domain,vel/cs_eos(1))
+                Mach_max_domain = max(Mach_max_domain,vel/cs_eos)
 
              endif  ! end cell_valid and density check
 
