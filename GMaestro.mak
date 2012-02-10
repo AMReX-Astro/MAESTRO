@@ -32,11 +32,11 @@ ifndef UNIT_TEST
   MAESTRO_CORE += MAESTRO/Source 
 endif
 
+MAESTRO_CORE += MAESTRO/constants
 
 #-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
-EXTERN_CORE := extern/constants \
-	       extern/model_parser \
+EXTERN_CORE := extern/model_parser \
                extern/LAPACK \
                extern/random \
                extern/BLAS 
