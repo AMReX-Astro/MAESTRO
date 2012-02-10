@@ -24,10 +24,6 @@ GENERAL_NET_INPUTS := $(FPARALLEL)/$(NETWORK_DIR)/ignition.net
 EXTRA_DIR := 
 
 
-# define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters
-
-
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
 
