@@ -25,7 +25,8 @@ subroutine varden()
   use probin_module, only: prob_lo, prob_hi, pmask, &
                            test_set, cflfac, &
                            stop_time, vel_amp, &
-                           probin_init, probin_close, max_levs
+                           max_levs
+  use runtime_init_module
   use initialize_module, only: initialize_bc, initialize_dx
   use bl_constants_module
   use particle_module
@@ -66,7 +67,7 @@ subroutine varden()
 
 
   ! general Maestro initializations
-  call probin_init()
+  call runtime_init()
   call init_spherical()
   call init_center()
 
@@ -253,7 +254,7 @@ subroutine varden()
 
   call bc_tower_destroy(the_bc_tower)
 
-  call probin_close()
+  call runtime_close()
 
 end subroutine varden
 
