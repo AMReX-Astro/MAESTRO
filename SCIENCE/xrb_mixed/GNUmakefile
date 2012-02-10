@@ -29,10 +29,6 @@ endif
 EXTRA_DIR :=
 
 
-# define the runtime parameter files
-PROBIN_PARAMETERS := $(FPARALLEL)/MAESTRO/_parameters ./_parameters
-
-
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
 
