@@ -22,8 +22,6 @@ NETWORK_DIR := extern/networks/ignition
 EXTRA_DIR := MAESTRO/TEST_PROBLEMS/test_smallscale
 
 
-# define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters
 
 
 # include the MAESTRO build stuff

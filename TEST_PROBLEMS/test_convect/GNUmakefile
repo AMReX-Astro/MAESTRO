@@ -22,8 +22,6 @@ NETWORK_DIR := extern/networks/null
 EXTRA_DIR := 
 
 
-# define the runtime parameter files   
-PROBIN_PARAMETERS := ../_parameters
 
 
 # include the MAESTRO build stuff                                               
