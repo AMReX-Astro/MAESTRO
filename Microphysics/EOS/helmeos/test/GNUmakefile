@@ -28,7 +28,7 @@ ALL: testeos.$(suf).exe
 #   GMakerules.mak.
 Fmdirs := extern/VODE \
           extern/BLAS \
-          extern/constants \
+          MAESTRO/constants \
 	  $(EOS_DIR) \
 	  $(NETWORK_DIR)
 
