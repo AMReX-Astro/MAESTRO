@@ -93,10 +93,10 @@ contains
       if (small_temp > 0.d0) then
        smallt = small_temp
       else
-       smallt = 5.d6
+       smallt = 1.d4
       end if
     else
-       smallt = 5.d6
+       smallt = 1.d4
     endif
  
     if (present(small_dens)) then
