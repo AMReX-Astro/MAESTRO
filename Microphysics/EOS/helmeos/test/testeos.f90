@@ -31,14 +31,13 @@ program testeos
   Xin(img24) = 0.0_dp_t
 
 
-  den_eos(1) = dens
-  temp_eos(1) = temp
-  xn_eos(1,:) = Xin(:)
+  den_eos = dens
+  temp_eos = temp
+  xn_eos(:) = Xin(:)
 
   do_diag = .false.
 
   call eos(eos_input_rt, den_eos, temp_eos, &
-           npts, &
            xn_eos, &
            p_eos, h_eos, e_eos, &
            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -51,19 +50,18 @@ program testeos
   print *, 'eos_input_rt:'
   print *, 'dens: ', dens, ' temp: ', temp
   print *, 'X: ', Xin
-  print *, 'pres: ', p_eos(1),  ' ener: ', e_eos(1)
-  print *, 'h:    ', h_eos(1),  ' entr: ', s_eos(1)
-  print *, 'c_v:  ', cv_eos(1), ' c_p : ', cp_eos(1)
-  print *, 'dpdT: ', dpdt_eos(1), ' dpdr: ', dpdr_eos(1)
-  print *, 'dedT: ', dedt_eos(1), ' dedr: ', dedr_eos(1)
-  print *, 'dpdX: ', dpdX_eos(1,:)
-  print *, 'dhdX: ', dhdX_eos(1,:)
+  print *, 'pres: ', p_eos,  ' ener: ', e_eos
+  print *, 'h:    ', h_eos,  ' entr: ', s_eos
+  print *, 'c_v:  ', cv_eos, ' c_p : ', cp_eos
+  print *, 'dpdT: ', dpdt_eos, ' dpdr: ', dpdr_eos
+  print *, 'dedT: ', dedt_eos, ' dedr: ', dedr_eos
+  print *, 'dpdX: ', dpdX_eos(:)
+  print *, 'dhdX: ', dhdX_eos(:)
 
-  p_eos(1) = pres
-  s_eos(1) = entr
+  p_eos = pres
+  s_eos = entr
 
   call eos(eos_input_ps, den_eos, temp_eos, &
-           npts, &
            xn_eos, &
            p_eos, h_eos, e_eos, &
            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -74,16 +72,16 @@ program testeos
            do_diag)
 
   print *, 'eos_input_ps:'
-  print *, 'dens: ', den_eos(1), ' temp: ', temp_eos(1)
+  print *, 'dens: ', den_eos, ' temp: ', temp_eos
   print *, 'X: ', Xin
   print *, 'pres: ', pres,  ' entr: ', entr
-  print *, 'p_eos: ', p_eos(1), ' s_eos: ', s_eos(1)
-  print *, 'h:    ', h_eos(1),  ' ener: ', e_eos(1)
-  print *, 'c_v:  ', cv_eos(1), ' c_p : ', cp_eos(1)
-  print *, 'dpdT: ', dpdt_eos(1), ' dpdr: ', dpdr_eos(1)
-  print *, 'dedT: ', dedt_eos(1), ' dedr: ', dedr_eos(1)
-  print *, 'dpdX: ', dpdX_eos(1,:)
-  print *, 'dhdX: ', dhdX_eos(1,:)
+  print *, 'p_eos: ', p_eos, ' s_eos: ', s_eos
+  print *, 'h:    ', h_eos,  ' ener: ', e_eos
+  print *, 'c_v:  ', cv_eos, ' c_p : ', cp_eos
+  print *, 'dpdT: ', dpdt_eos, ' dpdr: ', dpdr_eos
+  print *, 'dedT: ', dedt_eos, ' dedr: ', dedr_eos
+  print *, 'dpdX: ', dpdX_eos(:)
+  print *, 'dhdX: ', dhdX_eos(:)
   
 
 end program testeos
