@@ -1,5 +1,5 @@
-f90EXEsources += network.f90
-f90EXEsources += castro_burner.f90
+f90EXE_sources += network.f90
+f90EXE_sources += castro_burner.f90
 
 # network.f90 is created at build time for this network
 network.f90:   $(GENERAL_NET_INPUTS) $(FBOXLIB_HOME)/extern/networks/general_null/network.template
