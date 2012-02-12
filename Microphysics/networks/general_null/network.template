@@ -24,6 +24,7 @@ module network
   implicit none
 
   integer, parameter :: nspec = @@NSPEC@@
+  integer, parameter :: naux = 0
 
   character (len=16), save :: spec_names(nspec) 
   character (len= 5), save :: short_spec_names(nspec)
