@@ -10,7 +10,7 @@ subroutine varden()
   use ml_boxarray_module, only: ml_boxarray
   use runtime_init_module, only: runtime_init, runtime_close
   use probin_module, only: test_set, pmask, max_levs, &
-       prob_lo, prob_hi, drdxfac
+       prob_lo, prob_hi, drdxfac, nodal
   use geometry, only: spherical, init_spherical, &
        init_center, destroy_geometry, &
        dr_fine, nr_fine, &
@@ -21,6 +21,8 @@ subroutine varden()
   use bl_constants_module
   use define_bc_module, only: bc_tower, bc_tower_level_build, bc_tower_destroy
   use test_projection_module
+  use proj_parameters
+  use hgproject_module
 
   implicit none
 
@@ -32,13 +34,19 @@ subroutine varden()
   type(bc_tower)    :: the_bc_tower
 
   type(multifab), allocatable :: uold(:)
+  type(multifab), allocatable :: umid(:)
   type(multifab), allocatable :: unew(:)
+
+  type(multifab), allocatable :: rhohalf(:)
+  type(multifab), allocatable :: div_coeff(:)
+  type(multifab), allocatable :: pi(:)
+  type(multifab), allocatable :: gpi(:)
 
   real(kind=dp_t), pointer :: dx(:,:)
 
   real(kind=dp_t) :: lenx,leny,lenz,max_dist
 
-  real(kind=dp_t) :: time
+  real(kind=dp_t) :: time, dt
 
   real(dp_t), parameter :: SMALL = 1.d-13
 
@@ -124,7 +132,7 @@ subroutine varden()
   !---------------------------------------------------------------------------
   ! allocate arrays
   !---------------------------------------------------------------------------
-  allocate(uold(nlevs), unew(nlevs))
+  allocate(uold(nlevs), umid(nlevs), unew(nlevs))
 
   ng_s = 4
 
@@ -132,6 +140,9 @@ subroutine varden()
      call build(uold(n),  mla%la(n), dm, ng_s)
      call setval(uold(n), ZERO, all=.true.)
      
+     call build(umid(n),  mla%la(n), dm, ng_s)
+     call setval(umid(n), ZERO, all=.true.)
+
      call build(unew(n),  mla%la(n), dm, ng_s)
      call setval(unew(n), ZERO, all=.true.)
   enddo
@@ -203,21 +214,66 @@ subroutine varden()
 
   call fabio_ml_write(uold, mla%mba%rr(:,1), "u_init", names=plot_names)
 
+  ! copy the velocity field over to the intermediate state, umid
+  do n = 1, nlevs
+     call multifab_copy(umid(n), uold(n), nghost(uold(n)))
+  enddo
 
   !---------------------------------------------------------------------------
   ! 'pollute' the velocity field by adding the gradient of a scalar
   !---------------------------------------------------------------------------
-  call add_grad_scalar(unew, dx, mla, the_bc_tower%bc_tower_array)
+  call add_grad_scalar(umid, dx, mla, the_bc_tower%bc_tower_array)
 
-  call fabio_ml_write(unew, mla%mba%rr(:,1), "u_plus_grad_phi", &
+  call fabio_ml_write(umid, mla%mba%rr(:,1), "u_plus_grad_phi", &
                       names=plot_names)
 
+
+  ! copy the velocity field over to the final star, unew
+  do n = 1, nlevs
+     call multifab_copy(unew(n), umid(n), nghost(uold(n)))
+  enddo
 
 
   !---------------------------------------------------------------------------
   ! project out the divergent portion of the velocity field
   !---------------------------------------------------------------------------
+  allocate(rhohalf(nlevs), pi(nlevs), gpi(nlevs), div_coeff(nlevs))
 
+  ng_s = 4
+
+  do n = 1, nlevs
+
+     ! build the density used in the projection -- we are just doing
+     ! constant density, so set it to 1
+     call build(rhohalf(n),  mla%la(n), 1, ng_s)
+     call setval(rhohalf(n), ONE, all=.true.)
+
+     ! build pi
+     call build(pi(n),  mla%la(n), 1, 1, nodal)
+     call setval(pi(n), ZERO, all=.true.)
+
+     ! build gpi
+     call build(gpi(n),  mla%la(n), dm, 1)
+     call setval(gpi(n), ZERO, all=.true.)
+
+     ! build the coefficient in the divergence.  We are doing 
+     ! divergence-free (incompressible), so set div_coeff = 1
+     call build(div_coeff(n),  mla%la(n), 1, 1)
+     call setval(div_coeff(n), ONE, all=.true.)
+
+  enddo
+
+  ! hgproject takes dt -- it has no meaning for our projection type
+  dt = ONE
+
+  call hgproject(initial_projection_comp, &
+                 mla, &
+                 unew, unew, rhohalf, &
+                 pi, gpi, &
+                 dx, dt, the_bc_tower, &
+                 div_coeff)
+
+  call fabio_ml_write(unew, mla%mba%rr(:,1), "u_new", names=plot_names)
 
 
   !---------------------------------------------------------------------------
@@ -232,13 +288,14 @@ subroutine varden()
 
   do n = 1, nlevs
      call destroy(uold(n))
+     call destroy(umid(n))
      call destroy(unew(n))
   enddo
 
   call destroy(mla)
   call destroy(mba)
   
-  deallocate(uold, unew)
+  deallocate(uold, umid, unew)
   deallocate(plot_names)
   
   call bc_tower_destroy(the_bc_tower)
