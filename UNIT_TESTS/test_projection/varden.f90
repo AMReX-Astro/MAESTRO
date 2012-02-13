@@ -192,23 +192,38 @@ subroutine varden()
   !---------------------------------------------------------------------------
   ! initialize velocity field
   !---------------------------------------------------------------------------
-  call init_velocity(uold, dx)
+  call init_velocity(uold, dx, mla, the_bc_tower%bc_tower_array)
 
 
-  ! fill ghostcells
-
-
-  !---------------------------------------------------------------------------
-  ! dump out the initial data
-  !---------------------------------------------------------------------------
-
-  ! plotnames
+  ! output the initial velocity field
   allocate(plot_names(dm))
   plot_names(1) = "x-velocity"
   if (dm >= 2) plot_names(2) = "y-velocity"
   if (dm == 3) plot_names(3) = "z-velocity"
 
   call fabio_ml_write(uold, mla%mba%rr(:,1), "u_init", names=plot_names)
+
+
+  !---------------------------------------------------------------------------
+  ! 'pollute' the velocity field by adding the gradient of a scalar
+  !---------------------------------------------------------------------------
+  call add_grad_scalar(unew, dx, mla, the_bc_tower%bc_tower_array)
+
+  call fabio_ml_write(unew, mla%mba%rr(:,1), "u_plus_grad_phi", &
+                      names=plot_names)
+
+
+
+  !---------------------------------------------------------------------------
+  ! project out the divergent portion of the velocity field
+  !---------------------------------------------------------------------------
+
+
+
+  !---------------------------------------------------------------------------
+  ! compute error
+  !---------------------------------------------------------------------------
+
 
 
   !---------------------------------------------------------------------------
