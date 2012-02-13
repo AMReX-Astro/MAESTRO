@@ -179,17 +179,17 @@ approximation to $A_{\rho X_k}$ and $A_{\rho h}$ and not the final
 updated state.
 
 \subsubsection{Species Source Terms.}
-For the species prediction, the form of $I_{\rho X_k}$ depends on
-{\tt species\_pred\_type} (see \S \ref{sec:pred:density}):  
+For the species prediction, the form of $I$ depends on
+{\tt species\_pred\_type} (see \S \ref{sec:pred:density}).
+We note that there is no $I$ term for $\rho$ or $\rho'$ prediction, since
+the density evolution equation does not have a reaction source term.
 \begin{itemize}
 \item {\tt species\_pred\_type} = 1 (predict $\rho'$ and $X_k$)
-%
 \begin{equation}
 I_{X_k} = \frac{1}{\rho^{n+\myhalf}} \left [ 
       \frac{(\rho X_k)^\mathrm{new} - 
-            (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ]
+            (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ].
 \end{equation}
-
 (Andy's Idea) Define $I_{X_k}$ using
 \begin{equation}
 I_{X_k} = \frac{X_k^\mathrm{new} - X_k^\mathrm{old}}{\Delta t} - A_{X_k},
@@ -208,26 +208,15 @@ and finally define $A_{X_k}$ using
 \begin{equation}
 \frac{X^{(1)} - X^\mathrm{old}}{\Delta t}= A_{X_k}.
 \end{equation}
-
 \item {\tt species\_pred\_type} = 2 (predict $\rho'$ and $(\rho X_k)$)
-%
 \begin{equation}
-I_{\rho X_k} = \frac{(\rho X_k)^\mathrm{new} - (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k} 
+I_{\rho X_k} = \frac{(\rho X_k)^\mathrm{new} - (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}.
 \label{eq:sdc:Irhoo}
 \end{equation}
-
 \item {\tt species\_pred\_type} = 3 (predict $\rho$ and $X_k$)
-%
-\begin{equation}
-I_{X_k} = \frac{1}{\rho^{n+\myhalf}} \left [ 
-      \frac{(\rho X_k)^\mathrm{new} - 
-            (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ]
-\end{equation}
 
+See {\tt species\_pred\_type} = 1 for the form of $I_{X_k}$.
 \end{itemize}
-
-We note that there is no $I$ term for $\rho$ or $\rho'$ prediction, since
-the density evolution equation does not have a reaction source term.
 
 \subsubsection{Enthalpy Source Terms.}
 The obvious analog to the above form for $I_{\rho X_k}$ is to define
@@ -242,19 +231,16 @@ enthalpy update ({\tt enthalpy\_pred\_type}, see \S
 are:
 
 \begin{itemize}
-\item {\tt enthalpy\_pred\_type} = {\tt predict\_rhoprime} 
-
-Not implemented.
+\item {\tt enthalpy\_pred\_type} = {\tt predict\_rhohprime} (not implemented yet)
 
 Here we need an $I_{\rho h}$ term for the $(\rho h)'$ evolution
-equation (see Eq.~\ref{rhohprime equation}).  Defining the source
-terms for this requires a base state enthalpy that knows about the
-source terms---this is currently not implemented.
+equation (see Eq.~\ref{rhohprime equation}).  In this case we will use
+$I_{(\rho h)'} = I_{\rho h}$
 
+In the future, when we enable base state evolution, the base state enthalpy
+evolution equation may need to know about the $I_{\rho h}$ source term.
 In particular, should $(\rho h)_0$ see a $\overline{(\rho \Hnuc)}$ term?
 what about an average thermal diffusion?
-
-
 
 \item {\tt enthalpy\_pred\_type} = {\tt predict\_h} 
 
@@ -274,7 +260,22 @@ Comparing these equations, we see that
 I_{h}  = \frac{1}{\rho^{n+\myhalf}} \left [
     \frac{(\rho h)^\mathrm{new} - (\rho h)^\mathrm{old}}{\Delta t} - A_{\rho h} \right ]
 \end{equation}
-
+(Andy's Idea) Form $I_h$ in the same way we would form $I_{X_k}$ from above:
+\begin{equation}
+I_h = \frac{h^\mathrm{new} - h^\mathrm{old}}{\Delta t} - A_h,
+\end{equation}
+where we first define
+\begin{equation}
+\frac{(\rho h)^{(1)} - (\rho h)^\mathrm{old}}{\Delta t} = A_{\rho h},
+\end{equation}
+and then define $h$,
+\begin{equation}
+h^{(1)} = (\rho h)^{(1)} / \sum_k(\rho X_k)^{(1)}, \quad h^\mathrm{old} = (\rho h)^\mathrm{old} / \sum_k(\rho X_k)^\mathrm{old}, \quad h^\mathrm{new} = (\rho h)^\mathrm{new} / \sum_k(\rho X_k)^\mathrm{new},
+\end{equation}
+and finally define $A_h$ using
+\begin{equation}
+I_h = \frac{h^{(1)} - h^\mathrm{old}}{\Delta t} = A_h.
+\end{equation}
 
 \item {\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_rhoprime} or 
       {\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_h} 
