@@ -184,7 +184,9 @@ For the species prediction, the form of $I$ depends on
 We note that there is no $I$ term for $\rho$ or $\rho'$ prediction, since
 the density evolution equation does not have a reaction source term.
 \begin{itemize}
-\item {\tt species\_pred\_type} = 1 (predict $\rho'$ and $X_k$)
+\item {\tt species\_pred\_type} = 1 (predict $\rho'$ and $X_k$) 
+or 3 (predict $\rho$ and $X_k$)
+
 \begin{equation}
 I_{X_k} = \frac{1}{\rho^{n+\myhalf}} \left [ 
       \frac{(\rho X_k)^\mathrm{new} - 
@@ -213,9 +215,6 @@ and finally define $A_{X_k}$ using
 I_{\rho X_k} = \frac{(\rho X_k)^\mathrm{new} - (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}.
 \label{eq:sdc:Irhoo}
 \end{equation}
-\item {\tt species\_pred\_type} = 3 (predict $\rho$ and $X_k$)
-
-See {\tt species\_pred\_type} = 1 for the form of $I_{X_k}$.
 \end{itemize}
 
 \subsubsection{Enthalpy Source Terms.}
@@ -233,9 +232,12 @@ are:
 \begin{itemize}
 \item {\tt enthalpy\_pred\_type} = {\tt predict\_rhohprime} (not implemented yet)
 
-Here we need an $I_{\rho h}$ term for the $(\rho h)'$ evolution
+(Andy's Idea) Here we need an $I_{\rho h}$ term for the $(\rho h)'$ evolution
 equation (see Eq.~\ref{rhohprime equation}).  In this case we will use
-$I_{(\rho h)'} = I_{\rho h}$
+$I_{(\rho h)'} = I_{\rho h}$.  Since we are not evolving the base state, the PDE
+for $(\rho h)_0$ is simply $\partial(\rho h)_0/\partial t = 0$, and thus the
+evolution equation for $(\rho h)'$ is the same as the evolution equation
+for $\rho h$.
 
 In the future, when we enable base state evolution, the base state enthalpy
 evolution equation may need to know about the $I_{\rho h}$ source term.
@@ -305,8 +307,19 @@ I_T = \frac{1}{\rho^{n+\myhalf} c_p^{n+\myhalf}} \left \{
             (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}  \right ] \right \}
 \end{equation}
 
-
-
+(Andy's Idea) The idea is to advance the species and enthalpy with advection
+terms only, and compute the resulting temperature, $T^{(1)}$.  Compare that temperature
+with the final temperature computed by the SDC VODE call.  The difference
+between these values is $I_T$.
+\begin{equation}
+I_T = \frac{T^\mathrm{new} - T^\mathrm{old}}{\Delta t} - A_T,
+\end{equation}
+with $A_T$ given by
+\begin{equation}
+\frac{T^{(1)} - T^\mathrm{old}}{\Delta t} = A_T,
+\end{equation}
+and $T^{(1)}$ computed using the equation of state from $\rho^{(1)}, X_k^{(1)}$, 
+and $h^{(1)}$ (or $p_0$, if {\tt use\_tfromp=T}).
 \end{itemize}
 
 
