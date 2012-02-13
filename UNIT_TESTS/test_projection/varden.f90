@@ -20,6 +20,7 @@ subroutine varden()
   use bl_IO_module
   use bl_constants_module
   use define_bc_module, only: bc_tower, bc_tower_level_build, bc_tower_destroy
+  use test_projection_module
 
   implicit none
 
@@ -191,7 +192,7 @@ subroutine varden()
   !---------------------------------------------------------------------------
   ! initialize velocity field
   !---------------------------------------------------------------------------
-
+  call init_velocity(uold, dx)
 
 
   ! fill ghostcells
