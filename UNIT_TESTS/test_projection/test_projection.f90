@@ -120,11 +120,12 @@ contains
 
 
 
-  subroutine add_grad_scalar(U, dx, mla, the_bc_level)
+  subroutine add_grad_scalar(U, gphi, dx, mla, the_bc_level)
 
     integer :: n, i, ng, dm, nlevs
 
     type(multifab) , intent(inout) :: U(:)
+    type(multifab) , intent(inout) :: gphi(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(ml_layout)   , intent(inout) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
@@ -132,6 +133,7 @@ contains
     integer :: lo(get_dim(U(1))), hi(get_dim(U(1)))
 
     real(kind=dp_t), pointer :: up(:,:,:,:)
+    real(kind=dp_t), pointer :: gp(:,:,:,:)
 
     nlevs = size(U)
     dm = get_dim(U(1))
@@ -142,12 +144,14 @@ contains
        do i = 1, nboxes(U(n))
           if ( multifab_remote(U(n),i) ) cycle
           up => dataptr(U(n), i)
+          gp => dataptr(gphi(n), i)
           lo = lwb(get_box(U(n), i))
           hi = upb(get_box(U(n), i))
 
           select case (dm)
           case (2)
-             call add_grad_scalar_2d(up(:,:,1,:), ng, lo, hi, dx(n,:))
+             call add_grad_scalar_2d(up(:,:,1,:), gp(:,:,1,:), ng, lo, hi, dx(n,:), &
+                                     the_bc_level(n)%phys_bc_level_array(i,:,:))
 
           case (3)
              call bl_error("ERROR: add_grad_scalar not implemented in 3d")
@@ -192,34 +196,78 @@ contains
 
   end subroutine add_grad_scalar
 
-
-  subroutine add_grad_scalar_2d(U, ng, lo, hi, dx)
+  subroutine add_grad_scalar_2d(U, gphi, ng, lo, hi, dx, phys_bc)
 
     ! Add on the gradient of a scalar (phi) that satisfies grad(phi).n = 0.
 
+    use     bc_module
     use probin_module, only: prob_lo, prob_hi
 
     integer         , intent(in   ) :: lo(:), hi(:), ng
-    real (kind=dp_t), intent(inout) :: U(lo(1)-ng:,lo(2)-ng:,:)
+    real (kind=dp_t), intent(inout) ::    U(lo(1)-ng:,lo(2)-ng:,:)
+    real (kind=dp_t), intent(inout) :: gphi(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) :: dx(:)
+    integer         , intent(in   ) :: phys_bc(:,:)
+
 
     ! Local variables
     integer :: i, j
     real (kind=dp_t) :: x, y
+    real (kind=dp_t), allocatable :: phi(:,:)
 
-    do j = lo(2), hi(2)
-       y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
+    allocate(phi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)) 
 
-       do i = lo(1), hi(1)
-          x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
-    
-          U(i,j,1) = U(i,j,1) + FOUR*x*(ONE - x)
-          U(i,j,2) = U(i,j,2) + FOUR*y*(ONE - y)
+    if (phys_bc(1,1) .eq. SLIP_WALL .and. phys_bc(1,2) .eq. SLIP_WALL .and. &
+        phys_bc(2,1) .eq. SLIP_WALL .and. phys_bc(2,2) .eq. SLIP_WALL) then
 
+       do j = lo(2), hi(2)
+          y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
+
+          do i = lo(1), hi(1)
+             x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
+      
+             U(i,j,1) = U(i,j,1) + FOUR*x*(ONE - x)
+             U(i,j,2) = U(i,j,2) + FOUR*y*(ONE - y)
+   
+          enddo
        enddo
-    enddo
+
+    else if (phys_bc(1,1) .eq. PERIODIC .and. phys_bc(1,2) .eq. PERIODIC .and. &
+             phys_bc(2,1) .eq. PERIODIC .and. phys_bc(2,2) .eq. PERIODIC) then
+
+       do j = lo(2)-1, hi(2)+1
+          y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
+    
+          do i = lo(1)-1, hi(1)+1
+             x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
+   
+               phi(i,j) = 0.1d0 * cos(2.d0*M_PI*y)*cos(2.d0*M_PI*x)
+   
+          enddo
+       enddo
+
+       do j = lo(2), hi(2)
+          y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
+
+          do i = lo(1), hi(1)
+             x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
+
+             gphi(i,j,1) =  (phi(i+1,j)-phi(i-1,j))/(2.d0*dx(1))
+             gphi(i,j,2) =  (phi(i,j+1)-phi(i,j-1))/(2.d0*dx(2))
+   
+             U(i,j,1) = U(i,j,1) + gphi(i,j,1)
+             U(i,j,2) = U(i,j,2) + gphi(i,j,2)
+   
+          enddo
+       enddo
+
+    else
+       print *,'Not set up for these boundary conditions'
+       stop
+    end if
+
+    deallocate(phi)
 
   end subroutine add_grad_scalar_2d
-
 
 end module test_projection_module

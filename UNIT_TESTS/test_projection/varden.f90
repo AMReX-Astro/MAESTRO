@@ -36,6 +36,7 @@ subroutine varden()
   type(multifab), allocatable :: uold(:)
   type(multifab), allocatable :: umid(:)
   type(multifab), allocatable :: unew(:)
+  type(multifab), allocatable :: gphi(:)
 
   type(multifab), allocatable :: rhohalf(:)
   type(multifab), allocatable :: div_coeff(:)
@@ -132,7 +133,7 @@ subroutine varden()
   !---------------------------------------------------------------------------
   ! allocate arrays
   !---------------------------------------------------------------------------
-  allocate(uold(nlevs), umid(nlevs), unew(nlevs))
+  allocate(uold(nlevs), umid(nlevs), unew(nlevs), gphi(nlevs))
 
   ng_s = 4
 
@@ -145,6 +146,9 @@ subroutine varden()
 
      call build(unew(n),  mla%la(n), dm, ng_s)
      call setval(unew(n), ZERO, all=.true.)
+     
+     call build(gphi(n),  mla%la(n), dm, ng_s)
+     call setval(gphi(n), ZERO, all=.true.)
   enddo
   
 
@@ -222,17 +226,18 @@ subroutine varden()
   !---------------------------------------------------------------------------
   ! 'pollute' the velocity field by adding the gradient of a scalar
   !---------------------------------------------------------------------------
-  call add_grad_scalar(umid, dx, mla, the_bc_tower%bc_tower_array)
+  call add_grad_scalar(umid, gphi, dx, mla, the_bc_tower%bc_tower_array)
 
   call fabio_ml_write(umid, mla%mba%rr(:,1), "u_plus_grad_phi", &
                       names=plot_names)
 
+  call fabio_ml_write(gphi, mla%mba%rr(:,1), "grad_phi", &
+                      names=plot_names)
 
   ! copy the velocity field over to the final star, unew
   do n = 1, nlevs
      call multifab_copy(unew(n), umid(n), nghost(uold(n)))
   enddo
-
 
   !---------------------------------------------------------------------------
   ! project out the divergent portion of the velocity field
@@ -275,7 +280,6 @@ subroutine varden()
 
   call fabio_ml_write(unew, mla%mba%rr(:,1), "u_new", names=plot_names)
 
-
   !---------------------------------------------------------------------------
   ! compute error
   !---------------------------------------------------------------------------
@@ -290,6 +294,7 @@ subroutine varden()
      call destroy(uold(n))
      call destroy(umid(n))
      call destroy(unew(n))
+     call destroy(gphi(n))
   enddo
 
   call destroy(mla)
