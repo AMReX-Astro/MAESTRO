@@ -178,7 +178,7 @@ This is because all we need from the advection solver is the
 approximation to $A_{\rho X_k}$ and $A_{\rho h}$ and not the final
 updated state.
 
-\subsubsection{Species Source Terms.}
+\subsection{Species Source Terms.}
 For the species prediction, the form of $I$ depends on
 {\tt species\_pred\_type} (see \S \ref{sec:pred:density}).
 We note that there is no $I$ term for $\rho$ or $\rho'$ prediction, since
@@ -217,7 +217,7 @@ I_{\rho X_k} = \frac{(\rho X_k)^\mathrm{new} - (\rho X_k)^\mathrm{old}}{\Delta t
 \end{equation}
 \end{itemize}
 
-\subsubsection{Enthalpy Source Terms.}
+\subsection{Enthalpy Source Terms.}
 The obvious analog to the above form for $I_{\rho X_k}$ is to define
 \begin{equation}
 I_{\rho h}  = \frac{(\rho h)^\mathrm{new} - (\rho h)^\mathrm{old}}{\Delta t} - A_{\rho h}
@@ -319,18 +319,18 @@ with $A_T$ given by
 \frac{T^{(1)} - T^\mathrm{old}}{\Delta t} = A_T,
 \end{equation}
 and $T^{(1)}$ computed using the equation of state from $\rho^{(1)}, X_k^{(1)}$, 
-and $h^{(1)}$ (or $p_0$, if {\tt use\_tfromp=T}).
+and $h^{(1)}$ (or $p_0$, if {\tt use\_tfromp = T}).
 \end{itemize}
 
 
-\subsubsection{Implementation}
+\subsection{Implementation}
 
 This is done in {\tt advance.f90} just after the call to {\tt react\_state},
 stored in the \multifab\ called {\tt intra}.
 These terms are used as the source terms for the
 advection step in the next SDC iteration.
 
-\section{Summary of Changes}
+\subsection{Summary of Changes}
 The major changes from the non-SDC-enabled burners is the addition of
 the advective terms to the system of ODEs, the fact that we integrate
 $(\rho X_k)$ instead of just $X_k$, integrate $(\rho h)$ instead
@@ -361,11 +361,11 @@ We now include thermal diffusion and assume the base state is constant in time b
 \label{eq:sdc enthalpy}
 \end{eqnarray}
 
-The time-advancement is divided into three major steps.  The first step is the predictor, where we integrate the thermodynamic variables over the full time step.  The second step is corrector, where we use the results from the predictor to perform a more accurate temporal integration of the thermodynamic variables.  The third step is the velocity and dynamic pressure update.
+The time-advancement is divided into three major steps.  The first step is the predictor, where we integrate the thermodynamic variables, $(\rho,\rho X_k,\rho h)$, over the full time step.  The second step is corrector, where we use the results from the predictor to perform a more accurate temporal integration of the thermodynamic variables.  The third step is the velocity and dynamic pressure update.\\
 
 {\bf Step 1:} ({\it Predictor}) In this step, we integrate $(\rho, \rho X_k, \rho h)$ over the full time step.  The quantities $(S, \beta_0, k_{\rm th}, c_p, \xi_k, h_p)^n$ are computed from the the thermodynamic variables at $t^n$.  This step is divided into several sub-steps:\\
 
-{\bf Step 1A:} ({\it Compute advection velocities}) Use $\Ub^n$ and a second-order Godunov method to compute time-centered edge velocities, $\uadvsdcstar$, with a time-lagged pressure gradient and explicit buoyancy forcing terms.  The $\star$ superscript indicates that this field does not satisfy the divergence constrain.  Compute $S^{n+\myhalf,{\rm pred}}$ by extrapolating in time,
+{\bf Step 1A:} ({\it Compute advection velocities}) Use $\Ub^n$ and a second-order Godunov method to compute time-centered edge velocities, $\uadvsdcstar$, with time-lagged dynamic pressure and explicit buoyancy as forcing terms.  The $\star$ superscript indicates that this field does not satisfy the divergence constraint.  Compute $S^{n+\myhalf,{\rm pred}}$ by extrapolating in time,
 \begin{equation}
 S^{n+\myhalf,{\rm pred}} = S^n + \frac{\Delta t^n}{2}\frac{S^n - S^{n-1}}{\Delta t^{n-1}},
 \end{equation}
@@ -374,7 +374,7 @@ and project $\uadvsdcstar$ to obtain $\uadvsdcpred$, which satisfies
 \nabla\cdot\left(\beta_0^n\uadvsdcpred\right) = S^{n+\myhalf,\rm{pred}}.
 \end{equation}
 
-{\bf Step 1B:} ({\it Compute advective fluxes}) Use $\uadvsdcpred$ and a second-order Godunov integrator to compute time-centered edge states, $(\rho X_k, \rho h)^{n+\myhalf,{\rm pred}}$, with time-lagged reactions, explicitly evaluated diffusion, and a time-centered thermodynamic pressure advective derivative as source terms.\\
+{\bf Step 1B:} ({\it Compute advective fluxes}) Use $\uadvsdcpred$ and a second-order Godunov integrator to compute time-centered edge states, $(\rho X_k, \rho h)^{n+\myhalf,{\rm pred}}$, with time-lagged reactions, explicit diffusion, and time-centered thermodynamic pressure as source terms.\\
 
 {\bf Step 1C:} ({\it Compute diffusive fluxes}) Begin by compute a preliminary time-advanced density using
 \begin{equation}
@@ -382,55 +382,57 @@ and project $\uadvsdcstar$ to obtain $\uadvsdcpred$, which satisfies
 \end{equation}
 Then, compute preliminary, time-advanced species using
 \begin{equation}
-\frac{\rho^{n+1,{\rm pred}}X_{k,{\rm AD}}^{n+1,{\rm pred}} - (\rho X_k)^n}{\Delta t} = -\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf,{\rm pred}}\uadvsdcpred\right] + I_{R,\rho X_k}^{\rm lagged}.\label{eq:sdc species 2}
+\frac{\rho^{n+1,{\rm pred}}X_{k,{\rm AD}}^{n+1,{\rm pred}} - (\rho X_k)^n}{\Delta t} = -\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf,{\rm pred}}\uadvsdcpred\right] + I_{\rho X_k}^{\rm lagged}.\label{eq:sdc species 2}
 \end{equation}
 Then, solve a Crank-Nicolson-type diffusion equation for $h^{n+1,{\rm pred}}_{\rm AD}$, using transport coefficients evaluated at $t^n$ everywhere,
 \begin{eqnarray}
-\frac{\rho^{n+1,{\rm pred}}h^{n+1,{\rm pred}}_{\rm AD} - (\rho h)^n}{\Delta t} &=& -\nabla\cdot\left[\left(\rho h\right)^{n+\myhalf,{\rm pred}}\uadvsdcpred\right] + \uadvsdcpred\cdot\nabla p_0 + I_{R,\rho h}^{\rm lagged}\nonumber\\
+\frac{\rho^{n+1,{\rm pred}}h^{n+1,{\rm pred}}_{\rm AD} - (\rho h)^n}{\Delta t} &=& -\nabla\cdot\left[\left(\rho h\right)^{n+\myhalf,{\rm pred}}\uadvsdcpred\right] + \uadvsdcpred\cdot\nabla p_0 + I_{\rho h}^{\rm lagged}\nonumber\\
 && + \half\left(\nabla\cdot\frac{\kth^n}{c_p^n}\nabla h^n + \nabla\cdot\frac{\kth^n}{c_p^n}\nabla h_{\rm AD}^{n+1,{\rm pred}}\right)\nonumber\\
 && + \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_{k,{\rm AD}}^{n+1,{\rm pred}}\right)\nonumber\\
-&& - \half\left(\nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0 + \nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0\right)\label{eq:sdc enthalpy 2}
+&& - \half\left(\nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0 + \nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0\right).\label{eq:sdc enthalpy 2}
 \end{eqnarray}
 
-{\bf Step 1D:} ({\it Advance thermodynamic variables}) Define $Q_{\rho X_k}^{\rm pred}$ as the right hand side of (\ref{eq:sdc species 2}) without the $I_{R,\rho X_k}^{\rm lagged}$ term, and define $Q_{\rho h}^{\rm pred}$ as the right hand side of (\ref{eq:sdc enthalpy 2}) without the $I_{R,\rho h}^{\rm lagged}$ term.  Use {\tt VODE} to integerate (\ref{eq:sdc species}) and (\ref{eq:sdc enthalpy}) over $\Delta t$ to advance $(\rho X_k, \rho h)^n$ to $(\rho X_k, \rho h)^{n+1,{\rm pred}}$ using the piecewise-constant advection and diffusion source terms:
+{\bf Step 1D:} ({\it Advance thermodynamic variables}) Define $Q_{\rho X_k}^{\rm pred}$ as the right hand side of (\ref{eq:sdc species 2}) without the $I_{\rho X_k}^{\rm lagged}$ term, and define $Q_{\rho h}^{\rm pred}$ as the right hand side of (\ref{eq:sdc enthalpy 2}) without the $I_{\rho h}^{\rm lagged}$ term.  Use {\tt VODE} to integerate (\ref{eq:sdc species}) and (\ref{eq:sdc enthalpy}) over $\Delta t$ to advance $(\rho X_k, \rho h)^n$ to $(\rho X_k, \rho h)^{n+1,{\rm pred}}$ using the piecewise-constant advection and diffusion source terms:
 \begin{eqnarray}
 \frac{\partial(\rho X_k)}{\partial t} &=& Q_{\rho X_k}^{\rm pred} + \rho\dot\omega_k\\
 \frac{\partial(\rho h)}{\partial t} &=& Q_{\rho h}^{\rm pred} + \rho\Hnuc.
 \end{eqnarray}
+At this point we can define $I_{\rho X_k}^{\rm pred}$ and $I_{\rho h}^{\rm pred}$, or whatever term we need depending on our species and enthalpy edge state prediction types, for use in the corrector step.\\
 
 {\bf Step 2:} ({\it Corrector}) In the corrector, we use the time-advanced state from the predictor to perform a more accurate integration of the thermodynamic variables.  The quantities $(S, \beta_0, k_{\rm th}, c_p, \xi_k, h_p)^{n+1,{\rm pred}}$ are computed from $(\rho,\rho X_k,\rho h)^{n+1,{\rm pred}}$.  This step is divided into several sub-steps:\\\\
 
 {\bf Step 2A:} ({\it Compute advection velocities}) First, compute $S^{n+\myhalf}$ and $\beta_0^{n+\myhalf}$ using
 \begin{equation}
-S^{n+\myhalf} = \frac{S^n + S^{n+1,{\rm pred}}}{2}, \qquad \beta_0^{n+\myhalf} = \frac{\beta_0^n + \beta_0^{n+1,{\rm pred}}}{2}
+S^{n+\myhalf} = \frac{S^n + S^{n+1,{\rm pred}}}{2}, \qquad \beta_0^{n+\myhalf} = \frac{\beta_0^n + \beta_0^{n+1,{\rm pred}}}{2}.
 \end{equation}
 Then, project $\uadvsdcstar$ to obtain $\uadvsdc$, which satisfies
 \begin{equation}
 \nabla\cdot\left(\beta_0^{n+\myhalf}\uadvsdc\right) = S^{n+\myhalf}.
 \end{equation}
 
-{\bf Step 2B:} ({\it Compute advective fluxes}) Use $\uadvsdc$ and a second-order Godunov integrator to compute time-centered edge states, $(\rho X_k, \rho h)^{n+\myhalf}$, with iteratively-lagged reactions, explicitly evaluated diffusion, and a time-centered thermodynamic pressure advective derivative as source terms.\\
+{\bf Step 2B:} ({\it Compute advective fluxes}) Use $\uadvsdc$ and a second-order Godunov integrator to compute time-centered edge states, $(\rho X_k, \rho h)^{n+\myhalf}$, with iteratively-lagged reactions, explicit diffusion, and time-centered thermodynamic pressure as source terms.\\
 
-{\bf Step 2C:} ({\it Compute diffusive fluxes}) Begin by compute a preliminary time-advanced density using
+{\bf Step 2C:} ({\it Compute diffusive fluxes}) Begin by computing the time-advanced density using
 \begin{equation}
 \frac{\rho^{n+1} - \rho^n}{\Delta t} = -\sum_m\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf}\uadvsdc\right].
 \end{equation}
 Then, compute preliminary, time-advanced species using
 \begin{equation}
-\frac{\rho^{n+1}X_{k,{\rm AD}}^{n+1} - (\rho X_k)^n}{\Delta t} = -\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf}\uadvsdc\right] + I_{R,\rho X_k}^{\rm pred}.\label{eq:sdc species 3}
+\frac{\rho^{n+1}X_{k,{\rm AD}}^{n+1} - (\rho X_k)^n}{\Delta t} = -\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf}\uadvsdc\right] + I_{\rho X_k}^{\rm pred}.\label{eq:sdc species 3}
 \end{equation}
 Then, solve a backward-Euler-type correction equation for $h^{n+1}_{\rm AD}$,
 \begin{eqnarray}
-\frac{\rho^{n+1}h^{n+1}_{\rm AD} - (\rho h)^n}{\Delta t} &=& -\nabla\cdot\left[\left(\rho h\right)^{n+\myhalf}\uadvsdc\right] + \uadvsdc\cdot\nabla p_0 + I_{R,\rho h}^{\rm pred}\nonumber\\
+\frac{\rho^{n+1}h^{n+1}_{\rm AD} - (\rho h)^n}{\Delta t} &=& -\nabla\cdot\left[\left(\rho h\right)^{n+\myhalf}\uadvsdc\right] + \uadvsdc\cdot\nabla p_0 + I_{\rho h}^{\rm pred}\nonumber\\
 && + \nabla\cdot\frac{\kth^{n+1,{\rm pred}}}{c_p^{n+1,{\rm pred}}}\nabla h^{n+1}_{\rm AD} + \half\left(\nabla\cdot\frac{\kth^n}{c_p^n}\nabla h^n - \nabla\cdot\frac{\kth^{n+1,{\rm pred}}}{c_p^{n+1,{\rm pred}}}\nabla h^{n+1,{\rm pred}}\right)\nonumber\\
 && + \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^{n+1,{\rm pred}} k_{\rm th}^{n+1,{\rm pred}}}{c_p^{n+1,{\rm pred}}}\nabla X_{k,{\rm AD}}^{n+1}\right)\nonumber\\
 && - \half\left(\nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0 + \nabla\cdot\frac{h_p^{n+1,{\rm pred}}k_{\rm th}^{n+1,{\rm pred}}}{c_p^{n+1,{\rm pred}}}\nabla p_0\right)\label{eq:sdc enthalpy 3}
 \end{eqnarray}
 
-{\bf Step 2D:} ({\it Advance thermodynamic variables}) Define $Q_{\rho X_k}$ as the right hand side of (\ref{eq:sdc species 3}) without the $I_{R,\rho X_k}^{\rm pred}$ term, and define $Q_{\rho h}$ as the right hand side of (\ref{eq:sdc enthalpy 3}) without the $I_{R,\rho h}^{\rm pred}$ term.  Use {\tt VODE} to integerate (\ref{eq:sdc species}) and (\ref{eq:sdc enthalpy}) over $\Delta t$ to advance $(\rho X_k, \rho h)^n$ to $(\rho X_k, \rho h)^{n+1}$ using the piecewise-constant advection and diffusion source terms:
+{\bf Step 2D:} ({\it Advance thermodynamic variables}) Define $Q_{\rho X_k}$ as the right hand side of (\ref{eq:sdc species 3}) without the $I_{\rho X_k}^{\rm pred}$ term, and define $Q_{\rho h}$ as the right hand side of (\ref{eq:sdc enthalpy 3}) without the $I_{\rho h}^{\rm pred}$ term.  Use {\tt VODE} to integerate (\ref{eq:sdc species}) and (\ref{eq:sdc enthalpy}) over $\Delta t$ to advance $(\rho X_k, \rho h)^n$ to $(\rho X_k, \rho h)^{n+1}$ using the piecewise-constant advection and diffusion source terms:
 \begin{eqnarray}
 \frac{\partial(\rho X_k)}{\partial t} &=& Q_{\rho X_k} + \rho\dot\omega_k\\
 \frac{\partial(\rho h)}{\partial t} &=& Q_{\rho h} + \rho\Hnuc.
 \end{eqnarray}
+At this point we can define $I_{\rho X_k}^{\rm lagged}$ and $I_{\rho h}^{\rm lagged}$, or whatever term we need depending on our species and enthalpy edge state prediction types, for use in the predictor in the next time step.\\
 
-{\bf Step 3:} ({\it Advance velocity and dynamic pressure})\\
+{\bf Step 3:} ({\it Advance velocity and dynamic pressure}) Same as the original \maestro\ algorithm.
