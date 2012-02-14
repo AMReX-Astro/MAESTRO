@@ -1,18 +1,21 @@
 &PROBIN
  model_file = "toy_nova_constg_tanh2.hse.smooth_3.00.1024"
+ job_name = "toy_convect tfromp=F s=3 h=3"
 
  spherical_in = 0
 
- max_levs = 4
- n_cellx = 64
- n_celly = 128
+ max_levs = 1
+ n_cellx = 512
+ n_celly = 1024
+
+ do_heating = T
+ species_pred_type = 3
+ enthalpy_pred_type = 3
+ drive_initial_convection = F
 
  max_grid_size = 64
- max_grid_size_1 = 32
- max_grid_size_2 = 32
 
  regrid_int = 2	
- amr_buf_width = 4
  
  prob_lo_x = 0.0d0
  prob_hi_x = 7.5d7
@@ -31,7 +34,7 @@
  grav_const = -1.04263053d9
 
  max_step  = 1000000
- stop_time = 250.0
+ stop_time = 1000.0
 
  do_initial_projection = T
  init_divu_iter = 4
@@ -41,10 +44,10 @@
 
  plot_base       = T
  plot_int        = -1
- plot_deltat     = 1.d0
+ plot_deltat     = 5.d0
  plot_base_name  = "plt"
 
- chk_int         = 50
+ chk_int         = 1000
  check_base_name = "chk"
 
  cflfac = 0.7d0
@@ -58,32 +61,22 @@
  bcy_hi = 12
 
     verbose = 1
- mg_verbose = 1
+ mg_verbose = 3
  cg_verbose = 0
 
- use_tfromp = T
- species_pred_type = 1
- enthalpy_pred_type = 1
-
+ use_tfromp = F
  dpdt_factor = 0.0d0
  use_eos_coulomb = T
 
  do_burning = F
- do_heating = T
 
  plot_Hext = T
- plot_ad_excess = T
+ plot_ad_excess = F
 
  apply_vel_field = T
  velpert_height_loc = 3.95e8
  velpert_scale = 1.d6
  velpert_amplitude = 1.d3
  num_vortices = 6
- 
- evolve_base_state = T
-
- 
- particle_temp_threshold = 4.e7
- particle_probability = 0.01
 
 /
