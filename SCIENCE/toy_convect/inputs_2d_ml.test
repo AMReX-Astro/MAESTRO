@@ -1,11 +1,16 @@
 &PROBIN
- model_file = "toy_nova_constg.hse.smooth_12.50.1024"
+ model_file = "toy_nova_constg_tanh2.hse.smooth_3.00.1024"
 
  spherical_in = 0
 
  max_levs = 4
  n_cellx = 64
  n_celly = 128
+
+ do_heating = T
+ species_pred_type = 3
+ enthalpy_pred_type = 3
+ drive_initial_convection = F
 
  max_grid_size = 64
 
@@ -17,13 +22,13 @@
  prob_lo_y = 3.5d8
  prob_hi_y = 5.d8
 
- anelastic_cutoff = 25.d0
- base_cutoff_density = 10.0d0
+ anelastic_cutoff = 50.d0
+ base_cutoff_density = 25.0d0
  buoyancy_cutoff_factor = 2.d0
 
  do_sponge = T
- sponge_center_density = 10.d0
- sponge_start_factor = 2.5d0
+ sponge_center_density = 25.d0
+ sponge_start_factor = 2.0d0
  sponge_kappa = 1000.d0
 
  grav_const = -1.04263053d9
@@ -42,7 +47,7 @@
  plot_deltat     = 1.d0
  plot_base_name  = "plt"
 
- chk_int         = 50
+ chk_int         = 1000
  check_base_name = "chk"
 
  cflfac = 0.7d0
@@ -59,19 +64,18 @@
  mg_verbose = 1
  cg_verbose = 0
 
- use_tfromp = T
+ use_tfromp = F
  dpdt_factor = 0.0d0
  use_eos_coulomb = T
 
  do_burning = F
- do_heating = T
 
  plot_Hext = T
  plot_ad_excess = T
 
  apply_vel_field = T
  velpert_height_loc = 3.95e8
- velpert_scale = 2.5d6
+ velpert_scale = 1.d6
  velpert_amplitude = 1.d3
  num_vortices = 6
 
