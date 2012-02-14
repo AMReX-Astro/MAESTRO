@@ -1,6 +1,8 @@
 &PROBIN
  test_set = "gr0_2d"
 
+ run_prefix = "wall_"
+
  spherical_in = 0
  dm_in = 2
 
