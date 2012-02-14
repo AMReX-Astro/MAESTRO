@@ -10,7 +10,7 @@ subroutine varden()
   use ml_boxarray_module, only: ml_boxarray
   use runtime_init_module, only: runtime_init, runtime_close
   use probin_module, only: test_set, pmask, max_levs, &
-       prob_lo, prob_hi, drdxfac, nodal
+       prob_lo, prob_hi, drdxfac, nodal, run_prefix
   use geometry, only: spherical, init_spherical, &
        init_center, destroy_geometry, &
        dr_fine, nr_fine, &
@@ -216,7 +216,8 @@ subroutine varden()
   if (dm >= 2) plot_names(2) = "y-velocity"
   if (dm == 3) plot_names(3) = "z-velocity"
 
-  call fabio_ml_write(uold, mla%mba%rr(:,1), "u_init", names=plot_names)
+  call fabio_ml_write(uold, mla%mba%rr(:,1), trim(run_prefix) // "u_init", &
+                      names=plot_names)
 
   ! copy the velocity field over to the intermediate state, umid
   do n = 1, nlevs
@@ -228,10 +229,10 @@ subroutine varden()
   !---------------------------------------------------------------------------
   call add_grad_scalar(umid, gphi, dx, mla, the_bc_tower%bc_tower_array)
 
-  call fabio_ml_write(umid, mla%mba%rr(:,1), "u_plus_grad_phi", &
+  call fabio_ml_write(umid, mla%mba%rr(:,1), trim(run_prefix) // "u_plus_grad_phi", &
                       names=plot_names)
 
-  call fabio_ml_write(gphi, mla%mba%rr(:,1), "grad_phi", &
+  call fabio_ml_write(gphi, mla%mba%rr(:,1), trim(run_prefix) // "grad_phi", &
                       names=plot_names)
 
   ! copy the velocity field over to the final star, unew
@@ -278,7 +279,8 @@ subroutine varden()
                  dx, dt, the_bc_tower, &
                  div_coeff)
 
-  call fabio_ml_write(unew, mla%mba%rr(:,1), "u_new", names=plot_names)
+  call fabio_ml_write(unew, mla%mba%rr(:,1), trim(run_prefix) // "u_new", &
+                      names=plot_names)
 
   !---------------------------------------------------------------------------
   ! compute error
