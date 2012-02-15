@@ -143,6 +143,30 @@
 
 \begin{enumerate}
 
+\item {\em Why is \maestro\ so ``hard'' to use (e.g.\ as compared to a
+  compressible code)?}
+
+There are several complexities to the algorithm that don't have
+straightforward compressible counterparts.  These mainly involve the
+role of the base state and the constraint equation.
+
+Care must be taken to setup an initial model/initial base state that
+respects the thermodynamics in \maestro\ and is in hydrostatic equilibrium.
+Best results are attained when the model is processed with the \maestro\
+EOS and reset into HSE, as is done in the {\tt initial\_model} routines.
+Because \maestro\ builds off of the base state, any flaws in that initial 
+state will influence the subsequent behavior of the algorithm.
+
+The constraint equation brings another complexity not seen in compressible
+codes---information is instantly communicated
+across the grid.  In compressible codes you can track down a problem by
+watching where it starts from and watching it move one cell per dt.  In
+\maestro\ things can go wrong in multiple places without it being obvious
+where the root problem is.
+
+
+
+
 \item {\em In the final projection in the algorithm, we project
   $U^{n+1}$, using a time-centered $\beta_0$, a time-centered $\rho_0$, but
   an ``$n+1$''-centered $S$.  Why then is the resulting $\phi$ (which then

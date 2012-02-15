@@ -12,7 +12,7 @@ paper.dvi: paper.tex faq.tex $(eps_source)
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
 
-paper.pdf: paper.tex $(pdf_source)
+paper.pdf: paper.tex faq.tex $(pdf_source)
 	pdflatex paper.tex < /dev/null
 	pdflatex paper.tex < /dev/null
 	pdflatex paper.tex < /dev/null
