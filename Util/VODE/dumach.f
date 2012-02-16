@@ -32,6 +32,7 @@ C Subroutines/functions called by DUMACH.. None
 C-----------------------------------------------------------------------
 C**End
 C
+      DOUBLE PRECISION U
       DUMACH = EPSILON(U)
 C----------------------- End of Function DUMACH ------------------------
       END
