@@ -32,13 +32,6 @@ C Subroutines/functions called by DUMACH.. None
 C-----------------------------------------------------------------------
 C**End
 C
-      DOUBLE PRECISION U, COMP
-C***FIRST EXECUTABLE STATEMENT  DUMACH
-      U = 1.0D0
- 10   U = U*0.5D0
-      COMP = 1.0D0 + U
-      IF (COMP .NE. 1.0D0) GO TO 10
-      DUMACH = U*2.0D0
-      RETURN
+      DUMACH = EPSILON(U)
 C----------------------- End of Function DUMACH ------------------------
       END
