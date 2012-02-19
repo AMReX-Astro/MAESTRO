@@ -38,8 +38,6 @@ subroutine varden()
   integer :: ng_s, ng_um
   integer :: nlevs, dm
 
-  integer :: idir, idim, itest_dir, index_t
-
   type(ml_layout) :: mla
 
   type(multifab), allocatable :: umac(:,:)
