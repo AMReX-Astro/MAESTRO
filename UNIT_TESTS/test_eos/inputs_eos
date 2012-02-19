@@ -1,0 +1,6 @@
+&PROBIN
+  dm_in = 3
+  test_set = "gr0_3d"
+
+
+/
