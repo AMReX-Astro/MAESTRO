@@ -22,7 +22,8 @@ subroutine varden()
                            use_eos_coulomb, small_temp, &
                            temp_min, temp_max, &
                            dens_min, dens_max, &
-                           metalicity_max
+                           metalicity_max, &
+                           run_prefix
   use runtime_init_module
   use initialize_module, only: initialize_dx
   use bl_constants_module
@@ -292,28 +293,32 @@ subroutine varden()
                  ! input: eos_input_ps
                  !------------------------------------------------------------
 
-                 ! ! change initial T and rho guess to make the root find do some work
-                 ! temp_eos = HALF*temp_zone   
-                 ! den_eos = HALF*dens_zone
-                 ! p_eos = sp(ii,jj,kk,p_comp)
-                 ! s_eos = sp(ii,jj,kk,s_comp)
-                 ! xn_eos(:) = xn_zone(:)
+                 ! change initial T and rho guess to make the root find do some work
+                 temp_eos = HALF*temp_zone   
+                 den_eos = HALF*dens_zone
+                 p_eos = sp(ii,jj,kk,p_comp)
+                 s_eos = sp(ii,jj,kk,s_comp)
+                 xn_eos(:) = xn_zone(:)
 
-                 ! call eos(eos_input_ps, den_eos, temp_eos, &
-                 !          xn_eos, &
-                 !          p_eos, h_eos, e_eos, &
-                 !          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                 !          dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                 !          dpdX_eos, dhdX_eos, &
-                 !          gam1_eos, cs_eos, s_eos, &
-                 !          dsdt_eos, dsdr_eos, &
-                 !          .false.)
+                 ! some EOSes don't have physically valid treatments
+                 ! of entropy throughout the entire rho-T plane
+                 if (s_eos > ZERO) then
 
+                    call eos(eos_input_ps, den_eos, temp_eos, &
+                             xn_eos, &
+                             p_eos, h_eos, e_eos, &
+                             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                             dpdX_eos, dhdX_eos, &
+                             gam1_eos, cs_eos, s_eos, &
+                             dsdt_eos, dsdr_eos, &
+                             .false.)
 
-                 ! ! store the thermodynamic state
-                 ! sp(ii,jj,kk,tfromps_comp) = temp_eos
-                 ! sp(ii,jj,kk,tfromps_err_comp) = (temp_eos - temp_zone)/temp_zone
-
+                    ! store the thermodynamic state
+                    sp(ii,jj,kk,tfromps_comp) = temp_eos
+                    sp(ii,jj,kk,tfromps_err_comp) = (temp_eos - temp_zone)/temp_zone
+                    
+                 endif
 
               enddo
            enddo
@@ -327,7 +332,8 @@ subroutine varden()
   ! field
   print *, mla%mba%rr(:,1)
   call fabio_ml_multifab_write_d(s,mla%mba%rr(:,1), &
-                                 "therm_init", names=varnames)
+                                 trim(run_prefix) // "eos_thermo", &
+                                 names=varnames)
 
 
 
