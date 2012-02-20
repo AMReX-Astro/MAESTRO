@@ -47,6 +47,18 @@ test_diffusion/
   described in the XRB paper.
 
 
+test_eos/
+
+  This test sets up a 3-d cube with rho varying on one axis, T on
+  another, and the composition on the third.  The EOS is then called
+  in every zone, doing rho, T -> p, h, s, e and stores those
+  quantities.  Then it does each of the different EOS types to recover
+  either T or rho (depending on the type), and stores the new T (or
+  rho) and the relative error with the original value.  A plotfile is
+  stored holding the results and errors.  This allows us to determine
+  whether the EOS inversion routines are working right.
+
+
 test_particles/
 
   This test exercises the particle advection routine.  A simple
@@ -63,4 +75,15 @@ test_particles/
   the number indicates which processor did the writing.  These
   particle files can be processed and the particle data plotted
   using the python routines in data_processing/python/.
+
+
+test_projection/
+
+  This tests the hgprojection routine in 2-d.  A divergence-free
+  velocity field is initialized and then "polluted" by adding the
+  gradient of a scalar.  The form of the scalar differs depending on
+  the boundary conditions (wall and periodic are supported currently).
+  Finally, the hgproject routine is called to recover the initial
+  divergence-free field.  
+
 
