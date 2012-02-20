@@ -10,29 +10,29 @@ module variables
 
   integer, save :: rho_comp, temp_comp, spec_comp, &
                    h_comp, p_comp, e_comp, s_comp
+  integer, save :: tfromrh_comp, rfromtp_comp, tfromrp_comp, &
+                   tfromre_comp, tfromps_comp
+  integer, save :: tfromrh_err_comp, rfromtp_err_comp, tfromrp_err_comp, &
+                   tfromre_err_comp, tfromps_err_comp
 
-  integer, save :: press_comp, foextrap_comp, hoextrap_comp
-
-  ! the total number of plot components
-  integer, save :: n_plot_comps = 0
+  ! the total number of state quantities we will deal with
+  integer, save :: nscal = 0
 
   character (len=20), save, allocatable :: varnames(:)
 
-  integer, save :: nscal
-
 contains
 
-  function get_next_plot_index(num) result (next)
+  function get_next_scal_index(num) result (next)
 
-    ! return the next starting index for a plotfile quantity,
-    ! and increment the counter of plotfile quantities by num
+    ! return the next starting index for a state quantity,
+    ! and increment the counter of state quantities by num
     integer :: num, next
 
-    next = n_plot_comps + 1
-    n_plot_comps = n_plot_comps + num
+    next = nscal + 1
+    nscal = nscal + num
 
     return
-  end function get_next_plot_index
+  end function get_next_scal_index
 
   subroutine init_variables()
 
@@ -41,15 +41,25 @@ contains
 
     integer :: n
 
-    rho_comp    = 1
-    temp_comp   = 2
-    spec_comp   = 3
-    h_comp      = spec_comp + nspec
-    p_comp      = h_comp + 1
-    e_comp      = p_comp + 1
-    s_comp      = e_comp + 1
-    
-    nscal = 6 + nspec
+    rho_comp    = get_next_scal_index(1)
+    temp_comp   = get_next_scal_index(1)
+    spec_comp   = get_next_scal_index(nspec)
+    h_comp      = get_next_scal_index(1)
+    p_comp      = get_next_scal_index(1)
+    e_comp      = get_next_scal_index(1)
+    s_comp      = get_next_scal_index(1)
+
+    tfromrh_comp = get_next_scal_index(1)
+    rfromtp_comp = get_next_scal_index(1)
+    tfromrp_comp = get_next_scal_index(1)
+    tfromre_comp = get_next_scal_index(1)
+    tfromps_comp = get_next_scal_index(1)
+
+    tfromrh_err_comp = get_next_scal_index(1)
+    rfromtp_err_comp = get_next_scal_index(1)
+    tfromrp_err_comp = get_next_scal_index(1)
+    tfromre_err_comp = get_next_scal_index(1)
+    tfromps_err_comp = get_next_scal_index(1)
 
     allocate (varnames(nscal))
 
@@ -63,10 +73,17 @@ contains
     varnames(e_comp)    = "internal energy"
     varnames(s_comp)    = "entropy"
 
-    press_comp  = dm_in + nscal + 1
+    varnames(tfromrh_comp) = "T(rho,h)"
+    varnames(rfromtp_comp) = "rho(T,p)"
+    varnames(tfromrp_comp) = "T(rho,p)"
+    varnames(tfromre_comp) = "T(rho,e)"
+    varnames(tfromps_comp) = "T(p,s)"
 
-    foextrap_comp = press_comp + 1
-    hoextrap_comp = foextrap_comp + 1
+    varnames(tfromrh_err_comp) = "[T(rho,h) - T]/T"
+    varnames(rfromtp_err_comp) = "[rho(T,p) - rho]/rho"
+    varnames(tfromrp_err_comp) = "[T(rho,p) - T]/T"
+    varnames(tfromre_err_comp) = "[T(rho,e) - T]/T"
+    varnames(tfromps_err_comp) = "[TT(p,s) - T]/T"
 
   end subroutine init_variables
 

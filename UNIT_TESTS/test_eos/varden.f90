@@ -148,8 +148,11 @@ subroutine varden()
                  
                  ! set the density
                  dens_zone = 10.0**(log10(dens_min) + dble(ii)*dlogrho)
-              
-                 ! call the EOS
+
+                 !------------------------------------------------------------
+                 ! call the EOS -- rho, T, X directly
+                 ! input: eos_input_rt
+                 !------------------------------------------------------------
                  temp_eos = temp_zone
                  den_eos = dens_zone
                  xn_eos(:) = xn_zone(:)
@@ -174,6 +177,143 @@ subroutine varden()
                  sp(ii,jj,kk,p_comp) = p_eos
                  sp(ii,jj,kk,e_comp) = e_eos
                  sp(ii,jj,kk,s_comp) = s_eos
+
+
+                 !------------------------------------------------------------
+                 ! call the EOS with rho, h
+                 ! input: eos_input_rh
+                 !------------------------------------------------------------
+
+                 ! change initial T guess to make the root find do some work
+                 temp_eos = HALF*temp_zone   
+                 den_eos = dens_zone
+                 h_eos = sp(ii,jj,kk,h_comp)
+                 xn_eos(:) = xn_zone(:)
+
+                 call eos(eos_input_rh, den_eos, temp_eos, &
+                          xn_eos, &
+                          p_eos, h_eos, e_eos, &
+                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                          dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                          dpdX_eos, dhdX_eos, &
+                          gam1_eos, cs_eos, s_eos, &
+                          dsdt_eos, dsdr_eos, &
+                          .false.)
+
+
+                 ! store the thermodynamic state
+                 sp(ii,jj,kk,tfromrh_comp) = temp_eos
+                 sp(ii,jj,kk,tfromrh_err_comp) = (temp_eos - temp_zone)/temp_zone
+
+
+                 !------------------------------------------------------------
+                 ! call the EOS with T, p
+                 ! input: eos_input_tp
+                 !------------------------------------------------------------
+
+                 ! change initial rho guess to make the root find do some work
+                 temp_eos = temp_zone   
+                 den_eos = HALF*dens_zone
+                 p_eos = sp(ii,jj,kk,p_comp)
+                 xn_eos(:) = xn_zone(:)
+
+                 call eos(eos_input_tp, den_eos, temp_eos, &
+                          xn_eos, &
+                          p_eos, h_eos, e_eos, &
+                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                          dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                          dpdX_eos, dhdX_eos, &
+                          gam1_eos, cs_eos, s_eos, &
+                          dsdt_eos, dsdr_eos, &
+                          .false.)
+
+
+                 ! store the thermodynamic state
+                 sp(ii,jj,kk,rfromtp_comp) = den_eos
+                 sp(ii,jj,kk,rfromtp_err_comp) = (den_eos - dens_zone)/dens_zone
+
+
+                 !------------------------------------------------------------
+                 ! call the EOS with rho, p
+                 ! input: eos_input_rp
+                 !------------------------------------------------------------
+
+                 ! change initial T guess to make the root find do some work
+                 temp_eos = HALF*temp_zone   
+                 den_eos = dens_zone
+                 p_eos = sp(ii,jj,kk,p_comp)
+                 xn_eos(:) = xn_zone(:)
+
+                 call eos(eos_input_rp, den_eos, temp_eos, &
+                          xn_eos, &
+                          p_eos, h_eos, e_eos, &
+                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                          dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                          dpdX_eos, dhdX_eos, &
+                          gam1_eos, cs_eos, s_eos, &
+                          dsdt_eos, dsdr_eos, &
+                          .false.)
+
+
+                 ! store the thermodynamic state
+                 sp(ii,jj,kk,tfromrp_comp) = temp_eos
+                 sp(ii,jj,kk,tfromrp_err_comp) = (temp_eos - temp_zone)/temp_zone
+
+
+                 !------------------------------------------------------------
+                 ! call the EOS with rho, e
+                 ! input: eos_input_re
+                 !------------------------------------------------------------
+
+                 ! change initial T guess to make the root find do some work
+                 temp_eos = HALF*temp_zone   
+                 den_eos = dens_zone
+                 e_eos = sp(ii,jj,kk,e_comp)
+                 xn_eos(:) = xn_zone(:)
+
+                 call eos(eos_input_re, den_eos, temp_eos, &
+                          xn_eos, &
+                          p_eos, h_eos, e_eos, &
+                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                          dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                          dpdX_eos, dhdX_eos, &
+                          gam1_eos, cs_eos, s_eos, &
+                          dsdt_eos, dsdr_eos, &
+                          .false.)
+
+
+                 ! store the thermodynamic state
+                 sp(ii,jj,kk,tfromre_comp) = temp_eos
+                 sp(ii,jj,kk,tfromre_err_comp) = (temp_eos - temp_zone)/temp_zone
+
+
+                 !------------------------------------------------------------
+                 ! call the EOS with p, s
+                 ! input: eos_input_ps
+                 !------------------------------------------------------------
+
+                 ! ! change initial T and rho guess to make the root find do some work
+                 ! temp_eos = HALF*temp_zone   
+                 ! den_eos = HALF*dens_zone
+                 ! p_eos = sp(ii,jj,kk,p_comp)
+                 ! s_eos = sp(ii,jj,kk,s_comp)
+                 ! xn_eos(:) = xn_zone(:)
+
+                 ! call eos(eos_input_ps, den_eos, temp_eos, &
+                 !          xn_eos, &
+                 !          p_eos, h_eos, e_eos, &
+                 !          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                 !          dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                 !          dpdX_eos, dhdX_eos, &
+                 !          gam1_eos, cs_eos, s_eos, &
+                 !          dsdt_eos, dsdr_eos, &
+                 !          .false.)
+
+
+                 ! ! store the thermodynamic state
+                 ! sp(ii,jj,kk,tfromps_comp) = temp_eos
+                 ! sp(ii,jj,kk,tfromps_err_comp) = (temp_eos - temp_zone)/temp_zone
+
 
               enddo
            enddo
