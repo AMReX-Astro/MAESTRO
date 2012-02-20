@@ -213,7 +213,7 @@ subroutine varden()
 
                  ! change initial rho guess to make the root find do some work
                  temp_eos = temp_zone   
-                 den_eos = HALF*dens_zone
+                 den_eos = THIRD*dens_zone
                  p_eos = sp(ii,jj,kk,p_comp)
                  xn_eos(:) = xn_zone(:)
 
