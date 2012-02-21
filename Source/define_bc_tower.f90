@@ -327,7 +327,7 @@ contains
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_PER   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_PER   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_PER   ! first order extrap
-          ell_bc_level(n,d,i,hoextrap_comp)                    = BC_NEU   ! higher order extrap
+          ell_bc_level(n,d,i,hoextrap_comp)                    = BC_PER   ! higher order extrap
        end if
     end do
     end do
