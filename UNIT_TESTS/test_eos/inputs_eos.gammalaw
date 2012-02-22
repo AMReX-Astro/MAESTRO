@@ -1,0 +1,8 @@
+&PROBIN
+  dm_in = 3
+  test_set = "gr0_3d"
+
+  small_temp = 1.d5
+
+  run_prefix = "gammalaw_"
+/
