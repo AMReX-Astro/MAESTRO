@@ -1,0 +1,62 @@
+&PROBIN
+ spherical_in = 0
+
+ max_levs = 1
+ n_cellx = 192
+ n_celly = 192
+
+ max_grid_size = 96
+
+ prob_hi_x = 1.0d0
+ prob_hi_y = 1.0d0
+
+ rho_base = 1.0d0
+ p_base = 1.0d0
+ 
+ yt   = 0.0333333333333d0
+ delx = 0.05d0
+
+ evolve_base_state = F 
+ beta_type = 3
+ do_smallscale = T
+
+ anelastic_cutoff = 1.0d-10
+ base_cutoff_density = 1.0d-10
+
+ do_sponge = F
+
+ grav_const = 0.0
+
+ ppm_type = 0
+
+ max_step  = 100000000
+ init_iter = 1
+
+ stop_time = 1.0d0
+
+ init_shrink = 0.1d0
+
+ plot_base = T
+ plot_int  = -1
+ plot_deltat = 0.1d0
+ chk_int   = 100
+
+ cflfac = 0.9
+
+ bcx_lo = -1
+ bcx_hi = -1
+ bcy_lo = -1
+ bcy_hi = -1
+
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+ do_initial_projection = F
+ init_divu_iter = 0
+
+ small_temp = 1.d-10
+ small_dens = 1.d-10
+
+/
