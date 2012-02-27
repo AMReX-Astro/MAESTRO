@@ -1,0 +1,13 @@
+#Incompressible shear jet parameters
+
+#Perturbation parameters.
+#   yt:   Scales the thickness of the two shear layers. 0=infinitely thin
+#   delx: Scales the amplitude of the vertical velocity perturbation. 0=no perturbation.
+#TODO: Shouldn't the type be double?  How does MAESTRO make sure I keep all of the precision
+#of my given default values?
+yt                                  real             1.0d0/30.0d0
+delx                                real             0.05d0
+
+#Base state initial values
+rho_base                            real             1.0d0
+p_base                              real             1.0d0
