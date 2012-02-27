@@ -75,6 +75,8 @@ subroutine varden()
   type(multifab), allocatable :: w0mac(:,:)
 
   type(multifab), allocatable :: dens_orig(:), dens_final(:)
+  type(multifab), allocatable :: error(:)
+  type(multifab), allocatable :: temporary(:)
 
   real(kind=dp_t), pointer :: sp(:,:,:,:)
 
@@ -93,7 +95,7 @@ subroutine varden()
 
   character (len=32) :: outname
 
-  character (len=20) :: plot_names(1)
+  character (len=20) :: plot_names(3)
 
   real(kind=dp_t), allocatable :: abs_norm(:,:), rel_norm(:,:)
   real(kind=dp_t) :: max_dabs_error, max_abs_error
@@ -210,15 +212,20 @@ subroutine varden()
   ! the initial and final densities
   allocate(dens_orig(nlevs))
   allocate(dens_final(nlevs))
+  allocate(error(nlevs))
+  allocate(temporary(nlevs))
 
 
   do n = 1,nlevs
      call multifab_build(dens_orig(n), mla%la(n), 1, ng_s)
      call multifab_build(dens_final(n), mla%la(n), 1, ng_s)
+     call multifab_build(error(n), mla%la(n), 1, ng_s)
+     call multifab_build(temporary(n), mla%la(n), 3, ng_s)
   end do
 
   plot_names(1) = "density"
-
+  plot_names(2) = "rel. error"
+  plot_names(3) = "abs. error"
 
   ! allocate the base state 
   allocate(           rho0_old(nlevs,0:nr_fine-1))
@@ -410,7 +417,7 @@ subroutine varden()
            endif
 
            call fabio_ml_multifab_write_d(dens_orig,mla%mba%rr(:,1), &
-                                          trim(outname),names=plot_names)
+                                          trim(outname),names=plot_names(1:1))
 
            print *, 'wrote file: ', trim(outname)
            print *, ' '
@@ -467,7 +474,42 @@ subroutine varden()
         enddo
 
 
+
+        ! compare the initial and final density
+
+        ! compute dens_final - dens_orig
+        do n = 1, nlevs
+           call multifab_copy_c(error(n),1,dens_final(n),1,1,ng_s)
+           call multifab_sub_sub(error(n), dens_orig(n))
+        enddo
+
+        do n = 1, nlevs
+           abs_norm(n,index_t) = multifab_norm_l2(error(n))
+        enddo
+
+        ! now compute (dens_final - dens_orig)/dens_orig
+        do n = 1, nlevs
+           call multifab_div_div(error(n), dens_orig(n), 0)
+        enddo
+
+        do n = 1, nlevs
+           rel_norm(n,index_t) = multifab_norm_l2(error(n))
+        enddo
+
+
         if (dump_output) then
+
+           do n = 1, nlevs
+              ! final density
+              call multifab_copy_c(temporary(n),1,dens_final(n),1,1,ng_s)
+
+              ! relative error 
+              call multifab_copy_c(temporary(n),2,error(n),1,1,ng_s)
+
+              ! absolute error (reconstructed)
+              call multifab_mult_mult(error(n), dens_orig(n), 0)
+              call multifab_copy_c(temporary(n),3,error(n),1,1,ng_s)
+           enddo
 
            ! write out the initial density field the output name will
            ! include the dimensionality, ppm_type, and advection
@@ -515,32 +557,13 @@ subroutine varden()
               outname = trim(outname) // "zp_final"
            end select
 
-           call fabio_ml_multifab_write_d(dens_final,mla%mba%rr(:,1), &
+           call fabio_ml_multifab_write_d(temporary,mla%mba%rr(:,1), &
                                           trim(outname),names=plot_names)
 
            print *, 'wrote file: ', trim(outname)
            
         endif
 
-        ! compare the initial and final density
-
-        ! compute dens_final - dens_orig
-        do n = 1, nlevs
-           call multifab_sub_sub(dens_final(n), dens_orig(n))
-        enddo
-
-        do n = 1, nlevs
-           abs_norm(n,index_t) = multifab_norm_l2(dens_final(n))
-        enddo
-
-        ! now compute (dens_final - dens_orig)/dens_orig
-        do n = 1, nlevs
-           call multifab_div_div(dens_final(n), dens_orig(n), 0)
-        enddo
-
-        do n = 1, nlevs
-           rel_norm(n,index_t) = multifab_norm_l2(dens_final(n))
-        enddo
 
      enddo    ! idir loop
   enddo    ! idim loop
@@ -599,12 +622,16 @@ subroutine varden()
      do comp=1,dm
         call destroy(umac(n,comp))
      end do
+     call destroy(dens_orig(n))
+     call destroy(dens_final(n))
+     call destroy(error(n))
+     call destroy(temporary(n))
   end do
 
   call destroy(mla)
   call destroy(mba)
 
-  deallocate(sold,snew,umac)
+  deallocate(sold,snew,umac,dens_orig,dens_final,error,temporary)
 
   call bc_tower_destroy(the_bc_tower)
 
