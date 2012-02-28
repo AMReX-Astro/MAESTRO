@@ -6,6 +6,7 @@ eps_source = $(wildcard *.eps) \
              $(wildcard lo_density/*.eps) \
              $(wildcard flowchart/*.eps) \
              $(wildcard architecture/*.eps) \
+             $(wildcard unit_tests/*.eps) \
              $(wildcard initial_models/*.eps) \
              $(wildcard rotation/*.eps) \
              $(wildcard radial_base/*.eps) \
