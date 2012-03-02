@@ -947,7 +947,7 @@ subroutine varden()
               call makeTfromRhoP(sold,p0_old,mla,the_bc_tower%bc_tower_array,dx)
            else
               ! compute full state T = T(rho,h,X)
-              call makeTfromRhoH(sold,mla,the_bc_tower%bc_tower_array)
+              call makeTfromRhoH(sold,p0_old,mla,the_bc_tower%bc_tower_array,dx)
            end if
 
            ! force tempbar to be the average of temp
