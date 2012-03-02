@@ -1,3 +1,4 @@
+%-----------------------------------------------------------------------------
 \section{Evolution Equations}
 
 The compressible and low Mach number formulations of the governing
@@ -13,13 +14,13 @@ shown here (where $p = p_0 + \pi$).
 
 In the compressible formulation we complete the system with an energy
 equation as well as an equation of state; in the low Mach number
-formulation we can derive a constraint on the velocity by 
-setting $p_{EOS} = p(\rho,h,X_k) = p_0$ and
-differentiating the equation of state along particle paths.
-In this case adding the energy equation would over-constrain the system, 
-but its solution can help us in providing a diagnostic capability for the
-solution.  We can write the energy equation in terms of internal energy, $e$,
-or enthalpy, $h$; these two equations are analytically equivalent.
+formulation we can derive a constraint on the velocity by setting
+$p_{EOS} = p(\rho,h,X_k) = p_0$ and differentiating the equation of
+state along particle paths.  In this case adding the energy equation
+would over-constrain the system, but its solution can help us in
+providing a diagnostic capability for the solution.  We can write the
+energy equation in terms of internal energy, $e$, or enthalpy, $h$;
+these two equations are analytically equivalent.
 \begin{eqnarray}
 \frac{\partial(\rho h)}{\partial t} + \nabla\cdot(\rho h\Ub) 
  &=& \frac{Dp}{Dt} + \rho\Hnuc \nonumber \\
@@ -27,10 +28,12 @@ or enthalpy, $h$; these two equations are analytically equivalent.
 \frac{\partial(\rho e)}{\partial t} + \nabla\cdot(\rho e \Ub)
  &=& - p\nabla\cdot \Ub + \rho\Hnuc \nonumber 
 \end{eqnarray}
-In low Mach number combustion, $Dp/Dt = 0,$ which makes the enthalpy equation
-preferable to the internal energy equation because we don't need to
-evaluate $p \nabla \cdot \Ub.$ 
+In low Mach number combustion, $Dp/Dt = 0,$ which makes the enthalpy
+equation preferable to the internal energy equation because we don't
+need to evaluate $p \nabla \cdot \Ub.$
 
+
+%-----------------------------------------------------------------------------
 \section{Derivation of Velocity Constraint}
 
 Differentiating the equation of state, written in the form, $p =
@@ -51,7 +54,8 @@ and $p_T = \left.\partial p/\partial T\right|_{\rho,X_k}$.
 
 \subsection{Using the Enthalpy Equation}
 
-Now writing $h = h(p,T,X_k)$ and expanding $Dh/Dt$ and using the enthalpy evolution equation:
+Now writing $h = h(p,T,X_k)$ and expanding $Dh/Dt$ and using the
+enthalpy evolution equation:
 \begin{equation}
 \rho \frac{D h}{Dt}  = \rho \left( h_p \frac{D p}{Dt} + c_p \frac{D T}{Dt} + \sum_k h_{X_k} \frac{D X_k}{Dt} \right)
                      = \frac{D p}{D t} + \rho \Hnuc
@@ -78,8 +82,8 @@ We could then write,
   \frac{p_T}{\rho c_p} (\rho \Hnuc - \rho \sum_k \xi_k   \omegadot_k)
                                + \sum_k p_{X_k} \omegadot_k \right) \enskip .
 \end{eqnarray*}
-When we derived this expression we explicitly retained the dependence of $h$ on $p$,
-as shown by the presence of the $h_p$ term.   
+When we derived this expression we explicitly retained the dependence
+of $h$ on $p$, as shown by the presence of the $h_p$ term.
 
 Then, replacing $p$ by $p_0(r)$, $Dp/Dt$ becomes $\Ub \cdot
 \nabla p_0$, and the divergence constraint can be written
@@ -98,7 +102,8 @@ where we define
 
 \subsection{Using the Energy Equation}
 
-Now writing $e = e(p,T,X_k)$ and expanding $De/Dt$ and using the energy evolution equation:
+Now writing $e = e(p,T,X_k)$ and expanding $De/Dt$ and using the
+energy evolution equation:
 \begin{equation}
 \rho \frac{D e}{Dt}  = \rho \left( e_p \frac{D p}{Dt} + e_T \frac{D T}{Dt} + \sum_k e_{X_k} \frac{D X_k}{Dt} \right)
                      = -p \nabla \cdot \Ub + \rho \Hnuc
@@ -131,11 +136,15 @@ which leads to
                                         - \rho \sum_k e_{X_k} \omegadot_k   \right)
     - \sum_k p_{X_k} {\omegadot}_k \right) \enskip ,
 \end{equation}
-Note that we can replace $p$ by $p_0$ in the coefficient on the l.h.s. as well as on the r.h.s.
+Note that we can replace $p$ by $p_0$ in the coefficient on the
+l.h.s. as well as on the r.h.s.
 
+
+%-----------------------------------------------------------------------------
 \section{Comparison of Constraints}
 
-If we set $\omegadot_k = \Hnuc = 0$ for simplicity, then the constraint as derived using $h$ can be written 
+If we set $\omegadot_k = \Hnuc = 0$ for simplicity, then the
+constraint as derived using $h$ can be written
 \begin{equation}
 \nabla \cdot \Ub
 + \left( \frac{(1 - \rho h_p )p_T - \rho c_p}{\rho^2
@@ -147,12 +156,15 @@ and the constraint derived using $e$ can be written
 + \left( \frac{\rho e_T + \rho e_p p_T}{\rho^2 e_T p_\rho + p p_T} \right) \frac{D p_0}{D t} = 0
 \end{equation}
 
-We note that if we evaluate both constraints for $p = \rho R T,$ with $h = c_p T,$ $e = c_v T,$
-$c_p = c_v + R$ and $\gamma = c_p / c_v,$ then both constraints reduce to 
+We note that if we evaluate both constraints for $p = \rho R T,$ with
+$h = c_p T,$ $e = c_v T,$ $c_p = c_v + R$ and $\gamma = c_p / c_v,$
+then both constraints reduce to
 \begin{equation}
 \nabla \cdot \Ub + \frac{1}{\gamma p} \frac{D p_0}{D t} = 0
 \end{equation}
 
+
+%-----------------------------------------------------------------------------
 \section{Enthalpy vs Energy Equation}
 
 The full enthalpy equation, with no approximations, appears as:
@@ -185,9 +197,10 @@ enthalpy equation, where we replace $p$ with $p_0$ in the $Dp/Dt$ term:
  -\nabla\cdot(\rho e\Ub) - p\nabla\cdot\Ub + \rho\Hnuc + 
   \left \{ \frac{Dp_0}{Dt} - \frac{Dp}{Dt} \right \} \nonumber 
 \end{eqnarray}
-However, if we solve the evolution equation for $e$ we would substitute 
-$p_0$ for $p$ in this equation as well.  Thus, we can pose the situation as the following.  
-If we solve the evolution equation for $h$ then we effectively are solving
+However, if we solve the evolution equation for $e$ we would
+substitute $p_0$ for $p$ in this equation as well.  Thus, we can pose
+the situation as the following.  If we solve the evolution equation
+for $h$ then we effectively are solving
 \begin{equation}
 \frac{\partial(\rho e)}{\partial t} +
   \nabla\cdot(\rho e\Ub) = -p \; \nabla\cdot\Ub + \rho\Hnuc + 
@@ -205,9 +218,9 @@ The second equation subtracted from the first gives:
 \end{equation}
 but this equation is only true, in general, if $p=p_0$.
 
-Suppose we solve the current enthalpy equation, but when we call the EOS, we 
-subtract $p_0$ from $\rho h$ and then call the EOS with $e$ instead of $h$.  This is equivalent
-to:
+Suppose we solve the current enthalpy equation, but when we call the
+EOS, we subtract $p_0$ from $\rho h$ and then call the EOS with $e$
+instead of $h$.  This is equivalent to:
 \begin{eqnarray}
 \frac{\partial(\rho h)}{\partial t} &=& -\nabla\cdot(\rho h\Ub) +
   \frac{Dp_0}{Dt} + \rho\Hnuc \nonumber \\
@@ -219,6 +232,10 @@ to:
  -\nabla\cdot(\rho e\Ub) - p_0 \nabla\cdot\Ub + \rho\Hnuc  \nonumber
 \end{eqnarray}
 which is identical to solving the energy equation with $p\to p_0$.
+This option is enabled in \maestro\ via {\tt
+  use\_eos\_e\_instead\_of\_h = T}.
+
+
 
 \subsection{Constant $\gamma$ Gas}
 Going back to the constant $\gamma$, ideal gas EOS, we can rewrite the
@@ -238,7 +255,8 @@ to
 \begin{equation}
 \nabla\cdot\Ub = \frac{\gamma-1}{\gamma p_0}\rho H \label{eq:div constraint for constant gamma}.
 \end{equation}
-Plugging this back into either of \eqref{eq:H:pressure evolution} or \eqref{eq:e:pressure evolution} gives
+Plugging this back into either of \eqref{eq:H:pressure evolution} or
+\eqref{eq:e:pressure evolution} gives
 \begin{equation}
   \frac{Dp}{Dt} = \frac{\gamma-1}{\gamma}\left(1-\frac{p}{p_0}\right)\rho H. \label{eq:pressure evolution constant gamma}
 \end{equation}
@@ -253,25 +271,31 @@ where the equality holds from \eqref{eq:pressure evolution constant
   gamma}. In other words, for the constant $\gamma$ gas we have
 $p=p_0$ as expected.
 
+
+%-----------------------------------------------------------------------------
 \section{Outstanding Questions}
 
 \begin{enumerate}
 \item Why do we want to start with enthalpy instead of internal energy?
 
-   We believe that the original desire stems from our experience with smallscale 
-   combustion.  There, stratification is not important and $Dp_0/Dt = 0$, so
-   the enthalpy equation becomes a conservation equation for $(\rho h)$.
+   We believe that the original desire stems from our experience with
+   smallscale combustion.  There, stratification is not important and
+   $Dp_0/Dt = 0$, so the enthalpy equation becomes a conservation
+   equation for $(\rho h)$.
 
-\item Should we call the EOS with $h$ as is, or call the EOS with $e = h - p_0 / \rho$?
+\item Should we call the EOS with $h$ as is, or call the EOS with $e =
+  h - p_0 / \rho$?
 
-\item When we stay on the constraint, i.e. $p_{EOS} = p_0$, then the equations for $e$ and
-for $h$ are identical.   However, once we are off the constraint, do the terms in the
-current evolution equation for $h$ serve to drive us back to the constraint?  Recall
-our current "volume discrepancy factor" acts as a source term which modifies the
-divergence constraint, which effectively modifies both $\rho$ and $T$ (or $e$ or $h$).
-The term in the enthalpy equation only modifies $\rho.$  Is this relevant and/or useful??
-Recall that the current "volume discrepancy factor" takes the form of adding 
-to the r.h.s. of the constraint:
+\item When we stay on the constraint, i.e. $p_{EOS} = p_0$, then the
+  equations for $e$ and for $h$ are identical.  However, once we are
+  off the constraint, do the terms in the current evolution equation
+  for $h$ serve to drive us back to the constraint?  Recall our
+  current "volume discrepancy factor" acts as a source term which
+  modifies the divergence constraint, which effectively modifies both
+  $\rho$ and $T$ (or $e$ or $h$).  The term in the enthalpy equation
+  only modifies $\rho.$ Is this relevant and/or useful??  Recall that
+  the current "volume discrepancy factor" takes the form of adding to
+  the r.h.s. of the constraint:
 \begin{equation}
 \nabla \cdot(\beta_0\Ub) = \beta_0\left(S-\frac{1}{\overline{\Gamma_1} p_0}
        \frac{\partial p_0}{\partial t} - \frac{f}{\overline{\Gamma_1} p_0}
@@ -283,9 +307,10 @@ to the r.h.s. of the constraint:
 %consistent with each other?  If they are not consistent, which of these 
 %substitutions is responsible for filtering the acoustics from the system?
 
-\item Suppose we corrected the $h$ (or $e$ equation) by using the full $p$ instead
-of $p_0$?  Would this be more or less consistent (one could imagine doing this as a 
-correction after solving for $\pi$ earlier in the timestep). 
+\item Suppose we corrected the $h$ (or $e$ equation) by using the full
+  $p$ instead of $p_0$?  Would this be more or less consistent (one
+  could imagine doing this as a correction after solving for $\pi$
+  earlier in the timestep).
 
 %\item In the EOS, we take $h$ and construct $e$ by subtracting off
 %  $p$---depending on the inputs to the EOS, we treat the `$p$' part of $h$
@@ -303,9 +328,4 @@ correction after solving for $\pi$ earlier in the timestep).
 %   in the enthalpy equation.
 
 \end{enumerate}
-
-
-
-
-
 
