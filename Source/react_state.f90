@@ -134,7 +134,7 @@ contains
     if (use_tfromp) then
        call makeTfromRhoP(snew,p0,mla,the_bc_level,dx)
     else
-       call makeTfromRhoH(snew,mla,the_bc_level)
+       call makeTfromRhoH(snew,p0,mla,the_bc_level,dx)
     end if
 
     call destroy(bpt)

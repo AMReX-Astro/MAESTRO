@@ -660,7 +660,7 @@ contains
     if (use_tfromp) then
        call makeTfromRhoP(s2,p0_new,mla,the_bc_tower%bc_tower_array,dx)
     else
-       call makeTfromRhoH(s2,mla,the_bc_tower%bc_tower_array)
+       call makeTfromRhoH(s2,p0_new,mla,the_bc_tower%bc_tower_array,dx)
     end if
 
     if (use_thermal_diffusion) then
@@ -1169,7 +1169,7 @@ contains
     if (use_tfromp) then
        call makeTfromRhoP(s2,p0_new,mla,the_bc_tower%bc_tower_array,dx)
     else
-       call makeTfromRhoH(s2,mla,the_bc_tower%bc_tower_array)
+       call makeTfromRhoH(s2,p0_new,mla,the_bc_tower%bc_tower_array,dx)
     end if
 
     do n=1,nlevs
