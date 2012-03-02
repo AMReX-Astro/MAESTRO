@@ -132,7 +132,8 @@ contains
                                         t0_new(n,:), rho0_edge_new(n,:), &
                                         rhoh0_edge_new(n,:), t0_edge_new(n,:), lo, hi)
           case (3)
-             sepz => dataptr(sedge(n,3),i)
+             sepy => dataptr(sedge(n,2), i)
+             sepz => dataptr(sedge(n,3), i)
              if (spherical .eq. 1) then
                rp   => dataptr( rho0_cart(n), i)
                rhp  => dataptr(rhoh0_cart(n), i)
@@ -744,6 +745,7 @@ contains
        enddo
     enddo
     !$OMP END PARALLEL DO
+
 
     ! y-edge
     !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,rho0_edge,rhoh0_edge)
