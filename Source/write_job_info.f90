@@ -99,7 +99,7 @@ subroutine write_job_info(dirname, mba)
      write (99,2001) "index", "name", "short name", "A", "Z"
      write (99,1000)
      do n = 1, nspec
-        write (99,2002), n, spec_names(n), short_spec_names(n), aion(n), zion(n)
+        write (99,2002) n, spec_names(n), short_spec_names(n), aion(n), zion(n)
      enddo
 
      write (99,*) " "
