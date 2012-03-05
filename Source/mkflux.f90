@@ -694,11 +694,12 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    if (dm == 3 .and. &
-        species_pred_type == predict_rhoprime_and_rhoX .and. &
-        (enthalpy_pred_type == predict_h .or. &
-         enthalpy_pred_type == predict_T_then_h)) then
-       call bl_error("ERROR: species_pred_type == predict_rhoprime_and_rhoX not supported with h on edges in mk_rhoh_flux for 3-d")
+    if (enthalpy_pred_type == predict_hprime) then
+       if (dm /= 3) then
+          call bl_error("ERROR: predict_hprime not supported in mk_rhoh_flux for 1- or 2-d")
+       else if (spherical == 0 .or. species_pred_type == predict_rho_and_X) then
+          call bl_error("ERROR: predict_hprime not supported for this geometry/species_pred_type")
+       endif
     endif
 
     ng_sf = nghost(sflux(1,1))
@@ -829,18 +830,19 @@ contains
     ! local
     integer         :: i
     real(kind=dp_t) :: rho0_edge,rhoh0_edge
-    logical         :: test,test2
+    logical         :: have_h, have_hprime
 
-    test = enthalpy_pred_type.eq.predict_h .or. &
-           enthalpy_pred_type.eq.predict_T_then_h .or. &
-           enthalpy_pred_type.eq.predict_Tprime_then_h
+    have_h = enthalpy_pred_type.eq.predict_h .or. &
+             enthalpy_pred_type.eq.predict_T_then_h .or. &
+             enthalpy_pred_type.eq.predict_Tprime_then_h
 
-    test2 = enthalpy_pred_type.eq.predict_hprime
+    have_hprime = enthalpy_pred_type.eq.predict_hprime
     
     ! create x-fluxes
-    if (test) then
+    if (have_h) then
 
        ! enthalpy edge state is h
+
        if (species_pred_type == predict_rhoprime_and_X .or. &
            species_pred_type == predict_rhoprime_and_rhoX) then
 
@@ -861,8 +863,9 @@ contains
 
        endif
 
-    else if (test2) then
+    else if (have_hprime) then
 
+       ! enthalpy edge state is h'
        call bl_error("mk_rhoh_flux_1d : predict_hprime not coded yet")
 
     else
@@ -907,18 +910,19 @@ contains
     ! local
     integer         :: i,j
     real(kind=dp_t) :: rho0_edge,rhoh0_edge
-    logical         :: test,test2
+    logical         :: have_h, have_hprime
 
-    test = enthalpy_pred_type.eq.predict_h .or. &
-           enthalpy_pred_type.eq.predict_T_then_h .or. &
-           enthalpy_pred_type.eq.predict_Tprime_then_h
+    have_h = enthalpy_pred_type.eq.predict_h .or. &
+             enthalpy_pred_type.eq.predict_T_then_h .or. &
+             enthalpy_pred_type.eq.predict_Tprime_then_h
 
-    test2 = enthalpy_pred_type.eq.predict_hprime
+    have_hprime = enthalpy_pred_type.eq.predict_hprime
     
     ! create x-fluxes
-    if (test) then
+    if (have_h) then
 
        ! enthalpy edge state is h
+
        if (species_pred_type == predict_rhoprime_and_X .or. &
            species_pred_type == predict_rhoprime_and_rhoX) then
 
@@ -943,8 +947,9 @@ contains
 
        endif
 
-    else if (test2) then
+    else if (have_hprime) then
 
+       ! enthalpy edge state is h'
        call bl_error("mk_rhoh_flux_2d : predict_hprime not coded yet")
 
     else
@@ -960,9 +965,10 @@ contains
     end if
 
     ! create y-fluxes
-    if (test) then
+    if (have_h) then
 
        ! enthalpy edge state is h
+
        if (species_pred_type == predict_rhoprime_and_X .or. &
            species_pred_type == predict_rhoprime_and_rhoX) then
 
@@ -987,8 +993,9 @@ contains
 
        endif
 
-    else if (test2) then
+    else if (have_hprime) then
 
+       ! enthalpy edge state is h'
        call bl_error("mk_rhoh_flux_2d : predict_hprime not coded yet")
 
     else
@@ -1039,18 +1046,19 @@ contains
    ! local
     integer         :: i,j,k
     real(kind=dp_t) :: rho0_edge,rhoh0_edge
-    logical         :: test,test2
+    logical         :: have_h, have_hprime
     
-    test = enthalpy_pred_type.eq.predict_h .or. &
-         enthalpy_pred_type.eq.predict_T_then_h .or. &
-         enthalpy_pred_type.eq.predict_Tprime_then_h
+    have_h = enthalpy_pred_type.eq.predict_h .or. &
+             enthalpy_pred_type.eq.predict_T_then_h .or. &
+             enthalpy_pred_type.eq.predict_Tprime_then_h
 
-    test2 = enthalpy_pred_type.eq.predict_hprime
+    have_hprime = enthalpy_pred_type.eq.predict_hprime
 
     ! create x-fluxes and y-fluxes
-    if (test) then
+    if (have_h) then
 
        ! enthalpy edge state is h
+
        if (species_pred_type == predict_rhoprime_and_X .or. &
            species_pred_type == predict_rhoprime_and_rhoX) then
 
@@ -1094,12 +1102,14 @@ contains
 
        endif
 
-    else if (test2) then
-
+    else if (have_hprime) then
+       
+       ! enthalpy edge state is h'
        call bl_error("mk_rhoh_flux_3d_cart : predict_hprime not coded yet")
 
     else
 
+       ! enthalpy edge state is (rho h)'
        do k=lo(3),hi(3)
           rhoh0_edge = HALF*(rhoh0_old(k)+rhoh0_new(k))
           do j=lo(2),hi(2)
@@ -1118,9 +1128,10 @@ contains
     end if
 
     ! create z-fluxes
-    if (test) then
+    if (have_h) then
 
        ! enthalpy edge state is h
+
        if (species_pred_type == predict_rhoprime_and_X .or. &
            species_pred_type == predict_rhoprime_and_rhoX) then
 
@@ -1149,12 +1160,14 @@ contains
 
        endif
 
-    else if (test2) then
+    else if (have_hprime) then
 
+       ! enthalpy edge state is h'
        call bl_error("mk_rhoh_flux_3d_cart : predict_hprime not coded yet")
 
     else
 
+       ! enthalpy edge state is (rho h)'
        do k=lo(3),hi(3)+1
           rhoh0_edge = HALF*(rhoh0_edge_old(k)+rhoh0_edge_new(k))
           do j=lo(2),hi(2)
@@ -1219,18 +1232,19 @@ contains
     integer         :: i,j,k
     real(kind=dp_t) :: rho0_edge,h0_edge
 !   real(kind=dp_t) :: rhoh0_edge
-    logical         :: test,test2
+    logical         :: have_h, have_hprime
     
-    test = enthalpy_pred_type.eq.predict_h .or. &
-           enthalpy_pred_type.eq.predict_T_then_h .or. &
-           enthalpy_pred_type.eq.predict_Tprime_then_h
+    have_h = enthalpy_pred_type.eq.predict_h .or. &
+             enthalpy_pred_type.eq.predict_T_then_h .or. &
+             enthalpy_pred_type.eq.predict_Tprime_then_h
     
-    test2 = enthalpy_pred_type.eq.predict_hprime
+    have_hprime = enthalpy_pred_type.eq.predict_hprime
     
     ! create x-fluxes
-    if (test) then
+    if (have_h) then
 
        ! enthalpy edge state is h
+
        if (species_pred_type == predict_rhoprime_and_X .or. &
            species_pred_type == predict_rhoprime_and_rhoX) then
 
@@ -1271,30 +1285,46 @@ contains
        endif
 
 
-    else if (test2) then
+    else if (have_hprime) then
 
-       ! (rho h)_edge = (h' + h_0) * (rho' + rho_0) where h0 is
-       ! computed from (rho h)_0 / rho_0 
-       ! sfluxx = (umac(i,j,k)+w0macx(i,j,k)) * (rho h)_edge
+       ! enthalpy edge state is h'
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)+1
+       if (species_pred_type == predict_rhoprime_and_X .or. &
+           species_pred_type == predict_rhoprime_and_rhoX) then
 
-                rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
+          ! density edge state is rho'
 
-                h0_edge = HALF*(h0macx_old(i,j,k)+h0macx_new(i,j,k))
+          ! (rho h)_edge = (h' + h_0) * (rho' + rho_0) where h0 is
+          ! computed from (rho h)_0 / rho_0 
+          ! sfluxx = (umac(i,j,k)+w0macx(i,j,k)) * (rho h)_edge
 
-                sfluxx(i,j,k,rhoh_comp) = (umac(i,j,k)+w0macx(i,j,k)) * &
-                     (sedgex(i,j,k,rho_comp)+rho0_edge) * (sedgex(i,j,k,rhoh_comp)+h0_edge)
-
+          !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)+1
+                   
+                   rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
+                   
+                   h0_edge = HALF*(h0macx_old(i,j,k)+h0macx_new(i,j,k))
+                   
+                   sfluxx(i,j,k,rhoh_comp) = (umac(i,j,k)+w0macx(i,j,k)) * &
+                        (sedgex(i,j,k,rho_comp)+rho0_edge) * (sedgex(i,j,k,rhoh_comp)+h0_edge)
+                   
+                end do
              end do
           end do
-       end do
-       !$OMP END PARALLEL DO
+          !$OMP END PARALLEL DO
+
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho
+          call bl_error("ERROR: predict_rho_and_X and predict_hprime not supported together")
+
+       endif
 
     else
+
+       ! enthalpy edge state is (rho h)'
 
        !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)
@@ -1302,9 +1332,9 @@ contains
              do i = lo(1), hi(1)+1
 
                 ! Average (rho h) onto edges by averaging rho and h
-                ! separately onto edges.  (rho h)_edge = (rho h)' +
-                ! (rho_0 * h_0) where h_0 is computed from (rho h)_0 /
-                ! rho_0
+                ! separately onto edges.  
+                !  (rho h)_edge = (rho h)' + (rho_0 * h_0) 
+                ! where h_0 is computed from (rho h)_0 / rho_0
                 rho0_edge = HALF*(rho0macx_old(i,j,k)+rho0macx_new(i,j,k))
 
                 h0_edge = HALF*(h0macx_old(i,j,k)+h0macx_new(i,j,k))
@@ -1325,9 +1355,10 @@ contains
     endif
 
     ! create y-fluxes
-    if (test) then
+    if (have_h) then
 
        ! enthalpy edge state is h
+
        if (species_pred_type == predict_rhoprime_and_X .or. &
            species_pred_type == predict_rhoprime_and_rhoX) then
 
@@ -1367,30 +1398,46 @@ contains
 
        endif
 
-    else if (test2) then
+    else if (have_hprime) then
 
-       ! (rho h)_edge = (h' + h_0) * (rho' + rho_0) where h0 is
-       ! computed from (rho h)_0 / rho_0 
-       ! sfluxy = (vmac(i,j,k)+w0macy(i,j,k)) * (rho h)_edge
+       ! enthalpy edge state is h'
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)+1
-             do i = lo(1), hi(1)
+       if (species_pred_type == predict_rhoprime_and_X .or. &
+           species_pred_type == predict_rhoprime_and_rhoX) then
 
-                rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
+          ! density edge state is rho'
 
-                h0_edge = HALF*(h0macy_old(i,j,k)+h0macy_new(i,j,k))
+          ! (rho h)_edge = (h' + h_0) * (rho' + rho_0) where h0 is
+          ! computed from (rho h)_0 / rho_0 
+          ! sfluxy = (vmac(i,j,k)+w0macy(i,j,k)) * (rho h)_edge
 
-                sfluxy(i,j,k,rhoh_comp) = (vmac(i,j,k)+w0macy(i,j,k)) * &
-                     (sedgey(i,j,k,rho_comp)+rho0_edge) * (sedgey(i,j,k,rhoh_comp)+h0_edge)
-
+          !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
+                   
+                   rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
+                   
+                   h0_edge = HALF*(h0macy_old(i,j,k)+h0macy_new(i,j,k))
+                   
+                   sfluxy(i,j,k,rhoh_comp) = (vmac(i,j,k)+w0macy(i,j,k)) * &
+                        (sedgey(i,j,k,rho_comp)+rho0_edge) * (sedgey(i,j,k,rhoh_comp)+h0_edge)
+                   
+                end do
              end do
           end do
-       end do
-       !$OMP END PARALLEL DO
+          !$OMP END PARALLEL DO
+
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho
+          call bl_error("ERROR: predict_rho_and_X and predict_hprime not supported together")
+          
+       endif
 
     else
+
+       ! enthalpy edge state is (rho h)'
 
        !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)
@@ -1398,9 +1445,9 @@ contains
              do i = lo(1), hi(1)
 
                 ! Average (rho h) onto edges by averaging rho and h
-                ! separately onto edges.  (rho h)_edge = (rho h)' +
-                ! (rho_0 * h_0) where h_0 is computed from (rho h)_0 /
-                ! rho_0
+                ! separately onto edges.  
+                !  (rho h)_edge = (rho h)' + (rho_0 * h_0) 
+                ! where h_0 is computed from (rho h)_0 / rho_0
                 rho0_edge = HALF*(rho0macy_old(i,j,k)+rho0macy_new(i,j,k))
 
                 h0_edge = HALF*(h0macy_old(i,j,k)+h0macy_new(i,j,k))
@@ -1422,9 +1469,10 @@ contains
 
 
     ! create z-fluxes
-    if (test) then
+    if (have_h) then
 
        ! enthalpy edge state is h
+
        if (species_pred_type == predict_rhoprime_and_X .or. &
            species_pred_type == predict_rhoprime_and_rhoX) then
 
@@ -1464,30 +1512,46 @@ contains
 
        endif
 
-    else if (test2) then
+    else if (have_hprime) then
 
-       ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
-       ! where h0 is computed from (rho h)_0 / rho_0
-       ! sfluxz = (wmac(i,j,k)+w0macz(i,j,k)) * (rho h)_edge
+       ! enthalpy edge state is h'
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
-       do k = lo(3), hi(3)+1
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
+       if (species_pred_type == predict_rhoprime_and_X .or. &
+           species_pred_type == predict_rhoprime_and_rhoX) then
 
-                rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
+          ! density edge state is rho'
 
-                h0_edge = HALF*(h0macz_old(i,j,k)+h0macz_new(i,j,k))
-
-                sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k)+w0macz(i,j,k)) * &
-                     (sedgez(i,j,k,rho_comp)+rho0_edge) * (sedgez(i,j,k,rhoh_comp)+h0_edge)
-
+          ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
+          ! where h0 is computed from (rho h)_0 / rho_0
+          ! sfluxz = (wmac(i,j,k)+w0macz(i,j,k)) * (rho h)_edge
+          
+          !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
+          do k = lo(3), hi(3)+1
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+                   
+                   rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
+                   
+                   h0_edge = HALF*(h0macz_old(i,j,k)+h0macz_new(i,j,k))
+                   
+                   sfluxz(i,j,k,rhoh_comp) = (wmac(i,j,k)+w0macz(i,j,k)) * &
+                        (sedgez(i,j,k,rho_comp)+rho0_edge) * (sedgez(i,j,k,rhoh_comp)+h0_edge)
+                   
+                end do
              end do
           end do
-       end do
-       !$OMP END PARALLEL DO
+          !$OMP END PARALLEL DO
+
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho
+          call bl_error("ERROR: predict_rho_and_X and predict_hprime not supported together")
+
+       endif
 
     else
+
+       ! enthalpy edge state is (rho h)'
 
        !$OMP PARALLEL DO PRIVATE(i,j,k,rho0_edge,h0_edge)
        do k = lo(3), hi(3)+1
@@ -1495,9 +1559,9 @@ contains
              do i = lo(1), hi(1)
 
                 ! Average (rho h) onto edges by averaging rho and h
-                ! separately onto edges.  (rho h)_edge = (rho h)' +
-                ! (rho_0 * h_0) where h_0 is computed from (rho h)_0 /
-                ! rho_0
+                ! separately onto edges.  
+                !  (rho h)_edge = (rho h)' + (rho_0 * h_0) 
+                ! where h_0 is computed from (rho h)_0 / rho_0
                 rho0_edge = HALF*(rho0macz_old(i,j,k)+rho0macz_new(i,j,k))
 
                 h0_edge = HALF*(h0macz_old(i,j,k)+h0macz_new(i,j,k))
