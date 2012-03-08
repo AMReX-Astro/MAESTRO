@@ -239,7 +239,7 @@ subroutine varden()
                          the_bc_tower)
 
     ! update temperature
-    call makeTfromRhoH(s_new,mla,the_bc_tower%bc_tower_array)
+    call makeTfromRhoH(s_new,p0,mla,the_bc_tower%bc_tower_array,dx)
 
 
     ! solution advanced -- update the time
