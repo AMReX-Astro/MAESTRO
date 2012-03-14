@@ -1,3 +1,35 @@
+\section{Coding}
+
+\begin{enumerate}
+
+\item {\em How do tags work when editing source?}
+
+   Tags allow the editor to follow function/subroutine names an
+   automatically switch you to the source code corresponding to that
+   function.  Using tags in \maestro\ depends on the editor:
+
+   \begin{itemize}
+
+     \item {\tt vi}:
+
+     In the build directory, type `{\tt make tags}'.  Then in {\tt
+       vi}, move the cursor over a function name and use {\tt
+       \verb|^|-]} to bring up the source corresponding to that
+       function.  Use {\tt \verb|^|-t} to go back.  (Here, {\tt \verb|^|-}
+       refers to the Control key.)
+
+     \item {\tt emacs}:
+
+     In the build directory, type `{\tt make TAGS}'.  Then in {\tt
+       emacs}, move the cursor over a function name and use {\tt M-.}\
+       to bring up the source corresponding to that function.  Use
+       {\tt M-*} to go back.  (Here, {\tt M-} refers to the META key.)
+
+   \end{itemize}
+
+\end{enumerate}
+
+
 \section{Compiling}
 
 \begin{enumerate}
