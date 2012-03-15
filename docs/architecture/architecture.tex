@@ -1185,36 +1185,41 @@ on the objective.
 When \maestro\ is run, the boundary condition parameters are read in
 from the input file and used to build the \bctower.  The
 \bctower\ consists of a \bclevel\ object for each level of resolution
-in the simulation.  The \bclevel\ contains 3 difference descriptions
-of the boundary conditions for each box in the domain at that level of
-refinement: {\tt phys\_bc\_level\_array}, {\tt
-  adv\_bc\_level\_array}, and {\tt ell\_bc\_level\_array}.
+in the simulation.  The \bclevel\ contains 3 different descriptions of
+the boundary conditions for each box in the domain at that level of
+refinement: {\tt phys\_bc\_level\_array}, {\tt adv\_bc\_level\_array},
+and {\tt ell\_bc\_level\_array}.  In all cases, the boundary
+conditions are specified via integer values that are defined in {\tt
+  bc\_module} (part of \boxlib).
 
 Each level has a {\tt phys\_bc\_level\_array(0:ngrids,dim,2)} array,
-where {\tt ngrids} is the number of boxes on that level and the last
-index refers to the lower (1) or upper (2) edge of the box in the given
-dimension.  This stores the physical desciption of the boundary type
-(outlet, inlet, slipwall, etc.)---this description is independent of
-the variables that live on the grid.  The {\tt
-  phys\_bc\_level\_array(0,:,:)} `box' refers to the entire domain.
-If an edge of a box is not on a physical boundary, then it is set to a
-default value (typically {\tt INTERIOR}).  These boundary condition
-types are used to interpret the actual method to fill the ghostcells
-for each variable, as described in {\tt adv\_bc\_level\_array} and
-{\tt ell\_bc\_level\_array}.
+where {\tt ngrids} is the number of boxes on that level, {\tt dim} is
+the coordinate direction, and the last index refers to the lower (1)
+or upper (2) edge of the box in the given coordinate direction.  This
+stores the {\em physical desciption} of the boundary type (outlet, inlet,
+slipwall, etc.)---this description is independent of the variables
+that live on the grid.  The {\tt phys\_bc\_level\_array(0,:,:)} `box'
+refers to the entire domain.  If an edge of a box is not on a physical
+boundary, then it is set to a default value (typically {\tt
+  INTERIOR}).  These boundary condition types are used to interpret
+the actual method to fill the ghostcells for each variable, as
+described in {\tt adv\_bc\_level\_array} and {\tt
+  ell\_bc\_level\_array}.
 
 
 Whereas {\tt phys\_bc\_level\_array} provides a physical description
-of the type of boundary, {\tt adv\_bc\_level\_array} describes the
-{\em action} taken (e.g.\ reflect, extrapolate, etc.) for each
-variable when filling boundaries.  {\tt adv\_bc\_level\_array} 
-specifically describes the boundary conditions that are in play for the advection
-(hyperbolic) equations.  The form of this array is {\tt
-  adv\_bc\_level\_array(0:ngrids,dim,2,nvar)} where the additional component,
-{\tt nvar}, allows for each state variable that lives on a grid to
-have different boundary condition actions associated with it.  The
-convention is that the first {\tt dm} variables in the \bclevel\ refer
-to the velocity components, and the subsequent slots are for the other
+of the type of boundary, the array {\tt adv\_bc\_level\_array}
+describes the {\em action} taken (e.g.\ reflect, extrapolate, etc.)
+for each variable when filling boundaries.  {\tt
+  adv\_bc\_level\_array} specifically describes the boundary
+conditions that are in play for the advection (hyperbolic) equations.
+The form of this array is {\tt
+  adv\_bc\_level\_array(0:ngrids,dim,2,nvar)} where the additional
+component, {\tt nvar}, allows for each state variable that lives on a
+grid to have different boundary condition actions associated with it.
+The convention is that the first {\tt dm} variables in \bclevel (where {\tt dm} is
+the dimensionality of the simulation) refer to the
+velocity components, and the subsequent slots are for the other
 standard variables described in the {\tt variables\_module}.  For
 instance, to reference the boundary condition for density, one would
 index with {\tt dm+rho\_comp}.  For temporary variables that are
@@ -1224,11 +1229,18 @@ temporary variable.  In this case, the special variables {\tt
   foextrap\_comp} and {\tt hoextrap\_comp} (first-order and high-order
 extrapolation) are used.
 
-{\tt ell\_bc\_level\_array} is the analog to {\tt adv\_bc\_level\_array}
-for the elliptic solves in \maestro.  This will come into play in the
-multigrid portions of the code.  The actions that are used for
-{\tt ell\_bc\_level\_array} are either Dirichlet or Neumann boundary
-condtions.
+{\tt ell\_bc\_level\_array} is the analog to {\tt
+  adv\_bc\_level\_array} for the elliptic solves in \maestro.  This
+will come into play in the multigrid portions of the code.  The
+actions that are used for {\tt ell\_bc\_level\_array} are either
+Dirichlet or Neumann boundary condtions.  For the velocity
+projections, we are dealing with a pressure-like quantity, $\phi$, so
+the pressure boundary conditions here reflect the behavior we want for
+the velocity.  You want $d\phi/dn=0$ in places where the incoming
+velocity to the elliptic solve must match the velocity you want after
+the projection (e.g.\ inflow, solid walls).  For outlet boundaries,
+setting $\phi = 0$ allows the velocity to adjust as needed to the
+domain. \MarginPar{reference here would be nice}
 
 The actual filling of the ghostcells according to the descriptions
 contained in the \bctower\ is carried out by the {\tt setbc} routine,
