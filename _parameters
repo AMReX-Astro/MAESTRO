@@ -126,6 +126,30 @@ bcz_lo                              integer            SLIP_WALL
 # $+z$ boundary condition
 bcz_hi                              integer            SLIP_WALL           
 
+# $-x$ boundary condition name---if this is set, it overrides the integer
+# value set through {\tt bcx\_lo}
+xlo_boundary_type                   character          ""
+
+# $+x$ boundary condition name---if this is set, it overrides the integer
+# value set through {\tt bcx\_hi}
+xhi_boundary_type                   character          ""
+
+# $-y$ boundary condition name---if this is set, it overrides the integer
+# value set through {\tt bcy\_lo}
+ylo_boundary_type                   character          ""
+
+# $+y$ boundary condition name---if this is set, it overrides the integer
+# value set through {\tt bcy\_hi}
+yhi_boundary_type                   character          ""
+
+# $-z$ boundary condition name---if this is set, it overrides the integer
+# value set through {\tt bcz\_lo}
+zlo_boundary_type                   character          ""
+
+# $+z$ boundary condition name---if this is set, it overrides the integer
+# value set through {\tt bcz\_hi}
+zhi_boundary_type                   character          ""
+
 # set to 1 if you are doing a spherical problem
 spherical_in                        integer            0                   
 

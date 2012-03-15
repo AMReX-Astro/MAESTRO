@@ -332,6 +332,34 @@ contains
     allocate(nodal(dm_in))
     nodal = .true.
 
+    ! if the string versions of the boundary conditions were set, then	
+    ! these override the integer values
+    if (.not. xlo_boundary_type == "") &
+         bcx_lo = bc_string_to_integer(trim(xlo_boundary_type))
+
+    if (.not. xhi_boundary_type == "") &
+         bcx_hi = bc_string_to_integer(trim(xhi_boundary_type))
+
+    if (.not. ylo_boundary_type == "") &
+         bcy_lo = bc_string_to_integer(trim(ylo_boundary_type))
+
+    if (.not. yhi_boundary_type == "") &
+         bcy_hi = bc_string_to_integer(trim(yhi_boundary_type))
+
+    if (.not. zlo_boundary_type == "") &
+         bcz_lo = bc_string_to_integer(trim(zlo_boundary_type))
+
+    if (.not. zhi_boundary_type == "") &
+         bcz_hi = bc_string_to_integer(trim(zhi_boundary_type))
+    
+    if (bcx_lo == UNDEFINED) call bl_error("xlo_boundary_type invalid")
+    if (bcx_hi == UNDEFINED) call bl_error("xhi_boundary_type invalid")
+    if (bcy_lo == UNDEFINED) call bl_error("ylo_boundary_type invalid")
+    if (bcy_hi == UNDEFINED) call bl_error("yhi_boundary_type invalid")
+    if (bcz_lo == UNDEFINED) call bl_error("zlo_boundary_type invalid")
+    if (bcz_hi == UNDEFINED) call bl_error("zhi_boundary_type invalid")
+
+
     ! initialize pmask
     allocate(pmask(dm_in))
     pmask = .FALSE.
