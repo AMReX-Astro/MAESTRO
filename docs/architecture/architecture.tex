@@ -642,7 +642,9 @@ calling {\tt multifab\_destroy} on the \multifab.
 \subsection{\bctower}
 
 A \bctower\ holds the information about what boundary conditions are
-in effect for each variable in a \maestro\ simulation.  \MarginPar{better description?}
+in effect for each variable in a
+\maestro\ simulation.  These are interpretted by the ghost cell filling 
+routines.  See \S~\ref{sec:arch:bcs} for more detail.
 
 \section{\maestro\ Data Organization}
 
@@ -1182,6 +1184,8 @@ on the objective.
 
 \section{Boundary Conditions}
 
+\label{sec:arch:bcs}
+
 When \maestro\ is run, the boundary condition parameters are read in
 from the input file and used to build the \bctower.  The
 \bctower\ consists of a \bclevel\ object for each level of resolution
@@ -1240,7 +1244,7 @@ the velocity.  You want $d\phi/dn=0$ in places where the incoming
 velocity to the elliptic solve must match the velocity you want after
 the projection (e.g.\ inflow, solid walls).  For outlet boundaries,
 setting $\phi = 0$ allows the velocity to adjust as needed to the
-domain. \MarginPar{reference here would be nice}
+domain (see, for example, \cite{almgrenBellSzymczak:1996}).
 
 The actual filling of the ghostcells according to the descriptions
 contained in the \bctower\ is carried out by the {\tt setbc} routine,
