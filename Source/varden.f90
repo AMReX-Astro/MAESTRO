@@ -462,7 +462,7 @@ subroutine varden()
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))        
 
-        call write_job_info(plot_file_name, mla%mba)
+        call write_job_info(plot_file_name, mla%mba, the_bc_tower)
 
      end if
 
@@ -625,7 +625,7 @@ subroutine varden()
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
-        call write_job_info(plot_file_name, mla%mba)
+        call write_job_info(plot_file_name, mla%mba, the_bc_tower)
         last_plt_written = istep
      end if
 
@@ -1295,7 +1295,7 @@ subroutine varden()
                                     w0, etarho_ec, etarho_cc, &
                                     div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
-              call write_job_info(plot_file_name, mla%mba)
+              call write_job_info(plot_file_name, mla%mba, the_bc_tower)
               last_plt_written = istep
            end if
         end if
@@ -1390,7 +1390,7 @@ subroutine varden()
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
-        call write_job_info(plot_file_name, mla%mba)
+        call write_job_info(plot_file_name, mla%mba, the_bc_tower)
      end if
   end if
 

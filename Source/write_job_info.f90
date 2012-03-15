@@ -1,4 +1,4 @@
-subroutine write_job_info(dirname, mba)
+subroutine write_job_info(dirname, mba, the_bc_tower)
 
   ! write out some basic information about the way the job was run
   ! to a file called job_info in the directory dir_name.  Usually
@@ -9,6 +9,8 @@ subroutine write_job_info(dirname, mba)
   use probin_module, only: job_name, inputs_file_used
   use runtime_init_module, only: probin
   use bl_system_module, only: BL_CWD_SIZE, get_cwd 
+  use bc_module
+  use define_bc_module
   use ml_boxarray_module
   use build_info_module, only: build_date, build_dir, build_machine, boxlib_dir, &
                                module_list, f90_compile_line, f_compile_line, &
@@ -20,8 +22,7 @@ subroutine write_job_info(dirname, mba)
 
   character (len=*), intent(in) :: dirname
   type(ml_boxarray), intent(in) :: mba
-
-
+  type(bc_tower)   , intent(in) :: the_bc_tower
 
   character (len=256) :: out_name
   character (len=16) :: date_in, time_in
@@ -35,6 +36,7 @@ subroutine write_job_info(dirname, mba)
  
   out_name = trim(dirname) // "/job_info"
 
+999  format(79('='))
 1000 format(79('-'))
 1001 format(a,a)
 1002 format(a,i6)
@@ -46,8 +48,9 @@ subroutine write_job_info(dirname, mba)
   if (parallel_IOProcessor()) then
      open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
      
+     write (99,999)
      write (99,*) "Job Information"
-     write (99,1000)
+     write (99,999)
      write (99,1001) "job name:    ", trim(job_name)
      write (99,1001) "inputs file: ", trim(inputs_file_used)
      write (99,*) " "     
@@ -61,8 +64,9 @@ subroutine write_job_info(dirname, mba)
      write (99,*) " "
 
 
+     write (99,999)
      write (99,*) "Build Information"
-     write (99,1000)
+     write (99,999)
      write (99,1001) "build date:    ", trim(build_date)
      write (99,1001) "build machine: ", trim(build_machine)
      write (99,1001) "build dir:     ", trim(build_dir)
@@ -82,8 +86,9 @@ subroutine write_job_info(dirname, mba)
      write (99,*) " "
 
 
+     write (99,999)
      write (99,*) "Grid Information"
-     write (99,1000)
+     write (99,999)
      do n = 1, mba%nlevel
         write (99,*) "level: ", n
         write (99,*) "   number of boxes = ", nboxes(mba, n)
@@ -91,11 +96,29 @@ subroutine write_job_info(dirname, mba)
      end do
 
      write (99,*) " "
+     write (99,*) "Boundary Conditions"     
+     write (99,*) "  -x: ", bc_integer_to_string(the_bc_tower%bc_tower_array(1)%phys_bc_level_array(0,1,1))
+     write (99,*) "  +x: ", bc_integer_to_string(the_bc_tower%bc_tower_array(1)%phys_bc_level_array(0,1,2))
+
+     if (mba%dim >= 2) then
+        write (99,*) " "
+        write (99,*) "  -y: ", bc_integer_to_string(the_bc_tower%bc_tower_array(1)%phys_bc_level_array(0,2,1))
+        write (99,*) "  +y: ", bc_integer_to_string(the_bc_tower%bc_tower_array(1)%phys_bc_level_array(0,2,2))
+     endif
+
+     if (mba%dim == 3) then
+        write (99,*) " "
+        write (99,*) "  -z: ", bc_integer_to_string(the_bc_tower%bc_tower_array(1)%phys_bc_level_array(0,3,1))
+        write (99,*) "  +z: ", bc_integer_to_string(the_bc_tower%bc_tower_array(1)%phys_bc_level_array(0,3,2))
+     endif
+
+     write (99,*) " "
      write (99,*) " "
 
 
+     write (99,999)
      write (99,*) "Species Information"
-     write (99,1000)
+     write (99,999)
      write (99,2001) "index", "name", "short name", "A", "Z"
      write (99,1000)
      do n = 1, nspec
@@ -106,8 +129,9 @@ subroutine write_job_info(dirname, mba)
      write (99,*) " "
 
 
+     write (99,999)
      write (99,*) "Runtime Parameter Information"
-     write (99,1000)
+     write (99,999)
      write (99,nml=probin)
      close(99)
   endif
