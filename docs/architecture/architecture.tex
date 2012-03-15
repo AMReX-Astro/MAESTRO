@@ -1182,6 +1182,43 @@ on the objective.
 
 \section{Boundary Conditions}
 
+When \maestro\ is run, the boundary condition parameters are read in
+from the input file and used to build the \bctower.  The
+\bctower\ consists of a \bclevel\ object for each level of resolution
+in the simulation.  The \bclevel\ contains 3 difference descriptions
+of the boundary conditions for each box in the domain at that level of
+refinement: {\tt phys\_bc\_level\_array}, {\tt
+  adv\_bc\_level\_array}, and {\tt ell\_bc\_level\_array}.
+
+Each level has a {\tt phys\_bc\_level\_array(0:ngrids,dim,2)} array,
+where {\tt ngrids} is the number of boxes on that level.  This stores
+the physical desciption of the boundary type (outlet, inlet, slipwall,
+etc.)---this description is independent of the variables that live on
+the grid.  The {\tt phys\_bc\_level\_array(0,:,:)} `box' refers to the
+entire domain.  If an edge of a box is not on a physical boundary,
+then it is set to a default value (typically {\tt INTERIOR}).  
+These boundary condition types are used to interpret the actual 
+method to fill the ghostcells for each variable, as described in 
+{\tt adv\_bc\_level\_array} and {\tt ell\_bc\_level\_array}.
+
+
+The convention is that the first {\tt dm} variables in the
+\bclevel\ refer to the velocity components, and the subsequent slots
+are for the other standard variables described in the {\tt
+  variables\_module}.  For instance, to reference the boundary
+condition for density, one would index with {\tt dm+rho\_comp}.
+For temporary variables that are created on the fly in the various
+routines in \maestro\ there may not be a variable name in {\tt
+  variables\_module} that describes the temporary variable.  In this
+case, the special variables {\tt foextrap\_comp} and {\tt
+  hoextrap\_comp} (first-order and high-order extrapolation) are used.
+
+The actual filling of the ghostcells according to the descriptions
+contained in the \bctower\ is carried out by the {\tt setbc} routine,
+which is called by {\tt multifab\_physbc}.
+
+
+
 
 \section{Multigrid}
 
