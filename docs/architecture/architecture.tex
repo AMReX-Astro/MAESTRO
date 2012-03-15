@@ -1207,10 +1207,10 @@ for each variable, as described in {\tt adv\_bc\_level\_array} and
 Whereas {\tt phys\_bc\_level\_array} provides a physical description
 of the type of boundary, {\tt adv\_bc\_level\_array} describes the
 {\em action} taken (e.g.\ reflect, extrapolate, etc.) for each
-variable when filling boundaries.  {\tt adv\_bc\_level\_array} is
-describes the boundary conditions that are in play for the advection
+variable when filling boundaries.  {\tt adv\_bc\_level\_array} 
+specifically describes the boundary conditions that are in play for the advection
 (hyperbolic) equations.  The form of this array is {\tt
-  adv\_bc\_level\_array(0:ngrids,dim,2,nvar)} where the new component,
+  adv\_bc\_level\_array(0:ngrids,dim,2,nvar)} where the additional component,
 {\tt nvar}, allows for each state variable that lives on a grid to
 have different boundary condition actions associated with it.  The
 convention is that the first {\tt dm} variables in the \bclevel\ refer
