@@ -47,6 +47,7 @@ shown here.
 \verb=  small_temp  = &    &  5.d6 \\
 \rowcolor{tableShade}
 \verb=  use_eos_coulomb  = &   use the Coulomb corrections between ions (if supported by the EOS)  &  .true. \\
+\verb=  use_eos_e_instead_of_h  = &   In deriving the temperature from the $h$, first subtract off $p_0/\rho$ to define $e$, and use that as the input to the EOS.  &  .false. \\
 
 
 \end{longtable}
@@ -358,6 +359,15 @@ shown here.
 \rowcolor{tableShade}
 \verb=  the_layout_verbosity  = &    &  0 \\
 \verb=  the_sfc_threshold  = &   When assigning processors for grids, this determines whether we use the sfc algorithm or knapsack algorithm.  If the total number of grids divided by the number of processors is greater than this number, use sfc.  &  5 \\
+\rowcolor{tableShade}
+\verb=  xhi_boundary_type  = &   $+x$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcx\_hi}  &  "" \\
+\verb=  xlo_boundary_type  = &   $-x$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcx\_lo}  &  "" \\
+\rowcolor{tableShade}
+\verb=  yhi_boundary_type  = &   $+y$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcy\_hi}  &  "" \\
+\verb=  ylo_boundary_type  = &   $-y$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcy\_lo}  &  "" \\
+\rowcolor{tableShade}
+\verb=  zhi_boundary_type  = &   $+z$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcz\_hi}  &  "" \\
+\verb=  zlo_boundary_type  = &   $-z$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcz\_lo}  &  "" \\
 
 
 \end{longtable}
