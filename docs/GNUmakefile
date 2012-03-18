@@ -14,7 +14,8 @@ eps_source = $(wildcard *.eps) \
              $(wildcard visualization/*.eps) \
              $(wildcard planar_invsq_base/*.eps) \
              $(wildcard pert_notes/*.eps) \
-             $(wildcard SDC/*.eps)
+             $(wildcard SDC/*.eps) \
+             $(wildcard test_suite/*.eps)
 
 pdf_source = $(eps_source:.eps=.pdf)
 
@@ -41,7 +42,8 @@ section_sources = maestro_doc.bib \
                   analysis/analysis.tex \
                   thermo_notes/thermo_notes.tex \
                   visualization/visualization.tex \
-                  SDC/sdc.tex
+                  SDC/sdc.tex \
+                  test_suite/test_suite.tex
 
 
 MaestroUsersGuide.dvi: MaestroUsersGuide.tex $(eps_source) $(section_sources) $(eps_source) 
