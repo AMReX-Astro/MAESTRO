@@ -5,7 +5,7 @@ code) written in Python exists in {\tt BoxLib/Tools/C\_util/regtests/}
 as {\tt testnew.py}.  The test suite consists of a set of problem
 definitions (the \maestro\ problem + their inputs file, etc.).  When
 the suite is run the first time, the plotfiles created at the end of
-each problem's executation is stored as a benchmark.  After this
+each problem's execution is stored as a benchmark.  After this
 initialization, each subsequent run of the test suite compares the
 current output of the code, level-by-level and zone-by-zone to the
 stored benchmarks (using the {\tt fcompare.f90} routine in {\tt
@@ -107,7 +107,7 @@ problem, as the test suite will refer to it.  {\tt buildDir} is the
 path beneath {\tt sourceDir} where the {\tt make} command should be
 executed.  The inputs file is given by {\tt inputFile} and the
 necessary model file is listed by {\tt aux1File}. (Not all problems
-will need this.  Additional auxillary files can be specified via {\tt
+will need this.  Additional auxiliary files can be specified via {\tt
   aux2File} and {\tt aux3File}).  Note that {\tt inputFile} and {\tt aux?File} are
 specified relative to the {\tt buildDir}. The dimensionality is specified by {\tt dim}.
 
@@ -193,22 +193,10 @@ of the CVS comments for the code, build the test comparison tools, and
 then loop over each test, building and running the executable and
 comparing the output to the benchmarks as required.
 
-\begin{figure}[t]
-\centering
-%\includegraphics[width=5.0in]{CastroVerification/test_suite_day}
-\caption{\label{fig:test_suite_date} The test suite output for a
-  single day's run.  Each row indicates a separate test, showing
-  whether they passed or failed.  Clicking on the test name will give
-  more information about that particular test on that day. Note: this
-  page is from the {\tt Maestro} code, but a {\tt Castro} test suite
-  run will produce similar output.}
-\end{figure}
-
 Upon completion of all the runs, a web page for this invocation of the
-test suite will be generated (see figure~\ref{fig:test_suite_date}),
-as well as pages showing the details for each of the problems run.
-Test failures indicate that the current output does not match the stored
-benchmarks.
+test suite will be generated as well as pages showing the details for
+each of the problems run.  Test failures indicate that the current
+output does not match the stored benchmarks.
 
 
 \section{Updating Benchmarks}
@@ -218,7 +206,7 @@ different answer than the stored benchmark.  A test can fail either
 because a bug was introduced into the code or a bug was fixed or new
 feature introduced.
 
-If a bug was introduced into the code recently, then by examing the
+If a bug was introduced into the code recently, then by examining the
 test history you can determine the time period in which the bug was
 introduced.  The {\tt ChangeLog}s linked to on each test date's webpage
 will list all the changes committed to CVS/git up to that point, which is
