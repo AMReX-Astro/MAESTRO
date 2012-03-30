@@ -220,7 +220,7 @@ contains
 
     if (use_thermal_diffusion) then
        do n=1,nlevs
-          call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,1)
+          call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,0)
           la = get_layout(chk_thermal2(n))
           call destroy(la)
           call destroy(chk_thermal2(n))
@@ -481,7 +481,7 @@ contains
           call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
           call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
           call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
-          call multifab_build(     thermal2(n), mla%la(n),     1, 1)
+          call multifab_build(     thermal2(n), mla%la(n),     1, 0)
        end do
 
        ! we set these to zero because they won't affect the solution
@@ -756,7 +756,7 @@ contains
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
-       call multifab_build(     thermal2(n), mla%la(n),     1, 1)
+       call multifab_build(     thermal2(n), mla%la(n),     1, 0)
 
        call setval(         uold(n), ZERO, all=.true.)
        call setval(         sold(n), ZERO, all=.true.)
@@ -1159,7 +1159,7 @@ contains
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
-       call multifab_build(     thermal2(n), mla%la(n),     1, 1)
+       call multifab_build(     thermal2(n), mla%la(n),     1, 0)
 
        call setval(         uold(n), ZERO, all=.true.)
        call setval(         sold(n), ZERO, all=.true.)
