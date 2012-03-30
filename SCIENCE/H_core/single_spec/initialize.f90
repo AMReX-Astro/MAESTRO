@@ -222,7 +222,7 @@ contains
 
     if (use_thermal_diffusion) then
        do n=1,nlevs
-          call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,0)
+          call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,1)
           la = get_layout(chk_thermal2(n))
           call destroy(la)
           call destroy(chk_thermal2(n))
