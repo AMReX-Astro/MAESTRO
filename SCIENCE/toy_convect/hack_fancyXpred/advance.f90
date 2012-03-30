@@ -482,7 +482,7 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(thermal1(n), mla%la(n), 1, 1)
+       call multifab_build(thermal1(n), mla%la(n), 1, 0)
        call setval(thermal1(n),ZERO,all=.true.)
     end do
     

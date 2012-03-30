@@ -139,7 +139,7 @@ contains
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
-       call multifab_build(     thermal2(n), mla%la(n),     1, 1)
+       call multifab_build(     thermal2(n), mla%la(n),     1, 0)
     end do
 
     do n=1,nlevs

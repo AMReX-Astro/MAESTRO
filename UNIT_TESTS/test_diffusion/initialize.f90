@@ -86,7 +86,7 @@ contains
     ! build states
     do n = 1,nlevs
        call multifab_build(s(n)      , mla%la(n), nscal, ng_s)
-       call multifab_build(thermal(n), mla%la(n),     1,    1)
+       call multifab_build(thermal(n), mla%la(n),     1,    0)
 
        call setval(s(n)      , ZERO, all=.true.)
        call setval(thermal(n), ZERO, all=.true.)
