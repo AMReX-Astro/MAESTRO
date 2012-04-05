@@ -1,5 +1,5 @@
 ! inlet_bc_module is a simple container module that holds the parameters
-! that are used by setbc to implement the inlet boundary conditions.
+! that are used by physbc to implement the inlet boundary conditions.
 ! As these are problem-specific, any problem needing inlet boundary 
 ! conditions should create its own version of this module, using this
 ! outline.
@@ -13,7 +13,7 @@ module inlet_bc_module
 
   implicit none
 
-  ! parameters that would be used by setbc in the EXT_DIR sections
+  ! parameters that would be used by physbc in the EXT_DIR sections
   ! would be stored here with the 'save' attribute
 
   logical, save :: inlet_bc_initialized = .false.

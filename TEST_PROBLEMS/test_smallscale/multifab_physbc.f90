@@ -1,5 +1,7 @@
-module setbc_module
+module multifab_physbc_module
 
+  use multifab_module
+  use define_bc_module
   use bl_types
   use bl_error_module
 
@@ -7,11 +9,65 @@ module setbc_module
 
   private
 
-  public :: setbc_1d, setbc_2d, setbc_3d
+  public :: multifab_physbc
 
 contains
 
-  subroutine setbc_1d(s,lo,hi,ng,bc,icomp)
+  subroutine multifab_physbc(s,start_scomp,start_bccomp,num_comp,the_bc_level)
+
+    use bl_prof_module
+
+    type(multifab) , intent(inout) :: s
+    integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
+    type(bc_level) , intent(in   ) :: the_bc_level
+
+    ! Local
+    integer                  :: lo(get_dim(s)),hi(get_dim(s)),dm
+    integer                  :: i,ng,scomp,bccomp
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+    
+    dm = get_dim(s)
+
+    ng = nghost(s)
+
+    if (ng == 0) return
+
+    call build(bpt, "multifab_physbc")
+    
+    do i=1,nboxes(s)
+       if ( multifab_remote(s,i) ) cycle
+       sp => dataptr(s,i)
+       lo = lwb(get_box(s,i))
+       hi = upb(get_box(s,i))
+       select case (dm)
+       case (1)
+          do scomp = start_scomp,start_scomp+num_comp-1
+             bccomp = start_bccomp + scomp - start_scomp
+             call physbc_1d(sp(:,1,1,scomp), lo, hi, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+          end do
+       case (2)
+          do scomp = start_scomp,start_scomp+num_comp-1
+             bccomp = start_bccomp + scomp - start_scomp
+             call physbc_2d(sp(:,:,1,scomp), lo, hi, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+          end do
+       case (3)
+          do scomp = start_scomp,start_scomp+num_comp-1
+             bccomp = start_bccomp + scomp - start_scomp
+             call physbc_3d(sp(:,:,:,scomp), lo, hi, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+          end do
+       end select
+    end do
+
+    call destroy(bpt)
+ 
+  end subroutine multifab_physbc
+
+  subroutine physbc_1d(s,lo,hi,ng,bc,icomp)
 
     use bc_module
     use bl_constants_module
@@ -23,13 +79,13 @@ contains
 
     print *,''
     print *,'*******************************************'
-    print *,'WARNING: setbc_1d not supported'
+    print *,'WARNING: physbc_1d not supported'
     print *,'*******************************************'
     print *,''
 
-  end subroutine setbc_1d
+  end subroutine physbc_1d
 
-  subroutine setbc_2d(s,lo,hi,ng,bc,icomp)
+  subroutine physbc_2d(s,lo,hi,ng,bc,icomp)
 
     use bc_module
     use bl_constants_module
@@ -50,38 +106,38 @@ contains
     if (bc(1,1) .eq. EXT_DIR) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,1) .eq. EXT_DIR'
+       print *,'WARNING: In physbc.f90: bc(1,1) .eq. EXT_DIR'
        print *,'*******************************************'
        print *,''
     else if (bc(1,1) .eq. FOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,1) .eq. FOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(1,1) .eq. FOEXTRAP'
        print *,'*******************************************'
        print *,''
     else if (bc(1,1) .eq. HOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,1) .eq. HOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(1,1) .eq. HOEXTRAP'
        print *,'*******************************************'
        print *,''
     else if (bc(1,1) .eq. REFLECT_EVEN) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,1) .eq. REFLECT_EVEN'
+       print *,'WARNING: In physbc.f90: bc(1,1) .eq. REFLECT_EVEN'
        print *,'*******************************************'
        print *,''
     else if (bc(1,1) .eq. REFLECT_ODD) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,1) .eq. REFLECT_ODD'
+       print *,'WARNING: In physbc.f90: bc(1,1) .eq. REFLECT_ODD'
        print *,'*******************************************'
        print *,''
     else if (bc(1,1) .eq. INTERIOR) then
     else
        print *,''
        print *,'*******************************************'
-       print *,'In setbc.f90: bc(1,1) = ',bc(1,1),' NOT YET SUPPORTED '
+       print *,'In physbc.f90: bc(1,1) = ',bc(1,1),' NOT YET SUPPORTED '
        print *,'*******************************************'
        print *,''
     end if
@@ -89,31 +145,31 @@ contains
     if (bc(1,2) .eq. EXT_DIR) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,2) .eq. EXT_DIR'
+       print *,'WARNING: In physbc.f90: bc(1,2) .eq. EXT_DIR'
        print *,'*******************************************'
        print *,''
     else if (bc(1,2) .eq. FOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,2) .eq. FOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(1,2) .eq. FOEXTRAP'
        print *,'*******************************************'
        print *,''
     else if (bc(1,2) .eq. HOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,2) .eq. HOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(1,2) .eq. HOEXTRAP'
        print *,'*******************************************'
        print *,''
     else if (bc(1,2) .eq. REFLECT_EVEN) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,2) .eq. REFLECT_EVEN'
+       print *,'WARNING: In physbc.f90: bc(1,2) .eq. REFLECT_EVEN'
        print *,'*******************************************'
        print *,''
     else if (bc(1,2) .eq. REFLECT_ODD) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,2) .eq. REFLECT_ODD'
+       print *,'WARNING: In physbc.f90: bc(1,2) .eq. REFLECT_ODD'
        print *,'*******************************************'
        print *,''
     else if (bc(1,2) .eq. INTERIOR) then
@@ -122,7 +178,7 @@ contains
     else 
        print *,''
        print *,'*******************************************'
-       print *,'In setbc.f90: bc(1,2) = ',bc(1,2),' NOT YET SUPPORTED '
+       print *,'In physbc.f90: bc(1,2) = ',bc(1,2),' NOT YET SUPPORTED '
        print *,'*******************************************'
        print *,''
     end if
@@ -150,19 +206,19 @@ contains
     else if (bc(2,1) .eq. HOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,1) .eq. HOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(2,1) .eq. HOEXTRAP'
        print *,'*******************************************'
        print *,''
     else if (bc(2,1) .eq. REFLECT_EVEN) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,1) .eq. REFLECT_EVEN'
+       print *,'WARNING: In physbc.f90: bc(2,1) .eq. REFLECT_EVEN'
        print *,'*******************************************'
        print *,''
     else if (bc(2,1) .eq. REFLECT_ODD) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,1) .eq. REFLECT_ODD'
+       print *,'WARNING: In physbc.f90: bc(2,1) .eq. REFLECT_ODD'
        print *,'*******************************************'
        print *,''
     else if (bc(2,1) .eq. INTERIOR) then
@@ -171,7 +227,7 @@ contains
     else 
        print *,''
        print *,'*******************************************'
-       print *,'In setbc.f90: bc(2,1) = ',bc(2,1),' NOT YET SUPPORTED '
+       print *,'In physbc.f90: bc(2,1) = ',bc(2,1),' NOT YET SUPPORTED '
        print *,'*******************************************'
        print *,''
     end if
@@ -179,7 +235,7 @@ contains
     if (bc(2,2) .eq. EXT_DIR) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,2) .eq. EXT_DIR'
+       print *,'WARNING: In physbc.f90: bc(2,2) .eq. EXT_DIR'
        print *,'*******************************************'
        print *,''
     else if (bc(2,2) .eq. FOEXTRAP) then
@@ -189,19 +245,19 @@ contains
     else if (bc(2,2) .eq. HOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,2) .eq. HOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(2,2) .eq. HOEXTRAP'
        print *,'*******************************************'
        print *,''
     else if (bc(2,2) .eq. REFLECT_EVEN) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,2) .eq. REFLECT_EVEN'
+       print *,'WARNING: In physbc.f90: bc(2,2) .eq. REFLECT_EVEN'
        print *,'*******************************************'
        print *,''
     else if (bc(2,2) .eq. REFLECT_ODD) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,2) .eq. REFLECT_ODD'
+       print *,'WARNING: In physbc.f90: bc(2,2) .eq. REFLECT_ODD'
        print *,'*******************************************'
        print *,''
     else if (bc(2,2) .eq. INTERIOR) then
@@ -210,14 +266,14 @@ contains
     else 
        print *,''
        print *,'*******************************************'
-       print *,'In setbc.f90: bc(2,2) = ',bc(2,2),' NOT YET SUPPORTED '
+       print *,'In physbc.f90: bc(2,2) = ',bc(2,2),' NOT YET SUPPORTED '
        print *,'*******************************************'
        print *,''
     end if
 
-  end subroutine setbc_2d
+  end subroutine physbc_2d
 
-  subroutine setbc_3d(s,lo,hi,ng,bc,icomp)
+  subroutine physbc_3d(s,lo,hi,ng,bc,icomp)
 
     use bc_module
     use bl_constants_module
@@ -237,31 +293,31 @@ contains
     if (bc(1,1) .eq. EXT_DIR) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,1) .eq. EXT_DIR'
+       print *,'WARNING: In physbc.f90: bc(1,1) .eq. EXT_DIR'
        print *,'*******************************************'
        print *,''
     else if (bc(1,1) .eq. FOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,1) .eq. FOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(1,1) .eq. FOEXTRAP'
        print *,'*******************************************'
        print *,''
     else if (bc(1,1) .eq. HOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,1) .eq. HOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(1,1) .eq. HOEXTRAP'
        print *,'*******************************************'
        print *,''
     else if (bc(1,1) .eq. REFLECT_EVEN) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,1) .eq. REFLECT_EVEN'
+       print *,'WARNING: In physbc.f90: bc(1,1) .eq. REFLECT_EVEN'
        print *,'*******************************************'
        print *,''
     else if (bc(1,1) .eq. REFLECT_ODD) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,1) .eq. REFLECT_ODD'
+       print *,'WARNING: In physbc.f90: bc(1,1) .eq. REFLECT_ODD'
        print *,'*******************************************'
        print *,'' 
     else if (bc(1,1) .eq. INTERIOR) then
@@ -270,7 +326,7 @@ contains
     else
        print *,''
        print *,'*******************************************'
-       print *,'In setbc.f90: bc(1,1) = ',bc(1,1),' NOT YET SUPPORTED '
+       print *,'In physbc.f90: bc(1,1) = ',bc(1,1),' NOT YET SUPPORTED '
        print *,'*******************************************'
        print *,''
     end if
@@ -278,31 +334,31 @@ contains
     if (bc(1,2) .eq. EXT_DIR) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,2) .eq. EXT_DIR'
+       print *,'WARNING: In physbc.f90: bc(1,2) .eq. EXT_DIR'
        print *,'*******************************************'
        print *,''         
     else if (bc(1,2) .eq. FOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,2) .eq. FOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(1,2) .eq. FOEXTRAP'
        print *,'*******************************************'
        print *,''         
     else if (bc(1,2) .eq. HOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,2) .eq. HOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(1,2) .eq. HOEXTRAP'
        print *,'*******************************************'
        print *,''        
     else if (bc(1,2) .eq. REFLECT_EVEN) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,2) .eq. REFLECT_EVEN'
+       print *,'WARNING: In physbc.f90: bc(1,2) .eq. REFLECT_EVEN'
        print *,'*******************************************'
        print *,''         
     else if (bc(1,2) .eq. REFLECT_ODD) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(1,2) .eq. REFLECT_ODD'
+       print *,'WARNING: In physbc.f90: bc(1,2) .eq. REFLECT_ODD'
        print *,'*******************************************'
        print *,''         
     else if (bc(1,2) .eq. INTERIOR) then
@@ -311,7 +367,7 @@ contains
     else 
        print *,''
        print *,'*******************************************'
-       print *,'In setbc.f90: bc(1,2) = ',bc(1,2),' NOT YET SUPPORTED '
+       print *,'In physbc.f90: bc(1,2) = ',bc(1,2),' NOT YET SUPPORTED '
        print *,'*******************************************'
        print *,''         
     end if
@@ -319,31 +375,31 @@ contains
     if (bc(2,1) .eq. EXT_DIR) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,1) .eq. EXT_DIR'
+       print *,'WARNING: In physbc.f90: bc(2,1) .eq. EXT_DIR'
        print *,'*******************************************'
        print *,''         
     else if (bc(2,1) .eq. FOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,1) .eq. FOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(2,1) .eq. FOEXTRAP'
        print *,'*******************************************'
        print *,''         
     else if (bc(2,1) .eq. HOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,1) .eq. HOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(2,1) .eq. HOEXTRAP'
        print *,'*******************************************'
        print *,''         
     else if (bc(2,1) .eq. REFLECT_EVEN) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,1) .eq. REFLECT_EVEN'
+       print *,'WARNING: In physbc.f90: bc(2,1) .eq. REFLECT_EVEN'
        print *,'*******************************************'
        print *,''         
     else if (bc(2,1) .eq. REFLECT_ODD) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,1) .eq. REFLECT_ODD'
+       print *,'WARNING: In physbc.f90: bc(2,1) .eq. REFLECT_ODD'
        print *,'*******************************************'
        print *,''         
     else if (bc(2,1) .eq. INTERIOR) then
@@ -352,7 +408,7 @@ contains
     else
        print *,''
        print *,'*******************************************'
-       print *,'In setbc.f90: bc(2,1) = ',bc(2,1),' NOT YET SUPPORTED '
+       print *,'In physbc.f90: bc(2,1) = ',bc(2,1),' NOT YET SUPPORTED '
        print *,'*******************************************'
        print *,''         
     end if
@@ -360,31 +416,31 @@ contains
     if (bc(2,2) .eq. EXT_DIR) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,2) .eq. EXT_DIR'
+       print *,'WARNING: In physbc.f90: bc(2,2) .eq. EXT_DIR'
        print *,'*******************************************'
        print *,''         
     else if (bc(2,2) .eq. FOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,2) .eq. FOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(2,2) .eq. FOEXTRAP'
        print *,'*******************************************'
        print *,''         
     else if (bc(2,2) .eq. HOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,2) .eq. HOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(2,2) .eq. HOEXTRAP'
        print *,'*******************************************'
        print *,''         
     else if (bc(2,2) .eq. REFLECT_EVEN) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,2) .eq. REFLECT_EVEN'
+       print *,'WARNING: In physbc.f90: bc(2,2) .eq. REFLECT_EVEN'
        print *,'*******************************************'
        print *,''         
     else if (bc(2,2) .eq. REFLECT_ODD) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(2,2) .eq. REFLECT_ODD'
+       print *,'WARNING: In physbc.f90: bc(2,2) .eq. REFLECT_ODD'
        print *,'*******************************************'
        print *,''         
     else if (bc(2,2) .eq. INTERIOR) then
@@ -393,7 +449,7 @@ contains
     else 
        print *,''
        print *,'*******************************************'
-       print *,'In setbc.f90: bc(2,2) = ',bc(2,2),' NOT YET SUPPORTED '
+       print *,'In physbc.f90: bc(2,2) = ',bc(2,2),' NOT YET SUPPORTED '
        print *,'*******************************************'
        print *,''        
     end if
@@ -424,25 +480,25 @@ contains
     else if(bc(3,1) .eq. REFLECT_EVEN) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(3,1) .eq. FOEXTRAP .or. REFLECT_EVEN'
+       print *,'WARNING: In physbc.f90: bc(3,1) .eq. FOEXTRAP .or. REFLECT_EVEN'
        print *,'*******************************************'
        print *,''         
     else if (bc(3,1) .eq. HOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(3,1) .eq. HOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(3,1) .eq. HOEXTRAP'
        print *,'*******************************************'
        print *,''        
     else if (bc(3,1) .eq. REFLECT_EVEN) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(3,1) .eq. REFLECT_EVEN'
+       print *,'WARNING: In physbc.f90: bc(3,1) .eq. REFLECT_EVEN'
        print *,'*******************************************'
        print *,''         
     else if (bc(3,1) .eq. REFLECT_ODD) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(3,1) .eq. REFLECT_ODD'
+       print *,'WARNING: In physbc.f90: bc(3,1) .eq. REFLECT_ODD'
        print *,'*******************************************'
        print *,''         
     else if (bc(3,1) .eq. INTERIOR) then
@@ -451,7 +507,7 @@ contains
     else 
        print *,''
        print *,'*******************************************'
-       print *,'In setbc.f90: bc(3,1) = ',bc(3,1),' NOT YET SUPPORTED '
+       print *,'In physbc.f90: bc(3,1) = ',bc(3,1),' NOT YET SUPPORTED '
        print *,'*******************************************'
        print *,''         
     end if
@@ -459,7 +515,7 @@ contains
     if (bc(3,2) .eq. EXT_DIR) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(3,2) .eq. EXT_DIR'
+       print *,'WARNING: In physbc.f90: bc(3,2) .eq. EXT_DIR'
        print *,'*******************************************'
        print *,''
     else if (bc(3,2) .eq. FOEXTRAP) then
@@ -471,19 +527,19 @@ contains
     else if (bc(3,2) .eq. HOEXTRAP) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(3,2) .eq. HOEXTRAP'
+       print *,'WARNING: In physbc.f90: bc(3,2) .eq. HOEXTRAP'
        print *,'*******************************************'
        print *,''
     else if (bc(3,2) .eq. REFLECT_EVEN) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(3,2) .eq. REFLECT_EVEN'
+       print *,'WARNING: In physbc.f90: bc(3,2) .eq. REFLECT_EVEN'
        print *,'*******************************************'
        print *,''
     else if (bc(3,2) .eq. REFLECT_ODD) then
        print *,''
        print *,'*******************************************'
-       print *,'WARNING: In setbc.f90: bc(3,2) .eq. REFLECT_ODD'
+       print *,'WARNING: In physbc.f90: bc(3,2) .eq. REFLECT_ODD'
        print *,'*******************************************'
        print *,''
     else if (bc(3,2) .eq. INTERIOR) then
@@ -492,11 +548,11 @@ contains
     else 
        print *,''
        print *,'*******************************************'
-       print *,'In setbc.f90: bc(3,2) = ',bc(3,2),' NOT YET SUPPORTED '
+       print *,'In physbc.f90: bc(3,2) = ',bc(3,2),' NOT YET SUPPORTED '
        print *,'*******************************************'
        print *,''
     end if
 
-  end subroutine setbc_3d
+  end subroutine physbc_3d
 
-end module setbc_module
+end module multifab_physbc_module

@@ -1,7 +1,7 @@
-! set the boundary conditions
+module multifab_physbc_module
 
-module setbc_module
-
+  use multifab_module
+  use define_bc_module
   use bl_types
   use bl_error_module
   use bc_module
@@ -12,22 +12,76 @@ module setbc_module
 
   private
 
-  public :: setbc_1d, setbc_2d, setbc_3d
+  public :: multifab_physbc
 
 contains
 
-  subroutine setbc_1d(s,lo,hi,ng,bc,icomp)
+  subroutine multifab_physbc(s,start_scomp,start_bccomp,num_comp,the_bc_level)
+
+    use bl_prof_module
+
+    type(multifab) , intent(inout) :: s
+    integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
+    type(bc_level) , intent(in   ) :: the_bc_level
+
+    ! Local
+    integer                  :: lo(get_dim(s)),hi(get_dim(s)),dm
+    integer                  :: i,ng,scomp,bccomp
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+    
+    dm = get_dim(s)
+
+    ng = nghost(s)
+
+    if (ng == 0) return
+
+    call build(bpt, "multifab_physbc")
+    
+    do i=1,nboxes(s)
+       if ( multifab_remote(s,i) ) cycle
+       sp => dataptr(s,i)
+       lo = lwb(get_box(s,i))
+       hi = upb(get_box(s,i))
+       select case (dm)
+       case (1)
+          do scomp = start_scomp,start_scomp+num_comp-1
+             bccomp = start_bccomp + scomp - start_scomp
+             call physbc_1d(sp(:,1,1,scomp), lo, hi, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+          end do
+       case (2)
+          do scomp = start_scomp,start_scomp+num_comp-1
+             bccomp = start_bccomp + scomp - start_scomp
+             call physbc_2d(sp(:,:,1,scomp), lo, hi, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+          end do
+       case (3)
+          do scomp = start_scomp,start_scomp+num_comp-1
+             bccomp = start_bccomp + scomp - start_scomp
+             call physbc_3d(sp(:,:,:,scomp), lo, hi, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+          end do
+       end select
+    end do
+
+    call destroy(bpt)
+ 
+  end subroutine multifab_physbc
+
+  subroutine physbc_1d(s,lo,hi,ng,bc,icomp)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:)
     integer        , intent(in   ) :: bc(:,:)
     integer        , intent(in   ) :: icomp
 
-    call bl_error("setbc_1d not written")
+    call bl_error("physbc_1d not written")
 
-  end subroutine setbc_1d
+  end subroutine physbc_1d
 
-  subroutine setbc_2d(s,lo,hi,ng,bc,icomp)    
+  subroutine physbc_2d(s,lo,hi,ng,bc,icomp)    
 
     use geometry, only: dr_fine
     use probin_module, only: inlet_mach
@@ -57,7 +111,7 @@ contains
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
-       call bl_error("setbc_2d: bc(1,1) not yet supported")
+       call bl_error("physbc_2d: bc(1,1) not yet supported")
     end if
 
     !--------------------------------------------------------------------------
@@ -70,7 +124,7 @@ contains
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
-       call bl_error("setbc_2d: bc(1,2) not yet supported")
+       call bl_error("physbc_2d: bc(1,2) not yet supported")
     end if
 
     !--------------------------------------------------------------------------
@@ -106,7 +160,7 @@ contains
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
     else
-       call bl_error("setbc_2d: bc(2,1) not yet supported")
+       call bl_error("physbc_2d: bc(2,1) not yet supported")
     end if
 
     !--------------------------------------------------------------------------
@@ -127,20 +181,20 @@ contains
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
     else 
-       call bl_error("setbc_2d: bc(2,2) not yet supported")
+       call bl_error("physbc_2d: bc(2,2) not yet supported")
     end if
 
-  end subroutine setbc_2d
+  end subroutine physbc_2d
 
-  subroutine setbc_3d(s,lo,hi,ng,bc,icomp)
+  subroutine physbc_3d(s,lo,hi,ng,bc,icomp)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     integer        , intent(in   ) :: bc(:,:)
     integer        , intent(in   ) :: icomp
 
-    call bl_error("setbc_3d not written")
+    call bl_error("physbc_3d not written")
 
-  end subroutine setbc_3d
+  end subroutine physbc_3d
 
-end module setbc_module
+end module multifab_physbc_module

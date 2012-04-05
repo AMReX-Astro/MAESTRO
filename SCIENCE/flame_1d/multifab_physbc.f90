@@ -1,26 +1,7 @@
-! set the boundary conditions for a laminar flame.  On one end we
-! will have inflow and on the other end we will have outflow.  
-!
-! In 1-d the flame is assumed to move in the X direction
-! In 2-d the flame is assumed to move in the Y direction
-! In 3-d the flame is assumed to move in the Z direction
-!
-! In the inputs file, these are specified via
-!
-! bcy_lo = 11   ! 2-d
-! bcy_hi = 12
-!
-! where boxlib/bc.f90 defines the integer parameters 
-!
-! INLET        = 11
-! OUTLET       = 12
-!
-! note: INLET and OUTLET are "macros" that define_bc_tower.f90
-! interprets and uses to set the BC type for each of the components
-!
+module multifab_physbc_module
 
-module setbc_module
-
+  use multifab_module
+  use define_bc_module
   use bl_types
   use bl_error_module
 
@@ -28,41 +9,92 @@ module setbc_module
 
   private
 
-  public :: setbc_1d, setbc_2d, setbc_3d
+  public :: multifab_physbc
 
 contains
 
+  subroutine multifab_physbc(s,start_scomp,start_bccomp,num_comp,the_bc_level)
+
+    use bl_prof_module
+
+    type(multifab) , intent(inout) :: s
+    integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
+    type(bc_level) , intent(in   ) :: the_bc_level
+
+    ! Local
+    integer                  :: lo(get_dim(s)),hi(get_dim(s)),dm
+    integer                  :: i,ng,scomp,bccomp
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+    
+    dm = get_dim(s)
+
+    ng = nghost(s)
+
+    if (ng == 0) return
+
+    call build(bpt, "multifab_physbc")
+    
+    do i=1,nboxes(s)
+       if ( multifab_remote(s,i) ) cycle
+       sp => dataptr(s,i)
+       lo = lwb(get_box(s,i))
+       hi = upb(get_box(s,i))
+       select case (dm)
+       case (1)
+          do scomp = start_scomp,start_scomp+num_comp-1
+             bccomp = start_bccomp + scomp - start_scomp
+             call physbc_1d(sp(:,1,1,scomp), lo, hi, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+          end do
+       case (2)
+          do scomp = start_scomp,start_scomp+num_comp-1
+             bccomp = start_bccomp + scomp - start_scomp
+             call physbc_2d(sp(:,:,1,scomp), lo, hi, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+          end do
+       case (3)
+          do scomp = start_scomp,start_scomp+num_comp-1
+             bccomp = start_bccomp + scomp - start_scomp
+             call physbc_3d(sp(:,:,:,scomp), lo, hi, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
+          end do
+       end select
+    end do
+
+    call destroy(bpt)
+ 
+  end subroutine multifab_physbc
+
   !============================================================================
-  ! setbc_1d
+  ! physbc_1d
   !============================================================================
-  subroutine setbc_1d(s,lo,hi,ng,bc,icomp)
+  subroutine physbc_1d(s,lo,hi,ng,bc,icomp)
 
     use bc_module
     use bl_constants_module
     use inlet_bc_module
     use network
     use variables
-    
+
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:)
     integer        , intent(in   ) :: bc(:,:)
     integer        , intent(in   ) :: icomp
 
-    !     Local variables
-    integer         :: i
-    
     character (len=256) err_string
     integer :: dm
-
-    dm = 1
 
     if(ng == 0) return
 
     if ( (bc(1,1) == EXT_DIR .or. &
           bc(1,2) == EXT_DIR) .and. .NOT. inlet_bc_initialized) then
-       call bl_error("ERROR: in setbc, but inlet BCs not initialized")
+       call bl_error("ERROR: in physbc, but inlet BCs not initialized")
     endif
 
+    dm = 1
+    
 
     !--------------------------------------------------------------------------
     ! lower X
@@ -70,8 +102,7 @@ contains
     if (bc(1,1) == EXT_DIR) then
 
        ! velocity components
-       if (icomp == 1) s(lo(1)-ng:lo(1)-1) = ZERO
-       if (icomp == 2) s(lo(1)-ng:lo(1)-1) = INLET_VEL
+       if (icomp == 1) s(lo(1)-ng:lo(1)-1) = INLET_VEL 
 
        ! density
        if (icomp == dm+rho_comp) s(lo(1)-ng:lo(1)-1) = INLET_RHO
@@ -97,10 +128,9 @@ contains
 
     else 
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(1,1) = ", bc(1,1)
+            "ERROR: physbc does not implement bc(1,1) = ", bc(1,1)
        call bl_error(trim(err_string))
     end if
-
 
     !--------------------------------------------------------------------------
     ! upper X
@@ -113,17 +143,16 @@ contains
 
     else
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(2,2) = ", bc(1,2)
+            "ERROR: physbc does not implement bc(2,2) = ", bc(1,2)
        call bl_error(trim(err_string))
     end if
 
-  end subroutine setbc_1d
-
+  end subroutine physbc_1d
 
   !============================================================================
-  ! setbc_2d
+  ! physbc_2d
   !============================================================================
-  subroutine setbc_2d(s,lo,hi,ng,bc,icomp)
+  subroutine physbc_2d(s,lo,hi,ng,bc,icomp)
 
     use bc_module
     use bl_constants_module
@@ -137,12 +166,9 @@ contains
     integer        , intent(in   ) :: icomp
 
     !     Local variables
-    integer         :: i
+    integer         :: i, dm
     
     character (len=256) err_string
-    integer :: dm
-
-    dm = 2 
 
     if(ng == 0) return
 
@@ -150,9 +176,10 @@ contains
           bc(1,2) == EXT_DIR .or. &
           bc(2,1) == EXT_DIR .or. &
           bc(2,2) == EXT_DIR) .and. .NOT. inlet_bc_initialized) then
-       call bl_error("ERROR: in setbc, but inlet BCs not initialized")
+       call bl_error("ERROR: in physbc, but inlet BCs not initialized")
     endif
 
+    dm = 2
 
     !--------------------------------------------------------------------------
     ! lower X 
@@ -161,7 +188,7 @@ contains
     ! we are assuming that the domain is periodic in X
     if (bc(1,1) /= INTERIOR) then
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(1,1) = ", bc(1,1)
+            "ERROR: physbc does not implement bc(1,1) = ", bc(1,1)
        call bl_error(trim(err_string))
     end if
 
@@ -173,7 +200,7 @@ contains
     ! we are assuming that the domain is periodic in X
     if (bc(1,2) /= INTERIOR) then
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(1,2) = ", bc(1,2)
+            "ERROR: physbc does not implement bc(1,2) = ", bc(1,2)
        call bl_error(trim(err_string))
     end if
 
@@ -213,7 +240,7 @@ contains
 
     else 
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(2,1) = ", bc(2,1)
+            "ERROR: physbc does not implement bc(2,1) = ", bc(2,1)
        call bl_error(trim(err_string))
     end if
 
@@ -231,17 +258,17 @@ contains
 
     else
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(2,2) = ", bc(2,2)
+            "ERROR: physbc does not implement bc(2,2) = ", bc(2,2)
        call bl_error(trim(err_string))
     end if
 
-  end subroutine setbc_2d
+  end subroutine physbc_2d
 
 
   !============================================================================
-  ! setbc_3d
+  ! physbc_3d
   !============================================================================
-  subroutine setbc_3d(s,lo,hi,ng,bc,icomp)
+  subroutine physbc_3d(s,lo,hi,ng,bc,icomp)
 
     use bc_module
     use bl_constants_module
@@ -255,13 +282,10 @@ contains
     integer        , intent(in   ) :: icomp
 
     !     Local variables
-    integer :: i,j
+    integer :: i,j, dm
 
     character (len=256) err_string
-    integer :: dm
 
-    dm = 3
-    
     if (ng == 0) return
 
     if ( (bc(1,1) == EXT_DIR .or. &
@@ -270,9 +294,10 @@ contains
           bc(2,2) == EXT_DIR .or. &
           bc(3,1) == EXT_DIR .or. &
           bc(3,2) == EXT_DIR) .and. .NOT. inlet_bc_initialized) then
-       call bl_error("ERROR: in setbc, but inlet BCs not initialized")
+       call bl_error("ERROR: in physbc, but inlet BCs not initialized")
     endif
 
+    dm = 3
 
     !--------------------------------------------------------------------------
     ! lower X 
@@ -281,7 +306,7 @@ contains
     ! we are assuming that the domain is periodic in X
     if (bc(1,1) /= INTERIOR) then
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(1,1) = ", bc(1,1)
+            "ERROR: physbc does not implement bc(1,1) = ", bc(1,1)
        call bl_error(trim(err_string))
     end if
 
@@ -293,7 +318,7 @@ contains
     ! we are assuming that the domain is periodic in X
     if (bc(1,2) /= INTERIOR) then
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(1,2) = ", bc(1,2)
+            "ERROR: physbc does not implement bc(1,2) = ", bc(1,2)
        call bl_error(trim(err_string))
     end if
 
@@ -305,7 +330,7 @@ contains
     ! we are assuming that the domain is periodic in X
     if (bc(2,1) /= INTERIOR) then
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(2,1) = ", bc(2,1)
+            "ERROR: physbc does not implement bc(2,1) = ", bc(2,1)
        call bl_error(trim(err_string))
     end if
 
@@ -317,7 +342,7 @@ contains
     ! we are assuming that the domain is periodic in X
     if (bc(2,2) /= INTERIOR) then
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(2,2) = ", bc(2,2)
+            "ERROR: physbc does not implement bc(2,2) = ", bc(2,2)
        call bl_error(trim(err_string))
     end if
 
@@ -360,7 +385,7 @@ contains
        
     else 
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(3,1) = ", bc(3,1)
+            "ERROR: physbc does not implement bc(3,1) = ", bc(3,1)
        call bl_error(trim(err_string))
     end if
 
@@ -380,10 +405,10 @@ contains
 
     else 
        write (unit=err_string, fmt="(a, i3)") &
-            "ERROR: setbc does not implement bc(3,2) = ", bc(3,2)
+            "ERROR: physbc does not implement bc(3,2) = ", bc(3,2)
        call bl_error(trim(err_string))
     end if
 
-  end subroutine setbc_3d
+  end subroutine physbc_3d
 
-end module setbc_module
+end module multifab_physbc_module

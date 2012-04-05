@@ -13,7 +13,6 @@ contains
   subroutine init_base_state(n,model_file,s0_init,p0_init,dx)
 
     use bc_module
-    use setbc_module
     use bl_prof_module
     use multifab_module
     use define_bc_module

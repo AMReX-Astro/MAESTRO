@@ -30,7 +30,6 @@ subroutine varden()
   use box_util_module
   use bl_IO_module
   use fabio_module
-  use setbc_module
   use variables, only: nscal, init_variables, rho_comp, spec_comp
   use fill_3d_module, only: make_normal
   use geometry, only:  nlevs_radial, spherical, &

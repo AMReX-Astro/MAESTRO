@@ -16,7 +16,6 @@ subroutine varden()
   use box_util_module
   use bl_IO_module
   use fabio_module
-  use setbc_module
   use variables
   use geometry
   use network

@@ -25,7 +25,6 @@ f90sources += pred_parameters.f90
 f90sources += probin.f90
 f90sources += restrict_base.f90
 f90sources += rhoh_vs_t.f90
-f90sources += setbc.f90
 f90sources += thermal_conduct.f90
 f90sources += varden.f90
 f90sources += variables.f90
