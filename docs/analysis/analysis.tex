@@ -1,7 +1,7 @@
-\section{The {\tt data\_processing} Routines}
+\section{The {\tt AmrPostprocessing} Routines}
 \label{sec:analysis}
 
-The {\tt fParallel/data\_processing/} directory contains a large
+The {\tt AmrPostprocessing/F\_Src/} directory contains a large
 number of Fortran-based analysis routines for BoxLib datasets.  Many
 of these can be used with both \maestro\ and the compressible
 astrophysics code, \castro.
@@ -86,7 +86,7 @@ provide usage examples.
 \subsection{Data Processing Example}
 
 The routine {\tt fspeciesmass2d.f90} in {\tt
-  data\_processing/tutorial} serves as a well-commented example of how
+  F\_src/tutorial} serves as a well-commented example of how
 to work with \maestro\ plotfile data.  This routine simply computes
 the total mass of a particular species on the entire domain for a 2-d
 dataset.  It is written to understand a multilevel (AMR) dataset, and
@@ -118,9 +118,9 @@ to get information on the classes and functions provided by the {\tt
 As a concrete example, running {\tt test2} with particles enabled
 will seed particles in the initial hotspot.  To plot the results,
 first set your {\tt PYTHONPATH} environment variable to point to the
-{\tt fParallel/data\_processing/python/} directory, for example:
+{\tt AmrPostprocessing/F\_Src/python/} directory, for example:
 \begin{verbatim}
-export PYTHONPATH="/home/username/development/MAESTRO/fParallel/data_processing/python"
+export PYTHONPATH="/home/username/development/AmrPostprocessing/F_Src/python"
 \end{verbatim}
 This will allow python to see the {\tt parseparticles.py} routine.
 For the {\tt test2} problem, the {\tt plotparticles.py} routine shows
