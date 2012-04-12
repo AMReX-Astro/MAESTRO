@@ -422,6 +422,8 @@ contains
 !             (we compute it in this wrapper as sqrt(gam1 p /rho) instead
 !             of taking the relativistic version from helmeos.
 ! entropy  -- entropy (erg/g/K)
+! dsdT     -- d entropy / d temperature
+! dsdR     -- d entropy / d density
 !
 ! input = 1 means dens, temp    , and xmass are inputs, return enthalpy, eint
 !       = 2 means dens, enthalpy, and xmass are inputs, return temp    , eint
