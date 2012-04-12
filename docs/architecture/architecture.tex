@@ -60,15 +60,6 @@ Problems piece together various \maestro\ directories, choosing a
 reaction network, equation of state, and conductivity routine to build
 an executable.  Briefly, the \maestro\ sub-directories are:
 \begin{itemize}
-\item {\tt data\_processing/}
-
-  Simple Fortran-based analysis routines (e.g.\ extract a line from a
-  multidimensional dataset) that operate on BoxLib datasets.  These are
-  described in \S~\ref{sec:analysis}.
-
-  Several sub-directories with python-based routines are also here.
-  These are described both in \S~\ref{sec:analysis} and \S~\ref{sec:vis:python}.
-
 \item {\tt extern/}
 
   External modules, like ODE integrators, equations of state, reaction
@@ -234,6 +225,13 @@ The \boxlib\ directories that \maestro\ uses are:
 
 \end{itemize}
 
+
+Finally the {\tt AmrPostprocessing} package provides simple
+Fortran-based analysis routines (e.g.\ extract a line from a
+multidimensional dataset) that operate on BoxLib datasets.  These are
+described in \S~\ref{sec:analysis}.  Several sub-directories with
+python-based routines are also here.  These are described both in
+\S~\ref{sec:analysis} and \S~\ref{sec:vis:python}.
 
 
 
@@ -755,9 +753,9 @@ A number of \maestro\ modules appear frequently throughout the source.
 Below, we describe some of the more common functionality of the most
 popular modules.
 
-\subsection{\tt average}
+\subsection{\tt average\_module}
 
-The {\tt average} module provides a routine {\tt average} that takes
+The {\tt average\_module} module provides a routine {\tt average} that takes
 a multilevel \multifab\ array and averages the full Cartesian data
 onto the 1D base state.
 
@@ -829,6 +827,12 @@ The {\tt fill\_3d\_module} provides routines that map from the 1D
 base state to the full Cartesian 2- or 3D state.  Variations in the
 routines allow for cell-centered or edge-centered data on either the
 base state or full Cartesian state.
+
+\subsection{\tt fundamental\_constants\_module}
+
+The {\tt fundamental\_constants\_module} provides a simple list of
+various fundamental constants (e.g.\ Newton's gravitational constant)
+in CGS units.
 
 \subsection{{\tt geometry}}
 
