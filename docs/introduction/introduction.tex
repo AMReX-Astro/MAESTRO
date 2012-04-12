@@ -1,10 +1,12 @@
 \section{History of \maestro}
 
 \maestro\ describes the evolution of low Mach number flows that are in
-hydrostatic equilibrium.  The idea for \maestro\ grew out of our success
-in applying low Mach number combustion methods developed for
-terrestrial flames~\cite{DayBell00} to small-scale
-astrophysical flows.  Our original small-scale astrophysical
+hydrostatic equilibrium.  The idea for \maestro\ grew out of our
+success in applying low Mach number combustion methods developed for
+terrestrial flames~\cite{DayBell00} to small-scale astrophysical
+flames (including Landau-Darrieus instability~\cite{SNld},
+Rayleigh-Taylor unstable flames~\cite{SNrt3d}, and flame-turbulence
+interactions~\cite{SNturb}).  Our original small-scale astrophysical
 combustion algorithm is detailed in
 \begin{itemize}
 \item {\em Adaptive Low Mach Number Simulations of Nuclear Flames,}
@@ -65,22 +67,106 @@ method to Type Ia supernovae and X-ray bursts:
 \end{itemize}
 
 
+\section{Brief Overview of Low Speed Approximations}
+
+There are many low speed formulations of the equations of hydrodynamics
+in use, each with their own applications.  All of these methods share in
+common a constraint equation on the velocity field that augments the
+equations of motion.  
+
+\subsection{Incompressible Hydrodynamics}
+
+The simplest low Mach number approximation is incompressible
+hydrodynamics. This approximation is formally the $M \rightarrow 0$
+limit of the Navier-Stokes equations. In incompressible hydrodynamics,
+the velocity satisfies a constraint equation:
+\begin{equation}
+\nabla \cdot \Ub = 0
+\end{equation}
+which acts to instantaneously equilibrate the flow, thereby filtering
+out soundwaves.  The constraint equation implies that
+\begin{equation}
+D\rho/Dt = 0
+\end{equation}
+(through the continuity equation) which says that the density is
+constant along particle paths. This means that there are no
+compressibility effects modeled in this approximation.
+
+
+\subsection{Anelastic Hydrodynamics}
+
+In the anelastic approximation small amplitude thermodynamic
+perturbations are carried with respect to a static hydrostatic
+background (described by density $\rho_0$).  The density perturbation
+is ignored in the continuity equation, resulting in a constraint
+equation:
+\begin{equation}
+\nabla \cdot (\rho_0 \Ub) = 0
+\end{equation}
+This properly captures the compressibility effects due to the
+stratification of the background. Because there is no evolution
+equation for the perturbational density, approximations are made to
+the buoyancy term in the momentum equation.
+
+\subsection{Low-Mach Number Combustion}
+
+In the low Mach number combustion model, the pressure is decomposed
+into a dynamic, $\pi$, and thermodynamic component, $p_0$, the ratio
+of which is $O(M^2)$. The total pressure is replaced everywhere by the
+thermodynamic pressure, except in the momentum equation. This
+decouples the pressure and density and filters out the sound
+waves. Large amplitude density and temperature fluctuations are
+allowed. The only requirement is that the total pressure stay close to
+the background pressure, which is assumed constant. This requirement
+can be expressed as:
+\begin{equation}
+p = p_0
+\end{equation}
+and differentiating this along particle paths leads to a constraint on
+the velocity field: 
+\begin{equation}
+\nabla \cdot \Ub = S 
+\end{equation}
+This looks like the constraint for incompressible hydrodynamics, but
+now we have a source term, $S$, representing the local compressibility
+effects due to the energy generation and thermal diffusion.  Since the
+background pressure is taken to be constant, we cannot model flows
+that cover a large fraction of a pressure scale height. However, this
+method is ideal for exploring the physics of flames.
+
+\subsection{Pseudo-Incompressible Methods}
+
+The pseudo-incompressible method incorporates both the local changes
+to compressibility due to reaction/heat release, and the large-scale
+changes due to the background stratification.  This was originally
+derived for an ideal gas equation of state for atmospherical flows.
+Allowing the background pressure, $p_0$ to vary (e.g.\ in hydrostatic
+equilibrium), differentiating pressure along particle paths gives:
+\begin{equation}
+\nabla \cdot (p_0^{1/\gamma} \Ub) = H
+\end{equation}
+where $\gamma$ is the ratio of specific heats and $H$ is the source.
+
+\maestro\ is based on this method, generalizing this constraint to an
+arbitrary equation of state and allowing for the time-variation of the
+base state.
+
 \section{Projection Methods 101}
 
 Most astrophysical hydrodynamics codes
 (e.g.\ CASTRO~\cite{castro} or FLASH~\cite{flash}) solve the
 compressible Euler equations, which can be written in the form:
 \begin{equation}
-U_t + \nabla \cdot F(U) = 0
+\Ub_t + \nabla \cdot F(\Ub) = 0
 \end{equation}
-where U is the vector of conserved quantities, $U = (\rho, \rho u,
+where $\Ub$ is the vector of conserved quantities, $\Ub = (\rho, \rho u,
 \rho E)$, with $\rho$ the density, $u$ the velocity, and $E$ the total
 energy per unit mass.  This system of equations can be expressed 
 as a system of advection equations:
 \begin{equation}
-q_t + A(q) q_x = 0
+{\bf q}_t + A({\bf q}) {\bf q}_x = 0
 \end{equation}
-where $q$ are called the primitive variables, and $A$ is the
+where ${\bf q}$ are called the primitive variables, and $A$ is the
 Jacobian, $A \equiv \partial F / \partial U$.  The eigenvalues of the
 matrix $A$ are the characteristic speeds---the speeds at which
 information propagates.  For the Euler equations, these are $u$ and $u
@@ -102,21 +188,21 @@ momentum) coupled with a divergence constraint on the velocity field.
 For example, the equations of constant-density incompressible flow
 are:
 \begin{eqnarray}
-U_t &=& -U \cdot \nabla U + \nabla p \label{eq:incompressible_u} \\
-\nabla \cdot U &=& 0
+\Ub_t &=& -\Ub \cdot \nabla \Ub + \nabla p \label{eq:incompressible_u} \\
+\nabla \cdot \Ub &=& 0
 \end{eqnarray}
-Here, $U$ represents the velocity vector%
+Here, $\Ub$ represents the velocity vector%
 %
 \footnote{Here we see an unfortunate conflict
 of notation between the compressible hydro community and the
 incompressible community.  In papers on compressible hydrodynamics,
-$U$ will usually mean the vector of conserved quantities.  In 
-incompressible / low speed papers, $U$ will mean the velocity vector.}
+$\Ub$ will usually mean the vector of conserved quantities.  In 
+incompressible / low speed papers, $\Ub$ will mean the velocity vector.}
 %
 and $p$ is the dynamical pressure.  The time-evolution equation for
 the velocity (Eq.~\ref{eq:incompressible_u}) can be solved using
 techniques similar to those developed for compressible hydrodynamics,
-updating the old velocity, $U^n$, to the new time-level, $U^\star$.
+updating the old velocity, $\Ub^n$, to the new time-level, $\Ub^\star$.
 Here the `$^\star$' indicates that the updated velocity does not, in
 general, satisfy the divergence constraint.  A projection method will
 take this updated velocity and force it to obey the constraint
@@ -124,21 +210,23 @@ equation.  The basic idea follows from the fact that any vector
 field can be expressed as the sum of a divergence-free quantity and
 the gradient of a scalar.  For the velocity, we can write:
 \begin{equation}
-U^\star = U^d + \nabla \phi \label{eq:decomposition}
+\Ub^\star = \Ub^d + \nabla \phi \label{eq:decomposition}
 \end{equation}
-where $U^d$ is the divergence free portion of the velocity vector,
-$U^\star$, and $\phi$ is a scalar.  Taking the divergence of
+where $\Ub^d$ is the divergence free portion of the velocity vector,
+$\Ub^\star$, and $\phi$ is a scalar.  Taking the divergence of
 Eq.~(\ref{eq:decomposition}), we have
 \begin{equation}
-\nabla^2 \phi = \nabla \cdot U^\star
+\nabla^2 \phi = \nabla \cdot \Ub^\star
 \end{equation}
-(where we used $\nabla \cdot U^d = 0$).
+(where we used $\nabla \cdot \Ub^d = 0$).
 With appropriate boundary conditions, this Poisson equation can be
 solved for $\phi$, and the final, divergence-free velocity can 
 be computed as
 \begin{equation}
-U^{n+1} = U^\star - \nabla \phi
+\Ub^{n+1} = \Ub^\star - \nabla \phi
 \end{equation}
+Because soundwaves are filtered, the timestep constraint now depends only
+on $|\Ub|$.
 
 Extensions to variable-density incompressible
 flows~\cite{bellMarcus:1992b} involve a slightly different
@@ -172,7 +260,10 @@ due to local sources and large-scale stratification.
 
 Throughout the papers describing \maestro, we've largely kept our
 notation consistent.  Table~\ref{table:sym} defines the
-frequently-used quantities and provides their units.
+frequently-used quantities and provides their units.  Additionally,
+for any quantity $\phi$, we denote the average of $\phi$ over a layer
+at constaint radius (or height for plane-parallel simulations) as
+$\overline{\phi}$.
 
 
 
@@ -283,6 +374,6 @@ $\psi$  & $\psi \equiv D_0 p_0/Dt = \partial p_0/\partial t + w_0\partial p_0/\p
 $\omegadot_k$ & creation rate for species $k$ ($\omegadot_k \equiv DX_k/Dt$) & s$^{-1}$ \\
 \end{longtable}
 \end{center}
-
 \renewcommand{\arraystretch}{1.0}
+
 
