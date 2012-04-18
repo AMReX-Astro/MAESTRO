@@ -401,8 +401,8 @@ subroutine varden()
         call build(rhohalf(n),  mla%la(n), 1, ng_s)
         call setval(rhohalf(n), ONE, all=.true.)
         
-        ! build macpi
-        call build(macpi(n),  mla%la(n), 1, ng_s)
+        ! build macpi -- macproject assumes it has 1 ghostcell
+        call build(macpi(n),  mla%la(n), 1, 1)
         call setval(macpi(n), ZERO, all=.true.)
         
      enddo
