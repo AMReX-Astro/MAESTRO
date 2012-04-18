@@ -12,10 +12,12 @@ module test_projection_module
   implicit none
 
   private
-  public :: init_velocity, add_grad_scalar
+  public :: init_velocity, init_mac_velocity, &
+       add_grad_scalar, add_grad_scalar_mac, convert_MAC_to_cc
 
 contains
 
+  !===========================================================================
   subroutine init_velocity(U, dx, mla, the_bc_level)
 
     integer :: n, i, ng, dm, nlevs
@@ -88,7 +90,6 @@ contains
 
   end subroutine init_velocity
 
-
   subroutine init_velocity_2d(U, ng, lo, hi, dx)
 
     ! initialize the velocity field to a divergence-free field.  This
@@ -119,7 +120,99 @@ contains
   end subroutine init_velocity_2d
 
 
+  !===========================================================================
+  subroutine init_mac_velocity(umac, dx, mla, the_bc_level)
 
+    integer :: n, i, ng, dm, nlevs
+
+    type(multifab) , intent(inout) :: umac(:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(ml_layout)   , intent(inout) :: mla
+    type(bc_level)    , intent(in   ) :: the_bc_level(:)
+
+    integer :: lo(get_dim(umac(1,1))), hi(get_dim(umac(1,1)))
+
+    real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:)
+
+    nlevs = size(umac(:,1))
+    dm = get_dim(umac(1,1))
+
+    ng = nghost(umac(1,1))
+
+    do n=1,nlevs
+       do i = 1, nboxes(umac(n,1))
+          if ( multifab_remote(umac(n,1),i) ) cycle
+          ump => dataptr(umac(n,1), i)
+          vmp => dataptr(umac(n,2), i)
+
+          lo = lwb(get_box(umac(n,1), i))
+          hi = upb(get_box(umac(n,1), i))
+
+          select case (dm)
+          case (2)
+             call init_mac_velocity_2d(ump(:,:,1,1), vmp(:,:,1,1), ng, &
+                                       lo, hi, dx(n,:))
+
+          case (3)
+             call bl_error("ERROR: init_mac_velocity not implemented in 3d")
+
+          end select
+       end do
+    end do
+
+    ! make edge states consistent across levels
+    do n = nlevs,2,-1
+       do i = 1, dm
+          call ml_edge_restriction_c(umac(n-1,i),1,umac(n,i),1,mla%mba%rr(n-1,:),i,1)
+       enddo
+    enddo
+
+  end subroutine init_mac_velocity
+
+  subroutine init_mac_velocity_2d(umac, vmac, ng, lo, hi, dx)
+
+    ! initialize the velocity field to a divergence-free field.  This
+    ! velocity field comes from Almgren, Bell, and Szymczak 1996.
+
+    use probin_module, only: prob_lo, prob_hi
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng
+    real (kind=dp_t), intent(inout) :: umac(lo(1)-ng:,lo(2)-ng:)
+    real (kind=dp_t), intent(inout) :: vmac(lo(1)-ng:,lo(2)-ng:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    ! Local variables
+    integer :: i, j
+    real (kind=dp_t) :: x, y
+
+    ! x-velocity  (x are edges, y are centers)
+    do j = lo(2), hi(2)
+       y = (dble(j)+HALF)*dx(2) + prob_lo(2)
+
+       do i = lo(1), hi(1)+1
+          x = (dble(i))*dx(1) + prob_lo(1)
+    
+          umac(i,j) = -sin(M_PI*x)**2 * sin(TWO*M_PI*y)
+
+       enddo
+    enddo
+
+    ! y-velocity  (x are centers, y are edges)
+    do j = lo(2), hi(2)+1
+       y = (dble(j))*dx(2) + prob_lo(2)
+
+       do i = lo(1), hi(1)+1
+          x = (dble(i)+HALF)*dx(1) + prob_lo(1)
+
+          vmac(i,j) =  sin(M_PI*y)**2 * sin(TWO*M_PI*x)  
+
+       enddo
+    enddo
+
+  end subroutine init_mac_velocity_2d
+
+
+  !===========================================================================
   subroutine add_grad_scalar(U, gphi, dx, mla, the_bc_level)
 
     integer :: n, i, ng, dm, nlevs
@@ -198,8 +291,6 @@ contains
 
   subroutine add_grad_scalar_2d(U, gphi, ng, lo, hi, dx, phys_bc)
 
-    ! Add on the gradient of a scalar (phi) that satisfies grad(phi).n = 0.
-
     use     bc_module
     use probin_module, only: prob_lo, prob_hi
 
@@ -220,14 +311,19 @@ contains
     if (phys_bc(1,1) .eq. SLIP_WALL .and. phys_bc(1,2) .eq. SLIP_WALL .and. &
         phys_bc(2,1) .eq. SLIP_WALL .and. phys_bc(2,2) .eq. SLIP_WALL) then
 
+       ! Add on the gradient of a scalar (phi) that satisfies
+       ! grad(phi).n = 0.
        do j = lo(2), hi(2)
           y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
 
           do i = lo(1), hi(1)
              x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
       
-             U(i,j,1) = U(i,j,1) + FOUR*x*(ONE - x)
-             U(i,j,2) = U(i,j,2) + FOUR*y*(ONE - y)
+             gphi(i,j,1) =  FOUR*x*(ONE - x)
+             gphi(i,j,2) =  FOUR*y*(ONE - y)
+
+             U(i,j,1) = U(i,j,1) + gphi(i,j,1)
+             U(i,j,2) = U(i,j,2) + gphi(i,j,2)
    
           enddo
        enddo
@@ -262,12 +358,245 @@ contains
        enddo
 
     else
-       print *,'Not set up for these boundary conditions'
-       stop
+       call bl_error('Not set up for these boundary conditions')
     end if
 
     deallocate(phi)
 
   end subroutine add_grad_scalar_2d
+
+
+  !===========================================================================
+  subroutine add_grad_scalar_mac(umac, gphi_mac, dx, mla, the_bc_level)
+
+    type(multifab) , intent(inout) :: umac(:,:)
+    type(multifab) , intent(inout) :: gphi_mac(:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(ml_layout)   , intent(inout) :: mla
+    type(bc_level)    , intent(in   ) :: the_bc_level(:)
+
+    integer :: n, i, ng_um, ng_gp, dm, nlevs
+
+    integer :: lo(get_dim(umac(1,1))), hi(get_dim(umac(1,1)))
+
+    real(kind=dp_t), pointer :: ump(:,:,:,:)
+    real(kind=dp_t), pointer :: vmp(:,:,:,:)
+
+    real(kind=dp_t), pointer :: gxp(:,:,:,:)
+    real(kind=dp_t), pointer :: gyp(:,:,:,:)
+
+    nlevs = size(umac(:,1))
+    dm = get_dim(umac(1,1))
+
+    ng_um = nghost(umac(1,1))
+    ng_gp = nghost(gphi_mac(1,1))
+
+    do n=1,nlevs
+       do i = 1, nboxes(umac(n,1))
+          if ( multifab_remote(umac(n,1),i) ) cycle
+          ump => dataptr(umac(n,1), i)
+          vmp => dataptr(umac(n,2), i)
+
+          gxp => dataptr(gphi_mac(n,1), i)
+          gyp => dataptr(gphi_mac(n,2), i)
+
+          lo = lwb(get_box(umac(n,1), i))
+          hi = upb(get_box(umac(n,1), i))
+
+          select case (dm)
+          case (2)
+             call add_grad_scalar_2d_mac(ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+                                         gxp(:,:,1,1), gyp(:,:,1,1), ng_gp, &
+                                         lo, hi, dx(n,:), &
+                                         the_bc_level(n)%phys_bc_level_array(i,:,:))
+
+          case (3)
+             call bl_error("ERROR: add_grad_scalar_mac not implemented in 3d")
+
+          end select
+       end do
+    end do
+
+    ! make edge states consistent across levels
+    do n = nlevs,2,-1
+       do i = 1, dm
+          call ml_edge_restriction_c(umac(n-1,i),1,umac(n,i),1,mla%mba%rr(n-1,:),i,1)
+          call ml_edge_restriction_c(gphi_mac(n-1,i),1,gphi_mac(n,i),1,mla%mba%rr(n-1,:),i,1)
+       enddo
+    enddo
+
+  end subroutine add_grad_scalar_mac
+
+  subroutine add_grad_scalar_2d_mac(umac, vmac, ng_um, &
+                                    gphi_x, gphi_y, ng_gp, &
+                                    lo, hi, dx, phys_bc)
+
+    use     bc_module
+    use probin_module, only: prob_lo, prob_hi
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_um, ng_gp
+    real (kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real (kind=dp_t), intent(inout) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real (kind=dp_t), intent(inout) :: gphi_x(lo(1)-ng_gp:,lo(2)-ng_gp:)
+    real (kind=dp_t), intent(inout) :: gphi_y(lo(1)-ng_gp:,lo(2)-ng_gp:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+    integer         , intent(in   ) :: phys_bc(:,:)
+
+
+    ! Local variables
+    integer :: i, j
+    real (kind=dp_t) :: x, y
+    real (kind=dp_t), allocatable :: phi(:,:)
+
+    allocate(phi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)) 
+
+    if (phys_bc(1,1) .eq. SLIP_WALL .and. phys_bc(1,2) .eq. SLIP_WALL .and. &
+        phys_bc(2,1) .eq. SLIP_WALL .and. phys_bc(2,2) .eq. SLIP_WALL) then
+
+       ! Add on the gradient of a scalar (phi) that satisfies
+       ! grad(phi).n = 0.
+
+       ! x-velocity  (x are edges, y are centers)
+       do j = lo(2), hi(2)
+          y = (dble(j)+HALF)*dx(2) + prob_lo(2)
+
+          do i = lo(1), hi(1)+1
+             x = (dble(i))*dx(1) + prob_lo(1)
+      
+             gphi_x(i,j) =  FOUR*x*(ONE - x)
+             umac(i,j) = umac(i,j) + gphi_x(i,j)
+   
+          enddo
+       enddo
+
+       ! y-velocity  (x are centers, y are edges)
+       do j = lo(2), hi(2)+1
+          y = (dble(j))*dx(2) + prob_lo(2)
+
+          do i = lo(1), hi(1)
+             x = (dble(i)+HALF)*dx(1) + prob_lo(1)
+      
+             gphi_y(i,j) =  FOUR*y*(ONE - y)
+             vmac(i,j) = vmac(i,j) + gphi_y(i,j)
+   
+          enddo
+       enddo
+
+
+    else if (phys_bc(1,1) .eq. PERIODIC .and. phys_bc(1,2) .eq. PERIODIC .and. &
+             phys_bc(2,1) .eq. PERIODIC .and. phys_bc(2,2) .eq. PERIODIC) then
+
+       do j = lo(2)-1, hi(2)+1
+          y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
+    
+          do i = lo(1)-1, hi(1)+1
+             x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
+   
+               phi(i,j) = 0.1d0 * cos(2.d0*M_PI*y)*cos(2.d0*M_PI*x)
+   
+          enddo
+       enddo
+
+       ! x-velocity  (x are edges, y are centers)
+       do j = lo(2), hi(2)
+          y = (dble(j)+HALF)*dx(2) + prob_lo(2)
+
+          do i = lo(1), hi(1)+1
+             x = (dble(i))*dx(1) + prob_lo(1)
+             
+             gphi_x(i,j) = (phi(i,j) - phi(i-1,j))/dx(1)
+             umac(i,j) = umac(i,j) + gphi_x(i,j)
+
+          enddo
+       enddo
+
+       ! y-velocity  (x are centers, y are edges)
+       do j = lo(2), hi(2)+1
+          y = (dble(j))*dx(2) + prob_lo(2)
+
+          do i = lo(1), hi(1)
+             x = (dble(i)+HALF)*dx(1) + prob_lo(1)
+
+             gphi_y(i,j) = (phi(i,j) - phi(i,j-1))/dx(2)
+             vmac(i,j) = vmac(i,j) + gphi_y(i,j)
+   
+          enddo
+       enddo
+
+    else
+       call bl_error('Not set up for these boundary conditions')
+    end if
+
+    deallocate(phi)
+
+  end subroutine add_grad_scalar_2d_mac
+
+
+  !===========================================================================  
+  subroutine convert_MAC_to_cc(umac, u)
+
+    ! convert a MAC velocity field to a cell-centered one -- no ghost
+    ! cell filling is done here.
+
+    integer :: n, i, ng_um, ng_u, dm, nlevs
+
+    type(multifab) , intent(in   ) :: umac(:,:)
+    type(multifab) , intent(inout) :: u(:)
+
+    integer :: lo(get_dim(u(1))), hi(get_dim(u(1)))
+
+    real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:), wmp(:,:,:,:)
+    real(kind=dp_t), pointer :: up(:,:,:,:)
+
+    nlevs = size(u)
+    dm = get_dim(u(1))
+
+    ng_u  = nghost(u(1))
+    ng_um = nghost(umac(1,1))
+
+    do n=1,nlevs
+       do i = 1, nboxes(u(n))
+          if ( multifab_remote(u(n),i) ) cycle
+          up => dataptr(u(n), i)
+
+          ump => dataptr(umac(n,1), i)
+          vmp => dataptr(umac(n,2), i)
+
+          lo = lwb(get_box(u(n), i))
+          hi = upb(get_box(u(n), i))
+
+          select case (dm)
+          case (2)
+             call convert_MAC_to_cc_2d(ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+                                       up(:,:,1,:), ng_u, lo, hi)
+
+          case (3)
+             call bl_error("ERROR: convert_MAC_to_cc not implemented in 3d")
+
+          end select
+       end do
+    end do
+    
+  end subroutine convert_MAC_to_cc
+
+  subroutine convert_MAC_to_cc_2d(umac, vmac, ng_um, u, ng_u, lo, hi)
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_um, ng_u
+    real (kind=dp_t), intent(in   ) :: umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real (kind=dp_t), intent(in   ) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real (kind=dp_t), intent(inout) ::    u(lo(1)-ng_u :,lo(2)-ng_u :,:)
+
+    integer :: i, j
+
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(2)
+
+          u(i,j,1) = HALF*(umac(i,j) + umac(i+1,j))
+          u(i,j,2) = HALF*(vmac(i,j) + vmac(i,j+1))
+
+       enddo
+    enddo
+       
+  end subroutine convert_MAC_to_cc_2d
 
 end module test_projection_module
