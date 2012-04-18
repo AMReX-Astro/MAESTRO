@@ -15,7 +15,9 @@ paper~III \cite{lowMach3}, and paper~IV \cite{lowMach4}.
 
 Here we summarize the equations solved by \maestro.  We refer the reader
 to papers~I through IV and the multilevel paper for the derivation
-and motivation of the equation set.
+and motivation of the equation set.  (Note: this `traditional' algorithm
+uses Strang-splitting for the reactions.  An alternate implementation, using
+spectral deferred corrections is outlined in Chapter~\ref{ch:sdc}.)
 
 
 
@@ -31,11 +33,14 @@ description in the multilevel paper.  The initialization has also been
 included with more detail than was given in paper III.  The main
 driver for a single step of the algorithm is {\tt advance.f90}---refer
 to that code to see the sequence of functions called to implement each
-ste.
+step.
 
 
 \subsection{Notation}
 
+reach\_state
+
+enforce\_hse
 
 
 \subsection{Single Step}
@@ -183,7 +188,11 @@ accounted for in {\bf React State}.  The update consists of two steps:
 \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
 \item Compute the time-centered species edge states, $(\rho X_k)^{\nph,\star,\pred}$,
-  for the conservative update of $(\rho X_k)^{(1)}$.  We use the equations 
+  for the conservative update of $(\rho X_k)^{(1)}$.  
+
+  There are a variety of choices of quantities to predict to the
+  edges (controlled by {\tt species\_pred\_type}---see Chapter~\ref{ch:pert}).
+  By default, we use the equations 
 \begin{eqnarray}
 \frac{\partial\rho'}{\partial t} &=& -\Ub\cdot\nabla\rho' - 
      \rho'\nabla\cdot\Ub - \nabla\cdot\left(\rho_0\Ubt\right),
@@ -289,14 +298,17 @@ equilibrium.  The update consists of two steps:
 \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
 \item Compute the time-centered enthalpy edge state, $(\rho h)^{\nph,\star,\pred},$
-  for the conservative update of $(\rho h)^{(1)}$.  The perturbational
+  for the conservative update of $(\rho h)^{(1)}$.  There are a variety
+   of quantities that we can predict to the interfaces here (controlled
+   by {\tt enthalpy\_pred\_type}---see Chapter~\ref{ch:pert}).  For
+   the default case, we use the perturbational
   enthalpy equation, neglecting reactions,
 \begin{equation}
 \frac{\partial(\rho h)'}{\partial t} = -\Ub\cdot\nabla(\rho h)' - 
    (\rho h)'\nabla\cdot\Ub - \nabla\cdot\left[(\rho h)_0\Ubt\right] + \Ubt\cdot\nabla p_0 
     \label{eq:Perturbational Enthalpy}.
 \end{equation}
-  is used to predict
+  to predict
   $(\rho h)' = (\rho h)^{(1)} - (\rho h)_0^n$ to time-centered edges, 
   using $\Ub = \uadvone+w_0^{\nph,\star} \eb_r$,
   yielding $(\rho h)^{'\nph,\star,\pred}$.  We convert the perturbational 
