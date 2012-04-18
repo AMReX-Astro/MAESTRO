@@ -1,12 +1,13 @@
 &PROBIN
- test_set = "gr0_2d"
+ test_set = "gr0_2d_2lev_coarse"
 
- run_prefix = "periodic_mac_"
+ run_prefix = "mac_periodic_"
 
  project_type = 2
 
  spherical_in = 0
  dm_in = 2
+ max_levs = 2
 
  verbose = 1
 
