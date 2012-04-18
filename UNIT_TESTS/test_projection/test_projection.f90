@@ -244,6 +244,7 @@ contains
           select case (dm)
           case (2)
              call add_grad_scalar_2d(up(:,:,1,:), gp(:,:,1,:), ng, lo, hi, dx(n,:), &
+                                     the_bc_level(n)%phys_bc_level_array(0,:,:), &
                                      the_bc_level(n)%phys_bc_level_array(i,:,:))
 
           case (3)
@@ -289,7 +290,8 @@ contains
 
   end subroutine add_grad_scalar
 
-  subroutine add_grad_scalar_2d(U, gphi, ng, lo, hi, dx, phys_bc)
+  subroutine add_grad_scalar_2d(U, gphi, ng, lo, hi, dx, &
+                                domain_phys_bc, box_phys_bc)
 
     use     bc_module
     use probin_module, only: prob_lo, prob_hi
@@ -298,7 +300,8 @@ contains
     real (kind=dp_t), intent(inout) ::    U(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(inout) :: gphi(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) :: dx(:)
-    integer         , intent(in   ) :: phys_bc(:,:)
+    integer         , intent(in   ) :: domain_phys_bc(:,:)
+    integer         , intent(in   ) :: box_phys_bc(:,:)
 
 
     ! Local variables
@@ -308,8 +311,10 @@ contains
 
     allocate(phi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)) 
 
-    if (phys_bc(1,1) .eq. SLIP_WALL .and. phys_bc(1,2) .eq. SLIP_WALL .and. &
-        phys_bc(2,1) .eq. SLIP_WALL .and. phys_bc(2,2) .eq. SLIP_WALL) then
+    if (domain_phys_bc(1,1) .eq. SLIP_WALL .and. &
+        domain_phys_bc(1,2) .eq. SLIP_WALL .and. &
+        domain_phys_bc(2,1) .eq. SLIP_WALL .and. &
+        domain_phys_bc(2,2) .eq. SLIP_WALL) then
 
        ! Add on the gradient of a scalar (phi) that satisfies
        ! grad(phi).n = 0.
@@ -328,8 +333,10 @@ contains
           enddo
        enddo
 
-    else if (phys_bc(1,1) .eq. PERIODIC .and. phys_bc(1,2) .eq. PERIODIC .and. &
-             phys_bc(2,1) .eq. PERIODIC .and. phys_bc(2,2) .eq. PERIODIC) then
+    else if (domain_phys_bc(1,1) .eq. PERIODIC .and. &
+             domain_phys_bc(1,2) .eq. PERIODIC .and. &
+             domain_phys_bc(2,1) .eq. PERIODIC .and. &
+             domain_phys_bc(2,2) .eq. PERIODIC) then
 
        do j = lo(2)-1, hi(2)+1
           y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
@@ -408,6 +415,7 @@ contains
              call add_grad_scalar_2d_mac(ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                          gxp(:,:,1,1), gyp(:,:,1,1), ng_gp, &
                                          lo, hi, dx(n,:), &
+                                         the_bc_level(n)%phys_bc_level_array(0,:,:), &
                                          the_bc_level(n)%phys_bc_level_array(i,:,:))
 
           case (3)
@@ -429,7 +437,8 @@ contains
 
   subroutine add_grad_scalar_2d_mac(umac, vmac, ng_um, &
                                     gphi_x, gphi_y, ng_gp, &
-                                    lo, hi, dx, phys_bc)
+                                    lo, hi, dx, &
+                                    domain_phys_bc, box_phys_bc)
 
     use     bc_module
     use probin_module, only: prob_lo, prob_hi
@@ -440,7 +449,8 @@ contains
     real (kind=dp_t), intent(inout) :: gphi_x(lo(1)-ng_gp:,lo(2)-ng_gp:)
     real (kind=dp_t), intent(inout) :: gphi_y(lo(1)-ng_gp:,lo(2)-ng_gp:)
     real (kind=dp_t), intent(in   ) :: dx(:)
-    integer         , intent(in   ) :: phys_bc(:,:)
+    integer         , intent(in   ) :: domain_phys_bc(:,:)
+    integer         , intent(in   ) :: box_phys_bc(:,:)
 
 
     ! Local variables
@@ -450,8 +460,10 @@ contains
 
     allocate(phi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)) 
 
-    if (phys_bc(1,1) .eq. SLIP_WALL .and. phys_bc(1,2) .eq. SLIP_WALL .and. &
-        phys_bc(2,1) .eq. SLIP_WALL .and. phys_bc(2,2) .eq. SLIP_WALL) then
+    if (domain_phys_bc(1,1) .eq. SLIP_WALL .and. &
+        domain_phys_bc(1,2) .eq. SLIP_WALL .and. &
+        domain_phys_bc(2,1) .eq. SLIP_WALL .and. &
+        domain_phys_bc(2,2) .eq. SLIP_WALL) then
 
        ! Add on the gradient of a scalar (phi) that satisfies
        ! grad(phi).n = 0.
@@ -483,8 +495,10 @@ contains
        enddo
 
 
-    else if (phys_bc(1,1) .eq. PERIODIC .and. phys_bc(1,2) .eq. PERIODIC .and. &
-             phys_bc(2,1) .eq. PERIODIC .and. phys_bc(2,2) .eq. PERIODIC) then
+    else if (domain_phys_bc(1,1) .eq. PERIODIC .and. &
+             domain_phys_bc(1,2) .eq. PERIODIC .and. &
+             domain_phys_bc(2,1) .eq. PERIODIC .and. &
+             domain_phys_bc(2,2) .eq. PERIODIC) then
 
        do j = lo(2)-1, hi(2)+1
           y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
@@ -526,6 +540,45 @@ contains
     else
        call bl_error('Not set up for these boundary conditions')
     end if
+
+
+    ! impose BCs
+
+    ! x lo
+    select case (box_phys_bc(1,1))
+    case (SLIP_WALL)
+       umac(lo(1),lo(2):hi(2)) = ZERO
+    case (PERIODIC, INTERIOR)
+    case default
+       call bl_error("invalid x lo BC")
+    end select
+
+    ! x hi
+    select case(box_phys_bc(1,2))
+    case (SLIP_WALL)
+       umac(hi(1)+1,lo(2):hi(2)) = ZERO
+    case (PERIODIC, INTERIOR)
+    case default
+       call bl_error("invalid x hi BC")
+    end select
+
+    ! y lo
+    select case (box_phys_bc(2,1))
+    case (SLIP_WALL)
+       umac(lo(1):hi(1),lo(2)) = ZERO
+    case (PERIODIC, INTERIOR)
+    case default
+       call bl_error("invalid y lo BC")
+    end select
+
+    ! y hi
+    select case(box_phys_bc(2,2))
+    case (SLIP_WALL)
+       umac(lo(1):hi(1),hi(2)+1) = ZERO
+    case (PERIODIC, INTERIOR)
+    case default
+       call bl_error("invalid y hi BC")
+    end select
 
     deallocate(phi)
 
