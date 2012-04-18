@@ -425,17 +425,47 @@ subroutine varden()
   ! clean-up
   !---------------------------------------------------------------------------
 
-  do n = 1, nlevs
-     call destroy(uold(n))
-     call destroy(umid(n))
-     call destroy(unew(n))
-     call destroy(gphi(n))
-  enddo
+  if (project_type == 1) then
+     do n = 1, nlevs
+        call destroy(uold(n))
+        call destroy(umid(n))
+        call destroy(unew(n))
+        call destroy(gphi(n))
+        
+        call destroy(rhohalf(n))
+        call destroy(pi(n))
+        call destroy(gpi(n))
+        call destroy(div_coeff(n))
+     enddo
 
+     deallocate(uold, umid, unew, gphi)
+     deallocate(rhohalf, pi, gpi, div_coeff)
+     
+  else
+     do n = 1, nlevs
+        do comp = 1, dm
+           call destroy(umac_old(n,comp))
+           call destroy(umac_mid(n,comp))
+           call destroy(umac_new(n,comp))
+           call destroy(gphi_mac(n,comp))
+        enddo
+
+        call destroy(utemp(n))
+
+        call destroy(rhohalf(n))
+        call destroy(macpi(n))
+
+     enddo
+
+     deallocate(umac_old, umac_mid, umac_new, gphi_mac, utemp)
+     deallocate(rhohalf, macpi)
+  endif
+  
   call destroy(mla)
   call destroy(mba)
   
-  deallocate(uold, umid, unew)
+
+
   deallocate(plot_names)
   
   call bc_tower_destroy(the_bc_tower)
