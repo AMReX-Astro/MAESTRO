@@ -709,10 +709,12 @@ The MAC velocities are allocated at each level of refinement, {\tt n},
 by making a \multifab\ array where each of the {\tt dm} components is
 nodal in its respective direction:
 \begin{lstlisting}[language={[95]fortran},mathescape=false]
-  type(multifab) :: umac(dm)
+  type(multifab) :: umac(nlevel,dm)
 
-  do comp=1,dm
-     call multifab_build_edge(umac(n,comp), mla%la(n),1,1,comp)
+  do n=1,nlevel
+     do comp=1,dm
+        call multifab_build_edge(umac(n,comp), mla%la(n),1,1,comp)
+     enddo
   enddo
 \end{lstlisting}
 
