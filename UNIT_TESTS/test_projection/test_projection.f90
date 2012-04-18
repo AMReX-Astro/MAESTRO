@@ -565,7 +565,7 @@ contains
     ! y lo
     select case (box_phys_bc(2,1))
     case (SLIP_WALL)
-       umac(lo(1):hi(1),lo(2)) = ZERO
+       vmac(lo(1):hi(1),lo(2)) = ZERO
     case (PERIODIC, INTERIOR)
     case default
        call bl_error("invalid y lo BC")
@@ -574,7 +574,7 @@ contains
     ! y hi
     select case(box_phys_bc(2,2))
     case (SLIP_WALL)
-       umac(lo(1):hi(1),hi(2)+1) = ZERO
+       vmac(lo(1):hi(1),hi(2)+1) = ZERO
     case (PERIODIC, INTERIOR)
     case default
        call bl_error("invalid y hi BC")
