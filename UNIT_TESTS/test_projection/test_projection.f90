@@ -642,7 +642,7 @@ contains
     integer :: i, j
 
     do j = lo(2), hi(2)
-       do i = lo(1), hi(2)
+       do i = lo(1), hi(1)
 
           u(i,j,1) = HALF*(umac(i,j) + umac(i+1,j))
           u(i,j,2) = HALF*(vmac(i,j) + vmac(i,j+1))
