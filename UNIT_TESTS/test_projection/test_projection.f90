@@ -201,7 +201,7 @@ contains
     do j = lo(2), hi(2)+1
        y = (dble(j))*dx(2) + prob_lo(2)
 
-       do i = lo(1), hi(1)+1
+       do i = lo(1), hi(1)
           x = (dble(i)+HALF)*dx(1) + prob_lo(1)
 
           vmac(i,j) =  sin(M_PI*y)**2 * sin(TWO*M_PI*x)  
