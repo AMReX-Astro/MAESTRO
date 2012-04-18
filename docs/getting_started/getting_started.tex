@@ -19,7 +19,7 @@ processor.  This test problem was shown in paper~3.
 
 \maestro\ requires the \boxlib\ library to manage the grids and 
 parallelization.  We also rely on the build system in \boxlib\ to
-build a \maestro\ executable.  \boxlib can be obtained via {\tt
+build a \maestro\ executable.  \boxlib\ can be obtained via {\tt
 git}\footnote{{\tt git} is an open-source source code version control
 system.  It is a standard part of any Linux distribution.  You may
 need to use your system's package manager to install {\tt git} if it
@@ -93,9 +93,11 @@ default \maestro\ source.
 
 \item {\tt COMP := gfortran}
 
-This option specifies the Fortran compiler.  We will use {\tt gfortran}, which is
-the preferred compiler for \maestro.  Specifying this compiler will automatically
-pull in the compiler settings as specified in {\tt BOXLIB\_HOME/Tools/F\_mk/}.
+This option specifies the Fortran compiler.  We will use {\tt
+gfortran}, which is the preferred compiler for \maestro.  Specifying
+this compiler will automatically pull in the compiler settings as
+specified in {\tt BOXLIB\_HOME/Tools/F\_mk/}.  (Alternate compiler
+choices include {\tt Intel}, {\tt PGI}, {\tt PathScale}.)
 
 \end{itemize}
 
@@ -122,7 +124,8 @@ cp ../../../extern/EOS/helmeos/helm_table.dat .
 
 \item {\em Run!}
 
-Each problem requires an input file.  The inputs file consists of
+Each problem requires an input file.  The inputs file (a Fortran
+namelist) consists of
 lines of the form {\em parameter = value}, where {\em parameter} is
 one of the many runtime parameters \maestro\ knows, and {\em value}
 overrides the default value for that parameter.  For the {\tt test2}
@@ -163,7 +166,7 @@ nnnnn}.  \boxlib\ plotfiles and checkpoints are actually directories,
 with the data stored in sub-directories grouped by refinement level.
 Details of the simulation (build information, number of processors
 used, output date, output directory, runtime parameter values, ...)
-are stored in the {\tt job\_info} file in each plotfile directory.
+are stored in the plaintext {\tt job\_info} file in each plotfile directory.
 
 Visualization of results is described in the next section.
 
@@ -197,12 +200,17 @@ but differ in a few ways.
 \amrvis\ uses the {\tt Motif} library for defining the GUI.  On a Linux 
 system, you may need to install the {\tt lesstif} package and any
 related development packages (e.g.\ {\tt lesstif-devel}).  Depending
-on your Linux system, you may also need to install {\tt libXpm} 
-and related development packages (e.g.\ {\tt libXpm-devel}).
+on your Linux system, you may also need to install {\tt libXpm} and
+related development packages (e.g.\ {\tt libXpm-devel}).  Also, in
+{\tt BoxLib/Tools/C\_mk/Make.defs}, the Fortran libraries are
+explictly linked in by asking {\tt gfortran} for the location of {\tt
+libgfortran.a}.  You may need to explicitly install the static
+libraries for {\tt gfortran} (i.e.\ {\tt libgfortran-static}), or
+change the library line to query for the shared-object version {\tt
+libgfortran.so}.
 
-%need to modify _f95_lib 
-
-library line
+Further details on the C++ \boxlib\ build system used by \amrvis\
+can be found in the \boxlib\ documentation.
 
 
 \subsection{{\tt data\_processing} scripts}
