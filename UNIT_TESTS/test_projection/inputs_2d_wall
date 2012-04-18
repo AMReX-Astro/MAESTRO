@@ -1,5 +1,5 @@
 &PROBIN
- test_set = "gr0_2d_2lev_coarse"
+ test_set = "gr0_2d"
 
  run_prefix = "wall_"
 
