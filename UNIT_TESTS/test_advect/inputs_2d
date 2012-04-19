@@ -7,7 +7,7 @@
 
  base_cutoff_density = 1.d-10
 
- dump_output = .false.
+ dump_output = .true.
 
  spherical_in = 0
  dm_in = 2

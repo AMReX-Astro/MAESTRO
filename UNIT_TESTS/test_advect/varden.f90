@@ -57,7 +57,7 @@ subroutine varden()
 
   real(dp_t) :: lenx,leny,lenz,max_dist
 
-  integer :: i,n,comp
+  integer :: i,n,p,comp
   integer :: ng_s
   integer :: nlevs, dm
 
@@ -96,7 +96,7 @@ subroutine varden()
 
   character (len=20) :: plot_names(3)
 
-  real(kind=dp_t), allocatable :: abs_norm(:,:), rel_norm(:,:)
+  real(kind=dp_t), allocatable :: abs_norm(:,:,:), rel_norm(:,:,:)
   real(kind=dp_t) :: max_dabs_error, max_abs_error
   real(kind=dp_t) :: max_drel_error, max_rel_error
 
@@ -143,11 +143,9 @@ subroutine varden()
   ! allocate states
   allocate(sold(nlevs),snew(nlevs),umac(nlevs,dm))
 
-  if (ppm_type .eq. 2) then
-     ng_s = 4
-  else
-     ng_s = 3
-  end if
+
+  ! 4 ghostcells will work for all PPM types
+  ng_s = 4
 
 
   if (spherical == 1) then
@@ -262,345 +260,379 @@ subroutine varden()
   end do
 
 
-  allocate(rel_norm(nlevs,2*dm))
-  allocate(abs_norm(nlevs,2*dm))
+  allocate(rel_norm(0:3,nlevs,2*dm))
+  allocate(abs_norm(0:3,nlevs,2*dm))
 
   rel_norm = ZERO
   abs_norm = ZERO
 
 
   !---------------------------------------------------------------------------
-  ! loop over all possible directions
+  ! loop over all possible directions and all ppm_types
   !---------------------------------------------------------------------------
-  do idim = 1, dm
-     do idir = -1, 1, 2
-
-        itest_dir = idir * idim
-
-        ! a unique index for indexing array by test
-        index_t = idim
-        if (idir < 0) then
-           index_t = index_t + dm
-        endif
-        
+  do p = 0,3
+     
+     if (p <= 2) then
+        ppm_type = p
 
         print *, ' '
-        print *, '<<< advection test in direction ', itest_dir, ' >>>'
-        print *, 'index_t = ', index_t
+        print *, '<<< ppm_type ', p, ' >>>'
+        print *, ' '
 
-        ! initialize the velocity field -- it is unity in the
-        ! direction of propagation a negative itest_dir indicates
-        ! negative velocity
-        do n = 1, nlevs
+     else
+        bds_type = 1
 
-           select case (itest_dir)
-
-           case (-1)
-              call setval(umac(n,1), -ONE,  all=.true.)
-              call setval(umac(n,2), ZERO, all=.true.)
-              if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
-
-           case (1)
-              call setval(umac(n,1), ONE,  all=.true.)
-              call setval(umac(n,2), ZERO, all=.true.)
-              if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
-     
-           case (-2)
-              call setval(umac(n,1), ZERO, all=.true.)
-              call setval(umac(n,2), -ONE,  all=.true.)
-              if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
-
-           case (2)
-              call setval(umac(n,1), ZERO, all=.true.)
-              call setval(umac(n,2), ONE,  all=.true.)
-              if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
-
-           case (-3)
-              call setval(umac(n,1), ZERO, all=.true.)
-              call setval(umac(n,2), ZERO, all=.true.)
-              call setval(umac(n,3), -ONE,  all=.true.)
-
-           case (3)
-              call setval(umac(n,1), ZERO, all=.true.)
-              call setval(umac(n,2), ZERO, all=.true.)
-              call setval(umac(n,3), ONE,  all=.true.)
-              
-           end select
-
-        enddo
+        print *, ' '
+        print *, '<<< bds_type ', 1, ' >>>'
+        print *, ' '
+     endif
 
 
-        ! the base state will not carry any information in this test problem
-        rho0_old(:,:) = ZERO
-        rho0_new(:,:) = ZERO
-        rhoh0(:,:) = ZERO
-        p0(:,:) = ZERO
-        w0(:,:) = ZERO
-        rho0_predicted_edge(:,:) = ZERO
 
+     do idim = 1, dm
+        do idir = -1, 1, 2
 
-        ! initialize the density field and species
-        do n=1,nlevs
-           do i = 1, sold(n)%nboxes
-              if ( multifab_remote(sold(n),i) ) cycle
-              sp => dataptr(sold(n), i)
-              lo = lwb(get_box(sold(n), i))
-              hi = upb(get_box(sold(n), i))
-        
-              select case (dm)
-              case (2)
-                 call init_density_2d(sp(:,:,1,rho_comp), &
-                                      sp(:,:,1,spec_comp:spec_comp-1+nspec), &
-                                      sold(n)%ng, lo, hi, dx(n,:))
+           itest_dir = idir * idim
 
-              case (3)
-                 call init_density_3d(sp(:,:,:,rho_comp), &
-                                      sp(:,:,:,spec_comp:spec_comp-1+nspec), &
-                                      sold(n)%ng, lo, hi, dx(n,:))
-              end select
-           end do
-        end do
-
-
-        ! ghost cell fill
-        if (nlevs .eq. 1) then
-
-           ! fill ghost cells for two adjacent grids at the same level
-           ! this includes periodic domain boundary ghost cells
-           call multifab_fill_boundary(sold(nlevs))
-     
-           ! fill non-periodic domain boundary ghost cells
-           call multifab_physbc(sold(nlevs),rho_comp,dm+rho_comp,nscal, &
-                                the_bc_tower%bc_tower_array(nlevs))
-
-        else
-
-           ! the loop over nlevs must count backwards to make sure the
-           ! finer grids are done first
-           do n=nlevs,2,-1
-        
-              ! set level n-1 data to be the average of the level n
-              ! data covering it
-              call ml_cc_restriction(sold(n-1),sold(n),mla%mba%rr(n-1,:))
-
-              ! fill level n ghost cells using interpolation from
-              ! level n-1 data note that multifab_fill_boundary and
-              ! multifab_physbc are called for both levels n-1 and n
-              call multifab_fill_ghost_cells(sold(n),sold(n-1),sold(n)%ng, &
-                                             mla%mba%rr(n-1,:), &
-                                             the_bc_tower%bc_tower_array(n-1), &
-                                             the_bc_tower%bc_tower_array(n), &
-                                             rho_comp,dm+rho_comp,nscal, &
-                                             fill_crse_input=.false.)
-        
-           enddo
-     
-        end if
-
-
-        ! store the initial density field
-        do n = 1,nlevs
-           call multifab_copy_c(dens_orig(n),1,sold(n),rho_comp,1,ng_s)
-        enddo          
-
-
-        ! write out the initial density field
-        if (dump_output .and. .not. wrote_init_file) then
-
-           if (dm == 2) then
-              outname = "dens_2d_orig"
-
-           else if (dm == 3) then
-              outname = "dens_3d_orig"
-
+           ! a unique index for indexing array by test
+           index_t = idim
+           if (idir < 0) then
+              index_t = index_t + dm
            endif
+        
 
-           call fabio_ml_multifab_write_d(dens_orig,mla%mba%rr(:,1), &
-                                          trim(outname),names=plot_names(1:1))
-
-           print *, 'wrote file: ', trim(outname)
            print *, ' '
+           print *, '<<< advection test in direction ', itest_dir, ' >>>'
+           print *, 'index_t = ', index_t
 
-           wrote_init_file = .true.
+           ! initialize the velocity field -- it is unity in the
+           ! direction of propagation a negative itest_dir indicates
+           ! negative velocity
+           do n = 1, nlevs
 
-        endif
+              select case (itest_dir)
 
-        ! compute the initial timestep -- dt = dx / u
-        dt = cflfac*dx(nlevs,1)/ONE
+              case (-1)
+                 call setval(umac(n,1), -ONE,  all=.true.)
+                 call setval(umac(n,2), ZERO, all=.true.)
+                 if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
 
-
-        ! advance the density using the constant velocity field
-        t = ZERO
-        do while (t < stop_time)
-
-           print *, 't = ', t, 'dt = ', dt
+              case (1)
+                 call setval(umac(n,1), ONE,  all=.true.)
+                 call setval(umac(n,2), ZERO, all=.true.)
+                 if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
      
+              case (-2)
+                 call setval(umac(n,1), ZERO, all=.true.)
+                 call setval(umac(n,2), -ONE,  all=.true.)
+                 if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
 
-           ! advance density according to rho_t + (rho U)_x = 0
-           call density_advance(mla,1,sold,snew,sedge,sflux, &
-                                scal_force,umac,w0,w0mac,etarhoflux, &
-                                rho0_old,rho0_new,p0, &
-                                rho0_predicted_edge, &
-                                dx,dt,the_bc_tower%bc_tower_array)
-          
+              case (2)
+                 call setval(umac(n,1), ZERO, all=.true.)
+                 call setval(umac(n,2), ONE,  all=.true.)
+                 if (dm == 3) call setval(umac(n,3), ZERO, all=.true.)
+                 
+              case (-3)
+                 call setval(umac(n,1), ZERO, all=.true.)
+                 call setval(umac(n,2), ZERO, all=.true.)
+                 call setval(umac(n,3), -ONE,  all=.true.)
+                 
+              case (3)
+                 call setval(umac(n,1), ZERO, all=.true.)
+                 call setval(umac(n,2), ZERO, all=.true.)
+                 call setval(umac(n,3), ONE,  all=.true.)
+                 
+              end select
 
-           ! save the state for the next step
-           do n = 1,nlevs
-              call multifab_copy_c(sold(n),1,snew(n),1,nscal,sold(n)%ng)
            enddo
 
-           rho0_old = rho0_new
 
-           ! update the time     
-           t = t + dt
+           ! the base state will not carry any information in this test problem
+           rho0_old(:,:) = ZERO
+           rho0_new(:,:) = ZERO
+           rhoh0(:,:) = ZERO
+           p0(:,:) = ZERO
+           w0(:,:) = ZERO
+           rho0_predicted_edge(:,:) = ZERO
 
+
+           ! initialize the density field and species
+           do n=1,nlevs
+              do i = 1, sold(n)%nboxes
+                 if ( multifab_remote(sold(n),i) ) cycle
+                 sp => dataptr(sold(n), i)
+                 lo = lwb(get_box(sold(n), i))
+                 hi = upb(get_box(sold(n), i))
+                 
+                 select case (dm)
+                 case (2)
+                    call init_density_2d(sp(:,:,1,rho_comp), &
+                                         sp(:,:,1,spec_comp:spec_comp-1+nspec), &
+                                         sold(n)%ng, lo, hi, dx(n,:))
+
+                 case (3)
+                    call init_density_3d(sp(:,:,:,rho_comp), &
+                                         sp(:,:,:,spec_comp:spec_comp-1+nspec), &
+                                         sold(n)%ng, lo, hi, dx(n,:))
+                 end select
+              end do
+           end do
+
+
+           ! ghost cell fill
+           if (nlevs .eq. 1) then
+           
+              ! fill ghost cells for two adjacent grids at the same level
+              ! this includes periodic domain boundary ghost cells
+              call multifab_fill_boundary(sold(nlevs))
      
-           ! adjust the timestep, if necessary
-           if (t + dt > stop_time) then
-              dt = stop_time - t
+              ! fill non-periodic domain boundary ghost cells
+              call multifab_physbc(sold(nlevs),rho_comp,dm+rho_comp,nscal, &
+                                   the_bc_tower%bc_tower_array(nlevs))
+
+           else
+
+              ! the loop over nlevs must count backwards to make sure
+              ! the finer grids are done first
+              do n=nlevs,2,-1
+        
+                 ! set level n-1 data to be the average of the level n
+                 ! data covering it
+                 call ml_cc_restriction(sold(n-1),sold(n),mla%mba%rr(n-1,:))
+
+                 ! fill level n ghost cells using interpolation from
+                 ! level n-1 data note that multifab_fill_boundary and
+                 ! multifab_physbc are called for both levels n-1 and
+                 ! n
+                 call multifab_fill_ghost_cells(sold(n),sold(n-1),sold(n)%ng, &
+                                                mla%mba%rr(n-1,:), &
+                                                the_bc_tower%bc_tower_array(n-1), &
+                                                the_bc_tower%bc_tower_array(n), &
+                                                rho_comp,dm+rho_comp,nscal, &
+                                                fill_crse_input=.false.)
+        
+              enddo
+     
+           end if
+
+
+           ! store the initial density field
+           do n = 1,nlevs
+              call multifab_copy_c(dens_orig(n),1,sold(n),rho_comp,1,ng_s)
+           enddo
+
+
+           ! write out the initial density field
+           if (dump_output .and. .not. wrote_init_file) then
+
+              if (dm == 2) then
+                 outname = "dens_2d_orig"
+
+              else if (dm == 3) then
+                 outname = "dens_3d_orig"
+
+              endif
+
+              call fabio_ml_multifab_write_d(dens_orig,mla%mba%rr(:,1), &
+                                             trim(outname),names=plot_names(1:1))
+
+              print *, 'wrote file: ', trim(outname)
+              print *, ' '
+              
+              wrote_init_file = .true.
+
            endif
 
+           ! compute the initial timestep -- dt = dx / u
+           dt = cflfac*dx(nlevs,1)/ONE
 
 
-        end do
+           ! advance the density using the constant velocity field
+           t = ZERO
+           do while (t < stop_time)
 
-        print *, 'finished evolution, t = ', t
+              print *, 't = ', t, 'dt = ', dt
+     
 
-        ! copy the final density field into a dummy multifab for
-        ! output and analysis
-        do n = 1,nlevs
-           call multifab_copy_c(dens_final(n),1,snew(n),rho_comp,1,0)
-        enddo
+              ! advance density according to rho_t + (rho U)_x = 0
+              call density_advance(mla,1,sold,snew,sedge,sflux, &
+                                   scal_force,umac,w0,w0mac,etarhoflux, &
+                                   rho0_old,rho0_new,p0, &
+                                   rho0_predicted_edge, &
+                                   dx,dt,the_bc_tower%bc_tower_array)
+              
+
+              ! save the state for the next step
+              do n = 1,nlevs
+                 call multifab_copy_c(sold(n),1,snew(n),1,nscal,sold(n)%ng)
+              enddo
+
+              rho0_old = rho0_new
+
+              ! update the time     
+              t = t + dt
+
+     
+              ! adjust the timestep, if necessary
+              if (t + dt > stop_time) then
+                 dt = stop_time - t
+              endif
+              
+           end do
+
+           print *, 'finished evolution, t = ', t
+
+           ! copy the final density field into a dummy multifab for
+           ! output and analysis
+           do n = 1,nlevs
+              call multifab_copy_c(dens_final(n),1,snew(n),rho_comp,1,0)
+           enddo
 
 
+           ! compare the initial and final density
 
-        ! compare the initial and final density
-
-        ! compute dens_final - dens_orig
-        do n = 1, nlevs
-           call multifab_copy_c(error(n),1,dens_final(n),1,1,ng_s)
-           call multifab_sub_sub(error(n), dens_orig(n))
-        enddo
-
-        do n = 1, nlevs
-           abs_norm(n,index_t) = multifab_norm_l2(error(n))
-        enddo
-
-        ! now compute (dens_final - dens_orig)/dens_orig
-        do n = 1, nlevs
-           call multifab_div_div(error(n), dens_orig(n), 0)
-        enddo
-
-        do n = 1, nlevs
-           rel_norm(n,index_t) = multifab_norm_l2(error(n))
-        enddo
-
-
-        if (dump_output) then
+           ! compute dens_final - dens_orig
+           do n = 1, nlevs
+              call multifab_copy_c(error(n),1,dens_final(n),1,1,ng_s)
+              call multifab_sub_sub(error(n), dens_orig(n))
+           enddo
+        
+           do n = 1, nlevs
+              abs_norm(p,n,index_t) = multifab_norm_l2(error(n))
+           enddo
+        
+           ! now compute (dens_final - dens_orig)/dens_orig
+           do n = 1, nlevs
+              call multifab_div_div(error(n), dens_orig(n), 0)
+           enddo
 
            do n = 1, nlevs
-              ! final density
-              call multifab_copy_c(temporary(n),1,dens_final(n),1,1,ng_s)
-
-              ! relative error 
-              call multifab_copy_c(temporary(n),2,error(n),1,1,ng_s)
-
-              ! absolute error (reconstructed)
-              call multifab_mult_mult(error(n), dens_orig(n), 0)
-              call multifab_copy_c(temporary(n),3,error(n),1,1,ng_s)
+              rel_norm(p,n,index_t) = multifab_norm_l2(error(n))
            enddo
 
-           ! write out the initial density field the output name will
-           ! include the dimensionality, ppm_type, and advection
-           ! direction
 
-           if (dm == 2) then
-              outname = "dens_2d_"
-           else if (dm == 3) then
-              outname = "dens_3d_"
-           endif
+           if (dump_output) then
+
+              do n = 1, nlevs
+                 ! final density
+                 call multifab_copy_c(temporary(n),1,dens_final(n),1,1,ng_s)
+
+                 ! relative error 
+                 call multifab_copy_c(temporary(n),2,error(n),1,1,ng_s)
+
+                 ! absolute error (reconstructed)
+                 call multifab_mult_mult(error(n), dens_orig(n), 0)
+                 call multifab_copy_c(temporary(n),3,error(n),1,1,ng_s)
+              enddo
+
+              ! write out the initial density field the output name will
+              ! include the dimensionality, ppm_type, and advection
+              ! direction
+
+              if (dm == 2) then
+                 outname = "dens_2d_"
+              else if (dm == 3) then
+                 outname = "dens_3d_"
+              endif
   
-           if (bds_type == 1) then
-              outname = trim(outname) // "bds_"
-           else
-              select case (ppm_type)
-              case (0)
-                 outname = trim(outname) // "ppm0_"
+              if (bds_type == 1) then
+                 outname = trim(outname) // "bds_"
+              else
+                 select case (p)
+                 case (0)
+                    outname = trim(outname) // "ppm0_"
+                    
+                 case (1)
+                    outname = trim(outname) // "ppm1_"
+                    
+                 case (2)
+                    outname = trim(outname) // "ppm2_"
+
+                 case (3)
+                    outname = trim(outname) // "bds_"
+                 end select
+              endif
+
+
+              select case (itest_dir)
+              case (-1)   
+                 outname = trim(outname) // "xm_final"
                  
               case (1)
-                 outname = trim(outname) // "ppm1_"
+                 outname = trim(outname) // "xp_final"
+                 
+              case (-2)
+                 outname = trim(outname) // "ym_final"
                  
               case (2)
-                 outname = trim(outname) // "ppm2_"
+                 outname = trim(outname) // "yp_final"
+                 
+              case (-3)
+                 outname = trim(outname) // "zm_final"
+                 
+              case (3)
+                 outname = trim(outname) // "zp_final"
               end select
+
+              call fabio_ml_multifab_write_d(temporary,mla%mba%rr(:,1), &
+                                             trim(outname),names=plot_names)
+
+              print *, 'wrote file: ', trim(outname)
+           
            endif
 
 
-           select case (itest_dir)
-           case (-1)   
-              outname = trim(outname) // "xm_final"
-              
-           case (1)
-              outname = trim(outname) // "xp_final"
-              
-           case (-2)
-              outname = trim(outname) // "ym_final"
-              
-           case (2)
-              outname = trim(outname) // "yp_final"
-              
-           case (-3)
-              outname = trim(outname) // "zm_final"
-              
-           case (3)
-              outname = trim(outname) // "zp_final"
-           end select
-
-           call fabio_ml_multifab_write_d(temporary,mla%mba%rr(:,1), &
-                                          trim(outname),names=plot_names)
-
-           print *, 'wrote file: ', trim(outname)
-           
-        endif
-
-
-     enddo    ! idir loop
-  enddo    ! idim loop
+        enddo    ! idir loop
+     enddo    ! idim loop
+  enddo   ! ppm_type
 
   print *, ' '
   print *, ' '
 
 
   ! report
-  do i = 1, 2*dm
-     if (i <= dm) then
-        itest_dir = i
+  do p = 0, 3   ! ppm_type
+
+     if (p <= 2) then
+        print *, 'ppm_type = ', p
      else
-        itest_dir = -1*(i - dm)
+        print *, 'bds_type = ', 1
      endif
 
-     print *, 'advection direction: ', itest_dir
-     do n = 1,nlevs
-        print *, '  level ', n
-        print *, '    | rho_final - rho_init |_2              = ', abs_norm(n,i)
-        print *, '    | (rho_final - rho_init) / rho_init |_2 = ', rel_norm(n,i)
+     do i = 1, 2*dm
+        if (i <= dm) then
+           itest_dir = i
+        else
+           itest_dir = -1*(i - dm)
+        endif
+
+        print *, 'advection direction: ', itest_dir
+        do n = 1,nlevs
+           print *, '  level ', n
+           print *, '    | rho_final - rho_init |_2              = ', abs_norm(p,n,i)
+           print *, '    | (rho_final - rho_init) / rho_init |_2 = ', rel_norm(p,n,i)
+        enddo
+        print *, ' '
      enddo
-     print *, ' '
-  enddo
+  enddo  ! ppm_type
 
   max_dabs_error = -1.d30
   max_abs_error  = -1.d30
-
+  
   max_drel_error = -1.d30
   max_rel_error  = -1.d30
   
-  do n = 1, nlevs
-     max_dabs_error = max(abs(maxval(abs_norm(n,:)) - minval(abs_norm(n,:))), max_dabs_error)
-     max_abs_error = max(maxval(abs_norm(n,:)), max_abs_error)
+  do p = 0, 3
+     do n = 1, nlevs
+        max_dabs_error = max(abs(maxval(abs_norm(p,n,:)) - minval(abs_norm(p,n,:))), &
+                             max_dabs_error)
+        max_abs_error = max(maxval(abs_norm(p,n,:)), max_abs_error)
 
-     max_drel_error = max(abs(maxval(rel_norm(n,:)) - minval(rel_norm(n,:))), max_drel_error)
-     max_rel_error = max(maxval(rel_norm(n,:)), max_rel_error)
-  enddo
+        max_drel_error = max(abs(maxval(rel_norm(p,n,:)) - minval(rel_norm(p,n,:))), &
+                             max_drel_error)
+        max_rel_error = max(maxval(rel_norm(p,n,:)), max_rel_error)
+     enddo
+  enddo  ! ppm_type
 
   if (max_dabs_error < advect_test_tol * max_abs_error .and. &
       max_drel_error < advect_test_tol * max_rel_error) then
