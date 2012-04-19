@@ -17,7 +17,7 @@ contains
     use restrict_base_module
     use bl_error_module
     use make_grav_module
-    use probin_module, only: do_planar_invsq_grav
+    use probin_module, only: do_planar_invsq_grav, do_2d_planar_octant
 
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(inout) ::   p0(:,0:)
@@ -66,12 +66,8 @@ contains
              ! we integrate upwards starting from the nearest coarse
              ! cell at a lower physical height
 
-             if (.not. do_planar_invsq_grav) then
-                ! assuming constant g here
-                p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
-                     + (3.d0*grav_cell(1,0)*dr(n)/4.d0)* &
-                     (rho0(n-1,r_start_coord(n,i)/2-1)+rho0(n,r_start_coord(n,i)))                      
-             else
+             if (do_planar_invsq_grav .OR. do_2d_planar_octant .eq. 1) then
+                ! we have variable gravity
                 p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
                      + (dr(n)/4.d0)* &
                       (2.d0*rho0(n,r_start_coord(n,i))/3.d0 + &
@@ -83,6 +79,11 @@ contains
                        1.d0*rho0(n-1,r_start_coord(n,i)/2-1)/3.d0)* &
                       (grav_edge(n,r_start_coord(n,i)) + &
                        grav_cell(n,r_start_coord(n,i)))
+             else
+                ! assuming constant g here
+                p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
+                     + (3.d0*grav_cell(1,0)*dr(n)/4.d0)* &
+                     (rho0(n-1,r_start_coord(n,i)/2-1)+rho0(n,r_start_coord(n,i)))                      
              endif
           else
              ! copy pressure from below
@@ -110,12 +111,8 @@ contains
              offset = 0.d0
           else if (r_end_coord(n,i) .le. base_cutoff_density_coord(n)) then
              ! use fine -> coarse stencil in notes
-             if (.not. do_planar_invsq_grav) then
-                ! assuming constant g here
-                temp = p0(n,r_end_coord(n,i)) + (3.d0*grav_cell(1,0)*dr(n)/4.d0)* &
-                     (rho0(n,r_end_coord(n,i))+rho0(n-1,(r_end_coord(n,i)+1)/2))
-                offset = p0(n-1,(r_end_coord(n,i)+1)/2) - temp
-             else
+             if (do_planar_invsq_grav .OR. do_2d_planar_octant .eq. 1) then
+                ! we have variable gravity
                 temp = p0(n,r_end_coord(n,i)) &
                      + (dr(n)/4.d0)* &
                       (2.d0*rho0(n,r_end_coord(n,i))/3.d0 + &
@@ -127,6 +124,11 @@ contains
                        1.d0*rho0(n-1,(r_end_coord(n,i)+1)/2)/3.d0)* &
                       (grav_cell(n,r_end_coord(n,i)) + &
                        grav_edge(n-1,(r_end_coord(n,i)+1)/2))
+                offset = p0(n-1,(r_end_coord(n,i)+1)/2) - temp
+             else
+                ! assuming constant g here
+                temp = p0(n,r_end_coord(n,i)) + (3.d0*grav_cell(1,0)*dr(n)/4.d0)* &
+                     (rho0(n,r_end_coord(n,i))+rho0(n-1,(r_end_coord(n,i)+1)/2))
                 offset = p0(n-1,(r_end_coord(n,i)+1)/2) - temp
              endif
           else

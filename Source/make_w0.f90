@@ -25,7 +25,7 @@ contains
     use bl_prof_module
     use geometry, only: spherical, dr, r_start_coord, r_end_coord, nlevs_radial
     use bl_constants_module
-    use probin_module, only: verbose, do_planar_invsq_grav
+    use probin_module, only: verbose, do_planar_invsq_grav, do_2d_planar_octant
 
     real(kind=dp_t), intent(  out) ::                 w0(:,0:)
     real(kind=dp_t), intent(in   ) ::             w0_old(:,0:)
@@ -54,19 +54,19 @@ contains
 
     if (spherical .eq. 0) then
 
-       if (.not. do_planar_invsq_grav) then
-          call make_w0_planar(w0,w0_old,Sbar_in, &
-                              p0_old,p0_new,gamma1bar_old,gamma1bar_new, &
-                              p0_minus_pthermbar,psi,w0_force, &
-                              dt,dtold)
-       else
+       if (do_planar_invsq_grav .OR. do_2d_planar_octant .eq. 1) then
           
-          call make_w0_planar_invsq(w0,w0_old,Sbar_in, &
+          call make_w0_planar_var_g(w0,w0_old,Sbar_in, &
                                     rho0_old,rho0_new,p0_old,p0_new, &
                                     gamma1bar_old,gamma1bar_new, &
                                     p0_minus_pthermbar, &
                                     etarho_cc,w0_force, &
                                     dt,dtold)
+       else
+          call make_w0_planar(w0,w0_old,Sbar_in, &
+                              p0_old,p0_new,gamma1bar_old,gamma1bar_new, &
+                              p0_minus_pthermbar,psi,w0_force, &
+                              dt,dtold)
        endif
 
 
@@ -254,7 +254,7 @@ contains
 
 
 
-  subroutine make_w0_planar_invsq(w0,w0_old,Sbar_in, &
+  subroutine make_w0_planar_var_g(w0,w0_old,Sbar_in, &
                                   rho0_old,rho0_new,p0_old,p0_new, &
                                   gamma1bar_old,gamma1bar_new, &
                                   p0_minus_pthermbar, &
@@ -503,7 +503,7 @@ contains
     call restrict_base(w0_force,.true.)
     call fill_ghost_base(w0_force,.true.)
 
-  end subroutine make_w0_planar_invsq
+  end subroutine make_w0_planar_var_g
 
   subroutine make_w0_spherical(w0,w0_old,Sbar_in, &
                                rho0_old,rho0_new,p0_old,p0_new, &

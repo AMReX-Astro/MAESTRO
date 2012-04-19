@@ -150,12 +150,15 @@ zlo_boundary_type                   character          ""
 # value set through {\tt bcz\_hi}
 zhi_boundary_type                   character          ""
 
-# set to 1 if you are doing a spherical problem
+# Set to 1 if you are doing a spherical problem.
 spherical_in                        integer            0                   
 
 # set octant = T if you just want to model an octant of a sphere
 # (note: only takes effect for spherical geometry)
 octant                              logical            .false.
+
+# Set to 1 if using the 2D simplified (planar) model of an octant.
+do_2d_planar_octant                 integer            0
 
 # dimensionality (valid values are 2 or 3)
 dm_in                               integer            2                   

@@ -248,6 +248,18 @@ contains
        call bl_error("ERROR: do_planar_invsq_grav invalid for spherical geometries")
     endif
 
+    if (do_2d_planar_octant == 1) then
+       if ( dm_in /= 2) then	
+       	  call bl_error("ERROR: do_2d_planar_octant requires dm_in = 2")
+       endif
+       if (spherical_in ==1) then
+       	  call bl_error("ERROR: do_2d_planar_octant requires spherical_in = 0")
+       endif
+       if (prob_lo_y /= ZERO) then
+       	  call bl_error("ERROR: do_2d_planar_octant requires prob_lo(2) = 0")
+       endif
+    endif
+
     if (do_planar_invsq_grav) then
        if ( (dm_in == 2 .and. prob_lo_y <= ZERO) .or. &
             (dm_in == 3 .and. prob_lo_z <= ZERO) )then
