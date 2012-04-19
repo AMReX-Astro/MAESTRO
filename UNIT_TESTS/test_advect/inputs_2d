@@ -12,6 +12,8 @@
  spherical_in = 0
  dm_in = 2
 
+ ! ppm_type doesn't have much meaning here, since we override it in
+ ! the course of the code
  ppm_type = 0
 
  verbose = 1
@@ -19,11 +21,12 @@
  prob_hi_x = 1.0
  prob_hi_y = 1.0
 
- bcx_lo = -1
- bcx_hi = -1
- bcy_lo = -1
- bcy_hi = -1
+ xlo_boundary_type = "periodic"
+ xhi_boundary_type = "periodic"
 
+ ylo_boundary_type = "periodic"
+ yhi_boundary_type = "periodic"
 
- use_eos_coulomb = F
+ advect_test_tol = 5.d-13
+
 /
