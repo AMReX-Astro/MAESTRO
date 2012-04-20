@@ -258,7 +258,7 @@ contains
          do i = 1, nboxes(unew(n))
             if ( multifab_remote(unew(n), i) ) cycle
             lo = lwb(get_box(unew(n),i))
-            hi = lwb(get_box(unew(n),i))
+            hi = upb(get_box(unew(n),i))
             unp => dataptr(unew(n)     , i) 
             uop => dataptr(uold(n)     , i) 
             gpp => dataptr(gpi(n)       , i)
@@ -509,7 +509,7 @@ contains
          do i = 1, nboxes(phi(n))
             if ( multifab_remote(phi(n),i) ) cycle
             lo = lwb(get_box(gphi(n),i))
-            hi = lwb(get_box(gphi(n),i))
+            hi = upb(get_box(gphi(n),i))
             gph => dataptr(gphi(n),i)
             pp  => dataptr(phi(n),i)
             select case (dm)
@@ -654,7 +654,7 @@ contains
          do i = 1, nboxes(unew(n))
             if ( multifab_remote(unew(n),i) ) cycle
             lo = lwb(get_box(unew(n),i))
-            hi = lwb(get_box(unew(n),i))
+            hi = upb(get_box(unew(n),i))
             upn => dataptr(unew(n),i)
             uon => dataptr(uold(n),i)
             gpp => dataptr(gpi(n),i)
@@ -1079,7 +1079,7 @@ contains
     do i = 1, nboxes(rho)
        if ( multifab_remote(rho, i) ) cycle
        lo = lwb(get_box(rho,i))
-       hi = lwb(get_box(rho,i))
+       hi = upb(get_box(rho,i))
        rp => dataptr(rho   , i)
        cp => dataptr(coeffs, i)
        select case (dm)
