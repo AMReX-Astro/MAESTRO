@@ -289,6 +289,7 @@ contains
     real(kind=dp_t), pointer :: cp(:,:,:,:)
     real(kind=dp_t), pointer :: rp(:,:,:,:)
     integer :: i,ng_r,ng_c,dm
+    integer :: lo(get_dim(rho)),hi(get_dim(rho))
 
     dm = get_dim(rho)
 
@@ -299,13 +300,15 @@ contains
        if ( multifab_remote(rho, i) ) cycle
        rp => dataptr(rho   , i)
        cp => dataptr(coeffs, i)
+       lo = lwb(get_box(rho,i))
+       hi = upb(get_box(rho,i))
        select case (dm)
        case (1)
-          call mkcoeffs_1d(cp(:,1,1,1), ng_c, rp(:,1,1,1), ng_r)
+          call mkcoeffs_1d(cp(:,1,1,1), ng_c, rp(:,1,1,1), ng_r, lo, hi)
        case (2)
-          call mkcoeffs_2d(cp(:,:,1,1), ng_c, rp(:,:,1,1), ng_r)
+          call mkcoeffs_2d(cp(:,:,1,1), ng_c, rp(:,:,1,1), ng_r, lo, hi)
        case (3)
-          call mkcoeffs_3d(cp(:,:,:,1), ng_c, rp(:,:,:,1), ng_r)
+          call mkcoeffs_3d(cp(:,:,:,1), ng_c, rp(:,:,:,1), ng_r, lo, hi)
        end select
     end do
 
@@ -313,19 +316,17 @@ contains
 
   !   *********************************************************************************** !
 
-  subroutine mkcoeffs_1d(coeffs,ng_c,rho,ng_r)
+  subroutine mkcoeffs_1d(coeffs,ng_c,rho,ng_r,lo,hi)
 
     use bl_constants_module
 
-    integer                        :: ng_c,ng_r
-    real(kind=dp_t), intent(inout) :: coeffs(1-ng_c:)
-    real(kind=dp_t), intent(in   ) ::    rho(1-ng_r:)
+    integer                        :: ng_c,ng_r,lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: coeffs(lo(1)-ng_c:)
+    real(kind=dp_t), intent(in   ) ::    rho(lo(1)-ng_r:)
 
-    integer :: i,nx
+    integer :: i
 
-    nx = size(coeffs,dim=1) - 2*ng_c
-
-    do i = 1,nx
+    do i = lo(1),hi(1)
        coeffs(i) = ONE / rho(i)
     end do
 
@@ -333,22 +334,18 @@ contains
 
   !   *********************************************************************************** !
 
-  subroutine mkcoeffs_2d(coeffs,ng_c,rho,ng_r)
+  subroutine mkcoeffs_2d(coeffs,ng_c,rho,ng_r,lo,hi)
 
     use bl_constants_module
 
-    integer                        :: ng_c,ng_r
-    real(kind=dp_t), intent(inout) :: coeffs(1-ng_c:,1-ng_c:)
-    real(kind=dp_t), intent(in   ) ::    rho(1-ng_r:,1-ng_r:)
+    integer                        :: ng_c,ng_r,lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: coeffs(lo(1)-ng_c:,lo(2)-ng_c:)
+    real(kind=dp_t), intent(in   ) ::    rho(lo(1)-ng_r:,lo(2)-ng_r:)
 
     integer :: i,j
-    integer :: nx,ny
 
-    nx = size(coeffs,dim=1) - 2*ng_c
-    ny = size(coeffs,dim=2) - 2*ng_c
-
-    do j = 1,ny
-       do i = 1,nx
+    do j = lo(2),hi(2)
+       do i = lo(1),hi(1)
           coeffs(i,j) = ONE / rho(i,j)
        end do
     end do
@@ -357,25 +354,20 @@ contains
 
   !   ********************************************************************************** !
 
-  subroutine mkcoeffs_3d(coeffs,ng_c,rho,ng_r)
+  subroutine mkcoeffs_3d(coeffs,ng_c,rho,ng_r,lo,hi)
 
       use bl_constants_module
 
-    integer                        :: ng_c,ng_r
-    real(kind=dp_t), intent(inout) :: coeffs(1-ng_c:,1-ng_c:,1-ng_c:)
-    real(kind=dp_t), intent(in   ) ::    rho(1-ng_r:,1-ng_r:,1-ng_r:)
+    integer                        :: ng_c,ng_r,lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: coeffs(lo(1)-ng_c:,lo(2)-ng_c:,lo(3)-ng_c:)
+    real(kind=dp_t), intent(in   ) ::    rho(lo(1)-ng_r:,lo(2)-ng_r:,lo(3)-ng_r:)
 
     integer :: i,j,k
-    integer :: nx,ny,nz
-
-    nx = size(coeffs,dim=1) - 2*ng_c
-    ny = size(coeffs,dim=2) - 2*ng_c
-    nz = size(coeffs,dim=3) - 2*ng_c
 
     !$OMP PARALLEL DO PRIVATE(i,j,k)
-    do k = 1,nz
-       do j = 1,ny
-          do i = 1,nx
+    do k = lo(3),hi(3)
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
              coeffs(i,j,k) = ONE / rho(i,j,k)
           end do
        end do
