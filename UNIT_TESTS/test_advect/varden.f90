@@ -575,7 +575,7 @@ subroutine varden()
               end select
 
               call fabio_ml_multifab_write_d(temporary,mla%mba%rr(:,1), &
-                                             trim(outname),names=plot_names)
+                                             trim(outname),names=plot_names, time=t)
 
               print *, 'wrote file: ', trim(outname)
            
