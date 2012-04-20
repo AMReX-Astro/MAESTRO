@@ -303,7 +303,7 @@ contains
       integer        , intent(in   ) :: proj_type
 
       if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)  ) = ZERO
+      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)+1) = ZERO
 
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
@@ -352,10 +352,10 @@ contains
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
-      if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1,lo(2)-1:hi(2)+2,:) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)+1,lo(2)-1:hi(2)+2,:) = ZERO
+      if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1,lo(2)-1:hi(2)+1,:) = ZERO
+      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)+1,lo(2)-1:hi(2)+1,:) = ZERO
       if (phys_bc(2,1) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1,:) = ZERO
-      if (phys_bc(2,2) .eq. INLET) gpi(lo(1)-1:hi(1)+1,hi(2)+2,:) = ZERO
+      if (phys_bc(2,2) .eq. INLET) gpi(lo(1)-1:hi(1)+1,hi(2)+1,:) = ZERO
 
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
@@ -367,9 +367,9 @@ contains
       else if (proj_type .eq. pressure_iters_comp) then
 
          unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) = ( &
-            unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) ) / dt
+             unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) ) / dt
          unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) = ( &
-            unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) ) / dt
+             unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) ) / dt
      
       ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
