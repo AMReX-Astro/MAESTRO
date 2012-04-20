@@ -323,7 +323,7 @@ contains
 
     integer :: i,nx
 
-    nx = size(coeffs,dim=1) - 2
+    nx = size(coeffs,dim=1) - 2*ng_c
 
     do i = 1,nx
        coeffs(i) = ONE / rho(i)
@@ -344,8 +344,8 @@ contains
     integer :: i,j
     integer :: nx,ny
 
-    nx = size(coeffs,dim=1) - 2
-    ny = size(coeffs,dim=2) - 2
+    nx = size(coeffs,dim=1) - 2*ng_c
+    ny = size(coeffs,dim=2) - 2*ng_c
 
     do j = 1,ny
        do i = 1,nx
@@ -368,9 +368,9 @@ contains
     integer :: i,j,k
     integer :: nx,ny,nz
 
-    nx = size(coeffs,dim=1) - 2
-    ny = size(coeffs,dim=2) - 2
-    nz = size(coeffs,dim=3) - 2
+    nx = size(coeffs,dim=1) - 2*ng_c
+    ny = size(coeffs,dim=2) - 2*ng_c
+    nz = size(coeffs,dim=3) - 2*ng_c
 
     !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k = 1,nz
