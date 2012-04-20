@@ -451,6 +451,7 @@ contains
       real(kind=dp_t), pointer :: vmp(:,:,:,:) 
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
       integer                  :: lo(get_dim(edge(1)))
+      integer                  :: hi(get_dim(edge(1)))
       integer                  :: i,ng_um,dm
 
       dm = get_dim(edge(1))
@@ -461,20 +462,21 @@ contains
          if ( multifab_remote(edge(1), i) ) cycle
          ump => dataptr(edge(1), i)
          lo =  lwb(get_box(edge(1), i))
+         hi =  upb(get_box(edge(1), i))
          select case (dm)
          case (1)
-            call mult_edge_by_1d_coeff_1d(ump(:,1,1,1), ng_um, &
+            call mult_edge_by_1d_coeff_1d(ump(:,1,1,1), lo, hi, ng_um, &
                                           div_coeff_edge(lo(dm):), &
                                           do_mult)
          case (2)
             vmp => dataptr(edge(2), i)
-            call mult_edge_by_1d_coeff_2d(ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+            call mult_edge_by_1d_coeff_2d(ump(:,:,1,1), vmp(:,:,1,1), lo, hi, ng_um, &
                                           div_coeff(lo(dm):), div_coeff_edge(lo(dm):), &
                                           do_mult)
          case (3)
             vmp => dataptr(edge(2), i)
             wmp => dataptr(edge(3), i)
-            call mult_edge_by_1d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+            call mult_edge_by_1d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, ng_um, &
                                           div_coeff(lo(dm):), div_coeff_edge(lo(dm):), &
                                           do_mult)
          end select
@@ -482,89 +484,86 @@ contains
 
     end subroutine mult_edge_by_1d_coeff
 
-    subroutine mult_edge_by_1d_coeff_1d(uedge,ng_um,div_coeff_edge,do_mult)
+    subroutine mult_edge_by_1d_coeff_1d(uedge,lo,hi,ng_um,div_coeff_edge,do_mult)
 
+      integer                        :: lo(:),hi(:)
       integer                        :: ng_um
-      real(kind=dp_t), intent(inout) :: uedge(-ng_um:)
-      real(dp_t)     , intent(in   ) :: div_coeff_edge(0:)
+      real(kind=dp_t), intent(inout) :: uedge(lo(1)-ng_um:)
+      real(dp_t)     , intent(in   ) :: div_coeff_edge(lo(1):)
       logical        , intent(in   ) :: do_mult
 
-      integer :: i,nx
-
-      nx = size(uedge,dim=1)-2*ng_um-1
+      integer :: i
 
       if (do_mult) then
-         do i = 0,nx
+         do i = lo(1),hi(1)+1
             uedge(i) = uedge(i) * div_coeff_edge(i)
          end do
       else
-         do i = 0,nx
+         do i = lo(1),hi(1)+1
             uedge(i) = uedge(i) / div_coeff_edge(i)
          end do
       end if
 
     end subroutine mult_edge_by_1d_coeff_1d
 
-    subroutine mult_edge_by_1d_coeff_2d(uedge,vedge,ng_um,div_coeff,div_coeff_edge,do_mult)
+    subroutine mult_edge_by_1d_coeff_2d(uedge,vedge,lo,hi,ng_um,div_coeff,div_coeff_edge,do_mult)
 
-      integer                        :: ng_Um
-      real(kind=dp_t), intent(inout) :: uedge(-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: vedge(-ng_um:,-ng_um:)
-      real(dp_t)     , intent(in   ) :: div_coeff(0:)
-      real(dp_t)     , intent(in   ) :: div_coeff_edge(0:)
+      integer                        :: lo(:),hi(:)
+      integer                        :: ng_um
+      real(kind=dp_t), intent(inout) :: uedge(lo(1)-ng_um:,lo(2)-ng_um:)
+      real(kind=dp_t), intent(inout) :: vedge(lo(1)-ng_um:,lo(2)-ng_um:)
+      real(dp_t)     , intent(in   ) :: div_coeff(lo(2):)
+      real(dp_t)     , intent(in   ) :: div_coeff_edge(lo(2):)
       logical        , intent(in   ) :: do_mult
 
-      integer :: j,ny
-
-      ny = size(uedge,dim=2)-2*ng_um
+      integer :: j
 
       if (do_mult) then
-         do j = 0,ny-1
+         do j = lo(2),hi(2)
             uedge(:,j) = uedge(:,j) * div_coeff(j)
          end do
-         do j = 0,ny
+         do j = lo(2),hi(2)+1
             vedge(:,j) = vedge(:,j) * div_coeff_edge(j)
          end do
       else
-         do j = 0,ny-1 
+         do j = lo(2),hi(2)
             uedge(:,j) = uedge(:,j) / div_coeff(j)
          end do
-         do j = 0,ny
+         do j = lo(2),hi(2)+1
             vedge(:,j) = vedge(:,j) / div_coeff_edge(j)
          end do
       end if
 
     end subroutine mult_edge_by_1d_coeff_2d
 
-    subroutine mult_edge_by_1d_coeff_3d(uedge,vedge,wedge,ng_um,div_coeff,div_coeff_edge, &
+    subroutine mult_edge_by_1d_coeff_3d(uedge,vedge,wedge,lo,hi,ng_um,div_coeff,div_coeff_edge, &
                                         do_mult)
 
+      integer                        :: lo(:),hi(:)
       integer                        :: ng_um
-      real(kind=dp_t), intent(inout) :: uedge(-ng_um:,-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: vedge(-ng_um:,-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: wedge(-ng_um:,-ng_um:,-ng_um:)
-      real(dp_t)     , intent(in   ) :: div_coeff(0:)
-      real(dp_t)     , intent(in   ) :: div_coeff_edge(0:)
+      real(kind=dp_t), intent(inout) :: uedge(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(kind=dp_t), intent(inout) :: vedge(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(kind=dp_t), intent(inout) :: wedge(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(dp_t)     , intent(in   ) :: div_coeff(lo(3):)
+      real(dp_t)     , intent(in   ) :: div_coeff_edge(lo(3):)
       logical        , intent(in   ) :: do_mult
 
-      integer :: k,nz
-
-      nz = size(uedge,dim=3)-2*ng_um
+      integer :: k
 
       if (do_mult) then
-         do k = 0,nz-1 
+         do k = lo(3),hi(3)
             uedge(:,:,k) = uedge(:,:,k) * div_coeff(k)
             vedge(:,:,k) = vedge(:,:,k) * div_coeff(k)
          end do
-         do k = 0,nz
+         do k = lo(3),hi(3)+1
             wedge(:,:,k) = wedge(:,:,k) * div_coeff_edge(k)
          end do
       else
-         do k = 0,nz-1 
+         do k = lo(3),hi(3)
             uedge(:,:,k) = uedge(:,:,k) / div_coeff(k)
             vedge(:,:,k) = vedge(:,:,k) / div_coeff(k)
          end do
-         do k = 0,nz
+         do k = lo(3),hi(3)+1
             wedge(:,:,k) = wedge(:,:,k) / div_coeff_edge(k)
          end do
       end if
@@ -753,7 +752,7 @@ contains
                call mkumac_1d(n,ump(:,1,1,1), ng_um, & 
                               php(:,1,1,1), ng_p, &
                               bxp(:,1,1,1), ng_b, &
-                              dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
+                              lo,hi,dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
@@ -802,8 +801,9 @@ contains
 
     end subroutine mkumac
 
-    subroutine mkumac_1d(n,umac,ng_um,phi,ng_p,betax,ng_b,dx,press_bc)
+    subroutine mkumac_1d(n,umac,ng_um,phi,ng_p,betax,ng_b,lo,hi,dx,press_bc)
 
+      integer        , intent(in   ) :: lo(:),hi(:)
       integer        , intent(in   ) :: n,ng_um,ng_p,ng_b
       real(kind=dp_t), intent(inout) :: umac(-ng_um:)
       real(kind=dp_t), intent(inout) ::  phi(-ng_p:)
@@ -812,28 +812,29 @@ contains
       integer        , intent(in   ) :: press_bc(:,:)
 
       real(kind=dp_t) :: gphix
-      integer :: i,nx,imin,imax
+      integer :: i,imin,imax
 
-      nx = size(phi,dim=1) - 2
-
+      ! Coarsest level
       if (n.eq.1) then
-         imin = 0
-         imax = nx
+         imin = lo(1)
+         imax = hi(1)+1
+
+      ! All higher levels
       else
-         imin = 1
-         imax = nx-1
+         imin = lo(1)+1
+         imax = hi(1)
       end if
 
       if (press_bc(1,1) == BC_NEU) then
-         phi(-1) = phi(0)
+         phi(lo(1)-1) = phi(lo(1))
       else if (press_bc(1,1) == BC_DIR) then
-         phi(-1) = -TWO*phi(0) + THIRD * phi(1)
+         phi(lo(1)-1) = -TWO*phi(lo(1)) + THIRD * phi(lo(1)+1)
       end if
 
       if (press_bc(1,2) == BC_NEU) then
-         phi(nx) = phi(nx-1)
+         phi(hi(1)+1) = phi(hi(1))
       else if (press_bc(1,2) == BC_DIR) then
-         phi(nx) = -TWO*phi(nx-1) + THIRD * phi(nx-2)
+         phi(hi(1)+1) = -TWO*phi(hi(1)) + THIRD * phi(hi(1)-1)
       end if
 
       do i = imin,imax
@@ -842,8 +843,8 @@ contains
       end do
 
       ! Here we reset phi == 0 at BC_DIR to be used in later iteration if necessary
-      if (press_bc(1,1) == BC_DIR) phi(-1) = ZERO
-      if (press_bc(1,2) == BC_DIR) phi(nx) = ZERO
+      if (press_bc(1,1) == BC_DIR) phi(lo(1)-1) = ZERO
+      if (press_bc(1,2) == BC_DIR) phi(hi(1)+1) = ZERO
 
     end subroutine mkumac_1d
 
