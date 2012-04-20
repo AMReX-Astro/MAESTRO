@@ -766,7 +766,7 @@ contains
                call mkumac_2d(n,ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
                               php(:,:,1,1), ng_p, &
                               bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
-                              dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
+                              lo,hi,dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
@@ -784,7 +784,7 @@ contains
                call mkumac_3d(n,ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
                               php(:,:,:,1), ng_p, &
                               bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
-                              dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
+                              lo,hi,dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
@@ -860,81 +860,83 @@ contains
 
     end subroutine correct_mkumac_1d
 
-    subroutine mkumac_2d(n,umac,vmac,ng_um,phi,ng_p,betax,betay,ng_b,dx,press_bc)
+    subroutine mkumac_2d(n,umac,vmac,ng_um,phi,ng_p,betax,betay,ng_b,lo,hi,dx,press_bc)
 
+      integer        , intent(in   ) :: lo(:),hi(:)
       integer        , intent(in   ) :: n,ng_um,ng_p,ng_b
-      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:)
-      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(inout) ::  umac(lo(1)-ng_um:,lo(2)-ng_um:)
+      real(kind=dp_t), intent(inout) ::  vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+      real(kind=dp_t), intent(inout) ::   phi(lo(1)-ng_p: ,lo(2)-ng_p:)
+      real(kind=dp_t), intent(in   ) :: betax(lo(1)-ng_b: ,lo(2)-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betay(lo(1)-ng_b: ,lo(2)-ng_b:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
       real(kind=dp_t) :: gphix,gphiy
-      integer :: i,j,nx,ny
+      integer :: i,j
       integer :: imin,imax,jmin,jmax
 
-      nx = size(phi,dim=1) - 2
-      ny = size(phi,dim=2) - 2
-
+      ! Coarsest level
       if (n.eq.1) then
-         imin = 0
-         imax = nx
-         jmin = 0
-         jmax = ny
+         imin = lo(1)
+         imax = hi(1)+1
+         jmin = lo(2)
+         jmax = hi(2)+1
+
+      ! All higher levels
       else
-         imin = 1
-         imax = nx-1
-         jmin = 1
-         jmax = ny-1
+         imin = lo(1)+1
+         imax = hi(1)
+         jmin = lo(2)+1
+         jmax = hi(2)
       end if
 
       if (press_bc(1,1) == BC_NEU) then
-         do j = 0,ny-1
-            phi(-1,j) = phi(0,j)
+         do j = lo(2),hi(2)
+            phi(lo(1)-1,j) = phi(lo(1),j)
          end do
       else if (press_bc(1,1) == BC_DIR) then
-         do j = 0,ny-1
-            phi(-1,j) = -TWO*phi(0,j) + THIRD * phi(1,j)
+         do j = lo(2),hi(2)
+            phi(lo(1)-1,j) = -TWO*phi(lo(1),j) + THIRD * phi(lo(1)+1,j) 
          end do
       end if
       if (press_bc(1,2) == BC_NEU) then
-         do j = 0,ny-1
-            phi(nx,j) = phi(nx-1,j)
+         do j = lo(2),hi(2)
+            phi(hi(1)+1,j) = phi(hi(1),j)
          end do
       else if (press_bc(1,2) == BC_DIR) then
-         do j = 0,ny-1
-            phi(nx,j) = -TWO*phi(nx-1,j) + THIRD * phi(nx-2,j)
-         end do
-      end if
-      if (press_bc(2,1) == BC_NEU) then
-         do i = 0,nx-1
-            phi(i,-1) = phi(i,0)
-         end do
-      else if (press_bc(2,1) == BC_DIR) then
-         do i = 0,nx-1
-            phi(i,-1) = -TWO*phi(i,0) + THIRD * phi(i,1)
-         end do
-      end if
-      if (press_bc(2,2) == BC_NEU) then
-         do i = 0,nx-1
-            phi(i,ny) = phi(i,ny-1)
-         end do
-      else if (press_bc(2,2) == BC_DIR) then
-         do i = 0,nx-1
-            phi(i,ny) = -TWO*phi(i,ny-1) + THIRD * phi(i,ny-2)
+         do j = lo(2),hi(2)
+            phi(hi(1)+1,j) = -TWO*phi(hi(1),j) + THIRD * phi(hi(1)-1,j)
          end do
       end if
 
-      do j = 0,ny-1
+      if (press_bc(2,1) == BC_NEU) then
+         do i = lo(1),hi(1)
+            phi(i,lo(2)-1) = phi(i,lo(2))
+         end do
+      else if (press_bc(2,1) == BC_DIR) then
+         do i = lo(1),hi(1)
+            phi(i,lo(2)-1) = -TWO*phi(i,lo(2)) + THIRD * phi(i,lo(2)+1)
+         end do
+      end if
+      if (press_bc(2,2) == BC_NEU) then
+         do i = lo(1),hi(1)
+            phi(i,hi(2)+1) = phi(i,hi(2))
+         end do
+      else if (press_bc(2,2) == BC_DIR) then
+         do i = lo(1),hi(1)
+            phi(i,hi(2)+1) = -TWO*phi(i,hi(2)) + THIRD * phi(i,hi(2)-1)
+         end do
+      end if
+
+      do j = lo(2),hi(2)
          do i = imin,imax
             gphix = (phi(i,j) - phi(i-1,j)) / dx(1)
             umac(i,j) = umac(i,j) - betax(i,j)*gphix
          end do
       end do
 
-      do i = 0,nx-1
+      do i = lo(1),hi(1)
          do j = jmin,jmax
             gphiy = (phi(i,j) - phi(i,j-1)) / dx(2)
             vmac(i,j) = vmac(i,j) - betay(i,j)*gphiy
@@ -942,10 +944,10 @@ contains
       end do
 
       ! Here we reset phi == 0 at BC_DIR to be used in later iteration if necessary
-      if (press_bc(1,1) == BC_DIR) phi(-1,:) = ZERO
-      if (press_bc(1,2) == BC_DIR) phi(nx,:) = ZERO
-      if (press_bc(2,1) == BC_DIR) phi(:,-1) = ZERO
-      if (press_bc(2,2) == BC_DIR) phi(:,ny) = ZERO
+      if (press_bc(1,1) == BC_DIR) phi(lo(1)-1,:) = ZERO
+      if (press_bc(1,2) == BC_DIR) phi(hi(1)+1,:) = ZERO
+      if (press_bc(2,1) == BC_DIR) phi(:,lo(2)-1) = ZERO
+      if (press_bc(2,2) == BC_DIR) phi(:,hi(2)+1) = ZERO
 
     end subroutine mkumac_2d
 
@@ -976,126 +978,128 @@ contains
     end subroutine correct_mkumac_2d
 
     subroutine mkumac_3d(n,umac,vmac,wmac,ng_um,phi,ng_p, &
-                         betax,betay,betaz,ng_b,dx,press_bc)
+                         betax,betay,betaz,ng_b,lo,hi,dx,press_bc)
 
+      integer        , intent(in   ) :: lo(:),hi(:)
       integer        , intent(in   ) :: n,ng_um,ng_p,ng_b
-      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) :: wmac(-ng_um:,-ng_um:,-ng_um:)
-      real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:,-ng_p:)
-      real(kind=dp_t), intent(in   ) :: betax(-ng_b:,-ng_b:,-ng_b:)
-      real(kind=dp_t), intent(in   ) :: betay(-ng_b:,-ng_b:,-ng_b:)
-      real(kind=dp_t), intent(in   ) :: betaz(-ng_b:,-ng_b:,-ng_b:)
+      real(kind=dp_t), intent(inout) :: umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(kind=dp_t), intent(inout) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(kind=dp_t), intent(inout) :: wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(kind=dp_t), intent(inout) ::  phi(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+      real(kind=dp_t), intent(in   ) :: betax(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betay(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+      real(kind=dp_t), intent(in   ) :: betaz(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
       real(kind=dp_t) :: gphix,gphiy,gphiz
-      integer :: i,j,k,nx,ny,nz
+      integer :: i,j,k
       integer :: imin,imax,jmin,jmax,kmin,kmax
 
-      nx = size(phi,dim=1) - 2
-      ny = size(phi,dim=2) - 2
-      nz = size(phi,dim=3) - 2
-
+      ! Coarsest level
       if (n.eq.1) then
-         imin = 0
-         imax = nx
-         jmin = 0
-         jmax = ny
-         kmin = 0
-         kmax = nz
+         imin = lo(1)
+         imax = hi(1)+1
+         jmin = lo(2)
+         jmax = hi(2)+1
+         kmin = lo(3)
+         kmax = hi(3)+1
+
+      ! All higher levels
       else
-         imin = 1
-         imax = nx-1
-         jmin = 1
-         jmax = ny-1
-         kmin = 1
-         kmax = nz-1
+         imin = lo(1)+1
+         imax = hi(1)
+         jmin = lo(2)+1
+         jmax = hi(2)
+         kmin = lo(3)+1
+         kmax = hi(3)
       end if
 
       if (press_bc(1,1) == BC_NEU) then
-         do k = 0,nz-1
-            do j = 0,ny-1
-               phi(-1,j,k) = phi(0,j,k)
+         do k = lo(3),hi(3)
+            do j = lo(2),hi(2)
+               phi(lo(1)-1,j,k) = phi(lo(1),j,k)
             end do
          end do
       else if (press_bc(1,1) == BC_DIR) then
-         do k = 0,nz-1
-            do j = 0,ny-1
-               phi(-1,j,k) = -TWO*phi(0,j,k) + THIRD * phi(1,j,k)
+         do k = lo(3),hi(3)
+            do j = lo(2),hi(2)
+               phi(lo(1)-1,j,k) = -TWO*phi(lo(1),j,k) + THIRD * phi(lo(1)+1,j,k)
             end do
          end do
       end if
+
       if (press_bc(1,2) == BC_NEU) then
-         do k = 0,nz-1
-            do j = 0,ny-1
-               phi(nx,j,k) = phi(nx-1,j,k)
+         do k = lo(3),hi(3)
+            do j = lo(2),hi(2)
+               phi(hi(1)+1,j,k) = phi(hi(1),j,k)
             end do
          end do
       else if (press_bc(1,2) == BC_DIR) then
-         do k = 0,nz-1
-            do j = 0,ny-1
-               phi(nx,j,k) = -TWO*phi(nx-1,j,k) + THIRD * phi(nx-2,j,k)
+         do k = lo(3),hi(3)
+            do j = lo(2),hi(2)
+               phi(hi(1)+1,j,k) = -TWO*phi(hi(1),j,k) + THIRD * phi(hi(1)-1,j,k)
             end do
          end do
       end if
+
       if (press_bc(2,1) == BC_NEU) then
-         do k = 0,nz-1
-            do i = 0,nx-1
-               phi(i,-1,k) = phi(i,0,k)
+         do k = lo(3),hi(3)
+            do i = lo(1),hi(1)
+               phi(i,lo(2)-1,k) = phi(i,lo(2),k)
             end do
          end do
       else if (press_bc(2,1) == BC_DIR) then
-         do k = 0,nz-1
-            do i = 0,nx-1
-               phi(i,-1,k) = -TWO*phi(i,0,k) + THIRD * phi(i,1,k)
+         do k = lo(3),hi(3)
+            do i = lo(1),hi(1)
+               phi(i,lo(2)-1,k) = -TWO*phi(i,lo(2),k) + THIRD * phi(i,lo(2)+1,k)
             end do
          end do
       end if
       if (press_bc(2,2) == BC_NEU) then
-         do k = 0,nz-1
-            do i = 0,nx-1
-               phi(i,ny,k) = phi(i,ny-1,k)
+         do k = lo(3),hi(3)
+            do i = lo(1),hi(1)
+               phi(i,hi(2)+1,k) = phi(i,hi(2),k)
             end do
          end do
       else if (press_bc(2,2) == BC_DIR) then
-         do k = 0,nz-1
-            do i = 0,nx-1
-               phi(i,ny,k) = -TWO*phi(i,ny-1,k) + THIRD * phi(i,ny-2,k)
+         do k = lo(3),hi(3)
+            do i = lo(1),hi(1)
+               phi(i,hi(2)+1,k) = -TWO*phi(i,hi(2),k) + THIRD * phi(i,hi(2)-1,k)
             end do
          end do
       end if
       if (press_bc(3,1) == BC_NEU) then
-         do j = 0,ny-1
-            do i = 0,nx-1
-               phi(i,j,-1) = phi(i,j,0)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               phi(i,j,lo(3)-1) = phi(i,j,lo(3))
             end do
          end do
       else if (press_bc(3,1) == BC_DIR) then
-         do j = 0,ny-1
-            do i = 0,nx-1
-               phi(i,j,-1) = -TWO*phi(i,j,0) + THIRD * phi(i,j,1)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               phi(i,j,lo(3)-1) = -TWO*phi(i,j,lo(3)) + THIRD * phi(i,j,lo(3)+1)
             end do
          end do
       end if
       if (press_bc(3,2) == BC_NEU) then
-         do j = 0,ny-1
-            do i = 0,nx-1
-               phi(i,j,nz) = phi(i,j,nz-1)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               phi(i,j,hi(3)+1) = phi(i,j,hi(3))
             end do
          end do
       else if (press_bc(3,2) == BC_DIR) then
-         do j = 0,ny-1
-            do i = 0,nx-1
-               phi(i,j,nz) = -TWO*phi(i,j,nz-1) + THIRD * phi(i,j,nz-2)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               phi(i,j,hi(3)+1) = -TWO*phi(i,j,hi(3)) + THIRD * phi(i,j,hi(3)-1)
             end do
          end do
       end if
 
       !$OMP PARALLEL PRIVATE(i,j,k,gphix,gphiy,gphiz)
       !$OMP DO
-      do k = 0,nz-1 
-         do j = 0,ny-1
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)
             do i = imin,imax
                gphix = (phi(i,j,k) - phi(i-1,j,k)) / dx(1)
                umac(i,j,k) = umac(i,j,k) - betax(i,j,k)*gphix
@@ -1105,9 +1109,9 @@ contains
       !$OMP END DO NOWAIT
 
       !$OMP DO
-      do k = 0,nz-1
+      do k = lo(3),hi(3)
          do j = jmin,jmax
-            do i = 0,nx-1
+            do i = lo(1),hi(1)
                gphiy = (phi(i,j,k) - phi(i,j-1,k)) / dx(2)
                vmac(i,j,k) = vmac(i,j,k) - betay(i,j,k)*gphiy
             end do
@@ -1117,8 +1121,8 @@ contains
 
       !$OMP DO
       do k = kmin,kmax
-         do j = 0,ny-1
-            do i = 0,nx-1
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
                gphiz = (phi(i,j,k) - phi(i,j,k-1)) / dx(3)
                wmac(i,j,k) = wmac(i,j,k) - betaz(i,j,k)*gphiz
             end do
@@ -1128,12 +1132,12 @@ contains
       !$OMP END PARALLEL
 
       ! Here we reset phi == 0 at BC_DIR to be used in later iteration if necessary
-      if (press_bc(1,1) == BC_DIR) phi(-1,:,:) = ZERO
-      if (press_bc(1,2) == BC_DIR) phi(nx,:,:) = ZERO
-      if (press_bc(2,1) == BC_DIR) phi(:,-1,:) = ZERO
-      if (press_bc(2,2) == BC_DIR) phi(:,ny,:) = ZERO
-      if (press_bc(3,1) == BC_DIR) phi(:,:,-1) = ZERO
-      if (press_bc(3,2) == BC_DIR) phi(:,:,nz) = ZERO
+      if (press_bc(1,1) == BC_DIR) phi(lo(1)-1,:,:) = ZERO
+      if (press_bc(1,2) == BC_DIR) phi(hi(1)+1,:,:) = ZERO
+      if (press_bc(2,1) == BC_DIR) phi(:,lo(2)-1,:) = ZERO
+      if (press_bc(2,2) == BC_DIR) phi(:,hi(2)+1,:) = ZERO
+      if (press_bc(3,1) == BC_DIR) phi(:,:,lo(3)-1) = ZERO
+      if (press_bc(3,2) == BC_DIR) phi(:,:,hi(3)+1) = ZERO
 
     end subroutine mkumac_3d
 
