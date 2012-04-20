@@ -805,9 +805,9 @@ contains
 
       integer        , intent(in   ) :: lo(:),hi(:)
       integer        , intent(in   ) :: n,ng_um,ng_p,ng_b
-      real(kind=dp_t), intent(inout) :: umac(-ng_um:)
-      real(kind=dp_t), intent(inout) ::  phi(-ng_p:)
-      real(kind=dp_t), intent(in   ) :: betax(-ng_b:)
+      real(kind=dp_t), intent(inout) ::  umac(lo(1)-ng_um:)
+      real(kind=dp_t), intent(inout) ::   phi(lo(1)-ng_p:)
+      real(kind=dp_t), intent(in   ) :: betax(lo(1)-ng_b:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
