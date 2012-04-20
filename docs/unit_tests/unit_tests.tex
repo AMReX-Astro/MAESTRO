@@ -21,6 +21,19 @@ specific \maestro\ routines directly.
   tested, the norms are compared to ensure that the error does
   not show any directional bias.
 
+\begin{figure}[t] 
+\centering
+\includegraphics[height=1.9in]{\unitfigpath/dens_2d_orig_density}
+\includegraphics[height=1.9in]{\unitfigpath/dens_2d_ppm1_xp_final_density}
+\includegraphics[height=1.9in]{\unitfigpath/dens_2d_ppm1_xp_final_abserror} 
+%
+\caption[Results of the {\tt test\_advect} unit test]{\label{fig:unit:advtest}
+  Initial Gaussian density profile (left); density profile after
+  advecting to the right for one period (center); absolute error
+  between the final and initial density fields, showing the error in
+  the advection scheme (right).}
+\end{figure}
+
 
 \section {\tt test\_average} 
 
@@ -116,9 +129,9 @@ specific \maestro\ routines directly.
 
 \begin{figure}[t] 
 \centering
-\includegraphics[height=1.8in]{\unitfigpath/wall_u_init_x-velocity} 
-\includegraphics[height=1.8in]{\unitfigpath/wall_u_plus_grad_phi_x-velocity} 
-\includegraphics[height=1.8in]{\unitfigpath/wall_u_new_x-velocity} 
+\includegraphics[height=1.9in]{\unitfigpath/wall_u_init_x-velocity} 
+\includegraphics[height=1.9in]{\unitfigpath/wall_u_plus_grad_phi_x-velocity} 
+\includegraphics[height=1.9in]{\unitfigpath/wall_u_new_x-velocity} 
 %
 \caption[Results of the {\tt test\_projection} unit test]{\label{fig:unit:projtest}
   Initial divergence free velocity field (x-component; left); Velocity field plus
