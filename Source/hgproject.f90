@@ -241,6 +241,7 @@ contains
       real(kind=dp_t), pointer ::  rp(:,:,:,:)
   
       integer :: i,n
+      integer :: lo(unew(1)%dim),hi(unew(1)%dim)
       integer :: ng_un,ng_uo,ng_rh,ng_gp
 
       type(bl_prof_timer), save :: bpt
@@ -256,6 +257,8 @@ contains
          bc = the_bc_tower%bc_tower_array(n)
          do i = 1, nboxes(unew(n))
             if ( multifab_remote(unew(n), i) ) cycle
+            lo = lwb(get_box(unew(n),i))
+            hi = lwb(get_box(unew(n),i))
             unp => dataptr(unew(n)     , i) 
             uop => dataptr(uold(n)     , i) 
             gpp => dataptr(gpi(n)       , i)
@@ -263,16 +266,16 @@ contains
             select case (dm)
                case (1)
                  call create_uvec_1d(unp(:,1,1,1), ng_un, uop(:,1,1,1), ng_uo, &
-                                     rp(:,1,1,1), ng_rh, gpp(:,1,1,1), ng_gp, &
-                                     dt,bc%phys_bc_level_array(i,:,:), proj_type)
+                                      rp(:,1,1,1), ng_rh, gpp(:,1,1,1), ng_gp, &
+                                     lo,hi,dt,bc%phys_bc_level_array(i,:,:), proj_type)
                case (2)
                  call create_uvec_2d(unp(:,:,1,:), ng_un, uop(:,:,1,:), ng_uo, &
-                                     rp(:,:,1,1), ng_rh, gpp(:,:,1,:), ng_gp, &
-                                     dt,bc%phys_bc_level_array(i,:,:), proj_type)
+                                      rp(:,:,1,1), ng_rh, gpp(:,:,1,:), ng_gp, &
+                                     lo,hi,dt,bc%phys_bc_level_array(i,:,:), proj_type)
                case (3)
                  call create_uvec_3d(unp(:,:,:,:), ng_un, uop(:,:,:,:), ng_uo, &
-                                     rp(:,:,:,1), ng_rh, gpp(:,:,:,:), ng_gp, &
-                                     dt, bc%phys_bc_level_array(i,:,:), proj_type)
+                                      rp(:,:,:,1), ng_rh, gpp(:,:,:,:), ng_gp, &
+                                     lo,hi,dt, bc%phys_bc_level_array(i,:,:), proj_type)
             end select
          end do
          call multifab_fill_boundary(unew(n))
@@ -285,24 +288,22 @@ contains
     !   ******************************************************************************** !
 
     subroutine create_uvec_1d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpi,ng_gp, &
-                              dt,phys_bc,proj_type)
+                              lo,hi,dt,phys_bc,proj_type)
 
       use proj_parameters
 
       integer        , intent(in   ) :: ng_un,ng_uo,ng_rh,ng_gp
-      real(kind=dp_t), intent(inout) ::    unew(-ng_un:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:)
-      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:)
-      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:)
+      integer        , intent(in   ) :: lo(:),hi(:)
+      real(kind=dp_t), intent(inout) ::    unew(lo(1)-ng_un:)
+      real(kind=dp_t), intent(in   ) ::    uold(lo(1)-ng_uo:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(lo(1)-ng_rh:)
+      real(kind=dp_t), intent(inout) ::     gpi(lo(1)-ng_gp:)
       real(kind=dp_t), intent(in   ) :: dt
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
-      integer :: nx
-      nx = size(gpi,dim=1) - 2*ng_gp
-
-      if (phys_bc(1,1) .eq. INLET) gpi(-1) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpi(nx) = ZERO
+      if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1) = ZERO
+      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)  ) = ZERO
 
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
@@ -313,12 +314,12 @@ contains
       ! quantity projected is (Ustar - Un)
       else if (proj_type .eq. pressure_iters_comp) then
 
-         unew(-1:nx) = ( unew(-1:nx) - uold(-1:nx) ) / dt
+         unew(lo(1)-1:hi(1)+1) = ( unew(lo(1)-1:hi(1)+1) - uold(lo(1)-1:hi(1)+1) ) / dt
 
       ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
 
-         unew(-1:nx) = unew(-1:nx) + dt*gpi(-1:nx)/rhohalf(-1:nx)
+         unew(lo(1)-1:hi(1)+1) = unew(lo(1)-1:hi(1)+1) + dt*gpi(lo(1)-1:hi(1)+1)/rhohalf(lo(1)-1:hi(1)+1)
 
        else
 
@@ -327,9 +328,9 @@ contains
       end if
 
       if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL .or. &
-          phys_bc(1,1)==SYMMETRY ) unew(-1) = ZERO
+          phys_bc(1,1)==SYMMETRY ) unew(lo(1)-1) = ZERO
       if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL .or. &
-          phys_bc(1,2)==SYMMETRY ) unew(nx) = ZERO
+          phys_bc(1,2)==SYMMETRY ) unew(hi(1)+1) = ZERO
 
     end subroutine create_uvec_1d
 
@@ -337,27 +338,24 @@ contains
     !   ******************************************************************************** !
 
     subroutine create_uvec_2d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpi,ng_gp, &
-                              dt,phys_bc,proj_type)
+                              lo,hi,dt,phys_bc,proj_type)
 
       use proj_parameters
 
       integer        , intent(in   ) :: ng_un,ng_uo,ng_rh,ng_gp
-      real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,:)
-      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:)
-      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:,-ng_gp:,:)
+      integer        , intent(in   ) :: lo(:),hi(:)
+      real(kind=dp_t), intent(inout) ::    unew(lo(1)-ng_un:,lo(2)-ng_un:,:)
+      real(kind=dp_t), intent(in   ) ::    uold(lo(1)-ng_uo:,lo(2)-ng_uo:,:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(lo(1)-ng_rh:,lo(2)-ng_rh:)
+      real(kind=dp_t), intent(inout) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,:)
       real(kind=dp_t), intent(in   ) :: dt
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
-      integer :: nx,ny
-      nx = size(gpi,dim=1) - 2
-      ny = size(gpi,dim=2) - 2
-
-      if (phys_bc(1,1) .eq. INLET) gpi(-1,-1:ny,:) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpi(nx,-1:ny,:) = ZERO
-      if (phys_bc(2,1) .eq. INLET) gpi(-1:nx,-1,:) = ZERO
-      if (phys_bc(2,2) .eq. INLET) gpi(-1:nx,ny,:) = ZERO
+      if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1,lo(2)-1:hi(2)+2,:) = ZERO
+      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)+1,lo(2)-1:hi(2)+2,:) = ZERO
+      if (phys_bc(2,1) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1,:) = ZERO
+      if (phys_bc(2,2) .eq. INLET) gpi(lo(1)-1:hi(1)+1,hi(2)+2,:) = ZERO
 
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
@@ -368,16 +366,18 @@ contains
       ! quantity projected is (Ustar - Un)
       else if (proj_type .eq. pressure_iters_comp) then
 
-         unew(-1:nx,-1:ny,1) = ( unew(-1:nx,-1:ny,1) - uold(-1:nx,-1:ny,1) ) / dt
-         unew(-1:nx,-1:ny,2) = ( unew(-1:nx,-1:ny,2) - uold(-1:nx,-1:ny,2) ) / dt
+         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) = ( &
+            unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) ) / dt
+         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) = ( &
+            unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) ) / dt
      
       ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
 
-         unew(-1:nx,-1:ny,1) = &
-              unew(-1:nx,-1:ny,1) + dt*gpi(-1:nx,-1:ny,1)/rhohalf(-1:nx,-1:ny)
-         unew(-1:nx,-1:ny,2) = &
-              unew(-1:nx,-1:ny,2) + dt*gpi(-1:nx,-1:ny,2)/rhohalf(-1:nx,-1:ny)
+         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) = unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) + &
+            dt*gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)/rhohalf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)
+         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) = unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) + &
+            dt*gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)/rhohalf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)
 
        else
      
@@ -386,44 +386,41 @@ contains
       end if
 
       if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL .or. &
-          phys_bc(1,1)==SYMMETRY ) unew(-1,:,:) = ZERO
+          phys_bc(1,1)==SYMMETRY ) unew(lo(1)-1,:,:) = ZERO
       if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL .or. &
-          phys_bc(1,2)==SYMMETRY ) unew(nx,:,:) = ZERO
+          phys_bc(1,2)==SYMMETRY ) unew(hi(1)+1,:,:) = ZERO
       if (phys_bc(2,1)==SLIP_WALL .or. phys_bc(2,1)==NO_SLIP_WALL .or. &
-          phys_bc(2,1)==SYMMETRY ) unew(:,-1,:) = ZERO
+          phys_bc(2,1)==SYMMETRY ) unew(:,lo(2)-1,:) = ZERO
       if (phys_bc(2,2)==SLIP_WALL .or. phys_bc(2,2)==NO_SLIP_WALL .or. &
-          phys_bc(2,2)==SYMMETRY ) unew(:,ny,:) = ZERO
+          phys_bc(2,2)==SYMMETRY ) unew(:,hi(2)+1,:) = ZERO
 
     end subroutine create_uvec_2d
 
     !  *********************************************************************************** !
 
     subroutine create_uvec_3d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpi,ng_gp, &
-                              dt,phys_bc,proj_type)
+                              lo,hi,dt,phys_bc,proj_type)
 
       use proj_parameters
 
       integer        , intent(in   ) :: ng_un,ng_uo,ng_rh,ng_gp
-      real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,-ng_un:,:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,-ng_uo:,:)
-      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:,-ng_gp:,-ng_gp:,:)
-      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:,-ng_rh:)
+      integer        , intent(in   ) :: lo(:),hi(:)
+      real(kind=dp_t), intent(inout) ::    unew(lo(1)-ng_un:,lo(2)-ng_un:,lo(3)-ng_un:,:)
+      real(kind=dp_t), intent(in   ) ::    uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
+      real(kind=dp_t), intent(inout) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
       real(kind=dp_t), intent(in   ) :: dt
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
-      integer :: nx,ny,nz,i,j,k,m
+      integer :: i,j,k,m
 
-      nx = size(gpi,dim=1) - 2
-      ny = size(gpi,dim=2) - 2
-      nz = size(gpi,dim=3) - 2
-
-      if (phys_bc(1,1) .eq. INLET) gpi(-1,-1:ny,-1:nz,:) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpi(nx,-1:ny,-1:nz,:) = ZERO
-      if (phys_bc(2,1) .eq. INLET) gpi(-1:nx,-1,-1:nz,:) = ZERO
-      if (phys_bc(2,2) .eq. INLET) gpi(-1:nx,ny,-1:nz,:) = ZERO
-      if (phys_bc(3,1) .eq. INLET) gpi(-1:nx,-1:ny,-1,:) = ZERO
-      if (phys_bc(3,2) .eq. INLET) gpi(-1:nx,-1:ny,nz,:) = ZERO
+      if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,:) = ZERO
+      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,:) = ZERO
+      if (phys_bc(2,1) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1,:) = ZERO
+      if (phys_bc(2,2) .eq. INLET) gpi(lo(1)-1:hi(1)+1,hi(2)+1,lo(3)-1:hi(3)+1,:) = ZERO
+      if (phys_bc(3,1) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1,:) = ZERO
+      if (phys_bc(3,2) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+1,:) = ZERO
 
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
@@ -437,9 +434,9 @@ contains
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
-            do k=-1,nz
-               do j=-1,ny
-                  do i=-1,nx
+            do k=lo(3)-1,hi(3)+1
+               do j=lo(2)-1,hi(2)+1
+                  do i=lo(1)-1,hi(1)+1
                      unew(i,j,k,m) = (unew(i,j,k,m) - uold(i,j,k,m)) / dt
                   end do
                end do
@@ -454,9 +451,9 @@ contains
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
-            do k=-1,nz
-               do j=-1,ny
-                  do i=-1,nx
+            do k=lo(3)-1,hi(3)+1
+               do j=lo(2)-1,hi(2)+1
+                  do i=lo(1)-1,hi(1)+1
                      unew(i,j,k,m) = unew(i,j,k,m) + dt*gpi(i,j,k,m)/rhohalf(i,j,k)
                   end do
                end do
@@ -472,17 +469,17 @@ contains
       end if
 
       if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL .or. &
-          phys_bc(1,1)==SYMMETRY) unew(-1,:,:,:) = ZERO
+          phys_bc(1,1)==SYMMETRY) unew(lo(1)-1,:,:,:) = ZERO
       if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL .or. &
-          phys_bc(1,2)==SYMMETRY) unew(nx,:,:,:) = ZERO
+          phys_bc(1,2)==SYMMETRY) unew(hi(1)+1,:,:,:) = ZERO
       if (phys_bc(2,1)==SLIP_WALL .or. phys_bc(2,1)==NO_SLIP_WALL .or. &
-          phys_bc(2,1)==SYMMETRY) unew(:,-1,:,:) = ZERO
+          phys_bc(2,1)==SYMMETRY) unew(:,lo(2)-1,:,:) = ZERO
       if (phys_bc(2,2)==SLIP_WALL .or. phys_bc(2,2)==NO_SLIP_WALL .or. &
-          phys_bc(2,2)==SYMMETRY) unew(:,ny,:,:) = ZERO
+          phys_bc(2,2)==SYMMETRY) unew(:,hi(2)+1,:,:) = ZERO
       if (phys_bc(3,1)==SLIP_WALL .or. phys_bc(3,1)==NO_SLIP_WALL .or. &
-          phys_bc(3,1)==SYMMETRY) unew(:,:,-1,:) = ZERO
+          phys_bc(3,1)==SYMMETRY) unew(:,:,lo(3)-1,:) = ZERO
       if (phys_bc(3,2)==SLIP_WALL .or. phys_bc(3,2)==NO_SLIP_WALL .or. &
-          phys_bc(3,2)==SYMMETRY) unew(:,:,nz,:) = ZERO
+          phys_bc(3,2)==SYMMETRY) unew(:,:,hi(3)+1,:) = ZERO
 
     end subroutine create_uvec_3d
 
@@ -494,6 +491,7 @@ contains
       type(multifab), intent(in   ) :: phi(:)
       real(dp_t) :: dx(:,:)
 
+      integer :: lo(phi(1)%dim),hi(phi(1)%dim)
       integer :: i,n,ng_p,ng_gp
 
       real(kind=dp_t), pointer :: gph(:,:,:,:) 
@@ -510,15 +508,17 @@ contains
 
          do i = 1, nboxes(phi(n))
             if ( multifab_remote(phi(n),i) ) cycle
+            lo = lwb(get_box(gphi(n),i))
+            hi = lwb(get_box(gphi(n),i))
             gph => dataptr(gphi(n),i)
             pp  => dataptr(phi(n),i)
             select case (dm)
             case (1)
-               call mkgphi_1d(gph(:,1,1,1), ng_gp, pp(:,1,1,1), ng_p, dx(n,:))
+               call mkgphi_1d(gph(:,1,1,1), ng_gp, pp(:,1,1,1), ng_p, lo, hi, dx(n,:))
             case (2)
-               call mkgphi_2d(gph(:,:,1,:), ng_gp, pp(:,:,1,1), ng_p, dx(n,:))
+               call mkgphi_2d(gph(:,:,1,:), ng_gp, pp(:,:,1,1), ng_p, lo, hi, dx(n,:))
             case (3)
-               call mkgphi_3d(gph(:,:,:,:), ng_gp, pp(:,:,:,1), ng_p, dx(n,:))
+               call mkgphi_3d(gph(:,:,:,:), ng_gp, pp(:,:,:,1), ng_p, lo, hi, dx(n,:))
             end select
          end do
 
@@ -530,18 +530,17 @@ contains
 
     !   ********************************************************************************* !
 
-    subroutine mkgphi_1d(gphi,ng_gp,phi,ng_p,dx)
+    subroutine mkgphi_1d(gphi,ng_gp,phi,ng_p,lo,hi,dx)
 
       integer        , intent(in   ) :: ng_gp,ng_p
-      real(kind=dp_t), intent(inout) :: gphi(-ng_gp:)
-      real(kind=dp_t), intent(inout) ::  phi(-ng_p :)
+      integer        , intent(in   ) :: lo(:),hi(:)
+      real(kind=dp_t), intent(inout) :: gphi(lo(1)-ng_gp:)
+      real(kind=dp_t), intent(inout) ::  phi(lo(1)-ng_p :)
       real(kind=dp_t), intent(in   ) :: dx(:)
 
-      integer :: i,nx
+      integer :: i
 
-      nx = size(gphi,dim=1)
-
-      do i = 0,nx-1
+      do i = lo(1),hi(1)
          gphi(i) = ( phi(i+1) - phi(i) ) / dx(1)
       end do
 
@@ -549,20 +548,18 @@ contains
 
     !   ********************************************************************************* !
 
-    subroutine mkgphi_2d(gphi,ng_gp,phi,ng_p,dx)
+    subroutine mkgphi_2d(gphi,ng_gp,phi,ng_p,lo,hi,dx)
 
       integer        , intent(in   ) :: ng_gp,ng_p
-      real(kind=dp_t), intent(inout) :: gphi(-ng_gp:,-ng_gp:,:)
-      real(kind=dp_t), intent(inout) ::  phi(-ng_p :,-ng_p :)
+      integer        , intent(in   ) :: lo(:),hi(:)
+      real(kind=dp_t), intent(inout) :: gphi(lo(1)-ng_gp:,lo(2)-ng_gp:,:)
+      real(kind=dp_t), intent(inout) ::  phi(lo(1)-ng_p :,lo(2)-ng_p :)
       real(kind=dp_t), intent(in   ) :: dx(:)
 
-      integer :: i,j,nx,ny
+      integer :: i,j
 
-      nx = size(gphi,dim=1)
-      ny = size(gphi,dim=2)
-
-      do j = 0,ny-1
-         do i = 0,nx-1
+      do j = lo(2),hi(2)
+         do i = lo(1),hi(1)
             gphi(i,j,1) = HALF*(phi(i+1,j) + phi(i+1,j+1) - &
                  phi(i  ,j) - phi(i  ,j+1) ) /dx(1)
             gphi(i,j,2) = HALF*(phi(i,j+1) + phi(i+1,j+1) - &
@@ -574,23 +571,20 @@ contains
 
     !   ******************************************************************************** !
 
-    subroutine mkgphi_3d(gphi,ng_gp,phi,ng_p,dx)
+    subroutine mkgphi_3d(gphi,ng_gp,phi,ng_p,lo,hi,dx)
 
       integer        , intent(in   ) :: ng_gp,ng_p
-      real(kind=dp_t), intent(inout) :: gphi(-ng_gp:,-ng_gp:,-ng_gp:,:)
-      real(kind=dp_t), intent(inout) ::  phi(-ng_p :,-ng_p :,-ng_p :)
+      integer        , intent(in   ) :: lo(:),hi(:)
+      real(kind=dp_t), intent(inout) :: gphi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
+      real(kind=dp_t), intent(inout) ::  phi(lo(1)-ng_p :,lo(2)-ng_p :,lo(3)-ng_p :)
       real(kind=dp_t), intent(in   ) :: dx(:)
 
-      integer :: i,j,k,nx,ny,nz
-
-      nx = size(gphi,dim=1)
-      ny = size(gphi,dim=2)
-      nz = size(gphi,dim=3)
+      integer :: i,j,k
 
       !$OMP PARALLEL DO PRIVATE(i,j,k)
-      do k = 0,nz-1
-         do j = 0,ny-1
-            do i = 0,nx-1
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
                gphi(i,j,k,1) = FOURTH*(phi(i+1,j,k  ) + phi(i+1,j+1,k  ) &
                     +phi(i+1,j,k+1) + phi(i+1,j+1,k+1) & 
                     -phi(i  ,j,k  ) - phi(i  ,j+1,k  ) &
@@ -633,6 +627,7 @@ contains
       ! local
       integer :: i,n
       integer :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h
+      integer :: lo(unew(1)%dim),hi(unew(1)%dim)
 
       real(kind=dp_t), pointer :: upn(:,:,:,:) 
       real(kind=dp_t), pointer :: uon(:,:,:,:) 
@@ -658,6 +653,8 @@ contains
 
          do i = 1, nboxes(unew(n))
             if ( multifab_remote(unew(n),i) ) cycle
+            lo = lwb(get_box(unew(n),i))
+            hi = lwb(get_box(unew(n),i))
             upn => dataptr(unew(n),i)
             uon => dataptr(uold(n),i)
             gpp => dataptr(gpi(n),i)
@@ -669,15 +666,15 @@ contains
             case (1)
                call hg_update_1d(proj_type, upn(:,1,1,1), ng_un, uon(:,1,1,1), ng_uo, &
                                  gpp(:,1,1,1), ng_gp, gph(:,1,1,1), ng_gh, rp(:,1,1,1), &
-                                 ng_rh, pp(:,1,1,1), ng_p, ph(:,1,1,1), ng_h, dt)
+                                 ng_rh, pp(:,1,1,1), ng_p, ph(:,1,1,1), ng_h, lo, hi, dt)
             case (2)
                call hg_update_2d(proj_type, upn(:,:,1,:), ng_un, uon(:,:,1,:), ng_uo, &
                                  gpp(:,:,1,:), ng_gp, gph(:,:,1,:), ng_gh, rp(:,:,1,1), &
-                                 ng_rh, pp(:,:,1,1), ng_p, ph(:,:,1,1), ng_h, dt)
+                                 ng_rh, pp(:,:,1,1), ng_p, ph(:,:,1,1), ng_h, lo, hi, dt)
             case (3)
                call hg_update_3d(proj_type, upn(:,:,:,:), ng_un, uon(:,:,:,:), ng_uo, &
                                  gpp(:,:,:,:), ng_gp, gph(:,:,:,:), ng_gh, rp(:,:,:,1), &
-                                 ng_rh, pp(:,:,:,1), ng_p, ph(:,:,:,1), ng_h, dt)
+                                 ng_rh, pp(:,:,:,1), ng_p, ph(:,:,:,1), ng_h, lo, hi, dt)
             end select
          end do
 
@@ -733,30 +730,27 @@ contains
     !   ****************************************************************************** !
 
     subroutine hg_update_1d(proj_type,unew,ng_un,uold,ng_uo,gpi,ng_gp,gphi,ng_gh, &
-                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,dt)
+                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,lo,hi,dt)
 
       use proj_parameters
 
       integer        , intent(in   ) :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h
+      integer        , intent(in   ) :: lo(:),hi(:)
       integer        , intent(in   ) :: proj_type
-      real(kind=dp_t), intent(inout) ::    unew(-ng_un:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:)
-      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:)
-      real(kind=dp_t), intent(in   ) ::    gphi(-ng_gh:)
-      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:)
-      real(kind=dp_t), intent(inout) ::    pi(-ng_p :)
-      real(kind=dp_t), intent(in   ) ::     phi(-ng_h :)
+      real(kind=dp_t), intent(inout) ::    unew(lo(1)-ng_un:)
+      real(kind=dp_t), intent(in   ) ::    uold(lo(1)-ng_uo:)
+      real(kind=dp_t), intent(inout) ::     gpi(lo(1)-ng_gp:)
+      real(kind=dp_t), intent(in   ) ::    gphi(lo(1)-ng_gh:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(lo(1)-ng_rh:)
+      real(kind=dp_t), intent(inout) ::      pi(lo(1)-ng_p :)
+      real(kind=dp_t), intent(in   ) ::     phi(lo(1)-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
-      integer         :: nx
-
-      nx = size(gphi,dim=1)-1
-
       !     Subtract off the density-weighted gradient.
-      unew(0:nx) = unew(0:nx) - gphi(0:nx)/rhohalf(0:nx) 
+      unew(lo(1):hi(1)) = unew(lo(1):hi(1)) - gphi(lo(1):hi(1))/rhohalf(lo(1):hi(1)) 
 
       if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
-           unew(0:nx) = uold(0:nx) + dt * unew(0:nx)
+           unew(lo(1):hi(1)) = uold(lo(1):hi(1)) + dt * unew(lo(1):hi(1))
 
       if ( (proj_type .eq. initial_projection_comp) .or. &
            (proj_type .eq. divu_iters_comp) ) then
@@ -768,15 +762,15 @@ contains
 
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
-         gpi(0:nx) = gpi(0:nx) + gphi(0:nx)
-          pi(0:nx+1) =  pi(0:nx+1)  + phi(0:nx+1)
+         gpi(lo(1):hi(1)  ) = gpi(lo(1):hi(1)  ) + gphi(lo(1):hi(1))
+          pi(lo(1):hi(1)+1) =  pi(lo(1):hi(1)+1)  + phi(lo(1):hi(1)+1)
 
       else if (proj_type .eq. regular_timestep_comp) then
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
-         gpi(0:nx) = (ONE/dt) * gphi(0:nx)
-          pi(0:nx+1) = (ONE/dt) *  phi(0:nx+1)
+         gpi(lo(1):hi(1)  ) = (ONE/dt) * gphi(lo(1):hi(1))
+          pi(lo(1):hi(1)+1) = (ONE/dt) *  phi(lo(1):hi(1)+1)
 
       end if
 
@@ -785,32 +779,31 @@ contains
     !   ****************************************************************************** !
 
     subroutine hg_update_2d(proj_type,unew,ng_un,uold,ng_uo,gpi,ng_gp,gphi,ng_gh, &
-                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,dt)
+                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,lo,hi,dt)
 
       use proj_parameters
 
       integer        , intent(in   ) :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h
+      integer        , intent(in   ) :: lo(:),hi(:)
       integer        , intent(in   ) :: proj_type
-      real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,:)
-      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:,-ng_gp:,:)
-      real(kind=dp_t), intent(in   ) ::    gphi(-ng_gh:,-ng_gh:,:)
-      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:)
-      real(kind=dp_t), intent(inout) ::    pi(-ng_p :,-ng_p :)
-      real(kind=dp_t), intent(in   ) ::     phi(-ng_h :,-ng_h :)
+      real(kind=dp_t), intent(inout) ::    unew(lo(1)-ng_un:,lo(2)-ng_un:,:)
+      real(kind=dp_t), intent(in   ) ::    uold(lo(1)-ng_uo:,lo(2)-ng_uo:,:)
+      real(kind=dp_t), intent(inout) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,:)
+      real(kind=dp_t), intent(in   ) ::    gphi(lo(1)-ng_gh:,lo(2)-ng_gh:,:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(lo(1)-ng_rh:,lo(2)-ng_rh:)
+      real(kind=dp_t), intent(inout) ::      pi(lo(1)-ng_p :,lo(2)-ng_p :)
+      real(kind=dp_t), intent(in   ) ::     phi(lo(1)-ng_h :,lo(2)-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
-      integer :: nx,ny
-
-      nx = size(gphi,dim=1)-1
-      ny = size(gphi,dim=2)-1
-
       !     Subtract off the density-weighted gradient.
-      unew(0:nx,0:ny,1) = unew(0:nx,0:ny,1) - gphi(0:nx,0:ny,1)/rhohalf(0:nx,0:ny) 
-      unew(0:nx,0:ny,2) = unew(0:nx,0:ny,2) - gphi(0:nx,0:ny,2)/rhohalf(0:nx,0:ny) 
+      unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) - &
+          gphi(lo(1):hi(1),lo(2):hi(2),1)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
+      unew(lo(1):hi(1),lo(2):hi(2),2) = unew(lo(1):hi(1),lo(2):hi(2),2) - &
+          gphi(lo(1):hi(1),lo(2):hi(2),2)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
 
       if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
-           unew(0:nx,0:ny,:) = uold(0:nx,0:ny,:) + dt * unew(0:nx,0:ny,:)
+           unew(lo(1):hi(1),lo(2):hi(2),:) = uold(lo(1):hi(1),lo(2):hi(2),:) + &
+               dt * unew(lo(1):hi(1),lo(2):hi(2),:)
 
       if ( (proj_type .eq. initial_projection_comp) .or. &
            (proj_type .eq. divu_iters_comp) ) then
@@ -822,15 +815,17 @@ contains
 
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
-         gpi(0:nx,0:ny,:) = gpi(0:nx,0:ny,:) + gphi(0:nx,0:ny,:)
-         pi(0:nx+1,0:ny+1) =  pi(0:nx+1,0:ny+1)  +  phi(0:nx+1,0:ny+1)
+         gpi(lo(1):hi(1)  ,lo(2):hi(2)  ,:) = gpi(lo(1):hi(1)  ,lo(2):hi(2)  ,:) + &
+             gphi(lo(1):hi(1),lo(2):hi(2),:)
+          pi(lo(1):hi(1)+1,lo(2):hi(2)+1)   =  pi(lo(1):hi(1)+1,lo(2):hi(2)+1)  +  &
+             phi(lo(1):hi(1)+1,lo(2):hi(2)+1)
 
       else if (proj_type .eq. regular_timestep_comp) then
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
-         gpi(0:nx,0:ny,:) = (ONE/dt) * gphi(0:nx,0:ny,:)
-         pi(0:nx+1,0:ny+1) = (ONE/dt) * phi(0:nx+1,0:ny+1)
+         gpi(lo(1):hi(1)  ,lo(2):hi(2)  ,:) = (ONE/dt) * gphi(lo(1):hi(1)  ,lo(2):hi(2)  ,:)
+          pi(lo(1):hi(1)+1,lo(2):hi(2)+1)   = (ONE/dt) *  phi(lo(1):hi(1)+1,lo(2):hi(2)+1)
 
       end if
 
@@ -839,35 +834,32 @@ contains
     !   ******************************************************************************* !
 
     subroutine hg_update_3d(proj_type,unew,ng_un,uold,ng_uo,gpi,ng_gp,gphi,ng_gh, &
-                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,dt)
+                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,lo,hi,dt)
 
       use proj_parameters
 
       integer        , intent(in   ) :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h
+      integer        , intent(in   ) :: lo(:),hi(:)
       integer        , intent(in   ) :: proj_type
-      real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,-ng_un:,:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,-ng_uo:,:)
-      real(kind=dp_t), intent(inout) ::   gpi(-ng_gp:,-ng_gp:,-ng_gp:,:)
-      real(kind=dp_t), intent(in   ) ::    gphi(-ng_gh:,-ng_gh:,-ng_gh:,:)
-      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:,-ng_rh:)
-      real(kind=dp_t), intent(inout) ::    pi(-ng_p :,-ng_p :,-ng_p :)
-      real(kind=dp_t), intent(in   ) ::     phi(-ng_h :,-ng_h :,-ng_h :)
+      real(kind=dp_t), intent(inout) ::    unew(lo(1)-ng_un:,lo(2)-ng_un:,lo(3)-ng_un:,:)
+      real(kind=dp_t), intent(in   ) ::    uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
+      real(kind=dp_t), intent(inout) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
+      real(kind=dp_t), intent(in   ) ::    gphi(lo(1)-ng_gh:,lo(2)-ng_gh:,lo(3)-ng_gh:,:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
+      real(kind=dp_t), intent(inout) ::      pi(lo(1)-ng_p :,lo(2)-ng_p :,lo(3)-ng_p :)
+      real(kind=dp_t), intent(in   ) ::     phi(lo(1)-ng_h :,lo(2)-ng_h :,lo(3)-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
-      integer         :: nx,ny,nz,i,j,k,m
-
-      nx = size(gphi,dim=1)-1
-      ny = size(gphi,dim=2)-1
-      nz = size(gphi,dim=3)-1
+      integer         :: i,j,k,m
       !
       ! Subtract off the density-weighted gradient
       !
       !$OMP PARALLEL PRIVATE(i,j,k,m)
       do m=1,3
          !$OMP DO
-         do k=0,nz
-            do j=0,ny
-               do i=0,nx
+         do k=lo(3),hi(3)
+            do j=lo(2),hi(2)
+               do i=lo(1),hi(1)
                   unew(i,j,k,m) = unew(i,j,k,m) - gphi(i,j,k,m)/rhohalf(i,j,k)
                end do
             end do
@@ -883,9 +875,9 @@ contains
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
-            do k=0,nz
-               do j=0,ny
-                  do i=0,nx
+            do k=lo(3),hi(3)
+               do j=lo(2),hi(2)
+                  do i=lo(1),hi(1)
                      unew(i,j,k,m) = uold(i,j,k,m) + dt*unew(i,j,k,m)
                   end do
                end do
@@ -909,9 +901,9 @@ contains
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
-            do k=0,nz
-               do j=0,ny
-                  do i=0,nx
+            do k=lo(3),hi(3)
+               do j=lo(2),hi(2)
+                  do i=lo(1),hi(1)
                      gpi(i,j,k,m) = gpi(i,j,k,m) + gphi(i,j,k,m)
                   end do
                end do
@@ -921,9 +913,9 @@ contains
          !$OMP END PARALLEL
 
          !$OMP PARALLEL DO PRIVATE(i,j,k)
-         do k=0,nz+1
-            do j=0,ny+1
-               do i=0,nx+1
+            do k=lo(3),hi(3)+1
+               do j=lo(2),hi(2)+1
+                  do i=lo(1),hi(1)+1
                   pi(i,j,k) = pi(i,j,k) + phi(i,j,k)
                end do
             end do
@@ -938,9 +930,9 @@ contains
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
-            do k=0,nz
-               do j=0,ny
-                  do i=0,nx
+            do k=lo(3),hi(3)
+               do j=lo(2),hi(2)
+                  do i=lo(1),hi(1)
                      gpi(i,j,k,m) = gphi(i,j,k,m) / dt
                   end do
                end do
@@ -950,9 +942,9 @@ contains
          !$OMP END PARALLEL
 
          !$OMP PARALLEL DO PRIVATE(i,j,k)
-         do k=0,nz+1
-            do j=0,ny+1
-               do i=0,nx+1
+         do k=lo(3),hi(3)+1
+            do j=lo(2),hi(2)+1
+               do i=lo(1),hi(1)+1
                   pi(i,j,k) = phi(i,j,k) / dt
                end do
             end do
@@ -1076,6 +1068,7 @@ contains
 
     real(kind=dp_t), pointer :: cp(:,:,:,:)
     real(kind=dp_t), pointer :: rp(:,:,:,:)
+    integer :: lo(rho%dim),hi(rho%dim)
     integer :: i,ng_r,ng_c,dm
 
     dm = get_dim(rho)
@@ -1085,15 +1078,17 @@ contains
 
     do i = 1, nboxes(rho)
        if ( multifab_remote(rho, i) ) cycle
+       lo = lwb(get_box(rho,i))
+       hi = lwb(get_box(rho,i))
        rp => dataptr(rho   , i)
        cp => dataptr(coeffs, i)
        select case (dm)
        case (1)
-          call mkcoeffs_1d(cp(:,1,1,1), ng_c, rp(:,1,1,1), ng_r)
+          call mkcoeffs_1d(cp(:,1,1,1), ng_c, rp(:,1,1,1), lo, hi, ng_r)
        case (2)
-          call mkcoeffs_2d(cp(:,:,1,1), ng_c, rp(:,:,1,1), ng_r)
+          call mkcoeffs_2d(cp(:,:,1,1), ng_c, rp(:,:,1,1), lo, hi, ng_r)
        case (3)
-          call mkcoeffs_3d(cp(:,:,:,1), ng_c, rp(:,:,:,1), ng_r)
+          call mkcoeffs_3d(cp(:,:,:,1), ng_c, rp(:,:,:,1), lo, hi, ng_r)
        end select
     end do
 
@@ -1101,19 +1096,18 @@ contains
 
   !   *********************************************************************************** !
 
-  subroutine mkcoeffs_1d(coeffs,ng_c,rho,ng_r)
+  subroutine mkcoeffs_1d(coeffs,ng_c,rho,lo,hi,ng_r)
 
     use bl_constants_module
 
     integer                        :: ng_c,ng_r
-    real(kind=dp_t), intent(inout) :: coeffs(1-ng_c:)
-    real(kind=dp_t), intent(in   ) ::    rho(1-ng_r:)
+    integer                        :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: coeffs(lo(1)-ng_c:)
+    real(kind=dp_t), intent(in   ) ::    rho(lo(1)-ng_r:)
 
-    integer :: i,nx
+    integer :: i
 
-    nx = size(coeffs,dim=1) - 2
-
-    do i = 1,nx
+    do i = lo(1),hi(1)
        coeffs(i) = ONE / rho(i)
     end do
 
@@ -1121,22 +1115,19 @@ contains
 
   !   *********************************************************************************** !
 
-  subroutine mkcoeffs_2d(coeffs,ng_c,rho,ng_r)
+  subroutine mkcoeffs_2d(coeffs,ng_c,rho,lo,hi,ng_r)
 
     use bl_constants_module
 
     integer                        :: ng_c,ng_r
-    real(kind=dp_t), intent(inout) :: coeffs(1-ng_c:,1-ng_c:)
-    real(kind=dp_t), intent(in   ) ::    rho(1-ng_r:,1-ng_r:)
+    integer                        :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: coeffs(lo(1)-ng_c:,lo(2)-ng_c:)
+    real(kind=dp_t), intent(in   ) ::    rho(lo(1)-ng_r:,lo(2)-ng_r:)
 
     integer :: i,j
-    integer :: nx,ny
 
-    nx = size(coeffs,dim=1) - 2
-    ny = size(coeffs,dim=2) - 2
-
-    do j = 1,ny
-       do i = 1,nx
+    do j = lo(2),hi(2)
+       do i = lo(1),hi(1)
           coeffs(i,j) = ONE / rho(i,j)
        end do
     end do
@@ -1145,25 +1136,21 @@ contains
 
   !   ********************************************************************************** !
 
-  subroutine mkcoeffs_3d(coeffs,ng_c,rho,ng_r)
+  subroutine mkcoeffs_3d(coeffs,ng_c,rho,lo,hi,ng_r)
 
       use bl_constants_module
 
     integer                        :: ng_c,ng_r
-    real(kind=dp_t), intent(inout) :: coeffs(1-ng_c:,1-ng_c:,1-ng_c:)
-    real(kind=dp_t), intent(in   ) ::    rho(1-ng_r:,1-ng_r:,1-ng_r:)
+    integer                        :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: coeffs(lo(1)-ng_c:,lo(2)-ng_c:,lo(3)-ng_c:)
+    real(kind=dp_t), intent(in   ) ::    rho(lo(1)-ng_r:,lo(2)-ng_r:,lo(3)-ng_r:)
 
     integer :: i,j,k
-    integer :: nx,ny,nz
-
-    nx = size(coeffs,dim=1) - 2
-    ny = size(coeffs,dim=2) - 2
-    nz = size(coeffs,dim=3) - 2
 
     !$OMP PARALLEL DO PRIVATE(i,j,k)
-    do k = 1,nz
-       do j = 1,ny
-          do i = 1,nx
+    do k = lo(3),hi(3)
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
              coeffs(i,j,k) = ONE / rho(i,j,k)
           end do
        end do
