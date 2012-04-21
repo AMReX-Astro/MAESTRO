@@ -168,6 +168,9 @@ Details of the simulation (build information, number of processors
 used, output date, output directory, runtime parameter values, ...)
 are stored in the plaintext {\tt job\_info} file in each plotfile directory.
 
+{\bf Note: unless otherwise specified all quantities in \maestro\ are
+assumed to be in CGS units.}
+
 Visualization of results is described in the next section.
 
 
@@ -388,14 +391,22 @@ the types of boundaries, and the number of computational cells include:
   the physical coordinate of the upper extent of the domain boundary
   in the $x$, $y$, and $z$ coordinate directions.
 
-\item {\tt bcx\_lo }, {\tt bcy\_lo }, {\tt bcz\_lo }, 
-      {\tt bcx\_hi }, {\tt bcy\_hi }, {\tt bcz\_hi } are the boundary
-   condition types at the lower (`{\tt lo}') and upper (`{\tt hi}')
-   domain boundaries in the $x$, $y$, and $z$ coordinate directions.
-   The different types are set via integer flags listed in table~\ref{arch:table:bcflags}.
+\item There are two ways to specify boundary conditions---via integer flags
+      or descriptive string names.  If the string names are present,
+      then they will override the integer quantities in determining
+      the boundary conditions.
+
+   \begin{itemize}
+
+   \item {\tt bcx\_lo }, {\tt bcy\_lo }, {\tt bcz\_lo }, {\tt bcx\_hi
+      }, {\tt bcy\_hi }, {\tt bcz\_hi } are the boundary condition
+      types at the lower (`{\tt lo}') and upper (`{\tt hi}') domain
+      boundaries in the $x$, $y$, and $z$ coordinate directions.  The
+      different types are set via integer flags listed in
+      table~\ref{gs:table:bcflags}.
 
    \begin{table}[h]
-   \caption{\label{arch:table:bcflags} Boundary condition flags}  
+   \caption{\label{gs:table:bcflags} Boundary condition flags}  
    \begin{center}
    \begin{tabular}{ll}
    \hline
@@ -411,6 +422,40 @@ the types of boundaries, and the number of computational cells include:
    \end{tabular}
    \end{center}
    \end{table}
+
+   \item {\tt xlo\_boundary\_type}, {\tt ylo\_boundary\_type}, {\tt
+   zlo\_boundary\_type}, {\tt xhi\_boundary\_type}, {\tt
+   yhi\_boundary\_type}, {\tt zhi\_boundary\_type} are the boundary
+   condition types at the lower and upper domain boundaries in 
+   the $x$, $y$, and $z$ coordinate directions.   The boundary
+   type is set by providing a string name---valid values are listed
+   in table~\ref{gs:table:bcstrings}
+
+   \begin{table}[h]
+   \caption{\label{gs:table:bcstrings} Boundary condition string names}  
+   \begin{center}
+   \begin{tabular}{ll}
+   \hline
+   BC type    & integer flag \\
+   \hline
+   periodic             & ``periodic'' \\
+   inlet (user-defined) & ``inlet'' \\
+   outlet               & ``outlet'' \\
+   symmetry             & ``symmetry'' \\
+   slip wall            & ``slip wall'' \\
+   no-slip wall         & ``no slip wall'' \\
+   \hline
+   \end{tabular}
+   \end{center}
+   \end{table}
+
+   \end{itemize}
+
+  The string-based parameters are a newer option for specifying
+  boundary conditions, and are preferred due to clarity.  The
+  conversion between the string names and integer flags is done
+  by \boxlib\ in the {\tt bc\_module} at the time of initializing
+  the runtime parameters.
 
 \end{itemize}
 
