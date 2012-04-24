@@ -13,13 +13,24 @@ specific \maestro\ routines directly.
 
   This test initializes a Gaussian density field (no other scalar
   quantities are used) and a uniform velocity field in any one of the
-  coordinate directions.  The Gaussian profile is advected through
-  the period domain exactly once and the error in the density profile
-  (L2 norm) is computed.  The driver for this problem does this 
-  for every dimension twice (once with a positive velocity and once
-  with a negative velocity).  After all coordinate directions are 
-  tested, the norms are compared to ensure that the error does
-  not show any directional bias.
+  coordinate directions.  The Gaussian profile is advected through the
+  period domain exactly once and the error in the density profile (L2
+  norm) is computed.  The driver for this problem does this for every
+  dimension twice (once with a positive velocity and once with a
+  negative velocity), and loops over all advection methods ({\tt
+  ppm\_type = 0,1,2} and {\tt bds\_type = 1}).  After all coordinate
+  directions are tested, the norms are compared to ensure that the
+  error does not show any directional bias.
+
+  Note: the BDS advection method does not guarantee that the error be
+  independent of the advection direction---small differences can
+  arise.  What's happening here is that within each cell BDS is trying
+  to define a tri-linear profile for rho subject to the constrants in
+  the BDS paper~\cite{bds3d} (constraints 1 and 2 on p.\ 2044 after eq. 3.4).  We
+  do not solve the L2 minimization problem exactly so we iterate up to
+  3 times using a simple heuristic algorithm designed to work toward
+  the constraint.  The iteration will give different results depending
+  on orientation since we work through the corners in arbitrary order.
 
 \begin{figure}[t] 
 \centering
