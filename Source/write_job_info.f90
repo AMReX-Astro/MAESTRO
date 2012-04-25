@@ -13,7 +13,8 @@ subroutine write_job_info(dirname, mba, the_bc_tower)
   use define_bc_module
   use ml_boxarray_module
   use build_info_module, only: build_date, build_dir, build_machine, boxlib_dir, &
-                               module_list, f90_compile_line, f_compile_line, &
+                               module_list, FCOMP, FCOMP_version, &
+                               f90_compile_line, f_compile_line, &
                                C_compile_line, link_line
   use omp_module
   use network
@@ -73,6 +74,9 @@ subroutine write_job_info(dirname, mba, the_bc_tower)
      write (99,1001) "BoxLib dir:    ", trim(boxlib_dir)
      write (99,*) " "
      write (99,1001) "modules used:  ", trim(module_list)
+     write (99,*) " "
+     write (99,1001) "FCOMP:            ", trim(FCOMP)
+     write (99,1001) "FCOMP version:    ", trim(FCOMP_version)
      write (99,*) " "
      write (99,1001) "F90 compile line: ", trim(f90_compile_line)
      write (99,*) " "

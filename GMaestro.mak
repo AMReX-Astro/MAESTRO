@@ -149,7 +149,8 @@ build_info.f90:
 	@echo "---------------------------------------------------------------------------"
 	@echo "WRITING build_info.f90"
 	$(BOXLIB_HOME)/Tools/F_scripts/make_build_info \
-            "$(Fmdirs)" "$(COMPILE.f90)" "$(COMPILE.f)" \
+            "$(Fmdirs)" "$(COMP)" "$(FCOMP_VERSION)" \
+            "$(COMPILE.f90)" "$(COMPILE.f)" \
             "$(COMPILE.c)" "$(LINK.f90)" "$(BOXLIB_HOME)"
 	@echo "---------------------------------------------------------------------------"
 	@echo " "
