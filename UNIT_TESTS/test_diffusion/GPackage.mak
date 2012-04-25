@@ -14,7 +14,6 @@ f90sources += make_explicit_thermal.f90
 f90sources += make_plotfile.f90
 f90sources += make_plot_variables.f90
 f90sources += mg_eps.f90
-f90sources += ml_solve.f90
 f90sources += pred_parameters.f90
 f90sources += probin.f90
 f90sources += restrict_base.f90
