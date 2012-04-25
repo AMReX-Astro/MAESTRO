@@ -801,7 +801,7 @@ contains
 
     !     Local variables
     integer            :: i, j, k
-    real (kind=dp_t)   :: velr, vel, weight
+    real (kind=dp_t)   :: vel, weight
     logical            :: cell_valid
     real (kind=dp_t)   :: x, y, z
 
@@ -814,8 +814,8 @@ contains
        call bl_error("ERROR: geometry not spherical in diag")
     endif
 
-!$omp parallel do private(i,j,k,x,y,z,cell_valid,velr,vel) &
-!$omp reduction(max:vr_max,U_max,Mach_max,Mach_max_domain) &
+!$omp parallel do private(i,j,k,x,y,z,cell_valid,vel) &
+!$omp reduction(max:U_max,Mach_max,Mach_max_domain) &
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
