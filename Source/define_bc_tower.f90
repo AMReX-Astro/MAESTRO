@@ -127,6 +127,16 @@ contains
 
     phys_bc_level = default_value
 
+    ! phys_bc_level(0:nboxes,dim,2) contains the physical name of the
+    ! boundary condition type on each edge of each box that makes up
+    ! the current level.  The phys_bc_level(0,:,:) 'box' refers to the
+    ! entire domain.  If an edge of a box is not on a physical
+    ! boundary, then it is set to default_value (typically INTERIOR).
+    !
+    ! These boundary condition types are used to interpret the actual
+    ! method to fill the ghostcells for each variable, as described in
+    ! the adv_bc_level and ell_bc_level arrays.
+
     i = 0
     do d = 1,layout_dim(la_level)
        phys_bc_level(i,d,1) = domain_bc(d,1)
