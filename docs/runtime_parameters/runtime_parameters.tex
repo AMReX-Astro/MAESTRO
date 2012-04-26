@@ -1,4 +1,6 @@
 
+\label{ch:parameters}
+
 \section{Runtime Parameters}
 
 The following tables list the runtime parameters available to
@@ -321,52 +323,54 @@ shown here.
 \verb=  change_max_grid_size_1  = &   Change the max grid size on the base level on restart  &  .false. \\
 \verb=  dm_in  = &   dimensionality (valid values are 2 or 3)  &  2 \\
 \rowcolor{tableShade}
+\verb=  do_2d_planar_octant  = &   Set to 1 if using the 2D simplified (planar) model of an octant.  &  0 \\
 \verb=  drdxfac  = &   ratio of radial base state zones to Cartesian full state zones for spherical geometry  &  1 \\
+\rowcolor{tableShade}
 \verb=  dump_grid_file  = &   dump out a file, named grids.out, containing the number of grids a each level. A new line is added each time regrid is called.  &  .false. \\
-\rowcolor{tableShade}
 \verb=  max_grid_size  = &   The largest grid size that will be created using make\_new\_grids.  &  64 \\
+\rowcolor{tableShade}
 \verb=  max_grid_size_1  = &   The largest grid size that will be created using make\_new\_grids for the coarsest level.  Defaults to {\tt max\_grid\_size}.  &  -1 \\
-\rowcolor{tableShade}
 \verb=  max_grid_size_2  = &   The largest grid size that will be created using make\_new\_grids for level 2 (the first refined level).  Defaults to {\tt max\_grid\_size}.  &  -1 \\
+\rowcolor{tableShade}
 \verb=  max_grid_size_3  = &   The largest grid size that will be created using make\_new\_grids for level 3 (the second refined level) and beyond.  Defaults to {\tt max\_grid\_size}.  &  -1 \\
-\rowcolor{tableShade}
 \verb=  max_levs  = &   Total number of levels.  1 = single level.  &  1 \\
+\rowcolor{tableShade}
 \verb=  min_eff  = &   parameter for cluster algorithm for making new grids in adaptive problems  &  0.9d0 \\
-\rowcolor{tableShade}
 \verb=  minwidth  = &   The minimum size on a side for a grid created using make\_new\_grids.  &  8 \\
+\rowcolor{tableShade}
 \verb=  n_cellx  = &   Number of cells for the base level in the x-direction  &  -1 \\
-\rowcolor{tableShade}
 \verb=  n_celly  = &   Number of cells for the base level in the y-direction  &  -1 \\
+\rowcolor{tableShade}
 \verb=  n_cellz  = &   Number of cells for the base level in the z-direction  &  -1 \\
-\rowcolor{tableShade}
 \verb=  octant  = &   set octant = T if you just want to model an octant of a sphere (note: only takes effect for spherical geometry)  &  .false. \\
+\rowcolor{tableShade}
 \verb=  prob_hi_x  = &   physical coordinates of hi-x corner of problem domain  &  1.d0 \\
-\rowcolor{tableShade}
 \verb=  prob_hi_y  = &   physical coordinates of hi-y corner of problem domain  &  1.d0 \\
+\rowcolor{tableShade}
 \verb=  prob_hi_z  = &   physical coordinates of hi-z corner of problem domain  &  1.d0 \\
-\rowcolor{tableShade}
 \verb=  prob_lo_x  = &   physical coordinates of lo-x corner of problem domain  &  ZERO \\
+\rowcolor{tableShade}
 \verb=  prob_lo_y  = &   physical coordinates of lo-y corner of problem domain  &  ZERO \\
-\rowcolor{tableShade}
 \verb=  prob_lo_z  = &   physical coordinates of lo-z corner of problem domain  &  ZERO \\
+\rowcolor{tableShade}
 \verb=  ref_ratio  = &   Refinement ratio for multilevel problems  &  2 \\
-\rowcolor{tableShade}
 \verb=  regrid_int  = &   How often we regrid.  &  -1 \\
-\verb=  spherical_in  = &   set to 1 if you are doing a spherical problem  &  0 \\
 \rowcolor{tableShade}
+\verb=  spherical_in  = &   Set to 1 if you are doing a spherical problem.  &  0 \\
 \verb=  test_set  = &   Fixed grid file.  &  '' \\
+\rowcolor{tableShade}
 \verb=  the_copy_cache_max  = &    Number of boxassoc layouts we keep in memory to avoid having to recompute the boxassoc, which is computationally expensive.  &  25 \\
-\rowcolor{tableShade}
 \verb=  the_layout_verbosity  = &    &  0 \\
+\rowcolor{tableShade}
 \verb=  the_sfc_threshold  = &   When assigning processors for grids, this determines whether we use the sfc algorithm or knapsack algorithm.  If the total number of grids divided by the number of processors is greater than this number, use sfc.  &  5 \\
-\rowcolor{tableShade}
 \verb=  xhi_boundary_type  = &   $+x$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcx\_hi}  &  "" \\
+\rowcolor{tableShade}
 \verb=  xlo_boundary_type  = &   $-x$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcx\_lo}  &  "" \\
-\rowcolor{tableShade}
 \verb=  yhi_boundary_type  = &   $+y$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcy\_hi}  &  "" \\
-\verb=  ylo_boundary_type  = &   $-y$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcy\_lo}  &  "" \\
 \rowcolor{tableShade}
+\verb=  ylo_boundary_type  = &   $-y$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcy\_lo}  &  "" \\
 \verb=  zhi_boundary_type  = &   $+z$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcz\_hi}  &  "" \\
+\rowcolor{tableShade}
 \verb=  zlo_boundary_type  = &   $-z$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcz\_lo}  &  "" \\
 
 

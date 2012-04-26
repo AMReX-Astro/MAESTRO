@@ -3,6 +3,8 @@ import sys
 
 # tex format stuff
 Mheader=r"""
+\label{ch:parameters}
+
 \section{Runtime Parameters}
 
 The following tables list the runtime parameters available to
