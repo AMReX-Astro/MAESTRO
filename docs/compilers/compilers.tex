@@ -4,7 +4,7 @@ Here, we list notes on problems with specific compilers and \maestro.
 %-----------------------------------------------------------------------------
 \section{Cray}
 
-Cray 8.0.2 compiles and runs \maestro\ find on the interlagos/jaguarpf 
+Cray 8.0.2 compiles and runs \maestro\ fine on the interlagos/jaguarpf 
 machine at OCLF.
 
 
@@ -15,7 +15,7 @@ Probably the best compilers for \maestro.
 Some notes:
 \begin{itemize}
 \item gfortran 4.5 has no known issues.
-\item gfortran 4.6.1 and 4.6.2 on Fedora (15 and 16) have a bug that 
+\item gfortran 4.6.1--4.6.3 on Fedora (15 and 16) have a bug that 
 shows up in multi-processor runs ({\tt toy\_convect} on 4 processors, for instance).
 The symptom is a crash during initialization with the message that
 ``message sizes do not match across processes in the collective'' in a
