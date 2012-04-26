@@ -216,13 +216,14 @@ Further details on the C++ \boxlib\ build system used by \amrvis\
 can be found in the \boxlib\ documentation.
 
 
-\subsection{{\tt data\_processing} scripts}
+\subsection{{\tt AmrPostprocessing} scripts}
 
 Several useful analysis scripts (written in Fortran 90) can be found
-in {\tt fParallel/data\_processing}.  The {\tt GNUmakefile} there
-needs to be edited to indicate which of the tools to build.  For
-example, to extract the density along a line from the center of a
-plotfile, {\tt plt00200}, in the $y$-direction:
+in {\tt AmrPostprocessing/F\_Src/} (distributed separately
+from \maestro).  The {\tt GNUmakefile} there needs to be edited to
+indicate which of the tools to build.  For example, to extract the
+density along a line from the center of a plotfile, {\tt plt00200}, in
+the $y$-direction:
 
 \begin{verbatim}
 fextract.Linux.gfortran.exe -d 2 -v "density" -p plt00200
@@ -231,7 +232,7 @@ fextract.Linux.gfortran.exe -d 2 -v "density" -p plt00200
 These routines are described in \S~\ref{sec:analysis}.
 
 There is also a python visualization method in {\tt
-fParallel/data\_processing/python\_plotfile}.  This is described
+AmrPostprocessing/F\_src/python\_plotfile}.  This is described
 in \S~\ref{sec:vis:python}.
 
 
@@ -239,8 +240,7 @@ in \S~\ref{sec:vis:python}.
 
 \visit\ is a powerful, DOE-supported visualization tool for 2- and 3D
 datasets.  It can do contouring, volume rendering, streamlines, ...\, ,
-directly from \boxlib\ plotfiles (to open a plotfile in \visit, point to
-the {\tt Header} file inside the plotfile directory).  Details on
+directly from \boxlib\ plotfiles.   Details on
 \visit\ can be found at:\newline
  {\tt https://wci.llnl.gov/codes/visit/home.html}\,. \newline
 The easiest way to get started with \visit\ is to download a precompiled
@@ -251,11 +251,12 @@ Once \visit\ is installed, you can open a \boxlib\ plotfile by pointing
 
 \subsection{Diagnostic Files}
 
-By default, \maestro\ outputs global diagnostics each timestep into a file
-called {\tt maestro\_diag.out}.  This includes the maximum Mach number,
-peak temperature, and peak nuclear energy generation rate.  Individual problems
-can provide their own {\tt diag.f90} file to produce custom diagnostic
-output.
+By default, \maestro\ outputs global diagnostics each timestep into a
+file called {\tt maestro\_diag.out}.  This includes the maximum Mach
+number, peak temperature, and peak nuclear energy generation rate.
+Individual problems can provide their own {\tt diag.f90} file to
+produce custom diagnostic output.  This information can be plotted
+directly with {\sl GNUplot}, for example.
 
 
 

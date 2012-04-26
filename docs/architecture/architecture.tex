@@ -40,21 +40,28 @@ distributed separately.
 
 
 
-\section{\maestro\ Directory Structure}
+\section{The \maestro\ `Ecosystem'}
 
 \begin{figure}[]
 \centering
 \includegraphics[scale=0.55]{\archfigpath/maestro_ecosystem2}
-\caption[\maestro\ directory structure]
-{The basic \maestro\ directory structure.}
+\caption[\maestro\ `ecosystem'] {\label{fig:arch:eco} The basic
+  \maestro\ `ecosystem'.  Here we see the different packages that
+  contribute to building the {\tt test2} problem in \maestro.  The
+  purple lines show the directories that are pulled in through
+  variable Makefile variables ({\tt BOXLIB\_HOME}, {\tt NETWORK\_DIR},
+  {\tt EOS\_DIR}, and {\tt CONDUCTIVITY\_DIR}).  The blue lines show
+  standard modules that are used in most \maestro\ builds.}
 \end{figure}
 
 
 Building \maestro\ requires both the \maestro-specific source
 files (distributed in the {\tt MAESTRO/} directory), and the
-\boxlib\ library (distributed in the {\tt BoxLib/} directory.
+\boxlib\ library (distributed separately, consisting of the {\tt BoxLib/} directory).
 \boxlib\ provides both a C++ and a Fortran framework.  \maestro\
-only uses the Fortran framework.
+only uses the Fortran portions of \boxlib.  Figure~\ref{fig:arch:eco}
+shows the relationship between the different packages, highlighting
+what goes into defining a specific \maestro\ problem.
 
 Problems piece together various \maestro\ directories, choosing a
 reaction network, equation of state, and conductivity routine to build
@@ -145,6 +152,12 @@ an executable.  Briefly, the \maestro\ sub-directories are:
     the advection routines, etc.  All \maestro\ problems will compile
     this source.
 
+  \item {\tt Source_SDC}
+
+    Source for an alternate formulation of \maestro\ that removes the
+    splitting between hydrodynamics, diffusion, and reactions (see
+    Chapter~\ref{ch:sdc}).
+
   \item {\tt TEST\_PROBLEMS}
  
     \maestro\ problem directories for simple test problems that have
@@ -167,12 +180,14 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 \begin{figure}[t]
 \centering
 \includegraphics[scale=0.65]{\archfigpath/boxlib_directory2}
-\caption[\boxlib\ directory structure]
-{The basic \boxlib\ directory structure.  The directories used
-by \maestro\ are indicated in red.}
+\caption[\boxlib\ directory structure] {\label{fig:arch:boxlib} The
+  basic \boxlib\ directory structure.  The directories used by
+  \maestro\ are indicated in red.}
 \end{figure}
 
-The \boxlib\ directories that \maestro\ uses are:
+The \boxlib\ directory structure is shown in
+Figure~\ref{fig:arch:boxlib}.  The subset of the directories that are
+used by \maestro\ are:
 \begin{itemize}
 \item {Src/}
 
@@ -240,22 +255,23 @@ python-based routines are also here.  These are described both in
 \section{Adding A New Problem}
 \label{sec:adding_problems}
 
-Different \maestro\ problems are defined in sub-directories under
-{\tt MAESTRO/}.  To add a problem, start by creating a new
-sub-directory---this is where you will compile your problem and
-store all the problem-specific files.
+Different \maestro\ problems are defined in sub-directories under {\tt
+  MAESTRO/SCIENCE}, {\tt MAESTRO/TEST\_PROBLEMS}, or {\tt
+  MAESTRO/UNIT\_TESTS}.  To add a problem, start by creating a new
+sub-directory---this is where you will compile your problem and store
+all the problem-specific files.
 
-The minimum requirement to
-define a new problem would be a {\tt GNUmakefile} which describes how
-to build the application and an input file which lists the runtime
-parameters.  The problem-specific executable is built in the problem
-directory by typing {\tt make}.  Source files are found automatically
-by searching the directories listed in the {\tt GNUmakefile}.
-Customized versions of any source files placed in the problem-directory
-override those with the same name found elsewhere.  Any unique
-source files (and not simply a custom version of a file found
-elsewhere) needs to be listed in a file called {\tt GPackage.mak}
-in the problem-directory.
+The minimum requirement to define a new problem would be a {\tt
+  GNUmakefile} which describes how to build the application and an
+input file which lists the runtime parameters.  The problem-specific
+executable is built in the problem directory by typing {\tt make}.
+Source files are found automatically by searching the directories
+listed in the {\tt GNUmakefile}.  Customized versions of any source
+files placed in the problem-directory override those with the same
+name found elsewhere.  Any unique source files (and not simply a
+custom version of a file found elsewhere) needs to be listed in a file
+called {\tt GPackage.mak} in the problem-directory (and this needs to
+be told to the build system---see below).
 
 \subsection{The {\tt GNUmakefile}}
 
@@ -277,13 +293,13 @@ specified in {\tt MAESTRO/mk/GMakeMPI.mak}.
 
 The next line sets the compiler to be used for compilation:
 \begin{lstlisting}[language={[gnu]make},mathescape=false]
-  COMP := Intel
+  COMP := gfortran
 \end{lstlisting}
 The \maestro\ build system knows what options to use for various
 compiler families.  The {\tt COMP} flag specifies which compiler to
 use.  Allowed values include {\tt Intel}, {\tt gfortran}, {\tt PGI},
-and {\tt PathScale}.  The specific details of these choices are
-defined in the {\tt MAESTRO/mk/comps/} directory.
+{\tt PathScale}, and {\tt Cray}.  The specific details of these
+choices are defined in the {\tt MAESTRO/mk/comps/} directory.
 
 {\tt MKVERBOSE} set to true will echo the build commands to the
 terminal as the are executed.
@@ -332,17 +348,11 @@ automatically handled by the {\tt GMaestro.mak} instructions.
 Runtime parameters listed in the {\tt MAESTRO/\_parameters} file are
 parsed at compile time and the file {\tt probin.f90} is written and
 compiled.  This is a Fortran module that holds the values of the
-runtime parameters and makes them available to any routine.  The
-variable {\tt PROBIN\_PARAMETERS} should list all of the files that
-contain runtime parameters for the current problem.  You must always
-include the main {\tt ../\_parameters} file (i.e.\ {\tt
-  MAESTRO/\_parameters}).  Sometimes a problem defines their own
-runtime parameters (for instance {\tt \_parameters.myproblem}), in which
-case, its parameter file should also appear in {\tt
-  PROBIN\_PARAMETERS} (see \S~\ref{sec:def_runtime_param}).
-\begin{lstlisting}[language={[gnu]make},mathescape=false]
-  PROBIN_PARAMETERS := ../_parameters
-\end{lstlisting}
+runtime parameters and makes them available to any routine.  By
+default, the build system looks for a file called {\tt \_parameters}
+in the problem directory and adds those parameters along with the
+master list of \maestro\ parameters ({\tt MAESTRO/\_parameters}) to
+the {\tt probin\_module}.
 
 The final line in the {\tt GNUmakefile} includes the rules to actually
 build the executable.
@@ -368,13 +378,11 @@ list in the {\tt GNUmakefile}.
 
 \label{sec:def_runtime_param}
 
-The runtime parameters for the core \maestro\ algorithm are listed
-in {\tt MAESTRO/\_parameters}.  That file is parsed at compile-time
-by the {\tt MAESTRO/write\_probin.py} script
-(along with any other parameter files listed in the {\tt PROBIN\_PARAMETERS}
-variable in the {GNUmakefile}, see \S \ref{sec:makefile}).  The script
-outputs the {\tt probin.f90} source file.  Each line
-in the {\tt \_parameters} file has the form: 
+The runtime parameters for the core \maestro\ algorithm are listed in
+{\tt MAESTRO/\_parameters}.  That file is parsed at compile-time by
+the {\tt MAESTRO/write\_probin.py} script (along with any
+problem-specific parameters).  The script outputs the {\tt probin.f90}
+source file.  Each line in the {\tt \_parameters} file has the form:
 \vskip 3mm
 {\em parameter} \hskip 10em  {\em data-type} \hskip 10em  {\em value} 
 \vskip 3mm
@@ -387,7 +395,8 @@ available runtime parameters.  For the documentation, runtime parameters are gro
 in the {\tt \_parameters} file into categories.  The category headings
 are defined by comments in the {\tt \_parameters} file and any comments
 following that heading are placed into that category.  The documentation
-is produced by the script {\tt MAESTRO/docs/runtime\_parameters/rp.py}.
+(Chapter~\ref{ch:parameters}) is produced by the script 
+{\tt MAESTRO/docs/runtime\_parameters/rp.py}.
 
 At runtime, the default values for the parameters can be overridden
 either through the inputs file (by adding a line of the form: {\tt
@@ -397,9 +406,8 @@ values of the runtime parameters available to the various functions
 in the code (see \S~\ref{sec:probin}).
 
 Problem-specific runtime parameters should be defined in the
-problem-directory in a file called {\tt
-  \_parameters}\{{\em.problem-name}\}.  This file should be added
-to the {\tt PROBIN\_PARAMETERS} variable in the {\tt GNUmakefile}.
+problem-directory in a file called {\tt \_parameters}.  This file will
+be automatically found at compile time.
 
 
 
