@@ -132,7 +132,7 @@ contains
        ns = 2*dm+1
        do n = nlevs, 2, -1
           la = mla%la(n)
-          call multifab_build(one_sided_ss(n), la, ns, 0, nodal)
+          call multifab_build(one_sided_ss(n), la, ns, 0, nodal, stencil=.true.)
           call setval(one_sided_ss(n), ZERO,all=.true.)
        end do
     end if
