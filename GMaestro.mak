@@ -92,16 +92,15 @@ include $(Fmpack)
 
 # vpath defines the directories to search for the source files
 
-#  Note: GMakerules.mak will include '.' at the start of the
-#  VPATH_LOCATIONS to first search in the problem directory
-VPATH_LOCATIONS += $(Fmlocs)
-
 # we always want to search the MAESTRO/Source directory, even for
 # unit tests, since they may build individual files there.
 ifdef UNIT_TEST
   VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO/Source
 endif
 
+#  Note: GMakerules.mak will include '.' at the start of the
+#  VPATH_LOCATIONS to first search in the problem directory
+VPATH_LOCATIONS += $(Fmlocs)
 
 
 # list of directories to put in the Fortran include path
