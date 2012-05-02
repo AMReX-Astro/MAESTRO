@@ -21,7 +21,7 @@ HTAR=/opt/public/bin/htar
 
 # path to the ftime executable -- used for making a simple ftime.out file
 # listing the name of the plotfile and its simulation time
-FTIME_EXE=./ftime.Linux.PathScale.exe
+FTIME_EXE=ftime.Linux.gfortran.exe
 
 
 #----------------------------------------------------------------------------
@@ -131,7 +131,7 @@ function process_files
           date > ${dir}.processed
 
 	  # output the plotfile name and simulation time to ftime.out
-	  if [ -f ${FTIME_EXE} ] ; then
+	  if [ `command -v ${FTIME_EXE}` ] ; then
 	      ${FTIME_EXE} ${dir} >> ftime.out
 	  fi
 
