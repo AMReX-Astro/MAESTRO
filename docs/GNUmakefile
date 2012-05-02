@@ -15,7 +15,8 @@ eps_source = $(wildcard *.eps) \
              $(wildcard planar_invsq_base/*.eps) \
              $(wildcard pert_notes/*.eps) \
              $(wildcard SDC/*.eps) \
-             $(wildcard test_suite/*.eps)
+             $(wildcard test_suite/*.eps) \
+             $(wildcard getting_started/*.eps)
 
 pdf_source = $(eps_source:.eps=.pdf)
 
