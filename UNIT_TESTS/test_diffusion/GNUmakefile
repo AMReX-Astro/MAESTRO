@@ -23,9 +23,6 @@ EXTRA_DIR := MAESTRO/UNIT_TESTS/test_diffusion
 
 UNIT_TEST := t
 
-# define the runtime parameter files
-PROBIN_PARAMETERS := ../_parameters ./_parameters
-
 
 # include the MAESTRO build stuff
 include $(FPARALLEL)/MAESTRO/GMaestro.mak
