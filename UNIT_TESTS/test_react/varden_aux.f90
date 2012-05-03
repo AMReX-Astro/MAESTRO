@@ -84,7 +84,7 @@ contains
     
     !Check for proper nesting
     if (.not. ml_boxarray_properly_nested(mla%mba, 3, pmask)) then
-      call bl_error('ERROR: fixed_grids not properly nested')
+       call bl_error('ERROR: fixed_grids not properly nested')
     end if
     
     !Initialize nlevs
@@ -105,7 +105,7 @@ contains
     dm = mla%dim
     
     if (dm /= 3 .or. spherical_in /= 0) then
-      call bl_error('ERROR: grid must be Cartesian and three-dimensional')
+       call bl_error('ERROR: grid must be Cartesian and three-dimensional')
     endif
 
     !Initialize_dx
@@ -128,6 +128,7 @@ contains
                              prob_hi, prob_lo 
     use network, only: nspec, spec_names
     use eos_module
+    use layout_module   , only: get_pd   
 
     !Args
     type(ml_layout),              intent(in   ) :: mla
@@ -135,23 +136,23 @@ contains
     real(kind=dp_t), allocatable, intent(  out) :: tempbar(:,:), pbar(:,:)
 
     !Local variables
-    integer,         allocatable :: lo(:), hi(:)
+    integer                      :: lo(mla%dim), hi(mla%dim)
+    integer                      :: domlo(mla%dim), domhi(mla%dim)
     real(kind=dp_t), pointer     :: sp(:,:,:,:)
     integer                      :: n, i, ii, jj, kk
     integer                      :: res, nlevs
     real(kind=dp_t)              :: dlogrho, dlogT, dxn, summ
-    real(kind=dp_t)              :: temp_zone, dens_zone, xn_zone(nspec, 0:extent(mla%mba%pd(1),1)-1)
+    real(kind=dp_t)              :: temp_zone, dens_zone, xn_zone(nspec, 0:extent(mla%mba%pd(1),3)-1)
 
     !=== Execution ===
-    !Initialize boundary arrays
-    allocate(lo(mla%dim))
-    allocate(hi(mla%dim))
-    lo = lwb(get_box(s(1), 1))
-    hi = upb(get_box(s(1), nboxes(s(1))))
+
+    ! get the lo and hi of the domain
+    domlo = lwb(get_pd(get_layout(s(1))))
+    domhi = upb(get_pd(get_layout(s(1))))
 
     !Initialize tempbar & pbar
     nlevs = mla%nlevel
-    res   = hi(3)-lo(3)
+    res   = domhi(3)-domlo(3)
     allocate(tempbar(nlevs,0:res))
     allocate(pbar(nlevs,0:res))
     tempbar = ZERO
@@ -160,55 +161,54 @@ contains
     !Density, temperature, and mass fraction increments
     dlogrho = (log10(dens_max) - log10(dens_min))/(extent(mla%mba%pd(1),1) - 1)
     dlogT   = (log10(temp_max) - log10(temp_min))/(extent(mla%mba%pd(1),2) - 1)
-    call get_xn(xn_zone, lo(3), hi(3))
+    call get_xn(xn_zone, domlo(3), domhi(3))
 
     !-- Initialization of the full thermodynamic grid --
     do n = 1, nlevs
-      do i = 1, nboxes(s(n))
-        if ( multifab_remote(s(n),i) ) cycle
+       do i = 1, nboxes(s(n))
+          if ( multifab_remote(s(n),i) ) cycle
     
-        sp  => dataptr(s(n), i)
+          sp  => dataptr(s(n), i)
  
-        lo = lwb(get_box(s(n), i))
-        hi = upb(get_box(s(n), i))
+          lo = lwb(get_box(s(n), i))
+          hi = upb(get_box(s(n), i))
         
-        do kk = lo(3), hi(3)
-          do jj = lo(2), hi(2)
-            !Set the temperature
-            temp_zone = 10.0**(log10(temp_min) + dble(jj)*dlogT)
-            do ii = lo(1), hi(1)
-              !Set the density
-              dens_zone = 10.0**(log10(dens_min) + dble(ii)*dlogrho)
-               
-              !Call the EoS w/ rho, temp, & X as inputs
-              temp_eos  = temp_zone
-              den_eos   = dens_zone
-              xn_eos(:) = xn_zone(:,kk)
-              
-              call eos(eos_input_rt, den_eos, temp_eos, &
-                       xn_eos, &
-                       p_eos, h_eos, e_eos, &
-                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                       dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                       dpdX_eos, dhdX_eos, &
-                       gam1_eos, cs_eos, s_eos, &
-                       dsdt_eos, dsdr_eos, &
-                       .false.)
-    
-              !Initialize this element of the state
-              sp(ii,jj,kk,rho_comp)                    = dens_zone
-              sp(ii,jj,kk,rhoh_comp)                   = dens_zone * h_eos
-              sp(ii,jj,kk,spec_comp:spec_comp-1+nspec) = dens_zone * xn_zone(1:nspec,kk)
-              sp(ii,jj,kk,temp_comp)                   = temp_zone
-            enddo
-          enddo
-        enddo
-      enddo
-    enddo
+          do kk = lo(3), hi(3)
+             do jj = lo(2), hi(2)
+                !Set the temperature
+                temp_zone = 10.0**(log10(temp_min) + dble(jj)*dlogT)
 
-    !Clean up
-    deallocate(lo)
-    deallocate(hi)
+                do ii = lo(1), hi(1)
+                   !Set the density
+                   dens_zone = 10.0**(log10(dens_min) + dble(ii)*dlogrho)
+                   
+                   !Call the EoS w/ rho, temp, & X as inputs
+                   temp_eos  = temp_zone
+                   den_eos   = dens_zone
+                   xn_eos(:) = xn_zone(:,kk)
+                   
+                   call eos(eos_input_rt, den_eos, temp_eos, &
+                            xn_eos, &
+                            p_eos, h_eos, e_eos, &
+                            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                            dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                            dpdX_eos, dhdX_eos, &
+                            gam1_eos, cs_eos, s_eos, &
+                            dsdt_eos, dsdr_eos, &
+                            .false.)
+    
+                   !Initialize this element of the state
+                   sp(ii,jj,kk,rho_comp)                    = dens_zone
+                   sp(ii,jj,kk,rhoh_comp)                   = dens_zone * h_eos
+                   sp(ii,jj,kk,spec_comp:spec_comp-1+nspec) = dens_zone * xn_zone(1:nspec,kk)
+                   sp(ii,jj,kk,temp_comp)                   = temp_zone
+                enddo
+             enddo
+          enddo
+
+       enddo
+    enddo
+    
   end subroutine therm_init
 
   subroutine varden_close()
@@ -218,7 +218,7 @@ contains
 
     !=== Execution ===
     do n=1, nlevs
-      call destroy(react_s(n))
+       call destroy(react_s(n))
     end do
     
     deallocate(react_s)
@@ -256,7 +256,7 @@ contains
 
     !=== Execution ===
     if(.not. react_is_init) then
-      call bl_error('ERROR: varden_aux reaction data not initialized')
+       call bl_error('ERROR: varden_aux reaction data not initialized')
     endif
 
     !Allocate bounding arrays.
@@ -265,64 +265,65 @@ contains
 
     !Loop through cell by cell
     do n = 1, nlevs
-      do i = 1, nboxes(react_s(n))
-        if ( multifab_remote(react_s(n),i) ) cycle
+       do i = 1, nboxes(react_s(n))
+          if ( multifab_remote(react_s(n),i) ) cycle
     
-        rsp => dataptr(react_s(n),      i)
-        snp => dataptr(snew(n),         i)
-        sop => dataptr(sold(n),         i)
-        rwp => dataptr(rho_omegadot(n), i)
-        rnp => dataptr(rho_Hnuc(n),     i)
-        rep => dataptr(rho_Hext(n),     i)
- 
-        lo = lwb(get_box(react_s(n), i))
-        hi = upb(get_box(react_s(n), i))
-        do kk = lo(3), hi(3)
-          do jj = lo(2), hi(2)
-            do ii = lo(1), hi(1)
-              cur_rho = snp(ii,jj,kk,rho_comp)
+          rsp => dataptr(react_s(n),      i)
+          snp => dataptr(snew(n),         i)
+          sop => dataptr(sold(n),         i)
+          rwp => dataptr(rho_omegadot(n), i)
+          rnp => dataptr(rho_Hnuc(n),     i)
+          rep => dataptr(rho_Hext(n),     i)
+          
+          lo = lwb(get_box(react_s(n), i))
+          hi = upb(get_box(react_s(n), i))
+          do kk = lo(3), hi(3)
+             do jj = lo(2), hi(2)
+                do ii = lo(1), hi(1)
+                   cur_rho = snp(ii,jj,kk,rho_comp)
 
-              !Consistency checks
-              !1) Check that omegadot * dt = (change in mass fraction) for each species
-              do j=0, nspec-1
-                dxn = (snp(ii,jj,kk,spec_comp + j) / snp(ii,jj,kk,rho_comp)) - &
-                      (sop(ii,jj,kk,spec_comp + j) / sop(ii,jj,kk,rho_comp))  
-                rsp(ii,jj,kk,dxn_con_c + j) = (rwp(ii,jj,kk,j + 1) / cur_rho) * dt - dxn
-              enddo
+                   !Consistency checks
+                   !1) Check that omegadot * dt = (change in mass fraction) for each species
+                   do j=0, nspec-1
+                      dxn = (snp(ii,jj,kk,spec_comp + j) / snp(ii,jj,kk,rho_comp)) - &
+                           (sop(ii,jj,kk,spec_comp + j) / sop(ii,jj,kk,rho_comp))  
+                      rsp(ii,jj,kk,dxn_con_c + j) = (rwp(ii,jj,kk,j + 1) / cur_rho) * dt - dxn
+                   enddo
         
-              !2) Check that h_new = (h_old + Hnuc * dt + Hext * dt) 
-              rsp(ii,jj,kk,h_con_c) = snp(ii,jj,kk,rhoh_comp)   / cur_rho                   &
-                                      - ((sop(ii,jj,kk,rhoh_comp) / sop(ii,jj,kk,rho_comp)) &
-                                      + rnp(ii,jj,kk,1) / cur_rho * dt                           &
-                                      + rep(ii,jj,kk,1) / cur_rho * dt)
+                   !2) Check that h_new = (h_old + Hnuc * dt + Hext * dt) 
+                   rsp(ii,jj,kk,h_con_c) = snp(ii,jj,kk,rhoh_comp)   / cur_rho                   &
+                                       - ((sop(ii,jj,kk,rhoh_comp) / sop(ii,jj,kk,rho_comp)) &
+                                       + rnp(ii,jj,kk,1) / cur_rho * dt                           &
+                                       + rep(ii,jj,kk,1) / cur_rho * dt)
            
-              !3) Check H_nuc and H_ext 
-              if(.not. do_heating .and. (rep(ii,jj,kk,1) /= ZERO) ) then
-                print *, 'ERROR: Non-zero H_ext with no heating'
-              endif
-              if(.not. do_burning .and. (rnp(ii,jj,kk,1) /= ZERO) ) then
-                print *, 'ERROR: Non-zero H_nuc with no burning'
-              endif
+                   !3) Check H_nuc and H_ext 
+                   if(.not. do_heating .and. (rep(ii,jj,kk,1) /= ZERO) ) then
+                      print *, 'ERROR: Non-zero H_ext with no heating'
+                   endif
+                   if(.not. do_burning .and. (rnp(ii,jj,kk,1) /= ZERO) ) then
+                      print *, 'ERROR: Non-zero H_nuc with no burning'
+                   endif
  
-              !Store reaction data
-              rsp(ii,jj,kk,rho_c) = cur_rho
-              rsp(ii,jj,kk,h_c)   = snp(ii,jj,kk,rhoh_comp) / cur_rho
-              do j=0, nspec-1
-                rsp(ii,jj,kk,spec_c + j)     = snp(ii,jj,kk,spec_comp + j) / cur_rho
-                rsp(ii,jj,kk,omegadot_c + j) = rwp(ii,jj,kk,j + 1)         / cur_rho
-              enddo
-              rsp(ii,jj,kk,t_c)    = snp(ii,jj,kk,temp_comp)
-              rsp(ii,jj,kk,hnuc_c) = rnp(ii,jj,kk,1) / cur_rho
-              if(rsp(ii,jj,kk,hnuc_c) >= ONE) then
-                rsp(ii,jj,kk,lhnuc_c) = log(rsp(ii,jj,kk,hnuc_c))
-              else
-                rsp(ii,jj,kk,lhnuc_c) = ZERO
-              endif 
-              rsp(ii,jj,kk,hext_c) = rep(ii,jj,kk,1) / cur_rho
-            enddo
+                   !Store reaction data
+                   rsp(ii,jj,kk,rho_c) = cur_rho
+                   rsp(ii,jj,kk,h_c)   = snp(ii,jj,kk,rhoh_comp) / cur_rho
+                   do j=0, nspec-1
+                      rsp(ii,jj,kk,spec_c + j)     = snp(ii,jj,kk,spec_comp + j) / cur_rho
+                      rsp(ii,jj,kk,omegadot_c + j) = rwp(ii,jj,kk,j + 1)         / cur_rho
+                   enddo
+                   rsp(ii,jj,kk,t_c)    = snp(ii,jj,kk,temp_comp)
+                   rsp(ii,jj,kk,hnuc_c) = rnp(ii,jj,kk,1) / cur_rho
+                   if(rsp(ii,jj,kk,hnuc_c) >= ONE) then
+                      rsp(ii,jj,kk,lhnuc_c) = log(rsp(ii,jj,kk,hnuc_c))
+                   else
+                      rsp(ii,jj,kk,lhnuc_c) = ZERO
+                   endif
+                   rsp(ii,jj,kk,hext_c) = rep(ii,jj,kk,1) / cur_rho
+                enddo
+             enddo
           enddo
-        enddo
-      enddo
+
+       enddo
     enddo
 
     !Write reaction data
@@ -362,11 +363,11 @@ contains
     varnames(rho_c)        = 'density'
     varnames(h_c)          = 'enthalpy'
     do i = 0, nspec - 1
-      write(temp_buf, *) i+1
-      temp_buf = adjustl(temp_buf)
-      varnames(spec_c     + i) = 'X_' // adjustl(trim(spec_names(i+1)))
-      varnames(omegadot_c + i) = 'wdot(' // adjustl(trim(spec_names(i+1))) // ')'  
-      varnames(dxn_con_c  + i) = adjustl(trim(spec_names(i+1))) // ' consistency'
+       write(temp_buf, *) i+1
+       temp_buf = adjustl(temp_buf)
+       varnames(spec_c     + i) = 'X_' // adjustl(trim(spec_names(i+1)))
+       varnames(omegadot_c + i) = 'wdot(' // adjustl(trim(spec_names(i+1))) // ')'  
+       varnames(dxn_con_c  + i) = adjustl(trim(spec_names(i+1))) // ' consistency'
     enddo
     varnames(t_c)          = 'temperature'
     varnames(p_c)          = 'pressure'
@@ -381,43 +382,46 @@ contains
     !Modules
     use network,       only: nspec, spec_names
     use probin_module, only: xin_file
+    use bl_IO_module, only: unit_new
 
     !Args
     real(kind=dp_t), intent(  out) :: xn_zone(:,:)
     integer,         intent(in   ) :: lo, hi
 
     !Local data
-    integer, parameter :: XIN_FD = 44
+    integer         :: un
     integer         :: i 
     real(kind=dp_t) :: summ, usr_in
     
     !=== Execution ===
     !Read mass fractions from user
     if(xin_file .eq. 'uniform') then
-      summ = 0.0
-      do i=1, nspec - 1
-        print *, trim(adjustl(spec_names(i))) // ' mass fraction: '
-        read(*,*) usr_in
-        xn_zone(i,:) = usr_in
-        summ = summ + usr_in
-      enddo
+       summ = 0.0
+       do i=1, nspec - 1
+          print *, trim(adjustl(spec_names(i))) // ' mass fraction: '
+          read(*,*) usr_in
+          xn_zone(i,:) = usr_in
+          summ = summ + usr_in
+       enddo
 
-      if(summ > 1.0_dp_t) then
-        print *, 'ERROR: Mass fraction sum exceeds 1.0!'
-        stop
-      else
-        xn_zone(nspec,:) = ONE - summ
-      endif
+       if(summ > 1.0_dp_t) then
+          print *, 'ERROR: Mass fraction sum exceeds 1.0!'
+          stop
+       else
+          xn_zone(nspec,:) = ONE - summ
+       endif
     else
-      open(unit=XIN_FD, file=xin_file, status='old')
-      summ = 0.0
-      !TODO: Add xn <= 1.0 error checking
-      !TODO: Add proper cell count error checking
-      do i=1, nspec 
-        read(XIN_FD,*) xn_zone(i,:)
-      enddo
-
-      close(XIN_FD)
+       un = unit_new()
+       open(unit=un, file=xin_file, status='old')
+       summ = 0.0
+       !TODO: Add xn <= 1.0 error checking
+       !TODO: Add proper cell count error checking
+       do i=1, nspec 
+          read(un,*) xn_zone(i,:)
+       enddo
+       
+       close(un)
     endif
   end subroutine get_xn
+
 end module varden_aux
