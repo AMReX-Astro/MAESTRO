@@ -19,7 +19,8 @@
   min_time_step = 1.0d-10
   react_its = 10
 
-  do_heating = .true.
-  xin_file   = "uniform"
+  do_heating = .false.
+
+  xin_file   = "xin"
   run_prefix = "react_"
 /
