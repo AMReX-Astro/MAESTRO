@@ -4,7 +4,7 @@ OMP    :=
 
 COMP := gfortran
 
-PARTICLES := t
+PARTICLES := 
 
 MKVERBOSE := t
 
