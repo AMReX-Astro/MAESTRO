@@ -44,7 +44,7 @@ contains
     logical        , intent(in   ) :: is_conservative
     type(ml_layout), intent(in   ) :: mla
 
-    integer                  :: i,scomp,bccomp,n,n_1d,dm,nlevs
+    integer                  :: i,scomp,bccomp,n,dm,nlevs
     integer                  :: lo(mla%dim), hi(mla%dim)
     integer                  :: ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), pointer :: sop(:,:,:,:)
@@ -86,9 +86,8 @@ contains
                                         ump(:,1,1,1), ng_um, &
                                        fp(:,1,1,:), ng_f, &
                                        lo, hi, dx(n,:), dt, is_vel, &
-                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-                                       scomp, is_conservative)
+                                       the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                                       scomp, bccomp, is_conservative)
              end do
 
           case (2)
@@ -101,9 +100,8 @@ contains
                                        ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                        fp(:,:,1,:), ng_f, &
                                        lo, hi, dx(n,:), dt, is_vel, &
-                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-                                       scomp, is_conservative)
+                                       the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                                       scomp, bccomp, is_conservative)
              end do
 
           case (3)
@@ -113,19 +111,13 @@ contains
              sepz => dataptr( sedge(n,3),i)
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
-                if (spherical .eq. 1) then
-                   n_1d = 1
-                else
-                   n_1d = n
-                end if
                 call make_edge_scal_3d(sop(:,:,:,:), ng_s, &
                                        sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                        ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                        ng_um, fp(:,:,:,:), ng_f,  &
                                        lo, hi, dx(n,:), dt, is_vel, &
-                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-                                       scomp, is_conservative)
+                                       the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                                       scomp, bccomp, is_conservative)
              end do
           end select
        end do
@@ -148,8 +140,8 @@ contains
   end subroutine make_edge_scal
   
   subroutine make_edge_scal_1d(s,ng_s,sedgex,ng_se,umac,ng_um, &
-                               force,ng_f,lo,hi,dx,dt,is_vel,phys_bc,adv_bc, &
-                               comp,is_conservative)
+                               force,ng_f,lo,hi,dx,dt,is_vel,adv_bc, &
+                               comp,bccomp,is_conservative)
 
     use bc_module
     use slope_module
@@ -165,9 +157,8 @@ contains
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
-    integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
-    integer        , intent(in   ) :: comp
+    integer        , intent(in   ) :: comp,bccomp
     logical        , intent(in   ) :: is_conservative
 
     ! Local variables
@@ -196,9 +187,9 @@ contains
     ie = hi(1)
 
     if (ppm_type .eq. 0) then
-       call slopex_1d(s(:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
+       call slopex_1d(s(:,comp:),slopex,lo,hi,ng_s,1,adv_bc(:,:,bccomp:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_fpu_1d(s(:,comp),ng_s,umac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_fpu_1d(s(:,comp),ng_s,umac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,bccomp),dx,dt)
     end if
 
     dt2 = HALF*dt
@@ -248,57 +239,41 @@ contains
     enddo
  
     ! impose lo side bc's
-    if (phys_bc(1,1) .eq. INLET) then
+    if (adv_bc(1,1,bccomp) .eq. EXT_DIR) then
        sedgex(is,comp) = s(is-1,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          sedgex(is,comp) = ZERO
-       else
-          sedgex(is,comp) = sedgerx(is)
-       end if
-    else if (phys_bc(1,1) .eq. NO_SLIP_WALL) then
+    else if (adv_bc(1,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel) then
-          sedgex(is,comp) = ZERO
-       else
-          sedgex(is,comp) = sedgerx(is)
-       end if
-    else if (phys_bc(1,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 1) then
           sedgex(is,comp) = min(sedgerx(is),ZERO)
        else
           sedgex(is,comp) = sedgerx(is)
        end if
-    else if (phys_bc(1,1) .eq. INTERIOR) then
-    else if (phys_bc(1,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_1d: invalid boundary type phys_bc(1,1)")
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_EVEN) then
+       sedgex(is,comp) = sedgerx(is)
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_ODD) then
+       sedgex(is,comp) = ZERO
+    else if (adv_bc(1,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_1d: invalid boundary type adv_bc(1,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(1,2) .eq. INLET) then
+    if (adv_bc(1,2,bccomp) .eq. EXT_DIR) then
        sedgex(ie+1,comp) = s(ie+1,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          sedgex(ie+1,comp) = ZERO
-       else
-          sedgex(ie+1,comp) = sedgelx(ie+1)
-       end if
-    else if (phys_bc(1,2) .eq. NO_SLIP_WALL) then
+    else if (adv_bc(1,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel) then
-          sedgex(ie+1,comp) = ZERO
-       else
-          sedgex(ie+1,comp) = sedgelx(ie+1)
-       end if
-    else if (phys_bc(1,2) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 1) then
           sedgex(ie+1,comp) = max(sedgelx(ie+1),ZERO)
        else
           sedgex(ie+1,comp) = sedgelx(ie+1)
        end if
-    else if (phys_bc(1,2) .eq. INTERIOR) then
-    else if (phys_bc(1,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_1d: invalid boundary type phys_bc(1,2)")
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_EVEN) then
+       sedgex(ie+1,comp) = sedgelx(ie+1)
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_ODD) then
+       sedgex(ie+1,comp) = ZERO
+    else if (adv_bc(1,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_1d: invalid boundary type adv_bc(1,2)")
     end if
 
     deallocate(sedgelx,sedgerx)
@@ -307,8 +282,8 @@ contains
   end subroutine make_edge_scal_1d
   
   subroutine make_edge_scal_2d(s,ng_s,sedgex,sedgey,ng_se,umac,vmac,ng_um, &
-                               force,ng_f,lo,hi,dx,dt,is_vel,phys_bc,adv_bc, &
-                               comp,is_conservative)
+                               force,ng_f,lo,hi,dx,dt,is_vel,adv_bc, &
+                               comp,bccomp,is_conservative)
 
     use bc_module
     use slope_module
@@ -326,9 +301,8 @@ contains
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
-    integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
-    integer        , intent(in   ) :: comp
+    integer        , intent(in   ) :: comp,bccomp
     logical        , intent(in   ) :: is_conservative
 
     ! Local variables
@@ -381,10 +355,10 @@ contains
     je = hi(2)
 
     if (ppm_type .eq. 0) then
-       call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
-       call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc)
+       call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc(:,:,bccomp:))
+       call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc(:,:,bccomp:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_fpu_2d(s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_fpu_2d(s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,bccomp),dx,dt)
     end if
 
     dt2 = HALF*dt
@@ -417,65 +391,43 @@ contains
     end if
 
     ! impose lo side bc's
-    if (phys_bc(1,1) .eq. INLET) then
+    if (adv_bc(1,1,bccomp) .eq. EXT_DIR) then
        slx(is,js-1:je+1) = s(is-1,js-1:je+1,comp)
        srx(is,js-1:je+1) = s(is-1,js-1:je+1,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
+    else if (adv_bc(1,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
-          slx(is,js-1:je+1) = ZERO
-          srx(is,js-1:je+1) = ZERO
-       else
-          slx(is,js-1:je+1) = srx(is,js-1:je+1)
+          srx(is,js-1:je+1) = min(srx(is,js-1:je+1),ZERO)
        end if
-    else if (phys_bc(1,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slx(is,js-1:je+1) = ZERO
-          srx(is,js-1:je+1) = ZERO
-       else
-          slx(is,js-1:je+1) = srx(is,js-1:je+1)
-       end if
-    else if (phys_bc(1,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 1) then
-          slx(is,js-1:je+1) = min(srx(is,js-1:je+1),ZERO)
-          srx(is,js-1:je+1) = slx(is,js-1:je+1)
-       else
-          slx(is,js-1:je+1) = srx(is,js-1:je+1)
-       end if
-    else if (phys_bc(1,1) .eq. INTERIOR) then
-    else if (phys_bc(1,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(1,1)")
+       slx(is,js-1:je+1) = srx(is,js-1:je+1)
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_EVEN) then
+       slx(is,js-1:je+1) = srx(is,js-1:je+1)
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_ODD) then
+       slx(ie+1,js-1:je+1) = ZERO
+       srx(ie+1,js-1:je+1) = ZERO
+    else if (adv_bc(1,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_2d: invalid boundary type adv_bc(1,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(1,2) .eq. INLET) then
+    if (adv_bc(1,2,bccomp) .eq. EXT_DIR) then
        slx(ie+1,js-1:je+1) = s(ie+1,js-1:je+1,comp)
        srx(ie+1,js-1:je+1) = s(ie+1,js-1:je+1,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          slx(ie+1,js-1:je+1) = ZERO
-          srx(ie+1,js-1:je+1) = ZERO
-       else
-          srx(ie+1,js-1:je+1) = slx(ie+1,js-1:je+1)
-       end if
-    else if (phys_bc(1,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slx(ie+1,js-1:je+1) = ZERO
-          srx(ie+1,js-1:je+1) = ZERO
-       else
-          srx(ie+1,js-1:je+1) = slx(ie+1,js-1:je+1)
-       end if
-    else if (phys_bc(1,2) .eq. OUTLET) then       
+    else if (adv_bc(1,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
           slx(ie+1,js-1:je+1) = max(slx(ie+1,js-1:je+1),ZERO)
-          srx(ie+1,js-1:je+1) = max(slx(ie+1,js-1:je+1),ZERO)
-       else
-          srx(ie+1,js-1:je+1) = slx(ie+1,js-1:je+1)
        end if
-    else if (phys_bc(1,2) .eq. INTERIOR) then
-    else if (phys_bc(1,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(1,2)")
+       srx(ie+1,js-1:je+1) = slx(ie+1,js-1:je+1)
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_EVEN) then
+       srx(ie+1,js-1:je+1) = slx(ie+1,js-1:je+1)
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_ODD) then
+       slx(ie+1,js-1:je+1) = ZERO
+       srx(ie+1,js-1:je+1) = ZERO
+    else if (adv_bc(1,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_2d: invalid boundary type adv_bc(1,2)")
     end if
 
     do j=js-1,je+1
@@ -507,65 +459,43 @@ contains
     end if
 
     ! impose lo side bc's
-    if (phys_bc(2,1) .eq. INLET) then
+    if (adv_bc(2,1,bccomp) .eq. EXT_DIR) then
        sly(is-1:ie+1,js) = s(is-1:ie+1,js-1,comp)
        sry(is-1:ie+1,js) = s(is-1:ie+1,js-1,comp)
-    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SYMMETRY) then
+    else if (adv_bc(2,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
-          sly(is-1:ie+1,js) = ZERO
-          sry(is-1:ie+1,js) = ZERO
-       else
-          sly(is-1:ie+1,js) = sry(is-1:ie+1,js)
+          sry(is-1:ie+1,js) = min(sry(is-1:ie+1,js),ZERO)
        end if
-    else if (phys_bc(2,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sly(is-1:ie+1,js) = ZERO
-          sry(is-1:ie+1,js) = ZERO
-       else
-          sly(is-1:ie+1,js) = sry(is-1:ie+1,js)
-       end if
-    else if (phys_bc(2,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 2) then
-          sly(is-1:ie+1,js) = min(sry(is-1:ie+1,js),ZERO)
-          sry(is-1:ie+1,js) = sly(is-1:ie+1,js)
-       else
-          sly(is-1:ie+1,js) = sry(is-1:ie+1,js)
-       end if
-    else if (phys_bc(2,1) .eq. INTERIOR) then
-    else if (phys_bc(2,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(2,1)")
+       sly(is-1:ie+1,js) = sry(is-1:ie+1,js)
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_EVEN) then
+       sly(is-1:ie+1,js) = sry(is-1:ie+1,js)
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_ODD) then
+       sly(is-1:ie+1,js) = ZERO
+       sry(is-1:ie+1,js) = ZERO
+    else if (adv_bc(2,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_2d: invalid boundary type adv_bc(2,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(2,2) .eq. INLET) then
+    if (adv_bc(2,2,bccomp) .eq. EXT_DIR) then
        sly(is-1:ie+1,je+1) = s(is-1:ie+1,je+1,comp)
        sry(is-1:ie+1,je+1) = s(is-1:ie+1,je+1,comp)
-    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 2) then
-          sly(is-1:ie+1,je+1) = ZERO
-          sry(is-1:ie+1,je+1) = ZERO
-       else
-          sry(is-1:ie+1,je+1) = sly(is-1:ie+1,je+1)
-       end if
-    else if (phys_bc(2,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sly(is-1:ie+1,je+1) = ZERO
-          sry(is-1:ie+1,je+1) = ZERO
-       else
-          sry(is-1:ie+1,je+1) = sly(is-1:ie+1,je+1)
-       end if
-    else if (phys_bc(2,2) .eq. OUTLET) then
+    else if (adv_bc(2,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
           sly(is-1:ie+1,je+1) = max(sly(is-1:ie+1,je+1),ZERO)
-          sry(is-1:ie+1,je+1) = max(sly(is-1:ie+1,je+1),ZERO)
-       else
-          sry(is-1:ie+1,je+1) = sly(is-1:ie+1,je+1)
        end if
-    else if (phys_bc(2,2) .eq. INTERIOR) then
-    else if (phys_bc(2,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(2,2)")
+       sry(is-1:ie+1,je+1) = sly(is-1:ie+1,je+1)
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_EVEN) then
+       sry(is-1:ie+1,je+1) = sly(is-1:ie+1,je+1)
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_ODD) then
+       sly(is-1:ie+1,je+1) = ZERO
+       sry(is-1:ie+1,je+1) = ZERO
+    else if (adv_bc(2,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_2d: invalid boundary type adv_bc(2,2)")
     end if
 
     do j=js,je+1
@@ -612,57 +542,41 @@ contains
     enddo
  
     ! impose lo side bc's
-    if (phys_bc(1,1) .eq. INLET) then
+    if (adv_bc(1,1,bccomp) .eq. EXT_DIR) then
        sedgex(is,js:je,comp) = s(is-1,js:je,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          sedgex(is,js:je,comp) = ZERO
-       else
-          sedgex(is,js:je,comp) = sedgerx(is,js:je)
-       end if
-    else if (phys_bc(1,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sedgex(is,js:je,comp) = ZERO
-       else
-          sedgex(is,js:je,comp) = sedgerx(is,js:je)
-       end if
-    else if (phys_bc(1,1) .eq. OUTLET) then
+    else if (adv_bc(1,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
           sedgex(is,js:je,comp) = min(sedgerx(is,js:je),ZERO)
        else
           sedgex(is,js:je,comp) = sedgerx(is,js:je)
        end if
-    else if (phys_bc(1,1) .eq. INTERIOR) then
-    else if (phys_bc(1,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(1,1)")
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_EVEN) then
+       sedgex(is,js:je,comp) = sedgerx(is,js:je)
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_ODD) then
+       sedgex(is,js:je,comp) = ZERO
+    else if (adv_bc(1,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_2d: invalid boundary type adv_bc(1,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(1,2) .eq. INLET) then
+    if (adv_bc(1,2,bccomp) .eq. EXT_DIR) then
        sedgex(ie+1,js:je,comp) = s(ie+1,js:je,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          sedgex(ie+1,js:je,comp) = ZERO
-       else
-          sedgex(ie+1,js:je,comp) = sedgelx(ie+1,js:je)
-       end if
-    else if (phys_bc(1,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sedgex(ie+1,js:je,comp) = ZERO
-       else
-          sedgex(ie+1,js:je,comp) = sedgelx(ie+1,js:je)
-       end if
-    else if (phys_bc(1,2) .eq. OUTLET) then
+    else if (adv_bc(1,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
           sedgex(ie+1,js:je,comp) = max(sedgelx(ie+1,js:je),ZERO)
        else
           sedgex(ie+1,js:je,comp) = sedgelx(ie+1,js:je)
        end if
-    else if (phys_bc(1,2) .eq. INTERIOR) then
-    else if (phys_bc(1,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(1,2)")
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_EVEN) then
+       sedgex(ie+1,js:je,comp) = sedgelx(ie+1,js:je)
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_ODD) then
+       sedgex(ie+1,js:je,comp) = ZERO
+    else if (adv_bc(1,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_2d: invalid boundary type adv_bc(1,2)")
     end if
 
     ! loop over appropriate y-faces
@@ -696,57 +610,41 @@ contains
     enddo
 
     ! impose lo side bc's
-    if (phys_bc(2,1) .eq. INLET) then
+    if (adv_bc(2,1,bccomp) .eq. EXT_DIR) then
        sedgey(is:ie,js,comp) = s(is:ie,js-1,comp)
-    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 2) then
-          sedgey(is:ie,js,comp) = ZERO
-       else
-          sedgey(is:ie,js,comp) = sedgery(is:ie,js)
-       end if
-    else if (phys_bc(2,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sedgey(is:ie,js,comp) = ZERO
-       else
-          sedgey(is:ie,js,comp) = sedgery(is:ie,js)
-       end if
-    else if (phys_bc(2,1) .eq. OUTLET) then
+    else if (adv_bc(2,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
           sedgey(is:ie,js,comp) = min(sedgery(is:ie,js),ZERO)
        else
           sedgey(is:ie,js,comp) = sedgery(is:ie,js)
        end if
-    else if (phys_bc(2,1) .eq. INTERIOR) then
-    else if (phys_bc(2,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(2,1)")
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_EVEN) then
+       sedgey(is:ie,js,comp) = sedgery(is:ie,js)
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_ODD) then
+       sedgey(is:ie,js,comp) = ZERO
+    else if (adv_bc(2,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_2d: invalid boundary type adv_bc(2,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(2,2) .eq. INLET) then
+    if (adv_bc(2,2,bccomp) .eq. EXT_DIR) then
        sedgey(is:ie,je+1,comp) = s(is:ie,je+1,comp)
-    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SYMMETRY)  then
-       if (is_vel .and. comp .eq. 2) then
-          sedgey(is:ie,je+1,comp) = ZERO
-       else
-          sedgey(is:ie,je+1,comp) = sedgely(is:ie,je+1)
-       end if
-    else if (phys_bc(2,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sedgey(is:ie,je+1,comp) = ZERO
-       else
-          sedgey(is:ie,je+1,comp) = sedgely(is:ie,je+1)
-       end if
-    else if (phys_bc(2,2) .eq. OUTLET) then
+    else if (adv_bc(2,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
           sedgey(is:ie,je+1,comp) = max(sedgely(is:ie,je+1),ZERO)
        else
           sedgey(is:ie,je+1,comp) = sedgely(is:ie,je+1)
        end if
-    else if (phys_bc(2,2) .eq. INTERIOR) then
-    else if (phys_bc(2,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_2d: invalid boundary type phys_bc(2,2)")
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_EVEN) then
+          sedgey(is:ie,je+1,comp) = sedgely(is:ie,je+1)
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_ODD) then
+       sedgey(is:ie,je+1,comp) = ZERO
+    else if (adv_bc(2,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_2d: invalid boundary type adv_bc(2,2)")
     end if
 
     deallocate(slx,srx,sly,sry,simhx,simhy,sedgelx,sedgerx,sedgely,sedgery)
@@ -755,7 +653,7 @@ contains
   end subroutine make_edge_scal_2d
 
   subroutine make_edge_scal_3d(s,ng_s,sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
-                               force,ng_f,lo,hi,dx,dt,is_vel,phys_bc,adv_bc,comp, &
+                               force,ng_f,lo,hi,dx,dt,is_vel,adv_bc,comp,bccomp, &
                                is_conservative)
 
     use geometry, only: spherical
@@ -777,9 +675,8 @@ contains
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
-    integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
-    integer        , intent(in   ) :: comp
+    integer        , intent(in   ) :: comp,bccomp
     logical        , intent(in   ) :: is_conservative
 
     ! Local variables
@@ -834,13 +731,13 @@ contains
 
     if (ppm_type .eq. 0) then
        do k = lo(3)-1,hi(3)+1
-          call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,hi,ng_s,1,adv_bc)
-          call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,hi,ng_s,1,adv_bc)
+          call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,hi,ng_s,1,adv_bc(:,:,bccomp:))
+          call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,hi,ng_s,1,adv_bc(:,:,bccomp:))
        end do
-       call slopez_3d(s(:,:,:,comp:),slopez,lo,hi,ng_s,1,adv_bc)
+       call slopez_3d(s(:,:,:,comp:),slopez,lo,hi,ng_s,1,adv_bc(:,:,bccomp:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        call ppm_fpu_3d(s(:,:,:,comp),ng_s,umac,vmac,wmac,ng_um,Ip,Im, &
-                       lo,hi,adv_bc(:,:,1),dx,dt)
+                       lo,hi,adv_bc(:,:,bccomp),dx,dt)
     end if
 
     dt2 = HALF*dt
@@ -889,65 +786,43 @@ contains
     end if
 
     ! impose lo side bc's
-    if (phys_bc(1,1) .eq. INLET) then
+    if (adv_bc(1,1,bccomp) .eq. EXT_DIR) then
        slx(is,js-1:je+1,ks-1:ke+1) = s(is-1,js-1:je+1,ks-1:ke+1,comp)
        srx(is,js-1:je+1,ks-1:ke+1) = s(is-1,js-1:je+1,ks-1:ke+1,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
+    else if (adv_bc(1,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
-          slx(is,js-1:je+1,ks-1:ke+1) = ZERO
-          srx(is,js-1:je+1,ks-1:ke+1) = ZERO
-       else
-          slx(is,js-1:je+1,ks-1:ke+1) = srx(is,js-1:je+1,ks-1:ke+1)
+          srx(is,js-1:je+1,ks-1:ke+1) = min(srx(is,js-1:je+1,ks-1:ke+1),ZERO)
        end if
-    else if (phys_bc(1,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slx(is,js-1:je+1,ks-1:ke+1) = ZERO
-          srx(is,js-1:je+1,ks-1:ke+1) = ZERO
-       else
-          slx(is,js-1:je+1,ks-1:ke+1) = srx(is,js-1:je+1,ks-1:ke+1)
-       end if
-    else if (phys_bc(1,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 1) then
-          slx(is,js-1:je+1,ks-1:ke+1) = min(srx(is,js-1:je+1,ks-1:ke+1),ZERO)
-          srx(is,js-1:je+1,ks-1:ke+1) = slx(is,js-1:je+1,ks-1:ke+1)
-       else
-          slx(is,js-1:je+1,ks-1:ke+1) = srx(is,js-1:je+1,ks-1:ke+1)
-       end if
-    else if (phys_bc(1,1) .eq. INTERIOR) then
-    else if (phys_bc(1,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,1)")
+       slx(is,js-1:je+1,ks-1:ke+1) = srx(is,js-1:je+1,ks-1:ke+1)
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_EVEN) then
+       slx(is,js-1:je+1,ks-1:ke+1) = srx(is,js-1:je+1,ks-1:ke+1)
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_ODD) then
+       slx(is,js-1:je+1,ks-1:ke+1) = ZERO
+       srx(is,js-1:je+1,ks-1:ke+1) = ZERO
+    else if (adv_bc(1,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(1,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(1,2) .eq. INLET) then
+    if (adv_bc(1,2,bccomp) .eq. EXT_DIR) then
        slx(ie+1,js-1:je+1,ks-1:ke+1) = s(ie+1,js-1:je+1,ks-1:ke+1,comp)
        srx(ie+1,js-1:je+1,ks-1:ke+1) = s(ie+1,js-1:je+1,ks-1:ke+1,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          slx(ie+1,js-1:je+1,ks-1:ke+1) = ZERO
-          srx(ie+1,js-1:je+1,ks-1:ke+1) = ZERO
-       else
-          srx(ie+1,js-1:je+1,ks-1:ke+1) = slx(ie+1,js-1:je+1,ks-1:ke+1)
-       end if
-    else if (phys_bc(1,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slx(ie+1,js-1:je+1,ks-1:ke+1) = ZERO
-          srx(ie+1,js-1:je+1,ks-1:ke+1) = ZERO
-       else
-          srx(ie+1,js-1:je+1,ks-1:ke+1) = slx(ie+1,js-1:je+1,ks-1:ke+1)
-       end if
-    else if (phys_bc(1,2) .eq. OUTLET) then
+    else if (adv_bc(1,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
           slx(ie+1,js-1:je+1,ks-1:ke+1) = max(slx(ie+1,js-1:je+1,ks-1:ke+1),ZERO)
-          srx(ie+1,js-1:je+1,ks-1:ke+1) = max(slx(ie+1,js-1:je+1,ks-1:ke+1),ZERO)
-       else
-          srx(ie+1,js-1:je+1,ks-1:ke+1) = slx(ie+1,js-1:je+1,ks-1:ke+1)
        end if
-    else if (phys_bc(1,2) .eq. INTERIOR) then
-    else if (phys_bc(1,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,2)")
+       srx(ie+1,js-1:je+1,ks-1:ke+1) = slx(ie+1,js-1:je+1,ks-1:ke+1)
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_EVEN) then
+       srx(ie+1,js-1:je+1,ks-1:ke+1) = slx(ie+1,js-1:je+1,ks-1:ke+1)
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_ODD) then
+          slx(ie+1,js-1:je+1,ks-1:ke+1) = ZERO
+          srx(ie+1,js-1:je+1,ks-1:ke+1) = ZERO
+    else if (adv_bc(1,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(1,2)")
     end if
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
@@ -996,65 +871,43 @@ contains
     end if
 
     ! impose lo side bc's
-    if (phys_bc(2,1) .eq. INLET) then
+    if (adv_bc(2,1,bccomp) .eq. EXT_DIR) then
        sly(is-1:ie+1,js,ks-1:ke+1) = s(is-1:ie+1,js-1,ks-1:ke+1,comp)
        sry(is-1:ie+1,js,ks-1:ke+1) = s(is-1:ie+1,js-1,ks-1:ke+1,comp)
-    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SYMMETRY) then
+    else if (adv_bc(2,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
-          sly(is-1:ie+1,js,ks-1:ke+1) = ZERO
-          sry(is-1:ie+1,js,ks-1:ke+1) = ZERO
-       else
-          sly(is-1:ie+1,js,ks-1:ke+1) = sry(is-1:ie+1,js,ks-1:ke+1)
+          sry(is-1:ie+1,js,ks-1:ke+1) = min(sry(is-1:ie+1,js,ks-1:ke+1),ZERO)
        end if
-    else if (phys_bc(2,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sly(is-1:ie+1,js,ks-1:ke+1) = ZERO
-          sry(is-1:ie+1,js,ks-1:ke+1) = ZERO
-       else
-          sly(is-1:ie+1,js,ks-1:ke+1) = sry(is-1:ie+1,js,ks-1:ke+1)
-       end if
-    else if (phys_bc(2,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 2) then
-          sly(is-1:ie+1,js,ks-1:ke+1) = min(sry(is-1:ie+1,js,ks-1:ke+1),ZERO)
-          sry(is-1:ie+1,js,ks-1:ke+1) = sly(is-1:ie+1,js,ks-1:ke+1)
-       else
-          sly(is-1:ie+1,js,ks-1:ke+1) = sry(is-1:ie+1,js,ks-1:ke+1)
-       end if
-    else if (phys_bc(2,1) .eq. INTERIOR) then
-    else if (phys_bc(2,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,1)")
+       sly(is-1:ie+1,js,ks-1:ke+1) = sry(is-1:ie+1,js,ks-1:ke+1)
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_EVEN) then
+       sly(is-1:ie+1,js,ks-1:ke+1) = sry(is-1:ie+1,js,ks-1:ke+1)
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_ODD) then
+       sly(is-1:ie+1,js,ks-1:ke+1) = ZERO
+       sry(is-1:ie+1,js,ks-1:ke+1) = ZERO
+    else if (adv_bc(2,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(2,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(2,2) .eq. INLET) then
+    if (adv_bc(2,2,bccomp) .eq. EXT_DIR) then
        sly(is-1:ie+1,je+1,ks-1:ke+1) = s(is-1:ie+1,je+1,ks-1:ke+1,comp)
        sry(is-1:ie+1,je+1,ks-1:ke+1) = s(is-1:ie+1,je+1,ks-1:ke+1,comp)
-    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 2) then
-          sly(is-1:ie+1,je+1,ks-1:ke+1) = ZERO
-          sry(is-1:ie+1,je+1,ks-1:ke+1) = ZERO
-       else
-          sry(is-1:ie+1,je+1,ks-1:ke+1) = sly(is-1:ie+1,je+1,ks-1:ke+1)
-       end if
-    else if (phys_bc(2,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sly(is-1:ie+1,je+1,ks-1:ke+1) = ZERO
-          sry(is-1:ie+1,je+1,ks-1:ke+1) = ZERO
-       else
-          sry(is-1:ie+1,je+1,ks-1:ke+1) = sly(is-1:ie+1,je+1,ks-1:ke+1)
-       end if
-    else if (phys_bc(2,2) .eq. OUTLET) then
+    else if (adv_bc(2,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
           sly(is-1:ie+1,je+1,ks-1:ke+1) = max(sly(is-1:ie+1,je+1,ks-1:ke+1),ZERO)
-          sry(is-1:ie+1,je+1,ks-1:ke+1) = max(sly(is-1:ie+1,je+1,ks-1:ke+1),ZERO)
-       else
-          sry(is-1:ie+1,je+1,ks-1:ke+1) = sly(is-1:ie+1,je+1,ks-1:ke+1)
        end if
-    else if (phys_bc(2,2) .eq. INTERIOR) then
-    else if (phys_bc(2,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,2)")
+       sry(is-1:ie+1,je+1,ks-1:ke+1) = sly(is-1:ie+1,je+1,ks-1:ke+1)
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_EVEN) then
+       sry(is-1:ie+1,je+1,ks-1:ke+1) = sly(is-1:ie+1,je+1,ks-1:ke+1)
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_ODD) then
+       sly(is-1:ie+1,je+1,ks-1:ke+1) = ZERO
+       sry(is-1:ie+1,je+1,ks-1:ke+1) = ZERO
+    else if (adv_bc(2,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(2,2)")
     end if
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
@@ -1105,65 +958,43 @@ contains
     deallocate(slopex,slopey,slopez,Ip,Im)
 
     ! impose lo side bc's
-    if (phys_bc(3,1) .eq. INLET) then
+    if (adv_bc(3,1,bccomp) .eq. EXT_DIR) then
        slz(is-1:ie+1,js-1:je+1,ks) = s(is-1:ie+1,js-1:je+1,ks,comp)
        srz(is-1:ie+1,js-1:je+1,ks) = s(is-1:ie+1,js-1:je+1,ks,comp)
-    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SYMMETRY) then
+    else if (adv_bc(3,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(3,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 3) then
-          slz(is-1:ie+1,js-1:je+1,ks) = ZERO
-          srz(is-1:ie+1,js-1:je+1,ks) = ZERO
-       else
-          slz(is-1:ie+1,js-1:je+1,ks) = srz(is-1:ie+1,js-1:je+1,ks)
+          srz(is-1:ie+1,js-1:je+1,ks) = min(srz(is-1:ie+1,js-1:je+1,ks),ZERO)
        end if
-    else if (phys_bc(3,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slz(is-1:ie+1,js-1:je+1,ks) = ZERO
-          srz(is-1:ie+1,js-1:je+1,ks) = ZERO
-       else
-          slz(is-1:ie+1,js-1:je+1,ks) = srz(is-1:ie+1,js-1:je+1,ks)
-       end if
-    else if (phys_bc(3,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 3) then
-          slz(is-1:ie+1,js-1:je+1,ks) = min(srz(is-1:ie+1,js-1:je+1,ks),ZERO)
-          srz(is-1:ie+1,js-1:je+1,ks) = slz(is-1:ie+1,js-1:je+1,ks)
-       else
-          slz(is-1:ie+1,js-1:je+1,ks) = srz(is-1:ie+1,js-1:je+1,ks)
-       end if
-    else if (phys_bc(3,1) .eq. INTERIOR) then
-    else if (phys_bc(3,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,1)")
+       slz(is-1:ie+1,js-1:je+1,ks) = srz(is-1:ie+1,js-1:je+1,ks)
+    else if (adv_bc(3,1,bccomp) .eq. REFLECT_EVEN) then
+       slz(is-1:ie+1,js-1:je+1,ks) = srz(is-1:ie+1,js-1:je+1,ks)
+    else if (adv_bc(3,1,bccomp) .eq. REFLECT_ODD) then
+       slz(is-1:ie+1,js-1:je+1,ks) = ZERO
+       srz(is-1:ie+1,js-1:je+1,ks) = ZERO
+    else if (adv_bc(3,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(3,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(3,2) .eq. INLET) then
+    if (adv_bc(3,2,bccomp) .eq. EXT_DIR) then
        slz(is-1:ie+1,js-1:je+1,ke+1) = s(is-1:ie+1,js-1:je+1,ke+1,comp)
        srz(is-1:ie+1,js-1:je+1,ke+1) = s(is-1:ie+1,js-1:je+1,ke+1,comp)
-    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 3) then
-          slz(is-1:ie+1,js-1:je+1,ke+1) = ZERO
-          srz(is-1:ie+1,js-1:je+1,ke+1) = ZERO
-       else
-          srz(is-1:ie+1,js-1:je+1,ke+1) = slz(is-1:ie+1,js-1:je+1,ke+1)
-       end if
-    else if (phys_bc(3,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slz(is-1:ie+1,js-1:je+1,ke+1) = ZERO
-          srz(is-1:ie+1,js-1:je+1,ke+1) = ZERO
-       else
-          srz(is-1:ie+1,js-1:je+1,ke+1) = slz(is-1:ie+1,js-1:je+1,ke+1)
-       end if
-    else if (phys_bc(3,2) .eq. OUTLET) then
+    else if (adv_bc(3,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(3,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 3) then
           slz(is-1:ie+1,js-1:je+1,ke+1) = max(slz(is-1:ie+1,js-1:je+1,ke+1),ZERO)
-          srz(is-1:ie+1,js-1:je+1,ke+1) = max(slz(is-1:ie+1,js-1:je+1,ke+1),ZERO)
-       else
-          srz(is-1:ie+1,js-1:je+1,ke+1) = slz(is-1:ie+1,js-1:je+1,ke+1)
        end if
-    else if (phys_bc(3,2) .eq. INTERIOR) then
-    else if (phys_bc(3,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,2)")
+       srz(is-1:ie+1,js-1:je+1,ke+1) = slz(is-1:ie+1,js-1:je+1,ke+1)
+    else if (adv_bc(3,2,bccomp) .eq. REFLECT_EVEN) then
+       srz(is-1:ie+1,js-1:je+1,ke+1) = slz(is-1:ie+1,js-1:je+1,ke+1)
+    else if (adv_bc(3,2,bccomp) .eq. REFLECT_ODD) then
+       slz(is-1:ie+1,js-1:je+1,ke+1) = ZERO
+       srz(is-1:ie+1,js-1:je+1,ke+1) = ZERO
+    else if (adv_bc(3,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(3,2)")
     end if
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
@@ -1223,65 +1054,43 @@ contains
     end if
 
     ! impose lo side bc's
-    if (phys_bc(1,1) .eq. INLET) then
+    if (adv_bc(1,1,bccomp) .eq. EXT_DIR) then
        slxy(is,js:je,ks-1:ke+1) = s(is-1,js:je,ks-1:ke+1,comp)
        srxy(is,js:je,ks-1:ke+1) = s(is-1,js:je,ks-1:ke+1,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
+    else if (adv_bc(1,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
-          slxy(is,js:je,ks-1:ke+1) = ZERO
-          srxy(is,js:je,ks-1:ke+1) = ZERO
-       else
-          slxy(is,js:je,ks-1:ke+1) = srxy(is,js:je,ks-1:ke+1)
+          srxy(is,js:je,ks-1:ke+1) = min(srxy(is,js:je,ks-1:ke+1),ZERO)
        end if
-    else if (phys_bc(1,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slxy(is,js:je,ks-1:ke+1) = ZERO
-          srxy(is,js:je,ks-1:ke+1) = ZERO
-       else
-          slxy(is,js:je,ks-1:ke+1) = srxy(is,js:je,ks-1:ke+1)
-       end if
-    else if (phys_bc(1,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 1) then
-          slxy(is,js:je,ks-1:ke+1) = min(srxy(is,js:je,ks-1:ke+1),ZERO)
-          srxy(is,js:je,ks-1:ke+1) = slxy(is,js:je,ks-1:ke+1)
-       else
-          slxy(is,js:je,ks-1:ke+1) = srxy(is,js:je,ks-1:ke+1)
-       end if
-    else if (phys_bc(1,1) .eq. INTERIOR) then
-    else if (phys_bc(1,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,1)")
+       slxy(is,js:je,ks-1:ke+1) = srxy(is,js:je,ks-1:ke+1)
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_EVEN) then
+       slxy(is,js:je,ks-1:ke+1) = srxy(is,js:je,ks-1:ke+1)
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_ODD) then
+       slxy(is,js:je,ks-1:ke+1) = ZERO
+       srxy(is,js:je,ks-1:ke+1) = ZERO
+    else if (adv_bc(1,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(1,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(1,2) .eq. INLET) then
+    if (adv_bc(1,2,bccomp) .eq. EXT_DIR) then
        slxy(ie+1,js:je,ks-1:ke+1) = s(ie+1,js:je,ks-1:ke+1,comp)
        srxy(ie+1,js:je,ks-1:ke+1) = s(ie+1,js:je,ks-1:ke+1,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          slxy(ie+1,js:je,ks-1:ke+1) = ZERO
-          srxy(ie+1,js:je,ks-1:ke+1) = ZERO
-       else
-          srxy(ie+1,js:je,ks-1:ke+1) = slxy(ie+1,js:je,ks-1:ke+1)
-       end if
-    else if (phys_bc(1,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slxy(ie+1,js:je,ks-1:ke+1) = ZERO
-          srxy(ie+1,js:je,ks-1:ke+1) = ZERO
-       else
-          srxy(ie+1,js:je,ks-1:ke+1) = slxy(ie+1,js:je,ks-1:ke+1)
-       end if
-    else if (phys_bc(1,2) .eq. OUTLET) then
+    else if (adv_bc(1,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
           slxy(ie+1,js:je,ks-1:ke+1) = max(slxy(ie+1,js:je,ks-1:ke+1),ZERO)
-          srxy(ie+1,js:je,ks-1:ke+1) = max(slxy(ie+1,js:je,ks-1:ke+1),ZERO)
-       else
-          srxy(ie+1,js:je,ks-1:ke+1) = slxy(ie+1,js:je,ks-1:ke+1)
        end if
-    else if (phys_bc(1,2) .eq. INTERIOR) then
-    else if (phys_bc(1,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,2)")
+       srxy(ie+1,js:je,ks-1:ke+1) = slxy(ie+1,js:je,ks-1:ke+1)
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_EVEN) then
+       srxy(ie+1,js:je,ks-1:ke+1) = slxy(ie+1,js:je,ks-1:ke+1)
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_ODD) then
+       slxy(ie+1,js:je,ks-1:ke+1) = ZERO
+       srxy(ie+1,js:je,ks-1:ke+1) = ZERO
+    else if (adv_bc(1,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(1,2)")
     end if
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
@@ -1344,65 +1153,43 @@ contains
     end if
 
     ! impose lo side bc's
-    if (phys_bc(1,1) .eq. INLET) then
+    if (adv_bc(1,1,bccomp) .eq. EXT_DIR) then
        slxz(is,js-1:je+1,ks:ke) = s(is-1,js-1:je+1,ks:ke,comp)
        srxz(is,js-1:je+1,ks:ke) = s(is-1,js-1:je+1,ks:ke,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
+    else if (adv_bc(1,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
-          slxz(is,js-1:je+1,ks:ke) = ZERO
-          srxz(is,js-1:je+1,ks:ke) = ZERO
-       else
-          slxz(is,js-1:je+1,ks:ke) = srxz(is,js-1:je+1,ks:ke)
+          srxz(is,js-1:je+1,ks:ke) = min(srxz(is,js-1:je+1,ks:ke),ZERO)
        end if
-    else if (phys_bc(1,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slxz(is,js-1:je+1,ks:ke) = ZERO
-          srxz(is,js-1:je+1,ks:ke) = ZERO
-       else
-          slxz(is,js-1:je+1,ks:ke) = srxz(is,js-1:je+1,ks:ke)
-       end if
-    else if (phys_bc(1,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 1) then
-          slxz(is,js-1:je+1,ks:ke) = min(srxz(is,js-1:je+1,ks:ke),ZERO)
-          srxz(is,js-1:je+1,ks:ke) = slxz(is,js-1:je+1,ks:ke)
-       else
-          slxz(is,js-1:je+1,ks:ke) = srxz(is,js-1:je+1,ks:ke)
-       end if
-    else if (phys_bc(1,1) .eq. INTERIOR) then
-    else if (phys_bc(1,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,1)")
+       slxz(is,js-1:je+1,ks:ke) = srxz(is,js-1:je+1,ks:ke)
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_EVEN) then
+       slxz(is,js-1:je+1,ks:ke) = srxz(is,js-1:je+1,ks:ke)
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_ODD) then
+       slxz(is,js-1:je+1,ks:ke) = ZERO
+       srxz(is,js-1:je+1,ks:ke) = ZERO
+    else if (adv_bc(1,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(1,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(1,2) .eq. INLET) then
+    if (adv_bc(1,2,bccomp) .eq. EXT_DIR) then
        slxz(ie+1,js-1:je+1,ks:ke) = s(ie+1,js-1:je+1,ks:ke,comp)
        srxz(ie+1,js-1:je+1,ks:ke) = s(ie+1,js-1:je+1,ks:ke,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          slxz(ie+1,js-1:je+1,ks:ke) = ZERO
-          srxz(ie+1,js-1:je+1,ks:ke) = ZERO
-       else
-          srxz(ie+1,js-1:je+1,ks:ke) = slxz(ie+1,js-1:je+1,ks:ke)
-       end if
-    else if (phys_bc(1,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slxz(ie+1,js-1:je+1,ks:ke) = ZERO
-          srxz(ie+1,js-1:je+1,ks:ke) = ZERO
-       else
-          srxz(ie+1,js-1:je+1,ks:ke) = slxz(ie+1,js-1:je+1,ks:ke)
-       end if
-    else if (phys_bc(1,2) .eq. OUTLET) then
+    else if (adv_bc(1,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
           slxz(ie+1,js-1:je+1,ks:ke) = max(slxz(ie+1,js-1:je+1,ks:ke),ZERO)
-          srxz(ie+1,js-1:je+1,ks:ke) = max(slxz(ie+1,js-1:je+1,ks:ke),ZERO)
-       else
-          srxz(ie+1,js-1:je+1,ks:ke) = slxz(ie+1,js-1:je+1,ks:ke)
        end if
-    else if (phys_bc(1,2) .eq. INTERIOR) then
-    else if (phys_bc(1,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,2)")
+       srxz(ie+1,js-1:je+1,ks:ke) = slxz(ie+1,js-1:je+1,ks:ke)
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_EVEN) then
+       srxz(ie+1,js-1:je+1,ks:ke) = slxz(ie+1,js-1:je+1,ks:ke)
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_ODD) then
+       slxz(ie+1,js-1:je+1,ks:ke) = ZERO
+       srxz(ie+1,js-1:je+1,ks:ke) = ZERO
+    else if (adv_bc(1,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(1,2)")
     end if
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
@@ -1465,65 +1252,43 @@ contains
     end if
 
     ! impose lo side bc's
-    if (phys_bc(2,1) .eq. INLET) then
+    if (adv_bc(2,1,bccomp) .eq. EXT_DIR) then
        slyx(is:ie,js,ks-1:ke+1) = s(is:ie,js-1,ks-1:ke+1,comp)
        sryx(is:ie,js,ks-1:ke+1) = s(is:ie,js-1,ks-1:ke+1,comp)
-    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SYMMETRY) then
+    else if (adv_bc(2,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
-          slyx(is:ie,js,ks-1:ke+1) = ZERO
-          sryx(is:ie,js,ks-1:ke+1) = ZERO
-       else
-          slyx(is:ie,js,ks-1:ke+1) = sryx(is:ie,js,ks-1:ke+1)
+          sryx(is:ie,js,ks-1:ke+1) = min(sryx(is:ie,js,ks-1:ke+1),ZERO)
        end if
-    else if (phys_bc(2,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slyx(is:ie,js,ks-1:ke+1) = ZERO
-          sryx(is:ie,js,ks-1:ke+1) = ZERO
-       else
-          slyx(is:ie,js,ks-1:ke+1) = sryx(is:ie,js,ks-1:ke+1)
-       end if
-    else if (phys_bc(2,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 2) then
-          slyx(is:ie,js,ks-1:ke+1) = min(sryx(is:ie,js,ks-1:ke+1),ZERO)
-          sryx(is:ie,js,ks-1:ke+1) = slyx(is:ie,js,ks-1:ke+1)
-       else
-          slyx(is:ie,js,ks-1:ke+1) = sryx(is:ie,js,ks-1:ke+1)
-       end if
-    else if (phys_bc(2,1) .eq. INTERIOR) then
-    else if (phys_bc(2,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,1)")
+       slyx(is:ie,js,ks-1:ke+1) = sryx(is:ie,js,ks-1:ke+1)
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_EVEN) then
+       slyx(is:ie,js,ks-1:ke+1) = sryx(is:ie,js,ks-1:ke+1)
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_ODD) then
+       slyx(is:ie,js,ks-1:ke+1) = ZERO
+       sryx(is:ie,js,ks-1:ke+1) = ZERO
+    else if (adv_bc(2,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(2,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(2,2) .eq. INLET) then
+    if (adv_bc(2,2,bccomp) .eq. EXT_DIR) then
        slyx(is:ie,je+1,ks-1:ke+1) = s(is:ie,je+1,ks-1:ke+1,comp)
        sryx(is:ie,je+1,ks-1:ke+1) = s(is:ie,je+1,ks-1:ke+1,comp)
-    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 2) then
-          slyx(is:ie,je+1,ks-1:ke+1) = ZERO
-          sryx(is:ie,je+1,ks-1:ke+1) = ZERO
-       else
-          sryx(is:ie,je+1,ks-1:ke+1) = slyx(is:ie,je+1,ks-1:ke+1)
-       end if
-    else if (phys_bc(2,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slyx(is:ie,je+1,ks-1:ke+1) = ZERO
-          sryx(is:ie,je+1,ks-1:ke+1) = ZERO
-       else
-          sryx(is:ie,je+1,ks-1:ke+1) = slyx(is:ie,je+1,ks-1:ke+1)
-       end if
-    else if (phys_bc(2,2) .eq. OUTLET) then
+    else if (adv_bc(2,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
           slyx(is:ie,je+1,ks-1:ke+1) = max(slyx(is:ie,je+1,ks-1:ke+1),ZERO)
-          sryx(is:ie,je+1,ks-1:ke+1) = max(slyx(is:ie,je+1,ks-1:ke+1),ZERO)
-       else
-          sryx(is:ie,je+1,ks-1:ke+1) = slyx(is:ie,je+1,ks-1:ke+1)
        end if
-    else if (phys_bc(2,2) .eq. INTERIOR) then
-    else if (phys_bc(2,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,2)")
+       sryx(is:ie,je+1,ks-1:ke+1) = slyx(is:ie,je+1,ks-1:ke+1)
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_EVEN) then
+       sryx(is:ie,je+1,ks-1:ke+1) = slyx(is:ie,je+1,ks-1:ke+1)
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_ODD) then
+       slyx(is:ie,je+1,ks-1:ke+1) = ZERO
+       sryx(is:ie,je+1,ks-1:ke+1) = ZERO
+    else if (adv_bc(2,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(2,2)")
     end if
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
@@ -1588,65 +1353,43 @@ contains
     deallocate(simhz)
 
     ! impose lo side bc's
-    if (phys_bc(2,1) .eq. INLET) then
+    if (adv_bc(2,1,bccomp) .eq. EXT_DIR) then
        slyz(is-1:ie+1,js,ks:ke) = s(is-1:ie+1,js-1,ks:ke,comp)
        sryz(is-1:ie+1,js,ks:ke) = s(is-1:ie+1,js-1,ks:ke,comp)
-    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SYMMETRY) then
+    else if (adv_bc(2,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
-          slyz(is-1:ie+1,js,ks:ke) = ZERO
-          sryz(is-1:ie+1,js,ks:ke) = ZERO
-       else
-          slyz(is-1:ie+1,js,ks:ke) = sryz(is-1:ie+1,js,ks:ke)
+          sryz(is-1:ie+1,js,ks:ke) = min(sryz(is-1:ie+1,js,ks:ke),ZERO)
        end if
-    else if (phys_bc(2,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slyz(is-1:ie+1,js,ks:ke) = ZERO
-          sryz(is-1:ie+1,js,ks:ke) = ZERO
-       else
-          slyz(is-1:ie+1,js,ks:ke) = sryz(is-1:ie+1,js,ks:ke)
-       end if
-    else if (phys_bc(2,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 2) then
-          slyz(is-1:ie+1,js,ks:ke) = min(sryz(is-1:ie+1,js,ks:ke),ZERO)
-          sryz(is-1:ie+1,js,ks:ke) = slyz(is-1:ie+1,js,ks:ke)
-       else
-          slyz(is-1:ie+1,js,ks:ke) = sryz(is-1:ie+1,js,ks:ke)
-       end if
-    else if (phys_bc(2,1) .eq. INTERIOR) then
-    else if (phys_bc(2,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,1)")
+       slyz(is-1:ie+1,js,ks:ke) = sryz(is-1:ie+1,js,ks:ke)
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_EVEN) then
+       slyz(is-1:ie+1,js,ks:ke) = sryz(is-1:ie+1,js,ks:ke)
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_ODD) then
+       slyz(is-1:ie+1,js,ks:ke) = ZERO
+       sryz(is-1:ie+1,js,ks:ke) = ZERO
+    else if (adv_bc(2,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(2,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(2,2) .eq. INLET) then
+    if (adv_bc(2,2,bccomp) .eq. EXT_DIR) then
        slyz(is-1:ie+1,je+1,ks:ke) = s(is-1:ie+1,je+1,ks:ke,comp)
        sryz(is-1:ie+1,je+1,ks:ke) = s(is-1:ie+1,je+1,ks:ke,comp)
-    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 2) then
-          slyz(is-1:ie+1,je+1,ks:ke) = ZERO
-          sryz(is-1:ie+1,je+1,ks:ke) = ZERO
-       else
-          sryz(is-1:ie+1,je+1,ks:ke) = slyz(is-1:ie+1,je+1,ks:ke)
-       end if
-    else if (phys_bc(2,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slyz(is-1:ie+1,je+1,ks:ke) = ZERO
-          sryz(is-1:ie+1,je+1,ks:ke) = ZERO
-       else
-          sryz(is-1:ie+1,je+1,ks:ke) = slyz(is-1:ie+1,je+1,ks:ke)
-       end if
-    else if (phys_bc(2,2) .eq. OUTLET) then
+    else if (adv_bc(2,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
           slyz(is-1:ie+1,je+1,ks:ke) = max(slyz(is-1:ie+1,je+1,ks:ke),ZERO)
-          sryz(is-1:ie+1,je+1,ks:ke) = max(slyz(is-1:ie+1,je+1,ks:ke),ZERO)
-       else
-          sryz(is-1:ie+1,je+1,ks:ke) = slyz(is-1:ie+1,je+1,ks:ke)
        end if
-    else if (phys_bc(2,2) .eq. INTERIOR) then
-    else if (phys_bc(2,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,2)")
+       sryz(is-1:ie+1,je+1,ks:ke) = slyz(is-1:ie+1,je+1,ks:ke)
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_EVEN) then
+       sryz(is-1:ie+1,je+1,ks:ke) = slyz(is-1:ie+1,je+1,ks:ke)
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_ODD) then
+       slyz(is-1:ie+1,je+1,ks:ke) = ZERO
+       sryz(is-1:ie+1,je+1,ks:ke) = ZERO
+    else if (adv_bc(2,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(2,2)")
     end if
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
@@ -1711,65 +1454,43 @@ contains
     deallocate(simhx)
 
     ! impose lo side bc's
-    if (phys_bc(3,1) .eq. INLET) then
+    if (adv_bc(3,1,bccomp) .eq. EXT_DIR) then
        slzx(is:ie,js-1:je+1,ks) = s(is:ie,js-1:je+1,ks-1,comp)
        srzx(is:ie,js-1:je+1,ks) = s(is:ie,js-1:je+1,ks-1,comp)
-    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SYMMETRY) then
+    else if (adv_bc(3,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(3,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 3) then
-          slzx(is:ie,js-1:je+1,ks) = ZERO
-          srzx(is:ie,js-1:je+1,ks) = ZERO
-       else
-          slzx(is:ie,js-1:je+1,ks) = srzx(is:ie,js-1:je+1,ks)
+          srzx(is:ie,js-1:je+1,ks) = min(srzx(is:ie,js-1:je+1,ks),ZERO)
        end if
-    else if (phys_bc(3,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slzx(is:ie,js-1:je+1,ks) = ZERO
-          srzx(is:ie,js-1:je+1,ks) = ZERO
-       else
-          slzx(is:ie,js-1:je+1,ks) = srzx(is:ie,js-1:je+1,ks)
-       end if
-    else if (phys_bc(3,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 3) then
-          slzx(is:ie,js-1:je+1,ks) = min(srzx(is:ie,js-1:je+1,ks),ZERO)
-          srzx(is:ie,js-1:je+1,ks) = slzx(is:ie,js-1:je+1,ks)
-       else
-          slzx(is:ie,js-1:je+1,ks) = srzx(is:ie,js-1:je+1,ks)
-       end if
-    else if (phys_bc(3,1) .eq. INTERIOR) then
-    else if (phys_bc(3,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,1)")
+       slzx(is:ie,js-1:je+1,ks) = srzx(is:ie,js-1:je+1,ks)
+    else if (adv_bc(3,1,bccomp) .eq. REFLECT_EVEN) then
+       slzx(is:ie,js-1:je+1,ks) = srzx(is:ie,js-1:je+1,ks)
+    else if (adv_bc(3,1,bccomp) .eq. REFLECT_ODD) then
+       slzx(is:ie,js-1:je+1,ks) = ZERO
+       srzx(is:ie,js-1:je+1,ks) = ZERO
+    else if (adv_bc(3,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(3,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(3,2) .eq. INLET) then
+    if (adv_bc(3,2,bccomp) .eq. EXT_DIR) then
        slzx(is:ie,js-1:je+1,ke+1) = s(is:ie,js-1:je+1,ke+1,comp)
        srzx(is:ie,js-1:je+1,ke+1) = s(is:ie,js-1:je+1,ke+1,comp)
-    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 3) then
-          slzx(is:ie,js-1:je+1,ke+1) = ZERO
-          srzx(is:ie,js-1:je+1,ke+1) = ZERO
-       else
-          srzx(is:ie,js-1:je+1,ke+1) = slzx(is:ie,js-1:je+1,ke+1)
-       end if
-    else if (phys_bc(3,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slzx(is:ie,js-1:je+1,ke+1) = ZERO
-          srzx(is:ie,js-1:je+1,ke+1) = ZERO
-       else
-          srzx(is:ie,js-1:je+1,ke+1) = slzx(is:ie,js-1:je+1,ke+1)
-       end if
-    else if (phys_bc(3,2) .eq. OUTLET) then
+    else if (adv_bc(3,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(3,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 3) then
           slzx(is:ie,js-1:je+1,ke+1) = max(slzx(is:ie,js-1:je+1,ke+1),ZERO)
-          srzx(is:ie,js-1:je+1,ke+1) = max(slzx(is:ie,js-1:je+1,ke+1),ZERO)
-       else
-          srzx(is:ie,js-1:je+1,ke+1) = slzx(is:ie,js-1:je+1,ke+1)
        end if
-    else if (phys_bc(3,2) .eq. INTERIOR) then
-    else if (phys_bc(3,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,2)")
+       srzx(is:ie,js-1:je+1,ke+1) = slzx(is:ie,js-1:je+1,ke+1)
+    else if (adv_bc(3,2,bccomp) .eq. REFLECT_EVEN) then
+       srzx(is:ie,js-1:je+1,ke+1) = slzx(is:ie,js-1:je+1,ke+1)
+    else if (adv_bc(3,2,bccomp) .eq. REFLECT_ODD) then
+       slzx(is:ie,js-1:je+1,ke+1) = ZERO
+       srzx(is:ie,js-1:je+1,ke+1) = ZERO
+    else if (adv_bc(3,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(3,2)")
     end if
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
@@ -1834,65 +1555,43 @@ contains
     deallocate(simhy)
 
     ! impose lo side bc's
-    if (phys_bc(3,1) .eq. INLET) then
+    if (adv_bc(3,1,bccomp) .eq. EXT_DIR) then
        slzy(is-1:ie+1,js:je,ks) = s(is-1:ie+1,js:je,ks-1,comp)
        srzy(is-1:ie+1,js:je,ks) = s(is-1:ie+1,js:je,ks-1,comp)
-    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SYMMETRY) then
+    else if (adv_bc(3,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(3,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 3) then
-          slzy(is-1:ie+1,js:je,ks) = ZERO
-          srzy(is-1:ie+1,js:je,ks) = ZERO
-       else
-          slzy(is-1:ie+1,js:je,ks) = srzy(is-1:ie+1,js:je,ks)
+          srzy(is-1:ie+1,js:je,ks) = min(srzy(is-1:ie+1,js:je,ks),ZERO)
        end if
-    else if (phys_bc(3,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slzy(is-1:ie+1,js:je,ks) = ZERO
-          srzy(is-1:ie+1,js:je,ks) = ZERO
-       else
-          slzy(is-1:ie+1,js:je,ks) = srzy(is-1:ie+1,js:je,ks)
-       end if
-    else if (phys_bc(3,1) .eq. OUTLET) then
-       if (is_vel .and. comp .eq. 3) then
-          slzy(is-1:ie+1,js:je,ks) = min(srzy(is-1:ie+1,js:je,ks),ZERO)
-          srzy(is-1:ie+1,js:je,ks) = slzy(is-1:ie+1,js:je,ks)
-       else
-          slzy(is-1:ie+1,js:je,ks) = srzy(is-1:ie+1,js:je,ks)
-       end if
-    else if (phys_bc(3,1) .eq. INTERIOR) then
-    else if (phys_bc(3,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,1)")
+       slzy(is-1:ie+1,js:je,ks) = srzy(is-1:ie+1,js:je,ks)
+    else if (adv_bc(3,1,bccomp) .eq. REFLECT_EVEN) then
+       slzy(is-1:ie+1,js:je,ks) = srzy(is-1:ie+1,js:je,ks)
+    else if (adv_bc(3,1,bccomp) .eq. REFLECT_ODD) then
+       slzy(is-1:ie+1,js:je,ks) = ZERO
+       srzy(is-1:ie+1,js:je,ks) = ZERO
+    else if (adv_bc(3,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(3,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(3,2) .eq. INLET) then
+    if (adv_bc(3,2,bccomp) .eq. EXT_DIR) then
        slzy(is-1:ie+1,js:je,ke+1) = s(is-1:ie+1,js:je,ke+1,comp)
        srzy(is-1:ie+1,js:je,ke+1) = s(is-1:ie+1,js:je,ke+1,comp)
-    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 3) then
-          slzy(is-1:ie+1,js:je,ke+1) = ZERO
-          srzy(is-1:ie+1,js:je,ke+1) = ZERO
-       else
-          srzy(is-1:ie+1,js:je,ke+1) = slzy(is-1:ie+1,js:je,ke+1)
-       end if
-    else if (phys_bc(3,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          slzy(is-1:ie+1,js:je,ke+1) = ZERO
-          srzy(is-1:ie+1,js:je,ke+1) = ZERO
-       else
-          srzy(is-1:ie+1,js:je,ke+1) = slzy(is-1:ie+1,js:je,ke+1)
-       end if
-    else if (phys_bc(3,2) .eq. OUTLET) then
+    else if (adv_bc(3,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(3,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 3) then
           slzy(is-1:ie+1,js:je,ke+1) = max(slzy(is-1:ie+1,js:je,ke+1),ZERO)
-          srzy(is-1:ie+1,js:je,ke+1) = max(slzy(is-1:ie+1,js:je,ke+1),ZERO)
-       else
-          srzy(is-1:ie+1,js:je,ke+1) = slzy(is-1:ie+1,js:je,ke+1)
        end if
-    else if (phys_bc(3,2) .eq. INTERIOR) then
-    else if (phys_bc(3,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,2)")
+       srzy(is-1:ie+1,js:je,ke+1) = slzy(is-1:ie+1,js:je,ke+1)
+    else if (adv_bc(3,2,bccomp) .eq. REFLECT_EVEN) then
+       srzy(is-1:ie+1,js:je,ke+1) = slzy(is-1:ie+1,js:je,ke+1)
+    else if (adv_bc(3,2,bccomp) .eq. REFLECT_ODD) then
+       slzy(is-1:ie+1,js:je,ke+1) = ZERO
+       srzy(is-1:ie+1,js:je,ke+1) = ZERO
+    else if (adv_bc(3,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(3,2)")
     end if
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,savg)
@@ -1986,57 +1685,41 @@ contains
     !$OMP END PARALLEL DO
 
     ! impose lo side bc's
-    if (phys_bc(1,1) .eq. INLET) then
+    if (adv_bc(1,1,bccomp) .eq. EXT_DIR) then
        sedgex(is,js:je,ks:ke,comp) = s(is-1,js:je,ks:ke,comp)
-    else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          sedgex(is,js:je,ks:ke,comp) = ZERO
-       else
-          sedgex(is,js:je,ks:ke,comp) = sedgerx(is,js:je,ks:ke)
-       end if
-    else if (phys_bc(1,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sedgex(is,js:je,ks:ke,comp) = ZERO
-       else
-          sedgex(is,js:je,ks:ke,comp) = sedgerx(is,js:je,ks:ke)
-       end if
-    else if (phys_bc(1,1) .eq. OUTLET) then
+    else if (adv_bc(1,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
           sedgex(is,js:je,ks:ke,comp) = min(sedgerx(is,js:je,ks:ke),ZERO)
        else
           sedgex(is,js:je,ks:ke,comp) = sedgerx(is,js:je,ks:ke)
        end if
-    else if (phys_bc(1,1) .eq. INTERIOR) then
-    else if (phys_bc(1,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,1)")
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_EVEN) then
+       sedgex(is,js:je,ks:ke,comp) = sedgerx(is,js:je,ks:ke)
+    else if (adv_bc(1,1,bccomp) .eq. REFLECT_ODD) then
+       sedgex(is,js:je,ks:ke,comp) = ZERO
+    else if (adv_bc(1,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(1,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(1,2) .eq. INLET) then
+    if (adv_bc(1,2,bccomp) .eq. EXT_DIR) then
        sedgex(ie+1,js:je,ks:ke,comp) = s(ie+1,js:je,ks:ke,comp)
-    else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 1) then
-          sedgex(ie+1,js:je,ks:ke,comp) = ZERO
-       else
-          sedgex(ie+1,js:je,ks:ke,comp) = sedgelx(ie+1,js:je,ks:ke)
-       end if
-    else if (phys_bc(1,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sedgex(ie+1,js:je,ks:ke,comp) = ZERO
-       else
-          sedgex(ie+1,js:je,ks:ke,comp) = sedgelx(ie+1,js:je,ks:ke)
-       end if
-    else if (phys_bc(1,2) .eq. OUTLET) then
+    else if (adv_bc(1,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(1,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 1) then
           sedgex(ie+1,js:je,ks:ke,comp) = max(sedgelx(ie+1,js:je,ks:ke),ZERO)
        else
           sedgex(ie+1,js:je,ks:ke,comp) = sedgelx(ie+1,js:je,ks:ke)
        end if
-    else if (phys_bc(1,2) .eq. INTERIOR) then
-    else if (phys_bc(1,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(1,2)")
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_EVEN) then
+       sedgex(ie+1,js:je,ks:ke,comp) = sedgelx(ie+1,js:je,ks:ke)
+    else if (adv_bc(1,2,bccomp) .eq. REFLECT_ODD) then
+       sedgex(ie+1,js:je,ks:ke,comp) = ZERO
+    else if (adv_bc(1,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(1,2)")
     end if
 
     deallocate(sedgelx,sedgerx)
@@ -2110,57 +1793,41 @@ contains
     !$OMP END PARALLEL DO
 
     ! impose lo side bc's
-    if (phys_bc(2,1) .eq. INLET) then
+    if (adv_bc(2,1,bccomp) .eq. EXT_DIR) then
        sedgey(is:ie,js,ks:ke,comp) = s(is:ie,js-1,ks:ke,comp)
-    else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 2) then
-          sedgey(is:ie,js,ks:ke,comp) = ZERO
-       else
-          sedgey(is:ie,js,ks:ke,comp) = sedgery(is:ie,js,ks:ke)
-       end if
-    else if (phys_bc(2,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sedgey(is:ie,js,ks:ke,comp) = ZERO
-       else
-          sedgey(is:ie,js,ks:ke,comp) = sedgery(is:ie,js,ks:ke)
-       end if
-    else if (phys_bc(2,1) .eq. OUTLET) then
+    else if (adv_bc(2,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
           sedgey(is:ie,js,ks:ke,comp) = min(sedgery(is:ie,js,ks:ke),ZERO)
        else
           sedgey(is:ie,js,ks:ke,comp) = sedgery(is:ie,js,ks:ke)
        end if
-    else if (phys_bc(2,1) .eq. INTERIOR) then
-    else if (phys_bc(2,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,1)")
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_EVEN) then
+       sedgey(is:ie,js,ks:ke,comp) = sedgery(is:ie,js,ks:ke)
+    else if (adv_bc(2,1,bccomp) .eq. REFLECT_ODD) then
+       sedgey(is:ie,js,ks:ke,comp) = ZERO
+    else if (adv_bc(2,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(2,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(2,2) .eq. INLET) then
+    if (adv_bc(2,2,bccomp) .eq. EXT_DIR) then
        sedgey(is:ie,je+1,ks:ke,comp) = s(is:ie,je+1,ks:ke,comp)
-    else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 2) then
-          sedgey(is:ie,je+1,ks:ke,comp) = ZERO
-       else
-          sedgey(is:ie,je+1,ks:ke,comp) = sedgely(is:ie,je+1,ks:ke)
-       end if
-    else if (phys_bc(2,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sedgey(is:ie,je+1,ks:ke,comp) = ZERO
-       else
-          sedgey(is:ie,je+1,ks:ke,comp) = sedgely(is:ie,je+1,ks:ke)
-       end if
-    else if (phys_bc(2,2) .eq. OUTLET) then
+    else if (adv_bc(2,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(2,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 2) then
           sedgey(is:ie,je+1,ks:ke,comp) = max(sedgely(is:ie,je+1,ks:ke),ZERO)
        else
           sedgey(is:ie,je+1,ks:ke,comp) = sedgely(is:ie,je+1,ks:ke)
        end if
-    else if (phys_bc(2,2) .eq. INTERIOR) then
-    else if (phys_bc(2,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(2,2)")
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_EVEN) then
+       sedgey(is:ie,je+1,ks:ke,comp) = sedgely(is:ie,je+1,ks:ke)
+    else if (adv_bc(2,2,bccomp) .eq. REFLECT_ODD) then
+       sedgey(is:ie,je+1,ks:ke,comp) = ZERO
+    else if (adv_bc(2,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(2,2)")
     end if
 
     deallocate(sedgely,sedgery)
@@ -2234,57 +1901,41 @@ contains
     !$OMP END PARALLEL DO
 
     ! impose lo side bc's
-    if (phys_bc(3,1) .eq. INLET) then
+    if (adv_bc(3,1,bccomp) .eq. EXT_DIR) then
        sedgez(is:ie,js:je,ks,comp) = s(is:ie,js:je,ks-1,comp)
-    else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 3) then
-          sedgez(is:ie,js:je,ks,comp) = ZERO
-       else
-          sedgez(is:ie,js:je,ks,comp) = sedgerz(is:ie,js:je,ks)
-       end if
-    else if (phys_bc(3,1) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sedgez(is:ie,js:je,ks,comp) = ZERO
-       else
-          sedgez(is:ie,js:je,ks,comp) = sedgerz(is:ie,js:je,ks)
-       end if
-    else if (phys_bc(3,1) .eq. OUTLET) then
+    else if (adv_bc(3,1,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(3,1,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 3) then
           sedgez(is:ie,js:je,ks,comp) = min(sedgerz(is:ie,js:je,ks),ZERO)
        else
           sedgez(is:ie,js:je,ks,comp) = sedgerz(is:ie,js:je,ks)
        end if
-    else if (phys_bc(3,1) .eq. INTERIOR) then
-    else if (phys_bc(3,1) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,1)")
+    else if (adv_bc(3,1,bccomp) .eq. REFLECT_EVEN) then
+       sedgez(is:ie,js:je,ks,comp) = sedgerz(is:ie,js:je,ks)
+    else if (adv_bc(3,1,bccomp) .eq. REFLECT_ODD) then
+       sedgez(is:ie,js:je,ks,comp) = ZERO
+    else if (adv_bc(3,1,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(3,1)")
     end if
 
     ! impose hi side bc's
-    if (phys_bc(3,2) .eq. INLET) then
+    if (adv_bc(3,2,bccomp) .eq. EXT_DIR) then
        sedgez(is:ie,js:je,ke+1,comp) = s(is:ie,js:je,ke+1,comp)
-    else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. SYMMETRY) then
-       if (is_vel .and. comp .eq. 3) then
-          sedgez(is:ie,js:je,ke+1,comp) = ZERO
-       else
-          sedgez(is:ie,js:je,ke+1,comp) = sedgelz(is:ie,js:je,ke+1)
-       end if
-    else if (phys_bc(3,2) .eq. NO_SLIP_WALL) then
-       if (is_vel) then
-          sedgez(is:ie,js:je,ke+1,comp) = ZERO
-       else
-          sedgez(is:ie,js:je,ke+1,comp) = sedgelz(is:ie,js:je,ke+1)
-       end if
-    else if (phys_bc(3,2) .eq. OUTLET) then
+    else if (adv_bc(3,2,bccomp) .eq. FOEXTRAP .or. &
+             adv_bc(3,2,bccomp) .eq. HOEXTRAP) then
        if (is_vel .and. comp .eq. 3) then
           sedgez(is:ie,js:je,ke+1,comp) = max(sedgelz(is:ie,js:je,ke+1),ZERO)
        else
           sedgez(is:ie,js:je,ke+1,comp) = sedgelz(is:ie,js:je,ke+1)
        end if
-    else if (phys_bc(3,2) .eq. INTERIOR) then
-    else if (phys_bc(3,2) .eq. PERIODIC) then
-    else 
-       call bl_error("make_edge_scal_3d: invalid boundary type phys_bc(3,2)")
+    else if (adv_bc(3,2,bccomp) .eq. REFLECT_EVEN) then
+       sedgez(is:ie,js:je,ke+1,comp) = sedgelz(is:ie,js:je,ke+1)
+    else if (adv_bc(3,2,bccomp) .eq. REFLECT_ODD) then
+       sedgez(is:ie,js:je,ke+1,comp) = ZERO
+    else if (adv_bc(3,2,bccomp) .eq. INTERIOR) then
+    else
+       call bl_error("make_edge_scal_3d: invalid boundary type adv_bc(3,2)")
     end if
 
     deallocate(sedgelz,sedgerz)
