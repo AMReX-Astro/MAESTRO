@@ -14,7 +14,7 @@ contains
     use bl_prof_module
     use eos_module
     use probin_module, only: rho0, grav_const, H, &
-         prob_lo, prob_hi, nn, K
+         prob_lo, prob_hi, nn, K, dlow, Tlow, dhigh, Thigh
     use bl_constants_module
     use geometry, only: dr, nr
     use inlet_bc_module, only: set_inlet_bcs
@@ -47,10 +47,16 @@ contains
     rmax = (dble(nr(n)-1)+HALF)*dr(n)
 
     ! fill the base state arrays
-    do r=0,nr(n)-1
+    do r=-1,nr(n)
 
        !height above the bottom of the domain
-       rloc = (dble(r)+HALF)*dr(n)
+       if (r .eq. -1) then
+          rloc = 0.d0
+       else if (r .eq. nr(n)) then
+          rloc = (dble(r))*dr(n)
+       else
+          rloc = (dble(r)+HALF)*dr(n)
+       end if
 
        d_ambient = (rho0**(1.0d0/nn) + grav_const / (nn+1.0d0) / K * (rloc-rmax))**(nn)
        p_ambient = K * (rho0**(1.0d0/nn) + grav_const / (nn+1.0d0) / K * (rloc-rmax))**(nn+1.0d0)
@@ -73,11 +79,19 @@ contains
             .false., &
             pt_index_eos)
 
-       s0_init(r, rho_comp) = den_eos
-       s0_init(r,rhoh_comp) = den_eos * h_eos
-       s0_init(r,spec_comp:spec_comp+nspec-1) = den_eos * xn_eos(:)
-       p0_init(r) = p_eos
-       s0_init(r,temp_comp) = temp_eos
+       if (r .eq. -1) then
+          Tlow = temp_eos
+          dlow = den_eos
+       else if (r .eq. nr(n)) then
+          Thigh = temp_eos
+          dhigh = den_eos
+       else
+          s0_init(r, rho_comp) = den_eos
+          s0_init(r,rhoh_comp) = den_eos * h_eos
+          s0_init(r,spec_comp:spec_comp+nspec-1) = den_eos * xn_eos(:)
+          p0_init(r) = p_eos
+          s0_init(r,temp_comp) = temp_eos
+       end if
 
     end do
 

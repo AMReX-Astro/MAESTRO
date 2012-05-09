@@ -242,7 +242,7 @@ contains
        if (icomp .eq. rho_comp+2) then ! density
           s(:,lo(2)-ng:lo(2)-1) = dlow
        else if (icomp .eq. rhoh_comp+2) then ! rho*enthalpy
-          s(:,lo(2)-ng:lo(2)-1) = 2.5d0*Tlow
+          s(:,lo(2)-ng:lo(2)-1) = 2.5d0*dlow*Tlow
        else if (icomp .eq. temp_comp+2) then ! temperature
           s(:,lo(2)-ng:lo(2)-1) = Tlow
        else if (icomp .eq. spec_comp+2) then ! scalar
@@ -288,7 +288,7 @@ contains
        if (icomp .eq. rho_comp+2) then ! density
           s(:,hi(2)+1:hi(2)+ng) = dhigh
        else if (icomp .eq. rhoh_comp+2) then ! rho*enthalpy
-          s(:,hi(2)+1:hi(2)+ng) = 2.5d0*Thigh
+          s(:,hi(2)+1:hi(2)+ng) = 2.5d0*dhigh*Thigh
        else if (icomp .eq. temp_comp+2) then ! temperature
           s(:,hi(2)+1:hi(2)+ng) = Thigh
        else if (icomp .eq. spec_comp+2) then ! scalar
