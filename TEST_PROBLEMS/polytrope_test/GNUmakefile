@@ -7,13 +7,13 @@ COMP   := gfortran
 
 MKVERBOSE := t
 
-FPARALLEL := ../..
+FPARALLEL := ../../..
 
-Fmdirs := MAESTRO/polytrope_test_new
+Fmdirs := MAESTRO/TEST_PROBLEMS/polytrope_test
 
-EOS_DIR := MAESTRO/polytrope_test/idealgas
+EOS_DIR          := MAESTRO/TEST_PROBLEMS/polytrope_test/idealgas
+NETWORK_DIR      := extern/networks/null
 CONDUCTIVITY_DIR := extern/conductivity/constant
-NETWORK_DIR := extern/networks/null
 
 EXTRA_DIR := extern/random
 
