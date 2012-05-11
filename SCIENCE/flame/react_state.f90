@@ -13,17 +13,18 @@ module react_state_module
 
 contains
 
-  subroutine react_state(mla,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,p0, &
-                         dt,dx,the_bc_level,time)
+  subroutine react_state(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,p0, &
+                         dt,dx,the_bc_level)
 
-    use heating_module
-    use probin_module, only: use_tfromp
-    use rhoh_vs_t_module
-    use geometry, only: nlevs, dm
+    use probin_module, only: use_tfromp, do_heating, do_burning
     use variables, only: temp_comp
+
     use multifab_fill_ghost_module
-    use ml_restriction_module
-    use multifab_physbc_module
+    use multifab_physbc_module, only: multifab_physbc
+    use ml_restriction_module , only: ml_cc_restriction
+    use heating_module        , only: get_rho_Hext 
+    use rhoh_vs_t_module      , only: makeTfromRhoP, makeTfromRhoH
+    use bl_constants_module   , only: ZERO
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: sold(:)
@@ -32,65 +33,113 @@ contains
     type(multifab) , intent(inout) :: rho_Hnuc(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
     real(dp_t)     , intent(in   ) :: p0(:,0:)
-    real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
+    real(dp_t)     , intent(in   ) :: tempbar_init(:,0:)
+    real(kind=dp_t), intent(in   ) :: dt,dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local
     type(bl_prof_timer), save :: bpt
 
-    integer :: n
+    integer :: n,nlevs,dm
 
     call build(bpt, "react_state")
 
-    ! get heating term
-    call get_rho_Hext(mla,sold,rho_Hext,dx,time,dt,the_bc_level)
+    nlevs = mla%nlevel
+    dm = mla%dim
 
-    ! do the burning
-    call burner_loop(mla,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dt,dx,the_bc_level)
+    ! apply heating term
+    if (do_heating) then
+       call get_rho_Hext(mla,tempbar_init,sold,rho_Hext,the_bc_level,dx,dt)
 
-    ! pass temperature through for seeding the temperature update eos call
-    do n=1,nlevs
-       call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,sold(n)%ng)
-    end do
+       ! if we aren't burning, then we should just copy the old state to the
+       ! new and only update the rhoh component with the heating term
+       if (.not. do_burning) then
+          do n = 1, nlevs
+             call multifab_copy(snew(n),sold(n), nghost(sold(n)))
+
+             ! add in the heating term*dt
+             call multifab_mult_mult_s(rho_Hext(n),dt)
+             call multifab_plus_plus_c(snew(n),rhoh_comp,rho_Hext(n),1,1)
+             call multifab_div_div_s(rho_Hext(n),dt)
+          enddo
+       endif
+
+    else ! not burning, so we ZERO rho_Hext
+       do n = 1, nlevs
+          call setval(rho_Hext(n),ZERO,all=.true.)
+       enddo
+
+    endif
+
+    ! apply burning term
+    if (do_burning) then
+       ! we pass in rho_Hext so that we can add it to rhoh incase we 
+       ! applied heating
+
+       call burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc, &
+                        rho_Hext,dx,dt,the_bc_level)
+
+       ! pass temperature through for seeding the temperature update eos call
+       do n=1,nlevs
+          call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1, &
+                               nghost(sold(n)))
+       end do
+
+    else ! not burning, so we ZERO rho_omegadot and rho_Hnuc
+       do n = 1, nlevs
+          call setval(rho_omegadot(n),ZERO,all=.true.)
+          call setval(rho_Hnuc(n),ZERO,all=.true.)
+       enddo
+
+    endif
+
+    ! if we aren't doing any heating/burning, then just copy the old to the new
+    if (.not. (do_heating .or. do_burning)) then
+       do n = 1, nlevs
+          call multifab_copy(snew(n),sold(n),nghost(sold(n)))
+       enddo
+    endif
+
+
+    ! fill the boundaries
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(snew(nlevs))
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(snew(nlevs),rho_comp,dm+rho_comp,nscal,the_bc_level(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(snew(n-1)        ,snew(n)        ,mla%mba%rr(n-1,:))
+          call ml_cc_restriction(rho_omegadot(n-1),rho_omegadot(n),mla%mba%rr(n-1,:))
+          call ml_cc_restriction(rho_Hext(n-1)    ,rho_Hext(n)    ,mla%mba%rr(n-1,:))
+          call ml_cc_restriction(rho_Hnuc(n-1)    ,rho_Hnuc(n)    ,mla%mba%rr(n-1,:))
+          
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for 
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(snew(n),snew(n-1),nghost(snew(n)),mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n), &
+                                         rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
+
+       enddo
+
+    endif
+
 
     ! now update temperature
     if (use_tfromp) then
        call makeTfromRhoP(snew,p0,mla,the_bc_level,dx)
     else
-       call makeTfromRhoH(snew,mla,the_bc_level)
+       call makeTfromRhoH(snew,p0,mla,the_bc_level,dx)
     end if
-
-    ! fill the temperature ghostcells
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(snew(nlevs),temp_comp,1)
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(snew(nlevs),temp_comp,dm+temp_comp,1, &
-                            the_bc_level(nlevs))
-    else
-
-       ! the loop over nlevs must count backwards to make sure the
-       ! finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(snew(n-1),temp_comp,snew(n),temp_comp,mla%mba%rr(n-1,:),1)
-          
-          ! fill level n ghost cells using interpolation from level
-          ! n-1 data note that multifab_fill_boundary and
-          ! multifab_physbc are called for both levels n-1 and n
-          call multifab_fill_ghost_cells(snew(n),snew(n-1), &
-                                         snew(1)%ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1), &
-                                         the_bc_level(n  ), &
-                                         temp_comp,dm+temp_comp,1,fill_crse_input=.false.)
-       end do
-          
-    end if
-
 
     call destroy(bpt)
 
@@ -98,18 +147,13 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine burner_loop(mla,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dt,dx,the_bc_level)
+  subroutine burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dx,dt,the_bc_level)
 
-    use bl_constants_module
-    use geometry, only: dm, nlevs, nr_fine, nr, nlevs_radial
-    use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, nscal, ntrac, trac_comp
-    use multifab_fill_ghost_module
-    use ml_restriction_module
-    use multifab_physbc_module
-    use probin_module, only: do_average_burn
+    use bl_constants_module, only: ZERO
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, &
+                         nscal, ntrac, trac_comp, foextrap_comp
     use network, only: nspec
-    use average_module
-    use burner_module
+    use probin_module, only: do_average_burn
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: sold(:)
@@ -117,15 +161,19 @@ contains
     type(multifab) , intent(inout) :: rho_omegadot(:)
     type(multifab) , intent(inout) :: rho_Hnuc(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
+    real(kind=dp_t), intent(in   ) :: tempbar_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local
-    real(kind=dp_t), pointer:: snp(:,:,:,:)
-    real(kind=dp_t), pointer:: sop(:,:,:,:)
-    real(kind=dp_t), pointer::  rp(:,:,:,:)
-    real(kind=dp_t), pointer::  hnp(:,:,:,:)
-    real(kind=dp_t), pointer::  hep(:,:,:,:)
+    real(kind=dp_t), pointer :: snp(:,:,:,:)
+    real(kind=dp_t), pointer :: sop(:,:,:,:)
+    real(kind=dp_t), pointer ::  rp(:,:,:,:)
+    real(kind=dp_t), pointer ::  hnp(:,:,:,:)
+    real(kind=dp_t), pointer ::  hep(:,:,:,:)
+    real(kind=dp_t), pointer ::  tcp(:,:,:,:)
+    logical        , pointer ::   mp(:,:,:,:)
+
 
     integer :: lo(dm),hi(dm),ng_si,ng_so,ng_rw,ng_he,ng_hn
     integer :: i,n,r,comp
