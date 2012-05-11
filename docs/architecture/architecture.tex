@@ -1261,8 +1261,14 @@ setting $\phi = 0$ allows the velocity to adjust as needed to the
 domain (see, for example, \cite{almgrenBellSzymczak:1996}).
 
 The actual filling of the ghostcells according to the descriptions
-contained in the \bctower\ is carried out by the {\tt multifab\_physbc}
-routine.
+contained in the \bctower\ is carried out by the {\tt
+  multifab\_physbc} routine.  When you have an {\tt EXT\_DIR}
+condition in {\tt multifab\_physbc} (an specified in the inputs file
+as {\tt inlet}), the advection solver (via the slope routine) and
+linear solvers will then assume that the value in the ghost cells is
+equal to the value that actually lies on the wall.
+
+
 
 
 
