@@ -86,8 +86,6 @@ contains
     integer        , intent(in   ) :: icomp
 
     !     Local variables
-    integer         :: i
-    
     character (len=256) err_string
     integer :: dm
 
