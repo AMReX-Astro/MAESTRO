@@ -227,7 +227,7 @@ contains
     react_is_init = .false.
   end subroutine varden_close
 
-  subroutine react_write(snew, sold, rho_omegadot, rho_Hnuc, rho_Hext, mla, dt, pref)
+  subroutine react_write(snew, sold, rho_omegadot, rho_Hnuc, rho_Hext, mla, dt, pref, the_bc_tower)
     !=== Data ===
     !Modules
     use variables
@@ -236,6 +236,7 @@ contains
     use probin_module, only: run_prefix, &
                              prob_hi, prob_lo, &
                              do_heating, do_burning
+    use define_bc_module, only: bc_tower
 
     !Args
     type(multifab)  , intent(in )   :: snew(:)
@@ -246,7 +247,8 @@ contains
     type(ml_layout) , intent(in )   :: mla
     real(kind=dp_t) , intent(in )   :: dt
     character(len=*), intent(in )   :: pref
-     
+    type(bc_tower)  , intent(in )   :: the_bc_tower
+
     !Local variables 
     real(kind=dp_t), pointer :: rsp(:,:,:,:), snp(:,:,:,:), sop(:,:,:,:), &
                                 rwp(:,:,:,:), rnp(:,:,:,:), rep(:,:,:,:)
@@ -329,6 +331,9 @@ contains
     !Write reaction data
     call fabio_ml_multifab_write_d(react_s,mla%mba%rr(:,1), &
                                    trim(run_prefix) // trim(pref), names=varnames, time=dt)
+
+    call write_job_info(trim(run_prefix) // trim(pref), mla%mba, the_bc_tower)
+    
   end subroutine react_write
 
   !======= Private helper routines ======

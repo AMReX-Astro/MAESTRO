@@ -95,7 +95,7 @@ subroutine varden()
 
   !## react_state() testing ##
   !Write plotfile of initial state
-  call react_write(s, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, ZERO, "initial")
+  call react_write(s, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, ZERO, "initial",bct)
 
   !Calculate react_state inputs
   call average(mla,s,tempbar,dx,temp_comp)
@@ -110,7 +110,7 @@ subroutine varden()
   call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
                    min_time_step,dx,bct%bc_tower_array)
   call react_write(snew, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, &
-                   min_time_step, "mode1")
+                   min_time_step, "mode1",bct)
 
   !Mode 2: Burning without heating
   do_burning = .true.
@@ -118,7 +118,7 @@ subroutine varden()
   call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
                    min_time_step,dx,bct%bc_tower_array)
   call react_write(snew, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, &
-                   min_time_step, "mode2")
+                   min_time_step, "mode2",bct)
 
   !Mode 3: Heating without burning
   do_burning = .false.
@@ -126,7 +126,7 @@ subroutine varden()
   call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
                    min_time_step,dx,bct%bc_tower_array)
   call react_write(snew, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, &
-                   min_time_step, "mode3")
+                   min_time_step, "mode3",bct)
 
   !Mode 4: Burning and heating
   do_burning = .true.
@@ -134,7 +134,7 @@ subroutine varden()
   call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
                    min_time_step,dx,bct%bc_tower_array)
   call react_write(snew, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, &
-                   min_time_step, "mode4")
+                   min_time_step, "mode4",bct)
 
   !Explore ten orders of magnitude of the time domain using user inputs.
   do_burning = dbo
@@ -146,7 +146,7 @@ subroutine varden()
     write(temp_buf, *) i
     temp_buf = adjustl(temp_buf)
     call react_write(snew, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, &
-                     10**(i)*min_time_step, "dtE+" // trim(temp_buf))
+                     10**(i)*min_time_step, "dtE+" // trim(temp_buf),bct)
   enddo
 
   !## Clean-up ##
