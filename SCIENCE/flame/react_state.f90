@@ -155,6 +155,8 @@ contains
     use network, only: nspec
     use probin_module, only: do_average_burn
     use geometry, only: nlevs_radial, nr_fine, nr
+    use average_module, only: average
+    use burner_module, only: burner
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: sold(:)
