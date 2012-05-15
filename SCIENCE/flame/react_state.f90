@@ -17,7 +17,7 @@ contains
                          dt,dx,the_bc_level)
 
     use probin_module, only: use_tfromp, do_heating, do_burning
-    use variables, only: temp_comp
+    use variables, only: temp_comp, rhoh_comp, rho_comp, nscal
 
     use multifab_fill_ghost_module
     use multifab_physbc_module, only: multifab_physbc
@@ -154,6 +154,7 @@ contains
                          nscal, ntrac, trac_comp, foextrap_comp
     use network, only: nspec
     use probin_module, only: do_average_burn
+    use geometry, only: nlevs_radial, nr_fine, nr
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: sold(:)
@@ -175,7 +176,9 @@ contains
     logical        , pointer ::   mp(:,:,:,:)
 
 
-    integer :: lo(dm),hi(dm),ng_si,ng_so,ng_rw,ng_he,ng_hn
+    integer :: lo(mla%dim),hi(mla%dim)
+    integer :: ng_si,ng_so,ng_rw,ng_he,ng_hn
+    integer :: dm,nlevs
     integer :: i,n,r,comp
 
     type(bl_prof_timer), save :: bpt
@@ -187,6 +190,9 @@ contains
 
     call build(bpt, "burner_loop")
 
+    dm = mla%dim
+    nlevs = mla%nlevel
+
     if (do_average_burn) then
        allocate(    rho_avg(nlevs,0:nr_fine-1))
        allocate(      T_avg(nlevs,0:nr_fine-1))
@@ -197,11 +203,11 @@ contains
     endif
 
 
-    ng_si = sold(1)%ng
-    ng_so = snew(1)%ng
-    ng_rw = rho_omegadot(1)%ng
-    ng_hn = rho_Hnuc(1)%ng
-    ng_he = rho_Hext(1)%ng
+    ng_si = nghost(sold(1))
+    ng_so = nghost(snew(1))
+    ng_rw = nghost(rho_omegadot(1))
+    ng_hn = nghost(rho_Hnuc(1))
+    ng_he = nghost(rho_Hext(1))
 
     if (do_average_burn) then
        ! laterally average the density, temperature and mass fractions
@@ -249,7 +255,7 @@ contains
     endif
 
     do n = 1, nlevs
-       do i = 1, sold(n)%nboxes
+       do i = 1, nboxes(sold(n))
           if ( multifab_remote(sold(n), i) ) cycle
           snp => dataptr(sold(n) , i)
           sop => dataptr(snew(n), i)
@@ -259,6 +265,9 @@ contains
           lo =  lwb(get_box(sold(n), i))
           hi =  upb(get_box(sold(n), i))
           select case (dm)
+          case (1)
+             call bl_error("ERROR: 1-d burner_loop not implemented")
+
           case (2)
              if (do_average_burn) then
                 call burner_loop_2d_avg(snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so,rp(:,:,1,:),ng_rw, &
@@ -275,54 +284,6 @@ contains
           end select
        end do
     end do
-
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(snew(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(snew(nlevs),rho_comp,dm+rho_comp,nscal,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(snew(n-1)        ,snew(n)        ,mla%mba%rr(n-1,:))
-          call ml_cc_restriction(rho_omegadot(n-1),rho_omegadot(n),mla%mba%rr(n-1,:))
-          call ml_cc_restriction(rho_Hext(n-1)    ,rho_Hext(n)    ,mla%mba%rr(n-1,:))
-          call ml_cc_restriction(rho_Hnuc(n-1)    ,rho_Hnuc(n)    ,mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-
-          ! density
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         rho_comp,dm+rho_comp,1,fill_crse_input=.false.)
-
-          ! enthalpy
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         rhoh_comp,dm+rhoh_comp,1,fill_crse_input=.false.)
-
-          ! species
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         spec_comp,dm+spec_comp,nspec,fill_crse_input=.false.)
-
-          ! tracers
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_so,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         trac_comp,dm+trac_comp,ntrac,fill_crse_input=.false.)
-
-       enddo
-
-    end if
 
     call destroy(bpt)
 
