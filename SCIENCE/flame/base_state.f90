@@ -60,12 +60,11 @@ contains
     xn_fuel(ic12) = xc12_fuel
     xn_fuel(io16) = 1.d0 - xc12_fuel
 
-    den_eos(1)  = dens_fuel
-    temp_eos(1) = temp_fuel
-    xn_eos(1,:) = xn_fuel(:)
+    den_eos  = dens_fuel
+    temp_eos = temp_fuel
+    xn_eos(:) = xn_fuel(:)
 
     call eos(eos_input_rt, den_eos, temp_eos, &
-             npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -76,8 +75,8 @@ contains
              .false.)
 
     ! note: p_ambient should be = p0_init
-    p_ambient = p_eos(1)
-    rhoh_fuel = dens_fuel*h_eos(1)
+    p_ambient = p_eos
+    rhoh_fuel = dens_fuel*h_eos
 
     ! ash
     xn_ash(:)     = ZERO
@@ -85,13 +84,12 @@ contains
     xn_ash(io16)  = 1.d0 - xc12_fuel    
     xn_ash(img24) = xc12_fuel
 
-    den_eos(1)  = dens_fuel    ! initial guess
-    temp_eos(1) = temp_ash
-    xn_eos(1,:) = xn_ash(:)
-    p_eos(1) = p_ambient
+    den_eos  = dens_fuel    ! initial guess
+    temp_eos = temp_ash
+    xn_eos(:) = xn_ash(:)
+    p_eos = p_ambient
 
     call eos(eos_input_tp, den_eos, temp_eos, &
-             npts, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -101,8 +99,8 @@ contains
              dsdt_eos, dsdr_eos, &
              .false.)
 
-    dens_ash = den_eos(1)
-    rhoh_ash = dens_ash*h_eos(1)
+    dens_ash = den_eos
+    rhoh_ash = dens_ash*h_eos
 
     ! initialize the fuel and ash, but put in a smooth temperature
     ! profile -- this means that we'll need to go back through an
@@ -149,13 +147,12 @@ contains
        xn_smooth(img24) = 1.d0 - xn_smooth(ic12) - xn_smooth(io16)
 
        ! get the new density and enthalpy 
-       den_eos(1)  = s0_init(r,rho_comp)
-       temp_eos(1) = s0_init(r,temp_comp)
-       xn_eos(1,:) = xn_smooth(:)
-       p_eos(1) = p_ambient
+       den_eos  = s0_init(r,rho_comp)
+       temp_eos = s0_init(r,temp_comp)
+       xn_eos(:) = xn_smooth(:)
+       p_eos = p_ambient
 
        call eos(eos_input_tp, den_eos, temp_eos, &
-                npts, &
                 xn_eos, &
                 p_eos, h_eos, e_eos, &
                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -165,9 +162,9 @@ contains
                 dsdt_eos, dsdr_eos, &
                 .false.)
 
-       s0_init(r,rho_comp)  = den_eos(1)
-       s0_init(r,spec_comp:spec_comp+nspec-1) = den_eos(1)*xn_smooth(:)
-       s0_init(r,rhoh_comp) = den_eos(1)*h_eos(1)
+       s0_init(r,rho_comp)  = den_eos
+       s0_init(r,spec_comp:spec_comp+nspec-1) = den_eos*xn_smooth(:)
+       s0_init(r,rhoh_comp) = den_eos*h_eos
 
     enddo
 
