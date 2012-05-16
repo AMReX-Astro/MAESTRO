@@ -34,7 +34,7 @@
 
  ppm_type = 0
 
- max_step  = 100000
+ max_step  = 10000
  init_iter = 1
 
  stop_time = 500.0d0
@@ -42,9 +42,8 @@
  init_shrink = 0.1d0
 
  plot_base = T 
- plot_int  = -1
- plot_deltat = 5.0d0
- chk_int   = -1
+ plot_int  = 500
+ chk_int   = 500
  max_dt  = 0.05d0
  horave_int = -1
  horave_deltat = 1.0d0
