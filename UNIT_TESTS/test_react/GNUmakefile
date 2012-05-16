@@ -1,6 +1,6 @@
 NDEBUG := t
 MPI    := 
-OMP    :=
+OMP    :=t
 
 COMP := gfortran
 
@@ -15,9 +15,9 @@ FPARALLEL := ../../..
 EOS_DIR := extern/EOS/gamma_law_general
 CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
 
-NETWORK_DIR := extern/networks/ignition_simple
-NETWORK_DIR := extern/networks/pphotcno_VODE
-NETWORK_DIR := extern/networks/triple_alpha_plus_cago
+NETWORK_DIR := extern/networks/ignition_chamulak
+#NETWORK_DIR := extern/networks/pphotcno_VODE
+#NETWORK_DIR := extern/networks/triple_alpha_plus_cago
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
