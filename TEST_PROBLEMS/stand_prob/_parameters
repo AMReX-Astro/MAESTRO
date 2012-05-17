@@ -1,3 +1,6 @@
+horave_int                          integer            1
+horave_deltat                       real               1.d0
+
 perturb_type                        integer            2
 
 yhigh                               real               0.8d0
