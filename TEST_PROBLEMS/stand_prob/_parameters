@@ -1,0 +1,11 @@
+perturb_type                        integer            2
+
+yhigh                               real               0.8d0
+ylow                                real               0.7d0
+amp                                 real               0.01d0
+k                                   integer            1
+kz                                  integer            1
+
+rho0				    real	       1.0d0
+H                                   real               1.0d0
+

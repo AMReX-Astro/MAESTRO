@@ -7,23 +7,20 @@
 
  max_grid_size = 128
 
- prob_hi_x = 1.0d0
- prob_hi_y = 1.0d0
+ prob_hi_x = 5.0d0
+ prob_hi_y = 5.0d0
 
  rho0 = 1.0d0
+ H = 1.0d0
  grav_const = -1.0d0
- nn = 1.4d0
- K = 1.0d0
 
- use_thermal_diffusion = T
- conductivity_constant = 1.0d-4
- use_tfromp            = F
- temp_diffusion_formulation = 1
+ perturb_type= 6
 
- perturb_type= 3
-
- amp   = 1.0d-3
- kmode = 10
+ yhigh = 1.5d0
+ ylow  = 1.0d0
+ amp   = 1.0d-4
+ k     = 1
+ kz    = 20
 
  anelastic_cutoff = 1.d-10
  base_cutoff_density = 1.d-10
@@ -35,31 +32,32 @@
 
  ppm_type = 0
 
- max_step  = 10000
+ max_step  = 100000
  init_iter = 1
 
- stop_time = 500.0d0
+ stop_time = 2000.0d0
 
  init_shrink = 0.1d0
 
  plot_base = T 
- plot_int  = 500
- chk_int   = 500
- max_dt  = 0.05d0
- horave_int = -1
- horave_deltat = 1.0d0
+ plot_int  = -1
+ plot_deltat = 20.0d0
+ chk_int   = -1
+ max_dt  = 1.0
+ horave_deltat = 1.0d0 
 
  plot_Hnuc = F
  plot_gpi = F
  plot_omegadot = F
  plot_spec = F
 
+
  cflfac = 0.5
 
  bcx_lo = -1
  bcx_hi = -1
  bcy_lo = 14
- bcy_hi = 12
+ bcy_hi = 14
 
     verbose = 1
  mg_verbose = 1
