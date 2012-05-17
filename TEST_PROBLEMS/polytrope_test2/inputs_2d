@@ -17,8 +17,7 @@
 
  use_thermal_diffusion = T
  conductivity_constant = 1.0d-4
- use_tfromp            = F
- temp_diffusion_formulation = 1
+ use_tfromp            = T
 
  perturb_type= 3
 
