@@ -270,6 +270,7 @@ contains
     use variables, only: rho_comp, temp_comp
     use bl_constants_module, only: HALF, ZERO
     use probin_module, only: prob_lo, grav_const
+    use geometry, only: nr_fine
 
     !**** inputs
 
@@ -300,7 +301,7 @@ contains
     logical            :: cell_valid
     real (kind=dp_t)   :: rho1
     real (kind=dp_t)   :: N2(lo(2):hi(2))
-    real (kind=dp_t)   :: rho_over_beta(lo(2):hi(2))
+    real (kind=dp_t)   :: rho_over_beta(0:nr_fine-1)
     real (kind=dp_t)   :: entropy(lo(2):hi(2))
 
     ! initializing KE and PE
