@@ -8,6 +8,8 @@ MKVERBOSE := t
 
 FPARALLEL := ../../..
 
+Fmdirs := MAESTRO/TEST_PROBLEMS/stand_prob
+
 EOS_DIR := MAESTRO/TEST_PROBLEMS/stand_prob/idealgas
 CONDUCTIVITY_DIR := extern/conductivity/constant
 NETWORK_DIR := extern/networks/null
