@@ -88,7 +88,6 @@ contains
   subroutine sig99(temp,den,xmass,zion,aion,ionmax,pep,xne,eta, &
                    orad,ocond,opac,conductivity)
     implicit none
-    save
     
     !..this routine approximates the thermal transport coefficients.
     !..
