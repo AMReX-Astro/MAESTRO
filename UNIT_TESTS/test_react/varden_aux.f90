@@ -13,8 +13,8 @@ module varden_aux
   private
   type(multifab), save, allocatable :: react_s(:) !Multifab to hold react data
 
-  integer, save :: rho_c, h_c, spec_c, t_c, p_c, omegadot_c, hnuc_c, lhnuc_c, &
-                   hext_c, dxn_con_c, h_con_c, ncomps
+  integer, save :: rho_c, h_c, spec_c, t_c, p_c, omegadot_c, hnuc_c, &
+                   lhnuc_c, hext_c, dxn_con_c, h_con_c, ncomps
   integer, save :: nlevs
 
   character(len=20), save, allocatable :: varnames(:)
@@ -136,13 +136,14 @@ contains
     real(kind=dp_t), allocatable, intent(  out) :: tempbar(:,:), pbar(:,:)
 
     !Local variables
-    integer                      :: lo(mla%dim), hi(mla%dim)
-    integer                      :: domlo(mla%dim), domhi(mla%dim)
-    real(kind=dp_t), pointer     :: sp(:,:,:,:)
-    integer                      :: n, i, ii, jj, kk
-    integer                      :: res, nlevs
-    real(kind=dp_t)              :: dlogrho, dlogT, dxn, summ
-    real(kind=dp_t)              :: temp_zone, dens_zone, xn_zone(nspec, 0:extent(mla%mba%pd(1),3)-1)
+    integer                     :: lo(mla%dim), hi(mla%dim)
+    integer                     :: domlo(mla%dim), domhi(mla%dim)
+    real(kind=dp_t), pointer    :: sp(:,:,:,:)
+    integer                     :: n, i, ii, jj, kk
+    integer                     :: res, nlevs
+    real(kind=dp_t)             :: dlogrho, dlogT, dxn, summ
+    real(kind=dp_t)             :: temp_zone, dens_zone
+    real(kind=dp_t)             :: xn_zone(nspec, 0:extent(mla%mba%pd(1),3)-1)
 
     !=== Execution ===
 
@@ -176,11 +177,11 @@ contains
           do kk = lo(3), hi(3)
              do jj = lo(2), hi(2)
                 !Set the temperature
-                temp_zone = 10.0**(log10(temp_min) + dble(jj)*dlogT)
+                temp_zone = 10.0_dp_t**(log10(temp_min) + dble(jj)*dlogT)
 
                 do ii = lo(1), hi(1)
                    !Set the density
-                   dens_zone = 10.0**(log10(dens_min) + dble(ii)*dlogrho)
+                   dens_zone = 10.0_dp_t**(log10(dens_min) + dble(ii)*dlogrho)
                    
                    !Call the EoS w/ rho, temp, & X as inputs
                    temp_eos  = temp_zone
@@ -227,7 +228,8 @@ contains
     react_is_init = .false.
   end subroutine varden_close
 
-  subroutine react_write(snew, sold, rho_omegadot, rho_Hnuc, rho_Hext, mla, dt, pref, the_bc_tower)
+  subroutine react_write(snew, sold, rho_omegadot, rho_Hnuc, rho_Hext, &
+                        mla, dt, pref, the_bc_tower)
     !=== Data ===
     !Modules
     use variables
@@ -285,7 +287,8 @@ contains
                    cur_rho = snp(ii,jj,kk,rho_comp)
 
                    !Consistency checks
-                   !1) Check that omegadot * dt = (change in mass fraction) for each species
+                   !1) Check that omegadot * dt = (change in mass fraction) 
+                   !   for each species
                    do j=0, nspec-1
                       dxn = (snp(ii,jj,kk,spec_comp + j) / snp(ii,jj,kk,rho_comp)) - &
                            (sop(ii,jj,kk,spec_comp + j) / sop(ii,jj,kk,rho_comp))  
@@ -315,7 +318,7 @@ contains
                    enddo
                    rsp(ii,jj,kk,t_c)    = snp(ii,jj,kk,temp_comp)
                    rsp(ii,jj,kk,hnuc_c) = rnp(ii,jj,kk,1) / cur_rho
-                   if(rsp(ii,jj,kk,hnuc_c) >= ONE) then
+                   if (rsp(ii,jj,kk,hnuc_c) >= ONE) then
                       rsp(ii,jj,kk,lhnuc_c) = log(rsp(ii,jj,kk,hnuc_c))
                    else
                       rsp(ii,jj,kk,lhnuc_c) = ZERO
@@ -401,7 +404,7 @@ contains
     !=== Execution ===
     !Read mass fractions from user
     if(xin_file .eq. 'uniform') then
-       summ = 0.0
+       summ = ZERO
        do i=1, nspec - 1
           print *, trim(adjustl(spec_names(i))) // ' mass fraction: '
           read(*,*) usr_in
@@ -409,7 +412,7 @@ contains
           summ = summ + usr_in
        enddo
 
-       if(summ > 1.0_dp_t) then
+       if(summ > ONE) then
           print *, 'ERROR: Mass fraction sum exceeds 1.0!'
           stop
        else
@@ -418,7 +421,7 @@ contains
     else
        un = unit_new()
        open(unit=un, file=xin_file, status='old')
-       summ = 0.0
+       summ = ZERO
        !TODO: Add xn <= 1.0 error checking
        !TODO: Add proper cell count error checking
        do i=1, nspec 
