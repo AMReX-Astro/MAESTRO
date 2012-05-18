@@ -36,10 +36,6 @@ contains
     real(kind=dp_t) :: del,dpls,dmin,slim,sflag
     real(kind=dp_t) :: offset
 
-    ! FIXME debugging
-    real(kind=dp_t) :: dbdr, rho_cc
-
-
     div_coeff = 0.d0
 
     if (beta_type .eq. 1) then
@@ -177,7 +173,7 @@ contains
                    beta0_edge(n,r+1) = beta0_edge(n,r) * exp(-integral)
                    div_coeff(n,r) = HALF*(beta0_edge(n,r) + beta0_edge(n,r+1))
 
-                else ! r > anelastic_cutoff
+                else ! r >= anelastic_cutoff
 
                    div_coeff(n,r) = div_coeff(n,r-1) * (rho0(n,r)/rho0(n,r-1))                   
                 endif
