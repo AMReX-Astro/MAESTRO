@@ -513,7 +513,7 @@ contains
 
        ! Solve for the temperature:
        ! h = e + p/rho = (p/rho)*[1 + 1/(gamma-1)] = (p/rho)*gamma/(gamma-1)
-       temp = (enthalpy*mu*m_nucleon/k_B)*(gamma_const - 1.0)/gamma_const
+       temp = (enthalpy*mu*m_nucleon/k_B)*(gamma_const - 1.0_dp_t)/gamma_const
 
 
     else if (input .EQ. eos_input_tp ) then
@@ -540,7 +540,7 @@ contains
 
        ! Solve for the temperature
        ! e = k T / [(mu m_nucleon)*(gamma-1)]
-       temp = eint*mu*m_nucleon*(gamma_const-1.0)/k_B
+       temp = eint*mu*m_nucleon*(gamma_const-1.0_dp_t)/k_B
 
 
     else if (input .EQ. eos_input_ps) then
@@ -569,7 +569,7 @@ contains
     ! compute the pressure simply from the ideal gas law, and the
     ! specific internal energy using the gamma-law EOS relation
     pres = dens*k_B*temp/(mu*m_nucleon)
-    eint = pres/(gamma_const - 1.0)/dens
+    eint = pres/(gamma_const - 1.0_dp_t)/dens
 
     ! enthalpy is h = e + p/rho
     enthalpy = eint + pres/dens
@@ -609,7 +609,7 @@ contains
        if (eos_assume_neutral) then
           dmudX =  (mu/aion(n))*(aion(n) - mu)
        else
-          dmudX =  (mu/aion(n))*(aion(n) - mu*(1.0d0 + zion(n)))
+          dmudX =  (mu/aion(n))*(aion(n) - mu*(1.0_dp_t + zion(n)))
        endif
 
        dPdX(n) = -(pres/mu)*dmudX
