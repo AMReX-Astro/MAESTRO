@@ -51,8 +51,8 @@ Note that for single-level planar or any spherical problem, saying $r\ge$ {\tt a
 In this case, the base state exists as several one-dimensional arrays, each with
 different grid spacing.  Refer to Figure \ref{Fig:Cutoff_Multi} in the following examples.
 The guiding principle is to check whether $\rho_0$ falls below $\rho_{\rm cutoff}$ on the finest
-grid first.  If not, check the next coarser level.  Continue until you reach the base grid,
-in which case $\rho_0$ must fall below $\rho_{\rm cutoff}$ somewhere.  Some examples are in order:
+grid first.  If not, check the next coarser level.  Continue until you reach the base grid.
+Some examples are in order:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure}[hpb]
 \centering
@@ -91,6 +91,10 @@ corresponding boundary that is at a larger radius than the location on the fines
 
 \end{itemize}
 
+Note: if $\rho_0$ does not fall below $\rho_{\rm cutoff}$ at any level, we set the cutoff 
+coordinate at the fine level to be first first cell above the domain and propagate the 
+coordinate to the coarser levels.
+
 \section{When are the Cutoff Coordinates Updated?}
 
 At several points in the algorithm, we compute {\tt anelastic\_cutoff\_coord}(:), 
@@ -124,10 +128,6 @@ The {\tt anelastic\_cutoff} is the density below which we modify the constraint.
 
 \item In {\tt probin}, {\tt anelastic\_cutoff} is set to $3\times 10^6$ by default.
 
-\item In {\tt init\_base\_state}, we give a warning if {\tt anelastic\_cutoff}
-  is smaller than the minimum model density.  Then, if ${\tt anelastic\_cutoff} 
-  < {\tt base\_cutoff\_density}$, we abort the program.
-
 \item In {\tt make\_div\_coeff}, for 
   $r \ge {\tt anelastic\_cutoff\_coord}$, we set
   ${\tt div\_coeff}(n,r) = {\tt div\_coeff}(n,r-1) * \rho_0(n,r)/\rho_0(n,r-1)$.
@@ -146,10 +146,6 @@ The {\tt base\_cutoff\_density} is the lowest density that we model.
 \begin{itemize}
 
 \item In {\tt probin}, {\tt base\_cutoff\_density} is set to $3\times 10^6$ by default.
-
-\item In {\tt init\_base\_state}, we give a warning of {\tt base\_cutoff\_density}
-  is smaller than the minimum model density.  Then, if ${\tt anelastic\_cutoff} 
-  < {\tt base\_cutoff\_density}$ we abort the program.
 
 \item In {\tt base\_state}, we compute a physical cutoff location,
   {\tt base\_cutoff\_density\_loc}, which is defined as the physical
