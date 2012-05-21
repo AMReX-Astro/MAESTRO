@@ -48,7 +48,23 @@ from the machine-specific information---this allows for reuse of the
 compiler information.  The only machine-specific parts of the build system
 are for the MPI library locations, contained in {\tt GMakeMPI.mak}.
 The compiler flags for the various compilers are listed in the
-files in {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/comps/}.
+files in {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/comps/}.  The compiler
+is set via the {\tt COMP} variable in the problem's {\tt GNUmakefile}.
+
+There are several options in addition to the compiler that affect the
+build process: {\tt MPI}, {\tt OMP}, and {\tt NDEBUG}---these turn on/off
+MPI parallelization, OpenMP parallelization, and debugging.  Together,
+these choices along with the compiler name are reflected in the name
+of the executable.  
+
+When the `{\tt make}' command is run, the object and module files are
+written into a directory {\tt t/{\em OS}.{\em COMP}.{\em other}/},
+where {\tt \em OS} is the operating system detected by the build
+system, {\tt \em COMP} is the compiler used, and {\tt \em other}
+reflects any other build options (MPI, OpenMP, debugging, etc.) used.
+Separating each build into a separate subdirectory under the problem
+directory allows for multiple builds of \maestro\ to exist
+side-by-side in the problem directory.
 
 \subsection{Finding Source Files}
 
@@ -141,7 +157,7 @@ in the problem's {\tt GNUmakefile}.
 \end{itemize}
 
 
-\subsection{Core MAESTRO modules}
+\subsection{Core \maestro\ modules}
 
 \subsection{Unit Tests}
 
@@ -165,7 +181,13 @@ This functionality is useful for debugging the makefiles.
 
 \subsection{{\tt clean} and {\tt realclean}}
 
+Typing `{\tt make clean}' deleted the object and module files for the
+current build (i.e., the current choice of {\tt MPI}, {\tt NDEBUG},
+{\tt COMP}, and {\tt OMP}).  This also removes any of the compile-time
+generated source files.  Any other builds are left unchanged.
 
+Typing `{\tt make realclean}' deletes the object and module files for
+all builds---i.e., the entire {\tt t/} directory is removed.
 
 \section{Extending the Build System}
 
@@ -175,7 +197,7 @@ This functionality is useful for debugging the makefiles.
 
 \subsection{Parallel Builds}
 
-
+{\tt BOXLIB\_USE\_MPI\_WRAPPERS}
 
 
 
