@@ -64,6 +64,13 @@ module eos_module
 
   integer, public         :: pt_index_eos(MAX_SPACEDIM)
 
+  common /eos_common/ xn_eos,temp_eos,den_eos,abar_eos,zbar_eos,e_eos,p_eos,h_eos
+  common /eos_common/ cv_eos,cp_eos,xne_eos,eta_eos,pele_eos,dpdt_eos,dpdr_eos,dedr_eos
+  common /eos_common/ dedt_eos,gam1_eos,cs_eos,s_eos,dsdt_eos,dsdr_eos,dpdX_eos,dhdX_eos
+  common /eos_common/ conduct_eos,pt_index_eos
+  SAVE /eos_common/
+!$omp threadprivate(/eos_common/)
+
   integer, parameter, public :: eos_input_rt = 1   ! density, temperature are inputs
   integer, parameter, public :: eos_input_rh = 2   ! density, enthalpy are inputs
   integer, parameter, public :: eos_input_tp = 3   ! temperature, pressure are inputs
