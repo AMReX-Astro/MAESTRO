@@ -2,23 +2,48 @@
 
 \section{Build Process Overview}
 
-The \maestro\ build system relies on the definitions setup by \boxlib.  There are
-4 main files that define the macros used by the build:
+The \maestro\ build system uses features of GNU make, which is typically the 
+default on systems.  The main macros that define the build process are 
+split across several files.  The 4 main files are:
 \begin{itemize}
-\item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakedefs.mak}
+\item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakedefs.mak}:
+  This setups the basic macros, includes the options for the selected
+  compiler, builds the list of object and source files, and defines
+  the compile and link command lines.
 
 \item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakeMPI.mak}
+  This implements any changes to the compiler names and library
+  locations necessary to build a parallel executable with MPI.
 
 \item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakerules.mak}
+  This creates the various build targets and specifies the rules for
+  building the object files, the list of dependencies, and some other
+  lesser-used targets (tags for editors, documentation, etc.)
 
 \item {\tt MAESTRO/GMaestro.mak}
+  This is a \maestro-specific file that gathers all of the various
+  modules that are used to build a typical \maestro\ application
+  and integrates with the \boxlib\ build system.  Every \maestro\
+  problem's makefile will include this file.
+
 \end{itemize}
+
 
 The \boxlib\ build system separates the compiler-specific information
 from the machine-specific information---this allows for reuse of the
-compiler information.
+compiler information.  The only machine-specific parts of the build system
+are for the MPI library locations, contained in {\tt GMakeMPI.mak}.
 
-rely on VPATH  / GPackage.mak
+The \maestro\ build system relies on the vpath functionality of {\tt
+make}.  In a makefile, the {\tt vpath} variable holds search path used
+to locate source files.  When a particular file is needed, the
+directories listed in {\tt vpath} are searched until the file is
+found.  The first instance of a file is used.  We exploit this feature
+by always putting the build directory first in {\tt vpath} (this is
+done in {\tt GMakerules.mak}).  This means that if a source file is
+placed in the build directory, that copy will override any other
+version in the source path.
+
 
 dependency generation
 
