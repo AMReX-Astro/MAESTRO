@@ -12,7 +12,7 @@ MKVERBOSE := t
 FPARALLEL := ../../..
 
 # define the physics packages to build this problem
-EOS_DIR := extern/EOS/gamma_law_general
+EOS_DIR := extern/EOS/helmeos
 CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
 
 NETWORK_DIR := extern/networks/ignition_chamulak
