@@ -1,0 +1,60 @@
+\label{ch:make}
+
+\section{Build Process Overview}
+
+The \maestro\ build system relies on the definitions setup by \boxlib.  There are
+4 main files that define the macros used by the build:
+\begin{itemize}
+\item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakedefs.mak}
+
+\item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakeMPI.mak}
+
+\item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakerules.mak}
+
+\item {\tt MAESTRO/GMaestro.mak}
+\end{itemize}
+
+The \boxlib\ build system separates the compiler-specific information
+from the machine-specific information---this allows for reuse of the
+compiler information.
+
+rely on VPATH  / GPackage.mak
+
+dependency generation
+
+include files
+
+files created at build-time: {\tt probin.f90}, {\tt build\_info.f90}, and {\tt network.f90}
+
+
+\section{\maestro\ Problem Options}
+
+\subsection{Problem-specific Files}
+
+\subsection{Defining Network, EOS, and Conductivity Routines}
+
+\subsection{Core MAESTRO modules}
+
+\subsection{Unit Tests}
+
+
+\section{Special Targets}
+
+\subsection{Debugging ({\tt print-*})}
+
+\subsection{{\tt clean} and {\tt realclean}}
+
+
+
+\section{Extending the Build System}
+
+\subsection{Adding a Machine}
+
+\subsection{Adding a Compiler}
+
+\subsection{Parallel Builds}
+
+
+
+
+
