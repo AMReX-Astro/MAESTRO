@@ -68,6 +68,18 @@ side-by-side in the problem directory.
 
 \subsection{Finding Source Files}
 
+The \maestro\ executable is built from source distributed across a
+number of directories.  In each of these directories containing source
+files, there is a {\tt GPackage.mak} file.  This file has a number of
+lines of the form:
+\begin{verbatim}
+f90sources += file.f90
+\end{verbatim}
+where {\tt file.f90} is a source file that should be built when this
+directory is added to the list of build directories.  For old
+fixed-form Fortran files, the files should be added to the {\tt
+fsources} variable instead of {\tt f90sources}.
+
 The \boxlib\ build system relies on the vpath functionality of {\tt
 make}.  In a makefile, the {\tt vpath} variable holds search path used
 to locate source files.  When a particular file is needed, the
@@ -85,9 +97,19 @@ described below (see \S~\ref{sec:make:otherfiles}).
 
 \subsection{Dependencies}
 
-dependency generation
+There is no need to explicitly define the dependencies between the
+source files for Fortran modules.  The scripts in {\tt
+BOXLIB\_HOME/Tools/F\_scripts/} are run at the start of the build
+process and parse all the source files and make an explicit list of
+the dependency pairs.  This process is defined in {\tt
+GMakerules.mak}.
 
-include files
+A few files use explicit `{\tt include}' statements to include Fortran
+source in other source files.  Any include file locations should be
+added to {\tt Fmincludes} variable in the problem's {\tt GNUmakefile}.
+This does not occur frequently.  For the case of the {\tt helmeos}
+equation of state, this is done automatically in {\tt GMaestro.mak}.
+
 
 \subsection{Files Created at Compile-time}
 
