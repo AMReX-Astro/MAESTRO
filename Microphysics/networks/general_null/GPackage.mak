@@ -3,13 +3,12 @@ f90sources += burner.f90
 
 # network.f90 is created at build time for this network
 network.f90:   $(GENERAL_NET_INPUTS) $(FPARALLEL)/extern/networks/general_null/network.template
-	@echo "---------------------------------------------------------------------------"
-	@echo "WRITING network.f90:"
+	@echo " "
+	@echo "${bold}WRITING network.f90${normal}"
 	$(FPARALLEL)/extern/networks/general_null/write_network.py \
             -t $(FPARALLEL)/extern/networks/general_null/network.template \
             -s $(GENERAL_NET_INPUTS) \
             -o network.f90
-	@echo "---------------------------------------------------------------------------"
 	@echo " "
 
 

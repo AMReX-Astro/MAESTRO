@@ -131,12 +131,11 @@ EXTERN_PARAMETER_DIRS += $(foreach dir, $(EXTERN_CORE), $(FPARALLEL)/$(dir))
 EXTERN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
-	@echo "---------------------------------------------------------------------------"
-	@echo "WRITING probin.f90"
+	@echo " "
+	@echo "${bold}WRITING probin.f90${normal}"
 	$(BOXLIB_HOME)/Tools/F_scripts/write_probin.py \
            -t $(PROBIN_TEMPLATE) -o probin.f90 -n probin \
            --pa "$(PROBIN_PARAMETERS)" --pb "$(EXTERN_PARAMETERS)"
-	@echo "---------------------------------------------------------------------------"
 	@echo " "
 
 
@@ -145,13 +144,12 @@ probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
 deppairs: build_info.f90
 
 build_info.f90: 
-	@echo "---------------------------------------------------------------------------"
-	@echo "WRITING build_info.f90"
+	@echo " "
+	@echo "${bold}WRITING build_info.f90${normal}"
 	$(BOXLIB_HOME)/Tools/F_scripts/make_build_info \
             "$(Fmdirs)" "$(COMP)" "$(FCOMP_VERSION)" \
             "$(COMPILE.f90)" "$(COMPILE.f)" \
             "$(COMPILE.c)" "$(LINK.f90)" "$(BOXLIB_HOME)"
-	@echo "---------------------------------------------------------------------------"
 	@echo " "
 
 $(odir)/build_info.o: build_info.f90
