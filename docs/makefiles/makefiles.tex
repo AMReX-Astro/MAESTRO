@@ -2,39 +2,57 @@
 
 \section{Build Process Overview}
 
-The \maestro\ build system uses features of GNU make, which is typically the 
-default on systems.  The main macros that define the build process are 
-split across several files.  The 4 main files are:
+The \maestro\ build system uses features of GNU make, which is
+typically the default on systems.  The \maestro\ executable is built
+in the problem's directory (one of the directories under {\tt
+SCIENCE/}, {TEST\_PROBLEMS}, or {UNIT\_TESTS}).  This directory will
+contain a makefile, {\tt GNUmakefile}, that includes all the necessary
+information to build the executable.  
+
+The main macros that define the build process are split across several
+files.  The 4 main files are:
 \begin{itemize}
 \item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakedefs.mak}:
+
   This setups the basic macros, includes the options for the selected
   compiler, builds the list of object and source files, and defines
   the compile and link command lines.
 
-\item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakeMPI.mak}
+\item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakeMPI.mak}:
+
   This implements any changes to the compiler names and library
   locations necessary to build a parallel executable with MPI.
 
-\item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakerules.mak}
+\item {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/GMakerules.mak}:
+
   This creates the various build targets and specifies the rules for
   building the object files, the list of dependencies, and some other
   lesser-used targets (tags for editors, documentation, etc.)
 
-\item {\tt MAESTRO/GMaestro.mak}
+\item {\tt MAESTRO/GMaestro.mak}:
+
   This is a \maestro-specific file that gathers all of the various
   modules that are used to build a typical \maestro\ application
   and integrates with the \boxlib\ build system.  Every \maestro\
-  problem's makefile will include this file.
+  problem's {\tt GNUmakefile} will include this file.
 
 \end{itemize}
 
+\maestro\ gets the location of the \boxlib\ library through the 
+{\tt BOXLIB\_HOME} variable.  This should be set as an environment
+variable in your shell start-up files (e.g.\ {\tt .bashrc} or {\tt
+.cshrc}).
 
 The \boxlib\ build system separates the compiler-specific information
 from the machine-specific information---this allows for reuse of the
 compiler information.  The only machine-specific parts of the build system
 are for the MPI library locations, contained in {\tt GMakeMPI.mak}.
+The compiler flags for the various compilers are listed in the
+files in {\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/comps/}.
 
-The \maestro\ build system relies on the vpath functionality of {\tt
+\subsection{Finding Source Files}
+
+The \boxlib\ build system relies on the vpath functionality of {\tt
 make}.  In a makefile, the {\tt vpath} variable holds search path used
 to locate source files.  When a particular file is needed, the
 directories listed in {\tt vpath} are searched until the file is
@@ -44,19 +62,84 @@ done in {\tt GMakerules.mak}).  This means that if a source file is
 placed in the build directory, that copy will override any other
 version in the source path.
 
+In \maestro, the {\tt vpath} variable is set using the macros defined
+in {\tt GMaestro.mak}.  A user does not need to set this variable
+explicitly.  Additional source locations are added in the manner
+described below (see \S~\ref{sec:make:otherfiles}).
+
+\subsection{Dependencies}
 
 dependency generation
 
 include files
 
-files created at build-time: {\tt probin.f90}, {\tt build\_info.f90}, and {\tt network.f90}
+\subsection{Files Created at Compile-time}
+
+Several files are created at build-time:
+\begin{itemize}
+\item {\tt probin.f90}
+
+\item {\tt build\_info.f90}
+
+\item {\tt network.f90} (only for the {\tt general\_null} network)
+\end{itemize}
+
 
 
 \section{\maestro\ Problem Options}
 
 \subsection{Problem-specific Files}
+\label{sec:make:otherfiles}
 
-\subsection{Defining Network, EOS, and Conductivity Routines}
+
+\subsection{Defining EOS, Network, and Conductivity Routines}
+
+Each \maestro\ problem needs to define an equation of state, a
+reaction network, and a routine to compute the conductivities (for
+thermal diffusion).  This is true even if the problem is not doing
+reactions of thermal diffusion.  These definitions are specified
+in the problem's {\tt GNUmakefile}.
+
+\begin{itemize}
+\item {\tt EOS\_DIR}:
+
+  This variable points to the path (relative to {\tt fParallel/}) of
+  the equation of state used for the build.  Choices that work
+  with \maestro\ are:
+  \begin{itemize}
+  \item {\tt extern/EOS/helmeos}
+  \item {\tt extern/EOS/gamma\_law\_general}
+  \end{itemize}
+
+\item {\tt CONDUCTIVITY\_DIR}:
+
+  This variable points to the conductivity routine used for the build
+  (relative to {\tt fParallel/}).  Choices that work with \maestro\
+  are:
+  \begin{itemize}
+  \item {\tt extern/conductivity/constant}
+  \item {\tt extern/conductivity/timmes\_stellar}
+  \end{itemize}
+  If diffusion is not being used for the problem, this should be set
+  to {\tt extern/conductivity/constant}.
+
+\item {\tt NETWORK\_DIR}:
+
+  This variable points to the reaction network used for the build
+  (relative to {\tt fParallel/}).  A lot of options are present in
+  {\tt extern/networks/}.  A network is required even if you are not
+  doing reactions, since the network defines the species that are
+  advected and interpreted by the equation of state.  
+
+  A special choice, {\tt extern/networks/general\_null} is a general
+  network that simply defines the properties of one or more species.
+  This requires an inputs file, specified by {\tt
+  GENERAL\_NET\_INPUTS}.  This inputs file is read at compile-time and
+  used to build the {\tt network.f90} file that is compiled into the
+  source.
+
+\end{itemize}
+
 
 \subsection{Core MAESTRO modules}
 
@@ -66,6 +149,19 @@ files created at build-time: {\tt probin.f90}, {\tt build\_info.f90}, and {\tt n
 \section{Special Targets}
 
 \subsection{Debugging ({\tt print-*})}
+
+To see the contents of any variable in the build system, you can build
+the special target {\tt print-{\em varname}}, where {\tt {\em
+varname}} is the name of the variable.  For example, to see what the
+Fortran compiler flags are, you would do:
+\begin{verbatim}
+make print-FFLAGS
+\end{verbatim}
+This would give (for {\tt gfortran}, for example):
+\begin{verbatim}
+FFLAGS is -Jt/Linux.gfortran/m -I t/Linux.gfortran/m -O2 -fno-range-check
+\end{verbatim}
+This functionality is useful for debugging the makefiles.
 
 \subsection{{\tt clean} and {\tt realclean}}
 
