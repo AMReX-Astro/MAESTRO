@@ -129,6 +129,21 @@ Several files are created at build-time:
 \subsection{Problem-specific Files}
 \label{sec:make:otherfiles}
 
+If a problem has a unique file that is needed as part of the build,
+then that file should be added to a {\tt GPackage.mak} file in the
+problem's directory.  Since, by default, problems don't have a {\tt
+GPackage.mak}, the build system needs to be told to look in the
+problem directory for unique sources.  This is accomplished by adding
+the problem's directory to the {\tt EXTRA\_DIR} variable in the
+problem's {\tt GNUmakefile}.  
+
+Note that this is not necessary if you place a custom version of 
+a source file in the problem's directory.  Since that file is already
+listed in the {\tt GPackage.mak} in its original location, the build
+system will know that it needs to be built.  Since the {\tt vpath}
+variable puts the problem's directory at the start of the search
+path, the version of the file in the problem's directory will be 
+found first.
 
 \subsection{Defining EOS, Network, and Conductivity Routines}
 
