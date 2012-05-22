@@ -225,7 +225,54 @@ in the problem's {\tt GNUmakefile}.
 
 \subsection{Core \maestro\ modules}
 
+Several modules are included in all \maestro\ builds by default.
+From \boxlib, we alway include:
+\begin{itemize}
+\item {\tt \$\{BOXLIB\_HOME\}/Src/F\_BaseLib}
+\item {\tt \$\{BOXLIB\_HOME\}/Src/LinearSolvers/F\_MG}
+\end{itemize}
+
+\noindent From {\tt extern}, we always include
+\begin{itemize}
+\item {\tt extern/model\_parser}
+\item {\tt extern/LAPACK}
+\item {\tt extern/random}
+\item {\tt extern/BLAS}
+\item {\tt \$\{EOS\_DIR\}}
+\item {\tt \$\{NETWORK\_DIR\}}
+\item {\tt \$\{CONDUCTIVITY\_DIR\}}
+\end{itemize}
+for most networks, we automatically add in {\tt extern/VODE} as well.
+
+\noindent From {\tt MAESTRO/}, we add
+\begin{itemize}
+\item {\tt MAESTRO/constants}
+\item {\tt MAESTRO/Source}
+\end{itemize}
+(although see the unit tests section below regarding {\tt MAESTRO/Source}.
+
+\noindent Finally, any extra directories listed in the {\tt EXTRA\_DIR}
+variable are included.
+
+For each of these included directories, {\tt GMaestro.mak} adds the list of source files
+defined in their {\tt GPackage.mak} to the list of files to be compiled.
+It also adds each of these directories to the {\tt vpath} as a directory
+for the build process to search in for source files.
+
+
 \subsection{Unit Tests}
+
+Sometimes we only want to use a few of the standard \maestro\
+routines, for example in a unit test where we are testing only a small
+part of the \maestro\ algorithm indepenedently.  In this case, we
+don't want to comple all of the files in {\tt MAESTRO/Source}.  If we
+set {\tt UNIT\_TEST := t} in our problem's {\tt GNUmakefile}, then the
+{\tt GPackage.mak} in {\tt MAESTRO/Source} is not read, so those files
+are not automatically put into the list of files to compile.  Instead,
+the problem should create its own {\tt GPackage.mak} listing only the
+subset of files that are to be compiled.  {\tt MAESTRO/Source} is put
+into the {\tt vpath} search path for sources, so those files will
+still be found as needed.
 
 
 \section{Special Targets}
@@ -257,9 +304,18 @@ all builds---i.e., the entire {\tt t/} directory is removed.
 
 \section{Extending the Build System}
 
-\subsection{Adding a Machine}
-
 \subsection{Adding a Compiler}
+
+Properties for different compilers are already defined in 
+{\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/comps/}.
+Each compiler is given its own file.  The appropriate file is included
+into {\tt GMakedefs.mak} by looking at the {\tt COMP} variable and the
+operating system.  These compiler files define the compiler flags for
+both optimized and debug compiling.  Additionally, the variable {\tt
+FCOMP\_VERSION} should be defined there, based on the output from the
+compiler, to provide the compiler version for output into the {\tt
+job\_info} file at runtime.
+
 
 \subsection{Parallel (MPI) Builds}
 
