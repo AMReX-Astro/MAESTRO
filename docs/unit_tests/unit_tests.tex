@@ -153,5 +153,23 @@ specific \maestro\ routines directly.
 \end{figure}
 
 
+\section{\tt test\_react}
+
+  This simply tests the reaction network by calling the \maestro\ {\tt
+  react\_state} routine directly.  The network is selected in the {\tt
+  GNUmakefile} by setting the {\tt NETWORK\_DIR} variable.  A 3d cube
+  is setup with density varying on one axis, temperature varying on
+  another, and the composition varying on the third.  The density and
+  temperature ranges are set in the inputs file.  The composition is
+  read in via an input file.
+
+  A good use of this test is to test whether a burner is threadsafe.
+  This is accomplished by compiling with OpenMP (setting {\tt OMP=t})
+  and the running with 1 thread and multiple threads (this can be done
+  by setting the environment variable {\tt OMP\_NUM\_THREADS} to the 
+  desired number of threads).  Since each zone is independent of the
+  others, the results should be identical regardless of the number
+  of threads.  This can be confirmed using the {\tt fcompare} tool
+  in {\tt AmrPostprocessing}.
 
 
