@@ -598,7 +598,7 @@ subroutine varden()
 
 
   ! report
-  do p = 0, 3   ! ppm_type
+  do p = 0, imax   ! ppm_type
 
      if (p <= 2) then
         print *, 'ppm_type = ', p
@@ -629,7 +629,7 @@ subroutine varden()
   max_drel_error = -1.d30
   max_rel_error  = -1.d30
   
-  do p = 0, 3
+  do p = 0, imax
      do n = 1, nlevs
         max_dabs_error = max(abs(maxval(abs_norm(p,n,:)) - minval(abs_norm(p,n,:))), &
                              max_dabs_error)
