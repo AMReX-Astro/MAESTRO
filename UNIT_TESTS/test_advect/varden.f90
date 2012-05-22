@@ -42,7 +42,7 @@ subroutine varden()
                            prob_lo, prob_hi, pmask, drdxfac, &
                            use_eos_coulomb, &
                            test_set, &
-                           ppm_type, bds_type, &
+                           ppm_type, bds_type, do_bds, &
                            cflfac, &
                            stop_time
   use runtime_init_module, only: runtime_init, runtime_close
@@ -62,6 +62,7 @@ subroutine varden()
   integer :: nlevs, dm
 
   integer :: idir, idim, itest_dir, index_t
+  integer :: imax
 
   type(ml_layout) :: mla
 
@@ -270,7 +271,13 @@ subroutine varden()
   !---------------------------------------------------------------------------
   ! loop over all possible directions and all ppm_types
   !---------------------------------------------------------------------------
-  do p = 0,3
+  if (do_bds) then
+     imax = 3
+  else
+     imax = 2
+  endif
+
+  do p = 0, imax
      
      if (p <= 2) then
         ppm_type = p

@@ -15,6 +15,7 @@
  ! ppm_type doesn't have much meaning here, since we override it in
  ! the course of the code
  ppm_type = 0
+ do_bds = T
 
  verbose = 1
 
