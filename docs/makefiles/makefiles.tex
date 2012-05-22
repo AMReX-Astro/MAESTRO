@@ -115,11 +115,40 @@ equation of state, this is done automatically in {\tt GMaestro.mak}.
 
 Several files are created at build-time:
 \begin{itemize}
-\item {\tt probin.f90}
+\item {\tt probin.f90}:
 
-\item {\tt build\_info.f90}
+  This is the module that controls runtime parameters.  This is
+  created by the script
+  {\tt write\_probin.py} in {\tt \$\{BOXLIB\_HOME\}/Tools/F\_scripts/}.  The
+  makefile logic for creating it is in {\tt GMaestro.mak}.  At compile
+  time, the problem, main {\tt MAESTRO/}, and {\tt extern/}
+  directories are searched for {\tt \_parameter} files.  These files
+  are parsed and the {\tt probin.f90} file is output containing the 
+  runtime parameters, their default values, and the logic for reading
+  and interpreting the inputs file.
 
-\item {\tt network.f90} (only for the {\tt general\_null} network)
+\item {\tt build\_info.f90}:
+
+  This is a module that contains basic information about the build
+  environment (compiler used, build machine, build directory, compiler
+  flags, etc.).  This is created by the script {\tt make\_build\_info}
+  in {\tt \$\{BOXLIB\_HOME\}/Tools/F\_scripts/} from {\tt
+  GMaestro.mak} by passing in a number of makefile variables.  This is
+  rewritten everytime the code is compiled.  The primary use of this
+  module is writing out the {\tt job\_info} file in the plotfiles.
+
+\item ({\tt network.f90}):
+
+  This is generated at compile time {\em only} for the {\tt
+  general\_null} network.  The {\tt general\_null} network allows the
+  user to define a list of non-reacting species builds the {\tt
+  network.f90} based on this list.  The makefile logic for building
+  the {\tt network.f90} is in the {\tt GPackage.mak} in {\tt
+  extern/networks/general\_null}.  The script {\tt write\_network.py}
+  in that directory does the actual parsing of the species file and
+  outputs the {\tt network.f90}.
+
+
 \end{itemize}
 
 
@@ -232,9 +261,21 @@ all builds---i.e., the entire {\tt t/} directory is removed.
 
 \subsection{Adding a Compiler}
 
-\subsection{Parallel Builds}
+\subsection{Parallel (MPI) Builds}
 
-{\tt BOXLIB\_USE\_MPI\_WRAPPERS}
+When building with MPI, the build system needs to know about the location of the
+MPI libraries.  If your local MPI has the {\tt mpif90} and {\tt mpicc} wrappers
+installed and working, then \maestro\ can use these simply by setting the
+environment variable:
+\begin{verbatim}
+BOXLIB_USE_MPI_WRAPPERS=1
+\end{verbatim}
+Otherwise, you will need to edit {\tt GMakeMPI.mak} and add a section
+specific to your machine with the compiler and library location.  It
+is best to simply copy an existing similar portion of the makefile and
+adjust it to your system.  Most national supercomputing facilities are
+already supported, and parallel builds on them should work out of the
+box.
 
 
 
