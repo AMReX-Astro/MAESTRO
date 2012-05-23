@@ -532,7 +532,8 @@ contains
 
     ldt = dt
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH) FIRSTPRIVATE(ldt)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH) FIRSTPRIVATE(ldt) &
+    !$OMP SCHEDULE(DYNAMIC,1)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
