@@ -153,7 +153,7 @@ contains
                            thermal,Source,sponge,mba,plot_names,dx, &
                            the_bc_tower,w0,rho0,rhoh0,p0, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt,particles)
+                           normal,dt,particles,write_pf_time)
 
     use bl_prof_module
     use fabio_module
@@ -205,6 +205,7 @@ contains
     real(dp_t)       , intent(in   ) :: etarho_cc(:,0:)
     type(multifab)   , intent(in   ) :: normal(:)
     type(particle_container), intent(inout) :: particles
+    real(dp_t)       , intent(  out) :: write_pf_time
 
     type(multifab) :: plotdata(mla%nlevel)
     type(multifab) ::  tempfab(mla%nlevel)
@@ -683,6 +684,8 @@ contains
        print*,'Time to write plotfile: ',writetime1,' seconds'
        print*,''
     end if
+
+    write_pf_time = writetime1
 
     do n = 1,nlevs
        call destroy(plotdata(n))

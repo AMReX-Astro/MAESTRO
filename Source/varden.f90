@@ -121,6 +121,7 @@ subroutine varden()
   real(dp_t), allocatable :: tempbar_init_temp(:,:)
 
   logical :: dump_plotfile, dump_checkpoint, abort_maestro
+  real(dp_t) :: write_pf_time
 
   type(particle_container) :: particles
   integer :: numparticles
@@ -455,14 +456,14 @@ subroutine varden()
                            thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt,particles)
+                           normal,dt,particles,write_pf_time)
 
         call write_base_state(restart, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))        
 
-        call write_job_info(plot_file_name, mla%mba, the_bc_tower)
+        call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
 
      end if
 
@@ -618,14 +619,14 @@ subroutine varden()
                            thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt,particles)
+                           normal,dt,particles,write_pf_time)
 
         call write_base_state(istep, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
-        call write_job_info(plot_file_name, mla%mba, the_bc_tower)
+        call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
         last_plt_written = istep
      end if
 
@@ -1288,14 +1289,14 @@ subroutine varden()
                                  thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
                                  the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
                                  tempbar,gamma1bar,etarho_cc, &
-                                 normal,dt,particles)
+                                 normal,dt,particles,write_pf_time)
 
               call write_base_state(istep, plot_file_name, &
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
                                     w0, etarho_ec, etarho_cc, &
                                     div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
-              call write_job_info(plot_file_name, mla%mba, the_bc_tower)
+              call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
               last_plt_written = istep
            end if
         end if
@@ -1383,14 +1384,14 @@ subroutine varden()
                            thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
                            tempbar,gamma1bar,etarho_cc, &
-                           normal,dt,particles)
+                           normal,dt,particles,write_pf_time)
         
         call write_base_state(istep, plot_file_name, &
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
                               div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
-        call write_job_info(plot_file_name, mla%mba, the_bc_tower)
+        call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
      end if
   end if
 

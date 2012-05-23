@@ -1,4 +1,4 @@
-subroutine write_job_info(dirname, mba, the_bc_tower)
+subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
 
   ! write out some basic information about the way the job was run
   ! to a file called job_info in the directory dir_name.  Usually
@@ -24,6 +24,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower)
   character (len=*), intent(in) :: dirname
   type(ml_boxarray), intent(in) :: mba
   type(bc_tower)   , intent(in) :: the_bc_tower
+  real(kind=dp_t)  , intent(in) :: write_pf_time
 
   character (len=256) :: out_name
   character (len=16) :: date_in, time_in
@@ -43,6 +44,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower)
 1002 format(a,i6)
 1003 format(a,i4.4,'-',i2.2,'-',i2.2)
 1004 format(a,i2.2,':',i2.2,':',i2.2)
+1005 format(a,g20.10)
 2001 format(a5,1x,a20,1x,a20,1x,a8,1x,a8)
 2002 format(i5,1x,a20,1x,a20,1x,f8.2,1x,f8.2)
 
@@ -57,9 +59,17 @@ subroutine write_job_info(dirname, mba, the_bc_tower)
      write (99,*) " "     
      write (99,1002) "number of MPI processes ", parallel_nprocs()
      write (99,1002) "number of threads       ", omp_get_max_threads()
-     write (99,1003) "output date:            ", values(1), values(2), values(3)
-     write (99,1004) "output time:            ", values(5), values(6), values(7)
-     write (99,1001) "output dir:             ", trim(cwd)
+
+     write (99,*) " "
+     write (99,*) " "
+
+     write (99,999)
+     write (99,*) "Plotfile Information"
+     write (99,999)
+     write (99,1003) "output date:              ", values(1), values(2), values(3)
+     write (99,1004) "output time:              ", values(5), values(6), values(7)
+     write (99,1001) "output dir:               ", trim(cwd)
+     write (99,1005) "time to write plotfile (s)", write_pf_time
 
      write (99,*) " "
      write (99,*) " "
