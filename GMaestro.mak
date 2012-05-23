@@ -71,10 +71,17 @@ Fmdirs += $(EXTRA_DIR) \
           $(MAESTRO_CORE)
 
 
-# the helmeos has an include file
+# the helmeos has an include file -- also add a target to link the table
+# into the problem directory.
 ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
   Fmincludes := extern/EOS/helmeos
+  EOS_PATH := $(FPARALLEL)/$(strip $(EOS_DIR))
+  ALL: table
 endif
+
+
+table:
+	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
 
 Fmpack := $(foreach dir, $(Fmdirs), $(FPARALLEL)/$(dir)/GPackage.mak)
