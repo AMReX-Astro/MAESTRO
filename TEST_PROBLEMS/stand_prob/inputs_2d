@@ -22,6 +22,9 @@
  k     = 1
  kz    = 20
 
+ use_thermal_diffusion = T
+ conductivity_constant = 1.0d-4
+
  anelastic_cutoff = 1.d-10
  base_cutoff_density = 1.d-10
 
