@@ -156,55 +156,6 @@ sizes.
 %-----------------------------------------------------------------------------
 \section{Visualizing with \visit}
 
-\subsection{Remote Visualization on Lens}
-
-in .bashrc, add:
-
-export PATH=''/sw/analysis-x64/visit/bin/'':\$PATH
-
-
-in visit on bender:
-
-setup a new host
-
-   options -> host profiles
-
-      'new'
-
-   under 'host settings' tab:
-
-      host nickname: lens
-      remote host name: lens.ccs.ornl.gov
-     
-      make sure your username is correct
-
-      check 'tunnel data connections through SSH'
-
-
-   under 'launch profiles' tab:
-
-       'new'
-       call it parallel
-
-       under 'parallel' tab:
-
-         check 'lauch parallel engine'
-         parallel launch method: qsub/mpirun
-         partition: computation
-         default number of processors: 8
-         default number of nodes: 2
-         default bank/account: AST006
-         default time limit: 00:30:00
-
-
-save the host setting by Options -> save settings
-
-
-
-then 'open', from the drop down list at the top, select lens.  You
-will be prompted for your password.  After that, you can navigate to
-the directory on lens with the data.
-
 
 
 %-----------------------------------------------------------------------------
