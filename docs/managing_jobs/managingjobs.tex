@@ -14,6 +14,8 @@ call {\tt wdconvect\_run}, then do:
 hsi
 mkdir wdconvect_run
 \end{verbatim}
+(Note: if the hsi command prompts you for your password, you will need to
+talk to the NCCS help desk to ask for password-less access to HPSS).
 
 The script {\tt process.jaguar} is called from {\tt jaguar.run} and
 will run in the background and continually wait until checkpoint or
@@ -27,29 +29,24 @@ copied into a {\tt plotfile/} subdirectory.  This is actually important,
 since you don't want to try archiving the data a second time and
 overwriting the stored copy, especially if a purge took place.
 
-Additionally, if you have the path to the {\tt ftime} executable set in the
-script ({\tt ftime.f90} lives in {\tt fParallel/data\_processing/}), then the
+Additionally, if the {\tt ftime} executable is in your path 
+({\tt ftime.f90} lives in {\tt AmrPostprocessing/F\_src/}), then the
 script will create a file called {\tt ftime.out} that lists the name of the
 plotfile and the corresponding simulation time.
 
 Finally, right when the job is submitted, the script will tar up all
-of the diagnostic files created by {\tt diag.f90} and archive them on HPSS.
-The {\tt .tar} file is given a name that contains the date-string to allow
-multiple archives to co-exist.
+of the diagnostic files created by {\tt diag.f90} and {\tt ftime.out}
+and archive them on HPSS.  The {\tt .tar} file is given a name that
+contains the date-string to allow multiple archives to co-exist.
 
-This really allows you to run the job and have all of the data stored
-long term automatically.  This way you don't need to worry about
-filesystem purges.  It seems to work well.
-
-Also, the {\tt jaguar.run} submission script has code in it that will look
+The {\tt jaguar.run} submission script has code in it that will look
 at the most recently generated checkpoint files, make sure that they
 were written out correctly (it looks to see if there is a Header file,
-since that is the last thing written), and automatically set the
-{\tt --restart} flag on the run line to restart from the most recent
-checkpoint file.
-
-This allows you to job-chain a bunch of submission and have them wait
-until the previous job finished and then automatically queue up:
+since that is the last thing written), and automatically set the {\tt
+  --restart} flag on the run line to restart from the most recent
+checkpoint file.  This allows you to job-chain a bunch of submission
+and have them wait until the previous job finished and then
+automatically queue up:
 \begin{verbatim}
 qsub -W depend=afterany:<JOB-ID>  <QSUB SCRIPT>
 \end{verbatim}
@@ -74,3 +71,56 @@ msub -l depend=<JOB-ID> <MSUB SCRIPT>
 where, again, {\tt <JOB-ID>} is the id number of the job that must
 complete before the current submission runs and {\tt <MSUB SCRIPT>}
 is the job submission script (e.g.\ {\tt atlas.run}).
+
+
+\section{Remote \visit\ Visualization on Lens}
+
+For large data files, visualization with \visit\ should be done with
+a client running on your local machine interfacing with \visit\ running
+on the remote machine.  For the {\tt lens} machine at NCCS, the proper setup
+is described below.
+
+First, on {\tt lens}, in your {\tt .bashrc}, add:
+\begin{verbatim}
+export PATH="/sw/analysis-x64/visit/bin/":$PATH
+\end{verbatim}
+(you would think that you could just add {\tt module load visit} but this
+does not seem to work with \visit.
+
+On your local machine, launch \visit.
+\begin{itemize}
+\item First we setup a new host
+
+  \begin{itemize}
+  \item From the menu, select {\em options $\rightarrow$ host profiles}
+  \item Create a new host by clicking on the {\em New Host} button.
+  \item Enter the {\em Host nickname} as {\tt lens}
+  \item Enter the {\em Remote host name} as {\tt lens.ccs.ornl.gov}
+  \item Make sure that your {\em username} is correct
+  \item Check {\em Tunnel data connections through SSH}
+  \end{itemize}
+
+\item Setup the {\em Launch Profiles}
+  \begin{itemize}
+  \item Click on the {\em Launch Profiles} tab
+  \item Click on the {\em New Profile} button
+  \item Enter the {\em Profile name} as {\tt parallel}
+  \item Click on the {\em Parallel} tab
+  \item Check {\em Launch parallel engine}
+  \item Select the {\em Parallel launch metho} as {\tt qsub/mpirun}
+  \item Set the {\em Partition / Pool / Queue} to {\tt computation}
+  \item Change the {\em Default number of processors} to 8
+  \item Set the {\em Default number of nodes} to 2
+  \item Set the {\em Default Bank / Account} to {\tt AST006}
+  \item Set the {\em Default Time Limit} to {\tt 00:30:00}
+  \end{itemize}
+
+\item Click on {\em Apply} and {\em Post}
+
+\item Save your changes by selecting {\em Options $\rightarrow$ Save Settings}
+\end{itemize}
+
+To do remote visualization, select {\em File $\rightarrow$ Open}.
+From the drop down list at the top, select {\tt lens}.  You will be
+prompted for your password.  After that, you can navigate to the
+directory on lens with the data.
