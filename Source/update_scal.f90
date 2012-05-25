@@ -167,7 +167,8 @@ contains
                             force,ng_f,p0,lo,hi,dx,dt)
 
     use network,       only: nspec
-    use eos_module
+    use eos_module,    only: eos, eos_input_rp
+    use eos_type_module
     use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac, temp_comp
     use pred_parameters
@@ -187,6 +188,10 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
 
+    integer :: pt_index(MAX_SPACEDIM)
+    
+    type(eos_t) :: eos_state
+
     do comp = nstart, nstop
 
        do i=lo(1),hi(1)
@@ -204,26 +209,18 @@ contains
        do i = lo(1), hi(1)
              
           if (snew(i,rho_comp) .le. base_cutoff_density) then
-             den_eos = snew(i,rho_comp)
-             temp_eos = sold(i,temp_comp)
-             p_eos = p0(i)
-             xn_eos(:) = snew(i,spec_comp:spec_comp+nspec-1)/den_eos
+
+             eos_state%rho = snew(i,rho_comp)
+             eos_state%T   = sold(i,temp_comp)
+             eos_state%p   = p0(i)
+             eos_state%xn  =snew(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
-             pt_index_eos(:) = (/i, -1, -1/)
+             pt_index(:) = (/i, -1, -1/)
              
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rp, eos_state, .false., pt_index)
              
-             snew(i,rhoh_comp) = snew(i,rho_comp) * h_eos
+             snew(i,rhoh_comp) = snew(i,rho_comp) * eos_state%h
              
           end if
           
@@ -286,7 +283,7 @@ contains
                             force,ng_f,p0,lo,hi,dx,dt)
 
     use network,       only: nspec
-    use eos_module,    only: eos, pt_index_eos, eos_input_rp
+    use eos_module,    only: eos, eos_input_rp
     use eos_type_module
     use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac, temp_comp
@@ -307,6 +304,8 @@ contains
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
+
+    integer :: pt_index(MAX_SPACEDIM)
 
     type(eos_t) :: eos_state
 
@@ -336,10 +335,10 @@ contains
                 eos_state%p   = p0(j)
                 eos_state%xn  = snew(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                pt_index_eos(:) = (/i, j, -1/)
+                pt_index(:) = (/i, j, -1/)
                 
                 ! (rho,P) --> T,h
-                call eos(eos_input_rp, eos_state, .false., pt_index_eos)
+                call eos(eos_input_rp, eos_state, .false., pt_index)
                 
                 snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * eos_state%h
                 
@@ -408,7 +407,8 @@ contains
                                  ng_sf,force,ng_f,p0,lo,hi,dx,dt)
 
     use network,       only: nspec
-    use eos_module
+    use eos_module,    only: eos, eos_input_rp
+    use eos_type_module
     use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac, temp_comp
     use pred_parameters
@@ -429,6 +429,10 @@ contains
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
+
+    integer :: pt_index(MAX_SPACEDIM)
+
+    type(eos_t) :: eos_state
 
     !$OMP PARALLEL PRIVATE(i,j,k,divterm,comp) 
     do comp = nstart, nstop
@@ -452,33 +456,24 @@ contains
     
     if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
                 if (snew(i,j,k,rho_comp) .le. base_cutoff_density) then
 
-                   den_eos = snew(i,j,k,rho_comp)
-                   temp_eos = sold(i,j,k,temp_comp)
-                   p_eos = p0(k)
-                   xn_eos(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                   eos_state%rho = snew(i,j,k,rho_comp)
+                   eos_state%T   = sold(i,j,k,temp_comp)
+                   eos_state%p   = p0(k)
+                   eos_state%xn  = snew(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                   pt_index_eos(:) = (/i, j, k/)
+                   pt_index(:) = (/i, j, k/)
 
                    ! (rho,P) --> T,h
-                   call eos(eos_input_rp, den_eos, temp_eos, &
-                            xn_eos, &
-                            p_eos, h_eos, e_eos, &
-                            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                            dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                            dpdX_eos, dhdX_eos, &
-                            gam1_eos, cs_eos, s_eos, &
-                            dsdt_eos, dsdr_eos, &
-                            .false., &
-                            pt_index_eos)
+                   call eos(eos_input_rp, eos_state, .false., pt_index)
 
-                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos
+                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * eos_state%h
 
                 end if
 
@@ -553,7 +548,8 @@ contains
                                  ng_sf,force,ng_f,p0_new_cart,ng_p,lo,hi,dx,dt)
 
     use network,       only: nspec
-    use eos_module
+    use eos_module,    only: eos, eos_input_rp
+    use eos_type_module
     use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac, temp_comp
     use pred_parameters
@@ -574,6 +570,10 @@ contains
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
+
+    integer :: pt_index(MAX_SPACEDIM)
+    type(eos_t) :: eos_state
+
     !
     ! is spherical
     !
@@ -599,32 +599,23 @@ contains
 
     if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
        do k = lo(3), hi(3) 
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
                 if (snew(i,j,k,rho_comp) .le. base_cutoff_density) then
-                   den_eos = snew(i,j,k,rho_comp)
-                   temp_eos = sold(i,j,k,temp_comp)
-                   p_eos = p0_new_cart(i,j,k)
-                   xn_eos(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                   eos_state%rho   = snew(i,j,k,rho_comp)
+                   eos_state%T     = sold(i,j,k,temp_comp)
+                   eos_state%p     = p0_new_cart(i,j,k)
+                   eos_state%xn(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                   pt_index_eos(:) = (/i, j, k/)
+                   pt_index(:) = (/i, j, k/)
 
                    ! (rho,P) --> T,h
-                   call eos(eos_input_rp, den_eos, temp_eos, &
-                            xn_eos, &
-                            p_eos, h_eos, e_eos, &
-                            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                            dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                            dpdX_eos, dhdX_eos, &
-                            gam1_eos, cs_eos, s_eos, &
-                            dsdt_eos, dsdr_eos, &
-                            .false., &
-                            pt_index_eos)
+                   call eos(eos_input_rp, eos_state, .false., pt_index)
 
-                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos
+                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * eos_state%h
 
                 end if
 
