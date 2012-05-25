@@ -4,6 +4,7 @@ module eos_module
   use bl_types
   use bl_constants_module
   use network, only: nspec, aion, zion
+  use eos_type_module
 
   implicit none
 
@@ -63,6 +64,11 @@ module eos_module
   public eos_init, eos_get_small_temp, eos_get_small_dens, eos_given_ReX, &
          eos_e_given_RPX, eos_S_given_ReX, eos_given_RTX, eos_dpdr_given_RTX, &
          eos_given_TPX, eos_given_PSX, eos
+
+  interface eos
+     module procedure eos_old
+     module procedure eos_new
+  end interface eos
 
 contains
 
@@ -380,20 +386,44 @@ contains
 
   end subroutine eos_given_PSX
 
+  !---------------------------------------------------------------------------
+  ! new interface
+  !---------------------------------------------------------------------------
+  subroutine eos_new(input, eos_state, do_eos_diag, pt_index)
+
+    integer,           intent(in   ) :: input
+    type (eos_t),      intent(inout) :: eos_state
+    logical,           intent(in   ) :: do_eos_diag
+    integer, optional, intent(in   ) :: pt_index(:)
+
+    call eos_old(input, eos_state%rho, eos_state%T, &
+                 eos_state%xn, &
+                 eos_state%p, eos_state%h, eos_state%e, &
+                 eos_state%cv, eos_state%cp, eos_state%xne, &
+                 eos_state%eta, eos_state%pele, &
+                 eos_state%dpdT, eos_state%dpdr, &
+                 eos_state%dedT, eos_state%dedr, &
+                 eos_state%dpdX, eos_state%dhdX, &
+                 eos_state%gam1, eos_state%cs, eos_state%s, &
+                 eos_state%dsdT, eos_state%dsdr, &
+                 do_eos_diag, pt_index)
+
+  end subroutine eos_new
+
 
   !---------------------------------------------------------------------------
   ! The main interface -- this is used directly by MAESTRO
   !---------------------------------------------------------------------------
-  subroutine eos(input, dens, temp, &
-                 xmass, &
-                 pres, enthalpy, eint, &
-                 c_v, c_p, ne, eta, pele, &
-                 dPdT, dPdR, dEdT, dEdR, &
-                 dPdX, dhdX, &
-                 gam1, cs, entropy, &
-                 dsdT, dsdR, &
-                 do_eos_diag, &
-                 pt_index)
+  subroutine eos_old(input, dens, temp, &
+                     xmass, &
+                     pres, enthalpy, eint, &
+                     c_v, c_p, ne, eta, pele, &
+                     dPdT, dPdR, dEdT, dEdR, &
+                     dPdX, dhdX, &
+                     gam1, cs, entropy, &
+                     dsdT, dsdR, &
+                     do_eos_diag, &
+                     pt_index)
 
     use bl_error_module
 
@@ -1600,6 +1630,6 @@ contains
 
 
     return
-  end subroutine eos
+  end subroutine eos_old
 
 end module eos_module
