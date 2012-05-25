@@ -178,7 +178,8 @@ contains
 
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
-    use eos_module
+    use eos_module,    only: eos, eos_input_rt
+    use eos_type_module
     use network,       only: nspec
     use probin_module, only: enthalpy_pred_type, species_pred_type, small_temp
     use pred_parameters
@@ -191,63 +192,58 @@ contains
     integer :: i, n
     real(kind=dp_t) :: t0_edge
     
+    integer :: pt_index(MAX_SPACEDIM)
+    type(eos_t) :: eos_state
+
+
     do i = lo(1), hi(1)+1
 
        ! get edge-centered temperature
        if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
           t0_edge = HALF*(t0_edge_old(i)+t0_edge_new(i))
-          temp_eos = max(sx(i,temp_comp)+t0_edge,small_temp)
+          eos_state%T = max(sx(i,temp_comp)+t0_edge,small_temp)
        else
-          temp_eos = max(sx(i,temp_comp),small_temp)
+          eos_state%T = max(sx(i,temp_comp),small_temp)
        end if
 
        ! get edge-centered density and species
        if (species_pred_type .eq. predict_rhoprime_and_X) then
           
           ! interface states are rho' and X
-          den_eos  = sx(i,rho_comp) + &
+          eos_state%rho = sx(i,rho_comp) + &
                HALF * (rho0_edge_old(i) + rho0_edge_new(i))
           
-          xn_eos(:) = sx(i,spec_comp:spec_comp+nspec-1)
+          eos_state%xn(:) = sx(i,spec_comp:spec_comp+nspec-1)
           
        else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
           
           ! interface states are rho' and (rho X)
-          den_eos = ZERO
+          eos_state%rho = ZERO
           do n = 1, nspec
-             den_eos = den_eos + sx(i,spec_comp+n-1)
+             eos_state%rho = eos_state%rho + sx(i,spec_comp+n-1)
           enddo
           
-          xn_eos(:) = sx(i,spec_comp:spec_comp+nspec-1)/den_eos
+          eos_state%xn(:) = sx(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
           
        else if (species_pred_type .eq. predict_rho_and_X) then
           
           ! interface states are rho and X
-          den_eos = sx(i,rho_comp)
+          eos_state%rho = sx(i,rho_comp)
 
-          xn_eos(:) = sx(i,spec_comp:spec_comp+nspec-1)
+          eos_state%xn(:) = sx(i,spec_comp:spec_comp+nspec-1)
 
        endif
 
-       pt_index_eos(:) = (/i, -1, -1/)
+       pt_index(:) = (/i, -1, -1/)
 
-       call eos(eos_input_rt, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false., &
-                pt_index_eos)
+       call eos(eos_input_rt, eos_state, .false., pt_index)
 
        if (enthalpy_pred_type .eq. predict_T_then_h .or. &
            enthalpy_pred_type .eq. predict_Tprime_then_h) then
-          sx(i,rhoh_comp) = h_eos 
+          sx(i,rhoh_comp) = eos_state%h
 
        else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-          sx(i,rhoh_comp) = den_eos*h_eos &
+          sx(i,rhoh_comp) = eos_state%rho*eos_state%h &
                - HALF*(rhoh0_edge_old(i) + rhoh0_edge_new(i))
        end if
 
@@ -267,7 +263,8 @@ contains
     
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
-    use eos_module
+    use eos_module,    only: eos, eos_input_rt
+    use eos_type_module
     use network,       only: nspec
     use probin_module, only: enthalpy_pred_type, species_pred_type, small_temp
     use pred_parameters
@@ -283,6 +280,9 @@ contains
     integer :: i,j, n
     real(kind=dp_t) :: t0_edge
 
+    integer :: pt_index(MAX_SPACEDIM)
+    type(eos_t) :: eos_state
+
     ! x-edge
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)+1
@@ -290,58 +290,49 @@ contains
           ! get edge-centered temperature
           if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
              t0_edge = HALF*(t0_old(j)+t0_new(j))
-             temp_eos = max(sx(i,j,temp_comp)+t0_edge,small_temp)
+             eos_state%T = max(sx(i,j,temp_comp)+t0_edge,small_temp)
           else
-             temp_eos = max(sx(i,j,temp_comp),small_temp)
+             eos_state%T = max(sx(i,j,temp_comp),small_temp)
           end if
           
           ! get edge-centered density and species
           if (species_pred_type .eq. predict_rhoprime_and_X) then
              
              ! interface states are rho' and X
-             den_eos  = sx(i,j,rho_comp) + &
+             eos_state%rho  = sx(i,j,rho_comp) + &
                   HALF * (rho0_old(j) + rho0_new(j))
              
-             xn_eos(:) = sx(i,j,spec_comp:spec_comp+nspec-1)
+             eos_state%xn(:) = sx(i,j,spec_comp:spec_comp+nspec-1)
              
           else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
              
              ! interface states are rho' and (rho X)
-             den_eos = ZERO
+             eos_state%rho = ZERO
              do n = 1, nspec
-                den_eos = den_eos + sx(i,j,spec_comp+n-1)
+                eos_state%rho = eos_state%rho + sx(i,j,spec_comp+n-1)
              enddo
               
-             xn_eos(:) = sx(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%xn(:) = sx(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
               
           else if (species_pred_type .eq. predict_rho_and_X) then
               
              ! interface states are rho and X
-             den_eos = sx(i,j,rho_comp)
+             eos_state%rho = sx(i,j,rho_comp)
              
-             xn_eos(:) = sx(i,j,spec_comp:spec_comp+nspec-1)
+             eos_state%xn(:) = sx(i,j,spec_comp:spec_comp+nspec-1)
               
           endif
            
-          pt_index_eos(:) = (/i, j, -1/)
+          pt_index(:) = (/i, j, -1/)
           
-          call eos(eos_input_rt, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)
+          call eos(eos_input_rt, eos_state, .false., pt_index)
            
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                enthalpy_pred_type .eq. predict_Tprime_then_h) then
-             sx(i,j,rhoh_comp) = h_eos
+             sx(i,j,rhoh_comp) = eos_state%h
               
           else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-             sx(i,j,rhoh_comp) = den_eos*h_eos - HALF*(rhoh0_old(j)+rhoh0_new(j))
+             sx(i,j,rhoh_comp) = eos_state%rho*eos_state%h - HALF*(rhoh0_old(j)+rhoh0_new(j))
           end if
           
        enddo
@@ -354,59 +345,50 @@ contains
           ! get edge-centered temperature
           if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
              t0_edge = HALF*(t0_edge_old(j)+t0_edge_new(j))
-             temp_eos = max(sy(i,j,temp_comp)+t0_edge,small_temp)
+             eos_state%T = max(sy(i,j,temp_comp)+t0_edge,small_temp)
           else
-             temp_eos = max(sy(i,j,temp_comp),small_temp)
+             eos_state%T = max(sy(i,j,temp_comp),small_temp)
           end if
           
           ! get edge-centered density and species
           if (species_pred_type .eq. predict_rhoprime_and_X) then
              
              ! interface states are rho' and X
-             den_eos  = sy(i,j,rho_comp) + &
+             eos_state%rho  = sy(i,j,rho_comp) + &
                   HALF * (rho0_edge_old(j) + rho0_edge_new(j))
              
-             xn_eos(:) = sy(i,j,spec_comp:spec_comp+nspec-1)
+             eos_state%xn(:) = sy(i,j,spec_comp:spec_comp+nspec-1)
 
           else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
               
              ! interface states are rho' and (rho X)
-             den_eos = ZERO
+             eos_state%rho = ZERO
              do n = 1, nspec
-                den_eos = den_eos + sy(i,j,spec_comp+n-1)
+                eos_state%rho = eos_state%rho + sy(i,j,spec_comp+n-1)
              enddo
               
-             xn_eos(:) = sy(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%xn(:) = sy(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
               
           else if (species_pred_type .eq. predict_rho_and_X) then
               
              ! interface states are rho and X
-             den_eos = sy(i,j,rho_comp)
+             eos_state%rho = sy(i,j,rho_comp)
               
-             xn_eos(:) = sy(i,j,spec_comp:spec_comp+nspec-1)
+             eos_state%xn(:) = sy(i,j,spec_comp:spec_comp+nspec-1)
               
           endif
 
 
-          pt_index_eos(:) = (/i, j, -1/)
+          pt_index(:) = (/i, j, -1/)
           
-          call eos(eos_input_rt, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)
+          call eos(eos_input_rt, eos_state, .false., pt_index)
            
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                enthalpy_pred_type .eq. predict_Tprime_then_h) then
-             sy(i,j,rhoh_comp) = h_eos 
+             sy(i,j,rhoh_comp) = eos_state%h 
               
           else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-             sy(i,j,rhoh_comp) = den_eos*h_eos &
+             sy(i,j,rhoh_comp) = eos_state%rho*eos_state%h &
                   - HALF*(rhoh0_edge_old(j) + rhoh0_edge_new(j))
           end if
            
@@ -426,7 +408,8 @@ contains
                                         lo,hi)
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
-    use eos_module
+    use eos_module,    only: eos, eos_input_rt
+    use eos_type_module
     use network,       only: nspec
     use probin_module, only: species_pred_type, enthalpy_pred_type, small_temp
     use pred_parameters
@@ -444,8 +427,11 @@ contains
     integer         :: i,j,k,n
     real(kind=dp_t) :: t0_edge
 
+    integer :: pt_index(MAX_SPACEDIM)
+    type(eos_t) :: eos_state
+
     ! x-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
@@ -453,58 +439,49 @@ contains
              ! get edge-centered temperature
              if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 t0_edge = HALF*(t0_old(k)+t0_new(k))
-                temp_eos = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
+                eos_state%T = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
              else
-                temp_eos = max(sx(i,j,k,temp_comp),small_temp)
+                eos_state%T = max(sx(i,j,k,temp_comp),small_temp)
              end if
 
              ! get edge-centered density and species
              if (species_pred_type .eq. predict_rhoprime_and_X) then
 
                 ! interface states are rho' and X
-                den_eos = sx(i,j,k,rho_comp) + &
+                eos_state%rho = sx(i,j,k,rho_comp) + &
                      HALF * (rho0_old(k) + rho0_new(k))
 
-                xn_eos(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
+                eos_state%xn(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
 
              else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
                 
                 ! interface states are rho' and (rho X)
-                den_eos = ZERO
+                eos_state%rho = ZERO
                 do n = 1, nspec
-                   den_eos = den_eos + sx(i,j,k,spec_comp+n-1)
+                   eos_state%rho = eos_state%rho + sx(i,j,k,spec_comp+n-1)
                 enddo
 
-                xn_eos(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%xn(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              else if (species_pred_type .eq. predict_rho_and_X) then
 
                 ! interface states are rho and X
-                den_eos = sx(i,j,k,rho_comp)
+                eos_state%rho = sx(i,j,k,rho_comp)
                 
-                xn_eos(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
+                eos_state%xn(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
 
              endif
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rt, eos_state, .false., pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
-                sx(i,j,k,rhoh_comp) = h_eos
+                sx(i,j,k,rhoh_comp) = eos_state%h
 
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-                sx(i,j,k,rhoh_comp) = den_eos*h_eos - HALF*(rhoh0_old(k)+rhoh0_new(k))
+                sx(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h - HALF*(rhoh0_old(k)+rhoh0_new(k))
              end if
              
           enddo
@@ -513,7 +490,7 @@ contains
     !$OMP END PARALLEL DO
 
     ! y-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge)    
+    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,eos_state,pt_index)    
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)
@@ -521,58 +498,49 @@ contains
              ! get edge-centered temperature
              if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 t0_edge = HALF*(t0_old(k)+t0_new(k))
-                temp_eos = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
+                eos_state%T = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
              else
-                temp_eos = max(sy(i,j,k,temp_comp),small_temp)
+                eos_state%T = max(sy(i,j,k,temp_comp),small_temp)
              end if
        
              ! get edge-centered density and species
              if (species_pred_type .eq. predict_rhoprime_and_X) then
 
                 ! interface states are rho' and X
-                den_eos  = sy(i,j,k,rho_comp) + &
+                eos_state%rho  = sy(i,j,k,rho_comp) + &
                      HALF * (rho0_old(k) + rho0_new(k))
 
-                xn_eos(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
+                eos_state%xn(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
 
              else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
 
                 ! interface states are rho' and (rho X)
-                den_eos = ZERO
+                eos_state%rho = ZERO
                 do n = 1, nspec
-                   den_eos = den_eos + sy(i,j,k,spec_comp+n-1) 
+                   eos_state%rho = eos_state%rho + sy(i,j,k,spec_comp+n-1) 
                 enddo
 
-                xn_eos(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%xn(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              else if (species_pred_type .eq. predict_rho_and_X) then
 
                 ! interface states are rho and X
-                den_eos = sy(i,j,k,rho_comp) 
+                eos_state%rho = sy(i,j,k,rho_comp) 
 
-                xn_eos(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
+                eos_state%xn(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
 
              endif                
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rt, eos_state, .false., pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
-                sy(i,j,k,rhoh_comp) = h_eos
+                sy(i,j,k,rhoh_comp) = eos_state%h
 
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-                sy(i,j,k,rhoh_comp) = den_eos*h_eos - HALF*(rhoh0_old(k)+rhoh0_new(k))
+                sy(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h - HALF*(rhoh0_old(k)+rhoh0_new(k))
              end if
 
           enddo
@@ -581,7 +549,7 @@ contains
     !$OMP END PARALLEL DO
 
     ! z-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge) 
+    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,eos_state,pt_index) 
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -589,58 +557,49 @@ contains
              ! get edge-centered temperature
              if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 t0_edge = HALF*(t0_edge_old(k)+t0_edge_new(k))
-                temp_eos = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
+                eos_state%T = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
              else
-                temp_eos = max(sz(i,j,k,temp_comp),small_temp)
+                eos_state%T = max(sz(i,j,k,temp_comp),small_temp)
              end if
 
              ! get edge-centered density and species
              if (species_pred_type .eq. predict_rhoprime_and_X) then
 
                 ! interface states are rho' and X
-                den_eos = sz(i,j,k,rho_comp) + &
+                eos_state%rho = sz(i,j,k,rho_comp) + &
                      HALF * (rho0_edge_old(k) + rho0_edge_new(k))
 
-                xn_eos(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
+                eos_state%xn(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
 
              else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
 
                 ! interface states are rho' and (rho X)
-                den_eos = ZERO
+                eos_state%rho = ZERO
                 do n = 1, nspec
-                   den_eos = den_eos + sz(i,j,k,spec_comp+n-1)
+                   eos_state%rho = eos_state%rho + sz(i,j,k,spec_comp+n-1)
                 enddo
 
-                xn_eos(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%xn(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              else if (species_pred_type .eq. predict_rho_and_X) then
 
                 ! interface states are rho and X
-                den_eos = sz(i,j,k,rho_comp)                 
+                eos_state%rho = sz(i,j,k,rho_comp)                 
 
-                xn_eos(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
+                eos_state%xn(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
 
              endif
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
 
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rt, eos_state, .false., pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
-                sz(i,j,k,rhoh_comp) = h_eos
+                sz(i,j,k,rhoh_comp) = eos_state%h
 
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-                sz(i,j,k,rhoh_comp) =  den_eos*h_eos &
+                sz(i,j,k,rhoh_comp) =  eos_state%rho*eos_state%h &
                      - HALF*(rhoh0_edge_old(k)+rhoh0_edge_new(k))
              end if
              
@@ -658,7 +617,8 @@ contains
                                         t0_cart,ng_t0,lo,hi)
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
-    use eos_module
+    use eos_module,    only: eos, eos_input_rt
+    use eos_type_module
     use network,       only: nspec
     use probin_module, only: specieS_pred_type, enthalpy_pred_type, small_temp
     use pred_parameters
@@ -676,9 +636,12 @@ contains
     ! Local variables
     integer :: i, j, k, n
     real(kind=dp_t) rho0_edge, rhoh0_edge, t0_edge
+
+    integer :: pt_index(MAX_SPACEDIM)
+    type(eos_t) :: eos_state
     
     ! x-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,rho0_edge,rhoh0_edge)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
@@ -686,9 +649,9 @@ contains
              ! get edge-centered temperature
              if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 t0_edge = HALF* (t0_cart(i-1,j,k) + t0_cart(i,j,k))
-                temp_eos = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
+                eos_state%T = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
              else
-                temp_eos = max(sx(i,j,k,temp_comp),small_temp)
+                eos_state%T = max(sx(i,j,k,temp_comp),small_temp)
              end if
 
              ! get edge-centered density and species
@@ -696,49 +659,40 @@ contains
                 
                 ! interface states are rho' and X
                 rho0_edge = HALF * (rho0_cart(i-1,j,k) + rho0_cart(i,j,k))
-                den_eos = sx(i,j,k,rho_comp) + rho0_edge
+                eos_state%rho = sx(i,j,k,rho_comp) + rho0_edge
 
-                xn_eos(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
+                eos_state%xn(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
 
              else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
 
                 ! interface states are rho' and (rho X)
-                den_eos = ZERO
+                eos_state%rho = ZERO
                 do n = 1, nspec
-                   den_eos = den_eos + sx(i,j,k,spec_comp+n-1)
+                   eos_state%rho = eos_state%rho + sx(i,j,k,spec_comp+n-1)
                 enddo
 
-                xn_eos(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%xn(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              else if (species_pred_type .eq. predict_rho_and_X) then
 
                 ! interface states are rho and X
-                den_eos = sx(i,j,k,rho_comp) 
+                eos_state%rho = sx(i,j,k,rho_comp) 
 
-                xn_eos(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
+                eos_state%xn(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
 
              endif
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
 
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rt, eos_state, .false., pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
-                sx(i,j,k,rhoh_comp) = h_eos
+                sx(i,j,k,rhoh_comp) = eos_state%h
 
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
                 rhoh0_edge = HALF * (rhoh0_cart(i-1,j,k) + rhoh0_cart(i,j,k))
-                sx(i,j,k,rhoh_comp) = den_eos*h_eos - rhoh0_edge
+                sx(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h - rhoh0_edge
              end if
 
           enddo
@@ -748,7 +702,7 @@ contains
 
 
     ! y-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,rho0_edge,rhoh0_edge)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)
@@ -756,9 +710,9 @@ contains
              ! get edge-centered temperature
              if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 t0_edge = HALF * (t0_cart(i,j-1,k) + t0_cart(i,j,k))
-                temp_eos = max(sy(i,j,k,temp_comp)+t0_edge,small_temp)
+                eos_state%T = max(sy(i,j,k,temp_comp)+t0_edge,small_temp)
              else
-                temp_eos = max(sy(i,j,k,temp_comp),small_temp)
+                eos_state%T = max(sy(i,j,k,temp_comp),small_temp)
              end if
 
              ! get edge-centered density and species
@@ -766,49 +720,40 @@ contains
                 
                 ! interface states are rho' and X
                 rho0_edge = HALF * (rho0_cart(i,j-1,k) + rho0_cart(i,j,k))
-                den_eos = sy(i,j,k,rho_comp) + rho0_edge
+                eos_state%rho = sy(i,j,k,rho_comp) + rho0_edge
 
-                xn_eos(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1) 
+                eos_state%xn(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1) 
 
              else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
 
                 ! interface states are rho' and (rho X)
-                den_eos = ZERO
+                eos_state%rho = ZERO
                 do n = 1, nspec
-                   den_eos = den_eos + sy(i,j,k,spec_comp+n-1)
+                   eos_state%rho = eos_state%rho + sy(i,j,k,spec_comp+n-1)
                 enddo
 
-                xn_eos(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%xn(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              else if (species_pred_type .eq. predict_rho_and_X) then
 
                 ! interface states are rho and X
-                den_eos = sy(i,j,k,rho_comp)
+                eos_state%rho = sy(i,j,k,rho_comp)
 
-                xn_eos(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
+                eos_state%xn(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
 
              endif
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
 
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rt, eos_state, .false., pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
-                sy(i,j,k,rhoh_comp) = h_eos
+                sy(i,j,k,rhoh_comp) = eos_state%h
 
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
                 rhoh0_edge = HALF * (rhoh0_cart(i,j-1,k) + rhoh0_cart(i,j,k))
-                sy(i,j,k,rhoh_comp) = den_eos*h_eos - rhoh0_edge
+                sy(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h - rhoh0_edge
              end if
              
           enddo
@@ -817,7 +762,7 @@ contains
     !$OMP END PARALLEL DO
 
     ! z-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,rho0_edge,rhoh0_edge)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -825,9 +770,9 @@ contains
              ! get edge-centered temperature
              if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 t0_edge = HALF * (t0_cart(i,j,k-1) + t0_cart(i,j,k))
-                temp_eos = max(sz(i,j,k,temp_comp)+t0_edge,small_temp)
+                eos_state%T = max(sz(i,j,k,temp_comp)+t0_edge,small_temp)
              else
-                temp_eos = max(sz(i,j,k,temp_comp),small_temp)
+                eos_state%T = max(sz(i,j,k,temp_comp),small_temp)
              end if
 
              ! get edge-centered density and species
@@ -835,48 +780,39 @@ contains
 
                 ! interface states are rho' and X
                 rho0_edge = HALF * (rho0_cart(i,j,k-1) + rho0_cart(i,j,k))
-                den_eos = sz(i,j,k,rho_comp) + rho0_edge
+                eos_state%rho = sz(i,j,k,rho_comp) + rho0_edge
              
-                xn_eos(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1) 
+                eos_state%xn(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1) 
 
              else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
 
                 ! interface states are rho' and (rho X)
-                den_eos = ZERO
+                eos_state%rho = ZERO
                 do n = 1, nspec
-                   den_eos = den_eos + sz(i,j,k,spec_comp+n-1)
+                   eos_state%rho = eos_state%rho + sz(i,j,k,spec_comp+n-1)
                 enddo
 
-                xn_eos(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%xn(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              else if (species_pred_type .eq. predict_rho_and_X) then
 
                 ! interface states are rho and X
-                den_eos = sz(i,j,k,rho_comp)
+                eos_state%rho = sz(i,j,k,rho_comp)
 
-                xn_eos(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
+                eos_state%xn(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
 
              endif
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
 
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rt, eos_state, .false., pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
-                sz(i,j,k,rhoh_comp) = h_eos
+                sz(i,j,k,rhoh_comp) = eos_state%h
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
                 rhoh0_edge = HALF * (rhoh0_cart(i,j,k-1) + rhoh0_cart(i,j,k))
-                sz(i,j,k,rhoh_comp) = den_eos*h_eos - rhoh0_edge
+                sz(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h - rhoh0_edge
              end if
              
           enddo
