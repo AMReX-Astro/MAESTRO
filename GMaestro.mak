@@ -34,12 +34,14 @@ endif
 
 MAESTRO_CORE += MAESTRO/constants
 
+
 #-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
 EXTERN_CORE := extern/model_parser \
                extern/LAPACK \
                extern/random \
-               extern/BLAS 
+               extern/BLAS \
+               extern/EOS
 
 # add in the network, EOS, and conductivity
 EXTERN_CORE += $(EOS_DIR) \
