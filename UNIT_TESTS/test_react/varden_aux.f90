@@ -335,7 +335,7 @@ contains
     call fabio_ml_multifab_write_d(react_s,mla%mba%rr(:,1), &
                                    trim(run_prefix) // trim(pref), names=varnames, time=dt)
 
-    call write_job_info(trim(run_prefix) // trim(pref), mla%mba, the_bc_tower)
+    call write_job_info(trim(run_prefix) // trim(pref), mla%mba, the_bc_tower, -ONE)
     
   end subroutine react_write
 
