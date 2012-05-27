@@ -199,7 +199,8 @@ contains
   subroutine firstdt_1d(n,u,ng_u,s,ng_s,force,ng_f,divu,ng_dU,p0,gamma1bar,lo,hi,dx,dt, &
                         umax,cfl)
 
-    use eos_module
+    use eos_module, only: eos, eos_input_rt
+    use eos_type_module
     use network, only: nspec
     use variables, only: rho_comp, temp_comp, spec_comp
     use geometry,  only: nr
@@ -220,6 +221,9 @@ contains
     real (kind = dp_t)  :: spdx,pforcex,ux,eps,dt_divu,dt_sound,rho_min
     real (kind = dp_t)  :: gradp0,denom
     integer             :: i
+
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
     
     rho_min = 1.d-20
     
@@ -235,25 +239,16 @@ contains
     do i = lo(1), hi(1)
           
        ! compute the sound speed from rho and temp
-       den_eos  = s(i,rho_comp)
-       temp_eos = s(i,temp_comp)
-       xn_eos(:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos
+       eos_state%rho   = s(i,rho_comp)
+       eos_state%T     = s(i,temp_comp)
+       eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
        
-       pt_index_eos(:) = (/i, -1, -1/)
+       pt_index(:) = (/i, -1, -1/)
 
        ! dens, temp, and xmass are inputs
-       call eos(eos_input_rt, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false., &
-                pt_index_eos)
+       call eos(eos_input_rt, eos_state, .false., pt_index)
        
-       spdx    = max(spdx,cs_eos)
+       spdx    = max(spdx,eos_state%cs)
        pforcex = max(pforcex,abs(force(i)))
        ux      = max(ux,abs(u(i)))
 
@@ -314,7 +309,8 @@ contains
   subroutine firstdt_2d(n,u,ng_u,s,ng_s,force,ng_f,divu,ng_dU,p0,gamma1bar,lo,hi,dx,dt, &
                         umax,cfl)
 
-    use eos_module
+    use eos_module, only: eos, eos_input_rt
+    use eos_type_module
     use network, only: nspec
     use variables, only: rho_comp, temp_comp, spec_comp
     use geometry,  only: nr
@@ -336,6 +332,9 @@ contains
     real (kind = dp_t)  :: gradp0,denom
     integer             :: i,j
 
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
+
     rho_min = 1.d-20
     
     eps = 1.0d-8
@@ -354,26 +353,17 @@ contains
        do i = lo(1), hi(1)
           
           ! compute the sound speed from rho and temp
-          den_eos  = s(i,j,rho_comp)
-          temp_eos = s(i,j,temp_comp)
-          xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+          eos_state%rho   = s(i,j,rho_comp)
+          eos_state%T     = s(i,j,temp_comp)
+          eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-          pt_index_eos(:) = (/i, j, -1/)
+          pt_index(:) = (/i, j, -1/)
           
           ! dens, temp, and xmass are inputs
-          call eos(eos_input_rt, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, & 
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)
+          call eos(eos_input_rt, eos_state, .false., pt_index)
           
-          spdx    = max(spdx,cs_eos)
-          spdy    = max(spdy,cs_eos)
+          spdx    = max(spdx,eos_state%cs)
+          spdy    = max(spdy,eos_state%cs)
           pforcex = max(pforcex,abs(force(i,j,1)))
           pforcey = max(pforcey,abs(force(i,j,2)))
           ux      = max(ux,abs(u(i,j,1)))
@@ -444,7 +434,8 @@ contains
 
     use geometry,  only: spherical, nr
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos, eos_input_rt
+    use eos_type_module
     use network, only: nspec
     use bl_constants_module
     use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
@@ -464,6 +455,9 @@ contains
     real (kind = dp_t)  :: spdx,spdy,spdz,pforcex,pforcey,pforcez,ux,uy,uz
     real (kind = dp_t)  :: eps,dt_divu,dt_sound,gradp0,denom,rho_min
     integer             :: i,j,k
+
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
     eps = 1.0d-8
     
@@ -487,27 +481,18 @@ contains
           do i = lo(1), hi(1)
 
              ! compute the sound speed from rho and temp
-             den_eos = s(i,j,k,rho_comp)
-             temp_eos = s(i,j,k,temp_comp)
-             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho = s(i,j,k,rho_comp)
+             eos_state%T = s(i,j,k,temp_comp)
+             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
              
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, & 
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rt, eos_state, .false., pt_index)
              
-             spdx    = max(spdx,cs_eos)
-             spdy    = max(spdy,cs_eos)
-             spdz    = max(spdz,cs_eos)
+             spdx    = max(spdx,eos_state%cs)
+             spdy    = max(spdy,eos_state%cs)
+             spdz    = max(spdz,eos_state%cs)
              pforcex = max(pforcex,abs(force(i,j,k,1)))
              pforcey = max(pforcey,abs(force(i,j,k,2)))
              pforcez = max(pforcez,abs(force(i,j,k,3)))
@@ -588,7 +573,8 @@ contains
 
     use geometry,  only: nr, dr, nr_fine
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos, eos_input_rt
+    use eos_type_module
     use network, only: nspec
     use bl_constants_module
     use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
@@ -612,6 +598,9 @@ contains
     real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
 
     real (kind = dp_t) :: gp0(0:nr_fine)
+
+    integer pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
     allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
 
@@ -637,27 +626,18 @@ contains
           do i = lo(1), hi(1)
 
              ! compute the sound speed from rho and temp
-             den_eos = s(i,j,k,rho_comp)
-             temp_eos = s(i,j,k,temp_comp)
-             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%T     = s(i,j,k,temp_comp)
+             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
              
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, & 
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rt, eos_state, .false., pt_index)
              
-             spdx    = max(spdx,cs_eos)
-             spdy    = max(spdy,cs_eos)
-             spdz    = max(spdz,cs_eos)
+             spdx    = max(spdx,eos_state%cs)
+             spdy    = max(spdy,eos_state%cs)
+             spdz    = max(spdz,eos_state%cs)
              pforcex = max(pforcex,abs(force(i,j,k,1)))
              pforcey = max(pforcey,abs(force(i,j,k,2)))
              pforcez = max(pforcez,abs(force(i,j,k,3)))
