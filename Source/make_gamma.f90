@@ -82,7 +82,8 @@ contains
 
   subroutine make_gamma_1d(lo,hi,gamma,ng_g,s,ng_s,p0)
 
-    use eos_module
+    use eos_module, only: eos, eos_input_rp
+    use eos_type_module
     use network, only: nspec
     use variables, only: rho_comp, spec_comp, temp_comp
 
@@ -94,28 +95,22 @@ contains
     ! local variables
     integer :: i
 
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
+
     do i = lo(1), hi(1)
 
-       den_eos = s(i,rho_comp)
-       p_eos = p0(i)
-       xn_eos(:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos
-       temp_eos = s(i,temp_comp)
+       eos_state%rho   = s(i,rho_comp)
+       eos_state%p     = p0(i)
+       eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
+       eos_state%T     = s(i,temp_comp)
 
-       pt_index_eos(:) = (/i, -1, -1/)
+       pt_index(:) = (/i, -1, -1/)
 
        ! dens, pres, and xmass are inputs
-       call eos(eos_input_rp, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false., &
-                pt_index_eos)
+       call eos(eos_input_rp, eos_state, .false., pt_index)
 
-       gamma(i) = gam1_eos
+       gamma(i) = eos_state%gam1
 
     end do
 
@@ -123,7 +118,8 @@ contains
 
   subroutine make_gamma_2d(lo,hi,gamma,ng_g,s,ng_s,p0)
 
-    use eos_module
+    use eos_module, only: eos, eos_input_rp
+    use eos_type_module
     use network, only: nspec
     use variables, only: rho_comp, spec_comp, temp_comp
 
@@ -135,29 +131,23 @@ contains
     ! local variables
     integer :: i, j
 
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
+
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          den_eos = s(i,j,rho_comp)
-          p_eos = p0(j)
-          xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
-          temp_eos = s(i,j,temp_comp)
+          eos_state%rho   = s(i,j,rho_comp)
+          eos_state%p     = p0(j)
+          eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+          eos_state%T     = s(i,j,temp_comp)
 
-          pt_index_eos(:) = (/i, j, -1/)
+          pt_index(:) = (/i, j, -1/)
 
           ! dens, pres, and xmass are inputs
-          call eos(eos_input_rp, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, & 
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)
+          call eos(eos_input_rp, eos_state, .false., pt_index)
 
-          gamma(i,j) = gam1_eos
+          gamma(i,j) = eos_state%gam1
 
        end do
     end do
@@ -166,7 +156,8 @@ contains
 
   subroutine make_gamma_3d(lo,hi,gamma,ng_g,s,ng_s,p0)
 
-    use eos_module
+    use eos_module, only: eos, eos_input_rp
+    use eos_type_module
     use network, only: nspec
     use variables, only: rho_comp, spec_comp, temp_comp
     use fill_3d_module
@@ -179,31 +170,25 @@ contains
     ! local variables
     integer :: i, j, k
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,pt_index,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos = s(i,j,k,rho_comp)
-             p_eos = p0(k)
-             temp_eos = s(i,j,k,temp_comp)
-             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%p     = p0(k)
+             eos_state%T     = s(i,j,k,temp_comp)
+             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
 
              ! dens, pres, and xmass are inputs
-             call eos(eos_input_rp, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, & 
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rp, eos_state, .false., pt_index)
 
-             gamma(i,j,k) = gam1_eos
+             gamma(i,j,k) = eos_state%gam1
 
           end do
        end do
@@ -214,7 +199,8 @@ contains
 
   subroutine make_gamma_3d_sphr(lo,hi,gamma,ng_g,s,ng_s,p0,dx)
 
-    use eos_module
+    use eos_module, only: eos, eos_input_rp
+    use eos_type_module
     use network, only: nspec
     use variables, only: rho_comp, spec_comp, temp_comp
     use fill_3d_module
@@ -230,34 +216,28 @@ contains
 
     real (kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
+
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos = s(i,j,k,rho_comp)
-             p_eos = p0_cart(i,j,k,1)
-             temp_eos = s(i,j,k,temp_comp)
-             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%p     = p0_cart(i,j,k,1)
+             eos_state%T     = s(i,j,k,temp_comp)
+             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
 
              ! dens, pres, and xmass are inputs
-             call eos(eos_input_rp, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, & 
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rp, eos_state, .false., pt_index)
 
-             gamma(i,j,k) = gam1_eos
+             gamma(i,j,k) = eos_state%gam1
 
           end do
        end do
