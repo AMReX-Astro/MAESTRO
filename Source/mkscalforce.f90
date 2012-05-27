@@ -865,6 +865,8 @@ contains
           hi  =  upb(get_box(s(n),i))
           tp  => dataptr(thermal(n),i)
           select case (dm)
+          case (1)
+             call bl_error("ERROR: mktempforce not implemented for 1-d")
           case (2)
              call mktempforce_2d(n, fp(:,:,1,temp_comp), ng_f, sp(:,:,1,:), ng_s, &
                                  vmp(:,:,1,1), ng_um, tp(:,:,1,1), ng_th, lo, hi, &
