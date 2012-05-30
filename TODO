@@ -59,35 +59,6 @@
    common blocks for passing stuff into the RHS.
 
 
--- gamma_law_general should be OpenMP-ed
-
-
--- EOS: remove the eos data in the eos_stuff module that is just
-   declared to allow us to pass data into/outof the EOS.
-   
-   instead define a new data type:
-
-      type(eos_data) :: eos_stuff
-
-      ...
-
-      eos_stuff%dens = s(i,j,k,rho_comp)
-      eos_stuff%temp = s(i,j,k,temp_comp)
-
-      call eos(eos_input_rt, eos_stuff)
-
-      h = eos_stuff%enthalpy
-
-   
-   This would make the threadsafe-ness easier, since we make eos_stuff
-   private in the calling function instead of creating a common block 
-   in the eos module and making that private.
-
-   This also means that we don't have to worry about remembering the
-   ordering of the arguments in the EOS call.
-
-   NOTE: this will affect CASTRO as well.
-
 -- when predicting rho', we use the advective formulation instead
    of conservative formulation in make_edge_state -- but we could
    use conservative prediction here, and elimiate a lot of the
@@ -96,3 +67,5 @@
    Also, for species_pred_type = 2, we should do the (rho X)
    prediction using conservative prediction
 
+
+ 
