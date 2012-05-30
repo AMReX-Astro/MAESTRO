@@ -79,14 +79,13 @@ contains
                                              enthalpy_pred_type, species_pred_type
     use time_module                 , only : time
     use addw0_module                , only : addw0
-    use convert_rhoX_to_X_module    , only: convert_rhoX_to_X
     use pred_parameters
     use make_intra_coeffs_module    , only: make_intra_coeffs
 
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
     type(multifab),  intent(in   ) ::   uold(:)
-    type(multifab),  intent(inout) ::   sold(:)
+    type(multifab),  intent(in   ) ::   sold(:)
     type(multifab),  intent(inout) ::   unew(:)
     type(multifab),  intent(inout) ::   snew(:)
     type(multifab),  intent(inout) ::  gpi(:)
@@ -287,11 +286,6 @@ contains
        call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
     end do
 
-    ! SDC HACK - don't need this call anymore
-!    call react_state(mla,tempbar_init,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old,halfdt,dx, &
-!                     the_bc_tower%bc_tower_array)
-
-    ! SDC HACK
     ! copy sold into s1
     do n=1,nlevs
        call multifab_copy_c(s1(n),1,sold(n),1,nscal,nghost(sold(n)))
@@ -555,7 +549,6 @@ contains
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
-    ! SDC HACK
     call density_advance(mla,1,s1,s2,sedge,sflux,scal_force,intra,umac,w0,w0mac,etarhoflux, &
                          rho0_old,rho0_new,p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
@@ -642,8 +635,7 @@ contains
        write(6,*) '            : enthalpy_advance >>> '
     end if
 
-    call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,intra, &
-                          thermal1,umac,w0,w0mac, &
+    call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,intra,thermal1,umac,w0,w0mac, &
                           rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                           tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
@@ -704,7 +696,6 @@ contains
     if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
-    ! SDC HACK
     ! extract aofs = (s2 - s1) / dt
     do n=1,nlevs
        call multifab_build(aofs(n), mla%la(n), nscal, 1)
@@ -729,11 +720,11 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
 
-    ! SDC HACK - need to rewrite interface   
+    ! new interface
     call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
                      dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
-    ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] 
+    ! extract IR = [ (snew - sold)/dt - sdc_source ] 
     do n=1,nlevs
        call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 1)
        call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 1)
@@ -825,7 +816,7 @@ contains
        call destroy(s2(n))
        call destroy(rhohalf(n))
     end do
-       
+
     if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
     
@@ -1148,7 +1139,6 @@ contains
        call multifab_build(scal_force(n), mla%la(n), nscal, 1)
     end do
 
-    ! SDC HACK
     call density_advance(mla,2,s1,s2,sedge,sflux,scal_force,intra,umac,w0,w0mac,etarhoflux, &
                          rho0_old,rho0_new,p0_new,rho0_predicted_edge,dx,dt, &
                          the_bc_tower%bc_tower_array)
@@ -1231,8 +1221,7 @@ contains
        write(6,*) '            : enthalpy_advance >>>'
     end if
 
-    call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,intra, &
-                          thermal1,umac,w0,w0mac, &
+    call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,intra,thermal1,umac,w0,w0mac, &
                           rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                           tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
@@ -1302,7 +1291,6 @@ contains
        call makeTfromRhoH(s2,p0_new,mla,the_bc_tower%bc_tower_array,dx)
     end if
 
-    ! SDC HACK
     ! extract aofs = (s2 - s1) / dt
     do n=1,nlevs
        call multifab_copy_c     (aofs(n), 1, s2(n), 1, nscal, 1)
@@ -1330,11 +1318,11 @@ contains
        write(6,*) ' '
     end if
 
-    ! SDC HACK - need to rewrite interface 
+    ! new interface
     call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
                      dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
-    ! SDC HACK - extract IR = [ (snew - sold)/dt - sdc_source ] 
+    ! extract IR = [ (snew - sold)/dt - sdc_source ] 
     do n=1,nlevs
        call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 1)
        call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 1)

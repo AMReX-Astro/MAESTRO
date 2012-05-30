@@ -20,9 +20,8 @@ contains
     use variables, only: temp_comp, rhoh_comp, rho_comp,nscal
 
     use multifab_fill_ghost_module
-    use ml_restriction_module
     use multifab_physbc_module, only : multifab_physbc
-    use ml_restriction_module , only : ml_cc_restriction_c
+    use ml_restriction_module , only : ml_cc_restriction
     use heating_module        , only : get_rho_Hext 
     use rhoh_vs_t_module      , only : makeTfromRhoP, makeTfromRhoH
     use bl_constants_module   , only: ZERO
@@ -78,7 +77,7 @@ contains
        ! we pass in rho_Hext so that we can add it to rhoh incase we 
        ! applied heating
        call burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc, &
-                        rho_Hext,sdc_source,dx,dt,p0,the_bc_level)
+                        rho_Hext,dx,dt,the_bc_level,sdc_source,p0)
 
        ! pass temperature through for seeding the temperature update eos call
        do n=1,nlevs
@@ -145,8 +144,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext, &
-                         sdc_source,dx,dt,p0,the_bc_level)
+  subroutine burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dx,dt,the_bc_level, &
+                         sdc_source,p0)
 
     use bl_constants_module, only: ZERO
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, &
@@ -162,11 +161,11 @@ contains
     type(multifab) , intent(inout) :: rho_omegadot(:)
     type(multifab) , intent(inout) :: rho_Hnuc(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
-    type(multifab) , intent(in   ) :: sdc_source(:)
     real(kind=dp_t), intent(in   ) :: tempbar_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:)
-    real(dp_t)     , intent(in   ) :: p0(:,0:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
+    type(multifab) , intent(in   ) :: sdc_source(:)
+    real(dp_t)     , intent(in   ) :: p0(:,0:)
 
     ! Local
     real(kind=dp_t), pointer :: snp(:,:,:,:)
@@ -399,9 +398,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine burner_loop_2d(tempbar_init,sold,ng_si,snew,ng_so,rho_omegadot,ng_rw, &
-                            rho_Hnuc,ng_hn,rho_Hext,ng_he,sdc_source,ng_sdc, &
-                            p0,dt,lo,hi,mask)
+  subroutine burner_loop_2d(tempbar_init,sold,ng_si,snew,ng_so,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
+                            rho_Hext,ng_he,sdc_source,ng_sdc,p0,dt,lo,hi,mask)
 
     use bl_constants_module
     use burner_module
@@ -561,7 +559,8 @@ contains
 
     ldt = dt
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH) FIRSTPRIVATE(ldt)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH) FIRSTPRIVATE(ldt) &
+    !$OMP SCHEDULE(DYNAMIC,1)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -678,7 +677,8 @@ contains
     ldt = dt
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH) &
-    !$OMP FIRSTPRIVATE(ldt)
+    !$OMP FIRSTPRIVATE(ldt) &
+    !$OMP SCHEDULE(DYNAMIC,1)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
