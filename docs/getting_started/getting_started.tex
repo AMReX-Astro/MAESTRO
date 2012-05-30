@@ -110,16 +110,9 @@ finished, the executable will have a name like {\tt
 main.Linux.gfortran.exe}, where the specific parts of the name depend
 on the compilers and OS used.
 
-
-\item {\em Copy in auxillary files}.
-
-This problem uses the {\tt helmeos} equation of state, so 
-we need to copy in the data table for the equation of state, {\tt
-  extern/EOS/helmeos/helm\_table.dat}.
-
-\begin{verbatim}
-cp ../../../extern/EOS/helmeos/helm_table.dat .
-\end{verbatim}
+Note, at the end of the build process, a link will be made in the current
+directory to the data
+table needed for the equation of state ({\tt extern/EOS/helmeos/helm\_table.dat}).
 
 
 \item {\em Run!}
