@@ -120,10 +120,11 @@ subroutine varden()
   real(dp_t), allocatable :: w0_temp(:,:)
   real(dp_t), allocatable :: tempbar_init_temp(:,:)
 
-  logical :: dump_plotfile, dump_checkpoint
+  logical :: dump_plotfile, dump_checkpoint, abort_maestro
   real(dp_t) :: write_pf_time
 
   type(particle_container) :: particles
+  integer :: numparticles
 
   ! SDC HACK
   type(multifab), allocatable :: intra(:)
@@ -315,7 +316,6 @@ subroutine varden()
 
   allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs))
   allocate(normal(nlevs))
-
 
   ! SDC HACK
   allocate(intra(nlevs))
@@ -550,11 +550,27 @@ subroutine varden()
 
      end if ! end if (init_iter > 0)
 
+
+     ! initialize any passively-advected particles
+     if (use_particles) then
+        call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar, &
+                            mla,dx,1)
+
+        numparticles = particle_global_numparticles(particles)
+
+        if ( parallel_IOProcessor()) then
+           print *,""
+           print *,"number of particles initialized = ", numparticles
+           print *,""
+        endif
+     endif
+
+
      if ( chk_int > 0 ) then
 
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
         ! write a checkpoint file
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
 
         allocate(chkdata(nlevs))
         do n = 1,nlevs
@@ -596,9 +612,9 @@ subroutine varden()
 
      if ( plot_int > 0 .or. plot_deltat > ZERO) then
 
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
         ! write a plotfile
-        !------------------------------------------------------------------------
+        !-----------------------------------------------------------------------
 
         if (istep <= 99999) then
            write(unit=plot_index,fmt='(i5.5)') istep
@@ -632,13 +648,6 @@ subroutine varden()
 
   if (restart < 0) then
      init_step = 1
-
-     ! initialize any passively-advected particles
-     if (use_particles) then
-        call init_particles(particles,sold,rho0_old,rhoh0_old,p0_old,tempbar, &
-                            mla,dx,1)
-     endif
-
   else
      init_step = restart+1
   end if
@@ -809,7 +818,7 @@ subroutine varden()
                  do n=2,max_levs
                     do r=0,nr(n)-1
                        if (r .eq. 0 .or. r .eq. nr(n)-1) then
-                          rho0_temp(n,r) = rho0_old(n-1,r/2)
+                          rho0_temp(n,r) = rho0_temp(n-1,r/2)
                        else
                           if (mod(r,2) .eq. 0) then
                              rho0_temp(n,r) = 0.75d0*rho0_temp(n-1,r/2) &
@@ -1208,7 +1217,11 @@ subroutine varden()
 
         ! output any particle information
         if (use_particles) then
-           call timestamp(particles, 'timestamp', sold, index_partdata, names_partdata, time)
+           if (store_particle_vels) then
+              call timestamp(particles, 'timestamp', sold, index_partdata, names_partdata, time, uold)
+           else
+              call timestamp(particles, 'timestamp', sold, index_partdata, names_partdata, time)
+           endif
         endif
 
 
@@ -1298,6 +1311,15 @@ subroutine varden()
            end if
         end if
 
+
+        ! if the file .abort_maestro exists in our output directory, then
+        ! automatically end the run.  This has the effect of also dumping
+        ! a final checkpoint file.
+        inquire(file=".abort_maestro", exist=abort_maestro)        
+        if (abort_maestro) exit
+           
+
+        ! have we reached the stop time?
         if (stop_time >= 0.d0) then
            if (time >= stop_time) goto 999
         end if
