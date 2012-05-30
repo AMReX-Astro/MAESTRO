@@ -405,11 +405,11 @@ Then, solve a Crank-Nicolson-type diffusion equation for $h^{n+1,{\rm pred}}_{\r
 \end{eqnarray}
 At this point we can define $I_{\rho X_k}^{n\rightarrow n+1,{\rm pred}}$ and $I_{\rho h}^{n\rightarrow n+1,{\rm pred}}$, or whatever term we need depending on our species and enthalpy edge state prediction types, for use in the corrector step.\\
 
-{\bf Step 2:} ({\it Corrector}) In the corrector, we use the time-advanced state from the predictor to perform a more accurate integration of the thermodynamic variables.  The quantities $(S, \beta_0, k_{\rm th}, c_p, \xi_k, h_p)^{n+1,{n\rightarrow n+1,{\rm pred}}}$ are computed from $(\rho,\rho X_k,\rho h)^{n+1,{n\rightarrow n+1,{\rm pred}}}$.  This step is divided into several sub-steps:\\\\
+{\bf Step 2:} ({\it Corrector}) In the corrector, we use the time-advanced state from the predictor to perform a more accurate integration of the thermodynamic variables.  The quantities $(S, \beta_0, k_{\rm th}, c_p, \xi_k, h_p)^{n+1,{\rm pred}}$ are computed from $(\rho,\rho X_k,\rho h)^{n+1,{\rm pred}}$.  This step is divided into several sub-steps:\\\\
 
 {\bf Step 2A:} ({\it Compute advection velocities}) First, compute $S^{n+\myhalf}$ and $\beta_0^{n+\myhalf}$ using
 \begin{equation}
-S^{n+\myhalf} = \frac{S^n + S^{n+1,{n\rightarrow n+1,{\rm pred}}}}{2}, \qquad \beta_0^{n+\myhalf} = \frac{\beta_0^n + \beta_0^{n+1,{n\rightarrow n+1,{\rm pred}}}}{2}.
+S^{n+\myhalf} = \frac{S^n + S^{n+1,{\rm pred}}}{2}, \qquad \beta_0^{n+\myhalf} = \frac{\beta_0^n + \beta_0^{n+1,{\rm pred}}}{2}.
 \end{equation}
 Then, project $\uadvsdcstar$ to obtain $\uadvsdc$, which satisfies
 \begin{equation}
@@ -418,8 +418,8 @@ Then, project $\uadvsdcstar$ to obtain $\uadvsdc$, which satisfies
 
 {\bf Step 2B:} ({\it Compute advective fluxes}) Use $\uadvsdc$ and a second-order Godunov integrator to compute time-centered edge states, $(\rho X_k, \rho h)^{n+\myhalf}$, with iteratively-lagged reactions ($I^{n\rightarrow n+1,{\rm pred}}$), explicit diffusion, and time-centered thermodynamic pressure as source terms.  Define the advective flux divergences as
 \begin{eqnarray}
-A_{\rho X_k} &=& -\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf}\uadvsdcpred\right],\\
-A_{\rho h} &=& -\nabla\cdot\left[\left(\rho h\right)^{n+\myhalf}\uadvsdcpred\right].
+A_{\rho X_k} &=& -\nabla\cdot\left[\left(\rho X_k\right)^{n+\myhalf}\uadvsdc\right],\\
+A_{\rho h} &=& -\nabla\cdot\left[\left(\rho h\right)^{n+\myhalf}\uadvsdc\right].
 \end{eqnarray}
 
 {\bf Step 2C:} ({\it Compute diffusive fluxes}) Begin by computing the time-advanced density using
