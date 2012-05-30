@@ -43,7 +43,8 @@
  bcy_hi = 12
 
  evolve_base_state = F
- use_tfromp = T
+ enthalpy_pred_type = 4
+ species_pred_type = 2
 
     verbose = 1
  mg_verbose = 1
