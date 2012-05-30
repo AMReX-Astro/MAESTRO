@@ -4,7 +4,7 @@ module density_advance_module
   use bl_types, only: dp_t
   use multifab_module, only: multifab, multifab_max_c, multifab_min_c, get_layout, &
                              build, destroy, setval, multifab_build_edge, &
-                             multifab_div_div_c, multifab_mult_mult_c,, multifab_copy_c, &
+                             multifab_div_div_c, multifab_mult_mult_c, multifab_copy_c, &
                              multifab_plus_plus_c
   use ml_layout_module, only: ml_layout
   use define_bc_module, only: bc_level
