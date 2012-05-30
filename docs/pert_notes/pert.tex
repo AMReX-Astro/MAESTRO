@@ -114,8 +114,8 @@ resulting edge state are shown in the table~\ref{table:pred:species}
   $\rho'_\mathrm{edge}$, $(X_k)_\mathrm{edge}$ &
   $\left(\rho_0^{n+\myhalf,{\rm avg}}  
   + \rho'_\mathrm{edge} \right)(X_k)_\mathrm{edge}$ \\
-2 / {\tt predict\_rhoprime\_and\_rhoX}  &  
-  $\rho'_\mathrm{edge}$, $(\rho X_k)_\mathrm{edge}$ &
+2 / {\tt predict\_rhoX}  &  
+  $\sum(\rho X_k)_\mathrm{edge}$, $(\rho X_k)_\mathrm{edge}$ &
   $(\rho X_k)_\mathrm{edge}$ \\
 3 / {\tt predict\_rho\_and\_X}  &  
   $\rho_\mathrm{edge}$, $(X_k)_\mathrm{edge}$ &
@@ -123,7 +123,7 @@ resulting edge state are shown in the table~\ref{table:pred:species}
 \hline
 \end{tabular}
 \end{table}
-We note the labels {\tt predict\_rhoprime\_and\_X}, {\tt predict\_rhoprime\_and\_rhoX}, and
+We note the labels {\tt predict\_rhoprime\_and\_X}, {\tt predict\_rhoX}, and
 {\tt predict\_rho\_and\_X} are provided by the {\tt pred\_parameters}
 module.
 
@@ -215,7 +215,7 @@ The force seen by {\tt make\_edge\_scal} is 0.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Method 2: {\tt species\_pred\_type} = {\tt predict\_rhoprime\_and\_rhoX}}
+\subsection{Method 2: {\tt species\_pred\_type} = {\tt predict\_rhoX}}
 
 Here we wish to construct $(\rho X_k)_\mathrm{edge}$ by predicting
 $(\rho X_k)$ to the edges as a single quantity.  We recall
@@ -230,8 +230,9 @@ We do not consider the $\rho \omegadot_k$ term in the forcing when
 Strang-splitting.
 
 
-We note that even though it is not needed here, we still predict
-$\rho'$ to the edges since certain enthalpy formulations need it.
+We note that even though it is not needed here, we still compute
+$\rho_\mathrm{edge}=\sum(\rho X_k)_\mathrm{edge}$ at the edges since certain 
+enthalpy formulations need it.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -267,7 +268,7 @@ associated discretization is \\
 \end{equation} \\
 
 
-\noindent {\tt species\_pred\_type = predict\_rhoprime\_and\_rhoX}:
+\noindent {\tt species\_pred\_type = predict\_rhoX}:
 \begin{equation}
 \frac{\partial\rho X_k}{\partial t} = 
 -\nabla\cdot\left\{\left[\left(\rho X_k \right)_\mathrm{edge} \right](\Ubt+w_0\eb_r)\right\}.
@@ -498,22 +499,22 @@ of the {\tt enthalpy\_pred\_type} behavior.
   $\left ( \rho_0^{n+\myhalf,{\rm avg}} + \rho'_\mathrm{edge} \right ) h_\mathrm{edge}$ \\
 \hline
 \hline
-2 / {\tt predict\_rhoprime\_and\_rhoX}  & 1 / {\tt predict\_rhohprime} &
+2 / {\tt predict\_rhoX}  & 1 / {\tt predict\_rhohprime} &
   $(\rho h)'$ & $(\rho h)'_\mathrm{edge}$ & 
-  $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
+  $(\rho X)_\mathrm{edge}$, $\sum(\rho X)_\mathrm{edge}$ & 
   $\left [ (\rho h)_0^{n+\myhalf,{\rm avg}} + (\rho h)'_\mathrm{edge} \right ]$ \\
-2 / {\tt predict\_rhoprime\_and\_rhoX}  & 2 / {\tt predict\_h} &
+2 / {\tt predict\_rhoX}  & 2 / {\tt predict\_h} &
   $h$ & $h_\mathrm{edge}$ & 
-  $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
-  $\left ( \rho_0^{n+\myhalf,{\rm avg}} + \rho'_\mathrm{edge} \right ) h_\mathrm{edge}$ \\
-2 / {\tt predict\_rhoprime\_and\_rhoX}  & 3 / {\tt predict\_T\_then\_rhohprime} &
+  $(\rho X)_\mathrm{edge}$, $\sum(\rho X)_\mathrm{edge}$ & 
+  $\sum(\rho X)_\mathrm{edge} h_\mathrm{edge}$ \\
+2 / {\tt predict\_rhoX}  & 3 / {\tt predict\_T\_then\_rhohprime} &
   $T$ & $(\rho h)'_\mathrm{edge}$ & 
-  $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
+  $(\rho X)_\mathrm{edge}$, $\sum(\rho X)_\mathrm{edge}$ & 
   $\left [ (\rho h)_0^{n+\myhalf,{\rm avg}} + (\rho h)'_\mathrm{edge} \right ]$ \\
-2 / {\tt predict\_rhoprime\_and\_rhoX}  & 4 / {\tt predict\_T\_then\_h} &
+2 / {\tt predict\_rhoX}  & 4 / {\tt predict\_T\_then\_h} &
   $T$ & $h_\mathrm{edge}$ & 
-  $(\rho X)_\mathrm{edge}$, $\rho'_\mathrm{edge}$ & 
-  $\left ( \rho_0^{n+\myhalf,{\rm avg}} + \rho'_\mathrm{edge} \right ) h_\mathrm{edge}$ \\
+  $(\rho X)_\mathrm{edge}$, $\sum(\rho X)_\mathrm{edge}$ & 
+  $\sum(\rho X)_\mathrm{edge} h_\mathrm{edge}$ \\
 \hline
 \hline
 3 / {\tt predict\_rho\_and\_X}  & 1 / {\tt predict\_rhohprime} &
@@ -588,12 +589,11 @@ quantities are present.  In all cases, the enthalpy state is found
 by predicting $h$ to the edges.
 
 
-For {\tt species\_pred\_types}: {\tt predict\_rhoprime\_and\_X} or
-{\tt predict\_rhoprime\_and\_rhoX}, we wish to construct $(\rho_0 +
-\rho'_\mathrm{edge} ) h_\mathrm{edge}$. \MarginPar{alternately, we could construct $\rho_\mathrm{edge} = \sum_k (\rho X_k)_\mathrm{edge}$ for s\_p\_t = 2}
+For {\tt species\_pred\_types}: {\tt predict\_rhoprime\_and\_X}, we wish to construct 
+$(\rho_0 + \rho'_\mathrm{edge} ) h_\mathrm{edge}$.
 
-For {\tt species\_pred\_types}: {\tt predict\_rho\_and\_X}, we wish to
-construct $\rho_\mathrm{edge} h_\mathrm{edge}$.
+For {\tt species\_pred\_types}: {\tt predict\_rho\_and\_X} or
+{\tt predict\_rhoX}, we wish to construct $\rho_\mathrm{edge} h_\mathrm{edge}$.
 
 \subsubsection{Predicting $h$ at edges}
 
@@ -607,12 +607,17 @@ the correct force for this type.
 
 \subsubsection{Computing $\rho h$ at edges}
 
-{\tt species\_pred\_types}: {\tt predict\_rhoprime\_and\_X} or
-{\tt predict\_rhoprime\_and\_rhoX}:\\[1mm]
+{\tt species\_pred\_types}: {\tt predict\_rhoprime\_and\_X}:\\[1mm]
 %
 We use the same procedure described in Section \ref{Computing rho at
   edges} for computing $\rho_\mathrm{edge}$ from $\rho_0$ and
 $\rho'_\mathrm{edge}$ and then multiply by $h_\mathrm{edge}$.
+
+\ \\
+{\tt species\_pred\_types}: {\tt predict\_rhoX}:\\[1mm]
+%
+We already have $\sum(\rho X_k)_\mathrm{edge}$ and simply multiply by
+$h_\mathrm{edge}$.
 
 \ \\
 {\tt species\_pred\_types}: {\tt predict\_rho\_and\_X}:\\[1mm]
@@ -660,7 +665,7 @@ constructed as:
 {\tt predict\_rhoprime\_and\_X} & 
   $\rho_0^{n+\myhalf,\rm{avg}} + \rho'_\mathrm{edge}$ & 
   $(X_k)_\mathrm{edge}$ \\
-{\tt predict\_rhoprime\_and\_rhoX} & 
+{\tt predict\_rhoX} & 
   $\sum_k (\rho X_k)_\mathrm{edge}$ & 
   $(\rho X_k)_\mathrm{edge}/\sum_k (\rho X_k)_\mathrm{edge}$ \\
 {\tt predict\_rho\_and\_X} & 
@@ -688,8 +693,11 @@ quantities are present.  In all cases, the enthalpy state is found by
 predicting $T$ to the edges and then converting this to
 $h_\mathrm{edge}$ via the EOS.
 
-For {\tt species\_pred\_types}: {\tt predict\_rhoprime\_and\_X} or
-{\tt predict\_rhoprime\_and\_rhoX}, we wish to construct $(\rho_0 +                                             \rho'_\mathrm{edge} ) h_\mathrm{edge}$.
+For {\tt species\_pred\_types}: {\tt predict\_rhoprime\_and\_X}, we wish to 
+construct $(\rho_0 + \rho'_\mathrm{edge} ) h_\mathrm{edge}$.
+
+For {\tt species\_pred\_types}: {\tt predict\_rhoX}, we wish to
+construct $\sum(\rho X_k)_\mathrm{edge} h_\mathrm{edge}$.
 
 For {\tt species\_pred\_types}: {\tt predict\_rho\_and\_X}, we wish to
 construct $\rho_\mathrm{edge} h_\mathrm{edge}$.

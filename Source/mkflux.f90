@@ -10,7 +10,7 @@
 !    We have rho' and X, and need a edge-centered base state to
 !    make the final fluxes
 !
-! predict_rhoprime_and_rhoX:
+! predict_rhoX:
 !    We use the (rho X) edge state directly to compute the fluxes.
 !    No base state input needed.
 !
@@ -241,7 +241,7 @@ contains
              sfluxx(i,comp) = &
                   (umac(i)+w0(i))*(rho0_edge+sedgex(i,rho_comp))*sedgex(i,comp)
 
-          else if (species_pred_type == predict_rhoprime_and_rhoX) then
+          else if (species_pred_type == predict_rhoX) then
              ! edge states are (rho X)
              sfluxx(i,comp) = &
                   (umac(i)+w0(i))*sedgex(i,comp)             
@@ -309,7 +309,7 @@ contains
                 sfluxx(i,j,comp) = umac(i,j)* &
                      (rho0_edge+sedgex(i,j,rho_comp))*sedgex(i,j,comp)
 
-             else if (species_pred_type == predict_rhoprime_and_rhoX) then
+             else if (species_pred_type == predict_rhoX) then
                 ! edge states are (rho X)
                 sfluxx(i,j,comp) = umac(i,j)*sedgex(i,j,comp)
 
@@ -334,7 +334,7 @@ contains
                 sfluxy(i,j,comp) = &
                      (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,comp)
 
-             else if (species_pred_type == predict_rhoprime_and_rhoX) then
+             else if (species_pred_type == predict_rhoX) then
                 ! edge states are (rho X)
                 sfluxy(i,j,comp) = &
                      (vmac(i,j)+w0(j))*sedgey(i,j,comp)
@@ -410,7 +410,7 @@ contains
                    sfluxx(i,j,k,comp) = &
                         umac(i,j,k)*(rho0_edge+sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoprime_and_rhoX) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
                    sfluxx(i,j,k,comp) = &
                         umac(i,j,k)*sedgex(i,j,k,comp)          
@@ -434,7 +434,7 @@ contains
                    sfluxy(i,j,k,comp) = &
                         vmac(i,j,k)*(rho0_edge+sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoprime_and_rhoX) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
                    sfluxy(i,j,k,comp) = &
                         vmac(i,j,k)*sedgey(i,j,k,comp)
@@ -462,7 +462,7 @@ contains
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))* &
                      (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoprime_and_rhoX) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp)
 
@@ -549,9 +549,9 @@ contains
                    sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
                         (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoprime_and_rhoX) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
-                   sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * sedgex(i,j,k,comp)                   
+                   sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * sedgex(i,j,k,comp)
 
                 else if (species_pred_type == predict_rho_and_X) then
                    ! edge states are rho and X
@@ -578,7 +578,7 @@ contains
                    sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
                         (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoprime_and_rhoX) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
                    sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * sedgey(i,j,k,comp)
 
@@ -607,7 +607,7 @@ contains
                    sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
                      (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
 
-                else if (species_pred_type == predict_rhoprime_and_rhoX) then
+                else if (species_pred_type == predict_rhoX) then
                    ! edge states are (rho X)
                    sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * sedgez(i,j,k,comp)
 
@@ -855,8 +855,7 @@ contains
 
        ! enthalpy edge state is h
 
-       if (species_pred_type == predict_rhoprime_and_X .or. &
-           species_pred_type == predict_rhoprime_and_rhoX) then
+       if (species_pred_type == predict_rhoprime_and_X) then
 
           ! density edge state is rho'
           do i=lo(1),hi(1)+1
@@ -865,7 +864,8 @@ contains
                   (umac(i)+w0(i))*(rho0_edge+sedgex(i,rho_comp))*sedgex(i,rhoh_comp)
           end do
           
-       else if (species_pred_type == predict_rho_and_X) then
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
 
           ! density edge state is rho
           do i=lo(1),hi(1)+1
@@ -935,8 +935,7 @@ contains
 
        ! enthalpy edge state is h
 
-       if (species_pred_type == predict_rhoprime_and_X .or. &
-           species_pred_type == predict_rhoprime_and_rhoX) then
+       if (species_pred_type == predict_rhoprime_and_X) then
 
           ! density edge state is rho'          
           do j=lo(2),hi(2)
@@ -947,7 +946,8 @@ contains
              end do
           end do
 
-       else if (species_pred_type == predict_rho_and_X) then
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
 
           ! density edge state is rho
           do j=lo(2),hi(2)
@@ -981,8 +981,7 @@ contains
 
        ! enthalpy edge state is h
 
-       if (species_pred_type == predict_rhoprime_and_X .or. &
-           species_pred_type == predict_rhoprime_and_rhoX) then
+       if (species_pred_type == predict_rhoprime_and_X) then
 
           ! density edge state is rho'
           do j=lo(2),hi(2)+1
@@ -993,7 +992,8 @@ contains
              end do
           end do
           
-       else if (species_pred_type == predict_rho_and_X) then
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
 
           ! density edge state is rho
           do j=lo(2),hi(2)+1
@@ -1071,8 +1071,7 @@ contains
 
        ! enthalpy edge state is h
 
-       if (species_pred_type == predict_rhoprime_and_X .or. &
-           species_pred_type == predict_rhoprime_and_rhoX) then
+       if (species_pred_type == predict_rhoprime_and_X) then
 
           ! density edge state is rho'
           do k=lo(3),hi(3)
@@ -1092,7 +1091,8 @@ contains
              end do
           end do
 
-       else if (species_pred_type == predict_rho_and_X) then
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
 
           ! density edge state is rho
           do k=lo(3),hi(3)
@@ -1144,8 +1144,7 @@ contains
 
        ! enthalpy edge state is h
 
-       if (species_pred_type == predict_rhoprime_and_X .or. &
-           species_pred_type == predict_rhoprime_and_rhoX) then
+       if (species_pred_type == predict_rhoprime_and_X) then
 
           ! density edge state is rho'
           do k=lo(3),hi(3)+1
@@ -1158,7 +1157,8 @@ contains
              end do
           end do
 
-       else if (species_pred_type == predict_rho_and_X) then
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
 
           ! density edge state is rho
           do k=lo(3),hi(3)+1
@@ -1257,8 +1257,7 @@ contains
 
        ! enthalpy edge state is h
 
-       if (species_pred_type == predict_rhoprime_and_X .or. &
-           species_pred_type == predict_rhoprime_and_rhoX) then
+       if (species_pred_type == predict_rhoprime_and_X) then
 
           ! density edge state is rho' 
 
@@ -1277,7 +1276,8 @@ contains
           end do
           !$OMP END PARALLEL DO
 
-       else if (species_pred_type == predict_rho_and_X) then
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
 
           ! density edge state is rho 
 
@@ -1301,8 +1301,7 @@ contains
 
        ! enthalpy edge state is h'
 
-       if (species_pred_type == predict_rhoprime_and_X .or. &
-           species_pred_type == predict_rhoprime_and_rhoX) then
+       if (species_pred_type == predict_rhoprime_and_X) then
 
           ! density edge state is rho'
 
@@ -1331,6 +1330,12 @@ contains
 
           ! density edge state is rho
           call bl_error("ERROR: predict_rho_and_X and predict_hprime not supported together")
+
+       else if (species_pred_type == predict_rhoX) then
+
+          ! density edge state is rho
+          call bl_error("ERROR: predict_rhoX and predict_hprime not supported together")
+
 
        endif
 
@@ -1371,8 +1376,7 @@ contains
 
        ! enthalpy edge state is h
 
-       if (species_pred_type == predict_rhoprime_and_X .or. &
-           species_pred_type == predict_rhoprime_and_rhoX) then
+       if (species_pred_type == predict_rhoprime_and_X) then
 
           ! density edge state is rho'
 
@@ -1391,7 +1395,8 @@ contains
           end do
           !$OMP END PARALLEL DO
 
-       else if (species_pred_type == predict_rho_and_X) then
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
 
           ! density edge state is rho
 
@@ -1414,8 +1419,7 @@ contains
 
        ! enthalpy edge state is h'
 
-       if (species_pred_type == predict_rhoprime_and_X .or. &
-           species_pred_type == predict_rhoprime_and_rhoX) then
+       if (species_pred_type == predict_rhoprime_and_X) then
 
           ! density edge state is rho'
 
@@ -1440,7 +1444,8 @@ contains
           end do
           !$OMP END PARALLEL DO
 
-       else if (species_pred_type == predict_rho_and_X) then
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
 
           ! density edge state is rho
           call bl_error("ERROR: predict_rho_and_X and predict_hprime not supported together")
@@ -1485,8 +1490,7 @@ contains
 
        ! enthalpy edge state is h
 
-       if (species_pred_type == predict_rhoprime_and_X .or. &
-           species_pred_type == predict_rhoprime_and_rhoX) then
+       if (species_pred_type == predict_rhoprime_and_X) then
 
           ! density edge state is rho'
 
@@ -1505,7 +1509,8 @@ contains
           end do
           !$OMP END PARALLEL DO
 
-       else if (species_pred_type == predict_rho_and_X) then
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
 
           ! density edge state is rho
 
@@ -1528,8 +1533,7 @@ contains
 
        ! enthalpy edge state is h'
 
-       if (species_pred_type == predict_rhoprime_and_X .or. &
-           species_pred_type == predict_rhoprime_and_rhoX) then
+       if (species_pred_type == predict_rhoprime_and_X) then
 
           ! density edge state is rho'
 
@@ -1558,6 +1562,11 @@ contains
 
           ! density edge state is rho
           call bl_error("ERROR: predict_rho_and_X and predict_hprime not supported together")
+
+       else if (species_pred_type == predict_rhoX) then
+
+          ! density edge state is rho
+          call bl_error("ERROR: predict_rhoX and predict_hprime not supported together")
 
        endif
 

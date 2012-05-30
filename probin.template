@@ -311,7 +311,7 @@ contains
 
     ! check species and enthalpy types
     if (.not. (species_pred_type == predict_rhoprime_and_X .or. &
-               species_pred_type == predict_rhoprime_and_rhoX .or. &
+               species_pred_type == predict_rhoX .or. &
                species_pred_type == predict_rho_and_X)) then
        call bl_error("invalid species_pred_type")
     endif

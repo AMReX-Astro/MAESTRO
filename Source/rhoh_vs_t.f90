@@ -215,13 +215,10 @@ contains
           
           eos_state%xn(:) = sx(i,spec_comp:spec_comp+nspec-1)
           
-       else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
+       else if (species_pred_type .eq. predict_rhoX) then
           
-          ! interface states are rho' and (rho X)
-          eos_state%rho = ZERO
-          do n = 1, nspec
-             eos_state%rho = eos_state%rho + sx(i,spec_comp+n-1)
-          enddo
+          ! interface states are rho and (rho X)
+          eos_state%rho = sx(i,rho_comp)
           
           eos_state%xn(:) = sx(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
           
@@ -304,13 +301,10 @@ contains
              
              eos_state%xn(:) = sx(i,j,spec_comp:spec_comp+nspec-1)
              
-          else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
+          else if (species_pred_type .eq. predict_rhoX) then
              
-             ! interface states are rho' and (rho X)
-             eos_state%rho = ZERO
-             do n = 1, nspec
-                eos_state%rho = eos_state%rho + sx(i,j,spec_comp+n-1)
-             enddo
+             ! interface states are rho and (rho X)
+             eos_state%rho = sx(i,j,rho_comp)
               
              eos_state%xn(:) = sx(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
               
@@ -359,13 +353,10 @@ contains
              
              eos_state%xn(:) = sy(i,j,spec_comp:spec_comp+nspec-1)
 
-          else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
+          else if (species_pred_type .eq. predict_rhoX) then
               
-             ! interface states are rho' and (rho X)
-             eos_state%rho = ZERO
-             do n = 1, nspec
-                eos_state%rho = eos_state%rho + sy(i,j,spec_comp+n-1)
-             enddo
+             ! interface states are rho and (rho X)
+             eos_state%rho = sy(i,j,rho_comp)
               
              eos_state%xn(:) = sy(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
               
@@ -453,13 +444,10 @@ contains
 
                 eos_state%xn(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
 
-             else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
+             else if (species_pred_type .eq. predict_rhoX) then
                 
-                ! interface states are rho' and (rho X)
-                eos_state%rho = ZERO
-                do n = 1, nspec
-                   eos_state%rho = eos_state%rho + sx(i,j,k,spec_comp+n-1)
-                enddo
+                ! interface states are rho and (rho X)
+                eos_state%rho = sx(i,j,k,rho_comp)
 
                 eos_state%xn(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
@@ -512,13 +500,10 @@ contains
 
                 eos_state%xn(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
 
-             else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
+             else if (species_pred_type .eq. predict_rhoX) then
 
-                ! interface states are rho' and (rho X)
-                eos_state%rho = ZERO
-                do n = 1, nspec
-                   eos_state%rho = eos_state%rho + sy(i,j,k,spec_comp+n-1) 
-                enddo
+                ! interface states are rho and (rho X)
+                eos_state%rho = sy(i,j,k,rho_comp) 
 
                 eos_state%xn(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
@@ -571,13 +556,10 @@ contains
 
                 eos_state%xn(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
 
-             else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
+             else if (species_pred_type .eq. predict_rhoX) then
 
-                ! interface states are rho' and (rho X)
-                eos_state%rho = ZERO
-                do n = 1, nspec
-                   eos_state%rho = eos_state%rho + sz(i,j,k,spec_comp+n-1)
-                enddo
+                ! interface states are rho and (rho X)
+                eos_state%rho = sz(i,j,k,rho_comp)  
 
                 eos_state%xn(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
@@ -663,13 +645,10 @@ contains
 
                 eos_state%xn(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
 
-             else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
+             else if (species_pred_type .eq. predict_rhoX) then
 
-                ! interface states are rho' and (rho X)
-                eos_state%rho = ZERO
-                do n = 1, nspec
-                   eos_state%rho = eos_state%rho + sx(i,j,k,spec_comp+n-1)
-                enddo
+                ! interface states are rho and (rho X)
+                eos_state%rho = sx(i,j,k,rho_comp) 
 
                 eos_state%xn(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
@@ -724,13 +703,10 @@ contains
 
                 eos_state%xn(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1) 
 
-             else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
+             else if (species_pred_type .eq. predict_rhoX) then
 
-                ! interface states are rho' and (rho X)
-                eos_state%rho = ZERO
-                do n = 1, nspec
-                   eos_state%rho = eos_state%rho + sy(i,j,k,spec_comp+n-1)
-                enddo
+                ! interface states are rho and (rho X)
+                eos_state%rho = sy(i,j,k,rho_comp)
 
                 eos_state%xn(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
@@ -784,13 +760,10 @@ contains
              
                 eos_state%xn(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1) 
 
-             else if (species_pred_type .eq. predict_rhoprime_and_rhoX) then
+             else if (species_pred_type .eq. predict_rhoX) then
 
-                ! interface states are rho' and (rho X)
-                eos_state%rho = ZERO
-                do n = 1, nspec
-                   eos_state%rho = eos_state%rho + sz(i,j,k,spec_comp+n-1)
-                enddo
+                ! interface states are rho and (rho X)
+                eos_state%rho = sz(i,j,k,rho_comp)
 
                 eos_state%xn(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 

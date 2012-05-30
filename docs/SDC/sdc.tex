@@ -110,7 +110,7 @@ flux divergence source term) and the reactions.  This provides a much stronger c
 the physical processes.  In particular, our system now looks like:
 \begin{eqnarray}
 \frac{d(\rho X_k)}{dt} &=& \rho \omegadot_k(\rho,X_k,T) + \underbrace{\nabla\cdot(\rho X_k\Ub)}_{A_{\rho X_k}}\label{eq:sdc:rhoX} \\
-\frac{d(\rho h)}{dt}   &=& \rho \Hnuc + \underbrace{\nabla\cdot(\rho h\Ub)}_{A_{\rho h}} \label{eq:sdc:rhoh}
+\frac{d(\rho h)}{dt}   &=& \rho \Hnuc + \underbrace{\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt}}_{A_{\rho h}} \label{eq:sdc:rhoh}
 \end{eqnarray}
 Here, $A_{\rho X_k}$ and $A_{\rho h}$ are piecewise-constant (in time)
 approximations to the change in ${\rho X_k}$ and ${\rho h}$ (respectively)

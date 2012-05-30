@@ -4,7 +4,7 @@ module pred_parameters
 
    ! species prediction
    integer, parameter :: predict_rhoprime_and_X    = 1
-   integer, parameter :: predict_rhoprime_and_rhoX = 2
+   integer, parameter :: predict_rhoX              = 2
    integer, parameter :: predict_rho_and_X         = 3
 
    ! enthalpy prediction

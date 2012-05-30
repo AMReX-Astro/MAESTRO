@@ -4,7 +4,8 @@ module density_advance_module
   use bl_types, only: dp_t
   use multifab_module, only: multifab, multifab_max_c, multifab_min_c, get_layout, &
                              build, destroy, setval, multifab_build_edge, &
-                             multifab_div_div_c, multifab_mult_mult_c, multifab_plus_plus_c
+                             multifab_div_div_c, multifab_mult_mult_c,, multifab_copy_c, &
+                             multifab_plus_plus_c
   use ml_layout_module, only: ml_layout
   use define_bc_module, only: bc_level
 
@@ -112,12 +113,9 @@ contains
     ! ** density source term **
 
     ! Make source term for rho or rho' 
-    if ((species_pred_type == predict_rhoprime_and_X) .or. &
-        (species_pred_type == predict_rhoprime_and_rhoX)) then
+    if (species_pred_type == predict_rhoprime_and_X) then
        ! rho' source term
        !   . this is needed for pred_rhoprime_and_X
-       !   . we still do this for predict_rhoprime_and_rhoX since some 
-       !     methods for the enthalpy advancement need rho' edge states
        call modify_scal_force(scal_force,sold,umac,rho0_old, &
                               rho0_edge_old,w0,dx,rho0_old_cart,rho_comp, &
                               mla,the_bc_level)
@@ -132,9 +130,9 @@ contains
     ! ** species source term **
 
     ! for species_pred_types predict_rhoprime_and_X and
-    ! predict_rho_and_X, there is not force for X.
+    ! predict_rho_and_X, there is no force for X.
 
-    ! for predict_rhoprime_and_rhoX, we are predicting (rho X)
+    ! for predict_rhoX, we are predicting (rho X)
     ! as a conservative equation, and there is no force.
 
     if (spherical .eq. 1) then
@@ -167,12 +165,9 @@ contains
        call convert_rhoX_to_X(sold,.true.,mla,the_bc_level)
     endif
 
-    if ((species_pred_type == predict_rhoprime_and_X) .or. &
-        (species_pred_type == predict_rhoprime_and_rhoX)) then
+    if (species_pred_type == predict_rhoprime_and_X) then
        ! convert rho -> rho' in sold
        !   . this is needed for predict_rhoprime_and_X
-       !   . we still do this for predict_rhoprime_and_rhoX since some 
-       !     methods for the enthalpy advancement need rho' edge states 
        call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,foextrap_comp,.true.,the_bc_level)
     endif
 
@@ -195,7 +190,7 @@ contains
                    spec_comp,dm+spec_comp,nspec,.false.,mla)
        end if
 
-    else if (species_pred_type == predict_rhoprime_and_rhoX) then
+    else if (species_pred_type == predict_rhoX) then
 
        ! we are predicting (rho X) to the edges, using the
        ! conservative form of the prediction
@@ -211,19 +206,30 @@ contains
 
     endif
 
-    ! predict rho or rho' at the edges (depending on species_pred_type)
-    if (bds_type .eq. 0) then
-       call make_edge_scal(sold,sedge,umac,scal_force, &
-                           dx,dt,is_vel,the_bc_level, &
-                           rho_comp,dm+rho_comp,1,.false.,mla)
-    else if (bds_type .eq. 1) then
-       call bds(sold,sedge,umac,scal_force, &
-                dx,dt,is_vel,the_bc_level, &
-                rho_comp,dm+rho_comp,1,.false.,mla)
+    if (species_pred_type .eq. predict_rhoX) then
+       ! compute rho = sum(rhoX) at the edges
+       do n=1,nlevs
+          do i=1,dm
+             call multifab_copy_c(sedge(n,i),rho_comp,sedge(n,i),spec_comp,1,0)
+             do comp=2,nspec
+                call multifab_plus_plus_c(sedge(n,i),rho_comp,sedge(n,i),spec_comp+comp-1,1,0)
+             end do
+          end do
+       end do
+    else
+       ! predict rho or rho' at the edges (depending on species_pred_type)
+       if (bds_type .eq. 0) then
+          call make_edge_scal(sold,sedge,umac,scal_force, &
+                              dx,dt,is_vel,the_bc_level, &
+                              rho_comp,dm+rho_comp,1,.false.,mla)
+       else if (bds_type .eq. 1) then
+          call bds(sold,sedge,umac,scal_force, &
+                   dx,dt,is_vel,the_bc_level, &
+                   rho_comp,dm+rho_comp,1,.false.,mla)
+       end if
     end if
 
-    if ((species_pred_type == predict_rhoprime_and_X) .or. &
-        (species_pred_type == predict_rhoprime_and_rhoX)) then
+    if (species_pred_type == predict_rhoprime_and_X) then
        ! convert rho' -> rho in sold 
        call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,dm+rho_comp,.false.,the_bc_level)
     endif
