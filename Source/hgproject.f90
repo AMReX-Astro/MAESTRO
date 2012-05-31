@@ -115,6 +115,7 @@ contains
        do d=1,dm
           call multifab_mult_mult_c(unew(n),d,div_coeff_3d(n),1,1,nghost(div_coeff_3d(n)))
        end do
+       ! rhohalf = rho/beta_0
        call multifab_div_div_c(rhohalf(n),1,div_coeff_3d(n),1,1,nghost(div_coeff_3d(n)))
     end do
 

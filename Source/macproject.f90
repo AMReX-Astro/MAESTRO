@@ -89,8 +89,8 @@ contains
        call setval(alpha(n),ZERO,all=.true.)
     end do
 
-    ! Print the norm of each component separately -- make sure to do this before we multiply
-    !       the velocities by the div_coeff.                                 
+    ! Print the norm of each component separately -- make sure to do
+    !       this before we multiply the velocities by the div_coeff.
     if (verbose .eq. 1) then
        if (parallel_IOProcessor()) print *,''
        do n = 1,nlevs
@@ -148,8 +148,10 @@ contains
        call divumac(umac,rh,dx,mla%mba%rr,.true.)
     end if
 
+    ! first set beta = 1/rho
     call mk_mac_coeffs(mla,rho,beta)
 
+    ! now make beta = beta_0/rho
     if (use_div_coeff_1d) then
        do n = 1,nlevs
           call mult_edge_by_1d_coeff(beta(n,:),div_coeff_1d(n,:),div_coeff_1d_edge(n,:),&
