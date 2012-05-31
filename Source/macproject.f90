@@ -1,3 +1,26 @@
+! Project the edge-centered (MAC) velocities to satisfy the divergence
+! constraint.
+!
+! We want to solve:  D [ (beta_0/rho) G phi ] = D ( beta_0 U ) - beta_0 S
+!
+! after which we update the velocity as U = U - (1/rho) G phi
+!
+! basic outline:
+!
+!   -- multiply U by beta_0 (now the umac multifab holds: beta_0 U)
+!
+!   -- compute div ( beta_0 U)
+!
+!   -- store beta_0/rho in the beta multifab (mk_mac_coeffs followed by 
+!      multiply either via mult_edge_by_1d_coeff or multifab_mult_mult)
+!
+!   -- solve the elliptic equation via multigrid
+!
+!   -- compute beta_0 U = beta_0 U - (beta_0/rho) G phi (mkumac subroutine)
+!      (note it is beta_0 U that is updated since umac still holds beta_0 U)
+!
+!   -- divide out the beta_0 giving us the new U
+
 module macproject_module
 
   use bl_types
@@ -191,6 +214,7 @@ contains
 
     call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower)
 
+    ! divide out the beta_0
     if (use_div_coeff_1d) then
        do n = 1,nlevs
           call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_1d_edge(n,:), &
