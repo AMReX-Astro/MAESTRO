@@ -3,6 +3,10 @@
 !
 ! We want to solve:  D [ (beta_0/rho) G phi ] = D ( beta_0 U ) - beta_0 S
 !
+! For the use_alt_energy_fix = T case, we instead solve:
+!   D [ (beta_0**2/rho) G (phi/beta_0) ] = D ( beta_0 U ) - beta_0 S
+! (note the extra beta_0)
+! 
 ! after which we update the velocity as U = U - (1/rho) G phi
 !
 ! basic outline:
@@ -11,8 +15,9 @@
 !
 !   -- compute div ( beta_0 U)
 !
-!   -- store beta_0/rho in the beta multifab (mk_mac_coeffs followed by 
-!      multiply either via mult_edge_by_1d_coeff or multifab_mult_mult)
+!   -- store beta_0/rho (or beta_0**2/rho) in the beta multifab 
+!      (mk_mac_coeffs followed by multiply either via mult_edge_by_1d_coeff 
+!      or multifab_mult_mult)
 !
 !   -- solve the elliptic equation via multigrid
 !
@@ -20,7 +25,7 @@
 !      (note it is beta_0 U that is updated since umac still holds beta_0 U)
 !
 !   -- divide out the beta_0 giving us the new U
-
+!
 module macproject_module
 
   use bl_types
@@ -50,7 +55,7 @@ contains
     use multifab_physbc_edgevel_module , only : multifab_physbc_edgevel
 
     use geometry, only: spherical
-    use probin_module, only: verbose, use_hypre
+    use probin_module, only: verbose, use_hypre, use_alt_energy_fix
     use variables, only: press_comp
     use ml_restriction_module, only: ml_edge_restriction
 
@@ -177,13 +182,20 @@ contains
     ! now make beta = beta_0/rho
     if (use_div_coeff_1d) then
        do n = 1,nlevs
-          call mult_edge_by_1d_coeff(beta(n,:),div_coeff_1d(n,:),div_coeff_1d_edge(n,:),&
-                                     .true.)
+          call mult_edge_by_1d_coeff(beta(n,:),div_coeff_1d(n,:), &
+                                     div_coeff_1d_edge(n,:),.true.)
+          if (use_alt_energy_fix) then
+             call mult_edge_by_1d_coeff(beta(n,:),div_coeff_1d(n,:), &
+                                        div_coeff_1d_edge(n,:),.true.)
+          endif
        end do
     else if (use_div_coeff_cart_edge) then
        do n=1,nlevs
           do comp=1,dm
              call multifab_mult_mult(beta(n,comp),div_coeff_cart_edge(n,comp))
+             if (use_alt_energy_fix) then
+                call multifab_mult_mult(beta(n,comp),div_coeff_cart_edge(n,comp))                
+             endif
           end do
        end do
     end if

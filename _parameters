@@ -492,6 +492,11 @@ drive_initial_convection            logical            .false.
 restart_with_vel_field              logical            .false.
 
 
+# modify the momentum equation to have (beta_0/rho) grad(pi/beta_0)
+# instead of just (1/rho) grad(pi/beta_0) 
+use_alt_energy_fix                  logical            .false.
+
+
 #-----------------------------------------------------------------------------
 # category: thermal diffusion
 #-----------------------------------------------------------------------------
