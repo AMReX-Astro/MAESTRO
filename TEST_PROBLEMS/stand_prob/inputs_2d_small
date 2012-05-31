@@ -1,6 +1,8 @@
 &PROBIN
  spherical_in = 0
 
+ use_alt_energy_fix = T
+
  max_levs = 1
  n_cellx = 128
  n_celly = 128
