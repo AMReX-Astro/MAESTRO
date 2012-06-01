@@ -20,7 +20,7 @@ MAESTRO_CORE :=
 # if we are doing the SDC algorithm, then look first for source
 # files living in Source_SDC/ then look in Source/
 ifdef SDC
-  MAESTRO_CORE += MAESTRO/Source_SDC
+  MAESTRO_CORE += Source_SDC
 endif
 
 # next look for the files in Source/ itself
@@ -29,27 +29,28 @@ endif
 #   source in the MAESTRO/Source directory.  So, for unit tests, we
 #   leave it off the list of core directories 
 ifndef UNIT_TEST
-  MAESTRO_CORE += MAESTRO/Source 
+  MAESTRO_CORE += Source 
 endif
 
-MAESTRO_CORE += MAESTRO/constants
+MAESTRO_CORE += constants
 
 
 #-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
-EXTERN_CORE := extern/model_parser \
-               extern/random \
-               extern/BLAS \
-               extern/EOS
+UTIL_CORE := Util/model_parser \
+             Util/random \
+             Util/BLAS 
+
+MICROPHYS_CORE := Microphysics/EOS
 
 # add in the network, EOS, and conductivity
-EXTERN_CORE += $(EOS_DIR) \
-               $(NETWORK_DIR) \
-               $(CONDUCTIVITY_DIR) 
+MICROPHYS_CORE += Microphysics/$(EOS_DIR) \
+                  Microphysics/$(NETWORK_DIR) \
+                  Microphysics/$(CONDUCTIVITY_DIR) 
 
 # networks in general need the VODE 
 ifneq ($(findstring null, $(NETWORK_DIR)), null)
-  EXTERN_CORE += extern/VODE 
+  UTIL_CORE += Util/VODE 
 endif
 
 
@@ -68,15 +69,16 @@ PARTICLES := t
 # in source files, and thus specified using -I in the compiler flags.
 
 Fmdirs += $(EXTRA_DIR) \
-          $(EXTERN_CORE) \
+          $(UTIL_CORE) \
+          $(MICROPHYS_CORE) \
           $(MAESTRO_CORE)
 
 
 # the helmeos has an include file -- also add a target to link the table
 # into the problem directory.
 ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
-  Fmincludes := extern/EOS/helmeos
-  EOS_PATH := $(FPARALLEL)/$(strip $(EOS_DIR))
+  Fmincludes := Microphysics/EOS/helmeos
+  EOS_PATH := $(FPARALLEL)/MAESTRO/Microphysics/$(strip $(EOS_DIR))
   ALL: table
 endif
 
@@ -85,9 +87,9 @@ table:
 	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
 
-Fmpack := $(foreach dir, $(Fmdirs), $(FPARALLEL)/$(dir)/GPackage.mak)
-Fmlocs := $(foreach dir, $(Fmdirs), $(FPARALLEL)/$(dir))
-Fmincs := $(foreach dir, $(Fmincludes), $(FPARALLEL)/$(dir))
+Fmpack := $(foreach dir, $(Fmdirs), $(FPARALLEL)/MAESTRO/$(dir)/GPackage.mak)
+Fmlocs := $(foreach dir, $(Fmdirs), $(FPARALLEL)/MAESTRO/$(dir))
+Fmincs := $(foreach dir, $(Fmincludes), $(FPARALLEL)/MAESTRO/$(dir))
 
 Fmpack += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir)/GPackage.mak)
 Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
@@ -135,7 +137,7 @@ PROBIN_PARAMETER_DIRS = ./ ../ ../../
 PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
 
 # list of all valid _parameters files for extern
-EXTERN_PARAMETER_DIRS += $(foreach dir, $(EXTERN_CORE), $(FPARALLEL)/$(dir))
+EXTERN_PARAMETER_DIRS += $(foreach dir, $(MICROPHYSICS_CORE), $(FPARALLEL)/$(dir))
 EXTERN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
