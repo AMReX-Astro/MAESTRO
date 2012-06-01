@@ -153,7 +153,7 @@ PROBIN_PARAMETER_DIRS = ./ ../ ../../
 PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
 
 # list of all valid _parameters files for extern
-EXTERN_PARAMETER_DIRS += $(MICROPHYSICS_CORE)
+EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE)
 EXTERN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
@@ -173,7 +173,7 @@ build_info.f90:
 	@echo " "
 	@echo "${bold}WRITING build_info.f90${normal}"
 	$(BOXLIB_HOME)/Tools/F_scripts/make_build_info \
-            "$(Fmdirs)" "$(COMP)" "$(FCOMP_VERSION)" \
+            "$(Fmdirs) $(MICROPHYS_CORE)" "$(COMP)" "$(FCOMP_VERSION)" \
             "$(COMPILE.f90)" "$(COMPILE.f)" \
             "$(COMPILE.c)" "$(LINK.f90)" "$(BOXLIB_HOME)"
 	@echo " "
