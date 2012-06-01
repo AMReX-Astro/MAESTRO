@@ -186,8 +186,8 @@ For the species prediction, the form of $I$ depends on
 We note that there is no $I$ term for $\rho$ or $\rho'$ prediction, since
 the density evolution equation does not have a reaction source term.
 \begin{itemize}
-\item {\tt species\_pred\_type} = 1 (predict $\rho'$ and $X_k$) 
-or 3 (predict $\rho$ and $X_k$)
+\item {\tt species\_pred\_type} = 1 ({\tt predict\_rhoprime\_and\_X})
+or 3 ({\tt predict\_rho\_and\_X})
 
 \begin{equation}
 I_{X_k} = \frac{1}{\rho^{n+\myhalf}} \left [ 
@@ -212,7 +212,7 @@ and finally define $A_{X_k}$ using
 \begin{equation}
 \frac{X^{(1)} - X^\mathrm{old}}{\Delta t}= A_{X_k}.
 \end{equation}
-\item {\tt species\_pred\_type} = 2 (predict $\rho'$ and $(\rho X_k)$)
+\item {\tt species\_pred\_type} = 2 ({\tt predict\_rhoX})
 \begin{equation}
 I_{\rho X_k} = \frac{(\rho X_k)^\mathrm{new} - (\rho X_k)^\mathrm{old}}{\Delta t} - A_{\rho X_k}.
 \label{eq:sdc:Irhoo}
@@ -232,7 +232,7 @@ enthalpy update ({\tt enthalpy\_pred\_type}, see \S
 are:
 
 \begin{itemize}
-\item {\tt enthalpy\_pred\_type} = {\tt predict\_rhohprime} (not implemented yet)
+\item {\tt enthalpy\_pred\_type} = 1 ({\tt predict\_rhohprime}, not implemented yet)
 
 (Andy's Idea) Here we need an $I_{\rho h}$ term for the $(\rho h)'$ evolution
 equation (see Eq.~\ref{rhohprime equation}).  In this case we will use
@@ -246,7 +246,7 @@ evolution equation may need to know about the $I_{\rho h}$ source term.
 In particular, should $(\rho h)_0$ see a $\overline{(\rho \Hnuc)}$ term?
 what about an average thermal diffusion?
 
-\item {\tt enthalpy\_pred\_type} = {\tt predict\_h} 
+\item {\tt enthalpy\_pred\_type} = 2 ({\tt predict\_h} )
 
 This is the most straightforward prediction type.  The SDC solver
 integrates the equation for $(\rho h)$:
@@ -281,8 +281,8 @@ and finally define $A_h$ using
 I_h = \frac{h^{(1)} - h^\mathrm{old}}{\Delta t} = A_h.
 \end{equation}
 
-\item {\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_rhoprime} or 
-      {\tt enthalpy\_pred\_type} = {\tt predict\_T\_then\_h} 
+\item {\tt enthalpy\_pred\_type} = 3 ({\tt predict\_T\_then\_rhoprime}) or 
+      {\tt enthalpy\_pred\_type} = 4 ({\tt predict\_T\_then\_h} )
 
 Both of these {\tt enthalpy\_pred\_type}s predict temperature.  Expressing
 $h = h(p_0,T,X_k)$ and differentiating along particle paths:
