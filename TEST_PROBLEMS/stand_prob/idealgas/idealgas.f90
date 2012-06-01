@@ -9,6 +9,7 @@ module eos_module
   use bl_error_module
   use bl_space
   use network, only: nspec
+  use eos_type_module
 
   implicit none
 
@@ -61,6 +62,11 @@ module eos_module
 
   integer, public         :: pt_index_eos(MAX_SPACEDIM)
 
+  interface eos
+     module procedure eos_old
+     module procedure eos_new
+  end interface eos
+
 contains
 
   subroutine eos_init(use_eos_coulomb, small_temp, small_dens, gamma_in)
@@ -79,10 +85,39 @@ contains
 
   end subroutine eos_init
 
-  subroutine eos(input, rho, temp, xmass, pres, h, &
-       eint, c_v, c_p, ne, eta, pele, &
-       dPdT, dPdR, dEdT, dEdR, dPdX, dhdX, &
-       gam1, cs, entropy, dsdT, dsdR, do_eos_diag, pt_index)
+
+  !---------------------------------------------------------------------------
+  ! new interface
+  !---------------------------------------------------------------------------
+  subroutine eos_new(input, eos_state, do_eos_diag, pt_index)
+
+    integer,           intent(in   ) :: input
+    type (eos_t),      intent(inout) :: eos_state
+    logical,           intent(in   ) :: do_eos_diag
+    integer, optional, intent(in   ) :: pt_index(:)
+
+    call eos_old(input, eos_state%rho, eos_state%T, &
+                 eos_state%xn, &
+                 eos_state%p, eos_state%h, eos_state%e, &
+                 eos_state%cv, eos_state%cp, eos_state%xne, &
+                 eos_state%eta, eos_state%pele, &
+                 eos_state%dpdT, eos_state%dpdr, &
+                 eos_state%dedT, eos_state%dedr, &
+                 eos_state%dpdX, eos_state%dhdX, &
+                 eos_state%gam1, eos_state%cs, eos_state%s, &
+                 eos_state%dsdT, eos_state%dsdr, &
+                 do_eos_diag, pt_index)
+
+  end subroutine eos_new
+
+
+  !---------------------------------------------------------------------------
+  ! The main interface -- this is used directly by MAESTRO
+  !---------------------------------------------------------------------------
+  subroutine eos_old(input, rho, temp, xmass, pres, h, &
+                     eint, c_v, c_p, ne, eta, pele, &
+                     dPdT, dPdR, dEdT, dEdR, dPdX, dhdX, &
+                     gam1, cs, entropy, dsdT, dsdR, do_eos_diag, pt_index)
 
 !  input = 1 means rho, temp are inputs
 !        = 2 means temp, pres are inputs
@@ -148,30 +183,30 @@ contains
 
     ! then calculate everything else
 
-       h = gamma_const/(gamma_const - 1.0) * temp
-       eint = temp/(gamma_const - 1.0)
-       gam1 = gamma_const
-       cs = sqrt(gamma_const*pres/rho)
-       dPdT = pres/temp
-       dPdR = pres/rho
-       dedT = eint/temp
-       dedR = 0.d0
-       dsdT = 0.d0
-       dsdR = 0.d0
-       entropy = pres/rho**gam1
-       pele = 0.d0
-       eta  = 0.d0
-       ne   = 0.d0
+    h = gamma_const/(gamma_const - 1.0) * temp
+    eint = temp/(gamma_const - 1.0)
+    gam1 = gamma_const
+    cs = sqrt(gamma_const*pres/rho)
+    dPdT = pres/temp
+    dPdR = pres/rho
+    dedT = eint/temp
+    dedR = 0.d0
+    dsdT = 0.d0
+    dsdR = 0.d0
+    entropy = pres/rho**gam1
+    pele = 0.d0
+    eta  = 0.d0
+    ne   = 0.d0
 
-       do n = 1, nspec
-         dPdX(n) = 0.d0
-         dhdX(n) = 0.d0
-       enddo
+    do n = 1, nspec
+       dPdX(n) = 0.d0
+       dhdX(n) = 0.d0
+    enddo
 
-       c_v = dedT
-       c_p = gamma_const*c_v
+    c_v = dedT
+    c_p = gamma_const*c_v
 
 
-  end subroutine eos
+  end subroutine eos_old
 
 end module eos_module
