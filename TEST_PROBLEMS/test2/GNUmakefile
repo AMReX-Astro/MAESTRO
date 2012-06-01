@@ -13,13 +13,13 @@ FPARALLEL := ../../..
 
 
 # define the physics packages to build this problem
-EOS_DIR := extern/EOS/helmeos 
-CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
+EOS_DIR := EOS/helmeos 
+CONDUCTIVITY_DIR := conductivity/timmes_stellar
 
 ifdef SDC
-  NETWORK_DIR := extern/networks/ignition_simple_SDC
+  NETWORK_DIR := networks/ignition_simple_SDC
 else
-  NETWORK_DIR := extern/networks/ignition_simple
+  NETWORK_DIR := networks/ignition_simple
 endif
 
 # define the special directories needed to build this problem.  Note:
