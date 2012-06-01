@@ -6,7 +6,7 @@ COMP := gfortran
 
 MKVERBOSE := t
 
-# define the location of the fParallel root directory
+# define the location of the MAESTRO top directory
 MAESTRO_TOP_DIR := ../..
 
 
