@@ -1,6 +1,7 @@
 #GNUmakefile for the incompressible shear jet problem
 
 NDEBUG := f 	#t=Do NOT debug, f=debug
+
 #Parallel computing options.  Leave blank for serial.
 MPI    :=
 OMP    :=
@@ -10,13 +11,16 @@ COMP := gfortran
 
 MKVERBOSE := t
 
-# define the location of the fParallel root directory
-FPARALLEL := ../../..
+# define the location of the MAESTRO top directory
+MAESTRO_TOP_DIR := ../..
 
 # define the physics packages to build this problem
-EOS_DIR := extern/EOS/gamma_law_general 
-CONDUCTIVITY_DIR := extern/conductivity/constant
-NETWORK_DIR := extern/networks/simple 
+EOS_DIR := gamma_law_general 
+CONDUCTIVITY_DIR := constant
+NETWORK_DIR := general_null
+
+GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/simple.net
+
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
@@ -25,4 +29,4 @@ NETWORK_DIR := extern/networks/simple
 EXTRA_DIR :=
 
 # include the MAESTRO build stuff
-include $(FPARALLEL)/MAESTRO/GMaestro.mak
+include $(MAESTRO_TOP_DIR)/GMaestro.mak
