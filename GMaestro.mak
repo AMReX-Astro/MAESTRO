@@ -41,12 +41,25 @@ UTIL_CORE := Util/model_parser \
              Util/random \
              Util/BLAS 
 
-MICROPHYS_CORE := Microphysics/EOS
+MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS
+
+# locations of the microphysics 
+ifndef EOS_TOP_DIR 
+  EOS_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/EOS
+endif
+
+ifndef NETWORK_TOP_DIR 
+  NETWORK_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/networks
+endif
+
+ifndef CONDUCTIVITY_TOP_DIR
+  CONDUCTIVITY_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/conductivity
+endif
 
 # add in the network, EOS, and conductivity
-MICROPHYS_CORE += Microphysics/$(EOS_DIR) \
-                  Microphysics/$(NETWORK_DIR) \
-                  Microphysics/$(CONDUCTIVITY_DIR) 
+MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
+                  $(NETWORK_TOP_DIR)/$(NETWORK_DIR) \
+                  $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) 
 
 # networks in general need the VODE 
 ifneq ($(findstring null, $(NETWORK_DIR)), null)
@@ -70,7 +83,6 @@ PARTICLES := t
 
 Fmdirs += $(EXTRA_DIR) \
           $(UTIL_CORE) \
-          $(MICROPHYS_CORE) \
           $(MAESTRO_CORE)
 
 
@@ -78,7 +90,7 @@ Fmdirs += $(EXTRA_DIR) \
 # into the problem directory.
 ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
   Fmincludes := Microphysics/EOS/helmeos
-  EOS_PATH := $(FPARALLEL)/MAESTRO/Microphysics/$(strip $(EOS_DIR))
+  EOS_PATH := $(MAESTRO_TOP_DIR)/Microphysics/$(strip $(EOS_DIR))
   ALL: table
 endif
 
@@ -87,9 +99,13 @@ table:
 	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
 
-Fmpack := $(foreach dir, $(Fmdirs), $(FPARALLEL)/MAESTRO/$(dir)/GPackage.mak)
-Fmlocs := $(foreach dir, $(Fmdirs), $(FPARALLEL)/MAESTRO/$(dir))
-Fmincs := $(foreach dir, $(Fmincludes), $(FPARALLEL)/MAESTRO/$(dir))
+Fmpack := $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir)/GPackage.mak)
+Fmpack += $(foreach dir, $(MICROPHYS_CORE), $(dir)/GPackage.mak)
+
+Fmlocs := $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir))
+Fmlocs += $(foreach dir, $(MICROPHYS_CORE), $(dir))
+
+Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir))
 
 Fmpack += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir)/GPackage.mak)
 Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
@@ -105,7 +121,7 @@ include $(Fmpack)
 # we always want to search the MAESTRO/Source directory, even for
 # unit tests, since they may build individual files there.
 ifdef UNIT_TEST
-  VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO/Source
+  VPATH_LOCATIONS += $(MAESTRO_TOP_DIR)/Source
 endif
 
 #  Note: GMakerules.mak will include '.' at the start of the
@@ -128,7 +144,7 @@ main.$(suf).exe: $(objects)
 # runtime parameter stuff (probin.f90)
 
 # template used by write_probin.py to build probin.f90
-PROBIN_TEMPLATE := $(FPARALLEL)/MAESTRO/probin.template
+PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/probin.template
 
 # list of the directories to search for _parameters files
 PROBIN_PARAMETER_DIRS = ./ ../ ../../
@@ -137,7 +153,7 @@ PROBIN_PARAMETER_DIRS = ./ ../ ../../
 PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
 
 # list of all valid _parameters files for extern
-EXTERN_PARAMETER_DIRS += $(foreach dir, $(MICROPHYSICS_CORE), $(FPARALLEL)/$(dir))
+EXTERN_PARAMETER_DIRS += $(MICROPHYSICS_CORE)
 EXTERN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
