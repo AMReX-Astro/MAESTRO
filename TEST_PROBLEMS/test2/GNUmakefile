@@ -8,18 +8,18 @@ COMP := gfortran
 
 MKVERBOSE := t
 
-# define the location of the fParallel root directory
-FPARALLEL := ../../..
+# define the location of the MAESTRO root directory
+MAESTRO_TOP_DIR := ../..
 
 
 # define the physics packages to build this problem
-EOS_DIR := EOS/helmeos 
-CONDUCTIVITY_DIR := conductivity/timmes_stellar
+EOS_DIR := helmeos 
+CONDUCTIVITY_DIR := timmes_stellar
 
 ifdef SDC
-  NETWORK_DIR := networks/ignition_simple_SDC
+  NETWORK_DIR := ignition_simple_SDC
 else
-  NETWORK_DIR := networks/ignition_simple
+  NETWORK_DIR := ignition_simple
 endif
 
 # define the special directories needed to build this problem.  Note:
@@ -30,6 +30,6 @@ EXTRA_DIR :=
 
 
 # include the MAESTRO build stuff
-include $(FPARALLEL)/MAESTRO/GMaestro.mak
+include $(MAESTRO_TOP_DIR)/GMaestro.mak
 
 
