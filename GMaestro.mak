@@ -38,7 +38,6 @@ MAESTRO_CORE += MAESTRO/constants
 #-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
 EXTERN_CORE := extern/model_parser \
-               extern/LAPACK \
                extern/random \
                extern/BLAS \
                extern/EOS
