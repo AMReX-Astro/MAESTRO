@@ -90,7 +90,7 @@ Fmdirs += $(EXTRA_DIR) \
 # into the problem directory.
 ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
   Fmincludes := Microphysics/EOS/helmeos
-  EOS_PATH := $(MAESTRO_TOP_DIR)/Microphysics/$(strip $(EOS_DIR))
+  EOS_PATH := $(MAESTRO_TOP_DIR)/Microphysics/EOS/$(strip $(EOS_DIR))
   ALL: table
 endif
 
