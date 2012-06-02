@@ -34,7 +34,7 @@ contains
     use multifab_physbc_module
     use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
          ppm_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
-         check_base_name, use_tfromp, cflfac
+         check_base_name, use_tfromp, cflfac, dm_in
 
     use average_module
     use make_grav_module
@@ -64,11 +64,11 @@ contains
     ! local
     type(ml_boxarray) :: mba
     type(box)         :: domain
-    integer           :: domhi(dm)
+    integer           :: domhi(dm_in)
 
     real(dp_t) :: lenx,leny,lenz,max_dist,p0_temp
 
-    integer :: n,ng_s,nr_fine_old,r
+    integer :: n,ng_s,nr_fine_old,r,dm,nlevs
 
     type(multifab), pointer :: chkdata(:)
     type(multifab), pointer :: chk_p(:)
@@ -92,6 +92,8 @@ contains
     character(len=5)   :: check_index
     character(len=6)   :: check_index6
     character(len=256) :: check_file_name
+
+    dm = mla%dim
 
     ! create mba, chk stuff, time, and dt
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
@@ -597,7 +599,7 @@ contains
     use average_module
     use restrict_base_module
     use probin_module, only : drdxfac, octant, test_set, ppm_type, nodal, &
-         prob_lo, prob_hi, model_file, do_smallscale
+         prob_lo, prob_hi, model_file, do_smallscale, dm_in
     use make_grav_module
     use enforce_HSE_module
     use rhoh_vs_t_module
@@ -619,12 +621,15 @@ contains
     ! local
     type(ml_boxarray) :: mba
     type(box)         :: domain
-    integer           :: domhi(dm)
+    integer           :: domhi(dm_in)
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
-    integer :: n,ng_s
+    integer :: n,ng_s,dm, nlevs
     
+    dm = mla%dim
+    nlevs = mla%dim
+
     ! set time and dt
     time = ZERO
     dt = 1.d20
@@ -795,7 +800,7 @@ contains
 
     use probin_module, only: n_cellx, n_celly, n_cellz, &
          regrid_int, amr_buf_width, max_grid_size_1, max_grid_size_2, max_grid_size_3, &
-         ref_ratio, max_levs, octant
+         ref_ratio, max_levs, octant, dm_in
     use init_scalar_module
     use init_vel_module
     use average_module
@@ -827,20 +832,21 @@ contains
     ! local
     type(ml_boxarray) :: mba
     type(box)         :: domain
-    integer           :: domhi(dm)
+    integer           :: domhi(dm_in)
 
     type(layout) :: la_array(max_levs)
     type(box)    :: bxs
 
     real(dp_t) :: lenx,leny,lenz,max_dist
     integer    :: n,ng_s,nl
-    integer    :: lo(dm), hi(dm)
+    integer    :: lo(dm_in), hi(dm_in), dm, nlevs
     logical    :: new_grid
 
     ! set time and dt
     time = ZERO
     dt = 1.d20
 
+    dm = dm_in
 
     ! set up hi & lo to carry indexing info
     lo = 0
@@ -1134,7 +1140,9 @@ contains
     integer       , intent(in   ) :: num_levs
     logical       , intent(in   ) :: pmask(:)
     
-    integer :: domain_phys_bc(dm,2)
+    integer :: domain_phys_bc(size(pmask),2), dm
+
+    dm = size(pmask)
 
     ! Define the physical boundary conditions on the domain
     ! Put the bc values from the inputs file into domain_phys_bc
@@ -1177,8 +1185,10 @@ contains
     type(ml_boxarray), intent(in ) :: mba
     integer          , intent(in ) :: num_levs
     
-    integer :: n,d
+    integer :: n,d, dm
     
+    dm = mba%dim
+
     allocate(dx(num_levs,dm))
     
     do d=1,dm

@@ -14,29 +14,31 @@ module heating_module
   
 contains
 
-  subroutine get_rho_Hext(mla,s,rho_Hext,dx,the_bc_level)
+  subroutine get_rho_Hext(mla,tempbar_init,s,rho_Hext,the_bc_level,dx,dt)
 
-    use geometry, only: nlevs
     use multifab_module
     use ml_layout_module
     use ml_restriction_module
-    use geometry, only: dm
     use variables, only: foextrap_comp
 
     type(ml_layout), intent(in   ) :: mla
+    real(kind=dp_t), intent(in   ) :: tempbar_init(:,0:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
 
     ! local
-    integer                  :: n,i,ng_s,ng_h
-    integer                  :: lo(dm),hi(dm)
+    integer                  :: n,i,ng_s,ng_h,dm, nlevs
+    integer                  :: lo(mla%dim),hi(mla%dim)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "get_rho_Hext")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s = s(1)%ng
     ng_h = rho_Hext(1)%ng

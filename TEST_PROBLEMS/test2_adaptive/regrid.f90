@@ -30,7 +30,7 @@ contains
          regrid_int, amr_buf_width, &
          max_grid_size_2, max_grid_size_3, ref_ratio, max_levs, &
          ppm_type
-    use geometry, only: dm, nlevs, nlevs_radial, spherical, nr_fine
+    use geometry, only: nlevs_radial, spherical, nr_fine
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp, temp_comp
     use network, only: nspec
     use average_module, only: average_one_level
@@ -45,7 +45,7 @@ contains
 
     ! local
     logical           :: new_grid
-    integer           :: n, nl, d, ng_s
+    integer           :: n, nl, d, ng_s, dm, nlevs
     type(layout)      :: la_array(max_levs)
     type(ml_layout)   :: mla_old
     type(ml_boxarray) :: mba
@@ -55,6 +55,9 @@ contains
     type(multifab) :: pi_temp(max_levs), dSdt_temp(max_levs), src_temp(max_levs)
 
     real(kind=dp_t)   :: tempbar(max_levs,0:nr_fine-1)
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (verbose .ge. 1) then
        if (parallel_IOProcessor()) print*,'Calling regrid'

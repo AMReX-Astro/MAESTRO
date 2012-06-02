@@ -29,7 +29,7 @@ contains
     ! multifab array, so index_rho may be different.
 
     use bl_prof_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use variables, only: foextrap_comp
     use bl_constants_module
     use ml_restriction_module, only: ml_cc_restriction
@@ -63,16 +63,19 @@ contains
     real(kind=dp_t), pointer ::  gpp(:,:,:,:)
     real(kind=dp_t), pointer ::   fp(:,:,:,:)
     real(kind=dp_t), pointer ::   rp(:,:,:,:)
-    integer                  :: i,comp,lo(dm),hi(dm)
+    integer                  :: i,comp,lo(mla%dim),hi(mla%dim),dm,nlevs
     integer                  :: ng_s,ng_f,ng_gp,n,ng_uo,ng_um
    
     type(multifab) :: w0_cart(mla%nlevel)
-    type(multifab) :: w0mac(mla%nlevel,dm)
+    type(multifab) :: w0mac(mla%nlevel,mla%dim)
     integer :: ng_wc, ng_wm
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mk_vel_force")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     ng_s = s(1)%ng
     ng_f = vel_force(1)%ng
@@ -510,7 +513,7 @@ contains
   subroutine add_w0_force(vel_force,w0_force,w0_force_cart,the_bc_level,mla)
 
     use bl_prof_module
-    use geometry, only: spherical, dm, nlevs
+    use geometry, only: spherical
     use variables, only: foextrap_comp
     use bl_constants_module
     use ml_restriction_module, only: ml_cc_restriction
@@ -527,11 +530,14 @@ contains
     real(kind=dp_t), pointer:: fp(:,:,:,:)
     real(kind=dp_t), pointer:: w0p(:,:,:,:)
     integer                 :: i,n,ng_f,ng_w
-    integer                 :: lo(dm),hi(dm)
+    integer                 :: lo(mla%dim),hi(mla%dim),dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "add_w0_force")
+
+    nlevs = mla%nlevel
+    dm = mla%dim
 
     ng_f = vel_force(1)%ng
 
