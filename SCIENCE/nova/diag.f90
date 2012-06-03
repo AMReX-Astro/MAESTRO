@@ -653,12 +653,11 @@ contains
 
              
           ! call the EOS to get the sound speed and internal energy       
-          temp_eos(1) = s(i,temp_comp)
-          den_eos(1)  = s(i,rho_comp)
-          xn_eos(1,:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos(1)
+          temp_eos  = s(i,temp_comp)
+          den_eos   = s(i,rho_comp)
+          xn_eos(:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos
 
           call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, &
                    xn_eos, &
                    p_eos, h_eos, e_eos, &
                    cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -670,7 +669,7 @@ contains
 
 
           ! max Mach number                                       
-          Mach_max = max(Mach_max,vel/cs_eos(1))
+          Mach_max = max(Mach_max,vel/cs_eos)
 
           ! max temp and enuc
           temp_max = max(temp_max,s(i,temp_comp))
@@ -836,12 +835,11 @@ contains
 
              
              ! call the EOS to get the sound speed and internal energy       
-             temp_eos(1) = s(i,j,temp_comp)
-             den_eos(1)  = s(i,j,rho_comp)
-             xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             temp_eos  = s(i,j,temp_comp)
+             den_eos   = s(i,j,rho_comp)
+             xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
 
              call eos(eos_input_rt, den_eos, temp_eos, &
-                      npts, &
                       xn_eos, &
                       p_eos, h_eos, e_eos, &
                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -853,7 +851,7 @@ contains
 
 
              ! max Mach number                                       
-             Mach_max = max(Mach_max,vel/cs_eos(1))
+             Mach_max = max(Mach_max,vel/cs_eos)
 
              ! max temp and enuc
              temp_max = max(temp_max,s(i,j,temp_comp))
@@ -1024,12 +1022,11 @@ contains
 
              
                 ! call the EOS to get the sound speed and internal energy       
-                temp_eos(1) = s(i,j,k,temp_comp)
-                den_eos(1)  = s(i,j,k,rho_comp)
-                xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                temp_eos  = s(i,j,k,temp_comp)
+                den_eos   = s(i,j,k,rho_comp)
+                xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
                 call eos(eos_input_rt, den_eos, temp_eos, &
-                         npts, &
                          xn_eos, &
                          p_eos, h_eos, e_eos, &
                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1041,7 +1038,7 @@ contains
 
 
                 ! max Mach number                                       
-                Mach_max = max(Mach_max,vel/cs_eos(1))
+                Mach_max = max(Mach_max,vel/cs_eos)
 
                 ! max temp and enuc
                 temp_max = max(temp_max,s(i,j,k,temp_comp))
@@ -1221,12 +1218,11 @@ contains
 
              
                 ! call the EOS to get the sound speed and internal energy       
-                temp_eos(1) = s(i,j,k,temp_comp)
-                den_eos(1)  = s(i,j,k,rho_comp)
-                xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                temp_eos  = s(i,j,k,temp_comp)
+                den_eos   = s(i,j,k,rho_comp)
+                xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
 
                 call eos(eos_input_rt, den_eos, temp_eos, &
-                         npts, &
                          xn_eos, &
                          p_eos, h_eos, e_eos, &
                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -1238,7 +1234,7 @@ contains
 
 
                 ! max Mach number                                       
-                Mach_max = max(Mach_max,vel/cs_eos(1))
+                Mach_max = max(Mach_max,vel/cs_eos)
 
                 ! max temp and enuc
                 temp_max = max(temp_max,s(i,j,k,temp_comp))

@@ -2,20 +2,20 @@ NDEBUG := t
 MPI    := t
 OMP    :=
 
-COMP := Intel
+COMP := gfortran
 
 MKVERBOSE := t
 
-# define the location of the fParallel root directory
-FPARALLEL := ../../..
+# define the location of the MAESTRO top directory
+MAESTRO_TOP_DIR := ../..
 
 
 # define the physics packages to build this problem 
-EOS_DIR := extern/EOS/helmeos
-CONDUCTIVITY_DIR := extern/conductivity/timmes_stellar
+EOS_DIR := helmeos
+CONDUCTIVITY_DIR := timmes_stellar
 
-NETWORK_DIR := extern/networks/general_null
-GENERAL_NET_INPUTS := ns_ocean.net
+NETWORK_DIR := general_null
+GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/SCIENCE/ns_ocean/ns_ocean.net
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
@@ -26,6 +26,6 @@ EXTRA_DIR :=
 
 
 # include the MAESTRO build stuff
-include $(FPARALLEL)/MAESTRO/GMaestro.mak
+include $(MAESTRO_TOP_DIR)/GMaestro.mak
 
 
