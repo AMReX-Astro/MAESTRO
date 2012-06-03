@@ -815,7 +815,7 @@ contains
     endif
 
 !$omp parallel do private(i,j,k,x,y,z,cell_valid,vel) &
-!$omp reduction(max:U_max,Mach_max,Mach_max_domain) &
+!$omp reduction(max:U_max,Mach_max,Mach_max_domain) 
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
