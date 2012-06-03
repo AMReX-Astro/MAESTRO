@@ -1,4 +1,4 @@
-initial models created using MAESTRO/initial_models/kepler_hybrid and
-the extern/networks/ignition burner.
+initial models created using AstroDev/initial_models/kepler_hybrid and
+the Microphysics/networks/ignition burner.
 
 This is the model/composition used in the lowMach4 paper.
