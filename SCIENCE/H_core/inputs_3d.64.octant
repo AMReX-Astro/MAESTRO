@@ -16,6 +16,8 @@
  sponge_start_factor = 1.5d0
  sponge_kappa = 1.5d-3
 
+ small_temp = 5.d3
+
  spherical_in = 1
  octant = .true.
 

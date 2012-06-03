@@ -13,6 +13,8 @@
 ! buoyancy_cutoff_factor = 2.d3
  buoyancy_cutoff_factor = 5.d2
 
+ small_temp = 5.d3
+
  anelastic_cutoff = 1.d-4
  base_cutoff_density = 1.d-4
  sponge_center_density = 5.d-1

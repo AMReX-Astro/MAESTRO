@@ -11,6 +11,8 @@
  anelastic_cutoff = 1.d-4
  buoyancy_cutoff_factor = 5.d2
 
+ small_temp = 5.d3
+
  do_sponge = .true.
  sponge_center_density = 5.d-1
  sponge_start_factor = 1.5d0

@@ -14,6 +14,8 @@
  anelastic_cutoff = 1.d-4
  base_cutoff_density = 1.d-4
 
+ small_temp = 5.d3
+
  do_sponge = .true.
  sponge_center_density = 2.d-1
  sponge_start_factor = 1.5d0

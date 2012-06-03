@@ -11,6 +11,8 @@
  buoyancy_cutoff_factor = 4.e2
  anelastic_cutoff = 1.d-4
  base_cutoff_density = 1.d-4
+
+ small_temp = 5.d3
  
  spherical_in = 1
  octant = .true.
