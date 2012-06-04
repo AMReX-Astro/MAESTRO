@@ -309,6 +309,35 @@ contains
           end do
        end do
 
+    else if (perturb_type .eq. 7) then
+
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             s(i,j,rho_comp) = s0_init(j,rho_comp)
+             s(i,j,rhoh_comp) = s0_init(j,rhoh_comp)
+             s(i,j,temp_comp) = s0_init(j,temp_comp)
+             s(i,j,spec_comp:spec_comp+nspec-1) = s0_init(j,spec_comp:spec_comp+nspec-1)
+             s(i,j,trac_comp:trac_comp+ntrac-1) = s0_init(j,trac_comp:trac_comp+ntrac-1)
+
+          end do
+       end do
+
+       Lx = prob_hi(1) - prob_lo(1)
+       Ly = prob_hi(2) - prob_lo(2)
+
+       do j = lo(2), hi(2)
+          y = (j+HALF)*dx(2)+prob_lo(2)
+          do i = lo(1), hi(1)
+             x = (i+HALF)*dx(1)+prob_lo(1)
+
+             s(i,j,rho_comp) = s(i,j,rho_comp)*(1.d0+ &
+                                amp*sin(2.d0*M_PI*x*k/Lx)*sin(2.d0*M_PI*y*kz/Ly)* &
+                                exp(+y/2.0*(1+3./5.)))
+
+          end do
+       end do
+
     end if
 
   end subroutine initscalardata_2d

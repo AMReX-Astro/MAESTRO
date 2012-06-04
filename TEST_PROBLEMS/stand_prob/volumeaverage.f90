@@ -285,13 +285,13 @@ contains
 
     !**** outputs
 
-    real (kind=dp_t), intent(  out) :: KE_local
-    real (kind=dp_t), intent(  out) :: PE_local
-    real (kind=dp_t), intent(  out) :: PKE_local
-    real (kind=dp_t), intent(  out) :: PPE_local
-    real (kind=dp_t), intent(  out) :: KEnl_local
-    real (kind=dp_t), intent(  out) :: PEnl_local
-    real (kind=dp_t), intent(  out) :: IEnl_local
+    real (kind=dp_t), intent(inout) :: KE_local
+    real (kind=dp_t), intent(inout) :: PE_local
+    real (kind=dp_t), intent(inout) :: PKE_local
+    real (kind=dp_t), intent(inout) :: PPE_local
+    real (kind=dp_t), intent(inout) :: KEnl_local
+    real (kind=dp_t), intent(inout) :: PEnl_local
+    real (kind=dp_t), intent(inout) :: IEnl_local
 
     !**** local variables
 
@@ -304,21 +304,10 @@ contains
     real (kind=dp_t)   :: rho_over_beta(0:nr_fine-1)
     real (kind=dp_t)   :: entropy(lo(2):hi(2))
 
-    ! initializing KE and PE
-
-    KE_local = ZERO
-    PE_local = ZERO
-    PKE_local = ZERO
-    PPE_local = ZERO
-    KEnl_local = ZERO
-    PEnl_local = ZERO
-    IEnl_local = ZERO
-
     ! calculate N2
 
-    rho_over_beta = rho0 / div_coeff
-
     do j = lo(2), hi(2)
+       rho_over_beta = rho0(j)/div_coeff(j)
        entropy(j) = log(rho_over_beta(j))
     enddo
 

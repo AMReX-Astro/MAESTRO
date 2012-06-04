@@ -7,9 +7,6 @@
  n_cellx = 512
  n_celly = 512
 
- n_cellx = 32
- n_celly = 32
-
  max_grid_size = 128
 
  prob_hi_x = 5.0d0
@@ -19,16 +16,15 @@
  H = 1.0d0
  grav_const = -1.0d0
 
- perturb_type= 6
+ perturb_type= 5
 
  yhigh = 1.5d0
  ylow  = 1.0d0
  amp   = 1.0d-4
  k     = 1
- kz    = 20
+ kz    = 3
 
  use_thermal_diffusion = F
- use_thermal_diffusion = T
  conductivity_constant = 1.0d-4
 
  anelastic_cutoff = 1.d-10
@@ -41,7 +37,7 @@
 
  ppm_type = 0
 
- max_step  = 1
+ max_step  = 100000
  init_iter = 1
 
  stop_time = 2000.0d0
@@ -49,9 +45,9 @@
  init_shrink = 0.1d0
 
  plot_base = T 
- plot_int  = 10
- chk_int   = 10
- max_dt  = 1.0
+ plot_int  = 50
+ chk_int   = 500
+ max_dt  = 0.3
  horave_deltat = 1.0d0 
 
  plot_Hnuc = F
