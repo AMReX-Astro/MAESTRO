@@ -32,7 +32,8 @@ contains
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use parallel, only: parallel_IOProcessor
     use bl_constants_module, only: ZERO, HALF, ONE, FOUR3RD, M_PI
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: spec_names
     use probin_module, only: base_cutoff_density, prob_lo, prob_hi, &
                              grav_const, planar_invsq_mass, &
@@ -65,6 +66,8 @@ contains
     real(kind=dp_t) :: max_hse_error
 
     logical, save :: firstCall = .true.
+
+    type (eos_t) :: eos_state
 
     call build(bpt, "init_base_state")
 
@@ -163,26 +166,18 @@ contains
           xn_ambient = xn_ambient/sumX
 
           ! use the EOS to make the state consistent
-          temp_eos = t_ambient
-          den_eos  = d_ambient
-          p_eos    = p_ambient
-          xn_eos(:) = xn_ambient(:)
+          eos_state%T     = t_ambient
+          eos_state%rho   = d_ambient
+          eos_state%p     = p_ambient
+          eos_state%xn(:) = xn_ambient(:)
 
           ! (rho,T) --> p,h
-          call eos(eos_input_rt, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false.)
+          call eos(eos_input_rt, eos_state, .false.)
 
           s0_init(r, rho_comp ) = d_ambient
-          s0_init(r,rhoh_comp ) = d_ambient * h_eos
+          s0_init(r,rhoh_comp ) = d_ambient * eos_state%h
           s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-          p0_init(r) = p_eos
+          p0_init(r) = eos_state%p
 
           s0_init(r,temp_comp) = t_ambient
 

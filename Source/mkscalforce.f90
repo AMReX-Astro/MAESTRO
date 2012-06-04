@@ -933,7 +933,8 @@ contains
 
     use geometry, only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec
 
     ! compute the source terms for temperature
@@ -954,6 +955,9 @@ contains
 
     real(kind=dp_t) :: gradp0, wadv, dhdp
 
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     do j = lo(2),hi(2)
 
        if (j.eq.0) then
@@ -969,33 +973,24 @@ contains
 
        do i = lo(1),hi(1)
 
-          temp_eos = s(i,j,temp_comp)
-           den_eos = s(i,j,rho_comp)
-          xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1) / s(i,j,rho_comp)
+          eos_state%T     = s(i,j,temp_comp)
+          eos_state%rho   = s(i,j,rho_comp)
+          eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1) / s(i,j,rho_comp)
 
-          pt_index_eos(:) = (/i, -1, -1/)
+          pt_index(:) = (/i, -1, -1/)
 
           ! dens, temp, xmass inputs
-         call eos(eos_input_rt, den_eos, temp_eos, &
-                  xn_eos, &
-                  p_eos, h_eos, e_eos, &
-                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                  dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                  dpdX_eos, dhdX_eos, &
-                  gam1_eos, cs_eos, s_eos, &
-                  dsdt_eos, dsdr_eos, &
-                  .false., &
-                  pt_index_eos)
+         call eos(eos_input_rt, eos_state, .false., pt_index)
 
-         dhdp = ONE / s(i,j,rho_comp) + ( s(i,j,rho_comp) * dedr_eos - &
-                                          p_eos / s(i,j,rho_comp) ) &
-                                        / ( s(i,j,rho_comp) * dpdr_eos )
+         dhdp = ONE / s(i,j,rho_comp) + ( s(i,j,rho_comp) * eos_state%dedr - &
+                                          eos_state%p / s(i,j,rho_comp) ) &
+                                        / ( s(i,j,rho_comp) * eos_state%dpdr )
 
          wadv = HALF*(wmac(i,j)+wmac(i,j+1))
 
          temp_force(i,j) =  thermal(i,j) + (ONE - s(i,j,rho_comp) * dhdp) * &
                             (wadv * gradp0 + psi(j))
-         temp_force(i,j) = temp_force(i,j) / (cp_eos * s(i,j,rho_comp))
+         temp_force(i,j) = temp_force(i,j) / (eos_state%cp * s(i,j,rho_comp))
 
        end do
     end do
@@ -1007,7 +1002,8 @@ contains
 
     use geometry,  only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec
 
     ! compute the source terms for temperature
@@ -1026,6 +1022,9 @@ contains
     integer         :: i,j,k
     real(kind=dp_t) :: dhdp, gradp0, wadv
 
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     do k = lo(3),hi(3)
        if (k.eq.0) then
           gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
@@ -1041,33 +1040,24 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
 
-             temp_eos = s(i,j,k,temp_comp)
-             den_eos = s(i,j,k,rho_comp)
-             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
+             eos_state%T     = s(i,j,k,temp_comp)
+             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
 
-             pt_index_eos(:) = (/i, j, -1/)
+             pt_index(:) = (/i, j, -1/)
              
              ! dens, temp, xmass inputs
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rt, eos_state, .false., pt_index)
              
-             dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos - &
-                  p_eos / s(i,j,k,rho_comp) ) / ( s(i,j,k,rho_comp) * dpdr_eos )
+             dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * eos_state%dedr - &
+                  eos_state%p / s(i,j,k,rho_comp) ) / ( s(i,j,k,rho_comp) * eos_state%dpdr )
              
              wadv = HALF * (wmac(i,j,k+1) + wmac(i,j,k))
              
              temp_force(i,j,k) =  thermal(i,j,k) + &
                   (ONE - s(i,j,k,rho_comp) * dhdp) * (wadv * gradp0 + psi(k))
              
-             temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos * s(i,j,k,rho_comp))
+             temp_force(i,j,k) = temp_force(i,j,k) / (eos_state%cp * s(i,j,k,rho_comp))
              
           end do
        end do
@@ -1080,7 +1070,8 @@ contains
 
     use fill_3d_module
     use variables, only: temp_comp, rho_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec
     use geometry,  only: dr, nr_fine
     use probin_module, only: enthalpy_pred_type
@@ -1104,36 +1095,30 @@ contains
     real(kind=dp_t) :: divup,p0divu,ugradp,dhdp
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
 
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,dhdp,p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,divup,p0divu,ugradp)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,dhdp,p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,divup,p0divu,ugradp,eos_state,pt_index)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              
-             temp_eos   = s(i,j,k,temp_comp)
-             den_eos   = s(i,j,k,rho_comp)
-             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
+             eos_state%T     = s(i,j,k,temp_comp)
+             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
              
              ! dens, temp, xmass inputs
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rt, eos_state, .false., pt_index)
              
-             dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos - &
-                                                p_eos / s(i,j,k,rho_comp) ) &
-                                                / ( s(i,j,k,rho_comp) * dpdr_eos )
+             dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * eos_state%dedr - &
+                                                eos_state%p / s(i,j,k,rho_comp) ) &
+                                                / ( s(i,j,k,rho_comp) * eos_state%dpdr )
 
              p0_lox = HALF * (p0_cart(i,j,k) + p0_cart(i-1,j,k)) 
              p0_hix = HALF * (p0_cart(i,j,k) + p0_cart(i+1,j,k)) 
@@ -1155,7 +1140,7 @@ contains
              temp_force(i,j,k) =  thermal(i,j,k) + &
                   (ONE - s(i,j,k,rho_comp) * dhdp) * (ugradp + psi_cart(i,j,k,1))
 
-             temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos * s(i,j,k,rho_comp))
+             temp_force(i,j,k) = temp_force(i,j,k) / (eos_state%cp * s(i,j,k,rho_comp))
              
           end do
        end do
