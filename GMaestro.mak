@@ -184,7 +184,7 @@ $(odir)/build_info.o: build_info.f90
 
 
 #-----------------------------------------------------------------------------
-# include the fParallel Makefile rules
+# include the BoxLib Fortran Makefile rules
 include $(BOXLIB_HOME)/Tools/F_mk/GMakerules.mak
 
 
