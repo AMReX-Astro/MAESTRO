@@ -12,8 +12,11 @@ MAESTRO_TOP_DIR := ../..
 
 # define the physics packages to build this problem 
 EOS_DIR := helmeos 
-CONDUCTIVITY_DIR := timmes_stellar
-NETWORK_DIR := null
+CONDUCTIVITY_DIR := constant
+
+NETWORK_DIR := general_null
+GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/ignition.net
+
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
