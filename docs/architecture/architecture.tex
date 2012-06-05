@@ -66,45 +66,8 @@ what goes into defining a specific \maestro\ problem.
 Problems piece together various \maestro\ directories, choosing a
 reaction network, equation of state, and conductivity routine to build
 an executable.  Briefly, the \maestro\ sub-directories are:
+
 \begin{itemize}
-\item {\tt extern/}
-
-  External modules, like ODE integrators, equations of state, reaction
-  networks, etc.  Many of these routines were developed by other groups.
-
-  Important sub-directories include:
- 
-  \begin{itemize}
-  \item {\tt conductivity/}
-
-    Various routines for computing the thermal conductivity used in the
-    thermal diffusion part of the algorithm.
-
-  \item {\tt EOS/}
-
-    A collection of various EOSes for use with the code.  The two
-    important ones for \maestro\ are {\tt helmeos/} and {\tt
-    gamma\_law\_general/}.
-
-  \item {\tt model\_parser/}
-
-    A simple Fortran module for reading in 1D initial model files.
-    This is used by the initialization routines to get the initial
-    model data.
-
-  \item {\tt networks/}
-
-    Various reaction networks for \maestro\ problems.  In addition to
-    providing a routine to evolve the nuclear species due to
-    reactions, the networks also define the species that are advected
-    by the code.
-
-  \item {\tt VODE/}
-
-    The {\tt VODE} \cite{vode} package for integrating ODEs.  At the
-    moment, this is used for integrating various reaction networks.
- 
-  \end{itemize}
 
 \item {\tt MAESTRO/}
 
@@ -128,17 +91,36 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
     A simple module to define physical constants
 
-
   \item {\tt docs/}
 
     Documentation describing the basic algorithm (including this
     document).
 
-  \item {\tt initial\_models}
+  \item {\tt Microphysics/}
 
-    Several sub-directories containing routines to generate 1D initial
-    conditions in hydrostatic equilibrium for mapping onto the
-    \maestro\ grid.  See \S~\ref{sec:initial_models} for details.
+    The core microphysics routines used by \maestro.  These are organized
+    into the following sub-directories.
+
+    \begin{itemize}
+    \item {\tt conductivity/}
+
+      Various routines for computing the thermal conductivity used in
+      the thermal diffusion part of the algorithm.
+
+    \item {\tt EOS/}
+
+      A collection of various EOSes for use with the code.  The two
+      important ones for \maestro\ are {\tt helmeos/} and {\tt
+        gamma\_law\_general/}.
+
+    \item {\tt networks/}
+
+      Various reaction networks for \maestro\ problems.  In addition
+      to providing a routine to evolve the nuclear species due to
+      reactions, the networks also define the species that are
+      advected by the code.
+
+    \end{itemize}
 
   \item {\tt SCIENCE/}
 
@@ -146,31 +128,59 @@ an executable.  Briefly, the \maestro\ sub-directories are:
     setups that have been used for science papers in the past, or are
     the basis for current science studies.
 
-  \item {\tt Source}
+  \item {\tt Source/}
 
     The main \maestro\ source.  Here you will find the driver routine,
     the advection routines, etc.  All \maestro\ problems will compile
     this source.
 
-  \item {\tt Source\_SDC}
+  \item {\tt Source\_SDC/}
 
     Source for an alternate formulation of \maestro\ that removes the
     splitting between hydrodynamics, diffusion, and reactions (see
     Chapter~\ref{ch:sdc}).
 
-  \item {\tt TEST\_PROBLEMS}
+  \item {\tt TEST\_PROBLEMS/}
  
     \maestro\ problem directories for simple test problems that have
     been used while developing \maestro.  Many of these problems have
     appeared in the various papers describing the \maestro\ algorithm.
 
-  \item {\tt UNIT\_TESTS}
+  \item {\tt UNIT\_TESTS/}
 
     Special \maestro\ problem directories that test only a single component
     of the \maestro\ algorithm.  These often have their own main drivers
     ({\tt varden.f90}) that setup and initialize some data structures and
     then call only a few of the \maestro\ routines.  See \S~\ref{sec:unit_tests}
     for details.
+
+  \item {\tt Util/}
+
+    Various helper routines exist in this directory.  Some of these
+    are externally developed.
+
+    \begin{itemize}
+
+    \item {\tt BLAS/}
+
+      Linear algebra routines.
+
+    \item {\tt model\_parser/}
+
+      A simple Fortran module for reading in 1D initial model files.
+      This is used by the initialization routines to get the initial
+      model data.
+
+    \item {\tt random/}
+
+      A random number generator.
+
+    \item {\tt VODE/}
+
+      The {\tt VODE} \cite{vode} package for integrating ODEs.  At the
+      moment, this is used for integrating various reaction networks.
+ 
+   \end{itemize}
 
   \end{itemize}
 
@@ -307,9 +317,9 @@ terminal as the are executed.
   MKVERBOSE := t
 \end{lstlisting}
 
-The next line defines where the top of the source tree is located.
+The next line defines where the top of the \maestro\ source tree is located.
 \begin{lstlisting}[language={[gnu]make},mathescape=false]
-  FPARALLEL := ../..
+  MAESTRO_TOP_DIR := ../..
 \end{lstlisting}
 
 A \maestro\ application is built from several packages (the
@@ -318,12 +328,20 @@ multigrid solver, an EOS, a reaction network, etc.).  The core
 to define the EOS, reaction network, and conductivities to
 use, as well as any extra, problem-specific files.  
 \begin{lstlisting}[language={[gnu]make},mathescape=false]
-EOS_DIR := extern/EOS/helmeos   
-CONDUCTIVITY_DIR := extern/conductivity/constant
-NETWORK_DIR := extern/networks/ignition
+EOS_DIR := helmeos   
+CONDUCTIVITY_DIR := constant
+NETWORK_DIR := ignition_simple
 
-EXTRA_DIR := extern/random
+EXTRA_DIR := Util/random
 \end{lstlisting}
+Note that the microphysics packages are listed simply by the name of 
+the directory containing the specific implementation (e.g. {\tt helmeos}).
+By default, the build system will look in {\tt Microphysics/EOS/} for
+the EOS, {\tt Microphysics/conductivity/} for the conductivity routine,
+and {\tt Microphysics/networks/} for the reaction network.  To
+override this default search path, you can set {\tt EOS\_TOP\_DIR},
+{\tt CONDUCTIVITY\_TOP\_DIR}, and {\tt NETWORK\_TOP\_DIR} respectively.
+
 Generally, one does not need to include the problem directory itself
 in {\tt EXTRA\_DIR}, unless there are unique source files found there,
 described in a {\tt GPackage.mak} file.  These variables are
@@ -357,7 +375,7 @@ the {\tt probin\_module}.
 The final line in the {\tt GNUmakefile} includes the rules to actually
 build the executable.
 \begin{lstlisting}[language={[gnu]make},mathescape=false]
-  include $(FPARALLEL)/MAESTRO/GMaestro.mak
+  include $(MAESTRO_TOP_DIR)/GMaestro.mak
 \end{lstlisting}
 %$
 
