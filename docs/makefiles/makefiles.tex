@@ -185,33 +185,39 @@ in the problem's {\tt GNUmakefile}.
 \begin{itemize}
 \item {\tt EOS\_DIR}:
 
-  This variable points to the path (relative to {\tt fParallel/}) of
+  This variable points to the directory (by default, relative to {\tt Microphysics/EOS/}) of
   the equation of state used for the build.  Choices that work
   with \maestro\ are:
   \begin{itemize}
   \item {\tt extern/EOS/helmeos}
   \item {\tt extern/EOS/gamma\_law\_general}
   \end{itemize}
+  To use an EOS contained in a different location, set the variable {\tt EOS\_TOP\_DIR}
+  to point to the directory above the alternate EOS directory.
 
 \item {\tt CONDUCTIVITY\_DIR}:
 
   This variable points to the conductivity routine used for the build
-  (relative to {\tt fParallel/}).  Choices that work with \maestro\
-  are:
-  \begin{itemize}
-  \item {\tt extern/conductivity/constant}
-  \item {\tt extern/conductivity/timmes\_stellar}
-  \end{itemize}
+  (by default, relative to {\tt Microphysics/conductivity/}).  Choices
+  that work with \maestro\ are: 
+  %
+  \begin{itemize} 
+  \item {\tt extern/conductivity/constant} 
+  \item {\tt extern/conductivity/timmes\_stellar} 
+  \end{itemize} 
+  % 
   If diffusion is not being used for the problem, this should be set
-  to {\tt extern/conductivity/constant}.
+  to {\tt extern/conductivity/constant}.  To use an alternate conductivity
+  routine, set the variable {\tt CONDUCTIVITY\_TOP\_DIR} to point
+  to the directory above the alternate conductivity directory.
 
 \item {\tt NETWORK\_DIR}:
 
-  This variable points to the reaction network used for the build
-  (relative to {\tt fParallel/}).  A lot of options are present in
-  {\tt extern/networks/}.  A network is required even if you are not
-  doing reactions, since the network defines the species that are
-  advected and interpreted by the equation of state.  
+  This variable points to the reaction network used for the build (by
+  default, relative to {\tt Microphysics/networks/}).  Several options
+  are present in {\tt extern/networks/}.  A network is required even
+  if you are not doing reactions, since the network defines the
+  species that are advected and interpreted by the equation of state.
 
   A special choice, {\tt extern/networks/general\_null} is a general
   network that simply defines the properties of one or more species.
@@ -219,6 +225,10 @@ in the problem's {\tt GNUmakefile}.
   GENERAL\_NET\_INPUTS}.  This inputs file is read at compile-time and
   used to build the {\tt network.f90} file that is compiled into the
   source.
+
+  To use an alternate reaction network, set the variable {\tt
+  NETWORK\_TOP\_DIR} to point to the directory above the alternate
+  network.
 
 \end{itemize}
 
