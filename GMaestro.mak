@@ -43,6 +43,8 @@ UTIL_CORE := Util/model_parser \
 
 MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS
 
+
+#-----------------------------------------------------------------------------
 # locations of the microphysics 
 ifndef EOS_TOP_DIR 
   EOS_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/EOS
@@ -67,6 +69,19 @@ ifneq ($(findstring null, $(NETWORK_DIR)), null)
 endif
 
 
+# the helmeos has an include file -- also add a target to link the table
+# into the problem directory.
+ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
+  Fmincludes := Microphysics/EOS/helmeos
+  EOS_PATH := $(MAESTRO_TOP_DIR)/Microphysics/EOS/$(strip $(EOS_DIR))
+  ALL: table
+endif
+
+
+table:
+	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
+
+
 #-----------------------------------------------------------------------------
 # compile in support for particles
 PARTICLES := t
@@ -84,19 +99,6 @@ PARTICLES := t
 Fmdirs += $(EXTRA_DIR) \
           $(UTIL_CORE) \
           $(MAESTRO_CORE)
-
-
-# the helmeos has an include file -- also add a target to link the table
-# into the problem directory.
-ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
-  Fmincludes := Microphysics/EOS/helmeos
-  EOS_PATH := $(MAESTRO_TOP_DIR)/Microphysics/EOS/$(strip $(EOS_DIR))
-  ALL: table
-endif
-
-
-table:
-	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
 
 Fmpack := $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir)/GPackage.mak)
