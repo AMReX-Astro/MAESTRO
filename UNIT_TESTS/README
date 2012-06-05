@@ -87,3 +87,15 @@ test_projection/
   divergence-free field.  
 
 
+test_react/
+
+  This test sets up a 3-d cube with rho varying on one axis, T on
+  another, and the composition on the third.  The composition is setup
+  via an inputs file.  The script in test_react/scripts/ can be used
+  to do this.  The burner is then called in every zone, for a variety
+  of timesteps, and the results are written out into plotfiles.  This
+  test is useful for determining whether a burner is threadsafe--run
+  with 1 thread and then again with multiple threads and the results
+  should be identical (since this test is trivially parallel).
+
+
