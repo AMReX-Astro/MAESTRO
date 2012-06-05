@@ -97,7 +97,7 @@ This option specifies the Fortran compiler.  We will use {\tt
 gfortran}, which is the preferred compiler for \maestro.  Specifying
 this compiler will automatically pull in the compiler settings as
 specified in {\tt BOXLIB\_HOME/Tools/F\_mk/}.  (Alternate compiler
-choices include {\tt Intel}, {\tt PGI}, {\tt PathScale}.)
+choices include {\tt Intel}, {\tt PGI}, {\tt PathScale}, {\tt Cray}.)
 
 \end{itemize}
 
@@ -208,13 +208,7 @@ but differ in a few ways.
 system, you may need to install the {\tt lesstif} package and any
 related development packages (e.g.\ {\tt lesstif-devel}).  Depending
 on your Linux system, you may also need to install {\tt libXpm} and
-related development packages (e.g.\ {\tt libXpm-devel}).  Also, in
-{\tt BoxLib/Tools/C\_mk/Make.defs}, the Fortran libraries are
-explictly linked in by asking {\tt gfortran} for the location of {\tt
-libgfortran.a}.  You may need to explicitly install the static
-libraries for {\tt gfortran} (i.e.\ {\tt libgfortran-static}), or
-change the library line to query for the shared-object version {\tt
-libgfortran.so}.
+related development packages (e.g.\ {\tt libXpm-devel}).  
 
 Further details on the C++ \boxlib\ build system used by \amrvis\
 can be found in the \boxlib\ documentation.
@@ -260,7 +254,7 @@ file called {\tt maestro\_diag.out}.  This includes the maximum Mach
 number, peak temperature, and peak nuclear energy generation rate.
 Individual problems can provide their own {\tt diag.f90} file to
 produce custom diagnostic output.  This information can be plotted
-directly with {\sl GNUplot}, for example.
+directly with {\sf GNUplot}, for example.
 
 
 
@@ -270,7 +264,7 @@ directly with {\sl GNUplot}, for example.
 
 Different problems in \maestro\ are contained in one of three
 sub-directories under {\tt MAESTRO/} ({\tt SCIENCE/}, {\tt
-TEST\_PROBLEMS}, or {\tt UNIT\_TESTS}).  The {\tt GNUmakefile} in each
+TEST\_PROBLEMS/}, or {\tt UNIT\_TESTS/}).  The {\tt GNUmakefile} in each
 problem directory lists the components of {\tt MAESTRO} that are used
 to build the executable.  {\tt TEST\_PROBLEMS/} contains simple
 problems that were used in the development of \maestro.  Many
@@ -292,7 +286,7 @@ rather enforces $\nabla \cdot U = S$ (through the runtime parameter
 {\tt spherical\_heat} maps a spherical star (a Chandrasekhar-mass white
 dwarf) onto the Cartesian domain and uses an external heat source to
 cause the star to expand.  This is the 3D analogue of the {\tt
-  test\_basestate} unit test (see \S~\ref{sec:unit_tests}).  This
+  test\_basestate} unit test (see \S~\ref{chapter:unit_tests}).  This
 problem was discussed in \cite{multilevel}.
 
 \item {\tt test2} \\[-3mm]
@@ -471,4 +465,28 @@ number of zones on the finest grid in the $x$ direction will be
 ${\tt n\_cellx} \cdot 2^{({\tt max\_levels} -1)}$.
 
 
+
+\section{Parallel Jobs}
+
+To run in parallel with MPI, you would set {\tt MPI := t} in your {\tt
+GNUmakefile}.  For a machine with working MPI compiler wrappers ({\tt
+mpif90} and {\tt mpicc}), setting the environment variable {\tt
+BOXLIB\_USE\_MPI\_WRAPPERS=1} will have the code build using these
+wrappers.  This is the easiest way to do a parallel build, and should
+work on most Linux systems.
+
+More generally, the build system needs to know about your MPI
+installation.  For popular national computing facilities, this is
+already setup, and the build system looks at the machine hostname to
+set the proper libraries.  For other machines, you may need to edit
+the {\tt GMake.MPI} file in the \boxlib\ build files.  See
+\S~\ref{ch:make} for more details.
+
+OpenMP can be used to parallelize on shared-memory machines (i.e.\
+within a node).  OpenMP support is accomplished through the compiler.
+Setting {\tt OMP := t} in the {\tt GNUmakefile} will enable the proper
+compiler flags to build with OpenMP.  Note: not all \maestro\ modules 
+have OpenMP support.  Microphysics routines need to be written in a
+threadsafe manner.  This can be tested via the {\tt test\_react} unit
+test (see ~\S~\ref{chapter:unit_tests}).
 
