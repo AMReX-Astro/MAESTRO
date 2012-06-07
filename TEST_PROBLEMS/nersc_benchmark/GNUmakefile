@@ -1,10 +1,10 @@
-NDEBUG := t
+NDEBUG :=  
 MPI    := t
-OMP    := t
+OMP    :=
 
 HYPRE :=
 
-COMP := PathScale
+COMP := gfortran
 
 MKVERBOSE := t
 
@@ -25,17 +25,17 @@ NETWORK_DIR := ignition_chamulak
 EXTRA_DIR := Util/random
 
 ifdef HYPRE
- 
+
 # on manda
   HYPRE_DIR = ../../extern/hypre
- 
+
 # on hopper
 # HYPRE_DIR =  /usr/common/acts/Hypre/2.6.0b/src/cray-xt5_O
- 
+
   LDFLAGS += -L $(HYPRE_DIR)/lib
   FINCLUDE_LOCATIONS += $(HYPRE_DIR)/include
   hypre_libraries = -lHYPRE
- 
+
 endif
 
 
