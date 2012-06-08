@@ -169,8 +169,8 @@ contains
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
-    use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac, temp_comp
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
+    use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
 
@@ -285,8 +285,8 @@ contains
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
-    use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac, temp_comp
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
+    use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
 
@@ -409,8 +409,8 @@ contains
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
-    use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac, temp_comp
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
+    use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
 
@@ -550,8 +550,8 @@ contains
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
-    use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac, temp_comp
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
+    use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
 

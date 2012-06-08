@@ -18,7 +18,6 @@ contains
 
   subroutine make_gamma(mla,gamma,s,p0,dx)
 
-    use variables, only: foextrap_comp
     use bl_prof_module
     use ml_restriction_module
     use multifab_physbc_module

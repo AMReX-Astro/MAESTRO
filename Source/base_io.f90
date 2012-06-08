@@ -120,9 +120,8 @@ contains
 
     use parallel, only: parallel_IOProcessor
     use bl_prof_module, only: bl_prof_timer, build, destroy
-    use variables, only: rho_comp, rhoh_comp
     use network, only: nspec
-    use geometry, only : dr, nr, nlevs_radial, compute_cutoff_coords
+    use geometry, only : nr, nlevs_radial, compute_cutoff_coords
     use restrict_base_module, only: fill_ghost_base
     use inlet_bc_module, only: set_inlet_bcs
     

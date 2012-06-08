@@ -34,7 +34,7 @@ contains
     use cell_to_edge_module, only: cell_to_edge
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr_fine, nlevs_radial
-    use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
+    use variables,     only: ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
     use probin_module, only: verbose, bds_type, species_pred_type
     use modify_scal_force_module, only: modify_scal_force
     use convert_rhoX_to_X_module, only: convert_rhoX_to_X

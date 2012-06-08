@@ -28,7 +28,7 @@ contains
     use pert_form_module
 
     use probin_module, only : verbose, nodal, pmask, &
-         regrid_int, amr_buf_width, &
+         amr_buf_width, &
          max_grid_size_2, max_grid_size_3, ref_ratio, max_levs, &
          ppm_type, bds_type, dump_grid_file
     use geometry, only: nlevs_radial, spherical
@@ -394,7 +394,7 @@ contains
     use fillpatch_module
     use ml_prolongation_module
     use probin_module, only : nodal
-    use variables    , only : nscal, rho_comp, rhoh_comp, foextrap_comp
+    use variables    , only : nscal, rho_comp, foextrap_comp
 
     integer                    , intent(in   ) :: lev, dm, ng_s, rr(:)
     type(layout)               , intent(in   ) :: la

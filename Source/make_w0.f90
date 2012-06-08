@@ -109,9 +109,8 @@ contains
 
     use geometry, only: nr_fine, r_start_coord, r_end_coord, dr, &
          base_cutoff_density_coord,numdisjointchunks, nr
-    use variables, only: rho_comp
     use bl_constants_module
-    use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
+    use probin_module, only: grav_const, dpdt_factor
     use restrict_base_module
 
     real(kind=dp_t), intent(  out) ::                 w0(:,0:)
@@ -266,7 +265,7 @@ contains
     use make_grav_module
     use bl_constants_module
     use fundamental_constants_module, only: Gconst
-    use probin_module, only: dpdt_factor, base_cutoff_density
+    use probin_module, only: dpdt_factor
     use prolong_base_to_uniform_module
     use restrict_base_module
     use make_grav_module
@@ -512,7 +511,7 @@ contains
                                etarho_ec,etarho_cc,w0_force, &
                                dt,dtold)
 
-    use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr, &
+    use geometry, only: nr_fine, r_edge_loc, dr, r_cc_loc, &
          base_cutoff_density_coord
     use make_grav_module
     use bl_constants_module

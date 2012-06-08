@@ -430,8 +430,6 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_conductivity(plotdata,comp_cond,state)
 
-    use geometry, only: spherical
-
     type(multifab),  intent(inout) :: plotdata
     integer,         intent(in   ) :: comp_cond
     type(multifab),  intent(in   ) :: state
@@ -2771,8 +2769,6 @@ contains
   end subroutine makemagvel_2d
 
   subroutine makemagvel_3d_cart(magvel,mom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
-
-    use geometry, only : spherical
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
     real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)

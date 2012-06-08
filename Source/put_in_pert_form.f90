@@ -22,7 +22,6 @@ contains
   subroutine put_in_pert_form(mla,s,base,dx,comp,bc_comp,flag,the_bc_level)
 
     use geometry, only: spherical
-    use variables, only: foextrap_comp, nscal
     use ml_layout_module
     use define_bc_module
     use ml_restriction_module, only: ml_cc_restriction_c

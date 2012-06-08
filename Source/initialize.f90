@@ -697,7 +697,7 @@ contains
     use average_module
     use restrict_base_module
     use probin_module, only : drdxfac, octant, test_set, ppm_type, bds_type, nodal, &
-         prob_lo, prob_hi, model_file, do_smallscale, dm_in, fix_base_state, max_levs
+         prob_lo, prob_hi, model_file, do_smallscale, dm_in, fix_base_state
     use make_grav_module
     use enforce_HSE_module
     use rhoh_vs_t_module
@@ -909,7 +909,7 @@ contains
                                             psi,tempbar,tempbar_init,grav_cell)
 
     use probin_module, only: n_cellx, n_celly, n_cellz, &
-         regrid_int, amr_buf_width, max_grid_size_1, max_grid_size_2, max_grid_size_3, &
+         amr_buf_width, max_grid_size_1, max_grid_size_2, max_grid_size_3, &
          ref_ratio, max_levs, octant
     use init_scalar_module
     use init_vel_module

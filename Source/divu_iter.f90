@@ -23,7 +23,7 @@ contains
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
                        tempbar_init,w0,grav_cell,dx,dt,the_bc_tower,mla)
 
-    use variables, only: nscal, foextrap_comp, rho_comp
+    use variables, only: nscal, foextrap_comp
     use network, only: nspec
     use probin_module, only: use_thermal_diffusion, evolve_base_state, &
          init_divu_iter, cflfac, verbose, init_shrink, fixed_dt

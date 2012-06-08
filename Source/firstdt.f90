@@ -432,7 +432,7 @@ contains
   subroutine firstdt_3d(n,u,ng_u,s,ng_s,force,ng_f,divU,ng_dU,p0,gamma1bar,lo,hi,dx,dt, &
                         umax,cfl)
 
-    use geometry,  only: spherical, nr
+    use geometry,  only: nr
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module, only: eos, eos_input_rt
     use eos_type_module
@@ -571,7 +571,7 @@ contains
   subroutine firstdt_3d_sphr(u,ng_u,s,ng_s,force,ng_f,divU,ng_dU,p0,gamma1bar,lo,hi,dx, &
                              dt,umax,cfl)
 
-    use geometry,  only: nr, dr, nr_fine
+    use geometry,  only: dr, nr_fine
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module, only: eos, eos_input_rt
     use eos_type_module

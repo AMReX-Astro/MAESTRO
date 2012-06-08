@@ -26,7 +26,7 @@ contains
     use ml_solve_module     , only : ml_nd_solve
     use nodal_divu_module   , only : divu, subtract_divu_from_rh
     use probin_module       , only : hg_bottom_solver, max_mg_bottom_nlevels, &
-                                     verbose, mg_verbose, cg_verbose, nodal
+                                     mg_verbose, cg_verbose, nodal
     use variables, only: press_comp
     use mg_eps_module, only: eps_hg_bottom
 

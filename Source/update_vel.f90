@@ -253,7 +253,7 @@ contains
                                 sponge,ng_sp)
 
     use fill_3d_module
-    use geometry, only: spherical, nr_fine, dr
+    use geometry, only: spherical
     use bl_constants_module
     use probin_module, only: do_sponge
 

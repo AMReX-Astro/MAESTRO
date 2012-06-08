@@ -441,7 +441,6 @@ contains
     use eos_module
     use conductivity_module
     use network, only: nspec
-    use geometry, only: spherical
     use fill_3d_module
     
     integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_T,ng_h,ng_X,ng_p

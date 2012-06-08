@@ -430,7 +430,6 @@ contains
                                  ng_pm,lo,hi,dx,psi,add_thermal)
 
     use fill_3d_module
-    use geometry, only: nr_fine, dr, center
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
@@ -674,7 +673,6 @@ contains
                                    dx,psi,add_thermal)
 
     use fill_3d_module
-    use geometry, only: nr_fine, dr, center
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
@@ -1073,8 +1071,6 @@ contains
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
     use network, only: nspec
-    use geometry,  only: dr, nr_fine
-    use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
     ! compute the source terms for temperature

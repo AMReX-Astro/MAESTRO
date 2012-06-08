@@ -29,7 +29,6 @@ contains
     use network, only: network_species_index
     use inlet_bc_module
     use fill_3d_module, only: put_1d_array_on_cart, make_w0mac
-    use variables, only: foextrap_comp
     use probin_module, only: mach_max_abort
 
     real(kind=dp_t), intent(in   ) :: dx(:,:),newtime
@@ -62,11 +61,8 @@ contains
     real(kind=dp_t) :: Mach_max, Mach_max_level, Mach_max_local
 
     integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
-    integer :: ng_s,ng_u,ng_n,ng_rhn,ng_rhe,ng_rw,ng_w,ng_wm
+    integer :: ng_s,ng_u,ng_n,ng_w,ng_wm
     integer :: i,n,comp
-    logical :: lexist
-
-    logical, save :: firstCall_io = .true.
 
     type(bl_prof_timer), save :: bpt
 
@@ -316,7 +312,6 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp
     use bl_constants_module
     use network, only: nspec
-    use probin_module, only: prob_lo
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
 
@@ -381,7 +376,6 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp
     use bl_constants_module
     use network, only: nspec
-    use probin_module, only: prob_lo
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
 
@@ -449,7 +443,6 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp
     use bl_constants_module
     use network, only: nspec
-    use probin_module, only: prob_lo
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
 
@@ -523,7 +516,6 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp
     use bl_constants_module
     use network, only: nspec
-    use probin_module, only: prob_lo
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
 

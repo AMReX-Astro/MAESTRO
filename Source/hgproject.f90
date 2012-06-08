@@ -26,7 +26,7 @@ contains
     use hg_hypre_module            , only : hg_hypre
 
     use mg_eps_module              , only : eps_hg, eps_hg_max, hg_level_factor
-    use probin_module              , only: verbose, mg_verbose, cg_verbose, &
+    use probin_module              , only: verbose, &
                                            hg_dense_stencil, nodal, &
                                            use_hypre, use_alt_energy_fix
     use enforce_outflow_on_divu_module, only : enforce_outflow_on_divu_rhs
@@ -1089,7 +1089,6 @@ contains
     use ml_solve_module
     use nodal_divu_module
     use probin_module, only : nodal
-    use probin_module, only : verbose, nodal
     use variables, only: press_comp
 
     type(ml_layout), intent(inout) :: mla

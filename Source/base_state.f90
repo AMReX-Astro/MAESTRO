@@ -35,7 +35,7 @@ contains
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
     use network, only: spec_names
-    use probin_module, only: base_cutoff_density, prob_lo, prob_hi, &
+    use probin_module, only: base_cutoff_density, prob_lo, &
                              grav_const, planar_invsq_mass, &
                              do_planar_invsq_grav, do_2d_planar_octant
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac

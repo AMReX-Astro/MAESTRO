@@ -293,7 +293,7 @@ contains
 
     use bl_constants_module
     use geometry, only: dr, center, r_cc_loc, nr_fine, r_edge_loc
-    use probin_module, only: s0_interp_type, w0_interp_type, prob_lo, prob_hi
+    use probin_module, only: s0_interp_type, w0_interp_type, prob_lo
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s
     logical        , intent(in   ) :: is_input_edge_centered,is_output_a_vector
@@ -570,9 +570,8 @@ contains
   subroutine make_w0mac(mla,w0,w0mac,dx,the_bc_level)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine
+    use geometry, only: spherical
     use probin_module, only: w0mac_interp_type
-    use variables, only: foextrap_comp
     use define_bc_module
 
     type(ml_layout), intent(in   ) :: mla
@@ -646,7 +645,7 @@ contains
 
     use bl_constants_module
     use geometry, only: dr, center, nr_fine, r_edge_loc
-    use probin_module, only: w0mac_interp_type, prob_lo, prob_hi
+    use probin_module, only: w0mac_interp_type, prob_lo
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_w0,ng_wc
     real(kind=dp_t), intent(in   ) :: w0(0:)
@@ -966,7 +965,7 @@ contains
   subroutine make_s0mac(mla,s0,s0mac,dx,bccomp,the_bc_level)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine
+    use geometry, only: spherical
     use define_bc_module
     use probin_module, only: s0mac_interp_type
 
@@ -1043,7 +1042,7 @@ contains
 
     use bl_constants_module
     use geometry, only: dr, center, nr_fine, r_cc_loc
-    use probin_module, only: s0mac_interp_type, prob_lo, prob_hi
+    use probin_module, only: s0mac_interp_type, prob_lo
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sm,ng_s0
     real(kind=dp_t), intent(in   ) :: s0(0:)
@@ -1335,7 +1334,7 @@ contains
 
     use bl_constants_module
     use geometry, only: spherical, center
-    use probin_module, only: prob_lo, prob_hi
+    use probin_module, only: prob_lo
     
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -1723,8 +1722,8 @@ contains
   subroutine put_1d_array_on_cart_irreg_sphr(s0,radii,s0_cart,lo,hi,dx,ng_s)
 
     use bl_constants_module
-    use geometry, only: dr, center, r_cc_loc, nr_fine, r_edge_loc, nr_irreg
-    use probin_module, only: s0_interp_type, w0_interp_type, prob_lo, prob_hi
+    use geometry, only: center, nr_irreg
+    use probin_module, only: prob_lo
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s
     real(kind=dp_t), intent(in   ) :: s0(0:),radii(0:)

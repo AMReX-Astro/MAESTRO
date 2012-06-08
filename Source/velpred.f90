@@ -18,7 +18,6 @@ contains
     use bl_prof_module
     use bl_constants_module
     use geometry, only: spherical
-    use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
     use ml_restriction_module, only : ml_edge_restriction_c

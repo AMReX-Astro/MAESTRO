@@ -30,7 +30,6 @@ contains
     use network
     use fill_3d_module
     use multifab_physbc_module
-    use probin_module, only: species_pred_type
     use pred_parameters
     
     type(multifab) , intent(in   ) :: u(:)
@@ -189,7 +188,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:),rhoh0_edge_old(0:),t0_edge_old(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:),rhoh0_edge_new(0:),t0_edge_new(0:)
  
-    integer :: i, n
+    integer :: i
     real(kind=dp_t) :: t0_edge
     
     integer :: pt_index(MAX_SPACEDIM)
@@ -274,7 +273,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_new(0:),rhoh0_new(0:),t0_new(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:),rhoh0_edge_new(0:),t0_edge_new(0:)
 
-    integer :: i,j, n
+    integer :: i,j
     real(kind=dp_t) :: t0_edge
 
     integer :: pt_index(MAX_SPACEDIM)
@@ -1339,7 +1338,7 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoP_1d(state,lo,hi,ng,p0)
 
-    use variables,     only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use variables,     only: rho_comp, spec_comp, temp_comp
     use eos_module
     use network,       only: nspec
 
@@ -1384,7 +1383,7 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoP_2d(state,lo,hi,ng,p0)
 
-    use variables,     only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use variables,     only: rho_comp, spec_comp, temp_comp
     use eos_module
     use network,       only: nspec
 
@@ -1431,7 +1430,7 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoP_3d(state,lo,hi,ng,p0)
 
-    use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use variables,      only: rho_comp, spec_comp, temp_comp
     use eos_module
     use network,       only: nspec
     use fill_3d_module
@@ -1482,7 +1481,7 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoP_3d_sphr(state,lo,hi,ng,p0,dx)
 
-    use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use variables,      only: rho_comp, spec_comp, temp_comp
     use eos_module
     use network,       only: nspec
     use fill_3d_module

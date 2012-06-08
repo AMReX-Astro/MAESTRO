@@ -395,8 +395,7 @@ contains
 
   subroutine average_irreg(mla,phi,phibar_irreg,dx,incomp)
 
-    use geometry, only: nr_fine, nr_irreg, r_start_coord, r_end_coord, spherical, &
-         numdisjointchunks, dr
+    use geometry, only: nr_irreg, spherical
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use bl_constants_module, only: ZERO
     use restrict_base_module, only: restrict_base, fill_ghost_base
@@ -567,7 +566,7 @@ contains
 
   subroutine sum_phi_3d_sphr(radii,nr_irreg,phi,phisum,lo,hi,ng,dx,ncell,incomp,mask)
 
-    use geometry, only: dr, center
+    use geometry, only: center
     use probin_module, only: prob_lo
     use bl_constants_module, only: HALF
 

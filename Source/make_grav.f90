@@ -14,8 +14,8 @@ contains
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_cc_loc, r_edge_loc, &
-         nlevs_radial, nr, numdisjointchunks, base_cutoff_density_coord, & 
-         r_start_coord, r_end_coord, dr
+         nlevs_radial, nr, numdisjointchunks, & 
+         r_start_coord, r_end_coord
     use probin_module, only: grav_const, base_cutoff_density, &
          do_planar_invsq_grav, planar_invsq_mass, do_2d_planar_octant, ref_ratio
     use fundamental_constants_module, only: Gconst
@@ -234,8 +234,7 @@ contains
 
     use bl_constants_module
     use geometry, only: spherical, r_edge_loc, nr_fine, nlevs_radial, nr, &
-         numdisjointchunks, base_cutoff_density_coord,r_start_coord, &
-         r_end_coord,dr
+         numdisjointchunks, r_start_coord, r_end_coord
     use probin_module, only: grav_const, base_cutoff_density, &
          do_planar_invsq_grav, planar_invsq_mass, do_2d_planar_octant, ref_ratio
     use fundamental_constants_module, only: Gconst

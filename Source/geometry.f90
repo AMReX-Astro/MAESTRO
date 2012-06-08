@@ -77,7 +77,7 @@ contains
 
     ! computes dr, nr, r_cc_loc, r_edge_loc
 
-    use probin_module, only: prob_lo, prob_hi
+    use probin_module, only: prob_lo
     use bl_constants_module
 
     integer          , intent(in   ) :: num_levs
@@ -309,7 +309,6 @@ contains
     ! computes numdisjointchunks, r_start_coord, r_end_coord
 
     use bl_constants_module
-    use probin_module, only: prob_lo
 
     type(multifab) , intent(in   ) :: mf(:)
 
@@ -449,7 +448,7 @@ contains
 
   subroutine init_rotation()
 
-    use probin_module, only: rotational_frequency, co_latitude, rotation_radius
+    use probin_module, only: rotational_frequency, co_latitude
     use bl_constants_module, only: M_PI, ZERO
 
     real(dp_t) :: theta_in_rad

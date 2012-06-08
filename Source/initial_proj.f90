@@ -24,7 +24,7 @@ contains
   subroutine initial_proj(uold,sold,pi,gpi,Source_old,hgrhs,thermal, &
                           div_coeff_old,p0,gamma1bar,dx,the_bc_tower,mla)
 
-    use variables, only: foextrap_comp, rho_comp
+    use variables, only: foextrap_comp
     use network, only: nspec
     use probin_module, only: use_thermal_diffusion, evolve_base_state
     use geometry, only: spherical, nr_fine, nlevs_radial

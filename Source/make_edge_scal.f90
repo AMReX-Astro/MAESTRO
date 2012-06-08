@@ -27,8 +27,6 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
-    use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
     use ml_restriction_module, only : ml_edge_restriction_c
@@ -656,7 +654,6 @@ contains
                                force,ng_f,lo,hi,dx,dt,is_vel,adv_bc,comp,bccomp, &
                                is_conservative)
 
-    use geometry, only: spherical
     use bc_module
     use slope_module
     use bl_constants_module

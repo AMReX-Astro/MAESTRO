@@ -36,7 +36,7 @@ contains
   subroutine make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks, dr
+    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks
     use restrict_base_module
 
     real(kind=dp_t)   , intent(  out) :: etarho_ec(:,0:)

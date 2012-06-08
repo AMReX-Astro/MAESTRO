@@ -35,9 +35,9 @@ contains
     use fill_3d_module       , only : put_1d_array_on_cart, put_data_on_faces
     use ml_restriction_module, only : ml_cc_restriction_c
 
-    use variables    , only : foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
+    use variables    , only : foextrap_comp, rho_comp, spec_comp, rhoh_comp
     use network      , only : nspec
-    use probin_module, only : thermal_diffusion_type, use_tfromp
+    use probin_module, only : thermal_diffusion_type
     use mg_eps_module, only : eps_mac
 
     type(ml_layout), intent(inout) :: mla

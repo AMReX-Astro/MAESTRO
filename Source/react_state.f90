@@ -146,8 +146,7 @@ contains
   subroutine burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,dx,dt,the_bc_level)
 
     use bl_constants_module, only: ZERO
-    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, &
-                         nscal, ntrac, trac_comp, foextrap_comp
+    use variables, only: foextrap_comp
     use network, only: nspec
     use probin_module, only: drive_initial_convection
     use geometry, only: spherical
@@ -298,7 +297,7 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
-    use probin_module, ONLY: do_burning, burning_cutoff_density, burner_threshold_species, &
+    use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
@@ -394,7 +393,7 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
-    use probin_module, ONLY: do_burning, burning_cutoff_density, burner_threshold_species, &
+    use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
@@ -499,7 +498,7 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
-    use probin_module, ONLY: do_burning, burning_cutoff_density, burner_threshold_species, &
+    use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
@@ -616,7 +615,7 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
-    use probin_module, ONLY: do_burning, burning_cutoff_density, burner_threshold_species, &
+    use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn,ng_tc

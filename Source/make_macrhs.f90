@@ -186,7 +186,7 @@ contains
                             delta_p_term,ng_dp,dt)
 
     use geometry, only: base_cutoff_density_coord
-    use probin_module, only: dpdt_factor, base_cutoff_density
+    use probin_module, only: dpdt_factor
     use fill_3d_module
 
     integer         , intent(in   ) :: n,lo(:),hi(:),ng_rh,ng_sr,ng_dg,ng_dp
@@ -238,7 +238,6 @@ contains
                                  Sbar,div_coeff,dx,gamma1bar_old,gamma1bar_new,p0_old, &
                                  p0_new,delta_p_term,ng_dp,dt)
 
-    use geometry, only: base_cutoff_density_coord
     use probin_module, only: dpdt_factor, base_cutoff_density
     use fill_3d_module
 

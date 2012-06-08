@@ -608,7 +608,7 @@ contains
 
   subroutine add_utilde_force_1d(n,lo,hi,force,ng_f,umac,ng_u,w0)
 
-    use geometry, only: spherical, nr, dr
+    use geometry, only: nr, dr
     use bl_constants_module
 
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_u
@@ -635,7 +635,7 @@ contains
 
   subroutine add_utilde_force_2d(n,lo,hi,force,ng_f,vmac,ng_u,w0)
 
-    use geometry, only: spherical, nr, dr
+    use geometry, only: nr, dr
     use bl_constants_module
 
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_u

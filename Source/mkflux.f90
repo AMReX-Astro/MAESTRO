@@ -501,7 +501,7 @@ contains
 
     use bl_constants_module
     use network, only: nspec
-    use variables, only: spec_comp, rho_comp
+    use variables, only: rho_comp
     use pred_parameters
     use probin_module, only: species_pred_type
 

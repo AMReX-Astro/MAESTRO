@@ -21,8 +21,7 @@ contains
   subroutine init_particles(particles,s,rho0,rhoh0,p0,tempbar,mla,dx,init_mode)
 
     use bl_prof_module
-    use geometry, only: spherical, nlevs_radial, nr_fine
-    use variables, only: rho_comp, temp_comp
+    use geometry, only: spherical
     use fill_3d_module
 
     type(particle_container), intent(inout) :: particles
@@ -37,7 +36,7 @@ contains
     
     real(kind=dp_t), pointer::   sop(:,:,:,:)
     
-    integer :: lo(mla%dim),hi(mla%dim),i,n,comp,dm,nlevs
+    integer :: lo(mla%dim),hi(mla%dim),i,n,dm,nlevs
     integer :: ng_s
     
     type(bl_prof_timer), save :: bpt

@@ -79,7 +79,7 @@ contains
     double precision orad, ocond, opac
 
     ! local
-    integer n,i
+    integer i
 
     !..call an equation of state
     !..you can download this eos from fxt's eos code webpage

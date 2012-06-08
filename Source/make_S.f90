@@ -505,7 +505,6 @@ contains
     use network, only: nspec
     use variables, only: rho_comp, temp_comp, spec_comp
     use probin_module, only: use_delta_gamma1_term
-    use geometry, only: anelastic_cutoff_coord, nr
 
     integer         , intent(in   ) :: lo(:),hi(:)
     integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_rw,ng_he,ng_hn,ng_th
