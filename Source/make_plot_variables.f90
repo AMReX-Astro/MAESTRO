@@ -75,7 +75,8 @@ contains
   subroutine make_ad_excess_1d(ad_excess, ng_ad, state, ng_s, lo, hi)
 
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec
     use probin_module, only: base_cutoff_density
     use bl_constants_module
@@ -89,30 +90,24 @@ contains
 
     integer :: i
     
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     do i = lo(1), hi(1)
 
-       den_eos = state(i,rho_comp)
-       temp_eos = state(i,temp_comp)
-       xn_eos(:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos
+       eos_state%rho   = state(i,rho_comp)
+       eos_state%T     = state(i,temp_comp)
+       eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-       pt_index_eos(:) = (/i, -1, -1/)       
+       pt_index(:) = (/i, -1, -1/)       
 
-       call eos(eos_input_rt, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false., &
-                pt_index_eos)       
+       call eos(eos_input_rt, eos_state, .false., pt_index)
        
-       pres(i) = p_eos
+       pres(i) = eos_state%p
 
-       chi_rho = den_eos * dpdr_eos / p_eos
-       chi_t = temp_eos * dpdt_eos / p_eos
-       nabla_ad(i) = (gam1_eos - chi_rho) / (chi_t * gam1_eos)
+       chi_rho = eos_state%rho * eos_state%dpdr / eos_state%p
+       chi_t = eos_state%T * eos_state%dpdt / eos_state%p
+       nabla_ad(i) = (eos_state%gam1 - chi_rho) / (chi_t * eos_state%gam1)
 
     enddo
 
@@ -150,7 +145,8 @@ contains
   subroutine make_ad_excess_2d(ad_excess, ng_ad, state, ng_s, lo, hi)
 
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec
     use probin_module, only: base_cutoff_density
     use bl_constants_module
@@ -165,31 +161,25 @@ contains
 
     integer :: i, j
     
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          den_eos = state(i,j,rho_comp)
-          temp_eos = state(i,j,temp_comp)
-          xn_eos(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+          eos_state%rho   = state(i,j,rho_comp)
+          eos_state%T     = state(i,j,temp_comp)
+          eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-          pt_index_eos(:) = (/i, j, -1/)       
+          pt_index(:) = (/i, j, -1/)       
 
-          call eos(eos_input_rt, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)       
+          call eos(eos_input_rt, eos_state, .false., pt_index)       
        
-          pres(i,j) = p_eos
+          pres(i,j) = eos_state%p
 
-          chi_rho = den_eos * dpdr_eos / p_eos
-          chi_t = temp_eos * dpdt_eos / p_eos
-          nabla_ad(i,j) = (gam1_eos - chi_rho) / (chi_t * gam1_eos)
+          chi_rho = eos_state%rho * eos_state%dpdr / eos_state%p
+          chi_t = eos_state%T * eos_state%dpdt / eos_state%p
+          nabla_ad(i,j) = (eos_state%gam1 - chi_rho) / (chi_t * eos_state%gam1)
 
        enddo
     enddo
@@ -230,7 +220,8 @@ contains
   subroutine make_ad_excess_3d(ad_excess, ng_ad, state, ng_s, lo, hi)
 
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec
     use probin_module, only: base_cutoff_density
     use bl_constants_module
@@ -245,33 +236,27 @@ contains
 
     integer :: i, j, k
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t)    
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t,eos_state,pt_index)    
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos = state(i,j,k,rho_comp)
-             temp_eos = state(i,j,k,temp_comp)
-             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = state(i,j,k,rho_comp)
+             eos_state%T     = state(i,j,k,temp_comp)
+             eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)       
+             pt_index(:) = (/i, j, k/)       
 
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)       
+             call eos(eos_input_rt, eos_state, .false., pt_index)       
        
-             pres(i,j,k) = p_eos
+             pres(i,j,k) = eos_state%p
 
-             chi_rho = den_eos * dpdr_eos / p_eos
-             chi_t = temp_eos * dpdt_eos / p_eos
-             nabla_ad(i,j,k) = (gam1_eos - chi_rho) / (chi_t * gam1_eos)
+             chi_rho = eos_state%rho * eos_state%dpdr / eos_state%p
+             chi_t = eos_state%T * eos_state%dpdt / eos_state%p
+             nabla_ad(i,j,k) = (eos_state%gam1 - chi_rho) / (chi_t * eos_state%gam1)
 
           enddo
        enddo
@@ -320,7 +305,8 @@ contains
                                     normal, ng_n, lo, hi)
 
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec
     use probin_module, only: base_cutoff_density
     use bl_constants_module
@@ -337,33 +323,27 @@ contains
 
     integer :: i, j, k, c
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t)    
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t,eos_state,pt_index)    
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos = state(i,j,k,rho_comp)
-             temp_eos = state(i,j,k,temp_comp)
-             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = state(i,j,k,rho_comp)
+             eos_state%T     = state(i,j,k,temp_comp)
+             eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)       
+             pt_index(:) = (/i, j, k/)       
 
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)       
+             call eos(eos_input_rt, eos_state, .false., pt_index)
        
-             pres(i,j,k) = p_eos
+             pres(i,j,k) = eos_state%p
 
-             chi_rho = den_eos * dpdr_eos / p_eos
-             chi_t = temp_eos * dpdt_eos / p_eos
-             nabla_ad(i,j,k) = (gam1_eos - chi_rho) / (chi_t * gam1_eos)
+             chi_rho = eos_state%rho * eos_state%dpdr / eos_state%p
+             chi_t = eos_state%T * eos_state%dpdt / eos_state%p
+             nabla_ad(i,j,k) = (eos_state%gam1 - chi_rho) / (chi_t * eos_state%gam1)
 
           enddo
        enddo
@@ -491,7 +471,8 @@ contains
   subroutine make_conductivity_1d(cond,ng_c,state,ng_s,lo,hi)
 
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use conductivity_module
     use network, only: nspec
 
@@ -502,24 +483,18 @@ contains
     ! local
     integer :: i
 
+    type (eos_t) :: eos_state
+    real (kind=dp_t) :: conductivity
+
     do i = lo(1), hi(1)
 
-       den_eos  = state(i,rho_comp)
-       temp_eos = state(i,temp_comp)
-       xn_eos(:) = state(i,spec_comp:spec_comp+nspec-1) / den_eos
+       eos_state%rho   = state(i,rho_comp)
+       eos_state%T     = state(i,temp_comp)
+       eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1) / eos_state%rho
 
-       call conducteos(eos_input_rt, den_eos, temp_eos, &
-                       nspec, &
-                       xn_eos, &
-                       p_eos, h_eos, e_eos, &
-                       cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                       dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                       dpdX_eos, dhdX_eos, &
-                       gam1_eos, cs_eos, s_eos, &
-                       dsdt_eos, dsdr_eos, &
-                       .false., conduct_eos)
+       call conducteos(eos_input_rt, eos_state, .false., conductivity)
 
-       cond(i) = conduct_eos
+       cond(i) = conductivity
 
     enddo
 
@@ -528,7 +503,8 @@ contains
   subroutine make_conductivity_2d(cond,ng_c,state,ng_s,lo,hi)
 
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use conductivity_module
     use network, only: nspec
 
@@ -539,25 +515,19 @@ contains
     ! local
     integer :: i, j
 
+    type (eos_t) :: eos_state
+    real (kind=dp_t) :: conductivity
+
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          den_eos = state(i,j,rho_comp)
-          temp_eos = state(i,j,temp_comp)
-          xn_eos(:) = state(i,j,spec_comp:spec_comp+nspec-1) / den_eos
+          eos_state%rho   = state(i,j,rho_comp)
+          eos_state%T     = state(i,j,temp_comp)
+          eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1) / eos_state%rho
 
-          call conducteos(eos_input_rt, den_eos, temp_eos, &
-                          nspec, &
-                          xn_eos, &
-                          p_eos, h_eos, e_eos, &
-                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                          dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                          dpdX_eos, dhdX_eos, &
-                          gam1_eos, cs_eos, s_eos, &
-                          dsdt_eos, dsdr_eos, &
-                          .false., conduct_eos)
+          call conducteos(eos_input_rt, eos_state, .false., conductivity)
 
-          cond(i,j) = conduct_eos
+          cond(i,j) = conductivity
 
        enddo
     enddo
@@ -567,7 +537,8 @@ contains
   subroutine make_conductivity_3d(cond,ng_c,state,ng_s,lo,hi)
 
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use conductivity_module
     use network, only: nspec
 
@@ -578,28 +549,22 @@ contains
     ! local
     integer :: i, j, k
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    type (eos_t) :: eos_state
+    real (kind=dp_t) :: conductivity
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,conductivity)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos  = state(i,j,k,rho_comp)
-             temp_eos = state(i,j,k,temp_comp)
-             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1) / &
-                           den_eos
+             eos_state%rho   = state(i,j,k,rho_comp)
+             eos_state%T     = state(i,j,k,temp_comp)
+             eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1) / &
+                           eos_state%rho
 
-             call conducteos(eos_input_rt, den_eos, temp_eos, &
-                             nspec, &
-                             xn_eos, &
-                             p_eos, h_eos, e_eos, &
-                             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                             dpdX_eos, dhdX_eos, &
-                             gam1_eos, cs_eos, s_eos, &
-                             dsdt_eos, dsdr_eos, &
-                             .false., conduct_eos)
+             call conducteos(eos_input_rt, eos_state, .false., conductivity)
 
-             cond(i,j,k) = conduct_eos
+             cond(i,j,k) = conductivity
 
           enddo
        enddo
@@ -872,7 +837,8 @@ contains
   subroutine make_tfromH_1d(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
-    use eos_module
+    use eos_module, only: eos_input_rh, eos
+    use eos_type_module
     use network, only: nspec
     use bl_constants_module
 
@@ -886,32 +852,26 @@ contains
     ! Local variables
     integer :: i
 
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     do i = lo(1), hi(1)
 
        ! (rho, H) --> T, p
-       den_eos  = state(i,rho_comp)
-       p_eos    = p0(i)
-       temp_eos = state(i,temp_comp)
-       xn_eos(:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos
-       h_eos = state(i,rhoh_comp) / state(i,rho_comp)
+       eos_state%rho   = state(i,rho_comp)
+       eos_state%p     = p0(i)
+       eos_state%T     = state(i,temp_comp)
+       eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
+       eos_state%h     = state(i,rhoh_comp) / state(i,rho_comp)
 
-       pt_index_eos(:) = (/i, -1, -1/)       
+       pt_index(:) = (/i, -1, -1/)       
 
-       call eos(eos_input_rh, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false., &
-                pt_index_eos)
+       call eos(eos_input_rh, eos_state, .false., pt_index)
 
-       T(i) = temp_eos
-       if (.not. use_tfromp) tpert(i) = temp_eos - tempbar(i)
+       T(i) = eos_state%T
+       if (.not. use_tfromp) tpert(i) = eos_state%T - tempbar(i)
 
-       deltaP(i) = abs(p_eos-p0(i))/ p0(i)
+       deltaP(i) = abs(eos_state%p - p0(i))/ p0(i)
 
     enddo
 
@@ -920,7 +880,8 @@ contains
   subroutine make_tfromH_2d(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
-    use eos_module
+    use eos_module, only: eos_input_rh, eos
+    use eos_type_module
     use network, only: nspec
     use bl_constants_module
 
@@ -934,33 +895,27 @@ contains
     ! Local variables
     integer :: i, j
 
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
           ! (rho, H) --> T, p
-          den_eos  = state(i,j,rho_comp)
-          p_eos    = p0(j)
-          temp_eos = state(i,j,temp_comp)
-          xn_eos(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos
-          h_eos = state(i,j,rhoh_comp) / state(i,j,rho_comp)
+          eos_state%rho   = state(i,j,rho_comp)
+          eos_state%p     = p0(j)
+          eos_state%T     = state(i,j,temp_comp)
+          eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+          eos_state%h     = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
-          pt_index_eos(:) = (/i, j, -1/)
+          pt_index(:) = (/i, j, -1/)
 
-          call eos(eos_input_rh, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)
+          call eos(eos_input_rh, eos_state, .false., pt_index)
 
-          T(i,j) = temp_eos
-          if (.not. use_tfromp) tpert(i,j) = temp_eos - tempbar(j)
+          T(i,j) = eos_state%T
+          if (.not. use_tfromp) tpert(i,j) = eos_state%T - tempbar(j)
 
-          deltaP(i,j) = abs(p_eos-p0(j))/ p0(j)
+          deltaP(i,j) = abs(eos_state%p - p0(j))/ p0(j)
 
        enddo
     enddo
@@ -970,7 +925,8 @@ contains
   subroutine make_tfromH_3d_cart(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
-    use eos_module
+    use eos_module, only: eos_input_rh, eos
+    use eos_type_module
     use network, only: nspec
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
@@ -983,34 +939,28 @@ contains
     ! Local variables
     integer :: i, j, k
 
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
              ! (rho, H) --> T, p
-             den_eos  = state(i,j,k,rho_comp)
-             p_eos    = p0(k)
-             temp_eos = state(i,j,k,temp_comp)
-             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
-             h_eos = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
+             eos_state%rho   = state(i,j,k,rho_comp)
+             eos_state%p     = p0(k)
+             eos_state%T     = state(i,j,k,temp_comp)
+             eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+             eos_state%h     = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
 
-             call eos(eos_input_rh, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rh, eos_state, .false., pt_index)
 
-             T(i,j,k) = temp_eos
-             if (.not. use_tfromp) tpert(i,j,k) = temp_eos - tempbar(k)
+             T(i,j,k) = eos_state%T
+             if (.not. use_tfromp) tpert(i,j,k) = eos_state%T - tempbar(k)
 
-             deltaP(i,j,k) = (p_eos-p0(k))/ p0(k)
+             deltaP(i,j,k) = (eos_state%p - p0(k))/ p0(k)
 
           enddo
        enddo
@@ -1021,7 +971,8 @@ contains
   subroutine make_tfromH_3d_sphr(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar,dx)
 
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
-    use eos_module
+    use eos_module, only: eos_input_rh, eos
+    use eos_type_module
     use network, only: nspec
     use fill_3d_module
 
@@ -1038,40 +989,34 @@ contains
     real (kind=dp_t), allocatable :: p0_cart(:,:,:,:)
     real (kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
 
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     allocate(  tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos  = state(i,j,k,rho_comp)
-             h_eos    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
-             temp_eos = state(i,j,k,temp_comp)
-             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = state(i,j,k,rho_comp)
+             eos_state%h     = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+             eos_state%T     = state(i,j,k,temp_comp)
+             eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
 
              ! (rho, H) --> T, p
-             call eos(eos_input_rh, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rh, eos_state, .false., pt_index)
 
-             T(i,j,k) = temp_eos
-             if (.not. use_tfromp) tpert(i,j,k) = temp_eos - tempbar_cart(i,j,k,1)
+             T(i,j,k) = eos_state%T
+             if (.not. use_tfromp) tpert(i,j,k) = eos_state%T - tempbar_cart(i,j,k,1)
              
-             deltaP(i,j,k) = (p_eos-p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
+             deltaP(i,j,k) = (eos_state%p - p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
 
           enddo
        enddo
@@ -1159,7 +1104,8 @@ contains
   subroutine make_tfromp_1d(t,tpert,machno,cs,deltagamma,entropy,magvel, &
                             ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0)
 
-    use eos_module
+    use eos_module, only: eos_input_rp, eos
+    use eos_type_module
     use network, only: nspec
     use variables, only: rho_comp, spec_comp, temp_comp
     use probin_module, only: plot_cs
@@ -1180,37 +1126,31 @@ contains
     !     Local variables
     integer          :: i
 
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     ! Then compute the perturbation
     do i = lo(1), hi(1)
 
-       den_eos = s(i,rho_comp)
-       temp_eos = s(i,temp_comp)
-       p_eos = p0(i)
-       xn_eos(:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos
+       eos_state%rho   = s(i,rho_comp)
+       eos_state%T     = s(i,temp_comp)
+       eos_state%p     = p0(i)
+       eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-       pt_index_eos(:) = (/i, -1, -1/)
+       pt_index(:) = (/i, -1, -1/)
 
        ! (rho,P) --> T,h
-       call eos(eos_input_rp, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false., &
-                pt_index_eos)
+       call eos(eos_input_rp, eos_state, .false., pt_index)
 
-       t(i) = temp_eos
-       if (use_tfromp) tpert(i) = temp_eos - tempbar(i)
+       t(i) = eos_state%T
+       if (use_tfromp) tpert(i) = eos_state%T - tempbar(i)
 
-       if (plot_cs) cs(i) = cs_eos
+       if (plot_cs) cs(i) = eos_state%cs
 
-       machno(i) = magvel(i) / cs_eos
-       deltagamma(i) = gam1_eos - gamma1bar(i)
+       machno(i) = magvel(i) / eos_state%cs
+       deltagamma(i) = eos_state%gam1 - gamma1bar(i)
 
-       entropy(i) = s_eos
+       entropy(i) = eos_state%s
     enddo
 
   end subroutine make_tfromp_1d
@@ -1218,7 +1158,8 @@ contains
   subroutine make_tfromp_2d(t,tpert,machno,cs,deltagamma,entropy,magvel, &
                             ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0)
 
-    use eos_module
+    use eos_module, only: eos_input_rp, eos
+    use eos_type_module
     use network, only: nspec
     use variables, only: rho_comp, spec_comp, temp_comp
     use probin_module, only: plot_cs
@@ -1239,39 +1180,33 @@ contains
     !     Local variables
     integer          :: i, j
 
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     ! Then compute the perturbation
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          den_eos = s(i,j,rho_comp)
-          temp_eos = s(i,j,temp_comp)
-          p_eos = p0(j)
-          xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+          eos_state%rho   = s(i,j,rho_comp)
+          eos_state%T     = s(i,j,temp_comp)
+          eos_state%p     = p0(j)
+          eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-          pt_index_eos(:) = (/i, j, -1/)
+          pt_index(:) = (/i, j, -1/)
 
           ! (rho,P) --> T,h
-          call eos(eos_input_rp, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, & 
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)
+          call eos(eos_input_rp, eos_state, .false., pt_index)
 
-          t(i,j) = temp_eos
-          if (use_tfromp) tpert(i,j) = temp_eos - tempbar(j)
+          t(i,j) = eos_state%T
+          if (use_tfromp) tpert(i,j) = eos_state%T - tempbar(j)
 
-          if (plot_cs) cs(i,j) = cs_eos
+          if (plot_cs) cs(i,j) = eos_state%cs
 
-          machno(i,j) = magvel(i,j) / cs_eos
+          machno(i,j) = magvel(i,j) / eos_state%cs
 
-          deltagamma(i,j) = gam1_eos - gamma1bar(j)
+          deltagamma(i,j) = eos_state%gam1 - gamma1bar(j)
 
-          entropy(i,j) = s_eos
+          entropy(i,j) = eos_state%s
        enddo
     enddo
 
@@ -1281,7 +1216,8 @@ contains
                                  ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0)
 
     use variables, only: rho_comp, spec_comp, temp_comp
-    use eos_module
+    use eos_module, only: eos_input_rp, eos
+    use eos_type_module
     use network, only: nspec
     use probin_module, only: plot_cs
 
@@ -1301,40 +1237,34 @@ contains
     ! Local variables
     integer          :: i, j, k
 
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
     ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_eos = s(i,j,k,rho_comp)
-             temp_eos = s(i,j,k,temp_comp)
-             p_eos = p0(k)
-             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%T     = s(i,j,k,temp_comp)
+             eos_state%p     = p0(k)
+             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
 
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, & 
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rp, eos_state, .false., pt_index)
 
-             t(i,j,k) = temp_eos
-             if (use_tfromp) tpert(i,j,k) = temp_eos - tempbar(k)
+             t(i,j,k) = eos_state%T
+             if (use_tfromp) tpert(i,j,k) = eos_state%T - tempbar(k)
 
-             if (plot_cs) cs(i,j,k) = cs_eos
+             if (plot_cs) cs(i,j,k) = eos_state%cs
 
-             machno(i,j,k) = magvel(i,j,k) / cs_eos
+             machno(i,j,k) = magvel(i,j,k) / eos_state%cs
 
-             deltagamma(i,j,k) = gam1_eos - gamma1bar(k)
+             deltagamma(i,j,k) = eos_state%gam1 - gamma1bar(k)
 
-             entropy(i,j,k) = s_eos
+             entropy(i,j,k) = eos_state%s
           enddo
        enddo
     enddo
@@ -1345,7 +1275,8 @@ contains
                                  ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0,dx)
 
     use variables, only: rho_comp, spec_comp, temp_comp
-    use eos_module
+    use eos_module, only: eos_input_rp, eos
+    use eos_type_module
     use network, only: nspec
     use fill_3d_module
     use probin_module, only: plot_cs
@@ -1367,6 +1298,9 @@ contains
     !     Local variables
     integer          :: i, j, k
 
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
 
     real (kind=dp_t), allocatable ::   tempbar_cart(:,:,:,:)
     real (kind=dp_t), allocatable ::        p0_cart(:,:,:,:)
@@ -1380,41 +1314,32 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,gamma1bar,gamma1bar_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
              ! Then compute the perturbation and Mach number
-             den_eos = s(i,j,k,rho_comp)
-             temp_eos = s(i,j,k,temp_comp)
-             p_eos = p0_cart(i,j,k,1)
-             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%T     = s(i,j,k,temp_comp)
+             eos_state%p     = p0_cart(i,j,k,1)
+             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
 
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, & 
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rp, eos_state, .false., pt_index)
 
-             t(i,j,k) = temp_eos
-             if (use_tfromp) tpert(i,j,k) = temp_eos - tempbar_cart(i,j,k,1)
+             t(i,j,k) = eos_state%T
+             if (use_tfromp) tpert(i,j,k) = eos_state%T - tempbar_cart(i,j,k,1)
 
-             if (plot_cs) cs(i,j,k) = cs_eos
+             if (plot_cs) cs(i,j,k) = eos_state%cs
 
-             machno(i,j,k) = magvel(i,j,k) / cs_eos
+             machno(i,j,k) = magvel(i,j,k) / eos_state%cs
 
-             deltagamma(i,j,k) = gam1_eos - gamma1bar_cart(i,j,k,1)
+             deltagamma(i,j,k) = eos_state%gam1 - gamma1bar_cart(i,j,k,1)
 
-             entropy(i,j,k) = s_eos
+             entropy(i,j,k) = eos_state%s
           enddo
        enddo
     enddo

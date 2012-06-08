@@ -6,7 +6,6 @@ module init_scalar_module
   use multifab_physbc_module
   use ml_restriction_module
   use multifab_fill_ghost_module
-  use eos_module
   use variables
   use network
   use fill_3d_module, only: put_1d_array_on_cart_3d_sphr
@@ -46,6 +45,8 @@ contains
           hi =  upb(get_box(s(n),i))
 
           select case (dm)
+          case (1)
+             call bl_error("ERROR: initscalardata not support in 1d")
           case (2)
              call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
                                     p0_init(n,:))
@@ -117,6 +118,8 @@ contains
        lo =  lwb(get_box(s,i))
        hi =  upb(get_box(s,i))
        select case (dm)
+       case (1)
+          call bl_error("ERROR: initscalardata not support in 1d")
        case (2)
           call initscalardata_2d(sop(:,:,1,:),lo,hi,ng,dx,s0_init,p0_init)
        case (3)
@@ -255,6 +258,8 @@ contains
 
     use probin_module, only: prob_lo, perturb_model
     use init_perturb_module
+    use eos_module, only: eos_input_rp, eos
+    use eos_type_module
     
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -268,6 +273,9 @@ contains
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
+
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
 
     ! initial the domain with the base state
     s = ZERO
@@ -300,28 +308,22 @@ contains
                                          s(:,:,:,comp:),lo,hi,dx,ng)
     end do
 
-    ! initialize (rho h) using the EOS
+    ! initialize (rho h) and T using the EOS
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             temp_eos = s(i,j,k,temp_comp)
-             p_eos = p0_cart(i,j,k,1)
-             den_eos = s(i,j,k,rho_comp)
-             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%T     = s(i,j,k,temp_comp)
+             eos_state%p     = p0_cart(i,j,k,1)
+             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             call eos(eos_input_rp, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false.)
+             pt_index = (/ i, j, k /)
 
-             s(i,j,k,rhoh_comp) = den_eos*h_eos
-             s(i,j,k,temp_comp) = temp_eos
+             call eos(eos_input_rp, eos_state, .false., pt_index)
+
+             s(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
+             s(i,j,k,temp_comp) = eos_state%T
 
           enddo
        enddo
