@@ -400,10 +400,10 @@ contains
     integer         :: un
     integer         :: i 
     real(kind=dp_t) :: summ, usr_in
+    character (len=1024) :: line
     
     !=== Execution ===
-    !Read mass fractions from user
-    if(xin_file .eq. 'uniform') then
+    if (xin_file .eq. 'uniform') then
        summ = ZERO
        do i=1, nspec - 1
           print *, trim(adjustl(spec_names(i))) // ' mass fraction: '
@@ -419,15 +419,31 @@ contains
           xn_zone(nspec,:) = ONE - summ
        endif
     else
+       ! read in an inputs file containing the mass fractions.
+       ! each species is on its own line.
+       ! Allow for comment lines with '#' in the first column
        un = unit_new()
        open(unit=un, file=xin_file, status='old')
+
        summ = ZERO
+
        !TODO: Add xn <= 1.0 error checking
        !TODO: Add proper cell count error checking
-       do i=1, nspec 
-          read(un,*) xn_zone(i,:)
+       i = 1
+       do while (i <= nspec)
+          ! read the line into a character buffer
+          read (un,'(a)') line
+
+          ! skip comments
+          if (index(line, '#') == 1) cycle
+
+          ! parse the line 
+          read(line,*) xn_zone(i,:)
+
+          i = i + 1
        enddo
        
+
        close(un)
     endif
   end subroutine get_xn
