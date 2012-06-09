@@ -442,7 +442,10 @@ contains
 
           i = i + 1
        enddo
-       
+
+       do i = 1, size(xn_zone,1)
+          print *, i, sum(xn_zone(:,i))
+       enddo
 
        close(un)
     endif

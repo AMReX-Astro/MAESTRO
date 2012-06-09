@@ -16,8 +16,8 @@ EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 
 NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
-NETWORK_DIR := ignition_chamulak
-
+NETWORK_DIR := rprox 
+#NETWORK_DIR := ignition_chamulak
 #NETWORK_DIR := extern/networks/pphotcno_VODE
 #NETWORK_DIR := extern/networks/triple_alpha_plus_cago
 
