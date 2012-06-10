@@ -37,10 +37,15 @@ contains
     logical           :: radialtag_proc(0:nr_fine-1)
     integer, parameter :: npad = 4
 
+    integer :: ih1
+
+
     radialtag = .false.
     radialtag_proc = .false.
 
     dm = get_dim(mf)
+
+    ih1 = network_get_index("hydrogen-1")
 
     ng_s = mf%ng
     if (present(aux_tag_mf)) ng_aux = aux_tag_mf%ng
@@ -59,7 +64,7 @@ contains
                                          auxp(:,:,1,1), ng_aux, lo)
              else
                 call radialtag_2d(radialtag_proc, &
-                                  sp(:,:,1,spec_comp),sp(:,:,1,rho_comp), &
+                                  sp(:,:,1,spec_comp-1+ih1),sp(:,:,1,rho_comp), &
                                   lo,ng_s,lev)
              endif
                   
@@ -71,7 +76,7 @@ contains
                                          auxp(:,:,:,1), ng_aux, lo)
              else
                 call radialtag_3d(radialtag_proc, &
-                                  sp(:,:,:,spec_comp),sp(:,:,:,rho_comp), &
+                                  sp(:,:,:,spec_comp-1+ih1),sp(:,:,:,rho_comp), &
                                   lo,ng_s,lev)
              endif
 
