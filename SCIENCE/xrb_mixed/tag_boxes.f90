@@ -23,6 +23,7 @@ contains
     use variables, only: rho_comp, spec_comp
     use geometry, only: nr_fine, nr
     use probin_module, only: do_dens_tagging
+    use network, only: network_species_index
 
     type( multifab)          , intent(in   ) :: mf
     type(lmultifab)          , intent(inout) :: tagboxes
@@ -45,7 +46,7 @@ contains
 
     dm = get_dim(mf)
 
-    ih1 = network_get_index("hydrogen-1")
+    ih1 = network_species_index("hydrogen-1")
 
     ng_s = mf%ng
     if (present(aux_tag_mf)) ng_aux = aux_tag_mf%ng
