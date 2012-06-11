@@ -85,7 +85,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
      write (99,*) " "
      write (99,1001) "modules used:  ", " "
      do i=1, NUM_MODULES
-        write (99,1001) "  ", modules(i)
+        write (99,1001) "  ", trim(modules(i))
      enddo
      write (99,*) " "
      write (99,1001) "FCOMP:            ", trim(FCOMP)
