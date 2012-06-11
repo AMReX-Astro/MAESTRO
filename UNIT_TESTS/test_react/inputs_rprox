@@ -13,10 +13,10 @@
 
   dens_min   = 1.d3
   dens_max   = 1.d7
-  temp_min   = 1.d7
+  temp_min   = 1.d8
   temp_max   = 1.d9
 
-  min_time_step = 1.0d-10
+  min_time_step = 1.0d-7
   react_its = 6
 
   do_heating = .false.
