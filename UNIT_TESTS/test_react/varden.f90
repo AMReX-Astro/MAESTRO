@@ -14,7 +14,8 @@ subroutine varden()
   use probin_module, only: use_eos_coulomb, small_temp, &
                            drive_initial_convection,    & 
                            use_tfromp, min_time_step,   &
-                           react_its, do_burning, do_heating
+                           react_its, do_burning, do_heating, &
+                           dens_min, base_cutoff_density
   use runtime_init_module
   use bl_constants_module
   use bl_types
@@ -60,6 +61,13 @@ subroutine varden()
   if (use_tfromp .neqv. .false.) then
     call bl_error('ERROR: Getting temperature from pressure not currently supported')
   endif
+
+
+  ! density sanity check
+  if (dens_min < base_cutoff_density) then
+     call bl_error('ERROR: dens_min < base_cutoff_density (= burning_cutoff_density)')
+  endif
+
 
   !Grid/Geometry initializations
   call grid_init(mla, nlevs, bct, dx)
