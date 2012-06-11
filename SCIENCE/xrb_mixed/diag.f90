@@ -50,7 +50,7 @@ module diag_module
 
   public :: diag, flush_diag
 
-  integer, save :: ic12, io16
+  integer, save :: ih1, ic12, io16
   logical, save :: do_mass_sums
 
 contains
@@ -158,6 +158,7 @@ contains
 
        do_mass_sums = .true.
 
+       ih1 = network_species_index("hydrogen-1")
        ic12 = network_species_index("carbon-12")
        io16 = network_species_index("oxygen-16")
 
@@ -822,6 +823,7 @@ contains
     real (kind=dp_t) :: weight
     real (kind=dp_t) :: w0_cent, vel, Mach, deltap
 
+
     ! weight is the volume of a cell at the current level divided by the
     ! volume of a cell at the COARSEST level
     weight = ONE / FOUR**(n-1)
@@ -846,7 +848,7 @@ contains
              ! burning layer 
              ! we check against spec_comp; this is H for the hotcno network
              ! if we are, then get T_max and its loc
-             if ( s(i,j,spec_comp) .ge. &
+             if ( s(i,j,spec_comp-1+ih1) .ge. &
 		  diag_define_layer * s(i,j,rho_comp) ) then
 
                 if (s(i,j,temp_comp) > T_max) then
