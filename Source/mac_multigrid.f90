@@ -22,7 +22,7 @@ contains
     use cc_stencil_fill_module, only : stencil_fill_cc_all_mglevels
     use mg_module             , only : mg_tower, mg_tower_build, mg_tower_destroy
     use ml_solve_module       , only : ml_cc_solve
-    use probin_module, only : mg_bottom_solver, max_mg_bottom_nlevels, mg_verbose, cg_verbose
+    use probin_module, only : mg_bottom_solver, max_mg_bottom_nlevels, mg_verbose, cg_verbose, mg_bottom_nu
     use mg_eps_module, only: eps_mac_bottom
 
     type(ml_layout), intent(in   ) :: mla
@@ -51,7 +51,7 @@ contains
     integer    :: max_iter
     integer    :: min_width
     integer    :: max_nlevel
-    integer    :: d, n, nu1, nu2, nub, gamma, cycle_type, smoother
+    integer    :: d, n, nu1, nu2, gamma, cycle_type, smoother
     integer    :: max_nlevel_in
     integer    :: do_diagnostics
     real(dp_t) :: omega,bottom_solver_eps
@@ -71,7 +71,6 @@ contains
     smoother          = mgt(nlevs)%smoother
     nu1               = mgt(nlevs)%nu1
     nu2               = mgt(nlevs)%nu2
-    nub               = mgt(nlevs)%nub
     gamma             = mgt(nlevs)%gamma
     omega             = mgt(nlevs)%omega
     cycle_type        = mgt(nlevs)%cycle_type
@@ -133,7 +132,7 @@ contains
                            smoother = smoother, &
                            nu1 = nu1, &
                            nu2 = nu2, &
-                           nub = nub, &
+                           nub = mg_bottom_nu, &
                            gamma = gamma, &
                            cycle_type = cycle_type, &
                            omega = omega, &

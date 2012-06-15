@@ -26,7 +26,7 @@ contains
     use ml_solve_module     , only : ml_nd_solve
     use nodal_divu_module   , only : divu, subtract_divu_from_rh
     use probin_module       , only : hg_bottom_solver, max_mg_bottom_nlevels, &
-                                     mg_verbose, cg_verbose, nodal
+                                     mg_verbose, cg_verbose, nodal, mg_bottom_nu
     use variables, only: press_comp
     use mg_eps_module, only: eps_hg_bottom
 
@@ -61,7 +61,7 @@ contains
     integer :: max_iter
     integer :: min_width
     integer :: max_nlevel
-    integer :: nu1, nu2, nub, gamma, cycle_type, smoother
+    integer :: nu1, nu2, gamma, cycle_type, smoother
     integer :: d,n
     integer :: max_nlevel_in
     integer :: do_diagnostics
@@ -80,7 +80,6 @@ contains
     smoother          = mgt(nlevs)%smoother
     nu1               = mgt(nlevs)%nu1
     nu2               = mgt(nlevs)%nu2
-    nub               = mgt(nlevs)%nub
     gamma             = mgt(nlevs)%gamma
     omega             = mgt(nlevs)%omega
     cycle_type        = mgt(nlevs)%cycle_type
@@ -169,7 +168,7 @@ contains
                            smoother = smoother, &
                            nu1 = nu1, &
                            nu2 = nu2, &
-                           nub = nub, &
+                           nub = mg_bottom_nu, &
                            gamma = gamma, &
                            cycle_type = cycle_type, &
                            omega = omega, &
