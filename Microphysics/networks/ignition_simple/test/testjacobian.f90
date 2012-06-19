@@ -49,12 +49,11 @@ program testjacobian
   Xin(img24) = 0.0_dp_t
 
 
-  den_eos(1) = dens
-  temp_eos(1) = temp
-  xn_eos(1,:) = Xin(:)
+  den_eos = dens
+  temp_eos = temp
+  xn_eos(:) = Xin(:)
   
   call eos(eos_input_rt, den_eos, temp_eos, &
-           npts, &
            xn_eos, &
            p_eos, h_eos, e_eos, &
            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
@@ -73,8 +72,8 @@ program testjacobian
 
   ! set the burner_aux variables
   dens_pass = dens
-  c_p_pass = cp_eos(1)
-  dhdx_pass(:) = dhdX_eos(1,:)
+  c_p_pass = cp_eos
+  dhdx_pass(:) = dhdX_eos(:)
   X_O16_pass = Xin(io16)
   
 

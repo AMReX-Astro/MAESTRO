@@ -1,36 +1,29 @@
-NDEBUG :=  
 NDEBUG := 
 MPI    :=
 OMP    :=
 
-COMP := Intel
+COMP := gfortran
 
 MKVERBOSE := t
 
-FPARALLEL := ../../../..
-
-include $(FPARALLEL)/mk/GMakedefs.mak
+MAESTRO_TOP_DIR := ../../../..
 
 programs += testburn
 programs += eval
 programs += testjacobian
 
-include $(FPARALLEL)/boxlib/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/boxlib
+EOS_DIR := gamma_law_general
+CONDUCTIVITY_DIR := constant
+NETWORK_DIR := ignition_simple
 
-include $(FPARALLEL)/extern/helmeos/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/helmeos
-FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/helmeos
+BOXLIB_ONLY := t
+EXTRA_DIR = Microphysics/networks/ignition_simple/test
 
-include $(FPARALLEL)/extern/networks/ignition_simple/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/ignition_simple/
+testAll: 
 
-include $(FPARALLEL)/extern/VODE/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/VODE
+include $(MAESTRO_TOP_DIR)/GMaestro.mak
 
-all: $(pnames)
-
-include $(FPARALLEL)/mk/GMakerules.mak
+testAll: $(pnames)
 
 %.$(suf).exe:%.f90 $(objects)
 ifdef MKVERBOSE
