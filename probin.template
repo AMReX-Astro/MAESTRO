@@ -5,6 +5,9 @@ module probin_module
 
   use bl_types
   use bl_space
+  use bl_constants_module
+  use pred_parameters
+  use bc_module
 
   implicit none
 
@@ -65,16 +68,16 @@ contains
 
     use f2kcli
     use parallel
-    use bc_module
     use bl_IO_module
     use bl_prof_module
     use bl_error_module
     use bl_constants_module
     use knapsack_module
-    use pred_parameters
     use multifab_module, only: multifab_set_alltoallv
     use cluster_module
     use layout_module
+    use pred_parameters
+    use bc_module
     
     integer    :: narg, farg
 
@@ -98,9 +101,6 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialize the runtime parameters
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-    @@defaults@@
 
 
     !
