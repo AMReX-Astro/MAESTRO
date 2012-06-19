@@ -23,14 +23,23 @@ ifdef SDC
   MAESTRO_CORE += Source_SDC
 endif
 
-# next look for the files in Source/ itself
-#   Note: a unit test tests only a single component of the MAESTRO
-#   algorithm, so we don't, in general, want to build all of the
-#   source in the MAESTRO/Source directory.  So, for unit tests, we
-#   leave it off the list of core directories 
-ifndef UNIT_TEST
-  MAESTRO_CORE += Source 
+# next look for the files in Source/ itself 
+#
+#   Note: a unit test (UNIT_TEST := t) tests only a single component
+#   of the MAESTRO algorithm, so we don't, in general, want to build
+#   all of the source in the MAESTRO/Source directory.  So, for unit
+#   tests, we leave it off the list of core directories, but do
+#   include it in the VPATH 
+#
+#   Setting BOXLIB_ONLY := t means that we don't even want the
+#   MAESTRO/Source directory in our VPATH
+
+ifndef UNIT_TEST 
+  ifndef BOXLIB_ONLY 
+    MAESTRO_CORE += Source 
+  endif 
 endif
+
 
 MAESTRO_CORE += constants
 
