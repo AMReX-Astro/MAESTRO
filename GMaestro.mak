@@ -155,10 +155,18 @@ main.$(suf).exe: $(objects)
 # runtime parameter stuff (probin.f90)
 
 # template used by write_probin.py to build probin.f90
-PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/probin.template
+ifndef BOXLIB_ONLY
+  PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/probin.template
+else
+  PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/Util/parameters/dummy.probin.template
+endif
 
 # list of the directories to search for _parameters files
-PROBIN_PARAMETER_DIRS = ./ $(MAESTRO_TOP_DIR)
+PROBIN_PARAMETER_DIRS = ./ 
+
+ifndef BOXLIB_ONLY 
+  PROBIN_PARAMETER_DIRS += $(MAESTRO_TOP_DIR)
+endif
 
 # list of all valid _parameters files for probin
 PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
