@@ -69,9 +69,8 @@ subroutine varden()
   call init_variables()
 
   call network_init()
-  print *, 'use_eos_coulomb = ', use_eos_coulomb
   print *, 'EOS temp cutoff = ', small_temp
-  call eos_init(use_eos_coulomb=use_eos_coulomb, small_temp=small_temp)
+  call eos_init(small_temp=small_temp)
 
   nlevs = 1
   nlevs_radial = 1

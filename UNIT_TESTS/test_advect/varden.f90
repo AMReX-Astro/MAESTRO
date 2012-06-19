@@ -40,7 +40,6 @@ subroutine varden()
   use eos_module, only: eos_init
   use probin_module, only: dump_output, advect_test_tol, &
                            prob_lo, prob_hi, pmask, drdxfac, &
-                           use_eos_coulomb, &
                            test_set, &
                            ppm_type, bds_type, do_bds, &
                            cflfac, &
@@ -111,7 +110,7 @@ subroutine varden()
   call init_variables()
 
   call network_init()
-  call eos_init(use_eos_coulomb=use_eos_coulomb)
+  call eos_init()
 
   ! setup the grid
   call read_a_hgproj_grid(mba, test_set)

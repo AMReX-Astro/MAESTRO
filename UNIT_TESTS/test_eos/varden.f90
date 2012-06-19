@@ -19,7 +19,7 @@ subroutine varden()
   use variables
   use probin_module, only: prob_lo, prob_hi, &
                            test_set, pmask, max_levs, &
-                           use_eos_coulomb, small_temp, &
+                           small_temp, &
                            temp_min, temp_max, &
                            dens_min, dens_max, &
                            metalicity_max, &
@@ -62,7 +62,7 @@ subroutine varden()
 
   ! microphysics
   call network_init()
-  call eos_init(use_eos_coulomb=use_eos_coulomb, small_temp=small_temp)
+  call eos_init(small_temp=small_temp)
 
   ! note: custom variables for this problem
   call init_variables()

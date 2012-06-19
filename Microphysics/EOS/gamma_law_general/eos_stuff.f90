@@ -100,11 +100,10 @@ module eos_module
 contains
 
   ! EOS initialization routine -- this is used by both MAESTRO and Castro
-  subroutine eos_init(use_eos_coulomb, small_temp, small_dens, gamma_in)
+  subroutine eos_init(small_temp, small_dens, gamma_in)
 
     implicit none
  
-    logical        , intent(in), optional :: use_eos_coulomb
     real(kind=dp_t), intent(in), optional :: small_temp
     real(kind=dp_t), intent(in), optional :: small_dens
     real(kind=dp_t), intent(in), optional :: gamma_in

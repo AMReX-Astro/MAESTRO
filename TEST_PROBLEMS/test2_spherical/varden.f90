@@ -119,7 +119,7 @@ subroutine varden()
   call init_plot_variables()
 
   call network_init()
-  call eos_init(use_eos_coulomb=use_eos_coulomb,small_temp=small_temp,small_dens=small_dens)
+  call eos_init(small_temp=small_temp,small_dens=small_dens)
 
   allocate(plot_names(n_plot_comps))
   call get_plot_names(plot_names)

@@ -60,7 +60,7 @@ subroutine varden()
   call init_variables()
 
   call network_init()
-  call eos_init(use_eos_coulomb=use_eos_coulomb,gamma_in=FIVE3RD)
+  call eos_init(gamma_in=FIVE3RD)
 
   call conductivity_init(cond_const=thermal_conductivity)
 

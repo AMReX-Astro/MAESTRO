@@ -539,9 +539,6 @@ burner_threshold_cutoff             real               1.d-10
 # category: EOS
 #-----------------------------------------------------------------------------
 
-# use the Coulomb corrections between ions (if supported by the EOS)
-use_eos_coulomb                     logical            .true.       
-
 small_temp                          real               5.d6                
 
 small_dens                          real               1.d-5            

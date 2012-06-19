@@ -64,7 +64,7 @@ subroutine varden()
   call init_variables()
 
   call network_init()
-  call eos_init(use_eos_coulomb=use_eos_coulomb)
+  call eos_init()
 
   call read_a_hgproj_grid(mba, test_set)
 

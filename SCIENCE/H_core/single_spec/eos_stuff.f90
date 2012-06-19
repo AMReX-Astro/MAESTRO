@@ -76,11 +76,12 @@ contains
   ! EOS initialization routine -- this is used by both MAESTRO and Castro
   ! For this general EOS, this calls helmeos_init() which reads in the 
   ! table with the electron component's properties.
-  subroutine eos_init(use_eos_coulomb, small_temp, small_dens, gamma_in)
+  subroutine eos_init(small_temp, small_dens, gamma_in)
+
+    use extern_probin_module, only: use_eos_coulomb
 
     implicit none
  
-    logical        , intent(in), optional :: use_eos_coulomb
     real(kind=dp_t), intent(in), optional :: small_temp
     real(kind=dp_t), intent(in), optional :: small_dens
 
@@ -88,11 +89,7 @@ contains
     ! for an EOS, but only used in a gamma-law EOS, not this general EOS
     real(kind=dp_t), intent(in), optional :: gamma_in
  
-    if (present(use_eos_coulomb)) then
-       do_coulomb = use_eos_coulomb
-    else
-       do_coulomb = .true.
-    endif
+    do_coulomb = use_eos_coulomb
  
     if (present(small_temp)) then
       if (small_temp > 0.d0) then

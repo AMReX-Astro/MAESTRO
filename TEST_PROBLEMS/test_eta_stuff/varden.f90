@@ -140,8 +140,7 @@ subroutine varden()
   call init_variables(dm, nspec)
   call init_plot_variables(dm)
   call network_init()
-  call eos_init(use_eos_coulomb=use_eos_coulomb, &
-                small_temp=small_temp,small_dens=small_dens)
+  call eos_init(small_temp=small_temp,small_dens=small_dens)
 
   n_chk_comps = 2*dm + nscal
 

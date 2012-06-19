@@ -11,7 +11,7 @@ subroutine varden()
   use multifab_module
   use average_module
   use variables
-  use probin_module, only: use_eos_coulomb, small_temp, &
+  use probin_module, only: small_temp, &
                            drive_initial_convection,    & 
                            use_tfromp, min_time_step,   &
                            react_its, do_burning, do_heating, &
@@ -74,7 +74,7 @@ subroutine varden()
 
   !Microphysics
   call network_init()
-  call eos_init(use_eos_coulomb=use_eos_coulomb, small_temp=small_temp)
+  call eos_init(small_temp=small_temp)
   
   !Initialize the varden_aux reaction data
   call react_init(mla)
