@@ -29,6 +29,4 @@
  bcz_lo = -1
  bcz_hi = -1
 
-
- use_eos_coulomb = F
 /
