@@ -285,6 +285,19 @@ into the {\tt vpath} search path for sources, so those files will
 still be found as needed.
 
 
+\subsection{\boxlib-only Tests}
+
+An even more restrictive setting than {\tt UNIT\_TEST := t} is invoked
+by setting {\tt BOXLIB\_ONLY := t}.  This is like the unit test flag,
+but does not include {\tt MAESTRO/Source} in the {\tt vpath} search
+path for sources.  So this is intended for cases where we don't want
+to use any \maestro\ source files.  Typically, this is used in the
+small unit tests that live under the various microphysics solvers.  If
+a {\tt probin.f90} is built for these tests, it will not include all
+the \maestro-specific parameters, but will include any parameters from
+the various microphysics routines.
+
+
 \section{Special Targets}
 
 \subsection{Debugging ({\tt print-*})}
