@@ -12,7 +12,7 @@ programs += testburn
 programs += eval
 programs += testjacobian
 
-EOS_DIR := gamma_law_general
+EOS_DIR := helmeos
 CONDUCTIVITY_DIR := constant
 NETWORK_DIR := ignition_simple
 

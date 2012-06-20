@@ -3,4 +3,4 @@
 # they don't get added to the general objects variable -- they are
 # brought in one-by-one for their respective executable's linking
 
-f90sources +=
+f90sources += probin.f90
