@@ -92,6 +92,15 @@ table:
 
 
 #-----------------------------------------------------------------------------
+# extra directory
+ifndef EXTRA_TOP_DIR 
+  EXTRA_TOP_DIR := $(MAESTRO_TOP_DIR)/
+endif
+
+EXTRAS := $(addprefix $(EXTRA_TOP_DIR)/, $(EXTRA_DIR))
+
+
+#-----------------------------------------------------------------------------
 # compile in support for particles
 PARTICLES := t
 
@@ -105,16 +114,17 @@ PARTICLES := t
 # The directories listed in Fmincludes contain files that are included
 # in source files, and thus specified using -I in the compiler flags.
 
-Fmdirs += $(EXTRA_DIR) \
-          $(UTIL_CORE) \
+Fmdirs += $(UTIL_CORE) \
           $(MAESTRO_CORE)
 
 
 Fmpack := $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir)/GPackage.mak)
 Fmpack += $(foreach dir, $(MICROPHYS_CORE), $(dir)/GPackage.mak)
+Fmpack += $(foreach dir, $(EXTRAS), $(dir)/GPackage.mak)
 
 Fmlocs := $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir))
 Fmlocs += $(foreach dir, $(MICROPHYS_CORE), $(dir))
+Fmlocs += $(foreach dir, $(EXTRAS), $(dir))
 
 Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir))
 
