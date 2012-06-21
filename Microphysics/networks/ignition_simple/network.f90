@@ -23,6 +23,8 @@ module network
 
   implicit none
 
+  character (len=*), parameter :: network_name = "ignition_simple"
+
   ! nspec = number of species this network carries
   ! nspec_advance = the number of species that are explicitly integrated
   !                 in the ODE solve (the others are solved for 

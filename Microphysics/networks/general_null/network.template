@@ -1,6 +1,8 @@
 ! An automatically generated "null" network.  This provides the properties
 ! of a set of non-reacting species.
 !
+! network_name     -- a descriptive name of the network
+!
 ! nspec            -- the number of species
 !
 ! aion             -- atomic number
@@ -29,6 +31,8 @@ module network
   character (len=16), save :: spec_names(nspec) 
   character (len= 5), save :: short_spec_names(nspec)
   character (len= 5), save :: short_aux_names(naux)
+
+  character (len=*), parameter :: network_name = @@NAME@@
 
   real(kind=dp_t), save :: aion(nspec), zion(nspec)
 
