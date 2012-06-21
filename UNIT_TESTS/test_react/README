@@ -1,6 +1,6 @@
 +Introduction
 -------------------------
-The test_react unit test serves both as a check of the consistency of a reaction network
+Theee test_react unit test serves both as a check of the consistency of a reaction network
 as well as a diagnostic tool for isolating and analyzing reaction network results.
 
 The basic algorithm:
