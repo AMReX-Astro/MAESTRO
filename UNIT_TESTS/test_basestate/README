@@ -1,3 +1,4 @@
+------------------------------------------------------------------------------
 spherical test problem from multilevel paper:
 
   inputs-spherical_heat is the inputs file
@@ -24,21 +25,29 @@ spherical test problem from multilevel paper:
   CASTRO takes additional time to equilibrate after heating is shut off.
 
 
+------------------------------------------------------------------------------
 plane-parallel test problem:
 
   inputs-planar approximates what was done in paper II, but this
   should be revisited.
 
+  The original comparison was done with FLASH
 
+
+------------------------------------------------------------------------------
 analytical CNO cycle test problem:
 
   make sure to change the nework in GNUmakefile to H_core_null
 
 
+------------------------------------------------------------------------------
 planar 1/r**2 gravity nova test problem
 
    The initial model here was created using initial_models/toy_atm/
    with _params.nova.invsq
 
    Use the pphotcno network to get the required species
+
+   There is a CASTRO comparison: hydrostatic_adjust_planar_invsq
+
 
