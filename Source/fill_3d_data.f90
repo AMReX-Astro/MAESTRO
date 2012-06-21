@@ -1343,6 +1343,14 @@ contains
     integer         :: i,j,k
     real(kind=dp_t) :: x,y,z,radius
 
+    ! normal is the unit vector in the radial direction (e_r) in spherical
+    ! coordinates.
+    !
+    ! in terms of Cartesian coordinates, with unit vectors e_x, e_y, e_z,
+    !    e_r = sin(theta)cos(phi) e_x + sin(theta)sin(phi) e_y + cos(theta) e_z
+    ! or
+    !    e_r = (x/R) e_x + (y/R) e_y + (z/R) e_z
+
     if (spherical .eq. 1) then
 
        !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,radius)
