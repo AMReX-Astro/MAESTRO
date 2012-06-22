@@ -15,7 +15,7 @@ EOS_DIR := helmeos
 CONDUCTIVITY_DIR := constant
 
 NETWORK_DIR := general_null
-GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/ignition.net
+GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/triple_alpha_plus_o.net
 
 
 # define the special directories needed to build this problem.  Note:

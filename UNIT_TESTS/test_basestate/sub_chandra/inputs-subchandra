@@ -19,7 +19,7 @@
 
  heating_time  = 25.d0
  heating_rad   = 4.2d8
- heating_peak  = 1.d14
+ heating_peak  = 1.d15
  heating_sigma = 1.d7
 
  prob_type = 3
