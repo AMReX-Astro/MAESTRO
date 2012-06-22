@@ -24,12 +24,13 @@ contains
     real(dp_t) :: fac
     integer :: r
 
-    integer                        :: h1_comp
-    integer                        :: c12_comp
-    integer                        :: n14_comp
-    integer                        :: o16_comp
-    real(kind=dp_t)                :: rho, T_6_third, X_CNO, X_1, g14
-    real(kind=dp_t)                :: tmp1, tmp2, tmp3
+    integer         :: h1_comp
+    integer         :: he4_comp               
+    integer         :: c12_comp
+    integer         :: n14_comp
+    integer         :: o16_comp
+    real(kind=dp_t) :: rho, T_6_third, X_CNO, X_1, g14
+    real(kind=dp_t) :: tmp1, tmp2, tmp3
 
 
     Hbar(:) = 0.d0
@@ -56,6 +57,7 @@ contains
              endif
           enddo
        end if
+
     elseif (prob_type .eq. 2) then
 
        ! analytic heating modeling CNO cycle
@@ -64,6 +66,7 @@ contains
        c12_comp = spec_comp - 1 + network_species_index("carbon-12")
        n14_comp = spec_comp - 1 + network_species_index("nitrogen-14")
        o16_comp = spec_comp - 1 + network_species_index("oxygen-16")
+
        do r = 0, nr(1)-1
           rho = s0(r,rho_comp)
           T_6_third = (s0(r,temp_comp) / 1.0d6) ** THIRD
@@ -80,6 +83,40 @@ contains
           tmp2 = dexp(-1.5228d2 / T_6_third)
           Hbar(r) = tmp1 * tmp2
        enddo
+
+    elseif (prob_type .eq. 3) then
+
+       if (.not. (network_name == "triple_alpha" .or. &
+                  network_name == "triple_alpha_plus_cago" .or. &
+                  network_name == "general-triple_alpha_plus_o.net")) then
+          call bl_error("ERROR: invalid network for prob_type == 3")
+       endif
+
+       he4_comp = spec_comp - 1 + network_species_index("helium-4")
+
+
+       ! off-center heating for sub_chandra
+       if (time .le. heating_time) then
+
+          if ( (time+dt) .gt. heating_time ) then
+             fac = (heating_time - time) / dt
+          else
+             fac = 1.d0
+          end if
+
+          do r = 0, nr(1)-1
+             if (spherical .eq. 0) then
+                call bl_error("ERROR: heating not supported")
+             else
+                ! spherical -- lower amplitude heating term
+                Hbar(r) = fac * heating_peak * &
+                     exp(-((r_cc_loc(1,r) - heating_rad)**2)/ heating_sigma**2)
+
+                ! only heat if there is He-4
+                Hbar(r) = (s0(r,he4_comp)/s0(r,rho_comp)) * Hbar(r)
+             endif
+          enddo
+       end if
 
     else
 

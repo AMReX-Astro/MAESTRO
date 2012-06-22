@@ -99,7 +99,7 @@ subroutine varden()
      dr_fine = (prob_hi(1) - prob_lo(1))/nr_fine
   else 
 
-     if (prob_type == 1) then
+     if (prob_type == 1 .or. prob_type == 3) then
         dr_fine = (prob_hi(1) - prob_lo(1))/nr_fine
      else
         ! need to compute it this way to agree with how the initial model was 
@@ -180,7 +180,7 @@ subroutine varden()
   write(*,*)
   write(*,*)'writing initial data to base.orig'
   open(unit=10,file="base.orig")
-  if (prob_type .eq. 1) then
+  if (prob_type .eq. 1 .or. prob_type .eq. 3) then
      do r=0,nr_fine-1
         write(10,1000) r_cc_loc(1,r), s0_old(1,r,rho_comp), &
              s0_old(1,r,temp_comp),p0_old(1,r)
@@ -661,14 +661,14 @@ subroutine varden()
 
   ! output
   open(unit=10,file="base.new")
-  if (prob_type .eq. 1) then 
-     write(10,*) "ONE=r_cc, TWO=rho, THREE=temp, FOUR=p0"
+  if (prob_type .eq. 1 .or. prob_type .eq. 3) then 
+     write(10,*) "# ONE=r_cc, TWO=rho, THREE=temp, FOUR=p0"
      do r=0,nr_fine-1
         write(10,1000) r_cc_loc(1,r), s0_new(1,r,rho_comp), &
              s0_new(1,r,temp_comp),p0_new(1,r)
      enddo
   elseif (prob_type .eq. 2) then
-     write(10,*) "ONE=r_cc, TWO=rho, THREE=temp, FOUR=p0  FIVE=Hext SIX+=H1 C N O" 
+     write(10,*) "# ONE=r_cc, TWO=rho, THREE=temp, FOUR=p0  FIVE=Hext SIX+=H1 C N O" 
      do r=0,nr_fine-1
         write(10,1000) r_cc_loc(1,r), s0_new(1,r,rho_comp), &
              s0_new(1,r,temp_comp),p0_new(1,r), Hext_bar(1,r), &
