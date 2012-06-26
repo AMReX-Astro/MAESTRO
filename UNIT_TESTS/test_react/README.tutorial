@@ -12,9 +12,12 @@ Legend:
   the test_react unit test!>
 
 === STEP 1 - Edit GNUmakefile ===
-$ cd <some base directory>/MAESTRO/fParallel/MAESTRO/UNIT_TESTS/test_react
+$ cd <some base directory>/MAESTRO/UNIT_TESTS/test_react
 * edit GNUmakefile by setting 'NETWORK_DIR := triple_alpha'*
-< WARNING: make sure NETWORK_TOP_DIR is properly initialized >
+< WARNING: 
+    -make sure NETWORK_TOP_DIR is properly initialized
+    -make sure 'OMP := ' , NOT 'OMP := t' . triple_alpha is not currently thread safe,
+      so using MPI or OMP will likely result in errors. >
 
 === STEP 2 - Compile ===
 $ make
@@ -22,7 +25,8 @@ $ make
 === OPTIONAL STEP - Generate an xin file ===
 < Instead of setting 'xin_file = "uniform" ' in my input file, which gives all
   species in the network equal and uniform mass fractions, I'd like to customize
-  my mass fractions.  Thus, I do the following. >
+  my mass fractions.  Thus, I do the following. Alternatives, one can write their
+  own xin file without using the script.>
 $ ./scripts/xinGen.py
 $ How many species are in the network? 3
 $ What is the grid size (cells on a cide, e.g. 16, 32, or 64)? 16
