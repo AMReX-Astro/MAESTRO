@@ -52,4 +52,6 @@
  init_divu_iter = 1
 
  use_eos_coulomb = F
+
+ do_heating = T
 /
