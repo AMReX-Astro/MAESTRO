@@ -14,11 +14,12 @@ having to tediously comb through the plotfiles using amrvis.
 
 +Usage
 -------------------------
-Call 
+First generate fsnapshot.so with a make call
+  'make'
+Now you can analyze plotfiles by calling
   './recon.py plotfile' 
 from a terminal.  One can also pass multiple plotfies
   './recon.py plotfile1 plotfile2 plotfile3 ...'
-
 
 +Output
 -------------------------
