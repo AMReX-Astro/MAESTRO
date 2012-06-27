@@ -21,7 +21,7 @@
 
   do_heating = .false.
 
-  xin_file   = "xin.3alpha"
+  xin_file   = "xin.3alpha_plus_o"
   run_prefix = "react_3alpha_"
 
   base_cutoff_density = 1.e-5
