@@ -78,6 +78,9 @@ $ ./main.Linux.gfortran.exe inputs_3alpha
 * Use amrvis3d to review the generated plotfiles. *
 
 2) Automated consistency checks
+$ cd scripts
+$ make
+$ cd ..
 $ ./scripts/recon.py react_3alpha_dtE+0
 
 < Generates the following output: >
