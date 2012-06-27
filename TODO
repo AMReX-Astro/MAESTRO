@@ -1,6 +1,6 @@
 -- figure out what density_cutoff should be in initdata.f90 (in relation
    to anelastic_cutoff), and understand what values of this give a valid
-   basestate expansion.
+   basestate expansion. 
 
 -- in modify_scal_force, for spherical, why don't we compute divu for
    the base state in the radial geom and then put it on the Cart grid,
