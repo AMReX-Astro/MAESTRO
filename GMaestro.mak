@@ -47,13 +47,13 @@ MAESTRO_CORE += constants
 #-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
 UTIL_CORE := Util/model_parser \
-             Util/random \
-             Util/BLAS 
-
-MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS
+             Util/random 
 
 
 #-----------------------------------------------------------------------------
+# microphysics
+MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS
+
 # locations of the microphysics 
 ifndef EOS_TOP_DIR 
   EOS_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/EOS
@@ -72,9 +72,15 @@ MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
                   $(NETWORK_TOP_DIR)/$(NETWORK_DIR) \
                   $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) 
 
-# networks in general need the VODE 
-ifneq ($(findstring null, $(NETWORK_DIR)), null)
-  UTIL_CORE += Util/VODE 
+# get any additional network dependencies
+include $(NETWORK_TOP_DIR)/$(NETWORK_DIR)/NETWORK_REQUIRES
+
+ifdef NEED_VODE
+  UTIL_CORE += Util/VODE
+endif
+
+ifdef NEED_BLAS
+  UTIL_CORE += Util/BLAS
 endif
 
 
