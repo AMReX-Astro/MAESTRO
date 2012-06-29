@@ -889,7 +889,8 @@ contains
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use network, only: nspec
-    use eos_module
+    use eos_module, only: eos_input_re, eos_input_rh, eos
+    use eos_type_module
     use probin_module, only: use_eos_e_instead_of_h
     
     integer, intent(in)               :: lo(:), hi(:), ng
@@ -899,7 +900,8 @@ contains
     
     ! Local variables
     integer :: i
-    
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
     if (use_eos_e_instead_of_h) then
 
@@ -907,27 +909,19 @@ contains
 
           ! (rho, (h->e)) --> T, p
 
-          den_eos  = state(i,rho_comp)
-          temp_eos = state(i,temp_comp)
-          xn_eos(:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos
+          eos_state%rho   = state(i,rho_comp)
+          eos_state%T     = state(i,temp_comp)
+          eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
           ! e = h - p/rho
-          e_eos = state(i,rhoh_comp) / state(i,rho_comp) - p0(i) / state(i,rho_comp)
+          eos_state%e = state(i,rhoh_comp) / state(i,rho_comp) - &
+               p0(i) / state(i,rho_comp)
 
-          pt_index_eos(:) = (/i, -1, -1/)
+          pt_index(:) = (/i, -1, -1/)
 
-          call eos(eos_input_re, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)
+          call eos(eos_input_re, eos_state, .false., pt_index)
           
-          state(i,temp_comp) = temp_eos
+          state(i,temp_comp) = eos_state%T
 
        enddo
 
@@ -937,26 +931,17 @@ contains
 
           ! (rho, h) --> T, p
 
-          den_eos  = state(i,rho_comp)
-          temp_eos = state(i,temp_comp)
-          xn_eos(:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos
+          eos_state%rho   = state(i,rho_comp)
+          eos_state%T     = state(i,temp_comp)
+          eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-          h_eos = state(i,rhoh_comp) / state(i,rho_comp)
+          eos_state%h = state(i,rhoh_comp) / state(i,rho_comp)
 
-          pt_index_eos(:) = (/i, -1, -1/)
+          pt_index(:) = (/i, -1, -1/)
 
-          call eos(eos_input_rh, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)
+          call eos(eos_input_rh, eos_state, .false., pt_index)
           
-          state(i,temp_comp) = temp_eos
+          state(i,temp_comp) = eos_state%T
 
        enddo
 
@@ -971,7 +956,8 @@ contains
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use network, only: nspec
-    use eos_module
+    use eos_module, only: eos_input_re, eos_input_rh, eos
+    use eos_type_module
     use probin_module, only: use_eos_e_instead_of_h
 
     integer, intent(in)               :: lo(:), hi(:), ng
@@ -980,7 +966,8 @@ contains
     
     ! Local variables
     integer :: i, j
-
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
     if (use_eos_e_instead_of_h) then
     
@@ -989,27 +976,19 @@ contains
 
              ! (rho, (h->e)) --> T, p
           
-             den_eos  = state(i,j,rho_comp)
-             temp_eos = state(i,j,temp_comp)
-             xn_eos(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = state(i,j,rho_comp)
+             eos_state%T     = state(i,j,temp_comp)
+             eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              ! e = h - p/rho             
-             e_eos = state(i,j,rhoh_comp) / state(i,j,rho_comp) - p0(j) / state(i,j,rho_comp)
+             eos_state%e = state(i,j,rhoh_comp) / state(i,j,rho_comp) - &
+                  p0(j) / state(i,j,rho_comp)
 
-             pt_index_eos(:) = (/i, j, -1/)
+             pt_index(:) = (/i, j, -1/)
           
-             call eos(eos_input_re, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_re, eos_state, .false., pt_index)
           
-             state(i,j,temp_comp) = temp_eos
+             state(i,j,temp_comp) = eos_state%T
           
           enddo
        enddo
@@ -1021,32 +1000,22 @@ contains
 
              ! (rho, h) --> T, p
           
-             den_eos  = state(i,j,rho_comp)
-             temp_eos = state(i,j,temp_comp)
-             xn_eos(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = state(i,j,rho_comp)
+             eos_state%T     = state(i,j,temp_comp)
+             eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
-             h_eos = state(i,j,rhoh_comp) / state(i,j,rho_comp)
+             eos_state%h = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
-             pt_index_eos(:) = (/i, j, -1/)
+             pt_index(:) = (/i, j, -1/)
           
-             call eos(eos_input_rh, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rh, eos_state, .false., pt_index)
           
-             state(i,j,temp_comp) = temp_eos
+             state(i,j,temp_comp) = eos_state%T
           
           enddo
        enddo
 
     endif
-
 
   end subroutine makeTfromRhoH_2d
 
@@ -1055,9 +1024,10 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoH_3d(state,lo,hi,ng,p0)
 
-    use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
-    use eos_module
-    use network,        only: nspec
+    use variables,     only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use eos_module,    only: eos_input_re, eos_input_rh, eos
+    use eos_type_module
+    use network,       only: nspec
     use probin_module, only: use_eos_e_instead_of_h
 
     integer          , intent(in)    :: lo(:), hi(:), ng
@@ -1066,39 +1036,31 @@ contains
 
     ! Local variables
     integer :: i, j, k
-
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
     if (use_eos_e_instead_of_h) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
              
                 ! (rho, (h->e)) --> T, p
              
-                den_eos  = state(i,j,k,rho_comp)
-                temp_eos = state(i,j,k,temp_comp)
-                xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%rho   = state(i,j,k,rho_comp)
+                eos_state%T     = state(i,j,k,temp_comp)
+                eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
                 ! e = h - p/rho
-                e_eos = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) - &
+                eos_state%e = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) - &
                      p0(k) / state(i,j,k,rho_comp)
                 
-                pt_index_eos(:) = (/i, j, k/)
+                pt_index(:) = (/i, j, k/)
              
-                call eos(eos_input_re, den_eos, temp_eos, &
-                         xn_eos, &
-                         p_eos, h_eos, e_eos, &
-                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                         dpdX_eos, dhdX_eos, &
-                         gam1_eos, cs_eos, s_eos, &
-                         dsdt_eos, dsdr_eos, &
-                         .false., &
-                         pt_index_eos)
+                call eos(eos_input_re, eos_state, .false., pt_index)
              
-                state(i,j,k,temp_comp) = temp_eos
+                state(i,j,k,temp_comp) = eos_state%T
              
              enddo
           enddo
@@ -1107,32 +1069,24 @@ contains
 
     else
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
              
                 ! (rho, h) --> T, p
              
-                den_eos  = state(i,j,k,rho_comp)
-                temp_eos = state(i,j,k,temp_comp)
-                xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
-                h_eos = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+                eos_state%rho   = state(i,j,k,rho_comp)
+                eos_state%T     = state(i,j,k,temp_comp)
+                eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                eos_state%h = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
                 
-                pt_index_eos(:) = (/i, j, k/)
+                pt_index(:) = (/i, j, k/)
              
-                call eos(eos_input_rh, den_eos, temp_eos, &
-                         xn_eos, &
-                         p_eos, h_eos, e_eos, &
-                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                         dpdX_eos, dhdX_eos, &
-                         gam1_eos, cs_eos, s_eos, &
-                         dsdt_eos, dsdr_eos, &
-                         .false., &
-                         pt_index_eos)
+                call eos(eos_input_rh, eos_state, .false., pt_index)
              
-                state(i,j,k,temp_comp) = temp_eos
+                state(i,j,k,temp_comp) = eos_state%T
              
              enddo
           enddo
@@ -1148,9 +1102,10 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoH_3d_sphr(state,lo,hi,ng,p0,dx)
 
-    use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
-    use eos_module
-    use network,        only: nspec
+    use variables,     only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use eos_module,    only: eos_input_re, eos_input_rh, eos
+    use eos_type_module
+    use network,       only: nspec
     use probin_module, only: use_eos_e_instead_of_h
     use fill_3d_module
 
@@ -1162,42 +1117,34 @@ contains
     ! Local variables
     integer :: i, j, k
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
-
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
     if (use_eos_e_instead_of_h) then
 
        allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
              
                 ! (rho, (h->e)) --> T, p
              
-                den_eos  = state(i,j,k,rho_comp)
-                temp_eos = state(i,j,k,temp_comp)
-                xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%rho   = state(i,j,k,rho_comp)
+                eos_state%T     = state(i,j,k,temp_comp)
+                eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
                 ! e = h - p/rho
-                e_eos = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) - &
+                eos_state%e = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) - &
                      p0_cart(i,j,k,1) / state(i,j,k,rho_comp)
                 
-                pt_index_eos(:) = (/i, j, k/)
+                pt_index(:) = (/i, j, k/)
              
-                call eos(eos_input_re, den_eos, temp_eos, &
-                         xn_eos, &
-                         p_eos, h_eos, e_eos, &
-                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                         dpdX_eos, dhdX_eos, &
-                         gam1_eos, cs_eos, s_eos, &
-                         dsdt_eos, dsdr_eos, &
-                         .false., &
-                         pt_index_eos)
+                call eos(eos_input_re, eos_state, .false., pt_index)
              
-                state(i,j,k,temp_comp) = temp_eos
+                state(i,j,k,temp_comp) = eos_state%T
              
              enddo
           enddo
@@ -1208,32 +1155,24 @@ contains
 
     else
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
              
                 ! (rho, h) --> T, p
              
-                den_eos  = state(i,j,k,rho_comp)
-                temp_eos = state(i,j,k,temp_comp)
-                xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
-                h_eos = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+                eos_state%rho   = state(i,j,k,rho_comp)
+                eos_state%T     = state(i,j,k,temp_comp)
+                eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                eos_state%h = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
                 
-                pt_index_eos(:) = (/i, j, k/)
+                pt_index(:) = (/i, j, k/)
              
-                call eos(eos_input_rh, den_eos, temp_eos, &
-                         xn_eos, &
-                         p_eos, h_eos, e_eos, &
-                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                         dpdX_eos, dhdX_eos, &
-                         gam1_eos, cs_eos, s_eos, &
-                         dsdt_eos, dsdr_eos, &
-                         .false., &
-                         pt_index_eos)
+                call eos(eos_input_rh, eos_state, .false., pt_index)
              
-                state(i,j,k,temp_comp) = temp_eos
+                state(i,j,k,temp_comp) = eos_state%T
              
              enddo
           enddo
@@ -1312,7 +1251,8 @@ contains
 
     else
 
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       ! the loop over nlevs must count backwards to make sure the
+       ! finer grids are done first
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
@@ -1339,7 +1279,8 @@ contains
   subroutine makeTfromRhoP_1d(state,lo,hi,ng,p0)
 
     use variables,     only: rho_comp, spec_comp, temp_comp
-    use eos_module
+    use eos_module,    only: eos_input_rp, eos
+    use eos_type_module
     use network,       only: nspec
 
     integer, intent(in) :: lo(:), hi(:), ng
@@ -1348,31 +1289,24 @@ contains
     
     ! Local variables
     integer :: i
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
     do i = lo(1), hi(1)
 
        ! (rho, p) --> T
 
-       den_eos  = state(i,rho_comp)
-       temp_eos = state(i,temp_comp)
-       xn_eos(:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos
+       eos_state%rho   = state(i,rho_comp)
+       eos_state%T     = state(i,temp_comp)
+       eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-       p_eos = p0(i)
+       eos_state%p = p0(i)
 
-       pt_index_eos(:) = (/i, -1, -1/)
+       pt_index(:) = (/i, -1, -1/)
 
-       call eos(eos_input_rp, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false., &
-                pt_index_eos)
+       call eos(eos_input_rp, eos_state, .false., pt_index)
 
-       state(i,temp_comp) = temp_eos
+       state(i,temp_comp) = eos_state%T
 
     enddo
 
@@ -1384,7 +1318,8 @@ contains
   subroutine makeTfromRhoP_2d(state,lo,hi,ng,p0)
 
     use variables,     only: rho_comp, spec_comp, temp_comp
-    use eos_module
+    use eos_module,    only: eos_input_rp, eos
+    use eos_type_module
     use network,       only: nspec
 
     integer, intent(in) :: lo(:), hi(:), ng
@@ -1393,32 +1328,25 @@ contains
     
     ! Local variables
     integer :: i, j
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
     
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
           
           ! (rho, p) --> T
           
-          den_eos  = state(i,j,rho_comp)
-          temp_eos = state(i,j,temp_comp)
-          xn_eos(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+          eos_state%rho  = state(i,j,rho_comp)
+          eos_state%T = state(i,j,temp_comp)
+          eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
           
-          p_eos = p0(j)
+          eos_state%p = p0(j)
 
-          pt_index_eos(:) = (/i, j, -1/)
+          pt_index(:) = (/i, j, -1/)
           
-          call eos(eos_input_rp, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)
+          call eos(eos_input_rp, eos_state, .false., pt_index)
           
-          state(i,j,temp_comp) = temp_eos
+          state(i,j,temp_comp) = eos_state%T
           
        enddo
     enddo
@@ -1430,8 +1358,9 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoP_3d(state,lo,hi,ng,p0)
 
-    use variables,      only: rho_comp, spec_comp, temp_comp
-    use eos_module
+    use variables,     only: rho_comp, spec_comp, temp_comp
+    use eos_module,    only: eos_input_rp, eos
+    use eos_type_module
     use network,       only: nspec
     use fill_3d_module
 
@@ -1441,33 +1370,26 @@ contains
 
     ! Local variables
     integer :: i, j, k
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              
              ! (rho, p) --> T
              
-             den_eos  = state(i,j,k,rho_comp)
-             temp_eos = state(i,j,k,temp_comp)
-             p_eos = p0(k)
-             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = state(i,j,k,rho_comp)
+             eos_state%T     = state(i,j,k,temp_comp)
+             eos_state%p     = p0(k)
+             eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rp, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rp, eos_state, .false., pt_index)
              
-             state(i,j,k,temp_comp) = temp_eos
+             state(i,j,k,temp_comp) = eos_state%T
              
           enddo
        enddo
@@ -1481,8 +1403,9 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoP_3d_sphr(state,lo,hi,ng,p0,dx)
 
-    use variables,      only: rho_comp, spec_comp, temp_comp
-    use eos_module
+    use variables,     only: rho_comp, spec_comp, temp_comp
+    use eos_module,    only: eos_input_rp, eos
+    use eos_type_module
     use network,       only: nspec
     use fill_3d_module
 
@@ -1494,36 +1417,29 @@ contains
     ! Local variables
     integer :: i, j, k
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              
              ! (rho, p) --> T
              
-             den_eos  = state(i,j,k,rho_comp)
-             temp_eos = state(i,j,k,temp_comp)
-             p_eos = p0_cart(i,j,k,1)
-             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho  = state(i,j,k,rho_comp)
+             eos_state%T = state(i,j,k,temp_comp)
+             eos_state%p = p0_cart(i,j,k,1)
+             eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rp, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rp, eos_state, .false., pt_index)
              
-             state(i,j,k,temp_comp) = temp_eos
+             state(i,j,k,temp_comp) = eos_state%T
              
           enddo
        enddo
@@ -1630,9 +1546,10 @@ contains
   !----------------------------------------------------------------------------
   subroutine makePfromRhoH_1d(state,temp_old,peos,lo,hi,ng_s,ng_so,ng_p)
 
-    use variables,     only: rho_comp, spec_comp, rhoh_comp
-    use eos_module
-    use network,       only: nspec
+    use variables,  only: rho_comp, spec_comp, rhoh_comp
+    use eos_module, only: eos_input_rh, eos
+    use eos_type_module
+    use network,    only: nspec
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_so, ng_p
     real (kind = dp_t), intent(in   ) ::    state(lo(1)-ng_s :,:)
@@ -1641,30 +1558,23 @@ contains
     
     ! Local variables
     integer :: i
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
     
     do i = lo(1), hi(1)
 
        ! (rho, H) --> T, p
-       den_eos  = state(i,rho_comp)
-       temp_eos = temp_old(i)
-       xn_eos(:) = state(i,spec_comp:spec_comp+nspec-1)/den_eos
+       eos_state%rho   = state(i,rho_comp)
+       eos_state%T     = temp_old(i)
+       eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
        
-       h_eos = state(i,rhoh_comp) / state(i,rho_comp)
+       eos_state%h = state(i,rhoh_comp) / state(i,rho_comp)
 
-       pt_index_eos(:) = (/i, -1, -1/)
+       pt_index(:) = (/i, -1, -1/)
        
-       call eos(eos_input_rh, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false., &
-                pt_index_eos)
+       call eos(eos_input_rh, eos_state, .false., pt_index)
        
-       peos(i) = p_eos
+       peos(i) = eos_state%p
        
     enddo
 
@@ -1675,9 +1585,10 @@ contains
   !----------------------------------------------------------------------------
   subroutine makePfromRhoH_2d(state,temp_old,peos,lo,hi,ng_s,ng_so,ng_p)
 
-    use variables,     only: rho_comp, spec_comp, rhoh_comp
-    use eos_module
-    use network,       only: nspec
+    use variables,  only: rho_comp, spec_comp, rhoh_comp
+    use eos_module, only: eos_input_rh, eos
+    use eos_type_module
+    use network,    only: nspec
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_so, ng_p
     real (kind = dp_t), intent(in   ) ::    state(lo(1)-ng_s :,lo(2)-ng_s :,:)
@@ -1686,31 +1597,24 @@ contains
     
     ! Local variables
     integer :: i, j
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
     
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
           ! (rho, H) --> T, p
-          den_eos  = state(i,j,rho_comp)
-          temp_eos = temp_old(i,j)
-          xn_eos(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+          eos_state%rho   = state(i,j,rho_comp)
+          eos_state%T     = temp_old(i,j)
+          eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-          h_eos = state(i,j,rhoh_comp) / state(i,j,rho_comp)
+          eos_state%h = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
-          pt_index_eos(:) = (/i, j, -1/)
+          pt_index(:) = (/i, j, -1/)
 
-          call eos(eos_input_rh, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)
+          call eos(eos_input_rh, eos_state, .false., pt_index)
 
-          peos(i,j) = p_eos
+          peos(i,j) = eos_state%p
 
        enddo
     enddo
@@ -1722,9 +1626,10 @@ contains
   !----------------------------------------------------------------------------
   subroutine makePfromRhoH_3d(state,temp_old,peos,lo,hi,ng_s,ng_so,ng_p)
 
-    use variables,      only: rho_comp, spec_comp, rhoh_comp
-    use eos_module
-    use network,       only: nspec
+    use variables,  only: rho_comp, spec_comp, rhoh_comp
+    use eos_module, only: eos_input_rh, eos
+    use eos_type_module
+    use network,    only: nspec
     use fill_3d_module
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_s, ng_so, ng_p
@@ -1734,32 +1639,26 @@ contains
 
     ! Local variables
     integer :: i, j, k
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              
              ! (rho, H) --> T, p
-             den_eos  = state(i,j,k,rho_comp)
-             temp_eos = temp_old(i,j,k)
-             xn_eos(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
-             h_eos = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+             eos_state%rho   = state(i,j,k,rho_comp)
+             eos_state%T     = temp_old(i,j,k)
+             eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index_eos(:) = (/i, j, k/)
+             eos_state%h = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+
+             pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rh, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rh, eos_state, .false., pt_index)
              
-             peos(i,j,k) = p_eos
+             peos(i,j,k) = eos_state%p
              
           enddo
        enddo
@@ -1837,7 +1736,8 @@ contains
 
     else
 
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       ! the loop over nlevs must count backwards to make sure the
+       ! finer grids are done first
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
@@ -1869,7 +1769,8 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTHfromRhoP_1d(s,ng_s,lo,hi,p0)
 
-    use eos_module
+    use eos_module, only: eos_input_rp, eos
+    use eos_type_module
     use network,       only: nspec
     use variables
 
@@ -1879,29 +1780,22 @@ contains
 
     ! local
     integer    :: i
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
     do i=lo(1),hi(1)
 
-       den_eos = s(i,rho_comp)
-       xn_eos(:) = s(i,spec_comp:spec_comp+nspec-1)/s(i,rho_comp)
-       temp_eos = s(i,temp_comp)
-       p_eos = p0(i)
+       eos_state%rho   = s(i,rho_comp)
+       eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/s(i,rho_comp)
+       eos_state%T     = s(i,temp_comp)
+       eos_state%p     = p0(i)
 
-       pt_index_eos(:) = (/i, -1, -1/)
+       pt_index(:) = (/i, -1, -1/)
 
-       call eos(eos_input_rp, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false., &
-                pt_index_eos)
+       call eos(eos_input_rp, eos_state, .false., pt_index)
 
-       s(i,rhoh_comp) = den_eos*h_eos
-       s(i,temp_comp) = temp_eos
+       s(i,rhoh_comp) = eos_state%rho*eos_state%h
+       s(i,temp_comp) = eos_state%T
 
     end do
 
@@ -1912,7 +1806,8 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTHfromRhoP_2d(s,ng_s,lo,hi,p0)
 
-    use eos_module
+    use eos_module, only: eos_input_rp, eos
+    use eos_type_module
     use network,       only: nspec
     use variables
 
@@ -1922,30 +1817,23 @@ contains
 
     ! local
     integer    :: i,j
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
     do j=lo(2),hi(2)
        do i=lo(1),hi(1)
 
-          den_eos = s(i,j,rho_comp)
-          xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/s(i,j,rho_comp)
-          temp_eos = s(i,j,temp_comp)
-          p_eos = p0(j)
+          eos_state%rho   = s(i,j,rho_comp)
+          eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/s(i,j,rho_comp)
+          eos_state%T     = s(i,j,temp_comp)
+          eos_state%p     = p0(j)
 
-          pt_index_eos(:) = (/i, j, -1/)
+          pt_index(:) = (/i, j, -1/)
 
-          call eos(eos_input_rp, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false., &
-                   pt_index_eos)
+          call eos(eos_input_rp, eos_state, .false., pt_index)
 
-          s(i,j,rhoh_comp) = den_eos*h_eos
-          s(i,j,temp_comp) = temp_eos
+          s(i,j,rhoh_comp) = eos_state%rho*eos_state%h
+          s(i,j,temp_comp) = eos_state%T
 
        end do
     end do
@@ -1957,8 +1845,9 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTHfromRhoP_3d(s,ng_s,lo,hi,p0)
 
-    use eos_module
-    use network,       only: nspec
+    use eos_module, only: eos_input_rp, eos
+    use eos_type_module
+    use network,    only: nspec
     use variables
 
     integer           , intent(in   ) :: lo(:),hi(:),ng_s
@@ -1967,32 +1856,25 @@ contains
 
     ! local
     integer    :: i,j,k
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
              
-             den_eos = s(i,j,k,rho_comp)
-             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,K,rho_comp)
-             temp_eos = s(i,j,k,temp_comp)
-             p_eos = p0(k)
+             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,k,rho_comp)
+             eos_state%T     = s(i,j,k,temp_comp)
+             eos_state%p     = p0(k)
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rp, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rp, eos_state, .false., pt_index)
              
-             s(i,j,k,rhoh_comp) = den_eos*h_eos
-             s(i,j,k,temp_comp) = temp_eos
+             s(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
+             s(i,j,k,temp_comp) = eos_state%T
              
           end do
        end do
@@ -2006,8 +1888,9 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTHfromRhoP_3d_sphr(s,ng_s,lo,hi,p0,dx)
 
-    use eos_module
-    use network,       only: nspec
+    use eos_module, only: eos_input_rp, eos
+    use eos_type_module
+    use network,    only: nspec
     use variables
     use fill_3d_module
 
@@ -2019,35 +1902,28 @@ contains
     ! local
     integer    :: i,j,k
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
              
-             den_eos = s(i,j,k,rho_comp)
-             xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,K,rho_comp)
-             temp_eos = s(i,j,k,temp_comp)
-             p_eos = p0_cart(i,j,k,1)
+             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,k,rho_comp)
+             eos_state%T     = s(i,j,k,temp_comp)
+             eos_state%p     = p0_cart(i,j,k,1)
 
-             pt_index_eos(:) = (/i, j, k/)
+             pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rp, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false., &
-                      pt_index_eos)
+             call eos(eos_input_rp, eos_state, .false., pt_index)
              
-             s(i,j,k,rhoh_comp) = den_eos*h_eos
-             s(i,j,k,temp_comp) = temp_eos
+             s(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
+             s(i,j,k,temp_comp) = eos_state%T
              
           end do
        end do
