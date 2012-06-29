@@ -242,19 +242,19 @@ From \boxlib, we alway include:
 \item {\tt \$\{BOXLIB\_HOME\}/Src/LinearSolvers/F\_MG}
 \end{itemize}
 
-\noindent From {\tt extern}, we always include
+\noindent From {\tt Util}, we always include
 \begin{itemize}
-\item {\tt extern/model\_parser}
-\item {\tt extern/LAPACK}
-\item {\tt extern/random}
-\item {\tt extern/BLAS}
-\item {\tt \$\{EOS\_DIR\}}
-\item {\tt \$\{NETWORK\_DIR\}}
-\item {\tt \$\{CONDUCTIVITY\_DIR\}}
+\item {\tt Util/model\_parser}
+\item {\tt Util/random}
 \end{itemize}
-for most networks, we automatically add in {\tt extern/VODE} as well.
 
-\noindent From {\tt MAESTRO/}, we add
+The microphysics, as described above is also included.  For the networks,
+we include a file called {\tt NETWORK\_REQUIRES} into {\tt GMaestro.mak}
+that tells us whether to also include {\tt Util/VODE} (if {\tt NEED\_VODE := t})
+or {\tt Util/BLAS} (if {\tt NEED\_BLAS := t}).
+
+
+From {\tt MAESTRO/}, we add
 \begin{itemize}
 \item {\tt MAESTRO/constants}
 \item {\tt MAESTRO/Source}
@@ -264,10 +264,11 @@ for most networks, we automatically add in {\tt extern/VODE} as well.
 \noindent Finally, any extra directories listed in the {\tt EXTRA\_DIR}
 variable are included.
 
-For each of these included directories, {\tt GMaestro.mak} adds the list of source files
-defined in their {\tt GPackage.mak} to the list of files to be compiled.
-It also adds each of these directories to the {\tt vpath} as a directory
-for the build process to search in for source files.
+For each of these included directories, {\tt GMaestro.mak} adds the
+list of source files defined in their {\tt GPackage.mak} to the list
+of files to be compiled.  It also adds each of these directories to
+the {\tt vpath} as a directory for the build process to search in for
+source files.
 
 
 \subsection{Unit Tests}
