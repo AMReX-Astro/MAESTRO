@@ -819,10 +819,15 @@ Presently there are 2 equations of state that work with \maestro:
      make this switch.
 \end{itemize}
 
-The {\tt eos\_module} declares for convenience the variables that need
-appear in the {\tt eos} call argument list.  \maestro\ routines use
-these module variables in the EOS call to avoid having to declare 
-each quantity in each routine that calls the EOS.
+The thermodynamic quantities are stored in a Fortran type {\tt eos\_t},
+which has fields for all the thermodynamic inputs and outputs.  The 
+type definition is brought in through {\tt eos\_type\_module}.
+\footnote{ Note: an older interface to the EOS exists, but is
+  deprecated.  In this mode, the {\tt eos\_module} declares for
+  convenience the variables that need appear in the {\tt eos} call
+  argument list.  \maestro\ routines use these module variables in the
+  EOS call to avoid having to declare each quantity in each routine
+  that calls the EOS.}
 
 The first argument to the {\tt eos} call is an integer key that
 specifies which thermodynamic variables (in addition to the mass
