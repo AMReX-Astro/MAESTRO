@@ -73,7 +73,7 @@ MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
                   $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) 
 
 # get any additional network dependencies
-include $(NETWORK_TOP_DIR)/$(NETWORK_DIR)/NETWORK_REQUIRES
+include $(NETWORK_TOP_DIR)/$(strip $(NETWORK_DIR))/NETWORK_REQUIRES
 
 ifdef NEED_VODE
   UTIL_CORE += Util/VODE
