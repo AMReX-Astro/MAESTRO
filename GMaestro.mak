@@ -112,32 +112,39 @@ PARTICLES := t
 
 
 #-----------------------------------------------------------------------------
-# The directories listed in Fmdirs should contain a GPackage.mak,
-# which specifies to the MAESTRO build system the list of files
-# to build.  These directories are also put in the vpath to define
-# the locations that Make will look for source files.
+# Fmpack is the list of all the GPackage.mak files that we need to
+# include into the build system to define the list of source files.
+#
+# Fmlocs is the list of all the directories that we want to search
+# for the source files in -- this is usually going to be the
+# same as the list of directories containing GPackage.mak defined
+# above.
+#
+# Fincs is the list of directories that have include files that
+# we need to tell the compiler about.
 
-# The directories listed in Fmincludes contain files that are included
-# in source files, and thus specified using -I in the compiler flags.
-
+# Maestro and Util modules
 Fmdirs += $(UTIL_CORE) \
           $(MAESTRO_CORE)
 
-
 Fmpack := $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir)/GPackage.mak)
-Fmpack += $(foreach dir, $(MICROPHYS_CORE), $(dir)/GPackage.mak)
-Fmpack += $(foreach dir, $(EXTRAS), $(dir)/GPackage.mak)
-
 Fmlocs := $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir))
+
+# Microphysics
+Fmpack += $(foreach dir, $(MICROPHYS_CORE), $(dir)/GPackage.mak)
 Fmlocs += $(foreach dir, $(MICROPHYS_CORE), $(dir))
+
+# Extras
+Fmpack += $(foreach dir, $(EXTRAS), $(dir)/GPackage.mak)
 Fmlocs += $(foreach dir, $(EXTRAS), $(dir))
 
-Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir))
-
+# BoxLib
 Fmpack += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir)/GPackage.mak)
 Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
 
 
+# any include directories
+Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir))
 
 
 # include the necessary GPackage.mak files that define this setup
