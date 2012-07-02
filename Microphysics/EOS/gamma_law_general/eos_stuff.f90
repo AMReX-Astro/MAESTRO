@@ -90,7 +90,7 @@ module eos_module
 
   private nspec, aion, zion
 
-  public eos_init, eos
+  public eos_init, eos_finalize, eos
 
   interface eos
      module procedure eos_old
@@ -131,6 +131,13 @@ contains
     initialized = .true.
  
   end subroutine eos_init
+
+
+  subroutine eos_finalize()
+
+    call shutdown_mesa_eos()
+
+  end subroutine eos_finalize
 
 
   !---------------------------------------------------------------------------
