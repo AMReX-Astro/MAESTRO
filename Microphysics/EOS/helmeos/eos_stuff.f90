@@ -119,8 +119,6 @@ contains
 
   subroutine eos_finalize()
 
-    call shutdown_mesa_eos()
-
   end subroutine eos_finalize
 
 
