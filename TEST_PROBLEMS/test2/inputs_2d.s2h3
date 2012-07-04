@@ -51,4 +51,6 @@
  init_divu_iter = 1
 
  perturb_model = T
+
+ use_particles = T
 /
