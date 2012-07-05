@@ -45,7 +45,8 @@ section_sources = maestro_doc.bib \
                   visualization/visualization.tex \
                   SDC/sdc.tex \
                   test_suite/test_suite.tex \
-                  makefiles/makefiles.tex
+                  makefiles/makefiles.tex \
+                  managing_jobs/managingjobs.tex
 
 
 MaestroUsersGuide.dvi: MaestroUsersGuide.tex $(eps_source) $(section_sources) $(eps_source) 
