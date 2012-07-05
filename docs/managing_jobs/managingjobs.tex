@@ -96,6 +96,7 @@ On your local machine, launch \visit.
   \item Create a new host by clicking on the {\em New Host} button.
   \item Enter the {\em Host nickname} as {\tt lens}
   \item Enter the {\em Remote host name} as {\tt lens.ccs.ornl.gov}
+  \item Enter the {\em Path to Visit installation} as {\tt /sw/analysis-x64/visit} (not sure if this is needed)
   \item Make sure that your {\em username} is correct
   \item Check {\em Tunnel data connections through SSH}
   \end{itemize}
@@ -124,3 +125,50 @@ To do remote visualization, select {\em File $\rightarrow$ Open}.
 From the drop down list at the top, select {\tt lens}.  You will be
 prompted for your password.  After that, you can navigate to the
 directory on lens with the data.
+
+To make a movie (output sequence of images):
+\begin{itemize}
+\item save a view in \visit\ you like as a session file (File $\rightarrow$ Save session).  
+\item On lens, create a file called {\tt files.visit} which lists all
+  of the files you want to visualize, one per line, with {\tt /Header}
+  after the filename.  This can be done simply as:
+  \begin{verbatim}
+  ls -1 | grep -v processed | awk '{print $1"/Header"}' > files.visit
+  \end{verbatim}
+  %$
+  (note: the {\tt processed} bit is for when you used the script above to 
+  automatically archive the data).
+
+\item Edit the session file, searching for the name of the plotfile you
+  originally visualized, and change it to read {\tt files.visit}.  Make
+  sure that the path is correct.  This may appear multiple times.
+
+\item Relaunch \visit\ locally and restore the session (File $\rightarrow$ Restore session).  It will render the first image.  Then reopen (File $\rightarrow$ ReOpen file).  After this is done, the buttons that allow you to move through the files should become active (black).
+
+\item Resave the session file
+
+\item To generate the frames, you have 2 options:
+
+  \begin{enumerate}
+  \item File $\rightarrow$ Save movie.  Pick {\em New simple movie},
+    then set the format to {\em PNG} and add this to the output box by
+    clicking the right arrow, then in the very last screen, select:
+    {Later, tell me the command to run}.
+
+   \visit\ will pop up a box showing the command to run.  Trying to
+   get the currently running session of \visit\ to generate the frames
+   seems problamatic.  Note: you will probably want to edit out the
+   {\tt -v x.x.x} argument in the commandline to not have it force
+   to use a specific version.
+
+  \item If the session file successfully does the remote visualization
+   as desired, you can run the movie via the commandline with something like:
+
+   \begin{verbatim}
+   visit -movie -format png -geometry 1080x1080 -output subchandra_cutoff3_ \
+       -start 0 -end 44 -sessionfile subchandra_radvel.session
+   \end{verbatim}
+
+  \end{enumerate}
+
+\end{itemize}
