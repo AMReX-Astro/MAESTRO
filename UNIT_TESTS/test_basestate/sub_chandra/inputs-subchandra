@@ -1,7 +1,7 @@
 &PROBIN
 
- anelastic_cutoff = 1.e4
- base_cutoff_density = 5.e3
+ anelastic_cutoff = 3.e4
+ base_cutoff_density = 1.0e4
 
  spherical_in = 1
  dm_in = 1
