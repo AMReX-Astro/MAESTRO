@@ -40,9 +40,9 @@ sourceDir      = /home/zingale/tests/MAESTRO/
 testTopDir     = /home/zingale/tests/
 webTopDir      = /home/www/Maestro/test-suite/
 compareToolDir = /home/zingale/tests/AmrPostprocessing/F_Src/
-helmeosDir     = /home/zingale/tests/MAESTRO/fParallel/extern/EOS/helmeos/
+helmeosDir     = /home/zingale/tests/MAESTRO/Microphysics/EOS/helmeos/
 
-sourceTree = fParallel
+sourceTree = F_Src
 
 suiteName = Maestro
 
@@ -53,8 +53,7 @@ MPIcommand = mpiexec -n @nprocs@ @command@
 
 The first group of options define the necessary paths.  Here, {\tt
   boxLibDir} points to the location of the \boxlib\ source, {\tt
-  sourceDir} points to the top-level \maestro\ directory, which is
-expected to contain the {\tt fParallel} subdirectories.  {\tt
+  sourceDir} points to the top-level \maestro\ directory.  {\tt
   testTopDir} refers to the directory that the suite should use as its
 root directory for running the tests and {\tt webTopDir} is the
 directory in which to place the web output.  The {\tt fcompare.f90}
@@ -63,7 +62,7 @@ comparison tool source is expected to be found in {\tt
 {\tt helm\_table.dat} file used by the general stellar equation of
 state.
 
-Next, we set {\tt sourceTree} to {\tt fParallel}, indicating that
+Next, we set {\tt sourceTree} to {\tt F\_Src}, indicating that
 \maestro\ is built using the Fortran \boxlib\ framework.  This option
 tells the test suite what build system to use.
 
@@ -90,7 +89,7 @@ example, a test listing for the {\tt test2} problem might look like:
 
 \begin{lstlisting}
 [test2]
-buildDir = fParallel/MAESTRO/TEST_PROBLEMS/test2/
+buildDir = TEST_PROBLEMS/test2/
 inputFile = inputs_2d
 aux1File = model.hse.cool.coulomb
 needsHelmEOS = 1
