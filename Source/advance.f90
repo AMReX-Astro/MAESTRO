@@ -1121,7 +1121,7 @@ contains
 !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    ndproj_time_start = parallel_wtime()
+    thermal_time_start = parallel_wtime()
 
     if (use_thermal_diffusion) then
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -1156,7 +1156,7 @@ contains
     end if
 
     if (barrier_timers) call parallel_barrier()
-    ndproj_time = ndproj_time + (parallel_wtime() - ndproj_time_start)
+    thermal_time = thermal_time + (parallel_wtime() - thermal_time_start)
 
     misc_time_start = parallel_wtime()
 
@@ -1233,7 +1233,7 @@ contains
 !! STEP 10 -- compute S^{n+1} for the final projection
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    thermal_time_start = parallel_wtime()
+    ndproj_time_start = parallel_wtime()
     
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP 10 : make new S >>>'
@@ -1270,10 +1270,6 @@ contains
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
        call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
     end do
-
-    thermal_time = thermal_time + (parallel_wtime() - thermal_time_start)
-
-    ndproj_time_start = parallel_wtime()
 
     ! p0 is only used for the delta_gamma1_term
     call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
