@@ -740,8 +740,6 @@ contains
           call destroy(xihalf(n))
        enddo
 
-    else
-       call bl_error("invalid enthalpy_pred_type")
     endif     
 
     ! for some species_pred_types, we need to make intra in terms of
@@ -1309,8 +1307,6 @@ contains
           call destroy(xihalf(n))
        enddo
 
-    else
-       call bl_error("invalid enthalpy_pred_type")
     endif
 
 

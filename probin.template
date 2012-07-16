@@ -316,7 +316,8 @@ contains
        call bl_error("invalid species_pred_type")
     endif
 
-    if (.not. (enthalpy_pred_type == predict_rhohprime .or. &
+    if (.not. (enthalpy_pred_type == predict_rhoh .or. &
+               enthalpy_pred_type == predict_rhohprime .or. &
                enthalpy_pred_type == predict_h .or. &
                enthalpy_pred_type == predict_T_then_rhohprime .or. &
                enthalpy_pred_type == predict_T_then_h .or. &

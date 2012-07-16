@@ -254,9 +254,10 @@ contains
 
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
-    ! (rho h)', but should be there if we are predicting h
+    ! (rho h)', but should be there if we are predicting h or rhoh
     if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
-         (.NOT. is_prediction)) then
+        (is_prediction .AND. enthalpy_pred_type == predict_rhoh) .OR. & 
+        (.NOT. is_prediction)) then
        do i = lo(1),hi(1)
           rhoh_force(i) =  rhoh_force(i)  + psi(i)
        end do
@@ -324,9 +325,10 @@ contains
 
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
-    ! (rho h)', but should be there if we are predicting h
+    ! (rho h)', but should be there if we are predicting h or rhoh
     if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
-         (.NOT. is_prediction)) then
+        (is_prediction .AND. enthalpy_pred_type == predict_rhoh) .OR. &
+        (.NOT. is_prediction)) then
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              rhoh_force(i,j) =  rhoh_force(i,j)  + psi(j)
@@ -396,7 +398,9 @@ contains
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
     ! (rho h)', but should be there if we are predicting h
-    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. (.NOT. is_prediction)) then
+    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
+        (is_prediction .AND. enthalpy_pred_type == predict_rhoh) .OR. &
+        (.NOT. is_prediction)) then
        !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
@@ -481,7 +485,9 @@ contains
     ! For prediction, it should not be in the force if we are predicting
     ! (rho h)', but should be there if we are predicting h
     !
-    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. (.NOT. is_prediction)) then
+    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
+        (is_prediction .AND. enthalpy_pred_type == predict_rhoh) .OR. &
+        (.NOT. is_prediction)) then
 
        allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
@@ -564,7 +570,7 @@ contains
     call build(bpt, "mkhprimeforce")
 
     ! if we are doing the prediction, then it only makes sense to be in
-    ! this routine if the quantity we are predicting is (rho h)' or h
+    ! this routine if the quantity we are predicting is h'
     if (is_prediction .AND. enthalpy_pred_type .ne. predict_hprime) then
        call bl_error("ERROR: should not call mkhprimeforce if enthalpy_pred_type .ne. predict_hprime")
     endif
@@ -764,7 +770,7 @@ contains
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
     ! (rho h)', but should be there if we are predicting h
-    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. (.NOT. is_prediction)) then
+    if (.NOT. is_prediction) then
 
        allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0)

@@ -9,16 +9,23 @@
  prob_hi_x = 0.25
  prob_hi_y = 2.0
 
- grav_const = 0.e0
+ grav_const = 0.d0
 
  max_step  = 300
  stop_time = 2.5
 
  do_initial_projection = T
- init_divu_iter = 3
+ init_divu_iter = 0
  init_iter = 1
 
  do_smallscale = T
+ beta_type = 3
+
+ use_thermal_diffusion = T
+ evolve_base_state = F
+
+ enthalpy_pred_type = 0
+ species_pred_type = 2
 
  plot_int  = 10
  chk_int   = 100
@@ -32,17 +39,9 @@
  bcy_lo = 11
  bcy_hi = 12
 
-
-    verbose = 10
+    verbose = 1
  mg_verbose = 1
  cg_verbose = 0
-
- use_thermal_diffusion = T
-
- evolve_base_state = F
- beta_type = 3
-
-!restart = 50
 
  use_eos_coulomb = F
 

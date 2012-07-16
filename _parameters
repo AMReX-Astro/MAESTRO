@@ -417,6 +417,7 @@ do_smallscale                       logical            .false.
 # below the base cutoff density.
 do_eos_h_above_cutoff               logical            .true.              
 
+# predict\_rhoh = 0; @@
 # predict\_rhohprime = 1; @@
 # predict\_h = 2; @@
 # predict\_T\_then\_rhohprime = 3; @@

@@ -8,6 +8,7 @@ module pred_parameters
    integer, parameter :: predict_rho_and_X         = 3
 
    ! enthalpy prediction
+   integer, parameter :: predict_rhoh             = 0
    integer, parameter :: predict_rhohprime        = 1
    integer, parameter :: predict_h                = 2
    integer, parameter :: predict_T_then_rhohprime = 3

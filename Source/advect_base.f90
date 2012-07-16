@@ -334,7 +334,7 @@ contains
     do r=0,nr_fine-1
        rhoh0_new(1,r) = rhoh0_old(1,r) - dtdr / r_cc_loc(1,r)**2 * &
             (r_edge_loc(1,r+1)**2 * edge(1,r+1) * w0(1,r+1) - &
-            r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  )) + dt * psi(1,r)
+             r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  )) + dt * psi(1,r)
     end do
     !$OMP END PARALLEL DO
 

@@ -154,16 +154,20 @@ contains
           call destroy(rhoh0_old_cart(n))
        end do
 
-    else if (enthalpy_pred_type .eq. predict_h) then
+    else if (enthalpy_pred_type .eq. predict_h .or. &
+             enthalpy_pred_type .eq. predict_rhoh) then
 
-       ! make force for h by calling mkrhohforce then dividing by rho
        is_prediction = .true.
        call mkrhohforce(mla,scal_force,is_prediction,&
                         thermal,umac,p0_old,p0_old,rho0_old,rho0_old,&
                         psi,dx,.true.,the_bc_level)
-       do n=1,nlevs
-          call multifab_div_div_c(scal_force(n),rhoh_comp,sold(n),rho_comp,1,1)
-       end do
+
+       if (enthalpy_pred_type .eq. predict_h) then
+          ! make force for h by calling mkrhohforce then dividing by rho
+          do n=1,nlevs
+             call multifab_div_div_c(scal_force(n),rhoh_comp,sold(n),rho_comp,1,1)
+          end do
+       end if
 
     else if (enthalpy_pred_type .eq. predict_hprime) then
 
