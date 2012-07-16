@@ -125,19 +125,10 @@ contains
     type(multifab) ::           hgrhs_old(mla%nlevel)
     type(multifab) ::          Source_nph(mla%nlevel)
     type(multifab) ::            thermal1(mla%nlevel)
-    type(multifab) ::   delta_gamma1_term(mla%nlevel)
-    type(multifab) ::        delta_gamma1(mla%nlevel)
-    type(multifab) ::       rho_omegadot1(mla%nlevel)
-    type(multifab) ::           rho_Hnuc1(mla%nlevel)
     type(multifab) ::        div_coeff_3d(mla%nlevel)
     type(multifab) :: div_coeff_cart_edge(mla%nlevel,mla%dim)
     type(multifab) ::              gamma1(mla%nlevel)
     type(multifab) ::          etarhoflux(mla%nlevel)
-    type(multifab) ::            peos_old(mla%nlevel)
-    type(multifab) ::            peos_nph(mla%nlevel)
-    type(multifab) ::            peos_new(mla%nlevel)
-    type(multifab) ::        peosbar_cart(mla%nlevel)
-    type(multifab) ::        delta_p_term(mla%nlevel)
 
     ! coefficients for thermal conduction stuff
     type(multifab) ::         Tcoeff_old(mla%nlevel)
@@ -148,6 +139,17 @@ contains
     type(multifab) ::         hcoeff_new(mla%nlevel)
     type(multifab) ::        Xkcoeff_new(mla%nlevel)
     type(multifab) ::         pcoeff_new(mla%nlevel)
+
+    ! used for dpdt volume discrepancy
+    type(multifab) ::            peos_old(mla%nlevel)
+    type(multifab) ::            peos_nph(mla%nlevel)
+    type(multifab) ::            peos_new(mla%nlevel)
+    type(multifab) ::        peosbar_cart(mla%nlevel)
+    type(multifab) ::        delta_p_term(mla%nlevel)
+
+    ! only used if delta_gamma1_term = T
+    type(multifab) ::   delta_gamma1_term(mla%nlevel)
+    type(multifab) ::        delta_gamma1(mla%nlevel)
 
     type(multifab) ::          scal_force(mla%nlevel)
     type(multifab) ::               w0mac(mla%nlevel,mla%dim)

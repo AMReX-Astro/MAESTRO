@@ -193,7 +193,7 @@ contains
        ! make force for temperature
        call mktempforce(mla,scal_force,umac,sold,thermal,p0_old,p0_old,psi,dx,the_bc_level)
 
-    end if
+    end if        
 
     ! SDC HACK
     do n=1,nlevs
