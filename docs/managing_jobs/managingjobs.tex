@@ -87,7 +87,8 @@ export PATH="/sw/analysis-x64/visit/bin/":$PATH
 (you would think that you could just add {\tt module load visit} but this
 does not seem to work with \visit.
 
-On your local machine, launch \visit.
+On your local machine, launch \visit.  Note: this procedure seems to
+work with \visit~2.4.2, but not \visit~2.5.0 for some reason.
 \begin{itemize}
 \item First we setup a new host
 
@@ -108,7 +109,7 @@ On your local machine, launch \visit.
   \item Enter the {\em Profile name} as {\tt parallel}
   \item Click on the {\em Parallel} tab
   \item Check {\em Launch parallel engine}
-  \item Select the {\em Parallel launch metho} as {\tt qsub/mpirun}
+  \item Select the {\em Parallel launch method} as {\tt qsub/mpirun}
   \item Set the {\em Partition / Pool / Queue} to {\tt computation}
   \item Change the {\em Default number of processors} to 8
   \item Set the {\em Default number of nodes} to 2
