@@ -189,7 +189,12 @@ contains
        ! make force for temperature
        call mktempforce(mla,scal_force,umac,sold,thermal,p0_old,p0_old,psi,dx,the_bc_level)
 
-    end if        
+    end if
+
+    ! SDC HACK
+    do n=1,nlevs
+       call multifab_plus_plus_c(scal_force(n), rhoh_comp, intra(n), rhoh_comp, 1, 1)
+    end do
       
     !**************************************************************************
     !     Add w0 to MAC velocities (trans velocities already have w0).
