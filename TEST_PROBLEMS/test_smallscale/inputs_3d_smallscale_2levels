@@ -7,7 +7,8 @@
  n_celly = 8
  n_cellz = 64
  regrid_int = 4
- cluster_min_width = 4
+ minwidth = 8
+ blocking_factor = 4
 
  prob_hi_x = 0.25
  prob_hi_y = 0.25
