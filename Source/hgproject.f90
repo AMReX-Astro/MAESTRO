@@ -1,3 +1,8 @@
+! note: if use_alt_energy_fix = T, then we come out of here with 
+! (beta_0 grad pi) instead of just grad pi (and also, pi in this
+! case is pi/beta_0).  This beta_0 weighting makes the use of gpi in
+! mkforce.f90 correct.
+
 module hgproject_module
 
   use bl_types
