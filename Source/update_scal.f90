@@ -13,7 +13,7 @@ module update_scal_module
 
 contains
 
-  subroutine update_scal(mla,nstart,nstop,sold,snew,sflux,scal_force,p0,p0_new_cart, &
+  subroutine update_scal(mla,nstart,nstop,sold,snew,sflux,scal_force,p0_new,p0_new_cart, &
                          dx,dt,the_bc_level)
 
     use bl_prof_module
@@ -31,7 +31,7 @@ contains
     type(multifab)    , intent(inout) :: snew(:)
     type(multifab)    , intent(in   ) :: sflux(:,:)
     type(multifab)    , intent(in   ) :: scal_force(:)
-    real(kind = dp_t) , intent(in   ) :: p0(:,0:)
+    real(kind = dp_t) , intent(in   ) :: p0_new(:,0:)
     type(multifab)    , intent(in   ) :: p0_new_cart(:)
     real(kind = dp_t) , intent(in   ) :: dx(:,:),dt
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
@@ -43,7 +43,7 @@ contains
     real(kind=dp_t), pointer :: sfpy(:,:,:,:)
     real(kind=dp_t), pointer :: sfpz(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
-    real(kind=dp_t), pointer :: p0np(:,:,:,:)
+    real(kind=dp_t), pointer :: p0p(:,:,:,:)
 
     integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: i,n
@@ -79,14 +79,14 @@ contains
                                   snp(:,1,1,:), ng_sn, &
                                  sfpx(:,1,1,:), ng_sf, &
                                    fp(:,1,1,:), ng_f, &
-                                 p0(n,:), lo, hi, dx(n,:), dt)
+                                 p0_new(n,:), lo, hi, dx(n,:), dt)
           case (2)
              sfpy => dataptr(sflux(n,2),i)
              call update_scal_2d(nstart, nstop, &
                                  sop(:,:,1,:), ng_so, snp(:,:,1,:), ng_sn, &
                                  sfpx(:,:,1,:), sfpy(:,:,1,:), ng_sf, &
                                  fp(:,:,1,:), ng_f, &
-                                 p0(n,:), lo, hi, dx(n,:), dt)
+                                 p0_new(n,:), lo, hi, dx(n,:), dt)
           case (3)
              sfpy => dataptr(sflux(n,2),i)
              sfpz => dataptr(sflux(n,3),i)
@@ -95,14 +95,14 @@ contains
                                          sop(:,:,:,:), ng_so, snp(:,:,:,:), ng_sn, &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          ng_sf, fp(:,:,:,:), ng_f, &
-                                         p0(n,:), lo, hi, dx(n,:), dt)
+                                         p0_new(n,:), lo, hi, dx(n,:), dt)
              else
-                p0np => dataptr(p0_new_cart(n), i)
+                p0p => dataptr(p0_new_cart(n), i)
                 call update_scal_3d_sphr(nstart, nstop, &
                                          sop(:,:,:,:), ng_so, snp(:,:,:,:), ng_sn, &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          ng_sf, fp(:,:,:,:), ng_f, &
-                                         p0np(:,:,:,1), ng_p, lo, hi, dx(n,:), dt)
+                                         p0p(:,:,:,1), ng_p, lo, hi, dx(n,:), dt)
              end if
           end select
        end do
@@ -164,7 +164,7 @@ contains
   end subroutine update_scal
 
   subroutine update_scal_1d(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,ng_sf, &
-                            force,ng_f,p0,lo,hi,dx,dt)
+                            force,ng_f,p0_new,lo,hi,dx,dt)
 
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
@@ -180,7 +180,7 @@ contains
     real (kind = dp_t), intent(  out) ::   snew(lo(1)-ng_sn:,:)
     real (kind = dp_t), intent(in   ) :: sfluxx(lo(1)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,:)
-    real (kind = dp_t), intent(in   ) ::        p0(0:)
+    real (kind = dp_t), intent(in   ) :: p0_new(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, comp, comp2
@@ -212,7 +212,7 @@ contains
 
              eos_state%rho = snew(i,rho_comp)
              eos_state%T   = sold(i,temp_comp)
-             eos_state%p   = p0(i)
+             eos_state%p   = p0_new(i)
              eos_state%xn  =snew(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
              pt_index(:) = (/i, -1, -1/)
@@ -280,7 +280,7 @@ contains
   end subroutine update_scal_1d
 
   subroutine update_scal_2d(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,ng_sf, &
-                            force,ng_f,p0,lo,hi,dx,dt)
+                            force,ng_f,p0_new,lo,hi,dx,dt)
 
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
@@ -297,7 +297,7 @@ contains
     real (kind = dp_t), intent(in   ) :: sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) :: sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)
-    real (kind = dp_t), intent(in   ) ::        p0(0:)
+    real (kind = dp_t), intent(in   ) :: p0_new(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, comp, comp2
@@ -332,7 +332,7 @@ contains
              if (snew(i,j,rho_comp) .le. base_cutoff_density) then
                 eos_state%rho = snew(i,j,rho_comp)
                 eos_state%T   = sold(i,j,temp_comp)
-                eos_state%p   = p0(j)
+                eos_state%p   = p0_new(j)
                 eos_state%xn  = snew(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
                 pt_index(:) = (/i, j, -1/)
@@ -404,7 +404,7 @@ contains
   end subroutine update_scal_2d
 
   subroutine update_scal_3d_cart(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,sfluxz, &
-                                 ng_sf,force,ng_f,p0,lo,hi,dx,dt)
+                                 ng_sf,force,ng_f,p0_new,lo,hi,dx,dt)
 
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
@@ -422,7 +422,7 @@ contains
     real (kind = dp_t), intent(in   ) :: sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) :: sfluxz(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
-    real (kind = dp_t), intent(in   ) ::        p0(0:)
+    real (kind = dp_t), intent(in   ) :: p0_new(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
@@ -465,7 +465,7 @@ contains
 
                    eos_state%rho = snew(i,j,k,rho_comp)
                    eos_state%T   = sold(i,j,k,temp_comp)
-                   eos_state%p   = p0(k)
+                   eos_state%p   = p0_new(k)
                    eos_state%xn  = snew(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
                    pt_index(:) = (/i, j, k/)
