@@ -1,0 +1,22 @@
+&PROBIN
+ test_set = "gr0_2d_2lev_coarse"
+
+ run_prefix = "wall_cross_"
+
+ spherical_in = 0
+ dm_in = 2
+ max_levs = 2
+
+ verbose = 1
+
+ prob_hi_x = 1.0
+ prob_hi_y = 1.0
+
+ bcx_lo = 14
+ bcx_hi = 14
+ bcy_lo = 14
+ bcy_hi = 14
+
+ hg_dense_stencil = F
+
+/
