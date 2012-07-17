@@ -178,36 +178,7 @@ contains
        enddo ! end loop over species
 
        call put_1d_array_on_cart(p0,phi,foextrap_comp,.false.,.false., &
-                                 dx,the_bc_tower%bc_tower_array,mla)       
-
-       if (nlevs .eq. 1) then
-
-          ! fill ghost cells for two adjacent grids at the same level
-          ! this includes periodic domain boundary ghost cells
-          call multifab_fill_boundary(phi(nlevs))
-
-          ! fill non-periodic domain boundary ghost cells
-          call multifab_physbc(phi(nlevs),1,foextrap_comp,1, &
-                               the_bc_tower%bc_tower_array(nlevs))
-
-       else
-
-          do n=nlevs,2,-1
-
-             ! we shouldn't need a call to ml_cc_restriction here as
-             ! long as the coarse phi under fine cells is reasonably
-             ! valued, the results of mac_applyop are identical
-
-             ! fill level n ghost cells using interpolation from level
-             ! n-1 data note that multifab_fill_boundary and
-             ! multifab_physbc are called for both levels n-1 and n
-             call multifab_fill_ghost_cells(phi(n),phi(n-1),1,mla%mba%rr(n-1,:), &
-                                            the_bc_tower%bc_tower_array(n-1), &
-                                            the_bc_tower%bc_tower_array(n), &
-                                            1,foextrap_comp,1,fill_crse_input=.false.)
-          end do
-
-       end if
+                                 dx,the_bc_tower%bc_tower_array,mla)
 
        call put_data_on_faces(mla,pcoeff,1,beta,.true.)
 
