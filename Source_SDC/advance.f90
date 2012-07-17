@@ -1564,15 +1564,6 @@ contains
 
     call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower,div_coeff_3d,hgrhs)
 
-
-    call fabio_ml_multifab_write_d(pi,mla%mba%rr(:,1),"a_pi")
-    call fabio_ml_multifab_write_d(gpi,mla%mba%rr(:,1),"a_gpi")
-    call fabio_ml_multifab_write_d(rhohalf,mla%mba%rr(:,1),"a_rhohalf")
-    call fabio_ml_multifab_write_d(hgrhs,mla%mba%rr(:,1),"a_hgrhs")
-    call fabio_ml_multifab_write_d(unew,mla%mba%rr(:,1),"a_unew")
-    call fabio_ml_multifab_write_d(uold,mla%mba%rr(:,1),"a_uold")
-    stop
-
     do n=1,nlevs
        call destroy(div_coeff_3d(n))
        call destroy(rhohalf(n))
