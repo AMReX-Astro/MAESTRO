@@ -1446,6 +1446,8 @@ subroutine varden()
 
   call destroy_geometry()
 
+  call eos_finalize()
+
   call runtime_close()
 
   deallocate(uold,sold,pi,gpi,dSdt,Source_old,Source_new,rho_omegadot2, &

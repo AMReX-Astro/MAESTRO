@@ -608,7 +608,6 @@ contains
     ! extract aofs = (snew - sold) / dt
     do n=1,nlevs
        call multifab_build(aofs(n), mla%la(n), nscal, 1)
-       call multifab_build(sdc_source(n), mla%la(n), nscal, 1)
        call multifab_copy_c     (aofs(n), 1, snew(n), 1, nscal, 1)
        call multifab_sub_sub_c  (aofs(n), 1, sold(n), 1, nscal, 1)
        call multifab_div_div_s_c(aofs(n), 1, dt,       nscal, 1)
@@ -622,6 +621,11 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     thermal_time_start = parallel_wtime()
+
+    do n=1,nlevs
+       call multifab_build(diff_hat(n), mla%la(n), 1, 0)
+       call setval(diff_hat(n),ZERO,all=.true.)
+    end do
 
     if (use_thermal_diffusion) then
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -653,6 +657,7 @@ contains
     end if
 
     do n=1,nlevs
+       call multifab_build(sdc_source(n), mla%la(n), nscal, 1)
        call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 1)
     end do
 
@@ -1145,7 +1150,6 @@ contains
        ! extract aofs = (snew - sold) / dt
        do n=1,nlevs
           call multifab_build(aofs(n), mla%la(n), nscal, 1)
-          call multifab_build(sdc_source(n), mla%la(n), nscal, 1)
           call multifab_copy_c     (aofs(n), 1, snew(n), 1, nscal, 1)
           call multifab_sub_sub_c  (aofs(n), 1, sold(n), 1, nscal, 1)
           call multifab_div_div_s_c(aofs(n), 1, dt,       nscal, 1)
@@ -1192,11 +1196,13 @@ contains
        end if
        
        do n=1,nlevs
+          call multifab_build(sdc_source(n), mla%la(n), nscal, 1)
           call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 1)
        end do
 
        call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
                         dt,dx,sdc_source,the_bc_tower%bc_tower_array)
+
 
        ! extract IR = [ (snew - sold)/dt - sdc_source ] 
        do n=1,nlevs
@@ -1212,7 +1218,6 @@ contains
        ! species intra.
        
        ! first create rhohalf -- a lot of forms need this.
-
        do n=1,nlevs
           call multifab_build(rhohalf(n), mla%la(n), 1, 1)
        end do
@@ -1250,7 +1255,8 @@ contains
           !     sum_k xi_k ( (rhoX_new - rhoX_old)/dt - A_rhoX ) ]
           do n=1,nlevs
              call multifab_copy_c(intra(n), temp_comp, intra(n), rhoh_comp, 1, 1)
-             do comp=1, nspec
+
+             do comp=1,nspec
 
                 ! multiple xi by intra and store in xi
                 call multifab_mult_mult_c(xihalf(n), comp, &
@@ -1304,12 +1310,6 @@ contains
                                      Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
                                      p0_new,the_bc_tower)
 
-       else
-
-          do n=1,nlevs
-             call setval(diff_new(n),ZERO,all=.true.)
-          end do
-
        end if
        
     ! compute gamma1bar
@@ -1354,6 +1354,7 @@ contains
     do n=1,nlevs
        call destroy(etarhoflux(n))
        call destroy(diff_old(n))
+       call destroy(diff_hat(n))
        call destroy(aofs(n))
        call destroy(sdc_source(n))
     end do
