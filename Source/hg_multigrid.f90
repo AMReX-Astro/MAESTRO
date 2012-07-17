@@ -62,10 +62,12 @@ contains
     integer :: min_width
     integer :: max_nlevel
     integer :: nu1, nu2, gamma, cycle_type, smoother
-    integer :: d,n
+    integer :: d,n,j
     integer :: max_nlevel_in
     integer :: do_diagnostics
     integer, allocatable :: lo_inflow(:),hi_inflow(:)
+
+    real(dp_t), pointer :: p(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -132,7 +134,15 @@ contains
        do n = nlevs, 2, -1
           la = mla%la(n)
           call multifab_build(one_sided_ss(n), la, ns, 0, nodal, stencil=.true.)
-          call setval(one_sided_ss(n), ZERO,all=.true.)
+
+          ! set the stencil to zero manually -- multifab_setval doesn't work
+          ! with stencil = .true.
+          do j = 1, one_sided_ss(n)%nboxes
+             if ( remote(one_sided_ss(n), j) ) cycle
+             p => dataptr(one_sided_ss(n), j)
+             p = ZERO
+          enddo
+
        end do
     end if
 
