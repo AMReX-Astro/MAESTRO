@@ -605,5 +605,5 @@ do_heating                          logical            .false.
 
 # how many SDC iteractions to take (requires the code be compiled with
 # {\tt SDC := t}
-sdc_iters                           integer            4
+sdc_iters                           integer            1
 

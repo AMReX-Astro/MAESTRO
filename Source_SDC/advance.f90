@@ -40,7 +40,7 @@ contains
     use average_module              , only : average
     use phihalf_module              , only : make_S_at_halftime, make_at_halftime
     use extraphalf_module           , only : extrap_to_halftime
-    use thermal_conduct_module      , only : thermal_conduct
+    use thermal_conduct_module      , only : thermal_conduct_predictor
     use make_explicit_thermal_module, only : make_explicit_thermal, make_thermal_coeffs 
     use make_grav_module            , only : make_grav_cell
     use make_eta_module             , only : make_etarho_planar, make_etarho_spherical
@@ -202,9 +202,6 @@ contains
 
     if (evolve_base_state) then
        call bl_error("evolve_base_state not supported with SDC")
-    end if
-    if (use_thermal_diffusion) then
-       call bl_error("use_thermal_diffusion not supported with SDC")
     end if
     if (enthalpy_pred_type == 1) then
        call bl_error("enthalpy_pred_type == 1 not supported with SDC")
@@ -600,7 +597,7 @@ contains
        do comp = 1,dm
           call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))
-             call destroy(umac(n,comp))
+          call destroy(umac(n,comp))
        end do
        call destroy(scal_force(n))
     end do
@@ -632,10 +629,10 @@ contains
           write(6,*) '<<< STEP 2B: Compute diffusive flux divergence'
        end if
 
-       call thermal_conduct(mla,dx,dt,sold, &
-                            hcoeff_old,Xkcoeff_old,pcoeff_old, &
-                            hcoeff_old,Xkcoeff_old,pcoeff_old, &
-                            snew,p0_old,p0_new,the_bc_tower)
+       call thermal_conduct_predictor(mla,dx,dt,sold, &
+                                      hcoeff_old,Xkcoeff_old,pcoeff_old, &
+                                      hcoeff_old,Xkcoeff_old,pcoeff_old, &
+                                      snew,p0_old,p0_new,intra,the_bc_tower)
 
        ! compute diff_hat using snew, p0_new, and old coefficients
        call make_explicit_thermal(mla,dx,diff_hat,snew, &
@@ -1170,10 +1167,10 @@ contains
 
        if (use_thermal_diffusion) then
 
-          call thermal_conduct(mla,dx,dt,sold, &
-                               hcoeff_old,Xkcoeff_old,pcoeff_old, &
-                               hcoeff_new,Xkcoeff_new,pcoeff_new, &
-                               snew,p0_old,p0_new,the_bc_tower)
+!          call thermal_conduct(mla,dx,dt,sold, &
+!                               hcoeff_old,Xkcoeff_old,pcoeff_old, &
+!                               hcoeff_new,Xkcoeff_new,pcoeff_new, &
+!                               snew,p0_old,p0_new,the_bc_tower)
           
           ! compute diff_hat using snew, p0_new, and new coefficients from previous iteration
           call make_explicit_thermal(mla,dx,diff_hat,snew, &
