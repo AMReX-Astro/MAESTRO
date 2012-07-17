@@ -840,7 +840,26 @@ proceeds as follows.
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 \renewcommand{\labelenumii}{\roman{enumii}.}
 
-\item {\bf Do} {$\nu = 1,...,N_{\rm iters}^{S}$.}
+\item {\em Initial Projection}: if {\tt do\_initial\_projection = T}, then we 
+   first project the velocity field with $\rho = 1$ and $\beta_0^0$ defined 
+   from the initial data.  No sources are included in $S$.  The elliptic
+   equation we solve is 
+   \begin{equation}
+   \nabla \cdot \beta_0^0 \nabla \phi = - \nabla \cdot (\beta_0^0 \Ub^0)
+   \end{equation}
+   This $\phi$ is then used to correct the velocity field.
+
+\item {\em ``Divu'' iterations}: Next we do {\tt init\_divu\_iter} iterations 
+  to project the velocity field using a constraint that sees the reactions. 
+  The initial timestep estimate is provided by {\tt firstdt}, to allow us to 
+  integrate the reaction networks.  In this projection, again the density is 
+  set to 1, and the elliptic equation we solve is:
+   \begin{equation}
+   \nabla \cdot \beta_0^0 \nabla \phi = \beta_0 (S - \Sbar)- \nabla \cdot (\beta_0^0 \Ub^0)
+   \end{equation}
+
+
+  {\bf Do} {$\nu = 1,...,N_{\rm iters}^{S}$.}
   \begin{enumerate}
 
   \item Estimate $\Delta t^\nu$ using $\Ub^{0,\nu-1}$ and $w_0^{\nu-1}.$
@@ -875,8 +894,11 @@ $\etarho^{-\myhalf}=0, \psi^{-\myhalf}=0, S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 \renewcommand{\labelenumii}{\roman{enumii}.}
-\addtocounter{enumi}{1}
-\item {\bf Do} {$\nu = 1,...,N_{\rm iters}^{\pi}$.}
+\addtocounter{enumi}{2}
+\item {\it Pressure iterations}: Here we do {\tt init\_iter} iterations to get an
+  approximation for the lagged pressure:
+
+  {\bf Do} {$\nu = 1,...,N_{\rm iters}^{\pi}$.}
   \begin{enumerate}
   \item Perform {\bf Steps 1-11} as described above, using 
     $S^{\myhalf,\star\star} = (S^0 + S^{1,\nu-1})/2$ in {\bf Step 2} as described.
@@ -885,7 +907,7 @@ $\etarho^{-\myhalf}=0, \psi^{-\myhalf}=0, S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
     \begin{equation}  L_\beta^\rho \phi = D \left ( \beta_0^{\myhalf} {\bf V} \right) - \beta_0^{\myhalf} \left[ \left(S^{1}-\overline{S^{1}}\right) - \left(S^{0}-\overline{S^{0}}\right) \right] \enskip . 
     \end{equation}
     (The motivation for this form of the projection in the initial pressure iterations
-    is discussed in (cite almgren:bell:crutchfield).)
+    is discussed in \cite{almgren:bell:crutchfield}.)
       We discard the new velocity resulting from this, but keep the new  
       value for $\pi^{\myhalf} = \pi^{-\myhalf} + (1 / \dt) \; \phi.$  
       These steps also yield new scalar data at time $\dt,$ which
