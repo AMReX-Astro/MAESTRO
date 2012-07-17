@@ -661,7 +661,7 @@ contains
        call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 1)
     end do
 
-    call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
+    call react_state(mla,tempbar_init,sold,snew,rho_Hext,p0_new, &
                      dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
     ! extract IR = [ (snew - sold)/dt - sdc_source ] 
@@ -825,7 +825,7 @@ contains
        call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
     end do
 
-    ! p0 is only used for the delta_gamma1_term
+    ! FIXME - instead of rho_omegadot2 and rho_Hnuc2 need instantaneous versions
     call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                 rho_Hnuc2,rho_Hext,diff_new,p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
@@ -1200,7 +1200,7 @@ contains
           call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 1)
        end do
 
-       call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
+       call react_state(mla,tempbar_init,sold,snew,rho_Hext,p0_new, &
                         dt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
 
@@ -1378,7 +1378,7 @@ contains
 
     ndproj_time_start = parallel_wtime()
 
-    ! p0 is only used for the delta_gamma1_term
+    ! FIXME - instead of rho_omegadot2 and rho_Hnuc2 need instantaneous versions
     call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                 rho_Hnuc2,rho_Hext,diff_new,p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)

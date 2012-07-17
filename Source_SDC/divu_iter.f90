@@ -72,8 +72,8 @@ contains
     type(multifab) :: delta_gamma1_term(mla%nlevel)
     type(multifab) :: delta_gamma1(mla%nlevel)
     type(multifab) :: rhohalf(mla%nlevel)
-    type(multifab) :: rho_omegadot1(mla%nlevel)
-    type(multifab) :: rho_Hnuc1(mla%nlevel)
+    type(multifab) :: rho_omegadot(mla%nlevel)
+    type(multifab) :: rho_Hnuc(mla%nlevel)
     type(multifab) :: rho_Hext(mla%nlevel)
     type(multifab) :: div_coeff_3d(mla%nlevel)
     type(multifab) :: Tcoeff(mla%nlevel)
@@ -108,16 +108,14 @@ contains
     ng_s   = nghost(sold(1))
 
     do n = 1,nlevs
-       call multifab_build(s1(n),            mla%la(n), nscal, ng_s)      
-       call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
-       call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
+       call multifab_build(s1(n),            mla%la(n), nscal, ng_s)
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
        call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
        call setval(sdc_source(n), 0.d0)
     end do
 
     ! burn to define rho_omegadot and rho_Hnuc -- needed to make S
-    call react_state(mla,tempbar_init,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old, &
+    call react_state(mla,tempbar_init,sold,s1,rho_Hext,p0_old, &
                      halfdt,dx,sdc_source,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
@@ -154,17 +152,20 @@ contains
     
     do n=1,nlevs
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
-       call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
+       call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)      
+       call multifab_build(rho_omegadot(n), mla%la(n), nspec, 0)
+       call multifab_build(rho_Hnuc(n),     mla%la(n), 1,     0)
     end do
 
+    ! FIXME - instead of rho_omegadot and rho_Hnuc need instantaneous versions
     call make_S(Source_old,delta_gamma1_term,delta_gamma1, &
-                sold,uold,rho_omegadot1,rho_Hnuc1,rho_Hext,thermal, &
+                sold,uold,rho_omegadot,rho_Hnuc,rho_Hext,thermal, &
                 p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
-       call destroy(rho_omegadot1(n))
-       call destroy(rho_Hnuc1(n))
+       call destroy(rho_omegadot(n))
+       call destroy(rho_Hnuc(n))
        call destroy(rho_Hext(n))
        call destroy(delta_gamma1(n))
     end do

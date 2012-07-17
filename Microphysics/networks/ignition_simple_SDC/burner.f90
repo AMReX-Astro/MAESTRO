@@ -13,30 +13,23 @@ module burner_module
 
 contains
 
-  subroutine burner(rhoXin, rhohin, dt, rhoout, rhoXout, rhohout, rho_omegadot, rho_Hnuc, &
-                    sdc_rhoX, sdc_rhoh, p0)
+  subroutine burner(rhoXin, rhohin, dt, rhoout, rhoXout, rhohout, sdc_rhoX, sdc_rhoh, p0)
 
     ! outputs:
     !   rhoout is the updated density
     !   rhoXout are the updated density-weighted species (rho X_k)
     !   rhohout is the updated (rho h)
-    !   rho_omegadot = rho DX/Dt (i.e. the change in rho X due to 
-    !       reactions only)
-    !   rho_Hnuc = - sum_k q_k rho_omegadot_k  [erg / cm^3 / s] 
-    !       (i.e. the energy generation rate per unit volume)
 
     use burner_aux_module, only : sdc_rhoX_pass, sdc_rhoh_pass, p0_pass
 
     implicit none
 
     real(kind=dp_t), intent(in   ) :: rhoXin(nspec), rhohin, dt
-    real(kind=dp_t), intent(  out) :: rhoout, rhoXout(nspec), rhohout, rho_omegadot(nspec)
-    real(kind=dp_t), intent(  out) :: rho_Hnuc
+    real(kind=dp_t), intent(  out) :: rhoout, rhoXout(nspec), rhohout
     real(kind=dp_t), intent(in   ) :: sdc_rhoX(nspec), sdc_rhoh
     real(kind=dp_t), intent(in   ) :: p0
 
     integer :: n
-    real(kind=dp_t) :: drhoX
 
     logical, parameter :: verbose = .false.
 
@@ -188,21 +181,6 @@ contains
     rhoout = rhoXout(ic12) + rhoXout(io16) + rhoXout(img24)
         
     rhohout = y(nspec+1)
-
-    ! compute the energy release.  Our convention is that the binding 
-    ! energies are negative, so the energy release is
-    ! - sum_k { drhoX_k ebin(k) }
-    ! where drhoX is the change in rhoX only due to the reactions
-    !
-    ! also compute the density-weighted creation rates, rho_omegadot
-    rho_Hnuc = 0.0_dp_t
-    do n = 1, nspec
-       drhoX = rhoXout(n) - rhoXin(n) - dt * sdc_rhoX(n)
-       rho_Hnuc = rho_Hnuc - ebin(n) * drhoX
-       rho_omegadot(n) = drhoX / dt
-    enddo
-
-    rho_Hnuc = rho_Hnuc/dt
 
     if (verbose) then
        
