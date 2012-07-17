@@ -1,9 +1,7 @@
 &PROBIN
  test_set = "gr0_2d_2lev_coarse"
 
- run_prefix = "mac_periodic_cross_"
-
- project_type = 2
+ run_prefix = "wall_cross_"
 
  spherical_in = 0
  dm_in = 2
@@ -14,10 +12,10 @@
  prob_hi_x = 1.0
  prob_hi_y = 1.0
 
- bcx_lo = -1
- bcx_hi = -1
- bcy_lo = -1
- bcy_hi = -1
+ bcx_lo = 14
+ bcx_hi = 14
+ bcy_lo = 14
+ bcy_hi = 14
 
  hg_dense_stencil = F
 
