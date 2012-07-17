@@ -6,6 +6,8 @@
 ! For the use_alt_energy_fix = T case, we instead solve:
 !   D [ (beta_0**2/rho) G (phi/beta_0) ] = D ( beta_0 U ) - beta_0 S
 ! (note the extra beta_0)
+!
+! Here, phi is cell-centered.
 ! 
 ! after which we update the velocity as U = U - (1/rho) G phi
 !
