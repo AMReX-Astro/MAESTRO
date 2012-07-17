@@ -16,7 +16,7 @@ contains
 
   subroutine thermal_conduct_predictor(mla,dx,dt,sold,snew,p0_old,p0_new, &
                                        hcoeff_old,Xkcoeff_old,pcoeff_old, &
-                                       intra,the_bc_tower)
+                                       aofs,intra,the_bc_tower)
 
     use bl_prof_module
     use multifab_physbc_module
@@ -41,6 +41,7 @@ contains
     type(multifab) , intent(in   ) :: pcoeff_old(:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
+    type(multifab) , intent(in   ) :: aofs(:)
     type(multifab) , intent(in   ) :: intra(:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
 
@@ -93,7 +94,7 @@ contains
        end do
     end do
 
-    ! set alpha to while we evaluate the diffusion terms for the rhs
+    ! set alpha to zero while we evaluate the diffusion terms for the rhs
     do n=1,nlevs
        call setval(alpha(n), ZERO, all=.true.)
        call setval(rhs(n), ZERO, all=.true.)
@@ -174,7 +175,7 @@ contains
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! subtract old-time pressure diffusion from rhs
+    ! add old-time pressure diffusion from rhs
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
@@ -194,7 +195,7 @@ contains
     enddo    
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! subtract new-time pressure diffusion from rhs
+    ! add new-time pressure diffusion from rhs
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
@@ -227,14 +228,19 @@ contains
        call multifab_plus_plus_c(rhs(n),1,intra(n),rhoh_comp,1,0)
     end do
 
-    ! multiply rhs by dt
+    ! add aofs to rhs
     do n=1,nlevs
-       call multifab_mult_mult_s(rhs(n),dt,0)
+       call multifab_plus_plus_c(rhs(n),1,aofs(n),rhoh_comp,1,0)
     end do
 
-    ! add (rhoh)^old + dt*A to rhs
+    ! multiply rhs by dt
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,snew(n),rhoh_comp,1,0)
+       call multifab_mult_mult_s_c(rhs(n),1,dt,1,0)
+    end do
+
+    ! add (rhoh)^old to rhs
+    do n=1,nlevs
+       call multifab_plus_plus_c(rhs(n),1,sold(n),rhoh_comp,1,0)
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -462,9 +468,9 @@ contains
     call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                      dm+rhoh_comp,stencil_order,mla%mba%rr)
 
-    ! add Lphi to rhs
+    ! subtract Lphi from rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_sub_sub_c(rhs(n),1,Lphi(n),1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -520,7 +526,7 @@ contains
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! subtract old-time pressure diffusion from rhs
+    ! add old-time pressure diffusion from rhs
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
@@ -540,7 +546,7 @@ contains
     enddo    
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! subtract new-time pressure diffusion from rhs
+    ! add new-time pressure diffusion from rhs
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces

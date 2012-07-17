@@ -473,11 +473,11 @@ contains
 
     do n=1,nlevs
        call multifab_build(diff_old(n), mla%la(n), 1, 0)
-       call setval(diff_old(n),ZERO,all=.true.)
     end do
     
     ! diff_old is the forcing for rhoh or temperature
     if(use_thermal_diffusion) then
+
        do n=1,nlevs
           call multifab_build(Tcoeff_old(n),  mla%la(n), 1,     1)
           call multifab_build(hcoeff_old(n),  mla%la(n), 1,     1)
@@ -485,12 +485,19 @@ contains
           call multifab_build(pcoeff_old(n),  mla%la(n), 1,     1)
        end do
 
+       ! compute transport coefficients
        call make_thermal_coeffs(sold,Tcoeff_old,hcoeff_old,Xkcoeff_old,pcoeff_old)
 
-       ! compute diff_old using sold, p0_old, and old coefficients
-       call make_explicit_thermal(mla,dx,diff_old,sold, &
-                                  Tcoeff_old,hcoeff_old,Xkcoeff_old,pcoeff_old, &
-                                  p0_old,the_bc_tower)
+       ! compute diff_old
+       call make_explicit_thermal(mla,dx,diff_old,sold,Tcoeff_old,hcoeff_old, &
+                                  Xkcoeff_old,pcoeff_old,p0_old,the_bc_tower)
+
+    else
+
+       do n=1,nlevs
+          call setval(diff_old(n),ZERO,all=.true.)
+       end do
+
     end if
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -507,7 +514,8 @@ contains
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
-    call density_advance(mla,1,sold,snew,sedge,sflux,scal_force,intra,umac,w0,w0mac,etarhoflux, &
+    call density_advance(mla,1,sold,snew,sedge,sflux,scal_force,intra,umac, &
+                         w0,w0mac,etarhoflux, &
                          rho0_old,rho0_new,p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
 
@@ -591,7 +599,8 @@ contains
        write(6,*) '            : enthalpy_advance '
     end if
 
-    call enthalpy_advance(mla,1,uold,sold,snew,sedge,sflux,scal_force,intra,diff_old,umac,w0,w0mac, &
+    call enthalpy_advance(mla,1,uold,sold,snew,sedge,sflux,scal_force,intra, &
+                          diff_old,umac,w0,w0mac, &
                           rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                           tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
@@ -606,10 +615,10 @@ contains
 
     ! extract aofs = (snew - sold) / dt
     do n=1,nlevs
-       call multifab_build(aofs(n), mla%la(n), nscal, 1)
-       call multifab_copy_c     (aofs(n), 1, snew(n), 1, nscal, 1)
-       call multifab_sub_sub_c  (aofs(n), 1, sold(n), 1, nscal, 1)
-       call multifab_div_div_s_c(aofs(n), 1, dt,       nscal, 1)
+       call multifab_build(aofs(n), mla%la(n), nscal, 0)
+       call multifab_copy_c(aofs(n), 1, snew(n), 1, nscal, 0)
+       call multifab_sub_sub_c(aofs(n), 1, sold(n), 1, nscal, 0)
+       call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
     end do
 
     if (barrier_timers) call parallel_barrier()
@@ -633,7 +642,7 @@ contains
 
        call thermal_conduct_predictor(mla,dx,dt,sold,snew,p0_old,p0_new, &
                                       hcoeff_old,Xkcoeff_old,pcoeff_old, &
-                                      intra,the_bc_tower)
+                                      aofs,intra,the_bc_tower)
 
        ! compute diff_hat using snew, p0_new, and old coefficients
        call make_explicit_thermal(mla,dx,diff_hat,snew, &
@@ -659,8 +668,8 @@ contains
        call multifab_setval(sdc_source(n), 0.d0)
        call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 0)
        call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 0)
-       call multifab_mult_mult_s(sdc_source(n), 0.5d0, 0)
-       call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
+       call multifab_mult_mult_s_c(sdc_source(n), rhoh_comp, 0.5d0, 1, 0)
+       call multifab_plus_plus_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
     end do
 
     call react_state(mla,tempbar_init,sold,snew,rho_Hext,p0_new, &
@@ -1065,7 +1074,8 @@ contains
           call multifab_build(scal_force(n), mla%la(n), nscal, 1)
        end do
        
-       call density_advance(mla,2,sold,snew,sedge,sflux,scal_force,intra,umac,w0,w0mac,etarhoflux, &
+       call density_advance(mla,2,sold,snew,sedge,sflux,scal_force,intra,umac, &
+                            w0,w0mac,etarhoflux, &
                             rho0_old,rho0_new,p0_new,rho0_predicted_edge,dx,dt, &
                             the_bc_tower%bc_tower_array)
 
@@ -1145,7 +1155,8 @@ contains
           write(6,*) '            : enthalpy_advance'
        end if
 
-       call enthalpy_advance(mla,2,uold,sold,snew,sedge,sflux,scal_force,intra,diff_old,umac,w0,w0mac, &
+       call enthalpy_advance(mla,2,uold,sold,snew,sedge,sflux,scal_force, &
+                             intra,diff_old,umac,w0,w0mac, &
                              rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                              tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
@@ -1159,9 +1170,9 @@ contains
 
        ! extract aofs = (snew - sold) / dt
        do n=1,nlevs
-          call multifab_copy_c     (aofs(n), 1, snew(n), 1, nscal, 1)
-          call multifab_sub_sub_c  (aofs(n), 1, sold(n), 1, nscal, 1)
-          call multifab_div_div_s_c(aofs(n), 1, dt,       nscal, 1)
+          call multifab_copy_c(aofs(n), 1, snew(n), 1, nscal, 0)
+          call multifab_sub_sub_c(aofs(n), 1, sold(n), 1, nscal, 0)
+          call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
        end do
 
        if (barrier_timers) call parallel_barrier()
