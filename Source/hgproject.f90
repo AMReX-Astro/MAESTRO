@@ -1,4 +1,15 @@
-! note: if use_alt_energy_fix = T, then we come out of here with 
+! hgproject does the nodal projection.
+!
+! Here, U is cell-centered.  phi is on the nodes, and we solve:
+!
+!  D [ (beta_0/rho) G phi ] = D ( beta_0 U ) - beta_0 S
+!
+! If use_alt_energy_fix = T, then we solve:
+!
+!  D [ (beta_0**2/rho) G (phi/beta_0) ] = D ( beta_0 U ) - beta_0 S
+!
+! 
+! Note: if use_alt_energy_fix = T, then we come out of here with 
 ! (beta_0 grad pi) instead of just grad pi (and also, pi in this
 ! case is pi/beta_0).  This beta_0 weighting makes the use of gpi in
 ! mkforce.f90 correct.
