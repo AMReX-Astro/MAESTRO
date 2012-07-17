@@ -655,8 +655,12 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(sdc_source(n), mla%la(n), nscal, 1)
-       call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 1)
+       call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
+       call multifab_setval(sdc_source(n), 0.d0)
+       call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 0)
+       call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 0)
+       call multifab_mult_mult_s(sdc_source(n), 0.5d0, 0)
+       call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
     end do
 
     call react_state(mla,tempbar_init,sold,snew,rho_Hext,p0_new, &
@@ -664,10 +668,11 @@ contains
 
     ! extract IR = [ (snew - sold)/dt - sdc_source ] 
     do n=1,nlevs
-       call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 1)
-       call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 1)
-       call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 1)
-       call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 1)
+       call multifab_setval       (intra(n), 0.d0, all=.true.)
+       call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 0)
+       call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 0)
+       call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 0)
+       call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 0)
     end do
 
     ! massage the rhoh intra term into the proper form, depending on

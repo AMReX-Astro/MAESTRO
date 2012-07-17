@@ -116,9 +116,9 @@ contains
     call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                      dm+rhoh_comp,stencil_order,mla%mba%rr)
 
-    ! subtract Lphi from rhs (since applyop returns negative operator)
+    ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_sub_sub_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -140,9 +140,9 @@ contains
        call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                         dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
 
-       ! subtract Lphi from rhs (since applyop returns negative operator)
+       ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_sub_sub_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
        enddo
 
     end do
@@ -166,9 +166,9 @@ contains
        call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                         dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
 
-       ! subtract Lphi from rhs (since applyop returns negative operator)
+       ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_sub_sub_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
        enddo
 
     end do
@@ -188,7 +188,7 @@ contains
     call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                      foextrap_comp,stencil_order,mla%mba%rr)
 
-    ! add Lphi to rhs (since applyop returns negative operator)
+    ! add Lphi to rhs
     do n=1,nlevs
        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
     enddo    
@@ -208,7 +208,7 @@ contains
     call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                      foextrap_comp,stencil_order,mla%mba%rr)
 
-    ! add Lphi to rhs (since applyop returns negative operator)
+    ! add Lphi to rhs
     do n=1,nlevs
        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
     enddo
@@ -440,9 +440,9 @@ contains
     call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                      dm+rhoh_comp,stencil_order,mla%mba%rr)
 
-    ! subtract Lphi from rhs (since applyop returns negative operator)
+    ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_sub_sub_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -462,7 +462,7 @@ contains
     call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                      dm+rhoh_comp,stencil_order,mla%mba%rr)
 
-    ! add Lphi to rhs (since applyop returns negative operator)
+    ! add Lphi to rhs
     do n=1,nlevs
        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
     enddo
@@ -486,9 +486,9 @@ contains
        call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                         dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
 
-       ! subtract Lphi from rhs (since applyop returns negative operator)
+       ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_sub_sub_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
        enddo
 
     end do
@@ -512,9 +512,9 @@ contains
        call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                         dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
 
-       ! subtract Lphi from rhs (since applyop returns negative operator)
+       ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_sub_sub_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
        enddo
 
     end do
@@ -534,7 +534,7 @@ contains
     call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                      foextrap_comp,stencil_order,mla%mba%rr)
 
-    ! add Lphi to rhs (since applyop returns negative operator)
+    ! add Lphi to rhs
     do n=1,nlevs
        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
     enddo    
@@ -554,7 +554,7 @@ contains
     call mac_applyop(mla,Lphi,phi,alpha,beta,dx,the_bc_tower, &
                      foextrap_comp,stencil_order,mla%mba%rr)
 
-    ! add Lphi to rhs (since applyop returns negative operator)
+    ! add Lphi to rhs
     do n=1,nlevs
        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
     enddo
