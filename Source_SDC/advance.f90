@@ -545,6 +545,8 @@ contains
 !       call make_grav_cell(grav_cell_new,rho0_new)
 !    else
        grav_cell_new = grav_cell_old
+       grav_cell_nph = grav_cell_old
+       rho0_nph = rho0_old
 !    end if
 
 !    if (evolve_base_state) then
@@ -585,6 +587,7 @@ contains
 !
 !    else
        p0_new = p0_old
+       p0_nph = p0_old
 !    end if
 
 !    if (evolve_base_state) then
@@ -1108,8 +1111,8 @@ contains
 !       call make_grav_cell(grav_cell_nph,rho0_nph)
 !    else
        grav_cell_new = grav_cell_old
-       rho0_nph = rho0_old
        grav_cell_nph = grav_cell_old
+       rho0_nph = rho0_old
 !    end if
 
 !    if (evolve_base_state) then
@@ -1145,6 +1148,7 @@ contains
 !
 !    else
        p0_new = p0_old
+       p0_nph = p0_old
  !   end if
 
 !    if (evolve_base_state) then
@@ -1449,10 +1453,12 @@ contains
     end do
 
     call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
-    
+
     call velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpi,normal,w0,w0mac,w0_force, &
                           w0_force_cart,rho0_old,rho0_nph,grav_cell_old,grav_cell_nph, &
                           dx,dt,the_bc_tower%bc_tower_array,sponge)
+
+
 
     if (init_mode) then
        ! throw away w0 by setting w0 = w0_old
@@ -1490,6 +1496,7 @@ contains
        end do
        call make_hgrhs(the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
                        Sbar,div_coeff_nph,dx)
+
        do n=1,nlevs
           call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
           call multifab_div_div_s(hgrhs(n),dt)
