@@ -157,7 +157,8 @@ contains
        call multifab_build(rho_Hnuc(n),     mla%la(n), 1,     0)
     end do
 
-    ! FIXME - instead of rho_omegadot and rho_Hnuc need instantaneous versions
+    call instantaneous_reaction_rates(mla,sold,rho_omegadot,rho_Hnuc)
+
     call make_S(Source_old,delta_gamma1_term,delta_gamma1, &
                 sold,uold,rho_omegadot,rho_Hnuc,rho_Hext,thermal, &
                 p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &

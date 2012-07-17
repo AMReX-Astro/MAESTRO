@@ -9,7 +9,7 @@ module react_state_module
 
   private
 
-  public :: react_state
+  public :: react_state, instantaneous_reaction_rates
 
 contains
 
@@ -273,7 +273,7 @@ contains
          burner_threshold_cutoff
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_sd
-    real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,:)
+    real(kind=dp_t), intent(in   ) ::         sold(lo(1)-ng_si:,:)
     real(kind=dp_t), intent(  out) ::         snew(lo(1)-ng_so:,:)
     real(kind=dp_t), intent(in   ) ::   sdc_source(lo(1)-ng_sd:,:)
     real(dp_t)     , intent(in   ) :: p0(0:)
@@ -673,5 +673,85 @@ contains
     !$OMP END PARALLEL DO
 
   end subroutine burner_loop_3d_sph
+
+  subroutine instantaneous_reaction_rates(mla,s,rho_omegadot,rho_Hnuc)
+
+    type(ml_layout), intent(in   ) :: mla
+    type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(inout) :: rho_omegadot(:)
+    type(multifab) , intent(inout) :: rho_Hnuc(:)
+
+    ! local
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+    real(kind=dp_t), pointer :: wp(:,:,:,:)
+    real(kind=dp_t), pointer :: hp(:,:,:,:)
+
+    integer :: lo(mla%dim),hi(mla%dim)
+    integer :: dm,nlevs,i,n
+    integer :: ng_s, ng_w, ng_h
+
+    dm = mla%dim
+    nlevs = mla%nlevel
+
+    ng_s = s(1)%ng
+    ng_w = rho_omegadot(1)%ng
+    ng_h = rho_Hnuc(1)%ng
+
+    do n=1,nlevs
+       do i=1,nboxes(s(n))
+          if ( multifab_remote(s(n), i) ) cycle
+          sp => dataptr(s(n), i)
+          wp => dataptr(rho_omegadot(n), i)
+          hp => dataptr(rho_Hnuc(n), i)
+          lo = lwb(get_box(s(n), i))
+          hi = upb(get_box(s(n), i))
+          select case(dm)
+          case (2)
+             call instantaneous_reaction_rates_2d(sp(:,:,1,:),ng_s,wp(:,:,1,:),ng_w, &
+                                                  hp(:,:,1,1),ng_h,lo,hi)
+          case (3)
+             call bl_error("instantaneous_reaction_rates_3d not written yet")
+          end select
+       end do
+    end do
+
+  end subroutine instantaneous_reaction_rates
+
+  subroutine instantaneous_reaction_rates_2d(s,ng_s,rho_omegadot,ng_w,rho_Hnuc,ng_h,lo,hi)
+
+    use network, only: nspec
+    use variables, only: spec_comp, rhoh_comp
+
+    integer,         intent(in   ) :: ng_s,ng_w,ng_h,lo(:),hi(:)
+    real(kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real(kind=dp_t), intent(inout) :: rho_omegadot(lo(1)-ng_w:,lo(2)-ng_w:,:)
+    real(kind=dp_t), intent(inout) ::     rho_Hnuc(lo(1)-ng_h:,lo(2)-ng_h:)
+
+    ! local
+    integer :: i,j
+
+    real(kind=dp_t) :: y(nspec+1)
+    real(kind=dp_t) :: ydot(nspec+1)
+    real(kind=dp_t) :: rho_Hnuc_out
+
+    real(kind=dp_t) :: time_dummy, rpar_dummy
+    integer :: ipar_dummy
+
+    do j=lo(2),hi(2)
+       do i=lo(1),hi(1)
+
+          y(1:nspec) = s(i,j,spec_comp:spec_comp+nspec-1)
+          y(nspec+1) = s(i,j,rhoh_comp)
+
+          call f_rhs_instantaneous_reaction_rates(nspec+1,time_dummy,y,ydot,rho_Hnuc_out, &
+                                                  rpar_dummy,ipar_dummy)
+
+          rho_omegadot(i,j,1:nspec) = ydot(1:nspec)
+          rho_Hnuc(i,j) = rho_Hnuc_out
+
+       end do
+    end do
+
+  end subroutine instantaneous_reaction_rates_2d
 
 end module react_state_module

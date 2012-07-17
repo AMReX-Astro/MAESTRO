@@ -35,12 +35,13 @@ contains
     use make_div_coeff_module       , only : make_div_coeff
     use make_w0_module              , only : make_w0
     use advect_base_module          , only : advect_base_dens, advect_base_enthalpy
-    use react_state_module          , only : react_state
+    use react_state_module          , only : react_state, instantaneous_reaction_rates
     use make_S_module               , only : make_S
     use average_module              , only : average
     use phihalf_module              , only : make_S_at_halftime, make_at_halftime
     use extraphalf_module           , only : extrap_to_halftime
-    use thermal_conduct_module      , only : thermal_conduct_predictor, thermal_conduct_corrector
+    use thermal_conduct_module      , only : thermal_conduct_predictor, &
+                                             thermal_conduct_corrector
     use make_explicit_thermal_module, only : make_explicit_thermal, make_thermal_coeffs 
     use make_grav_module            , only : make_grav_cell
     use make_eta_module             , only : make_etarho_planar, make_etarho_spherical
@@ -822,7 +823,8 @@ contains
        call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
     end do
 
-    ! FIXME - instead of rho_omegadot2 and rho_Hnuc2 need instantaneous versions
+    call instantaneous_reaction_rates(mla,snew,rho_omegadot2,rho_Hnuc2)
+
     call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                 rho_Hnuc2,rho_Hext,diff_new,p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
@@ -1383,7 +1385,8 @@ contains
 
     ndproj_time_start = parallel_wtime()
 
-    ! FIXME - instead of rho_omegadot2 and rho_Hnuc2 need instantaneous versions
+    call instantaneous_reaction_rates(mla,snew,rho_omegadot2,rho_Hnuc2)
+
     call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                 rho_Hnuc2,rho_Hext,diff_new,p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
