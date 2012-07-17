@@ -40,7 +40,7 @@ contains
     use average_module              , only : average
     use phihalf_module              , only : make_S_at_halftime, make_at_halftime
     use extraphalf_module           , only : extrap_to_halftime
-    use thermal_conduct_module      , only : thermal_conduct_predictor
+    use thermal_conduct_module      , only : thermal_conduct_predictor, thermal_conduct_corrector
     use make_explicit_thermal_module, only : make_explicit_thermal, make_thermal_coeffs 
     use make_grav_module            , only : make_grav_cell
     use make_eta_module             , only : make_etarho_planar, make_etarho_spherical
@@ -152,6 +152,7 @@ contains
     type(multifab) ::   delta_gamma1_term(mla%nlevel)
     type(multifab) ::        delta_gamma1(mla%nlevel)
 
+    type(multifab) ::         snew_lagged(mla%nlevel)
     type(multifab) ::          scal_force(mla%nlevel)
     type(multifab) ::               w0mac(mla%nlevel,mla%dim)
     type(multifab) ::                umac(mla%nlevel,mla%dim)
@@ -629,10 +630,9 @@ contains
           write(6,*) '<<< STEP 2B: Compute diffusive flux divergence'
        end if
 
-       call thermal_conduct_predictor(mla,dx,dt,sold, &
+       call thermal_conduct_predictor(mla,dx,dt,sold,snew,p0_old,p0_new, &
                                       hcoeff_old,Xkcoeff_old,pcoeff_old, &
-                                      hcoeff_old,Xkcoeff_old,pcoeff_old, &
-                                      snew,p0_old,p0_new,intra,the_bc_tower)
+                                      intra,the_bc_tower)
 
        ! compute diff_hat using snew, p0_new, and old coefficients
        call make_explicit_thermal(mla,dx,diff_hat,snew, &
@@ -1020,6 +1020,12 @@ contains
 
        advect_time_start = parallel_wtime()
 
+       ! save the time-advanced state
+       do n=1,nlevs
+          call multifab_build(snew_lagged(n), mla%la(n), nscal, 1)
+          call multifab_copy_c(snew_lagged(n), 1, snew(n), 1, nscal, 1)
+       end do
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4A: Compute advective flux divergences
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1146,7 +1152,6 @@ contains
 
        ! extract aofs = (snew - sold) / dt
        do n=1,nlevs
-          call multifab_build(aofs(n), mla%la(n), nscal, 1)
           call multifab_copy_c     (aofs(n), 1, snew(n), 1, nscal, 1)
           call multifab_sub_sub_c  (aofs(n), 1, sold(n), 1, nscal, 1)
           call multifab_div_div_s_c(aofs(n), 1, dt,       nscal, 1)
@@ -1167,10 +1172,10 @@ contains
 
        if (use_thermal_diffusion) then
 
-!          call thermal_conduct(mla,dx,dt,sold, &
-!                               hcoeff_old,Xkcoeff_old,pcoeff_old, &
-!                               hcoeff_new,Xkcoeff_new,pcoeff_new, &
-!                               snew,p0_old,p0_new,the_bc_tower)
+          call thermal_conduct_corrector(mla,dx,dt,sold,snew,snew_lagged,p0_old,p0_new, &
+                                         hcoeff_old,Xkcoeff_old,pcoeff_old, &
+                                         hcoeff_new,Xkcoeff_new,pcoeff_new, &
+                                         intra,the_bc_tower)
           
           ! compute diff_hat using snew, p0_new, and new coefficients from previous iteration
           call make_explicit_thermal(mla,dx,diff_hat,snew, &
@@ -1178,6 +1183,10 @@ contains
                                      p0_new,the_bc_tower)
           
        end if
+
+       do n=1,nlevs
+          call multifab_destroy(snew_lagged(n))
+       end do
 
        if (barrier_timers) call parallel_barrier()
        thermal_time = thermal_time + (parallel_wtime() - thermal_time_start)
@@ -1193,7 +1202,6 @@ contains
        end if
        
        do n=1,nlevs
-          call multifab_build(sdc_source(n), mla%la(n), nscal, 1)
           call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 1)
        end do
 
