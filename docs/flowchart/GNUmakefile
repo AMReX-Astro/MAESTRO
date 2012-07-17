@@ -6,14 +6,16 @@ eps_source = $(wildcard *.eps)
 
 pdf_source = $(eps_source:.eps=.pdf)
 
-paper.dvi: paper.tex flowchart.tex $(eps_source)
+paper.dvi: paper.tex flowchart.tex $(eps_source) ../maestro_doc.bib
 	latex paper.tex < /dev/null
+	bibtex paper
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
 
-paper.pdf: paper.tex flowchart.tex $(pdf_source)
+paper.pdf: paper.tex flowchart.tex $(pdf_source) ../maestro_doc.bib
 	pdflatex paper.tex < /dev/null
+	bibtex paper
 	pdflatex paper.tex < /dev/null
 	pdflatex paper.tex < /dev/null
 	pdflatex paper.tex < /dev/null

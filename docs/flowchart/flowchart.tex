@@ -895,7 +895,10 @@ $\etarho^{-\myhalf}=0, \psi^{-\myhalf}=0, S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 \renewcommand{\labelenumii}{\roman{enumii}.}
 \addtocounter{enumi}{2}
-\item {\bf Do} {$\nu = 1,...,N_{\rm iters}^{\pi}$.}
+\item {\it Pressure iterations}: Here we do {\tt init\_iter} iterations to get an
+  approximation for the lagged pressure:
+
+  {\bf Do} {$\nu = 1,...,N_{\rm iters}^{\pi}$.}
   \begin{enumerate}
   \item Perform {\bf Steps 1-11} as described above, using 
     $S^{\myhalf,\star\star} = (S^0 + S^{1,\nu-1})/2$ in {\bf Step 2} as described.
@@ -904,7 +907,7 @@ $\etarho^{-\myhalf}=0, \psi^{-\myhalf}=0, S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
     \begin{equation}  L_\beta^\rho \phi = D \left ( \beta_0^{\myhalf} {\bf V} \right) - \beta_0^{\myhalf} \left[ \left(S^{1}-\overline{S^{1}}\right) - \left(S^{0}-\overline{S^{0}}\right) \right] \enskip . 
     \end{equation}
     (The motivation for this form of the projection in the initial pressure iterations
-    is discussed in (cite almgren:bell:crutchfield).)
+    is discussed in \cite{almgren:bell:crutchfield}.)
       We discard the new velocity resulting from this, but keep the new  
       value for $\pi^{\myhalf} = \pi^{-\myhalf} + (1 / \dt) \; \phi.$  
       These steps also yield new scalar data at time $\dt,$ which
