@@ -223,6 +223,8 @@ contains
           rhopert = 0.d0
        end if
 
+       ! note: if use_alt_energy_fix = T, then gphi is already weighted
+       ! by beta_0
        vel_force(i) =  rhopert / rho(i) * grav(i) - gpi(i) / rho(i) - w0_force(i)
 
     end do
@@ -257,6 +259,8 @@ contains
              rhopert = 0.d0
           end if
 
+          ! note: if use_alt_energy_fix = T, then gphi is already weighted
+          ! by beta_0
           vel_force(i,j,1) = - gpi(i,j,1) / rho(i,j)
           vel_force(i,j,2) =  rhopert / rho(i,j) * grav(j) &
                - gpi(i,j,2) / rho(i,j) - w0_force(j)
@@ -363,6 +367,8 @@ contains
                 coriolis_term(3) = -TWO * omega * uold(i,j,k,2) * sin_theta
              endif
 
+             ! note: if use_alt_energy_fix = T, then gphi is already
+             ! weighted by beta_0
              vel_force(i,j,k,1) = -coriolis_term(1) - centrifugal_term(1) - &
                   gpi(i,j,k,1) / rho(i,j,k) 
 
@@ -485,6 +491,9 @@ contains
 
              ! we just computed the absolute value of the forces above, so use
              ! the right sign here
+
+             ! note: if use_alt_energy_fix = T, then gphi is already weighted
+             ! by beta_0
              vel_force(i,j,k,1) = -coriolis_term(1) - centrifugal_term(1) + &
                   ( rhopert * grav_cart(i,j,k,1) - gpi(i,j,k,1) ) / rho(i,j,k) &
                   - w0_force_cart(i,j,k,1)
