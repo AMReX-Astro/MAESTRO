@@ -141,9 +141,9 @@ contains
        end do
     end if
 
-    ! SDC HACK
+    ! reaction forcing terms - FIXME doesn't fill ghost cells
     do n=1,nlevs
-       call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 1)
+       call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)
     end do
 
     !**************************************************************************

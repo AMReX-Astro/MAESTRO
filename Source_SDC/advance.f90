@@ -76,6 +76,8 @@ contains
     use pred_parameters
     use make_intra_coeffs_module    , only: make_intra_coeffs
 
+    use fabio_module
+
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
     type(multifab),  intent(in   ) ::   uold(:)
@@ -663,6 +665,7 @@ contains
        write(6,*) '<<< STEP 2C : Advance thermodynamic variables '
     end if
 
+    ! build sdc_source
     do n=1,nlevs
        call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
        call multifab_setval(sdc_source(n), 0.d0)
@@ -1218,9 +1221,15 @@ contains
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP 4C: Advance thermodynamic variables (MISDC iter = ', misdc, ')   '
        end if
-       
+
+       ! build sdc_source - FIXME, currently uses predictor formulation
        do n=1,nlevs
-          call multifab_copy_c(sdc_source(n), 1, aofs(n), 1, nscal, 1)
+          call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
+          call multifab_setval(sdc_source(n), 0.d0)
+          call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 0)
+          call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 0)
+          call multifab_mult_mult_s_c(sdc_source(n), rhoh_comp, 0.5d0, 1, 0)
+          call multifab_plus_plus_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
        end do
 
        call react_state(mla,tempbar_init,sold,snew,rho_Hext,p0_new, &
@@ -1229,10 +1238,11 @@ contains
 
        ! extract IR = [ (snew - sold)/dt - sdc_source ] 
        do n=1,nlevs
-          call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 1)
-          call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 1)
-          call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 1)
-          call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 1)
+          call multifab_setval       (intra(n), 0.d0, all=.true.)
+          call multifab_copy_c       (intra(n), 1, snew(n), 1,       nscal, 0)
+          call multifab_sub_sub_c    (intra(n), 1, sold(n), 1,       nscal, 0)
+          call multifab_div_div_s_c  (intra(n), 1, dt,               nscal, 0)
+          call multifab_sub_sub_c    (intra(n), 1, sdc_source(n), 1, nscal, 0)
        end do
 
        ! massage the rhoh intra term into the proper form, depending on
@@ -1553,6 +1563,15 @@ contains
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
     call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower,div_coeff_3d,hgrhs)
+
+
+    call fabio_ml_multifab_write_d(pi,mla%mba%rr(:,1),"a_pi")
+    call fabio_ml_multifab_write_d(gpi,mla%mba%rr(:,1),"a_gpi")
+    call fabio_ml_multifab_write_d(rhohalf,mla%mba%rr(:,1),"a_rhohalf")
+    call fabio_ml_multifab_write_d(hgrhs,mla%mba%rr(:,1),"a_hgrhs")
+    call fabio_ml_multifab_write_d(unew,mla%mba%rr(:,1),"a_unew")
+    call fabio_ml_multifab_write_d(uold,mla%mba%rr(:,1),"a_uold")
+    stop
 
     do n=1,nlevs
        call destroy(div_coeff_3d(n))

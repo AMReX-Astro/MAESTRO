@@ -320,7 +320,7 @@ subroutine varden()
   ! SDC HACK
   allocate(intra(nlevs))
   do n=1,nlevs
-     call multifab_build(intra(n), mla%la(n), nscal, 1)
+     call multifab_build(intra(n), mla%la(n), nscal, 0)
      call setval(intra(n),ZERO,all=.true.)
   end do
 
