@@ -830,12 +830,11 @@ The details for both iterations are given below.\\
 \noindent {\bf Step 0.} {\em Initialization}
 
 First, we need to construct approximations to $S^0, w_0^{-\myhalf}, \Delta t^0$, 
-and $\Ub^0$.  Start with initial data $X_k^{\initp}, \rho^{\initp},$ $T^{\initp},$ an 
-initial base state, and an initial guess for the velocity, $\Ub^{\initp}$.
+and $\Ub^0$.  Start with initial data $X_k^{\initp}, \rho^{\initp},$ $T^{\initp},$ 
+an initial base state, and an initial guess for the velocity, $\Ub^{\initp}$.
 Set $w_0^0 = 0$ as an initial approximation.  Use the equation of state to 
 determine $(\rho h)^{\initp}$.  Compute $\beta_0^0$ as a function of 
-the initial data.  Then, project $\Ub^{\initp}$ using $\beta_0^0$ and 
-$S = \rho\Hext$, giving $\Ub^{0,0}$.  The next part of the initialization process 
+the initial data.  The next part of the initialization process 
 proceeds as follows.
 
 \begin{enumerate}
@@ -843,23 +842,25 @@ proceeds as follows.
 \renewcommand{\labelenumii}{\roman{enumii}.}
 
 \item {\em Initial Projection}: if {\tt do\_initial\_projection = T}, then we 
-   first project the velocity field with $\rho = 1$ and $\beta_0^0$ defined 
-   from the initial data.  No sources are included in $S$.  The elliptic
-   equation we solve is 
+   first project the velocity field with $\rho = 1$ and $\beta_0^0$.
+   The initial projection does not see reactions
+   or external heating, and thus we set $\dot\omega = \Hnuc = \Hext = 0$ in $S$.
+   The reason for ignoring reactions and heating is that we need some kind of 
+   time scale over which to compute the effect of reactions, but we first 
+   need an estimate of the velocity
+   field in order to derive the time step that will be used as a time scale.
+   The elliptic equation we solve is 
    \begin{equation}
-   \nabla \cdot \beta_0^0 \nabla \phi = - \nabla \cdot (\beta_0^0 \Ub^0)
+   \nabla \cdot \beta_0^0 \nabla \phi = \beta_0^0(S - \Sbar)- \nabla \cdot (\beta_0^0 \Ub^{\initp})
    \end{equation}
-   This $\phi$ is then used to correct the velocity field.
+   This $\phi$ is then used to correct the velocity field to obtain $\Ub^{0,0}$.
+   If {\tt do\_initial\_projection = F}, set $\Ub^{0,0} = \Ub^{\initp}$.
 
 \item {\em ``Divu'' iterations}: Next we do {\tt init\_divu\_iter} iterations 
-  to project the velocity field using a constraint that sees the reactions. 
-  The initial timestep estimate is provided by {\tt firstdt}, to allow us to 
-  integrate the reaction networks.  In this projection, again the density is 
-  set to 1, and the elliptic equation we solve is:
-   \begin{equation}
-   \nabla \cdot \beta_0^0 \nabla \phi = \beta_0 (S - \Sbar)- \nabla \cdot (\beta_0^0 \Ub^0)
-   \end{equation}
-
+  to project the velocity field using a constraint that sees reactions
+  and external heating. 
+  The initial timestep estimate is provided by {\tt firstdt} and
+  $\Ub^{0,0}$, to allow us to compute the effect of reactions over $\Delta t/2$.
 
   {\bf Do} {$\nu = 1,...,N_{\rm iters}^{S}$.}
   \begin{enumerate}
@@ -879,7 +880,13 @@ X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{0,\nu} ].$
         
   \item Project $\Ub^{0,\nu-1}$ using $\beta_0^0$ and 
         $(S^{0,\nu} - \overline{S^{0,\nu}})$ as the source term.  
-        This yields $\Ub^{0,\nu}.$
+        This yields $\Ub^{0,\nu}.$  In this projection, again the density is 
+        set to 1, and the elliptic equation we solve is:
+   
+   \begin{equation}
+   \nabla \cdot \beta_0^0 \nabla \phi = \beta_0 (S - \Sbar)- \nabla \cdot (\beta_0^0 \Ub^{0,\nu-1})
+   \end{equation}
+
 
   \end{enumerate}
 
