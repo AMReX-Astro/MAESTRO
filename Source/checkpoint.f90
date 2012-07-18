@@ -27,6 +27,7 @@ contains
                              use_thermal_diffusion, plot_Hext
     use variables, only: rel_eps
     use time_module, only: time
+    use cputime_module, only: get_cputime
 
     type(multifab)  , intent(in) :: mfs(:), mfs_nodal(:)
     type(multifab)  , intent(in) :: dSdt(:), Source_old(:), Source_new(:)
@@ -137,6 +138,14 @@ contains
        write(unit=un,fmt=1000) rel_eps
        close(un)
     end if
+
+    if (parallel_IOProcessor()) then
+       un = unit_new()
+       open(unit=un, file=trim(dirname) // "/CPUtime", &
+            form="formatted", action="write", status="replace")
+       write(unit=un,fmt=*) get_cputime()
+       close(un)
+    endif
 
     writetime2 = parallel_wtime() - writetime1
     call parallel_reduce(writetime1, writetime2, MPI_MAX, proc=parallel_IOProcessorNode())

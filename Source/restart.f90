@@ -20,6 +20,7 @@ contains
     use bl_prof_module
     use checkpoint_module
     use probin_module, only: check_base_name, dm_in
+    use cputime_module, only: initialize_elapsed_cputime
 
     integer          , intent(in   ) :: restart_int
     real(dp_t)       , intent(  out) :: dt
@@ -41,6 +42,9 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
+    logical :: lexist
+    real (kind=dp_t) :: cputime
+
     call build(bpt, "fill_restart_data")
 
     if (restart_int <= 99999) then
@@ -51,8 +55,23 @@ contains
        check_file_name = trim(check_base_name) // check_index6
     endif
 
+    
+    ! if we stored the elapsed CPU time in the checkpoint file, read
+    ! it in now
+    if ( parallel_IOProcessor()) then
+       inquire(file=trim(check_file_name) // "/CPUtime", exist=lexist)
+       if (lexist) then
+          open(unit=98,file=trim(check_file_name) // "/CPUtime", action="read", form="formatted")
+          read (98,*) cputime
+          call initialize_elapsed_cputime(cputime)
+          close(unit=98)
+       endif
+    endif
+       
+
     if ( parallel_IOProcessor()) &
-      print *,'Reading ', trim(check_file_name), ' to get state data for restart'
+         print *,'Reading ', trim(check_file_name), ' to get state data for restart'
+
     call checkpoint_read(chkdata, chk_p, chk_dsdt, chk_src_old, chk_src_new, &
                          chk_rho_omegadot2, chk_rho_Hnuc2, chk_rho_Hext, &
                          chk_thermal2, check_file_name, &

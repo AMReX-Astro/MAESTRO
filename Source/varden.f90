@@ -40,6 +40,7 @@ subroutine varden()
   use check_cutoff_module, only: check_cutoff_values
   use time_module, only: time
   use particle_module
+  use cputime_module, only: start_cputime_clock
 
   implicit none
 
@@ -129,6 +130,9 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialization
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  ! keep track of cputime
+  call start_cputime_clock()
 
   last_plt_written = -1
   last_chk_written = -1

@@ -5,6 +5,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
   ! dir_name will be the name of the checkpoint or plotfile toplevel
   ! directory
 
+  use bl_types
   use parallel
   use probin_module, only: job_name, inputs_file_used
   use runtime_init_module, only: probin
@@ -18,6 +19,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
                                C_compile_line, link_line
   use omp_module
   use network
+  use cputime_module, only: get_cputime
 
   implicit none
 
@@ -59,6 +61,8 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
      write (99,*) " "     
      write (99,1002) "number of MPI processes ", parallel_nprocs()
      write (99,1002) "number of threads       ", omp_get_max_threads()
+     write (99,*) " "
+     write (99,1005) "CPU time used since start of simulation (CPU-hours) ", get_cputime()/3600.0_dp_t
 
      write (99,*) " "
      write (99,*) " "
