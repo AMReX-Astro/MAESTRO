@@ -851,7 +851,7 @@ proceeds as follows.
    field in order to derive the time step that will be used as a time scale.
    The elliptic equation we solve is 
    \begin{equation}
-   \nabla \cdot \beta_0^0 \nabla \phi = \beta_0^0(S - \Sbar)- \nabla \cdot (\beta_0^0 \Ub^{\initp})
+   \nabla \cdot \beta_0^0 \nabla \phi = \underbrace{\beta_0^0(S - \Sbar)}_\mathrm{0~ except~ for~ diffusion} - \nabla \cdot (\beta_0^0 \Ub^{\initp})
    \end{equation}
    This $\phi$ is then used to correct the velocity field to obtain $\Ub^{0,0}$.
    If {\tt do\_initial\_projection = F}, set $\Ub^{0,0} = \Ub^{\initp}$.
