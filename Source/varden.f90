@@ -1435,6 +1435,7 @@ subroutine varden()
   call destroy_geometry()
 
   call eos_finalize()
+  call network_finalize()
 
   call runtime_close()
 
