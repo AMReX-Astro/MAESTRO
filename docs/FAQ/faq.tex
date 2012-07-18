@@ -99,6 +99,18 @@
   and resetting the tolerances.  The role of each of these tolerances
   is described in {\tt MAESTRO/docs/mg/}.
 
+\item {\em Why do the initial projection and ``divu'' iters sometimes
+  have a harder time converging than the multigrid solves in the main algorithm?}
+
+  The initial projection and ``divu'' solve sets the density to $1$
+  (see \S~\ref{sec:flow:initialization}), so the coefficients in the
+  elliptic solve are $O(\beta_0) \sim O(\rho)$.  But in the main
+  algorithm, the coefficients are $O(\beta_0/\rho) \sim O(1)$.  Since
+  $\rho$ can vary a lot, the variation in the coefficients in the
+  initial projection and ``divu'' solve present a harded linear system
+  to solve.
+
+
 \item {\em How can I obtain profiling infomation for my run?}
 
   The code is already instrumented with timers.  Simply compile with
@@ -129,9 +141,7 @@
 \end{enumerate}
 
 
-
-
-\section{I/O}
+\section{Debugging}
 
 \begin{enumerate}
 
@@ -145,6 +155,21 @@
     call fabio_ml_multifab_write_d(umac(:,1),mla%mba%rr(:,1),"a_umacx")
 \end{verbatim}
 
+\item {\em How can I print out a multifab's contents from within the code?}
+
+  There is a {\tt print} method in {\tt multifab\_module}.  This can
+  be simply called as
+  \begin{verbatim}
+  call print(a)
+  \end{verbatim}
+  where {\tt a} is a multifab (single-level).
+
+\end{enumerate}
+
+
+\section{I/O}
+
+\begin{enumerate}
 
 
 \item {\em How can I tell from a plotfile what runtime parameters were
