@@ -255,10 +255,10 @@ contains
     ! copy hcoeff^old into beta
     call put_data_on_faces(mla,hcoeff_old,1,beta,.true.)
 
-    ! multiply beta by dt/2
+    ! multiply beta by -dt/2
     do n=1,nlevs
        do i = 1,dm 
-          call multifab_mult_mult_s_c(beta(n,i),1,dt/2.d0,1,0)
+          call multifab_mult_mult_s_c(beta(n,i),1,-dt/2.d0,1,0)
        enddo
     enddo
 
@@ -601,10 +601,10 @@ contains
     ! copy hcoeff^new into beta
     call put_data_on_faces(mla,hcoeff_new,1,beta,.true.)
 
-    ! multiply beta by dt
+    ! multiply beta by -dt
     do n=1,nlevs
        do i = 1,dm 
-          call multifab_mult_mult_s_c(beta(n,i),1,dt,1,0)
+          call multifab_mult_mult_s_c(beta(n,i),1,-dt,1,0)
        enddo
     enddo
 
