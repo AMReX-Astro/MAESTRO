@@ -168,7 +168,7 @@ contains
                              evolve_base_state, prob_lo, prob_hi, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, &
                              plot_cs, sponge_kappa, plot_sponge_fdamp, use_particles, &
-                             plot_processors
+                             plot_processors, use_alt_energy_fix
     use geometry, only: spherical, nr_fine, nlevs_radial, numdisjointchunks, &
          r_start_coord, r_end_coord
     use average_module
@@ -179,6 +179,8 @@ contains
     use network, only: nspec
     use time_module, only: time
     use particle_module, only: particle_container, make_particle_count
+    use make_grav_module
+    use make_div_coeff_module
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -212,6 +214,9 @@ contains
     type(multifab) ::    w0mac(mla%nlevel,mla%dim)
     type(multifab) :: w0r_cart(mla%nlevel)
     type(multifab) ::    pi_cc(mla%nlevel)
+
+    real(dp_t)  :: div_coeff(nlevs_radial,0:nr_fine-1)
+    real(dp_t)  :: grav_cell(nlevs_radial,0:nr_fine-1)
 
     real(dp_t) :: entropybar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         h0(nlevs_radial,0:nr_fine-1)
@@ -579,6 +584,20 @@ contains
        endif
 
     end do
+
+    if (use_alt_energy_fix) then
+       ! make beta_0 and correct pi/beta_0 to be pi
+       call make_grav_cell(grav_cell,rho0)
+       call make_div_coeff(div_coeff,rho0,p0,gamma1bar,grav_cell)
+       
+       call put_1d_array_on_cart(div_coeff,tempfab,foextrap_comp,.false.,.false.,dx, &
+                                 the_bc_tower%bc_tower_array,mla)
+       do n = 1,nlevs
+          call multifab_mult_mult_c(plotdata(n),icomp_pi,tempfab(n),1,1)
+       enddo
+    end if
+
+
 
     ! SPONGE
     if (plot_sponge_fdamp) then
