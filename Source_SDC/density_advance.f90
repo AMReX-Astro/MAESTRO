@@ -350,9 +350,14 @@ contains
     !     3) Define density as the sum of the (rho X)_i
     !     4) Update tracer with conservative differencing as well.
     !**************************************************************************
-    
+
     do n=1,nlevs
        call setval(scal_force(n),ZERO,all=.true.)
+    end do
+
+    ! reaction forcing terms
+    do n=1,nlevs
+       call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)
     end do
 
     ! p0 only used in rhoh update so we just pass in a dummy version
