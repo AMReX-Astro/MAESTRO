@@ -96,4 +96,9 @@ contains
     return
   end function network_species_index
 
+  
+  subroutine network_finalize()
+
+  end subroutine network_finalize
+
 end module network
