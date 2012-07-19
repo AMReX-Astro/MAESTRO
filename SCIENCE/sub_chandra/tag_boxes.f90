@@ -30,7 +30,7 @@ contains
 
     real(kind = dp_t), pointer :: sp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
-    integer           :: i, lo(mf%dim), ng
+    integer           :: i, lo(mf%dim), hi(mf%dim), ng
 
     integer           :: ihe4
 
@@ -43,44 +43,44 @@ contains
        sp => dataptr(mf, i)
        tp => dataptr(tagboxes, i)
        lo =  lwb(get_box(tagboxes, i))
+       hi =  upb(get_box(tagboxes, i))
 
        select case (mf%dim)
        case (2)
           call bl_error("ERROR: 2-d tag_boxes not implemented")
        case  (3)
-          call tag_boxes_3d(tp(:,:,:,1),sp(:,:,:,rho_comp),sp(:,:,:,spec_comp-1+ihe4),lo,ng,lev)
+          call tag_boxes_3d(tp(:,:,:,1),sp(:,:,:,rho_comp),sp(:,:,:,spec_comp-1+ihe4),ng,lo,hi,dx,lev)
        end select
     end do
 
   end subroutine tag_boxes
 
 
-  subroutine tag_boxes_3d(tagbox,rho,rho_Xhe,lo,ng,lev)
+  subroutine tag_boxes_3d(tagbox,rho,rho_Xhe,ng,lo,hi,dx,lev)
 
     use bl_constants_module, ONLY: HALF
-    use probin_module, ONLY: base_cutoff_density, prob_lo, prob_hi
+    use probin_module, ONLY: base_cutoff_density, prob_lo, prob_hi, octant
+    use geometry, only: center
 
-    integer          , intent(in   ) :: lo(:),ng
+    integer          , intent(in   ) :: lo(:),hi(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):,lo(3):)
-    real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind = dp_t), intent(in   ) ::     rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real(kind = dp_t), intent(in   ) :: rho_Xhe(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(dp_t)       , intent(in   ) :: dx
     integer, optional, intent(in   ) :: lev
 
     real(kind = dp_t) :: Xhe, x, y, z
 
-    integer :: i,j,k,nx,ny,nz,llev
+    integer :: i,j,k,llev
 
     llev = 1; if (present(lev)) llev = lev
-    nx = size(tagbox,dim=1)
-    ny = size(tagbox,dim=2)
-    nz = size(tagbox,dim=3)
 
     tagbox = .false.
 
 !$omp parallel do private(i,j,k,Xhe)
-    do k = lo(3),lo(3)+nz-1
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
+    do k = lo(3),hi(3)
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
              Xhe = rho_Xhe(i,j,k)/rho(i,j,k)
              if (Xhe > 0.01_dp_t .and. rho(i,j,k) >= base_cutoff_density) then
                 tagbox(i,j,k) = .true.
@@ -91,24 +91,46 @@ contains
 !$omp end parallel do
 
     ! refine the very center of the star, for average
-!$omp parallel do private(i,j,k,x,y,z)
-    do k = lo(3),lo(3)+nz-1
-       !z = prob_lo(3) + (dble(k)+HALF)*dx(3)
+    if (octant) then
 
-       do j = lo(2),lo(2)+ny-1
-          !y = prob_lo(2) + (dble(j)+HALF)*dx(2)
-
-          do i = lo(1),lo(1)+nx-1
-             !x = prob_lo(1) + (dble(i)+HALF)*dx(1)
-
-             !if (sqrt(x**2 + y**2 + z**2) < 0.1*prob_hi(1)) then
-             if (sqrt(dble(i)**2 + dble(j)**2 + dble(k)**2) < 10.d0) then
-                tagbox(i,j,k) = .true.
-             end if
-          end do
-       enddo
-    end do
+!$omp parallel do private(i,j,k)
+       do k = lo(3),hi(3)
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)
+                if (sqrt(dble(i)**2 + dble(j)**2 + dble(k)**2) < 10.0) then
+                   tagbox(i,j,k) = .true.
+                end if
+             end do
+          enddo
+       end do
 !$omp end parallel do
+
+    else
+
+       ! note: dx is a scalar here 
+
+!$omp parallel do private(i,j,k,x,y,z)
+       do k = lo(3),hi(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx
+
+          do j = lo(2),hi(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx
+
+             do i = lo(1),hi(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx
+
+                if (sqrt((x-center(1))**2 + &
+                         (y-center(2))**2 + &
+                         (z-center(3))**2) < 10.0*dx) then
+                   tagbox(i,j,k) = .true.
+                end if
+
+             end do
+          enddo
+       end do
+!$omp end parallel do
+       
+    end if
 
   end subroutine tag_boxes_3d
 
