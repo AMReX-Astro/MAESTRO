@@ -6,3 +6,5 @@ pert_width        real    0.025d0
 
 r_mid             real    1.0
 
+s_jump            real    1.0
+

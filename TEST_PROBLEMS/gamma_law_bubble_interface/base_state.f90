@@ -20,12 +20,12 @@ contains
     use parallel
     use bl_error_module
     use bl_constants_module
-    use eos_module, only: eos, eos_input_rp, gamma_const
+    use eos_module, only: eos, eos_input_rp, eos_input_ps, gamma_const
     use eos_type_module
     use network, only: spec_names, network_species_index
     use probin_module, only: base_cutoff_density, anelastic_cutoff, &
                              buoyancy_cutoff_factor, grav_const, dens_base, pres_base, &
-                             prob_lo, r_mid
+                             prob_lo, r_mid, s_jump
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr
     
@@ -38,7 +38,7 @@ contains
     ! local
     integer         :: j
     real(kind=dp_t) :: H,r,r_base
-    real(kind=dp_t) :: dens_mid, dens_zone, pres_zone
+    real(kind=dp_t) :: dens_mid, pres_mid, s_mid, dens_zone, pres_zone
 
     logical :: do_isentropic, first_isothermal
 
@@ -58,6 +58,11 @@ contains
 
     ! set the pressure at the base -- we integrate HSE from this
     p0_init(0) = pres_base
+
+
+    ! only initialize the first species
+    eos_state%xn(:) = ZERO
+    eos_state%xn(1) = ONE
 
 
     ! set an initial guess for the temperature -- this will be reset
@@ -87,12 +92,34 @@ contains
 
           if (first_isothermal) then
              dens_mid = s0_init(j-1, rho_comp)
+             pres_mid = p0_init(j-1)
+
+             ! get the entropy
+             eos_state%rho = dens_mid
+             eos_state%p = pres_mid
+
+             ! (rho,p) --> T, h
+             call eos(eos_input_rp, eos_state, .false.)
+             
+             s_mid = eos_state%s
+
+             ! increase the entropy, if desired, to create an entropy "wall"
+             s_mid = s_jump*s_mid
+
+             ! find the new density for this entropy
+             eos_state%s = s_mid
+             call eos(eos_input_ps, eos_state, .false.)
+
+             ! reset the midpoint density
+             dens_mid = eos_state%rho
 
              ! compute the pressure scale height (for an isothermal,
              ! ideal-gas atmosphere)
-             H = p0_init(j-1) / dens_mid / abs(grav_const)
+             H = pres_mid / dens_mid / abs(grav_const)
 
              first_isothermal = .false.
+
+
           endif
       
           ! the density of an isothermal gamma-law atm is exponential
@@ -110,11 +137,6 @@ contains
        end if
        
        ! use the EOS to make the state consistent
-
-       ! only initialize the first species
-       eos_state%xn(:) = ZERO
-       eos_state%xn(1) = ONE
-
        eos_state%rho = s0_init(j, rho_comp)
        eos_state%p = p0_init(j)
 
