@@ -68,6 +68,7 @@ contains
     type(multifab) ::   rh(mla%nlevel)
 
     integer                   :: n,d,stencil_type,dm,nlevs
+    logical                   :: using_alt_energy_fix
     real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
     real(dp_t)                :: rel_solver_eps
     real(dp_t)                :: abs_solver_eps
@@ -128,14 +129,29 @@ contains
 
     call create_uvec_for_projection(unew,uold,rhohalf,gpi,dt,the_bc_tower,proj_type)
 
+    if (proj_type .ne. initial_projection_comp .and. &
+        proj_type .ne. divu_iters_comp .and. &
+        use_alt_energy_fix) then
+
+        using_alt_energy_fix = .true.
+
+    else
+
+        using_alt_energy_fix = .false.
+
+    end if
+
     do n=1,nlevs
        do d=1,dm
           call multifab_mult_mult_c(unew(n),d,div_coeff_3d(n),1,1,nghost(div_coeff_3d(n)))
        end do
+
        ! rhohalf = rho/beta_0
        call multifab_div_div_c(rhohalf(n),1,div_coeff_3d(n),1,1, &
                                nghost(div_coeff_3d(n)))
-       if (use_alt_energy_fix) then
+
+       ! rhohalf = rho/beta_0^2
+       if (using_alt_energy_fix) then
           call multifab_div_div_c(rhohalf(n),1,div_coeff_3d(n),1,1, &
                                   nghost(div_coeff_3d(n)))
        endif
@@ -187,12 +203,19 @@ contains
     end do
 
     do n=1,nlevs
+
+       ! Convert (beta_0 U) back to U
        do d=1,dm
           call multifab_div_div_c(unew(n),d,div_coeff_3d(n),1,1,nghost(div_coeff_3d(n)))
        end do
+
+       ! Convert (rhohalf/beta_0)   back to rhohalf
+       !  OR     (rhohalf/beta_0^2) back to (rhohalf/beta_0^2)
        call multifab_mult_mult_c(rhohalf(n),1,div_coeff_3d(n),1,1, &
                                  nghost(div_coeff_3d(n)))
-       if (use_alt_energy_fix) then
+
+      ! Convert (rhohalf/beta_0)   back to rhohalf
+       if (using_alt_energy_fix) then
           call multifab_mult_mult_c(rhohalf(n),1,div_coeff_3d(n),1,1, &
                                     nghost(div_coeff_3d(n)))
        endif
@@ -205,7 +228,8 @@ contains
     call mkgphi(gphi,phi,dx)
 
     call hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,  &
-                   pi,phi,dt,mla,the_bc_tower%bc_tower_array,div_coeff_3d)
+                   pi,phi,dt,mla,the_bc_tower%bc_tower_array,div_coeff_3d, &
+                   using_alt_energy_fix)
 
     do n = 1,nlevs
        call destroy(phi(n))
@@ -635,7 +659,7 @@ contains
     ! ******************************************************************************* !
 
     subroutine hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,pi,phi,dt, &
-                         mla,the_bc_level,div_coeff_3d)
+                         mla,the_bc_level,div_coeff_3d,using_alt_energy_fix)
 
       use multifab_physbc_module
       use variables, only: foextrap_comp
@@ -652,6 +676,7 @@ contains
       type(ml_layout), intent(in   ) :: mla
       type(bc_level) , intent(in   ) :: the_bc_level(:)
       type(multifab) , intent(in   ) :: div_coeff_3d(:)
+      logical        , intent(in   ) :: using_alt_energy_fix
 
       ! local
       integer :: i,n
@@ -699,17 +724,17 @@ contains
                call hg_update_1d(proj_type, upn(:,1,1,1), ng_un, uon(:,1,1,1), ng_uo, &
                                  gpp(:,1,1,1), ng_gp, gph(:,1,1,1), ng_gh, rp(:,1,1,1), &
                                  ng_rh, pp(:,1,1,1), ng_p, ph(:,1,1,1), ng_h, &
-                                 dp(:,1,1,1), ng_d, lo, hi, dt)
+                                 dp(:,1,1,1), ng_d, lo, hi, dt, using_alt_energy_fix)
             case (2)
                call hg_update_2d(proj_type, upn(:,:,1,:), ng_un, uon(:,:,1,:), ng_uo, &
                                  gpp(:,:,1,:), ng_gp, gph(:,:,1,:), ng_gh, rp(:,:,1,1), &
                                  ng_rh, pp(:,:,1,1), ng_p, ph(:,:,1,1), ng_h, &
-                                 dp(:,:,1,1), ng_d, lo, hi, dt)
+                                 dp(:,:,1,1), ng_d, lo, hi, dt, using_alt_energy_fix)
             case (3)
                call hg_update_3d(proj_type, upn(:,:,:,:), ng_un, uon(:,:,:,:), ng_uo, &
                                  gpp(:,:,:,:), ng_gp, gph(:,:,:,:), ng_gh, rp(:,:,:,1), &
                                  ng_rh, pp(:,:,:,1), ng_p, ph(:,:,:,1), ng_h, &
-                                 dp(:,:,:,1), ng_d, lo, hi, dt)
+                                 dp(:,:,:,1), ng_d, lo, hi, dt, using_alt_energy_fix)
             end select
          end do
 
@@ -765,10 +790,10 @@ contains
     !   ****************************************************************************** !
 
     subroutine hg_update_1d(proj_type,unew,ng_un,uold,ng_uo,gpi,ng_gp,gphi,ng_gh, &
-                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,divcoeff,ng_d,lo,hi,dt)
+                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,divcoeff,ng_d,lo,hi,dt, &
+                            using_alt_energy_fix)
 
       use proj_parameters
-      use probin_module, only: use_alt_energy_fix
 
       integer        , intent(in   ) :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h,ng_d
       integer        , intent(in   ) :: lo(:),hi(:)
@@ -782,13 +807,14 @@ contains
       real(kind=dp_t), intent(in   ) ::      phi(lo(1)-ng_h :)
       real(kind=dp_t), intent(in   ) :: divcoeff(lo(1)-ng_d :)
       real(kind=dp_t), intent(in   ) :: dt
+      logical        , intent(in   ) :: using_alt_energy_fix
 
       !     Subtract off the density-weighted gradient.
-      if (.not. use_alt_energy_fix) then
-         unew(lo(1):hi(1)) = unew(lo(1):hi(1)) - gphi(lo(1):hi(1))/rhohalf(lo(1):hi(1)) 
-      else
+      if (using_alt_energy_fix) then
          unew(lo(1):hi(1)) = unew(lo(1):hi(1)) - &
               divcoeff(lo(1):hi(1))*gphi(lo(1):hi(1))/rhohalf(lo(1):hi(1)) 
+      else
+         unew(lo(1):hi(1)) = unew(lo(1):hi(1)) - gphi(lo(1):hi(1))/rhohalf(lo(1):hi(1)) 
       endif
 
       if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
@@ -804,9 +830,8 @@ contains
 
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
-         if (use_alt_energy_fix) then
+         if (using_alt_energy_fix) &
             gphi(lo(1):hi(1)) = gphi(lo(1):hi(1)) * divcoeff(lo(1):hi(1))
-         endif
 
          gpi(lo(1):hi(1)  ) = gpi(lo(1):hi(1)  ) + gphi(lo(1):hi(1))
           pi(lo(1):hi(1)+1) =  pi(lo(1):hi(1)+1)  + phi(lo(1):hi(1)+1)
@@ -815,9 +840,8 @@ contains
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
-         if (use_alt_energy_fix) then
+         if (using_alt_energy_fix) &
             gphi(lo(1):hi(1)) = gphi(lo(1):hi(1)) * divcoeff(lo(1):hi(1))
-         endif
 
          gpi(lo(1):hi(1)  ) = (ONE/dt) * gphi(lo(1):hi(1))
           pi(lo(1):hi(1)+1) = (ONE/dt) *  phi(lo(1):hi(1)+1)
@@ -829,10 +853,10 @@ contains
     !   ****************************************************************************** !
 
     subroutine hg_update_2d(proj_type,unew,ng_un,uold,ng_uo,gpi,ng_gp,gphi,ng_gh, &
-                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,divcoeff,ng_d,lo,hi,dt)
+                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,divcoeff,ng_d,lo,hi,dt, &
+                            using_alt_energy_fix)
 
       use proj_parameters
-      use probin_module, only: use_alt_energy_fix
 
       integer        , intent(in   ) :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h,ng_d
       integer        , intent(in   ) :: lo(:),hi(:)
@@ -846,15 +870,10 @@ contains
       real(kind=dp_t), intent(in   ) ::      phi(lo(1)-ng_h :,lo(2)-ng_h :)
       real(kind=dp_t), intent(in   ) :: divcoeff(lo(1)-ng_d :,lo(2)-ng_d :)
       real(kind=dp_t), intent(in   ) :: dt
+      logical        , intent(in   ) :: using_alt_energy_fix
 
       !     Subtract off the density-weighted gradient.
-      if (.not. use_alt_energy_fix) then
-         unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) - &
-              gphi(lo(1):hi(1),lo(2):hi(2),1)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
-
-         unew(lo(1):hi(1),lo(2):hi(2),2) = unew(lo(1):hi(1),lo(2):hi(2),2) - &
-              gphi(lo(1):hi(1),lo(2):hi(2),2)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
-      else
+      if (using_alt_energy_fix) then
          unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) - &
               gphi(lo(1):hi(1),lo(2):hi(2),1)*divcoeff(lo(1):hi(1),lo(2):hi(2))/ &
               rhohalf(lo(1):hi(1),lo(2):hi(2)) 
@@ -862,6 +881,12 @@ contains
          unew(lo(1):hi(1),lo(2):hi(2),2) = unew(lo(1):hi(1),lo(2):hi(2),2) - &
               gphi(lo(1):hi(1),lo(2):hi(2),2)*divcoeff(lo(1):hi(1),lo(2):hi(2))/ &
               rhohalf(lo(1):hi(1),lo(2):hi(2))          
+      else
+         unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) - &
+              gphi(lo(1):hi(1),lo(2):hi(2),1)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
+
+         unew(lo(1):hi(1),lo(2):hi(2),2) = unew(lo(1):hi(1),lo(2):hi(2),2) - &
+              gphi(lo(1):hi(1),lo(2):hi(2),2)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
       endif
 
       if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
@@ -879,7 +904,7 @@ contains
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
 
-         if (use_alt_energy_fix) then
+         if (using_alt_energy_fix) then
             gphi(lo(1):hi(1),lo(2):hi(2),1) = gphi(lo(1):hi(1),lo(2):hi(2),1) * &
                                           divcoeff(lo(1):hi(1),lo(2):hi(2))
 
@@ -898,7 +923,7 @@ contains
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
 
-         if (use_alt_energy_fix) then
+         if (using_alt_energy_fix) then
             gphi(lo(1):hi(1),lo(2):hi(2),1) = gphi(lo(1):hi(1),lo(2):hi(2),1) * &
                                           divcoeff(lo(1):hi(1),lo(2):hi(2))
 
@@ -917,10 +942,10 @@ contains
     !   ******************************************************************************* !
 
     subroutine hg_update_3d(proj_type,unew,ng_un,uold,ng_uo,gpi,ng_gp,gphi,ng_gh, &
-                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,divcoeff,ng_d,lo,hi,dt)
+                            rhohalf,ng_rh,pi,ng_p,phi,ng_h,divcoeff,ng_d,lo,hi,dt, &
+                            using_alt_energy_fix)
 
       use proj_parameters
-      use probin_module, only: use_alt_energy_fix
 
       integer        , intent(in   ) :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h,ng_d
       integer        , intent(in   ) :: lo(:),hi(:)
@@ -934,20 +959,23 @@ contains
       real(kind=dp_t), intent(in   ) ::      phi(lo(1)-ng_h :,lo(2)-ng_h :,lo(3)-ng_h :)
       real(kind=dp_t), intent(in   ) :: divcoeff(lo(1)-ng_d :,lo(2)-ng_d :,lo(3)-ng_d :)
       real(kind=dp_t), intent(in   ) :: dt
+      logical        , intent(in   ) :: using_alt_energy_fix
 
       integer         :: i,j,k,m
       !
       ! Subtract off the density-weighted gradient
       !
 
-      if (.not. use_alt_energy_fix) then
+      if (using_alt_energy_fix) then
+
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
             do k=lo(3),hi(3)
                do j=lo(2),hi(2)
                   do i=lo(1),hi(1)
-                     unew(i,j,k,m) = unew(i,j,k,m) - gphi(i,j,k,m)/rhohalf(i,j,k)
+                     unew(i,j,k,m) = unew(i,j,k,m) - &
+                          divcoeff(i,j,k)*gphi(i,j,k,m)/rhohalf(i,j,k)
                   end do
                end do
             end do
@@ -963,8 +991,7 @@ contains
             do k=lo(3),hi(3)
                do j=lo(2),hi(2)
                   do i=lo(1),hi(1)
-                     unew(i,j,k,m) = unew(i,j,k,m) - &
-                          divcoeff(i,j,k)*gphi(i,j,k,m)/rhohalf(i,j,k)
+                     unew(i,j,k,m) = unew(i,j,k,m) - gphi(i,j,k,m)/rhohalf(i,j,k)
                   end do
                end do
             end do
@@ -1005,7 +1032,7 @@ contains
          ! gphi held the gradient of (change in pressure)
          !
 
-         if (use_alt_energy_fix) then
+         if (using_alt_energy_fix) then
             !$OMP PARALLEL PRIVATE(i,j,k,m)
             do m=1,3
                !$OMP DO
@@ -1050,7 +1077,7 @@ contains
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
          !
-         if (use_alt_energy_fix) then
+         if (using_alt_energy_fix) then
             !$OMP PARALLEL PRIVATE(i,j,k,m)
             do m=1,3
                !$OMP DO

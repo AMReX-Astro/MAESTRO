@@ -16,8 +16,8 @@
  xlo_boundary_type = "periodic"
  xhi_boundary_type = "periodic"
 
- ylo_boundary_type = "outlet"
- yhi_boundary_type = "outlet"
+ ylo_boundary_type = "slip wall"
+ yhi_boundary_type = "slip wall"
 
 
  !----------------------------------------------------------------------------
