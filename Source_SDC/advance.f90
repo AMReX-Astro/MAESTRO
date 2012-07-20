@@ -649,6 +649,13 @@ contains
                                       hcoeff_old,Xkcoeff_old,pcoeff_old, &
                                       aofs,intra,the_bc_tower)
 
+       ! hack test update coefficients
+!       do n=1,nlevs
+!          call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,3)
+!       end do
+!       call makeTfromRhoH(snew,p0_new,mla,the_bc_tower%bc_tower_array,dx)
+!       call make_thermal_coeffs(snew,Tcoeff_old,hcoeff_old,Xkcoeff_old,pcoeff_old)
+
        ! compute diff_hat using snew, p0_new, and old coefficients
        call make_explicit_thermal(mla,dx,diff_hat,snew, &
                                   Tcoeff_old,hcoeff_old,Xkcoeff_old,pcoeff_old, &
@@ -672,10 +679,10 @@ contains
     do n=1,nlevs
        call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
        call multifab_setval(sdc_source(n), 0.d0)
-       call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 0)
-       call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 0)
-       call multifab_mult_mult_s_c(sdc_source(n), rhoh_comp, 0.5d0, 1, 0)
-       call multifab_plus_plus_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
+       call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 1)
+       call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 1)
+       call multifab_mult_mult_s_c(sdc_source(n), rhoh_comp, 0.5d0, 1)
+       call multifab_plus_plus_c(sdc_source(n), 1, aofs(n), 1, nscal)
     end do
 
     call react_state(mla,tempbar_init,sold,snew,rho_Hext,p0_new, &
@@ -1230,10 +1237,10 @@ contains
        do n=1,nlevs
           call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
           call multifab_setval(sdc_source(n), 0.d0)
-          call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 0)
-          call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 0)
-          call multifab_mult_mult_s_c(sdc_source(n), rhoh_comp, 0.5d0, 1, 0)
-          call multifab_plus_plus_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
+          call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 1)
+          call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 1)
+          call multifab_mult_mult_s_c(sdc_source(n), rhoh_comp, 0.5d0, 1)
+          call multifab_plus_plus_c(sdc_source(n), 1, aofs(n), 1, nscal)
        end do
 
        call react_state(mla,tempbar_init,sold,snew,rho_Hext,p0_new, &
