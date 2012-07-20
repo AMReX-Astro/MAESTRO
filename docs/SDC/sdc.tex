@@ -386,21 +386,21 @@ Next, use these fluxes to compute the time-advanced density,
 \end{equation}
 Then, compute preliminary, time-advanced species using
 \begin{equation}
-\frac{\rho^{n+1}X_{k,{\rm AD}}^{n+1,(0)} - (\rho X_k)^n}{\Delta t} = A_{\rho X_k}^{(0)} + I_{\rho X_k}^{\rm lagged}.\label{eq:sdc species 2}
+\frac{\rho^{n+1}\widehat{X}_k^{n+1,(0)} - (\rho X_k)^n}{\Delta t} = A_{\rho X_k}^{(0)} + I_{\rho X_k}^{\rm lagged}.\label{eq:sdc species 2}
 \end{equation}
 
 {\bf Step 2B:} ({\it Compute diffusive flux divergence})\\ \\
-Solve a Crank-Nicolson-type diffusion equation for $h^{n+1,(0)}_{\rm AD}$, using transport coefficients evaluated at $t^n$ everywhere,
+Solve a Crank-Nicolson-type diffusion equation for $\widehat{h}^{n+1,(0)}$, using transport coefficients evaluated at $t^n$ everywhere,
 \begin{eqnarray}
-\frac{\rho^{n+1}h^{n+1,(0)}_{\rm AD} - (\rho h)^n}{\Delta t} &=& A_{\rho h}^{(0)} + I_{\rho h}^{\rm lagged}\nonumber\\
-&& + \half\left(\nabla\cdot\frac{\kth^n}{c_p^n}\nabla h^n + \nabla\cdot\frac{\kth^n}{c_p^n}\nabla h_{\rm AD}^{n+1,(0)}\right)\nonumber\\
-&& - \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_{k,{\rm AD}}^{n+1,(0)}\right)\nonumber\\
+\frac{\rho^{n+1}\widehat{h}^{n+1,(0)} - (\rho h)^n}{\Delta t} &=& A_{\rho h}^{(0)} + I_{\rho h}^{\rm lagged}\nonumber\\
+&& + \half\left(\nabla\cdot\frac{\kth^n}{c_p^n}\nabla h^n + \nabla\cdot\frac{\kth^n}{c_p^n}\nabla \widehat{h}^{n+1,(0)}\right)\nonumber\\
+&& - \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla\widehat{X}_k^{n+1,(0)}\right)\nonumber\\
 && - \half\left(\nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0 + \nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0\right),\label{eq:sdc enthalpy 2}
 \end{eqnarray}
 which is equivalent to
 \begin{eqnarray}
-\left(\rho^{n+1} - \frac{\Delta t}{2}\nabla\cdot\frac{k_{\rm th}^n}{c_p^n}\nabla\right)h_{\rm AD}^{n+1,(0)} &=& (\rho h)^n + \Delta t\Bigg[A_{\rho h}^{(0)} + I_{\rho h}^{\rm lagged} + \left(\half\nabla\cdot\frac{\kth^n}{c_p^n}\nabla h^n\right)\nonumber\\
-&&\hspace{0.85in} - \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_{k,{\rm AD}}^{n+1,(0)}\right)\nonumber\\
+\left(\rho^{n+1} - \frac{\Delta t}{2}\nabla\cdot\frac{k_{\rm th}^n}{c_p^n}\nabla\right)\widehat{h}^{n+1,(0)} &=& (\rho h)^n + \Delta t\Bigg[A_{\rho h}^{(0)} + I_{\rho h}^{\rm lagged} + \left(\half\nabla\cdot\frac{\kth^n}{c_p^n}\nabla h^n\right)\nonumber\\
+&&\hspace{0.85in} - \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla\widehat{X}_k^{n+1,(0)}\right)\nonumber\\
 &&\hspace{0.85in} - \half\left(\nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0 + \nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0\right)\Bigg].
 \end{eqnarray}
 
@@ -437,22 +437,22 @@ A_{\rho h}^{(j)} &=& -\nabla\cdot\left[\left(\rho h\right)^{n+\myhalf,(j)}\uadvs
 \end{eqnarray}
 Then, compute preliminary, time-advanced species using
 \begin{equation}
-\frac{\rho^{n+1}X_{k,{\rm AD}}^{n+1,(j)} - (\rho X_k)^n}{\Delta t} = A_{\rho X_k}^{(j)} + I_{\rho X_k}^{(j-1)}.\label{eq:sdc species 3}
+\frac{\rho^{n+1}\widehat{X}_k^{n+1,(j)} - (\rho X_k)^n}{\Delta t} = A_{\rho X_k}^{(j)} + I_{\rho X_k}^{(j-1)}.\label{eq:sdc species 3}
 \end{equation}
 
 {\bf Step 4B:} ({\it Compute diffusive flux divergence})\\ \\
-Solve a backward-Euler-type correction equation for $h^{n+1,(j)}_{\rm AD}$,
+Solve a backward-Euler-type correction equation for $\widehat{h}^{n+1,(j)}$,
 \begin{eqnarray}
-\frac{\rho^{n+1}h^{n+1,(j)}_{\rm AD} - (\rho h)^n}{\Delta t} &=& A_{\rho h}^{(j)} + I_{\rho h}^{(j-1)}\nonumber\\
-&& + \nabla\cdot\frac{\kth^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla h^{n+1,(j)}_{\rm AD} + \half\left(\nabla\cdot\frac{\kth^n}{c_p^n}\nabla h^n - \nabla\cdot\frac{\kth^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla h^{n+1,(j-1)}\right)\nonumber\\
-&& - \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^{n+1,(j-1)} k_{\rm th}^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla X_{k,{\rm AD}}^{n+1,(j)}\right)\nonumber\\
+\frac{\rho^{n+1}\widehat{h}^{n+1,(j)} - (\rho h)^n}{\Delta t} &=& A_{\rho h}^{(j)} + I_{\rho h}^{(j-1)}\nonumber\\
+&& + \nabla\cdot\frac{\kth^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla\widehat{h}^{n+1,(j)} + \half\left(\nabla\cdot\frac{\kth^n}{c_p^n}\nabla h^n - \nabla\cdot\frac{\kth^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla h^{n+1,(j-1)}\right)\nonumber\\
+&& - \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^{n+1,(j-1)} k_{\rm th}^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla\widehat{X}_k^{n+1,(j)}\right)\nonumber\\
 && - \half\left(\nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0 + \nabla\cdot\frac{h_p^{n+1,(j-1)}k_{\rm th}^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla p_0\right),\label{eq:sdc enthalpy 3}
 \end{eqnarray}
 which is equivalent to
 \begin{eqnarray}
-\left(\rho^{n+1} - \Delta t\nabla\cdot\frac{\kth^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla\right)h^{n+1,(j)}_{\rm AD} &=& (\rho h)^n + \Delta t\Bigg[A_{\rho h}^{(j)} + I_{\rho h}^{(j-1)} \nonumber\\
+\left(\rho^{n+1} - \Delta t\nabla\cdot\frac{\kth^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla\right)\widehat{h}^{n+1,(j)} &=& (\rho h)^n + \Delta t\Bigg[A_{\rho h}^{(j)} + I_{\rho h}^{(j-1)} \nonumber\\
 && + \half\left(\nabla\cdot\frac{\kth^n}{c_p^n}\nabla h^n - \nabla\cdot\frac{\kth^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla h^{n+1,(j-1)}\right)\nonumber\\
-&& - \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^{n+1,(j-1)} k_{\rm th}^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla X_{k,{\rm AD}}^{n+1,(j)}\right)\nonumber\\
+&& - \half\left(\sum_k\nabla\cdot\frac{\xi_k^n k_{\rm th}^n}{c_p^n}\nabla X_k^n + \sum_k\nabla\cdot\frac{\xi_k^{n+1,(j-1)} k_{\rm th}^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla\widehat{X}_k^{n+1,(j)}\right)\nonumber\\
 && - \half\left(\nabla\cdot\frac{h_p^n k_{\rm th}^n}{c_p^n}\nabla p_0 + \nabla\cdot\frac{h_p^{n+1,(j-1)}k_{\rm th}^{n+1,(j-1)}}{c_p^{n+1,(j-1)}}\nabla p_0\right)\Bigg].
 \end{eqnarray}
 
