@@ -19,7 +19,7 @@ contains
 !
 !  if temp_diffusion_formulation = 1, then we compute this directly.
 !  if temp_diffusion_formulation = 2, then we compute the algebraically
-!     equivalent form with grad h + grad X_k + grad p_0 formulation
+!     equivalent form with grad h - grad X_k - grad p_0 formulation
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine make_explicit_thermal(mla,dx,thermal,s,Tcoeff,hcoeff,Xkcoeff,pcoeff, &
@@ -123,8 +123,8 @@ contains
 
     else ! if (temp_diffusion_formulation .eq. 2) case
 
-       ! compute thermal = del dot ( hcoeff grad h) +
-       !             sum_k del dot (Xkcoeff grad X_k) +
+       ! compute thermal = del dot ( hcoeff grad h) -
+       !             sum_k del dot (Xkcoeff grad X_k) -
        !                   del dot ( pcoeff grad p_0)
        
        do n=1,nlevs
