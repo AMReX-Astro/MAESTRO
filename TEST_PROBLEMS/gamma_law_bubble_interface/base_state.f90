@@ -1,5 +1,6 @@
-! initialize an isentropic layer below an isothermal layer.  The
-! transition happens at a height r_mid.
+! initialize an isentropic layer below an isothermal or isentropic
+! layer (either of which can have an entropy jump).  The transition
+! happens at a height r_mid.
 
 module base_state_module
 
