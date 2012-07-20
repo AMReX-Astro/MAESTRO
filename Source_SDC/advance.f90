@@ -119,7 +119,7 @@ contains
     type(particle_container), intent(inout) :: particles
 
     ! local variables
-
+    type(multifab) ::                shat(mla%nlevel)
     type(multifab) ::             rhohalf(mla%nlevel)
     type(multifab) ::             cphalf(mla%nlevel)
     type(multifab) ::             xihalf(mla%nlevel)
@@ -158,7 +158,6 @@ contains
     type(multifab) ::   delta_gamma1_term(mla%nlevel)
     type(multifab) ::        delta_gamma1(mla%nlevel)
 
-    type(multifab) ::         snew_lagged(mla%nlevel)
     type(multifab) ::          scal_force(mla%nlevel)
     type(multifab) ::               w0mac(mla%nlevel,mla%dim)
     type(multifab) ::                umac(mla%nlevel,mla%dim)
@@ -510,6 +509,7 @@ contains
     end if
 
     do n=1,nlevs
+       call multifab_build(shat(n),mla%la(n),nscal,nghost(sold(n)))
        do comp = 1,dm
           call multifab_build_edge(sedge(n,comp),mla%la(n),nscal,0,comp)
           call multifab_build_edge(sflux(n,comp),mla%la(n),nscal,0,comp)
@@ -519,7 +519,7 @@ contains
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
-    call density_advance(mla,1,sold,snew,sedge,sflux,scal_force,intra,umac, &
+    call density_advance(mla,1,sold,shat,sedge,sflux,scal_force,intra,umac, &
                          w0,w0mac,etarhoflux, &
                          rho0_old,rho0_new,p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
@@ -607,7 +607,7 @@ contains
        write(6,*) '            : enthalpy_advance '
     end if
 
-    call enthalpy_advance(mla,1,uold,sold,snew,sedge,sflux,scal_force,intra, &
+    call enthalpy_advance(mla,1,uold,sold,shat,sedge,sflux,scal_force,intra, &
                           diff_old,umac,w0,w0mac, &
                           rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                           tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
@@ -621,10 +621,10 @@ contains
        call destroy(scal_force(n))
     end do
 
-    ! extract aofs = (snew - sold) / dt
+    ! extract aofs = (shat - sold) / dt
     do n=1,nlevs
        call multifab_build(aofs(n), mla%la(n), nscal, 0)
-       call multifab_copy_c(aofs(n), 1, snew(n), 1, nscal, 0)
+       call multifab_copy_c(aofs(n), 1, shat(n), 1, nscal, 0)
        call multifab_sub_sub_c(aofs(n), 1, sold(n), 1, nscal, 0)
        call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
     end do
@@ -648,12 +648,12 @@ contains
           write(6,*) '<<< STEP 2B: Compute diffusive flux divergence'
        end if
 
-       call thermal_conduct_predictor(mla,dx,dt,sold,snew,p0_old,p0_new, &
+       call thermal_conduct_predictor(mla,dx,dt,sold,shat,p0_old,p0_new, &
                                       hcoeff_old,Xkcoeff_old,pcoeff_old, &
                                       aofs,intra,the_bc_tower)
 
-       ! compute diff_hat using snew, p0_new, and old coefficients
-       call make_explicit_thermal(mla,dx,diff_hat,snew, &
+       ! compute diff_hat using shat, p0_new, and old coefficients
+       call make_explicit_thermal(mla,dx,diff_hat,shat, &
                                   Tcoeff_old,hcoeff_old,Xkcoeff_old,pcoeff_old, &
                                   p0_new,the_bc_tower)
     end if
@@ -1052,12 +1052,6 @@ contains
 
        advect_time_start = parallel_wtime()
 
-       ! save the time-advanced state
-       do n=1,nlevs
-          call multifab_build(snew_lagged(n), mla%la(n), nscal, 1)
-          call multifab_copy_c(snew_lagged(n), 1, snew(n), 1, nscal, 1)
-       end do
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4A: Compute advective flux divergences
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1090,7 +1084,7 @@ contains
           call multifab_build(scal_force(n), mla%la(n), nscal, 1)
        end do
        
-       call density_advance(mla,2,sold,snew,sedge,sflux,scal_force,intra,umac, &
+       call density_advance(mla,2,sold,shat,sedge,sflux,scal_force,intra,umac, &
                             w0,w0mac,etarhoflux, &
                             rho0_old,rho0_new,p0_new,rho0_predicted_edge,dx,dt, &
                             the_bc_tower%bc_tower_array)
@@ -1172,7 +1166,7 @@ contains
           write(6,*) '            : enthalpy_advance'
        end if
 
-       call enthalpy_advance(mla,2,uold,sold,snew,sedge,sflux,scal_force, &
+       call enthalpy_advance(mla,2,uold,sold,shat,sedge,sflux,scal_force, &
                              intra,diff_old,umac,w0,w0mac, &
                              rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                              tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
@@ -1185,9 +1179,9 @@ contains
           call destroy(scal_force(n))
        end do
 
-       ! extract aofs = (snew - sold) / dt
+       ! extract aofs = (shat - sold) / dt
        do n=1,nlevs
-          call multifab_copy_c(aofs(n), 1, snew(n), 1, nscal, 0)
+          call multifab_copy_c(aofs(n), 1, shat(n), 1, nscal, 0)
           call multifab_sub_sub_c(aofs(n), 1, sold(n), 1, nscal, 0)
           call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
        end do
@@ -1207,13 +1201,13 @@ contains
 
        if (use_thermal_diffusion) then
 
-          call thermal_conduct_corrector(mla,dx,dt,sold,snew,snew_lagged,p0_old,p0_new, &
+          call thermal_conduct_corrector(mla,dx,dt,sold,shat,snew,p0_old,p0_new, &
                                          hcoeff_old,Xkcoeff_old,pcoeff_old, &
                                          hcoeff_new,Xkcoeff_new,pcoeff_new, &
                                          intra,the_bc_tower)
           
-          ! compute diff_hat using snew, p0_new, and new coefficients from previous iteration
-          call make_explicit_thermal(mla,dx,diff_hat,snew, &
+          ! compute diff_hat using shat, p0_new, and new coefficients from previous iteration
+          call make_explicit_thermal(mla,dx,diff_hat,shat, &
                                      Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
                                      p0_new,the_bc_tower)
 
@@ -1223,13 +1217,9 @@ contains
              call multifab_build(diff_hterm_hat(n), mla%la(n), 1, 0)
              call setval(diff_hterm_hat(n),ZERO,all=.true.)
           end do
-          call make_explicit_thermal_hterm(mla,dx,diff_hterm_hat,snew,hcoeff_new,the_bc_tower)
+          call make_explicit_thermal_hterm(mla,dx,diff_hterm_hat,shat,hcoeff_new,the_bc_tower)
           
        end if
-
-       do n=1,nlevs
-          call multifab_destroy(snew_lagged(n))
-       end do
 
        if (barrier_timers) call parallel_barrier()
        thermal_time = thermal_time + (parallel_wtime() - thermal_time_start)
@@ -1399,6 +1389,7 @@ contains
 
     if (use_thermal_diffusion) then
        do n=1,nlevs
+          call destroy(shat(n))
           call destroy(Tcoeff_old(n))
           call destroy(hcoeff_old(n))
           call destroy(Xkcoeff_old(n))
