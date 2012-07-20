@@ -302,9 +302,13 @@ contains
     ! zone.  This is because the weight used in the loop over cells          
     ! was with reference to the coarse level                                 
 
-    kin_ener = kin_ener*dx(1,1)*dx(1,2)*dx(1,3)
-    int_ener = int_ener*dx(1,1)*dx(1,2)*dx(1,3)
-    pot_ener = pot_ener*dx(1,1)*dx(1,2)*dx(1,3)
+    if (dm == 2) then
+       kin_ener = kin_ener*dx(1,1)*dx(1,2)
+       int_ener = int_ener*dx(1,1)*dx(1,2)
+       pot_ener = pot_ener*dx(1,1)*dx(1,2)
+    else
+       call bl_error("only 2-d supported in diag.f90")
+    endif
 
 
     !=========================================================================
