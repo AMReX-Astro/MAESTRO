@@ -41,7 +41,8 @@ contains
     use phihalf_module              , only : make_S_at_halftime, make_at_halftime
     use extraphalf_module           , only : extrap_to_halftime
     use thermal_conduct_module      , only : thermal_conduct_predictor, &
-                                             thermal_conduct_corrector
+                                             thermal_conduct_corrector, &
+                                             make_explicit_thermal_hterm
     use make_explicit_thermal_module, only : make_explicit_thermal, make_thermal_coeffs 
     use make_grav_module            , only : make_grav_cell
     use make_eta_module             , only : make_etarho_planar, make_etarho_spherical
@@ -129,6 +130,8 @@ contains
     type(multifab) ::          Source_nph(mla%nlevel)
     type(multifab) ::            diff_old(mla%nlevel)
     type(multifab) ::            diff_hat(mla%nlevel)
+    type(multifab) ::      diff_hterm_new(mla%nlevel)
+    type(multifab) ::      diff_hterm_hat(mla%nlevel)
     type(multifab) ::        div_coeff_3d(mla%nlevel)
     type(multifab) :: div_coeff_cart_edge(mla%nlevel,mla%dim)
     type(multifab) ::              gamma1(mla%nlevel)
@@ -649,13 +652,6 @@ contains
                                       hcoeff_old,Xkcoeff_old,pcoeff_old, &
                                       aofs,intra,the_bc_tower)
 
-       ! hack test update coefficients
-!       do n=1,nlevs
-!          call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,3)
-!       end do
-!       call makeTfromRhoH(snew,p0_new,mla,the_bc_tower%bc_tower_array,dx)
-!       call make_thermal_coeffs(snew,Tcoeff_old,hcoeff_old,Xkcoeff_old,pcoeff_old)
-
        ! compute diff_hat using snew, p0_new, and old coefficients
        call make_explicit_thermal(mla,dx,diff_hat,snew, &
                                   Tcoeff_old,hcoeff_old,Xkcoeff_old,pcoeff_old, &
@@ -678,11 +674,11 @@ contains
     ! build sdc_source
     do n=1,nlevs
        call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
-       call multifab_setval(sdc_source(n), 0.d0)
-       call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 1)
-       call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 1)
-       call multifab_mult_mult_s_c(sdc_source(n), rhoh_comp, 0.5d0, 1)
-       call multifab_plus_plus_c(sdc_source(n), 1, aofs(n), 1, nscal)
+       call multifab_setval_c(sdc_source(n), 0.d0, 1, nscal, all=.true.)
+       call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 1, 0)
+       call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 1, 0)
+       call multifab_mult_mult_s_c(sdc_source(n), rhoh_comp, 0.5d0, 1, 0)
+       call multifab_plus_plus_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
     end do
 
     call react_state(mla,tempbar_init,sold,snew,rho_Hext,p0_new, &
@@ -836,6 +832,13 @@ contains
        call make_explicit_thermal(mla,dx,diff_new,snew, &
                                   Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
                                   p0_new,the_bc_tower)
+
+       ! compute only the h term in diff_new
+       do n=1,nlevs
+          call multifab_build(diff_hterm_new(n), mla%la(n), 1, 0)
+          call setval(diff_hterm_new(n),ZERO,all=.true.)
+       end do
+       call make_explicit_thermal_hterm(mla,dx,diff_hterm_new,snew,hcoeff_new,the_bc_tower)
 
     else
 
@@ -1213,6 +1216,14 @@ contains
           call make_explicit_thermal(mla,dx,diff_hat,snew, &
                                      Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
                                      p0_new,the_bc_tower)
+
+
+          ! compute only the h term in diff_hat
+          do n=1,nlevs
+             call multifab_build(diff_hterm_hat(n), mla%la(n), 1, 0)
+             call setval(diff_hterm_hat(n),ZERO,all=.true.)
+          end do
+          call make_explicit_thermal_hterm(mla,dx,diff_hterm_hat,snew,hcoeff_new,the_bc_tower)
           
        end if
 
@@ -1236,16 +1247,21 @@ contains
        ! build sdc_source - FIXME, currently uses predictor formulation
        do n=1,nlevs
           call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
-          call multifab_setval(sdc_source(n), 0.d0)
-          call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 1)
-          call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 1)
-          call multifab_mult_mult_s_c(sdc_source(n), rhoh_comp, 0.5d0, 1)
-          call multifab_plus_plus_c(sdc_source(n), 1, aofs(n), 1, nscal)
+          call multifab_setval_c(sdc_source(n), 0.d0, 1, nscal, all=.true.)
+          call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 1, 0)
+          call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 1, 0)
+          call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hterm_hat(n), 1, 1, 0)
+          call multifab_sub_sub_c(sdc_source(n), rhoh_comp, diff_hterm_new(n), 1, 1, 0)
+          call multifab_mult_mult_s_c(sdc_source(n), rhoh_comp, 0.5d0, 1, 0)
+          call multifab_plus_plus_c(sdc_source(n), 1, aofs(n), 1, nscal, 0)
+       end do
+
+       do n=1,nlevs
+          call multifab_destroy(diff_hterm_hat(n))
        end do
 
        call react_state(mla,tempbar_init,sold,snew,rho_Hext,p0_new, &
                         dt,dx,sdc_source,the_bc_tower%bc_tower_array)
-
 
        ! extract IR = [ (snew - sold)/dt - sdc_source ] 
        do n=1,nlevs
@@ -1392,6 +1408,7 @@ contains
           call destroy(hcoeff_new(n))
           call destroy(Xkcoeff_new(n))
           call destroy(pcoeff_new(n))
+          call destroy(diff_hterm_new(n))
        end do
     end if
 
