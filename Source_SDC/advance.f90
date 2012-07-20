@@ -1246,7 +1246,6 @@ contains
 
        ! build sdc_source - FIXME, currently uses predictor formulation
        do n=1,nlevs
-          call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
           call multifab_setval_c(sdc_source(n), 0.d0, 1, nscal, all=.true.)
           call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_old(n), 1, 1, 0)
           call multifab_plus_plus_c(sdc_source(n), rhoh_comp, diff_hat(n), 1, 1, 0)
