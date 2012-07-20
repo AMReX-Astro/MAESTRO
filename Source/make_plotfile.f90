@@ -571,9 +571,21 @@ contains
        call setval(pi_cc(n), ZERO, all=.true.)
     end do
 
+
+    if (use_alt_energy_fix) then
+       ! make beta_0 on a multifab
+       call make_grav_cell(grav_cell,rho0)
+       call make_div_coeff(div_coeff,rho0,p0,gamma1bar,grav_cell)
+       
+       call put_1d_array_on_cart(div_coeff,tempfab,foextrap_comp,.false.,.false.,dx, &
+                                 the_bc_tower%bc_tower_array,mla)
+    endif
+
     ! new function that average the nodal pi to cell-centers, then
-    ! normalized the entire signal to sum to 0
-    call make_pi_cc(mla,pi,pi_cc,the_bc_tower%bc_tower_array)
+    ! normalized the entire signal to sum to 0.  If we are doing
+    ! use_alt_energy_fix = T, then we first want to convert
+    ! (pi/beta_0) to pi.
+    call make_pi_cc(mla,pi,pi_cc,the_bc_tower%bc_tower_array,tempfab)
 
     do n=1,nlevs
 
@@ -595,19 +607,6 @@ contains
        endif
 
     end do
-
-    if (use_alt_energy_fix) then
-       ! make beta_0 and correct pi/beta_0 to be pi
-       call make_grav_cell(grav_cell,rho0)
-       call make_div_coeff(div_coeff,rho0,p0,gamma1bar,grav_cell)
-       
-       call put_1d_array_on_cart(div_coeff,tempfab,foextrap_comp,.false.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla)
-       do n = 1,nlevs
-          call multifab_mult_mult_c(plotdata(n),icomp_pi,tempfab(n),1,1)
-       enddo
-    end if
-
 
 
     ! SPONGE
