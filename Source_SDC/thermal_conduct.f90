@@ -10,7 +10,8 @@ module thermal_conduct_module
 
   private
 
-  public :: thermal_conduct_predictor, thermal_conduct_corrector
+  public :: thermal_conduct_predictor, thermal_conduct_corrector, &
+       make_explicit_thermal_hterm
 
 contains 
 
@@ -684,5 +685,90 @@ contains
     call destroy(bpt)
 
   end subroutine thermal_conduct_corrector
+
+  subroutine make_explicit_thermal_hterm(mla,dx,thermal,s,hcoeff,the_bc_tower)
+
+    use bc_module
+    use bl_prof_module
+    use cc_stencil_module
+    use mac_applyop_module
+    use network, only: nspec
+    use ml_restriction_module, only : ml_cc_restriction
+    use multifab_fill_ghost_module
+    use bl_constants_module
+    use variables, only: rho_comp, rhoh_comp
+    use multifab_physbc_module
+    use fill_3d_module
+
+    type(ml_layout), intent(inout) :: mla
+    real(dp_t)     , intent(in   ) :: dx(:,:)
+    type(multifab) , intent(inout) :: thermal(:)
+    type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(in   ) :: hcoeff(:)
+    type(bc_tower) , intent(in   ) :: the_bc_tower
+
+    ! Local
+    type(multifab) :: phi(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel,mla%dim)
+    type(multifab) :: resid(mla%nlevel)
+
+    integer :: comp,i,n,stencil_order,dm,nlevs
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "make_explicit_thermal")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
+
+    stencil_order = 2
+
+    do n=1,nlevs
+       call setval(thermal(n), ZERO, all=.true.)
+    end do
+
+       ! compute thermal = del dot ( hcoeff grad h)
+       
+       do n=1,nlevs
+          call multifab_build(phi(n),  mla%la(n), 1,  1)
+          do i = 1,dm
+             call multifab_build_edge(beta(n,i), mla%la(n), 1, 1, i)
+          end do
+       end do
+
+       do n=1,nlevs
+          ! load h into phi
+          call multifab_copy_c(phi(n),1,s(n),rhoh_comp,1,1)
+          call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
+       end do
+
+       call put_data_on_faces(mla,hcoeff,1,beta,.true.)
+
+       do n=1,nlevs
+          call multifab_build(alpha(n), mla%la(n), 1, 1)
+          call multifab_build(resid(n), mla%la(n), 1, 0)
+          call setval(alpha(n), ZERO, all=.true.)
+       end do
+       
+       ! applyop to compute resid = del dot hcoeff grad h
+       call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
+                        stencil_order,mla%mba%rr)
+       
+       ! add residual to thermal
+       do n=1,nlevs
+          call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
+       enddo
+       
+       do n=1,nlevs
+          call destroy(resid(n))
+          call destroy(phi(n))
+          call destroy(alpha(n))
+          do i = 1,dm 
+             call destroy(beta(n,i))
+          end do
+       end do
+    
+    call destroy(bpt)
+    
+  end subroutine make_explicit_thermal_hterm
 
 end module thermal_conduct_module
