@@ -576,7 +576,7 @@ contains
   !---------------------------------------------------------------------------
   ! make_pi_cc
   !---------------------------------------------------------------------------
-  subroutine make_pi_cc(mla,pi,pi_cc,the_bc_level)
+  subroutine make_pi_cc(mla,pi,pi_cc,the_bc_level,beta0)
 
     use ml_layout_module
     use bc_module
@@ -585,12 +585,14 @@ contains
     type(multifab) , intent(in   ) :: pi(:)
     type(multifab) , intent(inout) :: pi_cc(:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
+    type(multifab) , intent(in   ) :: beta0(:)
 
     real(kind=dp_t), pointer :: ppn(:,:,:,:)
     real(kind=dp_t), pointer :: ppc(:,:,:,:)
+    real(kind=dp_t), pointer ::  bp(:,:,:,:)
     logical,         pointer ::  mp(:,:,:,:)
 
-    integer :: i,n,ng_pn,ng_pc,dm,nlevs
+    integer :: i,n,ng_pn,ng_pc,ng_b,dm,nlevs
     integer :: lo(mla%dim),hi(mla%dim)
 
     real(kind=dp_t) :: ncell_proc(mla%nlevel), ncell(mla%nlevel)
@@ -607,6 +609,7 @@ contains
     pisum_proc = 0.d0
     ng_pn      = nghost(pi(1))
     ng_pc      = nghost(pi_cc(1))
+    ng_b       = nghost(beta0(1))
 
     do n=1,nlevs
        weight = 2.d0**(dm*(n-1))
@@ -614,35 +617,36 @@ contains
           if ( multifab_remote(pi_cc(n), i) ) cycle
           ppn => dataptr(pi(n), i)
           ppc => dataptr(pi_cc(n), i)
+          bp  => dataptr(beta0(n), i)
           lo  =  lwb(get_box(pi_cc(n), i))
           hi  =  upb(get_box(pi_cc(n), i))
           select case (dm)
           case (1)
              if (n .eq. nlevs) then
                 call make_pi_cc_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,1),ng_pc, &
-                                   lo,hi,ncell_proc(n),pisum_proc(n))
+                                   lo,hi,ncell_proc(n),pisum_proc(n),bp(:,1,1,1),ng_b)
              else
                 mp => dataptr(mla%mask(n), i)
                 call make_pi_cc_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,1),ng_pc, &
-                                   lo,hi,ncell_proc(n),pisum_proc(n),mp(:,1,1,1))
+                                   lo,hi,ncell_proc(n),pisum_proc(n),bp(:,1,1,1),ng_b,mp(:,1,1,1))
              end if
           case (2)
              if (n .eq. nlevs) then
                 call make_pi_cc_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
-                                   lo,hi,ncell_proc(n),pisum_proc(n))
+                                   lo,hi,ncell_proc(n),pisum_proc(n),bp(:,:,1,1),ng_b)
              else
                 mp => dataptr(mla%mask(n), i)
                 call make_pi_cc_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
-                                   lo,hi,ncell_proc(n),pisum_proc(n),mp(:,:,1,1))
+                                   lo,hi,ncell_proc(n),pisum_proc(n),bp(:,:,1,1),ng_b,mp(:,:,1,1))
              end if
           case (3)
              if (n .eq. nlevs) then
                 call make_pi_cc_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,1),ng_pc, &
-                                   lo,hi,ncell_proc(n),pisum_proc(n))
+                                   lo,hi,ncell_proc(n),pisum_proc(n),bp(:,:,:,1),ng_b)
              else
                 mp => dataptr(mla%mask(n), i)
                 call make_pi_cc_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,1),ng_pc, &
-                                   lo,hi,ncell_proc(n),pisum_proc(n),mp(:,:,:,1))
+                                   lo,hi,ncell_proc(n),pisum_proc(n),bp(:,:,:,1),ng_b,mp(:,:,:,1))
              end if
           end select
        end do
@@ -671,12 +675,15 @@ contains
 
   end subroutine make_pi_cc
 
-  subroutine make_pi_cc_1d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
+  subroutine make_pi_cc_1d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,beta0,ng_b,mask)
+
+    use probin_module, only: use_alt_energy_fix
 
     real (kind=dp_t), intent(in   )           :: weight
-    integer         , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc
+    integer         , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc, ng_b
     real (kind=dp_t), intent(in   )           ::    pi(lo(1)-ng_pn:)
     real (kind=dp_t), intent(inout)           :: pi_cc(lo(1)-ng_pc:)
+    real (kind=dp_t), intent(in   )           :: beta0(lo(1)-ng_b:)
     real (kind=dp_t), intent(inout)           :: ncell,pisum
     logical         , intent(in   ), optional ::  mask(lo(1):      )
 
@@ -688,6 +695,10 @@ contains
     do i=lo(1),hi(1)
 
        pi_cc(i) = (pi(i) + pi(i+1)) / 2.d0
+
+       if (use_alt_energy_fix) then
+          pi_cc(i) = pi_cc(i)*beta0(i)
+       endif
 
        ! make sure the cell isn't covered by finer cells
        cell_valid = .true.
@@ -704,12 +715,15 @@ contains
 
   end subroutine make_pi_cc_1d
 
-  subroutine make_pi_cc_2d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
+  subroutine make_pi_cc_2d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,beta0,ng_b,mask)
+
+    use probin_module, only: use_alt_energy_fix
 
     real (kind=dp_t), intent(in   )           :: weight
-    integer         , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc
+    integer         , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc, ng_b
     real (kind=dp_t), intent(in   )           ::    pi(lo(1)-ng_pn:,lo(2)-ng_pn:)
     real (kind=dp_t), intent(inout)           :: pi_cc(lo(1)-ng_pc:,lo(2)-ng_pc:)
+    real (kind=dp_t), intent(in   )           :: beta0(lo(1)-ng_b: ,lo(2)-ng_b:)
     real (kind=dp_t), intent(inout)           :: ncell,pisum
     logical         , intent(in   ), optional ::  mask(lo(1):      ,lo(2):      )
 
@@ -722,6 +736,10 @@ contains
        do i=lo(1),hi(1)
 
           pi_cc(i,j) = (pi(i,j) + pi(i+1,j) + pi(i,j+1) + pi(i+1,j+1)) / 4.d0
+
+          if (use_alt_energy_fix) then
+             pi_cc(i,j) = pi_cc(i,j)*beta0(i,j)
+          endif
 
           ! make sure the cell isn't covered by finer cells
           cell_valid = .true.
@@ -739,12 +757,15 @@ contains
 
   end subroutine make_pi_cc_2d
 
-  subroutine make_pi_cc_3d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,mask)
+  subroutine make_pi_cc_3d(weight,pi,ng_pn,pi_cc,ng_pc,lo,hi,ncell,pisum,beta0,ng_b,mask)
+
+    use probin_module, only: use_alt_energy_fix
 
     real(kind=dp_t), intent(in   )           :: weight
-    integer        , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc
+    integer        , intent(in   )           :: lo(:), hi(:), ng_pn, ng_pc, ng_b
     real(kind=dp_t), intent(in   )           ::    pi(lo(1)-ng_pn:,lo(2)-ng_pn:,lo(3)-ng_pn:)
     real(kind=dp_t), intent(inout)           :: pi_cc(lo(1)-ng_pc:,lo(2)-ng_pc:,lo(3)-ng_pc:)
+    real(kind=dp_t), intent(inout)           :: beta0(lo(1)-ng_b: ,lo(2)-ng_b: ,lo(3)-ng_b:)
     real(kind=dp_t), intent(inout)           :: ncell,pisum
     logical        , intent(in   ), optional ::  mask(lo(1):      ,lo(2):      ,lo(3):      )
 
@@ -760,6 +781,10 @@ contains
              
              pi_cc(i,j,k) = (pi(i,j,k) + pi(i+1,j,k) + pi(i,j+1,k) + pi(i,j,k+1) &
                   + pi(i+1,j+1,k) + pi(i+1,j,k+1) + pi(i,j+1,k+1) + pi(i+1,j+1,k+1)) / 8.d0
+
+             if (use_alt_energy_fix) then
+                pi_cc(i,j,k) = pi_cc(i,j,k)*beta0(i,j,k)
+             endif
              
              ! make sure the cell isn't covered by finer cells
              cell_valid = .true.
