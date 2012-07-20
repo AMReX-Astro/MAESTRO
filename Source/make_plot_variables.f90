@@ -4,6 +4,7 @@ module plot_variables_module
   use multifab_module
   use define_bc_module
   use probin_module, only: use_tfromp
+  use bl_constants_module, only: HALF
 
   implicit none
 
@@ -14,7 +15,7 @@ module plot_variables_module
   public :: make_tfromH, make_tfromp, make_entropypert
   public :: make_deltaT, make_divw0, make_vorticity, make_magvel, make_velrc
   public :: make_rhopert, make_rhohpert
-  public :: make_processor_number
+  public :: make_processor_number, make_pidivu
 
 contains
 
@@ -777,6 +778,129 @@ contains
     !$OMP END PARALLEL DO
 
   end subroutine make_pi_cc_3d
+
+
+  !---------------------------------------------------------------------------
+  ! make_pidivu
+  !---------------------------------------------------------------------------
+  subroutine make_pidivu(plotdata, comp_pidivu, pi_cc, u, dx)
+
+    use ml_layout_module
+    use bc_module
+
+    type(multifab) , intent(inout) :: plotdata
+    integer        , intent(in   ) :: comp_pidivu
+    type(multifab) , intent(in   ) :: pi_cc
+    type(multifab) , intent(in   ) :: u
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    real(kind=dp_t), pointer :: pdp(:,:,:,:)
+    real(kind=dp_t), pointer :: pip(:,:,:,:)
+    real(kind=dp_t), pointer :: up(:,:,:,:)
+
+    integer :: i,n,ng_pd,ng_pi,ng_u,dm
+    integer :: lo(get_dim(plotdata)),hi(get_dim(plotdata))
+
+    dm = get_dim(plotdata)
+
+    ng_pd = nghost(plotdata)
+    ng_pi = nghost(pi_cc)
+    ng_u  = nghost(u)
+
+    do i=1,nboxes(plotdata)
+       if ( multifab_remote(plotdata, i) ) cycle
+       pdp => dataptr(plotdata, i)
+       pip => dataptr(pi_cc, i)
+       up  => dataptr(u, i)
+
+       lo  =  lwb(get_box(plotdata, i))
+       hi  =  upb(get_box(plotdata, i))
+       
+       select case (dm)
+       case (1)
+          call make_pidivu_1d(pdp(:,1,1,comp_pidivu), ng_pd, &
+                              pip(:,1,1,1), ng_pi, &
+                              up(:,1,1,:), ng_u, &
+                              lo, hi, dx)
+
+       case (2)
+          call make_pidivu_2d(pdp(:,:,1,comp_pidivu), ng_pd, &
+                              pip(:,:,1,1), ng_pi, &
+                              up(:,:,1,:), ng_u, &
+                              lo, hi, dx)
+
+       case (3)
+          call make_pidivu_3d(pdp(:,:,:,comp_pidivu), ng_pd, &
+                              pip(:,:,:,1), ng_pi, &
+                              up(:,:,:,:), ng_u, &
+                              lo, hi, dx)
+
+       end select
+    end do
+
+  end subroutine make_pidivu
+
+  subroutine make_pidivu_1d(pidivu, ng_pd, pi_cc, ng_pi, u, ng_u, lo, hi, dx)
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_pd, ng_pi, ng_u
+    real (kind=dp_t), intent(inout) ::   pidivu(lo(1)-ng_pd:)
+    real (kind=dp_t), intent(in   ) ::    pi_cc(lo(1)-ng_pi:)
+    real (kind=dp_t), intent(in   ) ::        u(lo(1)-ng_u:,:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    ! local
+    integer :: i
+
+    do i=lo(1),hi(1)
+       pidivu(i) = pi_cc(i)*( HALF*(u(i+1,1) - u(i-1,1))/dx(1) )
+    end do
+
+  end subroutine make_pidivu_1d
+
+
+  subroutine make_pidivu_2d(pidivu, ng_pd, pi_cc, ng_pi, u, ng_u, lo, hi, dx)
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_pd, ng_pi, ng_u
+    real (kind=dp_t), intent(inout) ::   pidivu(lo(1)-ng_pd:,lo(2)-ng_pd:)
+    real (kind=dp_t), intent(in   ) ::    pi_cc(lo(1)-ng_pi:,lo(2)-ng_pi:)
+    real (kind=dp_t), intent(in   ) ::        u(lo(1)-ng_u: ,lo(2)-ng_u: ,:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    ! local
+    integer :: i, j
+
+    do j=lo(2),hi(2)
+       do i=lo(1),hi(1)
+          pidivu(i,j) = pi_cc(i,j)*( HALF*(u(i+1,j,1) - u(i-1,j,1))/dx(1) + &
+                                     HALF*(u(i,j+1,2) - u(i,j-1,2))/dx(2) )
+       enddo
+    enddo
+
+  end subroutine make_pidivu_2d
+
+
+  subroutine make_pidivu_3d(pidivu, ng_pd, pi_cc, ng_pi, u, ng_u, lo, hi, dx)
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_pd, ng_pi, ng_u
+    real (kind=dp_t), intent(inout) ::   pidivu(lo(1)-ng_pd:,lo(2)-ng_pd:,lo(3)-ng_pd:)
+    real (kind=dp_t), intent(in   ) ::    pi_cc(lo(1)-ng_pi:,lo(2)-ng_pi:,lo(3)-ng_pi:)
+    real (kind=dp_t), intent(in   ) ::        u(lo(1)-ng_u: ,lo(2)-ng_u: ,lo(3)-ng_u: ,:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    ! local
+    integer :: i, j, k
+
+    do k=lo(3),hi(3)
+       do j=lo(2),hi(2)
+          do i=lo(1),hi(1)
+             pidivu(i,j,k) = pi_cc(i,j,k)*( HALF*(u(i+1,j,k,1) - u(i-1,j,k,1))/dx(1) + & 
+                                            HALF*(u(i,j+1,k,2) - u(i,j-1,k,2))/dx(2) + & 
+                                            HALF*(u(i,j,k+1,3) - u(i,j-1,k,3))/dx(3) )
+          enddo
+       enddo
+    enddo
+
+  end subroutine make_pidivu_3d
 
 
   !---------------------------------------------------------------------------

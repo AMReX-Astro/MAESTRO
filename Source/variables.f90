@@ -24,6 +24,7 @@ module variables
   integer, save :: icomp_ad_excess
   integer, save :: icomp_part
   integer, save :: icomp_proc
+  integer, save :: icomp_pidivu
 
   ! the total number of plot components
   integer, save :: n_plot_comps = 0
@@ -74,7 +75,7 @@ contains
     use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
          plot_omegadot, plot_Hnuc, plot_Hext, plot_eta, plot_ad_excess, &
          use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, dm_in, use_particles, &
-         plot_processors
+         plot_processors, plot_pidivu
     use geometry, only: spherical
 
     icomp_vel      = get_next_plot_index(dm_in)
@@ -169,6 +170,10 @@ contains
 
     if (plot_processors) then
        icomp_proc = get_next_plot_index(1)
+    endif
+
+    if (plot_pidivu) then
+       icomp_pidivu = get_next_plot_index(1)
     endif
 
   end subroutine init_plot_variables

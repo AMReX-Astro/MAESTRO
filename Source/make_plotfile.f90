@@ -21,7 +21,8 @@ contains
                              use_thermal_diffusion, plot_omegadot, plot_Hnuc, &
                              plot_Hext, plot_eta, plot_ad_excess, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, &
-                             plot_sponge_fdamp, dm_in, use_particles, plot_processors
+                             plot_sponge_fdamp, dm_in, use_particles, &
+                             plot_processors, plot_pidivu
     use geometry, only: spherical
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -146,6 +147,11 @@ contains
        plot_names(icomp_proc) = "processor_number"
     endif
 
+    if (plot_pidivu) then
+       plot_names(icomp_pidivu) = "pi_divu"
+    endif
+
+
   end subroutine get_plot_names
 
   subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot, &
@@ -168,7 +174,7 @@ contains
                              evolve_base_state, prob_lo, prob_hi, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, &
                              plot_cs, sponge_kappa, plot_sponge_fdamp, use_particles, &
-                             plot_processors, use_alt_energy_fix
+                             plot_processors, plot_pidivu, use_alt_energy_fix
     use geometry, only: spherical, nr_fine, nlevs_radial, numdisjointchunks, &
          r_start_coord, r_end_coord
     use average_module
@@ -581,6 +587,11 @@ contains
        ! GRAD PI
        if (plot_gpi) then
           call multifab_copy_c(plotdata(n),icomp_gpi,gpi(n),1,dm)
+       endif
+
+       ! pi * div(U)
+       if (plot_pidivu) then
+          call make_pidivu(plotdata(n),icomp_pidivu,pi_cc(n),u(n),dx(n,:))
        endif
 
     end do
