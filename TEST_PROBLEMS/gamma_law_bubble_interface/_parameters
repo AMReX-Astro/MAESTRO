@@ -8,3 +8,5 @@ r_mid             real    1.0
 
 s_jump            real    1.0
 
+# do we want the top layer to be isentropic? or isothermal?
+do_isentropic_above    logical    .false.
