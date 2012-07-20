@@ -105,7 +105,7 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
               pt_index_eos)
 
      temp = temp_eos
-
+     
   endif
 
 
@@ -177,9 +177,7 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   ydot(ic12)  = dens*ydot(ic12)  + sdc_rhoX_pass(ic12)
   ydot(io16)  = dens*ydot(io16)  + sdc_rhoX_pass(io16)
   ydot(img24) = dens*ydot(img24) + sdc_rhoX_pass(img24)
-
-  ! enthalpy
-  ydot(nspec+1) =  sdc_rhoh_pass + rho_Hnuc
+  ydot(nspec+1) = rho_Hnuc + sdc_rhoh_pass
 
   return
 
@@ -340,6 +338,11 @@ subroutine f_rhs_instantaneous_reaction_rates(n, t, y, ydot, rho_Hnuc, rpar, ipa
   do k = 1, nspec
      rho_Hnuc = rho_Hnuc - ebin(k)*dens*ydot(k)
   enddo
+
+  ! now make ydots refer to rhoX
+  ydot(ic12)  = dens*ydot(ic12)
+  ydot(io16)  = dens*ydot(io16)
+  ydot(img24) = dens*ydot(img24)
 
   return
 
