@@ -104,6 +104,7 @@
  chk_int  = -1
 
  plot_base   = T
+ plot_pidivu = T
 
     verbose = 1
  mg_verbose = 2
