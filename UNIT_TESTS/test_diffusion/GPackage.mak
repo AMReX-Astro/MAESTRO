@@ -22,3 +22,5 @@ f90sources += thermal_conduct.f90
 f90sources += varden.f90
 f90sources += variables.f90
 f90sources += time.f90
+f90sources += make_grav.f90
+f90sources += make_div_coeff.f90
