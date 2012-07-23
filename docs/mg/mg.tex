@@ -1,5 +1,10 @@
 \section{Introduction to \maestro\ Multigrid}
 
+\maestro\ uses multigrid to enforce the velocity constraint through
+projections at the half-time (the MAC projection) and end of the time
+step.  Two multigrid solvers are provided by \boxlib---one for
+cell-centered data and one for node-centered (nodal) data.
+
 \section{Multigrid Solver Tolerances}
 
 \label{sec:mgtol}
