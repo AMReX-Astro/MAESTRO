@@ -33,3 +33,4 @@ f90sources += multifab_fill_ghost_cells.f90
     f90sources += multifab_physbc.f90
 f90sources += build_info.f90
 f90sources += write_job_info.f90
+f90sources += cputime.f90
