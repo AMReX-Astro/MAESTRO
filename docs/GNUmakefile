@@ -16,7 +16,8 @@ eps_source = $(wildcard *.eps) \
              $(wildcard pert_notes/*.eps) \
              $(wildcard SDC/*.eps) \
              $(wildcard test_suite/*.eps) \
-             $(wildcard getting_started/*.eps)
+             $(wildcard getting_started/*.eps) \
+             $(wildcard mg/*.eps)
 
 pdf_source = $(eps_source:.eps=.pdf)
 
