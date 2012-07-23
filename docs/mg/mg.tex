@@ -5,6 +5,30 @@ projections at the half-time (the MAC projection) and end of the time
 step.  Two multigrid solvers are provided by \boxlib---one for
 cell-centered data and one for node-centered (nodal) data.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=5.5in]{MAC_mg2}
+\caption{\label{fig:mg:MAC} Data centerings for the MAC projection}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=5.5in]{HG_mg2}
+\caption{\label{fig:mg:HG} Data centerings for the HG projection}
+\end{figure}
+
+\section{\mgtower}
+
+The \mgtower\ is a special Fortran derived type that carries all the
+information required for a \boxlib\ multigrid solve.
+
+
+\section{Bottom Solvers}
+
+
+\section{Convergence Criteria}
+
+
 \section{Multigrid Solver Tolerances}
 
 \label{sec:mgtol}
