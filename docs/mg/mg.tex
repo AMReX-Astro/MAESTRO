@@ -2,8 +2,9 @@
 
 \maestro\ uses multigrid to enforce the velocity constraint through
 projections at the half-time (the MAC projection) and end of the time
-step.  Two multigrid solvers are provided by \boxlib---one for
-cell-centered data and one for node-centered (nodal) data.
+step (the HG projection).  Two multigrid solvers are provided by
+\boxlib---one for cell-centered data and one for node-centered (nodal)
+data.  Both of these are used in \maestro.
 
 \begin{figure}[t]
 \centering
@@ -11,11 +12,69 @@ cell-centered data and one for node-centered (nodal) data.
 \caption{\label{fig:mg:MAC} Data centerings for the MAC projection}
 \end{figure}
 
+The MAC projection operates on the advective velocities predicted at
+the cell-interfaces at the half-time.  The edge-centered velocities
+are shown in Figure~\ref{fig:mg:MAC}.  If we consider purely
+incompressible flow, the projection appears as:
+\begin{equation}
+D G \phi = D U
+\end{equation}
+where $D$ is the divergence operator and $G$ is the gradient operator.
+In this discretization, $\phi$ is cell-centered (see
+Figure~\ref{fig:mg:MAC}).  The remaining quantities are discretized as:
+\begin{itemize}
+\item $DU$ is cell-centered, 
+  \begin{equation}
+  (DU)_{i,j} = \frac{u_{i+1/2,j} - u_{i-1/2,j}}{\Delta x} + 
+               \frac{v_{i,j+1/2} - v_{i,j-1/2}}{\Delta y}
+  \end{equation}
+
+\item $G\phi$ is edge-centered, on the MAC grid, as shown in
+  Figure~\ref{fig:mg:MAC}.
+
+\item $DG\phi$ is cell-centered, also shown in Figure~\ref{fig:mg:MAC},
+  computed from $G\phi$ using the same differencing as $DU$.
+
+\end{itemize}
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=5.5in]{\mgfigpath/HG_mg2}
 \caption{\label{fig:mg:HG} Data centerings for the HG projection}
 \end{figure}
+
+The HG projection projects the cell-centered velocities at the end of
+the timestep.  Here, $\phi$ is node-centered.  Figure~\ref{fig:mg:HG}
+shows the locations of the various quantities involved in the HG
+projection.  Again considering simple incompressible flow, we now
+solve:
+\begin{equation}
+L \phi = D U
+\end{equation}
+where $L$ is a discretization of the Laplacian operator.  In this
+sense, the HG projection is an {\em approximate projection}, that is,
+$L \neq DG$ (in discretized form).  The various operations have the
+following centerings:
+\begin{itemize}
+
+\item $DU$ is node-centered.  This is computed as:
+  \begin{equation}
+  (DU)_{i-1/2,j-1/2} = \frac{\frac{1}{2} (u_{i,j} + u_{i,j-1}) -
+                             \frac{1}{2} (u_{i-1,j} + u_{i-1,j-1})}{\Delta x} +
+                       \frac{\frac{1}{2} (v_{i,j} + v_{i-1,j}) -
+                             \frac{1}{2} (v_{i,j-1} + v_{i-1,j-1})}{\Delta y} 
+  \end{equation}
+
+\item $G\phi$ is cell-centered, as shown in Figure~\ref{fig:mg:HG}.
+
+\item $L\phi$ is node-centered.  This is a direct discretization of 
+the Laplacian operator.  By default, \maestro\ uses a dense stencil
+(9-points in 2-d, 27-points in 3-d).  Alternately, a {\em cross}
+stencil can be used (by setting {\tt hg\_dense\_stencil = F}).  This
+uses 5-points in 2-d, 7-points in 3-d.
+
+\end{itemize}
+
 
 \section{\mgtower}
 
