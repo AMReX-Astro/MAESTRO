@@ -40,6 +40,7 @@ contains
     use modify_scal_force_module, only: modify_scal_force
     use convert_rhoX_to_X_module, only: convert_rhoX_to_X
     use pred_parameters
+    use multifab_physbc_module
 
     type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: which_step
@@ -98,9 +99,15 @@ contains
     ! Create source terms at time n
     !**************************************************************************
 
-    ! Source terms for X and for tracers are zero - do nothing
-    do n = 1, nlevs
+    ! reaction forcing terms
+    do n=1,nlevs
        call setval(scal_force(n),ZERO,all=.true.)
+       call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)
+       call multifab_fill_boundary(scal_force(n))
+       do comp=1,nspec
+          call multifab_physbc(scal_force(n), spec_comp+comp-1, foextrap_comp, 1, &
+                               the_bc_level(n))
+       end do
     end do
 
     if (spherical .eq. 1) then
@@ -141,12 +148,6 @@ contains
           call destroy(rho0_old_cart(n))
        end do
     end if
-
-    ! reaction forcing terms - FIXME doesn't fill ghost cells
-    do n=1,nlevs
-       call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)
-       call multifab_fill_boundary(scal_force(n))
-    end do
 
     !**************************************************************************
     !     Add w0 to MAC velocities (trans velocities already have w0).
@@ -355,12 +356,7 @@ contains
 
     do n=1,nlevs
        call setval(scal_force(n),ZERO,all=.true.)
-    end do
-
-    ! reaction forcing terms - FIXME doesn't fill ghost cells
-    do n=1,nlevs
        call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)
-       call multifab_fill_boundary(scal_force(n))
     end do
 
     ! p0 only used in rhoh update so we just pass in a dummy version
