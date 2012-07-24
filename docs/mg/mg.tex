@@ -81,11 +81,70 @@ uses 5-points in 2-d, 7-points in 3-d.
 The \mgtower\ is a special Fortran derived type that carries all the
 information required for a \boxlib\ multigrid solve.
 
+The following parameters are specified when building the \mgtower:
+\begin{itemize}
+\item {\tt smoother}: the type of smoother to use.  Choices are listed
+  in {\tt mg\_tower.f90}.  Common options are {\tt
+    MG\_SMOOTHER\_GS\_RB} for red-black Gauss-Seidel and {\tt
+    MG\_SMOOTHER\_JACOBI} for Jacobi.
+
+\item {\tt nu1}: The number of smoothings at each level on the way down
+  the V-cycle.
+
+\item {\tt nu2}: The number of smoothings at each level on the way up
+  the V-cycle.
+
+\item {\tt nub}: The number of smoothing before and after the bottom solver.
+
+\item {\tt gamma}: \MarginPar{what does this mean?}
+
+\item {\tt cycle\_type}: The type of multigrid to do, V-cycles ({\tt
+  MG\_VCycle}), W-cycles ({\tt MG\_WCycle}), full multigrid ({\tt
+  MG\_FCycle}).
+
+\item {\tt omega}:  \MarginPar{description?}
+
+\item {\tt bottom\_solver}: the type of bottom solver to use.  See the next
+ section.
+
+\item {\tt bottom\_max\_iter}: the maximum number of iterations for the 
+  bottom solver
+
+\item {\tt bottom\_solver\_eps}: the tolerance used by the bottom
+  solver.  In \maestro, this is set via {\tt mg\_eps\_module}.
+
+\item {\tt max\_iter}: the maximum number of multigrid cycles.
+
+\item {\tt max\_bottom\_nlevel}: additional coarsening if you use
+  {\tt bottom\_solver} type 4 (see below)
+
+\item {\tt min\_width}: minimum size of grid at coarsest multigrid level
+
+\item {\tt rel\_solver\_eps}: the relative tolerance of the solver (in
+  \maestro, this is set via {\tt mg\_eps\_module}.
+
+\item {\tt abs\_solver\_eps}: the absolute tolerance of the solver (in
+  \maestro, this is set via {\tt mg\_eps\_module}.
+
+\item {\tt verbose}: the verbosity of the multigrid solver.  In \maestro,
+  this is set via the {\tt mg\_verbose} runtime parameter.  Higher
+  numbers give more verbosity.
+
+\item {\tt cg\_verbose}: the verbosity of the bottom solver.  In \maestro,
+  this is set via the {\tt cg\_verbose} runtime parameter.  Higher
+  numbers give more verbosity.
+
+
+
+\end{itemize}
+
 
 \section{Bottom Solvers}
 
 
 \section{Convergence Criteria}
+
+All \maestro\ multigrid solves consist of pure V-cycles.  
 
 
 \section{Multigrid Solver Tolerances}
@@ -247,3 +306,9 @@ two (optional) thermal diffusion solves, and the final velocity projection.
 
 \end{itemize}
 
+
+\section{General Remarks}
+
+If \maestro\ has trouble converging in the multigrid solves, try
+setting the verbosity {\tt mg\_verbose} or {\tt cg\_verbose} to
+higher values to get more information about the solve.
