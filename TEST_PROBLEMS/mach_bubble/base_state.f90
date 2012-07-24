@@ -17,7 +17,8 @@ contains
     use parallel
     use bl_error_module
     use bl_constants_module
-    use eos_module
+    use eos_module, only: eos_input_rp, eos, gamma_const
+    use eos_type_module
     use network, only: spec_names, network_species_index
     use probin_module, only: base_cutoff_density, anelastic_cutoff, &
                              buoyancy_cutoff_factor, grav_const, dens_base, pres_base, do_isentropic
@@ -34,6 +35,10 @@ contains
     ! local
     integer         :: r,j
     real(kind=dp_t) :: H,z,const
+    real(kind=dp_t) :: dens_zone, temp_zone, pres_zone
+    real(kind=dp_t) :: xn_zone(nspec)
+
+    type (eos_t) :: eos_state
 
     type(bl_prof_timer), save :: bpt
 
@@ -48,14 +53,14 @@ contains
     const = pres_base/dens_base**gamma_const
 
     ! use the EOS to make the state consistent
-    den_eos  = dens_base
-    p_eos    = pres_base
+    dens_zone  = dens_base
+    pres_zone    = pres_base
 
     ! only initialize the first species
-    xn_eos(:) = ZERO
-    xn_eos(1) = 1.d0
+    xn_zone(:) = ZERO
+    xn_zone(1) = 1.d0
 
-    p0_init(0) = p_eos
+    p0_init(0) = pres_zone
 
     ! compute the pressure scale height (for an isothermal, ideal-gas
     ! atmosphere)
@@ -63,7 +68,7 @@ contains
 
     ! set an initial guess for the temperature -- this will be reset
     ! by the EOS
-    temp_eos = 1000.d0
+    temp_zone = 1000.d0
 
     do j = 0, nr(n)-1
 
@@ -72,7 +77,7 @@ contains
           z = dble(j) * dr(1)
 
           ! we can integrate HSE with p = K rho^gamma analytically
-          den_eos = dens_base*(grav_const*dens_base*(gamma_const - 1.0)*z/ &
+          dens_zone = dens_base*(grav_const*dens_base*(gamma_const - 1.0)*z/ &
                (gamma_const*pres_base) + 1.d0)**(1.d0/(gamma_const - 1.d0))
 
        else
@@ -80,11 +85,11 @@ contains
           z = (dble(j)+HALF) * dr(1)
 
           ! the density of an isothermal gamma-law atm is exponential
-          den_eos  = dens_base * exp(-z/H)
+          dens_zone = dens_base * exp(-z/H)
 
        end if
 
-       s0_init(j, rho_comp) = den_eos
+       s0_init(j, rho_comp) = dens_zone
 
        ! compute the pressure by discretizing HSE
        if (j.gt.0) then
@@ -92,29 +97,25 @@ contains
                dr(1) * HALF * (s0_init(j,rho_comp) + s0_init(j-1,rho_comp)) * &
                abs(grav_const)
           
-          p_eos = p0_init(j)
+          pres_zone = p0_init(j)
        end if
        
        ! use the EOS to make the state consistent
+       eos_state%rho   = dens_zone
+       eos_state%p     = pres_zone
+       eos_state%T     = temp_zone
+       eos_state%xn(:) = xn_zone(:)
 
        ! (rho,p) --> T, h
-       call eos(eos_input_rp, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false.)
+       call eos(eos_input_rp, eos_state, .false.)
 
-       s0_init(j, rho_comp) = den_eos
-       s0_init(j,rhoh_comp) = den_eos*h_eos
+       s0_init(j, rho_comp) = dens_zone
+       s0_init(j,rhoh_comp) = dens_zone * eos_state%h
 
        s0_init(j,spec_comp:spec_comp-1+nspec) = ZERO
-       s0_init(j,spec_comp) = den_eos
+       s0_init(j,spec_comp) = dens_zone
 
-       s0_init(j,temp_comp) = temp_eos
+       s0_init(j,temp_comp) = eos_state%T
        s0_init(j,trac_comp) = ZERO
 
     end do
