@@ -781,17 +781,6 @@ contains
 !! STEP 3 -- Update advection velocities
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if (use_thermal_diffusion) then
-
-       do n=1,nlevs
-          call multifab_build(Tcoeff_new(n),  mla%la(n), 1,     1)
-          call multifab_build(hcoeff_new(n),  mla%la(n), 1,     1)
-          call multifab_build(Xkcoeff_new(n), mla%la(n), nspec, 1)
-          call multifab_build(pcoeff_new(n),  mla%la(n), 1,     1)
-          call multifab_build(diff_hterm_new(n), mla%la(n), 1, 0)
-       end do
-    end if
-
     misc_time_start = parallel_wtime()
 
     ! compute gamma1bar
@@ -819,6 +808,37 @@ contains
 
     div_coeff_nph = HALF*(div_coeff_old + div_coeff_new)
 
+    ! reset cutoff coordinates to old time value
+    call compute_cutoff_coords(rho0_old)
+
+    if (use_thermal_diffusion) then
+
+       do n=1,nlevs
+          call multifab_build(Tcoeff_new(n),  mla%la(n), 1,     1)
+          call multifab_build(hcoeff_new(n),  mla%la(n), 1,     1)
+          call multifab_build(Xkcoeff_new(n), mla%la(n), nspec, 1)
+          call multifab_build(pcoeff_new(n),  mla%la(n), 1,     1)
+          call multifab_build(diff_hterm_new(n), mla%la(n), 1, 0)
+       end do
+
+       call make_thermal_coeffs(snew,Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new)
+
+       ! compute diff_new using snew, p0_new, and new coefficients
+       call make_explicit_thermal(mla,dx,diff_new,snew, &
+            Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
+            p0_new,the_bc_tower)
+
+       ! compute only the h term in diff_new
+       call make_explicit_thermal_hterm(mla,dx,diff_hterm_new,snew,hcoeff_new,the_bc_tower)
+
+    else
+
+       do n=1,nlevs
+          call setval(diff_new(n),ZERO,all=.true.)
+       end do
+
+    end if
+
     if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
@@ -826,29 +846,6 @@ contains
     
        advect_time_start = parallel_wtime()
 
-       ! reset cutoff coordinates to old time value
-       call compute_cutoff_coords(rho0_old)
-
-       if (use_thermal_diffusion) then
-
-          call make_thermal_coeffs(snew,Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new)
-
-          ! compute diff_new using snew, p0_new, and new coefficients
-          call make_explicit_thermal(mla,dx,diff_new,snew, &
-                                     Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
-                                     p0_new,the_bc_tower)
-
-          ! compute only the h term in diff_new
-          call make_explicit_thermal_hterm(mla,dx,diff_hterm_new,snew,hcoeff_new,the_bc_tower)
-          
-       else
-          
-          do n=1,nlevs
-             call setval(diff_new(n),ZERO,all=.true.)
-          end do
-          
-       end if
-       
        do n=1,nlevs
           call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
           call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
@@ -898,7 +895,6 @@ contains
           enddo
 
           do n=1,nlevs
-             call destroy(peos_old(n))
              call destroy(peos_new(n))
           end do
 
@@ -1029,13 +1025,22 @@ contains
        do n=1,nlevs
           call destroy(rhohalf(n))
           call destroy(macrhs(n))
-          call destroy(macphi(n))
        end do
 
        if (barrier_timers) call parallel_barrier()
        macproj_time = macproj_time + (parallel_wtime() - macproj_time_start)
 
     end if
+
+    if (dpdt_factor .gt. ZERO) then
+       do n=1,nlevs
+          call destroy(peos_old(n))
+       end do
+    end if
+
+    do n=1,nlevs
+       call destroy(macphi(n))
+    end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4: Corrector loop
