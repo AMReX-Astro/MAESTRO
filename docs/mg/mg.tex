@@ -141,6 +141,32 @@ The following parameters are specified when building the \mgtower:
 
 \section{Bottom Solvers}
 
+There are several bottom solvers available to \maestro.  These are set
+through the {\tt mg\_bottom\_solver} (MAC) and {\tt
+  hg\_bottom\_solver} (HG) runtime parameters.  The allowed values
+  are:
+
+\begin{itemize}
+
+\item {\tt mg\_bottom\_solver} / {hg\_bottom\_solver} = 0: smoothing only.
+
+\item {\tt mg\_bottom\_solver} / {hg\_bottom\_solver} = 1: biconjugate
+  gradient stabilized---this is the default.
+
+\item {\tt mg\_bottom\_solver} / {hg\_bottom\_solver} = 2: conjugate
+  gradient method
+
+\item {\tt mg\_bottom\_solver} / {hg\_bottom\_solver} = 4: a special 
+  bottom solver that extends the range of the multigrid coarsening
+  by aggregrating coarse grids on the original mesh together and
+  further coarsening. \MarginPar{does this option then use bicg 
+  at the new bottom?}
+
+\end{itemize}
+
+\MarginPar{any simple discussion on why we might choose one of the
+  other bottom solvers?}
+
 
 \section{Convergence Criteria}
 
