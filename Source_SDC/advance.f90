@@ -628,6 +628,15 @@ contains
        call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
     end do
 
+    ! update shat for species by adding dt*intra terms in
+    ! fixme - ghost cells
+    do n=1,nlevs
+       call multifab_div_div_s_c(shat(n), spec_comp, 1.d0/dt, nspec, 0)
+       call multifab_plus_plus_c(shat(n), spec_comp, intra(n), spec_comp, nspec, 0)
+       call multifab_mult_mult_s_c(shat(n), spec_comp, dt, nspec, 0)
+       call multifab_fill_boundary(shat(n))
+    end do
+
     if (barrier_timers) call parallel_barrier()
     advect_time = advect_time + parallel_wtime() - advect_time_start
 
@@ -1186,6 +1195,15 @@ contains
           call multifab_copy_c(aofs(n), 1, shat(n), 1, nscal, 0)
           call multifab_sub_sub_c(aofs(n), 1, sold(n), 1, nscal, 0)
           call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
+       end do
+
+       ! update shat for species by adding dt*intra terms in
+       ! fixme - ghost cells
+       do n=1,nlevs
+          call multifab_div_div_s_c(shat(n), spec_comp, 1.d0/dt, nspec, 0)
+          call multifab_plus_plus_c(shat(n), spec_comp, intra(n), spec_comp, nspec, 0)
+          call multifab_mult_mult_s_c(shat(n), spec_comp, dt, nspec, 0)
+          call multifab_fill_boundary(shat(n))
        end do
 
        if (barrier_timers) call parallel_barrier()
