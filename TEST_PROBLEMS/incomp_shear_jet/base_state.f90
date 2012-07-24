@@ -34,7 +34,8 @@ contains
     use parallel                !BoxLib parallel module.
     use bl_error_module         
     use bl_constants_module
-    use eos_module              !Equation of state module
+    use eos_module, only: eos, eos_input_rp    !Equation of state module
+    use eos_type_module
     use network,       only: spec_names, network_species_index
     !Probin module gives global access to all problem parameters.
     use probin_module, only: base_cutoff_density, anelastic_cutoff, &   
@@ -78,6 +79,8 @@ contains
     real(kind=dp_t),     parameter :: TINY    = 1.0d-10
     character(len=*),    parameter :: FMT_SEP = "(78('-'))"
     character(len=*),    parameter :: FMT_MSG = "(a60,g18.10)"
+    type (eos_t) :: eos_state
+
 
     !--- Execution ---
     call build(bpt, "init_base_state")  !Build the timer
@@ -175,28 +178,20 @@ contains
         ! We set density and pressure, and from this the EoS yields many
         ! thermodynamic quantities (temperature and enthalpy being the two we
         ! care about in this problem).
-        temp_eos = t_ambient
-        den_eos  = d_ambient
-        p_eos    = p_ambient
-        xn_eos(:) = xn_ambient(:)
+        eos_state%T     = t_ambient
+        eos_state%rho   = d_ambient
+        eos_state%p     = p_ambient
+        eos_state%xn(:) = xn_ambient(:)
 
         ! (rho,p) --> T, h
-        call eos(eos_input_rp, den_eos, temp_eos, &
-                 xn_eos, &
-                 p_eos, h_eos, e_eos, &
-                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                 dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                 dpdX_eos, dhdX_eos, &
-                 gam1_eos, cs_eos, s_eos, &
-                 dsdt_eos, dsdr_eos, &
-                 .false.)
+        call eos(eos_input_rp, eos_state, .false.)
 
         !Now that we've calculated all of the ambient values and churned them
         !through the EoS we can finally initialize the fluid state.
         s0_init(r, rho_comp)                    = d_ambient
-        s0_init(r, rhoh_comp)                   = d_ambient * h_eos
+        s0_init(r, rhoh_comp)                   = d_ambient * eos_state%h
         s0_init(r, spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-        s0_init(r, temp_comp)                   = temp_eos
+        s0_init(r, temp_comp)                   = eos_state%T
         p0_init(r)                              = p_base
 
         !We don't use tracers in this problem, so ntrac is always 0.

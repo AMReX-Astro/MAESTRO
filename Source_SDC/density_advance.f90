@@ -22,6 +22,7 @@ contains
                              rho0_old,rho0_new,p0_dummy, &
                              rho0_predicted_edge,dx,dt,the_bc_level)
 
+    use multifab_module
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use bl_constants_module, only: ZERO, ONE
     use make_edge_scal_module, only: make_edge_scal
@@ -144,6 +145,7 @@ contains
     ! reaction forcing terms - FIXME doesn't fill ghost cells
     do n=1,nlevs
        call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)
+       call multifab_fill_boundary(scal_force(n))
     end do
 
     !**************************************************************************
@@ -355,9 +357,10 @@ contains
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
-    ! reaction forcing terms
+    ! reaction forcing terms - FIXME doesn't fill ghost cells
     do n=1,nlevs
        call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)
+       call multifab_fill_boundary(scal_force(n))
     end do
 
     ! p0 only used in rhoh update so we just pass in a dummy version

@@ -17,7 +17,7 @@ contains
 
   subroutine thermal_conduct_predictor(mla,dx,dt,sold,shat,p0_old,p0_new, &
                                        hcoeff_old,Xkcoeff_old,pcoeff_old, &
-                                       aofs,intra,the_bc_tower)
+                                       the_bc_tower)
 
     use bl_prof_module
     use multifab_physbc_module
@@ -42,8 +42,6 @@ contains
     type(multifab) , intent(in   ) :: pcoeff_old(:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
-    type(multifab) , intent(in   ) :: aofs(:)
-    type(multifab) , intent(in   ) :: intra(:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
 
     ! Local
@@ -219,29 +217,14 @@ contains
     ! scale rhs and add remaining terms
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    ! multiply rhs by 0.5
+    ! multiply rhs by 0.5*dt
     do n=1,nlevs
-       call multifab_mult_mult_s(rhs(n),0.5d0,0)
+       call multifab_mult_mult_s(rhs(n),0.5d0*dt,0)
     end do
 
-    ! add reaction term to rhs
+    ! add (rhoh)^old + dt*(aofs + intra) to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,intra(n),rhoh_comp,1,0)
-    end do
-
-    ! add aofs to rhs
-    do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,aofs(n),rhoh_comp,1,0)
-    end do
-
-    ! multiply rhs by dt
-    do n=1,nlevs
-       call multifab_mult_mult_s_c(rhs(n),1,dt,1,0)
-    end do
-
-    ! add (rhoh)^old to rhs
-    do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,sold(n),rhoh_comp,1,0)
+       call multifab_plus_plus_c(rhs(n),1,shat(n),rhoh_comp,1,0)
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -343,7 +326,7 @@ contains
   subroutine thermal_conduct_corrector(mla,dx,dt,sold,shat,snew,p0_old,p0_new, &
                                        hcoeff_old,Xkcoeff_old,pcoeff_old, &
                                        hcoeff_new,Xkcoeff_new,pcoeff_new, &
-                                       intra,the_bc_tower)
+                                       the_bc_tower)
 
     use bl_prof_module
     use multifab_physbc_module
@@ -372,7 +355,6 @@ contains
     type(multifab) , intent(in   ) :: hcoeff_new(:)
     type(multifab) , intent(in   ) :: Xkcoeff_new(:)
     type(multifab) , intent(in   ) :: pcoeff_new(:)
-    type(multifab) , intent(in   ) :: intra(:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
 
     ! Local
@@ -570,22 +552,12 @@ contains
     ! scale rhs and add remaining terms
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    ! multiply rhs by 0.5
+    ! multiply rhs by 0.5*dt
     do n=1,nlevs
-       call multifab_mult_mult_s(rhs(n),0.5d0,0)
+       call multifab_mult_mult_s(rhs(n),0.5d0*dt,0)
     end do
 
-    ! add reaction term to rhs
-    do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,intra(n),rhoh_comp,1,0)
-    end do
-
-    ! multiply rhs by dt
-    do n=1,nlevs
-       call multifab_mult_mult_s(rhs(n),dt,0)
-    end do
-
-    ! add (rhoh)^old + dt*A to rhs
+    ! add (rhoh)^old + dt*(aofs + intra) to rhs
     do n=1,nlevs
        call multifab_plus_plus_c(rhs(n),1,shat(n),rhoh_comp,1,0)
     end do
