@@ -31,6 +31,12 @@ mach_bubble/
 
 mach_jet/
 
+  Inflow a low Mach number jet through the lower boundary into a
+  constant density/p domain.  This was used to explore acoustics and
+  the role of pi in the overall pressure in the SciDAC 2010 paper
+  (http://arxiv.org/abs/1008.2801)
+
+
 nersc_benchmark/
 
 planar_heat/
