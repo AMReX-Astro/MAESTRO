@@ -357,6 +357,12 @@ contains
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
+    ! reaction forcing terms - FIXME doesn't fill ghost cells
+    do n=1,nlevs
+       call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)
+       call multifab_fill_boundary(scal_force(n))
+    end do
+
     ! p0 only used in rhoh update so we just pass in a dummy version
     if (spherical .eq. 1) then
        do n=1,nlevs

@@ -412,6 +412,12 @@ contains
                         psi,dx,.false.,the_bc_level)
     end if
 
+    ! reaction forcing terms - FIXME doesn't fill ghost cells
+    do n=1,nlevs
+       call multifab_plus_plus_c(scal_force(n), rhoh_comp, intra(n), rhoh_comp, 1, 0)
+       call multifab_fill_boundary(scal_force(n))
+    end do
+
     if (spherical .eq. 1) then
        do n=1,nlevs
           call build(p0_new_cart(n), get_layout(sold(n)), 1, 1)

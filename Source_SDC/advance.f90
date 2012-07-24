@@ -620,21 +620,13 @@ contains
        call destroy(scal_force(n))
     end do
 
-    ! extract aofs = (shat - sold) / dt
+    ! extract aofs = (shat - sold) / dt - intra
     do n=1,nlevs
        call multifab_build(aofs(n), mla%la(n), nscal, 0)
        call multifab_copy_c(aofs(n), 1, shat(n), 1, nscal, 0)
        call multifab_sub_sub_c(aofs(n), 1, sold(n), 1, nscal, 0)
        call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
-    end do
-
-    ! update shat for species by adding dt*intra terms in
-    ! fixme - ghost cells
-    do n=1,nlevs
-       call multifab_div_div_s_c(shat(n), spec_comp, 1.d0/dt, nspec, 0)
-       call multifab_plus_plus_c(shat(n), spec_comp, intra(n), spec_comp, nspec, 0)
-       call multifab_mult_mult_s_c(shat(n), spec_comp, dt, nspec, 0)
-       call multifab_fill_boundary(shat(n))
+       call multifab_sub_sub_c(aofs(n), 1, intra(n), 1, nscal, 0)
     end do
 
     if (barrier_timers) call parallel_barrier()
@@ -658,7 +650,7 @@ contains
 
        call thermal_conduct_predictor(mla,dx,dt,sold,shat,p0_old,p0_new, &
                                       hcoeff_old,Xkcoeff_old,pcoeff_old, &
-                                      aofs,intra,the_bc_tower)
+                                      the_bc_tower)
 
        ! compute diff_hat using shat, p0_new, and old coefficients
        call make_explicit_thermal(mla,dx,diff_hat,shat, &
@@ -1195,15 +1187,7 @@ contains
           call multifab_copy_c(aofs(n), 1, shat(n), 1, nscal, 0)
           call multifab_sub_sub_c(aofs(n), 1, sold(n), 1, nscal, 0)
           call multifab_div_div_s_c(aofs(n), 1, dt, nscal, 0)
-       end do
-
-       ! update shat for species by adding dt*intra terms in
-       ! fixme - ghost cells
-       do n=1,nlevs
-          call multifab_div_div_s_c(shat(n), spec_comp, 1.d0/dt, nspec, 0)
-          call multifab_plus_plus_c(shat(n), spec_comp, intra(n), spec_comp, nspec, 0)
-          call multifab_mult_mult_s_c(shat(n), spec_comp, dt, nspec, 0)
-          call multifab_fill_boundary(shat(n))
+          call multifab_sub_sub_c(aofs(n), 1, intra(n), 1, nscal, 0)
        end do
 
        if (barrier_timers) call parallel_barrier()
@@ -1224,7 +1208,7 @@ contains
           call thermal_conduct_corrector(mla,dx,dt,sold,shat,snew,p0_old,p0_new, &
                                          hcoeff_old,Xkcoeff_old,pcoeff_old, &
                                          hcoeff_new,Xkcoeff_new,pcoeff_new, &
-                                         intra,the_bc_tower)
+                                         the_bc_tower)
           
           ! compute diff_hat using shat, p0_new, and new coefficients from previous iteration
           call make_explicit_thermal(mla,dx,diff_hat,shat, &
