@@ -1,3 +1,5 @@
+\label{ch:mg}
+
 \section{Introduction to \maestro\ Multigrid}
 
 \maestro\ uses multigrid to enforce the velocity constraint through
@@ -166,6 +168,57 @@ through the {\tt mg\_bottom\_solver} (MAC) and {\tt
 
 \MarginPar{any simple discussion on why we might choose one of the
   other bottom solvers?}
+
+\subsection{Special Bottom Solver}
+We have a special bottom solver type that greatly speeds up large problems
+and speeds up smaller problems to a lesser degree.
+In fact, you should use this bottom solver whenever possible, because I
+have yet to find a case that performs worse than our standard bottom solver.
+What this special solver essentially does is take the data from the coarsest 
+level of the original multigrid V-cycle and copy it onto a new grid structure 
+with the same number of total cells in each direction, but with a fewer number of larger 
+grids.  A new V-cycle begins from this point, 
+so we are essentially coarsening this ``new'' problem.
+Now, the coarsest level of the multigrid V-cycle in the ``new'' problem has 
+fewer cells and fewer grids as compared to the original coarsest level.
+
+To enable this solver, set {\tt hg\_bottom\_solver = 4} (for the nodal
+projections) and/or {\tt mg\_bottom\_solver = 4} (for the cell-centered
+projections) in your inputs file.
+
+To understand how this bottom solver works, the first thing you need to know
+is what the grid structure of the coarsest level of your multigrid V-cycle
+looks like (we need to put a description of this in the section above).
+Now, figure out the size of the box you would need if you
+wanted it to fit all the data on the coarsest level.  Now, figure out what
+the largest integer $n$ is so that you can evenly divide the length of this box
+by $2^n$ in every coordinate direction.  If $n < 2$, the program will abort
+since the grid structure is not suitable for this bottom solver.
+
+Now the code will set up a ``new'' problem, using the data at the coarsest level
+of the original problem as the initial data.  The grid structure for this new
+problem has the same number of cells as the coarsest level of the original problem,
+but the data is copied onto a grid structure where each grid has $2^n$ cells
+on each side.  The new V-cycle continues down to the new coarsest level, in
+which each grid has 2 cells on each side.  If you wish to impose a limit on
+the maximum value that $n$ can have, you can do so by setting 
+{\tt max\_mg\_bottom\_nlevs} equal to that value.
+
+{\bf Example 1:} A 3D problem with $384^3$ cells divided into $32^3$ grids, i.e., 
+there is a $12\times 12\times 12$ block of $32^3$ grids.  The coarsest level of the 
+multigrid V-cycle contains $12\times 12\times 12$ grids that have $2^3$ cells, so the 
+entire problem domain has $24^3$ cells.  We see that $n=3$, and create a new problem 
+domain with a $3\times 3\times 3$ block of $8^3$ grids.  The coarsest level of the 
+multigrid V-cycle for the ``new'' problem will be a $3\times 3\times 3$ block of 
+$2^3$ grids.
+
+{\bf Example 2:} A 2D problem with $96\times 384$ cells divided into $48^2$ grids, i.e., 
+there is a $2\times 8$ block of $48^2$ grids.  The coarsest level of the multigrid 
+V-cycle contains $2\times 8$ grids that have $3^2$ cells, so the entire problem 
+domain has $6\times 24$ cells.  We see that $n=1$, so the program aborts since this grid
+structure is not appropriate for the fancy bottom solver.
+
+
 
 
 \section{Convergence Criteria}
