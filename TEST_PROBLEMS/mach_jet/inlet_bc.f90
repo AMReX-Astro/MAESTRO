@@ -10,7 +10,8 @@ module inlet_bc_module
   use bl_constants_module
   use bl_space
   use network
-  use eos_module
+  use eos_module, only: eos, eos_input_rp
+  use eos_type_module
 
   implicit none
 
@@ -30,41 +31,27 @@ contains
   ! and upon restart, just after the base state is read in.
   subroutine set_inlet_bcs()
 
-    temp_eos = 10.d0
-    den_eos = 1.d-3
-    p_eos = 1.d6
-    xn_eos(:) = 1.d0
+    type (eos_t) :: eos_state
 
-    call eos(eos_input_rp, den_eos, temp_eos, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, & 
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             .false.)
+    eos_state%T     = 10.d0
+    eos_state%rho   = 1.d-3
+    eos_state%p     = 1.d6
+    eos_state%xn(:) = 1.d0
 
-    INLET_CS   = cs_eos
+    call eos(eos_input_rp, eos_state, .false.)
 
-    temp_eos = 10.d0
-    den_eos = 5.d-4
-    p_eos = 1.d6
-    xn_eos(:) = 1.d0
+    INLET_CS   = eos_state%cs
 
-    call eos(eos_input_rp, den_eos, temp_eos, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, & 
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             .false.)
+    eos_state%T     = 10.d0
+    eos_state%rho   = 5.d-4
+    eos_state%p     = 1.d6
+    eos_state%xn(:) = 1.d0
 
-    INLET_RHO  = den_eos
-    INLET_RHOH = den_eos*h_eos
-    INLET_TEMP = temp_eos
+    call eos(eos_input_rp, eos_state, .false.)
+
+    INLET_RHO  = eos_state%rho
+    INLET_RHOH = eos_state%rho * eos_state%h
+    INLET_TEMP = eos_state%T
 
     inlet_bc_initialized = .true.
 
