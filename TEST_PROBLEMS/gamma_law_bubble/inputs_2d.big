@@ -52,10 +52,11 @@
 
  plot_base   = T
 
- bcx_lo = -1
- bcx_hi = -1
- bcy_lo = 12
- bcy_hi = 12
+ xlo_boundary_type = "periodic"
+ xhi_boundary_type = "periodic"
+
+ ylo_boundary_type = "outlet"
+ yhi_boundary_type = "outlet"
 
     verbose = 1
  mg_verbose = 2
