@@ -198,6 +198,7 @@ contains
     ! reaction forcing terms - FIXME doesn't fill ghost cells
     do n=1,nlevs
        call multifab_plus_plus_c(scal_force(n), rhoh_comp, intra(n), rhoh_comp, 1, 0)
+       call multifab_fill_boundary(scal_force(n))
     end do
       
     !**************************************************************************
