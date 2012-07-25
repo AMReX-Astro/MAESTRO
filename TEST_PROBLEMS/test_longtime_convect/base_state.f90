@@ -17,7 +17,8 @@ contains
     use multifab_module
     use define_bc_module
     use bl_constants_module
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec, spec_names
     use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
@@ -59,6 +60,8 @@ contains
     character (len=256) :: header_line
 
     type(bl_prof_timer), save :: bpt
+
+    type (eos_t) :: eos_state
 
     call build(bpt, "init_base_state")
 
@@ -235,28 +238,20 @@ contains
           xn_ambient(:) = xn_ambient(:)/sum
 
           ! use the EOS to make the state consistent
-          temp_eos  = t_ambient
-          den_eos   = d_ambient
-          p_eos     = p_ambient
-          xn_eos(:) = xn_ambient(:)
+          eos_state%T     = t_ambient
+          eos_state%rho   = d_ambient
+          eos_state%p     = p_ambient
+          eos_state%xn(:) = xn_ambient(:)
 
           ! (rho,T) --> p,h
-          call eos(eos_input_rt, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false.)
-          max_speed = max(max_speed,cs_eos)
-!         print *,'CS ',j,cs_eos(1)
+          call eos(eos_input_rt, eos_state, .false.)
+
+          max_speed = max(max_speed,eos_state%cs)
 
           s0_init(j, rho_comp ) = d_ambient
-          s0_init(j,rhoh_comp ) = d_ambient * h_eos
+          s0_init(j,rhoh_comp ) = d_ambient * eos_state%h
           s0_init(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-          p0_init(j)    = p_eos
+          p0_init(j)    = eos_state%p
 
           s0_init(j,temp_comp) = t_ambient
 
