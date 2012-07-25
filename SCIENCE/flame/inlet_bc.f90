@@ -8,6 +8,7 @@ module inlet_bc_module
 
   use bl_types
   use bl_constants_module
+  use bl_error_module
   use bl_space
   use network
 
@@ -27,36 +28,35 @@ contains
   subroutine set_inlet_bcs()
 
     ! initialize the inflow boundary condition variables
-    use eos_module
+    use eos_module, only: eos, eos_input_rt
+    use eos_type_module
     use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel
 
     integer :: ic12, io16
+
+    type (eos_t) :: eos_state
 
     ! figure out the indices for different species
     ic12  = network_species_index("carbon-12")
     io16  = network_species_index("oxygen-16")
 
-    den_eos  = dens_fuel
-    temp_eos = temp_fuel
+    if (ic12 < 0 .or. io16 < 0) then
+       call bl_error("ERROR: species indices undefined in inlet_bc")
+    endif
 
-    xn_eos(:) = ZERO
-    xn_eos(ic12) = xc12_fuel
-    xn_eos(io16) = 1.d0 - xc12_fuel
+    eos_state%rho = dens_fuel
+    eos_state%T   = temp_fuel
 
-    call eos(eos_input_rt, den_eos, temp_eos, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, &
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             .false.)
+    eos_state%xn(:)    = ZERO
+    eos_state%xn(ic12) = xc12_fuel
+    eos_state%xn(io16) = 1.d0 - xc12_fuel
+
+    call eos(eos_input_rt, eos_state, .false.)
 
     INLET_RHO     = dens_fuel
-    INLET_RHOH    = dens_fuel*h_eos
+    INLET_RHOH    = dens_fuel*eos_state%h
     INLET_TEMP    = temp_fuel
-    INLET_RHOX(:) = dens_fuel*xn_eos(:)
+    INLET_RHOX(:) = dens_fuel*eos_state%xn(:)
     INLET_VEL     = vel_fuel
     INLET_TRA     = ZERO
 
