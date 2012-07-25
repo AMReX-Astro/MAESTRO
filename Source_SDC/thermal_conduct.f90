@@ -118,7 +118,7 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -142,7 +142,7 @@ contains
 
        ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
        enddo
 
     end do
@@ -168,7 +168,7 @@ contains
 
        ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
        enddo
 
     end do
@@ -190,7 +190,7 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo    
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -210,7 +210,7 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -431,7 +431,7 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -453,7 +453,7 @@ contains
 
     ! subtract Lphi from rhs
     do n=1,nlevs
-       call multifab_sub_sub_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_sub_sub_c(rhs(n),1,Lphi(n),1,1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -477,7 +477,7 @@ contains
 
        ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
        enddo
 
     end do
@@ -503,7 +503,7 @@ contains
 
        ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
        enddo
 
     end do
@@ -525,7 +525,7 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo    
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -545,7 +545,7 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
