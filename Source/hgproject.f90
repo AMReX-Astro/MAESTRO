@@ -8,8 +8,8 @@
 !
 !  D [ (beta_0**2/rho) G (phi/beta_0) ] = D ( beta_0 U ) - beta_0 S
 !
-! 
-! Note: if use_alt_energy_fix = T, then we come out of here with 
+!
+! Note: if use_alt_energy_fix = T, then we come out of here with
 ! (beta_0 grad pi) instead of just grad pi (and also, pi in this
 ! case is pi/beta_0).  This beta_0 weighting makes the use of gpi in
 ! mkforce.f90 correct.
@@ -182,19 +182,23 @@ contains
 
     if (use_hypre) then 
        if (present(divu_rhs)) then
-          call hg_hypre(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
-                        stencil_type,rel_solver_eps,abs_solver_eps,divu_rhs)
+          call hg_hypre(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
+                        stencil_type,rel_solver_eps,abs_solver_eps, &
+                        using_alt_energy_fix,divu_rhs)
        else
-          call hg_hypre(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
-                        stencil_type,rel_solver_eps,abs_solver_eps)
+          call hg_hypre(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
+                        stencil_type,rel_solver_eps,abs_solver_eps, &
+                        using_alt_energy_fix)
        end if
     else
        if (present(divu_rhs)) then
-          call hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
-                            stencil_type,rel_solver_eps,abs_solver_eps,divu_rhs)
+          call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
+                            stencil_type,rel_solver_eps,abs_solver_eps, &
+                            using_alt_energy_fix,divu_rhs)
        else
-          call hg_multigrid(mla,rh,unew,rhohalf,phi,dx,the_bc_tower, &
-                            stencil_type,rel_solver_eps,abs_solver_eps)
+          call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
+                            stencil_type,rel_solver_eps,abs_solver_eps, &
+                            using_alt_energy_fix)
        end if
     endif
 
@@ -214,7 +218,7 @@ contains
        call multifab_mult_mult_c(rhohalf(n),1,div_coeff_3d(n),1,1, &
                                  nghost(div_coeff_3d(n)))
 
-      ! Convert (rhohalf/beta_0)   back to rhohalf
+       ! Convert (rhohalf/beta_0)   back to rhohalf
        if (using_alt_energy_fix) then
           call multifab_mult_mult_c(rhohalf(n),1,div_coeff_3d(n),1,1, &
                                     nghost(div_coeff_3d(n)))
@@ -225,7 +229,7 @@ contains
        call multifab_build(gphi(n), mla%la(n), dm, 0)
     end do
 
-    call mkgphi(gphi,phi,dx)
+    call mkgphi(gphi,phi,div_coeff_3d,dx,using_alt_energy_fix)
 
     call hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,  &
                    pi,phi,dt,mla,the_bc_tower%bc_tower_array,div_coeff_3d, &
@@ -537,17 +541,20 @@ contains
 
     ! ******************************************************************************* !
 
-    subroutine mkgphi(gphi,phi,dx)
+    subroutine mkgphi(gphi,phi,div_coeff_3d,dx,using_alt_energy_fix)
 
       type(multifab), intent(inout) :: gphi(:)
       type(multifab), intent(in   ) :: phi(:)
-      real(dp_t) :: dx(:,:)
+      type(multifab), intent(in   ) :: div_coeff_3d(:)
+      real(dp_t)    , intent(in   ) :: dx(:,:)
+      logical       , intent(in   ) :: using_alt_energy_fix
 
       integer :: lo(phi(1)%dim),hi(phi(1)%dim)
-      integer :: i,n,ng_p,ng_gp
+      integer :: i,n,ng_p,ng_gp,ng_b
 
       real(kind=dp_t), pointer :: gph(:,:,:,:) 
       real(kind=dp_t), pointer :: pp(:,:,:,:) 
+      real(kind=dp_t), pointer :: bp(:,:,:,:) 
 
       type(bl_prof_timer), save :: bpt
 
@@ -555,6 +562,7 @@ contains
 
       ng_p  = nghost(phi(1))
       ng_gp = nghost(gphi(1))
+      ng_b  = nghost(div_coeff_3d(1))
 
       do n = 1, nlevs
 
@@ -564,13 +572,20 @@ contains
             hi = upb(get_box(gphi(n),i))
             gph => dataptr(gphi(n),i)
             pp  => dataptr(phi(n),i)
+            bp  => dataptr(div_coeff_3d(n),i)
             select case (dm)
             case (1)
-               call mkgphi_1d(gph(:,1,1,1), ng_gp, pp(:,1,1,1), ng_p, lo, hi, dx(n,:))
+               call mkgphi_1d(gph(:,1,1,1), ng_gp, pp(:,1,1,1), ng_p, &
+                               bp(:,1,1,1), ng_b, lo, hi, dx(n,:), &
+                              using_alt_energy_fix)
             case (2)
-               call mkgphi_2d(gph(:,:,1,:), ng_gp, pp(:,:,1,1), ng_p, lo, hi, dx(n,:))
+               call mkgphi_2d(gph(:,:,1,:), ng_gp, pp(:,:,1,1), ng_p, &
+                               bp(:,:,1,1), ng_b, lo, hi, dx(n,:), &
+                              using_alt_energy_fix)
             case (3)
-               call mkgphi_3d(gph(:,:,:,:), ng_gp, pp(:,:,:,1), ng_p, lo, hi, dx(n,:))
+               call mkgphi_3d(gph(:,:,:,:), ng_gp, pp(:,:,:,1), ng_p, &
+                               bp(:,:,:,1), ng_b, lo, hi, dx(n,:), &
+                              using_alt_energy_fix)
             end select
          end do
 
@@ -582,13 +597,15 @@ contains
 
     !   ********************************************************************************* !
 
-    subroutine mkgphi_1d(gphi,ng_gp,phi,ng_p,lo,hi,dx)
+    subroutine mkgphi_1d(gphi,ng_gp,phi,ng_p,beta0,ng_b,lo,hi,dx,using_alt_energy_fix)
 
-      integer        , intent(in   ) :: ng_gp,ng_p
+      integer        , intent(in   ) :: ng_gp,ng_p,ng_b
       integer        , intent(in   ) :: lo(:),hi(:)
-      real(kind=dp_t), intent(inout) :: gphi(lo(1)-ng_gp:)
-      real(kind=dp_t), intent(inout) ::  phi(lo(1)-ng_p :)
+      real(kind=dp_t), intent(inout) ::  gphi(lo(1)-ng_gp:)
+      real(kind=dp_t), intent(inout) ::   phi(lo(1)-ng_p :)
+      real(kind=dp_t), intent(inout) :: beta0(lo(1)-ng_b :)
       real(kind=dp_t), intent(in   ) :: dx(:)
+      logical        , intent(in   ) :: using_alt_energy_fix
 
       integer :: i
 
@@ -600,22 +617,24 @@ contains
 
     !   ********************************************************************************* !
 
-    subroutine mkgphi_2d(gphi,ng_gp,phi,ng_p,lo,hi,dx)
+    subroutine mkgphi_2d(gphi,ng_gp,phi,ng_p,beta0,ng_b,lo,hi,dx,using_alt_energy_fix)
 
-      integer        , intent(in   ) :: ng_gp,ng_p
+      integer        , intent(in   ) :: ng_gp,ng_p,ng_b
       integer        , intent(in   ) :: lo(:),hi(:)
-      real(kind=dp_t), intent(inout) :: gphi(lo(1)-ng_gp:,lo(2)-ng_gp:,:)
-      real(kind=dp_t), intent(inout) ::  phi(lo(1)-ng_p :,lo(2)-ng_p :)
+      real(kind=dp_t), intent(inout) ::  gphi(lo(1)-ng_gp:,lo(2)-ng_gp:,:)
+      real(kind=dp_t), intent(inout) ::   phi(lo(1)-ng_p :,lo(2)-ng_p :)
+      real(kind=dp_t), intent(inout) :: beta0(lo(1)-ng_b :,lo(2)-ng_b :)
       real(kind=dp_t), intent(in   ) :: dx(:)
+      logical        , intent(in   ) :: using_alt_energy_fix
 
       integer :: i,j
 
       do j = lo(2),hi(2)
          do i = lo(1),hi(1)
             gphi(i,j,1) = HALF*(phi(i+1,j) + phi(i+1,j+1) - &
-                 phi(i  ,j) - phi(i  ,j+1) ) /dx(1)
+                                phi(i  ,j) - phi(i  ,j+1) ) /dx(1)
             gphi(i,j,2) = HALF*(phi(i,j+1) + phi(i+1,j+1) - &
-                 phi(i,j  ) - phi(i+1,j  ) ) /dx(2)
+                                phi(i,j  ) - phi(i+1,j  ) ) /dx(2)
          end do
       end do
 
@@ -623,13 +642,15 @@ contains
 
     !   ******************************************************************************** !
 
-    subroutine mkgphi_3d(gphi,ng_gp,phi,ng_p,lo,hi,dx)
+    subroutine mkgphi_3d(gphi,ng_gp,phi,ng_p,beta0,ng_b,lo,hi,dx,using_alt_energy_fix)
 
-      integer        , intent(in   ) :: ng_gp,ng_p
+      integer        , intent(in   ) :: ng_gp,ng_p,ng_b
       integer        , intent(in   ) :: lo(:),hi(:)
-      real(kind=dp_t), intent(inout) :: gphi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
-      real(kind=dp_t), intent(inout) ::  phi(lo(1)-ng_p :,lo(2)-ng_p :,lo(3)-ng_p :)
+      real(kind=dp_t), intent(inout) ::  gphi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
+      real(kind=dp_t), intent(inout) ::   phi(lo(1)-ng_p :,lo(2)-ng_p :,lo(3)-ng_p :)
+      real(kind=dp_t), intent(inout) :: beta0(lo(1)-ng_b :,lo(2)-ng_b :,lo(3)-ng_b :)
       real(kind=dp_t), intent(in   ) :: dx(:)
+      logical        , intent(in   ) :: using_alt_energy_fix
 
       integer :: i,j,k
 
