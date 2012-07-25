@@ -73,6 +73,9 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
      xn_eos(:) = X(1:nspec)
      p_eos = p0_pass
 
+     ! need an initial T guess
+     temp_eos = 1.d9
+
      call eos(eos_input_rp, den_eos, temp_eos, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
@@ -93,8 +96,8 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
      xn_eos(:) = X(1:nspec)
      h_eos = rhoh/dens
 
-     ! need an initial T guess                                                                                          
-     temp_eos =1.e9_dp_t
+     ! need an initial T guess
+     temp_eos = 1.d9
 
      call eos(eos_input_rh, den_eos, temp_eos, &
               xn_eos, &
@@ -261,6 +264,9 @@ subroutine f_rhs_instantaneous_reaction_rates(n, t, y, ydot, rho_Hnuc, rpar, ipa
      den_eos = dens
      xn_eos(:) = X(1:nspec)
      h_eos = rhoh/dens
+
+     ! need an initial T guess
+     temp_eos = 1.d9
 
      call eos(eos_input_rh, den_eos, temp_eos, &
               xn_eos, &
