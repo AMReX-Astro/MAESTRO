@@ -38,6 +38,7 @@ contains
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
+    use multifab_physbc_module
 
     type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: which_step
@@ -195,9 +196,11 @@ contains
 
     end if        
 
-    ! reaction forcing terms - FIXME doesn't fill ghost cells
+    ! reaction forcing terms
     do n=1,nlevs
        call multifab_plus_plus_c(scal_force(n), rhoh_comp, intra(n), rhoh_comp, 1, 0)
+       call multifab_fill_boundary(scal_force(n))
+       call multifab_physbc(scal_force(n), rhoh_comp, foextrap_comp, 1, the_bc_level(n))
     end do
       
     !**************************************************************************
@@ -410,6 +413,11 @@ contains
                         thermal,umac,p0_old,p0_new,rho0_old,rho0_new,&
                         psi,dx,.false.,the_bc_level)
     end if
+
+    ! reaction forcing terms
+    do n=1,nlevs
+       call multifab_plus_plus_c(scal_force(n), rhoh_comp, intra(n), rhoh_comp, 1, 0)
+    end do
 
     if (spherical .eq. 1) then
        do n=1,nlevs

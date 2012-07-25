@@ -29,7 +29,8 @@ contains
 
   subroutine set_inlet_bcs()
 
-    use eos_module
+    use eos_module, only: eos_input_rt, eos_input_tp, eos
+    use eos_type_module
 
     ! local variables
     integer :: ndum,comp
@@ -37,60 +38,55 @@ contains
 
     real(kind=dp_t) :: state1d(ndum)
 
+    type (eos_t) :: eos_state
+
     ! now reset inflow boundary conditions
     call asin1d('flame_4.e7_screen_left.out', -.00125d0, 0.d0, state1d, ndum, .false.)
 
-       p_eos = state1d(18)
-     den_eos = state1d(3)
-    temp_eos = state1d(9)
+    eos_state%p   = state1d(18)
+    eos_state%rho = state1d(3)
+    eos_state%T   = state1d(9)
+
+    eos_state%xn(:) = ZERO
 
     do comp=1,nspec
        if(spec_names(comp) .eq. "carbon-12") then
-          xn_eos(comp) = state1d(21)
+          eos_state%xn(comp) = state1d(21)
+
        else if(spec_names(comp) .eq. "magnesium-24") then
-          xn_eos(comp) = state1d(22)
+          eos_state%xn(comp) = state1d(22)
+
        else if(spec_names(comp) .eq. "oxygen-16") then
-          xn_eos(comp) = state1d(23)
+          eos_state%xn(comp) = state1d(23)
+
        else
           print*,"In initdata, spec_names(",comp,") invalid"
        endif
     enddo
 
     ! given P, T, and X, compute rho
-    call eos(eos_input_tp, den_eos, temp_eos, &
-             xn_eos, p_eos, h_eos, e_eos, & 
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             .false.)
+    call eos(eos_input_tp, eos_state, .false.)
 
     ! given rho, T, and X, compute h
-    call eos(eos_input_rt, den_eos, temp_eos, &
-             xn_eos, p_eos, h_eos, e_eos, & 
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             .false.)
+    call eos(eos_input_rt, eos_state, .false.)  ! not sure why this is needed
 
-    INLET_VN = 0.0d0
-    INLET_VT = 0.0d0
-    INLET_RHO = den_eos
-    INLET_RHOH = den_eos*h_eos
+    INLET_VN   = 0.0d0
+    INLET_VT   = 0.0d0
+    INLET_RHO  = eos_state%rho
+    INLET_RHOH = eos_state%rho * eos_state%h
 
     do comp=1,nspec
        if(spec_names(comp) .eq. "carbon-12") then
-          INLET_RHOC12 = den_eos*xn_eos(comp)
+          INLET_RHOC12  = eos_state%rho * eos_state%xn(comp)
+
        else if(spec_names(comp) .eq. "magnesium-24") then
-          INLET_RHOMG24 = den_eos*xn_eos(comp)
+          INLET_RHOMG24 = eos_state%rho * eos_state%xn(comp)
+
        else if(spec_names(comp) .eq. "oxygen-16") then
-          INLET_RHOO16 = den_eos*xn_eos(comp)
+          INLET_RHOO16  = eos_state%rho * eos_state%xn(comp)
        endif
     enddo
-    INLET_TEMP = temp_eos
+    INLET_TEMP = eos_state%T
     INLET_TRA = 0.0d0
 
     inlet_bc_initialized = .true.

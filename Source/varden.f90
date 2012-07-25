@@ -1432,6 +1432,8 @@ subroutine varden()
 
   call bc_tower_destroy(the_bc_tower)
 
+  call destroy(particles)
+
   call destroy_geometry()
 
   call eos_finalize()

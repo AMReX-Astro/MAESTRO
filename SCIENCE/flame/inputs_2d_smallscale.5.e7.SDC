@@ -45,8 +45,7 @@
  use_eos_coulomb = T
 
  ppm_type = 1
- species_pred_type = 2
- enthalpy_pred_type = 0
+ enthalpy_pred_type = 3
 
  dpdT_factor = 0.3d0
 

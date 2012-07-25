@@ -1,0 +1,138 @@
+gamma_law_bubble/
+  
+  A simple rising bubble in a stratified atmosphere, using the
+  gamma-law equation of state.  The bubble is initialized via a
+  temperature perturbation---no heating term is used.  By varying the
+  amplitude of the perturbation, the Mach number of the bubble
+  changes.  The atmosphere can be setup to be isentropic or
+  isothermal.
+
+
+gamma_law_bubble_interface/
+
+  Similar to gamma_law_bubble, but now the atmosphere consists of
+  two parts.  The lower layer is isentropic.  The upper layer is
+  either isentropic or isothermal.  A jump in entropy can be 
+  applied at the interface, creating an entropy "wall" that stops
+  the bubble.
+
+
+incomp_shear_jet/
+
+  A simple pure-incompressible shear layer problem.  This is the 
+  example problem used in Bell, Colella, and Glaz (1989).
+
+
+mach_bubble/
+
+  Similar to gamma_law_bubble, but this uses a heating term to seed
+  the bubbles.
+
+
+mach_jet/
+
+  Inflow a low Mach number jet through the lower boundary into a
+  constant density/p domain.  This was used to explore acoustics and
+  the role of pi in the overall pressure in the SciDAC 2010 paper
+  (http://arxiv.org/abs/1008.2801)
+
+
+nersc_benchmark/
+
+planar_heat/
+
+polytrope_test/
+
+polytrope_test2/
+
+rt/
+
+  A classic Rayleigh-Taylor instability problem.
+
+
+spherical_heat/
+
+  Map a spherical star (a Chandrasekhar-mass white dwarf) onto the
+  Cartesian domain and uses an external heat source to cause the star
+  to expand.  This is the 3D analogue of the
+  UNIT_TESTS/test_basestate.  This problem was discussed in
+  the multilevel paper.
+
+
+stand_prob/
+
+
+test/
+
+  Originally used in Maestro paper II.  This sets up some bubbles with
+  an analytic heating source.
+
+
+test2/
+ 
+  The test problem from the Maestro paper III.  This places 3 hots
+  spots in a plane-parallel atmosphere.  Burning makes these bubbles
+  buoyant, and then roll up.
+
+
+test2_adaptive/
+
+  A version of test2 with adaptive grids, used in the multilevel
+  paper.
+
+
+test2_convergence/
+
+  This is based on test2, but with initial conditions simplified
+  (single bubble) to do an easier convergence study.  (This is likely
+  the setup used in Maestro paper III for the convergence study).
+
+
+test2_heating/
+
+  A version of the test2 problem with an additional heating layer to force the
+  base state to expand more.
+
+
+test2_spherical/
+
+  A full-star version of test_basestate for spherical problems.  This is from
+  the multilevel paper.
+
+
+test_3d_bubble/
+
+test_convect/
+
+  Drive convection through a plane-parallel atmosphere using an
+  externally-specified heat source.  This problem was used to compare
+  with compressible solvers in Maestro paper III and to test the
+  multilevel algorithm in the multilevel paper.
+
+
+test_eta_stuff/
+
+test_he_burn/
+
+test_longtime_convect/
+
+  Setup convection in a layer in a plane-parallel atmosphere.  This was used
+  in paper III for the example that ran for a long time.
+
+
+test_smallscale/
+
+   An older flame problem that reads in an inputs file from the SNe code
+   and maps it onto the grid and propagates the flame.  This was used when
+   writing the thermal diffusion solver.
+
+
+test_spherical/
+
+   Set up an isentropically stratified star and stir it up with a
+   random velocity field.  The low Mach number constraint is replaced
+   with the anelastic constraint (through the beta_type runtime
+   parameter).  Analytically, under these conditions, the density of
+   the star should not change.  This test problem was discussed in
+   Maestro paper IV.
+

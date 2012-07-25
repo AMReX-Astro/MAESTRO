@@ -10,13 +10,14 @@ module thermal_conduct_module
 
   private
 
-  public :: thermal_conduct_predictor, thermal_conduct_corrector
+  public :: thermal_conduct_predictor, thermal_conduct_corrector, &
+       make_explicit_thermal_hterm
 
 contains 
 
-  subroutine thermal_conduct_predictor(mla,dx,dt,sold,snew,p0_old,p0_new, &
+  subroutine thermal_conduct_predictor(mla,dx,dt,sold,shat,p0_old,p0_new, &
                                        hcoeff_old,Xkcoeff_old,pcoeff_old, &
-                                       aofs,intra,the_bc_tower)
+                                       the_bc_tower)
 
     use bl_prof_module
     use multifab_physbc_module
@@ -35,14 +36,12 @@ contains
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
     type(multifab) , intent(in   ) :: sold(:)
-    type(multifab) , intent(inout) :: snew(:)
+    type(multifab) , intent(inout) :: shat(:)
     type(multifab) , intent(in   ) :: hcoeff_old(:)
     type(multifab) , intent(in   ) :: Xkcoeff_old(:)
     type(multifab) , intent(in   ) :: pcoeff_old(:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
-    type(multifab) , intent(in   ) :: aofs(:)
-    type(multifab) , intent(in   ) :: intra(:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
 
     ! Local
@@ -101,7 +100,7 @@ contains
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! add old-time enthalpy diffusion to rhs
+    ! add h^old diffusion to rhs (using old coefficients)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
@@ -119,11 +118,11 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! add old-time species diffusion to rhs
+    ! add X_k^old diffusion to rhs (using old coefficients)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do comp=1,nspec
@@ -143,13 +142,13 @@ contains
 
        ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
        enddo
 
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! add new-time species diffusion to rhs
+    ! add X_k^hat diffusion to rhs (using old coefficients)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do comp=1,nspec
@@ -157,10 +156,10 @@ contains
        ! put beta on faces
        call put_data_on_faces(mla,Xkcoeff_old,comp,beta,.true.)
 
-       ! set phi = X_k^new
+       ! set phi = X_k^hat
        do n=1,nlevs
-          call multifab_copy_c(phi(n),1,snew(n),spec_comp+comp-1,1,1)
-          call multifab_div_div_c(phi(n),1,snew(n),rho_comp,1,1)
+          call multifab_copy_c(phi(n),1,shat(n),spec_comp+comp-1,1,1)
+          call multifab_div_div_c(phi(n),1,shat(n),rho_comp,1,1)
        enddo
 
        ! apply the operator
@@ -169,19 +168,19 @@ contains
 
        ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
        enddo
 
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! add old-time pressure diffusion from rhs
+    ! add p0^old diffusion to rhs (using old coefficients)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
     call put_data_on_faces(mla,pcoeff_old,1,beta,.true.)
 
-    ! set phi = p0_old
+    ! set phi = p0^old
     call put_1d_array_on_cart(p0_old,phi,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
 
@@ -191,17 +190,17 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo    
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! add new-time pressure diffusion from rhs
+    ! add p0^new diffusion to rhs (using old coefficients)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
     call put_data_on_faces(mla,pcoeff_old,1,beta,.true.)
 
-    ! set phi = p0_new
+    ! set phi = p0^new
     call put_1d_array_on_cart(p0_new,phi,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
 
@@ -211,48 +210,33 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! scale rhs and add remaining terms
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    ! multiply rhs by 0.5
+    ! multiply rhs by 0.5*dt
     do n=1,nlevs
-       call multifab_mult_mult_s(rhs(n),0.5d0,0)
+       call multifab_mult_mult_s(rhs(n),0.5d0*dt,0)
     end do
 
-    ! add reaction term to rhs
+    ! add (rhoh)^old + dt*(aofs + intra) to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,intra(n),rhoh_comp,1,0)
-    end do
-
-    ! add aofs to rhs
-    do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,aofs(n),rhoh_comp,1,0)
-    end do
-
-    ! multiply rhs by dt
-    do n=1,nlevs
-       call multifab_mult_mult_s_c(rhs(n),1,dt,1,0)
-    end do
-
-    ! add (rhoh)^old to rhs
-    do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,sold(n),rhoh_comp,1,0)
+       call multifab_plus_plus_c(rhs(n),1,shat(n),rhoh_comp,1,0)
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Setup LHS coefficients for implicit solve
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    ! copy rho^new into alpha
+    ! copy rho^hat=rho^new into alpha
     do n=1,nlevs
-       call multifab_copy_c(alpha(n),1,snew(n),rho_comp,1,0)
+       call multifab_copy_c(alpha(n),1,shat(n),rho_comp,1,0)
     enddo
 
-    ! copy hcoeff^old into beta
+    ! copy old coefficients into beta
     call put_data_on_faces(mla,hcoeff_old,1,beta,.true.)
 
     ! multiply beta by -dt/2
@@ -262,10 +246,10 @@ contains
        enddo
     enddo
 
-    ! initialize phi to a reasonable guess, (rhoh)^new / rho^new
+    ! initialize phi to a reasonable guess, (rhoh)^hat / rho^hat
     do n=1,nlevs
-       call multifab_copy_c(phi(n),1,snew(n),rhoh_comp,1,1)
-       call multifab_div_div_c(phi(n),1,snew(n),rho_comp,1,1)
+       call multifab_copy_c(phi(n),1,shat(n),rhoh_comp,1,1)
+       call multifab_div_div_c(phi(n),1,shat(n),rho_comp,1,1)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -281,15 +265,15 @@ contains
 
     rel_solver_eps = eps_mac
 
-    ! Call the solver to obtain h (it will be stored in phi)
+    ! Call the solver to obtain h^hat (it will be stored in phi)
     ! solves (alpha - div beta grad) phi = rhs
     call mac_multigrid(mla,rhs,phi,fine_flx,alpha,beta,dx,the_bc_tower, &
                        dm+rhoh_comp,stencil_order,mla%mba%rr,rel_solver_eps,abs_solver_eps)
 
-    ! load new rho*h into snew
+    ! load (rho*h)^hat into shat
     do n=1,nlevs
-       call multifab_copy_c(snew(n),rhoh_comp,phi(n),1,1,0)
-       call multifab_mult_mult_c(snew(n),rhoh_comp,snew(n),rho_comp,1,0)
+       call multifab_copy_c(shat(n),rhoh_comp,phi(n),1,1,0)
+       call multifab_mult_mult_c(shat(n),rhoh_comp,shat(n),rho_comp,1,0)
     enddo
 
     do n=2,nlevs
@@ -310,10 +294,10 @@ contains
 
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(snew(nlevs),rhoh_comp,1)
+       call multifab_fill_boundary_c(shat(nlevs),rhoh_comp,1)
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(snew(nlevs),rhoh_comp,dm+rhoh_comp,1, &
+       call multifab_physbc(shat(nlevs),rhoh_comp,dm+rhoh_comp,1, &
                             the_bc_tower%bc_tower_array(nlevs))
 
     else
@@ -322,12 +306,12 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(snew(n-1),rhoh_comp,snew(n),rhoh_comp,mla%mba%rr(n-1,:),1)
+          call ml_cc_restriction_c(shat(n-1),rhoh_comp,shat(n),rhoh_comp,mla%mba%rr(n-1,:),1)
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),nghost(snew(1)),mla%mba%rr(n-1,:), &
+          call multifab_fill_ghost_cells(shat(n),shat(n-1),nghost(shat(1)),mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
                                          rhoh_comp,dm+rhoh_comp,1,fill_crse_input=.false.)
@@ -339,10 +323,10 @@ contains
 
   end subroutine thermal_conduct_predictor
 
-  subroutine thermal_conduct_corrector(mla,dx,dt,sold,snew,snew_lagged,p0_old,p0_new, &
+  subroutine thermal_conduct_corrector(mla,dx,dt,sold,shat,snew,p0_old,p0_new, &
                                        hcoeff_old,Xkcoeff_old,pcoeff_old, &
                                        hcoeff_new,Xkcoeff_new,pcoeff_new, &
-                                       intra,the_bc_tower)
+                                       the_bc_tower)
 
     use bl_prof_module
     use multifab_physbc_module
@@ -361,8 +345,8 @@ contains
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
     type(multifab) , intent(in   ) :: sold(:)
-    type(multifab) , intent(inout) :: snew(:)
-    type(multifab) , intent(in   ) :: snew_lagged(:)
+    type(multifab) , intent(inout) :: shat(:)
+    type(multifab) , intent(in   ) :: snew(:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
     type(multifab) , intent(in   ) :: hcoeff_old(:)
@@ -371,7 +355,6 @@ contains
     type(multifab) , intent(in   ) :: hcoeff_new(:)
     type(multifab) , intent(in   ) :: Xkcoeff_new(:)
     type(multifab) , intent(in   ) :: pcoeff_new(:)
-    type(multifab) , intent(in   ) :: intra(:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
 
     ! Local
@@ -430,7 +413,7 @@ contains
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! add old-time enthalpy diffusion to rhs
+    ! add h^old diffusion to rhs (using old coefficients)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
@@ -448,20 +431,20 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! subtract new-time enthalpy diffusion from rhs
+    ! subtract h^new enthalpy from rhs (using new coefficients)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
     call put_data_on_faces(mla,hcoeff_new,1,beta,.true.)
 
-    ! set phi = h^new,lagged
+    ! set phi = h^new
     do n=1,nlevs
-       call multifab_copy_c(phi(n),1,snew_lagged(n),rhoh_comp,1,1)
-       call multifab_div_div_c(phi(n),1,snew_lagged(n),rho_comp,1,1)
+       call multifab_copy_c(phi(n),1,snew(n),rhoh_comp,1,1)
+       call multifab_div_div_c(phi(n),1,snew(n),rho_comp,1,1)
     end do
 
     ! apply the operator
@@ -470,11 +453,11 @@ contains
 
     ! subtract Lphi from rhs
     do n=1,nlevs
-       call multifab_sub_sub_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_sub_sub_c(rhs(n),1,Lphi(n),1,1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! add old-time species diffusion to rhs
+    ! add X_k^old diffusion to rhs (using old coefficients)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do comp=1,nspec
@@ -494,13 +477,13 @@ contains
 
        ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
        enddo
 
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! add new-time species diffusion to rhs
+    ! add X_k^hat diffusion to rhs (using new coefficients)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do comp=1,nspec
@@ -510,8 +493,8 @@ contains
 
        ! set phi = X_k^new
        do n=1,nlevs
-          call multifab_copy_c(phi(n),1,snew(n),spec_comp+comp-1,1,1)
-          call multifab_div_div_c(phi(n),1,snew(n),rho_comp,1,1)
+          call multifab_copy_c(phi(n),1,shat(n),spec_comp+comp-1,1,1)
+          call multifab_div_div_c(phi(n),1,shat(n),rho_comp,1,1)
        enddo
 
        ! apply the operator
@@ -520,13 +503,13 @@ contains
 
        ! add Lphi to rhs
        do n=1,nlevs
-          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+          call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
        enddo
 
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! add old-time pressure diffusion from rhs
+    ! add p0^old diffusion to rhs (using old coefficients)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
@@ -542,11 +525,11 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo    
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! add new-time pressure diffusion from rhs
+    ! add p0^new diffusion to rhs (using new coefficients)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
@@ -562,43 +545,33 @@ contains
 
     ! add Lphi to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,0)
+       call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! scale rhs and add remaining terms
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    ! multiply rhs by 0.5
+    ! multiply rhs by 0.5*dt
     do n=1,nlevs
-       call multifab_mult_mult_s(rhs(n),0.5d0,0)
+       call multifab_mult_mult_s(rhs(n),0.5d0*dt,0)
     end do
 
-    ! add reaction term to rhs
+    ! add (rhoh)^old + dt*(aofs + intra) to rhs
     do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,intra(n),rhoh_comp,1,0)
-    end do
-
-    ! multiply rhs by dt
-    do n=1,nlevs
-       call multifab_mult_mult_s(rhs(n),dt,0)
-    end do
-
-    ! add (rhoh)^old + dt*A to rhs
-    do n=1,nlevs
-       call multifab_plus_plus_c(rhs(n),1,snew(n),rhoh_comp,1,0)
+       call multifab_plus_plus_c(rhs(n),1,shat(n),rhoh_comp,1,0)
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Setup LHS coefficients for implicit solve
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    ! copy rho^new into alpha
+    ! copy rho^hat\rho^new into alpha
     do n=1,nlevs
-       call multifab_copy_c(alpha(n),1,snew(n),rho_comp,1,0)
+       call multifab_copy_c(alpha(n),1,shat(n),rho_comp,1,0)
     enddo
 
-    ! copy hcoeff^new into beta
+    ! copy new coefficients into beta
     call put_data_on_faces(mla,hcoeff_new,1,beta,.true.)
 
     ! multiply beta by -dt
@@ -608,10 +581,10 @@ contains
        enddo
     enddo
 
-    ! initialize phi to a reasonable guess, (rhoh)^new / rho^new
+    ! initialize phi to a reasonable guess, (rhoh)^hat / rho^hat
     do n=1,nlevs
-       call multifab_copy_c(phi(n),1,snew(n),rhoh_comp,1,1)
-       call multifab_div_div_c(phi(n),1,snew(n),rho_comp,1,1)
+       call multifab_copy_c(phi(n),1,shat(n),rhoh_comp,1,1)
+       call multifab_div_div_c(phi(n),1,shat(n),rho_comp,1,1)
     enddo
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -627,15 +600,15 @@ contains
 
     rel_solver_eps = eps_mac
 
-    ! Call the solver to obtain h (it will be stored in phi)
+    ! Call the solver to obtain h^hat (it will be stored in phi)
     ! solves (alpha - div beta grad) phi = rhs
     call mac_multigrid(mla,rhs,phi,fine_flx,alpha,beta,dx,the_bc_tower, &
                        dm+rhoh_comp,stencil_order,mla%mba%rr,rel_solver_eps,abs_solver_eps)
 
-    ! load new rho*h into snew
+    ! load (rho*h)^hat into shat
     do n=1,nlevs
-       call multifab_copy_c(snew(n),rhoh_comp,phi(n),1,1,0)
-       call multifab_mult_mult_c(snew(n),rhoh_comp,snew(n),rho_comp,1,0)
+       call multifab_copy_c(shat(n),rhoh_comp,phi(n),1,1,0)
+       call multifab_mult_mult_c(shat(n),rhoh_comp,shat(n),rho_comp,1,0)
     enddo
 
     do n=2,nlevs
@@ -656,10 +629,10 @@ contains
 
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(snew(nlevs),rhoh_comp,1)
+       call multifab_fill_boundary_c(shat(nlevs),rhoh_comp,1)
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(snew(nlevs),rhoh_comp,dm+rhoh_comp,1, &
+       call multifab_physbc(shat(nlevs),rhoh_comp,dm+rhoh_comp,1, &
                             the_bc_tower%bc_tower_array(nlevs))
 
     else
@@ -668,12 +641,12 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(snew(n-1),rhoh_comp,snew(n),rhoh_comp,mla%mba%rr(n-1,:),1)
+          call ml_cc_restriction_c(shat(n-1),rhoh_comp,shat(n),rhoh_comp,mla%mba%rr(n-1,:),1)
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),nghost(snew(1)),mla%mba%rr(n-1,:), &
+          call multifab_fill_ghost_cells(shat(n),shat(n-1),nghost(shat(1)),mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
                                          rhoh_comp,dm+rhoh_comp,1,fill_crse_input=.false.)
@@ -684,5 +657,90 @@ contains
     call destroy(bpt)
 
   end subroutine thermal_conduct_corrector
+
+  subroutine make_explicit_thermal_hterm(mla,dx,thermal,s,hcoeff,the_bc_tower)
+
+    use bc_module
+    use bl_prof_module
+    use cc_stencil_module
+    use mac_applyop_module
+    use network, only: nspec
+    use ml_restriction_module, only : ml_cc_restriction
+    use multifab_fill_ghost_module
+    use bl_constants_module
+    use variables, only: rho_comp, rhoh_comp
+    use multifab_physbc_module
+    use fill_3d_module
+
+    type(ml_layout), intent(inout) :: mla
+    real(dp_t)     , intent(in   ) :: dx(:,:)
+    type(multifab) , intent(inout) :: thermal(:)
+    type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(in   ) :: hcoeff(:)
+    type(bc_tower) , intent(in   ) :: the_bc_tower
+
+    ! Local
+    type(multifab) :: phi(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel,mla%dim)
+    type(multifab) :: resid(mla%nlevel)
+
+    integer :: comp,i,n,stencil_order,dm,nlevs
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "make_explicit_thermal")
+
+    dm = mla%dim
+    nlevs = mla%nlevel
+
+    stencil_order = 2
+
+    do n=1,nlevs
+       call setval(thermal(n), ZERO, all=.true.)
+    end do
+
+       ! compute thermal = del dot ( hcoeff grad h)
+       
+       do n=1,nlevs
+          call multifab_build(phi(n),  mla%la(n), 1,  1)
+          do i = 1,dm
+             call multifab_build_edge(beta(n,i), mla%la(n), 1, 1, i)
+          end do
+       end do
+
+       do n=1,nlevs
+          ! load h into phi
+          call multifab_copy_c(phi(n),1,s(n),rhoh_comp,1,1)
+          call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
+       end do
+
+       call put_data_on_faces(mla,hcoeff,1,beta,.true.)
+
+       do n=1,nlevs
+          call multifab_build(alpha(n), mla%la(n), 1, 1)
+          call multifab_build(resid(n), mla%la(n), 1, 0)
+          call setval(alpha(n), ZERO, all=.true.)
+       end do
+       
+       ! applyop to compute resid = del dot hcoeff grad h
+       call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
+                        stencil_order,mla%mba%rr)
+       
+       ! add residual to thermal
+       do n=1,nlevs
+          call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
+       enddo
+       
+       do n=1,nlevs
+          call destroy(resid(n))
+          call destroy(phi(n))
+          call destroy(alpha(n))
+          do i = 1,dm 
+             call destroy(beta(n,i))
+          end do
+       end do
+    
+    call destroy(bpt)
+    
+  end subroutine make_explicit_thermal_hterm
 
 end module thermal_conduct_module

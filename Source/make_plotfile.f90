@@ -21,7 +21,8 @@ contains
                              use_thermal_diffusion, plot_omegadot, plot_Hnuc, &
                              plot_Hext, plot_eta, plot_ad_excess, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, &
-                             plot_sponge_fdamp, dm_in, use_particles, plot_processors
+                             plot_sponge_fdamp, dm_in, use_particles, &
+                             plot_processors, plot_pidivu
     use geometry, only: spherical
 
     character(len=20), intent(inout) :: plot_names(:)
@@ -146,6 +147,11 @@ contains
        plot_names(icomp_proc) = "processor_number"
     endif
 
+    if (plot_pidivu) then
+       plot_names(icomp_pidivu) = "pi_divu"
+    endif
+
+
   end subroutine get_plot_names
 
   subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot, &
@@ -168,7 +174,7 @@ contains
                              evolve_base_state, prob_lo, prob_hi, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, &
                              plot_cs, sponge_kappa, plot_sponge_fdamp, use_particles, &
-                             plot_processors, use_alt_energy_fix
+                             plot_processors, plot_pidivu, use_alt_energy_fix
     use geometry, only: spherical, nr_fine, nlevs_radial, numdisjointchunks, &
          r_start_coord, r_end_coord
     use average_module
@@ -565,9 +571,21 @@ contains
        call setval(pi_cc(n), ZERO, all=.true.)
     end do
 
+
+    if (use_alt_energy_fix) then
+       ! make beta_0 on a multifab
+       call make_grav_cell(grav_cell,rho0)
+       call make_div_coeff(div_coeff,rho0,p0,gamma1bar,grav_cell)
+       
+       call put_1d_array_on_cart(div_coeff,tempfab,foextrap_comp,.false.,.false.,dx, &
+                                 the_bc_tower%bc_tower_array,mla)
+    endif
+
     ! new function that average the nodal pi to cell-centers, then
-    ! normalized the entire signal to sum to 0
-    call make_pi_cc(mla,pi,pi_cc,the_bc_tower%bc_tower_array)
+    ! normalized the entire signal to sum to 0.  If we are doing
+    ! use_alt_energy_fix = T, then we first want to convert
+    ! (pi/beta_0) to pi.
+    call make_pi_cc(mla,pi,pi_cc,the_bc_tower%bc_tower_array,tempfab)
 
     do n=1,nlevs
 
@@ -583,20 +601,12 @@ contains
           call multifab_copy_c(plotdata(n),icomp_gpi,gpi(n),1,dm)
        endif
 
+       ! pi * div(U)
+       if (plot_pidivu) then
+          call make_pidivu(plotdata(n),icomp_pidivu,pi_cc(n),u(n),dx(n,:))
+       endif
+
     end do
-
-    if (use_alt_energy_fix) then
-       ! make beta_0 and correct pi/beta_0 to be pi
-       call make_grav_cell(grav_cell,rho0)
-       call make_div_coeff(div_coeff,rho0,p0,gamma1bar,grav_cell)
-       
-       call put_1d_array_on_cart(div_coeff,tempfab,foextrap_comp,.false.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla)
-       do n = 1,nlevs
-          call multifab_mult_mult_c(plotdata(n),icomp_pi,tempfab(n),1,1)
-       enddo
-    end if
-
 
 
     ! SPONGE

@@ -306,6 +306,9 @@ plot_ad_excess                      logical            .false.
 # create a field in the plotfile storing the processor number for each zone
 plot_processors                     logical            .false.
 
+# plot pi * div(U) -- this is a measure of conservation of energy
+plot_pidivu                         logical            .false.
+
 
 #-----------------------------------------------------------------------------
 # category: algorithm initialization

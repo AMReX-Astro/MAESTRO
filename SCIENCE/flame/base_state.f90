@@ -24,7 +24,8 @@ contains
     use bl_constants_module
     use bl_error_module
     use network
-    use eos_module
+    use eos_module, only: eos, eos_input_tp, eos_input_rt
+    use eos_type_module
     use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel, &
          interface_pos_frac, smooth_len_frac, &
          anelastic_cutoff, base_cutoff_density, prob_lo, prob_hi, &
@@ -45,10 +46,16 @@ contains
     real(kind=dp_t) :: p_ambient, dens_ash, rhoh_fuel, rhoh_ash
     real(kind=dp_t) :: xn_fuel(nspec), xn_ash(nspec), xn_smooth(nspec)
     
+    type (eos_t) :: eos_state
+
     ! figure out the indices for different species
     ic12  = network_species_index("carbon-12")
     io16  = network_species_index("oxygen-16")
     img24  = network_species_index("magnesium-24")    
+
+    if (ic12 < 0 .or. io16 < 0 .or. img24 < 0) then
+       call bl_error("ERROR: species indices not defined")
+    end if
 
     ! length of the domain
     rlen = (prob_hi(size(dx)) - prob_lo(size(dx)))
@@ -60,23 +67,15 @@ contains
     xn_fuel(ic12) = xc12_fuel
     xn_fuel(io16) = 1.d0 - xc12_fuel
 
-    den_eos  = dens_fuel
-    temp_eos = temp_fuel
-    xn_eos(:) = xn_fuel(:)
+    eos_state%rho   = dens_fuel
+    eos_state%T     = temp_fuel
+    eos_state%xn(:) = xn_fuel(:)
 
-    call eos(eos_input_rt, den_eos, temp_eos, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, &
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             .false.)
+    call eos(eos_input_rt, eos_state, .false.)
 
     ! note: p_ambient should be = p0_init
-    p_ambient = p_eos
-    rhoh_fuel = dens_fuel*h_eos
+    p_ambient = eos_state%p
+    rhoh_fuel = dens_fuel*eos_state%h
 
     ! ash
     xn_ash(:)     = ZERO
@@ -84,23 +83,15 @@ contains
     xn_ash(io16)  = 1.d0 - xc12_fuel    
     xn_ash(img24) = xc12_fuel
 
-    den_eos  = dens_fuel    ! initial guess
-    temp_eos = temp_ash
-    xn_eos(:) = xn_ash(:)
-    p_eos = p_ambient
+    eos_state%rho   = dens_fuel    ! initial guess
+    eos_state%T     = temp_ash
+    eos_state%xn(:) = xn_ash(:)
+    eos_state%p     = p_ambient
 
-    call eos(eos_input_tp, den_eos, temp_eos, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, &
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             .false.)
+    call eos(eos_input_tp, eos_state, .false.)
 
-    dens_ash = den_eos
-    rhoh_ash = dens_ash*h_eos
+    dens_ash = eos_state%rho
+    rhoh_ash = dens_ash*eos_state%h
 
     ! initialize the fuel and ash, but put in a smooth temperature
     ! profile -- this means that we'll need to go back through an
@@ -138,6 +129,7 @@ contains
             (smooth_len_frac*rlen) ) )
 
        ! give the carbon mass fraction a smooth profile too
+       xn_smooth(:) = ZERO
        xn_smooth(ic12) = xn_fuel(ic12) + (xn_ash(ic12) - xn_fuel(ic12)) * &
             HALF * (ONE + &
             tanh( (rloc - (prob_lo(size(dx)) + interface_pos_frac*rlen)) / &
@@ -147,24 +139,16 @@ contains
        xn_smooth(img24) = 1.d0 - xn_smooth(ic12) - xn_smooth(io16)
 
        ! get the new density and enthalpy 
-       den_eos  = s0_init(r,rho_comp)
-       temp_eos = s0_init(r,temp_comp)
-       xn_eos(:) = xn_smooth(:)
-       p_eos = p_ambient
+       eos_state%rho   = s0_init(r,rho_comp)
+       eos_state%T     = s0_init(r,temp_comp)
+       eos_state%xn(:) = xn_smooth(:)
+       eos_state%p     = p_ambient
 
-       call eos(eos_input_tp, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false.)
+       call eos(eos_input_tp, eos_state, .false.)
 
-       s0_init(r,rho_comp)  = den_eos
-       s0_init(r,spec_comp:spec_comp+nspec-1) = den_eos*xn_smooth(:)
-       s0_init(r,rhoh_comp) = den_eos*h_eos
+       s0_init(r,rho_comp)  = eos_state%rho
+       s0_init(r,spec_comp:spec_comp+nspec-1) = eos_state%rho*xn_smooth(:)
+       s0_init(r,rhoh_comp) = eos_state%rho * eos_state%h
 
     enddo
 
