@@ -819,18 +819,14 @@ contains
           call multifab_build(hcoeff_new(n),  mla%la(n), 1,     1)
           call multifab_build(Xkcoeff_new(n), mla%la(n), nspec, 1)
           call multifab_build(pcoeff_new(n),  mla%la(n), 1,     1)
-          call multifab_build(diff_hterm_new(n), mla%la(n), 1, 0)
        end do
 
        call make_thermal_coeffs(snew,Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new)
 
        ! compute diff_new using snew, p0_new, and new coefficients
        call make_explicit_thermal(mla,dx,diff_new,snew, &
-            Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
-            p0_new,the_bc_tower)
-
-       ! compute only the h term in diff_new
-       call make_explicit_thermal_hterm(mla,dx,diff_hterm_new,snew,hcoeff_new,the_bc_tower)
+                                  Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
+                                  p0_new,the_bc_tower)
 
     else
 
@@ -1215,13 +1211,16 @@ contains
                                      Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
                                      p0_new,the_bc_tower)
 
-
-          ! compute only the h term in diff_hat
           do n=1,nlevs
              call multifab_build(diff_hterm_hat(n), mla%la(n), 1, 0)
-             call setval(diff_hterm_hat(n),ZERO,all=.true.)
+             call multifab_build(diff_hterm_new(n), mla%la(n), 1, 0)
           end do
+
+          ! compute only the h term in diff_hat
           call make_explicit_thermal_hterm(mla,dx,diff_hterm_hat,shat,hcoeff_new,the_bc_tower)
+
+          ! compute only the h term in diff_new
+          call make_explicit_thermal_hterm(mla,dx,diff_hterm_new,snew,hcoeff_new,the_bc_tower)
           
        end if
 
@@ -1251,6 +1250,7 @@ contains
 
        do n=1,nlevs
           call multifab_destroy(diff_hterm_hat(n))
+          call multifab_destroy(diff_hterm_new(n))
        end do
 
        call react_state(mla,tempbar_init,sold,snew,rho_Hext,p0_new, &
@@ -1407,7 +1407,6 @@ contains
           call destroy(hcoeff_new(n))
           call destroy(Xkcoeff_new(n))
           call destroy(pcoeff_new(n))
-          call destroy(diff_hterm_new(n))
        end do
     end if
 
