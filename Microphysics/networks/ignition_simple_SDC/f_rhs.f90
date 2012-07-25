@@ -93,6 +93,9 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
      xn_eos(:) = X(1:nspec)
      h_eos = rhoh/dens
 
+     ! need an initial T guess                                                                                          
+     temp_eos =1.e9_dp_t
+
      call eos(eos_input_rh, den_eos, temp_eos, &
               xn_eos, &
               p_eos, h_eos, e_eos, &
