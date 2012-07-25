@@ -61,7 +61,11 @@ spherical_heat/
 
 stand_prob/
 
+
 test/
+
+  Originally used in Maestro paper II.  This sets up some bubbles with
+  an analytic heating source.
 
 
 test2/
@@ -81,7 +85,15 @@ test2_convergence/
 
 test2_heating/
 
+  A version of the test2 problem with an additional heating layer to force the
+  base state to expand more.
+
+
 test2_spherical/
+
+  A full-star version of test_basestate for spherical problems.  This is from
+  the multilevel paper.
+
 
 test_3d_bubble/
 
@@ -99,7 +111,16 @@ test_he_burn/
 
 test_longtime_convect/
 
+  Setup convection in a layer in a plane-parallel atmosphere.  This was used
+  in paper III for the example that ran for a long time.
+
+
 test_smallscale/
+
+   An older flame problem that reads in an inputs file from the SNe code
+   and maps it onto the grid and propagates the flame.  This was used when
+   writing the thermal diffusion solver.
+
 
 test_spherical/
 
