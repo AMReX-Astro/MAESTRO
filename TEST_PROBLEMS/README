@@ -83,6 +83,11 @@ test2_adaptive/
 
 test2_convergence/
 
+  This is based on test2, but with initial conditions simplified
+  (single bubble) to do an easier convergence study.  (This is likely
+  the setup used in Maestro paper III for the convergence study).
+
+
 test2_heating/
 
   A version of the test2 problem with an additional heating layer to force the
