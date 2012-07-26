@@ -714,7 +714,7 @@ contains
 
        ! we want this in terms of h, not (rho h)
        do n=1,nlevs
-          call multifab_div_div_c(intra(n),rhoh_comp,rhohalf(n),1,1,1)
+          call multifab_div_div_c(intra(n),rhoh_comp,rhohalf(n),1,1,0)
        end do
 
     else if ((enthalpy_pred_type == predict_T_then_rhohprime) .or. &
@@ -735,19 +735,19 @@ contains
        ! I_T = (1 / (rho c_p)) [ (rhoh_new - rhoh_old)/dt - A_rhoh -
        !     sum_k xi_k ( (rhoX_new - rhoX_old)/dt - A_rhoX ) ]
        do n=1,nlevs
-          call multifab_copy_c(intra(n), temp_comp, intra(n), rhoh_comp, 1, 1)
+          call multifab_copy_c(intra(n), temp_comp, intra(n), rhoh_comp, 1, 0)
           do comp=1, nspec
              ! multiple xi by intra and store in xi
              call multifab_mult_mult_c(xihalf(n), comp, &
-                                       intra(n),  spec_comp+comp-1, 1, 1)
+                                       intra(n),  spec_comp+comp-1, 1, 0)
 
              ! subtract from intra temp
-             call multifab_sub_sub_c(intra(n), temp_comp, xihalf(n), comp, 1, 1)
+             call multifab_sub_sub_c(intra(n), temp_comp, xihalf(n), comp, 1, 0)
              
           enddo
 
-          call multifab_div_div_c(intra(n), temp_comp, rhohalf(n), 1, 1, 1)
-          call multifab_div_div_c(intra(n), temp_comp, cphalf(n),  1, 1, 1)
+          call multifab_div_div_c(intra(n), temp_comp, rhohalf(n), 1, 1, 0)
+          call multifab_div_div_c(intra(n), temp_comp, cphalf(n),  1, 1, 0)
 
        end do
 
@@ -766,7 +766,7 @@ contains
 
        do n=1,nlevs
           do comp=spec_comp,spec_comp+nspec-1
-             call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
+             call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,0)
           end do
        end do
 
@@ -1273,7 +1273,7 @@ contains
 
           ! we want this in terms of h, not (rho h)
           do n=1,nlevs
-             call multifab_div_div_c(intra(n),rhoh_comp,rhohalf(n),1,1,1)
+             call multifab_div_div_c(intra(n),rhoh_comp,rhohalf(n),1,1,0)
           end do
 
        else if ((enthalpy_pred_type == predict_T_then_rhohprime) .or. &
@@ -1294,21 +1294,21 @@ contains
           ! I_T = (1 / (rho c_p)) [ (rhoh_new - rhoh_old)/dt - A_rhoh -
           !     sum_k xi_k ( (rhoX_new - rhoX_old)/dt - A_rhoX ) ]
           do n=1,nlevs
-             call multifab_copy_c(intra(n), temp_comp, intra(n), rhoh_comp, 1, 1)
+             call multifab_copy_c(intra(n), temp_comp, intra(n), rhoh_comp, 1, 0)
 
              do comp=1,nspec
 
                 ! multiple xi by intra and store in xi
                 call multifab_mult_mult_c(xihalf(n), comp, &
-                                          intra(n),  spec_comp+comp-1, 1, 1)
+                                          intra(n),  spec_comp+comp-1, 1, 0)
 
                 ! subtract from intra temp
-                call multifab_sub_sub_c(intra(n), temp_comp, xihalf(n), comp, 1, 1)
+                call multifab_sub_sub_c(intra(n), temp_comp, xihalf(n), comp, 1, 0)
              
              enddo
 
-             call multifab_div_div_c(intra(n), temp_comp, rhohalf(n), 1, 1, 1)
-             call multifab_div_div_c(intra(n), temp_comp, cphalf(n),  1, 1, 1)
+             call multifab_div_div_c(intra(n), temp_comp, rhohalf(n), 1, 1, 0)
+             call multifab_div_div_c(intra(n), temp_comp, cphalf(n),  1, 1, 0)
 
           end do
           
@@ -1327,7 +1327,7 @@ contains
           
           do n=1,nlevs
              do comp=spec_comp,spec_comp+nspec-1
-                call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
+                call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,0)
              end do
           end do
        endif
