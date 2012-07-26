@@ -230,6 +230,7 @@ contains
     end if
 
     if (enthalpy_pred_type .eq. predict_rhoh) then
+       ! use the conservative form of the prediction
        if (bds_type .eq. 0) then
           call make_edge_scal(sold,sedge,umac,scal_force, &
                               dx,dt,is_vel,the_bc_level, &
@@ -240,6 +241,7 @@ contains
                    pred_comp,dm+pred_comp,1,.true.,mla)
        end if
     else
+       ! use the advective form of the prediction
        if (bds_type .eq. 0) then
           call make_edge_scal(sold,sedge,umac,scal_force, &
                               dx,dt,is_vel,the_bc_level, &
