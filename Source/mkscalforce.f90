@@ -863,19 +863,26 @@ contains
           if ( multifab_remote(temp_force(n),i) ) cycle
           fp  => dataptr(temp_force(n),i)
           ump => dataptr(umac(n,1),i)
-          vmp => dataptr(umac(n,2),i)
           sp  => dataptr(s(n),i)
+          tp  => dataptr(thermal(n),i)
+
           lo  =  lwb(get_box(s(n),i))
           hi  =  upb(get_box(s(n),i))
-          tp  => dataptr(thermal(n),i)
+
           select case (dm)
           case (1)
-             call bl_error("ERROR: mktempforce not implemented for 1-d")
+             call mktempforce_1d(n, fp(:,1,1,temp_comp), ng_f, sp(:,1,1,:), ng_s, &
+                                 ump(:,1,1,1), ng_um, tp(:,1,1,1), ng_th, lo, hi, &
+                                 p0_old(n,:), p0_new(n,:), psi(n,:))
+
           case (2)
+             vmp => dataptr(umac(n,2),i)
              call mktempforce_2d(n, fp(:,:,1,temp_comp), ng_f, sp(:,:,1,:), ng_s, &
                                  vmp(:,:,1,1), ng_um, tp(:,:,1,1), ng_th, lo, hi, &
                                  p0_old(n,:), p0_new(n,:), psi(n,:))
+
           case(3)
+             vmp => dataptr(umac(n,2),i)
              wmp => dataptr(umac(n,3),i)
              if (spherical .eq. 1) then
                 pp  => dataptr(p0_cart(n),i)
@@ -932,6 +939,72 @@ contains
 
   end subroutine mktempforce
 
+  subroutine mktempforce_1d(n, temp_force, ng_f, s, ng_s, wmac, ng_um, thermal, ng_th, &
+                            lo, hi, p0_old, p0_new, psi)
+
+    use geometry, only: dr, nr
+    use variables, only: temp_comp, rho_comp, spec_comp
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
+    use network, only: nspec
+
+    ! compute the source terms for temperature
+
+    ! note, in the prediction of the interface states, we will set
+    ! both p0_old and p0_new to the same old value.  In the computation
+    ! of the temp_force for the update, they will be used to time-center.
+
+    integer,         intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um,ng_th
+    integer,         intent(in   ) :: n
+    real(kind=dp_t), intent(  out) :: temp_force(lo(1)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s :,:)
+    real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:), psi(0:)
+
+    integer :: i
+
+    real(kind=dp_t) :: gradp0, wadv, dhdp
+
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
+    do i = lo(1),hi(1)
+
+       if (i.eq.0) then
+          gradp0 = HALF * ( p0_old(i+1) + p0_new(i+1) &
+                           -p0_old(i  ) - p0_new(i  ) ) / dr(n)
+       else if (i.eq.nr(n)-1) then
+          gradp0 = HALF * ( p0_old(i  ) + p0_new(i  ) &
+                           -p0_old(i-1) - p0_new(i-1) ) / dr(n)
+       else
+          gradp0 = FOURTH * ( p0_old(i+1) + p0_new(i+1) &
+                             -p0_old(i-1) - p0_new(i-1) ) / dr(n)
+       end if
+
+       eos_state%T     = s(i,temp_comp)
+       eos_state%rho   = s(i,rho_comp)
+       eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1) / s(i,rho_comp)
+
+       pt_index(:) = (/i, -1, -1/)
+
+       ! dens, temp, xmass inputs
+       call eos(eos_input_rt, eos_state, .false., pt_index)
+
+       dhdp = ONE / s(i,rho_comp) + ( s(i,rho_comp) * eos_state%dedr - &
+                                      eos_state%p / s(i,rho_comp) ) &
+                                     / ( s(i,rho_comp) * eos_state%dpdr )
+
+       wadv = HALF*(wmac(i)+wmac(i+1))
+
+       temp_force(i) =  thermal(i) + (ONE - s(i,rho_comp) * dhdp) * &
+                          (wadv * gradp0 + psi(i))
+       temp_force(i) = temp_force(i) / (eos_state%cp * s(i,rho_comp))
+
+    end do
+
+  end subroutine mktempforce_1d
+
   subroutine mktempforce_2d(n, temp_force, ng_f, s, ng_s, wmac, ng_um, thermal, ng_th, &
                             lo, hi, p0_old, p0_new, psi)
 
@@ -981,7 +1054,7 @@ contains
           eos_state%rho   = s(i,j,rho_comp)
           eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1) / s(i,j,rho_comp)
 
-          pt_index(:) = (/i, -1, -1/)
+          pt_index(:) = (/i, j, -1/)
 
           ! dens, temp, xmass inputs
          call eos(eos_input_rt, eos_state, .false., pt_index)
@@ -1048,7 +1121,7 @@ contains
              eos_state%rho   = s(i,j,k,rho_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
 
-             pt_index(:) = (/i, j, -1/)
+             pt_index(:) = (/i, j, k/)
              
              ! dens, temp, xmass inputs
              call eos(eos_input_rt, eos_state, .false., pt_index)
