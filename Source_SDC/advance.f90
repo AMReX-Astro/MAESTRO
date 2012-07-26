@@ -483,7 +483,6 @@ contains
     
     ! diff_old is the forcing for rhoh or temperature
     if(use_thermal_diffusion) then
-
        do n=1,nlevs
           call multifab_build(Tcoeff_old(n),  mla%la(n), 1,     1)
           call multifab_build(hcoeff_old(n),  mla%la(n), 1,     1)
@@ -497,7 +496,6 @@ contains
        ! compute diff_old
        call make_explicit_thermal(mla,dx,diff_old,sold,Tcoeff_old,hcoeff_old, &
                                   Xkcoeff_old,pcoeff_old,p0_old,the_bc_tower)
-
     end if
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -1372,7 +1370,6 @@ contains
 
     if (use_thermal_diffusion) then
        do n=1,nlevs
-          call destroy(shat(n))
           call destroy(Tcoeff_old(n))
           call destroy(hcoeff_old(n))
           call destroy(Xkcoeff_old(n))
@@ -1385,6 +1382,7 @@ contains
     end if
 
     do n=1,nlevs
+       call destroy(shat(n))
        call destroy(macphi(n))
        call destroy(etarhoflux(n))
        call destroy(diff_old(n))
