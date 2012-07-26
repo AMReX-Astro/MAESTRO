@@ -706,6 +706,10 @@ contains
           lo = lwb(get_box(s(n), i))
           hi = upb(get_box(s(n), i))
           select case(dm)
+          case (1)
+             call instantaneous_reaction_rates_1d(sp(:,1,1,:),ng_s,wp(:,1,1,:),ng_w, &
+                                                  hp(:,1,1,1),ng_h,lo,hi)
+
           case (2)
              call instantaneous_reaction_rates_2d(sp(:,:,1,:),ng_s,wp(:,:,1,:),ng_w, &
                                                   hp(:,:,1,1),ng_h,lo,hi)
@@ -716,6 +720,41 @@ contains
     end do
 
   end subroutine instantaneous_reaction_rates
+
+  subroutine instantaneous_reaction_rates_1d(s,ng_s,rho_omegadot,ng_w,rho_Hnuc,ng_h,lo,hi)
+
+    use network, only: nspec
+    use variables, only: spec_comp, rhoh_comp
+
+    integer,         intent(in   ) :: ng_s,ng_w,ng_h,lo(:),hi(:)
+    real(kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s:,:)
+    real(kind=dp_t), intent(inout) :: rho_omegadot(lo(1)-ng_w:,:)
+    real(kind=dp_t), intent(inout) ::     rho_Hnuc(lo(1)-ng_h:)
+
+    ! local
+    integer :: i
+
+    real(kind=dp_t) :: y(nspec+1)
+    real(kind=dp_t) :: ydot(nspec+1)
+    real(kind=dp_t) :: rho_Hnuc_out
+
+    real(kind=dp_t) :: time_dummy, rpar_dummy
+    integer :: ipar_dummy
+
+    do i=lo(1),hi(1)
+
+       y(1:nspec) = s(i,spec_comp:spec_comp+nspec-1)
+       y(nspec+1) = s(i,rhoh_comp)
+
+       call f_rhs_instantaneous_reaction_rates(nspec+1,time_dummy,y,ydot,rho_Hnuc_out,&
+                                               rpar_dummy,ipar_dummy)
+
+       rho_omegadot(i,1:nspec) = ydot(1:nspec)
+       rho_Hnuc(i) = rho_Hnuc_out
+
+    end do
+
+  end subroutine instantaneous_reaction_rates_1d
 
   subroutine instantaneous_reaction_rates_2d(s,ng_s,rho_omegadot,ng_w,rho_Hnuc,ng_h,lo,hi)
 
