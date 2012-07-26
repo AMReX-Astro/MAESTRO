@@ -713,7 +713,7 @@ contains
 
        ! we want this in terms of h, not (rho h)
        do n=1,nlevs
-          call multifab_div_div_c(intra(n),rhoh_comp,rhohalf(n),1,1,1)
+          call multifab_div_div_c(intra(n),rhoh_comp,rhohalf(n),1,1,0)
        end do
 
     else if ((enthalpy_pred_type == predict_T_then_rhohprime) .or. &
@@ -734,19 +734,19 @@ contains
        ! I_T = (1 / (rho c_p)) [ (rhoh_new - rhoh_old)/dt - A_rhoh -
        !     sum_k xi_k ( (rhoX_new - rhoX_old)/dt - A_rhoX ) ]
        do n=1,nlevs
-          call multifab_copy_c(intra(n), temp_comp, intra(n), rhoh_comp, 1, 1)
+          call multifab_copy_c(intra(n), temp_comp, intra(n), rhoh_comp, 1, 0)
           do comp=1, nspec
              ! multiple xi by intra and store in xi
              call multifab_mult_mult_c(xihalf(n), comp, &
-                                       intra(n),  spec_comp+comp-1, 1, 1)
+                                       intra(n),  spec_comp+comp-1, 1, 0)
 
              ! subtract from intra temp
-             call multifab_sub_sub_c(intra(n), temp_comp, xihalf(n), comp, 1, 1)
+             call multifab_sub_sub_c(intra(n), temp_comp, xihalf(n), comp, 1, 0)
              
           enddo
 
-          call multifab_div_div_c(intra(n), temp_comp, rhohalf(n), 1, 1, 1)
-          call multifab_div_div_c(intra(n), temp_comp, cphalf(n),  1, 1, 1)
+          call multifab_div_div_c(intra(n), temp_comp, rhohalf(n), 1, 1, 0)
+          call multifab_div_div_c(intra(n), temp_comp, cphalf(n),  1, 1, 0)
 
        end do
 
@@ -765,7 +765,7 @@ contains
 
        do n=1,nlevs
           do comp=spec_comp,spec_comp+nspec-1
-             call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
+             call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,0)
           end do
        end do
 
@@ -778,11 +778,29 @@ contains
     if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
     
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! STEP 3 -- Update advection velocities
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     misc_time_start = parallel_wtime()
+
+    ! compute new-time coefficients and diffusion term
+    if (use_thermal_diffusion) then
+
+       do n=1,nlevs
+          call multifab_build(Tcoeff_new(n),  mla%la(n), 1,     1)
+          call multifab_build(hcoeff_new(n),  mla%la(n), 1,     1)
+          call multifab_build(Xkcoeff_new(n), mla%la(n), nspec, 1)
+          call multifab_build(pcoeff_new(n),  mla%la(n), 1,     1)
+       end do
+
+       call make_thermal_coeffs(snew,Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new)
+
+       call make_explicit_thermal(mla,dx,diff_new,snew, &
+                                  Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
+                                  p0_new,the_bc_tower)
+
+    else
+       do n=1,nlevs
+          call setval(diff_new(n),ZERO,all=.true.)
+       end do
+    end if
 
     ! compute gamma1bar
 !    if (evolve_base_state) then
@@ -810,35 +828,16 @@ contains
     div_coeff_nph = HALF*(div_coeff_old + div_coeff_new)
 
     ! reset cutoff coordinates to old time value
-    call compute_cutoff_coords(rho0_old)
-
-    if (use_thermal_diffusion) then
-
-       do n=1,nlevs
-          call multifab_build(Tcoeff_new(n),  mla%la(n), 1,     1)
-          call multifab_build(hcoeff_new(n),  mla%la(n), 1,     1)
-          call multifab_build(Xkcoeff_new(n), mla%la(n), nspec, 1)
-          call multifab_build(pcoeff_new(n),  mla%la(n), 1,     1)
-       end do
-
-       call make_thermal_coeffs(snew,Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new)
-
-       ! compute diff_new using snew, p0_new, and new coefficients
-       call make_explicit_thermal(mla,dx,diff_new,snew, &
-                                  Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
-                                  p0_new,the_bc_tower)
-
-    else
-
-       do n=1,nlevs
-          call setval(diff_new(n),ZERO,all=.true.)
-       end do
-
-    end if
+!    call compute_cutoff_coords(rho0_old)
 
     if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 3 -- Update advection velocities
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! we only recompute umac if we are doing SDC iterations
     if (sdc_iters .ge. 1) then
     
        advect_time_start = parallel_wtime()
@@ -1006,17 +1005,6 @@ contains
           call cell_to_edge(div_coeff_nph,div_coeff_edge)
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,macrhs, &
                           div_coeff_1d=div_coeff_nph,div_coeff_1d_edge=div_coeff_edge)
-       end if
-
-       ! advect the particles through dt using umac.  Then redistribute them
-       if (.not. init_mode .and. use_particles) then
-
-          call addw0(umac,the_bc_tower%bc_tower_array,mla,w0,w0mac,mult=1.d0)
-
-          call move_advect(particles,mla,umac,dx,dt,prob_lo,prob_hi)
-
-          call addw0(umac,the_bc_tower%bc_tower_array,mla,w0,w0mac,mult=-1.d0)
-
        end if
 
        do n=1,nlevs
@@ -1286,7 +1274,7 @@ contains
 
           ! we want this in terms of h, not (rho h)
           do n=1,nlevs
-             call multifab_div_div_c(intra(n),rhoh_comp,rhohalf(n),1,1,1)
+             call multifab_div_div_c(intra(n),rhoh_comp,rhohalf(n),1,1,0)
           end do
 
        else if ((enthalpy_pred_type == predict_T_then_rhohprime) .or. &
@@ -1307,21 +1295,21 @@ contains
           ! I_T = (1 / (rho c_p)) [ (rhoh_new - rhoh_old)/dt - A_rhoh -
           !     sum_k xi_k ( (rhoX_new - rhoX_old)/dt - A_rhoX ) ]
           do n=1,nlevs
-             call multifab_copy_c(intra(n), temp_comp, intra(n), rhoh_comp, 1, 1)
+             call multifab_copy_c(intra(n), temp_comp, intra(n), rhoh_comp, 1, 0)
 
              do comp=1,nspec
 
                 ! multiple xi by intra and store in xi
                 call multifab_mult_mult_c(xihalf(n), comp, &
-                                          intra(n),  spec_comp+comp-1, 1, 1)
+                                          intra(n),  spec_comp+comp-1, 1, 0)
 
                 ! subtract from intra temp
-                call multifab_sub_sub_c(intra(n), temp_comp, xihalf(n), comp, 1, 1)
+                call multifab_sub_sub_c(intra(n), temp_comp, xihalf(n), comp, 1, 0)
              
              enddo
 
-             call multifab_div_div_c(intra(n), temp_comp, rhohalf(n), 1, 1, 1)
-             call multifab_div_div_c(intra(n), temp_comp, cphalf(n),  1, 1, 1)
+             call multifab_div_div_c(intra(n), temp_comp, rhohalf(n), 1, 1, 0)
+             call multifab_div_div_c(intra(n), temp_comp, cphalf(n),  1, 1, 0)
 
           end do
           
@@ -1340,7 +1328,7 @@ contains
           
           do n=1,nlevs
              do comp=spec_comp,spec_comp+nspec-1
-                call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,1)
+                call multifab_div_div_c(intra(n),comp,rhohalf(n),1,1,0)
              end do
           end do
        endif
@@ -1417,6 +1405,13 @@ contains
        call destroy(aofs(n))
        call destroy(sdc_source(n))
     end do
+
+    ! advect the particles through dt using umac.  Then redistribute them
+    if (.not. init_mode .and. use_particles) then
+       call addw0(umac,the_bc_tower%bc_tower_array,mla,w0,w0mac,mult=1.d0)
+       call move_advect(particles,mla,umac,dx,dt,prob_lo,prob_hi)
+       call addw0(umac,the_bc_tower%bc_tower_array,mla,w0,w0mac,mult=-1.d0)
+    end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 5 -- Advance velocity and dynamic pressure

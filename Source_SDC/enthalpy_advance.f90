@@ -238,14 +238,27 @@ contains
        pred_comp = rhoh_comp
     end if
 
-    if (bds_type .eq. 0) then
-       call make_edge_scal(sold,sedge,umac,scal_force, &
-                           dx,dt,is_vel,the_bc_level, &
-                           pred_comp,dm+pred_comp,1,.false.,mla)
-    else if (bds_type .eq. 1) then
-       call bds(sold,sedge,umac,scal_force, &
-                dx,dt,is_vel,the_bc_level, &
-                pred_comp,dm+pred_comp,1,.false.,mla)
+    if (enthalpy_pred_type .eq. predict_rhoh) then
+       if (bds_type .eq. 0) then
+          call make_edge_scal(sold,sedge,umac,scal_force, &
+                              dx,dt,is_vel,the_bc_level, &
+                              pred_comp,dm+pred_comp,1,.true.,mla)
+       else if (bds_type .eq. 1) then
+          call bds(sold,sedge,umac,scal_force, &
+                   dx,dt,is_vel,the_bc_level, &
+                   pred_comp,dm+pred_comp,1,.true.,mla)
+       end if
+    else
+       if (bds_type .eq. 0) then
+          call make_edge_scal(sold,sedge,umac,scal_force, &
+               dx,dt,is_vel,the_bc_level, &
+               pred_comp,dm+pred_comp,1,.false.,mla)
+       else if (bds_type .eq. 1) then
+          call bds(sold,sedge,umac,scal_force, &
+               dx,dt,is_vel,the_bc_level, &
+               pred_comp,dm+pred_comp,1,.false.,mla)
+       end if
+
     end if
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then

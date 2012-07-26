@@ -1,5 +1,5 @@
-NDEBUG := 
-MPI    := 
+NDEBUG :=
+MPI    :=
 OMP    :=
 
 COMP := gfortran
@@ -13,7 +13,12 @@ MAESTRO_TOP_DIR := ../..
 # define the physics packages to build this problem 
 EOS_DIR := helmeos 
 CONDUCTIVITY_DIR := timmes_stellar
-NETWORK_DIR := ignition_simple 
+
+ifdef SDC
+  NETWORK_DIR := ignition_simple_SDC
+else
+  NETWORK_DIR := ignition_simple
+endif
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
