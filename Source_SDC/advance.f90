@@ -478,6 +478,7 @@ contains
 
     do n=1,nlevs
        call multifab_build(diff_old(n), mla%la(n), 1, 0)
+       call setval(diff_old(n), 0.d0, all=.true.)
     end do
     
     ! diff_old is the forcing for rhoh or temperature
@@ -496,12 +497,6 @@ contains
        ! compute diff_old
        call make_explicit_thermal(mla,dx,diff_old,sold,Tcoeff_old,hcoeff_old, &
                                   Xkcoeff_old,pcoeff_old,p0_old,the_bc_tower)
-
-    else
-
-       do n=1,nlevs
-          call setval(diff_old(n),ZERO,all=.true.)
-       end do
 
     end if
 
@@ -641,7 +636,7 @@ contains
 
     do n=1,nlevs
        call multifab_build(diff_hat(n), mla%la(n), 1, 0)
-       call setval(diff_hat(n),ZERO,all=.true.)
+       call setval(diff_hat(n), 0.d0, all=.true.)
     end do
 
     if (use_thermal_diffusion) then
@@ -783,7 +778,6 @@ contains
 
     ! compute new-time coefficients and diffusion term
     if (use_thermal_diffusion) then
-
        do n=1,nlevs
           call multifab_build(Tcoeff_new(n),  mla%la(n), 1,     1)
           call multifab_build(hcoeff_new(n),  mla%la(n), 1,     1)
@@ -796,11 +790,6 @@ contains
        call make_explicit_thermal(mla,dx,diff_new,snew, &
                                   Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
                                   p0_new,the_bc_tower)
-
-    else
-       do n=1,nlevs
-          call setval(diff_new(n),ZERO,all=.true.)
-       end do
     end if
 
     ! compute gamma1bar
@@ -1186,8 +1175,14 @@ contains
 
        thermal_time_start = parallel_wtime()
 
-       if (use_thermal_diffusion) then
+       do n=1,nlevs
+          call multifab_build(diff_hterm_hat(n), mla%la(n), 1, 0)
+          call multifab_build(diff_hterm_new(n), mla%la(n), 1, 0)
+          call setval(diff_hterm_hat(n), 0.d0, all=.true.)
+          call setval(diff_hterm_new(n), 0.d0, all=.true.)
+       end do
 
+       if (use_thermal_diffusion) then
           call thermal_conduct_corrector(mla,dx,dt,sold,shat,snew,p0_old,p0_new, &
                                          hcoeff_old,Xkcoeff_old,pcoeff_old, &
                                          hcoeff_new,Xkcoeff_new,pcoeff_new, &
@@ -1198,17 +1193,11 @@ contains
                                      Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
                                      p0_new,the_bc_tower)
 
-          do n=1,nlevs
-             call multifab_build(diff_hterm_hat(n), mla%la(n), 1, 0)
-             call multifab_build(diff_hterm_new(n), mla%la(n), 1, 0)
-          end do
-
           ! compute only the h term in diff_hat
           call make_explicit_thermal_hterm(mla,dx,diff_hterm_hat,shat,hcoeff_new,the_bc_tower)
 
           ! compute only the h term in diff_new
           call make_explicit_thermal_hterm(mla,dx,diff_hterm_new,snew,hcoeff_new,the_bc_tower)
-          
        end if
 
        if (barrier_timers) call parallel_barrier()
@@ -1342,14 +1331,12 @@ contains
        misc_time_start = parallel_wtime()
 
        if (use_thermal_diffusion) then
-
           call make_thermal_coeffs(snew,Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new)
 
           ! compute diff_new using snew, p0_new, and new coefficients
           call make_explicit_thermal(mla,dx,diff_new,snew, &
                                      Tcoeff_new,hcoeff_new,Xkcoeff_new,pcoeff_new, &
                                      p0_new,the_bc_tower)
-
        end if
        
     ! compute gamma1bar
@@ -1662,8 +1649,7 @@ contains
        write(6,*) '   Advection       : ', advect_time_max , ' seconds'
        write(6,*) '   MAC   Projection: ', macproj_time_max, ' seconds'
        write(6,*) '   Nodal Projection: ', ndproj_time_max , ' seconds'
-       if (use_thermal_diffusion) &
-          write(6,*) '   Thermal         : ', thermal_time_max, ' seconds'
+       write(6,*) '   Thermal         : ', thermal_time_max, ' seconds'
        write(6,*) '   Reactions       : ', react_time_max  , ' seconds'
        write(6,*) '   Misc            : ', misc_time_max   , ' seconds'
        write(6,*) ' '
