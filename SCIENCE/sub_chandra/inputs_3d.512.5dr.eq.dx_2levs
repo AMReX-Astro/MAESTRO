@@ -1,8 +1,8 @@
 &PROBIN
- model_file = "sub_chandra.M_WD-1.00.M_He-0.05.hse.C.5120.Tcutoff"
+ model_file = "sub_chandra.M_WD-1.00.M_He-0.05.hse.C.5120.hotcutoff"
  drdxfac = 5
 
- job_name = "512^3 base, 2-level run"
+ job_name = "512^3 base, hot T cutoff, default sponge -- hires run"
 
  hg_bottom_solver = 4
  mg_bottom_solver = 4
@@ -24,13 +24,12 @@
  do_initial_projection = T
 
  max_grid_size = 64
- max_grid_size_2 = 48
 
- anelastic_cutoff = 1.d4
- base_cutoff_density = 5.d3
+ anelastic_cutoff = 6.d4
+ base_cutoff_density = 1.d4
  buoyancy_cutoff_factor = 2.d0
- sponge_center_density = 1.d4
- sponge_start_factor = 3.333d0
+ sponge_center_density = 6.d4
+ sponge_start_factor = 2.0d0
  sponge_kappa = 10.0d0
 
  spherical_in = 1
@@ -43,11 +42,11 @@
  prob_hi_z = 7.5d8
 
 
- plot_base_name = "sub_chandra_plt"
+ plot_base_name = "subCh_hot_hires_plt"
  plot_int  = -1
- plot_deltat = 2.5d0
+ plot_deltat = 1.0d0
 
- check_base_name = "sub_chandra_chk"
+ check_base_name = "subCh_hot_hires_chk"
  chk_int   = 25
 
  cflfac = 0.7d0
@@ -70,7 +69,7 @@
  do_burning = T
 
  enthalpy_pred_type = 1
- evolve_base_state = F
+ evolve_base_state = T
 
  dpdt_factor = 0.0d0
  species_pred_type = 3
