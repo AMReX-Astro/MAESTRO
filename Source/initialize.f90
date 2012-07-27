@@ -348,7 +348,9 @@ contains
        end if
 
        if (do_smallscale) then
-          ! leave rho0_old = rhoh0_old = ZERO
+          ! first compute cutoff coordinates using initial density profile
+          call compute_cutoff_coords(rho0_old)
+          ! set rho0_old = rhoh0_old = ZERO
           rho0_old  = ZERO
           rhoh0_old = ZERO
        else
@@ -869,7 +871,9 @@ contains
     end if
 
     if (do_smallscale) then
-       ! leave rho0_old = rhoh0_old = ZERO
+       ! first compute cutoff coordinates using initial density profile
+       call compute_cutoff_coords(rho0_old)
+       ! set rho0_old = rhoh0_old = ZERO
        rho0_old  = ZERO
        rhoh0_old = ZERO
     else
@@ -1223,7 +1227,9 @@ contains
     end if
 
     if (do_smallscale) then
-       ! leave rho0_old = rhoh0_old = ZERO
+       ! first compute cutoff coordinates using initial density profile
+       call compute_cutoff_coords(rho0_old)
+       ! set rho0_old = rhoh0_old = ZERO
        rho0_old  = ZERO
        rhoh0_old = ZERO
     else
