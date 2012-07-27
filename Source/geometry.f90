@@ -151,10 +151,6 @@ contains
        allocate(burning_cutoff_density_coord(1))
     end if
 
-    anelastic_cutoff_coord(:) = HUGE(1)
-    base_cutoff_density_coord(:) = HUGE(1)
-    burning_cutoff_density_coord(:) = HUGE(1)
-
   end subroutine init_cutoff
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -192,28 +188,26 @@ contains
        end do
     end do
 
-    if (found) then
+    ! if the anelastic cutoff density was not found anywhere, then set
+    ! it to above the top of the domain on the finest level
+    if (.not. found) then
+       which_lev = nlevs_radial
+       anelastic_cutoff_coord(nlevs_radial) = nr(nlevs_radial)
+    endif
 
-       ! set anelastic_cutoff_coord on the finer levels
-       do n=which_lev+1,nlevs_radial
-          anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)+1
-       end do
-       
-       ! set the anelastic_cutoff_coord on the coarser levels
-       do n=which_lev-1,1,-1
-          if (mod(anelastic_cutoff_coord(n+1),2) .eq. 0) then
-             anelastic_cutoff_coord(n) = anelastic_cutoff_coord(n+1) / 2
-          else
-             anelastic_cutoff_coord(n) = anelastic_cutoff_coord(n+1) / 2 + 1
-          end if
-       end do
+    ! set the anelastic cutoff coordinate on the finer levels
+    do n=which_lev+1,nlevs_radial
+       anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)+1
+    end do
 
-    else
-
-       ! set the anelastic_cutoff_coord to a huge value so we never encounter it
-       anelastic_cutoff_coord(:) = HUGE(1)
-
-    end if
+    ! set the anelastic cutoff coordinate on the coarser levels
+    do n=which_lev-1,1,-1
+       if (mod(anelastic_cutoff_coord(n+1),2) .eq. 0) then
+          anelastic_cutoff_coord(n) = anelastic_cutoff_coord(n+1) / 2
+       else
+          anelastic_cutoff_coord(n) = anelastic_cutoff_coord(n+1) / 2 + 1
+       end if
+    end do
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -239,28 +233,26 @@ contains
        end do
     end do
 
-    if (found) then
+    ! if the base cutoff density was not found anywhere, then set
+    ! it to above the top of the domain on the finest level
+    if (.not. found) then
+       which_lev = nlevs_radial
+       base_cutoff_density_coord(nlevs_radial) = nr(nlevs_radial)
+    endif
 
-       ! set base_cutoff_density_coord on the finer levels
-       do n=which_lev+1,nlevs_radial
-          base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)+1
-       end do
-       
-       ! set the base_cutoff_density_coord on the coarser levels
-       do n=which_lev-1,1,-1
-          if (mod(base_cutoff_density_coord(n+1),2) .eq. 0) then
-             base_cutoff_density_coord(n) = base_cutoff_density_coord(n+1) / 2
-          else
-             base_cutoff_density_coord(n) = base_cutoff_density_coord(n+1) / 2 + 1
-          end if
-       end do
+    ! set the base cutoff coordinate on the finer levels
+    do n=which_lev+1,nlevs_radial
+       base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)+1
+    end do
 
-    else
-
-       ! set the base_cutoff_density_coord to a huge value so we never encounter it
-       base_cutoff_density_coord(:) = HUGE(1)
-
-    end if
+    ! set the base cutoff coordinate on the coarser levels
+    do n=which_lev-1,1,-1
+       if (mod(base_cutoff_density_coord(n+1),2) .eq. 0) then
+          base_cutoff_density_coord(n) = base_cutoff_density_coord(n+1) / 2
+       else
+          base_cutoff_density_coord(n) = base_cutoff_density_coord(n+1) / 2 + 1
+       end if
+    end do
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -285,29 +277,27 @@ contains
 
        end do
     end do
+ 
+    ! if the burning cutoff density was not found anywhere, then set
+    ! it to above the top of the domain on the finest level
+    if (.not. found) then
+       which_lev = nlevs_radial
+       burning_cutoff_density_coord(nlevs_radial) = nr(nlevs_radial)
+    endif
 
-    if (found) then
+    ! set the burning cutoff coordinate on the finer levels 
+    do n=which_lev+1,nlevs_radial
+       burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)+1
+    end do
 
-       ! set burning_cutoff_density_coord on the finer levels
-       do n=which_lev+1,nlevs_radial
-          burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)+1
-       end do
-       
-       ! set the burning_cutoff_density_coord on the coarser levels
-       do n=which_lev-1,1,-1
-          if (mod(burning_cutoff_density_coord(n+1),2) .eq. 0) then
-             burning_cutoff_density_coord(n) = burning_cutoff_density_coord(n+1) / 2
-          else
-             burning_cutoff_density_coord(n) = burning_cutoff_density_coord(n+1) / 2 + 1
-          end if
-       end do
-
-    else
-
-       ! set the burning_cutoff_density_coord to a huge value so we never encounter it
-       burning_cutoff_density_coord(:) = HUGE(1)
-
-    end if
+    ! set the burning cutoff coordinate on the coarser levels
+    do n=which_lev-1,1,-1
+       if (mod(burning_cutoff_density_coord(n+1),2) .eq. 0) then
+          burning_cutoff_density_coord(n) = burning_cutoff_density_coord(n+1) / 2
+       else
+          burning_cutoff_density_coord(n) = burning_cutoff_density_coord(n+1) / 2 + 1
+       end if
+    end do
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   end subroutine compute_cutoff_coords
