@@ -391,8 +391,14 @@ contains
 
        ! note: still need to load/store tempbar
        call read_base_state(restart, check_file_name, &
-            rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
-            etarho_ec, etarho_cc, div_coeff_old, psi, tempbar, tempbar_init)
+                            rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
+                            etarho_ec, etarho_cc, div_coeff_old, psi, tempbar, tempbar_init)
+
+       if (do_smallscale) then
+          call average(mla,sold,rho0_old,dx,rho_comp)
+          call compute_cutoff_coords(rho0_old)
+          rho0_old = ZERO
+       end if
 
        ! read in any auxillary data
        call read_aux_data(restart, check_file_name)
