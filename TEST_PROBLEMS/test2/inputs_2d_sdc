@@ -44,7 +44,7 @@
  yhi_boundary_type = "outlet"
 
  evolve_base_state = F
- enthalpy_pred_type = 4
+ enthalpy_pred_type = 0
  species_pred_type = 2
 
     verbose = 1

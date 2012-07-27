@@ -659,7 +659,7 @@ contains
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
     dt_avg = HALF * (dt + dtold)
 
-    !$OMP PARALLEL DO PRIVATE(w0_avg,div_avg)
+    !$OMP PARALLEL DO PRIVATE(r,w0_avg,div_avg)
     do r = 0,nr_fine-1
        w0_old_cen(r) = HALF * (w0_old(r) + w0_old(r+1))
        w0_new_cen(r) = HALF * (w0    (r) + w0    (r+1))

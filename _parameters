@@ -610,3 +610,6 @@ do_heating                          logical            .false.
 # {\tt SDC := t}
 sdc_iters                           integer            1
 
+# recompute MAC velocity at the beginning of each SDC iter
+# if .false., only recompute MAC velocity at the beginning of the first iter
+sdc_couple_mac_velocity             logical            .false.
