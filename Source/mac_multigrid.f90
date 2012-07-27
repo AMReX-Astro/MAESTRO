@@ -5,6 +5,7 @@ module mac_multigrid_module
   use define_bc_module
   use multifab_module
   use bndry_reg_module
+  use stencil_types_module
   use bl_constants_module
 
   implicit none
@@ -22,7 +23,8 @@ contains
     use cc_stencil_fill_module, only : stencil_fill_cc_all_mglevels
     use mg_module             , only : mg_tower, mg_tower_build, mg_tower_destroy
     use ml_solve_module       , only : ml_cc_solve
-    use probin_module, only : mg_bottom_solver, max_mg_bottom_nlevels, mg_verbose, cg_verbose, mg_bottom_nu
+    use probin_module, only : mg_bottom_solver, max_mg_bottom_nlevels, &
+                              mg_verbose, cg_verbose, mg_bottom_nu
     use mg_eps_module, only: eps_mac_bottom
 
     type(ml_layout), intent(in   ) :: mla
@@ -54,6 +56,7 @@ contains
     integer    :: d, n, nu1, nu2, gamma, cycle_type, smoother
     integer    :: max_nlevel_in
     integer    :: do_diagnostics
+    integer    :: stencil_type
     real(dp_t) :: omega,bottom_solver_eps
     real(dp_t) ::  xa(mla%dim),  xb(mla%dim)
     real(dp_t) :: pxa(mla%dim), pxb(mla%dim)
@@ -125,8 +128,11 @@ contains
 
 !      if (dm .eq. 1) omega = 4.d0 / 3.d0
 
+       stencil_type = CC_CROSS_STENCIL
+
        call mg_tower_build(mgt(n), mla%la(n), pd, &
                            the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp),&
+                           stencil_type, &
                            dh = dx(n,:), &
                            ns = ns, &
                            smoother = smoother, &
