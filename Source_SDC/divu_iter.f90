@@ -124,7 +124,6 @@ contains
     end do
 
     if(use_thermal_diffusion) then
-
        do n=1,nlevs
           call multifab_build(Tcoeff(n),  mla%la(n), 1,     1)
           call multifab_build(hcoeff(n),  mla%la(n), 1,     1)
@@ -142,11 +141,6 @@ contains
           call destroy(hcoeff(n))
           call destroy(Xkcoeff(n))
           call destroy(pcoeff(n))
-       end do
-
-    else
-       do n=1,nlevs
-          call setval(thermal(n), ZERO, all=.true.)
        end do
     end if
     
