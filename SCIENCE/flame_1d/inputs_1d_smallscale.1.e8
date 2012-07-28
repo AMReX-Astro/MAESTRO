@@ -34,7 +34,7 @@
  max_step  = 10000
 
  stop_time = 1.d0
- cflfac = 0.8d0
+ cflfac = 0.5d0
  init_shrink = 0.1d0
  max_dt_growth = 1.2d0
 
@@ -42,9 +42,16 @@
  ! physics
  grav_const = 0.d0
  use_thermal_diffusion = T
+
  use_eos_coulomb = T
+
  ppm_type = 1
+ species_pred_type = 2
+ enthalpy_pred_type = 0
+
  dpdT_factor = 0.3d0
+
+ sdc_iters = 4
 
 
  ! projection
