@@ -80,18 +80,18 @@ contains
     nlevs = mla%nlevel
 
     if (hg_dense_stencil) then
-       stencil_type = ST_DENSE
+       stencil_type = ND_DENSE_STENCIL
     else
-       stencil_type = ST_CROSS
+       stencil_type = ND_CROSS_STENCIL
     end if
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        print *,'PROJ_TYPE IN HGPROJECT:',proj_type
        select case (stencil_type)
-       case (ST_CROSS)
-          print *,'PROJ_TYPE IN HGPROJECT: ST_CROSS'
-       case (ST_DENSE)
-          print *,'PROJ_TYPE IN HGPROJECT: ST_DENSE'
+       case (ND_CROSS_STENCIL)
+          print *,'PROJ_TYPE IN HGPROJECT: ND_CROSS_STENCIL'
+       case (ND_DENSE_STENCIL)
+          print *,'PROJ_TYPE IN HGPROJECT: ND_DENSE_STENCIL'
        end select
     end if
 
@@ -169,7 +169,7 @@ contains
     end do
 
 !   if (dm .eq. 1) then
-!      call hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,divu_rhs)
+!      call hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,divu_rhs)
 !   else 
 
     if (present(eps_in)) then
@@ -1146,7 +1146,7 @@ contains
 
   ! ******************************************************************************** !
 
-  subroutine hg_1d_solver(mla,rh,unew,rhohalf,phi,dx,the_bc_tower,divu_rhs)
+  subroutine hg_1d_solver(mla,rh,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,divu_rhs)
 
     use bl_prof_module
     use bl_constants_module
@@ -1162,6 +1162,7 @@ contains
     type(multifab ), intent(inout) :: phi(:)
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
+    integer        , intent(in)    :: stencil_type
 
     type(multifab ), intent(in   ), optional :: divu_rhs(:)
 
@@ -1190,6 +1191,7 @@ contains
 
        call mg_tower_build(mgt(n), mla%la(n), pd, &
                            the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,press_comp), &
+                           stencil_type, &
                            dh = dx(n,:), &
                            ns = ns, &
                            nodal = nodal)

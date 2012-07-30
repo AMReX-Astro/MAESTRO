@@ -7,33 +7,32 @@
 
  ! grid size
  max_levs = 1
- n_cellx = 2048
-
- max_grid_size = 2048
+ n_cellx = 3072
+ 
+ max_grid_size = 3072
 
 
  ! domain size
- prob_hi_x = 0.625d0
+ prob_hi_x = 15.0d0
 
 
  ! problem data
- dens_fuel = 1.d8
+ dens_fuel = 5.d7
  temp_fuel = 1.d8
  xc12_fuel = 0.5d0
- vel_fuel = 1.d5
+ vel_fuel = 5.d4
 
- temp_ash = 4.d9
+ temp_ash = 3.0d9
  
- interface_pos_frac = 0.5d0
+ interface_pos_frac = 0.125d0
  smooth_len_frac = 0.025d0
 
  do_smallscale = T
 
 
  ! stepping parameters
- max_step  = 10000
-
- stop_time = 1.d0
+ max_step  = 300000
+ stop_time = 1.5e-5
  cflfac = 0.5d0
  init_shrink = 0.1d0
  max_dt_growth = 1.2d0
@@ -41,6 +40,7 @@
 
  ! physics
  grav_const = 0.d0
+
  use_thermal_diffusion = T
 
  use_eos_coulomb = T
@@ -61,9 +61,9 @@
 
 
  ! output
- plot_int  = 50
-!plot_deltat = 1.d-7
- chk_int   = 50
+ plot_int  = -1
+ plot_deltat = 1.d-5
+ chk_int   = 1000
 
 
  ! boundary conditions
@@ -74,12 +74,12 @@
 
  ! verbosity
  verbose    = 10
- mg_verbose = 2
+ mg_verbose = 1
  cg_verbose = 0
 
 
  ! constraint parameters
  evolve_base_state = F
  beta_type = 3
-  
+
 /

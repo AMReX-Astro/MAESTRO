@@ -121,7 +121,7 @@ contains
     ! Note: put this here for robustness
     max_iter = 100
 
-    if (stencil_type .eq. ST_DENSE) then
+    if (stencil_type .eq. ND_DENSE_STENCIL) then
        if (dm .eq. 3) then
           i = mgt(nlevs)%nlevels
           if ( (dx(nlevs,1) .eq. dx(nlevs,2)) .and. &
@@ -179,6 +179,7 @@ contains
 
        call mg_tower_build(mgt(n), mla%la(n), pd, &
                            the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,press_comp), &
+                           stencil_type, &
                            dh = dx(n,:), &
                            ns = ns, &
                            smoother = smoother, &
@@ -229,7 +230,7 @@ contains
 
        call stencil_fill_nodal_all_mglevels(mgt(n), coeffs, stencil_type)
 
-       if (stencil_type .eq. ST_CROSS .and. n .gt. 1) then
+       if (stencil_type .eq. ND_CROSS_STENCIL .and. n .gt. 1) then
           i = mgt(n)%nlevels
           call stencil_fill_one_sided(one_sided_ss(n), coeffs(i), &
                                       mgt(n)%dh(:,i), &
@@ -295,7 +296,7 @@ contains
        call mg_tower_destroy(mgt(n))
     end do
 
-    if (stencil_type .ne. ST_DENSE) then
+    if (stencil_type .ne. ND_DENSE_STENCIL) then
        do n = nlevs, 2, -1
           call destroy(one_sided_ss(n))
        end do

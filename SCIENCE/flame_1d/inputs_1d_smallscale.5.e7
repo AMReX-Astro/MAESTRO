@@ -7,13 +7,13 @@
 
  ! grid size
  max_levs = 1
- n_cellx = 2048
+ n_cellx = 3072
  
- max_grid_size = 2048
+ max_grid_size = 3072
 
 
  ! domain size
- prob_hi_x = 20.0d0
+ prob_hi_x = 15.0d0
 
 
  ! problem data
@@ -32,7 +32,7 @@
 
  ! stepping parameters
  max_step  = 300000
- stop_time = 1.d0
+ stop_time = 1.5e-4
  cflfac = 0.5d0
  init_shrink = 0.1d0
  max_dt_growth = 1.2d0
@@ -51,7 +51,7 @@
 
  dpdT_factor = 0.3d0
 
- ! sdc_iters = 1
+ sdc_iters = 1
 
 
  ! projection

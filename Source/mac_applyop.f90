@@ -19,6 +19,7 @@ contains
     use mg_module
     use cc_stencil_fill_module, only: stencil_fill_cc
     use cc_applyop_module, only: ml_cc_applyop
+    use stencil_types_module
     use probin_module, only: cg_verbose, mg_verbose
 
     type(ml_layout), intent(inout) :: mla
@@ -38,6 +39,7 @@ contains
 
     type(mg_tower)  :: mgt(mla%nlevel)
     integer         :: ns,dm,nlevs
+    integer         :: stencil_type
 
     ! MG solver defaults
     integer    :: bottom_solver, bottom_max_iter
@@ -73,12 +75,15 @@ contains
 
     ns = 1 + dm*3
 
+    stencil_type = CC_CROSS_STENCIL
+
     do n = nlevs, 1, -1
 
        pd = layout_get_pd(mla%la(n))
 
        call mg_tower_build(mgt(n), mla%la(n), pd, &
                            the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp),&
+                           stencil_type, &
                            dh = dx(n,:), &
                            ns = ns, &
                            smoother = smoother, &
