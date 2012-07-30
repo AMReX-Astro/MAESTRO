@@ -103,7 +103,6 @@ contains
     type(multifab),  intent(inout) :: rho_Hnuc2(:)
     type(multifab),  intent(inout) :: rho_Hext(:)
     type(multifab),  intent(inout) ::  diff_new(:)
-    type(multifab),  intent(inout) ::     intra(:)
     real(dp_t)    ,  intent(inout) :: div_coeff_old(:,0:)
     real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
     real(dp_t)    ,  intent(inout) :: grav_cell_old(:,0:)
