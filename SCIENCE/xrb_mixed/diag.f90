@@ -794,7 +794,8 @@ contains
     use network, only: nspec
     use probin_module, only: diag_define_layer, prob_lo, base_cutoff_density
     use bl_constants_module, only: HALF, ONE, FOUR
-    use eos_module
+    use eos_module, only: eos_input_rh, eos
+    use eos_type_module
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
@@ -822,7 +823,7 @@ contains
     logical :: cell_valid
     real (kind=dp_t) :: weight
     real (kind=dp_t) :: w0_cent, vel, Mach, deltap
-
+    type (eos_t) :: eos_state
 
     ! weight is the volume of a cell at the current level divided by the
     ! volume of a cell at the COARSEST level
@@ -895,23 +896,15 @@ contains
              
              ! Mach number diagnostic
              ! call the EOS to get the sound speed
-             den_eos = s(i,j,rho_comp)
-             temp_eos = s(i,j,temp_comp)
-             h_eos = s(i,j,rhoh_comp) / s(i,j,rho_comp)
+             eos_state%rho   = s(i,j,rho_comp)
+             eos_state%T     = s(i,j,temp_comp)
+             eos_state%h     = s(i,j,rhoh_comp) / s(i,j,rho_comp)
 
-             xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             call eos(eos_input_rh, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false.)
+             call eos(eos_input_rh, eos_state, .false.)
 
-             Mach = vel/cs_eos
+             Mach = vel/eos_state%cs
              if (Mach > Machno_max) then
 
                 Machno_max = Mach
@@ -924,7 +917,7 @@ contains
              if (do_deltap_diag) then
                 ! here we mirror what we do in make_tfromH
                 ! we already have the pressure from the above eos call
-                deltap = abs(p_eos - p0(j)) / p0(j)
+                deltap = abs(eos_state%p - p0(j)) / p0(j)
 
                 if (deltap > deltap_max) then
                    
@@ -974,7 +967,8 @@ contains
     use network, only: nspec
     use bl_constants_module, only: HALF, ONE, EIGHT
     use probin_module, only: diag_define_layer, prob_lo, base_cutoff_density
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
 
     integer, intent(in) :: n,lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
@@ -1002,7 +996,7 @@ contains
     logical :: cell_valid
     real (kind=dp_t) :: weight
     real (kind=dp_t) :: w0_cent, vel, Mach, deltap
-
+    type (eos_t) :: eos_state
 
     ! weight is the volume of a cell at the current level divided by the
     ! volume of a cell at the COARSEST level
@@ -1083,21 +1077,13 @@ contains
 
                 ! Mach number diagnostic
                 ! call the EOS to get the sound speed
-                temp_eos = s(i,j,k,temp_comp)
-                den_eos  = s(i,j,k,rho_comp)
-                xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%T     = s(i,j,k,temp_comp)
+                eos_state%rho   = s(i,j,k,rho_comp)
+                eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                call eos(eos_input_rt, den_eos, temp_eos, &
-                         xn_eos, &
-                         p_eos, h_eos, e_eos, &
-                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                         dpdX_eos, dhdX_eos, &
-                         gam1_eos, cs_eos, s_eos, &
-                         dsdt_eos, dsdr_eos, &
-                         .false.)
+                call eos(eos_input_rt, eos_state, .false.)
 
-                Mach = vel/cs_eos
+                Mach = vel/eos_state%cs
                 if (Mach > Machno_max) then
 
                    Machno_max = Mach
@@ -1112,7 +1098,7 @@ contains
                 if (do_deltap_diag) then
                    ! here we mirror what we do in make_tfromH
                    ! we already have the pressure from the above eos call
-                   deltap = abs(p_eos - p0(k)) / p0(k)
+                   deltap = abs(eos_state%p - p0(k)) / p0(k)
 
                    if (deltap > deltap_max) then
                    
