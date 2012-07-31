@@ -3,7 +3,8 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   use bl_types
   use bl_constants_module
   use network
-  use eos_module
+  use eos_module, only: eos_input_rp, eos_input_rh, eos
+  use eos_type_module
   use bl_error_module
   
   use burner_aux_module, only : sdc_rhoX_pass, sdc_rhoh_pass, p0_pass
@@ -49,6 +50,8 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
 
   logical, save :: firstCall = .true.
 
+  type (eos_t) :: eos_state
+
   if (firstCall) then
      ic12 = network_species_index("carbon-12")
      io16 = network_species_index("oxygen-16")
@@ -69,48 +72,30 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   if (use_tfromp) then
 
      ! get T from (rho, p, X)
-     den_eos = dens
-     xn_eos(:) = X(1:nspec)
-     p_eos = p0_pass
+     eos_state%rho   = dens
+     eos_state%xn(:) = X(1:nspec)
+     eos_state%p     = p0_pass
 
      ! need an initial T guess
-     temp_eos = 1.d9
+     eos_state%T = 1.d9
 
-     call eos(eos_input_rp, den_eos, temp_eos, &
-              xn_eos, &
-              p_eos, h_eos, e_eos, &
-              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-              dpdX_eos, dhdX_eos, &
-              gam1_eos, cs_eos, s_eos, &
-              dsdt_eos, dsdr_eos, &
-              .false., &
-              pt_index_eos)
+     call eos(eos_input_rp, eos_state, .false.)
 
-     temp = temp_eos
+     temp = eos_state%T
 
   else
 
      ! get T from (rho, h, X)
-     den_eos = dens
-     xn_eos(:) = X(1:nspec)
-     h_eos = rhoh/dens
+     eos_state%rho   = dens
+     eos_state%xn(:) = X(1:nspec)
+     eos_state%h     = rhoh/dens
 
      ! need an initial T guess
-     temp_eos = 1.d9
+     eos_state%T = 1.d9
 
-     call eos(eos_input_rh, den_eos, temp_eos, &
-              xn_eos, &
-              p_eos, h_eos, e_eos, &
-              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-              dpdX_eos, dhdX_eos, &
-              gam1_eos, cs_eos, s_eos, &
-              dsdt_eos, dsdr_eos, &
-              .false., &
-              pt_index_eos)
+     call eos(eos_input_rh, eos_state, .false.)
 
-     temp = temp_eos
+     temp = eos_state%T
      
   endif
 
@@ -194,7 +179,8 @@ subroutine f_rhs_instantaneous_reaction_rates(n, t, y, ydot, rho_Hnuc, rpar, ipa
   use bl_types
   use bl_constants_module
   use network
-  use eos_module
+  use eos_module, only: eos_input_rh, eos
+  use eos_type_module
   use bl_error_module
   use probin_module, only: use_tfromp
 
@@ -237,6 +223,8 @@ subroutine f_rhs_instantaneous_reaction_rates(n, t, y, ydot, rho_Hnuc, rpar, ipa
 
   logical, save :: firstCall = .true.
 
+  type (eos_t) :: eos_state
+
   if (firstCall) then
      ic12 = network_species_index("carbon-12")
      io16 = network_species_index("oxygen-16")
@@ -261,25 +249,16 @@ subroutine f_rhs_instantaneous_reaction_rates(n, t, y, ydot, rho_Hnuc, rpar, ipa
   else
 
      ! get T from (rho, h, X)
-     den_eos = dens
-     xn_eos(:) = X(1:nspec)
-     h_eos = rhoh/dens
+     eos_state%rho   = dens
+     eos_state%xn(:) = X(1:nspec)
+     eos_state%h     = rhoh/dens
 
      ! need an initial T guess
-     temp_eos = 1.d9
+     eos_state%T = 1.d9
 
-     call eos(eos_input_rh, den_eos, temp_eos, &
-              xn_eos, &
-              p_eos, h_eos, e_eos, &
-              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-              dpdX_eos, dhdX_eos, &
-              gam1_eos, cs_eos, s_eos, &
-              dsdt_eos, dsdr_eos, &
-              .false., &
-              pt_index_eos)
+     call eos(eos_input_rh, eos_state, .false.)
 
-     temp = temp_eos
+     temp = eos_state%T
 
   endif
 
