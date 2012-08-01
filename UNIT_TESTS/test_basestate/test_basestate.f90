@@ -130,7 +130,8 @@ contains
   subroutine make_Sbar(Sbar, s0, Hbar)
 
     use variables
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec
     use geometry, only : nr
 
@@ -139,25 +140,18 @@ contains
     real(dp_t), intent(in   ) :: Hbar(0:)
 
     integer :: r
+    type (eos_t) :: eos_state
 
      do r=0,nr(1)-1
 
         ! (rho, T) --> p,h, etc
-        den_eos  = s0(r,rho_comp)
-        temp_eos = s0(r,temp_comp)
-        xn_eos(:) = s0(r,spec_comp:spec_comp-1+nspec)/s0(r,rho_comp)
+        eos_state%rho   = s0(r,rho_comp)
+        eos_state%T     = s0(r,temp_comp)
+        eos_state%xn(:) = s0(r,spec_comp:spec_comp-1+nspec)/s0(r,rho_comp)
 
-        call eos(eos_input_rt, den_eos, temp_eos, &
-                 xn_eos, &
-                 p_eos, h_eos, e_eos, &
-                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                 dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                 dpdX_eos, dhdX_eos, &
-                 gam1_eos, cs_eos, s_eos, &
-                 dsdt_eos, dsdr_eos, &
-                 .false.)
+        call eos(eos_input_rt, eos_state, .false.)
 
-        Sbar(r) = Hbar(r) * dpdt_eos / (den_eos * cp_eos * dpdr_eos)
+        Sbar(r) = Hbar(r) * eos_state%dpdt / (eos_state%rho * eos_state%cp * eos_state%dpdr)
 
      enddo
 

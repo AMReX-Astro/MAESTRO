@@ -51,3 +51,14 @@ planar 1/r**2 gravity nova test problem
    There is a CASTRO comparison: hydrostatic_adjust_planar_invsq
 
 
+------------------------------------------------------------------------------
+spherical for sub-Chandra
+
+   This is used to test base state expansion for the sub_chandra
+   problem.  The model comes from AstroDev/initial_models/sub_chandra.
+
+   This needs to be compiled with one of the triple_alpha networks.
+
+   Castro comparison output is provided: castro_hse_adjust_subchandra.out
+
+  

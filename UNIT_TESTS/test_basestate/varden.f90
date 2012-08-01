@@ -12,7 +12,8 @@ subroutine varden()
   use variables
   use geometry
   use network
-  use eos_module
+  use eos_module, only: eos_input_rp, eos, eos_init
+  use eos_type_module
   use make_w0_module
   use advect_base_module
   use make_grav_module
@@ -61,6 +62,8 @@ subroutine varden()
 
   real(dp_t) :: mencl, max_hse_error, starting_rad, rloc, r_r, r_l, g, dpdr, rhog
   real(dp_t) :: max_Mach
+
+  type (eos_t) :: eos_state
 
   call runtime_init()
   call init_spherical()
@@ -211,23 +214,15 @@ subroutine varden()
   do r=0,nr_fine-1
 
      ! (rho, p) --> gamma1bar
-     den_eos  = s0_old(1,r,rho_comp)
-     p_eos    = p0_old(1,r)
-     xn_eos(:) = s0_old(1,r,spec_comp:spec_comp-1+nspec)/s0_old(1,r,rho_comp)
+     eos_state%rho   = s0_old(1,r,rho_comp)
+     eos_state%p     = p0_old(1,r)
+     eos_state%xn(:) = s0_old(1,r,spec_comp:spec_comp-1+nspec)/s0_old(1,r,rho_comp)
      
-     temp_eos = s0_old(1,r,temp_comp)
+     eos_state%T     = s0_old(1,r,temp_comp)
      
-     call eos(eos_input_rp, den_eos, temp_eos, &
-              xn_eos, &
-              p_eos, h_eos, e_eos, &
-              cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-              dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-              dpdX_eos, dhdX_eos, &
-              gam1_eos, cs_eos, s_eos, &
-              dsdt_eos, dsdr_eos, &
-              .false.)
+     call eos(eos_input_rp, eos_state, .false.)
      
-     gamma1bar_old(1,r) = gam1_eos
+     gamma1bar_old(1,r) = eos_state%gam1
 
   end do
 
@@ -365,23 +360,15 @@ subroutine varden()
      do r=0,nr_fine-1
 
         ! (rho, p) --> gamma1bar
-        den_eos  = s0_new(1,r,rho_comp)
-        p_eos    = p0_new(1,r)
-        xn_eos(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+        eos_state%rho   = s0_new(1,r,rho_comp)
+        eos_state%p     = p0_new(1,r)
+        eos_state%xn(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
 
-        temp_eos = s0_old(1,r,temp_comp)
+        eos_state%T     = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos,  &
-             xn_eos, &
-             p_eos, h_eos, e_eos, &
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             .false.)
+        call eos(eos_input_rp, eos_state, .false.)
 
-        gamma1bar_new(1,r) = gam1_eos
+        gamma1bar_new(1,r) = eos_state%gam1
 
      end do
 
@@ -392,23 +379,15 @@ subroutine varden()
      do r=0,nr_fine-1
 
         ! (rho,p) --> T,h, etc
-        den_eos  = s0_new(1,r,rho_comp)
-        p_eos    = p0_new(1,r)
-        xn_eos(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+        eos_state%rho   = s0_new(1,r,rho_comp)
+        eos_state%p     = p0_new(1,r)
+        eos_state%xn(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
 
-        temp_eos = s0_old(1,r,temp_comp)
+        eos_state%T     = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos, &
-                 xn_eos, &
-                 p_eos, h_eos, e_eos, &
-                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                 dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                 dpdX_eos, dhdX_eos, &
-                 gam1_eos, cs_eos, s_eos, &
-                 dsdt_eos, dsdr_eos, &
-                 .false.)
+        call eos(eos_input_rp, eos_state, .false.)
 
-        s0_new(1,r,temp_comp) = temp_eos
+        s0_new(1,r,temp_comp) = eos_state%T
 
      enddo
 
@@ -546,25 +525,17 @@ subroutine varden()
      do r=0,nr_fine-1
 
         ! (rho, p) --> gamma1bar
-        den_eos  = s0_new(1,r,rho_comp)
-        p_eos    = p0_new(1,r)
-        xn_eos(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+        eos_state%rho   = s0_new(1,r,rho_comp)
+        eos_state%p     = p0_new(1,r)
+        eos_state%xn(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
 
-        temp_eos = s0_old(1,r,temp_comp)
+        eos_state%T     = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, &
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             .false.)
+        call eos(eos_input_rp, eos_state, .false.)
 
-        gamma1bar_new(1,r) = gam1_eos
+        gamma1bar_new(1,r) = eos_state%gam1
 
-        max_Mach = max(max_Mach, abs(w0(1,r)/cs_eos) )
+        max_Mach = max(max_Mach, abs(w0(1,r)/eos_state%cs) )
      end do
 
      print *, 'maximum Mach # = ', max_Mach
@@ -576,23 +547,15 @@ subroutine varden()
      do r=0,nr_fine-1
 
         ! (rho,p) --> T,h, etc
-        den_eos  = s0_new(1,r,rho_comp)
-        p_eos    = p0_new(1,r)
-        xn_eos(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
+        eos_state%rho   = s0_new(1,r,rho_comp)
+        eos_state%p     = p0_new(1,r)
+        eos_state%xn(:) = s0_new(1,r,spec_comp:spec_comp-1+nspec)/s0_new(1,r,rho_comp)
 
-        temp_eos = s0_old(1,r,temp_comp)
+        eos_state%T     = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, den_eos, temp_eos, &
-                 xn_eos, &
-                 p_eos, h_eos, e_eos, &
-                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                 dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                 dpdX_eos, dhdX_eos, &
-                 gam1_eos, cs_eos, s_eos, &
-                 dsdt_eos, dsdr_eos, &
-                 .false.)
+        call eos(eos_input_rp, eos_state, .false.)
 
-        s0_new(1,r,temp_comp) = temp_eos
+        s0_new(1,r,temp_comp) = eos_state%T
 
      enddo
 
