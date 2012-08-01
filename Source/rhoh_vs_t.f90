@@ -414,14 +414,14 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_new(0:),rhoh0_new(0:),t0_new(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:),rhoh0_edge_new(0:),t0_edge_new(0:)
     
-    integer         :: i,j,k,n
+    integer         :: i,j,k
     real(kind=dp_t) :: t0_edge
 
     integer :: pt_index(MAX_SPACEDIM)
     type(eos_t) :: eos_state
 
     ! x-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
@@ -477,7 +477,7 @@ contains
     !$OMP END PARALLEL DO
 
     ! y-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,eos_state,pt_index)    
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,eos_state,pt_index)    
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)
@@ -533,7 +533,7 @@ contains
     !$OMP END PARALLEL DO
 
     ! z-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,eos_state,pt_index) 
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,eos_state,pt_index) 
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -615,14 +615,14 @@ contains
     real(kind=dp_t), intent(in   ) ::    t0_cart(lo(1)-ng_t0 :,lo(2)-ng_t0 :,lo(3)-ng_t0 :)
     
     ! Local variables
-    integer :: i, j, k, n
+    integer :: i, j, k
     real(kind=dp_t) rho0_edge, rhoh0_edge, t0_edge
 
     integer :: pt_index(MAX_SPACEDIM)
     type(eos_t) :: eos_state
     
     ! x-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
@@ -680,7 +680,7 @@ contains
 
 
     ! y-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)
@@ -737,7 +737,7 @@ contains
     !$OMP END PARALLEL DO
 
     ! z-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,n,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
