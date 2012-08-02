@@ -81,7 +81,8 @@ contains
   subroutine make_intra_coeffs_1d(lo,hi,sold,ng_so,snew,ng_sn,cp,ng_cp,xi,ng_xi)
 
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_so,ng_sn,ng_cp,ng_xi
@@ -92,53 +93,38 @@ contains
     
     ! local
     integer :: i,comp    
-    
+    type (eos_t) :: eos_state
+
     do i=lo(1)-1,hi(1)+1
           
        ! old state first
-       den_eos  = sold(i,rho_comp)
-       temp_eos = sold(i,temp_comp)
-       xn_eos(:) = sold(i,spec_comp:spec_comp+nspec-1)/den_eos
+       eos_state%rho   = sold(i,rho_comp)
+       eos_state%T     = sold(i,temp_comp)
+       eos_state%xn(:) = sold(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
        
        ! dens, temp, and xmass are inputs
-       call eos(eos_input_rt, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false.)
+       call eos(eos_input_rt, eos_state, .false.)
        
-       cp(i) = cp_eos
+       cp(i) = eos_state%cp
 
        do comp=1,nspec
-          xi(i,comp) = dhdX_eos(comp)
+          xi(i,comp) = eos_state%dhdX(comp)
        enddo
 
 
        ! new state now -- average results
-       den_eos  = snew(i,rho_comp)
-       temp_eos = snew(i,temp_comp)
-       xn_eos(:) = snew(i,spec_comp:spec_comp+nspec-1)/den_eos
+       eos_state%rho   = snew(i,rho_comp)
+       eos_state%T     = snew(i,temp_comp)
+       eos_state%xn(:) = snew(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
        
        ! dens, temp, and xmass are inputs
-       call eos(eos_input_rt, den_eos, temp_eos, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                .false.)
+       call eos(eos_input_rt, eos_state, .false.)
     
        ! average the current state with the old one
-       cp(i) = HALF*(cp_eos + cp(i))
+       cp(i) = HALF*(eos_state%cp + cp(i))
 
        do comp=1,nspec
-          xi(i,comp) = HALF*(dhdX_eos(comp) + xi(i,comp))
+          xi(i,comp) = HALF*(eos_state%dhdX(comp) + xi(i,comp))
        enddo
 
     enddo
@@ -149,7 +135,8 @@ contains
   subroutine make_intra_coeffs_2d(lo,hi,sold,ng_so,snew,ng_sn,cp,ng_cp,xi,ng_xi)
 
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_so,ng_sn,ng_cp,ng_xi
@@ -160,54 +147,39 @@ contains
     
     ! local
     integer :: i,j,comp    
-    
+    type (eos_t) :: eos_state
+
     do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)+1
     
           ! old state first
-          den_eos  = sold(i,j,rho_comp)
-          temp_eos = sold(i,j,temp_comp)
-          xn_eos(:) = sold(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+          eos_state%rho   = sold(i,j,rho_comp)
+          eos_state%T     = sold(i,j,temp_comp)
+          eos_state%xn(:) = sold(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
           
           ! dens, temp, and xmass are inputs
-          call eos(eos_input_rt, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, & 
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false.)
+          call eos(eos_input_rt, eos_state, .false.)
           
-          cp(i,j) = cp_eos
+          cp(i,j) = eos_state%cp
           
           do comp=1,nspec
-             xi(i,j,comp) = dhdX_eos(comp)
+             xi(i,j,comp) = eos_state%dhdX(comp)
           enddo
 
 
           ! new state now -- average results
-          den_eos  = snew(i,j,rho_comp)
-          temp_eos = snew(i,j,temp_comp)
-          xn_eos(:) = snew(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+          eos_state%rho   = snew(i,j,rho_comp)
+          eos_state%T     = snew(i,j,temp_comp)
+          eos_state%xn(:) = snew(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
           
           ! dens, temp, and xmass are inputs
-          call eos(eos_input_rt, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, & 
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false.)
+          call eos(eos_input_rt, eos_state, .false.)
           
           ! average the current state with the old one
-          cp(i,j) = HALF*(cp_eos + cp(i,j))
+          cp(i,j) = HALF*(eos_state%cp + cp(i,j))
           
           do comp=1,nspec
-             xi(i,j,comp) = HALF*(dhdX_eos(comp) + xi(i,j,comp))
+             xi(i,j,comp) = HALF*(eos_state%dhdX(comp) + xi(i,j,comp))
           enddo
 
        enddo
@@ -219,7 +191,8 @@ contains
   subroutine make_intra_coeffs_3d(lo,hi,sold,ng_so,snew,ng_sn,cp,ng_cp,xi,ng_xi)
 
     use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use network, only: nspec
     
     integer        , intent(in   ) :: lo(:),hi(:),ng_so,ng_sn,ng_cp,ng_xi
@@ -230,55 +203,40 @@ contains
 
     ! local
     integer :: i,j,k,comp
+    type (eos_t) :: eos_state
     
-    !$OMP PARALLEL DO PRIVATE(i,j,k,comp)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,comp,eos_state)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
              
              ! old state first
-             den_eos  = sold(i,j,k,rho_comp)
-             temp_eos = sold(i,j,k,temp_comp)
-             xn_eos(:) = sold(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = sold(i,j,k,rho_comp)
+             eos_state%T     = sold(i,j,k,temp_comp)
+             eos_state%xn(:) = sold(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, & 
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false.)
-             
-             cp(i,j,k) = cp_eos
+             call eos(eos_input_rt, eos_state, .false.)
+
+             cp(i,j,k) = eos_state%cp
              
              do comp=1,nspec
-                xi(i,j,k,comp) = dhdX_eos(comp)
+                xi(i,j,k,comp) = eos_state%dhdX(comp)
              enddo
 
 
              ! new state now -- average results
-             den_eos  = snew(i,j,k,rho_comp)
-             temp_eos = snew(i,j,k,temp_comp)
-             xn_eos(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%rho   = snew(i,j,k,rho_comp)
+             eos_state%T     = snew(i,j,k,temp_comp)
+             eos_state%xn(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, & 
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false.)
+             call eos(eos_input_rt, eos_state, .false.)
              
-             cp(i,j,k) = HALF*(cp_eos + cp(i,j,k))
+             cp(i,j,k) = HALF*(eos_state%cp + cp(i,j,k))
              
              do comp=1,nspec
-                xi(i,j,k,comp) = HALF*(dhdX_eos(comp) + xi(i,j,k,comp))
+                xi(i,j,k,comp) = HALF*(eos_state%dhdX(comp) + xi(i,j,k,comp))
              enddo
 
           enddo

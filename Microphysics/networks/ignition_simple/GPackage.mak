@@ -4,3 +4,4 @@ f90sources += f_rhs.f90
 f90sources += burner_aux.f90
 fsources += ../screen.f
 
+NEED_VODE := t

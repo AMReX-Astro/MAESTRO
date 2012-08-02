@@ -7,7 +7,8 @@ program testjacobian
   use bl_constants_module
   use bl_error_module
   use network
-  use eos_module
+  use eos_module, only: eos_input_rt, eos, eos_init
+  use eos_type_module
   use burner_module
   use burner_aux_module
 
@@ -29,6 +30,8 @@ program testjacobian
 
   real(kind=dp_t), parameter :: delta = 0.001d0
   real(kind=dp_t) :: num_jac
+  
+  type (eos_t) :: eos_state
 
   call network_init()
   call eos_init()
@@ -49,20 +52,11 @@ program testjacobian
   Xin(img24) = 0.0_dp_t
 
 
-  den_eos = dens
-  temp_eos = temp
-  xn_eos(:) = Xin(:)
+  eos_state%rho   = dens
+  eos_state%T     = temp
+  eos_state%xn(:) = Xin(:)
   
-  call eos(eos_input_rt, den_eos, temp_eos, &
-           xn_eos, &
-           p_eos, h_eos, e_eos, &
-           cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-           dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-           dpdX_eos, dhdX_eos, &
-           gam1_eos, cs_eos, s_eos, &
-           dsdt_eos, dsdr_eos, &
-           .false.)
-
+  call eos(eos_input_rt, eos_state, .false.)
 
   print *, 'evaluating the RHS...'
 
@@ -72,8 +66,8 @@ program testjacobian
 
   ! set the burner_aux variables
   dens_pass = dens
-  c_p_pass = cp_eos
-  dhdx_pass(:) = dhdX_eos(:)
+  c_p_pass = eos_state%cp
+  dhdx_pass(:) = eos_state%dhdX(:)
   X_O16_pass = Xin(io16)
   
 

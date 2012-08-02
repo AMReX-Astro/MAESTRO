@@ -18,7 +18,8 @@ contains
     use parallel
     use bl_error_module
     use bl_constants_module
-    use eos_module
+    use eos_module, only: eos_input_rh, eos
+    use eos_type_module
     use network, only: network_species_index
     use probin_module, only: ambient_h, ambient_dens, &
                              ambient_he4, ambient_c12, ambient_fe56, &
@@ -39,6 +40,7 @@ contains
     ! local
     integer :: ihe4, ic12, ife56
     integer :: r
+    type (eos_t) :: eos_state
 
     type(bl_prof_timer), save :: bpt
     
@@ -52,34 +54,26 @@ contains
     if (ihe4 < 0 .or. ic12 < 0 .or. ife56 < 0) &
        call bl_error("Invalid species in init_base_state.")
 
-    h_eos = ambient_h
-    den_eos  = ambient_dens
+    eos_state%h         = ambient_h
+    eos_state%rho       = ambient_dens
     
-    xn_eos(ihe4)  = ambient_he4
-    xn_eos(ic12)  = ambient_c12
-    xn_eos(ife56) = ambient_fe56
+    eos_state%xn(ihe4)  = ambient_he4
+    eos_state%xn(ic12)  = ambient_c12
+    eos_state%xn(ife56) = ambient_fe56
 
-    call eos(eos_input_rh, den_eos, temp_eos, &
-         xn_eos, &
-         p_eos, h_eos, e_eos, &
-         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-         dpdX_eos, dhdX_eos, &
-         gam1_eos, cs_eos, s_eos, &
-         dsdt_eos, dsdr_eos, &
-         .false.)       
+    call eos(eos_input_rh, eos_state, .false.)
 
-    diffusion_coefficient = thermal_conductivity / (cp_eos * ambient_dens)
+    diffusion_coefficient = thermal_conductivity / (eos_state%cp * ambient_dens)
 
     do r = 0, nr(n) - 1
 
-       s0_init(r,rho_comp ) = den_eos
-       s0_init(r,rhoh_comp) = den_eos * h_eos
-       s0_init(r,temp_comp) = temp_eos
+       s0_init(r,rho_comp ) = eos_state%rho
+       s0_init(r,rhoh_comp) = eos_state%rho * eos_state%h
+       s0_init(r,temp_comp) = eos_state%T
 
-       s0_init(r,spec_comp:spec_comp+nspec-1) = den_eos * xn_eos(1:nspec)
+       s0_init(r,spec_comp:spec_comp+nspec-1) = eos_state%rho * eos_state%xn(1:nspec)
 
-       p0_init(r) = p_eos
+       p0_init(r) = eos_state%p
 
        if (ntrac .gt. 0) then
           s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO

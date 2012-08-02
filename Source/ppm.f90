@@ -489,7 +489,7 @@ contains
 
   end subroutine ppm_1d
 
-  ! characteristics based on u
+  ! characteristics based on umac
   subroutine ppm_fpu_1d(s,ng_s,umac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module

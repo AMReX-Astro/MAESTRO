@@ -127,7 +127,8 @@ contains
     use probin_module, only: dens_max, temp_max, dens_min, temp_min, &
                              prob_hi, prob_lo 
     use network, only: nspec, spec_names
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use layout_module   , only: get_pd   
 
     !Args
@@ -144,6 +145,7 @@ contains
     real(kind=dp_t)             :: dlogrho, dlogT, dxn, summ
     real(kind=dp_t)             :: temp_zone, dens_zone
     real(kind=dp_t)             :: xn_zone(nspec, 0:extent(mla%mba%pd(1),3)-1)
+    type (eos_t) :: eos_state
 
     !=== Execution ===
 
@@ -184,23 +186,15 @@ contains
                    dens_zone = 10.0_dp_t**(log10(dens_min) + dble(ii)*dlogrho)
                    
                    !Call the EoS w/ rho, temp, & X as inputs
-                   temp_eos  = temp_zone
-                   den_eos   = dens_zone
-                   xn_eos(:) = xn_zone(:,kk)
+                   eos_state%T     = temp_zone
+                   eos_state%rho   = dens_zone
+                   eos_state%xn(:) = xn_zone(:,kk)
                    
-                   call eos(eos_input_rt, den_eos, temp_eos, &
-                            xn_eos, &
-                            p_eos, h_eos, e_eos, &
-                            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                            dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                            dpdX_eos, dhdX_eos, &
-                            gam1_eos, cs_eos, s_eos, &
-                            dsdt_eos, dsdr_eos, &
-                            .false.)
+                   call eos(eos_input_rt, eos_state, .false.)
     
                    !Initialize this element of the state
                    sp(ii,jj,kk,rho_comp)                    = dens_zone
-                   sp(ii,jj,kk,rhoh_comp)                   = dens_zone * h_eos
+                   sp(ii,jj,kk,rhoh_comp)                   = dens_zone * eos_state%h
                    sp(ii,jj,kk,spec_comp:spec_comp-1+nspec) = dens_zone * xn_zone(1:nspec,kk)
                    sp(ii,jj,kk,temp_comp)                   = temp_zone
                 enddo

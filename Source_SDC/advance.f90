@@ -21,7 +21,7 @@ contains
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpi,pi,normal,rho0_old,rhoh0_old, &
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
-                              rho_omegadot2,rho_Hnuc2,rho_Hext,diff_new,intra,&
+                              rho_omegadot2,rho_Hnuc2,rho_Hext,diff_new, &
                               div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,dt,dtold,the_bc_tower, &
                               dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
@@ -103,7 +103,6 @@ contains
     type(multifab),  intent(inout) :: rho_Hnuc2(:)
     type(multifab),  intent(inout) :: rho_Hext(:)
     type(multifab),  intent(inout) ::  diff_new(:)
-    type(multifab),  intent(inout) ::     intra(:)
     real(dp_t)    ,  intent(inout) :: div_coeff_old(:,0:)
     real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
     real(dp_t)    ,  intent(inout) :: grav_cell_old(:,0:)
@@ -137,6 +136,7 @@ contains
     type(multifab) :: div_coeff_cart_edge(mla%nlevel,mla%dim)
     type(multifab) ::              gamma1(mla%nlevel)
     type(multifab) ::          etarhoflux(mla%nlevel)
+    type(multifab) ::               intra(mla%nlevel)
 
     ! coefficients for thermal conduction stuff
     type(multifab) ::         Tcoeff_old(mla%nlevel)
@@ -511,6 +511,12 @@ contains
        call multifab_build(scal_force(n), mla%la(n), nscal, 1)
        call multifab_build_edge(etarhoflux(n), mla%la(n), 1, 0, dm)
        call setval(etarhoflux(n),ZERO,all=.true.)
+
+       ! we are using rho_omegadot2 and rho_Hnuc2 to store intra for checkpoint
+       ! purposes.  Copy them back into intra
+       call multifab_build(intra(n), mla%la(n), nscal, 0)
+       call multifab_copy_c(intra(n), spec_comp, rho_omegadot2(n), 1, nspec, 0)
+       call multifab_copy_c(intra(n), rhoh_comp, rho_Hnuc2(n), 1, 1, 0)
     end do
 
     call density_advance(mla,1,sold,shat,sedge,sflux,scal_force,intra,umac, &
@@ -1422,6 +1428,15 @@ contains
     call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                 rho_Hnuc2,rho_Hext,diff_new,p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
+
+
+    do n=1,nlevs
+       ! we are using rho_omegadot2 and rho_Hnuc2 to store intra for checkpoint
+       ! purposes.  Copy them from intra
+       call multifab_copy_c(rho_omegadot2(n), 1, intra(n), spec_comp, nspec, 0)
+       call multifab_copy_c(rho_Hnuc2(n), 1, intra(n), rhoh_comp, 1, 0)
+       call destroy(intra(n))
+    end do
 
     do n=1,nlevs
        call destroy(delta_gamma1(n))

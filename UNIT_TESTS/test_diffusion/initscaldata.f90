@@ -7,7 +7,6 @@ module init_scalar_module
   use define_bc_module
   use multifab_module
   use fill_3d_module
-  use eos_module
   use variables
   use network
   use geometry
@@ -90,6 +89,8 @@ contains
                                diffusion_coefficient)
 
     use probin_module, only: prob_lo, perturb_model, peak_h, t0, ambient_h
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -108,6 +109,7 @@ contains
     logical :: converged
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
+    type (eos_t) :: eos_state
 
     s = ZERO
 
@@ -128,30 +130,21 @@ contains
 
           temp_zone = s0_init(j,temp_comp)
 
-          xn_eos(1:nspec) = s0_init(j,spec_comp:spec_comp+nspec-1) / &
-                              s0_init(j,rho_comp)
+          eos_state%xn(1:nspec) = s0_init(j,spec_comp:spec_comp+nspec-1) / &
+                                  s0_init(j,rho_comp)
 
-          den_eos = s0_init(j,rho_comp)
+          eos_state%rho = s0_init(j,rho_comp)
 
           converged = .false.
 
           do iter = 1, max_iter
-             temp_eos = temp_zone
+             eos_state%T = temp_zone
 
-             call eos(eos_input_rt, &
-                      den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false.)
+             call eos(eos_input_rt, eos_state, .false.)
 
-             dhdt = cv_eos + dpdt_eos/den_eos
+             dhdt = eos_state%cv + eos_state%dpdt/eos_state%rho
 
-             del_temp = -(h_eos - h_zone) / dhdt
+             del_temp = -(eos_state%h - h_zone) / dhdt
 
              temp_zone = temp_zone + del_temp
 
@@ -165,27 +158,18 @@ contains
              call bl_error("iters did not converge in initscalars")
 
           ! call eos one last time
-          temp_eos = temp_zone
+          eos_state%T = temp_zone
 
-          call eos(eos_input_rt, &
-                   den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false.)
+          call eos(eos_input_rt, eos_state, .false.)
 
-          s(i,j,rho_comp)  = den_eos
-          s(i,j,rhoh_comp) = den_eos * h_eos
-          s(i,j,temp_comp) = temp_eos
+          s(i,j,rho_comp)  = eos_state%rho
+          s(i,j,rhoh_comp) = eos_state%rho * eos_state%h
+          s(i,j,temp_comp) = eos_state%T
           s(i,j,spec_comp:spec_comp+nspec-1) = &
-               xn_eos(1:nspec) * den_eos
+               eos_state%xn(1:nspec) * eos_state%rho
           s(i,j,trac_comp:trac_comp+ntrac-1) = &
                                   s0_init(j,trac_comp:trac_comp+ntrac-1)
-          p0_init(j) = p_eos
+          p0_init(j) = eos_state%p
                     
        enddo
     enddo

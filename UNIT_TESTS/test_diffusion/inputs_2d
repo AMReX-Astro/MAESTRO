@@ -32,8 +32,6 @@
  hg_bottom_solver = 4
  max_mg_bottom_nlevels = 4
 
- use_eos_coulomb = T
-
  prob_lo_x = 0.0d0
  prob_lo_y = 0.0d0
 
