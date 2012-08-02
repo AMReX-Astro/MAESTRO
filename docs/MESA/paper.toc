@@ -1,0 +1,29 @@
+\contentsline {section}{\numberline {1}Introduction}{2}
+\contentsline {section}{\numberline {2}Setting Up {\tt MESA}}{2}
+\contentsline {subsection}{\numberline {2.1}Setup {\tt MESA} Without {\tt MESASDK}}{2}
+\contentsline {subsubsection}{\numberline {2.1.1}Environment Variables (NOT using SDK)}{2}
+\contentsline {subsubsection}{\numberline {2.1.2}Modify the Makefile (NOT using SDK)}{2}
+\contentsline {subsection}{\numberline {2.2}Install {\tt MESA}}{3}
+\contentsline {section}{\numberline {3}Compile Modules Without OpenMP}{3}
+\contentsline {subsection}{\numberline {3.1}Optional: Turn Off {\tt mesa/star} OpenMP}{4}
+\contentsline {section}{\numberline {4}Compiling {\tt MAESTRO} to Use {\tt MESA}}{4}
+\contentsline {section}{\numberline {5}Using {\tt MESA} Modules}{4}
+\contentsline {subsection}{\numberline {5.1}Equation of State}{4}
+\contentsline {subsubsection}{\numberline {5.1.1}Set Up}{4}
+\contentsline {subsubsection}{\numberline {5.1.2}Calling the EOS}{5}
+\contentsline {subsubsection}{\numberline {5.1.3}Shutdown the EOS}{6}
+\contentsline {subsection}{\numberline {5.2}Mapping {\tt MAESTRO} to {\tt MESA}}{6}
+\contentsline {subsection}{\numberline {5.3}Network}{6}
+\contentsline {subsubsection}{\numberline {5.3.1}Set Up}{6}
+\contentsline {subsubsection}{\numberline {5.3.2}Calling the Network}{7}
+\contentsline {subsubsection}{\numberline {5.3.3}Shutdown the Network}{7}
+\contentsline {section}{\numberline {6}Install {\tt MESA} on Hopper}{7}
+\contentsline {subsection}{\numberline {6.1}{\tt makefile\_header}}{8}
+\contentsline {subsection}{\numberline {6.2}{\tt build\_and\_test} script}{8}
+\contentsline {subsection}{\numberline {6.3}{\tt mtx} makefile}{9}
+\contentsline {subsection}{\numberline {6.4}makefiles in {\tt screen}, {\tt num}, {\tt utils} and {\tt interp\_1d}}{9}
+\contentsline {subsection}{\numberline {6.5}{\tt install} script}{10}
+\contentsline {subsection}{\numberline {6.6}{\tt BoxLib Linux\_cray.mak} file}{10}
+\contentsline {subsection}{\numberline {6.7}{\tt BoxLib GMakedefs.mak} makefile}{11}
+\contentsline {section}{\numberline {7}Compilation Scripts}{11}
+\contentsline {subsection}{\numberline {7.1}Compile All Modules}{11}

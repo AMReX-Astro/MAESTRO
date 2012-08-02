@@ -1,0 +1,18 @@
+This directory will hold instructions on what is needed in order to 
+call MESA modules from an outside program.
+
+The instructions will deal primarily with the eos and net modules.
+
+The main TeX file depends on a number of other Tex files which should be 
+  located in the same directory. They include:
+	appendix.tex
+	compile_all_mods.tex
+	hopper_compile.tex
+
+	compile_one_mod.tex
+	convert_short_names.tex
+	setup_eos.tex
+	setup_xmass.tex
+	shutdown_eos.tex
+
+

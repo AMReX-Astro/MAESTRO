@@ -1,0 +1,81 @@
+%
+% Appendix
+%
+
+\appendix
+\appendixpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% EOS Routines
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\section{Sample EOS Routines}
+% \label{sec:code_eos}
+%
+%Sample routines that can be used to setup, call and shutdown the {\tt MESA} 
+%equation of state.
+%
+% \subsection{Setup EOS}
+%  \input eos_utils
+%  \input setup_eos
+%
+% \subsection{Calling the EOS}
+%  \input MESA_eos_from_MAESTRO
+%
+% \subsection{Shutdown EOS}
+%  \input shutdown_eos
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Map from Maestro to Mesa
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\section{Mapping {\tt MAESTRO} to {\tt MESA}}
+% \label{sec:code_mapping}
+%
+%Sample routines that can be used to setup the map between {\tt MAESTRO} 
+%and {\tt MESA} data formats. {\tt chem\_get\_iso\_id} is a {\tt MESA} 
+%function that takes an isotope name as its input and returns the index 
+%of that isotope in the {\tt MESA} chemistry data table.
+%
+% \subsection{Convert Short Species Names}
+%  \input convert_short_names
+%
+% \subsection{Map Species Array}
+%  \input setup_xmass
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Network Routines
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\section{Sample Network Routines}
+% \label{sec:code_net}
+%
+%Sample routines to setup, call and shutdown the {\tt MESA} network.
+%
+% \subsection{Setup Network}
+%  \input net_utils
+%  \input setup_net
+%  \input which_reactions
+%
+% \subsection{Calling the Network}
+%  \input Do_One_Zone_Burn
+%
+% \subsection{Shutdown Network}
+%  \input shutdown_net
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Useful Scripts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Compilation Scripts}
+ \label{sec:compile_scripts}
+
+Useful script written in {\tt BASH} to help with compiling {\tt MESA} 
+modules. The script cleans the module directory, compiles the source code and 
+exports the libraries and {\tt .mod} files to the appropriate directories 
+for every module. 
+
+% \subsection{Compile One Module}
+%  \input compile_one_mod
+
+ \subsection{Compile All Modules}
+  \input compile_all_mods
+
