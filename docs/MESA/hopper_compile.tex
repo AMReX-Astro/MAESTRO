@@ -1,24 +1,25 @@
 
-Once {\tt MESA} was installed and working properly on a local machine (e.g. 
+Once {\sf MESA} was installed and working properly on a local machine (e.g. 
 Bender), I tried installing it on Hopper, which is a Cray XE6 machine. On 
 Bender, which is an Intel(R) Xeon(R) X5650 machine, the compiler was 
-{\tt gcc} version 4.7.0, on Hopper I tried compiling {\tt MESA} with the 
+{\tt gcc} version 4.7.0, on Hopper I tried compiling {\sf MESA} with the 
 Cray Compiler using version 8.0.5. The module that was loaded to enable this 
 was {\tt PrgEnv-cray}.
 
-There are several steps needed to compile {\tt MAESTRO} with {\tt MESA} on 
+There are several steps needed to compile {\sf MAESTRO} with {\sf MESA} on 
 Hopper:
 \begin{enumerate}
 \item Edit the {\tt makefile\_header} in the {\tt utils} directory
 \item Edit the {\tt build\_and\_test} script in the {\tt utils} directory
+\item Edit the {\tt chem\_lib.f} file in the {\tt chem} directory
 \item Edit the {\tt mtx} makefile
 \item Edit the makefiles in {\tt screen}, {\tt utils}, {\tt num} and 
 {\tt interp\_1d}
-\item Edit the {\tt install} script in the main {\tt MESA} directory
+\item Edit the {\tt install} script in the main {\sf MESA} directory
 \item Edit the {\tt BoxLib/Tools/F\_mk/GMakedefs.mak} makefile
 \item Edit the {\tt BoxLib/Tools/F\_mk/comps/Linux\_cray.mak} file
-\item Make sure the makefile {\tt COMP} variable is set to {\tt Cray} in the 
-problem directory
+\item Install {\sf MESA}
+\item Compile {\sf MAESTRO}
 \end{enumerate}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -68,7 +69,7 @@ appropriate compiler flags. The results of what I changed are shown below:
 The {\tt build\_and\_test} script in the {\tt utils} directory is 
 responsible for compiling the main module directory as well as compiling 
 and running the test directory. We want to turn off the compiling and 
-running of the test directory to ensure that {\tt MESA} compiles successfully. 
+running of the test directory to ensure that {\sf MESA} compiles successfully. 
 A portion of the {\tt build\_and\_test} script looks like this:
 \begin{lstlisting}[language=bash,mathescape=false]
   cd make
@@ -101,6 +102,26 @@ we wish to change it to this:
 \end{lstlisting}
 This disables the compiling and running of the test directory.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{{\tt chem\_lib.f} Source File}
+
+Open the {\tt chem\_lib.f} file located in {\tt chem/public}. In the 
+{\tt generate\_nuclide\_set} subroutine, the implied do loop must be removed 
+and replaced with an actual do loop. For an unknown reason, the implied do 
+loop was causing a Segmentation Fault on Hopper with the Cray compiler. The 
+implied loop:
+\begin{lstlisting}[language=fortran,mathescape=false]
+  set = [(nuclide_set(names(i), i), i=1, size(names))]
+\end{lstlisting}
+should be changed to an explicit do loop:
+\begin{lstlisting}[language=fortran,mathescape=false]
+  do i=1, size(names)
+     set(i) = nuclide_set(names(i), i)
+  enddo
+\end{lstlisting}
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{{\tt mtx} makefile}
 
@@ -131,7 +152,17 @@ All three of the manually added flags ({\tt -O3}, {\tt -fno-common} and
 When creating the library for these four modules, there is a {\tt LIB\_DEFS} 
 variable in the makefile that holds the {\tt *\_def.o} file, e.g. 
 {\tt utils\_def.o} or {\tt num\_def.o}. This files is never loaded into the 
-library as seen below for the {\tt utils} directory:
+library as seen below for the {\tt utils} directory. Certain modules have a 
+{\tt *\_def.f} file with both definitions and declarations of data that will 
+be needed at runtime, so they must be included in the library. Other modules 
+have a {\tt *\_def.f} file that contains only definitions and no data 
+declarations and therefor only needs to be included at compile time. The Cray 
+compiler on Hopper for whatever reason complained that there were undefined 
+references to certain {\tt *\_def.o} files. The undefined references only 
+occurred for modules whose {\tt *\_def.f} file did not need to be included in 
+the library. The fix was to manually include the {\tt *\_def.o} file in the 
+library for all of the necessary module directories. The {\tt utils} directory 
+is shown here:
 \begin{lstlisting}[language=make,mathescape=false]
   LIB = libutils.a
   LIB_DEFS = utils_def.o
@@ -155,21 +186,21 @@ This must be done for each makefile in the following directories:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{{\tt install} script}
 
-Certain modules that are unneccessary for use with {\tt MAESTRO} do not need 
+Certain modules that are unneccessary for use with {\sf MAESTRO} do not need 
 to be installed (and also cause some sort of installation error). In the 
-main {\tt MESA} directory, edit the {\tt install} script and comment out 
+main {\sf MESA} directory, edit the {\tt install} script and comment out 
 the following four lines: {\tt do\_one sample}, {\tt do\_one star}, 
 {\tt do\_one adipls} and {\tt do\_one astero}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt BoxLib Linux\_cray.mak} file}
+\subsection{{\sf BoxLib Linux\_cray.mak} file}
 
-Two flags used in the compilation of {\tt MESA} with the Cray compiler are 
+Two flags used in the compilation of {\sf MESA} with the Cray compiler are 
 important; the {\tt -e m} or {\tt -em} flag and the {\tt -e f} or {\tt -ef} 
 flag. The {\tt -em} flag tells the compiler to create {\tt .mod} files of the 
 form {\tt NAME.mod}. The {\tt -e f} flag, which must be used with the 
 {\tt -em} flag, instead outputs {\tt .mod} files of the form {\tt name.mod}. 
-This is important for {\tt MESA} because the {\tt export} scripts copy the 
+This is important for {\sf MESA} because the {\tt export} scripts copy the 
 various libraries and {\tt .mod} files to the correct directories. The 
 {\tt export} script in the {\tt const} directory for example looks like this:
 \begin{lstlisting}[language=bash,mathescape=false]
@@ -182,9 +213,9 @@ various libraries and {\tt .mod} files to the correct directories. The
 \end{lstlisting}
 If the {\tt -ef} flag is not enabled, the {\tt .mod} file will be 
 {\tt CONST\_LIB.mod} and will not get copied to the {\tt include} directory 
-(the library is unaffected). The default for {\tt MAESTRO} is to not use 
-the {\tt -ef} flag, but it does use the {\tt -em} flag. To make {\tt MAESTRO} 
-and {\tt MESA} compatible, I added the {\tt -ef} flag to the 
+(the library is unaffected). The default for {\sf MAESTRO} is to not use 
+the {\tt -ef} flag, but it does use the {\tt -em} flag. To make {\sf MAESTRO} 
+and {\sf MESA} compatible, I added the {\tt -ef} flag to the 
 {\tt Linux\_cray.mak} file located in {\tt BoxLib/Tools/F\_mk/comps}. I also 
 added a few more debugging flags:
 \begin{lstlisting}[language=make,mathescape=false]
@@ -203,15 +234,15 @@ added a few more debugging flags:
 \end{lstlisting}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\tt BoxLib GMakedefs.mak} makefile}
+\subsection{{\sf BoxLib GMakedefs.mak} makefile}
 
-In {\tt MAESTRO}, {\tt .mod} files are located in the {\tt \$(tdir)/m} 
-directory, where {\tt tdir = t/\$(suf)} and {\tt suf} was in this case 
-{\tt Linux.Cray}. This means the {\tt MAESTRO} routines are expecting to find 
+In {\sf MAESTRO}, {\tt .mod} files are located in the {\tt \$(tdir)/m} 
+directory, where {\tt tdir = t/\$(suf)} and {\tt \$(suf)} was in this case 
+{\tt Linux.Cray}. This means the {\sf MAESTRO} routines are expecting to find 
 module files with the name {\tt t/Linux.Cray/m/network.mod}. The addition of 
 the {\tt -ef} flag affects the entire name of the module so the Cray compiler 
 was creating files with the name {\tt t/linux.cray/m/network.mod}. To solve 
-this, I modified what {\tt suf} is defined to be when using the Cray compiler. 
+this, I modified what {\tt tdir} is defined to be when using the Cray compiler. 
 This was done in the {\tt BoxLib/Tools/F\_mk/GMakedefs.mak} makefile by using 
 a simple if statement:
 \begin{lstlisting}[language=make,mathescape=false]
@@ -225,4 +256,15 @@ a simple if statement:
 \end{lstlisting}
 The shell command {\tt echo \$(suf) | tr A-Z a-z} has the effect of converting 
 {\tt \$(suf)} to lowercase.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Install {\sf MESA} and Compile {\sf MAESTRO}}
+
+At this point the {\tt install} script in the top {\sf MESA} directory can be 
+executed to install {\sf MESA}. This will compile the source code, generate 
+the libraries and copy the necessary files to the correct directories. Once, 
+{\sf MESA} is installed, {\sf MAESTRO} can be compiled and linked such that 
+it can use {\sf MESA}'s EOS and/or network. Make sure the makefile variable 
+{\tt COMP} is set to {\tt Cray} so the Cray compiler is used.
+
 
