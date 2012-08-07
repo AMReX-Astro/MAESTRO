@@ -4,27 +4,28 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
-Modules for Experiments in Stellar Astrophysics ({\tt MESA}) is a
-collection of open source, robust and efficient modules developed for
-a wide range of applications in computational stellar
-astrophysics. The modules include macroscopic and microscopic physics
-such as nuclear reaction rates, opacity, equation of state, element
-diffusion data and atmosphere boundary conditions in addition to
-numerical routines. This document describes how to link the {\tt MESA}
-modules to an outside program such as {\tt MAESTRO}\footnote{This
+Modules for Experiments in Stellar Astrophysics ({\sf MESA}) is a collection 
+of open source, robust and efficient modules developed for a wide range of 
+applications in computational stellar astrophysics. The modules include 
+macroscopic and microscopic physics such as nuclear reaction rates, opacity, 
+equation of state, element diffusion data and atmosphere boundary conditions 
+in addition to numerical routines. This document describes how to link the 
+{\sf MESA} modules to an outside program such as {\sf MAESTRO}.
+\footnote{This
   interface work was done by Ryan Orvedahl---questions (and credit)
   should be directed to him}.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup MESA
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Setting Up {\tt MESA}}
+\section{Setting Up {\sf MESA}}
 
-To install {\tt MESA}, download the source code from the {\tt MESA} website, 
+To install {\sf MESA}, download the source code from the {\sf MESA} website, 
 {\tt http://mesa.sourceforge.net}. Check the website for the latest version, 
 which is 4219 with the writing of this document. The codes and algorithms 
-discussed here were created when the current version of {\tt MESA} was 
+discussed here were created when the current version of {\sf MESA} was 
 version 4088. Between versions 4088 and 4219, there are minor changes that 
 will cause some of the included routines to crash. To download the source code 
 associated with version 4088, use the following command:
@@ -37,8 +38,8 @@ in the directory where this command was run. This step might take some time
 final {\tt mesa} directory will take up roughly 2.2 GB.
 
 Rich Townsend has developed a Software Development Kit (SDK) to help install 
-{\tt MESA} called {\tt MESASDK}. The SDK will install certain software 
-packages that {\tt MESA} uses and it will also change the {\tt PATH} 
+{\sf MESA} called {\sf MESASDK}. The SDK will install certain software 
+packages that {\sf MESA} uses and it will also change the {\tt PATH} 
 environment variable such that these programs become the default. A tarball 
 of the SDK software and indepth instructions for its use are available on 
 Townsend's website:
@@ -51,7 +52,7 @@ automatically changing the {\tt PATH} variable.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Setup without SDK
 %%%%%%%%%%%%%%%%%%
-\subsection{Setup {\tt MESA} Without {\tt MESASDK}}
+\subsection{Setup {\sf MESA} Without {\sf MESASDK}}
 \label{sec:woSDK}
 
 %-------------------------------------------------------------------------
@@ -72,15 +73,18 @@ located in the {\tt mesa/utils} directory and is called
 {\tt makefile\_header\_non\_mesasdk}. Open it and change the following:
 \begin{enumerate}
 \item Compilers: First change the compilers labeled {\tt CC} (C compiler) 
-and {\tt FC} (Fortran compiler) to the compilers of your choice ({\tt MESA} 
+and {\tt FC} (Fortran compiler) to the compilers of your choice ({\sf MESA} 
 defaults are {\tt gcc} and {\tt ifort}).
 
-\item {\tt UTILS\_ISNAN}: Leave this as {\tt utils\_isnan\_okay}, if {\tt MESA} 
+\item Remove the second instance of {\tt CC} located directly under the 
+{\tt SPECIAL\_FC\_FLAGS} variable
+
+\item {\tt UTILS\_ISNAN}: Leave this as {\tt utils\_isnan\_okay}, if {\sf MESA} 
 complains upon compiling the {\tt mesa/utils} module, then change it to 
 {\tt utils\_isnan\_nope}.
 
 \item {\tt BLAS} and {\tt LAPACK}: Set the location of {\tt LAPACK} and 
-{\tt BLAS} provided with the {\tt MESA} source tree using the following 
+{\tt BLAS} provided with the {\sf MESA} source tree using the following 
 definitions:
 \begin{lstlisting}[language=make,mathescape=false,upquote=true]
   WHICH_LAPACK = USE_SRCS
@@ -101,13 +105,13 @@ evolution code).
 {\tt LOAD\_SE} and {\tt INCLUDE\_SE} to be empty. {\tt SE} is a library of 
 formats used for writing/reading data in stellar evolution codes.
 
-\item Compiler Flags: Installing {\tt MESA} without OpenMP will result in a 
-failed install. {\tt MESA} is capable of being compiled in serial, but it 
+\item Compiler Flags: Installing {\sf MESA} without OpenMP will result in a 
+failed install. {\sf MESA} is capable of being compiled in serial, but it 
 must happen after the initial install. If not using {\tt gcc} or {\tt ifort} 
 it will be necessary to enter all of the relevant compiler flags.
 \end{enumerate}
 
-All {\tt MESA} modules have a makefile that includes the main makefile named 
+All {\sf MESA} modules have a makefile that includes the main makefile named 
 {\tt makefile\_header}. The file that was just edited was named 
 {\tt makefile\_header\_non\_mesasdk} and so the name must be changed in order 
 for the edits to take effect. This can be done as follows:
@@ -115,24 +119,24 @@ for the edits to take effect. This can be done as follows:
   cp makefile_header_non_mesasdk makefile_header
 \end{lstlisting}
 
-At this point, {\tt MESA} is ready to be installed, see Section 
+At this point, {\sf MESA} is ready to be installed, see Section 
 \ref{sec:install}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Install MESA
 %%%%%%%%%%%%%%%%
-\subsection{Install {\tt MESA}}
+\subsection{Install {\sf MESA}}
 \label{sec:install}
 If the environment variables were added to the {\tt .bashrc} (or equivalent) 
-file, do not forget to source that file before continuing. Now {\tt MESA} 
+file, do not forget to source that file before continuing. Now {\sf MESA} 
 is ready to be installed. Change directories to the {\tt mesa} directory. 
 Run the {\tt install} script by typing {\tt ./install}. The permissions of the 
 {\tt install} script may need to be changed in order for it to be executable.
 This will untar many data tables used by the equation of state, network and 
 chemistry modules. It will also compile and export all modules.
 
-Following the execution of the {\tt ./install} script, {\tt MESA} has been 
+Following the execution of the {\tt ./install} script, {\sf MESA} has been 
 installed and the following has completed:
 \begin{itemize}
 \item SDK only: Supporting software (compilers, linear algebra packages, 
@@ -144,7 +148,7 @@ etc.) has been unpacked and installed
 {\tt mesa/include} directories
 \end{itemize}
 
-If you want to run {\tt MESA} in parallel, nothing further needs to be done. 
+If you want to run {\sf MESA} in parallel, nothing further needs to be done. 
 If you want to make sure all modules are compiled in serial, see Section 
 \ref{sec:compile_wo_omp}, which addresses how to compile the modules.
 
@@ -174,7 +178,7 @@ and exports every module and should be run in the top {\tt mesa/} directory.
 \subsection{Optional: Turn Off {\tt mesa/star} OpenMP}
 There are four other places to turn off OpenMP, but they are all contained 
 in the {\tt mesa/star} directory, which is the 1-D stellar evolution code. If 
-only using a few {\tt MESA} modules that do not include the {\tt mesa/star} 
+only using a few {\sf MESA} modules that do not include the {\tt mesa/star} 
 stellar evolution code, then these last few places do not need to be 
 modified in any way. 
 
@@ -187,35 +191,69 @@ to set the {\tt use\_omp} flag to False. They occur in the {\tt do\_eos},
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compiling MESA with an Outside Program
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Compiling {\tt MAESTRO} to Use {\tt MESA}}
+\section{Compiling {\sf MAESTRO} to Use {\sf MESA}}
 
-Compiling code that depends on {\tt MESA} modules involves linking the code 
-with the {\tt .mod} files and libraries that are generated when {\tt MESA} 
+Compiling code that depends on {\sf MESA} modules involves linking the code 
+with the {\tt .mod} files and libraries that are generated when {\sf MESA} 
 is compiled. After the {\tt export} script has been run in all compiled 
 directories, the {\tt .mod} files and other supporting routines are 
 copied to the {\tt mesa/include} directory while the libraries are copied to 
 the {\tt mesa/lib} directory.
 
-The {\tt MESA} libraries have the name {\tt lib(module-name).a}, e.g. 
+The {\sf MESA} libraries have the name {\tt lib(module-name).a}, e.g. 
 {\tt libeos.a} or {\tt libnet.a}. The libraries need to be linked using the 
 {\tt -L} flag with the {\tt mesa/lib} directory and a list of which libraries 
-to load, e.g. {\tt -L\$(MESA\_DIR)/lib -leos -lnet -lnum}. {\tt MESA} 
+to load, e.g. {\tt -L\$(MESA\_DIR)/lib -leos -lnet -lnum}. {\sf MESA} 
 {\tt .mod} files are linked to code using the {\tt -I} flag and the 
-{\tt mesa/include} directory, e.g. {\tt -I\$(MESA\_DIR)/include}.
+{\tt mesa/include} directory, e.g. {\tt -I\$(MESA\_DIR)/include}. 
 
 The order in which the libraries appear is important. If compilation errors 
-related to undefined references to a particular {\tt MESA} module such as 
+related to undefined references to a particular {\sf MESA} module such as 
 {\tt eos\_lib} occur, check to make sure that the libraries are in the correct 
 order. Of course it is also possible that an undefined reference really does 
 exist.
 
+The wrapper routines that allow {\sf MAESTRO} to use {\sf MESA} modules are 
+located in the {\tt AstroDev/EOS/MESA} and {\tt AstroDev/networks/MESA} 
+directories. In each directory there is a {\tt GPackage.mak} file that 
+specifies the proper {\tt -I} and {\tt -L} compiler flags along with what 
+source files to include in the build. To use the EOS, open the 
+{\tt GNUmakefile} in the {\sf MAESTRO} problem directory and add the 
+following lines:
+\begin{lstlisting}[language=make,mathescape=false]
+  EOS_TOP_DIR := $(ASTRODEV_DIR)/EOS
+  EOS_DIR := MESA
+\end{lstlisting}
+To use the network, add the following lines:
+\begin{lstlisting}[language=make,mathescape=false]
+  NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
+  NETWORK_DIR := MESA
+  GENERAL_NET_INPUTS := $(NETWORK_TOP_DIR)/MESA/Net-Files/net_input.net
+\end{lstlisting}
+The {\tt GENERAL\_NET\_INPUTS} variable holds the path to the
+{\tt net\_input.net} file, which does not need to be kept in the
+{\tt Net-Files} directory. The {\tt net\_input.net} file could look like this:
+\begin{lstlisting}[language=make,mathescape=false]
+  # name              short-name    aion   zion
+  hydrogen-1             H1          1.0    1.0
+  helium-4               He4         4.0    2.0
+  carbon-12              C12         12.0   6.0
+  oxygen-16              O16         16.0   8.0
+  neon-20                Ne20        20.0  10.0
+  sodium-23              Na23        23.0  11.0
+  magnesium-23           Mg23        23.0  12.0
+  magnesium-24           Mg24        24.0  12.0
+  silicon-28             Si28        28.0  14.0
+\end{lstlisting}
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % How to setup/envoke/shutdown MESA modules
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Using {\tt MESA} Modules}
+\section{Using {\sf MESA} Modules}
 
 This section describes what needs to take place in order to use 
-{\tt MESA} modules such as setting up the module, invoking certain routines 
+{\sf MESA} modules such as setting up the module, invoking certain routines 
 and shutting down the module. This discussion will only include information 
 pertaining to the network and equation of state modules.
 
@@ -260,7 +298,7 @@ integer
 %-------------------------------------------------------------------------
 \subsubsection{Calling the EOS}
 
-The call to the generic {\tt MESA} equation of state looks like:
+The call to the generic {\sf MESA} equation of state looks like:
 \begin{lstlisting}[language=fortran,mathescape=false]
   call eosDT_get(handle_eos, Z, X, abar, zbar, nspec, chem_id, net_iso, Xa, &
                  rho, log10(rho), temp, log10(temp), res, d_dlnd, d_dlnT, ierr)
@@ -313,7 +351,7 @@ of the output
 values from the call, including all derivatives. 
 There are slight differences between the generic EOS call and the HELM EOS 
 call: HELM does not need the mass fractions or the maps between 
-{\tt MESA} isotope indices and the mass fraction array indices ({\tt chem\_id} 
+{\sf MESA} isotope indices and the mass fraction array indices ({\tt chem\_id} 
 and {\tt net\_iso}, see Section \ref{sec:mapping}). The HELM EOS returns on 
 the order of 400 different quantities which include the values shown in 
 Table \ref{tab:res} as well as quantities such as $dP/d(abar)$ and 
@@ -335,23 +373,23 @@ There are two steps to shutting down the equation of state:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mapping from MAESTRO to MESA using chem_id and net_iso
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Mapping {\tt MAESTRO} to {\tt MESA}}
+\subsection{Mapping {\sf MAESTRO} to {\sf MESA}}
 \label{sec:mapping}
 
-{\tt MAESTRO} and {\tt MESA} refer to isotopes in a very similar way; using 
-short names of the isotopes such as he4 and ni56. {\tt MAESTRO} 
-tends to use capital letters (He4 and Ni56) while {\tt MESA} uses 
+{\sf MAESTRO} and {\sf MESA} refer to isotopes in a very similar way; using 
+short names of the isotopes such as he4 and ni56. {\sf MAESTRO} 
+tends to use capital letters (He4 and Ni56) while {\sf MESA} uses 
 lowercase letters (he4 and ni56). A simple routine to convert from 
 uppercase to lowercase will be needed.
 
-In order to use {\tt MESA} modules and obtain the correct result, it is 
-important to make sure that {\tt MESA} and {\tt MAESTRO} agree on what 
+In order to use {\sf MESA} modules and obtain the correct result, it is 
+important to make sure that {\sf MESA} and {\sf MAESTRO} agree on what 
 isotope each entry in the mass fraction array refers to. This is done by 
 using the {\tt chem\_id} and {\tt net\_iso} variables. Both variables are 
 integer pointer arrays of size {\tt num\_chem\_isos}, which is defined in one 
 of the chemistry modules. {\tt chem\_id} maps from an isotope in the current 
-net to the {\tt MESA} data table that holds the properties of that isotope. 
-{\tt net\_iso} is used to map from the {\tt MESA} data tables to an isotope 
+net to the {\sf MESA} data table that holds the properties of that isotope. 
+{\tt net\_iso} is used to map from the {\sf MESA} data tables to an isotope 
 in the current network. 
 
 For example, assume there are 3 isotopes in the current net: H1, Be7 and C12. 
@@ -359,10 +397,10 @@ The {\tt chem\_id} array should look like this: {\tt chem\_id(:) = -1,
 chem\_id(1) = 2, chem\_id(2) = 18, chem\_id(3) = 38}, and the 
 {\tt net\_iso} array should look like this: {\tt net\_iso(:) = -1, 
 net\_iso(2) = 1, net\_iso(18) = 2, net\_iso(38) = 3}. Where 2, 18 and 38 
-refer to the {\tt MESA} data table location of H1, Be7 and C12, respectively.
+refer to the {\sf MESA} data table location of H1, Be7 and C12, respectively.
 
 Care should be taken when setting up these arrays in order to avoid 
-disagreement between the {\tt MESA} mass fraction array and the {\tt MAESTRO} 
+disagreement between the {\sf MESA} mass fraction array and the {\sf MAESTRO} 
 mass fraction array. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -373,22 +411,22 @@ mass fraction array.
 %-------------------------------------------------------------------------
 \subsubsection{Set Up}
 
-There are significantly more steps involved when initializing the {\tt MESA} 
+There are significantly more steps involved when initializing the {\sf MESA} 
 network. Here is a brief outline of what needs to happen:
 \begin{enumerate}
-\item Get the {\tt MESA} and {\tt AstroDev} directory locations
-\item Convert the short species names to {\tt MESA} format
-\item Generate a file that will tell {\tt MESA} which reactions to add based 
+\item Get the {\sf MESA} and {\sf AstroDev} directory locations
+\item Convert the short species names to {\sf MESA} format
+\item Generate a file that will tell {\sf MESA} which reactions to add based 
 on the isotopes in the current network ({\tt call which\_reactions})
-\item Initialize {\tt MESA} {\tt chem}, {\tt weak} and {\tt reaclib} modules
-\item Setup the map between {\tt MAESTRO} and {\tt MESA}, see Section 
+\item Initialize {\sf MESA} {\tt chem}, {\tt weak} and {\tt reaclib} modules
+\item Setup the map between {\sf MAESTRO} and {\sf MESA}, see Section 
 \ref{sec:mapping} for a more in depth explanation
-\item Initialize {\tt MESA} {\tt rates} and {\tt net} modules
+\item Initialize {\sf MESA} {\tt rates} and {\tt net} modules
 \item Allocate a network handle
 \item Call the {\tt net\_start\_def}, {\tt read\_net\_file}, {\tt net\_ptr} 
 and {\tt net\_finish\_def}
 \item Output a log file containing the species in the current net and which 
-reactions were chosen by {\tt MESA} based on those species
+reactions were chosen by {\sf MESA} based on those species
 \item Set {\tt which\_rates\_choice} and allocate {\tt which\_rates} array
 \item Set entire array equal to {\tt which\_rates\_choice} and call 
 {\tt net\_set\_which\_rates}
@@ -397,7 +435,7 @@ reactions were chosen by {\tt MESA} based on those species
 
 After calling {\tt net\_set\_which\_rates}, the setup routine should call 
 {\tt net\_setup\_tables}. This is based on the example 
-{\tt one\_zone\_burn.f} program distributed with the {\tt MESA} source code. 
+{\tt one\_zone\_burn.f} program distributed with the {\sf MESA} source code. 
 I have not had a successful burn if the {\tt net\_setup\_tables} routine is 
 called at setup in the {\tt setup\_mesa\_net.f90} program. I do have 
 successful burns when it is placed within the burner program 
@@ -408,19 +446,14 @@ everytime a burn is to take place, I added a logical flag that signals if the
 %-------------------------------------------------------------------------
 \subsubsection{Calling the Network}
 
-Calling the {\tt MESA} network from within the {\tt MAESTRO} wrapper starts 
-with calling a modified {\tt MESA} wrapper:
+Calling the {\sf MESA} network from within the {\sf MAESTRO} wrapper starts 
+with calling a modified {\sf MESA} wrapper:
 \begin{lstlisting}[language=fortran,mathescape=false]
-  results => Xout
-
-  call Do_One_Zone_Burn(dens, temp, dt, Xin, burn_ergs, Xout, results)
+  call Do_One_Zone_Burn(dens, temp, dt, Xin, burn_ergs, Xout)
 \end{lstlisting}
 The inputs are density, temperature, how long to burn and starting mass 
 fractions. The outputs are the energy generation rate ({\tt burn\_ergs}) 
-in units of ergs g$^{-1}$ s$^{-1}$, the final mass fractions and a pointer 
-to the final mass fractions ({\tt results}). The pointer is necessary 
-because the {\tt MESA} network works with pointers while {\tt MAESTRO} 
-uses standard arrays.
+in units of ergs g$^{-1}$ s$^{-1}$ and the final mass fractions. 
 
 To calculate {\tt rho\_omegadot} ($\rho \dot{\omega}$) and {\tt rho\_Hnuc} 
 ($\rho H_{{\rm nuc}}$) the following code can be used after a call to 
@@ -434,16 +467,16 @@ To calculate {\tt rho\_omegadot} ($\rho \dot{\omega}$) and {\tt rho\_Hnuc}
   rho_Hnuc = dens * burn_ergs
 \end{lstlisting}
 There is a support routine called {\tt burn\_solout} that is passed to the 
-{\tt MESA} burner. This routine is called after every step of the burn and 
+{\sf MESA} burner. This routine is called after every step of the burn and 
 is responsible for calculating the energy generation rate. {\tt burn\_solout} 
 is passed as an argument to the {\tt net\_1\_zone\_burn} subroutine (the 
-{\tt MESA} burner) and as a result the actual call to the {\tt burn\_solout} 
-routine is buried deep within the {\tt MESA} source code.
+{\sf MESA} burner) and as a result the actual call to the {\tt burn\_solout} 
+routine is buried deep within the {\sf MESA} source code.
 
 %-------------------------------------------------------------------------
 \subsubsection{Shutdown the Network}
 
-Shutting down the {\tt MESA} network requires only one step:
+Shutting down the {\sf MESA} network requires only one step:
 \begin{enumerate}
 \item Deallocate {\tt chem\_id}, {\tt net\_iso} and {\tt which\_rates}
 \end{enumerate}
@@ -452,15 +485,31 @@ Shutting down the {\tt MESA} network requires only one step:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compile MESA on Hopper, a Cray XE6 machine
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Install {\tt MESA} on Hopper}
+\section{Install {\sf MESA} on Hopper}
 \label{sec:hopper_install}
 \input hopper_compile
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Begin the appendix, where all the code examples are
+% Handy compilation script
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\input appendix
+\section{Compilation Script}
+ \label{sec:compile_scripts}
+
+Useful script written in {\tt BASH} to help with compiling {\sf MESA} modules. 
+The script cleans the module directory, compiles the source code and exports 
+the libraries and {\tt .mod} files to the appropriate directories for every 
+module. This script can be found in {\tt AstroDev/networks/MESA/scripts}. 
+There is also a script to compile just one module. The compile-all-modules 
+script should be run from the top {\sf MESA} directory while the 
+compile-one-module script can be run from anywhere because it takes the 
+relative path to the module.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Script
+%%%%%%%%
+\subsection{Compile All Modules}
+\input compile_all_mods
 
 \end{document}
 
