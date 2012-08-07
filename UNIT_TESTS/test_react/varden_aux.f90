@@ -313,7 +313,7 @@ contains
                    rsp(ii,jj,kk,t_c)    = snp(ii,jj,kk,temp_comp)
                    rsp(ii,jj,kk,hnuc_c) = rnp(ii,jj,kk,1) / cur_rho
                    if (rsp(ii,jj,kk,hnuc_c) >= ONE) then
-                      rsp(ii,jj,kk,lhnuc_c) = log(rsp(ii,jj,kk,hnuc_c))
+                      rsp(ii,jj,kk,lhnuc_c) = log10(rsp(ii,jj,kk,hnuc_c))
                    else
                       rsp(ii,jj,kk,lhnuc_c) = ZERO
                    endif
@@ -374,7 +374,7 @@ contains
     varnames(t_c)          = 'temperature'
     varnames(p_c)          = 'pressure'
     varnames(hnuc_c)       = 'H_nuc'
-    varnames(lhnuc_c)      = 'log(H_nuc)'
+    varnames(lhnuc_c)      = 'log10(H_nuc)'
     varnames(hext_c)       = 'H_ext'
     varnames(h_con_c)      = 'enthapy consistency'
   end subroutine names_init
