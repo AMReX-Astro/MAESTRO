@@ -72,7 +72,7 @@ contains
                                              use_delta_gamma1_term, nodal, mach_max_abort, &
                                              prob_lo, prob_hi, use_particles, sdc_iters, &
                                              enthalpy_pred_type, species_pred_type, &
-                                             sdc_couple_mac_velocity
+                                             sdc_couple_mac_velocity, sdc_hold_mac_velocity
     use time_module                 , only : time
     use addw0_module                , only : addw0
     use pred_parameters
