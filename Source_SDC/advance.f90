@@ -843,7 +843,8 @@ contains
 !! STEP 3 -- Update advection velocities
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-       if (sdc_iters .eq. 1 .or. sdc_couple_mac_velocity) then
+       if ( (sdc_iters .eq. 1 .or. sdc_couple_mac_velocity) .and. &
+            (.not. sdc_hold_mac_velocity) ) then
 
           if (parallel_IOProcessor() .and. verbose .ge. 1) then
              write(6,*) '<<< STEP 3: Recompute MAC velocity (MISDC iter = ', misdc, ')   '
