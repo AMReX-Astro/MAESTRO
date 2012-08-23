@@ -903,6 +903,7 @@ contains
 
              do n=1,nlevs
                 call destroy(peos_new(n))
+                call destroy(peos_old(n))
              end do
 
              ! compute peosbar = Avg(peos_nph)
