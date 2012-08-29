@@ -1,4 +1,4 @@
-! initialize a divergence-free velocity field, add the gradient of a
+! Initialize a divergence-free velocity field, add the gradient of a
 ! scalar, project, and check if we get the original field back.
 
 subroutine varden()
@@ -125,7 +125,7 @@ subroutine varden()
      call bl_error('varden.f90: nlevs .ne. max_levs not supported yet')
   end if
 
-  if (dm .ne. get_dim(mla%mba) .or. dm .ne. 2) then
+  if (dm .ne. get_dim(mla%mba)) then
      call bl_error('dm_in not properly set in inputs file')
   endif
   

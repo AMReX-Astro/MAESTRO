@@ -48,7 +48,7 @@ contains
              call init_velocity_2d(up(:,:,1,:), ng, lo, hi, dx(n,:))
 
           case (3)
-             call bl_error("ERROR: init_velocity not implemented in 3d")
+             call init_velocity_3d(up(:,:,:,:), ng, lo, hi, dx(n,:))
 
           end select
        end do
@@ -118,6 +118,54 @@ contains
     enddo
 
   end subroutine init_velocity_2d
+
+  subroutine init_velocity_3d(U, ng, lo, hi, dx)
+
+    ! initialize the velocity field to a divergence-free field.  This
+    ! velocity field comes from the idea that the curl of any vector
+    ! is divergence-free.
+    !
+    ! we take: Phi = (alpha, beta, gamma) as our initial vector, with:
+    !
+    !   alpha = sin  pi y  sin 2pi z
+    !   beta  = sin 2pi x  sin  pi z
+    !   gamma = sin  pi x  sin 2pi y
+    !
+    ! then U = curl{Phi} gives our field
+
+    use probin_module, only: prob_lo, prob_hi
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng
+    real (kind=dp_t), intent(inout) :: U(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    ! Local variables
+    integer :: i, j, k
+    real (kind=dp_t) :: x, y, z
+
+    do k = lo(3), hi(3)
+       z = (dble(k)+0.5d0)*dx(3) + prob_lo(3)
+
+       do j = lo(2), hi(2)
+          y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
+
+          do i = lo(1), hi(1)
+             x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
+    
+             U(i,j,k,1) = TWO*M_PI*sin(M_PI*x)*cos(TWO*M_PI*y) - &
+                              M_PI*sin(TWO*M_PI*x)*cos(M_PI*z)
+
+             U(i,j,k,2) = TWO*M_PI*sin(M_PI*y)*cos(TWO*M_PI*z) - &
+                              M_PI*cos(M_PI*x)*sin(TWO*M_PI*y)
+
+             U(i,j,k,3) = TWO*M_PI*cos(TWO*M_PI*x)*sin(M_PI*z) - &
+                              M_PI*cos(M_PI*y)*sin(TWO*M_PI*z)
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine init_velocity_3d
 
 
   !===========================================================================
@@ -248,7 +296,9 @@ contains
                                      the_bc_level(n)%phys_bc_level_array(i,:,:))
 
           case (3)
-             call bl_error("ERROR: add_grad_scalar not implemented in 3d")
+             call add_grad_scalar_3d(up(:,:,:,:), gp(:,:,:,:), ng, lo, hi, dx(n,:), &
+                                     the_bc_level(n)%phys_bc_level_array(0,:,:), &
+                                     the_bc_level(n)%phys_bc_level_array(i,:,:))
 
           end select
        end do
@@ -371,6 +421,109 @@ contains
     deallocate(phi)
 
   end subroutine add_grad_scalar_2d
+
+
+  subroutine add_grad_scalar_3d(U, gphi, ng, lo, hi, dx, &
+                                domain_phys_bc, box_phys_bc)
+
+    use     bc_module
+    use probin_module, only: prob_lo, prob_hi
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng
+    real (kind=dp_t), intent(inout) ::    U(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real (kind=dp_t), intent(inout) :: gphi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+    integer         , intent(in   ) :: domain_phys_bc(:,:)
+    integer         , intent(in   ) :: box_phys_bc(:,:)
+
+
+    ! Local variables
+    integer :: i, j, k
+    real (kind=dp_t) :: x, y, z
+    real (kind=dp_t), allocatable :: phi(:,:,:)
+
+    allocate(phi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)) 
+
+    if (domain_phys_bc(1,1) .eq. SLIP_WALL .and. &
+        domain_phys_bc(1,2) .eq. SLIP_WALL .and. &
+        domain_phys_bc(2,1) .eq. SLIP_WALL .and. &
+        domain_phys_bc(2,2) .eq. SLIP_WALL .and. &
+        domain_phys_bc(3,1) .eq. SLIP_WALL .and. &
+        domain_phys_bc(3,2) .eq. SLIP_WALL) then
+
+       ! Add on the gradient of a scalar (phi) that satisfies
+       ! grad(phi).n = 0.
+       do k = lo(3), hi(3)
+          z = (dble(k)+0.5d0)*dx(3) + prob_lo(3)
+
+          do j = lo(2), hi(2)
+             y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
+
+             do i = lo(1), hi(1)
+                x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
+      
+                gphi(i,j,k,1) =  EIGHT*x*(ONE - x)
+                gphi(i,j,k,2) =  EIGHT*y*(ONE - y)
+                gphi(i,j,k,3) =  EIGHT*z*(ONE - z)
+
+                U(i,j,k,1) = U(i,j,k,1) + gphi(i,j,k,1)
+                U(i,j,k,2) = U(i,j,k,2) + gphi(i,j,k,2)
+                U(i,j,k,3) = U(i,j,k,3) + gphi(i,j,k,3)
+   
+             enddo
+          enddo
+       enddo
+
+    else if (domain_phys_bc(1,1) .eq. PERIODIC .and. &
+             domain_phys_bc(1,2) .eq. PERIODIC .and. &
+             domain_phys_bc(2,1) .eq. PERIODIC .and. &
+             domain_phys_bc(2,2) .eq. PERIODIC .and. &
+             domain_phys_bc(3,1) .eq. PERIODIC .and. &
+             domain_phys_bc(3,2) .eq. PERIODIC) then
+
+       do k = lo(3)-1, hi(3)+1
+          z = (dble(k)+0.5d0)*dx(3) + prob_lo(3)
+
+          do j = lo(2)-1, hi(2)+1
+             y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
+    
+             do i = lo(1)-1, hi(1)+1
+                x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
+   
+                phi(i,j,k) = 0.5d0 * cos(2.d0*M_PI*y)*cos(2.d0*M_PI*x)*cos(2.d0*M_PI*z)
+   
+             enddo
+          enddo
+       enddo
+
+       do k = lo(3), hi(3)
+          z = (dble(k)+0.5d0)*dx(3) + prob_lo(3)
+
+          do j = lo(2), hi(2)
+             y = (dble(j)+0.5d0)*dx(2) + prob_lo(2)
+
+             do i = lo(1), hi(1)
+                x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
+
+                gphi(i,j,k,1) =  (phi(i+1,j,k)-phi(i-1,j,k))/(2.d0*dx(1))
+                gphi(i,j,k,2) =  (phi(i,j+1,k)-phi(i,j-1,k))/(2.d0*dx(2))
+                gphi(i,j,k,3) =  (phi(i,j,k+1)-phi(i,j,k-1))/(2.d0*dx(3))
+   
+                U(i,j,k,1) = U(i,j,k,1) + gphi(i,j,k,1)
+                U(i,j,k,2) = U(i,j,k,2) + gphi(i,j,k,2)
+                U(i,j,k,3) = U(i,j,k,3) + gphi(i,j,k,3)
+                
+             enddo
+          enddo
+       enddo
+
+    else
+       call bl_error('Not set up for these boundary conditions')
+    end if
+
+    deallocate(phi)
+
+  end subroutine add_grad_scalar_3d
 
 
   !===========================================================================
