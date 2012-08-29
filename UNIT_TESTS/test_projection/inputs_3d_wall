@@ -1,11 +1,11 @@
 &PROBIN
- test_set = "gr0_3d"
+ test_set = "gr0_3d_2lev_coarse"
 
  run_prefix = "wall_3d_"
 
  spherical_in = 0
  dm_in = 3
- max_levs = 1
+ max_levs = 2
 
  verbose = 1
 
