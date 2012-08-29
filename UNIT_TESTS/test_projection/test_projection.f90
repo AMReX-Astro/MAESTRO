@@ -180,7 +180,7 @@ contains
 
     integer :: lo(get_dim(umac(1,1))), hi(get_dim(umac(1,1)))
 
-    real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:)
+    real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:), wmp(:,:,:,:)
 
     nlevs = size(umac(:,1))
     dm = get_dim(umac(1,1))
@@ -202,7 +202,9 @@ contains
                                        lo, hi, dx(n,:))
 
           case (3)
-             call bl_error("ERROR: init_mac_velocity not implemented in 3d")
+             wmp => dataptr(umac(n,3), i)
+             call init_mac_velocity_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng, &
+                                       lo, hi, dx(n,:))
 
           end select
        end do
@@ -258,6 +260,87 @@ contains
     enddo
 
   end subroutine init_mac_velocity_2d
+
+
+  subroutine init_mac_velocity_3d(umac, vmac, wmac, ng, lo, hi, dx)
+
+    ! initialize the velocity field to a divergence-free field.  This
+    ! velocity field comes from the idea that the curl of any vector
+    ! is divergence-free.
+    !
+    ! we take: Phi = (alpha, beta, gamma) as our initial vector, with:
+    !
+    !   alpha = sin  pi y  sin 2pi z
+    !   beta  = sin 2pi x  sin  pi z
+    !   gamma = sin  pi x  sin 2pi y
+    !
+    ! then U = curl{Phi} gives our field
+
+    use probin_module, only: prob_lo, prob_hi
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng
+    real (kind=dp_t), intent(inout) :: umac(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real (kind=dp_t), intent(inout) :: vmac(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real (kind=dp_t), intent(inout) :: wmac(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    ! Local variables
+    integer :: i, j, k
+    real (kind=dp_t) :: x, y, z
+
+    ! x-velocity  (x are edges, y and z are centers)
+    do k = lo(3), hi(3)
+       z = (dble(k)+HALF)*dx(3) + prob_lo(3)
+
+       do j = lo(2), hi(2)
+          y = (dble(j)+HALF)*dx(2) + prob_lo(2)
+
+          do i = lo(1), hi(1)+1
+             x = (dble(i))*dx(1) + prob_lo(1)
+    
+             umac(i,j,k) = TWO*M_PI*sin(M_PI*x)*cos(TWO*M_PI*y) - &
+                               M_PI*sin(TWO*M_PI*x)*cos(M_PI*z)
+
+          enddo
+       enddo
+    enddo
+
+    ! y-velocity  (x and z are centers, y are edges)
+    do k = lo(3), hi(3)
+       z = (dble(k)+HALF)*dx(3) + prob_lo(3)
+
+       do j = lo(2), hi(2)+1
+          y = (dble(j))*dx(2) + prob_lo(2)
+
+          do i = lo(1), hi(1)
+             x = (dble(i)+HALF)*dx(1) + prob_lo(1)
+
+             vmac(i,j,k) = TWO*M_PI*sin(M_PI*y)*cos(TWO*M_PI*z) - &
+                               M_PI*cos(M_PI*x)*sin(TWO*M_PI*y)
+
+          enddo
+       enddo
+    enddo
+
+    ! z-velocity  (x and y are centers, z are edges)
+    do k = lo(3), hi(3)+1
+       z = (dble(k))*dx(3) + prob_lo(3)
+
+       do j = lo(2), hi(2)
+          y = (dble(j)+HALF)*dx(2) + prob_lo(2)
+
+          do i = lo(1), hi(1)
+             x = (dble(i)+HALF)*dx(1) + prob_lo(1)
+
+             wmac(i,j,k) = TWO*M_PI*cos(TWO*M_PI*x)*sin(M_PI*z) - &
+                               M_PI*cos(M_PI*y)*sin(TWO*M_PI*z)
+
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine init_mac_velocity_3d
 
 
   !===========================================================================
