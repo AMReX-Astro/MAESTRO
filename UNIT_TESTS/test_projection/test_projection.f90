@@ -462,9 +462,9 @@ contains
              do i = lo(1), hi(1)
                 x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
       
-                gphi(i,j,k,1) =  EIGHT*x*(ONE - x)
-                gphi(i,j,k,2) =  EIGHT*y*(ONE - y)
-                gphi(i,j,k,3) =  EIGHT*z*(ONE - z)
+                gphi(i,j,k,1) =  16.0_dp_t*x*(ONE - x)
+                gphi(i,j,k,2) =  16.0_dp_t*y*(ONE - y)
+                gphi(i,j,k,3) =  16.0_dp_t*z*(ONE - z)
 
                 U(i,j,k,1) = U(i,j,k,1) + gphi(i,j,k,1)
                 U(i,j,k,2) = U(i,j,k,2) + gphi(i,j,k,2)
