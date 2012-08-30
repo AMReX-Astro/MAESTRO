@@ -575,7 +575,7 @@ contains
              do i = lo(1)-1, hi(1)+1
                 x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
    
-                phi(i,j,k) = 0.5d0 * cos(2.d0*M_PI*y)*cos(2.d0*M_PI*x)*cos(2.d0*M_PI*z)
+                phi(i,j,k) = 5.0d0 * cos(2.d0*M_PI*y)*cos(2.d0*M_PI*x)*cos(2.d0*M_PI*z)
    
              enddo
           enddo
