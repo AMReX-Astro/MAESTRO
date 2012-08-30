@@ -3872,11 +3872,11 @@
         </Object>
         <Object name="ViewerSubject">
             <Object name="SourceMap">
-                <Field name="SOURCE00" type="string">localhost:/home/zingale/development/MAESTRO/UNIT_TESTS/test_projection/wall_3d_u_plus_grad_phi/Header</Field>
+                <Field name="SOURCE00" type="string">localhost:/home/zingale/development/MAESTRO/UNIT_TESTS/test_projection/wall_3d_u_new/Header</Field>
             </Object>
             <Object name="SourcePlugins">
                 <Field name="lens.ccs.ornl.gov:/tmp/work/zingale/sub_chandra_hires_blocks/sub_chandra_plt00318/Header" type="string">Boxlib3D_1.0</Field>
-                <Field name="localhost:/home/zingale/development/MAESTRO/UNIT_TESTS/test_projection/wall_3d_u_plus_grad_phi/Header" type="string">Boxlib3D_1.0</Field>
+                <Field name="localhost:/home/zingale/development/MAESTRO/UNIT_TESTS/test_projection/wall_3d_u_new/Header" type="string">Boxlib3D_1.0</Field>
             </Object>
             <Object name="DatabaseCorrelationList">
                 <Field name="needPermission" type="bool">true</Field>
