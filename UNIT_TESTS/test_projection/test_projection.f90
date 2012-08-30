@@ -127,9 +127,11 @@ contains
     !
     ! we take: Phi = (alpha, beta, gamma) as our initial vector, with:
     !
-    !   alpha = sin  pi y  sin 2pi z
-    !   beta  = sin 2pi x  sin  pi z
-    !   gamma = sin  pi x  sin 2pi y
+    !   alpha = sin 4pi y  sin 2pi z
+    !   beta  = sin 2pi x  sin 4pi z
+    !   gamma = sin 4pi x  sin 2pi y
+    !
+    ! (this is periodic and even in all directions)
     !
     ! then U = curl{Phi} gives our field
 
@@ -152,14 +154,14 @@ contains
           do i = lo(1), hi(1)
              x = (dble(i)+0.5d0)*dx(1) + prob_lo(1)
     
-             U(i,j,k,1) = TWO*M_PI*sin(M_PI*x)*cos(TWO*M_PI*y) - &
-                              M_PI*sin(TWO*M_PI*x)*cos(M_PI*z)
+             U(i,j,k,1) = TWO*M_PI*sin(FOUR*M_PI*x)*cos( TWO*M_PI*y) - &
+                         FOUR*M_PI*sin( TWO*M_PI*x)*cos(FOUR*M_PI*z)
 
-             U(i,j,k,2) = TWO*M_PI*sin(M_PI*y)*cos(TWO*M_PI*z) - &
-                              M_PI*cos(M_PI*x)*sin(TWO*M_PI*y)
+             U(i,j,k,2) = TWO*M_PI*sin(FOUR*M_PI*y)*cos( TWO*M_PI*z) - &
+                         FOUR*M_PI*cos(FOUR*M_PI*x)*sin( TWO*M_PI*y)
 
-             U(i,j,k,3) = TWO*M_PI*cos(TWO*M_PI*x)*sin(M_PI*z) - &
-                              M_PI*cos(M_PI*y)*sin(TWO*M_PI*z)
+             U(i,j,k,3) = TWO*M_PI*cos( TWO*M_PI*x)*sin(FOUR*M_PI*z) - &
+                         FOUR*M_PI*cos(FOUR*M_PI*y)*sin( TWO*M_PI*z)
 
           enddo
        enddo
