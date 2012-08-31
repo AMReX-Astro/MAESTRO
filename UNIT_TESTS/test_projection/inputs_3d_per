@@ -13,10 +13,13 @@
  prob_hi_y = 1.0
  prob_hi_z = 1.0
 
- bcx_lo = -1
- bcx_hi = -1
- bcy_lo = -1
- bcy_hi = -1
- bcz_lo = -1
- bcz_hi = -1
+ xlo_boundary_type = "periodic"
+ xhi_boundary_type = "periodic"
+
+ ylo_boundary_type = "periodic"
+ yhi_boundary_type = "periodic"
+
+ zlo_boundary_type = "periodic"
+ zhi_boundary_type = "periodic"
+ 
 /
