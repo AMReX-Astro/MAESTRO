@@ -4,33 +4,29 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   use bl_constants_module
   use network
   use eos_module
-  
-  ! we get the thermodynamic state through the burner_aux module -- we freeze
-  ! these to the values are the top of the timestep to avoid costly
-  ! EOS calls
-  use burner_aux_module, only : dens_pass, c_p_pass, dhdx_pass, X_O16_pass
+  use network_indices
+  use rpar_indices
 
   implicit none
 
   ! our convention is that y(1:nspec) are the species (in the same
   ! order as defined in network.f90, and y(nspec+1) is the temperature
-  integer :: n
-  real(kind=dp_t) :: y(n), ydot(n)
+  integer,         intent(in   ) :: n, ipar
+  real(kind=dp_t), intent(in   ) :: y(n)
+  real(kind=dp_t), intent(  out) :: ydot(n)
+  real(kind=dp_t), intent(inout) :: rpar(*)
 
   integer :: k
   real(kind=dp_t) :: ymass(nspec)
 
-  real(kind=dp_t) :: rpar
-  integer :: ipar
-
   real(kind=dp_t) :: t
 
-  real(kind=dp_t) :: dens, temp, T9, T9a, dT9dt, dT9adt
+  real(kind=dp_t) :: dens, c_p, dhdX(nspec), X_O16
+  real(kind=dp_t) :: temp, T9, T9a, dT9dt, dT9adt
 
   real(kind=dp_t) :: rate, dratedt
   real(kind=dp_t) :: sc1212, dsc1212dt
   real(kind=dp_t) :: xc12tmp
-  common /rate_info/ rate, dratedt, sc1212, dsc1212dt, xc12tmp
 
   real(kind=dp_t), PARAMETER :: &
                      one_twelvth = 1.0d0/12.0d0, &
@@ -42,28 +38,19 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   
   real(kind=dp_t) :: a, b, dadt, dbdt
 
-  integer, save :: ic12, io16, img24
 
-  logical, save :: firstCall = .true.
+  dens = rpar(irp_dens)
+  temp = y(nspec_advance+1)
 
-  if (firstCall) then
-     ic12 = network_species_index("carbon-12")
-     io16 = network_species_index("oxygen-16")
-     img24 = network_species_index("magnesium-24")
-
-     firstCall = .false.
-  end if
-
-
+  c_p     = rpar(irp_cp)
+  dhdX(:) = rpar(irp_dhdX:irp_dhdX-1+nspec)
+  X_O16   = rpar(irp_o16)
 
   ! compute the molar fractions -- needed for the screening
-  ymass(ic12) = y(1)/aion(ic12)
-  ymass(io16) = X_O16_pass/aion(io16)
-  ymass(img24) = (ONE - y(1) - X_O16_pass)/aion(img24)
+  ymass(ic12_) = y(1)/aion(ic12_)
+  ymass(io16_) = X_O16/aion(io16_)
+  ymass(img24_) = (ONE - y(1) - X_O16)/aion(img24_)
 
-  ! for convinence, carry a temp variable and dens variable
-  dens = dens_pass
-  temp = y(nspec_advance+1)
 
   ! call the screening routine
   call screenz(temp,dens,6.0d0,6.0d0,12.0d0,12.0d0,ymass,aion,zion,nspec,     &
@@ -119,16 +106,24 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   ! the network module -- this makes things robust to a shuffling of the 
   ! species ordering
 
-  xc12tmp = max(y(ic12),0.d0)
-  ydot(ic12) = -one_twelvth*dens*sc1212*rate*xc12tmp**2
+  xc12tmp = max(y(ic12_),0.d0)
+  ydot(ic12_) = -one_twelvth*dens*sc1212*rate*xc12tmp**2
 
   ! now compute the change in temperature, using the evolution equation
   ! dT/dt = -(1/c_p) sum_k (xi_k + q_k) omega_k
   ! 
   ! we make use of the fact that omega(Mg24) = - omega(C12), and that
   ! omega(O16) = 0 in our simplified burner
-  ydot(nspec_advance+1) =  ( (dhdx_pass(img24) - dhdx_pass(ic12)) + &
-                             (ebin(img24) - ebin(ic12)) )*ydot(ic12)/c_p_pass
+  ydot(nspec_advance+1) =  ( (dhdx(img24_) - dhdx(ic12_)) + &
+                             (ebin(img24_) - ebin(ic12_)) )*ydot(ic12_)/c_p
+
+
+  ! for Mr. Jacobian
+  rpar(irp_rate)      = rate
+  rpar(irp_dratedt)   = dratedt
+  rpar(irp_sc1212)    = sc1212
+  rpar(irp_dsc1212dt) = dsc1212dt
+  rpar(irp_xc12tmp)   = xc12tmp
 
   return
 
@@ -140,34 +135,31 @@ subroutine jac(neq, t, y, ml, mu, pd, nrpd, rpar, ipar)
   use bl_types
   use bl_constants_module
   use network
-
-  ! we get the thermodynamic state through the burner_aux module -- we freeze
-  ! these to the values are the top of the timestep to avoid costly
-  ! EOS calls
-  use burner_aux_module, only : dens_pass, c_p_pass, dhdx_pass, X_O16_pass
+  use network_indices
+  use rpar_indices
 
   implicit none
 
   integer        , intent(IN   ) :: neq, ml, mu, nrpd, ipar
-  real(kind=dp_t), intent(IN   ) :: y(neq), rpar, t
+  real(kind=dp_t), intent(IN   ) :: y(neq), rpar(*), t
   real(kind=dp_t), intent(  OUT) :: pd(neq,neq)
 
+  real(kind=dp_t) :: dens, c_p, dhdX(nspec), X_O16
   real(kind=dp_t) :: rate, dratedt, scorr, dscorrdt, xc12tmp
-  common /rate_info/ rate, dratedt, scorr, dscorrdt, xc12tmp
 
   integer :: itemp
 
-  integer, save :: ic12, io16, img24
 
-  logical, save :: firstCall = .true.
+  dens    = rpar(irp_dens)
+  c_p     = rpar(irp_cp)
+  dhdX(:) = rpar(irp_dhdX:irp_dhdX-1+nspec)
+  X_O16   = rpar(irp_o16)
 
-  if (firstCall) then
-     ic12 = network_species_index("carbon-12")
-     io16 = network_species_index("oxygen-16")
-     img24 = network_species_index("magnesium-24")
-
-     firstCall = .false.
-  end if
+  rate     = rpar(irp_rate)     
+  dratedt  = rpar(irp_dratedt)  
+  scorr    = rpar(irp_sc1212)   
+  dscorrdt = rpar(irp_dsc1212dt)
+  xc12tmp  = rpar(irp_xc12tmp)  
 
 
   ! initialize
@@ -177,22 +169,22 @@ subroutine jac(neq, t, y, ml, mu, pd, nrpd, rpar, ipar)
 
 
   ! carbon jacobian elements
-  pd(ic12, ic12) = -(1.0d0/6.0d0)*dens_pass*scorr*rate*xc12tmp
+  pd(ic12_, ic12_) = -(1.0d0/6.0d0)*dens*scorr*rate*xc12tmp
 
 
 
   ! add the temperature derivatives: df(y_i) / dT
-  pd(ic12,itemp) = -(1.0d0/12.0d0)*(dens_pass*rate*xc12tmp**2*dscorrdt    &
-                                    + dens_pass*scorr*xc12tmp**2*dratedt)  
+  pd(ic12_,itemp) = -(1.0d0/12.0d0)*(dens*rate*xc12tmp**2*dscorrdt    &
+                                   + dens*scorr*xc12tmp**2*dratedt)  
 
   ! add the temperature jacobian elements df(T) / df(y)
-  pd(itemp,ic12) =  ( (dhdx_pass(img24) - dhdx_pass(ic12)) + &
-                      (ebin(img24) - ebin(ic12)) )*pd(ic12,ic12)/c_p_pass
+  pd(itemp,ic12_) =  ( (dhdx(img24_) - dhdx(ic12_)) + &
+                       (ebin(img24_) - ebin(ic12_)) )*pd(ic12_,ic12_)/c_p
 
 
   ! add df(T) / dT
-  pd(itemp,itemp) = ( (dhdx_pass(img24) - dhdx_pass(ic12)) + &
-                      (ebin(img24) - ebin(ic12)) )*pd(ic12,itemp)/c_p_pass
+  pd(itemp,itemp) = ( (dhdx(img24_) - dhdx(ic12_)) + &
+                      (ebin(img24_) - ebin(ic12_)) )*pd(ic12_,itemp)/c_p
 
 
   return

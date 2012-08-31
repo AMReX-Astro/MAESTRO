@@ -45,29 +45,24 @@ contains
   
   subroutine network_init()
 
-    integer :: ic12, io16, img24
+    use network_indices
+    use rpar_indices
 
-    ! integer keys -- for convinence.  In all other places, we will find
-    ! these by querying based on species name using network_species_index
-    ic12  = 1
-    io16  = 2
-    img24 = 3
+    spec_names(ic12_)  = "carbon-12"
+    spec_names(io16_)  = "oxygen-16"
+    spec_names(img24_) = "magnesium-24"
 
-    spec_names(ic12)  = "carbon-12"
-    spec_names(io16)  = "oxygen-16"
-    spec_names(img24) = "magnesium-24"
+    short_spec_names(ic12_)  = "C12"
+    short_spec_names(io16_)  = "O16"
+    short_spec_names(img24_) = "Mg24"
 
-    short_spec_names(ic12)  = "C12"
-    short_spec_names(io16)  = "O16"
-    short_spec_names(img24) = "Mg24"
-
-    aion(ic12)  = 12.0_dp_t
-    aion(io16)  = 16.0_dp_t
-    aion(img24) = 24.0_dp_t
+    aion(ic12_)  = 12.0_dp_t
+    aion(io16_)  = 16.0_dp_t
+    aion(img24_) = 24.0_dp_t
     
-    zion(ic12)  = 6.0_dp_t
-    zion(io16)  = 8.0_dp_t
-    zion(img24) = 12.0_dp_t
+    zion(ic12_)  = 6.0_dp_t
+    zion(io16_)  = 8.0_dp_t
+    zion(img24_) = 12.0_dp_t
 
     ! our convention is that the binding energies are negative.  We convert
     ! from the MeV values that are traditionally written in astrophysics 
@@ -75,9 +70,15 @@ contains
     ! MeV values are per nucleus, so we divide by aion to make it per
     ! nucleon and we multiple by Avogardo's # (6.0221415e23) to get the 
     ! value in erg/g
-    ebin(ic12)  = -7.4103097e18_dp_t     !  92.16294 MeV
-    ebin(io16)  = -7.6959672e18_dp_t     ! 127.62093 MeV
-    ebin(img24) = -7.9704080e18_dp_t     ! 198.2579  MeV
+    ebin(ic12_)  = -7.4103097e18_dp_t     !  92.16294 MeV
+    ebin(io16_)  = -7.6959672e18_dp_t     ! 127.62093 MeV
+    ebin(img24_) = -7.9704080e18_dp_t     ! 198.2579  MeV
+
+    ! rpar is VODE's way of passing information into the RHS and
+    ! jacobian routines.  Here we initialize some indices to make
+    ! sense of what is stored in the rpar() array.
+    call init_rpar_indices(nspec)
+
 
     network_initialized = .true.
 
