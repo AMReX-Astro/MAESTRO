@@ -14,8 +14,8 @@ MAESTRO_TOP_DIR := ../..
 EOS_DIR := gamma_law_general
 CONDUCTIVITY_DIR := constant
 
-NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
-NETWORK_DIR := triple_alpha
+NETWORK_DIR := general_null
+GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/triple_alpha_plus_o.net
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique

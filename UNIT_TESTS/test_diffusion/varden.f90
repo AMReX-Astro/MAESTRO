@@ -66,15 +66,21 @@ subroutine varden()
 
   time = ZERO
 
+  ! we are hardcoded for a certain net here
+  if (nspec /= 4) then
+     call bl_error("ERROR: wrong network")
+  endif
+
   ! setup some names for the data fab's
   allocate(names(nscal))
   names(1) = "density"
   names(2) = "rhoh"
-  names(3) = "X(He4)*rho"
-  names(4) = "X(C12)*rho"
-  names(5) = "X(Fe56)*rho"
-  names(6) = "temp"
-  names(7) = "trac"
+  names(3) = "X(" // trim(short_spec_names(1)) // ")*rho"
+  names(4) = "X(" // trim(short_spec_names(2)) // ")*rho"
+  names(5) = "X(" // trim(short_spec_names(3)) // ")*rho"
+  names(6) = "X(" // trim(short_spec_names(4)) // ")*rho"
+  names(7) = "temp"
+  names(8) = "trac"
 
  ! we only use fixed grids
  if (test_set /= '') then

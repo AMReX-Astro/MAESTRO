@@ -44,19 +44,23 @@ contains
 
     type(bl_prof_timer), save :: bpt
     
+    call network_init()
 
     call build(bpt, "init_base_state")
 
-    ihe4  = network_species_index("He4")
-    ic12  = network_species_index("C12")
-    ife56 = network_species_index("Fe56")
+    ihe4  = network_species_index("helium-4")
+    ic12  = network_species_index("carbon-12")
+    ife56 = network_species_index("iron-56")
 
-    if (ihe4 < 0 .or. ic12 < 0 .or. ife56 < 0) &
+    if (ihe4 < 0 .or. ic12 < 0 .or. ife56 < 0) then
+       print *, ihe4, ic12, ife56
        call bl_error("Invalid species in init_base_state.")
+    endif
 
     eos_state%h         = ambient_h
     eos_state%rho       = ambient_dens
-    
+
+    eos_state%xn(:) = ZERO
     eos_state%xn(ihe4)  = ambient_he4
     eos_state%xn(ic12)  = ambient_c12
     eos_state%xn(ife56) = ambient_fe56
