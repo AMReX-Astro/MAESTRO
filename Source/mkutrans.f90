@@ -57,8 +57,7 @@ contains
 
     do n=1,nlevs
 
-       do i=1, nboxes(u(n))
-          if ( multifab_remote(u(n),i) ) cycle
+       do i=1, nfabs(u(n))
           up => dataptr(u(n),i)
           ufp => dataptr(ufull(n),i)
           utp => dataptr(utrans(n,1),i)

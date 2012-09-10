@@ -46,8 +46,7 @@ contains
     ng_s = nghost(s(1))
 
     do n = 1, nlevs
-       do i = 1, nboxes(s(n))
-          if ( multifab_remote(s(n), i) ) cycle
+       do i = 1, nfabs(s(n))
           gamp => dataptr(gamma(n), i)
           sp   => dataptr(s(n), i)
           lo = lwb(get_box(s(n), i))

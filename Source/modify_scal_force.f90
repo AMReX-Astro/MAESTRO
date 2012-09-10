@@ -75,8 +75,7 @@ contains
        domlo  = lwb(domain)
        domhi  = upb(domain)
        
-       do i=1, nboxes(force(n))
-          if ( multifab_remote(force(n),i) ) cycle
+       do i=1, nfabs(force(n))
           fp => dataptr(force(n),i)
           sp => dataptr(s(n),i)
           ump => dataptr(umac(n,1),i)

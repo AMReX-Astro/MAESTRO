@@ -86,8 +86,7 @@ contains
           ncell(:,n) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
        end if
 
-       do i=1,layout_nboxes(mla%la(n))
-          if ( multifab_remote(etarhoflux(n), i) ) cycle
+       do i=1,nfabs(etarhoflux(n))
           efp => dataptr(etarhoflux(n), i)
           lo =  lwb(get_box(mla%la(n), i))
           hi =  upb(get_box(mla%la(n), i))
@@ -306,8 +305,7 @@ contains
 
        ng_e = nghost(eta_cart(n))
 
-       do i=1, nboxes(eta_cart(n))
-          if ( multifab_remote(eta_cart(n),i) ) cycle
+       do i=1, nfabs(eta_cart(n))
           ep  => dataptr(eta_cart(n), i)
           sop => dataptr(sold(n), i)
           snp => dataptr(snew(n), i)

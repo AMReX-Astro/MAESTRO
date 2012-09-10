@@ -361,8 +361,7 @@ contains
       end do
 
       do n = 1,nlevs
-         do i = 1, nboxes(rh(n))
-            if ( multifab_remote(rh(n), i) ) cycle
+         do i = 1, nfabs(rh(n))
             ump => dataptr(umac(n,1), i)
             rhp => dataptr(rh(n)    , i)
             lo =   lwb(get_box(rh(n), i))
@@ -498,8 +497,7 @@ contains
       ng_um = nghost(edge(1))
 
       ! Multiply edge velocities by div coeff
-      do i = 1, nboxes(edge(1))
-         if ( multifab_remote(edge(1), i) ) cycle
+      do i = 1, nfabs(edge(1))
          ump => dataptr(edge(1), i)
          lo =  lwb(get_box(edge(1), i))
          hi =  upb(get_box(edge(1), i))
@@ -629,8 +627,7 @@ contains
       ng_b = nghost(beta(1,1))
 
       do n = 1, nlevs
-         do i = 1, nboxes(rho(n))
-            if ( multifab_remote(rho(n), i) ) cycle
+         do i = 1, nfabs(rho(n))
             rp => dataptr(rho(n) , i)
             bxp => dataptr(beta(n,1), i)
             lo = lwb(get_box(rho(n), i))
@@ -780,8 +777,7 @@ contains
 
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
-         do i = 1, nboxes(rh(n))
-            if ( multifab_remote(rh(n), i) ) cycle
+         do i = 1, nfabs(rh(n))
             ump => dataptr(umac(n,1), i)
             php => dataptr( phi(n), i)
             bxp => dataptr(beta(n,1), i)

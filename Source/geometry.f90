@@ -330,8 +330,8 @@ contains
        ! this the smallest possible box that fits every grid at a particular level
        ! this even includes the empty spaces if there are gaps between grids
        do n=1,nlevs
-          boundingbox(n) = get_box(mf(n),1)
-          do i=2, nboxes(mf(n))
+          boundingbox(n) = get_box(mf(n)%la,1)
+          do i=2, nboxes(mf(n)%la)
              boundingbox(n) = box_bbox(boundingbox(n),get_box(mf(n),i))
           end do
        end do

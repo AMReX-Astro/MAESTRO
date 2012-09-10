@@ -147,8 +147,7 @@ contains
        umax_grid    = 0.d0
        umax_proc    = 0.d0
 
-       do i = 1, nboxes(u(n))
-          if ( multifab_remote(u(n), i) ) cycle
+       do i = 1, nfabs(u(n))
           uop   => dataptr(u(n), i)
           sop   => dataptr(s(n), i)
           fp    => dataptr(force(n), i)

@@ -5,8 +5,8 @@ module addw0_module
 
   use bl_types, only: dp_t
   use box_module, only: upb, lwb
-  use multifab_module, only: multifab, multifab_remote, multifab_fill_boundary, &
-                             nboxes, nghost, dataptr, get_box
+  use multifab_module, only: multifab, multifab_fill_boundary, &
+                             nboxes, nghost, dataptr, get_box, nfabs
 
   implicit none
 
@@ -53,8 +53,7 @@ contains
                               ! same # of ghostcells
 
     do n = 1, nlevs
-       do i = 1, nboxes(umac(n,dm))
-          if ( multifab_remote(umac(n,dm), i) ) cycle
+       do i = 1, nfabs(umac(n,dm))
           wmp  => dataptr(umac(n,dm), i)
           lo =  lwb(get_box(umac(n,dm), i))
           hi =  upb(get_box(umac(n,dm), i))

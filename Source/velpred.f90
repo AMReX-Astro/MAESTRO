@@ -63,8 +63,7 @@ contains
     ng_w0 = nghost(w0mac(1,1))
 
     do n=1,nlevs
-       do i = 1, nboxes(u(n))
-          if ( multifab_remote(u(n),i) ) cycle
+       do i = 1, nfabs(u(n))
           uop  => dataptr(u(n),i)
           ufp  => dataptr(ufull(n),i)
           ump  => dataptr(umac(n,1),i)

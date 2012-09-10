@@ -111,8 +111,7 @@ contains
     ng_rn = nghost(rho0mac_new(1,1))
     
     do n=1,nlevs
-       do i=1, nboxes(sold(n))
-          if ( multifab_remote(sold(n),i) ) cycle
+       do i=1, nfabs(sold(n))
           sfxp => dataptr(sflux(n,1),i)
           efp  => dataptr(etarhoflux(n),i)
           sexp => dataptr(sedge(n,1),i)
@@ -721,8 +720,7 @@ contains
     ng_0m = nghost(rho0mac_old(1,1))
     
     do n=1,nlevs
-       do i=1, nboxes(sold(n))
-          if ( multifab_remote(sold(n),i) ) cycle
+       do i=1, nfabs(sold(n))
           sfxp => dataptr(sflux(n,1),i)
           sexp => dataptr(sedge(n,1),i)
           ump  => dataptr(umac(n,1),i)

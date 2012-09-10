@@ -31,8 +31,7 @@ contains
 
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
-         do i = 1, nboxes(divu_rhs(n))
-            if ( multifab_remote(divu_rhs(n), i) ) cycle
+         do i = 1, nfabs(divu_rhs(n))
             divp => dataptr(divu_rhs(n) , i)
             lo = lwb(get_box(divu_rhs(n),i))
             hi = upb(get_box(divu_rhs(n),i))

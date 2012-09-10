@@ -51,8 +51,7 @@ contains
 
     do n = 1, nlevs
 
-       do i = 1, nboxes(shalf(n))
-          if ( multifab_remote(shalf(n), i) ) cycle
+       do i = 1, nfabs(shalf(n))
           shp => dataptr(shalf(n), i)
           sop => dataptr(sold(n), i)
           snp => dataptr(snew(n), i)
@@ -136,8 +135,7 @@ contains
     ng_n = nghost(snew(1))
 
     do n = 1, nlevs
-       do i = 1, nboxes(phihalf(n))
-          if ( multifab_remote(phihalf(n), i) ) cycle
+       do i = 1, nfabs(phihalf(n))
           rhp => dataptr(phihalf(n), i)
           rop => dataptr(sold(n), i)
           rnp => dataptr(snew(n), i)

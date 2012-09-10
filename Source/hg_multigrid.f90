@@ -101,7 +101,7 @@ contains
     end if
 
     if ( hg_bottom_solver >= 0 ) then
-        if (hg_bottom_solver == 4 .and. nboxes(phi(1)) == 1) then
+        if (hg_bottom_solver == 4 .and. nboxes(phi(1)%la) == 1) then
            if (parallel_IOProcessor()) then
               print *,'Dont use hg_bottom_solver == 4 with only one grid -- '
               print *,'  Reverting to default bottom solver ',bottom_solver
@@ -143,8 +143,7 @@ contains
 
           ! set the stencil to zero manually -- multifab_setval doesn't work
           ! with stencil = .true.
-          do j = 1, one_sided_ss(n)%nboxes
-             if ( remote(one_sided_ss(n), j) ) cycle
+          do j = 1, nfabs(one_sided_ss(n))
              p => dataptr(one_sided_ss(n), j)
              p = ZERO
           enddo
@@ -326,8 +325,7 @@ contains
     ng_d = nghost(div_coeff_3d)
     ng_c = nghost(coeffs)
 
-    do i = 1, nboxes(rho)
-       if ( multifab_remote(rho, i) ) cycle
+    do i = 1, nfabs(rho)
        rp => dataptr(rho   , i)
        dp => dataptr(div_coeff_3d, i)
        cp => dataptr(coeffs, i)

@@ -82,8 +82,8 @@ contains
 
     do comp=start_scomp,start_scomp+num_comp-1
        do n=1,nlevs
-          do i = 1, s(n)%nboxes
-             if ( multifab_remote(s(n), i) ) cycle
+          do i = 1, nfabs(s(n))
+
              sop    => dataptr(s(n), i)
              sepx   => dataptr(sedge(n,1), i)
              sepy   => dataptr(sedge(n,2), i)
@@ -3663,8 +3663,7 @@ contains
     ng_s  = slopeu(1)%ng
 
     do n=1,nlevs
-       do i=1,u(n)%nboxes
-          if ( multifab_remote(u(n), i) ) cycle
+       do i=1,nfabs(u(n))
           up  => dataptr(u(n), i)
           sup => dataptr(slopeu(n), i)
           svp => dataptr(slopev(n), i)

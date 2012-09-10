@@ -83,7 +83,7 @@ contains
     min_width         = mgt(nlevs)%min_width
 
     if ( mg_bottom_solver >= 0 ) then
-        if (mg_bottom_solver == 4 .and. nboxes(phi(1)) == 1) then
+        if (mg_bottom_solver == 4 .and. nboxes(phi(1)%la) == 1) then
            if (parallel_IOProcessor()) then
               print *,'Dont use mg_bottom_solver == 4 with only one grid -- '
               print *,'  Reverting to default bottom solver ',bottom_solver

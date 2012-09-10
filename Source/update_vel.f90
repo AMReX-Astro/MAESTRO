@@ -71,8 +71,7 @@ contains
 
     do n = 1, nlevs
 
-       do i = 1, nboxes(uold(n))
-          if ( multifab_remote(uold(n),i) ) cycle
+       do i = 1, nfabs(uold(n))
           uop  => dataptr(uold(n),i)
           unp  => dataptr(unew(n),i)
           ump  => dataptr(umac(n,1),i)
