@@ -8,7 +8,7 @@ module volave_module
   use bl_IO_module, only: unit_new
   use box_module, only: lwb, upb
   use multifab_module, only: multifab, multifab_build, multifab_build_edge, &
-                             dataptr, get_box, multifab_remote, &
+                             dataptr, get_box, &
                              nghost, setval, destroy
   use ml_layout_module, only: ml_layout
   use define_bc_module, only: bc_tower
@@ -110,9 +110,7 @@ contains
        !========================================================================
        ! Loop over boxes in a level
        !========================================================================
-       do i = 1, s(n)%nboxes
-
-          if ( multifab_remote(s(n), i) ) cycle
+       do i = 1, nfabs(s(n))
 
           sp => dataptr(s(n), i)
           up => dataptr(u(n), i)
