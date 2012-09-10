@@ -63,7 +63,7 @@ contains
 
     use fab_module, only: lwb, upb
     use multifab_module, only: multifab, multifab_build, destroy, nghost, nboxes, &
-                               multifab_remote, dataptr, setval, get_box, &
+                               dataptr, setval, get_box, nfabs, &
                                multifab_build_edge
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_tower
@@ -348,8 +348,7 @@ contains
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
        !----------------------------------------------------------------------
-       do i = 1, nboxes(s(n))
-          if ( multifab_remote(s(n), i) ) cycle
+       do i = 1, nfabs(s(n))
           sp => dataptr(s(n) , i)
           rhnp => dataptr(rho_Hnuc(n), i)
           rhep => dataptr(rho_Hext(n), i)
@@ -990,7 +989,8 @@ contains
     use geometry, only: spherical, center
     use probin_module, only: base_cutoff_density, prob_lo, sponge_start_factor, &
          sponge_center_density
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
 
     integer,          intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
     real (kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:  ,lo(2)-ng_s:  ,lo(3)-ng_s:,:)
@@ -1021,6 +1021,8 @@ contains
     logical            :: cell_valid
     real (kind=dp_t)   :: x, y, z
 
+    type (eos_t) :: eos_state
+
     ! weight is the factor by which the volume of a cell at the
     ! current level relates to the volume of a cell at the coarsest
     ! level of refinement.
@@ -1030,7 +1032,7 @@ contains
        call bl_error("ERROR: geometry not spherical in diag")
     endif
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,cell_valid,velr,vel) &
+    !$OMP PARALLEL DO PRIVATE(i,j,k,x,y,z,cell_valid,velr,vel,eos_state) &
     !$OMP SHARED(T_max,enuc_max,coord_Tmax,vel_Tmax,coord_enucmax,vel_enucmax) &
     !$OMP REDUCTION(max:vr_max,U_max,Mach_max) &
     !$OMP REDUCTION(+:ncenter,T_center,velx_center,vely_center,velz_center,vr_x,vr_y,vr_z) &
@@ -1140,29 +1142,20 @@ contains
                 end if
 
                 ! call the EOS to get the sound speed and internal energy
-                temp_eos = s(i,j,k,temp_comp)
-                den_eos  = s(i,j,k,rho_comp)
-                xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%T     = s(i,j,k,temp_comp)
+                eos_state%rho   = s(i,j,k,rho_comp)
+                eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                call eos(eos_input_rt, den_eos, temp_eos, &
-                         xn_eos, &
-                         p_eos, h_eos, e_eos, &
-                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                         dpdX_eos, dhdX_eos, &
-                         gam1_eos, cs_eos, s_eos, &
-                         dsdt_eos, dsdr_eos, &
-                         .false.)
-
+                call eos(eos_input_rt, eos_state, .false.)
 
                 ! kinetic, internal, and nuclear energies
                 kin_ener = kin_ener + weight*s(i,j,k,rho_comp)*vel**2
-                int_ener = int_ener + weight*s(i,j,k,rho_comp)*e_eos
+                int_ener = int_ener + weight*s(i,j,k,rho_comp)*eos_state%e
                 nuc_ener = nuc_ener + weight*rho_Hnuc(i,j,k)
 
                 ! max vel and Mach number
                 U_max = max(U_max,vel)
-                Mach_max = max(Mach_max,vel/cs_eos)
+                Mach_max = max(Mach_max,vel/eos_state%cs)
 
              endif  ! end cell_valid and density check
 

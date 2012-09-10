@@ -55,9 +55,8 @@ contains
     !--- Execution ---
     !Initialize all boxes in the 'u' multifab for all levels
     do n=1,nlevs
-       do i = 1, u(n)%nboxes
-          if ( multifab_remote(u(n),i) ) cycle  !If the box isn't on this
-                                                !processor, skip it
+       do i = 1, nfabs(u(n))
+
           uop => dataptr(u(n),i)
           lo =  lwb(get_box(u(n),i))
           hi =  upb(get_box(u(n),i))

@@ -29,7 +29,7 @@ contains
 
   subroutine set_inlet_bcs()
 
-    use eos_module, only: eos_input_rt, eos_input_tp, eos
+    use eos_module, only: eos_input_rt, eos_input_rp, eos
     use eos_type_module
 
     ! local variables
