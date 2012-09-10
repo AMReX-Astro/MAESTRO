@@ -10,7 +10,7 @@ module diag_module
   use bl_IO_module, only: unit_new
   use box_module, only: lwb, upb
   use multifab_module, only: multifab, multifab_build, multifab_build_edge, &
-                             dataptr, get_box, multifab_remote, &
+                             dataptr, get_box, nfabs, &
                              nghost, setval, destroy
   use ml_layout_module, only: ml_layout
   use define_bc_module, only: bc_tower
@@ -223,8 +223,7 @@ contains
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
        !----------------------------------------------------------------------
-       do i = 1, s(n)%nboxes
-          if ( multifab_remote(s(n), i) ) cycle
+       do i = 1, nfabs(s(n))
 
           sp => dataptr(s(n) , i)
           rhnp => dataptr(rho_Hnuc(n), i)
@@ -593,7 +592,8 @@ contains
     use bl_constants_module, only: HALF
     use network, only: nspec, network_species_index
     use probin_module, only: prob_lo
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use aux_data_module, only: aux_data
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw
@@ -633,6 +633,8 @@ contains
                           Ne18_comp, Ne19_comp, Ne20_comp, Mg22_comp, &
                           S30_comp,  Ni56_comp
 
+    type (eos_t) :: eos_state
+
 
     ! weight is the factor by which the volume of a cell at the current level
     ! relates to the volume of a cell at the coarsest level of refinement.
@@ -653,23 +655,14 @@ contains
 
              
           ! call the EOS to get the sound speed and internal energy       
-          temp_eos  = s(i,temp_comp)
-          den_eos   = s(i,rho_comp)
-          xn_eos(:) = s(i,spec_comp:spec_comp+nspec-1)/den_eos
+          eos_state%T     = s(i,temp_comp)
+          eos_state%rho   = s(i,rho_comp)
+          eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-          call eos(eos_input_rt, den_eos, temp_eos, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   .false.)
-
+          call eos(eos_input_rt, eos_state, .false.)
 
           ! max Mach number                                       
-          Mach_max = max(Mach_max,vel/cs_eos)
+          Mach_max = max(Mach_max,vel/eos_state%cs)
 
           ! max temp and enuc
           temp_max = max(temp_max,s(i,temp_comp))
@@ -772,7 +765,8 @@ contains
     use bl_constants_module, only: HALF
     use network, only: nspec, network_species_index
     use probin_module, only: prob_lo
-    use eos_module
+    use eos_module, only: eos_input_rt
+    use eos_type_module
     use aux_data_module, only: aux_data
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw
@@ -812,6 +806,8 @@ contains
                           Ne18_comp, Ne19_comp, Ne20_comp, Mg22_comp, &
                           S30_comp,  Ni56_comp
 
+    type (eos_t) :: eos_state
+
     ! weight is the factor by which the volume of a cell at the current level
     ! relates to the volume of a cell at the coarsest level of refinement.
     weight = 1.d0 / 4.d0**(n-1)
@@ -835,23 +831,14 @@ contains
 
              
              ! call the EOS to get the sound speed and internal energy       
-             temp_eos  = s(i,j,temp_comp)
-             den_eos   = s(i,j,rho_comp)
-             xn_eos(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos
+             eos_state%T     = s(i,j,temp_comp)
+             eos_state%rho   = s(i,j,rho_comp)
+             eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             call eos(eos_input_rt, den_eos, temp_eos, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      .false.)
-
+             call eos(eos_input_rt, eos_state, .false.)
 
              ! max Mach number                                       
-             Mach_max = max(Mach_max,vel/cs_eos)
+             Mach_max = max(Mach_max,vel/eos_state%cs)
 
              ! max temp and enuc
              temp_max = max(temp_max,s(i,j,temp_comp))
@@ -955,7 +942,8 @@ contains
     use bl_constants_module, only: HALF
     use network, only: nspec, network_species_index
     use probin_module, only: prob_lo
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use aux_data_module, only: aux_data
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw
@@ -995,6 +983,8 @@ contains
                           Ne18_comp, Ne19_comp, Ne20_comp, Mg22_comp, &
                           S30_comp,  Ni56_comp
 
+    type (eos_t) :: eos_state
+
     ! weight is the factor by which the volume of a cell at the current level
     ! relates to the volume of a cell at the coarsest level of refinement.
     weight = 1.d0 / 8.d0**(n-1)
@@ -1022,23 +1012,14 @@ contains
 
              
                 ! call the EOS to get the sound speed and internal energy       
-                temp_eos  = s(i,j,k,temp_comp)
-                den_eos   = s(i,j,k,rho_comp)
-                xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%T     = s(i,j,k,temp_comp)
+                eos_state%rho   = s(i,j,k,rho_comp)
+                eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                call eos(eos_input_rt, den_eos, temp_eos, &
-                         xn_eos, &
-                         p_eos, h_eos, e_eos, &
-                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                         dpdX_eos, dhdX_eos, &
-                         gam1_eos, cs_eos, s_eos, &
-                         dsdt_eos, dsdr_eos, &
-                         .false.)
-
+                call eos(eos_input_rt, eos_state, .false.)
 
                 ! max Mach number                                       
-                Mach_max = max(Mach_max,vel/cs_eos)
+                Mach_max = max(Mach_max,vel/eos_state%cs)
 
                 ! max temp and enuc
                 temp_max = max(temp_max,s(i,j,k,temp_comp))
@@ -1147,7 +1128,8 @@ contains
     use bl_constants_module
     use network, only: nspec, network_species_index
     use probin_module, only: prob_lo
-    use eos_module
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
     use aux_data_module, only: aux_data
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw, ng_w, ng_wm, ng_n
@@ -1191,6 +1173,8 @@ contains
                           Ne18_comp, Ne19_comp, Ne20_comp, Mg22_comp, &
                           S30_comp,  Ni56_comp
 
+    type (eos_t) :: eos_state
+
     ! weight is the factor by which the volume of a cell at the current level
     ! relates to the volume of a cell at the coarsest level of refinement.
     weight = 1.d0 / 8.d0**(n-1)
@@ -1218,23 +1202,14 @@ contains
 
              
                 ! call the EOS to get the sound speed and internal energy       
-                temp_eos  = s(i,j,k,temp_comp)
-                den_eos   = s(i,j,k,rho_comp)
-                xn_eos(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos
+                eos_state%T     = s(i,j,k,temp_comp)
+                eos_state%rho   = s(i,j,k,rho_comp)
+                eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                call eos(eos_input_rt, den_eos, temp_eos, &
-                         xn_eos, &
-                         p_eos, h_eos, e_eos, &
-                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                         dpdX_eos, dhdX_eos, &
-                         gam1_eos, cs_eos, s_eos, &
-                         dsdt_eos, dsdr_eos, &
-                         .false.)
-
+                call eos(eos_input_rt, eos_state, .false.)
 
                 ! max Mach number                                       
-                Mach_max = max(Mach_max,vel/cs_eos)
+                Mach_max = max(Mach_max,vel/eos_state%cs)
 
                 ! max temp and enuc
                 temp_max = max(temp_max,s(i,j,k,temp_comp))
