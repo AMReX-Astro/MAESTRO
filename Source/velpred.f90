@@ -32,7 +32,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(in   ) :: mla
 
-    integer                  :: i,n,n_1d
+    integer                  :: i,n,n_1d,gid
     integer                  :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0
     integer                  :: lo(mla%dim), hi(mla%dim),dm,nlevs
     real(kind=dp_t), pointer :: uop(:,:,:,:)
@@ -64,6 +64,7 @@ contains
 
     do n=1,nlevs
        do i = 1, nfabs(u(n))
+          gid  =  global_index(u(n),i)
           uop  => dataptr(u(n),i)
           ufp  => dataptr(ufull(n),i)
           ump  => dataptr(umac(n,1),i)
@@ -77,8 +78,8 @@ contains
                              ufp(:,1,1,:), ng_uf, &
                              ump(:,1,1,1), ng_um, &
                              fp(:,1,1,1), ng_f, w0(n,:), lo, hi, dx(n,:), dt, &
-                             the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                             the_bc_level(n)%adv_bc_level_array(i,:,:,:))
+                             the_bc_level(n)%phys_bc_level_array(gid,:,:), &
+                             the_bc_level(n)%adv_bc_level_array(gid,:,:,:))
           case (2)
              vtp  => dataptr(utrans(n,2),i)
              vmp  => dataptr(  umac(n,2),i)
@@ -87,8 +88,8 @@ contains
                              utp(:,:,1,1), vtp(:,:,1,1), ng_ut, &
                              ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                              fp(:,:,1,:), ng_f, w0(n,:), lo, hi, dx(n,:), dt, &
-                             the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                             the_bc_level(n)%adv_bc_level_array(i,:,:,:))
+                             the_bc_level(n)%phys_bc_level_array(gid,:,:), &
+                             the_bc_level(n)%adv_bc_level_array(gid,:,:,:))
 
           case (3)
              vmp  => dataptr(  umac(n,2),i)
@@ -110,8 +111,8 @@ contains
                              fp(:,:,:,:), ng_f, &
                              w0(n_1d,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
                              ng_w0, lo, hi, dx(n,:), dt, &
-                             the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                             the_bc_level(n)%adv_bc_level_array(i,:,:,:))
+                             the_bc_level(n)%phys_bc_level_array(gid,:,:), &
+                             the_bc_level(n)%adv_bc_level_array(gid,:,:,:))
           end select
        end do
     end do

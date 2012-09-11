@@ -44,7 +44,7 @@ contains
 
     integer                  :: i,scomp,bccomp,n,dm,nlevs
     integer                  :: lo(mla%dim), hi(mla%dim)
-    integer                  :: ng_s,ng_se,ng_um,ng_f
+    integer                  :: ng_s,ng_se,ng_um,ng_f,gid
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
@@ -68,6 +68,7 @@ contains
 
     do n=1,nlevs
        do i = 1, nfabs(s(n))
+          gid  =  global_index(s(n),i)
           sop  => dataptr(s(n),i)
           sepx => dataptr(sedge(n,1),i)
           ump  => dataptr(umac(n,1),i)
@@ -83,7 +84,7 @@ contains
                                         ump(:,1,1,1), ng_um, &
                                        fp(:,1,1,:), ng_f, &
                                        lo, hi, dx(n,:), dt, is_vel, &
-                                       the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                                       the_bc_level(n)%adv_bc_level_array(gid,:,:,:), &
                                        scomp, bccomp, is_conservative)
              end do
 
@@ -97,7 +98,7 @@ contains
                                        ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                        fp(:,:,1,:), ng_f, &
                                        lo, hi, dx(n,:), dt, is_vel, &
-                                       the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                                       the_bc_level(n)%adv_bc_level_array(gid,:,:,:), &
                                        scomp, bccomp, is_conservative)
              end do
 
@@ -113,7 +114,7 @@ contains
                                        ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                        ng_um, fp(:,:,:,:), ng_f,  &
                                        lo, hi, dx(n,:), dt, is_vel, &
-                                       the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                                       the_bc_level(n)%adv_bc_level_array(gid,:,:,:), &
                                        scomp, bccomp, is_conservative)
              end do
           end select
