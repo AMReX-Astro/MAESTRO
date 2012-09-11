@@ -175,36 +175,36 @@ contains
        call multifab_copy_c( sold(n),1,chkdata(n),rho_comp+dm      ,nscal)
        call multifab_copy_c(  gpi(n),1,chkdata(n),rho_comp+dm+nscal,dm)
        la = get_layout(chkdata(n))
-       call destroy(la)
        call destroy(chkdata(n))
+       call destroy(la)
     end do
     
     do n=1,nlevs
        call multifab_copy_c(pi(n),1,chk_p(n),1,1)
        la = get_layout(chk_p(n))
-       call destroy(la)
        call destroy(chk_p(n))
+       call destroy(la)
     end do
     
     do n=1,nlevs
        call multifab_copy_c(dSdt(n),1,chk_dsdt(n),1,1)
        la = get_layout(chk_dsdt(n))
-       call destroy(la)
        call destroy(chk_dsdt(n))
+       call destroy(la)
     end do
     
     do n=1,nlevs
        call multifab_copy_c(Source_old(n),1,chk_src_old(n),1,1)
        la = get_layout(chk_src_old(n))
-       call destroy(la)
        call destroy(chk_src_old(n))
+       call destroy(la)
     end do
 
     do n=1,nlevs
        call multifab_copy_c(Source_new(n),1,chk_src_new(n),1,1)
        la = get_layout(chk_src_new(n))
-       call destroy(la)
        call destroy(chk_src_new(n))
+       call destroy(la)
     end do
     
     ! Note: rho_omegadot2, rho_Hnuc2, rho_Hext, and thermal2 are not
@@ -215,23 +215,23 @@ contains
     do n=1,nlevs
        call multifab_copy_c(rho_omegadot2(n),1,chk_rho_omegadot2(n),1,nspec)
        la = get_layout(chk_rho_omegadot2(n))
-       call destroy(la)
        call destroy(chk_rho_omegadot2(n))
+       call destroy(la)
     end do
 
     do n=1,nlevs
        call multifab_copy_c(rho_Hnuc2(n),1,chk_rho_Hnuc2(n),1,1)
        la = get_layout(chk_rho_Hnuc2(n))
-       call destroy(la)
        call destroy(chk_rho_Hnuc2(n))
+       call destroy(la)
     end do
 
     if (plot_Hext) then
        do n=1,nlevs
           call multifab_copy_c(rho_Hext(n),1,chk_rho_Hext(n),1,1)
           la = get_layout(chk_rho_Hext(n))
-          call destroy(la)
           call destroy(chk_rho_Hext(n))
+          call destroy(la)
        end do
        deallocate(chk_rho_Hext)
     end if
@@ -240,8 +240,8 @@ contains
        do n=1,nlevs
           call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,1)
           la = get_layout(chk_thermal2(n))
-          call destroy(la)
           call destroy(chk_thermal2(n))
+          call destroy(la)
        end do
        deallocate(chk_thermal2)
     else
