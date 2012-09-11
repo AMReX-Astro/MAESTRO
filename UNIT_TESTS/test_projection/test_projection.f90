@@ -37,8 +37,7 @@ contains
     ng = nghost(U(1))
 
     do n=1,nlevs
-       do i = 1, nboxes(U(n))
-          if ( multifab_remote(U(n),i) ) cycle
+       do i = 1, nfabs(U(n))
           up => dataptr(U(n), i)
           lo = lwb(get_box(U(n), i))
           hi = upb(get_box(U(n), i))
@@ -190,8 +189,7 @@ contains
     ng = nghost(umac(1,1))
 
     do n=1,nlevs
-       do i = 1, nboxes(umac(n,1))
-          if ( multifab_remote(umac(n,1),i) ) cycle
+       do i = 1, nfabs(umac(n,1))
           ump => dataptr(umac(n,1), i)
           vmp => dataptr(umac(n,2), i)
 
@@ -369,8 +367,7 @@ contains
     ng = nghost(U(1))
 
     do n=1,nlevs
-       do i = 1, nboxes(U(n))
-          if ( multifab_remote(U(n),i) ) cycle
+       do i = 1, nfabs(U(n))
           up => dataptr(U(n), i)
           gp => dataptr(gphi(n), i)
           lo = lwb(get_box(U(n), i))
@@ -641,8 +638,7 @@ contains
     ng_gp = nghost(gphi_mac(1,1))
 
     do n=1,nlevs
-       do i = 1, nboxes(umac(n,1))
-          if ( multifab_remote(umac(n,1),i) ) cycle
+       do i = 1, nfabs(umac(n,1))
           ump => dataptr(umac(n,1), i)
           vmp => dataptr(umac(n,2), i)
 
@@ -1084,8 +1080,7 @@ contains
     ng_um = nghost(umac(1,1))
 
     do n=1,nlevs
-       do i = 1, nboxes(u(n))
-          if ( multifab_remote(u(n),i) ) cycle
+       do i = 1, nfabs(u(n))
           up => dataptr(u(n), i)
 
           ump => dataptr(umac(n,1), i)

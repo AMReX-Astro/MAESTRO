@@ -364,8 +364,7 @@ subroutine varden()
 
            ! initialize the density field and species
            do n=1,nlevs
-              do i = 1, sold(n)%nboxes
-                 if ( multifab_remote(sold(n),i) ) cycle
+              do i = 1, nfabs(sold(n))
                  sp => dataptr(sold(n), i)
                  lo = lwb(get_box(sold(n), i))
                  hi = upb(get_box(sold(n), i))

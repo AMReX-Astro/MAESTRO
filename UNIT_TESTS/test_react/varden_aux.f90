@@ -168,8 +168,7 @@ contains
 
     !-- Initialization of the full thermodynamic grid --
     do n = 1, nlevs
-       do i = 1, nboxes(s(n))
-          if ( multifab_remote(s(n),i) ) cycle
+       do i = 1, nfabs(s(n))
     
           sp  => dataptr(s(n), i)
  
@@ -263,8 +262,7 @@ contains
 
     !Loop through cell by cell
     do n = 1, nlevs
-       do i = 1, nboxes(react_s(n))
-          if ( multifab_remote(react_s(n),i) ) cycle
+       do i = 1, nfabs(react_s(n))
     
           rsp => dataptr(react_s(n),      i)
           snp => dataptr(snew(n),         i)
