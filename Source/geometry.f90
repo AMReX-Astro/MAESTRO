@@ -332,7 +332,7 @@ contains
        do n=1,nlevs
           boundingbox(n) = get_box(mf(n)%la,1)
           do i=2, nboxes(mf(n)%la)
-             boundingbox(n) = box_bbox(boundingbox(n),get_box(mf(n),i))
+             boundingbox(n) = box_bbox(boundingbox(n),get_box(mf(n)%la,i))
           end do
        end do
        
