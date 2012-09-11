@@ -256,9 +256,7 @@ contains
        allocate(sum_data_local(nsums), sum_data_level(nsums))
 
        ! loop over the boxes at the current level
-       do i = 1, s(n)%nboxes
-
-          if ( multifab_remote(s(n), i) ) cycle
+       do i = 1, nfabs(s(n))
 
           sp => dataptr(s(n) , i)
           rhnp => dataptr(rho_Hnuc(n), i)

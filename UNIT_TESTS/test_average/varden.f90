@@ -164,8 +164,7 @@ subroutine varden()
   allocate(hi(dm))
 
   do n=1,nlevs
-     do i = 1, phi(n)%nboxes
-        if ( multifab_remote(phi(n),i) ) cycle
+     do i = 1, nfabs(phi(n))
         pp => dataptr(phi(n),i)
         lo =  lwb(get_box(phi(n),i))
         hi =  upb(get_box(phi(n),i))

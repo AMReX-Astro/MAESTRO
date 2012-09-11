@@ -122,7 +122,7 @@ subroutine varden()
     print *, 'number of dimensions = ', dm
     do n = 1, nlevs
        print *, 'level: ', n
-       print *, '   number of boxes = ', s_old(n)%nboxes
+       print *, '   number of boxes = ', nboxes(s_old(n)%la)
        print *, '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
     end do
     print *, ''
@@ -330,8 +330,7 @@ contains
     integer :: n, i, j, ii, jj
     real(kind=dp_t) :: xx, yy, dist
     
-    do i = 1, solution%nboxes
-       if (multifab_remote(solution,i)) cycle
+    do i = 1, nfabs(solution)
        sp => dataptr(solution,i)
        lo = lwb(get_box(solution,i))
        hi = upb(get_box(solution,i))

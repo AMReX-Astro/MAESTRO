@@ -480,8 +480,7 @@ subroutine varden()
   ! Create the normal array once we have defined "center"
   if (spherical .eq. 1) then
      do n = 1,nlevs
-        do i = 1, normal(n)%nboxes
-           if ( multifab_remote(normal(n), i) ) cycle
+        do i = 1, nfabs(normal(n))
            nop => dataptr(normal(n), i)
            lo =  lwb(get_box(normal(n), i))
            hi =  upb(get_box(normal(n), i))

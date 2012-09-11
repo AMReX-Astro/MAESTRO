@@ -68,7 +68,7 @@ contains
 
     use fab_module, only: lwb, upb
     use multifab_module, only: multifab, multifab_build, destroy, &
-                               multifab_remote, dataptr, setval, get_box
+                               dataptr, setval, get_box, nfabs
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_tower
 
@@ -346,8 +346,7 @@ contains
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
        !----------------------------------------------------------------------
-       do i = 1, s(n)%nboxes
-          if ( multifab_remote(s(n), i) ) cycle
+       do i = 1, nfabs(s(n))
           sp => dataptr(s(n) , i)
           rhnp => dataptr(rho_Hnuc(n), i)
           rhep => dataptr(rho_Hext(n), i)
@@ -1027,6 +1026,7 @@ contains
     use probin_module, only: base_cutoff_density, prob_lo, sponge_start_factor, &
          sponge_center_density
     use eos_module
+    use eos_old_interface
 
     integer,          intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
     real (kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:  ,lo(2)-ng_s:  ,lo(3)-ng_s:,:)
@@ -1164,7 +1164,6 @@ contains
                 xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
                 call eos(eos_input_rt, den_eos, temp_eos, &
-                         npts, &
                          xn_eos, &
                          p_eos, h_eos, e_eos, &
                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &

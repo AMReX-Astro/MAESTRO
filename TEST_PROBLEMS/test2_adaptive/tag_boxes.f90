@@ -45,8 +45,7 @@ contains
     ng_s = mf%ng
 
     if (spherical .eq. 0) then
-       do i = 1, mf%nboxes
-          if ( multifab_remote(mf, i) ) cycle
+       do i = 1, nfabs(mf)
           sp => dataptr(mf, i)
           lo =  lwb(get_box(tagboxes, i))
           select case (dm)
@@ -61,8 +60,7 @@ contains
        call parallel_reduce(radialtag, radialtag_proc, MPI_LOR)
     end if
 
-    do i = 1, mf%nboxes
-       if ( multifab_remote(mf, i) ) cycle
+    do i = 1, nfabs(mf)
        tp => dataptr(tagboxes, i)
        lo =  lwb(get_box(tagboxes, i))
        hi =  upb(get_box(tagboxes, i))

@@ -13,163 +13,169 @@ module probin_module
 
   use bl_types
   use bl_space
+  use bl_constants_module
+  use pred_parameters
+  use bc_module
 
   implicit none
 
   private
 
-  real (kind=dp_t), save, public :: pert_factor
-  real (kind=dp_t), save, public :: dens_base
-  real (kind=dp_t), save, public :: pres_base
-  real (kind=dp_t), save, public :: y_pert_center
-  real (kind=dp_t), save, public :: pert_width
-  logical, save, public :: do_isentropic
-  integer, save, public :: verbose
-  logical, save, public :: do_alltoallv
-  logical, save, public :: the_knapsack_verbosity
-  character (len=256), save, public :: job_name
-  logical, save, public :: barrier_timers
-  character (len=256), save, public :: model_file
-  logical, save, public :: perturb_model
-  real (kind=dp_t), save, public :: stop_time
-  integer, save, public :: max_step
-  real (kind=dp_t), save, public :: cflfac
-  real (kind=dp_t), save, public :: init_shrink
-  real (kind=dp_t), save, public :: small_dt
-  real (kind=dp_t), save, public :: max_dt_growth
-  real (kind=dp_t), save, public :: max_dt
-  real (kind=dp_t), save, public :: fixed_dt
-  real (kind=dp_t), save, public :: nuclear_dt_fac
-  logical, save, public :: use_soundspeed_firstdt
-  logical, save, public :: use_divu_firstdt
-  real (kind=dp_t), save, public :: prob_lo_x
-  real (kind=dp_t), save, public :: prob_lo_y
-  real (kind=dp_t), save, public :: prob_lo_z
-  real (kind=dp_t), save, public :: prob_hi_x
-  real (kind=dp_t), save, public :: prob_hi_y
-  real (kind=dp_t), save, public :: prob_hi_z
-  character (len=256), save, public :: test_set
-  integer, save, public :: bcx_lo
-  integer, save, public :: bcx_hi
-  integer, save, public :: bcy_lo
-  integer, save, public :: bcy_hi
-  integer, save, public :: bcz_lo
-  integer, save, public :: bcz_hi
-  character (len=256), save, public :: xlo_boundary_type
-  character (len=256), save, public :: xhi_boundary_type
-  character (len=256), save, public :: ylo_boundary_type
-  character (len=256), save, public :: yhi_boundary_type
-  character (len=256), save, public :: zlo_boundary_type
-  character (len=256), save, public :: zhi_boundary_type
-  integer, save, public :: spherical_in
-  logical, save, public :: octant
-  integer, save, public :: do_2d_planar_octant
-  integer, save, public :: dm_in
-  integer, save, public :: max_levs
-  integer, save, public :: max_grid_size
-  integer, save, public :: max_grid_size_1
-  integer, save, public :: max_grid_size_2
-  integer, save, public :: max_grid_size_3
-  logical, save, public :: change_max_grid_size_1
-  integer, save, public :: regrid_int
-  integer, save, public :: amr_buf_width
-  integer, save, public :: ref_ratio
-  integer, save, public :: n_cellx
-  integer, save, public :: n_celly
-  integer, save, public :: n_cellz
-  integer, save, public :: drdxfac
-  integer, save, public :: the_sfc_threshold
-  integer, save, public :: the_layout_verbosity
-  integer, save, public :: the_copy_cache_max
-  integer, save, public :: minwidth
-  integer, save, public :: blocking_factor
-  real (kind=dp_t), save, public :: min_eff
-  logical, save, public :: dump_grid_file
-  integer, save, public :: plot_int
-  real (kind=dp_t), save, public :: plot_deltat
-  integer, save, public :: chk_int
-  logical, save, public :: plot_h_with_use_tfromp
-  logical, save, public :: plot_spec
-  logical, save, public :: plot_omegadot
-  logical, save, public :: plot_Hext
-  logical, save, public :: plot_Hnuc
-  logical, save, public :: plot_eta
-  logical, save, public :: plot_trac
-  logical, save, public :: plot_base
-  logical, save, public :: plot_gpi
-  logical, save, public :: plot_cs
-  character (len=256), save, public :: plot_base_name
-  character (len=256), save, public :: check_base_name
-  integer, save, public :: nOutFiles
-  logical, save, public :: lUsingNFiles
-  logical, save, public :: single_prec_plotfiles
-  integer, save, public :: diag_buf_size
-  logical, save, public :: plot_ad_excess
-  logical, save, public :: plot_processors
-  integer, save, public :: init_iter
-  integer, save, public :: init_divu_iter
-  integer, save, public :: restart
-  logical, save, public :: restart_into_finer
-  logical, save, public :: do_initial_projection
-  integer, save, public :: mg_verbose
-  integer, save, public :: cg_verbose
-  integer, save, public :: hg_bottom_solver
-  integer, save, public :: mg_bottom_solver
-  integer, save, public :: max_mg_bottom_nlevels
-  logical, save, public :: hg_dense_stencil
-  logical, save, public :: use_hypre
-  logical, save, public :: do_sponge
-  real (kind=dp_t), save, public :: sponge_kappa
-  real (kind=dp_t), save, public :: sponge_center_density
-  real (kind=dp_t), save, public :: sponge_start_factor
-  logical, save, public :: plot_sponge_fdamp
-  real (kind=dp_t), save, public :: anelastic_cutoff
-  real (kind=dp_t), save, public :: base_cutoff_density
-  real (kind=dp_t), save, public :: buoyancy_cutoff_factor
-  real (kind=dp_t), save, public :: dpdt_factor
-  logical, save, public :: do_planar_invsq_grav
-  real (kind=dp_t), save, public :: planar_invsq_mass
-  logical, save, public :: evolve_base_state
-  logical, save, public :: fix_base_state
-  logical, save, public :: do_smallscale
-  logical, save, public :: do_eos_h_above_cutoff
-  integer, save, public :: enthalpy_pred_type
-  integer, save, public :: species_pred_type
-  logical, save, public :: use_delta_gamma1_term
-  logical, save, public :: use_etarho
-  integer, save, public :: slope_order
-  real (kind=dp_t), save, public :: grav_const
-  logical, save, public :: use_tfromp
-  integer, save, public :: ppm_type
-  integer, save, public :: bds_type
-  integer, save, public :: beta_type
-  logical, save, public :: use_linear_grav_in_beta
-  real (kind=dp_t), save, public :: rotational_frequency
-  real (kind=dp_t), save, public :: co_latitude
-  real (kind=dp_t), save, public :: rotation_radius
-  real (kind=dp_t), save, public :: mach_max_abort
-  logical, save, public :: drive_initial_convection
-  logical, save, public :: restart_with_vel_field
-  logical, save, public :: use_alt_energy_fix
-  logical, save, public :: use_thermal_diffusion
-  integer, save, public :: temp_diffusion_formulation
-  integer, save, public :: thermal_diffusion_type
-  real (kind=dp_t), save, public :: conductivity_constant
-  logical, save, public :: do_burning
-  character (len=256), save, public :: burner_threshold_species
-  real (kind=dp_t), save, public :: burner_threshold_cutoff
-  logical, save, public :: use_eos_coulomb
-  real (kind=dp_t), save, public :: small_temp
-  real (kind=dp_t), save, public :: small_dens
-  logical, save, public :: use_eos_e_instead_of_h
-  integer, save, public :: s0_interp_type
-  integer, save, public :: w0_interp_type
-  integer, save, public :: s0mac_interp_type
-  integer, save, public :: w0mac_interp_type
-  logical, save, public :: use_particles
-  logical, save, public :: store_particle_vels
-  logical, save, public :: do_heating
-  integer, save, public :: sdc_iters
+  real (kind=dp_t), save, public :: pert_factor = 0.1d0
+  real (kind=dp_t), save, public :: dens_base = 1.65d-3
+  real (kind=dp_t), save, public :: pres_base = 1.65d6
+  real (kind=dp_t), save, public :: y_pert_center = 0.7d0
+  real (kind=dp_t), save, public :: pert_width = 0.025d0
+  logical, save, public :: do_isentropic = .true.
+  integer, save, public :: verbose = 0
+  logical, save, public :: do_alltoallv = .false.
+  logical, save, public :: the_knapsack_verbosity = .false.
+  character (len=256), save, public :: job_name = ""
+  logical, save, public :: barrier_timers = .false.
+  character (len=256), save, public :: model_file = "model.hse"
+  logical, save, public :: perturb_model = .false.
+  real (kind=dp_t), save, public :: stop_time = -1.d0
+  integer, save, public :: max_step = 1
+  real (kind=dp_t), save, public :: cflfac = 0.5d0
+  real (kind=dp_t), save, public :: init_shrink = 1.d0
+  real (kind=dp_t), save, public :: small_dt = 1.d-10
+  real (kind=dp_t), save, public :: max_dt_growth = 1.1d0
+  real (kind=dp_t), save, public :: max_dt = 1.0d33
+  real (kind=dp_t), save, public :: fixed_dt = -1.0d0
+  real (kind=dp_t), save, public :: nuclear_dt_fac = -1.0d0
+  logical, save, public :: use_soundspeed_firstdt = .false.
+  logical, save, public :: use_divu_firstdt = .false.
+  real (kind=dp_t), save, public :: prob_lo_x = ZERO
+  real (kind=dp_t), save, public :: prob_lo_y = ZERO
+  real (kind=dp_t), save, public :: prob_lo_z = ZERO
+  real (kind=dp_t), save, public :: prob_hi_x = 1.d0
+  real (kind=dp_t), save, public :: prob_hi_y = 1.d0
+  real (kind=dp_t), save, public :: prob_hi_z = 1.d0
+  character (len=256), save, public :: test_set = ''
+  integer, save, public :: bcx_lo = SLIP_WALL
+  integer, save, public :: bcx_hi = SLIP_WALL
+  integer, save, public :: bcy_lo = SLIP_WALL
+  integer, save, public :: bcy_hi = SLIP_WALL
+  integer, save, public :: bcz_lo = SLIP_WALL
+  integer, save, public :: bcz_hi = SLIP_WALL
+  character (len=256), save, public :: xlo_boundary_type = ""
+  character (len=256), save, public :: xhi_boundary_type = ""
+  character (len=256), save, public :: ylo_boundary_type = ""
+  character (len=256), save, public :: yhi_boundary_type = ""
+  character (len=256), save, public :: zlo_boundary_type = ""
+  character (len=256), save, public :: zhi_boundary_type = ""
+  integer, save, public :: spherical_in = 0
+  logical, save, public :: octant = .false.
+  integer, save, public :: do_2d_planar_octant = 0
+  integer, save, public :: dm_in = 2
+  integer, save, public :: max_levs = 1
+  integer, save, public :: max_grid_size = 64
+  integer, save, public :: max_grid_size_1 = -1
+  integer, save, public :: max_grid_size_2 = -1
+  integer, save, public :: max_grid_size_3 = -1
+  logical, save, public :: change_max_grid_size_1 = .false.
+  integer, save, public :: regrid_int = -1
+  integer, save, public :: amr_buf_width = -1
+  integer, save, public :: ref_ratio = 2
+  integer, save, public :: n_cellx = -1
+  integer, save, public :: n_celly = -1
+  integer, save, public :: n_cellz = -1
+  integer, save, public :: drdxfac = 1
+  integer, save, public :: the_sfc_threshold = 5
+  integer, save, public :: the_layout_verbosity = 0
+  integer, save, public :: the_copy_cache_max = 25
+  integer, save, public :: minwidth = 8
+  integer, save, public :: blocking_factor = 8
+  real (kind=dp_t), save, public :: min_eff = 0.9d0
+  logical, save, public :: dump_grid_file = .false.
+  integer, save, public :: plot_int = 0
+  real (kind=dp_t), save, public :: plot_deltat = -1.d0
+  integer, save, public :: chk_int = 0
+  logical, save, public :: plot_h_with_use_tfromp = .true.
+  logical, save, public :: plot_spec = .true.
+  logical, save, public :: plot_omegadot = .true.
+  logical, save, public :: plot_Hext = .false.
+  logical, save, public :: plot_Hnuc = .true.
+  logical, save, public :: plot_eta = .false.
+  logical, save, public :: plot_trac = .false.
+  logical, save, public :: plot_base = .false.
+  logical, save, public :: plot_gpi = .true.
+  logical, save, public :: plot_cs = .false.
+  character (len=256), save, public :: plot_base_name = "plt"
+  character (len=256), save, public :: check_base_name = "chk"
+  integer, save, public :: nOutFiles = 64
+  logical, save, public :: lUsingNFiles = .true.
+  logical, save, public :: single_prec_plotfiles = .false.
+  integer, save, public :: diag_buf_size = 10
+  logical, save, public :: plot_ad_excess = .false.
+  logical, save, public :: plot_processors = .false.
+  logical, save, public :: plot_pidivu = .false.
+  integer, save, public :: init_iter = 4
+  integer, save, public :: init_divu_iter = 4
+  integer, save, public :: restart = -1
+  logical, save, public :: restart_into_finer = .false.
+  logical, save, public :: do_initial_projection = .true.
+  integer, save, public :: mg_verbose = 0
+  integer, save, public :: cg_verbose = 0
+  integer, save, public :: hg_bottom_solver = -1
+  integer, save, public :: mg_bottom_solver = -1
+  integer, save, public :: max_mg_bottom_nlevels = 1000
+  integer, save, public :: mg_bottom_nu = 10
+  logical, save, public :: hg_dense_stencil = .true.
+  logical, save, public :: use_hypre = .false.
+  logical, save, public :: do_sponge = .false.
+  real (kind=dp_t), save, public :: sponge_kappa = 10.d0
+  real (kind=dp_t), save, public :: sponge_center_density = 3.d6
+  real (kind=dp_t), save, public :: sponge_start_factor = 3.333d0
+  logical, save, public :: plot_sponge_fdamp = .false.
+  real (kind=dp_t), save, public :: anelastic_cutoff = 3.d6
+  real (kind=dp_t), save, public :: base_cutoff_density = 3.d6
+  real (kind=dp_t), save, public :: buoyancy_cutoff_factor = 5.0
+  real (kind=dp_t), save, public :: dpdt_factor = 0.d0
+  logical, save, public :: do_planar_invsq_grav = .false.
+  real (kind=dp_t), save, public :: planar_invsq_mass = 0.d0
+  logical, save, public :: evolve_base_state = .true.
+  logical, save, public :: fix_base_state = .false.
+  logical, save, public :: do_smallscale = .false.
+  logical, save, public :: do_eos_h_above_cutoff = .true.
+  integer, save, public :: enthalpy_pred_type = predict_rhohprime
+  integer, save, public :: species_pred_type = 1
+  logical, save, public :: use_delta_gamma1_term = .false.
+  logical, save, public :: use_etarho = .true.
+  integer, save, public :: slope_order = 4
+  real (kind=dp_t), save, public :: grav_const = -1.5d10
+  logical, save, public :: use_tfromp = .false.
+  integer, save, public :: ppm_type = 1
+  integer, save, public :: bds_type = 0
+  integer, save, public :: beta_type = 1
+  logical, save, public :: use_linear_grav_in_beta = .false.
+  real (kind=dp_t), save, public :: rotational_frequency = ZERO
+  real (kind=dp_t), save, public :: co_latitude = ZERO
+  real (kind=dp_t), save, public :: rotation_radius = 1.0d6
+  real (kind=dp_t), save, public :: mach_max_abort = -1.d0
+  logical, save, public :: drive_initial_convection = .false.
+  logical, save, public :: restart_with_vel_field = .false.
+  logical, save, public :: use_alt_energy_fix = .false.
+  logical, save, public :: use_thermal_diffusion = .false.
+  integer, save, public :: temp_diffusion_formulation = 2
+  integer, save, public :: thermal_diffusion_type = 1
+  real (kind=dp_t), save, public :: conductivity_constant = 1.0d0
+  logical, save, public :: do_burning = .true.
+  character (len=256), save, public :: burner_threshold_species = ""
+  real (kind=dp_t), save, public :: burner_threshold_cutoff = 1.d-10
+  real (kind=dp_t), save, public :: small_temp = 5.d6
+  real (kind=dp_t), save, public :: small_dens = 1.d-5
+  logical, save, public :: use_eos_e_instead_of_h = .false.
+  integer, save, public :: s0_interp_type = 3
+  integer, save, public :: w0_interp_type = 2
+  integer, save, public :: s0mac_interp_type = 1
+  integer, save, public :: w0mac_interp_type = 1
+  logical, save, public :: use_particles = .false.
+  logical, save, public :: store_particle_vels = .false.
+  logical, save, public :: do_heating = .false.
+  integer, save, public :: sdc_iters = 1
+  logical, save, public :: sdc_couple_mac_velocity = .false.
+  logical, save, public :: sdc_hold_mac_velocity = .false.
 
   real(dp_t), save, public    :: burning_cutoff_density  ! note: presently not runtime parameter
 
@@ -298,6 +304,7 @@ module runtime_init_module
   namelist /probin/ diag_buf_size
   namelist /probin/ plot_ad_excess
   namelist /probin/ plot_processors
+  namelist /probin/ plot_pidivu
   namelist /probin/ init_iter
   namelist /probin/ init_divu_iter
   namelist /probin/ restart
@@ -308,6 +315,7 @@ module runtime_init_module
   namelist /probin/ hg_bottom_solver
   namelist /probin/ mg_bottom_solver
   namelist /probin/ max_mg_bottom_nlevels
+  namelist /probin/ mg_bottom_nu
   namelist /probin/ hg_dense_stencil
   namelist /probin/ use_hypre
   namelist /probin/ do_sponge
@@ -350,7 +358,6 @@ module runtime_init_module
   namelist /probin/ do_burning
   namelist /probin/ burner_threshold_species
   namelist /probin/ burner_threshold_cutoff
-  namelist /probin/ use_eos_coulomb
   namelist /probin/ small_temp
   namelist /probin/ small_dens
   namelist /probin/ use_eos_e_instead_of_h
@@ -362,6 +369,8 @@ module runtime_init_module
   namelist /probin/ store_particle_vels
   namelist /probin/ do_heating
   namelist /probin/ sdc_iters
+  namelist /probin/ sdc_couple_mac_velocity
+  namelist /probin/ sdc_hold_mac_velocity
 
   private
 
@@ -375,16 +384,16 @@ contains
 
     use f2kcli
     use parallel
-    use bc_module
     use bl_IO_module
     use bl_prof_module
     use bl_error_module
     use bl_constants_module
     use knapsack_module
-    use pred_parameters
     use multifab_module, only: multifab_set_alltoallv
     use cluster_module
     use layout_module
+    use pred_parameters
+    use bc_module
     
     integer    :: narg, farg
 
@@ -408,160 +417,6 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialize the runtime parameters
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-    pert_factor = 0.1d0
-    dens_base = 1.65d-3
-    pres_base = 1.65d6
-    y_pert_center = 0.7d0
-    pert_width = 0.025d0
-    do_isentropic = .true.
-    verbose = 0
-    do_alltoallv = .false.
-    the_knapsack_verbosity = .false.
-    job_name = ""
-    barrier_timers = .false.
-    model_file = "model.hse"
-    perturb_model = .false.
-    stop_time = -1.d0
-    max_step = 1
-    cflfac = 0.5d0
-    init_shrink = 1.d0
-    small_dt = 1.d-10
-    max_dt_growth = 1.1d0
-    max_dt = 1.0d33
-    fixed_dt = -1.0d0
-    nuclear_dt_fac = -1.0d0
-    use_soundspeed_firstdt = .false.
-    use_divu_firstdt = .false.
-    prob_lo_x = ZERO
-    prob_lo_y = ZERO
-    prob_lo_z = ZERO
-    prob_hi_x = 1.d0
-    prob_hi_y = 1.d0
-    prob_hi_z = 1.d0
-    test_set = ''
-    bcx_lo = SLIP_WALL
-    bcx_hi = SLIP_WALL
-    bcy_lo = SLIP_WALL
-    bcy_hi = SLIP_WALL
-    bcz_lo = SLIP_WALL
-    bcz_hi = SLIP_WALL
-    xlo_boundary_type = ""
-    xhi_boundary_type = ""
-    ylo_boundary_type = ""
-    yhi_boundary_type = ""
-    zlo_boundary_type = ""
-    zhi_boundary_type = ""
-    spherical_in = 0
-    octant = .false.
-    do_2d_planar_octant = 0
-    dm_in = 2
-    max_levs = 1
-    max_grid_size = 64
-    max_grid_size_1 = -1
-    max_grid_size_2 = -1
-    max_grid_size_3 = -1
-    change_max_grid_size_1 = .false.
-    regrid_int = -1
-    amr_buf_width = -1
-    ref_ratio = 2
-    n_cellx = -1
-    n_celly = -1
-    n_cellz = -1
-    drdxfac = 1
-    the_sfc_threshold = 5
-    the_layout_verbosity = 0
-    the_copy_cache_max = 25
-    minwidth = 8
-    blocking_factor = 8
-    min_eff = 0.9d0
-    dump_grid_file = .false.
-    plot_int = 0
-    plot_deltat = -1.d0
-    chk_int = 0
-    plot_h_with_use_tfromp = .true.
-    plot_spec = .true.
-    plot_omegadot = .true.
-    plot_Hext = .false.
-    plot_Hnuc = .true.
-    plot_eta = .false.
-    plot_trac = .false.
-    plot_base = .false.
-    plot_gpi = .true.
-    plot_cs = .false.
-    plot_base_name = "plt"
-    check_base_name = "chk"
-    nOutFiles = 64
-    lUsingNFiles = .true.
-    single_prec_plotfiles = .false.
-    diag_buf_size = 10
-    plot_ad_excess = .false.
-    plot_processors = .false.
-    init_iter = 4
-    init_divu_iter = 4
-    restart = -1
-    restart_into_finer = .false.
-    do_initial_projection = .true.
-    mg_verbose = 0
-    cg_verbose = 0
-    hg_bottom_solver = -1
-    mg_bottom_solver = -1
-    max_mg_bottom_nlevels = 1000
-    hg_dense_stencil = .true.
-    use_hypre = .false.
-    do_sponge = .false.
-    sponge_kappa = 10.d0
-    sponge_center_density = 3.d6
-    sponge_start_factor = 3.333d0
-    plot_sponge_fdamp = .false.
-    anelastic_cutoff = 3.d6
-    base_cutoff_density = 3.d6
-    buoyancy_cutoff_factor = 5.0
-    dpdt_factor = 0.d0
-    do_planar_invsq_grav = .false.
-    planar_invsq_mass = 0.d0
-    evolve_base_state = .true.
-    fix_base_state = .false.
-    do_smallscale = .false.
-    do_eos_h_above_cutoff = .true.
-    enthalpy_pred_type = predict_rhohprime
-    species_pred_type = 1
-    use_delta_gamma1_term = .false.
-    use_etarho = .true.
-    slope_order = 4
-    grav_const = -1.5d10
-    use_tfromp = .false.
-    ppm_type = 1
-    bds_type = 0
-    beta_type = 1
-    use_linear_grav_in_beta = .false.
-    rotational_frequency = ZERO
-    co_latitude = ZERO
-    rotation_radius = 1.0d6
-    mach_max_abort = -1.d0
-    drive_initial_convection = .false.
-    restart_with_vel_field = .false.
-    use_alt_energy_fix = .false.
-    use_thermal_diffusion = .false.
-    temp_diffusion_formulation = 2
-    thermal_diffusion_type = 1
-    conductivity_constant = 1.0d0
-    do_burning = .true.
-    burner_threshold_species = ""
-    burner_threshold_cutoff = 1.d-10
-    use_eos_coulomb = .true.
-    small_temp = 5.d6
-    small_dens = 1.d-5
-    use_eos_e_instead_of_h = .false.
-    s0_interp_type = 3
-    w0_interp_type = 2
-    s0mac_interp_type = 1
-    w0mac_interp_type = 1
-    use_particles = .false.
-    store_particle_vels = .false.
-    do_heating = .false.
-    sdc_iters = 4
 
 
     !
@@ -1090,6 +945,11 @@ contains
           call get_command_argument(farg, value = fname)
           read(fname, *) plot_processors
 
+       case ('--plot_pidivu')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) plot_pidivu
+
        case ('--init_iter')
           farg = farg + 1
           call get_command_argument(farg, value = fname)
@@ -1139,6 +999,11 @@ contains
           farg = farg + 1
           call get_command_argument(farg, value = fname)
           read(fname, *) max_mg_bottom_nlevels
+
+       case ('--mg_bottom_nu')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) mg_bottom_nu
 
        case ('--hg_dense_stencil')
           farg = farg + 1
@@ -1349,11 +1214,6 @@ contains
           call get_command_argument(farg, value = fname)
           read(fname, *) burner_threshold_cutoff
 
-       case ('--use_eos_coulomb')
-          farg = farg + 1
-          call get_command_argument(farg, value = fname)
-          read(fname, *) use_eos_coulomb
-
        case ('--small_temp')
           farg = farg + 1
           call get_command_argument(farg, value = fname)
@@ -1408,6 +1268,16 @@ contains
           farg = farg + 1
           call get_command_argument(farg, value = fname)
           read(fname, *) sdc_iters
+
+       case ('--sdc_couple_mac_velocity')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) sdc_couple_mac_velocity
+
+       case ('--sdc_hold_mac_velocity')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) sdc_hold_mac_velocity
 
 
 
@@ -1524,7 +1394,8 @@ contains
        call bl_error("invalid species_pred_type")
     endif
 
-    if (.not. (enthalpy_pred_type == predict_rhohprime .or. &
+    if (.not. (enthalpy_pred_type == predict_rhoh .or. &
+               enthalpy_pred_type == predict_rhohprime .or. &
                enthalpy_pred_type == predict_h .or. &
                enthalpy_pred_type == predict_T_then_rhohprime .or. &
                enthalpy_pred_type == predict_T_then_h .or. &
