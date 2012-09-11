@@ -72,8 +72,7 @@ contains
     dt_divu_proc  = HUGE(dt_divu_proc)
     dt_start      = HUGE(dt_start)
     
-    do i = 1, u%nboxes
-       if ( multifab_remote(u, i) ) cycle
+    do i = 1, nfabs(u)
        uop   => dataptr(u, i)
        sop   => dataptr(s, i)
        fp    => dataptr(force, i)

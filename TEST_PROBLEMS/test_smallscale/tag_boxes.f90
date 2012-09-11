@@ -30,8 +30,7 @@ contains
 
     ng = mf%ng
 
-    do i = 1, mf%nboxes
-       if ( multifab_remote(mf, i) ) cycle
+    do i = 1, nfabs(mf)
        sp => dataptr(mf, i)
        tp => dataptr(tagboxes, i)
        lo =  lwb(get_box(tagboxes, i))
