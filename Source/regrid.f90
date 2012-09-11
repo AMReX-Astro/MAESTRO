@@ -173,14 +173,7 @@ contains
              ! Test on whether grids are already properly nested
              if (.not. ml_boxarray_properly_nested(mba, ng_buffer, pmask, 2, nl+1)) then
 
-                call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
-
-                ! Loop over all the lower levels which we might have changed when we enforced proper nesting.
-                do n = 2,nl
-   
-                   ! This makes sure the boundary conditions are properly defined everywhere
-                   call bc_tower_level_build(the_bc_tower,n,la_array(n))
-   
+                do n = 2,nl   
                    ! Delete old multifabs so that we can rebuild them.
                    call destroy(  sold(n))
                    call destroy(  uold(n))
@@ -188,6 +181,15 @@ contains
                    call destroy(    pi(n))
                    call destroy(  dSdt(n))
                    call destroy(   src(n))
+                end do
+
+                call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
+
+                ! Loop over all the lower levels which we might have changed when we enforced proper nesting.
+                do n = 2,nl
+   
+                   ! This makes sure the boundary conditions are properly defined everywhere
+                   call bc_tower_level_build(the_bc_tower,n,la_array(n))
    
                    ! Rebuild the lower level data again if it changed.
                    call build_and_fill_data(n,la_array(n),mla_old, &
