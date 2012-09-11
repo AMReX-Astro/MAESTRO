@@ -248,7 +248,7 @@ contains
        if (parallel_IOProcessor()) then
           do n = 1, nlevs
              write(6,*) 'level: ', n
-             write(6,*) '   number of boxes = ', nboxes(pi(n))
+             write(6,*) '   number of boxes = ', nboxes(pi(n)%la)
              write(6,*) '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
           end do
        end if
