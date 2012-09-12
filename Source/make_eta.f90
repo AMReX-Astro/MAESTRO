@@ -88,8 +88,8 @@ contains
 
        do i=1,nfabs(etarhoflux(n))
           efp => dataptr(etarhoflux(n), i)
-          lo =  lwb(get_box(mla%la(n), i))
-          hi =  upb(get_box(mla%la(n), i))
+          lo =  lwb(get_box(etarhoflux(n), i))
+          hi =  upb(get_box(etarhoflux(n), i))
           select case (dm)
           case (1)
              call sum_etarho_1d(n,lo,hi,efp(:,1,1,1),ng_e,etarhosum_proc(:,n))
