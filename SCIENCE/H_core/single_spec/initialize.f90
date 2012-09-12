@@ -1131,20 +1131,25 @@ contains
        call destroy(sold(1))
        
     end if  ! end if (maxlev > 1)
-
-    call ml_layout_restricted_build(mla,mba,nlevs,pmask)
-    
-    nlevs = mla%nlevel
-
-    if (nlevs .ne. max_levs) then
-       call bl_error('initialize_with_adaptive_grids: nlevs .ne. max_levs not supported yet')
-    end if
-
-    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
     
     do n = 1, nlevs
        call destroy(la_array(n))
     end do
+
+    call ml_layout_restricted_build(mla,mba,nlevs,pmask)
+    
+    nlevs = mla%nlevel
+    
+    if (nlevs .ne. max_levs) then
+       call bl_error('initialize_with_adaptive_grids: nlevs .ne. max_levs not supported yet')
+    end if
+
+    ! this makes sure the boundary conditions are properly defined everywhere
+    do n = 1,nlevs
+       call bc_tower_level_build(the_bc_tower,n,mla%la(n))
+    end do
+
+    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
     
     ! build states
     do n = 1,nlevs
