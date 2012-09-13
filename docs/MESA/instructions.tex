@@ -21,12 +21,13 @@ in addition to numerical routines. This document describes how to link the
 % Setup MESA
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Setting Up {\sf MESA}}
+\label{sec:setupmesa}
 
 To install {\sf MESA}, download the source code from the {\sf MESA} website, 
 {\tt http://mesa.sourceforge.net}. Check the website for the latest version, 
-which is 4219 with the writing of this document. The codes and algorithms 
+which is 4298 with the writing of this document. The codes and algorithms 
 discussed here were created when the current version of {\sf MESA} was 
-version 4088. Between versions 4088 and 4219, there are minor changes that 
+version 4088. Between versions 4088 and 4298, there are minor changes that 
 will cause some of the included routines to crash. To download the source code 
 associated with version 4088, use the following command:
 \begin{lstlisting}[language=bash,mathescape=false]
@@ -94,7 +95,7 @@ definitions:
   MKL_INCLUDE =
 \end{lstlisting}
 
-\item {\tt PGPLOT}: Set the variable {\tt USE\_PGPLOT} to {\tt NO} and set 
+\item {\tt PGPLOT}: Set the variable {\tt USE\_PGSTAR} to {\tt NO} and set 
 the variable {\tt LOAD\_PGPLOT} to be empty on the line corresponding to 
 the compiler that was chosen. The default for {\tt gcc} and {\tt ifort} is 
 {\tt YES}, but for any other compiler the default is {\tt NO}. {\tt PGPLOT} 
@@ -136,16 +137,14 @@ Run the {\tt install} script by typing {\tt ./install}. The permissions of the
 This will untar many data tables used by the equation of state, network and 
 chemistry modules. It will also compile and export all modules.
 
-Following the execution of the {\tt ./install} script, {\sf MESA} has been 
-installed and the following has completed:
+Following a successful execution of the {\tt ./install} script, 
+{\sf MESA} has been installed and the following has completed:
 \begin{itemize}
-\item SDK only: Supporting software (compilers, linear algebra packages, 
-etc.) has been unpacked and installed
 \item Data tables have been untarred
 \item Linear Algebra packages have been compiled and linked
 \item All modules have been compiled (in parallel)
-\item All modules have been exported to the {\tt mesa/lib} and 
-{\tt mesa/include} directories
+\item All modules and libraries have been exported to the {\tt mesa/include} 
+and {\tt mesa/lib} directories
 \end{itemize}
 
 If you want to run {\sf MESA} in parallel, nothing further needs to be done. 
@@ -160,7 +159,8 @@ If you want to make sure all modules are compiled in serial, see Section
 
 In the {\tt mesa/utils} directory, open the {\tt makefile\_header} file. 
 Change the {\tt FCopenmp} flag ({\tt gfortran} default = {\tt -fopenmp}) to 
-be empty. This will disable OpenMP for all modules. 
+the appropriate value so as to disable OpenMP, e.g. with {\tt gfortran} 
+{\tt FCopenmp} should be empty. 
 
 Anytime a change is made to a makefile or any source code, the module must 
 be recompiled, which is a three step process involving the {\tt clean}, 
@@ -204,7 +204,7 @@ The {\sf MESA} libraries have the name {\tt lib(module-name).a}, e.g.
 {\tt libeos.a} or {\tt libnet.a}. The libraries need to be linked using the 
 {\tt -L} flag with the {\tt mesa/lib} directory and a list of which libraries 
 to load, e.g. {\tt -L\$(MESA\_DIR)/lib -leos -lnet -lnum}. {\sf MESA} 
-{\tt .mod} files are linked to code using the {\tt -I} flag and the 
+{\tt .mod} files are linked to the code using the {\tt -I} flag and the 
 {\tt mesa/include} directory, e.g. {\tt -I\$(MESA\_DIR)/include}. 
 
 The order in which the libraries appear is important. If compilation errors 
@@ -232,7 +232,8 @@ To use the network, add the following lines:
 \end{lstlisting}
 The {\tt GENERAL\_NET\_INPUTS} variable holds the path to the
 {\tt net\_input.net} file, which does not need to be kept in the
-{\tt Net-Files} directory. The {\tt net\_input.net} file could look like this:
+{\tt Net-Files} directory. The {\tt net\_input.net} file should have the 
+following format:
 \begin{lstlisting}[language=make,mathescape=false]
   # name              short-name    aion   zion
   hydrogen-1             H1          1.0    1.0
@@ -287,7 +288,7 @@ holds the exit status of the subroutine, non-zero means there was an error
 subroutine: {\tt call eos\_init(data\_dir, eos\_file\_prefix, use\_cache, 
 ierr)}. {\tt eos\_file\_prefix} is a character variable and should be 
 declared and set equal to `mesa'. {\tt use\_cache} is a logical variable that 
-also needs to be declared and set equal to `true'
+also needs to be declared and set equal to {\tt .true.}
 
 \item Handle: Obtain a handle associated with the equation of state by 
 calling the {\tt alloc\_eos\_handle} function: 
@@ -352,8 +353,8 @@ values from the call, including all derivatives.
 There are slight differences between the generic EOS call and the HELM EOS 
 call: HELM does not need the mass fractions or the maps between 
 {\sf MESA} isotope indices and the mass fraction array indices ({\tt chem\_id} 
-and {\tt net\_iso}, see Section \ref{sec:mapping}). The HELM EOS returns on 
-the order of 400 different quantities which include the values shown in 
+and {\tt net\_iso}, see Section \ref{sec:mapping}). The HELM EOS returns 409 
+different quantities which include the values shown in 
 Table \ref{tab:res} as well as quantities such as $dP/d(abar)$ and 
 $dE/d(zbar)$. 
 
@@ -387,10 +388,10 @@ important to make sure that {\sf MESA} and {\sf MAESTRO} agree on what
 isotope each entry in the mass fraction array refers to. This is done by 
 using the {\tt chem\_id} and {\tt net\_iso} variables. Both variables are 
 integer pointer arrays of size {\tt num\_chem\_isos}, which is defined in one 
-of the chemistry modules. {\tt chem\_id} maps from an isotope in the current 
-net to the {\sf MESA} data table that holds the properties of that isotope. 
-{\tt net\_iso} is used to map from the {\sf MESA} data tables to an isotope 
-in the current network. 
+of the chemistry modules. {\tt chem\_id} maps from the index of an isotope in 
+the current net to the {\sf MESA} data table position that holds the 
+properties of that isotope. {\tt net\_iso} is used to map from the {\sf MESA} 
+data table position to the index of an isotope in the current network. 
 
 For example, assume there are 3 isotopes in the current net: H1, Be7 and C12. 
 The {\tt chem\_id} array should look like this: {\tt chem\_id(:) = -1, 
@@ -424,7 +425,7 @@ on the isotopes in the current network ({\tt call which\_reactions})
 \item Initialize {\sf MESA} {\tt rates} and {\tt net} modules
 \item Allocate a network handle
 \item Call the {\tt net\_start\_def}, {\tt read\_net\_file}, {\tt net\_ptr} 
-and {\tt net\_finish\_def}
+and {\tt net\_finish\_def} subroutines
 \item Output a log file containing the species in the current net and which 
 reactions were chosen by {\sf MESA} based on those species
 \item Set {\tt which\_rates\_choice} and allocate {\tt which\_rates} array
@@ -433,15 +434,12 @@ reactions were chosen by {\sf MESA} based on those species
 \item Initialize which linear algebra solver to use
 \end{enumerate}
 
-After calling {\tt net\_set\_which\_rates}, the setup routine should call 
-{\tt net\_setup\_tables}. This is based on the example 
-{\tt one\_zone\_burn.f} program distributed with the {\sf MESA} source code. 
-I have not had a successful burn if the {\tt net\_setup\_tables} routine is 
-called at setup in the {\tt setup\_mesa\_net.f90} program. I do have 
-successful burns when it is placed within the burner program 
-{\tt Do\_One\_Zone\_Burn.f90}. To prevent the setup routine from being called 
-everytime a burn is to take place, I added a logical flag that signals if the 
-{\tt net\_setup\_tables} routine has alredy been called.
+In the {\tt Do\_One\_Zone\_Burn.f90} routine, there are two more ``set up'' 
+routines: {\tt set\_rattab\_range} and {\tt net\_setup\_tables}. I have not 
+found a good way to call these routines only once with the set up of all the 
+other routines because the {\tt set\_rattab\_range} routine depends on 
+temperature. As a result, both routines are called every time a burn is to 
+take place.
 
 %-------------------------------------------------------------------------
 \subsubsection{Calling the Network}
