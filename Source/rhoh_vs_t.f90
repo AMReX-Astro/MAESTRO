@@ -109,8 +109,7 @@ contains
 
    do n=1,nlevs
 
-       do i=1,nboxes(u(n))
-          if ( multifab_remote(u(n),i) ) cycle
+       do i=1,nfabs(u(n))
           sepx => dataptr(sedge(n,1), i)
           lo = lwb(get_box(u(n),i))
           hi = upb(get_box(u(n),i))
@@ -829,8 +828,7 @@ contains
 
     do n=1,nlevs
 
-       do i=1,nboxes(state(n))
-          if (multifab_remote(state(n),i)) cycle
+       do i=1,nfabs(state(n))
           sp => dataptr(state(n),i)
           lo = lwb(get_box(state(n),i))
           hi = upb(get_box(state(n),i))
@@ -1219,8 +1217,7 @@ contains
 
     do n=1,nlevs
 
-       do i=1,nboxes(state(n))
-          if (multifab_remote(state(n),i)) cycle
+       do i=1,nfabs(state(n))
           sp => dataptr(state(n),i)
           lo = lwb(get_box(state(n),i))
           hi = upb(get_box(state(n),i))
@@ -1488,8 +1485,7 @@ contains
 
     do n=1,nlevs
 
-       do i=1,nboxes(state(n))
-          if (multifab_remote(state(n),i)) cycle
+       do i=1,nfabs(state(n))
           snp => dataptr(state(n),i)
           sop => dataptr(sold(n),i)
           pnp => dataptr(peos(n),i)
@@ -1703,8 +1699,7 @@ contains
     ng_s = nghost(s(1))
 
     do n=1,nlevs
-       do i = 1, nboxes(s(n))
-          if ( multifab_remote(s(n),i) ) cycle
+       do i = 1, nfabs(s(n))
           sop => dataptr(s(n),i)
           lo =  lwb(get_box(s(n),i))
           hi =  upb(get_box(s(n),i))

@@ -66,15 +66,21 @@ subroutine varden()
 
   time = ZERO
 
+  ! we are hardcoded for a certain net here
+  if (nspec /= 4) then
+     call bl_error("ERROR: wrong network")
+  endif
+
   ! setup some names for the data fab's
   allocate(names(nscal))
   names(1) = "density"
   names(2) = "rhoh"
-  names(3) = "X(He4)*rho"
-  names(4) = "X(C12)*rho"
-  names(5) = "X(Fe56)*rho"
-  names(6) = "temp"
-  names(7) = "trac"
+  names(3) = "X(" // trim(short_spec_names(1)) // ")*rho"
+  names(4) = "X(" // trim(short_spec_names(2)) // ")*rho"
+  names(5) = "X(" // trim(short_spec_names(3)) // ")*rho"
+  names(6) = "X(" // trim(short_spec_names(4)) // ")*rho"
+  names(7) = "temp"
+  names(8) = "trac"
 
  ! we only use fixed grids
  if (test_set /= '') then
@@ -116,7 +122,7 @@ subroutine varden()
     print *, 'number of dimensions = ', dm
     do n = 1, nlevs
        print *, 'level: ', n
-       print *, '   number of boxes = ', s_old(n)%nboxes
+       print *, '   number of boxes = ', nboxes(s_old(n)%la)
        print *, '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
     end do
     print *, ''
@@ -324,8 +330,7 @@ contains
     integer :: n, i, j, ii, jj
     real(kind=dp_t) :: xx, yy, dist
     
-    do i = 1, solution%nboxes
-       if (multifab_remote(solution,i)) cycle
+    do i = 1, nfabs(solution)
        sp => dataptr(solution,i)
        lo = lwb(get_box(solution,i))
        hi = upb(get_box(solution,i))

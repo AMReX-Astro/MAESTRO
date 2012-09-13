@@ -73,8 +73,7 @@ contains
     ng_th = nghost(thermal(1))
 
     do n = 1, nlevs
-       do i = 1, nboxes(state(n))
-          if ( multifab_remote(state(n), i) ) cycle
+       do i = 1, nfabs(state(n))
           srcp => dataptr(Source(n), i)
           dgtp     => dataptr(delta_gamma1_term(n), i)
           dgp    => dataptr(delta_gamma1(n), i)
@@ -161,8 +160,7 @@ contains
        call average(mla,delta_gamma1_term,delta_gamma1_termbar,dx,1)
 
        do n = 1, nlevs
-          do i = 1, nboxes(state(n))
-             if ( multifab_remote(state(n), i) ) cycle
+          do i = 1, nfabs(state(n))
              dgtp   => dataptr(delta_gamma1_term(n), i)
              dgp    => dataptr(delta_gamma1(n), i)
              select case (dm)

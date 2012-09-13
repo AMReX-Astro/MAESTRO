@@ -69,9 +69,8 @@ contains
     use fundamental_constants_module, only: Gconst
 
     use fab_module, only: lwb, upb
-    use multifab_module, only: multifab, multifab_build, destroy, nghost, nboxes, &
-                               multifab_remote, dataptr, setval, get_box, &
-                               multifab_build_edge
+    use multifab_module, only: multifab, multifab_build, destroy, nghost, nfabs, &
+                               dataptr, setval, get_box, multifab_build_edge
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_tower
 
@@ -355,8 +354,7 @@ contains
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
        !----------------------------------------------------------------------
-       do i = 1, nboxes(s(n))
-          if ( multifab_remote(s(n), i) ) cycle
+       do i = 1, nfabs(s(n))
           sp => dataptr(s(n) , i)
           rhnp => dataptr(rho_Hnuc(n), i)
           rhep => dataptr(rho_Hext(n), i)

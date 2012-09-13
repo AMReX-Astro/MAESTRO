@@ -59,8 +59,7 @@ contains
 
     do n = 1, nlevs
 
-       do i = 1, nboxes(Source(n))
-          if ( multifab_remote(Source(n), i) ) cycle
+       do i = 1, nfabs(Source(n))
           mp => dataptr(macrhs(n), i)
           sp => dataptr(Source(n), i)
           gp => dataptr(delta_gamma1_term(n), i)

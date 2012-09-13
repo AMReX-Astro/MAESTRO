@@ -102,8 +102,7 @@ contains
 
     do n=1,nlevs
 
-       do i = 1, sponge(n)%nboxes
-          if ( multifab_remote(sponge(n), i) ) cycle
+       do i = 1, nfabs(sponge(n))
           sp => dataptr(sponge(n), i)
           lo =  lwb(get_box(sponge(n), i))
           hi =  upb(get_box(sponge(n), i))

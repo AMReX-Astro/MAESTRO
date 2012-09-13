@@ -296,9 +296,8 @@ contains
       real(kind=dp_t), pointer :: gpp(:,:,:,:) 
       real(kind=dp_t), pointer ::  rp(:,:,:,:)
   
-      integer :: i,n
       integer :: lo(unew(1)%dim),hi(unew(1)%dim)
-      integer :: ng_un,ng_uo,ng_rh,ng_gp
+      integer :: i,n,gid,ng_un,ng_uo,ng_rh,ng_gp
 
       type(bl_prof_timer), save :: bpt
 
@@ -311,27 +310,27 @@ contains
   
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
-         do i = 1, nboxes(unew(n))
-            if ( multifab_remote(unew(n), i) ) cycle
-            lo = lwb(get_box(unew(n),i))
-            hi = upb(get_box(unew(n),i))
+         do i = 1, nfabs(unew(n))
+            gid =  global_index(unew(n), i)
+            lo  =  lwb(get_box(unew(n) , i))
+            hi  =  upb(get_box(unew(n) , i))
             unp => dataptr(unew(n)     , i) 
             uop => dataptr(uold(n)     , i) 
-            gpp => dataptr(gpi(n)       , i)
+            gpp => dataptr(gpi(n)      , i)
              rp => dataptr(  rhohalf(n), i)
             select case (dm)
                case (1)
                  call create_uvec_1d(unp(:,1,1,1), ng_un, uop(:,1,1,1), ng_uo, &
                                       rp(:,1,1,1), ng_rh, gpp(:,1,1,1), ng_gp, &
-                                     lo,hi,dt,bc%phys_bc_level_array(i,:,:), proj_type)
+                                     lo,hi,dt,bc%phys_bc_level_array(gid,:,:), proj_type)
                case (2)
                  call create_uvec_2d(unp(:,:,1,:), ng_un, uop(:,:,1,:), ng_uo, &
                                       rp(:,:,1,1), ng_rh, gpp(:,:,1,:), ng_gp, &
-                                     lo,hi,dt,bc%phys_bc_level_array(i,:,:), proj_type)
+                                     lo,hi,dt,bc%phys_bc_level_array(gid,:,:), proj_type)
                case (3)
                  call create_uvec_3d(unp(:,:,:,:), ng_un, uop(:,:,:,:), ng_uo, &
                                       rp(:,:,:,1), ng_rh, gpp(:,:,:,:), ng_gp, &
-                                     lo,hi,dt, bc%phys_bc_level_array(i,:,:), proj_type)
+                                     lo,hi,dt, bc%phys_bc_level_array(gid,:,:), proj_type)
             end select
          end do
          call multifab_fill_boundary(unew(n))
@@ -566,8 +565,7 @@ contains
 
       do n = 1, nlevs
 
-         do i = 1, nboxes(phi(n))
-            if ( multifab_remote(phi(n),i) ) cycle
+         do i = 1, nfabs(phi(n))
             lo = lwb(get_box(gphi(n),i))
             hi = upb(get_box(gphi(n),i))
             gph => dataptr(gphi(n),i)
@@ -728,8 +726,7 @@ contains
 
       do n = 1, nlevs
 
-         do i = 1, nboxes(unew(n))
-            if ( multifab_remote(unew(n),i) ) cycle
+         do i = 1, nfabs(unew(n))
             lo = lwb(get_box(unew(n),i))
             hi = upb(get_box(unew(n),i))
             upn => dataptr(unew(n),i)
@@ -1264,8 +1261,7 @@ contains
     ng_r = nghost(rho)
     ng_c = nghost(coeffs)
 
-    do i = 1, nboxes(rho)
-       if ( multifab_remote(rho, i) ) cycle
+    do i = 1, nfabs(rho)
        lo = lwb(get_box(rho,i))
        hi = upb(get_box(rho,i))
        rp => dataptr(rho   , i)

@@ -90,8 +90,7 @@ contains
     ng_hg = nghost(hgrhs(1))
 
     do n = 1, nlevs
-       do i = 1, nboxes(Source(n))
-          if ( multifab_remote(Source(n), i) ) cycle
+       do i = 1, nfabs(Source(n))
           rp => dataptr(rhs_cc(n), i)
           sp => dataptr(Source(n), i)
           gp => dataptr(delta_gamma1_term(n), i)
@@ -148,8 +147,7 @@ contains
        
     do n=1,nlevs
        call setval(hgrhs(n),ZERO,all=.true.)
-       do i = 1, nboxes(Source(n))
-          if ( multifab_remote(Source(n), i) ) cycle
+       do i = 1, nfabs(Source(n))
           hp => dataptr(hgrhs(n), i)
           rp => dataptr(rhs_cc(n), i)
           lo =  lwb(get_box(Source(n), i))
@@ -420,8 +418,7 @@ contains
     ng_cn = nghost(correction_nodal(1))
 
     do n = 1, nlevs
-       do i = 1, nboxes(delta_p_term(n))
-          if ( multifab_remote(delta_p_term(n), i) ) cycle
+       do i = 1, nfabs(delta_p_term(n))
           ccp => dataptr(correction_cc(n), i)
           ptp => dataptr(delta_p_term(n), i)
           lo =  lwb(get_box(delta_p_term(n), i))
@@ -484,8 +481,7 @@ contains
        
     do n=1,nlevs
        call setval(correction_nodal(n),ZERO,all=.true.)
-       do i = 1, nboxes(delta_p_term(n))
-          if ( multifab_remote(delta_p_term(n), i) ) cycle
+       do i = 1, nfabs(delta_p_term(n))
           cnp => dataptr(correction_nodal(n), i)
           ccp => dataptr(correction_cc(n), i)
           lo =  lwb(get_box(delta_p_term(n), i))

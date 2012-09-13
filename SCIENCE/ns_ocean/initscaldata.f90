@@ -6,7 +6,8 @@ module init_scalar_module
   use multifab_physbc_module
   use define_bc_module
   use multifab_module
-  use eos_module
+  use eos_module, only: eos_input_rt, eos
+  use eos_type_module
   use variables
   use network
   use geometry, only: nr, spherical
@@ -45,8 +46,7 @@ contains
     ng = s(1)%ng
 
     do n=1,nlevs
-       do i = 1, nboxes(s(n))
-          if ( multifab_remote(s(n),i) ) cycle
+       do i = 1, nfabs(s(n))
 
           sop => dataptr(s(n),i)
           lo =  lwb(get_box(s(n),i))
@@ -130,9 +130,7 @@ contains
 
     ng = nghost(s)
 
-    do i = 1, nboxes(s)
-
-       if ( multifab_remote(s,i) ) cycle
+    do i = 1, nfabs(s)
 
        sop => dataptr(s,i)
        lo =  lwb(get_box(s,i))
@@ -329,6 +327,8 @@ contains
     logical, save :: firstCall = .true.
     integer, save :: io16
 
+    type (eos_t) :: eos_state
+
     if (firstCall) then
        io16 = network_species_index("oxygen-16")
        if (io16 < 0) call bl_error("ERROR: oxygen not found for perturbing")
@@ -342,28 +342,21 @@ contains
     
     XO = XO0 * (ONE + ns_pert_factor * dexp(-distance**2 / rad_pert))
 
-    temp_eos = s0_init(temp_comp)
-    den_eos = s0_init(rho_comp)
+    eos_state%T = s0_init(temp_comp)
+    eos_state%rho = s0_init(rho_comp)
 
-    xn_eos(:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
-    xn_eos(io16) = XO
+    ! this doesn't seem right -- aren't we summing to > 1 now?
+    eos_state%xn(:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
+    eos_state%xn(io16) = XO
 
 
-    call eos(eos_input_rt, den_eos, temp_eos, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, &
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             .false.)
+    call eos(eos_input_rt, eos_state, .false.)
 
-    dens_pert = den_eos
-    rhoh_pert = den_eos*h_eos
-    rhoX_pert(:) = dens_pert*xn_eos(:)
+    dens_pert = eos_state%rho
+    rhoh_pert = eos_state%rho*eos_state%h
+    rhoX_pert(:) = dens_pert*eos_state%xn(:)
 
-    temp_pert = temp_eos
+    temp_pert = eos_state%T
     
     trac_pert(:) = ZERO
 

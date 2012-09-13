@@ -72,7 +72,7 @@ contains
                                              use_delta_gamma1_term, nodal, mach_max_abort, &
                                              prob_lo, prob_hi, use_particles, sdc_iters, &
                                              enthalpy_pred_type, species_pred_type, &
-                                             sdc_couple_mac_velocity
+                                             sdc_couple_mac_velocity, sdc_hold_mac_velocity
     use time_module                 , only : time
     use addw0_module                , only : addw0
     use pred_parameters
@@ -248,7 +248,7 @@ contains
        if (parallel_IOProcessor()) then
           do n = 1, nlevs
              write(6,*) 'level: ', n
-             write(6,*) '   number of boxes = ', nboxes(pi(n))
+             write(6,*) '   number of boxes = ', nboxes(pi(n)%la)
              write(6,*) '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
           end do
        end if
@@ -843,7 +843,8 @@ contains
 !! STEP 3 -- Update advection velocities
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-       if (sdc_iters .eq. 1 .or. sdc_couple_mac_velocity) then
+       if ( (misdc .eq. 1 .or. sdc_couple_mac_velocity) .and. &
+            (.not. sdc_hold_mac_velocity) ) then
 
           if (parallel_IOProcessor() .and. verbose .ge. 1) then
              write(6,*) '<<< STEP 3: Recompute MAC velocity (MISDC iter = ', misdc, ')   '
@@ -902,6 +903,7 @@ contains
 
              do n=1,nlevs
                 call destroy(peos_new(n))
+                call destroy(peos_old(n))
              end do
 
              ! compute peosbar = Avg(peos_nph)

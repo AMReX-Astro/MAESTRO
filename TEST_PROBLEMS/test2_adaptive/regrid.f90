@@ -133,6 +133,9 @@ contains
     ! Build the level 1 layout.
     call layout_build_ba(la_array(1),mba%bas(1),mba%pd(1),pmask)
 
+    ! This makes sure the boundary conditions are properly defined everywhere
+    call bc_tower_level_build(the_bc_tower,1,la_array(1))
+
     ! Build the level 1 data only.
     call multifab_build(  uold(1), la_array(1),    dm, ng_s)
     call multifab_build(  sold(1), la_array(1), nscal, ng_s)
@@ -272,15 +275,7 @@ contains
 
     ! check for proper nesting
     if (nlevs .ge. 3) then
-
        call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
-
-       ! enforce_proper_nesting can create new grids at coarser levels
-       ! this makes sure the boundary conditions are properly defined everywhere
-       do n=2,nlevs
-          call bc_tower_level_build(the_bc_tower,n,la_array(n))
-       end do
-
     end if
 
     do n = 1,nl
@@ -290,6 +285,11 @@ contains
     call destroy(mla)
 
     call ml_layout_restricted_build(mla,mba,nlevs,pmask)
+
+    ! this makes sure the boundary conditions are properly defined everywhere
+    do n = 1,nlevs
+       call bc_tower_level_build(the_bc_tower,n,mla%la(n))
+    end do
 
     ! Build the level 1 data again.
     call multifab_build(  uold(1), mla%la(1),    dm, ng_s)

@@ -45,8 +45,7 @@ contains
 
     do n = 1, nlevs
 
-       do i = 1, nboxes(Source_nph(n))
-          if ( multifab_remote(Source_nph(n), i) ) cycle
+       do i = 1, nfabs(Source_nph(n))
           Snphp => dataptr(Source_nph(n), i)
           Soldp => dataptr(Source_old(n), i)
           dSdtp => dataptr(dSdt(n), i)

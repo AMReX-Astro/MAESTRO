@@ -104,8 +104,7 @@ contains
     endif
 
     do n=1,nlevs
-       do i=1,nboxes(s(n))
-          if ( multifab_remote(s(n), i) ) cycle
+       do i=1,nfabs(s(n))
           fp  => dataptr(vel_force(n),i)
           gpp => dataptr(gpi(n),i)
           rp  => dataptr(s(n),i)
@@ -576,8 +575,7 @@ contains
     ng_w0 = nghost(gradw0_cart(1))
 
     do n=1,nlevs
-       do i=1, nboxes(vel_force(n))
-          if ( multifab_remote(vel_force(n),i) ) cycle
+       do i=1, nfabs(vel_force(n))
           fp   => dataptr(vel_force(n),i)
           ump  => dataptr(umac(n,1),i)
           lo   =  lwb(get_box(vel_force(n),i))

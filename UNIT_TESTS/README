@@ -79,12 +79,12 @@ test_particles/
 
 test_projection/
 
-  This tests the hgprojection routine in 2-d.  A divergence-free
-  velocity field is initialized and then "polluted" by adding the
-  gradient of a scalar.  The form of the scalar differs depending on
-  the boundary conditions (wall and periodic are supported currently).
-  Finally, the hgproject routine is called to recover the initial
-  divergence-free field.  
+  This tests the hgproject and macproject routines in 2- and 3-d.  A
+  divergence-free velocity field is initialized and then "polluted" by
+  adding the gradient of a scalar.  The form of the scalar differs
+  depending on the boundary conditions (wall and periodic are
+  supported currently).  Finally, the hgproject/macproject routine is
+  called to recover the initial divergence-free field.
 
 
 test_react/

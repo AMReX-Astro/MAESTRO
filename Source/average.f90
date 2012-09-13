@@ -6,7 +6,7 @@ module average_module
   
   use bl_types        , only: dp_t
   use box_module      , only: lwb, upb, box
-  use multifab_module , only: multifab, multifab_remote, dataptr, &
+  use multifab_module , only: multifab, nfabs, dataptr, &
                               get_layout, get_box, nghost, nboxes, get_dim
   use layout_module   , only: get_pd
   use ml_layout_module, only: ml_layout
@@ -134,8 +134,7 @@ contains
              ncell(:,n) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
           end if
 
-          do i=1, nboxes(phi(n))
-             if ( multifab_remote(phi(n), i) ) cycle
+          do i=1, nfabs(phi(n))
              pp => dataptr(phi(n), i)
              lo =  lwb(get_box(phi(n), i))
              hi =  upb(get_box(phi(n), i))
@@ -171,8 +170,7 @@ contains
        ! in radii(:,:).
        do n=nlevs,1,-1
 
-          do i=1, nboxes(phi(n))
-             if ( multifab_remote(phi(n), i) ) cycle
+          do i=1, nfabs(phi(n))
              pp => dataptr(phi(n), i)
              lo =  lwb(get_box(phi(n), i))
              hi =  upb(get_box(phi(n), i))
@@ -470,8 +468,7 @@ contains
     !
     do n=nlevs,1,-1
 
-       do i=1, nboxes(phi(n))
-          if ( multifab_remote(phi(n), i) ) cycle
+       do i=1, nfabs(phi(n))
           pp => dataptr(phi(n), i)
           lo =  lwb(get_box(phi(n), i))
           hi =  upb(get_box(phi(n), i))
@@ -673,8 +670,7 @@ contains
           ncell = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
        end if
 
-       do i=1, nboxes(phi(n))
-          if ( multifab_remote(phi(n), i) ) cycle
+       do i=1, nfabs(phi(n))
           pp => dataptr(phi(n), i)
           lo =  lwb(get_box(phi(n), i))
           hi =  upb(get_box(phi(n), i))

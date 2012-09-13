@@ -4,8 +4,11 @@ Here, we list notes on problems with specific compilers and \maestro.
 %-----------------------------------------------------------------------------
 \section{Cray}
 
-Cray 8.0.2 compiles and runs \maestro\ fine on the interlagos/jaguarpf 
+\begin{itemize}
+\item Cray 8.0.2 compiles and runs \maestro\ fine on the interlagos/jaguarpf 
 machine at OCLF.
+\item Cray 8.0.7 compiles and runs \maestro\ fine on hopper (8/21/12).
+\end{itemize}
 
 
 %-----------------------------------------------------------------------------
@@ -14,6 +17,8 @@ machine at OCLF.
 Probably the best compilers for \maestro.  
 Some notes:
 \begin{itemize}
+\item gfortran 4.4.3 dies with an out of bounds error in multigrid for
+2+ level runs with effective 128$^3$ resolution or better.
 \item gfortran 4.5 has no known issues.
 \item gfortran 4.6.1--4.6.3 on Fedora (15 and 16) have a bug that 
 shows up in multi-processor, multilevel runs ({\tt toy\_convect} on 4
@@ -24,7 +29,9 @@ parallel\_bcast} call.  This is in {\tt cluster\_f.f90}, and the issue
 seems to be a multiplication error in computing the size to allocate
 {\tt bxs}.  The bug is not present when you compile in debug mode, so
 it seems to be related to optimization.
-\item gfortran 4.7.1 (prerelease) seems to have fixed the above issue.
+\item gfortran 4.7.1 (prerelease) seems to have fixed the above issue,
+but now wdconvect with 2-level, effective 768$^3$ dies due to an
+unknown seg fault at the beginning of the run.
 \end{itemize}
 
 An added benefit of the gfortran compilers is that their debugging

@@ -128,7 +128,7 @@ specific \maestro\ routines directly.
 
 \section {\tt test\_projection}
 
-  This tests the projection routines in 2-d---either the hgprojection
+  This tests the projection routines in 2- and 3-d---either the hgprojection
   ({\tt project\_type = 1}) or the MAC projection ({\tt project\_type =
   2}).  A divergence-free velocity field is initialized and then
   ``polluted'' by adding the gradient of a scalar.  The form of the
@@ -144,14 +144,27 @@ specific \maestro\ routines directly.
 \includegraphics[height=1.9in]{\unitfigpath/wall_u_plus_grad_phi_x-velocity} 
 \includegraphics[height=1.9in]{\unitfigpath/wall_u_new_x-velocity} 
 %
-\caption[Results of the {\tt test\_projection} unit test]{\label{fig:unit:projtest}
-  Initial divergence free velocity field (x-component; left); Velocity field plus
-  gradient of a scalar (x-component; center); and resulting velocity after projecting
-  out the non-divergence free portion (x-component; right).  This is will slipwall
-  boundary conditions on all sides, a 2-level grid with the left half refined and
-  right half coarse, and the hgprojection tested.}
+\caption[Results of the 2-d {\tt test\_projection} unit test]{\label{fig:unit:projtest}
+  Initial divergence free velocity field (x-component; left); Velocity
+  field plus gradient of a scalar (x-component; center); and resulting
+  velocity after projecting out the non-divergence free portion
+  (x-component; right).  This is with slipwall boundary conditions on
+  all sides, a 2-level grid with the left half refined and right half
+  coarse, and the hgprojection tested.}
 \end{figure}
 
+
+\begin{figure}
+\centering
+\includegraphics[height=8in]{\unitfigpath/test_project_3d}
+%
+\caption[Results of the 3-d {\tt test\_projection} unit test]{\label{fig:unit:projtest3d}
+  Projection test in 3-d showing the x-velocity (left), y-velocity
+  (middle), and z-velocity (right) initially (top row), after the
+  gradient of a scalar is added (center row), and the resulting
+  velocity after the projection.  This is with slipwall boundary conditions
+  on all sides, a 2-level grid with an octant refined, and the hgprojection.}
+\end{figure}
 
 \section{\tt test\_react}
 

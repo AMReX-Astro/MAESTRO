@@ -1,0 +1,27 @@
+&PROBIN
+ test_set = "gr0_3d_2lev_coarse"
+
+ run_prefix = "mac_wall_3d_"
+
+ project_type = 2
+
+ spherical_in = 0
+ dm_in = 3
+ max_levs = 2
+
+ verbose = 1
+
+ prob_hi_x = 1.0
+ prob_hi_y = 1.0
+ prob_hi_z = 1.0
+
+ xlo_boundary_type = "slip wall"
+ xhi_boundary_type = "slip wall"
+
+ ylo_boundary_type = "slip wall"
+ yhi_boundary_type = "slip wall"
+
+ zlo_boundary_type = "slip wall"
+ zhi_boundary_type = "slip wall"
+
+/

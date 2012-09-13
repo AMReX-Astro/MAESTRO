@@ -72,7 +72,7 @@ contains
     ! For all RHS terms, we set alpha = 0, beta = the appropriate 
     ! coefficient, and phi = the quantity being diffused.
 
-    call build(bpt, "therm_cond_full_alg")
+    call build(bpt, "therm_cond_predictor")
 
     dm = mla%dim
     nlevs = mla%nlevel
@@ -385,7 +385,7 @@ contains
     ! For all RHS terms, we set alpha = 0, beta = the appropriate 
     ! coefficient, and phi = the quantity being diffused.
 
-    call build(bpt, "therm_cond_full_alg")
+    call build(bpt, "therm_cond_corrector")
 
     dm = mla%dim
     nlevs = mla%nlevel
@@ -687,7 +687,7 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
-    call build(bpt, "make_explicit_thermal")
+    call build(bpt, "make_explicit_thermal_hterm")
 
     dm = mla%dim
     nlevs = mla%nlevel

@@ -361,8 +361,7 @@ contains
       end do
 
       do n = 1,nlevs
-         do i = 1, nboxes(rh(n))
-            if ( multifab_remote(rh(n), i) ) cycle
+         do i = 1, nfabs(rh(n))
             ump => dataptr(umac(n,1), i)
             rhp => dataptr(rh(n)    , i)
             lo =   lwb(get_box(rh(n), i))
@@ -498,8 +497,7 @@ contains
       ng_um = nghost(edge(1))
 
       ! Multiply edge velocities by div coeff
-      do i = 1, nboxes(edge(1))
-         if ( multifab_remote(edge(1), i) ) cycle
+      do i = 1, nfabs(edge(1))
          ump => dataptr(edge(1), i)
          lo =  lwb(get_box(edge(1), i))
          hi =  upb(get_box(edge(1), i))
@@ -629,8 +627,7 @@ contains
       ng_b = nghost(beta(1,1))
 
       do n = 1, nlevs
-         do i = 1, nboxes(rho(n))
-            if ( multifab_remote(rho(n), i) ) cycle
+         do i = 1, nfabs(rho(n))
             rp => dataptr(rho(n) , i)
             bxp => dataptr(beta(n,1), i)
             lo = lwb(get_box(rho(n), i))
@@ -752,9 +749,7 @@ contains
       real(dp_t)    , intent(in   ) :: dx(:,:)
       type(bc_tower), intent(in   ) :: the_bc_tower
 
-      integer :: i
-      integer :: ng_um,ng_p,ng_b
-      integer :: lo(get_dim(rh(1))),hi(get_dim(rh(1))),dm
+      integer :: i,gid,ng_um,ng_p,ng_b,lo(get_dim(rh(1))),hi(get_dim(rh(1))),dm
 
       type(bc_level)           :: bc
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
@@ -780,19 +775,19 @@ contains
 
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
-         do i = 1, nboxes(rh(n))
-            if ( multifab_remote(rh(n), i) ) cycle
+         do i = 1, nfabs(rh(n))
+            gid =  global_index(umac(n,1),i)
             ump => dataptr(umac(n,1), i)
             php => dataptr( phi(n), i)
             bxp => dataptr(beta(n,1), i)
-            lo = lwb(get_box(phi(n), i))
-            hi = upb(get_box(phi(n), i))
+            lo  =  lwb(get_box(phi(n), i))
+            hi  =  upb(get_box(phi(n), i))
             select case (dm)
             case (1)
                call mkumac_1d(n,ump(:,1,1,1), ng_um, & 
                               php(:,1,1,1), ng_p, &
                               bxp(:,1,1,1), ng_b, &
-                              lo,hi,dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
+                              lo,hi,dx(n,:),bc%ell_bc_level_array(gid,:,:,press_comp))
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
@@ -805,7 +800,7 @@ contains
                call mkumac_2d(n,ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
                               php(:,:,1,1), ng_p, &
                               bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
-                              lo,hi,dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
+                              lo,hi,dx(n,:),bc%ell_bc_level_array(gid,:,:,press_comp))
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
@@ -823,7 +818,7 @@ contains
                call mkumac_3d(n,ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
                               php(:,:,:,1), ng_p, &
                               bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
-                              lo,hi,dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
+                              lo,hi,dx(n,:),bc%ell_bc_level_array(gid,:,:,press_comp))
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)

@@ -53,8 +53,7 @@ contains
     
     do n=1,nlevs
        
-       do i = 1, nboxes(s0_cart(n))
-          if ( multifab_remote(s0_cart(n), i) ) cycle
+       do i = 1, nfabs(s0_cart(n))
           sp => dataptr(s0_cart(n), i)
           lo =  lwb(get_box(s0_cart(n), i))
           hi =  upb(get_box(s0_cart(n), i))
@@ -620,8 +619,7 @@ contains
     end if
     
     do n=1,nlevs
-       do i=1, nboxes(w0mac(n,1))
-          if ( multifab_remote(w0mac(n,1), i) ) cycle
+       do i=1, nfabs(w0mac(n,1))
           w0xp => dataptr(w0mac(n,1), i)
           w0yp => dataptr(w0mac(n,2), i)
           w0zp => dataptr(w0mac(n,3), i)
@@ -1016,8 +1014,7 @@ contains
     end if
 
     do n=1,nlevs
-       do i=1, nboxes(s0mac(n,1))
-          if ( multifab_remote(s0mac(n,1), i) ) cycle
+       do i=1, nfabs(s0mac(n,1))
           s0xp => dataptr(s0mac(n,1), i)
           s0yp => dataptr(s0mac(n,2), i)
           s0zp => dataptr(s0mac(n,3), i)
@@ -1318,8 +1315,7 @@ contains
 
     if (spherical .eq. 1) then
        do n = 1,nlevs
-          do i = 1, nboxes(normal(n))
-             if ( multifab_remote(normal(n), i) ) cycle
+          do i = 1, nfabs(normal(n))
              nop => dataptr(normal(n), i)
              lo =  lwb(get_box(normal(n), i))
              hi =  upb(get_box(normal(n), i))
@@ -1409,8 +1405,7 @@ contains
 
     ! setup beta = ccfab on faces
     do n=1,nlevs
-       do i=1, nboxes(ccfab(n))
-          if (multifab_remote(ccfab(n),i)) cycle
+       do i=1, nfabs(ccfab(n))
           ccfabp => dataptr(ccfab(n),i)
           bxp   => dataptr(beta(n,1),i)
           lo = lwb(get_box(ccfab(n),i))
@@ -1690,8 +1685,7 @@ contains
 
     do n=1,nlevs
        
-       do i = 1, nboxes(s0_cart(n))
-          if ( multifab_remote(s0_cart(n), i) ) cycle
+       do i = 1, nfabs(s0_cart(n))
           sp => dataptr(s0_cart(n), i)
           lo =  lwb(get_box(s0_cart(n), i))
           hi =  upb(get_box(s0_cart(n), i))

@@ -40,8 +40,7 @@ contains
     ng = s(1)%ng
 
     do n=1,nlevs
-       do i = 1, s(n)%nboxes
-          if ( multifab_remote(s(n),i) ) cycle
+       do i = 1, nfabs(s(n))
           sop => dataptr(s(n),i)
           lo =  lwb(get_box(s(n),i))
           hi =  upb(get_box(s(n),i))

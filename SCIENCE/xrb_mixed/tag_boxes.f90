@@ -51,8 +51,7 @@ contains
     ng_s = mf%ng
     if (present(aux_tag_mf)) ng_aux = aux_tag_mf%ng
 
-    do i = 1, mf%nboxes
-       if ( multifab_remote(mf, i) ) cycle
+    do i = 1, nfabs(mf)
        sp => dataptr(mf, i)
        if (present(aux_tag_mf)) auxp => dataptr(aux_tag_mf, i)
        lo =  lwb(get_box(tagboxes, i))
@@ -110,8 +109,7 @@ contains
     enddo
 
 
-    do i = 1, mf%nboxes
-       if ( multifab_remote(mf, i) ) cycle
+    do i = 1, nfabs(mf)
        tp => dataptr(tagboxes, i)
        lo =  lwb(get_box(tagboxes, i))
        select case (dm)

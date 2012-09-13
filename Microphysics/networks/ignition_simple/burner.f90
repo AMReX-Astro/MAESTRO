@@ -21,7 +21,7 @@ contains
     !   rho_omegadot = rho dX/dt
     !   rho_Hnuc = - sum_k q_k rho_omegadot_k  [erg / cm^3 / s]
 
-    use burner_aux_module, only : dens_pass, c_p_pass, dhdx_pass, X_O16_pass
+    use rpar_indices
 
     implicit none
 
@@ -98,7 +98,7 @@ contains
     integer, dimension(LIW) :: iwork
     
 
-    real(kind=dp_t) :: rpar
+    real(kind=dp_t), allocatable :: rpar(:)
     integer :: ipar
 
     EXTERNAL jac, f_rhs
@@ -123,6 +123,11 @@ contains
        
        firstCall = .false.
     endif
+
+    ! allocate storage for rpar -- the scratch array passed into the            
+    ! rhs and jacobian routines                                                 
+    allocate(rpar(n_rpar_comps))
+
 
     ! set the tolerances.  We will be more relaxed on the temperature
     ! since it is only used in evaluating the rates.  
@@ -152,6 +157,15 @@ contains
     y(ic12) = Xin(ic12)
     y(nspec_advance+1) = temp
 
+    
+    ! we need the specific heat at constant pressure and dhdX |_p.  Take
+    ! T, rho, Xin as input
+    eos_state%rho   = dens
+    eos_state%T     = temp
+    eos_state%xn(:) = Xin(:)
+       
+    call eos(eos_input_rt, eos_state, .false.)
+
     ! density, specific heat at constant pressure, c_p, and dhdX are needed
     ! in the righthand side routine, so we will pass these in through the
     ! burner_aux module.
@@ -161,20 +175,10 @@ contains
     ! Since we are only integrating C12, we will need the O16 mass fraction
     ! in the RHS routine to compute the screening (and we know that the
     ! Mg24 abundance is constraint so things add to 1).
-    dens_pass = dens
-    
-    ! we need the specific heat at constant pressure and dhdX |_p.  Take
-    ! T, rho, Xin as input
-    eos_state%rho   = dens
-    eos_state%T     = temp
-    eos_state%xn(:) = Xin(:)
-       
-    call eos(eos_input_rt, eos_state, .false.)
-    
-    c_p_pass = eos_state%cp
-    dhdx_pass(:) = eos_state%dhdX(:)
-
-    X_O16_pass = Xin(io16)
+    rpar(irp_dens) = dens    
+    rpar(irp_cp)   = eos_state%cp
+    rpar(irp_dhdX:irp_dhdX-1+nspec) = eos_state%dhdX(:)
+    rpar(irp_o16)  = Xin(io16)
 
     ! call the integration routine
     call dvode(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &

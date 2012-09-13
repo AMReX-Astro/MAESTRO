@@ -42,8 +42,7 @@ contains
     ng_s = nghost(state)
     ng_n = nghost(normal)
 
-    do i = 1, nboxes(state)
-       if (multifab_remote(state, i)) cycle
+    do i = 1, nfabs(state)
        sp => dataptr(state, i)
        cp => dataptr(plotdata, i)
        lo = lwb(get_box(state, i))
@@ -445,8 +444,7 @@ contains
     ng_s = nghost(state)
     ng_c = nghost(plotdata)
 
-    do i = 1, nboxes(state)
-       if (multifab_remote(state, i)) cycle
+    do i = 1, nfabs(state)
        sp => dataptr(state,i)
        cp => dataptr(plotdata,i)
        lo = lwb(get_box(state,i))
@@ -613,8 +611,7 @@ contains
 
     do n=1,nlevs
        weight = 2.d0**(dm*(n-1))
-       do i=1,nboxes(pi_cc(n))
-          if ( multifab_remote(pi_cc(n), i) ) cycle
+       do i=1,nfabs(pi_cc(n))
           ppn => dataptr(pi(n), i)
           ppc => dataptr(pi_cc(n), i)
           bp  => dataptr(beta0(n), i)
@@ -823,7 +820,7 @@ contains
     real(kind=dp_t), pointer :: pip(:,:,:,:)
     real(kind=dp_t), pointer :: up(:,:,:,:)
 
-    integer :: i,n,ng_pd,ng_pi,ng_u,dm
+    integer :: i,ng_pd,ng_pi,ng_u,dm
     integer :: lo(get_dim(plotdata)),hi(get_dim(plotdata))
 
     dm = get_dim(plotdata)
@@ -832,8 +829,7 @@ contains
     ng_pi = nghost(pi_cc)
     ng_u  = nghost(u)
 
-    do i=1,nboxes(plotdata)
-       if ( multifab_remote(plotdata, i) ) cycle
+    do i=1,nfabs(plotdata)
        pdp => dataptr(plotdata, i)
        pip => dataptr(pi_cc, i)
        up  => dataptr(u, i)
@@ -951,8 +947,7 @@ contains
     ng_s = nghost(state)
     ng_p = nghost(plotdata)
 
-    do i = 1, nboxes(state)
-       if ( multifab_remote(state, i) ) cycle
+    do i = 1, nfabs(state)
        sp => dataptr(state, i)
        tp => dataptr(plotdata, i)
        lo =  lwb(get_box(state, i))
@@ -1202,8 +1197,7 @@ contains
     ng_p = nghost(plotdata)
     ng_s = nghost(s)
 
-    do i = 1, nboxes(s)
-       if ( multifab_remote(s, i) ) cycle
+    do i = 1, nfabs(s)
        tp => dataptr(plotdata, i)
        sp => dataptr(s, i)
        lo =  lwb(get_box(s, i))
@@ -1518,8 +1512,7 @@ contains
     ng_p = nghost(plotdata)
     ng_s = nghost(s)
 
-    do i = 1, nboxes(s)
-       if ( multifab_remote(s, i) ) cycle
+    do i = 1, nfabs(s)
        tp => dataptr(plotdata, i)
        sp => dataptr(s, i)
        lo =  lwb(get_box(s, i))
@@ -1665,8 +1658,7 @@ contains
     ng_p = nghost(plotdata)
     ng_s = nghost(s)
 
-    do i = 1, nboxes(s)
-       if ( multifab_remote(s, i) ) cycle
+    do i = 1, nfabs(s)
        tp => dataptr(plotdata, i)
        sp => dataptr(s, i)
        lo =  lwb(get_box(s, i))
@@ -1814,8 +1806,7 @@ contains
     ng_p = nghost(plotdata(1))
 
     do n=1,nlevs
-       do i = 1, nboxes(plotdata(n))
-          if ( multifab_remote(plotdata(n), i) ) cycle
+       do i = 1, nfabs(plotdata(n))
           tp => dataptr(plotdata(n), i)
           lo =  lwb(get_box(plotdata(n), i))
           hi =  upb(get_box(plotdata(n), i))
@@ -1954,8 +1945,7 @@ contains
 
     ng_p = nghost(plotdata)
 
-    do i = 1, nboxes(plotdata)
-       if ( multifab_remote(plotdata, i) ) cycle
+    do i = 1, nfabs(plotdata)
        tp => dataptr(plotdata, i)
        lo =  lwb(get_box(plotdata, i))
        hi =  upb(get_box(plotdata, i))
@@ -2055,8 +2045,7 @@ contains
 
     ng_dw = nghost(divw0)
 
-    do i=1,nboxes(divw0)
-       if ( multifab_remote(divw0, i) ) cycle
+    do i=1,nfabs(divw0)
        dwp => dataptr(divw0, i)
        lo = lwb(get_box(divw0, i))
        hi = upb(get_box(divw0, i))
@@ -2172,7 +2161,7 @@ contains
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: vp(:,:,:,:)
     integer :: lo(get_dim(vort)),hi(get_dim(vort))
-    integer :: i,ng_u,ng_v,dm
+    integer :: i,ng_u,ng_v,dm,gid
 
     type(bl_prof_timer), save :: bpt
 
@@ -2183,21 +2172,21 @@ contains
     ng_u = nghost(u)
     ng_v = nghost(vort)
 
-    do i = 1, nboxes(u)
-       if ( multifab_remote(u, i) ) cycle
-       up => dataptr(u, i)
-       vp => dataptr(vort, i)
-       lo =  lwb(get_box(u, i))
-       hi =  upb(get_box(u, i))
+    do i = 1, nfabs(u)
+       gid =  global_index(u,i)
+       up  => dataptr(u, i)
+       vp  => dataptr(vort, i)
+       lo  =  lwb(get_box(u, i))
+       hi  =  upb(get_box(u, i))
        select case (dm)
        case (1)
           call setval(vort,0.d0,comp,1,all=.true.)
        case (2)
           call makevort_2d(vp(:,:,1,comp),ng_v,up(:,:,1,:),ng_u,lo,hi,dx, &
-                           bc%phys_bc_level_array(i,:,:))
+                           bc%phys_bc_level_array(gid,:,:))
        case (3)
           call makevort_3d(vp(:,:,:,comp),ng_v,up(:,:,:,:),ng_u,lo,hi,dx, &
-                           bc%phys_bc_level_array(i,:,:))
+                           bc%phys_bc_level_array(gid,:,:))
        end select
     end do
 
@@ -2839,8 +2828,7 @@ contains
     ng_u = nghost(u)
     ng_p = nghost(plotdata)
 
-    do i = 1, nboxes(u)
-       if ( multifab_remote(u, i) ) cycle
+    do i = 1, nfabs(u)
        pp => dataptr(plotdata, i)
        sp => dataptr(s, i)
        up => dataptr(u, i)
@@ -3011,9 +2999,7 @@ contains
        call bl_error("unable to create radial and circumferential velocity -- not spherical geometry")
     endif
 
-    do i = 1, nboxes(u)
-
-       if ( multifab_remote(u, i) ) cycle
+    do i = 1, nfabs(u)
 
        pp => dataptr(plotdata, i)
        up => dataptr(u, i)
@@ -3079,12 +3065,9 @@ contains
     real(kind=dp_t), pointer :: pp(:,:,:,:)
     integer :: i
 
-    do i = 1, nboxes(plotdata)
-       if (multifab_remote(plotdata, i)) cycle
+    do i = 1, nfabs(plotdata)
        pp => dataptr(plotdata, i)
-
        pp(:,:,:,comp_proc) = parallel_myproc()
-
     enddo
   end subroutine make_processor_number
 

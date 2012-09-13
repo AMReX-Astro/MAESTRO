@@ -201,8 +201,7 @@ contains
     endif
 
     do n = 1, nlevs
-       do i = 1, nboxes(sold(n))
-          if ( multifab_remote(sold(n), i) ) cycle
+       do i = 1, nfabs(sold(n))
           snp => dataptr(sold(n) , i)
           sop => dataptr(snew(n), i)
           sdcp => dataptr(sdc_source(n), i)
@@ -698,8 +697,7 @@ contains
     ng_h = rho_Hnuc(1)%ng
 
     do n=1,nlevs
-       do i=1,nboxes(s(n))
-          if ( multifab_remote(s(n), i) ) cycle
+       do i=1,nfabs(s(n))
           sp => dataptr(s(n), i)
           wp => dataptr(rho_omegadot(n), i)
           hp => dataptr(rho_Hnuc(n), i)

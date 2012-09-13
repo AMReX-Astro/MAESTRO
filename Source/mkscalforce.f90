@@ -117,8 +117,7 @@ contains
     
     do n=1,nlevs
 
-       do i=1, nboxes(scal_force(n))
-          if ( multifab_remote(scal_force(n),i) ) cycle
+       do i=1, nfabs(scal_force(n))
           fp => dataptr(scal_force(n), i)
           tp  => dataptr(thermal(n),i)
           lo = lwb(get_box(scal_force(n),i))
@@ -601,8 +600,7 @@ contains
                                     dx,the_bc_level,mla)
        end if
 
-       do i=1, nboxes(scal_force(n))
-          if ( multifab_remote(scal_force(n),i) ) cycle
+       do i=1, nfabs(scal_force(n))
           fp => dataptr(scal_force(n), i)
           ump => dataptr(umac(n,1),i)
           vmp => dataptr(umac(n,2),i)
@@ -859,8 +857,7 @@ contains
 
     do n=1,nlevs
 
-       do i=1, nboxes(temp_force(n))
-          if ( multifab_remote(temp_force(n),i) ) cycle
+       do i=1, nfabs(temp_force(n))
           fp  => dataptr(temp_force(n),i)
           ump => dataptr(umac(n,1),i)
           sp  => dataptr(s(n),i)

@@ -10,9 +10,6 @@ module define_bc_module
 
   type bc_level
 
-     integer   :: dim    = 0
-     integer   :: ngrids = 0
-     type(box) :: domain 
      integer, pointer :: phys_bc_level_array(:,:,:) => Null()
      integer, pointer ::  adv_bc_level_array(:,:,:,:) => Null()
      integer, pointer ::  ell_bc_level_array(:,:,:,:) => Null()
@@ -21,8 +18,6 @@ module define_bc_module
 
   type bc_tower
 
-     integer :: dim     = 0
-     integer :: nlevels = 0
      integer :: max_level_built = 0
      type(bc_level), pointer :: bc_tower_array(:) => Null()
      integer       , pointer :: domain_bc(:,:) => Null()
@@ -42,16 +37,8 @@ contains
     integer        , intent(in   ) :: dm
     integer        , intent(in   ) :: phys_bc_in(:,:)
 
-    integer :: n
-
-    bct%nlevels = num_levs
-    bct%dim     = dm
-    allocate(bct%bc_tower_array(bct%nlevels))
+    allocate(bct%bc_tower_array(num_levs))
     allocate(bct%domain_bc(dm,2))
-
-    do n = 1, num_levs
-      bct%bc_tower_array(n)%ngrids = -1
-    end do
 
     bct%domain_bc(:,:) = phys_bc_in(:,:)
 
@@ -65,31 +52,32 @@ contains
     integer        , intent(in   ) :: n
     type(layout)   , intent(in   ) :: la
 
-    integer :: ngrids
+    integer :: ngrids,dm
     integer :: default_value
 
-    if (bct%bc_tower_array(n)%ngrids > 0) then
+    if (associated(bct%bc_tower_array(n)%phys_bc_level_array)) then
       deallocate(bct%bc_tower_array(n)%phys_bc_level_array)
       deallocate(bct%bc_tower_array(n)%adv_bc_level_array)
       deallocate(bct%bc_tower_array(n)%ell_bc_level_array)
+      bct%bc_tower_array(n)%phys_bc_level_array => NULL()
+      bct%bc_tower_array(n)%adv_bc_level_array => NULL()
+      bct%bc_tower_array(n)%ell_bc_level_array => NULL()
     end if
 
     ngrids = layout_nboxes(la)
-    bct%bc_tower_array(n)%dim    = bct%dim
-    bct%bc_tower_array(n)%ngrids = ngrids
-    bct%bc_tower_array(n)%domain = layout_get_pd(la)
+    dm = layout_dim(la)
 
-    allocate(bct%bc_tower_array(n)%phys_bc_level_array(0:ngrids,bct%dim,2))
+    allocate(bct%bc_tower_array(n)%phys_bc_level_array(0:ngrids,dm,2))
     default_value = INTERIOR
     call phys_bc_level_build(bct%bc_tower_array(n)%phys_bc_level_array,la, &
                              bct%domain_bc,default_value)
 
-    allocate(bct%bc_tower_array(n)%adv_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+3))
+    allocate(bct%bc_tower_array(n)%adv_bc_level_array(0:ngrids,dm,2,dm+nscal+3))
     default_value = INTERIOR
     call adv_bc_level_build(bct%bc_tower_array(n)%adv_bc_level_array, &
                             bct%bc_tower_array(n)%phys_bc_level_array,default_value)
 
-    allocate(bct%bc_tower_array(n)%ell_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+3))
+    allocate(bct%bc_tower_array(n)%ell_bc_level_array(0:ngrids,dm,2,dm+nscal+3))
     default_value = BC_INT
     call ell_bc_level_build(bct%bc_tower_array(n)%ell_bc_level_array, &
                             bct%bc_tower_array(n)%phys_bc_level_array,default_value)
@@ -102,12 +90,17 @@ contains
 
     type(bc_tower), intent(inout) :: bct
 
-    integer :: i
+    integer :: i,num_levs
 
-    do i = 1,bct%nlevels
+    num_levs = size(bct%bc_tower_array,dim=1)
+
+    do i = 1,num_levs
        deallocate(bct%bc_tower_array(i)%phys_bc_level_array)
        deallocate(bct%bc_tower_array(i)%adv_bc_level_array)
        deallocate(bct%bc_tower_array(i)%ell_bc_level_array)
+       bct%bc_tower_array(i)%phys_bc_level_array => NULL()
+       bct%bc_tower_array(i)%adv_bc_level_array => NULL()
+       bct%bc_tower_array(i)%ell_bc_level_array => NULL()
     end do
     deallocate(bct%bc_tower_array)
     deallocate(bct%domain_bc)

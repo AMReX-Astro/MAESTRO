@@ -43,8 +43,7 @@ contains
 
     ng_s = mf%ng
 
-    do i = 1, mf%nboxes
-       if ( multifab_remote(mf, i) ) cycle
+    do i = 1, nfabs(mf)
        sp => dataptr(mf, i)
        lo =  lwb(get_box(tagboxes, i))
        select case (dm)
@@ -80,8 +79,7 @@ contains
     enddo
 
 
-    do i = 1, mf%nboxes
-       if ( multifab_remote(mf, i) ) cycle
+    do i = 1, nfabs(mf)
        tp => dataptr(tagboxes, i)
        lo =  lwb(get_box(tagboxes, i))
        select case (dm)

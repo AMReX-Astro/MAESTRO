@@ -1,0 +1,25 @@
+&PROBIN
+ test_set = "gr0_3d"
+
+ run_prefix = "periodic_3d_"
+
+ spherical_in = 0
+ dm_in = 3
+ max_levs = 1
+
+ verbose = 1
+
+ prob_hi_x = 1.0
+ prob_hi_y = 1.0
+ prob_hi_z = 1.0
+
+ xlo_boundary_type = "periodic"
+ xhi_boundary_type = "periodic"
+
+ ylo_boundary_type = "periodic"
+ yhi_boundary_type = "periodic"
+
+ zlo_boundary_type = "periodic"
+ zhi_boundary_type = "periodic"
+ 
+/

@@ -2,7 +2,7 @@ NDEBUG := t
 MPI    := 
 OMP    :=
 
-SDC := t
+SDC := 
 
 COMP := gfortran
 

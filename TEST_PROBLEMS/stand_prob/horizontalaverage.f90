@@ -3,8 +3,8 @@ module horizontal_average_module
   
   use bl_types        , only: dp_t
   use box_module      , only: lwb, upb, box
-  use multifab_module , only: multifab, multifab_remote, dataptr, &
-                              get_layout, get_box, nghost, nboxes, get_dim
+  use multifab_module , only: multifab, dataptr, &
+                              get_layout, get_box, nghost, nfabs, get_dim
   use layout_module   , only: get_pd
   use ml_layout_module, only: ml_layout
   use parallel        , only: parallel_reduce, MPI_SUM
@@ -131,8 +131,7 @@ contains
              ncell(:,n) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
           end if
 
-          do i=1, nboxes(u(n))
-             if ( multifab_remote(u(n), i) ) cycle
+          do i=1, nfabs(u(n))
              pu => dataptr(u(n), i)
              ps => dataptr(s(n), i)
              lo =  lwb(get_box(u(n), i))
@@ -340,8 +339,7 @@ contains
     !
     do n=nlevs,1,-1
 
-       do i=1, nboxes(phi(n))
-          if ( multifab_remote(phi(n), i) ) cycle
+       do i=1, nfabs(phi(n))
           pp => dataptr(phi(n), i)
           lo =  lwb(get_box(phi(n), i))
           hi =  upb(get_box(phi(n), i))
@@ -600,8 +598,7 @@ contains
           ncell = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
        end if
 
-       do i=1, nboxes(phi(n))
-          if ( multifab_remote(phi(n), i) ) cycle
+       do i=1, nfabs(phi(n))
           pp => dataptr(phi(n), i)
           lo =  lwb(get_box(phi(n), i))
           hi =  upb(get_box(phi(n), i))

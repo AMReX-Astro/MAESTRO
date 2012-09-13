@@ -1045,15 +1045,15 @@ To access the data, we loop over all the levels, and all the boxes in
 the given level.
 \begin{lstlisting}[language={[95]fortran},mathescape=false]
     do n=1,nlevs
-       do i = 1, nboxes(s(n))
+       do i = 1, nfabs(s(n))
 \end{lstlisting}
-{\tt nboxes(s(n))} is simply the number of boxes in level {\tt n}.
-All data in all \multifab s will have the same box layout, so we only
-need to query the number of boxes from one \multifab.
+{\tt nfabs(s(n))} is simply the number of boxes in level {\tt n} on
+the current processor.  Each processor knows which \fab s in its
+\multifab are local to that processor, and this loop will only loop
+over those.
 
 For a given \boxtype, we get the data and the bounds of the \boxtype.
 \begin{lstlisting}[language={[95]fortran},mathescape=false]
-          if ( multifab_remote(s(n), i) ) cycle
           sp  => dataptr(s(n), i)
           ump => dataptr(umac(n,1),i)
           vmp => dataptr(umac(n,2),i)
@@ -1061,10 +1061,6 @@ For a given \boxtype, we get the data and the bounds of the \boxtype.
           hi =  upb(get_box(s(n), i))
 \end{lstlisting}
 
-\noindent For parallel runs, there is no guarantee that the particular
-box is on the current processor.  The function {\tt multifab\_remote}
-returns {\tt .true.} if the box is off-processor, in which case, we 
-simply skip to the next box.
 
 The actual data array is accessed through the {\tt dataptr} function,
 which takes a \multifab\ (e.g.\ {\tt s(n)}) and the index of the

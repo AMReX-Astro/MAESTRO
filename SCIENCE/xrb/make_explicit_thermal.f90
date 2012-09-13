@@ -286,8 +286,7 @@ contains
     do n=1,nlevs
        if (parallel_IOProcessor()) write (6, 999) n
 
-       do i=1,nboxes(s(n))
-          if (multifab_remote(s(n),i)) cycle
+       do i=1,nfabs(s(n))
           sp       => dataptr(s(n),i)
           Tcoeffp  => dataptr(Tcoeff(n),i)
           hcoeffp  => dataptr(hcoeff(n),i)

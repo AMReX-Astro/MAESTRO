@@ -169,8 +169,7 @@ subroutine varden()
   ng_s  = nghost(s(1))
 
   do n = 1, nlevs
-     do i = 1, umac(n,1)%nboxes
-        if ( multifab_remote(umac(n,1),i) ) cycle
+     do i = 1, nfabs(umac(n,1))
 
         ump  => dataptr(umac(n,1),i)
         vmp  => dataptr(umac(n,2),i)
