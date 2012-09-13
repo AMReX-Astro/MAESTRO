@@ -2161,7 +2161,7 @@ contains
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: vp(:,:,:,:)
     integer :: lo(get_dim(vort)),hi(get_dim(vort))
-    integer :: i,ng_u,ng_v,dm,gid
+    integer :: i,ng_u,ng_v,dm
 
     type(bl_prof_timer), save :: bpt
 
@@ -2173,7 +2173,6 @@ contains
     ng_v = nghost(vort)
 
     do i = 1, nfabs(u)
-       gid =  global_index(u,i)
        up  => dataptr(u, i)
        vp  => dataptr(vort, i)
        lo  =  lwb(get_box(u, i))
@@ -2183,10 +2182,10 @@ contains
           call setval(vort,0.d0,comp,1,all=.true.)
        case (2)
           call makevort_2d(vp(:,:,1,comp),ng_v,up(:,:,1,:),ng_u,lo,hi,dx, &
-                           bc%phys_bc_level_array(gid,:,:))
+                           bc%phys_bc_level_array(i,:,:))
        case (3)
           call makevort_3d(vp(:,:,:,comp),ng_v,up(:,:,:,:),ng_u,lo,hi,dx, &
-                           bc%phys_bc_level_array(gid,:,:))
+                           bc%phys_bc_level_array(i,:,:))
        end select
     end do
 

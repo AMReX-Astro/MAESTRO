@@ -23,7 +23,7 @@ contains
 
     ! Local
     integer                  :: lo(get_dim(s)),hi(get_dim(s)),dm
-    integer                  :: i,ng,scomp,bccomp,gid
+    integer                  :: i,ng,scomp,bccomp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
@@ -37,7 +37,6 @@ contains
     call build(bpt, "multifab_physbc")
     
     do i=1,nfabs(s)
-       gid =  global_index(s,i)
        sp  => dataptr(s,i)
        lo  =  lwb(get_box(s,i))
        hi  =  upb(get_box(s,i))
@@ -46,19 +45,19 @@ contains
           do scomp = start_scomp,start_scomp+num_comp-1
              bccomp = start_bccomp + scomp - start_scomp
              call physbc_1d(sp(:,1,1,scomp), lo, hi, ng, &
-                           the_bc_level%adv_bc_level_array(gid,:,:,bccomp),bccomp)
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
           end do
        case (2)
           do scomp = start_scomp,start_scomp+num_comp-1
              bccomp = start_bccomp + scomp - start_scomp
              call physbc_2d(sp(:,:,1,scomp), lo, hi, ng, &
-                           the_bc_level%adv_bc_level_array(gid,:,:,bccomp),bccomp)
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
           end do
        case (3)
           do scomp = start_scomp,start_scomp+num_comp-1
              bccomp = start_bccomp + scomp - start_scomp
              call physbc_3d(sp(:,:,:,scomp), lo, hi, ng, &
-                           the_bc_level%adv_bc_level_array(gid,:,:,bccomp),bccomp)
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
           end do
        end select
     end do

@@ -1,7 +1,7 @@
 module define_bc_module
 
   use box_module, only: box
-  use layout_module, only: layout, layout_get_pd, layout_get_box, layout_dim, layout_nboxes
+  use layout_module, only: layout, layout_get_pd, layout_get_box, layout_dim, layout_nlocal
   use bc_module, only: EXT_DIR, FOEXTRAP, HOEXTRAP, REFLECT_EVEN, REFLECT_ODD, BC_DIR, &
                        BC_NEU, BC_PER, BC_INT, INTERIOR, &
                        INLET, NO_SLIP_WALL, OUTLET, PERIODIC, SLIP_WALL, SYMMETRY
@@ -64,7 +64,7 @@ contains
       bct%bc_tower_array(n)%ell_bc_level_array => NULL()
     end if
 
-    ngrids = layout_nboxes(la)
+    ngrids = layout_nlocal(la)
     dm = layout_dim(la)
 
     allocate(bct%bc_tower_array(n)%phys_bc_level_array(0:ngrids,dm,2))
@@ -120,7 +120,7 @@ contains
 
     phys_bc_level = default_value
 
-    ! phys_bc_level(0:nboxes,dim,2) contains the physical name of the
+    ! phys_bc_level(0:nlocal,dim,2) contains the physical name of the
     ! boundary condition type on each edge of each box that makes up
     ! the current level.  The phys_bc_level(0,:,:) 'box' refers to the
     ! entire domain.  If an edge of a box is not on a physical
@@ -136,8 +136,8 @@ contains
        phys_bc_level(i,d,2) = domain_bc(d,2)
     end do
 
-    do i = 1,layout_nboxes(la_level)
-       bx = layout_get_box(la_level,i)
+    do i = 1,layout_nlocal(la_level)
+       bx = layout_get_box(la_level,global_index(la_level,i))
        do d = 1,layout_dim(la_level)
           if (bx%lo(d) == pd%lo(d)) phys_bc_level(i,d,1) = domain_bc(d,1)
           if (bx%hi(d) == pd%hi(d)) phys_bc_level(i,d,2) = domain_bc(d,2)

@@ -808,7 +808,7 @@ contains
       integer       , intent(in   ) :: press_comp
       integer       , intent(in   ) :: ref_ratio(:,:)
 
-      integer :: i,gid
+      integer :: i
       integer :: ng_um,ng_p,ng_b
 
       type(bc_level)           :: bc
@@ -833,7 +833,6 @@ contains
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
          do i = 1, nfabs(rh(n))
-            gid =  global_index(umac(n,1),i)
             ump => dataptr(umac(n,1), i)
             vmp => dataptr(umac(n,2), i)
             php => dataptr( phi(n), i)
@@ -850,12 +849,12 @@ contains
                                  php(:,:,1,1),ng_p, &
                                  bxp(:,:,1,1),byp(:,:,1,1),ng_b, &
                                  lxp(:,:,1,1),hxp(:,:,1,1),lyp(:,:,1,1),hyp(:,:,1,1), &
-                                 dx(n,:),bc%ell_bc_level_array(gid,:,:,press_comp))
+                                 dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                else 
                   call mkumac_2d_base(ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
                                       php(:,:,1,1), ng_p, &
                                       bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
-                                      dx(n,:),bc%ell_bc_level_array(gid,:,:,press_comp))
+                                      dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                end if
             case (3)
                wmp => dataptr(umac(n,3), i)
@@ -872,12 +871,12 @@ contains
                                  bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
                                  lxp(:,:,:,1),hxp(:,:,:,1),lyp(:,:,:,1),hyp(:,:,:,1), &
                                  lzp(:,:,:,1),hzp(:,:,:,1),dx(n,:),&
-                                 bc%ell_bc_level_array(gid,:,:,press_comp))
+                                 bc%ell_bc_level_array(i,:,:,press_comp))
                else
                   call mkumac_3d_base(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
                                       php(:,:,:,1), ng_p, &
                                       bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
-                                      dx(n,:),bc%ell_bc_level_array(gid,:,:,press_comp))
+                                      dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                end if
             end select
          end do

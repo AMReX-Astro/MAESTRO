@@ -19,7 +19,7 @@ contains
       type(multifab) , intent(inout) :: divu_rhs(:)
       type(bc_tower) , intent(in   ) :: the_bc_tower
 
-      integer        :: i,n,ng_d,dm,nlevs,gid
+      integer        :: i,n,ng_d,dm,nlevs
       integer        :: lo(get_dim(divu_rhs(1))),hi(get_dim(divu_rhs(1)))
       type(bc_level) :: bc
       real(kind=dp_t), pointer :: divp(:,:,:,:) 
@@ -32,20 +32,19 @@ contains
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
          do i = 1, nfabs(divu_rhs(n))
-            gid =   global_index(divu_rhs(n),i)
             divp => dataptr(divu_rhs(n) , i)
             lo =    lwb(get_box(divu_rhs(n),i))
             hi =    upb(get_box(divu_rhs(n),i))
             select case (dm)
             case (1)
                call enforce_outflow_1d(divp(:,1,1,1), lo, hi, ng_d, &
-                                       bc%phys_bc_level_array(gid,:,:))
+                                       bc%phys_bc_level_array(i,:,:))
             case (2)
                call enforce_outflow_2d(divp(:,:,1,1), lo, hi, ng_d, &
-                                       bc%phys_bc_level_array(gid,:,:))
+                                       bc%phys_bc_level_array(i,:,:))
             case (3)
                call enforce_outflow_3d(divp(:,:,:,1), lo, hi, ng_d, &
-                                       bc%phys_bc_level_array(gid,:,:))
+                                       bc%phys_bc_level_array(i,:,:))
             end select
          end do
       end do

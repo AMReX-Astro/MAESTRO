@@ -41,7 +41,7 @@ contains
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     integer                  :: lo(mla%dim),hi(mla%dim),dm,nlevs
-    integer                  :: i,n,n_1d,ng_u,ng_uf,ng_ut,ng_w0,gid
+    integer                  :: i,n,n_1d,ng_u,ng_uf,ng_ut,ng_w0
 
     type(bl_prof_timer), save :: bpt
 
@@ -58,7 +58,6 @@ contains
     do n=1,nlevs
 
        do i=1, nfabs(u(n))
-          gid =  global_index(u(n),i)
           up  => dataptr(u(n),i)
           ufp => dataptr(ufull(n),i)
           utp => dataptr(utrans(n,1),i)
@@ -70,16 +69,16 @@ contains
                               ufp(:,1,1,:), ng_uf, &
                               utp(:,1,1,1), ng_ut, w0(n,:), &
                               lo,hi,dx(n,:),dt,&
-                              the_bc_level(n)%adv_bc_level_array(gid,:,:,:), &
-                              the_bc_level(n)%phys_bc_level_array(gid,:,:))
+                              the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                              the_bc_level(n)%phys_bc_level_array(i,:,:))
           case (2)
              vtp => dataptr(utrans(n,2),i)
              call mkutrans_2d(up(:,:,1,:), ng_u, &
                               ufp(:,:,1,:), ng_uf, &
                               utp(:,:,1,1), vtp(:,:,1,1), ng_ut, w0(n,:), &
                               lo,hi,dx(n,:),dt,&
-                              the_bc_level(n)%adv_bc_level_array(gid,:,:,:), &
-                              the_bc_level(n)%phys_bc_level_array(gid,:,:))
+                              the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                              the_bc_level(n)%phys_bc_level_array(i,:,:))
           case (3)
              vtp => dataptr(utrans(n,2),i)
              wtp => dataptr(utrans(n,3), i)
@@ -96,8 +95,8 @@ contains
                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
                               w0(n_1d,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1),&
                               ng_w0, lo, hi, dx(n,:), dt, &
-                              the_bc_level(n)%adv_bc_level_array(gid,:,:,:), &
-                              the_bc_level(n)%phys_bc_level_array(gid,:,:))
+                              the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                              the_bc_level(n)%phys_bc_level_array(i,:,:))
           end select
        end do
 

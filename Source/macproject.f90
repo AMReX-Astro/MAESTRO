@@ -749,7 +749,7 @@ contains
       real(dp_t)    , intent(in   ) :: dx(:,:)
       type(bc_tower), intent(in   ) :: the_bc_tower
 
-      integer :: i,gid,ng_um,ng_p,ng_b,lo(get_dim(rh(1))),hi(get_dim(rh(1))),dm
+      integer :: i,ng_um,ng_p,ng_b,lo(get_dim(rh(1))),hi(get_dim(rh(1))),dm
 
       type(bc_level)           :: bc
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
@@ -776,7 +776,6 @@ contains
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
          do i = 1, nfabs(rh(n))
-            gid =  global_index(umac(n,1),i)
             ump => dataptr(umac(n,1), i)
             php => dataptr( phi(n), i)
             bxp => dataptr(beta(n,1), i)
@@ -787,7 +786,7 @@ contains
                call mkumac_1d(n,ump(:,1,1,1), ng_um, & 
                               php(:,1,1,1), ng_p, &
                               bxp(:,1,1,1), ng_b, &
-                              lo,hi,dx(n,:),bc%ell_bc_level_array(gid,:,:,press_comp))
+                              lo,hi,dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
@@ -800,7 +799,7 @@ contains
                call mkumac_2d(n,ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
                               php(:,:,1,1), ng_p, &
                               bxp(:,:,1,1), byp(:,:,1,1), ng_b, &
-                              lo,hi,dx(n,:),bc%ell_bc_level_array(gid,:,:,press_comp))
+                              lo,hi,dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
@@ -818,7 +817,7 @@ contains
                call mkumac_3d(n,ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
                               php(:,:,:,1), ng_p, &
                               bxp(:,:,:,1), byp(:,:,:,1), bzp(:,:,:,1), ng_b, &
-                              lo,hi,dx(n,:),bc%ell_bc_level_array(gid,:,:,press_comp))
+                              lo,hi,dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                if (n > 1) then
                   lxp => dataptr(fine_flx(n)%bmf(1,0), i)
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
