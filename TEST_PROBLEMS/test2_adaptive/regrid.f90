@@ -133,6 +133,9 @@ contains
     ! Build the level 1 layout.
     call layout_build_ba(la_array(1),mba%bas(1),mba%pd(1),pmask)
 
+    ! This makes sure the boundary conditions are properly defined everywhere
+    call bc_tower_level_build(the_bc_tower,1,la_array(1))
+
     ! Build the level 1 data only.
     call multifab_build(  uold(1), la_array(1),    dm, ng_s)
     call multifab_build(  sold(1), la_array(1), nscal, ng_s)
