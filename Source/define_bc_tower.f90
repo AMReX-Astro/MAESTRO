@@ -1,7 +1,7 @@
 module define_bc_module
 
   use box_module, only: box
-  use layout_module, only: layout, layout_get_pd, layout_get_box, layout_dim, layout_nlocal
+  use layout_module, only: layout, layout_get_pd, layout_get_box, layout_dim, layout_nlocal, global_index
   use bc_module, only: EXT_DIR, FOEXTRAP, HOEXTRAP, REFLECT_EVEN, REFLECT_ODD, BC_DIR, &
                        BC_NEU, BC_PER, BC_INT, INTERIOR, &
                        INLET, NO_SLIP_WALL, OUTLET, PERIODIC, SLIP_WALL, SYMMETRY
