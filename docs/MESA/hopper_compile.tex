@@ -9,6 +9,8 @@ was {\tt PrgEnv-cray}.
 There are several steps needed to compile {\sf MAESTRO} with {\sf MESA} on 
 Hopper:
 \begin{enumerate}
+\item Download the {\tt MESA} source code using the command described in 
+Section \ref{sec:setupmesa}
 \item Edit the {\tt makefile\_header} in the {\tt utils} directory
 \item Edit the {\tt build\_and\_test} script in the {\tt utils} directory
 \item Edit the {\tt chem\_lib.f} file in the {\tt chem} directory
@@ -51,7 +53,7 @@ appropriate compiler flags. The results of what I changed are shown below:
   FCfixed72 = -f fixed -N 72
   FCfree = -f free
   FCopt = -O 1
-  FCdebug = -g -O0
+  FCdebug = -g -O0 -R bps
   FCstatic =
 
   FC_fixed_preprocess = -eZ
@@ -69,8 +71,9 @@ appropriate compiler flags. The results of what I changed are shown below:
 The {\tt build\_and\_test} script in the {\tt utils} directory is 
 responsible for compiling the main module directory as well as compiling 
 and running the test directory. We want to turn off the compiling and 
-running of the test directory to ensure that {\sf MESA} compiles successfully. 
-A portion of the {\tt build\_and\_test} script looks like this:
+running of the test directory to ensure that {\sf MESA} compiles successfully 
+(it failed to install otherwise). A portion of the {\tt build\_and\_test} 
+script looks like this:
 \begin{lstlisting}[language=bash,mathescape=false]
   cd make
   make
@@ -110,7 +113,7 @@ Open the {\tt chem\_lib.f} file located in {\tt chem/public}. In the
 {\tt generate\_nuclide\_set} subroutine, the implied do loop must be removed 
 and replaced with an actual do loop. For an unknown reason, the implied do 
 loop was causing a Segmentation Fault on Hopper with the Cray compiler. The 
-implied loop:
+implied do loop:
 \begin{lstlisting}[language=fortran,mathescape=false]
   set = [(nuclide_set(names(i), i), i=1, size(names))]
 \end{lstlisting}
@@ -151,7 +154,7 @@ All three of the manually added flags ({\tt -O3}, {\tt -fno-common} and
 
 When creating the library for these four modules, there is a {\tt LIB\_DEFS} 
 variable in the makefile that holds the {\tt *\_def.o} file, e.g. 
-{\tt utils\_def.o} or {\tt num\_def.o}. This files is never loaded into the 
+{\tt utils\_def.o} or {\tt num\_def.o}. This file is never loaded into the 
 library as seen below for the {\tt utils} directory. Certain modules have a 
 {\tt *\_def.f} file with both definitions and declarations of data that will 
 be needed at runtime, so they must be included in the library. Other modules 
@@ -171,7 +174,7 @@ is shown here:
   $(LIB) : $(LIB_DEFS) $(LIB_OBJS)
   	$(LIB_TOOL) $(LIB) $(LIB_OBJS)
 \end{lstlisting}
-To include the {\tt LIB\_DEFS} file:
+To include the {\tt LIB\_DEFS} file, change the above code to the following:
 \begin{lstlisting}[language=make,mathescape=false]
   LIB = libutils.a
   LIB_DEFS = utils_def.o
@@ -265,6 +268,7 @@ executed to install {\sf MESA}. This will compile the source code, generate
 the libraries and copy the necessary files to the correct directories. Once, 
 {\sf MESA} is installed, {\sf MAESTRO} can be compiled and linked such that 
 it can use {\sf MESA}'s EOS and/or network. Make sure the makefile variable 
-{\tt COMP} is set to {\tt Cray} so the Cray compiler is used.
+{\tt COMP} is set to {\tt Cray} in the {\sf MAESTRO} problem directory 
+so the Cray compiler is used.
 
 
