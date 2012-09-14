@@ -43,7 +43,7 @@
 
 
  plot_base_name = "subCh_hot_baserun_plt"
- plot_int  = -1
+ plot_int = 3
  plot_deltat = 1.0d0
 
  check_base_name = "subCh_hot_baserun_chk"
