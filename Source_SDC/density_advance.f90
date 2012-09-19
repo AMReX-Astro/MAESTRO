@@ -22,7 +22,6 @@ contains
                              rho0_old,rho0_new,p0_dummy, &
                              rho0_predicted_edge,dx,dt,the_bc_level)
 
-    use multifab_module
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use bl_constants_module, only: ZERO, ONE
     use make_edge_scal_module, only: make_edge_scal
@@ -40,6 +39,7 @@ contains
     use modify_scal_force_module, only: modify_scal_force
     use convert_rhoX_to_X_module, only: convert_rhoX_to_X
     use pred_parameters
+    use multifab_module, only: multifab_fill_boundary
     use multifab_physbc_module
 
     type(ml_layout), intent(inout) :: mla
@@ -99,8 +99,8 @@ contains
     ! Create source terms at time n
     !**************************************************************************
 
-    ! reaction forcing terms
-    do n=1,nlevs
+    ! Source terms for X and for tracers include reaction forcing terms
+    do n = 1, nlevs
        call setval(scal_force(n),ZERO,all=.true.)
        call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)
        call multifab_fill_boundary(scal_force(n))
@@ -348,12 +348,12 @@ contains
     end if
 
     !**************************************************************************
-    !     1) Set force for (rho X)'_i at time n+1/2 = 0.
+    !     1) Set force for (rho X)_i at time n+1/2 = reaction source terms.
     !     2) Update (rho X)_i with conservative differencing.
     !     3) Define density as the sum of the (rho X)_i
     !     4) Update tracer with conservative differencing as well.
     !**************************************************************************
-
+    
     do n=1,nlevs
        call setval(scal_force(n),ZERO,all=.true.)
        call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)

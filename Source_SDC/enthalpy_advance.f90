@@ -33,7 +33,7 @@ contains
     use rhoh_vs_t_module
     use geometry,      only: spherical, nr_fine, r_start_coord, r_end_coord, &
          numdisjointchunks, nlevs_radial
-    use variables,     only: nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
+    use variables,     only: temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use probin_module, only: enthalpy_pred_type, verbose, bds_type
     use pred_parameters
     use modify_scal_force_module
@@ -239,6 +239,7 @@ contains
     end if
 
     if (enthalpy_pred_type .eq. predict_rhoh) then
+       ! use the conservative form of the prediction
        if (bds_type .eq. 0) then
           call make_edge_scal(sold,sedge,umac,scal_force, &
                               dx,dt,is_vel,the_bc_level, &
@@ -249,16 +250,16 @@ contains
                    pred_comp,dm+pred_comp,1,.true.,mla)
        end if
     else
+       ! use the advective form of the prediction
        if (bds_type .eq. 0) then
           call make_edge_scal(sold,sedge,umac,scal_force, &
-               dx,dt,is_vel,the_bc_level, &
-               pred_comp,dm+pred_comp,1,.false.,mla)
+                              dx,dt,is_vel,the_bc_level, &
+                              pred_comp,dm+pred_comp,1,.false.,mla)
        else if (bds_type .eq. 1) then
           call bds(sold,sedge,umac,scal_force, &
-               dx,dt,is_vel,the_bc_level, &
-               pred_comp,dm+pred_comp,1,.false.,mla)
+                   dx,dt,is_vel,the_bc_level, &
+                   pred_comp,dm+pred_comp,1,.false.,mla)
        end if
-
     end if
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then

@@ -108,9 +108,11 @@ contains
     ng_s   = nghost(sold(1))
 
     do n = 1,nlevs
-       call multifab_build(s1(n),            mla%la(n), nscal, ng_s)
-       call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
-       call multifab_build(sdc_source(n), mla%la(n), nscal, 0)
+       call multifab_build(s1(n),           mla%la(n), nscal, ng_s)
+       call multifab_build(rho_Hext(n),     mla%la(n), 1,     0)
+       call multifab_build(rho_omegadot(n), mla%la(n), nspec, 0)
+       call multifab_build(rho_Hnuc(n),     mla%la(n), 1,     0)
+       call multifab_build(sdc_source(n),   mla%la(n), nscal, 0)
        call setval(sdc_source(n), 0.d0)
     end do
 
@@ -146,9 +148,7 @@ contains
     
     do n=1,nlevs
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
-       call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)      
-       call multifab_build(rho_omegadot(n), mla%la(n), nspec, 0)
-       call multifab_build(rho_Hnuc(n),     mla%la(n), 1,     0)
+       call multifab_build(delta_gamma1(n),      mla%la(n), 1, 0)
     end do
 
     call instantaneous_reaction_rates(mla,sold,rho_omegadot,rho_Hnuc)

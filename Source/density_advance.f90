@@ -339,7 +339,7 @@ contains
     end if
 
     !**************************************************************************
-    !     1) Set force for (rho X)'_i at time n+1/2 = 0.
+    !     1) Set force for (rho X)_i at time n+1/2 = 0.
     !     2) Update (rho X)_i with conservative differencing.
     !     3) Define density as the sum of the (rho X)_i
     !     4) Update tracer with conservative differencing as well.
