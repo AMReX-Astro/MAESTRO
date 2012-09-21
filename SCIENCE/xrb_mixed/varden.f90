@@ -266,7 +266,7 @@ subroutine varden()
      print *, 'number of dimensions    = ', dm
      do n = 1, nlevs
         print *, 'level: ', n
-        print *, '   number of boxes = ', nboxes(pi(n))
+        print *, '   number of boxes = ', nboxes(pi(n)%la)
         print *, '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
      end do
      print *, ' '

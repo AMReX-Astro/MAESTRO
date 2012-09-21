@@ -377,7 +377,7 @@ contains
        write (un, 998) nstep
        write (un, 999) 
        do n = 1, nlevs
-          write (un,1000) n, multifab_volume(sold(n),.false.), multifab_volume(sold(n),.true.), nboxes(sold(n))
+          write (un,1000) n, multifab_volume(sold(n),.false.), multifab_volume(sold(n),.true.), nboxes(sold(n)%la)
        enddo
        write (un, *) " "
        close (un)
