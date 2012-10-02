@@ -443,7 +443,7 @@ use_delta_gamma1_term               logical            .false.
 # turn on the etarho term as described in flow chart
 use_etarho                          logical            .true.              
 
-# order of slopes in Godunov algorithm.  Options are 0, 2, or 4.
+# order of slopes in piecewise linear Godunov algorithm.  Options are 0, 2, or 4.
 slope_order                         integer            4                   
 
 # the gravitational acceleration (cm~s$^{-2}$) for plane-parallel geometry
@@ -453,9 +453,9 @@ grav_const                          real               -1.5d10
 # $T=T(\rho,h,X)$.
 use_tfromp                          logical            .false.             
 
-# 0 = no ppm @@
-# 1 = 1985 ppm @@
-# 2 = Hybrid Sekora/Colella McCorquodale Colella 2009/2010 ppm
+# 0 = no ppm (piecewise linear slopes instead) @@
+# 1 = 1984 ppm @@
+# 2 = Hybrid Sekora/Colella and McCorquodale/Colella 2009/2010 ppm
 ppm_type                            integer            1
 
 # 0 = use ppm instead for multi-d integrator @@
