@@ -476,13 +476,13 @@
 \verb=  planar_invsq_mass  = &   the point mass for planar 1/r$^2$ gravity  &  0.d0 \\
 \rowcolor{tableShade}
 \verb=  plot_sponge_fdamp  = &   plot fdamp rather than sponge assumes sponge has the form 1/(1+dt*{\tt sponge\_kappa}*fdamp)  &  .false. \\
-\verb=  ppm_type  = &   0 = no ppm \newline 1 = 1985 ppm \newline 2 = Hybrid Sekora/Colella McCorquodale Colella 2009/2010 ppm  &  1 \\
+\verb=  ppm_type  = &   0 = no ppm (piecewise linear slopes instead) \newline 1 = 1984 ppm \newline 2 = Hybrid Sekora/Colella and McCorquodale/Colella 2009/2010 ppm  &  1 \\
 \rowcolor{tableShade}
 \verb=  restart_with_vel_field  = &   restart the simulation using a result from a {\tt drive\_initial\_convection} = T run note that this uses the restart variable to specify which file to restart from.  After reading in the velocity information from the restart file, the time and timestep number are zeroed.  &  .false. \\
 \verb=  rotation_radius  = &   radius used for computing centrifugal term in rotation problems  &  1.0d6 \\
 \rowcolor{tableShade}
 \verb=  rotational_frequency  = &   rotational frequency used for computing centrifugal term in rotation problems.  &  ZERO \\
-\verb=  slope_order  = &   order of slopes in Godunov algorithm.  Options are 0, 2, or 4.  &  4 \\
+\verb=  slope_order  = &   order of slopes in piecewise linear Godunov algorithm.  Options are 0, 2, or 4.  &  4 \\
 \rowcolor{tableShade}
 \verb=  species_pred_type  = &   Which quantities do we predict to the edges for computing the ($\rho X$) edge states?  \newline {\tt species\_pred\_type} = 1 means predict $\rho^\prime$ and $X$ separately.  \newline {\tt species\_pred\_type} = 2 means predict the full ($\rho X$) itself. \newline {\tt species\_pred\_type} = 3 means predict $\rho$ and $X$ separately.  &  1 \\
 \verb=  sponge_center_density  = &   Center of the inner sponge.  &  3.d6 \\
