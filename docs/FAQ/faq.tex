@@ -2,6 +2,14 @@
 
 \begin{enumerate}
 
+\item {\em Why is everything in its own module?}
+
+   If a subroutine is in a Fortran module, then at compile time, 
+   there is argument checking.  This ensures that the right number
+   and data types of arguments are present.  It makes the code safer.
+
+
+
 \item {\em How do tags work when editing source?}
 
    Tags allow the editor to follow function/subroutine names an
@@ -254,6 +262,21 @@ where the root problem is.
  No.  This is a design decision.  There is no support for axisymmetric
  coordinates in \maestro.  Spherical problems must be run in 3-d.
 
+
+\item {\em Why did we switch all the equations over to the
+  $\tilde{\Ub}$ form instead of just working with $\Ub$?}
+
+This is basically a numerical discretization issue.  Whenever the base
+state aligns with the grid, you should be able to show that you get
+exactly the same answer each way.
+
+When you do a spherical star on a 3d Cartesian grid, though, the $w_0$
+is defined on the radial mesh and the $\tilde{\Ub}$ on the Cartesian
+mesh, and the $w_0$ part never experiences the Cartesian projection,
+for example.  So there are differences in exactly how the $w_0$ component
+appears (projected on the Cartesian mesh vs.\ interpolated from the
+radial mesh)---we made the decision at the time to separate the
+components for that reason.
 
 \end{enumerate}
 
