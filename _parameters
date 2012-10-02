@@ -468,7 +468,7 @@ bds_type                            integer            0
 # {\tt beta\_type} = 3 uses 1 (small-scale combustion).
 beta_type                           integer            1                   
 
-# how to represent gravity in the beta0 integration: 
+# how to represent gravity in the $\beta_0$ integration: 
 # .true. = piecewise linear
 # .false. = piecewise constant
 use_linear_grav_in_beta             logical            .false.
@@ -499,8 +499,8 @@ drive_initial_convection            logical            .false.
 restart_with_vel_field              logical            .false.
 
 
-# modify the momentum equation to have (beta_0/rho) grad(pi/beta_0)
-# instead of just (1/rho) grad(pi/beta_0) 
+# modify the momentum equation to have $(\beta_0/\rho) \nabla (\pi/\beta_0)$
+# instead of just $(1/\rho) \nabla (\pi)$ 
 use_alt_energy_fix                  logical            .false.
 
 
