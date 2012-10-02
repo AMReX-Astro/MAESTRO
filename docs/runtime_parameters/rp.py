@@ -5,11 +5,6 @@ import sys
 Mheader=r"""
 \label{ch:parameters}
 
-\section{Runtime Parameters}
-
-The following tables list the runtime parameters available to
-all MAESTRO problems.  Problem-specific runtime parameters are not
-shown here.
 
 %%%%%%%%%%%%%%%%
 % symbol table

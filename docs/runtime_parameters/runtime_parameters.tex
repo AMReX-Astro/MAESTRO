@@ -1,11 +1,6 @@
 
 \label{ch:parameters}
 
-\section{Runtime Parameters}
-
-The following tables list the runtime parameters available to
-all MAESTRO problems.  Problem-specific runtime parameters are not
-shown here.
 
 %%%%%%%%%%%%%%%%
 % symbol table
@@ -48,7 +43,6 @@ shown here.
 \verb=  small_dens  = &    &  1.d-5 \\
 \verb=  small_temp  = &    &  5.d6 \\
 \rowcolor{tableShade}
-\verb=  use_eos_coulomb  = &   use the Coulomb corrections between ions (if supported by the EOS)  &  .true. \\
 \verb=  use_eos_e_instead_of_h  = &   In deriving the temperature from the $h$, first subtract off $p_0/\rho$ to define $e$, and use that as the input to the EOS.  &  .false. \\
 
 
@@ -89,7 +83,10 @@ shown here.
 
 
 \rowcolor{tableShade}
-\verb=  sdc_iters  = &   how many SDC iteractions to take (requires the code be compiled with {\tt SDC := t}  &  4 \\
+\verb=  sdc_couple_mac_velocity  = &   recompute MAC velocity at the beginning of each SDC iter if .false., only recompute MAC velocity at the beginning of the first iter  &  .false. \\
+\verb=  sdc_hold_mac_velocity  = &   if true, never recompute MAC velocity, no matter what the other sdc flags are  &  .false. \\
+\rowcolor{tableShade}
+\verb=  sdc_iters  = &   how many SDC iteractions to take (requires the code be compiled with {\tt SDC := t}  &  1 \\
 
 
 \end{longtable}
@@ -469,7 +466,7 @@ shown here.
 \verb=  dpdt_factor  = &   factor in front of the volume discrepancy term (0.0 = off)  &  0.d0 \\
 \verb=  drive_initial_convection  = &   freeze the temperature used in the reaction network to the initial value.  This is useful for developing an initial convective field to carry away the energy, while preventing the reactions from going nonlinear.  &  .false. \\
 \rowcolor{tableShade}
-\verb=  enthalpy_pred_type  = &   predict\_rhohprime = 1; \newline predict\_h = 2; \newline predict\_T\_then\_rhohprime = 3; \newline predict\_T\_then\_h = 4; \newline predict\_hprime = 5; \newline predict\_Tprime\_then\_h = 6.  &  predict\_rhohprime \\
+\verb=  enthalpy_pred_type  = &   predict\_rhoh = 0; \newline predict\_rhohprime = 1; \newline predict\_h = 2; \newline predict\_T\_then\_rhohprime = 3; \newline predict\_T\_then\_h = 4; \newline predict\_hprime = 5; \newline predict\_Tprime\_then\_h = 6.  &  predict\_rhohprime \\
 \verb=  evolve_base_state  = &   turn on (.true.) or off (.false.) basestate evolution  &  .true. \\
 \rowcolor{tableShade}
 \verb=  fix_base_state  = &   if true, don't call average to reset the base state at all, even during initialization  &  .false. \\
@@ -493,10 +490,12 @@ shown here.
 \verb=  sponge_kappa  = &   Parameter for sponge.  Problem dependent.  &  10.d0 \\
 \verb=  sponge_start_factor  = &   The sponge begins at sponge\_center\_density * sponge\_start\_factor.  &  3.333d0 \\
 \rowcolor{tableShade}
+\verb=  use_alt_energy_fix  = &   modify the momentum equation to have $(\beta_0/\rho) \nabla (\pi/\beta_0)$ instead of just $(1/\rho) \nabla (\pi)$  &  .false. \\
 \verb=  use_delta_gamma1_term  = &   turns on second order correction to delta gamma1 term  &  .false. \\
-\verb=  use_etarho  = &   turn on the etarho term as described in flow chart  &  .true. \\
 \rowcolor{tableShade}
-\verb=  use_linear_grav_in_beta  = &   how to represent gravity in the beta0 integration: .true. = piecewise linear .false. = piecewise constant  &  .false. \\
+\verb=  use_etarho  = &   turn on the etarho term as described in flow chart  &  .true. \\
+\verb=  use_linear_grav_in_beta  = &   how to represent gravity in the $\beta_0$ integration: .true. = piecewise linear .false. = piecewise constant  &  .false. \\
+\rowcolor{tableShade}
 \verb=  use_tfromp  = &   When updating temperature, use $T=T(\rho,p_0,X) $ rather than $T=T(\rho,h,X)$.  &  .false. \\
 
 
@@ -543,9 +542,10 @@ shown here.
 \verb=  hg_dense_stencil  = &   In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 7-point Laplacian (.false.).  &  .true. \\
 \verb=  max_mg_bottom_nlevels  = &   if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have  &  1000 \\
 \rowcolor{tableShade}
+\verb=  mg_bottom_nu  = &   number of smoothing iterations to do after the multigrid bottom solver  &  10 \\
 \verb=  mg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
-\verb=  mg_verbose  = &   Verbsoity of the multigrid solver, but not the bottom solver.  &  0 \\
 \rowcolor{tableShade}
+\verb=  mg_verbose  = &   Verbsoity of the multigrid solver, but not the bottom solver.  &  0 \\
 \verb=  use_hypre  = &   use the hypre library  &  .false. \\
 
 
@@ -611,11 +611,12 @@ shown here.
 \verb=  plot_int  = &   plot interval  &  0 \\
 \rowcolor{tableShade}
 \verb=  plot_omegadot  = &   plot omegadot in plotfile  &  .true. \\
+\verb=  plot_pidivu  = &   plot pi * div(U) -- this is a measure of conservation of energy  &  .false. \\
+\rowcolor{tableShade}
 \verb=  plot_processors  = &   create a field in the plotfile storing the processor number for each zone  &  .false. \\
-\rowcolor{tableShade}
 \verb=  plot_spec  = &   plot species and omegadot in plotfile  &  .true. \\
-\verb=  plot_trac  = &   plot tracers in plotfile  &  .false. \\
 \rowcolor{tableShade}
+\verb=  plot_trac  = &   plot tracers in plotfile  &  .false. \\
 \verb=  single_prec_plotfiles  = &   store the state data in single precision  &  .false. \\
 
 
