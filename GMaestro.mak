@@ -17,10 +17,11 @@ BOXLIB_CORE := Src/F_BaseLib \
 # core MAESTRO directories
 MAESTRO_CORE := 
 
-# if we are doing the SDC algorithm, then look first for source
-# files living in Source_SDC/ then look in Source/
+# path to SDC files -- note this must come before Source/ in the vpath
+SDC_CORE := 
+
 ifdef SDC
-  MAESTRO_CORE += Source_SDC
+  SDC_CORE += $(ASTRODEV_DIR)/Source_SDC
 endif
 
 # next look for the files in Source/ itself 
@@ -120,12 +121,17 @@ PARTICLES := t
 # Fincs is the list of directories that have include files that
 # we need to tell the compiler about.
 
+
+# SDC
+Fmpack := $(foreach dir, $(SDC_CORE), $(dir)/GPackage.mak)
+Fmlocs := $(foreach dir, $(SDC_CORE), $(dir))
+
 # Maestro and Util modules
 Fmdirs += $(UTIL_CORE) \
           $(MAESTRO_CORE)
 
-Fmpack := $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir)/GPackage.mak)
-Fmlocs := $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir))
+Fmpack += $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir)/GPackage.mak)
+Fmlocs += $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir))
 
 # Microphysics
 Fmpack += $(foreach dir, $(MICROPHYS_CORE), $(dir)/GPackage.mak)
