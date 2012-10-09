@@ -11,6 +11,7 @@ f90sources += build_info.f90
 f90sources += cell_to_edge.f90
 f90sources += check_cutoff.f90
 f90sources += checkpoint.f90
+f90sources += constants_cgs.f90
 f90sources += convert_rhoX_to_X.f90
 f90sources += cputime.f90
 f90sources += density_advance.f90
