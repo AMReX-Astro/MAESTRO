@@ -41,9 +41,6 @@ ifndef UNIT_TEST
 endif
 
 
-MAESTRO_CORE += constants
-
-
 #-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
 UTIL_CORE := Util/model_parser \
