@@ -182,7 +182,7 @@ main.$(suf).exe: $(objects)
 
 # template used by write_probin.py to build probin.f90
 ifndef BOXLIB_ONLY
-  PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/probin.template
+  PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/Source/probin.template
 else
   PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/Util/parameters/dummy.probin.template
 endif
@@ -191,7 +191,7 @@ endif
 PROBIN_PARAMETER_DIRS = ./ 
 
 ifndef BOXLIB_ONLY 
-  PROBIN_PARAMETER_DIRS += $(MAESTRO_TOP_DIR)
+  PROBIN_PARAMETER_DIRS += $(MAESTRO_TOP_DIR)/Source
 endif
 
 # list of all valid _parameters files for probin
