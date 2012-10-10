@@ -48,10 +48,10 @@ distributed separately.
 \caption[\maestro\ `ecosystem'] {\label{fig:arch:eco} The basic
   \maestro\ `ecosystem'.  Here we see the different packages that
   contribute to building the {\tt test2} problem in \maestro.  The
+  red directories are part of most standard \maestro\ build.  The
   purple lines show the directories that are pulled in through
-  variable Makefile variables ({\tt BOXLIB\_HOME}, {\tt NETWORK\_DIR},
-  {\tt EOS\_DIR}, and {\tt CONDUCTIVITY\_DIR}).  The blue lines show
-  standard modules that are used in most \maestro\ builds.}
+  various Makefile variables ({\tt BOXLIB\_HOME}, {\tt NETWORK\_DIR},
+  {\tt EOS\_DIR}, and {\tt CONDUCTIVITY\_DIR}).}
 \end{figure}
 
 
@@ -87,14 +87,38 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
   \begin{itemize}
 
-  \item {\tt constants/}
-
-    A simple module to define physical constants
-
   \item {\tt docs/}
 
     Documentation describing the basic algorithm (including this
     document).
+
+  \item {\tt Exec/}
+
+    The various problem-setups.
+ 
+    \begin{itemize}
+    \item {\tt SCIENCE/}
+
+      \maestro\ problem directories for science studies.  These are
+      the setups that have been used for science papers in the past,
+      or are the basis for current science studies.
+
+    \item {\tt TEST\_PROBLEMS/}
+ 
+      \maestro\ problem directories for simple test problems that have
+      been used while developing \maestro.  Many of these problems
+      have appeared in the various papers describing the
+      \maestro\ algorithm.
+
+    \item {\tt UNIT\_TESTS/}
+
+      Special \maestro\ problem directories that test only a single
+      component of the \maestro\ algorithm.  These often have their
+      own main drivers ({\tt varden.f90}) that setup and initialize
+      some data structures and then call only a few of the
+      \maestro\ routines.  See \S~\ref{sec:unit_tests} for details.
+
+    \end{itemize}
 
   \item {\tt Microphysics/}
 
@@ -122,11 +146,6 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
     \end{itemize}
 
-  \item {\tt SCIENCE/}
-
-    \maestro\ problem directories for science studies.  These are the
-    setups that have been used for science papers in the past, or are
-    the basis for current science studies.
 
   \item {\tt Source/}
 
@@ -134,25 +153,6 @@ an executable.  Briefly, the \maestro\ sub-directories are:
     the advection routines, etc.  All \maestro\ problems will compile
     this source.
 
-  \item {\tt Source\_SDC/}
-
-    Source for an alternate formulation of \maestro\ that removes the
-    splitting between hydrodynamics, diffusion, and reactions (see
-    Chapter~\ref{ch:sdc}).
-
-  \item {\tt TEST\_PROBLEMS/}
- 
-    \maestro\ problem directories for simple test problems that have
-    been used while developing \maestro.  Many of these problems have
-    appeared in the various papers describing the \maestro\ algorithm.
-
-  \item {\tt UNIT\_TESTS/}
-
-    Special \maestro\ problem directories that test only a single component
-    of the \maestro\ algorithm.  These often have their own main drivers
-    ({\tt varden.f90}) that setup and initialize some data structures and
-    then call only a few of the \maestro\ routines.  See \S~\ref{sec:unit_tests}
-    for details.
 
   \item {\tt Util/}
 
