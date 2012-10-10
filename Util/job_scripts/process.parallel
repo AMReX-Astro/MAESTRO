@@ -1,0 +1,304 @@
+#!/bin/ksh -p
+
+#----------------------------------------------------------------------------
+# user modifiable variables:
+
+# number of parallel tasks to run
+NCPUS=4
+
+
+# pidfile is a lock file that is used to make sure that only one instance 
+# of this script is working on the current directory
+pidfile=process.pid
+
+
+# set the prefix of the plotfiles and checkpoint files
+plt_prefix=plt
+chk_prefix=chk??[05]??
+
+
+# set the full name of the analysis routines -- note, these need to be in 
+# the working directory so compute nodes can access them.
+fwdconvect=./fwdconvect.Linux.Intel.exe
+fsnapshot3d=./fsnapshot3d.Linux.Intel.exe
+
+
+# set the name of the variable we want to process with fsnapshot
+pvar=radial_velocity
+
+
+# directory to archive to on HPSS -- set this to the working directory
+work_dir=`pwd`
+HPSS_DIR=`basename $work_dir`
+
+
+#----------------------------------------------------------------------------
+# initialization stuff
+
+# check to make sure that the lock file does not already exist.
+if [ -f $pidfile ]; then
+  echo 2>&1 "process lock file " $pidfile " already exists"
+  exit -1
+fi
+
+# create the lock file
+echo $$ > $pidfile
+
+# if our process if killed, remove the lock file first
+trap '/bin/rm -f $pidfile' EXIT HUP TERM XCPU KILL
+
+# Number of seconds to sleep before checking again.
+N=60
+
+
+
+#----------------------------------------------------------------------------
+# make storage directories
+
+# once we process a file, we will move the plotfiles into the plotfiles/
+# directory.  This then hides them from the script, so if the system
+# later purges the files in the pltXXXXX directory and the .processed
+# file, we don't overwrite our archived data with a tarred empty
+# directory structure
+
+if [ ! -d plotfiles ]; then
+  mkdir plotfiles
+fi
+
+
+# also create directories to hold the images and .averages file 
+# produced -- this just keeps the run directory clean
+
+if [ ! -d images ]; then
+  mkdir images
+fi
+
+if [ ! -d averages ]; then
+  mkdir averages
+fi
+
+
+#----------------------------------------------------------------------------
+# the processing functions
+
+# Process Files.  Once a plotfile is successfully processed, we will output
+# a file pltXXXXX.processed (checkpoint files are only archived, with a
+# chkXXXXX.processed file appearing once the archiving is successful).  
+# Subsequent invocations of this routine will skip over any plotfiles or
+# checkpoint files that have a corresponding .processed file.
+
+
+function process_plotfiles
+{
+
+    # the argument $1 is the name of the plotfile directory we are 
+    # operating on
+
+    echo "working on " $1
+    root=$(basename $1)
+    echo $1 > _process.$root
+
+    if [ -d $1 ]; then
+
+      if [ ! -f $1.processed ]; then
+
+        # do processing
+
+        echo "running fwdconvect on $1"
+        ${fwdconvect} -p $1 -s $1.averages
+
+        echo "running fsnapshot3d on $1"
+        ${fsnapshot3d} -p $1 -n 1 -cname "${pvar}" -m -1.e6 -M 1.e6
+        ${fsnapshot3d} -p $1 -n 2 -cname "${pvar}" -m -1.e6 -M 1.e6
+        ${fsnapshot3d} -p $1 -n 3 -cname "${pvar}" -m -1.e6 -M 1.e6
+
+        # store the file on HPSS
+        htar -cvf ${HPSS_DIR}/$1.tar $1 > $1.htar
+
+	# Ordinarily, we'd check htar's exit status (0 = successful), but 
+	# on some machines (like Atlas) htar doesn't return a valid exit
+	# status.  Instead we'll grep for the success line at the end of 
+	# htar's output (which we piped into a file) and check the output 
+	# status of grep
+	grep "HTAR: HTAR SUCCESSFUL" $1.htar >> /dev/null
+
+	# $? holds the exit status of the previous command
+	if [ $? -eq 0 ]; then
+
+          # mark this file as processed so we skip it next time
+          date > $1.processed
+
+	  # remove the htar temporary file
+	  rm $1.htar
+	  
+	  # move the plotfile into the plotfiles directory
+	  mv $1 plotfiles/
+
+	  # the find command will find the plotfiles even in their 
+	  # subdirectory, so we need to move the corresponding .processed 
+	  # file there too.
+	  mv $1.processed plotfiles/
+
+	  mv $1.averages averages/
+
+	  mv $1*.ppm images/
+        fi
+
+      fi   # end test of whether plotfile already processed
+
+    fi   # end test of whether plotfile is a directory (as it should be)
+
+    rm -f _process.$root
+}
+
+
+function process_checkfiles
+{
+
+    # the argument $1 is the name of the checkpoint directory we are 
+    # operating on
+
+    echo "working on " $1
+    root=$(basename $1)
+    echo $1 > _process.$root
+
+    if [ -d $1 ]; then
+
+      if [ ! -f $1.processed ]; then
+
+        # store the file on HPSS
+        htar -cvf ${HPSS_DIR}/$1.tar $1 > $1.htar
+
+	# Ordinarily, we'd check htar's exit status (0 = successful), but 
+	# on some machines (like Atlas) htar doesn't return a valid exit
+	# status.  Instead we'll grep for the success line at the end of 
+	# htar's output (which we piped into a file) and check the output 
+	# status of grep
+	grep "HTAR: HTAR SUCCESSFUL" ${dir}.htar >> /dev/null
+
+	# $? holds the exit status of the previous command
+	if [ $? -eq 0 ]; then
+
+          # mark this file as processed so we skip it next time
+          date > $1.processed
+
+	  # remove the htar temporary file
+	  rm $1.htar
+
+        fi
+
+      fi
+
+    fi
+
+    rm -f _process.$root
+
+}
+
+
+#----------------------------------------------------------------------------
+# The function freecpus looks counts the _process.XX files to determine 
+# how many files we are currently processing.  If we are processing <
+# NCPUS, return 1 to indicate that there are free CPUs available to 
+# do more processing.
+function freecpus
+{
+    num=$(ls -l _process.* | wc -l)
+
+    if [ $num -lt $NCPUS ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+
+#----------------------------------------------------------------------------
+# the main loop
+
+# Looping waiting for plt and chk directories to appear.  We process
+# NCPUS files at a time.  We loop over files, waiting for free CPUs.
+# When a CPU becomes available, we launch the processing job in the 
+# background, and move to the next file, again waiting for an available
+# CPU.
+
+
+while true
+do
+
+  if [ ! -f $pidfile ]; then
+    echo "process: $pidfile has been removed, exiting"
+    exit
+  fi
+
+
+  # plotfiles
+
+  # Take all but the final plt file -- we want to ensure they're completely 
+  # written to disk.  
+  pltlist=$(find . -maxdepth 1 -type d -name "${plt_prefix}*" -print | sort)
+
+  if [ "$pltlist" ]; then
+    nl=$(echo "$pltlist" | wc -l)
+    nl=$(expr $nl - 1)
+    if [ $nl -eq 0 ]; then
+      pltlist=""
+    else
+      pltlist=$(echo "$pltlist" | head -$nl)
+    fi
+  fi
+
+  for dir in ${pltlist}
+  do
+
+      # wait for available CPUS
+      freecpus
+      while [ $? -eq 0 ]
+      do
+          sleep 5
+          freecpus
+      done
+
+      process_plotfiles ${dir} &
+
+      sleep 5
+  done
+
+
+  # checkpoint files
+
+  # Take all but the final chk file -- we want to ensure they're completely 
+  # written to disk.  
+  chklist=$(find . -type d -name "${chk_prefix}*" -print | sort)
+
+  if [ "$chklist" ]; then
+    nl=$(echo "$chklist" | wc -l)
+    nl=$(expr $nl - 1)
+    if [ $nl -eq 0 ]; then
+      chklist=""
+    else
+      chklist=$(echo "$chklist" | head -$nl)
+    fi
+  fi
+
+  for dir in ${chklist}
+  do
+
+      # wait for available CPUS
+      freecpus
+      while [ $? -eq 0 ]
+      do
+          sleep 5
+          freecpus
+      done
+
+      process_checkfiles ${dir} &
+
+      sleep 5
+  done
+
+
+  # we've processed all of the files.  Sleep a bit and repeat on any
+  # newly written files.
+  sleep $N
+done
