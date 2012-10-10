@@ -25,7 +25,7 @@ NETWORK_DIR := rprox
 # we only need to include the problem's directory if there are unique
 # files there (as specified in a GPackage.mak).  The problem directory
 # is always placed at the start of the vpath by the GMakerules.mak.
-EXTRA_DIR := UNIT_TESTS/test_react
+EXTRA_DIR := Exec/UNIT_TESTS/test_react
 
 UNIT_TEST := t
 
