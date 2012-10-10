@@ -1,4 +1,0 @@
-test2_adaptive is an adaptive bubble rise problem in plane-parallel.  The single-level
-version resides in tests.  This example resides in its own subdirectory since there
-are several f90 files that had to be included for the regridding, and I'd rather not
-clutter up the test2 example.

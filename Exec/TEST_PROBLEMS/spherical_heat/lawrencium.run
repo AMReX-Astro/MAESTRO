@@ -1,9 +1,0 @@
-#PBS -q lr_batch
-#PBS -A ac_ccse
-#PBS -l nodes=4:ppn=8
-#PBS -l walltime=00:30:00
-#PBS -j oe
-
-cd $PBS_O_WORKDIR
-
-mpirun ./main.Linux.Intel.mpi.exe inputs_3d.96.10dr.eq.dx >& output.$PBS_JOBID
