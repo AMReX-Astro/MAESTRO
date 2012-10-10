@@ -1,9 +1,0 @@
-# the null network for the ns_ocean problem.  It defines:
-# H1, He4, O16, Se79
-#
-
-# name short-name aion zion
- hydrogen-1 H1 1.0 1.0
- helium-4 He4 4.0 2.0
- oxygen-16 O16 16.0 8.0
- selenium-79 Se79 79.0 34.0

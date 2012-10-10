@@ -1,9 +1,0 @@
-#PBS -A ast006
-#PBS -N xrb
-#PBS -j oe
-#PBS -q debug
-#PBS -l walltime=00:30:00,size=64
-
-cd $PBS_O_WORKDIR
-
-aprun -n 64 ./main.Linux.PathScale.mpi.exe inputs_2d_5cm >& output.$PBS_JOBID
