@@ -7,7 +7,7 @@ COMP := gfortran
 MKVERBOSE := t
 
 # define the location of the MAESTRO top directory                           
-MAESTRO_TOP_DIR := ../..
+MAESTRO_TOP_DIR := ../../..
 
 
 # define the physics packages to build this problem 
