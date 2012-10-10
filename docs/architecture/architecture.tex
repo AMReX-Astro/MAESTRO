@@ -266,10 +266,10 @@ python-based routines are also here.  These are described both in
 \label{sec:adding_problems}
 
 Different \maestro\ problems are defined in sub-directories under {\tt
-  MAESTRO/SCIENCE}, {\tt MAESTRO/TEST\_PROBLEMS}, or {\tt
-  MAESTRO/UNIT\_TESTS}.  To add a problem, start by creating a new
-sub-directory---this is where you will compile your problem and store
-all the problem-specific files.
+  Exec/} in {\tt SCIENCE}, {\tt TEST\_PROBLEMS}, or {\tt UNIT\_TESTS}.
+To add a problem, start by creating a new sub-directory---this is
+where you will compile your problem and store all the problem-specific
+files.
 
 The minimum requirement to define a new problem would be a {\tt
   GNUmakefile} which describes how to build the application and an
@@ -319,7 +319,7 @@ terminal as the are executed.
 
 The next line defines where the top of the \maestro\ source tree is located.
 \begin{lstlisting}[language={[gnu]make},mathescape=false]
-  MAESTRO_TOP_DIR := ../..
+  MAESTRO_TOP_DIR := ../../..
 \end{lstlisting}
 
 A \maestro\ application is built from several packages (the
