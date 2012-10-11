@@ -802,7 +802,7 @@ Presently there are 2 equations of state that work with \maestro:
       and electrons (with arbitrary degeneracy and degree of relativity).
       This equation of state is that described in \cite{timmes_eos}.
 
-      A runtime parameter, {\tt use\_eos_coulomb}, is defined in
+      A runtime parameter, {\tt use\_eos\_coulomb}, is defined in
       this EOS to enable/disable Coulomb corrections.
 
 \item {\tt extern/EOS/gamma\_law\_general} assumes an ideal gas with a mixed 
@@ -826,7 +826,7 @@ The thermodynamic quantities are stored in a Fortran type {\tt eos\_t},
 which has fields for all the thermodynamic inputs and outputs.  The 
 type definition is brought in through {\tt eos\_type\_module}.
 \footnote{ Note: an older interface to the EOS exists, but is
-  deprecated.  In this mode, the {\tt eos\_old_interface} module declares 
+  deprecated.  In this mode, the {\tt eos\_old\_interface} module declares 
   the variables that need appear in the old-style {\tt eos} call
   argument list.  \maestro\ routines use these module variables in the
   EOS call to avoid having to declare each quantity in each routine
