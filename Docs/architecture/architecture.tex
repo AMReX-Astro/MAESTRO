@@ -73,16 +73,6 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
   The main \maestro\ algorithm directory.  
 
-  Each problem in \maestro\ gets it own sub-directory under {\tt
-    SCIENCE/}, {\tt TEST\_PROBLEMS/}, or {\tt UNIT\_TESTS/}.  The {\tt
-    GNUmakefile} in the problem directory includes the instructions on
-  how to build the executable, including what modules in {\tt extern}
-  are used.  Any file that you place in a sub-directory here takes
-  precedence over a file of the same name in {\tt MAESTRO/}.  This
-  allows problems to have custom versions of the main
-  \maestro\ routines (e.g.\ initial conditions via {\tt initdata.f90}.
-  See \S~\ref{sec:makefile} for details on the build system).
-
   Important directories under {\tt MAESTRO/} include:
 
   \begin{itemize}
@@ -94,7 +84,17 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
   \item {\tt Exec/}
 
-    The various problem-setups.
+    The various problem-setups.  Each problem in \maestro\ gets it own
+    sub-directory under {\tt SCIENCE/}, {\tt TEST\_PROBLEMS/}, or {\tt
+      UNIT\_TESTS/}.  The {\tt GNUmakefile} in the problem directory
+    includes the instructions on how to build the executable,
+    including what modules in {\tt extern} are used.  Any file that
+    you place in a sub-directory here takes precedence over a file of
+    the same name in {\tt MAESTRO/}.  This allows problems to have
+    custom versions of the main \maestro\ routines (e.g.\ initial
+    conditions via {\tt initdata.f90}.  See \S~\ref{sec:makefile} for
+    details on the build system).
+
  
     \begin{itemize}
     \item {\tt SCIENCE/}
