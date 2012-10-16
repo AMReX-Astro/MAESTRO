@@ -1,6 +1,6 @@
 EPStoPDF = epstopdf
 
-ALL: MaestroUsersGuide.ps MaestroUsersGuide.pdf 
+ALL: MaestroUsersGuide.pdf 
 
 eps_source = $(wildcard *.eps) \
              $(wildcard lo_density/*.eps) \
