@@ -77,7 +77,7 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
   \begin{itemize}
 
-  \item {\tt docs/}
+  \item {\tt Docs/}
 
     Documentation describing the basic algorithm (including this
     document).
@@ -92,8 +92,8 @@ an executable.  Briefly, the \maestro\ sub-directories are:
     you place in a sub-directory here takes precedence over a file of
     the same name in {\tt MAESTRO/}.  This allows problems to have
     custom versions of the main \maestro\ routines (e.g.\ initial
-    conditions via {\tt initdata.f90}.  See \S~\ref{sec:makefile} for
-    details on the build system).
+    conditions via {\tt initdata.f90}.  See \S~\ref{sec:makefile} and
+    Chapter~\ref{ch:make} for details on the build system).
 
  
     \begin{itemize}
@@ -116,7 +116,7 @@ an executable.  Briefly, the \maestro\ sub-directories are:
       component of the \maestro\ algorithm.  These often have their
       own main drivers ({\tt varden.f90}) that setup and initialize
       some data structures and then call only a few of the
-      \maestro\ routines.  See \S~\ref{sec:unit_tests} for details.
+      \maestro\ routines.  See Chapter~\ref{chapter:unit_tests} for details.
 
     \end{itemize}
 
