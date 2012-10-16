@@ -25,13 +25,13 @@ in addition to numerical routines. This document describes how to link the
 
 To install {\sf MESA}, download the source code from the {\sf MESA} website, 
 {\tt http://mesa.sourceforge.net}. Check the website for the latest version, 
-which is 4298 with the writing of this document. The codes and algorithms 
+which is 4442 with the writing of this document. The codes and algorithms 
 discussed here were created when the current version of {\sf MESA} was 
-version 4088. Between versions 4088 and 4298, there are minor changes that 
+version 4411. Between versions 4411 and 4442, there are minor changes that 
 will cause some of the included routines to crash. To download the source code 
-associated with version 4088, use the following command:
+associated with version 4411, use the following command:
 \begin{lstlisting}[language=bash,mathescape=false]
-  svn co -r 4088 http://mesa.svn.sourceforge.net/svnroot/mesa/trunk mesa
+  svn co -r 4411 http://mesa.svn.sourceforge.net/svnroot/mesa/trunk mesa
 \end{lstlisting}
 This will download the source into a directory called {\tt mesa} located 
 in the directory where this command was run. This step might take some time 
@@ -71,7 +71,16 @@ Bourne shell):
 \subsubsection{Modify the Makefile (NOT using SDK)}
 The main makefile that contains compiler information including flags is 
 located in the {\tt mesa/utils} directory and is called 
-{\tt makefile\_header\_non\_mesasdk}. Open it and change the following:
+{\tt makefile\_header\_non\_mesasdk}. 
+
+All of the following changes apply to 
+variables that already exist. There is no need to explicitly add new code 
+unless you intend to compile {\sf MESA} with something other than 
+{\tt gfortran} or {\tt ifort}. If you want to compile using something 
+different, then the only code that needs to be explicitly added are the 
+definitions of the compiler flags. 
+
+Open the {\tt makefile\_header\_non\_mesasdk} and change the following:
 \begin{enumerate}
 \item Compilers: First change the compilers labeled {\tt CC} (C compiler) 
 and {\tt FC} (Fortran compiler) to the compilers of your choice ({\sf MESA} 
@@ -96,20 +105,106 @@ definitions:
 \end{lstlisting}
 
 \item {\tt PGPLOT}: Set the variable {\tt USE\_PGSTAR} to {\tt NO} and set 
-the variable {\tt LOAD\_PGPLOT} to be empty on the line corresponding to 
-the compiler that was chosen. The default for {\tt gcc} and {\tt ifort} is 
+the variable {\tt LOAD\_PGPLOT} to be empty in the if-construct corresponding 
+to the compiler that was chosen. The default for {\tt gcc} and {\tt ifort} is 
 {\tt YES}, but for any other compiler the default is {\tt NO}. {\tt PGPLOT} 
 controls the pop up images that are used in {\tt mesa/star} (1D stellar 
 evolution code). 
 
 \item {\tt USE\_SE}: Set the variable {\tt USE\_SE} to {\tt NO} and set both 
-{\tt LOAD\_SE} and {\tt INCLUDE\_SE} to be empty. {\tt SE} is a library of 
+{\tt LOAD\_SE} and {\tt INCLUDE\_SE} to be empty. These also need to be set 
+in the correct if-construct according to which compiler was chosen. 
+{\tt SE} is a library of 
 formats used for writing/reading data in stellar evolution codes.
 
-\item Compiler Flags: Installing {\sf MESA} without OpenMP will result in a 
+\item Compiler Flags: Find the if-construct corresponding to the chosen 
+compiler. This is where compiler options are defined. It is not necessary to 
+edit any of these if you are using {\tt gfortran} or {\tt ifort}. These are 
+the variables to edit if you wish to add more (or less) debugging flags 
+for example. If using a different compiler, the variables in the last 
+{\tt else} statement (which are all empty except for 
+{\tt FCbasic = UNKNOWN COMPILER}) are what must be edited to hold the compiler 
+flag definitions. 
+
+Installing {\sf MESA} without OpenMP will result in a 
 failed install. {\sf MESA} is capable of being compiled in serial, but it 
-must happen after the initial install. If not using {\tt gcc} or {\tt ifort} 
-it will be necessary to enter all of the relevant compiler flags.
+must happen after the initial install.
+
+\item {\tt LOAD\_MATRIX}: {\tt LOAD\_MATRIX} is first defined near the end of 
+the file around line $\sim$275. The purpose of this variable is to load all 
+the libraries associated with linear algebra including {\tt LAPACK}, {\tt BLAS} 
+and a few others. The lines we wish to change look like this:
+\begin{lstlisting}[language=make,mathescape=false]
+  #LOAD_MATRIX = -lmtx -lconst -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
+  # for ifort on mac, we need the following def for LOAD_MATRIX 
+  # because of loader bugs (as of July 2012)
+  LOAD_MATRIX = -lmtx $(MESA_DIR)/const/make/const_def.o \
+      $(MESA_DIR)/const/make/const_lib.o -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
+  LOAD_MESA_NUMERICS = -linterp_2d -linterp_1d -lnum -lutils -lalert \
+      $(LOAD_MATRIX)
+\end{lstlisting}
+We must uncomment the first {\tt LOAD\_MATRIX} and comment out the second one:
+\begin{lstlisting}[language=make,mathescape=false]
+  LOAD_MATRIX = -lmtx -lconst -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
+  # for ifort on mac, we need the following def for LOAD_MATRIX 
+  # because of loader bugs (as of July 2012)
+  #LOAD_MATRIX = -lmtx $(MESA_DIR)/const/make/const_def.o \
+  #    $(MESA_DIR)/const/make/const_lib.o -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
+  LOAD_MESA_NUMERICS = -linterp_2d -linterp_1d -lnum -lutils -lalert \
+       $(LOAD_MATRIX)
+\end{lstlisting}
+
+\item {\tt install} script: In the {\tt MESA} directory, open the {\tt install} 
+script and comment out two lines. We want to change:
+\begin{lstlisting}[language=bash,mathescape=false]
+  do_one atm
+
+  do_one sample
+
+  do_one star
+
+  do_one adipls
+\end{lstlisting}
+to this:
+\begin{lstlisting}[language=bash,mathescape=false]
+  do_one atm
+
+  #do_one sample
+
+  #do_one star
+
+  #do_one adipls
+\end{lstlisting}
+There are routines in the {\tt star} package and {\tt adipls} that rely on 
+the {\tt PGSTAR} modules. We do not wish to use these modules and the easiest 
+way around this is to not install both {\tt star} and {\tt adipls} because 
+neither one is needed to include {\sf MESA} microphysics modules in 
+{\sf MAESTRO}. {\tt star} is the 1D stellar evolution module and {\tt adipls} 
+module is used for asteroseismology. The {\tt sample} module is simply a 
+sample directory that is not needed for using the main microphysics modules.
+
+\item Edit 1 source file: An undefined reference to 
+{\tt omp\_get\_max\_threads} occurs in the {\tt const\_def.f} file located in 
+{\tt const/public/const\_def.f}.
+
+In the {\tt const\_def.f} file, around line $\sim$164, in the 
+{\tt do\_const\_init} subroutine, there is a line that reads:
+\begin{lstlisting}[language=fortran,mathescape=false]
+  omp_num_threads = omp_get_max_threads()
+\end{lstlisting}
+Our first change is to declare a temporary character variable in the 
+({\tt do\_const\_init} subroutine):
+\begin{lstlisting}[language=fortran,mathescape=false]
+  character(len=16) :: temp_max_threads
+\end{lstlisting}
+Then we comment out the above line ({\tt omp\_num\_threads = ...}) and add the 
+following (all in the {\tt do\_const\_init} subroutine):
+\begin{lstlisting}[language=fortran,mathescape=false]
+  !omp_num_threads = omp_get_max_threads()
+  call get_environment_variable("OMP_NUM_THREADS", temp_max_threads)
+  read(temp_max_threads, *) omp_num_threads
+\end{lstlisting}
+
 \end{enumerate}
 
 All {\sf MESA} modules have a makefile that includes the main makefile named 
@@ -258,6 +353,13 @@ This section describes what needs to take place in order to use
 and shutting down the module. This discussion will only include information 
 pertaining to the network and equation of state modules.
 
+The routines that carry out these processes (setting up EOS, setting up 
+isotope map, shutdown routines, etc.) have already been written and live in 
+{\sf AstroDev/networks/MESA} and {\sf AstroDev/EOS/MESA}. This section 
+outlines the necessary steps taken by those routines in order to set up the 
+EOS and network. 
+
+ 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% EOS
 %%%%%%
@@ -491,23 +593,32 @@ Shutting down the {\sf MESA} network requires only one step:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Handy compilation script
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Compilation Script}
+\section{Compilation Scripts}
  \label{sec:compile_scripts}
 
-Useful script written in {\tt BASH} to help with compiling {\sf MESA} modules. 
-The script cleans the module directory, compiles the source code and exports 
-the libraries and {\tt .mod} files to the appropriate directories for every 
-module. This script can be found in {\tt AstroDev/networks/MESA/scripts}. 
-There is also a script to compile just one module. The compile-all-modules 
-script should be run from the top {\sf MESA} directory while the 
-compile-one-module script can be run from anywhere because it takes the 
-relative path to the module.
+Some useful scripts have been written in {\tt BASH} to help with compiling 
+{\sf MESA} modules. They live in the {\sf AstroDev/networks/MESA/scripts} 
+directory. Currently, there are two scripts; one that compiles all modules 
+(which unfortunately is version dependant), and one that compiles a single 
+module.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Script
-%%%%%%%%
-\subsection{Compile All Modules}
-\input compile_all_mods
+The compile-one-module script can be run from any directory because the 
+calling sequence involves the relative path to the {\sf MESA} module:
+\begin{lstlisting}[language=bash,mathescape=false]
+  compile-one-mod.sh ../../../mesa/net
+\end{lstlisting}
+The above command will compile the {\tt net} module without needing to be in 
+the {\sf MESA} directory.
+
+The compile-all-modules script will clean the module directory, compile the 
+source code and export the libraries and {\tt .mod} files to the appropriate 
+directories for every module. To run this script, you must be in the {\sf MESA} 
+directory. The calling sequence would be something like:
+\begin{lstlisting}[language=bash,mathescape=false]
+  cd $MESA_DIR
+  compile-all-mods.sh
+\end{lstlisting}
+
 
 \end{document}
 
