@@ -1,7 +1,7 @@
 module eos_type_module
   
   use bl_types
-  use network
+  use network, only: nspec
 
   implicit none
 
