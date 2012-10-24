@@ -217,10 +217,17 @@ deppairs: build_info.f90
 build_info.f90: 
 	@echo " "
 	@echo "${bold}WRITING build_info.f90${normal}"
-	$(BOXLIB_HOME)/Tools/F_scripts/make_build_info \
-            "$(Fmdirs) $(MICROPHYS_CORE)" "$(COMP)" "$(FCOMP_VERSION)" \
-            "$(COMPILE.f90)" "$(COMPILE.f)" \
-            "$(COMPILE.c)" "$(LINK.f90)" "$(BOXLIB_HOME)" "$(MAESTRO_TOP_DIR)" "$(ASTRODEV_DIR)"
+	$(BOXLIB_HOME)/Tools/F_scripts/makebuildinfo.py \
+           --modules "$(Fmdirs) $(MICROPHYS_CORE)" \
+           --FCOMP "$(COMP)" \
+           --FCOMP_version "$(FCOMP_VERSION)" \
+           --f90_compile_line "$(COMPILE.f90)" \
+           --f_compile_line "$(COMPILE.f)" \
+           --C_compile_line "$(COMPILE.c)" \
+           --link_line "$(LINK.f90)" \
+           --boxlib_home "$(BOXLIB_HOME)" \
+           --source_home "$(MAESTRO_TOP_DIR)" \
+           --extra_home "$(ASTRODEV_DIR)"
 	@echo " "
 
 $(odir)/build_info.o: build_info.f90
