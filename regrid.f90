@@ -15,7 +15,8 @@ module regrid_module
 
 contains
 
-  subroutine regrid(nstep,mla,uold,sold,gpi,pi,dSdt,src,dx,the_bc_tower,rho0,rhoh0,is_restart,rhoHdot)
+  subroutine regrid(nstep,mla,uold,sold,gpi,pi,dSdt,src,dx,the_bc_tower, &
+                    rho0,rhoh0,init_into_finer,rhoHdot)
 
     use fillpatch_module
     use ml_prolongation_module
@@ -27,7 +28,7 @@ contains
     use pert_form_module
 
     use probin_module, only : verbose, nodal, pmask, &
-         regrid_int, amr_buf_width, &
+         amr_buf_width, &
          max_grid_size_2, max_grid_size_3, ref_ratio, max_levs, &
          ppm_type, bds_type, dump_grid_file
     use geometry, only: nlevs_radial, spherical
@@ -42,7 +43,7 @@ contains
     real(dp_t)    ,  pointer       :: dx(:,:)
     type(bc_tower),  intent(inout) :: the_bc_tower
     real(kind=dp_t), intent(in   ) :: rho0(:,0:),rhoh0(:,0:)
-    logical        , intent(in   ) :: is_restart
+    logical        , intent(in   ) :: init_into_finer
 
     ! local
     logical           :: new_grid
@@ -152,7 +153,7 @@ contains
     nl       = 1
     new_grid = .true.
 
-    ng_buffer = 2
+    ng_buffer = 4
 
     do while ( (nl .lt. max_levs) .and. (new_grid) )
 
@@ -182,14 +183,7 @@ contains
              ! Test on whether grids are already properly nested
              if (.not. ml_boxarray_properly_nested(mba, ng_buffer, pmask, 2, nl+1)) then
 
-                call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
-
-                ! Loop over all the lower levels which we might have changed when we enforced proper nesting.
-                do n = 2,nl
-   
-                   ! This makes sure the boundary conditions are properly defined everywhere
-                   call bc_tower_level_build(the_bc_tower,n,la_array(n))
-   
+                do n = 2,nl  
                    ! Delete old multifabs so that we can rebuild them.
                    call destroy(  sold(n))
                    call destroy(  uold(n))
@@ -198,6 +192,15 @@ contains
                    call destroy(  dSdt(n))
                    call destroy(   src(n))
                    call destroy(rhoHdot(n))
+                enddo
+
+                call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
+
+                ! Loop over all the lower levels which we might have changed when we enforced proper nesting.
+                do n = 2,nl
+
+                   ! This makes sure the boundary conditions are properly defined everywhere
+                   call bc_tower_level_build(the_bc_tower,n,la_array(n)) 
    
                    ! Rebuild the lower level data again if it changed.
                    call build_and_fill_data(n,la_array(n),mla_old, &
@@ -238,7 +241,9 @@ contains
 
     if (spherical .eq. 1) then
 
-       if (is_restart) nlevs = nlevs-1
+       ! this is here to save work - we don't need to do these operations at
+       ! the finest level
+       if (init_into_finer) nlevs = nlevs-1
 
        ! convert (rho X) --> X in sold_temp 
        call convert_rhoX_to_X(sold_temp,.true.,mla_old,the_bc_tower%bc_tower_array)
@@ -250,6 +255,8 @@ contains
        ! convert (rho h) -> (rho h)' in sold_temp
        call put_in_pert_form(mla_old,sold_temp,rhoh0,dx,rhoh_comp,foextrap_comp,.true., &
                              the_bc_tower%bc_tower_array)
+
+       if (init_into_finer) nlevs = nlevs+1
 
        ! Delete old multifabs so that we can rebuild them.
        do n = 1, nlevs
@@ -269,8 +276,6 @@ contains
                                    uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, rhoHdot_temp, &
                                    the_bc_tower,dm,ng_s,mba%rr(n-1,:))
        end do
-
-       if (is_restart) nlevs = nlevs+1
 
        ! convert rho' -> rho in sold
        call put_in_pert_form(mla,sold,rho0,dx,rho_comp,dm+rho_comp,.false., &
