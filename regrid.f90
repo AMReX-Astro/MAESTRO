@@ -311,7 +311,7 @@ contains
        call multifab_fill_boundary(gpi(nlevs))
        call multifab_fill_boundary(pi(nlevs))
        call multifab_fill_boundary(src(nlevs))
-       call multifab_fill_boundary(rhoHdot(nlevs))
+       !call multifab_fill_boundary(rhoHdot(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
        call multifab_physbc(uold(nlevs),1,1,dm,the_bc_tower%bc_tower_array(nlevs))
@@ -334,7 +334,7 @@ contains
           call ml_cc_restriction(sold(n-1),sold(n),mla%mba%rr(n-1,:))
           call ml_cc_restriction(gpi(n-1),gpi(n),mla%mba%rr(n-1,:))
           call ml_cc_restriction(src(n-1),src(n),mla%mba%rr(n-1,:))
-          call ml_cc_restriction(rhoHdot(n-1),rhoHdot(n),mla%mba%rr(n-1,:))
+          !call ml_cc_restriction(rhoHdot(n-1),rhoHdot(n),mla%mba%rr(n-1,:))
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
