@@ -40,6 +40,7 @@ subroutine varden()
   use check_cutoff_module, only: check_cutoff_values
   use time_module, only: time
   use particle_module
+  use cputime_module, only: start_cputime_clock
 
   implicit none
 
@@ -120,6 +121,7 @@ subroutine varden()
   real(dp_t), allocatable :: rho0_temp(:,:)
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
+  real(dp_t), allocatable :: tempbar_init_temp(:,:)
 
   logical :: dump_plotfile, dump_checkpoint, abort_maestro
   real(dp_t) :: write_pf_time
@@ -130,6 +132,9 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialization
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  ! keep track of cputime
+  call start_cputime_clock()
 
   last_plt_written = -1
   last_chk_written = -1
@@ -252,8 +257,15 @@ subroutine varden()
      end if
   end if
 
-  if (do_heating .and. do_burning) &
-       call bl_error("We don't allow analytic heating and rxns")
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! warn the user if we are burning and heating - this might not be what we want
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  if (do_burning .and. do_heating .and. parallel_IOProcessor()) then
+     print *, 'WARNING: attempting to apply heating and a reaction network'
+     print *, '         make sure this is what you want to do, otherwise check'
+     print *, '         the do_heating and do_burning flag settings.'
+  endif
+    
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! print processor and grid info
@@ -298,12 +310,14 @@ subroutine varden()
      allocate(      rho0_temp(max_levs,0:nr_fine-1))
      allocate( etarho_ec_temp(max_levs,0:nr_fine))
      allocate(        w0_temp(max_levs,0:nr_fine))
+     allocate(tempbar_init_temp(max_levs,0:nr_fine-1))
   else
      allocate(       psi_temp(1,0:nr_fine-1))
      allocate( etarho_cc_temp(1,0:nr_fine-1))
      allocate(      rho0_temp(1,0:nr_fine-1))
      allocate( etarho_ec_temp(1,0:nr_fine))
      allocate(        w0_temp(1,0:nr_fine))
+     allocate(tempbar_init_temp(1,0:nr_fine-1))
   end if
 
   allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs))
@@ -800,10 +814,11 @@ subroutine varden()
                  w0         = w0_temp
 
               else 
-                 ! evolve_base_state = F.  
+                 ! evolve_base_state == F and spherical == 0
 
                  ! Here we want to fill in the rho0 array so there is
-                 ! valid data in any new grid locations.
+                 ! valid data in any new grid locations that are created
+                 ! during the regrid.
 
                  ! copy the coarsest level of the real arrays into the
                  ! temp arrays
@@ -813,7 +828,7 @@ subroutine varden()
                  do n=2,max_levs
                     do r=0,nr(n)-1
                        if (r .eq. 0 .or. r .eq. nr(n)-1) then
-                          rho0_temp(n,r) = rho0_old(n-1,r/2)
+                          rho0_temp(n,r) = rho0_temp(n-1,r/2)
                        else
                           if (mod(r,2) .eq. 0) then
                              rho0_temp(n,r) = 0.75d0*rho0_temp(n-1,r/2) &
@@ -841,6 +856,44 @@ subroutine varden()
 
               endif
 
+              ! regardless of evolve_base_state, if new grids were
+              ! created, we need to initialize tempbar_init there, in
+              ! case drive_initial_convection = T
+
+              ! copy the coarsest level of the real arrays into the 
+              ! temp arrays
+              tempbar_init_temp(1,:)  = tempbar_init(1,:)
+
+              ! piecewise linear interpolation to fill the cc temp arrays
+              do n=2,max_levs
+                 do r=0,nr(n)-1
+                    if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                       tempbar_init_temp(n,r) = tempbar_init_temp(n-1,r/2)
+                    else
+                       if (mod(r,2) .eq. 0) then
+                          tempbar_init_temp(n,r) = 0.75d0*tempbar_init_temp(n-1,r/2) &
+                               + 0.25d0*tempbar_init_temp(n-1,r/2-1)
+                       else
+                          tempbar_init_temp(n,r) = 0.75d0*tempbar_init_temp(n-1,r/2) &
+                               + 0.25d0*tempbar_init_temp(n-1,r/2+1)
+                       end if
+                    end if
+                 end do
+              end do
+
+
+              ! copy valid data into temp
+              do n=2,nlevs_radial
+                 do i=1,numdisjointchunks(n)
+                    do r=r_start_coord(n,i),r_end_coord(n,i)
+                       tempbar_init_temp(n,r) = tempbar_init(n,r)
+                    end do
+                 end do
+              end do
+
+              ! copy temp array back into the real thing
+              tempbar_init = tempbar_init_temp
+
            end if ! end regridding of base state
            
            ! figure out if we are tagging off of heating or rxns
@@ -853,10 +906,6 @@ subroutine varden()
                  call multifab_copy_c(tag_mf(n), 1, rho_Hnuc2(n), 1, 1)
               enddo
            endif
-
-           ! create new grids and fill in data on those grids
-           call regrid(istep,mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
-                       rho0_old,rhoh0_old,.false.,tag_mf)
 
 
            do n=1,nlevs
@@ -873,6 +922,11 @@ subroutine varden()
                  call multifab_destroy(normal(n))
               end if
            end do
+
+           ! create new grids and fill in data on those grids
+
+           call regrid(istep,mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
+                       rho0_old,rhoh0_old,.false.,tag_mf)
 
 
            ! nlevs is local so we need to reset it
@@ -913,27 +967,34 @@ subroutine varden()
               call average(mla,sold,rho0_old,dx,rho_comp)
 
            else
-              ! copy the old base state density with piecewise linear
-              ! interpolated data in the new positions
-              rho0_old = rho0_temp
 
-              ! zero out any data where there is no corresponding full
-              ! state array
-              do n=2,nlevs_radial
-                 do i=1,numdisjointchunks(n)
-                    if (i .eq. numdisjointchunks(n)) then
-                       do r=r_end_coord(n,i)+1,nr(n)-1
-                          rho0_old(n,r) = 0.d0
-                       end do
-                    else
-                       do r=r_end_coord(n,i)+1,r_start_coord(n,i+1)-1
-                          rho0_old(n,r) = 0.d0
-                       end do
-                    end if
+              if (spherical .eq. 0) then
+                 ! copy the old base state density with piecewise linear
+                 ! interpolated data in the new positions -- this is 
+                 ! only necessary for evolve_base_state = F and
+                 ! spherical = 0.
+                 rho0_old = rho0_temp
+
+                 ! zero out any data where there is no corresponding full
+                 ! state array
+                 do n=2,nlevs_radial
+                    do i=1,numdisjointchunks(n)
+                       if (i .eq. numdisjointchunks(n)) then
+                          do r=r_end_coord(n,i)+1,nr(n)-1
+                             rho0_old(n,r) = 0.d0
+                          end do
+                       else
+                          do r=r_end_coord(n,i)+1,r_start_coord(n,i+1)-1
+                             rho0_old(n,r) = 0.d0
+                          end do
+                       end if
+                    end do
                  end do
-              end do
-              
+
+              endif
+
            endif
+
 
            ! recompute p0 based on the new rho0 
            call compute_cutoff_coords(rho0_old)
@@ -1181,10 +1242,10 @@ subroutine varden()
         ! output any particle information
         if (use_particles) then
            if (store_particle_vels) then
-              call timestamp(particles, "timestamp", sold, index_partdata, &
+              call timestamp(particles, 'timestamp', sold, index_partdata, &
                              names_partdata, time, uold)
            else
-              call timestamp(particles, "timestamp", sold, index_partdata, &
+              call timestamp(particles, 'timestamp', sold, index_partdata, &
                              names_partdata, time)
            endif
         endif
@@ -1408,7 +1469,12 @@ subroutine varden()
 
   call bc_tower_destroy(the_bc_tower)
 
+  call destroy(particles)
+
   call destroy_geometry()
+
+  call eos_finalize()
+  call network_finalize()
 
   call runtime_close()
 
