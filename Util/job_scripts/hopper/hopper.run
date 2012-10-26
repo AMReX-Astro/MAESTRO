@@ -17,7 +17,7 @@ cd $PBS_O_WORKDIR
 
 # run the compression script to tar up the plot and checkpoint files
 # as they are created.
-./process.jaguar &
+./process.nersc &
 PID=$!
 trap 'kill -s TERM $PID' EXIT TERM HUP XCPU KILL
 
