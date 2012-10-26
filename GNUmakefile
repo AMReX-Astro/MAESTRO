@@ -21,7 +21,7 @@ NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
 ifdef SDC
   NETWORK_DIR := approx8_SDC
 else
-  NETWORK_DIR := approx8
+  NETWORK_DIR := rprox
 endif
 
 # define the special directories needed to build this problem.  Note:
