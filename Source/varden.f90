@@ -64,6 +64,8 @@ subroutine varden()
   type(multifab), allocatable :: hgrhs(:)
   type(multifab), allocatable :: gamma1(:)
 
+  type(multifab), pointer :: tag_mf(:)
+
   ! these are pointers because they need to be allocated and built within 
   !   another function
   type(multifab), pointer :: uold(:)
@@ -84,7 +86,7 @@ subroutine varden()
   character(len=6)               :: plot_index6, check_index6
   character(len=256)             :: plot_file_name, check_file_name
   character(len=20), allocatable :: plot_names(:)
-
+  
   integer :: npartdata
   integer, allocatable :: index_partdata(:)
   character(len=16), allocatable :: names_partdata(:)
@@ -164,13 +166,13 @@ subroutine varden()
 
   index_partdata(1) = rho_comp
   names_partdata(1) = "density"
-
+  
   index_partdata(2) = temp_comp
   names_partdata(2) = "temperature"
-
+  
   do n = 1, nspec
-     index_partdata(2 + n) = spec_comp -1 + n
-     names_partdata(2 + n) = spec_names(n)
+     index_partdata(2+n) = spec_comp -1 + n
+     names_partdata(2+n) = spec_names(n)
   enddo
 
 
@@ -183,7 +185,7 @@ subroutine varden()
                                   s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                   p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
                                   tempbar,tempbar_init,grav_cell)
-     
+
      if (restart <= 99999) then
         write(unit=check_index,fmt='(i5.5)') restart
         check_file_name = trim(check_base_name) // check_index
@@ -192,11 +194,14 @@ subroutine varden()
         check_file_name = trim(check_base_name) // check_index6
      endif
 
-     if (use_particles) call particle_container_restart(particles,check_file_name,mla,dx,prob_lo)
-
+     if (use_particles) then
+        call particle_container_restart(particles,check_file_name,&
+                                        mla,dx,prob_lo)
+     endif
+     
   else if (test_set /= '') then
-
-     if (use_particles) call build(particles)
+     
+     if(use_particles) call build(particles)
 
      call initialize_with_fixed_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                       Source_old,Source_new, &
@@ -260,7 +265,7 @@ subroutine varden()
      print *, '         make sure this is what you want to do, otherwise check'
      print *, '         the do_heating and do_burning flag settings.'
   endif
-
+    
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! print processor and grid info
@@ -300,23 +305,24 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   if (spherical .eq. 0) then
-     allocate(         psi_temp(max_levs,0:nr_fine-1))
-     allocate(   etarho_cc_temp(max_levs,0:nr_fine-1))
-     allocate(        rho0_temp(max_levs,0:nr_fine-1))
-     allocate(   etarho_ec_temp(max_levs,0:nr_fine))
-     allocate(          w0_temp(max_levs,0:nr_fine))
+     allocate(       psi_temp(max_levs,0:nr_fine-1))
+     allocate( etarho_cc_temp(max_levs,0:nr_fine-1))
+     allocate(      rho0_temp(max_levs,0:nr_fine-1))
+     allocate( etarho_ec_temp(max_levs,0:nr_fine))
+     allocate(        w0_temp(max_levs,0:nr_fine))
      allocate(tempbar_init_temp(max_levs,0:nr_fine-1))
   else
-     allocate(         psi_temp(1,0:nr_fine-1))
-     allocate(   etarho_cc_temp(1,0:nr_fine-1))
-     allocate(        rho0_temp(1,0:nr_fine-1))
-     allocate(   etarho_ec_temp(1,0:nr_fine))
-     allocate(          w0_temp(1,0:nr_fine))
+     allocate(       psi_temp(1,0:nr_fine-1))
+     allocate( etarho_cc_temp(1,0:nr_fine-1))
+     allocate(      rho0_temp(1,0:nr_fine-1))
+     allocate( etarho_ec_temp(1,0:nr_fine))
+     allocate(        w0_temp(1,0:nr_fine))
      allocate(tempbar_init_temp(1,0:nr_fine-1))
   end if
 
   allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs))
   allocate(normal(nlevs))
+  allocate(tag_mf(nlevs))
 
   do n = 1,nlevs
      call multifab_build(      unew(n), mla%la(n),    dm, nghost(uold(n)))
@@ -326,11 +332,13 @@ subroutine varden()
      if (dm .eq. 3) then
         call multifab_build(normal(n), mla%la(n),    dm, 1)
      end if
+     call multifab_build(    tag_mf(n), mla%la(n), 1, 0)
 
      call setval(      unew(n), ZERO, all=.true.)
      call setval(      snew(n), ZERO, all=.true.)
      call setval(    sponge(n), ONE,  all=.true.)
      call setval(     hgrhs(n), ZERO, all=.true.)
+     call setval(    tag_mf(n), ZERO, all=.true.)
   end do
 
   ! Create normal now that we have defined center and dx
@@ -465,7 +473,7 @@ subroutine varden()
         call write_base_state(restart, plot_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))        
+                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
         call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
 
@@ -601,7 +609,9 @@ subroutine varden()
         end do
         deallocate(chkdata)
 
-        if (use_particles) call particle_container_checkpoint(particles,check_file_name,mla)
+        if (use_particles) then
+           call particle_container_checkpoint(particles,check_file_name,mla)
+        endif
      end if
 
      if ( plot_int > 0 .or. plot_deltat > ZERO) then
@@ -658,6 +668,12 @@ subroutine varden()
   if ( (max_step >= init_step) .and. (time < stop_time .or. stop_time < 0.d0) ) then
 
      do istep = init_step,max_step
+     
+        if (drive_initial_convection .and. istep >= stop_initial_convection) &
+             drive_initial_convection = .false.
+
+        if (drive_initial_convection .and. istep >= stop_initial_convection) &
+             drive_initial_convection = .false.
 
         if ( verbose .ge. 1 ) then
            if ( parallel_IOProcessor() ) then
@@ -844,7 +860,7 @@ subroutine varden()
               ! created, we need to initialize tempbar_init there, in
               ! case drive_initial_convection = T
 
-              ! copy the coarsest level of the real arrays into the
+              ! copy the coarsest level of the real arrays into the 
               ! temp arrays
               tempbar_init_temp(1,:)  = tempbar_init(1,:)
 
@@ -864,7 +880,7 @@ subroutine varden()
                     end if
                  end do
               end do
-                 
+
 
               ! copy valid data into temp
               do n=2,nlevs_radial
@@ -879,6 +895,18 @@ subroutine varden()
               tempbar_init = tempbar_init_temp
 
            end if ! end regridding of base state
+           
+           ! figure out if we are tagging off of heating or rxns
+           if (do_heating) then
+              do n = 1, nlevs
+                 call multifab_copy_c(tag_mf(n), 1, rho_Hext(n), 1, 1)
+              enddo
+           else
+              do n = 1, nlevs
+                 call multifab_copy_c(tag_mf(n), 1, rho_Hnuc2(n), 1, 1)
+              enddo
+           endif
+
 
            do n=1,nlevs
               call multifab_destroy(unew(n))
@@ -896,8 +924,10 @@ subroutine varden()
            end do
 
            ! create new grids and fill in data on those grids
+
            call regrid(istep,mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
-                       rho0_old,rhoh0_old,.false.)
+                       rho0_old,rhoh0_old,.false.,tag_mf)
+
 
            ! nlevs is local so we need to reset it
            nlevs = mla%nlevel
@@ -960,7 +990,7 @@ subroutine varden()
                        end if
                     end do
                  end do
-                 
+
               endif
 
            endif
@@ -1093,7 +1123,7 @@ subroutine varden()
                               Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init, &
                               particles)
 
-        
+
         ! limit the timestep if the temperature is changing too rapidly
         if (nuclear_dt_fac .gt. 0.d0) then
            smaxold = 0.d0
@@ -1212,9 +1242,11 @@ subroutine varden()
         ! output any particle information
         if (use_particles) then
            if (store_particle_vels) then
-              call timestamp(particles, 'timestamp', sold, index_partdata, names_partdata, time, uold)
+              call timestamp(particles, 'timestamp', sold, index_partdata, &
+                             names_partdata, time, uold)
            else
-              call timestamp(particles, 'timestamp', sold, index_partdata, names_partdata, time)
+              call timestamp(particles, 'timestamp', sold, index_partdata, &
+                             names_partdata, time)
            endif
         endif
 
@@ -1265,7 +1297,9 @@ subroutine varden()
               end do
               deallocate(chkdata)
 
-              if (use_particles) call particle_container_checkpoint(particles,check_file_name,mla)
+              if (use_particles) then
+                 call particle_container_checkpoint(particles,check_file_name,mla)
+              endif
 
            end if
         end if
@@ -1309,10 +1343,10 @@ subroutine varden()
         ! if the file .abort_maestro exists in our output directory, then
         ! automatically end the run.  This has the effect of also dumping
         ! a final checkpoint file.
-        inquire(file=".abort_maestro", exist=abort_maestro)        
+        inquire(file=".abort_maestro", exist=abort_maestro)
         if (abort_maestro) exit
-           
 
+        
         ! have we reached the stop time?
         if (stop_time >= 0.d0) then
            if (time >= stop_time) goto 999
@@ -1369,7 +1403,9 @@ subroutine varden()
         end do
         deallocate(chkdata)
 
-        if (use_particles) call particle_container_checkpoint(particles,check_file_name,mla)
+        if (use_particles) then
+           call particle_container_checkpoint(particles,check_file_name,mla)
+        endif
 
      end if
 
@@ -1420,6 +1456,7 @@ subroutine varden()
      call destroy(rho_Hext(n))
      call destroy(thermal2(n))
      call destroy(sponge(n))
+     call destroy(tag_mf(n))
   end do
 
   if(dm .eq. 3) then
@@ -1442,7 +1479,7 @@ subroutine varden()
   call runtime_close()
 
   deallocate(uold,sold,pi,gpi,dSdt,Source_old,Source_new,rho_omegadot2, &
-             rho_Hnuc2,rho_Hext)
+             rho_Hnuc2,rho_Hext,tag_mf)
   deallocate(thermal2,dx)
   deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)

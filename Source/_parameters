@@ -492,6 +492,9 @@ mach_max_abort                      real               -1.d0
 # nonlinear.
 drive_initial_convection            logical            .false.
 
+# timestep beyond which we set drive_initial_convection = F
+stop_initial_convection            integer              -1
+
 # restart the simulation using a result from a {\tt drive\_initial\_convection} = T run
 # note that this uses the restart variable to specify which file to restart
 # from.  After reading in the velocity information from the restart file, the
