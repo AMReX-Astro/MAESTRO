@@ -38,9 +38,6 @@ velpert_height_loc                  real               6.5d3
 # number of vortices 
 num_vortices                        integer            1
 
-# apply the conductivity limiting
-limit_conductivity                  logical            .false.
-
 # look at the deltap diagnostic
 do_deltap_diag                      logical            .false.
 
