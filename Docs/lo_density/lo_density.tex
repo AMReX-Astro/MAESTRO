@@ -222,6 +222,11 @@ to the velocity equation at low densities.
    rotating stars, if $\rho < \mathtt{buoyancy\_cutoff\_factor *
    base\_cutoff\_density}$.
 
+\item In {\tt make\_explicit\_thermal}, if {\tt limit\_conductivity = T}, then for 
+$\rho < \mathtt{buoyancy\_cutoff\_factor}$ \\ $* \mathtt{base\_cutoff\_density}$, we
+zero out the thermal coefficients, effectively turning off thermal
+diffusion there.
+
 \end{itemize}
 
 
