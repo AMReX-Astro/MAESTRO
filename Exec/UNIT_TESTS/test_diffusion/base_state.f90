@@ -1,7 +1,7 @@
 module base_state_module
 
   use bl_types
-  use network, only: nspec
+  use network, only: nspec, network_init
   
   implicit none
 

@@ -48,8 +48,8 @@ contains
     use regrid_module
     use init_scalar_module
     use time_module, only: time
-    use base_io_module
-    use aux_data_module
+  use base_io_module
+  use aux_data_module
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(inout) :: restart
@@ -111,7 +111,7 @@ contains
 
     if (change_max_grid_size_1) then
        ! Change max grid size if inputs file calls for it
-       ! rebuild level 1 box array 
+       ! rebuild level 1 box array
        ! for now just copy higher level boxarrays
        ! regrid will take care of the higher levels when it's called
        call ml_boxarray_copy(mba, mba_old)
@@ -120,8 +120,8 @@ contains
        call boxarray_build_bx(mba%bas(1),bxs)
        call boxarray_maxsize(mba%bas(1),max_grid_size_1)
     else
-       call ml_boxarray_copy(mba, mba_old)       
-    end if
+       call ml_boxarray_copy(mba, mba_old)
+    endif
 
     ! create mla
     call ml_layout_build(mla,mba,pmask)
@@ -391,14 +391,14 @@ contains
 
        ! note: still need to load/store tempbar
        call read_base_state(restart, check_file_name, &
-                            rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
-                            etarho_ec, etarho_cc, div_coeff_old, psi, tempbar, tempbar_init)
+            rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
+            etarho_ec, etarho_cc, div_coeff_old, psi, tempbar, tempbar_init)
 
        if (do_smallscale) then
           call average(mla,sold,rho0_old,dx,rho_comp)
           call compute_cutoff_coords(rho0_old)
           rho0_old = ZERO
-       end if
+       endif
 
        ! read in any auxillary data
        call read_aux_data(restart, check_file_name)
@@ -493,7 +493,7 @@ contains
        ! regrid
        ! this also rebuilds mla and the_bc_tower
        call regrid(restart,mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
-                   rho0_old,rhoh0_old,.true.)
+                   rho0_old,rhoh0_old,.true.,rho_Hnuc2)
 
        ! nlevs is local so we need to reset it
        nlevs = mla%nlevel
@@ -1051,7 +1051,7 @@ contains
     if (spherical .eq. 1) then
        call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(max_levs,:))
     else
-       ! init_base_state requires loop backwards over levels
+          ! init_base_state requires loop backwards over levels
        do n=max_levs,1,-1
           call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
        end do
