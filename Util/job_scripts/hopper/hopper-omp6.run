@@ -17,7 +17,7 @@ cd $PBS_O_WORKDIR
 
 # run the compression script to tar up the plot and checkpoint files
 # as they are created.
-./process.jaguar &
+./process.nersc &
 PID=$!
 trap 'kill -s TERM $PID' EXIT TERM HUP XCPU KILL
 
@@ -52,11 +52,16 @@ if [ "${restartFile}" = "" ]; then
 fi
 
 
+# cut out the numerical part of the *chkXXXXX file, here we use the
+# 'k' in 'chk' as the delimiter
+restartNum=`echo ${restartFile} | cut -d'k' -f2`
+
+
 # restartString will be empty if no chk files are found -- i.e. new run
-if [ "${restartFile}" = "" ]; then
+if [ "${restartNum}" = "" ]; then
     restartString=""
 else
-    restartString="amr.restart=${restartFile}"
+    restartString="--restart ${restartNum}"
 fi
 
 
