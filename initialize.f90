@@ -10,7 +10,6 @@ module initialize_module
   use network, only: nspec
   use bl_constants_module
   use base_state_module
-  use base_io_module
 
   implicit none
 
@@ -36,7 +35,8 @@ contains
     use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
          ppm_type, bds_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
          check_base_name, use_tfromp, cflfac, dm_in, restart_with_vel_field, &
-         model_file, do_smallscale, fix_base_state, drive_initial_convection
+         model_file, do_smallscale, fix_base_state, max_grid_size_1, &
+         change_max_grid_size_1, drive_initial_convection
     use average_module
     use make_grav_module
     use enforce_HSE_module
@@ -48,6 +48,8 @@ contains
     use regrid_module
     use init_scalar_module
     use time_module, only: time
+  use base_io_module
+  use aux_data_module
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(inout) :: restart
@@ -65,7 +67,7 @@ contains
     real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
 
     ! local
-    type(ml_boxarray) :: mba
+    type(ml_boxarray) :: mba, mba_old
     type(box)         :: domain
     integer           :: domhi(dm_in)
 
@@ -87,6 +89,8 @@ contains
 
     type(layout) :: la
 
+    type(box)    :: bxs
+
     real(dp_t), allocatable :: psi_temp(:,:)
     real(dp_t), allocatable :: etarho_cc_temp(:,:)
     real(dp_t), allocatable :: w0_temp(:,:)
@@ -97,13 +101,27 @@ contains
 
     ! sanity check
     if (drive_initial_convection .and. restart_with_vel_field) then
-       call bl_error("drive_initial_convection and restart_with_vel_field both T")
+       call bl_error("restart_with_vel_field and drive_initial_convection both T")
     endif
 
     ! create mba, chk stuff, time, and dt
-    call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
+    call fill_restart_data(restart, mba_old, chkdata, chk_p, chk_dsdt, chk_src_old, &
                            chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, &
                            chk_rho_Hext,chk_thermal2, dt)
+
+    if (change_max_grid_size_1) then
+       ! Change max grid size if inputs file calls for it
+       ! rebuild level 1 box array
+       ! for now just copy higher level boxarrays
+       ! regrid will take care of the higher levels when it's called
+       call ml_boxarray_copy(mba, mba_old)
+       call box_build_2(bxs,lwb(mba_old%pd(1)),upb(mba_old%pd(1)))
+       call destroy(mba%bas(1))
+       call boxarray_build_bx(mba%bas(1),bxs)
+       call boxarray_maxsize(mba%bas(1),max_grid_size_1)
+    else
+       call ml_boxarray_copy(mba, mba_old)
+    endif
 
     ! create mla
     call ml_layout_build(mla,mba,pmask)
@@ -157,36 +175,36 @@ contains
        call multifab_copy_c( sold(n),1,chkdata(n),rho_comp+dm      ,nscal)
        call multifab_copy_c(  gpi(n),1,chkdata(n),rho_comp+dm+nscal,dm)
        la = get_layout(chkdata(n))
-       call destroy(la)
        call destroy(chkdata(n))
+       call destroy(la)
     end do
     
     do n=1,nlevs
        call multifab_copy_c(pi(n),1,chk_p(n),1,1)
        la = get_layout(chk_p(n))
-       call destroy(la)
        call destroy(chk_p(n))
+       call destroy(la)
     end do
     
     do n=1,nlevs
        call multifab_copy_c(dSdt(n),1,chk_dsdt(n),1,1)
        la = get_layout(chk_dsdt(n))
-       call destroy(la)
        call destroy(chk_dsdt(n))
+       call destroy(la)
     end do
     
     do n=1,nlevs
        call multifab_copy_c(Source_old(n),1,chk_src_old(n),1,1)
        la = get_layout(chk_src_old(n))
-       call destroy(la)
        call destroy(chk_src_old(n))
+       call destroy(la)
     end do
 
     do n=1,nlevs
        call multifab_copy_c(Source_new(n),1,chk_src_new(n),1,1)
        la = get_layout(chk_src_new(n))
-       call destroy(la)
        call destroy(chk_src_new(n))
+       call destroy(la)
     end do
     
     ! Note: rho_omegadot2, rho_Hnuc2, rho_Hext, and thermal2 are not
@@ -197,23 +215,23 @@ contains
     do n=1,nlevs
        call multifab_copy_c(rho_omegadot2(n),1,chk_rho_omegadot2(n),1,nspec)
        la = get_layout(chk_rho_omegadot2(n))
-       call destroy(la)
        call destroy(chk_rho_omegadot2(n))
+       call destroy(la)
     end do
 
     do n=1,nlevs
        call multifab_copy_c(rho_Hnuc2(n),1,chk_rho_Hnuc2(n),1,1)
        la = get_layout(chk_rho_Hnuc2(n))
-       call destroy(la)
        call destroy(chk_rho_Hnuc2(n))
+       call destroy(la)
     end do
 
     if (plot_Hext) then
        do n=1,nlevs
           call multifab_copy_c(rho_Hext(n),1,chk_rho_Hext(n),1,1)
           la = get_layout(chk_rho_Hext(n))
-          call destroy(la)
           call destroy(chk_rho_Hext(n))
+          call destroy(la)
        end do
        deallocate(chk_rho_Hext)
     end if
@@ -222,8 +240,8 @@ contains
        do n=1,nlevs
           call multifab_copy_c(thermal2(n),1,chk_thermal2(n),1,1)
           la = get_layout(chk_thermal2(n))
-          call destroy(la)
           call destroy(chk_thermal2(n))
+          call destroy(la)
        end do
        deallocate(chk_thermal2)
     else
@@ -330,7 +348,9 @@ contains
        end if
 
        if (do_smallscale) then
-          ! leave rho0_old = rhoh0_old = ZERO
+          ! first compute cutoff coordinates using initial density profile
+          call compute_cutoff_coords(rho0_old)
+          ! set rho0_old = rhoh0_old = ZERO
           rho0_old  = ZERO
           rhoh0_old = ZERO
        else
@@ -374,7 +394,17 @@ contains
             rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
             etarho_ec, etarho_cc, div_coeff_old, psi, tempbar, tempbar_init)
 
+       if (do_smallscale) then
+          call average(mla,sold,rho0_old,dx,rho_comp)
+          call compute_cutoff_coords(rho0_old)
+          rho0_old = ZERO
+       endif
+
+       ! read in any auxillary data
+       call read_aux_data(restart, check_file_name)
+
     endif
+
 
     ! fill ghost cells
     ! this need to be done after read_base_state since in some problems, the inflow
@@ -451,6 +481,15 @@ contains
        ! build the bc_tower for level 1 only
        call bc_tower_level_build(the_bc_tower,1,mla%la(1))
 
+       ! destroy these before we reset nlevs
+       do n=1,nlevs
+          call multifab_destroy(Source_new(n))
+          call multifab_destroy(rho_omegadot2(n))
+          call multifab_destroy(rho_Hnuc2(n))
+          call multifab_destroy(rho_Hext(n))
+          call multifab_destroy(thermal2(n))
+       end do
+
        ! regrid
        ! this also rebuilds mla and the_bc_tower
        call regrid(restart,mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
@@ -462,18 +501,6 @@ contains
        if (nlevs .ne. max_levs) then
           call bl_error('restart_into_finer: nlevs .ne. max_levs not supported yet')
        end if
-
-       ! destroy these before we reset nlevs
-       do n=1,nlevs
-          call multifab_destroy(Source_new(n))
-          call multifab_destroy(rho_omegadot2(n))
-          call multifab_destroy(rho_Hnuc2(n))
-          call multifab_destroy(rho_Hext(n))
-          call multifab_destroy(thermal2(n))
-       end do
-
-       ! nlevs is local so we need to reset it
-       nlevs = mla%nlevel
 
        ! rebuild these with the new ml_layout
        do n=1,nlevs
@@ -655,6 +682,7 @@ contains
 
     end if ! end spherical restart_into_finer initialization
 
+    call destroy(mba_old)
     call destroy(mba)
 
   end subroutine initialize_from_restart
@@ -849,7 +877,9 @@ contains
     end if
 
     if (do_smallscale) then
-       ! leave rho0_old = rhoh0_old = ZERO
+       ! first compute cutoff coordinates using initial density profile
+       call compute_cutoff_coords(rho0_old)
+       ! set rho0_old = rhoh0_old = ZERO
        rho0_old  = ZERO
        rhoh0_old = ZERO
     else
@@ -889,7 +919,7 @@ contains
                                             psi,tempbar,tempbar_init,grav_cell)
 
     use probin_module, only: n_cellx, n_celly, n_cellz, &
-         regrid_int, amr_buf_width, max_grid_size_1, max_grid_size_2, max_grid_size_3, &
+         amr_buf_width, max_grid_size_1, max_grid_size_2, max_grid_size_3, &
          ref_ratio, max_levs, octant
     use init_scalar_module
     use init_vel_module
@@ -1116,15 +1146,7 @@ contains
 
        ! check for proper nesting
        if (nlevs .ge. 3) then
-
           call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
-
-          ! enforce_proper_nesting can create new grids at coarser levels
-          ! this makes sure the boundary conditions are properly defined everywhere
-          do n=2,nlevs
-             call bc_tower_level_build(the_bc_tower,n,la_array(n))
-          end do
-
        end if
        
     else
@@ -1208,7 +1230,9 @@ contains
     end if
 
     if (do_smallscale) then
-       ! leave rho0_old = rhoh0_old = ZERO
+       ! first compute cutoff coordinates using initial density profile
+       call compute_cutoff_coords(rho0_old)
+       ! set rho0_old = rhoh0_old = ZERO
        rho0_old  = ZERO
        rhoh0_old = ZERO
     else
