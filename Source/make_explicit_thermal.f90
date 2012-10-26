@@ -296,6 +296,7 @@ contains
     use eos_type_module
     use conductivity_module
     use network, only: nspec
+    use probin_module, only: buoyancy_cutoff_factor, base_cutoff_density, limit_conductivity
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_T,ng_h,ng_X,ng_p
     real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,:)
@@ -311,24 +312,37 @@ contains
 
 
     do i=lo(1)-1,hi(1)+1
+
+       ! if we are outside the star, turn off the conductivity
+       if (limit_conductivity .and. &
+            s(i,rho_comp) < buoyancy_cutoff_factor*base_cutoff_density) then
+
+          Tcoeff(i) = ZERO
+          hcoeff(i) = ZERO
+          pcoeff(i) = ZERO
+          Xkcoeff(i,:) = ZERO
+
+       else
           
-       eos_state%rho   = s(i,rho_comp)
-       eos_state%T     = s(i,temp_comp)
-       eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
+          eos_state%rho   = s(i,rho_comp)
+          eos_state%T     = s(i,temp_comp)
+          eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
+          
+          ! dens, temp, and xmass are inputs
+          call conducteos(eos_input_rt, eos_state, .false., conductivity)
+          
+          Tcoeff(i) = -conductivity
+          hcoeff(i) = -conductivity/eos_state%cp
+          pcoeff(i) = (conductivity/eos_state%cp)* &
+               ((1.0d0/eos_state%rho)* &
+               (1.0d0-eos_state%p/(eos_state%rho*eos_state%dpdr))+ &
+               eos_state%dedr/eos_state%dpdr)
        
-       ! dens, temp, and xmass are inputs
-       call conducteos(eos_input_rt, eos_state, .false., conductivity)
-       
-       Tcoeff(i) = -conductivity
-       hcoeff(i) = -conductivity/eos_state%cp
-       pcoeff(i) = (conductivity/eos_state%cp)* &
-            ((1.0d0/eos_state%rho)* &
-            (1.0d0-eos_state%p/(eos_state%rho*eos_state%dpdr))+ &
-             eos_state%dedr/eos_state%dpdr)
-       
-       do comp=1,nspec
-          Xkcoeff(i,comp) = (conductivity/eos_state%cp)*eos_state%dhdX(comp)
-       enddo
+          do comp=1,nspec
+             Xkcoeff(i,comp) = (conductivity/eos_state%cp)*eos_state%dhdX(comp)
+          enddo
+
+       endif
 
     enddo
     
@@ -349,6 +363,7 @@ contains
     use eos_type_module
     use conductivity_module
     use network, only: nspec
+    use probin_module, only: buoyancy_cutoff_factor, base_cutoff_density, limit_conductivity
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_T,ng_h,ng_X,ng_p
     real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,lo(2)-ng_s:,:)
@@ -364,25 +379,37 @@ contains
     
     do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)+1
-          
-          eos_state%rho   = s(i,j,rho_comp)
-          eos_state%T     = s(i,j,temp_comp)
-          eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
-          
-          ! dens, temp, and xmass are inputs
-          call conducteos(eos_input_rt, eos_state, .false., conductivity)
-          
-          Tcoeff(i,j) = -conductivity
-          hcoeff(i,j) = -conductivity/eos_state%cp
-          pcoeff(i,j) = (conductivity/eos_state%cp)* &
-               ((1.0d0/eos_state%rho)* &
-               (1.0d0-eos_state%p/(eos_state%rho*eos_state%dpdr))+ &
-                eos_state%dedr/eos_state%dpdr)
-          
-          do comp=1,nspec
-             Xkcoeff(i,j,comp) = (conductivity/eos_state%cp)*eos_state%dhdX(comp)
-          enddo
 
+          ! if we are outside the star, turn off the conductivity
+          if (limit_conductivity .and. &
+               s(i,j,rho_comp) < buoyancy_cutoff_factor*base_cutoff_density) then
+
+             Tcoeff(i,j) = ZERO
+             hcoeff(i,j) = ZERO
+             pcoeff(i,j) = ZERO
+             Xkcoeff(i,j,:) = ZERO
+
+          else
+          
+             eos_state%rho   = s(i,j,rho_comp)
+             eos_state%T     = s(i,j,temp_comp)
+             eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+             
+             ! dens, temp, and xmass are inputs
+             call conducteos(eos_input_rt, eos_state, .false., conductivity)
+             
+             Tcoeff(i,j) = -conductivity
+             hcoeff(i,j) = -conductivity/eos_state%cp
+             pcoeff(i,j) = (conductivity/eos_state%cp)* &
+                  ((1.0d0/eos_state%rho)* &
+                  (1.0d0-eos_state%p/(eos_state%rho*eos_state%dpdr))+ &
+                  eos_state%dedr/eos_state%dpdr)
+             
+             do comp=1,nspec
+                Xkcoeff(i,j,comp) = (conductivity/eos_state%cp)*eos_state%dhdX(comp)
+             enddo
+
+          endif
        enddo
     enddo
     
@@ -404,6 +431,7 @@ contains
     use conductivity_module
     use network, only: nspec
     use fill_3d_module
+    use probin_module, only: buoyancy_cutoff_factor, base_cutoff_density, limit_conductivity
     
     integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_T,ng_h,ng_X,ng_p
     real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
@@ -421,24 +449,38 @@ contains
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
+
+             ! if we are outside the star, turn off the conductivity
+             if (limit_conductivity .and. &
+                  s(i,j,k,rho_comp) < &
+                  buoyancy_cutoff_factor*base_cutoff_density) then
+
+                Tcoeff(i,j,k) = ZERO
+                hcoeff(i,j,k) = ZERO
+                pcoeff(i,j,k) = ZERO
+                Xkcoeff(i,j,k,:) = ZERO
+
+             else
              
-             eos_state%rho   = s(i,j,k,rho_comp)
-             eos_state%T     = s(i,j,k,temp_comp)
-             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+                eos_state%rho   = s(i,j,k,rho_comp)
+                eos_state%T     = s(i,j,k,temp_comp)
+                eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
-             ! dens, temp, and xmass are inputs
-             call conducteos(eos_input_rt, eos_state, .false., conductivity)
-             
-             Tcoeff(i,j,k) = -conductivity
-             hcoeff(i,j,k) = -conductivity/eos_state%cp
-             pcoeff(i,j,k) = (conductivity/eos_state%cp)* &
-                  ((1.0d0/eos_state%rho)* &
-                  (1.0d0-eos_state%p/(eos_state%rho*eos_state%dpdr))+ &
-                   eos_state%dedr/eos_state%dpdr)
-             
-             do comp=1,nspec
-                Xkcoeff(i,j,k,comp) = (conductivity/eos_state%cp)*eos_state%dhdX(comp)
-             enddo
+                ! dens, temp, and xmass are inputs
+                call conducteos(eos_input_rt, eos_state, .false., conductivity)
+                
+                Tcoeff(i,j,k) = -conductivity
+                hcoeff(i,j,k) = -conductivity/eos_state%cp
+                pcoeff(i,j,k) = (conductivity/eos_state%cp)* &
+                     ((1.0d0/eos_state%rho)* &
+                     (1.0d0-eos_state%p/(eos_state%rho*eos_state%dpdr))+ &
+                     eos_state%dedr/eos_state%dpdr)
+                
+                do comp=1,nspec
+                   Xkcoeff(i,j,k,comp) = (conductivity/eos_state%cp)*eos_state%dhdX(comp)
+                enddo
+
+             endif
 
           enddo
        enddo
