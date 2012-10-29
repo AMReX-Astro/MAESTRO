@@ -34,7 +34,7 @@ of the peak, D is the diffusion coefficient and t_0 is the time from
 which the system is evolved.  The analytic solution is given by
 
   h(t) = (h_p - h_0) * (t_0 / (t + t_0)) * 
-            exp( -|r - r_0|^2 / (4 * D * (t + t_0))).
+            exp( -|r - r_0|^2 / (4 * D * (t + t_0))) + h_0
 
 
 OUTLINE:
