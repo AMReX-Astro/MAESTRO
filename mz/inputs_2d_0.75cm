@@ -36,6 +36,7 @@
  max_levs = 3
  regrid_int = 2
 
+ max_grid_size_1 = 32
  max_grid_size = 64
 
  prob_lo_x = 0.0d0
@@ -87,7 +88,7 @@
  species_pred_type = 3
  enthalpy_pred_type = 4
 
- # initial projections
+ ! initial projections
  do_initial_projection = T
  init_divu_iter = 3
  init_iter = 3
@@ -95,8 +96,8 @@
  use_tfromp = F
  dpdt_factor = 0.0d0
 
- base_cutoff_density = 1.d4
- anelastic_cutoff = 1.d4
+ base_cutoff_density = 1.d3
+ anelastic_cutoff = 1.d3
 
  do_sponge = T
  sponge_start_factor = 25
