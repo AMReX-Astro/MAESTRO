@@ -20,10 +20,11 @@ module mg_eps_module
 
 
   ! tolerances for the MAC projection
-!  real (kind=dp_t) :: eps_mac = 1.d-10
+  real (kind=dp_t) :: eps_mac = 1.d-10
+  real (kind=dp_t) :: eps_mac_max = 1.d-8
 ! SDC HACK because evolve_base_state = F
-  real (kind=dp_t) :: eps_mac = 1.d-9
-  real (kind=dp_t) :: eps_mac_max = 2.d-8
+!  real (kind=dp_t) :: eps_mac = 1.d-9
+!  real (kind=dp_t) :: eps_mac_max = 2.d-8
 
   real (kind=dp_t) :: mac_level_factor = 10.d0
 
@@ -31,11 +32,11 @@ module mg_eps_module
 
 
   ! tolerances for the HG projection
-!  real (kind=dp_t) :: eps_hg = 1.d-10
-!  real (kind=dp_t) :: eps_hg_max = 1.d-10
+  real (kind=dp_t) :: eps_hg = 1.d-11
+  real (kind=dp_t) :: eps_hg_max = 1.d-10
 ! SDC HACK because evolve_base_state = F
-  real (kind=dp_t) :: eps_hg = 2.d-9
-  real (kind=dp_t) :: eps_hg_max = 2.d-8
+!  real (kind=dp_t) :: eps_hg = 2.d-9
+!  real (kind=dp_t) :: eps_hg_max = 2.d-8
 
   real (kind=dp_t) :: hg_level_factor = 10.d0
 
