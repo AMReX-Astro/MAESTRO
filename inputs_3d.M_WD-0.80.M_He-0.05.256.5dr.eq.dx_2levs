@@ -1,8 +1,8 @@
 &PROBIN
- model_file = "sub_chandra.M_WD-1.00.M_He-0.05.hse.C.2560.hotcutoff"
+ model_file = "sub_chandra.M_WD-0.80.M_He-0.05.hse.C.2560.hotcutoff"
  drdxfac = 5
 
- job_name = "256^3 base, hot T cutoff, default sponge -- this is the base calculation"
+ job_name = "256^3 base, hot T cutoff, default sponge -- M_WD=0.8, M_He=0.05"
 
  hg_bottom_solver = 4
  mg_bottom_solver = 4
@@ -25,10 +25,10 @@
 
  max_grid_size = 32
 
- anelastic_cutoff = 6.d4
+ anelastic_cutoff = 3.d4
  base_cutoff_density = 1.d4
  buoyancy_cutoff_factor = 2.d0
- sponge_center_density = 6.d4
+ sponge_center_density = 3.d4
  sponge_start_factor = 2.0d0
  sponge_kappa = 10.0d0
 
@@ -37,16 +37,16 @@
  dm_in = 3
  do_sponge = .true.
 
- prob_hi_x = 7.5d8
- prob_hi_y = 7.5d8
- prob_hi_z = 7.5d8
+ prob_hi_x = 1.d9
+ prob_hi_y = 1.d9
+ prob_hi_z = 1.d9
 
 
- plot_base_name = "subCh_hot_baserun_plt"
+ plot_base_name = "subCh_hot_0.8_0.05_plt"
  plot_int  = -1
  plot_deltat = 1.0d0
 
- check_base_name = "subCh_hot_baserun_chk"
+ check_base_name = "subCh_hot_0.8_0.05_chk"
  chk_int   = 25
 
  cflfac = 0.7d0

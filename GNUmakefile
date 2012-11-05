@@ -1,8 +1,8 @@
-NDEBUG := t
+NDEBUG := 
 MPI    := t
 OMP    := t
 
-COMP := Cray
+COMP := gfortran
 
 MKVERBOSE := t
 
