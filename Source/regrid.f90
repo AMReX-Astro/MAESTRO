@@ -34,7 +34,6 @@ contains
     use geometry, only: nlevs_radial, spherical
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp
     use network, only: nspec
-    use initialize_module, only: initialize_bc
 
     integer       ,  intent(in   ) :: nstep
     type(ml_layout), intent(inout) :: mla
