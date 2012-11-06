@@ -309,7 +309,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dt
 
     !     Local variables
-    integer            :: i
+    integer            :: i,n
     real (kind = dp_t) :: rho,T_in
     real (kind = dp_t) :: x_in(nspec)
     real (kind = dp_t) :: x_out(nspec)
@@ -318,6 +318,9 @@ contains
     real (kind = dp_t) :: x_test
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
+
+    real (kind = dp_t) :: sum
+    real (kind = dp_t), parameter :: x_err = 1.d-10
 
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
@@ -359,6 +362,15 @@ contains
              x_out = x_in
              rhowdot = 0.d0
              rhoH = 0.d0
+          endif
+
+          ! check if sum{X_k} = 1
+          sum = ZERO
+          do n = 1, nspec
+             sum = sum + x_out(n)
+          enddo
+          if (abs(sum - ONE) > x_err) then
+             call bl_error("ERROR: abundances do not sum to 1")
           endif
 
           ! pass the density through
@@ -406,7 +418,7 @@ contains
     logical        , intent(in   ), optional :: mask(lo(1):,lo(2):)
 
     !     Local variables
-    integer            :: i, j
+    integer            :: i, j, n
     real (kind = dp_t) :: rho,T_in
     real (kind = dp_t) :: x_in(nspec)
     real (kind = dp_t) :: x_out(nspec)
@@ -416,6 +428,9 @@ contains
     logical            :: cell_valid
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
+
+    real (kind = dp_t) :: sum
+    real (kind = dp_t), parameter :: x_err = 1.d-10
 
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
@@ -465,6 +480,15 @@ contains
                 rhoH = 0.d0
              endif
              
+             ! check if sum{X_k} = 1
+             sum = ZERO
+             do n = 1, nspec
+                sum = sum + x_out(n)
+             enddo
+             if (abs(sum - ONE) > x_err) then
+                call bl_error("ERROR: abundances do not sum to 1")
+             endif
+
              ! pass the density through
              snew(i,j,rho_comp) = sold(i,j,rho_comp)
              
@@ -511,7 +535,7 @@ contains
     logical        , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
-    integer            :: i, j, k
+    integer            :: i, j, k, n
     real (kind = dp_t) :: rho,T_in,ldt
 
     real (kind = dp_t) :: x_in(nspec)
@@ -523,6 +547,9 @@ contains
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
+    real (kind = dp_t) :: sum
+    real (kind = dp_t), parameter :: x_err = 1.d-10
+
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
        firstCall = .false.
@@ -530,7 +557,7 @@ contains
 
     ldt = dt
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH) FIRSTPRIVATE(ldt) &
+    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sum,n) FIRSTPRIVATE(ldt) &
     !$OMP SCHEDULE(DYNAMIC,1)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -575,6 +602,15 @@ contains
                    rhoH = 0.d0
                 endif
                 
+                ! check if sum{X_k} = 1
+                sum = ZERO
+                do n = 1, nspec
+                   sum = sum + x_out(n)
+                enddo
+                if (abs(sum - ONE) > x_err) then
+                   call bl_error("ERROR: abundances do not sum to 1")
+                endif
+
                 ! pass the density through
                 snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
                 
@@ -628,7 +664,7 @@ contains
     logical        , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
-    integer            :: i, j, k
+    integer            :: i, j, k, n
     real (kind = dp_t) :: rho,T_in,ldt
 
     real (kind = dp_t) :: x_in(nspec)
@@ -640,6 +676,9 @@ contains
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
+    real (kind = dp_t) :: sum
+    real (kind = dp_t), parameter :: x_err = 1.d-10
+
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
        firstCall = .false.
@@ -647,7 +686,7 @@ contains
 
     ldt = dt
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH) &
+    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sum,n) &
     !$OMP FIRSTPRIVATE(ldt) &
     !$OMP SCHEDULE(DYNAMIC,1)
     do k = lo(3), hi(3)
@@ -696,6 +735,15 @@ contains
                    rhoH = 0.d0
                 endif
              
+                ! check if sum{X_k} = 1
+                sum = ZERO
+                do n = 1, nspec
+                   sum = sum + x_out(n)
+                enddo
+                if (abs(sum - ONE) > x_err) then
+                   call bl_error("ERROR: abundances do not sum to 1")
+                endif
+
                 ! pass the density through
                 snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
                 
