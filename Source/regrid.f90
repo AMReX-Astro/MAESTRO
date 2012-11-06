@@ -34,6 +34,7 @@ contains
     use geometry, only: nlevs_radial, spherical
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp
     use network, only: nspec
+    use initialize_module, only: initialize_bc
 
     integer       ,  intent(in   ) :: nstep
     type(ml_layout), intent(inout) :: mla
@@ -49,15 +50,16 @@ contains
     logical           :: new_grid
     integer           :: n, nl, d, ng_s, dm, nlevs, ng_buffer
     type(layout)      :: la_array(max_levs)
-    type(ml_layout)   :: mla_old
     type(ml_boxarray) :: mba
     integer           :: un
     logical           :: lexist
 
     ! These are copies to hold the old data.
-    type(multifab) :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
-    type(multifab) :: pi_temp(max_levs), dSdt_temp(max_levs), src_temp(max_levs)
-    type(multifab) :: rhoHdot_temp(max_levs)
+    type(ml_layout) :: mla_temp
+    type(bc_tower)  :: the_bc_tower_temp
+    type(multifab)  :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
+    type(multifab)  :: pi_temp(max_levs), dSdt_temp(max_levs), src_temp(max_levs)
+    type(multifab)  :: rhoHdot_temp(max_levs)
 
     dm    = mla%dim
     nlevs = mla%nlevel
@@ -76,18 +78,25 @@ contains
        call bl_error('Dont call regrid with max_levs < 2')
     end if
 
-    call ml_layout_build(mla_old,mla%mba,mla%pmask)
+    ! create a copy of the original mla and bc_tower
+    ! we need this for putting the original state into perturbational form
+    ! for filling new grids
+    call ml_layout_build(mla_temp,mla%mba,mla%pmask)
+    call initialize_bc(the_bc_tower_temp,nlevs,mla_temp%pmask)
+    do n = 1,nlevs
+       call bc_tower_level_build(the_bc_tower_temp,n,mla_temp%la(n))
+    end do    
 
     do n = 1,nlevs
 
        ! Create copies of the old data.
-       call multifab_build(  uold_temp(n),mla_old%la(n),   dm, ng_s)
-       call multifab_build(  sold_temp(n),mla_old%la(n),nscal, ng_s)
-       call multifab_build(   gpi_temp(n),mla_old%la(n),   dm, 1)
-       call multifab_build(    pi_temp(n),mla_old%la(n),    1, 1, nodal)
-       call multifab_build(  dSdt_temp(n),mla_old%la(n),    1, 0)
-       call multifab_build(   src_temp(n),mla_old%la(n),    1, 1)
-       call multifab_build(rhoHdot_temp(n),mla_old%la(n),   1, 0)
+       call multifab_build(  uold_temp(n),mla_temp%la(n),   dm, ng_s)
+       call multifab_build(  sold_temp(n),mla_temp%la(n),nscal, ng_s)
+       call multifab_build(   gpi_temp(n),mla_temp%la(n),   dm, 1)
+       call multifab_build(    pi_temp(n),mla_temp%la(n),    1, 1, nodal)
+       call multifab_build(  dSdt_temp(n),mla_temp%la(n),    1, 0)
+       call multifab_build(   src_temp(n),mla_temp%la(n),    1, 1)
+       call multifab_build(rhoHdot_temp(n),mla_temp%la(n),   1, 0)
 
        call multifab_copy_c(  uold_temp(n),1,  uold(n),1,   dm)
        call multifab_copy_c(  sold_temp(n),1,  sold(n),1,nscal)
@@ -130,10 +139,10 @@ contains
     allocate(rhoHdot(max_levs))
 
     ! Copy the level 1 boxarray
-    call copy(mba%bas(1),mla_old%mba%bas(1))
+    call copy(mba%bas(1),mla_temp%mba%bas(1))
 
     ! Copy the pd(:)
-    mba%pd(1) = mla_old%mba%pd(1)
+    mba%pd(1) = mla_temp%mba%pd(1)
     do n = 2, max_levs
        mba%pd(n) = refine(mba%pd(n-1),mba%rr((n-1),:))
     enddo
@@ -145,7 +154,7 @@ contains
     call bc_tower_level_build(the_bc_tower,1,la_array(1))
 
     ! Build and fill the level 1 data only.
-    call build_and_fill_data(1,la_array(1),mla_old, &
+    call build_and_fill_data(1,la_array(1),mla_temp, &
                              uold     ,sold     ,gpi     ,pi     ,dSdt     ,src,      rhoHdot, &
                              uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, rhoHdot_temp, &
                              the_bc_tower,dm,ng_s,mba%rr(1,:))
@@ -203,7 +212,7 @@ contains
                    call bc_tower_level_build(the_bc_tower,n,la_array(n)) 
    
                    ! Rebuild the lower level data again if it changed.
-                   call build_and_fill_data(n,la_array(n),mla_old, &
+                   call build_and_fill_data(n,la_array(n),mla_temp, &
                                             uold     ,sold     ,gpi     ,pi     ,dSdt     ,src,      rhoHdot, &
                                             uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, rhoHdot_temp, &
                                             the_bc_tower,dm,ng_s,mba%rr(n-1,:))
@@ -215,7 +224,7 @@ contains
           call bc_tower_level_build(the_bc_tower,nl+1,la_array(nl+1))
 
           ! Build the level nl+1 data only.
-          call build_and_fill_data(nl+1,la_array(nl+1),mla_old, &
+          call build_and_fill_data(nl+1,la_array(nl+1),mla_temp, &
                                    uold     ,sold     ,gpi     ,pi     ,dSdt     ,src,      rhoHdot, &
                                    uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, rhoHdot_temp, &
                                    the_bc_tower,dm,ng_s,mba%rr(nl,:))
@@ -246,15 +255,15 @@ contains
        if (init_into_finer) nlevs = nlevs-1
 
        ! convert (rho X) --> X in sold_temp 
-       call convert_rhoX_to_X(sold_temp,.true.,mla_old,the_bc_tower%bc_tower_array)
+       call convert_rhoX_to_X(sold_temp,.true.,mla_temp,the_bc_tower_temp%bc_tower_array)
 
        ! convert rho -> rho' in sold_temp
-       call put_in_pert_form(mla_old,sold_temp,rho0,dx,rho_comp,foextrap_comp,.true., &
-                             the_bc_tower%bc_tower_array)
+       call put_in_pert_form(mla_temp,sold_temp,rho0,dx,rho_comp,foextrap_comp,.true., &
+                             the_bc_tower_temp%bc_tower_array)
 
        ! convert (rho h) -> (rho h)' in sold_temp
-       call put_in_pert_form(mla_old,sold_temp,rhoh0,dx,rhoh_comp,foextrap_comp,.true., &
-                             the_bc_tower%bc_tower_array)
+       call put_in_pert_form(mla_temp,sold_temp,rhoh0,dx,rhoh_comp,foextrap_comp,.true., &
+                             the_bc_tower_temp%bc_tower_array)
 
        if (init_into_finer) nlevs = nlevs+1
 
@@ -271,7 +280,7 @@ contains
 
        ! Rebuild using the perturbational form
        do n = 1, nlevs
-          call build_and_fill_data(n,la_array(n),mla_old, &
+          call build_and_fill_data(n,la_array(n),mla_temp, &
                                    uold     ,sold     ,gpi     ,pi     ,dSdt     ,src,      rhoHdot, &
                                    uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, rhoHdot_temp, &
                                    the_bc_tower,dm,ng_s,mba%rr(n-1,:))
@@ -291,7 +300,7 @@ contains
     end if
 
     do nl = 1,nlevs
-       if (mla_old%nlevel .ge. nl) then
+       if (mla_temp%nlevel .ge. nl) then
           call destroy(  uold_temp(nl))
           call destroy(  sold_temp(nl))
           call destroy(   gpi_temp(nl))
@@ -398,12 +407,12 @@ contains
 !   end if
 
     call destroy(mba)
-
-    call destroy(mla_old)
+    call destroy(mla_temp)
+    call bc_tower_destroy(the_bc_tower_temp)
 
   end subroutine regrid
 
-  subroutine build_and_fill_data(lev,la,mla_old, &
+  subroutine build_and_fill_data(lev,la,mla_temp, &
                                  uold     ,sold     ,gpi     ,pi     ,dSdt     ,src,      rhoHdot, &
                                  uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, rhoHdot_temp, &
                                  the_bc_tower,dm,ng_s,rr)
@@ -415,7 +424,7 @@ contains
 
     integer                    , intent(in   ) :: lev, dm, ng_s, rr(:)
     type(layout)               , intent(in   ) :: la
-    type(ml_layout)            , intent(in   ) :: mla_old
+    type(ml_layout)            , intent(in   ) :: mla_temp
     type(bc_tower)             , intent(inout) :: the_bc_tower
     type(multifab)   ,  pointer :: uold(:),sold(:),gpi(:),pi(:),dSdt(:),src(:)
     type(multifab)   ,  pointer :: rhoHdot(:)
@@ -475,7 +484,7 @@ contains
     end if
 
     ! Copy from old data at current level, if it exists
-    if (mla_old%nlevel .ge. lev) then
+    if (mla_temp%nlevel .ge. lev) then
        call multifab_copy_c(  uold(lev),1,  uold_temp(lev),1,   dm)
        call multifab_copy_c(  sold(lev),1,  sold_temp(lev),1,nscal)
        call multifab_copy_c(   gpi(lev),1,   gpi_temp(lev),1,   dm)
