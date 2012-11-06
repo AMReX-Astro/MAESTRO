@@ -11,7 +11,7 @@ module varden_aux
 
   !Global variables
   private
-  type(multifab), save, allocatable :: react_s(:) !Multifab to hold react data
+  type(multifab), allocatable, save :: react_s(:) !Multifab to hold react data
 
   integer, save :: rho_c, h_c, spec_c, t_c, p_c, omegadot_c, hnuc_c, &
                    lhnuc_c, hext_c, dxn_con_c, h_con_c, ncomps
@@ -62,7 +62,6 @@ contains
     use probin_module, only: pmask, spherical_in, prob_lo, prob_hi, test_set
     use define_bc_module
     use geometry
-    use initialize_module
     use box_util_module
 
     !Args
@@ -212,7 +211,7 @@ contains
 
     !=== Execution ===
     do n=1, nlevs
-       call destroy(react_s(n))
+       call multifab_destroy(react_s(n))
     end do
     
     deallocate(react_s)

@@ -25,7 +25,7 @@ subroutine varden()
                            metalicity_max, &
                            run_prefix
   use runtime_init_module
-  use initialize_module, only: initialize_dx
+  use geometry, only: initialize_dx
   use bl_constants_module
   use network
   use eos_module, only: eos_input_rt, eos_input_rh, eos_input_tp, &

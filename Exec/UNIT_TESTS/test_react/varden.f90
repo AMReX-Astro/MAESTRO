@@ -20,7 +20,6 @@ subroutine varden()
   use bl_constants_module
   use bl_types
   use define_bc_module
-  use initialize_module, only: initialize_dx, initialize_bc
   use network
   use eos_module
   use react_state_module
@@ -158,6 +157,8 @@ subroutine varden()
   enddo
 
   !## Clean-up ##
+  call varden_close() ! -- must do this before we destroy the layout
+
   !If you (or a subroutine) built it, destroy it!
   do n = 1,nlevs
     call destroy(s(n))
@@ -177,6 +178,6 @@ subroutine varden()
   deallocate(rho_omegadot)
   deallocate(rho_Hnuc)
   deallocate(rho_Hext)
-  call varden_close()
+
   call runtime_close()
 end subroutine varden
