@@ -14,12 +14,11 @@ subroutine varden()
   use geometry, only: spherical, init_spherical, &
        init_center, destroy_geometry, &
        dr_fine, nr_fine, &
-       init_cutoff, init_radial, init_multilevel
+       init_cutoff, init_radial, init_multilevel, initialize_dx
   use box_util_module, only: read_a_hgproj_grid
-  use initialize_module, only: initialize_bc, initialize_dx
   use bl_IO_module
   use bl_constants_module
-  use define_bc_module, only: bc_tower, bc_tower_level_build, bc_tower_destroy
+  use define_bc_module, only: bc_tower, bc_tower_level_build, bc_tower_destroy, initialize_bc
   use test_projection_module
   use proj_parameters
   use hgproject_module
