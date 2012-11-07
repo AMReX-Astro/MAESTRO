@@ -34,8 +34,9 @@ subroutine varden()
   use fill_3d_module, only: make_normal
   use geometry, only:  nlevs_radial, spherical, &
                        dr_fine, nr_fine, &
-                       init_spherical, init_center, init_multilevel, init_radial, &
-                       init_cutoff, destroy_geometry
+                       init_spherical, init_center, &
+                       init_multilevel, init_radial, &
+                       init_cutoff, initialize_dx, destroy_geometry
   use network, only: network_init, nspec
   use eos_module, only: eos_init
   use probin_module, only: dump_output, advect_test_tol, &
@@ -45,7 +46,6 @@ subroutine varden()
                            cflfac, &
                            stop_time
   use runtime_init_module, only: runtime_init, runtime_close
-  use initialize_module, only: initialize_bc, initialize_dx
   use bl_constants_module
   use multifab_physbc_module
   use multifab_fill_ghost_module
