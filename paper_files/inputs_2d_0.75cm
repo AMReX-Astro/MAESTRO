@@ -98,12 +98,6 @@
  init_divu_iter = 3
  init_iter = 3
 
- do_initial_projection = F
- init_divu_iter = 0
- init_iter = 0
- max_step = 0
- plot_int = 1
-
  use_tfromp = F
  dpdt_factor = 0.0d0
 
