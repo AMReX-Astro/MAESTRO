@@ -1276,11 +1276,16 @@ actions that are used for {\tt ell\_bc\_level\_array} are either
 Dirichlet or Neumann boundary condtions.  For the velocity
 projections, we are dealing with a pressure-like quantity, $\phi$, so
 the pressure boundary conditions here reflect the behavior we want for
-the velocity.  You want $d\phi/dn=0$ in places where the incoming
-velocity to the elliptic solve must match the velocity you want after
-the projection (e.g.\ inflow, solid walls).  For outlet boundaries,
-setting $\phi = 0$ allows the velocity to adjust as needed to the
-domain (see, for example, \cite{almgrenBellSzymczak:1996}).
+the velocity.  After the projection, it is $\nabla \phi$ that modifies
+the velocity field.  At a wall or for inflow conditions, we already
+have the velocity we want at the boundary, so we want the velocity to
+remain unchanged after the projection.  This requires $d\phi/dn=0$ on
+those boundaries.  For outflow, we impose a condition that we do not
+want the boundaries to introduce any tangental acceleration (or
+shear), this is equivalent to setting $\phi = 0$ (then $\partial
+\phi/d\partial t = 0$, with $t$ meaning `tangental').  This allows the
+velocity to adjust as needed to the domain (see, for example,
+\cite{almgrenBellSzymczak:1996}).
 
 The actual filling of the ghostcells according to the descriptions
 contained in the \bctower\ is carried out by the {\tt
