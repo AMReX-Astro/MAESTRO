@@ -154,8 +154,6 @@ subroutine varden()
      point(1) = r*cos(theta) + HALF*(prob_lo(1) + prob_hi(1))
      point(2) = r*sin(theta) + HALF*(prob_lo(2) + prob_hi(2))
 
-     print *, point
-
      call add(particles,point,mla,dx,prob_lo)
   enddo
 
@@ -194,7 +192,6 @@ subroutine varden()
 
   ! write out a plotfile that contains the magnitude of the velocity
   ! field
-  print *, mla%mba%rr(:,1)
   call fabio_ml_multifab_write_d(s,mla%mba%rr(:,1), &
                                  "magvel_field")
 
@@ -249,6 +246,8 @@ subroutine varden()
   deallocate(umac)
 
   call bc_tower_destroy(the_bc_tower)
+
+  call destroy(particles)
 
   call runtime_close()
 
