@@ -21,13 +21,12 @@ subroutine varden()
   use variables, only: nscal, init_variables, rho_comp, spec_comp
   use geometry, only:  spherical, &
                        init_spherical, init_center, &
-                       init_cutoff
+                       init_cutoff, initialize_dx
   use probin_module, only: prob_lo, prob_hi, pmask, &
                            test_set, cflfac, &
                            stop_time, vel_amp, &
                            max_levs
   use runtime_init_module
-  use initialize_module, only: initialize_bc, initialize_dx
   use bl_constants_module
   use particle_module
   use test_particles_module, only: init_umac_2d
