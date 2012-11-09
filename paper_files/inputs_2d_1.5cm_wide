@@ -5,7 +5,7 @@
  !----------------------------------------------------------------------------
  ! problem setup
  !----------------------------------------------------------------------------
- model_file = "alex_1000_rprox_0.75cm.hse.isen"
+ model_file = "alex_1000_rprox_1.5cm.hse.isen"
 
  spherical_in = 0
 
@@ -29,25 +29,24 @@
  !----------------------------------------------------------------------------
  ! gridding
  !----------------------------------------------------------------------------
-
-! n_cellx = 256
+! n_cellx = 512
 ! n_celly = 768
 ! 
 ! ! we tag where rhoHnuc > tag_minval
 ! tag_minval = 3e15
 !
-! max_levs = 3
+! max_levs = 2
 ! regrid_int = 2
+!
 ! max_grid_size_1 = 32
 ! max_grid_size = 64
 
- ! fixed grid file
- test_set = 'gr0_2d_0.75cm'
+ test_set = 'gr0_2d_1.5cm_wide'
 
  prob_lo_x = 0.0d0
  prob_lo_y = 6499.5d0
 
- prob_hi_x = 768.0d0
+ prob_hi_x = 1536.0d0
  prob_hi_y = 8803.5d0
 
  bcx_lo = -1

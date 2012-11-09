@@ -30,7 +30,7 @@
  ! gridding
  !----------------------------------------------------------------------------
 
-! n_cellx = 256
+! n_cellx = 512
 ! n_celly = 768
 ! 
 ! ! we tag where rhoHnuc > tag_minval
@@ -42,12 +42,12 @@
 ! max_grid_size = 64
 
  ! fixed grid file
- test_set = 'gr0_2d_0.75cm'
+ test_set = 'gr0_2d_0.75cm_wide'
 
  prob_lo_x = 0.0d0
  prob_lo_y = 6499.5d0
 
- prob_hi_x = 768.0d0
+ prob_hi_x = 1536.0d0
  prob_hi_y = 8803.5d0
 
  bcx_lo = -1
