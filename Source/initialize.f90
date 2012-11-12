@@ -138,6 +138,7 @@ contains
     nlevs = mla%nlevel
     nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
+
     ! initialize boundary conditions
     call initialize_bc(the_bc_tower,nlevs,pmask)
     do n = 1,nlevs
@@ -145,10 +146,10 @@ contains
     end do
 
     ! allocate states
-    allocate(uold(max_levs),sold(max_levs),gpi(max_levs),pi(max_levs))
-    allocate(dSdt(max_levs),Source_old(max_levs),Source_new(max_levs))
-    allocate(rho_omegadot2(max_levs),rho_Hnuc2(max_levs),rho_Hext(max_levs))
-    allocate(thermal2(max_levs))
+    allocate(uold(nlevs),sold(nlevs),gpi(nlevs),pi(nlevs))
+    allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs))
+    allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),rho_Hext(nlevs))
+    allocate(thermal2(nlevs))
 
     if (ppm_type .eq. 2 .or. bds_type .eq. 1) then
        ng_s = 4
