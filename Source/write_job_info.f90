@@ -22,6 +22,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
   use omp_module
   use network
   use cputime_module, only: get_cputime
+  use mg_eps_module
 
   implicit none
 
@@ -155,6 +156,25 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
      do n = 1, nspec
         write (99,2002) n, spec_names(n), short_spec_names(n), aion(n), zion(n)
      enddo
+
+     write (99,*) " "
+     write (99,*) " "
+
+
+     write (99,999)
+     write (99,*) "MG Tolerance Information"
+     write (99,999)
+     write (99,*) "  eps_mac:          ", eps_mac
+     write (99,*) "  eps_mac_max:      ", eps_mac_max
+     write (99,*) "  mac_level_factor: ", mac_level_factor
+     write (99,*) "  eps_mac_bottom:   ", eps_mac_bottom
+
+     write (99,*) " "
+
+     write (99,*) "  eps_hg:           ", eps_hg
+     write (99,*) "  eps_hg_max:       ", eps_hg_max
+     write (99,*) "  hg_level_factor:  ", hg_level_factor
+     write (99,*) "  eps_hg_bottom:    ", eps_hg_bottom
 
      write (99,*) " "
      write (99,*) " "
