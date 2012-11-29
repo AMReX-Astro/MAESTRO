@@ -208,10 +208,10 @@ contains
           exit
 
        case default
-          if ( .not. parallel_q() ) then
+          if ( parallel_IOProcessor() ) then
              write(*,*) 'UNKNOWN option = ', fname
-             call bl_error("MAIN")
           end if
+          call bl_error("Unknown option")
        end select
 
        farg = farg + 1
