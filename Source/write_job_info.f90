@@ -8,7 +8,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
   use bl_types
   use parallel
   use probin_module, only: job_name, inputs_file_used
-  use runtime_init_module, only: probin
+  use runtime_init_module, only: runtime_pretty_print
   use bl_system_module, only: BL_CWD_SIZE, get_cwd 
   use bc_module
   use define_bc_module
@@ -183,7 +183,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
      write (99,999)
      write (99,*) "Runtime Parameter Information"
      write (99,999)
-     write (99,nml=probin)
+     call runtime_pretty_print(99)
      close(99)
   endif
 
