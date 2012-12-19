@@ -173,6 +173,19 @@ To make a movie (output sequence of images):
 
 \section{Working at NERSC}
 
+\subsection{General Guidelines}
+
+hopper is configured with 24 cores per node, with the cores grouped
+into 4 NUMA nodes of 6 cores each.  Best performance is seen when
+running with 6 threads and 4 MPI tasks per node, using the following
+run line:
+\begin{verbatim}
+aprun -n 128 -N 4 -d 6 -S 1 -ss ./main.Linux.Cray.mpi.omp.ex inputs_3d
+\end{verbatim}
+Here, {\tt -n} is the number of MPI tasks, and {\tt n * d} is the
+total number of cores (which should match the {\tt mppwidth} set at
+the top of the submission script).
+
 \subsection{Automatic Restarting and Archiving of Data}
 
 The same set of submission scripts are available for hopper at NERSC in 
