@@ -3,7 +3,7 @@
 \subsection{Automatic Restarting and Archiving of Data}
 
 The submission script {\tt jaguar.run} and shell script
-{\tt process.jaguar} in {\tt wdconvect/job\_scripts/}
+{\tt process.jaguar} in {\tt Util/job\_scripts/jaguar/}
 are designed to allow you to run \maestro\ with minimal interaction,
 while being assured that the data is archived to HPSS on the NCCS
 machines.
@@ -65,14 +65,8 @@ is running at any one time.  Sometimes if the machine crashes, the
 {\tt process.pid} file will be left behind, in which case, the script
 aborts.  Just delete that if you know the script is not running.
 
-Analogous scripts exist for running on Atlas, with the same general
-procedure.  The command to chain a job on atlas is:
-\begin{verbatim}
-msub -l depend=<JOB-ID> <MSUB SCRIPT>
-\end{verbatim}
-where, again, {\tt <JOB-ID>} is the id number of the job that must
-complete before the current submission runs and {\tt <MSUB SCRIPT>}
-is the job submission script (e.g.\ {\tt atlas.run}).
+The {\tt chainsub.sh} script can be used to automatically launch a number
+of jobs depending on a single, currently queued (or running) job.
 
 
 \subsection{Remote \visit\ Visualization on Lens}
@@ -179,6 +173,12 @@ To make a movie (output sequence of images):
 
 \section{Working at NERSC}
 
+\subsection{Automatic Restarting and Archiving of Data}
+
+The same set of submission scripts are available for hopper at NERSC in 
+{\tt Util/job\_scripts/hopper/}.  They are mostly identical, with a few
+minor changes for the local system configuration.  The use is the same
+as described above.
 
 \subsection{Using the {\tt AmrPostprocesing} python plotting scripts on hopper}
 
