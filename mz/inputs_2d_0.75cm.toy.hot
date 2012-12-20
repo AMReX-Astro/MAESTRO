@@ -3,7 +3,7 @@
  !----------------------------------------------------------------------------
  ! problem setup
  !----------------------------------------------------------------------------
- model_file = "alex_1000_rprox_0.75cm.hse"
+ model_file = "toy_xrb.hot.hse.tanh.delta_12.000cm.dx_0.750cm"
 
  spherical_in = 0
 
@@ -14,36 +14,27 @@
  xrb_pert_size = 50
  xrb_pert_factor = 1.0d-5
  xrb_pert_type = 1
- xrb_pert_height = 7075.0d0
+ xrb_pert_height = 575.0d0
 
  ! velocity perturbation
  apply_vel_field    = T
  velpert_scale      = 1.0d2
  velpert_amplitude  = 1.0d5
- velpert_height_loc = 7075.0
+ velpert_height_loc = 575.0
  num_vortices       = 8
 
 
  !----------------------------------------------------------------------------
  ! gridding
  !----------------------------------------------------------------------------
- n_cellx = 128
- n_celly = 768
- 
- ! we tag where rhoHnuc > tag_minval
- tag_minval = 3e15
+ test_set = "gr0_2d_0.75cm.toy"
 
- max_levs = 3
- regrid_int = 2
-
- max_grid_size_1 = 32
- max_grid_size = 64
 
  prob_lo_x = 0.0d0
- prob_lo_y = 6499.5d0
+ prob_lo_y = 0.0d0
 
- prob_hi_x = 384.0d0
- prob_hi_y = 8803.5d0
+ prob_hi_x = 768.0d0
+ prob_hi_y = 2304.0d0
 
  bcx_lo = -1
  bcx_hi = -1
@@ -72,7 +63,7 @@
  !----------------------------------------------------------------------------
  plot_int  = -1
  plot_deltat = 1.e-4
- chk_int   = 200
+ chk_int   = 500
 
  plot_base = T
  plot_h_with_use_tfromp = T
