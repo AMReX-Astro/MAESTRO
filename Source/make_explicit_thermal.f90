@@ -100,7 +100,7 @@ contains
 
        ! applyop to compute resid = del dot Tcoeff grad T
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
-                        stencil_order,mla%mba%rr)
+                        stencil_order)
      
        do n=1,nlevs
           call destroy(phi(n))
@@ -150,7 +150,7 @@ contains
        
        ! applyop to compute resid = del dot hcoeff grad h
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
-                        stencil_order,mla%mba%rr)
+                        stencil_order)
        
        ! add residual to thermal
        do n=1,nlevs
@@ -169,7 +169,7 @@ contains
           
           ! applyop to compute resid = del dot Xkcoeff grad X_k
           call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+spec_comp+comp-1, &
-                           stencil_order,mla%mba%rr)
+                           stencil_order)
           
           ! add residual to thermal
           do n=1,nlevs
@@ -184,7 +184,7 @@ contains
 
        ! applyop to compute resid = del dot pcoeff grad p0
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,foextrap_comp, &
-                        stencil_order,mla%mba%rr)
+                        stencil_order)
        
        do n=1,nlevs
           call destroy(phi(n))

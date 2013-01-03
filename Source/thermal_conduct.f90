@@ -140,7 +140,7 @@ contains
 
     ! apply the operator
     call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                     dm+rhoh_comp,stencil_order,mla%mba%rr)
+                     dm+rhoh_comp,stencil_order)
 
     ! begin construction of rhs by setting rhs = \rho^{(2)}h^{(2')}
     do n=1,nlevs
@@ -189,7 +189,7 @@ contains
 
        ! apply the operator
        call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                        dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
+                        dm+spec_comp+comp-1,stencil_order)
 
        if(thermal_diffusion_type .eq. 1) then
           ! add lphi to rhs
@@ -225,7 +225,7 @@ contains
 
        ! apply the operator
        call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                        dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
+                        dm+spec_comp+comp-1,stencil_order)
 
        ! add lphi to rhs
        do n=1,nlevs
@@ -260,7 +260,7 @@ contains
                               dx,the_bc_tower%bc_tower_array,mla)
     ! apply the operator
     call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                     foextrap_comp,stencil_order,mla%mba%rr)
+                     foextrap_comp,stencil_order)
 
     if(thermal_diffusion_type .eq. 1) then
        ! add lphi to rhs
@@ -293,7 +293,7 @@ contains
 
     ! apply the operator
     call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                     foextrap_comp,stencil_order,mla%mba%rr)
+                     foextrap_comp,stencil_order)
 
     do n=1,nlevs
        call destroy(rhsalpha(n))
