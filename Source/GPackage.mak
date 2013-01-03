@@ -34,7 +34,6 @@ f90sources += init_perturb.f90
 f90sources += initial_proj.f90
 f90sources += initialize.f90
 f90sources += inlet_bc.f90
-f90sources += mac_applyop.f90
 f90sources += mac_multigrid.f90
 f90sources += macproject.f90
 f90sources += main.f90
