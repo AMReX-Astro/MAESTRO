@@ -1,7 +1,9 @@
-\section{Automatic Restarting and Archiving of Data}
+\section{Working at OLCF (ORNL)}
+
+\subsection{Automatic Restarting and Archiving of Data}
 
 The submission script {\tt jaguar.run} and shell script
-{\tt process.jaguar} in {\tt wdconvect/job\_scripts/}
+{\tt process.jaguar} in {\tt Util/job\_scripts/jaguar/}
 are designed to allow you to run \maestro\ with minimal interaction,
 while being assured that the data is archived to HPSS on the NCCS
 machines.
@@ -63,17 +65,11 @@ is running at any one time.  Sometimes if the machine crashes, the
 {\tt process.pid} file will be left behind, in which case, the script
 aborts.  Just delete that if you know the script is not running.
 
-Analogous scripts exist for running on Atlas, with the same general
-procedure.  The command to chain a job on atlas is:
-\begin{verbatim}
-msub -l depend=<JOB-ID> <MSUB SCRIPT>
-\end{verbatim}
-where, again, {\tt <JOB-ID>} is the id number of the job that must
-complete before the current submission runs and {\tt <MSUB SCRIPT>}
-is the job submission script (e.g.\ {\tt atlas.run}).
+The {\tt chainsub.sh} script can be used to automatically launch a number
+of jobs depending on a single, currently queued (or running) job.
 
 
-\section{Remote \visit\ Visualization on Lens}
+\subsection{Remote \visit\ Visualization on Lens}
 
 For large data files, visualization with \visit\ should be done with
 a client running on your local machine interfacing with \visit\ running
@@ -173,3 +169,61 @@ To make a movie (output sequence of images):
   \end{enumerate}
 
 \end{itemize}
+
+
+\section{Working at NERSC}
+
+\subsection{General Guidelines}
+
+hopper is configured with 24 cores per node, with the cores grouped
+into 4 NUMA nodes of 6 cores each.  Best performance is seen when
+running with 6 threads and 4 MPI tasks per node, using the following
+run line:
+\begin{verbatim}
+aprun -n 128 -N 4 -d 6 -S 1 -ss ./main.Linux.Cray.mpi.omp.ex inputs_3d
+\end{verbatim}
+Here, {\tt -n} is the number of MPI tasks, and {\tt n * d} is the
+total number of cores (which should match the {\tt mppwidth} set at
+the top of the submission script).
+
+\subsection{Automatic Restarting and Archiving of Data}
+
+The same set of submission scripts are available for hopper at NERSC in 
+{\tt Util/job\_scripts/hopper/}.  They are mostly identical, with a few
+minor changes for the local system configuration.  The use is the same
+as described above.
+
+\subsection{Using the {\tt AmrPostprocesing} python plotting scripts on hopper}
+
+To build the {\tt fsnapshot.so} library, you need to do:
+\begin{verbatim}
+module load gcc
+\end{verbatim}
+{\tt f2py} is already in the path, so the library should then build without issue.
+%
+
+Then edit your {\tt .bashrc.ext} file to set the {\tt PYTHONPATH} to
+the {\tt python\_plotfile} directory, e.g.:
+\begin{verbatim}
+export PYTHONPATH="/global/homes/z/zingale/AmrPostprocessing/F\_Src/python_plotfile"
+\end{verbatim}
+%
+and set the {\tt PATH} to that directory,
+\begin{verbatim}
+export PATH="/global/homes/z/zingale/AmrPostprocessing/F_Src/python_plotfile:$PATH"
+\end{verbatim}
+
+To run the script, you need to do:
+\begin{verbatim}
+module load matplotlib
+module load python
+\end{verbatim}
+
+
+
+\subsection{Remote visualization on hopper}
+
+\visit\ is already configured to work with hopper.  If the host does not appear
+in your local version of visit, copy the {\tt host\_nersc\_hopper.xml} file
+from the {\tt .visit/allhosts/} directory under the system's \visit\ install path
+to your {\tt $\mathtt{\sim}$/.visit/hosts/} directory. 
