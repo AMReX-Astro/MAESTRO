@@ -268,6 +268,9 @@ def do_plot(plotfile,
     ax.cax.colorbar(im, format=formatter)
 
 
+    # write the time
+    pylab.text(0.1,0.1, "t = %g s" % (time), transform = F.transFigure)
+
 
     #--------------------------------------------------------------------------
     # save the figure
