@@ -1,0 +1,88 @@
+&PROBIN
+ model_file = "sub_chandra.M_WD-1.00.M_He-0.10.hse.C.2560.hotcutoff"
+ drdxfac = 5
+
+ job_name = "256^3 base, hot T cutoff, default sponge, 3 levels -- M_WD=1.0, M_He=0.100"
+
+ hg_bottom_solver = 4
+ mg_bottom_solver = 4
+ max_mg_bottom_nlevels = 3
+
+ max_levs = 3
+ regrid_int = 2
+
+ n_cellx = 256
+ n_celly = 256
+ n_cellz = 256
+
+ stop_time = 30000.
+
+ max_step  = 100000000
+
+ init_iter = 1
+ init_divu_iter = 3
+ do_initial_projection = T
+
+ max_grid_size = 32
+
+ anelastic_cutoff = 1.75d5
+ base_cutoff_density = 1.d4
+ buoyancy_cutoff_factor = 2.d0
+ sponge_center_density = 1.75d5
+ sponge_start_factor = 2.0d0
+ sponge_kappa = 10.0d0
+
+ spherical_in = 1
+ octant = .true.
+ dm_in = 3
+ do_sponge = .true.
+
+ prob_hi_x = 6.5d8
+ prob_hi_y = 6.5d8
+ prob_hi_z = 6.5d8
+
+
+ plot_base_name = "10100-3lev_plt"
+ plot_int  = -1
+ plot_deltat = 0.25d0
+
+ check_base_name = "10100-3lev_chk"
+ chk_int   = 25
+
+ cflfac = 0.7d0
+ init_shrink = 0.1d0
+ max_dt_growth = 1.1d0
+ use_soundspeed_firstdt = T
+ use_divu_firstdt = T
+
+ bcx_lo = 13
+ bcx_hi = 12
+ bcy_lo = 13
+ bcy_hi = 12
+ bcz_lo = 13
+ bcz_hi = 12
+
+    verbose = 1
+ mg_verbose = 2
+ cg_verbose = 0
+
+ do_burning = T
+
+ enthalpy_pred_type = 1
+ evolve_base_state = T
+
+ dpdt_factor = 0.0d0
+ species_pred_type = 3
+ use_tfromp = T
+
+ single_prec_plotfiles = T
+
+ use_eos_coulomb = T
+
+ plot_trac = F
+
+ velpert_amplitude = 1.d5
+ velpert_scale = 5.d7
+ velpert_steep = 1.d7
+
+/
