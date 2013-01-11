@@ -37,6 +37,7 @@ var4 = "enucdot"
 m4 = 1.e14
 M4 = 1.e19
 l4 = 1
+epsEnuc = 1.e-10
 
 var5 = "X(Mg22)"
 m5 = 1.e-8
@@ -51,7 +52,7 @@ def do_plot(plotfile,
             eps, dpi, 
             xmax_pass, ymax_pass, zmax_pass):
 
-    global var1, m1, M1, l1, var2, m2, M2, l2, var3, m3, M3, l3, var4, m4, M4, l4, var5, m5, M5, l5
+    global var1, m1, M1, l1, var2, m2, M2, l2, var3, m3, M3, l3, var4, m4, M4, l4, var5, m5, M5, l5, epsEnuc
 
     pylab.rc("font", size=9)
 
@@ -162,6 +163,9 @@ def do_plot(plotfile,
 
     data4 = numpy.transpose(data4)
 
+    # floor values
+    data4[data4 < epsEnuc] = epsEnuc
+
     if (l4):
         data4 = numpy.log10(data4)
         m4 = math.log10(m4)
@@ -269,7 +273,7 @@ def do_plot(plotfile,
 
 
     # write the time
-    pylab.text(0.1,0.1, "t = %g s" % (time), transform = F.transFigure)
+    pylab.text(0.0,0.05, "t = %g s" % (time), transform = F.transFigure)
 
 
     #--------------------------------------------------------------------------
