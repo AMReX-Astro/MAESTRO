@@ -1409,7 +1409,10 @@ subroutine varden()
 
      end if
 
-     if ( plot_int > 0 .and. last_plt_written .ne. istep ) then
+     if ( ( plot_int > 0 .or. &
+            (plot_deltat > ZERO .and. &
+             mod(time - dt,plot_deltat) > mod(time,plot_deltat)) ) .and. &
+          last_plt_written .ne. istep ) then
 
         if (istep <= 99999) then
            write(unit=plot_index,fmt='(i5.5)') istep
