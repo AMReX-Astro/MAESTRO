@@ -4,11 +4,11 @@
 # the same figure.  Note: the variables and limits are hardcoded here.
 #
 # 2012-01-10 M. Zingale
-
+import matplotlib
+matplotlib.use('Agg')
 import fsnapshot
 import numpy
 import pylab
-import matplotlib
 import os
 import sys
 import getopt
