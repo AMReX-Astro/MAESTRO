@@ -184,7 +184,23 @@ aprun -n 128 -N 4 -d 6 -S 1 -ss ./main.Linux.Cray.mpi.omp.ex inputs_3d
 \end{verbatim}
 Here, {\tt -n} is the number of MPI tasks, and {\tt n * d} is the
 total number of cores (which should match the {\tt mppwidth} set at
-the top of the submission script).
+the top of the submission script). \\
+
+\noindent (2013-01-15) It's been seen that sometimes an MPICH2 error is 
+generated of the form:
+\begin{verbatim}
+MPIU_nem_gni_get_hugepages(): Unable to mmap 8388608 bytes for file 
+/var/lib/hugetlbfs/global/pagesize-2097152/hugepagefile.MPICH.1.19467.kvs_14619732, 
+err Cannot allocate memory
+\end{verbatim}
+Setting:
+\begin{verbatim}
+export MPICH_GNI_MALLOC_FALLBACK=enabled
+\end{verbatim}
+in your submission script seems to fix this issue.  This will allow
+MPI to continue if there are insufficient huge pages in one NUMA node.
+(Alternately, it was suggested to run without the {\tt -ss} option to
+{\tt aprun}.
 
 \subsection{Automatic Restarting and Archiving of Data}
 
