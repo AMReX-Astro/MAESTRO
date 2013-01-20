@@ -167,8 +167,8 @@ sizes.
 \label{sec:vis:python}
 
 
-{\tt AmrPostprocessing/F\_Src/python\_plotfile} provide a simple commandline
-tool for doing visualizations of \boxlib\ plotfiles.  The main drivers
+{\tt AmrPostprocessing/F\_Src/python\_plotfile} provide some simple commandline
+tools for doing visualizations of \boxlib\ plotfiles.  The main drivers
 are written in python and use a set of Fortran routines, compiled with
 {\tt f2py} to interface with the plotfile data.  To use the routine,
 you will need to have {\tt matplotlib} and {\tt f2py} installed.  On a
@@ -180,6 +180,18 @@ yum install python-matplotlib f2py
 The library required by the python routines can be built by typing
 '{\tt make}' in that directory.  If successful, you should find
 a library {\tt fsnapshot.so}. 
+
+The path to {\tt fsnapshot.so} should be included in your {\tt PYTHONPATH}
+environment variable.  This can be done by adding:
+\begin{verbatim}
+export PYTHONPATH="${PYTHONPATH}:/home/user/AmrPostprocessing/F_Src/python_plotfile}
+\end{verbatim}
+to your {\tt .bashrc}.
+
+It is recommended that you use {\tt matplotlib} version 1.2.0 or
+higher.  If the fonts look strange in the output files, you can try
+installing the {\tt lyx-fonts} package and deleting your {\tt
+  .matplotlib} directory, and trying again.
 
 \subsection{\tt plotsinglevar.py}
 
@@ -233,11 +245,44 @@ will put the slices through the origin.
 
 \subsection{\tt contourcompare.py}
 
-{\tt contourcompare.py} takes 2 plotfiles and a variable as arguments
-and plots contours of the 2 datasets on the same set of axes.  This is 
+{\tt contourcompare.py} takes two or three plotfiles and a single variable as arguments
+and plots contours of the datasets on the same set of axes.  This is 
 form comparisons of different runs.  Running the script with no parameters
 will give the full list available options.
 
+For example:
+\begin{verbatim}
+contourcompare.py tfromp plt00000 other_plt00000
+\end{verbatim}
+will make a contour plot of the variable {\tt tfromp} from the data in
+{\tt plt00000} and {\tt other\_plt00000} shown on the same axes.  
+
+
+\subsection{\tt runtimevis.py}
+
+The {\tt runtimevis.py} script is designed to be run from a submission
+script to produce plots from plotfiles as they are produced.  This is
+accomplished by hooking it into the {\tt process} scripts described in
+Chapter~\ref{ch:managingjobs}.
+
+The script itself reads in an inputs file, {\tt vis.in}, that
+describes the variables to plot.  From 1 to 6 variables can be
+plotting from a plotfile.  The script does its best to organize them
+in columns and rows to maximize the plot area.  The image is always
+output at 1280$\times$720 pixels, corresponding to 720p HD resolution.
+For each variable, a block of the form:
+\begin{verbatim}
+[varname]
+min = 1
+max = 2
+log = 1
+\end{verbatim}
+is supplied.  If {\tt min} or {\tt max} are omitted, then the data
+limits are computed automatically.  If {\tt log} is omitted, then no
+log is taken of the data before plotting.  The script is then run as:
+\begin{verbatim}
+runtimevis.py plt00000
+\end{verbatim}
 
 
 
@@ -373,7 +418,6 @@ convenience module that sets up the appropriate \yt namespace.
 %% local\_variable}---then this should be done via the various API's
 %% for that particular piece of code.  For example,
 For completeness, below is a script containing our example above.
-\newpage
 \begin{lstlisting}[language=Python]
 # load our namespace
 from yt.mods import *
