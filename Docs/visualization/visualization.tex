@@ -167,7 +167,7 @@ sizes.
 \label{sec:vis:python}
 
 
-{\tt AmrPostprocessing/F\_Src/python\_plotfile} provide some simple commandline
+{\tt AmrPostprocessing/python} provides some simple commandline
 tools for doing visualizations of \boxlib\ plotfiles.  The main drivers
 are written in python and use a set of Fortran routines, compiled with
 {\tt f2py} to interface with the plotfile data.  To use the routine,
@@ -184,7 +184,7 @@ a library {\tt fsnapshot.so}.
 The path to {\tt fsnapshot.so} should be included in your {\tt PYTHONPATH}
 environment variable.  This can be done by adding:
 \begin{verbatim}
-export PYTHONPATH="${PYTHONPATH}:/home/user/AmrPostprocessing/F_Src/python_plotfile}
+export PYTHONPATH="${PYTHONPATH}:/home/user/AmrPostprocessing/python}
 \end{verbatim}
 to your {\tt .bashrc}.
 
