@@ -117,7 +117,7 @@ contains
        hi =  upb(get_box(s,i))
        select case (dm)
        case (1)
-          call bl_error("ERROR: initscalardata not support in 1d")
+          call bl_error("ERROR: initscalardata not supported in 1d")
        case (2)
           call initscalardata_2d(sop(:,:,1,:),lo,hi,ng,dx,s0_init,p0_init)
        case (3)
@@ -283,10 +283,7 @@ contains
     ! then initialize h from rho, X, and p0.
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
-    ! initialize the scalars
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,rho_comp), &
-                                      s(:,:,:,rho_comp:),lo,hi,dx,ng)
-
+    ! initialize temp
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,temp_comp), &
                                       s(:,:,:,temp_comp:),lo,hi,dx,ng)
 
@@ -299,6 +296,18 @@ contains
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
                                          s(:,:,:,comp:),lo,hi,dx,ng)
     end do
+
+    ! initialize rho as sum of partial densities rho*X_i
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             s(i,j,k,rho_comp) = ZERO
+             do comp = spec_comp, spec_comp+nspec-1
+                s(i,j,k,rho_comp) = s(i,j,k,rho_comp) + s(i,j,k,comp)
+             enddo
+          enddo
+       enddo
+    enddo 
 
     ! initialize tracers
     do comp = trac_comp, trac_comp+ntrac-1
