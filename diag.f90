@@ -64,6 +64,8 @@ contains
     use bl_prof_module
     use bl_constants_module
     use bl_error_module
+    use bl_system_module, only: BL_CWD_SIZE, get_cwd 
+    use probin_module, only: job_name
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(multifab) , intent(in   ) :: s(:)
@@ -143,6 +145,10 @@ contains
     integer :: i,n, index_max, isum
     integer :: un, un2, un3, un4
     logical :: lexist
+
+    character (len=16) :: date_str, time_str
+    integer, dimension(8) :: values
+    character (len=BL_CWD_SIZE) :: cwd
 
     logical, save :: firstCall = .true.
 
@@ -632,8 +638,12 @@ contains
 
     if (do_deltap_diag) deltap_avg = deltap_avg / nzones
 
+999 format("# job name: ",a)
 1000 format(1x,10(g20.10,1x))
 1001 format("#",10(a18,1x))
+800 format("# ",a,i4.4,'-',i2.2,'-',i2.2)
+801 format("# ",a,i2.2,':',i2.2,':',i2.2)
+802 format("# ",a,a)
 
     if (parallel_IOProcessor()) then
 
@@ -681,6 +691,31 @@ contains
 
        ! print the headers
        if(firstCall) then
+
+          ! get the data and time
+          call date_and_time(date_str, time_str, VALUES=values)
+
+          ! get the output directory
+          call get_cwd(cwd)
+
+          write (un, *) " "
+          write (un, 800) "output date: ", values(1), values(2), values(3)
+          write (un, 801) "output time: ", values(5), values(6), values(7)
+          write (un, 802) "output dir:  ", trim(cwd)
+          write (un, 999) trim(job_name)
+
+          write (un2, *) " "
+          write (un2, 800) "output date: ", values(1), values(2), values(3)
+          write (un2, 801) "output time: ", values(5), values(6), values(7)
+          write (un2, 802) "output dir:  ", trim(cwd)
+          write (un2, 999) trim(job_name)
+
+          write (un3, *) " "
+          write (un3, 800) "output date: ", values(1), values(2), values(3)
+          write (un3, 801) "output time: ", values(5), values(6), values(7)
+          write (un3, 802) "output dir:  ", trim(cwd)
+          write (un3, 999) trim(job_name)
+
           
           if (dm > 2) then
              write(un , 1001) "time", "max{T}", "x_loc", "y_loc", "z_loc"
