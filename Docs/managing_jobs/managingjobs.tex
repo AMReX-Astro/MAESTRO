@@ -1,5 +1,27 @@
 \label{ch:managingjobs}
 
+\section{General Info}
+
+All plotfile directories have a {\tt job\_info} file which lists as
+host of parameters about the simulation, including:
+\begin{itemize}
+\item A descriptive name for the simulation (the {\tt job\_name} runtime
+  parameter
+\item The number of MPI tasks and OpenMP threads
+\item The total amount of CPU-hours used up to this point
+\item The data and time of the plotfile creation and the directory it was written to.
+\item The build date, machine, and directory
+\item The MAESTRO, BoxLib and other relevant git hashes for the source
+\item The directories used in the build
+\item The compilers used and compilation flags
+\item The number of levels and boxes for the grid
+\item The properties of the species carried
+\item The tolerances for the MG solves
+\item The value of all runtime parameters (even those that were not explicitly set in the inputs file)
+\end{itemize}
+This file makes it easy to understand how to recreate the run that
+produced the plotfile.
+
 \section{Working at OLCF (ORNL)}
 
 \subsection{Automatic Restarting and Archiving of Data}
