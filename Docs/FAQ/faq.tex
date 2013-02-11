@@ -278,6 +278,16 @@ appears (projected on the Cartesian mesh vs.\ interpolated from the
 radial mesh)---we made the decision at the time to separate the
 components for that reason.
 
+
+\item {\em Why does ``checkerboarding'' appear in the velocity field,
+especially in regions where the flow is stagnant?}
+
+Checkerboarding can arise from the projection---it doesn't see that
+mode (because it is an approximate projection) so it is unable to
+remove it.  This allows the pattern to slowly build up.  There are
+filtering techniques that can be used to remove these modes, but
+they are not implemented in \maestro.
+
 \end{enumerate}
 
 
