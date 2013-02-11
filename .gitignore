@@ -1,0 +1,23 @@
+# latex intermediates
+*.aux
+*.log
+*.dvi
+*.toc
+*.bbl
+*.blg
+*.lof
+*.lot
+
+
+# emacs temporaries
+*~
+\#*
+
+
+# Maestro files created at compile-time
+probin.f90
+build_info.f90
+
+
+# Maestro executable
+main.*.exe
