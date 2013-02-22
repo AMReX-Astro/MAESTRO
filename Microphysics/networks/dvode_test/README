@@ -48,3 +48,8 @@ false-positive.  These values are stored in the tol(:) array, where
 atol(:) = tol(1) and rtol(:) = tol(2).
 
 The driver for the test problem can be found in ./test/
+
+This example came from the lecture notes from the JINA Summer School
+"Tools and Toys for Nuclear Astrophysics: Nuclear Reaction Network
+Techniques" by Frank Timmes.  See lecture 2:
+http://cococubed.asu.edu/talk_pages/jina.shtml
