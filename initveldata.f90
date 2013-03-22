@@ -75,7 +75,7 @@ contains
     enddo
 
     do i = 0, nr_fine-1
-       if (s0_init(1,i,spec_comp-1+ihe4) > 0.9_dp_t) then
+       if (s0_init(1,i,spec_comp-1+ihe4)/s0_init(1,i,rho_comp) > 0.9_dp_t) then
           velpert_r_inner = r_cc_loc(1,i)
           exit
        endif
