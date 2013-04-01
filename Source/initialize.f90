@@ -380,6 +380,8 @@ contains
        dt = 1.d20
        restart = -1
 
+       ! end of restart_with_vel_field = T
+
     else
 
        ! now that we have nr we can read in the base state
