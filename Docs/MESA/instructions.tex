@@ -10,11 +10,9 @@ applications in computational stellar astrophysics. The modules include
 macroscopic and microscopic physics such as nuclear reaction rates, opacity, 
 equation of state, element diffusion data and atmosphere boundary conditions 
 in addition to numerical routines. This document describes how to link the 
-{\sf MESA} modules to an outside program such as {\sf MAESTRO}.
-\footnote{This
+{\sf MESA} modules to an outside program such as {\sf MAESTRO}\footnote{This
   interface work was done by Ryan Orvedahl---questions (and credit)
   should be directed to him}.
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -25,18 +23,23 @@ in addition to numerical routines. This document describes how to link the
 
 To install {\sf MESA}, download the source code from the {\sf MESA} website, 
 {\tt http://mesa.sourceforge.net}. Check the website for the latest version, 
-which is 4442 with the writing of this document. The codes and algorithms 
+which is 4849 when the last upgrades to this document were added. The codes 
+and algorithms 
 discussed here were created when the current version of {\sf MESA} was 
-version 4411. Between versions 4411 and 4442, there are minor changes that 
-will cause some of the included routines to crash. To download the source code 
-associated with version 4411, use the following command:
+version 4088 and have been modified accordingly to keep up with the quickly 
+channging source code. It might be possible to use older versions of 
+{\sf MESA} with 
+the information in this document, although there are minor changes and 
+upgrades between {\sf MESA} versions that may cause the routines and algorithms 
+discussed here to crash. To download the source code associated with version 
+4849, issue the following command:
 \begin{lstlisting}[language=bash,mathescape=false]
-  svn co -r 4411 http://mesa.svn.sourceforge.net/svnroot/mesa/trunk mesa
+  svn co -r 4849 svn://svn.code.sf.net/p/mesa/code/trunk mesa
 \end{lstlisting}
 This will download the source into a directory called {\tt mesa} located 
 in the directory where this command was run. This step might take some time 
-($\sim$10 min depending on the internet connection) possibly because the 
-final {\tt mesa} directory will take up roughly 2.2 GB.
+($\sim$3 min depending on the internet connection) possibly because the 
+final {\tt mesa} directory will take up roughly 2.1 GB.
 
 Rich Townsend has developed a Software Development Kit (SDK) to help install 
 {\sf MESA} called {\sf MESASDK}. The SDK will install certain software 
@@ -64,7 +67,8 @@ Bourne shell):
 \item Set location of {\tt mesa}: 
 {\tt export MESA\_DIR=<absolute-path-to-mesa-directory>}
 
-\item Set OpenMP number of threads: {\tt export OMP\_NUM\_THREADS=n}, a suggested value is the number of cores in the computer
+\item Set OpenMP number of threads: {\tt export OMP\_NUM\_THREADS=n}, a 
+suggested value is the number of cores in the computer
 \end{enumerate}
 
 %-------------------------------------------------------------------------
@@ -95,7 +99,7 @@ complains upon compiling the {\tt mesa/utils} module, then change it to
 
 \item {\tt BLAS} and {\tt LAPACK}: Set the location of {\tt LAPACK} and 
 {\tt BLAS} provided with the {\sf MESA} source tree using the following 
-definitions:
+definitions (these should be the default settings):
 \begin{lstlisting}[language=make,mathescape=false,upquote=true]
   WHICH_LAPACK = USE_SRCS
   LOAD_LAPACK = -lmesalapack
@@ -130,64 +134,76 @@ Installing {\sf MESA} without OpenMP will result in a
 failed install. {\sf MESA} is capable of being compiled in serial, but it 
 must happen after the initial install.
 
-\item {\tt LOAD\_MATRIX}: {\tt LOAD\_MATRIX} is first defined near the end of 
-the file around line $\sim$275. The purpose of this variable is to load all 
-the libraries associated with linear algebra including {\tt LAPACK}, {\tt BLAS} 
-and a few others. The lines we wish to change look like this:
-\begin{lstlisting}[language=make,mathescape=false]
-  #LOAD_MATRIX = -lmtx -lconst -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
-  # for ifort on mac, we need the following def for LOAD_MATRIX 
-  # because of loader bugs (as of July 2012)
-  LOAD_MATRIX = -lmtx $(MESA_DIR)/const/make/const_def.o \
-      $(MESA_DIR)/const/make/const_lib.o -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
-  LOAD_MESA_NUMERICS = -linterp_2d -linterp_1d -lnum -lutils -lalert \
-      $(LOAD_MATRIX)
-\end{lstlisting}
-We must uncomment the first {\tt LOAD\_MATRIX} and comment out the second one:
-\begin{lstlisting}[language=make,mathescape=false]
-  LOAD_MATRIX = -lmtx -lconst -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
-  # for ifort on mac, we need the following def for LOAD_MATRIX 
-  # because of loader bugs (as of July 2012)
-  #LOAD_MATRIX = -lmtx $(MESA_DIR)/const/make/const_def.o \
-  #    $(MESA_DIR)/const/make/const_lib.o -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
-  LOAD_MESA_NUMERICS = -linterp_2d -linterp_1d -lnum -lutils -lalert \
-       $(LOAD_MATRIX)
-\end{lstlisting}
+%============================================================================
+% This next \item is unnecessary for version 4849 (it was necessary for 4411)
+%============================================================================
+%
+%\item {\tt LOAD\_MATRIX}: {\tt LOAD\_MATRIX} is first defined near the end of 
+%the file around line $\sim$280. The purpose of this variable is to load all 
+%the libraries associated with linear algebra including {\tt LAPACK}, 
+%{\tt BLAS} and a few others. The lines we wish to change look like this:
+%\begin{lstlisting}[language=make,mathescape=false]
+%  #LOAD_MATRIX = -lmtx -lconst -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
+%  # for ifort on mac, we need the following def for LOAD_MATRIX 
+%  # because of loader bugs (as of July 2012)
+%  LOAD_MATRIX = -lmtx $(MESA_DIR)/const/make/const_def.o \
+%      $(MESA_DIR)/const/make/const_lib.o -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
+%  LOAD_MESA_NUMERICS = -linterp_2d -linterp_1d -lnum -lutils -lalert \
+%      $(LOAD_MATRIX)
+%\end{lstlisting}
+%We must uncomment the first {\tt LOAD\_MATRIX} and comment out the second one:
+%\begin{lstlisting}[language=make,mathescape=false]
+%  LOAD_MATRIX = -lmtx -lconst -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
+%  # for ifort on mac, we need the following def for LOAD_MATRIX 
+%  # because of loader bugs (as of July 2012)
+%  #LOAD_MATRIX = -lmtx $(MESA_DIR)/const/make/const_def.o \
+%  #    $(MESA_DIR)/const/make/const_lib.o -lmesaklu $(LOAD_LAPACK) $(LOAD_BLAS)
+%  LOAD_MESA_NUMERICS = -linterp_2d -linterp_1d -lnum -lutils -lalert \
+%       $(LOAD_MATRIX)
+%\end{lstlisting}
 
-\item {\tt install} script: In the {\tt MESA} directory, open the {\tt install} 
-script and comment out two lines. We want to change:
-\begin{lstlisting}[language=bash,mathescape=false]
-  do_one atm
+%============================================================================
+% This next \item is unnecessary for version 4849 (it was necessary for 4411)
+%============================================================================
+%
+%\item {\tt install} script: In the {\tt MESA} directory, open the 
+%{\tt install} script and comment out two lines. We want to change:
+%\begin{lstlisting}[language=bash,mathescape=false]
+%  do_one atm
+%
+%  do_one sample
+%
+%  do_one star
+%
+%  do_one adipls
+%\end{lstlisting}
+%to this:
+%\begin{lstlisting}[language=bash,mathescape=false]
+%  do_one atm
+%
+%  #do_one sample
+%
+%  #do_one star
+%
+%  #do_one adipls
+%\end{lstlisting}
+%There are routines in the {\tt star} package and {\tt adipls} that rely on 
+%the {\tt PGSTAR} modules. We do not wish to use these modules and the easiest 
+%way around this is to not install both {\tt star} and {\tt adipls} because 
+%neither one is needed to include {\sf MESA} microphysics modules in 
+%{\sf MAESTRO}. {\tt star} is the 1D stellar evolution module and {\tt adipls} 
+%module is used for asteroseismology. The {\tt sample} module is simply a 
+%sample directory that is not needed for using the main microphysics modules.
 
-  do_one sample
-
-  do_one star
-
-  do_one adipls
-\end{lstlisting}
-to this:
-\begin{lstlisting}[language=bash,mathescape=false]
-  do_one atm
-
-  #do_one sample
-
-  #do_one star
-
-  #do_one adipls
-\end{lstlisting}
-There are routines in the {\tt star} package and {\tt adipls} that rely on 
-the {\tt PGSTAR} modules. We do not wish to use these modules and the easiest 
-way around this is to not install both {\tt star} and {\tt adipls} because 
-neither one is needed to include {\sf MESA} microphysics modules in 
-{\sf MAESTRO}. {\tt star} is the 1D stellar evolution module and {\tt adipls} 
-module is used for asteroseismology. The {\tt sample} module is simply a 
-sample directory that is not needed for using the main microphysics modules.
-
+%============================================================================
+% This next \item is necessary when compiling in serial
+%============================================================================
+%
 \item Edit 1 source file: An undefined reference to 
 {\tt omp\_get\_max\_threads} occurs in the {\tt const\_def.f} file located in 
-{\tt const/public/const\_def.f}.
+{\tt const/public/const\_def.f} when compiling in serial.
 
-In the {\tt const\_def.f} file, around line $\sim$164, in the 
+In the {\tt const\_def.f} file, around line $\sim$168, in the 
 {\tt do\_const\_init} subroutine, there is a line that reads:
 \begin{lstlisting}[language=fortran,mathescape=false]
   omp_num_threads = omp_get_max_threads()
@@ -263,9 +279,8 @@ be recompiled, which is a three step process involving the {\tt clean},
 first step is to clean out any old files using the {\tt ./clean} script. 
 Step two is to make the module using the {\tt ./mk} script. The last step is 
 to export the {\tt .mod} files and the library to the right directories using 
-the {\tt ./export} script. Section \ref{sec:compile_scripts} contains a 
-simple script that is meant to help with compiling modules. It cleans, makes 
-and exports every module and should be run in the top {\tt mesa/} directory.
+the {\tt ./export} script. Section \ref{sec:compile_scripts} discusses a few 
+simple scripts that are meant to help with compiling modules.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Optional mesa/star OpenMP
@@ -277,11 +292,13 @@ only using a few {\sf MESA} modules that do not include the {\tt mesa/star}
 stellar evolution code, then these last few places do not need to be 
 modified in any way. 
 
-In {\tt mesa/star/private/micro.f} there are three places 
-to set the {\tt use\_omp} flag to False. They occur in the {\tt do\_eos}, 
-{\tt do\_neu} and {\tt do\_net} routines. The fourth place to set the 
-{\tt use\_omp} flag to False is contained in the {\tt do\_kap} routine in 
-{\tt mesa/star/private/opacities.f}.
+To find where all to set the {\tt use\_omp} flag to False, execute the 
+following command:
+\begin{lstlisting}[language=bash,mathescape=false]
+  find $(MESA_DIR) -name "*.f" -exec grep -Hn --color use_omp {} \;
+\end{lstlisting}
+This will return fortran files located in the {\tt mesa/star/private} 
+directory.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compiling MESA with an Outside Program
