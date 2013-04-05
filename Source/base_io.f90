@@ -48,9 +48,12 @@ contains
     if (istep <= 99999) then
        write(unit=state_name,fmt='("model_cc_",i5.5)') istep
        write(unit=w0_name,fmt='("model_ec_",i5.5)') istep
-    else
+    else if (istep <= 999999) then
        write(unit=state_name,fmt='("model_cc_",i6.6)') istep
        write(unit=w0_name,fmt='("model_ec_",i6.6)') istep
+    else
+       write(unit=state_name,fmt='("model_cc_",i7.7)') istep
+       write(unit=w0_name,fmt='("model_ec_",i7.7)') istep
     endif
     
     if (spherical .eq. 0) then
@@ -147,9 +150,12 @@ contains
     if (restart <= 99999) then
        write(unit=state_name,fmt='("model_cc_",i5.5)') restart
        write(unit=w0_name,fmt='("model_ec_",i5.5)') restart
-    else
+    else if (restart <= 999999) then
        write(unit=state_name,fmt='("model_cc_",i6.6)') restart
        write(unit=w0_name,fmt='("model_ec_",i6.6)') restart
+    else
+       write(unit=state_name,fmt='("model_cc_",i7.7)') restart
+       write(unit=w0_name,fmt='("model_ec_",i7.7)') restart
     endif
 
     ! read in cell-centered 1D data

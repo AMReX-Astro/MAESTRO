@@ -49,8 +49,10 @@ contains
     ! create the names of the files that will store the output
     if (istep <= 99999) then
        write(unit=aux_name,fmt='("aux_",i5.5)') istep
-    else
+    else if (istep <= 999999) then
        write(unit=aux_name,fmt='("aux_",i6.6)') istep
+    else
+       write(unit=aux_name,fmt='("aux_",i7.7)') istep
     endif
   
 
@@ -91,8 +93,10 @@ contains
 
     if (restart <= 99999) then
        write(unit=aux_name,fmt='("aux_",i5.5)') restart
-    else
+    else if (restart <= 999999) then
        write(unit=aux_name,fmt='("aux_",i6.6)') restart
+    else
+       write(unit=aux_name,fmt='("aux_",i7.7)') restart
     endif
 
     out_name = trim(chk_name) // "/" // trim(aux_name)

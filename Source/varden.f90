@@ -84,6 +84,7 @@ subroutine varden()
 
   character(len=5)               :: plot_index, check_index
   character(len=6)               :: plot_index6, check_index6
+  character(len=7)               :: plot_index7, check_index7
   character(len=256)             :: plot_file_name, check_file_name
   character(len=20), allocatable :: plot_names(:)
   
@@ -189,9 +190,12 @@ subroutine varden()
      if (restart <= 99999) then
         write(unit=check_index,fmt='(i5.5)') restart
         check_file_name = trim(check_base_name) // check_index
-     else
+     else if (restart <= 999999) then
         write(unit=check_index6,fmt='(i6.6)') restart
         check_file_name = trim(check_base_name) // check_index6
+     else
+        write(unit=check_index7,fmt='(i7.7)') restart
+        check_file_name = trim(check_base_name) // check_index7
      endif
 
      if (use_particles) then
@@ -585,9 +589,12 @@ subroutine varden()
         if (istep <= 99999) then
            write(unit=check_index,fmt='(i5.5)') istep
            check_file_name = trim(check_base_name) // check_index
-        else
+        else if (istep <= 999999) then
            write(unit=check_index6,fmt='(i6.6)') istep
            check_file_name = trim(check_base_name) // check_index6
+        else
+           write(unit=check_index7,fmt='(i7.7)') istep
+           check_file_name = trim(check_base_name) // check_index7
         endif
 
         call checkpoint_write(check_file_name, chkdata, &
@@ -1272,9 +1279,12 @@ subroutine varden()
               if (istep <= 99999) then
                  write(unit=check_index,fmt='(i5.5)') istep
                  check_file_name = trim(check_base_name) // check_index
-              else
+              else if (istep <= 999999)  then
                  write(unit=check_index6,fmt='(i6.6)') istep
                  check_file_name = trim(check_base_name) // check_index6
+              else
+                 write(unit=check_index7,fmt='(i7.7)') istep
+                 check_file_name = trim(check_base_name) // check_index7
               endif
 
               call checkpoint_write(check_file_name, chkdata, &
@@ -1381,9 +1391,12 @@ subroutine varden()
         if (istep <= 99999) then
            write(unit=check_index,fmt='(i5.5)') istep
            check_file_name = trim(check_base_name) // check_index
-        else
+        else if (istep <= 999999) then
            write(unit=check_index6,fmt='(i6.6)') istep
            check_file_name = trim(check_base_name) // check_index6
+        else
+           write(unit=check_index7,fmt='(i7.7)') istep
+           check_file_name = trim(check_base_name) // check_index7
         endif
 
         call checkpoint_write(check_file_name, chkdata, &

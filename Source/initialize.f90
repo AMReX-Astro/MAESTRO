@@ -98,6 +98,7 @@ contains
   
     character(len=5)   :: check_index
     character(len=6)   :: check_index6
+    character(len=7)   :: check_index7
     character(len=256) :: check_file_name
 
     ! sanity check
@@ -388,9 +389,12 @@ contains
        if (restart <= 99999) then
           write(unit=check_index,fmt='(i5.5)') restart
           check_file_name = trim(check_base_name) // check_index
-       else
+       else if (restart <= 999999) then
           write(unit=check_index6,fmt='(i6.6)') restart
           check_file_name = trim(check_base_name) // check_index6
+       else
+          write(unit=check_index7,fmt='(i7.7)') restart
+          check_file_name = trim(check_base_name) // check_index7
        endif
 
        ! note: still need to load/store tempbar
