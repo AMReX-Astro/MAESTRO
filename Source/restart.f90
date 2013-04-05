@@ -37,6 +37,7 @@ contains
     type(multifab)   , pointer        :: chk_thermal2(:)
     character(len=5)                  :: check_index
     character(len=6)                  :: check_index6
+    character(len=7)                  :: check_index7
     character(len=256)                :: check_file_name
     integer                           :: n,nlevs_local
 
@@ -50,9 +51,12 @@ contains
     if (restart_int <= 99999) then
        write(unit=check_index,fmt='(i5.5)') restart_int
        check_file_name = trim(check_base_name) // check_index
-    else
+    else if (restart_int <= 999999) then
        write(unit=check_index6,fmt='(i6.6)') restart_int
        check_file_name = trim(check_base_name) // check_index6
+    else
+       write(unit=check_index7,fmt='(i7.7)') restart_int
+       check_file_name = trim(check_base_name) // check_index7
     endif
 
     
