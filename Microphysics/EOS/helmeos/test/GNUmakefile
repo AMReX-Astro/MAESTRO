@@ -17,7 +17,7 @@ GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/ig
 BOXLIB_ONLY := t
 EXTRA_DIR = Microphysics/EOS/helmeos/test
 
-testALL: testeos
+testALL: testeos table
 
 # define the packages to build this problem
 #   note: we only need to include the problem's directory if there are 

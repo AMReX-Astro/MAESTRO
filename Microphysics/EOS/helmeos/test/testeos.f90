@@ -3,11 +3,13 @@ program testeos
   use bl_types
   use network
   use eos_module
+  use eos_type_module
 
   implicit none
 
   real(kind=dp_t) :: dens, temp, pres, entr
   real(kind=dp_t), dimension(nspec) :: Xin
+  type(eos_t) :: eos_state
   
   integer :: ic12, io16, img24
 
@@ -31,57 +33,41 @@ program testeos
   Xin(img24) = 0.0_dp_t
 
 
-  den_eos = dens
-  temp_eos = temp
-  xn_eos(:) = Xin(:)
+  eos_state%rho = dens
+  eos_state%T = temp
+  eos_state%xn(:) = Xin(:)
 
   do_diag = .false.
 
-  call eos(eos_input_rt, den_eos, temp_eos, &
-           xn_eos, &
-           p_eos, h_eos, e_eos, &
-           cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-           dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-           dpdX_eos, dhdX_eos, &
-           gam1_eos, cs_eos, s_eos, &
-           dsdt_eos, dsdr_eos, &
-           do_diag)
+  call eos(eos_input_rt, eos_state, do_diag)
 
   print *, 'eos_input_rt:'
   print *, 'dens: ', dens, ' temp: ', temp
   print *, 'X: ', Xin
-  print *, 'pres: ', p_eos,  ' ener: ', e_eos
-  print *, 'h:    ', h_eos,  ' entr: ', s_eos
-  print *, 'c_v:  ', cv_eos, ' c_p : ', cp_eos
-  print *, 'dpdT: ', dpdt_eos, ' dpdr: ', dpdr_eos
-  print *, 'dedT: ', dedt_eos, ' dedr: ', dedr_eos
-  print *, 'dpdX: ', dpdX_eos(:)
-  print *, 'dhdX: ', dhdX_eos(:)
+  print *, 'pres: ', eos_state%p,  ' ener: ', eos_state%e
+  print *, 'h:    ', eos_state%h,  ' entr: ', eos_state%s
+  print *, 'c_v:  ', eos_state%cv, ' c_p : ', eos_state%cp
+  print *, 'dpdT: ', eos_state%dpdt, ' dpdr: ', eos_state%dpdr
+  print *, 'dedT: ', eos_state%dedt, ' dedr: ', eos_state%dedr
+  print *, 'dpdX: ', eos_state%dpdX(:)
+  print *, 'dhdX: ', eos_state%dhdX(:)
 
-  p_eos = pres
-  s_eos = entr
+  eos_state%p = pres
+  eos_state%s = entr
 
-  call eos(eos_input_ps, den_eos, temp_eos, &
-           xn_eos, &
-           p_eos, h_eos, e_eos, &
-           cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-           dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-           dpdX_eos, dhdX_eos, &
-           gam1_eos, cs_eos, s_eos, &
-           dsdt_eos, dsdr_eos, &
-           do_diag)
+  call eos(eos_input_ps, eos_state, do_diag)
 
   print *, 'eos_input_ps:'
-  print *, 'dens: ', den_eos, ' temp: ', temp_eos
+  print *, 'dens: ', eos_state%rho, ' temp: ', eos_state%T
   print *, 'X: ', Xin
   print *, 'pres: ', pres,  ' entr: ', entr
-  print *, 'p_eos: ', p_eos, ' s_eos: ', s_eos
-  print *, 'h:    ', h_eos,  ' ener: ', e_eos
-  print *, 'c_v:  ', cv_eos, ' c_p : ', cp_eos
-  print *, 'dpdT: ', dpdt_eos, ' dpdr: ', dpdr_eos
-  print *, 'dedT: ', dedt_eos, ' dedr: ', dedr_eos
-  print *, 'dpdX: ', dpdX_eos(:)
-  print *, 'dhdX: ', dhdX_eos(:)
+  print *, 'p_eos: ', eos_state%p, ' s_eos: ', eos_state%s
+  print *, 'h:    ', eos_state%h,  ' ener: ', eos_state%e
+  print *, 'c_v:  ', eos_state%cv, ' c_p : ', eos_state%cp
+  print *, 'dpdT: ', eos_state%dpdt, ' dpdr: ', eos_state%dpdr
+  print *, 'dedT: ', eos_state%dedt, ' dedr: ', eos_state%dedr
+  print *, 'dpdX: ', eos_state%dpdX(:)
+  print *, 'dhdX: ', eos_state%dhdX(:)
   
 
 end program testeos
