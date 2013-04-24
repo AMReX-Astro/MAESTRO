@@ -30,7 +30,6 @@ contains
 
     use bl_prof_module
     use geometry, only: spherical
-    use variables, only: foextrap_comp
     use bl_constants_module
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
