@@ -51,7 +51,7 @@ contains
     type(multifab)  :: uedge(mla%nlevel,mla%dim)
     logical         :: is_vel
     logical         :: is_final_update
-    integer         :: velpred,n,comp,dm,nlevs
+    integer         :: n,comp,dm,nlevs
     real(kind=dp_t) :: smin,smax
 
     type(bl_prof_timer), save :: bpt
@@ -61,7 +61,6 @@ contains
     nlevs = mla%nlevel
 
     is_vel  = .true.
-    velpred = 0
     dm = mla%dim
 
     do n = 1, nlevs
