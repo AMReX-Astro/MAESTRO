@@ -1,3 +1,8 @@
+! velpred is called by advance_premac -- it is used to predict the
+! normal velocities to the interfaces.  We don't care about the
+! transverse velocities here.  The prediction is done piecewise linear
+! or with PPM depending on ppm_type.
+
 module velpred_module
 
   use bl_types
