@@ -35,7 +35,7 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use probin_module, only: evolve_base_state
-    use fill_3d_module, only : make_w0mac, put_1d_array_on_cart
+    use fill_3d_module, only : put_1d_array_on_cart
 
     type(multifab) , intent(inout) :: vel_force(:)
     logical        , intent(in   ) :: is_final_update
