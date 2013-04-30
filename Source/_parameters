@@ -462,6 +462,12 @@ ppm_type                            integer            1
 # 1 = bilinear
 bds_type                            integer            0
 
+# if 1, then perform parabolic reconstruction on the forces used in
+# the prediction and trace under the parabola to the interfaces the
+# amount that can reach the interface over dt
+ppm_trace_forces                    integer            0
+
+
 # what type of coefficient to use inside the velocity divergence constraint. @@
 # {\tt beta\_type} = 1 uses $\beta_0$; @@
 # {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); @@

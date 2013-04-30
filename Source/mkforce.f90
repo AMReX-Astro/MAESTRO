@@ -15,13 +15,14 @@ module mk_vel_force_module
   implicit none
 
   private
-  public :: mk_vel_force, add_utilde_force
+  public :: mk_vel_force
 
 contains
 
   subroutine mk_vel_force(vel_force,is_final_update, &
-                          uold,umac,w0,w0mac,gpi,s,index_rho, &
-                          rho0,grav,dx,w0_force,w0_force_cart,the_bc_level,mla)
+                          uold,umac,w0,w0mac,gpi,s,index_rho,normal, &
+                          rho0,grav,dx,w0_force,w0_force_cart,the_bc_level,mla, &
+                          do_add_utilde_force)
 
     ! index_rho refers to the index into s where the density lives.
     ! Usually s will be the full state array, and index_rho would
@@ -29,17 +30,19 @@ contains
     ! multifab array, so index_rho may be different.
 
     use bl_prof_module
-    use geometry, only: spherical
+    use geometry, only: spherical, nr_fine, dr
     use bl_constants_module
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use probin_module, only: evolve_base_state
     use fill_3d_module, only : put_1d_array_on_cart
+    use variables, only : foextrap_comp
 
     type(multifab) , intent(inout) :: vel_force(:)
     logical        , intent(in   ) :: is_final_update
     type(multifab) , intent(in   ) :: uold(:)
+    type(multifab) , intent(in   ) :: normal(:)
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
@@ -53,12 +56,14 @@ contains
     type(multifab) , intent(in   ) :: w0_force_cart(:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
+    logical        , intent(in   ) :: do_add_utilde_force
 
     ! Local variables
     real(kind=dp_t), pointer ::  uop(:,:,:,:)
     real(kind=dp_t), pointer ::  ump(:,:,:,:)
     real(kind=dp_t), pointer ::  vmp(:,:,:,:)
     real(kind=dp_t), pointer ::  wmp(:,:,:,:)
+    real(kind=dp_t), pointer ::   np(:,:,:,:)
     real(kind=dp_t), pointer :: w0cp(:,:,:,:)
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
@@ -66,11 +71,17 @@ contains
     real(kind=dp_t), pointer ::   fp(:,:,:,:)
     real(kind=dp_t), pointer ::   rp(:,:,:,:)
     real(kind=dp_t), pointer ::  w0p(:,:,:,:)
-    integer                  :: i,lo(mla%dim),hi(mla%dim),dm,nlevs
-    integer                  :: ng_s,ng_f,ng_gp,n,ng_uo,ng_um
+    real(kind=dp_t), pointer :: gw0p(:,:,:,:)
+
+    ! stuff for spherical only
+    real(kind=dp_t) :: gradw0_rad(1,0:nr_fine-1)
+    type(multifab)  :: gradw0_cart(mla%nlevel)
+
+    integer                  :: i,r,lo(mla%dim),hi(mla%dim),dm,nlevs
+    integer                  :: ng_s,ng_f,ng_gp,n,ng_uo,ng_um, ng_n
    
     type(multifab) :: w0_cart(mla%nlevel)
-    integer :: ng_wc, ng_wm, ng_w
+    integer :: ng_wc, ng_wm, ng_w, ng_gw
 
     type(bl_prof_timer), save :: bpt
 
@@ -83,7 +94,8 @@ contains
     ng_f  = nghost(vel_force(1))
     ng_gp = nghost(gpi(1))
 
-    ! put w0 on cell centers
+
+    ! put w0 and gradw0 on cell centers
     if (spherical .eq. 1) then
        do n=1,nlevs
           ! w0_cart will contain the cell-centered Cartesian components of w0, 
@@ -92,12 +104,27 @@ contains
           ! in the cell update
           call build(w0_cart(n),mla%la(n),dm,0)
           call setval(w0_cart(n), ZERO, all=.true.)
+
+          call build(gradw0_cart(n),get_layout(vel_force(n)),1,1)
+          call setval(gradw0_cart(n), ZERO, all=.true.)
        enddo       
 
        if (evolve_base_state) then
           ! fill the all dm components of the cell-centered w0_cart
           call put_1d_array_on_cart(w0,w0_cart,1,.true.,.true.,dx, &
                                     the_bc_level,mla)
+
+          if (do_add_utilde_force) then
+             !$OMP PARALLEL DO PRIVATE(r)
+             do r=0,nr_fine-1
+                gradw0_rad(1,r) = (w0(1,r+1) - w0(1,r)) / dr(1)
+             enddo
+             !$OMP END PARALLEL DO
+
+             call put_1d_array_on_cart(gradw0_rad,gradw0_cart,foextrap_comp, &
+                                       .false.,.false.,dx,the_bc_level,mla)
+          endif
+               
        end if
 
     endif
@@ -107,45 +134,67 @@ contains
           fp  => dataptr(vel_force(n),i)
           gpp => dataptr(gpi(n),i)
           rp  => dataptr(s(n),i)
+
           lo = lwb(get_box(s(n),i))
           hi = upb(get_box(s(n),i))
+
+          ump => dataptr(umac(n,1),i)
+          ng_um = nghost(umac(1,1))
+
           select case (dm)
           case (1)
-             call mk_vel_force_1d(fp(:,1,1,1),ng_f,gpp(:,1,1,1),ng_gp,rp(:,1,1,index_rho), &
-                                  ng_s,rho0(n,:),grav(n,:),w0_force(n,:),lo,hi)
+             call mk_vel_force_1d(fp(:,1,1,1),ng_f,gpp(:,1,1,1),ng_gp, &
+                                  rp(:,1,1,index_rho),ng_s, &
+                                  ump(:,1,1,1), ng_um, &
+                                  rho0(n,:),grav(n,:),w0(n,:),w0_force(n,:),lo,hi,n, &
+                                  do_add_utilde_force)
+
           case (2)
-             call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp,rp(:,:,1,index_rho), &
-                                  ng_s,rho0(n,:),grav(n,:),w0_force(n,:),lo,hi)
+             vmp => dataptr(umac(n,2),i)
+             call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp, &
+                                  rp(:,:,1,index_rho),ng_s, &
+                                  vmp(:,:,1,1), ng_um, &
+                                  rho0(n,:),grav(n,:),w0(n,:),w0_force(n,:),lo,hi,n, &
+                                  do_add_utilde_force)
+
           case (3)
              uop => dataptr(uold(n),i)
-             ump => dataptr(umac(n,1),i)
              vmp => dataptr(umac(n,2),i)
              wmp => dataptr(umac(n,3),i)
+
              ng_uo = nghost(uold(1))
-             ng_um = nghost(umac(1,1))
 
              if (spherical .eq. 1) then
                 w0cp  => dataptr(w0_cart(n), i)
                 w0xp  => dataptr(w0mac(n,1),i)
                 w0yp  => dataptr(w0mac(n,2),i)
                 w0p   => dataptr(w0_force_cart(n), i)
+                np    => dataptr(normal(n),i)
+                gw0p   => dataptr(gradw0_cart(n),i)
+
                 ng_wm = nghost(w0mac(1,1))
                 ng_wc = nghost(w0_cart(1))
-                ng_w = nghost(w0_force_cart(1))
+                ng_w  = nghost(w0_force_cart(1))
+                ng_gw = nghost(gradw0_cart(1))
+                ng_n  = nghost(normal(1))
+
                 call mk_vel_force_3d_sphr(fp(:,:,:,:),ng_f,is_final_update, &
-                                          uop(:,:,:,:),ng_uo, &
-                                          ump(:,:,:,1),vmp(:,:,:,1),ng_um, &
-                                          w0cp(:,:,:,:),ng_wc, &
+                                          uop(:,:,:,:),ng_uo,np(:,:,:,:),ng_n, &
+                                          ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
+                                          w0cp(:,:,:,:),ng_wc,gw0p(:,:,:,1),ng_gw, &
                                           w0xp(:,:,:,1),w0yp(:,:,:,1),ng_wm, &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,index_rho),ng_s, &
-                                          rho0(1,:),grav(1,:),w0p(:,:,:,:),ng_w,lo,hi,dx(n,:))
+                                          rho0(1,:),grav(1,:),w0p(:,:,:,:),ng_w,lo,hi,dx(n,:), &
+                                          do_add_utilde_force)
+
              else
                 call mk_vel_force_3d_cart(fp(:,:,:,:),ng_f,is_final_update, &
                                           uop(:,:,:,:),ng_uo, &
                                           ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
                                           w0(n,:), &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,index_rho),ng_s, &
-                                          rho0(n,:),grav(n,:),w0_force(n,:),lo,hi)
+                                          rho0(n,:),grav(n,:),w0_force(n,:),lo,hi,n, &
+                                          do_add_utilde_force)
              end if
           end select
        end do
@@ -154,6 +203,7 @@ contains
     if (spherical .eq. 1) then
        do n=1,nlevs
           call destroy(w0_cart(n))
+          call destroy(gradw0_cart(n))
        end do
     end if
 
@@ -194,19 +244,26 @@ contains
 
   end subroutine mk_vel_force
 
-  subroutine mk_vel_force_1d(vel_force,ng_f,gpi,ng_gp,rho,ng_s,rho0,grav,w0_force,lo,hi)
+  subroutine mk_vel_force_1d(vel_force,ng_f,gpi,ng_gp, &
+                             rho,ng_s, &
+                             umac,ng_um, &
+                             rho0,grav,w0,w0_force,lo,hi,n, &
+                             do_add_utilde_force)
 
+    use geometry, only: nr, dr
     use bl_constants_module
     use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
 
-    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s
+    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s,ng_um
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :)
     real(kind=dp_t), intent(in   ) ::     gpi(lo(1)-ng_gp:)
-    real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::     rho(lo(1)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::    umac(lo(1)-ng_um:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
-    real(kind=dp_t), intent(in   ) :: w0_force(0:)
-
+    real(kind=dp_t), intent(in   ) :: w0(0:), w0_force(0:)
+    logical        , intent(in   ) :: do_add_utilde_force
+    integer        , intent(in   ) :: n
     integer         :: i
     real(kind=dp_t) :: rhopert
 
@@ -227,20 +284,43 @@ contains
 
     end do
 
+    if (do_add_utilde_force) then
+       do i=lo(1),hi(1)
+
+          if (i .le. -1) then
+             ! do not modify force since dw0/dr=0                                                                          
+          else if (i .ge. nr(n)) then
+             ! do not modify force since dw0/dr=0                                                                          
+          else
+             vel_force(i) = vel_force(i) &
+                  - (umac(i+1)+umac(i))*(w0(i+1)-w0(i)) / (TWO*dr(n))
+          end if
+
+       enddo
+    endif
+
+
   end subroutine mk_vel_force_1d
 
-  subroutine mk_vel_force_2d(vel_force,ng_f,gpi,ng_gp,rho,ng_s,rho0,grav,w0_force,lo,hi)
+  subroutine mk_vel_force_2d(vel_force,ng_f,gpi,ng_gp, &
+                             rho,ng_s, &
+                             vmac, ng_um, &
+                             rho0,grav,w0,w0_force,lo,hi,n, &
+                             do_add_utilde_force)
 
+    use geometry, only: nr, dr
     use bl_constants_module
     use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
 
-    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s
+    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s,ng_um, n
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,:)
     real(kind=dp_t), intent(in   ) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,:)
-    real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::     rho(lo(1)-ng_s :,lo(2)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::    vmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
-    real(kind=dp_t), intent(in   ) :: w0_force(0:)
+    real(kind=dp_t), intent(in   ) :: w0(0:),w0_force(0:)
+    logical        , intent(in   ) :: do_add_utilde_force
 
     integer         :: i,j
     real(kind=dp_t) :: rhopert
@@ -265,6 +345,26 @@ contains
        end do
     end do
 
+    if (do_add_utilde_force) then
+
+       do j=lo(2),hi(2)
+          do i=lo(1),hi(1)
+
+             if (j .le. -1) then
+                ! do not modify force since dw0/dr=0                                                                       
+             else if (j .ge. nr(n)) then
+                ! do not modify force since dw0/dr=0                                                                       
+             else
+                vel_force(i,j,2) = vel_force(i,j,2) &
+                     - (vmac(i,j+1)+vmac(i,j))*(w0(j+1)-w0(j)) / (TWO*dr(n))
+             end if
+          
+          end do
+       end do
+
+    endif
+
+
   end subroutine mk_vel_force_2d
 
   subroutine mk_vel_force_3d_cart(vel_force,ng_f,is_final_update, &
@@ -272,14 +372,15 @@ contains
                                   umac,vmac,wmac,ng_um, &
                                   w0, &
                                   gpi,ng_gp,rho,ng_s, &
-                                  rho0,grav,w0_force,lo,hi)
+                                  rho0,grav,w0_force,lo,hi,n, &
+                                  do_add_utilde_force)
 
-    use geometry,  only: sin_theta, cos_theta, omega
+    use geometry,  only: sin_theta, cos_theta, omega, nr, dr
     use bl_constants_module
     use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor, &
                              rotation_radius
 
-    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s, ng_uo, ng_um
+    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s, ng_uo, ng_um, n
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     logical        , intent(in   ) :: is_final_update
     real(kind=dp_t), intent(in   ) ::      uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
@@ -292,6 +393,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) :: w0_force(0:)
+    logical        , intent(in   ) :: do_add_utilde_force
 
     integer         :: i,j,k
     real(kind=dp_t) :: rhopert
@@ -382,36 +484,64 @@ contains
     end do
     !$OMP END PARALLEL DO
 
+
+    if (do_add_utilde_force) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k=lo(3),hi(3)
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)
+
+                if (k .le. -1) then
+                   ! do not modify force since dw0/dr=0
+                else if (k .ge. nr(n)) then
+                   ! do not modify force since dw0/dr=0
+                else
+                   vel_force(i,j,k,3) = vel_force(i,j,k,3) &
+                        - (wmac(i,j,k+1)+wmac(i,j,k))*(w0(k+1)-w0(k)) / (TWO*dr(n))
+                end if
+
+             end do
+          end do
+       end do
+       !$OMP END PARALLEL DO
+
+    endif
+
   end subroutine mk_vel_force_3d_cart
 
   subroutine mk_vel_force_3d_sphr(vel_force,ng_f,is_final_update, &
-                                  uold,ng_uo, &
-                                  umac,vmac,ng_um, &
-                                  w0_cart,ng_wc, &
+                                  uold,ng_uo,normal,ng_n, &
+                                  umac,vmac,wmac,ng_um, &
+                                  w0_cart,ng_wc,gradw0_cart,ng_gw, &
                                   w0macx,w0macy,ng_wm, &
                                   gpi,ng_gp,rho,ng_s, &
-                                  rho0,grav,w0_force_cart,ng_w,lo,hi,dx)
+                                  rho0,grav,w0_force_cart,ng_w,lo,hi,dx, &
+                                  do_add_utilde_force)
 
     use fill_3d_module
     use bl_constants_module
     use geometry,  only: omega, center
     use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor, prob_lo
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_uo,ng_um,ng_wc,ng_wm,ng_w
+    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_uo,ng_um,ng_wc,ng_wm,ng_w,ng_n,ng_gw
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     logical        , intent(in   ) :: is_final_update
-    real(kind=dp_t), intent(in   ) ::      uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
-    real(kind=dp_t), intent(in   ) ::      umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) ::      vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) ::   w0_cart(lo(1)-ng_wc:,lo(2)-ng_wc:,lo(3)-ng_wc:,:)
-    real(kind=dp_t), intent(in   ) ::    w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
-    real(kind=dp_t), intent(in   ) ::    w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
-    real(kind=dp_t), intent(in   ) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
-    real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::       uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
+    real(kind=dp_t), intent(in   ) ::     normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
+    real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::    w0_cart(lo(1)-ng_wc:,lo(2)-ng_wc:,lo(3)-ng_wc:,:)
+    real(kind=dp_t), intent(in   ) ::gradw0_cart(lo(1)-ng_wc:,lo(2)-ng_wc:,lo(3)-ng_wc:)
+    real(kind=dp_t), intent(in   ) ::     w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) ::     w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) ::        gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
+    real(kind=dp_t), intent(in   ) ::        rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) :: w0_force_cart(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:,:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) ::   dx(:)
+    logical        , intent(in   ) :: do_add_utilde_force
 
     integer         :: i,j,k
 
@@ -421,6 +551,8 @@ contains
     real(kind=dp_t) :: rhopert
     real(kind=dp_t) :: xx, yy, zz
     real(kind=dp_t) :: centrifugal_term(3), coriolis_term(3)
+
+    real(kind=dp_t) :: Ut_dot_er
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     allocate(grav_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
@@ -509,229 +641,32 @@ contains
     end do
     !$OMP END PARALLEL DO
 
-    deallocate(rho0_cart,grav_cart)
 
-  end subroutine mk_vel_force_3d_sphr
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  subroutine add_utilde_force(vel_force,normal,umac,w0,dx,the_bc_level,mla)
-
-    use geometry, only: spherical, nr_fine, dr
-    use fill_3d_module, only: put_1d_array_on_cart
-    use variables, only: foextrap_comp
-
-    type(multifab) , intent(inout) :: vel_force(:)
-    type(multifab) , intent(in   ) ::    normal(:)
-    type(multifab) , intent(in   ) ::      umac(:,:)
-    real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
-    type(bc_level) , intent(in   ) :: the_bc_level(:)
-    type(ml_layout), intent(in   ) :: mla
-    
-    ! local
-    integer :: n,r,i
-    integer :: ng_f, ng_u, ng_w0, ng_n
-
-    real(kind=dp_t), pointer ::  fp(:,:,:,:)
-    real(kind=dp_t), pointer :: ump(:,:,:,:)
-    real(kind=dp_t), pointer :: vmp(:,:,:,:)
-    real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: gwp(:,:,:,:)
-    real(kind=dp_t), pointer ::  np(:,:,:,:)
-
-    ! stuff for spherical only
-    real(kind=dp_t) :: gradw0_rad(1,0:nr_fine-1)
-    type(multifab)  :: gradw0_cart(mla%nlevel)
-    integer         :: lo(mla%dim), hi(mla%dim), dm, nlevs, n_1d
-
-    type(bl_prof_timer), save :: bpt
-
-    call build(bpt, "add_utilde_force")
-
-    dm = mla%dim
-    nlevs = mla%nlevel
-
-    do n=1,nlevs
-       call multifab_build(gradw0_cart(n),get_layout(vel_force(n)),1,1)
-    end do
-
-    if (spherical .eq. 1) then
-
-       !$OMP PARALLEL DO PRIVATE(r)
-       do r=0,nr_fine-1
-          gradw0_rad(1,r) = (w0(1,r+1) - w0(1,r)) / dr(1)
-       enddo
-       !$OMP END PARALLEL DO
-
-       call put_1d_array_on_cart(gradw0_rad,gradw0_cart,foextrap_comp, &
-                                 .false.,.false.,dx,the_bc_level,mla)
-    end if
-
-    ng_f = nghost(vel_force(1))
-    ng_n = nghost(normal(1))
-    ng_u = nghost(umac(1,1))
-    ng_w0 = nghost(gradw0_cart(1))
-
-    do n=1,nlevs
-       do i=1, nfabs(vel_force(n))
-          fp   => dataptr(vel_force(n),i)
-          ump  => dataptr(umac(n,1),i)
-          lo   =  lwb(get_box(vel_force(n),i))
-          hi   =  upb(get_box(vel_force(n),i))
-          select case (dm)
-          case (1)
-          call add_utilde_force_1d(n, lo, hi, fp(:,1,1,:), ng_f, &
-                                   ump(:,1,1,1), ng_u, w0(n,:))
-          case (2)
-          vmp  => dataptr(umac(n,2),i)
-          call add_utilde_force_2d(n, lo, hi, fp(:,:,1,:), ng_f, &
-                                   vmp(:,:,1,1), ng_u, w0(n,:))
-          case (3)
-          vmp  => dataptr(umac(n,2),i)
-          wmp  => dataptr(umac(n,3),i)
-          gwp  => dataptr(gradw0_cart(n),i)
-          np   => dataptr(normal(n),i)
-          if (spherical .eq. 1) then
-             n_1d = 1
-          else
-             n_1d = n
-          end if
-          call add_utilde_force_3d(n, lo, hi, fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
-                                   ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_u, &
-                                   gwp(:,:,:,1), ng_w0, w0(n_1d,:))
-          end select
-       end do
-    end do
-
-    do n=1,nlevs
-       call destroy(gradw0_cart(n))
-    end do
-
-    call destroy(bpt)
-
-  end subroutine add_utilde_force
-
-  subroutine add_utilde_force_1d(n,lo,hi,force,ng_f,umac,ng_u,w0)
-
-    use geometry, only: nr, dr
-    use bl_constants_module
-
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_u
-    real(kind=dp_t), intent(inout) ::       force(lo(1)-ng_f :,:)
-    real(kind=dp_t), intent(in   ) ::        umac(lo(1)-ng_u :)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
-    
-    integer :: i
-
-    do i=lo(1)-1,hi(1)+1
-
-       if (i .eq. -1) then
-          ! do not modify force since dw0/dr=0
-       else if (i .eq. nr(n)) then
-          ! do not modify force since dw0/dr=0
-       else
-          force(i,1) = force(i,1) &
-               - (umac(i+1)+umac(i))*(w0(i+1)-w0(i)) / (TWO*dr(n))
-       end if
-
-    end do
-
-  end subroutine add_utilde_force_1d
-
-  subroutine add_utilde_force_2d(n,lo,hi,force,ng_f,vmac,ng_u,w0)
-
-    use geometry, only: nr, dr
-    use bl_constants_module
-
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_u
-    real(kind=dp_t), intent(inout) ::       force(lo(1)-ng_f :,lo(2)-ng_f :,:)
-    real(kind=dp_t), intent(in   ) ::        vmac(lo(1)-ng_u :,lo(2)-ng_u :)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
-    
-    integer :: i,j
-
-
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
-
-          if (j .eq. -1) then
-             ! do not modify force since dw0/dr=0
-          else if (j .eq. nr(n)) then
-             ! do not modify force since dw0/dr=0
-          else
-             force(i,j,2) = force(i,j,2) &
-                  - (vmac(i,j+1)+vmac(i,j))*(w0(j+1)-w0(j)) / (TWO*dr(n))
-          end if
-
-       end do
-    end do
-
-  end subroutine add_utilde_force_2d
-
-  subroutine add_utilde_force_3d(n,lo,hi,force,ng_f,normal,ng_n,umac,vmac,wmac,ng_u, &
-                                 gradw0_cart,ng_w0,w0)
-
-    use geometry, only: spherical, nr, dr
-    use bl_constants_module
-
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_n,ng_u,ng_w0
-    real(kind=dp_t), intent(inout) ::       force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
-    real(kind=dp_t), intent(in   ) ::      normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
-    real(kind=dp_t), intent(in   ) ::        umac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
-    real(kind=dp_t), intent(in   ) ::        vmac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
-    real(kind=dp_t), intent(in   ) ::        wmac(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :)
-    real(kind=dp_t), intent(in   ) :: gradw0_cart(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
-
-    integer :: i,j,k
-
-    real(kind=dp_t) :: Ut_dot_er
-
-    if (spherical .eq. 1) then
+    if (do_add_utilde_force) then
 
        !$OMP PARALLEL DO PRIVATE(i,j,k,Ut_dot_er)
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+       do k=lo(3),hi(3)
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)
 
                 Ut_dot_er = &
                      HALF*(umac(i,j,k)+umac(i+1,j  ,k  ))*normal(i,j,k,1) + &
                      HALF*(vmac(i,j,k)+vmac(i  ,j+1,k  ))*normal(i,j,k,2) + &
                      HALF*(wmac(i,j,k)+wmac(i  ,j,  k+1))*normal(i,j,k,3)
 
-                force(i,j,k,1) = force(i,j,k,1) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
-                force(i,j,k,2) = force(i,j,k,2) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
-                force(i,j,k,3) = force(i,j,k,3) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
+                vel_force(i,j,k,1) = vel_force(i,j,k,1) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
+                vel_force(i,j,k,2) = vel_force(i,j,k,2) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
+                vel_force(i,j,k,3) = vel_force(i,j,k,3) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
 
              end do
           end do
        end do
        !$OMP END PARALLEL DO
 
-    else
+    endif
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
+    deallocate(rho0_cart,grav_cart)
 
-                if (k .eq. -1) then
-                   ! do not modify force since dw0/dr=0
-                else if (k .eq. nr(n)) then
-                   ! do not modify force since dw0/dr=0
-                else
-                   force(i,j,k,3) = force(i,j,k,3) &
-                        - (wmac(i,j,k+1)+wmac(i,j,k))*(w0(k+1)-w0(k)) / (TWO*dr(n))
-                end if
-
-             end do
-          end do
-       end do
-       !$OMP END PARALLEL DO
-
-    end if
-
-  end subroutine add_utilde_force_3d
+  end subroutine mk_vel_force_3d_sphr
 
 end module mk_vel_force_module
