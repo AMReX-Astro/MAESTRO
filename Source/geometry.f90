@@ -458,18 +458,20 @@ contains
 
 ! rotation
 ! 
-! co_latitude, rotation_radius, theta_in_rad, sin_theta and cos_theta are only
-! important when wanting to rotate a plane-parallel patch which lives at an 
-! angle co_latitude from the rotation axis and at a distance rotation_radius 
-! from center().  mk_vel_force should calculate the rotational forcing terms
-! for the points within the patch.  
+! co_latitude, rotation_radius, theta_in_rad, sin_theta and cos_theta
+! are only important when wanting to rotate a plane-parallel patch
+! which lives at an angle co_latitude from the rotation axis and at a
+! distance rotation_radius from center().  mk_vel_force should
+! calculate the rotational forcing terms for the points within the
+! patch.
 !
-! for spherical problems, the only important variable from init_rotation() is 
-! omega, the angular frequency - mk_vel_force will calculate the appropriate
-! terms for a given coordinate
+! for spherical problems, the only important variable from
+! init_rotation() is omega, the angular frequency - mk_vel_force will
+! calculate the appropriate terms for a given coordinate
 !
-! NOTE: it is currently unclear how to handle BC's with a plane-parallel patch
-!       and it is not advisable to utilize rotation for such problems.
+! NOTE: it is currently unclear how to handle BC's with a
+!       plane-parallel patch and it is not advisable to utilize
+!       rotation for such problems.
 !
 
   subroutine init_rotation()
