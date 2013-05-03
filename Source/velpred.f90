@@ -675,12 +675,12 @@ contains
     real(kind=dp_t), allocatable :: slopey(:,:,:,:)
     real(kind=dp_t), allocatable :: slopez(:,:,:,:)
 
-    real(kind=dp_t), allocatable :: Ipu(:,:,:,:)
-    real(kind=dp_t), allocatable :: Imu(:,:,:,:)
-    real(kind=dp_t), allocatable :: Ipv(:,:,:,:)
-    real(kind=dp_t), allocatable :: Imv(:,:,:,:)
-    real(kind=dp_t), allocatable :: Ipw(:,:,:,:)
-    real(kind=dp_t), allocatable :: Imw(:,:,:,:)
+    real(kind=dp_t), allocatable :: Ipu(:,:,:,:), Ipfx(:,:,:,:)
+    real(kind=dp_t), allocatable :: Imu(:,:,:,:), Imfx(:,:,:,:)
+    real(kind=dp_t), allocatable :: Ipv(:,:,:,:), Ipfy(:,:,:,:)
+    real(kind=dp_t), allocatable :: Imv(:,:,:,:), Imfy(:,:,:,:)
+    real(kind=dp_t), allocatable :: Ipw(:,:,:,:), Ipfz(:,:,:,:)
+    real(kind=dp_t), allocatable :: Imw(:,:,:,:), Imfz(:,:,:,:)
 
     ! these correspond to u_L^x, etc.
     real(kind=dp_t), allocatable:: ulx(:,:,:,:),urx(:,:,:,:),uimhx(:,:,:,:)
@@ -718,6 +718,7 @@ contains
     real(kind=dp_t), allocatable:: wmacl(:,:,:),wmacr(:,:,:)
 
     real(kind=dp_t) :: hx, hy, hz, dt2, dt4, dt6, uavg, maxu, minu
+    real(kind=dp_t) :: fl, fr
 
     integer :: i,j,k,is,js,ie,je,ks,ke,ung
 
@@ -733,6 +734,15 @@ contains
     allocate(Imv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(Ipw(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(Imw(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+
+    if (ppm_trace_forces == 1) then
+       allocate(Ipfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+       allocate(Imfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+       allocate(Ipfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+       allocate(Imfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+       allocate(Ipfz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+       allocate(Imfz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    endif
 
     is = lo(1)
     ie = hi(1)
@@ -762,6 +772,16 @@ contains
        call ppm_3d(u(:,:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
        call ppm_3d(u(:,:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
        call ppm_3d(u(:,:,:,3),ng_u,ufull,ng_uf,Ipw,Imw,lo,hi,adv_bc(:,:,3),dx,dt)
+
+       ! trace forces, if necessary.  Note by default the ppm routines
+       ! will trace each component to each interface in all coordinate
+       ! directions, but we really only need the force traced along
+       ! its respective dimension.  This should be simplified later.
+       if (ppm_trace_forces == 1) then
+          call ppm_3d(force(:,:,:,1),ng_u,ufull,ng_uf,Ipfx,Imfx,lo,hi,adv_bc(:,:,1),dx,dt)
+          call ppm_3d(force(:,:,:,2),ng_u,ufull,ng_uf,Ipfy,Imfy,lo,hi,adv_bc(:,:,2),dx,dt)
+          call ppm_3d(force(:,:,:,3),ng_u,ufull,ng_uf,Ipfz,Imfz,lo,hi,adv_bc(:,:,3),dx,dt)
+       endif
     end if
 
     !******************************************************************
@@ -1542,23 +1562,27 @@ contains
     allocate(umacl(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
     allocate(umacr(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,fl,fr)
     do k=ks,ke
        do j=js,je
           do i=is,ie+1
+             ! use the traced force if ppm_trace_forces = 1
+             fl = merge(force(i-1,j,k,1), Ipfx(i-1,j,k,1), ppm_trace_forces == 0)
+             fr = merge(force(i,j  ,k,1), Imfx(i,  j,k,1), ppm_trace_forces == 0)
+             
              ! extrapolate to edges
              umacl(i,j,k) = ulx(i,j,k,1) &
                   - (dt4/hy)*(vtrans(i-1,j+1,k  )+vtrans(i-1,j,k)) &
                   * (uimhyz(i-1,j+1,k  )-uimhyz(i-1,j,k)) &
                   - (dt4/hz)*(wtrans(i-1,j  ,k+1)+wtrans(i-1,j,k)) &
                   * (uimhzy(i-1,j  ,k+1)-uimhzy(i-1,j,k)) &
-                  + dt2*force(i-1,j,k,1)
+                  + dt2*fl
              umacr(i,j,k) = urx(i,j,k,1) &
                   - (dt4/hy)*(vtrans(i  ,j+1,k  )+vtrans(i  ,j,k)) &
                   * (uimhyz(i  ,j+1,k  )-uimhyz(i  ,j,k)) &
                   - (dt4/hz)*(wtrans(i  ,j  ,k+1)+wtrans(i  ,j,k)) &
                   * (uimhzy(i  ,j  ,k+1)-uimhzy(i  ,j,k)) &
-                  + dt2*force(i  ,j,k,1)
+                  + dt2*fr
           enddo
        enddo
     enddo
@@ -1637,23 +1661,27 @@ contains
     allocate(vmacl(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
     allocate(vmacr(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,fl,fr)
     do k=ks,ke
        do j=js,je+1
           do i=is,ie
+             ! use the traced force if ppm_trace_forces = 1
+             fl = merge(force(i,j-1,k,2), Ipfy(i,j-1,k,2), ppm_trace_forces == 0)
+             fr = merge(force(i,j  ,k,2), Imfy(i,j  ,k,2), ppm_trace_forces == 0)
+
              ! extrapolate to edges
              vmacl(i,j,k) = uly(i,j,k,2) &
                   - (dt4/hx)*(utrans(i+1,j-1,k  )+utrans(i,j-1,k)) &
                   * (vimhxz(i+1,j-1,k  )-vimhxz(i,j-1,k)) &
                   - (dt4/hz)*(wtrans(i  ,j-1,k+1)+wtrans(i,j-1,k)) &
                   * (vimhzx(i  ,j-1,k+1)-vimhzx(i,j-1,k)) &
-                  + dt2*force(i,j-1,k,2)
+                  + dt2*fl
              vmacr(i,j,k) = ury(i,j,k,2) &
                   - (dt4/hx)*(utrans(i+1,j  ,k  )+utrans(i,j  ,k)) &
                   * (vimhxz(i+1,j  ,k  )-vimhxz(i,j  ,k)) &
                   - (dt4/hz)*(wtrans(i  ,j  ,k+1)+wtrans(i,j  ,k)) &
                   * (vimhzx(i  ,j  ,k+1)-vimhzx(i,j  ,k)) &
-                  + dt2*force(i,j  ,k,2)
+                  + dt2*fr
           enddo
        enddo
     enddo
@@ -1732,23 +1760,27 @@ contains
     allocate(wmacl(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
     allocate(wmacr(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,fl,fr)
     do k=ks,ke+1
        do j=js,je
           do i=is,ie
+             ! use the traced force if ppm_trace_forces = 1
+             fl = merge(force(i,j,k-1,3), Ipfz(i,j,k-1,3), ppm_trace_forces == 0)
+             fr = merge(force(i,j,k  ,3), Imfz(i,j,k  ,3), ppm_trace_forces == 0)
+
              ! extrapolate to edges
              wmacl(i,j,k) = ulz(i,j,k,3) &
                   - (dt4/hx)*(utrans(i+1,j  ,k-1)+utrans(i,j,k-1)) &
                   * (wimhxy(i+1,j  ,k-1)-wimhxy(i,j,k-1)) &
                   - (dt4/hy)*(vtrans(i  ,j+1,k-1)+vtrans(i,j,k-1)) &
                   * (wimhyx(i  ,j+1,k-1)-wimhyx(i,j,k-1)) &
-                  + dt2*force(i,j,k-1,3)
+                  + dt2*fl
              wmacr(i,j,k) = urz(i,j,k,3) &
                   - (dt4/hx)*(utrans(i+1,j  ,k  )+utrans(i,j,k  )) &
                   * (wimhxy(i+1,j  ,k  )-wimhxy(i,j,k  )) &
                   - (dt4/hy)*(vtrans(i  ,j+1,k  )+vtrans(i,j,k  )) &
                   * (wimhyx(i  ,j+1,k  )-wimhyx(i,j,k  )) &
-                  + dt2*force(i,j,k  ,3)
+                  + dt2*fr
           enddo
        enddo
     enddo
