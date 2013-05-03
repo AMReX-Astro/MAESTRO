@@ -57,6 +57,7 @@ contains
     type(multifab) ::      w0mac(mla%nlevel,mla%dim)
     type(multifab) :: umac_dummy(mla%nlevel,mla%dim)
     type(multifab) :: w0_force_cart_dummy(mla%nlevel)
+    type(multifab) :: normal_dummy(mla%nlevel)
 
     logical :: is_final_update
 
@@ -103,6 +104,10 @@ contains
           call setval(umac_dummy(n,comp), ZERO, all=.true.)
        end do
  
+       ! create a dummy normal also for the vel routine -- this is not
+       ! used if we don't add the utilde force
+       call multifab_build(normal_dummy(n), mla%la(n), dm, 1)
+
     end do
 
     if (spherical .eq. 1) then
@@ -122,15 +127,16 @@ contains
     
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      u,umac_dummy,w0,w0mac,gpi,s,rho_comp, &
+                      u,umac_dummy,w0,w0mac,gpi,s,rho_comp,normal_dummy, &
                       rho0,grav,dx,w0_force_dummy,w0_force_cart_dummy, &
-                      the_bc_tower%bc_tower_array,mla)
+                      the_bc_tower%bc_tower_array,mla,.false.)
 
     do n=1,nlevs
        call destroy(w0_force_cart_dummy(n))
        do comp=1,dm
           call destroy(umac_dummy(n,comp))
        end do
+       call destroy(normal_dummy(n))
     end do
 
     ng_u  = nghost(u(1))

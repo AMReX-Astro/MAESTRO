@@ -25,11 +25,12 @@ contains
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use velpred_module, only: velpred
     use mkutrans_module, only: mkutrans
-    use mk_vel_force_module, only: mk_vel_force, add_utilde_force
+    use mk_vel_force_module, only: mk_vel_force
     use addw0_module, only: addw0
     use bl_constants_module, only: ONE
     use variables, only: rho_comp
     use fill_3d_module, only: put_1d_array_on_cart
+    use probin_module, only: ppm_trace_forces
 
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(in   ) :: sold(:)
@@ -61,7 +62,13 @@ contains
     nlevs = mla%nlevel
 
     do n=1,nlevs
-       call multifab_build(force(n),get_layout(uold(n)),dm,1)
+       if (ppm_trace_forces == 0) then
+          call multifab_build(force(n),get_layout(uold(n)),dm,1)
+       else
+          ! tracing needs more ghost cells
+          call multifab_build(force(n),get_layout(uold(n)),dm,uold(n)%ng)
+       endif
+
        call multifab_build(ufull(n),get_layout(uold(n)),dm,nghost(uold(n)))
     end do
 
@@ -85,15 +92,15 @@ contains
 
 
     !*************************************************************
-    !     Create force, initializing with pressure gradient and buoyancy terms.
+    !     Create force, initializing with pressure gradient and buoyancy terms, and
+    !     the utilde . gradw0 force
     !*************************************************************
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      uold,utrans,w0,w0mac,gpi,sold,rho_comp, &
+                      uold,utrans,w0,w0mac,gpi,sold,rho_comp,normal, &
                       rho0(:,:),grav_cell,dx,w0_force,w0_force_cart_vec, &
-                      the_bc_level,mla)
+                      the_bc_level,mla,.true.)
 
-    call add_utilde_force(force,normal,utrans,w0,dx,the_bc_level,mla)
 
     !*************************************************************
     !     Add w0 to trans velocities.

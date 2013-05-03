@@ -51,7 +51,7 @@ contains
     type(multifab)  :: uedge(mla%nlevel,mla%dim)
     logical         :: is_vel
     logical         :: is_final_update
-    integer         :: velpred,n,comp,dm,nlevs
+    integer         :: n,comp,dm,nlevs
     real(kind=dp_t) :: smin,smax
 
     type(bl_prof_timer), save :: bpt
@@ -61,7 +61,6 @@ contains
     nlevs = mla%nlevel
 
     is_vel  = .true.
-    velpred = 0
     dm = mla%dim
 
     do n = 1, nlevs
@@ -74,11 +73,10 @@ contains
 
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
-                      uold,umac,w0,w0mac,gpi,sold,rho_comp, &
+                      uold,umac,w0,w0mac,gpi,sold,rho_comp,normal, &
                       rho0_old,grav_cell_old,dx, &
-                      w0_force,w0_force_cart_vec,the_bc_level,mla)
+                      w0_force,w0_force_cart_vec,the_bc_level,mla,.true.)
 
-    call add_utilde_force(force,normal,umac,w0,dx,the_bc_level,mla)
 
     !********************************************************
     !     Add w0 to MAC velocities (trans velocities already have w0).
@@ -117,11 +115,10 @@ contains
 
     is_final_update = .true.
     call mk_vel_force(force,is_final_update, &
-                      uold,umac,w0,w0mac,gpi,rhohalf,1, &
+                      uold,umac,w0,w0mac,gpi,rhohalf,1,normal, &
                       rho0_nph,grav_cell_nph,dx, &
-                      w0_force,w0_force_cart_vec,the_bc_level,mla)
+                      w0_force,w0_force_cart_vec,the_bc_level,mla,.true.)
 
-    call add_utilde_force(force,normal,umac,w0,dx,the_bc_level,mla)
 
     !********************************************************
     !     Update the velocity with convective differencing

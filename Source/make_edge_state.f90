@@ -1,17 +1,5 @@
-! make_edge_state constructs the edge state of a variable, using a 
-! second-order Taylor expansion in space (through dx/2) and time 
-! (though dt/2). 
-!
-! If is_vel = .true., then we are computing the edge states for the
-! velocity.
-!
-! If velpred = 1 (then is_vel should also be 1), and we are computing 
-! the edge states for the MAC.  In this case, we only need the normal 
-! edge states (i.e. the x-edge state for u, the y-edge state for v, ...)
-!
-! If velpred = 0, then we are computing all edge states for each 
-! variable.  This is what is done for the final updates of the state 
-! variables and velocity.
+! make_edge_state is for reconstruction of the base state variables to
+! predict the time-centered edge states.
 
 module make_edge_state_module
 

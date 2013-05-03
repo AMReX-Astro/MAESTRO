@@ -1,3 +1,8 @@
+! velpred is called by advance_premac -- it is used to predict the
+! normal velocities to the interfaces.  We don't care about the
+! transverse velocities here.  The prediction is done piecewise linear
+! or with PPM depending on ppm_type.
+
 module velpred_module
 
   use bl_types
@@ -133,7 +138,7 @@ contains
     use slope_module
     use bl_constants_module
     use variables, only: rel_eps
-    use probin_module, only: ppm_type
+    use probin_module, only: ppm_type, ppm_trace_forces
     use ppm_module
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_um,ng_f
@@ -149,8 +154,8 @@ contains
     ! Local variables
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,1)
 
-    real(kind=dp_t), allocatable :: Ipu(:)
-    real(kind=dp_t), allocatable :: Imu(:)
+    real(kind=dp_t), allocatable :: Ipu(:), Ipf(:)
+    real(kind=dp_t), allocatable :: Imu(:), Imf(:)
 
     ! these correspond to umac_L, etc.
     real(kind=dp_t), allocatable :: umacl(:),umacr(:)
@@ -163,6 +168,11 @@ contains
 
     allocate(Ipu(lo(1)-1:hi(1)+1))
     allocate(Imu(lo(1)-1:hi(1)+1))
+
+    if (ppm_trace_forces .eq. 1) then
+       allocate(Ipf(lo(1)-1:hi(1)+1))
+       allocate(Imf(lo(1)-1:hi(1)+1))
+    endif
 
     allocate(umacl(lo(1):hi(1)+1))
     allocate(umacr(lo(1):hi(1)+1))
@@ -177,8 +187,12 @@ contains
 
     if (ppm_type .eq. 0) then
        call slopex_1d(u,slopex,lo,hi,ng_u,1,adv_bc)
+
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        call ppm_1d(u(:,1),ng_u,ufull(:,1),ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       if (ppm_trace_forces .eq. 1) then
+          call ppm_1d(force(:),ng_f,ufull(:,1),ng_uf,Ipf,Imf,lo,hi,adv_bc(:,:,1),dx,dt)
+       endif
     end if
 
     !******************************************************************
@@ -195,12 +209,21 @@ contains
                + dt2*force(i  )
        end do
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       do i=is,ie+1
-          ! extrapolate velocity to left face
-          umacl(i) = Ipu(i-1) + dt2*force(i-1)
-          ! extrapolate velocity to right face
-          umacr(i) = Imu(i  ) + dt2*force(i  )
-       end do
+       if (ppm_trace_forces .eq. 0) then
+          do i=is,ie+1
+             ! extrapolate velocity to left face
+             umacl(i) = Ipu(i-1) + dt2*force(i-1)
+             ! extrapolate velocity to right face
+             umacr(i) = Imu(i  ) + dt2*force(i  )
+          end do
+       else 
+          do i=is,ie+1
+             ! extrapolate velocity to left face
+             umacl(i) = Ipu(i-1) + dt2*Ipf(i-1)
+             ! extrapolate velocity to right face
+             umacr(i) = Imu(i  ) + dt2*Imf(i  )
+          end do
+       endif
     end if
 
     do i=is,ie+1
@@ -250,7 +273,7 @@ contains
     use slope_module
     use bl_constants_module
     use variables, only: rel_eps
-    use probin_module, only: ppm_type
+    use probin_module, only: ppm_type, ppm_trace_forces
     use ppm_module
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_um,ng_ut,ng_f
@@ -270,10 +293,10 @@ contains
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
 
-    real(kind=dp_t), allocatable :: Ipu(:,:,:)
-    real(kind=dp_t), allocatable :: Imu(:,:,:)
-    real(kind=dp_t), allocatable :: Ipv(:,:,:)
-    real(kind=dp_t), allocatable :: Imv(:,:,:)
+    real(kind=dp_t), allocatable :: Ipu(:,:,:), Ipfx(:,:,:)
+    real(kind=dp_t), allocatable :: Imu(:,:,:), Imfx(:,:,:)
+    real(kind=dp_t), allocatable :: Ipv(:,:,:), Ipfy(:,:,:)
+    real(kind=dp_t), allocatable :: Imv(:,:,:), Imfy(:,:,:)
 
     ! these correspond to u_L^x, etc.
     real(kind=dp_t), allocatable :: ulx(:,:,:),urx(:,:,:),uimhx(:,:,:)
@@ -284,6 +307,7 @@ contains
     real(kind=dp_t), allocatable :: vmacl(:,:),vmacr(:,:)
 
     real(kind=dp_t) :: hx, hy, dt2, dt4, uavg, maxu, minu
+    real(kind=dp_t) :: fl, fr
 
     integer :: i,j,is,js,ie,je
 
@@ -293,6 +317,13 @@ contains
     allocate(Imu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
     allocate(Ipv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
     allocate(Imv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+
+    if (ppm_trace_forces == 1) then
+       allocate(Ipfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+       allocate(Imfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+       allocate(Ipfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+       allocate(Imfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    endif
 
     allocate(  ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,2))
     allocate(  urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,2))
@@ -325,6 +356,15 @@ contains
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        call ppm_2d(u(:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
        call ppm_2d(u(:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
+
+       ! trace forces, if necessary.  Note by default the ppm routines
+       ! will trace each component to each interface in all coordinate
+       ! directions, but we really only need the force traced along
+       ! its respective dimension.  This should be simplified later.
+       if (ppm_trace_forces == 1) then
+          call ppm_2d(force(:,:,1),ng_f,ufull,ng_uf,Ipfx,Imfx,lo,hi,adv_bc(:,:,1),dx,dt)
+          call ppm_2d(force(:,:,2),ng_f,ufull,ng_uf,Ipfy,Imfy,lo,hi,adv_bc(:,:,2),dx,dt)
+       endif
     end if
        
     !******************************************************************
@@ -495,13 +535,17 @@ contains
 
     do j=js,je
        do i=is,ie+1
+          ! use the traced force if ppm_trace_forces = 1
+          fl = merge(force(i-1,j,1), Ipfx(i-1,j,1), ppm_trace_forces == 0)
+          fr = merge(force(i,j  ,1), Imfx(i,  j,1), ppm_trace_forces == 0)
+
           ! extrapolate to edges
           umacl(i,j) = ulx(i,j,1) &
                - (dt4/hy)*(vtrans(i-1,j+1)+vtrans(i-1,j)) &
-               * (uimhy(i-1,j+1,1)-uimhy(i-1,j,1)) + dt2*force(i-1,j,1)
+               * (uimhy(i-1,j+1,1)-uimhy(i-1,j,1)) + dt2*fl
           umacr(i,j) = urx(i,j,1) &
                - (dt4/hy)*(vtrans(i  ,j+1)+vtrans(i  ,j)) &
-               * (uimhy(i  ,j+1,1)-uimhy(i  ,j,1)) + dt2*force(i  ,j,1)
+               * (uimhy(i  ,j+1,1)-uimhy(i  ,j,1)) + dt2*fr
 
           ! solve Riemann problem using full velocity
           uavg = HALF*(umacl(i,j)+umacr(i,j))
@@ -538,24 +582,30 @@ contains
        call bl_error("velpred_2d: invalid boundary type phys_bc(1,2)")
     end select
 
+
     do j=js,je+1
        do i=is,ie
+          ! use the traced force if ppm_trace_forces = 1
+          fl = merge(force(i,j-1,2), Ipfy(i,j-1,2), ppm_trace_forces == 0)
+          fr = merge(force(i,j  ,2), Imfy(i,j  ,2), ppm_trace_forces == 0)
+          
           ! extrapolate to edges
           vmacl(i,j) = uly(i,j,2) &
                - (dt4/hx)*(utrans(i+1,j-1)+utrans(i,j-1)) &
-               * (uimhx(i+1,j-1,2)-uimhx(i,j-1,2)) + dt2*force(i,j-1,2)
+               * (uimhx(i+1,j-1,2)-uimhx(i,j-1,2)) + dt2*fl
           vmacr(i,j) = ury(i,j,2) &
                - (dt4/hx)*(utrans(i+1,j  )+utrans(i,j  )) &
-               * (uimhx(i+1,j  ,2)-uimhx(i,j  ,2)) + dt2*force(i,j  ,2)
-
+               * (uimhx(i+1,j  ,2)-uimhx(i,j  ,2)) + dt2*fr
+          
           ! solve Riemann problem using full velocity
           uavg = HALF*(vmacl(i,j)+vmacr(i,j))
           test = ((vmacl(i,j)+w0(j) .le. ZERO .and. vmacr(i,j)+w0(j) .ge. ZERO) .or. &
-              (abs(vmacl(i,j)+vmacr(i,j)+TWO*w0(j)) .lt. rel_eps))
+               (abs(vmacl(i,j)+vmacr(i,j)+TWO*w0(j)) .lt. rel_eps))
           vmac(i,j) = merge(vmacl(i,j),vmacr(i,j),uavg+w0(j) .gt. ZERO)
           vmac(i,j) = merge(ZERO,vmac(i,j),test)
        enddo
     enddo
+
 
     ! impose lo side bc's
     select case(phys_bc(2,1))
@@ -598,7 +648,7 @@ contains
     use bl_constants_module
     use geometry, only: spherical
     use variables, only: rel_eps
-    use probin_module, only: ppm_type
+    use probin_module, only: ppm_type, ppm_trace_forces
     use ppm_module
 
     integer        , intent(in   ) :: lo(:),hi(:)
