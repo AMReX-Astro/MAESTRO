@@ -75,7 +75,7 @@ contains
                                              use_etarho, dpdt_factor, verbose, &
                                              use_tfromp, use_thermal_diffusion, &
                                              use_delta_gamma1_term, nodal, mach_max_abort, &
-                                             prob_lo, prob_hi, use_particles
+                                             prob_lo, prob_hi, use_particles, ppm_trace_forces
     use time_module                 , only : time
     use addw0_module                , only : addw0
     
@@ -524,7 +524,12 @@ contains
           call multifab_build_edge(sedge(n,comp),mla%la(n),nscal,0,comp)
           call multifab_build_edge(sflux(n,comp),mla%la(n),nscal,0,comp)
        end do
-       call multifab_build(scal_force(n), mla%la(n), nscal, 1)
+       if (ppm_trace_forces == 0) then
+          call multifab_build(scal_force(n), mla%la(n), nscal, 1)
+       else
+          ! we need more ghostcells if we are tracing the forces
+          call multifab_build(scal_force(n), mla%la(n), nscal, nghost(sold(n)))
+       endif
        call multifab_build_edge(etarhoflux(n), mla%la(n), 1, 0, dm)
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
@@ -1012,7 +1017,12 @@ contains
           call multifab_build_edge(sedge(n,comp),mla%la(n),nscal,0,comp)
           call multifab_build_edge(sflux(n,comp),mla%la(n),nscal,0,comp)
        end do
-       call multifab_build(scal_force(n), mla%la(n), nscal, 1)
+       if (ppm_trace_forces == 0) then
+          call multifab_build(scal_force(n), mla%la(n), nscal, 1)
+       else
+          print *, "here: ", nghost(sold(n))
+          call multifab_build(scal_force(n), mla%la(n), nscal, nghost(sold(n)))
+       endif
     end do
 
     call density_advance(mla,2,s1,s2,sedge,sflux,scal_force,umac,w0,w0mac,etarhoflux, &

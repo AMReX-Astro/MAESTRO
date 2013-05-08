@@ -23,7 +23,7 @@ contains
     use bl_constants_module
     use mk_vel_force_module
     use make_edge_scal_module
-    use probin_module, only: verbose, bds_type
+    use probin_module, only: verbose, bds_type, ppm_trace_forces
     use variables, only: rho_comp
     use bds_module
 
@@ -64,7 +64,12 @@ contains
     dm = mla%dim
 
     do n = 1, nlevs
-       call multifab_build(force(n),get_layout(uold(n)),dm,1)
+       if (ppm_trace_forces == 0) then
+          call multifab_build(force(n),get_layout(uold(n)),dm,1)
+       else
+          ! tracing needs more ghost cells
+          call multifab_build(force(n),get_layout(uold(n)),dm,uold(n)%ng)
+       endif
     end do
 
     !********************************************************

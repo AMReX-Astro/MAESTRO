@@ -146,7 +146,7 @@ contains
     use bl_constants_module
     use variables, only: rel_eps
     use ppm_module
-    use probin_module, only: ppm_type
+    use probin_module, only: ppm_type, ppm_trace_forces
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,:)
@@ -162,18 +162,23 @@ contains
     ! Local variables
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,1)
 
-    real(kind=dp_t) :: hx,dt2,dt4,savg
+    real(kind=dp_t) :: hx,dt2,dt4,savg,fl,fr
 
     integer :: i,is,ie
 
-    real(kind=dp_t), allocatable :: Ip(:)
-    real(kind=dp_t), allocatable :: Im(:)
+    real(kind=dp_t), allocatable :: Ip(:), Ipf(:)
+    real(kind=dp_t), allocatable :: Im(:), Imf(:)
 
     ! these correspond to \mathrm{sedge}_L^x, etc.
     real(kind=dp_t), allocatable:: sedgelx(:),sedgerx(:)
 
     allocate(Ip(lo(1)-1:hi(1)+1))
     allocate(Im(lo(1)-1:hi(1)+1))
+
+    if (ppm_trace_forces == 1) then
+       allocate(Ipf(lo(1)-1:hi(1)+1))
+       allocate(Imf(lo(1)-1:hi(1)+1))
+    endif
 
     ! Final edge states.
     ! lo:hi+1 in the normal direction
@@ -188,6 +193,9 @@ contains
        call slopex_1d(s(:,comp:),slopex,lo,hi,ng_s,1,adv_bc(:,:,bccomp:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        call ppm_fpu_1d(s(:,comp),ng_s,umac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,bccomp),dx,dt)
+       if (ppm_trace_forces == 1) then
+          call ppm_fpu_1d(force(:,comp),ng_s,umac,ng_um,Ipf,Imf,lo,hi,adv_bc(:,:,bccomp),dx,dt)
+       endif
     end if
 
     dt2 = HALF*dt
@@ -217,16 +225,19 @@ contains
     ! loop over appropriate x-faces
     do i=is,ie+1
        ! make sedgelx, sedgerx
+       fl = merge(force(i-1,comp), Ipf(i-1), ppm_trace_forces == 0)
+       fr = merge(force(i  ,comp), Imf(i  ), ppm_trace_forces == 0)
+
        if(is_conservative) then
           sedgelx(i) = sedgelx(i) &
                - (dt2/hx)*s(i-1,comp)*(umac(i  )-umac(i-1)) &
-               + dt2*force(i-1,comp)
+               + dt2*fl
           sedgerx(i) = sedgerx(i) &
                - (dt2/hx)*s(i  ,comp)*(umac(i+1)-umac(i  )) &
-               + dt2*force(i  ,comp)
+               + dt2*fr
        else
-          sedgelx(i) = sedgelx(i) + dt2*force(i-1,comp)
-          sedgerx(i) = sedgerx(i) + dt2*force(i  ,comp)
+          sedgelx(i) = sedgelx(i) + dt2*fl
+          sedgerx(i) = sedgerx(i) + dt2*fr
        end if
 
        ! make sedgex by solving Riemann problem
@@ -288,7 +299,7 @@ contains
     use bl_constants_module
     use variables, only: rel_eps
     use ppm_module
-    use probin_module, only: ppm_type
+    use probin_module, only: ppm_type, ppm_trace_forces
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,:)
@@ -307,12 +318,12 @@ contains
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
 
-    real(kind=dp_t) :: hx,hy,dt2,dt4,savg
+    real(kind=dp_t) :: hx,hy,dt2,dt4,savg,fl,fr
 
     integer :: i,j,is,js,ie,je
 
-    real(kind=dp_t), allocatable :: Ip(:,:,:)
-    real(kind=dp_t), allocatable :: Im(:,:,:)
+    real(kind=dp_t), allocatable :: Ip(:,:,:), Ipf(:,:,:)
+    real(kind=dp_t), allocatable :: Im(:,:,:), Imf(:,:,:)
 
     ! these correspond to s_L^x, etc.
     real(kind=dp_t), allocatable:: slx(:,:),srx(:,:)
@@ -327,6 +338,11 @@ contains
 
     allocate(Ip(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
     allocate(Im(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+
+    if (ppm_trace_forces == 1) then
+       allocate(Ipf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+       allocate(Imf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    endif
 
     ! Normal predictor states.
     ! Allocated from lo:hi+1 in the normal direction
@@ -357,6 +373,9 @@ contains
        call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc(:,:,bccomp:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        call ppm_fpu_2d(s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,bccomp),dx,dt)
+       if (ppm_trace_forces == 1) then
+          call ppm_fpu_2d(force(:,:,comp),ng_s,umac,vmac,ng_um,Ipf,Imf,lo,hi,adv_bc(:,:,bccomp),dx,dt)
+       endif
     end if
 
     dt2 = HALF*dt
@@ -513,22 +532,25 @@ contains
     do j=js,je
        do i=is,ie+1
           ! make sedgelx, sedgerx
+          fl = merge(force(i-1,j,comp), Ipf(i-1,j,1), ppm_trace_forces == 0)
+          fr = merge(force(i,j  ,comp), Imf(i,  j,1), ppm_trace_forces == 0)
+
           if(is_conservative) then
              sedgelx(i,j) = slx(i,j) &
                   - (dt2/hy)*(simhy(i-1,j+1)*vmac(i-1,j+1) - simhy(i-1,j)*vmac(i-1,j)) &
                   - (dt2/hx)*s(i-1,j,comp)*(umac(i  ,j)-umac(i-1,j)) &
-                  + dt2*force(i-1,j,comp)
+                  + dt2*fl
              sedgerx(i,j) = srx(i,j) &
                   - (dt2/hy)*(simhy(i  ,j+1)*vmac(i  ,j+1) - simhy(i  ,j)*vmac(i  ,j)) &
                   - (dt2/hx)*s(i  ,j,comp)*(umac(i+1,j)-umac(i  ,j)) &
-                  + dt2*force(i  ,j,comp)
+                  + dt2*fr
           else
              sedgelx(i,j) = slx(i,j) &
                   - (dt4/hy)*(vmac(i-1,j+1)+vmac(i-1,j))*(simhy(i-1,j+1)-simhy(i-1,j)) &
-                  + dt2*force(i-1,j,comp)
+                  + dt2*fl
              sedgerx(i,j) = srx(i,j) &
                   - (dt4/hy)*(vmac(i  ,j+1)+vmac(i  ,j))*(simhy(i  ,j+1)-simhy(i  ,j)) &
-                  + dt2*force(i  ,j,comp)
+                  + dt2*fr
           end if
 
           ! make sedgex by solving Riemann problem
@@ -581,22 +603,25 @@ contains
     do j=js,je+1
        do i=is,ie
           ! make sedgely, sedgery
+          fl = merge(force(i,j-1,comp), Ipf(i,j-1,2), ppm_trace_forces == 0)
+          fr = merge(force(i,j  ,comp), Imf(i,j  ,2), ppm_trace_forces == 0)
+
           if(is_conservative) then
              sedgely(i,j) = sly(i,j) &
                   - (dt2/hx)*(simhx(i+1,j-1)*umac(i+1,j-1) - simhx(i,j-1)*umac(i,j-1)) &
                   - (dt2/hy)*s(i,j-1,comp)*(vmac(i,j  )-vmac(i,j-1)) &
-                  + dt2*force(i,j-1,comp)
+                  + dt2*fl
              sedgery(i,j) = sry(i,j) &
                   - (dt2/hx)*(simhx(i+1,j  )*umac(i+1,j  ) - simhx(i,j  )*umac(i,j  )) &
                   - (dt2/hy)*s(i,j  ,comp)*(vmac(i,j+1)-vmac(i,j  )) &
-                  + dt2*force(i,j  ,comp)
+                  + dt2*fr
           else
              sedgely(i,j) = sly(i,j) &
                   - (dt4/hx)*(umac(i+1,j-1)+umac(i,j-1))*(simhx(i+1,j-1)-simhx(i,j-1)) &
-                  + dt2*force(i,j-1,comp)
+                  + dt2*fl
              sedgery(i,j) = sry(i,j) &
                   - (dt4/hx)*(umac(i+1,j  )+umac(i,j  ))*(simhx(i+1,j  )-simhx(i,j  )) &
-                  + dt2*force(i,j  ,comp)
+                  + dt2*fr
           end if
 
           ! make sedgey by solving Riemann problem
@@ -659,7 +684,7 @@ contains
     use bl_constants_module
     use variables, only: rel_eps
     use ppm_module
-    use probin_module, only: ppm_type
+    use probin_module, only: ppm_type, ppm_trace_forces
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
@@ -681,13 +706,13 @@ contains
     real(kind=dp_t), allocatable :: slopey(:,:,:,:)
     real(kind=dp_t), allocatable :: slopez(:,:,:,:)
 
-    real(kind=dp_t) :: hx,hy,hz,dt2,dt3,dt4,dt6
+    real(kind=dp_t) :: hx,hy,hz,dt2,dt3,dt4,dt6,fl,fr
     real(kind=dp_t) :: savg
 
     integer :: i,j,k,is,js,ks,ie,je,ke
 
-    real(kind=dp_t), allocatable :: Ip(:,:,:,:)
-    real(kind=dp_t), allocatable :: Im(:,:,:,:)
+    real(kind=dp_t), allocatable :: Ip(:,:,:,:), Ipf(:,:,:,:)
+    real(kind=dp_t), allocatable :: Im(:,:,:,:), Imf(:,:,:,:)
 
     ! these correspond to s_L^x, etc.
     real(kind=dp_t), allocatable:: slx(:,:,:),srx(:,:,:)
@@ -719,6 +744,11 @@ contains
     allocate(Ip(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(Im(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
+    if (ppm_trace_forces == 1) then
+       allocate(Ipf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+       allocate(Imf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    endif
+
     is = lo(1)
     ie = hi(1)
     js = lo(2)
@@ -735,6 +765,10 @@ contains
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        call ppm_fpu_3d(s(:,:,:,comp),ng_s,umac,vmac,wmac,ng_um,Ip,Im, &
                        lo,hi,adv_bc(:,:,bccomp),dx,dt)
+       if (ppm_trace_forces == 1) then
+          call ppm_fpu_3d(force(:,:,:,comp),ng_s,umac,vmac,wmac,ng_um,Ipf,Imf, &
+                          lo,hi,adv_bc(:,:,bccomp),dx,dt)
+       endif
     end if
 
     dt2 = HALF*dt
@@ -1618,47 +1652,55 @@ contains
 
     ! loop over appropriate x-faces
     if (is_conservative) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,fl,fr)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
                 ! make sedgelx, sedgerx
+                fl = merge(force(i-1,j,k,comp), Ipf(i-1,j,k,1), ppm_trace_forces == 0)
+                fr = merge(force(i  ,j,k,comp), Imf(i,  j,k,1), ppm_trace_forces == 0)
+
                 sedgelx(i,j,k) = slx(i,j,k) &
                      - (dt2/hy)*(simhyz(i-1,j+1,k  )*vmac(i-1,j+1,k  ) &
                      - simhyz(i-1,j,k)*vmac(i-1,j,k)) &
                      - (dt2/hz)*(simhzy(i-1,j  ,k+1)*wmac(i-1,j  ,k+1) &
                      - simhzy(i-1,j,k)*wmac(i-1,j,k)) &
                      - (dt2/hx)*s(i-1,j,k,comp)*(umac(i  ,j,k)-umac(i-1,j,k)) &
-                     + dt2*force(i-1,j,k,comp)
+                     + dt2*fl
+
                 sedgerx(i,j,k) = srx(i,j,k) &
                      - (dt2/hy)*(simhyz(i  ,j+1,k  )*vmac(i  ,j+1,  k) &
                      - simhyz(i  ,j,k)*vmac(i  ,j,k)) &
                      - (dt2/hz)*(simhzy(i  ,j  ,k+1)*wmac(i  ,j  ,k+1) &
                      - simhzy(i  ,j,k)*wmac(i  ,j,k)) &
                      - (dt2/hx)*s(i  ,j,k,comp)*(umac(i+1,j,k)-umac(i  ,j,k)) &
-                     + dt2*force(i  ,j,k,comp)
+                     + dt2*fr
              end do
           end do
        end do
        !$OMP END PARALLEL DO
     else
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,fl,fr)
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
                 ! make sedgelx, sedgerx
+                fl = merge(force(i-1,j,k,comp), Ipf(i-1,j,k,1), ppm_trace_forces == 0)
+                fr = merge(force(i  ,j,k,comp), Imf(i,  j,k,1), ppm_trace_forces == 0)
+
                 sedgelx(i,j,k) = slx(i,j,k) &
                      - (dt4/hy)*(vmac(i-1,j+1,k  )+vmac(i-1,j,k))* &
                      (simhyz(i-1,j+1,k  )-simhyz(i-1,j,k)) &
                      - (dt4/hz)*(wmac(i-1,j  ,k+1)+wmac(i-1,j,k))* &
                      (simhzy(i-1,j  ,k+1)-simhzy(i-1,j,k)) &
-                     + dt2*force(i-1,j,k,comp)
+                     + dt2*fl
+
                 sedgerx(i,j,k) = srx(i,j,k) &
                      - (dt4/hy)*(vmac(i  ,j+1,k  )+vmac(i  ,j,k))* &
                      (simhyz(i  ,j+1,k  )-simhyz(i  ,j,k)) &
                      - (dt4/hz)*(wmac(i  ,j  ,k+1)+wmac(i  ,j,k))* &
                      (simhzy(i  ,j  ,k+1)-simhzy(i  ,j,k)) &
-                     + dt2*force(i  ,j,k,comp)
+                     + dt2*fr
              end do
           end do
        end do
@@ -1726,47 +1768,55 @@ contains
 
     ! loop over appropriate y-faces
     if (is_conservative) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,fl,fr)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
                 ! make sedgely, sedgery
+                fl = merge(force(i,j-1,k,comp), Ipf(i,j-1,k,2), ppm_trace_forces == 0)
+                fr = merge(force(i,j  ,k,comp), Imf(i,j  ,k,2), ppm_trace_forces == 0)
+                
                 sedgely(i,j,k) = sly(i,j,k) &
                      - (dt2/hx)*(simhxz(i+1,j-1,k  )*umac(i+1,j-1,k  ) &
                      - simhxz(i,j-1,k)*umac(i,j-1,k)) &
                      - (dt2/hz)*(simhzx(i  ,j-1,k+1)*wmac(i  ,j-1,k+1) &
                      - simhzx(i,j-1,k)*wmac(i,j-1,k)) &
                      - (dt2/hy)*s(i,j-1,k,comp)*(vmac(i,j  ,k)-vmac(i,j-1,k)) &
-                     + dt2*force(i,j-1,k,comp)
+                     + dt2*fl
+
                 sedgery(i,j,k) = sry(i,j,k) &
                      - (dt2/hx)*(simhxz(i+1,j  ,k  )*umac(i+1,j  ,k  ) &
                      - simhxz(i,j  ,k)*umac(i,j  ,k)) &
                      - (dt2/hz)*(simhzx(i  ,j  ,k+1)*wmac(i  ,j  ,k+1) &
                      - simhzx(i,j  ,k)*wmac(i,j  ,k)) &
                      - (dt2/hy)*s(i,j  ,k,comp)*(vmac(i,j+1,k)-vmac(i,j  ,k)) &
-                     + dt2*force(i,j  ,k,comp)
+                     + dt2*fr
              end do
           end do
        end do
        !$OMP END PARALLEL DO
     else
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,fl,fr)
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
                 ! make sedgely, sedgery
+                fl = merge(force(i,j-1,k,comp), Ipf(i,j-1,k,2), ppm_trace_forces == 0)
+                fr = merge(force(i,j  ,k,comp), Imf(i,j  ,k,2), ppm_trace_forces == 0)
+
                 sedgely(i,j,k) = sly(i,j,k) &
                      - (dt4/hx)*(umac(i+1,j-1,k  )+umac(i,j-1,k))* &
                      (simhxz(i+1,j-1,k  )-simhxz(i,j-1,k)) &
                      - (dt4/hz)*(wmac(i  ,j-1,k+1)+wmac(i,j-1,k))* &
                      (simhzx(i  ,j-1,k+1)-simhzx(i,j-1,k)) &
-                     + dt2*force(i,j-1,k,comp)
+                     + dt2*fl
+
                 sedgery(i,j,k) = sry(i,j,k) &
                      - (dt4/hx)*(umac(i+1,j  ,k  )+umac(i,j  ,k))* &
                      (simhxz(i+1,j  ,k  )-simhxz(i,j  ,k)) &
                      - (dt4/hz)*(wmac(i  ,j  ,k+1)+wmac(i,j  ,k))* &
                      (simhzx(i  ,j  ,k+1)-simhzx(i,j  ,k)) &
-                     + dt2*force(i,j  ,k,comp)
+                     + dt2*fr
              end do
           end do
        end do
@@ -1834,47 +1884,55 @@ contains
 
     ! loop over appropriate z-faces
     if (is_conservative) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,fl,fr)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
                 ! make sedgelz, sedgerz
+                fl = merge(force(i,j,k-1,comp), Ipf(i,j,k-1,3), ppm_trace_forces == 0)
+                fr = merge(force(i,j,k  ,comp), Imf(i,j,k  ,3), ppm_trace_forces == 0)                
+
                 sedgelz(i,j,k) = slz(i,j,k) &
                      - (dt2/hx)*(simhxy(i+1,j  ,k-1)*umac(i+1,j  ,k-1) &
                      - simhxy(i,j,k-1)*umac(i,j,k-1)) &
                      - (dt2/hy)*(simhyx(i  ,j+1,k-1)*vmac(i  ,j+1,k-1) &
                      - simhyx(i,j,k-1)*vmac(i,j,k-1)) &
                      - (dt2/hz)*s(i,j,k-1,comp)*(wmac(i,j,k  )-wmac(i,j,k-1)) &
-                     + dt2*force(i,j,k-1,comp)
+                     + dt2*fl
+
                 sedgerz(i,j,k) = srz(i,j,k) &
                      - (dt2/hx)*(simhxy(i+1,j  ,k  )*umac(i+1,j  ,k  ) &
                      - simhxy(i,j,k  )*umac(i,j,k  )) &
                      - (dt2/hy)*(simhyx(i  ,j+1,k  )*vmac(i  ,j+1,k  ) &
                      - simhyx(i,j,k  )*vmac(i,j,k  )) &
                      - (dt2/hz)*s(i,j,k  ,comp)*(wmac(i,j,k+1)-wmac(i,j,k  )) &
-                     + dt2*force(i,j,k  ,comp)
+                     + dt2*fr
              end do
           end do
        end do
        !$OMP END PARALLEL DO
     else
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,fl,fr)
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
                 ! make sedgelz, sedgerz
+                fl = merge(force(i,j,k-1,comp), Ipf(i,j,k-1,3), ppm_trace_forces == 0)
+                fr = merge(force(i,j,k  ,comp), Imf(i,j,k  ,3), ppm_trace_forces == 0)                
+
                 sedgelz(i,j,k) = slz(i,j,k) &
                      - (dt4/hx)*(umac(i+1,j  ,k-1)+umac(i,j,k-1)) &
                      *(simhxy(i+1,j  ,k-1)-simhxy(i,j,k-1)) &
                      - (dt4/hy)*(vmac(i  ,j+1,k-1)+vmac(i,j,k-1)) &
                      *(simhyx(i  ,j+1,k-1)-simhyx(i,j,k-1)) &
-                     + dt2*force(i,j,k-1,comp)
+                     + dt2*fl
+
                 sedgerz(i,j,k) = srz(i,j,k) &
                      - (dt4/hx)*(umac(i+1,j  ,k  )+umac(i,j,k  )) &
                      *(simhxy(i+1,j  ,k  )-simhxy(i,j,k  )) &
                      - (dt4/hy)*(vmac(i  ,j+1,k  )+vmac(i,j,k  )) &
                      *(simhyx(i  ,j+1,k  )-simhyx(i,j,k  )) &
-                     + dt2*force(i,j,k  ,comp)
+                     + dt2*fr
              end do
           end do
        end do
