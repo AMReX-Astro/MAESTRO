@@ -169,10 +169,8 @@ contains
     allocate(Ipu(lo(1)-1:hi(1)+1))
     allocate(Imu(lo(1)-1:hi(1)+1))
 
-    if (ppm_trace_forces .eq. 1) then
-       allocate(Ipf(lo(1)-1:hi(1)+1))
-       allocate(Imf(lo(1)-1:hi(1)+1))
-    endif
+    allocate(Ipf(lo(1)-1:hi(1)+1))
+    allocate(Imf(lo(1)-1:hi(1)+1))
 
     allocate(umacl(lo(1):hi(1)+1))
     allocate(umacr(lo(1):hi(1)+1))
@@ -318,12 +316,10 @@ contains
     allocate(Ipv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
     allocate(Imv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
 
-    if (ppm_trace_forces == 1) then
-       allocate(Ipfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-       allocate(Imfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-       allocate(Ipfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-       allocate(Imfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-    endif
+    allocate(Ipfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Imfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Ipfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Imfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
 
     allocate(  ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,2))
     allocate(  urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,2))
@@ -735,14 +731,12 @@ contains
     allocate(Ipw(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(Imw(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
-    if (ppm_trace_forces == 1) then
-       allocate(Ipfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-       allocate(Imfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-       allocate(Ipfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-       allocate(Imfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-       allocate(Ipfz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-       allocate(Imfz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-    endif
+    allocate(Ipfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Imfx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Ipfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Imfy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Ipfz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Imfz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     is = lo(1)
     ie = hi(1)

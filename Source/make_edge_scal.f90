@@ -175,10 +175,8 @@ contains
     allocate(Ip(lo(1)-1:hi(1)+1))
     allocate(Im(lo(1)-1:hi(1)+1))
 
-    if (ppm_trace_forces == 1) then
-       allocate(Ipf(lo(1)-1:hi(1)+1))
-       allocate(Imf(lo(1)-1:hi(1)+1))
-    endif
+    allocate(Ipf(lo(1)-1:hi(1)+1))
+    allocate(Imf(lo(1)-1:hi(1)+1))
 
     ! Final edge states.
     ! lo:hi+1 in the normal direction
@@ -339,10 +337,8 @@ contains
     allocate(Ip(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
     allocate(Im(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
 
-    if (ppm_trace_forces == 1) then
-       allocate(Ipf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-       allocate(Imf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-    endif
+    allocate(Ipf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Imf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
 
     ! Normal predictor states.
     ! Allocated from lo:hi+1 in the normal direction
@@ -744,10 +740,8 @@ contains
     allocate(Ip(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(Im(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
-    if (ppm_trace_forces == 1) then
-       allocate(Ipf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-       allocate(Imf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-    endif
+    allocate(Ipf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Imf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     is = lo(1)
     ie = hi(1)
