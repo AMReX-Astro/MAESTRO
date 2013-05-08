@@ -31,7 +31,7 @@
  stop_time = 1.0d0
 
  plot_base   = T
- plot_deltat = 0.5d0
+ plot_deltat = 1.0d0
  chk_int     = 100
 
  cflfac = 0.9
