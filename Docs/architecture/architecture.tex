@@ -445,16 +445,16 @@ state is in hydrostatic equilibrium.  At the start of a simulation,
 the initial model is read in and taken as the base state.  Therefore,
 any initial model needs to already be in hydrostatic equilibrium.
 
-The routines in {\tt AstroDev/initial\_models/}\footnote{The {\tt \astrodev} package is currently distributed separately from \maestro} prepare an initial model
-for \maestro.  There are two types of routines here, the first type
-modify an existing 1D initial model produced somewhere else (e.g.\ a
-1D stellar evolution code), and map it onto a uniform grid, at
-the desired resolution, using the equation of state in \maestro, and
-using \maestro's discretization of hydrostatic equilibrium.  The second
-type generate the initial model internally, by integrating the
-condition of hydrostatic equilibrium together with a simplifying
-assumption on the energy (e.g. isothermal or isentropic).  In
-both cases hydrostatic equilibrium is enforced as:
+The routines in {\tt Util/initial\_models/} prepare an initial model
+for \maestro.  In general, there are two different proceduces that are
+needed.  The first type modify an existing 1D initial model produced
+somewhere else (e.g.\ a 1D stellar evolution code), and map it onto a
+uniform grid, at the desired resolution, using the equation of state
+in \maestro, and using \maestro's discretization of hydrostatic
+equilibrium.  The second type generate the initial model internally,
+by integrating the condition of hydrostatic equilibrium together with
+a simplifying assumption on the energy (e.g. isothermal or
+isentropic).  In both cases hydrostatic equilibrium is enforced as:
 \begin{equation}
 \frac{p_{i+1} - p_i}{\Delta r} = \frac{1}{2} (\rho_i + \rho_{i+1})
 g_{i+1/2}
