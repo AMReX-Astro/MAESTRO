@@ -8,9 +8,11 @@ hydrostatic equilibrium.  Two basic geometries are allowed.  A {\em
   plane-parallel} geometry assumes that the domain is thin compared to
 the radius of curvature of the star, and therefore the 1D base state
 is perfectly aligned with the Cartesian state.  A {\em spherical}
-geometry is for modeling an entire star.  Here, the 1D base state is
-not aligned with the Cartesian state.  Figure~\ref{fig:base_state}
-shows these geometries.
+geometry is for modeling an entire star\footnote{Spherical geometry
+  only exists for 3-d. This is a design decision---convection is 3-d.
+  You can however run as an octant}.  Here, the 1D base state is not
+aligned with the Cartesian state.  Figure~\ref{fig:base_state} shows
+these geometries.
 
 \begin{figure}[tb]
 \centering
@@ -443,7 +445,7 @@ state is in hydrostatic equilibrium.  At the start of a simulation,
 the initial model is read in and taken as the base state.  Therefore,
 any initial model needs to already be in hydrostatic equilibrium.
 
-The routines in {\tt MAESTRO/initial\_model/} prepare an initial model
+The routines in {\tt AstroDev/initial\_models/}\footnote{The {\tt \astrodev} package is currently distributed separately from \maestro} prepare an initial model
 for \maestro.  There are two types of routines here, the first type
 modify an existing 1D initial model produced somewhere else (e.g.\ a
 1D stellar evolution code), and map it onto a uniform grid, at
@@ -474,6 +476,16 @@ defined in the {\tt network} module used by the \maestro\ problem.
 Full details on which initial model routine matches each problem and
 how the initial models are used to initialize the full state data can
 be found in \S~\ref{sec:initial_models_main}.
+
+\subsection{Customizing the Initialization}
+
+The best way to customize the initialization (e.g.\ add perturbations)
+is to copy from one of the existing problems.  The file {\tt
+  initveldata.f90} controls the velocity field initialization and {\tt
+  initscaldata.f90} controls the initialization of the scalars
+($\rho$, $\rho X_k$, $\rho h$).  The {\tt test2} problem is a good
+starting point for plane-parallel and {\tt wdconvect} is a good
+starting point for full stars.
 
 
 
