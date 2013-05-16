@@ -19,16 +19,15 @@ data file for each test problem:
 \begin{eqnarray}
 {\tt test2} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \nonumber \\
 {\tt test\_convect} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \nonumber \\
-{\tt wdconvect} & \rightarrow & {\tt initial\_models/kepler/model\_6.e8.raw} \nonumber \\
+{\tt wdconvect} & \rightarrow & {\tt model\_6.e8.raw} \nonumber \\
 {\tt spherical\_heat} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \\
-{\tt xrb} & \rightarrow & {\tt initial\_models/xrb/sorted\_xrb.raw} \nonumber
 \end{eqnarray}
 
 We use a fortran subroutine
 to interpolate the raw data, yielding the model data, $\rho^{\model},
 T^{\model}, p^{\model}$, and $X^{\model}$.  The fortran subroutine
 then uses an iterative procedure to modify the model data so that it
-is thermodynamically consistent with the {\tt MAESTRO} equation of
+is thermodynamically consistent with the \maestro\ equation of
 state (EOS), and also satisfies our chosen hydrostatic equilibrium
 (HSE) discretization,
 \begin{equation}
@@ -36,13 +35,13 @@ state (EOS), and also satisfies our chosen hydrostatic equilibrium
 \end{equation}
 to a user defined tolerance.  Here are the fortran subroutines for each test problem:
 \begin{eqnarray}
-{\tt test2} & \rightarrow & {\tt initial\_models/test2/init\_1d.f90} \nonumber \\
-{\tt test\_convect} & \rightarrow & {\tt initial\_models/test2/init\_1d.f90} \nonumber \\
-{\tt wdconvect} & \rightarrow & {\tt initial\_models/kepler/init\_1d.f90} \nonumber \\
-{\tt spherical\_heat} & \rightarrow & {\tt initial\_models/spherical/init\_1d.f90} \nonumber \\
-{\tt xrb} & \rightarrow & {\tt initial\_models/xrb/init\_1d.f90} \nonumber
+{\tt test2} & \rightarrow & {\tt Util/initial\_models/test2/init\_1d.f90} \nonumber \\
+{\tt test\_convect} & \rightarrow & {\tt Util/initial\_models/test2/init\_1d.f90} \nonumber \\
+{\tt wdconvect} & \rightarrow & none\footnotemark \nonumber \\
+{\tt spherical\_heat} & \rightarrow & {\tt Util/initial\_models/spherical/init\_1d.f90} \nonumber \\
 \end{eqnarray}
-The model data is not generated at run-time - it must be generated in
+\footnotetext{the original model routines are not distributed, but the {\tt Util/initial\_models/spherical/init\_1d.f90} routines can work as a simple substitute.}
+The model data is not generated at run-time---it must be generated in
 advance of running any \maestro\ examples.  The inputs file should point
 to the file containing the model data.
 
