@@ -1,0 +1,25 @@
+&params
+
+  ! this set of parameters appears to reproduce the original initial
+  ! model in test_convect, which was used in paper III.  Note: Coulomb
+  ! corrections we off back then.
+
+  do_coulomb = .false.
+
+  xmin = 0.0d0
+  xmax = 3.6d8
+
+  base_height = 1.d8
+
+  entropy_jump = 3.d0
+  entropy_end  = 6.d0
+
+  dens_base = 2.6d9
+  temp_base = 7.d8
+
+  g_zone = -1.5d10
+
+  low_density_cutoff = 1.d-4
+  temp_fluff = 1.d7
+
+/
