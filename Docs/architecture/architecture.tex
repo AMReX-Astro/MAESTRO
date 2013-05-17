@@ -616,6 +616,9 @@ exists so that we don't have to recompute intersections every time we
 do some operation with two \multifab s that have that layout, for
 example.
 
+By separating the layout from the actual data, we can allocate and
+destroy data that lives on the grid as needed.
+
 
 \subsection{\fab}
 
@@ -638,6 +641,10 @@ refinement.  This is the primary data structure that \maestro\
 routine operate on.  A multilevel simulation stores the 
 data in an array of \multifab s, where the array index refers
 to the refinement level.
+
+All \fab s in a given \multifab\ have the same number of ghost cells,
+but different \multifab s can have different numbers of ghost cells
+(or no ghost cells).
 
 \subsubsection{Working with \multifab s}
 
@@ -966,9 +973,21 @@ the most popular such modules.
 
 \subsection{{\tt bl\_types}}
 
+The main purpose of this module is to define the Fortran kind {\tt dp\_t}
+which is used throughout the code to declare double precision variables.
+
 \subsection{{\tt bl\_constants}}
 
+This module provides descriptive names for a number of common double precision
+numbers, e.g.\ {\tt ONE = 1.0\_dp\_t}.  This enhances the readability of
+the code.
+
 \subsection{{\tt parallel}}
+
+All MPI calls are wrapped by functions in the {\tt parallel} module.  For
+serial jobs, the wrappers simply do the requested operation on processor.
+By wrapping the calls, we can easily switch between serial and parallel
+builds.
 
 \section{\label{sec:example} Example: Accessing State and MAC Data}
 
