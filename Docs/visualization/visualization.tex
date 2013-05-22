@@ -147,6 +147,43 @@ sizes.
 \renewcommand{\arraystretch}{1.0}
 
 
+\subsection{the \boxlib\ file format}
+
+\maestro\ stores the plotfile data in a hierarchical directory format,
+with each level's data stored in a separate subdirectory.  Some meta-data
+is stored in the top-level to help interpret the structure.  The basic format is:
+\begin{itemize}
+\item {\tt plt00000/}
+  \begin{itemize}
+    \item {\tt Header}
+    \item {\tt job\_info}
+    \item {\tt Level\_00/}
+      \begin{itemize}
+        \item {\tt Cell\_D\_00000}
+        \item {\ldots}
+        \item {\tt Cell\_H}
+      \end{itemize}
+    \item {\tt model\_cc\_00000}
+    \item {\tt model\_ec\_00000}
+  \end{itemize}
+\end{itemize}
+%
+In the main directory, {\tt Header} contains the information required
+to interpret the data stored on disk.  We describe this below.  The
+{\tt job\_info} file is a plaintext file that contains a lot of
+information about the run (where it was run, when it was run, compiler
+options, runtime options, etc.).  It is not needed to interpret the
+data.  Finally, the {\tt model\_cc\_00000} and {\tt model\_ec\_00000}
+contain the \maestro\ basestate information for the cell-centered and
+edge-centered basestate quantities respectively.  These files are not
+typically used for visualization.
+
+\subsubsection{\tt Header}
+
+The main {\tt Header} is written by {\tt fabio\_ml\_multifab\_write\_d}
+
+
+
 %-----------------------------------------------------------------------------
 % amrvis
 %-----------------------------------------------------------------------------
