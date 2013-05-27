@@ -343,6 +343,7 @@ contains
 
     integer :: lo(get_dim(mf(1))),hi(get_dim(mf(1)))
 
+    type(layout)   :: la
     type(boxarray) ::  validboxarr(size(mf))
     type(boxarray) :: diffboxarray(size(mf))
     type(box)      ::  boundingbox(size(mf))
@@ -369,7 +370,8 @@ contains
        ! r_end_coord
        do n=1,nlevs
           call boxarray_build_copy(validboxarr(n),get_boxarray(mf(n)))
-          call boxarray_boxarray_diff(diffboxarray(n),boundingbox(n),validboxarr(n))
+          la = get_layout(mf(n))
+          call layout_boxarray_diff(diffboxarray(n),boundingbox(n),la)
           call boxarray_simplify(diffboxarray(n))
        end do
        
