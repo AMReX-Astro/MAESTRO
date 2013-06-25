@@ -17,9 +17,10 @@ EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 
 NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
-NETWORK_DIR := rprox
+#NETWORK_DIR := rprox
 #NETWORK_DIR := triple_alpha
 #NETWORK_DIR := ignition_chamulak
+NETWORK_DIR := aprox13
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
