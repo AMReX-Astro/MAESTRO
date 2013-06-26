@@ -337,9 +337,9 @@ contains
                    end if
 
                    if (is_output_a_vector) then
-                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
-                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
-                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                      s0_cart(i,j,k,1) = s0_cart_val * x * (ONE / radius)
+                      s0_cart(i,j,k,2) = s0_cart_val * y * (ONE / radius)
+                      s0_cart(i,j,k,3) = s0_cart_val * z * (ONE / radius)
                    else
                       s0_cart(i,j,k,1) = s0_cart_val
                    end if
@@ -370,9 +370,9 @@ contains
                    end if
 
                    if (is_output_a_vector) then
-                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
-                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
-                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                      s0_cart(i,j,k,1) = s0_cart_val * x * (ONE / radius)
+                      s0_cart(i,j,k,2) = s0_cart_val * y * (ONE / radius)
+                      s0_cart(i,j,k,3) = s0_cart_val * z * (ONE / radius)
                    else
                       s0_cart(i,j,k,1) = s0_cart_val
                    end if
@@ -410,9 +410,9 @@ contains
                                     s0(index),s0(index+1),s0(index+2))
 
                    if (is_output_a_vector) then
-                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
-                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
-                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                      s0_cart(i,j,k,1) = s0_cart_val * x * (ONE / radius)
+                      s0_cart(i,j,k,2) = s0_cart_val * y * (ONE / radius)
+                      s0_cart(i,j,k,3) = s0_cart_val * z * (ONE / radius)
                    else
                       s0_cart(i,j,k,1) = s0_cart_val
                    end if
@@ -449,9 +449,9 @@ contains
                    s0_cart_val = s0(index)
 
                    if (is_output_a_vector) then
-                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
-                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
-                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                      s0_cart(i,j,k,1) = s0_cart_val * x * (ONE / radius)
+                      s0_cart(i,j,k,2) = s0_cart_val * y * (ONE / radius)
+                      s0_cart(i,j,k,3) = s0_cart_val * z * (ONE / radius)
                    else
                       s0_cart(i,j,k,1) = s0_cart_val
                    end if
@@ -492,9 +492,9 @@ contains
                    end if
 
                    if (is_output_a_vector) then
-                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
-                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
-                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                      s0_cart(i,j,k,1) = s0_cart_val * x * (ONE / radius)
+                      s0_cart(i,j,k,2) = s0_cart_val * y * (ONE / radius)
+                      s0_cart(i,j,k,3) = s0_cart_val * z * (ONE / radius)
                    else
                       s0_cart(i,j,k,1) = s0_cart_val
                    end if
@@ -531,9 +531,9 @@ contains
                                     s0(index-1),s0(index),s0(index+1))
 
                    if (is_output_a_vector) then
-                      s0_cart(i,j,k,1) = s0_cart_val * x / radius
-                      s0_cart(i,j,k,2) = s0_cart_val * y / radius
-                      s0_cart(i,j,k,3) = s0_cart_val * z / radius
+                      s0_cart(i,j,k,1) = s0_cart_val * x * (ONE / radius)
+                      s0_cart(i,j,k,2) = s0_cart_val * y * (ONE / radius)
+                      s0_cart(i,j,k,3) = s0_cart_val * z * (ONE / radius)
                    else
                       s0_cart(i,j,k,1) = s0_cart_val
                    end if
@@ -906,9 +906,9 @@ contains
                    w0_cart_val = w0(nr_fine)
                 end if
 
-                w0_nodal(i,j,k,1) = w0_cart_val * x / radius
-                w0_nodal(i,j,k,2) = w0_cart_val * y / radius
-                w0_nodal(i,j,k,3) = w0_cart_val * z / radius
+                w0_nodal(i,j,k,1) = w0_cart_val * x * (ONE / radius)
+                w0_nodal(i,j,k,2) = w0_cart_val * y * (ONE / radius)
+                w0_nodal(i,j,k,3) = w0_cart_val * z * (ONE / radius)
 
              end do
           end do
@@ -1359,9 +1359,9 @@ contains
 
                 radius = sqrt(x**2 + y**2 + z**2)
 
-                normal(i,j,k,1) = x / radius
-                normal(i,j,k,2) = y / radius
-                normal(i,j,k,3) = z / radius
+                normal(i,j,k,1) = x * (ONE / radius)
+                normal(i,j,k,2) = y * (ONE / radius)
+                normal(i,j,k,3) = z * (ONE / radius)
 
              end do
           end do
