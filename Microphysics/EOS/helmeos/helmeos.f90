@@ -154,14 +154,11 @@
 
 !..quintic hermite polynomial statement functions
 !..psi0 and its derivatives
-!      psi0(z)   = z**3 * ( z * (-6.0d0*z + 15.0d0) -10.0d0) + 1.0d0
       psi0(z)   = z*z*z * ( z * (-6.0d0*z + 15.0d0) -10.0d0) + 1.0d0
-!      dpsi0(z)  = z**2 * ( z * (-30.0d0*z + 60.0d0) - 30.0d0)
       dpsi0(z)  = z*z * ( z * (-30.0d0*z + 60.0d0) - 30.0d0)
       ddpsi0(z) = z* ( z*( -120.0d0*z + 180.0d0) -60.0d0)
 
 !..psi1 and its derivatives
-!      psi1(z)   = z* ( z**2 * ( z * (-3.0d0*z + 8.0d0) - 6.0d0) + 1.0d0)
       psi1(z)   = z* ( z*z * ( z * (-3.0d0*z + 8.0d0) - 6.0d0) + 1.0d0)
       dpsi1(z)  = z*z * ( z * (-15.0d0*z + 32.0d0) - 18.0d0) +1.0d0
       ddpsi1(z) = z * (z * (-60.0d0*z + 96.0d0) -36.0d0)
@@ -173,25 +170,24 @@
 
 !..biquintic hermite polynomial statement function
       h5(w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md)= &
-             fi(1)  *w0d*w0t   + fi(2)  *w0md*w0t &
-           + fi(3)  *w0d*w0mt  + fi(4)  *w0md*w0mt &
-           + fi(5)  *w0d*w1t   + fi(6)  *w0md*w1t &
-           + fi(7)  *w0d*w1mt  + fi(8)  *w0md*w1mt &
-           + fi(9)  *w0d*w2t   + fi(10) *w0md*w2t &
-           + fi(11) *w0d*w2mt  + fi(12) *w0md*w2mt &
-           + fi(13) *w1d*w0t   + fi(14) *w1md*w0t &
-           + fi(15) *w1d*w0mt  + fi(16) *w1md*w0mt &
-           + fi(17) *w2d*w0t   + fi(18) *w2md*w0t &
-           + fi(19) *w2d*w0mt  + fi(20) *w2md*w0mt &
-           + fi(21) *w1d*w1t   + fi(22) *w1md*w1t &
-           + fi(23) *w1d*w1mt  + fi(24) *w1md*w1mt &
-           + fi(25) *w2d*w1t   + fi(26) *w2md*w1t &
-           + fi(27) *w2d*w1mt  + fi(28) *w2md*w1mt &
-           + fi(29) *w1d*w2t   + fi(30) *w1md*w2t &
-           + fi(31) *w1d*w2mt  + fi(32) *w1md*w2mt &
-           + fi(33) *w2d*w2t   + fi(34) *w2md*w2t &
-           + fi(35) *w2d*w2mt  + fi(36) *w2md*w2mt
-
+             (fi(1)  *w0d  + fi(2)  *w0md)*w0t &
+           + (fi(3)  *w0d  + fi(4)  *w0md)*w0mt &
+           + (fi(5)  *w0d  + fi(6)  *w0md)*w1t &
+           + (fi(7)  *w0d  + fi(8)  *w0md)*w1mt &
+           + (fi(9)  *w0d  + fi(10) *w0md)*w2t &
+           + (fi(11) *w0d  + fi(12) *w0md)*w2mt &
+           + (fi(13) *w1d  + fi(14) *w1md)*w0t &
+           + (fi(15) *w1d  + fi(16) *w1md)*w0mt &
+           + (fi(17) *w2d  + fi(18) *w2md)*w0t &
+           + (fi(19) *w2d  + fi(20) *w2md)*w0mt &
+           + (fi(21) *w1d  + fi(22) *w1md)*w1t &
+           + (fi(23) *w1d  + fi(24) *w1md)*w1mt &
+           + (fi(25) *w2d  + fi(26) *w2md)*w1t &
+           + (fi(27) *w2d  + fi(28) *w2md)*w1mt &
+           + (fi(29) *w1d  + fi(30) *w1md)*w2t &
+           + (fi(31) *w1d  + fi(32) *w1md)*w2mt &
+           + (fi(33) *w2d  + fi(34) *w2md)*w2t &
+           + (fi(35) *w2d  + fi(36) *w2md)*w2mt
 
 
 !..cubic hermite polynomial statement functions
@@ -206,14 +202,14 @@
 
 !..bicubic hermite polynomial statement function
       h3(w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md) =  &
-             fi(1)  *w0d*w0t   +  fi(2)  *w0md*w0t  &
-           + fi(3)  *w0d*w0mt  +  fi(4)  *w0md*w0mt &
-           + fi(5)  *w0d*w1t   +  fi(6)  *w0md*w1t  &
-           + fi(7)  *w0d*w1mt  +  fi(8)  *w0md*w1mt &
-           + fi(9)  *w1d*w0t   +  fi(10) *w1md*w0t  &
-           + fi(11) *w1d*w0mt  +  fi(12) *w1md*w0mt &
-           + fi(13) *w1d*w1t   +  fi(14) *w1md*w1t  &
-           + fi(15) *w1d*w1mt  +  fi(16) *w1md*w1mt
+             (fi(1)  *w0d  +  fi(2)  *w0md)*w0t  &
+           + (fi(3)  *w0d  +  fi(4)  *w0md)*w0mt &
+           + (fi(5)  *w0d  +  fi(6)  *w0md)*w1t  &
+           + (fi(7)  *w0d  +  fi(8)  *w0md)*w1mt &
+           + (fi(9)  *w1d  +  fi(10) *w1md)*w0t  &
+           + (fi(11) *w1d  +  fi(12) *w1md)*w0mt &
+           + (fi(13) *w1d  +  fi(14) *w1md)*w1t  &
+           + (fi(15) *w1d  +  fi(16) *w1md)*w1mt
 
 !..start of vectorization loop, normal executaion starts here
       eosfail = .false.
