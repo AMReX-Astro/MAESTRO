@@ -6487,7 +6487,7 @@ contains
     do k=lo(3)-1,hi(3)
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             sigma = abs(wmac(i,j,k+1))*dt/dx(2)
+             sigma = abs(wmac(i,j,k+1))*dt/dx(3)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
              if ( wmac(i,j,k+1).gt. rel_eps) then
                 Ip(i,j,k,3) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
@@ -6503,7 +6503,7 @@ contains
     do k=lo(3),hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             sigma = abs(wmac(i,j,k))*dt/dx(2)
+             sigma = abs(wmac(i,j,k))*dt/dx(3)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
              if (wmac(i,j,k) .lt. -rel_eps) then
                 Im(i,j,k,3) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
