@@ -29,6 +29,8 @@
 
  plot_base   = T
  plot_deltat = 0.5d0
+ plot_processors = T
+
  chk_int     = 100
 
  cflfac = 0.9
