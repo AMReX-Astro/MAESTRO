@@ -370,7 +370,7 @@ contains
              sum = sum + x_out(n)
           enddo
           if (abs(sum - ONE) > x_err) then
-             call bl_error("ERROR: abundances do not sum to 1")
+             call bl_error("ERROR: abundances do not sum to 1", abs(sum-ONE))
           endif
 
           ! pass the density through
@@ -486,7 +486,7 @@ contains
                 sum = sum + x_out(n)
              enddo
              if (abs(sum - ONE) > x_err) then
-                call bl_error("ERROR: abundances do not sum to 1")
+                call bl_error("ERROR: abundances do not sum to 1", abs(sum-ONE))
              endif
 
              ! pass the density through
@@ -608,7 +608,7 @@ contains
                    sum = sum + x_out(n)
                 enddo
                 if (abs(sum - ONE) > x_err) then
-                   call bl_error("ERROR: abundances do not sum to 1")
+                   call bl_error("ERROR: abundances do not sum to 1", abs(sum-ONE))
                 endif
 
                 ! pass the density through
@@ -741,7 +741,7 @@ contains
                    sum = sum + x_out(n)
                 enddo
                 if (abs(sum - ONE) > x_err) then
-                   call bl_error("ERROR: abundances do not sum to 1")
+                   call bl_error("ERROR: abundances do not sum to 1", abs(sum-ONE))
                 endif
 
                 ! pass the density through

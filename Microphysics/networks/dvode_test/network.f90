@@ -57,7 +57,7 @@ contains
 
     do n = 1, nspec
 
-       if (trim(name) == trim(spec_names(n))) then
+       if (name == spec_names(n)) then
           network_species_index = n
           exit
        endif

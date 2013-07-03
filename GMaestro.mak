@@ -103,6 +103,12 @@ endif
 
 EXTRAS := $(addprefix $(EXTRA_TOP_DIR)/, $(EXTRA_DIR))
 
+ifndef EXTRA_TOP_DIR2 
+  EXTRA_TOP_DIR2 := $(MAESTRO_TOP_DIR)/
+endif
+
+EXTRAS += $(addprefix $(EXTRA_TOP_DIR2)/, $(EXTRA_DIR2))
+
 
 #-----------------------------------------------------------------------------
 # compile in support for particles

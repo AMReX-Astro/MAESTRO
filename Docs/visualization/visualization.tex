@@ -180,7 +180,27 @@ typically used for visualization.
 
 \subsubsection{\tt Header}
 
-The main {\tt Header} is written by {\tt fabio\_ml\_multifab\_write\_d}
+The main {\tt Header} is written by {\tt fabio\_ml\_multifab\_write\_d} by
+processor 0.  The information contained is the following:
+\begin{quote}
+NavierStokes-V1.1 \\
+{\em number of variables} \\
+{\em variable 1 name} \\
+{\em variable 2 name} \\
+$\vdots$ \\
+{\em last variable name} \\
+{\em number of dimensions} \\
+{\em simulation time} \\
+{\em number of levels} (0-based) \\
+{\em physical domain minimum coordinate} (dm numbers) \\
+{\em physical domain maximum coordinate} (dm numbers) \\
+{\em jump in refinement between level 0 and 1} \\
+$\vdots$ \\
+{\em jump in refinement between level $n-2$ and $n-1$} \\
+~\\
+
+\end{quote}
+
 
 
 
