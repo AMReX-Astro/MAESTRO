@@ -14,8 +14,6 @@ MAESTRO_TOP_DIR := ../../..
 # define the physics packages to build this problem
 EOS_DIR := helmeos   
 CONDUCTIVITY_DIR := timmes_stellar
-
-NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
 NETWORK_DIR := ignition_chamulak 
 
 # define the special directories needed to build this problem.  Note:
