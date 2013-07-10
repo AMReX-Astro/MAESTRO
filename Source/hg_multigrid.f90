@@ -59,14 +59,13 @@ contains
     type(multifab), allocatable :: coeffs(:)
 
     real(dp_t) :: bottom_solver_eps
-    real(dp_t) :: omega
 
     integer :: i, ns, dm, nlevs
     integer :: bottom_solver, bottom_max_iter
     integer :: max_iter
     integer :: min_width
     integer :: max_nlevel
-    integer :: nu1, nu2, gamma, cycle_type, smoother
+    integer :: nu1, nu2, cycle_type, smoother
     integer :: d,n,j
     integer :: max_nlevel_in
     integer :: do_diagnostics
@@ -88,8 +87,6 @@ contains
     smoother          = mgt(nlevs)%smoother
     nu1               = mgt(nlevs)%nu1
     nu2               = mgt(nlevs)%nu2
-    gamma             = mgt(nlevs)%gamma
-    omega             = mgt(nlevs)%omega
     cycle_type        = mgt(nlevs)%cycle_type
     bottom_solver     = mgt(nlevs)%bottom_solver
     bottom_solver_eps = mgt(nlevs)%bottom_solver_eps
@@ -171,7 +168,6 @@ contains
 
        if (dm .eq. 1) then
           max_iter = 200
-          omega = 1.33d0
           nu1 = 200
           nu2 = 200
        end if
@@ -185,9 +181,7 @@ contains
                            nu1 = nu1, &
                            nu2 = nu2, &
                            nub = mg_bottom_nu, &
-                           gamma = gamma, &
                            cycle_type = cycle_type, &
-                           omega = omega, &
                            bottom_solver = bottom_solver, &
                            bottom_max_iter = bottom_max_iter, &
                            bottom_solver_eps = bottom_solver_eps, &

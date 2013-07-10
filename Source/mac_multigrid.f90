@@ -53,11 +53,11 @@ contains
     integer    :: max_iter
     integer    :: min_width
     integer    :: max_nlevel
-    integer    :: d, n, nu1, nu2, gamma, cycle_type, smoother
+    integer    :: d, n, nu1, nu2, cycle_type, smoother
     integer    :: max_nlevel_in
     integer    :: do_diagnostics
     integer    :: stencil_type
-    real(dp_t) :: omega,bottom_solver_eps
+    real(dp_t) :: bottom_solver_eps
     real(dp_t) ::  xa(mla%dim),  xb(mla%dim)
     real(dp_t) :: pxa(mla%dim), pxb(mla%dim)
 
@@ -74,8 +74,6 @@ contains
     smoother          = mgt(nlevs)%smoother
     nu1               = mgt(nlevs)%nu1
     nu2               = mgt(nlevs)%nu2
-    gamma             = mgt(nlevs)%gamma
-    omega             = mgt(nlevs)%omega
     cycle_type        = mgt(nlevs)%cycle_type
     bottom_solver     = mgt(nlevs)%bottom_solver
     bottom_solver_eps = mgt(nlevs)%bottom_solver_eps
@@ -126,8 +124,6 @@ contains
 
        pd = layout_get_pd(mla%la(n))
 
-!      if (dm .eq. 1) omega = 4.d0 / 3.d0
-
        stencil_type = CC_CROSS_STENCIL
 
        call mg_tower_build(mgt(n), mla%la(n), pd, &
@@ -139,9 +135,7 @@ contains
                            nu1 = nu1, &
                            nu2 = nu2, &
                            nub = mg_bottom_nu, &
-                           gamma = gamma, &
                            cycle_type = cycle_type, &
-                           omega = omega, &
                            bottom_solver = bottom_solver, &
                            bottom_max_iter = bottom_max_iter, &
                            bottom_solver_eps = bottom_solver_eps, &
