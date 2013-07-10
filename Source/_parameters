@@ -340,6 +340,12 @@ mg_verbose                          integer            0
 # Verbosity of bottom solver
 cg_verbose                          integer            0                   
 
+# Type of cycle used in the MAC multigrid -- 1 = F-cycle, 2 = W-cycle, 3 = V-cycle
+mg_cycle_type                       integer            3
+
+# Type of cycle used in the nodal multigrid -- 1 = F-cycle, 2 = W-cycle, 3 = V-cycle
+hg_cycle_type                       integer            3
+
 # valid values are $\le$ 0
 hg_bottom_solver                    integer            -1                  
 
