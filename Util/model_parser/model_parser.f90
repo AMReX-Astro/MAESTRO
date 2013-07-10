@@ -155,7 +155,8 @@ contains
 
           else
              do comp = 1, nspec
-                if (varnames_stored(j) == spec_names(comp)) then
+                if (varnames_stored(j) == spec_names(comp) .or. &
+                    varnames_stored(j) == short_spec_names(comp)) then
                    model_state(i,ispec_model-1+comp) = vars_stored(j)
                    found_model = .true.
                    found_spec(comp) = .true.
