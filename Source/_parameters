@@ -358,6 +358,12 @@ max_mg_bottom_nlevels               integer            1000
 # number of smoothing iterations to do after the multigrid bottom solver
 mg_bottom_nu                        integer            10
 
+# number of smoothing iterations to do going down the V-cycle
+mg_nu_1                             integer            2
+
+# number of smoothing iterations to do going up the V-cycle
+mg_nu_2                             integer            2
+
 # In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point 
 # Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 
 # 7-point Laplacian (.false.).
