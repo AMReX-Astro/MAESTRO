@@ -23,7 +23,7 @@ in addition to numerical routines. This document describes how to link the
 
 To install {\sf MESA}, download the source code from the {\sf MESA} website, 
 {\tt http://mesa.sourceforge.net}. Check the website for the latest version, 
-which is 4849 when the last upgrades to this document were added. The codes 
+which is 5271 when the last upgrades to this document were added. The codes 
 and algorithms 
 discussed here were created when the current version of {\sf MESA} was 
 version 4088 and have been modified accordingly to keep up with the quickly 
@@ -31,15 +31,16 @@ channging source code. It might be possible to use older versions of
 {\sf MESA} with 
 the information in this document, although there are minor changes and 
 upgrades between {\sf MESA} versions that may cause the routines and algorithms 
-discussed here to crash. To download the source code associated with version 
-4849, issue the following command:
+discussed here to crash. These notes are aimed at working with 
+version 4942, to download the source code associated with this version, 
+issue the following command:
 \begin{lstlisting}[language=bash,mathescape=false]
-  svn co -r 4849 svn://svn.code.sf.net/p/mesa/code/trunk mesa
+  svn co -r 4942 svn://svn.code.sf.net/p/mesa/code/trunk mesa
 \end{lstlisting}
 This will download the source into a directory called {\tt mesa} located 
 in the directory where this command was run. This step might take some time 
-($\sim$3 min depending on the internet connection) possibly because the 
-final {\tt mesa} directory will take up roughly 2.1 GB.
+($\sim$1-3 min depending on the internet connection) possibly because the 
+final {\tt mesa} directory will take up roughly 1.8 GB.
 
 Rich Townsend has developed a Software Development Kit (SDK) to help install 
 {\sf MESA} called {\sf MESASDK}. The SDK will install certain software 
@@ -50,8 +51,23 @@ Townsend's website:
 \begin{lstlisting}[language=html,mathescape=false]
   http://www.astro.wisc.edu/~townsend/static.php?ref=mesasdk
 \end{lstlisting}
-The instructions in this document do not use the SDK in order to avoid 
-automatically changing the {\tt PATH} variable.
+The instructions in this document {\bf \emph{do not}} use the SDK in order 
+to avoid automatically changing the {\tt PATH} variable.
+
+A quick outline for compiling {\sf MESA} for use with {\sf MAESTRO} is 
+shown below. Detailed instructions are discussed in Section \ref{sec:woSDK}.
+\begin{enumerate}
+\item Set environment variables, {\tt MESA\_DIR} and {\tt OMP\_NUM\_THREADS}
+\item Change name of makefile
+\item Makefile: choose compiler, comment out second instance of 
+{\tt CC = gcc}, turn off {\tt USE\_PGSTAR} and {\tt LOAD\_PGPLOT}
+\item Modify the {\tt const/public/const\_def.f} to fix the 
+{\tt omp\_get\_max\_threads()} line
+\item Run {\tt install} script
+\item Turn off OMP
+\item Recompile using the {\tt compile-all-mods.sh} script
+\end{enumerate}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Setup without SDK
@@ -62,7 +78,7 @@ automatically changing the {\tt PATH} variable.
 %-------------------------------------------------------------------------
 \subsubsection{Environment Variables (NOT using SDK)}
 A few environment variables need to be set (commands are shown for the 
-Bourne shell):
+BASH shell):
 \begin{enumerate}
 \item Set location of {\tt mesa}: 
 {\tt export MESA\_DIR=<absolute-path-to-mesa-directory>}
@@ -75,31 +91,37 @@ suggested value is the number of cores in the computer
 \subsubsection{Modify the Makefile (NOT using SDK)}
 The main makefile that contains compiler information including flags is 
 located in the {\tt mesa/utils} directory and is called 
-{\tt makefile\_header\_non\_mesasdk}. 
+{\tt makefile\_header}. All {\sf MESA} modules have a makefile that 
+includes this main makefile. The file that needs to be edited is named 
+{\tt makefile\_header\_non\_mesasdk} and so the name must be changed in order 
+for the edits to take effect. This can be done as follows:
+\begin{lstlisting}[language=bash,mathescape=false]
+  cp makefile_header_non_mesasdk makefile_header
+\end{lstlisting}
 
-All of the following changes apply to 
-variables that already exist. There is no need to explicitly add new code 
+All of the changes listed below apply to variables that already exist. 
+There is no need to explicitly add new code 
 unless you intend to compile {\sf MESA} with something other than 
 {\tt gfortran} or {\tt ifort}. If you want to compile using something 
 different, then the only code that needs to be explicitly added are the 
 definitions of the compiler flags. 
 
-Open the {\tt makefile\_header\_non\_mesasdk} and change the following:
+Open the {\tt makefile\_header} file and change the following:
 \begin{enumerate}
 \item Compilers: First change the compilers labeled {\tt CC} (C compiler) 
 and {\tt FC} (Fortran compiler) to the compilers of your choice ({\sf MESA} 
 defaults are {\tt gcc} and {\tt ifort}).
 
-\item Remove the second instance of {\tt CC} located directly under the 
-{\tt SPECIAL\_FC\_FLAGS} variable
+\item Remove (or comment out) the second instance of {\tt CC} located 
+directly under the {\tt SPECIAL\_FC\_FLAGS} variable
 
 \item {\tt UTILS\_ISNAN}: Leave this as {\tt utils\_isnan\_okay}, if {\sf MESA} 
 complains upon compiling the {\tt mesa/utils} module, then change it to 
 {\tt utils\_isnan\_nope}.
 
-\item {\tt BLAS} and {\tt LAPACK}: Set the location of {\tt LAPACK} and 
-{\tt BLAS} provided with the {\sf MESA} source tree using the following 
-definitions (these should be the default settings):
+\item {\tt BLAS} and {\tt LAPACK}: Make sure the location of {\tt LAPACK} and 
+{\tt BLAS} (provided with the {\sf MESA} source tree) are set using the 
+following definitions (these should be the default settings):
 \begin{lstlisting}[language=make,mathescape=false,upquote=true]
   WHICH_LAPACK = USE_SRCS
   LOAD_LAPACK = -lmesalapack
@@ -115,9 +137,9 @@ to the compiler that was chosen. The default for {\tt gcc} and {\tt ifort} is
 controls the pop up images that are used in {\tt mesa/star} (1D stellar 
 evolution code). 
 
-\item {\tt USE\_SE}: Set the variable {\tt USE\_SE} to {\tt NO} and set both 
-{\tt LOAD\_SE} and {\tt INCLUDE\_SE} to be empty. These also need to be set 
-in the correct if-construct according to which compiler was chosen. 
+\item {\tt USE\_SE}: Make sure the variable {\tt USE\_SE} is set to {\tt NO} 
+and both {\tt LOAD\_SE} and {\tt INCLUDE\_SE} are empty. These also need to 
+be set in the correct if-construct according to which compiler was chosen. 
 {\tt SE} is a library of 
 formats used for writing/reading data in stellar evolution codes.
 
@@ -201,7 +223,7 @@ must happen after the initial install.
 %
 \item Edit 1 source file: An undefined reference to 
 {\tt omp\_get\_max\_threads} occurs in the {\tt const\_def.f} file located in 
-{\tt const/public/const\_def.f} when compiling in serial.
+{\tt const/public/const\_def.f} when running the code in serial.
 
 In the {\tt const\_def.f} file, around line $\sim$168, in the 
 {\tt do\_const\_init} subroutine, there is a line that reads:
@@ -222,14 +244,6 @@ following (all in the {\tt do\_const\_init} subroutine):
 \end{lstlisting}
 
 \end{enumerate}
-
-All {\sf MESA} modules have a makefile that includes the main makefile named 
-{\tt makefile\_header}. The file that was just edited was named 
-{\tt makefile\_header\_non\_mesasdk} and so the name must be changed in order 
-for the edits to take effect. This can be done as follows:
-\begin{lstlisting}[language=bash,mathescape=false]
-  cp makefile_header_non_mesasdk makefile_header
-\end{lstlisting}
 
 At this point, {\sf MESA} is ready to be installed, see Section 
 \ref{sec:install}.
@@ -270,8 +284,10 @@ If you want to make sure all modules are compiled in serial, see Section
 
 In the {\tt mesa/utils} directory, open the {\tt makefile\_header} file. 
 Change the {\tt FCopenmp} flag ({\tt gfortran} default = {\tt -fopenmp}) to 
-the appropriate value so as to disable OpenMP, e.g. with {\tt gfortran} 
-{\tt FCopenmp} should be empty. 
+the appropriate value so as to disable OpenMP, e.g.\ with {\tt gfortran} 
+{\tt FCopenmp} should be empty. Now all modules must be recompiled. This is 
+most easily accomplished with the scripts described in Section 
+\ref{sec:compile_scripts}.
 
 Anytime a change is made to a makefile or any source code, the module must 
 be recompiled, which is a three step process involving the {\tt clean}, 
@@ -280,7 +296,7 @@ first step is to clean out any old files using the {\tt ./clean} script.
 Step two is to make the module using the {\tt ./mk} script. The last step is 
 to export the {\tt .mod} files and the library to the right directories using 
 the {\tt ./export} script. Section \ref{sec:compile_scripts} discusses a few 
-simple scripts that are meant to help with compiling modules.
+simple scripts that are meant to help with compiling the modules.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Optional mesa/star OpenMP
@@ -312,12 +328,12 @@ directories, the {\tt .mod} files and other supporting routines are
 copied to the {\tt mesa/include} directory while the libraries are copied to 
 the {\tt mesa/lib} directory.
 
-The {\sf MESA} libraries have the name {\tt lib(module-name).a}, e.g. 
+The {\sf MESA} libraries have the name {\tt lib(module-name).a}, e.g.\ 
 {\tt libeos.a} or {\tt libnet.a}. The libraries need to be linked using the 
 {\tt -L} flag with the {\tt mesa/lib} directory and a list of which libraries 
-to load, e.g. {\tt -L\$(MESA\_DIR)/lib -leos -lnet -lnum}. {\sf MESA} 
+to load, e.g.\ {\tt -L\$(MESA\_DIR)/lib -leos -lnet -lnum}. {\sf MESA} 
 {\tt .mod} files are linked to the code using the {\tt -I} flag and the 
-{\tt mesa/include} directory, e.g. {\tt -I\$(MESA\_DIR)/include}. 
+{\tt mesa/include} directory, e.g.\ {\tt -I\$(MESA\_DIR)/include}. 
 
 The order in which the libraries appear is important. If compilation errors 
 related to undefined references to a particular {\sf MESA} module such as 
@@ -326,7 +342,8 @@ order. Of course it is also possible that an undefined reference really does
 exist.
 
 The wrapper routines that allow {\sf MAESTRO} to use {\sf MESA} modules are 
-located in the {\tt AstroDev/EOS/MESA} and {\tt AstroDev/networks/MESA} 
+located in the {\tt AstroDev/EOS/MESA}, {\tt AstroDev/networks/MESA} and 
+{\tt AstroDev/networks/MESA\_SDC} 
 directories. In each directory there is a {\tt GPackage.mak} file that 
 specifies the proper {\tt -I} and {\tt -L} compiler flags along with what 
 source files to include in the build. To use the EOS, open the 
@@ -336,11 +353,20 @@ following lines:
   EOS_TOP_DIR := $(ASTRODEV_DIR)/EOS
   EOS_DIR := MESA
 \end{lstlisting}
-To use the network, add the following lines:
+To use the Strang-Split version of the network, add the following lines:
 \begin{lstlisting}[language=make,mathescape=false]
   NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
   NETWORK_DIR := MESA
-  GENERAL_NET_INPUTS := $(NETWORK_TOP_DIR)/MESA/Net-Files/net_input.net
+  GENERAL_NET_INPUTS := $(NETWORK_TOP_DIR)/$(NETWORK_DIR)/Net-Files/net_input.net
+\end{lstlisting}
+To use the Spectral Deferred Corrections (SDC) version of the network add 
+these lines instead:
+\begin{lstlisting}[language=make,mathescape=false]
+  SDC := t
+
+  NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
+  NETWORK_DIR := MESA_SDC
+  GENERAL_NET_INPUTS := $(NETWORK_TOP_DIR)/$(NETWORK_DIR)/Net-Files/net_input.net
 \end{lstlisting}
 The {\tt GENERAL\_NET\_INPUTS} variable holds the path to the
 {\tt net\_input.net} file, which does not need to be kept in the
@@ -364,6 +390,7 @@ following format:
 % How to setup/envoke/shutdown MESA modules
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Using {\sf MESA} Modules}
+\label{sec:using_modules}
 
 This section describes what needs to take place in order to use 
 {\sf MESA} modules such as setting up the module, invoking certain routines 
@@ -371,8 +398,9 @@ and shutting down the module. This discussion will only include information
 pertaining to the network and equation of state modules.
 
 The routines that carry out these processes (setting up EOS, setting up 
-isotope map, shutdown routines, etc.) have already been written and live in 
-{\sf AstroDev/networks/MESA} and {\sf AstroDev/EOS/MESA}. This section 
+isotope map, shutdown routines, etc.) {\bf \emph{have already been written}} 
+and live in {\tt AstroDev/networks/MESA}, {\tt AstroDev/networks/MESA\_SDC} 
+and {\tt AstroDev/EOS/MESA}. This section 
 outlines the necessary steps taken by those routines in order to set up the 
 EOS and network. 
 
@@ -399,7 +427,7 @@ subroutine: {\tt call chem\_init(data\_dir, `isotopes.data\_real', ierr)}.
 The second argument can also be {\tt `isotopes.data\_approx'}. The ``real'' 
 file contains actual values for 
 atomic quantities such as atomic weight. The ``approx'' file contains 
-approximate values for these quantities, e.g. the mass of the proton and 
+approximate values for these quantities, e.g.\ the mass of the proton and 
 neutron are both equal to 1.0. The {\tt ierr} argument is an integer that 
 holds the exit status of the subroutine, non-zero means there was an error
 
@@ -527,20 +555,32 @@ mass fraction array.
 %% Network
 %%%%%%%%%%
 \subsection{Network}
+There are currently two different algorithms that integrate the nuclear 
+reaction network in {\sf MAESTRO}; Strang Splitting and Spectral Deferred 
+Corrections (SDC). The routines to go from {\sf MAESTRO} 
+to {\sf MESA} using Strang are stored in {\tt AstroDev/networks/MESA} while 
+the routines that implement the SDC method are stored in 
+{\tt AstroDev/networks/MESA\_SDC}.
+
+The setup/shutdown procedures for both methods are very similar. The largest 
+difference is that the Strang method uses {\sf MESA} to obtain the right 
+hand sides of the network equations \emph{and} do the integration, while the 
+SDC method uses {\sf MESA} to obtain the right hand sides and uses 
+{\sf MAESTRO} to integrate the equations using {\tt VODE}.
 
 %-------------------------------------------------------------------------
 \subsubsection{Set Up}
 
 There are significantly more steps involved when initializing the {\sf MESA} 
-network. Here is a brief outline of what needs to happen:
+network. Here is a brief outline of what happens:
 \begin{enumerate}
 \item Get the {\sf MESA} and {\sf AstroDev} directory locations
 \item Convert the short species names to {\sf MESA} format
 \item Generate a file that will tell {\sf MESA} which reactions to add based 
-on the isotopes in the current network ({\tt call which\_reactions})
-\item Initialize {\sf MESA} {\tt chem}, {\tt weak} and {\tt reaclib} modules
-\item Setup the map between {\sf MAESTRO} and {\sf MESA}, see Section 
-\ref{sec:mapping} for a more in depth explanation
+on the isotopes in the current network
+\item Initialize various {\sf MESA} modules
+\item Setup the map between {\sf MAESTRO} and {\sf MESA} (see Section 
+\ref{sec:mapping} for a more in depth explanation)
 \item Initialize {\sf MESA} {\tt rates} and {\tt net} modules
 \item Allocate a network handle
 \item Call the {\tt net\_start\_def}, {\tt read\_net\_file}, {\tt net\_ptr} 
@@ -550,45 +590,44 @@ reactions were chosen by {\sf MESA} based on those species
 \item Set {\tt which\_rates\_choice} and allocate {\tt which\_rates} array
 \item Set entire array equal to {\tt which\_rates\_choice} and call 
 {\tt net\_set\_which\_rates}
-\item Initialize which linear algebra solver to use
+\item Call {\tt net\_setup\_tables}
+\item Set which linear algebra solver to use
+\item Set the ODE solver to use for the network integration (Strang-Split 
+version only)
 \end{enumerate}
-
-In the {\tt Do\_One\_Zone\_Burn.f90} routine, there are two more ``set up'' 
-routines: {\tt set\_rattab\_range} and {\tt net\_setup\_tables}. I have not 
-found a good way to call these routines only once with the set up of all the 
-other routines because the {\tt set\_rattab\_range} routine depends on 
-temperature. As a result, both routines are called every time a burn is to 
-take place.
 
 %-------------------------------------------------------------------------
 \subsubsection{Calling the Network}
 
-Calling the {\sf MESA} network from within the {\sf MAESTRO} wrapper starts 
-with calling a modified {\sf MESA} wrapper:
+In the case of Strang Splitting the call to the {\sf MESA} burner looks like 
+this:
 \begin{lstlisting}[language=fortran,mathescape=false]
-  call Do_One_Zone_Burn(dens, temp, dt, Xin, burn_ergs, Xout)
+  call net_1_zone_burn( &
+        handle, solver_choice, species, num_reactions, 0.0_dp_t, burn_tend, &
+        xin, clip, num_times, times, log10Ts_f1, log10Rhos_f1, etas_f1, &
+        dxdt_source_term, rate_factors, category_factors, std_reaction_Qs, &
+        std_reaction_neuQs, screening_mode, theta_e_for_graboske_et_al, &
+        h, max_step_size, max_steps, rtol, atol, itol, &
+        decsol_choice, caller_id, burn_solout, iout, ending_x, &
+        nfcn, njac, nstep, naccpt, nrejct, time_doing_net, ierr)
 \end{lstlisting}
-The inputs are density, temperature, how long to burn and starting mass 
-fractions. The outputs are the energy generation rate ({\tt burn\_ergs}) 
-in units of ergs g$^{-1}$ s$^{-1}$ and the final mass fractions. 
+The inputs are density, temperature, how long to burn, starting mass 
+fractions, various rates and parameters as well as some things to control the 
+integration. The outputs are the energy ({\tt burn\_ergs}) in units of ergs/g, 
+the ending mass fractions and various counters such as number of jacobian 
+evaluations. This routine will calculate the right hand sides, pass them 
+to a stiff ODE integrator and return the final results.
 
-To calculate {\tt rho\_omegadot} ($\rho \dot{\omega}$) and {\tt rho\_Hnuc} 
-($\rho H_{{\rm nuc}}$) the following code can be used after a call to 
-{\tt Do\_One\_Zone\_Burn}:
+In the case of the SDC method, the call to the {\sf MESA} routine that returns 
+the instantaneous right hand sides looks like this:
 \begin{lstlisting}[language=fortran,mathescape=false]
-  do i=1, nspec
-     dX = Xout(i) - Xin(i)
-     rho_omegadot(i) = dens * dX / dt
-  enddo
-
-  rho_Hnuc = dens * burn_ergs
+  call burn_derivs(nspec, t, xmass(1:nspec), ydot(1:nspec), lrpar, rpar, &
+                   lipar, ipar, ierr)
 \end{lstlisting}
-There is a support routine called {\tt burn\_solout} that is passed to the 
-{\sf MESA} burner. This routine is called after every step of the burn and 
-is responsible for calculating the energy generation rate. {\tt burn\_solout} 
-is passed as an argument to the {\tt net\_1\_zone\_burn} subroutine (the 
-{\sf MESA} burner) and as a result the actual call to the {\tt burn\_solout} 
-routine is buried deep within the {\sf MESA} source code.
+The inputs are mass fraction, work arrays and the time. The output is the 
+time derivative of the mass fraction. This routine is only responsible for 
+calculating the right hand sides of the network equations, {\tt VODE} is tasked 
+with the integration in this algorithm.
 
 %-------------------------------------------------------------------------
 \subsubsection{Shutdown the Network}
@@ -614,7 +653,7 @@ Shutting down the {\sf MESA} network requires only one step:
  \label{sec:compile_scripts}
 
 Some useful scripts have been written in {\tt BASH} to help with compiling 
-{\sf MESA} modules. They live in the {\sf AstroDev/networks/MESA/scripts} 
+{\sf MESA} modules. They live in the {\tt AstroDev/networks/MESA/scripts} 
 directory. Currently, there are two scripts; one that compiles all modules 
 (which unfortunately is version dependant), and one that compiles a single 
 module.

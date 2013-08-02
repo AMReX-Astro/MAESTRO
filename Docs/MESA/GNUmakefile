@@ -6,14 +6,14 @@ eps_source = $(wildcard *.eps)
 
 pdf_source = $(eps_source:.eps=.pdf)
 
-paper.dvi: paper.tex instructions.tex $(eps_source)
+paper.dvi: paper.tex instructions.tex hopper_compile.tex $(eps_source)
 	latex paper.tex < /dev/null
 #	bibtex paper
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
 
-paper.pdf: paper.tex instructions.tex $(pdf_source)
+paper.pdf: paper.tex instructions.tex hopper_compile.tex $(pdf_source)
 	pdflatex paper.tex < /dev/null
 #	bibtex paper
 	pdflatex paper.tex < /dev/null

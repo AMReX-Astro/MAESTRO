@@ -1,12 +1,12 @@
 These notes are somewhat dated because they pertain only to {\sf MESA} version 
-4088. The above notes are for version 4849. In my experience, version 4088 is 
+4088. In my experience, version 4088 is 
 very easy to install and follows the same steps as outlined above. When using 
 the scripts in 
 {\sf AstroDev/MESA/networks/scripts}, make sure the proper list of modules to 
 compile (lines containing {\tt do\_one ....}) is used. Those lists are 
 version dependant.
 
-Once {\sf MESA} was installed and working properly on a local machine (e.g. 
+Once {\sf MESA} was installed and working properly on a local machine (e.g.\ 
 Bender), I tried installing it on Hopper, which is a Cray XE6 machine. On 
 Bender, which is an Intel(R) Xeon(R) X5650 machine, the compiler was 
 {\tt gcc} version 4.7.0, on Hopper I tried compiling {\sf MESA} with the 
@@ -16,8 +16,8 @@ was {\tt PrgEnv-cray}.
 There are several steps needed to compile {\sf MAESTRO} with {\sf MESA} on 
 Hopper:
 \begin{enumerate}
-\item Download the {\tt MESA} source code using the command described in 
-Section \ref{sec:setupmesa}
+\item Download the {\tt MESA} source code (Section \ref{sec:setupmesa}) and 
+be sure to use the correct version: {\tt svn co -r 4088 ...}
 \item Edit the {\tt makefile\_header} in the {\tt utils} directory
 \item Edit the {\tt build\_and\_test} script in the {\tt utils} directory
 \item Edit the {\tt chem\_lib.f} file in the {\tt chem} directory
@@ -160,7 +160,7 @@ All three of the manually added flags ({\tt -O3}, {\tt -fno-common} and
 {\tt interp\_1d}}
 
 When creating the library for these four modules, there is a {\tt LIB\_DEFS} 
-variable in the makefile that holds the {\tt *\_def.o} file, e.g. 
+variable in the makefile that holds the {\tt *\_def.o} file, e.g.\ 
 {\tt utils\_def.o} or {\tt num\_def.o}. This file is never loaded into the 
 library as seen below for the {\tt utils} directory. Certain modules have a 
 {\tt *\_def.f} file with both definitions and declarations of data that will 
