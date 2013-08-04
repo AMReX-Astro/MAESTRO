@@ -61,6 +61,17 @@
    to the {\tt BoxLib} directory.  You cannot use `{\tt $\sim$}' as a shortcut
    for your home directory.
   
+\item {\em {\tt make} issues an error like:
+       {\small
+       \begin{verbatim}
+       .../BoxLib/Tools/F_mk/GMakeMPI.mak:40: Extraneous text after `else' directive
+       .../BoxLib/Tools/F_mk/GMakeMPI.mak:47: *** only one `else' per conditional.  Stop
+      \end{verbatim}
+      }
+      }
+
+   You need to use GNU make version 3.81 or later.  Earlier versions do
+   not support an {\em else-if} clause.
 
 \end{enumerate}
 
