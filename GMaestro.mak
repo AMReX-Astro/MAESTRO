@@ -1,5 +1,13 @@
 # A set of useful macros for putting together a MAESTRO application.
 
+# check the version number -- this comes from the GNU Make cookbook
+NEED := 3.81
+OK := $(filter $(NEED),$(firstword $(sort $(MAKE_VERSION) $(NEED))))
+
+ifndef OK
+  $(error your version of GNU make is too old.  You need atleast version $(NEED))
+endif
+
 # include the main Makefile stuff
 include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 
