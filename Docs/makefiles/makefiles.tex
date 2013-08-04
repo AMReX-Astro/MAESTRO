@@ -2,12 +2,12 @@
 
 \section{Build Process Overview}
 
-The \maestro\ build system uses features of GNU make, which is
-typically the default on systems.  The \maestro\ executable is built
-in the problem's directory (one of the directories under {\tt
-SCIENCE/}, {TEST\_PROBLEMS}, or {UNIT\_TESTS}).  This directory will
-contain a makefile, {\tt GNUmakefile}, that includes all the necessary
-information to build the executable.  
+The \maestro\ build system uses features of GNU make (version 3.81 or
+later), which is typically the default on systems.  The \maestro\
+executable is built in the problem's directory (one of the directories
+under {\tt SCIENCE/}, {TEST\_PROBLEMS}, or {UNIT\_TESTS}).  This
+directory will contain a makefile, {\tt GNUmakefile}, that includes
+all the necessary information to build the executable.
 
 The main macros that define the build process are split across several
 files.  The 4 main files are:
