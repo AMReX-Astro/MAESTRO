@@ -58,7 +58,7 @@ Mfooter=r"""
 """
 
 fParallel="../../.."
-paramFile=fParallel + "/MAESTRO/_parameters"
+paramFile=fParallel + "/MAESTRO/Source/_parameters"
 
 
 # container class for the parameters

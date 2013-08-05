@@ -476,19 +476,22 @@
 \verb=  planar_invsq_mass  = &   the point mass for planar 1/r$^2$ gravity  &  0.d0 \\
 \rowcolor{tableShade}
 \verb=  plot_sponge_fdamp  = &   plot fdamp rather than sponge assumes sponge has the form 1/(1+dt*{\tt sponge\_kappa}*fdamp)  &  .false. \\
+\verb=  ppm_trace_forces  = &   if 1, then perform parabolic reconstruction on the forces used in the prediction and trace under the parabola to the interfaces the amount that can reach the interface over dt  &  0 \\
+\rowcolor{tableShade}
 \verb=  ppm_type  = &   0 = no ppm (piecewise linear slopes instead) \newline 1 = 1984 ppm \newline 2 = Hybrid Sekora/Colella and McCorquodale/Colella 2009/2010 ppm  &  1 \\
-\rowcolor{tableShade}
 \verb=  restart_with_vel_field  = &   restart the simulation using a result from a {\tt drive\_initial\_convection} = T run note that this uses the restart variable to specify which file to restart from.  After reading in the velocity information from the restart file, the time and timestep number are zeroed.  &  .false. \\
+\rowcolor{tableShade}
 \verb=  rotation_radius  = &   radius used for computing centrifugal term in rotation problems  &  1.0d6 \\
-\rowcolor{tableShade}
 \verb=  rotational_frequency  = &   rotational frequency used for computing centrifugal term in rotation problems.  &  ZERO \\
+\rowcolor{tableShade}
 \verb=  slope_order  = &   order of slopes in piecewise linear Godunov algorithm.  Options are 0, 2, or 4.  &  4 \\
-\rowcolor{tableShade}
 \verb=  species_pred_type  = &   Which quantities do we predict to the edges for computing the ($\rho X$) edge states?  \newline {\tt species\_pred\_type} = 1 means predict $\rho^\prime$ and $X$ separately.  \newline {\tt species\_pred\_type} = 2 means predict the full ($\rho X$) itself. \newline {\tt species\_pred\_type} = 3 means predict $\rho$ and $X$ separately.  &  1 \\
-\verb=  sponge_center_density  = &   Center of the inner sponge.  &  3.d6 \\
 \rowcolor{tableShade}
+\verb=  sponge_center_density  = &   Center of the inner sponge.  &  3.d6 \\
 \verb=  sponge_kappa  = &   Parameter for sponge.  Problem dependent.  &  10.d0 \\
+\rowcolor{tableShade}
 \verb=  sponge_start_factor  = &   The sponge begins at sponge\_center\_density * sponge\_start\_factor.  &  3.333d0 \\
+\verb=  stop_initial_convection  = &   timestep beyond which we set {\tt drive\_initial\_convection} = F  &  -1 \\
 \rowcolor{tableShade}
 \verb=  use_alt_energy_fix  = &   modify the momentum equation to have $(\beta_0/\rho) \nabla (\pi/\beta_0)$ instead of just $(1/\rho) \nabla (\pi)$  &  .false. \\
 \verb=  use_delta_gamma1_term  = &   turns on second order correction to delta gamma1 term  &  .false. \\
@@ -539,11 +542,17 @@
 \verb=  cg_verbose  = &   Verbosity of bottom solver  &  0 \\
 \verb=  hg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
 \rowcolor{tableShade}
+\verb=  hg_cycle_type  = &   Type of cycle used in the nodal multigrid -- 1 = F-cycle, 2 = W-cycle, 3 = V-cycle  &  3 \\
 \verb=  hg_dense_stencil  = &   In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 7-point Laplacian (.false.).  &  .true. \\
-\verb=  max_mg_bottom_nlevels  = &   if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have  &  1000 \\
 \rowcolor{tableShade}
+\verb=  max_mg_bottom_nlevels  = &   if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have  &  1000 \\
 \verb=  mg_bottom_nu  = &   number of smoothing iterations to do after the multigrid bottom solver  &  10 \\
+\rowcolor{tableShade}
 \verb=  mg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
+\verb=  mg_cycle_type  = &   Type of cycle used in the MAC multigrid -- 1 = F-cycle, 2 = W-cycle, 3 = V-cycle  &  3 \\
+\rowcolor{tableShade}
+\verb=  mg_nu_1  = &   number of smoothing iterations to do going down the V-cycle  &  2 \\
+\verb=  mg_nu_2  = &   number of smoothing iterations to do going up the V-cycle  &  2 \\
 \rowcolor{tableShade}
 \verb=  mg_verbose  = &   Verbsoity of the multigrid solver, but not the bottom solver.  &  0 \\
 \verb=  use_hypre  = &   use the hypre library  &  .false. \\
@@ -740,9 +749,11 @@
 
 \rowcolor{tableShade}
 \verb=  conductivity_constant  = &   the constant conductivity (only applies if the conductivity/constant module is used)  &  1.0d0 \\
-\verb=  temp_diffusion_formulation  = &   How to compute the explicit thermal diffusion term.  \newline 1 = in terms of $T$; \newline 2 = in terms of $\rho,p_0,X$.  &  2 \\
+\verb=  limit_conductivity  = &   apply the conductivity limiting---if T, then we set the thermal coefficients all to 0 for $\rho <$ {\tt buoyancy\_cutoff\_factor} * {\tt base\_cutoff\_density}  &  .false. \\
 \rowcolor{tableShade}
+\verb=  temp_diffusion_formulation  = &   How to compute the explicit thermal diffusion term.  \newline 1 = in terms of $T$; \newline 2 = in terms of $\rho,p_0,X$.  &  2 \\
 \verb=  thermal_diffusion_type  = &   In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.  &  1 \\
+\rowcolor{tableShade}
 \verb=  use_thermal_diffusion  = &   Use thermal diffusion.  &  .false. \\
 
 
