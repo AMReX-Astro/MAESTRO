@@ -510,7 +510,7 @@ mach_max_abort                      real               -1.d0
 # nonlinear.
 drive_initial_convection            logical            .false.
 
-# timestep beyond which we set drive_initial_convection = F
+# timestep beyond which we set {\tt drive\_initial\_convection} = F
 stop_initial_convection            integer              -1
 
 # restart the simulation using a result from a {\tt drive\_initial\_convection} = T run
@@ -545,7 +545,7 @@ thermal_diffusion_type              integer            1
 conductivity_constant               real               1.0d0
 
 # apply the conductivity limiting---if T, then we set the thermal coefficients
-# all to 0 for $\rho <$ buoyancy\_cutoff\_factor * base_\cutoff\_density
+# all to 0 for $\rho <$ {\tt buoyancy\_cutoff\_factor} * {\tt base\_cutoff\_density}
 limit_conductivity                  logical            .false.
 
 
