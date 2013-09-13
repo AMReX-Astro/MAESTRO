@@ -8,6 +8,10 @@ ifndef OK
   $(error your version of GNU make is too old.  You need atleast version $(NEED))
 endif
 
+ifeq ($(findstring ~, $(BOXLIB_HOME)), ~)
+   $(error you cannot include the ~ character in your BOXLIB_HOME variable)
+endif
+
 # include the main Makefile stuff
 include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 
