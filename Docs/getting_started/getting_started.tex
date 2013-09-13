@@ -38,7 +38,7 @@ If your shell is {\tt Bash}, add
 \begin{verbatim}
 export BOXLIB_HOME="/path/to/BoxLib/"
 \end{verbatim}
-to your {\tt .bashrc}.  
+to your {\tt .bashrc}. 
 
 If your shell is {\tt Csh/Tcsh}, add
 \begin{verbatim}
@@ -46,6 +46,9 @@ setenv BOXLIB_HOME /path/to/BoxLib/
 \end{verbatim}
 to your {\tt .cshrc}.  
 
+Note: you must specify the full path to the BoxLib directory.  Do not
+use ``$\sim$'' to refer to your home directory---the scripts used by
+the build system will not be able to process this.
 
 \item {\em Setup the problem's {\tt GNUmakefile}}.
 
