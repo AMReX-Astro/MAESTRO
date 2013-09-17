@@ -209,6 +209,36 @@ $\vdots$ \\
 %-----------------------------------------------------------------------------
 \section{Visualizing with \amrvis}
 
+\amrvis\ is a tool developed together with \boxlib\ to visualize datasets
+from codes built around the \boxlib\ library.  You can download the
+\amrvis\ source from: \\
+\url{https://ccse.lbl.gov/Downloads/downloadAmrvis.html} \\
+
+\amrvis\ exists in the C++ \boxlib\ framework, so the build system is
+slightly different.  A different executable is needed for 2- vs.\ 3-d
+datasets.  Edit the {\tt GNUmakefile} and set the compilers (probably
+{\tt g++} and {\tt gfortran}) and the dimensionality, and turn off any
+of the volume rendering options.  You will need to have the Motif library
+installed on your system (or a replacement, such as {\tt lesstif}.  
+
+Once the code is built, you visualize a dataset as:
+\begin{verbatim}
+amrvis3d.Linux.g++.gfortran.ex pltfile
+\end{verbatim}
+where {\tt pltfile} is the name of the plotfile directory.  Different
+variables can be selected from the drop down menu at the top.  Middle
+and right clicking in 3-d select the slice planes, and shift + middle
+or right will extract 1-d lines through the data.  In 2-d, middle and
+right clicking alone extract 1-d lines.
+
+If \amrvis\ cannot find the {\tt Palette} file, then the plots will be
+in grayscale.  To fix this, copy the {\tt amrvis.defaults} and {\tt
+  Palette} files to your home directory and edit {\tt amrvis.defaults} so that
+the {\tt palette} line points to the {\tt Palette} file, e.g.:
+\begin{verbatim}
+palette               /home/username/Palette
+\end{verbatim}
+
 
 %-----------------------------------------------------------------------------
 % VisIt
