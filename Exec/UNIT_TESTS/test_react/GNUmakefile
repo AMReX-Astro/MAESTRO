@@ -22,6 +22,11 @@ NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
 #NETWORK_DIR := ignition_chamulak
 NETWORK_DIR := aprox13
 
+# a special case for the test suite
+ifeq ($(NETWORK_DIR), ignition_chamulak)
+  NETWORK_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/networks
+endif
+
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
 # files there (as specified in a GPackage.mak).  The problem directory
