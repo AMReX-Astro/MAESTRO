@@ -46,7 +46,6 @@ subroutine varden()
   character(len=256) :: outdir, sstep
 
   real(kind=dp_t), parameter :: SMALL = 1.e-13
-  real(kind=dp_t), parameter :: FIVE3RD = FIVE/THREE 
   
   real(kind=dp_t) :: diffusion_coefficient
 

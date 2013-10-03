@@ -82,7 +82,6 @@ contains
     integer    :: narg, farg
 
     character(len=128) :: fname
-    character(len=128) :: probin_env
 
     logical    :: lexist
     integer    :: natonce, myproc, nprocs, nsets, myset, iset, ibuff(1)
