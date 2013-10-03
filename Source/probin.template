@@ -408,10 +408,15 @@ contains
 
   subroutine runtime_pretty_print(unit)
 
+    use bl_constants_module
+    use pred_parameters
+    use bc_module
     use probin_module
     use extern_probin_module
 
     integer, intent(in) :: unit
+
+    write (unit, *) "defaults shown in []"
 
     @@printing@@
 
