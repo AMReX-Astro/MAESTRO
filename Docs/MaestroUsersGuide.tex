@@ -91,8 +91,6 @@
 \newcommand{\HRule}{\rule{\linewidth}{0.125mm}}
 
 
-% short table of contents
-\usepackage{shorttoc}
 
 
 % spacing in the table of contents
@@ -100,6 +98,9 @@
 
 \setlength{\cftbeforechapskip}{2ex}
 \setlength{\cftbeforesecskip}{0.25ex}
+
+% short table of contents
+%\usepackage{shorttoc}
 
 
 % don't put a header on blank pages, see
@@ -147,6 +148,7 @@
 \newcommand{\suitefigpath}{./test_suite}
 \newcommand{\gsfigpath}{./getting_started}
 \newcommand{\mgfigpath}{./mg}
+\newcommand{\mesafigpath}{./MESA}
 
 
 %-----------------------------------------------------------------------------
@@ -190,7 +192,7 @@
 \end{titlepage}
 
 
-\shorttoc{Chapter Listing}{0}
+%\shorttoc{Chapter Listing}{0}
 
 \setcounter{tocdepth}{2}
 \tableofcontents
@@ -298,6 +300,9 @@ Questions can be sent to \\[3mm]
 
 \chapter{Networks}
 \input networks/networks
+
+\chapter{MESA Microphysics}
+\input MESA/instructions
 
 \chapter{Notes on $\etarho$}
 \input eta_notes/eta

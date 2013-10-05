@@ -48,7 +48,8 @@ section_sources = maestro_doc.bib \
                   test_suite/test_suite.tex \
                   makefiles/makefiles.tex \
                   managing_jobs/managingjobs.tex \
-                  mg/mg.tex
+                  mg/mg.tex \
+                  MESA/instructions.tex
 
 
 MaestroUsersGuide.dvi: MaestroUsersGuide.tex $(eps_source) $(section_sources) $(eps_source) 
