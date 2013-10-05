@@ -304,6 +304,11 @@ subroutine varden()
      end if
   end if
 
+
+  if (restart < 0) &
+       call write_job_info("", mla%mba, the_bc_tower, write_pf_time)
+
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Initialize all remaining arrays and multifabs
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

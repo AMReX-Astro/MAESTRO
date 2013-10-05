@@ -40,8 +40,12 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
 
   call date_and_time(date_in, time_in, VALUES=values)
   call get_cwd(cwd)
- 
-  out_name = trim(dirname) // "/job_info"
+
+  if (dirname == "") then
+     out_name = "maestro-overview.out"
+  else
+     out_name = trim(dirname) // "/job_info"
+  endif
 
 999  format(79('='))
 1000 format(79('-'))
