@@ -122,7 +122,7 @@ complains upon compiling the {\tt mesa/utils} module, then change it to
 \item {\tt BLAS} and {\tt LAPACK}: Make sure the location of {\tt LAPACK} and 
 {\tt BLAS} (provided with the {\sf MESA} source tree) are set using the 
 following definitions (these should be the default settings):
-\begin{lstlisting}[language=make,mathescape=false,upquote=true]
+\begin{lstlisting}[language=make,mathescape=false]%,upquote=true]
   WHICH_LAPACK = USE_SRCS
   LOAD_LAPACK = -lmesalapack
   WHICH_BLAS = USE_SRCS
