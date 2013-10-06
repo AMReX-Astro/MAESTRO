@@ -41,6 +41,7 @@ subroutine varden()
   use time_module, only: time
   use particle_module
   use cputime_module, only: start_cputime_clock
+  use simple_log_module, only: simple_log_init
 
   implicit none
 
@@ -158,6 +159,9 @@ subroutine varden()
 
   ! particle initialization
   call particle_setverbose(.true.)
+
+  ! a simple logging facility for writting both to the screen and a file
+  call simple_log_init()
 
   ! collect the indices into the s multifab and the associated variable
   ! names for the data we will store along with each particle.
@@ -305,10 +309,6 @@ subroutine varden()
   end if
 
 
-  if (restart < 0) &
-       call write_job_info("", mla%mba, the_bc_tower, write_pf_time)
-
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Initialize all remaining arrays and multifabs
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -371,6 +371,8 @@ subroutine varden()
 
   call check_cutoff_values()
 
+  if (restart < 0) &
+       call write_job_info("", mla%mba, the_bc_tower, write_pf_time)
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

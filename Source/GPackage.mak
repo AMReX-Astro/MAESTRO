@@ -72,6 +72,7 @@ f90sources += restart.f90
 f90sources += restrict_base.f90
 f90sources += rhoh_vs_t.f90
 f90sources += sanity.f90
+f90sources += simple_log.f90
 f90sources += slope.f90
 f90sources += sponge.f90
 f90sources += time.f90

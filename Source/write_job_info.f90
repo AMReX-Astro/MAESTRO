@@ -23,6 +23,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
   use network
   use cputime_module, only: get_cputime
   use mg_eps_module
+  use simple_log_module
 
   implicit none
 
@@ -183,6 +184,14 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
      write (99,*) " "
      write (99,*) " "
 
+
+     write (99,999)
+     write (99,*) "Initialization Logs/Warnings"
+     write (99,999)
+
+     do i = 1, log_lines
+        write (99,*) trim(log_data(i))
+     enddo
 
      write (99,999)
      write (99,*) "Runtime Parameter Information"

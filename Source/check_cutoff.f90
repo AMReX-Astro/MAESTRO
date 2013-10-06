@@ -19,6 +19,7 @@ contains
     use model_parser_module, only: model_initialized, model_state, &
                                    idens_model, itemp_model
     use bl_error_module, only: bl_error
+    use simple_log_module
 
     real (kind=dp_t) :: model_min_dens, model_max_dens
     real (kind=dp_t) :: model_min_temp, model_max_temp
@@ -62,23 +63,17 @@ contains
     if ( parallel_IOProcessor() ) then
           ! output block for cutoff density information
        write (*,887)
-       write (*,*)   'physical cutoff densities:'
-       write (*,888) '    low density cutoff (for mapping the model) =      ', &
-            base_cutoff_density
-       write (*,888) '    buoyancy cutoff density                           '
-       write (*,888) '        (for zeroing rho - rho_0, centrifugal term) = ', &
-            buoyancy_cutoff_factor*base_cutoff_density
-       write (*,888) '    anelastic cutoff =                                ', &
-            anelastic_cutoff
-       write (*,888) '    sponge start density =                            ', &
-            sponge_start_density
-       write (*,888) ' '
-
-       write (*,*)   'thermodynamics cutoffs:'
-       write (*,888) '    EOS temperature floor =                           ', &
-            small_temp
-       write (*,888) '    EOS density floor =                               ', &
-            small_dens
+       call log('physical cutoff densities:')
+       call log('    low density cutoff (for mapping the model) =      ', base_cutoff_density)
+       call log('    buoyancy cutoff density                           ')
+       call log('        (for zeroing rho - rho_0, centrifugal term) = ', &
+            buoyancy_cutoff_factor*base_cutoff_density)
+       call log('    anelastic cutoff =                                ', anelastic_cutoff)
+       call log('    sponge start density =                            ', sponge_start_density)
+       call log(' ')
+       call log('thermodynamics cutoffs:')
+       call log('    EOS temperature floor =                           ', small_temp)
+       call log('    EOS density floor =                               ', small_dens)
     end if
 
     
@@ -88,35 +83,35 @@ contains
        if ( model_min_dens < base_cutoff_density .OR. &
             model_min_dens < anelastic_cutoff) then
           if ( parallel_IOProcessor() ) then
-             print *, ' '
-             print *, 'WARNING: minimum model density is lower than one of the cutoff densities'
-             print *, '         make sure that the cutoff densities are lower than any density'
-             print *, '         of dynamical interest'
+             call log(' ')
+             call log('WARNING: minimum model density is lower than one of the cutoff densities')
+             call log('         make sure that the cutoff densities are lower than any density')
+             call log('         of dynamical interest')
           end if
        endif
        
        if ( model_min_dens + eps > base_cutoff_density .or. &
             model_min_dens + eps > anelastic_cutoff) then
           if ( parallel_IOProcessor() ) then
-             print *, ' '
-             print *, 'WARNING: minimum model density is larger than, or very close to '
-             print *,'          the cutoff density.' 
+             call log(' ')
+             call log('WARNING: minimum model density is larger than, or very close to ')
+             call log('          the cutoff density.')
           end if
        end if
 
        if (model_min_temp < small_temp) then
           if ( parallel_IOProcessor() ) then
-             print *, ' '
-             print *, 'WARNING: minimum model temperature is lower than the EOS cutoff'
-             print *, '         temperature, small_temp'
+             call log(' ')
+             call log('WARNING: minimum model temperature is lower than the EOS cutoff')
+             call log('         temperature, small_temp')
           endif
        endif
 
        if (model_min_dens < small_dens) then
           if ( parallel_IOProcessor() ) then
-             print *, ' '
-             print *, 'WARNING: minimum model density is lower than the EOS cutoff'
-             print *, '         density, small_dens'
+             call log(' ')
+             call log('WARNING: minimum model density is lower than the EOS cutoff')
+             call log('         density, small_dens')
           endif
        endif
 
@@ -132,10 +127,10 @@ contains
 
     if (buoyancy_cutoff_factor*base_cutoff_density > sponge_start_density) then
        if ( parallel_IOProcessor() ) then
-          print *, ' '
-          print *, 'WARNING: buoyancy cutoff occurs at densities greater than those sponged'
-          print *, '         The buoyancy_cutoff_factor should be lowered to ensure the'
-          print *, '         buoyancy cutoff occurs within the sponged region'
+          call log(' ')
+          call log('WARNING: buoyancy cutoff occurs at densities greater than those sponged')
+          call log('         The buoyancy_cutoff_factor should be lowered to ensure the')
+          call log('         buoyancy cutoff occurs within the sponged region')
        endif
     endif
 
@@ -143,7 +138,7 @@ contains
     if ( parallel_IOProcessor() ) then
        ! close the cutoff density output block
        write (*,887)
-       write (*,*)   ' '
+       call log(' ')
     end if
 
 
