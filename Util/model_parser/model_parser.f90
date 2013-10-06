@@ -208,6 +208,8 @@ contains
 
     end do   ! end loop over npts_model
 
+    model_initialized = .true.
+
     close(99)
 
     deallocate(vars_stored,varnames_stored)
