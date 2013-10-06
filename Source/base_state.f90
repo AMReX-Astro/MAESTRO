@@ -1,6 +1,6 @@
 ! init_base_state is used to initialize the base state arrays from the
 ! model file.  The actual reading of the model file is handled by the
-! model_parser_module in extern/.  
+! model_parser_module in Util/
 !
 ! Note: The initial base state quantities returned from this routine
 ! are only a temporary base state.  These quantities are mapped onto
