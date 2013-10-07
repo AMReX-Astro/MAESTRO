@@ -1,9 +1,8 @@
-!Setup a 3D grid of smoothly varying rho, T, and user-defined X.  Then call react_state() on
-!the grid and output the results.
+! Setup a 3D grid of smoothly varying rho, T, and user-defined X.  Then
+! call react_state() on the grid and output the results.
 
 subroutine varden()
-  !### Data ###
-  !Modules
+
   use BoxLib
   use f2kcli            !Grants access to command line args
   use geometry
@@ -24,12 +23,17 @@ subroutine varden()
   use eos_module
   use react_state_module
   use varden_aux
-  
+  use simple_log_module
+
   !Local variables
   implicit none
   
-  type(multifab) , allocatable :: s(:), snew(:)                             !Conventional fluid state multifabs
-  type(multifab) , allocatable :: rho_omegadot(:), rho_Hnuc(:), rho_Hext(:) !react_state output
+  ! Conventional fluid state multifabs
+  type(multifab) , allocatable :: s(:), snew(:)                             
+
+  ! react_state output
+  type(multifab) , allocatable :: rho_omegadot(:), rho_Hnuc(:), rho_Hext(:) 
+
   real(kind=dp_t), allocatable :: tempbar(:,:), pbar(:,:)
  
   real(kind=dp_t), pointer :: dx(:,:)
@@ -52,13 +56,15 @@ subroutine varden()
   !General Maestro initializations
   call runtime_init()
   call init_variables()
-  
+
+  call simple_log_init()
+
   !Check for unimplemented modes
   if (drive_initial_convection .neqv. .false.) then
-    call bl_error('ERROR: Driving initial convection not currently supported')
+     call bl_error('ERROR: Driving initial convection not currently supported')
   endif
   if (use_tfromp .neqv. .false.) then
-    call bl_error('ERROR: Getting temperature from pressure not currently supported')
+     call bl_error('ERROR: Getting temperature from pressure not currently supported')
   endif
 
 

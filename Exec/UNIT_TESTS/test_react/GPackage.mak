@@ -35,3 +35,4 @@ f90sources += write_job_info.f90
 f90sources += mg_eps.f90
 f90sources += cputime.f90
 f90sources += constants_cgs.f90 
+f90sources += simple_log.f90
