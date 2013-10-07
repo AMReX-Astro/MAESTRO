@@ -17,7 +17,9 @@ host of parameters about the simulation, including:
 \item The number of levels and boxes for the grid
 \item The properties of the species carried
 \item The tolerances for the MG solves
-\item The value of all runtime parameters (even those that were not explicitly set in the inputs file)
+\item Any warnings from the initialization procedure (note: these are not currently stored on restart).
+\item The value of all runtime parameters (even those that were not explicitly set in the inputs file), along with an indicator showing if the default value
+was overridden.
 \end{itemize}
 This file makes it easy to understand how to recreate the run that
 produced the plotfile.
