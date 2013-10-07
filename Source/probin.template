@@ -415,7 +415,7 @@ contains
 
     integer, intent(in) :: unit
 
-    write (unit, *) "defaults shown in []"
+    write (unit, *) "[*] indicates overridden default"
 
     @@printing@@
 
