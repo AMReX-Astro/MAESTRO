@@ -1,6 +1,6 @@
 #!/bin/ksh
 #PBS -A m1400
-#PBS -N xrb-3cm-prod
+#PBS -N xrb-1.5cm-prod
 #PBS -j oe
 #PBS -q regular
 #PBS -l walltime=3:00:00
