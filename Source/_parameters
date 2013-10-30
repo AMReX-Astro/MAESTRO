@@ -346,10 +346,10 @@ mg_cycle_type                       integer            3
 # Type of cycle used in the nodal multigrid -- 1 = F-cycle, 2 = W-cycle, 3 = V-cycle
 hg_cycle_type                       integer            3
 
-# valid values are $\le$ 0
+# valid values are $\ge$ 0
 hg_bottom_solver                    integer            -1                  
 
-# valid values are $\le$ 0
+# valid values are $\ge$ 0
 mg_bottom_solver                    integer            -1                  
 
 # if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have
