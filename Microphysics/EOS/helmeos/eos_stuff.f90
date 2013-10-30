@@ -17,6 +17,7 @@ module eos_module
   integer, parameter, public :: eos_input_rp = 4  ! rho, p are inputs
   integer, parameter, public :: eos_input_re = 5  ! rho, e are inputs
   integer, parameter, public :: eos_input_ps = 6  ! p, s are inputs
+  integer, parameter, public :: eos_input_ph = 7  ! p, h are inputs
  
 
   logical, save, private :: do_coulomb
@@ -1031,9 +1032,9 @@ contains
           else if (dim_ptindex .eq. 3) then 
              write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
           end if
-          call bl_error('EOS: Newton-Raphson failed:2: too many iterations', err_string)
+          call bl_error('EOS: Newton-Raphson failed:5: too many iterations', err_string)
        else
-          call bl_error('EOS: Newton-Raphson failed:2: too many iterations')
+          call bl_error('EOS: Newton-Raphson failed:5: too many iterations')
        endif
 
 270     continue
@@ -1263,9 +1264,9 @@ contains
           else if (dim_ptindex .eq. 3) then 
              write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
           end if
-          call bl_error('EOS: Newton-Raphson failed:2: too many iterations', err_string)
+          call bl_error('EOS: Newton-Raphson failed:6: too many iterations', err_string)
        else
-          call bl_error('EOS: Newton-Raphson failed:2: too many iterations')
+          call bl_error('EOS: Newton-Raphson failed:6: too many iterations')
        endif
 
 370     continue
@@ -1275,6 +1276,239 @@ contains
        temp = tnew
        eint = etot_row
        enthalpy = eint + ptot_row/dens
+          
+       c_v = cv_row
+       c_p = cp_row
+
+       ! store the number density of electrons and positrons, the degeneracy
+       ! parameter, and the total electron/positron pressure
+       ne   = xne_row + xnp_row
+       eta  = etaele_row
+       pele = pele_row + ppos_row
+       
+       dPdR = dpd_row
+       dPdT = dpt_row
+       dEdR = ded_row
+       dEdT = det_row   ! c_v
+       gam1 = gam1_row
+!      cs =   cs_row
+       cs =   sqrt(gam1*pres/dens)
+       dsdT = dst_row
+       dsdR = dsd_row
+
+       do n = 1, nspec
+          dpdX(n) = dpa_row * (abar/aion(n))* &
+                                 (aion(n) - abar) + &
+                    dpz_row * (abar/aion(n))* &
+                                 (zion(n) - zbar)
+
+          dEdX(n) = dea_row * (abar/aion(n))* &
+                                 (aion(n) - abar) + &
+                    dez_row * (abar/aion(n))* &
+                                 (zion(n) - zbar)
+
+          ! create the enthalpy derivatives wrt average composition --
+          ! hold pressure constant!!!
+          dhdX(n) = dEdX(n) + &
+               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
+
+       enddo
+
+
+    else if (input .EQ. eos_input_ph) then
+!---------------------------------------------------------------------------
+! input = 7: pres, enthalpy, and xmass are inputs
+!---------------------------------------------------------------------------
+
+       ! load the initial guess
+       temp_row = temp
+       den_row  = dens
+       abar_row = abar
+       zbar_row = zbar
+
+       if (do_eos_diag) print*,'T/D INIT ',temp,dens
+
+       ! we want to converge to the given entropy and pressure
+       enthalpy_want = enthalpy
+       pres_want    = pres
+
+       if (enthalpy_want < ZERO) then
+          if (present(pt_index)) then
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
+             call bl_error('ERROR: enthalpy < 0 in the EOS', err_string)
+          else
+             call bl_error('ERROR: enthalpy < 0 in the EOS')
+          endif
+       endif
+
+       if (pres_want < ZERO) then
+          if (present(pt_index)) then
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
+             call bl_error('ERROR: pressure < 0 in the EOS', err_string)
+          else
+             call bl_error('ERROR: pressure < 0 in the EOS')
+          endif
+       endif
+
+       if (do_eos_diag) then
+          print*,'WANT h ',enthalpy_want
+          print*,'WANT pres', pres_want
+       endif
+
+       call helmeos(do_coulomb,eosfail, &
+                    temp_row, den_row, abar_row, zbar_row, &
+                    etot_row, ptot_row, &
+                    cv_row, cp_row, xne_row, xnp_row, etaele_row, &
+                    pele_row, ppos_row, &
+                    dpd_row, dpt_row, dpa_row, dpz_row, &
+                    ded_row, det_row, dea_row, dez_row, &
+                    gam1_row, cs_row, stot_row, &
+                    dsd_row, dst_row)
+
+       if (eosfail) then
+          if (present(pt_index)) then
+             if (dim_ptindex .eq. 1) then 
+                write (err_string,1001) pt_index(1)
+             else if (dim_ptindex .eq. 2) then 
+                write (err_string,1002) pt_index(1), pt_index(2)
+             else if (dim_ptindex .eq. 3) then 
+                write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+             end if
+             call bl_error('EOS: error in the EOS', err_string)
+          else
+             call bl_error('EOS: error in the EOS')
+          endif
+       endif
+
+       do iter = 1, max_newton
+
+          niter = iter
+
+          ! correct density and temperature
+          pres1 = ptot_row
+          enth1 = etot_row + ptot_row/den_row
+
+          if (do_eos_diag) then
+             print*,'PRES1 ',iter,pres1
+             print*,'ENTH1 ',iter,enth1
+          end if
+
+          ! two functions, f and g, to iterate over
+          f = pres_want - pres1
+          dfdd = -dpd_row
+          dfdt = -dpt_row
+          
+          g = enthalpy_want - enth1
+          dgdd = -ded_row - dpd_row/den_row + ptot_row/den_row**2
+          dgdt = -det_row - dpt_row/den_row
+          !
+          ! 0 = f + dfdd * deld + dfdt * delt
+          ! 0 = g + dgdd * deld + dgdt * delt
+          !
+          deld = (f*dgdt - g*dfdt) / (dgdd*dfdt - dgdt*dfdd)
+
+          dnew = den_row + deld
+
+          tnew = temp_row - (f + dfdd*deld) / dfdt
+
+          if (do_eos_diag) then
+             print *, 'DNEW FIRST ', den_row, ' + ', &
+                  f*dgdt - g*dfdt, ' / ', dgdd*dfdt - dgdt*dfdd
+             print *, 'TNEW FIRST ', temp_row, ' - ', &
+                  f + dfdd*deld, ' / ', dfdt
+          endif
+
+          ! don't let the temperature or density change by more
+          ! than a factor of two
+          tnew = max(HALF*temp_row, &
+                        min(tnew, TWO*temp_row))
+          dnew = max(HALF*den_row, &
+                        min(dnew, TWO*den_row))
+
+          ! don't let us freeze or evacuate
+          tnew = max(smallt, tnew)
+          dnew = max(smalld, dnew)
+
+          if (do_eos_diag) then
+             print*,'DNEW AFTER ',iter,dnew
+             print*,'TNEW AFTER ',iter,tnew
+          endif
+
+          ! compute the errors
+          error = ZERO
+          error2 = ZERO
+          error  = max(error ,abs(dnew - den_row)/den_row)
+          error2 = max(error2,abs(tnew - temp_row)/temp_row)
+
+          ! store the new temperature and density
+          den_row = dnew
+          temp_row = tnew
+
+          if (error .LT. dtol .and. error2 .LT. ttol) goto 470
+     
+          call helmeos(do_coulomb,eosfail, &
+                       temp_row, den_row, abar_row, zbar_row, &
+                       etot_row, ptot_row, &
+                       cv_row, cp_row, xne_row, xnp_row, etaele_row, &
+                       pele_row, ppos_row, &
+                       dpd_row, dpt_row, dpa_row, dpz_row, &
+                       ded_row, det_row, dea_row, dez_row, &
+                       gam1_row, cs_row, stot_row, &
+                       dsd_row, dst_row)
+
+          if (eosfail) then
+             if (present(pt_index)) then
+                if (dim_ptindex .eq. 1) then 
+                   write (err_string,1001) pt_index(1)
+                else if (dim_ptindex .eq. 2) then 
+                   write (err_string,1002) pt_index(1), pt_index(2)
+                else if (dim_ptindex .eq. 3) then 
+                   write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+                end if
+                call bl_error('EOS: error in the EOS', err_string)
+             else
+                call bl_error('EOS: error in the EOS')
+             endif
+          endif
+        
+       enddo
+
+       ! Land here if too many iterations are needed
+
+       continue
+
+       if (present(pt_index)) then
+          if (dim_ptindex .eq. 1) then 
+             write (err_string,1001) pt_index(1)
+          else if (dim_ptindex .eq. 2) then 
+             write (err_string,1002) pt_index(1), pt_index(2)
+          else if (dim_ptindex .eq. 3) then 
+             write (err_string,1003) pt_index(1), pt_index(2), pt_index(3)
+          end if
+          call bl_error('EOS: Newton-Raphson failed:7: too many iterations', err_string)
+       else
+          call bl_error('EOS: Newton-Raphson failed:7: too many iterations')
+       endif
+
+470     continue
+
+       ! store the end result
+       dens = dnew
+       temp = tnew
+       eint = etot_row
+       entropy = stot_row
           
        c_v = cv_row
        c_p = cp_row
