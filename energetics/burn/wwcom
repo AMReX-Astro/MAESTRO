@@ -1,0 +1,15 @@
+      INTEGER nwwdim
+      PARAMETER (nwwdim=1)
+
+      REAL*8 recww(nwwdim),redww(nwwdim),rpdww(nwwdim),
+     &     eecww(nwwdim),eedww(nwwdim)
+      INTEGER nww,nwwnot
+      INTEGER idxww(nwwdim,2)
+
+      COMMON /wwcom/ nww,nwwnot, 
+     &     recww,redww,rpdww,eecww,eedww,	
+     &     idxww	
+
+      INTEGER nwwc14
+      PARAMETER (nwwc14=1)
+

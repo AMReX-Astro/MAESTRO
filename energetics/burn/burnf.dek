@@ -1,0 +1,110 @@
+c..this file contains the parameters and common block information
+c..for the burn code.
+c..
+c.. jan 2000 increase nburn from 1300 to 4800
+c.. (rath_001.bdat has 4800 nuclei avail!)
+c.. max number of elements in burn network (check subr gnu if changed!)
+      parameter (nburn=4800)
+c..
+c..maximum number of changeable parameters,  subroutines to be timed
+      parameter ( nparmz=500,  nsubz=8 )
+c..
+c..maximum number of fuller weak rates
+      parameter (nfuldim=600)
+c..
+      parameter (nif=5*nfuldim,nif2=2*nif,nif3=3*nif,ndif=6*nif)
+      parameter (nset45=45*nfuldim,iblkcpy=4*nfuldim)
+
+      parameter (nz0=0,n1=1,n2=2,n3=3,n4=4,n5=5,n6=6,n7=7,n8=8,
+     1           n9=9,n10=10)
+c..
+c..
+c..here are declarations and common block for the linear systems
+c..the sizes of naij and neloc should be enough for nburn isotopes
+c..upiv sets the pivoting; u=0=no pivoting; u=1=full pivoting
+      integer          naij,neloc
+      parameter        (naij=900000, neloc = 900000)
+      integer          eloc(neloc),irow(naij),icol(naij),
+     1                 ivect(naij),jvect(naij),iw(8*nburn),
+     2                 ikeep(5*nburn),nzo,nterm
+      common /acl1/    eloc,irow,icol,ivect,jvect,iw,ikeep,nzo,nterm
+      double precision upiv
+      parameter        (upiv=0.1d0)
+      double precision a(naij),b(nburn),wrk(nburn)
+      common /alc2/    a,b,wrk
+c..
+c..
+c..
+c.... fuller data array is stored in lcm. total dimension is 214*nfuldim
+      common /fulcom/ datful(5*nfuldim,6,7),qfac(4*nfuldim)
+      dimension datfuleq(5*nfuldim*6*7)
+      equivalence( datful,datfuleq )
+c..
+      common /fuldat/ icode(nfuldim),qn(nfuldim),nful,nfulnot,
+     1     rectot,rpdtot,redtot,eectot,epdtot,eedtot,wrate,snuw
+c..
+c..general code communications
+      common/nblock/irestart,locerr
+c..
+      common /sigma/ sig(14,nburn),signuc(4,nburn)
+      dimension sigeq(14*nburn)
+      equivalence (sig,sigeq)
+c..
+      common /vector/nrr(7,nburn),q(nburn),nrrneut(7,nburn)
+      dimension nrreq(7*nburn)
+      equivalence (nrr,nrreq)
+c..
+      common /ratpn/ rpen,rnep,spen,snep
+      common /var/   kmax,nmaz,necapm,necaph,nhan,nposd,nelecd
+c.. jan 2000 increase size of c array from 40000 to 200000
+      integer ncsize
+      parameter (ncsize=250000)
+      common /ratdat/ c(ncsize),astor(nburn,2,7),w(nburn),g(nburn),
+     1                ic1(10,nburn),ic2(10,nburn)
+c..
+c..data in hansen weak routines (cannot be in lcm)
+      common /ratcom/ ist(nburn),as(6*nburn),gs(6*nburn),
+     1 dumy(nburn),rrpen(6,7),rrnep(6,7)
+c..
+      common /scrn/ scfacp(nburn),scfaca(nburn),sc3a,sc1212,
+     1     sc1216,sc1616
+      common /aver/ zbar,abar,z2bar,ye
+c..
+      common /spl1/ nh2,nh3,nhe3,nli6,nli7,nbe7,nbe9,nb8,nb10,
+     1     nb11,nc11,nc12,nc13,nc14,n13,n14,n15,no14,
+     2     no15,no16,no17,no18,nf17,nf18,nf19,ne19,ne20,ne21,ne22,na21,
+c.. jan 2000 included nal25
+     3     na22,na23,mg23,mg24,mg25,mg26,nal25,nal26,nal27,nsi27,nsi28,
+     4     nsi29,nsi30,np30,np31,ns31
+c..
+c..
+      common  /sy/    nz(nburn),na(nburn),nn(nburn)
+      common /work/   y(nburn),t9,rho,dth,aan,aap,aaa,etan,eb,eb1,
+     1                etim,ngbk,i2,izon
+c..
+      common /spc/ ra3,ral,r24,r23,r23n,r20,b24n,b24p,b24a,
+     1             r32,r31,r31n,r30,r28,b32n,b32p,b32d,b32a,rc28,
+     2             rc27p,rc27n,rc24a,bc27p,bc27n,bc24a,rli7pag,
+     3             rb11pa,rb8epn,rc12np,rc12pa,rc12na,rc12he3,rc11na,
+     4             rpp,rpng,rpgn,rh2h3n,rhe3he3,rh3h3,rhe3td,
+     5             rhe3tnp,rhe3dp,rbe9pd,rc12h3p,rc12he3n,raan,rgaan
+c..
+      common /fulrat/ recful(nfuldim),rpdful(nfuldim),redful(nfuldim),
+     1     eec(nfuldim),eed(nfuldim),ratf(nif),ref(4*nif),rtf(nif),
+     2     qc0(nfuldim),qc1(nfuldim),qc2(nfuldim),qc3(nfuldim),
+     3     etaf(nfuldim),ff0(nfuldim),f1(nfuldim),f2(nfuldim),
+     4     f3(nfuldim),f4(nfuldim)
+c..
+      common zdum(1),chimin,delchi,fdtn,dtbkup,ncomp,ncent,nedt,nzro,
+     1     ntrm,ninv,nbkup,ntty,iratstop,negbkup,bkupdiv,
+     2     bkupmass,bkupmp,nbkupmax,mazful
+      common dumburn(nparmz-20),  nzstop,  itermzb,  btime
+
+c.. aug 1994 - g.f.'s nucap routine needs atomic mass excesses
+
+      dimension amex(nburn),amexdms(nburn)
+
+c.. needed for 5 prm partition function fits
+
+      common /pffit/ nppf
+
