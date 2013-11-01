@@ -22,6 +22,7 @@ for ifn,fn in enumerate(fns):
 
     assert len(indx) == len(cols), \
         "indx and cols don't match: %s\n%s" % (' '.join(indx), ' '.join(cols))
+    assert "time" in cols, "Couldn't find a time column!"
     nplts = len(indx)
     dat = numpy.loadtxt(fn,usecols=indx)
     for iplt in range(1,nplts):
@@ -29,7 +30,7 @@ for ifn,fn in enumerate(fns):
         if labelDict.has_key(cols[iplt]):
             plt.plot(dat[:,0],dat[:,iplt])
             ax = plt.gca()
-            ax.set_xlabel(cols[0])
+            ax.set_xlabel("%s (s)" % cols[0])
             ax.set_ylabel(labelDict[cols[iplt]])
             plt.savefig("%s_%s.png" % (names[ifn],
                                        cols[iplt].replace('{','_').strip('}')))
