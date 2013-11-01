@@ -5,11 +5,19 @@ matplotlib.rcParams["lines.linewidth"] = 2
 matplotlib.rcParams["legend.columnspacing"] = 0.5
 matplotlib.rcParams["legend.labelspacing"] = 0.1
 matplotlib.rcParams["legend.fontsize"] = "medium"
+matplotlib.rcParams["legend.frameon"] = False
 import matplotlib.pyplot as plt
 import subprocess
 import glob
 import StringIO
 import sys
+
+# comparison function for sorting plt's with 5 vs 6 digits
+def fnCmp(fn1,fn2):
+    # strip the 'plt' off and compare
+    fn1=int(fn1[3:])
+    fn2=int(fn2[3:])
+    return cmp(fn1,fn2)
 
 datFile = "masses.txt"
 lts = ['b-','g-','r-','c-','m-',
@@ -27,7 +35,7 @@ if justPlot:
     labels = open(datFile,'r').readline().split()[1:]
 else:
     fns = glob.glob("plt*")
-    fns.sort()
+    fns.sort(cmp=fnCmp)
 
     fmass = "./fspec_total_mass.Linux.gfortran.exe"
     cmd = "%s %s" % (fmass, ' '.join(fns))
@@ -54,5 +62,5 @@ ax.set_xlabel(r"$t$ (s)")
 ax.set_ylabel(r"$M_X/M_{X,0}$")
 plt.legend(loc="upper center",ncol=4)
 
-plt.savefig("masses.png",bbox_inches='tight')
+plt.savefig("masses.eps",bbox_inches='tight')
 plt.savefig("masses.pdf",bbox_inches='tight')
