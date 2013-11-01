@@ -17,7 +17,7 @@ oldjob=$1
 for count in `seq 1 1 $2`
 do
   echo starting job $count to depend on $oldjob
-  aout=`qsub -W depend=afterany:${oldjob}@sdb hopper.run`
+  aout=`qsub -W depend=afterany:${oldjob} hopper.run`
   echo "   " jobid: $aout
   echo " "
   oldjob=$aout
