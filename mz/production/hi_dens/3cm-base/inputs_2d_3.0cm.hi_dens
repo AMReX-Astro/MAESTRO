@@ -3,7 +3,7 @@
  !----------------------------------------------------------------------------
  ! problem setup
  !----------------------------------------------------------------------------
- model_file = "toy_xrb.hi_dens.hse.tanh.delta_12.000cm.dx_6.000cm.CNO"
+ model_file = "toy_xrb.hi_dens.hse.tanh.delta_12.000cm.dx_3.000cm.CNO"
 
  spherical_in = 0
 
