@@ -32,8 +32,10 @@ for ifn,fn in enumerate(fns):
             ax = plt.gca()
             ax.set_xlabel("%s (s)" % cols[0])
             ax.set_ylabel(labelDict[cols[iplt]])
-            plt.savefig("%s_%s.png" % (names[ifn],
-                                       cols[iplt].replace('{','_').strip('}')))
+            fsave = "%s_%s" % (names[ifn],
+                               cols[iplt].replace('{','_').strip('}'))
+            plt.savefig("%s.eps" % fsave,bbox_inches='tight')
+            plt.savefig("%s.pdf" % fsave,bbox_inches='tight')
             plt.clf()
             plt.cla()
 
