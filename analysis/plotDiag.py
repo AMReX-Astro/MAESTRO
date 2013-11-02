@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy
 import glob
 
-labelDict={'max{enuc}': r"$\epsilon_{\rm max}$ (erg g$^{-1}$ s$^{-1}$",
+labelDict={'max{enuc}': r"$\epsilon_{\rm max}$ (erg g$^{-1}$ s$^{-1}$)",
            'max{T}': r"$T_{\rm max}$ (K)",
            'max{Machno}': r"$M_{\rm max}$"}
 
