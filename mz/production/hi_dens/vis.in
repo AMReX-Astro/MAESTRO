@@ -1,0 +1,28 @@
+[general]
+numXlabels = 3
+
+[tfromh]
+min = 5.e7
+max = 2.e9
+log = 1
+
+[vort]
+min = -1.e6
+max = 1.e6
+cmap = bwr
+
+[magvel]
+min = 1.e4
+max = 1.e7
+log = 1
+
+[enucdot]
+min = 1.e14
+max = 1.e19
+log = 1
+eps = 1.e-10
+
+[X(S30)]
+min = 1.e-4
+max = 5.e-3
+log = 0
