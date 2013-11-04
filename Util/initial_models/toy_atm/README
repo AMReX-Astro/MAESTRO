@@ -1,0 +1,5 @@
+This setup is used for toy_convect and for the XRB stuff.  The init
+code takes an input file (one of the _param* files) to determine what
+is going on.
+
+
