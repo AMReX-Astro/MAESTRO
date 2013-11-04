@@ -29,6 +29,7 @@ justPlot = False
 append = False
 every = 1
 
+# parse the cmdline options
 justPlot = '--just-plot' in sys.argv
 append = '--append' in sys.argv
 everyFlag = "--every" in sys.argv
@@ -39,10 +40,12 @@ if everyFlag:
 if justPlot:
     print "Just doing the plots"
     masses = numpy.loadtxt(datFile)
-    labels = open(datFile,'r').readline().split()[1:]
-    # make sure this is the label list; might be second header line
+    fh = open(datFile,'r')
+    labels = fh.readline().split()[1:]
+    # make sure this is the label list
     if "time" not in labels:
-        labels = open(datFile,'r').readline().split()[1:]
+        labels = fh.readline().split()[1:]
+    fh.close()
     assert "time" in labels, "Can't find headers!"
 else:
     fns = glob.glob("plt*")
@@ -55,7 +58,7 @@ else:
     mass = subprocess.Popen(cmd,shell=True,
                             stdout=subprocess.PIPE).communicate()[0]
     labels = mass.split('\n')[0].split()[1:]
-    lastFile = "# last file used: %s\n" % fns[-1]
+    lastFile = "last file used: %s\n" % fns[-1]
     labels = [lastFile,] + labels
 
     fh = StringIO.StringIO(mass)
@@ -73,6 +76,8 @@ masses[:,1:] /= masses[0,1:]
 print "Plotting..."
 for i,curve in enumerate(labels[1:]):
     plt.plot(masses[:,0],masses[:,i+1],lts[i],label=curve)
+# thin line at 1
+plt.axhline(y=1.0,lw=1.0,ls='-',color='0.5')
 
 ax = plt.gca()
 ax.semilogy()
