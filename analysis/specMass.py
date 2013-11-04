@@ -55,7 +55,7 @@ else:
     mass = subprocess.Popen(cmd,shell=True,
                             stdout=subprocess.PIPE).communicate()[0]
     labels = mass.split('\n')[0].split()[1:]
-    lastFile = "# last file used: %s\n" fns[-1]
+    lastFile = "# last file used: %s\n" % fns[-1]
     labels = [lastFile,] + labels
 
     fh = StringIO.StringIO(mass)
