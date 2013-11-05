@@ -11,6 +11,7 @@ import subprocess
 import glob
 import StringIO
 import sys
+import os.path
 
 # comparison function for sorting plt's with 5 vs 6 digits
 def fnCmp(fn1,fn2):
@@ -59,7 +60,7 @@ else:
                             stdout=subprocess.PIPE).communicate()[0]
     labels = mass.split('\n')[0].split()[1:]
     lastFile = "last file used: %s\n" % fns[-1]
-    labels = [lastFile,] + labels
+    header = [lastFile,] + labels
 
     fh = StringIO.StringIO(mass)
     masses = numpy.loadtxt(fh)
@@ -67,7 +68,10 @@ else:
         print "Just appending the new values to the old %s file" % datFile
         oldMasses = numpy.loadtxt(datFile)
         masses = numpy.vstack((oldMasses,masses))
-    numpy.savetxt(datFile,masses,header=' '.join(labels))
+    if os.path.exists(datFile):
+        raw_input("Getting ready to overwrite %s; " % datFile
+                  + "continue if this is ok, otherwise C-c and quit.")
+    numpy.savetxt(datFile,masses,header=' '.join(header))
 
 # normalize to starting value
 print 'Normalizing...'
@@ -77,7 +81,7 @@ print "Plotting..."
 for i,curve in enumerate(labels[1:]):
     plt.plot(masses[:,0],masses[:,i+1],lts[i],label=curve)
 # thin line at 1
-plt.axhline(y=1.0,lw=1.0,ls='-',color='0.5')
+plt.axhline(y=1.0,lw=1.0,ls=':',color='0.5')
 
 ax = plt.gca()
 ax.semilogy()
