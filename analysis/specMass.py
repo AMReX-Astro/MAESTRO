@@ -75,7 +75,8 @@ else:
 
 # normalize to starting value
 print 'Normalizing...'
-masses[:,1:] /= masses[0,1:]
+startVals = masses[0,1:].copy()
+masses[:,1:] /= startVals
 
 print "Plotting..."
 for i,curve in enumerate(labels[1:]):
