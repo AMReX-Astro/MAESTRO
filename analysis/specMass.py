@@ -88,7 +88,7 @@ ax = plt.gca()
 ax.semilogy()
 ax.set_xlabel(r"$t$ (s)")
 ax.set_ylabel(r"$M_X/M_{X,0}$")
-plt.legend(loc="upper center",ncol=4)
+plt.legend(loc="upper center",ncol=4, frameon=False)
 
 plt.savefig("masses.eps",bbox_inches='tight')
 plt.savefig("masses.pdf",bbox_inches='tight')
