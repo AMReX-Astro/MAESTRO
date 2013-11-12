@@ -469,9 +469,12 @@ subroutine varden()
         if (restart <= 99999) then
            write(unit=plot_index,fmt='(i5.5)') restart
            plot_file_name = trim(plot_base_name) // plot_index
-        else
+        else if (restart <= 999999) then
            write(unit=plot_index6,fmt='(i6.6)') restart
            plot_file_name = trim(plot_base_name) // plot_index6
+        else
+           write(unit=plot_index7,fmt='(i7.7)') restart
+           plot_file_name = trim(plot_base_name) // plot_index7
         endif
 
         call make_plotfile(plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
@@ -637,9 +640,12 @@ subroutine varden()
         if (istep <= 99999) then
            write(unit=plot_index,fmt='(i5.5)') istep
            plot_file_name = trim(plot_base_name) // plot_index
-        else
+        else if (istep <= 999999) then
            write(unit=plot_index6,fmt='(i6.6)') istep
            plot_file_name = trim(plot_base_name) // plot_index6
+        else
+           write(unit=plot_index7,fmt='(i7.7)') istep
+           plot_file_name = trim(plot_base_name) // plot_index7
         endif
 
         call make_plotfile(plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
@@ -1334,9 +1340,12 @@ subroutine varden()
               if (istep <= 99999) then
                  write(unit=plot_index,fmt='(i5.5)') istep
                  plot_file_name = trim(plot_base_name) // plot_index
-              else
+              else if (istep <= 999999) then
                  write(unit=plot_index6,fmt='(i6.6)') istep
                  plot_file_name = trim(plot_base_name) // plot_index6
+              else
+                 write(unit=plot_index7,fmt='(i7.7)') istep
+                 plot_file_name = trim(plot_base_name) // plot_index7
               endif
 
               call make_plotfile(plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
@@ -1437,9 +1446,12 @@ subroutine varden()
         if (istep <= 99999) then
            write(unit=plot_index,fmt='(i5.5)') istep
            plot_file_name = trim(plot_base_name) // plot_index
-        else
+        else if (istep <= 999999) then
            write(unit=plot_index6,fmt='(i6.6)') istep
            plot_file_name = trim(plot_base_name) // plot_index6
+        else
+           write(unit=plot_index7,fmt='(i7.7)') istep
+           plot_file_name = trim(plot_base_name) // plot_index7
         endif
 
         call make_plotfile(plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
