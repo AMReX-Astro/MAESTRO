@@ -26,6 +26,17 @@ fmass = "./fspec_total_mass.Linux.gfortran.exe"
 lts = ['b-','g-','r-','c-','m-',
        'b--','g--','r--','c--','m--']
 
+specLabels={"C12": r"$^{12}\mathrm{C}$",
+            "O14": r"$^{14}\mathrm{O}$",
+            "O15": r"$^{15}\mathrm{O}$",
+            "O16": r"$^{16}\mathrm{O}$",
+            "F17": r"$^{17}\mathrm{F}$",
+            "Mg22": r"$^{22}\mathrm{Mg}$",
+            "S30": r"$^{30}\mathrm{S}$",
+            "Ni56": r"$^{56}\mathrm{Ni}$",
+            "He4": r"$^{4}\mathrm{He}$",
+            "H1": r"$^{1}\mathrm{H}$"}
+
 justPlot = False
 append = False
 every = 1
@@ -80,7 +91,7 @@ masses[:,1:] /= startVals
 
 print "Plotting..."
 for i,curve in enumerate(labels[1:]):
-    plt.plot(masses[:,0],masses[:,i+1],lts[i],label=curve)
+    plt.plot(masses[:,0],masses[:,i+1],lts[i],label=specLabels[curve])
 # thin line at 1
 plt.axhline(y=1.0,lw=1.0,ls=':',color='0.5')
 
@@ -88,6 +99,7 @@ ax = plt.gca()
 ax.semilogy()
 ax.set_xlabel(r"$t$ (s)")
 ax.set_ylabel(r"$M_X/M_{X,0}$")
+ax.set_xlim(0,0.175)
 plt.legend(loc="upper center",ncol=4, frameon=False)
 
 plt.savefig("masses.eps",bbox_inches='tight')
