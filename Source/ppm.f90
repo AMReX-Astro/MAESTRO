@@ -25,7 +25,11 @@ module ppm_module
 
 contains
 
-  ! characteristics based on u
+  !===========================================================================
+  ! 1-d version
+  !===========================================================================
+
+  ! characteristics based on u  
   subroutine ppm_1d(s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
@@ -64,10 +68,6 @@ contains
     allocate(sp(lo(1)-1:hi(1)+1))
     allocate(sm(lo(1)-1:hi(1)+1))
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! x-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     ! cell-centered indexing w/extra x-ghost cell
     allocate(dsvl(lo(1)-2:hi(1)+2))
 
@@ -80,6 +80,10 @@ contains
 
     ! compute s at x-edges
     if (ppm_type .eq. 1) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
 
        ! compute van Leer slopes in x-direction
        dsvl = ZERO
@@ -186,6 +190,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
        
        if (ng_s .lt. 4) then
           call bl_error("Need 4 ghost cells for ppm_type=2")
@@ -477,7 +485,10 @@ contains
 
     end if
 
+    !-------------------------------------------------------------------------
     ! compute x-component of Ip and Im
+    !-------------------------------------------------------------------------
+
     do i=lo(1)-1,hi(1)
        sigma = abs(u(i))*dt/dx(1)
        s6 = SIX*s(i) - THREE*(sm(i)+sp(i))
@@ -500,6 +511,7 @@ contains
     deallocate(sp,sm,dsvl,sedge)
 
   end subroutine ppm_1d
+
 
   ! characteristics based on umac
   subroutine ppm_fpu_1d(s,ng_s,umac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
@@ -540,10 +552,6 @@ contains
     allocate(sp(lo(1)-1:hi(1)+1))
     allocate(sm(lo(1)-1:hi(1)+1))
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! x-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     ! cell-centered indexing w/extra x-ghost cell
     allocate(dsvl(lo(1)-2:hi(1)+2))
 
@@ -556,6 +564,10 @@ contains
 
     ! compute s at x-edges
     if (ppm_type .eq. 1) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
 
        ! compute van Leer slopes in x-direction
        dsvl = ZERO
@@ -662,6 +674,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
        
        if (ng_s .lt. 4) then
           call bl_error("Need 4 ghost cells for ppm_type=2")
@@ -953,7 +969,10 @@ contains
 
     end if
 
+    !-------------------------------------------------------------------------
     ! compute x-component of Ip and Im
+    !-------------------------------------------------------------------------
+
     do i=lo(1)-1,hi(1)
        sigma = abs(umac(i+1))*dt/dx(1)
        s6 = SIX*s(i) - THREE*(sm(i)+sp(i))
@@ -976,6 +995,11 @@ contains
     deallocate(sm,sp,dsvl,sedge)
 
   end subroutine ppm_fpu_1d
+
+
+  !===========================================================================
+  ! 2-d version
+  !===========================================================================
 
   ! characteristics based on u
   subroutine ppm_2d(s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
@@ -1017,9 +1041,9 @@ contains
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
     ! x-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
 
     ! cell-centered indexing w/extra x-ghost cell
     allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1))
@@ -1033,6 +1057,10 @@ contains
 
     ! compute s at x-edges
     if (ppm_type .eq. 1) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
 
        ! compute van Leer slopes in x-direction
        dsvl = ZERO
@@ -1163,6 +1191,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
        
        if (ng_s .lt. 4) then
           call bl_error("Need 4 ghost cells for ppm_type=2")
@@ -1472,7 +1504,10 @@ contains
 
     end if
 
+    !-------------------------------------------------------------------------
     ! compute x-component of Ip and Im
+    !-------------------------------------------------------------------------
+
     do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)
           sigma = abs(u(i,j,1))*dt/dx(1)
@@ -1496,9 +1531,10 @@ contains
 
     deallocate(sedge,dsvl)
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !-------------------------------------------------------------------------
     ! y-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
 
     ! cell-centered indexing w/extra y-ghost cell
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+2))
@@ -1512,6 +1548,10 @@ contains
 
     ! compute s at y-edges
     if (ppm_type .eq. 1) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
 
        ! compute van Leer slopes in y-direction
        dsvl = ZERO
@@ -1642,6 +1682,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
        
        ! interpolate s to y-edges
        do j=lo(2)-2,hi(2)+3
@@ -1942,7 +1986,10 @@ contains
 
     end if
 
+    !-------------------------------------------------------------------------
     ! compute y-component of Ip and Im
+    !-------------------------------------------------------------------------
+
     do j=lo(2)-1,hi(2)
        do i=lo(1)-1,hi(1)+1
           sigma = abs(u(i,j,2))*dt/dx(2)
@@ -1969,6 +2016,7 @@ contains
     deallocate(sp,sm,dsvl,sedge)
 
   end subroutine ppm_2d
+
 
   ! characteristics based on umac
   subroutine ppm_fpu_2d(s,ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
@@ -2011,9 +2059,10 @@ contains
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !-------------------------------------------------------------------------
     ! x-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
 
     ! cell-centered indexing w/extra x-ghost cell
     allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1))
@@ -2027,6 +2076,10 @@ contains
 
     ! compute s at x-edges
     if (ppm_type .eq. 1) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
 
        ! compute van Leer slopes in x-direction
        dsvl = ZERO
@@ -2157,6 +2210,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
        
        if (ng_s .lt. 4) then
           call bl_error("Need 4 ghost cells for ppm_type=2")
@@ -2466,7 +2523,10 @@ contains
 
     end if
 
+    !-------------------------------------------------------------------------
     ! compute x-component of Ip and Im
+    !-------------------------------------------------------------------------
+
     do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)
           sigma = abs(umac(i+1,j))*dt/dx(1)
@@ -2490,9 +2550,10 @@ contains
 
     deallocate(sedge,dsvl)
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !-------------------------------------------------------------------------
     ! y-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
 
     ! cell-centered indexing w/extra y-ghost cell
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+2))
@@ -2506,6 +2567,10 @@ contains
 
     ! compute s at y-edges
     if (ppm_type .eq. 1) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
 
        ! compute van Leer slopes in y-direction
        dsvl = ZERO
@@ -2636,6 +2701,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
        
        ! interpolate s to y-edges
        do j=lo(2)-2,hi(2)+3
@@ -2936,7 +3005,10 @@ contains
 
     end if
 
+    !-------------------------------------------------------------------------
     ! compute y-component of Ip and Im
+    !-------------------------------------------------------------------------
+
     do j=lo(2)-1,hi(2)
        do i=lo(1)-1,hi(1)+1
           sigma = abs(vmac(i,j+1))*dt/dx(2)
@@ -2963,6 +3035,11 @@ contains
     deallocate(sp,sm,dsvl,sedge)
 
   end subroutine ppm_fpu_2d
+
+
+  !===========================================================================
+  ! 3-d version
+  !===========================================================================
 
   ! characteristics based on u
   subroutine ppm_3d(s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
@@ -3005,9 +3082,9 @@ contains
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
     ! x-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
 
     ! cell-centered indexing w/extra x-ghost cell
     allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
@@ -3021,7 +3098,11 @@ contains
 
     ! compute s at x-edges
     if (ppm_type .eq. 1) then
-       
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
+
        dsvl = ZERO
 
        !$OMP PARALLEL PRIVATE(i,j,k,dsc,dsl,dsr)
@@ -3188,6 +3269,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
 
        if (ng_s .lt. 4) then
           call bl_error("Need 4 ghost cells for ppm_type=2")
@@ -3544,9 +3629,11 @@ contains
        end if
 
     end if
-    !
+
+    !-------------------------------------------------------------------------
     ! Compute x-component of Ip and Im.
-    !
+    !-------------------------------------------------------------------------
+
     !$OMP PARALLEL DO PRIVATE(i,j,k,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
@@ -3576,9 +3663,10 @@ contains
 
     deallocate(sedge,dsvl)
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !-------------------------------------------------------------------------
     ! y-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
 
     ! cell-centered indexing w/extra y-ghost cell
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+2,lo(3)-1:hi(3)+1))
@@ -3593,6 +3681,10 @@ contains
     ! Compute s at y-edges.
     !
     if (ppm_type .eq. 1) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
 
        dsvl = ZERO
 
@@ -3760,6 +3852,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
 
        !$OMP PARALLEL PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
        !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
@@ -4120,9 +4216,11 @@ contains
        end if
 
     end if
-    !
+
+    !-------------------------------------------------------------------------    
     ! Compute y-component of Ip and Im.
-    !
+    !-------------------------------------------------------------------------
+
     !$OMP PARALLEL DO PRIVATE(i,j,k,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)
@@ -4154,9 +4252,10 @@ contains
 
     deallocate(sedge,dsvl)
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !-------------------------------------------------------------------------
     ! z-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
 
     ! cell-centered indexing w/extra z-ghost cell
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-2:hi(3)+2))
@@ -4171,6 +4270,10 @@ contains
     ! Compute s at z-edges.
     !
     if (ppm_type .eq. 1) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
        
        dsvl = ZERO
 
@@ -4338,6 +4441,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
 
        !$OMP PARALLEL PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
        !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
@@ -4697,9 +4804,11 @@ contains
        end if
 
     end if
-    !
+
+    !-------------------------------------------------------------------------    
     ! Compute z-component of Ip and Im.
-    !
+    !-------------------------------------------------------------------------
+
     !$OMP PARALLEL PRIVATE(i,j,k,sigma,s6)
     !$OMP DO
     do k=lo(3)-1,hi(3)
@@ -4739,6 +4848,7 @@ contains
     deallocate(sp,sm,dsvl,sedge)
 
   end subroutine ppm_3d
+
 
   ! characteristics based on umac
   subroutine ppm_fpu_3d(s,ng_s,umac,vmac,wmac,ng_um,Ip,Im,lo,hi,bc,dx,dt)
@@ -4783,9 +4893,10 @@ contains
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !-------------------------------------------------------------------------
     ! x-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
 
     ! cell-centered indexing w/extra x-ghost cell
     allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
@@ -4800,7 +4911,11 @@ contains
     ! Compute s at x-edges.
     !
     if (ppm_type .eq. 1) then
-       
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
+
        dsvl = ZERO
 
        !$OMP PARALLEL PRIVATE(i,j,k,dsc,dsl,dsr)
@@ -4966,6 +5081,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
 
        if (ng_s .lt. 4) then
           call bl_error("Need 4 ghost cells for ppm_type=2")
@@ -5328,9 +5447,11 @@ contains
        end if
 
     end if
-    !
+    
+    !-------------------------------------------------------------------------
     ! Compute x-component of Ip and Im.
-    !
+    !-------------------------------------------------------------------------
+    
     !$OMP PARALLEL DO PRIVATE(i,j,k,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
@@ -5358,9 +5479,10 @@ contains
 
     deallocate(sedge,dsvl)
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !-------------------------------------------------------------------------
     ! y-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
 
     ! cell-centered indexing w/extra y-ghost cell
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+2,lo(3)-1:hi(3)+1))
@@ -5375,6 +5497,10 @@ contains
     ! Compute s at y-edges.
     !
     if (ppm_type .eq. 1) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
        
        dsvl = ZERO
 
@@ -5542,6 +5668,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
 
        !$OMP PARALLEL PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
        !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
@@ -5902,9 +6032,11 @@ contains
        end if
 
     end if
-    !
+    
+    !-------------------------------------------------------------------------
     ! Compute y-component of Ip and Im.
-    !
+    !-------------------------------------------------------------------------
+    
     !$OMP PARALLEL DO PRIVATE(i,j,k,sigma,s6)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)
@@ -5934,9 +6066,10 @@ contains
 
     deallocate(sedge,dsvl)
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !-------------------------------------------------------------------------
     ! z-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-------------------------------------------------------------------------
 
     ! cell-centered indexing w/extra z-ghost cell
     allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-2:hi(3)+2))
@@ -5951,6 +6084,10 @@ contains
     ! Compute s at z-edges.
     !
     if (ppm_type .eq. 1) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 1
+       !----------------------------------------------------------------------
        
        dsvl = ZERO
 
@@ -6118,6 +6255,10 @@ contains
        end if
 
     else if (ppm_type .eq. 2) then
+
+       !----------------------------------------------------------------------
+       ! ppm_type = 2
+       !----------------------------------------------------------------------
 
        !$OMP PARALLEL PRIVATE(i,j,k,alphap,alpham,bigp,bigm,extremum,dafacem,dafacep) &
        !$OMP PRIVATE(dabarm,dabarp,dafacemin,dabarmin,dachkm,dachkp,D2,D2L,D2R,D2C,sgn,D2LIM,amax) &
@@ -6479,9 +6620,11 @@ contains
        end if
 
     end if
-    !
+    
+    !-------------------------------------------------------------------------
     ! Compute z-component of Ip and Im.
-    !
+    !-------------------------------------------------------------------------
+    
     !$OMP PARALLEL PRIVATE(i,j,k,sigma,s6)
     !$OMP DO
     do k=lo(3)-1,hi(3)
