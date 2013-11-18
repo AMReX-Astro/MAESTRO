@@ -350,16 +350,24 @@ contains
        call slopex_2d(u,slopex,lo,hi,ng_u,2,adv_bc)
        call slopey_2d(u,slopey,lo,hi,ng_u,2,adv_bc)
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_2d(u(:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_2d(u(:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_2d(u(:,:,1),ng_u, &
+                   ufull(:,:,1),ufull(:,:,2),ng_uf, &
+                   Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
+       call ppm_2d(u(:,:,2),ng_u, &
+                   ufull(:,:,1),ufull(:,:,2),ng_uf, &
+                   Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt,.false.)
 
        ! trace forces, if necessary.  Note by default the ppm routines
        ! will trace each component to each interface in all coordinate
        ! directions, but we really only need the force traced along
        ! its respective dimension.  This should be simplified later.
        if (ppm_trace_forces == 1) then
-          call ppm_2d(force(:,:,1),ng_f,ufull,ng_uf,Ipfx,Imfx,lo,hi,adv_bc(:,:,1),dx,dt)
-          call ppm_2d(force(:,:,2),ng_f,ufull,ng_uf,Ipfy,Imfy,lo,hi,adv_bc(:,:,2),dx,dt)
+          call ppm_2d(force(:,:,1),ng_f, &
+                      ufull(:,:,1),ufull(:,:,2),ng_uf, &
+                      Ipfx,Imfx,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
+          call ppm_2d(force(:,:,2),ng_f, &
+                      ufull(:,:,1),ufull(:,:,2),ng_uf, &
+                      Ipfy,Imfy,lo,hi,adv_bc(:,:,2),dx,dt,.false.)
        endif
     end if
        

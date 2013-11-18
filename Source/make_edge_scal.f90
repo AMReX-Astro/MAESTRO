@@ -368,9 +368,13 @@ contains
        call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc(:,:,bccomp:))
        call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc(:,:,bccomp:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_fpu_2d(s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,bccomp),dx,dt)
+       call ppm_2d(s(:,:,comp),ng_s, &
+                   umac,vmac,ng_um, &
+                   Ip,Im,lo,hi,adv_bc(:,:,bccomp),dx,dt,.true.)
        if (ppm_trace_forces == 1) then
-          call ppm_fpu_2d(force(:,:,comp),ng_s,umac,vmac,ng_um,Ipf,Imf,lo,hi,adv_bc(:,:,bccomp),dx,dt)
+          call ppm_2d(force(:,:,comp),ng_s, &
+                      umac,vmac,ng_um, &
+                      Ipf,Imf,lo,hi,adv_bc(:,:,bccomp),dx,dt,.true.)
        endif
     end if
 
