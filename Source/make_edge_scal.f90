@@ -190,9 +190,9 @@ contains
     if (ppm_type .eq. 0) then
        call slopex_1d(s(:,comp:),slopex,lo,hi,ng_s,1,adv_bc(:,:,bccomp:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_fpu_1d(s(:,comp),ng_s,umac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,bccomp),dx,dt)
+       call ppm_1d(s(:,comp),ng_s,umac,ng_um,Ip,Im,lo,hi,adv_bc(:,:,bccomp),dx,dt,.true.)
        if (ppm_trace_forces == 1) then
-          call ppm_fpu_1d(force(:,comp),ng_s,umac,ng_um,Ipf,Imf,lo,hi,adv_bc(:,:,bccomp),dx,dt)
+          call ppm_1d(force(:,comp),ng_s,umac,ng_um,Ipf,Imf,lo,hi,adv_bc(:,:,bccomp),dx,dt,.true.)
        endif
     end if
 

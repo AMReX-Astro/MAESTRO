@@ -186,7 +186,7 @@ contains
     if (ppm_type .eq. 0) then
        call slopex_1d(u(:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_1d(u(:,1),ng_u,ufull(:,1),ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_1d(u(:,1),ng_u,ufull(:,1),ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
     end if
 
     !******************************************************************

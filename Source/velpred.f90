@@ -187,9 +187,9 @@ contains
        call slopex_1d(u,slopex,lo,hi,ng_u,1,adv_bc)
 
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_1d(u(:,1),ng_u,ufull(:,1),ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_1d(u(:,1),ng_u,ufull(:,1),ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
        if (ppm_trace_forces .eq. 1) then
-          call ppm_1d(force(:),ng_f,ufull(:,1),ng_uf,Ipf,Imf,lo,hi,adv_bc(:,:,1),dx,dt)
+          call ppm_1d(force(:),ng_f,ufull(:,1),ng_uf,Ipf,Imf,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
        endif
     end if
 
