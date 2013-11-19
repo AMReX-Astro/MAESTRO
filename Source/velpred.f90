@@ -771,18 +771,30 @@ contains
        !$OMP END PARALLEL DO
        call slopez_3d(u,slopez,lo,hi,ng_u,3,adv_bc)
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(u(:,:,:,1),ng_u,ufull,ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_3d(u(:,:,:,2),ng_u,ufull,ng_uf,Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt)
-       call ppm_3d(u(:,:,:,3),ng_u,ufull,ng_uf,Ipw,Imw,lo,hi,adv_bc(:,:,3),dx,dt)
+       call ppm_3d(u(:,:,:,1),ng_u, &
+                   ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
+                   Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
+       call ppm_3d(u(:,:,:,2),ng_u, &
+                   ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
+                   Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt,.false.)
+       call ppm_3d(u(:,:,:,3),ng_u, &
+                   ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
+                   Ipw,Imw,lo,hi,adv_bc(:,:,3),dx,dt,.false.)
 
        ! trace forces, if necessary.  Note by default the ppm routines
        ! will trace each component to each interface in all coordinate
        ! directions, but we really only need the force traced along
        ! its respective dimension.  This should be simplified later.
        if (ppm_trace_forces == 1) then
-          call ppm_3d(force(:,:,:,1),ng_u,ufull,ng_uf,Ipfx,Imfx,lo,hi,adv_bc(:,:,1),dx,dt)
-          call ppm_3d(force(:,:,:,2),ng_u,ufull,ng_uf,Ipfy,Imfy,lo,hi,adv_bc(:,:,2),dx,dt)
-          call ppm_3d(force(:,:,:,3),ng_u,ufull,ng_uf,Ipfz,Imfz,lo,hi,adv_bc(:,:,3),dx,dt)
+          call ppm_3d(force(:,:,:,1),ng_u, &
+                      ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
+                      Ipfx,Imfx,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
+          call ppm_3d(force(:,:,:,2),ng_u, &
+                      ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
+                      Ipfy,Imfy,lo,hi,adv_bc(:,:,2),dx,dt,.false.)
+          call ppm_3d(force(:,:,:,3),ng_u, &
+                      ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
+                      Ipfz,Imfz,lo,hi,adv_bc(:,:,3),dx,dt,.false.)
        endif
     end if
 

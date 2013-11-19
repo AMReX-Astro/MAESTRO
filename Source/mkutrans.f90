@@ -525,7 +525,9 @@ contains
        end do
        call slopez_3d(u(:,:,:,3:),slopez,lo,hi,ng_u,1,adv_bc(:,:,3:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(u(:,:,:,1),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_3d(u(:,:,:,1),ng_u, &
+                   ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
+                   Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
     end if
     
     !******************************************************************
@@ -635,7 +637,9 @@ contains
     !******************************************************************
 
     if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(u(:,:,:,2),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_3d(u(:,:,:,2),ng_u, &
+                   ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
+                   Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt,.false.)
     end if
 
     allocate(vly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
@@ -741,7 +745,9 @@ contains
     !******************************************************************
 
     if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(u(:,:,:,3),ng_u,ufull,ng_uf,Ip,Im,lo,hi,adv_bc(:,:,3),dx,dt)
+       call ppm_3d(u(:,:,:,3),ng_u, &
+                   ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
+                   Ip,Im,lo,hi,adv_bc(:,:,3),dx,dt,.false.)
     end if
 
     allocate(wlz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
