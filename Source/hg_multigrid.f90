@@ -23,8 +23,7 @@ contains
 
     use enforce_outflow_on_divu_module, only : enforce_outflow_on_divu_rhs
 
-    use nodal_stencil_fill_module , only : stencil_fill_nodal_all_mglevels,      &
-                                           stencil_fill_one_sided
+    use nodal_stencil_fill_module , only : stencil_fill_nodal_all_mglevels
     use ml_solve_module     , only : ml_nd_solve
     use nodal_divu_module   , only : divu, subtract_divu_from_rh
     use probin_module       , only : hg_bottom_solver, max_mg_bottom_nlevels, &
@@ -54,8 +53,6 @@ contains
     type(  layout)  :: la
 
     type(mg_tower) :: mgt(mla%nlevel)
-
-    type(multifab) :: one_sided_ss(2:mla%nlevel)
 
     type(multifab), allocatable :: coeffs(:)
 
@@ -118,36 +115,6 @@ contains
     ! Note: put this here for robustness
     max_iter = 100
 
-    if (stencil_type .eq. ND_DENSE_STENCIL) then
-       if (dm .eq. 3) then
-          i = mgt(nlevs)%nlevels
-          if ( (dx(nlevs,1) .eq. dx(nlevs,2)) .and. &
-               (dx(nlevs,1) .eq. dx(nlevs,3)) ) then
-             ns = 21
-          else
-             ns = 27
-          end if
-       else if (dm .eq. 2) then
-          ns = 9
-       else if (dm .eq. 1) then
-          ns = 3
-       end if
-    else
-       ns = 2*dm+1
-       do n = nlevs, 2, -1
-          la = mla%la(n)
-          call multifab_build(one_sided_ss(n), la, ns, 0, nodal, stencil=.true.)
-
-          ! set the stencil to zero manually -- multifab_setval doesn't work
-          ! with stencil = .true.
-          do j = 1, nfabs(one_sided_ss(n))
-             p => dataptr(one_sided_ss(n), j)
-             p = ZERO
-          enddo
-
-       end do
-    end if
-
     do n = nlevs, 1, -1
 
        if (dm == 1) then
@@ -176,7 +143,6 @@ contains
                            the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,press_comp), &
                            stencil_type, &
                            dh = dx(n,:), &
-                           ns = ns, &
                            smoother = smoother, &
                            nu1 = nu1, &
                            nu2 = nu2, &
@@ -198,13 +164,6 @@ contains
     end do
 
     !! Fill coefficient array
-
-!   if (using_alt_energy_fix) then
-!      coeff_ncomp = 2
-!   else
-       coeff_ncomp = 1
-!   end if
-
     do n = nlevs,1,-1
 
        allocate( coeffs(mgt(n)%nlevels))
@@ -212,7 +171,7 @@ contains
        la = mla%la(n)
 
        ! Build coeffs to pass into the multigrid
-       call multifab_build( coeffs(mgt(n)%nlevels), la, coeff_ncomp, 1)
+       call multifab_build( coeffs(mgt(n)%nlevels), la, 1, 1)
        call setval(coeffs(mgt(n)%nlevels), 0.0_dp_t, 1, all=.true.)
 
        ! Build coeffs(i,j,1) = (rho/beta0)
@@ -221,14 +180,7 @@ contains
 
        call multifab_fill_boundary(coeffs(mgt(n)%nlevels))
 
-       call stencil_fill_nodal_all_mglevels(mgt(n), coeffs, stencil_type)
-
-       if (stencil_type .eq. ND_CROSS_STENCIL .and. n .gt. 1) then
-          i = mgt(n)%nlevels
-          call stencil_fill_one_sided(one_sided_ss(n), coeffs(i), &
-                                      mgt(n)%dh(:,i), &
-                                      mgt(n)%mm(i), mgt(n)%face_type)
-       end if
+       call stencil_fill_nodal_all_mglevels(mgt(n), coeffs)
 
        call destroy(coeffs(mgt(n)%nlevels))
        deallocate(coeffs)
@@ -274,7 +226,7 @@ contains
        do_diagnostics = 0
     end if
 
-    call ml_nd_solve(mla,mgt,rh,phi,one_sided_ss,mla%mba%rr,do_diagnostics,&
+    call ml_nd_solve(mla,mgt,rh,phi,mla%mba%rr,do_diagnostics,&
                      rel_solver_eps,abs_solver_eps)
 
     ! ********************************************************************************
@@ -288,12 +240,6 @@ contains
     do n = 1, nlevs
        call mg_tower_destroy(mgt(n))
     end do
-
-    if (stencil_type .ne. ND_DENSE_STENCIL) then
-       do n = nlevs, 2, -1
-          call destroy(one_sided_ss(n))
-       end do
-    end if
 
     call destroy(bpt)
 

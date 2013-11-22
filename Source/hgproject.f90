@@ -1179,8 +1179,6 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    ns = 3
-
     do n = nlevs, 1, -1
 
        pd = layout_get_pd(mla%la(n))
@@ -1189,7 +1187,6 @@ contains
                            the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,press_comp), &
                            stencil_type, &
                            dh = dx(n,:), &
-                           ns = ns, &
                            nodal = nodal)
 
     end do
