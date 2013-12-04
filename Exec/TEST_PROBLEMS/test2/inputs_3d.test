@@ -28,7 +28,7 @@
  max_step  = 100000000
  init_iter = 1
 
- stop_time = 1.0d0
+ stop_time = 0.3d0
 
  plot_base   = T
  plot_deltat = 1.0d0
