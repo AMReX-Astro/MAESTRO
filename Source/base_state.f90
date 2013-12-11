@@ -44,7 +44,7 @@ contains
     use fundamental_constants_module, only: Gconst
     use model_parser_module, only: read_model_file, npts_model, model_r, model_state, &
                                    idens_model, itemp_model, ipres_model, ispec_model
-
+    use simple_log_module
 
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
@@ -93,18 +93,15 @@ contains
     if ( parallel_IOProcessor() ) then
        write (*,887)
        if (spherical .ne. 1) then
-          write (*,*)   'model file mapping, level:', n
+          call log('model file mapping, level: ', n)
        else
-          write (*,*)   'model file mapping (spherical base state)'
+          call log('model file mapping (spherical base state)')
        endif
 
-       write (*,888) 'dr of MAESTRO base state =                            ', &
-            dr(n)
-       write (*,888) 'dr of input file data =                               ', &
-            dr_in
-       write (*,*) ' '
-       write (*,888) 'maximum radius (cell-centered) of input model =       ', &
-            rmax
+       call log('dr of MAESTRO base state =                            ', dr(n))
+       call log('dr of input file data =                               ', dr_in)
+       call log(' ')
+       call log('maximum radius (cell-centered) of input model =       ', rmax)
        
        if (dr(n) .lt. dr_in) then
           mod_dr = mod(dr_in,dr(n))
@@ -113,14 +110,14 @@ contains
        endif
 
        if (mod_dr .gt. TINY) then
-          print *, ''
-          print *, "WARNING: resolution of base state array is not an integer"
-          print *, "         multiple of the initial model's resolution.     "
-          print *, "         make sure this is a desired property as this    "
-          print *, "         could lead to aliasing when performing the      "
-          print *, "         interpolation.                                  "
-          print *, " "
-          print *, "modulus = ", mod_dr
+          call log(' ')
+          call log("WARNING: resolution of base state array is not an integer")
+          call log("         multiple of the initial model's resolution.     ")
+          call log("         make sure this is a desired property as this    ")
+          call log("         could lead to aliasing when performing the      ")
+          call log("         interpolation.                                  ")
+          call log(" ")
+          call log("modulus = ", mod_dr)
        endif
     end if
 
@@ -246,6 +243,7 @@ contains
           dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
           rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*g
 
+          !print *, 'r, dpdr, rhog, err: ', r, dpdr, rhog, abs(dpdr - rhog)/abs(rhog)
           max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(rhog))
 
        end if
@@ -253,12 +251,12 @@ contains
     enddo
 
     if ( parallel_IOProcessor() ) then
-       write (*,*) ' '
-       write (*,*) 'Maximum HSE Error = ', max_hse_error
-       write (*,*) '   (after putting initial model into base state arrays, and'
-       write (*,*) '    for density < base_cutoff_density)'
+       call log(' ')
+       call log('Maximum HSE Error = ', max_hse_error)
+       call log('   (after putting initial model into base state arrays, and')
+       call log('    for density < base_cutoff_density)')
        write (*,887)
-       write (*,*) ' '
+       call log(' ')
     endif
 
 
