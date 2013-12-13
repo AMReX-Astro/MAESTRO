@@ -70,7 +70,7 @@ method to Type Ia supernovae, X-ray bursts, and stellar evolution:
   R.~J.~Orvedahl 2013, ApJ, 764, 97
 \item {\em Low-Mach Number Modeling of Core Convection in Massive Stars,}
   C.~Gilet, A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, S.~E.~Woosley, \& M. Zingale
-  2013, ApJ, submitted.
+  2013, ApJ, 773, 137
 \end{itemize}
 
 
@@ -157,6 +157,19 @@ where $\gamma$ is the ratio of specific heats and $H$ is the source.
 \maestro\ is based on this method, generalizing this constraint to an
 arbitrary equation of state and allowing for the time-variation of the
 base state.
+
+\subsection{Alternate Energy Formulation}
+
+Several authors~\cite{KP:2012,VLBWZ:2013} showed that with a slightly
+different momentum equation, the low Mach number system can conserve
+an energy (that is, a quantity that looks like the compressible
+energy, but formed using the low Mach number quantities).  This change
+manifests itself as either a change to the buoyancy term or by
+changing $\nabla \pi$ to $\beta_0 \nabla (\pi/\beta_0)$.  Furthermore,
+\cite{VLBWZ:2013} showed that the new formulation better captures the
+vertical propagation of gravity waves.  We explored this in more
+detail and from an asymptotic approach in \cite{MaestroEnergy}.  As of
+Dec.\ 2013, this new formulation is the default in \maestro.
 
 \section{Projection Methods 101}
 
