@@ -4,6 +4,7 @@ module react_state_module
   use multifab_module
   use define_bc_module
   use ml_layout_module
+  use bl_constants_module
 
   implicit none
 
@@ -12,6 +13,22 @@ module react_state_module
   public :: react_state
 
 contains
+
+  function slope(q, qm, qp) result (dq)
+    
+    real (kind=dp_t), intent(in) :: q, qm, qp
+    real (kind=dp_t) :: dq
+
+    real (kind=dp_t) :: test
+
+    test = (qp - q)*(q - qm)
+    if (test > ZERO) then
+       dq = min(HALF*abs(qp - qm), min(TWO*abs(qp-q), TWO*(q-qm)))* sign(ONE, qp-qm)
+    else
+       dq = ZERO
+    endif
+
+  end function slope
 
   subroutine react_state(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,p0, &
                          dt,dx,the_bc_level)
@@ -148,7 +165,7 @@ contains
     use bl_constants_module, only: ZERO
     use variables, only: foextrap_comp
     use network, only: nspec
-    use probin_module, only: drive_initial_convection
+    use probin_module, only: drive_initial_convection, do_subgrid_burning
     use geometry, only: spherical
     use fill_3d_module, only: put_1d_array_on_cart
 
@@ -225,20 +242,42 @@ contains
                                  hnp(:,1,1,1),ng_hn,hep(:,1,1,1),ng_he, &
                                  dt,lo,hi)
           case (2)
-             if (n .eq. nlevs) then
-                call burner_loop_2d(tempbar_init(n,:), &
-                                    snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so, &
-                                    rp(:,:,1,:),ng_rw, &
-                                    hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
-                                    dt,lo,hi)
+
+             if (do_subgrid_burning) then
+                if (n .eq. nlevs) then
+                   call burner_loop_2d_sub(tempbar_init(n,:), &
+                                           snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so, &
+                                           rp(:,:,1,:),ng_rw, &
+                                           hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
+                                           dx(n,:),dt,lo,hi)
+                else
+                   mp => dataptr(mla%mask(n), i)
+                   call burner_loop_2d_sub(tempbar_init(n,:), &
+                                           snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so, &
+                                           rp(:,:,1,:),ng_rw, &
+                                           hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
+                                           dx(n,:),dt,lo,hi,mp(:,:,1,1))
+                end if
+
              else
-                mp => dataptr(mla%mask(n), i)
-                call burner_loop_2d(tempbar_init(n,:), &
-                                    snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so, &
-                                    rp(:,:,1,:),ng_rw, &
-                                    hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
-                                    dt,lo,hi,mp(:,:,1,1))
-             end if
+
+                if (n .eq. nlevs) then
+                   call burner_loop_2d(tempbar_init(n,:), &
+                                       snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so, &
+                                       rp(:,:,1,:),ng_rw, &
+                                       hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
+                                       dt,lo,hi)
+                else
+                   mp => dataptr(mla%mask(n), i)
+                   call burner_loop_2d(tempbar_init(n,:), &
+                                       snp(:,:,1,:),ng_si,sop(:,:,1,:),ng_so, &
+                                       rp(:,:,1,:),ng_rw, &
+                                       hnp(:,:,1,1),ng_hn,hep(:,:,1,1),ng_he, &
+                                       dt,lo,hi,mp(:,:,1,1))
+                end if
+
+             endif
+
           case (3)
              if (spherical == 1) then
                 tcp => dataptr(tempbar_init_cart(n), i)
@@ -511,6 +550,169 @@ contains
     enddo
 
   end subroutine burner_loop_2d
+
+
+  subroutine burner_loop_2d_sub(tempbar_init,sold,ng_si,snew,ng_so,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
+                            rho_Hext,ng_he,dx,dt,lo,hi,mask)
+
+    ! a special version of the 2d loop that subsamples in the vertical direction and averages
+    ! the result -- this gets a better value for the average enuc in a cell.
+
+    use bl_constants_module
+    use burner_module
+    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use network, only: nspec, network_species_index
+    use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
+         burner_threshold_cutoff, drive_initial_convection
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
+    real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,lo(2)-ng_si:,:)
+    real(kind=dp_t), intent(  out) ::         snew(lo(1)-ng_so:,lo(2)-ng_so:,:)
+    real(kind=dp_t), intent(  out) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,:)
+    real(kind=dp_t), intent(  out) ::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:)
+    real(kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:)
+    real(kind=dp_t), intent(in   ) :: tempbar_init(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:), dt
+    logical        , intent(in   ), optional :: mask(lo(1):,lo(2):)
+
+    !     Local variables
+    integer, parameter :: nsub = 4
+    integer :: jj
+
+    integer            :: i, j, n
+    real (kind = dp_t) :: rho,T_in
+    real (kind = dp_t) :: x_in(nspec)
+    real (kind = dp_t) :: x_out(nspec)
+    real (kind = dp_t) :: rhowdot(nspec)
+    real (kind = dp_t) :: rhoH
+    real (kind = dp_t) :: x_test
+    logical            :: cell_valid
+    integer, save      :: ispec_threshold
+    logical, save      :: firstCall = .true.
+
+    real (kind = dp_t) :: sum
+    real (kind = dp_t), parameter :: x_err = 1.d-10
+
+    real (kind=dp_t) :: slope_rho, slope_T, slope_X
+    real (kind=dp_t) :: slope_X_temp
+    real (kind=dp_t) :: x_out_temp(nspec), rhowdot_temp(nspec), rhoH_temp
+
+    if (firstCall) then
+       ispec_threshold = network_species_index(burner_threshold_species)
+       firstCall = .false.
+    endif
+
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+          
+          ! make sure the cell isn't covered by finer cells
+          cell_valid = .true.
+          if ( present(mask) ) then
+             if ( (.not. mask(i,j)) ) cell_valid = .false.
+          end if
+
+          if (cell_valid) then
+
+             ! density
+             slope_rho = slope(sold(i,j,rho_comp), sold(i,j-1,rho_comp), sold(i,j+1,rho_comp))
+
+             ! temp
+             slope_T = slope(sold(i,j,temp_comp), sold(i,j-1,temp_comp), sold(i,j+1,temp_comp))
+
+             ! X -- we really need to do a group limit here -- for now do 0
+             slope_X = ZERO
+
+             ! subcycle over the zones
+             x_out = ZERO
+             rhowdot = ZERO
+             rhoH = ZERO
+
+             do jj = 0, nsub-1
+                             
+                rho = sold(i,j,rho_comp) + dble(jj - nsub/2 + HALF)*slope_rho/dx(2)
+
+                x_in(1:nspec) = sold(i,j,spec_comp:spec_comp+nspec-1) / sold(i,j,rho_comp) + &
+                     dble(jj - nsub/2 + HALF)*slope_X/dx(2)
+
+                T_in = sold(i,j,temp_comp) + dble(jj - nsub/2 + HALF)*slope_T/dx(2)
+
+                sum = ZERO
+                do n = 1, nspec
+                   sum = sum + x_in(n)
+                enddo
+                if (abs(sum - ONE) > x_err) then
+                   print *, x_in
+                   print *, slope_X
+                   call bl_error("ERROR: before burn, abundances do not sum to 1", abs(sum-ONE))
+                endif
+
+                ! Fortran doesn't guarantee short-circuit evaluation of logicals so
+                ! we need to test the value of ispec_threshold before using it 
+                ! as an index in x_in
+                if (ispec_threshold > 0) then
+                   x_test = x_in(ispec_threshold)
+                else
+                   x_test = ZERO
+                endif
+
+                ! if the threshold species is not in the network, then we burn
+                ! normally.  if it is in the network, make sure the mass
+                ! fraction is above the cutoff.
+                if (rho > burning_cutoff_density .and.           &
+                     ( ispec_threshold < 0 .or.                  &
+                     (ispec_threshold > 0 .and.                  &
+                     x_test > burner_threshold_cutoff ))) then
+                   call burner(rho, T_in, x_in, dt, x_out_temp, rhowdot_temp, rhoH_temp)
+                else
+                   x_out_temp = x_in
+                   rhowdot_temp = 0.d0
+                   rhoH_temp = 0.d0
+                endif
+             
+                ! check if sum{X_k} = 1
+                sum = ZERO
+                do n = 1, nspec
+                   sum = sum + x_out_temp(n)
+                enddo
+                if (abs(sum - ONE) > x_err) then
+                   print *, sold(i,j,spec_comp:spec_comp+nspec-1)
+                   call bl_error("ERROR: abundances do not sum to 1", abs(sum-ONE))
+                endif
+
+                x_out = x_out + x_out_temp
+                rhowdot = rhowdot + rhowdot_temp
+                rhoH = rhoH + rhoH_temp
+
+             enddo
+
+             ! normalize
+             x_out = x_out/nsub
+             rhowdot = rhowdot/nsub
+             rhoH = rhoH/nsub
+
+
+             ! pass the density through
+             snew(i,j,rho_comp) = sold(i,j,rho_comp)
+             
+             ! update the species
+             snew(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * sold(i,j,rho_comp)
+             
+             ! store the energy generation and species creation quantities
+             rho_omegadot(i,j,1:nspec) = rhowdot(1:nspec)
+             rho_Hnuc(i,j) = rhoH
+             
+             ! update the enthalpy -- include the change due to external heating
+             snew(i,j,rhoh_comp) = sold(i,j,rhoh_comp) + dt*rho_Hnuc(i,j) + dt*rho_Hext(i,j)
+             
+             ! pass the tracers through
+             snew(i,j,trac_comp:trac_comp+ntrac-1) = sold(i,j,trac_comp:trac_comp+ntrac-1)   
+
+          end if
+          
+       enddo
+    enddo
+
+  end subroutine burner_loop_2d_sub
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

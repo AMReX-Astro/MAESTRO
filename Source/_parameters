@@ -563,6 +563,9 @@ burner_threshold_species            character          ""
 # Mass fraction cutoff for burner\_threshold\_species  used in burner threshold
 burner_threshold_cutoff             real               1.d-10
 
+# break a zone into subzones, call the burner in each subzone and
+# then average the result to the original cell
+do_subgrid_burning                  logical            .false.
 
 
 #-----------------------------------------------------------------------------
