@@ -23,7 +23,7 @@ contains
 
     test = (qp - q)*(q - qm)
     if (test > ZERO) then
-       dq = min(HALF*abs(qp - qm), min(TWO*abs(qp-q), TWO*(q-qm)))* sign(ONE, qp-qm)
+       dq = min(HALF*abs(qp - qm), min(TWO*abs(qp-q), TWO*abs(q-qm)))* sign(ONE, qp-qm)
     else
        dq = ZERO
     endif
