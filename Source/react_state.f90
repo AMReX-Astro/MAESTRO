@@ -358,7 +358,7 @@ contains
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
-    real (kind = dp_t) :: sum
+    real (kind = dp_t) :: sumX
     real (kind = dp_t), parameter :: x_err = 1.d-10
 
     if (firstCall) then
@@ -404,12 +404,12 @@ contains
           endif
 
           ! check if sum{X_k} = 1
-          sum = ZERO
+          sumX = ZERO
           do n = 1, nspec
-             sum = sum + x_out(n)
+             sumX = sumX + x_out(n)
           enddo
-          if (abs(sum - ONE) > x_err) then
-             call bl_error("ERROR: abundances do not sum to 1", abs(sum-ONE))
+          if (abs(sumX - ONE) > x_err) then
+             call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
           endif
 
           ! pass the density through
@@ -468,7 +468,7 @@ contains
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
-    real (kind = dp_t) :: sum
+    real (kind = dp_t) :: sumX
     real (kind = dp_t), parameter :: x_err = 1.d-10
 
     if (firstCall) then
@@ -520,12 +520,12 @@ contains
              endif
              
              ! check if sum{X_k} = 1
-             sum = ZERO
+             sumX = ZERO
              do n = 1, nspec
-                sum = sum + x_out(n)
+                sumX = sumX + x_out(n)
              enddo
-             if (abs(sum - ONE) > x_err) then
-                call bl_error("ERROR: abundances do not sum to 1", abs(sum-ONE))
+             if (abs(sumX - ONE) > x_err) then
+                call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
              endif
 
              ! pass the density through
@@ -590,7 +590,7 @@ contains
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
-    real (kind = dp_t) :: sum
+    real (kind = dp_t) :: sumX
     real (kind = dp_t), parameter :: x_err = 1.d-10
 
     real (kind=dp_t) :: slope_rho, slope_T, slope_X
@@ -636,14 +636,14 @@ contains
 
                 T_in = sold(i,j,temp_comp) + dble(jj - nsub/2 + HALF)*slope_T/dx(2)
 
-                sum = ZERO
+                sumX = ZERO
                 do n = 1, nspec
-                   sum = sum + x_in(n)
+                   sumX = sumX + x_in(n)
                 enddo
-                if (abs(sum - ONE) > x_err) then
+                if (abs(sumX - ONE) > x_err) then
                    print *, x_in
                    print *, slope_X
-                   call bl_error("ERROR: before burn, abundances do not sum to 1", abs(sum-ONE))
+                   call bl_error("ERROR: before burn, abundances do not sum to 1", abs(sumX-ONE))
                 endif
 
                 ! Fortran doesn't guarantee short-circuit evaluation of logicals so
@@ -670,13 +670,13 @@ contains
                 endif
              
                 ! check if sum{X_k} = 1
-                sum = ZERO
+                sumX = ZERO
                 do n = 1, nspec
-                   sum = sum + x_out_temp(n)
+                   sumX = sumX + x_out_temp(n)
                 enddo
-                if (abs(sum - ONE) > x_err) then
+                if (abs(sumX - ONE) > x_err) then
                    print *, sold(i,j,spec_comp:spec_comp+nspec-1)
-                   call bl_error("ERROR: abundances do not sum to 1", abs(sum-ONE))
+                   call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
                 endif
 
                 x_out = x_out + x_out_temp
@@ -749,7 +749,7 @@ contains
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
-    real (kind = dp_t) :: sum
+    real (kind = dp_t) :: sumX
     real (kind = dp_t), parameter :: x_err = 1.d-10
 
     if (firstCall) then
@@ -759,7 +759,7 @@ contains
 
     ldt = dt
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sum,n) FIRSTPRIVATE(ldt) &
+    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) FIRSTPRIVATE(ldt) &
     !$OMP SCHEDULE(DYNAMIC,1)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -805,12 +805,12 @@ contains
                 endif
                 
                 ! check if sum{X_k} = 1
-                sum = ZERO
+                sumX = ZERO
                 do n = 1, nspec
-                   sum = sum + x_out(n)
+                   sumX = sumX + x_out(n)
                 enddo
-                if (abs(sum - ONE) > x_err) then
-                   call bl_error("ERROR: abundances do not sum to 1", abs(sum-ONE))
+                if (abs(sumX - ONE) > x_err) then
+                   call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
                 endif
 
                 ! pass the density through
@@ -878,7 +878,7 @@ contains
     integer, save      :: ispec_threshold
     logical, save      :: firstCall = .true.
 
-    real (kind = dp_t) :: sum
+    real (kind = dp_t) :: sumX
     real (kind = dp_t), parameter :: x_err = 1.d-10
 
     if (firstCall) then
@@ -888,7 +888,7 @@ contains
 
     ldt = dt
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sum,n) &
+    !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) &
     !$OMP FIRSTPRIVATE(ldt) &
     !$OMP SCHEDULE(DYNAMIC,1)
     do k = lo(3), hi(3)
@@ -938,12 +938,12 @@ contains
                 endif
              
                 ! check if sum{X_k} = 1
-                sum = ZERO
+                sumX = ZERO
                 do n = 1, nspec
-                   sum = sum + x_out(n)
+                   sumX = sumX + x_out(n)
                 enddo
-                if (abs(sum - ONE) > x_err) then
-                   call bl_error("ERROR: abundances do not sum to 1", abs(sum-ONE))
+                if (abs(sumX - ONE) > x_err) then
+                   call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
                 endif
 
                 ! pass the density through
