@@ -30,6 +30,34 @@ contains
 
   end function slope
 
+  function ppm_fit(q, qm2, qm1, qp1, qp2) result (qcoeff)
+
+    real (kind=dp_t), intent(in) :: q, qm2, qm1, qp1, qp2
+    real (kind=dp_t) :: qcoeff(3)
+
+    ! qcoeff(1) is the ppm ql, qcoeff(2) is the ppm qr, and
+    ! qcoeff(3) is the ppm q6
+    ! no limiting is done!!
+
+    ! find ql and qr
+    qcoeff(1) = (7.0_dp_t/12.0_dp_t)*(q + qm1) - (1.0_dp_t/12.0_dp_t)*(qm2 + qp1)
+    qcoeff(2) = (7.0_dp_t/12.0_dp_t)*(q + qp1) - (1.0_dp_t/12.0_dp_t)*(qm1 + qp2)
+
+    ! construct q6
+    qcoeff(3) = 6.0_dp_t*(q - 0.5_dp_t*(qcoeff(1) + qcoeff(2)))
+
+  end function ppm_fit
+
+  function ppm_eval(xi, ql, qr, q6) result (qval)
+    
+    real (kind=dp_t), intent(in) :: xi, ql, qr, q6
+    real (kind=dp_t) :: qval
+
+    qval = ql + xi*(qr - ql + q6*(1.0_dp_t - xi))
+
+  end function ppm_eval
+    
+
   subroutine react_state(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,p0, &
                          dt,dx,the_bc_level)
 
@@ -594,6 +622,7 @@ contains
     real (kind = dp_t), parameter :: x_err = 1.d-10
 
     real (kind=dp_t) :: slope_rho, slope_T, slope_X
+    real (kind=dp_t) :: Tcoeff(3)
     real (kind=dp_t) :: slope_X_temp
     real (kind=dp_t) :: x_out_temp(nspec), rhowdot_temp(nspec), rhoH_temp
 
@@ -616,8 +645,22 @@ contains
              ! density
              slope_rho = slope(sold(i,j,rho_comp), sold(i,j-1,rho_comp), sold(i,j+1,rho_comp))
 
-             ! temp
-             slope_T = slope(sold(i,j,temp_comp), sold(i,j-1,temp_comp), sold(i,j+1,temp_comp))
+             ! temp -- do dT and T_0 separately
+             if (j > 1 .and. j < size(tempbar_init,dim=1)-2) then
+                slope_T = slope(sold(i,j  ,temp_comp)-tempbar_init(j), &
+                                sold(i,j-1,temp_comp)-tempbar_init(j-1), &
+                                sold(i,j+1,temp_comp)-tempbar_init(j+1))
+
+                Tcoeff = ppm_fit(tempbar_init(j), &
+                                 tempbar_init(j-2), tempbar_init(j-1), &
+                                 tempbar_init(j+1), tempbar_init(j+2))
+             else
+                slope_T = slope(sold(i,j  ,temp_comp)-tempbar_init(j), &
+                                sold(i,j-1,temp_comp)-tempbar_init(j), &
+                                sold(i,j+1,temp_comp)-tempbar_init(j))
+
+                Tcoeff = [tempbar_init(j), tempbar_init(j), 0.0d0]
+             endif
 
              ! X -- we really need to do a group limit here -- for now do 0
              slope_X = ZERO
@@ -634,8 +677,14 @@ contains
                 x_in(1:nspec) = sold(i,j,spec_comp:spec_comp+nspec-1) / sold(i,j,rho_comp) + &
                      dble(jj - nsub/2 + HALF)*slope_X/dx(2)
 
-                T_in = sold(i,j,temp_comp) + dble(jj - nsub/2 + HALF)*slope_T/dx(2)
+                ! T is the sum of dT interpolated + T0 reconstructed via PPM
+                T_in = (sold(i,j,temp_comp)-tempbar_init(j)) + dble(jj - nsub/2 + HALF)*slope_T/dx(2) + &
+                     ppm_eval(dble(jj+HALF)/nsub, Tcoeff(1), Tcoeff(2), Tcoeff(3))
 
+
+                if (i == 0) then
+                   print *, 'j, T_ij, T0, T_in', j, sold(i,j,temp_comp), tempbar_init(j), T_in
+                endif
                 sumX = ZERO
                 do n = 1, nspec
                    sumX = sumX + x_in(n)
