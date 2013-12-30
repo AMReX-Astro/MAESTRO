@@ -29,7 +29,7 @@
 
  plot_int  = -1
  plot_deltat = 10.0d0
- chk_int   = 10
+ chk_int   = 20
 
  cflfac = 0.7d0
  init_shrink = 0.1d0
