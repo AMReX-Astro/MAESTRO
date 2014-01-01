@@ -1084,6 +1084,7 @@ contains
     type (eos_t) :: eos_state
     integer :: pt_index(MAX_SPACEDIM)
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1107,6 +1108,7 @@ contains
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO    
 
   end subroutine make_tfromH_3d_cart
 
@@ -1382,6 +1384,8 @@ contains
     integer :: pt_index(MAX_SPACEDIM)
 
     ! Then compute the perturbation and Mach number
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1409,6 +1413,7 @@ contains
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
 
   end subroutine make_tfromp_3d_cart
 
@@ -1883,6 +1888,8 @@ contains
 
 
     ! Compute entropy - entropybar
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1890,6 +1897,7 @@ contains
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
 
   end subroutine make_entropypert_3d_cart
 
@@ -2918,15 +2926,18 @@ contains
     real (kind = dp_t) :: w0_cent
 
     ! Recall w0 is edge-centered
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,w0_cent)
     do k = lo(3), hi(3)
        w0_cent = 0.5d0 * (w0(k) + w0(k+1))
        do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-          magvel(i,j,k) = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + (u(i,j,k,3)+w0_cent)**2)
-          mom(i,j,k) = rho(i,j,k)*magvel(i,j,k)
-       enddo
+          do i = lo(1), hi(1)
+             magvel(i,j,k) = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + (u(i,j,k,3)+w0_cent)**2)
+             mom(i,j,k) = rho(i,j,k)*magvel(i,j,k)
+          enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
 
   end subroutine makemagvel_3d_cart
 
