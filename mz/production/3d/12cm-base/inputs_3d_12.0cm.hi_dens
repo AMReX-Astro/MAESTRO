@@ -17,11 +17,11 @@
  xrb_pert_height = 1475.0d0
 
  ! velocity perturbation
- apply_vel_field    = F
+ apply_vel_field    = T
  velpert_scale      = 1.0d2
  velpert_amplitude  = 1.0d5
- velpert_height_loc = 1475.0
- num_vortices       = 16
+ velpert_height_loc = 1460.0
+ velpert_steep      = 12.0d0
 
 
  !----------------------------------------------------------------------------
