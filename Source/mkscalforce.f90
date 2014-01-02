@@ -1099,6 +1099,7 @@ contains
     type (eos_t) :: eos_state
     integer :: pt_index(MAX_SPACEDIM)
 
+    !$OMP PARALLEL DO PRIVATE(i,j,k,gradp0,eos_state,pt_index,dhdp,wadv)
     do k = lo(3),hi(3)
        if (k.eq.0) then
           gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
@@ -1136,6 +1137,7 @@ contains
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
     
   end subroutine mktempforce_3d
 
