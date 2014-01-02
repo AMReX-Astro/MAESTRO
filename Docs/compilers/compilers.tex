@@ -7,7 +7,8 @@ Here, we list notes on problems with specific compilers and \maestro.
 \begin{itemize}
 \item Cray 8.0.2 compiles and runs \maestro\ fine on the interlagos/jaguarpf 
 machine at OCLF.
-\item Cray 8.0.7 compiles and runs \maestro\ fine on hopper (8/21/12).
+\item Cray 8.0.7 compiles and runs \maestro\ fine on hopper (08/21/12).
+\item Cray 8.2.1 and 8.2.2 seem to have issues with OpenMP on hopper (01/02/14).  Basically, in the initial divu iters, we appear to hang.  Compiling in debug mode works fine, but is slow.  This suggests that there is a compiler bug.
 \end{itemize}
 
 
