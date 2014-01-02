@@ -371,8 +371,9 @@ subroutine varden()
 
   call check_cutoff_values()
 
+  ! write the maestro-overview.out file
   if (restart < 0) &
-       call write_job_info("", mla%mba, the_bc_tower, write_pf_time)
+       call write_job_info("", mla%mba, the_bc_tower, 0.0d0)
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
