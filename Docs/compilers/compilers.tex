@@ -8,10 +8,16 @@ Here, we list notes on problems with specific compilers and \maestro.
 \item Cray 8.0.2 compiles and runs \maestro\ fine on the interlagos/jaguarpf 
 machine at OCLF.
 \item Cray 8.0.7 compiles and runs \maestro\ fine on hopper (08/21/12).
-\item Cray 8.2.1 and 8.2.2 seem to have issues with OpenMP on hopper (01/02/14).  Basically, in the initial divu iters, we appear to hang.  Compiling in debug mode works fine, but is slow.  This suggests that there is a compiler bug.
+
+\item Cray 8.1.3, 8.2.1, and 8.2.2 seem to have issues with OpenMP on hopper 
+ (01/02/14).  Basically, in the initial divu iters, we appear to hang.
+ Compiling in debug mode works fine, but is slow.  This suggests that
+ there is a compiler bug.
  
- A separate issue is that the ``volume'' reported by {\tt multifab\_volume()}
- seems to be wrong.  For a single level run, it should just be $\mathtt{nx} \times \mathtt{ny} \times \mathtt{nz}$, but the value reported is incorrect.
+ A separate issue is that the ``volume'' reported by {\tt
+ multifab\_volume()} seems to be wrong.  For a single level run, it
+ should just be $\mathtt{nx} \times \mathtt{ny} \times \mathtt{nz}$,
+ but the value reported is incorrect.
 \end{itemize}
 
 
