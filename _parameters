@@ -26,16 +26,19 @@ diag_define_layer                real               0.1
 # Velocity field initialization
 apply_vel_field                     logical            .false.
 
-# Initial velocity field vortex scale
+# Initial velocity field vortex scale (2-d); thickness of velocity layer (3-d)
 velpert_scale                       real               1.0d2
 
 # Initial velocity field vortex amplitude
 velpert_amplitude                   real               1.0d2
 
-# Initial velocity field vortex height location
+# Initial velocity field vortex height location (2-d); base of perturbation layer (3-d)
 velpert_height_loc                  real               6.5d3
 
-# number of vortices 
+# thickness of velocity pert transition region (3-d)
+velpert_steep                       real               12.d0
+
+# number of vortices (2-d)
 num_vortices                        integer            1
 
 # look at the deltap diagnostic
