@@ -624,11 +624,28 @@ destroy data that lives on the grid as needed.
 
 A \fab\ is a ``Fortran Array Box''.  It contains the state data in a
 multidimensional array and several \boxtype-types to describe where in
-the global index-space it lives.  
-Note that all state data is stored in a four-dimensional array,
-{\tt (nx,ny,nz,nc)} in size, regardless of the dimensionality of the
-problem.  Here {\tt nc} is the number of components, for instance
-representing different fluid variables.  For 2D problems, {\tt nz=1}.
+the global index-space it lives:
+\begin{lstlisting}[language={[95]fortran},mathescape=false]
+  type fab
+     ...
+     type(box) :: bx
+     type(box) :: pbx
+     type(box) :: ibx
+  end type fab
+\end{lstlisting}
+{\tt bx} represents the box in the global index-space over which the 
+\fab\ is defined, {\tt pbx} represents the ``physical'' box in the sense
+that it includes {\tt bx} plus ghost cells, and {\tt ibx} is the same as {\tt bx} unless 
+the \fab\ is nodal.  As can be seen in Figure~\ref{fig:dataloc},
+for the same grid nodal data requires one more array element than 
+cell-centered data.  To address this {\tt ibx} is made by growing
+{\tt bx} by one element along all nodal dimensions.
+
+It's important to note that all state data is stored in a four-dimensional array
+{\em regardless of the problem's dimensionality}.  The array is 
+{\tt (nx,ny,nz,nc)} in size, where {\tt nc} is the number of components, for instance
+representing different fluid variables, and {\tt (nx,ny,nz)} are the number of cells
+in each respective spatial dimension.  For 2D problems, {\tt nz=1}.
 
 A \fab\ would represent the data for a single box in the domain.
 In \maestro, we don't usually deal with \fab s alone, but rather
