@@ -880,7 +880,7 @@ contains
 
              ! temperature diagnostic check to see if we are in the
              ! burning layer 
-             ! we check against spec_comp; this is H for the hotcno network
+             ! we check against the H1 abundance
              ! if we are, then get T_max and its loc
              if ( s(i,j,spec_comp-1+ih1) .ge. &
 		  diag_define_layer * s(i,j,rho_comp) ) then
@@ -1053,12 +1053,11 @@ contains
 
              if (cell_valid .and. s(i,j,k,rho_comp) > base_cutoff_density) then
 
-
                 ! temperature diagnostic check to see if we are in the
                 ! burning layer 
-                ! we check against spec_comp; this is H for the hotcno network
+                ! we check against the H1 abundance
                 ! if we are, then get T_max and its loc
-                if ( s(i,j,k,spec_comp) .ge. &
+                if ( s(i,j,k,spec_comp-1+ih1) .ge. &
                      diag_define_layer * s(i,j,k,rho_comp) ) then
 
                    if (s(i,j,k,temp_comp) > T_max) then
