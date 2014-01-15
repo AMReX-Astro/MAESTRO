@@ -383,7 +383,10 @@ cosmological simulation data.  It has since been refactored to remove
 the specific {\tt Enzo}isms, and now can work on various data formats,
 such as the BoxLib data from \maestro\ and \castro, HDF5 data
 from {\tt FLASH}, and data from the SPH code {\tt Gadget}.  For more
-information, see the \yt homepage at {\tt http://yt.enzotools.org/}.
+information, see the \yt homepage at \url{http://yt-project.org/} and
+\cite{yt}.
+
+\noindent {\bf Note: for \maestro\ data, you need to use \yt 3.0 or later.}
 
 \subsection{Installing \yt}
 The easiest way to obtain \yt is through the use of an installation script:
@@ -392,28 +395,33 @@ The easiest way to obtain \yt is through the use of an installation script:
 > bash install_script.sh
 \end{lstlisting}
 By default, this \yt install script will download and install, in its
-own isolated environment, all the secondary utilities needed to get \yt
-up and running.  Note that this currently includes installing {\it
-  hdf5 1.6.9, zlib 1.2.3, bzip2 1.0.5, libpng 1.2.43, freetype 2.4.4,
-  Python 2.6.3, numpy 1.5.1, matplotlib 1.0.0, mercurial 1.7.1,
-  ipython 0.10, h5py 1.2.0, Cython 0.14, Forthon 0.8.4} as well as a
-\yt {\it mercurial} bundle of changes.  You can turn off the automatic
+own isolated environment, all the secondary utilities needed to get
+\yt up and running.  Note that this currently includes installing {\it
+  hdf5, zlib, bzip2, libpng, freetype, python, numpy, matplotlib,
+  mercurial, ipython, h5py, Cython, Forthon} as well as a \yt {\it
+  mercurial} bundle of changes.  You can turn off the automatic
 installation of any of these particular packages by setting the
-appropriate {\tt INST\_}* variable to zero in the install script;
-you may have to then change some of *{\tt \_DIR} variables to point to
-your own particular installation of that package.  I usually just let
-\yt install its own stuff, which ensures things are working properly.
+appropriate {\tt INST\_}* variable to zero in the install script; you
+may have to then change some of *{\tt \_DIR} variables to point to
+your own particular installation of that package.  It is usually best
+to just let \yt install its own stuff, which ensures things are
+working properly.
 
-After the install script has finished, and assuming you let \yt install its own packages, you'll need to {\it prepend} some environment variables with \yt locations so that your system finds those first and stops looking.  For example, the \yt specific information in my {\tt .bashrc} file looks like this
-\begin{lstlisting}[language=bash,mathescape=false]
-# yt stuff
-export YT_DEST=~/install/yt/current/yt-x86_64
-export PATH=${YT_DEST}/bin/:$PATH
-export PYTHONPATH=${YT_DEST}/lib/python2.6/site-packages/:$PYTHONPATH
-export LD_LIBRARY_PATH=${YT_DEST}/lib/:$LD_LIBRARY_PATH
-\end{lstlisting}
-where I have {\tt ~/install/yt/current} as a soft link to my \yt
-installation directory.
+After the install script has finished, and assuming you let \yt
+install its own packages, you'll need to {\it prepend} some
+environment variables with \yt locations so that your system finds
+those first and stops looking.  \yt provides a simple script to
+do this, which will be announced upon successful completion.
+
+%% \begin{lstlisting}[language=bash,mathescape=false]
+%% # yt stuff
+%% export YT_DEST=~/install/yt/current/yt-x86_64
+%% export PATH=${YT_DEST}/bin/:$PATH
+%% export PYTHONPATH=${YT_DEST}/lib/python2.6/site-packages/:$PYTHONPATH
+%% export LD_LIBRARY_PATH=${YT_DEST}/lib/:$LD_LIBRARY_PATH
+%% \end{lstlisting}
+%% where I have {\tt ~/install/yt/current} as a soft link to my \yt
+%% installation directory.
 
 \subsection{Working with \yt}
 The \yt installation provides both an interactive, {\it iPython}-like,
