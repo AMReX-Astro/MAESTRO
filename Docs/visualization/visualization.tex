@@ -288,7 +288,7 @@ via:
 \begin{verbatim}
 plotsinglevar.py --log -o test.png plt00000/ tfromp
 \end{verbatim}
-This will make a plot of ``tfromp'' from the plotfile {\tt plt00000} with log scaling,
+This will make a plot of ``{\tt tfromp}'' from the plotfile {\tt plt00000} with log scaling,
 and store the output in {\tt test.png}.  See Figure~\ref{fig:python}.
 If you don't do `{\tt -o}', then a default output filename consisting of the
 plotfile name + component will be used.
@@ -391,7 +391,7 @@ information, see the \yt homepage at \url{http://yt-project.org/} and
 \subsection{Installing \yt}
 The easiest way to obtain \yt is through the use of an installation script:
 \begin{lstlisting}[language=bash,mathescape=false]
-> wget http://hg.enzotools.org/yt/raw-file/stable/doc/install_script.sh
+> wget http://hg.yt-project.org/yt/raw/yt-3.0/doc/install_script.sh
 > bash install_script.sh
 \end{lstlisting}
 By default, this \yt install script will download and install, in its
@@ -443,9 +443,13 @@ dimensions, time, etc.---of a a dataset.  \yt likes to grab this
 information before working on any specific data; this is accomplished
 via the convenience method \textcolor{blue}{\tt load}:
 \begin{lstlisting}[language=Python]
-In [1]: pf = load(``plt00166'')
+In [1]: pf = load("plt00166")
 \end{lstlisting}
-This method returns an instance of the {\tt StaticOutput} class.  One
+Note that some older versions of \yt needed an {\tt inputs} file 
+in the same directory as the plotfile, but as of \yt 3.0, all the
+necessary metadata is obtained from the {\tt job\_info} file inside
+the plotfile directory.
+The {\tt load} method returns an instance of the {\tt StaticOutput} class.  One
 of the easiest ways of handling plots is via a {\tt PlotCollection}
 object
 \begin{lstlisting}[language=Python]
@@ -464,9 +468,9 @@ Now we would like to take some slices of tfromp in the dataset and
 generate some 2-d plots.  To do this, we will use the {\tt
   PlotCollection}'s \textcolor{blue}{\tt add\_slice} method:
 \begin{lstlisting}[language=Python]
-In [4]: pc.add_slice(``tfromp'',0)
-In [5]: pc.add_slice(``tfromp'',1)
-In [6]: pc.add_slice(``tfromp'',2)
+In [4]: pc.add_slice("tfromp",0)
+In [5]: pc.add_slice("tfromp",1)
+In [6]: pc.add_slice("tfromp",2)
 \end{lstlisting}
 The first call to \textcolor{blue}{\tt add\_slice} builds an {\tt
   AMRHierarchy} object associated with {\tt pf}.  The {\tt
@@ -482,7 +486,7 @@ made---0 for x, 1 for y, 2 for z.  Now we want to save the plots from
 the {\tt PlotCollection}; this is done with the \textcolor{blue}{\tt
   save} method, which takes an optional basename for the generated files:
 \begin{lstlisting}[language=Python]
-In [7]: pc.save(``my_cool_images'')
+In [7]: pc.save("my_cool_images")
 \end{lstlisting}
 This generates the following image files:
 \begin{lstlisting}[language=Python]
@@ -496,7 +500,7 @@ Note that this was a quick and dirty generation of the image---there
 is a lot of space around the figure, which can be removed with various
 options to the \yt methods.  Also, the user can specify derived
 variables, log-scaling, annotations, etc. For more information see the
-documentation at \url{http://yt.enzotools.org/doc/}\, .
+documentation at \url{http://yt-project.org/docs/dev/}\, .
 
 \begin{figure}[!h]\label{fig:yt_slice}
 \centering
@@ -518,7 +522,7 @@ For completeness, below is a script containing our example above.
 from yt.mods import *
 
 # the plotfile I'm interested in
-fn = ``plt00166''
+fn = "plt00166"
 
 # load it into a StaticOutput object
 pf = load(fn)
@@ -530,13 +534,13 @@ center = (pf.domain_right_edge + pf.domain_left_edge) / 2.0
 pc = PlotCollection(pf,center)
 
 # add some slices of tfromp
-pc.add_slice(``tfromp'',0)
-pc.add_slice(``tfromp'',1)
-pc.add_slice(``tfromp'',2)
+pc.add_slice("tfromp",0)
+pc.add_slice("tfromp",1)
+pc.add_slice("tfromp",2)
 
 # save our plots to a files with basename
-# ``my_cool_images''
-pc.save(``my_cool_images'')
+# "my_cool_images"
+pc.save("my_cool_images")
 \end{lstlisting}
 
 \subsection{Volume Rendering}
