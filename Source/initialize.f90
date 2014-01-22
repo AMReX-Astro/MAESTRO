@@ -1015,6 +1015,7 @@ contains
     ! initialize cutoff arrays
     call init_cutoff(max_levs)
 
+    ! set number of ghost cells required by hydrodynamics stencil
     if (ppm_type .eq. 2 .or. bds_type .eq. 1) then
        ng_s = 4
     else
@@ -1071,9 +1072,6 @@ contains
     ! Build the level 1 layout.
     call layout_build_ba(la_array(1),mba%bas(1),mba%pd(1),pmask)
 
-    ! Build the level 1 data only
-    call multifab_build(sold(1), la_array(1), nscal, ng_s)
-
     ! Define bc_tower at level 1.
     call bc_tower_level_build(the_bc_tower,1,la_array(1))
 
@@ -1081,24 +1079,54 @@ contains
     nlevs_radial = 1
 
     if (max_levs > 1) then
-
-       ! Initialize the level 1 data only.
+       ! Build and initialize the level 1 data 
+       ! so we can use it to build finer levels
+       call multifab_build(sold(1), la_array(1), nscal, ng_s)
        call initscalardata_on_level(1,sold(1),s0_init(1,:,:),p0_init(1,:), &
                                     dx(1,:),the_bc_tower%bc_tower_array(1))
 
+       ! Fill level 1's ghost cells and apply boundary conditions 
+       ! so we can use them in tagging boxes for refinement
+       call multifab_fill_boundary(sold(1))
+       call multifab_physbc(sold(1),rho_comp,dm+rho_comp,nscal, &
+                                  the_bc_tower%bc_tower_array(1))
+
        new_grid = .true.
        nl = 1
-       
+
+       ! Loop over all levels, building fine grids as we go.  This loop's
+       ! ultimate purpose is to add properly refined grids to 'mba' and
+       ! 'la_array'
        do while ( (nl .lt. max_levs) .and. (new_grid) )
-          
-          ! Do we need finer grids?
-          if (nl .eq. 1) then
-             call multifab_fill_boundary(sold(1))
-             call multifab_physbc(sold(1),rho_comp,dm+rho_comp,nscal, &
-                                  the_bc_tower%bc_tower_array(1))
-          else
+          if (nl >  1) then
+             ! We made a new fine level that needs to be filled.
+             !   Note: We fill the data here instead of at the bottom of the
+             !   loop so that we only spend resources building and filling
+             !   temporary data structures if we need to do another refinement. 
+
+             ! Build the level nl data only.
+             call multifab_build(sold(nl),la_array(nl),nscal,ng_s)
+             
+             ! Define bc_tower at level nl.
+             call bc_tower_level_build(the_bc_tower,nl,la_array(nl))
+            
+             ! Fill the nl level valid region 
+             if (spherical .eq. 1) then
+                call initscalardata_on_level(nl,sold(nl),s0_init(1,:,:), &
+                                             p0_init(1,:),dx(nl,:), &
+                                             the_bc_tower%bc_tower_array(nl))
+             else
+                call initscalardata_on_level(nl,sold(nl),s0_init(nl,:,:), &
+                                             p0_init(nl,:),dx(nl,:), &
+                                             the_bc_tower%bc_tower_array(nl))
+             end if
+
+             ! Restrict coarse levels to be the average of any fine data covering them,
+             ! and fill fine ghost cells.
              do n=nl,2,-1
                 call ml_cc_restriction(sold(n-1),sold(n),mba%rr(n-1,:))
+                !Note that fill_boundary() and physbc() will be called on sold(n)
+                !as part of filling the ghost cells
                 call multifab_fill_ghost_cells(sold(n),sold(n-1), &
                                                nghost(sold(n)),mba%rr(n-1,:), &
                                                the_bc_tower%bc_tower_array(n-1), &
@@ -1108,6 +1136,9 @@ contains
              enddo
           endif
 
+          ! Do we need finer grids?  
+          !   Note: currently the answer to this question is always yes.  Maestro 
+          !   doesn't currently support having fewer levels than max_levs
           if (nl .eq. 1) then
              call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
                                  amr_buf_width,ref_ratio,nl,max_grid_size_2)
@@ -1115,27 +1146,65 @@ contains
              call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
                                  amr_buf_width,ref_ratio,nl,max_grid_size_3)
           end if
-          
+         
+          ! If we tagged boxes for refinement, then build the new grids! 
           if (new_grid) then
-              
+             ! Add the new level's boxes to mba's boxarray list
              call copy(mba%bas(nl+1),get_boxarray(la_array(nl+1)))
-             
-             ! Build the level nl+1 data only.
-             call multifab_build(sold(nl+1),la_array(nl+1),nscal,ng_s)
-             
-             ! Define bc_tower at level nl+1.
-             call bc_tower_level_build(the_bc_tower,nl+1,la_array(nl+1))
-             
-             if (spherical .eq. 1) then
-                call initscalardata_on_level(nl+1,sold(nl+1),s0_init(1,:,:), &
-                                             p0_init(1,:),dx(nl+1,:), &
-                                             the_bc_tower%bc_tower_array(nl+1))
-             else
-                ! fills the physical region of each level with problem data
-                call initscalardata_on_level(nl+1,sold(nl+1),s0_init(nl+1,:,:), &
-                                             p0_init(nl+1,:),dx(nl+1,:), &
-                                             the_bc_tower%bc_tower_array(nl+1))
-             end if
+            
+             ! We must enforce proper nesting as we build the grids so that we
+             ! can fillpatch() them
+             !   Note: Proper nesting only needs to be enforced for nl >= 2
+             !   because Maestro requires that level 1 cover the entire domain
+             !   and thus level 2 will always be properly nested.
+             if(nl .ge. 2) then
+               ! Test if grids are already properly nested
+               if (.not. ml_boxarray_properly_nested(mba, ng_s, pmask, 2, nl+1)) then
+                 do n = 2,nl  
+                   ! Delete old multifabs so that we can rebuild them.
+                   call destroy(  sold(n))
+                 enddo
+
+                 ! This changes mba and la_array such that all levels are properly nested
+                 call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
+
+                 ! Loop over all the lower levels which we might have changed when we enforced proper nesting.
+                 do n = 2,nl
+                   ! This makes sure the boundary conditions are properly defined everywhere
+                   call bc_tower_level_build(the_bc_tower,n,la_array(n)) 
+   
+                   ! Rebuild and fill the lower level data.
+                   ! TODO: It would be more efficient to only destroy/rebuild
+                   !   the data when we know for sure enforce_proper_nesting()
+                   !   changed the layout.
+                   call multifab_build(sold(n),la_array(n),nscal,ng_s)
+                   ! fills the physical (valid) region of each level with problem data
+                   if (spherical .eq. 1) then
+                     call initscalardata_on_level(n,sold(n),s0_init(1,:,:), &
+                                                  p0_init(1,:),dx(n,:), &
+                                                  the_bc_tower%bc_tower_array(n))
+                   else
+                     call initscalardata_on_level(n,sold(n),s0_init(n,:,:), &
+                                                  p0_init(n,:),dx(n,:), &
+                                                  the_bc_tower%bc_tower_array(n))
+                   end if
+
+                 end do
+
+                 ! now fill the ghost cells and boundary conditions
+                 do n=nl,2,-1
+                    call ml_cc_restriction(sold(n-1),sold(n),mba%rr(n-1,:))
+                    !Note that fill_boundary() and physbc() will be called on sold(n)
+                    !as part of filling the ghost cells
+                    call multifab_fill_ghost_cells(sold(n),sold(n-1), &
+                                                   nghost(sold(n)),mba%rr(n-1,:), &
+                                                   the_bc_tower%bc_tower_array(n-1), &
+                                                   the_bc_tower%bc_tower_array(n), &
+                                                   rho_comp,dm+rho_comp,nscal, &
+                                                   fill_crse_input=.false.)
+                 enddo
+               endif
+             endif !end proper nesting enforcement
 
              nlevs = nl+1
              nlevs_radial = merge(1, nlevs, spherical .eq. 1)
@@ -1145,21 +1214,17 @@ contains
           
        enddo
        
-       do n = 1,nlevs
+       do n = 1,nlevs-1
           call destroy(sold(n))
        end do
 
        nlevs = nl
        nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
-       ! check for proper nesting
+       ! A final enforcement of proper nesting
        if (nlevs .ge. 3) then
           call enforce_proper_nesting(mba,la_array,max_grid_size_2,max_grid_size_3)
        end if
-       
-    else
-
-       call destroy(sold(1))
        
     end if  ! end if (maxlev > 1)
     
