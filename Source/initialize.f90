@@ -1095,8 +1095,8 @@ contains
        nl = 1
 
        ! Loop over all levels, building fine grids as we go.  This loop's
-       ! ultimate purpose is to add properly refined grids to 'mba' and
-       ! 'la_array'
+       ! ultimate purpose is to add properly refined grids to 'mba' so we
+       ! can use it to build 'mla'
        do while ( (nl .lt. max_levs) .and. (new_grid) )
           if (nl >  1) then
              ! We made a new fine level that needs to be filled.
