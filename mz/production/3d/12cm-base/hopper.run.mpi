@@ -1,9 +1,9 @@
 #!/bin/ksh
-#PBS -A m1400
+#PBS -A m1938
 #PBS -N xrb-12cm-3d
 #PBS -j oe
 #PBS -q regular
-#PBS -l walltime=3:00:00
+#PBS -l walltime=6:00:00
 #PBS -l mppwidth=192
 
 
@@ -92,7 +92,7 @@ fi
 # that number * 6 should match the mppwidth set at the top of this script
 echo "restart string: " ${restartString}
 
-aprun -n 192 ./main.Linux.Cray.mpi.omp.exe inputs_3d_12.0cm.hi_dens ${restartString}
+aprun -n 192 ./main.Linux.Cray.mpi.exe inputs_3d_12.0cm.hi_dens ${restartString}
 
 
 rm -f process.pid
