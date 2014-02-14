@@ -2,11 +2,21 @@
 # http://yt-project.org/doc/visualizing/volume_rendering.html
 
 from yt.mods import *
+import math
+
+
 
 pf = load("plt23437")
 
+@derived_field(name="vel",
+               units="cm/s",
+               take_log=False,
+               display_name=r"|U|")
+def _vel(field,data):
+    return data["magvel"]
+
 # Choose a field
-field = 'magvel'
+field = 'vel'
 
 # Do you want the log of the field?
 use_log = True
@@ -17,7 +27,10 @@ mi, ma = dd.quantities["Extrema"](field)[0]
 
 pf.field_info[field].take_log = use_log
 
-print mi, ma
+vals = [1.e5, 3.16e5, 1.e6, 3.16e6, 1.e7]
+
+mi = min(vals)
+ma = max(vals)
 
 if use_log:
     mi,ma = np.log10(mi), np.log10(ma)
@@ -36,20 +49,40 @@ N = 800
 # Now let's add some isocontours, and take a snapshot, saving the image
 # to a file.
 #tf.add_layers(25, 0.3, colormap = 'spectral')
-tf.sample_colormap(3, 0.02)
-tf.sample_colormap(4, 0.02)
-tf.sample_colormap(5, 0.02)
-tf.sample_colormap(6, 0.02)
-tf.sample_colormap(7, 0.02)
+cm = "gist_rainbow"
+
+
+for v in vals:
+    if (use_log):
+        tf.sample_colormap(math.log10(v), 0.002, colormap=cm) #, alpha=0.2)
+    else:
+        tf.sample_colormap(v, 0.01, colormap=cm) #, alpha=0.2)
+
+
+#tf.add_layers(10,0.01,colormap='RdBu_r')
+
 
 # Create a camera object
 cam = pf.h.camera(c, L, W, N, tf, 
                   no_ghost=False,
                   fields = [field], log_fields = [use_log])
 
-im = cam.snapshot('test_rendering.png')
+# make an image
+im = cam.snapshot()
 
-# To add the domain box to the image:
+# add an axes triad
+cam.draw_coordinate_vectors(im)
+
+# colorbar
+cam.show_tf()
+
+# add the domain box to the image:
 nim = cam.draw_domain(im)
+
+
+# save
 nim.write_png('test_rendering_with_domain.png')
+
+# save annotated
+cam.save_annotated("test.png", nim)
 
