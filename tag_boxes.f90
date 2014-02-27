@@ -18,7 +18,7 @@ contains
 
   subroutine tag_boxes(mf,tagboxes,dx,lev,aux_tag_mf)
 
-    use variables, ONLY: rho_comp, spec_comp
+    use variables, ONLY: rho_comp, spec_comp, temp_comp
 
     use network, ONLY: network_species_index
 
@@ -48,48 +48,87 @@ contains
        case (2)
           call bl_error("ERROR: 2-d tag_boxes not implemented")
        case  (3)
-          call tag_boxes_3d(tp(:,:,:,1),sp(:,:,:,rho_comp),sp(:,:,:,spec_comp-1+ihe4),ng,lo,hi,dx,lev)
+          call tag_boxes_3d(tp(:,:,:,1),sp(:,:,:,rho_comp),&
+               sp(:,:,:,spec_comp-1+ihe4),sp(:,:,:,temp_comp),ng,lo,hi,dx,lev)
        end select
     end do
 
   end subroutine tag_boxes
 
 
-  subroutine tag_boxes_3d(tagbox,rho,rho_Xhe,ng,lo,hi,dx,lev)
+  subroutine tag_boxes_3d(tagbox,rho,rho_Xhe,temp,ng,lo,hi,dx,lev)
 
     use bl_constants_module, ONLY: HALF
-    use probin_module, ONLY: base_cutoff_density, prob_lo, prob_hi, octant
+    use probin_module, ONLY: prob_lo, prob_hi, octant
+    use probin_module, ONLY: tag_rhomin, tag_critxhe, tag_crittemp
     use geometry, only: center
 
     integer          , intent(in   ) :: lo(:),hi(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):,lo(3):)
     real(kind = dp_t), intent(in   ) ::     rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real(kind = dp_t), intent(in   ) :: rho_Xhe(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind = dp_t), intent(in   ) :: temp(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real(dp_t)       , intent(in   ) :: dx
     integer, optional, intent(in   ) :: lev
 
-    real(kind = dp_t) :: Xhe, x, y, z
+    real(kind = dp_t) :: Xhe, cur_temp, x, y, z
 
     integer :: i,j,k,llev
 
+    real(kind = dp_t) :: RHOMIN
+    real(kind = dp_t) :: CRITXHE
+    real(kind = dp_t) :: CRITTEMP
+
     llev = 1; if (present(lev)) llev = lev
+    RHOMIN   = tag_rhomin
+    CRITXHE  = tag_critxhe
+    CRITTEMP = tag_crittemp
 
     tagbox = .false.
 
-!$omp parallel do private(i,j,k,Xhe)
-    do k = lo(3),hi(3)
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             Xhe = rho_Xhe(i,j,k)/rho(i,j,k)
-             if (Xhe > 0.01_dp_t .and. rho(i,j,k) >= base_cutoff_density) then
-                tagbox(i,j,k) = .true.
-             end if
-          end do
-       enddo
-    end do
+    !First refine based on the most physically interesting cells:
+    !  level 2: helium mass fraction > 0.01 and we haven't gotten too far
+    !             from the stellar surface as determined by density.  This
+    !             roughly traces the convective shell
+    !  level 3-4: to resolve the thinnest shells, we refine to a 4th level the
+    !           hottest cells with T > 100 MK
+    !           
+    select case(llev)
+    case (1)
+!$omp parallel do private(i,j,k,Xhe,cur_temp)
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               Xhe = rho_Xhe(i,j,k)/rho(i,j,k)
+               cur_temp = temp(i,j,k)
+               if (cur_temp > CRITTEMP .or.  &
+                    (Xhe > CRITXHE    .and.  &
+                    rho(i,j,k) >= RHOMIN)    &
+                  ) then
+                  tagbox(i,j,k) = .true.
+               end if
+            end do
+         enddo
+      end do
 !$omp end parallel do
-
-    ! refine the very center of the star, for average
+    case (2,3)
+!$omp parallel do private(i,j,k,cur_temp)
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               cur_temp = temp(i,j,k)
+               if (cur_temp > CRITTEMP) then
+                  tagbox(i,j,k) = .true.
+               end if
+            end do
+         enddo
+      end do
+!$omp end parallel do
+    case default
+       call bl_error("tag_boxes.f90: Need to write tagging condition for this level")
+    end select
+    
+    ! Now we refine the very center of the star (helps the averaging)
     if (octant) then
 
 !$omp parallel do private(i,j,k)
