@@ -92,9 +92,9 @@ contains
        call bl_error("ERROR: Incompressible shear jet is not valid for spherical geometry")
     endif
 
-    !Here's an example of using the parallel module to put the code on hold if
-    !running could result in accessing shared data or resources currently in
-    !use, in this case the terminal.
+    !Here's an example of using the parallel module.  The module assigns one
+    !processor for I/O and parallel_IOProcessor() returns true if the currently
+    !executing processor is the I/O processor.
     if ( parallel_IOProcessor() .and. n == 1) then
        ! Output block for cutoff densities
        write (*,FMT_SEP)

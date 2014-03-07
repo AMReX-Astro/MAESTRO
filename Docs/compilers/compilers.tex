@@ -17,7 +17,12 @@ machine at OCLF.
  A separate issue is that the ``volume'' reported by {\tt
  multifab\_volume()} seems to be wrong.  For a single level run, it
  should just be $\mathtt{nx} \times \mathtt{ny} \times \mathtt{nz}$,
- but the value reported is incorrect.
+ but the value reported is incorrect.  This issue only manifests when
+ using OpenMP, so it is likely related to the OpenMP loop in {\tt
+ boxarray\_volume()}, which is called by {\tt multifab\_volume()}.
+ In Cray 8.2.4 the problem appears to be resolved, with  
+ {\tt multifab\_volume()} returning the correct cell count.
+
 \end{itemize}
 
 
