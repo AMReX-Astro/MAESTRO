@@ -150,7 +150,7 @@ contains
 
     integer,         intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_ut
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,:)
-    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:)
     real(kind=dp_t), intent(in   ) :: w0(0:)    
     real(kind=dp_t), intent(in   ) :: dt,dx(:)
@@ -264,7 +264,7 @@ contains
 
     integer,         intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_ut
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
-    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,lo(2)-ng_uf:,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(inout) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(in   ) :: w0(0:)    
@@ -469,7 +469,7 @@ contains
     
     integer,         intent(in)    :: lo(:),hi(:),ng_u,ng_uf,ng_ut,ng_w0    
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
-    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,lo(2)-ng_uf:,lo(3)-ng_uf:,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
     real(kind=dp_t), intent(inout) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
     real(kind=dp_t), intent(inout) :: wtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
