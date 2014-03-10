@@ -377,6 +377,7 @@ runtimevis.py plt00000
 % yt
 %-----------------------------------------------------------------------------
 \section{Visualizing with \yt}
+
 \yt is a Python package for analyzing and visualizing simulation data.
 Originally \yt was written for the {\tt Enzo} code, with focus on
 cosmological simulation data.  It has since been refactored to remove
@@ -542,6 +543,24 @@ pc.add_slice("tfromp",2)
 # "my_cool_images"
 pc.save("my_cool_images")
 \end{lstlisting}
+
+\subsection{2-d datasets}
+
+To visualize 2-d data, you can use the {\tt SlicePlot} function,
+picking the normal direction to be {\tt "z"}:
+\begin{lstlisting}
+from yt.mods import *
+ pf = load("plt00085")
+s = SlicePlot(pf, "z", "tfromp")
+s.save("tfromp.eps")
+\end{lstlisting}
+This generates the figure shown in Figure~\ref{fig:yt2d}.
+
+\begin{figure}[!h]
+\centering
+\includegraphics[height=0.4\textheight]{\visfigpath/tfromp}
+\caption{\label{fig:yt2d} Example slice through 3-d dataset with \yt.}
+\end{figure}
 
 \subsection{Volume Rendering}
 
