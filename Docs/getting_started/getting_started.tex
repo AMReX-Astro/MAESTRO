@@ -15,18 +15,39 @@ processor.  This test problem was shown in paper~3.
 
 \begin{enumerate}
 
+\item {\em Get a copy of \maestro}.
+
+If you don't already have a copy of \maestro, you can obtain one
+via {\tt git}\footnote{{\tt git} is an open-source source code version control
+system.  It is a standard part of any Linux distribution.  You may
+need to use your system's package manager to install {\tt git} if it
+is not already present} as:
+\begin{verbatim}
+git clone http://bender.astro.sunysb.edu/Maestro/staging/MAESTRO.git
+\end{verbatim}
+\maestro\ is under active development, so you will want to keep in 
+sync with the changes by periodically pulling from the repository.  Simply
+type
+\begin{verbatim}
+git pull
+\end{verbatim}
+in the {\tt MAESTRO/} directory.
+
 \item {\em Get a copy of \boxlib}.
 
 \maestro\ requires the \boxlib\ library to manage the grids and 
 parallelization.  We also rely on the build system in \boxlib\ to
 build a \maestro\ executable.  \boxlib\ can be obtained via {\tt
-git}\footnote{{\tt git} is an open-source source code version control
-system.  It is a standard part of any Linux distribution.  You may
-need to use your system's package manager to install {\tt git} if it
-is not already present} as:
+git} as:
 \begin{verbatim}
 git clone https://ccse.lbl.gov/pub/Downloads/BoxLib.git
 \end{verbatim}
+
+You will periodic want to update \boxlib\ by doing
+\begin{verbatim}
+git pull
+\end{verbatim}
+in the {\tt BoxLib/} directory.
 
 
 \item {\em Setup your shell environment}.
@@ -250,6 +271,14 @@ binary from the \visit\ webpage.
 Once \visit\ is installed, you can open a \boxlib\ plotfile by pointing
 \visit\ to the {\tt Header} file in the plotfile directory.
 
+
+\subsection{\yt}
+
+\yt\ (version 3.0 and later) can natively read the \maestro\ plotfiles.  See
+the \yt\ documentation or \S~\ref{sec:vis:yt}.
+
+
+
 \subsection{Diagnostic Files}
 
 By default, \maestro\ outputs global diagnostics each timestep into a
@@ -258,7 +287,6 @@ number, peak temperature, and peak nuclear energy generation rate.
 Individual problems can provide their own {\tt diag.f90} file to
 produce custom diagnostic output.  This information can be plotted
 directly with {\sf GNUplot}, for example.
-
 
 
 
