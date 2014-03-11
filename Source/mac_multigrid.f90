@@ -191,7 +191,7 @@ contains
        do_diagnostics = 0
     end if
 
-    call ml_cc_solve(mla, mgt, rh, phi, fine_flx, ref_ratio, do_diagnostics,rel_solver_eps)
+    call ml_cc_solve(mla, mgt, rh, phi, fine_flx, do_diagnostics)
 
     do n = 1, nlevs
        call multifab_fill_boundary(phi(n))

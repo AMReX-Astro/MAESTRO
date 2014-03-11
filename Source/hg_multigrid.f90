@@ -229,8 +229,7 @@ contains
        do_diagnostics = 0
     end if
 
-    call ml_nd_solve(mla,mgt,rh,phi,mla%mba%rr,do_diagnostics,&
-                     rel_solver_eps,abs_solver_eps)
+    call ml_nd_solve(mla,mgt,rh,phi,do_diagnostics)
 
     ! ********************************************************************************
     ! Clean-up ...
