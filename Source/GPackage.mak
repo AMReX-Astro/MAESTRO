@@ -17,7 +17,6 @@ f90sources += cputime.f90
 f90sources += density_advance.f90
 f90sources += diag.f90
 f90sources += divu_iter.f90
-f90sources += enforce_outflow_on_divu_rhs.f90
 f90sources += enforce_HSE.f90
 f90sources += enthalpy_advance.f90
 f90sources += estdt.f90

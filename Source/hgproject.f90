@@ -42,10 +42,10 @@ contains
     use hg_hypre_module            , only : hg_hypre
 
     use mg_eps_module              , only : eps_hg, eps_hg_max, hg_level_factor
-    use probin_module              , only: verbose, &
-                                           hg_dense_stencil, nodal, &
-                                           use_hypre, use_alt_energy_fix
-    use enforce_outflow_on_divu_module, only : enforce_outflow_on_divu_rhs
+    use probin_module              , only : verbose, &
+                                            hg_dense_stencil, nodal, &
+                                            use_hypre, use_alt_energy_fix
+    use nodal_divu_module          , only : enforce_outflow_on_divu_rhs
 
 
     integer        , intent(in   ) :: proj_type

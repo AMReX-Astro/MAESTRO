@@ -21,7 +21,7 @@ contains
 
     use bl_prof_module
 
-    use enforce_outflow_on_divu_module, only : enforce_outflow_on_divu_rhs
+    use nodal_divu_module   , only : enforce_outflow_on_divu_rhs
 
     use nodal_stencil_fill_module , only : stencil_fill_nodal_all_mglevels
     use ml_solve_module     , only : ml_nd_solve
