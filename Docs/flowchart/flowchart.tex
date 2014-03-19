@@ -38,10 +38,144 @@ step.
 
 \subsection{Notation}
 
-reach\_state
 
-enforce\_hse
+{\bf React State}$[\rho^{\inp},(\rho                                                                   h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp},                                                      
+  p_0^{\inp}] \rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp},                                   
+  T^{\outp}, (\rho \omegadot_k)^{\outp}, (\rho\Hnuc)^{\outp}]$
+  evolves the species and enthalpy due to reactions through
+  $\Delta t/2$ according to:
+\begin{equation}
+\frac{dX_k}{dt} = \omegadot_k(\rho,X_k,T) ; \qquad
+\frac{dT}{dt}   = \frac{1}{c_p} \left ( -\sum_k \xi_k  \omegadot_k  + \Hnuc \right ).
+\end{equation}
+%This system is solved using the stiff ordinary differential equation                                     
+%integration package, {\tt VODE} \citep{vode}.                                                            
+Full details of the
+solution procedure can be found in Paper III. We then define:
+\begin{eqnarray}
+(\rho\omegadot_k)^{\outp} &=& \frac{\rho^{\outp} ( X_k^{\outp} - X_k^{\inp})}{\dt/2}, \\
+(\rho h)^{\outp} &=& (\rho h)^{\inp} + \frac{\dt}{2} (\rho\Hnuc)^{\outp} + \frac{\dt}{2} (\rho\Hext)^{\in\
+p}.
+\end{eqnarray}
+where the enthalpy update includes external heat sources $(\rho\Hext)^{\inp}$.
+As introduced in Paper IV, we update the temperature using $T^{\outp} =                                   
+T(\rho^\outp,h^\outp,X_k^\outp)$ for planar geometry or $T^{\outp} =                                      
+T(\rho^\outp,p_0^\inp,X_k^\outp)$ for spherical geometry.
+Note that the density remains unchanged within {\bf React State}, i.e.,
+$\rho^{\outp} = \rho^{\inp}$.
 
+
+{\bf Advect Base Density}$[\rho_0^\inp,w_0^\inp] \rightarrow
+  [\rho_0^\outp, \rho_0^{\outp,\nph}]$ is the process by which we
+  update the base state density through $\dt$ in time.  We keep the
+  time-centered edge states, $\rho_0^{\outp,\nph}$,
+  since they are used later in discretization of $\etarho$ for planar problems.
+\begin{description}
+\item[planar:] We discretize equation (\ref{eq:Base State Density}) to
+  compute the new base state density,
+\begin{equation}
+\rho_{0,j}^{\outp} = \rho_{0,j}^{\inp} - \frac{\dt}{\dr} \left [ \left( \rho_0^{\outp,\nph} w_0^{\inp}\right)_{j+\myhalf} - \left( \rho_0^{\outp,\nph} w_0^{\inp}\right)_{j-\myhalf} \right ].
+\end{equation}
+  We compute the time-centered edge states, $\rho_0^{\outp,\nph}$,
+  by discretizing an expanded form of equation (\ref{eq:Base State Density}):
+\begin{equation}
+\frac{\partial \rho_0}{\partial t} + w_0 \frac{\partial \rho_0}{\partial r} = - \rho_0 \frac{\partial w_0}{\partial r},
+\end{equation}
+  where the right hand side is used as the force term.
+\item[spherical:] The base state density update now includes the area factors in the 
+  divergences:
+\begin{equation}
+\rho_{0,j}^{\outp} = \rho_{0,j}^{\inp} - \frac{1}{r_j^2} \frac{\dt}{\dr} \left [ \left( r^2 \rho_0^{\outp,\nph} w_0^{\inp}\right)_{j+\myhalf} - \left( r^2 \rho_0^{\outp,\nph} w_0^{\inp}\right)_{j-\myhalf} \right].
+\end{equation}
+  In order to compute the time-centered edge states, an additional geometric 
+  term is added to the forcing, due to the spherical discretization of 
+  (\ref{eq:Base State Density}):
+\begin{equation}
+\frac{\partial \rho_0}{\partial t} + w_0 \frac{\partial \rho_0}{\partial r} = - \rho_0 \frac{\partial w_0}{\partial r} - \frac{2 \rho_0 w_0}{r}.
+\end{equation}
+\end{description}
+
+{\bf Enforce HSE}$[p_0^{\inp},\rho_0^{\inp}]
+  \rightarrow [p_0^{\outp}]$ has replaced {\bf Advect Base Pressure}
+  from Paper III as the process by which we update the base state
+  pressure.  Rather than discretizing the evolution equation for
+  $p_0$, we enforce hydrostatic equilibrium directly, which is numerically simpler
+  and analytically equivalent.  We first set 
+  $p_{0,j=0}^{\outp} = p_{0,j=0}^{\inp}$ and then update $p_0^\outp$ using:
+\begin{equation}
+p_{0,j+1}^{\outp} = p_{0,j}^{\outp} + \Delta r g_{j+\myhalf}\frac{\left(\rho_{0,j+1}^{\inp}+\rho_{0,j}^{\inp}\right)}{2},
+\end{equation}
+  where $g=g(\rho_0^\inp)$.  As soon as $\rho_{0,j}^\inp < \rho_{\rm cutoff}$, we set 
+  $p_{0,j+1}^\outp = p_{0,j}^\outp$ for all remaining values of $j$.  
+  Then we compare $p_{0,j_{\rm max}}^\outp$ with $p_{0,j_{\rm max}}^\inp$ and offset
+  every element in $p_0^\outp$ so that $p_{0,j_{\rm max}}^\outp = p_{0,j_{\rm max}}^\inp$.  
+  We are effectively using the location where the $\rho_0^\inp$ drops below 
+  $\rho_{\rm cutoff}$ as the starting point for integration.
+
+
+{\bf Advect Base Enthalpy}$[(\rho h)_0^\inp,w_0^\inp,\psi^\inp] \rightarrow [(\rho h)_0^\outp]$
+  is the process by which we update the base state enthalpy through $\dt$ in time.  
+\begin{description}
+\item[planar:] We discretize equation (\ref{eq:Base State Enthalpy}), neglecting reaction source terms,
+  to compute the new base state enthalpy,
+\begin{equation}
+(\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} - \frac{\dt}{\Delta r} \left\{ \left[ (\rho h)_0^{\nph} w_0^{\inp}\right]_{j+\myhalf} - \left[ (\rho h)_0^{\nph} w_0^{\inp}\right]_{j-\myhalf} \right\} + \dt\psi_j^{\inp}.
+\end{equation}
+  We compute the time-centered edge states, $(\rho h)_0^{\nph}$, by discretizing
+  an expanded form of equation (\ref{eq:Base State Enthalpy}):
+\begin{equation}
+\frac{\partial (\rho h)_0}{\partial t} + w_0 \frac{\partial (\rho h)_0}{\partial r} = -(\rho h)_0 \frac{\partial w_0}{\partial r} + \psi.
+\end{equation}
+\item[spherical:]  The base state enthalpy update now includes the area factors 
+  in the divergences:
+\begin{eqnarray}
+(\rho h)_{0,j}^{\outp} &=& (\rho h)_{0,j}^{\inp} \nonumber \\
+&& - \frac{1}{r_j^2} \frac{\dt}{\dr} \left \{ \left[ r^2 (\rho h)_0^{\nph} w_0^{\inp}\right]_{j+\myhalf} - \left[ r^2 (\rho h)_0^{\nph} w_0^{\inp}\right]_{j-\myhalf} \right\} +\dt\psi^{\inp,\nph}.\nonumber\\
+\end{eqnarray}
+  In order to compute the time-centered edge states, an additional geometric 
+  term is added to the forcing, due to the spherical discretization of 
+  (\ref{eq:Base State Enthalpy}):
+\begin{equation}
+\frac{\partial (\rho h)_0}{\partial t} + w_0 \frac{\partial (\rho h)_0}{\partial r} = -(\rho h)_0 \frac{\partial w_0}{\partial r} - \frac{2 (\rho h)_0 w_0}{r} + \psi.
+\end{equation}
+\end{description}
+
+\subsubsection{Computing $w_0$}\label{Sec:Computing w0}
+Here we describe the process by which we compute $w_0$.  The arguments 
+are different for planar and spherical geometries.
+\begin{description}
+
+\item {\bf Compute} {\boldmath $w_0$} {\bf Planar}
+$[\Sbar^{\inp},\gammabar^{\inp}, p_0^{\inp},\psi^{\inp}]\rightarrow [w_0^{\outp}]$:
+
+In Paper III, we showed that $\psi=\etarho g$ for planar geometries, and 
+derived an alternate expression for equation (\ref{eq:w0 divergence}).
+We compute $w_0$ using equation (35) in Paper III using the following 
+discretization:
+\begin{equation}
+\frac{w_{0,j+\myhalf}^\outp-w_{0,j-\myhalf}^\outp}{\Delta r} = \left(\Sbar^{\inp} - \frac{1}{\gammabar^{\inp} p_0^{\inp}}\psi^{\inp}\right)_j,
+\end{equation}
+with $w_{0,-\myhalf}=0$.
+
+\item {\bf Compute} {\boldmath $w_0$} {\bf Spherical}
+  $[\Sbar^{\inp},\gammabar^{\inp},\rho_0^{\inp},p_0^{\inp},\etarho^{\inp}]
+  \rightarrow[w_0^{\outp}]$:
+
+We begin with equation (\ref{eq:w0 divergence}) written in spherical coordinates:
+\begin{equation}
+\frac{1}{r^2}\frac{\partial}{\partial r} \left (r^2 \beta_0 w_0 \right ) = \beta_0 \left ( \Sbar - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} \right ).
+\end{equation}
+We expand the spatial derivative and recall from Paper I that
+\begin{equation}
+\frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial r} = \frac{1}{\beta_0} \frac{\partial \beta_0}{\partial r},
+\end{equation}
+giving:
+\begin{equation}
+\frac{1}{r^2} \frac{\partial}{\partial r} \left (r^2 w_0 \right ) = \Sbar - \frac{1}{\gammabar p_0} \underbrace{\left( \frac{\partial p_0}{\partial t} + w_0 \frac{\partial p_0}{\partial r} \right)}_{\psi}.\label{eq:psi def}
+\end{equation}
+We solve this equation for $w_0$ as described in Appendix of the multilevel paper.
+
+\end{description}
 
 \subsection{Single Step}
 
@@ -69,8 +203,8 @@ the algorithm.
 %--------------------------------------------------------------------------
 \item[Step 1.] {\em React the full state through the first time interval of $\dt / 2.$}
 
-Call {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n, p_0^n]$\\
-\phantom{ }\hfill $\rightarrow [\rho^{(1)},(\rho h)^{(1)},X_k^{(1)},T^{(1)},(\rho \omegadot_k)^{(1)},(\rho \Hnuc)^{(1)}]$.
+Call {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n, p_0^n]
+ \rightarrow [\rho^{(1)},(\rho h)^{(1)},X_k^{(1)},T^{(1)},(\rho \omegadot_k)^{(1)},(\rho \Hnuc)^{(1)}]$.
 
 %--------------------------------------------------------------------------
 % STEP 2
@@ -363,8 +497,8 @@ $T^{(2),\star} =
 \item[Step 5.] {\em React the full state through a second time interval of $\dt / 2.$}
 
 Call {\bf React State}$[ \rho^{(2),\star},(\rho h)^{(2),\star}, X_k^{(2),\star}, T^{(2),\star}, 
-(\rho\Hext)^{(2),\star}, p_0^{n+1,\star}]$\\
-\phantom{ }\hfill$\rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\star}, (\rho \omegadot_k)^{(2),\star}, (\rho \Hnuc)^{(2),\star} ].$
+(\rho\Hext)^{(2),\star}, p_0^{n+1,\star}]$ \\
+ ${}\hfill   \rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\star}, (\rho \omegadot_k)^{(2),\star}, (\rho \Hnuc)^{(2),\star} ].$
 
 %--------------------------------------------------------------------------
 % STEP 6
@@ -404,8 +538,7 @@ p_0^{\nph,\star} = \frac{p_0^{n} + p_0^{n+1,\star}}{2},
 \item For planar geometry, call\\
 {\bf Compute} {\boldmath $w_0$} {\bf Planar}$[\overline{S^{\nph,\star}},\overline{\Gamma_1^{\nph,\star}},p_0^{\nph,\star},\psi^{\nph,\star}]\rightarrow [w_0^{\nph}]$.
 \item For spherical geometry, call\\
-{\bf Compute} {\boldmath $w_0$} {\bf Spherical}$[\overline{S^{\nph,\star}},\overline{\Gamma_1^{\nph,\star}},\rho_0^{\nph,\star},p_0^{\nph,\star},\etarho^{\nph,\star}]$\\
-\phantom{ }\hfill$\rightarrow [w_0^{\nph}]$.
+{\bf Compute} {\boldmath $w_0$} {\bf Spherical}$[\overline{S^{\nph,\star}},\overline{\Gamma_1^{\nph,\star}},\rho_0^{\nph,\star},p_0^{\nph,\star},\etarho^{\nph,\star}]\rightarrow [w_0^{\nph}]$.
 \end{description}
 
 \item Compute the base state velocity forcing.  Rearrange equation (\ref{eq:pizero}),
