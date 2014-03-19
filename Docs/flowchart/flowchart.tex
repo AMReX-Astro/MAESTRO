@@ -844,6 +844,65 @@ discrepancy term:
 \left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]\right\}.
 \end{equation}
 \end{itemize}
+
+
+\subsection{$\Gamma_1$ Variation Changes}
+
+The constraint we derive from requiring the pressure to be close to the background hydrostatic
+pressure takes the form:
+\begin{equation}
+\nablab \cdotb \Ub + \frac{1}{\Gamma_1 p_0} \frac{Dp_0}{Dt} = S \enskip .
+\end{equation}
+The default \maestro\ algorithm replaces $\Gamma_1$ with $\gammabar$, allowing us
+to write this as a divergence constraint.  In paper~III, we explored the effects of
+localized variations in $\Gamma_1$ by writing $\Gamma_1 = \gammabar + \delta \Gamma_1$.
+This gives us:
+\begin{equation}
+\nablab \cdotb \Ub + \frac{1}{(\gammabar + \delta \Gamma_1) \; p_0} 
+  \Ub \cdotb \nablab p_0 = S - \frac{1}{(\gammabar + \delta \Gamma_1) \; p_0} 
+  \frac{\partial p_0}{\partial t} \enskip .
+\end{equation}
+
+Assuming that $\delta \Gamma_1 \ll \gammabar$, we then have
+\begin{equation}
+\nablab \cdotb \Ub + \frac{1}{\gammabar p_0} \Ub \cdotb \nablab p_0 = S - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} +
+\frac{\delta \Gamma_1}{\gammabar^2 p_0} \frac{\partial p_0}{\partial t} +
+\frac{\delta \Gamma_1}{\gammabar^2 p_0} \Ub \cdotb \nablab p_0 \enskip , \label{eq:gammafull}
+\end{equation}
+The base state evolution equation is the average of this over a layer
+\begin{equation}
+\nablab \cdot w_0 \er + \frac{1}{\gammabar p_0} w_0 \er \cdotb \nablab p_0 =
+\Sbar - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} + \overline{
+  \left ( \frac{\delta \Gamma_1}{\gammabar^2 p_0} \ut \cdotb \nablab p_0
+  \right ) } \enskip .
+\end{equation}
+Subtracting this from equation (\ref{eq:gammafull}), we have
+\begin{equation}
+\nablab \cdotb \Ubt + \frac{1}{\gammabar p_0} \Ubt \cdotb \nablab p_0 = S -
+\Sbar + \frac{\delta \Gamma_1}{\gammabar^2 p_0} \left (\psi + \Ubt \cdotb
+\nablab p_0 \right ) - \overline{ \left ( \frac{\delta \Gamma_1}{\gammabar^2 p_0} \Ubt
+\cdotb \nablab p_0 \right ) } \enskip .
+\end{equation}
+
+These can be written more compactly as:
+\begin{equation}
+\frac{\partial w_0}{\partial r} = \Sbar -\frac{1}{\gammabar p_0}\psi +
+\overline{ \left ( \frac{\delta \Gamma_1}{\gammabar^2 p_0} \ut \cdotb \nablab
+  p_0 \right ) } \enskip , \label{eq:base_w0_with_dgamma1}
+\end{equation}
+for plane-parallel geometries (analogous to eq. [\ref{eq:divw0}]), and
+\begin{equation}
+\nablab \cdotb (\beta_0 \Ubt) = \beta_0 \left [ S - \Sbar + \frac{\delta
+    \Gamma_1}{\gammabar^2 p_0} \psi + \frac{\delta \Gamma_1}{\gammabar^2 p_0}
+  \Ubt \cdotb \nablab p_0 - \overline{ \left ( \frac{\delta
+      \Gamma_1}{\gammabar^2 p_0} \Ubt \cdotb \nablab p_0 \right ) } ~ \right ]
+ \enskip ,  \label{eq:constraint_with_delta_gamma}
+\end{equation}
+
+This constraint is not in a form that can be projected.  To solve this form, we 
+need to use a lagged $\Ubt$ in the righthand side.
+
+
 \subsection{Thermal Diffusion Changes}
 Immediately after {\bf Step 4H}, diffuse the enthalpy through 
 a time interval of $\dt$.  First, define $(\rho h)^{(1a),\star} = (\rho h)^{(2),\star}$.  
