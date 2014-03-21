@@ -1,0 +1,12 @@
+&probin
+
+  species_a_name = "carbon-12"
+  species_a_gamma = 1.4
+
+  species_b_name = "oxygen-16"
+  species_b_gamma = 1.6
+
+  species_c_name = "magnesium-24"
+  species_c_gamma = 1.5
+
+/
