@@ -26,7 +26,7 @@ module eos_module
 
   public eos_init, eos_finalize, eos
   public eos_input_rt, eos_input_rh, eos_input_tp, eos_input_rp, &
-         eos_input_re, eos_input_ps, eos_input_ph, eos_input_th
+         eos_input_re, eos_input_ps, eos_input_ph
   public gammas
 
 contains
@@ -202,13 +202,6 @@ contains
        ! Solve for temperature and density
        dens = state % p * abar / state % h * sumYg_gm1
        temp = state % p * abar * m_nucleon / (k_B * dens)
-
-
-    case (eos_input_th)
-
-       ! temperature, enthalpy and xmass are inputs
-       call bl_error("eos_input_th is not supported")
-       
 
     case default
 
