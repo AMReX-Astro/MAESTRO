@@ -225,12 +225,16 @@ contains
     ! enthalpy is h = e + p/rho
     state % h = state % e + state % p / dens
 
-    ! entropy (per gram) -- not implemented
-    state % s = ZERO
+    ! entropy (per gram) -- this is wrong. Not sure what the expression
+    ! is for a multigamma gas
+    state % s = (k_B/(abar*m_nucleon))*(2.5_dp_t + &
+         log( ( (abar*m_nucleon)**2.5/dens )*(k_B*temp)**1.5_dp_t / (2.0_dp_t*M_PI*hbar*hbar)**1.5_dp_t ) )
+
 
     ! Compute the thermodynamic derivatives and specific heats 
     state % dpdT = state % p / temp
     state % dpdr = state % p / dens
+
     state % dedT = state % e / temp
     state % dedr = ZERO
     state % dsdT = ZERO
