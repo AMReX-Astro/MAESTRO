@@ -11,6 +11,5 @@ module eos_data_module
   integer, parameter :: eos_input_re = 5  ! rho, e are inputs
   integer, parameter :: eos_input_ps = 6  ! p, s are inputs
   integer, parameter :: eos_input_ph = 7  ! p, h are inputs
-  integer, parameter :: eos_input_th = 8  ! T, h are inputs
 
 end module eos_data_module
