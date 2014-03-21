@@ -90,7 +90,7 @@ an executable.  Briefly, the \maestro\ sub-directories are:
     sub-directory under {\tt SCIENCE/}, {\tt TEST\_PROBLEMS/}, or {\tt
       UNIT\_TESTS/}.  The {\tt GNUmakefile} in the problem directory
     includes the instructions on how to build the executable,
-    including what modules in {\tt extern} are used.  Any file that
+    including what modules in {\tt Microphysics/} are used.  Any file that
     you place in a sub-directory here takes precedence over a file of
     the same name in {\tt MAESTRO/}.  This allows problems to have
     custom versions of the main \maestro\ routines (e.g.\ initial
@@ -366,7 +366,7 @@ EOS) require Fortran include files.  The {\tt Fmincludes} variable
 lists all those directories that contain include files that are
 inserted into the Fortran source at compile time via the {\tt include}
 statement.  Presently, the only instance of this is with the Helmholtz
-general equation of state found in {\tt extern/EOS/helmeos/}.  This is
+general equation of state found in {\tt Microphysics/EOS/helmeos/}.  This is
 automatically handled by the {\tt GMaestro.mak} instructions.
 
 Runtime parameters listed in the {\tt MAESTRO/\_parameters} file are
@@ -470,7 +470,7 @@ The {\tt toy\_atm} example provides a simple approximation for a thin
 of a star.  This can be used as the starting point for a more complex
 model.  
 
-\maestro\ initial models are read in by the {\tt extern/model\_parser}
+\maestro\ initial models are read in by the {\tt Util/model\_parser}
 routines.  This expects the initial model to contain a header giving
 the number of variables and their names, followed by rows of data
 giving the coordinate and data values at that coordinate.  The initial
@@ -835,9 +835,9 @@ gets the information about the fluid species from the {\tt network}
 module (for example, the atomic number, $Z$, and atomic weight, $A$,
 of the nuclei).
 
-Presently there are 2 equations of state that work with \maestro:
+Presently there are 3 equations of state that work with \maestro:
 \begin{itemize}
-\item {\tt extern/EOS/helmeos/} represents a general stellar equation 
+\item {\tt helmeos/} represents a general stellar equation 
       of state, consisting of nuclei (as an ideal gas), radiation,
       and electrons (with arbitrary degeneracy and degree of relativity).
       This equation of state is that described in \cite{timmes_eos}.
@@ -845,7 +845,7 @@ Presently there are 2 equations of state that work with \maestro:
       A runtime parameter, {\tt use\_eos\_coulomb}, is defined in
       this EOS to enable/disable Coulomb corrections.
 
-\item {\tt extern/EOS/gamma\_law\_general} assumes an ideal gas with a mixed 
+\item {\tt gamma\_law\_general} assumes an ideal gas with a mixed 
      composition and a constant ratio of specific heats, $\gamma$:
       \begin{equation}
       p = \rho e (\gamma - 1) = \frac{\rho k_B T}{\mu m_p} 
@@ -860,6 +860,52 @@ Presently there are 2 equations of state that work with \maestro:
      An option in the source code itself exists for treating the
      species as fully-ionized, but there is no runtime-parameter to
      make this switch.
+
+\item {\tt multigamma} is an ideal gas equation of state where each
+  species can have a different value of $\gamma$.  This mainly affects
+  how the internal energy is constructed as each species, represented
+  with a mass fraction $X_k$ will have its contribution to the total
+  specific internal energy take the form of $e = p/\rho/(\gamma_k -                                               
+  1)$.  The main thermodynamic quantities take the form:
+\begin{align}
+p &= \frac{\rho k T}{m_u} \sum_k \frac{X_k}{A_k} \\
+e &= \frac{k T}{m_u} \sum_k \frac{1}{\gamma_k - 1} \frac{X_k}{A_k} \\
+h &= \frac{k T}{m_u} \sum_k \frac{\gamma_k}{\gamma_k - 1} \frac{X_k}{A_k}
+\end{align}
+We recognize that the usual astrophysical $\bar{A}^{-1} = \sum_k                                                  
+X_k/A_k$, but now we have two other sums that involve different
+$\gamma_k$ weightings.
+
+The specific heats are constructed as usual,
+\begin{align}
+c_v &= \left . \frac{\partial e}{\partial T} \right |_\rho =
+    \frac{k}{m_u} \sum_k \frac{1}{\gamma_k - 1} \frac{X_k}{A_k} \\
+c_p &= \left . \frac{\partial h}{\partial T} \right |_p =
+    \frac{k}{m_u} \sum_k \frac{\gamma_k}{\gamma_k - 1} \frac{X_k}{A_k}
+\end{align}
+and it can be seen that the specific gas constant, $R \equiv c_p - c_v$ is
+independent of the $\gamma_i$, and is simply $R = k/m_u\bar{A}$ giving the
+usual relation that $p = R\rho T$.  Furthermore, we can show
+\begin{equation}
+\Gamma_1 \equiv \left . \frac{\partial \log p}{\partial \log \rho} \right |_s =
+   \left ( \sum_k \frac{\gamma_k}{\gamma_k - 1} \frac{X_k}{A_k} \right ) \bigg /
+   \left ( \sum_k \frac{1}{\gamma_k - 1} \frac{X_k}{A_k} \right ) =
+\frac{c_p}{c_v} \equiv \gamma_\mathrm{effective}
+\end{equation}
+and $p = \rho e (\gamma_\mathrm{effective} - 1)$.
+
+This equation of state takes several runtime parameters that can set the
+$\gamma_i$ for a specific species:
+\begin{itemize}
+\item {\tt eos\_gamma\_default}: the default $\gamma$ to apply for
+  all species
+\item {\tt species\_X\_name} and {\tt species\_X\_gamma}: set the $\gamma_i$
+  for the species whose name is given as {\tt species\_X\_name} to the
+  value provided by {\tt species\_X\_gamma}.  Here, {\tt X} can be one
+  of the letters: {\tt a}, {\tt b}, or {\tt c}, allowing us to specify
+  custom $\gamma_i$ for up to three different species.
+\end{itemize}
+
 \end{itemize}
 
 The thermodynamic quantities are stored in a Fortran type {\tt eos\_t},
@@ -919,7 +965,7 @@ code ({\tt nspec}), their ordering, and gives their basic properties
 (like atomic number, $Z$, and atomic mass, $A$).  All \maestro\ problems
 require a {\tt network} module, even if there are no reactions
 modeled.  Many different reaction modules (containing different sets
-of isotopes) exist in {\tt extern/networks}.  The particular network
+of isotopes) exist in {\tt Microphysics/networks}.  The particular network
 used by a problem is defined in the problem's {\tt GNUmakefile}.
 
 To find the location of a particular species (for instance, ``carbon-12'')
