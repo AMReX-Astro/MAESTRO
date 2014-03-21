@@ -32,18 +32,11 @@ module eos_module
   use bl_constants_module, only: M_PI, ONE
   use network, only: nspec, aion, zion
   use eos_type_module
+  use eos_data_module
 
   implicit none
 
   private
-
-  integer, parameter, public :: eos_input_rt = 1   ! density, temperature are inputs
-  integer, parameter, public :: eos_input_rh = 2   ! density, enthalpy are inputs
-  integer, parameter, public :: eos_input_tp = 3   ! temperature, pressure are inputs
-  integer, parameter, public :: eos_input_rp = 4   ! density, pressure are inputs
-  integer, parameter, public :: eos_input_re = 5   ! density, internal energy are inputs
-  integer, parameter, public :: eos_input_ps = 6   ! pressure, entropy are inputs
- 
 
   real(kind=dp_t), save, private :: smallt
   real(kind=dp_t), save, private :: smalld
@@ -56,6 +49,8 @@ module eos_module
   private nspec, aion, zion
 
   public eos_init, eos_finalize, eos
+  public eos_input_rt, eos_input_rh, eos_input_tp, eos_input_rp, &
+         eos_input_re, eos_input_ps, eos_input_ph
 
   interface eos
      module procedure eos_old
@@ -64,7 +59,7 @@ module eos_module
 
 contains
 
-  ! EOS initialization routine -- this is used by both MAESTRO and Castro
+  ! EOS initialization routine
   subroutine eos_init(small_temp, small_dens, gamma_in)
 
     implicit none
@@ -304,6 +299,9 @@ contains
        ! Solve for the density
        ! rho = p mu m_nucleon / (k T)
        dens = pres*mu*m_nucleon/(k_B*temp)
+
+    else if (input .EQ. eos_input_ph) then
+       call bl_error("ERROR: eos_input_ph not implemented")
 
     endif
 
