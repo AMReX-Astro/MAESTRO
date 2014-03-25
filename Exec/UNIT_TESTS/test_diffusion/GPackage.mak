@@ -7,7 +7,6 @@ f90sources += geometry.f90
 f90sources += initscaldata.f90
 f90sources += initialize.f90
 f90sources += inlet_bc.f90
-f90sources += mac_applyop.f90
 f90sources += mac_multigrid.f90
 f90sources += main.f90
 f90sources += make_explicit_thermal.f90
