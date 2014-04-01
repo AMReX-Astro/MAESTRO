@@ -1,4 +1,10 @@
 ! Compute the source term to the divergence constraint, S.
+!
+! We also construct the delta_gamma1_term here which is used to
+! correct for the approximation that Gamma_1 -> \bar{Gamma_1} in the
+! constraint.  First we compute the main part of the term and then
+! we average it.  Finally we correct the full version of the term to
+! account for the psi term that comes from the base state.  
 
 module make_S_module
 
@@ -586,7 +592,7 @@ contains
 
     do i = lo(1), hi(1)
 
-       delta_gamma1_term(i) = delta_gamma1_term(i) - delta_gamma1_termbar(i) &
+       delta_gamma1_term(i) = delta_gamma1_term(i) &
             + delta_gamma1(i)*psi(i)/(gamma1bar(i)**2*p0(i))
 
     end do
@@ -609,7 +615,7 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          delta_gamma1_term(i,j) = delta_gamma1_term(i,j) - delta_gamma1_termbar(j) &
+          delta_gamma1_term(i,j) = delta_gamma1_term(i,j) &
                + delta_gamma1(i,j)*psi(j)/(gamma1bar(j)**2*p0(j))
 
        end do
@@ -635,7 +641,7 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             delta_gamma1_term(i,j,k) = delta_gamma1_term(i,j,k) - delta_gamma1_termbar(k) &
+             delta_gamma1_term(i,j,k) = delta_gamma1_term(i,j,k) &
                   + delta_gamma1(i,j,k)*psi(k)/(gamma1bar(k)**2*p0(k))
 
           end do
