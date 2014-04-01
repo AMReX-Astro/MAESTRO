@@ -38,8 +38,8 @@ step.
 
 \subsection{Notation}
 
-
-{\bf React State}$[\rho^{\inp},(\rho                                                                   h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp},                                                      
+\begin{itemize}
+\item {\bf React State}$[\rho^{\inp},(\rho                                                                   h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp},                                                      
   p_0^{\inp}] \rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp},                                   
   T^{\outp}, (\rho \omegadot_k)^{\outp}, (\rho\Hnuc)^{\outp}]$
   evolves the species and enthalpy due to reactions through
@@ -65,7 +65,7 @@ Note that the density remains unchanged within {\bf React State}, i.e.,
 $\rho^{\outp} = \rho^{\inp}$.
 
 
-{\bf Advect Base Density}$[\rho_0^\inp,w_0^\inp] \rightarrow
+\item {\bf Advect Base Density}$[\rho_0^\inp,w_0^\inp] \rightarrow
   [\rho_0^\outp, \rho_0^{\outp,\nph}]$ is the process by which we
   update the base state density through $\dt$ in time.  We keep the
   time-centered edge states, $\rho_0^{\outp,\nph}$,
@@ -95,7 +95,7 @@ $\rho^{\outp} = \rho^{\inp}$.
 \end{equation}
 \end{description}
 
-{\bf Enforce HSE}$[p_0^{\inp},\rho_0^{\inp}]
+\item {\bf Enforce HSE}$[p_0^{\inp},\rho_0^{\inp}]
   \rightarrow [p_0^{\outp}]$ has replaced {\bf Advect Base Pressure}
   from Paper III as the process by which we update the base state
   pressure.  Rather than discretizing the evolution equation for
@@ -113,7 +113,7 @@ p_{0,j+1}^{\outp} = p_{0,j}^{\outp} + \Delta r g_{j+\myhalf}\frac{\left(\rho_{0,
   $\rho_{\rm cutoff}$ as the starting point for integration.
 
 
-{\bf Advect Base Enthalpy}$[(\rho h)_0^\inp,w_0^\inp,\psi^\inp] \rightarrow [(\rho h)_0^\outp]$
+\item {\bf Advect Base Enthalpy}$[(\rho h)_0^\inp,w_0^\inp,\psi^\inp] \rightarrow [(\rho h)_0^\outp]$
   is the process by which we update the base state enthalpy through $\dt$ in time.  
 \begin{description}
 \item[planar:] We discretize equation (\ref{eq:Base State Enthalpy}), neglecting reaction source terms,
@@ -140,7 +140,7 @@ p_{0,j+1}^{\outp} = p_{0,j}^{\outp} + \Delta r g_{j+\myhalf}\frac{\left(\rho_{0,
 \end{equation}
 \end{description}
 
-\subsubsection{Computing $w_0$}\label{Sec:Computing w0}
+\item {\bf Computing {\boldmath $w_0$}}\label{Sec:Computing w0}
 Here we describe the process by which we compute $w_0$.  The arguments 
 are different for planar and spherical geometries.
 \begin{description}
@@ -176,6 +176,8 @@ giving:
 We solve this equation for $w_0$ as described in Appendix of the multilevel paper.
 
 \end{description}
+
+\end{itemize}
 
 \subsection{Single Step}
 
@@ -846,17 +848,18 @@ discrepancy term:
 \end{itemize}
 
 
+%-----------------------------------------------------------------------------
 \subsection{$\Gamma_1$ Variation Changes}
 
-The constraint we derive from requiring the pressure to be close to the background hydrostatic
-pressure takes the form:
+The constraint we derive from requiring the pressure to be close to
+the background hydrostatic pressure takes the form:
 \begin{equation}
 \nablab \cdotb \Ub + \frac{1}{\Gamma_1 p_0} \frac{Dp_0}{Dt} = S \enskip .
 \end{equation}
-The default \maestro\ algorithm replaces $\Gamma_1$ with $\gammabar$, allowing us
-to write this as a divergence constraint.  In paper~III, we explored the effects of
-localized variations in $\Gamma_1$ by writing $\Gamma_1 = \gammabar + \delta \Gamma_1$.
-This gives us:
+The default \maestro\ algorithm replaces $\Gamma_1$ with $\gammabar$,
+allowing us to write this as a divergence constraint.  In paper~III,
+we explored the effects of localized variations in $\Gamma_1$ by
+writing $\Gamma_1 = \gammabar + \delta \Gamma_1$.  This gives us:
 \begin{equation}
 \nablab \cdotb \Ub + \frac{1}{(\gammabar + \delta \Gamma_1) \; p_0} 
   \Ub \cdotb \nablab p_0 = S - \frac{1}{(\gammabar + \delta \Gamma_1) \; p_0} 
@@ -887,7 +890,7 @@ Subtracting this from equation (\ref{eq:gammafull}), we have
 These can be written more compactly as:
 \begin{equation}
 \frac{\partial w_0}{\partial r} = \Sbar -\frac{1}{\gammabar p_0}\psi +
-\overline{ \left ( \frac{\delta \Gamma_1}{\gammabar^2 p_0} \ut \cdotb \nablab
+\overline{ \left ( \frac{\delta \Gamma_1}{\gammabar^2 p_0} \Ubt \cdotb \nablab
   p_0 \right ) } \enskip , \label{eq:base_w0_with_dgamma1}
 \end{equation}
 for plane-parallel geometries (analogous to eq. [\ref{eq:divw0}]), and
@@ -899,10 +902,59 @@ for plane-parallel geometries (analogous to eq. [\ref{eq:divw0}]), and
  \enskip ,  \label{eq:constraint_with_delta_gamma}
 \end{equation}
 
-This constraint is not in a form that can be projected.  To solve this form, we 
-need to use a lagged $\Ubt$ in the righthand side.
+This constraint is not in a form that can be projected.  To solve this
+form, we need to use a lagged $\Ubt$ in the righthand side.
+
+This change comes into \maestro\ in a variety of steps, summarized here.
+
+\begin{itemize}
+
+\item In {\bf Step 3}, we are doing the ``predictor'' portion of the 
+\maestro\ algorithm, getting the MAC velocity that satisfies the constraint, 
+so we do not try to incorporate the $\delta \Gamma_1$ effect.  We set
+all the $\delta \Gamma_1$ terms in
+Eq.~\ref{eq:constraint_with_delta_gamma} to zero.
+
+\item In {\bf Step 6}, we are computing the new time-centered source, 
+$S^{\nph,\star}$ and the base state velocity, $w_0^\nph$.  Now we can
+incorporate the $\delta \Gamma_1$ effect.  First we construct:
+\begin{equation}
+\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0 \approx
+   \frac{\Gamma_1^{n+1,\star} - \overline{\Gamma_1^{n+1,\star}}}
+         {{\overline{\Gamma_1^{n+1,\star}}}^2} \frac{1}{p_0^n} \Ubt^n \cdotb \nablab p_0^n
+\end{equation}
+Then we call {\bf average} to construct the lateral average of this
+\begin{equation}
+\overline{\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0} = 
+   \mathbf{Avg} \left (\frac{\Gamma_1^{n+1,\star} - \overline{\Gamma_1^{n+1,\star}}}
+         {{\overline{\Gamma_1^{n+1,\star}}}^2} \frac{1}{p_0^n} \Ubt^n \cdotb \nablab p_0^n \right )
+\end{equation}
+
+Since the average of this is needed in advancing $w_0$, we modify $\overline{S}$ 
+to include this average:
+\begin{equation}
+\overline{S^{\nph,\star}} \leftarrow \overline{S^{\nph,\star}} + 
+   \overline{\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0} 
+\end{equation}
+
+\item In {\bf Step 7}, we now include the $\delta \Gamma_1$ term in the righthand
+side for the constraint by solving:
+\begin{equation}
+\nabla \cdot \left(\beta_0^{\nph,\star} \uadvtwo\right) =
+\beta_0^{\nph,\star}\left( S^{\nph,\star} - \overline{S^{\nph,\star}} +
+   \frac{\Gamma_1^{n+1,\star} - \overline{\Gamma_1^{n+1,\star}}} 
+         {{\overline{\Gamma_1^{n+1,\star}}}^2} \frac{1}{p_0^n} 
+         (\psi^{\nph,\star} + \Ubt^n \cdotb \nablab p_0^n)
+\right)
+\end{equation}
+We note that this includes the average of the correction term as shown
+in Eq.~\ref{eq:constraint_with_delta_gamma} because we modified
+$\bar{S}$ to include this already.
+\end{itemize}
 
 
+
+%-----------------------------------------------------------------------------
 \subsection{Thermal Diffusion Changes}
 Immediately after {\bf Step 4H}, diffuse the enthalpy through 
 a time interval of $\dt$.  First, define $(\rho h)^{(1a),\star} = (\rho h)^{(2),\star}$.  
