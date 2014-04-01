@@ -950,6 +950,40 @@ side for the constraint by solving:
 We note that this includes the average of the correction term as shown
 in Eq.~\ref{eq:constraint_with_delta_gamma} because we modified
 $\bar{S}$ to include this already.
+
+\item In {\bf Step 10}, we do a construction much like that done in {\bf Step 6},
+but with the time-centerings of some of the quantities changed.
+First we construct:
+\begin{equation}
+\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0 \approx
+   \frac{\Gamma_1^{n+1} - \overline{\Gamma_1^{n+1}}}
+         {{\overline{\Gamma_1^{n+1}}}^2} \frac{1}{p_0^{n+1}} \Ubt^n \cdotb \nablab p_0^{n+1}
+\end{equation}
+Then we call {\bf average} to construct the lateral average of this
+\begin{equation}
+\overline{\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0} = 
+   \mathbf{Avg} \left (\frac{\Gamma_1^{n+1} - \overline{\Gamma_1^{n+1}}}
+         {{\overline{\Gamma_1^{n+1}}}^2} \frac{1}{p_0^{n+1}} \Ubt^n \cdotb \nablab p_0^{n+1} \right )
+\end{equation}
+
+Again we modify $\overline{S}$ to include this average:
+\begin{equation}
+\overline{S^{n+1}} \leftarrow \overline{S^{n+1}} + 
+   \overline{\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0} 
+\end{equation}
+
+\item In {\bf Step 11}, we modify the source of the constraint to include the
+$\delta \Gamma_1$ information.  In particular, we solve:
+\begin{equation}
+\nabla \cdot \left(\beta_0^{\nph} \Ubt^{n+1} \right) 
+= \beta_0^{\nph} \left(S^{n+1} - \overline{S^{n+1}} +
+   \frac{\Gamma_1^{n+1} - \overline{\Gamma_1^{n+1}}} 
+         {{\overline{\Gamma_1^{n+1}}}^2} \frac{1}{p_0^{n+1}}
+         (\psi^{\nph} + \Ubt^n \cdotb \nablab p_0^{n+1})
+\right)
+\end{equation}
+
+
 \end{itemize}
 
 
