@@ -20,7 +20,7 @@ module divu_iter_module
 contains
 
   subroutine divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal, &
-                       Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
+                       Source_old,normal,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
                        tempbar_init,w0,grav_cell,dx,dt,the_bc_tower,mla)
 
     use variables, only: nscal, foextrap_comp
@@ -49,6 +49,7 @@ contains
     type(multifab) , intent(inout) :: gpi(:)
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(inout) :: Source_old(:)
+    type(multifab) , intent(inout) :: normal(:)
     type(multifab) , intent(inout) :: hgrhs(:)
     type(multifab) , intent(in   ) :: dSdt(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
@@ -148,9 +149,11 @@ contains
     end do
 
     call make_S(Source_old,delta_gamma1_term,delta_gamma1, &
-                sold,uold,rho_omegadot,rho_Hnuc,rho_Hext,thermal, &
-                p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
-                mla,the_bc_tower%bc_tower_array)
+                sold,uold, &
+                normal, &
+                rho_omegadot,rho_Hnuc,rho_Hext,thermal, &
+                p0_old,gamma1bar,delta_gamma1_termbar,psi, &
+                dx,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(rho_omegadot(n))
