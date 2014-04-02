@@ -327,7 +327,7 @@ accounted for in {\bf React State}.  The update consists of two steps:
   for the conservative update of $(\rho X_k)^{(1)}$.  
 
   There are a variety of choices of quantities to predict to the
-  edges (controlled by {\tt species\_pred\_type}---see Chapter~\ref{ch:pert}).
+  edges (controlled by \runparam{species\_pred\_type}---see Chapter~\ref{ch:pert}).
   By default, we use the equations 
 \begin{eqnarray}
 \frac{\partial\rho'}{\partial t} &=& -\Ub\cdot\nabla\rho' - 
@@ -436,7 +436,7 @@ equilibrium.  The update consists of two steps:
 \item Compute the time-centered enthalpy edge state, $(\rho h)^{\nph,\star,\pred},$
   for the conservative update of $(\rho h)^{(1)}$.  There are a variety
    of quantities that we can predict to the interfaces here (controlled
-   by {\tt enthalpy\_pred\_type}---see Chapter~\ref{ch:pert}).  For
+   by \runparam{enthalpy\_pred\_type}---see Chapter~\ref{ch:pert}).  For
    the default case, we use the perturbational
   enthalpy equation, neglecting reactions,
 \begin{equation}
@@ -906,7 +906,7 @@ This constraint is not in a form that can be projected.  To solve this
 form, we need to use a lagged $\Ubt$ in the righthand side.
 
 This change comes into \maestro\ in a variety of steps, summarized here.
-To enable this portion of the algorithm, set {\tt use\_delta\_gamma1\_term = T}.
+To enable this portion of the algorithm, set \runparam{use\_delta\_gamma1\_term} {\tt = T}.
 
 \begin{itemize}
 
@@ -1057,7 +1057,7 @@ which is numerically implemented as a diffusion equation for $h^{(2)}$.
   variables that are the same in {\bf Step 6} as they are in
   {\bf Step 2}, i.e., they are unchanged by the predictor steps.
   The diffusion steps (4a and 8a) are optional, depending on
-  {\tt use\_thermal\_diffusion}.}
+  \runparam{use\_thermal\_diffusion}.}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1120,7 +1120,7 @@ proceeds as follows.
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 \renewcommand{\labelenumii}{\roman{enumii}.}
 
-\item {\em Initial Projection}: if {\tt do\_initial\_projection = T}, then we 
+\item {\em Initial Projection}: if \runparam{do\_initial\_projection} {\tt = T}, then we 
    first project the velocity field with $\rho = 1$ and $\beta_0^0$.
    The initial projection does not see reactions
    or external heating, and thus we set $\dot\omega = \Hnuc = \Hext = 0$ in $S$.
@@ -1135,7 +1135,7 @@ proceeds as follows.
    This $\phi$ is then used to correct the velocity field to obtain $\Ub^{0,0}$.
    If {\tt do\_initial\_projection = F}, set $\Ub^{0,0} = \Ub^{\initp}$.
 
-\item {\em ``Divu'' iterations}: Next we do {\tt init\_divu\_iter} iterations 
+\item {\em ``Divu'' iterations}: Next we do \runparam{init\_divu\_iter} iterations 
   to project the velocity field using a constraint that sees reactions
   and external heating. 
   The initial timestep estimate is provided by {\tt firstdt} and
@@ -1183,7 +1183,7 @@ $\etarho^{-\myhalf}=0, \psi^{-\myhalf}=0, S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 \renewcommand{\labelenumii}{\roman{enumii}.}
 \addtocounter{enumi}{2}
-\item {\it Pressure iterations}: Here we do {\tt init\_iter} iterations to get an
+\item {\it Pressure iterations}: Here we do \runparam{init\_iter} iterations to get an
   approximation for the lagged pressure:
 
   {\bf Do} {$\nu = 1,...,N_{\rm iters}^{\pi}$.}
@@ -1225,10 +1225,10 @@ The tolerances for these elliptic solves are described in \S~\ref{sec:mgtol}.
 \item We defined the mapping of data between a 1D radial array and the 3D Cartesian
 grid for spherical problems (which we improve upon in the multilevel paper).
 \item We update $T$ after the call to {\bf React State}.
-\item We have created a {\tt burning\_cutoff\_density}, where the burning does
-not happen below this density.  It is presently set to {\tt base\_cutoff\_density}.
+\item We have created a \runparam{burning\_cutoff\_density}, where the burning does
+not happen below this density.  It is presently set to \runparam{base\_cutoff\_density}.
 \item Use corner coupling in advection.
-\item We have an option, controlled by {\tt use\_tfromp}, to update temperature 
+\item We have an option, controlled by \runparam{use\_tfromp}, to update temperature 
 using $T=T(\rho,X_k,p_0)$ rather than $T=T(\rho,h,X_k)$.  The former completely 
 decouples enthalpy from our system.  For spherical problems, we use 
 {\tt use\_tfromp = TRUE}, for planar problems, we use {\tt use\_tfromp = FALSE}.
@@ -1238,10 +1238,10 @@ $\nabla\cdot(\Ubt p_0) - p_0\nabla\cdot\Ubt$.
 \item In paper III we discretized the enthalpy evolution equation in
 terms of $T$.  Since then we have discovered that 
 discretizing the enthalpy evolution in perturbational form, $(\rho h)'$,
-leads to better numerical properties.  We use {\tt enthalpy\_pred\_type = 1}.
+leads to better numerical properties.  We use \runparam{enthalpy\_pred\_type = 1}.
 This is more like paper II.
 \item We have turned off the evolution of $h$ above the atmosphere and instead
-compute $h$ with the EOS using {\tt do\_eos\_h\_above\_cutoff = TRUE}.
+compute $h$ with the EOS using \runparam{do\_eos\_h\_above\_cutoff} {\tt = T}.
 \end{enumerate}
 
 
@@ -1257,11 +1257,11 @@ See the multilevel paper for the latest.
 
 \subsection{Changes Between Paper 5 and the XRB Paper}
 \begin{enumerate}
-\item We have added thermal diffusion, controlled by {\tt use\_thermal\_diffusion},
-{\tt temp\_diffusion\_formulation}, and {\tt thermal\_diffusion\_type}.
+\item We have added thermal diffusion, controlled by \runparam{use\_thermal\_diffusion},
+\runparam{temp\_diffusion\_formulation}, and \runparam{thermal\_diffusion\_type}.
 \item We added the volume discrepancy term to the velocity constraint equation,
-controlled by the input parameter, {\tt dpdt\_factor}.
-\item For certain problems, we need to set {\tt do\_eos\_h\_above\_cutoff = FALSE}
+controlled by the input parameter, \runparam{dpdt\_factor}.
+\item For certain problems, we need to set \runparam{do\_eos\_h\_above\_cutoff} {\tt = F}
 to prevent large, unphysical velocities from appearing near the edge of the star.
 \end{enumerate}
 
@@ -1275,10 +1275,10 @@ to prevent large, unphysical velocities from appearing near the edge of the star
 \item Should we use a predictor-corrector for updating the full-state density?
 Specifically, after calling {\bf Correct Base}, should we do a full-state density 
 advance and {\bf Correct Base} using the more accurate estimate of $\rho_0^{n+1}$?
-\item We are still exploring the effects of {\tt use\_tfromp = FALSE} for spherical
+\item We are still exploring the effects of \runparam{use\_tfromp}  {\tt = F} for spherical
 problems.  We would eventually like to run in this mode, but $T=T(\rho,X_k,p_0)$ 
 and $T=T(\rho,h,X_k)$ drift away from each other more than we would like.  Our
-attempts at incorporating a {\tt dpdt\_factor} for spherical problems have not 
+attempts at incorporating a \runparam{dpdt\_factor} for spherical problems have not 
 been successful.
 \end{itemize}
 
