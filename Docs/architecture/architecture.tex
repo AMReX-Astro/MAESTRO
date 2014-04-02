@@ -569,7 +569,7 @@ index space at that level.  For example, box 1 in the figure has {\tt
 is 0-based.
 
 The global index space covers the entire domain at a given resolution.
-For a simulation setup with {\tt n\_cellx = 32} and {\tt n\_celly =
+For a simulation setup with \runparam{n\_cellx = 32} and \runparam{n\_celly =
   32}, the coarsest level (level 1) has $32 \times 32$ zones, and the
 global index space will run from $0, \ldots, 31$ in each coordinate
 direction.  Level 2 will have a global index space running from $0,
@@ -811,7 +811,7 @@ guaranteed to be valid.
 For spherical problems, the base state resolution, $\Delta r$, is
 generally picked to be finer than the Cartesian grid resolution,
 $\Delta x$, i.e.\ $\Delta r < \Delta x$.  The ratio is controlled
-by the parameter {\tt drdxfac}.
+by the parameter \runparam{drdxfac}.
 
 
 
@@ -842,7 +842,7 @@ Presently there are 3 equations of state that work with \maestro:
       and electrons (with arbitrary degeneracy and degree of relativity).
       This equation of state is that described in \cite{timmes_eos}.
 
-      A runtime parameter, {\tt use\_eos\_coulomb}, is defined in
+      A runtime parameter, \runparam{use\_eos\_coulomb}, is defined in
       this EOS to enable/disable Coulomb corrections.
 
 \item {\tt gamma\_law\_general} assumes an ideal gas with a mixed 
@@ -897,9 +897,9 @@ and $p = \rho e (\gamma_\mathrm{effective} - 1)$.
 This equation of state takes several runtime parameters that can set the
 $\gamma_i$ for a specific species:
 \begin{itemize}
-\item {\tt eos\_gamma\_default}: the default $\gamma$ to apply for
+\item \runparam{eos\_gamma\_default}: the default $\gamma$ to apply for
   all species
-\item {\tt species\_X\_name} and {\tt species\_X\_gamma}: set the $\gamma_i$
+\item \runparam{species\_X\_name} and \runparam{species\_X\_gamma}: set the $\gamma_i$
   for the species whose name is given as {\tt species\_X\_name} to the
   value provided by {\tt species\_X\_gamma}.  Here, {\tt X} can be one
   of the letters: {\tt a}, {\tt b}, or {\tt c}, allowing us to specify
