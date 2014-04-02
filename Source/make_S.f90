@@ -80,6 +80,8 @@ contains
 
     call build(bpt, "make_S")
 
+    dm = mla%dim
+    nlevs = mla%nlevel
 
     if (spherical == 1) then
        do n = 1, nlevs
@@ -122,8 +124,6 @@ contains
        endif
     endif
 
-    dm = mla%dim
-    nlevs = mla%nlevel
 
     ng_sr = nghost(Source(1))
     ng_dt = nghost(delta_gamma1_term(1))
@@ -162,8 +162,8 @@ contains
                             hep(:,:,1,1), ng_he, &
                             tp(:,:,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
           case (3)
-             if (spherical .eq. 1) then
-                
+             if (spherical == 1) then
+
                 gp0p => dataptr(gradp0_cart(n), i)
                 ng_gp = nghost(gradp0_cart(1))
 
@@ -254,7 +254,7 @@ contains
                                                   dgp(:,:,1,1),ng_dg, &
                                                   gamma1bar(n,:),psi(n,:),p0(n,:))
              case (3)
-                if (spherical .eq. 1) then
+                if (spherical == 1) then
                    g1p => dataptr(gamma1bar_cart(n), i)
                    ng_g1 = nghost(gamma1bar_cart(1))
 
