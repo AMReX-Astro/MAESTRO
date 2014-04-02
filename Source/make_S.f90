@@ -244,6 +244,10 @@ contains
           do i = 1, nfabs(state(n))
              dgtp   => dataptr(delta_gamma1_term(n), i)
              dgp    => dataptr(delta_gamma1(n), i)
+
+             lo = lwb(get_box(state(n), i))
+             hi = upb(get_box(state(n), i))
+
              select case (dm)
              case (1)
                 call correct_delta_gamma1_term_1d(lo,hi,dgtp(:,1,1,1),ng_dt, &
