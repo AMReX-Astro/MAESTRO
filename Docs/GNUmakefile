@@ -52,29 +52,21 @@ section_sources = maestro_doc.bib \
                   MESA/instructions.tex
 
 
-MaestroUsersGuide.dvi: MaestroUsersGuide.tex $(eps_source) $(section_sources) $(eps_source) 
-	latex MaestroUsersGuide.tex < /dev/null
-	bibtex MaestroUsersGuide
-	latex MaestroUsersGuide.tex < /dev/null
-	makeindex MaestroUsersGuide < /dev/null
-	latex MaestroUsersGuide.tex < /dev/null
-	latex MaestroUsersGuide.tex < /dev/null
-
 MaestroUsersGuide.pdf: MaestroUsersGuide.tex $(pdf_source) $(section_sources) $(pdf_source)
 	pdflatex MaestroUsersGuide.tex < /dev/null
 	bibtex MaestroUsersGuide
 	pdflatex MaestroUsersGuide.tex < /dev/null
+#	makeindex -s mystyle.ist MaestroUsersGuide < /dev/null
 	makeindex MaestroUsersGuide < /dev/null
 	pdflatex MaestroUsersGuide.tex < /dev/null
 	pdflatex MaestroUsersGuide.tex < /dev/null
 
 pdf:	MaestroUsersGuide.pdf 
 
-%.ps: %.dvi
-	dvips -t letter -o $@ $<
 
 %.pdf: %.eps
 	$(EPStoPDF) $<
+
 
 clean:
 	$(RM) $(pdf_source) MaestroUsersGuide.dvi 
