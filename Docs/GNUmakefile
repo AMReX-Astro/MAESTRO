@@ -56,6 +56,7 @@ MaestroUsersGuide.dvi: MaestroUsersGuide.tex $(eps_source) $(section_sources) $(
 	latex MaestroUsersGuide.tex < /dev/null
 	bibtex MaestroUsersGuide
 	latex MaestroUsersGuide.tex < /dev/null
+	makeindex MaestroUsersGuide < /dev/null
 	latex MaestroUsersGuide.tex < /dev/null
 	latex MaestroUsersGuide.tex < /dev/null
 
@@ -63,6 +64,7 @@ MaestroUsersGuide.pdf: MaestroUsersGuide.tex $(pdf_source) $(section_sources) $(
 	pdflatex MaestroUsersGuide.tex < /dev/null
 	bibtex MaestroUsersGuide
 	pdflatex MaestroUsersGuide.tex < /dev/null
+	makeindex MaestroUsersGuide < /dev/null
 	pdflatex MaestroUsersGuide.tex < /dev/null
 	pdflatex MaestroUsersGuide.tex < /dev/null
 

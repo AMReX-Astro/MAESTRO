@@ -155,6 +155,11 @@
 \newcommand{\mesafigpath}{./MESA}
 
 
+% index
+\usepackage{makeidx}
+\makeindex
+
+
 %-----------------------------------------------------------------------------
 \begin{document}
 
@@ -348,11 +353,16 @@ Questions can be sent to \\[3mm]
 \backmatter
 
 %-----------------------------------------------------------------------------
-\part{References}
+\part{References and Index}
 
 \renewcommand\bibname{References}
 \addcontentsline{toc}{chapter}{References}
 \bibliographystyle{plain}
 \bibliography{maestro_doc}
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Index}
+\printindex
 
 \end{document}
