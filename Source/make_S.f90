@@ -62,16 +62,18 @@ contains
     real(kind=dp_t), pointer:: srcp(:,:,:,:),dgtp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:)
     real(kind=dp_t), pointer:: tp(:,:,:,:),dgp(:,:,:,:)
     real(kind=dp_t), pointer:: omegap(:,:,:,:), hep(:,:,:,:), hnp(:,:,:,:)
-    real(kind=dp_t), pointer:: np(:,:,:,:), gp0p(:,:,:,:), p0p(:,:,:,:), g1p(:,:,:,:)
+    real(kind=dp_t), pointer:: np(:,:,:,:)
+    real(kind=dp_t), pointer:: gp0p(:,:,:,:), p0p(:,:,:,:), g1p(:,:,:,:), psp(:,:,:,:)
 
     integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: i,n, r
     integer :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
-    integer :: ng_gp, ng_p0, ng_g1, ng_n
+    integer :: ng_gp, ng_p0, ng_g1, ng_n, ng_ps
 
     real(kind=dp_t) :: gradp0_rad(1,0:nr_fine-1)
     type(multifab) :: gradp0_cart(mla%nlevel)
     type(multifab) :: p0_cart(mla%nlevel)
+    type(multifab) :: psi_cart(mla%nlevel)
     type(multifab) :: gamma1bar_cart(mla%nlevel)
 
     type(bl_prof_timer), save :: bpt
@@ -86,6 +88,9 @@ contains
 
           call build(p0_cart(n), mla%la(n), 1, 0)
           call setval(p0_cart(n), ZERO, all=.true.)
+
+          call build(psi_cart(n), mla%la(n), 1, 0)
+          call setval(psi_cart(n), ZERO, all=.true.)
 
           call build(gamma1bar_cart(n), mla%la(n), 1, 0)
           call setval(gamma1bar_cart(n), ZERO, all=.true.)
@@ -107,6 +112,9 @@ contains
                                     .false.,.false.,dx,the_bc_level,mla)
 
           call put_1d_array_on_cart(p0,p0_cart,foextrap_comp, &
+                                    .false.,.false.,dx,the_bc_level,mla)
+
+          call put_1d_array_on_cart(psi,psi_cart,foextrap_comp, &
                                     .false.,.false.,dx,the_bc_level,mla)
 
           call put_1d_array_on_cart(gamma1bar,gamma1bar_cart,foextrap_comp, &
@@ -189,14 +197,6 @@ contains
        end do
     enddo
 
-    if (spherical == 1) then
-       do n = 1, nlevs
-          call destroy(gradp0_cart(n))
-          call destroy(p0_cart(n))
-          call destroy(gamma1bar_cart(n))
-       enddo
-    endif
-
     ! fill the ghostcells for delta_gamma1_term and Source
     if (nlevs .eq. 1) then
 
@@ -248,21 +248,31 @@ contains
              case (1)
                 call correct_delta_gamma1_term_1d(lo,hi,dgtp(:,1,1,1),ng_dt, &
                                                   dgp(:,1,1,1),ng_dg, &
-                                                  gamma1bar(n,:),psi(n,:), &
-                                                  delta_gamma1_termbar(n,:),p0(n,:))
+                                                  gamma1bar(n,:),psi(n,:),p0(n,:))
              case (2)
                 call correct_delta_gamma1_term_2d(lo,hi,dgtp(:,:,1,1),ng_dt, &
                                                   dgp(:,:,1,1),ng_dg, &
-                                                  gamma1bar(n,:),psi(n,:), &
-                                                  delta_gamma1_termbar(n,:),p0(n,:))
+                                                  gamma1bar(n,:),psi(n,:),p0(n,:))
              case (3)
                 if (spherical .eq. 1) then
-                   call bl_error("ERROR: correct_delta_gamma1_term not implemented for spherical in make_S")
+                   g1p => dataptr(gamma1bar_cart(n), i)
+                   ng_g1 = nghost(gamma1bar_cart(1))
+
+                   p0p => dataptr(p0_cart(n), i)
+                   ng_p0 = nghost(p0_cart(1))
+
+                   psp => dataptr(psi_cart(n), i)
+                   ng_ps = nghost(psi_cart(1))
+
+                   call correct_delta_gamma1_term_3d_sphr(lo,hi,dgtp(:,:,:,1),ng_dt, &
+                                                          dgp(:,:,:,1),ng_dg, &
+                                                          g1p(:,:,:,1),ng_g1, &
+                                                          psp(:,:,:,1),ng_ps, &
+                                                          p0p(:,:,:,1),ng_p0)
                 else
                    call correct_delta_gamma1_term_3d(lo,hi,dgtp(:,:,:,1),ng_dt, &
                                                      dgp(:,:,:,1),ng_dg, &
-                                                     gamma1bar(n,:),psi(n,:), &
-                                                     delta_gamma1_termbar(n,:),p0(n,:))
+                                                     gamma1bar(n,:),psi(n,:),p0(n,:))
                 end if
              end select
           end do
@@ -296,6 +306,15 @@ contains
        end if
 
     end if
+
+    if (spherical == 1) then
+       do n = 1, nlevs
+          call destroy(gradp0_cart(n))
+          call destroy(p0_cart(n))
+          call destroy(psi_cart(n))
+          call destroy(gamma1bar_cart(n))
+       enddo
+    endif
 
     call destroy(bpt)
 
@@ -674,15 +693,15 @@ contains
 
   end subroutine make_S_3d_sphr
 
-  subroutine correct_delta_gamma1_term_1d(lo,hi,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
-                                          gamma1bar,psi,delta_gamma1_termbar,p0)
+  subroutine correct_delta_gamma1_term_1d(lo,hi,delta_gamma1_term,ng_dt, &
+                                          delta_gamma1,ng_dg, &
+                                          gamma1bar,psi,p0)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_dt, ng_dg
     real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1)-ng_dt:)
     real (kind=dp_t), intent(in   ) ::      delta_gamma1(lo(1)-ng_dg:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: psi(0:)
-    real (kind=dp_t), intent(in   ) :: delta_gamma1_termbar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
     integer :: i
@@ -696,15 +715,15 @@ contains
 
   end subroutine correct_delta_gamma1_term_1d
 
-  subroutine correct_delta_gamma1_term_2d(lo,hi,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
-                                          gamma1bar,psi,delta_gamma1_termbar,p0)
+  subroutine correct_delta_gamma1_term_2d(lo,hi,delta_gamma1_term,ng_dt, &
+                                          delta_gamma1,ng_dg, &
+                                          gamma1bar,psi,p0)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_dt, ng_dg
     real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:)
     real (kind=dp_t), intent(in   ) ::      delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: psi(0:)
-    real (kind=dp_t), intent(in   ) :: delta_gamma1_termbar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
     integer :: i, j
@@ -720,15 +739,15 @@ contains
 
   end subroutine correct_delta_gamma1_term_2d
 
-  subroutine correct_delta_gamma1_term_3d(lo,hi,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
-                                          gamma1bar,psi,delta_gamma1_termbar,p0)
+  subroutine correct_delta_gamma1_term_3d(lo,hi,delta_gamma1_term,ng_dt, &
+                                          delta_gamma1,ng_dg, &
+                                          gamma1bar,psi,p0)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_dt, ng_dg
     real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
     real (kind=dp_t), intent(in   ) ::    delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: psi(0:)
-    real (kind=dp_t), intent(in   ) :: delta_gamma1_termbar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
     integer :: i, j, k
@@ -747,5 +766,35 @@ contains
     !$OMP END PARALLEL DO
 
   end subroutine correct_delta_gamma1_term_3d
+
+  subroutine correct_delta_gamma1_term_3d_sphr(lo,hi,delta_gamma1_term,ng_dt, &
+                                               delta_gamma1,ng_dg, &
+                                               gamma1bar_cart,ng_g1, &
+                                               psi_cart,ng_ps, &
+                                               p0_cart,ng_p0)
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_dt, ng_dg, ng_g1, ng_ps, ng_p0
+    real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
+    real (kind=dp_t), intent(in   ) ::    delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
+    real (kind=dp_t), intent(in   ) ::  gamma1bar_cart(lo(1)-ng_g1:,lo(2)-ng_g1:,lo(3)-ng_g1:)
+    real (kind=dp_t), intent(in   ) ::         p0_cart(lo(1)-ng_p0:,lo(2)-ng_p0:,lo(3)-ng_p0:)
+    real (kind=dp_t), intent(in   ) ::        psi_cart(lo(1)-ng_ps:,lo(2)-ng_ps:,lo(3)-ng_ps:)
+
+    integer :: i, j, k
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             delta_gamma1_term(i,j,k) = delta_gamma1_term(i,j,k) &
+                  + delta_gamma1(i,j,k)*psi_cart(i,j,k)/(gamma1bar_cart(i,j,k)**2*p0_cart(i,j,k))
+
+          end do
+       end do
+    end do
+    !$OMP END PARALLEL DO
+
+  end subroutine correct_delta_gamma1_term_3d_sphr
 
 end module make_S_module
