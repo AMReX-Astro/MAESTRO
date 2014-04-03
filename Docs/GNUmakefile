@@ -23,9 +23,10 @@ pdf_source = $(eps_source:.eps=.pdf)
 
 section_sources = maestro_doc.bib \
                   introduction/introduction.tex \
-                  flowchart/flowchart.tex \
                   preface/preface.tex \
+                  flowchart/flowchart.tex \
                   getting_started/getting_started.tex \
+                  unit_tests/unit_tests.tex \
                   architecture/architecture.tex \
                   runtime_parameters/runtime_parameters.tex \
                   volume_discrepancy/volume_discrepancy.tex \

@@ -31,7 +31,7 @@ spectral deferred corrections is outlined in Chapter~\ref{ch:sdc}.)
 Here is the current description of the algorithm, based from the
 description in the multilevel paper.  The initialization has also been
 included with more detail than was given in paper III.  The main
-driver for a single step of the algorithm is {\tt advance.f90}---refer
+driver for a single step of the algorithm is \code{advance.f90}---refer
 to that code to see the sequence of functions called to implement each
 step.
 
@@ -1138,7 +1138,7 @@ proceeds as follows.
 \item {\em ``Divu'' iterations}: Next we do \runparam{init\_divu\_iter} iterations 
   to project the velocity field using a constraint that sees reactions
   and external heating. 
-  The initial timestep estimate is provided by {\tt firstdt} and
+  The initial timestep estimate is provided by \code{firstdt} and
   $\Ub^{0,0}$, to allow us to compute the effect of reactions over $\Delta t/2$.
 
   {\bf Do} {$\nu = 1,...,N_{\rm iters}^{S}$.}

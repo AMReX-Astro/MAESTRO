@@ -4,7 +4,7 @@
 In addition to the \maestro\ science problems, which use the full
 capabilities of \maestro, there are a number of unit tests that
 exercise only specific components of the \maestro\ solvers.  These
-tests have their own drivers (a custom {\tt varden.f90}) that
+tests have their own drivers (a custom \code{varden.f90}) that
 initialize only the data needed for the specific test and call
 specific \maestro\ routines directly.
 
@@ -50,12 +50,12 @@ specific \maestro\ routines directly.
 
   This test initializes a 1D radial base state quantity with a
   Gaussian distribution, maps it into the 3D domain (assuming a
-  spherical geometry) using the routines provided by the {\tt
-    fill\_3d\_module} module, and then calls {\tt average} to put it
-  back onto a 1D radial array.  This way we test the accuracy of our
-  procedure to map between the 1D radial and 3D Cartesian states.
-  The output from this test was described in detail in
-  \cite{multilevel}.
+  spherical geometry) using the routines provided by
+  the \code{fill\_3d\_module} module, and then calls \code{average} to
+  put it back onto a 1D radial array.  This way we test the accuracy
+  of our procedure to map between the 1D radial and 3D Cartesian
+  states.  The output from this test was described in detail
+  in \cite{multilevel}.
 
 
 \section {\tt test\_basestate} 
@@ -168,13 +168,13 @@ specific \maestro\ routines directly.
 
 \section{\tt test\_react}
 
-  This simply tests the reaction network by calling the \maestro\ {\tt
-  react\_state} routine directly.  The network is selected in the {\tt
-  GNUmakefile} by setting the {\tt NETWORK\_DIR} variable.  A 3d cube
-  is setup with density varying on one axis, temperature varying on
-  another, and the composition varying on the third.  The density and
-  temperature ranges are set in the inputs file.  The composition is
-  read in via an input file.
+  This simply tests the reaction network by calling
+  the \maestro\ \code{react\_state} routine directly.  The network is
+  selected in the {\tt GNUmakefile} by setting the {\tt NETWORK\_DIR}
+  variable.  A 3d cube is setup with density varying on one axis,
+  temperature varying on another, and the composition varying on the
+  third.  The density and temperature ranges are set in the inputs
+  file.  The composition is read in via an input file.
 
   A good use of this test is to test whether a burner is threadsafe.
   This is accomplished by compiling with OpenMP (setting {\tt OMP=t})
