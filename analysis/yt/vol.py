@@ -3,42 +3,38 @@
 
 from yt.mods import *
 import math
+import yt.visualization.volume_rendering.api
+import yt.units as u
 
-
-
-pf = load("plt23437")
-
-@derived_field(name="vel",
-               units="cm/s",
-               take_log=False,
-               display_name=r"|U|")
-def _vel(field,data):
-    return data["magvel"]
+pf = load("xrb-3d/plt58827")
 
 # Choose a field
-field = 'vel'
+field = ('gas', 'velocity_magnitude')
 
 # Do you want the log of the field?
 use_log = True
 
 # Find the bounds in log space of for your field
 dd = pf.h.all_data()
-mi, ma = dd.quantities["Extrema"](field)[0]
+mi, ma = dd.quantities["Extrema"](field)
 
 pf.field_info[field].take_log = use_log
 
-vals = [1.e5, 3.16e5, 1.e6, 3.16e6, 1.e7]
+if use_log:
+    vals = [1.e5, 3.16e5, 1.e6, 3.16e6, 1.e7]
+else:
+    vals = np.mgrid[mi:ma:7j].d
 
 mi = min(vals)
 ma = max(vals)
 
 if use_log:
-    mi,ma = np.log10(mi), np.log10(ma)
+    mi, ma = np.log10(mi), np.log10(ma)
 
 print mi, ma
 
 # Instantiate the ColorTransferfunction.
-tf = ColorTransferFunction((mi, ma))
+tf =  yt.visualization.volume_rendering.api.ColorTransferFunction((mi, ma))
 
 # Set up the camera parameters: center, looking direction, width, resolution
 c = (pf.domain_right_edge + pf.domain_left_edge)/2.0
@@ -69,6 +65,10 @@ cam = pf.h.camera(c, L, W, N, tf,
 
 # make an image
 im = cam.snapshot()
+max_val = im[:,:,:3].std() * 4.0
+im[:,:,:3] /= max_val
+
+im.write_png('test-1.png')
 
 # add an axes triad
 cam.draw_coordinate_vectors(im)
@@ -78,11 +78,10 @@ cam.show_tf()
 
 # add the domain box to the image:
 nim = cam.draw_domain(im)
-
+nim[:,:,:3] /= max_val
 
 # save
 nim.write_png('test_rendering_with_domain.png')
 
 # save annotated
 cam.save_annotated("test.png", nim)
-
