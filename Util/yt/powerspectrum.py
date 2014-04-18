@@ -45,11 +45,6 @@ def powerspectrum(pf, nindex_rho=0.0):
                             fields=[irho, iu, iv, iw])
 
 
-    # only triply-periodic is supported at the moment, although it is 
-    # not at all clear that BCs should come into play for a sampled
-    # covering grid
-    pf.periodicity = (True, True, True)
-
     rho = cube[irho].d
     u = cube[iu].d
     v = cube[iv].d
