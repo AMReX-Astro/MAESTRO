@@ -38,8 +38,10 @@ def powerspectrum(pf, nindex_rho=0.0):
     # get the data on a uniform grid at the highest resolution
     max_level = pf.index.max_level
 
+    ref = na.product(pf.ref_factors[0:max_level])
+
     cube = pf.covering_grid(max_level, left_edge=pf.domain_left_edge, 
-                            dims=pf.domain_dimensions,
+                            dims=pf.domain_dimensions*ref,
                             fields=[irho, iu, iv, iw])
 
 
