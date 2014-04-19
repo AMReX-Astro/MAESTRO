@@ -45,26 +45,34 @@ def powerspectrum(pf, nindex_rho=0.0):
                             fields=[irho, iu, iv, iw])
 
 
-    rho = cube[irho].d
-    u = cube[iu].d
-    v = cube[iv].d
-    w = cube[iw].d
-    
+    rho = cube[irho].d    
     nx, ny, nz = rho.shape
 
     # do the FFTs -- note that since our data is real, there will be
     # too much information here.  By default, fftn will put the
     # positive frequency terms in the first half of all axes -- that's
     # what we want to keep
-    ruk = na.fft.fftn(rho**nindex_rho * u)[0:nx/2+1,0:ny/2+1,0:nz/2+1]
-    rvk = na.fft.fftn(rho**nindex_rho * v)[0:nx/2+1,0:ny/2+1,0:nz/2+1]
-    rwk = na.fft.fftn(rho**nindex_rho * w)[0:nx/2+1,0:ny/2+1,0:nz/2+1]
 
     # normalize -- the 8 here is because we are a real-valued function,
     # so only one octant is unique.
-    ruk = 8.0*ruk/(nx*ny*nz)
-    rvk = 8.0*rvk/(nx*ny*nz)
-    rwk = 8.0*rwk/(nx*ny*nz)
+
+    print "doing ux"
+    u = cube[iu].d
+    ru = na.fft.fftn(rho**nindex_rho * u)[0:nx/2+1,0:ny/2+1,0:nz/2+1]
+    ru = 8.0*ru/(nx*ny*nz)
+    Kk = 0.5*abs(ru)**2
+
+    print "doing uy"
+    u = cube[iv].d
+    ru = na.fft.fftn(rho**nindex_rho * u)[0:nx/2+1,0:ny/2+1,0:nz/2+1]
+    ru = 8.0*ru/(nx*ny*nz)
+    Kk += 0.5*abs(ru)**2
+
+    print "doing uz"
+    u = cube[iw].d
+    ru = na.fft.fftn(rho**nindex_rho * u)[0:nx/2+1,0:ny/2+1,0:nz/2+1]
+    ru = 8.0*ru/(nx*ny*nz)
+    Kk += 0.5*abs(ru)**2
 
     # wavenumbers -- unfortunately, yt uses an older version of NumPy,
     # so we don't have access to the rfftfreq function.  The last
@@ -80,12 +88,9 @@ def powerspectrum(pf, nindex_rho=0.0):
     ky[-1] *= -1
     ky = ky*ny/L[1]
 
-    kz = na.fft.fftfreq(rho.shape[2])[0:nz/2+1]
+    kz = na.fft.fftfreq(nz)[0:nz/2+1]
     kz[-1] *= -1
     kz = kz*nz/L[2]
-
-    # density-weighted kinetic energy density
-    Kk = 0.5*(abs(ruk)**2 + abs(rvk)**2 + abs(rwk)**2)
 
     kmin = 0
     kmax = na.sqrt(na.max(kx)**2 + na.max(ky)**2 + na.max(kz)**2)
@@ -116,10 +121,11 @@ def powerspectrum(pf, nindex_rho=0.0):
 
     n = 1
     while n < len(ncount):
-        E_spectrum[n-1] = na.sum(Kk.flat[whichbin==n])/ncount[n]
+        if ncount[n] == 0: break
+        E_spectrum[n-1] = na.sum(Kk.flat[whichbin==n]) #/ncount[n]
         n += 1
 
-    k = bins[1:]
+    k = bins[1:n]
     E_spectrum = E_spectrum[0:len(k)]
 
     return k, E_spectrum
