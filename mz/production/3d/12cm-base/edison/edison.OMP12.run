@@ -81,16 +81,27 @@ else
     restartString="--restart ${restartNum}"
 fi
 
-
-# -n is the total number of MPI tasks
-# -N is the number of MPI tasks PER compute node
+# Edison has 2 Intel "IvyBridge" processors each with 12 cores.  Each processor
+# connects to 1/2 of the node's memory, and is called a NUMA node.  So there
+# are 2 NUMA nodes per Edison node.
+#
+# -S is the number of MPI tasks per NUMA node (you want to split them
+#    across the 2 NUMA nodes per Edison node)
+#
+# -n is the total number of MPI tasks for the entire application
+#
+# -N is the number of MPI tasks PER Edison node
+#
 # -d is the number of OpenMP threads per MPI task (must match OMP_NUM_THREADS)
 #
 # see http://www.nersc.gov/users/computational-systems/edison/running-jobs/example-batch-scripts/
-
-
+#     http://www.nersc.gov/users/computational-systems/edison/running-jobs/aprun/
+#
 # you need to change -n to give the number of MPI tasks you want.  Then
 # that number * OMP_NUM_THREADS should match the mppwidth set at the top of this script
+#
+# The product of -N and -d should be 24 -- the total number of cores per Edison node.
+
 echo "restart string: " ${restartString}
 
 aprun -n 192 -N 2 -S 1 -d 12 -ss ./main.Linux.Cray.mpi.omp.exe inputs_3d_12.0cm.hi_dens ${restartString}
