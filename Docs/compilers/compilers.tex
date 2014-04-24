@@ -19,9 +19,11 @@ machine at OCLF.
  should just be $\mathtt{nx} \times \mathtt{ny} \times \mathtt{nz}$,
  but the value reported is incorrect.  This issue only manifests when
  using OpenMP, so it is likely related to the OpenMP loop in {\tt
- boxarray\_volume()}, which is called by {\tt multifab\_volume()}.
+ boxarray\_volume()}, which is called by \code{multifab\_volume()}.
  In Cray 8.2.4 the problem appears to be resolved, with  
- {\tt multifab\_volume()} returning the correct cell count.
+ \code{\tt multifab\_volume()} returning the correct cell count.
+
+\item Cray 8.2.6 on NERSC Edison seems to work well with OpenMP.
 
 \end{itemize}
 
