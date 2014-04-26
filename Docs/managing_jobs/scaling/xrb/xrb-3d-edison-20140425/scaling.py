@@ -28,8 +28,8 @@ def scaling():
     idx_omp12 = N_omp[:] == 12
 
     pylab.loglog(cores[idx_omp1], t_total[idx_omp1], "o-", label="pure MPI")
-    pylab.loglog(cores[idx_omp6], t_total[idx_omp6], "^-", label="MPI + 6 OpenMP threads")
-    pylab.loglog(cores[idx_omp12], t_total[idx_omp12], "x-", label="MPI + 12 OpenMP threads")
+    pylab.loglog(cores[idx_omp6], t_total[idx_omp6], "o-", label="MPI + 6 OpenMP threads")
+    pylab.loglog(cores[idx_omp12], t_total[idx_omp12], "o-", label="MPI + 12 OpenMP threads")
 
     # ideal
     pylab.loglog(cores, t_total[0]*cores[0]/cores, ":", color="k", label="ideal scaling")
