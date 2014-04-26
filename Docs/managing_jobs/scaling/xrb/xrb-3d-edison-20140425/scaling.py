@@ -27,12 +27,14 @@ def scaling():
     idx_omp6 = N_omp[:] == 6
     idx_omp12 = N_omp[:] == 12
 
-    pylab.loglog(cores[idx_omp1], t_total[idx_omp1], "o-", label="pure MPI")
-    pylab.loglog(cores[idx_omp6], t_total[idx_omp6], "o-", label="MPI + 6 OpenMP threads")
-    pylab.loglog(cores[idx_omp12], t_total[idx_omp12], "o-", label="MPI + 12 OpenMP threads")
+    pylab.loglog(cores[idx_omp1], t_total[idx_omp1], "o-", color="b", label="pure MPI")
+    pylab.loglog(cores[idx_omp6], t_total[idx_omp6], "o-", color="r", label="MPI + 6 OpenMP threads")
+    pylab.loglog(cores[idx_omp12], t_total[idx_omp12], "o-", color="g", label="MPI + 12 OpenMP threads")
 
     # ideal
-    pylab.loglog(cores, t_total[0]*cores[0]/cores, ":", color="k", label="ideal scaling")
+    cm = np.min(cores)
+    cM = np.max(cores)
+    pylab.loglog([cm, cM], t_total[0]*cm/np.array([cm, cM]), ":", color="k", label="ideal scaling")
 
     pylab.legend(frameon=False)
 
@@ -40,6 +42,8 @@ def scaling():
     pylab.ylabel("average time to advance timestep")
 
     pylab.title("NERSC Edison Scaling for 3-d XRB (384 x 384 x 768 zones)")
+
+    pylab.ylim(1.,100.)
 
     pylab.savefig("xrb_edison_scaling_by_parallel.png")
 
@@ -48,14 +52,18 @@ def scaling():
     pylab.clf()
 
     grids = np.unique(N_mpi)
+    colors = ["g", "b", "r"]
     for g in grids:
         idx = N_mpi[:] == g
         gsize = int(round((problem_size/g)**(1./3.)))
-        pylab.loglog(cores[idx], t_total[idx], "o-", label=r"${}^3$ grid".format(gsize))
+        pylab.loglog(cores[idx], t_total[idx], "o-", color=colors.pop(),
+                     label=r"${}^3$ grid".format(gsize))
 
 
     # ideal
-    pylab.loglog(cores, t_total[0]*cores[0]/cores, ":", color="k", label="ideal scaling")
+    cm = np.min(cores)
+    cM = np.max(cores)
+    pylab.loglog([cm, cM], t_total[0]*cm/np.array([cm, cM]), ":", color="k", label="ideal scaling")
 
     pylab.legend(frameon=False)
 
@@ -64,6 +72,7 @@ def scaling():
 
     pylab.title("NERSC Edison Scaling for 3-d XRB (384 x 384 x 768 zones)")
 
+    pylab.ylim(1.,100.)
     pylab.savefig("xrb_edison_scaling_by_grid.png")
 
 
