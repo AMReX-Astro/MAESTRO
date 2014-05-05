@@ -3,25 +3,31 @@ In low density regions, we modify the behavior of the algorithm.  Here
 is a summary of some parameters, and a brief description of what they
 do.
 \begin{itemize}
-\item {\tt base\_cutoff\_density}, $\rho_{\rm base}$, (real):\\ \\
+\item \runparam{base\_cutoff\_density}, $\rho_{\rm base}$, (real):\\ \\
 Essentially controls the lowest density allowed in the simulation and modifies the behavior
 of several modules.
 \item {\tt base\_cutoff\_density\_coord(:)} (integer array):\\ \\
 For each level in the radial base state array, this is the coordinate of the first cell
 where $\rho_0 < \rho_{\rm base}$.  Slightly more complicated for multilevel problems.
-\item {\tt anelastic\_cutoff}, $\rho_{\rm anelastic}$, (real):\\ \\
+
+\item \runparam{anelastic\_cutoff}, $\rho_{\rm anelastic}$, (real):\\ \\
 If $\rho_0 < \rho_{\rm anelastic}$, we modify the computation of $\beta_0$ in the
 divergence constraint.
+
 \item {\tt anelastic\_cutoff\_coord(:)} (integer array):\\ \\
 Anelastic cutoff analogy of {\tt base\_cutoff\_density\_coord(:)}.
-\item {\tt burning\_cutoff\_density}, $\rho_{\rm burning}$,  (real):\\ \\
+
+\item \runparam{burning\_cutoff\_density}, $\rho_{\rm burning}$,  (real):\\ \\
 If $\rho < \rho_{\rm burning}$, don't call the burner in this cell.
+
 \item {\tt burning\_cutoff\_density\_coord(:)} (integer array):\\ \\
 Burning cutoff analogy of {\tt base\_cutoff\_density\_coord(:)}.
-\item {\tt buoyancy\_cutoff\_factor} (real):\\ \\
+
+\item \runparam{buoyancy\_cutoff\_factor} (real):\\ \\
 When computing velocity forcing, set the buoyance term ($\rho-\rho_0$) to 0 if 
 $\rho < $ {\tt buoyancy\_cutoff\_factor} * {\tt base\_cutoff\_density}.
-\item {\tt do\_eos\_h\_above\_cutoff} (logical):\\ \\
+
+\item \runparam{do\_eos\_h\_above\_cutoff} (logical):\\ \\
 If {\rm true}, at the end of the advection step, for each cell where 
 $\rho < \rho_{\rm base}$, recompute $h = h(\rho,p_0,X)$.
 \end{itemize}
@@ -45,7 +51,12 @@ are related for single-level planar and all spherical problems.}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Note that for single-level planar or any spherical problem, saying $r\ge$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\rho_0(r)\le$ {\tt anelastic\_cutoff}.  Also, saying $r<$ {\tt anelastic\_cutoff\_coord} is analogous to saying $\rho_0(r)>$ {\tt anelastic\_cutoff}.  Ditto for {\tt base\_cutoff\_density} and {\tt base\_cutoff\_density\_coord}.
+Note that for single-level planar or any spherical problem, saying
+$r\ge$ {\tt anelastic\_cutoff\_coord} is analogous to saying
+$\rho_0(r)\le$ \runparam{anelastic\_cutoff}.  Also, saying $r<$ {\tt
+anelastic\_cutoff\_coord} is analogous to saying $\rho_0(r)>$ {\tt
+anelastic\_cutoff}.  Ditto for \runparam{base\_cutoff\_density} and {\tt
+base\_cutoff\_density\_coord}.
 
 \subsection{Multilevel Planar}
 In this case, the base state exists as several one-dimensional arrays, each with
@@ -121,7 +132,7 @@ At several points in the algorithm, we compute {\tt anelastic\_cutoff\_coord}(:)
 
 \subsection{anelastic\_cutoff}\label{Sec:Anelastic Cutoff}
 
-The {\tt anelastic\_cutoff} is the density below which we modify the constraint.
+The \runparam{anelastic\_cutoff} is the density below which we modify the constraint.
 
 
 \begin{itemize}
@@ -133,7 +144,8 @@ The {\tt anelastic\_cutoff} is the density below which we modify the constraint.
   ${\tt div\_coeff}(n,r) = {\tt div\_coeff}(n,r-1) * \rho_0(n,r)/\rho_0(n,r-1)$.
 
 \item in {\tt make\_S}, we set {\tt delta\_gamma1\_term} and {\tt delta\_gamma1} 
-  to zero for $r \ge {\tt anelastic\_cutoff\_coord}$.
+  to zero for $r \ge {\tt anelastic\_cutoff\_coord}$.  This is only relevant
+  if you are running with \runparam{use\_delta\_gamma1\_term} {\tt = T}.
 
 \item Some versions of {\tt sponge}, use {\tt anelastic\_cutoff} in a problem dependent way.
 
@@ -141,7 +153,7 @@ The {\tt anelastic\_cutoff} is the density below which we modify the constraint.
 
 \subsection{base\_cutoff\_density}\label{Sec:Base Cutoff Density}
 
-The {\tt base\_cutoff\_density} is the lowest density that we model.
+The \runparam{base\_cutoff\_density} is the lowest density that we model.
 
 \begin{itemize}
 
@@ -167,7 +179,7 @@ The {\tt base\_cutoff\_density} is the lowest density that we model.
   setting it to $\rho_0 g$.
 
 \item In {\tt update\_scal}, if $\rho \le {\tt base\_cutoff\_density}$
-   and {\tt do\_eos\_h\_above\_cutoff}, we call the EOS to compute $h$.
+   and \runparam{do\_eos\_h\_above\_cutoff}, we call the EOS to compute $h$.
 
 \item In {\tt update\_scal}, if $\rho \le {\tt base\_cutoff\_density}/2$
    we set it to ${\tt base\_cutoff\_density}/2$.
@@ -191,8 +203,8 @@ densities below the burning cutoff, we do not call the network.
 
 \begin{itemize}
 
-\item In {\tt probin}, {\tt burning\_cutoff\_density} is set to 
-  {\tt base\_cutoff\_density}.  There is no option to set 
+\item In {\tt probin}, \runparam{burning\_cutoff\_density} is set to 
+  \runparam{base\_cutoff\_density}.  There is no option to set 
   {\tt burning\_cutoff\_density} using the inputs file.
 
 \item In {\tt react\_state}, we only call the burner if 
@@ -204,7 +216,7 @@ densities below the burning cutoff, we do not call the network.
 
 \subsection{buoyancy\_cutoff\_factor}
 
-The {\tt buoyancy\_cutoff\_factor} is used to zero out the forcing terms
+The \runparam{buoyancy\_cutoff\_factor} is used to zero out the forcing terms
 to the velocity equation at low densities.
 
 \begin{itemize}
@@ -222,7 +234,7 @@ to the velocity equation at low densities.
    rotating stars, if $\rho < \mathtt{buoyancy\_cutoff\_factor *
    base\_cutoff\_density}$.
 
-\item In {\tt make\_explicit\_thermal}, if {\tt limit\_conductivity = T}, then for 
+\item In {\tt make\_explicit\_thermal}, if \runparam{limit\_conductivity} {\tt = T}, then for 
 $\rho < \mathtt{buoyancy\_cutoff\_factor}$ \\ $* \mathtt{base\_cutoff\_density}$, we
 zero out the thermal coefficients, effectively turning off thermal
 diffusion there.

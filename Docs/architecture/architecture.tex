@@ -94,7 +94,7 @@ an executable.  Briefly, the \maestro\ sub-directories are:
     you place in a sub-directory here takes precedence over a file of
     the same name in {\tt MAESTRO/}.  This allows problems to have
     custom versions of the main \maestro\ routines (e.g.\ initial
-    conditions via {\tt initdata.f90}.  See \S~\ref{sec:makefile} and
+    conditions via \code{initdata.f90}.  See \S~\ref{sec:makefile} and
     Chapter~\ref{ch:make} for details on the build system).
 
  
@@ -116,7 +116,7 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
       Special \maestro\ problem directories that test only a single
       component of the \maestro\ algorithm.  These often have their
-      own main drivers ({\tt varden.f90}) that setup and initialize
+      own main drivers (\code{varden.f90}) that setup and initialize
       some data structures and then call only a few of the
       \maestro\ routines.  See Chapter~\ref{chapter:unit_tests} for details.
 
@@ -370,13 +370,13 @@ general equation of state found in {\tt Microphysics/EOS/helmeos/}.  This is
 automatically handled by the {\tt GMaestro.mak} instructions.
 
 Runtime parameters listed in the {\tt MAESTRO/\_parameters} file are
-parsed at compile time and the file {\tt probin.f90} is written and
+parsed at compile time and the file \code{probin.f90} is written and
 compiled.  This is a Fortran module that holds the values of the
 runtime parameters and makes them available to any routine.  By
 default, the build system looks for a file called {\tt \_parameters}
 in the problem directory and adds those parameters along with the
 master list of \maestro\ parameters ({\tt MAESTRO/\_parameters}) to
-the {\tt probin\_module}.
+the \code{probin\_module}.
 
 The final line in the {\tt GNUmakefile} includes the rules to actually
 build the executable.
@@ -405,7 +405,7 @@ list in the {\tt GNUmakefile}.
 The runtime parameters for the core \maestro\ algorithm are listed in
 {\tt MAESTRO/\_parameters}.  That file is parsed at compile-time by
 the {\tt MAESTRO/write\_probin.py} script (along with any
-problem-specific parameters).  The script outputs the {\tt probin.f90}
+problem-specific parameters).  The script outputs the \code{probin.f90}
 source file.  Each line in the {\tt \_parameters} file has the form:
 \vskip 3mm
 {\em parameter} \hskip 10em  {\em data-type} \hskip 10em  {\em value} 
@@ -425,7 +425,7 @@ following that heading are placed into that category.  The documentation
 At runtime, the default values for the parameters can be overridden
 either through the inputs file (by adding a line of the form: {\tt
   parameter = value}) or through a command-line argument (taking the
-form: {\tt --parameter value}).  The {\tt probin\_module} makes the
+form: {\tt --parameter value}).  The \code{probin\_module} makes the
 values of the runtime parameters available to the various functions
 in the code (see \S~\ref{sec:probin}).
 
@@ -470,12 +470,12 @@ The {\tt toy\_atm} example provides a simple approximation for a thin
 of a star.  This can be used as the starting point for a more complex
 model.  
 
-\maestro\ initial models are read in by the {\tt Util/model\_parser}
+\maestro\ initial models are read in by the \code{Util/model\_parser}
 routines.  This expects the initial model to contain a header giving
 the number of variables and their names, followed by rows of data
 giving the coordinate and data values at that coordinate.  The initial
 model should contain the same species data (in the form of mass fractions) as
-defined in the {\tt network} module used by the \maestro\ problem.
+defined in the \code{network} module used by the \maestro\ problem.
 
 Full details on which initial model routine matches each problem and
 how the initial models are used to initialize the full state data can
@@ -484,9 +484,7 @@ be found in \S~\ref{sec:initial_models_main}.
 \subsection{Customizing the Initialization}
 
 The best way to customize the initialization (e.g.\ add perturbations)
-is to copy from one of the existing problems.  The file {\tt
-  initveldata.f90} controls the velocity field initialization and {\tt
-  initscaldata.f90} controls the initialization of the scalars
+is to copy from one of the existing problems.  The file \code{initveldata.f90} controls the velocity field initialization and \code{initscaldata.f90} controls the initialization of the scalars
 ($\rho$, $\rho X_k$, $\rho h$).  The {\tt test2} problem is a good
 starting point for plane-parallel and {\tt wdconvect} is a good
 starting point for full stars.
@@ -569,7 +567,7 @@ index space at that level.  For example, box 1 in the figure has {\tt
 is 0-based.
 
 The global index space covers the entire domain at a given resolution.
-For a simulation setup with {\tt n\_cellx = 32} and {\tt n\_celly =
+For a simulation setup with \runparam{n\_cellx} {\tt = 32} and \runparam{n\_celly} {\tt =
   32}, the coarsest level (level 1) has $32 \times 32$ zones, and the
 global index space will run from $0, \ldots, 31$ in each coordinate
 direction.  Level 2 will have a global index space running from $0,
@@ -688,17 +686,17 @@ everywhere.  This can be done (level-by-level) as
 \begin{lstlisting}[language={[95]fortran},mathescape=false]
 call setval(mfab(n), ZERO, all=.true.)
 \end{lstlisting}
-where {\tt ZERO} is the constant 0.0 from {\tt bl\_constants\_module}.
+where {\tt ZERO} is the constant 0.0 from \code{bl\_constants\_module}.
 
 The procedure for accessing the data in each grid managed by the \multifab\
 is shown in \S~\ref{sec:example}.  
 Subroutines to add, multiply, or divide two \multifab s exist, as do
-subroutines to copy from one \multifab\ to another---see {\tt boxlib/multifab.f90}
+subroutines to copy from one \multifab\ to another---see \code{BoxLib/Src/F\_BaseLib/multifab.f90}
 for the full list of routines that work with \multifab s.
 
 
 When you are done working with a \multifab, its memory can be freed by
-calling {\tt multifab\_destroy} on the \multifab.
+calling \code{multifab\_destroy} on the \multifab.
 
 
 
@@ -732,7 +730,7 @@ X_k)$.  The tracer component is not used at present time, but can
 describe an arbitrary advected quantity.
 
 Individual state variables should be indexed using the integer keys
-provided by the {\tt variables} module (see \S
+provided by the \code{variables} module (see \S
 \ref{sec:variables_module}).  For example, the integer {\tt rho\_comp}
 will always refer to the density component of the state.
 
@@ -811,7 +809,7 @@ guaranteed to be valid.
 For spherical problems, the base state resolution, $\Delta r$, is
 generally picked to be finer than the Cartesian grid resolution,
 $\Delta x$, i.e.\ $\Delta r < \Delta x$.  The ratio is controlled
-by the parameter {\tt drdxfac}.
+by the parameter \runparam{drdxfac}.
 
 
 
@@ -823,15 +821,15 @@ popular modules.
 
 \subsection{\tt average\_module}
 
-The {\tt average\_module} module provides a routine {\tt average} that takes
+The \code{average\_module} module provides a routine {\tt average} that takes
 a multilevel \multifab\ array and averages the full Cartesian data
 onto the 1D base state.
 
 \subsection{{\tt eos\_module}}
 
-The {\tt eos\_module} provides the interface to the equation of 
+The \code{eos\_module} provides the interface to the equation of 
 state to connect the state variables thermodynamically.  It 
-gets the information about the fluid species from the {\tt network}
+gets the information about the fluid species from the \code{network}
 module (for example, the atomic number, $Z$, and atomic weight, $A$,
 of the nuclei).
 
@@ -842,7 +840,7 @@ Presently there are 3 equations of state that work with \maestro:
       and electrons (with arbitrary degeneracy and degree of relativity).
       This equation of state is that described in \cite{timmes_eos}.
 
-      A runtime parameter, {\tt use\_eos\_coulomb}, is defined in
+      A runtime parameter, \runparam{use\_eos\_coulomb}, is defined in
       this EOS to enable/disable Coulomb corrections.
 
 \item {\tt gamma\_law\_general} assumes an ideal gas with a mixed 
@@ -897,9 +895,9 @@ and $p = \rho e (\gamma_\mathrm{effective} - 1)$.
 This equation of state takes several runtime parameters that can set the
 $\gamma_i$ for a specific species:
 \begin{itemize}
-\item {\tt eos\_gamma\_default}: the default $\gamma$ to apply for
+\item \runparam{eos\_gamma\_default}: the default $\gamma$ to apply for
   all species
-\item {\tt species\_X\_name} and {\tt species\_X\_gamma}: set the $\gamma_i$
+\item \runparam{species\_X\_name} and \runparam{species\_X\_gamma}: set the $\gamma_i$
   for the species whose name is given as {\tt species\_X\_name} to the
   value provided by {\tt species\_X\_gamma}.  Here, {\tt X} can be one
   of the letters: {\tt a}, {\tt b}, or {\tt c}, allowing us to specify
@@ -910,10 +908,10 @@ $\gamma_i$ for a specific species:
 
 The thermodynamic quantities are stored in a Fortran type {\tt eos\_t},
 which has fields for all the thermodynamic inputs and outputs.  The 
-type definition is brought in through {\tt eos\_type\_module}.
+type definition is brought in through \code{eos\_type\_module}.
 \footnote{ Note: an older interface to the EOS exists, but is
   deprecated.  In this mode, the {\tt eos\_old\_interface} module declares 
-  the variables that need appear in the old-style {\tt eos} call
+  the variables that need appear in the old-style \code{eos} call
   argument list.  \maestro\ routines use these module variables in the
   EOS call to avoid having to declare each quantity in each routine
   that calls the EOS.  Most code has been updated to use the new interface.}
@@ -945,14 +943,14 @@ in table~\ref{arch:table:eosinput}.
 
 \subsection{{\tt fill\_3d\_module}}
 
-The {\tt fill\_3d\_module} provides routines that map from the 1D
+The \code{fill\_3d\_module} provides routines that map from the 1D
 base state to the full Cartesian 2- or 3D state.  Variations in the
 routines allow for cell-centered or edge-centered data on either the
 base state or full Cartesian state.
 
 \subsection{\tt fundamental\_constants\_module}
 
-The {\tt fundamental\_constants\_module} provides a simple list of
+The \code{fundamental\_constants\_module} provides a simple list of
 various fundamental constants (e.g.\ Newton's gravitational constant)
 in CGS units.
 
@@ -960,7 +958,7 @@ in CGS units.
 
 \subsection{{\tt network}}
 
-The {\tt network} module defines the number species advected by the
+The \code{network} module defines the number species advected by the
 code ({\tt nspec}), their ordering, and gives their basic properties
 (like atomic number, $Z$, and atomic mass, $A$).  All \maestro\ problems
 require a {\tt network} module, even if there are no reactions
@@ -980,7 +978,7 @@ found.
 
 \label{sec:probin}
 
-{\tt probin\_module} provides access to the runtime parameters.
+\code{probin\_module} provides access to the runtime parameters.
 The runtime parameters appear simply as module variables.  To get the 
 value of a parameter, one simply needs to `{\tt use probin\_module}'.
 The preferred method is to add the `{\tt only}' clause to the
@@ -992,7 +990,7 @@ described in \S~\ref{sec:def_runtime_param}.
 
 \label{sec:variables_module}
 
-The {\tt variables} module provides integer keys to index the state
+The \code{variables} module provides integer keys to index the state
 multifabs and other arrays dealing with the scalar quantities.  The
 most commonly used keys are are list in table~\ref{arch:table:variables}.
 
@@ -1012,13 +1010,13 @@ most commonly used keys are are list in table~\ref{arch:table:variables}.
 
 The species indices are contiguous in the state array, spanning {\tt
   spec\_comp:spec\_comp-1+nspec}.  To find a particular species, a
-query can be made through the {\tt network} module, such as:
+query can be made through the \code{network} module, such as:
 \begin{verbatim}
   ic12 = network_species_index("carbon-12")
 \end{verbatim}
 and then the \fab\ can be indexed using {\tt spec\_comp-1+ic12} to
 get ``carbon-12''.
-The {\tt variables} module also provides keys for the plotfile
+The \code{variables} module also provides keys for the plotfile
 variables and boundary condition types.
 
 Other keys in the {\tt variables} modules are reserved for boundary
@@ -1047,7 +1045,7 @@ the code.
 
 \subsection{{\tt parallel}}
 
-All MPI calls are wrapped by functions in the {\tt parallel} module.  For
+All MPI calls are wrapped by functions in the \code{parallel} module.  For
 serial jobs, the wrappers simply do the requested operation on processor.
 By wrapping the calls, we can easily switch between serial and parallel
 builds.
@@ -1081,16 +1079,16 @@ the dimensionality.
     use variables, only: rho_comp
 \end{lstlisting}
 
-\noindent Here, the {\tt bl\_types} and {\tt multifab\_module} modules
-bring in the basic BoxLib data types. Specifically, here, {\tt
-  bl\_types} defines {\tt dp\_t} which is the {\tt kind} used for
-declaring double precision data, and {\tt multifab\_module} defines
-the \multifab\ data type.  The {\tt ml\_layout\_module} defines the
-datatype for a \mllayout---many routines will take an \mllayout
-to allow us to fill ghostcells.  The {\tt variables} module is a \maestro\
-module that provides integer keys for indexing the state arrays.  In
-this case the integer {\tt rho\_comp} refers to the location in the
-state array corresponding to density.
+\noindent Here, the {\tt bl\_types} and \code{multifab\_module}
+modules bring in the basic BoxLib data types. Specifically, here,
+\code{bl\_types} defines {\tt dp\_t} which is the {\tt kind} used for
+declaring double precision data, and \code{multifab\_module} defines
+the \multifab\ data type.  The \code{ml\_layout\_module} defines the
+datatype for a \mllayout---many routines will take an \mllayout to
+allow us to fill ghostcells.  The \code{variables} module is a
+\maestro\ module that provides integer keys for indexing the state
+arrays.  In this case the integer {\tt rho\_comp} refers to the
+location in the state array corresponding to density.
 
 Next we declare the subroutine arguments:
 
@@ -1136,7 +1134,7 @@ these next:
     ng_um = nghost(umac(1,1))
 \end{lstlisting}
 By convention, all levels in a given multifab have the same number of
-ghostcells, so we use level 1 in the {\tt nghost()} call.  We also use
+ghostcells, so we use level 1 in the \code{nghost()} call.  We also use
 the same number of ghostcells for each component of the velocity, so
 we only need to consider the first component in the {\tt nghost()}
 call.  The ghostcells will be needed to access the data stored in the
@@ -1148,7 +1146,7 @@ the given level.
     do n=1,nlevs
        do i = 1, nfabs(s(n))
 \end{lstlisting}
-{\tt nfabs(s(n))} is simply the number of boxes in level {\tt n} on
+\code{nfabs(s(n))} is simply the number of boxes in level {\tt n} on
 the current processor.  Each processor knows which \fab s in its
 \multifab are local to that processor, and this loop will only loop
 over those.
@@ -1261,14 +1259,15 @@ into account the {\tt ng\_sp} ghostcells and the index space of the
 current box.  Likewise, the MAC velocities refer to the {\tt ng\_um}
 ghostcells.  The {\tt j} and {\tt i} loops loop over all the valid
 zones.  Coordinate information is computed from {\tt dx} and {\tt
-  prob\_lo} which is the physical lower bound of the domain.  {\tt
-  bl\_constants\_module} declares useful double-precision constants,
-like {\tt HALF} (0.5).  Here, we see how to access the density for
-the current zone and compute the cell-centered velocities from the
-MAC velocities.  By convection, for a nodal array, the indices refer 
-to the {\em lower} interface in the nodal direction, so for {\tt umac},
-{\tt umac(i,j)} and {\tt umac(i+1,j)} are the $x$ MAC velocities
-on the lower and upper edge of the zone in the $x$-direction.
+  prob\_lo} which is the physical lower bound of the domain.
+\code{bl\_constants\_module} declares useful double-precision
+constants, like {\tt HALF} (0.5).  Here, we see how to access the
+density for the current zone and compute the cell-centered velocities
+from the MAC velocities.  By convection, for a nodal array, the
+indices refer to the {\em lower} interface in the nodal direction, so
+for {\tt umac}, {\tt umac(i,j)} and {\tt umac(i+1,j)} are the $x$ MAC
+velocities on the lower and upper edge of the zone in the
+$x$-direction.
 
 The three-dimensional case is similar, with the {\tt density} array
 declared as 
@@ -1297,20 +1296,20 @@ on the objective.
 
 \begin{itemize}
 
-\item {\tt multifab\_fill\_boundary} fills ghost cells for two
+\item \code{multifab\_fill\_boundary} fills ghost cells for two
   adjacent grids at the same level, which als includes periodic domain
   boundary ghost cells.
 
-\item {\tt multifab\_physbc} fills ghostcells at the physical boundaries.
+\item \code{multifab\_physbc} fills ghostcells at the physical boundaries.
 
-\item {\tt multifab\_fill\_ghost\_cells} is used for multilevel
+\item \code{multifab\_fill\_ghost\_cells} is used for multilevel
   problems, and fills ghostcells in the finer grid (level {\tt n}) by
   interpolating from data in the coarser grid (level {\tt n-1}).
   This function, by default, will also call {\tt multifab\_fill\_boundary}
   and {\tt multifab\_physbc} for both levels {\tt n} and {\tt n-1} (you 
   can override this behavior for speed optimization purposes).
   This call is usually preceded by a call to 
-  {\tt ml\_cc\_restriction\_c} which sets the level {\tt n-1} data to be
+  \code{ml\_cc\_restriction\_c} which sets the level {\tt n-1} data to be
   the average of the level {\tt n} data covering it.
    
 
@@ -1358,7 +1357,7 @@ grid to have different boundary condition actions associated with it.
 The convention is that the first {\tt dm} variables in \bclevel (where {\tt dm} is
 the dimensionality of the simulation) refer to the
 velocity components, and the subsequent slots are for the other
-standard variables described in the {\tt variables\_module}.  For
+standard variables described in the \code{variables\_module}.  For
 instance, to reference the boundary condition for density, one would
 index with {\tt dm+rho\_comp}.  For temporary variables that are
 created on the fly in the various routines in \maestro\ there may not
@@ -1386,8 +1385,7 @@ velocity to adjust as needed to the domain (see, for example,
 \cite{almgrenBellSzymczak:1996}).
 
 The actual filling of the ghostcells according to the descriptions
-contained in the \bctower\ is carried out by the {\tt
-  multifab\_physbc} routine.  When you have an {\tt EXT\_DIR}
+contained in the \bctower\ is carried out by the \code{multifab\_physbc} routine.  When you have an {\tt EXT\_DIR}
 condition in {\tt multifab\_physbc} (an specified in the inputs file
 as {\tt inlet}), the advection solver (via the slope routine) and
 linear solvers will then assume that the value in the ghost cells is
@@ -1423,10 +1421,10 @@ More detail on the multigrid solvers is given in Chapter~\ref{ch:mg}.
 \maestro\ has support for Lagrangian particles that are passively
 advected with the velocity field.  These are useful for diagnostics
 and post-processing.  To use particles, particles must be seeded into
-the domain by writing a problem-specific {\tt init\_particles.f90}
+the domain by writing a problem-specific \code{init\_particles.f90}
 routine.  This routine is called at the start of the simulation.  The
 {\tt init\_particles} routines add particles at specific locations by
-calling the {\tt particle\_module}'s {\tt add} routine when a given
+calling the \code{particle\_module}'s {\tt add} routine when a given
 criteria is met by the fluid state.
 
 When you run the code, particles are enabled by setting {\tt

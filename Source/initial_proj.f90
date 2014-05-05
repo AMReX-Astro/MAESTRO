@@ -21,7 +21,7 @@ module initial_proj_module
 
 contains
 
-  subroutine initial_proj(uold,sold,pi,gpi,Source_old,hgrhs,thermal, &
+  subroutine initial_proj(uold,sold,pi,gpi,Source_old,normal,hgrhs,thermal, &
                           div_coeff_old,p0,gamma1bar,dx,the_bc_tower,mla)
 
     use variables, only: foextrap_comp
@@ -44,6 +44,7 @@ contains
     type(multifab) , intent(inout) :: pi(:)
     type(multifab) , intent(inout) :: gpi(:)
     type(multifab) , intent(inout) :: Source_old(:)
+    type(multifab) , intent(inout) :: normal(:)
     type(multifab) , intent(inout) :: hgrhs(:)
     type(multifab) , intent(inout) :: thermal(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
@@ -129,9 +130,11 @@ contains
     end do
 
     call make_S(Source_old,delta_gamma1_term,delta_gamma1, &
-                sold,uold,rho_omegadot1,rho_Hnuc1,rho_Hext,thermal, &
-                p0,gamma1bar,delta_gamma1_termbar,psi,dx, &
-                mla,the_bc_tower%bc_tower_array)
+                sold,uold, &
+                normal, &
+                rho_omegadot1,rho_Hnuc1,rho_Hext,thermal, &
+                p0,gamma1bar,delta_gamma1_termbar,psi, &
+                dx,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(rho_omegadot1(n))

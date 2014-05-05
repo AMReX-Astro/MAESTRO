@@ -284,7 +284,7 @@ the \yt\ documentation or \S~\ref{sec:vis:yt}.
 By default, \maestro\ outputs global diagnostics each timestep into a
 file called {\tt maestro\_diag.out}.  This includes the maximum Mach
 number, peak temperature, and peak nuclear energy generation rate.
-Individual problems can provide their own {\tt diag.f90} file to
+Individual problems can provide their own \code{diag.f90} file to
 produce custom diagnostic output.  This information can be plotted
 directly with {\sf GNUplot}, for example.
 
@@ -356,37 +356,37 @@ presented in \cite{lowMach4,wdconvect,wdturb}.
 Parameters that set the maximum time for the simulation to run
 include:
 \begin{itemize}
-\item {\tt stop\_time} is the maximum simulation time, in seconds,
+\item \runparam{stop\_time} is the maximum simulation time, in seconds,
       to evolve the system for.
 
-\item {\tt max\_step} is the maximum number of steps to take.
+\item \runparam{max\_step} is the maximum number of steps to take.
 \end{itemize}
 
 \noindent Parameters affecting the size of the timestep include:
 \begin{itemize}
-\item {\tt cflfac} is a multiplicative factor ({\tt $\le 1$}) 
+\item \runparam{cflfac} is a multiplicative factor ({\tt $\le 1$}) 
       applied to the advective CFL timestep
 
-\item {\tt init\_shrink} is the factor ({\tt $\le 1$}) by which to reduce 
+\item \runparam{init\_shrink} is the factor ({\tt $\le 1$}) by which to reduce 
       the initial timestep from the estimated first timestep.
 \end{itemize}
 
 \noindent Parameters affecting output and restart include:
 \begin{itemize}
 
-\item {\tt restart} tells \maestro\ to restart from a checkpoint.  The
+\item \runparam{restart} tells \maestro\ to restart from a checkpoint.  The
       value of this parameter should be the file number to restart from.
       For example, to restart from the checkpoint file {\tt chk00010},
       you would set {\tt restart = 10}.
 
-\item {\tt plot\_int} is the number of steps to take between
+\item \runparam{plot\_int} is the number of steps to take between
   outputting a plotfile
 
-\item {\tt plot\_deltat} is the simulation time to evolve between
+\item \runparam{plot\_deltat} is the simulation time to evolve between
   outputting a plotfile.  Note: to output only based on simulation
   time, set {\tt plot\_int = -1}.
 
-\item {\tt check\_int} is the number of steps to take between
+\item \runparam{check\_int} is the number of steps to take between
   outputting a checkpoint.
 
 \end{itemize}
@@ -397,28 +397,28 @@ Parameters that determine the spatial extent of the grid,
 the types of boundaries, and the number of computational cells include:
 \begin{itemize}
 
-\item {\tt max\_levs } is the maximum number of grid levels in the AMR
+\item \runparam{max\_levs} is the maximum number of grid levels in the AMR
   hierarchy to use.  {\tt max\_levs = 1} indicates running with only a
   single level spanning the whole domain.
 
-\item {\tt n\_cellx }, {\tt n\_celly }, {\tt n\_cellz } the size of
+\item \runparam{n\_cellx}, \runparam{n\_celly}, \runparam{n\_cellz} the size of
   base level in terms of number of cells, in the $x$, $y$, and $z$
   coordinate directions.
 
-\item {\tt max\_grid\_size } the maximum extend of a grid, in any
+\item \runparam{max\_grid\_size} the maximum extend of a grid, in any
   coordinate direction, as measured in terms of number of cells.
 
-  For multilevel problems, the parameter {\tt max\_grid\_size\_1}
-  controls the maximum extent on level 1 (the base grid), {\tt
-    max\_grid\_size\_2} controls the maximum extent on level 2, and
-  {\tt max\_grid\_size\_3} controls the maximum extent on levels 3 and
-  higher.
+  For multilevel problems, the parameter \runparam{max\_grid\_size\_1}
+  controls the maximum extent on level 1 (the base
+  grid), \runparam{max\_grid\_size\_2} controls the maximum extent on
+  level 2, and \runparam{max\_grid\_size\_3} controls the maximum extent on
+  levels 3 and higher.
 
-\item {\tt prob\_lo\_x }, {\tt prob\_lo\_y }, {\tt prob\_lo\_z } is
+\item \runparam{prob\_lo\_x}, \runparam{prob\_lo\_y}, \runparam{prob\_lo\_z} is
   the physical coordinate of the lower extent of the domain boundary
   in the $x$, $y$, and $z$ coordinate directions.
 
-\item {\tt prob\_hi\_x }, {\tt prob\_hi\_y }, {\tt prob\_hi\_z } is
+\item \runparam{prob\_hi\_x}, \runparam{prob\_hi\_y}, \runparam{prob\_hi\_z} is
   the physical coordinate of the upper extent of the domain boundary
   in the $x$, $y$, and $z$ coordinate directions.
 
@@ -429,12 +429,12 @@ the types of boundaries, and the number of computational cells include:
 
    \begin{itemize}
 
-   \item {\tt bcx\_lo }, {\tt bcy\_lo }, {\tt bcz\_lo }, {\tt bcx\_hi
-      }, {\tt bcy\_hi }, {\tt bcz\_hi } are the boundary condition
-      types at the lower (`{\tt lo}') and upper (`{\tt hi}') domain
-      boundaries in the $x$, $y$, and $z$ coordinate directions.  The
-      different types are set via integer flags listed in
-      table~\ref{gs:table:bcflags}.
+   \item \runparam{bcx\_lo}, \runparam{bcy\_lo}, \runparam{bcz\_lo
+      }, \runparam{bcx\_hi}, \runparam{bcy\_hi}, \runparam{bcz\_hi} are the
+      boundary condition types at the lower (`{\tt lo}') and upper
+      (`{\tt hi}') domain boundaries in the $x$, $y$, and $z$
+      coordinate directions.  The different types are set via integer
+      flags listed in table~\ref{gs:table:bcflags}.
 
    \begin{table}[h]
    \caption{\label{gs:table:bcflags} Boundary condition flags}  
@@ -454,13 +454,11 @@ the types of boundaries, and the number of computational cells include:
    \end{center}
    \end{table}
 
-   \item {\tt xlo\_boundary\_type}, {\tt ylo\_boundary\_type}, {\tt
-   zlo\_boundary\_type}, {\tt xhi\_boundary\_type}, {\tt
-   yhi\_boundary\_type}, {\tt zhi\_boundary\_type} are the boundary
-   condition types at the lower and upper domain boundaries in 
-   the $x$, $y$, and $z$ coordinate directions.   The boundary
-   type is set by providing a string name---valid values are listed
-   in table~\ref{gs:table:bcstrings}
+   \item \runparam{xlo\_boundary\_type}, \runparam{ylo\_boundary\_type}, \runparam{zlo\_boundary\_type}, \runparam{xhi\_boundary\_type}, \runparam{yhi\_boundary\_type}, \runparam{zhi\_boundary\_type}
+   are the boundary condition types at the lower and upper domain
+   boundaries in the $x$, $y$, and $z$ coordinate directions.  The
+   boundary type is set by providing a string name---valid values are
+   listed in table~\ref{gs:table:bcstrings}
 
    \begin{table}[h]
    \caption{\label{gs:table:bcstrings} Boundary condition string names}  
@@ -485,7 +483,7 @@ the types of boundaries, and the number of computational cells include:
   The string-based parameters are a newer option for specifying
   boundary conditions, and are preferred due to clarity.  The
   conversion between the string names and integer flags is done
-  by \boxlib\ in the {\tt bc\_module} at the time of initializing
+  by \boxlib\ in the \code{bc\_module} at the time of initializing
   the runtime parameters.
 
 \end{itemize}

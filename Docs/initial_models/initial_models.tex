@@ -84,7 +84,7 @@ these on the base state and full state later.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 We deal with the edge of the star by tracking the first coarse cell 
-in which the density falls below {\tt base\_cutoff\_density}.  We note 
+in which the density falls below \runparam{base\_cutoff\_density}.  We note 
 the radius of this cell center, and the values of $\rho$, $\rho h$, $X_k$, 
 $p$, and $T$ in this cells.  Then, at every level, if current cell-center 
 is above this radius, we set the state equal to this stored state.  This 
@@ -102,7 +102,7 @@ state is thermodynamically consistent with $p_0$.  Overall we do:
 \begin{enumerate}
 \item Fill $\rho^{\init}, h^{\init}, X^{\init}$, and $T^{\init}$ onto a 
   multifab to obtain the full state $\rho, h, X$, and $T$.
-\item If {\tt perturb\_model} = T, a user-defined perturbation is
+\item If \runparam{perturb\_model} {\tt = T}, a user-defined perturbation is
   added.  This routine should make sure that the EOS is called so that
   there is some sense of thermodynamic consistency.
 \item Set $\rho_0 = \overline\rho$.

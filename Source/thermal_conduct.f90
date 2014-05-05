@@ -31,7 +31,7 @@ contains
     use bndry_reg_module
 
     use mac_multigrid_module , only : mac_multigrid
-    use mac_applyop_module   , only : mac_applyop
+    use cc_applyop_module   ,  only : cc_applyop
     use fill_3d_module       , only : put_1d_array_on_cart, put_data_on_faces
     use ml_restriction_module, only : ml_cc_restriction_c
 
@@ -91,7 +91,7 @@ contains
     ! turn.  
     !
     ! To actually construct each div . (c grad q) term for the RHS, we will 
-    ! make use of the mac_applyop routine, which constructs the quantity
+    ! make use of the cc_applyop routine, which constructs the quantity
     !
     !     (rhsalpha - div . rhsbeta grad) phi = Lphi
     !
@@ -139,8 +139,8 @@ contains
     end do
 
     ! apply the operator
-    call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                     dm+rhoh_comp,stencil_order)
+    call cc_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+                    dm+rhoh_comp,stencil_order)
 
     ! begin construction of rhs by setting rhs = \rho^{(2)}h^{(2')}
     do n=1,nlevs
@@ -188,8 +188,8 @@ contains
        enddo
 
        ! apply the operator
-       call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                        dm+spec_comp+comp-1,stencil_order)
+       call cc_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+                       dm+spec_comp+comp-1,stencil_order)
 
        if(thermal_diffusion_type .eq. 1) then
           ! add lphi to rhs
@@ -224,8 +224,8 @@ contains
        enddo
 
        ! apply the operator
-       call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                        dm+spec_comp+comp-1,stencil_order)
+       call cc_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+                       dm+spec_comp+comp-1,stencil_order)
 
        ! add lphi to rhs
        do n=1,nlevs
@@ -259,8 +259,8 @@ contains
     call put_1d_array_on_cart(p0_old,phi,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
     ! apply the operator
-    call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                     foextrap_comp,stencil_order)
+    call cc_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+                    foextrap_comp,stencil_order)
 
     if(thermal_diffusion_type .eq. 1) then
        ! add lphi to rhs
@@ -292,8 +292,8 @@ contains
                               dx,the_bc_tower%bc_tower_array,mla)
 
     ! apply the operator
-    call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                     foextrap_comp,stencil_order)
+    call cc_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+                    foextrap_comp,stencil_order)
 
     do n=1,nlevs
        call destroy(rhsalpha(n))

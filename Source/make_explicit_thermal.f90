@@ -28,7 +28,7 @@ contains
     use bc_module
     use bl_prof_module
     use cc_stencil_module
-    use mac_applyop_module
+    use cc_applyop_module
     use network, only: nspec
     use ml_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
@@ -68,8 +68,8 @@ contains
        call setval(thermal(n), ZERO, all=.true.)
     end do
 
-    ! for either diffusion formulation, we will use mac_applyop to
-    ! construct the form of the conduction term.  mac_applyop forms
+    ! for either diffusion formulation, we will use cc_applyop to
+    ! construct the form of the conduction term.  cc_applyop forms
     ! the generic quantity:
     !
     !   (alpha MINUS del dot beta grad) phi = RHS
@@ -99,8 +99,8 @@ contains
        end do
 
        ! applyop to compute resid = del dot Tcoeff grad T
-       call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
-                        stencil_order)
+       call cc_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
+                       stencil_order)
      
        do n=1,nlevs
           call destroy(phi(n))
@@ -149,8 +149,8 @@ contains
        end do
        
        ! applyop to compute resid = del dot hcoeff grad h
-       call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
-                        stencil_order)
+       call cc_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
+                       stencil_order)
        
        ! add residual to thermal
        do n=1,nlevs
@@ -168,8 +168,8 @@ contains
           call put_data_on_faces(mla,Xkcoeff,comp,beta,.true.)
           
           ! applyop to compute resid = del dot Xkcoeff grad X_k
-          call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+spec_comp+comp-1, &
-                           stencil_order)
+          call cc_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+spec_comp+comp-1, &
+                          stencil_order)
           
           ! add residual to thermal
           do n=1,nlevs
@@ -183,8 +183,8 @@ contains
        call put_data_on_faces(mla,pcoeff,1,beta,.true.)
 
        ! applyop to compute resid = del dot pcoeff grad p0
-       call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,foextrap_comp, &
-                        stencil_order)
+       call cc_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,foextrap_comp, &
+                       stencil_order)
        
        do n=1,nlevs
           call destroy(phi(n))

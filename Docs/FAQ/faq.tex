@@ -89,7 +89,10 @@
     init_divu_iter = 0
     do_initial_projection = F
 \end{verbatim}
-
+\runparamidx{max\_step}
+\runparamidx{init\_iter}
+\runparamidx{init\_divu\_iter}
+\runparamidx{do\_initial\_projection}
 
 \item {\em  \maestro\ crashes because the multigrid algorithm fails to
     converge---how do I get around this?}
@@ -102,7 +105,7 @@
   convergence.  For the latter, it may be that the multigrid
   solver was fed bad data and the problem arose in one of the earlier
   steps.  To get more detail information from the multigrid solver,
-  set {\tt mg\_verbose} to a positive integer from 1-4 (the higher
+  set \runparam{mg\_verbose} to a positive integer from 1-4 (the higher
   the number the more information you receive.
 
   If the multigrid solver is failing during one of the initial

@@ -31,15 +31,15 @@ spectral deferred corrections is outlined in Chapter~\ref{ch:sdc}.)
 Here is the current description of the algorithm, based from the
 description in the multilevel paper.  The initialization has also been
 included with more detail than was given in paper III.  The main
-driver for a single step of the algorithm is {\tt advance.f90}---refer
+driver for a single step of the algorithm is \code{advance.f90}---refer
 to that code to see the sequence of functions called to implement each
 step.
 
 
 \subsection{Notation}
 
-
-{\bf React State}$[\rho^{\inp},(\rho                                                                   h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp},                                                      
+\begin{itemize}
+\item {\bf React State}$[\rho^{\inp},(\rho                                                                   h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp},                                                      
   p_0^{\inp}] \rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp},                                   
   T^{\outp}, (\rho \omegadot_k)^{\outp}, (\rho\Hnuc)^{\outp}]$
   evolves the species and enthalpy due to reactions through
@@ -65,7 +65,7 @@ Note that the density remains unchanged within {\bf React State}, i.e.,
 $\rho^{\outp} = \rho^{\inp}$.
 
 
-{\bf Advect Base Density}$[\rho_0^\inp,w_0^\inp] \rightarrow
+\item {\bf Advect Base Density}$[\rho_0^\inp,w_0^\inp] \rightarrow
   [\rho_0^\outp, \rho_0^{\outp,\nph}]$ is the process by which we
   update the base state density through $\dt$ in time.  We keep the
   time-centered edge states, $\rho_0^{\outp,\nph}$,
@@ -95,7 +95,7 @@ $\rho^{\outp} = \rho^{\inp}$.
 \end{equation}
 \end{description}
 
-{\bf Enforce HSE}$[p_0^{\inp},\rho_0^{\inp}]
+\item {\bf Enforce HSE}$[p_0^{\inp},\rho_0^{\inp}]
   \rightarrow [p_0^{\outp}]$ has replaced {\bf Advect Base Pressure}
   from Paper III as the process by which we update the base state
   pressure.  Rather than discretizing the evolution equation for
@@ -113,7 +113,7 @@ p_{0,j+1}^{\outp} = p_{0,j}^{\outp} + \Delta r g_{j+\myhalf}\frac{\left(\rho_{0,
   $\rho_{\rm cutoff}$ as the starting point for integration.
 
 
-{\bf Advect Base Enthalpy}$[(\rho h)_0^\inp,w_0^\inp,\psi^\inp] \rightarrow [(\rho h)_0^\outp]$
+\item {\bf Advect Base Enthalpy}$[(\rho h)_0^\inp,w_0^\inp,\psi^\inp] \rightarrow [(\rho h)_0^\outp]$
   is the process by which we update the base state enthalpy through $\dt$ in time.  
 \begin{description}
 \item[planar:] We discretize equation (\ref{eq:Base State Enthalpy}), neglecting reaction source terms,
@@ -140,7 +140,7 @@ p_{0,j+1}^{\outp} = p_{0,j}^{\outp} + \Delta r g_{j+\myhalf}\frac{\left(\rho_{0,
 \end{equation}
 \end{description}
 
-\subsubsection{Computing $w_0$}\label{Sec:Computing w0}
+\item {\bf Computing {\boldmath $w_0$}}\label{Sec:Computing w0}
 Here we describe the process by which we compute $w_0$.  The arguments 
 are different for planar and spherical geometries.
 \begin{description}
@@ -176,6 +176,8 @@ giving:
 We solve this equation for $w_0$ as described in Appendix of the multilevel paper.
 
 \end{description}
+
+\end{itemize}
 
 \subsection{Single Step}
 
@@ -325,7 +327,7 @@ accounted for in {\bf React State}.  The update consists of two steps:
   for the conservative update of $(\rho X_k)^{(1)}$.  
 
   There are a variety of choices of quantities to predict to the
-  edges (controlled by {\tt species\_pred\_type}---see Chapter~\ref{ch:pert}).
+  edges (controlled by \runparam{species\_pred\_type}---see Chapter~\ref{ch:pert}).
   By default, we use the equations 
 \begin{eqnarray}
 \frac{\partial\rho'}{\partial t} &=& -\Ub\cdot\nabla\rho' - 
@@ -434,7 +436,7 @@ equilibrium.  The update consists of two steps:
 \item Compute the time-centered enthalpy edge state, $(\rho h)^{\nph,\star,\pred},$
   for the conservative update of $(\rho h)^{(1)}$.  There are a variety
    of quantities that we can predict to the interfaces here (controlled
-   by {\tt enthalpy\_pred\_type}---see Chapter~\ref{ch:pert}).  For
+   by \runparam{enthalpy\_pred\_type}---see Chapter~\ref{ch:pert}).  For
    the default case, we use the perturbational
   enthalpy equation, neglecting reactions,
 \begin{equation}
@@ -846,17 +848,18 @@ discrepancy term:
 \end{itemize}
 
 
+%-----------------------------------------------------------------------------
 \subsection{$\Gamma_1$ Variation Changes}
 
-The constraint we derive from requiring the pressure to be close to the background hydrostatic
-pressure takes the form:
+The constraint we derive from requiring the pressure to be close to
+the background hydrostatic pressure takes the form:
 \begin{equation}
 \nablab \cdotb \Ub + \frac{1}{\Gamma_1 p_0} \frac{Dp_0}{Dt} = S \enskip .
 \end{equation}
-The default \maestro\ algorithm replaces $\Gamma_1$ with $\gammabar$, allowing us
-to write this as a divergence constraint.  In paper~III, we explored the effects of
-localized variations in $\Gamma_1$ by writing $\Gamma_1 = \gammabar + \delta \Gamma_1$.
-This gives us:
+The default \maestro\ algorithm replaces $\Gamma_1$ with $\gammabar$,
+allowing us to write this as a divergence constraint.  In paper~III,
+we explored the effects of localized variations in $\Gamma_1$ by
+writing $\Gamma_1 = \gammabar + \delta \Gamma_1$.  This gives us:
 \begin{equation}
 \nablab \cdotb \Ub + \frac{1}{(\gammabar + \delta \Gamma_1) \; p_0} 
   \Ub \cdotb \nablab p_0 = S - \frac{1}{(\gammabar + \delta \Gamma_1) \; p_0} 
@@ -887,7 +890,7 @@ Subtracting this from equation (\ref{eq:gammafull}), we have
 These can be written more compactly as:
 \begin{equation}
 \frac{\partial w_0}{\partial r} = \Sbar -\frac{1}{\gammabar p_0}\psi +
-\overline{ \left ( \frac{\delta \Gamma_1}{\gammabar^2 p_0} \ut \cdotb \nablab
+\overline{ \left ( \frac{\delta \Gamma_1}{\gammabar^2 p_0} \Ubt \cdotb \nablab
   p_0 \right ) } \enskip , \label{eq:base_w0_with_dgamma1}
 \end{equation}
 for plane-parallel geometries (analogous to eq. [\ref{eq:divw0}]), and
@@ -899,10 +902,94 @@ for plane-parallel geometries (analogous to eq. [\ref{eq:divw0}]), and
  \enskip ,  \label{eq:constraint_with_delta_gamma}
 \end{equation}
 
-This constraint is not in a form that can be projected.  To solve this form, we 
-need to use a lagged $\Ubt$ in the righthand side.
+This constraint is not in a form that can be projected.  To solve this
+form, we need to use a lagged $\Ubt$ in the righthand side.
+
+This change comes into \maestro\ in a variety of steps, summarized here.
+To enable this portion of the algorithm, set \runparam{use\_delta\_gamma1\_term} {\tt = T}.
+
+\begin{itemize}
+
+\item In {\bf Step 3}, we are doing the ``predictor'' portion of the 
+\maestro\ algorithm, getting the MAC velocity that satisfies the constraint, 
+so we do not try to incorporate the $\delta \Gamma_1$ effect.  We set
+all the $\delta \Gamma_1$ terms in
+Eq.~\ref{eq:constraint_with_delta_gamma} to zero.
+
+\item In {\bf Step 6}, we are computing the new time-centered source, 
+$S^{\nph,\star}$ and the base state velocity, $w_0^\nph$.  Now we can
+incorporate the $\delta \Gamma_1$ effect.  First we construct:
+\begin{equation}
+\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0 \approx
+   \frac{\Gamma_1^{n+1,\star} - \overline{\Gamma_1^{n+1,\star}}}
+         {{\overline{\Gamma_1^{n+1,\star}}}^2} \frac{1}{p_0^n} \Ubt^n \cdotb \nablab p_0^n
+\end{equation}
+Then we call {\bf average} to construct the lateral average of this
+\begin{equation}
+\overline{\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0} = 
+   \mathbf{Avg} \left (\frac{\Gamma_1^{n+1,\star} - \overline{\Gamma_1^{n+1,\star}}}
+         {{\overline{\Gamma_1^{n+1,\star}}}^2} \frac{1}{p_0^n} \Ubt^n \cdotb \nablab p_0^n \right )
+\end{equation}
+
+Since the average of this is needed in advancing $w_0$, we modify $\overline{S}$ 
+to include this average:
+\begin{equation}
+\overline{S^{\nph,\star}} \leftarrow \overline{S^{\nph,\star}} + 
+   \overline{\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0} 
+\end{equation}
+
+\item In {\bf Step 7}, we now include the $\delta \Gamma_1$ term in the righthand
+side for the constraint by solving:
+\begin{equation}
+\nabla \cdot \left(\beta_0^{\nph,\star} \uadvtwo\right) =
+\beta_0^{\nph,\star}\left( S^{\nph,\star} - \overline{S^{\nph,\star}} +
+   \frac{\Gamma_1^{n+1,\star} - \overline{\Gamma_1^{n+1,\star}}} 
+         {{\overline{\Gamma_1^{n+1,\star}}}^2} \frac{1}{p_0^n} 
+         (\psi^{\nph,\star} + \Ubt^n \cdotb \nablab p_0^n)
+\right)
+\end{equation}
+We note that this includes the average of the correction term as shown
+in Eq.~\ref{eq:constraint_with_delta_gamma} because we modified
+$\bar{S}$ to include this already.
+
+\item In {\bf Step 10}, we do a construction much like that done in {\bf Step 6},
+but with the time-centerings of some of the quantities changed.
+First we construct:
+\begin{equation}
+\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0 \approx
+   \frac{\Gamma_1^{n+1} - \overline{\Gamma_1^{n+1}}}
+         {{\overline{\Gamma_1^{n+1}}}^2} \frac{1}{p_0^{n+1}} \Ubt^n \cdotb \nablab p_0^{n+1}
+\end{equation}
+Then we call {\bf average} to construct the lateral average of this
+\begin{equation}
+\overline{\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0} = 
+   \mathbf{Avg} \left (\frac{\Gamma_1^{n+1} - \overline{\Gamma_1^{n+1}}}
+         {{\overline{\Gamma_1^{n+1}}}^2} \frac{1}{p_0^{n+1}} \Ubt^n \cdotb \nablab p_0^{n+1} \right )
+\end{equation}
+
+Again we modify $\overline{S}$ to include this average:
+\begin{equation}
+\overline{S^{n+1}} \leftarrow \overline{S^{n+1}} + 
+   \overline{\frac{\delta \Gamma_1}{\Gamma_1^2 p_0} \Ubt \cdotb \nablab p_0} 
+\end{equation}
+
+\item In {\bf Step 11}, we modify the source of the constraint to include the
+$\delta \Gamma_1$ information.  In particular, we solve:
+\begin{equation}
+\nabla \cdot \left(\beta_0^{\nph} \Ubt^{n+1} \right) 
+= \beta_0^{\nph} \left(S^{n+1} - \overline{S^{n+1}} +
+   \frac{\Gamma_1^{n+1} - \overline{\Gamma_1^{n+1}}} 
+         {{\overline{\Gamma_1^{n+1}}}^2} \frac{1}{p_0^{n+1}}
+         (\psi^{\nph} + \Ubt^n \cdotb \nablab p_0^{n+1})
+\right)
+\end{equation}
 
 
+\end{itemize}
+
+
+
+%-----------------------------------------------------------------------------
 \subsection{Thermal Diffusion Changes}
 Immediately after {\bf Step 4H}, diffuse the enthalpy through 
 a time interval of $\dt$.  First, define $(\rho h)^{(1a),\star} = (\rho h)^{(2),\star}$.  
@@ -970,7 +1057,7 @@ which is numerically implemented as a diffusion equation for $h^{(2)}$.
   variables that are the same in {\bf Step 6} as they are in
   {\bf Step 2}, i.e., they are unchanged by the predictor steps.
   The diffusion steps (4a and 8a) are optional, depending on
-  {\tt use\_thermal\_diffusion}.}
+  \runparam{use\_thermal\_diffusion}.}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1033,7 +1120,7 @@ proceeds as follows.
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 \renewcommand{\labelenumii}{\roman{enumii}.}
 
-\item {\em Initial Projection}: if {\tt do\_initial\_projection = T}, then we 
+\item {\em Initial Projection}: if \runparam{do\_initial\_projection} {\tt = T}, then we 
    first project the velocity field with $\rho = 1$ and $\beta_0^0$.
    The initial projection does not see reactions
    or external heating, and thus we set $\dot\omega = \Hnuc = \Hext = 0$ in $S$.
@@ -1048,10 +1135,10 @@ proceeds as follows.
    This $\phi$ is then used to correct the velocity field to obtain $\Ub^{0,0}$.
    If {\tt do\_initial\_projection = F}, set $\Ub^{0,0} = \Ub^{\initp}$.
 
-\item {\em ``Divu'' iterations}: Next we do {\tt init\_divu\_iter} iterations 
+\item {\em ``Divu'' iterations}: Next we do \runparam{init\_divu\_iter} iterations 
   to project the velocity field using a constraint that sees reactions
   and external heating. 
-  The initial timestep estimate is provided by {\tt firstdt} and
+  The initial timestep estimate is provided by \code{firstdt} and
   $\Ub^{0,0}$, to allow us to compute the effect of reactions over $\Delta t/2$.
 
   {\bf Do} {$\nu = 1,...,N_{\rm iters}^{S}$.}
@@ -1096,7 +1183,7 @@ $\etarho^{-\myhalf}=0, \psi^{-\myhalf}=0, S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 \renewcommand{\labelenumii}{\roman{enumii}.}
 \addtocounter{enumi}{2}
-\item {\it Pressure iterations}: Here we do {\tt init\_iter} iterations to get an
+\item {\it Pressure iterations}: Here we do \runparam{init\_iter} iterations to get an
   approximation for the lagged pressure:
 
   {\bf Do} {$\nu = 1,...,N_{\rm iters}^{\pi}$.}
@@ -1138,10 +1225,10 @@ The tolerances for these elliptic solves are described in \S~\ref{sec:mgtol}.
 \item We defined the mapping of data between a 1D radial array and the 3D Cartesian
 grid for spherical problems (which we improve upon in the multilevel paper).
 \item We update $T$ after the call to {\bf React State}.
-\item We have created a {\tt burning\_cutoff\_density}, where the burning does
-not happen below this density.  It is presently set to {\tt base\_cutoff\_density}.
+\item We have created a \runparam{burning\_cutoff\_density}, where the burning does
+not happen below this density.  It is presently set to \runparam{base\_cutoff\_density}.
 \item Use corner coupling in advection.
-\item We have an option, controlled by {\tt use\_tfromp}, to update temperature 
+\item We have an option, controlled by \runparam{use\_tfromp}, to update temperature 
 using $T=T(\rho,X_k,p_0)$ rather than $T=T(\rho,h,X_k)$.  The former completely 
 decouples enthalpy from our system.  For spherical problems, we use 
 {\tt use\_tfromp = TRUE}, for planar problems, we use {\tt use\_tfromp = FALSE}.
@@ -1151,10 +1238,10 @@ $\nabla\cdot(\Ubt p_0) - p_0\nabla\cdot\Ubt$.
 \item In paper III we discretized the enthalpy evolution equation in
 terms of $T$.  Since then we have discovered that 
 discretizing the enthalpy evolution in perturbational form, $(\rho h)'$,
-leads to better numerical properties.  We use {\tt enthalpy\_pred\_type = 1}.
+leads to better numerical properties.  We use \runparam{enthalpy\_pred\_type = 1}.
 This is more like paper II.
 \item We have turned off the evolution of $h$ above the atmosphere and instead
-compute $h$ with the EOS using {\tt do\_eos\_h\_above\_cutoff = TRUE}.
+compute $h$ with the EOS using \runparam{do\_eos\_h\_above\_cutoff} {\tt = T}.
 \end{enumerate}
 
 
@@ -1170,11 +1257,11 @@ See the multilevel paper for the latest.
 
 \subsection{Changes Between Paper 5 and the XRB Paper}
 \begin{enumerate}
-\item We have added thermal diffusion, controlled by {\tt use\_thermal\_diffusion},
-{\tt temp\_diffusion\_formulation}, and {\tt thermal\_diffusion\_type}.
+\item We have added thermal diffusion, controlled by \runparam{use\_thermal\_diffusion},
+\runparam{temp\_diffusion\_formulation}, and \runparam{thermal\_diffusion\_type}.
 \item We added the volume discrepancy term to the velocity constraint equation,
-controlled by the input parameter, {\tt dpdt\_factor}.
-\item For certain problems, we need to set {\tt do\_eos\_h\_above\_cutoff = FALSE}
+controlled by the input parameter, \runparam{dpdt\_factor}.
+\item For certain problems, we need to set \runparam{do\_eos\_h\_above\_cutoff} {\tt = F}
 to prevent large, unphysical velocities from appearing near the edge of the star.
 \end{enumerate}
 
@@ -1188,10 +1275,10 @@ to prevent large, unphysical velocities from appearing near the edge of the star
 \item Should we use a predictor-corrector for updating the full-state density?
 Specifically, after calling {\bf Correct Base}, should we do a full-state density 
 advance and {\bf Correct Base} using the more accurate estimate of $\rho_0^{n+1}$?
-\item We are still exploring the effects of {\tt use\_tfromp = FALSE} for spherical
+\item We are still exploring the effects of \runparam{use\_tfromp}  {\tt = F} for spherical
 problems.  We would eventually like to run in this mode, but $T=T(\rho,X_k,p_0)$ 
 and $T=T(\rho,h,X_k)$ drift away from each other more than we would like.  Our
-attempts at incorporating a {\tt dpdt\_factor} for spherical problems have not 
+attempts at incorporating a \runparam{dpdt\_factor} for spherical problems have not 
 been successful.
 \end{itemize}
 

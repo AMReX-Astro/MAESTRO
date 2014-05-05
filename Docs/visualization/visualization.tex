@@ -8,10 +8,10 @@ Table~\ref{vis:table:plotfile} lists the quantities stored in a plotfile.
 Not all of these may be present, dependent on what options were used in 
 creating the plotfile.
 
-By default, plotfiles store double precision data, but if {\tt
-  single\_prec\_plotfiles = .true.} is set, then the data is converted
-to single precision before outputting---this is done to reduce file
-sizes.
+By default, plotfiles store double precision data, but if
+\runparam{single\_prec\_plotfiles} {\tt = T} is set, then the data is
+converted to single precision before outputting---this is done to
+reduce file sizes.
 
 \renewcommand{\arraystretch}{1.3}
 {\footnotesize
@@ -47,15 +47,15 @@ sizes.
 %\hline
 {\tt density}  & $\rho$ & -- \\
 %\hline
-{\tt rhoh}   & $(\rho h)$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
+{\tt rhoh}   & $(\rho h)$ & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and \runparam{plot\_h\_with\_use\_tfromp} {\tt = T}) \\           
 %\hline
 {\tt h}      & $(\rho h)/\rho$   & {\tt use\_tfromp = F} or ({\tt use\_tfromp = T} and {\tt plot\_h\_with\_use\_tfromp = T}) \\           
 %\hline
-{\tt X(*)}   & $(\rho X_k)/\rho$ & {\tt plot\_spec} \\
+{\tt X(*)}   & $(\rho X_k)/\rho$ & \runparam{plot\_spec} \\
 %\hline
-{\tt tracer} & tracers           & {\tt plot\_trac} \\
+{\tt tracer} & tracers           & \runparam{plot\_trac} \\
 %\hline
-{\tt w0\_x}  & $w_0 \er \cdot \ex$ & {\tt plot\_base} \\ 
+{\tt w0\_x}  & $w_0 \er \cdot \ex$ & \runparam{plot\_base} \\ 
 %\hline
 {\tt w0\_y}  & $w_0 \er \cdot \ey$ & {\tt plot\_base} \\ 
 %\hline
@@ -71,7 +71,7 @@ sizes.
 %\hline
 {\tt p0}     & $p_0$                & {\tt plot\_base} \\ 
 %\hline
-{\tt radial\_velocity}  & $\Ubt \cdot \er + w_0$ & {\tt spherical == 1} \\
+{\tt radial\_velocity}  & $\Ubt \cdot \er + w_0$ & \runparam{spherical} {\tt == 1} \\
 %\hline
 {\tt circum\_velocity}  & $| \Ubt - (\Ubt \cdot \er) \er |$ &  {\tt spherical == 1}  \\
 %\hline
@@ -99,7 +99,7 @@ sizes.
 %\hline
 {\tt Machnumber}          & $| \Ubt + w_0 \er | / c(\rho,p_0,X_k)$ & -- \\
 %\hline
-{\tt soundspeed}        & $c(\rho,p_0,X_k)$ & {\tt plot\_cs} \\
+{\tt soundspeed}        & $c(\rho,p_0,X_k)$ & \runparam{plot\_cs} \\
 %\hline
 {\tt deltagamma}          & $\Gamma_1(\rho,p_0,X_k) - \gammabar$ & -- \\
 %\hline
@@ -107,11 +107,11 @@ sizes.
 %\hline
 {\tt entropypert}         & $[s(\rho,p_0,X_k) - \overline{s}]/\overline{s}$ & -- \\
 %\hline
-{\tt sponge} or {\tt sponge\_fdamp} & $1/(1 + \Delta t \kappa f_\mathrm{damp})$ by default; $f_\mathrm{damp}$ if {\tt plot\_sponge\_fdamp = T} & -- \\
+{\tt sponge} or {\tt sponge\_fdamp} & $1/(1 + \Delta t \kappa f_\mathrm{damp})$ by default; $f_\mathrm{damp}$ if \runparam{plot\_sponge\_fdamp = T} & -- \\
 %\hline
 {\tt pi}                 & $\pi$ & -- \\
 %\hline
-{\tt gpi\_x}           & $\nabla \pi \cdot \ex$ & {\tt plot\_gpi} \\
+{\tt gpi\_x}           & $\nabla \pi \cdot \ex$ & \runparam{plot\_gpi} \\
 %\hline 
 {\tt gpi\_y}           & $\nabla \pi \cdot \ey$ & {\tt plot\_gpi} \\
 %\hline
@@ -121,25 +121,25 @@ sizes.
 %\hline
 {\tt p0pluspi}         & $p_0 + \pi$ & {\tt plot\_base} \\
 %\hline
-{\tt omegadot(*)}      & $\dot{\omega}_k$ & {\tt plot\_omegadot} \\
+{\tt omegadot(*)}      & $\dot{\omega}_k$ & \runparam{plot\_omegadot} \\
 %\hline
-{\tt enucdot}          & $(\rho \Hnuc)/\rho$ & {\tt plot\_Hnuc} \\
+{\tt enucdot}          & $(\rho \Hnuc)/\rho$ & \runparam{plot\_Hnuc} \\
 %\hline
-{\tt Hext}             & $(\rho \Hext)/\rho$ & {\tt plot\_Hext} \\
+{\tt Hext}             & $(\rho \Hext)/\rho$ & \runparam{plot\_Hext} \\
 %\hline
-{\tt eta\_rho}         & $\etarho$ & {\tt plot\_eta} \\
+{\tt eta\_rho}         & $\etarho$ & \runparam{plot\_eta} \\
 %\hline
-{\tt thermal}          & $\nabla \cdot \kappa \nabla T$ & {\tt use\_thermal\_diffusion} \\
+{\tt thermal}          & $\nabla \cdot \kappa \nabla T$ & \runparam{use\_thermal\_diffusion} \\
 %\hline
 {\tt conductivity}     & $\kappa(\rho, T, X_k)$ & {\tt use\_thermal\_diffusion} \\
 %\hline
-{\tt ad\_excess}       & $\nabla - \nabla_\mathrm{ad}$ & {\tt plot\_ad\_excess} \\
+{\tt ad\_excess}       & $\nabla - \nabla_\mathrm{ad}$ & \runparam{plot\_ad\_excess} \\
 %\hline
-{\tt particle\_count}  & number of particles in a cell & {\tt use\_particles} \\
+{\tt particle\_count}  & number of particles in a cell & \runparam{use\_particles} \\
 %\hline
-{\tt processor\_number} & processor number containing the cell's data & {\tt plot\_processors} \\
+{\tt processor\_number} & processor number containing the cell's data & \runparam{plot\_processors} \\
 %\hline
-{\tt pi\_divu}         & $\pi \nabla \cdot \tilde{\Ub}$ (a measure of energy conservation) & {\tt plot\_pidivu} \\
+{\tt pi\_divu}         & $\pi \nabla \cdot \tilde{\Ub}$ (a measure of energy conservation) & \runparam{plot\_pidivu} \\
 \end{longtable}
 \end{center}
 }
