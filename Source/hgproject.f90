@@ -45,8 +45,6 @@ contains
     use probin_module              , only : verbose, &
                                             hg_dense_stencil, nodal, &
                                             use_hypre, use_alt_energy_fix
-    use nodal_divu_module          , only : enforce_outflow_on_divu_rhs
-
 
     integer        , intent(in   ) :: proj_type
     type(ml_layout), intent(in   ) :: mla
@@ -156,10 +154,6 @@ contains
                                   nghost(div_coeff_3d(n)))
        endif
     end do
-
-    if (present(divu_rhs)) then
-       call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
-    end if
 
     do n = 1, nlevs
        call multifab_build(phi(n), mla%la(n), 1, 1, nodal)

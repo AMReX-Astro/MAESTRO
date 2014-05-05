@@ -21,8 +21,6 @@ contains
 
     use bl_prof_module
 
-    use nodal_divu_module   , only : enforce_outflow_on_divu_rhs
-
     use nodal_stencil_fill_module , only : stencil_fill_nodal_all_mglevels
     use ml_solve_module     , only : ml_nd_solve
     use nodal_divu_module   , only : divu, subtract_divu_from_rh
@@ -213,9 +211,9 @@ contains
     ! Subtract S:  RHS = div(U) - S
     ! ********************************************************************************
 
-    ! (this routine preserves rh=0 on nodes which have bc_dirichlet = true.)
+    ! Note that we now set divu_rhs at outflow and at the fine nodes
+    !      on coarse-fine boundaries in a call to enforce_dirichlet_rhs from ml_nd_solve.
     if (present(divu_rhs)) then
-       call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
        call subtract_divu_from_rh(nlevs,mgt,rh,divu_rhs)
     end if
 
