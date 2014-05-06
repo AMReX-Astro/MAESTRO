@@ -16,8 +16,7 @@ module hg_multigrid_module
 contains 
 
   subroutine hg_multigrid(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
-                          stencil_type,rel_solver_eps,abs_solver_eps, &
-                          using_alt_energy_fix,divu_rhs)
+                          stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
 
     use bl_prof_module
 
@@ -40,7 +39,6 @@ contains
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
     integer        , intent(in   ) :: stencil_type
-    logical        , intent(in   ) :: using_alt_energy_fix
     real(dp_t)     , intent(in   ) :: rel_solver_eps
     real(dp_t)     , intent(in   ) :: abs_solver_eps
 
@@ -56,19 +54,16 @@ contains
 
     real(dp_t) :: bottom_solver_eps
 
-    integer :: i, ns, dm, nlevs
+    integer :: dm, nlevs
     integer :: bottom_solver, bottom_max_iter
     integer :: max_iter
     integer :: min_width
     integer :: max_nlevel
     integer :: nu1, nu2, smoother
-    integer :: d,n,j
+    integer :: d,n
     integer :: max_nlevel_in
     integer :: do_diagnostics
-    integer :: coeff_ncomp
     integer, allocatable :: lo_inflow(:),hi_inflow(:)
-
-    real(dp_t), pointer :: p(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
