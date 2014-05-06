@@ -16,12 +16,9 @@ module hg_multigrid_module
 contains 
 
   subroutine hg_multigrid(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
-                          stencil_type,rel_solver_eps,abs_solver_eps, &
-                          using_alt_energy_fix,divu_rhs)
+                          stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
 
     use bl_prof_module
-
-    use nodal_divu_module   , only : enforce_outflow_on_divu_rhs
 
     use nodal_stencil_fill_module , only : stencil_fill_nodal_all_mglevels
     use ml_solve_module     , only : ml_nd_solve
@@ -42,7 +39,6 @@ contains
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
     integer        , intent(in   ) :: stencil_type
-    logical        , intent(in   ) :: using_alt_energy_fix
     real(dp_t)     , intent(in   ) :: rel_solver_eps
     real(dp_t)     , intent(in   ) :: abs_solver_eps
 
@@ -58,19 +54,16 @@ contains
 
     real(dp_t) :: bottom_solver_eps
 
-    integer :: i, ns, dm, nlevs
+    integer :: dm, nlevs
     integer :: bottom_solver, bottom_max_iter
     integer :: max_iter
     integer :: min_width
     integer :: max_nlevel
     integer :: nu1, nu2, smoother
-    integer :: d,n,j
+    integer :: d,n
     integer :: max_nlevel_in
     integer :: do_diagnostics
-    integer :: coeff_ncomp
     integer, allocatable :: lo_inflow(:),hi_inflow(:)
-
-    real(dp_t), pointer :: p(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -213,9 +206,9 @@ contains
     ! Subtract S:  RHS = div(U) - S
     ! ********************************************************************************
 
-    ! (this routine preserves rh=0 on nodes which have bc_dirichlet = true.)
+    ! Note that we now set divu_rhs at outflow and at the fine nodes
+    !      on coarse-fine boundaries in a call to enforce_dirichlet_rhs from ml_nd_solve.
     if (present(divu_rhs)) then
-       call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
        call subtract_divu_from_rh(nlevs,mgt,rh,divu_rhs)
     end if
 
