@@ -45,8 +45,6 @@ contains
     use probin_module              , only : verbose, &
                                             hg_dense_stencil, nodal, &
                                             use_hypre, use_alt_energy_fix
-    use nodal_divu_module          , only : enforce_outflow_on_divu_rhs
-
 
     integer        , intent(in   ) :: proj_type
     type(ml_layout), intent(in   ) :: mla
@@ -157,10 +155,6 @@ contains
        endif
     end do
 
-    if (present(divu_rhs)) then
-       call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
-    end if
-
     do n = 1, nlevs
        call multifab_build(phi(n), mla%la(n), 1, 1, nodal)
        call multifab_build( rh(n), mla%la(n), 1, 1, nodal)
@@ -183,22 +177,19 @@ contains
     if (use_hypre) then 
        if (present(divu_rhs)) then
           call hg_hypre(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
-                        stencil_type,rel_solver_eps,abs_solver_eps, &
-                        using_alt_energy_fix,divu_rhs)
+                        stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
        else
           call hg_hypre(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
-                        stencil_type,rel_solver_eps,abs_solver_eps, &
-                        using_alt_energy_fix)
+                        stencil_type,rel_solver_eps,abs_solver_eps)
        end if
     else
        if (present(divu_rhs)) then
           call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
-                            stencil_type,rel_solver_eps,abs_solver_eps, &
-                            using_alt_energy_fix,divu_rhs)
+                            stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
        else
           call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
-                            stencil_type,rel_solver_eps,abs_solver_eps, &
-                            using_alt_energy_fix)
+                            stencil_type,rel_solver_eps,abs_solver_eps)
+                            
        end if
     endif
 
@@ -229,7 +220,7 @@ contains
        call multifab_build(gphi(n), mla%la(n), dm, 0)
     end do
 
-    call mkgphi(gphi,phi,div_coeff_3d,dx,using_alt_energy_fix)
+    call mkgphi(gphi,phi,div_coeff_3d,dx)
 
     call hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,  &
                    pi,phi,dt,mla,the_bc_tower%bc_tower_array,div_coeff_3d, &
@@ -539,16 +530,15 @@ contains
 
     ! ******************************************************************************* !
 
-    subroutine mkgphi(gphi,phi,div_coeff_3d,dx,using_alt_energy_fix)
+    subroutine mkgphi(gphi,phi,div_coeff_3d,dx)
 
       type(multifab), intent(inout) :: gphi(:)
       type(multifab), intent(in   ) :: phi(:)
       type(multifab), intent(in   ) :: div_coeff_3d(:)
       real(dp_t)    , intent(in   ) :: dx(:,:)
-      logical       , intent(in   ) :: using_alt_energy_fix
 
       integer :: lo(phi(1)%dim),hi(phi(1)%dim)
-      integer :: i,n,ng_p,ng_gp,ng_b
+      integer :: i,n,ng_p,ng_gp
 
       real(kind=dp_t), pointer :: gph(:,:,:,:) 
       real(kind=dp_t), pointer :: pp(:,:,:,:) 
@@ -560,7 +550,6 @@ contains
 
       ng_p  = nghost(phi(1))
       ng_gp = nghost(gphi(1))
-      ng_b  = nghost(div_coeff_3d(1))
 
       do n = 1, nlevs
 
@@ -573,16 +562,13 @@ contains
             select case (dm)
             case (1)
                call mkgphi_1d(gph(:,1,1,1), ng_gp, pp(:,1,1,1), ng_p, &
-                               bp(:,1,1,1), ng_b, lo, hi, dx(n,:), &
-                              using_alt_energy_fix)
+                              lo, hi, dx(n,:))
             case (2)
                call mkgphi_2d(gph(:,:,1,:), ng_gp, pp(:,:,1,1), ng_p, &
-                               bp(:,:,1,1), ng_b, lo, hi, dx(n,:), &
-                              using_alt_energy_fix)
+                              lo, hi, dx(n,:))
             case (3)
                call mkgphi_3d(gph(:,:,:,:), ng_gp, pp(:,:,:,1), ng_p, &
-                               bp(:,:,:,1), ng_b, lo, hi, dx(n,:), &
-                              using_alt_energy_fix)
+                              lo, hi, dx(n,:))
             end select
          end do
 
@@ -594,15 +580,13 @@ contains
 
     !   ********************************************************************************* !
 
-    subroutine mkgphi_1d(gphi,ng_gp,phi,ng_p,beta0,ng_b,lo,hi,dx,using_alt_energy_fix)
+    subroutine mkgphi_1d(gphi,ng_gp,phi,ng_p,lo,hi,dx)
 
-      integer        , intent(in   ) :: ng_gp,ng_p,ng_b
+      integer        , intent(in   ) :: ng_gp,ng_p
       integer        , intent(in   ) :: lo(:),hi(:)
       real(kind=dp_t), intent(inout) ::  gphi(lo(1)-ng_gp:)
       real(kind=dp_t), intent(inout) ::   phi(lo(1)-ng_p :)
-      real(kind=dp_t), intent(inout) :: beta0(lo(1)-ng_b :)
       real(kind=dp_t), intent(in   ) :: dx(:)
-      logical        , intent(in   ) :: using_alt_energy_fix
 
       integer :: i
 
@@ -614,15 +598,13 @@ contains
 
     !   ********************************************************************************* !
 
-    subroutine mkgphi_2d(gphi,ng_gp,phi,ng_p,beta0,ng_b,lo,hi,dx,using_alt_energy_fix)
+    subroutine mkgphi_2d(gphi,ng_gp,phi,ng_p,lo,hi,dx)
 
-      integer        , intent(in   ) :: ng_gp,ng_p,ng_b
+      integer        , intent(in   ) :: ng_gp,ng_p
       integer        , intent(in   ) :: lo(:),hi(:)
       real(kind=dp_t), intent(inout) ::  gphi(lo(1)-ng_gp:,lo(2)-ng_gp:,:)
       real(kind=dp_t), intent(inout) ::   phi(lo(1)-ng_p :,lo(2)-ng_p :)
-      real(kind=dp_t), intent(inout) :: beta0(lo(1)-ng_b :,lo(2)-ng_b :)
       real(kind=dp_t), intent(in   ) :: dx(:)
-      logical        , intent(in   ) :: using_alt_energy_fix
 
       integer :: i,j
 
@@ -639,15 +621,13 @@ contains
 
     !   ******************************************************************************** !
 
-    subroutine mkgphi_3d(gphi,ng_gp,phi,ng_p,beta0,ng_b,lo,hi,dx,using_alt_energy_fix)
+    subroutine mkgphi_3d(gphi,ng_gp,phi,ng_p,lo,hi,dx)
 
-      integer        , intent(in   ) :: ng_gp,ng_p,ng_b
+      integer        , intent(in   ) :: ng_gp,ng_p
       integer        , intent(in   ) :: lo(:),hi(:)
       real(kind=dp_t), intent(inout) ::  gphi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
       real(kind=dp_t), intent(inout) ::   phi(lo(1)-ng_p :,lo(2)-ng_p :,lo(3)-ng_p :)
-      real(kind=dp_t), intent(inout) :: beta0(lo(1)-ng_b :,lo(2)-ng_b :,lo(3)-ng_b :)
       real(kind=dp_t), intent(in   ) :: dx(:)
-      logical        , intent(in   ) :: using_alt_energy_fix
 
       integer :: i,j,k
 
@@ -1169,7 +1149,7 @@ contains
 
     type(multifab), allocatable :: coeffs(:)
 
-    integer :: n, ns, dm, nlevs
+    integer :: n, dm, nlevs
     integer :: lo_inflow(1),hi_inflow(1)
 
     type(bl_prof_timer), save :: bpt

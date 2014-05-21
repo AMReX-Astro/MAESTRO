@@ -255,7 +255,8 @@ palette               /home/username/Palette
 
 
 {\tt AmrPostprocessing/python} provides some simple commandline
-tools for doing visualizations of \boxlib\ plotfiles.  The main drivers
+tools for doing visualizations of \boxlib\ plotfiles (note: a subset
+of these are distributed directly with \boxlib\ in {\tt BoxLib/Tools/Py\_util/}).  The main drivers
 are written in python and use a set of Fortran routines, compiled with
 {\tt f2py} to interface with the plotfile data.  To use the routine,
 you will need to have {\tt matplotlib} and {\tt f2py} installed.  On a
@@ -388,6 +389,9 @@ information, see the \yt homepage at \url{http://yt-project.org/} and
 \cite{yt}.
 
 \noindent {\bf Note: for \maestro\ data, you need to use \yt 3.0 or later.}
+
+Some sample scripts that use \yt\ with \maestro\ data are contained in 
+{\tt MAESTRO/Util/yt/}.
 
 \subsection{Installing \yt}
 The easiest way to obtain \yt is through the use of an installation script:
