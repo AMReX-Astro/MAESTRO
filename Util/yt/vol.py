@@ -101,7 +101,8 @@ def doit(plotfile, fname):
 
     # save annotated -- this added the transfer function values, 
     # but this messes up our image size defined above
-    cam.save_annotated("xrb_vol_{}_{}.png".format(fname, plotfile), nim, dpi=145)
+    cam.save_annotated("xrb_vol_{}_{}.png".format(fname, plotfile), nim, dpi=145,
+                       text="{:.3g} s".format(float(pf.current_time.d)), text_x=0.2, text_y=0.85)
 
 
 
