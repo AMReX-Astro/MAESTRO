@@ -24,6 +24,7 @@ data_prefix=plt
 # set the full name of the analysis routines (must be in the path)
 analysis=./vol.py
 
+fname=vz
 
 # activate yt
 source /global/homes/z/zingale/yt/yt-x86_64/bin/activate
@@ -64,12 +65,14 @@ function process_files
 
     if [ -d $1 ]; then
 
-        # do processing
-        ${analysis} $1
+	if [ ! -f xrb_vol_${fname}_${root}.png ]; then
+           # do processing
+           ${analysis} $1 ${fname}
+	fi
 
         # this sleep line is not necessary if the analysis takes any 
 	# measurable amount of time
-	sleep 5           
+	#sleep 5           
 
     fi   # end test of whether datafile is a file (as it should be)
 
