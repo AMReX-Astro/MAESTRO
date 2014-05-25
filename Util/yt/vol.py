@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import matplotlib
+matplotlib.use('agg')
 
 # this example comes from 
 # http://yt-project.org/doc/visualizing/volume_rendering.html
@@ -41,7 +43,6 @@ def doit(plotfile, fname):
     if use_log:
         mi, ma = np.log10(mi), np.log10(ma)
         
-    print mi, ma
 
     # Instantiate the ColorTransferfunction.
     tf =  yt.visualization.volume_rendering.api.ColorTransferFunction((mi, ma))
@@ -78,7 +79,7 @@ def doit(plotfile, fname):
                       no_ghost=False, #data_source=reg,
                       fields = [field], log_fields = [use_log])
 
-    #cam.rotate(2*np.pi*f/N_frames, rot_vector=rot_vector)
+    cam.rotate(2*np.pi/6, rot_vector=rot_vector)
 
     # make an image
     im = cam.snapshot()
@@ -100,7 +101,8 @@ def doit(plotfile, fname):
 
     # save annotated -- this added the transfer function values, 
     # but this messes up our image size defined above
-    cam.save_annotated("xrb_vol_{}.png".format(fname), nim, dpi=145)
+    cam.save_annotated("xrb_vol_{}_{}.png".format(fname, plotfile), nim, dpi=145,
+                       text="{:.3g} s".format(float(pf.current_time.d)), text_x=0.2, text_y=0.85)
 
 
 
