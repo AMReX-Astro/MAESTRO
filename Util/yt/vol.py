@@ -8,10 +8,10 @@ matplotlib.use('agg')
 
 import math
 import sys
+import pylab
 
 from yt.mods import *
-import yt.visualization.volume_rendering.api
-
+import yt.visualization.volume_rendering.api as vr
 
 def doit(plotfile, fname):
 
@@ -45,7 +45,7 @@ def doit(plotfile, fname):
         
 
     # Instantiate the ColorTransferfunction.
-    tf =  yt.visualization.volume_rendering.api.ColorTransferFunction((mi, ma))
+    tf =  vr.ColorTransferFunction((mi, ma))
 
     # Set up the camera parameters: center, looking direction, width, resolution
     c = (pf.domain_right_edge + pf.domain_left_edge)/2.0
@@ -75,11 +75,11 @@ def doit(plotfile, fname):
     pf.periodicity = (True, True, True)
 
     # Create a camera object
-    cam = pf.h.camera(c, L, W, N, tf, 
-                      no_ghost=False, #data_source=reg,
-                      fields = [field], log_fields = [use_log])
+    cam = vr.Camera(c, L, W, N, transfer_function=tf, pf=pf, 
+                    no_ghost=False, #data_source=reg,
+                    fields = [field], log_fields = [use_log])
 
-    cam.rotate(2*np.pi/6, rot_vector=rot_vector)
+    cam.rotate(2*np.pi/6., rot_vector=rot_vector)
 
     # make an image
     im = cam.snapshot()
@@ -97,12 +97,18 @@ def doit(plotfile, fname):
     max_val = im[:,:,:3].std() * 4.0
     nim[:,:,:3] /= max_val
 
-    #nim.write_png("xrb_vol_{:04}.png".format(f))
+    #nim.write_png("xrb_vol_test.png")
 
+    f = pylab.figure()
+
+    pylab.text(0.2, 0.85, "{:.3g} s".format(float(pf.current_time.d)),
+               transform=f.transFigure, color="white")
+
+    cam._render_figure = f
+    
     # save annotated -- this added the transfer function values, 
     # but this messes up our image size defined above
-    cam.save_annotated("xrb_vol_{}_{}.png".format(fname, plotfile), nim, dpi=145,
-                       text="{:.3g} s".format(float(pf.current_time.d)), text_x=0.2, text_y=0.85)
+    cam.save_annotated("xrb_vol_{}.png".format(fname), nim, dpi=145, clear_fig=False)
 
 
 
