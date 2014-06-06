@@ -5,7 +5,7 @@
 The \maestro\ build system uses features of GNU make (version 3.81 or
 later), which is typically the default on systems.  The \maestro\
 executable is built in the problem's directory (one of the directories
-under {\tt SCIENCE/}, {TEST\_PROBLEMS}, or {UNIT\_TESTS}).  This
+under {\tt SCIENCE/}, {\tt TEST\_PROBLEMS}, or {\tt UNIT\_TESTS}).  This
 directory will contain a makefile, {\tt GNUmakefile}, that includes
 all the necessary information to build the executable.
 
@@ -101,8 +101,14 @@ There is no need to explicitly define the dependencies between the
 source files for Fortran modules.  The scripts in {\tt
 BOXLIB\_HOME/Tools/F\_scripts/} are run at the start of the build
 process and parse all the source files and make an explicit list of
-the dependency pairs.  This process is defined in {\tt
-GMakerules.mak}.
+the dependency pairs.  The execution of these scripts is triggered
+by including makefiles of the form {\tt *.depends}.  On a fresh build these
+will not exist.  When GNU make cannot find an included makefile it will
+first attempt to build it using any relevant targets before issuing an 
+error.  The targets for the {\tt *.depends} files contain the recipe for
+executing the dependency scripts.  Once these makefiles are built by the
+scripts GNU make will then read the dependencies for the current build
+from them.  This process is defined in {\tt GMakerules.mak}.
 
 A few files use explicit `{\tt include}' statements to include Fortran
 source in other source files.  Any include file locations should be
