@@ -19,7 +19,7 @@ NETWORK_DIR := ignition_simple
 BOXLIB_ONLY := t
 EXTRA_DIR = Microphysics/networks/ignition_simple/test
 
-testAll: 
+testAll: table
 
 include $(MAESTRO_TOP_DIR)/GMaestro.mak
 

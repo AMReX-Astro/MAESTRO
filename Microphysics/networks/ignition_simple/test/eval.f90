@@ -7,7 +7,7 @@ program testburn
   use eos_module, only: eos_input_rt, eos, eos_init
   use eos_type_module
   use burner_module
-  use burner_aux_module
+  use rpar_indices
 
   implicit none
 
@@ -16,7 +16,7 @@ program testburn
   real(kind=dp_t), dimension(nspec_advance+1) :: y, ydot
   real(kind=dp_t) :: enucdot
 
-  real(kind=dp_t) :: rpar
+  real(kind=dp_t), allocatable :: rpar(:)
   integer :: ipar
 
   integer :: ic12, io16, img24
@@ -26,6 +26,7 @@ program testburn
 
   call network_init()
   call eos_init()
+  allocate(rpar(n_rpar_comps))
 
   ic12 = network_species_index("carbon-12")
   io16 = network_species_index("oxygen-16")
@@ -55,15 +56,13 @@ program testburn
   y(1) = Xin(ic12)
   y(nspec_advance+1) = temp
 
-  ! set the burner_aux variables
-  dens_pass = dens
-  c_p_pass = eos_state%cp
-  dhdx_pass(:) = eos_state%dhdX(:)
-  X_O16_pass = Xin(io16)
-  
+  ! set the rpar variables
+  rpar(irp_dens) = dens
+  rpar(irp_cp) = eos_state%cp
+  rpar(irp_dhdX:irp_dhdX-1+nspec) = eos_state%dhdX(:)
+  rpar(irp_o16)  = Xin(io16)
 
   call f_rhs(nspec_advance+1, ZERO, y, ydot, rpar, ipar)
-
   
   print *, 'done!'
 

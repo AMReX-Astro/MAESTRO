@@ -35,7 +35,6 @@ program testburn
 
   print *, 'calling the burner...'
 
-
   call burner(dens, temp, Xin, dt, Xout, rho_omegadot, rho_Hnuc)
 
   print *, 'done!'
