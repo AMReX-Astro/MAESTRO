@@ -118,12 +118,16 @@ module bdf
 contains
 
   !
-  ! Wrapper of the parallel BDF integrator that mirrors the interface of DVODE.
-  ! It translates DVODE input into the equivalent BDF input.
-  ! This will be the quickest way to replace DVODE with BDF, but there may be
-  ! a performance cost.
+  ! Wrapper of the vectorized BDF (VBDF) integrator that mirrors the interface of DVODE.
+  ! It translates DVODE input into the equivalent VBDF input and wraps
+  ! DVODE-style interfaces with VBDF-style interfaces.
   !
-  ! TODO: Add comments describing args
+  ! This will be the quickest way to replace DVODE with VBDF, but there will be
+  ! no performance benefit.  This is intended for debugging and comparing VBDF
+  ! with DVODE.
+  !
+  ! See the DVODE source code's extensive comments for an explanation of this
+  ! interface.
   !
   subroutine bdf_wrap(f, neq, y, t, tout, itol, rtol, atol, itask, &
       istate, iopt, rwork, lrw, iwork, liw, jac, mf,    &
@@ -157,7 +161,9 @@ contains
     logical, parameter :: REUSE = .false. !.false. means don't reuse the Jacobian
     integer, parameter :: MF_ANALYTIC_JAC = 21
     real(kind=dp_t), parameter :: DT0 = 1.0d-9 !Initial dt to be used in getting from 
-                                                   !t to tout
+                                               !t to tout.  Also arbitrary,
+                                               !multiple values should be
+                                               !explored.
     type(bdf_ts)    :: ts
     logical         :: first_call
     integer         :: ierr
@@ -173,7 +179,8 @@ contains
 
     ! Translate DVODE args into args for bdf_advance
     y0(:,1) = y
-    call bdf_advance(ts, f_wrap, Jac_wrap, neq, NPT, y0, t, y1, tout, DT0, RESET, REUSE, ierr)
+    call bdf_advance(ts, f_wrap, Jac_wrap, neq, NPT, y0, t, y1, tout, &
+                     DT0, RESET, REUSE, ierr, initial_call=.true.)
     t = tout !BDF is designed to always end at tout, 
              !set t to tout to mimic the output behavior of DVODE
     y = y1(:,1)
@@ -217,24 +224,25 @@ contains
   !
   ! Advance system from t0 to t1.
   !
-  subroutine bdf_advance(ts, f, Jac, neq, npt, y0, t0, y1, t1, dt0, reset, reuse, ierr)
+  subroutine bdf_advance(ts, f, Jac, neq, npt, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
     type(bdf_ts), intent(inout) :: ts
     integer,      intent(in   ) :: neq, npt
-    real(dp_t),     intent(in   ) :: y0(neq,npt), t0, t1, dt0
-    real(dp_t),     intent(  out) :: y1(neq,npt)
+    real(dp_t),   intent(in   ) :: y0(neq,npt), t0, t1, dt0
+    real(dp_t),   intent(  out) :: y1(neq,npt)
     logical,      intent(in   ) :: reset, reuse
     integer,      intent(  out) :: ierr
+    logical,      intent(in   ), optional :: initial_call
     interface
        subroutine f(neq, npt, y, t, yd, upar)
          import dp_t
-         integer,  intent(in   ) :: neq, npt
+         integer,    intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: yd(neq,npt)
          real(dp_t), intent(inout), optional :: upar(:)
        end subroutine f
        subroutine Jac(neq, npt, y, t, J, upar)
          import dp_t
-         integer,  intent(in   ) :: neq, npt
+         integer,    intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: J(neq, neq)
          real(dp_t), intent(inout), optional :: upar(:)
@@ -242,8 +250,9 @@ contains
     end interface
 
     integer  :: k, p, m
-    logical  :: retry
+    logical  :: retry, linitial
 
+    linitial = .false.; if (present(initial_call)) linitial = initial_call
 
     if (reset) call bdf_reset(ts, f, y0, dt0, reuse)
 
@@ -260,11 +269,12 @@ contains
 
        call bdf_update(ts)                ! update various coeffs (l, tq) based on time-step history
        call bdf_predict(ts)               ! predict nordsieck array using pascal matrix
-       if(k == 1) then
-          !This is the initial solve, so use the user's initial value, not
-          !predicted value.
+       if(linitial .and. k == 1) then
+          !This is the initial solve, so use the user's initial value, 
+          !not the predicted value.
           do p = 1, ts%npt
              do m = 1, ts%neq
+                !Overwrite the predicted z0 with the user's y0
                 ts%z0(m,p,0) = ts%y(m,p)
              end do
           end do
