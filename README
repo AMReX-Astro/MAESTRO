@@ -10,3 +10,6 @@ making it ideal for targeting GPUs.
 
 The original BDF code the source here is adapted from lives in 
 Combustion/Chemistry/src_common/bdf.f90.  Please see test/t1.f90 for example usage.
+
+NOTE: As of now Maestro only uses bdf.f90.  The other source files are from the Combustion
+codebase and retained in case we decide to make use of them.
