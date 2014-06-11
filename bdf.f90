@@ -20,12 +20,13 @@ module bdf
 
   use bl_types
   use bl_error_module
+!  use rpar_indices
 
   implicit none
 
-  real(dp_t), parameter :: one  = 1.0_dp_t
-  real(dp_t), parameter :: two  = 2.0_dp_t
-  real(dp_t), parameter :: half = 0.5_dp_t
+  real(dp_t), private, parameter :: one  = 1.0_dp_t
+  real(dp_t), private, parameter :: two  = 2.0_dp_t
+  real(dp_t), private, parameter :: half = 0.5_dp_t
 
   integer, parameter :: bdf_max_iters = 666666666
 
@@ -132,29 +133,31 @@ contains
                                       lrw, liw, mf
     integer,         intent(in   ) :: iwork(liw), ipar(:)
     real(kind=dp_t), intent(in   ) :: tout, rtol(:), atol(:), &
-                                      rwork(lrw), rpar(:)
-    real(kind=dp_t), intent(inout) :: y(neq), t
+                                      rwork(lrw)
+    real(kind=dp_t), intent(inout) :: y(neq), t, rpar(:)
     interface
        subroutine f(neq, t, y, yd, rpar, ipar)
          import dp_t
          integer,    intent(in   ) :: neq, ipar(:)
-         real(dp_t), intent(in   ) :: y(neq), t, rpar(:)
+         real(dp_t), intent(in   ) :: y(neq), t
          real(dp_t), intent(  out) :: yd(neq)
+         real(dp_t), intent(inout) :: rpar(:)
        end subroutine f
        subroutine Jac(neq, t, y, ml, mu, pd, nrowpd, rpar, ipar)
          import dp_t
          integer,    intent(in   ) :: neq, nrowpd, ml, mu, ipar(:)
-         real(dp_t), intent(in   ) :: y(neq), t, rpar(:)
+         real(dp_t), intent(in   ) :: y(neq), t
          real(dp_t), intent(  out) :: pd(nrowpd, neq)
+         real(dp_t), intent(inout) :: rpar(:)
        end subroutine Jac
     end interface
 
-    integer, parameter :: NPT = 1         !For DVODE-style calls there's no concepts of npt>1
+    integer, parameter :: NPT = 1         !For DVODE-style calls there's no concept of npt>1
     integer, parameter :: MAX_ORDER = 3   !This is arbitrary, should investigate other values
     logical, parameter :: RESET = .true.  !.true. means we want to initialize the bdf_ts object
     logical, parameter :: REUSE = .false. !.false. means don't reuse the Jacobian
     integer, parameter :: MF_ANALYTIC_JAC = 21
-    real(kind=dp_t), parameter :: DT0 = 1.d-8 !Initial dt to be used in getting from 
+    real(kind=dp_t), parameter :: DT0 = 1.0d-9 !Initial dt to be used in getting from 
                                                    !t to tout
     type(bdf_ts)    :: ts
     logical         :: first_call
@@ -170,11 +173,11 @@ contains
     call bdf_ts_build(ts, neq, NPT, rtol, atol, MAX_ORDER, rpar)
 
     ! Translate DVODE args into args for bdf_advance
-    y0(:,1) = y(:)
+    y0(:,1) = y
     call bdf_advance(ts, f_wrap, Jac_wrap, neq, NPT, y0, t, y1, tout, DT0, RESET, REUSE, ierr)
     t = tout !BDF is designed to always end at tout, 
              !set t to tout to mimic the output behavior of DVODE
-    y(:) = y1(:,1)
+    y = y1(:,1)
 
     ! Cleanup
     call bdf_ts_destroy(ts)
@@ -185,9 +188,11 @@ contains
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(in   ), optional :: upar(:)
+         real(dp_t), intent(inout), optional :: upar(:)
 
          integer :: ipar(1) !Dummy array to match DVODE interface
+
+         ipar(1) = -1
 
          call f(neq, t, y(:,1), yd(:,1), upar, ipar)
       end subroutine f_wrap
@@ -197,7 +202,7 @@ contains
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: J(neq, neq)
-         real(dp_t), intent(in   ), optional :: upar(:)
+         real(dp_t), intent(inout), optional :: upar(:)
 
          integer :: ipar(1), ml, mu
 
@@ -205,7 +210,7 @@ contains
          mu = -1
          ipar(1) = -1
 
-         call Jac(neq, t, y, ml, mu, J, neq, upar, ipar)
+         call Jac(neq, t, y(:,1), ml, mu, J, neq, upar, ipar)
       end subroutine Jac_wrap
   end subroutine bdf_wrap
 
@@ -226,18 +231,18 @@ contains
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(in   ), optional :: upar(:)
+         real(dp_t), intent(inout), optional :: upar(:)
        end subroutine f
        subroutine Jac(neq, npt, y, t, J, upar)
          import dp_t
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: J(neq, neq)
-         real(dp_t), intent(in   ), optional :: upar(:)
+         real(dp_t), intent(inout), optional :: upar(:)
        end subroutine Jac
     end interface
 
-    integer  :: k
+    integer  :: k, p, m
     logical  :: retry
 
 
@@ -256,6 +261,15 @@ contains
 
        call bdf_update(ts)                ! update various coeffs (l, tq) based on time-step history
        call bdf_predict(ts)               ! predict nordsieck array using pascal matrix
+       if(k == 1) then
+          !This is the initial solve, so use the user's initial value, not
+          !predicted value.
+          do p = 1, ts%npt
+             do m = 1, ts%neq
+                ts%z0(m,p,0) = ts%y(m,p)
+             end do
+          end do
+       endif
        call bdf_solve(ts, f, Jac)         ! solve for y_n based on predicted y and yd
        call bdf_check(ts, retry, ierr)    ! check for solver errors and test error estimate
 
@@ -386,18 +400,18 @@ contains
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(in   ), optional :: upar(:)
+         real(dp_t), intent(inout), optional :: upar(:)
        end subroutine f
        subroutine Jac(neq, npt, y, t, J, upar)
          import dp_t
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: J(neq, neq)
-         real(dp_t), intent(in   ), optional :: upar(:)
+         real(dp_t), intent(inout), optional :: upar(:)
        end subroutine Jac
     end interface
 
-    include 'LinAlg.inc'
+    !include 'LinAlg.inc'
 
     integer  :: k, m, n, p, info
     real(dp_t) :: c, dt_adj, dt_rat, inv_l1
@@ -631,6 +645,7 @@ contains
   ! Reset counters, set order to one, init Nordsieck history array.
   !
   subroutine bdf_reset(ts, f, y0, dt, reuse)
+    !use rpar_indices
     type(bdf_ts), intent(inout) :: ts
     real(dp_t),     intent(in   ) :: y0(ts%neq, ts%npt), dt
     logical,      intent(in   ) :: reuse
@@ -640,7 +655,7 @@ contains
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(in   ), optional :: upar(:)
+         real(dp_t), intent(inout), optional :: upar(:)
        end subroutine f
     end interface
 
@@ -856,6 +871,7 @@ contains
   ! Build/destroy BDF time-stepper.
   !
   subroutine bdf_ts_build(ts, neq, npt, rtol, atol, max_order, upar)
+    !use rpar_indices
     type(bdf_ts), intent(inout) :: ts
     integer,      intent(in   ) :: max_order, neq, npt
     real(dp_t),     intent(in   ) :: rtol(neq), atol(neq)
