@@ -20,7 +20,6 @@ module bdf
 
   use bl_types
   use bl_error_module
-!  use rpar_indices
 
   implicit none
 
@@ -645,7 +644,6 @@ contains
   ! Reset counters, set order to one, init Nordsieck history array.
   !
   subroutine bdf_reset(ts, f, y0, dt, reuse)
-    !use rpar_indices
     type(bdf_ts), intent(inout) :: ts
     real(dp_t),     intent(in   ) :: y0(ts%neq, ts%npt), dt
     logical,      intent(in   ) :: reuse
@@ -871,7 +869,6 @@ contains
   ! Build/destroy BDF time-stepper.
   !
   subroutine bdf_ts_build(ts, neq, npt, rtol, atol, max_order, upar)
-    !use rpar_indices
     type(bdf_ts), intent(inout) :: ts
     integer,      intent(in   ) :: max_order, neq, npt
     real(dp_t),     intent(in   ) :: rtol(neq), atol(neq)
