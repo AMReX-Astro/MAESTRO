@@ -1,3 +1,6 @@
+fEXE_sources += dgefa.f
+fEXE_sources += dgesl.f
+fEXE_sources += vddot.f
 fEXE_sources += daxpy.f
 fEXE_sources += dcopy.f
 fEXE_sources += ddot.f

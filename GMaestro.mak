@@ -93,6 +93,9 @@ ifdef NEED_BLAS
   UTIL_CORE += Util/BLAS
 endif
 
+ifdef NEED_VBDF
+  UTIL_CORE += ../AstroDev/VBDF
+endif
 
 # the helmeos has an include file -- also add a target to link the table
 # into the problem directory.
