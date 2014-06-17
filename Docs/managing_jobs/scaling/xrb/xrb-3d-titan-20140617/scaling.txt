@@ -1,0 +1,21 @@
+
+# 64^3: 432 grids
+
+# 8 cores per node (-j 1):
+#        MPI     threads   advection         MAC       nodal   reactions        misc       total
+        432           8    2.780050    1.048600    2.069960    4.287160    1.647840   10.321900
+
+
+# 16 cores per node (-j 2)
+#        MPI     threads   advection         MAC       nodal   reactions        misc       total
+        432           8    3.479560    1.587940    2.528570    5.731940    2.051700   13.405900
+
+
+
+
+# I/O times writing 50 G (#s from plt00000):
+# 4.264 s
+# 4.171 s
+
+
+
