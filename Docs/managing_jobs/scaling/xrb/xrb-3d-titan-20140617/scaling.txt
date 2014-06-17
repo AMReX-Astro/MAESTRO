@@ -11,7 +11,17 @@
 #        MPI     threads   advection         MAC       nodal   reactions        misc       total
         432           4    6.777920    2.383350    2.852380   11.383500    3.848030   22.921100
         432           8    3.479560    1.587940    2.528570    5.731940    2.051700   13.405900
+        432          16    2.471570    1.485020    2.434820    2.947440    1.240330    9.532690
 
+
+# 48^3: 1024 grids
+
+# 8 cores per node (-j 1)
+
+
+# 16 cores per node (-j 2)
+#        MPI     threads   advection         MAC       nodal   reactions        misc       total
+       1024           8    2.251370    1.304820    2.069960    2.904470    2.140810    7.927860
 
 
 
