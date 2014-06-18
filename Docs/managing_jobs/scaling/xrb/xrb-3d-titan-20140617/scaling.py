@@ -25,18 +25,22 @@ def scaling():
 
     # we ran in 3 batches, with 4, 8, and 16 threads -- separate them out
     # we also ran in 2 modes on titan -- with 8 cores per compute node and 16
+    idx_omp1_j1 = np.logical_and(N_omp[:] == 1, jmode[:] == 1)
     idx_omp4_j1 = np.logical_and(N_omp[:] == 4, jmode[:] == 1)
     idx_omp8_j1 = np.logical_and(N_omp[:] == 8, jmode[:] == 1)
     idx_omp16_j1 = np.logical_and(N_omp[:] == 16, jmode[:] == 1)
 
+    idx_omp1_j2 = np.logical_and(N_omp[:] == 1, jmode[:] == 2)
     idx_omp4_j2 = np.logical_and(N_omp[:] == 4, jmode[:] == 2)
     idx_omp8_j2 = np.logical_and(N_omp[:] == 8, jmode[:] == 2)
     idx_omp16_j2 = np.logical_and(N_omp[:] == 16, jmode[:] == 2)
 
+    pylab.loglog(cores[idx_omp1_j1], t_total[idx_omp1_j1], "o-", color="k", label="MPI")
     pylab.loglog(cores[idx_omp4_j1], t_total[idx_omp4_j1], "o-", color="b", label="MPI + 4 OpenMP threads")
     pylab.loglog(cores[idx_omp8_j1], t_total[idx_omp8_j1], "o-", color="r", label="MPI + 8 OpenMP threads")
     pylab.loglog(cores[idx_omp16_j1], t_total[idx_omp16_j1], "o-", color="g", label="MPI + 16 OpenMP threads")
 
+    pylab.loglog(cores[idx_omp1_j2], t_total[idx_omp1_j2], "^-", color="k")
     pylab.loglog(cores[idx_omp4_j2], t_total[idx_omp4_j2], "^-", color="b")
     pylab.loglog(cores[idx_omp8_j2], t_total[idx_omp8_j2], "^-", color="r")
     pylab.loglog(cores[idx_omp16_j2], t_total[idx_omp16_j2], "^-", color="g")
@@ -44,7 +48,8 @@ def scaling():
     # ideal
     cm = np.min(cores)
     cM = np.max(cores)
-    pylab.loglog([cm, cM], t_total[0]*cm/np.array([cm, cM]), ":", color="k", label="ideal scaling")
+    id = np.argmin(cores)
+    pylab.loglog([cm, cM], t_total[id]*cm/np.array([cm, cM]), ":", color="k", label="ideal scaling")
 
     pylab.legend(frameon=False)
 
@@ -53,7 +58,7 @@ def scaling():
 
     pylab.title("OLCF Titan Scaling for 3-d XRB (384 x 384 x 768 zones)")
 
-    pylab.ylim(1.,100.)
+    pylab.ylim(1.,200.)
 
     pylab.savefig("xrb_titan_scaling_by_parallel.png")
 
@@ -77,7 +82,9 @@ def scaling():
     # ideal
     cm = np.min(cores)
     cM = np.max(cores)
-    pylab.loglog([cm, cM], t_total[0]*cm/np.array([cm, cM]), ":", color="k", label="ideal scaling")
+    id = np.argmin(cores)
+
+    pylab.loglog([cm, cM], t_total[id]*cm/np.array([cm, cM]), ":", color="k", label="ideal scaling")
 
     pylab.legend(frameon=False)
 
@@ -86,7 +93,7 @@ def scaling():
 
     pylab.title("OLCF Titan Scaling for 3-d XRB (384 x 384 x 768 zones)")
 
-    pylab.ylim(1.,100.)
+    pylab.ylim(1.,200.)
     pylab.savefig("xrb_titan_scaling_by_grid.png")
 
 
