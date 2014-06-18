@@ -23,7 +23,7 @@ def scaling():
 
     cores = N_mpi * N_omp
 
-    # we ran in 3 batches, with 4, 8, and 16 threads -- separate them out
+    # we ran in 4 batches, with 1, 4, 8, and 16 threads -- separate them out
     # we also ran in 2 modes on titan -- with 8 cores per compute node and 16
     idx_omp1_j1 = np.logical_and(N_omp[:] == 1, jmode[:] == 1)
     idx_omp4_j1 = np.logical_and(N_omp[:] == 4, jmode[:] == 1)
@@ -61,6 +61,7 @@ def scaling():
     pylab.ylim(1.,200.)
 
     pylab.savefig("xrb_titan_scaling_by_parallel.png")
+    pylab.savefig("xrb_titan_scaling_by_parallel.eps")
 
     # we also ran with 3 different grid sizes: 32^3, 48^3, and 64^3.
     # this is essentially N_mpi
@@ -86,7 +87,22 @@ def scaling():
 
     pylab.loglog([cm, cM], t_total[id]*cm/np.array([cm, cM]), ":", color="k", label="ideal scaling")
 
-    pylab.legend(frameon=False)
+    # custom legend
+    legs = []
+    legnames = []
+    colors = ["g", "b", "r"]
+    for g in grids:
+        legs.append(pylab.Line2D((0,1),(0,0), color=colors.pop(), marker=None))
+        gsize = int(round((problem_size/g)**(1./3.)))
+        legnames.append(r"${}^3$ grid".format(gsize))
+                    
+    legs.append(pylab.Line2D((0,1),(0,0), color="k", marker="o", linestyle=""))    
+    legnames.append("1 CPU / compute unit (-j 1)")
+
+    legs.append(pylab.Line2D((0,1),(0,0), color="k", marker="^", linestyle=""))    
+    legnames.append("2 CPUs / compute unit (-j 2)")
+
+    pylab.legend(legs, legnames, ncol=2, frameon=False, fontsize=11, numpoints=1)
 
     pylab.xlabel("number of cores")
     pylab.ylabel("average time to advance timestep")
@@ -94,7 +110,10 @@ def scaling():
     pylab.title("OLCF Titan Scaling for 3-d XRB (384 x 384 x 768 zones)")
 
     pylab.ylim(1.,200.)
+
+    pylab.tight_layout()
     pylab.savefig("xrb_titan_scaling_by_grid.png")
+    pylab.savefig("xrb_titan_scaling_by_grid.eps", bbox_inches="tight")
 
 
 
