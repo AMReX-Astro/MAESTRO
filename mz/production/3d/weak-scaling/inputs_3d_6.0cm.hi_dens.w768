@@ -10,7 +10,7 @@
  grav_const = -2.45e14
 
  ! temperature perturbation
- perturb_model = T
+ perturb_model = F
  xrb_pert_size = 50
  xrb_pert_factor = 1.0d-5
  xrb_pert_type = 1
@@ -27,7 +27,7 @@
  !----------------------------------------------------------------------------
  ! gridding
  !----------------------------------------------------------------------------
- test_set = "grd_3d_xrb_wide.64.w768"
+ test_set = "grd_3d_xrb_wide_w768.64"
 
  dm_in = 3
 
