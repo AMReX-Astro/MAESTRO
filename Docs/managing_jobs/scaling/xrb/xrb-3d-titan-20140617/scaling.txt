@@ -20,12 +20,14 @@
 # 8 cores per node (-j 1)
 #        MPI     threads   advection         MAC       nodal   reactions        misc       total
        1024           4    2.871490    0.912488    1.710670    4.253180    3.044610    8.763680
+       1024           8    1.701680    0.887784    1.618630    2.167050    1.630950    5.958510
 
 
 # 16 cores per node (-j 2)
 #        MPI     threads   advection         MAC       nodal   reactions        misc       total
        1024           4    3.903310    1.353340    1.974140    5.575890    3.957430   11.477900
        1024           8    2.251370    1.304820    2.069960    2.904470    2.140810    7.927860
+       1024          16    1.522680    1.543980    1.992530    1.499070    1.174360    6.316580
 
 
 
@@ -38,6 +40,9 @@
 
 
 # 16 cores per node (-j 2)
+#        MPI     threads   advection         MAC       nodal   reactions        misc       total
+       3456           4    1.412950    2.456020    5.306900    1.618690    1.176260   10.435300
+       3456           8    0.990606    2.657500    5.407930    0.865530    0.652122    9.757600
 
 
 # I/O times writing 50 G (#s from plt00000):
