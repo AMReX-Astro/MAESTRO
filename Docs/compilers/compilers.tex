@@ -14,7 +14,7 @@ machine at OCLF.
  Compiling in debug mode works fine, but is slow.  This suggests that
  there is a compiler bug.
  
- A separate issue is that the ``volume'' reported by {\tt
+ \item A separate issue is that the ``volume'' reported by {\tt
  multifab\_volume()} seems to be wrong.  For a single level run, it
  should just be $\mathtt{nx} \times \mathtt{ny} \times \mathtt{nz}$,
  but the value reported is incorrect.  This issue only manifests when
@@ -23,7 +23,8 @@ machine at OCLF.
  In Cray 8.2.4 the problem appears to be resolved, with  
  \code{\tt multifab\_volume()} returning the correct cell count.
 
-\item Cray 8.2.6 on NERSC Edison seems to work well with OpenMP.
+\item Cray 8.2.5 works well on titan/OLCF with MPI/OpenMP
+\item Cray 8.2.6 works well on edison/NERSC with MPI/OpenMP.
 
 \end{itemize}
 
@@ -49,6 +50,9 @@ it seems to be related to optimization.
 \item gfortran 4.7.1 (prerelease) seems to have fixed the above issue,
 but now wdconvect with 2-level, effective 768$^3$ dies due to an
 unknown seg fault at the beginning of the run.
+
+\item There are no known issues with gfortran 4.8.x
+
 \end{itemize}
 
 An added benefit of the gfortran compilers is that their debugging
