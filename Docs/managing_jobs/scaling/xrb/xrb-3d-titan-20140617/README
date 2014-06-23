@@ -9,7 +9,7 @@ We can do 32^3, 48^3, or 64^3 grids.
 Titan nodes have 16 cores, but 8 FPUs, so it may be better to run with
 8 codes -- the -j 1 option to aprun ensure that it is one core per FPU.
 
-Run for 100 steps.  Output is from ./scaling_avgs.sh
+Run for 100 steps or 30 minutes.  Last 10 steps are averaged.  Output is from ./scaling_avgs.sh
 
 
 64^3 aprun config:
