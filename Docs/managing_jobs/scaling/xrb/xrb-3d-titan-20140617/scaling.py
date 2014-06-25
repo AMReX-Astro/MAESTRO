@@ -158,7 +158,8 @@ def scaling():
     legs.append(pylab.Line2D((0,1),(0,0), color="k", marker="^", linestyle=""))    
     legnames.append("2 CPUs / compute unit (-j 2)")
 
-    pylab.legend(legs, legnames, ncol=3, frameon=False, fontsize=11, numpoints=1)
+    pylab.legend(legs, legnames, ncol=3, frameon=False, 
+                 fontsize=13, numpoints=1)
 
     pylab.xlabel("number of cores")
     pylab.ylabel("average time to advance timestep")
