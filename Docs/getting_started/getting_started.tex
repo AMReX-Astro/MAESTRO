@@ -309,6 +309,15 @@ A simple pure-incompressible shear layer problem.  This is the example
 problem used in \cite{bellcolellaglaz}.  This is useful to see how to
 use \maestro\ as an incompressible solver.
 
+\item {\tt rt} \\ [-3mm]
+
+A Rayleigh-Taylor instability problem.  There are two methods that the
+code is run here, in the standard (using {\tt inputs\_2d}), the base state
+has the stratified atmosphere and we introduce a velocity perturbation
+to start the instability.  The alternate method, {\tt inputs\_2d\_SNe}, uses
+the \runparam{do\_smallscale} runtime parameter to eliminate the base state
+and instead use the incompressible constraint to evolve the system.
+
 \item {\tt test2} \\[-3mm]
 
 {\tt test2} places 3 hots spots in a plane-parallel atmosphere.
