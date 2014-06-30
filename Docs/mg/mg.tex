@@ -142,10 +142,24 @@ In addition to these parameters, the \mgtower\ carries a number of
 \multifab s that carry the solution and stencil for the multigrid
 solve.
 
-The stencil itself is contained in the {\tt ss} \multifab---for each
-zone, this gives the coefficients of the terms in the Laplacian, with
-the convection that the `0' term is located in the current cell and
-the other terms are the $\pm 1$ off the current cell in each direction.
+\begin{itemize}
+
+\item {\tt ss}: The stencil itself---for each zone, this gives the 
+  coefficients of the terms in the Laplacian, with the convection that
+  the `0' term is located in the current cell and the other terms are
+  the $\pm 1$ off the current cell in each direction.
+
+\item {\tt cc}: scratch space (?)
+
+\item {\tt ff}: The source (righthand side) of the elliptic equation
+  we are solving.
+
+\item {\tt dd}: The residual/defect, $ff - L\phi$
+
+\item {\tt uu}: The solution variable ($\phi$ when on the finest level)
+
+\item {\tt mm}: A mask used at coarse/fine interfaces
+\end{itemize}
 
 \section{Bottom Solvers}
 
