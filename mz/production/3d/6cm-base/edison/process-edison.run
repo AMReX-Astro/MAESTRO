@@ -1,0 +1,19 @@
+#!/bin/ksh
+#PBS -A m1938
+#PBS -N process-yt
+#PBS -j oe
+#PBS -q regular
+#PBS -l walltime=4:00:00
+#PBS -l mppwidth=24
+
+
+export OMP_NUM_THREADS=1
+
+
+cd $PBS_O_WORKDIR
+
+
+./parallel-yt
+
+
+
