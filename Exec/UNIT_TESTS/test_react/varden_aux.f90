@@ -421,6 +421,7 @@ contains
        !TODO: Add xn <= 1.0 error checking
        !TODO: Add proper cell count error checking
        i = 1
+       print *, 'nspec: ', nspec
        do while (i <= nspec)
           ! read the line into a character buffer
           read (un,'(a)') line

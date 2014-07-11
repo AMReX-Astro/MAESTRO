@@ -16,11 +16,12 @@ MAESTRO_TOP_DIR := ../../..
 EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 
-NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
+#NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
 #NETWORK_DIR := rprox
 #NETWORK_DIR := triple_alpha
 #NETWORK_DIR := ignition_chamulak
-NETWORK_DIR := aprox13
+#NETWORK_DIR := aprox13
+NETWORK_DIR := ignition_simple
 
 # a special case for the test suite
 ifeq ($(NETWORK_DIR), ignition_chamulak)
