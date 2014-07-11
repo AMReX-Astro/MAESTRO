@@ -7,6 +7,11 @@
 *.blg
 *.lof
 *.lot
+*.idx
+*.ilg
+*.ind
+Docs/*/*.pdf
+MaestroUsersGuide.out
 
 
 # emacs temporaries
