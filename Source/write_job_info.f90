@@ -39,13 +39,17 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
 
   integer :: i, n
 
+  logical :: is_overview 
+
   call date_and_time(date_in, time_in, VALUES=values)
   call get_cwd(cwd)
 
   if (dirname == "") then
      out_name = "maestro-overview.out"
+     is_overview = .true.
   else
      out_name = trim(dirname) // "/job_info"
+     is_overview = .false.
   endif
 
 999  format(79('='))
@@ -197,7 +201,14 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
      write (99,*) "Runtime Parameter Information"
      write (99,999)
      call runtime_pretty_print(99)
+
+     if (is_overview) then
+        write (99,*) " "
+        write (99,*) "Restart information: "
+     endif
+
      close(99)
+
   endif
 
 end subroutine write_job_info

@@ -131,6 +131,8 @@ subroutine varden()
   type(particle_container) :: particles
   integer :: numparticles
 
+  logical :: have_overview
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialization
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -371,9 +373,22 @@ subroutine varden()
 
   call check_cutoff_values()
 
+1010 format(1x, "restarted from step ", i7, 2x, "MPI tasks = ", i6, 2x, "OMP threads = ", i3)
+
   ! write the maestro-overview.out file
-  if (restart < 0) &
-       call write_job_info("", mla%mba, the_bc_tower, 0.0d0)
+  if (restart < 0) then
+     call write_job_info("", mla%mba, the_bc_tower, 0.0d0)
+  else
+     if (parallel_IOProcessor()) then
+        inquire(file="maestro-overview.out", exist=have_overview)
+        if (have_overview) then
+           open(unit=99, file="maestro-overview.out", form = "formatted", &
+                action="write", status="old", position="append")        
+           write(99,1010) restart, parallel_nprocs(), omp_get_max_threads()
+           close(unit=99)
+        endif
+     endif
+  endif
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
