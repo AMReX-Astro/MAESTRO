@@ -11,7 +11,7 @@ host of parameters about the simulation, including:
 \item The total amount of CPU-hours used up to this point
 \item The data and time of the plotfile creation and the directory it was written to.
 \item The build date, machine, and directory
-\item The MAESTRO, BoxLib and other relevant git hashes for the source
+\item The \maestro, \boxlib, and other relevant git hashes for the source
 \item The directories used in the build
 \item The compilers used and compilation flags
 \item The number of levels and boxes for the grid
@@ -24,7 +24,46 @@ was overridden.
 This file makes it easy to understand how to recreate the run that
 produced the plotfile.
 
+
+\section{Linux boxes}
+
+\subsection{gfortran}
+
+gfortran is probably the best compiler for \maestro.  Here are some
+version-specific notes:
+
+\begin{itemize}
+\item {\em gfortran 4.5.x}: gfortran 4.5 has no known issues.
+
+\item {\em gfortran 4.6.x}: gfortran 4.6.1--4.6.3 on Fedora 
+(15 and 16) have a bug that shows up in multi-processor, multilevel
+runs ({\tt toy\_convect} on 4 processors, with {\tt
+inputs\_2d\_ml.test} for instance).  The symptom is a crash during
+initialization with the message that ``message sizes do not match
+across processes in the collective'' in a {\tt parallel\_bcast} call.
+This is in {\tt cluster\_f.f90}, and the issue seems to be a
+multiplication error in computing the size to allocate {\tt bxs}.  The
+bug is not present when you compile in debug mode, so it seems to be
+related to optimization.
+
+\item {\em gfortran 4.7.x}: gfortran 4.7.1 (prerelease) seems to have 
+fixed the above issue, but now wdconvect with 2-level, effective
+768$^3$ dies due to an unknown seg fault at the beginning of the run.
+
+\item {\em gfortran 4.8.x}: There are no known issues with gfortran 4.8.x
+
+\end{itemize}
+
+
+
+
 \section{Working at OLCF (ORNL)}
+
+\subsection{Titan Compilers}
+
+The preferred compilers on Titan are the Cray compilers.  
+Cray 8.2.5 works well on titan/OLCF with MPI/OpenMP.
+
 
 \subsection{Automatic Restarting and Archiving of Data}
 
@@ -198,6 +237,23 @@ To make a movie (output sequence of images):
 
 
 \section{Working at NERSC}
+
+\subsection{edison compilers}
+
+The default compilers on edison are the Intel compilers, but
+it seems that the Cray compilers are the best.
+
+\begin{itemize}
+\item Cray 8.2.6 works well on edison/NERSC with MPI/OpenMP.
+
+\item Cray 8.3.0 generates an internal compiler error on edison/NERSC.
+      To get back to the older Cray compilers, you need to do:
+\begin{verbatim}                                                                                  
+module swap cce/8.3.0 cce/8.2.6                                                                   
+module swap cray-libsci cray-libsci/12.2.0                                                        
+module swap cray-mpich cray-mpich/6.3.1                                                           
+\end{verbatim}
+\end{itemize}
 
 \subsection{General Guidelines}
 
