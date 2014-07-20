@@ -1,0 +1,5 @@
+The process-edison.run script is used to postprocess plotfiles with
+yt.  Note that the parallel-yt script actually calls the vol.py script,
+and launches it with aprun, because otherwise it will not run on the
+compute nodes.  This script will do multiple visualization jobs
+in parallel on the compute nodes.
