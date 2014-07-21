@@ -15,7 +15,7 @@ import yt.visualization.volume_rendering.api as vr
 
 def doit(plotfile, fname):
 
-    pf = load(plotfile)
+    ds = load(plotfile)
 
     if fname == "vz":
         field = ('gas', 'velocity_z')
@@ -32,9 +32,9 @@ def doit(plotfile, fname):
         sigma = 0.1
 
 
-    dd = pf.h.all_data()
+    dd = ds.h.all_data()
 
-    pf.field_info[field].take_log = use_log
+    ds.field_info[field].take_log = use_log
 
 
     mi = min(vals)
@@ -48,9 +48,9 @@ def doit(plotfile, fname):
     tf =  vr.ColorTransferFunction((mi, ma))
 
     # Set up the camera parameters: center, looking direction, width, resolution
-    c = (pf.domain_right_edge + pf.domain_left_edge)/2.0
+    c = (ds.domain_right_edge + ds.domain_left_edge)/2.0
     L = np.array([-0.0, -1.0, -1.0])
-    W = 2.0*pf.domain_width
+    W = 2.0*ds.domain_width
     N = 720
 
     rot_vector=[0.0,0.0,1.0]
@@ -65,17 +65,17 @@ def doit(plotfile, fname):
 
 
     # an attempt to get around the periodic assumption -- suggested by Nathan
-    #root_dds = pf.domain_width/pf.domain_dimensions
+    #root_dds = .domain_width/pf.domain_dimensions
     #half_w = pf.domain_width/2.# - root_dds
     #half_w[2] -= root_dds[2]
     #reg = pf.region(pf.domain_center, pf.domain_center-half_w, pf.domain_center+half_w)
 
 
     # alternate attempt
-    pf.periodicity = (True, True, True)
+    ds.periodicity = (True, True, True)
 
     # Create a camera object
-    cam = vr.Camera(c, L, W, N, transfer_function=tf, pf=pf, 
+    cam = vr.Camera(c, L, W, N, transfer_function=tf, ds=ds, 
                     no_ghost=False, #data_source=reg,
                     fields = [field], log_fields = [use_log])
 
@@ -101,7 +101,7 @@ def doit(plotfile, fname):
 
     f = pylab.figure()
 
-    pylab.text(0.2, 0.85, "{:.3g} s".format(float(pf.current_time.d)),
+    pylab.text(0.2, 0.85, "{:.3g} s".format(float(ds.current_time.d)),
                transform=f.transFigure, color="white")
 
     cam._render_figure = f
