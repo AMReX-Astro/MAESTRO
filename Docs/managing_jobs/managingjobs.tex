@@ -29,7 +29,7 @@ produced the plotfile.
 
 \subsection{gfortran}
 
-gfortran is probably the best compiler for \maestro.  Here are some
+gfortran is probably the best-supported compiler for \maestro.  Here are some
 version-specific notes:
 
 \begin{itemize}
@@ -67,10 +67,10 @@ Cray 8.2.5 works well on titan/OLCF with MPI/OpenMP.
 
 \subsection{Automatic Restarting and Archiving of Data}
 
-The submission script {\tt jaguar.run} and shell script
-{\tt process.jaguar} in {\tt Util/job\_scripts/jaguar/}
+The submission script {\tt titan.run} and shell script
+{\tt process.titan} in {\tt Util/job\_scripts/titan/}
 are designed to allow you to run \maestro\ with minimal interaction,
-while being assured that the data is archived to HPSS on the NCCS
+while being assured that the data is archived to HPSS on the OLCF
 machines.
 
 To use the scripts, first create a directory in HPSS that has the same
@@ -82,9 +82,9 @@ hsi
 mkdir wdconvect_run
 \end{verbatim}
 (Note: if the hsi command prompts you for your password, you will need to
-talk to the NCCS help desk to ask for password-less access to HPSS).
+talk to the OLCF help desk to ask for password-less access to HPSS).
 
-The script {\tt process.jaguar} is called from {\tt jaguar.run} and
+The script {\tt process.titan} is called from {\tt titan.run} and
 will run in the background and continually wait until checkpoint or
 plotfiles are created (actually, it always leaves the most recent one
 alone, since data may still be written to it, so it waits until there
@@ -106,7 +106,7 @@ of the diagnostic files created by {\tt diag.f90} and {\tt ftime.out}
 and archive them on HPSS.  The {\tt .tar} file is given a name that
 contains the date-string to allow multiple archives to co-exist.
 
-The {\tt jaguar.run} submission script has code in it that will look
+The {\tt titan.run} submission script has code in it that will look
 at the most recently generated checkpoint files, make sure that they
 were written out correctly (it looks to see if there is a Header file,
 since that is the last thing written), and automatically set the {\tt
@@ -119,12 +119,12 @@ qsub -W depend=afterany:<JOB-ID>  <QSUB SCRIPT>
 \end{verbatim}
 where {\tt <JOB-ID>} is the id number of the job that must complete
 before the new submission runs and {\tt QSUB SCRIPT} is the submission
-script (e.g.\ {\tt jaguar.run}).
+script (e.g.\ {\tt titan.run}).
 This way you can queue up a bunch of runs and literally leave things
 alone and it will restart from the right place automatically and store
 the data as it is generated.
 
-When {\tt process.jaguar} is running, it creates a lockfile (called
+When {\tt process.titan} is running, it creates a lockfile (called
 {\tt process.pid}) that ensures that only one instance of the script
 is running at any one time.  Sometimes if the machine crashes, the
 {\tt process.pid} file will be left behind, in which case, the script
@@ -135,6 +135,8 @@ of jobs depending on a single, currently queued (or running) job.
 
 
 \subsection{Remote \visit\ Visualization on Lens}
+
+{\em Note: this information may be out-of-date.}
 
 For large data files, visualization with \visit\ should be done with
 a client running on your local machine interfacing with \visit\ running
@@ -248,26 +250,38 @@ it seems that the Cray compilers are the best.
 
 \item Cray 8.3.0 generates an internal compiler error on edison/NERSC.
       To get back to the older Cray compilers, you need to do:
-\begin{verbatim}                                                                                  
-module swap cce/8.3.0 cce/8.2.6                                                                   
-module swap cray-libsci cray-libsci/12.2.0                                                        
-module swap cray-mpich cray-mpich/6.3.1                                                           
+\begin{verbatim}                                                                   
+module swap cce/8.3.0 cce/8.2.6
+module swap cray-libsci cray-libsci/12.2.0
+module swap cray-mpich cray-mpich/6.3.1
 \end{verbatim}
 \end{itemize}
 
 \subsection{General Guidelines}
 
-hopper is configured with 24 cores per node, with the cores grouped
-into 4 NUMA nodes of 6 cores each.  Best performance is seen when
-running with 6 threads and 4 MPI tasks per node, using the following
-run line:
+edison is configured with 24 cores per node split between two Intel IvyBridge
+12-core processors.  Each processor connects to 1/2 of the node's memory
+and is called a NUMA node, so there are 2 NUMA nodes per edison node.
+Best performance is seen when
+running with 6 threads and 4 MPI tasks per node, as example:
 \begin{verbatim}
-aprun -n 128 -N 4 -d 6 -S 1 -ss ./main.Linux.Cray.mpi.omp.ex inputs_3d
+aprun -n 192 -N 4 -S 2 -d 6 -ss ./main.Linux.Cray.mpi.omp.exe inputs_3d
 \end{verbatim}
-Here, {\tt -n} is the number of MPI tasks, and {\tt n * d} is the
-total number of cores (which should match the {\tt mppwidth} set at
-the top of the submission script). \\
+Here,
+\begin{itemize}
+\item {\tt -S} is the number of MPI tasks per NUMA node (you want to split them
+  across the 2 NUMA nodes per Edison node)
+\item {\tt -n} is the total number of MPI tasks for the entire application
+\item {\tt -N} is the number of MPI tasks PER Edison node
+\item {\tt -d} is the number of OpenMP threads per MPI task (must match 
+{\tt OMP\_NUM\_THREADS})
+\end{itemize}
+The product of {\tt -N} and {\tt -d} should be 24---the total number of cores
+per edison node.
+The script {\tt
+Util/job\_scripts/edison/edison.run} provides an example.
 
+\subsubsection{Older information---still relevant?}
 \noindent (2013-01-15) It's been seen that sometimes an MPICH2 error is 
 generated of the form:
 \begin{verbatim}
@@ -286,10 +300,19 @@ MPI to continue if there are insufficient huge pages in one NUMA node.
 
 \subsection{Automatic Restarting and Archiving of Data}
 
-The same set of submission scripts are available for hopper at NERSC in 
-{\tt Util/job\_scripts/hopper/}.  They are mostly identical, with a few
-minor changes for the local system configuration.  The use is the same
-as described above.
+The same set of submission scripts described for titan are available
+for edison at NERSC in {\tt Util/job\_scripts/edison/}.  They are
+mostly identical, with a few minor changes for the local system
+configuration.  The use is the same as described above.
+
+\subsection{Batch visualization using \yt}
+
+The scripts {\tt parallel-yt} and {\tt process-edison.run} in {\tt
+Util/job\_scripts/edison} show how to invoke \yt\ to loop over a 
+series of plotfiles and do visualization.  A number of tasks are
+run at once on the node, each operating on a separate file.  Note:
+it is important that {\tt aprun} be used to launch the \yt\ script
+to ensure that it is run on the compute node.
 
 \subsection{Using the {\tt AmrPostprocesing} python plotting scripts on hopper}
 
