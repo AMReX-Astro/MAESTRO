@@ -154,7 +154,7 @@ solve.
 \item {\tt ff}: The source (righthand side) of the elliptic equation
   we are solving.
 
-\item {\tt dd}: The residual/defect, $ff - L\phi$
+\item {\tt dd}: The residual/defect, $f - L\phi$
 
 \item {\tt uu}: The solution variable ($\phi$ when on the finest level)
 
@@ -238,6 +238,49 @@ V-cycle contains $2\times 8$ grids that have $3^2$ cells, so the entire problem
 domain has $6\times 24$ cells.  We see that $n=1$, so the program aborts since this grid
 structure is not appropriate for the fancy bottom solver.
 
+
+\section{Flowchart}
+
+\MyArrow[1em]{start1}{end1}{colorii,line width=2pt}
+\MyArrow[1em]{start2}{end2}{colorii,line width=2pt}
+
+\subsection{Cell-Centered MG}
+
+\begin{itemize}
+
+\item {\tt stencil\_fill\_cc\_all\_mglevels} / {\tt stencil\_fill\_cc}:
+
+\item {\tt ml\_cc}:
+
+\item {\tt mg\_tower\_v\_cycle} (recursive):
+\begin{itemize}
+
+  \item {\em recursively descend V-cycle}
+  \begin{itemize} 
+  \item \tikzmark{end1} {\tt cc\_mg\_tower\_smoother}:
+
+  \item {\tt compute\_defect}:
+
+  \item\tikzmark{start1} {\tt ml\_restriction}:
+  \end{itemize}
+
+  \item {\tt mg\_tower\_bottom\_solve}:
+
+  \item {\em ascend V-cycle}
+
+  \begin{itemize}
+  \item\tikzmark{end2} {\tt mg\_tower\_prolongation}: Take the solution at level $n-1$ and use it to 
+     correct the solution at level $n$ by representing the data on the finer grid.  This uses
+     linear reconstruction for jumps by $2\times$ and piecewise-constant otherwise.
+
+  \item\tikzmark{start2} {\tt cc\_mg\_tower\_smoother}:
+  \end{itemize}
+
+\end{itemize}
+\item multiple {\tt compute\_defect} calls:
+
+
+\end{itemize}
 
 
 
