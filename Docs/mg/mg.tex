@@ -1,84 +1,28 @@
 \label{ch:mg}
 
-\section{Introduction to \maestro\ Multigrid}
 
-\maestro\ uses multigrid to enforce the velocity constraint through
-projections at the half-time (the MAC projection) and end of the time
-step (the HG projection).  Two multigrid solvers are provided by
-\boxlib---one for cell-centered data and one for node-centered (nodal)
-data.  Both of these are used in \maestro.
+\section{\boxlib\ Multigrid Philosophy}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=5.5in]{\mgfigpath/MAC_mg2}
-\caption{\label{fig:mg:MAC} Data centerings for the MAC projection}
-\end{figure}
+Here we describe some of the general ideas behind the \boxlib\ multigrid.
 
-The MAC projection operates on the advective velocities predicted at
-the cell-interfaces at the half-time.  The edge-centered velocities
-are shown in Figure~\ref{fig:mg:MAC}.  If we consider purely
-incompressible flow, the projection appears as:
-\begin{equation}
-D G \phi = D U
-\end{equation}
-where $D$ is the divergence operator and $G$ is the gradient operator.
-In this discretization, $\phi$ is cell-centered (see
-Figure~\ref{fig:mg:MAC}).  The remaining quantities are discretized as:
-\begin{itemize}
-\item $DU$ is cell-centered, 
-  \begin{equation}
-  (DU)_{i,j} = \frac{u_{i+1/2,j} - u_{i-1/2,j}}{\Delta x} + 
-               \frac{v_{i,j+1/2} - v_{i,j-1/2}}{\Delta y}
-  \end{equation}
+We solve MG on an AMR hierarchy, which means in places we will encounter
+C-F interfaces.  The \boxlib\ MG will modify the stencil for the Laplacian
+at C-F interfaces to ensure the correct solution to the Poisson equation
+across these interfaces.  There is no correction step needed in this
+case (this differs from \cite{ricker:2008}).
 
-\item $G\phi$ is edge-centered, on the MAC grid, as shown in
-  Figure~\ref{fig:mg:MAC}.
+The MG solver always works with jumps of $2\times$ between levels.  In 
+some codes (but not \maestro) we can have jumps of $4\times$ between
+levels.  \boxlib\ uses a {\tt mini\_cycle} in these cases, effectively
+inserting a multigrid level between the two AMR levels and doing a mini
+V-cycle.
 
-\item $DG\phi$ is cell-centered, also shown in Figure~\ref{fig:mg:MAC},
-  computed from $G\phi$ using the same differencing as $DU$.
+Support for $\Delta x \ne \Delta y \ne \Delta z$
 
-\end{itemize}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=5.5in]{\mgfigpath/HG_mg2}
-\caption{\label{fig:mg:HG} Data centerings for the HG projection}
-\end{figure}
-
-The HG projection projects the cell-centered velocities at the end of
-the timestep.  Here, $\phi$ is node-centered.  Figure~\ref{fig:mg:HG}
-shows the locations of the various quantities involved in the HG
-projection.  Again considering simple incompressible flow, we now
-solve:
-\begin{equation}
-L \phi = D U
-\end{equation}
-where $L$ is a discretization of the Laplacian operator.  In this
-sense, the HG projection is an {\em approximate projection}, that is,
-$L \neq DG$ (in discretized form).  The various operations have the
-following centerings:
-\begin{itemize}
-
-\item $DU$ is node-centered.  This is computed as:
-  \begin{equation}
-  (DU)_{i-1/2,j-1/2} = \frac{\frac{1}{2} (u_{i,j} + u_{i,j-1}) -
-                             \frac{1}{2} (u_{i-1,j} + u_{i-1,j-1})}{\Delta x} +
-                       \frac{\frac{1}{2} (v_{i,j} + v_{i-1,j}) -
-                             \frac{1}{2} (v_{i,j-1} + v_{i-1,j-1})}{\Delta y} 
-  \end{equation}
-
-\item $G\phi$ is cell-centered, as shown in Figure~\ref{fig:mg:HG}.
-
-\item $L\phi$ is node-centered.  This is a direct discretization of 
-the Laplacian operator.  By default, \maestro\ uses a dense stencil
-(9-points in 2-d, 27-points in 3-d).  Alternately, a {\em cross}
-stencil can be used (by setting {\tt hg\_dense\_stencil = F}).  This
-uses 5-points in 2-d, 7-points in 3-d.
-
-\end{itemize}
+There are two MG solvers: cell-centered and nodal.  
 
 
-\section{\mgtower}
+\subsection{\mgtower}
 
 The \mgtower\ is a special Fortran derived type that carries all the
 information required for a \boxlib\ multigrid solve.
@@ -158,16 +102,97 @@ solve.
 
 \item {\tt uu}: The solution variable ($\phi$ when on the finest level)
 
-\item {\tt mm}: A mask used at coarse/fine interfaces
+\item {\tt mm}: For cell-centered, {\tt mm} takes a direction and
+   tells you whether we are at a Dirichlet or Neumann boundary, or if 
+   we are skewed in that direction.
+
+   For nodal, {\tt mm} simply tells us whether a point is Dirichlet
+   or Neumann.  There is no skew in nodal.
+
 \end{itemize}
 
-\section{Bottom Solvers}
 
-There are several bottom solvers available to \maestro.  These are set
-through the {\tt mg\_bottom\_solver} (MAC) and {\tt
-  hg\_bottom\_solver} (HG) runtime parameters.  The allowed values
-  are:
+\subsection{Stencils}
 
+There are several different stencil types that we can use for 
+the discretization.  For cell-centered, these are:
+\begin{itemize}
+\item {\tt CC\_CROSS\_STENCIL}: this is the standard cross-stencil---5 points 
+in 2-d and 7 points in 3-d.  For cell-centered MG, this is the default, and
+is usually the best choice.
+
+\item {\tt HO\_CROSS\_STENCIL}: this is a cross-stencil that uses 9 points
+in 2-d and 11-points in 3-d.  For instance, it will use $(i,j)$;
+$(i\pm1,j)$; $(i\pm2,j)$; $(i,j\pm1)$; $(i,j\pm2)$.  This is
+higher-order accurate that {\tt CC\_CROSS\_STENCIL}.
+
+\item {\tt HO\_DENSE\_STENCIL}: this is a dense-stencil---it uses all the
+points (including corners) in $(i\pm1,j\pm1)$, resulting in a 9-point stencil
+in 2-d and 27-point stencil in 3-d.
+\end{itemize}
+
+For the nodal solver, the choices are:
+\begin{itemize}
+\item {\tt ND\_CROSS\_STENCIL}: this is the standard cross-stencil.
+
+\item {\tt ND\_DENSE\_STENCIL}: this is a dense stencil, using
+  all the points in $(i\pm1,j\pm1)$.  The 
+  derivation of this stencil is based on finite-element ideas, defining
+  basis functions on the nodes.  This is developed in 2-d in 
+  \cite{almgrenBellSzymczak:1996}.
+
+\item {\tt ND\_VATER\_STENCIL}: this is an alternate dense stencil derived
+  using a similar finite-element idea as above, but a different control
+  volume.
+\end{itemize}
+For the cell-centered solve, the coefficients for the stencil are computed
+once, at the beginning of the solve.  For the nodal solver, the coefficients
+are hard-coded into the smoothers.
+
+\subsection{Smoothers}
+
+The following smoothers are available (but not necessarily for both the
+cell-centered and nodal solvers):
+\begin{itemize}
+\item {MG\_SMOOTHER\_GS\_RB}: a red-black Gauss-Seidel smoother
+
+\item {MG\_SMOOTHER\_JACOBI}: a Jacobi smoother (not implemented for 
+the dense nodal stencil)
+
+\item {MG\_SMOOTHER\_MINION\_CROSS}
+
+\item {MG\_SMOOTHER\_MINION\_FULL}
+
+\item {MG\_SMOOTHER\_EFF\_RB}
+\end{itemize}
+
+
+
+\subsection{Cycling}
+
+The default cycling is a V-cycle, but W-cycles and full multigrid are
+supported as well.
+
+
+\subsection{Bottom Solvers}
+
+The multigrid cycling coarsens the grids as part of the solve.  When 
+the coarsest grid is reached, the individual boxes that comprise that
+level are coarsened as much as then can, down to $2^3$ zones.  Depending
+on the distribution of sizes of the grids, it may not be possible for
+everything to reach this minimum size.  At this point, the bottom
+solver is invoked.  Most of these will solve the linear system
+on this collection of grids directly.  There is one special bottom
+solver that will define a new box encompassing all of the coarsened
+grids and then put the data on fewer boxes and processors and further
+coarsen the problem, again until we get as close to $2^3$ as possible.
+At that point, one of the other bottom solvers will be called upon
+to solve the problem.
+
+There are several bottom solvers available in \boxlib.  For \maestro.
+These are set through the {\tt mg\_bottom\_solver} (MAC/cell-centered)
+and {\tt hg\_bottom\_solver} (nodal) runtime parameters.
+The allowed values are:
 \begin{itemize}
 
 \item {\tt mg\_bottom\_solver} / {hg\_bottom\_solver} = 0: smoothing only.
@@ -186,57 +211,150 @@ through the {\tt mg\_bottom\_solver} (MAC) and {\tt
 
 \end{itemize}
 
+You should use the special bottom solver (4) whenever possible, even
+if it means changing your gridding strategy (as discussed below) to 
+make it more efficient.
+
 \MarginPar{any simple discussion on why we might choose one of the
   other bottom solvers?}
 
-\subsection{Special Bottom Solver}
-We have a special bottom solver type that greatly speeds up large problems
-and speeds up smaller problems to a lesser degree.
-In fact, you should use this bottom solver whenever possible, because I
-have yet to find a case that performs worse than our standard bottom solver.
-What this special solver essentially does is take the data from the coarsest 
-level of the original multigrid V-cycle and copy it onto a new grid structure 
-with the same number of total cells in each direction, but with a fewer number of larger 
-grids.  A new V-cycle begins from this point, 
-so we are essentially coarsening this ``new'' problem.
-Now, the coarsest level of the multigrid V-cycle in the ``new'' problem has 
-fewer cells and fewer grids as compared to the original coarsest level.
+\subsubsection{Special Bottom Solver}
+
+The special solver takes the data from the coarsest level of the
+original multigrid V-cycle and copies it onto a new grid structure with
+the same number of total cells in each direction, but with a fewer
+number of larger grids.  A new V-cycle begins from this point, so we
+are essentially coarsening this ``new'' problem.  Now, the coarsest
+level of the multigrid V-cycle in the ``new'' problem has fewer cells
+and fewer grids as compared to the original coarsest level.
 
 To enable this solver, set {\tt hg\_bottom\_solver = 4} (for the nodal
-projections) and/or {\tt mg\_bottom\_solver = 4} (for the cell-centered
-projections) in your inputs file.
+projections) and/or {\tt mg\_bottom\_solver = 4} (for the
+cell-centered projections) in your inputs file.
 
-To understand how this bottom solver works, the first thing you need to know
-is what the grid structure of the coarsest level of your multigrid V-cycle
-looks like (we need to put a description of this in the section above).
-Now, figure out the size of the box you would need if you
-wanted it to fit all the data on the coarsest level.  Now, figure out what
-the largest integer $n$ is so that you can evenly divide the length of this box
-by $2^n$ in every coordinate direction.  If $n < 2$, the program will abort
-since the grid structure is not suitable for this bottom solver.
+To understand how this bottom solver works, the first thing you need
+to know is what the grid structure of the coarsest level of your
+multigrid V-cycle looks like.  Next, figure out the size of the box you
+would need if you wanted it to fit all the data on the coarsest level.
+Finally, figure out what the largest integer $n$ is so that you can evenly
+divide the length of this box by $2^n$ in every coordinate direction.
+If $n < 2$, the program will abort since the grid structure is not
+suitable for this bottom solver.
 
-Now the code will set up a ``new'' problem, using the data at the coarsest level
-of the original problem as the initial data.  The grid structure for this new
-problem has the same number of cells as the coarsest level of the original problem,
-but the data is copied onto a grid structure where each grid has $2^n$ cells
-on each side.  The new V-cycle continues down to the new coarsest level, in
-which each grid has 2 cells on each side.  If you wish to impose a limit on
-the maximum value that $n$ can have, you can do so by setting 
-{\tt max\_mg\_bottom\_nlevs} equal to that value.
+The code will set up a ``new'' problem, using the data at the
+coarsest level of the original problem as the initial data.  The grid
+structure for this new problem has the same number of cells as the
+coarsest level of the original problem, but the data is copied onto a
+grid structure where each grid has $2^n$ cells on each side.  The new
+V-cycle continues down to the new coarsest level, in which each grid
+has 2 cells on each side.  If you wish to impose a limit on the
+maximum value that $n$ can have, you can do so by setting {\tt
+max\_mg\_bottom\_nlevs} equal to that value.
 
-{\bf Example 1:} A 3D problem with $384^3$ cells divided into $32^3$ grids, i.e., 
-there is a $12\times 12\times 12$ block of $32^3$ grids.  The coarsest level of the 
-multigrid V-cycle contains $12\times 12\times 12$ grids that have $2^3$ cells, so the 
-entire problem domain has $24^3$ cells.  We see that $n=3$, and create a new problem 
-domain with a $3\times 3\times 3$ block of $8^3$ grids.  The coarsest level of the 
-multigrid V-cycle for the ``new'' problem will be a $3\times 3\times 3$ block of 
-$2^3$ grids.
+Some grid examples help make this clear:
+\begin{itemize}
+\item {\bf Example 1:} A 3D problem with $384^3$ cells divided into $32^3$
+grids, i.e., there is a $12\times 12\times 12$ block of $32^3$ grids.
+The coarsest level of the multigrid V-cycle contains $12\times
+12\times 12$ grids that have $2^3$ cells, so the entire problem domain
+has $24^3$ cells.  We see that $n=3$, and create a new problem domain
+with a $3\times 3\times 3$ block of $8^3$ grids.  The coarsest level
+of the multigrid V-cycle for the ``new'' problem will be a $3\times
+3\times 3$ block of $2^3$ grids.
 
-{\bf Example 2:} A 2D problem with $96\times 384$ cells divided into $48^2$ grids, i.e., 
-there is a $2\times 8$ block of $48^2$ grids.  The coarsest level of the multigrid 
-V-cycle contains $2\times 8$ grids that have $3^2$ cells, so the entire problem 
-domain has $6\times 24$ cells.  We see that $n=1$, so the program aborts since this grid
+\item {\bf Example 2:} A 2D problem with $96\times 384$ cells divided into
+$48^2$ grids, i.e., there is a $2\times 8$ block of $48^2$ grids.  The
+coarsest level of the multigrid V-cycle contains $2\times 8$ grids
+that have $3^2$ cells, so the entire problem domain has $6\times 24$
+cells.  We see that $n=0$, so the program aborts since this grid
 structure is not appropriate for the fancy bottom solver.
+\end{itemize}
+
+
+
+\section{\maestro's Multigrid Use}
+
+\maestro\ uses multigrid to enforce the velocity constraint through
+projections at the half-time (the MAC projection) and end of the time
+step (the HG projection).  Two multigrid solvers are provided by
+\boxlib---one for cell-centered data and one for node-centered (nodal)
+data.  Both of these are used in \maestro.
+
+
+The MAC projection operates on the advective velocities predicted at
+the cell-interfaces at the half-time.  The edge-centered velocities
+are shown in Figure~\ref{fig:mg:MAC}.  If we consider purely
+incompressible flow, the projection appears as:
+\begin{equation}
+D G \phi = D U
+\end{equation}
+where $D$ is the divergence operator and $G$ is the gradient operator.
+In this discretization, $\phi$ is cell-centered (see
+Figure~\ref{fig:mg:MAC}).  The remaining quantities are discretized as:
+\begin{itemize}
+\item $DU$ is cell-centered, 
+  \begin{equation}
+  (DU)_{i,j} = \frac{u_{i+1/2,j} - u_{i-1/2,j}}{\Delta x} + 
+               \frac{v_{i,j+1/2} - v_{i,j-1/2}}{\Delta y}
+  \end{equation}
+
+\item $G\phi$ is edge-centered, on the MAC grid, as shown in
+  Figure~\ref{fig:mg:MAC}.
+
+\item $DG\phi$ is cell-centered, also shown in Figure~\ref{fig:mg:MAC},
+  computed from $G\phi$ using the same differencing as $DU$.
+
+\end{itemize}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=5.5in]{\mgfigpath/MAC_mg2}
+\caption{\label{fig:mg:MAC} Data centerings for the MAC projection}
+\end{figure}
+
+The HG projection projects the cell-centered velocities at the end of
+the timestep.  Here, $\phi$ is node-centered.  Figure~\ref{fig:mg:HG}
+shows the locations of the various quantities involved in the HG
+projection.  Again considering simple incompressible flow, we now
+solve:
+\begin{equation}
+L \phi = D U
+\end{equation}
+where $L$ is a discretization of the Laplacian operator.  In this
+sense, the HG projection is an {\em approximate projection}, that is,
+$L \neq DG$ (in discretized form).  The various operations have the
+following centerings:
+\begin{itemize}
+
+\item $DU$ is node-centered.  This is computed as:
+  \begin{equation}
+  (DU)_{i-1/2,j-1/2} = \frac{\frac{1}{2} (u_{i,j} + u_{i,j-1}) -
+                             \frac{1}{2} (u_{i-1,j} + u_{i-1,j-1})}{\Delta x} +
+                       \frac{\frac{1}{2} (v_{i,j} + v_{i-1,j}) -
+                             \frac{1}{2} (v_{i,j-1} + v_{i-1,j-1})}{\Delta y} 
+  \end{equation}
+
+\item $G\phi$ is cell-centered, as shown in Figure~\ref{fig:mg:HG}.
+
+\item $L\phi$ is node-centered.  This is a direct discretization of 
+the Laplacian operator.  By default, \maestro\ uses a dense stencil
+(9-points in 2-d, 27-points in 3-d).  Alternately, a {\em cross}
+stencil can be used (by setting {\tt hg\_dense\_stencil = F}).  This
+uses 5-points in 2-d, 7-points in 3-d.
+
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=5.5in]{\mgfigpath/HG_mg2}
+\caption{\label{fig:mg:HG} Data centerings for the HG projection}
+\end{figure}
+
+
+\end{itemize}
+
+
+
+
 
 
 \section{Flowchart}
