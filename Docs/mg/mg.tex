@@ -241,10 +241,15 @@ structure is not appropriate for the fancy bottom solver.
 
 \section{Flowchart}
 
-\MyArrow[1em]{start1}{end1}{colorii,line width=2pt}
-\MyArrow[1em]{start2}{end2}{colorii,line width=2pt}
+\maestro\ multigrid solves always involve the full AMR hierarchy.
+
+
 
 \subsection{Cell-Centered MG}
+
+The flowchart below shows the structure of a cell-centered multigrid
+solve using pure V-cycles.
+
 
 \begin{itemize}
 
@@ -256,6 +261,7 @@ structure is not appropriate for the fancy bottom solver.
 \begin{itemize}
 
   \item {\em recursively descend V-cycle}
+\MyArrow[1em]{start1}{end1}{colorii,line width=2pt}
   \begin{itemize} 
   \item \tikzmark{end1} {\tt cc\_mg\_tower\_smoother}:
 
@@ -267,7 +273,7 @@ structure is not appropriate for the fancy bottom solver.
   \item {\tt mg\_tower\_bottom\_solve}:
 
   \item {\em ascend V-cycle}
-
+\MyArrow[1em]{start2}{end2}{colorii,line width=2pt}
   \begin{itemize}
   \item\tikzmark{end2} {\tt mg\_tower\_prolongation}: Take the solution at level $n-1$ and use it to 
      correct the solution at level $n$ by representing the data on the finer grid.  This uses
@@ -284,12 +290,15 @@ structure is not appropriate for the fancy bottom solver.
 
 
 
+\subsection{Nodal MG}
+
+
 \section{Convergence Criteria}
 
 All \maestro\ multigrid solves consist of pure V-cycles.  
 
 
-\section{Multigrid Solver Tolerances}
+\subsection{Multigrid Solver Tolerances}
 
 \label{sec:mgtol}
 
