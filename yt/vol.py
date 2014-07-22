@@ -17,6 +17,9 @@ def doit(plotfile, fname):
 
     ds = load(plotfile)
 
+    cm = "gist_rainbow"
+
+
     if fname == "vz":
         field = ('gas', 'velocity_z')
         use_log = False
@@ -28,8 +31,17 @@ def doit(plotfile, fname):
         field = ('gas', 'velocity_magnitude')
         use_log = False
         
-        vals = [1.e6, 2.5e6, 5.e6, 7.5e6, 1.e7]
-        sigma = 1.e5
+        vals = [1.e6, 2.e6, 4.e6, 8.e6, 1.6e7]
+        sigma = 2.e5
+
+    elif fname == "radvel":
+        field = ('boxlib', 'radial_velocity')
+        use_log = False
+        
+        vals = [-1.e7, -5.e6, -2.5e6, 2.5e6, 5.e6, 1.e7]
+        sigma = 2.e5
+        
+        cm = "coolwarm"
 
 
     dd = ds.h.all_data()
@@ -56,8 +68,6 @@ def doit(plotfile, fname):
 
     north=[0.0,0.0,-1.0]
 
-    cm = "gist_rainbow"
-
     for v in vals:
         if (use_log):
             tf.sample_colormap(math.log10(v), sigma**2, colormap=cm) #, alpha=0.2)
@@ -76,23 +86,22 @@ def doit(plotfile, fname):
 
     #cam.rotate(3.0*np.pi/2., rot_vector=rot_vector)
 
+
     # make an image
     im = cam.snapshot()
 
-    # add an axes triad
-    cam.draw_coordinate_vectors(im)
 
-    # colorbar
-    cam.show_tf()
+    # add an axes triad -- note if we do this, we HAVE to do draw
+    # domain, otherwise the image is blank (likely a bug)
+    cam.draw_coordinate_vectors(im)
 
     # add the domain box to the image:
     nim = cam.draw_domain(im)
 
-    # increase the contrast
+    # increase the contrast -- for some reason, the enhance default
+    # to save_annotated doesn't do the trick (likely a bug)
     max_val = im[:,:,:3].std() * 4.0
     nim[:,:,:3] /= max_val
-
-    #nim.write_png("xrb_vol_test.png")
 
     f = pylab.figure()
 
@@ -103,7 +112,8 @@ def doit(plotfile, fname):
     
     # save annotated -- this added the transfer function values, 
     # but this messes up our image size defined above
-    cam.save_annotated("xrb_vol_{}.png".format(fname), nim, dpi=145, clear_fig=False)
+    cam.save_annotated("xrb_vol_{}.png".format(fname), nim, 
+                       dpi=145, clear_fig=False)
 
 
 
