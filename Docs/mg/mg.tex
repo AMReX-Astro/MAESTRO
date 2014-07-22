@@ -154,16 +154,16 @@ are hard-coded into the smoothers.
 The following smoothers are available (but not necessarily for both the
 cell-centered and nodal solvers):
 \begin{itemize}
-\item {MG\_SMOOTHER\_GS\_RB}: a red-black Gauss-Seidel smoother
+\item {\tt MG\_SMOOTHER\_GS\_RB}: a red-black Gauss-Seidel smoother
 
-\item {MG\_SMOOTHER\_JACOBI}: a Jacobi smoother (not implemented for 
+\item {\tt MG\_SMOOTHER\_JACOBI}: a Jacobi smoother (not implemented for 
 the dense nodal stencil)
 
-\item {MG\_SMOOTHER\_MINION\_CROSS}
+\item {\tt MG\_SMOOTHER\_MINION\_CROSS}
 
-\item {MG\_SMOOTHER\_MINION\_FULL}
+\item {\tt MG\_SMOOTHER\_MINION\_FULL}
 
-\item {MG\_SMOOTHER\_EFF\_RB}
+\item {\tt MG\_SMOOTHER\_EFF\_RB}
 \end{itemize}
 
 
@@ -195,19 +195,18 @@ and {\tt hg\_bottom\_solver} (nodal) runtime parameters.
 The allowed values are:
 \begin{itemize}
 
-\item {\tt mg\_bottom\_solver} / {hg\_bottom\_solver} = 0: smoothing only.
+\item {\tt mg\_bottom\_solver} / {\tt hg\_bottom\_solver = 0}: smoothing only.
 
-\item {\tt mg\_bottom\_solver} / {hg\_bottom\_solver} = 1: biconjugate
+\item {\tt mg\_bottom\_solver} / {\tt hg\_bottom\_solver = 1}: biconjugate
   gradient stabilized---this is the default.
 
-\item {\tt mg\_bottom\_solver} / {hg\_bottom\_solver} = 2: conjugate
+\item {\tt mg\_bottom\_solver} / {\tt hg\_bottom\_solver = 2}: conjugate
   gradient method
 
-\item {\tt mg\_bottom\_solver} / {hg\_bottom\_solver} = 4: a special 
+\item {\tt mg\_bottom\_solver} / {\tt hg\_bottom\_solver = 4}: a special 
   bottom solver that extends the range of the multigrid coarsening
   by aggregrating coarse grids on the original mesh together and
-  further coarsening. \MarginPar{does this option then use bicg 
-  at the new bottom?}
+  further coarsening.
 
 \end{itemize}
 
@@ -269,6 +268,71 @@ that have $3^2$ cells, so the entire problem domain has $6\times 24$
 cells.  We see that $n=0$, so the program aborts since this grid
 structure is not appropriate for the fancy bottom solver.
 \end{itemize}
+
+
+
+
+\section{Flowchart}
+
+\maestro\ multigrid solves always involve the full AMR hierarchy.
+
+
+
+\subsection{Cell-Centered MG}
+
+The flowchart below shows the structure of a cell-centered multigrid
+solve using pure V-cycles.
+
+
+\begin{itemize}
+
+\item {\tt stencil\_fill\_cc\_all\_mglevels} / {\tt stencil\_fill\_cc}:
+  Compute all of the stencil coefficients
+  for the Laplacian operator at all cells.  At the C-F interfaces, the
+  stencil coefficients are modified to know this.
+
+\item {\tt ml\_cc}: The main driver for the cell-centered multigrid.
+   Among other things, this computes the norm that will be used
+   for convergence testing.
+
+\item {\tt mg\_tower\_v\_cycle} (recursive):
+\begin{itemize}
+
+  \item {\em recursively descend V-cycle}
+\MyArrow[1em]{start1}{end1}{colorii,line width=2pt}
+  \begin{itemize} 
+  \item \tikzmark{end1} {\tt cc\_mg\_tower\_smoother}: Smooth the 
+    problem at the current MG level using the desired smoother.
+
+  \item {\tt compute\_defect}: Construct $f - L\phi$.
+
+  \item\tikzmark{start1} {\tt mg\_tower\_restriction}:  Restrict
+    the defect to the coarser level by conservative averaging.
+  \end{itemize}
+
+  \item {\tt mg\_tower\_bottom\_solve}:  Solve the coarsened problem
+    using the chosen bottom solver.
+
+  \item {\em ascend V-cycle}
+\MyArrow[1em]{start2}{end2}{colorii,line width=2pt}
+  \begin{itemize}
+  \item\tikzmark{end2} {\tt mg\_tower\_prolongation}: Take the solution at level $n-1$ and use it to 
+     correct the solution at level $n$ by representing the data on the finer grid.  This uses
+     linear reconstruction for jumps by $2\times$ and piecewise-constant otherwise.
+
+  \item\tikzmark{start2} {\tt cc\_mg\_tower\_smoother}:
+  \end{itemize}
+
+\end{itemize}
+\item {\tt compute\_defect}: This is called multiple times, checking for
+   convergence at each level.
+
+
+\end{itemize}
+
+
+
+\subsection{Nodal MG}
 
 
 
@@ -354,61 +418,6 @@ uses 5-points in 2-d, 7-points in 3-d.
 
 
 
-
-
-
-\section{Flowchart}
-
-\maestro\ multigrid solves always involve the full AMR hierarchy.
-
-
-
-\subsection{Cell-Centered MG}
-
-The flowchart below shows the structure of a cell-centered multigrid
-solve using pure V-cycles.
-
-
-\begin{itemize}
-
-\item {\tt stencil\_fill\_cc\_all\_mglevels} / {\tt stencil\_fill\_cc}:
-
-\item {\tt ml\_cc}:
-
-\item {\tt mg\_tower\_v\_cycle} (recursive):
-\begin{itemize}
-
-  \item {\em recursively descend V-cycle}
-\MyArrow[1em]{start1}{end1}{colorii,line width=2pt}
-  \begin{itemize} 
-  \item \tikzmark{end1} {\tt cc\_mg\_tower\_smoother}:
-
-  \item {\tt compute\_defect}:
-
-  \item\tikzmark{start1} {\tt ml\_restriction}:
-  \end{itemize}
-
-  \item {\tt mg\_tower\_bottom\_solve}:
-
-  \item {\em ascend V-cycle}
-\MyArrow[1em]{start2}{end2}{colorii,line width=2pt}
-  \begin{itemize}
-  \item\tikzmark{end2} {\tt mg\_tower\_prolongation}: Take the solution at level $n-1$ and use it to 
-     correct the solution at level $n$ by representing the data on the finer grid.  This uses
-     linear reconstruction for jumps by $2\times$ and piecewise-constant otherwise.
-
-  \item\tikzmark{start2} {\tt cc\_mg\_tower\_smoother}:
-  \end{itemize}
-
-\end{itemize}
-\item multiple {\tt compute\_defect} calls:
-
-
-\end{itemize}
-
-
-
-\subsection{Nodal MG}
 
 
 \section{Convergence Criteria}
