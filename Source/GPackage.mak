@@ -47,6 +47,7 @@ f90sources += make_grav.f90
 f90sources += make_heating.f90
 f90sources += make_hgrhs.f90
 f90sources += make_macrhs.f90
+f90sources += make_pi_cc.f90
 f90sources += make_plotfile.f90
 f90sources += make_plot_variables.f90
 f90sources += make_psi.f90
