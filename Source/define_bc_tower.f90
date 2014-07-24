@@ -198,7 +198,8 @@ contains
 
   subroutine adv_bc_level_build(adv_bc_level,phys_bc_level,default_value)
 
-    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, &
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, pi_comp, &
+         trac_comp, press_comp, &
          foextrap_comp, hoextrap_comp, ntrac
     use network, only: nspec
 
@@ -217,13 +218,13 @@ contains
 !    *** 2-D ***
 !   COMP = 1     : x-velocity
 !   COMP = 2     : y-velocity
-!   COMP = 3...  : density, (rho h), (rho X)_i, temp, tracers, pressure
+!   COMP = 3...  : density, (rho h), (rho X)_i, temp, pi, tracers, pressure
 
 !    *** 3-D ***
 !   COMP = 1     : x-velocity
 !   COMP = 2     : y-velocity
 !   COMP = 3     : z-velocity
-!   COMP = 4...  : density, (rho h), (rho X)_i, temp, tracers, pressure
+!   COMP = 4...  : density, (rho h), (rho X)_i, temp, pi, tracers, pressure
 
     do n  = 0,size(adv_bc_level,dim=1)-1
     do d  = 1,dm
@@ -235,6 +236,7 @@ contains
           adv_bc_level(n,d,i,rhoh_comp+dm)                     = HOEXTRAP      ! (rho h)
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= HOEXTRAP      ! (rho X)_i
           adv_bc_level(n,d,i,temp_comp+dm)                     = HOEXTRAP      ! temperature
+          adv_bc_level(n,d,i,pi_comp+dm)                       = HOEXTRAP      ! pi
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= HOEXTRAP      ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
@@ -245,6 +247,7 @@ contains
           adv_bc_level(n,d,i,rhoh_comp+dm)                     = HOEXTRAP      ! (rho h)
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= HOEXTRAP      ! (rho X)_i
           adv_bc_level(n,d,i,temp_comp+dm)                     = HOEXTRAP      ! temperature
+          adv_bc_level(n,d,i,pi_comp+dm)                       = HOEXTRAP      ! pi
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= HOEXTRAP      ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
@@ -255,6 +258,7 @@ contains
           adv_bc_level(n,d,i,rhoh_comp+dm)                     = EXT_DIR       ! (rho h)
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= EXT_DIR       ! (rho X)_i
           adv_bc_level(n,d,i,temp_comp+dm)                     = EXT_DIR       ! temperature
+          adv_bc_level(n,d,i,pi_comp+dm)                       = EXT_DIR       ! pi
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= EXT_DIR       ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
@@ -265,6 +269,7 @@ contains
           adv_bc_level(n,d,i,rhoh_comp+dm)                     = FOEXTRAP      ! (rho h)
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= FOEXTRAP      ! (rho X)_i
           adv_bc_level(n,d,i,temp_comp+dm)                     = FOEXTRAP      ! temperature
+          adv_bc_level(n,d,i,pi_comp+dm)                       = FOEXTRAP      ! pi
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= FOEXTRAP      ! tracers
           adv_bc_level(n,d,i,press_comp)                       = EXT_DIR       ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
@@ -276,6 +281,7 @@ contains
           adv_bc_level(n,d,i,rhoh_comp+dm)                     = REFLECT_EVEN  ! (rho h)
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= REFLECT_EVEN  ! (rho X)_i
           adv_bc_level(n,d,i,temp_comp+dm)                     = REFLECT_EVEN  ! temperature
+          adv_bc_level(n,d,i,pi_comp+dm)                       = REFLECT_EVEN  ! pi
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= REFLECT_EVEN  ! tracers
           adv_bc_level(n,d,i,press_comp)                       = REFLECT_EVEN  ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = REFLECT_EVEN  ! first order extrap -- overridden by symmetry
@@ -289,7 +295,8 @@ contains
 
   subroutine ell_bc_level_build(ell_bc_level,phys_bc_level,default_value)
 
-    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, &
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, pi_comp, &
+         trac_comp, press_comp, &
          foextrap_comp, hoextrap_comp, ntrac
     use network, only: nspec
 
@@ -308,13 +315,13 @@ contains
 !    *** 2-D ***
 !   COMP = 1     : x-velocity
 !   COMP = 2     : y-velocity
-!   COMP = 3...  : density, (rho h), (rho X)_i, temp, tracers, pressure
+!   COMP = 3...  : density, (rho h), (rho X)_i, temp, pi, tracers, pressure
 
 !    *** 3-D ***
 !   COMP = 1     : x-velocity
 !   COMP = 2     : y-velocity
 !   COMP = 3     : z-velocity
-!   COMP = 4...  : density, (rho h), (rho X)_i, temp, tracers, pressure
+!   COMP = 4...  : density, (rho h), (rho X)_i, temp, pi, tracers, pressure
 
     do n = 0,size(ell_bc_level,dim=1)-1
     do d = 1,dm
@@ -326,6 +333,7 @@ contains
           ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_NEU   ! (rho h)
           ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_NEU   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
+          ell_bc_level(n,d,i,pi_comp+dm)                       = BC_NEU   ! pi
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_NEU   ! first order extrap
@@ -336,6 +344,7 @@ contains
           ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_NEU   ! (rho h)
           ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_NEU   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
+          ell_bc_level(n,d,i,pi_comp+dm)                       = BC_NEU   ! pi
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_NEU   ! first order extrap
@@ -346,6 +355,7 @@ contains
           ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_DIR   ! (rho h)
           ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_DIR   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_DIR   ! temperature
+          ell_bc_level(n,d,i,pi_comp+dm)                       = BC_DIR   ! pi
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_DIR   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_NEU   ! first order extrap
@@ -356,6 +366,7 @@ contains
           ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_NEU   ! (rho h)
           ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_NEU   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
+          ell_bc_level(n,d,i,pi_comp+dm)                       = BC_NEU   ! pi
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_DIR   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_NEU   ! first order extrap
@@ -367,6 +378,7 @@ contains
           ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_NEU   ! (rho h)
           ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_NEU   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
+          ell_bc_level(n,d,i,pi_comp+dm)                       = BC_NEU   ! pi
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_NEU   ! first order extrap
@@ -377,6 +389,7 @@ contains
           ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_PER   ! (rho h)
           ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_PER   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_PER   ! temperature
+          ell_bc_level(n,d,i,pi_comp+dm)                       = BC_PER   ! pi
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_PER   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_PER   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_PER   ! first order extrap
