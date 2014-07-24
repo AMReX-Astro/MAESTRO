@@ -44,7 +44,7 @@ def doit(plotfile, fname):
         cm = "coolwarm"
 
 
-    dd = ds.h.all_data()
+    dd = ds.all_data()
 
     ds.field_info[field].take_log = use_log
 
