@@ -3,7 +3,8 @@
 
 \section{\boxlib\ Multigrid Philosophy}
 
-Here we describe some of the general ideas behind the \boxlib\ multigrid.
+Here we describe some of the general ideas behind the \boxlib\
+multigrid (MG).
 
 We solve MG on an AMR hierarchy, which means in places we will encounter
 C-F interfaces.  The \boxlib\ MG will modify the stencil for the Laplacian
@@ -17,9 +18,15 @@ levels.  \boxlib\ uses a {\tt mini\_cycle} in these cases, effectively
 inserting a multigrid level between the two AMR levels and doing a mini
 V-cycle.
 
+The MG solvers are located in {\tt BoxLib/Src/LinearSolvers/F\_MG/}.
+There are two MG solvers, for cell-centered and nodal data.
+Generally, the routines specific to the cell-centered solver will have
+{\tt cc} in their name, and those specific to the nodal solver will have
+{\tt nd} in their name.
+
 Support for $\Delta x \ne \Delta y \ne \Delta z$
 
-There are two MG solvers: cell-centered and nodal.  
+
 
 
 \subsection{\mgtower}
