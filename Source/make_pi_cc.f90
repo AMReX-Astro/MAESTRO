@@ -11,6 +11,9 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_pi_cc(mla,pi,pi_cc,the_bc_level,beta0)
 
+    ! average the nodal pi to the cell-centers and normalize
+    ! it such that it integrates to 0.  Store the result in pi_cc
+
     use multifab_module
     use define_bc_module
     use ml_layout_module

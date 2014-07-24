@@ -68,7 +68,8 @@ contains
     use hgproject_module            , only : hgproject
     use proj_parameters             , only : pressure_iters_comp, regular_timestep_comp
 
-    use variables                   , only : nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
+    use variables                   , only : nscal, temp_comp, rho_comp, rhoh_comp, pi_comp, &
+                                             foextrap_comp
     use geometry                    , only : nlevs_radial, spherical, nr_fine, compute_cutoff_coords
     use network                     , only : nspec
     use probin_module               , only : barrier_timers, evolve_base_state, fix_base_state, &
@@ -78,6 +79,7 @@ contains
                                              prob_lo, prob_hi, use_particles, ppm_trace_forces
     use time_module                 , only : time
     use addw0_module                , only : addw0
+    use make_pi_cc_module           , only : make_pi_cc
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -150,6 +152,8 @@ contains
     type(multifab) ::            Xkcoeff2(mla%nlevel)
     type(multifab) ::             pcoeff2(mla%nlevel)
     type(multifab) ::          scal_force(mla%nlevel)
+    type(multifab) ::               pi_cc(mla%nlevel)
+
     type(multifab) ::               w0mac(mla%nlevel,mla%dim)
     type(multifab) ::                umac(mla%nlevel,mla%dim)
     type(multifab) ::               sedge(mla%nlevel,mla%dim)
@@ -1447,6 +1451,17 @@ contains
 
     call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower,div_coeff_3d,hgrhs)
 
+    do n = 1, nlevs
+       call multifab_build(pi_cc(n), mla%la(n), 1, 0)
+       call setval(pi_cc(n), ZERO, all=.true.)
+    enddo
+
+    call make_pi_cc(mla,pi,pi_cc,the_bc_tower%bc_tower_array,div_coeff_3d)
+
+    do n = 1, nlevs
+       call multifab_copy_c(snew(n),pi_comp,pi_cc(n),1,1)
+    enddo
+
     do n=1,nlevs
        call destroy(div_coeff_3d(n))
        call destroy(rhohalf(n))
@@ -1459,6 +1474,7 @@ contains
           call destroy(hgrhs_old(n))
        end do
     end if
+
 
     if (barrier_timers) call parallel_barrier()
     ndproj_time = ndproj_time + (parallel_wtime() - ndproj_time_start)
