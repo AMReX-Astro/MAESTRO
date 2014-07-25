@@ -19,7 +19,7 @@ contains
   subroutine make_w0(w0,w0_old,w0_force,Sbar_in, &
                      rho0_old,rho0_new,p0_old,p0_new, &
                      gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
-                     psi,etarho_ec,etarho_cc,dt,dtold)
+                     psi,etarho_ec,etarho_cc,dt,dtold,delta_chi_w0,is_predictor)
 
     use parallel
     use bl_prof_module
@@ -41,7 +41,9 @@ contains
     real(kind=dp_t), intent(in   ) ::      gamma1bar_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
     real(kind=dp_t), intent(in   ) ::            Sbar_in(:,0:)
+    real(kind=dp_t), intent(inout) ::       delta_chi_w0(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
+    logical        , intent(in   ) :: is_predictor
 
     integer         :: r,n
     real(kind=dp_t) :: max_w0

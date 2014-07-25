@@ -174,6 +174,7 @@ contains
     real(kind=dp_t), allocatable ::               w0_old(:,:)
     real(kind=dp_t), allocatable ::       div_coeff_edge(:,:)
     real(kind=dp_t), allocatable ::  rho0_predicted_edge(:,:)
+    real(kind=dp_t), allocatable ::         delta_chi_w0(:,:)
 
     integer    :: i,n,comp,proj_type,nlevs,dm
     real(dp_t) :: halfdt
@@ -220,6 +221,7 @@ contains
     allocate(              w0_old(nlevs_radial,0:nr_fine))
     allocate(      div_coeff_edge(nlevs_radial,0:nr_fine))
     allocate( rho0_predicted_edge(nlevs_radial,0:nr_fine))
+    allocate(        delta_chi_w0(nlevs_radial,0:nr_fine-1))
 
     if (verbose .ge. 1) then
 
@@ -371,7 +373,8 @@ contains
        call average(mla,Source_nph,Sbar,dx,1)
 
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old,gamma1bar_old, &
-                    gamma1bar_old,p0_minus_peosbar,psi,etarho_ec,etarho_cc,dt,dtold)
+                    gamma1bar_old,p0_minus_peosbar,psi,etarho_ec,etarho_cc,dt,dtold, &
+                    delta_chi_w0,.true.)
 
        if (spherical .eq. 1) then
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
@@ -867,7 +870,7 @@ contains
 
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
                     gamma1bar_old,gamma1bar,p0_minus_peosbar, &
-                    psi,etarho_ec,etarho_cc,dt,dtold)
+                    psi,etarho_ec,etarho_cc,dt,dtold,delta_chi_w0,.false.)
 
        if (spherical .eq. 1) then
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
@@ -907,7 +910,7 @@ contains
     end do
 
     ! note delta_gamma1_term here is not time-centered
-    call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar,div_coeff_nph,dx, &
+    call make_macrhs(macrhs,rho0_new,Source_nph,delta_gamma1_term,Sbar,div_coeff_nph,dx, &
                      gamma1bar,p0_new,delta_p_term,dt,delta_chi,.false.)
 
     do n=1,nlevs
