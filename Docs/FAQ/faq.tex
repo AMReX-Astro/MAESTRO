@@ -186,6 +186,21 @@
   \end{verbatim}
   where {\tt a} is a multifab (single-level).
 
+\item {\em How can I debug a parallel (MPI) job with gdb?}
+
+If you only need to use a few processors, the following command will work:
+\begin{verbatim}
+mpiexec -n 4 xterm -e gdb ./main.Linux.gfortran.mpi.exe 
+\end{verbatim}
+where the executable needs to be created with the ``{\tt -g}'' flag to
+the compiler.  This will pop up multiple {\tt xterm}s with {\tt gdb} running
+in each.  You need to then issue:
+\begin{verbatim}
+run inputs
+\end{verbatim}
+where {\tt inputs} is the desired inputs file {\em in each} {\tt xterm}.
+
+
 \end{enumerate}
 
 

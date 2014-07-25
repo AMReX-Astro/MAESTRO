@@ -35,6 +35,21 @@
 % Margins
 \usepackage[lmargin=0.5in,rmargin=0.5in,tmargin=0.75in,bmargin=0.75in]{geometry}
 
+\usepackage{tikz}
+\usepackage{xparse}
+\usetikzlibrary{tikzmark,decorations.pathreplacing,calc,decorations.markings}
+
+\definecolor{colori}{RGB}{166,35,41}
+\definecolor{colorii}{RGB}{248,219,162}
+
+\NewDocumentCommand\MyArrow{O{0pt}mmmO{out=150,in=210}}
+{%
+\begin{tikzpicture}[overlay, remember picture]
+  \draw [->,thick,line width=4pt,#4]
+    ( $ ({pic cs:#3}|-{pic cs:#2}) + (-#1,1.3ex) $ ) to[#5]  
+    ( $ (pic cs:#3) + (-#1,0) $ );
+\end{tikzpicture}%
+}
 
 \input ../maestrosymbols
 

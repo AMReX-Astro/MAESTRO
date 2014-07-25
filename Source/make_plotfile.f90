@@ -187,6 +187,7 @@ contains
     use particle_module, only: particle_container, make_particle_count
     use make_grav_module
     use make_div_coeff_module
+    use make_pi_cc_module
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla

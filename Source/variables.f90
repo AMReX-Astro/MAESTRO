@@ -8,7 +8,8 @@ module variables
 
   implicit none
 
-  integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp
+  integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, pi_comp
+  integer, save :: trac_comp, press_comp
   integer, save :: foextrap_comp, hoextrap_comp
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_h, icomp_spec, icomp_trac
   integer, save :: icomp_w0, icomp_divw0, icomp_rho0, icomp_rhoh0, icomp_h0
@@ -55,13 +56,16 @@ contains
     rhoh_comp   = 2
     spec_comp   = rhoh_comp + 1
     temp_comp   = spec_comp + nspec
-    trac_comp   = temp_comp + 1
+    pi_comp     = temp_comp + 1
+    trac_comp   = pi_comp + 1
 
     ntrac = 1
 
-    ! The "3" here refers to rho, rhoh, and temp
-    nscal = nspec + ntrac + 3
+    ! The "4" here refers to rho, rhoh, temp, and pi (the perturbation pressure)
+    nscal = nspec + ntrac + 4
 
+    ! press_comp here is used in the elliptic solves.  This slot is here
+    ! for the bc tower
     press_comp  = dm_in + nscal + 1
 
     foextrap_comp = press_comp + 1

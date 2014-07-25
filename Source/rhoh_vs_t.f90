@@ -1275,10 +1275,11 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoP_1d(state,lo,hi,ng,p0)
 
-    use variables,     only: rho_comp, spec_comp, temp_comp
+    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module,    only: eos_input_rp, eos
     use eos_type_module
     use network,       only: nspec
+    use probin_module, only: use_pprime_in_tfromp
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,:)
@@ -1297,7 +1298,11 @@ contains
        eos_state%T     = state(i,temp_comp)
        eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-       eos_state%p = p0(i)
+       if (use_pprime_in_tfromp) then
+          eos_state%p = p0(i) + state(i,pi_comp)
+       else
+          eos_state%p = p0(i)
+       endif
 
        pt_index(:) = (/i, -1, -1/)
 
@@ -1314,10 +1319,11 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoP_2d(state,lo,hi,ng,p0)
 
-    use variables,     only: rho_comp, spec_comp, temp_comp
+    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module,    only: eos_input_rp, eos
     use eos_type_module
     use network,       only: nspec
+    use probin_module, only: use_pprime_in_tfromp
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
@@ -1337,7 +1343,11 @@ contains
           eos_state%T = state(i,j,temp_comp)
           eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
           
-          eos_state%p = p0(j)
+          if (use_pprime_in_tfromp) then
+             eos_state%p = p0(j) + state(i,j,pi_comp)
+          else
+             eos_state%p = p0(j)
+          endif
 
           pt_index(:) = (/i, j, -1/)
           
@@ -1355,11 +1365,12 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoP_3d(state,lo,hi,ng,p0)
 
-    use variables,     only: rho_comp, spec_comp, temp_comp
+    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module,    only: eos_input_rp, eos
     use eos_type_module
     use network,       only: nspec
     use fill_3d_module
+    use probin_module, only: use_pprime_in_tfromp
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -1379,7 +1390,12 @@ contains
              
              eos_state%rho   = state(i,j,k,rho_comp)
              eos_state%T     = state(i,j,k,temp_comp)
-             eos_state%p     = p0(k)
+             if (use_pprime_in_tfromp) then
+                eos_state%p     = p0(k) + state(i,j,k,pi_comp)
+             else
+                eos_state%p     = p0(k)
+             endif
+
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              pt_index(:) = (/i, j, k/)
@@ -1400,11 +1416,12 @@ contains
   !----------------------------------------------------------------------------
   subroutine makeTfromRhoP_3d_sphr(state,lo,hi,ng,p0,dx)
 
-    use variables,     only: rho_comp, spec_comp, temp_comp
+    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module,    only: eos_input_rp, eos
     use eos_type_module
     use network,       only: nspec
     use fill_3d_module
+    use probin_module, only: use_pprime_in_tfromp
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -1429,7 +1446,11 @@ contains
              
              eos_state%rho  = state(i,j,k,rho_comp)
              eos_state%T = state(i,j,k,temp_comp)
-             eos_state%p = p0_cart(i,j,k,1)
+             if (use_pprime_in_tfromp) then
+                eos_state%p = p0_cart(i,j,k,1) + state(i,j,k,pi_comp)
+             else
+                eos_state%p = p0_cart(i,j,k,1)
+             endif
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              pt_index(:) = (/i, j, k/)
@@ -1768,6 +1789,7 @@ contains
     use eos_type_module
     use network,       only: nspec
     use variables
+    use probin_module, only: use_pprime_in_tfromp
 
     integer           , intent(in   ) :: lo(:),hi(:),ng_s
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,:)  
@@ -1783,8 +1805,11 @@ contains
        eos_state%rho   = s(i,rho_comp)
        eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/s(i,rho_comp)
        eos_state%T     = s(i,temp_comp)
-       eos_state%p     = p0(i)
-
+       if (use_pprime_in_tfromp) then
+          eos_state%p     = p0(i) + s(i,pi_comp)
+       else
+          eos_state%p     = p0(i)
+       endif
        pt_index(:) = (/i, -1, -1/)
 
        call eos(eos_input_rp, eos_state, .false., pt_index)
@@ -1805,6 +1830,7 @@ contains
     use eos_type_module
     use network,       only: nspec
     use variables
+    use probin_module, only: use_pprime_in_tfromp
 
     integer           , intent(in   ) :: lo(:),hi(:),ng_s
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,lo(2)-ng_s:,:)  
@@ -1821,7 +1847,11 @@ contains
           eos_state%rho   = s(i,j,rho_comp)
           eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/s(i,j,rho_comp)
           eos_state%T     = s(i,j,temp_comp)
-          eos_state%p     = p0(j)
+          if (use_pprime_in_tfromp)  then
+             eos_state%p     = p0(j) + s(i,j,pi_comp)
+          else
+             eos_state%p     = p0(j)
+          endif
 
           pt_index(:) = (/i, j, -1/)
 
@@ -1844,6 +1874,7 @@ contains
     use eos_type_module
     use network,    only: nspec
     use variables
+    use probin_module, only: use_pprime_in_tfromp
 
     integer           , intent(in   ) :: lo(:),hi(:),ng_s
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)  
@@ -1862,7 +1893,11 @@ contains
              eos_state%rho   = s(i,j,k,rho_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,k,rho_comp)
              eos_state%T     = s(i,j,k,temp_comp)
-             eos_state%p     = p0(k)
+             if (use_pprime_in_tfromp) then
+                eos_state%p     = p0(k) + s(i,j,k,pi_comp)
+             else
+                eos_state%p     = p0(k)
+             endif
 
              pt_index(:) = (/i, j, k/)
              
@@ -1888,6 +1923,7 @@ contains
     use network,    only: nspec
     use variables
     use fill_3d_module
+    use probin_module, only: use_pprime_in_tfromp
 
     integer           , intent(in   ) :: lo(:),hi(:),ng_s
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
@@ -1911,7 +1947,11 @@ contains
              eos_state%rho   = s(i,j,k,rho_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,k,rho_comp)
              eos_state%T     = s(i,j,k,temp_comp)
-             eos_state%p     = p0_cart(i,j,k,1)
+             if (use_pprime_in_tfromp) then
+                eos_state%p     = p0_cart(i,j,k,1) + s(i,j,k,pi_comp)
+             else
+                eos_state%p     = p0_cart(i,j,k,1)
+             endif
 
              pt_index(:) = (/i, j, k/)
              

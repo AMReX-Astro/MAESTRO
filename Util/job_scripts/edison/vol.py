@@ -8,17 +8,15 @@ matplotlib.use('agg')
 
 import math
 import sys
-import pylab
+import os
 
 from yt.mods import *
-import yt.visualization.volume_rendering.api as vr
+import yt.visualization.volume_rendering.api
+
 
 def doit(plotfile, fname):
 
-    ds = load(plotfile)
-
-    cm = "gist_rainbow"
-
+    pf = load(plotfile)
 
     if fname == "vz":
         field = ('gas', 'velocity_z')
@@ -29,24 +27,15 @@ def doit(plotfile, fname):
         
     elif fname == "magvel":
         field = ('gas', 'velocity_magnitude')
-        use_log = False
+        use_log = True
         
-        vals = [1.e6, 2.e6, 4.e6, 8.e6, 1.6e7]
-        sigma = 2.e5
-
-    elif fname == "radvel":
-        field = ('boxlib', 'radial_velocity')
-        use_log = False
-        
-        vals = [-1.e7, -5.e6, -2.5e6, 2.5e6, 5.e6, 1.e7]
-        sigma = 2.e5
-        
-        cm = "coolwarm"
+        vals = [1.e5, 3.16e5, 1.e6, 3.16e6, 1.e7]
+        sigma = 0.1
 
 
-    dd = ds.all_data()
+    dd = pf.h.all_data()
 
-    ds.field_info[field].take_log = use_log
+    pf.field_info[field].take_log = use_log
 
 
     mi = min(vals)
@@ -57,16 +46,17 @@ def doit(plotfile, fname):
         
 
     # Instantiate the ColorTransferfunction.
-    tf =  vr.ColorTransferFunction((mi, ma))
+    tf =  yt.visualization.volume_rendering.api.ColorTransferFunction((mi, ma))
 
     # Set up the camera parameters: center, looking direction, width, resolution
-    c = np.array([0.0, 0.0, 0.0])
-    L = np.array([1.0, 1.0, 1.0])
-    L = np.array([1.0, 1.0, 1.2])
-    W = 1.5*ds.domain_width
+    c = (pf.domain_right_edge + pf.domain_left_edge)/2.0
+    L = np.array([-0.0, -1.0, -1.0])
+    W = 2.0*pf.domain_width
     N = 720
 
-    north=[0.0,0.0,1.0]
+    rot_vector=[0.0,0.0,1.0]
+
+    cm = "gist_rainbow"
 
     for v in vals:
         if (use_log):
@@ -75,43 +65,45 @@ def doit(plotfile, fname):
             tf.sample_colormap(v, sigma**2, colormap=cm) #, alpha=0.2)
 
 
+    # an attempt to get around the periodic assumption -- suggested by Nathan
+    #root_dds = pf.domain_width/pf.domain_dimensions
+    #half_w = pf.domain_width/2.# - root_dds
+    #half_w[2] -= root_dds[2]
+    #reg = pf.region(pf.domain_center, pf.domain_center-half_w, pf.domain_center+half_w)
+
+
     # alternate attempt
-    ds.periodicity = (True, True, True)
+    pf.periodicity = (True, True, True)
 
     # Create a camera object
-    cam = vr.Camera(c, L, W, N, transfer_function=tf, ds=ds, 
-                    no_ghost=False,
-                    north_vector=north,
-                    fields = [field], log_fields = [use_log])
+    cam = pf.h.camera(c, L, W, N, tf, 
+                      no_ghost=False, #data_source=reg,
+                      fields = [field], log_fields = [use_log])
+
+    cam.rotate(2*np.pi/6, rot_vector=rot_vector)
 
     # make an image
     im = cam.snapshot()
 
-
-    # add an axes triad -- note if we do this, we HAVE to do draw
-    # domain, otherwise the image is blank (likely a bug)
+    # add an axes triad
     cam.draw_coordinate_vectors(im)
+
+    # colorbar
+    cam.show_tf()
 
     # add the domain box to the image:
     nim = cam.draw_domain(im)
 
-    # increase the contrast -- for some reason, the enhance default
-    # to save_annotated doesn't do the trick (likely a bug)
+    # increase the contrast
     max_val = im[:,:,:3].std() * 4.0
     nim[:,:,:3] /= max_val
 
-    f = pylab.figure()
+    #nim.write_png("xrb_vol_{:04}.png".format(f))
 
-    pylab.text(0.2, 0.85, "{:.3g} s".format(float(ds.current_time.d)),
-               transform=f.transFigure, color="white")
-
-    cam._render_figure = f
-    
     # save annotated -- this added the transfer function values, 
     # but this messes up our image size defined above
-    cam.save_annotated("{}_{}.png".format(os.path.normpath(plotfile), fname), 
-                       nim, 
-                       dpi=145, clear_fig=False)
+    cam.save_annotated("xrb_vol_{}_{}.png".format(fname, os.path.basename(plotfile)), nim, dpi=145,
+                       text="{:.3g} s".format(float(pf.current_time.d)), text_x=0.2, text_y=0.85)
 
 
 
