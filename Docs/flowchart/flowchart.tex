@@ -823,19 +823,27 @@ as computed in {\bf Step 11}.
 \subsection{Volume Discrepancy Changes}
 \begin{itemize}
 \item In {\bf Step 2B}, to compute $w_0$, we need to account for the volume discrepancy
-term by computing $p_{\rm EOS} = \overline{p(\rho,h,X_k)^n}$.
+term by first defining $p_{\rm EOS}^n = \overline{p(\rho,h,X_k)^n}$, and then using:
+\begin{equation}
+\frac{\partial w_0^{\nph,\star}}{\partial r} = \overline{S^{\nph,\star\star}} - \frac{1}{\overline{\Gamma_1^n}p_0^n}\psi^{\nmh} - \underbrace{\frac{f}{\overline{\Gamma_1^n}p_0^n}\left(\frac{p_0^n-\overline{p_{\rm EOS}^n}}{\Delta t}\right)}_{\delta\chi_{w_0}}.
+\end{equation}
 \item In {\bf Step 3}, the MAC projection should account for the volume discrepancy term:
 \begin{equation}
 \nabla \cdot \left(\beta_0^n \uadvone\right) = 
-\beta_0^n \left\{ \left(S^{\nph,\star\star} - \overline{S^{\nph,\star\star}}\right)
-+ \frac{f}{\gammabar^n p_0^n}
-\left[\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n}\right]\right\}.
+\beta_0^n \left[ \left(S^{\nph,\star\star} - \overline{S^{\nph,\star\star}}\right)
++ \underbrace{\frac{f}{\gammabar^n p_0^n}
+\left(\frac{p_{\rm EOS}^n - \overline{p_{\rm EOS}^n}}{\Delta t^n}\right)}_{\delta\chi}\right].
 \end{equation}
 \item In {\bf Step 6B}, to compute $w_0$, we need to account for the volume discrepancy
-term by computing $p_{\rm EOS} = \left[\overline{p(\rho,h,X_k)^n} + \overline{p(\rho,h,X_k)^{n+1,\star}}\right]/2$.
+term by first defining $p_{\rm EOS}^{n+1,\star} = p(\rho,h,X_k)^{n+1,\star}$,
+$\overline{\Gamma_1^{\nph,\star}} = (\overline{\Gamma_1^{n}}+\overline{\Gamma_1^{n+1,\star}})/2$,
+and $p^{\nph,\star} = (p^{n}+p^{n+1,\star})/2$, and then using:
+\begin{equation}
+\frac{\partial w_0^{\nph}}{\partial r} = \overline{S^{\nph,\star}} - \frac{1}{\overline{\Gamma_1^{\nph,\star}}p_0^{\nph,\star}}\psi^{\nph,\star} - \frac{f}{\overline{\Gamma_1^{n+1,\star}}p_0^{n+1,\star}}\left(\frac{p_0^{n+1,\star}-\overline{p_{\rm EOS}^{n+1,\star}}}{\Delta t}\right) - \delta\chi_{w_0}
+\end{equation}
 \item In {\bf Step 7}, the MAC projection should account for the volume discrepancy term:
 \begin{equation}
-\nabla \cdot \left(\beta_0^{\nph,\star} \uadvtwo\right) = \beta_0^{\nph,\star}\left\{\left(S^{\nph,\star} - \overline{S^{\nph,\star}}\right) + \frac{f}{\overline{\Gamma_1^{\nph,\star}} p_0^{\nph,\star}} \left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right]\right\},
+\nabla \cdot \left(\beta_0^{\nph,\star} \uadvtwo\right) = \beta_0^{\nph,\star}\left[\left(S^{\nph,\star} - \overline{S^{\nph,\star}}\right) + \frac{f}{\overline{\Gamma_1^{n+1,\star}} p_0^{n+1,\star}} \left(\frac{p_{\rm EOS}^{n+1,\star} - \overline{p_{\rm EOS}^{n+1,\star}}}{\Delta t^n}\right) + \delta\chi\right],
 \end{equation}
 where $p(\rho,h,X_k)^{\nph,\star} = \left[p(\rho,h,X_k)^n +p(\rho,h,X_k)^{n+1,\star}\right]/2$.
 \item In {\bf Step 11}, the approximate projection should account for the volume
