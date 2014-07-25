@@ -361,7 +361,7 @@ contains
 
     use bl_constants_module
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
@@ -470,7 +470,7 @@ contains
 
     use bl_constants_module
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
@@ -590,7 +590,7 @@ contains
 
     use bl_constants_module
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
@@ -773,7 +773,7 @@ contains
 
     use bl_constants_module
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
@@ -903,7 +903,7 @@ contains
 
     use bl_constants_module
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
