@@ -664,8 +664,10 @@ contains
     misc_time_start = parallel_wtime()
 
     ! pass temperature through for seeding the temperature update eos call
+    ! pi goes along for the ride
     do n=1,nlevs
        call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,nghost(sold(n)))
+       call multifab_copy_c(s2(n),pi_comp,  s1(n),pi_comp,  1,nghost(sold(n)))
     end do
 
     ! now update temperature
@@ -1163,8 +1165,10 @@ contains
     misc_time_start = parallel_wtime()
 
     ! pass temperature through for seeding the temperature update eos call
+    ! pi just goes along for the ride too
     do n=1,nlevs
        call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,nghost(sold(n)))
+       call multifab_copy_c(s2(n),pi_comp,  s1(n),pi_comp,  1,nghost(sold(n)))
     end do
 
     ! now update temperature
