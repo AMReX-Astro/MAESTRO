@@ -1460,6 +1460,7 @@ contains
 
     do n = 1, nlevs
        call multifab_copy_c(snew(n),pi_comp,pi_cc(n),1,1)
+       call destroy(pi_cc(n))
     enddo
 
     do n=1,nlevs
