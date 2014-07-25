@@ -1019,8 +1019,8 @@ contains
     use eos_module, only: eos_input_rp, eos
     use eos_type_module
     use network, only: nspec
-    use variables, only: rho_comp, spec_comp, temp_comp
-    use probin_module, only: plot_cs
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
+    use probin_module, only: plot_cs, use_pprime_in_tfromp
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:)  
@@ -1046,7 +1046,11 @@ contains
 
        eos_state%rho   = s(i,rho_comp)
        eos_state%T     = s(i,temp_comp)
-       eos_state%p     = p0(i)
+       if (use_pprime_in_tfromp) then
+          eos_state%p     = p0(i) + s(i,pi_comp)
+       else
+          eos_state%p     = p0(i)
+       endif
        eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
        pt_index(:) = (/i, -1, -1/)
@@ -1073,8 +1077,8 @@ contains
     use eos_module, only: eos_input_rp, eos
     use eos_type_module
     use network, only: nspec
-    use variables, only: rho_comp, spec_comp, temp_comp
-    use probin_module, only: plot_cs
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
+    use probin_module, only: plot_cs, use_pprime_in_tfromp
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:)  
@@ -1101,7 +1105,11 @@ contains
 
           eos_state%rho   = s(i,j,rho_comp)
           eos_state%T     = s(i,j,temp_comp)
-          eos_state%p     = p0(j)
+          if (use_pprime_in_tfromp) then
+             eos_state%p     = p0(j) + s(i,j,pi_comp)
+          else
+             eos_state%p     = p0(j)
+          endif
           eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
           pt_index(:) = (/i, j, -1/)
@@ -1127,11 +1135,11 @@ contains
   subroutine make_tfromp_3d_cart(t,tpert,machno,cs,deltagamma,entropy,magvel, &
                                  ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0)
 
-    use variables, only: rho_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module, only: eos_input_rp, eos
     use eos_type_module
     use network, only: nspec
-    use probin_module, only: plot_cs
+    use probin_module, only: plot_cs, use_pprime_in_tfromp
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
@@ -1161,7 +1169,11 @@ contains
 
              eos_state%rho   = s(i,j,k,rho_comp)
              eos_state%T     = s(i,j,k,temp_comp)
-             eos_state%p     = p0(k)
+             if (use_pprime_in_tfromp) then
+                eos_state%p     = p0(k) + s(i,j,k,pi_comp)
+             else
+                eos_state%p     = p0(k)
+             endif
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              pt_index(:) = (/i, j, k/)
@@ -1189,12 +1201,12 @@ contains
   subroutine make_tfromp_3d_sphr(t,tpert,machno,cs,deltagamma,entropy,magvel, &
                                  ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0,dx)
 
-    use variables, only: rho_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module, only: eos_input_rp, eos
     use eos_type_module
     use network, only: nspec
     use fill_3d_module
-    use probin_module, only: plot_cs
+    use probin_module, only: plot_cs, use_pprime_in_tfromp
 
     integer         , intent(in   ) :: lo(:),hi(:),ng_p,ng_s
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
@@ -1237,7 +1249,11 @@ contains
              ! Then compute the perturbation and Mach number
              eos_state%rho   = s(i,j,k,rho_comp)
              eos_state%T     = s(i,j,k,temp_comp)
-             eos_state%p     = p0_cart(i,j,k,1)
+             if (use_pprime_in_tfromp) then
+                eos_state%p     = p0_cart(i,j,k,1) + s(i,j,k,pi_comp)
+             else
+                eos_state%p     = p0_cart(i,j,k,1)
+             endif
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              pt_index(:) = (/i, j, k/)

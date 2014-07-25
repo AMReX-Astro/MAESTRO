@@ -83,7 +83,8 @@ contains
     use eos_module, only: eos, eos_input_rp
     use eos_type_module
     use network, only: nspec
-    use variables, only: rho_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
+    use probin_module, only: use_pprime_in_tfromp
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
     real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:)
@@ -99,7 +100,11 @@ contains
     do i = lo(1), hi(1)
 
        eos_state%rho   = s(i,rho_comp)
-       eos_state%p     = p0(i)
+       if (use_pprime_in_tfromp) then
+          eos_state%p     = p0(i) + s(i,pi_comp)
+       else
+          eos_state%p     = p0(i)
+       endif
        eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
        eos_state%T     = s(i,temp_comp)
 
@@ -119,7 +124,8 @@ contains
     use eos_module, only: eos, eos_input_rp
     use eos_type_module
     use network, only: nspec
-    use variables, only: rho_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
+    use probin_module, only: use_pprime_in_tfromp
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
     real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:,lo(2)-ng_g:)
@@ -136,7 +142,11 @@ contains
        do i = lo(1), hi(1)
 
           eos_state%rho   = s(i,j,rho_comp)
-          eos_state%p     = p0(j)
+          if (use_pprime_in_tfromp) then
+             eos_state%p     = p0(j) + s(i,j,pi_comp)
+          else
+             eos_state%p     = p0(j)
+          endif
           eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
           eos_state%T     = s(i,j,temp_comp)
 
@@ -157,8 +167,9 @@ contains
     use eos_module, only: eos, eos_input_rp
     use eos_type_module
     use network, only: nspec
-    use variables, only: rho_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
     use fill_3d_module
+    use probin_module, only: use_pprime_in_tfromp
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
     real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:,lo(2)-ng_g:,lo(3)-ng_g:)
@@ -177,7 +188,11 @@ contains
           do i = lo(1), hi(1)
 
              eos_state%rho   = s(i,j,k,rho_comp)
-             eos_state%p     = p0(k)
+             if (use_pprime_in_tfromp) then
+                eos_state%p     = p0(k) + s(i,j,k,pi_comp)
+             else
+                eos_state%p     = p0(k)
+             endif
              eos_state%T     = s(i,j,k,temp_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
@@ -200,8 +215,9 @@ contains
     use eos_module, only: eos, eos_input_rp
     use eos_type_module
     use network, only: nspec
-    use variables, only: rho_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
     use fill_3d_module
+    use probin_module, only: use_pprime_in_tfromp
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
     real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:,lo(2)-ng_g:,lo(3)-ng_g:)
@@ -226,7 +242,11 @@ contains
           do i = lo(1), hi(1)
 
              eos_state%rho   = s(i,j,k,rho_comp)
-             eos_state%p     = p0_cart(i,j,k,1)
+             if (use_pprime_in_tfromp) then
+                eos_state%p     = p0_cart(i,j,k,1) + s(i,j,k,pi_comp)
+             else
+                eos_state%p     = p0_cart(i,j,k,1)
+             endif
              eos_state%T     = s(i,j,k,temp_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
