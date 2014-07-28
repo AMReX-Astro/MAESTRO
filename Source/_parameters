@@ -641,8 +641,4 @@ do_heating                          logical            .false.
 sdc_iters                           integer            1
 
 # recompute MAC velocity at the beginning of each SDC iter
-# if .false., only recompute MAC velocity at the beginning of the first iter
 sdc_couple_mac_velocity             logical            .false.
-
-# if true, never recompute MAC velocity, no matter what the other sdc flags are
-sdc_hold_mac_velocity               logical            .false.

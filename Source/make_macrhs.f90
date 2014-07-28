@@ -212,6 +212,8 @@ contains
                    rhs(i,j) = rhs(i,j) + div_coeff(j) * &
                         ( dpdt_factor / (gamma1bar(j)*p0(j)) * delta_p_term(i,j) / dt &
                          + delta_chi(i,j) )
+                   ! if doing sdc with multiple iterations, update delta_chi for next corrector
+                   delta_chi(i,j) = delta_chi(i,j) + dpdt_factor / (gamma1bar(j)*p0(j)) * delta_p_term(i,j) / dt
                 end do
              end if
           end do
@@ -284,6 +286,8 @@ contains
                       rhs(i,j,k) = rhs(i,j,k) + div_coeff(k) * &
                            ( dpdt_factor / (gamma1bar(k)*p0(k)) * delta_p_term(i,j,k) / dt &
                             + delta_chi(i,j,k) )
+                      ! if doing sdc with multiple iterations, update delta_chi for next corrector
+                      delta_chi(i,j,k) = delta_chi(i,j,k) + dpdt_factor / (gamma1bar(k)*p0(k)) * delta_p_term(i,j,k) / dt
                    end do
                 end do
              end if
@@ -364,8 +368,7 @@ contains
                    if(rho0_cart(i,j,k,1) .gt. base_cutoff_density) then
                       delta_chi(i,j,k) = dpdt_factor / (gamma1bar_cart(i,j,k,1)*p0_cart(i,j,k,1)) &
                            * delta_p_term(i,j,k) / dt
-                      rhs(i,j,k) = rhs(i,j,k) + div_cart(i,j,k,1) * delta_chi(i,j,k)
-                           
+                      rhs(i,j,k) = rhs(i,j,k) + div_cart(i,j,k,1) * delta_chi(i,j,k)                           
                    end if
                 end do
              end do
@@ -382,6 +385,9 @@ contains
                       rhs(i,j,k) = rhs(i,j,k) + div_cart(i,j,k,1) * &
                            ( dpdt_factor / (gamma1bar_cart(i,j,k,1)*p0_cart(i,j,k,1)) &
                            * delta_p_term(i,j,k) / dt + delta_chi(i,j,k) )
+                      ! if doing sdc with multiple iterations, update delta_chi for next corrector
+                      delta_chi(i,j,k) = delta_chi(i,j,k) + dpdt_factor / (gamma1bar_cart(i,j,k,1)*p0_cart(i,j,k,1)) &
+                           * delta_p_term(i,j,k) / dt
                    end if
                 end do
              end do
