@@ -27,6 +27,7 @@ subroutine varden()
   use fundamental_constants_module, only: Gconst
   use test_basestate_module
   use model_parser_module, only: get_model_npts
+  use simple_log_module, only: simple_log_init
 
   implicit none
 
@@ -59,11 +60,14 @@ subroutine varden()
   real(dp_t), allocatable ::               force(:,:)
   real(dp_t), allocatable ::                edge(:,:)
   real(dp_t), allocatable ::            Hext_bar(:,:)
+  real(dp_t), allocatable ::        delta_chi_w0(:,:)
 
   real(dp_t) :: mencl, max_hse_error, starting_rad, rloc, r_r, r_l, g, dpdr, rhog
   real(dp_t) :: max_Mach
 
   type (eos_t) :: eos_state
+
+  real(dp_t), parameter :: SMALL = 1.e-12_dp_t
 
   call runtime_init()
   call init_spherical()
@@ -74,6 +78,8 @@ subroutine varden()
   call network_init()
   print *, 'EOS temp cutoff = ', small_temp
   call eos_init(small_temp=small_temp)
+
+  call simple_log_init()
 
   nlevs = 1
   nlevs_radial = 1
@@ -157,6 +163,7 @@ subroutine varden()
   allocate(              force(nlevs_radial,0:nr_fine-1))
   allocate(               edge(nlevs_radial,0:nr_fine))
   allocate(           Hext_bar(nlevs_radial,0:nr_fine-1))
+  allocate(       delta_chi_w0(nlevs_radial,0:nr_fine-1))
 
   gamma1bar_old      = ZERO
   gamma1bar_nph      = ZERO
@@ -168,6 +175,8 @@ subroutine varden()
   etarho_cc          = ZERO
   p0_minus_pthermbar = ZERO
   Hext_bar           = ZERO
+  delta_chi_w0       = ZERO
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! read in the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -259,9 +268,12 @@ subroutine varden()
 
      w0_tmp = w0
 
-     call make_w0(w0,w0_tmp,w0_force,Sbar_old,s0_old(:,:,rho_comp),s0_old(:,:,rho_comp), &
-                  p0_old,p0_old,gamma1bar_old,gamma1bar_old,p0_minus_pthermbar,psi, &
-                  etarho_ec,etarho_cc,dt,dtold)
+     call make_w0(w0,w0_tmp,w0_force,Sbar_old, &
+                  s0_old(:,:,rho_comp),s0_old(:,:,rho_comp), &
+                  p0_old,p0_old, &
+                  gamma1bar_old,gamma1bar_old,p0_minus_pthermbar, &
+                  psi,etarho_ec,etarho_cc,dt,dtold, &
+                  delta_chi_w0, .true.)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! update density and compute rho0_predicted_edge
@@ -412,9 +424,12 @@ subroutine varden()
 
      w0_tmp = w0
 
-     call make_w0(w0,w0_tmp,w0_force,Sbar_nph,s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
-                  p0_old,p0_new,gamma1bar_old,gamma1bar_new,p0_minus_pthermbar,psi, &
-                  etarho_ec,etarho_cc,dt,dtold)
+     call make_w0(w0,w0_tmp,w0_force,Sbar_nph, &
+                  s0_old(:,:,rho_comp),s0_new(:,:,rho_comp), &
+                  p0_old,p0_new, &
+                  gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
+                  psi,etarho_ec,etarho_cc,dt,dtold, &
+                  delta_chi_w0,.false.)
 
      if (iter .eq. 1) then
         open(unit=10,file="base.orig_w0")
@@ -566,7 +581,7 @@ subroutine varden()
      time  = time + dt
      dtold = dt
 
-     dt = min(1.1d0*dt,cflfac*dr_fine/maxval(abs(w0)))
+     dt = min(1.1d0*dt, cflfac*dr_fine/(maxval(abs(w0(1,0:nr_fine-2)) ) + SMALL) )
      if (time+dt > stop_time) dt = stop_time - time
 
      iter = iter + 1
