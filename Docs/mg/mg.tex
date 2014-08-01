@@ -29,7 +29,9 @@ Support for $\Delta x \ne \Delta y \ne \Delta z$
 
 
 
-\subsection{\mgtower}
+\subsection{Data Structures}
+
+\subsubsection{\mgtower}
 
 The \mgtower\ is a special Fortran derived type that carries all the
 information required for a \boxlib\ multigrid solve.
@@ -117,6 +119,25 @@ solve.
    or Neumann.  There is no skew in nodal.
 
 \end{itemize}
+
+
+\subsection{\bndryreg}
+
+A \bndryreg\ is a set of {\tt dim*2} multifabs defined on the coarse cells
+immediately outside of each fine grid.
+
+Ideally we would only include the cells not covered by a different
+fine grid, but in the current implementation, for {\tt N} fine grids we have
+{\tt N*dim*2} multifabs (the factor of 2 is {\tt lo}/{\tt hi}).
+
+We use the \bndryreg to store the correction to the residual to be
+used in the coarse grid relaxation.  The way we use it is that we
+compute a pure coarse grid residual in every coarse cell, then we
+correct it by subtracting the contribution of the coarse flux under
+the coarse-fine edge and adding the contribution of the fine fluxes at
+that same interface.  The \bndryreg\ holds the cell-centered
+contribution from the difference of these edge fluxes and is added to
+the coarse residual multifab.
 
 
 \subsection{Stencils}
