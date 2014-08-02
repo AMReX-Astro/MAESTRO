@@ -11,7 +11,7 @@
 # user modifiable variables:
 
 # number of parallel tasks to run
-NCPUS=6
+NCPUS=12
 
 
 # pidfile is a lock file that is used to make sure that only one instance 
@@ -65,7 +65,7 @@ function process_files
 
     if [ -d $1 ]; then
 
-	if [ ! -f xrb_vol_${fname}_${root}.png ]; then
+	if [ ! -f ${root}_${fname}.png ]; then
            # do processing
            aprun ${analysis} $1 ${fname} 
 	fi
@@ -109,6 +109,9 @@ function freecpus
 #
 # if you don't want to wait for new files to appear, get rid of the
 # outer loop.
+
+# clean-up from any previous run
+rm -f _process.plt*
 
 while true
 do
