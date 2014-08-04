@@ -19,7 +19,7 @@ contains
   subroutine make_w0(w0,w0_old,w0_force,Sbar_in, &
                      rho0_old,rho0_new,p0_old,p0_new, &
                      gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
-                     psi,etarho_ec,etarho_cc,dt,dtold)
+                     psi,etarho_ec,etarho_cc,dt,dtold,delta_chi_w0,is_predictor)
 
     use parallel
     use bl_prof_module
@@ -41,7 +41,9 @@ contains
     real(kind=dp_t), intent(in   ) ::      gamma1bar_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
     real(kind=dp_t), intent(in   ) ::            Sbar_in(:,0:)
+    real(kind=dp_t), intent(inout) ::       delta_chi_w0(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
+    logical        , intent(in   ) :: is_predictor
 
     integer         :: r,n
     real(kind=dp_t) :: max_w0
@@ -61,12 +63,12 @@ contains
                                     gamma1bar_old,gamma1bar_new, &
                                     p0_minus_pthermbar, &
                                     etarho_cc,w0_force, &
-                                    dt,dtold)
+                                    dt,dtold,delta_chi_w0,is_predictor)
        else
           call make_w0_planar(w0,w0_old,Sbar_in, &
                               p0_old,p0_new,gamma1bar_old,gamma1bar_new, &
                               p0_minus_pthermbar,psi,w0_force, &
-                              dt,dtold)
+                              dt,dtold,delta_chi_w0,is_predictor)
        endif
 
 
@@ -78,7 +80,7 @@ contains
                               gamma1bar_old(1,:),gamma1bar_new(1,:), &
                               p0_minus_pthermbar(1,:), &
                               etarho_ec(1,:),etarho_cc(1,:),w0_force(1,:), &
-                              dt,dtold)
+                              dt,dtold,delta_chi_w0,is_predictor)
 
     end if
 
@@ -102,15 +104,14 @@ contains
   end subroutine make_w0
 
 
-
   subroutine make_w0_planar(w0,w0_old,Sbar_in,p0_old,p0_new, &
                             gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
-                            psi,w0_force,dt,dtold)
+                            psi,w0_force,dt,dtold,delta_chi_w0,is_predictor)
 
     use geometry, only: nr_fine, r_start_coord, r_end_coord, dr, &
          base_cutoff_density_coord,numdisjointchunks, nr
     use bl_constants_module
-    use probin_module, only: grav_const, dpdt_factor
+    use probin_module, only: dpdt_factor
     use restrict_base_module
 
     real(kind=dp_t), intent(  out) ::                 w0(:,0:)
@@ -123,14 +124,16 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
     real(kind=dp_t), intent(in   ) ::                psi(:,0:)
     real(kind=dp_t), intent(  out) ::           w0_force(:,0:)
+    real(kind=dp_t), intent(inout) ::       delta_chi_w0(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
+    logical        , intent(in   ) :: is_predictor
 
     ! Local variables
     integer         :: r, n, i, j, refrat, nlevs
     real(kind=dp_t) :: w0_old_cen(size(w0,dim=1),0:nr_fine-1)
     real(kind=dp_t) :: w0_new_cen(size(w0,dim=1),0:nr_fine-1)
     real(kind=dp_t) :: w0_avg, div_avg, dt_avg, gamma1bar_p0_avg
-    real(kind=dp_t) :: volume_discrepancy, offset
+    real(kind=dp_t) :: offset
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Multilevel Outline
@@ -167,17 +170,28 @@ contains
           end if
 
           do r=r_start_coord(n,j)+1,r_end_coord(n,j)+1
+
              gamma1bar_p0_avg = (gamma1bar_old(n,r-1)+gamma1bar_new(n,r-1)) * &
                   (p0_old(n,r-1)+p0_new(n,r-1))/4.0d0
 
              if (r-1 .lt. base_cutoff_density_coord(n)) then
-                volume_discrepancy = dpdt_factor * p0_minus_pthermbar(n,r-1)/dt
+
+                if (is_predictor) then
+                   delta_chi_w0(n,r-1) = dpdt_factor * &
+                        p0_minus_pthermbar(n,r-1) / (gamma1bar_old(n,r-1)*p0_old(n,r-1)*dt)
+                else
+                   delta_chi_w0(n,r-1) = delta_chi_w0(n,r-1) + dpdt_factor * &
+                        p0_minus_pthermbar(n,r-1) / (gamma1bar_new(n,r-1)*p0_new(n,r-1)*dt)
+                end if
+
              else
-                volume_discrepancy = 0.0d0
+                delta_chi_w0(n,r-1) = 0.d0
              end if
 
              w0(n,r) = w0(n,r-1) + Sbar_in(n,r-1) * dr(n) &
-                  - ( (psi(n,r-1)+volume_discrepancy) / gamma1bar_p0_avg ) * dr(n)
+                  - psi(n,r-1) / gamma1bar_p0_avg * dr(n) &
+                  - delta_chi_w0(n,r-1) * dr(n)
+
           end do
 
           if (n .gt. 1) then
@@ -258,9 +272,9 @@ contains
                                   gamma1bar_old,gamma1bar_new, &
                                   p0_minus_pthermbar, &
                                   etarho_cc,w0_force, &
-                                  dt,dtold)
+                                  dt,dtold,delta_chi_w0,is_predictor)
 
-    use geometry, only: r_cc_loc, nr_fine, nlevs_radial, r_edge_loc, dr, &
+    use geometry, only: nr_fine, nlevs_radial, r_edge_loc, dr, &
          base_cutoff_density_coord, r_start_coord, r_end_coord, numdisjointchunks, nr
     use make_grav_module
     use bl_constants_module
@@ -283,7 +297,9 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
     real(kind=dp_t), intent(in   ) ::          etarho_cc(:,0:)
     real(kind=dp_t), intent(  out) ::           w0_force(:,0:)
+    real(kind=dp_t), intent(inout) ::       delta_chi_w0(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
+    logical        , intent(in   ) :: is_predictor
 
     ! local variables
     real(kind=dp_t), allocatable :: w0_fine(:)
@@ -509,7 +525,7 @@ contains
                                gamma1bar_old,gamma1bar_new, &
                                p0_minus_pthermbar, &
                                etarho_ec,etarho_cc,w0_force, &
-                               dt,dtold)
+                               dt,dtold,delta_chi_w0,is_predictor)
 
     use geometry, only: nr_fine, r_edge_loc, dr, r_cc_loc, &
          base_cutoff_density_coord
@@ -532,7 +548,9 @@ contains
     real(kind=dp_t), intent(in   ) ::          etarho_ec(0:)
     real(kind=dp_t), intent(in   ) ::          etarho_cc(0:)
     real(kind=dp_t), intent(  out) ::           w0_force(0:)
+    real(kind=dp_t), intent(inout) ::       delta_chi_w0(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
+    logical,         intent(in   ) :: is_predictor
 
     ! Local variables
     integer                    :: r

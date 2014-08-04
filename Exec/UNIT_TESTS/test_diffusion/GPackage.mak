@@ -12,6 +12,7 @@ f90sources += main.f90
 f90sources += make_explicit_thermal.f90
 f90sources += make_plotfile.f90
 f90sources += make_plot_variables.f90
+f90sources += make_pi_cc.f90
 f90sources += mg_eps.f90
 f90sources += pred_parameters.f90
 f90sources += probin.f90

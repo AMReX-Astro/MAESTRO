@@ -361,7 +361,7 @@ contains
 
     use bl_constants_module
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
@@ -440,8 +440,9 @@ contains
              call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
           endif
 
-          ! pass the density through
+          ! pass the density and pi through
           snew(i,rho_comp) = sold(i,rho_comp)
+          snew(i,pi_comp) = sold(i,pi_comp)
 
           ! update the species
           snew(i,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
@@ -469,7 +470,7 @@ contains
 
     use bl_constants_module
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
@@ -556,8 +557,9 @@ contains
                 call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
              endif
 
-             ! pass the density through
+             ! pass the density and pi through
              snew(i,j,rho_comp) = sold(i,j,rho_comp)
+             snew(i,j,pi_comp) = sold(i,j,pi_comp)
              
              ! update the species
              snew(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
@@ -588,7 +590,7 @@ contains
 
     use bl_constants_module
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
@@ -740,8 +742,9 @@ contains
              rhoH = rhoH/nsub
 
 
-             ! pass the density through
+             ! pass the density and pi through
              snew(i,j,rho_comp) = sold(i,j,rho_comp)
+             snew(i,j,pi_comp) = sold(i,j,pi_comp)
              
              ! update the species
              snew(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * sold(i,j,rho_comp)
@@ -770,7 +773,7 @@ contains
 
     use bl_constants_module
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
@@ -862,8 +865,9 @@ contains
                    call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
                 endif
 
-                ! pass the density through
+                ! pass the density and pi through
                 snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
+                snew(i,j,k,pi_comp) = sold(i,j,k,pi_comp)
                 
                 ! update the species
                 snew(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
@@ -899,7 +903,7 @@ contains
 
     use bl_constants_module
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
          burner_threshold_cutoff, drive_initial_convection
@@ -995,8 +999,9 @@ contains
                    call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
                 endif
 
-                ! pass the density through
+                ! pass the density and pi through
                 snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
+                snew(i,j,k,pi_comp) = sold(i,j,k,pi_comp)
                 
                 ! update the species
                 snew(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
