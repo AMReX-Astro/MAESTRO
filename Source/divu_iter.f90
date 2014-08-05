@@ -89,6 +89,7 @@ contains
     real(dp_t) ::            etarho_cc(nlevs_radial,0:nr_fine-1)
     real(dp_t) :: delta_gamma1_termbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::   p0_minus_pthermbar(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::         delta_chi_w0(nlevs_radial,0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 
@@ -166,7 +167,7 @@ contains
        call average(mla,Source_old,Sbar,dx,1)
        call make_w0(w0,w0,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
                     gamma1bar,gamma1bar,p0_minus_pthermbar, &
-                    psi,etarho_ec,etarho_cc,dt,dt)
+                    psi,etarho_ec,etarho_cc,dt,dt,delta_chi_w0,.true.)
     end if
     
     ! This needs to be a separate loop so Sbar is fully defined before 

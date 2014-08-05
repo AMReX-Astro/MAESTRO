@@ -138,9 +138,7 @@ contains
     type(multifab) :: div_coeff_cart_edge(mla%nlevel,mla%dim)
     type(multifab) ::              gamma1(mla%nlevel)
     type(multifab) ::          etarhoflux(mla%nlevel)
-    type(multifab) ::            peos_old(mla%nlevel)
-    type(multifab) ::            peos_nph(mla%nlevel)
-    type(multifab) ::            peos_new(mla%nlevel)
+    type(multifab) ::                peos(mla%nlevel)
     type(multifab) ::        peosbar_cart(mla%nlevel)
     type(multifab) ::        delta_p_term(mla%nlevel)
     type(multifab) ::             Tcoeff1(mla%nlevel)
@@ -153,6 +151,7 @@ contains
     type(multifab) ::             pcoeff2(mla%nlevel)
     type(multifab) ::          scal_force(mla%nlevel)
     type(multifab) ::               pi_cc(mla%nlevel)
+    type(multifab) ::           delta_chi(mla%nlevel)
 
     type(multifab) ::               w0mac(mla%nlevel,mla%dim)
     type(multifab) ::                umac(mla%nlevel,mla%dim)
@@ -175,6 +174,7 @@ contains
     real(kind=dp_t), allocatable ::               w0_old(:,:)
     real(kind=dp_t), allocatable ::       div_coeff_edge(:,:)
     real(kind=dp_t), allocatable ::  rho0_predicted_edge(:,:)
+    real(kind=dp_t), allocatable ::         delta_chi_w0(:,:)
 
     integer    :: i,n,comp,proj_type,nlevs,dm
     real(dp_t) :: halfdt
@@ -221,6 +221,7 @@ contains
     allocate(              w0_old(nlevs_radial,0:nr_fine))
     allocate(      div_coeff_edge(nlevs_radial,0:nr_fine))
     allocate( rho0_predicted_edge(nlevs_radial,0:nr_fine))
+    allocate(        delta_chi_w0(nlevs_radial,0:nr_fine-1))
 
     if (verbose .ge. 1) then
 
@@ -317,14 +318,14 @@ contains
     if (dpdt_factor .gt. ZERO ) then
     
        do n=1,nlevs
-          call multifab_build(peos_old(n), mla%la(n), 1, 0)
+          call multifab_build(peos(n), mla%la(n), 1, 0)
        end do
 
        ! peos_old now holds the thermodynamic p computed from sold(rho,h,X)
-       call makePfromRhoH(sold,sold,peos_old,mla,the_bc_tower%bc_tower_array)
+       call makePfromRhoH(sold,sold,peos,mla,the_bc_tower%bc_tower_array)
 
        ! compute peosbar = Avg(peos_old)
-       call average(mla,peos_old,peosbar,dx,1)
+       call average(mla,peos,peosbar,dx,1)
 
        ! compute p0_minus_peosbar = p0_old - peosbar
        p0_minus_peosbar = p0_old - peosbar
@@ -339,11 +340,12 @@ contains
 
        ! compute delta_p_term = peos_old - peosbar_cart
        do n=1,nlevs
-          call multifab_copy(delta_p_term(n), peos_old(n))
+          call multifab_copy(delta_p_term(n), peos(n))
           call multifab_sub_sub(delta_p_term(n), peosbar_cart(n))
        end do
        
        do n=1,nlevs
+          call destroy(peos(n))
           call destroy(peosbar_cart(n))
        end do
 
@@ -371,7 +373,8 @@ contains
        call average(mla,Source_nph,Sbar,dx,1)
 
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old,gamma1bar_old, &
-                    gamma1bar_old,p0_minus_peosbar,psi,etarho_ec,etarho_cc,dt,dtold)
+                    gamma1bar_old,p0_minus_peosbar,psi,etarho_ec,etarho_cc,dt,dtold, &
+                    delta_chi_w0,.true.)
 
        if (spherical .eq. 1) then
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
@@ -416,7 +419,10 @@ contains
     do n=1,nlevs
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
        call multifab_build(macrhs(n),            mla%la(n), 1, 0)
+       call multifab_build(delta_chi(n),         mla%la(n), 1, 0)
+
        call setval(delta_gamma1_term(n), ZERO, all=.true.)
+       call setval(delta_chi(n),         ZERO, all=.true.)
     end do
 
     if (barrier_timers) call parallel_barrier()
@@ -425,7 +431,7 @@ contains
     macproj_time_start = parallel_wtime()
 
     call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar,div_coeff_old,dx, &
-                     gamma1bar_old,gamma1bar_old,p0_old,p0_old,delta_p_term,dt)
+                     gamma1bar_old,p0_old,delta_p_term,dt,delta_chi,.true.)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
@@ -661,8 +667,10 @@ contains
     misc_time_start = parallel_wtime()
 
     ! pass temperature through for seeding the temperature update eos call
+    ! pi goes along for the ride
     do n=1,nlevs
        call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,nghost(sold(n)))
+       call multifab_copy_c(s2(n),pi_comp,  s1(n),pi_comp,  1,nghost(sold(n)))
     end do
 
     ! now update temperature
@@ -808,41 +816,22 @@ contains
        call setval(delta_p_term(n),ZERO,all=.true.)
     end do
 
-    ! compute p0_minus_peosbar = p0_nph - peosbar (for making w0)
-    ! and delta_p_term = peos_nph - peosbar_cart (for RHS of projection)
+    ! compute p0_minus_peosbar = p0_new - peosbar (for making w0)
+    ! and delta_p_term = peos_new - peosbar_cart (for RHS of projection)
     if (dpdt_factor .gt. ZERO) then
 
        do n=1,nlevs
-          call multifab_build(peos_new(n), mla%la(n), 1, 0)
+          call multifab_build(peos(n), mla%la(n), 1, 0)
        end do
 
        ! peos_new now holds the thermodynamic p computed from snew(rho h X)
-       call makePfromRhoH(snew,snew,peos_new,mla,the_bc_tower%bc_tower_array)
+       call makePfromRhoH(snew,snew,peos,mla,the_bc_tower%bc_tower_array)
 
-       do n=1,nlevs
-          call multifab_build(peos_nph(n), mla%la(n), 1, 0)
-       end do
+       ! compute peosbar = Avg(peos_new)
+       call average(mla,peos,peosbar,dx,1)
 
-       ! compute peos_nph = (1/2)*(peos_old+peos_new)
-       do n=1,nlevs
-          call multifab_copy(peos_nph(n), peos_old(n))
-          call multifab_plus_plus(peos_nph(n), peos_new(n))
-          call multifab_div_div_s(peos_nph(n), TWO)
-       enddo
-
-       do n=1,nlevs
-          call destroy(peos_old(n))
-          call destroy(peos_new(n))
-       end do
-
-       ! compute peosbar = Avg(peos_nph)
-       call average(mla,peos_nph,peosbar,dx,1)
-
-       ! compute p0_nph = (1/2)*(p0_old+p0_new)
-       p0_nph = HALF*(p0_old + p0_new)
-
-       ! compute p0_minus_peosbar = p0_nph - peosbar
-       p0_minus_peosbar = p0_nph - peosbar
+       ! compute p0_minus_peosbar = p0_new - peosbar
+       p0_minus_peosbar = p0_new - peosbar
 
        do n=1,nlevs
           call multifab_build(peosbar_cart(n), mla%la(n), 1, 0)
@@ -850,17 +839,17 @@ contains
 
        ! compute peosbar_cart from peosbar
        call put_1d_array_on_cart(peosbar,peosbar_cart,foextrap_comp, &
-            .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
+                                 .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
-       ! compute delta_p_term = peos_nph - peosbar_cart
+       ! compute delta_p_term = peos_new - peosbar_cart
        do n=1,nlevs
-          call multifab_copy(delta_p_term(n), peos_nph(n))
+          call multifab_copy(delta_p_term(n), peos(n))
           call multifab_sub_sub(delta_p_term(n), peosbar_cart(n))
        end do
 
        do n=1,nlevs
-          call destroy(peos_nph(n))
           call destroy(peosbar_cart(n))
+          call destroy(peos(n))
        end do
 
     end if
@@ -883,7 +872,7 @@ contains
 
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
                     gamma1bar_old,gamma1bar,p0_minus_peosbar, &
-                    psi,etarho_ec,etarho_cc,dt,dtold)
+                    psi,etarho_ec,etarho_cc,dt,dtold,delta_chi_w0,.false.)
 
        if (spherical .eq. 1) then
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
@@ -923,13 +912,14 @@ contains
     end do
 
     ! note delta_gamma1_term here is not time-centered
-    call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar,div_coeff_nph,dx, &
-                     gamma1bar_old,gamma1bar,p0_old,p0_new,delta_p_term,dt)
+    call make_macrhs(macrhs,rho0_new,Source_nph,delta_gamma1_term,Sbar,div_coeff_nph,dx, &
+                     gamma1bar,p0_new,delta_p_term,dt,delta_chi,.false.)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
        call destroy(Source_nph(n))
        call destroy(delta_p_term(n))
+       call destroy(delta_chi(n))
     end do
 
     do n=1,nlevs
@@ -1178,8 +1168,10 @@ contains
     misc_time_start = parallel_wtime()
 
     ! pass temperature through for seeding the temperature update eos call
+    ! pi just goes along for the ride too
     do n=1,nlevs
        call multifab_copy_c(s2(n),temp_comp,s1(n),temp_comp,1,nghost(sold(n)))
+       call multifab_copy_c(s2(n),pi_comp,  s1(n),pi_comp,  1,nghost(sold(n)))
     end do
 
     ! now update temperature
@@ -1393,14 +1385,14 @@ contains
        if (dpdt_factor .gt. ZERO) then
 
           do n=1,nlevs
-             call multifab_build(peos_new(n), mla%la(n), 1, 0)
+             call multifab_build(peos(n), mla%la(n), 1, 0)
           enddo
 
           ! peos_new now holds the thermodynamic p computed from snew(rho h X)
-          call makePfromRhoH(snew,snew,peos_new,mla,the_bc_tower%bc_tower_array)
+          call makePfromRhoH(snew,snew,peos,mla,the_bc_tower%bc_tower_array)
 
           ! compute peosbar = Avg(peos_new)
-          call average(mla,peos_new,peosbar,dx,1)
+          call average(mla,peos,peosbar,dx,1)
 
           ! no need to compute p0_minus_peosbar since make_w0 is not called after here
 
@@ -1418,12 +1410,12 @@ contains
 
           ! compute delta_p_term = peos_new - peosbar_cart
           do n=1,nlevs
-             call multifab_copy(delta_p_term(n), peos_new(n))
+             call multifab_copy(delta_p_term(n), peos(n))
              call multifab_sub_sub(delta_p_term(n), peosbar_cart(n))
           end do
 
           do n=1,nlevs
-             call destroy(peos_new(n))
+             call destroy(peos(n))
              call destroy(peosbar_cart(n))
           end do
           
