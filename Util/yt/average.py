@@ -7,7 +7,7 @@ dd = ds.all_data()
 
 p = yt.create_profile(dd, "z", "temperature", 
                       n_bins=ds.domain_dimensions[2],
-                      weight_field="cell_mass",
+                      weight_field="cell_volume",
                       logs={"z": False})
 
 
