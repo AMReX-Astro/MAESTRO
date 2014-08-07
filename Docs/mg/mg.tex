@@ -362,6 +362,54 @@ solve using pure V-cycles.
 
 \subsection{Nodal MG}
 
+The flowchart below shows the structure of a cell-centered multigrid
+solve using pure V-cycles.
+
+
+\begin{itemize}
+
+\item {\tt stencil\_fill\_cc\_all\_mglevels} / {\tt stencil\_fill\_cc}:
+  For the nodal solver, this applies the weights to the 
+  coefficients. \MarginPar{nodal does things differently than cc---need more here}
+
+\item {\tt ml\_nd}: The main driver for the nodal multigrid.
+
+\item {\tt mg\_tower\_v\_cycle} (recursive):
+\begin{itemize}
+
+  \item {\em recursively descend V-cycle}
+\MyArrow[1em]{start3}{end3}{colorii,line width=2pt}
+  \begin{itemize} 
+  \item \tikzmark{end3} {\tt nodal\_smoother\_?d}: Smooth the 
+    problem at the current MG level using the desired smoother.
+
+  \item {\tt compute\_defect}: Construct $f - L\phi$.
+
+  \item\tikzmark{start3} {\tt mg\_tower\_restriction}:  Restrict
+    the defect to the coarser level by simply taking the fine value that
+    lies at the same place as the coarse data.
+  \end{itemize}
+
+  \item {\tt mg\_tower\_bottom\_solve}:  Solve the coarsened problem
+    using the chosen bottom solver.
+
+  \item {\em ascend V-cycle}
+\MyArrow[1em]{start4}{end4}{colorii,line width=2pt}
+  \begin{itemize}
+  \item\tikzmark{end4} {\tt mg\_tower\_prolongation}: For nodal data, the fine grid
+     will have some points at exactly the same place as the coarse data---these are
+     simply copied to the fine grid.  The remain data is interpolated.
+
+  \item\tikzmark{start4} {\tt modal\_smoother\_?d}:
+  \end{itemize}
+
+\end{itemize}
+\item {\tt compute\_defect}: This is called multiple times, checking for
+   convergence at each level.
+
+
+\end{itemize}
+
 
 
 \section{\maestro's Multigrid Use}
