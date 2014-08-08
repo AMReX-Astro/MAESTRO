@@ -19,6 +19,138 @@ and motivation of the equation set.  (Note: this `traditional' algorithm
 uses Strang-splitting for the reactions.  An alternate implementation, using
 spectral deferred corrections is outlined in Chapter~\ref{ch:sdc}.)
 
+\subsection{Base State}
+
+The stratified atmosphere is characterized by a one-dimensional
+time-dependent base state, defined by a base state density, $\rho_0$,
+and a base state pressure, $p_0$, in hydrostatic equilibrum:
+\begin{equation}
+\nabla p_0 = -\rho_0 |g| \er
+\end{equation}
+
+For the time-dependence, we will define a base state velocity, $w_0$,
+which will adjust the base state from one hydrostatic equilibrum to
+another in response to heating.
+
+For convenience, we define a base state enthalphy, $h_0$, as needed
+by laterally averaging the full enthalpy, $h$.
+
+\subsection{Continuity}
+
+Conservation of mass gives the same continuity equation we have with
+compressible flow:
+\begin{equation}
+\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \Ub) = 0
+\end{equation}
+
+Additionally, we carry species around which can react.  The creation and destruction
+of the species is described by their create rate, $\omegadot_k$, and the species
+are defined by their mass fractions, $X_k \equiv \rho_k / \rho$, giving
+\begin{equation}
+\frac{\partial \rho X_k}{\partial t} + \nabla \cdot (\rho \Ub) = \rho \omegadot_k
+\end{equation}
+and
+\begin{equation}
+\sum_k X_k = 1
+\end{equation}
+
+\subsection{Constraint}
+
+The equation of state is cast into an elliptic constraint on the velocity field 
+by differentiating $p_0(\rho, s, X_k)$ along particle paths, giving:
+\begin{equation}
+\nabla \cdot (\beta_0 \Ub) = \beta_0 \left ( S - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} \right )
+\end{equation}
+where
+ $\beta_0$ is a density-like variable that carries background stratification, defined as
+\begin{equation}
+\beta_0(r,t) = \rho_0(0,t)\exp\left(\int_0^r\frac{1}{\gammabar p_0}\frac{\partial p_0}{\partial r'}dr'\right),
+\end{equation}
+and 
+\begin{equation}
+S = -\sigma\sum_k\xi_k\omegadot_k + \frac{1}{\rho p_\rho}\sum_k p_{X_k}\omegadot_k + \sigma\Hnuc + \sigma\Hext
+\end{equation}
+where $p_{X_k} \equiv \left. \partial p / \partial X_k
+\right|_{\rho,T,X_{j,j\ne k}}$, $\xi_k \equiv \left. \partial h / 
+\partial X_k \right |_{p,T,X_{j,j\ne k}}, 
+p_\rho \equiv \left. \partial p/\partial \rho \right |_{T, X_k}$, and
+$\sigma \equiv p_T/(\rho c_p p_\rho)$, with
+$p_T \equiv \left. \partial p / \partial T \right|_{\rho, X_k}$ and
+$c_p \equiv \left.  \partial h / \partial T
+\right|_{p,X_k}$ is the specific heat at constant pressure.   
+
+\subsection{Momentum}
+
+The compressible momentum equation (written in terms of velocity is):
+\begin{equation}
+\rho \frac{\partial \Ub}{\partial t} + \rho \Ub \cdot \nabla \Ub + \nabla p = -\rho |g| \er
+\end{equation}
+Subtracting off the base state, and defining the perturbational
+pressure (sometimes called the dynamic pressure) as $\pi = p -                                    
+p_0$, and perturbational density as $\rho' = \rho - \rho_0$, we have:
+\begin{equation}
+\rho \frac{\partial \Ub}{\partial t} + \rho \Ub \cdot \nabla \Ub + \nabla \pi = -\rho' |g| \er
+\end{equation}
+or
+\begin{equation}
+\frac{\partial \Ub}{\partial t} + \Ub \cdot \nabla \Ub + \frac{1}{\rho} \nabla \pi =
+   -\frac{\rho^\prime}{\rho} |g| \er
+\end{equation}
+This is the form of the momentum equation that we solved in papers I--III and in the multilevel
+paper.
+
+Several authors \cite{KP:2012,VLBWZ:2013} explored the idea of energy
+conservation in a low Mach number system and found that an additional term (which can
+look like a buoyancy) is needed in the low Mach number formulation, yielding:
+\begin{equation}
+\frac{\partial \Ub}{\partial t} + \Ub \cdot \nabla \Ub +
+   \frac{\beta_0}{\rho} \nabla \left (\frac{p^\prime}{\beta_0} \right ) =
+   -\frac{\rho^\prime}{\rho} |g| \er
+\end{equation}
+
+We decompose the full velocity field into a base
+state velocity, $w_0$, that governs the base state dynamics, and a
+local velocity, $\Ubt$, that governs the local dynamics, i.e.,
+\begin{equation}
+\Ub = w_0(r,t)\eb_r + \Ubt(\xb,t).
+\end{equation}
+with
+$\overline{(\Ubt\cdot\eb_r)} = 0$ and
+$w_0 = \overline{(\Ub\cdot\eb_r)}$.
+The velocity evolution equations are then
+\begin{eqnarray}
+\frac{\partial w_0}{\partial t} &=& -w_0\frac{\partial w_0}{\partial
+  r} - \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r},\label{eq:w0                                                                                                                                        
+  evolution}\\ \frac{\partial\Ubt}{\partial t} &=& -\Ub\cdot\nabla\Ubt
+- \left(\Ubt\cdot\eb_r\right)\frac{\partial w_0}{\partial r}\eb_r -
+\frac{1}{\rho}\nabla\pi +
+\frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r -
+\frac{\rho-\rho_0}{\rho}g\eb_r.\label{eq:utildeupd}
+\end{eqnarray}
+where $\pi_0$ is the base state component of the perturbational pressure.
+By laterally averaging to equation (\ref{eq:U divergence}),
+we obtain a divergence constraint for $w_0$:
+\begin{equation}
+\nabla\cdot(\beta_0 w_0 \eb_r) = \beta_0\left(\Sbar - \frac{1}{\gammabar p_0}\frac{\partial p_0}{\partial t}\right).\label{eq:w0 divergence}
+\end{equation}
+The divergence constraint for $\Ubt$ can be found by subtracting (\ref{eq:w0 divergence})
+into (\ref{eq:U divergence}), resulting in
+\begin{equation}
+\nabla\cdot\left(\beta_0\Ubt\right) = \beta_0\left(S-\Sbar\right).\label{eq:utilde divergence}
+\end{equation}
+
+\subsection{Energy}
+
+Finally, we add an equation for specific enthalpy evolution to our
+system.  Strictly speaking this is not necessary to close the system,
+but it becomes convenient at times to define the temperature.  
+\begin{equation}
+\frac{\partial(\rho h)}{\partial t} = -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt} + \rho\Hnuc + \rho\Hext,\label{eq:enthalpy}
+\end{equation}
+
+
+\subsection{Base State and Perturbation Form Equations}
+
 
 
 %-----------------------------------------------------------------------------
@@ -39,7 +171,7 @@ step.
 \subsection{Notation}
 
 \begin{itemize}
-\item {\bf React State}$[\rho^{\inp},(\rho                                                                   h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp},                                                      
+\item {\bf React State}$[\rho^{\inp},(\rho h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp},                                                      
   p_0^{\inp}] \rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp},                                   
   T^{\outp}, (\rho \omegadot_k)^{\outp}, (\rho\Hnuc)^{\outp}]$
   evolves the species and enthalpy due to reactions through
