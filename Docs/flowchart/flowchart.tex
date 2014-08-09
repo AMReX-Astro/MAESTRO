@@ -48,6 +48,7 @@ Conservation of mass gives the same continuity equation we have with
 compressible flow:
 \begin{equation}
 \frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \Ub) = 0
+\label{eq:flow:continuity}
 \end{equation}
 
 Additionally, we carry species around which can react.  The creation and destruction
@@ -67,11 +68,12 @@ The equation of state is cast into an elliptic constraint on the
 velocity field by differentiating $p_0(\rho, s, X_k)$ along particle
 paths, giving:
 \begin{equation}
-\nabla \cdot (\beta_0 \Ub) = \beta_0 \left ( S - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} \right )
+\nabla \cdot (\beta_0 \Ub) = 
+   \beta_0 \left ( S - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} \right )
 \label{eq:U divergence}
 \end{equation}
-where
- $\beta_0$ is a density-like variable that carries background stratification, defined as
+where $\beta_0$ is a density-like variable that carries background
+ stratification, defined as
 \begin{equation}
 \beta_0(r,t) = \rho_0(0,t)\exp\left(\int_0^r\frac{1}{\gammabar p_0}\frac{\partial p_0}{\partial r'}dr'\right),
 \end{equation}
@@ -166,7 +168,8 @@ Finally, we add an equation for specific enthalpy evolution to our
 system.  Strictly speaking this is not necessary to close the system,
 but it becomes convenient at times to define the temperature.
 \begin{equation}
-\frac{\partial(\rho h)}{\partial t} = -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt} + \rho\Hnuc + \rho\Hext,\label{eq:enthalpy}
+\frac{\partial(\rho h)}{\partial t} = 
+   -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt} + \rho\Hnuc + \rho\Hext,\label{eq:flow:enthalpy}
 \end{equation}
 
 We will often expand $Dp_0/Dt$ as
@@ -191,6 +194,14 @@ and differentiating:
 
 \subsection{Base State and Perturbation Form Equations}
 
+The base state evolution equations for density and enthalpy can be
+found by averaging (\ref{eq:flow:continuity}) and (\ref{eq:flow:enthalpy})
+respectively over a layer of constant radius, resulting in
+\begin{eqnarray}
+\frac{\partial\rho_0}{\partial t} &=& -\nabla\cdot(\rho_0 w_0 \eb_r),\label{eq:Base State Density}\\
+\frac{\partial(\rho h)_0}{\partial t} &=& -\nabla\cdot\left[(\rho h)_0w_0\eb_r\right] +
+  \psi + \overline{\rho \Hnuc} + \overline{\rho \Hext}. \label{eq:flow:enthalpy_base}
+\end{eqnarray}
 
 
 %-----------------------------------------------------------------------------
