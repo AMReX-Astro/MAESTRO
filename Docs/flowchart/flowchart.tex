@@ -236,17 +236,19 @@ and differentiating:
  + \rho \Hnuc + \rho \Hext \right \} \enskip  .
 \end{equation}
 
-
-\subsection{Base State and Perturbation Form Equations}
-
 The base state evolution equations for density and enthalpy can be
-found by averaging (\ref{eq:flow:continuity}) and (\ref{eq:flow:enthalpy})
-respectively over a layer of constant radius, resulting in
+found by averaging Eq~\ref{eq:flow:enthalpy}
+over a layer of constant radius, resulting in
 \begin{eqnarray}
 \frac{\partial(\rho h)_0}{\partial t} &=& -\nabla\cdot\left[(\rho h)_0w_0\eb_r\right] +
   \psi + \overline{\rho \Hnuc} + \overline{\rho \Hext}. \label{eq:flow:enthalpy_base}
 \end{eqnarray}
-
+Subtracting it from the full enthalpy equation gives:
+\begin{equation}
+\frac{\partial(\rho h)'}{\partial t} = -\Ub\cdot\nabla(\rho h)' - (\rho h)'\nabla\cdot\Ub - 
+  \nabla\cdot\left[(\rho h)_0\Ubt\right] + \Ubt\cdot\nabla p_0 
+   + ( \rho\Hnuc - \overline{\rho \Hnuc}) + (\rho\Hext - \overline{\rho \Hext}) 
+\end{equation}
 
 %-----------------------------------------------------------------------------
 % Time Advancement Algorithm
