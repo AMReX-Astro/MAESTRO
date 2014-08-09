@@ -62,6 +62,35 @@ and
 \sum_k X_k = 1
 \end{equation}
 
+The base state density evolution equation can be defined by laterally averaging the 
+full continuity equation, giving:
+\begin{equation}
+\frac{\partial\rho_0}{\partial t} = -\nabla\cdot(\rho_0 w_0 \eb_r),\label{eq:flow:base_density}
+\end{equation}
+
+Subtracting these two yields the evolution equation for the perturbational
+density, $\rho^\prime \equiv \rho - \rho_0$:
+\begin{equation}
+\frac{\partial\rho'}{\partial t} = -\Ub\cdot\nabla\rho' -
+  \rho'\nabla\cdot\Ub - \nabla\cdot\left(\rho_0\Ubt\right) \label{eq:flow:rhoprime}
+\end{equation}
+
+As first discussed in paper III and then refined in the multilevel paper, we capture
+the changes that can occur due to significant convective
+overturning by imposing the constraint that $\overline{\rho'}=0$
+for all time.  This gives
+\begin{equation}
+\frac{\partial\overline{\rho'}}{\partial t} = -\nabla\cdot(\etarho\eb_r).
+\end{equation}
+where
+\begin{equation}
+\etarho = \overline{\left(\rho'\Ub\cdot\eb_r\right)}
+\end{equation}
+In practice, we correct the drift by simply setting $\rho_0 =
+\overline{\rho}$ after the advective update of $\rho$.  However we still need to
+explicitly compute $\etarho$ since it appears in other equations.
+
+
 \subsection{Constraint}
 
 The equation of state is cast into an elliptic constraint on the
@@ -96,6 +125,22 @@ here makes it possible to cast the constraint as a
 divergence.  \cite{KP:2012} discuss the general case where we want to
 keep the local variations of $\Gamma_1$ (and we explored this in paper
 III).  We also look at this in \S~\ref{sec:flow:gamma1vary}.
+
+
+In practice, we calculate $w_0$ by integrating
+the one-dimensional divergence constraint:
+\begin{equation}
+\frac{\partial w_0}{\partial r} = \Sbar - \frac{1}{\gammabar p_0} \etarho g \enskip 
+\end{equation}
+Then we define
+\begin{equation}
+- \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} = \frac{\partial w_0}{\partial t} + 
+   w_0 \frac{\partial w_0}{\partial r} \enskip, \label{eq:pizero}
+\end{equation}
+once $w_0$ at the old and new times is known, and the advective term is computed explicitly.
+Then we can include this for completeness in the update for $\ut.$
+
+
 
 \subsection{Momentum}
 
@@ -198,7 +243,6 @@ The base state evolution equations for density and enthalpy can be
 found by averaging (\ref{eq:flow:continuity}) and (\ref{eq:flow:enthalpy})
 respectively over a layer of constant radius, resulting in
 \begin{eqnarray}
-\frac{\partial\rho_0}{\partial t} &=& -\nabla\cdot(\rho_0 w_0 \eb_r),\label{eq:Base State Density}\\
 \frac{\partial(\rho h)_0}{\partial t} &=& -\nabla\cdot\left[(\rho h)_0w_0\eb_r\right] +
   \psi + \overline{\rho \Hnuc} + \overline{\rho \Hext}. \label{eq:flow:enthalpy_base}
 \end{eqnarray}
