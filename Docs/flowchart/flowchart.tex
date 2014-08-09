@@ -68,6 +68,7 @@ velocity field by differentiating $p_0(\rho, s, X_k)$ along particle
 paths, giving:
 \begin{equation}
 \nabla \cdot (\beta_0 \Ub) = \beta_0 \left ( S - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} \right )
+\label{eq:U divergence}
 \end{equation}
 where
  $\beta_0$ is a density-like variable that carries background stratification, defined as
@@ -149,7 +150,9 @@ where $\pi_0$ is the base state component of the perturbational pressure.
 By laterally averaging to equation (\ref{eq:U divergence}),
 we obtain a divergence constraint for $w_0$:
 \begin{equation}
-\nabla\cdot(\beta_0 w_0 \eb_r) = \beta_0\left(\Sbar - \frac{1}{\gammabar p_0}\frac{\partial p_0}{\partial t}\right).\label{eq:w0 divergence}
+\nabla\cdot(\beta_0 w_0 \eb_r) = 
+    \beta_0\left(\Sbar - \frac{1}{\gammabar p_0}
+           \frac{\partial p_0}{\partial t}\right).\label{eq:w0 divergence}
 \end{equation}
 The divergence constraint for $\Ubt$ can be found by subtracting
 (\ref{eq:w0 divergence}) into (\ref{eq:U divergence}), resulting in
@@ -164,6 +167,25 @@ system.  Strictly speaking this is not necessary to close the system,
 but it becomes convenient at times to define the temperature.
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\nabla\cdot(\rho h\Ub) + \frac{Dp_0}{Dt} + \rho\Hnuc + \rho\Hext,\label{eq:enthalpy}
+\end{equation}
+
+We will often expand $Dp_0/Dt$ as
+\begin{equation}
+\frac{Dp_0}{Dt} = \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r}
+\end{equation}
+where we defined
+\begin{equation}
+\psi \equiv \frac{\partial p_0}{\partial t} + w_0 \frac{\partial p_0}{\partial r}
+\end{equation}
+
+At times, we will define a temperature equation by writing $h = h(T,p,X_k)$
+and differentiating:
+\begin{equation}
+\label{eq:tempenthalpypsi}
+\frac{DT}{Dt} = \frac{1}{\rho c_p} \left\{ \left(1 - \rho h_p\right) \left 
+  [ \psi + (\Ubt \cdotb \er) \frac{\partial p_0}{\partial r} \right ]
+ - \sum_k \rho \xi_k {\omegadot}_k
+ + \rho \Hnuc + \rho \Hext \right \} \enskip  .
 \end{equation}
 
 
