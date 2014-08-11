@@ -203,10 +203,13 @@ The divergence constraint for $\Ubt$ can be found by subtracting
 
 
 In practice, we calculate $w_0$ by integrating
-the one-dimensional divergence constraint:
+the one-dimensional divergence constraint.  For a plane-parallel atmosphere, the
+evolution is:
 \begin{equation}
+\label{eq:flow:dw0dr_planar}
 \frac{\partial w_0}{\partial r} = \Sbar - \frac{1}{\gammabar p_0} \etarho g \enskip 
 \end{equation}
+
 Then we define \MarginPar{this term needs the $\beta_0$'s as shown.  Also, is this really
 the form, or should it be $\overline{(\beta_0/\rho_0) \partial (\pi_0/\beta_0)/\partial r}$?}
 \begin{equation}
@@ -245,7 +248,7 @@ $\psi = \etarho g$
 At times, we will define a temperature equation by writing $h = h(T,p,X_k)$
 and differentiating:
 \begin{equation}
-\label{eq:tempenthalpypsi}
+\label{eq:flow:temp}
 \frac{DT}{Dt} = \frac{1}{\rho c_p} \left\{ \left(1 - \rho h_p\right) \left 
   [ \psi + (\Ubt \cdotb \er) \frac{\partial p_0}{\partial r} \right ]
  - \sum_k \rho \xi_k {\omegadot}_k
@@ -293,19 +296,20 @@ step.
 \frac{dX_k}{dt} = \omegadot_k(\rho,X_k,T) ; \qquad
 \frac{dT}{dt}   = \frac{1}{c_p} \left ( -\sum_k \xi_k  \omegadot_k  + \Hnuc \right ).
 \end{equation}
-%This system is solved using the stiff ordinary differential equation                                     
-%integration package, {\tt VODE} \citep{vode}.                                                            
+Here the temperature equation comes from Eq.~\ref{eq:flow:temp} with $Dp_0/Dt = 0$ for
+the burning part of the evolution.
+  
 Full details of the
 solution procedure can be found in Paper III. We then define:
 \begin{eqnarray}
 (\rho\omegadot_k)^{\outp} &=& \frac{\rho^{\outp} ( X_k^{\outp} - X_k^{\inp})}{\dt/2}, \\
-(\rho h)^{\outp} &=& (\rho h)^{\inp} + \frac{\dt}{2} (\rho\Hnuc)^{\outp} + \frac{\dt}{2} (\rho\Hext)^{\in\
-p}.
+(\rho h)^{\outp} &=& (\rho h)^{\inp} + \frac{\dt}{2} (\rho\Hnuc)^{\outp} + \frac{\dt}{2} (\rho\Hext)^{\inp}.
 \end{eqnarray}
 where the enthalpy update includes external heat sources $(\rho\Hext)^{\inp}$.
-As introduced in Paper IV, we update the temperature using $T^{\outp} =                                   
-T(\rho^\outp,h^\outp,X_k^\outp)$ for planar geometry or $T^{\outp} =                                      
-T(\rho^\outp,p_0^\inp,X_k^\outp)$ for spherical geometry.
+As introduced in Paper IV, we update the temperature using $T^{\outp} = 
+T(\rho^\outp,h^\outp,X_k^\outp)$ for planar geometry or $T^{\outp} =
+T(\rho^\outp,p_0^\inp,X_k^\outp)$ for spherical geometry, with this behavior
+controlled by \runparam{use\_tfromp}.
 Note that the density remains unchanged within {\bf React State}, i.e.,
 $\rho^{\outp} = \rho^{\inp}$.
 
@@ -316,13 +320,13 @@ $\rho^{\outp} = \rho^{\inp}$.
   time-centered edge states, $\rho_0^{\outp,\nph}$,
   since they are used later in discretization of $\etarho$ for planar problems.
 \begin{description}
-\item[planar:] We discretize equation (\ref{eq:Base State Density}) to
+\item[planar:] We discretize equation (\ref{eq:flow:base_density}) to
   compute the new base state density,
 \begin{equation}
 \rho_{0,j}^{\outp} = \rho_{0,j}^{\inp} - \frac{\dt}{\dr} \left [ \left( \rho_0^{\outp,\nph} w_0^{\inp}\right)_{j+\myhalf} - \left( \rho_0^{\outp,\nph} w_0^{\inp}\right)_{j-\myhalf} \right ].
 \end{equation}
-  We compute the time-centered edge states, $\rho_0^{\outp,\nph}$,
-  by discretizing an expanded form of equation (\ref{eq:Base State Density}):
+  We compute the time-centered edge states, ${\rho_0}^{\outp,\nph}_{j\pm\myhalf}$,
+  by discretizing an expanded form of equation (\ref{eq:flow:base_density}):
 \begin{equation}
 \frac{\partial \rho_0}{\partial t} + w_0 \frac{\partial \rho_0}{\partial r} = - \rho_0 \frac{\partial w_0}{\partial r},
 \end{equation}
@@ -334,7 +338,7 @@ $\rho^{\outp} = \rho^{\inp}$.
 \end{equation}
   In order to compute the time-centered edge states, an additional geometric 
   term is added to the forcing, due to the spherical discretization of 
-  (\ref{eq:Base State Density}):
+  (\ref{eq:flow:base_density}):
 \begin{equation}
 \frac{\partial \rho_0}{\partial t} + w_0 \frac{\partial \rho_0}{\partial r} = - \rho_0 \frac{\partial w_0}{\partial r} - \frac{2 \rho_0 w_0}{r}.
 \end{equation}
@@ -361,13 +365,13 @@ p_{0,j+1}^{\outp} = p_{0,j}^{\outp} + \Delta r g_{j+\myhalf}\frac{\left(\rho_{0,
 \item {\bf Advect Base Enthalpy}$[(\rho h)_0^\inp,w_0^\inp,\psi^\inp] \rightarrow [(\rho h)_0^\outp]$
   is the process by which we update the base state enthalpy through $\dt$ in time.  
 \begin{description}
-\item[planar:] We discretize equation (\ref{eq:Base State Enthalpy}), neglecting reaction source terms,
-  to compute the new base state enthalpy,
+\item[planar:] We discretize equation (\ref{eq:flow:enthalpy_base}), neglecting reaction 
+source terms, to compute the new base state enthalpy,
 \begin{equation}
 (\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} - \frac{\dt}{\Delta r} \left\{ \left[ (\rho h)_0^{\nph} w_0^{\inp}\right]_{j+\myhalf} - \left[ (\rho h)_0^{\nph} w_0^{\inp}\right]_{j-\myhalf} \right\} + \dt\psi_j^{\inp}.
 \end{equation}
   We compute the time-centered edge states, $(\rho h)_0^{\nph}$, by discretizing
-  an expanded form of equation (\ref{eq:Base State Enthalpy}):
+  an expanded form of equation (\ref{eq:flow:enthalpy_base}):
 \begin{equation}
 \frac{\partial (\rho h)_0}{\partial t} + w_0 \frac{\partial (\rho h)_0}{\partial r} = -(\rho h)_0 \frac{\partial w_0}{\partial r} + \psi.
 \end{equation}
@@ -379,7 +383,7 @@ p_{0,j+1}^{\outp} = p_{0,j}^{\outp} + \Delta r g_{j+\myhalf}\frac{\left(\rho_{0,
 \end{eqnarray}
   In order to compute the time-centered edge states, an additional geometric 
   term is added to the forcing, due to the spherical discretization of 
-  (\ref{eq:Base State Enthalpy}):
+  (\ref{eq:flow:enthalpy_base}):
 \begin{equation}
 \frac{\partial (\rho h)_0}{\partial t} + w_0 \frac{\partial (\rho h)_0}{\partial r} = -(\rho h)_0 \frac{\partial w_0}{\partial r} - \frac{2 (\rho h)_0 w_0}{r} + \psi.
 \end{equation}
@@ -393,10 +397,9 @@ are different for planar and spherical geometries.
 \item {\bf Compute} {\boldmath $w_0$} {\bf Planar}
 $[\Sbar^{\inp},\gammabar^{\inp}, p_0^{\inp},\psi^{\inp}]\rightarrow [w_0^{\outp}]$:
 
-In Paper III, we showed that $\psi=\etarho g$ for planar geometries, and 
-derived an alternate expression for equation (\ref{eq:w0 divergence}).
-We compute $w_0$ using equation (35) in Paper III using the following 
-discretization:
+In Paper III, we showed that $\psi=\etarho g$ for planar geometries,
+and derived derived Eq.~\ref{eq:flow:dw0dr_planar} as an alternate
+expression for Eq.~\ref{eq:w0 divergence}.  We discretize this as:
 \begin{equation}
 \frac{w_{0,j+\myhalf}^\outp-w_{0,j-\myhalf}^\outp}{\Delta r} = \left(\Sbar^{\inp} - \frac{1}{\gammabar^{\inp} p_0^{\inp}}\psi^{\inp}\right)_j,
 \end{equation}
@@ -418,7 +421,7 @@ giving:
 \begin{equation}
 \frac{1}{r^2} \frac{\partial}{\partial r} \left (r^2 w_0 \right ) = \Sbar - \frac{1}{\gammabar p_0} \underbrace{\left( \frac{\partial p_0}{\partial t} + w_0 \frac{\partial p_0}{\partial r} \right)}_{\psi}.\label{eq:psi def}
 \end{equation}
-We solve this equation for $w_0$ as described in Appendix of the multilevel paper.
+We solve this equation for $w_0$ as described in Appendix~B of the multilevel paper.
 
 \end{description}
 
