@@ -108,7 +108,7 @@ where $\beta_0$ is a density-like variable that carries background
 \end{equation}
 and 
 \begin{equation}
-S = -\sigma\sum_k\xi_k\omegadot_k + \frac{1}{\rho p_\rho}\sum_k p_{X_k}\omegadot_k + \sigma\Hnuc + \sigma\Hext
+S = -\sigma\sum_k\xi_k\omegadot_k + \frac{1}{\rho p_\rho}\sum_k p_{X_k}\omegadot_k + \sigma\Hnuc + \sigma\Hext + \frac{\sigma}{\rho} \nabla \cdot \kth \nabla T
 \end{equation}
 where $p_{X_k} \equiv \left. \partial p / \partial X_k
 \right|_{\rho,T,X_{j,j\ne k}}$, $\xi_k \equiv \left. \partial h / 
@@ -117,7 +117,8 @@ p_\rho \equiv \left. \partial p/\partial \rho \right |_{T, X_k}$, and
 $\sigma \equiv p_T/(\rho c_p p_\rho)$, with
 $p_T \equiv \left. \partial p / \partial T \right|_{\rho, X_k}$ and
 $c_p \equiv \left.  \partial h / \partial T
-\right|_{p,X_k}$ is the specific heat at constant pressure.   
+\right|_{p,X_k}$ is the specific heat at constant pressure.   The last
+term is only present if we are using thermal diffusion (\runparam{use\_thermal\_diffusion} {\tt = T}).  In this term, $\kth$ is the thermal conductivity.
 
 In this constraint, $\gammabar$ is the lateral average of
 $\Gamma_1 \equiv d\log p / d\log \rho |_s$.  Using the lateral average
@@ -126,19 +127,6 @@ divergence.  \cite{KP:2012} discuss the general case where we want to
 keep the local variations of $\Gamma_1$ (and we explored this in paper
 III).  We also look at this in \S~\ref{sec:flow:gamma1vary}.
 
-
-In practice, we calculate $w_0$ by integrating
-the one-dimensional divergence constraint:
-\begin{equation}
-\frac{\partial w_0}{\partial r} = \Sbar - \frac{1}{\gammabar p_0} \etarho g \enskip 
-\end{equation}
-Then we define
-\begin{equation}
-- \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} = \frac{\partial w_0}{\partial t} + 
-   w_0 \frac{\partial w_0}{\partial r} \enskip, \label{eq:pizero}
-\end{equation}
-once $w_0$ at the old and new times is known, and the advective term is computed explicitly.
-Then we can include this for completeness in the update for $\ut.$
 
 
 
@@ -182,15 +170,17 @@ $\Ubt$, that governs the local dynamics, i.e.,
 \end{equation}
 with
 $\overline{(\Ubt\cdot\eb_r)} = 0$ and
-$w_0 = \overline{(\Ub\cdot\eb_r)}$.
-The velocity evolution equations are then \MarginPar{we need the $\beta_0$ here}
+$w_0 = \overline{(\Ub\cdot\eb_r)}$---the motivation for this splitting was given in paper~II.
+The velocity evolution equations are then 
 \begin{eqnarray}
 \frac{\partial w_0}{\partial t} &=& -w_0\frac{\partial w_0}{\partial
-  r} - \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r},\label{eq:w0
-  evolution}\\ \frac{\partial\Ubt}{\partial t} &=& -\Ub\cdot\nabla\Ubt
+  r} - \frac{\beta_0}{\rho_0}\frac{\partial(\pi_0/\beta_0)}{\partial r},\label{eq:w0
+  evolution}\\ 
+%
+\frac{\partial\Ubt}{\partial t} &=& -(\Ubt + w_0\er)\cdot\nabla\Ubt
   - \left(\Ubt\cdot\eb_r\right)\frac{\partial w_0}{\partial r}\eb_r -
 \frac{1}{\rho}\nabla\pi +
-\frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r -
+\frac{\beta_0}{\rho_0}\frac{\partial(\pi_0/\beta_0)}{\partial r}\eb_r -
 \frac{\rho-\rho_0}{\rho}g\eb_r.\label{eq:utildeupd}
 \end{eqnarray}
 where $\pi_0$ is the base state component of the perturbational pressure.
@@ -206,6 +196,28 @@ The divergence constraint for $\Ubt$ can be found by subtracting
 \begin{equation}
 \nabla\cdot\left(\beta_0\Ubt\right) = \beta_0\left(S-\Sbar\right).\label{eq:utilde divergence}
 \end{equation}
+
+
+
+\subsection{Base State Expansion}
+
+
+In practice, we calculate $w_0$ by integrating
+the one-dimensional divergence constraint:
+\begin{equation}
+\frac{\partial w_0}{\partial r} = \Sbar - \frac{1}{\gammabar p_0} \etarho g \enskip 
+\end{equation}
+Then we define \MarginPar{this term needs the $\beta_0$'s as shown.  Also, is this really
+the form, or should it be $\overline{(\beta_0/\rho_0) \partial (\pi_0/\beta_0)/\partial r}$?}
+\begin{equation}
+- \frac{\beta_0}{\rho_0} \frac{\partial (\pizero/\beta_0)}{\partial r} = \frac{\partial w_0}{\partial t} + 
+   w_0 \frac{\partial w_0}{\partial r} \enskip, \label{eq:pizero}
+\end{equation}
+once $w_0$ at the old and new times is known, and the advective term is computed explicitly.
+Then we can include this for completeness in the update for $\ut.$
+
+
+
 
 \subsection{Energy}
 
@@ -225,6 +237,10 @@ where we defined
 \begin{equation}
 \psi \equiv \frac{\partial p_0}{\partial t} + w_0 \frac{\partial p_0}{\partial r}
 \end{equation}
+
+In paper~III, we showed that for a plane-parallel atmosphere with constant gravity,
+$\psi = \etarho g$
+
 
 At times, we will define a temperature equation by writing $h = h(T,p,X_k)$
 and differentiating:
