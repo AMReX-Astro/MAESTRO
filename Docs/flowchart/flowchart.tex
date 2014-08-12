@@ -56,6 +56,7 @@ of the species is described by their create rate, $\omegadot_k$, and the species
 are defined by their mass fractions, $X_k \equiv \rho_k / \rho$, giving
 \begin{equation}
 \frac{\partial \rho X_k}{\partial t} + \nabla \cdot (\rho \Ub X_k) = \rho \omegadot_k
+\label{eq:flow:rhoX}
 \end{equation}
 and
 \begin{equation}
@@ -85,6 +86,7 @@ for all time.  This gives
 where
 \begin{equation}
 \etarho = \overline{\left(\rho'\Ub\cdot\eb_r\right)}
+\label{eq:flow:etarho}
 \end{equation}
 In practice, we correct the drift by simply setting $\rho_0 =
 \overline{\rho}$ after the advective update of $\rho$.  However we still need to
@@ -109,6 +111,7 @@ where $\beta_0$ is a density-like variable that carries background
 and 
 \begin{equation}
 S = -\sigma\sum_k\xi_k\omegadot_k + \frac{1}{\rho p_\rho}\sum_k p_{X_k}\omegadot_k + \sigma\Hnuc + \sigma\Hext + \frac{\sigma}{\rho} \nabla \cdot \kth \nabla T
+\label{eq:flow:S}
 \end{equation}
 where $p_{X_k} \equiv \left. \partial p / \partial X_k
 \right|_{\rho,T,X_{j,j\ne k}}$, $\xi_k \equiv \left. \partial h / 
@@ -181,7 +184,7 @@ The velocity evolution equations are then
   - \left(\Ubt\cdot\eb_r\right)\frac{\partial w_0}{\partial r}\eb_r -
 \frac{1}{\rho}\nabla\pi +
 \frac{\beta_0}{\rho_0}\frac{\partial(\pi_0/\beta_0)}{\partial r}\eb_r -
-\frac{\rho-\rho_0}{\rho}g\eb_r.\label{eq:utildeupd}
+\frac{\rho-\rho_0}{\rho}g\eb_r.\label{eq:flow:utildeupd}
 \end{eqnarray}
 where $\pi_0$ is the base state component of the perturbational pressure.
 By laterally averaging to equation (\ref{eq:U divergence}),
@@ -267,6 +270,7 @@ Subtracting it from the full enthalpy equation gives:
 \frac{\partial(\rho h)'}{\partial t} = -\Ub\cdot\nabla(\rho h)' - (\rho h)'\nabla\cdot\Ub - 
   \nabla\cdot\left[(\rho h)_0\Ubt\right] + \Ubt\cdot\nabla p_0 
    + ( \rho\Hnuc - \overline{\rho \Hnuc}) + (\rho\Hext - \overline{\rho \Hext}) 
+\label{eq:flow:rhohprime}
 \end{equation}
 
 %-----------------------------------------------------------------------------
@@ -430,7 +434,7 @@ We solve this equation for $w_0$ as described in Appendix~B of the multilevel pa
 \subsection{Single Step}
 
 
-\begin{description}
+\begin{description}\itemsep 1em
 
 %--------------------------------------------------------------------------
 % STEP 0
@@ -469,15 +473,8 @@ Call {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n, p_0^n]
 
 \item Compute $S^{\nph,\star\star}$.  We compute an estimate for the
   time-centered expansion term in the velocity divergence constraint,
-  as given in paper~III equation (19),
-\begin{equation}
-  S =  -\sigma  \sum_k  \xi_k \omegadot_k  + 
-  \frac{1}{\rho p_\rho} \sum_k p_{X_k}  {\omegadot}_k  + \sigma \Hnuc + \sigma \Hext 
-  + \frac{\sigma}{\rho}\nabla\cdot\kth\nabla T \enskip .
-\label{eq:defineS} 
-\end{equation}
-
-  For the first time step ($n=0$), we set
+  as given in Eq.~\ref{eq:flow:S}.  For the first time step ($n=0$),
+  we set
 \begin{equation}
 S^{n+\myhalf,\star\star} = \frac{S^0 + S^1}{2},
 \end{equation}
@@ -504,11 +501,11 @@ S^{\nph,\star\star} = S^n + \frac{\dt^n}{2} \frac{S^n - S^{n-1}}{\dt^{n-1}}.
 \item Compute the provisional base state velocity forcing, using equation (38)
   from paper~III,
 \begin{equation}
--\frac{1}{\rho_0} \frac{\partial \pi_0}{\partial r} = \frac{\partial w_0}{\partial t} + w_0 \frac{\partial w_0}{\partial r}, \label{eq:pizero}
+-\frac{\beta_0}{\rho_0} \frac{\partial (\pi_0/\beta_0)}{\partial r} = \frac{\partial w_0}{\partial t} + w_0 \frac{\partial w_0}{\partial r}, \label{eq:pizero}
 \end{equation}
   with the following discretization:
 \begin{equation}
-\left ( \frac{1}{\rho_0} \frac{\partial \pi_0}{\partial r} \right )^{n,\star} = -\frac{w_0^{\nph,\star} - w_0^\nmh}{(\dt^n+\dt^{n-1})/2} - w_0^{n,\star} \left(\frac{\partial w_0}{\partial r}\right)^{n,\star},
+\left ( \frac{\beta_0}{\rho_0} \frac{\partial (\pi_0/\beta_0)}{\partial r} \right )^{n,\star} = -\frac{w_0^{\nph,\star} - w_0^\nmh}{(\dt^n+\dt^{n-1})/2} - w_0^{n,\star} \left(\frac{\partial w_0}{\partial r}\right)^{n,\star},
 \end{equation} 
   where $w_0^{n,\star}$ and $(\partial w_0 / \partial r)^{n,\star}$ are defined as
 \begin{eqnarray}
@@ -524,15 +521,7 @@ w_0^{n,\star} &=& \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\
 \item[Step 3.] {\em Construct the provisional time-centered advective velocity on 
 edges, $\uadvone$.}
 
-The local velocity field is described by paper III equation (37),
-\begin{equation}
-\frac{\partial\Ubt}{\partial t} = 
-- \left(\Ubt+w_0\right) \cdot \nabla \Ubt
-- \left(\Ubt \cdot \eb_r\right) \frac{\partial w_0}{\partial r} \eb_r
-- \frac{1}{\rho} \nabla\pi
-+ \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \eb_r
-- \frac{(\rho-\rhozero)}{\rho} \; g \; \eb_r  \label{eq:utildeupd}  \enskip .
-\end{equation}
+The local velocity field is described by Eq.~\ref{eq:flow:utildeupd}.
 From this, we compute time-centered edge 
 velocities, $\uadvonedag$, using 
 $\Ub = \Ubt^n + w_0^{\nph,\star}$.  The $\dagger$ superscript refers to the 
@@ -545,7 +534,10 @@ $\overline{(\uadvone\cdot\eb_r)}=0$ as well as
 \nabla \cdot \left(\beta_0^n \uadvone\right) &=& \beta_0^n \left(S^{\nph,\star\star} - \overline{S^{\nph,\star\star}}\right),\\
  \beta_0^n &=& \beta_0 \left(\rho_0^n, p_0^n, \overline{\Gamma_1^n}\right),
 \end{eqnarray}
-where $\beta_0$ is computed as described in Appendix C of Paper III.
+where $\beta_0$ is computed as described in Appendix C of Paper III (although
+note that an alternate procedure that uses linear reconstruction of $g$ in
+constructing $\beta_0$ is enabled with \runparam{use\_linear\_grav\_in\_beta}).
+
 
 %--------------------------------------------------------------------------
 % STEP 4
@@ -560,13 +552,13 @@ where $\beta_0$ is computed as described in Appendix C of Paper III.
 {\bf Advect Base Density}$[\rho_0^{n},w_0^{\nph,\star}] \rightarrow [\rho_0^{(2a),\star}, \rho_0^{\nph,\star,\pred}]$.
 
 \item Update $(\rho X_k)$ using a discretized version of the species 
-continuity equation,
+continuity equation, Eq.~\ref{eq:flow:rhoX}, where we omit the
+reaction terms, which were already accounted for in {\bf React State}:
 \begin{equation}
 \frac{\partial (\rho X_k)}{\partial t} + \nabla \cdot (\Ub \rho X_k) = 0 \enskip .
 \label{eq:species}
 \end{equation}
-where we omit the reaction terms, which were already 
-accounted for in {\bf React State}.  The update consists of two steps:
+The update consists of two steps:
 
 \begin{enumerate}
 \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
@@ -595,7 +587,7 @@ accounted for in {\bf React State}.  The update consists of two steps:
 \end{equation}
   where the base state density terms are mapped to Cartesian edges.
   Then,\\
-  $(\rho X_k)^{\nph,\star,\pred} = (\rho^{\nph,\star,\pred}X_k^{\nph,\star,\pred})$.
+  $(\rho X_k)^{\nph,\star,\pred} = \rho^{\nph,\star,\pred} \, X_k^{\nph,\star,\pred}$.
 
 \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2),\star}$ using
 \begin{eqnarray}
@@ -610,7 +602,7 @@ X_k^{(2),\star} = (\rho X_k)^{(2),\star} / \rho^{(2),\star}.
 
 \end{enumerate}
 
-\item Define a radial edge-centered $\etarho^{\nph,\star}$.
+\item Define a radial edge-centered $\etarho^{\nph,\star}$ (Eq.~\ref{eq:flow:etarho}).
 
 \begin{description}
 \item For planar geometry, since $\etarho = \overline{\rho'(\Ub\cdot\eb_r)} = \overline{\rho(\Ub\cdot\eb_r)}-\overline{\rho_0(\Ub\cdot\eb_r}) = \overline{\rho(\Ub\cdot\eb_r)} - \rho_0w_0$,
@@ -619,7 +611,8 @@ X_k^{(2),\star} = (\rho X_k)^{(2),\star} / \rho^{(2),\star}.
 && - w_0^{\nph,\star} \rho_0^{\nph,\star,\pred},
 \end{eqnarray}
 \item For spherical geometry, first construct 
-$\etarho^{{\rm cart},\nph,\star} = [\rho'(\Ub\cdot\eb_r)]^{\nph,\star}$ on Cartesian cell centers using:
+$\etarho^{{\rm cart},\nph,\star} =
+[\rho'(\Ub\cdot\eb_r)]^{\nph,\star}$ on Cartesian cell centers using:
 \begin{eqnarray}
 \etarho^{{\rm cart},\nph,\star} &=& \left[\left(\frac{\rho^{(1)}+\rho^{(2),\star}}{2}\right)-\left(\frac{\rho_0^n+\rho_0^{(2a),\star}}{2}\right)\right] \nonumber \\
 &&\cdot \left( \uadvone \cdot \eb_r  + w_0^{\nph,\star}\right).
@@ -664,7 +657,7 @@ Then, call\\
 {\bf Advect Base Enthalpy}$[(\rho h)_0^{n}, w_0^{\nph,\star}, \psi^{\nph,\star}] \rightarrow [(\rho h)_0^{n+1,\star}]$.
 
 \item Update the enthalpy using a discretized version of the enthalpy
-evolution equation, again omitting the reaction and heating terms
+evolution equation (Eq.~\ref{eq:flow:enthalpy}), again omitting the reaction and heating terms
 since we already accounted for
 them in {\bf React State}.  This equation takes the form:
 \begin{equation}
@@ -682,11 +675,11 @@ equilibrium.  The update consists of two steps:
 \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
 \item Compute the time-centered enthalpy edge state, $(\rho h)^{\nph,\star,\pred},$
-  for the conservative update of $(\rho h)^{(1)}$.  There are a variety
-   of quantities that we can predict to the interfaces here (controlled
-   by \runparam{enthalpy\_pred\_type}---see Chapter~\ref{ch:pert}).  For
-   the default case, we use the perturbational
-  enthalpy equation, neglecting reactions,
+  for the conservative update of $(\rho h)^{(1)}$.  There are a
+   variety of quantities that we can predict to the interfaces here
+   (controlled by \runparam{enthalpy\_pred\_type}---see
+   Chapter~\ref{ch:pert}).  For the default case, we use the
+   perturbational enthalpy equation, Eq.~\ref{eq:flow:rhohprime}, neglecting reactions,
 \begin{equation}
 \frac{\partial(\rho h)'}{\partial t} = -\Ub\cdot\nabla(\rho h)' - 
    (\rho h)'\nabla\cdot\Ub - \nabla\cdot\left[(\rho h)_0\Ubt\right] + \Ubt\cdot\nabla p_0 
@@ -733,6 +726,7 @@ we recompute enthalpy using
 \begin{equation}
 (\rho h)^{(2),\star} = \rho^{(2),\star}h\left(\rho^{(2),\star},p_0^{n+1,\star},X_k^{(2),\star}\right).
 \end{equation}
+This behavior is controlled by \runparam{do\_eos\_h\_above\_cutoff}.
 
 \item Update the temperature using the equation of state:
 $T^{(2),\star} = 
@@ -740,6 +734,7 @@ $T^{(2),\star} =
 $T^{(2),\star} = 
   T(\rho^{(2),\star}, p_0^{n+1,\star}, X_k^{(2),\star})$ (spherical geometry).
 \end{enumerate}
+As before, this behavior is controlled by \runparam{use\_tfromp}.
 
 %--------------------------------------------------------------------------
 % STEP 5
@@ -761,12 +756,15 @@ velocity, $w_0^{\nph}$, and base state velocity forcing.}
 
 \item Compute $S^{\nph,\star}$.  First, compute $S^{n+1,\star}$ with
 \begin{equation}
-S^{n+1,\star} =  -\sigma  \sum_k  \xi_k  (\omegadot_k)^{(2),\star}  + \frac{1}{\rho^{n+1,\star} p_\rho} \sum_k p_{X_k}  ({\omegadot}_k)^{(2),\star} + \sigma \Hnuc^{(2),\star} + \sigma \Hext^{(2),\star},
+S^{n+1,\star} =  -\sigma  \sum_k  \xi_k  (\omegadot_k)^{(2),\star}  + 
+   \frac{1}{\rho^{n+1,\star} p_\rho} \sum_k p_{X_k}  ({\omegadot}_k)^{(2),\star} + 
+   \sigma \Hnuc^{(2),\star} + \sigma \Hext^{(2),\star},
 \end{equation}
   where $(\omegadot_k)^{(2),\star} = (\rho \omegadot_k)^{(2),\star} /
   \rho^{(2),\star}$ and the thermodynamic quantities are defined using
   $\rho^{n+1,\star}, X_k^{n+1,\star},$ and $T^{n+1,\star}$ as inputs to
-  the equation of state.  Then, define
+  the equation of state.  If we are using diffusion then we would include the diffusion
+  term in $S$.  Then, define
 \begin{equation}
 \overline{S^{\nph,\star}} = {\mathrm{\bf Avg}} (S^{\nph,\star}),
 \qquad
@@ -856,7 +854,7 @@ $\overline{(\uadvtwo\cdot\eb_r)}=0$ as well as
 \begin{equation}
 \rho^{\nph,\pred} = \rho^{'\nph,\pred} + \frac{\rho_0^n + \rho_0^{(2a)}}{2}.
 \end{equation}
-  Then, $(\rho X_k)^{\nph,\pred} = (\rho^{\nph,\pred}X_k^{\nph,\pred})$.
+  Then, $(\rho X_k)^{\nph,\pred} = \rho^{\nph,\pred} \, X_k^{\nph,\pred}$.
 
 \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$ using
 \begin{equation}
@@ -1023,7 +1021,7 @@ Then, we define
 \rho^\nph = \frac{\rho^n + \rho^{n+1}}{2}, \qquad \rho_0^\nph = \frac{\rho_0^n + \rho_0^{n+1}}{2}.
 \end{equation}
 We update the velocity field $\Ubt^n$ to $\Ubt^{n+1,\dagger}$ by discretizing 
-equation (\ref{eq:utildeupd}) as
+equation (\ref{eq:flow:utildeupd}) as
 \begin{eqnarray}
 \Ubt^{n+1,\dagger} 
 &=& \Ubt^n - \dt \left[\left(\uadvtwo+ w_0^{\nph} \eb_r\right) \cdot \nabla \Ubt^{\nph,\pred} \right] \nonumber \\
