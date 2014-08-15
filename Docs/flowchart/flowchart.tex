@@ -1133,13 +1133,27 @@ writing $\Gamma_1 = \gammabar + \delta \Gamma_1$.  This gives us:
   \frac{\partial p_0}{\partial t} \enskip .
 \end{equation}
 
-Assuming that $\delta \Gamma_1 \ll \gammabar$, we then have \MarginPar{I think that we include to $\delta \Gamma_1^2$ now}
+Assuming that $\delta \Gamma_1 \ll \gammabar$, we then
+have 
 \begin{equation}
-\nablab \cdotb \Ub + \frac{1}{\gammabar p_0} \Ub \cdotb \nablab p_0 = S - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} +
-\frac{\delta \Gamma_1}{\gammabar^2 p_0} \frac{\partial p_0}{\partial t} +
-\frac{\delta \Gamma_1}{\gammabar^2 p_0} \Ub \cdotb \nablab p_0 \enskip , \label{eq:gammafull}
+\nablab \cdotb \Ub + \frac{1}{\gammabar p_0} \Ub \cdotb \nablab p_0 
+ \left [ 1 - \frac{\delta\Gamma_1}{\gammabar} + \frac{(\delta\Gamma_1)^2}{\gammabar^2} \right ]
+= S - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} 
+ \left [ 1 - \frac{\delta\Gamma_1}{\gammabar} + \frac{(\delta\Gamma_1)^2}{\gammabar^2} \right ] \\
 \end{equation}
-The base state evolution equation is the average of this over a layer
+Grouping by order of the correction, we have
+\begin{equation}
+\nablab \cdotb \Ub + \frac{1}{\gammabar p_0} \Ub \cdotb \nablab p_0 
+= S - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} +
+\underbrace{\frac{\delta \Gamma_1}{\gammabar^2 p_0} 
+            \left [\frac{\partial p_0}{\partial t} + \Ub \cdotb \nablab p_0\right ]}_{\mbox{first order corrections}} 
+ -
+  \underbrace{\frac{(\delta\Gamma_1)^2}{\gammabar^3 p_0}
+            \left [ \frac{\partial p_0}{\partial t} + \Ub \cdotb \nablab p_0 \right ]}_{\mbox{second order corrections}} \enskip , \label{eq:gammafull}
+\end{equation}
+
+\subsubsection{Keeping to First Order in $\delta\Gamma_1$}
+The base state evolution equation is the average of Eq.~\ref{eq:gammafull} over a layer
 \begin{equation}
 \nablab \cdot w_0 \er + \frac{1}{\gammabar p_0} w_0 \er \cdotb \nablab p_0 =
 \Sbar - \frac{1}{\gammabar p_0} \frac{\partial p_0}{\partial t} + \overline{
