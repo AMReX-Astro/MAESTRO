@@ -140,8 +140,8 @@ The compressible momentum equation (written in terms of velocity is):
 \rho \frac{\partial \Ub}{\partial t} + \rho \Ub \cdot \nabla \Ub + \nabla p = -\rho |g| \er
 \end{equation}
 Subtracting off the base state, and defining the perturbational
-pressure (sometimes called the dynamic pressure) as $\pi = p - p_0$,
-and perturbational density as $\rho' = \rho - \rho_0$, we have:
+pressure (sometimes called the dynamic pressure) as $\pi \equiv p - p_0$,
+and perturbational density as $\rho' \equiv \rho - \rho_0$, we have:
 \begin{equation}
 \rho \frac{\partial \Ub}{\partial t} + \rho \Ub \cdot \nabla \Ub + \nabla \pi = -\rho' |g| \er
 \end{equation}
@@ -176,17 +176,17 @@ with
 $\overline{(\Ubt\cdot\eb_r)} = 0$ and
 $w_0 = \overline{(\Ub\cdot\eb_r)}$---the motivation for this splitting was given in paper~II.
 The velocity evolution equations are then 
-\begin{eqnarray}
-\frac{\partial w_0}{\partial t} &=& -w_0\frac{\partial w_0}{\partial
+\begin{align}
+\frac{\partial w_0}{\partial t} &= -w_0\frac{\partial w_0}{\partial
   r} - \frac{\beta_0}{\rho_0}\frac{\partial(\pi_0/\beta_0)}{\partial r},\label{eq:w0
   evolution}\\ 
 %
-\frac{\partial\Ubt}{\partial t} &=& -(\Ubt + w_0\er)\cdot\nabla\Ubt
+\frac{\partial\Ubt}{\partial t} &= -(\Ubt + w_0\er)\cdot\nabla\Ubt
   - \left(\Ubt\cdot\eb_r\right)\frac{\partial w_0}{\partial r}\eb_r -
 \frac{\beta_0}{\rho}\nabla\left(\frac{\pi}{\beta_0} \right) +
 \frac{\beta_0}{\rho_0}\frac{\partial(\pi_0/\beta_0)}{\partial r}\eb_r -
 \frac{\rho-\rho_0}{\rho}g\eb_r.\label{eq:flow:utildeupd}
-\end{eqnarray}
+\end{align}
 where $\pi_0$ is the base state component of the perturbational pressure.
 By laterally averaging to equation (\ref{eq:U divergence}),
 we obtain a divergence constraint for $w_0$:
