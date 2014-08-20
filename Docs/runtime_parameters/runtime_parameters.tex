@@ -44,6 +44,9 @@
 \verb=  small_temp  = &    &  5.d6 \\
 \rowcolor{tableShade}
 \verb=  use_eos_e_instead_of_h  = &   In deriving the temperature from the $h$, first subtract off $p_0/\rho$ to define $e$, and use that as the input to the EOS.  &  .false. \\
+\verb=  use_pprime_in_tfromp  = &    &  .false. \\
+\rowcolor{tableShade}
+\verb=  use_tfromp  = &   When updating temperature, use $T=T(\rho,p_0,X) $ rather than $T=T(\rho,h,X)$.  &  .false. \\
 
 
 \end{longtable}
@@ -83,9 +86,7 @@
 
 
 \rowcolor{tableShade}
-\verb=  sdc_couple_mac_velocity  = &   recompute MAC velocity at the beginning of each SDC iter if .false., only recompute MAC velocity at the beginning of the first iter  &  .false. \\
-\verb=  sdc_hold_mac_velocity  = &   if true, never recompute MAC velocity, no matter what the other sdc flags are  &  .false. \\
-\rowcolor{tableShade}
+\verb=  sdc_couple_mac_velocity  = &   recompute MAC velocity at the beginning of each SDC iter  &  .false. \\
 \verb=  sdc_iters  = &   how many SDC iteractions to take (requires the code be compiled with {\tt SDC := t}  &  1 \\
 
 
@@ -220,6 +221,7 @@
 \verb=  burner_threshold_species  = &   Name of the species to be used in burner threshold  &  "" \\
 \rowcolor{tableShade}
 \verb=  do_burning  = &   turn on (.true.) or off (.false.) burning  &  .true. \\
+\verb=  do_subgrid_burning  = &   break a zone into subzones, call the burner in each subzone and then average the result to the original cell  &  .false. \\
 
 
 \end{longtable}
@@ -493,13 +495,11 @@
 \verb=  sponge_start_factor  = &   The sponge begins at sponge\_center\_density * sponge\_start\_factor.  &  3.333d0 \\
 \verb=  stop_initial_convection  = &   timestep beyond which we set {\tt drive\_initial\_convection} = F  &  -1 \\
 \rowcolor{tableShade}
-\verb=  use_alt_energy_fix  = &   modify the momentum equation to have $(\beta_0/\rho) \nabla (\pi/\beta_0)$ instead of just $(1/\rho) \nabla (\pi)$  &  .false. \\
+\verb=  use_alt_energy_fix  = &   modify the momentum equation to have $(\beta_0/\rho) \nabla (\pi/\beta_0)$ instead of just $(1/\rho) \nabla (\pi)$  &  .true. \\
 \verb=  use_delta_gamma1_term  = &   turns on second order correction to delta gamma1 term  &  .false. \\
 \rowcolor{tableShade}
 \verb=  use_etarho  = &   turn on the etarho term as described in flow chart  &  .true. \\
 \verb=  use_linear_grav_in_beta  = &   how to represent gravity in the $\beta_0$ integration: .true. = piecewise linear .false. = piecewise constant  &  .false. \\
-\rowcolor{tableShade}
-\verb=  use_tfromp  = &   When updating temperature, use $T=T(\rho,p_0,X) $ rather than $T=T(\rho,h,X)$.  &  .false. \\
 
 
 \end{longtable}
@@ -540,7 +540,7 @@
 
 \rowcolor{tableShade}
 \verb=  cg_verbose  = &   Verbosity of bottom solver  &  0 \\
-\verb=  hg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
+\verb=  hg_bottom_solver  = &   valid values are $\ge$ 0  &  -1 \\
 \rowcolor{tableShade}
 \verb=  hg_cycle_type  = &   Type of cycle used in the nodal multigrid -- 1 = F-cycle, 2 = W-cycle, 3 = V-cycle  &  3 \\
 \verb=  hg_dense_stencil  = &   In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 7-point Laplacian (.false.).  &  .true. \\
@@ -548,7 +548,7 @@
 \verb=  max_mg_bottom_nlevels  = &   if mg\_bottom\_solver == 4, then how many mg levels can the bottom solver mgt object have  &  1000 \\
 \verb=  mg_bottom_nu  = &   number of smoothing iterations to do after the multigrid bottom solver  &  10 \\
 \rowcolor{tableShade}
-\verb=  mg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
+\verb=  mg_bottom_solver  = &   valid values are $\ge$ 0  &  -1 \\
 \verb=  mg_cycle_type  = &   Type of cycle used in the MAC multigrid -- 1 = F-cycle, 2 = W-cycle, 3 = V-cycle  &  3 \\
 \rowcolor{tableShade}
 \verb=  mg_nu_1  = &   number of smoothing iterations to do going down the V-cycle  &  2 \\

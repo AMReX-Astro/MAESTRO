@@ -8,14 +8,16 @@ matplotlib.use('agg')
 
 import math
 import sys
+import numpy as np
+import os
 import pylab
 
-from yt.mods import *
+import yt
 import yt.visualization.volume_rendering.api as vr
 
 def doit(plotfile, fname):
 
-    ds = load(plotfile)
+    ds = yt.load(plotfile)
 
     cm = "gist_rainbow"
 
@@ -45,9 +47,6 @@ def doit(plotfile, fname):
 
 
     dd = ds.all_data()
-
-    ds.field_info[field].take_log = use_log
-
 
     mi = min(vals)
     ma = max(vals)
