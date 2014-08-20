@@ -154,13 +154,13 @@ contains
                             dgp(:,1,1,1), ng_dg, sp(:,1,1,:), ng_s, up(:,1,1,1), ng_u, &
                             omegap(:,1,1,:), ng_rw, hnp(:,1,1,1), ng_hn, &
                             hep(:,1,1,1), ng_he, &
-                            tp(:,1,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:), psi(n,:))
+                            tp(:,1,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
           case (2)
              call make_S_2d(n,lo, hi, srcp(:,:,1,1), ng_sr, dgtp(:,:,1,1), ng_dt, &
                             dgp(:,:,1,1), ng_dg, sp(:,:,1,:), ng_s, up(:,:,1,:), ng_u, &
                             omegap(:,:,1,:), ng_rw, hnp(:,:,1,1), ng_hn, &
                             hep(:,:,1,1), ng_he, &
-                            tp(:,:,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:), psi(n,:))
+                            tp(:,:,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
           case (3)
              if (spherical == 1) then
 
@@ -191,7 +191,7 @@ contains
                                dgp(:,:,:,1), ng_dg, sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
                                omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
                                hep(:,:,:,1), ng_he, &
-                               tp(:,:,:,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:), psi(n,:))
+                               tp(:,:,:,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
              end if
           end select
        end do
@@ -327,7 +327,7 @@ contains
   subroutine make_S_1d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
                        s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
                        rho_Hext,ng_he,thermal,ng_th, &
-                       p0,gamma1bar,dx,psi)
+                       p0,gamma1bar,dx)
 
     use bl_constants_module
     use eos_module, only: eos, eos_input_rt
@@ -351,7 +351,6 @@ contains
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: dx(:)
-    real (kind=dp_t), intent(in   ) :: psi(0:)
 
     !     Local variables
     integer         :: i, comp
@@ -403,10 +402,8 @@ contains
              delta_gamma1(i) = eos_state%gam1 - gamma1bar(i)
 
              delta_gamma1_term(i) = &
-                   ! first order term
-                   (delta_gamma1(i)/(p0(i)*gamma1bar(i)**2))*u(i)*gradp0 &
-                   ! second order term
-                   -(delta_gamma1(i)**2/(p0(i)*gamma1bar(i)**3))*(psi(i)+u(i)*gradp0)
+                  (eos_state%gam1 - gamma1bar(i))*u(i)* &
+                  gradp0/(gamma1bar(i)*gamma1bar(i)*p0(i))
           else
              delta_gamma1_term(i) = ZERO
              delta_gamma1(i) = ZERO
@@ -419,7 +416,7 @@ contains
   subroutine make_S_2d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
                        s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
                        rho_Hext,ng_he,thermal,ng_th, &
-                       p0,gamma1bar,dx,psi)
+                       p0,gamma1bar,dx)
 
     use bl_constants_module
     use eos_module, only: eos, eos_input_rt
@@ -443,7 +440,6 @@ contains
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: dx(:)
-    real (kind=dp_t), intent(in   ) :: psi(0:)
 
     !     Local variables
     integer         :: i, j, comp
@@ -496,10 +492,8 @@ contains
              delta_gamma1(i,j) = eos_state%gam1 - gamma1bar(j)
 
              delta_gamma1_term(i,j) = &
-                   ! first order term
-                   (delta_gamma1(i,j)/(p0(j)*gamma1bar(j)**2))*u(i,j,2)*gradp0 &
-                   ! second order term
-                   -(delta_gamma1(i,j)**2/(p0(j)*gamma1bar(j)**3))*(psi(j)+u(i,j,2)*gradp0)
+                  (eos_state%gam1 - gamma1bar(j))*u(i,j,2)* &
+                  gradp0/(gamma1bar(j)*gamma1bar(j)*p0(j))
           else
              delta_gamma1_term(i,j) = ZERO
              delta_gamma1(i,j) = ZERO
@@ -512,7 +506,7 @@ contains
 
   subroutine make_S_3d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
                        s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
-                       rho_Hext,ng_he,thermal,ng_th,p0,gamma1bar,dx,psi)
+                       rho_Hext,ng_he,thermal,ng_th,p0,gamma1bar,dx)
 
     use bl_constants_module
     use eos_module, only: eos, eos_input_rt
@@ -536,7 +530,6 @@ contains
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: dx(:)
-    real (kind=dp_t), intent(in   ) :: psi(0:)
 
     !     Local variables
     integer         :: i, j, k, comp
@@ -590,11 +583,8 @@ contains
                 
                 delta_gamma1(i,j,k) = eos_state%gam1 - gamma1bar(k)
                 
-                delta_gamma1_term(i,j,k) = &
-                   ! first order term
-                   (delta_gamma1(i,j,k)/(p0(k)*gamma1bar(k)**2))*u(i,j,k,3)*gradp0 &
-                   ! second order term
-                   -(delta_gamma1(i,j,k)**2/(p0(k)*gamma1bar(k)**3))*(psi(k)+u(i,j,k,3)*gradp0)
+                delta_gamma1_term(i,j,k) = (eos_state%gam1 - gamma1bar(k))*u(i,j,k,3)* &
+                     gradp0/(gamma1bar(k)*gamma1bar(k)*p0(k))
              else
                 delta_gamma1_term(i,j,k) = ZERO
                 delta_gamma1(i,j,k) = ZERO
