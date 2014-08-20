@@ -1,4 +1,5 @@
       INTEGER FUNCTION IDAMAX(N,DX,INCX)
+!$acc routine seq
 *     .. Scalar Arguments ..
       INTEGER INCX,N
 *     ..

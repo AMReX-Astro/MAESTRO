@@ -1,4 +1,5 @@
       SUBROUTINE DAXPY(N,DA,DX,INCX,DY,INCY)
+!$acc routine seq
 *     .. Scalar Arguments ..
       DOUBLE PRECISION DA
       INTEGER INCX,INCY,N
