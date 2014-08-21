@@ -8,7 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import AxesGrid
 
-def doit(file, var, log):
+def doit(file, var, log, title):
 
     # load the data
     ds = yt.load(file)
@@ -44,13 +44,14 @@ def doit(file, var, log):
         plot.axes = grid[i].axes
         plot.cax = grid.cbar_axes[i]
         
-        cb = plot.cb
-        cb.formatter = formatter
         #cb.formatter.set_scientific(True)
         #cb.formatter.set_powerlimits((-3,3))
         #plot.cax.yaxis.set_major_formatter(formatter)
 
-        #cb.update_ticks()
+        cb = plot.cb
+        cb.formatter = formatter
+        cb.update_ticks()
+
 
         p._setup_plots()
 
@@ -74,6 +75,9 @@ def doit(file, var, log):
 
     fig.set_size_inches(12.80, 7.20)
 
+    if not title == None:
+        plt.suptitle(title)
+
     plt.savefig("test.png")
 
     
@@ -84,11 +88,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--log", help="plot the log of the variable", action="store_true")
-    
+    parser.add_argument("--title", help="title to display at the top of the plot", 
+                        type=str, default=None)
     parser.add_argument("file", help="the name of the file to read", type=str)
     parser.add_argument("var", help="the name of the variable to plot", type=str)
 
     args = parser.parse_args()
 
-    doit(args.file, args.var, args.log)
+    doit(args.file, args.var, args.log, args.title)
 
