@@ -18,6 +18,10 @@ def doit(file, var, log, title):
 
     # see http://yt-project.org/docs/3.0/cookbook/complex_plots.html#multipanel-with-axes-labels
 
+    # to have better control over things, we may way to extract the slice
+    # fixed resolution buffers are in:
+    # http://yt-project.org/docs/3.0/cookbook/complex_plots.html#multi-plot-slice-and-projections
+
     fig = plt.figure()
 
     grid = AxesGrid(fig, (0.1, 0.1, 0.85, 0.85),
