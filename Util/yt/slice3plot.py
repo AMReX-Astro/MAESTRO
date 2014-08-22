@@ -1,6 +1,7 @@
 #!/bin/env python
 
 import argparse
+import os
 
 import yt
 
@@ -8,7 +9,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import AxesGrid
 
-def doit(file, var, log, title):
+def doit(file, var, log, title, outname):
 
     # load the data
     ds = yt.load(file)
@@ -18,13 +19,9 @@ def doit(file, var, log, title):
 
     # see http://yt-project.org/docs/3.0/cookbook/complex_plots.html#multipanel-with-axes-labels
 
-    # to have better control over things, we may way to extract the slice
-    # fixed resolution buffers are in:
-    # http://yt-project.org/docs/3.0/cookbook/complex_plots.html#multi-plot-slice-and-projections
-
     fig = plt.figure()
 
-    grid = AxesGrid(fig, (0.1, 0.1, 0.85, 0.85),
+    grid = AxesGrid(fig, (0.05, 0.1, 0.85, 0.85),
                     nrows_ncols = (1, 3),
                     axes_pad = 1.1,
                     label_mode = "all",
@@ -74,6 +71,9 @@ def doit(file, var, log, title):
         # cl = plt.getp(ax, 'xmajorticklabels')
         # plt.setp(cl, fontsize=10)
 
+        
+    plt.text(0.1, 0.05, "{:.3g} s".format(float(ds.current_time.d)),
+             transform=fig.transFigure, color="black")
 
         
 
@@ -82,10 +82,12 @@ def doit(file, var, log, title):
     if not title == None:
         plt.suptitle(title)
 
-    plt.savefig("test.png")
+    if outname == None:
+        outname = os.path.basename(os.path.normpath(file)) + ".png"
+
+    plt.savefig(outname)
 
     
-
 
 if __name__ == "__main__":
 
@@ -94,10 +96,11 @@ if __name__ == "__main__":
     parser.add_argument("--log", help="plot the log of the variable", action="store_true")
     parser.add_argument("--title", help="title to display at the top of the plot", 
                         type=str, default=None)
+    parser.add_argument("-o", help="output file name", type=str, default=None)
     parser.add_argument("file", help="the name of the file to read", type=str)
     parser.add_argument("var", help="the name of the variable to plot", type=str)
 
     args = parser.parse_args()
 
-    doit(args.file, args.var, args.log, args.title)
+    doit(args.file, args.var, args.log, args.title, args.o)
 
