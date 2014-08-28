@@ -21,7 +21,7 @@ contains
   subroutine extrap_to_halftime(mla,Source_nph,dSdt,Source_old,dt,the_bc_level)
     
     use variables, only: foextrap_comp
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
 

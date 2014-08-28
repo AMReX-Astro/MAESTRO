@@ -23,7 +23,7 @@ contains
     use geometry, only: spherical
     use define_bc_module, only: bc_level
     use ml_layout_module, only: ml_layout
-    use ml_restriction_module, only: ml_edge_restriction
+    use ml_cc_restriction_module, only: ml_edge_restriction
     use multifab_physbc_edgevel_module, only: multifab_physbc_edgevel
     
     type(multifab) , intent(inout) :: umac(:,:)

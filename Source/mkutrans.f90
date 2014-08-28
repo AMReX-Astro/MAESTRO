@@ -19,7 +19,7 @@ contains
     use bl_prof_module
     use create_umac_grown_module
     use geometry, only: spherical
-    use ml_restriction_module, only: ml_edge_restriction
+    use ml_cc_restriction_module, only: ml_edge_restriction
     use multifab_physbc_edgevel_module, only: multifab_physbc_edgevel
 
     type(multifab) , intent(in   ) :: u(:)

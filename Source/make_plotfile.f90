@@ -178,7 +178,7 @@ contains
     use geometry, only: spherical, nr_fine, nlevs_radial, numdisjointchunks, &
          r_start_coord, r_end_coord
     use average_module
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use bl_constants_module

@@ -32,7 +32,7 @@ contains
     use geometry, only: spherical
     use fill_3d_module
     use variables, only: foextrap_comp
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
     
@@ -341,7 +341,7 @@ contains
     use geometry, only: spherical
     use fill_3d_module
     use variables, only: foextrap_comp, rho_comp
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use probin_module, only: nodal

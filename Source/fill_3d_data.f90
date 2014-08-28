@@ -26,7 +26,7 @@ contains
     use geometry, only: spherical
     use ml_layout_module
     use multifab_physbc_module
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp
     
@@ -1376,7 +1376,7 @@ contains
 
   subroutine put_data_on_faces(mla,ccfab,comp,beta,harmonic_avg)
 
-    use ml_restriction_module, only: ml_edge_restriction
+    use ml_cc_restriction_module, only: ml_edge_restriction
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: ccfab(:)
@@ -1648,7 +1648,7 @@ contains
     use geometry, only: spherical, nr_irreg
     use ml_layout_module
     use multifab_physbc_module
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     
     real(kind=dp_t), intent(in   ) :: s0(:,0:)

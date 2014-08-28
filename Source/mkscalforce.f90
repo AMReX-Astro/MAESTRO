@@ -32,7 +32,7 @@ contains
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
     use geometry, only: spherical, nr_fine, nlevs_radial
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use fill_3d_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
@@ -524,7 +524,7 @@ contains
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp, rho_comp
     use geometry, only: spherical, nr_fine
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use fill_3d_module, only: put_1d_array_on_cart
     use multifab_fill_ghost_module
     use multifab_physbc_module
@@ -804,7 +804,7 @@ contains
     use bl_prof_module
     use variables, only: foextrap_comp, temp_comp
     use geometry, only: spherical, nr_fine
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use fill_3d_module, only: put_1d_array_on_cart

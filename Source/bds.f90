@@ -3601,7 +3601,7 @@ contains
 
   subroutine bds_velpred(u,umac,force,dx,dt,the_bc_level,mla)
 
-    use ml_restriction_module, only: ml_edge_restriction
+    use ml_cc_restriction_module, only: ml_edge_restriction
     use create_umac_grown_module
 
     type(multifab) , intent(in   ) :: u(:)

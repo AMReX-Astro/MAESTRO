@@ -33,7 +33,7 @@ contains
     use mac_multigrid_module , only : mac_multigrid
     use cc_applyop_module   ,  only : cc_applyop
     use fill_3d_module       , only : put_1d_array_on_cart, put_data_on_faces
-    use ml_restriction_module, only : ml_cc_restriction_c
+    use ml_cc_restriction_module, only : ml_cc_restriction_c
 
     use variables    , only : foextrap_comp, rho_comp, spec_comp, rhoh_comp
     use network      , only : nspec

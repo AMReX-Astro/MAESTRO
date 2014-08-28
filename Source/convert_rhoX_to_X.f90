@@ -23,7 +23,7 @@ contains
     use variables, only: spec_comp, foextrap_comp, rho_comp
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_level
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module, only: multifab_fill_ghost_cells
     use multifab_physbc_module, only: multifab_physbc
 
@@ -111,7 +111,7 @@ contains
     use variables, only: rho_comp, rhoh_comp, foextrap_comp
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_level
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module, only: multifab_fill_ghost_cells
     use multifab_physbc_module, only: multifab_physbc
 

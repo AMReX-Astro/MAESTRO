@@ -24,7 +24,7 @@ contains
     use geometry, only: spherical
     use ml_layout_module
     use define_bc_module
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use bl_prof_module

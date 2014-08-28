@@ -25,7 +25,7 @@ contains
     use geometry, only: spherical
     use fill_3d_module
     use multifab_physbc_module
-    use ml_restriction_module, only : ml_edge_restriction_c
+    use ml_cc_restriction_module, only : ml_edge_restriction_c
 
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: ufull(:)

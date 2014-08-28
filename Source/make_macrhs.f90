@@ -200,6 +200,7 @@ contains
                 do i = lo(1),hi(1)
                    delta_chi(i,j) = dpdt_factor / (gamma1bar(j)*p0(j)) * delta_p_term(i,j) / dt
                    rhs(i,j) = rhs(i,j) + div_coeff(j) * delta_chi(i,j)
+                   if (i.eq.0 .and. j.le.20) print *,'1:RHS ',j, rhs(i,j), delta_p_term(i,j)/p0(j)
                 end do
              end if
           end do
@@ -214,6 +215,7 @@ contains
                          + delta_chi(i,j) )
                    ! if doing sdc with multiple iterations, update delta_chi for next corrector
                    delta_chi(i,j) = delta_chi(i,j) + dpdt_factor / (gamma1bar(j)*p0(j)) * delta_p_term(i,j) / dt
+                   if (i.eq.0 .and. j.le.20) print *,'2:RHS ',j, rhs(i,j), delta_p_term(i,j)/p0(j)
                 end do
              end if
           end do
