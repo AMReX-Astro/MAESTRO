@@ -19,7 +19,7 @@ contains
 
     use bl_prof_module
     use multifab_physbc_module
-    use ml_restriction_module, only : ml_cc_restriction
+    use ml_cc_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp
 
@@ -111,7 +111,7 @@ contains
   subroutine make_at_halftime(phihalf,sold,snew,in_comp,out_comp,the_bc_level,mla)
 
     use multifab_physbc_module
-    use ml_restriction_module, only : ml_cc_restriction
+    use ml_cc_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
 
     type(multifab) , intent(inout) :: phihalf(:)

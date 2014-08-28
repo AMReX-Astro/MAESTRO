@@ -30,7 +30,7 @@ contains
                                      tempbar,tempbar_init,grav_cell)
 
     use restart_module
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
@@ -937,7 +937,7 @@ contains
     use probin_module, only : drdxfac, ppm_type, bds_type, prob_lo, prob_hi, do_smallscale, &
          model_file, nodal, dm_in, fix_base_state
     use multifab_physbc_module
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use multifab_fill_ghost_module
     use make_grav_module
     use enforce_HSE_module

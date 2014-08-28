@@ -37,7 +37,7 @@ contains
     use bl_prof_module
     use proj_parameters
     use multifab_fill_ghost_module , only : multifab_fill_ghost_cells
-    use ml_restriction_module      , only : ml_cc_restriction
+    use ml_cc_restriction_module   , only : ml_cc_restriction
     use hg_multigrid_module        , only : hg_multigrid
     use hg_hypre_module            , only : hg_hypre
 
@@ -869,6 +869,8 @@ contains
       real(kind=dp_t), intent(in   ) :: dt
       logical        , intent(in   ) :: using_alt_energy_fix
 
+      integer                        :: i,j
+
       !     Subtract off the density-weighted gradient.
       if (using_alt_energy_fix) then
          unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) - &
@@ -933,6 +935,15 @@ contains
          pi(lo(1):hi(1)+1,lo(2):hi(2)+1)   = (ONE/dt) * phi(lo(1):hi(1)+1,lo(2):hi(2)+1)
 
       end if
+
+      do j = lo(2),hi(2)
+      do i = lo(1),hi(1)
+          if (j.eq.63 .and. (i.eq.31 .or. i.eq.32)) then
+!            print *,'NEW U    AT ',i, unew(i,j,1), unew(i,j,2)
+             print *,'NEW GPHI AT ',i, gphi(i,j,1), gphi(i,j,2)
+          end if
+      end do
+      end do
 
     end subroutine hg_update_2d
 

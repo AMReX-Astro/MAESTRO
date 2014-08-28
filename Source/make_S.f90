@@ -34,7 +34,7 @@ contains
     use probin_module, only: use_delta_gamma1_term
     use ml_layout_module
     use average_module
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp

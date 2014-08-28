@@ -19,7 +19,7 @@ contains
   subroutine make_gamma(mla,gamma,s,p0,dx)
 
     use bl_prof_module
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use geometry, only: spherical

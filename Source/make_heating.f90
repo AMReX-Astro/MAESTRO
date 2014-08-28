@@ -18,7 +18,7 @@ contains
     use multifab_module
     use define_bc_module
     use ml_layout_module
-    use ml_restriction_module, only : ml_cc_restriction
+    use ml_cc_restriction_module, only : ml_cc_restriction
     use variables, only: foextrap_comp
     use geometry, only: spherical
     use bl_constants_module, only: ZERO

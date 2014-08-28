@@ -30,7 +30,7 @@ contains
     use cc_stencil_module
     use cc_applyop_module
     use network, only: nspec
-    use ml_restriction_module, only : ml_cc_restriction
+    use ml_cc_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
     use bl_constants_module
     use variables, only: temp_comp, rho_comp, rhoh_comp, spec_comp, foextrap_comp

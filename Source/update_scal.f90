@@ -22,7 +22,7 @@ contains
     use variables, only: spec_comp, rho_comp
     use network,   only: nspec
     use multifab_physbc_module
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
 
     type(ml_layout)   , intent(inout) :: mla

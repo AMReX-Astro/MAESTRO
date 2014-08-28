@@ -17,7 +17,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use geometry, only: spherical

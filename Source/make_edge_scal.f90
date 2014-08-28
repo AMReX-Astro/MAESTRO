@@ -30,7 +30,7 @@ contains
     use bl_constants_module
     use fill_3d_module
     use multifab_physbc_module
-    use ml_restriction_module, only : ml_edge_restriction_c
+    use ml_cc_restriction_module, only : ml_edge_restriction_c
 
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: sedge(:,:)

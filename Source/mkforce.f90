@@ -32,7 +32,7 @@ contains
     use bl_prof_module
     use geometry, only: spherical, nr_fine, dr
     use bl_constants_module
-    use ml_restriction_module, only: ml_cc_restriction
+    use ml_cc_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use probin_module, only: evolve_base_state

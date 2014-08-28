@@ -59,7 +59,7 @@ contains
     use geometry, only: spherical
     use probin_module, only: verbose, use_hypre, use_alt_energy_fix
     use variables, only: press_comp
-    use ml_restriction_module, only: ml_edge_restriction
+    use ml_cc_restriction_module, only: ml_edge_restriction
 
     use mg_eps_module, only: eps_mac, eps_mac_max, mac_level_factor
 
@@ -331,7 +331,7 @@ contains
 
     subroutine divumac(umac,rh,dx,ref_ratio,before,divu_rhs)
 
-      use ml_restriction_module, only: ml_cc_restriction, ml_edge_restriction
+      use ml_cc_restriction_module, only: ml_cc_restriction, ml_edge_restriction
       use probin_module, only: verbose
 
       type(multifab) , intent(inout) :: umac(:,:)
@@ -610,7 +610,7 @@ contains
 
     subroutine mk_mac_coeffs(mla,rho,beta)
 
-      use ml_restriction_module, only: ml_edge_restriction
+      use ml_cc_restriction_module, only: ml_edge_restriction
 
       type(ml_layout), intent(in   ) :: mla
       type(multifab ), intent(in   ) :: rho(:)

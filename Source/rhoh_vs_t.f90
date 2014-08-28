@@ -801,7 +801,7 @@ contains
 
     use variables,             only: temp_comp
     use bl_prof_module
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use geometry, only: spherical
@@ -1190,7 +1190,7 @@ contains
 
     use variables,             only: temp_comp
     use bl_prof_module
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use geometry, only: spherical
@@ -1476,7 +1476,7 @@ contains
 
     use variables,             only: foextrap_comp, temp_comp
     use bl_prof_module
-    use ml_restriction_module, only: ml_cc_restriction_c
+    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
 
@@ -1693,7 +1693,7 @@ contains
     use multifab_module
     use ml_layout_module
     use define_bc_module
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use multifab_fill_ghost_module
     use variables, only: rhoh_comp, temp_comp
     use multifab_physbc_module

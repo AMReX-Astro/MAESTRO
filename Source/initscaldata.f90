@@ -4,7 +4,7 @@ module init_scalar_module
   use ml_layout_module
   use bl_constants_module
   use multifab_physbc_module
-  use ml_restriction_module
+  use ml_cc_restriction_module
   use multifab_fill_ghost_module
   use variables
   use network
