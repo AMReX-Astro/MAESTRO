@@ -625,7 +625,6 @@ contains
 
     real (kind=dp_t) :: slope_rho, slope_T, slope_X
     real (kind=dp_t) :: Tcoeff(3)
-    real (kind=dp_t) :: slope_X_temp
     real (kind=dp_t) :: x_out_temp(nspec), rhowdot_temp(nspec), rhoH_temp
 
     if (firstCall) then
