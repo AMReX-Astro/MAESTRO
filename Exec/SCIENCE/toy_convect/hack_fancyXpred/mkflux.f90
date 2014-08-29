@@ -41,7 +41,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use geometry, only: spherical
-    use ml_restriction_module, only: ml_edge_restriction_c
+    use ml_cc_restriction_module, only: ml_edge_restriction_c
     use variables, only: spec_comp
     use network, only: nspec
 

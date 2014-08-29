@@ -11,7 +11,7 @@ module init_scalar_module
   use network
   use geometry
   use ml_layout_module
-  use ml_restriction_module
+  use ml_cc_restriction_module
   use multifab_fill_ghost_module
 
   implicit none

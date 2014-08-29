@@ -31,7 +31,7 @@ contains
     use variables, only: foextrap_comp, spec_comp
     use fill_3d_module
     use multifab_physbc_module
-    use ml_restriction_module, only : ml_edge_restriction_c
+    use ml_cc_restriction_module, only : ml_edge_restriction_c
     use network, only: nspec
     use probin_module, only: ppm_type
 
