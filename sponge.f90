@@ -85,7 +85,7 @@ contains
   subroutine make_sponge(sponge,dx,dt,mla)
 
     use bl_constants_module
-    use ml_restriction_module, only: ml_cc_restriction
+    use ml_cc_restriction_module, only: ml_cc_restriction
 
     type(multifab) , intent(inout) :: sponge(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
