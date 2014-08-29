@@ -18,6 +18,7 @@ contains
   subroutine regrid(nstep,mla,uold,sold,gpi,pi,dSdt,src,dx,the_bc_tower, &
                     rho0,rhoh0,init_into_finer,rhoHdot)
 
+    use fillpatch_module
     use ml_prolongation_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
@@ -430,7 +431,6 @@ contains
     type(multifab)             , intent(in   ) :: dSdt_temp(:),src_temp(:), rhoHdot_temp(:)
  
     integer :: d 
-    type(multifab) :: mftmp
 
     ! Build the level lev data only.
     call multifab_build(  uold(lev), la,    dm, ng_s)
@@ -462,9 +462,7 @@ contains
                          the_bc_tower%bc_tower_array(lev  ), &
                          d,d,foextrap_comp,1)
        end do
-       call multifab_build(mftmp, get_layout(dSdt(lev-1)), 1, 1)
-       call multifab_copy(mftmp, dSdt(lev-1))
-       call fillpatch(dSdt(lev),mftmp, &
+       call fillpatch(dSdt(lev),dSdt(lev-1), &
                       0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
@@ -474,8 +472,7 @@ contains
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
                       1,1,foextrap_comp,1) 
-       call multifab_copy(mftmp, rhoHdot(lev-1))
-       call fillpatch(rhoHdot(lev), mftmp, &
+       call fillpatch(rhoHdot(lev),rhoHdot(lev-1), &
                       0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
@@ -483,7 +480,6 @@ contains
        ! We interpolate p differently because it is nodal, not cell-centered
        call ml_nodal_prolongation(pi(lev), pi(lev-1), rr)
 
-       call destroy(mftmp)
     end if
 
     ! Copy from old data at current level, if it exists
