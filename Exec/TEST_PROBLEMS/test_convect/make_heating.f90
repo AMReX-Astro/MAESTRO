@@ -18,7 +18,7 @@ contains
 
     use multifab_module
     use ml_layout_module
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use variables, only: foextrap_comp
 
     type(ml_layout), intent(in   ) :: mla

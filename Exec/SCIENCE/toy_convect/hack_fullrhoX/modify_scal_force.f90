@@ -20,7 +20,7 @@ contains
     use geometry, only: spherical
     use variables, only: foextrap_comp
     use multifab_physbc_module
-    use ml_restriction_module
+    use ml_cc_restriction_module
     use multifab_fill_ghost_module
 
     ! When we write the scalar equation in perturbational and convective
