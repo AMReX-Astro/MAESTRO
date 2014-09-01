@@ -38,46 +38,24 @@ def powerspectrum(pf, nindex_rho=0.0):
     # get the data on a uniform grid at the highest resolution
     max_level = pf.index.max_level
 
-    ref = na.product(pf.ref_factors[0:max_level])
+    ref = int(na.product(pf.ref_factors[0:max_level]))
 
-    cube = pf.covering_grid(max_level, left_edge=pf.domain_left_edge, 
-                            dims=pf.domain_dimensions*ref,
-                            fields=[irho, iu, iv, iw])
+    # allocate for our uniformly-gridded result
+    dims = pf.domain_dimensions*ref
+    nx, ny, nz = dims
 
-
-    rho = cube[irho].d    
-    nx, ny, nz = rho.shape
-
-    # do the FFTs -- note that since our data is real, there will be
-    # too much information here.  By default, fftn will put the
-    # positive frequency terms in the first half of all axes -- that's
-    # what we want to keep
-
-    # normalize -- the 8 here is because we are a real-valued function,
-    # so only one octant is unique.
+    Kk = na.zeros( (nx/2+1, ny/2+1, nz/2+1), dtype=na.float32)
 
     print "doing ux"
-    u = cube[iu].d
-    ru = na.fft.fftn(rho**nindex_rho * u)[0:nx/2+1,0:ny/2+1,0:nz/2+1]
-    ru = 8.0*ru/(nx*ny*nz)
-    Kk = 0.5*abs(ru)**2
+    Kk += 0.5*fft_comp(pf, irho, iu, nindex_rho, max_level, dims)
 
     print "doing uy"
-    u = cube[iv].d
-    ru = na.fft.fftn(rho**nindex_rho * u)[0:nx/2+1,0:ny/2+1,0:nz/2+1]
-    ru = 8.0*ru/(nx*ny*nz)
-    Kk += 0.5*abs(ru)**2
+    Kk += 0.5*fft_comp(pf, irho, iv, nindex_rho, max_level, dims)
 
     print "doing uz"
-    u = cube[iw].d
-    ru = na.fft.fftn(rho**nindex_rho * u)[0:nx/2+1,0:ny/2+1,0:nz/2+1]
-    ru = 8.0*ru/(nx*ny*nz)
-    Kk += 0.5*abs(ru)**2
+    Kk += 0.5*fft_comp(pf, irho, iw, nindex_rho, max_level, dims)
 
-    # wavenumbers -- unfortunately, yt uses an older version of NumPy,
-    # so we don't have access to the rfftfreq function.  The last
-    # element is negative, because of the symmetry, but should be
-    # positive (rfftfreq would get this right).
+    # wavenumbers
     L = (pf.domain_right_edge - pf.domain_left_edge).d
 
     kx = na.fft.fftfreq(nx)[0:nx/2+1]
@@ -100,7 +78,7 @@ def powerspectrum(pf, nindex_rho=0.0):
     # bins holds the edges
     bins = na.linspace(kmin, kmax, N+1)
 
-    kx3d, ky3d, kz3d = na.meshgrid(kx, ky, kz, indexing="ij")
+    kx3d, ky3d, kz3d = na.meshgrid(kx, ky, kz, indexing="ij", dtype=na.float32)
 
     k = numpy.sqrt(kx3d**2 + ky3d**2 + kz3d**2)
 
@@ -117,7 +95,7 @@ def powerspectrum(pf, nindex_rho=0.0):
     # maximum value in whichbin
     ncount = na.bincount(whichbin)
 
-    E_spectrum = na.zeros(len(ncount)-1, dtype=na.float64)
+    E_spectrum = na.zeros(len(ncount)-1, dtype=na.float32)
 
     n = 1
     while n < len(ncount):
@@ -130,3 +108,37 @@ def powerspectrum(pf, nindex_rho=0.0):
 
     return k, E_spectrum
 
+
+
+def fft_comp(pf, irho, iu, nindex_rho, level, dims ):
+
+    print "covering grid"
+    cube = pf.covering_grid(level, left_edge=pf.domain_left_edge, 
+                            dims=dims,
+                            fields=[irho, iu])
+
+    print "accessing rho cube"
+    rho = cube[irho].d    
+
+    print rho.dtype
+    nx, ny, nz = rho.shape
+
+    # do the FFTs -- note that since our data is real, there will be
+    # too much information here.  By default, fftn will put the
+    # positive frequency terms in the first half of all axes -- that's
+    # what we want to keep
+
+    # normalize -- the 8 here is because we are a real-valued function,
+    # so only one octant is unique.
+
+    print "accessing cube"
+    u = cube[iu].d
+
+    print "ffting"
+    ru = na.fft.fftn(rho**nindex_rho * u)[0:nx/2+1,0:ny/2+1,0:nz/2+1]
+
+    print "normalizing"
+    ru = 8.0*ru/(nx*ny*nz)
+
+    print "returning"
+    return abs(ru)**2
