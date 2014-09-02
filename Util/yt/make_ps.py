@@ -31,6 +31,7 @@ pylab.loglog(k, Ek)
 pylab.loglog(k, Emax*(k/kmax)**(-5./3.), ls=":", color="0.5")
 
 pylab.xlabel(r"$k$")
-pylab.ylabel(r"$E(k)$")
+pylab.ylabel(r"$E(k)dk$")
 
 pylab.savefig("spectrum.eps")
+pylab.savefig("spectrum.png")
