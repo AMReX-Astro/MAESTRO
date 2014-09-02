@@ -100,13 +100,17 @@ def powerspectrum(ds, nindex_rho=0.0, zrange=None):
     kz[-1] *= -1
     kz = kz*nz/L[2]
 
-    kmin = 0
-    kmax = np.sqrt(np.max(kx)**2 + np.max(ky)**2 + np.max(kz)**2)
-
-    N = np.floor(np.sqrt(nx**2 + ny**2 + nz**2))
 
     # bins holds the edges
-    bins = np.linspace(kmin, kmax, N+1)
+    
+    # the smallest physical frequency is 1/L
+    kmin = np.min(1.0/L)
+
+    # the maximum is 2/dx
+    kmax = np.max(2.0*np.array(delta)/L)
+
+    bins = np.arange(kmin, kmax, kmin)
+    N = len(bins)
 
     kx3d, ky3d, kz3d = np.meshgrid(kx, ky, kz, indexing="ij", dtype=np.float32)
 
