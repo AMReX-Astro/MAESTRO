@@ -1,11 +1,14 @@
-from yt.mods import *
+import yt
 import pylab
 import powerspectrum
-import numpy as na
+import numpy as np
 
-pf = load("wd_576_base_plt216711")
+ds = yt.load("plt164582")
 
-k, Ek = powerspectrum.powerspectrum(pf, nindex_rho=1./3.)
+zmin = 1300 
+zmax = 3550
+
+k, Ek = powerspectrum.powerspectrum(ds, nindex_rho=1./3., zrange=(zmin, zmax))
 
 n = 0
 while n < len(k):
@@ -13,7 +16,7 @@ while n < len(k):
     n += 1
 
 
-index = na.argmax(Ek)
+index = np.argmax(Ek)
 
 print 'index = ', index
 
@@ -27,4 +30,7 @@ print 'Emax = ', Emax
 pylab.loglog(k, Ek)
 pylab.loglog(k, Emax*(k/kmax)**(-5./3.), ls=":", color="0.5")
 
-pylab.savefig("spectrum.png")
+pylab.xlabel(r"$k$")
+pylab.ylabel(r"$E(k)$")
+
+pylab.savefig("spectrum.eps")
