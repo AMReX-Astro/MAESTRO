@@ -106,8 +106,11 @@ def powerspectrum(ds, nindex_rho=0.0, zrange=None):
     # the smallest physical frequency is 1/L
     kmin = np.min(1.0/L)
 
-    # the maximum is 2/dx
-    kmax = np.max(2.0*np.array(delta)/L)
+    # the maximum is 1/2*dx
+    kmax = np.min(0.5*np.array(delta)/L)
+
+    print "wavenumbers:"
+    print kmin, kmax
 
     bins = np.arange(kmin, kmax, kmin)
     N = len(bins)
