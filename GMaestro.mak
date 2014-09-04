@@ -24,6 +24,8 @@ ALL: main.$(suf).exe
 BOXLIB_CORE := Src/F_BaseLib \
                Src/LinearSolvers/F_MG
 
+# include the random number generator stuff
+RANDOM := t
 
 #-----------------------------------------------------------------------------
 # core MAESTRO directories
@@ -56,8 +58,8 @@ endif
 
 #-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
-UTIL_CORE := Util/model_parser \
-             Util/random 
+UTIL_CORE := Util/model_parser 
+
 
 
 #-----------------------------------------------------------------------------
