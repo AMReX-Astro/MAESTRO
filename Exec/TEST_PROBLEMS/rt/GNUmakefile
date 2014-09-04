@@ -21,7 +21,7 @@ GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/si
 # we only need to include the problem's directory if there are unique
 # files there (as specified in a GPackage.mak).  The problem directory
 # is always placed at the start of the vpath by the GMakerules.mak.
-EXTRA_DIR := Util/random
+EXTRA_DIR := 
 
 
 # include the MAESTRO build stuff
