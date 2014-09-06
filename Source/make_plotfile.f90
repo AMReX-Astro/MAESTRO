@@ -680,7 +680,7 @@ contains
                                          nghost(tempfab(n)),mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n), &
-                                         1,foextrap_comp,1,fill_crse_input=.false.)
+                                         1,foextrap_comp,1)
        enddo
 
     end if

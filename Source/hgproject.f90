@@ -768,12 +768,11 @@ contains
             ! note that multifab_fill_boundary and multifab_physbc are called for
             ! both levels n-1 and n
             call multifab_fill_ghost_cells(unew(n),unew(n-1),nghost(unew(n)),mla%mba%rr(n-1,:), &
-                                           the_bc_level(n-1),the_bc_level(n),1,1,dm, &
-                                           fill_crse_input=.false.)
+                                           the_bc_level(n-1),the_bc_level(n),1,1,dm)
             do i=1,dm
                call multifab_fill_ghost_cells(gpi(n),gpi(n-1),1,mla%mba%rr(n-1,:), &
                                               the_bc_level(n-1),the_bc_level(n),i, &
-                                              foextrap_comp,1,fill_crse_input=.false.)
+                                              foextrap_comp,1)
             end do
 
          end do

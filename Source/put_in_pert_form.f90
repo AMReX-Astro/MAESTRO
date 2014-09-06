@@ -99,7 +99,7 @@ contains
           call multifab_fill_ghost_cells(s(n),s(n-1), &
                                          nghost(s(n)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         comp,bc_comp,1,fill_crse_input=.false.)
+                                         comp,bc_comp,1)
        end do
 
     end if

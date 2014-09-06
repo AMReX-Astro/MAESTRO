@@ -170,7 +170,7 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(snew(n),snew(n-1),nghost(snew(n)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
+                                         rho_comp,dm+rho_comp,nscal)
        enddo
 
     end if

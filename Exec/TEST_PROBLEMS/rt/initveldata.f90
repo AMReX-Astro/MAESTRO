@@ -78,8 +78,7 @@ contains
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          call multifab_fill_ghost_cells(u(n),u(n-1),ng,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),1,1,dm,fill_crse_input=.false.)
+          call multifab_fill_ghost_cells(u(n),u(n-1),ng,mla%mba%rr(n-1,:))
        enddo
        
     end if

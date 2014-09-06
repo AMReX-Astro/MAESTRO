@@ -353,7 +353,7 @@ contains
           call multifab_fill_ghost_cells(eta_cart(n),eta_cart(n-1), &
                                          ng_e,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1), the_bc_level(n), &
-                                         1,foextrap_comp,1,fill_crse_input=.false.)
+                                         1,foextrap_comp,1)
 
        enddo
 

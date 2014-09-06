@@ -194,7 +194,7 @@ contains
           call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
                                          nghost(scal_force(n)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         rhoh_comp,foextrap_comp,1,fill_crse_input=.false.)
+                                         rhoh_comp,foextrap_comp,1)
        end do
 
     end if
@@ -663,7 +663,7 @@ contains
           call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
                                          nghost(scal_force(n)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         rhoh_comp,foextrap_comp,1,fill_crse_input=.false.)
+                                         rhoh_comp,foextrap_comp,1)
        end do
 
     end if
@@ -927,7 +927,7 @@ contains
           call multifab_fill_ghost_cells(temp_force(n),temp_force(n-1), &
                                          nghost(temp_force(n)),mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         temp_comp,foextrap_comp,1,fill_crse_input=.false.)
+                                         temp_comp,foextrap_comp,1)
        enddo
 
     end if

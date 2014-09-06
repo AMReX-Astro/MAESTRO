@@ -93,8 +93,7 @@ contains
                                             mla%mba%rr(n-1,:),1)
                    call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s, &
                                                   mla%mba%rr(n-1,:),the_bc_level(n-1), &
-                                                  the_bc_level(n),comp,bc_comp,1, &
-                                                  fill_crse_input=.false.)
+                                                  the_bc_level(n),comp,bc_comp,1)
                 end do
              end if
           end do
@@ -110,8 +109,7 @@ contains
                 call ml_cc_restriction_c(s0_cart(n-1),1,s0_cart(n),1,mla%mba%rr(n-1,:),dm)
                 call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s, &
                                                mla%mba%rr(n-1,:),the_bc_level(n-1), &
-                                               the_bc_level(n),1,bc_comp,dm, &
-                                               fill_crse_input=.false.)
+                                               the_bc_level(n),1,bc_comp,dm)
              end do
           end if
 
@@ -127,8 +125,7 @@ contains
           do n=nlevs,2,-1
              call ml_cc_restriction_c(s0_cart(n-1),1,s0_cart(n),1,mla%mba%rr(n-1,:),1)
              call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                            the_bc_level(n-1),the_bc_level(n),1,bc_comp,1, &
-                                            fill_crse_input=.false.)
+                                            the_bc_level(n-1),the_bc_level(n),1,bc_comp,1)
           end do
        end if
 
@@ -1712,8 +1709,7 @@ contains
        do n=nlevs,2,-1
           call ml_cc_restriction_c(s0_cart(n-1),1,s0_cart(n),1,mla%mba%rr(n-1,:),1)
           call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n),1,bc_comp,1, &
-                                         fill_crse_input=.false.)
+                                         the_bc_level(n-1),the_bc_level(n),1,bc_comp,1)
        end do
     end if
 

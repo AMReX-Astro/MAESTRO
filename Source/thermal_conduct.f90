@@ -417,7 +417,7 @@ contains
           call multifab_fill_ghost_cells(s2(n),s2(n-1),nghost(s2(1)),mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
-                                         rhoh_comp,dm+rhoh_comp,1,fill_crse_input=.false.)
+                                         rhoh_comp,dm+rhoh_comp,1)
        enddo
 
     end if
