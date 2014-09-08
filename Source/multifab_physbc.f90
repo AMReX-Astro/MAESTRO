@@ -13,13 +13,15 @@ module multifab_physbc_module
 
 contains
 
-  subroutine multifab_physbc(s,start_scomp,start_bccomp,num_comp,the_bc_level)
+  subroutine multifab_physbc(s,start_scomp,start_bccomp,num_comp,the_bc_level, &
+                             time_in,dx_in,prob_lo_in,prob_hi_in)
 
     use bl_prof_module
 
     type(multifab) , intent(inout) :: s
     integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
     type(bc_level) , intent(in   ) :: the_bc_level
+    real(kind=dp_t), intent(in   ), optional :: time_in,dx_in(:),prob_lo_in(:),prob_hi_in(:)
 
     ! Local
     integer                  :: lo(get_dim(s)),hi(get_dim(s)),dm
