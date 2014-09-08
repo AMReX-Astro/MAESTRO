@@ -871,7 +871,7 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(state(n),state(n-1),ng,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n  ), &
-                                         temp_comp,dm+temp_comp,1,fill_crse_input=.false.)
+                                         temp_comp,dm+temp_comp,1)
        enddo
 
     end if
@@ -1261,7 +1261,7 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(state(n),state(n-1),ng,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n  ), &
-                                         temp_comp,dm+temp_comp,1,fill_crse_input=.false.)
+                                         temp_comp,dm+temp_comp,1)
        enddo
 
     end if
@@ -1549,7 +1549,7 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(peos(n),peos(n-1),ng_p,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n),1, &
-                                         foextrap_comp,1,fill_crse_input=.false.)
+                                         foextrap_comp,1)
        enddo
 
     end if
@@ -1765,12 +1765,10 @@ contains
           ! both levels n-1 and n
 
           call multifab_fill_ghost_cells(s(n),s(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),rhoh_comp,dm+rhoh_comp,1, &
-                                         fill_crse_input=.false.)
+                                         bc(n-1),bc(n),rhoh_comp,dm+rhoh_comp,1)
 
           call multifab_fill_ghost_cells(s(n),s(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),temp_comp,dm+temp_comp,1, &
-                                         fill_crse_input=.false.)
+                                         bc(n-1),bc(n),temp_comp,dm+temp_comp,1)
 
        enddo
 

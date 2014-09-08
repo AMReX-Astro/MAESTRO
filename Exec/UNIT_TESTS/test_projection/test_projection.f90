@@ -80,8 +80,7 @@ contains
                                          mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1), &
                                          the_bc_level(n), &
-                                         1,1,dm, &
-                                         fill_crse_input=.false.)
+                                         1,1,dm)
           
        enddo
 
@@ -415,8 +414,7 @@ contains
                                          mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1), &
                                          the_bc_level(n), &
-                                         1,1,dm, &
-                                         fill_crse_input=.false.)
+                                         1,1,dm)
           
        enddo
 

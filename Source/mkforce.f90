@@ -233,7 +233,7 @@ contains
              call multifab_fill_ghost_cells(vel_force(n),vel_force(n-1), &
                                             ng_f,mla%mba%rr(n-1,:), &
                                             the_bc_level(n-1),the_bc_level(n), &
-                                            i,i,1,fill_crse_input=.false.)
+                                            i,i,1)
           end do
 
        enddo

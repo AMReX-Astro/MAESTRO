@@ -96,7 +96,7 @@ contains
           call multifab_fill_ghost_cells(shalf(n),shalf(n-1), &
                                          ng_h,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1), the_bc_level(n), &
-                                         1,foextrap_comp,1,fill_crse_input=.false.)
+                                         1,foextrap_comp,1)
        enddo
 
     end if
@@ -178,7 +178,7 @@ contains
           call multifab_fill_ghost_cells(phihalf(n),phihalf(n-1), &
                                          ng_h,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1), the_bc_level(n  ), &
-                                         1,dm+in_comp,1,fill_crse_input=.false.)
+                                         1,dm+in_comp,1)
        end do
 
     end if
