@@ -49,8 +49,8 @@ contains
     use regrid_module
     use init_scalar_module
     use time_module, only: time
-  use base_io_module
-  use aux_data_module
+    use base_io_module
+    use aux_data_module
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(inout) :: restart
@@ -162,11 +162,11 @@ contains
     do n = 1,nlevs
        call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
        call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
-       call multifab_build(          gpi(n), mla%la(n),    dm, 1)
-       call multifab_build(           pi(n), mla%la(n),     1, 1, nodal)
+       call multifab_build(          gpi(n), mla%la(n),    dm, 0)
+       call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
-       call multifab_build(   Source_old(n), mla%la(n),     1, 1)
-       call multifab_build(   Source_new(n), mla%la(n),     1, 1)
+       call multifab_build(   Source_old(n), mla%la(n),     1, 0)
+       call multifab_build(   Source_new(n), mla%la(n),     1, 0)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
@@ -784,11 +784,11 @@ contains
     do n = 1,nlevs
        call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
        call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
-       call multifab_build(          gpi(n), mla%la(n),    dm, 1)
-       call multifab_build(           pi(n), mla%la(n),     1, 1, nodal)
+       call multifab_build(          gpi(n), mla%la(n),    dm, 0)
+       call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
-       call multifab_build(   Source_old(n), mla%la(n),     1, 1)
-       call multifab_build(   Source_new(n), mla%la(n),     1, 1)
+       call multifab_build(   Source_old(n), mla%la(n),     1, 0)
+       call multifab_build(   Source_new(n), mla%la(n),     1, 0)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
@@ -1249,11 +1249,11 @@ contains
     do n = 1,nlevs
        call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
        call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
-       call multifab_build(          gpi(n), mla%la(n),    dm, 1)
-       call multifab_build(           pi(n), mla%la(n),     1, 1, nodal)
+       call multifab_build(          gpi(n), mla%la(n),    dm, 0)
+       call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
-       call multifab_build(   Source_old(n), mla%la(n),     1, 1)
-       call multifab_build(   Source_new(n), mla%la(n),     1, 1)
+       call multifab_build(   Source_old(n), mla%la(n),     1, 0)
+       call multifab_build(   Source_new(n), mla%la(n),     1, 0)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)

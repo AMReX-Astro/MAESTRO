@@ -20,13 +20,10 @@ contains
 
     use fillpatch_module
     use ml_prolongation_module
-    use multifab_physbc_module
-    use multifab_fill_ghost_module
-    use ml_cc_restriction_module
     use make_new_grids_module
     use convert_rhoX_to_X_module
     use pert_form_module
-
+    use ml_restrict_fill_module
     use probin_module, only : verbose, nodal, pmask, &
          amr_buf_width, &
          max_grid_size_2, max_grid_size_3, ref_ratio, max_levs, &
@@ -47,7 +44,7 @@ contains
 
     ! local
     logical           :: new_grid
-    integer           :: n, nl, d, ng_s, dm, nlevs, ng_buffer
+    integer           :: n, nl, ng_s, dm, nlevs, ng_buffer
     type(layout)      :: la_array(max_levs)
     type(ml_boxarray) :: mba
     integer           :: un
@@ -91,10 +88,10 @@ contains
        ! Create copies of the old data.
        call multifab_build(  uold_temp(n),mla_temp%la(n),   dm, ng_s)
        call multifab_build(  sold_temp(n),mla_temp%la(n),nscal, ng_s)
-       call multifab_build(   gpi_temp(n),mla_temp%la(n),   dm, 1)
-       call multifab_build(    pi_temp(n),mla_temp%la(n),    1, 1, nodal)
+       call multifab_build(   gpi_temp(n),mla_temp%la(n),   dm, 0)
+       call multifab_build(    pi_temp(n),mla_temp%la(n),    1, 0, nodal)
        call multifab_build(  dSdt_temp(n),mla_temp%la(n),    1, 0)
-       call multifab_build(   src_temp(n),mla_temp%la(n),    1, 1)
+       call multifab_build(   src_temp(n),mla_temp%la(n),    1, 0)
        call multifab_build(rhoHdot_temp(n),mla_temp%la(n),   1, 0)
 
        call multifab_copy_c(  uold_temp(n),1,  uold(n),1,   dm)
@@ -310,63 +307,24 @@ contains
        end if
     end do
 
-    if (nlevs .eq. 1) then
+    do n=nlevs,2,-1
+       call ml_cc_restriction(gpi(n-1),gpi(n),mla%mba%rr(n-1,:))
+       call ml_cc_restriction(src(n-1),src(n),mla%mba%rr(n-1,:))
+    end do
 
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(uold(nlevs))
-       call multifab_fill_boundary(sold(nlevs))
-       call multifab_fill_boundary(gpi(nlevs))
-       call multifab_fill_boundary(pi(nlevs))
-       call multifab_fill_boundary(src(nlevs))
-       !call multifab_fill_boundary(rhoHdot(nlevs))
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,sold,mla%mba%rr,the_bc_tower%bc_tower_array, &
+                              icomp=1, &
+                              bcomp=dm+rho_comp, &
+                              nc=nscal, &
+                              ng=sold(1)%ng)
 
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(uold(nlevs),1,1,dm,the_bc_tower%bc_tower_array(nlevs))
-       call multifab_physbc(sold(nlevs),1,dm+rho_comp,nscal, &
-                            the_bc_tower%bc_tower_array(nlevs))
-       call multifab_physbc(pi(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
-       do d=1,dm
-          call multifab_physbc(gpi(nlevs),d,foextrap_comp,1, &
-                               the_bc_tower%bc_tower_array(nlevs))
-       end do
-       call multifab_physbc(src(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(uold(n-1),uold(n),mla%mba%rr(n-1,:))
-          call ml_cc_restriction(sold(n-1),sold(n),mla%mba%rr(n-1,:))
-          call ml_cc_restriction(gpi(n-1),gpi(n),mla%mba%rr(n-1,:))
-          call ml_cc_restriction(src(n-1),src(n),mla%mba%rr(n-1,:))
-          !call ml_cc_restriction(rhoHdot(n-1),rhoHdot(n),mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(uold(n),uold(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n),1,1,dm)
-          call multifab_fill_ghost_cells(sold(n),sold(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n), &
-                                         rho_comp,dm+rho_comp,nscal)
-          do d=1,dm
-             call multifab_fill_ghost_cells(gpi(n),gpi(n-1),1,mla%mba%rr(n-1,:), &
-                                            the_bc_tower%bc_tower_array(n-1), &
-                                            the_bc_tower%bc_tower_array(n), &
-                                            d,foextrap_comp,1)
-          end do
-          call multifab_fill_ghost_cells(src(n),src(n-1),1,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n),1,foextrap_comp,1)
-
-       enddo
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,uold,mla%mba%rr,the_bc_tower%bc_tower_array, &
+                              icomp=1, &
+                              bcomp=1, &
+                              nc=dm, &
+                              ng=uold(1)%ng)
 
     ! optionally output details of the grid structure
     if (dump_grid_file .and. parallel_IOProcessor()) then
@@ -417,7 +375,7 @@ contains
     use fillpatch_module
     use ml_prolongation_module
     use probin_module, only : nodal
-    use variables    , only : nscal, rho_comp, rhoh_comp, foextrap_comp
+    use variables    , only : nscal, rho_comp, foextrap_comp
 
     integer                    , intent(in   ) :: lev, dm, ng_s, rr(:)
     type(layout)               , intent(in   ) :: la
