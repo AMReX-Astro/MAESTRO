@@ -4,6 +4,7 @@ module rhoh_vs_t_module
   use multifab_module
   use ml_layout_module
   use define_bc_module
+  use ml_restrict_fill_module
 
   implicit none
 
@@ -29,7 +30,6 @@ contains
     use variables
     use network
     use fill_3d_module
-    use multifab_physbc_module
     use pred_parameters
     
     type(multifab) , intent(in   ) :: u(:)
@@ -801,9 +801,6 @@ contains
 
     use variables,             only: temp_comp
     use bl_prof_module
-    use ml_cc_restriction_module, only: ml_cc_restriction_c
-    use multifab_physbc_module
-    use multifab_fill_ghost_module
     use geometry, only: spherical
 
     type(multifab)    , intent(inout) :: state(:)
@@ -848,33 +845,12 @@ contains
 
     end do
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(state(nlevs),temp_comp,1)
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(state(nlevs),temp_comp,dm+temp_comp,1,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(state(n-1),temp_comp,state(n),temp_comp, &
-                                   mla%mba%rr(n-1,:),1)
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(state(n),state(n-1),ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n  ), &
-                                         temp_comp,dm+temp_comp,1)
-       enddo
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,state,mla%mba%rr,the_bc_level, &
+                              icomp=temp_comp, &
+                              bcomp=dm+temp_comp, &
+                              nc=1, &
+                              ng=state(1)%ng)
 
     call destroy(bpt)
 
@@ -1190,9 +1166,6 @@ contains
 
     use variables,             only: temp_comp
     use bl_prof_module
-    use ml_cc_restriction_module, only: ml_cc_restriction_c
-    use multifab_physbc_module
-    use multifab_fill_ghost_module
     use geometry, only: spherical
 
     type(multifab)    , intent(inout) :: state(:)
@@ -1237,34 +1210,12 @@ contains
 
     end do
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(state(nlevs),temp_comp,1)
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(state(nlevs),temp_comp,dm+temp_comp,1,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the
-       ! finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(state(n-1),temp_comp,state(n),temp_comp, &
-                                   mla%mba%rr(n-1,:),1)
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(state(n),state(n-1),ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n  ), &
-                                         temp_comp,dm+temp_comp,1)
-       enddo
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,state,mla%mba%rr,the_bc_level, &
+                              icomp=temp_comp, &
+                              bcomp=dm+temp_comp, &
+                              nc=1, &
+                              ng=state(1)%ng)
 
     call destroy(bpt)
 
@@ -1476,9 +1427,6 @@ contains
 
     use variables,             only: foextrap_comp, temp_comp
     use bl_prof_module
-    use ml_cc_restriction_module, only: ml_cc_restriction_c
-    use multifab_physbc_module
-    use multifab_fill_ghost_module
 
     type(multifab)    , intent(in   ) :: state(:)
     type(multifab)    , intent(in   ) :: sold(:)
@@ -1527,32 +1475,12 @@ contains
 
     end do
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(peos(nlevs),1,1)
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(peos(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(peos(n-1),1,peos(n),1,mla%mba%rr(n-1,:),1)
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(peos(n),peos(n-1),ng_p,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n),1, &
-                                         foextrap_comp,1)
-       enddo
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,peos,mla%mba%rr,the_bc_level, &
+                              icomp=1, &
+                              bcomp=foextrap_comp, &
+                              nc=1, &
+                              ng=peos(1)%ng)
 
     call destroy(bpt)
 
@@ -1688,20 +1616,17 @@ contains
   !============================================================================
   ! makeTHfromRhoP
   !============================================================================
-  subroutine makeTHfromRhoP(s,p0,bc,mla,dx)
+  subroutine makeTHfromRhoP(s,p0,the_bc_level,mla,dx)
 
     use multifab_module
     use ml_layout_module
     use define_bc_module
-    use ml_cc_restriction_module
-    use multifab_fill_ghost_module
     use variables, only: rhoh_comp, temp_comp
-    use multifab_physbc_module
     use geometry, only: spherical
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
-    type(bc_level) , intent(in   ) :: bc(:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
@@ -1739,40 +1664,19 @@ contains
        end do
     enddo
 
-    if (nlevs .eq. 1) then
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,s,mla%mba%rr,the_bc_level, &
+                              icomp=rhoh_comp, &
+                              bcomp=dm+rhoh_comp, &
+                              nc=1, &
+                              ng=s(1)%ng)
 
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(s(nlevs),rhoh_comp,1)
-       call multifab_fill_boundary_c(s(nlevs),temp_comp,1)
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(s(nlevs),rhoh_comp,dm+rhoh_comp,1,bc(nlevs))
-       call multifab_physbc(s(nlevs),temp_comp,dm+temp_comp,1,bc(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the
-       ! finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(s(n-1),rhoh_comp,s(n),rhoh_comp,mla%mba%rr(n-1,:))
-          call ml_cc_restriction_c(s(n-1),temp_comp,s(n),temp_comp,mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-
-          call multifab_fill_ghost_cells(s(n),s(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),rhoh_comp,dm+rhoh_comp,1)
-
-          call multifab_fill_ghost_cells(s(n),s(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),temp_comp,dm+temp_comp,1)
-
-       enddo
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,s,mla%mba%rr,the_bc_level, &
+                              icomp=temp_comp, &
+                              bcomp=dm+temp_comp, &
+                              nc=1, &
+                              ng=s(1)%ng)
 
     call destroy(bpt)
 
