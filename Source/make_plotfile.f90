@@ -178,9 +178,7 @@ contains
     use geometry, only: spherical, nr_fine, nlevs_radial, numdisjointchunks, &
          r_start_coord, r_end_coord
     use average_module
-    use ml_cc_restriction_module
-    use multifab_physbc_module
-    use multifab_fill_ghost_module
+    use ml_restrict_fill_module
     use bl_constants_module
     use network, only: nspec
     use time_module, only: time
@@ -645,7 +643,7 @@ contains
     end if
 
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! we just made the entropy above.  To compute s - sbar, we need to average
     ! the entropy first, and then compute that.
     ! an average quantity needs ghostcells, so copy entropy into
@@ -654,36 +652,12 @@ contains
        call multifab_copy_c(tempfab(n),1,plotdata(n),icomp_entropy,1)
     end do
 
-    ! fill the ghostcells of tempfab (entropy) so we can properly average it
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(tempfab(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(tempfab(nlevs),1,foextrap_comp,1, &
-                            the_bc_tower%bc_tower_array(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(tempfab(n-1),tempfab(n),mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(tempfab(n),tempfab(n-1), &
-                                         nghost(tempfab(n)),mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n), &
-                                         1,foextrap_comp,1)
-       enddo
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,tempfab,mla%mba%rr,the_bc_tower%bc_tower_array, &
+                              icomp=1, &
+                              bcomp=foextrap_comp, &
+                              nc=1, &
+                              ng=tempfab(1)%ng)
     
     call average(mla,tempfab,entropybar,dx,1)
 
@@ -695,7 +669,7 @@ contains
        call ml_cc_restriction_c(plotdata(n-1),icomp_entropypert,plotdata(n), &
                                 icomp_entropypert,mla%mba%rr(n-1,:),1)
     end do
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if (parallel_IOProcessor()) then
        write(6,*) 'Writing state to plotfile ',trim(dirname)
