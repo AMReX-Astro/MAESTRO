@@ -296,7 +296,7 @@ contains
       ng_uo = nghost(uold(1))
       ng_rh = nghost(rhohalf(1))
       ng_gp = nghost(gpi(1))
-  
+
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
          do i = 1, nfabs(unew(n))
@@ -345,9 +345,6 @@ contains
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
-      if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)+1) = ZERO
-
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
 
@@ -357,12 +354,12 @@ contains
       ! quantity projected is (Ustar - Un)
       else if (proj_type .eq. pressure_iters_comp) then
 
-         unew(lo(1)-1:hi(1)+1) = ( unew(lo(1)-1:hi(1)+1) - uold(lo(1)-1:hi(1)+1) ) / dt
+         unew(lo(1):hi(1)) = ( unew(lo(1):hi(1)) - uold(lo(1):hi(1)) ) / dt
 
       ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
 
-         unew(lo(1)-1:hi(1)+1) = unew(lo(1)-1:hi(1)+1) + dt*gpi(lo(1)-1:hi(1)+1)/rhohalf(lo(1)-1:hi(1)+1)
+         unew(lo(1):hi(1)) = unew(lo(1):hi(1)) + dt*gpi(lo(1):hi(1))/rhohalf(lo(1):hi(1))
 
        else
 
@@ -395,11 +392,6 @@ contains
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
-      if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1,lo(2)-1:hi(2)+1,:) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)+1,lo(2)-1:hi(2)+1,:) = ZERO
-      if (phys_bc(2,1) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1,:) = ZERO
-      if (phys_bc(2,2) .eq. INLET) gpi(lo(1)-1:hi(1)+1,hi(2)+1,:) = ZERO
-
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
 
@@ -409,18 +401,18 @@ contains
       ! quantity projected is (Ustar - Un)
       else if (proj_type .eq. pressure_iters_comp) then
 
-         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) = ( &
-             unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) ) / dt
-         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) = ( &
-             unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) ) / dt
+         unew(lo(1):hi(1),lo(2):hi(2),1) = ( &
+             unew(lo(1):hi(1),lo(2):hi(2),1) - uold(lo(1):hi(1),lo(2):hi(2),1) ) / dt
+         unew(lo(1):hi(1),lo(2):hi(2),2) = ( &
+             unew(lo(1):hi(1),lo(2):hi(2),2) - uold(lo(1):hi(1),lo(2):hi(2),2) ) / dt
      
       ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
 
-         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) = unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) + &
-            dt*gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)/rhohalf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)
-         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) = unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) + &
-            dt*gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)/rhohalf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)
+         unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) + &
+            dt*gpi(lo(1):hi(1),lo(2):hi(2),1)/rhohalf(lo(1):hi(1),lo(2):hi(2))
+         unew(lo(1):hi(1),lo(2):hi(2),2) = unew(lo(1):hi(1),lo(2):hi(2),2) + &
+            dt*gpi(lo(1):hi(1),lo(2):hi(2),2)/rhohalf(lo(1):hi(1),lo(2):hi(2))
 
        else
      
@@ -458,13 +450,6 @@ contains
 
       integer :: i,j,k,m
 
-      if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,:) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,:) = ZERO
-      if (phys_bc(2,1) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1,:) = ZERO
-      if (phys_bc(2,2) .eq. INLET) gpi(lo(1)-1:hi(1)+1,hi(2)+1,lo(3)-1:hi(3)+1,:) = ZERO
-      if (phys_bc(3,1) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1,:) = ZERO
-      if (phys_bc(3,2) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+1,:) = ZERO
-
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
 
@@ -477,9 +462,9 @@ contains
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
-            do k=lo(3)-1,hi(3)+1
-               do j=lo(2)-1,hi(2)+1
-                  do i=lo(1)-1,hi(1)+1
+            do k=lo(3),hi(3)
+               do j=lo(2),hi(2)
+                  do i=lo(1),hi(1)
                      unew(i,j,k,m) = (unew(i,j,k,m) - uold(i,j,k,m)) / dt
                   end do
                end do
@@ -494,9 +479,9 @@ contains
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
-            do k=lo(3)-1,hi(3)+1
-               do j=lo(2)-1,hi(2)+1
-                  do i=lo(1)-1,hi(1)+1
+            do k=lo(3),hi(3)
+               do j=lo(2),hi(2)
+                  do i=lo(1),hi(1)
                      unew(i,j,k,m) = unew(i,j,k,m) + dt*gpi(i,j,k,m)/rhohalf(i,j,k)
                   end do
                end do

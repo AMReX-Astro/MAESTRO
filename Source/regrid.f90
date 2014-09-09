@@ -401,10 +401,10 @@ contains
     ! Build the level lev data only.
     call multifab_build(  uold(lev), la,    dm, ng_s)
     call multifab_build(  sold(lev), la, nscal, ng_s)
-    call multifab_build(   gpi(lev), la,    dm, 1)
-    call multifab_build(    pi(lev), la,     1, 1, nodal)
+    call multifab_build(   gpi(lev), la,    dm, 0)
+    call multifab_build(    pi(lev), la,     1, 0, nodal)
     call multifab_build(  dSdt(lev), la,     1, 0)
-    call multifab_build(   src(lev), la,     1, 1)
+    call multifab_build(   src(lev), la,     1, 0)
     call multifab_build(rhoHdot(lev),la,     1, 0)
 
     ! Fill the data in the new level lev state -- first from the coarser data if lev > 1.
@@ -423,7 +423,7 @@ contains
                       1,1,dm+rho_comp,nscal)
        do d=1,dm
           call fillpatch(gpi(lev),gpi(lev-1), &
-                         1,rr, &
+                         0,rr, &
                          the_bc_tower%bc_tower_array(lev-1), &
                          the_bc_tower%bc_tower_array(lev  ), &
                          d,d,foextrap_comp,1)
@@ -434,7 +434,7 @@ contains
                       the_bc_tower%bc_tower_array(lev  ), &
                       1,1,foextrap_comp,1)
        call fillpatch(src(lev),src(lev-1), &
-                      1,rr, &
+                      0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
                       1,1,foextrap_comp,1) 
