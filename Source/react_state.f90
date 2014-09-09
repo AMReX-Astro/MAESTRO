@@ -145,7 +145,7 @@ contains
        enddo
     endif
 
-    ! let's fill the boundaries
+    ! restrict data and fill all ghost cells
     call ml_restrict_and_fill(nlevs,snew,mla%mba%rr,the_bc_level, &
                               icomp=rho_comp, &
                               bcomp=dm+rho_comp, &
@@ -578,7 +578,7 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
-         burner_threshold_cutoff, drive_initial_convection
+         burner_threshold_cutoff
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
     real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,lo(2)-ng_si:,:)

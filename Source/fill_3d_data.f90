@@ -25,9 +25,7 @@ contains
     use define_bc_module
     use geometry, only: spherical
     use ml_layout_module
-    use multifab_physbc_module
-    use ml_cc_restriction_module, only: ml_cc_restriction_c
-    use multifab_fill_ghost_module
+    use ml_restrict_fill_module
     use variables, only: foextrap_comp
     
     real(kind=dp_t), intent(in   ) :: s0(:,0:)
@@ -39,7 +37,7 @@ contains
     type(ml_layout), intent(in   ) :: mla
     
     integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
-    integer :: i,n,ng_s,comp
+    integer :: i,n,ng_s
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
@@ -83,51 +81,35 @@ contains
        if (bc_comp .eq. foextrap_comp) then
 
           ! Here we fill each of the dm components using foextrap
-          do comp=1,dm
-             if (nlevs .eq. 1) then
-                call multifab_fill_boundary_c(s0_cart(nlevs),comp,1)
-                call multifab_physbc(s0_cart(nlevs),comp,bc_comp,1,the_bc_level(nlevs))
-             else
-                do n=nlevs,2,-1
-                   call ml_cc_restriction_c(s0_cart(n-1),comp,s0_cart(n),comp, &
-                                            mla%mba%rr(n-1,:),1)
-                   call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s, &
-                                                  mla%mba%rr(n-1,:),the_bc_level(n-1), &
-                                                  the_bc_level(n),comp,bc_comp,1)
-                end do
-             end if
-          end do
+          ! restrict data and fill all ghost cells
+          call ml_restrict_and_fill(nlevs,s0_cart,mla%mba%rr,the_bc_level, &
+                                    icomp=1, &
+                                    bcomp=foextrap_comp, &
+                                    nc=dm, &
+                                    ng=s0_cart(1)%ng, &
+                                    same_boundary=.true.)
 
        else
 
           ! Here we fill each of the dm components using bc_comp+comp
-          if (nlevs .eq. 1) then
-             call multifab_fill_boundary_c(s0_cart(nlevs),1,dm)
-             call multifab_physbc(s0_cart(nlevs),1,bc_comp,dm,the_bc_level(nlevs))
-          else
-             do n=nlevs,2,-1
-                call ml_cc_restriction_c(s0_cart(n-1),1,s0_cart(n),1,mla%mba%rr(n-1,:),dm)
-                call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s, &
-                                               mla%mba%rr(n-1,:),the_bc_level(n-1), &
-                                               the_bc_level(n),1,bc_comp,dm)
-             end do
-          end if
+          ! restrict data and fill all ghost cells
+          call ml_restrict_and_fill(nlevs,s0_cart,mla%mba%rr,the_bc_level, &
+                                    icomp=1, &
+                                    bcomp=bc_comp, &
+                                    nc=dm, &
+                                    ng=s0_cart(1)%ng)
 
        end if
 
     else
 
        ! Here will fill the one component using bc_comp
-       if (nlevs .eq. 1) then
-          call multifab_fill_boundary_c(s0_cart(nlevs),1,1)
-          call multifab_physbc(s0_cart(nlevs),1,bc_comp,1,the_bc_level(nlevs))
-       else
-          do n=nlevs,2,-1
-             call ml_cc_restriction_c(s0_cart(n-1),1,s0_cart(n),1,mla%mba%rr(n-1,:),1)
-             call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                            the_bc_level(n-1),the_bc_level(n),1,bc_comp,1)
-          end do
-       end if
+       ! restrict data and fill all ghost cells
+       call ml_restrict_and_fill(nlevs,s0_cart,mla%mba%rr,the_bc_level, &
+                                 icomp=1, &
+                                 bcomp=bc_comp, &
+                                 nc=1, &
+                                 ng=s0_cart(1)%ng)
 
     end if
 
@@ -1644,9 +1626,7 @@ contains
     use define_bc_module
     use geometry, only: spherical, nr_irreg
     use ml_layout_module
-    use multifab_physbc_module
-    use ml_cc_restriction_module, only: ml_cc_restriction_c
-    use multifab_fill_ghost_module
+    use ml_restrict_fill_module
     
     real(kind=dp_t), intent(in   ) :: s0(:,0:)
     type(multifab) , intent(inout) :: s0_cart(:)
@@ -1702,16 +1682,12 @@ contains
     enddo
 
     ! Here will fill the one component using bc_comp
-    if (nlevs .eq. 1) then
-       call multifab_fill_boundary_c(s0_cart(nlevs),1,1)
-       call multifab_physbc(s0_cart(nlevs),1,bc_comp,1,the_bc_level(nlevs))
-    else
-       do n=nlevs,2,-1
-          call ml_cc_restriction_c(s0_cart(n-1),1,s0_cart(n),1,mla%mba%rr(n-1,:),1)
-          call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n),1,bc_comp,1)
-       end do
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,s0_cart,mla%mba%rr,the_bc_level, &
+                              icomp=1, &
+                              bcomp=bc_comp, &
+                              nc=1, &
+                              ng=s0_cart(1)%ng)
 
     call destroy(bpt)
     
