@@ -297,7 +297,7 @@ contains
     end if
     
     do n=1,nlevs
-       call multifab_build(Source_nph(n), mla%la(n), 1, 1)
+       call multifab_build(Source_nph(n), mla%la(n), 1, 0)
     end do
 
     if (time .eq. ZERO) then
@@ -806,7 +806,7 @@ contains
     end do
 
     do n=1,nlevs
-       call multifab_build(Source_nph(n), mla%la(n), 1, 1)
+       call multifab_build(Source_nph(n), mla%la(n), 1, 0)
     end do
 
     call make_S_at_halftime(mla,Source_nph,Source_old,Source_new,the_bc_tower%bc_tower_array)

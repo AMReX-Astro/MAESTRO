@@ -307,11 +307,6 @@ contains
        end if
     end do
 
-    do n=nlevs,2,-1
-       call ml_cc_restriction(gpi(n-1),gpi(n),mla%mba%rr(n-1,:))
-       call ml_cc_restriction(src(n-1),src(n),mla%mba%rr(n-1,:))
-    end do
-
     ! restrict data and fill all ghost cells
     call ml_restrict_and_fill(nlevs,sold,mla%mba%rr,the_bc_tower%bc_tower_array, &
                               icomp=1, &
@@ -325,6 +320,21 @@ contains
                               bcomp=1, &
                               nc=dm, &
                               ng=uold(1)%ng)
+
+    ! restrict data (no ghost cells)
+    call ml_restrict_and_fill(nlevs,gpi,mla%mba%rr,the_bc_tower%bc_tower_array, &
+                              icomp=1, &
+                              bcomp=foextrap_comp, &
+                              nc=dm, &
+                              ng=gpi(1)%ng, &
+                              same_boundary=.true.)
+
+    ! restrict data (no ghost cells)
+    call ml_restrict_and_fill(nlevs,src,mla%mba%rr,the_bc_tower%bc_tower_array, &
+                              icomp=1, &
+                              bcomp=foextrap_comp, &
+                              nc=1, &
+                              ng=src(1)%ng)
 
     ! optionally output details of the grid structure
     if (dump_grid_file .and. parallel_IOProcessor()) then

@@ -746,7 +746,7 @@ contains
                                 nc=dm, &
                                 ng=unew(1)%ng)
 
-      ! restrict data and fill all ghost cells
+      ! restrict data (gpi has no ghost cells)
       call ml_restrict_and_fill(nlevs,gpi,mla%mba%rr,the_bc_level, &
                                 icomp=1, &
                                 bcomp=foextrap_comp, &

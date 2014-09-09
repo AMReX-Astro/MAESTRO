@@ -195,14 +195,14 @@ contains
        end do
     enddo
 
-    ! restrict data and fill all ghost cells
+    ! restrict data (has no ghost cells)
     call ml_restrict_and_fill(nlevs,Source,mla%mba%rr,the_bc_level, &
                               icomp=1, &
                               bcomp=foextrap_comp, &
                               nc=1, &
                               ng=Source(1)%ng)
 
-    ! restrict data and fill all ghost cells
+    ! restrict data (has no ghost cells)
     call ml_restrict_and_fill(nlevs,delta_gamma1_term,mla%mba%rr,the_bc_level, &
                               icomp=1, &
                               bcomp=foextrap_comp, &

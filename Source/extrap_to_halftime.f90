@@ -72,7 +72,7 @@ contains
        
     enddo
 
-    ! restrict data and fill all ghost cells
+    ! restrict data (Source_nph has no ghost cells)
     call ml_restrict_and_fill(nlevs,Source_nph,mla%mba%rr,the_bc_level, &
                               icomp=1, &
                               bcomp=foextrap_comp, &
