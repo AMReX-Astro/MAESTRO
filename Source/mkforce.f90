@@ -32,9 +32,7 @@ contains
     use bl_prof_module
     use geometry, only: spherical, nr_fine, dr
     use bl_constants_module
-    use ml_cc_restriction_module, only: ml_cc_restriction
-    use multifab_fill_ghost_module
-    use multifab_physbc_module
+    use ml_restrict_fill_module
     use probin_module, only: evolve_base_state
     use fill_3d_module, only : put_1d_array_on_cart
     use variables, only : foextrap_comp
@@ -207,38 +205,12 @@ contains
        end do
     end if
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(vel_force(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       do i=1,dm
-          call multifab_physbc(vel_force(nlevs),i,i,1,the_bc_level(nlevs))
-       end do
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(vel_force(n-1),vel_force(n),mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          do i=1,dm
-             call multifab_fill_ghost_cells(vel_force(n),vel_force(n-1), &
-                                            ng_f,mla%mba%rr(n-1,:), &
-                                            the_bc_level(n-1),the_bc_level(n), &
-                                            i,i,1)
-          end do
-
-       enddo
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,vel_force,mla%mba%rr,the_bc_level, &
+                              icomp=1, &
+                              bcomp=1, &
+                              nc=dm, &
+                              ng=vel_force(1)%ng)
 
     call destroy(bpt)
 

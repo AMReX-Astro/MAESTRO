@@ -21,9 +21,7 @@ contains
     use geometry,  only: spherical
     use variables, only: spec_comp, rho_comp
     use network,   only: nspec
-    use multifab_physbc_module
-    use ml_cc_restriction_module, only: ml_cc_restriction_c
-    use multifab_fill_ghost_module
+    use ml_restrict_fill_module
 
     type(ml_layout)   , intent(inout) :: mla
     integer           , intent(in   ) :: nstart, nstop
@@ -108,52 +106,20 @@ contains
 
     end do
 
-    if (nlevs .eq. 1) then
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,snew,mla%mba%rr,the_bc_level, &
+                              icomp=nstart, &
+                              bcomp=dm+nstart, &
+                              nc=nstop-nstart+1, &
+                              ng=snew(1)%ng)
 
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(snew(nlevs),nstart,nstop-nstart+1)
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(snew(nlevs),nstart,dm+nstart,nstop-nstart+1, &
-                            the_bc_level(nlevs))
-
-       ! do the same for density if we updated the species
-       if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-          call multifab_fill_boundary_c(snew(nlevs),rho_comp,1)
-          call multifab_physbc(snew(nlevs),rho_comp,dm+rho_comp,1,the_bc_level(nlevs))
-
-       endif
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(snew(n-1),nstart,snew(n),nstart,mla%mba%rr(n-1,:), &
-                                   nstop-nstart+1)
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_sn,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         nstart,dm+nstart,nstop-nstart+1)
-
-          ! do the same for density if we updated the species
-          if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-
-             call ml_cc_restriction_c(snew(n-1),rho_comp,snew(n),rho_comp, &
-                                      mla%mba%rr(n-1,:),1)
-
-             call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_sn,mla%mba%rr(n-1,:), &
-                                            the_bc_level(n-1),the_bc_level(n), &
-                                            rho_comp,dm+rho_comp,1)
-
-          endif
-
-       enddo
+    ! do the same for density if we updated the species
+    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+       call ml_restrict_and_fill(nlevs,snew,mla%mba%rr,the_bc_level, &
+                                 icomp=rho_comp, &
+                                 bcomp=dm+rho_comp, &
+                                 nc=1, &
+                                 ng=snew(1)%ng)
 
     end if
 
