@@ -321,7 +321,6 @@ contains
                                      lo,hi,dt, bc%phys_bc_level_array(i,:,:), proj_type)
             end select
          end do
-         call multifab_fill_boundary(unew(n))
       end do 
 
       call destroy(bpt)
@@ -717,10 +716,6 @@ contains
                                  dp(:,:,:,1), ng_d, lo, hi, dt, using_alt_energy_fix)
             end select
          end do
-
-         ! fill ghost cells for two adjacent grids at the same level
-         ! this includes periodic domain boundary ghost cells
-         call multifab_fill_boundary(pi(n))
 
       end do
 
