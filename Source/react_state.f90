@@ -63,9 +63,6 @@ contains
 
     use probin_module, only: use_tfromp, do_heating, do_burning
     use variables, only: temp_comp, rhoh_comp, rho_comp,nscal
-
-    use multifab_fill_ghost_module
-    use multifab_physbc_module, only : multifab_physbc
     use ml_cc_restriction_module , only : ml_cc_restriction
     use heating_module        , only : get_rho_Hext 
     use rhoh_vs_t_module      , only : makeTfromRhoP, makeTfromRhoH
