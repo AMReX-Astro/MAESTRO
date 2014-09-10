@@ -106,10 +106,6 @@ contains
        end select
     end do
 
-    call multifab_fill_boundary(s)
-
-    call multifab_physbc(s,rho_comp,dm+rho_comp,nscal,the_bc_level)
-
   end subroutine initscalardata_on_level
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
