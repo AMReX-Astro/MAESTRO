@@ -34,7 +34,6 @@ contains
     use multifab_fill_ghost_module
     use bl_constants_module
     use variables, only: temp_comp, rho_comp, rhoh_comp, spec_comp, foextrap_comp
-    use multifab_physbc_module
     use fill_3d_module
     use probin_module, only: temp_diffusion_formulation
 
