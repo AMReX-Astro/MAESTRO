@@ -353,7 +353,7 @@ contains
       ! quantity projected is (Ustar - Un)
       else if (proj_type .eq. pressure_iters_comp) then
 
-         unew(lo(1):hi(1)) = ( unew(lo(1):hi(1)) - uold(lo(1):hi(1)) ) / dt
+         unew(lo(1)-1:hi(1)+1) = ( unew(lo(1)-1:hi(1)+1) - uold(lo(1)-1:hi(1)+1) ) / dt
 
       ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
@@ -400,10 +400,12 @@ contains
       ! quantity projected is (Ustar - Un)
       else if (proj_type .eq. pressure_iters_comp) then
 
-         unew(lo(1):hi(1),lo(2):hi(2),1) = ( &
-             unew(lo(1):hi(1),lo(2):hi(2),1) - uold(lo(1):hi(1),lo(2):hi(2),1) ) / dt
-         unew(lo(1):hi(1),lo(2):hi(2),2) = ( &
-             unew(lo(1):hi(1),lo(2):hi(2),2) - uold(lo(1):hi(1),lo(2):hi(2),2) ) / dt
+         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) = ( &
+             unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) &
+             - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) ) / dt
+         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) = ( &
+             unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) &
+             - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) ) / dt
      
       ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
@@ -461,9 +463,9 @@ contains
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
-            do k=lo(3),hi(3)
-               do j=lo(2),hi(2)
-                  do i=lo(1),hi(1)
+            do k=lo(3)-1,hi(3)+1
+               do j=lo(2)-1,hi(2)+1
+                  do i=lo(1)-1,hi(1)+1
                      unew(i,j,k,m) = (unew(i,j,k,m) - uold(i,j,k,m)) / dt
                   end do
                end do
