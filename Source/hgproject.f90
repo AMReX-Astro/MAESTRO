@@ -36,8 +36,6 @@ contains
     use bl_constants_module
     use bl_prof_module
     use proj_parameters
-    use multifab_fill_ghost_module , only : multifab_fill_ghost_cells
-    use ml_cc_restriction_module   , only : ml_cc_restriction
     use hg_multigrid_module        , only : hg_multigrid
     use hg_hypre_module            , only : hg_hypre
 
@@ -298,7 +296,7 @@ contains
       ng_uo = nghost(uold(1))
       ng_rh = nghost(rhohalf(1))
       ng_gp = nghost(gpi(1))
-  
+
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
          do i = 1, nfabs(unew(n))
@@ -323,7 +321,6 @@ contains
                                      lo,hi,dt, bc%phys_bc_level_array(i,:,:), proj_type)
             end select
          end do
-         call multifab_fill_boundary(unew(n))
       end do 
 
       call destroy(bpt)
@@ -347,9 +344,6 @@ contains
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
-      if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)+1) = ZERO
-
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
 
@@ -364,7 +358,7 @@ contains
       ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
 
-         unew(lo(1)-1:hi(1)+1) = unew(lo(1)-1:hi(1)+1) + dt*gpi(lo(1)-1:hi(1)+1)/rhohalf(lo(1)-1:hi(1)+1)
+         unew(lo(1):hi(1)) = unew(lo(1):hi(1)) + dt*gpi(lo(1):hi(1))/rhohalf(lo(1):hi(1))
 
        else
 
@@ -397,11 +391,6 @@ contains
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
 
-      if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1,lo(2)-1:hi(2)+1,:) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)+1,lo(2)-1:hi(2)+1,:) = ZERO
-      if (phys_bc(2,1) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1,:) = ZERO
-      if (phys_bc(2,2) .eq. INLET) gpi(lo(1)-1:hi(1)+1,hi(2)+1,:) = ZERO
-
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
 
@@ -412,17 +401,19 @@ contains
       else if (proj_type .eq. pressure_iters_comp) then
 
          unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) = ( &
-             unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) ) / dt
+             unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) &
+             - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) ) / dt
          unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) = ( &
-             unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) ) / dt
+             unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) &
+             - uold(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) ) / dt
      
       ! quantity projected is Ustar + dt * (1/rho) gpi
       else if (proj_type .eq. regular_timestep_comp) then
 
-         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) = unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) + &
-            dt*gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)/rhohalf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)
-         unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) = unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2) + &
-            dt*gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)/rhohalf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)
+         unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) + &
+            dt*gpi(lo(1):hi(1),lo(2):hi(2),1)/rhohalf(lo(1):hi(1),lo(2):hi(2))
+         unew(lo(1):hi(1),lo(2):hi(2),2) = unew(lo(1):hi(1),lo(2):hi(2),2) + &
+            dt*gpi(lo(1):hi(1),lo(2):hi(2),2)/rhohalf(lo(1):hi(1),lo(2):hi(2))
 
        else
      
@@ -460,13 +451,6 @@ contains
 
       integer :: i,j,k,m
 
-      if (phys_bc(1,1) .eq. INLET) gpi(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,:) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpi(hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,:) = ZERO
-      if (phys_bc(2,1) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1,:) = ZERO
-      if (phys_bc(2,2) .eq. INLET) gpi(lo(1)-1:hi(1)+1,hi(2)+1,lo(3)-1:hi(3)+1,:) = ZERO
-      if (phys_bc(3,1) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1,:) = ZERO
-      if (phys_bc(3,2) .eq. INLET) gpi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+1,:) = ZERO
-
       ! quantity projected is U
       if (proj_type .eq. initial_projection_comp) then
 
@@ -496,9 +480,9 @@ contains
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
-            do k=lo(3)-1,hi(3)+1
-               do j=lo(2)-1,hi(2)+1
-                  do i=lo(1)-1,hi(1)+1
+            do k=lo(3),hi(3)
+               do j=lo(2),hi(2)
+                  do i=lo(1),hi(1)
                      unew(i,j,k,m) = unew(i,j,k,m) + dt*gpi(i,j,k,m)/rhohalf(i,j,k)
                   end do
                end do
@@ -659,8 +643,8 @@ contains
     subroutine hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,pi,phi,dt, &
                          mla,the_bc_level,div_coeff_3d,using_alt_energy_fix)
 
-      use multifab_physbc_module
       use variables, only: foextrap_comp
+      use ml_restrict_fill_module
 
       integer        , intent(in   ) :: proj_type
       type(multifab) , intent(inout) :: unew(:)
@@ -735,50 +719,22 @@ contains
             end select
          end do
 
-         ! fill ghost cells for two adjacent grids at the same level
-         ! this includes periodic domain boundary ghost cells
-         call multifab_fill_boundary(pi(n))
-
       end do
 
-      if (nlevs .eq. 1) then
+      ! restrict data and fill all ghost cells
+      call ml_restrict_and_fill(nlevs,unew,mla%mba%rr,the_bc_level, &
+                                icomp=1, &
+                                bcomp=1, &
+                                nc=dm, &
+                                ng=unew(1)%ng)
 
-         ! fill ghost cells for two adjacent grids at the same level
-         ! this includes periodic domain boundary ghost cells
-         call multifab_fill_boundary(unew(nlevs))
-         call multifab_fill_boundary(gpi(nlevs))
-
-         ! fill non-periodic domain boundary ghost cells
-         call multifab_physbc(unew(nlevs),1,1,dm,the_bc_level(nlevs))
-         do i=1,dm
-            call multifab_physbc(gpi(nlevs),i,foextrap_comp,1,the_bc_level(nlevs))
-         end do
-
-      else
-
-         ! the loop over nlevs must count backwards to make sure the finer grids are 
-         ! done first
-         do n=nlevs,2,-1
-
-            ! set level n-1 data to be the average of the level n data covering it
-            call ml_cc_restriction(unew(n-1),unew(n),mla%mba%rr(n-1,:)) 
-            call ml_cc_restriction(gpi(n-1),gpi(n),mla%mba%rr(n-1,:))
-
-            ! fill level n ghost cells using interpolation from level n-1 data
-            ! note that multifab_fill_boundary and multifab_physbc are called for
-            ! both levels n-1 and n
-            call multifab_fill_ghost_cells(unew(n),unew(n-1),nghost(unew(n)),mla%mba%rr(n-1,:), &
-                                           the_bc_level(n-1),the_bc_level(n),1,1,dm, &
-                                           fill_crse_input=.false.)
-            do i=1,dm
-               call multifab_fill_ghost_cells(gpi(n),gpi(n-1),1,mla%mba%rr(n-1,:), &
-                                              the_bc_level(n-1),the_bc_level(n),i, &
-                                              foextrap_comp,1,fill_crse_input=.false.)
-            end do
-
-         end do
-
-      end if
+      ! restrict data (gpi has no ghost cells)
+      call ml_restrict_and_fill(nlevs,gpi,mla%mba%rr,the_bc_level, &
+                                icomp=1, &
+                                bcomp=foextrap_comp, &
+                                nc=dm, &
+                                ng=gpi(1)%ng, &
+                                same_boundary=.true.)
 
       call destroy(bpt)
 

@@ -63,13 +63,11 @@ contains
 
     use probin_module, only: use_tfromp, do_heating, do_burning
     use variables, only: temp_comp, rhoh_comp, rho_comp,nscal
-
-    use multifab_fill_ghost_module
-    use multifab_physbc_module, only : multifab_physbc
     use ml_cc_restriction_module , only : ml_cc_restriction
     use heating_module        , only : get_rho_Hext 
     use rhoh_vs_t_module      , only : makeTfromRhoP, makeTfromRhoH
     use bl_constants_module   , only: ZERO
+    use ml_restrict_fill_module
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: sold(:)
@@ -144,36 +142,20 @@ contains
        enddo
     endif
 
-    ! let's fill the boundaries
-    if (nlevs .eq. 1) then
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,snew,mla%mba%rr,the_bc_level, &
+                              icomp=rho_comp, &
+                              bcomp=dm+rho_comp, &
+                              nc=nscal, &
+                              ng=snew(1)%ng)
 
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(snew(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(snew(nlevs),rho_comp,dm+rho_comp,nscal,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(snew(n-1)        ,snew(n)        ,mla%mba%rr(n-1,:))
-          call ml_cc_restriction(rho_omegadot(n-1),rho_omegadot(n),mla%mba%rr(n-1,:))
-          call ml_cc_restriction(rho_Hext(n-1)    ,rho_Hext(n)    ,mla%mba%rr(n-1,:))
-          call ml_cc_restriction(rho_Hnuc(n-1)    ,rho_Hnuc(n)    ,mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),nghost(snew(n)),mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
-       enddo
-
-    end if
+    ! the loop over nlevs must count backwards to make sure the finer grids are done first
+    do n=nlevs,2,-1
+       ! set level n-1 data to be the average of the level n data covering it
+       call ml_cc_restriction(rho_omegadot(n-1),rho_omegadot(n),mla%mba%rr(n-1,:))
+       call ml_cc_restriction(rho_Hext(n-1)    ,rho_Hext(n)    ,mla%mba%rr(n-1,:))
+       call ml_cc_restriction(rho_Hnuc(n-1)    ,rho_Hnuc(n)    ,mla%mba%rr(n-1,:))
+    enddo
 
     ! now update temperature
     if (use_tfromp) then
@@ -593,7 +575,7 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
-         burner_threshold_cutoff, drive_initial_convection
+         burner_threshold_cutoff
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
     real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,lo(2)-ng_si:,:)

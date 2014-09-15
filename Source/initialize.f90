@@ -30,9 +30,7 @@ contains
                                      tempbar,tempbar_init,grav_cell)
 
     use restart_module
-    use ml_cc_restriction_module
     use multifab_fill_ghost_module
-    use multifab_physbc_module
     use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
          ppm_type, bds_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
          check_base_name, use_tfromp, cflfac, dm_in, restart_with_vel_field, &
@@ -49,8 +47,9 @@ contains
     use regrid_module
     use init_scalar_module
     use time_module, only: time
-  use base_io_module
-  use aux_data_module
+    use base_io_module
+    use aux_data_module
+    use ml_restrict_fill_module
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(inout) :: restart
@@ -162,11 +161,11 @@ contains
     do n = 1,nlevs
        call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
        call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
-       call multifab_build(          gpi(n), mla%la(n),    dm, 1)
-       call multifab_build(           pi(n), mla%la(n),     1, 1, nodal)
+       call multifab_build(          gpi(n), mla%la(n),    dm, 0)
+       call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
-       call multifab_build(   Source_old(n), mla%la(n),     1, 1)
-       call multifab_build(   Source_new(n), mla%la(n),     1, 1)
+       call multifab_build(   Source_old(n), mla%la(n),     1, 0)
+       call multifab_build(   Source_new(n), mla%la(n),     1, 0)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
@@ -413,49 +412,19 @@ contains
 
     endif
 
-
-    ! fill ghost cells
+    ! restrict data and fill all ghost cells
     ! this need to be done after read_base_state since in some problems, the inflow
     ! boundary conditions are set in read_base_state
-    if (nlevs .eq. 1) then
-        
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(sold(nlevs))
-       call multifab_fill_boundary(uold(nlevs))
-       
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(sold(nlevs),rho_comp,dm+rho_comp,nscal, &
-                            the_bc_tower%bc_tower_array(nlevs))
-       call multifab_physbc(uold(nlevs),       1,          1,   dm, &
-                            the_bc_tower%bc_tower_array(nlevs))
-       
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are 
-       ! done first
-       do n = nlevs,2,-1
-          
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(uold(n-1),uold(n),mla%mba%rr(n-1,:))
-          call ml_cc_restriction(sold(n-1),sold(n),mla%mba%rr(n-1,:))
-          
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(uold(n),uold(n-1), &
-                                         nghost(uold(n)),mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n  ), &
-                                         1,1,dm,fill_crse_input=.false.)
-          call multifab_fill_ghost_cells(sold(n),sold(n-1), &
-                                         nghost(sold(n)),mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n  ), &
-                                         rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
-       end do
-       
-    end if
+    call ml_restrict_and_fill(nlevs,sold,mba%rr,the_bc_tower%bc_tower_array, &
+                              icomp=rho_comp, &
+                              bcomp=dm+rho_comp, &
+                              nc=nscal, &
+                              ng=sold(1)%ng)
+    call ml_restrict_and_fill(nlevs,uold,mba%rr,the_bc_tower%bc_tower_array, &
+                              icomp=1, &
+                              bcomp=1, &
+                              nc=dm, &
+                              ng=uold(1)%ng)
 
     if (restart_into_finer .and. spherical .eq. 0) then
        call bl_error('restart_into_finer only currently supported for spherical')
@@ -784,11 +753,11 @@ contains
     do n = 1,nlevs
        call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
        call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
-       call multifab_build(          gpi(n), mla%la(n),    dm, 1)
-       call multifab_build(           pi(n), mla%la(n),     1, 1, nodal)
+       call multifab_build(          gpi(n), mla%la(n),    dm, 0)
+       call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
-       call multifab_build(   Source_old(n), mla%la(n),     1, 1)
-       call multifab_build(   Source_new(n), mla%la(n),     1, 1)
+       call multifab_build(   Source_old(n), mla%la(n),     1, 0)
+       call multifab_build(   Source_new(n), mla%la(n),     1, 0)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
@@ -936,9 +905,7 @@ contains
     use make_new_grids_module
     use probin_module, only : drdxfac, ppm_type, bds_type, prob_lo, prob_hi, do_smallscale, &
          model_file, nodal, dm_in, fix_base_state
-    use multifab_physbc_module
-    use ml_cc_restriction_module
-    use multifab_fill_ghost_module
+    use ml_restrict_fill_module
     use make_grav_module
     use enforce_HSE_module
     use rhoh_vs_t_module
@@ -1087,9 +1054,11 @@ contains
 
        ! Fill level 1's ghost cells and apply boundary conditions 
        ! so we can use them in tagging boxes for refinement
-       call multifab_fill_boundary(sold(1))
-       call multifab_physbc(sold(1),rho_comp,dm+rho_comp,nscal, &
-                                  the_bc_tower%bc_tower_array(1))
+       call ml_restrict_and_fill(1,sold,mba%rr,the_bc_tower%bc_tower_array, &
+                                 icomp=rho_comp, &
+                                 bcomp=dm+rho_comp, &
+                                 nc=nscal, &
+                                 ng=sold(1)%ng)
 
        new_grid = .true.
        nl = 1
@@ -1121,19 +1090,12 @@ contains
                                              the_bc_tower%bc_tower_array(nl))
              end if
 
-             ! Restrict coarse levels to be the average of any fine data covering them,
-             ! and fill fine ghost cells.
-             do n=nl,2,-1
-                call ml_cc_restriction(sold(n-1),sold(n),mba%rr(n-1,:))
-                !Note that fill_boundary() and physbc() will be called on sold(n)
-                !as part of filling the ghost cells
-                call multifab_fill_ghost_cells(sold(n),sold(n-1), &
-                                               nghost(sold(n)),mba%rr(n-1,:), &
-                                               the_bc_tower%bc_tower_array(n-1), &
-                                               the_bc_tower%bc_tower_array(n), &
-                                               rho_comp,dm+rho_comp,nscal, &
-                                               fill_crse_input=.false.)
-             enddo
+             ! restrict data and fill all ghost cells
+             call ml_restrict_and_fill(nl,sold,mba%rr,the_bc_tower%bc_tower_array, &
+                                       icomp=rho_comp, &
+                                       bcomp=dm+rho_comp, &
+                                       nc=nscal, &
+                                       ng=sold(1)%ng)
           endif
 
           ! Do we need finer grids?  
@@ -1191,18 +1153,13 @@ contains
 
                  end do
 
-                 ! now fill the ghost cells and boundary conditions
-                 do n=nl,2,-1
-                    call ml_cc_restriction(sold(n-1),sold(n),mba%rr(n-1,:))
-                    !Note that fill_boundary() and physbc() will be called on sold(n)
-                    !as part of filling the ghost cells
-                    call multifab_fill_ghost_cells(sold(n),sold(n-1), &
-                                                   nghost(sold(n)),mba%rr(n-1,:), &
-                                                   the_bc_tower%bc_tower_array(n-1), &
-                                                   the_bc_tower%bc_tower_array(n), &
-                                                   rho_comp,dm+rho_comp,nscal, &
-                                                   fill_crse_input=.false.)
-                 enddo
+                 ! restrict data and fill all ghost cells
+                 call ml_restrict_and_fill(nl,sold,mba%rr,the_bc_tower%bc_tower_array, &
+                                           icomp=rho_comp, &
+                                           bcomp=dm+rho_comp, &
+                                           nc=nscal, &
+                                           ng=sold(1)%ng)
+
                endif
              endif !end proper nesting enforcement
 
@@ -1251,11 +1208,11 @@ contains
     do n = 1,nlevs
        call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
        call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
-       call multifab_build(          gpi(n), mla%la(n),    dm, 1)
-       call multifab_build(           pi(n), mla%la(n),     1, 1, nodal)
+       call multifab_build(          gpi(n), mla%la(n),    dm, 0)
+       call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
-       call multifab_build(   Source_old(n), mla%la(n),     1, 1)
-       call multifab_build(   Source_new(n), mla%la(n),     1, 1)
+       call multifab_build(   Source_old(n), mla%la(n),     1, 0)
+       call multifab_build(   Source_new(n), mla%la(n),     1, 0)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)

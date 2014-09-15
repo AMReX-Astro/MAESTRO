@@ -25,9 +25,8 @@ contains
     use ml_layout_module
     use define_bc_module
     use ml_cc_restriction_module, only: ml_cc_restriction_c
-    use multifab_fill_ghost_module
-    use multifab_physbc_module
     use bl_prof_module
+    use ml_restrict_fill_module
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: comp,bc_comp
@@ -78,31 +77,12 @@ contains
        end do
     end do
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(s(nlevs),comp,1)
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(s(nlevs),comp,bc_comp,1,the_bc_level(nlevs))
-       
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(s(n-1),comp,s(n),comp,mla%mba%rr(n-1,:),1)
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(s(n),s(n-1), &
-                                         nghost(s(n)),mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         comp,bc_comp,1,fill_crse_input=.false.)
-       end do
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,s,mla%mba%rr,the_bc_level, &
+                              icomp=comp, &
+                              bcomp=bc_comp, &
+                              nc=1, &
+                              ng=s(1)%ng)
 
     call destroy(bpt)
 

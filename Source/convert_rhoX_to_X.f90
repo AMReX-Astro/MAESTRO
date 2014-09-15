@@ -5,9 +5,9 @@
 
 module convert_rhoX_to_X_module
 
-  use multifab_module, only: multifab, nghost, multifab_div_div_c, multifab_mult_mult_c, &
-                             multifab_fill_boundary_c
+  use multifab_module, only: multifab, nghost, multifab_div_div_c, multifab_mult_mult_c
   use bl_prof_module, only: bl_prof_timer, build, destroy
+  use ml_restrict_fill_module
 
   implicit none
 
@@ -23,9 +23,6 @@ contains
     use variables, only: spec_comp, foextrap_comp, rho_comp
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_level
-    use ml_cc_restriction_module, only: ml_cc_restriction_c
-    use multifab_fill_ghost_module, only: multifab_fill_ghost_cells
-    use multifab_physbc_module, only: multifab_physbc
 
     type(multifab) , intent(inout) :: s(:)
     logical        , intent(in   ) :: flag
@@ -33,7 +30,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    integer :: n,comp,bc_comp,dm,nlevs
+    integer :: n,comp,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
@@ -56,49 +53,23 @@ contains
        end do
     end if
 
-    if (nlevs .eq. 1) then
+    ! restrict data and fill all ghost cells
+    if (flag) then
 
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(s(nlevs),spec_comp,nspec)
-
-       do comp = spec_comp,spec_comp+nspec-1
-
-          if (flag) then
-             bc_comp = foextrap_comp
-          else
-             bc_comp = dm+comp
-          end if
-
-          ! fill non-periodic domain boundary ghost cells
-          call multifab_physbc(s(nlevs),comp,bc_comp,1,the_bc_level(nlevs))
-       end do
+       call ml_restrict_and_fill(nlevs,s,mla%mba%rr,the_bc_level, &
+                                 icomp=spec_comp, &
+                                 bcomp=foextrap_comp, &
+                                 nc=nspec, &
+                                 ng=s(1)%ng, &
+                                 same_boundary=.true.)
 
     else
 
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(s(n-1),spec_comp,s(n),spec_comp,mla%mba%rr(n-1,:),nspec)
-          
-          do comp = spec_comp,spec_comp+nspec-1
-             if (flag) then
-                bc_comp = foextrap_comp
-             else
-                bc_comp = dm+comp
-             end if
-             
-             ! fill level n ghost cells using interpolation from level n-1 data
-             ! note that multifab_fill_boundary and multifab_physbc are called for
-             ! both levels n-1 and n
-             call multifab_fill_ghost_cells(s(n),s(n-1), &
-                                            nghost(s(n)),mla%mba%rr(n-1,:), &
-                                            the_bc_level(n-1),the_bc_level(n), &
-                                            comp,bc_comp,1,fill_crse_input=.false.)
-          end do
-
-       end do
+       call ml_restrict_and_fill(nlevs,s,mla%mba%rr,the_bc_level, &
+                                 icomp=spec_comp, &
+                                 bcomp=dm+spec_comp, &
+                                 nc=nspec, &
+                                 ng=s(1)%ng)
 
     end if
 
@@ -111,9 +82,6 @@ contains
     use variables, only: rho_comp, rhoh_comp, foextrap_comp
     use ml_layout_module, only: ml_layout
     use define_bc_module, only: bc_level
-    use ml_cc_restriction_module, only: ml_cc_restriction_c
-    use multifab_fill_ghost_module, only: multifab_fill_ghost_cells
-    use multifab_physbc_module, only: multifab_physbc
 
     type(multifab) , intent(inout) :: s(:)
     logical        , intent(in   ) :: flag
@@ -121,7 +89,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    integer :: n,bc_comp,dm,nlevs
+    integer :: n,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
@@ -139,44 +107,23 @@ contains
           call multifab_mult_mult_c(s(n),rhoh_comp,s(n),rho_comp,1)
        end do
     end if
-    
-    if (nlevs .eq. 1) then
 
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(s(nlevs),rhoh_comp,1)
+    ! restrict data and fill all ghost cells
+    if (flag) then
 
-       if (flag) then
-          bc_comp = foextrap_comp
-       else
-          bc_comp = dm+rhoh_comp
-       end if
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(s(nlevs),rhoh_comp,bc_comp,1,the_bc_level(nlevs))
+       call ml_restrict_and_fill(nlevs,s,mla%mba%rr,the_bc_level, &
+                                 icomp=rhoh_comp, &
+                                 bcomp=foextrap_comp, &
+                                 nc=1, &
+                                 ng=s(1)%ng)
 
     else
 
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(s(n-1),rhoh_comp,s(n),rhoh_comp,mla%mba%rr(n-1,:),1)
-          
-          if (flag) then
-             bc_comp = foextrap_comp
-          else
-             bc_comp = dm+rhoh_comp
-          end if
-             
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(s(n),s(n-1), &
-                                         nghost(s(n)),mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         rhoh_comp,bc_comp,1,fill_crse_input=.false.)
-       end do
+       call ml_restrict_and_fill(nlevs,s,mla%mba%rr,the_bc_level, &
+                                 icomp=rhoh_comp, &
+                                 bcomp=dm+rhoh_comp, &
+                                 nc=1, &
+                                 ng=s(1)%ng)
 
     end if
 

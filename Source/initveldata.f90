@@ -3,9 +3,7 @@ module init_vel_module
   use multifab_module
   use ml_layout_module
   use bl_constants_module
-  use multifab_physbc_module
-  use ml_cc_restriction_module
-  use multifab_fill_ghost_module
+  use ml_restrict_fill_module
 
   implicit none
 
@@ -14,7 +12,7 @@ module init_vel_module
 
 contains
 
-  subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
+  subroutine initveldata(u,s0_init,p0_init,dx,the_bc_level,mla)
 
     use geometry, only: spherical
 
@@ -22,7 +20,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    type(bc_level) , intent(in   ) :: bc(:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
@@ -57,31 +55,12 @@ contains
 
     enddo
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(u(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(u(nlevs),1,1,dm,bc(nlevs))
-
-    else
-    
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(u(n-1),u(n),mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(u(n),u(n-1),ng,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),1,1,dm,fill_crse_input=.false.)
-       enddo
-       
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,u,mla%mba%rr,the_bc_level, &
+                              icomp=1, &
+                              bcomp=1, &
+                              nc=dm, &
+                              ng=u(1)%ng)
 
   end subroutine initveldata
 

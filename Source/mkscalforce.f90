@@ -16,6 +16,7 @@ module mkscalforce_module
   use multifab_module
   use ml_layout_module
   use define_bc_module
+  use ml_restrict_fill_module
 
   implicit none
 
@@ -32,10 +33,7 @@ contains
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
     use geometry, only: spherical, nr_fine, nlevs_radial
-    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use fill_3d_module
-    use multifab_fill_ghost_module
-    use multifab_physbc_module
     use make_grav_module
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
@@ -170,34 +168,12 @@ contains
        end do
     end if
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(scal_force(nlevs),rhoh_comp,1)
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(scal_force(nlevs),rhoh_comp,foextrap_comp,1,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(scal_force(n-1),rhoh_comp,scal_force(n),rhoh_comp, &
-                                   mla%mba%rr(n-1,:),1)
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
-                                         nghost(scal_force(n)),mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         rhoh_comp,foextrap_comp,1,fill_crse_input=.false.)
-       end do
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,scal_force,mla%mba%rr,the_bc_level, &
+                              icomp=rhoh_comp, &
+                              bcomp=foextrap_comp, &
+                              nc=1, &
+                              ng=scal_force(1)%ng)
 
     call destroy(bpt)
     
@@ -524,10 +500,7 @@ contains
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp, rho_comp
     use geometry, only: spherical, nr_fine
-    use ml_cc_restriction_module, only: ml_cc_restriction_c
     use fill_3d_module, only: put_1d_array_on_cart
-    use multifab_fill_ghost_module
-    use multifab_physbc_module
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
@@ -639,34 +612,12 @@ contains
        end do
     end if
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(scal_force(nlevs),rhoh_comp,1)
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(scal_force(nlevs),rhoh_comp,foextrap_comp,1,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(scal_force(n-1),rhoh_comp,scal_force(n),rhoh_comp, &
-                                   mla%mba%rr(n-1,:),1)
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
-                                         nghost(scal_force(n)),mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         rhoh_comp,foextrap_comp,1,fill_crse_input=.false.)
-       end do
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,scal_force,mla%mba%rr,the_bc_level, &
+                              icomp=rhoh_comp, &
+                              bcomp=foextrap_comp, &
+                              nc=1, &
+                              ng=scal_force(1)%ng)
 
     call destroy(bpt)
     
@@ -677,7 +628,6 @@ contains
                                    dx,psi,add_thermal)
 
     use fill_3d_module
-    use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
@@ -804,9 +754,6 @@ contains
     use bl_prof_module
     use variables, only: foextrap_comp, temp_comp
     use geometry, only: spherical, nr_fine
-    use ml_cc_restriction_module, only: ml_cc_restriction_c
-    use multifab_fill_ghost_module
-    use multifab_physbc_module
     use fill_3d_module, only: put_1d_array_on_cart
 
     type(ml_layout), intent(in   ) :: mla
@@ -903,34 +850,12 @@ contains
        end do
     end if
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(temp_force(nlevs),temp_comp,1)
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(temp_force(nlevs),temp_comp,foextrap_comp,1,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(temp_force(n-1),temp_comp,temp_force(n),temp_comp, &
-                                   mla%mba%rr(n-1,:),1)
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(temp_force(n),temp_force(n-1), &
-                                         nghost(temp_force(n)),mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         temp_comp,foextrap_comp,1,fill_crse_input=.false.)
-       enddo
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,temp_force,mla%mba%rr,the_bc_level, &
+                              icomp=temp_comp, &
+                              bcomp=foextrap_comp, &
+                              nc=1, &
+                              ng=temp_force(1)%ng)
 
     call destroy(bpt)
 

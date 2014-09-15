@@ -228,10 +228,6 @@ contains
     ! Clean-up ...
     ! ********************************************************************************
 
-    do n = nlevs,1,-1
-       call multifab_fill_boundary(phi(n))
-    end do
-
     do n = 1, nlevs
        call mg_tower_destroy(mgt(n))
     end do

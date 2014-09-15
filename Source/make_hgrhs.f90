@@ -32,9 +32,7 @@ contains
     use geometry, only: spherical
     use fill_3d_module
     use variables, only: foextrap_comp
-    use ml_cc_restriction_module
-    use multifab_fill_ghost_module
-    use multifab_physbc_module
+    use ml_restrict_fill_module
     
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla
@@ -118,33 +116,13 @@ contains
        end do
     end do
 
-    if (nlevs .eq. 1) then
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(rhs_cc(nlevs))
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,rhs_cc,mla%mba%rr,the_bc_tower%bc_tower_array, &
+                              icomp=1, &
+                              bcomp=foextrap_comp, &
+                              nc=1, &
+                              ng=rhs_cc(1)%ng)
 
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(rhs_cc(nlevs),1,foextrap_comp,1, &
-                            the_bc_tower%bc_tower_array(nlevs))
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(rhs_cc(n-1),rhs_cc(n),mla%mba%rr(n-1,:))
- 
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(rhs_cc(n),rhs_cc(n-1),1,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n),1,foextrap_comp,1, &
-                                         fill_crse_input=.false.)
-       end do
-
-    end if
-       
     do n=1,nlevs
        call setval(hgrhs(n),ZERO,all=.true.)
        do i = 1, nfabs(Source(n))
@@ -341,10 +319,8 @@ contains
     use geometry, only: spherical
     use fill_3d_module
     use variables, only: foextrap_comp, rho_comp
-    use ml_cc_restriction_module
-    use multifab_fill_ghost_module
-    use multifab_physbc_module
     use probin_module, only: nodal
+    use ml_restrict_fill_module
     
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla
@@ -450,34 +426,12 @@ contains
        end do
     end do
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(correction_cc(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(correction_cc(nlevs),1,foextrap_comp,1, &
-                            the_bc_tower%bc_tower_array(nlevs))
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(correction_cc(n-1),correction_cc(n),mla%mba%rr(n-1,:))
- 
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(correction_cc(n),correction_cc(n-1),1, &
-                                         mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n),1,foextrap_comp,1, &
-                                         fill_crse_input=.false.)
-       end do
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,correction_cc,mla%mba%rr,the_bc_tower%bc_tower_array, &
+                              icomp=1, &
+                              bcomp=foextrap_comp, &
+                              nc=1, &
+                              ng=correction_cc(1)%ng)
        
     do n=1,nlevs
        call setval(correction_nodal(n),ZERO,all=.true.)

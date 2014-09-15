@@ -413,8 +413,7 @@ subroutine varden()
                                                 mla%mba%rr(n-1,:), &
                                                 the_bc_tower%bc_tower_array(n-1), &
                                                 the_bc_tower%bc_tower_array(n), &
-                                                rho_comp,dm+rho_comp,nscal, &
-                                                fill_crse_input=.false.)
+                                                rho_comp,dm+rho_comp,nscal)
         
               enddo
      

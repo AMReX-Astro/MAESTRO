@@ -34,9 +34,7 @@ contains
     use probin_module, only: use_delta_gamma1_term
     use ml_layout_module
     use average_module
-    use ml_cc_restriction_module
-    use multifab_physbc_module
-    use multifab_fill_ghost_module
+    use ml_restrict_fill_module
     use variables, only: foextrap_comp
     use geometry, only: spherical, nr_fine, dr
     use fill_3d_module, only : put_1d_array_on_cart
@@ -197,44 +195,19 @@ contains
        end do
     enddo
 
-    ! fill the ghostcells for delta_gamma1_term and Source
-    if (nlevs .eq. 1) then
+    ! restrict data (has no ghost cells)
+    call ml_restrict_and_fill(nlevs,Source,mla%mba%rr,the_bc_level, &
+                              icomp=1, &
+                              bcomp=foextrap_comp, &
+                              nc=1, &
+                              ng=Source(1)%ng)
 
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(Source(nlevs))
-       call multifab_fill_boundary(delta_gamma1_term(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(Source(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
-       call multifab_physbc(delta_gamma1_term(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(Source(n-1),Source(n),mla%mba%rr(n-1,:))
-          call ml_cc_restriction(delta_gamma1_term(n-1),delta_gamma1_term(n), &
-                                 mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(Source(n),Source(n-1), &
-                                         ng_sr,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1), the_bc_level(n), &
-                                         1,foextrap_comp,1,fill_crse_input=.false.)
-          
-          call multifab_fill_ghost_cells(delta_gamma1_term(n),delta_gamma1_term(n-1), &
-                                         ng_dt,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1), the_bc_level(n), &
-                                         1,foextrap_comp,1,fill_crse_input=.false.)
-       enddo
-
-    end if
-
+    ! restrict data (has no ghost cells)
+    call ml_restrict_and_fill(nlevs,delta_gamma1_term,mla%mba%rr,the_bc_level, &
+                              icomp=1, &
+                              bcomp=foextrap_comp, &
+                              nc=1, &
+                              ng=delta_gamma1_term(1)%ng)
 
     if (use_delta_gamma1_term) then
 
@@ -281,33 +254,6 @@ contains
              end select
           end do
        enddo
-
-       ! fill ghostcells for delta_gamma1_term again, since it was just updated
-       if (nlevs .eq. 1) then
-
-          ! fill ghost cells for two adjacent grids at the same level
-          ! this includes periodic domain boundary ghost cells
-          call multifab_fill_boundary(delta_gamma1_term(nlevs))
-
-          ! fill non-periodic domain boundary ghost cells
-          call multifab_physbc(delta_gamma1_term(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
-
-       else
-
-          ! the loop over nlevs must count backwards to make sure the finer grids are done first
-          do n=nlevs,2,-1
-
-             ! set level n-1 data to be the average of the level n data covering it
-             call ml_cc_restriction(delta_gamma1_term(n-1),delta_gamma1_term(n), &
-                                    mla%mba%rr(n-1,:))
-
-             call multifab_fill_ghost_cells(delta_gamma1_term(n),delta_gamma1_term(n-1), &
-                                            ng_dt,mla%mba%rr(n-1,:), &
-                                            the_bc_level(n-1), the_bc_level(n), &
-                                            1,foextrap_comp,1,fill_crse_input=.false.)
-          enddo
-
-       end if
 
     end if
 

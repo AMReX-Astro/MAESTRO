@@ -194,10 +194,6 @@ contains
     call ml_cc_solve(mla, mgt, rh, phi, fine_flx, do_diagnostics)
 
     do n = 1, nlevs
-       call multifab_fill_boundary(phi(n))
-    end do
-
-    do n = 1, nlevs
        call mg_tower_destroy(mgt(n))
     end do
 

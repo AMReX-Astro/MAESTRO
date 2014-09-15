@@ -19,9 +19,7 @@ contains
     use bl_constants_module
     use geometry, only: spherical
     use variables, only: foextrap_comp
-    use multifab_physbc_module
-    use ml_cc_restriction_module
-    use multifab_fill_ghost_module
+    use ml_restrict_fill_module
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
@@ -113,34 +111,12 @@ contains
        
     enddo
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(force(nlevs),comp,1)
-       
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(force(nlevs),comp,foextrap_comp,1,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(force(n-1),comp,force(n),comp,mla%mba%rr(n-1,:),1)
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(force(n),force(n-1), &
-                                         nghost(force(n)),mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         comp,foextrap_comp,1,fill_crse_input=.false.)
-
-       enddo
-
-    end if
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,force,mla%mba%rr,the_bc_level, &
+                              icomp=comp, &
+                              bcomp=foextrap_comp, &
+                              nc=1, &
+                              ng=force(1)%ng)
 
     call destroy(bpt)
     
