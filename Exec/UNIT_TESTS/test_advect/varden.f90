@@ -125,10 +125,6 @@ subroutine varden()
   ! initialize nlevs
   nlevs = mla%nlevel
 
-!  if (nlevs .ne. max_levs) then
-!     call bl_error('varden.f90: nlevs .ne. max_levs not supported yet')
-!  end if
-
   nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
   ! initialize dm
@@ -281,16 +277,20 @@ subroutine varden()
      if (p <= 2) then
         ppm_type = p
 
-        print *, ' '
-        print *, '<<< ppm_type ', p, ' >>>'
-        print *, ' '
+        if (parallel_IOProcessor()) then
+           print *, ' '
+           print *, '<<< ppm_type ', p, ' >>>'
+           print *, ' '
+        endif
 
      else
         bds_type = 1
 
-        print *, ' '
-        print *, '<<< bds_type ', 1, ' >>>'
-        print *, ' '
+        if (parallel_IOProcessor()) then
+           print *, ' '
+           print *, '<<< bds_type ', 1, ' >>>'
+           print *, ' '
+        endif
      endif
 
 
@@ -307,9 +307,11 @@ subroutine varden()
            endif
         
 
-           print *, ' '
-           print *, '<<< advection test in direction ', itest_dir, ' >>>'
-           print *, 'index_t = ', index_t
+           if (parallel_IOProcessor()) then
+              print *, ' '
+              print *, '<<< advection test in direction ', itest_dir, ' >>>'
+              print *, 'index_t = ', index_t
+           endif
 
            ! initialize the velocity field -- it is unity in the
            ! direction of propagation a negative itest_dir indicates
@@ -440,8 +442,10 @@ subroutine varden()
               call fabio_ml_multifab_write_d(dens_orig,mla%mba%rr(:,1), &
                                              trim(outname),names=plot_names(1:1))
 
-              print *, 'wrote file: ', trim(outname)
-              print *, ' '
+              if (parallel_IOProcessor()) then
+                 print *, 'wrote file: ', trim(outname)
+                 print *, ' '
+              endif
               
               wrote_init_file = .true.
 
@@ -455,8 +459,9 @@ subroutine varden()
            t = ZERO
            do while (t < stop_time)
 
-              print *, 't = ', t, 'dt = ', dt
-     
+              if (parallel_IOProcessor()) then
+                 print *, 't = ', t, 'dt = ', dt
+              endif
 
               ! advance density according to rho_t + (rho U)_x = 0
               call density_advance(mla,1,sold,snew,sedge,sflux, &
@@ -484,7 +489,9 @@ subroutine varden()
               
            end do
 
-           print *, 'finished evolution, t = ', t
+           if (parallel_IOProcessor()) then
+              print *, 'finished evolution, t = ', t
+           endif
 
            ! copy the final density field into a dummy multifab for
            ! output and analysis
@@ -581,8 +588,10 @@ subroutine varden()
               call fabio_ml_multifab_write_d(temporary,mla%mba%rr(:,1), &
                                              trim(outname),names=plot_names, time=t)
 
-              print *, 'wrote file: ', trim(outname)
-           
+              if (parallel_IOProcessor()) then
+                 print *, 'wrote file: ', trim(outname)
+              endif
+
            endif
 
 
@@ -590,17 +599,22 @@ subroutine varden()
      enddo    ! idim loop
   enddo   ! ppm_type
 
-  print *, ' '
-  print *, ' '
-
+  if (parallel_IOProcessor()) then
+     print *, ' '
+     print *, ' '
+  endif
 
   ! report
   do p = 0, imax   ! ppm_type
 
      if (p <= 2) then
-        print *, 'ppm_type = ', p
+        if (parallel_IOProcessor()) then
+           print *, 'ppm_type = ', p
+        endif
      else
-        print *, 'bds_type = ', 1
+        if (parallel_IOProcessor()) then
+           print *, 'bds_type = ', 1
+        endif
      endif
 
      do i = 1, 2*dm
@@ -610,13 +624,16 @@ subroutine varden()
            itest_dir = -1*(i - dm)
         endif
 
-        print *, 'advection direction: ', itest_dir
-        do n = 1,nlevs
-           print *, '  level ', n
-           print *, '    | rho_final - rho_init |_2              = ', abs_norm(p,n,i)
-           print *, '    | (rho_final - rho_init) / rho_init |_2 = ', rel_norm(p,n,i)
-        enddo
-        print *, ' '
+        if (parallel_IOProcessor()) then
+           print *, 'advection direction: ', itest_dir
+           do n = 1,nlevs
+              print *, '  level ', n
+              print *, '    | rho_final - rho_init |_2              = ', abs_norm(p,n,i)
+              print *, '    | (rho_final - rho_init) / rho_init |_2 = ', rel_norm(p,n,i)
+           enddo
+           print *, ' '
+        endif
+
      enddo
   enddo  ! ppm_type
 
@@ -638,16 +655,18 @@ subroutine varden()
      enddo
   enddo  ! ppm_type
 
-  if (max_dabs_error < advect_test_tol * max_abs_error .and. &
-      max_drel_error < advect_test_tol * max_rel_error) then
-     print *, "SUCCESS: advection errors for all directions agree with tolerance"
-  else
-     print *, "ERROR: advection errors across directions are too large"
-     print *, "absolute error: ", max_dabs_error/max_abs_error
-     print *, "relative error: ", max_drel_error/max_rel_error
-  endif
+  if (parallel_IOProcessor()) then
+     if (max_dabs_error < advect_test_tol * max_abs_error .and. &
+          max_drel_error < advect_test_tol * max_rel_error) then     
+        print *, "SUCCESS: advection errors for all directions agree with tolerance"
+     else
+        print *, "ERROR: advection errors across directions are too large"
+        print *, "absolute error: ", max_dabs_error/max_abs_error
+        print *, "relative error: ", max_drel_error/max_rel_error
+     endif
 
-  print *, " "
+     print *, " "
+  endif
 
 
   ! clean-up
