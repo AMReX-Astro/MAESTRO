@@ -75,12 +75,13 @@ contains
 
     integer :: i,j,k,llev
 
-    real(kind = dp_t) :: RHOMIN
+    real(kind = dp_t) :: RHOMIN, RHOMIN4
     real(kind = dp_t) :: CRITXHE
     real(kind = dp_t) :: CRITTEMP
 
     llev = 1; if (present(lev)) llev = lev
     RHOMIN   = tag_rhomin
+    RHOMIN4  = 5.0d5
     CRITXHE  = tag_critxhe
     CRITTEMP = tag_crittemp
 
@@ -111,13 +112,26 @@ contains
          enddo
       end do
 !$omp end parallel do
-    case (2,3)
+    case (2)
 !$omp parallel do private(i,j,k,cur_temp)
       do k = lo(3),hi(3)
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
                cur_temp = temp(i,j,k)
                if (cur_temp > CRITTEMP) then
+                  tagbox(i,j,k) = .true.
+               end if
+            end do
+         enddo
+      end do
+!$omp end parallel do
+    case (3)
+!$omp parallel do private(i,j,k,cur_temp)
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               cur_temp = temp(i,j,k)
+               if (cur_temp > CRITTEMP .and. rho(i,j,k) >= RHOMIN4) then
                   tagbox(i,j,k) = .true.
                end if
             end do
