@@ -1,6 +1,6 @@
 &PROBIN
   dm_in = 3
-  test_set = "gr0_3d"
+  test_set = "gr0_3d.small"
 
   small_temp = 1.d5
 
@@ -22,6 +22,6 @@
 
   do_heating = .false.
 
-  xin_file   = "xin.ignition.64"
+  xin_file   = "xin.ignition"
   run_prefix = "react_ignition_"
 /
