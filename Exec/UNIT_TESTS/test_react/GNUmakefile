@@ -2,7 +2,7 @@ NDEBUG := t
 MPI    := 
 OMP    := t
 
-COMP := Cray
+COMP := gfortran
 
 PARTICLES := t
 

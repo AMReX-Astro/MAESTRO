@@ -114,13 +114,51 @@ subroutine varden()
   !Check the consistency of each mode
   dbo = do_burning
   dho = do_heating
-  
+
+
+  !Mode 1: No burning, no heating
+  do_burning = .false.
+  do_heating = .false.
+  call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
+                   min_time_step,dx,bct%bc_tower_array)
+  call react_write(snew, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, &
+                   min_time_step, "mode1",bct)
+
+  !Mode 2: Burning without heating
+  do_burning = .true.
+  do_heating = .false.
+  call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
+                   min_time_step,dx,bct%bc_tower_array)
+  call react_write(snew, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, &
+                   min_time_step, "mode2",bct)
+
+  !Mode 3: Heating without burning
+  do_burning = .false.
+  do_heating = .true.
+  call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
+                   min_time_step,dx,bct%bc_tower_array)
+  call react_write(snew, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, &
+                   min_time_step, "mode3",bct)
+
+  !Mode 4: Burning and heating
+  do_burning = .true.
+  do_heating = .true.
+  call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
+                   min_time_step,dx,bct%bc_tower_array)
+  call react_write(snew, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, &
+                   min_time_step, "mode4",bct)
+
   !Explore ten orders of magnitude of the time domain using user inputs.
   do_burning = dbo
   do_heating = dho
   do i=0, react_its-1
     call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
                      10**(i)*min_time_step,dx,bct%bc_tower_array)
+
+    write(temp_buf, *) i
+    temp_buf = adjustl(temp_buf)
+    call react_write(snew, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, &
+                     10**(i)*min_time_step, "dtE+" // trim(temp_buf),bct)
   enddo
 
   !## Clean-up ##
