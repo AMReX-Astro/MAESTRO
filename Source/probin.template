@@ -73,7 +73,6 @@ contains
     use bl_error_module
     use bl_constants_module
     use knapsack_module
-    use multifab_module, only: multifab_set_alltoallv
     use cluster_module
     use layout_module
     use pred_parameters
@@ -378,8 +377,6 @@ contains
     call cluster_set_blocking_factor(blocking_factor)
     call cluster_set_min_eff(min_eff)
 
-    if (do_alltoallv) call multifab_set_alltoallv(.true.)
-    
     call knapsack_set_verbose(the_knapsack_verbosity)
 
     call layout_set_verbosity(the_layout_verbosity)
