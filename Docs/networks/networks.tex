@@ -39,3 +39,11 @@ Then at compile time, the network.f90 is created using these species and
 compiled.  (For the curious, the rule to build {\tt network.f90} lives in
 {\tt extern/networks/general\_null/GPackage.mak})
 
+
+\subsection{{\tt rprox}}
+
+This is a network introduced in \cite{xrb2} that has 10 species
+approximates hit CNO burning, triple-$\alpha$, and rp-process 
+breakout up through $^{56}\mathrm{Ni}$.  Updated rates from
+ReacLib~\cite{ReacLib} are used.  The overall ideas in this 
+network are based on Appendix C of \cite{wallacewoosley:1981}.
