@@ -6,10 +6,7 @@ COMP := gfortran
 
 MKVERBOSE := t
 
-# location of root directory
-MAESTRO_HOME ?= ../../../../MAESTRO
-MAESTRO_TOP_DIR := $(MAESTRO_HOME)
-
+MAESTRO_TOP_DIR :=  ../../../..
 
 # programs to be compiled
 programs += testburn
@@ -20,21 +17,17 @@ programs += testjacobian
 
 EOS_DIR := helmeos
 CONDUCTIVITY_DIR := constant
-
-NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
 NETWORK_DIR := rprox
 
 BOXLIB_ONLY := t
 
-EXTRA_TOP_DIR := $(ASTRODEV_DIR)
-EXTRA_DIR = networks/rprox/test
+EXTRA_DIR = Microphysics/networks/rprox/test
 
-testAll:
+testAll: table
 
 include $(MAESTRO_TOP_DIR)/GMaestro.mak
 
 testAll: $(pnames)
-
 
 %.$(suf).exe:%.f90 $(objects)
 ifdef MKVERBOSE
