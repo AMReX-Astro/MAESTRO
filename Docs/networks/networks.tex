@@ -40,10 +40,26 @@ compiled.  (For the curious, the rule to build {\tt network.f90} lives in
 {\tt extern/networks/general\_null/GPackage.mak})
 
 
+\subsection{{\tt ignition\_chamulak}}
+
+This network was introduced in our paper on convection in white dwarfs
+as a model of Type Ia supernovae~\cite{wdconvect}.  It models 
+carbon burning in a regime appropriate for a simmering white dwarf,
+and captures the effects of a much larger network by setting the ash
+state and energetics to the values suggested in \cite{chamulak:2008}.
+
+\subsection{{\tt ignition\_simple}}
+
+This is the original network used in our white dwarf convection
+studies~\cite{lowMach4}.  It includes a single reaction,
+$^{12}\mathrm{C}({}^{12}\mathrm{C},\gamma){}^{24}\mathrm{Mg}$, using
+the rate from Caughlin and Fowler~\cite{caughlan-fowler:1988}.
+
 \subsection{{\tt rprox}}
 
-This is a network introduced in \cite{xrb2} that has 10 species
-approximates hit CNO burning, triple-$\alpha$, and rp-process 
-breakout up through $^{56}\mathrm{Ni}$.  Updated rates from
-ReacLib~\cite{ReacLib} are used.  The overall ideas in this 
-network are based on Appendix C of \cite{wallacewoosley:1981}.
+This is a network introduced in a paper modeling mixed H/He X-ray
+bursts~\cite{xrb2}.  {\tt rprox} that has 10 species approximates hit
+CNO burning, triple-$\alpha$, and rp-process breakout up through
+$^{56}\mathrm{Ni}$.  Updated rates from ReacLib~\cite{ReacLib} are
+used.  The overall ideas in this network are based on Appendix C of
+\cite{wallacewoosley:1981}.
