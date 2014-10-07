@@ -144,7 +144,8 @@ contains
     enddo
 
     ! Build the level 1 layout.
-    call layout_build_ba(la_array(1),mba%bas(1),mba%pd(1),pmask)
+    call layout_build_ba(la_array(1),mba%bas(1),mba%pd(1),pmask, &
+         mapping=LA_EXPLICIT, explicit_mapping=get_proc(mla%la(1)))
 
     ! This makes sure the boundary conditions are properly defined everywhere
     call bc_tower_level_build(the_bc_tower,1,la_array(1))
