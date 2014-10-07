@@ -222,7 +222,7 @@ contains
                       rel_solver_eps,abs_solver_eps)
     else
        call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
-                          the_bc_tower,press_comp,stencil_order,mla%mba%rr,&
+                          the_bc_tower,press_comp,stencil_order,&
                           rel_solver_eps,abs_solver_eps)
     endif
 
@@ -832,8 +832,8 @@ contains
             end select
          end do
 
-         do d=1,dm
-            call multifab_fill_boundary(umac(n,d))
+         do i = 1,dm
+            call multifab_fill_boundary(umac(n,i))
          enddo
 
       end do
