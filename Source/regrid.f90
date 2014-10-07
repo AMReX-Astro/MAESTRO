@@ -114,8 +114,6 @@ contains
 
     end do
 
-    call destroy(mla)
-
     ! mba is big enough to hold max_levs levels
     ! even though we know we had nlevs last time, we might 
     ! want more or fewer levels after regrid (if nlevs < max_levs)
@@ -146,6 +144,8 @@ contains
     ! Build the level 1 layout.
     call layout_build_ba(la_array(1),mba%bas(1),mba%pd(1),pmask, &
          mapping=LA_EXPLICIT, explicit_mapping=get_proc(mla%la(1)))
+
+    call destroy(mla)
 
     ! This makes sure the boundary conditions are properly defined everywhere
     call bc_tower_level_build(the_bc_tower,1,la_array(1))
