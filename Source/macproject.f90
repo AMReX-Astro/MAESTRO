@@ -226,7 +226,7 @@ contains
                           rel_solver_eps,abs_solver_eps)
     endif
 
-    call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower)
+    call mkumac(mla,umac,phi,beta,fine_flx,dx,the_bc_tower)
 
     ! divide out the beta_0
     if (use_div_coeff_1d) then
@@ -674,10 +674,10 @@ contains
 
     subroutine mk_mac_coeffs_2d(betax,betay,ng_b,rho,ng_r,lo,hi)
 
-      integer :: ng_b,ng_r,lo(:),hi(:)
+      integer        , intent(in   ) :: ng_b,ng_r,lo(:),hi(:)
       real(kind=dp_t), intent(inout) :: betax(lo(1)-ng_b:,lo(2)-ng_b:)
       real(kind=dp_t), intent(inout) :: betay(lo(1)-ng_b:,lo(2)-ng_b:)
-      real(kind=dp_t), intent(inout) ::   rho(lo(1)-ng_r:,lo(2)-ng_r:)
+      real(kind=dp_t), intent(in   ) ::   rho(lo(1)-ng_r:,lo(2)-ng_r:)
 
       integer :: i,j
 
@@ -697,11 +697,11 @@ contains
 
     subroutine mk_mac_coeffs_3d(betax,betay,betaz,ng_b,rho,ng_r,lo,hi)
 
-      integer :: ng_b,ng_r,lo(:),hi(:)
+      integer        , intent(in   ) :: ng_b,ng_r,lo(:),hi(:)
       real(kind=dp_t), intent(inout) :: betax(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
       real(kind=dp_t), intent(inout) :: betay(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
       real(kind=dp_t), intent(inout) :: betaz(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
-      real(kind=dp_t), intent(inout) ::   rho(lo(1)-ng_r:,lo(2)-ng_r:,lo(3)-ng_r:)
+      real(kind=dp_t), intent(in   ) ::   rho(lo(1)-ng_r:,lo(2)-ng_r:,lo(3)-ng_r:)
 
       integer :: i,j,k
 
@@ -737,19 +737,19 @@ contains
 
     end subroutine mk_mac_coeffs_3d
 
-    subroutine mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower)
+    subroutine mkumac(mla,umac,phi,beta,fine_flx,dx,the_bc_tower)
 
       use variables, only: press_comp
 
+      type(ml_layout),intent(in   ) :: mla
       type(multifab), intent(inout) :: umac(:,:)
-      type(multifab), intent(inout) ::   rh(:)
       type(multifab), intent(in   ) ::  phi(:)
       type(multifab), intent(in   ) :: beta(:,:)
       type(bndry_reg),intent(in   ) :: fine_flx(2:)
       real(dp_t)    , intent(in   ) :: dx(:,:)
       type(bc_tower), intent(in   ) :: the_bc_tower
 
-      integer :: i,ng_um,ng_p,ng_b,lo(get_dim(rh(1))),hi(get_dim(rh(1))),dm
+      integer :: i,ng_um,ng_p,ng_b,lo(get_dim(phi(1))),hi(get_dim(phi(1))),dm
 
       type(bc_level)           :: bc
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
@@ -766,8 +766,8 @@ contains
       real(kind=dp_t), pointer :: lzp(:,:,:,:) 
       real(kind=dp_t), pointer :: hzp(:,:,:,:) 
 
-      dm = get_dim(rh(1))
-      nlevs = size(rh)
+      dm = get_dim(phi(1))
+      nlevs = size(phi)
 
       ng_um = nghost(umac(1,1))
       ng_p = nghost(phi(1))
@@ -775,7 +775,7 @@ contains
 
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
-         do i = 1, nfabs(rh(n))
+         do i = 1, nfabs(phi(n))
             ump => dataptr(umac(n,1), i)
             php => dataptr( phi(n), i)
             bxp => dataptr(beta(n,1), i)
@@ -830,6 +830,17 @@ contains
                                          lzp(:,:,:,1),hzp(:,:,:,1),lo,hi,dx(n,:))
                end if
             end select
+         end do
+
+         do d=1,dm
+            call multifab_fill_boundary(umac(n,d))
+         enddo
+
+      end do
+
+      do n = nlevs,2,-1
+         do i = 1,dm
+            call ml_edge_restriction(umac(n-1,i),umac(n,i),mla%mba%rr(n-1,:),i)
          end do
       end do
 
