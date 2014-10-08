@@ -107,9 +107,6 @@ subroutine varden()
   call therm_init(mla, s, tempbar, pbar)
 
   !## react_state() testing ##
-  !Write plotfile of initial state
-  call react_write(s, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, ZERO, "initial",bct)
-
   !Calculate react_state inputs
   call average(mla,s,tempbar,dx,temp_comp)
   call setval(rho_Hext(1), ZERO, all=.true.)
@@ -117,6 +114,8 @@ subroutine varden()
   !Check the consistency of each mode
   dbo = do_burning
   dho = do_heating
+
+
   !Mode 1: No burning, no heating
   do_burning = .false.
   do_heating = .false.

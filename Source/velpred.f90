@@ -24,7 +24,6 @@ contains
     use bl_constants_module
     use geometry, only: spherical
     use fill_3d_module
-    use multifab_physbc_module
     use ml_cc_restriction_module, only : ml_edge_restriction_c
 
     type(multifab) , intent(in   ) :: u(:)
@@ -414,9 +413,8 @@ contains
        ulx(is,js-1:je+1,1:2) = ZERO
        urx(is,js-1:je+1,1:2) = ZERO
     case (OUTLET)
-       ulx(is,js-1:je+1,1) = min(urx(is,js-1:je+1,1),ZERO)
-       urx(is,js-1:je+1,1) = ulx(is,js-1:je+1,1)
-       ulx(is,js-1:je+1,2) = urx(is,js-1:je+1,2)
+       urx(is,js-1:je+1,1) = min(urx(is,js-1:je+1,1),ZERO)
+       urx(is,js-1:je+1,1:2) = ulx(is,js-1:je+1,1:2)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(1,1)")
@@ -436,8 +434,7 @@ contains
        urx(ie+1,js-1:je+1,1:2) = ZERO
     case (OUTLET)
        ulx(ie+1,js-1:je+1,1) = max(ulx(ie+1,js-1:je+1,1),ZERO)
-       urx(ie+1,js-1:je+1,1) = ulx(ie+1,js-1:je+1,2)
-       urx(ie+1,js-1:je+1,2) = ulx(ie+1,js-1:je+1,2)
+       urx(ie+1,js-1:je+1,1:2) = ulx(ie+1,js-1:je+1,1:2)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(1,2)")
@@ -493,9 +490,8 @@ contains
        uly(is-1:ie+1,js,1:2) = ZERO
        ury(is-1:ie+1,js,1:2) = ZERO
     case (OUTLET)
-       uly(is-1:ie+1,js,1) = ury(is-1:ie+1,js,1)
-       uly(is-1:ie+1,js,2) = min(ury(is-1:ie+1,js,2),ZERO)
-       ury(is-1:ie+1,js,2) = uly(is-1:ie+1,js,2)
+       ury(is-1:ie+1,js,2) = min(ury(is-1:ie+1,js,2),ZERO)
+       uly(is-1:ie+1,js,1:2) = ury(is-1:ie+1,js,1:2)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(2,1)")
@@ -514,9 +510,8 @@ contains
        uly(is-1:ie+1,je+1,1:2) = ZERO
        ury(is-1:ie+1,je+1,1:2) = ZERO
     case (OUTLET)
-       ury(is-1:ie+1,je+1,1) = uly(is-1:ie+1,je+1,1)
-       uly(is-1:ie+1,je+1,2) = max(uly(is-1:ie+1,je+1,2),ZERO)
-       ury(is-1:ie+1,je+1,2) = uly(is-1:ie+1,je+1,2)
+       uly(is-1:ie+1,je+1,2)   = max(uly(is-1:ie+1,je+1,2),ZERO)
+       ury(is-1:ie+1,je+1,1:2) = uly(is-1:ie+1,je+1,1:2)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_2d: invalid boundary type phys_bc(2,2)")
@@ -863,10 +858,8 @@ contains
        ulx(is,js-1:je+1,ks-1:ke+1,1:3) = ZERO
        urx(is,js-1:je+1,ks-1:ke+1,1:3) = ZERO
     case (OUTLET)
-       ulx(is,js-1:je+1,ks-1:ke+1,1) = min(urx(is,js-1:je+1,ks-1:ke+1,1),ZERO)
-       urx(is,js-1:je+1,ks-1:ke+1,1) = ulx(is,js-1:je+1,ks-1:ke+1,1)
-       ulx(is,js-1:je+1,ks-1:ke+1,2) = urx(is,js-1:je+1,ks-1:ke+1,2)
-       ulx(is,js-1:je+1,ks-1:ke+1,3) = urx(is,js-1:je+1,ks-1:ke+1,3)
+       urx(is,js-1:je+1,ks-1:ke+1,1) = min(urx(is,js-1:je+1,ks-1:ke+1,1),ZERO)
+       ulx(is,js-1:je+1,ks-1:ke+1,1:3) = ulx(is,js-1:je+1,ks-1:ke+1,1:3)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(1,1)")
@@ -887,9 +880,7 @@ contains
        urx(ie+1,js-1:je+1,ks-1:ke+1,1:3) = ZERO
     case (OUTLET)
        ulx(ie+1,js-1:je+1,ks-1:ke+1,1) = max(ulx(ie+1,js-1:je+1,ks-1:ke+1,1),ZERO)
-       urx(ie+1,js-1:je+1,ks-1:ke+1,1) = ulx(ie+1,js-1:je+1,ks-1:ke+1,1)
-       urx(ie+1,js-1:je+1,ks-1:ke+1,2) = ulx(ie+1,js-1:je+1,ks-1:ke+1,2)
-       urx(ie+1,js-1:je+1,ks-1:ke+1,3) = ulx(ie+1,js-1:je+1,ks-1:ke+1,3)
+       urx(ie+1,js-1:je+1,ks-1:ke+1,1:3) = ulx(ie+1,js-1:je+1,ks-1:ke+1,1:3)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(1,2)")
@@ -978,10 +969,8 @@ contains
        uly(is-1:ie+1,js,ks-1:ke+1,1:3) = ZERO
        ury(is-1:ie+1,js,ks-1:ke+1,1:3) = ZERO
     case (OUTLET)
-       uly(is-1:ie+1,js,ks-1:ke+1,1) = ury(is-1:ie+1,js,ks-1:ke+1,1)
-       uly(is-1:ie+1,js,ks-1:ke+1,2) = min(ury(is-1:ie+1,js,ks-1:ke+1,2),ZERO)
-       ury(is-1:ie+1,js,ks-1:ke+1,2) = uly(is-1:ie+1,js,ks-1:ke+1,2)
-       uly(is-1:ie+1,js,ks-1:ke+1,3) = ury(is-1:ie+1,js,ks-1:ke+1,3) 
+       ury(is-1:ie+1,js,ks-1:ke+1,2) = min(ury(is-1:ie+1,js,ks-1:ke+1,2),ZERO)
+       uly(is-1:ie+1,js,ks-1:ke+1,1:3) = ury(is-1:ie+1,js,ks-1:ke+1,1:3)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(2,1)")
@@ -1001,10 +990,8 @@ contains
        uly(is-1:ie+1,je+1,ks-1:ke+1,1:3) = ZERO
        ury(is-1:ie+1,je+1,ks-1:ke+1,1:3) = ZERO
     case (OUTLET)
-       ury(is-1:ie+1,je+1,ks-1:ke+1,1) = uly(is-1:ie+1,je+1,ks-1:ke+1,1)
        uly(is-1:ie+1,je+1,ks-1:ke+1,2) = max(uly(is-1:ie+1,je+1,ks-1:ke+1,2),ZERO)
-       ury(is-1:ie+1,je+1,ks-1:ke+1,2) = uly(is-1:ie+1,je+1,ks-1:ke+1,2)
-       ury(is-1:ie+1,je+1,ks-1:ke+1,3) = uly(is-1:ie+1,je+1,ks-1:ke+1,3)
+       ury(is-1:ie+1,je+1,ks-1:ke+1,1:3) = uly(is-1:ie+1,je+1,ks-1:ke+1,1:3)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(2,2)")
@@ -1092,10 +1079,8 @@ contains
        ulz(is-1:ie+1,js-1:je+1,ks,1:3) = ZERO
        urz(is-1:ie+1,js-1:je+1,ks,1:3) = ZERO
     case (OUTLET)
-       ulz(is-1:ie+1,js-1:je+1,ks,1) = urz(is-1:ie+1,js-1:je+1,ks,1)
-       ulz(is-1:ie+1,js-1:je+1,ks,2) = urz(is-1:ie+1,js-1:je+1,ks,2)
-       ulz(is-1:ie+1,js-1:je+1,ks,3) = min(urz(is-1:ie+1,js-1:je+1,ks,3),ZERO)
-       urz(is-1:ie+1,js-1:je+1,ks,3) = ulz(is-1:ie+1,js-1:je+1,ks,3)
+       urz(is-1:ie+1,js-1:je+1,ks,3) = min(urz(is-1:ie+1,js-1:je+1,ks,3),ZERO)
+       ulz(is-1:ie+1,js-1:je+1,ks,1:3) = urz(is-1:ie+1,js-1:je+1,ks,1:3)
     case (INTERIOR, PERIODIC)
     case  default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,1)")
@@ -1115,12 +1100,10 @@ contains
        ulz(is-1:ie+1,js-1:je+1,ke+1,1:3) = ZERO
        urz(is-1:ie+1,js-1:je+1,ke+1,1:3) = ZERO
     case (OUTLET)
-       urz(is-1:ie+1,js-1:je+1,ke+1,1) = ulz(is-1:ie+1,js-1:je+1,ke+1,1)
-       urz(is-1:ie+1,js-1:je+1,ke+1,2) = ulz(is-1:ie+1,js-1:je+1,ke+1,2)
        ulz(is-1:ie+1,js-1:je+1,ke+1,3) = max(ulz(is-1:ie+1,js-1:je+1,ke+1,3),ZERO)
-       urz(is-1:ie+1,js-1:je+1,ke+1,3) = ulz(is-1:ie+1,js-1:je+1,ke+1,3)
+       urz(is-1:ie+1,js-1:je+1,ke+1,1:3) = ulz(is-1:ie+1,js-1:je+1,ke+1,1:3)
     case (INTERIOR, PERIODIC)
-    case  default
+    case default
        call bl_error("velpred_3d: invalid boundary type phys_bc(3,2)")
     end select
 

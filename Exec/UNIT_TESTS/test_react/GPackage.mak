@@ -36,3 +36,5 @@ f90sources += mg_eps.f90
 f90sources += cputime.f90
 f90sources += constants_cgs.f90 
 f90sources += simple_log.f90
+f90sources += convert_rhoX_to_X.f90
+f90sources += put_in_pert_form.f90

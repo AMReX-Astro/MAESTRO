@@ -1312,8 +1312,19 @@ on the objective.
   \code{ml\_cc\_restriction\_c} which sets the level {\tt n-1} data to be
   the average of the level {\tt n} data covering it.
    
-
 \end{itemize}
+
+You generally won't see calls in the MAESTRO source code to these subroutines,
+as there is now a special BoxLib subroutine, {\tt ml\_restrict\_and\_fill},
+that takes an array of multifabs at different level, and in order calls:
+(1) {\tt ml\_cc\_restriction\_c}, (2) {\tt multifab\_fill\_boundary},
+(3) {\tt multifab\_physbc}, and (4) {\tt multifab\_fill\_ghost\_cells}.
+These four subroutines are called in such a way to avoid extra
+ghostcell filling, saving on communication time.  You can specify the
+starting component, starting boundary condition component, 
+the number of components, the number of ghost cells,
+and whether or not you want to use the same boundary condition component
+for all variables.
 
 \section{Boundary Conditions}
 

@@ -32,7 +32,7 @@ contains
     real(dp_t)     , intent(in)           :: abs_solver_eps 
 
     call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp,&
-                       stencil_order,ref_ratio,rel_solver_eps,abs_solver_eps)
+                       stencil_order,rel_solver_eps,abs_solver_eps)
 
   end subroutine mac_hypre
 

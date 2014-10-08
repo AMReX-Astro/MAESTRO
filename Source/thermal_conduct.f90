@@ -368,7 +368,7 @@ contains
     ! Call the solver to obtain h^(2) (it will be stored in phi)
     ! solves (alpha - nabla dot beta nabla)phi = rhs
     call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
-                       dm+rhoh_comp,stencil_order,mla%mba%rr,rel_solver_eps,abs_solver_eps)
+                       dm+rhoh_comp,stencil_order,rel_solver_eps,abs_solver_eps)
 
     do n=2,nlevs
        call destroy(fine_flx(n))

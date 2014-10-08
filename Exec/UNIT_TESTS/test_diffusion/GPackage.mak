@@ -1,6 +1,7 @@
 f90sources += average.f90
 f90sources += base_io.f90
 f90sources += base_state.f90
+f90sources += convert_rhoX_to_X.f90
 f90sources += estdt.f90
 f90sources += fill_3d_data.f90
 f90sources += geometry.f90
@@ -16,6 +17,7 @@ f90sources += make_pi_cc.f90
 f90sources += mg_eps.f90
 f90sources += pred_parameters.f90
 f90sources += probin.f90
+f90sources += put_in_pert_form.f90
 f90sources += restrict_base.f90
 f90sources += rhoh_vs_t.f90
 f90sources += thermal_conduct.f90

@@ -13,9 +13,6 @@
 # General verbosity
 verbose                             integer            0                   
 
-# use the MPI alltoallv call
-do_alltoallv                        logical            .false.             
-
 # Verbosity of the knapscak processor-to-grid algorithm.
 the_knapsack_verbosity              logical            .false.             
 

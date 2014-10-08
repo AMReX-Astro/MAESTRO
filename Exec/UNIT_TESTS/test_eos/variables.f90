@@ -8,12 +8,13 @@ module variables
 
   implicit none
 
-  integer, save :: rho_comp, temp_comp, spec_comp, &
+  integer, save :: rho_comp, rhoh_comp, temp_comp, spec_comp, &
                    h_comp, p_comp, e_comp, s_comp
   integer, save :: tfromrh_comp, rfromtp_comp, tfromrp_comp, &
                    tfromre_comp, tfromps_comp
   integer, save :: tfromrh_err_comp, rfromtp_err_comp, tfromrp_err_comp, &
                    tfromre_err_comp, tfromps_err_comp
+  integer, save :: foextrap_comp
 
   ! the total number of state quantities we will deal with
   integer, save :: nscal = 0
@@ -42,6 +43,7 @@ contains
     integer :: n
 
     rho_comp    = get_next_scal_index(1)
+    rhoh_comp   = get_next_scal_index(1)
     temp_comp   = get_next_scal_index(1)
     spec_comp   = get_next_scal_index(nspec)
     h_comp      = get_next_scal_index(1)
@@ -60,6 +62,8 @@ contains
     tfromrp_err_comp = get_next_scal_index(1)
     tfromre_err_comp = get_next_scal_index(1)
     tfromps_err_comp = get_next_scal_index(1)
+
+    foextrap_comp = get_next_scal_index(1)
 
     allocate (varnames(nscal))
 
