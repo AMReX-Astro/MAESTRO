@@ -21,7 +21,8 @@ contains
     use cc_stencil_fill_module, only : stencil_fill_cc_all_mglevels
     use mg_module             , only : mg_tower, mg_tower_build, mg_tower_destroy
     use ml_solve_module       , only : ml_cc_solve
-    use probin_module         , only : mg_verbose, cg_verbose, mg_bottom_solver, max_mg_bottom_nlevels
+    use probin_module         , only : mg_bottom_solver, max_mg_bottom_nlevels, &
+                                       mg_verbose, cg_verbose, mg_bottom_nu, mg_cycle_type
     use stencil_types_module
 
     type(ml_layout), intent(in   ) :: mla
@@ -55,6 +56,8 @@ contains
     call ml_cc_solve(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp, &
                      eps = rel_solver_eps, &
                      abs_eps = abs_solver_eps, &
+                     nub = mg_bottom_nu, &
+                     cycle_type = mg_cycle_type, &
                      bottom_solver_eps = 1.d-3, &
                      bottom_solver = mg_bottom_solver, &
                      max_bottom_nlevel = max_mg_bottom_nlevels, &
