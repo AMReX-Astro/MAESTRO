@@ -181,7 +181,6 @@ contains
 
     if (dpdt_factor .gt. 0.0d0) then
 
-       ! If doing sdc with multiple iterations, update delta_chi for next corrector; else
        if (is_predictor) &
           delta_chi = 0.d0
 
@@ -235,7 +234,6 @@ contains
     
     if (dpdt_factor .gt. 0.0d0) then
 
-       ! If doing sdc with multiple iterations, update delta_chi for next corrector; else
        if (is_predictor) &
           delta_chi = 0.d0
 
@@ -316,7 +314,6 @@ contains
        allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0,rho0_cart,lo,hi,dx,0)
        
-       ! If doing sdc with multiple iterations, update delta_chi for next corrector; else 
        if (is_predictor) &
           delta_chi = 0.d0
 
