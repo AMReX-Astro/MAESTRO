@@ -9,7 +9,7 @@
  n_cellx = 96
  n_celly = 96
  n_cellz = 640
- max_grid_size = 32
+ max_grid_size = 48
 
  prob_hi_x = 5.4e7
  prob_hi_y = 5.4e7
