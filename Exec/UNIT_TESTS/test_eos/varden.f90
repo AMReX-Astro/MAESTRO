@@ -133,7 +133,8 @@ subroutine varden()
 
         lo = lwb(get_box(s(n), i))
         hi = upb(get_box(s(n), i))
-        
+
+        !$OMP PARALLEL DO PRIVATE(ii,jj,kk, metalicity, xn_zone, temp_zone, dens_zone, eos_state)
         do kk = lo(3), hi(3)
 
            ! set the composition -- approximately solar
@@ -278,6 +279,7 @@ subroutine varden()
               enddo
            enddo
         enddo
+        !$OMP END PARALLEL DO
 
      enddo
   enddo

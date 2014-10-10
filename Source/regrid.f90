@@ -246,10 +246,6 @@ contains
 
     if (spherical .eq. 1) then
 
-       ! this is here to save work - we don't need to do these operations at
-       ! the finest level
-       if (init_into_finer) nlevs = nlevs-1
-
        ! convert (rho X) --> X in sold_temp 
        call convert_rhoX_to_X(sold_temp,.true.,mla_temp,the_bc_tower_temp%bc_tower_array)
 
@@ -260,8 +256,6 @@ contains
        ! convert (rho h) -> (rho h)' in sold_temp
        call put_in_pert_form(mla_temp,sold_temp,rhoh0,dx,rhoh_comp,foextrap_comp,.true., &
                              the_bc_tower_temp%bc_tower_array)
-
-       if (init_into_finer) nlevs = nlevs+1
 
        ! Delete old multifabs so that we can rebuild them.
        do n = 1, nlevs
