@@ -46,7 +46,6 @@ contains
 
     ! Local variables
     type(box     )  :: pd
-    type(  layout)  :: la
 
     type(mg_tower) :: mgt(mla%nlevel)
 
@@ -161,18 +160,21 @@ contains
 
        allocate( coeffs(mgt(n)%nlevels))
 
-       la = mla%la(n)
-
        ! Build coeffs to pass into the multigrid
-       call multifab_build( coeffs(mgt(n)%nlevels), la, 1, 1)
+       ! Set to 1 in the interior, 0 in ghost cells since those are used in Anorm.
+       call multifab_build( coeffs(mgt(n)%nlevels), mla%la(n), 1, 1)
        call setval(coeffs(mgt(n)%nlevels), 0.0_dp_t, 1, all=.true.)
+       call multifab_setval(coeffs(mgt(n)%nlevels),1.d0)
 
        ! Build coeffs(i,j,1) = (rho/beta0)
        ! (and) coeffs(i,j,2) =   1./beta0 if coeff_ncomp > 1
        !
-       ! Note: we enter this routine with rhohalf = rho/beta_0 or rho/beta_0^2
+       ! Note: either rhohalf = rho/beta_0 or rho/beta_0^2
        ! (depending on use_alt_energy_fix).
-       call mkcoeffs(rhohalf(n),div_coeff_3d(n),coeffs(mgt(n)%nlevels))
+
+       call multifab_div_div_c(coeffs(mgt(n)%nlevels),1,rhohalf(n),1,1,0)
+       if (ncomp(coeffs(mgt(n)%nlevels)) .gt. 1) &
+          call multifab_div_div_c(coeffs(mgt(n)%nlevels),2,div_coeff_3d(n),1,1,0)
 
        call multifab_fill_boundary(coeffs(mgt(n)%nlevels))
 
@@ -237,130 +239,5 @@ contains
   end subroutine hg_multigrid
 
   !   ********************************************************************************* !
-
-  subroutine mkcoeffs(rho,div_coeff_3d,coeffs)
-
-    type(multifab) , intent(in   ) :: rho
-    type(multifab) , intent(in   ) :: div_coeff_3d
-    type(multifab) , intent(inout) :: coeffs
-
-    real(kind=dp_t), pointer :: cp(:,:,:,:)
-    real(kind=dp_t), pointer :: dp(:,:,:,:)
-    real(kind=dp_t), pointer :: rp(:,:,:,:)
-    integer :: i,ng_r,ng_c,ng_d,dm
-    integer :: lo(get_dim(rho)),hi(get_dim(rho))
-
-    dm = get_dim(rho)
-
-    ng_r = nghost(rho)
-    ng_d = nghost(div_coeff_3d)
-    ng_c = nghost(coeffs)
-
-    do i = 1, nfabs(rho)
-       rp => dataptr(rho   , i)
-       dp => dataptr(div_coeff_3d, i)
-       cp => dataptr(coeffs, i)
-       lo = lwb(get_box(rho,i))
-       hi = upb(get_box(rho,i))
-       select case (dm)
-       case (1)
-          call mkcoeffs_1d(cp(:,1,1,:), ng_c, rp(:,1,1,1), ng_r, dp(:,1,1,1), ng_d, lo, hi)
-       case (2)
-          call mkcoeffs_2d(cp(:,:,1,:), ng_c, rp(:,:,1,1), ng_r, dp(:,:,1,1), ng_d, lo, hi)
-       case (3)
-          call mkcoeffs_3d(cp(:,:,:,:), ng_c, rp(:,:,:,1), ng_r, dp(:,:,:,1), ng_d, lo, hi)
-       end select
-    end do
-
-  end subroutine mkcoeffs
-
-  !   *********************************************************************************** !
-
-  subroutine mkcoeffs_1d(coeffs,ng_c,rho,ng_r,divcoeff,ng_d,lo,hi)
-
-    use bl_constants_module
-
-    integer                        :: ng_c,ng_r,ng_d,lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: coeffs(lo(1)-ng_c:,:)
-    real(kind=dp_t), intent(in   ) ::    rho(lo(1)-ng_r:)
-    real(kind=dp_t), intent(in   ) :: divcoeff(lo(1)-ng_d:)
-
-    integer :: i
-
-    do i = lo(1),hi(1)
-       coeffs(i,1) = ONE / rho(i)
-    end do
-
-    if (size(coeffs,dim=2) .gt. 1) then
-       do i = lo(1),hi(1)
-          coeffs(i,2) = ONE / divcoeff(i)
-       end do
-    end if
-
-  end subroutine mkcoeffs_1d
-
-  !   *********************************************************************************** !
-
-  subroutine mkcoeffs_2d(coeffs,ng_c,rho,ng_r,divcoeff,ng_d,lo,hi)
-
-    use bl_constants_module
-
-    integer                        :: ng_c,ng_r,ng_d,lo(:),hi(:)
-    real(kind=dp_t), intent(inout) ::   coeffs(lo(1)-ng_c:,lo(2)-ng_c:,:)
-    real(kind=dp_t), intent(in   ) ::      rho(lo(1)-ng_r:,lo(2)-ng_r:)
-    real(kind=dp_t), intent(in   ) :: divcoeff(lo(1)-ng_d:,lo(2)-ng_d:)
-
-    integer :: i,j
-
-    do j = lo(2),hi(2)
-       do i = lo(1),hi(1)
-          coeffs(i,j,1) = ONE / rho(i,j)
-       end do
-    end do
-
-    if (size(coeffs,dim=3) .gt. 1) then
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             coeffs(i,j,2) = ONE / divcoeff(i,j)
-          end do
-       end do
-    end if
-
-  end subroutine mkcoeffs_2d
-
-  !   ********************************************************************************** !
-
-  subroutine mkcoeffs_3d(coeffs,ng_c,rho,ng_r,divcoeff,ng_d,lo,hi)
-
-      use bl_constants_module
-
-    integer                        :: ng_c,ng_r,ng_d,lo(:),hi(:)
-    real(kind=dp_t), intent(inout) ::   coeffs(lo(1)-ng_c:,lo(2)-ng_c:,lo(3)-ng_c:,:)
-    real(kind=dp_t), intent(in   ) ::      rho(lo(1)-ng_r:,lo(2)-ng_r:,lo(3)-ng_r:)
-    real(kind=dp_t), intent(in   ) :: divcoeff(lo(1)-ng_d:,lo(2)-ng_d:,lo(3)-ng_d:)
-
-    integer :: i,j,k
-
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
-    do k = lo(3),hi(3)
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             coeffs(i,j,k,1) = ONE / rho(i,j,k)
-          end do
-       end do
-    end do
-    !$OMP END PARALLEL DO
-
-    if (size(coeffs,dim=4) .gt. 1) then
-       do k = lo(3),hi(3)
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             coeffs(i,j,k,2) = ONE / divcoeff(i,j,k)
-          end do
-       end do
-       end do
-    end if
-
-  end subroutine mkcoeffs_3d
 
 end module hg_multigrid_module
