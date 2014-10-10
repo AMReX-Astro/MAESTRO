@@ -174,7 +174,7 @@ contains
              gamma1bar_p0_avg = (gamma1bar_old(n,r-1)+gamma1bar_new(n,r-1)) * &
                   (p0_old(n,r-1)+p0_new(n,r-1))/4.0d0
 
-             if (r-1 .lt. base_cutoff_density_coord(n)) then
+             if (r .lt. base_cutoff_density_coord(n)) then
 
                 if (is_predictor) then
                    delta_chi_w0(n,r-1) = dpdt_factor * &
