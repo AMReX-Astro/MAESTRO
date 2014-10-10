@@ -33,7 +33,8 @@ module define_bc_module
 
   private
 
-  public :: bc_level, bc_tower, bc_tower_init, bc_tower_level_build, bc_tower_destroy
+  public :: bc_level, bc_tower, bc_tower_init, bc_tower_level_build, bc_tower_destroy, &
+       initialize_bc
 
   contains
 
@@ -231,6 +232,15 @@ module define_bc_module
   end subroutine ell_bc_level_build
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine initialize_bc(the_bc_tower,num_levs,pmask)
+
+    use bc_module
+    type(bc_tower), intent(  out) :: the_bc_tower
+    integer       , intent(in   ) :: num_levs
+    logical       , intent(in   ) :: pmask(:)
+
+  end subroutine initialize_bc
 
   subroutine bc_tower_destroy(bct)
 

@@ -34,6 +34,8 @@ program init_1d
                         ipres = 3, &
                         ispec = 4
 
+  real (kind=dp_t), parameter :: M_sun = 1.9891e33
+
   ! we'll get the composition indices from the network module
   integer, save :: ic12, io16, img24
   real (kind=dp_t) :: cfrac
@@ -61,11 +63,11 @@ program init_1d
 
   real (kind=dp_t), dimension(nspec) :: xn
 
-  real (kind=dp_t), save :: low_density_cutoff, temp_fluff, smallx, dens_conv_zone
+  real (kind=dp_t), save :: low_density_cutoff, temp_fluff, smallx, dens_conv_zone, M_conv_zone
 
   logical :: isentropic
 
-  character (len=256) :: outfile
+  character (len=256) :: outfile, prefix
   character (len=8) num
 
   real (kind=dp_t) :: max_hse_error, dpdr, rhog
@@ -75,11 +77,10 @@ program init_1d
   type (eos_t) :: eos_state
 
   namelist /params/ nx, dens_base, temp_base, &
-       low_density_cutoff, dens_conv_zone, temp_fluff, &
+       low_density_cutoff, dens_conv_zone, M_conv_zone, temp_fluff, &
        xmin, xmax, &
-       cfrac
+       cfrac, prefix
   
-
 
   ! determine if we specified a runtime parameters file or use the default
   narg = command_argument_count()
@@ -102,10 +103,16 @@ program init_1d
   dens_base = 2.6d9
   temp_base = 6.d8
      
+  dens_conv_zone = -1.d0
+  M_conv_zone = 2.0d0
+
+
   low_density_cutoff =1.d-4
   temp_fluff = 1.d7
 
   cfrac = 0.7_dp_t
+
+  prefix = "spherical"
 
 
   ! check the namelist for any changed parameters
@@ -394,13 +401,20 @@ program init_1d
           FOUR3RD*M_PI*(xznr(i) - xznl(i))* &
             (xznr(i)**2 +xznl(i)*xznr(i) + xznl(i)**2)*model_hse(i,idens)
 
+     if (M_enclosed(i) > M_conv_zone*M_sun) then
+
+        i_conv = i                 
+        isentropic = .false.
+                 
+     endif
+
   enddo
 
 
-  print *, 'mass = ', M_enclosed(nx)/1.99e33
+  print *, 'mass = ', M_enclosed(nx)/M_sun
 
   write(num,'(i8)') nx
-  outfile = "spherical.hse." // trim(adjustl(num))
+  outfile = trim(prefix) // ".hse." // trim(adjustl(num))
 
 
 
@@ -450,8 +464,8 @@ program init_1d
   print *, ' '
 
 
-  print *, 'total mass = ', M_enclosed(i_fluff)/1.99e33
-  print *, 'convective zone mass = ', M_enclosed(i_conv)/1.99e33
+  print *, 'total mass = ', M_enclosed(i_fluff)/M_sun
+  print *, 'convective zone mass = ', M_enclosed(i_conv)/M_sun
   
 
 

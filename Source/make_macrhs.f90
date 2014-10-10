@@ -136,29 +136,17 @@ contains
 
     if (dpdt_factor .gt. 0.0d0) then
 
-       if (is_predictor) then
+       if (is_predictor) &
+          delta_chi = 0.d0
 
-          do i = lo(1),hi(1)
-             if (i .lt. base_cutoff_density_coord(n)) then
-                delta_chi(i) = dpdt_factor / (gamma1bar(i)*p0(i)) * delta_p_term(i) / dt
-                rhs(i) = rhs(i) + div_coeff(i) * delta_chi(i)
-             end if
-          end do
-
-       else
-
-          do i = lo(1),hi(1)
-             if (i .lt. base_cutoff_density_coord(n)) then
-                rhs(i) = rhs(i) + div_coeff(i) * &
-                  ( dpdt_factor / (gamma1bar(i)*p0(i)) * delta_p_term(i) / dt &
-                   + delta_chi(i) )
-             end if
-          end do
-
-       end if
+       do i = lo(1),hi(1)
+          if (i .lt. base_cutoff_density_coord(n)) then
+             delta_chi(i) = delta_chi(i) + dpdt_factor * delta_p_term(i) / (dt*gamma1bar(i)*p0(i))
+             rhs(i) = rhs(i) + div_coeff(i) * delta_chi(i)
+          end if
+       end do
 
     end if
-
 
   end subroutine make_macrhs_1d
 
@@ -193,34 +181,17 @@ contains
 
     if (dpdt_factor .gt. 0.0d0) then
 
-       if (is_predictor) then
+       if (is_predictor) &
+          delta_chi = 0.d0
 
-          do j = lo(2),hi(2)
-             if (j .lt. base_cutoff_density_coord(n)) then
-                do i = lo(1),hi(1)
-                   delta_chi(i,j) = dpdt_factor / (gamma1bar(j)*p0(j)) * delta_p_term(i,j) / dt
-                   rhs(i,j) = rhs(i,j) + div_coeff(j) * delta_chi(i,j)
-                   if (i.eq.0 .and. j.le.20) print *,'1:RHS ',j, rhs(i,j), delta_p_term(i,j)/p0(j)
-                end do
-             end if
-          end do
-
-       else
-
-          do j = lo(2),hi(2)
-             if (j .lt. base_cutoff_density_coord(n)) then
-                do i = lo(1),hi(1)
-                   rhs(i,j) = rhs(i,j) + div_coeff(j) * &
-                        ( dpdt_factor / (gamma1bar(j)*p0(j)) * delta_p_term(i,j) / dt &
-                         + delta_chi(i,j) )
-                   ! if doing sdc with multiple iterations, update delta_chi for next corrector
-                   delta_chi(i,j) = delta_chi(i,j) + dpdt_factor / (gamma1bar(j)*p0(j)) * delta_p_term(i,j) / dt
-                   if (i.eq.0 .and. j.le.20) print *,'2:RHS ',j, rhs(i,j), delta_p_term(i,j)/p0(j)
-                end do
-             end if
-          end do
-
-       end if
+       do j = lo(2),hi(2)
+          if (j .lt. base_cutoff_density_coord(n)) then
+             do i = lo(1),hi(1)
+                delta_chi(i,j) = delta_chi(i,j) + dpdt_factor * delta_p_term(i,j) / (dt*gamma1bar(j)*p0(j))
+                rhs(i,j) = rhs(i,j) + div_coeff(j) * delta_chi(i,j)
+             end do
+          end if
+       end do
 
     end if
 
@@ -263,40 +234,22 @@ contains
     
     if (dpdt_factor .gt. 0.0d0) then
 
-       if (is_predictor) then
+       if (is_predictor) &
+          delta_chi = 0.d0
 
-          !$OMP PARALLEL DO PRIVATE(i,j,k)
-          do k = lo(3),hi(3)
-             if (k .lt. base_cutoff_density_coord(n)) then
-                do j = lo(2),hi(2)                
-                   do i = lo(1),hi(1)
-                      delta_chi(i,j,k) = dpdt_factor / (gamma1bar(k)*p0(k)) * delta_p_term(i,j,k) / dt
-                      rhs(i,j,k) = rhs(i,j,k) + div_coeff(k) * delta_chi(i,j,k)                           
-                   end do
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k = lo(3),hi(3)
+          if (k .lt. base_cutoff_density_coord(n)) then
+             do j = lo(2),hi(2)                
+                do i = lo(1),hi(1)
+                   delta_chi(i,j,k) = delta_chi(i,j,k) + dpdt_factor * delta_p_term(i,j,k) / &
+                           (dt*gamma1bar(k)*p0(k))
+                   rhs(i,j,k) = rhs(i,j,k) + div_coeff(k) * delta_chi(i,j,k)
                 end do
-             end if
-          end do
-          !$OMP END PARALLEL DO
-
-       else
-
-          !$OMP PARALLEL DO PRIVATE(i,j,k)
-          do k = lo(3),hi(3)
-             if (k .lt. base_cutoff_density_coord(n)) then
-                do j = lo(2),hi(2)                
-                   do i = lo(1),hi(1)
-                      rhs(i,j,k) = rhs(i,j,k) + div_coeff(k) * &
-                           ( dpdt_factor / (gamma1bar(k)*p0(k)) * delta_p_term(i,j,k) / dt &
-                            + delta_chi(i,j,k) )
-                      ! if doing sdc with multiple iterations, update delta_chi for next corrector
-                      delta_chi(i,j,k) = delta_chi(i,j,k) + dpdt_factor / (gamma1bar(k)*p0(k)) * delta_p_term(i,j,k) / dt
-                   end do
-                end do
-             end if
-          end do
-          !$OMP END PARALLEL DO
-
-       end if
+             end do
+          end if
+       end do
+       !$OMP END PARALLEL DO
 
     end if
        
@@ -342,7 +295,7 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              rhs(i,j,k) = div_cart(i,j,k,1) * (Source(i,j,k) - Sbar_cart(i,j,k,1) + &
-                  delta_gamma1_term(i,j,k))
+                          delta_gamma1_term(i,j,k))
           end do
        end do
     end do
@@ -361,42 +314,22 @@ contains
        allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0,rho0_cart,lo,hi,dx,0)
        
-       if (is_predictor) then
+       if (is_predictor) &
+          delta_chi = 0.d0
 
-          !$OMP PARALLEL DO PRIVATE(i,j,k)
-          do k = lo(3),hi(3)
-             do j = lo(2),hi(2)                
-                do i = lo(1),hi(1)
-                   if(rho0_cart(i,j,k,1) .gt. base_cutoff_density) then
-                      delta_chi(i,j,k) = dpdt_factor / (gamma1bar_cart(i,j,k,1)*p0_cart(i,j,k,1)) &
-                           * delta_p_term(i,j,k) / dt
-                      rhs(i,j,k) = rhs(i,j,k) + div_cart(i,j,k,1) * delta_chi(i,j,k)                           
-                   end if
-                end do
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k = lo(3),hi(3)
+          do j = lo(2),hi(2)                
+             do i = lo(1),hi(1)
+                if (rho0_cart(i,j,k,1) .gt. base_cutoff_density) then
+                   delta_chi(i,j,k) = delta_chi(i,j,k) + dpdt_factor * delta_p_term(i,j,k) / &
+                           (dt*gamma1bar_cart(i,j,k,1)*p0_cart(i,j,k,1))
+                   rhs(i,j,k) = rhs(i,j,k) + div_cart(i,j,k,1) * delta_chi(i,j,k)                           
+                end if
              end do
           end do
-          !$OMP END PARALLEL DO
-
-       else
-
-          !$OMP PARALLEL DO PRIVATE(i,j,k)
-          do k = lo(3),hi(3)
-             do j = lo(2),hi(2)                
-                do i = lo(1),hi(1)
-                   if(rho0_cart(i,j,k,1) .gt. base_cutoff_density) then
-                      rhs(i,j,k) = rhs(i,j,k) + div_cart(i,j,k,1) * &
-                           ( dpdt_factor / (gamma1bar_cart(i,j,k,1)*p0_cart(i,j,k,1)) &
-                           * delta_p_term(i,j,k) / dt + delta_chi(i,j,k) )
-                      ! if doing sdc with multiple iterations, update delta_chi for next corrector
-                      delta_chi(i,j,k) = delta_chi(i,j,k) + dpdt_factor / (gamma1bar_cart(i,j,k,1)*p0_cart(i,j,k,1)) &
-                           * delta_p_term(i,j,k) / dt
-                   end if
-                end do
-             end do
-          end do
-          !$OMP END PARALLEL DO
-
-       end if
+       end do
+       !$OMP END PARALLEL DO
        
        deallocate(gamma1bar_cart,p0_cart,rho0_cart)
        
