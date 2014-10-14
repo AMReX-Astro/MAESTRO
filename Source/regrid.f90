@@ -27,7 +27,7 @@ contains
     use probin_module, only : verbose, nodal, pmask, &
          amr_buf_width, &
          max_grid_size_2, max_grid_size_3, ref_ratio, max_levs, &
-         ppm_type, bds_type, dump_grid_file
+         ppm_type, bds_type, dump_grid_file, ignore_fine_in_layout_mapping
     use geometry, only: nlevs_radial, spherical
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp
     use network, only: nspec
@@ -56,6 +56,18 @@ contains
     type(multifab)  :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
     type(multifab)  :: pi_temp(max_levs), dSdt_temp(max_levs), src_temp(max_levs)
     type(multifab)  :: rhoHdot_temp(max_levs)
+
+    logical :: mc_flag, order_flag    
+    integer(kind=ll_t), allocatable :: lucvol(:)
+
+    if (ignore_fine_in_layout_mapping) then
+       mc_flag = get_manual_control_least_used_cpus_flag()
+       order_flag = get_luc_keep_cpu_order_flag()
+       call manual_control_least_used_cpus_set(.true.)
+       call luc_keep_cpu_order_set(.true.)  ! this only affects SFC
+       allocate(lucvol(max_levs))
+       lucvol = 0_ll_t
+    end if
 
     dm    = mla%dim
     nlevs = mla%nlevel
@@ -172,6 +184,11 @@ contains
                the_bc_tower%bc_tower_array(nl))
        end if
 
+       if (ignore_fine_in_layout_mapping) then
+          lucvol(nl) = layout_local_volume(la_array(nl))
+          call luc_vol_set(sum(lucvol(1:nl)))
+       end if
+
        if (nl .eq. 1) then
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
                               amr_buf_width,ref_ratio,nl,max_grid_size_2,rhoHdot(nl))
@@ -207,6 +224,14 @@ contains
                 ! Loop over all the lower levels which we might have changed when we enforced proper nesting.
                 do n = 2,nl
 
+                   if (ignore_fine_in_layout_mapping) then
+                      call luc_vol_set(sum(lucvol(1:n-1)))
+                      ! Destroy the old layout and build a new one.
+                      call destroy(la_array(n))
+                      call layout_build_ba(la_array(n),mba%bas(n),mba%pd(n),pmask)
+                      lucvol(n) = layout_local_volume(la_array(n))
+                   end if
+
                    ! This makes sure the boundary conditions are properly defined everywhere
                    call bc_tower_level_build(the_bc_tower,n,la_array(n)) 
    
@@ -216,6 +241,15 @@ contains
                                             uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, rhoHdot_temp, &
                                             the_bc_tower,dm,ng_s,mba%rr(n-1,:))
                 end do
+
+                if (ignore_fine_in_layout_mapping) then
+                   call luc_vol_set(sum(lucvol(1:nl)))
+                   ! Destroy the old layout and build a new one.
+                   call destroy(la_array(nl+1))
+                   call layout_build_ba(la_array(nl+1),mba%bas(nl+1),mba%pd(nl+1),pmask)
+                   lucvol(nl+1) = layout_local_volume(la_array(nl+1))
+                end if
+
              end if
           end if
 
@@ -371,6 +405,12 @@ contains
     call destroy(mba)
     call destroy(mla_temp)
     call bc_tower_destroy(the_bc_tower_temp)
+
+    if (ignore_fine_in_layout_mapping) then
+       call manual_control_least_used_cpus_set(mc_flag)
+       call luc_keep_cpu_order_set(order_flag)
+       deallocate(lucvol)
+    end if
 
   end subroutine regrid
 
