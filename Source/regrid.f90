@@ -5,6 +5,7 @@ module regrid_module
   use ml_layout_module
   use define_bc_module
   use box_util_module
+  use tag_boxes_module, only : tagging_needs_ghost_cells
 
   implicit none
 
@@ -164,10 +165,12 @@ contains
 
        ! Do we need finer grids?
 
-       ! Need to fill ghost cells here in case we use them in tagging
-       call multifab_fill_boundary(sold(nl))
-       call multifab_physbc(sold(nl),rho_comp,dm+rho_comp,nscal, &
-                            the_bc_tower%bc_tower_array(nl))
+       if (tagging_needs_ghost_cells) then
+          ! Need to fill ghost cells here in case we use them in tagging
+          call multifab_fill_boundary(sold(nl))
+          call multifab_physbc(sold(nl),rho_comp,dm+rho_comp,nscal, &
+               the_bc_tower%bc_tower_array(nl))
+       end if
 
        if (nl .eq. 1) then
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
@@ -406,37 +409,37 @@ contains
     if (lev .gt. 1) then
 
        call fillpatch(uold(lev),uold(lev-1), &
-                      ng_s,rr, &
+                      0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
-                      1,1,1,dm)
+                      1,1,1,dm,no_final_physbc_input=.true.)
        call fillpatch(sold(lev),sold(lev-1), &
-                      ng_s,rr, &
+                      0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
-                      1,1,dm+rho_comp,nscal)
+                      1,1,dm+rho_comp,nscal,no_final_physbc_input=.true.)
        do d=1,dm
           call fillpatch(gpi(lev),gpi(lev-1), &
                          0,rr, &
                          the_bc_tower%bc_tower_array(lev-1), &
                          the_bc_tower%bc_tower_array(lev  ), &
-                         d,d,foextrap_comp,1)
+                         d,d,foextrap_comp,1,no_final_physbc_input=.true.)
        end do
        call fillpatch(dSdt(lev),dSdt(lev-1), &
                       0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
-                      1,1,foextrap_comp,1)
+                      1,1,foextrap_comp,1,no_final_physbc_input=.true.)
        call fillpatch(src(lev),src(lev-1), &
                       0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
-                      1,1,foextrap_comp,1) 
+                      1,1,foextrap_comp,1,no_final_physbc_input=.true.) 
        call fillpatch(rhoHdot(lev),rhoHdot(lev-1), &
                       0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
-                      1,1,foextrap_comp,1) 
+                      1,1,foextrap_comp,1,no_final_physbc_input=.true.) 
        ! We interpolate p differently because it is nodal, not cell-centered
        call ml_nodal_prolongation(pi(lev), pi(lev-1), rr)
 
