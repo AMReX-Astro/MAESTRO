@@ -217,7 +217,7 @@ the_layout_verbosity                integer            0
 # may end up on different processors after regridding, and the box
 # distribution becomes more and more fragmented over time
 # (i.e. neighboring boxes become far away from each other in MPI
-# ranks).  Setting ignore_fine_in_layout_mapping to true will avoid
+# ranks).  Setting {\tt ignore\_fine\_in\_layout\_mapping} to true will avoid
 # the flaw.
 ignore_fine_in_layout_mapping       logical            .true.
 
