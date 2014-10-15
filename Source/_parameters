@@ -211,6 +211,14 @@ the_sfc_threshold                   integer            5
 
 the_layout_verbosity                integer            0                   
 
+# Our traditional way of distributing boxes among MPI ranks has a
+# flaw.  In some cases, it unnecessarily moves grids among processors
+# in regridding.  Even if the grids do not changes at all, the boxes
+# may end up on different processors after regridding, and the box
+# distribution becomes more and more fragmented over time
+# (i.e. neighboring boxes become far away from each other in MPI
+# ranks).  Setting ignore_fine_in_layout_mapping to true will avoid
+# the flaw.
 ignore_fine_in_layout_mapping       logical            .true.
 
 #  Number of boxassoc layouts we keep in memory to avoid having to 
