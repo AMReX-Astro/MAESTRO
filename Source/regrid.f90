@@ -89,7 +89,7 @@ contains
     ! create a copy of the original mla and bc_tower
     ! we need this for putting the original state into perturbational form
     ! for filling new grids
-    call ml_layout_build(mla_temp,mla%mba,mla%pmask)
+    call ml_layout_build_la(mla_temp,mla)
     call initialize_bc(the_bc_tower_temp,nlevs,mla_temp%pmask)
     do n = 1,nlevs
        call bc_tower_level_build(the_bc_tower_temp,n,mla_temp%la(n))
