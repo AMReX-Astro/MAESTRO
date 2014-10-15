@@ -51,16 +51,20 @@ fixed the above issue, but now wdconvect with 2-level, effective
 768$^3$ dies due to an unknown seg fault at the beginning of the run.
 
 \item {\em gfortran 4.8.x}: This typically works well, but sometimes we get
-an error allocating memory in {\tt cluster\_f.f90}.  The NERSC team looked
-into this an determined it is a compiler bug (affecting atleast 4.8.2 and 4.8.3):
-\begin{quote}
-The code runs without any problem if it is compiled with {\tt -O2 -ftree-vectorize -fno-range-check} (our default) expcept that {\tt cluster\_f.f90} is compiled with {\tt -O2 -ftree-vectorize -fno-range-check -fno-tree-pre}.   The ``{\tt fno-tree-pre}'' option turns off ``{\tt ftree-pre}'' that is turned on by ``{\tt O2}''.
+an error allocating memory in {\tt cluster\_f.f90}.  This
+is a compiler bug (affecting atleast 4.8.2 and 4.8.3):
 
+The code runs without any problem if it is compiled with {\tt -O2
+-ftree-vectorize -fno-range-check} (our default) but with {\tt
+cluster\_f.f90} compiled with {\tt -O2 -ftree-vectorize
+-fno-range-check -fno-tree-pre}.  The ``{\tt fno-tree-pre}'' option
+turns off ``{\tt ftree-pre}'' that is turned on by ``{\tt O2}'' \\
+ 
 GCC manual says,
 
 {\tt -ftree-pre} \\
 Perform partial redundancy elimination (PRE) on trees. This flag is enabled by default at {\tt -O2} and {\tt -O3}.
-\end{quote}
+
 
 
 \end{itemize}
