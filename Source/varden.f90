@@ -42,6 +42,7 @@ subroutine varden()
   use particle_module
   use cputime_module, only: start_cputime_clock
   use simple_log_module, only: simple_log_init
+  use pert_form_module, only: put_in_pert_form
 
   implicit none
 
@@ -66,7 +67,7 @@ subroutine varden()
   type(multifab), allocatable :: gamma1(:)
 
   type(multifab), pointer :: tag_mf(:)
-
+  
   ! these are pointers because they need to be allocated and built within 
   !   another function
   type(multifab), pointer :: uold(:)
@@ -932,17 +933,29 @@ subroutine varden()
 
            end if ! end regridding of base state
            
-           ! figure out if we are tagging off of heating or rxns
-           if (do_heating) then
+           ! we can pass as an auxillary tagging quantity either the
+           ! energy generate rate (per volume) or tpert
+           if (use_tpert_in_tagging) then
               do n = 1, nlevs
-                 call multifab_copy_c(tag_mf(n), 1, rho_Hext(n), 1, 1)
+                 call multifab_copy_c(tag_mf(n), 1, sold(n), temp_comp, 1)
               enddo
-           else
-              do n = 1, nlevs
-                 call multifab_copy_c(tag_mf(n), 1, rho_Hnuc2(n), 1, 1)
-              enddo
-           endif
+              
+              call put_in_pert_form(mla,tag_mf,tempbar,dx,1, &
+                                    foextrap_comp,.true., &
+                                    the_bc_tower%bc_tower_array)
 
+           else
+              ! figure out if we are tagging off of heating or rxns
+              if (do_heating) then
+                 do n = 1, nlevs
+                    call multifab_copy_c(tag_mf(n), 1, rho_Hext(n), 1, 1)
+                 enddo
+              else
+                 do n = 1, nlevs
+                    call multifab_copy_c(tag_mf(n), 1, rho_Hnuc2(n), 1, 1)
+                 enddo
+              endif
+           endif
 
            do n=1,nlevs
               call multifab_destroy(unew(n))

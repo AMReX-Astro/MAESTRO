@@ -238,6 +238,9 @@ min_eff                             real               0.9d0
 # A new line is added each time regrid is called.  
 dump_grid_file                      logical            .false.
 
+# pass $T'$ into the tagging routines as the auxillary multifab instead
+# of the default $\rho H_\mathrm{nuc}$.
+use_tpert_in_tagging                logical            .false.
 
 #-----------------------------------------------------------------------------
 # category: output
