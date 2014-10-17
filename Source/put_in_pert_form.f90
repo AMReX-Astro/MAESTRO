@@ -96,34 +96,34 @@ contains
 
     integer        , intent(in   ) :: n
     integer        , intent(in   ) :: comp
-    type(multifab) , intent(inout) :: s(:)
+    type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in   ) :: base(:,0:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
     logical        , intent(in   ) :: flag
 
     ! Local variables
     real(kind=dp_t), pointer :: sp(:,:,:,:)
-    integer :: lo(get_dim(s(1))),hi(get_dim(s(1)))
+    integer :: lo(get_dim(s)),hi(get_dim(s))
     integer :: i,ng,dm
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_in_pert_form_one_level")
 
-    dm = get_dim(s(1))
+    dm = get_dim(s)
 
-    ng = nghost(s(1))
+    ng = nghost(s)
 
-    do i = 1, nfabs(s(n))
-       sp => dataptr(s(n),i)
-       lo =  lwb(get_box(s(n),i))
-       hi =  upb(get_box(s(n),i))
+    do i = 1, nfabs(s)
+       sp => dataptr(s,i)
+       lo =  lwb(get_box(s,i))
+       hi =  upb(get_box(s,i))
        select case (dm)
        case (2)
           call pert_form_2d(sp(:,:,1,:),base(n,:),lo,hi,ng,comp,flag)
        case (3)
           if (spherical .eq. 1) then
-             call pert_form_3d_sphr(sp(:,:,:,:),base(1,:),lo,hi,ng,dx(n,:),comp,flag)
+             call pert_form_3d_sphr(sp(:,:,:,:),base(1,:),lo,hi,ng,dx(:),comp,flag)
           else
              call pert_form_3d_cart(sp(:,:,:,:),base(n,:),lo,hi,ng,comp,flag)
           end if
