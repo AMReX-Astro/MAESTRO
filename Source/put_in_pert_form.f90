@@ -14,7 +14,7 @@ module pert_form_module
 
   private
 
-  public :: put_in_pert_form
+  public :: put_in_pert_form, put_in_pert_form_one_level
 
   
 contains
