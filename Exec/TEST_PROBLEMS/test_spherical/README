@@ -1,0 +1,4 @@
+a new test problem, for paper IV, to put up a constant-entropy WD on
+the grid wih no perturbations or heating.  We also set beta_0 = rho_0.
+We then initialize a vortex in the domain.  Under these conditions,
+the density and enthalpy should not change with time.
