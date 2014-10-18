@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "model.hse.cool"
+ model_file = "model.hse.cool.coulomb"
  spherical_in = 0
 
  max_levs = 2
@@ -52,5 +52,5 @@
 
  perturb_model = T
 
- use_eos_coulomb = F
+ use_eos_coulomb = T
 /

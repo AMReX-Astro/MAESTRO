@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "model.hse.cool"
+ model_file = "model.hse.cool.coulomb"
  spherical_in = 0
 
  max_levs = 3
@@ -8,7 +8,7 @@
  max_grid_size = 32
  regrid_int = 4
  minwidth = 4
-
+ blocking_factor = 4
  use_tpert_in_tagging = T
 
  prob_hi_x = 1.44e8
@@ -51,5 +51,5 @@
 
  perturb_model = T
 
- use_eos_coulomb = F
+ use_eos_coulomb = T
 /
