@@ -223,7 +223,7 @@ ignore_fine_in_layout_mapping       logical            .true.
 
 #  Number of boxassoc layouts we keep in memory to avoid having to 
 # recompute the boxassoc, which is computationally expensive.
-the_copy_cache_max                  integer            50          
+the_copy_cache_max                  integer            128
 
 # The minimum size on a side for a grid created using make\_new\_grids.
 minwidth                            integer            8                     
