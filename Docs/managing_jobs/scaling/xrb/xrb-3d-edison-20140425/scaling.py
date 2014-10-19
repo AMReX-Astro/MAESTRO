@@ -73,7 +73,7 @@ def scaling():
     pylab.title("NERSC Edison Scaling for 3-d XRB (384 x 384 x 768 zones)")
 
     pylab.ylim(1.,100.)
-    pylab.savefig("xrb_edison_scaling_by_grid.png")
+    pylab.savefig("xrb_edison_scaling_by_grid.eps")
 
 
 
