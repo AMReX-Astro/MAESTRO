@@ -357,18 +357,20 @@
 \verb=  spherical_in  = &   Set to 1 if you are doing a spherical problem.  &  0 \\
 \rowcolor{tableShade}
 \verb=  test_set  = &   Fixed grid file.  &  '' \\
-\verb=  the_copy_cache_max  = &    Number of boxassoc layouts we keep in memory to avoid having to recompute the boxassoc, which is computationally expensive.  &  50 \\
+\verb=  the_copy_cache_max  = &    Number of boxassoc layouts we keep in memory to avoid having to recompute the boxassoc, which is computationally expensive.  &  128 \\
 \rowcolor{tableShade}
 \verb=  the_layout_verbosity  = &    &  0 \\
 \verb=  the_sfc_threshold  = &   When assigning processors for grids, this determines whether we use the sfc algorithm or knapsack algorithm.  If the total number of grids divided by the number of processors is greater than this number, use sfc.  &  5 \\
 \rowcolor{tableShade}
+\verb=  use_tpert_in_tagging  = &   pass $T'$ into the tagging routines as the auxillary multifab instead of the default $\rho H_\mathrm{nuc}$.  &  .false. \\
 \verb=  xhi_boundary_type  = &   $+x$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcx\_hi}  &  "" \\
+\rowcolor{tableShade}
 \verb=  xlo_boundary_type  = &   $-x$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcx\_lo}  &  "" \\
-\rowcolor{tableShade}
 \verb=  yhi_boundary_type  = &   $+y$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcy\_hi}  &  "" \\
-\verb=  ylo_boundary_type  = &   $-y$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcy\_lo}  &  "" \\
 \rowcolor{tableShade}
+\verb=  ylo_boundary_type  = &   $-y$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcy\_lo}  &  "" \\
 \verb=  zhi_boundary_type  = &   $+z$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcz\_hi}  &  "" \\
+\rowcolor{tableShade}
 \verb=  zlo_boundary_type  = &   $-z$ boundary condition name---if this is set, it overrides the integer value set through {\tt bcz\_lo}  &  "" \\
 
 
