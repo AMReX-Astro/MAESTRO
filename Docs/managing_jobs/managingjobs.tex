@@ -371,25 +371,46 @@ to your {\tt $\mathtt{\sim}$/.visit/hosts/} directory.
 
 
 
-\section{Using Blue Waters}
+\section{Working at NCSA (Blue Waters)}
 
 \subsection{Overview}
 
-Each node has 2 compute units, and a compute unit has 16 integer / 8
-floating point cores.  They suggest you run using all the integer
-cores.  Furthermore, each compute unit is separated into 2 NUMA nodes.
+Blue Waters consists of 22,640 Cray XE6 compute nodes and 4,224
+Cray XK7 compute nodes.
 
-A recommended configuration is:
+Each XE node has two AMD Interlagos model 6276 compute units, each of
+which has 16 integer cores (thus, a single node has a total of 32 integer
+cores).  Two integer cores share a multithreaded, 256-bit wide floating 
+point unit (FPU).  If both integer cores have their own thread, each has access 
+to 128-bit floating point processing, whereas if only one thread is 
+assigned the process can access all 256 bits.  In one major science
+application on Blue Waters it was found that having an OpenMP thread for
+each integer core gave the best performance, but when starting a new
+application it's best to experiment.  One OpenMP thread per FPU may
+be better in some cases.
 
+Each compute unit is divided into two NUMA nodes.  Cores in
+the same NUMA region share a pool of L3 cache.  For the same science
+application as before it was found that the best performance was achieved
+by assigning an MPI task to each NUMA node.  Thus, each physical node
+has four MPI tasks.
 
+The XK nodes consist of one AMD Interlagos model 6276 compute unit
+and an NVIDIA GK110 ``Kepler'' GPU accelerator (Tesla K20X).  The
+GPU is configured with 14 streaming multiprocessor units (SMXs), each
+of which has 192 single-precision or 64 double-precision CUDA cores.  Thus
+there are a total of 2688 SP CUDA cores or 896 DP CUDA cores.
+
+For more details, please see 
+\url{https://bluewaters.ncsa.illinois.edu/user-guide}
 
 \subsection{BW Compilers}
 
 The Cray compilers are the default on blue waters, and version
 8.3.3 works well with \maestro.
 
-
 \subsection{Monitoring Allocations}
 
-The {\tt usage} command will list your usage and {\tt usage -P {\em account}} will
-list the usage for all users on an account.
+The {\tt usage} command will list the current user's usage and 
+{\tt usage -P {\em project}} will
+list the usage for all users in a project allocation named ``project''.
