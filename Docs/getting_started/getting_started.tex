@@ -324,6 +324,10 @@ and instead use the incompressible constraint to evolve the system.
 Burning makes these bubbles buoyant, and then roll up.  This problem was
 used in \cite{lowMach3} to compare with compressible solvers.
 
+This problem can also be run adaptively.  The \code{tag\_boxes.f90}
+file in the problem directory tags cells for refinement if the
+perturbational temperature, $T^\prime$, exceeds some threshold.  
+
 \item {\tt test\_convect} \\[-3mm]
 
 {\tt test\_convect} drives convection through a plane-parallel
