@@ -44,8 +44,8 @@
 
  ! projection
  do_initial_projection = T
- init_divu_iter = 1
- init_iter = 3
+ init_divu_iter = 3
+ init_iter = 1
 
 
  ! output
