@@ -21,13 +21,6 @@
  prob_hi_y = 5.12d8
  prob_hi_z = 5.12d8
 
- bcx_lo = 12
- bcx_hi = 12
- bcy_lo = 12
- bcy_hi = 12
- bcz_lo = 12
- bcz_hi = 12
-
  xlo_boundary_type = "outlet"
  ylo_boundary_type = "outlet"
  zlo_boundary_type = "outlet"
@@ -41,7 +34,7 @@
  max_step  = 100000000
  stop_time = 30000.
 
- cflfac = 0.7d0
+ cflfac = 0.8d0
 
  init_shrink = 0.1d0
  max_dt_growth = 1.1d0
@@ -75,7 +68,7 @@
 
 
  ! multigrid
- max_mg_bottom_nlevels = 3
+ max_mg_bottom_nlevels = 16
  mg_bottom_solver = 4
  hg_bottom_solver = 4
 
