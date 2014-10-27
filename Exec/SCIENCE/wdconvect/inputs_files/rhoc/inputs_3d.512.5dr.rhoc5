@@ -88,11 +88,11 @@
 
 
  ! I/O
- plot_base_name = "wd_512_rhoc1_plt"
+ plot_base_name = "wd_512_rhoc5_plt"
  plot_int = -1
  plot_deltat = 5.0d0
 
- check_base_name = "wd_512_rhoc1_chk"
+ check_base_name = "wd_512_rhoc5_chk"
  chk_int   = 100
 
  single_prec_plotfiles = T
