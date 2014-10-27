@@ -8,10 +8,10 @@
 
 
  ! gridding and geometry
- max_levs = 1
- n_cellx = 512
- n_celly = 512
- n_cellz = 512
+ max_levs = 2
+ n_cellx = 256
+ n_celly = 256
+ n_cellz = 256
 
  max_grid_size_1 = 32
  max_grid_size_2 = 32
