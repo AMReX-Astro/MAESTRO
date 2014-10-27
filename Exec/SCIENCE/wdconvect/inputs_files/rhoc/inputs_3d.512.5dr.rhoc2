@@ -12,7 +12,12 @@
  n_cellx = 512
  n_celly = 512
  n_cellz = 512
- max_grid_size = 64
+
+ max_grid_size_1 = 32
+ max_grid_size_2 = 32
+
+ regrid_int = 2
+ min_eff = 0.8
 
  spherical_in = 1
  dm_in = 3
