@@ -15,7 +15,7 @@ MAESTRO_TOP_DIR = $(MAESTRO_HOME)
 EOS_DIR := helmeos
 
 NETWORK_DIR := general_null
-GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/ignition.net
+GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/ignition_wdconvect.net
 
 
 # the local sources needed to build the initial model generator
