@@ -1,3 +1,12 @@
+flame/
+
+   A combustion-mode problem where we model a thermonuclear flame in a
+   small domain.  This enforces the low Mach combustion constraint
+   div{U} = S.  Hot ash and cool fuel are put into contact and a flame
+   will ignite and propagate across the grid.  Inflow boundary
+   conditions are used to allow for an inflow velocity to be set to
+   keep the laminar flame stationary.
+
 toy_convect/
 
    A nova-like problem for studying convection.  This problem has seen

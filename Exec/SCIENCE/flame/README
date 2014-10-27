@@ -1,0 +1,6 @@
+This problem sets up a cool fuel and hot ash state in pressure
+equilibrium.  Thermal conduction will heat the fuel to the point of
+ignition, and and flame will develop and propagate.  Inflow boundary
+conditions on the fuel end feed in fuel at a specified rate.  This can
+allow you to keep the flame stationary, but matching the inflow speed
+to the laminar flame speed.
