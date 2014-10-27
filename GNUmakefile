@@ -2,6 +2,7 @@ NDEBUG := t
 MPI    := t
 OMP    :=
 
+# If using SDC, make sure you have an SDC-enabled network
 SDC :=
 
 COMP := gfortran
@@ -16,13 +17,7 @@ MAESTRO_TOP_DIR := $(MAESTRO_HOME)
 EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 
-NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
-
-ifdef SDC
-  NETWORK_DIR := approx8_SDC
-else
-  NETWORK_DIR := rprox
-endif
+NETWORK_DIR := rprox
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
