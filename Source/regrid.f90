@@ -273,6 +273,8 @@ contains
           call multifab_destroy(   dSdt(n))
           call multifab_destroy(    src(n))
           call multifab_destroy(rhoHdot(n))
+          
+          call destroy(la_array(n))
 
           uold   (n) =    uold_opt(n)
           sold   (n) =    sold_opt(n)
