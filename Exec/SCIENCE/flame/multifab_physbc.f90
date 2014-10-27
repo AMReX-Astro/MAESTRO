@@ -94,7 +94,8 @@ contains
 
     ! Local variables
     character (len=256) err_string
-    integer :: i, dm
+    integer :: i
+    integer, parameter :: dm = 1
 
     if ( (bc(1,1) == EXT_DIR .or. &
           bc(1,2) == EXT_DIR) .and. .NOT. inlet_bc_initialized) then
@@ -217,9 +218,7 @@ contains
     integer :: i,j
 
     character (len=256) err_string
-    integer :: dm
-
-    dm = 2 
+    integer, parameter :: dm = 2
 
     if(ng == 0) return
 
@@ -437,6 +436,9 @@ contains
 
     use bl_constants_module
     use bc_module
+    use inlet_bc_module
+    use network
+    use variables
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:, lo(2)-ng:, lo(3)-ng:)
@@ -445,6 +447,8 @@ contains
 
     ! Local variables
     integer :: i,j,k
+    integer, parameter :: dm =3
+
 
     !--------------------------------------------------------------------------
     ! lower X
@@ -658,11 +662,26 @@ contains
     ! lower Z
     !--------------------------------------------------------------------------
     if (bc(3,1) == EXT_DIR) then
-       do j = lo(2)-ng,hi(2)+ng
-          do i = lo(1)-ng,hi(1)+ng
-             s(i,j,lo(3)-ng:lo(3)-1) = ONE
-          end do
-       end do
+       ! velocity components                                                                                               
+       if (icomp == 1) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-ng:lo(3)-1) = ZERO
+       if (icomp == 2) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-ng:lo(3)-1) = ZERO
+       if (icomp == 3) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-ng:lo(3)-1) = INLET_VEL
+
+       ! density                                                                                                           
+       if (icomp == dm+rho_comp) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-ng:lo(3)-1) = INLET_RHO
+
+       ! rho * h                                                                                                           
+       if (icomp == dm+rhoh_comp) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-ng:lo(3)-1) = INLET_RHOH
+
+       ! species                                                                                                           
+       if (icomp >= dm+spec_comp .and. icomp < dm+spec_comp+nspec) then
+          s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-ng:lo(3)-1) = &
+               INLET_RHOX(icomp-(spec_comp+dm)+1)
+       endif
+
+       ! other                                                                                                             
+       if (icomp == dm+temp_comp) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-ng:lo(3)-1) = INLET_TEMP
+       if (icomp == dm+trac_comp) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:hi(2)+ng,lo(3)-ng:lo(3)-1) = INLET_TRA
 
     else if (bc(3,1) == FOEXTRAP .or. bc(3,1) == REFLECT_EVEN) then
        do j = lo(2)-ng,hi(2)+ng
