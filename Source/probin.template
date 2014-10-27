@@ -75,6 +75,7 @@ contains
     use knapsack_module
     use cluster_module
     use layout_module
+    use ml_layout_module
     use pred_parameters
     use bc_module
     
@@ -382,6 +383,8 @@ contains
     call layout_set_verbosity(the_layout_verbosity)
     call layout_set_copyassoc_max(the_copy_cache_max)
     call layout_set_sfc_threshold(the_sfc_threshold)
+
+    call ml_layout_set_strategy(the_ml_layout_strategy)
 
     call destroy(bpt)
     
