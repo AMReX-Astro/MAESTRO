@@ -25,6 +25,7 @@ module model_parser_module
   use parallel, only: parallel_IOProcessor
   use network
   use bl_types
+  use simple_log_module
 
   implicit none
 
@@ -106,7 +107,6 @@ contains
     allocate (model_r(npts_model))
 
 887 format(78('-'))
-888 format(a60,g18.10)
 889 format(a60)
 
     if ( parallel_IOProcessor()) then
@@ -169,8 +169,8 @@ contains
           ! care about?
           if (.NOT. found_model .and. i == 1) then
              if ( parallel_IOProcessor() ) then
-                print *, 'WARNING: variable not found: ', &
-                     trim(varnames_stored(j))
+                call log('WARNING: variable not found: ' // &
+                     trim(varnames_stored(j)))
              end if
           endif
 
@@ -180,27 +180,27 @@ contains
        if (i == 1) then
           if (.not. found_dens) then
              if ( parallel_IOProcessor() ) then
-                print *, 'WARNING: density not provided in inputs file'
+                call log('WARNING: density not provided in inputs file')
              end if
           endif
 
           if (.not. found_temp) then
              if ( parallel_IOProcessor() ) then
-                print *, 'WARNING: temperature not provided in inputs file'
+                call log('WARNING: temperature not provided in inputs file')
              end if
           endif
 
           if (.not. found_pres) then
              if ( parallel_IOProcessor() ) then
-                print *, 'WARNING: pressure not provided in inputs file'
+                call log('WARNING: pressure not provided in inputs file')
              end if
           endif
 
           do comp = 1, nspec
              if (.not. found_spec(comp)) then
                 if ( parallel_IOProcessor() ) then
-                   print *, 'WARNING: ', trim(spec_names(comp)), &
-                        ' not provided in inputs file'
+                   call log('WARNING: ' // trim(spec_names(comp)) // &
+                        ' not provided in inputs file')
                 end if
              endif
           enddo
@@ -209,6 +209,9 @@ contains
     end do   ! end loop over npts_model
 
     model_initialized = .true.
+
+    call log("initial model read...")
+    call log(" ")
 
     close(99)
 
