@@ -34,6 +34,9 @@ inputs_prefix=inputs3d*
 # etc...  GlobusOnline endpoints
 src_ep="ncsa#BlueWaters"
 dst_ep="ncsa#Nearline"
+
+# note: if your globus usename is not the same as your BW username,
+# you'll need to do username@cli.globusonline.org
 go_host="cli.globusonline.org"
 src_dir=`pwd`
 src_base=`basename $src_dir`
@@ -56,7 +59,7 @@ chk_fac=10
 
 #The below sets chk_int to 10 * the value of chk_int in the inputs
 #file
-grepchkout=$(grep chk_int inputs3d* | head -n 1)   #grep the chk_int variable from *first* inputs file found
+grepchkout=$(grep chk_int ${inputs_prefix} | head -n 1)   #grep the chk_int variable from *first* inputs file found
 eqindx=`expr index "${grepchkout}" =`  #find index of the "="
 chk_int=`echo ${grepchkout:$eqindx} | tr -d ' '` #store inputs' chk_int value, trim any leading spaces
 chk_int=`expr $chk_int \* $chk_fac`
