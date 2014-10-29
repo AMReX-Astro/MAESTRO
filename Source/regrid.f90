@@ -1,6 +1,7 @@
 module regrid_module
 
   use BoxLib
+  use bl_prof_module
   use ml_boxarray_module
   use ml_layout_module
   use define_bc_module
@@ -58,6 +59,10 @@ contains
     type(multifab)  :: rhoHdot_temp(max_levs)
     type(multifab), allocatable :: uold_opt(:), sold_opt(:), gpi_opt(:), pi_opt(:), &
          dSdt_opt(:), src_opt(:), rhoHdot_opt(:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "regrid")
 
     dm    = mla%dim
     nlevs = mla%nlevel
@@ -416,6 +421,8 @@ contains
     call destroy(mba)
     call destroy(mla_temp)
     call bc_tower_destroy(the_bc_tower_temp)
+
+    call destroy(bpt)
 
   end subroutine regrid
 
