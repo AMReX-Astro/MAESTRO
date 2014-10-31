@@ -8,11 +8,16 @@
 
 
  ! gridding and geometry
- max_levs = 1
- n_cellx = 512
- n_celly = 512
- n_cellz = 512
- max_grid_size = 64
+ max_levs = 2
+ n_cellx = 256
+ n_celly = 256
+ n_cellz = 256
+
+ max_grid_size_1 = 32
+ max_grid_size_2 = 32
+
+ regrid_int = 2
+ min_eff = 0.8
 
  spherical_in = 1
  dm_in = 3
@@ -20,13 +25,6 @@
  prob_hi_x = 5.12d8
  prob_hi_y = 5.12d8
  prob_hi_z = 5.12d8
-
- bcx_lo = 12
- bcx_hi = 12
- bcy_lo = 12
- bcy_hi = 12
- bcz_lo = 12
- bcz_hi = 12
 
  xlo_boundary_type = "outlet"
  ylo_boundary_type = "outlet"
@@ -41,7 +39,7 @@
  max_step  = 100000000
  stop_time = 30000.
 
- cflfac = 0.7d0
+ cflfac = 0.8d0
 
  init_shrink = 0.1d0
  max_dt_growth = 1.1d0
@@ -75,7 +73,7 @@
 
 
  ! multigrid
- max_mg_bottom_nlevels = 3
+ max_mg_bottom_nlevels = 16
  mg_bottom_solver = 4
  hg_bottom_solver = 4
 
@@ -90,11 +88,11 @@
 
 
  ! I/O
- plot_base_name = "wd_512_rhoc1_plt"
+ plot_base_name = "wd_512_rhoc3_plt"
  plot_int = -1
  plot_deltat = 5.0d0
 
- check_base_name = "wd_512_rhoc1_chk"
+ check_base_name = "wd_512_rhoc3_chk"
  chk_int   = 100
 
  single_prec_plotfiles = T
