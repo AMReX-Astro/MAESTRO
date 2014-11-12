@@ -3697,7 +3697,8 @@ contains
 
     if (nlevs .gt. 1) then
        do n=2,nlevs
-          call create_umac_grown(n,umac(n,:),umac(n-1,:),the_bc_level(n-1),the_bc_level(n))
+          call create_umac_grown(umac(n,:),umac(n-1,:),the_bc_level(n-1),the_bc_level(n), &
+               n.eq.nlevs)
        end do
     else
        do n=1,nlevs

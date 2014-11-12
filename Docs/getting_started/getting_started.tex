@@ -324,12 +324,26 @@ and instead use the incompressible constraint to evolve the system.
 Burning makes these bubbles buoyant, and then roll up.  This problem was
 used in \cite{lowMach3} to compare with compressible solvers.
 
+This problem can also be run adaptively.  The \code{tag\_boxes.f90}
+file in the problem directory tags cells for refinement if the
+perturbational temperature, $T^\prime$, exceeds some threshold.  
+
 \item {\tt test\_convect} \\[-3mm]
 
 {\tt test\_convect} drives convection through a plane-parallel
 atmosphere using an externally-specified heat source.  This problem
 was used to compare with compressible solvers in \cite{lowMach3}
 and to test the multilevel algorithm in \cite{multilevel}.
+
+\item {\tt test\_spherical} \\[-3mm]
+
+This problem sets up an isentropically stratified star and stirs it up
+with a random velocity field.  The low Mach number constraint is
+replaced with the anelastic constraint (through
+the \runparam{beta\_type} runtime parameter).  Analytically, under
+these conditions, the density of the star should not change.  This
+test problem was discussed in Maestro paper IV~\cite{lowMach4}.
+
 
 \end{itemize}
 
@@ -340,6 +354,19 @@ The following problems were used for science studies.  It is
 anticipated that more will be made available with time.
 
 \begin{itemize}
+
+\item {\tt flame} \\[-3mm]
+
+   A combustion-mode problem where we model a thermonuclear flame in a
+   small domain.  This enforces the low Mach combustion constraint
+   div{U} = S.  Hot ash and cool fuel are put into contact and a flame
+   will ignite and propagate across the grid.  Inflow boundary
+   conditions are used to allow for an inflow velocity to be set to
+   keep the laminar flame stationary.
+
+   In this mode, \maestro\ behaves like the code described
+   in \cite{SNe}, which was used for models of Rayleigh-Taylor
+   unstable flames~\cite{SNld,SNrt,SNrt3d}.
 
 \item {\tt toy\_convect} \\[-3mm]
 

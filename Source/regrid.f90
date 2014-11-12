@@ -1,10 +1,12 @@
 module regrid_module
 
   use BoxLib
+  use bl_prof_module
   use ml_boxarray_module
   use ml_layout_module
   use define_bc_module
   use box_util_module
+  use tag_boxes_module, only : tagging_needs_ghost_cells
 
   implicit none
 
@@ -55,6 +57,12 @@ contains
     type(multifab)  :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
     type(multifab)  :: pi_temp(max_levs), dSdt_temp(max_levs), src_temp(max_levs)
     type(multifab)  :: rhoHdot_temp(max_levs)
+    type(multifab), allocatable :: uold_opt(:), sold_opt(:), gpi_opt(:), pi_opt(:), &
+         dSdt_opt(:), src_opt(:), rhoHdot_opt(:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "regrid")
 
     dm    = mla%dim
     nlevs = mla%nlevel
@@ -76,7 +84,7 @@ contains
     ! create a copy of the original mla and bc_tower
     ! we need this for putting the original state into perturbational form
     ! for filling new grids
-    call ml_layout_build(mla_temp,mla%mba,mla%pmask)
+    call ml_layout_build_mla(mla_temp,mla)
     call initialize_bc(the_bc_tower_temp,nlevs,mla_temp%pmask)
     do n = 1,nlevs
        call bc_tower_level_build(the_bc_tower_temp,n,mla_temp%la(n))
@@ -85,30 +93,30 @@ contains
     do n = 1,nlevs
 
        ! Create copies of the old data.
-       call multifab_build(  uold_temp(n),mla_temp%la(n),   dm, ng_s)
-       call multifab_build(  sold_temp(n),mla_temp%la(n),nscal, ng_s)
-       call multifab_build(   gpi_temp(n),mla_temp%la(n),   dm, 0)
-       call multifab_build(    pi_temp(n),mla_temp%la(n),    1, 0, nodal)
-       call multifab_build(  dSdt_temp(n),mla_temp%la(n),    1, 0)
-       call multifab_build(   src_temp(n),mla_temp%la(n),    1, 0)
-       call multifab_build(rhoHdot_temp(n),mla_temp%la(n),   1, 0)
+       call multifab_build(   uold_temp(n),mla_temp%la(n),   dm, ng_s)
+       call multifab_build(   sold_temp(n),mla_temp%la(n),nscal, ng_s)
+       call multifab_build(    gpi_temp(n),mla_temp%la(n),   dm, 0)
+       call multifab_build(     pi_temp(n),mla_temp%la(n),    1, 0, nodal)
+       call multifab_build(   dSdt_temp(n),mla_temp%la(n),    1, 0)
+       call multifab_build(    src_temp(n),mla_temp%la(n),    1, 0)
+       call multifab_build(rhoHdot_temp(n),mla_temp%la(n),    1, 0)
 
-       call multifab_copy_c(  uold_temp(n),1,  uold(n),1,   dm)
-       call multifab_copy_c(  sold_temp(n),1,  sold(n),1,nscal)
-       call multifab_copy_c(   gpi_temp(n),1,   gpi(n),1,   dm)
-       call multifab_copy_c(    pi_temp(n),1,    pi(n),1,    1)
-       call multifab_copy_c(  dSdt_temp(n),1,  dSdt(n),1,    1)
-       call multifab_copy_c(   src_temp(n),1,   src(n),1,    1)
-       call multifab_copy_c(rhoHdot_temp(n),1,rhoHdot(n),1,  1)
+       call multifab_copy_c(   uold_temp(n),1,   uold(n),1,   dm)
+       call multifab_copy_c(   sold_temp(n),1,   sold(n),1,nscal)
+       call multifab_copy_c(    gpi_temp(n),1,    gpi(n),1,   dm)
+       call multifab_copy_c(     pi_temp(n),1,     pi(n),1,    1)
+       call multifab_copy_c(   dSdt_temp(n),1,   dSdt(n),1,    1)
+       call multifab_copy_c(    src_temp(n),1,    src(n),1,    1)
+       call multifab_copy_c(rhoHdot_temp(n),1,rhoHdot(n),1,    1)
 
        ! Get rid of the old data structures so we can create new ones 
        ! with the same names.
-       call multifab_destroy(  uold(n))
-       call multifab_destroy(  sold(n))
-       call multifab_destroy(   gpi(n))
-       call multifab_destroy(    pi(n))
-       call multifab_destroy(  dSdt(n))
-       call multifab_destroy(   src(n))
+       call multifab_destroy(   uold(n))
+       call multifab_destroy(   sold(n))
+       call multifab_destroy(    gpi(n))
+       call multifab_destroy(     pi(n))
+       call multifab_destroy(   dSdt(n))
+       call multifab_destroy(    src(n))
        call multifab_destroy(rhoHdot(n))
 
     end do
@@ -164,10 +172,12 @@ contains
 
        ! Do we need finer grids?
 
-       ! Need to fill ghost cells here in case we use them in tagging
-       call multifab_fill_boundary(sold(nl))
-       call multifab_physbc(sold(nl),rho_comp,dm+rho_comp,nscal, &
-                            the_bc_tower%bc_tower_array(nl))
+       if (tagging_needs_ghost_cells) then
+          ! Need to fill ghost cells here in case we use them in tagging
+          call multifab_fill_boundary(sold(nl))
+          call multifab_physbc(sold(nl),rho_comp,dm+rho_comp,nscal, &
+               the_bc_tower%bc_tower_array(nl))
+       end if
 
        if (nl .eq. 1) then
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
@@ -213,6 +223,7 @@ contains
                                             uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, rhoHdot_temp, &
                                             the_bc_tower,dm,ng_s,mba%rr(n-1,:))
                 end do
+
              end if
           end if
 
@@ -236,12 +247,54 @@ contains
     nlevs = nl
     nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
-    ! Note: this build actually sets mla%la(n) = la_array(n) so we mustn't delete la_array(n)
-    call build(mla,mba,la_array,pmask,nlevs)
+    call ml_layout_build_la_array(mla,la_array,mba,pmask,nlevs)
+
+    ! We need to move data if a layout in la_array is not used in mla.
+    ! We also need to destroy any unused layouts.
+    allocate(uold_opt(nlevs),sold_opt(nlevs),gpi_opt(nlevs),pi_opt(nlevs))
+    allocate(dSdt_opt(nlevs),src_opt(nlevs),rhoHdot_opt(nlevs))
+    do n=1,nlevs
+       if (mla%la(n) .ne. la_array(n)) then
+          call multifab_build(   uold_opt(n),mla%la(n),   dm, ng_s)
+          call multifab_build(   sold_opt(n),mla%la(n),nscal, ng_s)
+          call multifab_build(    gpi_opt(n),mla%la(n),   dm, 0)
+          call multifab_build(     pi_opt(n),mla%la(n),    1, 0, nodal)
+          call multifab_build(   dSdt_opt(n),mla%la(n),    1, 0)
+          call multifab_build(    src_opt(n),mla%la(n),    1, 0)
+          call multifab_build(rhoHdot_opt(n),mla%la(n),    1, 0)
+
+          call multifab_copy_c(   uold_opt(n),1,   uold(n),1,   dm)
+          call multifab_copy_c(   sold_opt(n),1,   sold(n),1,nscal)
+          call multifab_copy_c(    gpi_opt(n),1,    gpi(n),1,   dm)
+          call multifab_copy_c(     pi_opt(n),1,     pi(n),1,    1)
+          call multifab_copy_c(   dSdt_opt(n),1,   dSdt(n),1,    1)
+          call multifab_copy_c(    src_opt(n),1,    src(n),1,    1)
+          call multifab_copy_c(rhoHdot_opt(n),1,rhoHdot(n),1,  1)
+
+          call multifab_destroy(   uold(n))
+          call multifab_destroy(   sold(n))
+          call multifab_destroy(    gpi(n))
+          call multifab_destroy(     pi(n))
+          call multifab_destroy(   dSdt(n))
+          call multifab_destroy(    src(n))
+          call multifab_destroy(rhoHdot(n))
+          
+          call destroy(la_array(n))
+
+          uold   (n) =    uold_opt(n)
+          sold   (n) =    sold_opt(n)
+          gpi    (n) =     gpi_opt(n)
+          pi     (n) =      pi_opt(n)
+          dSdt   (n) =    dSdt_opt(n)
+          src    (n) =     src_opt(n)
+          rhoHdot(n) = rhoHdot_opt(n)
+       end if
+    end do
+    deallocate(uold_opt,sold_opt,gpi_opt,pi_opt,dSdt_opt,src_opt,rhoHdot_opt)
 
     ! This makes sure the boundary conditions are properly defined everywhere
     do n = 1, nlevs
-       call bc_tower_level_build(the_bc_tower,n,la_array(n))
+       call bc_tower_level_build(the_bc_tower,n,mla%la(n))
     end do
 
     if (spherical .eq. 1) then
@@ -270,7 +323,7 @@ contains
 
        ! Rebuild using the perturbational form
        do n = 1, nlevs
-          call build_and_fill_data(n,la_array(n),mla_temp, &
+          call build_and_fill_data(n,mla%la(n),mla_temp, &
                                    uold     ,sold     ,gpi     ,pi     ,dSdt     ,src,      rhoHdot, &
                                    uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,src_temp, rhoHdot_temp, &
                                    the_bc_tower,dm,ng_s,mba%rr(n-1,:))
@@ -291,12 +344,12 @@ contains
 
     do nl = 1,nlevs
        if (mla_temp%nlevel .ge. nl) then
-          call destroy(  uold_temp(nl))
-          call destroy(  sold_temp(nl))
-          call destroy(   gpi_temp(nl))
-          call destroy(    pi_temp(nl))
-          call destroy(  dSdt_temp(nl))
-          call destroy(   src_temp(nl))
+          call destroy(   uold_temp(nl))
+          call destroy(   sold_temp(nl))
+          call destroy(    gpi_temp(nl))
+          call destroy(     pi_temp(nl))
+          call destroy(   dSdt_temp(nl))
+          call destroy(    src_temp(nl))
           call destroy(rhoHdot_temp(nl))
        end if
     end do
@@ -369,6 +422,8 @@ contains
     call destroy(mla_temp)
     call bc_tower_destroy(the_bc_tower_temp)
 
+    call destroy(bpt)
+
   end subroutine regrid
 
   subroutine build_and_fill_data(lev,la,mla_temp, &
@@ -406,37 +461,37 @@ contains
     if (lev .gt. 1) then
 
        call fillpatch(uold(lev),uold(lev-1), &
-                      ng_s,rr, &
+                      0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
-                      1,1,1,dm)
+                      1,1,1,dm,no_final_physbc_input=.true.)
        call fillpatch(sold(lev),sold(lev-1), &
-                      ng_s,rr, &
+                      0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
-                      1,1,dm+rho_comp,nscal)
+                      1,1,dm+rho_comp,nscal,no_final_physbc_input=.true.)
        do d=1,dm
           call fillpatch(gpi(lev),gpi(lev-1), &
                          0,rr, &
                          the_bc_tower%bc_tower_array(lev-1), &
                          the_bc_tower%bc_tower_array(lev  ), &
-                         d,d,foextrap_comp,1)
+                         d,d,foextrap_comp,1,no_final_physbc_input=.true.)
        end do
        call fillpatch(dSdt(lev),dSdt(lev-1), &
                       0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
-                      1,1,foextrap_comp,1)
+                      1,1,foextrap_comp,1,no_final_physbc_input=.true.)
        call fillpatch(src(lev),src(lev-1), &
                       0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
-                      1,1,foextrap_comp,1) 
+                      1,1,foextrap_comp,1,no_final_physbc_input=.true.) 
        call fillpatch(rhoHdot(lev),rhoHdot(lev-1), &
                       0,rr, &
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
-                      1,1,foextrap_comp,1) 
+                      1,1,foextrap_comp,1,no_final_physbc_input=.true.) 
        ! We interpolate p differently because it is nodal, not cell-centered
        call ml_nodal_prolongation(pi(lev), pi(lev-1), rr)
 

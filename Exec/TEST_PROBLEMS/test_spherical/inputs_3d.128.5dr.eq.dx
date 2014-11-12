@@ -1,0 +1,69 @@
+&PROBIN
+ model_file = "spherical.hse.640"
+ drdxfac = 5
+
+ max_levs = 1
+ n_cellx = 128
+ n_celly = 128
+ n_cellz = 128
+ max_grid_size = 32
+
+ spherical_in = 1
+ dm_in = 3
+ do_sponge = .true.
+
+ prob_hi_x = 5.e8
+ prob_hi_y = 5.e8
+ prob_hi_z = 5.e8
+
+ max_step  = 100000000
+ init_iter = 1
+
+ stop_time = 30000.
+
+ plot_int  = -1
+ plot_deltat = 10.0
+ chk_int   = 100
+
+ cflfac = 0.5
+ init_shrink = 0.1
+ max_dt_growth = 1.1
+ use_soundspeed_firstdt = T
+ use_divu_firstdt = T
+
+ bcx_lo = 12
+ bcx_hi = 12
+ bcy_lo = 12
+ bcy_hi = 12
+ bcz_lo = 12
+ bcz_hi = 12
+
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+ do_initial_projection = T
+ init_divu_iter = 3
+
+ velpert_amplitude = 1.d7
+ velpert_radius = 5.d7
+ velpert_scale = 1.d7
+ velpert_steep = 1.d5
+
+ do_burning = F
+
+ enthalpy_pred_type = 1
+ evolve_base_state = F
+ beta_type = 2
+
+ dpdt_factor = 0.0
+
+ use_tfromp = T
+
+ single_prec_plotfiles = T
+
+ use_eos_coulomb = T
+
+ plot_trac = F
+/

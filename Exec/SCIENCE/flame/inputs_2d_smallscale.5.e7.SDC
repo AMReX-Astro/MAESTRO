@@ -1,0 +1,83 @@
+&PROBIN
+
+ ! geometry
+ dm_in = 2
+ spherical_in = 0
+
+ ! grid size
+ max_levs = 1
+ n_cellx = 128
+ n_celly = 1024
+ 
+ max_grid_size = 64
+
+ ! domain size
+ prob_hi_x = 0.625d0
+ prob_hi_y = 5.0d0
+
+
+ ! problem data
+ dens_fuel = 5.d7
+ temp_fuel = 1.d8
+ xc12_fuel = 0.5d0
+ vel_fuel = 1.d5
+
+ temp_ash = 3.d9
+ 
+ interface_pos_frac = 0.125d0
+ smooth_len_frac = 0.025d0
+
+ do_smallscale = T
+
+ ! stepping parameters
+ max_step  = 300000
+ stop_time = 1.d0
+ cflfac = 0.8d0
+ init_shrink = 0.1d0
+ max_dt_growth = 1.2d0
+
+
+ ! physics
+ grav_const = 0.d0
+
+ use_thermal_diffusion = T
+
+ use_eos_coulomb = T
+
+ ppm_type = 1
+ enthalpy_pred_type = 3
+
+ dpdT_factor = 0.3d0
+
+
+ ! projection
+ do_initial_projection = T
+ init_divu_iter = 3
+ init_iter = 1
+
+
+ ! output
+ plot_int  = 10
+ plot_deltat = 1.d-5
+ chk_int   = 1000
+
+
+ ! boundary conditions
+ bcx_lo = -1
+ bcx_hi = -1
+ bcy_lo = 11
+ bcy_hi = 12
+
+
+
+ ! verbosity
+ verbose    = 10
+ mg_verbose = 1
+ cg_verbose = 0
+
+
+ ! constraint parameters
+ evolve_base_state = F
+ beta_type = 3
+
+/

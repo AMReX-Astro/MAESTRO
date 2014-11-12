@@ -211,9 +211,18 @@ the_sfc_threshold                   integer            5
 
 the_layout_verbosity                integer            0                   
 
+# This prarmeter has no impact on single-level runs!
+# 
+# 0: This uses either knapsack or sfc on each level.  Before boxes are 
+#    distributed, MPI ranks are sorted according to the memory usage by 
+#    all levels.  This is our traditional approach.
+# 1: This uses sfc on each level.  MPI ranks are sorted according to the 
+#    memory usage by lower levels.
+the_ml_layout_strategy              integer            0
+
 #  Number of boxassoc layouts we keep in memory to avoid having to 
 # recompute the boxassoc, which is computationally expensive.
-the_copy_cache_max                  integer            25          
+the_copy_cache_max                  integer            128
 
 # The minimum size on a side for a grid created using make\_new\_grids.
 minwidth                            integer            8                     
@@ -228,6 +237,9 @@ min_eff                             real               0.9d0
 # A new line is added each time regrid is called.  
 dump_grid_file                      logical            .false.
 
+# pass $T'$ into the tagging routines as the auxillary multifab instead
+# of the default $\rho H_\mathrm{nuc}$.
+use_tpert_in_tagging                logical            .false.
 
 #-----------------------------------------------------------------------------
 # category: output

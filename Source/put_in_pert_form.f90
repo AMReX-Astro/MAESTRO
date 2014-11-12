@@ -14,7 +14,7 @@ module pert_form_module
 
   private
 
-  public :: put_in_pert_form
+  public :: put_in_pert_form, put_in_pert_form_one_level
 
   
 contains
@@ -87,6 +87,53 @@ contains
     call destroy(bpt)
 
   end subroutine put_in_pert_form
+
+
+  subroutine put_in_pert_form_one_level(n,s,base,dx,comp,flag)
+
+    use geometry, only: spherical
+    use bl_prof_module
+
+    integer        , intent(in   ) :: n
+    integer        , intent(in   ) :: comp
+    type(multifab) , intent(inout) :: s
+    real(kind=dp_t), intent(in   ) :: base(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+    logical        , intent(in   ) :: flag
+
+    ! Local variables
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+    integer :: lo(get_dim(s)),hi(get_dim(s))
+    integer :: i,ng,dm
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_in_pert_form_one_level")
+
+    dm = get_dim(s)
+
+    ng = nghost(s)
+
+    do i = 1, nfabs(s)
+       sp => dataptr(s,i)
+       lo =  lwb(get_box(s,i))
+       hi =  upb(get_box(s,i))
+       select case (dm)
+       case (2)
+          call pert_form_2d(sp(:,:,1,:),base(n,:),lo,hi,ng,comp,flag)
+       case (3)
+          if (spherical .eq. 1) then
+             call pert_form_3d_sphr(sp(:,:,:,:),base(1,:),lo,hi,ng,dx(:),comp,flag)
+          else
+             call pert_form_3d_cart(sp(:,:,:,:),base(n,:),lo,hi,ng,comp,flag)
+          end if
+       end select
+    end do
+ 
+    call destroy(bpt)
+
+  end subroutine put_in_pert_form_one_level
+
 
   subroutine pert_form_2d(s,s0,lo,hi,ng,comp,flag)
 

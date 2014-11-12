@@ -50,7 +50,22 @@ related to optimization.
 fixed the above issue, but now wdconvect with 2-level, effective
 768$^3$ dies due to an unknown seg fault at the beginning of the run.
 
-\item {\em gfortran 4.8.x}: There are no known issues with gfortran 4.8.x
+\item {\em gfortran 4.8.x}: This typically works well, but sometimes we get
+an error allocating memory in {\tt cluster\_f.f90}.  This
+is a compiler bug (affecting atleast 4.8.2 and 4.8.3):
+
+The code runs without any problem if it is compiled with {\tt -O2
+-ftree-vectorize -fno-range-check} (our default) but with {\tt
+cluster\_f.f90} compiled with {\tt -O2 -ftree-vectorize
+-fno-range-check -fno-tree-pre}.  The ``{\tt fno-tree-pre}'' option
+turns off ``{\tt ftree-pre}'' that is turned on by ``{\tt O2}'' \\
+ 
+GCC manual says,
+
+{\tt -ftree-pre} \\
+Perform partial redundancy elimination (PRE) on trees. This flag is enabled by default at {\tt -O2} and {\tt -O3}.
+
+
 
 \end{itemize}
 
@@ -64,6 +79,11 @@ fixed the above issue, but now wdconvect with 2-level, effective
 The preferred compilers on Titan are the Cray compilers.  
 Cray 8.2.5 works well on titan/OLCF with MPI/OpenMP.
 
+
+\subsection{Monitoring Allocations}
+
+The {\tt showusage} and {\tt showusage -f} commands give an
+overview of the usage.
 
 \subsection{Automatic Restarting and Archiving of Data}
 
@@ -348,3 +368,49 @@ module load python
 in your local version of visit, copy the {\tt host\_nersc\_hopper.xml} file
 from the {\tt .visit/allhosts/} directory under the system's \visit\ install path
 to your {\tt $\mathtt{\sim}$/.visit/hosts/} directory. 
+
+
+
+\section{Working at NCSA (Blue Waters)}
+
+\subsection{Overview}
+
+Blue Waters consists of 22,640 Cray XE6 compute nodes and 4,224
+Cray XK7 compute nodes.
+
+Each XE node has two AMD Interlagos model 6276 compute units, each of
+which has 16 integer cores (thus, a single node has a total of 32 integer
+cores).  Two integer cores share a multithreaded, 256-bit wide floating 
+point unit (FPU).  If both integer cores have their own thread, each has access 
+to 128-bit floating point processing, whereas if only one thread is 
+assigned the process can access all 256 bits.  In one major science
+application on Blue Waters it was found that having an OpenMP thread for
+each integer core gave the best performance, but when starting a new
+application it's best to experiment.  One OpenMP thread per FPU may
+be better in some cases.
+
+Each compute unit is divided into two NUMA nodes.  Cores in
+the same NUMA region share a pool of L3 cache.  For the same science
+application as before it was found that the best performance was achieved
+by assigning an MPI task to each NUMA node.  Thus, each physical node
+has four MPI tasks.
+
+The XK nodes consist of one AMD Interlagos model 6276 compute unit
+and an NVIDIA GK110 ``Kepler'' GPU accelerator (Tesla K20X).  The
+GPU is configured with 14 streaming multiprocessor units (SMXs), each
+of which has 192 single-precision or 64 double-precision CUDA cores.  Thus
+there are a total of 2688 SP CUDA cores or 896 DP CUDA cores.
+
+For more details, please see 
+\url{https://bluewaters.ncsa.illinois.edu/user-guide}
+
+\subsection{BW Compilers}
+
+The Cray compilers are the default on blue waters, and version
+8.3.3 works well with \maestro.
+
+\subsection{Monitoring Allocations}
+
+The {\tt usage} command will list the current user's usage and 
+{\tt usage -P {\em project}} will
+list the usage for all users in a project allocation named ``project''.

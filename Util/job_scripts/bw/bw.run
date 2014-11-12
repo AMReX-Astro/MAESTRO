@@ -1,0 +1,26 @@
+#PBS -S /usr/bin/tcsh
+# Name of job
+#PBS -N hero_4lev
+# Number of nodes: Number of processors per node: Node type (xe for CPU, xk
+# for GPU).  Note that each (CPU) node has 32 integer cores, every two of which share a
+# single floating point core.  By specifying ppn=32, we are saying we want to
+# treat each integer core as a traditional 'core'.  This works well for some
+# applications, and not so well for others as there might be contention
+# between the integer cores that share the fpu.
+#PBS -l nodes=1024:ppn=32:xe
+#PBS -l walltime=01:00:00
+
+# As usual, for OpenMP
+setenv OMP_NUM_THREADS 16
+
+cd $PBS_O_WORKDIR
+
+echo Starting `date`
+
+# Here we are starting a job with 2048 MPI tasks, with two MPI tasks per node,
+# and each MPI task having 16 threads.
+aprun -n 2048  -N 2 -d 16 ./Castro3d.Linux.gcc.gfortran.DEBUG.MPI.OMP.ex inputs.3d.castro
+
+echo Ending `date`
+
+

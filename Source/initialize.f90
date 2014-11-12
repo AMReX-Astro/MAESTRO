@@ -4,7 +4,7 @@ module initialize_module
   use ml_layout_module
   use multifab_module
   use bc_module
-  use variables, only: nscal, rho_comp, rhoh_comp, temp_comp
+  use variables, only: nscal, rho_comp, rhoh_comp, temp_comp, foextrap_comp
   use geometry, only: spherical, nr_irreg, nr_fine, dr_fine, nlevs_radial, &
        init_cutoff, init_multilevel, init_radial, destroy_geometry, &
        compute_cutoff_coords, initialize_dx
@@ -32,10 +32,11 @@ contains
     use restart_module
     use multifab_fill_ghost_module
     use probin_module, only : drdxfac, restart_into_finer, octant, max_levs, &
-         ppm_type, bds_type, plot_Hext, use_thermal_diffusion, prob_lo, prob_hi, nodal, &
+         ppm_type, bds_type, plot_Hext, use_thermal_diffusion, &
+         prob_lo, prob_hi, nodal, &
          check_base_name, use_tfromp, cflfac, dm_in, restart_with_vel_field, &
          model_file, do_smallscale, fix_base_state, max_grid_size_1, &
-         change_max_grid_size_1, drive_initial_convection
+         change_max_grid_size_1, drive_initial_convection, use_tpert_in_tagging
     use average_module
     use make_grav_module
     use enforce_HSE_module
@@ -50,6 +51,7 @@ contains
     use base_io_module
     use aux_data_module
     use ml_restrict_fill_module
+    use pert_form_module, only: put_in_pert_form
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(inout) :: restart
@@ -86,6 +88,7 @@ contains
     type(multifab), pointer :: chk_thermal2(:)
 
     type(multifab), allocatable :: gamma1(:)
+    type(multifab), pointer :: tpert_mf(:)
 
     type(layout) :: la
 
@@ -469,8 +472,33 @@ contains
 
        ! regrid
        ! this also rebuilds mla and the_bc_tower
-       call regrid(restart,mla,uold,sold,gpi,pi,dSdt,Source_old,dx,the_bc_tower, &
-                   rho0_old,rhoh0_old,.true.,rho_Hnuc2)
+       if (use_tpert_in_tagging) then
+
+          ! create tpert
+          allocate(tpert_mf(nlevs))
+          do n = 1,nlevs
+             call build(tpert_mf(n), mla%la(n), 1, 0)
+             call multifab_copy_c(tpert_mf(n),1,sold(n),temp_comp,1)
+          enddo
+          
+          call put_in_pert_form(mla,tpert_mf,tempbar,dx,1, &
+                                foextrap_comp,.true., &
+                                the_bc_tower%bc_tower_array)
+
+          call regrid(restart,mla,uold,sold,gpi,pi,dSdt,Source_old, &
+                      dx,the_bc_tower, &
+                      rho0_old,rhoh0_old,.true.,tpert_mf)
+
+          do n = 1,nlevs
+             call destroy(tpert_mf(n))
+          enddo
+          deallocate(tpert_mf)
+
+       else
+          call regrid(restart,mla,uold,sold,gpi,pi,dSdt,Source_old, &
+                      dx,the_bc_tower, &
+                      rho0_old,rhoh0_old,.true.,rho_Hnuc2)
+       endif
 
        ! nlevs is local so we need to reset it
        nlevs = mla%nlevel
@@ -904,12 +932,13 @@ contains
     use restrict_base_module
     use make_new_grids_module
     use probin_module, only : drdxfac, ppm_type, bds_type, prob_lo, prob_hi, do_smallscale, &
-         model_file, nodal, dm_in, fix_base_state
+         model_file, nodal, dm_in, fix_base_state, use_tpert_in_tagging
     use ml_restrict_fill_module
     use make_grav_module
     use enforce_HSE_module
     use rhoh_vs_t_module
     use time_module, only: time
+    use pert_form_module, only: put_in_pert_form_one_level
 
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: dt
@@ -929,6 +958,8 @@ contains
     type(ml_boxarray) :: mba
     type(box)         :: domain
     integer           :: domhi(dm_in)
+
+    type(multifab), pointer :: tpert_mf(:)
 
     type(layout) :: la_array(max_levs)
     type(box)    :: bxs
@@ -1098,16 +1129,47 @@ contains
                                        ng=sold(1)%ng)
           endif
 
-          ! Do we need finer grids?  
-          !   Note: currently the answer to this question is always yes.  Maestro 
-          !   doesn't currently support having fewer levels than max_levs
-          if (nl .eq. 1) then
-             call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
-                                 amr_buf_width,ref_ratio,nl,max_grid_size_2)
+          if (use_tpert_in_tagging) then
+
+             call average_one_level(nl,sold,tempbar,temp_comp)
+
+             allocate(tpert_mf(max_levs))
+             do n = 1, nl
+                call build(tpert_mf(n), la_array(n), 1, 0)
+                call multifab_copy_c(tpert_mf(n),1,sold(n),temp_comp,1)
+             enddo
+
+             call put_in_pert_form_one_level(nl,tpert_mf(nl),tempbar,dx(nl,:),1,.true.)
+
+             ! Do we need finer grids?  
+             !   Note: currently the answer to this question is always yes.  Maestro 
+             !   doesn't currently support having fewer levels than max_levs
+             if (nl .eq. 1) then
+                call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                                    amr_buf_width,ref_ratio,nl,max_grid_size_2,tpert_mf(nl))
+             else
+                call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                                 amr_buf_width,ref_ratio,nl,max_grid_size_3,tpert_mf(nl))
+             end if
+
+             do n=1,nl
+                call destroy(tpert_mf(n))
+             enddo
+             deallocate(tpert_mf)
+          
           else
-             call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
-                                 amr_buf_width,ref_ratio,nl,max_grid_size_3)
-          end if
+             ! Do we need finer grids?  
+             !   Note: currently the answer to this question is always yes.  Maestro 
+             !   doesn't currently support having fewer levels than max_levs
+             if (nl .eq. 1) then
+                call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                                    amr_buf_width,ref_ratio,nl,max_grid_size_2)
+             else
+                call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
+                                    amr_buf_width,ref_ratio,nl,max_grid_size_3)
+             end if
+
+          endif
          
           ! If we tagged boxes for refinement, then build the new grids! 
           if (new_grid) then

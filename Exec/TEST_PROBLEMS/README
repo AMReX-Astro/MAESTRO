@@ -7,11 +7,19 @@ incomp_shear_jet/
 nersc_benchmark/
 
 
+rt/
+
+  A classic Rayleigh-Taylor instability problem.
+
+
 test2/
  
   The test problem from the Maestro paper III.  This places 3 hots
   spots in a plane-parallel atmosphere.  Burning makes these bubbles
   buoyant, and then roll up.
+
+  This also contains the inputs files used in the multilevel Maestro
+  paper to show adaptivity in the test2 problem.  
 
 
 test_convect/
@@ -21,4 +29,13 @@ test_convect/
   with compressible solvers in Maestro paper III and to test the
   multilevel algorithm in the multilevel paper.
 
+
+test_spherical/
+
+   Set up an isentropically stratified star and stir it up with a
+   random velocity field.  The low Mach number constraint is replaced
+   with the anelastic constraint (through the beta_type runtime
+   parameter).  Analytically, under these conditions, the density of
+   the star should not change.  This test problem was discussed in
+   Maestro paper IV.
 

@@ -6,7 +6,7 @@
 module convert_rhoX_to_X_module
 
   use multifab_module, only: multifab, nghost, multifab_div_div_c, multifab_mult_mult_c
-  use bl_prof_module, only: bl_prof_timer, build, destroy
+  use bl_prof_module
   use ml_restrict_fill_module
 
   implicit none

@@ -33,7 +33,7 @@
 
  grav_const = -1.04263053d9
 
- max_step  = 500
+ max_step  = 200
  stop_time = 5.d2
 
  do_initial_projection = T
