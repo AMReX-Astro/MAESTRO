@@ -193,6 +193,14 @@ contains
     Xout(io16)  = Xin(io16)
     Xout(iash) = ONE - Xout(ic12) - Xout(io16)
         
+    ! normalize
+    dX = ZERO
+    do n = 1, nspec
+       Xout(n) = max(ZERO,Xout(n))
+       dX = dX + Xout(n)
+    end do
+    Xout = Xout / dX
+
 
     ! compute the energy release.
     ! Our convention is that the binding energies are negative, so the 
