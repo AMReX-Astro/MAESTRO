@@ -37,7 +37,7 @@ program init_1d
   real (kind=dp_t), parameter :: M_sun = 1.9891e33
 
   ! we'll get the composition indices from the network module
-  integer, save :: ic12, io16, img24
+  integer, save :: ic12, io16, img24, iash
   real (kind=dp_t) :: cfrac
 
   integer :: narg
@@ -133,10 +133,16 @@ program init_1d
   ! get the species indices
   ic12  = network_species_index("carbon-12")
   io16  = network_species_index("oxygen-16")
+
   img24 = network_species_index("magnesium-24")
+  iash = network_species_index("ash")
 
 
-  if (ic12 < 0 .or. io16 < 0 .or. img24 < 0) then
+  if (ic12 < 0 .or. io16 < 0) then
+     call bl_error("ERROR: species not defined")
+  endif
+
+  if (.not. (img24 > 0 .or. iash > 0)) then
      call bl_error("ERROR: species not defined")
   endif
 
@@ -144,9 +150,10 @@ program init_1d
      call bl_error("ERROR: cfrac must be between 0 and 1")
   endif
 
+  xn_base(:) = 0.0_dp_t
   xn_base(ic12) = cfrac
   xn_base(io16) = 1.0_dp_t - cfrac
-  xn_base(img24) = 0.0_dp_t
+
   
 
 !-----------------------------------------------------------------------------
