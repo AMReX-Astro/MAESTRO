@@ -253,8 +253,10 @@ subroutine make_rates(t9,dens,y,rpar)
   dcutonidt = cutoni*tfactors%t9i*(-THREE*HALF - 4.642_dp_t*tfactors%t9i)
   r57decay=3.54_dp_t
   r56eff=min(r56pg,cutoni*r57decay)
-  rpar(irp_r56eff) = r56eff
-  if (r56eff < r56pg) rpar(irp_dr56effdt) = r57decay*dcutonidt
+!   rpar(irp_r56eff) = r56eff
+!   if (r56eff < r56pg) rpar(irp_dr56effdt) = r57decay*dcutonidt
+  rpar(irp_r56eff) = ZERO
+  rpar(irp_dr56effdt) = ZERO
 
 end subroutine make_rates
 
