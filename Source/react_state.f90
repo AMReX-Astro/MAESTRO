@@ -977,6 +977,7 @@ contains
                    sumX = sumX + x_out(n)
                 enddo
                 if (abs(sumX - ONE) > x_err) then
+                   print *, x_out(:)
                    call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
                 endif
 
