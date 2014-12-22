@@ -210,9 +210,11 @@ contains
 
     model_initialized = .true.
 
-    call log("initial model read...")
-    call log(" ")
-
+    if ( parallel_IOProcessor() ) then
+       call log("initial model read...")
+       call log(" ")
+    endif
+    
     close(99)
 
     deallocate(vars_stored,varnames_stored)
