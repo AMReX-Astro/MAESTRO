@@ -884,7 +884,8 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
-         burner_threshold_cutoff, drive_initial_convection, reaction_sum_tol
+         burner_threshold_cutoff, drive_initial_convection, reaction_sum_tol, &
+         base_cutoff_density
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn,ng_tc
     real(kind=dp_t), intent(in   ) ::         sold(lo(1)-ng_si:,lo(2)-ng_si:,lo(3)-ng_si:,:)
@@ -975,6 +976,11 @@ contains
 
                 if (abs(sumX - ONE) > reaction_sum_tol) then
                    print *, x_out(:)
+                   ! did we burn?
+                   print *, "burned: ", (rho > burning_cutoff_density .and. &
+                        ( ispec_threshold < 0 .or. &
+                         (ispec_threshold > 0 .and. x_test > burner_threshold_cutoff) ))
+                   print *, 'density: ', rho, base_cutoff_density
                    call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
                 endif
 
