@@ -965,6 +965,18 @@ contains
                    x_out = x_in
                    rhowdot = 0.d0
                    rhoH = 0.d0
+
+                   ! if we didn't burn, make sure that our abundances sum to
+                   ! 1 -- this shouldn't normally be an issue, but some
+                   ! combination of AMR + hitting the low density cutoff
+                   ! can introduce a small error
+                   sumX = ZERO
+                   do n = 1, nspec
+                      sumX = sumX + x_out(n)
+                   enddo
+                   if (abs(sumX - ONE) > reaction_sum_tol) then
+                      x_out(:) = x_out(:)/sumX
+                   endif
                 endif
              
                 ! check if sum{X_k} = 1
