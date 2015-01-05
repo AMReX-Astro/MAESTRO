@@ -631,19 +631,21 @@ the global index-space it lives:
      type(box) :: ibx
   end type fab
 \end{lstlisting}
-{\tt bx} represents the box in the global index-space over which the 
-\fab\ is defined, {\tt pbx} represents the ``physical'' box in the sense
-that it includes {\tt bx} plus ghost cells, and {\tt ibx} is the same as {\tt bx} unless 
-the \fab\ is nodal.  As can be seen in Figure~\ref{fig:dataloc},
-for the same grid nodal data requires one more array element than 
-cell-centered data.  To address this {\tt ibx} is made by growing
-{\tt bx} by one element along all nodal dimensions.
+{\tt bx} represents the box in the global index-space over which the
+\fab\ is defined, {\tt pbx} represents the ``physical'' box in the
+sense that it includes {\tt bx} plus ghost cells, and {\tt ibx} is the
+same as {\tt bx} unless the \fab\ is nodal.  As can be seen in
+Figure~\ref{fig:dataloc}, for the same grid nodal data requires one
+more array element than cell-centered data.  To address this {\tt ibx}
+is made by growing {\tt bx} by one element along all nodal dimensions.
 
-It's important to note that all state data is stored in a four-dimensional array
-{\em regardless of the problem's dimensionality}.  The array is 
-{\tt (nx,ny,nz,nc)} in size, where {\tt nc} is the number of components, for instance
-representing different fluid variables, and {\tt (nx,ny,nz)} are the number of cells
-in each respective spatial dimension.  For 2D problems, {\tt nz=1}.
+It's important to note that all state data is stored in a
+four-dimensional array {\em regardless of the problem's
+  dimensionality}.  The array is {\tt (nx,ny,nz,nc)} in size, where
+{\tt nc} is the number of components, for instance representing
+different fluid variables, and {\tt (nx,ny,nz)} are the number of
+cells in each respective spatial dimension.  For 2D problems, {\tt
+  nz=1}.
 
 A \fab\ would represent the data for a single box in the domain.
 In \maestro, we don't usually deal with \fab s alone, but rather
@@ -688,11 +690,12 @@ call setval(mfab(n), ZERO, all=.true.)
 \end{lstlisting}
 where {\tt ZERO} is the constant 0.0 from \code{bl\_constants\_module}.
 
-The procedure for accessing the data in each grid managed by the \multifab\
-is shown in \S~\ref{sec:example}.  
-Subroutines to add, multiply, or divide two \multifab s exist, as do
-subroutines to copy from one \multifab\ to another---see \code{BoxLib/Src/F\_BaseLib/multifab.f90}
-for the full list of routines that work with \multifab s.
+The procedure for accessing the data in each grid managed by the
+\multifab\ is shown in \S~\ref{sec:example}.  Subroutines to add,
+multiply, or divide two \multifab s exist, as do subroutines to copy
+from one \multifab\ to another---see
+\code{BoxLib/Src/F\_BaseLib/multifab.f90} for the full list of
+routines that work with \multifab s.
 
 
 When you are done working with a \multifab, its memory can be freed by
@@ -811,6 +814,14 @@ generally picked to be finer than the Cartesian grid resolution,
 $\Delta x$, i.e.\ $\Delta r < \Delta x$.  The ratio is controlled
 by the parameter \runparam{drdxfac}.
 
+Note there are no ghost cells for the base state outside of the
+physical domain.  For plane-parallel, multilevel simulations, there
+are ghostcells at the jumps in refinement---these are filled by the
+\code{fill\_code\_base} routine.  The convention when dealing with the
+base state is that we only access it inside of the valid physical
+domain.  Any multi-dimensional quantity that is derived using the base
+state then has its ghost cells filled by the usually \multifab\ ghost
+cell routines.
 
 
 \section{\maestro\ Helper Modules}
