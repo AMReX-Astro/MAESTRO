@@ -34,7 +34,7 @@
  prob_lo_y = 0.0d0
 
  prob_hi_x = 3072.0d0
- prob_hi_y = 5610.0d0
+ prob_hi_y = 5760.0d0
 
  bcx_lo = -1
  bcx_hi = -1
