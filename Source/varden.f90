@@ -35,7 +35,7 @@ subroutine varden()
   use make_new_grids_module
   use regrid_module
   use make_eta_module
-  use diag_module, only: flush_diag
+  use diag_module, only: flush_diag, diag_finalize
   use omp_module
   use check_cutoff_module, only: check_cutoff_values
   use time_module, only: time
@@ -1543,6 +1543,8 @@ subroutine varden()
 
   call model_parser_finalize()
   call simple_log_finalize()
+
+  call diag_finalize()
   
   call runtime_close()
 
