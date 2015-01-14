@@ -49,7 +49,7 @@ module model_parser_module
 
   integer, parameter :: MAX_VARNAME_LENGTH=80
 
-  public :: read_model_file
+  public :: read_model_file, model_parser_finalize
 
 contains
 
