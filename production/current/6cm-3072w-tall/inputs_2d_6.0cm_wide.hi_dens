@@ -14,13 +14,13 @@
  xrb_pert_size = 50
  xrb_pert_factor = 1.0d-5
  xrb_pert_type = 1
- xrb_pert_height = 2477.0d0
+ xrb_pert_height = 2627.0d0
 
  ! velocity perturbation
  apply_vel_field    = T
  velpert_scale      = 1.0d2
  velpert_amplitude  = 1.0d5
- velpert_height_loc = 2477.0
+ velpert_height_loc = 2627.0
  num_vortices       = 16
 
 
@@ -34,7 +34,7 @@
  prob_lo_y = 0.0d0
 
  prob_hi_x = 3072.0d0
- prob_hi_y = 5610.0d0
+ prob_hi_y = 5760.0d0
 
  bcx_lo = -1
  bcx_hi = -1
