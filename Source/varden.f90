@@ -43,7 +43,8 @@ subroutine varden()
   use cputime_module, only: start_cputime_clock
   use simple_log_module, only: simple_log_init
   use pert_form_module, only: put_in_pert_form
-
+  use model_parser_module, only: model_parser_finalize
+  
   implicit none
 
   integer    :: init_step,istep
@@ -1540,6 +1541,8 @@ subroutine varden()
   call eos_finalize()
   call network_finalize()
 
+  call model_parser_finalize()
+  
   call runtime_close()
 
   deallocate(uold,sold,pi,gpi,dSdt,Source_old,Source_new,rho_omegadot2, &
