@@ -1,0 +1,51 @@
+&params
+
+ model_prefix = "toy_xrb.hi_dens"
+
+ nx = 935
+
+ dens_base = 2e6
+
+ T_star = 3.d8
+ T_base = 9.5d8
+ T_lo   = 5.d7
+
+ H_star = 2450.d0
+ delta  = 12.0
+
+ fuel1_name = "hydrogen-1"
+ fuel1_frac = 0.72d0
+
+ fuel2_name = "helium-4"
+ fuel2_frac = 0.24d0
+
+ fuel3_name = "oxygen-14"
+ fuel3_frac = 0.0004
+
+ fuel4_name = "oxygen-15"
+ fuel4_frac = 0.003
+
+ fuel5_name = "magnesium-22"
+ fuel5_frac = 0.001
+
+ fuel6_name = "sulfur-30"
+ fuel6_frac = 0.001
+
+ fuel7_name = "nickel-56"
+ fuel7_frac = 0.0346
+
+ ash1_name  = "nickel-56"
+ ash1_frac = 1.0d0
+
+
+
+
+ xmin = 0.0
+ xmax = 5610.0
+
+ g_const = -2.450d14
+
+ low_density_cutoff = 1.d-4
+
+ index_base_from_temp = T
+/

@@ -2,4 +2,11 @@ This setup is used for toy_convect and for the XRB stuff.  The init
 code takes an input file (one of the _param* files) to determine what
 is going on.
 
+-- _params.xrb_mixed.hi_dens.tall.CNO
 
+   This is the _params file that is used for the xrb_mixed stuff
+
+-- _params.xrb_mixed.hi_dens.tall2.CNO
+
+   This version differs from the above one with more buffer beneath
+   the convective layer
