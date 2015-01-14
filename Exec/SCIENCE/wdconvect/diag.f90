@@ -1189,6 +1189,11 @@ contains
   end subroutine diag_3d
 
   subroutine diag_finalize()
+       deallocate(time_data)
+       deallocate(file1_data)
+       deallocate(file2_data)
+       deallocate(file3_data)
+       deallocate(file4_data)
   end subroutine diag_finalize
   
 end module diag_module
