@@ -34,6 +34,9 @@ model_file                          character          "model.hse"
 # Turn on a perturbation in the initial data.  Problem specific.
 perturb_model                       logical            .false.             
 
+# print out HSE diagnostics as a function of r for the initial model
+print_init_hse_diag                 logical            .false.
+
 
 #-----------------------------------------------------------------------------
 # category: timestepping 
