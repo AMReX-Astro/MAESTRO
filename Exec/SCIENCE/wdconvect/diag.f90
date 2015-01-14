@@ -51,7 +51,7 @@ module diag_module
 
   integer, save :: nstored = 0
 
-  public :: diag, flush_diag
+  public :: diag, flush_diag, diag_finalize
 
 contains
 
@@ -1188,4 +1188,8 @@ contains
 
   end subroutine diag_3d
 
+  subroutine diag_finalize()
+  end subroutine diag_finalize
+  
 end module diag_module
+
