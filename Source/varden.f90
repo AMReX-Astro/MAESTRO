@@ -41,7 +41,7 @@ subroutine varden()
   use time_module, only: time
   use particle_module
   use cputime_module, only: start_cputime_clock
-  use simple_log_module, only: simple_log_init
+  use simple_log_module, only: simple_log_init, simple_log_finalize
   use pert_form_module, only: put_in_pert_form
   use model_parser_module, only: model_parser_finalize
   
@@ -1542,6 +1542,7 @@ subroutine varden()
   call network_finalize()
 
   call model_parser_finalize()
+  call simple_log_finalize()
   
   call runtime_close()
 
