@@ -245,5 +245,12 @@ contains
 
   end function get_model_npts
 
+  subroutine model_parser_finalize()
+    if (model_initialized) then
+       deallocate (model_state)
+       deallocate (model_r)
+    endif
+  end subroutine model_parser_finalize
+
 end module model_parser_module
 
