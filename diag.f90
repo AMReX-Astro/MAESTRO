@@ -48,7 +48,7 @@ module diag_module
 
   private
 
-  public :: diag, flush_diag
+  public :: diag, flush_diag, diag_finalize
 
   integer, save :: ih1, ic12, io16
   logical, save :: do_mass_sums
@@ -1155,4 +1155,7 @@ contains
 
   end subroutine diag_3d
 
+  subroutine diag_finalize()
+  end subroutine diag_finalize
+  
 end module diag_module
