@@ -8,14 +8,16 @@ matplotlib.use('agg')
 
 import math
 import sys
+import numpy as np
+import os
 import pylab
 
-from yt.mods import *
+import yt
 import yt.visualization.volume_rendering.api as vr
 
 def doit(plotfile, fname):
 
-    ds = load(plotfile)
+    ds = yt.load(plotfile)
 
     cm = "gist_rainbow"
 
@@ -23,7 +25,7 @@ def doit(plotfile, fname):
     if fname == "vz":
         field = ('gas', 'velocity_z')
         use_log = False
-
+        
         vals = [-1.e7, -5.e6, 5.e6, 1.e7]
         sigma = 5.e5
 
@@ -36,6 +38,14 @@ def doit(plotfile, fname):
         vals = [1.e6, 2.e6, 4.e6, 8.e6, 1.6e7]
         sigma = 2.e5
 
+    elif fname == "radvel":
+        field = ('boxlib', 'radial_velocity')
+        use_log = False
+        
+        vals = [-1.e7, -5.e6, -2.5e6, 2.5e6, 5.e6, 1.e7]
+        sigma = 2.e5
+        
+        cm = "coolwarm"
 
 
     dd = ds.all_data()
@@ -51,6 +61,7 @@ def doit(plotfile, fname):
     tf =  vr.ColorTransferFunction((mi, ma))
 
     # Set up the camera parameters: center, looking direction, width, resolution
+    #c = np.array([0.0, 0.0, 0.0])
     c = (ds.domain_right_edge + ds.domain_left_edge)/2.0
     L = np.array([1.0, 1.0, 1.0])
     L = np.array([1.0, 1.0, 1.2])
