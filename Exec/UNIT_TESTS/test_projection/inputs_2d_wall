@@ -12,6 +12,8 @@
  prob_hi_x = 1.0
  prob_hi_y = 1.0
 
+ hg_bottom_solver = 1
+
  xlo_boundary_type = "slip wall"
  xhi_boundary_type = "slip wall"
 

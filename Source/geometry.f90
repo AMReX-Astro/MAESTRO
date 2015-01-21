@@ -14,6 +14,7 @@ module geometry
   integer   , save :: nlevs_radial
   integer   , save :: spherical
   real(dp_t), save :: center(3)
+  integer   , save :: x2d, x3d
   integer   , save :: nr_fine, nr_irreg
   real(dp_t), save :: dr_fine
   real(dp_t), allocatable, save :: dr(:), r_cc_loc(:,:), r_edge_loc(:,:)
@@ -34,7 +35,7 @@ module geometry
   public :: base_cutoff_density_coord
   public :: burning_cutoff_density_coord
   public :: sin_theta, cos_theta, omega
-
+  public :: x2d, x3d
   public :: init_spherical, init_center, init_radial, init_cutoff, &
        initialize_dx, &
        compute_cutoff_coords, init_multilevel, init_rotation, destroy_geometry
@@ -64,6 +65,16 @@ contains
     integer :: n,d,dm
 
     dm = mba%dim
+
+    x2d = 0
+    x3d = 0
+    
+    if (dm >= 2) then
+       x2d = 1
+    endif
+    if (dm == 3) then
+       x3d = 1
+    endif
     
     allocate(dx(num_levs,dm))
     

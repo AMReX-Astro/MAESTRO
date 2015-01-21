@@ -60,8 +60,8 @@ contains
 
     real(kind=dp_t) :: Mach_max, Mach_max_level, Mach_max_local
 
-    integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
-    integer :: ng_s,ng_u,ng_n,ng_w,ng_wm
+    integer :: lo(3),hi(3),dm,nlevs
+    integer :: ng_n,ng_w,ng_wm
     integer :: i,n,comp
 
     type(bl_prof_timer), save :: bpt
@@ -71,6 +71,8 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
+    print *, "*** in sanity ***"
+    
     if (spherical .eq. 1) then
 
        do n=1,nlevs
@@ -99,8 +101,6 @@ contains
                                  the_bc_tower%bc_tower_array,mla)
     endif
 
-    ng_s   = nghost(s(1))
-    ng_u   = nghost(u(1))
     ng_n   = nghost(normal(1))
     if (spherical == 1) then
        ng_n   = nghost(normal(1))
@@ -128,122 +128,74 @@ contains
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
        !----------------------------------------------------------------------
+       lo(:) = 1; hi(:) = 1
+
        do i = 1, nfabs(s(n))
 
           sp => dataptr(s(n) , i)
           up => dataptr(u(n) , i)
+          
+          lo(1:dm) =  lwb(get_box(s(n), i))
+          hi(1:dm) =  upb(get_box(s(n), i))
 
-          lo =  lwb(get_box(s(n), i))
-          hi =  upb(get_box(s(n), i))
+          if (spherical == 1) then
+             
+             nop => dataptr(normal(n) , i)
+             w0rp => dataptr(w0r_cart(n), i)
+             w0xp => dataptr(w0mac(n,1), i)
+             w0yp => dataptr(w0mac(n,2), i)
+             w0zp => dataptr(w0mac(n,3), i)
 
-          select case (dm)
-
-          case (1)
              if (n .eq. nlevs) then
-                call sanity_1d(n,newtime,dx(n,:), &
-                               sp(:,1,1,:),ng_s, &
-                               rho0(n,:),rhoh0(n,:), &
-                               p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                               up(:,1,1,:),ng_u, &
-                               w0(n,:), &
-                               lo,hi, &
-                               Mach_max_local)
+                call sanity_3d_sph(n,newtime,dx(n,:), &
+                                   sp, lbound(sp),ubound(sp), &
+                                   rho0(n,:),rhoh0(n,:), &
+                                   p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                   up, lbound(up),ubound(up), &
+                                   w0rp(:,:,:,1), ng_w, &
+                                   w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
+                                   nop(:,:,:,:),ng_n, &
+                                   lo,hi, &
+                                   Mach_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
-                call sanity_1d(n,newtime,dx(n,:), &
-                               sp(:,1,1,:),ng_s, &
-                               rho0(n,:),rhoh0(n,:), &
-                               p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                               up(:,1,1,:),ng_u, &
-                               w0(n,:), &
-                               lo,hi, &
-                               Mach_max_local, &
-                               mp(:,1,1,1))
+                call sanity_3d_sph(n,newtime,dx(n,:), &
+                                   sp, lbound(sp),ubound(sp), &
+                                   rho0(n,:),rhoh0(n,:), &
+                                   p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                   up, lbound(up),ubound(up), &
+                                   w0rp(:,:,:,1), ng_w, &
+                                   w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
+                                   nop(:,:,:,:),ng_n, &
+                                   lo,hi, &
+                                   Mach_max_local, &
+                                   mp(:,:,:,1))
              endif
 
-          case (2)
+          else
              if (n .eq. nlevs) then
-                call sanity_2d(n,newtime,dx(n,:), &
-                               sp(:,:,1,:),ng_s, &
-                               rho0(n,:),rhoh0(n,:), &
-                               p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                               up(:,:,1,:),ng_u, &
-                               w0(n,:), &
-                               lo,hi, &
-                               Mach_max_local)
+                call sanity_cart(dm, n,newtime,dx(n,:), &
+                                 sp, lbound(sp), ubound(sp), &
+                                 rho0(n,:),rhoh0(n,:), &
+                                 p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                 up, lbound(up), ubound(up), &
+                                 w0(n,:), &
+                                 lo,hi, &
+                                 Mach_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
-                call sanity_2d(n,newtime,dx(n,:), &
-                               sp(:,:,1,:),ng_s, &
-                               rho0(n,:),rhoh0(n,:), &
-                               p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                               up(:,:,1,:),ng_u, &
-                               w0(n,:), &
-                               lo,hi, &
-                               Mach_max_local, &
-                               mp(:,:,1,1))
+                call sanity_cart(dm, n,newtime,dx(n,:), &
+                                 sp, lbound(sp), ubound(sp), &
+                                 rho0(n,:),rhoh0(n,:), &
+                                 p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                 up, lbound(up), ubound(up), &
+                                 w0(n,:), &
+                                 lo,hi, &
+                                 Mach_max_local, &
+                                 mp(:,:,:,1))
              endif
-
-          case (3)
-             if (spherical == 1) then
-
-                nop => dataptr(normal(n) , i)
-                w0rp => dataptr(w0r_cart(n), i)
-                w0xp => dataptr(w0mac(n,1), i)
-                w0yp => dataptr(w0mac(n,2), i)
-                w0zp => dataptr(w0mac(n,3), i)
-
-                if (n .eq. nlevs) then
-                   call sanity_3d_sph(n,newtime,dx(n,:), &
-                                      sp(:,:,:,:),ng_s, &
-                                      rho0(n,:),rhoh0(n,:), &
-                                      p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                      up(:,:,:,:),ng_u, &
-                                      w0rp(:,:,:,1), ng_w, &
-                                      w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
-                                      nop(:,:,:,:),ng_n, &
-                                      lo,hi, &
-                                      Mach_max_local)
-                else
-                   mp => dataptr(mla%mask(n), i)
-                   call sanity_3d_sph(n,newtime,dx(n,:), &
-                                      sp(:,:,:,:),ng_s, &
-                                      rho0(n,:),rhoh0(n,:), &
-                                      p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                      up(:,:,:,:),ng_u, &
-                                      w0rp(:,:,:,1), ng_w, &
-                                      w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
-                                      nop(:,:,:,:),ng_n, &
-                                      lo,hi, &
-                                      Mach_max_local, &
-                                      mp(:,:,:,1))
-                endif
-
-             else
-                if (n .eq. nlevs) then
-                   call sanity_3d(n,newtime,dx(n,:), &
-                                  sp(:,:,:,:),ng_s, &
-                                  rho0(n,:),rhoh0(n,:), &
-                                  p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                  up(:,:,:,:),ng_u, &
-                                  w0(n,:), &
-                                  lo,hi, &
-                                  Mach_max_local)
-                else
-                   mp => dataptr(mla%mask(n), i)
-                   call sanity_3d(n,newtime,dx(n,:), &
-                                  sp(:,:,:,:),ng_s, &
-                                  rho0(n,:),rhoh0(n,:), &
-                                  p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                                  up(:,:,:,:),ng_u, &
-                                  w0(n,:), &
-                                  lo,hi, &
-                                  Mach_max_local, &
-                                  mp(:,:,:,1))
-                endif
-
-             endif
-          end select
+                
+          endif
        end do
 
        !----------------------------------------------------------------------
@@ -297,159 +249,28 @@ contains
   end subroutine sanity_check
 
 
-
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine sanity_1d(n,newtime,dx, &
-                       s,ng_s, &
-                       rho0,rhoh0,p0,tempbar,gamma1bar, &
-                       u,ng_u, &
-                       w0, &
-                       lo,hi, &
-                       Mach_max, &
-                       mask)
+  subroutine sanity_cart(dm, n,newtime,dx, &
+                         s, slo, shi, &
+                         rho0,rhoh0,p0,tempbar,gamma1bar, &
+                         u, ulo, uhi, &
+                         w0, &
+                         lo,hi, &
+                         Mach_max,&
+                         mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp
     use bl_constants_module
     use network, only: nspec
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
-
-    integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u
-    real (kind=dp_t), intent(in   ) ::         s(lo(1)-ng_s:,:)
+    
+    integer, intent(in) :: dm, n, lo(:), hi(:)
+    integer, intent(in) :: slo(4), shi(4), ulo(4), uhi(4)
+    real (kind=dp_t), intent(in   ) :: s(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
     real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
                                          p0(0:),tempbar(0:),gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,:)
-    real (kind=dp_t), intent(in   ) :: w0(0:)
-    real (kind=dp_t), intent(in   ) :: newtime, dx(:)
-    real (kind=dp_t), intent(inout) :: Mach_max
-    logical,          intent(in   ), optional :: mask(lo(1):)
-
-    !     Local variables
-    integer            :: i
-    logical            :: cell_valid
-    real (kind=dp_t)   :: vel
-
-    type (eos_t) :: eos_state
-
-    do i = lo(1), hi(1)
-
-       cell_valid = .true.
-       if (present(mask)) then
-          if ( (.not. mask(i)) ) cell_valid = .false.
-       endif
-       
-       if (cell_valid) then
-
-          ! vel is the magnitude of the velocity, including w0
-          vel = sqrt( (u(i,1) + HALF*(w0(i) + w0(i+1)) )**2 )
-
-             
-          ! call the EOS to get the sound speed and internal energy       
-          eos_state%T     = s(i,temp_comp)
-          eos_state%rho   = s(i,rho_comp)
-          eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
-
-          call eos(eos_input_rt, eos_state, .false.)
-
-
-          ! max Mach number                                       
-          Mach_max = max(Mach_max,vel/eos_state%cs)
-
-       endif  ! cell valid
-
-    enddo
-
-  end subroutine sanity_1d
-  
-
-  !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine sanity_2d(n,newtime,dx, &
-                       s,ng_s, &
-                       rho0,rhoh0,p0,tempbar,gamma1bar, &
-                       u,ng_u, &
-                       w0, &
-                       lo,hi, &
-                       Mach_max, &
-                       mask)
-
-    use variables, only: rho_comp, spec_comp, temp_comp
-    use bl_constants_module
-    use network, only: nspec
-    use eos_module, only: eos_input_rt, eos
-    use eos_type_module
-
-    integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u
-    real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
-                                         p0(0:),tempbar(0:),gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
-    real (kind=dp_t), intent(in   ) :: w0(0:)
-    real (kind=dp_t), intent(in   ) :: newtime, dx(:)
-    real (kind=dp_t), intent(inout) :: Mach_max
-    logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
-
-    !     Local variables
-    integer            :: i, j
-    logical            :: cell_valid
-    real (kind=dp_t)   :: vel
-
-    type (eos_t) :: eos_state
-
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-
-          cell_valid = .true.
-          if (present(mask)) then
-             if ( (.not. mask(i,j)) ) cell_valid = .false.
-          endif
-
-          if (cell_valid) then
-
-             ! vel is the magnitude of the velocity, including w0
-             vel = sqrt(  u(i,j,1)**2 + &
-                        ( u(i,j,2) + HALF*(w0(j) + w0(j+1)) )**2 )
-
-             
-             ! call the EOS to get the sound speed and internal energy       
-             eos_state%T     = s(i,j,temp_comp)
-             eos_state%rho   = s(i,j,rho_comp)
-             eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
-
-             call eos(eos_input_rt, eos_state, .false.)
-
-
-             ! max Mach number                                       
-             Mach_max = max(Mach_max,vel/eos_state%cs)
-
-          endif  ! cell valid
-
-       enddo
-    enddo
-
-  end subroutine sanity_2d
-
-
-  !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  subroutine sanity_3d(n,newtime,dx, &
-                       s,ng_s, &
-                       rho0,rhoh0,p0,tempbar,gamma1bar, &
-                       u,ng_u, &
-                       w0, &
-                       lo,hi, &
-                       Mach_max,&
-                       mask)
-
-    use variables, only: rho_comp, spec_comp, temp_comp
-    use bl_constants_module
-    use network, only: nspec
-    use eos_module, only: eos_input_rt, eos
-    use eos_type_module
-
-    integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u
-    real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
-                                         p0(0:),tempbar(0:),gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
+    real (kind=dp_t), intent(in   ) :: u(ulo(1):uhi(1),ulo(2):uhi(2),ulo(3):uhi(3),ulo(4):uhi(4))
     real (kind=dp_t), intent(in   ) :: w0(0:)
     real (kind=dp_t), intent(in   ) :: newtime, dx(:)
     real (kind=dp_t), intent(inout) :: Mach_max
@@ -461,7 +282,6 @@ contains
     real (kind=dp_t)   :: vel
 
     type (eos_t) :: eos_state
-
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -475,10 +295,19 @@ contains
              if (cell_valid) then
 
                 ! vel is the magnitude of the velocity, including w0
-                vel = sqrt(  u(i,j,k,1)**2 + &
-                             u(i,j,k,2)**2 + &
-                           ( u(i,j,k,3) + HALF*(w0(k) + w0(k+1)) )**2 )
+                select case (dm)
+                case (1)
+                   vel =  u(i,j,k,1) + HALF*(w0(i) + w0(i+1))
 
+                case (2)
+                   vel = sqrt(  u(i,j,k,1)**2 + &
+                              ( u(i,j,k,2) + HALF*(w0(j) + w0(j+1)) )**2 )
+
+                case (3)
+                   vel = sqrt(  u(i,j,k,1)**2 + &
+                                u(i,j,k,2)**2 + &
+                              ( u(i,j,k,3) + HALF*(w0(k) + w0(k+1)) )**2 )                   
+                end select
              
                 ! call the EOS to get the sound speed and internal energy       
                 eos_state%T     = s(i,j,k,temp_comp)
@@ -497,14 +326,14 @@ contains
        enddo
     enddo
 
-  end subroutine sanity_3d
+  end subroutine sanity_cart
 
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   subroutine sanity_3d_sph(n,newtime,dx, &
-                           s,ng_s, &
+                           s,slo,shi, &
                            rho0,rhoh0,p0,tempbar,gamma1bar, &
-                           u,ng_u, &
+                           u,ulo,uhi, &
                            w0r,ng_w, &
                            w0macx,w0macy,w0macz,ng_wm, &
                            normal,ng_n, &
@@ -518,11 +347,12 @@ contains
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
 
-    integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_w, ng_wm, ng_n
-    real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    integer, intent(in) :: n, lo(:), hi(:), ng_w, ng_wm, ng_n
+    integer, intent(in) :: slo(4), shi(4), ulo(4), uhi(4)
+    real (kind=dp_t), intent(in   ) :: s(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))    
     real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
                                          p0(0:),tempbar(0:),gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
+    real (kind=dp_t), intent(in   ) :: u(ulo(1):uhi(1),ulo(2):uhi(2),ulo(3):uhi(3),ulo(4):uhi(4))    
     real (kind=dp_t), intent(in   ) ::      w0r(lo(1)-ng_w:  ,lo(2)-ng_w:  ,lo(3)-ng_w:)
     real (kind=dp_t), intent(in   ) ::   w0macx(lo(1)-ng_wm: ,lo(2)-ng_wm: ,lo(3)-ng_wm:)
     real (kind=dp_t), intent(in   ) ::   w0macy(lo(1)-ng_wm: ,lo(2)-ng_wm: ,lo(3)-ng_wm:)
@@ -536,7 +366,7 @@ contains
     integer            :: i, j, k
     logical            :: cell_valid
     real (kind=dp_t)   :: vel
-
+ 
     type (eos_t) :: eos_state
 
     do k = lo(3), hi(3)
