@@ -52,6 +52,7 @@ contains
     logical           :: lexist
 
     ! These are copies to hold the old data.
+    integer         :: nlevs_temp
     type(ml_layout) :: mla_temp
     type(bc_tower)  :: the_bc_tower_temp
     type(multifab)  :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
@@ -89,6 +90,8 @@ contains
     do n = 1,nlevs
        call bc_tower_level_build(the_bc_tower_temp,n,mla_temp%la(n))
     end do    
+
+    nlevs_temp = nlevs
 
     do n = 1,nlevs
 
@@ -342,16 +345,14 @@ contains
 
     end if
 
-    do nl = 1,nlevs
-       if (mla_temp%nlevel .ge. nl) then
-          call destroy(   uold_temp(nl))
-          call destroy(   sold_temp(nl))
-          call destroy(    gpi_temp(nl))
-          call destroy(     pi_temp(nl))
-          call destroy(   dSdt_temp(nl))
-          call destroy(    src_temp(nl))
-          call destroy(rhoHdot_temp(nl))
-       end if
+    do nl = 1,nlevs_temp
+       call destroy(   uold_temp(nl))
+       call destroy(   sold_temp(nl))
+       call destroy(    gpi_temp(nl))
+       call destroy(     pi_temp(nl))
+       call destroy(   dSdt_temp(nl))
+       call destroy(    src_temp(nl))
+       call destroy(rhoHdot_temp(nl))
     end do
 
     ! restrict data and fill all ghost cells

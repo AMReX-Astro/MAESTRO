@@ -346,7 +346,7 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
-         burner_threshold_cutoff, drive_initial_convection
+         burner_threshold_cutoff, drive_initial_convection, reaction_sum_tol
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
     real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,:)
@@ -369,7 +369,7 @@ contains
     logical, save      :: firstCall = .true.
 
     real (kind = dp_t) :: sumX
-    real (kind = dp_t), parameter :: x_err = 1.d-10
+
 
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
@@ -418,7 +418,7 @@ contains
           do n = 1, nspec
              sumX = sumX + x_out(n)
           enddo
-          if (abs(sumX - ONE) > x_err) then
+          if (abs(sumX - ONE) > reaction_sum_tol) then
              call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
           endif
 
@@ -455,7 +455,7 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
-         burner_threshold_cutoff, drive_initial_convection
+         burner_threshold_cutoff, drive_initial_convection, reaction_sum_tol
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
     real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,lo(2)-ng_si:,:)
@@ -480,7 +480,6 @@ contains
     logical, save      :: firstCall = .true.
 
     real (kind = dp_t) :: sumX
-    real (kind = dp_t), parameter :: x_err = 1.d-10
 
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
@@ -535,7 +534,7 @@ contains
              do n = 1, nspec
                 sumX = sumX + x_out(n)
              enddo
-             if (abs(sumX - ONE) > x_err) then
+             if (abs(sumX - ONE) > reaction_sum_tol) then
                 call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
              endif
 
@@ -575,7 +574,7 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
-         burner_threshold_cutoff
+         burner_threshold_cutoff, reaction_sum_tol
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
     real(kind=dp_t), intent(in   ) ::        sold (lo(1)-ng_si:,lo(2)-ng_si:,:)
@@ -603,7 +602,6 @@ contains
     logical, save      :: firstCall = .true.
 
     real (kind = dp_t) :: sumX
-    real (kind = dp_t), parameter :: x_err = 1.d-10
 
     real (kind=dp_t) :: slope_rho, slope_T, slope_X
     real (kind=dp_t) :: Tcoeff(3)
@@ -672,7 +670,7 @@ contains
                 do n = 1, nspec
                    sumX = sumX + x_in(n)
                 enddo
-                if (abs(sumX - ONE) > x_err) then
+                if (abs(sumX - ONE) > reaction_sum_tol) then
                    print *, x_in
                    print *, slope_X
                    call bl_error("ERROR: before burn, abundances do not sum to 1", abs(sumX-ONE))
@@ -706,7 +704,7 @@ contains
                 do n = 1, nspec
                    sumX = sumX + x_out_temp(n)
                 enddo
-                if (abs(sumX - ONE) > x_err) then
+                if (abs(sumX - ONE) > reaction_sum_tol) then
                    print *, sold(i,j,spec_comp:spec_comp+nspec-1)
                    call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
                 endif
@@ -757,7 +755,7 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
-         burner_threshold_cutoff, drive_initial_convection
+         burner_threshold_cutoff, drive_initial_convection, reaction_sum_tol
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
     real(kind=dp_t), intent(in   ) ::         sold(lo(1)-ng_si:,lo(2)-ng_si:,lo(3)-ng_si:,:)
@@ -783,7 +781,6 @@ contains
     logical, save      :: firstCall = .true.
 
     real (kind = dp_t) :: sumX
-    real (kind = dp_t), parameter :: x_err = 1.d-10
 
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
@@ -842,7 +839,7 @@ contains
                 do n = 1, nspec
                    sumX = sumX + x_out(n)
                 enddo
-                if (abs(sumX - ONE) > x_err) then
+                if (abs(sumX - ONE) > reaction_sum_tol) then
                    call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
                 endif
 
@@ -887,7 +884,8 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
-         burner_threshold_cutoff, drive_initial_convection
+         burner_threshold_cutoff, drive_initial_convection, reaction_sum_tol, &
+         base_cutoff_density
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn,ng_tc
     real(kind=dp_t), intent(in   ) ::         sold(lo(1)-ng_si:,lo(2)-ng_si:,lo(3)-ng_si:,:)
@@ -913,7 +911,6 @@ contains
     logical, save      :: firstCall = .true.
 
     real (kind = dp_t) :: sumX
-    real (kind = dp_t), parameter :: x_err = 1.d-10
 
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
@@ -969,6 +966,18 @@ contains
                    x_out = x_in
                    rhowdot = 0.d0
                    rhoH = 0.d0
+
+                   ! if we didn't burn, make sure that our abundances sum to
+                   ! 1 -- this shouldn't normally be an issue, but some
+                   ! combination of AMR + hitting the low density cutoff
+                   ! can introduce a small error
+                   sumX = ZERO
+                   do n = 1, nspec
+                      sumX = sumX + x_out(n)
+                   enddo
+                   if (abs(sumX - ONE) > reaction_sum_tol) then
+                      x_out(:) = x_out(:)/sumX
+                   endif
                 endif
              
                 ! check if sum{X_k} = 1
@@ -976,7 +985,14 @@ contains
                 do n = 1, nspec
                    sumX = sumX + x_out(n)
                 enddo
-                if (abs(sumX - ONE) > x_err) then
+
+                if (abs(sumX - ONE) > reaction_sum_tol) then
+                   print *, x_out(:)
+                   ! did we burn?
+                   print *, "burned: ", (rho > burning_cutoff_density .and. &
+                        ( ispec_threshold < 0 .or. &
+                         (ispec_threshold > 0 .and. x_test > burner_threshold_cutoff) ))
+                   print *, 'density: ', rho, base_cutoff_density
                    call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
                 endif
 

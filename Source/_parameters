@@ -34,6 +34,9 @@ model_file                          character          "model.hse"
 # Turn on a perturbation in the initial data.  Problem specific.
 perturb_model                       logical            .false.             
 
+# print out HSE diagnostics as a function of r for the initial model
+print_init_hse_diag                 logical            .false.
+
 
 #-----------------------------------------------------------------------------
 # category: timestepping 
@@ -572,6 +575,9 @@ burner_threshold_cutoff             real               1.d-10
 # then average the result to the original cell
 do_subgrid_burning                  logical            .false.
 
+# mass fraction sum tolerance (if they don't sum to 1 within this tolerance,
+# we abort)
+reaction_sum_tol                    real               1.d-10
 
 #-----------------------------------------------------------------------------
 # category: EOS

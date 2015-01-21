@@ -49,7 +49,7 @@ module model_parser_module
 
   integer, parameter :: MAX_VARNAME_LENGTH=80
 
-  public :: read_model_file
+  public :: read_model_file, model_parser_finalize
 
 contains
 
@@ -210,9 +210,11 @@ contains
 
     model_initialized = .true.
 
-    call log("initial model read...")
-    call log(" ")
-
+    if ( parallel_IOProcessor() ) then
+       call log("initial model read...")
+       call log(" ")
+    endif
+    
     close(99)
 
     deallocate(vars_stored,varnames_stored)
@@ -242,6 +244,13 @@ contains
     return
 
   end function get_model_npts
+
+  subroutine model_parser_finalize()
+    if (model_initialized) then
+       deallocate (model_state)
+       deallocate (model_r)
+    endif
+  end subroutine model_parser_finalize
 
 end module model_parser_module
 

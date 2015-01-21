@@ -2,7 +2,7 @@
 
  model_prefix = "toy_xrb.hi_dens"
 
- nx = 768
+ nx = 960
 
  dens_base = 2e6
 
@@ -10,7 +10,7 @@
  T_base = 9.5d8
  T_lo   = 5.d7
 
- H_star = 1450.d0
+ H_star = 2600.d0
  delta  = 12.0
 
  fuel1_name = "hydrogen-1"
@@ -41,7 +41,7 @@
 
 
  xmin = 0.0
- xmax = 4608.0
+ xmax = 5760.0
 
  g_const = -2.450d14
 

@@ -19,7 +19,7 @@ module diag_module
 
   private
 
-  public :: diag, flush_diag
+  public :: diag, flush_diag, diag_finalize
 
 contains
 
@@ -794,4 +794,7 @@ contains
 
   end subroutine diag_3d_sph
 
+  subroutine diag_finalize()
+  end subroutine diag_finalize
+  
 end module diag_module

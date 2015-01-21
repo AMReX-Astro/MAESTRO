@@ -2,7 +2,7 @@
 
  model_prefix = "toy_xrb.hot2"
 
- nx = 2048
+ nx = 512
 
  dens_base = 5.93e5
 

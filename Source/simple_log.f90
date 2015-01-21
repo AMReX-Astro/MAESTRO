@@ -29,6 +29,10 @@ contains
     allocate(log_data(MAX_LINES))
   end subroutine simple_log_init
 
+  subroutine simple_log_finalize()
+    deallocate(log_data)
+  end subroutine simple_log_finalize
+  
   subroutine sd_log(str, d)
     character (len=*), intent(in) :: str    
     real (kind=dp_t), intent(in) :: d
