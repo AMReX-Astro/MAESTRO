@@ -1,3 +1,100 @@
-My Page
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
-test
+<HTML>
+<HEAD>
+  <TITLE>Maestro</TITLE> 
+
+  <link rel="stylesheet" type="text/css" href="./hydro.css">
+  <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+
+</HEAD> 
+
+<body id="intro">
+
+<div id="container">
+
+<!-- HEADER .............................................................. -->
+<!--#include virtual="./header.html" -->
+
+
+<!-- MAIN ................................................................ -->
+<div id="main">
+
+
+<p><h2>&lowast; Introduction</h2>
+
+<p><div class="right">
+<img src="soundwaves2.png" border=0>
+<p>Figure 1: Mach number for 3 burning rising bubbles from a compressible
+code (top) and a low Mach number hydrodynamics method (bottom).
+</div>
+
+<P>A large number of interesting astrophysical phenomena occur at low
+Mach numbers.  Evolving these flows with a fully compressible
+simulation code is inefficient, because of the need to follow the
+sound waves.  For an explicit time-discretization (i.e., the new state
+is expressed solely in terms of the present state), a fundamental
+limitation exists on the size of the allowable timesteps -- the CFL
+condition.  A timestep is restricted such that information may only
+propagate across one zone in the computational grid per timestep.  In
+compressible flow, information propagates at the speeds: u, <nobr>u +
+c</nobr>, and
+<nobr>u - c</nobr>, where c is the sound speed.
+Mathematically the timestep restriction is expressed as
+<div class="eq">&Delta; t < min { &Delta; x / (|u| + c) }</div>
+For very low Mach number flows, this is
+<div class="eq">&Delta; t ~ &Delta; x / c</div>
+This means that <em>for an interface moving at a Mach number M << 1, 
+it takes 1/M timesteps for that interface to move just one zone!</em>
+
+<p>Maestro solves a reformulation of the equations of hydrodynamics
+that filters out sound waves, while retaining the compressibility effects
+important to the problem at hand.  This results in a timestep
+constraint of the form
+<div class="eq">&Delta; t < min{ &Delta; x / |u| }</div>
+Therefore, Maestro requires far fewer timesteps (~1/M fewer) to 
+simulate low Mach number flows.    
+
+<p>Mathematically, we can think of low Mach number flows as exhibiting
+instantaneous acoustic equilibriation.  Figure 1 shows this
+graphically.  Three temperature perturbations were placed in a
+stratified atmosphere, seeding nuclear reactions.  The heat release
+makes the bubbles buoyant.  The top panel shows the Mach number for
+the compressible solution&mdash;a clear signal resulting from the
+finite propagation speed of the soundwaves is seen surrounding each
+bubble.  In the low panel, a low Mach number method was used.  Owing
+to the instantaneous acoustic equilibriation, the velocity field is
+realized throughout the whole domain&mdash;even far from the bubbles.
+However, the flow at the bubbles is identical between the two codes,
+showing that in this case, the soundwaves are not imporatant to the
+dynamics.
+
+<p>Maestro was developed in a series of papers <a href="./papers/">listed
+here</a>.
+
+<p>Maestro is built on an adaptive mesh framework through the BoxLib
+library and uses MPI and OpenMP for parallelization.
+
+<p><h2>&lowast; Getting Started</h2>
+
+<p>Maestro is under active development.  To download the current version,
+visit the <a href="download/">download page</a>.  For help, visit
+the <a href="help/">help</a> page.  
+
+<p>There is an extensive User's Guide in the <tt>Maestro/Docs/</tt> directory
+of the Maestro distribution to introduce the basics of the code.
+
+</div>  <!-- main -->
+
+
+<!-- FOOTER .............................................................. -->
+<!--#include virtual="./footer.html" -->
+
+</div>
+
+
+</BODY>
+</HTML>
+
+
+

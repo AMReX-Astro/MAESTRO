@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+  <TITLE>Maestro</TITLE> 
+
+  <link rel="stylesheet" type="text/css" href="../hydro.css">
+  <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+
+</HEAD> 
+
+<body id="background">
+
+<div id="container">
+
+<!-- HEADER .............................................................. -->
+<!--#include virtual="../header.html" -->
+
+
+<!-- MAIN ................................................................ -->
+<div id="main">
+
+
+<p><h2>&lowast; Low Mach number variations</h2>
+
+
+<p>There are several popular methods for filtering soundwaves,
+which we summarize below.
+
+
+<p><H3>Incompressible hydrodynamics</H3>
+
+<p>The simplest low Mach number approximation is incompressible
+hydrodynamics.  This approximation is formally the M &rarr; 0 limit of
+the Navier-Stokes equations.  In incompressible hydrodynamics, the
+velocity satisfies a constraint equation <div class="eq">&nabla;
+&sdot; U = 0</div> which acts to instantaneously equilibrate the flow,
+thereby filtering out soundwaves.
+
+<p>The constraint equation implies that 
+<div class="eq">D&rho;/Dt = 0</div>
+which says that the density is constant along particle
+paths.  This means that there are no compressibility effects modeled
+in this approximation.
+
+
+<p><H3>Anelastic hydrodynamics</H3>
+
+<p>In the anelastic approximation small amplitude thermodynamic
+perturbations are carried with respect to a hydrostatic background.
+The density perturbation is ignored in the continuity equation,
+resulting in a constraint equation 
+<div class="eq">&nabla; &sdot; (&rho;<sub>0</sub>U) = 0</div> 
+This properly captures the compressibility effects due to the
+stratification of the background.  Because there is no evolution
+equation for the perturbational density, approximations are made
+to the buoyancy term in the momentum equation.
+
+
+<p><H3>The low Mach number combustion model</H3>
+
+<p>In the low Mach number combustion model, the pressure is decomposed
+into a dynamic, &pi;, and thermodynamic component, p<sub>0</sub>, the
+ratio of which is O(M<sup>2</sup>).  The total pressure is replaced
+everywhere by the thermodynamic pressure, except in the momentum
+equation.  This decouples the pressure and density and filters out the
+sound waves.  <em>Large amplitude density and temperature fluctuations
+are allowed</em>.  The only requirement is that the total pressure
+stay close to the background pressure, which is assumed constant.
+This requirement can be expressed as
+<div class="eq">p = p<sub>0, </sub></div>
+and
+differentiating this along particle paths leads to a constraint on the
+velocity field: 
+<div class="eq">&nabla; &sdot; U = S</div>
+This looks like the constraint for incompressible hydrodynamics, but
+now we have a source term, S, representing the compressibility effects
+due to the energy generation and thermal diffusion.  
+
+<p>Since the background pressure is taken to be constant, we cannot
+model flows that cover a large fraction of a pressure scale height.
+However, this method is ideal for exploring the physics of flames.  We
+formulated this algorithm for astrophysical flows and used it to
+explore the dynamics of Rayleigh-Taylor unstable flame fronts in Type
+Ia supernovae in two- and three-dimensions.  This was the predecessor
+to Maestro.
+
+<P><H3>The Maestro algorithm for low Mach number stellar flows</h3>
+
+<p>To model the full star, we begin with the low Mach number combustion
+model described above, but no longer assume that the background
+pressure is constant, but instead, is hydrostatically stratified.
+This results in a constraint on the velocity field of: 
+<div class="eq">&nabla; &sdot; ( &beta;<sub>0</sub>U) = &beta;<sub>0</sub>[
+S - 1/(&Gamma;<sub>1</sub>p<sub>0</sub>)
+&part;p<sub>0</sub>/&part;t]</div> 
+
+Here, &beta;<sub>0</sub> is a density-like variable.  Again, large
+amplitude density and temperature variations are allowed.  The only
+restriction is that the pressure remain close to the background
+pressure.  In the presence of heating, the star will expand, and
+therefore <em>we need to evolve the background state in response to
+the local heating</em>.  This is an extension of the
+pseudo-incompressible method introduced in the atmospheric science
+community.  As with anelastic hydrodynamics, this constraint
+incorporates the effects of the background stratification.  However,
+in contrast to anelastic, the right-hand side is non-zero, and
+represents the compressibility effects due to heating and the change
+in the background state.
+
+
+</div>  <!-- main -->
+
+
+<!-- FOOTER .............................................................. -->
+<!--#include virtual="../footer.html" -->
+
+</div>
+
+
+</BODY>
+</HTML>
+
+
+
