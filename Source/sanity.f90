@@ -71,8 +71,6 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    print *, "*** in sanity ***"
-    
     if (spherical .eq. 1) then
 
        do n=1,nlevs
