@@ -176,15 +176,15 @@ contains
                                  np(:,:,:,:), ng_n)
           else
              call make_S_cart(dm, n, lo, hi, &
-                              srcp(:,:,:,1), lbound(srcp), ubound(srcp), &
-                              dgtp(:,:,:,1), lbound(dgtp), ubound(dgtp), &
-                              dgp(:,:,:,1), lbound(dgp), ubound(dgp), &
-                              sp, lbound(sp), ubound(sp), &
-                              up, lbound(up), ubound(up), &
-                              omegap, lbound(omegap), ubound(omegap), &
-                              hnp(:,:,:,1), lbound(hnp), ubound(hnp), &
-                              hep(:,:,:,1), lbound(hep), ubound(hep), &
-                              tp(:,:,:,1), lbound(tp), ubound(tp), &
+                              srcp(:,:,:,1), lbound(srcp), &
+                              dgtp(:,:,:,1), lbound(dgtp), &
+                              dgp(:,:,:,1), lbound(dgp), &
+                              sp, lbound(sp), &
+                              up, lbound(up), &
+                              omegap, lbound(omegap), &
+                              hnp(:,:,:,1), lbound(hnp), &
+                              hep(:,:,:,1), lbound(hep), &
+                              tp(:,:,:,1), lbound(tp), &
                               p0(n,:), gamma1bar(n,:), dx(n,:))
           end if
 
@@ -267,15 +267,15 @@ contains
   end subroutine make_S
 
   subroutine make_S_cart(dm, n, lo, hi, &
-                         Source, srlo, srhi, &
-                         delta_gamma1_term, dtlo, dthi, &
-                         delta_gamma1, dglo, dghi, &
-                         s, slo, shi, &
-                         u, ulo, uhi, &
-                         rho_omegadot, rwlo, rwhi, &
-                         rho_Hnuc, hnlo, hnhi, &
-                         rho_Hext, helo, hehi, &
-                         thermal, thlo, thhi, &
+                         Source, srlo, &
+                         delta_gamma1_term, dtlo, &
+                         delta_gamma1, dglo, &
+                         s, slo, &
+                         u, ulo, &
+                         rho_omegadot, rwlo, &
+                         rho_Hnuc, hnlo, &
+                         rho_Hext, helo, &
+                         thermal, thlo, &
                          p0,gamma1bar,dx)
 
     use bl_constants_module
@@ -287,19 +287,19 @@ contains
     use geometry, only: anelastic_cutoff_coord, nr
 
     integer         , intent(in   ) :: dm, n, lo(:),hi(:)
-    integer         , intent(in   ) :: srlo(4), srhi(4), dtlo(4), dthi(4), dglo(4), dghi(4)
-    integer         , intent(in   ) :: slo(4), shi(4), ulo(4), uhi(4), rwlo(4), rwhi(4)
-    integer         , intent(in   ) :: hnlo(4), hnhi(4), helo(4), hehi(4), thlo(4), thhi(4)
+    integer         , intent(in   ) :: srlo(4), dtlo(4), dglo(4)
+    integer         , intent(in   ) :: slo(4), ulo(4), rwlo(4)
+    integer         , intent(in   ) :: hnlo(4), helo(4), thlo(4)
 
-    real (kind=dp_t), intent(  out) ::            Source(srlo(1):srhi(1),srlo(2):srhi(2),srlo(3):srhi(3))
-    real (kind=dp_t), intent(  out) :: delta_gamma1_term(dtlo(1):dthi(1),dtlo(2):dthi(2),dtlo(3):dthi(3))
-    real (kind=dp_t), intent(  out) ::      delta_gamma1(dglo(1):dghi(1),dglo(2):dghi(2),dglo(3):dghi(3))
-    real (kind=dp_t), intent(in   ) ::                 s( slo(1): shi(1), slo(2): shi(2), slo(3): shi(3), slo(4): shi(4))
-    real (kind=dp_t), intent(in   ) ::                 u( ulo(1): uhi(1), ulo(2): uhi(2), ulo(3): uhi(3), ulo(4): uhi(4))
-    real (kind=dp_t), intent(in   ) ::      rho_omegadot(rwlo(1):rwhi(1),rwlo(2):rwhi(2),rwlo(3):rwhi(3),rwlo(4):rwhi(4))
-    real (kind=dp_t), intent(in   ) ::          rho_Hnuc(hnlo(1):hnhi(1),hnlo(2):hnhi(2),hnlo(3):hnhi(3))
-    real (kind=dp_t), intent(in   ) ::          rho_Hext(helo(1):hehi(1),helo(2):hehi(2),helo(3):hehi(3))
-    real (kind=dp_t), intent(in   ) ::           thermal(thlo(1):thhi(1),thlo(2):thhi(2),thlo(3):thhi(3))
+    real (kind=dp_t), intent(  out) ::            Source(srlo(1): ,srlo(2): ,srlo(3): )
+    real (kind=dp_t), intent(  out) :: delta_gamma1_term(dtlo(1): ,dtlo(2): ,dtlo(3): )
+    real (kind=dp_t), intent(  out) ::      delta_gamma1(dglo(1): ,dglo(2): ,dglo(3): )
+    real (kind=dp_t), intent(in   ) ::                 s( slo(1): , slo(2): , slo(3): , slo(4): )
+    real (kind=dp_t), intent(in   ) ::                 u( ulo(1): , ulo(2): , ulo(3): , ulo(4): )
+    real (kind=dp_t), intent(in   ) ::      rho_omegadot(rwlo(1): ,rwlo(2): ,rwlo(3): ,rwlo(4): )
+    real (kind=dp_t), intent(in   ) ::          rho_Hnuc(hnlo(1): ,hnlo(2): ,hnlo(3): )
+    real (kind=dp_t), intent(in   ) ::          rho_Hext(helo(1): ,helo(2): ,helo(3): )
+    real (kind=dp_t), intent(in   ) ::           thermal(thlo(1): ,thlo(2): ,thlo(3): )
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: dx(:)
