@@ -63,7 +63,7 @@ contains
     real(kind=dp_t), pointer:: np(:,:,:,:)
     real(kind=dp_t), pointer:: gp0p(:,:,:,:), p0p(:,:,:,:), g1p(:,:,:,:), psp(:,:,:,:)
 
-    integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
+    integer :: lo(MAX_SPACEDIM),hi(MAX_SPACEDIM),dm,nlevs
     integer :: i,n, r
     integer :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
     integer :: ng_gp, ng_p0, ng_g1, ng_n, ng_ps
@@ -134,6 +134,9 @@ contains
     ng_th = nghost(thermal(1))
 
     do n = 1, nlevs
+
+       lo(:) = 1; hi(:) = 1
+       
        do i = 1, nfabs(state(n))
           srcp => dataptr(Source(n), i)
           dgtp     => dataptr(delta_gamma1_term(n), i)
@@ -144,54 +147,47 @@ contains
           hep    => dataptr(rho_Hext(n), i)
           hnp    => dataptr(rho_Hnuc(n), i)
           tp     => dataptr(thermal(n), i)
-          lo = lwb(get_box(state(n), i))
-          hi = upb(get_box(state(n), i))
-          select case (dm)
-          case (1)
-             call make_S_1d(n,lo, hi, srcp(:,1,1,1), ng_sr, dgtp(:,1,1,1), ng_dt, &
-                            dgp(:,1,1,1), ng_dg, sp(:,1,1,:), ng_s, up(:,1,1,1), ng_u, &
-                            omegap(:,1,1,:), ng_rw, hnp(:,1,1,1), ng_hn, &
-                            hep(:,1,1,1), ng_he, &
-                            tp(:,1,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
-          case (2)
-             call make_S_2d(n,lo, hi, srcp(:,:,1,1), ng_sr, dgtp(:,:,1,1), ng_dt, &
-                            dgp(:,:,1,1), ng_dg, sp(:,:,1,:), ng_s, up(:,:,1,:), ng_u, &
-                            omegap(:,:,1,:), ng_rw, hnp(:,:,1,1), ng_hn, &
-                            hep(:,:,1,1), ng_he, &
-                            tp(:,:,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
-          case (3)
-             if (spherical == 1) then
+          lo(1:dm) = lwb(get_box(state(n), i))
+          hi(1:dm) = upb(get_box(state(n), i))
 
-                gp0p => dataptr(gradp0_cart(n), i)
-                ng_gp = nghost(gradp0_cart(1))
+          if (spherical == 1) then
 
-                p0p => dataptr(p0_cart(n), i)
-                ng_p0 = nghost(p0_cart(1))
+             gp0p => dataptr(gradp0_cart(n), i)
+             ng_gp = nghost(gradp0_cart(1))
+             
+             p0p => dataptr(p0_cart(n), i)
+             ng_p0 = nghost(p0_cart(1))
+             
+             g1p => dataptr(gamma1bar_cart(n), i)
+             ng_g1 = nghost(gamma1bar_cart(1))
 
-                g1p => dataptr(gamma1bar_cart(n), i)
-                ng_g1 = nghost(gamma1bar_cart(1))
+             np => dataptr(normal(n), i)
+             ng_n = nghost(normal(1))
 
-                np => dataptr(normal(n), i)
-                ng_n = nghost(normal(1))
+             call make_S_3d_sphr(lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
+                                 dgp(:,:,:,1), ng_dg, &
+                                 sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
+                                 omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
+                                 hep(:,:,:,1), ng_he, &
+                                 tp(:,:,:,1), ng_th, &
+                                 gp0p(:,:,:,1), ng_gp, &
+                                 p0p(:,:,:,1), ng_p0, &
+                                 g1p(:,:,:,1), ng_g1, &
+                                 np(:,:,:,:), ng_n)
+          else
+             call make_S_cart(dm, n, lo, hi, &
+                              srcp(:,:,:,1), lbound(srcp), ubound(srcp), &
+                              dgtp(:,:,:,1), lbound(dgtp), ubound(dgtp), &
+                              dgp(:,:,:,1), lbound(dgp), ubound(dgp), &
+                              sp, lbound(sp), ubound(sp), &
+                              up, lbound(up), ubound(up), &
+                              omegap, lbound(omegap), ubound(omegap), &
+                              hnp(:,:,:,1), lbound(hnp), ubound(hnp), &
+                              hep(:,:,:,1), lbound(hep), ubound(hep), &
+                              tp(:,:,:,1), lbound(tp), ubound(tp), &
+                              p0(n,:), gamma1bar(n,:), dx(n,:))
+          end if
 
-                call make_S_3d_sphr(lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
-                                    dgp(:,:,:,1), ng_dg, &
-                                    sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
-                                    omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
-                                    hep(:,:,:,1), ng_he, &
-                                    tp(:,:,:,1), ng_th, &
-                                    gp0p(:,:,:,1), ng_gp, &
-                                    p0p(:,:,:,1), ng_p0, &
-                                    g1p(:,:,:,1), ng_g1, &
-                                    np(:,:,:,:), ng_n)
-             else
-                call make_S_3d(n,lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
-                               dgp(:,:,:,1), ng_dg, sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
-                               omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
-                               hep(:,:,:,1), ng_he, &
-                               tp(:,:,:,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
-             end if
-          end select
        end do
     enddo
 
@@ -270,10 +266,17 @@ contains
 
   end subroutine make_S
 
-  subroutine make_S_1d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
-                       s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
-                       rho_Hext,ng_he,thermal,ng_th, &
-                       p0,gamma1bar,dx)
+  subroutine make_S_cart(dm, n, lo, hi, &
+                         Source, srlo, srhi, &
+                         delta_gamma1_term, dtlo, dthi, &
+                         delta_gamma1, dglo, dghi, &
+                         s, slo, shi, &
+                         u, ulo, uhi, &
+                         rho_omegadot, rwlo, rwhi, &
+                         rho_Hnuc, hnlo, hnhi, &
+                         rho_Hext, helo, hehi, &
+                         thermal, thlo, thhi, &
+                         p0,gamma1bar,dx)
 
     use bl_constants_module
     use eos_module, only: eos, eos_input_rt
@@ -283,210 +286,35 @@ contains
     use probin_module, only: use_delta_gamma1_term
     use geometry, only: anelastic_cutoff_coord, nr
 
-    integer         , intent(in   ) :: n,lo(:),hi(:)
-    integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
-    real (kind=dp_t), intent(  out) ::            Source(lo(1)-ng_sr:)
-    real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1)-ng_dt:)
-    real (kind=dp_t), intent(  out) ::      delta_gamma1(lo(1)-ng_dg:)
-    real (kind=dp_t), intent(in   ) ::                 s(lo(1)-ng_s :,:)
-    real (kind=dp_t), intent(in   ) ::                 u(lo(1)-ng_u :)
-    real (kind=dp_t), intent(in   ) ::      rho_omegadot(lo(1)-ng_rw:,:)
-    real (kind=dp_t), intent(in   ) ::          rho_Hnuc(lo(1)-ng_hn:)
-    real (kind=dp_t), intent(in   ) ::          rho_Hext(lo(1)-ng_he:)
-    real (kind=dp_t), intent(in   ) ::           thermal(lo(1)-ng_th:)
+    integer         , intent(in   ) :: dm, n, lo(:),hi(:)
+    integer         , intent(in   ) :: srlo(4), srhi(4), dtlo(4), dthi(4), dglo(4), dghi(4)
+    integer         , intent(in   ) :: slo(4), shi(4), ulo(4), uhi(4), rwlo(4), rwhi(4)
+    integer         , intent(in   ) :: hnlo(4), hnhi(4), helo(4), hehi(4), thlo(4), thhi(4)
+
+    real (kind=dp_t), intent(  out) ::            Source(srlo(1):srhi(1),srlo(2):srhi(2),srlo(3):srhi(3))
+    real (kind=dp_t), intent(  out) :: delta_gamma1_term(dtlo(1):dthi(1),dtlo(2):dthi(2),dtlo(3):dthi(3))
+    real (kind=dp_t), intent(  out) ::      delta_gamma1(dglo(1):dghi(1),dglo(2):dghi(2),dglo(3):dghi(3))
+    real (kind=dp_t), intent(in   ) ::                 s( slo(1): shi(1), slo(2): shi(2), slo(3): shi(3), slo(4): shi(4))
+    real (kind=dp_t), intent(in   ) ::                 u( ulo(1): uhi(1), ulo(2): uhi(2), ulo(3): uhi(3), ulo(4): uhi(4))
+    real (kind=dp_t), intent(in   ) ::      rho_omegadot(rwlo(1):rwhi(1),rwlo(2):rwhi(2),rwlo(3):rwhi(3),rwlo(4):rwhi(4))
+    real (kind=dp_t), intent(in   ) ::          rho_Hnuc(hnlo(1):hnhi(1),hnlo(2):hnhi(2),hnlo(3):hnhi(3))
+    real (kind=dp_t), intent(in   ) ::          rho_Hext(helo(1):hehi(1),helo(2):hehi(2),helo(3):hehi(3))
+    real (kind=dp_t), intent(in   ) ::           thermal(thlo(1):thhi(1),thlo(2):thhi(2),thlo(3):thhi(3))
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
-    integer         :: i, comp
+    integer         :: i, j, k, r, comp
     real(kind=dp_t) :: sigma, xi_term, pres_term, gradp0
 
     integer :: pt_index(MAX_SPACEDIM)
     type(eos_t) :: eos_state
 
     Source = zero
-
-    do i = lo(1), hi(1)
-
-          eos_state%rho   = s(i,rho_comp)
-          eos_state%T     = s(i,temp_comp)
-          eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
-
-          pt_index(:) = (/i, -1, -1/)
-
-          ! dens, temp, and xmass are inputs
-          call eos(eos_input_rt, eos_state, .false., pt_index)
-
-          sigma = eos_state%dpdt / &
-               (eos_state%rho * eos_state%cp * eos_state%dpdr)
-
-          xi_term = ZERO
-          pres_term = ZERO
-          do comp = 1, nspec
-             xi_term = xi_term - &
-                  eos_state%dhdX(comp)*rho_omegadot(i,comp)/eos_state%rho 
-
-             pres_term = pres_term + &
-                  eos_state%dpdX(comp)*rho_omegadot(i,comp)/eos_state%rho
-          enddo
-
-          Source(i) = (sigma/eos_state%rho) * &
-               ( rho_Hext(i) + rho_Hnuc(i) + thermal(i) ) &
-               + sigma*xi_term &
-               + pres_term/(eos_state%rho*eos_state%dpdr)
-
-          if (use_delta_gamma1_term .and. i < anelastic_cutoff_coord(n)) then
-             if (i .eq. 0) then
-                gradp0 = (p0(i+1) - p0(i))/dx(1)
-             else if (i .eq. nr(n)-1) then
-                gradp0 = (p0(i) - p0(i-1))/dx(1)
-             else
-                gradp0 = HALF*(p0(i+1) - p0(i-1))/dx(1)
-             endif
-
-             delta_gamma1(i) = eos_state%gam1 - gamma1bar(i)
-
-             delta_gamma1_term(i) = &
-                  (eos_state%gam1 - gamma1bar(i))*u(i)* &
-                  gradp0/(gamma1bar(i)*gamma1bar(i)*p0(i))
-          else
-             delta_gamma1_term(i) = ZERO
-             delta_gamma1(i) = ZERO
-          endif
-
-    enddo
-
-  end subroutine make_S_1d
-
-  subroutine make_S_2d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
-                       s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
-                       rho_Hext,ng_he,thermal,ng_th, &
-                       p0,gamma1bar,dx)
-
-    use bl_constants_module
-    use eos_module, only: eos, eos_input_rt
-    use eos_type_module
-    use network, only: nspec
-    use variables, only: rho_comp, temp_comp, spec_comp
-    use probin_module, only: use_delta_gamma1_term
-    use geometry, only: anelastic_cutoff_coord, nr
-
-    integer         , intent(in   ) :: n,lo(:),hi(:)
-    integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
-    real (kind=dp_t), intent(  out) ::            Source(lo(1)-ng_sr:,lo(2)-ng_sr:)
-    real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:)
-    real (kind=dp_t), intent(  out) ::      delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:)
-    real (kind=dp_t), intent(in   ) ::                 s(lo(1)-ng_s :,lo(2)-ng_s :,:)
-    real (kind=dp_t), intent(in   ) ::                 u(lo(1)-ng_u :,lo(2)-ng_u :,:)
-    real (kind=dp_t), intent(in   ) ::      rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,:)
-    real (kind=dp_t), intent(in   ) ::          rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:)
-    real (kind=dp_t), intent(in   ) ::          rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:)
-    real (kind=dp_t), intent(in   ) ::           thermal(lo(1)-ng_th:,lo(2)-ng_th:)
-    real (kind=dp_t), intent(in   ) :: p0(0:)
-    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) :: dx(:)
-
-    !     Local variables
-    integer         :: i, j, comp
-    real(kind=dp_t) :: sigma, xi_term, pres_term, gradp0
-
-    integer :: pt_index(MAX_SPACEDIM)
-    type(eos_t) :: eos_state
-
-    Source = zero
-
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-
-          eos_state%rho   = s(i,j,rho_comp)
-          eos_state%T     = s(i,j,temp_comp)
-          eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
-
-          pt_index(:) = (/i, j, -1/)
-
-          ! dens, temp, and xmass are inputs
-          call eos(eos_input_rt, eos_state, .false., pt_index)
-
-          sigma = eos_state%dpdt / &
-               (eos_state%rho * eos_state%cp * eos_state%dpdr)
-
-          xi_term = ZERO
-          pres_term = ZERO
-          do comp = 1, nspec
-             xi_term = xi_term - &
-                  eos_state%dhdX(comp)*rho_omegadot(i,j,comp)/eos_state%rho 
-
-             pres_term = pres_term + &
-                  eos_state%dpdX(comp)*rho_omegadot(i,j,comp)/eos_state%rho
-          enddo
-
-          Source(i,j) = (sigma/eos_state%rho) * &
-               ( rho_Hext(i,j) + rho_Hnuc(i,j) + thermal(i,j) ) &
-               + sigma*xi_term &
-               + pres_term/(eos_state%rho*eos_state%dpdr)
-
-          if (use_delta_gamma1_term .and. j < anelastic_cutoff_coord(n)) then
-             if (j .eq. 0) then
-                gradp0 = (p0(j+1) - p0(j))/dx(2)
-             else if (j .eq. nr(n)-1) then
-                gradp0 = (p0(j) - p0(j-1))/dx(2)
-             else
-                gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
-             endif
-
-             delta_gamma1(i,j) = eos_state%gam1 - gamma1bar(j)
-
-             delta_gamma1_term(i,j) = &
-                  (eos_state%gam1 - gamma1bar(j))*u(i,j,2)* &
-                  gradp0/(gamma1bar(j)*gamma1bar(j)*p0(j))
-          else
-             delta_gamma1_term(i,j) = ZERO
-             delta_gamma1(i,j) = ZERO
-          endif
-
-       enddo
-    enddo
-
-  end subroutine make_S_2d
-
-  subroutine make_S_3d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
-                       s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
-                       rho_Hext,ng_he,thermal,ng_th,p0,gamma1bar,dx)
-
-    use bl_constants_module
-    use eos_module, only: eos, eos_input_rt
-    use eos_type_module
-    use network, only: nspec
-    use variables, only: rho_comp, temp_comp, spec_comp
-    use probin_module, only: use_delta_gamma1_term
-    use geometry, only: anelastic_cutoff_coord, nr
-
-    integer         , intent(in   ) :: n,lo(:),hi(:)
-    integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
-    real (kind=dp_t), intent(  out) ::          Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
-    real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
-    real (kind=dp_t), intent(  out) :: delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:) 
-    real (kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
-    real (kind=dp_t), intent(in   ) ::            u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
-    real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,lo(3)-ng_rw:,:)
-    real (kind=dp_t), intent(in   ) ::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:,lo(3)-ng_hn:)
-    real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:,lo(3)-ng_he:)
-    real (kind=dp_t), intent(in   ) ::      thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
-    real (kind=dp_t), intent(in   ) :: p0(0:)
-    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) :: dx(:)
-
-    !     Local variables
-    integer         :: i, j, k, comp
-    real(kind=dp_t) :: sigma, xi_term, pres_term, gradp0
-
-    integer :: pt_index(MAX_SPACEDIM)
-    type(eos_t) :: eos_state
-
-    Source = zero
-
-    !$OMP PARALLEL DO PRIVATE(i,j,k,comp,sigma,xi_term,pres_term,gradp0,eos_state,pt_index)
+    r = -1
+    
+    !$OMP PARALLEL DO PRIVATE(i,j,k,r,comp,sigma,xi_term,pres_term,gradp0,eos_state,pt_index)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -518,19 +346,28 @@ contains
                   + sigma*xi_term &
                   + pres_term/(eos_state%rho*eos_state%dpdr)
 
-             if (use_delta_gamma1_term .and. k < anelastic_cutoff_coord(n)) then
-                if (k .eq. 0) then
-                   gradp0 = (p0(k+1) - p0(k))/dx(3)
-                else if (k .eq. nr(n)-1) then
-                   gradp0 = (p0(k) - p0(k-1))/dx(3)
+             select case (dm)
+             case (1)
+                r = i
+             case (2)
+                r = j
+             case (3)
+                r = k
+             end select
+             
+             if (use_delta_gamma1_term .and. r < anelastic_cutoff_coord(n)) then
+                if (r .eq. 0) then
+                   gradp0 = (p0(r+1) - p0(r))/dx(dm)
+                else if (r .eq. nr(n)-1) then
+                   gradp0 = (p0(r) - p0(r-1))/dx(dm)
                 else
-                   gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
+                   gradp0 = HALF*(p0(r+1) - p0(r-1))/dx(dm)
                 endif
                 
-                delta_gamma1(i,j,k) = eos_state%gam1 - gamma1bar(k)
+                delta_gamma1(i,j,k) = eos_state%gam1 - gamma1bar(r)
                 
-                delta_gamma1_term(i,j,k) = (eos_state%gam1 - gamma1bar(k))*u(i,j,k,3)* &
-                     gradp0/(gamma1bar(k)*gamma1bar(k)*p0(k))
+                delta_gamma1_term(i,j,k) = (eos_state%gam1 - gamma1bar(r))*u(i,j,k,3)* &
+                     gradp0/(gamma1bar(r)*gamma1bar(r)*p0(r))
              else
                 delta_gamma1_term(i,j,k) = ZERO
                 delta_gamma1(i,j,k) = ZERO
@@ -541,7 +378,7 @@ contains
     enddo
     !$OMP END PARALLEL DO
 
-  end subroutine make_S_3d
+  end subroutine make_S_cart
 
   subroutine make_S_3d_sphr(lo,hi,Source,ng_sr,dg1_term,ng_dt,delta_gamma1, &
                             ng_dg,s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
