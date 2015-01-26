@@ -1,6 +1,6 @@
 &params
 
- model_prefix = "toy_xrb.hi_dens"
+ model_prefix = "toy_xrb.hi_dens_tall"
 
  nx = 960
 

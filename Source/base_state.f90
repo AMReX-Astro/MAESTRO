@@ -37,13 +37,16 @@ contains
     use network, only: spec_names
     use probin_module, only: base_cutoff_density, prob_lo, &
                              grav_const, planar_invsq_mass, &
-                             do_planar_invsq_grav, do_2d_planar_octant
+                             do_planar_invsq_grav, do_2d_planar_octant, &
+                             print_init_hse_diag
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, nr
     use inlet_bc_module, only: set_inlet_bcs
     use fundamental_constants_module, only: Gconst
-    use model_parser_module, only: read_model_file, npts_model, model_r, model_state, &
-                                   idens_model, itemp_model, ipres_model, ispec_model
+    use model_parser_module, only: read_model_file, npts_model, model_r, &
+                                   model_state, &
+                                   idens_model, itemp_model, ipres_model, &
+                                   ispec_model
     use simple_log_module
 
     integer           , intent(in   ) :: n
@@ -156,7 +159,7 @@ contains
 
           sumX = ZERO
           do comp = 1, nspec
-             xn_ambient(comp) = max(ZERO,min(ONE, &
+             xn_ambient(comp) = max(ZERO, min(ONE, &
                   interpolate(rloc, npts_model, model_r, model_state(:,ispec_model-1+comp))))
              sumX = sumX + xn_ambient(comp)
           enddo
@@ -174,10 +177,10 @@ contains
           s0_init(r, rho_comp ) = d_ambient
           s0_init(r,rhoh_comp ) = d_ambient * eos_state%h
           s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-          p0_init(r) = eos_state%p
+          p0_init(r) = eos_state%p ! p_ambient !
 
           s0_init(r,temp_comp) = t_ambient
-
+          
           if (ntrac .gt. 0) then
              s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
           end if
@@ -243,7 +246,13 @@ contains
           dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
           rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*g
 
-          !print *, 'r, dpdr, rhog, err: ', r, dpdr, rhog, abs(dpdr - rhog)/abs(rhog)
+          if (print_init_hse_diag) then
+             if ( parallel_IOProcessor() ) then
+                print *, 'r, dpdr, rhog, err: ', rloc, dpdr, rhog, &
+                     abs(dpdr - rhog)/abs(rhog)
+             endif
+          endif
+          
           max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(rhog))
 
        end if

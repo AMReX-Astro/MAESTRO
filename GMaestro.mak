@@ -58,8 +58,10 @@ endif
 
 #-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
-UTIL_CORE := Util/model_parser 
-
+UTIL_CORE := 
+ifndef BOXLIB_ONLY
+  UTIL_CORE := Util/model_parser 
+endif
 
 
 #-----------------------------------------------------------------------------
@@ -186,7 +188,7 @@ endif
 
 #  Note: GMakerules.mak will include '.' at the start of the
 #  VPATH_LOCATIONS to first search in the problem directory
-VPATH_LOCATIONS += $(Fmlocs)
+VPATH_LOCATIONS += $(Fmlocs)  $(EXTRA_LOCATIONS)
 
 
 # list of directories to put in the Fortran include path

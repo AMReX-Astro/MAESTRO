@@ -9,7 +9,7 @@ program testburn
 
   real(kind=dp_t) :: dens, temp, dt, rho_Hnuc
   real(kind=dp_t), dimension(nspec) :: Xin, Xout, rho_omegadot
-  
+
   integer :: ic12, io16, iash
 
   call network_init()

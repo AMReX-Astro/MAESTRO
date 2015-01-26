@@ -6,26 +6,29 @@ COMP := gfortran
 
 MKVERBOSE := t
 
-MAESTRO_TOP_DIR := ../../../..
+# location of root directory
+MAESTRO_TOP_DIR := $(MAESTRO_HOME)
 
-programs += testburn
+
+# programs to be compiled
+#programs += testburn
 programs += eval
-#programs += testjacobian
+programs += testjacobian
 
 EOS_DIR := helmeos
 CONDUCTIVITY_DIR := constant
-NETWORK_DIR := ignition_chamulak
+NETWORK_DIR := triple_alpha_plus_cago
 
 BOXLIB_ONLY := t
-EXTRA_DIR = Microphysics/networks/ignition_chamulak/test
 
-testAll: table
+EXTRA_DIR = Microphysics/networks/triple_alpha_plus_cago/test
 
-EXTRA_LOCATIONS += $(MAESTRO_TOP_DIR)/Source  # needed for constants.f90
+testAll:
 
 include $(MAESTRO_TOP_DIR)/GMaestro.mak
 
-testAll: $(pnames)
+testAll: $(pnames) table
+
 
 %.$(suf).exe:%.f90 $(objects)
 ifdef MKVERBOSE
@@ -34,6 +37,4 @@ else
 	@echo "Linking $@ ... "
 	@$(LINK.f90) -o $@ $< $(objects) $(libraries)
 endif
-
-
 

@@ -34,7 +34,6 @@ module geometry
   public :: base_cutoff_density_coord
   public :: burning_cutoff_density_coord
   public :: sin_theta, cos_theta, omega
-
   public :: init_spherical, init_center, init_radial, init_cutoff, &
        initialize_dx, &
        compute_cutoff_coords, init_multilevel, init_rotation, destroy_geometry
@@ -64,7 +63,7 @@ contains
     integer :: n,d,dm
 
     dm = mba%dim
-    
+
     allocate(dx(num_levs,dm))
     
     do d=1,dm

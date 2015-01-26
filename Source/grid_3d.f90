@@ -2,11 +2,11 @@ program grid_3d
 
   integer :: i, j, k
 
-  integer, parameter :: nx = 12
-  integer, parameter :: ny = 12
+  integer, parameter :: nx = 8
+  integer, parameter :: ny = 8
   integer, parameter :: nz = 12
-  integer, parameter :: nzonesx = 768
-  integer, parameter :: nzonesy = 768
+  integer, parameter :: nzonesx = 512
+  integer, parameter :: nzonesy = 512
   integer, parameter :: nzonesz = 768
 
   integer :: ix, iy, iz

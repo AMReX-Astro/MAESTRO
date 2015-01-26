@@ -4,6 +4,8 @@ OMP    :=
 
 COMP := gfortran
 
+PROF := t
+
 MKVERBOSE := t
 
 # define the location of the MAESTRO top directory
