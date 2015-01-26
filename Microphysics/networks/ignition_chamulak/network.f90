@@ -1,5 +1,5 @@
 ! the network module provides the information about the species we are
-! advecting: 
+! advecting:
 !
 ! nspec      -- the number of species
 !
@@ -14,7 +14,7 @@
 !  network_init()        -- initialize the isotope properties
 !
 !  network_species_index -- return the index of the species given its name
-! 
+!
 
 module network
 
@@ -26,13 +26,13 @@ module network
 
   ! nspec = number of species this network carries
   ! nspec_advance = the number of species that are explicitly integrated
-  !                 in the ODE solve (the others are solved for 
+  !                 in the ODE solve (the others are solved for
   !                 algebraically).
   integer, parameter :: nspec = 3
   integer, parameter :: nspec_advance = 1
   integer, parameter :: naux  = 0
 
-  character (len=16), save :: spec_names(nspec) 
+  character (len=16), save :: spec_names(nspec)
   character (len= 5), save :: short_spec_names(nspec)
   character (len= 5), save :: short_aux_names(naux)
 
@@ -45,37 +45,37 @@ module network
   logical, save :: network_initialized = .false.
 
 contains
-  
+
   subroutine network_init()
 
-    integer :: ic12, io16, iash
+    use network_indices
+    use rpar_indices
 
-    ! integer keys -- for convinence.  In all other places, we will find
-    ! these by querying based on species name using network_species_index
-    ic12  = 1
-    io16  = 2
-    iash  = 3
+    spec_names(ic12_)  = "carbon-12"
+    spec_names(io16_)  = "oxygen-16"
+    spec_names(iash_)  = "ash"
 
-    spec_names(ic12)  = "carbon-12"
-    spec_names(io16)  = "oxygen-16"
-    spec_names(iash)  = "ash"
-
-    short_spec_names(ic12)  = "C12"
-    short_spec_names(io16)  = "O16"
-    short_spec_names(iash) = "ash"
+    short_spec_names(ic12_)  = "C12"
+    short_spec_names(io16_)  = "O16"
+    short_spec_names(iash_) = "ash"
 
     ! the ash from C12 burning according to Chamulak et al. is a mixture
     ! of C13, O16, Ne20, and Na23.   Ne20 + alpha results 60% of the time,
     ! while Na23 + p is the other 40%.   Fusing 6 C12 will result in
     ! 1.2 Na23, 1.2 O16 (from the alpha), 1.8 Ne20, and 1.8 C13.
     ! The ash state will have an A and Z corresponding to this mixture.
-    aion(ic12)  = 12.0_dp_t
-    aion(io16)  = 16.0_dp_t
-    aion(iash)  = 18.0_dp_t
-    
-    zion(ic12)  = 6.0_dp_t
-    zion(io16)  = 8.0_dp_t
-    zion(iash)  = 8.8_dp_t
+    aion(ic12_)  = 12.0_dp_t
+    aion(io16_)  = 16.0_dp_t
+    aion(iash_)  = 18.0_dp_t
+
+    zion(ic12_)  = 6.0_dp_t
+    zion(io16_)  = 8.0_dp_t
+    zion(iash_)  = 8.8_dp_t
+
+    ! rpar is VODE's way of passing information into the RHS and
+    ! jacobian routines.  Here we initialize some indices to make
+    ! sense of what is stored in the rpar() array.
+    call init_rpar_indices(nspec)
 
     network_initialized = .true.
 
@@ -89,14 +89,14 @@ contains
 
     ! Chamulak et al. provide the q-value resulting from C12 burning,
     ! given as 3 different values (corresponding to 3 different densities).
-    ! Here we do a simple quadratic fit to the 3 values provided (see 
+    ! Here we do a simple quadratic fit to the 3 values provided (see
     ! Chamulak et al., p. 164, column 2).
 
     ! our convention is that the binding energies are negative.  We convert
-    ! from the MeV values that are traditionally written in astrophysics 
+    ! from the MeV values that are traditionally written in astrophysics
     ! papers by multiplying by 1.e6 eV/MeV * 1.60217646e-12 erg/eV.  The
     ! MeV values are per nucleus, so we divide by aion to make it per
-    ! nucleon and we multiple by Avogardo's # (6.0221415e23) to get the 
+    ! nucleon and we multiple by Avogardo's # (6.0221415e23) to get the
     ! value in erg/g
     rho9 = density/1.0e9_dp_t
 
@@ -109,7 +109,7 @@ contains
     ! is that binding energies are negative.
     ebin = -q_eff*MeV2eV*eV2erg*n_A/(M12_chamulak*12.0_dp_t)
 
-    return 
+    return
 
   end function get_ebin_value
 
