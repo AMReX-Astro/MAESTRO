@@ -1,52 +1,32 @@
-NDEBUG :=  
 NDEBUG := 
 MPI    :=
 OMP    :=
 
-COMP := Intel
+COMP := gfortran
 
 MKVERBOSE := t
 
-# define the location of the fParallel root directory
-FPARALLEL := ../../../..
+MAESTRO_TOP_DIR := ../../../..
 
-
-# include the main Makefile stuff
-include $(FPARALLEL)/mk/GMakedefs.mak
-
-
-# define the programs we want to build
 programs += testburn
-programs += eval
-programs += testjacobian
+#programs += eval
+#programs += testjacobian
 
-# define the packages to build this problem
-Fmdirs := boxlib \
-          extern/helmeos \
-          extern/networks/ignition_chamulak \
-          extern/constants \
-          extern/VODE
+EOS_DIR := helmeos
+CONDUCTIVITY_DIR := constant
+NETWORK_DIR := ignition_chamulak
 
-Fmpack := $(foreach dir, $(Fmdirs), $(FPARALLEL)/$(dir)/GPackage.mak)
-Fmlocs := $(foreach dir, $(Fmdirs), $(FPARALLEL)/$(dir))
+BOXLIB_ONLY := t
+EXTRA_DIR = Microphysics/networks/ignition_chamulak/test
 
-# include the necessary GPackage.mak files that define this setup
-include $(Fmpack)
+testAll: table
 
-# vpath defines the directories to search for the source files
-VPATH_LOCATIONS += $(Fmlocs)
+EXTRA_LOCATIONS += $(MAESTRO_TOP_DIR)/Source  # needed for constants.f90
 
-FINCLUDE_LOCATIONS += $(Fmlocs)
+include $(MAESTRO_TOP_DIR)/GMaestro.mak
 
+testAll: $(pnames)
 
-all: $(pnames)
-
-
-# include the Makefile rules
-include $(FPARALLEL)/mk/GMakerules.mak
-
-
-# define the build instructions for the executable
 %.$(suf).exe:%.f90 $(objects)
 ifdef MKVERBOSE
 	$(LINK.f90) -o $@ $< $(objects) $(libraries)
