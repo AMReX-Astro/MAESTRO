@@ -1,6 +1,6 @@
 ! sub-Chandra-specific diagnostic routine
-! 
-! currently, there are 3 output files (we mirror the files structure 
+!
+! currently, there are 3 output files (we mirror the files structure
 ! from the wdconvect problem)
 !
 !   subchandra_enuc_diag.out:
@@ -9,7 +9,7 @@
 !          velocity components at location of peak enuc
 !          radius of peak enuc
 !
-!   subchandra_temp_diag.out:          
+!   subchandra_temp_diag.out:
 !          peak temperature
 !          x/y/z location of peak temperature
 !          velocity components at location of peak temperature
@@ -42,7 +42,7 @@ module diag_module
 
   integer, save :: nstored = 0
 
-  public :: diag, flush_diag
+  public :: diag, flush_diag, diag_finalize
 
 contains
 
@@ -77,9 +77,9 @@ contains
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: rho_Hnuc(:)
-    type(multifab) , intent(in   ) :: rho_Hext(:)    
+    type(multifab) , intent(in   ) :: rho_Hext(:)
     type(multifab) , intent(in   ) :: thermal(:)
-    type(multifab) , intent(in   ) :: rho_omegadot(:)    
+    type(multifab) , intent(in   ) :: rho_omegadot(:)
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) ::      rho0(:,0:)
@@ -118,7 +118,7 @@ contains
     real(kind=dp_t) :: Rloc_Tmax
     real(kind=dp_t) :: vel_Tmax_local(mla%dim), vel_Tmax_level(mla%dim), vel_Tmax(mla%dim)
     real(kind=dp_t) :: vr_Tmax
-    
+
     real(kind=dp_t) :: coord_enucmax_local(mla%dim), coord_enucmax_level(mla%dim), coord_enucmax(mla%dim)
     real(kind=dp_t) :: Rloc_enucmax
     real(kind=dp_t) :: vel_enucmax_local(mla%dim), vel_enucmax_level(mla%dim), vel_enucmax(mla%dim)
@@ -144,7 +144,7 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
-    ! the maximum number of quantities to store in a size file -- for the 
+    ! the maximum number of quantities to store in a size file -- for the
     ! buffering
     integer, parameter :: MAX_FIELDS_PER_FILE = 32
 
@@ -156,7 +156,7 @@ contains
     nlevs = mla%nlevel
 
     if (firstCall) then
-       
+
        ! allocate the storage space for the buffers -- diag_buf_size
        ! is a runtime parameter that specifies how many steps we
        ! should go between outputting.  We need to make sure that we
@@ -178,14 +178,14 @@ contains
        firstCall = .false.
     endif
 
-       
+
     if (spherical .eq. 1) then
 
        do n=1,nlevs
 
           do comp=1,dm
-             ! w0mac will contain an edge-centered w0 on a Cartesian grid,   
-             ! for use in computing divergences.                            
+             ! w0mac will contain an edge-centered w0 on a Cartesian grid,
+             ! for use in computing divergences.
              call multifab_build_edge(w0mac(n,comp), mla%la(n),1,1,comp)
              call setval(w0mac(n,comp), ZERO, all=.true.)
           enddo
@@ -197,11 +197,11 @@ contains
           call setval(w0r_cart(n), ZERO, all=.true.)
        end do
 
-       ! put w0 on Cartesian edges as a vector  
+       ! put w0 on Cartesian edges as a vector
        call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
 
 
-       ! put w0 in Cartesian cell-centers as a scalar (the radial 
+       ! put w0 in Cartesian cell-centers as a scalar (the radial
        ! expansion velocity)
        call put_1d_array_on_cart(w0,w0r_cart,1,.true.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla)
@@ -246,7 +246,7 @@ contains
        ! initialize the local (processor's version) and level quantities to 0
        T_max_level = ZERO
        T_max_local = ZERO
-       
+
        enuc_max_level = ZERO
        enuc_max_local = ZERO
 
@@ -301,7 +301,7 @@ contains
                              rhep(:,:,:,1), ng_rhe, &
                              up(:,:,:,:),ng_u, &
                              w0rp(:,:,:,1), ng_w, &
-                             w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, & 
+                             w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
                              nop(:,:,:,:),ng_n, &
                              lo,hi, &
                              T_max_local, coord_Tmax_local, vel_Tmax_local, &
@@ -316,7 +316,7 @@ contains
                              rhep(:,:,:,1), ng_rhe, &
                              up(:,:,:,:),ng_u, &
                              w0rp(:,:,:,1), ng_w, &
-                             w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, & 
+                             w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
                              nop(:,:,:,:),ng_n, &
                              lo,hi, &
                              T_max_local, coord_Tmax_local, vel_Tmax_local, &
@@ -362,7 +362,7 @@ contains
 
 
        index_max = maxloc(T_max_data, dim=1)
-       
+
        ! T_max_coords will contain both the coordinate information and
        ! the velocity information, so there are 2*dm values on each
        ! proc
@@ -373,11 +373,11 @@ contains
        T_max_coords_local(4) = vel_Tmax_local(1)
        T_max_coords_local(5) = vel_Tmax_local(2)
        T_max_coords_local(6) = vel_Tmax_local(3)
-       
+
        call parallel_gather(T_max_coords_local, T_max_coords, 2*dm, &
                             root = parallel_IOProcessorNode())
 
-       
+
        T_max_level = T_max_data(index_max)
 
        coord_Tmax_level(1) = T_max_coords(2*dm*(index_max-1)+1)
@@ -403,7 +403,7 @@ contains
 
 
        index_max = maxloc(enuc_max_data, dim=1)
-       
+
        ! enuc_max_coords will contain both the coordinate information
        ! and the velocity information, so there are 2*dm values on
        ! each proc
@@ -414,11 +414,11 @@ contains
        enuc_max_coords_local(4) = vel_enucmax_local(1)
        enuc_max_coords_local(5) = vel_enucmax_local(2)
        enuc_max_coords_local(6) = vel_enucmax_local(3)
-       
+
        call parallel_gather(enuc_max_coords_local, enuc_max_coords, 2*dm, &
                             root = parallel_IOProcessorNode())
 
-       
+
        enuc_max_level = enuc_max_data(index_max)
 
        coord_enucmax_level(1) = enuc_max_coords(2*dm*(index_max-1)+1)
@@ -440,7 +440,7 @@ contains
           U_max           = max(U_max,    U_max_level)
           Mach_max        = max(Mach_max, Mach_max_level)
           Mach_max_domain = max(Mach_max_domain, Mach_max_domain_level)
-          
+
           ! if T_max_level is the new max, then copy the location as well
           if (T_max_level > T_max) then
              T_max = T_max_level
@@ -515,7 +515,7 @@ contains
     if (parallel_IOProcessor()) then
        ! file1 -- we are not storing a file1, to maintain consistency with
        ! the wdconvect diag.f90
-       
+
 
        ! file2 -- subchandra_temp_diag.out
        file2_data(index, 1) = T_max
@@ -578,7 +578,7 @@ contains
 
 
   !===========================================================================
-  ! flush_diag -- the output routine.  When this routine is called, it 
+  ! flush_diag -- the output routine.  When this routine is called, it
   ! outputs all the stored information in the buffers and resets them.
   !===========================================================================
   subroutine flush_diag()
@@ -586,7 +586,7 @@ contains
     use parallel
     use bl_constants_module, only: ZERO
     use bl_IO_module, only: unit_new
-    use bl_system_module, only: BL_CWD_SIZE, get_cwd 
+    use bl_system_module, only: BL_CWD_SIZE, get_cwd
     use probin_module, only: job_name
 
     integer :: un1,un2,un3,un4
@@ -716,7 +716,7 @@ contains
 
           write (un4,1000) time_data(n), &
                file4_data(n,1), file4_data(n,2), file4_data(n,3), file4_data(n,4)
-          
+
        enddo
 
        !close(un1)
@@ -818,16 +818,16 @@ contains
     endif
 
 !$omp parallel do private(i,j,k,x,y,z,cell_valid,vel,eos_state) &
-!$omp reduction(max:U_max,Mach_max,Mach_max_domain) 
+!$omp reduction(max:U_max,Mach_max,Mach_max_domain)
     do k = lo(3), hi(3)
        z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
        do j = lo(2), hi(2)
           y = prob_lo(2) + (dble(j)+HALF) * dx(2)
 
-          do i = lo(1), hi(1) 
+          do i = lo(1), hi(1)
              x = prob_lo(1) + (dble(i)+HALF) * dx(1)
-                
+
              cell_valid = .true.
              if (present(mask)) then
                 if ( (.not. mask(i,j,k)) ) cell_valid = .false.
@@ -892,5 +892,13 @@ contains
     enddo
 
   end subroutine diag_3d
+
+  subroutine diag_finalize()
+    deallocate(time_data)
+    deallocate(file1_data)
+    deallocate(file2_data)
+    deallocate(file3_data)
+    deallocate(file4_data)
+  end subroutine diag_finalize
 
 end module diag_module
