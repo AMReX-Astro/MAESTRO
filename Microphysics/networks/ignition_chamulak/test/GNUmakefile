@@ -9,7 +9,7 @@ MKVERBOSE := t
 MAESTRO_TOP_DIR := ../../../..
 
 programs += testburn
-#programs += eval
+programs += eval
 #programs += testjacobian
 
 EOS_DIR := helmeos
