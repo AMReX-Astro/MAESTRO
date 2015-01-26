@@ -17,14 +17,11 @@ programs += testjacobian
 
 EOS_DIR := helmeos
 CONDUCTIVITY_DIR := constant
-
-NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
 NETWORK_DIR := triple_alpha_plus_cago
 
 BOXLIB_ONLY := t
 
-EXTRA_TOP_DIR := $(ASTRODEV_DIR)
-EXTRA_DIR = networks/triple_alpha_plus_cago/test
+EXTRA_DIR = Microphysics/networks/triple_alpha_plus_cago/test
 
 testAll:
 

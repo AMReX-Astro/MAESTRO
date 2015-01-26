@@ -4,8 +4,10 @@ program testburn
   use bl_constants_module
   use network
   use eos_module
+  use eos_type_module
   use burner_module
-
+  use rpar_indices
+  
   implicit none
 
   real(kind=dp_t) :: dens, temp
@@ -13,7 +15,7 @@ program testburn
   real(kind=dp_t), dimension(nspec+1) :: y, ydot
   real(kind=dp_t) :: enucdot
 
-  real(kind=dp_t) :: rpar
+  real(kind=dp_t), allocatable :: rpar(:)
   integer :: ipar
 
   real(kind=dp_t) :: c_p, dhdx(nspec), T_eos, dT_crit
@@ -21,13 +23,9 @@ program testburn
   integer :: n
 
   integer :: ihe4, ic12, io16, ife56
-  common /species_index/ ihe4, ic12, io16, ife56
 
-  integer :: ir3a, irg3a, ircago, irogac
-  common /reaction_index/ ir3a, irg3a, ircago, irogac
-
-  common /zone_state/ dens, c_p, dhdx, T_eos, dT_crit
-
+  type(eos_t) :: eos_state
+  
   call network_init()
   call eos_init()
 
@@ -38,11 +36,6 @@ program testburn
   ic12  = network_species_index("carbon-12")
   io16  = network_species_index("oxygen-16")
   ife56 = network_species_index("iron-56")
-  
-  ir3a   = network_reaction_index("3agc")
-  irg3a  = network_reaction_index("cg3a")
-  ircago = network_reaction_index("cago")
-  irogac = network_reaction_index("ogac")
 
   Xin(ihe4)  = 0.5_dp_t
   Xin(ic12)  = 0.25_dp_t
@@ -50,20 +43,11 @@ program testburn
   Xin(ife56) = 0.0_dp_t
 
 
-  den_eos = dens
-  temp_eos = temp
-  xn_eos(:) = Xin(:)
+  eos_state%rho = dens
+  eos_state%T = temp
+  eos_state%xn(:) = Xin(:)
 
-  call eos(eos_input_rt, den_eos, temp_eos, &
-           xn_eos, &
-           p_eos, h_eos, e_eos, &
-           cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-           dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-           dpdX_eos, dhdX_eos, &
-           gam1_eos, cs_eos, s_eos, &
-           dsdt_eos, dsdr_eos, &
-           .false.)
-
+  call eos(eos_input_rt, eos_state, .false.)
 
   print *, 'evaluating the RHS...'
 
@@ -74,16 +58,19 @@ program testburn
   y(4) = Xin(ife56)
   y(5) = temp
 
-  ! load the common block
-  T_eos = temp
-  dT_crit = 0.01d0
-  dhdx(:) = dhdX_eos(:)
-  c_p = cp_eos
+  ! load the rpar array
+  allocate(rpar(n_rpar_comps))
   
-
+  rpar(irp_dens) = dens
+  rpar(irp_Teos) = temp
+  rpar(irp_Tcrit) = 0.01d0
+  rpar(irp_dhdX:irp_dhdX-1+nspec) = eos_state%dhdX(:)
+  rpar(irp_cp) = eos_state%cp
+  rpar(irp_Y56) = Xin(ife56)/aion(ife56)
+  
   call f_rhs(nspec+1, ZERO, y, ydot, rpar, ipar)
 
-  
+
   print *, 'done!'
 
   print *, 'Xin:  ', Xin

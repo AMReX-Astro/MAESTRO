@@ -68,8 +68,6 @@ program testjacobian
   y(1:nevolve) = Xin(1:nevolve)
   y(neq) = temp
 
-  ! load the common block
-
   call f_rhs(neq, ZERO, y, ydot, rpar, ipar)
 
   call jac(neq, ZERO, y, 0, 0, pd, neq, rpar, ipar)
