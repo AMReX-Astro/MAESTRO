@@ -65,7 +65,7 @@ chk_int=`expr $chk_int \* $chk_fac`
 # directory.  When a list of checkpoint files is generated, the last
 # chk_save files will not be archived.  WARNING: This script deletes
 # older checkpoint files that are not archived!
-chk_save = 10
+chk_save=10
 
 #----------------------------------------------------------------------------
 # initialization
@@ -401,7 +401,7 @@ diag_files=$(find . -maxdepth 1 -name "*_diag.out" -print)
 
 if [ "${diag_files}" ]; then
   diag_count=$(find . -maxdepth 1 -name "diag_files_*.tar" -print | wc -l)
-  if [ diag_count -gt 0 ]; then
+  if [ $diag_count -gt 0 ]; then
      lastdatestr=$(find . -maxdepth 1 -name "diag_files_*.tar" -print | tail -n 1)
      lastdatestr=${lastdatestr:13:8}
   else
@@ -409,7 +409,7 @@ if [ "${diag_files}" ]; then
   fi
   time_since_archive=$(expr $datestr - $lastdatestr)
   #Only archive the diag files daily
-  if [ time_since_archive -gt 0 ]; then
+  if [ $time_since_archive -gt 0 ]; then
      # tar the files
      tar cvf diag_files_$datetimestr.tar $diag_files
      # Initialize variables used by transfer_files
