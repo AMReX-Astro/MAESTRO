@@ -1,5 +1,5 @@
 NDEBUG := 
-MPI    :=t
+MPI    :=
 OMP    :=
 
 SDC := 

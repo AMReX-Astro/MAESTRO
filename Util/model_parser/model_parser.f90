@@ -26,7 +26,7 @@ module model_parser_module
   use network
   use bl_types
   use simple_log_module
-
+  use probin_module, only: grav_const, base_cutoff_density
   implicit none
 
   ! integer keys for indexing the model_state array
@@ -49,7 +49,9 @@ module model_parser_module
 
   integer, parameter :: MAX_VARNAME_LENGTH=80
 
-  public :: read_model_file
+  double precision :: rhog, dpdr, max_hse_error
+  
+  public :: read_model_file, model_parser_finalize
 
 contains
 
@@ -210,9 +212,23 @@ contains
 
     model_initialized = .true.
 
-    call log("initial model read...")
-    call log(" ")
+    !max_hse_error = -1.e33
+    !do i = 2, npts_model
+    !   dpdr = (model_state(i,ipres_model) - model_state(i-1,ipres_model))/ &
+    !        (model_r(i) - model_r(i-1))
+    !   rhog = HALF*(model_state(i,idens_model) + model_state(i-1,idens_model))*grav_const
+    !
+    !   if (model_state(i,idens_model) > base_cutoff_density) then
+    !      max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(rhog))
+    !   endif
+    !enddo
 
+    
+    if ( parallel_IOProcessor() ) then
+       call log("initial model read...")
+       call log(" ")
+    endif
+    
     close(99)
 
     deallocate(vars_stored,varnames_stored)
@@ -242,6 +258,13 @@ contains
     return
 
   end function get_model_npts
+
+  subroutine model_parser_finalize()
+    if (model_initialized) then
+       deallocate (model_state)
+       deallocate (model_r)
+    endif
+  end subroutine model_parser_finalize
 
 end module model_parser_module
 

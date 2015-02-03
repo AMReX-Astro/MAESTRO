@@ -96,17 +96,17 @@ contains
 
        ! the loop over nlevs must count backwards to make sure the finer grids are done first
        do n=nlevs,2,-1
-
           ! set level n-1 data to be the average of the level n data covering it
           do i=1,dm
              call ml_edge_restriction(umac(n-1,i),umac(n,i),mla%mba%rr(n-1,:),i)
           enddo
+       end do
 
+       do n=2,nlevs
           ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc_edgevel are called for
-          ! level n and level 1 (if n=2)
-          call create_umac_grown(n,umac(n,:),umac(n-1,:),the_bc_level(n-1),the_bc_level(n))
-
+          ! note that multifab_fill_boundary and multifab_physbc_edgevel are called.
+          call create_umac_grown(umac(n,:),umac(n-1,:),the_bc_level(n-1),the_bc_level(n), &
+               n.eq.nlevs)
        end do
 
     end if

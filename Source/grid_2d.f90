@@ -2,11 +2,11 @@ program grid_2d
 
   integer :: i, j
 
-  integer, parameter :: nx = 16
-  integer, parameter :: ny = 8
+  integer, parameter :: nx = 8
+  integer, parameter :: ny = 15
   integer, parameter :: nzonesx = 512
-  integer, parameter :: nzonesy = 512
-  integer, parameter :: iyoff = 272
+  integer, parameter :: nzonesy = 960
+  integer, parameter :: iyoff = 0
 
   integer :: ix, iy
   integer :: nlevs, ngrids

@@ -217,7 +217,6 @@ program init_1d_tanh
   use_eos_coulomb = .true.
 
 
-
   ! initialize the EOS and network
   call eos_init()
   call network_init()
@@ -226,8 +225,6 @@ program init_1d_tanh
   open(unit=11, file=params_file, status="old", action="read")
   read(unit=11, nml=params)
   close(unit=11)
-
-
 
   
   ! get the species indices
@@ -378,22 +375,22 @@ program init_1d_tanh
 
   ! set an initial temperature profile and composition
   do i = 1, nx
-       
-!%      !hyperbolic tangent transition:
-         model_hse(i,ispec:ispec-1+nspec) = xn_star(1:nspec) + &
-              HALF*(xn_base(1:nspec) - xn_star(1:nspec))* &
-              (ONE + tanh((xzn_hse(i) - (xmin + H_star - delta) + delta)/delta))
+     
+     !hyperbolic tangent transition:
+     model_hse(i,ispec:ispec-1+nspec) = xn_star(1:nspec) + &
+          HALF*(xn_base(1:nspec) - xn_star(1:nspec))* &
+          (ONE + tanh((xzn_hse(i) - (xmin + H_star - delta) + delta)/delta))
         
-        model_hse(i,itemp) = T_star + HALF*(T_base - T_star)* &
-         (ONE + tanh((xzn_hse(i) - (xmin + H_star - delta) + delta)/delta))
+     model_hse(i,itemp) = T_star + HALF*(T_base - T_star)* &
+          (ONE + tanh((xzn_hse(i) - (xmin + H_star - delta) + delta)/delta))
 
-        print *, i, xzn_hse(i), model_hse(i,itemp)
+     print *, i, xzn_hse(i), model_hse(i,itemp)
 
 
-        ! the density and pressure will be determined via HSE,
-        ! for now, set them to the base conditions
-        model_hse(i,idens) = dens_base
-        model_hse(i,ipres) = pres_base
+     ! the density and pressure will be determined via HSE,
+     ! for now, set them to the base conditions
+     model_hse(i,idens) = dens_base
+     model_hse(i,ipres) = pres_base
 
   enddo
 
@@ -417,6 +414,17 @@ program init_1d_tanh
 
   print *, 'index_base = ', index_base
 
+  ! make the base thermodynamics consistent for this base point -- that is
+  ! what we will integrate from!
+  eos_state%rho = model_hse(index_base,idens)
+  eos_state%T = model_hse(index_base,itemp)
+  eos_state%xn(:) = model_hse(index_base,ispec:ispec-1+nspec)
+
+  call eos(eos_input_rt, eos_state, .false.)
+
+  model_hse(index_base,ipres) = eos_state%p
+  
+  
 !-----------------------------------------------------------------------------
 ! HSE + entropy solve
 !-----------------------------------------------------------------------------
@@ -760,6 +768,18 @@ program init_1d_tanh
 
   enddo
 
+  ! test: bulk EOS call -- Maestro will do this once we are mapped, so make
+  ! sure that we are in HSE with updated thermodynamics
+  do i = 1, nx
+     eos_state%rho = model_hse(i,idens)
+     eos_state%T = model_hse(i,itemp)
+     eos_state%xn(:) = model_hse(i,ispec:ispec-1+nspec)
+
+     call eos(eos_input_rt, eos_state, .false.)
+
+     model_hse(i,ipres) = eos_state%p
+  enddo
+  
   ! compute the maximum HSE error
   max_hse_error = -1.d30
 

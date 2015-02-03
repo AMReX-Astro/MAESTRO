@@ -35,15 +35,16 @@ subroutine varden()
   use make_new_grids_module
   use regrid_module
   use make_eta_module
-  use diag_module, only: flush_diag
+  use diag_module, only: flush_diag, diag_finalize
   use omp_module
   use check_cutoff_module, only: check_cutoff_values
   use time_module, only: time
   use particle_module
   use cputime_module, only: start_cputime_clock
-  use simple_log_module, only: simple_log_init
+  use simple_log_module, only: simple_log_init, simple_log_finalize
   use pert_form_module, only: put_in_pert_form
-
+  use model_parser_module, only: model_parser_finalize
+  
   implicit none
 
   integer    :: init_step,istep
@@ -1540,6 +1541,11 @@ subroutine varden()
   call eos_finalize()
   call network_finalize()
 
+  call model_parser_finalize()
+  call simple_log_finalize()
+
+  call diag_finalize()
+  
   call runtime_close()
 
   deallocate(uold,sold,pi,gpi,dSdt,Source_old,Source_new,rho_omegadot2, &
