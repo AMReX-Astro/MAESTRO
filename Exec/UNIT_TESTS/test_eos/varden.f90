@@ -165,6 +165,7 @@ subroutine varden()
 
                  ! store the thermodynamic state
                  sp(ii,jj,kk,rho_comp) = dens_zone
+                 sp(ii,jj,kk,rhoh_comp) = dens_zone*eos_state%h
                  sp(ii,jj,kk,temp_comp) = temp_zone
                  sp(ii,jj,kk,spec_comp:spec_comp-1+nspec) = xn_zone(:)
 

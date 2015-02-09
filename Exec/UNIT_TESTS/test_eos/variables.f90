@@ -68,6 +68,7 @@ contains
     allocate (varnames(nscal))
 
     varnames(rho_comp)  = "density"
+    varnames(rhoh_comp)  = "rho * h"    
     varnames(temp_comp) = "temperature"
     do n = 1, nspec
        varnames(spec_comp-1+n) = "X(" // trim(short_spec_names(n)) // ")"
