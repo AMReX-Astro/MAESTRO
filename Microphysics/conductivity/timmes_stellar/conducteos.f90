@@ -4,7 +4,6 @@ module conductivity_module
   implicit none
 
   interface conducteos
-     module procedure conducteos_old
      module procedure conducteos_new
   end interface conducteos
 
@@ -20,104 +19,24 @@ contains
   subroutine conducteos_new(input, eos_state, do_diag, conductivity)
 
     use eos_type_module
-    use network, only: nspec
+    use eos_module
+    use network, only: nspec, aion, zion
 
+    implicit none
+    
     integer         , intent(in   ) :: input
     type (eos_t)    , intent(inout) :: eos_state
     logical         , intent(in   ) :: do_diag
     real (kind=dp_t), intent(inout) :: conductivity
 
-    call conducteos_old(input, eos_state%rho, eos_state%T, &
-                        nspec, &
-                        eos_state%xn, &
-                        eos_state%p, eos_state%h, eos_state%e, &
-                        eos_state%cv, eos_state%cp, eos_state%xne, &
-                        eos_state%eta, eos_state%pele, &
-                        eos_state%dpdT, eos_state%dpdr, &
-                        eos_state%dedT, eos_state%dedr, &
-                        eos_state%dpdX, eos_state%dhdX, &
-                        eos_state%gam1, eos_state%cs, eos_state%s, &
-                        eos_state%dsdT, eos_state%dsdr, &
-                        do_diag, &
-                        conductivity)
-    
-  end subroutine conducteos_new
-
-  subroutine conducteos_old(input, dens, temp, &
-                            nspecies, &
-                            xmass, &
-                            pres, enthalpy, eint, &
-                            c_v, c_p, ne, eta, pele, &
-                            dPdT, dPdR, dEdT, dEdR, &
-                            dPdX, dhdX,&
-                            gam1, cs, entropy, &
-                            dsdT, dsdR, &
-                            do_eos_diag, &
-                            conductivity)
-
-    use network
-    use eos_module
-    use eos_type_module
-    
-    implicit none
-
-    ! arguments
-    integer input,nspecies
-    logical do_eos_diag
-    double precision dens, temp
-    double precision xmass(nspecies)
-    double precision pres, enthalpy, eint
-    double precision c_v, c_p
-    double precision ne, eta, pele
-    double precision dPdT, dPdR
-    double precision dEdT, dEdR
-    double precision gam1, entropy, cs
-    double precision dPdX(nspecies), dhdX(nspecies)
-    double precision dsdT, dsdR
-    double precision conductivity
-    double precision xmass_temp(nspecies)
-
+    double precision xmass_temp(nspec)
     double precision orad, ocond, opac
-
-    type (eos_t) :: eos_state
     
     ! local
     integer i
 
-    !..call an equation of state
-    !..you can download this eos from fxt's eos code webpage
-    !..see the end of this file for how its brought in
-
-    eos_state%rho = dens
-    eos_state%T = temp
-    eos_state%xn = xmass
-    eos_state%p = pres
-    eos_state%h = enthalpy
-    eos_state%e = eint
-    
-    call eos(input, eos_state, do_eos_diag)
-
-    dens = eos_state%rho
-    temp = eos_state%T
-    pres = eos_state%p
-    enthalpy = eos_state%h
-    eint = eos_state%e
-    c_v = eos_state%cv
-    c_p = eos_state%cp
-    ne = eos_state%xne
-    eta = eos_state%eta
-    pele = eos_state%pele
-    dpdT = eos_state%dpdT
-    dPdR = eos_state%dpdr
-    dEdT = eos_state%dedT
-    dEdR = eos_state%dedr
-    dPdX = eos_state%dpdX
-    dhdX = eos_state%dhdX
-    gam1 = eos_state%gam1
-    cs = eos_state%cs
-    entropy = eos_state%s
-    dsdT = eos_state%dsdT
-    dsdR = eos_state%dsdr
+    ! call the EOS, passing through the arguments we called conducteos with
+    call eos(input, eos_state, do_diag)
 
     !..one *must* always call the eos before calling the opacity routine 
     !..since some of the required input must come from an eos
@@ -128,16 +47,16 @@ contains
     !..call the opacity routine
       
     ! this is done to be compatible with interface to sig99
-    do i=1,nspecies
-       xmass_temp(i) = xmass(i)
+    do i=1,nspec
+       xmass_temp(i) = eos_state%xn(i)
     enddo
 
-    call sig99(temp,dens,xmass_temp,zion,aion,nspecies, &
-               pele,ne,eta,orad,ocond,opac, &
-               conductivity)
+    call sig99(eos_state%T, eos_state%rho, xmass_temp, &
+               zion, aion, nspec, &
+               eos_state%pele, eos_state%xne, eos_state%eta, &
+               orad, ocond, opac, conductivity)
 
-  end subroutine conducteos_old
-
+  end subroutine conducteos_new
 
 
   subroutine sig99(temp,den,xmass,zion,aion,ionmax,pep,xne,eta, &
