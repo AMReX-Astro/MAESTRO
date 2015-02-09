@@ -176,6 +176,7 @@ contains
                 else ! r >= anelastic_cutoff
 
                    div_coeff(n,r) = div_coeff(n,r-1) * (rho0(n,r)/rho0(n,r-1))                   
+                   beta0_edge(n,r+1) = 2.d0*div_coeff(n,r) - beta0_edge(n,r)
                 endif
 
              end do
@@ -184,6 +185,11 @@ contains
 
                 ! Compare the difference between beta0 at the top of level n to the 
                 ! corresponding point on level n-1
+
+                print*,'here',n
+                print*,beta0_edge(n,r_end_coord(n,j)+1)
+                print*,beta0_edge(n-1,(r_end_coord(n,j)+1)/2)
+
                 offset = beta0_edge(n,r_end_coord(n,j)+1) &
                      - beta0_edge(n-1,(r_end_coord(n,j)+1)/2)
 
