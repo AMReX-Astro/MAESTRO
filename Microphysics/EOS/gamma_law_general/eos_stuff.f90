@@ -105,7 +105,7 @@ contains
 
     integer,           intent(in   ) :: input
     type (eos_t),      intent(inout) :: eos_state
-    logical,           intent(in   ) :: do_eos_diag
+    logical, optional, intent(in   ) :: do_eos_diag
     integer, optional, intent(in   ) :: pt_index(:)
 
     call eos_old(input, eos_state%rho, eos_state%T, &
