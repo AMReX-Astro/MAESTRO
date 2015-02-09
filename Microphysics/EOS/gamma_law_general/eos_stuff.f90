@@ -53,7 +53,6 @@ module eos_module
          eos_input_re, eos_input_ps, eos_input_ph
 
   interface eos
-     module procedure eos_old
      module procedure eos_new
   end interface eos
 
@@ -103,65 +102,40 @@ contains
   !---------------------------------------------------------------------------
   subroutine eos_new(input, eos_state, do_eos_diag, pt_index)
 
+    use bl_error_module
+    use fundamental_constants_module, only: k_B, n_A, hbar
+
+    implicit none
+    
     integer,           intent(in   ) :: input
     type (eos_t),      intent(inout) :: eos_state
     logical, optional, intent(in   ) :: do_eos_diag
     integer, optional, intent(in   ) :: pt_index(:)
 
-    call eos_old(input, eos_state%rho, eos_state%T, &
-                 eos_state%xn, &
-                 eos_state%p, eos_state%h, eos_state%e, &
-                 eos_state%cv, eos_state%cp, eos_state%xne, &
-                 eos_state%eta, eos_state%pele, &
-                 eos_state%dpdT, eos_state%dpdr, &
-                 eos_state%dedT, eos_state%dedr, &
-                 eos_state%dpdX, eos_state%dhdX, &
-                 eos_state%gam1, eos_state%cs, eos_state%s, &
-                 eos_state%dsdT, eos_state%dsdr, &
-                 do_eos_diag, pt_index)
-
-  end subroutine eos_new
-
-
-  !---------------------------------------------------------------------------
-  ! The main interface -- this is used directly by MAESTRO
-  !---------------------------------------------------------------------------
-  subroutine eos_old(input, dens, temp, &
-                     xmass, &
-                     pres, enthalpy, eint, &
-                     c_v, c_p, ne, eta, pele, &
-                     dPdT, dPdR, dEdT, dEdR, &
-                     dPdX, dhdX, &
-                     gam1, cs, entropy, &
-                     dsdT, dsdR, &
-                     do_eos_diag, &
-                     pt_index)
-
-    use bl_error_module
-    use fundamental_constants_module, only: k_B, n_A, hbar
-
-! dens     -- mass density (g/cc)
-! temp     -- temperature (K)
-! xmass    -- the mass fractions of the individual isotopes
-! pres     -- the pressure (dyn/cm**2)
-! enthalpy -- the enthalpy (erg/g)
-! eint     -- the internal energy (erg/g)
-! c_v      -- specific heat at constant volume
-! c_p      -- specific heat at constant pressure
-! ne       -- number density of electrons + positrons
+! All state information comes in through the eos_t derived type
+    
+! rho      -- mass density (g/cc)
+! T        -- temperature (K)
+! xn       -- the mass fractions of the individual isotopes
+! p        -- the pressure (dyn/cm**2)
+! h        -- the enthalpy (erg/g)
+! e        -- the internal energy (erg/g)
+! cv       -- specific heat at constant volume
+! cp       -- specific heat at constant pressure
+! xne      -- number density of electrons + positrons
 ! eta      -- degeneracy parameter
 ! pele     -- electron pressure + positron pressure
-! dPdT     -- d pressure/ d temperature
-! dPdR     -- d pressure/ d density
-! dEdT     -- d energy/ d temperature
-! dEdR     -- d energy/ d density
-! dPdX     -- d pressure / d xmass(k)
+! dpdT     -- d pressure/ d temperature
+! dpdr     -- d pressure/ d density
+! dedT     -- d energy/ d temperature
+! dedr     -- d energy/ d density
+! dpdX     -- d pressure / d xmass(k)
 ! dhdX     -- d enthalpy / d xmass(k)  -- AT CONSTANT PRESSURE!!!
 ! gam1     -- first adiabatic index (d log P/ d log rho) |_s
 ! cs       -- sound speed -- note that this is the non-relativistic one
 !             (we compute it in this wrapper as sqrt(gam1 p /rho) instead
 !             of taking the relativistic version from helmeos.
-! entropy  -- entropy (erg/g/K)  NOTE: presently the entropy expression is 
+! s        -- entropy (erg/g/K)  NOTE: presently the entropy expression is 
 !             valid only for an ideal MONATOMIC gas (gamma = 5/3).
 !
 ! input = 1 means dens, temp    , and xmass are inputs, return enthalpy, eint
@@ -183,29 +157,14 @@ contains
 !   dp/dX_k = dp/d(mu) d(mu)/dX_k
 !
 
-    implicit none
-
-    logical do_eos_diag
-    integer, intent(in) :: input
-
-    real(kind=dp_t) :: dens, temp
-    real(kind=dp_t) :: xmass(nspec)
-    real(kind=dp_t) :: pres, enthalpy, eint
-    real(kind=dp_t) :: c_v, c_p
-    real(kind=dp_t) :: ne, eta, pele
-    real(kind=dp_t) :: dPdT, dPdR, dedT, dedR
-    real(kind=dp_t) :: gam1, entropy, cs
-    real(kind=dp_t) :: dPdX(nspec), dedX(nspec), dhdX(nspec)
-    real(kind=dp_t) :: dsdT, dsdR
-
-    integer, optional, intent(in   ) :: pt_index(:)
-
 
     ! local variables
     real(kind=dp_t) :: ymass(nspec)    
     real(kind=dp_t) :: mu
     real(kind=dp_t) :: dmudX, sum_y
 
+    real(kind=dp_t) :: dedX(nspec)
+    
     ! get the mass of a nucleon from Avogadro's number.
     real(kind=dp_t), parameter :: m_nucleon = 1.d0/n_A
 
@@ -224,7 +183,7 @@ contains
        sum_y  = 0.d0
           
        do n = 1, nspec
-          ymass(n) = xmass(n)/aion(n)
+          ymass(n) = eos_state%xn(n)/aion(n)
           sum_y = sum_y + ymass(n)
        enddo
           
@@ -236,7 +195,7 @@ contains
        sum_y  = 0.d0
           
        do n = 1, nspec
-          ymass(n) = xmass(n)*(1.d0 + zion(n))/aion(n)
+          ymass(n) = eos_state%xn(n)*(1.d0 + zion(n))/aion(n)
           sum_y = sum_y + ymass(n)
        enddo
           
@@ -254,7 +213,7 @@ contains
 
        ! Solve for the temperature:
        ! h = e + p/rho = (p/rho)*[1 + 1/(gamma-1)] = (p/rho)*gamma/(gamma-1)
-       temp = (enthalpy*mu*m_nucleon/k_B)*(gamma_const - 1.0_dp_t)/gamma_const
+       eos_state%T = (eos_state%h*mu*m_nucleon/k_B)*(gamma_const - 1.0_dp_t)/gamma_const
 
 
     else if (input .EQ. eos_input_tp ) then
@@ -263,7 +222,7 @@ contains
           
        ! Solve for the density:
        ! p = rho k T / (mu m_nucleon)
-       dens = pres*mu*m_nucleon/(k_B*temp)
+       eos_state%rho = eos_state%p*mu*m_nucleon/(k_B*eos_state%T)
 
 
     else if (input .EQ. eos_input_rp ) then
@@ -272,7 +231,7 @@ contains
 
        ! Solve for the temperature:
        ! p = rho k T / (mu m_nucleon)
-       temp = pres*mu*m_nucleon/(k_B*dens)
+       eos_state%T = eos_state%p*mu*m_nucleon/(k_B*eos_state%rho)
 
 
     else if (input .EQ. eos_input_re) then
@@ -281,7 +240,7 @@ contains
 
        ! Solve for the temperature
        ! e = k T / [(mu m_nucleon)*(gamma-1)]
-       temp = eint*mu*m_nucleon*(gamma_const-1.0_dp_t)/k_B
+       eos_state%T = eos_state%e*mu*m_nucleon*(gamma_const-1.0_dp_t)/k_B
 
 
     else if (input .EQ. eos_input_ps) then
@@ -291,14 +250,14 @@ contains
        ! Solve for the temperature
        ! Invert Sackur-Tetrode eqn (below) using 
        ! rho = p mu m_nucleon / (k T)
-       temp = pres**(2.0_dp_t/5.0_dp_t) * &
+       eos_state%T = eos_state%p**(2.0_dp_t/5.0_dp_t) * &
             ( 2.0_dp_t*M_PI*hbar*hbar/(mu*m_nucleon) )**(3.0_dp_t/5.0_dp_t) * &
-            dexp(2.0_dp_t*mu*m_nucleon*entropy/(5.0_dp_t*k_B) - 1.0_dp_t) / &
+            dexp(2.0_dp_t*mu*m_nucleon*eos_state%s/(5.0_dp_t*k_B) - 1.0_dp_t) / &
             k_B
 
        ! Solve for the density
        ! rho = p mu m_nucleon / (k T)
-       dens = pres*mu*m_nucleon/(k_B*temp)
+       eos_state%rho = eos_state%p*mu*m_nucleon/(k_B*eos_state%T)
 
     else if (input .EQ. eos_input_ph) then
        call bl_error("ERROR: eos_input_ph not implemented")
@@ -312,29 +271,29 @@ contains
 
     ! compute the pressure simply from the ideal gas law, and the
     ! specific internal energy using the gamma-law EOS relation
-    pres = dens*k_B*temp/(mu*m_nucleon)
-    eint = pres/(gamma_const - 1.0_dp_t)/dens
+    eos_state%p = eos_state%rho*k_B*eos_state%T/(mu*m_nucleon)
+    eos_state%e = eos_state%p/(gamma_const - 1.0_dp_t)/eos_state%rho
 
     ! enthalpy is h = e + p/rho
-    enthalpy = eint + pres/dens
+    eos_state%h = eos_state%e + eos_state%p/eos_state%rho
 
     ! entropy (per gram) of an ideal monoatomic gas (the Sactur-Tetrode equation)
     ! NOTE: this expression is only valid for gamma = 5/3.
-    entropy = (k_B/(mu*m_nucleon))*(2.5_dp_t + &
-         log( ( (mu*m_nucleon)**2.5/dens )*(k_B*temp)**1.5_dp_t / (2.0_dp_t*M_PI*hbar*hbar)**1.5_dp_t ) )
+    eos_state%s = (k_B/(mu*m_nucleon))*(2.5_dp_t + &
+         log( ( (mu*m_nucleon)**2.5/eos_state%rho )*(k_B*eos_state%T)**1.5_dp_t / (2.0_dp_t*M_PI*hbar*hbar)**1.5_dp_t ) )
 
     ! compute the thermodynamic derivatives and specific heats 
-    dPdT = pres/temp
-    dPdR = pres/dens
-    dedT = eint/temp
-    dedR = 0.d0
-    dsdT = 0.d0
-    dsdR = 0.d0
+    eos_state%dpdT = eos_state%p/eos_state%T
+    eos_state%dpdr = eos_state%p/eos_state%rho
+    eos_state%dedT = eos_state%e/eos_state%T
+    eos_state%dedr = 0.d0
+    eos_state%dsdT = 0.d0
+    eos_state%dsdR = 0.d0
 
-    c_v = dedT
-    c_p = gamma_const*c_v
+    eos_state%cv = eos_state%dedT
+    eos_state%cp = gamma_const*eos_state%cv
 
-    gam1 = gamma_const
+    eos_state%gam1 = gamma_const
 
     do n = 1, nspec
 
@@ -356,23 +315,23 @@ contains
           dmudX =  (mu/aion(n))*(aion(n) - mu*(1.0_dp_t + zion(n)))
        endif
 
-       dPdX(n) = -(pres/mu)*dmudX
-       dedX(n) = -(eint/mu)*dmudX
+       eos_state%dpdX(n) = -(eos_state%p/mu)*dmudX
+       dedX(n) = -(eos_state%e/mu)*dmudX
           
        ! dhdX is at constant pressure -- see paper III for details
-       dhdX(n) = dedX(n) + &
-            (pres/dens**2 - dedR)*dPdX(n)/dPdr
+       eos_state%dhdX(n) = dedX(n) + &
+            (eos_state%p/eos_state%rho**2 - eos_state%dedr)*eos_state%dpdX(n)/eos_state%dpdr
     enddo
 
     ! electron-specific stuff (really for the degenerate EOS)
-    ne = 0.d0
-    eta = 0.d0
-    pele = 0.d0
+    eos_state%xne = 0.d0
+    eos_state%eta = 0.d0
+    eos_state%pele = 0.d0
 
     ! sound speed
-    cs = sqrt(gamma_const*pres/dens)
+    eos_state%cs = sqrt(gamma_const*eos_state%p/eos_state%rho)
 
     return
-  end subroutine eos_old
+  end subroutine eos_new
 
 end module eos_module
