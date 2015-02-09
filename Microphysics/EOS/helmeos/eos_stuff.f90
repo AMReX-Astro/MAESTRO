@@ -31,7 +31,6 @@ module eos_module
   public eos_init, eos_finalize, eos
 
   interface eos
-     module procedure eos_old
      module procedure eos_new
   end interface eos
 
@@ -90,71 +89,43 @@ contains
 
 
   !---------------------------------------------------------------------------
-  ! new interface
+  ! main interface
   !---------------------------------------------------------------------------
   subroutine eos_new(input, eos_state, do_eos_diag, pt_index)
 
+    use bl_error_module
+    
     integer,           intent(in   ) :: input
     type (eos_t),      intent(inout) :: eos_state
-    logical,           intent(in   ) :: do_eos_diag
+    logical, optional, intent(in   ) :: do_eos_diag
     integer, optional, intent(in   ) :: pt_index(:)
 
-    call eos_old(input, eos_state%rho, eos_state%T, &
-                 eos_state%xn, &
-                 eos_state%p, eos_state%h, eos_state%e, &
-                 eos_state%cv, eos_state%cp, eos_state%xne, &
-                 eos_state%eta, eos_state%pele, &
-                 eos_state%dpdT, eos_state%dpdr, &
-                 eos_state%dedT, eos_state%dedr, &
-                 eos_state%dpdX, eos_state%dhdX, &
-                 eos_state%gam1, eos_state%cs, eos_state%s, &
-                 eos_state%dsdT, eos_state%dsdr, &
-                 do_eos_diag, pt_index)
-
-  end subroutine eos_new
-
-
-  !---------------------------------------------------------------------------
-  ! The main interface -- this is used directly by MAESTRO
-  !---------------------------------------------------------------------------
-  subroutine eos_old(input, dens, temp, &
-                     xmass, &
-                     pres, enthalpy, eint, &
-                     c_v, c_p, ne, eta, pele, &
-                     dPdT, dPdR, dEdT, dEdR, &
-                     dPdX, dhdX, &
-                     gam1, cs, entropy, &
-                     dsdT, dsdR, &
-                     do_eos_diag, &
-                     pt_index)
-
-    use bl_error_module
 
 ! a generic wrapper for the Helmholtz based electron/positron degenerate
-! EOS.  
+! EOS.  All the fields are through the eos_t type.  
 !
-! dens     -- mass density (g/cc)
-! temp     -- temperature (K)
-! xmass    -- the mass fractions of the individual isotopes
-! pres     -- the pressure (dyn/cm**2)
-! enthalpy -- the enthalpy (erg/g)
-! eint     -- the internal energy (erg/g)
-! c_v      -- specific heat at constant volume
-! c_p      -- specific heat at constant pressure
-! ne       -- number density of electrons + positrons
+! rho      -- mass density (g/cc)
+! T        -- temperature (K)
+! xn       -- the mass fractions of the individual isotopes
+! p        -- the pressure (dyn/cm**2)
+! h        -- the enthalpy (erg/g)
+! e        -- the internal energy (erg/g)
+! cv       -- specific heat at constant volume
+! cp       -- specific heat at constant pressure
+! xne      -- number density of electrons + positrons
 ! eta      -- degeneracy parameter
 ! pele     -- electron pressure + positron pressure
-! dPdT     -- d pressure/ d temperature
-! dPdR     -- d pressure/ d density
-! dEdT     -- d energy/ d temperature
-! dEdR     -- d energy/ d density
-! dPdX     -- d pressure / d xmass
+! dpdT     -- d pressure/ d temperature
+! dpdr     -- d pressure/ d density
+! dedT     -- d energy/ d temperature
+! dedR     -- d energy/ d density
+! dpdX     -- d pressure / d xmass
 ! dhdX     -- d enthalpy / d xmass  -- AT CONSTANT PRESSURE!!!
 ! gam1     -- first adiabatic index (d log P/ d log rho) |_s
 ! cs       -- sound speed -- note that this is the non-relativistic one
 !             (we compute it in this wrapper as sqrt(gam1 p /rho) instead
 !             of taking the relativistic version from helmeos.
-! entropy  -- entropy (erg/g/K)
+! s        -- entropy (erg/g/K)
 ! dsdT     -- d entropy / d temperature
 ! dsdR     -- d entropy / d density
 !
@@ -186,33 +157,6 @@ contains
 !   d(abar)/dX_k = abar * (1 - abar/A_k)
 !   d(zbar)/dX_k = (Z_k - zbar) / ( A_k * sum_i {X_i/A_i} )
 !
-    implicit none
-
-!    include 'vector_eos.dek'
-
-
-!     ::::: Arguments
-    logical             :: do_eos_diag
-    integer, intent(in) :: input
-
-    ! some of these quantites can be inputs or outputs
-    real(kind=dp_t), intent(inout) :: dens, temp
-    real(kind=dp_t), intent(in)    :: xmass(nspec)
-    real(kind=dp_t), intent(inout) :: pres, enthalpy, &
-                                      eint, entropy
-
-    ! these quantities are always outputs
-    real(kind=dp_t), intent(out) :: c_v, c_p
-    real(kind=dp_t), intent(out) :: ne, eta, pele
-    real(kind=dp_t), intent(out) :: dPdT, dPdR, &
-                                    dedT, dedR
-    real(kind=dp_t), intent(out) :: gam1
-    real(kind=dp_t), intent(out) :: cs
-    real(kind=dp_t), intent(out) :: dPdX(nspec), &
-                                    dhdX(nspec)
-    real(kind=dp_t), intent(out) :: dsdT, dsdR
-
-    integer, optional, intent(in   ) :: pt_index(:)
 
     
 !     ::::: Local variables and arrays
@@ -237,12 +181,9 @@ contains
     real(kind=dp_t) :: dpdd, pres1, entr1
     real(kind=dp_t) :: f, g, dfdd, dfdt, dgdd, dgdt, deld
 
-    real(kind=dp_t) :: ttol
-    parameter (ttol = 1.0d-8)
-    real(kind=dp_t) :: dtol
-    parameter (dtol = 1.0d-8)
-    real(kind=dp_t) :: stol
-    parameter (stol = 1.0d-8)
+    real(kind=dp_t), parameter :: ttol = 1.0d-8
+    real(kind=dp_t), parameter :: dtol = 1.0d-8
+    real(kind=dp_t), parameter :: stol = 1.0d-8
 
     logical eosfail
     integer dim_ptindex
@@ -262,6 +203,7 @@ contains
                      stot_row, dsd_row, dst_row
     real(kind=dp_t) :: gam1_row, cs_row
 
+    
     if (present(pt_index)) dim_ptindex = size(pt_index,dim=1)
       
     if (.not. initialized) call bl_error('EOS: not initialized')
@@ -276,7 +218,7 @@ contains
     dnew   = 0.0d0
 
     do i=1,nspec
-       ymass(i) = xmass(i)/aion(i)
+       ymass(i) = eos_state%xn(i)/aion(i)
        dnew    = dnew + ymass(i)
        tnew    = tnew + zion(i) * ymass(i)
     enddo
@@ -291,8 +233,8 @@ contains
 !---------------------------------------------------------------------------
 
 ! we are taking density, temperature, and composition as given
-       temp_row = temp
-       den_row  = dens
+       temp_row = eos_state%T
+       den_row  = eos_state%rho
        abar_row = abar
        zbar_row = zbar
          
@@ -323,33 +265,33 @@ contains
        endif
 
        ! fill the outputs
-       pres = ptot_row
-       eint = etot_row
+       eos_state%p = ptot_row
+       eos_state%e = etot_row
          
-       enthalpy = eint + pres/dens
+       eos_state%h = eos_state%e + eos_state%p/eos_state%rho
 
-       c_v = cv_row
-       c_p = cp_row
+       eos_state%cv = cv_row
+       eos_state%cp = cp_row
 
        ! store the number density of electrons and positrons, the degeneracy
        ! parameter, and the total electron/positron pressure
-       ne   = xne_row + xnp_row
-       eta  = etaele_row
-       pele = pele_row + ppos_row
+       eos_state%xne   = xne_row + xnp_row
+       eos_state%eta  = etaele_row
+       eos_state%pele = pele_row + ppos_row
 
-       dPdR = dpd_row
-       dPdT = dpt_row
-       dEdR = ded_row
-       dEdT = det_row
-       gam1 = gam1_row
-!       cs =   cs_row
-       cs =   sqrt(gam1*pres/dens)
-       entropy = stot_row
-       dsdT = dst_row
-       dsdR = dsd_row
+       eos_state%dpdr = dpd_row
+       eos_state%dpdT = dpt_row
+       eos_state%dedr = ded_row
+       eos_state%dedT = det_row
+       eos_state%gam1 = gam1_row
+!       eos_state%cs =   cs_row
+       eos_state%cs =   sqrt(eos_state%gam1*eos_state%p/eos_state%rho)
+       eos_state%s = stot_row
+       eos_state%dsdT = dst_row
+       eos_state%dsdr = dsd_row
 
        do n = 1, nspec
-          dpdX(n) = dpa_row * (abar/aion(n))* &
+          eos_state%dpdX(n) = dpa_row * (abar/aion(n))* &
                               (aion(n) - abar) + &
                     dpz_row * (abar/aion(n))* &
                               (zion(n) - zbar)
@@ -361,8 +303,8 @@ contains
 
           ! create the enthalpy derivatives wrt average composition --
           ! hold pressure constant!!!
-          dhdX(n) = dEdX(n) + &
-               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
+          eos_state%dhdX(n) = dEdX(n) + &
+               (eos_state%p/eos_state%rho**2 - eos_state%dedr)*eos_state%dpdX(n)/eos_state%dpdr
 
        enddo
 
@@ -373,17 +315,17 @@ contains
 !---------------------------------------------------------------------------
 
        ! load the initial guess
-       temp_row = temp
-       den_row  = dens
+       temp_row = eos_state%T
+       den_row  = eos_state%rho
        abar_row = abar
        zbar_row = zbar
 
-       if (do_eos_diag) print*,'T/D INIT ',temp,dens
+       if (do_eos_diag) print*,'T/D INIT ',eos_state%T,eos_state%rho
 
        ! we want to converge to the given enthalpy
-       enthalpy_want = enthalpy
+       enthalpy_want = eos_state%h
 
-       if (do_eos_diag) print*,'WANT H ',enthalpy
+       if (do_eos_diag) print*,'WANT H ',eos_state%h
 
        call helmeos(do_coulomb,eosfail, &
                     temp_row, den_row, abar_row, zbar_row, &
@@ -415,10 +357,10 @@ contains
           niter = iter
 
           ! recompute the enthalpy and it's temperature derivative
-          enth1 = etot_row + ptot_row/dens
+          enth1 = etot_row + ptot_row/eos_state%rho
           if (do_eos_diag) print*,'ENTH1 ',iter,enth1
 
-          dhdt = det_row + dpt_row/dens
+          dhdt = det_row + dpt_row/eos_state%rho
           if (do_eos_diag) print*,'DHDT ',iter,dhdt
 
           tnew = temp_row - &
@@ -494,32 +436,32 @@ contains
 70     continue
 
        ! store the end result
-       temp = tnew
-       pres = ptot_row
-       eint = etot_row
+       eos_state%T = tnew
+       eos_state%p = ptot_row
+       eos_state%e = etot_row
        
-       c_v = cv_row
-       c_p = cp_row
+       eos_state%cv = cv_row
+       eos_state%cp = cp_row
 
        ! store the number density of electrons and positrons, the degeneracy
        ! parameter, and the total electron/positron pressure
-       ne   = xne_row + xnp_row
-       eta  = etaele_row
-       pele = pele_row + ppos_row
+       eos_state%xne   = xne_row + xnp_row
+       eos_state%eta  = etaele_row
+       eos_state%pele = pele_row + ppos_row
        
-       dPdR = dpd_row
-       dPdT = dpt_row
-       dEdR = ded_row
-       dEdT = det_row   ! c_v
-       gam1 = gam1_row
-!      cs =   cs_row
-       cs =   sqrt(gam1*pres/dens)
-       entropy = stot_row
-       dsdT = dst_row
-       dsdR = dsd_row
+       eos_state%dpdr = dpd_row
+       eos_state%dpdT = dpt_row
+       eos_state%dedr = ded_row
+       eos_state%dedT = det_row   ! c_v
+       eos_state%gam1 = gam1_row
+!      eos_state%cs =   cs_row
+       eos_state%cs =   sqrt(eos_state%gam1*eos_state%p/eos_state%rho)
+       eos_state%s = stot_row
+       eos_state%dsdT = dst_row
+       eos_state%dsdr = dsd_row
 
        do n = 1, nspec
-          dpdX(n) = dpa_row * (abar/aion(n))* &
+          eos_state%dpdX(n) = dpa_row * (abar/aion(n))* &
                                  (aion(n) - abar) + &
                     dpz_row * (abar/aion(n))* &
                                  (zion(n) - zbar)
@@ -531,8 +473,8 @@ contains
 
           ! create the enthalpy derivatives wrt average composition --
           ! hold pressure constant!!!
-          dhdX(n) = dEdX(n) + &
-               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
+          eos_state%dhdX(n) = dEdX(n) + &
+               (eos_state%p/eos_state%rho**2 - eos_state%dedr)*eos_state%dpdX(n)/eos_state%dpdr
 
        enddo
 
@@ -543,13 +485,13 @@ contains
 !---------------------------------------------------------------------------
 
        ! load the initial guess
-       temp_row = temp
-       den_row  = dens
+       temp_row = eos_state%T
+       den_row  = eos_state%rho
        abar_row = abar
        zbar_row = zbar
 
        ! we want to converge to the given pressure
-       pres_want = pres
+       pres_want = eos_state%p
 
        if (pres_want < ZERO) then
           if (present(pt_index)) then
@@ -667,33 +609,33 @@ contains
 170    continue
 
        ! store the end result
-       dens = dnew
-       temp = temp_row
-       eint = etot_row
-       enthalpy = eint + ptot_row/dens
+       eos_state%rho = dnew
+       eos_state%T = temp_row
+       eos_state%e = etot_row
+       eos_state%h = eos_state%e + ptot_row/eos_state%rho
 
-       c_v = cv_row
-       c_p = cp_row
+       eos_state%cv = cv_row
+       eos_state%cp = cp_row
 
        ! store the number density of electrons and positrons, the degeneracy
        ! parameter, and the total electron/positron pressure
-       ne   = xne_row + xnp_row
-       eta  = etaele_row
-       pele = pele_row + ppos_row
+       eos_state%xne   = xne_row + xnp_row
+       eos_state%eta  = etaele_row
+       eos_state%pele = pele_row + ppos_row
        
-       dPdR = dpd_row
-       dPdT = dpt_row
-       dEdR = ded_row
-       dEdT = det_row   ! c_v
-       gam1 = gam1_row
-!      cs =   cs_row
-       cs =   sqrt(gam1*pres/dens)
-       entropy = stot_row
-       dsdT = dst_row
-       dsdR = dsd_row
+       eos_state%dpdr = dpd_row
+       eos_state%dpdT = dpt_row
+       eos_state%dedr = ded_row
+       eos_state%dedT = det_row   ! c_v
+       eos_state%gam1 = gam1_row
+!      eos_state%cs =   cs_row
+       eos_state%cs =   sqrt(eos_state%gam1*eos_state%p/eos_state%rho)
+       eos_state%s = stot_row
+       eos_state%dsdT = dst_row
+       eos_state%dsdr = dsd_row
 
        do n = 1, nspec
-          dpdX(n) = dpa_row * (abar/aion(n))* &
+          eos_state%dpdX(n) = dpa_row * (abar/aion(n))* &
                                  (aion(n) - abar) + &
                     dpz_row * (abar/aion(n))* &
                                  (zion(n) - zbar)
@@ -705,8 +647,8 @@ contains
 
           ! create the enthalpy derivatives wrt average composition --
           ! hold pressure constant!!!
-          dhdX(n) = dEdX(n) + &
-               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
+          eos_state%dhdX(n) = dEdX(n) + &
+               (eos_state%p/eos_state%rho**2 - eos_state%dedr)*eos_state%dpdX(n)/eos_state%dpdr
 
        enddo
 
@@ -717,15 +659,15 @@ contains
 !---------------------------------------------------------------------------
 
        ! Load the initial guess
-       temp_row = temp
-       den_row  = dens
+       temp_row = eos_state%T
+       den_row  = eos_state%rho
        abar_row = abar
        zbar_row = zbar
-       if (do_eos_diag) print*,'T/D INIT ',temp,dens
+       if (do_eos_diag) print*,'T/D INIT ',eos_state%T,eos_state%rho
 
        ! We want to converge to the given pressure
-       pres_want = pres
-       if (do_eos_diag) print*,'P WANT ',pres
+       pres_want = eos_state%p
+       if (do_eos_diag) print*,'P WANT ',eos_state%p
 
        if (pres_want < ZERO) then
           if (present(pt_index)) then
@@ -852,33 +794,33 @@ contains
        ! store the end result
        ! jbb
        ! temp = tnew
-       temp = temp_row
-       dens = den_row
-       eint = etot_row
-       c_v = cv_row
-       c_p = cp_row
+       eos_state%T = temp_row
+       eos_state%rho = den_row
+       eos_state%e = etot_row
+       eos_state%cv = cv_row
+       eos_state%cp = cp_row
 
-       enthalpy = eint + ptot_row/dens
+       eos_state%h = eos_state%e + ptot_row/eos_state%rho
 
        ! store the number density of electrons and positrons, the degeneracy
        ! parameter, and the total electron/positron pressure
-       ne   = xne_row + xnp_row
-       eta  = etaele_row
-       pele = pele_row + ppos_row
+       eos_state%xne   = xne_row + xnp_row
+       eos_state%eta  = etaele_row
+       eos_state%pele = pele_row + ppos_row
        
-       dPdR = dpd_row
-       dPdT = dpt_row
-       dEdR = ded_row
-       dEdT = det_row   ! c_v
-       gam1 = gam1_row
-!      cs =   cs_row
-       cs =   sqrt(gam1*pres/dens)
-       entropy = stot_row
-       dsdT = dst_row
-       dsdR = dsd_row
+       eos_state%dpdr = dpd_row
+       eos_state%dpdT = dpt_row
+       eos_state%dedr = ded_row
+       eos_state%dedT = det_row   ! c_v
+       eos_state%gam1 = gam1_row
+!      eos_state%cs =   cs_row
+       eos_state%cs =   sqrt(eos_state%gam1*eos_state%p/eos_state%rho)
+       eos_state%s = stot_row
+       eos_state%dsdT = dst_row
+       eos_state%dsdr = dsd_row
 
        do n = 1, nspec
-          dpdX(n) = dpa_row * (abar/aion(n))* &
+          eos_state%dpdX(n) = dpa_row * (abar/aion(n))* &
                               (aion(n) - abar) + &
                     dpz_row * (abar/aion(n))* &
                               (zion(n) - zbar)
@@ -890,8 +832,8 @@ contains
 
           ! create the enthalpy derivatives wrt average composition --
           ! hold pressure constant!!!
-          dhdX(n) = dEdX(n) + &
-               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
+          eos_state%dhdX(n) = dEdX(n) + &
+               (eos_state%p/eos_state%rho**2 - eos_state%dedr)*eos_state%dpdX(n)/eos_state%dpdr
 
        enddo
 
@@ -903,15 +845,15 @@ contains
 
 !      do_eos_diag = .true.
        ! load the initial guess
-       temp_row = temp
-       den_row  = dens
+       temp_row = eos_state%T
+       den_row  = eos_state%rho
        abar_row = abar
        zbar_row = zbar
 
-       if (do_eos_diag) print*,'T/D INIT ',temp,dens
+       if (do_eos_diag) print*,'T/D INIT ',eos_state%T,eos_state%rho
 
        ! we want to converge to the given energy
-       energy_want = eint
+       energy_want = eos_state%e
 
        if (energy_want < ZERO) then
           print *,'BAD HERE ',pt_index(1)
@@ -1040,32 +982,32 @@ contains
 270     continue
 
        ! store the end result
-       temp = tnew
-       pres = ptot_row
-       enthalpy = eint + ptot_row/dens
+       eos_state%T = tnew
+       eos_state%p = ptot_row
+       eos_state%h = eos_state%e + ptot_row/eos_state%rho
        
-       c_v = cv_row
-       c_p = cp_row
+       eos_state%cv = cv_row
+       eos_state%cp = cp_row
 
        ! store the number density of electrons and positrons, the degeneracy
        ! parameter, and the total electron/positron pressure
-       ne   = xne_row + xnp_row
-       eta  = etaele_row
-       pele = pele_row + ppos_row
+       eos_state%xne   = xne_row + xnp_row
+       eos_state%eta  = etaele_row
+       eos_state%pele = pele_row + ppos_row
        
-       dPdR = dpd_row
-       dPdT = dpt_row
-       dEdR = ded_row
-       dEdT = det_row   ! c_v
-       gam1 = gam1_row
-!      cs =   cs_row
-       cs =   sqrt(gam1*pres/dens)
-       entropy = stot_row
-       dsdT = dst_row
-       dsdR = dsd_row
+       eos_state%dpdr = dpd_row
+       eos_state%dpdT = dpt_row
+       eos_state%dedr = ded_row
+       eos_state%dedT = det_row   ! c_v
+       eos_state%gam1 = gam1_row
+!      eos_state%cs =   cs_row
+       eos_state%cs =   sqrt(eos_state%gam1*eos_state%p/eos_state%rho)
+       eos_state%s = stot_row
+       eos_state%dsdT = dst_row
+       eos_state%dsdr = dsd_row
 
        do n = 1, nspec
-          dpdX(n) = dpa_row * (abar/aion(n))* &
+          eos_state%dpdX(n) = dpa_row * (abar/aion(n))* &
                                  (aion(n) - abar) + &
                     dpz_row * (abar/aion(n))* &
                                  (zion(n) - zbar)
@@ -1077,8 +1019,8 @@ contains
 
           ! create the enthalpy derivatives wrt average composition --
           ! hold pressure constant!!!
-          dhdX(n) = dEdX(n) + &
-               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
+          eos_state%dhdX(n) = dEdX(n) + &
+               (eos_state%p/eos_state%rho**2 - eos_state%dedr)*eos_state%dpdX(n)/eos_state%dpdr
 
        enddo
 
@@ -1088,16 +1030,16 @@ contains
 !---------------------------------------------------------------------------
 
        ! load the initial guess
-       temp_row = temp
-       den_row  = dens
+       temp_row = eos_state%T
+       den_row  = eos_state%rho
        abar_row = abar
        zbar_row = zbar
 
-       if (do_eos_diag) print*,'T/D INIT ',temp,dens
+       if (do_eos_diag) print*,'T/D INIT ',eos_state%T,eos_state%rho
 
        ! we want to converge to the given entropy and pressure
-       entropy_want = entropy
-       pres_want    = pres
+       entropy_want = eos_state%s
+       pres_want    = eos_state%p
 
        if (entropy_want < ZERO) then
           if (present(pt_index)) then
@@ -1272,32 +1214,32 @@ contains
 370     continue
 
        ! store the end result
-       dens = dnew
-       temp = tnew
-       eint = etot_row
-       enthalpy = eint + ptot_row/dens
+       eos_state%rho = dnew
+       eos_state%T = tnew
+       eos_state%e = etot_row
+       eos_state%h = eos_state%e + ptot_row/eos_state%rho
           
-       c_v = cv_row
-       c_p = cp_row
+       eos_state%cv = cv_row
+       eos_state%cp = cp_row
 
        ! store the number density of electrons and positrons, the degeneracy
        ! parameter, and the total electron/positron pressure
-       ne   = xne_row + xnp_row
-       eta  = etaele_row
-       pele = pele_row + ppos_row
+       eos_state%xne   = xne_row + xnp_row
+       eos_state%eta  = etaele_row
+       eos_state%pele = pele_row + ppos_row
        
-       dPdR = dpd_row
-       dPdT = dpt_row
-       dEdR = ded_row
-       dEdT = det_row   ! c_v
-       gam1 = gam1_row
-!      cs =   cs_row
-       cs =   sqrt(gam1*pres/dens)
-       dsdT = dst_row
-       dsdR = dsd_row
+       eos_state%dpdr = dpd_row
+       eos_state%dpdT = dpt_row
+       eos_state%dedr = ded_row
+       eos_state%dedT = det_row   ! c_v
+       eos_state%gam1 = gam1_row
+!      eos_state%cs =   cs_row
+       eos_state%cs =   sqrt(eos_state%gam1*eos_state%p/eos_state%rho)
+       eos_state%dsdT = dst_row
+       eos_state%dsdr = dsd_row
 
        do n = 1, nspec
-          dpdX(n) = dpa_row * (abar/aion(n))* &
+          eos_state%dpdX(n) = dpa_row * (abar/aion(n))* &
                                  (aion(n) - abar) + &
                     dpz_row * (abar/aion(n))* &
                                  (zion(n) - zbar)
@@ -1309,8 +1251,8 @@ contains
 
           ! create the enthalpy derivatives wrt average composition --
           ! hold pressure constant!!!
-          dhdX(n) = dEdX(n) + &
-               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
+          eos_state%dhdX(n) = dEdX(n) + &
+               (eos_state%p/eos_state%rho**2 - eos_state%dedr)*eos_state%dpdX(n)/eos_state%dpdr
 
        enddo
 
@@ -1321,16 +1263,16 @@ contains
 !---------------------------------------------------------------------------
 
        ! load the initial guess
-       temp_row = temp
-       den_row  = dens
+       temp_row = eos_state%T
+       den_row  = eos_state%rho
        abar_row = abar
        zbar_row = zbar
 
-       if (do_eos_diag) print*,'T/D INIT ',temp,dens
+       if (do_eos_diag) print*,'T/D INIT ',eos_state%T,eos_state%rho
 
        ! we want to converge to the given entropy and pressure
-       enthalpy_want = enthalpy
-       pres_want    = pres
+       enthalpy_want = eos_state%h
+       pres_want    = eos_state%p
 
        if (enthalpy_want < ZERO) then
           if (present(pt_index)) then
@@ -1505,32 +1447,32 @@ contains
 470     continue
 
        ! store the end result
-       dens = dnew
-       temp = tnew
-       eint = etot_row
-       entropy = stot_row
+       eos_state%rho = dnew
+       eos_state%T = tnew
+       eos_state%e = etot_row
+       eos_state%s = stot_row
           
-       c_v = cv_row
-       c_p = cp_row
+       eos_state%cv = cv_row
+       eos_state%cp = cp_row
 
        ! store the number density of electrons and positrons, the degeneracy
        ! parameter, and the total electron/positron pressure
-       ne   = xne_row + xnp_row
-       eta  = etaele_row
-       pele = pele_row + ppos_row
+       eos_state%xne   = xne_row + xnp_row
+       eos_state%eta  = etaele_row
+       eos_state%pele = pele_row + ppos_row
        
-       dPdR = dpd_row
-       dPdT = dpt_row
-       dEdR = ded_row
-       dEdT = det_row   ! c_v
-       gam1 = gam1_row
-!      cs =   cs_row
-       cs =   sqrt(gam1*pres/dens)
-       dsdT = dst_row
-       dsdR = dsd_row
+       eos_state%dpdr = dpd_row
+       eos_state%dpdT = dpt_row
+       eos_state%dedr = ded_row
+       eos_state%dedT = det_row   ! c_v
+       eos_state%gam1 = gam1_row
+!      eos_state%cs =   cs_row
+       eos_state%cs =   sqrt(eos_state%gam1*eos_state%p/eos_state%rho)
+       eos_state%dsdT = dst_row
+       eos_state%dsdr = dsd_row
 
        do n = 1, nspec
-          dpdX(n) = dpa_row * (abar/aion(n))* &
+          eos_state%dpdX(n) = dpa_row * (abar/aion(n))* &
                                  (aion(n) - abar) + &
                     dpz_row * (abar/aion(n))* &
                                  (zion(n) - zbar)
@@ -1542,8 +1484,8 @@ contains
 
           ! create the enthalpy derivatives wrt average composition --
           ! hold pressure constant!!!
-          dhdX(n) = dEdX(n) + &
-               (pres/dens**2 - dEdR)*dpdX(n)/dPdr
+          eos_state%dhdX(n) = dEdX(n) + &
+               (eos_state%p/eos_state%rho**2 - eos_state%dedr)*eos_state%dpdX(n)/eos_state%dpdr
 
        enddo
 
@@ -1566,6 +1508,6 @@ contains
 
 
     return
-  end subroutine eos_old
+  end subroutine eos_new
 
 end module eos_module

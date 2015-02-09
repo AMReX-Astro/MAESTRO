@@ -57,7 +57,8 @@ contains
 
     use network
     use eos_module
-
+    use eos_type_module
+    
     implicit none
 
     ! arguments
@@ -78,6 +79,8 @@ contains
 
     double precision orad, ocond, opac
 
+    type (eos_t) :: eos_state
+    
     ! local
     integer i
 
@@ -85,15 +88,36 @@ contains
     !..you can download this eos from fxt's eos code webpage
     !..see the end of this file for how its brought in
 
-    call eos(input, dens, temp, &
-             xmass, & 
-             pres, enthalpy, eint, &
-             c_v, c_p, ne, eta, pele, &
-             dPdT, dPdR, dEdT, dEdR, &
-             dPdX, dhdX, &
-             gam1, cs, entropy, &
-             dsdT, dsdR, &
-             do_eos_diag)
+    eos_state%rho = dens
+    eos_state%T = temp
+    eos_state%xn = xmass
+    eos_state%p = pres
+    eos_state%h = enthalpy
+    eos_state%e = eint
+    
+    call eos(input, eos_state, do_eos_diag)
+
+    dens = eos_state%rho
+    temp = eos_state%T
+    pres = eos_state%p
+    enthalpy = eos_state%h
+    eint = eos_state%e
+    c_v = eos_state%cv
+    c_p = eos_state%cp
+    ne = eos_state%xne
+    eta = eos_state%eta
+    pele = eos_state%pele
+    dpdT = eos_state%dpdT
+    dPdR = eos_state%dpdr
+    dEdT = eos_state%dedT
+    dEdR = eos_state%dedr
+    dPdX = eos_state%dpdX
+    dhdX = eos_state%dhdX
+    gam1 = eos_state%gam1
+    cs = eos_state%cs
+    entropy = eos_state%s
+    dsdT = eos_state%dsdT
+    dsdR = eos_state%dsdr
 
     !..one *must* always call the eos before calling the opacity routine 
     !..since some of the required input must come from an eos
