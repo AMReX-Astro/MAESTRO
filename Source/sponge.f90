@@ -53,8 +53,6 @@ contains
     r_top = prob_lo_r + dble(r_end_coord(1,1)+1) * dr(1)
     r_sp = r_top
 
-    print *, "in init_sponge!!!!!!!!!!!!!!!!!!!!"
-    
     sponge_start_density = sponge_start_factor*sponge_center_density
 
     ! set r_sp
