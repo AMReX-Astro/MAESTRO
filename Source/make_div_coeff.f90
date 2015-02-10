@@ -185,11 +185,6 @@ contains
 
                 ! Compare the difference between beta0 at the top of level n to the 
                 ! corresponding point on level n-1
-
-                print*,'here',n
-                print*,beta0_edge(n,r_end_coord(n,j)+1)
-                print*,beta0_edge(n-1,(r_end_coord(n,j)+1)/2)
-
                 offset = beta0_edge(n,r_end_coord(n,j)+1) &
                      - beta0_edge(n-1,(r_end_coord(n,j)+1)/2)
 
