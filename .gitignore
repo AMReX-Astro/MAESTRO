@@ -19,6 +19,7 @@ MaestroUsersGuide.out
 \#*
 
 
+
 # Maestro files created at compile-time
 probin.f90
 build_info.f90
@@ -30,3 +31,12 @@ main.*.exe
 
 # build stuff
 t/
+
+
+# runtime files
+maestro-overview.out
+*diag.out
+plt?????
+chk?????
+*plt?????
+*chk?????

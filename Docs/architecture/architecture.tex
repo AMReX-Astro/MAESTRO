@@ -49,7 +49,7 @@ distributed separately.
 \includegraphics[scale=0.55]{\archfigpath/maestro_ecosystem2}
 \caption[\maestro\ `ecosystem'] {\label{fig:arch:eco} The basic
   \maestro\ `ecosystem'.  Here we see the different packages that
-  contribute to building the {\tt test2} problem in \maestro.  The
+  contribute to building the {\tt reacting\_bubble} problem in \maestro.  The
   red directories are part of most standard \maestro\ build.  The
   purple lines show the directories that are pulled in through
   various Makefile variables ({\tt BOXLIB\_HOME}, {\tt NETWORK\_DIR},
@@ -485,7 +485,7 @@ be found in \S~\ref{sec:initial_models_main}.
 
 The best way to customize the initialization (e.g.\ add perturbations)
 is to copy from one of the existing problems.  The file \code{initveldata.f90} controls the velocity field initialization and \code{initscaldata.f90} controls the initialization of the scalars
-($\rho$, $\rho X_k$, $\rho h$).  The {\tt test2} problem is a good
+($\rho$, $\rho X_k$, $\rho h$).  The {\tt reacting\_bubble} problem is a good
 starting point for plane-parallel and {\tt wdconvect} is a good
 starting point for full stars.
 
