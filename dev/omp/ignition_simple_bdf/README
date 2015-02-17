@@ -1,0 +1,2 @@
+This is an implementation of Maestro's ignition_simple reaction network
+making use of Matthew Emmett's BDF integrator (instead of DVODE).
