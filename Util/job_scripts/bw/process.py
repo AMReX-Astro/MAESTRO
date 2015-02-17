@@ -464,9 +464,17 @@ class Archiver(object):
       for f in os.listdir('.'):
          #Is this a mae file with the right prefix?
          maeregex = '.*(' + prefix + ')([0-9]{5,6})$'
+         if DEBUG:
+            print 'checking ', f
          if isdir(f):
+            if DEBUG:
+               print 'is dir!'
             if match(maeregex, f) and f not in proc_set:
-               if isfile(join(f,'HEADER')):  #Only add fully written files, i.e. those with HEADER
+               if DEBUG:
+                  print 'regex match!'
+               if isfile(join(f,'Header')):  #Only add fully written files, i.e. those with HEADER
+                  if DEBUG:
+                     print 'found ', f
                   maelist.append(f)
       maelist.sort()
       return maelist[:-new_thresh]  #Will return empty list if len <= 2
