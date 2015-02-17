@@ -146,6 +146,9 @@ contains
   ! See the DVODE source code's extensive comments for an explanation of this
   ! interface.
   !
+  ! TODO: Delete this old wrapper code once things are finalized and you're sure
+  ! you don't need it.
+  !
   
   !subroutine bdf_wrap(f, neq, y, t, tout, itol, rtol, atol, itask, &
   !    istate, iopt, rwork, lrw, iwork, liw, jac, mf,    &
@@ -256,10 +259,12 @@ contains
   ! Advance system from t0 to t1.
   !
   subroutine bdf_advance(ts, f, Jac, neq, npt, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
+    use rpar_indices
+    use network
     type(bdf_ts), intent(inout) :: ts
     integer,      intent(in   ) :: neq, npt
-    real(dp_t),   intent(in   ) :: y0(neq,npt), t0, t1, dt0
-    real(dp_t),   intent(  out) :: y1(neq,npt)
+    real(kind=dp_t),   intent(in   ) :: y0(neq,npt), t0, t1, dt0
+    real(kind=dp_t),   intent(  out) :: y1(neq,npt)
     logical,      intent(in   ) :: reset, reuse
     integer,      intent(  out) :: ierr
     logical,      intent(in   ), optional :: initial_call
@@ -267,23 +272,24 @@ contains
        subroutine f(neq, npt, y, t, yd, upar)
          import dp_t
          integer,    intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
-         real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(inout), optional :: upar(:,:)
+         real(kind=dp_t), intent(in   ) :: y(neq,npt), t(npt)
+         real(kind=dp_t), intent(  out) :: yd(neq,npt)
+         real(kind=dp_t), intent(inout), optional :: upar(:,:)
        end subroutine f
        subroutine Jac(neq, npt, y, t, J, upar)
          import dp_t
          integer,    intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
-         real(dp_t), intent(  out) :: J(neq, neq, npt)
-         real(dp_t), intent(inout), optional :: upar(:,:)
+         real(kind=dp_t), intent(in   ) :: y(neq,npt), t(npt)
+         real(kind=dp_t), intent(  out) :: J(neq, neq, npt)
+         real(kind=dp_t), intent(inout), optional :: upar(:,:)
        end subroutine Jac
     end interface
 
+    external f_rhs
     type(bdf_ts) :: ts_local
-    integer  :: k, p, m, index_map(npt)
+    integer  :: k, p, m, index_map(npt), iierr, niter
     logical  :: retry, linitial
-    real(kind=dp_t) :: r1, r2
+    real(kind=dp_t) :: r1, r2, yy(neq), ttemp(neq), h0
 
     linitial = .false.; if (present(initial_call)) linitial = initial_call
 
@@ -299,10 +305,20 @@ contains
     call bdf_ts_build(ts_local, ts%neq, ts%npt, ts%rtol, ts%atol, &
                       ts%max_order, ts%upar)
     call bdf_ts_globalcopy(ts, ts_local)
+    call ewts(ts_local)
     do p = 1, npt
        call bdf_ts_ptcopy(ts, p, ts_local, p)
+       call dvhin(ts_local%neq, t0, ts_local%y(:,p),ts_local%yd(:,p), &
+                  f_rhs, ts_local%upar(:,p), -1, t1, epsilon(t1),     &
+                  ts_local%ewt(:,p), 2, ts_local%atol, yy, ttemp, h0, &
+                  niter, iierr)
+       ts_local%dt(p) = h0
+       !print *, 'dt0: ',  dt0
+       !print *, 'h0: ',   h0
+       !print *, 'ierr: ', iierr
     enddo
     do k = 1, bdf_max_iters + 1
+       !print *, 'iterating with', ts_local%npt, 'points'
        !print *, 'bdf iter ', k
        !call flush()
        if (ts_local%n > ts_local%max_steps .or. k > bdf_max_iters) then
@@ -312,19 +328,19 @@ contains
        if (k == 1) &
             call bdf_dump(ts_local)
 
-       r1 = parallel_wtime()
+       !r1 = parallel_wtime()
        !print *, 'call update... '
        !call flush()
        call bdf_update(ts_local)                ! update various coeffs (l, tq) based on time-step history
-       r2 = parallel_wtime() - r1
-       update_total = update_total + r2
+       !r2 = parallel_wtime() - r1
+       !update_total = update_total + r2
 
-       r1 = parallel_wtime()
+       !r1 = parallel_wtime()
        !print *, 'call predict... '
        !call flush()
        call bdf_predict(ts_local)               ! predict nordsieck array using pascal matrix
-       r2 = parallel_wtime() - r1
-       predict_total = predict_total + r2
+       !r2 = parallel_wtime() - r1
+       !predict_total = predict_total + r2
        if(linitial .and. k == 1) then
           !print *, 'initial call... '
           !call flush()
@@ -337,32 +353,32 @@ contains
              end do
           end do
        endif
-       r1 = parallel_wtime()
+       !r1 = parallel_wtime()
        !print *, 'call solve... '
        !call flush()
        call bdf_solve(ts_local, f, Jac)         ! solve for y_n based on predicted y and yd
-       r2 = parallel_wtime() - r1
-       solve_total = solve_total + r2
-       r1 = parallel_wtime()
+       !r2 = parallel_wtime() - r1
+       !solve_total = solve_total + r2
+       !r1 = parallel_wtime()
        !print *, 'call check... '
        !call flush()
        call bdf_check(ts_local, retry, ierr)    ! check for solver errors and test error estimate
-       r2 = parallel_wtime() - r1
-       check_total = check_total + r2
+       !r2 = parallel_wtime() - r1
+       !check_total = check_total + r2
 
        if (ierr /= BDF_ERR_SUCCESS) return
        if (retry) cycle
 
-       r1 = parallel_wtime()
+       !r1 = parallel_wtime()
        !print *, 'call correct... '
        !call flush()
        call bdf_correct(ts_local)               ! new solution looks good, correct history and advance
-       r2 = parallel_wtime() - r1
-       correct_total = correct_total + r2
+       !r2 = parallel_wtime() - r1
+       !correct_total = correct_total + r2
 
        call bdf_dump(ts_local)
        !print *, 'call prune... '
-       call flush()
+       !call flush()
        if (maxval(ts_local%t) >= t1) then
           !p = 1
           !do while(p <= ts_local%npt)
@@ -383,13 +399,12 @@ contains
           if (ts_local%npt == 0) exit
        endif
 
-       r1 = parallel_wtime()
+       !r1 = parallel_wtime()
        !print *, 'call adjust... '
        !call flush()
        call bdf_adjust(ts_local)                ! adjust step-size/order
-       r2 = parallel_wtime() - r1
-       adjust_total = adjust_total + r2
-       !print *, 'end bdf iter ', k
+       !r2 = parallel_wtime() - r1
+       !adjust_total = adjust_total + r2
     end do
 
     !print *, "bdf_solve's init_time:  ", init_time
@@ -404,6 +419,24 @@ contains
          ts%n, ts%nfe, ts%nje, ts%nlu, ts%nit, ts%nse, minval(ts%dt), minval(ts%k)
 
     y1 = ts%z(:,:,0)
+
+    contains
+      subroutine f_vode(neq, t, y, yd, rpar, ipar)
+        integer,         intent(in   ) :: neq, ipar(*)
+        real(kind=dp_t), intent(in   ) :: y(neq), t
+        real(kind=dp_t), intent(  out) :: yd(neq)
+        real(kind=dp_t), intent(inout) :: rpar(*)
+
+        real(kind=dp_t) :: y_bdf(neq,1), yd_bdf(neq,1), t_bdf(1)
+        real(kind=dp_t), allocatable :: rpar_bdf(:,:)
+        integer :: rp_n
+        t_bdf(1) = t
+        rp_n = size(ts%upar,1)
+        allocate(rpar_bdf(rp_n, 1))
+        rpar_bdf(:,1) = rpar(1:rp_n)
+
+        call f(neq, 1, y_bdf, t_bdf, yd_bdf, rpar_bdf)
+      end subroutine
   end subroutine bdf_advance
 
   !
@@ -511,7 +544,6 @@ contains
   !   G(y) = y - dt * f(y,t) - rhs
   !
   subroutine bdf_solve(ts, f, Jac)
-    !$acc routine(dgefa) seq
     type(bdf_ts), intent(inout) :: ts
     interface
        subroutine f(neq, npt, y, t, yd, upar)
@@ -536,8 +568,7 @@ contains
     real(dp_t) :: c(ts%npt), dt_adj(ts%npt), dt_rat(ts%npt), inv_l1, r1, r11, r2
     logical  :: rebuild, iterating(ts%npt)
 
-    !TODO: GPU
-    r1 = parallel_wtime()
+    !r1 = parallel_wtime()
     do p = 1, ts%npt
        do m = 1, ts%neq
           inv_l1 = 1.0_dp_t / ts%l(1,p)
@@ -546,8 +577,8 @@ contains
           ts%y(m,p)   = ts%z0(m,p,0)
        end do
     end do
-    r2 = parallel_wtime()
-    init_time = init_time + (r2 - r1)
+    !r2 = parallel_wtime()
+    !init_time = init_time + (r2 - r1)
     dt_adj    = ts%dt / ts%l(1,:)
 
     dt_rat = dt_adj / ts%dt_nwt
@@ -557,11 +588,11 @@ contains
 
     iterating = .true.
 
-    r1 = parallel_wtime()
+    !r1 = parallel_wtime()
     do k = 1, ts%max_iters
 
        ! build iteration matrix and factor
-       r11 = parallel_wtime()
+       !r11 = parallel_wtime()
        if (ts%refactor) then
           rebuild = .true.
           if (ts%ncse == 0 .and. maxval(ts%j_age) < ts%max_j_age) rebuild = .false.
@@ -576,16 +607,12 @@ contains
           call eye_r(ts%P)
          
           !This spawns redudantly executing threads on each gang
-          !$acc parallel copy(ts)                                              &
-          !$acc   firstprivate(dt_adj) private(info, p, m, n)                       
          
           !This distributes the iterations of the p-loop across gangs and the
           !workers within each gang. 
-          !$acc loop gang worker private(info, p, m, n)
           do p = 1, ts%npt
              !This collapses the two loops into one and distributes the new
              !single loop's iterations across the SIMD vectors of each worker
-             !$acc loop vector collapse(2) private(n,m,info)
              do m = 1, ts%neq
                 do n = 1, ts%neq
                    ts%P(n,m,p) = ts%P(n,m,p) - dt_adj(p) * ts%J(n,m,p)
@@ -594,7 +621,6 @@ contains
              call dgefa(ts%P(:,:,p), ts%neq, ts%neq, ts%ipvt(:,p), info)
              ! lapack      call dgetrf(neq, neq, ts%P, neq, ts%ipvt, info)
           end do
-          !$acc end parallel
 
           ts%nlu = ts%nlu + ts%npt !The number of times dgefa was called above
           
@@ -612,20 +638,18 @@ contains
           ts%p_age  = 0
           ts%refactor  = .false.
        end if
-       r2 = parallel_wtime()
-       refac_time = refac_time + (r2 - r11)
+       !r2 = parallel_wtime()
+       !refac_time = refac_time + (r2 - r11)
 
        c = 2 * ts%dt_nwt / (dt_adj + ts%dt_nwt)
 
-       !TODO: Compile on GPU
-       r11 = parallel_wtime()
+       !r11 = parallel_wtime()
        call f(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
        ts%nfe = ts%nfe + 1
-       r2 = parallel_wtime()
-       feval_time = feval_time + (r2 - r11)
+       !r2 = parallel_wtime()
+       !feval_time = feval_time + (r2 - r11)
 
-       !TODO: GPU
-       r11 = parallel_wtime()
+       !r11 = parallel_wtime()
        do p = 1, ts%npt
           if (.not. iterating(p)) cycle
           !if (p == 11950) then
@@ -646,7 +670,6 @@ contains
              !  print *, '    yd:  ', ts%yd(m,p)
              !endif
           end do
-          !TODO: Compile on GPU
           call dgesl(ts%P(:,:,p), ts%neq, ts%neq, ts%ipvt(:,p), ts%b(:,p), 0)
           ! lapack   call dgetrs ('N', neq, 1, ts%P, neq, ts%ipvt, ts%b, neq, info)
           ts%nit = ts%nit + 1
@@ -666,14 +689,14 @@ contains
           end do
           if (norm(ts%b(:,p), ts%ewt(:,p)) < one) iterating(p) = .false.
        end do
-       r2 = parallel_wtime()
-       slv_time = slv_time + (r2 - r11)
+       !r2 = parallel_wtime()
+       !slv_time = slv_time + (r2 - r11)
 
        if (.not. any(iterating)) exit
 
     end do
-    r2 = parallel_wtime()
-    kl_time = kl_time + (r2 - r1)
+    !r2 = parallel_wtime()
+    !kl_time = kl_time + (r2 - r1)
 
     ts%ncit = k; ts%p_age = ts%p_age + 1; ts%j_age = ts%j_age + 1
     !print *, "k:   ", k
@@ -783,31 +806,33 @@ contains
   subroutine bdf_adjust(ts)
     type(bdf_ts), intent(inout) :: ts
 
-    real(dp_t) :: c, error(ts%npt), eta(-1:1,ts%npt), rescale, etamax(ts%npt), etaminmax, delta(ts%npt)
+    real(dp_t) :: c, error, eta(-1:1,ts%npt), rescale, etamax(ts%npt), etaminmax, delta(ts%npt)
     integer  :: p
 
+    ! initialize
+    rescale = 0
+    eta = 0
+    etamax = -1.0
     rescale = 0
 
     do p = 1, ts%npt
        ! compute eta(k-1), eta(k), eta(k+1)
-       eta(:,p) = 0
-       error(p)  = ts%tq(0,p) * norm(ts%e(:,p), ts%ewt(:,p))
-       eta(0,p) = one / ( (6.d0 * error(p)) ** (one / ts%k(p)) + 1.d-6 )
+       error  = ts%tq(0,p) * norm(ts%e(:,p), ts%ewt(:,p))
+       eta(0,p) = one / ( (6.d0 * error) ** (one / ts%k(p)) + 1.d-6 )
        if (ts%k_age(p) > ts%k(p)) then
           if (ts%k(p) > 1) then
-             error(p)     = ts%tq(-1,p) * norm(ts%z(:,p,ts%k(p)), ts%ewt(:,p))
-             eta(-1,p) = one / ( (6.d0 * error(p)) ** (one / ts%k(p)) + 1.d-6 )
+             error     = ts%tq(-1,p) * norm(ts%z(:,p,ts%k(p)), ts%ewt(:,p))
+             eta(-1,p) = one / ( (6.d0 * error) ** (one / ts%k(p)) + 1.d-6 )
           end if
           if (ts%k(p) < ts%max_order) then
              c = (ts%tq(2,p) / ts%tq2save(p)) * (ts%h(0,p) / ts%h(2,p)) ** (ts%k(p)+1)
              error  = ts%tq(1,p) * norm(ts%e(:,p) - c * ts%e1(:,p), ts%ewt(:,p))
-             eta(1,p) = one / ( (10.d0 * error(p)) ** (one / (ts%k(p)+2)) + 1.d-6 )
+             eta(1,p) = one / ( (10.d0 * error) ** (one / (ts%k(p)+2)) + 1.d-6 )
           end if
           ts%k_age(p) = 0
        end if
 
        ! choose which eta will maximize the time step
-       etamax(p) = 0
        if (eta(-1,p) > etamax(p)) then
           etamax(p) = eta(-1,p)
           delta(p)  = -1
@@ -840,11 +865,12 @@ contains
           call rescale_timestep(ts, rescale, p)
        end if
    
-       ! save for next step (needed to compute eta(1))
-       ts%e1(:,p) = ts%e(:,p)
-       ts%tq2save(p) = ts%tq(2,p)
 
     end do
+    
+    ! save for next step (needed to compute eta(1))
+    ts%e1 = ts%e
+    ts%tq2save = ts%tq(2,:)
 
     !NOTE: The below commented out section is what we did when we had shared dt's
     !
@@ -1128,8 +1154,10 @@ contains
 
      !Check if any points remain
      if (all(remove_me)) then
-        !No need to build ts_new -- we pruned all the points
+        !No need to build ts_old -- we pruned all the points
+        !Just copy over the globals
         ts_sub%npt = 0
+        call bdf_ts_globalcopy(ts_sub, ts_master)
         print *, 'Last point!'
         return
      endif
@@ -1141,7 +1169,6 @@ contains
      do p = 1, ts_sub%npt
         call bdf_ts_ptcopy(ts_sub, p, ts_old, p)
      enddo
-
      !Now, rebuild ts_sub with only points that need more iterations
      call bdf_ts_destroy(ts_sub)
      call bdf_ts_build(ts_sub, ts_old%neq, ts_old%npt-count(remove_me), &
@@ -1175,7 +1202,6 @@ contains
      if(ts_dst%max_order /= ts_src%max_order) then
         call bl_error('unequal max_orders!')
      endif
-
      ts_dst%t(p_dst)       = ts_src%t(p_src)
      ts_dst%dt(p_dst)      = ts_src%dt(p_src)
      ts_dst%dt_nwt(p_dst)  = ts_src%dt_nwt(p_src)
@@ -1183,20 +1209,13 @@ contains
      ts_dst%j_age(p_dst)   = ts_src%j_age(p_src)
      ts_dst%p_age(p_dst)   = ts_src%p_age(p_src)
      ts_dst%k_age(p_dst)   = ts_src%k_age(p_src)
-     ts_dst%tq(-1:2,p_dst) = ts_src%tq(-1:2,p_src)
-     !ts_dst%tq(:,p_dst) = ts_src%tq(:,p_src)
+     ts_dst%tq(:,p_dst)    = ts_src%tq(:,p_src)
      ts_dst%tq2save(p_dst) = ts_src%tq2save(p_src)
      ts_dst%J(:,:,p_dst)   = ts_src%J(:,:,p_src)
      ts_dst%P(:,:,p_dst)   = ts_src%P(:,:,p_src)
-     !ts_dst%z(:,p_dst,0:ts_dst%max_order) = &
-     !   ts_src%z(:,p_src,0:ts_src%max_order)
-     ts_dst%z(:,p_dst,:) = ts_src%z(:,p_src,:)
-     !ts_dst%z0(:,p_dst,0:ts_dst%max_order) = &
-     !   ts_src%z0(:,p_src,0:ts_src%max_order)
-     ts_dst%z0(:,p_dst,:) = ts_src%z0(:,p_src,:)
-     !ts_dst%h(0:ts_dst%max_order,p_dst)     = ts_src%h(0:ts_src%max_order,p_src)
+     ts_dst%z(:,p_dst,:)   = ts_src%z(:,p_src,:)
+     ts_dst%z0(:,p_dst,:)  = ts_src%z0(:,p_src,:)
      ts_dst%h(:,p_dst)     = ts_src%h(:,p_src)
-     !ts_dst%l(0:ts_dst%max_order,p_dst)     = ts_src%l(0:ts_src%max_order,p_src)
      ts_dst%l(:,p_dst)     = ts_src%l(:,p_src)
      ts_dst%upar(:,p_dst)  = ts_src%upar(:,p_src)
      ts_dst%y(:,p_dst)     = ts_src%y(:,p_src)
@@ -1294,7 +1313,7 @@ contains
     ts%npt        = npt
     ts%max_order  = max_order
     ts%max_steps  = 1000000
-    ts%max_iters  = 10
+    ts%max_iters  = 100
     ts%verbose    = 0
     ts%dt_min     = epsilon(ts%dt_min)
     !ts%dt_min     = 1.0e-13_dp_t 
