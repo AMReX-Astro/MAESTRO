@@ -437,6 +437,8 @@ contains
     use probin_module, only : nodal
     use variables    , only : nscal, rho_comp, foextrap_comp
 
+    use fabio_module
+
     integer                    , intent(in   ) :: lev, dm, ng_s, rr(:)
     type(layout)               , intent(in   ) :: la
     type(ml_layout)            , intent(in   ) :: mla_temp
@@ -452,10 +454,13 @@ contains
     call multifab_build(  uold(lev), la,    dm, ng_s)
     call multifab_build(  sold(lev), la, nscal, ng_s)
     call multifab_build(   gpi(lev), la,    dm, 0)
-    call multifab_build(    pi(lev), la,     1, 0, nodal)
     call multifab_build(  dSdt(lev), la,     1, 0)
     call multifab_build(   src(lev), la,     1, 0)
     call multifab_build(rhoHdot(lev),la,     1, 0)
+
+    call multifab_build(    pi(lev), la,     1, 0, nodal)
+    ! need to initialize to zero for ml_nodal_prolongation
+    call multifab_setval(pi(lev),0.d0,all=.true.)
 
     ! Fill the data in the new level lev state -- first from the coarser data if lev > 1.
 

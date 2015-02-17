@@ -127,8 +127,9 @@ Several files are created at build-time:
   created by the script
   {\tt write\_probin.py} in {\tt \$\{BOXLIB\_HOME\}/Tools/F\_scripts/}.  The
   makefile logic for creating it is in {\tt GMaestro.mak}.  At compile
-  time, the problem, main {\tt MAESTRO/}, and {\tt extern/}
-  directories are searched for {\tt \_parameter} files.  These files
+  time, the problem, main {\tt MAESTRO/}, and any microphysics
+  directories (set from the {\tt EOS\_DIR}, {\tt CONDUCTIVITY\_DIR}, and {\tt NETWORK\_DIR} parameters in the {\tt GNUmakefile}
+  are searched for {\tt \_parameter} files.  These files
   are parsed and the {\tt probin.f90} file is output containing the 
   runtime parameters, their default values, and the logic for reading
   and interpreting the inputs file.
@@ -150,7 +151,7 @@ Several files are created at build-time:
   user to define a list of non-reacting species builds the {\tt
   network.f90} based on this list.  The makefile logic for building
   the {\tt network.f90} is in the {\tt GPackage.mak} in {\tt
-  extern/networks/general\_null}.  The script {\tt write\_network.py}
+  Microphysics/networks/general\_null}.  The script {\tt write\_network.py}
   in that directory does the actual parsing of the species file and
   outputs the {\tt network.f90}.
 
@@ -191,15 +192,17 @@ in the problem's {\tt GNUmakefile}.
 \begin{itemize}
 \item {\tt EOS\_DIR}:
 
-  This variable points to the directory (by default, relative to {\tt Microphysics/EOS/}) of
-  the equation of state used for the build.  Choices that work
-  with \maestro\ are:
+  This variable points to the directory (by default, relative to {\tt
+  Microphysics/EOS/}) of the equation of state used for the build.
+  Choices that work with \maestro\ are:
   \begin{itemize}
-  \item {\tt extern/EOS/helmeos}
-  \item {\tt extern/EOS/gamma\_law\_general}
+  \item {\tt helmeos}
+  \item {\tt gamma\_law\_general}
+  \item {\tt multigamma}
   \end{itemize}
-  To use an EOS contained in a different location, set the variable {\tt EOS\_TOP\_DIR}
-  to point to the directory above the alternate EOS directory.
+  To use an EOS contained in a different location, set the variable {\tt
+  EOS\_TOP\_DIR} to point to the directory above the alternate EOS
+  directory.
 
 \item {\tt CONDUCTIVITY\_DIR}:
 
@@ -208,12 +211,12 @@ in the problem's {\tt GNUmakefile}.
   that work with \maestro\ are: 
   %
   \begin{itemize} 
-  \item {\tt extern/conductivity/constant} 
-  \item {\tt extern/conductivity/timmes\_stellar} 
+  \item {\tt constant} 
+  \item {\tt timmes\_stellar} 
   \end{itemize} 
   % 
   If diffusion is not being used for the problem, this should be set
-  to {\tt extern/conductivity/constant}.  To use an alternate conductivity
+  to {\tt constant}.  To use an alternate conductivity
   routine, set the variable {\tt CONDUCTIVITY\_TOP\_DIR} to point
   to the directory above the alternate conductivity directory.
 
@@ -221,11 +224,11 @@ in the problem's {\tt GNUmakefile}.
 
   This variable points to the reaction network used for the build (by
   default, relative to {\tt Microphysics/networks/}).  Several options
-  are present in {\tt extern/networks/}.  A network is required even
+  are present in {\tt Microphysics/networks/}.  A network is required even
   if you are not doing reactions, since the network defines the
   species that are advected and interpreted by the equation of state.
 
-  A special choice, {\tt extern/networks/general\_null} is a general
+  A special choice, {\tt Microphysics/networks/general\_null} is a general
   network that simply defines the properties of one or more species.
   This requires an inputs file, specified by {\tt
   GENERAL\_NET\_INPUTS}.  This inputs file is read at compile-time and

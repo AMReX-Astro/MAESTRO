@@ -17,7 +17,7 @@ generate our initial model either analytically or from raw data,
 $\rho^{\raw}, T^{\raw}, p^{\raw}$, and $X^{\raw}$.  Here is the raw
 data file for each test problem:
 \begin{eqnarray}
-{\tt test2} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \nonumber \\
+{\tt reacting\_bubble} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \nonumber \\
 {\tt test\_convect} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \nonumber \\
 {\tt wdconvect} & \rightarrow & {\tt model\_6.e8.raw} \nonumber \\
 {\tt spherical\_heat} & \rightarrow & \mathrm{none-it~ is~ generated~ analytically} \nonumber \\
@@ -35,7 +35,7 @@ state (EOS), and also satisfies our chosen hydrostatic equilibrium
 \end{equation}
 to a user defined tolerance.  Here are the fortran subroutines for each test problem:
 \begin{eqnarray}
-{\tt test2} & \rightarrow & {\tt Util/initial\_models/test2/init\_1d.f90} \nonumber \\
+{\tt reacting\_bubble} & \rightarrow & {\tt Util/initial\_models/test2/init\_1d.f90} \nonumber \\
 {\tt test\_convect} & \rightarrow & {\tt Util/initial\_models/test2/init\_1d.f90} \nonumber \\
 {\tt wdconvect} & \rightarrow & none\footnotemark \nonumber \\
 {\tt spherical\_heat} & \rightarrow & {\tt Util/initial\_models/spherical/init\_1d.f90} \nonumber \\

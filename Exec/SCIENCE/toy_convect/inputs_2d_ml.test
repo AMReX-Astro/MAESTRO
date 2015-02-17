@@ -1,27 +1,64 @@
 &PROBIN
+
+ ! initial model
  model_file = "toy_nova_constg_tanh2.hse.smooth_3.00.1024"
 
- spherical_in = 0
 
+ ! gridding and geometry
  max_levs = 4
  n_cellx = 64
  n_celly = 128
-
- do_heating = T
- species_pred_type = 3
- enthalpy_pred_type = 3
- drive_initial_convection = F
 
  max_grid_size = 64
 
  regrid_int = 2	
  amr_buf_width = 4
- 
+
+ spherical_in = 0
+
  prob_lo_x = 0.0d0
  prob_hi_x = 7.5d7
+
  prob_lo_y = 3.5d8
  prob_hi_y = 5.d8
 
+ xlo_boundary_type = "periodic"
+ xhi_boundary_type = "periodic"
+
+ ylo_boundary_type = "slip wall"
+ yhi_boundary_type = "outlet"
+
+
+ ! stepping
+ max_step  = 200
+ stop_time = 5.d2
+
+ cflfac = 0.7d0
+
+ init_shrink = 0.1
+ use_soundspeed_firstdt = T
+ max_dt_growth = 1.1
+
+
+ ! algorithm details
+ verbose = 1
+ 
+ do_heating = T
+ do_burning = F
+
+ species_pred_type = 3
+ enthalpy_pred_type = 3
+
+ drive_initial_convection = F
+
+ use_tfromp = F
+ dpdt_factor = 0.0d0
+ use_eos_coulomb = T
+
+ grav_const = -1.04263053d9
+
+
+ ! cutoffs
  anelastic_cutoff = 50.d0
  base_cutoff_density = 25.0d0
  buoyancy_cutoff_factor = 2.d0
@@ -31,17 +68,19 @@
  sponge_start_factor = 2.0d0
  sponge_kappa = 1000.d0
 
- grav_const = -1.04263053d9
 
- max_step  = 200
- stop_time = 5.d2
+ ! multigrid
+ mg_verbose = 1
+ cg_verbose = 0
 
+
+ ! initialization
  do_initial_projection = T
  init_divu_iter = 4
  init_iter = 1
 
 
-
+ ! I/O
  plot_base       = T
  plot_int        = -1
  plot_deltat     = 1.d0
@@ -50,29 +89,11 @@
  chk_int         = 1000
  check_base_name = "chk"
 
- cflfac = 0.7d0
- init_shrink = 0.1
- use_soundspeed_firstdt = T
- max_dt_growth = 1.1
-
- bcx_lo = -1
- bcx_hi = -1
- bcy_lo = 14
- bcy_hi = 12
-
-    verbose = 1
- mg_verbose = 1
- cg_verbose = 0
-
- use_tfromp = F
- dpdt_factor = 0.0d0
- use_eos_coulomb = T
-
- do_burning = F
-
  plot_Hext = T
  plot_ad_excess = T
 
+
+ ! perturbation
  apply_vel_field = T
  velpert_height_loc = 3.95e8
  velpert_scale = 1.d6

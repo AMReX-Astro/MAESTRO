@@ -15,7 +15,7 @@ contains
     use parallel, only: parallel_IOProcessor
     use sponge_module, only: sponge_start_density
     use probin_module, only: buoyancy_cutoff_factor, base_cutoff_density, &
-                             anelastic_cutoff, small_dens, small_temp
+                             anelastic_cutoff, small_dens, small_temp, do_sponge
     use model_parser_module, only: model_initialized, model_state, &
                                    idens_model, itemp_model
     use bl_error_module, only: bl_error
@@ -69,7 +69,9 @@ contains
        call log('        (for zeroing rho - rho_0, centrifugal term) = ', &
             buoyancy_cutoff_factor*base_cutoff_density)
        call log('    anelastic cutoff =                                ', anelastic_cutoff)
-       call log('    sponge start density =                            ', sponge_start_density)
+       if (do_sponge) then
+          call log('    sponge start density =                            ', sponge_start_density)
+       endif
        call log(' ')
        call log('thermodynamics cutoffs:')
        call log('    EOS temperature floor =                           ', small_temp)
@@ -125,15 +127,17 @@ contains
     endif
 
 
-    if (buoyancy_cutoff_factor*base_cutoff_density > sponge_start_density) then
-       if ( parallel_IOProcessor() ) then
-          call log(' ')
-          call log('WARNING: buoyancy cutoff occurs at densities greater than those sponged')
-          call log('         The buoyancy_cutoff_factor should be lowered to ensure the')
-          call log('         buoyancy cutoff occurs within the sponged region')
+    if (do_sponge) then
+       if (buoyancy_cutoff_factor*base_cutoff_density > sponge_start_density) then
+          if ( parallel_IOProcessor() ) then
+             call log(' ')
+             call log('WARNING: buoyancy cutoff occurs at densities greater than those sponged')
+             call log('         The buoyancy_cutoff_factor should be lowered to ensure the')
+             call log('         buoyancy cutoff occurs within the sponged region')
+          endif
        endif
     endif
-
+    
 
     if ( parallel_IOProcessor() ) then
        ! close the cutoff density output block

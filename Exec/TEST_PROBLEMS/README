@@ -7,19 +7,21 @@ incomp_shear_jet/
 nersc_benchmark/
 
 
-rt/
-
-  A classic Rayleigh-Taylor instability problem.
-
-
-test2/
+reacting_bubble/
  
   The test problem from the Maestro paper III.  This places 3 hots
   spots in a plane-parallel atmosphere.  Burning makes these bubbles
   buoyant, and then roll up.
 
   This also contains the inputs files used in the multilevel Maestro
-  paper to show adaptivity in the test2 problem.  
+  paper to show adaptivity in the problem.  
+
+  Note: this problem setup was previously called test2
+  
+
+rt/
+
+  A classic Rayleigh-Taylor instability problem.
 
 
 test_convect/
