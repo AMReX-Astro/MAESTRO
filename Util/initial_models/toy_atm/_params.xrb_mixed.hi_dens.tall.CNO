@@ -2,7 +2,7 @@
 
  model_prefix = "toy_xrb.hi_dens"
 
- nx = 768
+ nx = 1536
 
  dens_base = 2e6
 

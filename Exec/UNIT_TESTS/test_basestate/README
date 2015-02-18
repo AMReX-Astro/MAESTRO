@@ -1,3 +1,6 @@
+** IMPORTANT: each of these tests requires a different network -- make
+   sure that the network is specified correctly in the GNUmakefile
+
 ------------------------------------------------------------------------------
 spherical test problem from multilevel paper:
 
@@ -7,6 +10,8 @@ spherical test problem from multilevel paper:
   white-dwarf environment.  We have a gaussinan bump of heating at the
   center of the star, and a null reaction network.
 
+  ** This needs to be compiled with ignition.net general_null network **
+  
   This is a 1D version of spherical_heat.
 
   Castro output is:

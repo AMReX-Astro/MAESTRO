@@ -1017,7 +1017,6 @@ contains
        if (ppm_trace_forces == 0) then
           call multifab_build(scal_force(n), mla%la(n), nscal, 1)
        else
-          print *, "here: ", nghost(sold(n))
           call multifab_build(scal_force(n), mla%la(n), nscal, nghost(sold(n)))
        endif
     end do

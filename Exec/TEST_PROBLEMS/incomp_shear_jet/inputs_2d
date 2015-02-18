@@ -42,11 +42,11 @@
 
  cflfac = 0.9
 
- bcx_lo = -1
- bcx_hi = -1
- bcy_lo = -1
- bcy_hi = -1
-
+ xlo_boundary_type = "periodic"
+ xhi_boundary_type = "periodic"
+ ylo_boundary_type = "periodic"
+ yhi_boundary_type = "periodic"
+ 
 
     verbose = 1
  mg_verbose = 1
