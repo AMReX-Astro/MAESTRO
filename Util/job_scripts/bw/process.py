@@ -1,19 +1,17 @@
 #!/usr/bin/env python2
-#TODO: change the above to just 'python' and add a check for version. 
-#      As of now we assume python 2.6 because this is what a lot of supercompuers have by default
 
 # Quickstart: check out the main execution region at the bottom for variables you'll want to
-# customize.  Basic usage is to execute (assuming bash)
-#     ./process.py > process.out &
-#     PID=$!
-#     trap 'kill -s TERM $PID' EXIT TERM HUP XCPU KILL
-# in your job submission script.  Output will be archived until the job's time limit is reached.
-# You may also want to add
-#     rm -f process.pid
-# to the end of your job script.
+#  customize.  Basic usage is to execute (assuming bash)
+#      python2 process.py > process.out &
+#      PID=$!
+#      trap 'kill -s TERM $PID' EXIT TERM HUP XCPU KILL
+#  in your job submission script.  Output will be archived until the job's time limit is reached.
+#  You may also want to add
+#      rm -f process.pid
+#  to the end of your job script.  If there's no process.pid file, the script terminates itself.
 #
-# TODO/WARNING: The script is currently only operational for Blue Waters, but is designed to be easily
-# extendable to other computing centers with whatever HPSS setup they have.
+#  TODO/WARNING: The script is currently only operational for Blue Waters, but is designed to be easily
+#  extendable to other computing centers with whatever HPSS setup they have.
 #
 #
 # process.py is a Python script for processing output of a Maestro run.
@@ -34,10 +32,9 @@ import abc
 #Global variables
 pidfile_name = 'process.pid'  #Lock file to prevent multiple instances of this script
 # Use this to turn on global debugging statements
-DEBUG = True
-#DEBUG = False
+#DEBUG = True
+DEBUG = False
 
-#TODO: explain conventions (e.g. directory structure)
 class HPSS(object):
    """An abstract class representing a high performance storage system."""
    __metaclass__ = abc.ABCMeta
@@ -261,8 +258,7 @@ class Archiver(object):
       from glob import glob
       from datetime import datetime, timedelta
 
-      #TODO: give user control of this
-      DIAG_INTERVAL = timedelta(0, 4.*3600.) # be sure to archive diag files every 4 hours
+      DIAG_INTERVAL = timedelta(0, self.diag_interval*3600.) # be sure to archive diag files every 4 hours
 
       #Check if the diag file archiving interval has passed, 
       #if so signal that we have new files to archive
@@ -304,7 +300,6 @@ class Archiver(object):
 
       #Archive checkpoint files
       if self.checkForMaeFiles(self.chk_prefix, self.chkdir, self.chk_thresh):
-         print 'chkint: ', self.chk_interval
          self._archiveMaeFiles(self.chk_prefix, self.chkdir, self.chk_thresh, self.chk_interval)
       
       #Archive plot files
@@ -371,6 +366,7 @@ class Archiver(object):
          raise RuntimeError, 'tar of diag files failed!'
      
       #Archive the tar
+      print 'archiving {}'.format(tarchive)
       self.myhpss.sendToHPSS(tarchive)
 
    def _archiveMaeFiles(self, prefix, proc_dir, new_thresh=2, interval=1):
@@ -424,8 +420,7 @@ class Archiver(object):
             print 'tstep, last_tstep, interval', tstep, last_tstep, interval
          if tstep - last_tstep >= interval:
             #Archive the file
-            if DEBUG:
-               print 'archiving ', f
+            print 'archiving ', f
             self.myhpss.sendToHPSS(f)
 
             #Mark it as processed
@@ -440,8 +435,7 @@ class Archiver(object):
             last_tstep = tstep
 
          #Move the file out of the way
-         if DEBUG:
-            print 'moving ', f
+         print 'moving {} to {}'.format(f, proc_dir)
          os.rename(f, join(proc_dir, f))
         
    def _getMaeFileList(self, prefix, proc_dir, new_thresh=2):
@@ -483,7 +477,7 @@ def cleanup(signum, curstackframe):
    """A signal handler that does some cleanup when this process is killed."""
    #Get rid of the pidfile to indicate no instances of process.py are running
    from os.path import isfile
-   print 'process.py: caught terminating signal, shutting down'
+   print 'process.py: caught terminating signal {0}, shutting down'.format(signum)
    if isfile(pidfile_name):
       os.remove(pidfile_name)
    sys.exit(0)
@@ -492,6 +486,7 @@ def cleanup(signum, curstackframe):
 if __name__ == '__main__':
    import argparse
    import time
+   from datetime import datetime
    from signal import signal, SIGHUP, SIGTERM, SIGXCPU, SIGINT, SIGQUIT, SIGABRT
 
    #  NOTE: If this is run in a directory mysimulation/, then a file prefix##### would be
@@ -511,7 +506,9 @@ if __name__ == '__main__':
       pidfile.write(str(os.getpid()))
       pidfile.close()
 
-   #Setup signal handling
+   print 'process.py starting up ', datetime.today().strftime("%Y-%m-%d %H:%M")
+
+   #Setup signal handling.  This way we clean up before the script terminates
    signal(SIGHUP, cleanup); signal(SIGTERM, cleanup); signal(SIGXCPU, cleanup)
    signal(SIGINT, cleanup); signal(SIGQUIT, cleanup); signal(SIGABRT, cleanup)
 
@@ -528,7 +525,8 @@ if __name__ == '__main__':
    arch.plt_thresh    = 1  #Do not archive the most recent plt file
 
    #Execute the archiving algorithm repeatedly until this process is killed
-   while True:
+   #or the lock file is removed.
+   while os.path.isfile(pidfile_name):
       if arch.checkForFiles():
          #New files found, let's archive them!
          if DEBUG:
@@ -538,8 +536,10 @@ if __name__ == '__main__':
          if DEBUG:
             print 'found no new files :('
       if DEBUG:
-         if os.path.isfile(pidfile_name):
-            os.remove(pidfile_name)
-         sys.exit(0)
+         print 'sleep for {}s'.format(sleeptime)
       time.sleep(sleeptime)
 
+   print 'process.py: lock file {} removed, shutting down...'.format(pidfile_name)
+
+#TODO: change the script to just use 'python', not 'python2'. Add a check for version. 
+#      As of now we assume python 2.6 because this is what a lot of supercomputers have by default
