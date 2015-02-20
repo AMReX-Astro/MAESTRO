@@ -2,7 +2,7 @@
 
 # Quickstart: check out the main execution region at the bottom for variables you'll want to
 #  customize.  Basic usage is to execute (assuming bash)
-#      python2 process.py > process.out &
+#      python2 process.py >> process.out 2>&1 < /dev/null &
 #      PID=$!
 #      trap 'kill -s TERM $PID' EXIT TERM HUP XCPU KILL
 #  in your job submission script.  Output will be archived until the job's time limit is reached.
@@ -366,7 +366,7 @@ class Archiver(object):
          raise RuntimeError, 'tar of diag files failed!'
      
       #Archive the tar
-      print 'archiving {}'.format(tarchive)
+      print 'archiving {0}'.format(tarchive)
       self.myhpss.sendToHPSS(tarchive)
 
    def _archiveMaeFiles(self, prefix, proc_dir, new_thresh=2, interval=1):
@@ -435,7 +435,9 @@ class Archiver(object):
             last_tstep = tstep
 
          #Move the file out of the way
-         print 'moving {} to {}'.format(f, proc_dir)
+         print f
+         print proc_dir
+         print 'moving {0} to {1}'.format(f, proc_dir)
          os.rename(f, join(proc_dir, f))
         
    def _getMaeFileList(self, prefix, proc_dir, new_thresh=2):
@@ -536,10 +538,10 @@ if __name__ == '__main__':
          if DEBUG:
             print 'found no new files :('
       if DEBUG:
-         print 'sleep for {}s'.format(sleeptime)
+         print 'sleep for {0}s'.format(sleeptime)
       time.sleep(sleeptime)
 
-   print 'process.py: lock file {} removed, shutting down...'.format(pidfile_name)
+   print 'process.py: lock file {0} removed, shutting down...'.format(pidfile_name)
 
 #TODO: change the script to just use 'python', not 'python2'. Add a check for version. 
 #      As of now we assume python 2.6 because this is what a lot of supercomputers have by default
