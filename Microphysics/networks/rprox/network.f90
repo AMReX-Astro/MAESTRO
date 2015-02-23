@@ -26,7 +26,6 @@
 module network
 
   use bl_types
-  use bl_constants_module
 
   implicit none
 
@@ -54,6 +53,7 @@ contains
 
   subroutine network_init()
 
+    use bl_constants_module
     use rpar_indices
 
     real(kind=dp_t), parameter :: MeV2erg = 1.60217646e-6, &
