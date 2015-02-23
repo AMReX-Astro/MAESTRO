@@ -3,7 +3,7 @@
 !
 !
 
-module burner_module
+module castro_burner_module
 
   use bl_types
   use bl_constants_module
@@ -237,4 +237,4 @@ contains
   end subroutine burner
 
 
-end module burner_module
+end module castro_burner_module
