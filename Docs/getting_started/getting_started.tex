@@ -304,20 +304,16 @@ of these were featured in the papers describing the \maestro\ algorithm.
 
 Some of the test problems available are:
 \begin{itemize}
+\item {\tt double\_bubble} \\[-3mm]
+
+A rising bubble problem where the bubble(s) can have a different gamma
+than the surrounding atmosphere.  This uses the {\tt multigamma} EOS.
+
 \item {\tt incomp\_shear\_jet} \\[-3mm]
 
 A simple pure-incompressible shear layer problem.  This is the example
 problem used in \cite{bellcolellaglaz}.  This is useful to see how to
 use \maestro\ as an incompressible solver.
-
-\item {\tt rt} \\ [-3mm]
-
-A Rayleigh-Taylor instability problem.  There are two methods that the
-code is run here, in the standard (using {\tt inputs\_2d}), the base state
-has the stratified atmosphere and we introduce a velocity perturbation
-to start the instability.  The alternate method, {\tt inputs\_2d\_SNe}, uses
-the \runparam{do\_smallscale} runtime parameter to eliminate the base state
-and instead use the incompressible constraint to evolve the system.
 
 \item {\tt reacting\_bubble} \\[-3mm]
 
@@ -328,6 +324,15 @@ used in \cite{lowMach3} to compare with compressible solvers.
 This problem can also be run adaptively.  The \code{tag\_boxes.f90}
 file in the problem directory tags cells for refinement if the
 perturbational temperature, $T^\prime$, exceeds some threshold.  
+
+\item {\tt rt} \\ [-3mm]
+
+A Rayleigh-Taylor instability problem.  There are two methods that the
+code is run here, in the standard (using {\tt inputs\_2d}), the base state
+has the stratified atmosphere and we introduce a velocity perturbation
+to start the instability.  The alternate method, {\tt inputs\_2d\_SNe}, uses
+the \runparam{do\_smallscale} runtime parameter to eliminate the base state
+and instead use the incompressible constraint to evolve the system.
 
 \item {\tt test\_convect} \\[-3mm]
 
@@ -369,6 +374,12 @@ anticipated that more will be made available with time.
    in \cite{SNe}, which was used for models of Rayleigh-Taylor
    unstable flames~\cite{SNld,SNrt,SNrt3d}.
 
+\item {\tt flame\_1d} \\[-3mm]
+
+   A 1-d version of the {\tt flame} problem above.  This uses a special
+   elliptic solver in \boxlib\ that only works for a single grid, so
+   no parallel runs are allowed for this problem.
+   
 \item {\tt toy\_convect} \\[-3mm]
 
 A nova-like problem for studying convection.  This problem has seen
