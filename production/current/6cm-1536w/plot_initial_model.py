@@ -16,19 +16,23 @@ plt.semilogy(model[:,ir], model[:,idens])
 
 sponge_start_factor = 25.0
 
-dens = 5.e2
-plt.semilogy(model[:,ir], dens*np.ones_like(model[:,ir]), ls=":", color="r")
-plt.semilogy(model[:,ir], sponge_start_factor*dens*np.ones_like(model[:,ir]), ls="--", color="r")
+dens = [5.e2, 1.e3, 5.e3]
+colors = ["r", "g", "b", "k", "0.5", "c"]
 
-dens = 1.e3
-plt.semilogy(model[:,ir], dens*np.ones_like(model[:,ir]), ls=":", color="g")
-plt.semilogy(model[:,ir], sponge_start_factor*dens*np.ones_like(model[:,ir]), ls="--", color="g")
-
-dens = 5.e3
-plt.semilogy(model[:,ir], dens*np.ones_like(model[:,ir]), ls=":", color="b")
-plt.semilogy(model[:,ir], sponge_start_factor*dens*np.ones_like(model[:,ir]), ls="--", color="b")
+for n, d in enumerate(dens):
+    plt.semilogy(model[:,ir],
+                 d*np.ones_like(model[:,ir]),
+                 ls=":", color=colors[n], label="{}".format(d))
+    plt.semilogy(model[:,ir],
+                 sponge_start_factor*d*np.ones_like(model[:,ir]),
+                 ls="--", color=colors[n])
 
 plt.ylim(1.0, 1.e8)
+
+plt.xlabel("r [cm]")
+plt.ylabel("density [g/cc]")
+
+plt.legend(frameon=False)
 
 plt.savefig("initial_model.png")
 
