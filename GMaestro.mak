@@ -35,7 +35,7 @@ MAESTRO_CORE :=
 SDC_CORE := 
 
 ifdef SDC
-  SDC_CORE += $(ASTRODEV_DIR)/Source_SDC
+  SDC_CORE += $(MAESTRO_TOP_DIR)/Source_SDC
 endif
 
 # next look for the files in Source/ itself 
