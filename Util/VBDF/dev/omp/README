@@ -1,0 +1,4 @@
+This is a reference version of the same test problem I'm using to develop
+the accelerated version of BDF.  I have it to make it easy to throw in debug prints
+and to make apples-to-apples comparisons as much as possible with the accelerated
+version of BDF.  See dev/accelerated.
