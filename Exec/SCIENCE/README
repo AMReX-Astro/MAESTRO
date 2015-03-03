@@ -7,6 +7,25 @@ flame/
    conditions are used to allow for an inflow velocity to be set to
    keep the laminar flame stationary.
 
+   An old/react_state.f90 exists in this problem averages the state
+   laterally and calls the burner only on this 1-d average state.
+   Since the flame is (should be) laterially invariant, this is an
+   optimization to speed things up.
+
+   Currently this problem has issues with high densities (> 5.e7
+   g/cc).  Reducing the CFL number (to 0.1) helps.  Experiments with
+   the SNe code show that SDC can overcome these problems.
+	  
+
+flame_1d/
+
+   A pure 1-d version of the flame problem.  This can only be run with
+   1 grid on 1 processor, since it uses a special version of the
+   elliptic solve.
+
+   This problem can be run with the SDC algorithm.
+
+
 toy_convect/
 
    A nova-like problem for studying convection.  This problem has seen
