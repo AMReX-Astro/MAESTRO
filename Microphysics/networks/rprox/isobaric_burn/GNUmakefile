@@ -15,19 +15,12 @@ MAESTRO_TOP_DIR := $(MAESTRO_HOME)
 programs += evolve.f90
 
 EOS_DIR := helmeos
-#EOS_TOP_DIR := $(ASTRODEV_DIR)/EOS
-#EOS_DIR := MESA
 CONDUCTIVITY_DIR := constant
-
-NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
 NETWORK_DIR := rprox
-#NETWORK_DIR := MESA
-#GENERAL_NET_INPUTS := $(NETWORK_TOP_DIR)/MESA/Net-Files/rprox_extended.net
 
 BOXLIB_ONLY := t
 
-EXTRA_TOP_DIR := $(ASTRODEV_DIR)
-EXTRA_DIR = networks/rprox/test
+EXTRA_DIR = Microphysics/networks/rprox/test
 
 testAll:
 
