@@ -77,6 +77,7 @@ contains
     real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start,dt_lev
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
     real(kind=dp_t) :: umax,umax_grid,umax_proc,umax_lev
+    real(kind=dp_t) :: dts_local(2), dts_global(2)
     
     real(kind=dp_t), parameter :: rho_min = 1.d-20
 
@@ -206,8 +207,13 @@ contains
        end do
 
        ! This sets dt to be the min of dt_proc over all processors.
-       call parallel_reduce( dt_adv,  dt_adv_proc, MPI_MIN)
-       call parallel_reduce(dt_divu, dt_divu_proc, MPI_MIN)
+       dts_local(1) = dt_adv_proc
+       dts_local(2) = dt_divu_proc
+       call parallel_reduce( dts_global,  dts_local, MPI_MIN)
+       dt_adv = dts_global(1)
+       dt_divu = dts_global(2)
+
+       ! we could pack this in the MIN reduce by looking at 1/umax_proc
        call parallel_reduce(umax_lev,    umax_proc, MPI_MAX)
 
        umax = max(umax,umax_lev)
