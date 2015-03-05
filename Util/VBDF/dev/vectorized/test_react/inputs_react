@@ -1,0 +1,26 @@
+&PROBIN
+  dm_in = 3
+  test_set = "gr0_3d"
+
+  small_temp = 1.d5
+
+  bcx_lo = -1
+  bcx_hi = -1
+  bcy_lo = -1
+  bcy_hi = -1
+  bcz_lo = -1
+  bcz_hi = -1
+
+  dens_min   = 1.d7
+  dens_max   = 3.d9
+  temp_min   = 5.d8
+  temp_max   = 5.d9
+
+  min_time_step = 1.0d-10
+  react_its = 10
+
+  do_heating = .false.
+
+  xin_file   = "xin"
+  run_prefix = "react_"
+/

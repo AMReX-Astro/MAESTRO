@@ -1,0 +1,34 @@
+# For C++ BoxLib based code
+
+# Note that for LMC none of USE_XXX is defined
+
+FEXE_headers += vode.H tranlib_1.H tranlib_2.H
+fEXE_sources += vode.f LinAlg.f math_d.f tranlib_d.f
+
+ifdef USE_EGZ
+  # use f90 version of eglib
+  f90EXE_sources += egz_module.f90
+else
+  fEXE_sources += EGini.f
+  ifdef USE_EGM
+     fEXE_sources += EGMlib.f
+  else
+     ifdef USE_EGF
+        fEXE_sources += EGFlib.f
+     else
+        fEXE_sources += EGSlib.f
+     endif
+  endif  
+endif
+
+ifdef USE_WORK_SPACE_MODULE
+  # vode, eglib & tranlib all need work space.  
+  # Here, the work spaces are in F90 modules. 
+  f90EXE_sources += vode_module.f90 tranlib_module.f90
+  ifndef USE_EGZ
+     f90EXE_sources += eglib_module.f90
+  endif
+endif
+
+f90EXE_sources += bdf.f90 bdf_data.f90
+

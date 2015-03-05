@@ -1,0 +1,26 @@
+&PROBIN
+  dm_in = 3
+  test_set = "gr0_3d.small"
+
+  small_temp = 1.d5
+
+  bcx_lo = -1
+  bcx_hi = -1
+  bcy_lo = -1
+  bcy_hi = -1
+  bcz_lo = -1
+  bcz_hi = -1
+
+  dens_min   = 1.d8
+  dens_max   = 2.d9
+  temp_min   = 5.d7
+  temp_max   = 7.d8
+
+  min_time_step = 1.0d-5
+  react_its = 7
+
+  do_heating = .false.
+
+  xin_file   = "xin.mesa_carbon"
+  run_prefix = "react_mesa_carbon_"
+/
