@@ -1,0 +1,13 @@
+All of tehse files were generated with the following default options
+to init_1d.f90:
+
+xmin               = ZERO
+xmax               = 9e3_dp_t
+phi                = 3e0_dp_t
+low_density_cutoff = 1.d-4
+
+For the *5.7e8* and *approx8* models, we specified a smoothing length via the
+--len_smooth command argument:
+
+smoothing_length   = 25.0e0
+

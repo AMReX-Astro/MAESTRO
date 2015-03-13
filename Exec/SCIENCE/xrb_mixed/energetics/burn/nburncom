@@ -1,0 +1,19 @@
+c... paramters common to both, zcom and kepcom
+c... more should be in here...
+
+c.... number of elements in burn network
+c.... due to implementation of SUBROUTINE restart do not make
+c....   smaller than 500
+
+      integer nburn
+      parameter (nburn=3072)
+
+c.... maximum number of chemical symbols
+
+      integer nsymb
+      parameter (nsymb=103)
+
+c.... maximum number of strong reactions
+
+      integer nreacts
+      parameter (nreacts=10)

@@ -1,0 +1,14 @@
+      common /spc/ 
+     *     ra3,ral,r24,r23,r23n,r20,b24n,b24p,b24a,
+     1     r32,r31,r31n,r30,r28,b32n,b32p,b32d,b32a,rc28,
+     2     rc27p,rc27n,rc24a,bc27p,bc27n,bc24a,rli7pag,
+     3     rb11pa,rb8epn,rc12he3,rc11na,rhe4n,rhe4p,rpnub,
+     4     rpp,rpng,rpgn,rh2h3n,rhe3he3,rh3h3,rhe3td,
+     5     rhe3tnp,rhe3dp,rbe9pd,rc12h3p,rc12he3n,rc12he4,
+     6     rli7tn,rli7t2n,
+     7     raan,rgaan,rc9bp,rb9aap,
+     8     rhe4nd,rhe42nt,rhe4pd,r33inv,rhe4pnt,rhe4dt,rhe4ap,r2he4ap,
+     9     rdpn,r2pnp,rddp,rtpd,rddn,rhe3nd,rhe4npg,rli6gpn,rli7dn,
+     *     raand,raapnhe3,rli7he3np,rbe7dp,r2he4pd,rbe7tnp,r2he4npt,
+     1     rbe7he32p,r2he42phe3,r2he42nt,rhe42ng,rhe6g2n,
+     2     rnnu

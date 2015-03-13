@@ -1,0 +1,14 @@
+Based on Alex's Kepler files, the region between r = [7072.5,8287.2]
+should be convectively unstable.
+
+These model files were calculated using
+AstroDev/initial_models/xrb/alex_models/mixed_h_he/init_1d.f90 with
+the following command line options:
+
+--model_file 1000_rprox.raw 
+-xmin 6499.5 
+-xmax 8803.5 
+-isen 7072.49 8287.17 
+-ldc 1.0
+
+plus the -nx option for the resolution.
