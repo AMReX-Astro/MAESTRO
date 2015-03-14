@@ -10,28 +10,10 @@ import math
 import sys
 import numpy as np
 import os
-import pylab
+import matplotlib.pyplot as plt
 
 import yt
 import yt.visualization.volume_rendering.api as vr
-
-def _rotate(point, center, theta):
-    """ apply a rotation matrix
-
-    / cos theta   -sin theta \
-    |                        |
-    \ sin theta    cos theta /
-
-    to a point about center, and return the 
-    transformed point """
-
-    x = point[0] - center[0]
-    y = point[1] - center[1]
-
-    return (x*np.cos(theta) - y*np.sin(theta) + center[0],
-            x*np.sin(theta) + y*np.cos(theta) + center[1])
-
-                
 
 def doit(plotfile, fname):
 
@@ -107,24 +89,25 @@ def doit(plotfile, fname):
     # alternate attempt
     ds.periodicity = (True, True, True)
 
+    
     # loop doing a Matrix transform on the orientation vectors about
     # the domain center to simulate rotation
-    Nrot = 180
-    for n, theta in enumerate(np.arange(Nrot)*2.0*np.pi/Nrot):
-        c0, c1 = _rotate((c[0], c[1]), (center[0].d, center[1].d), theta)
-        crot = [c0, c1, c[2]]
+    Nrot = 360
+    dtheta = 2.0*np.pi/Nrot
+    
+    for n in range(Nrot):
 
-        # make L a unit vector that points back to through the center
-        L0 = center[0].d - c0
-        L1 = center[1].d - c1
-        denom = np.sqrt(L0**2 + L1**2)
-        Lrot = np.array([L0/denom, L1/denom, 0])
-        
+
         # Create a camera object
-        cam = vr.PerspectiveCamera(crot, Lrot, W, N, transfer_function=tf, ds=ds, 
-                                   no_ghost=False,
-                                   north_vector=north,
-                                   fields = [field], log_fields = [use_log])
+        if n == 0:
+            cam = vr.PerspectiveCamera(c, L, W, N, transfer_function=tf, ds=ds, 
+                                       no_ghost=False,
+                                       north_vector=north,
+                                       fields = [field], log_fields = [use_log])
+    
+
+        cam.yaw(dtheta, center)
+        
 
         # make an image
         im = cam.snapshot()
@@ -139,12 +122,12 @@ def doit(plotfile, fname):
 
         # increase the contrast -- for some reason, the enhance default
         # to save_annotated doesn't do the trick (likely a bug)
-        if theta == 0: max_val = im[:,:,:3].std() * 4.0
+        if n == 0: max_val = im[:,:,:3].std() * 4.0
         nim[:,:,:3] /= max_val
 
-        f = pylab.figure()
+        f = plt.figure()
 
-        pylab.text(0.2, 0.15, "{:.3g} s".format(float(ds.current_time.d)),
+        plt.text(0.2, 0.15, "{:.3g} s".format(float(ds.current_time.d)),
                    transform=f.transFigure, color="white")
 
         cam._render_figure = f
@@ -155,6 +138,7 @@ def doit(plotfile, fname):
                            nim, 
                            dpi=145, clear_fig=False)
 
+        plt.close()
 
 
 if __name__ == "__main__":
