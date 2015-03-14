@@ -15,7 +15,7 @@ flame/
    Currently this problem has issues with high densities (> 5.e7
    g/cc).  Reducing the CFL number (to 0.1) helps.  Experiments with
    the SNe code show that SDC can overcome these problems.
-	  
+
 
 flame_1d/
 
@@ -40,3 +40,10 @@ wdconvect/
    SNe Ia progenitor model.  This setup was the basis for Zingale et
    al. 2009 (ApJ, 704, 196), Zingale et al. 2011 (ApJ, 740, 8), and
    Nonaka et al. 2012 (ApJ, 745, 73).
+
+
+xrb_mixed/
+
+   Model convection in a H/He layer on a neutron star -- the early
+   stages of a type I X-ray burst.  This setup was the basis for
+   Malone et al. 2014 (ApJ, 788, 115)
