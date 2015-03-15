@@ -1,0 +1,6 @@
+These scripts can be used to do a parallel vis (yt) run on rhea at
+OLCF.  rhea is a Linux cluster so your batch script gives you access
+to the compute node and you can simply start-up 8 serial jobs on the
+node.  That's what this script does -- it loops over the files that 
+don't yet have a .png file and does the processing 8 separate tasks
+at once.
