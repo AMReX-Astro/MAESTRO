@@ -1,0 +1,23 @@
+#!/bin/ksh
+#PBS -A ast106
+#PBS -N archive
+#PBS -j oe
+#PBS -q batch
+#PBS -l walltime=02:00:00,nodes=1
+
+# this script runs with just archive files
+#
+
+
+cd $PBS_O_WORKDIR
+
+# run the compression script to tar up the plot and checkpoint files
+# as they are created.
+./process.titan 
+
+PID=$!
+trap 'kill -s TERM $PID' EXIT TERM HUP XCPU KILL
+
+
+rm -f process.pid
+

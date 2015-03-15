@@ -10,34 +10,19 @@ import math
 import sys
 import numpy as np
 import os
-import pylab
+import matplotlib.pyplot as plt
 
 import yt
 import yt.visualization.volume_rendering.api as vr
-
-def _rotate(point, center, theta):
-    """ apply a rotation matrix
-
-    / cos theta   -sin theta \
-    |                        |
-    \ sin theta    cos theta /
-
-    to a point about center, and return the 
-    transformed point """
-
-    x = point[0] - center[0]
-    y = point[1] - center[1]
-
-    return (x*np.cos(theta) - y*np.sin(theta) + center[0],
-            x*np.sin(theta) + y*np.cos(theta) + center[1])
-
-                
 
 def doit(plotfile, fname):
 
     ds = yt.load(plotfile)
 
     cm = "gist_rainbow"
+
+    # rotate?
+    Nrot = 0
 
 
     if fname == "vz":
@@ -93,7 +78,7 @@ def doit(plotfile, fname):
     L = np.array([1.0, 1.0, 0.0])
     
     W = 3.0*ds.domain_width
-    N = 720
+    N = 1080
 
     north=[0.0,0.0,1.0]
 
@@ -107,24 +92,26 @@ def doit(plotfile, fname):
     # alternate attempt
     ds.periodicity = (True, True, True)
 
+    
     # loop doing a Matrix transform on the orientation vectors about
     # the domain center to simulate rotation
-    Nrot = 180
-    for n, theta in enumerate(np.arange(Nrot)*2.0*np.pi/Nrot):
-        c0, c1 = _rotate((c[0], c[1]), (center[0].d, center[1].d), theta)
-        crot = [c0, c1, c[2]]
+    if not Nrot == 0:
+        dtheta = 2.0*np.pi/Nrot
+    
+    for n in range(max(1,Nrot)):
 
-        # make L a unit vector that points back to through the center
-        L0 = center[0].d - c0
-        L1 = center[1].d - c1
-        denom = np.sqrt(L0**2 + L1**2)
-        Lrot = np.array([L0/denom, L1/denom, 0])
-        
+
         # Create a camera object
-        cam = vr.PerspectiveCamera(crot, Lrot, W, N, transfer_function=tf, ds=ds, 
-                                   no_ghost=False,
-                                   north_vector=north,
-                                   fields = [field], log_fields = [use_log])
+        if n == 0:
+            cam = vr.PerspectiveCamera(c, L, W, N, transfer_function=tf, ds=ds, 
+                                       no_ghost=False,
+                                       north_vector=north,
+                                       fields = [field], log_fields = [use_log])
+    
+
+        if not Nrot == 0:
+            cam.yaw(dtheta, center)
+        
 
         # make an image
         im = cam.snapshot()
@@ -139,22 +126,34 @@ def doit(plotfile, fname):
 
         # increase the contrast -- for some reason, the enhance default
         # to save_annotated doesn't do the trick (likely a bug)
-        if theta == 0: max_val = im[:,:,:3].std() * 4.0
+        if fname == "vz":
+            # this normalization comes from looking at im[:,:,:3].std() * 4.0 for
+            # a 3-d wide XRB visualization near 0.02 s
+            max_val = 0.0276241228025
+
+        elif n == 0:
+            max_val = im[:,:,:3].std() * 4.0
+
         nim[:,:,:3] /= max_val
 
-        f = pylab.figure()
+        f = plt.figure()
 
-        pylab.text(0.2, 0.15, "{:.3g} s".format(float(ds.current_time.d)),
+        plt.text(0.2, 0.15, "{:.3g} s".format(float(ds.current_time.d)),
                    transform=f.transFigure, color="white")
 
         cam._render_figure = f
     
         # save annotated -- this added the transfer function values, 
         # but this messes up our image size defined above
-        cam.save_annotated("{}_{}_{:03d}.png".format(os.path.normpath(plotfile), fname, n), 
-                           nim, 
-                           dpi=145, clear_fig=False)
+        #cam.save_annotated("{}_{}_{:03d}.png".format(os.path.normpath(plotfile), fname, n), 
+        #                   nim, 
+        #                   dpi=145, clear_fig=False)
 
+        cam.save_annotated("{}_{}_HD{:03d}.png".format(os.path.normpath(plotfile), fname, n), 
+                           nim, 
+                           dpi=218, clear_fig=False)
+        
+        plt.close()
 
 
 if __name__ == "__main__":
