@@ -11,7 +11,7 @@
 # user modifiable variables:
 
 # number of parallel tasks to run
-NCPUS=6
+NCPUS=12
 
 
 # pidfile is a lock file that is used to make sure that only one instance 
@@ -65,9 +65,9 @@ function process_files
 
     if [ -d $1 ]; then
 
-	if [ ! -f xrb_vol_${fname}_${root}.png ]; then
+	if [ ! -f ${root}_${fname}.png ]; then
            # do processing
-           ${analysis} $1 ${fname}
+           aprun ${analysis} $1 ${fname} 
 	fi
 
         # this sleep line is not necessary if the analysis takes any 
@@ -110,6 +110,9 @@ function freecpus
 # if you don't want to wait for new files to appear, get rid of the
 # outer loop.
 
+# clean-up from any previous run
+rm -f _process.plt*
+
 while true
 do
 
@@ -119,9 +122,11 @@ do
   fi
 
 
-  filelist=$(find . -maxdepth 1 -type d -name "${data_prefix}?????" -print | sort)
+  filelist1=$(find . -maxdepth 1 -type d -name "${data_prefix}?????" -print | sort)
+  filelist2=$(find . -maxdepth 1 -type d -name "${data_prefix}??????" -print | sort)
 
-  for file in ${filelist}
+
+  for file in ${filelist1} ${filelist2}
   do
 
       # wait for available CPUS
@@ -134,7 +139,7 @@ do
       
       process_files ${file} &
 
-      sleep 5
+      sleep 1
   done
 
 
