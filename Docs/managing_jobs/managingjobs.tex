@@ -101,36 +101,38 @@ call {\tt wdconvect\_run}, then do:
 hsi
 mkdir wdconvect_run
 \end{verbatim}
-(Note: if the hsi command prompts you for your password, you will need to
-talk to the OLCF help desk to ask for password-less access to HPSS).
+(Note: if the hsi command prompts you for your password, you will need
+to talk to the OLCF help desk to ask for password-less access to
+HPSS).
 
-The script {\tt process.titan} is called from {\tt titan.run} and
-will run in the background and continually wait until checkpoint or
+The script {\tt process.titan} is called from {\tt titan.run} and will
+run in the background and continually wait until checkpoint or
 plotfiles are created (actually, it always leaves the most recent one
 alone, since data may still be written to it, so it waits until there
 are more than 1 in the directory).
 
-Then the script will use {\tt htar} to archive the plotfiles and checkpoints
-to HPSS.  If the {\tt htar} command was successful, then the plotfiles are
-copied into a {\tt plotfile/} subdirectory.  This is actually important,
-since you don't want to try archiving the data a second time and
-overwriting the stored copy, especially if a purge took place.
+Then the script will use {\tt htar} to archive the plotfiles and
+checkpoints to HPSS.  If the {\tt htar} command was successful, then
+the plotfiles are copied into a {\tt plotfile/} subdirectory.  This is
+actually important, since you don't want to try archiving the data a
+second time and overwriting the stored copy, especially if a purge
+took place.
 
-Additionally, if the {\tt ftime} executable is in your path 
-({\tt ftime.f90} lives in {\tt BoxLib/Tools/Postprocessing/F\_src/}), then the
-script will create a file called {\tt ftime.out} that lists the name of the
-plotfile and the corresponding simulation time.
+Additionally, if the {\tt ftime} executable is in your path ({\tt
+ftime.f90} lives in {\tt BoxLib/Tools/Postprocessing/F\_src/}), then
+the script will create a file called {\tt ftime.out} that lists the
+name of the plotfile and the corresponding simulation time.
 
 Finally, right when the job is submitted, the script will tar up all
 of the diagnostic files created by {\tt diag.f90} and {\tt ftime.out}
 and archive them on HPSS.  The {\tt .tar} file is given a name that
 contains the date-string to allow multiple archives to co-exist.
 
-The {\tt titan.run} submission script has code in it that will look
-at the most recently generated checkpoint files, make sure that they
-were written out correctly (it looks to see if there is a Header file,
+The {\tt titan.run} submission script has code in it that will look at
+the most recently generated checkpoint files, make sure that they were
+written out correctly (it looks to see if there is a Header file,
 since that is the last thing written), and automatically set the {\tt
-  --restart} flag on the run line to restart from the most recent
+--restart} flag on the run line to restart from the most recent
 checkpoint file.  This allows you to job-chain a bunch of submission
 and have them wait until the previous job finished and then
 automatically queue up:
@@ -139,10 +141,9 @@ qsub -W depend=afterany:<JOB-ID>  <QSUB SCRIPT>
 \end{verbatim}
 where {\tt <JOB-ID>} is the id number of the job that must complete
 before the new submission runs and {\tt QSUB SCRIPT} is the submission
-script (e.g.\ {\tt titan.run}).
-This way you can queue up a bunch of runs and literally leave things
-alone and it will restart from the right place automatically and store
-the data as it is generated.
+script (e.g.\ {\tt titan.run}).  This way you can queue up a bunch of
+runs and literally leave things alone and it will restart from the
+right place automatically and store the data as it is generated.
 
 When {\tt process.titan} is running, it creates a lockfile (called
 {\tt process.pid}) that ensures that only one instance of the script
@@ -150,28 +151,37 @@ is running at any one time.  Sometimes if the machine crashes, the
 {\tt process.pid} file will be left behind, in which case, the script
 aborts.  Just delete that if you know the script is not running.
 
-The {\tt chainsub.sh} script can be used to automatically launch a number
-of jobs depending on a single, currently queued (or running) job.
+The {\tt chainsub.sh} script can be used to automatically launch a
+number of jobs depending on a single, currently queued (or running)
+job.
+
 
 \subsection{Batch Submission of \yt\ Visualization Scripts}
 
-You can run \yt\ python scripts in the titan batch queues
-to do your visualization.  You need to install \yt\ and all its dependencies
-manually somewhere on a LUSTRE filesystem---this ensures that the compute
-nodes can see it.  A good choice is the project space, since that has
-a longer purge window.
+You can run \yt\ python scripts in the titan batch queues to do your
+visualization.  You need to install \yt\ and all its dependencies
+manually somewhere on a LUSTRE filesystem---this ensures that the
+compute nodes can see it.  A good choice is the project space, since
+that has a longer purge window.
 
-Once \yt\ is install by the {\tt install\_script.sh} script, it will tell
-you what script to source to define the necessary paths.
+Once \yt\ is install by the {\tt install\_script.sh} script, it will
+tell you what script to source to define the necessary paths.
 
-The scripts {\tt process-titan.run} and {\tt parallel-yt-new} in
-{\tt MAESTRO/Util/job\_scripts/titan/} will manage the yt jobs
-by calling a python script for each file that matches a pattern.
+The scripts {\tt vis-titan.run} and {\tt parallel-yt-new} in {\tt
+MAESTRO/Util/job\_scripts/titan/} will manage the yt jobs by calling a
+python script for each file that matches a pattern.  Make sure you set
+the proper path for the \yt\ {\tt activate} script in {\tt
+parallel-yt-new}---this ensures that the paths to the various libraries
+are set on the compute nodes.
+
+Note that the actual visualization command itself is launched by
+{\tt parallel-yt-new} using the {\tt aprun} command.  
 
 
 \subsection{Remote \visit\ Visualization on Lens}
 
-{\em Note: this information may be out-of-date.}
+{\em Note: this information may be out-of-date.  It is recommended that
+ \yt\ be used instead.}
 
 For large data files, visualization with \visit\ should be done with
 a client running on your local machine interfacing with \visit\ running
