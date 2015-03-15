@@ -153,6 +153,21 @@ aborts.  Just delete that if you know the script is not running.
 The {\tt chainsub.sh} script can be used to automatically launch a number
 of jobs depending on a single, currently queued (or running) job.
 
+\subsection{Batch Submission of \yt\ Visualization Scripts}
+
+You can run \yt\ python scripts in the titan batch queues
+to do your visualization.  You need to install \yt\ and all its dependencies
+manually somewhere on a LUSTRE filesystem---this ensures that the compute
+nodes can see it.  A good choice is the project space, since that has
+a longer purge window.
+
+Once \yt\ is install by the {\tt install\_script.sh} script, it will tell
+you what script to source to define the necessary paths.
+
+The scripts {\tt process-titan.run} and {\tt parallel-yt-new} in
+{\tt MAESTRO/Util/job\_scripts/titan/} will manage the yt jobs
+by calling a python script for each file that matches a pattern.
+
 
 \subsection{Remote \visit\ Visualization on Lens}
 
