@@ -21,6 +21,9 @@ def doit(plotfile, fname):
 
     cm = "gist_rainbow"
 
+    # rotate?
+    Nrot = 0
+
 
     if fname == "vz":
         field = ('gas', 'velocity_z')
@@ -75,7 +78,7 @@ def doit(plotfile, fname):
     L = np.array([1.0, 1.0, 0.0])
     
     W = 3.0*ds.domain_width
-    N = 720
+    N = 1080
 
     north=[0.0,0.0,1.0]
 
@@ -92,10 +95,10 @@ def doit(plotfile, fname):
     
     # loop doing a Matrix transform on the orientation vectors about
     # the domain center to simulate rotation
-    Nrot = 360
-    dtheta = 2.0*np.pi/Nrot
+    if not Nrot == 0:
+        dtheta = 2.0*np.pi/Nrot
     
-    for n in range(Nrot):
+    for n in range(max(1,Nrot)):
 
 
         # Create a camera object
@@ -106,7 +109,8 @@ def doit(plotfile, fname):
                                        fields = [field], log_fields = [use_log])
     
 
-        cam.yaw(dtheta, center)
+        if not Nrot == 0:
+            cam.yaw(dtheta, center)
         
 
         # make an image
@@ -122,7 +126,14 @@ def doit(plotfile, fname):
 
         # increase the contrast -- for some reason, the enhance default
         # to save_annotated doesn't do the trick (likely a bug)
-        if n == 0: max_val = im[:,:,:3].std() * 4.0
+        if fname == "vz":
+            # this normalization comes from looking at im[:,:,:3].std() * 4.0 for
+            # a 3-d wide XRB visualization near 0.02 s
+            max_val = 0.0276241228025
+
+        elif n == 0:
+            max_val = im[:,:,:3].std() * 4.0
+
         nim[:,:,:3] /= max_val
 
         f = plt.figure()
@@ -134,10 +145,14 @@ def doit(plotfile, fname):
     
         # save annotated -- this added the transfer function values, 
         # but this messes up our image size defined above
-        cam.save_annotated("{}_{}_{:03d}.png".format(os.path.normpath(plotfile), fname, n), 
-                           nim, 
-                           dpi=145, clear_fig=False)
+        #cam.save_annotated("{}_{}_{:03d}.png".format(os.path.normpath(plotfile), fname, n), 
+        #                   nim, 
+        #                   dpi=145, clear_fig=False)
 
+        cam.save_annotated("{}_{}_HD{:03d}.png".format(os.path.normpath(plotfile), fname, n), 
+                           nim, 
+                           dpi=218, clear_fig=False)
+        
         plt.close()
 
 
