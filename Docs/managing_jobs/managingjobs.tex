@@ -158,6 +158,34 @@ job.
 
 \subsection{Batch Submission of \yt\ Visualization Scripts}
 
+\subsubsection{Rhea---preferred method}
+
+The best way to do visualization is to use rhea, the OLCF vis machine.
+You need to build \yt\ via the {\tt install\_script.sh} script {\em on
+rhea}.  It also must be on a Lustre filesystem, so it is seen by
+the compute node.  It is best to build it in your {\tt \$PROJWORK} directory,
+since that has a longer time between purges.  Once the installation is
+complete, it will tell you what script to source to define the
+necessary paths.
+
+The scripts in {\tt MAESTRO/Util/job\_scripts/rhea/} will handle the
+visualization.  On rhea, the job script gives you access to the
+compute node, and then you can run serial jobs or a parallel job with
+{\tt mpirun}.  The {\tt process-rhea.run} script will request the
+resources and run the {\tt parallel-yt-rhea} script.  {\tt
+parallel-yt-rhea} will launch the visualization process (defined
+via the variables at the top of the script) on all the plotfiles
+found to match the prefix defined in the script.  Several serial
+jobs are run together, with the script using lock files to keep track
+of how many processors are in use.  When processors free, the next
+file in the list is processed, and so on, until there are no more
+plotfiles left to process.  If a {\tt .png} file matching the
+plotfile prefix is found, then that plotfile is skipped.
+
+
+
+\subsubsection{Titan}
+
 You can run \yt\ python scripts in the titan batch queues to do your
 visualization.  You need to install \yt\ and all its dependencies
 manually somewhere on a LUSTRE filesystem---this ensures that the
