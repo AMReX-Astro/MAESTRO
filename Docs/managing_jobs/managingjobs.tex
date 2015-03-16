@@ -162,7 +162,7 @@ job.
 
 The best way to do visualization is to use rhea, the OLCF vis machine.
 You need to build \yt\ via the {\tt install\_script.sh} script {\em on
-rhea}.  It also must be on a Lustre filesystem, so it is seen by
+rhea}.  It also must be on a {\em Lustre filesystem}, so it is seen by
 the compute node.  It is best to build it in your {\tt \$PROJWORK} directory,
 since that has a longer time between purges.  Once the installation is
 complete, it will tell you what script to source to define the
@@ -182,13 +182,16 @@ file in the list is processed, and so on, until there are no more
 plotfiles left to process.  If a {\tt .png} file matching the
 plotfile prefix is found, then that plotfile is skipped.
 
+Note: the line in {\tt parallel-yt-rhea} that {\tt source}s the \yt\
+{\tt activate} script may need to be modified to point to the
+correct \yt\ installation path.
 
 
 \subsubsection{Titan}
 
-You can run \yt\ python scripts in the titan batch queues to do your
+You can also run \yt\ python scripts in the titan batch queues to do your
 visualization.  You need to install \yt\ and all its dependencies
-manually somewhere on a LUSTRE filesystem---this ensures that the
+manually somewhere on a {\em Lustre filesystem}---this ensures that the
 compute nodes can see it.  A good choice is the project space, since
 that has a longer purge window.
 
@@ -196,14 +199,18 @@ Once \yt\ is install by the {\tt install\_script.sh} script, it will
 tell you what script to source to define the necessary paths.
 
 The scripts {\tt vis-titan.run} and {\tt parallel-yt-new} in {\tt
-MAESTRO/Util/job\_scripts/titan/} will manage the yt jobs by calling a
+MAESTRO/Util/job\_scripts/titan/} will manage the \yt jobs by calling a
 python script for each file that matches a pattern.  Make sure you set
 the proper path for the \yt\ {\tt activate} script in {\tt
 parallel-yt-new}---this ensures that the paths to the various libraries
 are set on the compute nodes.
 
 Note that the actual visualization command itself is launched by
-{\tt parallel-yt-new} using the {\tt aprun} command.  
+{\tt parallel-yt-new} using the {\tt aprun} command.  This is the
+only way to get a job to run on the compute nodes on titan.  But
+{\tt aprun} can only launch a single job at a time, so this means
+we cannot easily do (trivally) parallel visualization on a node.  For
+this reason, running on rhea is preferred.
 
 
 \subsection{Remote \visit\ Visualization on Lens}
