@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import yt
 import yt.visualization.volume_rendering.api as vr
 
-def doit(plotfile, fname):
+def doit(plotfile, fname, view):
 
     ds = yt.load(plotfile)
 
@@ -76,7 +76,15 @@ def doit(plotfile, fname):
     # this shows something face on
     c = np.array([-2.0*xmax, -2.0*ymax, center[2]])
     L = np.array([1.0, 1.0, 0.0])
-    
+
+    if view == "top":
+        # this is a view from above
+        c = np.array([-2.0*xmax, -2.0*ymax, center[2]+0.75*zmax])
+
+        # the normal vector should be pointing back through the center
+        L = center.d - c
+        L = L/np.sqrt((L**2).sum())
+
     W = 3.0*ds.domain_width
     N = 1080
 
@@ -149,7 +157,12 @@ def doit(plotfile, fname):
         #                   nim, 
         #                   dpi=145, clear_fig=False)
 
-        cam.save_annotated("{}_{}_HD{:03d}.png".format(os.path.normpath(plotfile), fname, n), 
+        if view == "top":
+            ostr = fname + "_top"
+        else:
+            ostr = fname
+            
+        cam.save_annotated("{}_{}_HD{:03d}.png".format(os.path.normpath(plotfile), ostr, n), 
                            nim, 
                            dpi=218, clear_fig=False)
         
@@ -162,14 +175,18 @@ if __name__ == "__main__":
     fname = "vz"
     plotfile = ""
 
-
+    view = "normal"
+    
     try: plotfile = sys.argv[1]
     except: sys.exit("ERROR: no plotfile specified")
 
     try: fname = sys.argv[2]
     except: pass
 
-    doit(plotfile, fname)
+    try: view = sys.argv[3]
+    except: pass
+    
+    doit(plotfile, fname, view)
 
 
         
