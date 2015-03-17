@@ -50,7 +50,7 @@ section_sources = maestro_doc.bib \
                   MESA/instructions.tex
 
 
-MaestroUsersGuide.pdf: MaestroUsersGuide.tex $(pdf_source) $(section_sources) $(pdf_source)
+MaestroUsersGuide.pdf: MaestroUsersGuide.tex maestrosymbols.tex $(pdf_source) $(section_sources) $(pdf_source)
 	pdflatex MaestroUsersGuide.tex < /dev/null
 	bibtex MaestroUsersGuide
 	pdflatex MaestroUsersGuide.tex < /dev/null

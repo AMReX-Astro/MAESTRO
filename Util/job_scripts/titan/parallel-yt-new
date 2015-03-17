@@ -11,7 +11,7 @@
 # user modifiable variables:
 
 # number of parallel tasks to run
-NCPUS=12
+NCPUS=8
 
 
 # pidfile is a lock file that is used to make sure that only one instance 
@@ -19,16 +19,15 @@ NCPUS=12
 pidfile=process.pid
 
 # set the prefix of the datafile to process
-data_prefix=plt
+data_prefix=xrb_3d_w30.72m_plt
 
 # set the full name of the analysis routines (must be in the path)
-analysis=./vol.py
+analysis=./vol-perspective-rotate.py
 
 fname=vz
 
 # activate yt
-source /global/homes/z/zingale/yt/yt-x86_64/bin/activate
-
+source /lustre/atlas/proj-shared/ast106/yt/yt-x86_64/bin/activate
 
 #----------------------------------------------------------------------------
 # initialization stuff
@@ -65,7 +64,7 @@ function process_files
 
     if [ -d $1 ]; then
 
-	if [ ! -f ${root}_${fname}.png ]; then
+	if [ ! -f ${root}_${fname}_HD000.png ]; then  
            # do processing
            aprun ${analysis} $1 ${fname} 
 	fi
@@ -111,7 +110,11 @@ function freecpus
 # outer loop.
 
 # clean-up from any previous run
-rm -f _process.plt*
+rm -f _process.*
+
+echo "in the process routine"
+which python
+ls -l /ccs/home/zingale/yt/yt-x86_64/bin/
 
 while true
 do
@@ -121,9 +124,9 @@ do
     exit
   fi
 
-
-  filelist1=$(find . -maxdepth 1 -type d -name "${data_prefix}?????" -print | sort)
-  filelist2=$(find . -maxdepth 1 -type d -name "${data_prefix}??????" -print | sort)
+  
+  filelist1=$(find . -maxdepth 1 -type d -name "${data_prefix}9????" -print | sort)
+  filelist2=$(find . -maxdepth 1 -type d -name "${data_prefix}1?????" -print | sort)
 
 
   for file in ${filelist1} ${filelist2}
