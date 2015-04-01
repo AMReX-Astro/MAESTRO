@@ -49,4 +49,12 @@
  use_eos_coulomb = F
 
  do_heating = T
+
+ apply_vel_field = T
+
+ velpert_scale = 5.d6
+ velpert_amplitude = 1.d2
+ velpert_height_loc = 1.2e8
+ num_vortices = 2
+
 /

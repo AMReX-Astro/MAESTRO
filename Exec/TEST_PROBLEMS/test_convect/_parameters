@@ -1,0 +1,15 @@
+# Velocity field initialization
+apply_vel_field                     logical            .false.
+
+# Initial velocity field vortex scale
+velpert_scale                       real               2.5e6
+
+# Initial velocity field vortex amplitude
+velpert_amplitude                   real               1.0d2
+
+# Initial velocity field vortex height location
+velpert_height_loc                  real               1.2e8
+
+# number of vortices 
+num_vortices                        integer            2
+
