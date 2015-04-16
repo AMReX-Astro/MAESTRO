@@ -31,7 +31,7 @@ contains
     integer,  intent(in   ) :: neq, npt
     real(dp_t), intent(in   ) :: y(neq,npt), t
     real(dp_t), intent(  out) :: ydot(neq,npt)
-    real(dp_t), intent(inout), optional :: upar(:)
+    real(dp_t), intent(inout), optional :: upar(:,:)
     integer :: p
     do p = 1, npt
        ydot(1,p) = -.04d0*y(1,p) + 1.d4*y(2,p)*y(3,p)
@@ -42,18 +42,17 @@ contains
   subroutine J(neq, npt, y, t, pd, upar)
     integer,  intent(in   ) :: neq, npt
     real(dp_t), intent(in   ) :: y(neq,npt), t
-    real(dp_t), intent(  out) :: pd(neq,neq)
-    real(dp_t), intent(inout), optional :: upar(:)
-    pd(1,1) = -.04d0
-    pd(1,2) = 1.d4*y(3,1)
-    pd(1,3) = 1.d4*y(2,1)
-    pd(2,1) = .04d0
-    pd(2,3) = -pd(1,3)
-    pd(3,2) = 6.e7*y(2,1)
-    pd(2,2) = -pd(1,2) - pd(3,2)
+    real(dp_t), intent(  out) :: pd(neq,neq,npt)
+    real(dp_t), intent(inout), optional :: upar(:,:)
+    pd(1,1,:) = -.04d0
+    pd(1,2,:) = 1.d4*y(3,1)
+    pd(1,3,:) = 1.d4*y(2,1)
+    pd(2,1,:) = .04d0
+    pd(2,3,:) = -pd(1,3,1)
+    pd(3,2,:) = 6.e7*y(2,1)
+    pd(2,2,:) = -pd(1,2,1) - pd(3,2,1)
   end subroutine J
 end module feval
-
 
 program test
   use bdf
