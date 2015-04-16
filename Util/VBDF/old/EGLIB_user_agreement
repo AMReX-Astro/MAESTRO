@@ -1,0 +1,60 @@
+
+User Agreement for EGLIB
+(C) Alexandre Ern and Vincent Giovangigli
+
+First version of EGLIB released on February 28th, 1996
+
+
+
+By acceptance and use of this program, the user agrees to 
+the following
+
+*  As experimental, research software, this program is provided 
+free of charge on an "as is" basis without warranty of any 
+kind, either expressed or implied. In particular, the authors
+make no express or implied warranty including, but not limited
+to, the warranties of design, merchantability or fitness for
+a particular purpose. In no event will the authors be liable
+for any lost revenues or profits or other special, direct or
+consequential damages, even if the authors have been warned of 
+such possibilities.
+
+*  This program is provided for the user's personal, non-commercial,
+experimental use and the user is granted permission to copy this
+program to the extent reasonably required for such use. In any 
+case, the user should not deliver this program without a special 
+permission from the authors.
+
+*  The user understands and agrees that this program and any 
+derivative works are to be used solely for experimental uses 
+and are not to be sold, distributed to a commercial organization, 
+or be commercially exploited in any manner.
+
+*  All title, ownership and rights to this program and any copies 
+remain with the authors, irrespective of the ownership of the 
+media on which the program resides.
+
+*  The user is permitted to create derivative works to this program.
+However, all copies of the program and its derivative works must
+contain this user agreement.
+
+*  The authors request that the user supply them a copy of any 
+changes, enhancements, or derivative works which the user may  
+create. The user grants the authors an irrevocable, nonexclusive,
+worldwide and royalty-free license to use, execute, reproduce,
+display, perform, prepare derivative works based upon, and 
+distribute, (internally and externally) copies of any and all
+such materials and derivative works thereof.
+
+*  If the user publishes scientific results that were partly
+obtained using this program, the user is requested to 
+cite at least one of the following references, as the user 
+would cite other papers that were used: 
+
+[1] A. Ern and V. Giovangigli, Multicomponent 
+Transport Algorithms, lecture notes in physics, 
+m 24, new series monographs, Springer-Verlag, Heidelberg, 1994.
+	 
+[2] A. Ern and V. Giovangigli, Fast and Accurate
+Multicomponent Transport Property Evaluation,
+J. Comput. Phys., 120, 105--116, (1995).
