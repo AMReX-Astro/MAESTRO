@@ -1,0 +1,390 @@
+#!/bin/bash -p
+
+#----------------------------------------------------------------------------
+# Notes
+#
+# Blue Waters uses GlobusOnline for data management and HPSS archiving.  Note
+# that this script will not work if you have not set things up for 
+# GlobusOnline.  You must generate an ssh key and add it to your Globus
+# account.  See https://bluewaters.ncsa.illinois.edu/data-transfer-doc for details.
+#
+
+#----------------------------------------------------------------------------
+# user modifiable variables:
+
+# toggle debug print statements
+debug=""      #Off
+#debug="debug"  #On
+
+# N is the number of seconds to sleep before checking for new
+# files to process again.
+N=60
+
+# pidfile is a lock file that is used to make sure that only one instance 
+# of this script is working on the current directory
+pidfile=process.pid
+
+# set the prefix of the plotfiles and checkpoint files
+plt_prefix=*plt
+chk_prefix=*chk
+
+# HPSS variables -- Directories, GlobusOnline endpoints and host, etc...
+# GlobusOnline endpoints
+src_ep="ncsa#BlueWaters"
+dst_ep="ncsa#Nearline"
+go_host="cli.globusonline.org"
+src_dir=`pwd`
+src_base=`basename $src_dir`
+hpss_dir="/projects/sciteam/jni/ajacobs/$src_base"
+
+# Checkpoint archive intervals. All checkfiles with timesteps divisible by chk_int 
+# will be archived (e.g. chk_int = 100 means checkpoint files for every 100 timesteps
+# will be archived).  
+#
+# Note that all plotfiles will be archived, so be careful to set
+# plot_int or plot_deltat in the inputs file such that you're not flooding scratch
+# or HPSS with data.
+chk_int=100
+
+#----------------------------------------------------------------------------
+# initialization
+if [ $debug ]; then echo "Initializing..."; fi
+
+# timestamp the file that captures output
+date >> process.out
+echo "--------------------------------------------------" >> process.out
+
+# check to make sure that the lock file does not already exist.
+if [ -f $pidfile ]; then
+  echo "process lock file " $pidfile " already exists" >> process.out
+  exit -1
+fi
+
+# create the lock file
+echo $$ > $pidfile
+
+# if our process is killed, remove the lock file first
+trap "/bin/rm -f $pidfile" EXIT HUP TERM XCPU KILL
+
+#----------------------------------------------------------------------------
+# make storage directories
+
+if [ $debug ]; then echo "Making storage directories..."; fi
+
+# once we process a file, we will move the plotfiles into the plotfiles/
+# directory.  Other than keeping the directory clean, this then hides them 
+# from the script, so if the system later purges the files in the pltXXXXX 
+# directory and the .processed file, we don't overwrite our archived data with 
+# an empty directory structure.  We do the same with the checkpoint files (using
+# checkfiles/)
+
+if [ ! -d plotfiles ]; then
+  mkdir plotfiles
+fi
+
+if [ ! -d checkfiles ]; then
+  mkdir checkfiles
+fi
+
+#----------------------------------------------------------------------------
+# the processing function
+
+# Process Files.  Once a plotfile is successfully processed, we will output
+# a file pltXXXXX.processed (checkpoint files are only archived, with a
+# chkXXXXX.processed file appearing once the archiving is successful).  
+# Subsequent invocations of this routine will skip over any plotfiles or
+# checkpoint files that have a corresponding .processed file.
+
+function process_files
+{
+  if [ ! -f $pidfile ]; then
+    echo "process: $pidfile has been removed, exiting"
+    exit
+  fi
+
+  # plotfiles
+  if [ $debug ]; then echo "Processing plotfiles..."; fi
+
+  # Take all but the final plt file -- we want to ensure they're completely 
+  # written to disk.  Strip out any tar files that are lying around as well 
+  # as pltXXXXX.processed files.  We restrict the find command to a depth of 
+  # 1 to avoid catching any already-processed files in the plotfiles/
+  # directory
+  pltlist5=$(find . -maxdepth 1 -type d -name "${plt_prefix}?????" -print | sort)
+  pltlist6=$(find . -maxdepth 1 -type d -name "${plt_prefix}??????" -print | sort)
+
+  pltlist="$pltlist5 $pltlist6"
+
+  if [ $debug ]; then echo "Plotlist B4: $pltlist "; fi
+
+  if [ "$pltlist" ]; then
+    nl=$(echo "$pltlist" | wc -l)
+    nl=$(expr $nl - 1)
+    if [ $nl -le 0 ]; then
+      pltlist=""
+    else
+      pltlist=$(echo "$pltlist" | head -$nl)
+    fi
+  fi
+
+  if [ $debug ]; then echo "Plotlist Af: $pltlist "; fi
+
+  for dir in ${pltlist}; do
+    # Strip extraneous characters from dir
+    dir=`basename $dir`
+
+    # Sanity check that $dir is indeed a directory
+    if [ -d ${dir} ]; then
+      # only work on the file if there is not a .processed file in the
+      # main directory or the plotfiles/ directory
+      if [ ! -f ${dir}.processed ] && [ ! -f plotfiles/${dir}.processed ]; then
+        if [ $debug ]; then echo "Archiving $dir..."; fi
+
+        # Initialize variables used by transfer_files
+        sync_level="3" # 0: Copy files that do not exist at the destination
+                       # 1: Copy files if the destination size doesn't match
+                       #      source size
+                       # 2: Copy files if destination timestamp is older than
+                       #      source
+                       # 3: Copy files if source and destination checksums 
+                       #      don't match
+        task_label="Archiving $dir"
+        src_dst="$src_ep$src_dir/$dir/ $dst_ep$hpss_dir/plotfiles/$dir/ -r"
+        
+        # Archive files on the HPSS system
+        transfer_files #transfer_files initializes $task_id
+        rc=$?          # $? holds the value returned by the previous command
+        if [ $rc -ne 0 ]; then
+          echo "transfer_files failed for $dir!" >> process.out
+          if [ $debug ]; then echo "Transfer failed!"; fi
+          #exit $rc
+        fi
+
+        # If successful, then mark as processed
+        if [ $rc -eq 0 ]; then
+          if [ $debug ]; then echo "Success! Marking and moving..."; fi
+          echo "successfully transferred $dir!" >> process.out
+
+          # mark this file as processed so we skip it next time
+          date > ${dir}.processed
+
+          # move the plotfile into the plotfiles directory
+          mv ${dir} plotfiles/
+
+          # ..and the corresponding .processed file too.
+          mv ${dir}.processed plotfiles/
+
+        fi
+      fi   # end test of whether plotfile already processed
+    fi   # end test of whether plotfile is a directory (as it should be)
+  done
+
+  # checkpoint files
+  if [ $debug ]; then echo "Processing checkfiles..."; fi
+
+  # Take all but the final 2 chk files -- we want to ensure they're completely 
+  # written to disk and we want to leave recent checkfiles for jobs to restart
+  # from.  Strip out any chkXXXXX.processed files that are lying around.  We 
+  # restrict the find command to a depth of 1 to avoid catching any already-processed
+  # files in the checkfiles/ directory
+  chklist5=$(find . -maxdepth 1 -type d -name "${chk_prefix}?????" -print | sort)
+  chklist6=$(find . -maxdepth 1 -type d -name "${chk_prefix}??????" -print | sort)
+
+  chklist="$chklist5 $chklist6"
+
+  if [ $debug ]; then echo "Checklist B4: $chklist "; fi
+  
+  if [ "$chklist" ]; then
+    nl=$(echo "$chklist" | wc -l)
+    nl=$(expr $nl - 2)
+    if [ $nl -le 0 ]; then
+      chklist=""
+    else
+      chklist=$(echo "$chklist" | head -$nl)
+    fi
+  fi
+  
+  if [ $debug ]; then echo "Checklist Af: $chklist "; fi
+
+  for dir in ${chklist}; do
+    # Strip extraneous characters from dir
+    dir=`basename $dir`
+
+    # Sanity check that $dir is indeed a directory
+    if [ -d ${dir} ]; then
+      # Only process directories that haven't been processed yet
+      if [ ! -f ${dir}.processed ] && [ ! -f checkfiles/${dir}.processed ]; then
+        # If the timestep is divisble by chk_int, archive.  Otherwise, delete
+        # to keep from using up memory quotas.
+        tstep=${dir#$chk_prefix}
+        mod=`expr $tstep % $chk_int`
+        if [ $mod -eq 0 ]; then
+          if [ $debug ]; then echo "Archiving $dir..."; fi
+          # Initialize variables used by transfer_files
+          sync_level="3" # 0: Copy files that do not exist at the destination
+          # 1: Copy files if the destination size doesn't match
+          #      source size
+          # 2: Copy files if destination timestamp is older than
+          #      source
+          # 3: Copy files if source and destination checksums 
+          #      don't match
+          task_label="Archiving $dir"
+          src_dst="$src_ep$src_dir/$dir/ $dst_ep$hpss_dir/checkfiles/$dir/ -r"
+
+          # Archive files on the HPSS system
+          transfer_files #transfer_files initializes $task_id
+          rc=$?          # $? holds the value returned by the previous command
+          if [ $rc -ne 0 ]; then
+            if [ $debug ]; then echo "Failed!"; fi
+            echo "transfer_files failed for $dir!" >> process.out
+            #exit $rc
+          fi
+
+          # If successful, then mark as processed     
+          if [ $rc -eq 0 ]; then
+            if [ $debug ]; then echo "Success! Marking and moving..."; fi
+            echo "successfully transferred $dir!" >> process.out
+
+            # mark this file as processed so we skip it next time
+            date > ${dir}.processed
+
+            # move the checkpoint file into the checkfiles directory
+            mv ${dir} checkfiles/
+
+            # ..and the corresponding .processed file too.
+            mv ${dir}.processed checkfiles/
+
+          fi
+        else 
+          #Delete the directory
+          if [ $debug ]; then echo "Deleting $dir..."; fi
+          echo "deleting $dir in background..." >> process.out
+          rm -r $dir &
+        fi
+      fi
+    fi
+  done
+}
+
+#----------------------------------------------------------------------------
+# File transfer function
+function transfer_files 
+{
+  if [ $debug ]; then echo "Entering transfer function."; fi
+
+  # obtain a task id
+  if [ $debug ]; then echo "Get task id..."; fi
+  tries=1
+  while true; do
+    task_id=$(ssh $go_host transfer --generate-id)
+    rc=$?
+    if [ $rc -eq 0 ]; then
+      break
+    elif [ $tries -eq 1 ]; then
+      echo "Error attempting to obtain a task id - retrying." >> process.out
+    elif [ $tries -eq 2 ]; then
+      echo "Error attempting to obtain a task id - retrying." >> process.out
+    elif [ $tries -eq 3 ]; then
+      echo "Too many failures - aborting." >> process.out
+      return 1
+    fi
+    let "tries+=1"
+    sleep 10
+  done
+
+  # execute the transfer forcing a successful checksum check
+  if [ $debug ]; then echo "Execute transfer with: "; fi
+  if [ $debug ]; then echo "    task_id: $task_id "; fi
+  if [ $debug ]; then echo "    sync:    $sync_level "; fi
+  if [ $debug ]; then echo "    label:   $task_label "; fi
+  if [ $debug ]; then echo "    src_dst: $src_dst "; fi
+  tries=1
+  while true; do
+    # Transfer command:
+    # ssh user@cli.globusonline.org transfer --verify-checksum --taskid=$task_id 
+    #   -s $sync_level --label=$task_label -- ncsa#BlueWaters/$src_dir/ ncsa#Nearline/$dst_dir/ -r
+    #   
+    #   --verify-checksum unsurprisingly forces matching checksums and retransfers
+    #       until checksums match
+    #   -r (at the very end) tells GO to recursively transfer all files
+    if [ $debug ]; then echo "ssh $go_host transfer --verify-checksum --taskid=$task_id --label=\"$task_label\" -s $sync_level -- $src_dst"; fi
+    ssh $go_host transfer --verify-checksum --taskid=$task_id --label=\"$task_label\" -s $sync_level   -- $src_dst
+    rc=$?
+    if [ $rc -eq 0 ]; then
+      #All went well
+      if [ $debug ]; then echo "Transfer successfully established..."; fi
+      
+      #Wait for the transfer to complete
+      ssh $go_host wait $task_id >> /dev/null
+     
+      #Record the details, break from loop
+      echo " " >> process.out
+      echo "Details of $dir transfer: " >> process.out
+      echo ">>>" >> process.out
+      ssh $go_host details $task_id >> process.out
+      echo "<<<" >> process.out
+      echo " " >> process.out
+      break
+    elif [ $rc -ne 255 ]; then
+      if [ $debug ]; then echo "Fatal error!"; fi
+      echo "Transfer returned fatal error - aborting. Are your endpoints activated? Is your source_dest syntax correct?" >> process.out
+      return $rc
+    else
+      if [ $tries -lt 4 ]; then
+        if [ $debug ]; then echo "Retrying..."; fi
+        echo "ssh connection failed - retrying." >> process.out
+        sleep 30
+        let "tries+=1"
+      else
+        if [ $debug ]; then echo "Failed too many times, aborting."; fi
+        echo "Too many connection failures - aborting." >> process.out
+        break
+      fi
+    fi
+  done
+
+  return $rc
+}
+
+#----------------------------------------------------------------------------
+# the main function
+
+# archive any diagnostic files first -- give them a unique name, appending 
+# the date string, to make sure that we don't overwrite anything
+if [ $debug ]; then echo "Archiving diag files..."; fi
+
+datestr=$(date +"%Y%m%d_%H%M_%S")
+diag_files=$(find . -maxdepth 1 -name "*_diag.out" -print)
+
+if [ "${diag_files}" ]; then
+  # tar the files
+  tar cvf diag_files_$datestr.tar $diag_files
+  # Initialize variables used by transfer_files
+  sync_level="3" # 0: Copy files that do not exist at the destination
+                 # 1: Copy files if the destination size doesn't match
+                 #      source size
+                 # 2: Copy files if destination timestamp is older than
+                 #      source
+                 # 3: Copy files if source and destination checksums 
+                 #      don't match
+  task_label="Archiving diag_files_$datestr tarfile"
+  src_dst="$src_ep$src_dir/diag_files_$datestr.tar $dst_ep$hpss_dir/diag_files_$datestr.tar"
+
+  # Archive files on the HPSS system
+  transfer_files #transfer_files initializes $task_id
+  rc=$?          # $? holds the value returned by the previous command
+  if [ $rc -ne 0 ]; then
+    echo "transfer_files failed for diag_files_$datestr.tar!" >> process.out
+    if [ $debug ]; then echo "Transfer failed!"; fi
+    #exit $rc
+  fi
+fi
+
+# Loop, waiting for plt and chk directories to appear.
+if [ $debug ]; then echo "Entering processing loop..."; fi
+while true
+do
+  process_files
+  if [ $debug ]; then echo "Sleeping for $N seconds..."; fi
+  sleep $N
+done
