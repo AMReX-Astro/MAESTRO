@@ -90,11 +90,15 @@ MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
 include $(NETWORK_TOP_DIR)/$(strip $(NETWORK_DIR))/NETWORK_REQUIRES
 
 ifdef NEED_VODE
-  UTIL_CORE += Util/VODE
+  UTIL_CORE += Util/VODE Util/LINPACK
 endif
 
 ifdef NEED_BLAS
   UTIL_CORE += Util/BLAS
+endif
+
+ifdef NEED_LINPACK
+  UTIL_CORE += Util/LINPACK
 endif
 
 ifdef NEED_VBDF

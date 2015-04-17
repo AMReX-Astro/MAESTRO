@@ -7,8 +7,6 @@ COMP := gfortran
 
 MKVERBOSE := t
 
-NEED_BLAS := t
-
 # define the location of the MAESTRO top directory
 MAESTRO_TOP_DIR := $(MAESTRO_HOME)
 
@@ -16,7 +14,7 @@ MAESTRO_TOP_DIR := $(MAESTRO_HOME)
 EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 
-NETWORK_TOP_DIR := $(ASTRODEV_DIR)/VBDF/dev/omp
+NETWORK_TOP_DIR := $(MAESTRO_HOME)/Util/VBDF/dev/omp
 NETWORK_DIR := ignition_simple_bdf
 #NETWORK_DIR := rprox_vbdf
 
@@ -24,7 +22,7 @@ NETWORK_DIR := ignition_simple_bdf
 # we only need to include the problem's directory if there are unique
 # files there (as specified in a GPackage.mak).  The problem directory
 # is always placed at the start of the vpath by the GMakerules.mak.
-EXTRA_TOP_DIR := $(ASTRODEV_DIR)/VBDF/dev
+EXTRA_TOP_DIR := $(MAESTRO_HOME)/Util/VBDF/dev
 EXTRA_DIR := omp/test_react
 
 UNIT_TEST := t
