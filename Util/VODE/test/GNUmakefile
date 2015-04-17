@@ -1,15 +1,14 @@
 fsources = tvode.f
 
 include ../GPackage.mak
+include ../../BLAS/GPackage.mak
 
-F90 = g77
-F90 = ifort -check all
-F90 = lf95 -g --pca --nsav --ap --chk aesu --chkglobal
+F90 = gfortran
 
 tvode: $(fsources)
 	$(F90) -o tvode $^
 
-vpath %.f . ../
+vpath %.f . ../ ../../BLAS
 
 
 clean:
