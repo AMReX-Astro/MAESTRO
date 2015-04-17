@@ -1,39 +1,72 @@
+NDEBUG := t
+MPI    :=
+OMP    :=
 
-F90    ?= gfortran
-FFLAGS  = -Ibuild -Jbuild -g -Wall -Wno-unused-dummy-argument
-CC      = gcc
-CFLAGS  = -std=c99 -Wall -g -DBL_Linux -DBL_FORT_USE_UNDERSCORE 
+MKVERBOSE :=t
 
-BOXLIB = build/bl_types.o build/timer_c.o build/parallel_stubs.o build/bl_error.o build/bl_string.o build/bl_IO.o build/bl_timer.o
-LINALG = build/idamax.o build/dscal.o build/daxpy.o build/vddot.o build/dgefa.o build/dgesl.o
+COMP := gfortran
 
-vpath %.f90 ../ /home/ajacobs/Research/Codebase/BoxLib/Src/F_BaseLib/
-vpath %.f   ../
-vpath %.f   ../../BLAS
-vpath %.f   ../../VODE
-vpath %.c /home/ajacobs/Research/Codebase/BoxLib/Src/F_BaseLib/
+# define the location of the MAESTRO root directory
+MAESTRO_TOP_DIR := $(MAESTRO_HOME)
 
-all: t1.exe coeffs.exe
+include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 
-#
-# rules
-#
+# core BoxLib directories
+BOXLIB_CORE := Src/F_BaseLib
 
-%.exe: %.f90 $(BOXLIB) $(LINALG) build/bdf.o 
-	$(F90) $(FFLAGS) $^ -o $@
+# other packages needed for data_processing
+Fmdirs :=
 
-build/%.o: %.c
-	@mkdir -p build
-	$(CC) $(CFLAGS) -c $^ -o $@
 
-build/%.o: %.f
-	@mkdir -p build
-	$(F90) -c $(FFLAGS) $^ -o $@
+# directories containing files that are 'include'-d via Fortran
+Fmincludes :=
 
-build/%.o: %.f90
-	@mkdir -p build
-	$(F90) -c $(FFLAGS) $^ -o $@
+Fmdirs += Util/VBDF
+Fmdirs += Util/VODE
+Fmdirs += Util/BLAS
 
-clean::
-	rm -rf build/ *.exe *~
 
+# any MAESTRO stuff
+Fmpack := $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir)/GPackage.mak)
+Fmlocs := $(foreach dir, $(Fmdirs), $(MAESTRO_TOP_DIR)/$(dir))
+
+# BoxLib stuff
+Fmpack += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir)/GPackage.mak)
+Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
+
+
+# any include files
+Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir))
+
+
+# include the necessary GPackage.mak files that define this setup
+include $(Fmpack)
+
+# vpath defines the directories to search for the source files
+VPATH_LOCATIONS += $(Fmlocs)
+
+# list of directories to put in the Fortran include path
+FINCLUDE_LOCATIONS += $(Fmincs)
+
+programs += t1
+programs += coeffs
+
+all: $(pnames)
+
+
+include $(BOXLIB_HOME)/Tools/F_mk/GMakerules.mak
+
+
+%.$(suf).exe:%.f90 $(objects)
+ifdef MKVERBOSE
+	$(LINK.f90) -o $@ $< $(objects) $(libraries)
+else
+	@echo "Linking $@ ... "
+	@$(LINK.f90) -o $@ $< $(objects) $(libraries)
+endif
+
+
+# for debugging.  To see the value of a Makefile variable,
+# e.g. Fmlocs, simply do "make print-Fmlocs".  This will print out the
+# value.
+print-%: ; @echo $* is $($*)
