@@ -97,6 +97,10 @@ ifdef NEED_BLAS
   UTIL_CORE += Util/BLAS
 endif
 
+ifdef NEED_LINPACK
+  UTIL_CORE += Util/LINPACK
+endif
+
 ifdef NEED_VBDF
   UTIL_CORE += Util/VBDF
 endif
