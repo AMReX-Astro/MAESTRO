@@ -2,17 +2,12 @@ NDEBUG := t
 MPI    :=
 OMP    :=
 
-MKVERBOSE :=t 
+MKVERBOSE :=t
 
 COMP := gfortran
 
-# some routines need an eos/network (i.e. to compute thermodynamic 
-# quantities.  If that is the case, set NEED_EOS_NETWORK := t
-NEED_EOS_NETWORK := 
-
 # define the location of the MAESTRO root directory
 MAESTRO_TOP_DIR := $(MAESTRO_HOME)
-
 
 include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 
@@ -20,16 +15,15 @@ include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 BOXLIB_CORE := Src/F_BaseLib
 
 # other packages needed for data_processing
-Fmdirs := 
+Fmdirs :=
 
 
 # directories containing files that are 'include'-d via Fortran
-Fmincludes := 
+Fmincludes :=
 
 Fmdirs += Util/VBDF
 Fmdirs += Util/VODE
 Fmdirs += Util/BLAS
-
 
 
 # any MAESTRO stuff
@@ -45,7 +39,6 @@ Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
 Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir))
 
 
-
 # include the necessary GPackage.mak files that define this setup
 include $(Fmpack)
 
@@ -56,9 +49,9 @@ VPATH_LOCATIONS += $(Fmlocs)
 FINCLUDE_LOCATIONS += $(Fmincs)
 
 programs += t1
+programs += coeffs
 
 all: $(pnames)
-
 
 
 include $(BOXLIB_HOME)/Tools/F_mk/GMakerules.mak
@@ -67,7 +60,7 @@ include $(BOXLIB_HOME)/Tools/F_mk/GMakerules.mak
 %.$(suf).exe:%.f90 $(objects)
 ifdef MKVERBOSE
 	$(LINK.f90) -o $@ $< $(objects) $(libraries)
-else	
+else
 	@echo "Linking $@ ... "
 	@$(LINK.f90) -o $@ $< $(objects) $(libraries)
 endif
@@ -77,6 +70,3 @@ endif
 # e.g. Fmlocs, simply do "make print-Fmlocs".  This will print out the
 # value.
 print-%: ; @echo $* is $($*)
-
-
-
