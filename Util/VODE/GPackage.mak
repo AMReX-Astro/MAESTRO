@@ -14,10 +14,5 @@ fsources += dewset.f
 fsources += ixsav.f
 fsources += dumach.f
 fsources += iumach.f
-
 fsources += dacopy.f
-fsources += dgbfa.f
-fsources += dgbsl.f
-fsources += dgefa.f
-fsources += dgesl.f
 
