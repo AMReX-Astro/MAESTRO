@@ -22,7 +22,7 @@ Fmdirs :=
 Fmincludes :=
 
 Fmdirs += Util/VBDF
-Fmdirs += Util/VODE
+Fmdirs += Util/LINPACK
 Fmdirs += Util/BLAS
 
 
