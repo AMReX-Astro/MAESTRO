@@ -1,0 +1,28 @@
+Some notes on using OPENACC.
+
+OLCF has a nice GPU guide:                https://www.olcf.ornl.gov/support/system-user-guides/accelerated-computing-guide/
+And there are some Blue Waters resources: https://bluewaters.ncsa.illinois.edu/openacc
+
+Compile
+==========
+
+The BoxLib/Maestro build system already knows about OpenACC, so you just
+need to set 'ACC := t' in your GNUMakefile.
+
+Before compiling (with Cray), you will also want to load these modules:
+PrgEnv-cray
+craype-accel-nvidia35
+cudatoolkit
+
+(e.g. '$ module load craype-accel-nvidia35)
+
+Run
+========
+
+In your batch script, be sure you request xk nodes (the ones with GPUs), similar to:
+#PBS -l nodes=512:ppn=1:xk
+
+To get some debugging output at runtime, you can set the environment variable CRAY_ACC_DEBUG
+(I believe options are 1,2, or 3 with varying degrees of verbosity):
+$ export CRAY_ACC_DEBUG=3
+
