@@ -29,7 +29,7 @@ module feval
 contains
   subroutine f(neq, npt, y, t, ydot, upar)
     integer,  intent(in   ) :: neq, npt
-    real(dp_t), intent(in   ) :: y(neq,npt), t
+    real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
     real(dp_t), intent(  out) :: ydot(neq,npt)
     real(dp_t), intent(inout), optional :: upar(:,:)
     integer :: p
@@ -41,7 +41,7 @@ contains
   end subroutine f
   subroutine J(neq, npt, y, t, pd, upar)
     integer,  intent(in   ) :: neq, npt
-    real(dp_t), intent(in   ) :: y(neq,npt), t
+    real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
     real(dp_t), intent(  out) :: pd(neq,neq,npt)
     real(dp_t), intent(inout), optional :: upar(:,:)
     pd(1,1,:) = -.04d0
@@ -84,7 +84,7 @@ program test
      y0 = y1
      t0 = t1
      t1 = 10*t1
-     dt = 2*ts%dt
+     dt = 2*dt  !ts%dt
   end do
 
   print *, ''

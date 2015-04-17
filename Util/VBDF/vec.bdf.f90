@@ -362,7 +362,7 @@ contains
 
        call bdf_dump(ts_local)
        !print *, 'call prune... '
-       !call flush()
+       call flush()
        if (maxval(ts_local%t) >= t1) then
           !p = 1
           !do while(p <= ts_local%npt)
