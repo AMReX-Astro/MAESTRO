@@ -8,7 +8,8 @@ module burner_module
   use network
   use bdf
   use parallel
-
+  use extern_probin_module, only: use_vbdf
+  
   private
   public :: burner!, burner_vec
 
@@ -213,14 +214,20 @@ contains
 
     ! call the integration routine
     r1 = parallel_wtime()
-    call dvode(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &
-               istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
-               rpar, ipar)
- 
-    !call bdf_wrap(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &
-    !           istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
-    !           rpar, ipar)
+
+    if (use_vbdf) then
+       call bdf_wrap(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &
+                     istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
+                     rpar, ipar)
+
+    else
+       call dvode(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &
+                  istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
+                  rpar, ipar)
+    endif
+    
     r2 = parallel_wtime() - r1
+
     wrap_total = wrap_total + r2
     bdf_build_total = bdf_build_total + build_total
     bdf_advance_total = bdf_advance_total + advance_total
