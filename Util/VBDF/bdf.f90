@@ -143,24 +143,7 @@ contains
      real(kind=dp_t), intent(in   ) :: tout, rtol(:), atol(:), &
                                        rwork(lrw)
      real(kind=dp_t), intent(inout) :: y(neq), t, rpar(:)
-     external f, Jac
-     !interface
-     !   subroutine f(neq, t, y, yd, rpar, ipar)
-     !     import dp_t
-     !     integer,    intent(in   ) :: neq, ipar(:)
-     !     real(dp_t), intent(in   ) :: y(neq), t
-     !     real(dp_t), intent(  out) :: yd(neq)
-     !     real(dp_t), intent(inout) :: rpar(*)
-     !   end subroutine f
-     !   subroutine Jac(neq, t, y, ml, mu, pd, nrowpd, rpar, ipar)
-     !     import dp_t
-     !     integer,    intent(in   ) :: neq, nrowpd, ml, mu, ipar(:)
-     !     real(dp_t), intent(in   ) :: y(neq), t
-     !     real(dp_t), intent(  out) :: pd(nrowpd, neq)
-     !     real(dp_t), intent(inout) :: rpar(*)
-     !   end subroutine Jac
-     !end interface
-
+     external f, Jac 
      integer, parameter :: NPT = 1         !For DVODE-style calls there's no concept of npt>1
      integer, parameter :: MAX_ORDER = 3   !This is arbitrary, should investigate other values
      logical, parameter :: RESET = .true.  !.true. means we want to initialize the bdf_ts object
@@ -185,7 +168,8 @@ contains
      allocate(upar(size(rpar),NPT))
      upar(:,NPT) = rpar(:)
      call bdf_ts_build(ts, neq, NPT, rtol, atol, MAX_ORDER, upar)
-
+     ts%dt_min     = 1.0e-20_dp_t 
+     
      ! Translate DVODE args into args for bdf_advance
      y0(:,NPT) = y(:)
      call bdf_advance(ts, f_wrap, Jac_wrap, neq, NPT, y0, t, y1, tout, &
@@ -462,13 +446,10 @@ contains
        end subroutine Jac
     end interface
 
-    !include 'LinAlg.inc'
-
     integer  :: k, m, n, p, info
     real(dp_t) :: c(ts%npt), dt_adj(ts%npt), dt_rat(ts%npt), inv_l1 
     logical  :: rebuild, iterating(ts%npt)
 
-    !TODO: GPU
     do p = 1, ts%npt
        do m = 1, ts%neq
           inv_l1 = 1.0_dp_t / ts%l(1,p)
@@ -502,17 +483,7 @@ contains
 
           call eye_r(ts%P)
          
-          !This spawns redudantly executing threads on each gang
-          !$acc parallel copy(ts)                                              &
-          !$acc   firstprivate(dt_adj) private(info, p, m, n)                       
-         
-          !This distributes the iterations of the p-loop across gangs and the
-          !workers within each gang. 
-          !$acc loop gang worker private(info, p, m, n)
           do p = 1, ts%npt
-             !This collapses the two loops into one and distributes the new
-             !single loop's iterations across the SIMD vectors of each worker
-             !$acc loop vector collapse(2) private(n,m,info)
              do m = 1, ts%neq
                 do n = 1, ts%neq
                    ts%P(n,m,p) = ts%P(n,m,p) - dt_adj(p) * ts%J(n,m,p)
@@ -521,20 +492,9 @@ contains
              call dgefa(ts%P(:,:,p), ts%neq, ts%neq, ts%ipvt(:,p), info)
              ! lapack      call dgetrf(neq, neq, ts%P, neq, ts%ipvt, info)
           end do
-          !$acc end parallel
 
           ts%nlu = ts%nlu + ts%npt !The number of times dgefa was called above
           
-          !do p = 1, ts%npt
-          !   do m = 1, ts%neq
-          !      do n = 1, ts%neq
-          !         print *, 'pt', p, ' m', m, ' n', n
-          !         print *, 'P:    ', ts%P(n,m,p)
-          !      enddo
-          !      print *, 'ipvt: ', ts%ipvt(m,p)
-          !   enddo
-          !enddo
-
           ts%dt_nwt = dt_adj
           ts%p_age  = 0
           ts%refactor  = .false.
@@ -542,48 +502,23 @@ contains
 
        c = 2 * ts%dt_nwt / (dt_adj + ts%dt_nwt)
 
-       !TODO: Compile on GPU
        call f(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
        ts%nfe = ts%nfe + 1
 
-       !TODO: GPU
        do p = 1, ts%npt
           if (.not. iterating(p)) cycle
-          !if (p == 11950) then
-          !  print *, 'pt', p
-          !  print *, '  dt_adj: ', dt_adj
-          !  print *, '  c:      ', c
-          !  print *, '  ipvt:   ', ts%ipvt(:,p)
-          !endif
 
           ! solve using factorized iteration matrix
           do m = 1, ts%neq
              ts%b(m,p) = c(p) * (ts%rhs(m,p) - ts%y(m,p) + dt_adj(p) * ts%yd(m,p))
-             !if (p == 11950) then
-             !  print *, '  eq', m
-             !  print *, '    b:   ', ts%b(m,p)
-             !  print *, '    rhs: ', ts%rhs(m,p)
-             !  print *, '    y:   ', ts%y(m,p)
-             !  print *, '    yd:  ', ts%yd(m,p)
-             !endif
           end do
-          !TODO: Compile on GPU
           call dgesl(ts%P(:,:,p), ts%neq, ts%neq, ts%ipvt(:,p), ts%b(:,p), 0)
           ! lapack   call dgetrs ('N', neq, 1, ts%P, neq, ts%ipvt, ts%b, neq, info)
           ts%nit = ts%nit + 1
 
           do m = 1, ts%neq
-             !if (p == 11950) then
-             !   print *, '  eq', m
-             !   print *, '    ei:      ', ts%e(m,p)
-             !   print *, '    b:   ', ts%b(m,p)
-             !endif
              ts%e(m,p) = ts%e(m,p) + ts%b(m,p)
              ts%y(m,p) = ts%z0(m,p,0) + ts%e(m,p)
-             !if (p == 11950) then
-             !   print *, '    y_final: ', ts%y(m,p)
-             !   print *, '    ef:      ', ts%e(m,p)
-             !endif
           end do
           if (norm(ts%b(:,p), ts%ewt(:,p)) < one) iterating(p) = .false.
        end do
@@ -634,12 +569,12 @@ contains
           eta = one / ( (6.d0 * error) ** (one / ts%k(p)) + 1.d-6 )
           call rescale_timestep(ts, eta, p)
           retry_mask(p) = .true.
-          if (ts%dt(p) < ts%dt_min + epsilon(ts%dt_min)) ts%ncdtmin = ts%ncdtmin + 1
-          !if (ts%ncdtmin > 7) err = BDF_ERR_DTMIN
+          !TODO: Discuss if we want to use original epsilon implementation
+          !if (ts%dt(p) < ts%dt_min + epsilon(ts%dt_min)) ts%ncdtmin = ts%ncdtmin + 1
+          if (ts%dt(p) < ts%dt_min) ts%ncdtmin = ts%ncdtmin + 1
        end if
     end do
     if (ts%ncdtmin > 7*ts%npt) err = BDF_ERR_DTMIN
-    !print *, 'number pts rescaled: ', count(retry_mask)
     retry = any(retry_mask)
     if (retry) return
     ts%ncdtmin = 0
@@ -982,6 +917,7 @@ contains
 
   !
   ! Copy over all point-based values
+  ! TODO: We may not need this
   !
   subroutine bdf_ts_ptcopy(ts_src, p_src, ts_dst, p_dst)
      type(bdf_ts), intent(inout) :: ts_src, ts_dst
@@ -1026,6 +962,7 @@ contains
 
   !
   ! Copy over global values.
+  ! TODO: We may not need this
   !
   subroutine bdf_ts_globalcopy(ts_src, ts_dst)
      type(bdf_ts), intent(inout) :: ts_src, ts_dst
@@ -1111,8 +1048,7 @@ contains
     ts%max_steps  = 1000000
     ts%max_iters  = 10
     ts%verbose    = 0
-    ts%dt_min     = epsilon(ts%dt_min)
-    !ts%dt_min     = 1.0e-13_dp_t 
+    ts%dt_min     = epsilon(ts%dt_min) !TODO: Keep this as default?
     ts%eta_min    = 0.2_dp_t
     ts%eta_max    = 10.0_dp_t
     ts%eta_thresh = 1.50_dp_t
