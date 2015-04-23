@@ -13,17 +13,6 @@ module burner_module
   private
   public :: burner!, burner_vec
 
-  !TODO: Delete!  Just for development debugging
-  real(kind=dp_t), public, save :: wrap_total = 0.0_dp_t
-  real(kind=dp_t), public, save :: bdf_build_total = 0.0_dp_t
-  real(kind=dp_t), public, save :: bdf_advance_total = 0.0_dp_t
-  real(kind=dp_t), public, save :: bdf_update_total = 0.0_dp_t
-  real(kind=dp_t), public, save :: bdf_predict_total = 0.0_dp_t
-  real(kind=dp_t), public, save :: bdf_solve_total = 0.0_dp_t
-  real(kind=dp_t), public, save :: bdf_check_total = 0.0_dp_t
-  real(kind=dp_t), public, save :: bdf_correct_total = 0.0_dp_t
-  real(kind=dp_t), public, save :: bdf_adjust_total = 0.0_dp_t
-
   integer, public, save :: nst = 0
   integer, public, save :: nfe = 0
   integer, public, save :: nje = 0
@@ -47,7 +36,7 @@ contains
     real(kind=dp_t), intent(  out) :: Xout(nspec), rho_omegadot(nspec), rho_Hnuc
   
     integer :: n
-    real(kind=dp_t) :: enuc, dX, r1, r2
+    real(kind=dp_t) :: enuc, dX
 
     logical, parameter :: verbose = .false.
 
@@ -213,8 +202,6 @@ contains
     rpar(irp_o16)  = Xin(io16)
 
     ! call the integration routine
-    r1 = parallel_wtime()
-
     if (use_vbdf) then
        call bdf_wrap(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &
                      istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
@@ -226,27 +213,6 @@ contains
                   rpar, ipar)
     endif
     
-    r2 = parallel_wtime() - r1
-
-    wrap_total = wrap_total + r2
-    bdf_build_total = bdf_build_total + build_total
-    bdf_advance_total = bdf_advance_total + advance_total
-    bdf_update_total = bdf_update_total + update_total
-    bdf_predict_total = bdf_predict_total + predict_total
-    bdf_solve_total = bdf_solve_total + solve_total
-    bdf_check_total = bdf_check_total + check_total
-    bdf_correct_total = bdf_correct_total + correct_total
-    bdf_adjust_total = bdf_adjust_total + adjust_total
-
-    build_total = 0.0_dp_t
-    advance_total = 0.0_dp_t
-    update_total = 0.0_dp_t
-    predict_total = 0.0_dp_t
-    solve_total = 0.0_dp_t
-    check_total = 0.0_dp_t
-    correct_total = 0.0_dp_t
-    adjust_total = 0.0_dp_t
-
     if (istate < 0) then
        print *, 'ERROR: integration failed in net'
        print *, 'istate = ', istate
