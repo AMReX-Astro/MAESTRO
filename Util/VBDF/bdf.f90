@@ -66,30 +66,32 @@ module bdf
      real(dp_t), pointer :: atol(:)         ! absolute tolerances
 
      ! state
-     real(dp_t) :: t                        ! current time
-     real(dp_t) :: t1                       ! final time
-     real(dp_t) :: dt                       ! current time step
-     real(dp_t) :: dt_nwt                   ! dt used when building newton iteration matrix
-     integer  :: k                        ! current order
+     real(dp_t), pointer :: t(:)          ! current time
+     real(dp_t) :: t1                     ! final time
+     real(dp_t), pointer :: dt(:)         ! current time step
+     real(dp_t), pointer :: dt_nwt(:)     ! dt used when building newton iteration matrix
+     integer, pointer :: k(:)             ! current order
      integer  :: n                        ! current step
-     integer  :: j_age                    ! age of jacobian
-     integer  :: p_age                    ! age of newton iteration matrix
-     integer  :: k_age                    ! number of steps taken at current order
-     real(dp_t) :: tq(-1:2)                 ! error coefficients (test quality)
-     real(dp_t) :: tq2save
+     !TODO: As of now, j_age and p_age are de-facto scalars.  
+     !   Should decide if vectorized age boosts performance
+     integer, pointer :: j_age(:)         ! age of jacobian
+     integer, pointer :: p_age(:)         ! age of newton iteration matrix
+     integer,   pointer  :: k_age(:)      ! number of steps taken at current order
+     real(dp_t), pointer :: tq(:,:)    ! error coefficients (test quality)
+     real(dp_t), pointer :: tq2save(:)
      logical  :: refactor
 
      real(dp_t), pointer :: J(:,:,:)        ! jacobian matrix
      real(dp_t), pointer :: P(:,:,:)        ! newton iteration matrix
      real(dp_t), pointer :: z(:,:,:)        ! nordsieck histroy array, indexed as (dof, p, n)
      real(dp_t), pointer :: z0(:,:,:)       ! nordsieck predictor array
-     real(dp_t), pointer :: h(:)            ! time steps, h = [ h_n, h_{n-1}, ..., h_{n-k} ]
-     real(dp_t), pointer :: l(:)            ! predictor/corrector update coefficients
+     real(dp_t), pointer :: h(:,:)          ! time steps, h = [ h_n, h_{n-1}, ..., h_{n-k} ]
+     real(dp_t), pointer :: l(:,:)          ! predictor/corrector update coefficients (0:max_order,npt)
      real(dp_t), pointer :: upar(:,:)       ! array of user parameters (passed to
                                             ! user's Jacobian and f)
      real(dp_t), pointer :: y(:,:)          ! current y
      real(dp_t), pointer :: yd(:,:)         ! current \dot{y}
-     real(dp_t), pointer :: rhs(:,:)        ! solver rhs
+     real(dp_t), pointer :: rhs(:,:)        ! solver rhs (NOT the f in xdot = f)
      real(dp_t), pointer :: e(:,:)          ! accumulated correction
      real(dp_t), pointer :: e1(:,:)         ! accumulated correction, previous step
      real(dp_t), pointer :: ewt(:,:)        ! cached error weights
@@ -116,15 +118,6 @@ module bdf
   !                    bdf_correct, bdf_dump, bdf_adjust, bdf_reset, print_y
   !                    bdf_ts_build, bdf_ts_destroy, bdf_wrap
 
-  !TODO: delete these!  Just for temporary testing
-  real(dp_t), public, save :: build_total = 0.0_dp_t
-  real(dp_t), public, save :: advance_total = 0.0_dp_t
-  real(dp_t), public, save :: update_total = 0.0_dp_t
-  real(dp_t), public, save :: predict_total = 0.0_dp_t
-  real(dp_t), public, save :: solve_total = 0.0_dp_t
-  real(dp_t), public, save :: check_total = 0.0_dp_t
-  real(dp_t), public, save :: correct_total = 0.0_dp_t
-  real(dp_t), public, save :: adjust_total = 0.0_dp_t
 contains
 
   !
@@ -139,224 +132,195 @@ contains
   ! See the DVODE source code's extensive comments for an explanation of this
   ! interface.
   !
+  
   subroutine bdf_wrap(f, neq, y, t, tout, itol, rtol, atol, itask, &
-      istate, iopt, rwork, lrw, iwork, liw, jac, mf,    &
-      rpar, ipar)
-    integer,         intent(in   ) :: neq, itol, itask, istate, iopt, &
-                                      lrw, liw, mf
-    integer,         intent(in   ) :: iwork(liw), ipar(:)
-    real(kind=dp_t), intent(in   ) :: tout, rtol(:), atol(:), &
-                                      rwork(lrw)
-    real(kind=dp_t), intent(inout) :: y(neq), t, rpar(:)
-    interface
-       subroutine f(neq, t, y, yd, rpar, ipar)
-         import dp_t
-         integer,    intent(in   ) :: neq, ipar(:)
-         real(dp_t), intent(in   ) :: y(neq), t
-         real(dp_t), intent(  out) :: yd(neq)
-         real(dp_t), intent(inout) :: rpar(:)
-       end subroutine f
-       subroutine Jac(neq, t, y, ml, mu, pd, nrowpd, rpar, ipar)
-         import dp_t
-         integer,    intent(in   ) :: neq, nrowpd, ml, mu, ipar(:)
-         real(dp_t), intent(in   ) :: y(neq), t
-         real(dp_t), intent(  out) :: pd(nrowpd, neq)
-         real(dp_t), intent(inout) :: rpar(:)
-       end subroutine Jac
-    end interface
+       istate, iopt, rwork, lrw, iwork, liw, jac, mf,    &
+       rpar, ipar)
+     integer,         intent(in   ) :: neq, itol, itask, istate, iopt, &
+                                       lrw, liw, mf
+     integer,         intent(in   ) :: iwork(liw), ipar(:)
+     real(kind=dp_t), intent(in   ) :: tout, rtol(:), atol(:), &
+                                       rwork(lrw)
+     real(kind=dp_t), intent(inout) :: y(neq), t, rpar(:)
+     external f, Jac
+     !interface
+     !   subroutine f(neq, t, y, yd, rpar, ipar)
+     !     import dp_t
+     !     integer,    intent(in   ) :: neq, ipar(:)
+     !     real(dp_t), intent(in   ) :: y(neq), t
+     !     real(dp_t), intent(  out) :: yd(neq)
+     !     real(dp_t), intent(inout) :: rpar(*)
+     !   end subroutine f
+     !   subroutine Jac(neq, t, y, ml, mu, pd, nrowpd, rpar, ipar)
+     !     import dp_t
+     !     integer,    intent(in   ) :: neq, nrowpd, ml, mu, ipar(:)
+     !     real(dp_t), intent(in   ) :: y(neq), t
+     !     real(dp_t), intent(  out) :: pd(nrowpd, neq)
+     !     real(dp_t), intent(inout) :: rpar(*)
+     !   end subroutine Jac
+     !end interface
 
-    integer, parameter :: NPT = 1         !For DVODE-style calls there's no concept of npt>1
-    integer, parameter :: MAX_ORDER = 3   !This is arbitrary, should investigate other values
-    logical, parameter :: RESET = .true.  !.true. means we want to initialize the bdf_ts object
-    logical, parameter :: REUSE = .false. !.false. means don't reuse the Jacobian
-    integer, parameter :: MF_ANALYTIC_JAC = 21
-    real(kind=dp_t), parameter :: DT0 = 1.0d-9 !Initial dt to be used in getting from 
-                                               !t to tout.  Also arbitrary,
-                                               !multiple values should be
-                                               !explored.
-    type(bdf_ts)    :: ts
-    logical         :: first_call
-    integer         :: ierr
-    real(kind=dp_t) :: y0(neq,NPT), y1(neq,NPT), r1, r2
-    real(kind=dp_t),allocatable :: upar(:,:)
+     integer, parameter :: NPT = 1         !For DVODE-style calls there's no concept of npt>1
+     integer, parameter :: MAX_ORDER = 3   !This is arbitrary, should investigate other values
+     logical, parameter :: RESET = .true.  !.true. means we want to initialize the bdf_ts object
+     logical, parameter :: REUSE = .false. !.false. means don't reuse the Jacobian
+     integer, parameter :: MF_ANALYTIC_JAC = 21
+     real(kind=dp_t), parameter :: DT0 = 1.0d-9 !Initial dt to be used in getting from 
+                                                !t to tout.  Also arbitrary,
+                                                !multiple values should be
+                                                !explored.
+     type(bdf_ts)    :: ts
+     logical         :: first_call
+     integer         :: ierr
+     real(kind=dp_t) :: y0(neq,NPT), y1(neq,NPT)
+     real(kind=dp_t),allocatable :: upar(:,:)
 
-    ! Check user input
-    if(mf .ne. MF_ANALYTIC_JAC) then
-      call bl_error("ERROR in BDF integrator: mf != MF_ANALYTIC_JAC not yet supported")
-    endif
+     ! Check user input
+     if(mf .ne. MF_ANALYTIC_JAC) then
+       call bl_error("ERROR in BDF integrator: mf != MF_ANALYTIC_JAC not yet supported")
+     endif
 
-    ! Build the bdf_ts time-stepper object
-    r1 = parallel_wtime()
-    allocate(upar(size(rpar),NPT))
-    upar(:,NPT) = rpar(:)
-    call bdf_ts_build(ts, neq, NPT, rtol, atol, MAX_ORDER, upar)
-    r2 = parallel_wtime() - r1
-    build_total = build_total + r2
+     ! Build the bdf_ts time-stepper object
+     allocate(upar(size(rpar),NPT))
+     upar(:,NPT) = rpar(:)
+     call bdf_ts_build(ts, neq, NPT, rtol, atol, MAX_ORDER, upar)
 
-    ! Translate DVODE args into args for bdf_advance
-    y0(:,NPT) = y
-    r1 = parallel_wtime()
-    call bdf_advance(ts, f_wrap, Jac_wrap, neq, NPT, y0, t, y1, tout, &
-                     DT0, RESET, REUSE, ierr, initial_call=.true.)
-    r2 = parallel_wtime() - r1
-    advance_total = advance_total + r2
-    t = tout !BDF is designed to always end at tout, 
-             !set t to tout to mimic the output behavior of DVODE
-    y = y1(:,NPT)
-    rpar(:) = upar(:,NPT)
+     ! Translate DVODE args into args for bdf_advance
+     y0(:,NPT) = y
+     call bdf_advance(ts, f_wrap, Jac_wrap, neq, NPT, y0, t, y1, tout, &
+                      DT0, RESET, REUSE, ierr, initial_call=.true.)
+     t = tout !BDF is designed to always end at tout, 
+              !set t to tout to mimic the output behavior of DVODE
+     y = y1(:,NPT)
+     rpar(:) = upar(:,NPT)
 
-    ! Cleanup
-    r1 = parallel_wtime()
+     ! Cleanup
+     call bdf_ts_destroy(ts)
 
-    call bdf_ts_destroy(ts)
-    r2 = parallel_wtime() - r1
-    build_total = build_total + r2
+     contains
+       ! Wraps the DVODE-style f in a BDF-style interface
+       ! ASSUMPTION: All t(:) are the same
+       subroutine f_wrap(neq, npt, y, t, yd, upar)
+          integer,  intent(in   ) :: neq, npt
+          real(kind=dp_t), intent(in   ) :: y(neq,npt), t(npt)
+          real(kind=dp_t), intent(  out) :: yd(neq,npt)
+          real(kind=dp_t), intent(inout), optional :: upar(:,:)
 
-    contains
-      ! Wraps the DVODE-style f in a BDF-style interface
-      subroutine f_wrap(neq, npt, y, t, yd, upar)
-         integer,  intent(in   ) :: neq, npt
-         real(kind=dp_t), intent(in   ) :: y(neq,npt), t
-         real(kind=dp_t), intent(  out) :: yd(neq,npt)
-         real(kind=dp_t), intent(inout), optional :: upar(:,:)
+          real(kind=dp_t) :: rpar(11)
+          integer :: ipar(2) !Dummy array to match DVODE interface
 
-         integer :: ipar(2) !Dummy array to match DVODE interface
+          ipar = -1
 
-         ipar = -1
+          rpar(1:11) = upar(:,1)
+          call f(neq, t(1), y(:,1), yd(:,1), rpar, ipar)
+          upar(:,1) = rpar(1:11)
+       end subroutine f_wrap
 
-         call f(neq, t, y(:,1), yd(:,1), upar(:,1), ipar)
-      end subroutine f_wrap
+       ! Wraps the DVODE-style Jacobian in a BDF-style interface
+       ! ASSUMPTION: All t(:) are the same
+       subroutine Jac_wrap(neq, npt, y, t, J, upar)
+          integer,  intent(in   ) :: neq, npt
+          real(kind=dp_t), intent(in   ) :: y(neq,npt), t(npt)
+          real(kind=dp_t), intent(  out) :: J(neq, neq, npt)
+          real(kind=dp_t), intent(inout), optional :: upar(:,:)
 
-      ! Wraps the DVODE-style Jacobian in a BDF-style interface
-      subroutine Jac_wrap(neq, npt, y, t, J, upar)
-         integer,  intent(in   ) :: neq, npt
-         real(kind=dp_t), intent(in   ) :: y(neq,npt), t
-         real(kind=dp_t), intent(  out) :: J(neq, neq, npt)
-         real(kind=dp_t), intent(inout), optional :: upar(:,:)
+          integer :: ipar(2), ml, mu
 
-         integer :: ipar(2), ml, mu
+          ml = -1
+          mu = -1
+          ipar = -1
 
-         ml = -1
-         mu = -1
-         ipar = -1
-
-         call Jac(neq, t, y(:,1), ml, mu, J(:,:,1), neq, upar(:,1), ipar)
-      end subroutine Jac_wrap
+          call Jac(neq, t(1), y(:,1), ml, mu, J(:,:,1), neq, upar(:,1), ipar)
+       end subroutine Jac_wrap
   end subroutine bdf_wrap
 
   !
   ! Advance system from t0 to t1.
   !
   subroutine bdf_advance(ts, f, Jac, neq, npt, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
-    type(bdf_ts), intent(inout) :: ts
-    integer,      intent(in   ) :: neq, npt
-    real(dp_t),   intent(in   ) :: y0(neq,npt), t0, t1, dt0
-    real(dp_t),   intent(  out) :: y1(neq,npt)
-    logical,      intent(in   ) :: reset, reuse
-    integer,      intent(  out) :: ierr
-    logical,      intent(in   ), optional :: initial_call
-    interface
-       subroutine f(neq, npt, y, t, yd, upar)
-         import dp_t
-         integer,    intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t
-         real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(inout), optional :: upar(:,:)
-       end subroutine f
-       subroutine Jac(neq, npt, y, t, J, upar)
-         import dp_t
-         integer,    intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t
-         real(dp_t), intent(  out) :: J(neq, neq, npt)
-         real(dp_t), intent(inout), optional :: upar(:,:)
-       end subroutine Jac
-    end interface
+     type(bdf_ts), intent(inout) :: ts
+     integer,      intent(in   ) :: neq, npt
+     real(dp_t),   intent(in   ) :: y0(neq,npt), t0, t1, dt0
+     real(dp_t),   intent(  out) :: y1(neq,npt)
+     logical,      intent(in   ) :: reset, reuse
+     integer,      intent(  out) :: ierr
+     logical,      intent(in   ), optional :: initial_call
+     interface
+        subroutine f(neq, npt, y, t, yd, upar)
+           import dp_t
+           integer,    intent(in   ) :: neq, npt
+           real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
+           real(dp_t), intent(  out) :: yd(neq,npt)
+           real(dp_t), intent(inout), optional :: upar(:,:)
+        end subroutine f
+        subroutine Jac(neq, npt, y, t, J, upar)
+           import dp_t
+           integer,    intent(in   ) :: neq, npt
+           real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
+           real(dp_t), intent(  out) :: J(neq, neq, npt)
+           real(dp_t), intent(inout), optional :: upar(:,:)
+        end subroutine Jac
+     end interface
 
-    integer  :: k, p, m
-    logical  :: retry, linitial
-    real(kind=dp_t) :: r1, r2
+     integer  :: k, p, m, index_map(npt)
+     logical  :: retry, linitial
 
-    linitial = .false.; if (present(initial_call)) linitial = initial_call
+     linitial = .false.; if (present(initial_call)) linitial = initial_call
 
-    if (reset) call bdf_reset(ts, f, y0, dt0, reuse)
+     if (reset) call bdf_reset(ts, f, y0, dt0, reuse)
 
-    ierr = BDF_ERR_SUCCESS
+     ierr = BDF_ERR_SUCCESS
+     do p = 1, npt
+        index_map(p) = p
+     enddo
 
-    ts%t1 = t1; ts%t = t0; ts%ncse = 0; ts%ncdtmin = 0;
-    do k = 1, bdf_max_iters + 1
-       !print *, 'bdf iter ', k
-       !call flush()
-       if (ts%n > ts%max_steps .or. k > bdf_max_iters) then
-          ierr = BDF_ERR_MAXSTEPS; return
-       end if
+     ts%t1 = t1; ts%t = t0; ts%ncse = 0; ts%ncdtmin = 0;
+     do k = 1, bdf_max_iters + 1
+        if (ts%n > ts%max_steps .or. k > bdf_max_iters) then
+           ierr = BDF_ERR_MAXSTEPS; return
+        end if
 
-       if (k == 1) &
-            call bdf_dump(ts)
+        if (k == 1) &
+             call bdf_dump(ts)
 
-       r1 = parallel_wtime()
-       !print *, 'call update... '
-       !call flush()
-       call bdf_update(ts)                ! update various coeffs (l, tq) based on time-step history
-       r2 = parallel_wtime() - r1
-       update_total = update_total + r2
+        call bdf_update(ts)                ! update various coeffs (l, tq) based on time-step history
 
-       r1 = parallel_wtime()
-       !print *, 'call predict... '
-       !call flush()
-       call bdf_predict(ts)               ! predict nordsieck array using pascal matrix
-       r2 = parallel_wtime() - r1
-       predict_total = predict_total + r2
-       if(linitial .and. k == 1) then
-          !print *, 'initial call... '
-          !call flush()
-          !This is the initial solve, so use the user's initial value, 
-          !not the predicted value.
-          do p = 1, ts%npt
-             do m = 1, ts%neq
-                !Overwrite the predicted z0 with the user's y0
-                ts%z0(m,p,0) = ts%y(m,p)
-             end do
-          end do
-       endif
-       r1 = parallel_wtime()
-       !print *, 'call solve... '
-       !call flush()
-       call bdf_solve(ts, f, Jac)         ! solve for y_n based on predicted y and yd
-       r2 = parallel_wtime() - r1
-       solve_total = solve_total + r2
-       r1 = parallel_wtime()
-       !print *, '  cur time: ', ts%t
-       !print *, 'call check... '
-       !call flush()
-       call bdf_check(ts, retry, ierr)    ! check for solver errors and test error estimate
-       r2 = parallel_wtime() - r1
-       check_total = check_total + r2
+        call bdf_predict(ts)               ! predict nordsieck array using pascal matrix
+        if(linitial .and. k == 1) then
+           !This is the initial solve, so use the user's initial value, 
+           !not the predicted value.
+           do p = 1, ts%npt
+              do m = 1, ts%neq
+                 !Overwrite the predicted z0 with the user's y0
+                 ts%z0(m,p,0) = ts%y(m,p)
+              end do
+           end do
+        endif
+        call bdf_solve(ts, f, Jac)         ! solve for y_n based on predicted y and yd
+        call bdf_check(ts, retry, ierr)    ! check for solver errors and test error estimate
 
-       if (ierr /= BDF_ERR_SUCCESS) return
-       if (retry) cycle
+        if (ierr /= BDF_ERR_SUCCESS) return
+        if (retry) cycle
 
-       r1 = parallel_wtime()
-       !print *, 'call correct... '
-       !call flush()
-       call bdf_correct(ts)               ! new solution looks good, correct history and advance
-       r2 = parallel_wtime() - r1
-       correct_total = correct_total + r2
+        call bdf_correct(ts)               ! new solution looks good, correct history and advance
 
-       call bdf_dump(ts)
-       if (ts%t >= t1) exit
+        call bdf_dump(ts)
+        !TODO: As of now, points that reach t1 are just skipped in the 
+        !      various calculation routines.
+        !      Should we attempt to prune these points out and only
+        !      iterate on points that haven't reached t1?
+        if (minval(ts%t) >= t1) exit
+        
+        call bdf_adjust(ts)                ! adjust step-size/order
+     end do
 
-       r1 = parallel_wtime()
-       call bdf_adjust(ts)                ! adjust step-size/order
-       r2 = parallel_wtime() - r1
-       adjust_total = adjust_total + r2
-    end do
+     !TODO: Handle how to display dt, k now that it's vector
+     if (ts%verbose > 0) &
+          print '("BDF: n:",i6,", fe:",i6,", je: ",i3,", lu: ",i3,", &
+          &it: ",i3,", se: ",i3,", min(dt): ",e15.8,", min(k): ",i2)', &
+          ts%n, ts%nfe, ts%nje, ts%nlu, ts%nit, ts%nse, minval(ts%dt), minval(ts%k)
 
-    if (ts%verbose > 0) &
-         print '("BDF: n:",i6,", fe:",i6,", je: ",i3,", lu: ",i3,", it: ",i3,", se: ",i3,", dt: ",e15.8,", k: ",i2)', &
-         ts%n, ts%nfe, ts%nje, ts%nlu, ts%nit, ts%nse, ts%dt, ts%k
-
-    y1 = ts%z(:,:,0)
-    
+     y1 = ts%z(:,:,0)
   end subroutine bdf_advance
 
   !
@@ -383,50 +347,54 @@ contains
   subroutine bdf_update(ts)
     type(bdf_ts), intent(inout) :: ts
 
-    integer  :: j
+    integer  :: j, p
     real(dp_t) :: a0, a0hat, a1, a2, a3, a4, a5, a6, xistar_inv, xi_inv, c
 
     ts%l  = 0
     ts%tq = 0
 
     ! compute l vector
-    ts%l(0) = 1
-    ts%l(1) = xi_j(ts%h, 1)
-    if (ts%k > 1) then
-       do j = 2, ts%k-1
-          ts%l = ts%l + eoshift(ts%l, -1) / xi_j(ts%h, j)
-       end do
-       ts%l = ts%l + eoshift(ts%l, -1) * xi_star_inv(ts%k, ts%h)
-    end if
+    do p = 1, ts%npt
+       ts%l(0,p) = 1
+       ts%l(1,p) = xi_j(ts%h(:,p), 1)
+       if (ts%k(p) > 1) then
+          do j = 2, ts%k(p)-1
+             ts%l(:,p) = ts%l(:,p) + eoshift(ts%l(:,p), -1) / xi_j(ts%h(:,p), j)
+          end do
+          ts%l(:,p) = ts%l(:,p) + eoshift(ts%l(:,p), -1) * xi_star_inv(ts%k(p), ts%h(:,p))
+       end if
+    enddo
 
     ! compute error coefficients (adapted from cvode)
-    a0hat = alphahat0(ts%k, ts%h)
-    a0    = alpha0(ts%k)
+    do p = 1, ts%npt
+       a0hat = alphahat0(ts%k(p), ts%h(:,p))
+       a0    = alpha0(ts%k(p))
 
-    xi_inv     = one
-    xistar_inv = one
-    if (ts%k > 1) then
-       xi_inv     = one / xi_j(ts%h, ts%k)
-       xistar_inv = xi_star_inv(ts%k, ts%h)
-    end if
+       xi_inv     = one
+       xistar_inv = one
+       if (ts%k(p) > 1) then
+          xi_inv     = one / xi_j(ts%h(:,p), ts%k(p))
+          xistar_inv = xi_star_inv(ts%k(p), ts%h(:,p))
+       end if
 
-    a1 = one - a0hat + a0
-    a2 = one + ts%k * a1
-    ts%tq(0) = abs(a1 / (a0 * a2))
-    ts%tq(2) = abs(a2 * xistar_inv / (ts%l(ts%k) * xi_inv))
-    if (ts%k > 1) then
-       c  = xistar_inv / ts%l(ts%k)
-       a3 = a0 + one / ts%k
-       a4 = a0hat + xi_inv
-       ts%tq(-1) = abs(c * (one - a4 + a3) / a3)
-    else
-       ts%tq(-1) = one
-    end if
+       a1 = one - a0hat + a0
+       a2 = one + ts%k(p) * a1
+       ts%tq(0,p) = abs(a1 / (a0 * a2))
+       ts%tq(2,p) = abs(a2 * xistar_inv / (ts%l(ts%k(p),p) * xi_inv))
+       if (ts%k(p) > 1) then
+          c  = xistar_inv / ts%l(ts%k(p),p)
+          a3 = a0 + one / ts%k(p)
+          a4 = a0hat + xi_inv
+          ts%tq(-1,p) = abs(c * (one - a4 + a3) / a3)
+       else
+          ts%tq(-1,p) = one
+       end if
 
-    xi_inv = ts%h(0) / sum(ts%h(0:ts%k))
-    a5 = a0 - one / (ts%k+1)
-    a6 = a0hat - xi_inv
-    ts%tq(1) = abs((one - a6 + a5) / a2 / (xi_inv * (ts%k+2) * a5))
+       xi_inv = ts%h(0,p) / sum(ts%h(0:ts%k(p),p))
+       a5 = a0 - one / (ts%k(p)+1)
+       a6 = a0hat - xi_inv
+       ts%tq(1,p) = abs((one - a6 + a5) / a2 / (xi_inv * (ts%k(p)+2) * a5))
+    enddo
 
     call ewts(ts)
   end subroutine bdf_update
@@ -436,11 +404,11 @@ contains
   !
   subroutine bdf_predict(ts)
     type(bdf_ts), intent(inout) :: ts
-    integer :: i, j, m, p
-    do i = 0, ts%k
-       do p = 1, ts%npt
+    integer :: i, j, m, p, pp
+    do p = 1, ts%npt
+      do i = 0, ts%k(p)
           ts%z0(:,p,i) = 0
-          do j = i, ts%k
+          do j = i, ts%k(p)
              do m = 1, ts%neq
                 ts%z0(m,p,i) = ts%z0(m,p,i) + ts%A(i,j) * ts%z(m,p,j)
              end do
@@ -460,19 +428,20 @@ contains
   !   G(y) = y - dt * f(y,t) - rhs
   !
   subroutine bdf_solve(ts, f, Jac)
+    !$acc routine(dgefa) seq
     type(bdf_ts), intent(inout) :: ts
     interface
        subroutine f(neq, npt, y, t, yd, upar)
          import dp_t
          integer,  intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t
+         real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
          real(dp_t), intent(  out) :: yd(neq,npt)
          real(dp_t), intent(inout), optional :: upar(:,:)
        end subroutine f
        subroutine Jac(neq, npt, y, t, J, upar)
          import dp_t
          integer,  intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t
+         real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
          real(dp_t), intent(  out) :: J(neq, neq,npt)
          real(dp_t), intent(inout), optional :: upar(:,:)
        end subroutine Jac
@@ -481,22 +450,24 @@ contains
     !include 'LinAlg.inc'
 
     integer  :: k, m, n, p, info
-    real(dp_t) :: c, dt_adj, dt_rat, inv_l1
+    real(dp_t) :: c(ts%npt), dt_adj(ts%npt), dt_rat(ts%npt), inv_l1 
     logical  :: rebuild, iterating(ts%npt)
 
-    inv_l1 = 1.0_dp_t / ts%l(1)
+    !TODO: GPU
     do p = 1, ts%npt
        do m = 1, ts%neq
+          inv_l1 = 1.0_dp_t / ts%l(1,p)
           ts%e(m,p)   = 0
           ts%rhs(m,p) = ts%z0(m,p,0) - ts%z0(m,p,1) * inv_l1
           ts%y(m,p)   = ts%z0(m,p,0)
        end do
     end do
-    dt_adj = ts%dt / ts%l(1)
+    dt_adj    = ts%dt / ts%l(1,:)
 
     dt_rat = dt_adj / ts%dt_nwt
-    if (ts%p_age > ts%max_p_age) ts%refactor = .true.
-    if (dt_rat < 0.7d0 .or. dt_rat > 1.429d0) ts%refactor = .true.
+    if (maxval(ts%p_age) > ts%max_p_age) ts%refactor = .true.
+    !TODO: using min, max may not be best solution
+    if (minval(dt_rat) < 0.7d0 .or. maxval(dt_rat) > 1.429d0) ts%refactor = .true.
 
     iterating = .true.
 
@@ -505,30 +476,49 @@ contains
        ! build iteration matrix and factor
        if (ts%refactor) then
           rebuild = .true.
-          if (ts%ncse == 0 .and. ts%j_age < ts%max_j_age) rebuild = .false.
-          if (ts%ncse > 0  .and. (dt_rat < 0.2d0 .or. dt_rat > 5.d0)) rebuild = .false.
+          if (ts%ncse == 0 .and. maxval(ts%j_age) < ts%max_j_age) rebuild = .false.
+          if (ts%ncse > 0  .and. (minval(dt_rat) < 0.2d0 .or. maxval(dt_rat) > 5.d0)) rebuild = .false.
 
           if (rebuild) then
-             !TODO: Compile on GPU?
              call Jac(ts%neq, ts%npt, ts%y, ts%t, ts%J, ts%upar)
              ts%nje   = ts%nje + 1*ts%npt
              ts%j_age = 0
           end if
 
           call eye_r(ts%P)
-
-          !TODO: GPU?
-          do p =1, ts%npt
+         
+          !This spawns redudantly executing threads on each gang
+          !$acc parallel copy(ts)                                              &
+          !$acc   firstprivate(dt_adj) private(info, p, m, n)                       
+         
+          !This distributes the iterations of the p-loop across gangs and the
+          !workers within each gang. 
+          !$acc loop gang worker private(info, p, m, n)
+          do p = 1, ts%npt
+             !This collapses the two loops into one and distributes the new
+             !single loop's iterations across the SIMD vectors of each worker
+             !$acc loop vector collapse(2) private(n,m,info)
              do m = 1, ts%neq
                 do n = 1, ts%neq
-                   ts%P(n,m,p) = ts%P(n,m,p) - dt_adj * ts%J(n,m,p)
-                   !TODO: Compile on GPU?
-                   call dgefa(ts%P(:,:,p), ts%neq, ts%neq, ts%ipvt(:,p), info)
-                   ! lapack      call dgetrf(neq, neq, ts%P, neq, ts%ipvt, info)
-                   ts%nlu    = ts%nlu + 1
+                   ts%P(n,m,p) = ts%P(n,m,p) - dt_adj(p) * ts%J(n,m,p)
                 end do
              end do
+             call dgefa(ts%P(:,:,p), ts%neq, ts%neq, ts%ipvt(:,p), info)
+             ! lapack      call dgetrf(neq, neq, ts%P, neq, ts%ipvt, info)
           end do
+          !$acc end parallel
+
+          ts%nlu = ts%nlu + ts%npt !The number of times dgefa was called above
+          
+          !do p = 1, ts%npt
+          !   do m = 1, ts%neq
+          !      do n = 1, ts%neq
+          !         print *, 'pt', p, ' m', m, ' n', n
+          !         print *, 'P:    ', ts%P(n,m,p)
+          !      enddo
+          !      print *, 'ipvt: ', ts%ipvt(m,p)
+          !   enddo
+          !enddo
 
           ts%dt_nwt = dt_adj
           ts%p_age  = 0
@@ -544,10 +534,23 @@ contains
        !TODO: GPU
        do p = 1, ts%npt
           if (.not. iterating(p)) cycle
+          !if (p == 11950) then
+          !  print *, 'pt', p
+          !  print *, '  dt_adj: ', dt_adj
+          !  print *, '  c:      ', c
+          !  print *, '  ipvt:   ', ts%ipvt(:,p)
+          !endif
 
           ! solve using factorized iteration matrix
           do m = 1, ts%neq
-             ts%b(m,p) = c * (ts%rhs(m,p) - ts%y(m,p) + dt_adj * ts%yd(m,p))
+             ts%b(m,p) = c(p) * (ts%rhs(m,p) - ts%y(m,p) + dt_adj(p) * ts%yd(m,p))
+             !if (p == 11950) then
+             !  print *, '  eq', m
+             !  print *, '    b:   ', ts%b(m,p)
+             !  print *, '    rhs: ', ts%rhs(m,p)
+             !  print *, '    y:   ', ts%y(m,p)
+             !  print *, '    yd:  ', ts%yd(m,p)
+             !endif
           end do
           !TODO: Compile on GPU
           call dgesl(ts%P(:,:,p), ts%neq, ts%neq, ts%ipvt(:,p), ts%b(:,p), 0)
@@ -555,8 +558,17 @@ contains
           ts%nit = ts%nit + 1
 
           do m = 1, ts%neq
+             !if (p == 11950) then
+             !   print *, '  eq', m
+             !   print *, '    ei:      ', ts%e(m,p)
+             !   print *, '    b:   ', ts%b(m,p)
+             !endif
              ts%e(m,p) = ts%e(m,p) + ts%b(m,p)
              ts%y(m,p) = ts%z0(m,p,0) + ts%e(m,p)
+             !if (p == 11950) then
+             !   print *, '    y_final: ', ts%y(m,p)
+             !   print *, '    ef:      ', ts%e(m,p)
+             !endif
           end do
           if (norm(ts%b(:,p), ts%ewt(:,p)) < one) iterating(p) = .false.
        end do
@@ -577,9 +589,11 @@ contains
     integer,      intent(out)   :: err
 
     real(dp_t) :: error, eta
-    integer  :: p
+    integer    :: p
+    logical    :: retry_mask(ts%npt)
 
     retry = .false.; err = BDF_ERR_SUCCESS
+    retry_mask = .false.
 
     ! if solver failed many times, bail
     if (ts%ncit >= ts%max_iters .and. ts%ncse > 7) then
@@ -587,27 +601,32 @@ contains
        return
     end if
 
-    ! if solver failed to converge, shrink dt and try again
+    ! if solver failed to converge, shrink all dt's and try again
     if (ts%ncit >= ts%max_iters) then
        ts%refactor = .true.; ts%nse = ts%nse + 1; ts%ncse = ts%ncse + 1
-       call rescale_timestep(ts, 0.25d0)
+       do p = 1, ts%npt
+         call rescale_timestep(ts, 0.25d0, p)
+       enddo
        retry = .true.
        return
     end if
     ts%ncse = 0
 
-    ! if local error is too large, shrink dt and try again
     do p = 1, ts%npt
-       error = ts%tq(0) * norm(ts%e(:,p), ts%ewt(:,p))
+       ! if local error is too large, shrink dt and try again
+       error = ts%tq(0,p) * norm(ts%e(:,p), ts%ewt(:,p))
        if (error > one) then
-          eta = one / ( (6.d0 * error) ** (one / ts%k) + 1.d-6 )
-          call rescale_timestep(ts, eta)
-          retry = .true.
-          if (ts%dt < ts%dt_min + epsilon(ts%dt_min)) ts%ncdtmin = ts%ncdtmin + 1
-          if (ts%ncdtmin > 7) err = BDF_ERR_DTMIN
-          return
+          eta = one / ( (6.d0 * error) ** (one / ts%k(p)) + 1.d-6 )
+          call rescale_timestep(ts, eta, p)
+          retry_mask(p) = .true.
+          if (ts%dt(p) < ts%dt_min + epsilon(ts%dt_min)) ts%ncdtmin = ts%ncdtmin + 1
+          !if (ts%ncdtmin > 7) err = BDF_ERR_DTMIN
        end if
     end do
+    if (ts%ncdtmin > 7*ts%npt) err = BDF_ERR_DTMIN
+    !print *, 'number pts rescaled: ', count(retry_mask)
+    retry = any(retry_mask)
+    if (retry) return
     ts%ncdtmin = 0
 
   end subroutine bdf_check
@@ -619,19 +638,19 @@ contains
     type(bdf_ts), intent(inout) :: ts
     integer :: i, m, p
 
-    do i = 0, ts%k
-       do p = 1, ts%npt
+    do p = 1, ts%npt
+       do i = 0, ts%k(p)
           do m = 1, ts%neq
-             ts%z(m,p,i) = ts%z0(m,p,i) + ts%e(m,p) * ts%l(i)
+             ts%z(m,p,i) = ts%z0(m,p,i) + ts%e(m,p) * ts%l(i,p)
           end do
        end do
+       ts%h(:,p)   = eoshift(ts%h(:,p), -1)
+       ts%t(p)     = ts%t(p) + ts%dt(p)
+       ts%h(0,p)   = ts%dt(p)
+       ts%k_age(p) = ts%k_age(p) + 1
     end do
 
-    ts%h     = eoshift(ts%h, -1)
-    ts%h(0)  = ts%dt
-    ts%t     = ts%t + ts%dt
     ts%n     = ts%n + 1
-    ts%k_age = ts%k_age + 1
   end subroutine bdf_correct
 
 
@@ -643,7 +662,8 @@ contains
     integer :: i, m, p
 
     if (.not. ts%debug) return
-    write(ts%dump_unit,*) ts%t, ts%z(:,:,0)
+    write(ts%dump_unit,*) ts%t
+    write(ts%dump_unit,*) ts%z(:,:,0)
   end subroutine bdf_dump
 
   !
@@ -652,68 +672,69 @@ contains
   subroutine bdf_adjust(ts)
     type(bdf_ts), intent(inout) :: ts
 
-    real(dp_t) :: c, error, eta(-1:1), rescale, etamax(ts%npt), etaminmax, delta(ts%npt)
+    real(dp_t) :: c, error(ts%npt), eta(-1:1,ts%npt), rescale, etamax(ts%npt), etaminmax, delta(ts%npt)
     integer  :: p
 
     rescale = 0
 
     do p = 1, ts%npt
        ! compute eta(k-1), eta(k), eta(k+1)
-       eta = 0
-       error  = ts%tq(0) * norm(ts%e(:,p), ts%ewt(:,p))
-       eta(0) = one / ( (6.d0 * error) ** (one / ts%k) + 1.d-6 )
-       if (ts%k_age > ts%k) then
-          if (ts%k > 1) then
-             error     = ts%tq(-1) * norm(ts%z(:,p,ts%k), ts%ewt(:,p))
-             eta(-1) = one / ( (6.d0 * error) ** (one / ts%k) + 1.d-6 )
+       eta(:,p) = 0
+       error(p)  = ts%tq(0,p) * norm(ts%e(:,p), ts%ewt(:,p))
+       eta(0,p) = one / ( (6.d0 * error(p)) ** (one / ts%k(p)) + 1.d-6 )
+       if (ts%k_age(p) > ts%k(p)) then
+          if (ts%k(p) > 1) then
+             error(p)     = ts%tq(-1,p) * norm(ts%z(:,p,ts%k(p)), ts%ewt(:,p))
+             eta(-1,p) = one / ( (6.d0 * error(p)) ** (one / ts%k(p)) + 1.d-6 )
           end if
-          if (ts%k < ts%max_order) then
-             c = (ts%tq(2) / ts%tq2save) * (ts%h(0) / ts%h(2)) ** (ts%k+1)
-             error  = ts%tq(1) * norm(ts%e(:,p) - c * ts%e1(:,p), ts%ewt(:,p))
-             eta(1) = one / ( (10.d0 * error) ** (one / (ts%k+2)) + 1.d-6 )
+          if (ts%k(p) < ts%max_order) then
+             c = (ts%tq(2,p) / ts%tq2save(p)) * (ts%h(0,p) / ts%h(2,p)) ** (ts%k(p)+1)
+             error  = ts%tq(1,p) * norm(ts%e(:,p) - c * ts%e1(:,p), ts%ewt(:,p))
+             eta(1,p) = one / ( (10.d0 * error(p)) ** (one / (ts%k(p)+2)) + 1.d-6 )
           end if
-          ts%k_age = 0
+          ts%k_age(p) = 0
        end if
 
        ! choose which eta will maximize the time step
        etamax(p) = 0
-       if (eta(-1) > etamax(p)) then
-          etamax(p) = eta(-1)
+       if (eta(-1,p) > etamax(p)) then
+          etamax(p) = eta(-1,p)
           delta(p)  = -1
        end if
-       if (eta(1) > etamax(p)) then
-          etamax(p) = eta(1)
+       if (eta(1,p) > etamax(p)) then
+          etamax(p) = eta(1,p)
           delta(p)  = 1
        end if
-       if (eta(0) > etamax(p)) then
-          etamax(p) = eta(0)
+       if (eta(0,p) > etamax(p)) then
+          etamax(p) = eta(0,p)
           delta(p)  = 0
        end if
-    end do
 
-    p = minloc(etamax, dim=1)
-    rescale = 0
-    etaminmax = etamax(p)
-    if (etaminmax > ts%eta_thresh) then
-       if (delta(p) == -1) then
-          call decrease_order(ts)
-       else if (delta(p) == 1) then
-          call increase_order(ts)
+       ! optimize order
+       rescale = 0
+       if (etamax(p) > ts%eta_thresh) then
+          if (delta(p) == -1) then
+             call decrease_order(ts,p)
+          else if (delta(p) == 1) then
+             call increase_order(ts,p)
+          end if
+          rescale = etamax(p)
        end if
-       rescale = etaminmax
-    end if
 
-    if (ts%t + ts%dt > ts%t1) then
-       rescale = (ts%t1 - ts%t) / ts%dt
-       call rescale_timestep(ts, rescale, .true.)
-    else if (rescale /= 0) then
-       call rescale_timestep(ts, rescale)
-    end if
+       ! optimize timestep
+       if (ts%t(p) + ts%dt(p) > ts%t1) then
+          rescale = (ts%t1 - ts%t(p)) / ts%dt(p)
+          call rescale_timestep(ts, rescale, p, .true.)
+       else if (rescale /= 0) then
+          call rescale_timestep(ts, rescale, p)
+       end if
+   
+       ! save for next step (needed to compute eta(1))
+       ts%e1(:,p) = ts%e(:,p)
+       ts%tq2save(p) = ts%tq(2,p)
 
-    ! save for next step (needed to compute eta(1))
-    ts%e1 = ts%e
-    ts%tq2save = ts%tq(2)
-
+    end do
+    
   end subroutine bdf_adjust
 
   !
@@ -727,7 +748,7 @@ contains
        subroutine f(neq, npt, y, t, yd, upar)
          import dp_t
          integer,  intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t
+         real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
          real(dp_t), intent(  out) :: yd(neq,npt)
          real(dp_t), intent(inout), optional :: upar(:,:)
        end subroutine f
@@ -744,7 +765,7 @@ contains
     ts%n  = 1
     ts%k  = 1
 
-    ts%h        = ts%dt
+    ts%h        = dt
     ts%dt_nwt   = ts%dt
     ts%refactor = .true.
 
@@ -752,7 +773,7 @@ contains
     ts%nfe = ts%nfe + 1
 
     ts%z(:,:,0) = ts%y
-    ts%z(:,:,1) = ts%dt * ts%yd
+    ts%z(:,:,1) = dt * ts%yd
 
     ts%k_age = 0
     if (.not. reuse) then
@@ -773,9 +794,10 @@ contains
   !   2. scale dt and adjust time array t accordingly
   !   3. rescale Nordsieck history array
   !
-  subroutine rescale_timestep(ts, eta_in, force_in)
+  subroutine rescale_timestep(ts, eta_in, p_in, force_in)
     type(bdf_ts), intent(inout)           :: ts
-    real(dp_t),     intent(in   )           :: eta_in
+    real(dp_t),   intent(in   )           :: eta_in
+    integer,      intent(in   )           :: p_in
     logical,      intent(in   ), optional :: force_in
 
     real(dp_t) :: eta
@@ -787,66 +809,68 @@ contains
     if (force) then
        eta = eta_in
     else
-       eta = max(eta_in, ts%dt_min / ts%dt, ts%eta_min)
+       eta = max(eta_in, ts%dt_min / ts%dt(p_in), ts%eta_min)
        eta = min(eta, ts%eta_max)
 
-       if (ts%t + eta*ts%dt > ts%t1) then
-          eta = (ts%t1 - ts%t) / ts%dt
+       if (ts%t(p_in) + eta*ts%dt(p_in) > ts%t1) then
+          eta = (ts%t1 - ts%t(p_in)) / ts%dt(p_in)
        end if
     end if
 
-    ts%dt   = eta * ts%dt
-    ts%h(0) = ts%dt
+    ts%dt(p_in)  = eta * ts%dt(p_in)
+    ts%h(0,p_in) = ts%dt(p_in)
 
-    do i = 1, ts%k
-       ts%z(:,:,i) = eta**i * ts%z(:,:,i)
+    do i = 1, ts%k(p_in)
+       ts%z(:,p_in,i) = eta**i * ts%z(:,p_in,i)
     end do
   end subroutine rescale_timestep
 
   !
   ! Decrease order.
   !
-  subroutine decrease_order(ts)
+  subroutine decrease_order(ts, p)
     type(bdf_ts), intent(inout) :: ts
+    integer,      intent(in   ) :: p
     integer  :: j
     real(dp_t) :: c(0:6)
 
-    if (ts%k > 2) then
+    if (ts%k(p) > 2) then
        c = 0
        c(2) = 1
-       do j = 1, ts%k-2
-          c = eoshift(c, -1) + c * xi_j(ts%h, j)
+       do j = 1, ts%k(p)-2
+          c = eoshift(c, -1) + c * xi_j(ts%h(:,p), j)
        end do
 
-       do j = 2, ts%k-1
-          ts%z(:,:,j) = ts%z(:,:,j) - c(j) * ts%z(:,:,ts%k)
+       do j = 2, ts%k(p)-1
+          ts%z(:,p,j) = ts%z(:,p,j) - c(j) * ts%z(:,p,ts%k(p))
        end do
     end if
 
-    ts%z(:,:,ts%k) = 0
-    ts%k = ts%k - 1
+    ts%z(:,p,ts%k(p)) = 0
+    ts%k(p) = ts%k(p) - 1
   end subroutine decrease_order
 
   !
   ! Increase order.
   !
-  subroutine increase_order(ts)
+  subroutine increase_order(ts,p)
     type(bdf_ts), intent(inout) :: ts
+    integer,      intent(in   ) :: p
     integer  :: j
     real(dp_t) :: c(0:6)
 
     c = 0
     c(2) = 1
-    do j = 1, ts%k-2
-       c = eoshift(c, -1) + c * xi_j(ts%h, j)
+    do j = 1, ts%k(p)-2
+       c = eoshift(c, -1) + c * xi_j(ts%h(:,p), j)
     end do
 
-    ts%z(:,:,ts%k+1) = 0
-    do j = 2, ts%k+1
-       ts%z(:,:,j) = ts%z(:,:,j) + c(j) * ts%e
+    ts%z(:,p,ts%k(p)+1) = 0
+    do j = 2, ts%k(p)+1
+       ts%z(:,p,j) = ts%z(:,p,j) + c(j) * ts%e(:,p)
     end do
 
-    ts%k = ts%k + 1
+    ts%k(p) = ts%k(p) + 1
   end subroutine increase_order
 
   !
@@ -942,6 +966,86 @@ contains
   end function norm
 
   !
+  ! Copy over all point-based values
+  !
+  subroutine bdf_ts_ptcopy(ts_src, p_src, ts_dst, p_dst)
+     type(bdf_ts), intent(inout) :: ts_src, ts_dst
+     integer,      intent(in   ) :: p_src,  p_dst
+
+     if(ts_dst%max_order /= ts_src%max_order) then
+        call bl_error('unequal max_orders!')
+     endif
+
+     ts_dst%t(p_dst)       = ts_src%t(p_src)
+     ts_dst%dt(p_dst)      = ts_src%dt(p_src)
+     ts_dst%dt_nwt(p_dst)  = ts_src%dt_nwt(p_src)
+     ts_dst%k(p_dst)       = ts_src%k(p_src)
+     ts_dst%j_age(p_dst)   = ts_src%j_age(p_src)
+     ts_dst%p_age(p_dst)   = ts_src%p_age(p_src)
+     ts_dst%k_age(p_dst)   = ts_src%k_age(p_src)
+     ts_dst%tq(-1:2,p_dst) = ts_src%tq(-1:2,p_src)
+     !ts_dst%tq(:,p_dst) = ts_src%tq(:,p_src)
+     ts_dst%tq2save(p_dst) = ts_src%tq2save(p_src)
+     ts_dst%J(:,:,p_dst)   = ts_src%J(:,:,p_src)
+     ts_dst%P(:,:,p_dst)   = ts_src%P(:,:,p_src)
+     !ts_dst%z(:,p_dst,0:ts_dst%max_order) = &
+     !   ts_src%z(:,p_src,0:ts_src%max_order)
+     ts_dst%z(:,p_dst,:) = ts_src%z(:,p_src,:)
+     !ts_dst%z0(:,p_dst,0:ts_dst%max_order) = &
+     !   ts_src%z0(:,p_src,0:ts_src%max_order)
+     ts_dst%z0(:,p_dst,:) = ts_src%z0(:,p_src,:)
+     !ts_dst%h(0:ts_dst%max_order,p_dst)     = ts_src%h(0:ts_src%max_order,p_src)
+     ts_dst%h(:,p_dst)     = ts_src%h(:,p_src)
+     !ts_dst%l(0:ts_dst%max_order,p_dst)     = ts_src%l(0:ts_src%max_order,p_src)
+     ts_dst%l(:,p_dst)     = ts_src%l(:,p_src)
+     ts_dst%upar(:,p_dst)  = ts_src%upar(:,p_src)
+     ts_dst%y(:,p_dst)     = ts_src%y(:,p_src)
+     ts_dst%yd(:,p_dst)    = ts_src%yd(:,p_src)
+     ts_dst%rhs(:,p_dst)   = ts_src%rhs(:,p_src)
+     ts_dst%e(:,p_dst)     = ts_src%e(:,p_src)
+     ts_dst%e1(:,p_dst)    = ts_src%e1(:,p_src)
+     ts_dst%ewt(:,p_dst)   = ts_src%ewt(:,p_src)
+     ts_dst%b(:,p_dst)     = ts_src%b(:,p_src)
+     ts_dst%ipvt(:,p_dst)  = ts_src%ipvt(:,p_src)
+  end subroutine bdf_ts_ptcopy
+
+  !
+  ! Copy over global values.
+  !
+  subroutine bdf_ts_globalcopy(ts_src, ts_dst)
+     type(bdf_ts), intent(inout) :: ts_src, ts_dst
+
+     ts_dst%neq        = ts_src%neq         
+     ts_dst%npt        = ts_src%npt       
+     ts_dst%max_order  = ts_src%max_order 
+     ts_dst%max_steps  = ts_src%max_steps 
+     ts_dst%max_iters  = ts_src%max_iters 
+     ts_dst%verbose    = ts_src%verbose   
+     ts_dst%dt_min     = ts_src%dt_min    
+     ts_dst%eta_min    = ts_src%eta_min   
+     ts_dst%eta_max    = ts_src%eta_max   
+     ts_dst%eta_thresh = ts_src%eta_thresh
+     ts_dst%max_j_age  = ts_src%max_j_age 
+     ts_dst%max_p_age  = ts_src%max_p_age 
+     ts_dst%debug      = ts_src%debug
+     ts_dst%dump_unit  = ts_src%dump_unit
+     ts_dst%rtol       = ts_src%rtol      
+     ts_dst%atol       = ts_src%atol      
+     ts_dst%t1         = ts_src%t1        
+     ts_dst%n          = ts_src%n         
+     ts_dst%refactor   = ts_src%refactor
+     ts_dst%A          = ts_src%A         
+     ts_dst%nfe        = ts_src%nfe       
+     ts_dst%nje        = ts_src%nje       
+     ts_dst%nlu        = ts_src%nlu       
+     ts_dst%nit        = ts_src%nit       
+     ts_dst%nse        = ts_src%nse       
+     ts_dst%ncse       = ts_src%ncse      
+     ts_dst%ncit       = ts_src%ncit      
+     ts_dst%ncdtmin    = ts_src%ncdtmin   
+  end subroutine bdf_ts_globalcopy
+
+  !
   ! Build/destroy BDF time-stepper.
   !
   subroutine bdf_ts_build(ts, neq, npt, rtol, atol, max_order, upar)
@@ -954,10 +1058,19 @@ contains
 
     allocate(ts%rtol(neq))
     allocate(ts%atol(neq))
+    allocate(ts%t(npt))
+    allocate(ts%dt(npt))
+    allocate(ts%dt_nwt(npt))
+    allocate(ts%k(npt))
+    allocate(ts%j_age(npt))
+    allocate(ts%p_age(npt))
+    allocate(ts%k_age(npt))
+    allocate(ts%tq(-1:2, npt))
+    allocate(ts%tq2save(npt))
     allocate(ts%z(neq, npt, 0:max_order))
     allocate(ts%z0(neq, npt, 0:max_order))
-    allocate(ts%l(0:max_order))
-    allocate(ts%h(0:max_order))
+    allocate(ts%l(0:max_order, npt))
+    allocate(ts%h(0:max_order, npt))
     allocate(ts%A(0:max_order, 0:max_order))
     allocate(ts%P(neq, neq, npt))
     allocate(ts%J(neq, neq, npt))
@@ -984,6 +1097,7 @@ contains
     ts%max_iters  = 10
     ts%verbose    = 0
     ts%dt_min     = epsilon(ts%dt_min)
+    !ts%dt_min     = 1.0e-13_dp_t 
     ts%eta_min    = 0.2_dp_t
     ts%eta_max    = 10.0_dp_t
     ts%eta_thresh = 1.50_dp_t
@@ -1001,6 +1115,7 @@ contains
 
     ts%j_age = 666666666
     ts%p_age = 666666666
+    ts%k_age = 666666666
 
     ts%debug = .false.
 
@@ -1019,7 +1134,10 @@ contains
 
   subroutine bdf_ts_destroy(ts)
     type(bdf_ts), intent(inout) :: ts
+    integer :: p
     deallocate(ts%h,ts%l,ts%ewt,ts%rtol,ts%atol)
+    deallocate(ts%t,ts%dt,ts%dt_nwt,ts%k,ts%j_age)
+    deallocate(ts%p_age,ts%k_age,ts%tq,ts%tq2save)
     deallocate(ts%y,ts%yd,ts%z,ts%z0,ts%A)
     deallocate(ts%P,ts%J,ts%rhs,ts%e,ts%e1,ts%b,ts%ipvt)
     if(associated(ts%upar)) then
@@ -1035,7 +1153,7 @@ contains
     integer :: i
     A = 0
     do i = 1, size(A, 1)
-       A(i,i,:) = 1
+       A(i,i,:) = 1.0_dp_t
     end do
   end subroutine eye_r
   subroutine eye_i(A)

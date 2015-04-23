@@ -807,7 +807,6 @@ contains
     logical, save      :: firstCall = .true.
 
     real (kind = dp_t) :: sumX
-    real(kind=dp_t) :: r1, r2
     real (kind = dp_t), parameter :: x_err = 1.d-10
 
     if (firstCall) then
@@ -816,7 +815,6 @@ contains
     endif
 
     ldt = dt
-    r1 = parallel_wtime()
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) FIRSTPRIVATE(ldt) &
     !$OMP SCHEDULE(DYNAMIC,1)
@@ -896,40 +894,7 @@ contains
        enddo
     enddo
     !$OMP END PARALLEL DO
-    r2 = parallel_wtime() - r1
     
-    !TODO: Delete these
-    print *, 'Burner loop runtime:       ', r2
-    print *, '  total wrap runtime:      ', wrap_total
-    print *, '    total build runtime:   ', bdf_build_total
-    print *, '    total advance runtime: ', bdf_advance_total
-    print *, '      total update runtime: ', bdf_update_total
-    print *, '      total predict runtime: ', bdf_predict_total
-    print *, '      total solve runtime: ', bdf_solve_total
-    print *, '      total check runtime: ', bdf_check_total
-    print *, '      total correct runtime: ', bdf_correct_total
-    print *, '      total adjust runtime: ', bdf_adjust_total
-    wrap_total = 0.0_dp_t
-    bdf_build_total = 0.0_dp_t
-    bdf_advance_total = 0.0_dp_t
-    bdf_update_total =  0.0_dp_t
-    bdf_predict_total = 0.0_dp_t
-    bdf_solve_total = 0.0_dp_t 
-    bdf_check_total = 0.0_dp_t 
-    bdf_correct_total = 0.0_dp_t
-    bdf_adjust_total = 0.0_dp_t 
-
-    print *, 'steps:      ', nst
-    print *, 'F evals:    ', nfe
-    print *, 'J evals:    ', nje
-    print *, 'LU decomps: ', nlu
-    print *, 'Solver its: ', nit
-    nst = 0
-    nfe = 0
-    nje = 0
-    nlu = 0
-    nit = 0
-
   end subroutine burner_loop_3d
 
   !This loop makes use of a vectorized burner.  So the loop is trivial,
@@ -973,7 +938,6 @@ contains
     logical, save      :: firstCall = .true.
 
     real (kind = dp_t) :: sumX
-    real(kind=dp_t) :: r1, r2
     real (kind = dp_t), parameter :: x_err = 1.d-10
 
     if (firstCall) then
@@ -995,7 +959,6 @@ contains
     allocate(rhowdot(nspec,vec_size))
     allocate(   rhoH(vec_size))
     
-    r1 = parallel_wtime()
     !!$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) FIRSTPRIVATE(ldt) &
     !!$OMP PARALLEL DO PRIVATE(i,j,k,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) FIRSTPRIVATE(ldt) &
     !!$OMP SCHEDULE(DYNAMIC,1)
@@ -1083,27 +1046,6 @@ contains
        enddo
     enddo
     
-    r2 = parallel_wtime() - r1
-    print *, 'Burner loop runtime:       ', r2
-    print *, '  total wrap runtime:      ', wrap_total
-    print *, '    total build runtime:   ', bdf_build_total
-    print *, '    total advance runtime: ', bdf_advance_total
-    print *, '      total update runtime: ', bdf_update_total
-    print *, '      total predict runtime: ', bdf_predict_total
-    print *, '      total solve runtime: ', bdf_solve_total
-    print *, '      total check runtime: ', bdf_check_total
-    print *, '      total correct runtime: ', bdf_correct_total
-    print *, '      total adjust runtime: ', bdf_adjust_total
-    wrap_total = 0.0_dp_t
-    bdf_build_total = 0.0_dp_t
-    bdf_advance_total = 0.0_dp_t
-    bdf_update_total =  0.0_dp_t
-    bdf_predict_total = 0.0_dp_t
-    bdf_solve_total = 0.0_dp_t 
-    bdf_check_total = 0.0_dp_t 
-    bdf_correct_total = 0.0_dp_t
-    bdf_adjust_total = 0.0_dp_t 
-
     deallocate(rho,T_in,x_in,x_out,rhowdot,rhoH)
   end subroutine burner_loop_3d_vec
 
