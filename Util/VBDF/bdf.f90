@@ -136,8 +136,9 @@ contains
   subroutine bdf_wrap(f, neq, y, t, tout, itol, rtol, atol, itask, &
        istate, iopt, rwork, lrw, iwork, liw, jac, mf,    &
        rpar, ipar)
-     integer,         intent(in   ) :: neq, itol, itask, istate, iopt, &
+     integer,         intent(in   ) :: neq, itol, itask, iopt, &
                                        lrw, liw, mf
+     integer,         intent(inout) :: istate
      integer,         intent(in   ) :: iwork(liw), ipar(:)
      real(kind=dp_t), intent(in   ) :: tout, rtol(:), atol(:), &
                                        rwork(lrw)
@@ -177,7 +178,7 @@ contains
 
      ! Check user input
      if(mf .ne. MF_ANALYTIC_JAC) then
-       call bl_error("ERROR in BDF integrator: mf != MF_ANALYTIC_JAC not yet supported")
+        call bl_error("ERROR in BDF integrator: mf != MF_ANALYTIC_JAC not yet supported")
      endif
 
      ! Build the bdf_ts time-stepper object
@@ -186,17 +187,24 @@ contains
      call bdf_ts_build(ts, neq, NPT, rtol, atol, MAX_ORDER, upar)
 
      ! Translate DVODE args into args for bdf_advance
-     y0(:,NPT) = y
+     y0(:,NPT) = y(:)
      call bdf_advance(ts, f_wrap, Jac_wrap, neq, NPT, y0, t, y1, tout, &
                       DT0, RESET, REUSE, ierr, initial_call=.true.)
      t = tout !BDF is designed to always end at tout, 
               !set t to tout to mimic the output behavior of DVODE
-     y = y1(:,NPT)
-     rpar(:) = upar(:,NPT)
+     
+     istate = ierr
+     if (istate .eq. 0) then
+        y(:) = y1(:,NPT)
+        rpar(:) = upar(:,NPT)
+     else
+        call bl_error("bdf_advance returned error!: ", errors(istate))
+     endif
 
      ! Cleanup
      call bdf_ts_destroy(ts)
 
+     return
      contains
        ! Wraps the DVODE-style f in a BDF-style interface
        ! ASSUMPTION: All t(:) are the same
@@ -224,13 +232,16 @@ contains
           real(kind=dp_t), intent(  out) :: J(neq, neq, npt)
           real(kind=dp_t), intent(inout), optional :: upar(:,:)
 
+          real(kind=dp_t) :: rpar(11)
           integer :: ipar(2), ml, mu
 
           ml = -1
           mu = -1
           ipar = -1
 
-          call Jac(neq, t(1), y(:,1), ml, mu, J(:,:,1), neq, upar(:,1), ipar)
+          rpar(1:11) = upar(:,1)
+          call Jac(neq, t(1), y(:,1), ml, mu, J(:,:,1), neq, rpar, ipar)
+          upar(:,1) = rpar(1:11)
        end subroutine Jac_wrap
   end subroutine bdf_wrap
 
@@ -262,7 +273,7 @@ contains
         end subroutine Jac
      end interface
 
-     integer  :: k, p, m, index_map(npt)
+     integer  :: k, p, m
      logical  :: retry, linitial
 
      linitial = .false.; if (present(initial_call)) linitial = initial_call
@@ -270,9 +281,6 @@ contains
      if (reset) call bdf_reset(ts, f, y0, dt0, reuse)
 
      ierr = BDF_ERR_SUCCESS
-     do p = 1, npt
-        index_map(p) = p
-     enddo
 
      ts%t1 = t1; ts%t = t0; ts%ncse = 0; ts%ncdtmin = 0;
      do k = 1, bdf_max_iters + 1
@@ -320,7 +328,7 @@ contains
           &it: ",i3,", se: ",i3,", min(dt): ",e15.8,", min(k): ",i2)', &
           ts%n, ts%nfe, ts%nje, ts%nlu, ts%nit, ts%nse, minval(ts%dt), minval(ts%k)
 
-     y1 = ts%z(:,:,0)
+     y1(:,:) = ts%z(:,:,0)
   end subroutine bdf_advance
 
   !
