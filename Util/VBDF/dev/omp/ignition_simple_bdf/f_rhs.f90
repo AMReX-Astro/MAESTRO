@@ -222,8 +222,7 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   integer,         intent(in   ) :: n, ipar(:)
   real(kind=dp_t), intent(in   ) :: y(n), t
   real(kind=dp_t), intent(  out) :: ydot(n)
-  real(kind=dp_t), intent(inout) :: rpar(*)  !Works with DVODE
-  !real(kind=dp_t), intent(inout) :: rpar(:)   !Works with VBDF's bdf_wrap
+  real(kind=dp_t), intent(inout) :: rpar(*)  !For DVODE compatibility, use (*) instead of (:)
 
   integer :: k
   real(kind=dp_t) :: ymass(nspec)
@@ -245,8 +244,6 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   
   real(kind=dp_t) :: a, b, dadt, dbdt
 
-  !print *, 'rpar(:) ', rpar
-  print *, 'rpar(*) ', rpar(1:11)
   dens = rpar(irp_dens)
   temp = y(nspec_advance+1)
 
@@ -408,8 +405,7 @@ subroutine jac(neq, t, y, ml, mu, pd, nrpd, rpar, ipar)
   implicit none
 
   integer        , intent(IN   ) :: neq, ml, mu, nrpd, ipar(:)
-  !real(kind=dp_t), intent(IN   ) :: y(neq), rpar(*), t      !Works with DVODE
-  real(kind=dp_t), intent(IN   ) :: y(neq), rpar(:), t     !Works with VBDF's bdf_wrap
+  real(kind=dp_t), intent(IN   ) :: y(neq), rpar(*), t      !For DVODE compatibility, use (*) instead of (:)
   real(kind=dp_t), intent(  OUT) :: pd(neq,neq)
 
   real(kind=dp_t) :: dens, c_p, dhdX(nspec), X_O16

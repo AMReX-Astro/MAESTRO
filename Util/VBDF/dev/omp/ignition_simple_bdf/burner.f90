@@ -149,7 +149,6 @@ contains
     ! rhs and jacobian routines                                                 
     allocate(rpar(n_rpar_comps))
 
-
     ! set the tolerances.  We will be more relaxed on the temperature
     ! since it is only used in evaluating the rates.  
     atol(1:nspec_advance) = 1.d-12    ! mass fractions
@@ -208,9 +207,9 @@ contains
                      rpar, ipar)
 
     else
-       call dvode(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &
-                  istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
-                  rpar, ipar)
+       call    dvode(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &
+                     istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
+                     rpar, ipar)
     endif
     
     if (istate < 0) then

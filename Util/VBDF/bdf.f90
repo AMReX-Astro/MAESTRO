@@ -204,7 +204,6 @@ contains
      ! Cleanup
      call bdf_ts_destroy(ts)
 
-     return
      contains
        ! Wraps the DVODE-style f in a BDF-style interface
        ! ASSUMPTION: All t(:) are the same
@@ -214,14 +213,18 @@ contains
           real(kind=dp_t), intent(  out) :: yd(neq,npt)
           real(kind=dp_t), intent(inout), optional :: upar(:,:)
 
-          real(kind=dp_t) :: rpar(11)
+          real(kind=dp_t), allocatable :: rpar(:)
           integer :: ipar(2) !Dummy array to match DVODE interface
 
           ipar = -1
 
-          rpar(1:11) = upar(:,1)
+          if (present(upar)) then
+             allocate(rpar(size(upar(:,1))))
+          endif
+
+          rpar(:) = upar(:,1)
           call f(neq, t(1), y(:,1), yd(:,1), rpar, ipar)
-          upar(:,1) = rpar(1:11)
+          upar(:,1) = rpar(:)
        end subroutine f_wrap
 
        ! Wraps the DVODE-style Jacobian in a BDF-style interface
@@ -232,16 +235,20 @@ contains
           real(kind=dp_t), intent(  out) :: J(neq, neq, npt)
           real(kind=dp_t), intent(inout), optional :: upar(:,:)
 
-          real(kind=dp_t) :: rpar(11)
+          real(kind=dp_t), allocatable :: rpar(:)
           integer :: ipar(2), ml, mu
 
           ml = -1
           mu = -1
           ipar = -1
 
-          rpar(1:11) = upar(:,1)
+          if (present(upar)) then
+             allocate(rpar(size(upar(:,1))))
+          endif
+          
+          rpar(:) = upar(:,1)
           call Jac(neq, t(1), y(:,1), ml, mu, J(:,:,1), neq, rpar, ipar)
-          upar(:,1) = rpar(1:11)
+          upar(:,1) = rpar(:)
        end subroutine Jac_wrap
   end subroutine bdf_wrap
 
