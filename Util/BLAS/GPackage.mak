@@ -1,5 +1,3 @@
-fsources += dgefa.f
-fsources += dgesl.f
 fsources += vddot.f
 fsources += daxpy.f
 fsources += ddot.f
