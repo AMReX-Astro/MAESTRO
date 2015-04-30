@@ -118,139 +118,7 @@ module bdf
   !                    bdf_correct, bdf_dump, bdf_adjust, bdf_reset, print_y
   !                    bdf_ts_build, bdf_ts_destroy, bdf_wrap
 
-  !TODO: delete these!  Just for temporary testing
-  real(dp_t), public, save :: build_total = 0.0_dp_t
-  real(dp_t), public, save :: advance_total = 0.0_dp_t
-  real(dp_t), public, save :: update_total = 0.0_dp_t
-  real(dp_t), public, save :: predict_total = 0.0_dp_t
-  real(dp_t), public, save :: solve_total = 0.0_dp_t
-  real(dp_t), public, save :: check_total = 0.0_dp_t
-  real(dp_t), public, save :: correct_total = 0.0_dp_t
-  real(dp_t), public, save :: adjust_total = 0.0_dp_t
-  real(dp_t), public, save :: init_time = 0.0_dp_t
-  real(dp_t), public, save :: kl_time = 0.0_dp_t
-  real(dp_t), public, save :: refac_time = 0.0_dp_t
-  real(dp_t), public, save :: feval_time = 0.0_dp_t
-  real(dp_t), public, save :: slv_time = 0.0_dp_t
 contains
-
-  !
-  ! Wrapper of the vectorized BDF (VBDF) integrator that mirrors the interface of DVODE.
-  ! It translates DVODE input into the equivalent VBDF input and wraps
-  ! DVODE-style interfaces with VBDF-style interfaces.
-  !
-  ! This will be the quickest way to replace DVODE with VBDF, but there will be
-  ! no performance benefit.  This is intended for debugging and comparing VBDF
-  ! with DVODE.
-  !
-  ! See the DVODE source code's extensive comments for an explanation of this
-  ! interface.
-  !
-  
-  !subroutine bdf_wrap(f, neq, y, t, tout, itol, rtol, atol, itask, &
-  !    istate, iopt, rwork, lrw, iwork, liw, jac, mf,    &
-  !    rpar, ipar)
-  !  integer,         intent(in   ) :: neq, itol, itask, istate, iopt, &
-  !                                    lrw, liw, mf
-  !  integer,         intent(in   ) :: iwork(liw), ipar(:)
-  !  real(kind=dp_t), intent(in   ) :: tout, rtol(:), atol(:), &
-  !                                    rwork(lrw)
-  !  real(kind=dp_t), intent(inout) :: y(neq), t, rpar(:)
-  !  interface
-  !     subroutine f(neq, t, y, yd, rpar, ipar)
-  !       import dp_t
-  !       integer,    intent(in   ) :: neq, ipar(:)
-  !       real(dp_t), intent(in   ) :: y(neq), t
-  !       real(dp_t), intent(  out) :: yd(neq)
-  !       real(dp_t), intent(inout) :: rpar(:)
-  !     end subroutine f
-  !     subroutine Jac(neq, t, y, ml, mu, pd, nrowpd, rpar, ipar)
-  !       import dp_t
-  !       integer,    intent(in   ) :: neq, nrowpd, ml, mu, ipar(:)
-  !       real(dp_t), intent(in   ) :: y(neq), t
-  !       real(dp_t), intent(  out) :: pd(nrowpd, neq)
-  !       real(dp_t), intent(inout) :: rpar(:)
-  !     end subroutine Jac
-  !  end interface
-
-  !  integer, parameter :: NPT = 1         !For DVODE-style calls there's no concept of npt>1
-  !  integer, parameter :: MAX_ORDER = 3   !This is arbitrary, should investigate other values
-  !  logical, parameter :: RESET = .true.  !.true. means we want to initialize the bdf_ts object
-  !  logical, parameter :: REUSE = .false. !.false. means don't reuse the Jacobian
-  !  integer, parameter :: MF_ANALYTIC_JAC = 21
-  !  real(kind=dp_t), parameter :: DT0 = 1.0d-9 !Initial dt to be used in getting from 
-  !                                             !t to tout.  Also arbitrary,
-  !                                             !multiple values should be
-  !                                             !explored.
-  !  type(bdf_ts)    :: ts
-  !  logical         :: first_call
-  !  integer         :: ierr
-  !  real(kind=dp_t) :: y0(neq,NPT), y1(neq,NPT), r1, r2
-  !  real(kind=dp_t),allocatable :: upar(:,:)
-
-  !  ! Check user input
-  !  if(mf .ne. MF_ANALYTIC_JAC) then
-  !    call bl_error("ERROR in BDF integrator: mf != MF_ANALYTIC_JAC not yet supported")
-  !  endif
-
-  !  ! Build the bdf_ts time-stepper object
-  !  r1 = parallel_wtime()
-  !  allocate(upar(size(rpar),NPT))
-  !  upar(:,NPT) = rpar(:)
-  !  call bdf_ts_build(ts, neq, NPT, rtol, atol, MAX_ORDER, upar)
-  !  r2 = parallel_wtime() - r1
-  !  build_total = build_total + r2
-
-  !  ! Translate DVODE args into args for bdf_advance
-  !  y0(:,NPT) = y
-  !  r1 = parallel_wtime()
-  !  call bdf_advance(ts, f_wrap, Jac_wrap, neq, NPT, y0, t, y1, tout, &
-  !                   DT0, RESET, REUSE, ierr, initial_call=.true.)
-  !  r2 = parallel_wtime() - r1
-  !  advance_total = advance_total + r2
-  !  t = tout !BDF is designed to always end at tout, 
-  !           !set t to tout to mimic the output behavior of DVODE
-  !  y = y1(:,NPT)
-  !  rpar(:) = upar(:,NPT)
-
-  !  ! Cleanup
-  !  r1 = parallel_wtime()
-
-  !  call bdf_ts_destroy(ts)
-  !  r2 = parallel_wtime() - r1
-  !  build_total = build_total + r2
-
-  !  contains
-  !    ! Wraps the DVODE-style f in a BDF-style interface
-  !    subroutine f_wrap(neq, npt, y, t, yd, upar)
-  !       integer,  intent(in   ) :: neq, npt
-  !       real(kind=dp_t), intent(in   ) :: y(neq,npt), t
-  !       real(kind=dp_t), intent(  out) :: yd(neq,npt)
-  !       real(kind=dp_t), intent(inout), optional :: upar(:,:)
-
-  !       integer :: ipar(2) !Dummy array to match DVODE interface
-
-  !       ipar = -1
-
-  !       call f(neq, t, y(:,1), yd(:,1), upar(:,1), ipar)
-  !    end subroutine f_wrap
-
-  !    ! Wraps the DVODE-style Jacobian in a BDF-style interface
-  !    subroutine Jac_wrap(neq, npt, y, t, J, upar)
-  !       integer,  intent(in   ) :: neq, npt
-  !       real(kind=dp_t), intent(in   ) :: y(neq,npt), t
-  !       real(kind=dp_t), intent(  out) :: J(neq, neq, npt)
-  !       real(kind=dp_t), intent(inout), optional :: upar(:,:)
-
-  !       integer :: ipar(2), ml, mu
-
-  !       ml = -1
-  !       mu = -1
-  !       ipar = -1
-
-  !       call Jac(neq, t, y(:,1), ml, mu, J(:,:,1), neq, upar(:,1), ipar)
-  !    end subroutine Jac_wrap
-  !end subroutine bdf_wrap
 
   !
   ! Advance system from t0 to t1.
@@ -280,123 +148,61 @@ contains
        end subroutine Jac
     end interface
 
-    type(bdf_ts) :: ts_local
-    integer  :: k, p, m, index_map(npt)
+    !type(bdf_ts) :: ts_local
+    integer  :: k, p, m
     logical  :: retry, linitial
-    real(kind=dp_t) :: r1, r2
 
     linitial = .false.; if (present(initial_call)) linitial = initial_call
 
     if (reset) call bdf_reset(ts, f, y0, dt0, reuse)
 
     ierr = BDF_ERR_SUCCESS
-    do p = 1, npt
-       index_map(p) = p
-    enddo
-
     ts%t1 = t1; ts%t = t0; ts%ncse = 0; ts%ncdtmin = 0;
-    !Create local copy of ts that will be pruned down as points are solved.
-    call bdf_ts_build(ts_local, ts%neq, ts%npt, ts%rtol, ts%atol, &
-                      ts%max_order, ts%upar)
-    call bdf_ts_globalcopy(ts, ts_local)
-    do p = 1, npt
-       call bdf_ts_ptcopy(ts, p, ts_local, p)
-    enddo
+
+    !Launch on the GPU                                                         &
+    !$acc parallel default(none) create(p, m, retry) copy(ts, ierr)            &
+    !$acc copyin(k, bdf_max_iters, linitial, t1)
+    
     do k = 1, bdf_max_iters + 1
-       !print *, 'bdf iter ', k
-       !call flush()
-       if (ts_local%n > ts_local%max_steps .or. k > bdf_max_iters) then
-          ierr = BDF_ERR_MAXSTEPS; return
+       if (ts%n > ts%max_steps .or. k > bdf_max_iters) then
+          !ierr = BDF_ERR_MAXSTEPS; return
+          ierr = BDF_ERR_MAXSTEPS; exit
        end if
 
        if (k == 1) &
-            call bdf_dump(ts_local)
+            call bdf_dump(ts)
 
-       r1 = parallel_wtime()
-       !print *, 'call update... '
-       !call flush()
-       call bdf_update(ts_local)                ! update various coeffs (l, tq) based on time-step history
-       r2 = parallel_wtime() - r1
-       update_total = update_total + r2
+       call bdf_update(ts)                ! update various coeffs (l, tq) based on time-step history
 
-       r1 = parallel_wtime()
-       !print *, 'call predict... '
-       !call flush()
-       call bdf_predict(ts_local)               ! predict nordsieck array using pascal matrix
-       r2 = parallel_wtime() - r1
-       predict_total = predict_total + r2
+       call bdf_predict(ts)               ! predict nordsieck array using pascal matrix
        if(linitial .and. k == 1) then
-          !print *, 'initial call... '
-          !call flush()
           !This is the initial solve, so use the user's initial value, 
           !not the predicted value.
-          do p = 1, ts_local%npt
-             do m = 1, ts_local%neq
+          do p = 1, ts%npt
+             do m = 1, ts%neq
                 !Overwrite the predicted z0 with the user's y0
-                ts_local%z0(m,p,0) = ts_local%y(m,p)
+                ts%z0(m,p,0) = ts%y(m,p)
              end do
           end do
        endif
-       r1 = parallel_wtime()
-       !print *, 'call solve... '
-       !call flush()
-       call bdf_solve(ts_local, f, Jac)         ! solve for y_n based on predicted y and yd
-       r2 = parallel_wtime() - r1
-       solve_total = solve_total + r2
-       r1 = parallel_wtime()
-       !print *, 'call check... '
-       !call flush()
-       call bdf_check(ts_local, retry, ierr)    ! check for solver errors and test error estimate
-       r2 = parallel_wtime() - r1
-       check_total = check_total + r2
+       call bdf_solve(ts, f, Jac)         ! solve for y_n based on predicted y and yd
+       call bdf_check(ts, retry, ierr)    ! check for solver errors and test error estimate
 
-       if (ierr /= BDF_ERR_SUCCESS) return
+       !if (ierr /= BDF_ERR_SUCCESS) return
+       if (ierr /= BDF_ERR_SUCCESS) exit
        if (retry) cycle
 
-       r1 = parallel_wtime()
-       !print *, 'call correct... '
-       !call flush()
-       call bdf_correct(ts_local)               ! new solution looks good, correct history and advance
-       r2 = parallel_wtime() - r1
-       correct_total = correct_total + r2
+       call bdf_correct(ts)               ! new solution looks good, correct history and advance
 
-       call bdf_dump(ts_local)
-       !print *, 'call prune... '
-       !call flush()
-       if (maxval(ts_local%t) >= t1) then
-          !p = 1
-          !do while(p <= ts_local%npt)
-          !   if (ts_local%t(p) >= t1) then
-          !      !print *, 'prune    ', p, ' / ', ts_local%npt
-          !      !print *, 'npts b4: ', ts_local%npt
-          !      !print *, 'k b4:    ', ts_local%k(p)
-          !print *, 'npts b4: ', ts_local%npt
-          call bdf_ts_prune(ts_local, ts, index_map)
-          !print *, 'npts af: ', ts_local%npt
-          !      !print *, 'npts af: ', ts_local%npt
-          !      !print *, 'k af:    ', ts_local%k(p)
-          !      if (ts_local%npt == 0) exit
-          !   else
-          !      p = p + 1
-          !   endif
-          !enddo
-          if (ts_local%npt == 0) exit
-       endif
+       call bdf_dump(ts)
+       !TODO: Make sure we restrict all t(:) to not exceed t1, consider pruning?
+       if (minval(ts%t) >= t1) exit
 
-       r1 = parallel_wtime()
-       !print *, 'call adjust... '
-       !call flush()
-       call bdf_adjust(ts_local)                ! adjust step-size/order
-       r2 = parallel_wtime() - r1
-       adjust_total = adjust_total + r2
-       !print *, 'end bdf iter ', k
+       call bdf_adjust(ts)                ! adjust step-size/order
     end do
 
-    !print *, "bdf_solve's init_time:  ", init_time
-    !print *, "bdf_solve's kl_time:    ", kl_time
-    !print *, "bdf_solve's refac_time: ", refac_time
-    !print *, "bdf_solve's feval_time: ", feval_time
-    !print *, "bdf_solve's slv_time:   ", slv_time
+    !$acc end parallel
+    
     !TODO: Handle how to display dt, k now that it's vector
     if (ts%verbose > 0) &
          print '("BDF: n:",i6,", fe:",i6,", je: ",i3,", lu: ",i3,", &
@@ -547,7 +353,6 @@ contains
        end do
     end do
     r2 = parallel_wtime()
-    init_time = init_time + (r2 - r1)
     dt_adj    = ts%dt / ts%l(1,:)
 
     dt_rat = dt_adj / ts%dt_nwt
@@ -613,7 +418,6 @@ contains
           ts%refactor  = .false.
        end if
        r2 = parallel_wtime()
-       refac_time = refac_time + (r2 - r11)
 
        c = 2 * ts%dt_nwt / (dt_adj + ts%dt_nwt)
 
@@ -622,7 +426,6 @@ contains
        call f(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
        ts%nfe = ts%nfe + 1
        r2 = parallel_wtime()
-       feval_time = feval_time + (r2 - r11)
 
        !TODO: GPU
        r11 = parallel_wtime()
@@ -667,23 +470,13 @@ contains
           if (norm(ts%b(:,p), ts%ewt(:,p)) < one) iterating(p) = .false.
        end do
        r2 = parallel_wtime()
-       slv_time = slv_time + (r2 - r11)
 
        if (.not. any(iterating)) exit
 
     end do
     r2 = parallel_wtime()
-    kl_time = kl_time + (r2 - r1)
 
     ts%ncit = k; ts%p_age = ts%p_age + 1; ts%j_age = ts%j_age + 1
-    !print *, "k:   ", k
-    !print *, "bdf_solve's init_time:  ", init_time
-    !print *, "bdf_solve's kl_time:    ", kl_time
-    !print *, "bdf_solve's refac_time: ", refac_time
-    !print *, "bdf_solve's feval_time: ", feval_time
-    !print *, "bdf_solve's slv_time:   ", slv_time
-    !print *, 'neq: ', ts%neq
-    !print *, 'npt: ', ts%npt
     !do p =1, ts%npt
     !print *, 'y_ultimate:  ', ts%y(:,11950)
     !   print *, 'up:  ', ts%upar(:,p)

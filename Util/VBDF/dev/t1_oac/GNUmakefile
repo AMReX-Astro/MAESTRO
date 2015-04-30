@@ -25,6 +25,7 @@ Fmincludes :=
 Fmdirs += Util/VBDF
 Fmdirs += Util/VODE
 Fmdirs += Util/BLAS
+Fmdirs += Util/LINPACK
 
 
 # any MAESTRO stuff
@@ -65,6 +66,8 @@ else
 	@$(LINK.f90) -o $@ $< $(objects) $(libraries)
 endif
 
+clean::
+	rm -f *.cub *.ptx
 
 # for debugging.  To see the value of a Makefile variable,
 # e.g. Fmlocs, simply do "make print-Fmlocs".  This will print out the
