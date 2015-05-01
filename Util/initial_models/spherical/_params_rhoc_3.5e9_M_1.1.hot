@@ -1,6 +1,6 @@
 &params 
 
- nx = 2560
+ nx = 3840
  dens_base = 3.5e9
  temp_base = 6.25e8
 
