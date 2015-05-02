@@ -17,5 +17,11 @@ the PDF here:
 http://bender.astro.sunysb.edu/Maestro/staging/MAESTRO/Docs/MaestroUsersGuide.pdf
 
 
+## Mailing list:
+
+You can subscribe to the maestro-help mailing list at google groups at:
+https://groups.google.com/forum/#!forum/maestro-help
+
+
 
 
