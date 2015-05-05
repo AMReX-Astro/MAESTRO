@@ -73,6 +73,8 @@ program init_1d_tanh
 
   integer ::nx
 
+  integer :: lun1, lun2
+  
   ! define convenient indices for the scalars
   integer, parameter :: nvar = 3 + nspec
   integer, parameter :: idens = 1, &
@@ -118,7 +120,7 @@ program init_1d_tanh
 
   logical :: isentropic 
 
-  character (len=256) :: outfile
+  character (len=256) :: outfile, outfile2
   character (len=8) :: num
   character (len=32) :: deltastr, dxstr
   character (len=32) :: num_to_unitstring
@@ -742,18 +744,20 @@ program init_1d_tanh
   deltastr = num_to_unitstring(delta)
   dxstr = num_to_unitstring(dCoord)
 
-  outfile = trim(model_prefix) // ".hse." // "tanh.delta_" // trim(adjustl(deltastr)) // ".dx_" // trim(adjustl(dxstr)) 
+  outfile = trim(model_prefix) // ".hse." // "tanh.delta_" // trim(adjustl(deltastr)) // ".dx_" // trim(adjustl(dxstr))
+  outfile2 = trim(outfile) // ".extras"
 
-  open (unit=50, file=outfile, status="unknown")
+  open (newunit=lun1, file=outfile, status="unknown")
+  open (newunit=lun2, file=outfile2, status="unknown")  
 
-  write (50,1001) "# npts = ", nx
-  write (50,1001) "# num of variables = ", nvar
-  write (50,1002) "# density"
-  write (50,1002) "# temperature"
-  write (50,1002) "# pressure"
+  write (lun1,1001) "# npts = ", nx
+  write (lun1,1001) "# num of variables = ", nvar
+  write (lun1,1002) "# density"
+  write (lun1,1002) "# temperature"
+  write (lun1,1002) "# pressure"
 
   do n = 1, nspec
-     write (50, 1003) "# ", spec_names(n)
+     write (lun1, 1003) "# ", spec_names(n)
   enddo
 
 1000 format (1x, 100(g26.16, 1x))
@@ -763,11 +767,17 @@ program init_1d_tanh
 
   do i = 1, nx
 
-     write (50,1000) xzn_hse(i), model_hse(i,idens), model_hse(i,itemp), model_hse(i,ipres), &
+     write (lun1,1000) xzn_hse(i), model_hse(i,idens), model_hse(i,itemp), model_hse(i,ipres), &
           (model_hse(i,ispec-1+n), n=1,nspec)
 
   enddo
 
+
+  write (lun2,1001), "# npts = ", nx
+  write (lun2,1001), "# num of variables = ", 2
+  write (lun2,1002), "# entropy"
+  write (lun2,1002), "# c_s"
+  
   ! test: bulk EOS call -- Maestro will do this once we are mapped, so make
   ! sure that we are in HSE with updated thermodynamics
   do i = 1, nx
@@ -778,6 +788,8 @@ program init_1d_tanh
      call eos(eos_input_rt, eos_state, .false.)
 
      model_hse(i,ipres) = eos_state%p
+
+     write (lun2,1000), xzn_hse(i), eos_state%s, eos_state%cs
   enddo
   
   ! compute the maximum HSE error
@@ -804,8 +816,9 @@ program init_1d_tanh
   print *, 'maximum HSE error = ', max_hse_error
   print *, ' '
 
-  close (unit=50)
-
+  close (unit=lun1)
+  close (unit=lun2)
+  
 end program init_1d_tanh
 
 
