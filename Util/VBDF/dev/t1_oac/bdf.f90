@@ -35,6 +35,10 @@ module bdf
   integer, parameter :: BDF_ERR_MAXSTEPS = 2
   integer, parameter :: BDF_ERR_DTMIN    = 3
 
+  !Prepare some data on the GPU
+  !$acc declare copyin(bdf_max_iters, BDF_ERR_MAXSTEPS) &
+  !$acc copyin(BDF_ERR_SUCCESS, BDF_ERR_SOLVER, BDF_ERR_DTMIN)
+
   character(len=64), parameter :: errors(0:3) = [ &
        'Success.                                                ', &
        'Newton solver failed to converge several times in a row.', &
@@ -133,6 +137,7 @@ contains
     logical,      intent(in   ), optional :: initial_call
     interface
        subroutine f(neq, npt, y, t, yd, upar)
+         !$acc routine seq
          import dp_t
          integer,    intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
@@ -140,6 +145,7 @@ contains
          real(dp_t), intent(inout), optional :: upar(:,:)
        end subroutine f
        subroutine Jac(neq, npt, y, t, J, upar)
+         !$acc routine seq
          import dp_t
          integer,    intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
@@ -148,9 +154,16 @@ contains
        end subroutine Jac
     end interface
 
-    !type(bdf_ts) :: ts_local
     integer  :: k, p, m
     logical  :: retry, linitial
+
+    !Declare routines that have been compiled on the GPU
+    !!$acc routine(bdf_update)  seq
+    !!$acc routine(bdf_predict) seq
+    !!$acc routine(bdf_solve)   seq
+    !!$acc routine(bdf_check)   seq
+    !!$acc routine(bdf_correct) seq
+    !!$acc routine(bdf_adjust)  seq
 
     linitial = .false.; if (present(initial_call)) linitial = initial_call
 
@@ -160,17 +173,18 @@ contains
     ts%t1 = t1; ts%t = t0; ts%ncse = 0; ts%ncdtmin = 0;
 
     !Launch on the GPU                                                         &
-    !$acc parallel default(none) create(p, m, retry) copy(ts, ierr)            &
-    !$acc copyin(k, bdf_max_iters, linitial, t1)
-    
+    !!$acc parallel default(none) create(p, m, retry) copy(ts, ierr)            &
+    !!$acc copyin(k, linitial, t1)
+
     do k = 1, bdf_max_iters + 1
        if (ts%n > ts%max_steps .or. k > bdf_max_iters) then
           !ierr = BDF_ERR_MAXSTEPS; return
           ierr = BDF_ERR_MAXSTEPS; exit
        end if
 
-       if (k == 1) &
-            call bdf_dump(ts)
+       !TODO: Commenting out for dev, put it back or delete?
+       !if (k == 1) &
+       !     call bdf_dump(ts)
 
        call bdf_update(ts)                ! update various coeffs (l, tq) based on time-step history
 
@@ -194,14 +208,14 @@ contains
 
        call bdf_correct(ts)               ! new solution looks good, correct history and advance
 
-       call bdf_dump(ts)
+       !call bdf_dump(ts)
        !TODO: Make sure we restrict all t(:) to not exceed t1, consider pruning?
        if (minval(ts%t) >= t1) exit
 
        call bdf_adjust(ts)                ! adjust step-size/order
     end do
 
-    !$acc end parallel
+    !!$acc end parallel
     
     !TODO: Handle how to display dt, k now that it's vector
     if (ts%verbose > 0) &
@@ -234,6 +248,7 @@ contains
   !   2. The step size h_n = t_n - t_{n-1}.
   !
   subroutine bdf_update(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
 
     integer  :: j, p
@@ -248,9 +263,9 @@ contains
        ts%l(1,p) = xi_j(ts%h(:,p), 1)
        if (ts%k(p) > 1) then
           do j = 2, ts%k(p)-1
-             ts%l(:,p) = ts%l(:,p) + eoshift(ts%l(:,p), -1) / xi_j(ts%h(:,p), j)
+             ts%l(:,p) = ts%l(:,p) + eoshift_acc(ts%l(:,p), -2) / xi_j(ts%h(:,p), j)
           end do
-          ts%l(:,p) = ts%l(:,p) + eoshift(ts%l(:,p), -1) * xi_star_inv(ts%k(p), ts%h(:,p))
+          ts%l(:,p) = ts%l(:,p) + eoshift_acc(ts%l(:,p), -1) * xi_star_inv(ts%k(p), ts%h(:,p))
        end if
     enddo
 
@@ -292,6 +307,7 @@ contains
   ! Predict (apply Pascal matrix).
   !
   subroutine bdf_predict(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer :: i, j, m, p, pp
     do p = 1, ts%npt
@@ -317,10 +333,13 @@ contains
   !   G(y) = y - dt * f(y,t) - rhs
   !
   subroutine bdf_solve(ts, f, Jac)
+    !$acc routine seq
     !$acc routine(dgefa) seq
+    !$acc routine(dgesl) seq
     type(bdf_ts), intent(inout) :: ts
     interface
        subroutine f(neq, npt, y, t, yd, upar)
+         !$acc routine seq
          import dp_t
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
@@ -328,6 +347,7 @@ contains
          real(dp_t), intent(inout), optional :: upar(:,:)
        end subroutine f
        subroutine Jac(neq, npt, y, t, J, upar)
+         !$acc routine seq
          import dp_t
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
@@ -339,11 +359,10 @@ contains
     !include 'LinAlg.inc'
 
     integer  :: k, m, n, p, info
-    real(dp_t) :: c(ts%npt), dt_adj(ts%npt), dt_rat(ts%npt), inv_l1, r1, r11, r2
+    real(dp_t) :: c(ts%npt), dt_adj(ts%npt), dt_rat(ts%npt), inv_l1
     logical  :: rebuild, iterating(ts%npt)
 
     !TODO: GPU
-    r1 = parallel_wtime()
     do p = 1, ts%npt
        do m = 1, ts%neq
           inv_l1 = 1.0_dp_t / ts%l(1,p)
@@ -352,7 +371,6 @@ contains
           ts%y(m,p)   = ts%z0(m,p,0)
        end do
     end do
-    r2 = parallel_wtime()
     dt_adj    = ts%dt / ts%l(1,:)
 
     dt_rat = dt_adj / ts%dt_nwt
@@ -362,11 +380,9 @@ contains
 
     iterating = .true.
 
-    r1 = parallel_wtime()
     do k = 1, ts%max_iters
 
        ! build iteration matrix and factor
-       r11 = parallel_wtime()
        if (ts%refactor) then
           rebuild = .true.
           if (ts%ncse == 0 .and. maxval(ts%j_age) < ts%max_j_age) rebuild = .false.
@@ -381,16 +397,16 @@ contains
           call eye_r(ts%P)
          
           !This spawns redudantly executing threads on each gang
-          !$acc parallel copy(ts)                                              &
-          !$acc   firstprivate(dt_adj) private(info, p, m, n)                       
+          !!$acc parallel copy(ts)                                              &
+          !!$acc   firstprivate(dt_adj) private(info, p, m, n)                       
          
           !This distributes the iterations of the p-loop across gangs and the
           !workers within each gang. 
-          !$acc loop gang worker private(info, p, m, n)
+          !!$acc loop gang worker private(info, p, m, n)
           do p = 1, ts%npt
              !This collapses the two loops into one and distributes the new
              !single loop's iterations across the SIMD vectors of each worker
-             !$acc loop vector collapse(2) private(n,m,info)
+             !!$acc loop vector collapse(2) private(n,m,info)
              do m = 1, ts%neq
                 do n = 1, ts%neq
                    ts%P(n,m,p) = ts%P(n,m,p) - dt_adj(p) * ts%J(n,m,p)
@@ -399,7 +415,7 @@ contains
              call dgefa(ts%P(:,:,p), ts%neq, ts%neq, ts%ipvt(:,p), info)
              ! lapack      call dgetrf(neq, neq, ts%P, neq, ts%ipvt, info)
           end do
-          !$acc end parallel
+          !!$acc end parallel
 
           ts%nlu = ts%nlu + ts%npt !The number of times dgefa was called above
           
@@ -417,18 +433,14 @@ contains
           ts%p_age  = 0
           ts%refactor  = .false.
        end if
-       r2 = parallel_wtime()
 
        c = 2 * ts%dt_nwt / (dt_adj + ts%dt_nwt)
 
        !TODO: Compile on GPU
-       r11 = parallel_wtime()
        call f(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
        ts%nfe = ts%nfe + 1
-       r2 = parallel_wtime()
 
        !TODO: GPU
-       r11 = parallel_wtime()
        do p = 1, ts%npt
           if (.not. iterating(p)) cycle
           !if (p == 11950) then
@@ -469,12 +481,10 @@ contains
           end do
           if (norm(ts%b(:,p), ts%ewt(:,p)) < one) iterating(p) = .false.
        end do
-       r2 = parallel_wtime()
 
        if (.not. any(iterating)) exit
 
     end do
-    r2 = parallel_wtime()
 
     ts%ncit = k; ts%p_age = ts%p_age + 1; ts%j_age = ts%j_age + 1
     !do p =1, ts%npt
@@ -488,6 +498,7 @@ contains
   ! Check error estimates.
   !
   subroutine bdf_check(ts, retry, err)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     logical,      intent(out)   :: retry
     integer,      intent(out)   :: err
@@ -539,6 +550,7 @@ contains
   ! Correct (apply l coeffs) and advance step.
   !
   subroutine bdf_correct(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer :: i, m, p
 
@@ -548,7 +560,7 @@ contains
              ts%z(m,p,i) = ts%z0(m,p,i) + ts%e(m,p) * ts%l(i,p)
           end do
        end do
-       ts%h(:,p)   = eoshift(ts%h(:,p), -1)
+       ts%h(:,p)   = eoshift_acc(ts%h(:,p), -1)
        ts%t(p)     = ts%t(p) + ts%dt(p)
        ts%h(0,p)   = ts%dt(p)
        ts%k_age(p) = ts%k_age(p) + 1
@@ -574,6 +586,7 @@ contains
   ! Adjust step-size/order to maximize step-size.
   !
   subroutine bdf_adjust(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
 
     real(dp_t) :: c, error(ts%npt), eta(-1:1,ts%npt), rescale, etamax(ts%npt), etaminmax, delta(ts%npt)
@@ -672,6 +685,7 @@ contains
   ! Reset counters, set order to one, init Nordsieck history array.
   !
   subroutine bdf_reset(ts, f, y0, dt, reuse)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     real(dp_t),     intent(in   ) :: y0(ts%neq, ts%npt), dt
     logical,      intent(in   ) :: reuse
@@ -726,6 +740,7 @@ contains
   !   3. rescale Nordsieck history array
   !
   subroutine rescale_timestep(ts, eta_in, p_in, force_in)
+    !$acc routine seq
     type(bdf_ts), intent(inout)           :: ts
     real(dp_t),   intent(in   )           :: eta_in
     integer,      intent(in   )           :: p_in
@@ -760,6 +775,7 @@ contains
   ! Decrease order.
   !
   subroutine decrease_order(ts, p)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer,      intent(in   ) :: p
     integer  :: j
@@ -769,7 +785,7 @@ contains
        c = 0
        c(2) = 1
        do j = 1, ts%k(p)-2
-          c = eoshift(c, -1) + c * xi_j(ts%h(:,p), j)
+          c = eoshift_acc(c, -1) + c * xi_j(ts%h(:,p), j)
        end do
 
        do j = 2, ts%k(p)-1
@@ -785,6 +801,7 @@ contains
   ! Increase order.
   !
   subroutine increase_order(ts,p)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer,      intent(in   ) :: p
     integer  :: j
@@ -793,7 +810,7 @@ contains
     c = 0
     c(2) = 1
     do j = 1, ts%k(p)-2
-       c = eoshift(c, -1) + c * xi_j(ts%h(:,p), j)
+       c = eoshift_acc(c, -1) + c * xi_j(ts%h(:,p), j)
     end do
 
     ts%z(:,p,ts%k(p)+1) = 0
@@ -808,6 +825,7 @@ contains
   ! Return $\alpha_0$.
   !
   function alpha0(k) result(a0)
+    !$acc routine seq
     integer,  intent(in) :: k
     real(dp_t) :: a0
     integer  :: j
@@ -821,6 +839,7 @@ contains
   ! Return $\hat{\alpha}_{n,0}$.
   !
   function alphahat0(k, h) result(a0)
+    !$acc routine seq
     integer,  intent(in) :: k
     real(dp_t), intent(in) :: h(0:k)
     real(dp_t) :: a0
@@ -838,6 +857,7 @@ contains
   ! $\xi^*_k$ that appears in Jackson and Sacks-Davis.
   !
   function xi_star_inv(k, h) result(xii)
+    !$acc routine seq
     integer,  intent(in) :: k
     real(dp_t), intent(in) :: h(0:)
     real(dp_t) :: xii, hs
@@ -854,6 +874,7 @@ contains
   ! Return $\xi_j$.
   !
   function xi_j(h, j) result(xi)
+    !$acc routine seq
     integer,  intent(in) :: j
     real(dp_t), intent(in) :: h(0:)
     real(dp_t) :: xi
@@ -861,9 +882,39 @@ contains
   end function xi_j
 
   !
+  ! A local, GPU-compiled version of intrinsic eoshift 
+  ! Only what's needed for VBDF is implemented, also no
+  ! error-checking.
+  !
+  function eoshift_acc(arr, sh) result(ret)
+    !$acc routine seq
+    real(kind=dp_t),              intent(in   ) :: arr(:)
+    integer,                      intent(in   ) :: sh
+    
+    real(kind=dp_t), pointer :: ret(:)
+    integer :: i
+
+    allocate(ret(size(arr)))
+    ret = 0.0_dp_t
+
+    if (sh == 0) then
+       return
+    else if(sh > 0) then
+       do i = 1, size(arr) - sh
+          ret(i) = arr(i+sh)
+       enddo
+    else 
+       do i = size(arr), abs(sh), -1
+          ret(i) = arr(i+sh)
+       enddo
+    end if
+  end function eoshift_acc
+
+  !
   ! Pre-compute error weights.
   !
   subroutine ewts(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer :: m, p
     do p = 1, ts%npt
@@ -1142,6 +1193,7 @@ contains
   ! Various misc. helper functions
   !
   subroutine eye_r(A)
+    !$acc routine seq
     real(dp_t), intent(inout) :: A(:,:,:)
     integer :: i
     A = 0

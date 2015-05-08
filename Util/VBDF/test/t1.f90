@@ -29,7 +29,7 @@ module feval
 contains
   subroutine f(neq, npt, y, t, ydot, upar)
     integer,  intent(in   ) :: neq, npt
-    real(dp_t), intent(in   ) :: y(neq,npt), t
+    real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
     real(dp_t), intent(  out) :: ydot(neq,npt)
     real(dp_t), intent(inout), optional :: upar(:,:)
     integer :: p
@@ -41,16 +41,17 @@ contains
   end subroutine f
   subroutine J(neq, npt, y, t, pd, upar)
     integer,  intent(in   ) :: neq, npt
-    real(dp_t), intent(in   ) :: y(neq,npt), t
+    real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
     real(dp_t), intent(  out) :: pd(neq,neq,npt)
     real(dp_t), intent(inout), optional :: upar(:,:)
-    pd(1,1,:) = -.04d0
-    pd(1,2,:) = 1.d4*y(3,1)
-    pd(1,3,:) = 1.d4*y(2,1)
-    pd(2,1,:) = .04d0
-    pd(2,3,:) = -pd(1,3,1)
-    pd(3,2,:) = 6.e7*y(2,1)
-    pd(2,2,:) = -pd(1,2,1) - pd(3,2,1)
+    integer :: p
+    pd(1,1,1) = -.04d0
+    pd(1,2,1) = 1.d4*y(3,1)
+    pd(1,3,1) = 1.d4*y(2,1)
+    pd(2,1,1) = .04d0
+    pd(2,3,1) = -pd(1,3,1)
+    pd(3,2,1) = 6.e7*y(2,1)
+    pd(2,2,1) = -pd(1,2,1) - pd(3,2,1)
   end subroutine J
 end module feval
 
@@ -79,12 +80,12 @@ program test
 
   do i = 1, 11
      call bdf_advance(ts, f, J, neq, npt, y0, t0, y1, t1, dt, .true., .false., ierr)
-     print *, t1, ierr, y1(:,1)
-     print *, t1, ierr, y1(:,2)
+     print *, t1, ierr, y1(:,1), errors(ierr)
+     print *, t1, ierr, y1(:,2), errors(ierr)
      y0 = y1
      t0 = t1
      t1 = 10*t1
-     dt = 2*ts%dt
+     dt = 2*dt
   end do
 
   print *, ''
