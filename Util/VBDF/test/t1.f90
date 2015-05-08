@@ -27,31 +27,29 @@ module feval
   integer, parameter :: neq = 3
   integer, parameter :: npt = 2
 contains
-  subroutine f(neq, npt, y, t, ydot, upar)
-    integer,  intent(in   ) :: neq, npt
-    real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
-    real(dp_t), intent(  out) :: ydot(neq,npt)
-    real(dp_t), intent(inout), optional :: upar(:,:)
-    integer :: p
-    do p = 1, npt
-       ydot(1,p) = -.04d0*y(1,p) + 1.d4*y(2,p)*y(3,p)
-       ydot(3,p) = 3.e7*y(2,p)*y(2,p)
-       ydot(2,p) = -ydot(1,p) - ydot(3,p)
-    end do
+  subroutine f(neq, y, t, ydot, upar)
+    integer,  intent(in   ) :: neq
+    real(dp_t), intent(in   ) :: y(neq), t
+    real(dp_t), intent(  out) :: ydot(neq)
+    real(dp_t), intent(inout), optional :: upar(:)
+    
+    ydot(1) = -.04d0*y(1) + 1.d4*y(2)*y(3)
+    ydot(3) = 3.e7*y(2)*y(2)
+    ydot(2) = -ydot(1) - ydot(3)
   end subroutine f
-  subroutine J(neq, npt, y, t, pd, upar)
-    integer,  intent(in   ) :: neq, npt
-    real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
-    real(dp_t), intent(  out) :: pd(neq,neq,npt)
-    real(dp_t), intent(inout), optional :: upar(:,:)
-    integer :: p
-    pd(1,1,1) = -.04d0
-    pd(1,2,1) = 1.d4*y(3,1)
-    pd(1,3,1) = 1.d4*y(2,1)
-    pd(2,1,1) = .04d0
-    pd(2,3,1) = -pd(1,3,1)
-    pd(3,2,1) = 6.e7*y(2,1)
-    pd(2,2,1) = -pd(1,2,1) - pd(3,2,1)
+  subroutine J(neq, y, t, pd, upar)
+    integer,  intent(in   ) :: neq
+    real(dp_t), intent(in   ) :: y(neq), t
+    real(dp_t), intent(  out) :: pd(neq,neq)
+    real(dp_t), intent(inout), optional :: upar(:)
+    
+    pd(1,1) = -.04d0
+    pd(1,2) = 1.d4*y(3)
+    pd(1,3) = 1.d4*y(2)
+    pd(2,1) = .04d0
+    pd(2,3) = -pd(1,3)
+    pd(3,2) = 6.e7*y(2)
+    pd(2,2) = -pd(1,2) - pd(3,2)
   end subroutine J
 end module feval
 
@@ -82,6 +80,7 @@ program test
      call bdf_advance(ts, f, J, neq, npt, y0, t0, y1, t1, dt, .true., .false., ierr)
      print *, t1, ierr, y1(:,1), errors(ierr)
      print *, t1, ierr, y1(:,2), errors(ierr)
+     if (ierr /= BDF_ERR_SUCCESS) exit
      y0 = y1
      t0 = t1
      t1 = 10*t1
@@ -89,13 +88,13 @@ program test
   end do
 
   print *, ''
-  print *, 'stats for last interval'
+  print *, 'max stats for last interval'
   print *, 'number of steps taken      ', ts%n
-  print *, 'number of function evals   ', ts%nfe
-  print *, 'number of jacobian evals   ', ts%nje
-  print *, 'number of lu decomps       ', ts%nlu
-  print *, 'number of solver iterations', ts%nit
-  print *, 'number of solver errors    ', ts%nse
+  print *, 'number of function evals   ', maxval(ts%nfe)
+  print *, 'number of jacobian evals   ', maxval(ts%nje)
+  print *, 'number of lu decomps       ', maxval(ts%nlu)
+  print *, 'number of solver iterations', maxval(ts%nit)
+  print *, 'number of solver errors    ', maxval(ts%nse)
 
   call bdf_ts_destroy(ts)
 
