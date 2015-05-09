@@ -1,7 +1,7 @@
 NDEBUG := 
 MPI    :=
 OMP    :=
-ACC    := t
+ACC    := 
 
 MKVERBOSE :=t
 
@@ -23,7 +23,6 @@ Fmdirs :=
 Fmincludes :=
 
 Fmdirs += Util/VBDF
-Fmdirs += Util/VODE
 Fmdirs += Util/BLAS
 Fmdirs += Util/LINPACK
 
@@ -67,7 +66,7 @@ else
 endif
 
 clean::
-	rm -f *.cub *.ptx
+	rm -f *.cub *.ptx*
 
 # for debugging.  To see the value of a Makefile variable,
 # e.g. Fmlocs, simply do "make print-Fmlocs".  This will print out the

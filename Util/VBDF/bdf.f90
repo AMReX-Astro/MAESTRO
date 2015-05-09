@@ -281,7 +281,6 @@ contains
 
         if (k == 1) &
              call bdf_dump(ts)
-
         call bdf_update(ts)                ! update various coeffs (l, tq) based on time-step history
 
         call bdf_predict(ts)               ! predict nordsieck array using pascal matrix
@@ -319,7 +318,10 @@ contains
           &it: ",i3,", se: ",i3,", min(dt): ",e15.8,", min(k): ",i2)', &
           ts%n, ts%nfe, ts%nje, ts%nlu, ts%nit, ts%nse, minval(ts%dt), minval(ts%k)
 
-     y1(:,:) = ts%z(:,:,0)
+     print *, 'z8:    ', ts%z(:,:,0)
+     print *, 'y1 b4: ', y1
+     y1 = ts%z(:,:,0)
+     print *, 'y1 af: ', y1
   end subroutine bdf_advance
 
   !
@@ -459,10 +461,16 @@ contains
        end do
     end do
     dt_adj    = ts%dt / ts%l(1,:)
+    print *, 'dt_adj: ', dt_adj
+    print *, 'dt_nwt: ', ts%dt_nwt
 
     dt_rat = dt_adj / ts%dt_nwt
+    print *, 'dt_rat: ', dt_rat
     if (maxval(ts%p_age) > ts%max_p_age) ts%refactor = .true.
     !TODO: using min, max may not be best solution
+    !It's not.  I should make f and Jac operate on a single point, 
+    !then make refactor etc be pt-based.  As of now we refactor points
+    !that don't need it.
     if (minval(dt_rat) < 0.7d0 .or. maxval(dt_rat) > 1.429d0) ts%refactor = .true.
 
     iterating = .true.
@@ -1048,7 +1056,7 @@ contains
     ts%max_steps  = 1000000
     ts%max_iters  = 10
     ts%verbose    = 0
-    ts%dt_min     = epsilon(ts%dt_min) !TODO: Keep this as default?
+    ts%dt_min     = 1.e-6*epsilon(ts%dt_min) !TODO: Keep this as default?
     ts%eta_min    = 0.2_dp_t
     ts%eta_max    = 10.0_dp_t
     ts%eta_thresh = 1.50_dp_t

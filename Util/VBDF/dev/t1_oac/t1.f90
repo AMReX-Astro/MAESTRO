@@ -28,6 +28,7 @@ module feval
   integer, parameter :: npt = 2
 contains
   subroutine f(neq, npt, y, t, ydot, upar)
+    !$acc routine seq
     integer,  intent(in   ) :: neq, npt
     real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
     real(dp_t), intent(  out) :: ydot(neq,npt)
@@ -40,6 +41,7 @@ contains
     end do
   end subroutine f
   subroutine J(neq, npt, y, t, pd, upar)
+    !$acc routine seq
     integer,  intent(in   ) :: neq, npt
     real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
     real(dp_t), intent(  out) :: pd(neq,neq,npt)
