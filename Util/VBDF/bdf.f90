@@ -252,21 +252,6 @@ contains
      integer,      intent(  out) :: ierr
      logical,      intent(in   ), optional :: initial_call
      interface
-        !subroutine f(neq, npt, y, t, yd, upar)
-        !   import dp_t
-        !   integer,    intent(in   ) :: neq, npt
-        !   real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
-        !   real(dp_t), intent(  out) :: yd(neq,npt)
-        !   real(dp_t), intent(inout), optional :: upar(:,:)
-        !end subroutine f
-        !subroutine Jac(neq, npt, y, t, J, upar)
-        !   import dp_t
-        !   integer,    intent(in   ) :: neq, npt
-        !   real(dp_t), intent(in   ) :: y(neq,npt), t(npt)
-        !   real(dp_t), intent(  out) :: J(neq, neq, npt)
-        !   real(dp_t), intent(inout), optional :: upar(:,:)
-        !end subroutine Jac
-
         subroutine f(neq, y, t, yd, upar)
            import dp_t
            integer,    intent(in   ) :: neq
@@ -294,8 +279,6 @@ contains
 
      ts%t1 = t1; ts%t = t0; ts%ncse = 0; ts%ncdtmin = 0;
      do k = 1, bdf_max_iters + 1
-        !print *, 'y1, ierr: ', ts%z(:,1,0), ', ', ierr
-        !print *, 'y2:       ', ts%z(:,2,0)
         if (ts%n > ts%max_steps .or. k > bdf_max_iters) then
            ierr = BDF_ERR_MAXSTEPS; return
         end if
@@ -314,15 +297,8 @@ contains
               end do
            end do
         endif
-        !TODO: It's compiling, but still broken.  Need to follow y(:) about here
-        !and in the original BDF to see where things be breaking.
         call bdf_solve(ts, f, Jac)         ! solve for y_n based on predicted y and yd
         call bdf_check(ts, retry, ierr)    ! check for solver errors and test error estimate
-        !print *, 'y1, ierr: ', ts%z(:,1,0), ', ', ierr
-        !print *, 'y2:       ', ts%z(:,2,0)
-        !print *, 'dt:       ', ts%dt
-        !print *, 't, t1:    ', ts%t, ', ', t1
-        !print *, 'ncit:     ', ts%ncit
 
         if (ierr /= BDF_ERR_SUCCESS) return
         if (retry) cycle
@@ -337,8 +313,6 @@ contains
         if (minval(ts%t) >= t1) exit
         
         call bdf_adjust(ts)                ! adjust step-size/order
-        !print *, 'y1, ierr: ', ts%z(:,1,0), ', ', ierr
-        !print *, 'y2:       ', ts%z(:,2,0)
      end do
 
      !TODO: Handle how to display dt, k now that it's vector
@@ -377,7 +351,6 @@ contains
     integer  :: j, p
     real(dp_t) :: a0, a0hat, a1, a2, a3, a4, a5, a6, xistar_inv, xi_inv, c
 
-    !print *, 'bdf_update'
     ts%l  = 0
     ts%tq = 0
 
@@ -433,7 +406,6 @@ contains
   subroutine bdf_predict(ts)
     type(bdf_ts), intent(inout) :: ts
     integer :: i, j, m, p, pp
-    !print *, 'bdf_predict'
     do p = 1, ts%npt
       do i = 0, ts%k(p)
           ts%z0(:,p,i) = 0
@@ -457,7 +429,6 @@ contains
   !   G(y) = y - dt * f(y,t) - rhs
   !
   subroutine bdf_solve(ts, f, Jac)
-    !$acc routine(dgefa) seq
     type(bdf_ts), intent(inout) :: ts
     interface
        subroutine f(neq, y, t, yd, upar)
@@ -480,7 +451,6 @@ contains
     real(dp_t) :: c, dt_adj, dt_rat, inv_l1 
     logical  :: rebuild, iterating
 
-    !print *, 'bdf_solve'
     do p = 1, ts%npt
        do m = 1, ts%neq
           inv_l1 = 1.0_dp_t / ts%l(1,p)
@@ -563,7 +533,6 @@ contains
     real(dp_t) :: error, eta
     integer    :: p
 
-    !print *, 'bdf_check'
     retry = .false.; err = BDF_ERR_SUCCESS
 
     ! if solver failed many times, bail
@@ -579,7 +548,6 @@ contains
          ts%refactor(p) = .true.; ts%nse(p) = ts%nse(p) + 1; ts%ncse(p) = ts%ncse(p) + 1
          call rescale_timestep(ts, 0.25d0, p)
          retry = .true.
-         !print *, 'retry true A'
       endif
     enddo
     if (retry) return
@@ -592,7 +560,6 @@ contains
           eta = one / ( (6.d0 * error) ** (one / ts%k(p)) + 1.d-6 )
           call rescale_timestep(ts, eta, p)
           retry = .true.
-          !print *, 'retry true B'
           !TODO: Discuss if we want to use original epsilon implementation
           !if (ts%dt(p) < ts%dt_min + epsilon(ts%dt_min)) ts%ncdtmin = ts%ncdtmin + 1
           if (ts%dt(p) < ts%dt_min) ts%ncdtmin(p) = ts%ncdtmin(p) + 1
@@ -610,7 +577,6 @@ contains
     type(bdf_ts), intent(inout) :: ts
     integer :: i, m, p
 
-    !print *, 'bdf_correct'
     do p = 1, ts%npt
        if (ts%t(p) >= ts%t1) cycle !No need to advance
        do i = 0, ts%k(p)
@@ -649,7 +615,6 @@ contains
     real(dp_t) :: c, error(ts%npt), eta(-1:1,ts%npt), rescale, etamax(ts%npt), etaminmax, delta(ts%npt)
     integer  :: p
 
-    !print *, 'bdf_adjust'
     rescale = 0
 
     do p = 1, ts%npt
@@ -798,8 +763,6 @@ contains
     ts%dt(p_in)  = eta * ts%dt(p_in)
     ts%h(0,p_in) = ts%dt(p_in)
 
-
-    !if (ts%t(p_in) >= ts%t1) return !Don't mangle z if we've already solved this point
     do i = 1, ts%k(p_in)
        ts%z(:,p_in,i) = eta**i * ts%z(:,p_in,i)
     end do
