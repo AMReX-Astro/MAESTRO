@@ -78,8 +78,8 @@ program test
 
   do i = 1, 11
      call bdf_advance(ts, f, J, neq, npt, y0, t0, y1, t1, dt, .true., .false., ierr)
-     print *, t1, y1(:,1), t1, ierr, errors(ierr)
-     print *, '                         ', y1(:,2)
+     print *, t1, y1(:,1), ierr, errors(ierr)
+     print *, '                         ', y1(:,2), ts%dt
      if (ierr /= BDF_ERR_SUCCESS) exit
      y0 = y1
      t0 = t1
