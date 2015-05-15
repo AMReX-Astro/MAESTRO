@@ -1,0 +1,103 @@
+
+      ! The very simple network utilized in sub-Chandra runs with some added
+      ! alpha-chain
+
+      add_isos_and_reactions(
+         h1
+         he3 
+         he4 
+         c12 
+         n13
+         c14 
+         n14 
+         o16 
+         o18 
+         f18 
+         ne20
+         ne21
+         ne22
+         mg24
+         )
+
+      add_reactions(
+         !CAGO bypass
+         !rc12ap_to_o16   ! c12(a p)n15(p g)o16    
+         !rc12ap_aux        ! c12(ap)n15                 
+         !rn15pg_aux        ! n15(pg)o16           
+         !rn15pa_aux        ! n15(pa)c12
+
+         !CAGO bypass
+         r_c12_pg_n13    ! c12(p g)n13
+         r_n13_ap_o16    ! n13(a p)o16
+         r_n13_gp_c12
+
+         !NCO
+         rn14ecap        ! n14(e- nu)c14
+         r_c14_ag_o18    ! c14(a g)o18
+
+         ! pp chains
+         rpp_to_he3          ! p(p e+nu)h2(p g)he3
+         rpep_to_he3         ! p(e-p nu)h2(p g)he3     
+         r_he3_he3_to_h1_h1_he4       ! he3(he3 2p)he4 
+         r34_pp2             ! he4(he3 g)be7(e- nu)li7(p a)he4 
+         r34_pp3             ! he4(he3 g)be7(p g)b8(e+ nu)be8( a)he4  
+         r_h1_he3_wk_he4               ! he3(p e+nu)he4     
+
+         rbe7ec_li7_aux 
+         rbe7pg_b8_aux 
+
+
+
+         )
+
+
+      !add_isos(
+      !   h1
+      !   he4 
+      !   c12 
+      !   n14 
+      !   o16 
+      !   ne20
+      !   mg24
+      !   )
+         
+      !add_reactions(
+      !   ! helium burning
+      !   
+      !   r_he4_he4_he4_to_c12
+
+      !   r_c12_ag_o16
+      !   rc12ap_to_o16       ! c12(a p)n15(p g)o16    
+
+      !   rn14ag_lite         ! n14 + 1.5 alpha = ne20
+
+      !   r_o16_ag_ne20
+      !   ro16ap_to_ne20      ! o16(a p)f19(p g)ne20    
+
+      !   r_ne20_ag_mg24
+      !   rne20ap_to_mg24     ! ne20(a p)na23(p g)mg24
+
+      !   ! auxiliaries -- used only for computing rates of other reactions
+      !   
+      !   rbe7ec_li7_aux 
+      !   rbe7pg_b8_aux 
+      !   rn14pg_aux 
+      !   rn15pg_aux 
+      !   rn15pa_aux 
+      !   ro16ap_aux 
+      !   rf19pg_aux 
+      !   rf19pa_aux 
+      !   rne20ap_aux 
+      !   rna23pg_aux 
+      !   rna23pa_aux
+
+      !   rc12ap_aux               ! c12(ap)n15                 
+      !   rn15pg_aux               !        n15(pg)o16           
+      !   ro16gp_aux               ! o16(gp)n15                
+      !   rn15pa_aux               !        n15(pa)c12
+      !    
+      !   )     
+     
+     
+     
+     
