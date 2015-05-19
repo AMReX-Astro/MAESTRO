@@ -1,0 +1,5 @@
+This directory contains the code used to generate rates as plotted in the sub-Ch II paper.
+This is MESA code, using version 5527.
+
+each executable of the form t#rhoX.X calculates rates for the network described in 
+data/sub_chandra.net at a temperature of #00 MK and a density of 10^X.X.

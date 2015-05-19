@@ -103,8 +103,8 @@
           !test_logRho = 7.0d0
 
           !sub-Chandra 300 MK series
-          !test_logT = 8.477d0                   
-          test_logT = 8.6d0                   
+          test_logT = 8.477d0                   
+          !test_logT = 8.6d0                   
           !test_logRho = 5d0  
           !test_logRho = 5.2d0
           !test_logRho = 5.4d0
