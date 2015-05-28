@@ -23,49 +23,37 @@
       module test_net_support
       use chem_def
       use chem_lib
+      use crlibm_lib
       use net_def
       use net_lib
       use const_def
       use rates_def
+      use test_net_do_one
       
       implicit none
-         
-      logical, parameter :: extended_set = .true.
-      logical, parameter :: sorted = .true.
       
       integer, parameter :: max_files = 20, max_cnt = 100000      
       
-      logical :: qt
       
       character (len=256) :: eos_file_prefix, cache_suffix
       
-
-      character (len=64) :: net_file
-      
-      integer :: handle
       type (Net_General_Info), pointer  :: g
-      integer :: species, num_reactions
+      integer :: num_reactions
       
       integer, dimension(:), pointer :: net_iso, chem_id, isos_to_show
 
       integer :: which_rates_choice
       
-      integer, pointer :: 
-     >   reaction_id(:), reaction_table(:), rates_to_show(:), which_rates(:)
+      integer, pointer :: reaction_table(:)
+      integer, pointer :: rates_to_show(:)
+      integer, pointer :: which_rates(:)
 
-      real(dp) :: abar, zbar, z2bar, ye, eta, d_eta_dlnT, d_eta_dlnRho, eps_neu_total
-      real(dp), dimension(:), pointer :: 
-     >      xin, xin_copy, d_eps_nuc_dx, dxdt, d_dxdt_dRho, d_dxdt_dT
-      real(dp), pointer :: d_dxdt_dx(:, :)  
 
       real(dp), dimension(:), pointer :: rho_vector, T_vector
 
       integer :: nrates_to_show, nisos_to_show
+      
 
-      real(dp) :: test_logT, test_logRho
-
-      integer :: screening_mode
-      real(dp), parameter :: theta_e_for_graboske_et_al = 1 ! for nondegenerate
 
       contains
       
@@ -77,27 +65,26 @@
          if (do_plots) then
             call Create_Plot_Files(species, xin, g)
          else
-            call Do_One_Net(species, g, symbolic)
+            call Do_One_Net(symbolic)
          end if
       end subroutine do_test_net 
       
       
       subroutine test_net_setup(net_file_in)
-         use rates_lib, only: rates_init
          character (len=*), intent(in) :: net_file_in
+         integer, pointer :: r_id(:)
 
          integer :: info, i, ierr
          
+         include 'formats'
+         
          net_file = net_file_in
 
-         allocate(net_iso(num_chem_isos), isos_to_show(num_chem_isos), chem_id(num_chem_isos))
-        
-         !Init net module 
+      	allocate(net_iso(num_chem_isos), isos_to_show(num_chem_isos), chem_id(num_chem_isos))
+         
          call net_init(ierr)
          if (ierr /= 0) stop 1
-        
-         !Handle is integer which is an index into the list of General_Net_Info
-         !array.
+         
          handle = alloc_net_handle(ierr)
          if (ierr /= 0) then
             write(*,*) 'alloc_net_handle failed'
@@ -121,20 +108,18 @@
             write(*,*) 'net_finish_def failed'
             stop 2
          end if
-     
-        allocate(reaction_id(rates_reaction_id_max), reaction_table(rates_reaction_id_max))
-        allocate(rates_to_show(rates_reaction_id_max), which_rates(rates_reaction_id_max))
+   	
+      	allocate(reaction_id(rates_reaction_id_max), reaction_table(rates_reaction_id_max))
+      	allocate(rates_to_show(rates_reaction_id_max), which_rates(rates_reaction_id_max))
       
          which_rates(:) = which_rates_choice
-         
-         !which_rates(irpp_to_he3) = 3
 
          call net_set_which_rates(handle, which_rates, ierr)
          if (ierr /= 0) then
             write(*,*) 'net_set_which_rate_f17pg failed'
             stop 2
          end if
-        
+         
          cache_suffix = ''
          call net_setup_tables(handle, 'rate_tables', cache_suffix, info)
          if (ierr /= 0) then
@@ -148,7 +133,7 @@
             stop 2
          end if
          
-         species = g % num_isos
+         species = g% num_isos
          num_reactions = g% num_reactions
          
          call get_chem_id_table(handle, species, chem_id, ierr)
@@ -175,49 +160,206 @@
             stop 2
          end if
          
-         allocate(
-     >      xin(species), xin_copy(species), d_eps_nuc_dx(species), 
-     >      dxdt(species), d_dxdt_dRho(species), d_dxdt_dT(species), d_dxdt_dx(species, species))
-     
+         call do_test_net_alloc(species)
+#ifdef offload
+         r_id => reaction_id
+         !dir$ offload target(mic) in(r_id)
+         call do_copy_reaction_id_to_coprocessor(r_id)
+         !dir$ offload target(mic) in(species)
+         call do_test_net_alloc(species)
+#endif
+
       end subroutine test_net_setup
       
+#ifdef offload
+      !dir$ attributes offload: mic :: do_copy_reaction_id_to_coprocessor
+      subroutine do_copy_reaction_id_to_coprocessor(r_id)
+         integer, pointer, intent(in) :: r_id(:)
+         integer :: i, sz
+         sz = size(r_id,dim=1)
+         if (associated(reaction_id)) deallocate(reaction_id)
+         allocate(reaction_id(sz))
+         do i=1,sz
+            reaction_id(i) = r_id(i)
+         end do
+      end subroutine do_copy_reaction_id_to_coprocessor
+#endif         
+      
+#ifdef offload
+      !dir$ attributes offload: mic :: do_test_net_alloc
+#endif         
+      subroutine do_test_net_alloc(species)
+         integer, intent(in) :: species
+         allocate( &
+            xin(species), xin_copy(species), d_eps_nuc_dx(species), dxdt(species), &
+            d_dxdt_dRho(species), d_dxdt_dT(species), d_dxdt_dx(species, species))
+      end subroutine do_test_net_alloc
+
+
+      subroutine Do_One_Net(symbolic)
+         logical, intent(in) :: symbolic
+         integer :: i, id
+         if (.false.) then
+            do i = 1, g% num_reactions
+               id = g% reaction_id(i)
+               if (id > 0) write(*,'(a,2i6)') trim(reaction_Name(id)), i, id
+            end do
+         end if
+#ifdef offload
+         call setup_coprocessor
+         !dir$ offload target(mic) in(symbolic)
+#endif         
+         call do1_net(symbolic)
+      end subroutine Do_One_Net
+      
+#ifdef offload
+      subroutine setup_coprocessor ! runs on host
+         logical :: qt_in
+         character (len=64) :: net_file_in
+         integer :: screening_mode_in
+         real(dp) :: theta_e_in
+         real(dp) :: test_logT_in, test_logRho_in
+         integer :: handle_in
+         integer :: species_in
+         real(dp) :: eta_in, d_eta_dlnT_in, d_eta_dlnRho_in
+         logical :: reuse_rate_raw_in, reuse_rate_screened_in
+         real(dp), pointer :: xin_in(:)
+         qt_in = qt
+         net_file_in = net_file
+         screening_mode_in = screening_mode
+         theta_e_in = theta_e
+         test_logT_in = test_logT
+         test_logRho_in = test_logRho
+         handle_in = handle
+         species_in = species
+         eta_in = eta
+         d_eta_dlnT_in = d_eta_dlnT
+         d_eta_dlnRho_in = d_eta_dlnRho
+         reuse_rate_raw_in = reuse_rate_raw
+         reuse_rate_screened_in = reuse_rate_screened
+         xin_in => xin
+
+         !dir$ offload target(mic) in( &
+            qt_in, &
+            net_file_in, &
+            screening_mode_in, &
+            theta_e_in, &
+            test_logT_in, &
+            test_logRho_in, &
+            handle_in, &
+            species_in, &
+            eta_in, &
+            d_eta_dlnT_in, &
+            d_eta_dlnRho_in, &
+            reuse_rate_raw_in, &
+            reuse_rate_screened_in, &
+            xin_in)
+         call do_setup_coprocessor( &
+            qt_in, &
+            net_file_in, &
+            screening_mode_in, &
+            theta_e_in, &
+            test_logT_in, &
+            test_logRho_in, &
+            handle_in, &
+            species_in, &
+            eta_in, &
+            d_eta_dlnT_in, &
+            d_eta_dlnRho_in, &
+            reuse_rate_raw_in, &
+            reuse_rate_screened_in, &
+            xin_in)
+         
+      end subroutine setup_coprocessor
+         
+      !dir$ attributes offload: mic :: do_setup_coprocessor
+      subroutine do_setup_coprocessor( & ! runs on mic
+            qt_in, &
+            net_file_in, &
+            screening_mode_in, &
+            theta_e_in, &
+            test_logT_in, &
+            test_logRho_in, &
+            handle_in, &
+            species_in, &
+            eta_in, &
+            d_eta_dlnT_in, &
+            d_eta_dlnRho_in, &
+            reuse_rate_raw_in, &
+            reuse_rate_screened_in, &
+            xin_in)
+         logical, intent(in) :: qt_in
+         character (len=64), intent(in) :: net_file_in
+         integer, intent(in) :: screening_mode_in
+         real(dp), intent(in) :: theta_e_in
+         real(dp), intent(in) :: test_logT_in, test_logRho_in
+         integer, intent(in) :: handle_in
+         integer, intent(in) :: species_in
+         real(dp), intent(in) :: eta_in, d_eta_dlnT_in, d_eta_dlnRho_in
+         logical, intent(in) :: reuse_rate_raw_in, reuse_rate_screened_in         
+         real(dp), pointer, intent(in) :: xin_in(:)
+         integer :: i      
+         n => net_info_target
+         qt = qt_in
+         net_file = net_file_in
+         screening_mode = screening_mode_in
+         theta_e = theta_e_in
+         test_logT = test_logT_in
+         test_logRho = test_logRho_in
+         handle = handle_in
+         species = species_in
+         eta = eta_in
+         d_eta_dlnT = d_eta_dlnT_in
+         d_eta_dlnRho = d_eta_dlnRho_in
+         reuse_rate_raw = reuse_rate_raw_in
+         reuse_rate_screened = reuse_rate_screened_in
+         do i=1,species
+            xin(i) = xin_in(i)
+         end do
+      end subroutine do_setup_coprocessor
+#endif         
 
       subroutine Setup_eos(handle)
-         ! allocate and load the eos tables
+ ! allocate and load the eos tables
          use eos_def
          use eos_lib
          integer, intent(out) :: handle
-
          integer :: ierr
          logical, parameter :: use_cache = .true.
-         
          eos_file_prefix = 'mesa'
-
-         call eos_init(eos_file_prefix, '', '', use_cache, ierr)
+         call eos_init(eos_file_prefix, '', '', '', use_cache, ierr)
          if (ierr /= 0) then
             write(*,*) 'eos_init failed in Setup_eos'
             stop 1
-         end if
-         
+         end if         
          handle = alloc_eos_handle(ierr)
          if (ierr /= 0) then
             write(*,*) 'failed trying to allocate eos handle'
             stop 1
-         end if
-      
+         end if      
       end subroutine Setup_eos
       
       
       subroutine test_net_cleanup
-         integer :: ierr
+         call do_test_net_cleanup
+#ifdef offload
+         !dir$ offload target(mic)
+         call do_test_net_cleanup
+#endif
+         call free_net_handle(handle)
+      end subroutine test_net_cleanup
+      
+#ifdef offload
+      !dir$ attributes offload: mic :: do_test_net_cleanup
+#endif         
+      subroutine do_test_net_cleanup
          deallocate(xin)
          deallocate(d_eps_nuc_dx)
          deallocate(dxdt)
          deallocate(d_dxdt_dRho)
          deallocate(d_dxdt_dT)
          deallocate(d_dxdt_dx)
-         call free_net_handle(handle)
-      end subroutine test_net_cleanup
+      end subroutine do_test_net_cleanup
       
       
       subroutine change_net(new_net_file)
@@ -225,149 +367,6 @@
          call test_net_cleanup
          call test_net_setup(new_net_file)
       end subroutine change_net
-
-      
-      subroutine Do_One_Net(species, g, symbolic)
-         use chem_lib, only:composition_info
-         integer, intent(in) :: species
-         type (Net_General_Info), pointer  :: g
-         logical, intent(in) :: symbolic
-
-         real(dp) :: logRho, logT, Rho, T, sum, mass_correction,
-     >      eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, xh, xhe
-
-         integer :: info, i, j, k, lwork, chem_id(species), num_reactions
-         real(dp), dimension(species) :: dabar_dx, dzbar_dx, dmc_dx
-         real(dp), dimension(:, :), pointer :: reaction_eps_nuc
-         real(dp), dimension(:, :), pointer :: eps_nuc_categories
-         real(dp), dimension(:, :), pointer :: rate_screened, rate_raw
-         real(dp), pointer :: work(:), rate_factors(:), category_factors(:),
-     >      actual_Qs(:), actual_neuQs(:)
-         logical, pointer :: from_weaklib(:)
-         
-         num_reactions = g% num_reactions         
-
-         logRho = test_logRho
-         logT   = test_logT
-
-         if (.not. qt) write(*,*)
-         
-         lwork = net_work_size(handle, info) 
-         if (info /= 0) stop 1
-         
-         allocate(work(lwork), 
-     >         rate_factors(num_reactions),  category_factors(num_categories),        
-     >         rate_screened(num_rvs, num_reactions),         
-     >         rate_raw(num_rvs, num_reactions), reaction_eps_nuc(num_rvs, num_reactions),
-     >         eps_nuc_categories(num_rvs, num_categories),
-     >         actual_Qs(num_reactions), actual_neuQs(num_reactions), from_weaklib(num_reactions),
-     >         stat=info)
-         if (info /= 0) stop 2
-        
-         call get_chem_id_table(handle, species, chem_id, info)
-         if (info /= 0) stop 3
-
-         call composition_info(
-     >      species, chem_id, xin, xh, xhe, abar, zbar, z2bar, ye, mass_correction, sum, 
-     >      dabar_dx, dzbar_dx, dmc_dx)
-
-         Rho = 10**logRho
-         T   = 10**logT
-         
-         rate_factors(:) = 1
-         !Scale CAGO by 1.7
-         i = reaction_table(ir_c12_ag_o16)
-         rate_factors(i) = 1.7
-         category_factors(:) = 1
-         
-         if (symbolic) then
-            call net_get_symbolic_d_dxdt_dx(handle, species, num_reactions, 
-     >            xin, T, logT, Rho, logRho, 
-     >            abar, zbar, z2bar, ye, eta, d_eta_dlnT, d_eta_dlnRho,
-     >            rate_factors, category_factors, 
-     >            std_reaction_Qs, std_reaction_neuQs,
-     >            eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx, 
-     >            dxdt, d_dxdt_dRho, d_dxdt_dT, d_dxdt_dx, 
-     >            screening_mode, theta_e_for_graboske_et_al,    
-     >            rate_screened, rate_raw,
-     >            reaction_eps_nuc, eps_nuc_categories, eps_neu_total,
-     >            lwork, work, info)
-         else
-            call net_get_with_Qs(handle, species, num_reactions, 
-     >            xin, T, logT, Rho, logRho, 
-     >            abar, zbar, z2bar, ye, eta, d_eta_dlnT, d_eta_dlnRho,
-     >            rate_factors, category_factors, 
-     >            std_reaction_Qs, std_reaction_neuQs,
-     >            eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx, 
-     >            dxdt, d_dxdt_dRho, d_dxdt_dT, d_dxdt_dx, 
-     >            screening_mode, theta_e_for_graboske_et_al,    
-     >            rate_screened, rate_raw,
-     >            reaction_eps_nuc, eps_nuc_categories, eps_neu_total,
-     >            lwork, work, actual_Qs, actual_neuQs, from_weaklib, info)
-         end if
-         if (info /= 0) then
-            write(*, *) 'bad return from net_get'
-            stop 1
-         end if
-         
-         if (symbolic .and..not. qt) then
-            write(*,*) 'nonzero d_dxdt_dx entries'
-            k = 0
-            do j=1,species
-               do i=1,species
-                  if (d_dxdt_dx(i,j) /= 0) then
-                     k = k + 1
-                     write(*,'(a50,2i5)') 
-     >                     trim(chem_isos% name(chem_id(i))) // 
-     >                     ' ' // trim(chem_isos% name(chem_id(j))), i, j
-                  end if
-               end do
-            end do
-            write(*,*)
-            write(*,'(a50,i5)') 'num non zeros', k
-            write(*,*)
-         else if (.not. qt) then
-            call show_results(g, logT, logRho, species, num_reactions, xin, 
-     >            eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx, 
-     >            dxdt, d_dxdt_dRho, d_dxdt_dT, d_dxdt_dx, 
-     >            rate_screened, rate_raw, reaction_eps_nuc,
-     >            eps_nuc_categories, extended_set, sorted)         
-         end if
-
-         write(*,'(30x,4a20)') 'Q total', 'Q neutrino', 'Q total-neutrino'
-         do i = 1, num_reactions
-            if (from_weaklib(i)) then
-               write(*,'(a30,99f20.10)') 'weaklib ' // trim(reaction_Name(reaction_id(i))), 
-     >            actual_Qs(i), actual_neuQs(i), actual_Qs(i) - actual_neuQs(i)
-            else
-               write(*,'(a30,99f20.10)') trim(reaction_Name(reaction_id(i))), 
-     >            actual_Qs(i), actual_neuQs(i), actual_Qs(i) - actual_neuQs(i)
-            end if
-         end do
-         write(*,*)
-
-         deallocate(work, rate_factors, category_factors, rate_screened, rate_raw, 
-     >            eps_nuc_categories, reaction_eps_nuc, actual_Qs, actual_neuQs,
-     >            from_weaklib)
- 
-         return
-
-         write(*, *)
- 1       format(a40, 6x, e25.10)
- 2       format(a40, a6, e25.10)
-         write(*, 1) 'abar', abar
-         do i=1, species
-            write(*, 2) 'dabar_dx', trim(chem_isos% name(chem_id(i))), dabar_dx(i)
-         end do
-         write(*, *)
-         write(*, 1) 'zbar', zbar
-         do i=1, species
-            write(*, 2) 'dzbar_dx', trim(chem_isos% name(chem_id(i))), dzbar_dx(i)
-         end do
-         write(*, *)
-
-      end subroutine Do_One_Net
-
 
 
       subroutine Create_Plot_Files(species, xin, g)
@@ -384,31 +383,31 @@
 
          real(dp), allocatable :: output_values(:, :, :)
 
-         ! full range
+ ! full range
          logT_max = 9.1d0
          logT_min = 6d0
          logRho_min = -3d0
          logRho_max = 10d0
 
-         ! oxygen burning range
+ ! oxygen burning range
          logT_max = 9.5d0
          logT_min = 8d0
          logRho_min = -3d0
          logRho_max = 12d0
 
-         ! test FL
+ ! test FL
          logT_max = 9d0
          logT_min = 7d0
          logRho_min = 5d0
          logRho_max = 10.2d0
 
-         ! test FL
+ ! test FL
          logT_max = 8.4d0
          logT_min = 7.8d0
          logRho_min = 2d0
          logRho_max = 6d0
 
-         ! test C+C
+ ! test C+C
          logT_max = 10d0
          logT_min = 7.5d0
          logRho_min = 6d0
@@ -433,9 +432,9 @@
 
          fname = trim(dir) // '/' // 'params.data'
          open(unit=io_params, file=trim(fname))
-         write(io_params, '(6f16.6)') 
-     >         xin(net_iso(ih1)), xin(net_iso(ihe4)), xin(net_iso(ic12)),  
-     >         xin(net_iso(in14)), xin(net_iso(io16))
+         write(io_params, '(6f16.6)')  &
+               xin(net_iso(ih1)), xin(net_iso(ihe4)), xin(net_iso(ic12)),   &
+               xin(net_iso(in14)), xin(net_iso(io16))
          close(io_params)
 
          fname = trim(dir) // '/' // 'rho.data'
@@ -457,10 +456,10 @@
 !xx$OMP PARALLEL DO PRIVATE(logT, T, j)
          do j=1, logT_points
             logT = logT_min + dlogT*(j-1)
-            T = 10 ** logT
+            T = exp10_cr(logT)
 
-            call do_inner_loop(species, num_reactions, logT, T, j, output_values, g, xin, 
-     >               logRho_points, logRho_min, dlogRho, lwork)
+            call do_inner_loop(species, num_reactions, logT, T, j, output_values, g, xin,  &
+                     logRho_points, logRho_min, dlogRho, lwork)
             
          end do
 !xx$OMP END PARALLEL DO
@@ -468,7 +467,7 @@
          write(*, *) 'write the files'
 
 
-         ! write out the results
+ ! write out the results
          do j=1, logRho_points
             write(io_rho, 01) logRho_min + dlogRho*(j-1)
          end do
@@ -493,8 +492,8 @@
       end subroutine Create_Plot_Files
 
 
-      subroutine do_inner_loop(species, num_reactions, logT, T, j, output_values, g, xin, 
-     >         logRho_points, logRho_min, dlogRho, lwork)
+      subroutine do_inner_loop(species, num_reactions, logT, T, j, output_values, g, xin,  &
+               logRho_points, logRho_min, dlogRho, lwork)
          integer, intent(in) :: species, num_reactions, lwork
          real(dp), intent(in) :: logT, T
          integer, intent(in) :: j, logRho_points
@@ -507,16 +506,16 @@
 
          do i=1, logRho_points
             logRho = logRho_min + dlogRho*(i-1)
-            Rho = 10 ** logRho
-            call do_one_net_eval(species, num_reactions, logT, T, logRho, Rho, 
-     >                  i, j, output_values, g, xin, lwork)
+            Rho = exp10_cr(logRho)
+            call do_one_net_eval(species, num_reactions, logT, T, logRho, Rho,  &
+                        i, j, output_values, g, xin, lwork)
          enddo
          
       end subroutine do_inner_loop
       
       
-      subroutine do_one_net_eval(species, num_reactions, logT, T, logRho, Rho, 
-     >         i, j, output_values, g, xin, lwork)
+      subroutine do_one_net_eval(species, num_reactions, logT, T, logRho, Rho,  &
+               i, j, output_values, g, xin, lwork)
          use chem_lib, only:composition_info
          integer, intent(in) :: species, num_reactions, lwork
          real(dp), intent(in) :: logT, T, logRho, Rho
@@ -525,33 +524,32 @@
          real(dp), intent(OUT) :: output_values(:, :, :)
          real(dp), intent(in) :: xin(species)
       
-         real(dp) :: abar, zbar, z2bar, ye, sum, mx
-         real(dp) :: rate_factors(num_reactions), category_factors(num_categories)
+         real(dp) :: abar, zbar, z2bar, ye, sum, mx, weak_rate_factor
+         real(dp), target :: rate_factors_a(num_reactions)
+         real(dp), pointer :: rate_factors(:)
 
          real(dp) :: eps_nuc
          real(dp) :: d_eps_nuc_dT
          real(dp) :: d_eps_nuc_dRho
          real(dp) :: d_eps_nuc_dx(species) 
-            ! partial derivatives wrt mass fractions
+ ! partial derivatives wrt mass fractions
          
          real(dp) :: dxdt(species)  
-            ! rate of change of mass fractions caused by nuclear reactions
+ ! rate of change of mass fractions caused by nuclear reactions
          real(dp) :: d_dxdt_dRho(species)
          real(dp) :: d_dxdt_dT(species)
          real(dp) :: d_dxdt_dx(species, species)  
-            ! partial derivatives of rates wrt mass fractions
-         real(dp) :: rate_screened(num_rvs, num_reactions)  
-         real(dp) :: reaction_eps_nuc(num_rvs, num_reactions)  
-         real(dp) :: rate_raw(num_rvs, num_reactions)  
-         real(dp) :: eps_nuc_categories(num_rvs, num_categories)  
+         real(dp) :: eps_nuc_categories(num_categories)  
 
          integer :: info, k, h1, he4, chem_id(species)
          real(dp) :: xh, xhe, mass_correction
          real(dp), dimension(species) :: dabar_dx, dzbar_dx, dmc_dx
          real(dp), pointer :: work(:)
          real(dp), target :: work_ary(lwork)
+         logical :: skip_jacobian
          
          work => work_ary
+         rate_factors => rate_factors_a
          
          h1 = net_iso(ih1)
          he4 = net_iso(ihe4)
@@ -559,24 +557,24 @@
          call get_chem_id_table(handle, species, chem_id, info)
          if (info /= 0) stop 3
 
-         call composition_info(
-     >      species, chem_id, xin, xh, xhe, abar, zbar, z2bar, ye, 
-     >      mass_correction, sum, dabar_dx, dzbar_dx, dmc_dx)
+         call composition_info( &
+            species, chem_id, xin, xh, xhe, abar, zbar, z2bar, ye,  &
+            mass_correction, sum, dabar_dx, dzbar_dx, dmc_dx)
      
          rate_factors(:) = 1
-         category_factors(:) = 1
+         weak_rate_factor = 1
+         skip_jacobian = .false.
          
-         call net_get(handle, species, num_reactions, 
-     >            xin, T, logT, Rho, logRho, 
-     >            abar, zbar, z2bar, ye, eta, d_eta_dlnT, d_eta_dlnRho,
-     >            rate_factors, category_factors, 
-     >            std_reaction_Qs, std_reaction_neuQs,
-     >            eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx, 
-     >            dxdt, d_dxdt_dRho, d_dxdt_dT, d_dxdt_dx, 
-     >            screening_mode, theta_e_for_graboske_et_al,    
-     >            rate_screened, rate_raw,
-     >            reaction_eps_nuc, eps_nuc_categories, eps_neu_total,
-     >            lwork, work, info)
+         call net_get(handle, skip_jacobian, n, species, num_reactions,  &
+                  xin, T, logT, Rho, logRho,  &
+                  abar, zbar, z2bar, ye, eta, d_eta_dlnT, d_eta_dlnRho, &
+                  rate_factors, weak_rate_factor, &
+                  std_reaction_Qs, std_reaction_neuQs, reuse_rate_raw, reuse_rate_screened, &
+                  eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx,  &
+                  dxdt, d_dxdt_dRho, d_dxdt_dT, d_dxdt_dx,  &
+                  screening_mode, theta_e, &
+                  eps_nuc_categories, eps_neu_total, &
+                  lwork, work, info)
          if (info /= 0) then
             write(*, *) 'bad result from net_get'
             stop 1
@@ -593,23 +591,15 @@
             write(*, *) logRho, logT
             stop 1
          end if
-         
-         !eps_nuc = EPS3ALP(T,RHO,1d0,2d0) ! check F&L; use Y=1 and UE=2
 
-         k =   1; output_values(i, j, k) = safe_log10(eps_nuc)
+         k =   1; output_values(i, j, k) = safe_log10_cr(eps_nuc)
          
-         if (.false.) then
-            ! for testing, use Y=1 and UE=2
-            !k = k+1; output_values(i, j, k) = safe_log10(eps_nuc/HK_3ALF(T,RHO,1d0))
-            k = k+1; output_values(i, j, k) = eps_nuc/EPS3ALP(T,RHO,1d0,2d0)
-         else
-            k = k+1; output_values(i, j, k) =  sum / max(1d-20, mx)
-         end if
+         k = k+1; output_values(i, j, k) =  sum / max(1d-20, mx)
 
          k = k+1; output_values(i, j, k) =  d_eps_nuc_dT * T / max(1d-20, eps_nuc)
          k = k+1; output_values(i, j, k) =  d_eps_nuc_dRho * Rho / max(1d-20, eps_nuc)
-         k = k+1; output_values(i, j, k) =  safe_log10(abs(d_eps_nuc_dx(h1)))
-         k = k+1; output_values(i, j, k) =  safe_log10(abs(d_eps_nuc_dx(he4)))
+         k = k+1; output_values(i, j, k) =  safe_log10_cr(abs(d_eps_nuc_dx(h1)))
+         k = k+1; output_values(i, j, k) =  safe_log10_cr(abs(d_eps_nuc_dx(he4)))
       
          if (k > max_files) then
             write(*, *) 'need to enlarge max_files'
@@ -617,83 +607,6 @@
          end if
 
       end subroutine do_one_net_eval
-      
-      
-      FUNCTION EPS3ALP(T,RHO,Y,UE)
-!
-!     Gives the 3-alpha burning rate from Fushiki and Lamb (ap J,
-!     317, 368). We found that our other routine, which
-!     uses the screening of Salpeter and Van Horn is nearly
-!     always in good agreement with this form. However, this
-!     formula is also valid in the pycnonuclear regime. 
-!
-      IMPLICIT real(dp) (A-H,O-Z)
-      include 'formats.dek'
-      T6=T/1E6
-      R6=RHO/1E6
-      R6T=2.0*R6/UE
-      R6T13=R6T**(1.0/3.0)
-      R6T16=R6T**(1.0/6.0)
-      T623=T6**(2.0/3.0)
-      T632=T6**(3.0/2.0)
-      T613=T6**(1.0/3.0)
-      U=1.35*R6T13/T623
-      IF (U.LT.1) THEN
-         B1=(1-4.222E-2*T623)**2+2.643E-5*T6**(5.0/3.0)
-         B2=(1-2.807E-2*T623)**2+2.704E-6*T6**(5.0/3.0)
-         B1=16.16*EXP(-134.92/T6**(1.0/3.0))/(B1*T623)
-         B2=244.6*(1.0+3.528E-3*T623)**5*EXP(-235.72/T613)/(B2*T623)         
-         IF(5.458E3-R6T.GT.0) THEN
-            B1=B1+EXP(-1065.1/T6)/T632
-         ENDIF
-         
-         IF(1.836E4-R6T.GT.0) THEN
-            B2=B2+EXP(-3336.4/T6)/T632
-         ENDIF
-         
-         G1=B1*EXP(60.492*R6T13/T6)
-         G2=B2*EXP(106.35*R6T13/T6)
-      ELSE
-         AF=(1.0/U**(1.5)+1.0)
-         B1=(1.0-5.680E-2*R6T13)**2+8.815E-7*T6*T6
-         B1=1.178*AF*EXP(-77.554/R6T16)/(B1*SQRT(T6))
-         B2=(1.0-3.791E-2*R6T13)**2+5.162E-8*T6*T6
-         B2=(1.0+5.070E-3*R6T13)**5*EXP(-135.08/R6T16)/B2
-         B2=B2*13.48*AF/SQRT(T6)
-         IF(5.458E3-R6T.GT.0) THEN
-            G1=B1+EXP((60.492*R6T13-1065.1)/T6)/T632
-         ELSE
-            G1=B1
-         ENDIF
-         IF(1.836E4-R6T.GT.0) THEN
-            G2=B2+EXP((106.35*R6T13-3336.4)/T6)/T632
-         ELSE
-            G2=B2
-         ENDIF
-       ENDIF
-       EPS3ALP=5.120E29*G1*G2*Y**3*R6**2
-       RETURN
-       write(*,1) 'T', T
-       write(*,1) 'RHO', RHO
-       write(*,1) 'UE', UE
-       write(*,1) 'Y', Y
-       write(*,1) 'G1', G1
-       write(*,1) 'G2', G2
-       write(*,1) 'EPS3ALP', EPS3ALP
-       write(*,*)
-       stop
-       END FUNCTION EPS3ALP
-      
-      
-      FUNCTION HK_3ALF(T,RHO,Y) ! H&K eqn 6.80
-      IMPLICIT real(dp) (A-H,O-Z)
-      include 'formats.dek'
-      T9 = T*1d-9
-      HK_3ALF = 5.1d8*rho**2*Y**3*exp(-4.4027/T9)/T9**3 ! erg/g/s
-      END FUNCTION HK_3ALF
-
-         
-      
       
       integer function Open_Files(io_start, dir)
          integer, intent(in) :: io_start
@@ -723,330 +636,6 @@
          Open_Files = io
          
       end function Open_Files
-         
-
-      real(dp) function safe_log10(x)
-         real(dp), intent(in) :: x
-         if (x <= 0) then
-            safe_log10 = -99d0
-         else
-            safe_log10 = log10(x)
-         end if
-      end function safe_log10
-
-
-      subroutine show_results(
-     >         g, logT, logRho, species, num_reactions, xin, 
-     >         eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx, 
-     >         dxdt, d_dxdt_dRho, d_dxdt_dT, d_dxdt_dx, 
-     >         rate_screened, rate_raw, reaction_eps_nuc,
-     >         eps_nuc_categories, 
-     >         extended_set, sorted)
-         type (Net_General_Info), pointer  :: g
-         real(dp), intent(in) :: logT, logRho
-         integer, intent(in) :: species, num_reactions
-         real(dp), intent(in) :: xin(species)
-         real(dp), intent(in) :: eps_nuc
-         real(dp), intent(in) :: d_eps_nuc_dT
-         real(dp), intent(in) :: d_eps_nuc_dRho
-         real(dp), intent(in) :: d_eps_nuc_dx(species) 
-         real(dp), intent(in) :: dxdt(species) 
-         real(dp), intent(in) :: d_dxdt_dRho(species) 
-         real(dp), intent(in) :: d_dxdt_dT(species) 
-         real(dp), intent(in) :: d_dxdt_dx(species, species) 
-         real(dp), intent(in), dimension(num_rvs, num_categories) :: 
-     >         eps_nuc_categories
-         real(dp), intent(in), dimension(num_rvs, num_reactions) :: 
-     >         rate_screened, rate_raw, reaction_eps_nuc 
-         logical, intent(in) :: extended_set
-         logical, intent(in) :: sorted
-
-         write(*, *)
-         call show_summary_results(logT, logRho,
-     >         eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx) 
-         
-         if (extended_set) then
-            write(*, *)
-            call show_all_rates(
-     >          g, num_reactions, rate_raw, rate_screened, reaction_eps_nuc, logT, logRho, sorted)
-         end if
-         
-         write(*, *)
-         call show_by_category(
-     >            g, num_reactions, rate_screened, rate_raw, 
-     >            eps_nuc_categories, 
-     >            eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx, 
-     >            sorted)
-         
-         if (.not. extended_set) return
-         
-         write(*, *)
-         call show_dx_dt(g, species, xin, dxdt, sorted)
-         
-         write(*, *)
-         call show_d_eps_nuc_dx(g, species, xin, d_eps_nuc_dx, sorted)
-
-         write(*, *)
-
-      end subroutine show_results
-
-      
-      subroutine show_summary_results(logT, logRho, 
-     >         eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx) 
-         real(dp), intent(in) :: logT, logRho
-         real(dp), intent(in) :: eps_nuc
-         real(dp), intent(in) :: d_eps_nuc_dT
-         real(dp), intent(in) :: d_eps_nuc_dRho
-         real(dp), intent(in) :: d_eps_nuc_dx(species) 
-
-         real(dp) :: T, Rho, eps, d_eps_dt, d_eps_dd
-         T = 10**logT; Rho = 10**logRho
-
-         write(*, *)
-         write(*, '(a40, f20.9)') 'log temp', logT
-         write(*, '(a40, f20.9)') 'log rho', logRho
-         eps = eps_nuc
-         d_eps_dt = d_eps_nuc_dT
-         d_eps_dd = d_eps_nuc_dRho
-         write(*, *)
-         write(*, '(a40, f20.9)') 'log(eps_nuc)', safe_log10(eps_nuc)
-         write(*, *)
-         write(*, '(a40, e20.9)') 'eps_nuc', eps_nuc
-         write(*, *)
-         write(*, '(a40, f20.9)') 'd_lneps_dlnT', d_eps_dt * T / eps
-         write(*, '(a40, f20.9)') 'd_lneps_dlnRho', d_eps_dd * Rho / eps
-      
-      end subroutine show_summary_results
-
-      
-      subroutine show_all_rates(
-     >      g, num_reactions, rate_raw, rate_screened, reaction_eps_nuc, logT, logRho, sorted)
-         type (Net_General_Info), pointer  :: g
-         integer, intent(in) :: num_reactions
-         real(dp), intent(in) :: logT, logRho
-         real(dp), dimension(num_rvs, num_reactions), intent(in) ::
-     >      rate_raw, rate_screened, reaction_eps_nuc
-         logical, intent(in) :: sorted
-         
-         real(dp), dimension(num_rvs, num_reactions) :: rfact
-         integer :: i
-         real(dp) :: T, Rho
-         T = 10**logT; Rho = 10**logRho
-
-         write(*, *)
-         write(*, *) 'summary of log raw rates'
-         write(*, *)
-         call show_log_rates(g, rate_raw, T, Rho, sorted)
-         write(*, *)
-         write(*, *) 'summary of screening factors'
-         write(*, *)
-         do i=1,num_reactions
-            if (rate_raw(i_rate, i) > 1d-50) then
-               rfact(i_rate, i) = rate_screened(i_rate, i) / rate_raw(i_rate, i)
-            else
-               rfact(i_rate, i) = 1
-            end if
-         end do
-         call show_rates(g, rfact, T, Rho, sorted)
-         write(*, *)
-         write(*, *) 'summary of log screened rates (reactions/gm/sec)'
-         write(*, *)
-         call show_log_rates(g, rate_screened, T, Rho, sorted)
-         write(*, *)
-         write(*, *) 'summary of log energy generation (reactions/gm/sec)'
-         write(*, *)
-         call show_log_rates(g, reaction_eps_nuc, T, Rho, sorted)
-         write(*, *)
-
-
-      end subroutine show_all_rates
-
-      subroutine show_by_category(
-     >         g, num_reactions, rate_screened, rate_raw, 
-     >         eps_nuc_categories,
-     >         eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx, 
-     >         sorted)
-         type (Net_General_Info), pointer  :: g
-         integer, intent(in) :: num_reactions
-         real(dp), intent(in), dimension(num_rvs, num_reactions) :: 
-     >         rate_screened, rate_raw
-         real(dp), intent(in), dimension(num_rvs, num_categories) :: 
-     >         eps_nuc_categories
-         real(dp), intent(in) :: 
-     >         eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx(species)
-         logical, intent(in) :: sorted
-
-         real(dp) :: mx
-         integer :: k, j, jmx
-         logical :: flgs(rates_reaction_id_max)
-   
-         integer :: info
-         
-         write(*, *)
-         write(*, *) 'energy generation by category'
-         write(*, *)
-         write(*, '(a40, 3x, a20)') 'category', 'log rate (erg/g/sec)'
-         write(*, *)
-         flgs = .false.
-         do k = 1, num_categories
-            if (.not. sorted) then
-               jmx = k
-            else
-               mx = -99d99; jmx = -1
-               do j = 1, num_categories
-                  if ((.not. flgs(j)) .and. eps_nuc_categories(i_rate, j) > mx) then
-                     mx = eps_nuc_categories(i_rate, j); jmx = j
-                  end if
-               end do
-               if (jmx <= 0) exit
-               if (mx < 1) exit ! FOR TEST OUTPUT
-               flgs(jmx) = .true.
-            end if
-            write(*, '(a40, 2x, f15.6, e15.6)') 
-     >            trim(category_name(jmx)), safe_log10(eps_nuc_categories(i_rate, jmx)),
-     >            eps_nuc_categories(i_rate, jmx)     
-         end do
-         write(*, *)
-         write(*, '(a40, 2x, f15.6, e15.6)') 
-     >            'log10(-photodisintegration)', safe_log10(-eps_nuc_categories(i_rate, iphoto)),
-     >            -eps_nuc_categories(i_rate, iphoto)
-         
-         write(*, *)
-         
-      end subroutine show_by_category
-
-      subroutine show_rates(g, rts, T, Rho, sorted)
-         type (Net_General_Info), pointer  :: g
-         real(dp), intent(in) :: rts(num_rvs, rates_reaction_id_max), T, Rho
-         logical, intent(in) :: sorted
-         
-         logical :: flgs(rates_reaction_id_max)
-         real(dp) :: mx
-         integer :: k, j, jmx
-         
-         flgs = .false.
-         
-         do k = 1, g% num_reactions
-            if (.not. sorted) then
-               jmx = k; mx = rts(i_rate, jmx)
-            else
-               mx = -99d99; jmx = -1
-               do j = 1, g% num_reactions
-                  if ((.not. flgs(j)) .and. rts(i_rate, j) > mx) then
-                     mx = rts(i_rate, j); jmx = j
-                  end if
-               end do
-               if (jmx <= 0) exit
-               if (mx < 1d-60) exit
-               flgs(jmx) = .true.
-            end if
-            if (mx == 1) cycle
-            write(*, '(a40, e20.9, 2e17.6)') trim(reaction_name(reaction_id(jmx))), mx
-         end do
-         
-      end subroutine show_rates
-
-
-      subroutine show_log_rates(g, rts, T, Rho, sorted)
-         type (Net_General_Info), pointer  :: g
-         real(dp), intent(in) :: rts(num_rvs, rates_reaction_id_max), T, Rho
-         logical, intent(in) :: sorted
-         
-         logical :: flgs(rates_reaction_id_max)
-         real(dp) :: mx
-         integer :: k, j, jmx
-         
-         flgs = .false.
-         
-         do k = 1, g% num_reactions
-            if (.not. sorted) then
-               jmx = k; mx = rts(i_rate, jmx)
-            else
-               mx = -99d99; jmx = -1
-               do j = 1, g% num_reactions
-                  if ((.not. flgs(j)) .and. rts(i_rate, j) > mx) then
-                     mx = rts(i_rate, j); jmx = j
-                  end if
-               end do
-               if (jmx <= 0) exit
-               if (mx < 1d-40) exit
-               flgs(jmx) = .true.
-            end if
-            if (mx == 1) cycle
-            write(*, '(a40, f20.9, 2e17.6)') trim(reaction_name(reaction_id(jmx))), safe_log10(mx)
-         end do
-         
-      end subroutine show_log_rates
-      
-      
-      subroutine show_dx_dt(g, species, xin, dxdt, sorted)
-         type (Net_General_Info), pointer  :: g
-         integer, intent(in) :: species
-         real(dp), intent(in) :: xin(species)
-         real(dp), intent(in) :: dxdt(species)
-         logical, intent(in) :: sorted
-
-         write(*, *)
-         write(*, *) 'summary of isotope mass abundance changes'
-         write(*, *)
-         write(*, '(a40, 2(a17))') 'isotope', 'x initial', 'dx_dt   '
-         call show_partials(g, species, xin, dxdt, .true., sorted)
-         
-      end subroutine show_dx_dt
-      
-      
-      subroutine show_d_eps_nuc_dx(g, species, xin, d_eps_nuc_dx, sorted)
-         type (Net_General_Info), pointer  :: g
-         integer, intent(in) :: species
-         real(dp), intent(in) :: xin(species)
-         real(dp), intent(in) :: d_eps_nuc_dx(species)
-         logical, intent(in) :: sorted
-
-         write(*, *)
-         write(*, *) 'summary of d_eps_nuc_dx'
-         write(*, *)
-         write(*, '(a40, a17)') 'isotope', 'd_eps_nuc_dx'
-         call show_partials(g, species, xin, d_eps_nuc_dx, .false., sorted)
-         
-      end subroutine show_d_eps_nuc_dx
-      
-      
-      subroutine show_partials(g, species, xin, derivs, initX_flag, sorted)
-         type (Net_General_Info), pointer  :: g
-         integer, intent(in) :: species
-         real(dp), intent(in) :: xin(species)
-         real(dp), intent(in) :: derivs(species)
-         logical, intent(in) :: initX_flag, sorted
-
-         real(dp) :: mx
-         integer :: k, j, jmx
-         integer, pointer :: chem_id(:)
-         logical :: iflgs(species)
-         chem_id => g% chem_id
-         write(*, *)
-         iflgs = .false.
-         do k = 1, species
-            if (.not. sorted) then
-               jmx = k
-            else
-               mx = -99d99; jmx = -1
-               do j = 1, species
-                  if ((.not. iflgs(j)) .and. abs(derivs(j)) > mx) then
-                     mx = abs(derivs(j)); jmx = j
-                  end if
-               end do
-               if (jmx <= 0) exit
-               if (mx < 1d-40) exit
-            end if
-            if (initX_flag) then
-               write(*, '(a40, 2e17.6)') trim(chem_isos% name(chem_id(jmx))), xin(jmx), derivs(jmx)
-            else
-               write(*, '(a40, e25.14)') trim(chem_isos% name(chem_id(jmx))), derivs(jmx)
-            end if
-            iflgs(jmx) = .true.
-         end do
-         
-      end subroutine show_partials
 
 
       subroutine set_composition(g, species, xin)
@@ -1059,8 +648,6 @@
          
          eta = 0
          
-         adjustment_iso = net_iso(ih1)
-
          if (net_file == 'data/sub_chandra.net') then   
          
             adjustment_iso = net_iso(ih1)
@@ -1101,7 +688,7 @@
       
       
       subroutine read_test_data(filename, n, rho_vec, T_vec, ierr)
-         ! the data files have columns of mass, radius, density, temp
+ ! the data files have columns of mass, radius, density, temp
          use utils_lib
          character (len=*), intent(in) :: filename
          integer, intent(out) :: n
@@ -1168,24 +755,24 @@
          character (len=*), intent(in) :: net_file
          logical, intent(in) :: do_timing, show_Qs
          
-         real(dp) :: logRho, logT, Rho, T, xsum, Q1, Q2,
-     >     eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, theta_e,
-     >     eps_nuc_categories(num_rvs, num_categories), xh, xhe, mass_correction !approx_abar, approx_zbar
-         real(dp), dimension(:, :), pointer :: reaction_eps_nuc
-         real(dp), dimension(:, :), pointer :: rate_screened, rate_raw
+         real(dp) :: logRho, logT, Rho, T, xsum, Q1, Q2, &
+           eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, weak_rate_factor, &
+           eps_nuc_categories(num_categories), xh, xhe, mass_correction !approx_abar, approx_zbar
          integer :: i, j, k, info, ierr, nreps, rep, times_total, elapsed_time, clock_rate, time0, time1
          integer :: lwork, adjustment_iso, ir_c12_c12_to_he4_ne20, ir_he4_ne20_to_c12_c12
          real(dp), dimension(:), pointer :: d_eps_nuc_dx, dabar_dx, dzbar_dx, dmc_dx
-         real(dp), pointer :: work(:), rate_factors(:), category_factors(:),
-     >      actual_Qs(:), actual_neuQs(:)       
+         real(dp), pointer :: work(:), rate_factors(:), &
+            actual_Qs(:), actual_neuQs(:)       
          logical, pointer :: from_weaklib(:)
-         
+         logical :: skip_jacobian
+         real(dp), dimension(:), pointer :: &
+            rate_raw, rate_raw_dT, rate_raw_dRho, &
+            rate_screened, rate_screened_dT, rate_screened_dRho         
          
          include 'formats.dek'
          
          write(*,*) 'Do_One_Test ' // trim(net_file)
                   
-         theta_e = theta_e_for_graboske_et_al
          call test_net_setup(net_file)
             
          ierr = 0
@@ -1198,15 +785,16 @@
          lwork = net_work_size(handle, info) 
          if (info /= 0) stop 1
          
-         allocate(work(lwork), 
-     >         rate_factors(num_reactions), category_factors(num_categories),
-     >         rate_screened(num_rvs, num_reactions), rate_raw(num_rvs, num_reactions), 
-     >         actual_Qs(num_reactions), actual_neuQs(num_reactions), from_weaklib(num_reactions),
-     >         stat=info)
+         allocate(work(lwork),  &
+               rate_factors(num_reactions), &
+               actual_Qs(num_reactions), &
+               actual_neuQs(num_reactions), &
+               from_weaklib(num_reactions), &
+               stat=info)
          if (info /= 0) stop 2
          
          rate_factors(:) = 1
-         category_factors(:) = 1
+         weak_rate_factor = 1
          
          if (.false.) then ! get neutrino Q
          
@@ -1238,7 +826,7 @@
          end if
          
          if (.false.) then ! get reaction Q
-            ! co55 -> fe55
+ ! co55 -> fe55
             Q1 = isoB(ife55) - isoB(ico55)
             write(*,1) 'Q co55->fe55', Q1
             stop
@@ -1247,37 +835,273 @@
          xin = 0
          eta = 0
 
-         if (net_file == 'basic.net') then
+         if (net_file == 'mesa_201.net') then
             
-            nrates_to_show = 10
+            nrates_to_show = 2
          
-            rates_to_show(1:nrates_to_show) = (/ 
-     >         irpp_to_he3,
-     >         irpep_to_he3,
-     >         ir_he3_he3_to_h1_h1_he4,
-     >         ir34_pp2,
-     >         ir34_pp3,
-     >         ir_h1_he3_wk_he4,
-     >         irc12_to_n14,
-     >         irn14_to_c12,
-     >         irn14_to_o16,
-     >         iro16_to_n14  /)
+            rates_to_show(1:nrates_to_show) = (/  &
+               ir_ar36_ag_ca40, &
+               ir_ca40_ga_ar36  /)
 
-                     xin(net_iso(ih1))=     3.499985d-01
-                    xin(net_iso(ihe3))=     1.3914298d-05
-                    xin(net_iso(ic12))=     1.721186d-05  
-                    xin(net_iso(in14))=     5.084861d-03
-                    xin(net_iso(io16))=     9.502718d-03
-                   xin(net_iso(ine20))=     0
-                    xin(net_iso(ihe4))=     1d0 - 0.02d0 - xin(net_iso(ih1)) - xin(net_iso(ihe3))
-                   xin(net_iso(img24))=     1d0 - sum(xin(:))
+                                  xin(net_iso(ife56))=     6.3551174304779179D-01
+                                  xin(net_iso(icr52))=     1.0518849309100423D-01
+                                  xin(net_iso(ini60))=     6.8579809304547934D-02
+                                  xin(net_iso(ife55))=     3.0800958229563902D-02
+                                  xin(net_iso(imn55))=     2.1373990699858084D-02
+                                  xin(net_iso(ico57))=     2.0785551124804885D-02
+                                  xin(net_iso(ife57))=     1.6083543077536507D-02
+                                  xin(net_iso(imn53))=     1.5959192021165327D-02
+                                  xin(net_iso(ico59))=     1.3346191916961030D-02
+                                  xin(net_iso(ife58))=     1.2810477227656202D-02
+                                  xin(net_iso(ife54))=     1.2428871023625330D-02
+                                  xin(net_iso(ini62))=     1.1831182533246063D-02
+                                  xin(net_iso(icr53))=     8.1041573656346795D-03
+                                  xin(net_iso(ini61))=     5.1462544919734727D-03
+                                  xin(net_iso(imn54))=     4.8562102089927551D-03
+                                  xin(net_iso(icr54))=     3.4271335428296490D-03
+                                  xin(net_iso(ini59))=     2.9811021846265560D-03
+                                  xin(net_iso(ini58))=     2.8713349650366189D-03
+                                   xin(net_iso(iv51))=     2.0988150935152424D-03
+                                  xin(net_iso(ico58))=     2.0282210582857861D-03
+                                  xin(net_iso(icr51))=     1.2727926750247761D-03
+                                  xin(net_iso(icr50))=     3.5421790633561727D-04
+                                  xin(net_iso(icu63))=     3.0335040211002022D-04
+                                  xin(net_iso(iti48))=     2.8512639104984498D-04
+                                  xin(net_iso(iti50))=     2.8394752519368671D-04
+                                  xin(net_iso(ico56))=     2.4310701594699283D-04
+                                  xin(net_iso(ico60))=     1.5319574812323961D-04
+                                   xin(net_iso(ihe4))=     1.3780017854631601D-04
+                                  xin(net_iso(imn56))=     1.1066944504563417D-04
+                                   xin(net_iso(iv50))=     8.7723703257792468D-05
+                                   xin(net_iso(iv49))=     8.0539507322740820D-05
+                                  xin(net_iso(icu61))=     6.0898214714637941D-05
+                                  xin(net_iso(iti49))=     5.8026224632063015D-05
+                                  xin(net_iso(imn52))=     4.2516037186521133D-05
+                                  xin(net_iso(ico61))=     4.1332712278653746D-05
+                                  xin(net_iso(ini63))=     3.9285182071536010D-05
+                                  xin(net_iso(ico55))=     3.3984664667118780D-05
+                                  xin(net_iso(ife59))=     3.1874001320244153D-05
+                                  xin(net_iso(izn64))=     2.7904240321969555D-05
+                                  xin(net_iso(izn66))=     2.3416686728782276D-05
+                                  xin(net_iso(icu62))=     2.1144678609352833D-05
+                                  xin(net_iso(ini57))=     1.1679099363693715D-05
+                                   xin(net_iso(iv52))=     1.0016381776869645D-05
+                                  xin(net_iso(ini64))=     8.9564547480773243D-06
+                                  xin(net_iso(iti47))=     8.7562205406651916D-06
+                                  xin(net_iso(icu65))=     8.3830901771893844D-06
+                                  xin(net_iso(iti46))=     6.5019528109988749D-06
+                                  xin(net_iso(icu64))=     6.1556773376380492D-06
+                                  xin(net_iso(iar38))=     5.0886468271422554D-06
+                                  xin(net_iso(ife53))=     4.4893983930970075D-06
+                                   xin(net_iso(is34))=     4.2369862519232918D-06
+                                  xin(net_iso(izn65))=     4.1809380230467465D-06
+                                  xin(net_iso(icr55))=     3.5647078269917385D-06
+                                  xin(net_iso(imn51))=     1.3849206094166064D-06
+                                  xin(net_iso(ife60))=     1.0919469947619407D-06
+                                    xin(net_iso(ih1))=     9.8211241034612710D-07
+                                  xin(net_iso(ica44))=     6.4721481111312556D-07
+                                  xin(net_iso(isi30))=     6.0482126630410841D-07
+                                  xin(net_iso(ica42))=     5.8926684360031471D-07
+                                  xin(net_iso(isi28))=     5.5342250413192408D-07
+                                   xin(net_iso(iv48))=     5.4911502105605942D-07
+                                   xin(net_iso(iv53))=     5.4571869339657211D-07
+                                  xin(net_iso(icu60))=     4.5761289432308086D-07
+                                  xin(net_iso(izn63))=     4.4652045082610858D-07
+                                  xin(net_iso(isc47))=     4.4099241256913694D-07
+                                  xin(net_iso(ini56))=     3.9547421607331126D-07
+                                  xin(net_iso(iti51))=     3.6358450091693021D-07
+                                  xin(net_iso(izn62))=     3.0268870369662295D-07
+                                   xin(net_iso(is32))=     3.0184105591459131D-07
+                                  xin(net_iso(icr49))=     2.7706803242086906D-07
+                                  xin(net_iso(isc45))=     2.5466905171154329D-07
+                                   xin(net_iso(ik39))=     1.9906885458096793D-07
+                                  xin(net_iso(icl35))=     1.5826438708200070D-07
+                                   xin(net_iso(is33))=     1.2794750349676913D-07
+                                   xin(net_iso(ip31))=     1.1805533268957108D-07
+                                  xin(net_iso(icl37))=     1.0108890802543261D-07
+                                  xin(net_iso(ica43))=     9.5766190955127930D-08
+                                  xin(net_iso(iar36))=     8.3287350202069049D-08
+                                  xin(net_iso(isi29))=     7.6157023642649312D-08
+                                  xin(net_iso(isc49))=     7.2645544618960897D-08
+                                  xin(net_iso(icu59))=     6.9036259006119691D-08
+                                  xin(net_iso(ica40))=     6.4387988887989985D-08
+                                  xin(net_iso(isc46))=     6.1294200120692868D-08
+                                  xin(net_iso(iar37))=     5.0049708949178339D-08
+                                  xin(net_iso(ineut))=     4.7236564548991118D-08
+                                  xin(net_iso(isc48))=     3.7392395931746378D-08
+                                  xin(net_iso(ife52))=     3.0982331086000098D-08
+                                  xin(net_iso(icr56))=     2.9477366114308358D-08
+                                  xin(net_iso(ica41))=     2.7100443580454983D-08
+                                   xin(net_iso(is35))=     2.6527306613430685D-08
+                                  xin(net_iso(ica45))=     2.5532508173462626D-08
+                                  xin(net_iso(ico62))=     2.3608043613616947D-08
+                                  xin(net_iso(iar39))=     2.3503192609361190D-08
+                                  xin(net_iso(ica46))=     2.2455595751043146D-08
+                                   xin(net_iso(iv47))=     1.9789662501752072D-08
+                                  xin(net_iso(icu66))=     1.9285467280104737D-08
+                                  xin(net_iso(icl36))=     1.8710358753573163D-08
+                                   xin(net_iso(is36))=     1.6433794658525574D-08
+                                   xin(net_iso(ik41))=     1.1021812817088955D-08
+                                  xin(net_iso(ini65))=     1.0432196346423500D-08
+                                   xin(net_iso(ip33))=     8.9625871046594568D-09
+                                   xin(net_iso(ik40))=     7.2106087354006743D-09
+                                  xin(net_iso(iar40))=     7.1174073521523365D-09
+                                  xin(net_iso(iti45))=     5.6870435962784455D-09
+                                   xin(net_iso(ip32))=     4.9537776441010461D-09
+                                  xin(net_iso(icr48))=     3.0709436939798925D-09
+                                  xin(net_iso(isc44))=     2.7862949914482315D-09
+                                  xin(net_iso(isc43))=     1.4283233379580965D-09
+                                  xin(net_iso(isi31))=     1.3747008133379580D-09
+                                  xin(net_iso(iti52))=     1.2866447687101849D-09
+                                  xin(net_iso(ico63))=     1.0456195723572430D-09
+                                  xin(net_iso(iti44))=     7.1579364938842059D-10
+                                   xin(net_iso(io16))=     5.6818053126812287D-10
+                                  xin(net_iso(ial27))=     5.6117840295305725D-10
+                                  xin(net_iso(ica47))=     5.4798226854137171D-10
+                                  xin(net_iso(img24))=     3.8679049700264050D-10
+                                  xin(net_iso(ini66))=     2.8640604416758339D-10
+                                  xin(net_iso(izn61))=     2.4995195933116682D-10
+                                  xin(net_iso(ica48))=     1.9626419275146166D-10
+                                  xin(net_iso(ife61))=     1.8711288748163173D-10
+                                   xin(net_iso(ik42))=     1.4923884785773920D-10
+                                  xin(net_iso(isi32))=     1.4443919428884894D-10
+                                   xin(net_iso(ip30))=     1.3908837795296053D-10
+                                   xin(net_iso(ic12))=     1.3185610207511085D-10
+                                   xin(net_iso(ik43))=     1.1518951971920992D-10
+                                   xin(net_iso(iv54))=     8.8440974843643898D-11
+                                  xin(net_iso(img26))=     8.5260453209638504D-11
+                                  xin(net_iso(icl38))=     2.5853881572793256D-11
+                                  xin(net_iso(isc50))=     1.7292118708137885D-11
+                                  xin(net_iso(iar41))=     1.0665700916421081D-11
+                                  xin(net_iso(img25))=     9.2051027558630546D-12
+                                  xin(net_iso(ial28))=     8.9602126799277990D-12
+                                  xin(net_iso(izn60))=     7.0658622923470296D-12
+                                   xin(net_iso(ip34))=     4.2003981867966896D-12
+                                  xin(net_iso(icr57))=     2.8195149736768269D-12
+                                  xin(net_iso(ine20))=     1.1829006560529443D-12
+                                  xin(net_iso(ife62))=     1.0149415562457171D-12
+                                   xin(net_iso(ik44))=     5.5654687896999145D-13
+                                   xin(net_iso(is31))=     4.0845373817884839D-13
+                                   xin(net_iso(iv55))=     2.8610531204397973D-13
+                                  xin(net_iso(ina23))=     2.5122330767236196D-13
+                                   xin(net_iso(is37))=     2.1529809224524208D-13
+                                  xin(net_iso(iti53))=     1.4129020276964862D-13
+                                  xin(net_iso(iar35))=     1.2934962278023034D-13
+                                  xin(net_iso(ial26))=     1.2407881461251650D-13
+                                   xin(net_iso(in15))=     1.1945765698183132D-13
+                                  xin(net_iso(ico64))=     8.1590671587313667D-14
+                                  xin(net_iso(img27))=     6.7969591881380018D-14
+                                    xin(net_iso(ih2))=     5.6613884110319004D-14
+                                  xin(net_iso(ini67))=     5.1506647175988674D-14
+                                  xin(net_iso(ica39))=     3.8945192023978035D-14
+                                  xin(net_iso(ini55))=     3.0883773851523300D-14
+                                  xin(net_iso(ine22))=     1.3808913342478939D-14
+                                  xin(net_iso(ica49))=     1.0542673783683999D-14
+                                  xin(net_iso(isc51))=     9.2083686560605166D-15
+                                  xin(net_iso(isi27))=     8.3464191225256989D-15
+                                  xin(net_iso(ine21))=     6.6697557229646203D-15
+                                  xin(net_iso(ife51))=     6.5787879505834196D-15
+                                   xin(net_iso(io17))=     3.8661065919908615D-15
+                                   xin(net_iso(ic13))=     2.2604411883637647D-15
+                                  xin(net_iso(icr58))=     2.1539938862813166D-15
+                                  xin(net_iso(isi33))=     1.4888165334138879D-15
+                                  xin(net_iso(ina24))=     7.2312125147882022D-16
+                                  xin(net_iso(ial25))=     5.3576177397850227D-16
+                                  xin(net_iso(ico65))=     4.9566812556376405D-16
+                                  xin(net_iso(icr47))=     3.0194388465619186D-16
+                                   xin(net_iso(in14))=     2.6891785216435022D-16
+                                  xin(net_iso(ina22))=     2.5931749891034273D-16
+                                   xin(net_iso(io15))=     2.5261003710407275D-16
+                                  xin(net_iso(ini68))=     2.2419710841076782D-16
+                                   xin(net_iso(io18))=     1.8206042351246347D-16
+                                  xin(net_iso(iti43))=     9.9895985562055471D-17
+                                   xin(net_iso(if19))=     7.0445166521693986D-17
+                                   xin(net_iso(ihe3))=     6.8591249543794866D-17
+                                  xin(net_iso(iti54))=     3.3955810406819116D-17
+                                  xin(net_iso(ife63))=     3.0222399040043984D-17
+                                   xin(net_iso(in13))=     2.5097133179904447D-17
+                                  xin(net_iso(izn59))=     2.3782224732332168D-17
+                                  xin(net_iso(img23))=     2.2784900370197838D-17
+                                   xin(net_iso(if17))=     1.0052207505944401D-17
+                                   xin(net_iso(if18))=     6.3013547340360942D-18
+                                   xin(net_iso(iv56))=     2.1677062516769839D-18
+                                  xin(net_iso(ina21))=     1.9109919103480182D-18
+                                  xin(net_iso(ine23))=     1.2143041459039416D-18
+                                   xin(net_iso(ili6))=     1.4203908924439747D-19
+                                   xin(net_iso(ib11))=     1.1320699694157424D-19
+                                   xin(net_iso(if20))=     4.4936577179455616D-20
+                                  xin(net_iso(ine19))=     2.6387620496069204D-20
+                                  xin(net_iso(ife64))=     1.1841283303587735D-20
+                                   xin(net_iso(ib10))=     1.0494357182634838D-20
+                                   xin(net_iso(ibe9))=     7.8292004126082962D-21
+                                  xin(net_iso(ico66))=     6.4514234785580282D-21
+                                   xin(net_iso(ili7))=     6.4231341717191173D-21
+                                   xin(net_iso(in16))=     4.7443318701592232D-21
+                                   xin(net_iso(ibe7))=     3.3532048357084064D-22
+                                   xin(net_iso(io19))=     3.2062683754970905D-22
+                                  xin(net_iso(ibe10))=     6.5331631260779713D-23
+                                  xin(net_iso(ico67))=     4.9629777598135805D-24
+                                  xin(net_iso(ife65))=     3.7335326045384740D-26
+                                  xin(net_iso(ife66))=     8.6772104841406824D-30
+                                    xin(net_iso(ib8))=     4.1439050548710376D-31
                               
                               write(*,*) 'sum xin', sum(xin(:))
 
-                                  logT =    7.160481D+00
-                                logRho =    2.178040D+00
-                                   eta =   0
-                               theta_e =    1
+                                                 logT =    9.6532818288064650D+00
+                                               logRho =    7.9479966082179185D+00
+                                                  eta =    2.7403163311838425D+00
+                                              theta_e =    0.0000000000000000D+00
+                                   
+                                   
+               screening_mode = extended_screening
+               
+               call net_set_logTcut(handle, 0d0, 0d0, info)
+               if (info /= 0) then
+                  write(*,*) 'failed in net_set_logTcut'
+                  stop 1
+               end if
+
+         else if (net_file == 'approx21_cr60_plus_co56.net') then
+            
+            nrates_to_show = 2
+         
+            rates_to_show(1:nrates_to_show) = (/  &
+               ir_ar36_ag_ca40, &
+               ir_ca40_ga_ar36  /)
+
+                                  xin(net_iso(ife56))=     8.3990195536270140D-01
+                                  xin(net_iso(ife54))=     9.1219636106456448D-02
+                                   xin(net_iso(ihe4))=     5.4913235623813200D-02
+                                  xin(net_iso(icr60))=     5.7674995592308142D-03
+                                  xin(net_iso(ico56))=     4.9881560076575713D-03
+                                  xin(net_iso(iprot))=     1.3632657569069438D-03
+                                  xin(net_iso(isi28))=     7.8626218715835341D-04
+                                   xin(net_iso(is32))=     4.1969480135437183D-04
+                                  xin(net_iso(iar36))=     1.8526179220718401D-04
+                                  xin(net_iso(ica40))=     1.2242616041375457D-04
+                                  xin(net_iso(ineut))=     1.1980892341740248D-04
+                                  xin(net_iso(ini56))=     9.7550916738808739D-05
+                                  xin(net_iso(ife52))=     5.8905163394112936D-05
+                                  xin(net_iso(icr48))=     1.8019113042269716D-05
+                                   xin(net_iso(io16))=     1.3408668333884428D-05
+                                   xin(net_iso(ic12))=     1.1016907822550631D-05
+                                  xin(net_iso(img24))=     8.2286117186337854D-06
+                                  xin(net_iso(iti44))=     5.4079788265411310D-06
+                                  xin(net_iso(ine20))=     2.6035880565410054D-07
+                                    xin(net_iso(ih1))=     4.9844580237752611D-20
+                                   xin(net_iso(ihe3))=     8.8329616569722745D-21
+                                   xin(net_iso(in14))=     1.8035412315021348D-22
+                              
+                              write(*,*) 'sum xin', sum(xin(:))
+
+                                  logT =    7.2162656791795046D+00
+                                logRho =    2.2626037247171089D+00
+                                   eta =   -1.4737364370795314D+00
+                               theta_e =    0
+                                                 logT =    9.8477686652860221D+00
+                                               logRho =    8.4951102889416124D+00
+                                                  eta =    2.9827856303789755D+00
+                                              theta_e =    0.0000000000000000D+00
                                    
                                    
                screening_mode = extended_screening
@@ -1292,13 +1116,13 @@
             
             nrates_to_show = 6
          
-            rates_to_show(1:nrates_to_show) = (/ 
-     >      ir_h1_h1_wk_h2,
-     >      ir_h2_pg_he3,
-     >      ir_be7_ec_li7,
-     >      ir_b8_wk_he4_he4,
-     >      ir_he3_he3_to_h1_h1_he4,
-     >      ir_he3_ag_be7 /)
+            rates_to_show(1:nrates_to_show) = (/  &
+            ir_h1_h1_wk_h2, &
+            ir_h2_pg_he3, &
+            ir_be7_wk_li7, &
+            ir_b8_wk_he4_he4, &
+            ir_he3_he3_to_h1_h1_he4, &
+            ir_he3_ag_be7 /)
      
                      xin(net_iso(ih1))=     7.0999999999999996D-01
                      xin(net_iso(ih2))=     2.0000000000000002D-05
@@ -1328,34 +1152,16 @@
                   write(*,*) 'failed in net_set_logTcut'
                   stop 1
                end if
-               
-               if (.false.) then
-                  if (.false.) then
-                     rate_factors(:) = 0
-                     i = reaction_table(ir_h2_pg_he3)
-                     if (i == 0) stop 1
-                     rate_factors(i) = 1
-                  else
-                     i = reaction_table(ir_ne20_ag_mg24)
-                     if (i == 0) stop 1
-                     rate_factors(i) = 0
-                     i = reaction_table(ir_o16_ag_ne20)
-                     if (i == 0) stop 1
-                     rate_factors(i) = 0
-                  end if
-               end if
-
-         
 
          else if (net_file == 'agb.net') then
             
             nrates_to_show = 4
          
-            rates_to_show(1:nrates_to_show) = (/ 
-     >      ir_h1_h1_wk_h2,
-     >      ir_c13_an_o16,
-     >      ir_f19_ap_ne22,
-     >      ir_he3_ag_be7 /)
+            rates_to_show(1:nrates_to_show) = (/  &
+            ir_h1_h1_wk_h2, &
+            ir_c13_an_o16, &
+            ir_f19_ap_ne22, &
+            ir_he3_ag_be7 /)
      
                      xin(net_iso(ih1))= 1
                               
@@ -1397,15 +1203,15 @@
             
             nrates_to_show = 8
          
-            rates_to_show(1:nrates_to_show) = (/ 
-     >      rates_reaction_id('r_n13_wk_c13'),               
-     >      rates_reaction_id('r_o15_wk_n15'),               
-     >      rates_reaction_id('r_f17_wk_o17'),               
-     >      rates_reaction_id('r_f18_wk_o18'),               
-     >      rates_reaction_id('r_o14_wk_n14'),               
-     >      rates_reaction_id('r_ne18_wk_f18'),               
-     >      rates_reaction_id('r_ne19_wk_f19'),               
-     >      ir_he4_he4_he4_to_c12 /)
+            rates_to_show(1:nrates_to_show) = (/  &
+            rates_reaction_id('r_n13_wk_c13'),                &
+            rates_reaction_id('r_o15_wk_n15'),                &
+            rates_reaction_id('r_f17_wk_o17'),                &
+            rates_reaction_id('r_f18_wk_o18'),                &
+            rates_reaction_id('r_o14_wk_n14'),                &
+            rates_reaction_id('r_ne18_wk_f18'),                &
+            rates_reaction_id('r_ne19_wk_f19'),                &
+            ir_he4_he4_he4_to_c12 /)
      
          xin = 0
                      xin(net_iso(ih1))=     7.2265805432969643D-01
@@ -1424,10 +1230,10 @@
                    xin(net_iso(ine20))=     1.2563102679570999D-03
                    xin(net_iso(img24))=     4.7858754879924638D-04
  
-                                     T =    8.5648111120065376D+06
-                                  logT =    6.9327177894944265D+00
+                                  logT =    9.6d0
+                                logRho =    6.0d0
                                    rho =    7.8571498592117219D+00
-                                logRho =    8.9526503651107059D-01
+                                     T =    8.5648111120065376D+06
                                   abar =    1.2655060647252907D+00
                                   zbar =    1.0901664301076275D+00
                                  z2bar =    1.3036906023574921D+00
@@ -1436,187 +1242,59 @@
                                    
                screening_mode = extended_screening
 
-         else if (net_file == 'approx29.net') then
-
-            nrates_to_show = 11
-         
-            rates_to_show(1:nrates_to_show) = (/ 
-     >      ir1212,           
-     >      irc12_to_n14,
-     >      ir_c12_ag_o16,
-     >      ir1216_to_mg24,           
-     >      ir1216_to_si28,           
-     >      ir1616a,
-     >      ir1616ppa,
-     >      ir1616ppg,
-     >      ir_o16_ag_ne20,
-     >      ir_ne20_ag_mg24,
-     >      iro16_to_n14
-     >      /)
-     
+         else if (net_file == 'approx21.net' .or. &
+                  net_file == 'approx21_plus_co56.net' .or. &
+                  net_file == 'approx21_test.net' .or. &
+                  net_file == 'approx21_old.net' .or. &
+                  net_file == 'approx21_new.net') then
             
-                                   xin(net_iso(io16))=     8.4078806793430971D-01
-                                   xin(net_iso(ic12))=     1.5667831148778857D-01
-                                  xin(net_iso(ine20))=     2.5324828950044945D-03
-                                  xin(net_iso(img24))=     1.1374886503238785D-06
-                                  xin(net_iso(isi28))=     1.9320589618754134D-10
-                                   xin(net_iso(ihe4))=     1.0410585725431680D-12
-                                   xin(net_iso(is32))=     9.7508528557715739D-18
-                                  xin(net_iso(iar36))=     2.3719635461470835D-26
-                                  xin(net_iso(ica40))=     8.9365928208049725D-37
-                                  xin(net_iso(iti44))=     5.9447148967850597D-49
-                                  xin(net_iso(ini58))=     3.4324388103659015D-56
-                                  xin(net_iso(ini60))=     1.3592016146385322D-56
-                                  xin(net_iso(ife58))=     2.5667097198284398D-57
-                                  xin(net_iso(ini62))=     1.9271671069951470D-57
-                                  xin(net_iso(ini64))=     5.0462911310261966D-58
-                                  xin(net_iso(iti50))=     1.1414849804824868D-58
-                                  xin(net_iso(icr48))=     4.2643755024382846D-63
-                                  xin(net_iso(icr54))=     3.4371501049170877D-72
-                                  xin(net_iso(ife52))=     1.2270370811284163D-78
-                                  xin(net_iso(ife56))=     1.0673812072272265D-97
-                                  xin(net_iso(iprot))=     5.2120663852112486D-99
-                                   xin(net_iso(in14))=     1.5987902769634659D-99
-                                  xin(net_iso(ini56))=     1.1993659789578421D-99
-                                  xin(net_iso(ife54))=     1.0831894305010897D-99
-                                    xin(net_iso(ih1))=     1.0227678792105984D-99
-                                  xin(net_iso(icr56))=     1.0000006088916377D-99
-                                  xin(net_iso(ife60))=     1.0000000000000006D-99
-                                   xin(net_iso(ihe3))=     1.0000000000000006D-99
-                                  xin(net_iso(ineut))=     0.0000000000000000D+00
-             
-            xin(species) = 1d0 - sum(xin(1:species-1))
+
+            nrates_to_show = 5
+            
+            rates_to_show(1:nrates_to_show) = (/  &
+            irprot_to_neut,            &
+            irneut_to_prot, &
+            irni56ec_to_fe56, &
+            ir_fe52_ag_ni56,            &
+            ir_ni56_ga_fe52             &
+            /)
+                     xin = 0
+            
+                                  xin(net_iso(ife56))=     8.0387021484318166D-01
+                                  xin(net_iso(ife54))=     1.6096648736760832D-01
+                                  xin(net_iso(icr56))=     2.9480945535920525D-02
+                                   xin(net_iso(ihe4))=     4.8624637161320565D-03
+                                  xin(net_iso(ini56))=     2.8376270731890360D-04
+                                  xin(net_iso(isi28))=     1.5018628906135739D-04
+                                   xin(net_iso(is32))=     1.1613271635573457D-04
+                                  xin(net_iso(iprot))=     1.1139431633673653D-04
+                                  xin(net_iso(ica40))=     5.3688377473494185D-05
+                                  xin(net_iso(iar36))=     5.2702831822567062D-05
+                                  xin(net_iso(ife52))=     3.7866504131935185D-05
+                                  xin(net_iso(icr48))=     5.8401123037667974D-06
+                                  xin(net_iso(ineut))=     4.9141227703118397D-06
+                                  xin(net_iso(iti44))=     1.5085038561154746D-06
+                                   xin(net_iso(io16))=     9.5384019609049255D-07
+                                  xin(net_iso(img24))=     6.3808207717725580D-07
+                                   xin(net_iso(ic12))=     2.9048656673991868D-07
+                                  xin(net_iso(ine20))=     9.6468865023609427D-09
+                                   xin(net_iso(ihe3))=     4.6203603862263096D-80
+                                   xin(net_iso(in14))=     7.5867472225841235D-99
+                                    xin(net_iso(ih1))=     0 ! 9.9987777520212238-100
+                              write(*,*) 'test case sum xin', sum(xin(1:species))
                               
-                              write(*,*) 'sum xin', sum(xin(:))
 
-                                                    T =    6.8918604410301852D+08
-                                                 logT =    8.8383364744776500D+00
-                                                  rho =    2.4288677461994484D+04
-                                               logRho =    4.3854038677653975D+00
-                                                 abar =    1.5213185776121293D+01
-                                                 zbar =    7.6065928880606464D+00
-                                                z2bar =    5.8507728595911630D+01
-                                                   ye =    5.0000000000000000D-01
-                                                  eta =   -2.6646884260237336D+00
+                                                 logT =    9.6d0
+                                               logRho =    6d0
+                                                    T =    10**logT
+                                                  rho =    10**logRho
+                                                 abar =    5.2051025574883582D+01
+                                                 zbar =    2.4269152265763136D+01
+                                                z2bar =    6.2641754206392147D+02
+                                                   ye =    4.6625694686549729D-01
+                                                  eta =    4.3030680106736412D+00
                         screening_mode = extended_screening
                                               theta_e =    0.0000000000000000D+00
-               
-         
-         else if (net_file == 'wd_o_ne_ignite.net') then
-
-
-            nrates_to_show = 6
-         
-         
-            rates_to_show(1:nrates_to_show) = (/ 
-     >         rates_reaction_id('r_mg24_np_na24'),               
-     >         rates_reaction_id('r_mg24_wk_na24'),               
-     >         rates_reaction_id('rmg24ap_to_si28'),               
-     >         rates_reaction_id('r_mg24_ag_si28'),               
-     >         rates_reaction_id('r_mg24_ga_ne20'),               
-     >         rates_reaction_id('r_mg24_gp_na23') /)
-     
-                   xin(net_iso(ineut))=     0.0000000000000000D+00
-                     xin(net_iso(ih1))=     0.0000000000000000D+00
-                    xin(net_iso(ihe3))=     0.0000000000000000D+00
-                    xin(net_iso(ihe4))=     1.5957030460155789D-15
-                    xin(net_iso(ic12))=     6.5187788875984993D-03
-                    xin(net_iso(in14))=     1.2243249970731128D-08
-                    xin(net_iso(io16))=     5.6259113770759883D-01
-                    xin(net_iso(io20))=     2.0328589644116813D-10
-                    xin(net_iso(if20))=     9.3235184256934400D-12
-                   xin(net_iso(ine20))=     3.9890879552663960D-01
-                   xin(net_iso(ine24))=     5.4471392360365520D-04
-                   xin(net_iso(ina23))=     7.7578429229253277D-05
-                   xin(net_iso(ina24))=     2.9424728593175371D-10
-                   xin(net_iso(img24))=     2.8608638006352681D-02
-                   xin(net_iso(isi28))=     8.9096274199580966D-04
-                    xin(net_iso(is32))=     4.1509540873424419D-04
-                   xin(net_iso(iar36))=     8.1172438275055043D-05
-                   xin(net_iso(ica40))=     6.2815722448016586D-05
-                   xin(net_iso(iti44))=     1.0479767011423344D-15
-                   xin(net_iso(icr48))=     0.0000000000000000D+00
-                   xin(net_iso(icr56))=     0.0000000000000000D+00
-                   xin(net_iso(ife52))=     0.0000000000000000D+00
-                   xin(net_iso(ife54))=     7.4774179803179899D-05
-                   xin(net_iso(ife56))=     1.2255242776117584D-03
-                   xin(net_iso(ini56))=     0.0000000000000000D+00
-                   xin(net_iso(iprot))=     0.0000000000000000D+00
-
-                                     T =    1.6602302786935723D+08
-                                  logT =    8.2201683301062278D+00
-                                   rho =    1.1362219397057323D+10
-                                logRho =    1.0055463170965831D+01
-                                  abar =    1.7562161143883930D+01
-                                  zbar =    8.7794607650170917D+00
-                                 z2bar =    7.8422787604638103D+01
-                                    ye =    4.9990776722115221D-01
-                                   eta =    6.0822366730380656D+02
-                               theta_e =    0.0000000000000000D+00
-                        screening_mode = extended_screening
-         
-         else if (net_file == 'approx21.net') then
-
-            ! TESTING
-            nrates_to_show = 2
-         
-            rates_to_show(1:nrates_to_show) = (/ 
-     >         irpp_to_he3,         ! p(p,e+nu)h2(p,g)he3       
-     >         irpep_to_he3        ! p(e-p,nu)h2(p,g)he3     
-     >      /)
-     
-                                  xin(net_iso(isi28))=     5.7736594568628330D-01
-                                   xin(net_iso(is32))=     3.3161413041024329D-01
-                                  xin(net_iso(iar36))=     4.5440174228012949D-02
-                                  xin(net_iso(ica40))=     4.4326435432300693D-02
-                                  xin(net_iso(ife56))=     1.2343187771546734D-03
-                                   xin(net_iso(io16))=     1.0269660544212729D-05
-                                  xin(net_iso(icr48))=     5.5479714118961378D-06
-                                  xin(net_iso(iti44))=     2.6150279013440417D-06
-                                  xin(net_iso(img24))=     4.9126585387509215D-07
-                                  xin(net_iso(ineut))=     6.7235812080405344D-08
-                                   xin(net_iso(ic12))=     4.2308061053742621D-09
-                                  xin(net_iso(ine20))=     5.3544403631109066D-11
-                                  xin(net_iso(iprot))=     1.9172559653136226D-11
-                                   xin(net_iso(ihe4))=     9.5856466256448351D-13
-                                  xin(net_iso(ini56))=     1.3263075666515746D-16
-                                  xin(net_iso(icr56))=     1.0420775439667622D-18
-                                  xin(net_iso(ife52))=     1.0863095786231788D-20
-                                  xin(net_iso(ife54))=     8.3327063420412484D-22
-                                   xin(net_iso(ihe3))=     3.8463147997752578D-46
-                                   xin(net_iso(in14))=     1.0000000000000000D-99
-                                    xin(net_iso(ih1))=     1.0000000000000000D-99
-
-                                                    T =    2.2254570420573139D+09
-                                                 logT =    9.3474192155237201D+00
-                                                  rho =    3.7761775506596074D+07
-                                               logRho =    7.5770524060335811D+00
-                                                 abar =    2.9961210816200811D+01
-                                                 zbar =    1.4979283626686712D+01
-                                                z2bar =    2.2655888497684035D+02
-                                                   ye =    4.9995588357821041D-01
-                                                  eta =    4.5094610816657257D+00
-                                             screening_mode = extended_screening
-                                              theta_e =    0.0000000000000000D+00
-                               
-
-         else if (net_file == 'rp_si26.net') then
-
-            xin = 0
-            xin(net_iso(ih1))   =   1
- 
- 
-                                     T =    9.0d8
-                                  logT =    log10(T)
-                                   rho =    4.5d5
-                                logRho =    log10(rho)
-                                  abar =    4.6439541133960681D+01
-                                  zbar =    2.0327386428253433D+01
-                                 z2bar =    5.0071386690625775D+02
-                                    ye =    0.5
-                                   eta =    6.3910099340916329D+00
-                                   screening_mode = extended_screening
-                               theta_e =    0.0000000000000000D+00
 
          else
             
@@ -1625,50 +1303,68 @@
          
          end if
          
-         Rho = 10**logRho
-         T = 10**logT
+         Rho = exp10_cr(logRho)
+         T = exp10_cr(logT)
          
          write(*, *)
          write(*, *)
          
          info = 0
-         allocate(rate_screened(num_rvs, num_reactions), reaction_eps_nuc(num_rvs, num_reactions),     
-     >         rate_raw(num_rvs, num_reactions), stat=info)
-         if (info /= 0) stop 2
          
          ierr = 0
-
-         call composition_info(
-     >      species, chem_id, xin, xh, xhe, abar, zbar, z2bar, ye, 
-     >      mass_correction, xsum, dabar_dx, dzbar_dx, dmc_dx)
+         call composition_info( &
+            species, chem_id, xin, xh, xhe, abar, zbar, z2bar, ye,  &
+            mass_correction, xsum, dabar_dx, dzbar_dx, dmc_dx)
          
-
-        do i = 1, species
-           write(*,'(a40,i6,e26.16)')  'x ' // trim(chem_isos% name(chem_id(i))), i, xin(i)
-        end do
-        write(*,*)
+      	write(*,'(a40,e26.16)') 'xh', xh
+      	write(*,'(a40,e26.16)') 'xhe', xhe
+      	write(*,'(a40,e26.16)') 'abar', abar
+      	write(*,'(a40,e26.16)') 'zbar', zbar
+      	write(*,'(a40,e26.16)') 'z2bar', z2bar
+      	write(*,'(a40,e26.16)') 'ye', ye
+      	do i = 1, species
+      	   write(*,'(a40,i6,e26.16)')  'init x ' // trim(chem_isos% name(chem_id(i))), i, xin(i)
+      	end do
+      	write(*,*)
+      	write(*,'(a40,e26.16)') 'logT', logT
+      	write(*,'(a40,e26.16)') 'logRho', logRho
+      	write(*,'(a40,e26.16)') 'eta', eta
 
          if (do_timing) then
-            nreps = 10000
+            nreps = 100000
             call zero_net_timing(g)
             g% doing_timing = .true.
             call system_clock(time0)
          else
             nreps = 1
          end if
+         
+         skip_jacobian = .false.
+         
+         if (.false.) then
+            write(*,*) 'call net_get_rates_only'
+            call net_get_rates_only( &
+               handle, n, species, num_reactions,  &
+               xin, T, logT, Rho, logRho,  &
+               abar, zbar, z2bar, ye, eta, d_eta_dlnT, d_eta_dlnRho, &
+               rate_factors, weak_rate_factor, &
+               std_reaction_Qs, std_reaction_neuQs, &
+               screening_mode, theta_e_for_graboske_et_al,  &
+               lwork, work, ierr)
+            stop 'net_get_rates_only'
+         end if
 
          do rep=1,nreps
-            call net_get_with_Qs(handle, species, num_reactions, 
-     >            xin, T, logT, Rho, logRho, 
-     >            abar, zbar, z2bar, ye, eta, d_eta_dlnT, d_eta_dlnRho,
-     >            rate_factors, category_factors, 
-     >            std_reaction_Qs, std_reaction_neuQs,
-     >            eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx, 
-     >            dxdt, d_dxdt_dRho, d_dxdt_dT, d_dxdt_dx, 
-     >            screening_mode, theta_e_for_graboske_et_al,     
-     >            rate_screened, rate_raw, 
-     >            reaction_eps_nuc, eps_nuc_categories, eps_neu_total, 
-     >            lwork, work, actual_Qs, actual_neuQs, from_weaklib, info)
+            call net_get_with_Qs(handle, skip_jacobian, n, species, num_reactions,  &
+                  xin, T, logT, Rho, logRho,  &
+                  abar, zbar, z2bar, ye, eta, d_eta_dlnT, d_eta_dlnRho, &
+                   rate_factors, weak_rate_factor, &
+                  std_reaction_Qs, std_reaction_neuQs, reuse_rate_raw, reuse_rate_screened, &
+                  eps_nuc, d_eps_nuc_dRho, d_eps_nuc_dT, d_eps_nuc_dx,  &
+                  dxdt, d_dxdt_dRho, d_dxdt_dT, d_dxdt_dx,  &
+                  screening_mode, theta_e,      &
+                  eps_nuc_categories, eps_neu_total,  &
+                  lwork, work, actual_Qs, actual_neuQs, from_weaklib, info)
             if (info /= 0) then
                write(*,1) 'logT', logT
                write(*,1) 'logRho', logRho
@@ -1699,25 +1395,6 @@
             write(*,'(a30,f14.3)') 'elapsed time', dble(elapsed_time)/dble(clock_rate)
             write(*,*)
             write(*,*)
-            if (g% doing_derivs_timing) then
-               write(*,*)
-               write(*,'(a30,2f14.3)') 'clock_derivs_setup', 
-     >            dble(g% clock_derivs_setup)/dble(clock_rate),
-     >            100*dble(g% clock_derivs_setup)/dble(g% clock_net_derivs)
-               write(*,'(a30,2f14.3)') 'clock_derivs_select', 
-     >            dble(g% clock_derivs_select)/dble(clock_rate),
-     >            100*dble(g% clock_derivs_select)/dble(g% clock_net_derivs)
-               write(*,'(a30,2f14.3)') 'clock_derivs_general', 
-     >            dble(g% clock_derivs_general)/dble(clock_rate),
-     >            100*dble(g% clock_derivs_general)/dble(g% clock_net_derivs)
-               times_total = g% clock_derivs_setup + g% clock_derivs_select + g% clock_derivs_general
-               write(*,'(a30,2f14.3)') 'other derivs time', 
-     >            dble(g% clock_net_derivs - times_total)/dble(clock_rate),
-     >            100*dble(g% clock_net_derivs - times_total)/dble(g% clock_net_derivs)
-               write(*,*)
-               write(*,*)
-               write(*,*)
-            end if
             return
          end if
 
@@ -1729,11 +1406,11 @@
             write(*,'(30x,4a20)') 'Q total', 'Q neutrino', 'Q total-neutrino'
             do i = 1, num_reactions
                if (from_weaklib(i)) then
-                  write(*,'(a30,99f20.10)') 'weaklib ' // trim(reaction_Name(reaction_id(i))), 
-     >               actual_Qs(i), actual_neuQs(i), actual_Qs(i) - actual_neuQs(i)
+                  write(*,'(a30,99f20.10)') 'weaklib ' // trim(reaction_Name(reaction_id(i))),  &
+                     actual_Qs(i), actual_neuQs(i), actual_Qs(i) - actual_neuQs(i)
                else
-                  write(*,'(a30,99f20.10)') trim(reaction_Name(reaction_id(i))), 
-     >               actual_Qs(i), actual_neuQs(i), actual_Qs(i) - actual_neuQs(i)
+                  write(*,'(a30,99f20.10)') trim(reaction_Name(reaction_id(i))),  &
+                     actual_Qs(i), actual_neuQs(i), actual_Qs(i) - actual_neuQs(i)
                end if
             end do
             write(*,*)
@@ -1741,92 +1418,122 @@
          end if
          
          
-         call dealloc
-         
+         call get_net_rate_ptrs(g% handle, &
+            rate_screened, rate_screened_dT, rate_screened_dRho, &
+            rate_raw, rate_raw_dT, rate_raw_dRho, lwork, work, &
+            ierr)
+         if (ierr /= 0) then
+            write(*,*) 'failed in get_net_rate_ptrs'
+            stop 1
+         end if
          
          write(*,2) 'screening_mode', screening_mode
             
-        if (.true.) then
+      	if (.true.) then
             write(*,1) 'logT', logT
             write(*,1) 'logRho', logRho
-            if (.true.) then
-              write(*,*) 'reaction_eps_nuc'
-               do i=1,nrates_to_show
-                  j = rates_to_show(i)
-                  if (j == 0) cycle
-                  write(*,1) 'eps_nuc ' // trim(reaction_Name(j)), reaction_eps_nuc(i_rate,reaction_table(j))
-               end do
-               write(*,*)
-               !stop
-            end if
+         	write(*,*)
+         	
+      	   write(*,1) 'eps_nuc', eps_nuc
+      	   write(*,1) 'd_epsnuc_dlnd', d_eps_nuc_dRho*Rho
+      	   write(*,1) 'd_epsnuc_dlnT', d_eps_nuc_dT*T
+         	write(*,*)
+         	
+      	   write(*,1) 'log eps_nuc', log10(eps_nuc)
+      	   write(*,1) 'd_lnepsnuc_dlnd', d_eps_nuc_dRho*Rho/eps_nuc
+      	   write(*,1) 'd_lnepsnuc_dlnT', d_eps_nuc_dT*T/eps_nuc
+         	write(*,*)
+
+         	
+      	   stop
+
+
+
+
+
+         	do i = 1, species
+         	   write(*,1)  'd_eps_nuc_dx ' // trim(chem_isos% name(chem_id(i))), d_eps_nuc_dx(i)
+         	end do
+         	write(*,*)
+
+
+         	do i = 1, species
+         	   write(*,1)  'd_dxdt_dlnRho ' // trim(chem_isos% name(chem_id(i))), d_dxdt_dRho(i)*rho
+         	end do
+         	write(*,*)
+         	
+         	do i = 1, species
+         	   write(*,1)  'd_dxdt_dlnT ' // trim(chem_isos% name(chem_id(i))), d_dxdt_dT(i)*T
+         	end do
+         	write(*,*)
+
+
+         	
+         	if (.true.) then
+            	do i = 1, species
+            	   write(*,1)  'd_dxdt_dx(:,neut) ' // &
+            	      trim(chem_isos% name(chem_id(i))), d_dxdt_dx(i, net_iso(ineut))
+            	end do
+            	write(*,*)
+         	end if
+
+
+         	do i = 1, species
+         	   write(*,1)  'dxdt ' // trim(chem_isos% name(chem_id(i))), dxdt(i)
+         	end do
+         	write(*,1) 'sum(dxdt)', sum(dxdt(1:species))
+            
             do i=1,nrates_to_show
                j = rates_to_show(i)
                if (j == 0) cycle
-               write(*,1) 'rate_raw ' // trim(reaction_Name(j)), 
-     >                           rate_raw(i_rate,reaction_table(j))
+               write(*,1) 'rate_raw ' // trim(reaction_Name(j)),  &
+                                 rate_raw(reaction_table(j))
             end do
             write(*,*)
+            
             do i=1,nrates_to_show
                j = rates_to_show(i)
                if (j == 0) cycle
-               write(*,1) 'd_rate_raw_dT ' // trim(reaction_Name(j)), 
-     >                           rate_raw(i_rate_dT,reaction_table(j))
+               write(*,1) 'd_rate_raw_dT ' // trim(reaction_Name(j)),  &
+                                 rate_raw_dT(reaction_table(j))
             end do
             write(*,*)
+            
             do i=1,nrates_to_show
                j = rates_to_show(i)
                if (j == 0) cycle
-               write(*,1) 'rate_screened ' // trim(reaction_Name(j)),
-     >                           rate_screened(i_rate,reaction_table(j))
+               write(*,1) 'rate_screened ' // trim(reaction_Name(j)), &
+                                 rate_screened(reaction_table(j))
             end do
             write(*,*)
-            write(*,*)
-           do i = 1, species
-              write(*,1)  'x ' // trim(chem_isos% name(chem_id(i))), xin(i)
-           end do
-           write(*,*)
-           do i = 1, species
-              write(*,1)  'dxdt ' // trim(chem_isos% name(chem_id(i))), dxdt(i)
-           end do
-           write(*,*)
-           do i = 1, species
-              if (-dxdt(i) > 1d-90) 
-     >           write(*,1)  'x/dxdt ' // trim(chem_isos% name(chem_id(i))), xin(i)/dxdt(i)
-           end do
-           write(*,*)
-           do i = 1, species
-              write(*,1)  'd_dxdt_dlnRho ' // trim(chem_isos% name(chem_id(i))), d_dxdt_dRho(i)*rho
-           end do
-           write(*,*)
-           do i = 1, species
-              write(*,1)  'd_dxdt_dlnT ' // trim(chem_isos% name(chem_id(i))), d_dxdt_dT(i)*T
-           end do
-           write(*,*)
-           do i = 1, species
-              write(*,1)  'd_dxdt_dx(1,:) ' // trim(chem_isos% name(chem_id(i))), d_dxdt_dx(1,i)
-           end do
-           write(*,*)
-           do i = 1, num_categories
-              if (abs(eps_nuc_categories(i_rate,i)) < 1d-20) cycle
-              write(*,1)  'eps_nuc_cat ' // trim(category_name(i)), eps_nuc_categories(i_rate,i)
-           end do
-           write(*,*)
-           do i = 1, species
-              write(*,1)  'd_eps_nuc_dx ' // trim(chem_isos% name(chem_id(i))), d_eps_nuc_dx(i)
-           end do
-           write(*,*)
-           write(*,1) 'eps_neu_total', eps_neu_total
-           write(*,1) 'eps_nuc', eps_nuc
-           write(*,1) 'd_epsnuc_dlnd', d_eps_nuc_dRho*Rho
-           write(*,1) 'd_epsnuc_dlnT', d_eps_nuc_dT*T
-           stop
-        end if
+            
+         	do i = 1, species
+         	   write(*,1)  'x ' // trim(chem_isos% name(chem_id(i))), xin(i)
+         	end do
+         	write(*,*)
+         	
+         	do i = 1, species
+         	   if (-dxdt(i) > 1d-90)  &
+               	write(*,1)  'x/dxdt ' // trim(chem_isos% name(chem_id(i))), xin(i)/dxdt(i)
+         	end do
+         	write(*,*)
+         	
+         	if (.false.) then
+            	do i = 1, num_categories
+            	   if (abs(eps_nuc_categories(i)) < 1d-20) cycle
+            	   write(*,1)  'eps_nuc_cat ' // trim(category_name(i)), eps_nuc_categories(i)
+            	end do
+            	write(*,*)
+         	end if
+         	
+         	stop
+      	end if
 
          write(*,*)
          write(*,*)
          write(*,*) 'net_name ', trim(net_file)
          write(*,*) 'species', species
-         write(*,1) 'theta_e =', theta_e_for_graboske_et_al
+         write(*,1) 'theta_e =', theta_e
          write(*,1) 'abar =', abar
          write(*,1) 'zbar =', zbar
          write(*,1) 'z2bar =', z2bar
@@ -1839,7 +1546,6 @@
                write(*,*) 'missing reaction_table(j) for ' // trim(reaction_Name(j))
                stop
             end if
-            write(*,1) trim(reaction_Name(j)), reaction_eps_nuc(i_rate,reaction_table(j))
          end do
          write(*,*)
          write(*,1) 'eps_nuc', eps_nuc
@@ -1866,7 +1572,7 @@
          end do
          write(*, *)
          do j=1,num_categories
-            write(*,1) trim(category_name(j)), eps_nuc_categories(i_rate, j)
+            write(*,1) trim(category_name(j)), eps_nuc_categories( j)
          end do
          write(*,*)
          write(*,1) 'eta =', eta
@@ -1885,16 +1591,7 @@
          write(*,1) 'eps_nuc_neu_total', eps_neu_total
 
 
-
-
-         deallocate(actual_Qs, actual_neuQs, from_weaklib, rate_screened, rate_raw, reaction_eps_nuc)
-         
-         
-         contains
-         
-         subroutine dealloc
-            deallocate(work, rate_factors, category_factors)
-         end subroutine dealloc
+         deallocate(work, rate_factors, actual_Qs, actual_neuQs, from_weaklib)
 
 
       end subroutine Do_One_Testcase
@@ -1908,7 +1605,7 @@
          real(dp), parameter :: Qnu_o14 = 2.22d0 !..14o(e+nu)14n
          real(dp), parameter :: Qnu_ne18 = 1.87d0 !..18ne(e+nu)18f
          real(dp), parameter :: Qnu_ne19 = 1.25d0 !..19ne(e+nu)19f
-         !real(dp), parameter :: Qnu_mg21 = 6.2d0 !..mg21(e+nu)na21
+ !real(dp), parameter :: Qnu_mg21 = 6.2d0 !..mg21(e+nu)na21
          real(dp), parameter :: Qnu_mg22 = 2.1d0 !..mg22(e+nu)na22
          
  1       format(a40, 1pe26.16)

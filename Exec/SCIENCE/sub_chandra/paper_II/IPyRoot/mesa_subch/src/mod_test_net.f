@@ -59,13 +59,17 @@
       
           qt = quiet
       
-          my_mesa_dir = '/home/ajacobs/Research/Codebase/mesa'
+          n => net_info_target
+
+          my_mesa_dir = '/home/adam/Research/Codebase/mesa'
           call const_init(my_mesa_dir,ierr)     
           if (ierr /= 0) then
             write(*,*) 'const_init failed'
             stop 1
           end if        
       
+          call crlibm_init
+
           ierr = 0
           call chem_init('isotopes.data', ierr)
           if (ierr /= 0) then
@@ -73,7 +77,7 @@
             stop 1
           end if
       
-          call rates_init('reactions.list', '', ierr)
+          call rates_init('reactions.list', '', '', ierr)
           if (ierr /= 0) stop 1
      
           !!! Execution 
