@@ -61,7 +61,7 @@
       
           n => net_info_target
 
-          my_mesa_dir = '/home/adam/Research/Codebase/mesa'
+          my_mesa_dir = '/home/ajacobs/Research/Codebase/mesa'
           call const_init(my_mesa_dir,ierr)     
           if (ierr /= 0) then
             write(*,*) 'const_init failed'
@@ -112,7 +112,7 @@
           !test_logRho = 5d0  
           !test_logRho = 5.2d0
           !test_logRho = 5.4d0
-          test_logRho = 5.6d0
+          test_logRho = 5.8d0
           !test_logRho = 5.8d0
           !test_logRho = 6.0d0
           !test_logRho = 6.2d0

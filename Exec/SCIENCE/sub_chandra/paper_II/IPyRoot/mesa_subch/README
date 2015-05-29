@@ -1,5 +1,13 @@
 This directory contains the code used to generate rates as plotted in the sub-Ch II paper.
-This is MESA code, using version 5527.
+This is MESA code, using version 7503.  Note that the MESASDK for this version
+must be initialized for the `make` command to work.  You will also need to modify the
+my_mesa_dir variable in src/mod_test_net.f to point to your own installation of MESA.
 
-each executable of the form t#rhoX.X calculates rates for the network described in 
+Each executable of the form t#rhoX.X calculates rates for the network described in 
 data/sub_chandra.net at a temperature of #00 MK and a density of 10^X.X.
+
+Note that a lightly modified version of mesa/net/private/net_derivs.f90 is used to
+get energy generation on a per reaction basis (instead of the bulk information
+that's provided by default).  This can be found here in src/.
+
+This code is based on test_net.f found in mesa/net/test/.
