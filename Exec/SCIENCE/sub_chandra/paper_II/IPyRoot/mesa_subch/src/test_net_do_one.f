@@ -112,8 +112,8 @@
 
          rate_factors(:) = 1
          !Scale CAGO by 1.7
-         !i = reaction_table(ir_c12_ag_o16)
-         !rate_factors(i) = 1.7
+         i = g% net_reaction(ir_c12_ag_o16)
+         rate_factors(i) = 1.7
          weak_rate_factor = 1
          rate_limit = 0d0
          skip_jacobian = .false.
