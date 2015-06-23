@@ -1,11 +1,11 @@
-NDEBUG := 
+NDEBUG :=
 MPI    :=
 OMP    :=
-ACC    := 
+ACC    := t
 
-MKVERBOSE :=t
+MKVERBOSE := t
 
-COMP := Cray
+COMP := PGI
 
 # define the location of the MAESTRO root directory
 MAESTRO_TOP_DIR := $(MAESTRO_HOME)

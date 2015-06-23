@@ -1,6 +1,6 @@
 NDEBUG := t
-MPI    := t
-OMP    := t
+MPI    :=
+OMP    :=
 
 COMP := gfortran
 
