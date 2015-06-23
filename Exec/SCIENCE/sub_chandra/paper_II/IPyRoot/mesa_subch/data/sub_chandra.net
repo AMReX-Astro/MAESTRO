@@ -1,0 +1,16 @@
+
+ ! The very simple network utilized in sub-Chandra runs with some added
+ ! alpha-chain
+
+      add_isos_and_reactions(
+         neut
+         h 1 2
+         he 3 4
+         c 12 14
+         n 13 14
+         o 16 18
+         f18
+         ne20 
+         ne 21 22
+         mg24
+         )

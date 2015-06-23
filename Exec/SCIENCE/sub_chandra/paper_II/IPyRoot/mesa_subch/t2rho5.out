@@ -1,0 +1,408 @@
+  **************** Basic **************** 
+
+
+ reaction name <r_c12_ng_c13>     1   323
+ reaction name <r_c13_gn_c12>     2   324
+ net eps_nuc:    2.8673139269751848E-075
+
+ reaction name <r_c13_ng_c14>     3   325
+ reaction name <r_c14_gn_c13>     4   326
+ net eps_nuc:    9.0236977640683918E-092
+
+ reaction name <r_he3_ng_he4>     5   284
+ reaction name <r_he4_gn_he3>     6   285
+ net eps_nuc:    9.0236977640683918E-092
+
+ reaction name <r_n13_ng_n14>     7   334
+ reaction name <r_n14_gn_n13>     8   335
+ net eps_nuc:    9.0236977640683918E-092
+
+ reaction name <r_ne20_ng_ne21>     9   360
+ reaction name <r_ne21_gn_ne20>    10   361
+ net eps_nuc:    9.0236977640683918E-092
+
+ reaction name <r_ne21_ng_ne22>    11   363
+ reaction name <r_ne22_gn_ne21>    12   364
+ net eps_nuc:    9.0236977640683918E-092
+
+ reaction name <r_neut_pg_h2>    13   316
+ reaction name <r_h2_gp_neut>    14   317
+ net eps_nuc:    3.7457835435528365E-073
+
+ reaction name <r_o16_ng_o17>    15   341
+ reaction name <r_o17_gn_o16>    16   342
+ net eps_nuc:    3.8485122018068400E-075
+
+ reaction name <r_o17_ng_o18>    17   345
+ reaction name <r_o18_gn_o17>    18   346
+ net eps_nuc:    9.2549314279601883E-090
+
+ reaction name <r_c13_pn_n13>    19   328
+ reaction name <r_n13_np_c13>    20   327
+ net eps_nuc:    9.2549314279601883E-090
+
+ reaction name <r_c14_pn_n14>    21   333
+ reaction name <r_n14_np_c14>    22   332
+ net eps_nuc:   -34017012.668918826     
+
+ reaction name <r_o18_pn_f18>    23   349
+ reaction name <r_f18_np_o18>    24   348
+ net eps_nuc:    2.5197638041254326E-009
+
+ reaction name <r_c13_pg_n14>    25    24
+ reaction name <r_n14_gp_c13>    26    55
+ net eps_nuc:    2.5197638041254326E-009
+
+ reaction name <r_h2_pg_he3>    27   288
+ reaction name <r_he3_gp_h2>    28   289
+ net eps_nuc:    2.5197638041254326E-009
+
+ reaction name <r_c12_pg_n13>    29    21
+ reaction name <r_n13_gp_c12>    30    51
+ net eps_nuc:    3.8872440819656806E+017
+
+ reaction name <r_o17_pg_f18>    31    84
+ reaction name <r_f18_gp_o17>    32    32
+ net eps_nuc:   -1.5739362652057656     
+
+ reaction name <r_f18_ap_ne21>    33   356
+ reaction name <r_ne21_pa_f18>    34   357
+ net eps_nuc:   -1.5739362652057656     
+
+ reaction name <r_n13_ap_o16>    35    50
+ reaction name <r_o16_pa_n13>    36   337
+ net eps_nuc:   -1.5739362652057656     
+
+ reaction name <r_n14_ap_o17>    37    54
+ reaction name <r_o17_pa_n14>    38    83
+ net eps_nuc:   -1.5739362652057693     
+
+ reaction name <r_c14_an_o17>    39   340
+ reaction name <r_o17_na_c14>    40   339
+ net eps_nuc:   -1.5739362652057693     
+
+ reaction name <r_ne21_an_mg24>    41   367
+ reaction name <r_mg24_na_ne21>    42   366
+ net eps_nuc:   -1.5739362652057693     
+
+ reaction name <r_c13_an_o16>    43    23
+ reaction name <r_o16_na_c13>    44   338
+ net eps_nuc:   -1.5739362652057693     
+
+ reaction name <r_o17_an_ne20>    45   353
+ reaction name <r_ne20_na_o17>    46   352
+ net eps_nuc:   -1.5739362652057693     
+
+ reaction name <r_o18_an_ne21>    47   359
+ reaction name <r_ne21_na_o18>    48   358
+ net eps_nuc:   -1.5739362652057693     
+
+ reaction name <r_c12_ag_o16>    49    19
+ reaction name <r_o16_ga_c12>    50    80
+ net eps_nuc:    12100857.708217910     
+
+ reaction name <r_n14_ag_f18>    51    53
+ reaction name <r_f18_ga_n14>    52   347
+ net eps_nuc:    23984661506.993206     
+
+ reaction name <r_ne20_ag_mg24>    53    65
+ reaction name <r_mg24_ga_ne20>    54    49
+ net eps_nuc:   -14.269866030778784     
+
+ reaction name <r_o16_ag_ne20>    55    78
+ reaction name <r_ne20_ga_o16>    56    67
+ net eps_nuc:    98.155931732149995     
+
+ reaction name <r_o17_ag_ne21>    57   354
+ reaction name <r_ne21_ga_o17>    58   355
+ net eps_nuc:   -8.9643140228168381     
+
+ reaction name <r_o18_ag_ne22>    59    85
+ reaction name <r_ne22_ga_o18>    60   362
+ net eps_nuc:   -8.9643140228168381     
+
+ reaction name <r_c14_ag_o18>    61   343
+ reaction name <r_o18_ga_c14>    62   344
+ net eps_nuc:    1058410.6369725186     
+
+ reaction name <r_c12_to_he4_he4_he4>    63    22
+ reaction name <r_he4_he4_he4_to_c12>    64    45
+ net eps_nuc:    161236409744.71436     
+
+ reaction name <r_h2_h2_to_he4>    65    41
+ reaction name <r_he4_to_h2_h2>    66   321
+ net eps_nuc:    1.5961564349225978     
+
+ reaction name <r_he4_ne20_to_c12_c12>    67   299
+ reaction name <r_c12_c12_to_he4_ne20>    68   300
+ net eps_nuc:    1.5961564349225978     
+
+ reaction name <r_neut_he3_to_h2_h2>    69   319
+ reaction name <r_h2_h2_to_neut_he3>    70   318
+ net eps_nuc:    1.5961564349225978     
+
+ reaction name <r_h1_h1_he4_to_he3_he3>    71   320
+ reaction name <r_he3_he3_to_h1_h1_he4>    72    44
+ net eps_nuc:    1.5961564349225978     
+
+ reaction name <r_h1_h2_to_neut_h1_h1>    73   315
+ reaction name <r_neut_h1_h1_to_h1_h2>    74   314
+ net eps_nuc:    1.5961564349225978     
+
+ reaction name <r_c12_o16_to_he4_mg24>    75   365
+ reaction name <r_he4_mg24_to_c12_o16>    76   301
+ net eps_nuc:    1.5961564349225978     
+
+ reaction name <r_h1_he4_to_h2_he3>    77   322
+ reaction name <r_h2_he3_to_h1_he4>    78    42
+ net eps_nuc:    1.5961564349225978     
+
+ reaction name <r_h2_c13_to_neut_n14>    79   331
+ reaction name <r_neut_n14_to_h2_c13>    80   330
+ net eps_nuc:    1.5961564349225978     
+
+ reaction name <r_n13_wk_c13>    81   329
+ eps_nuc:    1.5961564349225978     
+
+ reaction name <r_h1_he3_wk_he4>    82   246
+ eps_nuc:    1.5961564349225978     
+
+ reaction name <r_f18_wk_o18>    83   350
+ eps_nuc:    1.5961564349225978     
+
+ reaction name <r_h1_h1_ec_h2>    84   237
+ eps_nuc:   -17.985745137274716     
+
+ reaction name <r_neut_wk-minus_h1>    85   313
+ eps_nuc:   -17.985745137274716     
+
+ reaction name <r_h1_wk_neut>    86   312
+ eps_nuc:   -17.985745138746807     
+
+ reaction name <r_c14_wk-minus_n14>    87   336
+ eps_nuc:    17.313744979239569     
+
+ reaction name <r_h1_h1_wk_h2>    88   236
+ eps_nuc:    9810.9277403705764     
+
+ reaction name <r_o18_wk-minus_f18>    89   351
+ eps_nuc:    9.4252537911110910     
+
+
+                                log temp         8.301029996
+                                 log rho         5.000000000
+
+                            log(eps_nuc)        17.589642018
+
+                                 eps_nuc     0.388724593E+18
+
+                            d_lneps_dlnT         7.865470010
+                          d_lneps_dlnRho         1.084224207
+
+
+ summary of log raw rates
+
+                            r_f18_np_o18        13.255286659
+                            r_n13_np_c13        13.012245522
+                      r_h2_he3_to_h1_he4        11.092509463
+                     r_h2_h2_to_neut_he3        11.081005215
+                            r_n13_ng_n14        11.041198669
+                            r_n14_np_c14        10.488756713
+                          r_ne21_ng_ne22        10.328721883
+                            r_neut_pg_h2         9.542865298
+                            r_o17_na_c14         9.511738364
+                          r_ne20_ng_ne21         8.867687884
+                            r_o16_ng_o17         8.515524618
+                            r_c12_ng_c13         8.185815834
+                            r_c13_ng_c14         8.084603088
+                            r_he3_ng_he4         8.080929370
+                  r_he3_he3_to_h1_h1_he4         7.084646513
+                            r_o17_ng_o18         6.856284930
+                             r_h2_pg_he3         6.368722942
+                           r_ne21_na_o18         6.198937655
+                    r_h2_c13_to_neut_n14         5.991573915
+                          r_h2_h2_to_he4         3.973202851
+                            r_c13_pg_n14         3.474130008
+                            r_c12_pg_n13         2.951556269
+                            r_o17_pa_n14         2.545535246
+                            r_o17_pg_f18         2.163231370
+                   r_neut_h1_h1_to_h1_h2         1.693356797
+                            r_c13_an_o16        -2.481486748
+                            r_n13_wk_c13        -2.935874127
+                            r_n13_ap_o16        -3.909368873
+                            r_f18_wk_o18        -3.978059281
+                            r_n14_ag_f18        -4.488319054
+                            r_c14_pn_n14        -4.804671546
+                    r_he4_he4_he4_to_c12        -4.983600472
+                           r_o18_ag_ne22        -5.445174250
+                           r_o17_an_ne20        -6.543198092
+                           r_o17_ag_ne21        -7.297908149
+                            r_c14_ag_o18        -8.010281332
+                           r_f18_ap_ne21        -8.345576345
+                            r_c12_ag_o16        -8.822545802
+                          r_ne21_an_mg24       -10.379631431
+                         r_h1_he3_wk_he4       -11.151035458
+                           r_h1_h1_wk_h2       -11.172812537
+                           r_o18_an_ne21       -11.237703283
+                           r_h1_h1_ec_h2       -11.246403307
+                      r_c14_wk-minus_n14       -11.414431580
+                          r_ne20_ag_mg24       -13.220025796
+                           r_o16_ag_ne20       -13.599494748
+                           r_ne20_na_o17       -20.058469858
+                            r_n14_ap_o17       -28.702329265
+                   r_c12_c12_to_he4_ne20       -30.827786706
+                            r_c14_an_o17       -35.984511804
+
+ summary of screening factors
+
+                      r_neut_wk-minus_h1     0.105000739E+41
+                            r_h1_wk_neut     0.180579934E+18
+                   r_c12_o16_to_he4_mg24     0.291127471E+01
+                   r_c12_c12_to_he4_ne20     0.228380379E+01
+                          r_ne21_an_mg24     0.175195643E+01
+                          r_ne20_ag_mg24     0.175195636E+01
+                           r_f18_ap_ne21     0.166360311E+01
+                            r_f18_wk_o18     0.158057732E+01
+                           r_o18_an_ne21     0.157591659E+01
+                           r_o18_ag_ne22     0.157591659E+01
+                           r_o17_an_ne20     0.157591654E+01
+                           r_o17_ag_ne21     0.157591654E+01
+                           r_o16_ag_ne20     0.157591650E+01
+                            r_n14_ap_o17     0.148933643E+01
+                            r_n14_ag_f18     0.148933643E+01
+                            r_n13_ap_o16     0.148933639E+01
+                            r_c14_an_o17     0.140414987E+01
+                            r_c14_ag_o18     0.140414987E+01
+                            r_c13_an_o16     0.140414986E+01
+                            r_c12_ag_o16     0.140414984E+01
+                    r_he4_he4_he4_to_c12     0.140059200E+01
+                            r_o18_pn_f18     0.125181772E+01
+                            r_o17_pg_f18     0.125181772E+01
+                            r_o17_pa_n14     0.125181772E+01
+                            r_c14_pn_n14     0.118346610E+01
+                            r_c13_pg_n14     0.118346610E+01
+                            r_c12_pg_n13     0.118346610E+01
+                    r_h2_c13_to_neut_n14     0.118346610E+01
+                  r_he3_he3_to_h1_h1_he4     0.111884660E+01
+                      r_h2_he3_to_h1_he4     0.105775545E+01
+                         r_h1_he3_wk_he4     0.105775545E+01
+                             r_h2_pg_he3     0.102847239E+01
+                          r_h2_h2_to_he4     0.102847239E+01
+                     r_h2_h2_to_neut_he3     0.102847239E+01
+                   r_h1_h2_to_neut_h1_h1     0.102847239E+01
+                           r_h1_h1_ec_h2     0.102847239E+01
+                           r_h1_h1_wk_h2     0.102847239E+01
+                      r_o18_wk-minus_f18     0.562196002E-06
+
+ summary of log screened rates (reactions/gm/sec)
+
+                            r_f18_np_o18        13.255286659
+                            r_n13_np_c13        13.012245522
+                      r_h2_he3_to_h1_he4        11.116894737
+                     r_h2_h2_to_neut_he3        11.093197852
+                            r_n13_ng_n14        11.041198669
+                            r_n14_np_c14        10.488756713
+                          r_ne21_ng_ne22        10.328721883
+                            r_neut_pg_h2         9.542865298
+                            r_o17_na_c14         9.511738364
+                          r_ne20_ng_ne21         8.867687884
+                            r_o16_ng_o17         8.515524618
+                            r_c12_ng_c13         8.185815834
+                            r_c13_ng_c14         8.084603088
+                            r_he3_ng_he4         8.080929370
+                  r_he3_he3_to_h1_h1_he4         7.133417060
+                            r_o17_ng_o18         6.856284930
+                             r_h2_pg_he3         6.380915579
+                           r_ne21_na_o18         6.198937655
+                    r_h2_c13_to_neut_n14         6.064729735
+                          r_h2_h2_to_he4         3.985395488
+                            r_c13_pg_n14         3.547285828
+                            r_c12_pg_n13         3.024712089
+                            r_o17_pa_n14         2.643076340
+                            r_o17_pg_f18         2.260772464
+                   r_neut_h1_h1_to_h1_h2         1.693356797
+                            r_c13_an_o16        -2.334073288
+                            r_n13_wk_c13        -2.935874127
+                      r_neut_wk-minus_h1        -2.973961353
+                            r_n13_ap_o16        -3.736376072
+                            r_f18_wk_o18        -3.779243535
+                            r_n14_ag_f18        -4.315326242
+                            r_c14_pn_n14        -4.731515725
+                    r_he4_he4_he4_to_c12        -4.837288831
+                           r_o18_ag_ne22        -5.247641023
+                           r_o17_an_ne20        -6.345664877
+                           r_o17_ag_ne21        -7.100374935
+                            r_c14_ag_o18        -7.862867869
+                           r_f18_ap_ne21        -8.124526620
+                            r_c12_ag_o16        -8.675132346
+                          r_ne21_an_mg24       -10.136108130
+                           r_o18_an_ne21       -11.040170056
+                         r_h1_he3_wk_he4       -11.126650184
+                           r_h1_h1_wk_h2       -11.160619900
+                           r_h1_h1_ec_h2       -11.234210670
+                      r_c14_wk-minus_n14       -11.414431580
+                          r_ne20_ag_mg24       -12.976502513
+                           r_o16_ag_ne20       -13.401961547
+                           r_ne20_na_o17       -20.058469858
+                            r_h1_wk_neut       -25.437454224
+                            r_n14_ap_o17       -28.529336453
+                   r_c12_c12_to_he4_ne20       -30.469127916
+                            r_c14_an_o17       -35.837098341
+
+
+
+ energy generation by category
+
+                                category   log rate (erg/g/sec)
+
+                                     cno        17.589642   0.388724E+18
+                                tri_alfa        11.207463   0.161236E+12
+                                  burn_n        10.379934   0.239847E+11
+                                      pp         3.990074   0.977403E+04
+                                  burn_o         2.050866   0.112426E+03
+                                   other         1.547768   0.352995E+02
+
+
+
+
+ summary of isotope mass abundance changes
+
+                                 isotope        x initial         dx_dt   
+
+                                     n13     0.100000E-98     0.269490E+01
+                                     c12     0.470000E-01    -0.248760E+01
+                                      h1     0.500000E-01    -0.207300E+00
+                                     he4     0.846450E+00    -0.298186E-06
+                                     f18     0.100000E-98     0.101356E-06
+                                     n14     0.770000E-02    -0.780440E-07
+                                     c14     0.850000E-03    -0.791100E-09
+                                    neut     0.100000E-98     0.563307E-10
+                                     o16     0.470000E-01     0.280182E-10
+                                     o18     0.100000E-98     0.317130E-11
+                                      h2     0.100000E-98     0.318502E-13
+                                    ne20     0.100000E-98     0.492706E-15
+                                     o17     0.100000E-98     0.584812E-31
+
+
+ summary of d_eps_nuc_dx
+
+                                 isotope     d_eps_nuc_dx
+
+                                    neut     0.39152876957298E+27
+                                      h2     0.31854012005978E+24
+                                     c13     0.98799301055354E+20
+                                     c12     0.82707320895461E+19
+                                      h1     0.77744881632514E+19
+                                     o17     0.43871634771268E+19
+                                     n13     0.14532717020643E+15
+                                     f18     0.56816386111603E+13
+                                     n14     0.31148911023178E+13
+                                     o18     0.62005557417112E+12
+                                     he4     0.59980749020752E+12
+                                     c14    -0.38774773844873E+11
+                                    ne21     0.18160654198141E+07
+                                     he3     0.12214176412427E+07
+                                    ne20     0.10039806893259E+05
+                                     o16     0.23920382502751E+04
+
+
