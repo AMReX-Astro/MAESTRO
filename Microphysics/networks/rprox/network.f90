@@ -1,4 +1,4 @@
-! the network module provides the information about the species we are 
+7! the network module provides the information about the species we are 
 ! advecting:
 !
 ! nspec      -- the number of species in the network
