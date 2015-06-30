@@ -66,7 +66,7 @@ endif
 
 #-----------------------------------------------------------------------------
 # microphysics
-MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS
+MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
 
 # locations of the microphysics 
 ifndef EOS_TOP_DIR 
