@@ -10,7 +10,7 @@
  grav_const = -2.45e14
 
  ! temperature perturbation
- perturb_model = F
+ perturb_model = T
  xrb_pert_size = 50
  xrb_pert_factor = 1.0d-5
  xrb_pert_type = 1
@@ -70,11 +70,13 @@
  plot_deltat = 1.e-4
  chk_int   = 2500
 
- plot_base = T
+ plot_base = F
  plot_h_with_use_tfromp = T
  plot_cs = T
  plot_ad_excess = T
 
+ single_prec_plotfiles = T
+ 
 
  !----------------------------------------------------------------------------
  ! core Maestro algorithm
