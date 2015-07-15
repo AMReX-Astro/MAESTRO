@@ -1,0 +1,27 @@
+This directory contains source, tests, and examples for CCSE's
+vectorized, variable step/order BDF implementation.
+
+The primary developer is Matthew Emmett (formerly of CCSE).  It was
+originally developed for CCSE's Combustion codebase.  The version
+found here is adapted by Adam Jacobs and Mike Zingale of Stony Brook
+for use in solving the stiff ODEs of Maestro's nuclear burning
+routines.  A novel feature of this integrator is that it can evolve an
+arbitrary number of solutions in parallel (i.e. it's vectorized),
+making it ideal for targeting GPUs.
+
+The original BDF code the source here is adapted from lives in
+Combustion/Chemistry/src_common/bdf.f90.  Please see test/t1.f90 for
+example usage.
+
+orig.bdf.f90: The original bdf from Combustion, written by Matthew
+              Emmett
+
+mae.bdf.f90 : A modified version of the original that uses
+              BoxLib/Maestro conventions and source, modified by
+	      Adam Jacobs
+
+vec.bdf.f90 : A further modified version that fully vectorized the
+              state object that tracks bdf data.  Developed
+	      by Adam Jacobs
+
+bdf.f90     : The version that will be used when you compile.

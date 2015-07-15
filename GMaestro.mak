@@ -35,7 +35,7 @@ MAESTRO_CORE :=
 SDC_CORE := 
 
 ifdef SDC
-  SDC_CORE += $(ASTRODEV_DIR)/Source_SDC
+  SDC_CORE += $(MAESTRO_TOP_DIR)/Source_SDC
 endif
 
 # next look for the files in Source/ itself 
@@ -66,7 +66,7 @@ endif
 
 #-----------------------------------------------------------------------------
 # microphysics
-MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS
+MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
 
 # locations of the microphysics 
 ifndef EOS_TOP_DIR 
@@ -90,15 +90,19 @@ MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
 include $(NETWORK_TOP_DIR)/$(strip $(NETWORK_DIR))/NETWORK_REQUIRES
 
 ifdef NEED_VODE
-  UTIL_CORE += Util/VODE
+  UTIL_CORE += Util/VODE Util/LINPACK Util/BLAS
 endif
 
 ifdef NEED_BLAS
   UTIL_CORE += Util/BLAS
 endif
 
+ifdef NEED_LINPACK
+  UTIL_CORE += Util/LINPACK
+endif
+
 ifdef NEED_VBDF
-  UTIL_CORE += ../AstroDev/VBDF
+  UTIL_CORE += Util/VBDF
 endif
 
 # the helmeos has an include file -- also add a target to link the table
@@ -252,7 +256,8 @@ build_info.f90:
            --link_line "$(LINK.f90)" \
            --boxlib_home "$(BOXLIB_HOME)" \
            --source_home "$(MAESTRO_TOP_DIR)" \
-           --extra_home "$(ASTRODEV_DIR)"
+           --extra_home "$(ASTRODEV_DIR)" \
+           --extra_home2 "$(MICROPHYSICS_DIR)" \
 	@echo " "
 
 $(odir)/build_info.o: build_info.f90

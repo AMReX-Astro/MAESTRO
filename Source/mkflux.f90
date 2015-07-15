@@ -210,7 +210,7 @@ contains
     use network, only : nspec
     use variables, only : spec_comp, rho_comp
     use pred_parameters
-    use probin_module, only: species_pred_type
+    use probin_module, only: species_pred_type, evolve_base_state
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_ef,ng_se,ng_um
     real(kind=dp_t), intent(inout) ::     sfluxx(lo(1)-ng_sf:,:)
@@ -251,13 +251,16 @@ contains
                   (umac(i)+w0(i))*sedgex(i,rho_comp)*sedgex(i,comp)
           endif
 
-          if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
-             etarhoflux(i) = etarhoflux(i) + sfluxx(i,comp)
-          end if
-
-          if ( comp.eq.spec_comp+nspec-1) then
-             etarhoflux(i) = etarhoflux(i) - w0(i)*rho0_predicted_edge(i)
-          end if
+          if (evolve_base_state) then
+             if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
+                etarhoflux(i) = etarhoflux(i) + sfluxx(i,comp)
+             end if
+             
+             if ( comp.eq.spec_comp+nspec-1) then
+                etarhoflux(i) = etarhoflux(i) - w0(i)*rho0_predicted_edge(i)
+             end if
+          endif
+          
        end do
     end do
 
@@ -274,7 +277,7 @@ contains
     use network, only : nspec
     use variables, only : spec_comp, rho_comp
     use pred_parameters
-    use probin_module, only: species_pred_type
+    use probin_module, only: species_pred_type, evolve_base_state
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_ef,ng_se,ng_um
     real(kind=dp_t), intent(inout) ::     sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
@@ -345,13 +348,16 @@ contains
 
              endif
 
-             if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
-                etarhoflux(i,j) = etarhoflux(i,j) + sfluxy(i,j,comp)
-             end if
+             if (evolve_base_state) then
+                if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
+                   etarhoflux(i,j) = etarhoflux(i,j) + sfluxy(i,j,comp)
+                end if
 
-             if ( comp.eq.spec_comp+nspec-1) then
-                etarhoflux(i,j) = etarhoflux(i,j) - w0(j)*rho0_predicted_edge(j)
-             end if
+                if ( comp.eq.spec_comp+nspec-1) then
+                   etarhoflux(i,j) = etarhoflux(i,j) - w0(j)*rho0_predicted_edge(j)
+                end if
+             endif  ! evolve_base_state
+             
           end do
        end do
     end do
@@ -370,7 +376,7 @@ contains
     use network, only : nspec
     use variables, only : spec_comp, rho_comp
     use pred_parameters
-    use probin_module, only: species_pred_type
+    use probin_module, only: species_pred_type, evolve_base_state
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_ef,ng_se,ng_um
     real(kind=dp_t), intent(inout) ::     sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
@@ -477,13 +483,16 @@ contains
 
                 endif
 
-                if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
-                   etarhoflux(i,j,k) = etarhoflux(i,j,k) + sfluxz(i,j,k,comp)
-                end if
+                if (evolve_base_state) then
+                   if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
+                      etarhoflux(i,j,k) = etarhoflux(i,j,k) + sfluxz(i,j,k,comp)
+                   end if
                    
-                if ( comp.eq.spec_comp+nspec-1) then
-                   etarhoflux(i,j,k) = etarhoflux(i,j,k) - w0(k)*rho0_predicted_edge(k)
-                end if
+                   if ( comp.eq.spec_comp+nspec-1) then
+                      etarhoflux(i,j,k) = etarhoflux(i,j,k) - w0(k)*rho0_predicted_edge(k)
+                   end if
+                endif ! evolve_base_state
+                
              end do
           end do
        end do

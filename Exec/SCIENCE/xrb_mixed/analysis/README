@@ -1,0 +1,34 @@
+- plotDiag.py
+
+  This looks for the xrb*diag.out files and makes plots of the
+  quantities vs. time.  Only those quantities described in the
+  labelDict will be plotted.
+
+
+- specMass.py
+
+  This uses the
+  AmrPostprocessing/F_Src/MAESTRO_xrb/fspec_total_mass.f90 routine to
+  plot the total mass of each species as a function of time.  This
+  first calls fspec_total_mass on all the plt* files in the current
+  directory, then builds a numpy array, saves that array to disk in
+  "masses.txt", and then makes a single plot of the evolution of the
+  total masses.  If you pass the --just-plot flag to the routine, it
+  will only read data from the "masses.txt" file instead of rebuilding
+  it.  Passing the "--append" flag will not overwrite the previous
+  masses.txt file, but rather append to it.  The "--every <int>" flag
+  can be specified to calculate the total mass of only some of the
+  plt* files in the current working directory.  NOTE: you need to have
+  fspec_total_mass compiled and in the current directory.
+
+
+- plotxrball.py
+
+  This script uses the AmrPostprocessing/python/fsnapshot.so build
+  (see the Makefile there) to parse several variables from a plotfile
+  and generate colormap plots.  The limits an variables are all
+  hard-coded and need to be modified if you want something different.
+  NOTE: this requires you to have fsnapshot.so built in a place python
+  can find it.
+
+

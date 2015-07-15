@@ -42,17 +42,19 @@
 
 \begin{enumerate}
 
-\item {\em Does it matter if we use a Fortran 90 compiler instead of a 
-   Fortran 95 compiler?}
+\item {\em What version of the Fortran standard is needed?}
 
+  Some features of Fortran 2003 are used, in particular, the {\tt
+    ISO\_C\_BINDING} feature of Fortran 2003 is needed to define a long
+  integer type for some MPI operations in Fortran.  This is supported
+  by most Fortran compilers even if they don't support the entire
+  Fortran 2003 standard.
 
-   On some machines it does---Fortran 95 specifies that any local
-   allocated arrays are automatically deallocated when a subroutine
-   ends.  Fortran 90 does not do this.  Most \maestro\ routines rely 
-   on this Fortran 95 feature.  
+  We also rely on the Fortran 95 standard that specifies that any
+  local allocated arrays are automatically deallocated when a
+  subroutine ends.  Fortran 90 does not do this.  Most
+  \maestro\ routines rely on this Fortran 95 feature.
 
-   On IBM machines, for instance, using {\tt xlf90} instead of {\tt
-     xlf95} for \maestro\ will produce memory leaks.
 
 \item {\em The code doesn't compile, but complains right away that there
    is ``{\tt No rule to make target `fabio\_c.c', needed by `t/Linux.gfortran.mpi/c.depends'}''}
@@ -329,7 +331,7 @@ they are not implemented in \maestro.
  data.  How do I do this?}
 
  One implementation of this can be found in {\tt
-   AmrPostprocessing/F\_Src/tutorial/fwrite2d.f90}.  This reads in
+   BoxLib/Tools/Postprocessing/F\_Src/tutorial/fwrite2d.f90}.  This reads in
  the plotfile data using the {\tt plotfile\_module} that the {\tt
    data\_processing} routines rely on, but then builds a multifab
    and writes the data out to a plotfile using the BoxLib write

@@ -558,17 +558,17 @@ contains
 
       if (do_mult) then
          do j = lo(2),hi(2)
-            uedge(:,j) = uedge(:,j) * div_coeff(j)
+            uedge(lo(1):hi(1)+1,j) = uedge(lo(1):hi(1)+1,j) * div_coeff(j)
          end do
          do j = lo(2),hi(2)+1
-            vedge(:,j) = vedge(:,j) * div_coeff_edge(j)
+            vedge(lo(1):hi(1),j) = vedge(lo(1):hi(1),j) * div_coeff_edge(j)
          end do
       else
          do j = lo(2),hi(2)
-            uedge(:,j) = uedge(:,j) / div_coeff(j)
+            uedge(lo(1):hi(1)+1,j) = uedge(lo(1):hi(1)+1,j) / div_coeff(j)
          end do
          do j = lo(2),hi(2)+1
-            vedge(:,j) = vedge(:,j) / div_coeff_edge(j)
+            vedge(lo(1):hi(1),j) = vedge(lo(1):hi(1),j) / div_coeff_edge(j)
          end do
       end if
 
@@ -590,19 +590,19 @@ contains
 
       if (do_mult) then
          do k = lo(3),hi(3)
-            uedge(:,:,k) = uedge(:,:,k) * div_coeff(k)
-            vedge(:,:,k) = vedge(:,:,k) * div_coeff(k)
+            uedge(lo(1):hi(1)+1,lo(2):hi(2),k) = uedge(lo(1):hi(1)+1,lo(2):hi(2),k) * div_coeff(k)
+            vedge(lo(1):hi(1),lo(2):hi(2)+1,k) = vedge(lo(1):hi(1),lo(2):hi(2)+1,k) * div_coeff(k)
          end do
          do k = lo(3),hi(3)+1
-            wedge(:,:,k) = wedge(:,:,k) * div_coeff_edge(k)
+            wedge(lo(1):hi(1),lo(2):hi(2),k) = wedge(lo(1):hi(1),lo(2):hi(2),k) * div_coeff_edge(k)
          end do
       else
          do k = lo(3),hi(3)
-            uedge(:,:,k) = uedge(:,:,k) / div_coeff(k)
-            vedge(:,:,k) = vedge(:,:,k) / div_coeff(k)
+            uedge(lo(1):hi(1)+1,lo(2):hi(2),k) = uedge(lo(1):hi(1)+1,lo(2):hi(2),k) / div_coeff(k)
+            vedge(lo(1):hi(1),lo(2):hi(2)+1,k) = vedge(lo(1):hi(1),lo(2):hi(2)+1,k) / div_coeff(k)
          end do
          do k = lo(3),hi(3)+1
-            wedge(:,:,k) = wedge(:,:,k) / div_coeff_edge(k)
+            wedge(lo(1):hi(1),lo(2):hi(2),k) = wedge(lo(1):hi(1),lo(2):hi(2),k) / div_coeff_edge(k)
          end do
       end if
 

@@ -229,7 +229,7 @@ ftime_files=$(find . -maxdepth 1 -name "ftime.out" -print)
 if [ "${diag_files}" ] || [ "${ftime_files}" ]; then
     # Note that the -P flag tells HTAR to create intermediate directories
     # if they don't exist.
-    ${HTAR} -P -cvf ${HPSS_DIR}/diag_files_${datestr}.tar ${diag_files} ${ftime_files} >> /dev/null
+    ${HTAR} -P -cvf ${HPSS_DIR}/diag_files_${datestr}.tar ${diag_files} ${ftime_files} inputs* maestro-overview.out *.run >> /dev/null
 fi
 
 # Loop, waiting for plt and chk directories to appear.

@@ -189,6 +189,9 @@ contains
     real(kind=dp_t) :: react_time  , react_time_start  , react_time_max
     real(kind=dp_t) :: misc_time   , misc_time_start   , misc_time_max
 
+    integer :: nreduce
+    real(kind=dp_t), allocatable :: times_local(:), times_global(:)
+    
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advance_timestep")
@@ -1017,7 +1020,6 @@ contains
        if (ppm_trace_forces == 0) then
           call multifab_build(scal_force(n), mla%la(n), nscal, 1)
        else
-          print *, "here: ", nghost(sold(n))
           call multifab_build(scal_force(n), mla%la(n), nscal, nghost(sold(n)))
        endif
     end do
@@ -1508,38 +1510,36 @@ contains
 
     call destroy(bpt)
 
-    call parallel_reduce(advect_time_max, advect_time, MPI_MAX, &
+    nreduce = 5
+    if (use_thermal_diffusion) nreduce = nreduce + 1
+    allocate (times_local(nreduce))
+    allocate (times_global(nreduce))
+
+    ! pack
+    times_local(1) = advect_time
+    times_local(2) = macproj_time
+    times_local(3) = ndproj_time
+    times_local(4) = react_time
+    times_local(5) = misc_time
+    if (use_thermal_diffusion) times_local(6) = thermal_time
+    
+    call parallel_reduce(times_global, times_local, MPI_MAX, &
                          proc=parallel_IOProcessorNode())
-
-    call parallel_reduce(macproj_time_max,   macproj_time, MPI_MAX, &
-                         proc=parallel_IOProcessorNode())
-
-    call parallel_reduce(ndproj_time_max,   ndproj_time, MPI_MAX, &
-                         proc=parallel_IOProcessorNode())
-
-    call parallel_reduce(react_time_max,  react_time, MPI_MAX, &
-                         proc=parallel_IOProcessorNode())
-
-    call parallel_reduce(misc_time_max,  misc_time, MPI_MAX, &
-                         proc=parallel_IOProcessorNode())
-
-    if(use_thermal_diffusion) then
-      call parallel_reduce(thermal_time_max,  thermal_time, MPI_MAX, &
-                           proc=parallel_IOProcessorNode())
-    end if
-
+ 
     if (parallel_IOProcessor()) then
        print *, 'Timing summary:'
-       print *, '   Advection       : ', advect_time_max , ' seconds'
-       print *, '   MAC   Projection: ', macproj_time_max, ' seconds'
-       print *, '   Nodal Projection: ', ndproj_time_max , ' seconds'
+       print *, '   Advection       : ', times_global(1), ' seconds'
+       print *, '   MAC   Projection: ', times_global(2), ' seconds'
+       print *, '   Nodal Projection: ', times_global(3), ' seconds'
        if (use_thermal_diffusion) &
-          print *, '   Thermal         : ', thermal_time_max, ' seconds'
-       print *, '   Reactions       : ', react_time_max  , ' seconds'
-       print *, '   Misc            : ', misc_time_max   , ' seconds'
+          print *, '   Thermal         : ', times_global(6), ' seconds'
+       print *, '   Reactions       : ', times_global(4), ' seconds'
+       print *, '   Misc            : ', times_global(5), ' seconds'
        print *, ' '
     endif
-    
+
+    deallocate(times_local, times_global)
+
   end subroutine advance_timestep
 
 end module advance_timestep_module

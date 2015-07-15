@@ -17,8 +17,6 @@ EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 
 ifdef SDC
-  ASTRODEV_DIR ?= /path/to/AstroDev
-  NETWORK_TOP_DIR = $(ASTRODEV_DIR)/networks
   NETWORK_DIR := ignition_simple_SDC
 else
   NETWORK_DIR := ignition_simple

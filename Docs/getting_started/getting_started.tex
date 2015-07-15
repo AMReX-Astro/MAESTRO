@@ -9,9 +9,11 @@ and how to look at the output.
 %-----------------------------------------------------------------------------
 \section{Quick Start}
 
-Here we will run the standard {\tt test2} problem (three reacting
-bubbles in a plane-parallel stratified atmosphere) on a single
-processor.  This test problem was shown in paper~3.  
+Here we will run the standard {\tt reacting\_bubble} problem (three
+reacting bubbles in a plane-parallel stratified atmosphere) on a
+single processor\footnote{In earlier versions of \maestro\ this
+problem was called {\tt test2}}.  This test problem was shown in
+paper~3.
 
 \begin{enumerate}
 
@@ -81,7 +83,7 @@ make}.  Full details of the {\tt GNUmakefile} can be found
 in \S~\ref{sec:adding_problems}.  Here we will configure for a serial
 build.
 
-Change directory to {\tt MAESTRO/Exec/TEST\_PROBLEMS/test2/}.    
+Change directory to {\tt MAESTRO/Exec/TEST\_PROBLEMS/reacting\_bubble/}.    
 We only need to worry about the options at the very top of the
 {\tt GNUmakefile} for now.  These should be set as follows:
 \begin{itemize}
@@ -133,9 +135,9 @@ finished, the executable will have a name like {\tt
 main.Linux.gfortran.exe}, where the specific parts of the name depend
 on the compilers and OS used.
 
-Note, at the end of the build process, a link will be made in the current
-directory to the data
-table needed for the equation of state ({\tt extern/EOS/helmeos/helm\_table.dat}).
+Note, at the end of the build process, a link will be made in the
+current directory to the data table needed for the equation of state
+({\tt Microphysics/EOS/helmeos/helm\_table.dat}).
 
 
 \item {\em Run!}
@@ -144,7 +146,7 @@ Each problem requires an input file.  The inputs file (a Fortran
 namelist) consists of
 lines of the form {\em parameter = value}, where {\em parameter} is
 one of the many runtime parameters \maestro\ knows, and {\em value}
-overrides the default value for that parameter.  For the {\tt test2}
+overrides the default value for that parameter.  For the {\tt reacting\_bubble}
 problem, we will use the inputs file {\tt inputs\_2d}.  An overview of
 some of the more common runtime parameters is given
 in \S~\ref{sec:gettingstarted:runtime}, and a full list of
@@ -197,14 +199,14 @@ Visualization of results is described in the next section.
 
 Visualization and analysis are done on the plotfiles.  A number of
 in-house and externally developed tools can work
-with \boxlib-formatted plotfiles.  An example plot of the {\tt test2}
+with \boxlib-formatted plotfiles.  An example plot of the {\tt reacting\_bubble}
 problem run above is shown in Figure~\ref{fig:gettingstarted:test2}.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=3in]{\gsfigpath/plt00133_tfromp}
-\caption[Visualization of {\tt test2} output]{\label{fig:gettingstarted:test2} Visualization of the
-final output of the {\tt test2} problem showing the temperature
+\caption[Visualization of {\tt reacting\_bubble} output]{\label{fig:gettingstarted:test2} Visualization of the
+final output of the {\tt reacting\_bubble} problem showing the temperature
 field (as derived from the pressure).  This plot was done with
 the {\tt AmrPostprocessing} tools.}
 \end{figure}
@@ -302,11 +304,26 @@ of these were featured in the papers describing the \maestro\ algorithm.
 
 Some of the test problems available are:
 \begin{itemize}
+\item {\tt double\_bubble} \\[-3mm]
+
+A rising bubble problem where the bubble(s) can have a different gamma
+than the surrounding atmosphere.  This uses the {\tt multigamma} EOS.
+
 \item {\tt incomp\_shear\_jet} \\[-3mm]
 
 A simple pure-incompressible shear layer problem.  This is the example
 problem used in \cite{bellcolellaglaz}.  This is useful to see how to
 use \maestro\ as an incompressible solver.
+
+\item {\tt reacting\_bubble} \\[-3mm]
+
+{\tt reacting\_bubble} places 3 hots spots in a plane-parallel atmosphere.
+Burning makes these bubbles buoyant, and then roll up.  This problem was
+used in \cite{lowMach3} to compare with compressible solvers.
+
+This problem can also be run adaptively.  The \code{tag\_boxes.f90}
+file in the problem directory tags cells for refinement if the
+perturbational temperature, $T^\prime$, exceeds some threshold.  
 
 \item {\tt rt} \\ [-3mm]
 
@@ -316,16 +333,6 @@ has the stratified atmosphere and we introduce a velocity perturbation
 to start the instability.  The alternate method, {\tt inputs\_2d\_SNe}, uses
 the \runparam{do\_smallscale} runtime parameter to eliminate the base state
 and instead use the incompressible constraint to evolve the system.
-
-\item {\tt test2} \\[-3mm]
-
-{\tt test2} places 3 hots spots in a plane-parallel atmosphere.
-Burning makes these bubbles buoyant, and then roll up.  This problem was
-used in \cite{lowMach3} to compare with compressible solvers.
-
-This problem can also be run adaptively.  The \code{tag\_boxes.f90}
-file in the problem directory tags cells for refinement if the
-perturbational temperature, $T^\prime$, exceeds some threshold.  
 
 \item {\tt test\_convect} \\[-3mm]
 
@@ -367,6 +374,12 @@ anticipated that more will be made available with time.
    in \cite{SNe}, which was used for models of Rayleigh-Taylor
    unstable flames~\cite{SNld,SNrt,SNrt3d}.
 
+\item {\tt flame\_1d} \\[-3mm]
+
+   A 1-d version of the {\tt flame} problem above.  This uses a special
+   elliptic solver in \boxlib\ that only works for a single grid, so
+   no parallel runs are allowed for this problem.
+   
 \item {\tt toy\_convect} \\[-3mm]
 
 A nova-like problem for studying convection.  This problem has seen

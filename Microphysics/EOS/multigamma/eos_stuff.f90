@@ -90,7 +90,7 @@ contains
 
     integer,           intent(in   ) :: input
     type (eos_t),      intent(inout) :: state
-    logical,           intent(in   ) :: do_eos_diag
+    logical, optional, intent(in   ) :: do_eos_diag
     integer, optional, intent(in   ) :: pt_index(:)
 
     ! Local variables
@@ -222,9 +222,10 @@ contains
     state % p = dens*k_B*temp/(abar*m_nucleon)
     state % e = k_B*temp*sumY_gm1/m_nucleon
 
+    
     ! enthalpy is h = e + p/rho
     state % h = state % e + state % p / dens
-
+    
     ! entropy (per gram) -- this is wrong. Not sure what the expression
     ! is for a multigamma gas
     state % s = (k_B/(abar*m_nucleon))*(2.5_dp_t + &

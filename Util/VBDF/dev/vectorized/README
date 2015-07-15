@@ -1,0 +1,12 @@
+This is intended to be an incremental, stable version of BDF that is fully 
+Maestro-compatible and with some further vectorization, but no OpenACC
+acceleration.  This is meant to debug and develop the vectorization itself
+before moving on to acceleration. See dev/accelerated/README
+
+Updates:
+  7/29/2014:
+   The fully vectorized and original, semi-vectorized BDF's appear to be giving results with 
+   good agreement.  For larger dt they start to diverge a bit, which I would like to attribute
+   to the semi-vectorized relying upon intermediate wrapper functions.  Should confirm.  Also,
+   semi-vectorized goes a bit faster for large dt. 
+

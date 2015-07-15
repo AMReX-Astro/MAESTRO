@@ -24,7 +24,9 @@ subroutine varden()
   use react_state_module
   use varden_aux
   use simple_log_module
-
+  use cputime_module, only: start_cputime_clock
+  
+  
   !Local variables
   implicit none
   
@@ -54,6 +56,8 @@ subroutine varden()
   !### Execution ###
   !## Initialization ##
   !General Maestro initializations
+  call start_cputime_clock()
+  
   call runtime_init()
   call init_variables()
 

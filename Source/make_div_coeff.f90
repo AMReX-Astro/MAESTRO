@@ -176,6 +176,7 @@ contains
                 else ! r >= anelastic_cutoff
 
                    div_coeff(n,r) = div_coeff(n,r-1) * (rho0(n,r)/rho0(n,r-1))                   
+                   beta0_edge(n,r+1) = 2.d0*div_coeff(n,r) - beta0_edge(n,r)
                 endif
 
              end do

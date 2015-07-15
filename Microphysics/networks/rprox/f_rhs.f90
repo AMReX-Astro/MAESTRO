@@ -1,8 +1,9 @@
-! The f_rhs routine provides the right-hand-side for the DVODE solver.  It 
-! converts the mass fractions into molar abundances before calling the 
-! make_rates, screen, and dydt routines.  It also checks to see if the 
-! temperature has changed much since the last call - if so, it updates the 
-! temperature to get a better estimate of the reaction rates.
+! The f_rhs routine provides the right-hand-side for the DVODE solver.
+! It deals with molar abundances throughout (we expect that the input
+! vector y has molar abundances, Y = X/A) for make_rates, and
+! dydt routines.  It also checks to see if the temperature has changed
+! much since the last call - if so, it updates the temperature to get
+! a better estimate of the reaction rates.
 !
 ! The jac routine provides an explicit Jacobian to the DVODE solver.
 !
@@ -71,7 +72,6 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
 ! shouldn't an aion be here?  putting it in breaks VODE convergence...
   ydot(n) = -sum((dhdX+ebin)*ydot(1:nspec))/cp
   ydot(n) = ydot(n) * T2T9
-
 
   return
 

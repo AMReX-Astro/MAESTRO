@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#PBS -j oe
+#PBS -N visit_test
+#PBS -l nodes=1:ppn=16
+#PBS -l walltime=00:30:00
+
+cd $PBS_O_WORKDIR
+. ${MODULESHOME}/init/bash
+module load visit
+
+visit -cli -nowin -np 16 -nn 1 -l aprun -s vistest.py

@@ -11,12 +11,15 @@
 *.ilg
 *.ind
 Docs/*/*.pdf
+Docs/*/*.ps
 MaestroUsersGuide.out
+MaestroUsersGuide.old
 
 
 # emacs temporaries
 *~
 \#*
+
 
 
 # Maestro files created at compile-time
@@ -26,7 +29,24 @@ build_info.f90
 
 # Maestro executable
 main.*.exe
+Exec/*/*/helm_table.dat
+gmon.out
+
+
+Source/grid_2d
+Source/grid_3d
 
 
 # build stuff
 t/
+
+
+# runtime files
+maestro-overview.out
+*diag.out
+plt?????
+chk?????
+*plt?????
+*chk?????
+
+react_*_dtE??

@@ -75,7 +75,7 @@ contains
     p0_init(0) = pres_base
     s0_init(0, rho_comp) = dens_base
 
-    s0_init(j,rhoh_comp) = dens_zone * eos_state%h
+    s0_init(j,rhoh_comp) = dens_base * eos_state%h
 
     s0_init(j,spec_comp:spec_comp-1+nspec) = dens_base*xn_zone(:)
     

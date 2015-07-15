@@ -30,8 +30,9 @@
  plot_deltat = 1.d0
  chk_int   = 4000
 
- cflfac = 0.9d0
- init_shrink = 1.d0
+ cflfac = 0.7d0
+ init_shrink = 0.1d0
+ use_soundspeed_firstdt = F
 
  bcx_lo = -1
  bcx_hi = -1
@@ -49,4 +50,12 @@
  use_eos_coulomb = F
 
  do_heating = T
+
+ apply_vel_field = T
+
+ velpert_scale = 5.d6
+ velpert_amplitude = 1.d5
+ velpert_height_loc = 1.2e8
+ num_vortices = 2
+
 /

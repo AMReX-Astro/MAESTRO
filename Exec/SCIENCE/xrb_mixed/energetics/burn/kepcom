@@ -1,0 +1,1072 @@
+c***********************************************************************
+c**** cliche kepcom  ***************************************************
+c***********************************************************************
+
+
+c.... kepcom last modified...
+
+      character*16 lastmodc
+      parameter              (  lastmodc = '20071008' )
+      parameter              (  currentversion = 16.70D0 )
+
+c.... variable type assignments
+
+      real*8 n0, k, me
+      
+      real gridbuf
+
+      character*1  charset, capchar, cflag, cdum1,pathsep,backslash
+      character*1  lempty
+      character*2  izsym
+      character*8  nameparm, nameqprm, namep5, idcycle, name80k
+      character*8  crayflag, namezone, netsym, nameprbl, isosym
+      character*8  cdum, cbuf, cbuf1, cbuf2, iflag80, iqbrnflg
+      character*8  craybox, nameprob, namep0, idword, idtcsym
+      character*8  ions, ionsb, isymr, icon, names, namedatm
+      character*8  nameedit, axisy2, axisy3, namedzed, namedatq
+      character*8  namedatl, namelvar, nametvar, idtcsyml
+      character*8  ldecay,ionbmax, idzone
+      character*10 unitedit, unitzone, unittime
+      character*16 lastrun, lastmod0, lastmodk, nxdirect, nameplot
+      character*16 lastmodp, lastmodu, lastmodz, lastmodl, namebg
+      character*16 namecode, namein, namec0, namezold, nameout
+      character*16 nameqq, nameqlib, nameolds, namenews, namez
+      character*16 nameqql, nameqql0, nameqql1, nameqlbl, cbuf16
+      character*16 isoicon, nametlib, printflg
+      character*30 idstring, idstrng0
+      character*32 cbuf32
+      character*33 lbuf(4)
+      character*48 labldatm, labldatq, labldatl, cbuf48
+      character*48 nsdirect
+      character*64 cbuf64
+      character*80 mess, savedcmd, savdcmd0, datapath,exitmsg
+      character*132 lineout
+
+      logical cray, backup, look
+      
+
+c.... parameter assignments...
+
+c.... set machine flags
+
+      parameter (  crayflag = 'no' )
+
+c.... set machine-dependent real-to-integer storage ratio
+c.... (=1 for cray; =2 for sgi and sun)
+
+      parameter ( iratioz=2 )
+
+c.... fundamental constants
+
+      parameter (  n0=6.02254d+23,  sigt=6.65205d-25,     k=1.38054d-16,
+     1               a=7.5648d-15,    me=9.10908d-28,     h=6.62559d-27,
+     2             gee=6.670d-8,   c=2.997925d+10,  pie=3.1415926536d+0,
+     3             solmass=1.9892d+33,  solmassi=1.d+0/solmass,
+     4             solrad=6.9599D10, solradi=1.D0/solrad,
+     5             penmex=0.782333098D0, ! (m_n-m_p-m_e)*c**2 [MeV]
+     6             year=3.1558d+7) 
+
+c.... number of implicit variables
+
+      parameter ( nvar=3 )
+
+c.... maximum number of zones, i/o buffer size (multiple of 1024)
+c.... maximum no. of networks, ion types per network, total ion types
+c.... see restriction on ngridz, below, when decreasing jmz
+c.... also note that lentrack(p300)/8 must exceed jmz
+c.... the packing algorithm in rezoneb limits jmzb(=jmz) to be.lt.10000
+
+      parameter ( jmz=1983,  iobufz=1024  )
+      parameter ( nniz=5,  nhiz=20,  nitz=100  )
+
+c.... number of diffusion coefficient due to rotationally induced mixing
+
+      parameter ( nangmd=5 )
+
+c.... maximum number of zones in burn arrays
+c.... should equal jmz if burn co-processing is being done
+
+      parameter (jmzb=jmz)
+
+c.... parameters common for kepcom and zcom should go in there
+
+      include 'nburncom'
+
+c.... maximum number of zones passed to zburn at a time
+c.... also set in zburn
+
+      parameter (nzburn=8)
+
+c.... burn network parameters:
+c.... maximum no. of networks, ion types per network, total ion types
+c.... note that nhizb and nitzb must be .ge. nburn
+c.... due to implementation of SUBROUTINE restart do not make
+c....   smaller than 500
+
+      parameter ( nnizb=1,  nhizb=nburn,  nitzb=nburn)
+
+c.... max no. of: time step controllers, subroutines to be timed
+c.... also set nsubz in zburn
+
+      parameter ( ndtz=30,  nsubz=30 )
+
+c.... current no. of: time step controllers, subroutines to be timed
+
+      parameter ( ndt=6,  nsub=15 )
+
+c.... maximum number of piston positions
+
+      parameter (npistz=300)
+
+c.... maximum number of ye initialization cards
+
+      parameter (nyez=150)
+
+c.... maximum number of edited reactions
+
+      parameter ( nreacz=50 )
+
+c.... current and maximum number of header parameters
+c.... warning... nheadz must be an even multiple of iratioz
+
+      parameter ( nhead=45, nheadz=100 )
+
+c.... current and maximum number of changeable ('p') parameters
+
+      parameter ( nparm=495, nparmz=500 )
+
+c.... current and maximum number of edit ('q') parameters
+
+      parameter ( nqparm=102, nqparmz=300 )
+      
+c.... maximum number of post-processor ('qq') dump variables
+c.... also maximum number of 'look' post-processing variables
+      
+      parameter ( ndatqz=250 )
+      
+c.... maximum number of user-specified multiple column zonal edits
+
+      parameter ( nzedz=30 )
+      
+c.... maximum number of saved tty commands
+
+      parameter ( ncsavedz=200 )
+
+c.... number of small saved array elements
+
+      parameter ( nsmall=1+2*npistz+2*nyez
+     1                    +2*nitz+nniz+nhiz*nniz
+     2                    +2*nitzb+nnizb+nhizb*nnizb
+     3                    +2*ndtz+3*(nsubz+1)+5*nreacz+nhiz
+     4                    +5*ndatqz+4*nzedz 
+     5                    +nitz+nitzb)
+
+c.... current number of zonal interface arrays
+
+      parameter ( nzonei=8 )
+ca      parameter ( nzonei=8+nangmd )
+
+c.... current number of zone-centered arrays
+
+ca      parameter ( nzonec=26 )
+ca      parameter ( nzonec=27 )
+      parameter ( nzonec=28+nangmd )
+
+c.... current number of burn co-processor zonal arrays
+
+      parameter ( nzoneb=12 )
+
+c.... number of saved small character variables and arrays
+c.... (in units of 8-character-long words)
+
+      parameter ( nsmallc = 8+3*2+nitz+nitzb+ndtz+nreacz+4*2+7*ndatqz
+     1                       +10*nzedz+10*30+7*ndatqz+3*2+6+3*50
+     2                       +10*ncsavedz+10)
+ca... changed; old was...
+ca     1                   +10*nzedz+10*30+7*ndatqz+3*2+6+3*50+ncsavedz )
+
+c.... maximum number of temperature plus density points
+c.... in eos tables written by kepler
+
+      parameter ( ntempz=60 )
+
+c.... maximum number of eos table sets (i.e. eos no.'s) that
+c.... kepler can write into a given eos file
+
+      parameter ( neosz=50 )
+      
+c.... maximum number of mongo buffer arrays
+
+      parameter ( nmongo=8 )
+      
+c.... number of editcom variables
+
+      parameter ( neditcom=91 )
+      
+c.... maximum number of post-processor grid points 
+c....  (should be max of nparm, nqparm, amd jmz)
+
+      parameter ( ngridz=jmz )
+      
+c.... maximum number of points in the post-processor mass-coordinate
+c.... library
+
+      parameter ( nylibz=19999 )
+      
+c.... number of 'zonal' post-processor indices reserved for non-zonal
+c.... variables (e.g. parameters)
+
+      parameter ( nyoffset=2000 )
+      
+c.... length of post-processor status file header block (bytes)
+c.... must exceed 4*(2+ndatqz) and be an even multiple of 8
+
+      parameter ( lenshead=1024 )
+      
+c.... length of post-processor dump file header block (bytes)
+
+      parameter ( lenqhead=1024+8*(1+nheadz/iratioz+nparmz+nqparmz
+     1                        +nsmall+nsmallc) )
+     
+c.... current number of standard post-processing ('look') variables
+c.... note: maximum number is ndatqz
+      
+      parameter ( nldatv=40 )
+
+c.... number of time-plot variables
+      
+      parameter ( ntdatv=52 )
+      
+c.... size of the grid buffer used for post-processing (in 4-byte words)
+c.... (note: must be .ge.(12*jmz) to accomodate datmongo-- see plot) 
+      
+      parameter (ngridbuf=100000)
+
+c.... number of elements
+
+      parameter (nzsym=103)
+
+c.... maximum number of entries per isotope in decay tree list
+
+      parameter (ndtree=16)
+
+c.... maximum number of flames on the grid
+
+      parameter (nflamez=50)
+
+c.... general code communication common blocks...
+
+c.... character common:
+c.... arrays of zonal array and timing block names, elemental symbols,
+c.... network symbols, alphanumeric character set, parameter names,
+c.... edit variable names and units, and standard 'look' variable names.
+c.... (all of the above arrays are data-loaded in kepdat). 
+c.... arrays of look variable qq-file names and plot variable names
+c.... and labels. 
+c.... i/o file names and id strings.
+c.... (note that arrays should start on word boundaries.)
+
+      common/namecom/ namezone(nzonei+nzonec+nzoneb), names(nsubz)
+      common/namecom/ unitzone(nzonei+nzonec+nzoneb)
+      common/namecom/ izsym(-1:nzsym), netsym(nniz)
+      common/namecom/ charset(40), capchar(26)
+      common/namecom/ nameparm(nparmz), nameqprm(nqparm)
+      common/namecom/ nameedit(neditcom), unitedit(neditcom)
+      common/namecom/ namelvar(nldatv), nameqql(ndatqz)
+      common/namecom/ namedatm(nmongo), labldatm(nmongo)
+      common/namecom/ nametvar(ntdatv), unittime(ntdatv)
+      
+      common/namecom/ namecode, nameprob, namein, nameout, namez
+      common/namecom/ name80k, nameplot, namep5, namebg, namezold 
+      common/namecom/ lastmodk, lastmodp, lastmodu, lastmodz, lastmodl
+      common/namecom/ idcycle, idstring, idstrng0, cflag, lbuf
+      common/namecom/ cbuf, cbuf1, cbuf2, cbuf16, cbuf32, cbuf48 
+      common/namecom/ mess, lineout, axisy2, axisy3, cbuf64
+      common/namecom/ nametlib, printflg, exitmsg, idzone
+
+c.... general (non-character) common:
+c.... flags, common lengths, and arrays of zonal variable
+c.... types and parameter types (set in kepdat)
+
+
+      common/gencom/ timemin0, timemax0, ypltmin0, ypltmax0
+      common/gencom/ y2lowmon, y2himon, y3lowmon, y3himon
+      common/gencom/ xlowmon,  xhimon
+
+      common/gencom/ mode, idestroy, ihsp, istore, nioerr
+      common/gencom/ lenhead, lencom, lencomc, iflagzms
+
+      common/gencom/ iztype(nzonei+nzonec+nzoneb)
+      common/gencom/ iptype(nparmz), iqtype(nqparm)
+      common/gencom/ numdatm, ncyct0, ncyct1, ncyctdel, ncycqqt
+      common/gencom/ lentdmpt, niymaxt, istype(nsmall), ibtype
+
+      
+
+
+      common /editcom/ edum(0:0),
+     o   edgamma,     edgammae,    edgammaf,    edeit,       edeet,
+     *   edept,       edert,       edeid,       edeed,       edepd,  
+     1   edpit,       edpet,       edppt,       edprt,       edpid, 
+     *   edped,       edppd,       edprd,       edxnebt,     edxnebd,             
+     2   edetabt,     edetabd,     edent,       edend,       edpnt,
+     *   edpnd,       edxknt,      edxknd,      edsnt,       edsnd,
+     3   edderiv1,    edderiv2,    edderiv3,    edderiv4,    edderiv5,
+     *   edsig,       edsigi,      edsige,      edsigp,      edsigr,
+     4   edsigion,    edei,        edee,        edep,        eder,
+     *   edpi,        edpe,        edpp,        edpr,        edxni, 
+     5   edxne,       edxnemc,     edxnp,       edeta,       edetap,
+     *   edxkibn1,    edxkibn2,    edxkchrs,    edxkr,       edxkcond,
+     6   edxkcomp,    edeos1,      edeos2,      eddye,       eddyq,
+     *   eddyf,       editerq,     edqxc12,     edqxo16,     edqxne,
+     7   edbetaq,     edwrate,     edrectot,    edrpdtot,    edredtot,
+     *   edsnuw,      edsnubps,    edeectot,    edepdtot,    edeedtot,
+     8   edebind0,    edebind,     edeexcit,    edsnucq,     edsnuc1q,
+     *   edsdotq,     edtauqse,    edyfqse,     edyffac,     edqj,
+     9   eddyo16q
+     
+c.... common block for unsaved post-processing ('look') variables
+c.... including the current 'look' time, timelook, and the 
+c.... buffer, gridbuf, and associated arrays used for 
+c.... storing reconstructed zonal variable arrays from info read from 
+c.... post-processor dumps.
+c.... also inlcudes the block of variables (starting with ltimelk0)
+c.... that time-dumps are read into (except ialign which is a dummy
+c.... integer variable used to preserve common block alignment)
+c.... jalign? additional alignmaent variable (alex)
+     
+      common/lookcom/ timelook, ltime, ltime0, locgb, locgb0
+      common/lookcom/ dscaleml, totm0lk, ncycl00, jalign1 
+      common/lookcom/ ngridl(ndatqz), locqql(ndatqz), ibqql(ndatqz)
+      common/lookcom/ gridbuf(ngridbuf), locgbufl(ndatqz), jalign2
+      
+      common/lookcom/
+     o   ltimelk0,  timelk0,   toffsetl,  ncyclook,  jdtclook,
+     *   iterlook,  jmlook,    jmcalclk,  nyliblk,   ndatqlk,
+     *   ialign,   
+     1   nameprbl,  idtcsyml,  dtlook,    radiuslk,  tefflook,
+     *   xlumlook,  dn1look,   tn1look,   xlumnlk,   ensclook,
+     2   enilook,   enklook,   enplook,   entlook,   eprolook,
+     *   eneslook,  enclook,   enscdlk,   enidlook,  enkdlook,
+     3   enpdlook,  entdlook,  eprodlk,   enesdlk,   encdlook,
+     *   snuclook,  sn1look,   snn1look,  pn1look,   eta1look,
+     4   ye1look,   sig1look,  cmptimel,  totmlook,  nzblook,
+     *   idlook2,   yeburn1,   dlook4,    dlook5,    dlook6,    
+     5   dlook7,    dlook8,    dlook9           
+
+c.... logical common:
+c.... machine flag, error condition, and look-mode flag
+
+      common/logcom/ cray, backup, look
+
+c.... commoms for decay data
+
+      common /decay/ solabu(nitzb),ildecay(2,nitzb)
+      common /decay/ decay(ndtree,nitzb),solabuel(nzsym)
+      common /decay/ idecay(ndtree,nitzb),ndecay(nitzb)
+      common /decay/ ldecay(nitzb),solabuib(nitzb),nldecay
+
+c.... saved common....
+
+      common  begins
+
+c.... header info:
+c.... parameters specifying array dimensions and common lengths
+
+      common  hdum(1)
+
+      common  lenhead0,jmz0, jmzb0, nburn0, iratioz0, nvar0
+      common  nheadz0, nhead0, nparmz0, nparm0, nqparmz0, nqparm0
+      common  nniz0, nhiz0, nitz0, nnizb0, nhizb0, nitzb0
+      common  nreacz0, ndtz0, ndt0, npistz0, nyez0, nsubz0, nsub0
+      common  nzonei0, nzonec0, nzoneb0, nsmall0, nsmallc0
+      common  imaxa0, imaxb0, nreac0, jmsave, lencom0, lencomc0
+      common  nedtcom0, ndatqz0, ngridz0, nylibz0, nyoffst0
+      common  lenshed0, lenqhed0, nzedz0, ncsavdz0
+
+      common  idumhead(nheadz-nhead)
+
+
+c.... changeable parameters...
+
+      common  pdum(0:0)
+
+c.... note that except for zbound, parameters whose names take the
+c.... form, 'z'//'name7', are stand-ins for the non-floating-point
+c.... parameters whose names begin with 'name7' (an up-to-7 char
+c.... sring) -- see equivalence statements below
+
+c.... parameters 1 to 100
+
+      common
+     o   dtnew,     timesec,   extrap,    q2fac,     zmaxit,
+     *   dtcr,      dtct,      dtcd,      dtcq,      dtcdt,
+     1   fcrmax,    fctmax,    q1fac,     znstop,    tstop,
+     *   znedit,    dtedit,    zndump,    xmlen,     fudgc,
+     2   difim,     fcrbu,     fctbu,     drmult,    dtmax,
+     *   fcrext,    fctext,    zipup,     xk1mt,     xk2mt,
+     3   xk3mt,     xk4mt,     rxkcmt,    pimult,    prmult,
+     *   pemult,    transm,    timex0,    dyemult,   dyqmult,
+     4   yemin,     ziwinsiz,  hstatm,    zlenqmax,  ziwinloc,
+     *   dtcp,      yfloorx,   cenu,      t7peek,    xkmin
+
+      common
+     5   thickfac,  zmaxbak,   dtcut,     tfcrbu,    tfctbu,
+     *   xipot,     dzero,     znpflag,   fracneut,  radius0,
+     6   summ0,     xlum0,     zirnet,    znpixedi,  tnucmin,
+     *   setparm,   ziytsfla,  tbound,    pbound,    fclmax,
+     7   fclext,    dtcl,      fclbu,     tfclbu,    dtsmult,
+     *   rnratmax,  rnratmin,  tnratmax,  tnratmin,  dnratmax,
+     8   dnratmin,  rnmin,     tnmin,     dnmin,     zjmmin,
+     *   zizonef,   zidzonef,  rnmax,     dypmin,    dymgmin,
+     9   zbound,    etaconv,   zjshell0,  zjshell1,  eexplode,
+     *   texplode,  tauexp,    p0core,    d0core,    d0power
+
+c.... parameters 101 to 200
+
+      common
+     o   sneutmt,   snucmt,    dsnum,     tcorefac,  tqsemin,
+     *   zjqse,     artv1,     artv2,     artv3,     zjartv1,
+     1   zjartv2,   zjartv3,   zipixtyp,  znplotsy,  tscalem,
+     *   zigridt,   zigridm,   zigridv,   zjp0,      zjp1,
+     2   rpmin0,    rpmax0,    ymintd,    ymaxtd,    sscalem,
+     *   pscalem,   zitvstar,  abunlim,   zivplot,   vscalem,
+     3   rscalem,   zirtype,   convord,   yplotmin,  yplotmax,
+     *   etacut,    znadapb,   fracrz1,   fracrz2,   rzmult0,
+     4   rzmult1,   rzmult2,   abarrat0,  abarratm,  fracmlim,
+     *   frcsound,  convlim,   woversht,  xmimult,   fmax0
+
+      common
+     5   fmax1,     fmax2,     ddsfrac,   dtsfrac,   ziudflag,
+     *   znsdump,   zniterba,  ziterbar,  ziautoou,  ziflgaba,
+     6   fraccore,  zjmcalc,   ziupdfla,  zniondum,  znisodum,
+     *   znzondum,  ziflagye,  znjeditq,  dtqnum,    ddqnum,
+     7   ziexcite,  ziterqmh,  ypconvh,   ynconvh,   ysiconvh,
+     *   cnseh,     fyph,      fynh,      fysih,     zneditq,
+     8   xiter1qe,  ziter1qe,  xthres,    tqselim,   o16lim,
+     *   qn56lim,   snuwmult,  zjnse,     siqselim,  zjlcalc,
+     9   vlimset,   zjpause,   fracrz0,   rzmultm,   fmaxm,
+     *   eionmult,  znnewout,  zneditq1,  wilsonmt,  t11cut
+
+c.... parameters 201 to 300
+
+      common
+     o   y56gessm,  zisi30br,  dqselim,   abunminx,  tfcybu,
+     *   yfloorbx,  ziqerrfl,  c12agmlt,  xltaucon,  znoqseco,
+     1   accrate,   xmacrete,  denconv,   flamerad,  coulmult,
+     *   zirzopt,   znsurfz,   fracsz0,   fracsz1,   xmlossm,
+     2   xmloss0,   totm0,     fracdez,   xmratbak,  xfracml,
+     *   zmlcompf,  e1mltc12,  e2mltc12,  znupdate,  dtfrac,
+     3   bmassmin,  bmassmax,  btempmin,  btempmax,  snucmin,
+     *   bdenmin,   bdenmax,   tchange,   dchange,   znetmax,
+     4   zneditb,   edmassl,   znedita,   zjmeditb,  znedital,
+     *   chimin,    delchi,    fdtn,      dtbkup,    zncomp
+
+      common
+     5   zncent,    znedt,     znzro,     amaglim,   zninv,
+     *   znbkup,    zntty,     zileqsto,  znegbkup,  bkupdiv,
+     6   bkupmass,  bkupmp,    znbkupma,  znsubcyc,  zmazful,
+     *   al26mult,  zinburn,   znpage,    znsavez,   znsaveb,
+     7   vloss,     abunlimb,  scalem,    zneditz1,  zneditz2,
+     *   zmedit,    zmeditfi,  zneditp,   c12flame,  o16flame,
+     8   timenew,   sharp1,    sharpr,    sharp2,    znewflam,
+     *   taunu,     enu53,     tmunu,     tenu,      znoiland,
+     9   charsizg,  charsizc,  charsizz,  charsizh,  widthtd,
+     *   zibackgn,  dscalem,   zngridmi,  zncycqq,   zlentrac
+     
+c.... parameters 301 to 400
+
+      common     
+     o   zidtmaxl,  zidtlook,  backfacq,  tempstop,  denstop,
+     *   vinstop,   o16stop,   timezms,   zizonezm,  q1faczms,
+     1   tempcig,   yflrxcig,  fmaxmcig,  fmax0cig,  toffset,
+     *   abunminb,  abunmaxb,  znumiso,   timeref,   tosetref,
+     2   timecmin,  timecmax,  yemax,     abarsemi,  drmultlo,
+     *   woverslo,  zmaptime,  vminmap,   vmaxmap,   vratmap,
+     3   tempcdep,  o16odep,   tempchar,  denchar,   abarchar,
+     *   zonemmin,  zicalcne,  xneconv,   zionflag,  xnemin,
+     4   xkapgam,   egamp,     tshock,    tnucleo,   tenvel,
+     *   znfirstq,  xlmxmult,  binm10,    binm20,    binalp
+
+      common
+     5   binbet,    bina0,     binmdt,    rocher,    xlanger1,
+     *   xlanger2,  ziburnye,  relmult,   geemult,   grbparm,
+     6   swmult,    tsharp,    xmlossn,   znangmix,  angfmu,
+     *   angfc,     angfjc,    angrcrit,  angric,    angfjdsi,
+     7   angfjshi,  angfjssi,  angfjez,   angfjgsf,  fmin,
+     *   zncnvout,  zkaptab,   fkapz,     zfakexp,   angsmt,
+     8   znangsmg,  angsml,    angsmm,    zipapsiz,  hstatxm,
+     *   hstatym,   xmlossw,   ziold,     rhotrans,  znwndout, 
+     9   zkapverb,  xl0limf,   xl0limk,   zllimout,  znenout,
+     *   zipromin,  zipromax,  ziprownd,  ziproyld,  zminapro
+
+c.... parameters 401 to 450
+
+      common
+     o   zmaxapro,   proymin,  proymax,   xkdmin,    h1hdep,
+     *   he4hedep,   znenuout, optconv,   rloss,     tloss,
+     1   tapprox,    semilan,  profmin,   profmax,   proamin,
+     *   proamax,    yelimb,   zirecb,    bmasslow,  si28dep,
+     2   zivspecl,   zivrate,  zmagnet,   znosht,    alpth,
+     *   abarstep,   zbarstep, xmustep,   znetmin,   awcorot,
+     3   ymcorot,    znstrout, zmixcycl,  zlburn,    zlbbkup,
+     *   rlossmin,   zlcout,   xmagfmu,   xmagft,    xmagfnu,
+     4   xmagfdif,   dxncbkup, ziplotb,   zminzone,  zonemmax,
+     *   tenubar,    zlevcnv,  zmingain,  zminloss,  zminnucl
+
+c.... parameters 451 to 500
+
+      common
+     5   ddmin,      ziazonef, dynfac,    h1hburn,   c12heign,
+     *   he4hebrn,   zonermin, zonermax,  xmixnova,  accmass, 
+     6   accmassf,   vinstopm, zlowamul,  pdmult,    edmult, 
+     *   zihwamul,   zkapburn, fackap,    awwkloss,  zlossrot,
+     7   ymjkep,     zmaxzone, cfakexp,   zminnucg,  zmingaind,
+     *   zminlossd,  zminnucgd,zminnucld, tweakmin,  centmult,
+     8   zmixout,    zirprox,  zn14pg,    r3amult,   zibwarn,
+     *   zifallbk,   xnumu12,  znzsave,   axion,     zmhiconv,
+     9   rnhiconv,   zicutbin, znconvers, znwndvers, h1hign 
+
+c.... buffer for future changeable parametersep
+
+      common dumparm(nparmz-nparm)
+
+
+c.... non-changeable edit ('q') parameters...
+
+      common qdum(0:0)
+
+c.... misc. edit parameters (q1 - q25)
+
+      common dt, zjm, dtold, zncyc, fcr, fct, ziter, told
+      common tfcr, tfct, fcl, tfcl
+
+      common zidtcon, zimax, znnet, znumit, totm, znreac
+      common zitert, zjfcr, zjfct, zjfcl, q23, s0exp, xlumn
+
+c.... energies (q26 - q45)
+
+      common enini, enink, eninp, enint
+      common ensc, eni, enk, enp, ent, epro, enes, enc
+      common enscd, enid, enkd, enpd, entd, eprod, enesd, encd
+
+c.... luminosity, radius, effective temperature (q46 - q48)
+
+      common xlum, radius, teff
+
+c.... small permanent memory for burn (q49 - q58)
+
+      common zncycb,  zncycbt,  znburnz,  znburnzt,  zimaxb
+      common znnetb,  znumitb,  zjlm,  zjbmax,  dtsub
+c.... (z)jlm is unused.
+
+c.... piston and neutrino flux variables (q59 - q69)
+
+      common zjpist, zjpistm, velocty0, tbounce, fluxnu0
+      common fluxnua, chi0, fluxnub, chi1, fluxnuc, chi2
+
+c.... small permanent memory for ise (qburn) (q70 - q71)
+
+      common znye, znyem
+      
+c.... small permanent memory for post-processing (q72 - q77)
+
+      common zidmptim, znylib, znylib0, zndatq, zlocqnex, zndatl 
+
+ca... quantities depending on rotation (q78 - q81)
+ca... (initial/final rotation energy/angular momentum)
+
+      common eninr, enr, anglint, anglt
+
+ca... mass loss rate (q82)
+ca... metallicity multiplyer (q83)
+ca... total neutrino energy lost from the star (q84)
+ca... total energy input by the piston (q85)
+ca... energy input rate by the piston (q86)
+ca... opacity at effective radius (q87)
+ca... total mass lost in wind (q88)
+
+      common xmlossr,zfak,enn,enpist,enpistd,capeff,xmlost
+
+ca... radius up to which convection is allowed, 
+ca...    determined from optconv in previous cycle (q89)
+
+      common radconv
+
+ca... number of inversions in last cycleb (q90)
+
+      common zninvl
+
+ca... APPROX backup record (q91-94)
+
+      common zngbkup,zmncbkup,znacbkup,zisebkup 
+
+ca... heat content record (q95)
+
+      common enhd
+
+ca... accretion boundary pressure (q96)
+
+      common pboundac
+
+ca... maximum extent of negative velocity (q97)
+
+      common velnegm
+
+ca... fallback rate (q98) and fallback mass (q99)
+
+      common fbrate,fallback
+
+ca... cycle of (re)start (q100)
+
+      common zncycr
+
+ca... initial central hydrogen (q101)
+
+      common h1init
+
+ca... change of rotational energy
+
+      common enrd
+
+c.... buffer for future 'q' parameters
+
+      common dumqparm(nqparmz-nqparm)
+
+c.... small saved arrays...
+
+c.... when you change the layout of this common block do not forget
+c.... to also edit the subroutine kepinit in kepou.f
+      common  sdum(1)
+
+c.... piston position and ye initialization arrays
+
+      common  tpist(npistz),  rpist(npistz)
+      common  yemass(nyez),  yeq0(nyez)
+
+c.... ion arrays
+
+      common  aion(nitz),   zion(nitz)
+      common  znumi(nniz),  zionn(nhiz,nniz)
+
+c.... burn ion arrays
+
+      common  aionb(nitzb),   zionb(nitzb)
+      common  znumib(nnizb),  zionnb(nhizb,nnizb)
+
+c.... time-step controller arrays
+
+      common  dtc(ndtz), zjdtc(ndtz)
+
+c.... subroutine timing array
+
+      common  timeused(3,nsubz+1)
+
+c.... reaction arrays
+
+      common  totalr(nreacz),  rater(nreacz),  qval(nreacz)
+      common  zjrate(nreacz),   rrx(nreacz)
+
+c.... accretion composition array
+
+      common compsurf(nhiz)
+      
+c.... post-processor dump arrays
+
+      common zlocqz(ndatqz), zlocqz0(ndatqz)
+      common ratzdump(ndatqz), ratiodez(ndatqz), ratioadz(ndatqz)
+      
+c.... user-specified edit arrays
+
+      common zndatzed(nzedz), zncyczed(nzedz)
+      common zedmass1(nzedz), zedmass2(nzedz)
+
+ca... record of isotope mass lost in wind 
+ca... wind:  19-isotope network
+ca... windb: burn network
+
+      common wind(nitz), windb(nitzb)
+
+c.... saved zonal arrays...
+
+      common  zdum(1)
+
+c.... arrays evaluated at outer zonal interfaces
+
+      common   ym(0:jmz),   rn(0:jmz),   rd(0:jmz),   un(0:jmz)
+      common  xln(0:jmz),  qln(0:jmz),  qld(0:jmz), difi(0:jmz)
+
+c.... arrays evaluated at zone centers
+c.... angj: specific angular momentum
+
+      common  znetnum(0:jmz)
+      common   xm(0:jmz),    dn(0:jmz),    tn(0:jmz),    td(0:jmz)
+      common   en(0:jmz),    pn(0:jmz),    zn(0:jmz),  etan(0:jmz)
+      common   sn(0:jmz),   snn(0:jmz),  abar(0:jmz),  zbar(0:jmz)
+c.... angj: specific angular momentum
+      common  xkn(0:jmz),  xnei(0:jmz),  stot(0:jmz),  angj(0:jmz)
+c.... angdg: total rotationally induced diffusion coefficients
+c....        and some used for plotting only
+c.... angd: rotational diffusion coefficients seperated for processes
+      common angdg(0:jmz), angd(0:jmz,1:nangmd)
+
+c.... nuclear burn derivative arrays (approx and ise)
+      common    dsold(0:jmz),    tsold(0:jmz)
+      common    snold(0:jmz),     snbd(0:jmz),     snbt(0:jmz)
+      common  abarold(0:jmz),  abarnbd(0:jmz),  abarnbt(0:jmz)
+      common  ypbtime(0:jmz),  ynbtime(0:jmz)
+
+c.... abundance array:  ppn(i,j) = ppn((j-1)*imax+i)
+
+      common  ppn(nhiz*jmz)
+
+c.... zonal arrays for the burn co-processor
+
+      common  bdum(1)
+
+      common  znetnumb(0:jmzb),  zlimab(0:jmzb),  zlimzb(0:jmzb)
+      common    zlimcb(0:jmzb),   timen(0:jmzb),  dtimen(0:jmzb) 
+      common     dnold(0:jmzb),   tnold(0:jmzb),     ymb(0:jmzb)
+      common     sburn(0:jmzb),    etab(0:jmzb),    pbuf(0:jmzb)
+
+c.... burn abundance array:  ppnb(i,j) = ppnb((j-1)*imaxb+i)
+
+      common  ppnb(nburn*jmzb)
+
+c.... maximum reached burn abundances
+
+      common  burnamax(nburn)
+      common  burnmmax(nburn)
+      common  ibcmax(nburn)
+      common  nabmax(nburn),nzbmax(nburn),ionbmax(nburn)
+      common  nibmax(nburn),nbmax
+
+c.... for alignment
+
+      common  ndumalign1
+
+c.... some arrays for rotational quantities
+c.... angi: specific moment of inertia
+c.... angw: angular velocity
+c.... amgri: richardson number
+
+      common angi(0:jmz),angw(0:jmz)
+      common angri(0:jmz)
+
+c.... some additional quantities saved, which are needed to evaluate
+c.... diffusion coefficients for rotationally induced mixing
+c.... stotd:   saved old total specific entropy
+c.... epsgrav: gravitational energy generation rate
+c.... enbtn:  (d en / d tn)_dn
+c.... enbdn:  (d en / d dn)_tn
+c.... pnbtn:  (d pn / d tn)_dn
+c.... pnbdn:  (d pn / d dn)_tn
+c.... gamma1: (d ln pn / d ln dn)_s
+c.... gamma2: [(d ln pn / d ln tn)_s == \Gamma_2/(\Gamma_2-1)]
+
+      common stotd(0:jmz),epsgrav(0:jmz)
+      common enbtn(0:jmz),enbdn(0:jmz)
+      common pnbtn(0:jmz),pnbdn(0:jmz)
+      common gamma1(0:jmz),gamma2(0:jmz)
+
+c.... magnetic fields
+
+c.... bfvisc: "effective viscosity" due to magnetic fields (for j
+c....         transport)
+c.... bfdiff: effective chemical diffusion coefficent due to magnetic
+c....         fields
+
+      common bfvisc(0:jmz),bfdiff(0:jmz)
+
+c.... save some "effective" values for pre-cycle mixing
+
+      common angdgeff(0:jmz),difieff(0:jmz)
+      common bfviscef(0:jmz),bfdiffef(0:jmz)
+
+c.... save accretion compositon for BURN
+
+      common compsurfb(nitzb)
+
+c.... store magnetic field data
+
+      common bfbr(jmz), bfbt(jmz)
+
+c.... i/o buffer
+
+      common ziobuf(iobufz)
+
+c.... temporary storage space
+
+      common scmt(3*(jmz+1)), dbuf(nvar*(nvar+1)*(jmz+2))
+
+c.... mass coordinate library buffer array
+
+      common ylib(nylibz)
+
+c.... composition and angular momentum temporary storage of old values
+
+      common ppnold(nhiz*jmz),ppnbold(nburn*jmzb),angjold(0:jmz)
+      common windold(nitz), windbold(nitzb)
+
+
+c.... IO flags
+
+      common killburn
+
+c.... end of unnamed common block
+c      common ends
+
+c.... system specific settings
+      common /sysdef/ modebin,pathsep,backslash
+      common /sysdef1/ nempty,lempty(8)
+
+c.... saved common for character variables...
+
+c.... names, flags, and id-words (char*8) (except namec0 is char*16)
+
+      common/charsave/ cdum(1)
+      common/charsave/ namep0, namec0, iflag80, iqbrnflg
+      common/charsave/ craybox, idword
+
+c.... storage directory, last run and code mod dates (char*16)
+
+      common/charsave/ nxdirect, lastrun, lastmod0
+
+c.... arrays of symbols for isotopes, burn isotopes, time-step
+c.... controlers, and reactions (char*8)
+
+      common/charsave/ ions(nitz),  ionsb(nitzb),  idtcsym(ndtz)
+      common/charsave/ isymr(nreacz)
+      
+c.... post-processor file names (char*16)
+      
+      common/charsave/ nameqq, nameqlib, nameolds, namenews
+      
+c.... arrays of post-processor dump variable names (char*8)
+c.... and labels (char*48)
+
+      common/charsave/ namedatq(ndatqz), labldatq(ndatqz)
+      
+c.... array of edit variable names for user-specified edits (char*8)
+
+      common/charsave/ namedzed(nzedz,10)
+      
+c.... old array of remembered tty command strings (char*80)
+
+      common/charsave/ savdcmd0(30)
+      
+c.... remembered 'look' post-processing variable names (char*8) and
+c.... labels (char*48)
+      
+      common/charsave/ namedatl(ndatqz), labldatl(ndatqz)
+      
+c.... 'look'-read post-processor file names (char*16) 
+
+      common/charsave/ nameqql0, nameqql1, nameqlbl
+      
+c.... output storage directory (char*48)
+
+      common/charsave/ nsdirect
+
+c.... set of isotopes to be plotted (char*8) and their 
+c.... plot icons (char*16)
+
+      common/charsave/ isosym(50), isoicon(50)
+      
+c.... array of remembered tty command strings (char*80)
+
+      common/charsave/ savedcmd(ncsavedz)
+      
+c.... path for location of data file
+
+      common/charsave/ datapath
+
+c.... array of zonal convection sentinels (char*8)
+
+      common/charsave/ icon(0:jmz)
+
+c.... common arrays for zburn
+c.... nalign is dummy variable for common alignment
+
+      common/zbrn/ ioldz,jcount
+      common/zbrn/ yz(nburn*nzburn), jzone(nzburn), timez(nzburn)
+      common/zbrn/ denz(nzburn),tempz(nzburn),rnz(nzburn),sburnz(nzburn)
+      common/zbrn/ dtimez(nzburn), etaz(nzburn), limabz(nzburn)
+      common/zbrn/ limzbz(nzburn), limcbz(nzburn), sneutz(nzburn)
+      common/zbrn/ dyz(nburn*nzburn)
+      common/zbrn/ zbdum(1), chiminz, delchiz, fdtnz, dtbkupz, ncompz
+      common/zbrn/ ncentz, nedtz, nzroz, amaglimz, ninvz, nbkupz
+      common/zbrn/ nttyz, ileqstpz, negbkupz, nalign, bkupdivz, bkupmasz
+      common/zbrn/ bkupmpz, nbkupmxz, mazfulz, c12mt1z, c12mt2z, al26mtz
+      common/zbrn/ imaxbz, ncycle, btime, tweakminz
+      common/zbrn/ taunuz, enu53z, tmunuz, tenuz, tenubarz
+      common/zbrn/ c12agmtz,r3amultz
+      common/zbrn/ ixforcez,nzbakup,lzbkquit
+      common/zbrn/ lowamulz,pdmultz,edmultz,ihwamulz,n14pgz,ibwarnz
+
+c...  arrays used for flame studies - masses burned and 
+c...  12c+12C rate multiplier to be used for flashing zones
+
+      
+
+      common /flameit/ xmburn(jmz), fc12mult(jmz)
+
+
+c=======================================================================
+c.... IO data system
+c      equivalence (modebin,zmodebin)
+c      equivalence (pathsep,zpathsep)
+c      equivalence (backslash,zbackslash)
+
+c.... form fixed point arrays for parameters
+c.... note that iratioz is a machine-dependent parameter indicating
+c.... the ratio of the storage length of normally used real numbers
+c.... to that of normally used integers (=1 on cray, =2 on mips and sun)
+
+      dimension ipdum(0:(iratioz*(nparmz+1)-1))
+      equivalence (pdum(0),ipdum(0))
+
+c.... equivalence all non-floating point parameters to their
+c.... floating point stand-ins in common ('z'//integerparm(1:7))
+
+      equivalence
+     * (maxit,zmaxit),       (nstop,znstop),       (nedit,znedit),
+     * (ndump,zndump),       (ipup,zipup),         (iwinsize,ziwinsiz),
+     * (lenqmax,zlenqmax),   (iwinloc,ziwinloc),   (maxbak,zmaxbak),
+     * (npflag,znpflag),     (irnet,zirnet),       (npixedit,znpixedi),
+     * (iytsflag,ziytsfla),  (jmmin,zjmmin),       (izonef,zizonef),
+     * (idzonef,zidzonef),   (jshell0,zjshell0),   (jshell1,zjshell1),
+     * (jqse,zjqse),         (jartv1,zjartv1),     (jartv2,zjartv2),
+     * (jartv3,zjartv3),     (ipixtype,zipixtyp),  (nplotsym,znplotsy),
+     * (igridt,zigridt),     (igridm,zigridm),     (igridv,zigridv),     
+     * (jp0,zjp0),           (jp1,zjp1)
+
+      equivalence
+     * (itvstart,zitvstar),  (ivplot,zivplot),     (irtype,zirtype),
+     * (iudflag,ziudflag),   (nsdump,znsdump),     (niterbar,zniterba),
+     * (iterbarm,ziterbar),  (iautoout,ziautoou),  (iflgabar,ziflgaba),
+     * (jmcalc,zjmcalc),     (iupdflag,ziupdfla),  (niondump,zniondum),
+     * (nisodump,znisodum),  (nzondump,znzondum),  (iflagye,ziflagye),
+     * (njeditq,znjeditq),   (iexciteh,ziexcite),  (iterqmh,ziterqmh),
+     * (neditq,zneditq),     (iter1qe,ziter1qe),   (jnse,zjnse),
+     * (jlcalc,zjlcalc),     (jpause,zjpause),     (nnewoutf,znnewout),
+     * (neditq1,zneditq1),   (isi30brn,zisi30br),  (iqerrflg,ziqerrfl),
+     * (noqsecon,znoqseco),  (irzopt,zirzopt),     (nsurfz,znsurfz)
+
+      equivalence
+     * (mlcompf,zmlcompf),   (nupdate,znupdate),   (netmax,znetmax),
+     * (neditb,zneditb),     (nedita,znedita),     (jmeditb,zjmeditb),
+     * (neditall,znedital),  (ncomp,zncomp),       (ncent,zncent),
+     * (nedt,znedt),         (nzro,znzro),         (ninv,zninv),
+     * (nbkup,znbkup),       (ntty,zntty),         (ileqs,zileqsto),
+     * (negbkup,znegbkup),   (nbkupmax,znbkupma),  (nsubcycm,znsubcyc),
+     * (mazful,zmazful),     (inburn,zinburn),     (npage,znpage),
+     * (nsavez,znsavez),     (nsaveb,znsaveb),     (neditz1,zneditz1),
+     * (neditz2,zneditz2),   (medit,zmedit),       (meditfin,zmeditfi),
+     * (neditp,zneditp),     (newflam,znewflam),   (noiland,znoiland)
+
+      equivalence
+     * (ibackgnd,zibackgn),  (ngridmin,zngridmi),  (ncycqq,zncycqq),
+     * (lentrack,zlentrac),  (idtmaxl,zidtmaxl),   (idtlook,zidtlook),
+     * (izonezms,zizonezm),  (numiso,znumiso),     (maptime,zmaptime),
+     * (icalcne,zicalcne),   (ionflag,zionflag),   (nfirstq,znfirstq),
+     * (iburnye,ziburnye),   (nangmix,znangmix),   (ncnvout,zncnvout),
+     * (kaptab,zkaptab),     (nangsmg,znangsmg),   (ipapsize,zipapsiz),
+     * (iold,ziold),         (nwndout,znwndout),   (kapverb,zkapverb),
+     * (llimout,zllimout),   (nenout,znenout),     (iproyld,ziproyld),
+     * (ipromin,zipromin),   (ipromax,zipromax),   (iprownd,ziprownd),
+     * (minapro,zminapro),   (maxapro,zmaxapro),   (nenuout,znenuout),
+     * (irecb,zirecb),       (nadapb,znadapb),     (ivspecl,zivspecl),
+     * (ivrate,zivrate),     (magnet,zmagnet),     (nosht,znosht)
+
+      equivalence
+     * (netmin,znetmin),     (nstrout,znstrout),   (mixcycl,zmixcycl), 
+     * (lburn,zlburn),       (lbbkup,zlbbkup),     (lcout,zlcout),
+     * (iplotb,ziplotb),     (minzone,zminzone),   (levcnv,zlevcnv),
+     * (mingain,zmingain),   (minloss,zminloss),   (minnucl,zminnucl),
+     * (iazonef,ziazonef),   (kapburn,zkapburn),   (maxzone,zmaxzone),
+     * (minnucg,zminnucg),   (mingaind,zmingaind), (minlossd,zminlossd), 
+     * (minnucgd,zminnucgd), (minnucld,zminnucld), (mixout,zmixout),
+     * (irprox,zirprox),     (n14pg,zn14pg),       (ibwarn,zibwarn),
+     * (ifallbk,zifallbk),   (nzsave,znzsave),     (icutbin,zicutbin),
+     * (ncycr,zncycr),       (nconvers,znconvers), (nwndvers,znwndvers)
+
+c.... form reference arrays for edit ('q') parameters
+
+      dimension iqdum(0:(iratioz*(nqparmz+1)-1))
+      equivalence (qdum(0),iqdum(0))
+
+c.... equivalence integer edit parameters to their floating point
+c.... stand-ins in common whose names have the form: 'z'//(integer-name)
+
+      equivalence (jm,zjm), (ncyc,zncyc),  (iter,ziter)
+      equivalence (idtcon,zidtcon),  (imax,zimax),  (nnet,znnet)
+      equivalence (numit,znumit),  (nreac,znreac),  (itert,zitert)
+      equivalence (jfcr,zjfcr),  (jfct,zjfct),  (jfcl,zjfcl)
+      equivalence (ncycb,zncycb),  (ncycbt,zncycbt),  (nburnz,znburnz)
+      equivalence (nburnzt,znburnzt),  (imaxb,zimaxb),  (nnetb,znnetb)
+      equivalence (numitb,znumitb),  (jlm,zjlm),  (jbmax,zjbmax)
+      equivalence (jpist,zjpist),  (jpistm,zjpistm),  (nye,znye)
+      equivalence (nyem,znyem),  (idmptime,zidmptim),  (nylib,znylib)
+      equivalence (nylib0,znylib0), (ndatq,zndatq),  (locqnext,zlocqnex)
+      equivalence (ndatl,zndatl), (ninvl,zninvl)
+      equivalence (ngbkup,zngbkup), (mncbkup,zmncbkup)
+      equivalence (nacbkup,znacbkup), (isebkup,zisebkup)
+
+c.... equivalence integer arrays to their floating-point stand-ins
+c.... in common whose names have the form: 'z'//(integer-array-name)
+
+      dimension numi(nniz), ionn(nhiz,nniz)
+      dimension numib(nnizb), ionnb(nhizb,nnizb)
+      dimension jrate(nreacz), jdtc(ndtz)
+      dimension locqz(ndatqz), locqz0(ndatqz)
+      dimension ndatzed(nzedz), ncyczed(nzedz)
+      dimension netnum(0:jmz), netnumb(0:jmzb)
+      dimension limab(0:jmzb),limzb(0:jmzb),limcb(0:jmzb)
+
+      equivalence (numi,znumi), (ionn,zionn)
+      equivalence (numib,znumib), (ionnb,zionnb)
+      equivalence (jrate,zjrate), (jdtc,zjdtc)
+      equivalence (locqz,zlocqz), (locqz0,zlocqz0)
+      equivalence (ndatzed,zndatzed), (ncyczed,zncyczed)
+      equivalence (netnum,znetnum), (netnumb,znetnumb)
+      equivalence (limab,zlimab),(limzb,zlimzb)
+      equivalence (limcb,zlimcb), (lowamul,zlowamul)
+      equivalence (ihwamul,zihwamul), (lossrot,zlossrot)
+      
+c.... form integer reference arrays for the post-processing buffer
+c.... note that gridbuf is real*4
+
+      dimension igridbuf(ngridbuf)
+      equivalence (igridbuf,gridbuf)
+
+c.... form reference arrays for zonal variables
+
+      dimension izdum(1), ibdum(1)
+      equivalence (zdum(1),izdum(1))
+      equivalence (bdum(1),ibdum(1))
+
+c.... equivalence ise derivative arrays to approx derivative
+c.... arrays in order to save space
+
+      dimension yp00(jmz), ypbtp(jmz), ypbdp(jmz),
+     1          yn00(jmz), ynbtp(jmz), ynbdp(jmz)
+      equivalence (yp00,snold), (ypbtp,snbt), (ypbdp,snbd)
+      equivalence (yn00,abarold), (ynbtp,abarnbt), (ynbdp,abarnbd)
+
+c.... header contains only intergers.
+c.... for compatibility of big/little endian systems
+      dimension ihdum(1)
+      equivalence (hdum,ihdum)
+
+c.... cdum contains only strings
+c.... for compatibility of big/little endian systems
+      dimension cdum1(1)
+      equivalence (cdum,cdum1)
+
+c.... sdum <-->isdum
+c.... for compatibility of big/little endian systems
+      dimension isdum(1)
+      equivalence (sdum,isdum)
+
+c     endcliche

@@ -214,8 +214,8 @@ contains
              dgtp   => dataptr(delta_gamma1_term(n), i)
              dgp    => dataptr(delta_gamma1(n), i)
 
-             lo = lwb(get_box(state(n), i))
-             hi = upb(get_box(state(n), i))
+             lo(1:dm) = lwb(get_box(state(n), i))
+             hi(1:dm) = upb(get_box(state(n), i))
 
              select case (dm)
              case (1)
@@ -366,7 +366,7 @@ contains
                 
                 delta_gamma1(i,j,k) = eos_state%gam1 - gamma1bar(r)
                 
-                delta_gamma1_term(i,j,k) = (eos_state%gam1 - gamma1bar(r))*u(i,j,k,3)* &
+                delta_gamma1_term(i,j,k) = (eos_state%gam1 - gamma1bar(r))*u(i,j,k,dm)* &
                      gradp0/(gamma1bar(r)*gamma1bar(r)*p0(r))
              else
                 delta_gamma1_term(i,j,k) = ZERO

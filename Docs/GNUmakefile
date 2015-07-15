@@ -15,7 +15,6 @@ eps_source = $(wildcard *.eps) \
              $(wildcard planar_invsq_base/*.eps) \
              $(wildcard pert_notes/*.eps) \
              $(wildcard SDC/*.eps) \
-             $(wildcard test_suite/*.eps) \
              $(wildcard getting_started/*.eps) \
              $(wildcard mg/*.eps)
 
@@ -45,14 +44,13 @@ section_sources = maestro_doc.bib \
                   thermo_notes/thermo_notes.tex \
                   visualization/visualization.tex \
                   SDC/sdc.tex \
-                  test_suite/test_suite.tex \
                   makefiles/makefiles.tex \
                   managing_jobs/managingjobs.tex \
                   mg/mg.tex \
                   MESA/instructions.tex
 
 
-MaestroUsersGuide.pdf: MaestroUsersGuide.tex $(pdf_source) $(section_sources) $(pdf_source)
+MaestroUsersGuide.pdf: MaestroUsersGuide.tex maestrosymbols.tex $(pdf_source) $(section_sources) $(pdf_source)
 	pdflatex MaestroUsersGuide.tex < /dev/null
 	bibtex MaestroUsersGuide
 	pdflatex MaestroUsersGuide.tex < /dev/null

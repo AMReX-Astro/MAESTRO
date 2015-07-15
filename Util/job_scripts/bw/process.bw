@@ -14,8 +14,8 @@
 # user modifiable variables:
 
 # turn on debug print statements
-debug=""      #Off
-#debug="debug"  #On
+#debug=""      #Off
+debug="debug"  #On
 
 # Timing.  N is the number of seconds to sleep before checking for new
 # files to process again.
@@ -37,10 +37,10 @@ dst_ep="ncsa#Nearline"
 
 # note: if your globus username is not the same as your BW username,
 # you'll need to do username@cli.globusonline.org
-go_host="mzingale@cli.globusonline.org"
+go_host="ajacobs@cli.globusonline.org"
 src_dir=`pwd`
 src_base=`basename $src_dir`
-hpss_dir="/projects/sciteam/jni/zingale/$src_base"
+hpss_dir="/projects/sciteam/jni/ajacobs/$src_base"
 
 # Checkpoint archive intervals.  To limit how many checkpoint files we 
 # archive on HPSS, we set chk_fac.  The checkpoint interval, chk_int, 
@@ -172,7 +172,9 @@ function process_files
                        #      source
                        # 3: Copy files if source and destination checksums 
                        #      don't match
-        task_label="Archiving $dir"
+        task_label="Archiving $dir" 
+        #Globus does not allow a "." in labels, so replace them with "-"
+        task_label=${task_label//./-}
         src_dst="$src_ep$src_dir/$dir/ $dst_ep$hpss_dir/plotfiles/$dir/ -r"
         
         # Archive files on the HPSS system

@@ -1,0 +1,12 @@
+processing on hopper:
+
+for i in plt????? plt??????
+> do
+> plotsinglevar.py -m 5.e7 -M 8.e8 --log $i tfromh
+> plotsinglevar.py -m 1.e4 -M 1.e7 --log $i magvel
+> plotsinglevar.py -m 1.e14 -M 1.e19 --log $i enucdot
+> plotsinglevar.py -m -2.e6 -M 2.e6 $i vort
+> plotsinglevar.py -m 1.e-8 -M 1.e-3 --log $i "X(Mg22)"
+> done
+
+

@@ -10,7 +10,7 @@ MAESTRO_TOP_DIR := ../../../..
 
 programs += testburn
 programs += eval
-#programs += testjacobian
+programs += testjacobian
 
 EOS_DIR := helmeos
 CONDUCTIVITY_DIR := constant

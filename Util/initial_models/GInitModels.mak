@@ -15,9 +15,7 @@ BOXLIB_CORE := Src/F_BaseLib
 
 #-----------------------------------------------------------------------------
 # MAESTRO directories needed
-Fmdirs := Microphysics/EOS \
-          Util/VODE \
-          Util/BLAS 
+Fmdirs := Microphysics/EOS 
 
 
 # locations of the microphysics

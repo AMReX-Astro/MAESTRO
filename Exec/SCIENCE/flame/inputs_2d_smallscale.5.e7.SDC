@@ -63,11 +63,10 @@
 
 
  ! boundary conditions
- bcx_lo = -1
- bcx_hi = -1
- bcy_lo = 11
- bcy_hi = 12
-
+ xlo_boundary_type = "periodic"
+ xhi_boundary_type = "periodic"
+ ylo_boundary_type = "inlet"
+ yhi_boundary_type = "outlet"
 
 
  ! verbosity

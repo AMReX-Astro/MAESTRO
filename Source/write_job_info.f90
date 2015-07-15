@@ -17,7 +17,8 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
                                NUM_MODULES, modules, FCOMP, FCOMP_version, &
                                f90_compile_line, f_compile_line, &
                                C_compile_line, link_line, &
-                               source_git_hash, boxlib_git_hash, extra_git_hash, &
+                               source_git_hash, boxlib_git_hash, &
+                               extra_git_hash, extra_git_hash2, &
                                different_build_tree, build_git_hash
   use omp_module
   use network
@@ -99,9 +100,10 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
      write (99,1001) "build dir:     ", trim(build_dir)
      write (99,1001) "BoxLib dir:    ", trim(boxlib_dir)
      write (99,*) " "
-     write (99,1001) "MAESTRO    git hash: ", trim(source_git_hash)
-     write (99,1001) "BoxLib     git hash: ", trim(boxlib_git_hash)
-     write (99,1001) "AstroDev   git hash: ", trim(extra_git_hash)
+     write (99,1001) "MAESTRO      git hash: ", trim(source_git_hash)
+     write (99,1001) "BoxLib       git hash: ", trim(boxlib_git_hash)
+     write (99,1001) "AstroDev     git hash: ", trim(extra_git_hash)
+     write (99,1001) "Microphysics git hash: ", trim(extra_git_hash2)
      if (different_build_tree) then
         write (99,1001) "build tree git hash: ", trim(build_git_hash)     
      endif
