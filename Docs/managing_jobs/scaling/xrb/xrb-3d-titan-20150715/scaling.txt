@@ -1,3 +1,6 @@
+# these #s are for a 384 x 384 x 768 grid with only 1 level of 48^3
+# grids, using all 16 cores per titan node (-j 2)
+
 #        MPI     threads   advection         MAC       nodal   reactions        misc       total
        1024           1   17.292100    3.298460    1.828820   25.316000   16.742900   40.012900
        1024           4    4.086120    1.535530    1.328920    5.790020    4.130520   11.348500
