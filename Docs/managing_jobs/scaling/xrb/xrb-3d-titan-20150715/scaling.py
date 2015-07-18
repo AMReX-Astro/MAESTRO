@@ -38,6 +38,7 @@ def scaling():
     id = np.argmin(cores[idx_768])
     pylab.loglog([cm, cM], t_total[idx_768][id]*cm/np.array([cm, cM]), ":", color="k")
 
+    pylab.text(600, 1.25, "Cray 8.3.9 compilers; 2015-07-15")
     pylab.xlim(512, 131072)
 
     pylab.legend(frameon=False)
