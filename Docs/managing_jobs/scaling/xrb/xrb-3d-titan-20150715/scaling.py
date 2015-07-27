@@ -48,6 +48,8 @@ def scaling():
 
     pylab.title("OLCF Titan Scaling for 3-d XRB")
 
+    pylab.tight_layout()
+
     pylab.savefig("titan_xrb_scaling.png")
 
 
