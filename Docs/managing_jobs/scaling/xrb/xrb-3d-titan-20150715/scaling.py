@@ -51,6 +51,11 @@ def scaling():
     pylab.savefig("titan_xrb_scaling.png")
 
 
+    pylab.loglog(cores[idx_384], t_react[idx_384], "o--", color="0.5", label=r"$384\times 384\times 768$ reactions")
+    pylab.loglog(cores[idx_768], t_react[idx_768], "^--", color="m", label=r"$384\times 384\times 768$ reactions")
+
+    pylab.savefig("titan_xrb_scaling_react.png")
+
 if __name__== "__main__":
     scaling()
 
