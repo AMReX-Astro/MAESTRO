@@ -223,4 +223,109 @@ contains
 
   end subroutine init_plot_variables
 
+
+  subroutine init_miniplot_variables(p)
+
+    use bl_error_module
+    use network, only: nspec
+    use probin_module, only: mini_plot_var1, mini_plot_var2, mini_plot_var3, &
+                             mini_plot_var4, mini_plot_var5, mini_plot_var6, &
+                             mini_plot_var7, mini_plot_var8, mini_plot_var9, &
+                             dm_in, use_tfromp
+
+    integer :: nvar, n
+
+    character (len=256) :: vars(9)
+
+    type(plot_t), intent(inout) :: p
+    
+    nvar = 0
+
+    ! hacky, but we don't want to deal with character array namelist
+    ! variables
+    if (.not. mini_plot_var1 == "") then
+       nvar = nvar + 1
+       vars(nvar) = trim(mini_plot_var1)
+    endif
+
+    if (.not. mini_plot_var1 == "") then
+       nvar = nvar + 1
+       vars(nvar) = trim(mini_plot_var2)
+    endif
+
+    if (.not. mini_plot_var1 == "") then
+       nvar = nvar + 1
+       vars(nvar) = trim(mini_plot_var3)
+    endif
+
+    if (.not. mini_plot_var1 == "") then
+       nvar = nvar + 1
+       vars(nvar) = trim(mini_plot_var4)
+    endif
+
+    if (.not. mini_plot_var1 == "") then
+       nvar = nvar + 1
+       vars(nvar) = trim(mini_plot_var5)
+    endif
+
+    if (.not. mini_plot_var1 == "") then
+       nvar = nvar + 1
+       vars(nvar) = trim(mini_plot_var6)
+    endif
+
+    if (.not. mini_plot_var1 == "") then
+       nvar = nvar + 1
+       vars(nvar) = trim(mini_plot_var7)
+    endif
+
+    if (.not. mini_plot_var1 == "") then
+       nvar = nvar + 1
+       vars(nvar) = trim(mini_plot_var8)
+    endif
+
+    if (.not. mini_plot_var1 == "") then
+       nvar = nvar + 1
+       vars(nvar) = trim(mini_plot_var9)
+    endif
+    
+    do n = 1, nvar
+       select case (vars(n))
+
+       case ("density")
+          p%icomp_rho = p%next_index(1)
+
+       case ("species")
+          p%icomp_spec = p%next_index(nspec)
+
+       case ("radvel")
+          p%icomp_velr = p%next_index(nspec)
+          p%icomp_velc = p%next_index(nspec)
+
+       case ("velocity")
+          p%icomp_vel = p%next_index(dm_in)
+
+       case ("vorticity")
+          p%icomp_vort = p%next_index(1)
+
+       case ("temperature")
+          if (use_tfromp) then
+             p%icomp_tfromp = p%next_index(1)
+          else
+             p%icomp_tfromh = p%next_index(1)
+          endif
+
+       case ("enuc")
+          p%icomp_enuc = p%next_index(1)
+
+       case ("mach")
+          p%icomp_machno = p%next_index(1)
+
+       case default
+          call bl_error("ERROR, plot variable undefined", vars(n))
+       end select
+
+    enddo
+
+  end subroutine init_miniplot_variables
+
 end module variables

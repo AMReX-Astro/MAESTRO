@@ -89,7 +89,7 @@ subroutine varden()
   character(len=6)               :: plot_index6, check_index6
   character(len=7)               :: plot_index7, check_index7
   character(len=256)             :: plot_file_name, check_file_name
-  character(len=20), allocatable :: plot_names(:)
+  character(len=20), allocatable :: plot_names(:), mini_plot_names(:)
   
   integer :: npartdata
   integer, allocatable :: index_partdata(:)
@@ -135,7 +135,7 @@ subroutine varden()
 
   logical :: have_overview
 
-  type(plot_t) :: plt
+  type(plot_t) :: plt, miniplt
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialization
@@ -153,15 +153,23 @@ subroutine varden()
   call init_rotation()
 
   call init_variables()
-  call init_plot_variables(plt)
 
   ! initialize the microphysics modules
   call network_init()
   call eos_init(small_temp=small_temp,small_dens=small_dens)
   call conductivity_init(cond_const=conductivity_constant)
 
+  ! setup the plotfiles
+  call init_plot_variables(plt)
+
   allocate(plot_names(plt%n_plot_comps))
   call get_plot_names(plt, plot_names)
+
+  call init_miniplot_variableS(miniplt)
+
+  allocate(mini_plot_names(miniplt%n_plot_comps))
+  call get_plot_names(miniplt, mini_plot_names)
+
 
   ! particle initialization
   call particle_setverbose(.true.)
