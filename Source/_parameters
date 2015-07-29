@@ -322,6 +322,17 @@ plot_processors                     logical            .false.
 plot_pidivu                         logical            .false.
 
 
+mini_plot_var1                      character          ""
+mini_plot_var2                      character          ""
+mini_plot_var3                      character          ""
+mini_plot_var4                      character          ""
+mini_plot_var5                      character          ""
+mini_plot_var6                      character          ""
+mini_plot_var7                      character          ""
+mini_plot_var8                      character          ""
+mini_plot_var9                      character          ""
+
+
 #-----------------------------------------------------------------------------
 # category: algorithm initialization
 #-----------------------------------------------------------------------------
