@@ -12,7 +12,7 @@ module make_plotfile_module
 
 contains
 
-  subroutine get_plot_names(plot_names, p)
+  subroutine get_plot_names(p, plot_names)
 
     use plot_variables_module
     use variables
