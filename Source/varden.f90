@@ -135,6 +135,8 @@ subroutine varden()
 
   logical :: have_overview
 
+  type(plot_t) :: plt
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialization
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -151,15 +153,15 @@ subroutine varden()
   call init_rotation()
 
   call init_variables()
-  call init_plot_variables()
+  call init_plot_variables(plt)
 
   ! initialize the microphysics modules
   call network_init()
   call eos_init(small_temp=small_temp,small_dens=small_dens)
   call conductivity_init(cond_const=conductivity_constant)
 
-  allocate(plot_names(n_plot_comps))
-  call get_plot_names(plot_names)
+  allocate(plot_names(plt%n_plot_comps))
+  call get_plot_names(plt, plot_names)
 
   ! particle initialization
   call particle_setverbose(.true.)
@@ -495,7 +497,7 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index7
         endif
 
-        call make_plotfile(plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
+        call make_plotfile(plt,plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
                            rho_Hnuc2,rho_Hext, &
                            thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
@@ -666,7 +668,7 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index7
         endif
 
-        call make_plotfile(plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
+        call make_plotfile(plt,plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
                            rho_Hnuc2,rho_Hext, &
                            thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
@@ -1378,7 +1380,7 @@ subroutine varden()
                  plot_file_name = trim(plot_base_name) // plot_index7
               endif
 
-              call make_plotfile(plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
+              call make_plotfile(plt,plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
                                  rho_Hnuc2,rho_Hext, &
                                  thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
                                  the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
@@ -1484,7 +1486,7 @@ subroutine varden()
            plot_file_name = trim(plot_base_name) // plot_index7
         endif
 
-        call make_plotfile(plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
+        call make_plotfile(plt,plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
                            rho_Hnuc2,rho_Hext, &
                            thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
                            the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &

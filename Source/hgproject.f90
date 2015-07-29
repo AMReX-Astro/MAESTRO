@@ -892,15 +892,6 @@ contains
 
       end if
 
-      do j = lo(2),hi(2)
-      do i = lo(1),hi(1)
-          if (j.eq.63 .and. (i.eq.31 .or. i.eq.32)) then
-!            print *,'NEW U    AT ',i, unew(i,j,1), unew(i,j,2)
-             print *,'NEW GPHI AT ',i, gphi(i,j,1), gphi(i,j,2)
-          end if
-      end do
-      end do
-
     end subroutine hg_update_2d
 
     !   ******************************************************************************* !

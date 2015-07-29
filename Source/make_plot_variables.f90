@@ -708,180 +708,94 @@ contains
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: tp(:,:,:,:)
-    integer :: lo(get_dim(plotdata)),hi(get_dim(plotdata)),ng_s,ng_p
+    integer :: lo(3), hi(3)
     integer :: i,dm
 
     dm = get_dim(plotdata)
 
-    ng_s = nghost(state)
-    ng_p = nghost(plotdata)
+    lo(:) = 1; hi(:) = 1
 
     do i = 1, nfabs(state)
        sp => dataptr(state, i)
        tp => dataptr(plotdata, i)
-       lo =  lwb(get_box(state, i))
-       hi =  upb(get_box(state, i))
-       select case (dm)
-       case (1)
-          call make_tfromH_1d(tp(:,1,1,comp_t),tp(:,1,1,comp_tpert), &
-                              tp(:,1,1,comp_dp),ng_p,sp(:,1,1,:),ng_s, &
-                              lo,hi,p0,tempbar)
-       case (2)
-          call make_tfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_tpert), &
-                              tp(:,:,1,comp_dp),ng_p,sp(:,:,1,:),ng_s, &
-                              lo,hi,p0,tempbar)
-       case (3)
-          if (spherical .eq. 1) then
-             call make_tfromH_3d_sphr(tp(:,:,:,comp_t),tp(:,:,:,comp_tpert), &
-                                      tp(:,:,:,comp_dp),ng_p, &
-                                      sp(:,:,:,:),ng_s,lo,hi,p0,tempbar,dx)
-          else
-             call make_tfromH_3d_cart(tp(:,:,:,comp_t),tp(:,:,:,comp_tpert), &
-                                      tp(:,:,:,comp_dp),ng_p, &
-                                      sp(:,:,:,:),ng_s,lo,hi,p0,tempbar)
-          end if
-       end select
+       lo(1:dm) =  lwb(get_box(state, i))
+       hi(1:dm) =  upb(get_box(state, i))
+
+       if (spherical .eq. 1) then
+          call make_tfromH_3d_sphr(tp, lbound(tp), ubound(tp), &
+                                   comp_t, comp_tpert, comp_dp, &
+                                   sp, lbound(sp), ubound(sp), &
+                                   lo,hi,p0,tempbar,dx)
+       else
+          call make_tfromH_cart(tp, lbound(tp), ubound(tp), &
+                                comp_t, comp_tpert, comp_dp, &
+                                sp, lbound(sp), ubound(sp), &
+                                dm,lo,hi,p0,tempbar)
+       end if
     end do
 
   end subroutine make_tfromH
 
-  subroutine make_tfromH_1d(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
-
-    use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
-    use eos_module, only: eos_input_rh, eos
-    use eos_type_module
-    use network, only: nspec
-    use bl_constants_module
-
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
-    real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:)
-    real (kind = dp_t), intent(  out) ::  tpert(lo(1)-ng_p:)
-    real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:)
-    real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) ::  p0(0:),tempbar(0:)
-
-    ! Local variables
-    integer :: i
-
-    type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
-
-    do i = lo(1), hi(1)
-
-       ! (rho, H) --> T, p
-       eos_state%rho   = state(i,rho_comp)
-       eos_state%p     = p0(i)
-       eos_state%T     = state(i,temp_comp)
-       eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
-       eos_state%h     = state(i,rhoh_comp) / state(i,rho_comp)
-
-       pt_index(:) = (/i, -1, -1/)       
-
-       call eos(eos_input_rh, eos_state, .false., pt_index)
-
-       T(i) = eos_state%T
-       if (.not. use_tfromp) tpert(i) = eos_state%T - tempbar(i)
-
-       deltaP(i) = abs(eos_state%p - p0(i))/ p0(i)
-
-    enddo
-
-  end subroutine make_tfromH_1d
-
-  subroutine make_tfromH_2d(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
-
-    use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
-    use eos_module, only: eos_input_rh, eos
-    use eos_type_module
-    use network, only: nspec
-    use bl_constants_module
-
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
-    real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:,lo(2)-ng_p:)  
-    real (kind = dp_t), intent(  out) ::  tpert(lo(1)-ng_p:,lo(2)-ng_p:)  
-    real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:,lo(2)-ng_p:)  
-    real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) ::  p0(0:),tempbar(0:)
-
-    ! Local variables
-    integer :: i, j
-
-    type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
-
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-
-          ! (rho, H) --> T, p
-          eos_state%rho   = state(i,j,rho_comp)
-          eos_state%p     = p0(j)
-          eos_state%T     = state(i,j,temp_comp)
-          eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
-          eos_state%h     = state(i,j,rhoh_comp) / state(i,j,rho_comp)
-
-          pt_index(:) = (/i, j, -1/)
-
-          call eos(eos_input_rh, eos_state, .false., pt_index)
-
-          T(i,j) = eos_state%T
-          if (.not. use_tfromp) tpert(i,j) = eos_state%T - tempbar(j)
-
-          deltaP(i,j) = abs(eos_state%p - p0(j))/ p0(j)
-
-       enddo
-    enddo
-
-  end subroutine make_tfromH_2d
-
-  subroutine make_tfromH_3d_cart(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
+  subroutine make_tfromH_cart(pdata,dlo,dhi, &
+                              it,itpert,ideltaP, &
+                              state,slo,shi, &
+                              dm,lo,hi,p0,tempbar)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module, only: eos_input_rh, eos
     use eos_type_module
     use network, only: nspec
 
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
-    real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind = dp_t), intent(  out) ::  tpert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    integer, intent(in) :: lo(:), hi(:), dlo(4), dhi(4), slo(4), shi(4), dm
+    integer, intent(in) :: it, itpert,ideltaP
+    real (kind = dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
+    real (kind = dp_t), intent(in   ) :: state(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
     real (kind = dp_t), intent(in   ) :: p0(0:),tempbar(0:)
 
     ! Local variables
-    integer :: i, j, k
+    integer :: i, j, k, r
 
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,r,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
+             select case (dm)
+             case (1)
+                r = i
+             case (2)
+                r = j
+             case (3)
+                r = k
+             end select
+
              ! (rho, H) --> T, p
              eos_state%rho   = state(i,j,k,rho_comp)
-             eos_state%p     = p0(k)
+             eos_state%p     = p0(r)
              eos_state%T     = state(i,j,k,temp_comp)
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
              eos_state%h     = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
 
-             pt_index(:) = (/i, j, k/)
+             call eos(eos_input_rh, eos_state, .false.)
 
-             call eos(eos_input_rh, eos_state, .false., pt_index)
+             if (it > 0) pdata(i,j,k,iT) = eos_state%T
+             if (.not. use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar(r)
 
-             T(i,j,k) = eos_state%T
-             if (.not. use_tfromp) tpert(i,j,k) = eos_state%T - tempbar(k)
-
-             deltaP(i,j,k) = (eos_state%p - p0(k))/ p0(k)
+             if (ideltaP > 0) pdata(i,j,k,ideltaP) = (eos_state%p - p0(r))/ p0(r)
 
           enddo
        enddo
     enddo
     !$OMP END PARALLEL DO    
 
-  end subroutine make_tfromH_3d_cart
+  end subroutine make_tfromH_cart
 
-  subroutine make_tfromH_3d_sphr(T,tpert,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar,dx)
+  subroutine make_tfromH_3d_sphr(pdata,dlo,dhi, &
+                                 iT,itpert,ideltaP, &
+                                 state,slo,shi, &
+                                 lo,hi,p0,tempbar,dx)
 
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use eos_module, only: eos_input_rh, eos
@@ -889,11 +803,10 @@ contains
     use network, only: nspec
     use fill_3d_module
 
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
-    real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind = dp_t), intent(  out) ::  tpert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    integer, intent(in) :: lo(:), hi(:), dlo(4), dhi(4), slo(4), shi(4)
+    integer, intent(in) :: it, itpert,ideltaP
+    real (kind = dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
+    real (kind = dp_t), intent(in   ) :: state(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
     real (kind = dp_t), intent(in   ) :: p0(0:),tempbar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
 
@@ -903,7 +816,6 @@ contains
     real (kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
 
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     allocate(  tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
@@ -921,15 +833,13 @@ contains
              eos_state%T     = state(i,j,k,temp_comp)
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index(:) = (/i, j, k/)
-
              ! (rho, H) --> T, p
-             call eos(eos_input_rh, eos_state, .false., pt_index)
+             call eos(eos_input_rh, eos_state, .false.)
 
-             T(i,j,k) = eos_state%T
-             if (.not. use_tfromp) tpert(i,j,k) = eos_state%T - tempbar_cart(i,j,k,1)
+             if (iT > 0) pdata(i,j,k,iT) = eos_state%T
+             if (.not. use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar_cart(i,j,k,1)
              
-             deltaP(i,j,k) = (eos_state%p - p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
+             if(ideltaP > 0) pdata(i,j,k,ideltaP) = (eos_state%p - p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
 
           enddo
        enddo
@@ -960,263 +870,125 @@ contains
     real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:)
-    integer :: lo(get_dim(plotdata)),hi(get_dim(plotdata)),i
-    integer :: ng_p,ng_s,dm
+    integer :: lo(3), hi(3), i
+    integer :: dm
 
     dm = get_dim(plotdata)
 
-    ng_p = nghost(plotdata)
-    ng_s = nghost(s)
+    lo(:) = 1; hi(:) = 1
 
     do i = 1, nfabs(s)
        tp => dataptr(plotdata, i)
        sp => dataptr(s, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
-       select case (dm)
-       case (1)
-          call make_tfromp_1d(tp(:,1,1,comp_tfromp  ),tp(:,1,1,comp_tpert), &
-                              tp(:,1,1,comp_machno  ), tp(:,1,1,comp_cs  ), &
-                              tp(:,1,1,comp_deltag), &
-                              tp(:,1,1,comp_entropy ),tp(:,1,1,comp_magvel), &
-                              ng_p, &
-                              sp(:,1,1,:), ng_s, &
-                              lo, hi, tempbar, gamma1bar, p0)
-       case (2)
-          call make_tfromp_2d(tp(:,:,1,comp_tfromp),tp(:,:,1,comp_tpert), &
-                              tp(:,:,1,comp_machno  ), tp(:,:,1,comp_cs), &
-                              tp(:,:,1,comp_deltag), &
-                              tp(:,:,1,comp_entropy ),tp(:,:,1,comp_magvel), &
-                              ng_p, &
-                              sp(:,:,1,:), ng_s, &
-                              lo, hi, tempbar, gamma1bar, p0)
-       case (3)
-          if (spherical .eq. 1) then
-             call make_tfromp_3d_sphr(tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
-                                      tp(:,:,:,comp_machno  ), tp(:,:,:,comp_cs), &
-                                      tp(:,:,:,comp_deltag), &
-                                      tp(:,:,:,comp_entropy ),tp(:,:,:,comp_magvel), &
-                                      ng_p, &
-                                      sp(:,:,:,:), ng_s, &
-                                      lo, hi, tempbar, gamma1bar, p0, dx)
-          else
-             call make_tfromp_3d_cart(tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
-                                      tp(:,:,:,comp_machno  ), tp(:,:,:,comp_cs), &
-                                      tp(:,:,:,comp_deltag), &
-                                      tp(:,:,:,comp_entropy ),tp(:,:,:,comp_magvel), &
-                                      ng_p, &
-                                      sp(:,:,:,:), ng_s, &
-                                      lo, hi, tempbar, gamma1bar, p0)
-          endif
-       end select
+       lo(1:dm) =  lwb(get_box(s, i))
+       hi(1:dm) =  upb(get_box(s, i))
+  
+       if (spherical .eq. 1) then
+          call make_tfromp_3d_sphr(tp, lbound(tp), ubound(tp), &
+                                   comp_tfromp, comp_tpert, &
+                                   comp_machno, comp_cs, comp_deltag, &
+                                   comp_entropy, comp_magvel, &
+                                   sp, lbound(sp), ubound(sp), &
+                                   lo, hi, tempbar, gamma1bar, p0, dx)
+       else
+          call make_tfromp_cart(tp, lbound(tp), ubound(tp), &
+                                comp_tfromp, comp_tpert, &
+                                comp_machno, comp_cs, comp_deltag, &
+                                comp_entropy, comp_magvel, &
+                                sp, lbound(sp), ubound(sp), &
+                                dm, lo, hi, tempbar, gamma1bar, p0)
+       endif
     end do
 
   end subroutine make_tfromp
 
-  subroutine make_tfromp_1d(t,tpert,machno,cs,deltagamma,entropy,magvel, &
-                            ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0)
-
-    use eos_module, only: eos_input_rp, eos
-    use eos_type_module
-    use network, only: nspec
-    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
-    use probin_module, only: plot_cs, use_pprime_in_tfromp
-
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
-    real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::         cs(lo(1)-ng_p:)  
-    real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:)  
-    real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:)
-    real (kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s:,:)
-    real (kind=dp_t), intent(in   ) :: tempbar(0:)
-    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) :: p0(0:)
-
-    !     Local variables
-    integer          :: i
-
-    type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
-
-    ! Then compute the perturbation
-    do i = lo(1), hi(1)
-
-       eos_state%rho   = s(i,rho_comp)
-       eos_state%T     = s(i,temp_comp)
-       if (use_pprime_in_tfromp) then
-          eos_state%p     = p0(i) + s(i,pi_comp)
-       else
-          eos_state%p     = p0(i)
-       endif
-       eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
-
-       pt_index(:) = (/i, -1, -1/)
-
-       ! (rho,P) --> T,h
-       call eos(eos_input_rp, eos_state, .false., pt_index)
-
-       t(i) = eos_state%T
-       if (use_tfromp) tpert(i) = eos_state%T - tempbar(i)
-
-       if (plot_cs) cs(i) = eos_state%cs
-
-       machno(i) = magvel(i) / eos_state%cs
-       deltagamma(i) = eos_state%gam1 - gamma1bar(i)
-
-       entropy(i) = eos_state%s
-    enddo
-
-  end subroutine make_tfromp_1d
-
-  subroutine make_tfromp_2d(t,tpert,machno,cs,deltagamma,entropy,magvel, &
-                            ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0)
-
-    use eos_module, only: eos_input_rp, eos
-    use eos_type_module
-    use network, only: nspec
-    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
-    use probin_module, only: plot_cs, use_pprime_in_tfromp
-
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
-    real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:,lo(2)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:,lo(2)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::         cs(lo(1)-ng_p:,lo(2)-ng_p:)  
-    real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:,lo(2)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:,lo(2)-ng_p:)  
-    real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:,lo(2)-ng_p:)
-    real (kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real (kind=dp_t), intent(in   ) :: tempbar(0:)
-    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) :: p0(0:)
-
-    !     Local variables
-    integer          :: i, j
-
-    type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
-
-    ! Then compute the perturbation
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-
-          eos_state%rho   = s(i,j,rho_comp)
-          eos_state%T     = s(i,j,temp_comp)
-          if (use_pprime_in_tfromp) then
-             eos_state%p     = p0(j) + s(i,j,pi_comp)
-          else
-             eos_state%p     = p0(j)
-          endif
-          eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
-
-          pt_index(:) = (/i, j, -1/)
-
-          ! (rho,P) --> T,h
-          call eos(eos_input_rp, eos_state, .false., pt_index)
-
-          t(i,j) = eos_state%T
-          if (use_tfromp) tpert(i,j) = eos_state%T - tempbar(j)
-
-          if (plot_cs) cs(i,j) = eos_state%cs
-
-          machno(i,j) = magvel(i,j) / eos_state%cs
-
-          deltagamma(i,j) = eos_state%gam1 - gamma1bar(j)
-
-          entropy(i,j) = eos_state%s
-       enddo
-    enddo
-
-  end subroutine make_tfromp_2d
-
-  subroutine make_tfromp_3d_cart(t,tpert,machno,cs,deltagamma,entropy,magvel, &
-                                 ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0)
-
+  subroutine make_tfromp_cart(pdata, dlo, dhi, &
+                              it,itpert,imachno,ics,ideltagamma,ientropy,imagvel, &
+                              s, slo, shi, &
+                              dm,lo,hi,tempbar,gamma1bar,p0)
+    
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module, only: eos_input_rp, eos
     use eos_type_module
     use network, only: nspec
-    use probin_module, only: plot_cs, use_pprime_in_tfromp
+    use probin_module, only: use_pprime_in_tfromp
 
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
-    real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::         cs(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
-    real (kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    integer, intent(in) :: lo(:), hi(:), dlo(4), dhi(4), slo(4), shi(4), dm
+    integer, intent(in) :: it,itpert,imachno,ics,ideltagamma,ientropy,imagvel
+
+    real (kind=dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
+    real (kind=dp_t), intent(in   ) :: s(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
     ! Local variables
-    integer          :: i, j, k
+    integer          :: i, j, k, r
 
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
-    ! Then compute the perturbation and Mach number
-
-    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,r,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
+             select case (dm)
+             case (1)
+                r = i
+             case (2)
+                r = j
+             case (3)
+                r = k
+             end select
+
              eos_state%rho   = s(i,j,k,rho_comp)
              eos_state%T     = s(i,j,k,temp_comp)
              if (use_pprime_in_tfromp) then
-                eos_state%p     = p0(k) + s(i,j,k,pi_comp)
+                eos_state%p     = p0(r) + s(i,j,k,pi_comp)
              else
-                eos_state%p     = p0(k)
+                eos_state%p     = p0(r)
              endif
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index(:) = (/i, j, k/)
-
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state, .false.)
 
-             t(i,j,k) = eos_state%T
-             if (use_tfromp) tpert(i,j,k) = eos_state%T - tempbar(k)
+             if (it > 0) pdata(i,j,k,it) = eos_state%T
+             if (use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar(r)
 
-             if (plot_cs) cs(i,j,k) = eos_state%cs
+             if (ics > 0) pdata(i,j,k,ics) = eos_state%cs
 
-             machno(i,j,k) = magvel(i,j,k) / eos_state%cs
+             if (imachno > 0 .and. imagvel > 0) then
+                pdata(i,j,k,imachno) = pdata(i,j,k,imagvel) / eos_state%cs
+             endif
 
-             deltagamma(i,j,k) = eos_state%gam1 - gamma1bar(k)
+             if (ideltagamma > 0) pdata(i,j,k,ideltagamma) = eos_state%gam1 - gamma1bar(r)
 
-             entropy(i,j,k) = eos_state%s
+             if (ientropy > 0) pdata(i,j,k,ientropy) = eos_state%s
           enddo
        enddo
     enddo
     !$OMP END PARALLEL DO
 
-  end subroutine make_tfromp_3d_cart
+  end subroutine make_tfromp_cart
 
-  subroutine make_tfromp_3d_sphr(t,tpert,machno,cs,deltagamma,entropy,magvel, &
-                                 ng_p,s,ng_s,lo,hi,tempbar,gamma1bar,p0,dx)
+  subroutine make_tfromp_3d_sphr(pdata,dlo,dhi, &
+                                 it,itpert,imachno,ics,ideltagamma,ientropy,imagvel, &
+                                 s,slo,shi, &
+                                 lo,hi,tempbar,gamma1bar,p0,dx)
 
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module, only: eos_input_rp, eos
     use eos_type_module
     use network, only: nspec
     use fill_3d_module
-    use probin_module, only: plot_cs, use_pprime_in_tfromp
+    use probin_module, only: use_pprime_in_tfromp
 
-    integer         , intent(in   ) :: lo(:),hi(:),ng_p,ng_s
-    real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::     machno(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::         cs(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(  out) :: deltagamma(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(  out) ::    entropy(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
-    real (kind=dp_t), intent(in   ) ::     magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
-    real (kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    integer         , intent(in   ) :: lo(:),hi(:), dlo(4), dhi(4), slo(4), shi(4)
+    integer, intent(in) :: it,itpert,imachno,ics,ideltagamma,ientropy,imagvel
+
+    real (kind=dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
+    real (kind=dp_t), intent(in   ) :: s(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
@@ -1226,8 +998,6 @@ contains
     integer          :: i, j, k
 
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
-
 
     real (kind=dp_t), allocatable ::   tempbar_cart(:,:,:,:)
     real (kind=dp_t), allocatable ::        p0_cart(:,:,:,:)
@@ -1241,7 +1011,7 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,gamma1bar,gamma1bar_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1256,21 +1026,19 @@ contains
              endif
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index(:) = (/i, j, k/)
-
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state, .false.)
 
-             t(i,j,k) = eos_state%T
-             if (use_tfromp) tpert(i,j,k) = eos_state%T - tempbar_cart(i,j,k,1)
+             if (it > 0) pdata(i,j,k,it) = eos_state%T
+             if (use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar_cart(i,j,k,1)
 
-             if (plot_cs) cs(i,j,k) = eos_state%cs
+             if (ics > 0) pdata(i,j,k,ics) = eos_state%cs
 
-             machno(i,j,k) = magvel(i,j,k) / eos_state%cs
+             if (imachno > 0 .and. imagvel > 0) pdata(i,j,k,imachno) = pdata(i,j,k,imagvel) / eos_state%cs
 
-             deltagamma(i,j,k) = eos_state%gam1 - gamma1bar_cart(i,j,k,1)
+             if (ideltagamma > 0) pdata(i,j,k,ideltagamma) = eos_state%gam1 - gamma1bar_cart(i,j,k,1)
 
-             entropy(i,j,k) = eos_state%s
+             if (ientropy > 0) pdata(i,j,k,ientropy) = eos_state%s
           enddo
        enddo
     enddo
@@ -2628,10 +2396,10 @@ contains
        hi =  upb(get_box(u, i))
        select case (dm)
        case (1)
-          call makemagvel_1d(pp(:,1,1,comp_magvel),pp(:,1,1,comp_mom),ng_p, &
+          call makemagvel_1d(pp(:,1,1,:), comp_magvel, comp_mom, ng_p, &
                              sp(:,1,1,rho_comp),ng_s,up(:,1,1,1),ng_u,w0,lo,hi)
        case (2)
-          call makemagvel_2d(pp(:,:,1,comp_magvel),pp(:,:,1,comp_mom),ng_p, &
+          call makemagvel_2d(pp(:,:,1,:), comp_magvel, comp_mom, ng_p, &
                              sp(:,:,1,rho_comp),ng_s,up(:,:,1,:),ng_u,w0,lo,hi)
        case (3)
           if (spherical .eq. 1) then
@@ -2639,11 +2407,11 @@ contains
              wyp => dataptr(w0mac(2), i)
              wzp => dataptr(w0mac(3), i)
              ng_w = nghost(w0mac(1))
-             call makemagvel_3d_sphr(pp(:,:,:,comp_magvel),pp(:,:,:,comp_mom),ng_p, &
+             call makemagvel_3d_sphr(pp(:,:,:,:), comp_magvel, comp_mom, ng_p, &
                                      sp(:,:,:,rho_comp),ng_s,up(:,:,:,:),ng_u, &
                                      wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w,lo,hi)
           else
-             call makemagvel_3d_cart(pp(:,:,:,comp_magvel),pp(:,:,:,comp_mom),ng_p, &
+             call makemagvel_3d_cart(pp(:,:,:,:), comp_magvel, comp_mom, ng_p, &
                                      sp(:,:,:,rho_comp),ng_s,up(:,:,:,:),ng_u,w0,lo,hi)
           end if
        end select
@@ -2651,11 +2419,11 @@ contains
 
   end subroutine make_magvel
 
-  subroutine makemagvel_1d(magvel,mom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
+  subroutine makemagvel_1d(pdata, imagvel, imom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
-    real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:)
-    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:)
+    integer           , intent(in   ) :: imagvel, imom
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,:)
     real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:)
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:)
     real (kind = dp_t), intent(in   ) :: w0(0:)
@@ -2667,17 +2435,17 @@ contains
     ! Recall w0 is edge-centered
     do i = lo(1), hi(1)
        w0_cent = 0.5d0 * (w0(i) + w0(i+1))
-       magvel(i) = abs(u(i)+w0_cent)
-       mom(i) = rho(i)*magvel(i)
+       pdata(i,imagvel) = abs(u(i)+w0_cent)
+       pdata(i,imom) = rho(i)*pdata(i,imagvel)
     enddo
 
   end subroutine makemagvel_1d
 
-  subroutine makemagvel_2d(magvel,mom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
+  subroutine makemagvel_2d(pdata,imagvel,imom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
-    real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:,lo(2)-ng_p:)
-    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:,lo(2)-ng_p:)
+    integer           , intent(in   ) :: imagvel, imom
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,lo(2)-ng_p:,:)
     real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:)  
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)  
     real (kind = dp_t), intent(in   ) :: w0(0:)
@@ -2690,18 +2458,18 @@ contains
     do j = lo(2), hi(2)
        w0_cent = 0.5d0 * (w0(j) + w0(j+1))
        do i = lo(1), hi(1)
-          magvel(i,j) = sqrt( u(i,j,1)**2 + (u(i,j,2)+w0_cent)**2 )
-          mom(i,j) = rho(i,j)*magvel(i,j)
+          pdata(i,j,imagvel) = sqrt( u(i,j,1)**2 + (u(i,j,2)+w0_cent)**2 )
+          pdata(i,j,imom) = rho(i,j)*pdata(i,j,imagvel)
        enddo
     enddo
 
   end subroutine makemagvel_2d
 
-  subroutine makemagvel_3d_cart(magvel,mom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
+  subroutine makemagvel_3d_cart(pdata,imagvel,imom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
-    real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
-    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    integer           , intent(in   ) :: imagvel, imom
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:,:)
     real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:) 
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:) 
     real (kind = dp_t), intent(in   ) :: w0(0:)
@@ -2717,8 +2485,8 @@ contains
        w0_cent = 0.5d0 * (w0(k) + w0(k+1))
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             magvel(i,j,k) = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + (u(i,j,k,3)+w0_cent)**2)
-             mom(i,j,k) = rho(i,j,k)*magvel(i,j,k)
+             pdata(i,j,k,imagvel) = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + (u(i,j,k,3)+w0_cent)**2)
+             pdata(i,j,k,imom) = rho(i,j,k)*pdata(i,j,k,imagvel)
           enddo
        enddo
     enddo
@@ -2726,15 +2494,15 @@ contains
 
   end subroutine makemagvel_3d_cart
 
-  subroutine makemagvel_3d_sphr(magvel,mom,ng_p,rho,ng_s,u,ng_u, &
+  subroutine makemagvel_3d_sphr(pdata,imagvel,imom,ng_p,rho,ng_s,u,ng_u, &
                                 w0macx,w0macy,w0macz,ng_w,lo,hi)
 
 
     use bl_constants_module
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_w, ng_s
-    real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
-    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    integer           , intent(in   ) :: imagvel, imom
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:,:)
     real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:) 
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:) 
     real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
@@ -2748,10 +2516,10 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             magvel(i,j,k) = sqrt( (u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))**2 + &
-                                   (u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))**2 + &
-                                   (u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))**2)
-             mom(i,j,k) = rho(i,j,k)*magvel(i,j,k)
+             pdata(i,j,k,imagvel) = sqrt( (u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))**2 + &
+                                         (u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))**2 + &
+                                         (u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))**2)
+             pdata(i,j,k,imom) = rho(i,j,k)*pdata(i,j,k,imagvel)
           enddo
        enddo
     enddo
@@ -2803,18 +2571,19 @@ contains
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
 
-       call makevelrc_3d_sphr(pp(:,:,:,comp_velr),pp(:,:,:,comp_velc),&
+       call makevelrc_3d_sphr(pp(:,:,:,:), comp_velr, comp_velc,&
                               ng_p,up(:,:,:,:),ng_u, &
                               w0rp(:,:,:,1),ng_w,nop(:,:,:,:),ng_n,lo,hi)
     end do
 
   end subroutine make_velrc
 
-  subroutine makevelrc_3d_sphr(velr,velc,ng_p,u,ng_u,w0r,ng_w,normal,ng_n,lo,hi)
+  subroutine makevelrc_3d_sphr(pdata,ivelr,ivelc,ng_p, &
+                               u,ng_u,w0r,ng_w,normal,ng_n,lo,hi)
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, ng_w
-    real (kind = dp_t), intent(  out) ::   velr(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
-    real (kind = dp_t), intent(  out) ::   velc(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    integer           , intent(in   ) :: ivelr, ivelc
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:,:)
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
     real (kind = dp_t), intent(in   ) ::    w0r(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
     real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)  
@@ -2823,28 +2592,40 @@ contains
     integer :: i, j, k
 
     !$OMP PARALLEL DO PRIVATE(i,j,k)
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             velr(i,j,k) = u(i,j,k,1)*normal(i,j,k,1) + &
-                           u(i,j,k,2)*normal(i,j,k,2) + &
-                           u(i,j,k,3)*normal(i,j,k,3) 
+    if (ivelr > 0) then
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                pdata(i,j,k,ivelr) = u(i,j,k,1)*normal(i,j,k,1) + &
+                                    u(i,j,k,2)*normal(i,j,k,2) + &
+                                    u(i,j,k,3)*normal(i,j,k,3) 
 
-             velc(i,j,k) = (u(i,j,k,1)-velr(i,j,k)*normal(i,j,k,1)) * &
-                           (u(i,j,k,1)-velr(i,j,k)*normal(i,j,k,1))
-             velc(i,j,k) = velc(i,j,k) + &
-                           (u(i,j,k,2)-velr(i,j,k)*normal(i,j,k,2)) * &
-                           (u(i,j,k,2)-velr(i,j,k)*normal(i,j,k,2))
-             velc(i,j,k) = velc(i,j,k) + &
-                           (u(i,j,k,3)-velr(i,j,k)*normal(i,j,k,3)) * &
-                           (u(i,j,k,3)-velr(i,j,k)*normal(i,j,k,3))
-             velc(i,j,k) = sqrt(velc(i,j,k))
-
-             velr(i,j,k) = velr(i,j,k) + w0r(i,j,k)
+                pdata(i,j,k,ivelr) = pdata(i,j,k,ivelr) + w0r(i,j,k)
+             enddo
           enddo
        enddo
-    enddo
-    !$OMP END PARALLEL DO
+       !$OMP END PARALLEL DO
+    endif
+
+    if (ivelc > 0) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                pdata(i,j,k,ivelc) = (u(i,j,k,1)-pdata(i,j,k,ivelr)*normal(i,j,k,1)) * &
+                                     (u(i,j,k,1)-pdata(i,j,k,ivelr)*normal(i,j,k,1))
+                pdata(i,j,k,ivelc) = pdata(i,j,k,ivelc) + &
+                              (u(i,j,k,2)-pdata(i,j,k,ivelr)*normal(i,j,k,2)) * &
+                              (u(i,j,k,2)-pdata(i,j,k,ivelr)*normal(i,j,k,2))
+                pdata(i,j,k,ivelc) = pdata(i,j,k,ivelc) + &
+                              (u(i,j,k,3)-pdata(i,j,k,ivelr)*normal(i,j,k,3)) * &
+                              (u(i,j,k,3)-pdata(i,j,k,ivelr)*normal(i,j,k,3))
+                pdata(i,j,k,ivelc) = sqrt(pdata(i,j,k,ivelc))
+             enddo
+          enddo
+       enddo
+       !$OMP END PARALLEL DO
+    endif
 
   end subroutine makevelrc_3d_sphr
 
