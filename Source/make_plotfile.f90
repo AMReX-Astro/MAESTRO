@@ -12,7 +12,7 @@ module make_plotfile_module
 
 contains
 
-  subroutine get_plot_names(plot_names)
+  subroutine get_plot_names(plot_names, p)
 
     use plot_variables_module
     use variables
@@ -25,132 +25,112 @@ contains
                              plot_processors, plot_pidivu
     use geometry, only: spherical
 
+    type(plot_t), intent(in) :: p
     character(len=20), intent(inout) :: plot_names(:)
 
     ! Local variables
     integer :: comp
 
-    plot_names(icomp_vel  ) = "x_vel"
-    if (dm_in > 1) then
-       plot_names(icomp_vel+1) = "y_vel"
-    end if
-    if (dm_in > 2) then
-       plot_names(icomp_vel+2) = "z_vel"
-    end if
-    plot_names(icomp_rho)  = "density"
+    if (p%icomp_vel > 0) then
+       plot_names(p%icomp_vel  ) = "x_vel"
+       if (dm_in > 1) then
+          plot_names(p%icomp_vel+1) = "y_vel"
+       end if
+       if (dm_in > 2) then
+          plot_names(p%icomp_vel+2) = "z_vel"
+       end if
+    endif
 
-    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
-       plot_names(icomp_rhoh) = "rhoh"
-       plot_names(icomp_h)    = "h"
-    end if
+    if (p%icomp_rho > 0) plot_names(p%icomp_rho)  = "density"
+    if (p%icomp_rhoh > 0) plot_names(p%icomp_rhoh) = "rhoh"
+    if (p%icomp_h > 0) plot_names(p%icomp_h)    = "h"
 
-    if (plot_spec) then
+    if (p%icomp_spec > 0) then
        do comp = 1, nspec
-          plot_names(icomp_spec+comp-1) = "X(" // trim(short_spec_names(comp)) // ")"
+          plot_names(p%icomp_spec+comp-1) = "X(" // trim(short_spec_names(comp)) // ")"
        end do
     end if
 
-    if (plot_trac) then
+    if (p%icomp_trac > 0) then
        do comp = 1, ntrac
-          plot_names(icomp_trac+comp-1) = "tracer"
+          plot_names(p%icomp_trac+comp-1) = "tracer"
        end do
     end if
 
-    if (plot_base) then
-       plot_names(icomp_w0)   = "w0_x"
-       if (dm_in > 1) plot_names(icomp_w0+1) = "w0_y"
-       if (dm_in > 2) plot_names(icomp_w0+2) = "w0_z"
-       plot_names(icomp_divw0) = "divw0"
-       plot_names(icomp_rho0)  = "rho0"
-       plot_names(icomp_rhoh0) = "rhoh0"
-       plot_names(icomp_h0)    = "h0"
-       plot_names(icomp_p0)    = "p0"
-    end if
-
-    if (spherical .eq. 1) then
-       plot_names(icomp_velr) = "radial_velocity"
-       plot_names(icomp_velc) = "circum_velocity"
+    if (p%icomp_w0 > 0) then
+       plot_names(p%icomp_w0)   = "w0_x"
+       if (dm_in > 1) plot_names(p%icomp_w0+1) = "w0_y"
+       if (dm_in > 2) plot_names(p%icomp_w0+2) = "w0_z"
     endif
 
-    plot_names(icomp_magvel)      = "magvel"
-    plot_names(icomp_mom)         = "momentum"
-    plot_names(icomp_vort)        = "vort"
-    plot_names(icomp_src)         = "S"
-    plot_names(icomp_rhopert)     = "rhopert"
-    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
-       plot_names(icomp_rhohpert)    = "rhohpert"
-    endif
-    plot_names(icomp_tfromp)      = "tfromp"
-    if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
-       plot_names(icomp_tfromH)      = "tfromh"
-       plot_names(icomp_dT)          = "deltaT"
-       plot_names(icomp_dp)          = "deltap"
-    endif
-    plot_names(icomp_tpert)       = "tpert"
-    plot_names(icomp_machno)      = "Machnumber"
-    if (plot_cs) then
-       plot_names(icomp_cs)          = "soundspeed"
-    end if
-    plot_names(icomp_dg)          = "deltagamma"
-    plot_names(icomp_entropy)     = "entropy"
-    plot_names(icomp_entropypert) = "entropypert"
-    if (plot_sponge_fdamp) then
-       plot_names(icomp_sponge)      = "sponge_fdamp"
-    else
-       plot_names(icomp_sponge)      = "sponge"
-    end if
+    if (p%icomp_divw0 > 0) plot_names(p%icomp_divw0) = "divw0"
+    if (p%icomp_rho0 > 0) plot_names(p%icomp_rho0)  = "rho0"
+    if (p%icomp_rhoh0 > 0) plot_names(p%icomp_rhoh0) = "rhoh0"
+    if (p%icomp_h0 > 0) plot_names(p%icomp_h0)    = "h0"
+    if (p%icomp_p0 > 0) plot_names(p%icomp_p0)    = "p0"
 
-    plot_names(icomp_pi)          = "pi"
-    if (plot_gpi) then
-       plot_names(icomp_gpi)         = "gpi_x"
-       if (dm_in > 1) plot_names(icomp_gpi+1) = "gpi_y"
-       if (dm_in > 2) plot_names(icomp_gpi+2) = "gpi_z"
-    endif
-    if (plot_base) then
-       plot_names(icomp_pioverp0)    = "pioverp0"
-       plot_names(icomp_p0pluspi)    = "p0pluspi"
-    end if
+    if (p%icomp_velr > 0) plot_names(p%icomp_velr) = "radial_velocity"
+    if (p%icomp_velc > 0) plot_names(p%icomp_velc) = "circum_velocity"
 
-    if (plot_omegadot) then
+    if (p%icomp_magvel > 0) plot_names(p%icomp_magvel)      = "magvel"
+    if (p%icomp_mom > 0) plot_names(p%icomp_mom)         = "momentum"
+    if (p%icomp_vort > 0) plot_names(p%icomp_vort)        = "vort"
+    if (p%icomp_src > 0) plot_names(p%icomp_src)         = "S"
+    if (p%icomp_rhopert > 0) plot_names(p%icomp_rhopert)     = "rhopert"
+    if (p%icomp_rhohpert > 0) plot_names(p%icomp_rhohpert)    = "rhohpert"
+  
+    if (p%icomp_tfromp > 0) plot_names(p%icomp_tfromp)      = "tfromp"
+    if (p%icomp_tfromH > 0) plot_names(p%icomp_tfromH)      = "tfromh"
+    if (p%icomp_dT > 0) plot_names(p%icomp_dT)          = "deltaT"
+    if (p%icomp_dp > 0) plot_names(p%icomp_dp)          = "deltap"
+
+    if (p%icomp_tpert > 0) plot_names(p%icomp_tpert)       = "tpert"
+    if (p%icomp_machno > 0) plot_names(p%icomp_machno)      = "Machnumber"
+    if (p%icomp_cs > 0) plot_names(p%icomp_cs)          = "soundspeed"
+
+    if (p%icomp_dg > 0) plot_names(p%icomp_dg)          = "deltagamma"
+    if (p%icomp_entropy > 0) plot_names(p%icomp_entropy)     = "entropy"
+    if (p%icomp_entropypert > 0) plot_names(p%icomp_entropypert) = "entropypert"
+    if (p%icomp_sponge > 0) then
+       if (plot_sponge_fdamp) then
+          plot_names(p%icomp_sponge)      = "sponge_fdamp"
+       else
+          plot_names(p%icomp_sponge)      = "sponge"
+       end if
+    endif
+
+    if (p%icomp_pi > 0) plot_names(p%icomp_pi)          = "pi"
+    if (p%icomp_gpi > 0) then
+       plot_names(p%icomp_gpi)         = "gpi_x"
+       if (dm_in > 1) plot_names(p%icomp_gpi+1) = "gpi_y"
+       if (dm_in > 2) plot_names(p%icomp_gpi+2) = "gpi_z"
+    endif
+
+    if (p%icomp_pioverp0 > 0) plot_names(p%icomp_pioverp0)    = "pioverp0"
+    if (p%icomp_p0pluspi > 0) plot_names(p%icomp_p0pluspi)    = "p0pluspi"
+
+    if (p%icomp_omegadot > 0) then
        do comp = 1, nspec
-          plot_names(icomp_omegadot+comp-1) = &
+          plot_names(p%icomp_omegadot+comp-1) = &
                "omegadot(" // trim(short_spec_names(comp)) // ")"
        end do
     end if
 
-    if (plot_Hnuc) then
-       plot_names(icomp_enuc) = "enucdot"
-    end if
+    if (p%icomp_enuc > 0) plot_names(p%icomp_enuc) = "enucdot"
+    if (p%icomp_Hext > 0) plot_names(p%icomp_Hext) = "Hext"
 
-    if (plot_Hext) then
-       plot_names(icomp_Hext) = "Hext"
-    endif
+    if (p%icomp_eta > 0) plot_names(p%icomp_eta) = "eta_rho"
 
-    if (plot_eta) then
-       plot_names(icomp_eta) = "eta_rho"
-    endif
+    if (p%icomp_thermal > 0) plot_names(p%icomp_thermal) = "thermal"
+    if (p%icomp_conductivity > 0) plot_names(p%icomp_conductivity) = "conductivity"
 
-    if (use_thermal_diffusion) then
-       plot_names(icomp_thermal) = "thermal"
-       plot_names(icomp_conductivity) = "conductivity"
-    endif
+    if (p%icomp_ad_excess > 0) plot_names(p%icomp_ad_excess) = "ad_excess"
 
-    if (plot_ad_excess) then
-       plot_names(icomp_ad_excess) = "ad_excess"
-    endif
+    if (p%icomp_part > 0) plot_names(p%icomp_part) = "particle_count"
 
-    if (use_particles) then
-       plot_names(icomp_part) = "particle_count"
-    endif
+    if (p%icomp_proc > 0) plot_names(p%icomp_proc) = "processor_number"
 
-    if (plot_processors) then
-       plot_names(icomp_proc) = "processor_number"
-    endif
-
-    if (plot_pidivu) then
-       plot_names(icomp_pidivu) = "pi_divu"
-    endif
-
+    if (p%icomp_pidivu > 0) plot_names(p%icomp_pidivu) = "pi_divu"
 
   end subroutine get_plot_names
 
@@ -247,76 +227,85 @@ contains
 
     do n = 1,nlevs
 
-       call multifab_build(plotdata(n), mla%la(n), n_plot_comps, 0)
+       call multifab_build(plotdata(n), mla%la(n), p%n_plot_comps, 0)
+
+       ! for temporary storage, as needed
        call multifab_build(tempfab(n),  mla%la(n), dm,           1)
               
-       ! VELOCITY 
-       call multifab_copy_c(plotdata(n),icomp_vel,u(n),1,dm)
+       ! velocity
+       if (p%icomp_vel > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_vel,u(n),1,dm)
+       endif
 
-       ! DENSITY AND (RHO H) 
-       call multifab_copy_c(plotdata(n),icomp_rho,s(n),rho_comp,1)
-       if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
-          call multifab_copy_c(plotdata(n),icomp_rhoh,s(n),rhoh_comp,1)
-          call multifab_copy_c(plotdata(n),icomp_h,   s(n),rhoh_comp,1)
-          call multifab_div_div_c(plotdata(n),icomp_h,s(n),rho_comp,1)
+       ! density, (rho h), and h
+       if (p%icomp_rho > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_rho,s(n),rho_comp,1)
+       endif
+
+       if (p%icomp_rhoh > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_rhoh,s(n),rhoh_comp,1)
+       endif
+
+       if (p%icomp_h > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_h,   s(n),rhoh_comp,1)
+          call multifab_div_div_c(plotdata(n),p%icomp_h,s(n),rho_comp,1)
        end if
 
 
-       ! RHOPERT and RHOHPERT
+       ! rhopert and rhohpert
        if (spherical .eq. 1) then
-          call make_rhopert( plotdata(n),icomp_rhopert, s(n), rho0(1,:),dx(n,:))
-
-          if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &          
-               call make_rhohpert(plotdata(n),icomp_rhohpert,s(n),rhoh0(1,:),dx(n,:))
+          if (p%icomp_rhopert > 0) then
+             call make_rhopert( plotdata(n),p%icomp_rhopert, s(n), rho0(1,:),dx(n,:))
+          endif
+          if (p%icomp_rhohpert > 0) then
+             call make_rhohpert(plotdata(n),p%icomp_rhohpert,s(n),rhoh0(1,:),dx(n,:))
+          endif
        else
-          call make_rhopert( plotdata(n),icomp_rhopert, s(n), rho0(n,:),dx(n,:))
-
-          if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
-               call make_rhohpert(plotdata(n),icomp_rhohpert,s(n),rhoh0(n,:),dx(n,:))
+          if (p%icomp_rhopert > 0) then
+             call make_rhopert( plotdata(n),p%icomp_rhopert, s(n), rho0(n,:),dx(n,:))
+          endif
+          if (p%icomp_rhohpert > 0) then
+             call make_rhohpert(plotdata(n),p%icomp_rhohpert,s(n),rhoh0(n,:),dx(n,:))
+          endif
        endif
 
 
-       if (plot_spec) then
-          
-          ! SPECIES
-          call multifab_copy_c(plotdata(n),icomp_spec,s(n),spec_comp,nspec)
+       ! species
+       if (p%icomp_spec > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_spec,s(n),spec_comp,nspec)
           do comp=1,nspec
-             call multifab_div_div_c(plotdata(n),icomp_spec+comp-1,s(n),rho_comp,1)
+             call multifab_div_div_c(plotdata(n),p%icomp_spec+comp-1,s(n),rho_comp,1)
           end do
-
        endif
 
-       if (plot_omegadot) then
-
-          ! OMEGADOT
-          call multifab_copy_c(plotdata(n),icomp_omegadot,rho_omegadot(n),1,nspec)
+       ! omegadot
+       if (p%icomp_omegadot > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_omegadot,rho_omegadot(n),1,nspec)
           do comp=1,nspec
-             call multifab_div_div_c(plotdata(n),icomp_omegadot+comp-1,s(n),rho_comp,1)
+             call multifab_div_div_c(plotdata(n),p%icomp_omegadot+comp-1,s(n),rho_comp,1)
           end do
-
        end if
 
-       if (plot_Hnuc) then
 
-          ! ENUCDOT
-          call multifab_copy_c(plotdata(n),icomp_enuc,rho_Hnuc(n),1)
-          call multifab_div_div_c(plotdata(n),icomp_enuc,s(n),rho_comp,1)
-         
+       ! enucdot
+       if (p%icomp_enuc > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_enuc,rho_Hnuc(n),1)
+          call multifab_div_div_c(plotdata(n),p%icomp_enuc,s(n),rho_comp,1)
        end if
 
-       if (plot_Hext) then
-          call multifab_copy_c(plotdata(n),icomp_Hext,rho_Hext(n),1)
-          call multifab_div_div_c(plotdata(n),icomp_Hext,s(n),rho_comp,1)
+       if (p%icomp_Hext > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_Hext,rho_Hext(n),1)
+          call multifab_div_div_c(plotdata(n),p%icomp_Hext,s(n),rho_comp,1)
        end if
 
-       ! THERMAL = del dot kappa grad T
-       if (use_thermal_diffusion) then
-          call multifab_copy_c(plotdata(n),icomp_thermal,thermal(n),1)
+       ! thermal = del dot kappa grad T
+       if (p%icomp_thermal > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_thermal,thermal(n),1)
        endif
 
-       ! TRACER
-       if (plot_trac .and. ntrac .ge. 1) then
-          call multifab_copy_c(plotdata(n),icomp_trac,s(n),trac_comp,ntrac)
+       ! tracer
+       if (p%icomp_trac > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_trac,s(n),trac_comp,ntrac)
        end if
 
     end do
@@ -344,16 +333,18 @@ contains
           ! put w0 on Cartesian edges as a vector
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
 
-          ! put w0 in Cartesian cell-centers as a scalar (the radial expansion velocity)
+          ! put w0 in Cartesian cell-centers as a scalar (the radial
+          ! expansion velocity)
           call put_1d_array_on_cart(w0,w0r_cart,1,.true.,.false.,dx, &
                                     the_bc_tower%bc_tower_array,mla)
        end if
 
-    end if
+    end if  ! spherical
 
-    if (plot_base) then
-
-       ! w0
+    ! w0
+    if (p%icomp_w0 > 0) then
+       ! this puts w0 onto Cartsian cell-centers as a vector, so we
+       ! have all components here
        if (evolve_base_state) then
           call put_1d_array_on_cart(w0,tempfab,1,.true.,.true.,dx, &
                                     the_bc_tower%bc_tower_array,mla)
@@ -364,28 +355,44 @@ contains
        end if
 
        do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_w0,tempfab(n),1,dm)
+          call multifab_copy_c(plotdata(n),p%icomp_w0,tempfab(n),1,dm)
        end do
+    endif
 
-       ! divw0
+    ! divw0
+    if (p%icomp_divw0) then
        do n=1,nlevs
           if (spherical .eq. 1) then
              n_1d = 1
           else
              n_1d = n
           end if
-          call make_divw0(plotdata(n),icomp_divw0,w0(n_1d,:),w0mac(n,:),dx(n,:))
+          call make_divw0(plotdata(n),p%icomp_divw0,w0(n_1d,:),w0mac(n,:),dx(n,:))
        end do
+    endif
 
-       ! rho0
+    ! rho0
+    if (p%icomp_rho0 > 0) then
        call put_1d_array_on_cart(rho0,tempfab,dm+rho_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla)
 
        do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_rho0,tempfab(n),1,1)
+          call multifab_copy_c(plotdata(n),p%icomp_rho0,tempfab(n),1,1)
        end do
+    endif
 
-       ! rhoh0
+    ! rhoh0
+    if (p%icomp_rhoh0 > 0) then
+       call put_1d_array_on_cart(rhoh0,tempfab,dm+rhoh_comp,.false.,.false.,dx, &
+                                 the_bc_tower%bc_tower_array,mla)
+
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),icomp_rhoh0,tempfab(n),1,1)
+       end do
+    endif
+
+    ! h0
+    if (p%icomp_h0 > 0) then
        if (do_smallscale) then
           h0 = ZERO
        else
@@ -409,35 +416,30 @@ contains
 
        end if
 
-       call put_1d_array_on_cart(rhoh0,tempfab,dm+rhoh_comp,.false.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla)
-
-       do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_rhoh0,tempfab(n),1,1)
-       end do
-
-       ! h0
        call put_1d_array_on_cart(h0,tempfab,foextrap_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla)
 
        do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_h0,tempfab(n),1,1)
+          call multifab_copy_c(plotdata(n),p%icomp_h0,tempfab(n),1,1)
        end do
+    endif
 
-       ! p0
+    ! p0
+    if (p%icomp_p0 > 0) then
        call put_1d_array_on_cart(p0,tempfab,foextrap_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla)
        do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_p0,tempfab(n),1,1)
+          call multifab_copy_c(plotdata(n),p%icomp_p0,tempfab(n),1,1)
        end do
 
     end if
 
-    if (plot_eta) then
+
+    if (p%icomp_eta > 0) then
        call put_1d_array_on_cart(etarho_cc,tempfab,foextrap_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla)
        do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_eta,tempfab(n),1,1)
+          call multifab_copy_c(plotdata(n),p%icomp_eta,tempfab(n),1,1)
        end do
     endif
 
@@ -452,18 +454,27 @@ contains
 
        ! RADIAL AND CIRCUMFERENTIAL VELOCITY (spherical only)
        if (spherical .eq. 1) then
-          call make_velrc(plotdata(n),icomp_velr,icomp_velc,u(n),w0r_cart(n),normal(n))
+          if (p%icomp_velr > 0 .or. p%icomp_velc > 0) then
+          call make_velrc(plotdata(n),p%icomp_velr,p%icomp_velc, &
+                          u(n),w0r_cart(n),normal(n))
        endif
 
        ! MAGVEL = |U + w0|
-       call make_magvel(plotdata(n),icomp_magvel,icomp_mom,s(n),u(n),w0(n_1d,:),w0mac(n,:))
+       if (p%icomp_magvel > 0 .or. p%icomp_mom > 0) then
+          call make_magvel(plotdata(n),p%icomp_magvel,icomp_mom, &
+                           s(n),u(n),w0(n_1d,:),w0mac(n,:))
+       endif
 
        ! VORTICITY
-       call make_vorticity(plotdata(n),icomp_vort,u(n),dx(n,:), &
-                           the_bc_tower%bc_tower_array(n))
+       if (p%icomp_vort > 0) then
+          call make_vorticity(plotdata(n),p%icomp_vort,u(n),dx(n,:), &
+                              the_bc_tower%bc_tower_array(n))
+       endif
 
        ! DIVU
-       call multifab_copy_c(plotdata(n),icomp_src,Source(n),1,1)
+       if (p%icomp_src > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_src,Source(n),1,1)
+       endif
 
     end do
 
@@ -472,30 +483,42 @@ contains
        ! make_tfromp -> TFROMP, TPERT, MACHNUMBER, CS, DELTAGAMMA, and ENTROPY
        ! make_tfromH -> TFROMP AND DELTA_P
        if (spherical .eq. 1) then
-          
-          call make_tfromp(plotdata(n), &
-                           icomp_tfromp,icomp_tpert,icomp_machno,icomp_cs, &
-                           icomp_dg,icomp_entropy,icomp_magvel, &
-                           s(n), &
-                           tempbar(1,:),gamma1bar(1,:),p0(1,:),dx(n,:))
 
-          if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
-               call make_tfromH(plotdata(n),icomp_tfromH,icomp_tpert, &
-                                icomp_dp,s(n),p0(1,:), &
-                                tempbar(1,:),dx(n,:))
+          if ( p%icomp_tfromp > 0 .or. p%icomp_tpert > 0 .or. &
+               p%icomp_machno > 0 .or. p%icomp_cs > 0 .or. p%icomp_dg > 0 .or. &
+               p%icomp_entropy > 0 .or. p%icomp_magvel > 0 ) then
+             
+             call make_tfromp(plotdata(n), &
+                              p%icomp_tfromp,p%icomp_tpert,p%icomp_machno,p%icomp_cs, &
+                              p%icomp_dg,p%icomp_entropy,p%icomp_magvel, &
+                              s(n), &
+                              tempbar(1,:),gamma1bar(1,:),p0(1,:),dx(n,:))
+          endif
+
+          if ( p%icomp_tfromH > 0 .or. p%icomp_tpert > 0 .or. p%icomp_dp > 0 ) then
+             call make_tfromH(plotdata(n),p%icomp_tfromH,p%icomp_tpert, &
+                              p%icomp_dp,s(n),p0(1,:), &
+                              tempbar(1,:),dx(n,:))
+          endif
 
        else
 
-          call make_tfromp(plotdata(n), &
-                           icomp_tfromp,icomp_tpert,icomp_machno,icomp_cs, &
-                           icomp_dg,icomp_entropy,icomp_magvel, &
-                           s(n), &
-                           tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
+          if ( p%icomp_tfromp > 0 .or. p%icomp_tpert > 0 .or. &
+               p%icomp_machno > 0 .or. p%icomp_cs > 0 .or. p%icomp_dg > 0 .or. &
+               p%icomp_entropy > 0 .or. p%icomp_magvel > 0 ) then
 
-          if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
-               call make_tfromH(plotdata(n),icomp_tfromH,icomp_tpert, &
-                                icomp_dp,s(n),p0(n,:), &
-                                tempbar(n,:),dx(n,:))
+             call make_tfromp(plotdata(n), &
+                              p%icomp_tfromp,p%icomp_tpert,p%icomp_machno,p%icomp_cs, &
+                              p%icomp_dg,p%icomp_entropy,p%icomp_magvel, &
+                              s(n), &
+                              tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
+          endif
+
+          if ( p%icomp_tfromH > 0 .or. p%icomp_tpert > 0 .or. p%icomp_dp > 0 ) then
+             call make_tfromH(plotdata(n),p%icomp_tfromH,p%icomp_tpert, &
+                              p%icomp_dp,s(n),p0(n,:), &
+                              tempbar(n,:),dx(n,:))
+          endif
 
        end if
        
