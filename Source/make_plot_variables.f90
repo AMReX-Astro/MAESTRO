@@ -730,25 +730,25 @@ contains
           call make_tfromH_cart(tp, lbound(tp), ubound(tp), &
                                 comp_t, comp_tpert, comp_dp, &
                                 sp, lbound(sp), ubound(sp), &
-                                lo,hi,p0,tempbar)
+                                dm,lo,hi,p0,tempbar)
        end if
     end do
 
   end subroutine make_tfromH
 
-  subroutine make_tfromH_cart(data,dlo,dhi, &
+  subroutine make_tfromH_cart(pdata,dlo,dhi, &
                               it,itpert,ideltaP, &
                               state,slo,shi, &
-                              lo,hi,p0,tempbar)
+                              dm,lo,hi,p0,tempbar)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module, only: eos_input_rh, eos
     use eos_type_module
     use network, only: nspec
 
-    integer, intent(in) :: lo(:), hi(:), dlo(4), dhi(4), slo(4), shi(4)
+    integer, intent(in) :: lo(:), hi(:), dlo(4), dhi(4), slo(4), shi(4), dm
     integer, intent(in) :: it, itpert,ideltaP
-    real (kind = dp_t), intent(  out) :: data(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
+    real (kind = dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
     real (kind = dp_t), intent(in   ) :: state(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
     real (kind = dp_t), intent(in   ) :: p0(0:),tempbar(0:)
 
@@ -780,19 +780,19 @@ contains
 
              call eos(eos_input_rh, eos_state, .false.)
 
-             if (it > 0) data(i,j,k,iT) = eos_state%T
-             if (.not. use_tfromp .and. itpert > 0) data(i,j,k,itpert) = eos_state%T - tempbar(r)
+             if (it > 0) pdata(i,j,k,iT) = eos_state%T
+             if (.not. use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar(r)
 
-             if (ideltaP > 0) data(i,j,k,ideltaP) = (eos_state%p - p0(r))/ p0(r)
+             if (ideltaP > 0) pdata(i,j,k,ideltaP) = (eos_state%p - p0(r))/ p0(r)
 
           enddo
        enddo
     enddo
     !$OMP END PARALLEL DO    
 
-  end subroutine make_tfromH_3d_cart
+  end subroutine make_tfromH_cart
 
-  subroutine make_tfromH_3d_sphr(data,dlo,dhi, &
+  subroutine make_tfromH_3d_sphr(pdata,dlo,dhi, &
                                  iT,itpert,ideltaP, &
                                  state,slo,shi, &
                                  lo,hi,p0,tempbar,dx)
@@ -805,9 +805,8 @@ contains
 
     integer, intent(in) :: lo(:), hi(:), dlo(4), dhi(4), slo(4), shi(4)
     integer, intent(in) :: it, itpert,ideltaP
-    real (kind = dp_t), intent(  out) :: data(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
+    real (kind = dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
     real (kind = dp_t), intent(in   ) :: state(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
-    real (kind = dp_t), intent(in   ) :: p0(0:),tempbar(0:)
     real (kind = dp_t), intent(in   ) :: p0(0:),tempbar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
 
@@ -837,10 +836,10 @@ contains
              ! (rho, H) --> T, p
              call eos(eos_input_rh, eos_state, .false.)
 
-             if (iT > 0) data(i,j,k,iT) = eos_state%T
-             if (.not. use_tfromp .and. itpert > 0) data(i,j,k,itpert) = eos_state%T - tempbar_cart(i,j,k,1)
+             if (iT > 0) pdata(i,j,k,iT) = eos_state%T
+             if (.not. use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar_cart(i,j,k,1)
              
-             if(ideltaP > 0) data(i,j,k,ideltaP) = (eos_state%p - p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
+             if(ideltaP > 0) pdata(i,j,k,ideltaP) = (eos_state%p - p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
 
           enddo
        enddo
@@ -897,27 +896,27 @@ contains
                                 comp_machno, comp_cs, comp_deltag, &
                                 comp_entropy, comp_magvel, &
                                 sp, lbound(sp), ubound(sp), &
-                                lo, hi, tempbar, gamma1bar, p0)
+                                dm, lo, hi, tempbar, gamma1bar, p0)
        endif
     end do
 
   end subroutine make_tfromp
 
-  subroutine make_tfromp_cart(data, dlo, dhi, &
+  subroutine make_tfromp_cart(pdata, dlo, dhi, &
                               it,itpert,imachno,ics,ideltagamma,ientropy,imagvel, &
                               s, slo, shi, &
-                              ng_s,lo,hi,tempbar,gamma1bar,p0)
-
+                              dm,lo,hi,tempbar,gamma1bar,p0)
+    
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module, only: eos_input_rp, eos
     use eos_type_module
     use network, only: nspec
     use probin_module, only: use_pprime_in_tfromp
 
-    integer, intent(in) :: lo(:), hi(:), dlo(4), dhi(4), slo(4), shi(4)
+    integer, intent(in) :: lo(:), hi(:), dlo(4), dhi(4), slo(4), shi(4), dm
     integer, intent(in) :: it,itpert,imachno,ics,ideltagamma,ientropy,imagvel
 
-    real (kind=dp_t), intent(  out) :: data(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
+    real (kind=dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
     real (kind=dp_t), intent(in   ) :: s(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
@@ -954,18 +953,18 @@ contains
              ! (rho,P) --> T,h
              call eos(eos_input_rp, eos_state, .false.)
 
-             if (it > 0) data(i,j,k,it) = eos_state%T
-             if (use_tfromp .and. itpert > 0) data(i,j,k,itpert) = eos_state%T - tempbar(r)
+             if (it > 0) pdata(i,j,k,it) = eos_state%T
+             if (use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar(r)
 
-             if (ics > 0) data(i,j,k,ics) = eos_state%cs
+             if (ics > 0) pdata(i,j,k,ics) = eos_state%cs
 
              if (imachno > 0 .and. imagvel > 0) then
-                data(i,j,k,imachno) = data(i,j,k,imagvel) / eos_state%cs
+                pdata(i,j,k,imachno) = pdata(i,j,k,imagvel) / eos_state%cs
              endif
 
-             if (ideltagamma > 0) data(i,j,k,ideltagamma) = eos_state%gam1 - gamma1bar(r)
+             if (ideltagamma > 0) pdata(i,j,k,ideltagamma) = eos_state%gam1 - gamma1bar(r)
 
-             if (ientropy > 0) data(i,j,k,ientropy) = eos_state%s
+             if (ientropy > 0) pdata(i,j,k,ientropy) = eos_state%s
           enddo
        enddo
     enddo
@@ -973,7 +972,7 @@ contains
 
   end subroutine make_tfromp_cart
 
-  subroutine make_tfromp_3d_sphr(data,dlo,dhi, &
+  subroutine make_tfromp_3d_sphr(pdata,dlo,dhi, &
                                  it,itpert,imachno,ics,ideltagamma,ientropy,imagvel, &
                                  s,slo,shi, &
                                  lo,hi,tempbar,gamma1bar,p0,dx)
@@ -988,7 +987,7 @@ contains
     integer         , intent(in   ) :: lo(:),hi(:), dlo(4), dhi(4), slo(4), shi(4)
     integer, intent(in) :: it,itpert,imachno,ics,ideltagamma,ientropy,imagvel
 
-    real (kind=dp_t), intent(  out) :: data(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
+    real (kind=dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
     real (kind=dp_t), intent(in   ) :: s(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
@@ -1028,18 +1027,18 @@ contains
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state, .false.)
 
-             if (it > 0) data(i,j,k,it) = eos_state%T
-             if (use_tfromp .and. itpert > 0) data(i,j,k,itpert) = eos_state%T - tempbar_cart(i,j,k,1)
+             if (it > 0) pdata(i,j,k,it) = eos_state%T
+             if (use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar_cart(i,j,k,1)
 
-             if (ics > 0) data(i,j,k,ics) = eos_state%cs
+             if (ics > 0) pdata(i,j,k,ics) = eos_state%cs
 
-             if (imachno > 0 .and. imagvel > 0) data(i,j,k,imachno) = data(i,j,k,imagvel) / eos_state%cs
+             if (imachno > 0 .and. imagvel > 0) pdata(i,j,k,imachno) = pdata(i,j,k,imagvel) / eos_state%cs
 
-             if (ideltagamma > 0) data(i,j,k,ideltagamma) = eos_state%gam1 - gamma1bar_cart(i,j,k,1)
+             if (ideltagamma > 0) pdata(i,j,k,ideltagamma) = eos_state%gam1 - gamma1bar_cart(i,j,k,1)
 
-             if (ientropy > 0) data(i,j,k,ientropy) = eos_state%s
+             if (ientropy > 0) pdata(i,j,k,ientropy) = eos_state%s
           enddo
        enddo
     enddo
@@ -2420,11 +2419,11 @@ contains
 
   end subroutine make_magvel
 
-  subroutine makemagvel_1d(data, imagvel, imom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
+  subroutine makemagvel_1d(pdata, imagvel, imom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
     integer           , intent(in   ) :: imagvel, imom
-    real (kind = dp_t), intent(  out) :: data(lo(1)-ng_p:,:)
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,:)
     real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:)
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:)
     real (kind = dp_t), intent(in   ) :: w0(0:)
@@ -2436,21 +2435,17 @@ contains
     ! Recall w0 is edge-centered
     do i = lo(1), hi(1)
        w0_cent = 0.5d0 * (w0(i) + w0(i+1))
-       if (imagvel > 0) then
-          data(i,imagvel) = abs(u(i)+w0_cent)
-       endif
-       if (imom > 0) then
-          mom(i,imom) = rho(i)*magvel(i)
-       endif
+       pdata(i,imagvel) = abs(u(i)+w0_cent)
+       pdata(i,imom) = rho(i)*pdata(i,imagvel)
     enddo
 
   end subroutine makemagvel_1d
 
-  subroutine makemagvel_2d(data,imagvel,imom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
+  subroutine makemagvel_2d(pdata,imagvel,imom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
     integer           , intent(in   ) :: imagvel, imom
-    real (kind = dp_t), intent(  out) :: data(lo(1)-ng_p:,lo(2)-ng_p:,:)
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,lo(2)-ng_p:,:)
     real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:)  
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)  
     real (kind = dp_t), intent(in   ) :: w0(0:)
@@ -2463,23 +2458,18 @@ contains
     do j = lo(2), hi(2)
        w0_cent = 0.5d0 * (w0(j) + w0(j+1))
        do i = lo(1), hi(1)
-          if (imagvel > 0) then
-             data(i,j,imagvel) = sqrt( u(i,j,1)**2 + (u(i,j,2)+w0_cent)**2 )
-          endif
-          if (imom > 0) then
-             data(i,j,imom) = rho(i,j)*magvel(i,j)
-          endif
+          pdata(i,j,imagvel) = sqrt( u(i,j,1)**2 + (u(i,j,2)+w0_cent)**2 )
+          pdata(i,j,imom) = rho(i,j)*pdata(i,j,imagvel)
        enddo
     enddo
 
   end subroutine makemagvel_2d
 
-  subroutine makemagvel_3d_cart(magvel,mom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
+  subroutine makemagvel_3d_cart(pdata,imagvel,imom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
     integer           , intent(in   ) :: imagvel, imom
-    real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
-    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:,:)
     real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:) 
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:) 
     real (kind = dp_t), intent(in   ) :: w0(0:)
@@ -2495,8 +2485,8 @@ contains
        w0_cent = 0.5d0 * (w0(k) + w0(k+1))
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             magvel(i,j,k) = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + (u(i,j,k,3)+w0_cent)**2)
-             mom(i,j,k) = rho(i,j,k)*magvel(i,j,k)
+             pdata(i,j,k,imagvel) = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + (u(i,j,k,3)+w0_cent)**2)
+             pdata(i,j,k,imom) = rho(i,j,k)*pdata(i,j,k,imagvel)
           enddo
        enddo
     enddo
@@ -2504,7 +2494,7 @@ contains
 
   end subroutine makemagvel_3d_cart
 
-  subroutine makemagvel_3d_sphr(magvel,mom,ng_p,rho,ng_s,u,ng_u, &
+  subroutine makemagvel_3d_sphr(pdata,imagvel,imom,ng_p,rho,ng_s,u,ng_u, &
                                 w0macx,w0macy,w0macz,ng_w,lo,hi)
 
 
@@ -2512,8 +2502,7 @@ contains
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_w, ng_s
     integer           , intent(in   ) :: imagvel, imom
-    real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
-    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:,:)
     real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:) 
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:) 
     real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
@@ -2527,10 +2516,10 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             magvel(i,j,k) = sqrt( (u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))**2 + &
-                                   (u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))**2 + &
-                                   (u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))**2)
-             mom(i,j,k) = rho(i,j,k)*magvel(i,j,k)
+             pdata(i,j,k,imagvel) = sqrt( (u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))**2 + &
+                                         (u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))**2 + &
+                                         (u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))**2)
+             pdata(i,j,k,imom) = rho(i,j,k)*pdata(i,j,k,imagvel)
           enddo
        enddo
     enddo
@@ -2589,12 +2578,12 @@ contains
 
   end subroutine make_velrc
 
-  subroutine makevelrc_3d_sphr(data,ivelr,ivelc,ng_p, &
+  subroutine makevelrc_3d_sphr(pdata,ivelr,ivelc,ng_p, &
                                u,ng_u,w0r,ng_w,normal,ng_n,lo,hi)
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, ng_w
     integer           , intent(in   ) :: ivelr, ivelc
-    real (kind = dp_t), intent(  out) :: data(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:,:)
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:,:)
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
     real (kind = dp_t), intent(in   ) ::    w0r(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
     real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)  
@@ -2607,11 +2596,11 @@ contains
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
-                data(i,j,k,ivelr) = u(i,j,k,1)*normal(i,j,k,1) + &
+                pdata(i,j,k,ivelr) = u(i,j,k,1)*normal(i,j,k,1) + &
                                     u(i,j,k,2)*normal(i,j,k,2) + &
                                     u(i,j,k,3)*normal(i,j,k,3) 
 
-                data(i,j,k,ivelr) = data(i,j,k,ivelr) + w0r(i,j,k)
+                pdata(i,j,k,ivelr) = pdata(i,j,k,ivelr) + w0r(i,j,k)
              enddo
           enddo
        enddo
@@ -2623,15 +2612,15 @@ contains
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
-                data(i,j,k,ivelc) = (u(i,j,k,1)-data(i,j,k,ivelr)*normal(i,j,k,1)) * &
-                                    (u(i,j,k,1)-data(i,j,k,ivelr)*normal(i,j,k,1))
-                data(i,j,k,ivelc) = data(i,j,k,ivelc) + &
-                              (u(i,j,k,2)-data(i,j,k,ivelr)*normal(i,j,k,2)) * &
-                              (u(i,j,k,2)-data(i,j,k,ivelr)*normal(i,j,k,2))
-                data(i,j,k,ivelc) = data(i,j,k,ivelc) + &
-                              (u(i,j,k,3)-data(i,j,k,ivelr)*normal(i,j,k,3)) * &
-                              (u(i,j,k,3)-data(i,j,k.ivelr)*normal(i,j,k,3))
-                data(i,j,k,ivelc) = sqrt(data(i,j,k,ivelc))
+                pdata(i,j,k,ivelc) = (u(i,j,k,1)-pdata(i,j,k,ivelr)*normal(i,j,k,1)) * &
+                                     (u(i,j,k,1)-pdata(i,j,k,ivelr)*normal(i,j,k,1))
+                pdata(i,j,k,ivelc) = pdata(i,j,k,ivelc) + &
+                              (u(i,j,k,2)-pdata(i,j,k,ivelr)*normal(i,j,k,2)) * &
+                              (u(i,j,k,2)-pdata(i,j,k,ivelr)*normal(i,j,k,2))
+                pdata(i,j,k,ivelc) = pdata(i,j,k,ivelc) + &
+                              (u(i,j,k,3)-pdata(i,j,k,ivelr)*normal(i,j,k,3)) * &
+                              (u(i,j,k,3)-pdata(i,j,k,ivelr)*normal(i,j,k,3))
+                pdata(i,j,k,ivelc) = sqrt(pdata(i,j,k,ivelc))
              enddo
           enddo
        enddo

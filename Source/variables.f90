@@ -59,6 +59,10 @@ module variables
      integer :: icomp_proc = -1
      integer :: icomp_pidivu = -1
      integer :: n_plot_comps = 0
+
+   contains
+     procedure :: next_index => get_next_plot_index
+
   end type plot_t
 
   integer, save :: ntrac,nscal
@@ -66,16 +70,18 @@ module variables
 
 contains
 
-  function get_next_plot_index(num, n_plot_comps) result (next)
+  function get_next_plot_index(this, num) result (next)
 
     ! return the next starting index for a plotfile quantity, and
     ! increment the counter of plotfile quantities, n_plot_comps, by
     ! num
-    integer :: num, next
-    integer, intent(inout) :: n_plot_comps
 
-    next = n_plot_comps + 1
-    n_plot_comps = n_plot_comps + num
+    class(plot_t), intent(inout) :: this
+    integer, intent(in) :: num
+    integer :: next
+
+    next = this%n_plot_comps + 1
+    this%n_plot_comps = this%n_plot_comps + num
 
     return
   end function get_next_plot_index
@@ -106,7 +112,7 @@ contains
 
   end subroutine init_variables
 
-  subroutine init_plot_variables(plotidx)
+  subroutine init_plot_variables(p)
 
     use network, only: nspec
     use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
@@ -115,109 +121,105 @@ contains
          plot_processors, plot_pidivu
     use geometry, only: spherical
 
-    type(plot_t), intent(inout) :: plotidx
+    type(plot_t), intent(inout) :: p
 
-    np = 0
-
-    plotidx%icomp_vel      = get_next_plot_index(dm_in, np)
-    plotidx%icomp_rho      = get_next_plot_index(1, np)
+    p%icomp_vel      = p%next_index(dm_in)
+    p%icomp_rho      = p%next_index(1)
     if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
-       plotidx%icomp_rhoh     = get_next_plot_index(1, np)
-       plotidx%icomp_h        = get_next_plot_index(1, np)
+       p%icomp_rhoh     = p%next_index(1)
+       p%icomp_h        = p%next_index(1)
     end if
 
-    if (plot_spec) plotidx%icomp_spec = get_next_plot_index(nspec, np)
-    if (plot_trac) plotidx%icomp_trac = get_next_plot_index(ntrac, np)
+    if (plot_spec) p%icomp_spec = p%next_index(nspec)
+    if (plot_trac) p%icomp_trac = p%next_index(ntrac)
 
     if (plot_base) then
-       plotidx%icomp_w0    = get_next_plot_index(dm_in, np)
-       plotidx%icomp_divw0 = get_next_plot_index(1, np)
-       plotidx%icomp_rho0  = get_next_plot_index(1, np)
-       plotidx%icomp_rhoh0 = get_next_plot_index(1, np)
-       plotidx%icomp_h0    = get_next_plot_index(1, np)
-       plotidx%icomp_p0    = get_next_plot_index(1, np)
+       p%icomp_w0    = p%next_index(dm_in)
+       p%icomp_divw0 = p%next_index(1)
+       p%icomp_rho0  = p%next_index(1)
+       p%icomp_rhoh0 = p%next_index(1)
+       p%icomp_h0    = p%next_index(1)
+       p%icomp_p0    = p%next_index(1)
     end if
 
     if (spherical .eq. 1) then
-       plotidx%icomp_velr = get_next_plot_index(1, np)
-       plotidx%icomp_velc = get_next_plot_index(1, np)
+       p%icomp_velr = p%next_index(1)
+       p%icomp_velc = p%next_index(1)
     end if
 
-    plotidx%icomp_magvel      = get_next_plot_index(1, np)
-    plotidx%icomp_mom         = get_next_plot_index(1, np)
-    plotidx%icomp_vort        = get_next_plot_index(1, np)
-    plotidx%icomp_src         = get_next_plot_index(1, np)
-    plotidx%icomp_rhopert     = get_next_plot_index(1, np)
+    p%icomp_magvel      = p%next_index(1)
+    p%icomp_mom         = p%next_index(1)
+    p%icomp_vort        = p%next_index(1)
+    p%icomp_src         = p%next_index(1)
+    p%icomp_rhopert     = p%next_index(1)
 
     if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
-       plotidx%icomp_rhohpert    = get_next_plot_index(1, np)
+       p%icomp_rhohpert    = p%next_index(1)
     endif
 
-    icomp_tfromp      = get_next_plot_index(1, np)
+    p%icomp_tfromp      = p%next_index(1)
     if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
-       plotidx%icomp_tfromH      = get_next_plot_index(1, np)
-       plotidx%icomp_dT          = get_next_plot_index(1, np)
-       plotidx%icomp_dp          = get_next_plot_index(1, np)
+       p%icomp_tfromH      = p%next_index(1)
+       p%icomp_dT          = p%next_index(1)
+       p%icomp_dp          = p%next_index(1)
     endif
 
-    plotidx%icomp_tpert       = get_next_plot_index(1, np)
-    plotidx%icomp_machno      = get_next_plot_index(1, np)
+    p%icomp_tpert       = p%next_index(1)
+    p%icomp_machno      = p%next_index(1)
     if (plot_cs) then
-       plotidx%icomp_cs          = get_next_plot_index(1, np)
+       p%icomp_cs          = p%next_index(1)
     end if
-    plotidx%icomp_dg          = get_next_plot_index(1, np)
-    plotidx%icomp_entropy     = get_next_plot_index(1, np)
-    plotidx%icomp_entropypert = get_next_plot_index(1, np)
-    plotidx%icomp_sponge      = get_next_plot_index(1, np)
+    p%icomp_dg          = p%next_index(1)
+    p%icomp_entropy     = p%next_index(1)
+    p%icomp_entropypert = p%next_index(1)
+    p%icomp_sponge      = p%next_index(1)
 
-    plotidx%icomp_pi          = get_next_plot_index(1, np)
+    p%icomp_pi          = p%next_index(1)
     if (plot_gpi) then
-       plotidx%icomp_gpi         = get_next_plot_index(dm_in, np)
+       p%icomp_gpi         = p%next_index(dm_in)
     endif
 
     if (plot_base) then
-       plotidx%icomp_pioverp0    = get_next_plot_index(1, np)
-       plotidx%icomp_p0pluspi    = get_next_plot_index(1, np)
+       p%icomp_pioverp0    = p%next_index(1)
+       p%icomp_p0pluspi    = p%next_index(1)
     end if
 
     if (plot_omegadot) then
-       plotidx%icomp_omegadot = get_next_plot_index(nspec, np)
+       p%icomp_omegadot = p%next_index(nspec)
     end if
 
     if (plot_Hnuc) then
-       plotidx%icomp_enuc     = get_next_plot_index(1, np)
+       p%icomp_enuc     = p%next_index(1)
     end if
 
     if (plot_Hext) then
-      plotidx%icomp_Hext     = get_next_plot_index(1, np)
+      p%icomp_Hext     = p%next_index(1)
     end if
 
     if (plot_eta) then
-      plotidx%icomp_eta     = get_next_plot_index(1, np)
+      p%icomp_eta     = p%next_index(1)
     end if
 
     if (use_thermal_diffusion) then
-       plotidx%icomp_thermal = get_next_plot_index(1, np)
-       plotidx%icomp_conductivity = get_next_plot_index(1, np)
+       p%icomp_thermal = p%next_index(1)
+       p%icomp_conductivity = p%next_index(1)
     endif
 
     if (plot_ad_excess) then
-       plotidx%icomp_ad_excess = get_next_plot_index(1, np)
+       p%icomp_ad_excess = p%next_index(1)
     endif
 
     if (use_particles) then
-       plotidx%icomp_part = get_next_plot_index(1, np)
+       p%icomp_part = p%next_index(1)
     endif
 
     if (plot_processors) then
-       plotidx%icomp_proc = get_next_plot_index(1, np)
+       p%icomp_proc = p%next_index(1)
     endif
 
     if (plot_pidivu) then
-       plotidx%icomp_pidivu = get_next_plot_index(1, np)
+       p%icomp_pidivu = p%next_index(1)
     endif
-
-    plotidx%n_plot_comps = np
 
   end subroutine init_plot_variables
 

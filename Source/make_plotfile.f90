@@ -134,7 +134,7 @@ contains
 
   end subroutine get_plot_names
 
-  subroutine make_plotfile(dirname,mla,u,s,pi,gpi,rho_omegadot, &
+  subroutine make_plotfile(p,dirname,mla,u,s,pi,gpi,rho_omegadot, &
                            rho_Hnuc,rho_Hext, &
                            thermal,Source,sponge,mba,plot_names,dx, &
                            the_bc_tower,w0,rho0,rhoh0,p0, &
@@ -167,6 +167,7 @@ contains
     use make_div_coeff_module
     use make_pi_cc_module
 
+    type(plot_t)     , intent(in   ) :: p
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
     type(multifab)   , intent(in   ) :: u(:)
@@ -360,7 +361,7 @@ contains
     endif
 
     ! divw0
-    if (p%icomp_divw0) then
+    if (p%icomp_divw0 > 0) then
        do n=1,nlevs
           if (spherical .eq. 1) then
              n_1d = 1
@@ -387,7 +388,7 @@ contains
                                  the_bc_tower%bc_tower_array,mla)
 
        do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_rhoh0,tempfab(n),1,1)
+          call multifab_copy_c(plotdata(n),p%icomp_rhoh0,tempfab(n),1,1)
        end do
     endif
 
@@ -455,13 +456,14 @@ contains
        ! RADIAL AND CIRCUMFERENTIAL VELOCITY (spherical only)
        if (spherical .eq. 1) then
           if (p%icomp_velr > 0 .or. p%icomp_velc > 0) then
-          call make_velrc(plotdata(n),p%icomp_velr,p%icomp_velc, &
-                          u(n),w0r_cart(n),normal(n))
+             call make_velrc(plotdata(n),p%icomp_velr,p%icomp_velc, &
+                             u(n),w0r_cart(n),normal(n))
+          endif
        endif
 
        ! MAGVEL = |U + w0|
        if (p%icomp_magvel > 0 .or. p%icomp_mom > 0) then
-          call make_magvel(plotdata(n),p%icomp_magvel,icomp_mom, &
+          call make_magvel(plotdata(n),p%icomp_magvel,p%icomp_mom, &
                            s(n),u(n),w0(n_1d,:),w0mac(n,:))
        endif
 
@@ -525,35 +527,35 @@ contains
     end do
 
     ! CONDUCTIVITY
-    if (use_thermal_diffusion) then
+    if (p%icomp_conductivity > 0) then
        do n=1,nlevs
           ! this just uses (rho, T, X_k) ---> conductivity
           ! it doesn't need to do anything fancy for spherical
-          call make_conductivity(plotdata(n),icomp_conductivity,s(n))
+          call make_conductivity(plotdata(n),p%icomp_conductivity,s(n))
        end do
     end if
 
     ! ADIABATIC EXCESS
-    if (plot_ad_excess) then
+    if (p%icomp_ad_excess > 0) then
        do n = 1, nlevs
-          call make_ad_excess(plotdata(n),icomp_ad_excess,s(n),normal(n))
+          call make_ad_excess(plotdata(n),p%icomp_ad_excess,s(n),normal(n))
        enddo
     endif
 
 
     ! PARTICLES
-    if (use_particles) then
+    if (p%icomp_part > 0) then
        do n = 1, nlevs
-          call multifab_setval_c(plotdata(n),ZERO,icomp_part,1)
+          call multifab_setval_c(plotdata(n),ZERO,p%icomp_part,1)
        enddo
-       call make_particle_count(mla,plotdata,icomp_part,particles)
+       call make_particle_count(mla,plotdata,p%icomp_part,particles)
     endif
 
 
     ! processor number
-    if (plot_processors) then
+    if (p%icomp_proc > 0) then
        do n = 1, nlevs
-          call make_processor_number(plotdata(n),icomp_proc)
+          call make_processor_number(plotdata(n),p%icomp_proc)
        enddo
     endif
     
@@ -561,30 +563,46 @@ contains
     ! the loop over nlevs must count backwards to make sure the finer grids are done first
     do n=nlevs,2,-1
        ! set level n-1 data to be the average of the level n data covering it
-       call ml_cc_restriction_c(plotdata(n-1),icomp_tfromp,plotdata(n),icomp_tfromp, &
-                                mla%mba%rr(n-1,:),1)
-       call ml_cc_restriction_c(plotdata(n-1),icomp_tpert,plotdata(n),icomp_tpert, &
-                                mla%mba%rr(n-1,:),1)
-       call ml_cc_restriction_c(plotdata(n-1),icomp_rhopert,plotdata(n),icomp_rhopert, &
-                                mla%mba%rr(n-1,:),1)
-       if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
-          call ml_cc_restriction_c(plotdata(n-1),icomp_rhohpert,plotdata(n),icomp_rhohpert, &
+       if (p%icomp_tfromp > 0) then
+          call ml_cc_restriction_c(plotdata(n-1),p%icomp_tfromp,plotdata(n),p%icomp_tfromp, &
                                    mla%mba%rr(n-1,:),1)
-          call ml_cc_restriction_c(plotdata(n-1),icomp_tfromH,plotdata(n),icomp_tfromH, &
+       endif
+       if (p%icomp_tpert > 0) then
+          call ml_cc_restriction_c(plotdata(n-1),p%icomp_tpert,plotdata(n),p%icomp_tpert, &
                                    mla%mba%rr(n-1,:),1)
-          call ml_cc_restriction_c(plotdata(n-1),icomp_dp,plotdata(n),icomp_dp, &
+       endif
+       if (p%icomp_rhopert > 0) then
+          call ml_cc_restriction_c(plotdata(n-1),p%icomp_rhopert,plotdata(n),p%icomp_rhopert, &
+                                   mla%mba%rr(n-1,:),1)
+       endif
+       if (p%icomp_rhohpert > 0) then
+          call ml_cc_restriction_c(plotdata(n-1),p%icomp_rhohpert,plotdata(n),p%icomp_rhohpert, &
+                                   mla%mba%rr(n-1,:),1)
+       endif
+       if (p%icomp_tfromH > 0) then
+          call ml_cc_restriction_c(plotdata(n-1),p%icomp_tfromH,plotdata(n),p%icomp_tfromH, &
+                                   mla%mba%rr(n-1,:),1)
+       endif
+       if (p%icomp_dp > 0) then
+          call ml_cc_restriction_c(plotdata(n-1),p%icomp_dp,plotdata(n),p%icomp_dp, &
+                                   mla%mba%rr(n-1,:),1)
+       endif
+       if (p%icomp_cs > 0) then
+          call ml_cc_restriction_c(plotdata(n-1),p%icomp_cs,plotdata(n),p%icomp_cs, &
                                    mla%mba%rr(n-1,:),1)
        end if
-       if (plot_cs) then
-          call ml_cc_restriction_c(plotdata(n-1),icomp_cs,plotdata(n),icomp_cs, &
+       if (p%icomp_machno > 0) then
+          call ml_cc_restriction_c(plotdata(n-1),p%icomp_machno,plotdata(n),p%icomp_machno, &
                                    mla%mba%rr(n-1,:),1)
-       end if
-       call ml_cc_restriction_c(plotdata(n-1),icomp_machno,plotdata(n),icomp_machno, &
-                                mla%mba%rr(n-1,:),1)
-       call ml_cc_restriction_c(plotdata(n-1),icomp_dg,plotdata(n),icomp_dg, &
-                                mla%mba%rr(n-1,:),1)
-       call ml_cc_restriction_c(plotdata(n-1),icomp_entropy,plotdata(n),icomp_entropy, &
-                                mla%mba%rr(n-1,:),1)
+       endif
+       if (p%icomp_dg > 0) then
+          call ml_cc_restriction_c(plotdata(n-1),p%icomp_dg,plotdata(n),p%icomp_dg, &
+                                   mla%mba%rr(n-1,:),1)
+       endif
+       if (p%icomp_entropy > 0) then
+          call ml_cc_restriction_c(plotdata(n-1),p%icomp_entropy,plotdata(n),p%icomp_entropy, &
+                                   mla%mba%rr(n-1,:),1)
+       endif
     end do
 
     ! build a cell-centered multifab to hold pi
@@ -612,56 +630,65 @@ contains
     do n=1,nlevs
 
        ! DELTA_T
-       if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) &
-            call make_deltaT(plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
+       if (p%icomp_dT > 0 .and. p%icomp_tfromp > 0 .and. p%icomp_tfromH > 0) then
+          call make_deltaT(plotdata(n),p%icomp_dT,p%icomp_tfromp,p%icomp_tfromH)
+       endif
 
        ! PI
-       call multifab_copy_c(plotdata(n),icomp_pi,pi_cc(n),1,1)
+       if (p%icomp_pi > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_pi,pi_cc(n),1,1)
+       endif
 
        ! GRAD PI
-       if (plot_gpi) then
-          call multifab_copy_c(plotdata(n),icomp_gpi,gpi(n),1,dm)
+       if (p%icomp_gpi > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_gpi,gpi(n),1,dm)
        endif
 
        ! pi * div(U)
-       if (plot_pidivu) then
-          call make_pidivu(plotdata(n),icomp_pidivu,pi_cc(n),u(n),dx(n,:))
+       if (p%icomp_pidivu > 0) then
+          call make_pidivu(plotdata(n),p%icomp_pidivu,pi_cc(n),u(n),dx(n,:))
        endif
 
     end do
 
 
     ! SPONGE
-    if (plot_sponge_fdamp) then
-       tempval = dt*sponge_kappa
-       do n=1,nlevs
-          ! compute f_damp assuming sponge=1/(1+dt*kappa*fdamp)
-          ! therefore fdamp = (1/sponge-1)/(dt*kappa)
+    if (p%icomp_sponge > 0) then
+       if (plot_sponge_fdamp) then
+          tempval = dt*sponge_kappa
+          do n=1,nlevs
+             ! compute f_damp assuming sponge=1/(1+dt*kappa*fdamp)
+             ! therefore fdamp = (1/sponge-1)/(dt*kappa)
 
-          ! plotdata = 1
-          call multifab_setval_c(plotdata(n),ONE,icomp_sponge,1)
-          ! tempfab = 1
-          call multifab_setval(tempfab(n),ONE)
-          ! plotdata = 1/sponge
-          call multifab_div_div_c(plotdata(n),icomp_sponge,sponge(n),1,1)
-          ! plotdata = 1/sponge-1
-          call multifab_sub_sub_c(plotdata(n),icomp_sponge,tempfab(n),1,1)
-          ! plotdata = (1/sponge-1)/(dt*kappa)
-          call multifab_div_div_s_c(plotdata(n),icomp_sponge,tempval,1)
-       end do
-    else
-       do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)
-       end do
-    end if
+             ! plotdata = 1
+             call multifab_setval_c(plotdata(n),ONE,p%icomp_sponge,1)
+             ! tempfab = 1
+             call multifab_setval(tempfab(n),ONE)
+             ! plotdata = 1/sponge
+             call multifab_div_div_c(plotdata(n),p%icomp_sponge,sponge(n),1,1)
+             ! plotdata = 1/sponge-1
+             call multifab_sub_sub_c(plotdata(n),p%icomp_sponge,tempfab(n),1,1)
+             ! plotdata = (1/sponge-1)/(dt*kappa)
+             call multifab_div_div_s_c(plotdata(n),p%icomp_sponge,tempval,1)
+          end do
+       else
+          do n=1,nlevs
+             call multifab_copy_c(plotdata(n),p%icomp_sponge,sponge(n),1,1)
+          end do
+       end if
+    endif
 
     !PIOVERP0 and P0PLUSPI
     if (plot_base) then
        do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_pioverp0,pi_cc(n),1,1)
-          call multifab_div_div_c(plotdata(n),icomp_pioverp0,plotdata(n),icomp_p0,1)
-          call multifab_copy_c(plotdata(n),icomp_p0pluspi,pi_cc(n),1,1)
-          call multifab_plus_plus_c(plotdata(n),icomp_p0pluspi,plotdata(n),icomp_p0,1)
+          if (p%icomp_pioverp0 > 0 .and. p%icomp_p0 > 0) then
+             call multifab_copy_c(plotdata(n),p%icomp_pioverp0,pi_cc(n),1,1)
+             call multifab_div_div_c(plotdata(n),p%icomp_pioverp0,plotdata(n),p%icomp_p0,1)
+          endif
+          if (p%icomp_p0pluspi > 0 .and. p%icomp_p0 > 0) then
+             call multifab_copy_c(plotdata(n),p%icomp_p0pluspi,pi_cc(n),1,1)
+             call multifab_plus_plus_c(plotdata(n),p%icomp_p0pluspi,plotdata(n),p%icomp_p0,1)
+          endif
        end do
     end if
 
@@ -671,27 +698,30 @@ contains
     ! the entropy first, and then compute that.
     ! an average quantity needs ghostcells, so copy entropy into
     ! tempfab
-    do n=1,nlevs
-       call multifab_copy_c(tempfab(n),1,plotdata(n),icomp_entropy,1)
-    end do
+    if (p%icomp_entropy > 0 .and. p%icomp_entropypert > 0) then
+       do n=1,nlevs
+          call multifab_copy_c(tempfab(n),1,plotdata(n),p%icomp_entropy,1)
+       end do
 
-    ! restrict data and fill all ghost cells
-    call ml_restrict_and_fill(nlevs,tempfab,mla%mba%rr,the_bc_tower%bc_tower_array, &
-                              icomp=1, &
-                              bcomp=foextrap_comp, &
-                              nc=1, &
-                              ng=tempfab(1)%ng)
+       ! restrict data and fill all ghost cells
+       call ml_restrict_and_fill(nlevs,tempfab,mla%mba%rr,the_bc_tower%bc_tower_array, &
+                                 icomp=1, &
+                                 bcomp=foextrap_comp, &
+                                 nc=1, &
+                                 ng=tempfab(1)%ng)
     
-    call average(mla,tempfab,entropybar,dx,1)
+       call average(mla,tempfab,entropybar,dx,1)
 
-    call make_entropypert(plotdata,icomp_entropy,icomp_entropypert,entropybar,dx)
+       call make_entropypert(plotdata,p%icomp_entropy,p%icomp_entropypert,entropybar,dx)
 
-    ! the loop over nlevs must count backwards to make sure the finer grids are done first
-    do n=nlevs,2,-1
-       ! set level n-1 data to be the average of the level n data covering it
-       call ml_cc_restriction_c(plotdata(n-1),icomp_entropypert,plotdata(n), &
-                                icomp_entropypert,mla%mba%rr(n-1,:),1)
-    end do
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction_c(plotdata(n-1),p%icomp_entropypert,plotdata(n), &
+                                   p%icomp_entropypert,mla%mba%rr(n-1,:),1)
+       end do
+    endif
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if (parallel_IOProcessor()) then
