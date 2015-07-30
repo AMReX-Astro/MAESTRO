@@ -823,7 +823,7 @@ contains
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -2591,8 +2591,8 @@ contains
     !     Local variables
     integer :: i, j, k
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
     if (ivelr > 0) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
