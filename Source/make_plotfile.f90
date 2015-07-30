@@ -51,6 +51,12 @@ contains
        end do
     end if
 
+    if (p%n_species > 0) then
+       do comp = 1, p%n_species
+          plot_names(p%ipf_spec(comp)) = "X(" // trim(short_spec_names(p%spec(comp))) // ")"
+       enddo
+    endif
+
     if (p%icomp_trac > 0) then
        do comp = 1, ntrac
           plot_names(p%icomp_trac+comp-1) = "tracer"
@@ -277,6 +283,15 @@ contains
           do comp=1,nspec
              call multifab_div_div_c(plotdata(n),p%icomp_spec+comp-1,s(n),rho_comp,1)
           end do
+       endif
+
+       ! individual species -- if specified by name for a mini plotfile
+       if (p%n_species > 0) then
+          do comp = 1, p%n_species
+             call multifab_copy_c(plotdata(n),p%ipf_spec(comp), &
+                                  s(n),spec_comp+p%spec(comp)-1,1)
+             call multifab_div_div_c(plotdata(n),p%ipf_spec(comp),s(n),rho_comp,1)
+          enddo
        endif
 
        ! omegadot

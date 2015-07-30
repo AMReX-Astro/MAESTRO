@@ -5,12 +5,16 @@
 module variables
 
   use bl_types
+  use network, only: nspec
 
   implicit none
 
   integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, pi_comp
   integer, save :: trac_comp, press_comp
   integer, save :: foextrap_comp, hoextrap_comp
+
+  integer, save :: ntrac, nscal
+  real(kind=dp_t), save :: rel_eps
 
   type plot_t
      integer :: icomp_vel = -1
@@ -60,13 +64,14 @@ module variables
      integer :: icomp_pidivu = -1
      integer :: n_plot_comps = 0
 
+     integer :: n_species = 0
+     integer :: spec(nspec)      ! index in the list of species in the network
+     integer :: ipf_spec(nspec)  ! index in the plotfile for a given species
+
    contains
      procedure :: next_index => get_next_plot_index
 
   end type plot_t
-
-  integer, save :: ntrac,nscal
-  real(kind=dp_t), save :: rel_eps
 
 contains
 
@@ -111,6 +116,7 @@ contains
     hoextrap_comp = foextrap_comp + 1
 
   end subroutine init_variables
+
 
   subroutine init_plot_variables(p)
 
@@ -227,13 +233,13 @@ contains
   subroutine init_miniplot_variables(p)
 
     use bl_error_module
-    use network, only: nspec
+    use network, only: nspec, network_species_index
     use probin_module, only: mini_plot_var1, mini_plot_var2, mini_plot_var3, &
                              mini_plot_var4, mini_plot_var5, mini_plot_var6, &
                              mini_plot_var7, mini_plot_var8, mini_plot_var9, &
                              dm_in, use_tfromp
 
-    integer :: nvar, n
+    integer :: nvar, n, idx
 
     character (len=256) :: vars(9)
 
@@ -321,7 +327,16 @@ contains
           p%icomp_machno = p%next_index(1)
 
        case default
-          call bl_error("ERROR, plot variable undefined", vars(n))
+
+          ! did we specify a particular species?
+          idx = network_species_index(vars(n))
+          if (idx > 0) then
+             p%n_species = p%n_species + 1
+             p%spec(p%n_species) = idx
+             p%ipf_spec(p%n_species) = p%next_index(1)
+          else
+             call bl_error("ERROR, plot variable undefined", vars(n))
+          endif
        end select
 
     enddo
