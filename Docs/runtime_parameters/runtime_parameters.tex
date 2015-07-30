@@ -222,6 +222,8 @@
 \rowcolor{tableShade}
 \verb=  do_burning  = &   turn on (.true.) or off (.false.) burning  &  .true. \\
 \verb=  do_subgrid_burning  = &   break a zone into subzones, call the burner in each subzone and then average the result to the original cell  &  .false. \\
+\rowcolor{tableShade}
+\verb=  reaction_sum_tol  = &   mass fraction sum tolerance (if they don't sum to 1 within this tolerance, we abort)  &  1.d-10 \\
 
 
 \end{longtable}
@@ -324,42 +326,42 @@
 \verb=  drdxfac  = &   ratio of radial base state zones to Cartesian full state zones for spherical geometry  &  1 \\
 \rowcolor{tableShade}
 \verb=  dump_grid_file  = &   dump out a file, named grids.out, containing the number of grids a each level. A new line is added each time regrid is called.  &  .false. \\
-\verb=  ignore_fine_in_layout_mapping  = &   Our traditional way of distributing boxes among MPI ranks has a flaw.  In some cases, it unnecessarily moves grids among processors in regridding.  Even if the grids do not changes at all, the boxes may end up on different processors after regridding, and the box distribution becomes more and more fragmented over time (i.e. neighboring boxes become far away from each other in MPI ranks).  Setting {\tt ignore\_fine\_in\_layout\_mapping} to true will avoid the flaw.  &  .true. \\
-\rowcolor{tableShade}
 \verb=  max_grid_size  = &   The largest grid size that will be created using make\_new\_grids.  &  64 \\
+\rowcolor{tableShade}
 \verb=  max_grid_size_1  = &   The largest grid size that will be created using make\_new\_grids for the coarsest level.  Defaults to {\tt max\_grid\_size}.  &  -1 \\
-\rowcolor{tableShade}
 \verb=  max_grid_size_2  = &   The largest grid size that will be created using make\_new\_grids for level 2 (the first refined level).  Defaults to {\tt max\_grid\_size}.  &  -1 \\
+\rowcolor{tableShade}
 \verb=  max_grid_size_3  = &   The largest grid size that will be created using make\_new\_grids for level 3 (the second refined level) and beyond.  Defaults to {\tt max\_grid\_size}.  &  -1 \\
-\rowcolor{tableShade}
 \verb=  max_levs  = &   Total number of levels.  1 = single level.  &  1 \\
+\rowcolor{tableShade}
 \verb=  min_eff  = &   parameter for cluster algorithm for making new grids in adaptive problems  &  0.9d0 \\
-\rowcolor{tableShade}
 \verb=  minwidth  = &   The minimum size on a side for a grid created using make\_new\_grids.  &  8 \\
+\rowcolor{tableShade}
 \verb=  n_cellx  = &   Number of cells for the base level in the x-direction  &  -1 \\
-\rowcolor{tableShade}
 \verb=  n_celly  = &   Number of cells for the base level in the y-direction  &  -1 \\
+\rowcolor{tableShade}
 \verb=  n_cellz  = &   Number of cells for the base level in the z-direction  &  -1 \\
-\rowcolor{tableShade}
 \verb=  octant  = &   set octant = T if you just want to model an octant of a sphere (note: only takes effect for spherical geometry)  &  .false. \\
+\rowcolor{tableShade}
 \verb=  prob_hi_x  = &   physical coordinates of hi-x corner of problem domain  &  1.d0 \\
-\rowcolor{tableShade}
 \verb=  prob_hi_y  = &   physical coordinates of hi-y corner of problem domain  &  1.d0 \\
+\rowcolor{tableShade}
 \verb=  prob_hi_z  = &   physical coordinates of hi-z corner of problem domain  &  1.d0 \\
-\rowcolor{tableShade}
 \verb=  prob_lo_x  = &   physical coordinates of lo-x corner of problem domain  &  ZERO \\
+\rowcolor{tableShade}
 \verb=  prob_lo_y  = &   physical coordinates of lo-y corner of problem domain  &  ZERO \\
-\rowcolor{tableShade}
 \verb=  prob_lo_z  = &   physical coordinates of lo-z corner of problem domain  &  ZERO \\
+\rowcolor{tableShade}
 \verb=  ref_ratio  = &   Refinement ratio for multilevel problems  &  2 \\
-\rowcolor{tableShade}
 \verb=  regrid_int  = &   How often we regrid.  &  -1 \\
+\rowcolor{tableShade}
 \verb=  spherical_in  = &   Set to 1 if you are doing a spherical problem.  &  0 \\
-\rowcolor{tableShade}
 \verb=  test_set  = &   Fixed grid file.  &  '' \\
-\verb=  the_copy_cache_max  = &    Number of boxassoc layouts we keep in memory to avoid having to recompute the boxassoc, which is computationally expensive.  &  128 \\
 \rowcolor{tableShade}
+\verb=  the_copy_cache_max  = &    Number of boxassoc layouts we keep in memory to avoid having to recompute the boxassoc, which is computationally expensive.  &  128 \\
 \verb=  the_layout_verbosity  = &    &  0 \\
+\rowcolor{tableShade}
+\verb=  the_ml_layout_strategy  = &   This prarmeter has no impact on single-level runs! 0: This uses either knapsack or sfc on each level.  Before boxes are    distributed, MPI ranks are sorted according to the memory usage by    all levels.  This is our traditional approach. 1: This uses sfc on each level.  MPI ranks are sorted according to the    memory usage by lower levels.  &  0 \\
 \verb=  the_sfc_threshold  = &   When assigning processors for grids, this determines whether we use the sfc algorithm or knapsack algorithm.  If the total number of grids divided by the number of processors is greater than this number, use sfc.  &  5 \\
 \rowcolor{tableShade}
 \verb=  use_tpert_in_tagging  = &   pass $T'$ into the tagging routines as the auxillary multifab instead of the default $\rho H_\mathrm{nuc}$.  &  .false. \\
@@ -602,6 +604,24 @@
 \verb=  diag_buf_size  = &   number of timesteps to buffer diagnostic output information before writing (note: not implemented for all problems)  &  10 \\
 \verb=  lUsingNFiles  = &   If .true., use nOutFiles processors to write checkpoint and plotfiles. Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  .true. \\
 \rowcolor{tableShade}
+\verb=  mini_plot_base_name  = &   basename for the mini plotfiles  &  "miniplt" \\
+\verb=  mini_plot_deltat  = &   rather than use a mini plot interval, output a mini plotfile every mini\_plot\_deltat in time  &  -1.d0 \\
+\rowcolor{tableShade}
+\verb=  mini_plot_int  = &   mini plot interval  &  -1 \\
+\verb=  mini_plot_var1  = &   names of specific variables to store in the mini plotfile  &  "" \\
+\rowcolor{tableShade}
+\verb=  mini_plot_var2  = &    &  "" \\
+\verb=  mini_plot_var3  = &    &  "" \\
+\rowcolor{tableShade}
+\verb=  mini_plot_var4  = &    &  "" \\
+\verb=  mini_plot_var5  = &    &  "" \\
+\rowcolor{tableShade}
+\verb=  mini_plot_var6  = &    &  "" \\
+\verb=  mini_plot_var7  = &    &  "" \\
+\rowcolor{tableShade}
+\verb=  mini_plot_var8  = &    &  "" \\
+\verb=  mini_plot_var9  = &    &  "" \\
+\rowcolor{tableShade}
 \verb=  nOutFiles  = &   If lUsingNFiles = .true., use this many processors to write checkpoint and plotfiles.  Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  64 \\
 \verb=  plot_Hext  = &   plot external heating (Hext) in plotfile  &  .false. \\
 \rowcolor{tableShade}
@@ -710,6 +730,8 @@
 \rowcolor{tableShade}
 \verb=  model_file  = &   input model file  &  "model.hse" \\
 \verb=  perturb_model  = &   Turn on a perturbation in the initial data.  Problem specific.  &  .false. \\
+\rowcolor{tableShade}
+\verb=  print_init_hse_diag  = &   print out HSE diagnostics as a function of r for the initial model  &  .false. \\
 
 
 \end{longtable}
@@ -770,9 +792,9 @@
 %
 \begin{center}
 \begin{longtable}{|l|p{5.25in}|l|}
-\caption[ timestepping 
- parameters.]{ timestepping 
- parameters.} \label{table:  timestepping 
+\caption[ timestepping
+ parameters.]{ timestepping
+ parameters.} \label{table:  timestepping
  parameters. runtime} \\
 %
 \hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
