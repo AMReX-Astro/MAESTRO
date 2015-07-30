@@ -86,7 +86,6 @@ subroutine varden()
   type(multifab), pointer :: chkdata(:)
 
   character(len=MAX_FILENAME_LEN) :: plot_file_name, check_file_name
-  character(len=20), allocatable :: plot_names(:), mini_plot_names(:)
   
   integer :: npartdata
   integer, allocatable :: index_partdata(:)
@@ -132,7 +131,8 @@ subroutine varden()
 
   logical :: have_overview
 
-  type(plot_t) :: plt, miniplt
+  type(plot_t) :: plt(2)  ! 1 = main plotfile; 2 = mini plotfile
+  integer :: ip
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! initialization
@@ -157,16 +157,11 @@ subroutine varden()
   call conductivity_init(cond_const=conductivity_constant)
 
   ! setup the plotfiles
-  call init_plot_variables(plt)
+  call init_plot_variables(plt(1), plot_int, plot_deltat, plot_base_name)
+  call get_plot_names(plt(1))
 
-  allocate(plot_names(plt%n_plot_comps))
-  call get_plot_names(plt, plot_names)
-
-  call init_miniplot_variableS(miniplt)
-
-  allocate(mini_plot_names(miniplt%n_plot_comps))
-  call get_plot_names(miniplt, mini_plot_names)
-
+  call init_miniplot_variables(plt(2), mini_plot_int, mini_plot_deltat, mini_plot_base_name)
+  call get_plot_names(plt(2))
 
   ! particle initialization
   call particle_setverbose(.true.)
@@ -482,21 +477,25 @@ subroutine varden()
            call make_sponge(sponge,dx,dt,mla)
         end if
 
-        plot_file_name = make_filename(plot_base_name, restart)
+        do ip = 1, 2
+           if (ip == 2 .and. plt(ip)%plot_int < 0 .and. plt(ip)%plot_dt < 0.0) cycle
 
-        call make_plotfile(plt,plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
-                           rho_Hnuc2,rho_Hext, &
-                           thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
-                           the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
-                           tempbar,gamma1bar,etarho_cc, &
-                           normal,dt,particles,write_pf_time)
+           plot_file_name = make_filename(plt(ip)%base_name, restart)
 
-        call write_base_state(restart, plot_file_name, &
-                              rho0_old, rhoh0_old, p0_old, gamma1bar, &
-                              w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+           call make_plotfile(plt(ip),plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
+                              rho_Hnuc2,rho_Hext, &
+                              thermal2,Source_old,sponge,mla%mba,dx, &
+                              the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
+                              tempbar,gamma1bar,etarho_cc, &
+                              normal,dt,particles,write_pf_time)
 
-        call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
+           call write_base_state(restart, plot_file_name, &
+                                 rho0_old, rhoh0_old, p0_old, gamma1bar, &
+                                 w0, etarho_ec, etarho_cc, &
+                                 div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+           
+           call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
+        enddo
 
      end if
 
@@ -629,29 +628,34 @@ subroutine varden()
         endif
      end if
 
-     if ( plot_int > 0 .or. plot_deltat > ZERO) then
+     !-----------------------------------------------------------------------
+     ! write a plotfile
+     !-----------------------------------------------------------------------
 
-        !-----------------------------------------------------------------------
-        ! write a plotfile
-        !-----------------------------------------------------------------------
+     do ip = 1, 2
+        if (ip == 2 .and. plt(ip)%plot_int < 0 .and. plt(ip)%plot_dt < 0.0) cycle
 
-        plot_file_name = make_filename(plot_base_name, istep)
+        if ( plt(ip)%plot_int > 0 .or. plt(ip)%plot_dt > ZERO) then
 
-        call make_plotfile(plt,plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
-                           rho_Hnuc2,rho_Hext, &
-                           thermal2,Source_old,sponge,mla%mba,plot_names,dx, &
-                           the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
-                           tempbar,gamma1bar,etarho_cc, &
-                           normal,dt,particles,write_pf_time)
+           plot_file_name = make_filename(plt(ip)%base_name, istep)
 
-        call write_base_state(istep, plot_file_name, &
-                              rho0_old, rhoh0_old, p0_old, gamma1bar, &
-                              w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+           call make_plotfile(plt(ip),plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
+                              rho_Hnuc2,rho_Hext, &
+                              thermal2,Source_old,sponge,mla%mba,dx, &
+                              the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
+                              tempbar,gamma1bar,etarho_cc, &
+                              normal,dt,particles,write_pf_time)
 
-        call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
-        last_plt_written = istep
-     end if
+           call write_base_state(istep, plot_file_name, &
+                                 rho0_old, rhoh0_old, p0_old, gamma1bar, &
+                                 w0, etarho_ec, etarho_cc, &
+                                 div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+
+           call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
+           last_plt_written = istep
+        end if
+
+     enddo
 
   end if ! end if (restart < 0)
 
@@ -1323,31 +1327,34 @@ subroutine varden()
         ! automatically dump a plotfile
         inquire(file=".dump_plotfile", exist=dump_plotfile)
 
-        if (plot_int > 0 .or. plot_deltat > ZERO .or. dump_plotfile) then
-           if ( (plot_int > 0 .and. mod(istep,plot_int) .eq. 0) .or. &
-                (plot_deltat > ZERO .and. &
-                mod(time - dt,plot_deltat) > mod(time,plot_deltat)) .or. &
-                dump_plotfile) then
+        do ip = 1, 2
+           if (ip == 2 .and. plt(ip)%plot_int < 0 .and. plt(ip)%plot_dt < 0.0) cycle
 
-              plot_file_name = make_filename(plot_base_name, istep)
+           if ( plt(ip)%plot_int > 0 .or. plt(ip)%plot_dt > ZERO .or. dump_plotfile) then
+              if ( (plt(ip)%plot_int > 0 .and. mod(istep,plt(ip)%plot_int) .eq. 0) .or. &
+                   (plt(ip)%plot_dt > ZERO .and. &
+                   mod(time - dt,plt(ip)%plot_dt) > mod(time,plt(ip)%plot_dt)) .or. &
+                   dump_plotfile) then
 
-              call make_plotfile(plt,plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
-                                 rho_Hnuc2,rho_Hext, &
-                                 thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
-                                 the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
-                                 tempbar,gamma1bar,etarho_cc, &
-                                 normal,dt,particles,write_pf_time)
+                 plot_file_name = make_filename(plt(ip)%base_name, istep)
 
-              call write_base_state(istep, plot_file_name, &
-                                    rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
-                                    w0, etarho_ec, etarho_cc, &
-                                    div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
-
-              call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
-              last_plt_written = istep
+                 call make_plotfile(plt(ip),plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
+                                    rho_Hnuc2,rho_Hext, &
+                                    thermal2,Source_new,sponge,mla%mba,dx, &
+                                    the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
+                                    tempbar,gamma1bar,etarho_cc, &
+                                    normal,dt,particles,write_pf_time)
+                 
+                 call write_base_state(istep, plot_file_name, &
+                                       rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
+                                       w0, etarho_ec, etarho_cc, &
+                                       div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+                 
+                 call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
+                 last_plt_written = istep
+              end if
            end if
-        end if
-
+        enddo
 
         ! if the file .abort_maestro exists in our output directory, then
         ! automatically end the run.  This has the effect of also dumping
@@ -1412,29 +1419,32 @@ subroutine varden()
 
      end if
 
-     if ( ( plot_int > 0 .or. &
-            (plot_deltat > ZERO .and. &
-             mod(time - dt,plot_deltat) > mod(time,plot_deltat)) ) .and. &
-          last_plt_written .ne. istep ) then
+     do ip = 1, 2
+        if (ip == 2 .and. plt(ip)%plot_int < 0 .and. plt(ip)%plot_dt < 0.0) cycle
 
-        plot_file_name = make_filename(plot_base_name, istep)
+        if ( ( plt(ip)%plot_int > 0 .or. &
+             (plt(ip)%plot_dt > ZERO .and. &
+             mod(time - dt,plt(ip)%plot_dt) > mod(time,plt(ip)%plot_dt)) ) .and. &
+             last_plt_written .ne. istep ) then
 
-        call make_plotfile(plt,plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
-                           rho_Hnuc2,rho_Hext, &
-                           thermal2,Source_new,sponge,mla%mba,plot_names,dx, &
-                           the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
-                           tempbar,gamma1bar,etarho_cc, &
-                           normal,dt,particles,write_pf_time)
+           plot_file_name = make_filename(plt(ip)%base_name, istep)
+
+           call make_plotfile(plt(ip),plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
+                              rho_Hnuc2,rho_Hext, &
+                              thermal2,Source_new,sponge,mla%mba,dx, &
+                              the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
+                              tempbar,gamma1bar,etarho_cc, &
+                              normal,dt,particles,write_pf_time)
         
-        call write_base_state(istep, plot_file_name, &
-                              rho0_new, rhoh0_new, p0_new, gamma1bar, &
-                              w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+           call write_base_state(istep, plot_file_name, &
+                                 rho0_new, rhoh0_new, p0_new, gamma1bar, &
+                                 w0, etarho_ec, etarho_cc, &
+                                 div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
-        call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
-     end if
-  end if
-
+           call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
+        end if
+     enddo
+  endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! clean-up

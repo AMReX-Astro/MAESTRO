@@ -68,6 +68,12 @@ module variables
      integer :: spec(nspec)      ! index in the list of species in the network
      integer :: ipf_spec(nspec)  ! index in the plotfile for a given species
 
+     character(len=20), allocatable :: names(:)
+
+     integer :: plot_int
+     real(dp_t) :: plot_dt
+     character(len=256) :: base_name
+
    contains
      procedure :: next_index => get_next_plot_index
 
@@ -118,7 +124,7 @@ contains
   end subroutine init_variables
 
 
-  subroutine init_plot_variables(p)
+  subroutine init_plot_variables(p, plot_int, plot_dt, base_name)
 
     use network, only: nspec
     use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
@@ -128,7 +134,16 @@ contains
     use geometry, only: spherical
 
     type(plot_t), intent(inout) :: p
+    integer, intent(in) :: plot_int
+    real(dp_t), intent(in) :: plot_dt
+    character (len=*), intent(in) :: base_name
 
+    ! general plotfile stuff
+    p%plot_int = plot_int
+    p%plot_dt = plot_dt
+    p%base_name = base_name
+
+    ! variable information
     p%icomp_vel      = p%next_index(dm_in)
     p%icomp_rho      = p%next_index(1)
     if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then
@@ -230,7 +245,7 @@ contains
   end subroutine init_plot_variables
 
 
-  subroutine init_miniplot_variables(p)
+  subroutine init_miniplot_variables(p, plot_int, plot_dt, base_name)
 
     use bl_error_module
     use network, only: nspec, network_species_index
@@ -239,11 +254,21 @@ contains
                              mini_plot_var7, mini_plot_var8, mini_plot_var9, &
                              dm_in, use_tfromp
 
+    type(plot_t), intent(inout) :: p
+    integer, intent(in) :: plot_int
+    real(dp_t), intent(in) :: plot_dt
+    character (len=*), intent(in) :: base_name
+
     integer :: nvar, n, idx
 
     character (len=256) :: vars(9)
 
-    type(plot_t), intent(inout) :: p
+    ! general plotfile stuff
+    p%plot_int = plot_int
+    p%plot_dt = plot_dt
+    p%base_name = base_name
+
+    ! variable information
     
     nvar = 0
 
@@ -254,46 +279,48 @@ contains
        vars(nvar) = trim(mini_plot_var1)
     endif
 
-    if (.not. mini_plot_var1 == "") then
+    if (.not. mini_plot_var2 == "") then
        nvar = nvar + 1
        vars(nvar) = trim(mini_plot_var2)
     endif
 
-    if (.not. mini_plot_var1 == "") then
+    if (.not. mini_plot_var3 == "") then
        nvar = nvar + 1
        vars(nvar) = trim(mini_plot_var3)
     endif
 
-    if (.not. mini_plot_var1 == "") then
+    if (.not. mini_plot_var4 == "") then
        nvar = nvar + 1
        vars(nvar) = trim(mini_plot_var4)
     endif
 
-    if (.not. mini_plot_var1 == "") then
+    if (.not. mini_plot_var5 == "") then
        nvar = nvar + 1
        vars(nvar) = trim(mini_plot_var5)
     endif
 
-    if (.not. mini_plot_var1 == "") then
+    if (.not. mini_plot_var6 == "") then
        nvar = nvar + 1
        vars(nvar) = trim(mini_plot_var6)
     endif
 
-    if (.not. mini_plot_var1 == "") then
+    if (.not. mini_plot_var7 == "") then
        nvar = nvar + 1
        vars(nvar) = trim(mini_plot_var7)
     endif
 
-    if (.not. mini_plot_var1 == "") then
+    if (.not. mini_plot_var8 == "") then
        nvar = nvar + 1
        vars(nvar) = trim(mini_plot_var8)
     endif
 
-    if (.not. mini_plot_var1 == "") then
+    if (.not. mini_plot_var9 == "") then
        nvar = nvar + 1
        vars(nvar) = trim(mini_plot_var9)
     endif
-    
+
+    print *, "here:", nvar
+
     do n = 1, nvar
        select case (vars(n))
 
@@ -335,6 +362,7 @@ contains
              p%spec(p%n_species) = idx
              p%ipf_spec(p%n_species) = p%next_index(1)
           else
+             print *, n, vars(n)
              call bl_error("ERROR, plot variable undefined", vars(n))
           endif
        end select

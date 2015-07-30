@@ -39,7 +39,7 @@ contains
   end function make_filename
 
 
-  subroutine get_plot_names(p, plot_names)
+  subroutine get_plot_names(p)
 
     use plot_variables_module
     use variables
@@ -52,124 +52,125 @@ contains
                              plot_processors, plot_pidivu
     use geometry, only: spherical
 
-    type(plot_t), intent(in) :: p
-    character(len=20), intent(inout) :: plot_names(:)
+    type(plot_t), intent(inout) :: p
 
     ! Local variables
     integer :: comp
 
+    allocate(p%names(p%n_plot_comps))
+    
     if (p%icomp_vel > 0) then
-       plot_names(p%icomp_vel  ) = "x_vel"
+       p%names(p%icomp_vel  ) = "x_vel"
        if (dm_in > 1) then
-          plot_names(p%icomp_vel+1) = "y_vel"
+          p%names(p%icomp_vel+1) = "y_vel"
        end if
        if (dm_in > 2) then
-          plot_names(p%icomp_vel+2) = "z_vel"
+          p%names(p%icomp_vel+2) = "z_vel"
        end if
     endif
 
-    if (p%icomp_rho > 0) plot_names(p%icomp_rho)  = "density"
-    if (p%icomp_rhoh > 0) plot_names(p%icomp_rhoh) = "rhoh"
-    if (p%icomp_h > 0) plot_names(p%icomp_h)    = "h"
+    if (p%icomp_rho > 0) p%names(p%icomp_rho)  = "density"
+    if (p%icomp_rhoh > 0) p%names(p%icomp_rhoh) = "rhoh"
+    if (p%icomp_h > 0) p%names(p%icomp_h)    = "h"
 
     if (p%icomp_spec > 0) then
        do comp = 1, nspec
-          plot_names(p%icomp_spec+comp-1) = "X(" // trim(short_spec_names(comp)) // ")"
+          p%names(p%icomp_spec+comp-1) = "X(" // trim(short_spec_names(comp)) // ")"
        end do
     end if
 
     if (p%n_species > 0) then
        do comp = 1, p%n_species
-          plot_names(p%ipf_spec(comp)) = "X(" // trim(short_spec_names(p%spec(comp))) // ")"
+          p%names(p%ipf_spec(comp)) = "X(" // trim(short_spec_names(p%spec(comp))) // ")"
        enddo
     endif
 
     if (p%icomp_trac > 0) then
        do comp = 1, ntrac
-          plot_names(p%icomp_trac+comp-1) = "tracer"
+          p%names(p%icomp_trac+comp-1) = "tracer"
        end do
     end if
 
     if (p%icomp_w0 > 0) then
-       plot_names(p%icomp_w0)   = "w0_x"
-       if (dm_in > 1) plot_names(p%icomp_w0+1) = "w0_y"
-       if (dm_in > 2) plot_names(p%icomp_w0+2) = "w0_z"
+       p%names(p%icomp_w0)   = "w0_x"
+       if (dm_in > 1) p%names(p%icomp_w0+1) = "w0_y"
+       if (dm_in > 2) p%names(p%icomp_w0+2) = "w0_z"
     endif
 
-    if (p%icomp_divw0 > 0) plot_names(p%icomp_divw0) = "divw0"
-    if (p%icomp_rho0 > 0) plot_names(p%icomp_rho0)  = "rho0"
-    if (p%icomp_rhoh0 > 0) plot_names(p%icomp_rhoh0) = "rhoh0"
-    if (p%icomp_h0 > 0) plot_names(p%icomp_h0)    = "h0"
-    if (p%icomp_p0 > 0) plot_names(p%icomp_p0)    = "p0"
+    if (p%icomp_divw0 > 0) p%names(p%icomp_divw0) = "divw0"
+    if (p%icomp_rho0 > 0) p%names(p%icomp_rho0)  = "rho0"
+    if (p%icomp_rhoh0 > 0) p%names(p%icomp_rhoh0) = "rhoh0"
+    if (p%icomp_h0 > 0) p%names(p%icomp_h0)    = "h0"
+    if (p%icomp_p0 > 0) p%names(p%icomp_p0)    = "p0"
 
-    if (p%icomp_velr > 0) plot_names(p%icomp_velr) = "radial_velocity"
-    if (p%icomp_velc > 0) plot_names(p%icomp_velc) = "circum_velocity"
+    if (p%icomp_velr > 0) p%names(p%icomp_velr) = "radial_velocity"
+    if (p%icomp_velc > 0) p%names(p%icomp_velc) = "circum_velocity"
 
-    if (p%icomp_magvel > 0) plot_names(p%icomp_magvel)      = "magvel"
-    if (p%icomp_mom > 0) plot_names(p%icomp_mom)         = "momentum"
-    if (p%icomp_vort > 0) plot_names(p%icomp_vort)        = "vort"
-    if (p%icomp_src > 0) plot_names(p%icomp_src)         = "S"
-    if (p%icomp_rhopert > 0) plot_names(p%icomp_rhopert)     = "rhopert"
-    if (p%icomp_rhohpert > 0) plot_names(p%icomp_rhohpert)    = "rhohpert"
+    if (p%icomp_magvel > 0) p%names(p%icomp_magvel)      = "magvel"
+    if (p%icomp_mom > 0) p%names(p%icomp_mom)         = "momentum"
+    if (p%icomp_vort > 0) p%names(p%icomp_vort)        = "vort"
+    if (p%icomp_src > 0) p%names(p%icomp_src)         = "S"
+    if (p%icomp_rhopert > 0) p%names(p%icomp_rhopert)     = "rhopert"
+    if (p%icomp_rhohpert > 0) p%names(p%icomp_rhohpert)    = "rhohpert"
   
-    if (p%icomp_tfromp > 0) plot_names(p%icomp_tfromp)      = "tfromp"
-    if (p%icomp_tfromH > 0) plot_names(p%icomp_tfromH)      = "tfromh"
-    if (p%icomp_dT > 0) plot_names(p%icomp_dT)          = "deltaT"
-    if (p%icomp_dp > 0) plot_names(p%icomp_dp)          = "deltap"
+    if (p%icomp_tfromp > 0) p%names(p%icomp_tfromp)      = "tfromp"
+    if (p%icomp_tfromH > 0) p%names(p%icomp_tfromH)      = "tfromh"
+    if (p%icomp_dT > 0) p%names(p%icomp_dT)          = "deltaT"
+    if (p%icomp_dp > 0) p%names(p%icomp_dp)          = "deltap"
 
-    if (p%icomp_tpert > 0) plot_names(p%icomp_tpert)       = "tpert"
-    if (p%icomp_machno > 0) plot_names(p%icomp_machno)      = "Machnumber"
-    if (p%icomp_cs > 0) plot_names(p%icomp_cs)          = "soundspeed"
+    if (p%icomp_tpert > 0) p%names(p%icomp_tpert)       = "tpert"
+    if (p%icomp_machno > 0) p%names(p%icomp_machno)      = "Machnumber"
+    if (p%icomp_cs > 0) p%names(p%icomp_cs)          = "soundspeed"
 
-    if (p%icomp_dg > 0) plot_names(p%icomp_dg)          = "deltagamma"
-    if (p%icomp_entropy > 0) plot_names(p%icomp_entropy)     = "entropy"
-    if (p%icomp_entropypert > 0) plot_names(p%icomp_entropypert) = "entropypert"
+    if (p%icomp_dg > 0) p%names(p%icomp_dg)          = "deltagamma"
+    if (p%icomp_entropy > 0) p%names(p%icomp_entropy)     = "entropy"
+    if (p%icomp_entropypert > 0) p%names(p%icomp_entropypert) = "entropypert"
     if (p%icomp_sponge > 0) then
        if (plot_sponge_fdamp) then
-          plot_names(p%icomp_sponge)      = "sponge_fdamp"
+          p%names(p%icomp_sponge)      = "sponge_fdamp"
        else
-          plot_names(p%icomp_sponge)      = "sponge"
+          p%names(p%icomp_sponge)      = "sponge"
        end if
     endif
 
-    if (p%icomp_pi > 0) plot_names(p%icomp_pi)          = "pi"
+    if (p%icomp_pi > 0) p%names(p%icomp_pi)          = "pi"
     if (p%icomp_gpi > 0) then
-       plot_names(p%icomp_gpi)         = "gpi_x"
-       if (dm_in > 1) plot_names(p%icomp_gpi+1) = "gpi_y"
-       if (dm_in > 2) plot_names(p%icomp_gpi+2) = "gpi_z"
+       p%names(p%icomp_gpi)         = "gpi_x"
+       if (dm_in > 1) p%names(p%icomp_gpi+1) = "gpi_y"
+       if (dm_in > 2) p%names(p%icomp_gpi+2) = "gpi_z"
     endif
 
-    if (p%icomp_pioverp0 > 0) plot_names(p%icomp_pioverp0)    = "pioverp0"
-    if (p%icomp_p0pluspi > 0) plot_names(p%icomp_p0pluspi)    = "p0pluspi"
+    if (p%icomp_pioverp0 > 0) p%names(p%icomp_pioverp0)    = "pioverp0"
+    if (p%icomp_p0pluspi > 0) p%names(p%icomp_p0pluspi)    = "p0pluspi"
 
     if (p%icomp_omegadot > 0) then
        do comp = 1, nspec
-          plot_names(p%icomp_omegadot+comp-1) = &
+          p%names(p%icomp_omegadot+comp-1) = &
                "omegadot(" // trim(short_spec_names(comp)) // ")"
        end do
     end if
 
-    if (p%icomp_enuc > 0) plot_names(p%icomp_enuc) = "enucdot"
-    if (p%icomp_Hext > 0) plot_names(p%icomp_Hext) = "Hext"
+    if (p%icomp_enuc > 0) p%names(p%icomp_enuc) = "enucdot"
+    if (p%icomp_Hext > 0) p%names(p%icomp_Hext) = "Hext"
 
-    if (p%icomp_eta > 0) plot_names(p%icomp_eta) = "eta_rho"
+    if (p%icomp_eta > 0) p%names(p%icomp_eta) = "eta_rho"
 
-    if (p%icomp_thermal > 0) plot_names(p%icomp_thermal) = "thermal"
-    if (p%icomp_conductivity > 0) plot_names(p%icomp_conductivity) = "conductivity"
+    if (p%icomp_thermal > 0) p%names(p%icomp_thermal) = "thermal"
+    if (p%icomp_conductivity > 0) p%names(p%icomp_conductivity) = "conductivity"
 
-    if (p%icomp_ad_excess > 0) plot_names(p%icomp_ad_excess) = "ad_excess"
+    if (p%icomp_ad_excess > 0) p%names(p%icomp_ad_excess) = "ad_excess"
 
-    if (p%icomp_part > 0) plot_names(p%icomp_part) = "particle_count"
+    if (p%icomp_part > 0) p%names(p%icomp_part) = "particle_count"
 
-    if (p%icomp_proc > 0) plot_names(p%icomp_proc) = "processor_number"
+    if (p%icomp_proc > 0) p%names(p%icomp_proc) = "processor_number"
 
-    if (p%icomp_pidivu > 0) plot_names(p%icomp_pidivu) = "pi_divu"
+    if (p%icomp_pidivu > 0) p%names(p%icomp_pidivu) = "pi_divu"
 
   end subroutine get_plot_names
 
   subroutine make_plotfile(p,dirname,mla,u,s,pi,gpi,rho_omegadot, &
                            rho_Hnuc,rho_Hext, &
-                           thermal,Source,sponge,mba,plot_names,dx, &
+                           thermal,Source,sponge,mba,dx, &
                            the_bc_tower,w0,rho0,rhoh0,p0, &
                            tempbar,gamma1bar,etarho_cc, &
                            normal,dt,particles,write_pf_time)
@@ -214,7 +215,6 @@ contains
     type(multifab)   , intent(in   ) :: Source(:)
     type(multifab)   , intent(in   ) :: sponge(:)
     type(ml_boxarray), intent(in   ) :: mba
-    character(len=20), intent(in   ) :: plot_names(:)
     real(dp_t)       , intent(in   ) :: dt,dx(:,:)
     type(bc_tower)   , intent(in   ) :: the_bc_tower
     real(dp_t)       , intent(in   ) :: w0(:,0:)
@@ -772,7 +772,7 @@ contains
 
     writetime1 = parallel_wtime()
 
-    call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
+    call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, p%names, &
                                    mba%pd(1), prob_lo, prob_hi, time, dx(1,:), &
                                    nOutFiles = nOutFiles, &
                                    lUsingNFiles = lUsingNFiles, prec = prec)
