@@ -12,7 +12,7 @@ subroutine varden()
   use box_util_module
   use fabio_module
   use checkpoint_module
-  use make_plotfile_module
+  use make_plotfile_module, only: MAX_FILENAME_LEN, get_plot_names, make_plotfile, make_filename
   use restart_module
   use probin_module
   use runtime_init_module
@@ -85,10 +85,7 @@ subroutine varden()
 
   type(multifab), pointer :: chkdata(:)
 
-  character(len=5)               :: plot_index, check_index
-  character(len=6)               :: plot_index6, check_index6
-  character(len=7)               :: plot_index7, check_index7
-  character(len=256)             :: plot_file_name, check_file_name
+  character(len=MAX_FILENAME_LEN) :: plot_file_name, check_file_name
   character(len=20), allocatable :: plot_names(:), mini_plot_names(:)
   
   integer :: npartdata
@@ -205,16 +202,7 @@ subroutine varden()
                                   p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
                                   tempbar,tempbar_init,grav_cell)
 
-     if (restart <= 99999) then
-        write(unit=check_index,fmt='(i5.5)') restart
-        check_file_name = trim(check_base_name) // check_index
-     else if (restart <= 999999) then
-        write(unit=check_index6,fmt='(i6.6)') restart
-        check_file_name = trim(check_base_name) // check_index6
-     else
-        write(unit=check_index7,fmt='(i7.7)') restart
-        check_file_name = trim(check_base_name) // check_index7
-     endif
+     check_file_name = make_filename(check_base_name, restart)
 
      if (use_particles) then
         call particle_container_restart(particles,check_file_name,&
@@ -494,16 +482,7 @@ subroutine varden()
            call make_sponge(sponge,dx,dt,mla)
         end if
 
-        if (restart <= 99999) then
-           write(unit=plot_index,fmt='(i5.5)') restart
-           plot_file_name = trim(plot_base_name) // plot_index
-        else if (restart <= 999999) then
-           write(unit=plot_index6,fmt='(i6.6)') restart
-           plot_file_name = trim(plot_base_name) // plot_index6
-        else
-           write(unit=plot_index7,fmt='(i7.7)') restart
-           plot_file_name = trim(plot_base_name) // plot_index7
-        endif
+        plot_file_name = make_filename(plot_base_name, restart)
 
         call make_plotfile(plt,plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
                            rho_Hnuc2,rho_Hext, &
@@ -624,16 +603,7 @@ subroutine varden()
            call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpi(n),1,dm)
         end do
 
-        if (istep <= 99999) then
-           write(unit=check_index,fmt='(i5.5)') istep
-           check_file_name = trim(check_base_name) // check_index
-        else if (istep <= 999999) then
-           write(unit=check_index6,fmt='(i6.6)') istep
-           check_file_name = trim(check_base_name) // check_index6
-        else
-           write(unit=check_index7,fmt='(i7.7)') istep
-           check_file_name = trim(check_base_name) // check_index7
-        endif
+        check_file_name = make_filename(check_base_name, istep)
 
         call checkpoint_write(check_file_name, chkdata, &
                               pi, dSdt, Source_old, Source_new, &
@@ -665,16 +635,7 @@ subroutine varden()
         ! write a plotfile
         !-----------------------------------------------------------------------
 
-        if (istep <= 99999) then
-           write(unit=plot_index,fmt='(i5.5)') istep
-           plot_file_name = trim(plot_base_name) // plot_index
-        else if (istep <= 999999) then
-           write(unit=plot_index6,fmt='(i6.6)') istep
-           plot_file_name = trim(plot_base_name) // plot_index6
-        else
-           write(unit=plot_index7,fmt='(i7.7)') istep
-           plot_file_name = trim(plot_base_name) // plot_index7
-        endif
+        plot_file_name = make_filename(plot_base_name, istep)
 
         call make_plotfile(plt,plot_file_name,mla,uold,sold,pi,gpi,rho_omegadot2, &
                            rho_Hnuc2,rho_Hext, &
@@ -1329,16 +1290,7 @@ subroutine varden()
                  call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpi(n),1,dm)
               end do
 
-              if (istep <= 99999) then
-                 write(unit=check_index,fmt='(i5.5)') istep
-                 check_file_name = trim(check_base_name) // check_index
-              else if (istep <= 999999)  then
-                 write(unit=check_index6,fmt='(i6.6)') istep
-                 check_file_name = trim(check_base_name) // check_index6
-              else
-                 write(unit=check_index7,fmt='(i7.7)') istep
-                 check_file_name = trim(check_base_name) // check_index7
-              endif
+              check_file_name = make_filename(check_base_name, istep)
 
               call checkpoint_write(check_file_name, chkdata, &
                                     pi, dSdt, Source_old, Source_new, &
@@ -1377,16 +1329,7 @@ subroutine varden()
                 mod(time - dt,plot_deltat) > mod(time,plot_deltat)) .or. &
                 dump_plotfile) then
 
-              if (istep <= 99999) then
-                 write(unit=plot_index,fmt='(i5.5)') istep
-                 plot_file_name = trim(plot_base_name) // plot_index
-              else if (istep <= 999999) then
-                 write(unit=plot_index6,fmt='(i6.6)') istep
-                 plot_file_name = trim(plot_base_name) // plot_index6
-              else
-                 write(unit=plot_index7,fmt='(i7.7)') istep
-                 plot_file_name = trim(plot_base_name) // plot_index7
-              endif
+              plot_file_name = make_filename(plot_base_name, istep)
 
               call make_plotfile(plt,plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
                                  rho_Hnuc2,rho_Hext, &
@@ -1444,16 +1387,7 @@ subroutine varden()
            call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpi(n),1,dm)
         end do
 
-        if (istep <= 99999) then
-           write(unit=check_index,fmt='(i5.5)') istep
-           check_file_name = trim(check_base_name) // check_index
-        else if (istep <= 999999) then
-           write(unit=check_index6,fmt='(i6.6)') istep
-           check_file_name = trim(check_base_name) // check_index6
-        else
-           write(unit=check_index7,fmt='(i7.7)') istep
-           check_file_name = trim(check_base_name) // check_index7
-        endif
+        check_file_name = make_filename(check_base_name, istep)
 
         call checkpoint_write(check_file_name, chkdata, &
                               pi, dSdt, Source_old, Source_new, &
@@ -1483,16 +1417,7 @@ subroutine varden()
              mod(time - dt,plot_deltat) > mod(time,plot_deltat)) ) .and. &
           last_plt_written .ne. istep ) then
 
-        if (istep <= 99999) then
-           write(unit=plot_index,fmt='(i5.5)') istep
-           plot_file_name = trim(plot_base_name) // plot_index
-        else if (istep <= 999999) then
-           write(unit=plot_index6,fmt='(i6.6)') istep
-           plot_file_name = trim(plot_base_name) // plot_index6
-        else
-           write(unit=plot_index7,fmt='(i7.7)') istep
-           plot_file_name = trim(plot_base_name) // plot_index7
-        endif
+        plot_file_name = make_filename(plot_base_name, istep)
 
         call make_plotfile(plt,plot_file_name,mla,unew,snew,pi,gpi,rho_omegadot2, &
                            rho_Hnuc2,rho_Hext, &

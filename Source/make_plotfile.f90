@@ -8,9 +8,36 @@ module make_plotfile_module
   implicit none
 
   private
-  public :: get_plot_names, make_plotfile
+  public :: get_plot_names, make_plotfile, make_filename
+
+  integer, parameter :: MAX_FILENAME_LEN = 256
+  public :: MAX_FILENAME_LEN
 
 contains
+
+  function make_filename(base_name, index) result (filename)
+
+    character (len=*), intent(in) :: base_name
+    integer, intent(in) :: index
+
+    character (len=MAX_FILENAME_LEN) :: filename
+
+    character(len=5) :: str_index
+    character(len=6) :: str_index6
+    character(len=7) :: str_index7
+    
+    if (index <= 99999) then
+       write(unit=str_index,fmt='(i5.5)') index
+       filename = trim(base_name) // str_index
+    else if (index <= 999999) then
+       write(unit=str_index6,fmt='(i6.6)') index
+       filename = trim(base_name) // str_index6
+    else
+       write(unit=str_index7,fmt='(i7.7)') index
+       filename = trim(base_name) // str_index7
+    endif
+  end function make_filename
+
 
   subroutine get_plot_names(p, plot_names)
 
