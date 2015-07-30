@@ -147,6 +147,38 @@ reduce file sizes.
 \renewcommand{\arraystretch}{1.0}
 
 
+\subsection{Mini vs.\ regular plotfiles}
+
+\maestro\ can manage two independent sets of plotfiles.  This allows you to
+output the default plotfiles, which contain a lot of variables, sparsely,
+and output mini-plotfiles much more frequently.  A mini-plotfile is controlled
+by the analogous runtime parameters as the main plotfiles:
+
+\begin{itemize}
+\item {\tt mini\_plot\_int} is the interval in steps between successive plotfiles
+\item {\tt mini\_plot\_deltat} is the interval in time between successive plotfiles
+\item {\tt mini\_plot\_base\_name} is the base name that prefixes the plotfiles.  The
+  default is {\tt miniplt}
+\end{itemize}
+
+To set the fields that are stored in the mini plotfile, a second set
+of runtime parameters is used: {\tt mini\_plot\_var1}, {\tt
+  mini\_plot\_var2}, $\ldots$, {\tt mini\_plot\_var9}.  These can be set to
+any of the following:
+\begin{itemize}
+  \item {\tt "density"}
+  \item {\tt "species"}: this gets all of the mass fractions
+  \item the name of an individual species in the network (like {\tt "helium-4"})
+  \item {\tt "radvel"}: this gets both the radial and circumferential velocity
+  \item {\tt "velocity"}: all three componets
+  \item {\tt "temperature"}: this is either $T(\rho,p_0)$ or $T(\rho,h)$, depending
+    on the value of {\tt use\_tfromp}
+  \item {\tt "enuc"}: the nuclear energy generation rate
+  \item {\tt "mach"}: the Mach number
+\end{itemize}
+
+
+
 \subsection{the \boxlib\ file format}
 
 \maestro\ stores the plotfile data in a hierarchical directory format,
