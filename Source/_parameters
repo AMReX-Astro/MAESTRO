@@ -322,6 +322,7 @@ plot_processors                     logical            .false.
 plot_pidivu                         logical            .false.
 
 
+# names of specific variables to store in the mini plotfile
 mini_plot_var1                      character          ""
 mini_plot_var2                      character          ""
 mini_plot_var3                      character          ""
@@ -331,6 +332,13 @@ mini_plot_var6                      character          ""
 mini_plot_var7                      character          ""
 mini_plot_var8                      character          ""
 mini_plot_var9                      character          ""
+
+# mini plot interval
+mini_plot_int                            integer            -1
+
+# rather than use a mini plot interval, output a mini plotfile every
+# mini\_plot\_deltat in time
+mini_plot_deltat                         real               -1.d0                 
 
 
 #-----------------------------------------------------------------------------
