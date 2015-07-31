@@ -532,10 +532,7 @@ contains
                p%icomp_machno > 0 .or. p%icomp_cs > 0 .or. p%icomp_dg > 0 .or. &
                p%icomp_entropy > 0 .or. p%icomp_magvel > 0 ) then
              
-             call make_tfromp(plotdata(n), &
-                              p%icomp_tfromp,p%icomp_tpert,p%icomp_machno,p%icomp_cs, &
-                              p%icomp_dg,p%icomp_entropy,p%icomp_magvel, &
-                              s(n), &
+             call make_tfromp(p, plotdata(n), s(n), &
                               tempbar(1,:),gamma1bar(1,:),p0(1,:),dx(n,:))
           endif
 
@@ -551,10 +548,7 @@ contains
                p%icomp_machno > 0 .or. p%icomp_cs > 0 .or. p%icomp_dg > 0 .or. &
                p%icomp_entropy > 0 .or. p%icomp_magvel > 0 ) then
 
-             call make_tfromp(plotdata(n), &
-                              p%icomp_tfromp,p%icomp_tpert,p%icomp_machno,p%icomp_cs, &
-                              p%icomp_dg,p%icomp_entropy,p%icomp_magvel, &
-                              s(n), &
+             call make_tfromp(p, plotdata(n), s(n), &
                               tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
           endif
 

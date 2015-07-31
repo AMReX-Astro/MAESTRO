@@ -5,6 +5,7 @@ module plot_variables_module
   use define_bc_module
   use probin_module, only: use_tfromp
   use bl_constants_module, only: HALF
+  use variables, only: plot_t
 
   implicit none
 
@@ -854,15 +855,11 @@ contains
   !---------------------------------------------------------------------------
   ! make_tfromp
   !---------------------------------------------------------------------------
-  subroutine make_tfromp(plotdata,comp_tfromp,comp_tpert, &
-                         comp_machno,comp_cs,comp_deltag,comp_entropy, comp_magvel, &
-                         s,tempbar,gamma1bar,p0,dx)
+  subroutine make_tfromp(p, plotdata, s, tempbar, gamma1bar, p0, dx)
 
     use geometry, only: spherical
 
-    integer        , intent(in   ) :: comp_tfromp,comp_tpert
-    integer        , intent(in   ) :: comp_machno,comp_cs
-    integer        , intent(in   ) :: comp_deltag, comp_entropy, comp_magvel
+    type(plot_t)   , intent(in   ) :: p
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: s
     real(kind=dp_t), intent(in   ) :: tempbar(0:)
@@ -885,27 +882,20 @@ contains
   
        if (spherical .eq. 1) then
           call make_tfromp_3d_sphr(tp, lbound(tp), ubound(tp), &
-                                   comp_tfromp, comp_tpert, &
-                                   comp_machno, comp_cs, comp_deltag, &
-                                   comp_entropy, comp_magvel, &
                                    sp, lbound(sp), ubound(sp), &
-                                   lo, hi, tempbar, gamma1bar, p0, dx)
+                                   p, lo, hi, tempbar, gamma1bar, p0, dx)
        else
           call make_tfromp_cart(tp, lbound(tp), ubound(tp), &
-                                comp_tfromp, comp_tpert, &
-                                comp_machno, comp_cs, comp_deltag, &
-                                comp_entropy, comp_magvel, &
                                 sp, lbound(sp), ubound(sp), &
-                                dm, lo, hi, tempbar, gamma1bar, p0)
+                                p, dm, lo, hi, tempbar, gamma1bar, p0)
        endif
     end do
 
   end subroutine make_tfromp
 
   subroutine make_tfromp_cart(pdata, dlo, dhi, &
-                              it,itpert,imachno,ics,ideltagamma,ientropy,imagvel, &
                               s, slo, shi, &
-                              dm,lo,hi,tempbar,gamma1bar,p0)
+                              p, dm,lo,hi,tempbar,gamma1bar,p0)
     
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module, only: eos_input_rp, eos
@@ -914,8 +904,7 @@ contains
     use probin_module, only: use_pprime_in_tfromp
 
     integer, intent(in) :: lo(:), hi(:), dlo(4), dhi(4), slo(4), shi(4), dm
-    integer, intent(in) :: it,itpert,imachno,ics,ideltagamma,ientropy,imagvel
-
+    type (plot_t), intent(in) :: p
     real (kind=dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
     real (kind=dp_t), intent(in   ) :: s(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
@@ -953,18 +942,18 @@ contains
              ! (rho,P) --> T,h
              call eos(eos_input_rp, eos_state, .false.)
 
-             if (it > 0) pdata(i,j,k,it) = eos_state%T
-             if (use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar(r)
+             if (p%icomp_tfromp > 0) pdata(i,j,k,p%icomp_tfromp) = eos_state%T
+             if (use_tfromp .and. p%icomp_tpert > 0) pdata(i,j,k,p%icomp_tpert) = eos_state%T - tempbar(r)
 
-             if (ics > 0) pdata(i,j,k,ics) = eos_state%cs
+             if (p%icomp_cs > 0) pdata(i,j,k,p%icomp_cs) = eos_state%cs
 
-             if (imachno > 0 .and. imagvel > 0) then
-                pdata(i,j,k,imachno) = pdata(i,j,k,imagvel) / eos_state%cs
+             if (p%icomp_machno > 0 .and. p%icomp_magvel > 0) then
+                pdata(i,j,k,p%icomp_machno) = pdata(i,j,k,p%icomp_magvel) / eos_state%cs
              endif
 
-             if (ideltagamma > 0) pdata(i,j,k,ideltagamma) = eos_state%gam1 - gamma1bar(r)
+             if (p%icomp_dg > 0) pdata(i,j,k,p%icomp_dg) = eos_state%gam1 - gamma1bar(r)
 
-             if (ientropy > 0) pdata(i,j,k,ientropy) = eos_state%s
+             if (p%icomp_entropy > 0) pdata(i,j,k,p%icomp_entropy) = eos_state%s
           enddo
        enddo
     enddo
@@ -973,9 +962,8 @@ contains
   end subroutine make_tfromp_cart
 
   subroutine make_tfromp_3d_sphr(pdata,dlo,dhi, &
-                                 it,itpert,imachno,ics,ideltagamma,ientropy,imagvel, &
                                  s,slo,shi, &
-                                 lo,hi,tempbar,gamma1bar,p0,dx)
+                                 p, lo,hi,tempbar,gamma1bar,p0,dx)
 
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module, only: eos_input_rp, eos
@@ -985,7 +973,7 @@ contains
     use probin_module, only: use_pprime_in_tfromp
 
     integer         , intent(in   ) :: lo(:),hi(:), dlo(4), dhi(4), slo(4), shi(4)
-    integer, intent(in) :: it,itpert,imachno,ics,ideltagamma,ientropy,imagvel
+    type (plot_t), intent(in) :: p
 
     real (kind=dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
     real (kind=dp_t), intent(in   ) :: s(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
@@ -1029,16 +1017,18 @@ contains
              ! (rho,P) --> T,h
              call eos(eos_input_rp, eos_state, .false.)
 
-             if (it > 0) pdata(i,j,k,it) = eos_state%T
-             if (use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar_cart(i,j,k,1)
+             if (p%icomp_tfromp > 0) pdata(i,j,k,p%icomp_tfromp) = eos_state%T
+             if (use_tfromp .and. p%icomp_tpert > 0) pdata(i,j,k,p%icomp_tpert) = eos_state%T - tempbar_cart(i,j,k,1)
 
-             if (ics > 0) pdata(i,j,k,ics) = eos_state%cs
+             if (p%icomp_cs > 0) pdata(i,j,k,p%icomp_cs) = eos_state%cs
 
-             if (imachno > 0 .and. imagvel > 0) pdata(i,j,k,imachno) = pdata(i,j,k,imagvel) / eos_state%cs
+             if (p%icomp_machno > 0 .and. p%icomp_magvel > 0) then
+                pdata(i,j,k,p%icomp_machno) = pdata(i,j,k,p%icomp_magvel) / eos_state%cs
+             endif
 
-             if (ideltagamma > 0) pdata(i,j,k,ideltagamma) = eos_state%gam1 - gamma1bar_cart(i,j,k,1)
+             if (p%icomp_dg > 0) pdata(i,j,k,p%icomp_dg) = eos_state%gam1 - gamma1bar_cart(i,j,k,1)
 
-             if (ientropy > 0) pdata(i,j,k,ientropy) = eos_state%s
+             if (p%icomp_entropy > 0) pdata(i,j,k,p%icomp_entropy) = eos_state%s
           enddo
        enddo
     enddo
