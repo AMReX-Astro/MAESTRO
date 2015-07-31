@@ -148,6 +148,7 @@ reduce file sizes.
 
 
 \subsection{Mini vs.\ regular plotfiles}
+\label{vis:sec:miniplotfile}
 
 \maestro\ can manage two independent sets of plotfiles.  This allows you to
 output the default plotfiles, which contain a lot of variables, sparsely,
@@ -155,14 +156,14 @@ and output mini-plotfiles much more frequently.  A mini-plotfile is controlled
 by the analogous runtime parameters as the main plotfiles:
 
 \begin{itemize}
-\item {\tt mini\_plot\_int} is the interval in steps between successive plotfiles
-\item {\tt mini\_plot\_deltat} is the interval in time between successive plotfiles
-\item {\tt mini\_plot\_base\_name} is the base name that prefixes the plotfiles.  The
+\item \runparam{mini\_plot\_int} is the interval in steps between successive plotfiles
+\item \runparam{mini\_plot\_deltat} is the interval in time between successive plotfiles
+\item \runparam{mini\_plot\_base\_name} is the base name that prefixes the plotfiles.  The
   default is {\tt miniplt}
 \end{itemize}
 
 To set the fields that are stored in the mini plotfile, a second set
-of runtime parameters is used: {\tt mini\_plot\_var1}, {\tt
+of runtime parameters is used: \runparam{mini\_plot\_var1}, {\tt
   mini\_plot\_var2}, $\ldots$, {\tt mini\_plot\_var9}.  These can be set to
 any of the following:
 \begin{itemize}

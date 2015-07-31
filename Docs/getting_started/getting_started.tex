@@ -437,7 +437,15 @@ include:
 \item \runparam{check\_int} is the number of steps to take between
   outputting a checkpoint.
 
+\item \runparam{plot\_base\_name} is the basename to use for the
+  plotfile filename.  The step number will be appended to
+  this name.
+
 \end{itemize}
+
+Note that in addition to the normal plotfiles, there are {\em mini} plotfiles
+that store a small subset of the fields, intended to be output more frequently.
+These are described in \S~\ref{vis:sec:miniplotfile}.
 
 \subsection{Defining the Grid and Boundary Conditions}
 
