@@ -2581,41 +2581,39 @@ contains
     !     Local variables
     integer :: i, j, k
 
-    if (ivelr > 0) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                pdata(i,j,k,ivelr) = u(i,j,k,1)*normal(i,j,k,1) + &
-                                    u(i,j,k,2)*normal(i,j,k,2) + &
-                                    u(i,j,k,3)*normal(i,j,k,3) 
+    ! note, we are assuming here that both ivelr and ivelc are defined
+    ! -- for mini-plotfiles, you can't have one without the other
 
-                pdata(i,j,k,ivelr) = pdata(i,j,k,ivelr) + w0r(i,j,k)
-             enddo
+    !$OMP PARALLEL DO PRIVATE(i,j,k)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             ! radial tilde velocity (no w0_r)
+             pdata(i,j,k,ivelr) = u(i,j,k,1)*normal(i,j,k,1) + &
+                                  u(i,j,k,2)*normal(i,j,k,2) + &
+                                  u(i,j,k,3)*normal(i,j,k,3) 
+
+             !                                 ~     ~   ~   ^
+             ! circumferential tilde velocity, U_c = U - U . e_r
+             pdata(i,j,k,ivelc) = &
+                  (u(i,j,k,1)-pdata(i,j,k,ivelr)*normal(i,j,k,1)) * &
+                  (u(i,j,k,1)-pdata(i,j,k,ivelr)*normal(i,j,k,1))
+             pdata(i,j,k,ivelc) = pdata(i,j,k,ivelc) + &
+                  (u(i,j,k,2)-pdata(i,j,k,ivelr)*normal(i,j,k,2)) * &
+                  (u(i,j,k,2)-pdata(i,j,k,ivelr)*normal(i,j,k,2))
+             pdata(i,j,k,ivelc) = pdata(i,j,k,ivelc) + &
+                  (u(i,j,k,3)-pdata(i,j,k,ivelr)*normal(i,j,k,3)) * &
+                  (u(i,j,k,3)-pdata(i,j,k,ivelr)*normal(i,j,k,3))
+             pdata(i,j,k,ivelc) = sqrt(pdata(i,j,k,ivelc))
+
+             ! now add the base state expansion velocity to the 
+             ! radial to get the full U_r
+             pdata(i,j,k,ivelr) = pdata(i,j,k,ivelr) + w0r(i,j,k)
           enddo
        enddo
-       !$OMP END PARALLEL DO
-    endif
-
-    if (ivelc > 0) then
-       !$OMP PARALLEL DO PRIVATE(i,j,k)
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                pdata(i,j,k,ivelc) = (u(i,j,k,1)-pdata(i,j,k,ivelr)*normal(i,j,k,1)) * &
-                                     (u(i,j,k,1)-pdata(i,j,k,ivelr)*normal(i,j,k,1))
-                pdata(i,j,k,ivelc) = pdata(i,j,k,ivelc) + &
-                              (u(i,j,k,2)-pdata(i,j,k,ivelr)*normal(i,j,k,2)) * &
-                              (u(i,j,k,2)-pdata(i,j,k,ivelr)*normal(i,j,k,2))
-                pdata(i,j,k,ivelc) = pdata(i,j,k,ivelc) + &
-                              (u(i,j,k,3)-pdata(i,j,k,ivelr)*normal(i,j,k,3)) * &
-                              (u(i,j,k,3)-pdata(i,j,k,ivelr)*normal(i,j,k,3))
-                pdata(i,j,k,ivelc) = sqrt(pdata(i,j,k,ivelc))
-             enddo
-          enddo
-       enddo
-       !$OMP END PARALLEL DO
-    endif
+    enddo
+    !$OMP END PARALLEL DO
 
   end subroutine makevelrc_3d_sphr
 

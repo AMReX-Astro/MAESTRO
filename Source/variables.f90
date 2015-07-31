@@ -331,6 +331,8 @@ contains
           p%icomp_spec = p%next_index(nspec)
 
        case ("radvel")
+          ! note: we assume in make_plot_variables.f90 that if
+          ! velr > 0 then velc > 0 too
           p%icomp_velr = p%next_index(nspec)
           p%icomp_velc = p%next_index(nspec)
 
