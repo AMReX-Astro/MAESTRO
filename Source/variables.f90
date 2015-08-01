@@ -319,8 +319,6 @@ contains
        vars(nvar) = trim(mini_plot_var9)
     endif
 
-    print *, "here:", nvar
-
     do n = 1, nvar
        select case (vars(n))
 
