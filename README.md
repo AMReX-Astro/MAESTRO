@@ -6,9 +6,10 @@ http://boxlib-codes.github.io/MAESTRO/
 
 ## Getting Started:
 
-To use `Maestro` you need a copy of the `BoxLib` library:
+To use `Maestro` you need a copy of the `BoxLib` library, available
+on github at:
 
-https://ccse.lbl.gov/Downloads/downloadBoxLib.html
+https://github.com/BoxLib-Codes/BoxLib.git
 
 A *Getting Started* guide is provided in the Maestro User's Guide.  To
 build the User's Guide, cd into `Docs/`, and type `make`, or download
