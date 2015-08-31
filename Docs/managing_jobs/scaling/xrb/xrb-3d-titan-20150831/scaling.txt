@@ -1,0 +1,19 @@
+# 2015-08-31 Maestro xrb_mixed scaling test on titan using the Cray 8.4.0.223 compilers.
+#
+# MAESTRO      git hash: 023077a016a25b53ae5b8992a0c093d9a98c890d
+# BoxLib       git hash: b1e9fe52d747b582c18de532c9dae23034dd05ba
+# AstroDev     git hash: 126cdfc4baa552b9cb2f18d90cf02c54440c88b9
+#
+# all runs used 48^3 boxes
+#
+# submission scripts are in 
+# MAESTRO/Docs/managing_jobs/scaling/xrb/xrb-3d-titan-20150715/titan-scripts/
+#
+# model files are in 
+# MAESTRO/Exec/SCIENCE/xrb_mixed/production/current/6cm-2304w/
+
+#        MPI     threads   advection         MAC       nodal   reactions        misc       total
+       1024           1   16.804100    2.574620    1.872760   23.839300   15.909200   38.147100
+       1024           4    3.981230    1.136480    1.311980    5.513360    3.955200   10.723500
+       1024           8    2.174840    0.775098    1.172970    2.847360    2.142020    6.414490
+       1024          16    1.548430    1.396170    1.547380    1.478530    1.183750    5.771720
