@@ -2,7 +2,7 @@
 #PBS -A ast106
 #PBS -N xrb-48-MPI-PE16
 #PBS -j oe
-#PBS -l walltime=0:30:00,nodes=64
+#PBS -l walltime=2:00:00,nodes=64
 #PBS -q batch
 #PBS -l gres=atlas1%atlas2
 
