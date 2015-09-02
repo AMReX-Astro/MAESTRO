@@ -1,6 +1,6 @@
 import math
 import numpy as np
-import pylab 
+import matplotlib.pyplot as plt 
 
 def scaling():
 
@@ -15,7 +15,8 @@ def scaling():
     t_react = data[:,5]
     t_misc = data[:,6]
     t_total = data[:,7]
-    width = data[:,8]
+    std_total = data[:,8]
+    width = data[:,9]
 
     cores = N_mpi * N_omp
 
@@ -24,39 +25,43 @@ def scaling():
     idx_384 = width[:] == 384
     idx_768 = width[:] == 768
 
-    pylab.loglog(cores[idx_384], t_total[idx_384], "o-", color="k", label=r"$384\times 384\times 768$")
-    pylab.loglog(cores[idx_768], t_total[idx_768], "^-", color="r", label=r"$768\times 768\times 768$")
+    plt.errorbar(cores[idx_384], t_total[idx_384], yerr=std_total[idx_384], marker="o", color="k", label=r"$384\times 384\times 768$")
+    plt.errorbar(cores[idx_768], t_total[idx_768], yerr=std_total[idx_768], marker="^", color="r", label=r"$768\times 768\times 768$")
+
+    ax = plt.gca()
+    ax.set_xscale("log")
+    ax.set_yscale("log")
 
     # ideal
     cm = np.min(cores[idx_384])
     cM = np.max(cores[idx_384])
     id = np.argmin(cores[idx_384])
-    pylab.loglog([cm, cM], t_total[idx_384][id]*cm/np.array([cm, cM]), ":", color="k")
+    plt.loglog([cm, cM], t_total[idx_384][id]*cm/np.array([cm, cM]), ":", color="k")
 
     cm = np.min(cores[idx_768])
     cM = np.max(cores[idx_768])
     id = np.argmin(cores[idx_768])
-    pylab.loglog([cm, cM], t_total[idx_768][id]*cm/np.array([cm, cM]), ":", color="k")
+    plt.loglog([cm, cM], t_total[idx_768][id]*cm/np.array([cm, cM]), ":", color="k")
 
-    pylab.text(600, 1.25, "Cray 8.3.9 compilers; 2015-07-15")
-    pylab.xlim(512, 131072)
+    plt.text(600, 1.25, "Cray 8.4.0 compilers; 2015-08-31")
+    plt.xlim(512, 131072)
 
-    pylab.legend(frameon=False)
+    plt.legend(frameon=False)
 
-    pylab.xlabel("number of cores")
-    pylab.ylabel("average time to advance timestep")
+    plt.xlabel("number of cores")
+    plt.ylabel("average time to advance timestep")
 
-    pylab.title("OLCF Titan Scaling for 3-d XRB")
+    plt.title("OLCF Titan Scaling for 3-d XRB")
 
-    pylab.tight_layout()
+    plt.tight_layout()
 
-    pylab.savefig("titan_xrb_scaling.png")
+    plt.savefig("titan_xrb_scaling.png")
 
 
-    pylab.loglog(cores[idx_384], t_react[idx_384], "o--", color="0.5", label=r"$384\times 384\times 768$ reactions")
-    pylab.loglog(cores[idx_768], t_react[idx_768], "^--", color="m", label=r"$384\times 384\times 768$ reactions")
+    plt.loglog(cores[idx_384], t_react[idx_384], "o--", color="0.5", label=r"$384\times 384\times 768$ reactions")
+    plt.loglog(cores[idx_768], t_react[idx_768], "^--", color="m", label=r"$384\times 384\times 768$ reactions")
 
-    pylab.savefig("titan_xrb_scaling_react.png")
+    plt.savefig("titan_xrb_scaling_react.png")
 
 if __name__== "__main__":
     scaling()
