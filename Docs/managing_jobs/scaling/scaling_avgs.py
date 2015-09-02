@@ -57,15 +57,15 @@ def parser(N, ofile):
     str = 9*"{:>10} "
     print "#  "+ str.format("MPI", "threads", "advection", "MAC",
                            "nodal", "reactions", "misc", "total", "total +/-")
-    str = "{:10} {:10} {:9.7f}  {:9.7f}  {:9.7f}  {:9.7f}  {:9.7f}  {:9.7f}  {:9.7f} "
+    str = "{:10} {:10} {:>9.6f}  {:>9.6f}  {:>9.6f}  {:>9.6f}  {:>9.6f}  {:>9.6f}  {:>9.6f} "
     print "   "+str.format(n_mpi, n_omp, np.average(adv), np.average(mac), 
                            np.average(nodal), np.average(react), np.average(misc), np.average(total), np.std(total))
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
 
-    p.add_argument("-N", help="number of timesteps (from the end) to include",
-                   type=int, default=-1)
+    p.add_argument("-N", help="number of timesteps (from the end) to include (-1 for all)",
+                   type=int, default=10)
 
     p.add_argument("job_file", help="Maestro stdout file",
                    type=str, nargs=1)
