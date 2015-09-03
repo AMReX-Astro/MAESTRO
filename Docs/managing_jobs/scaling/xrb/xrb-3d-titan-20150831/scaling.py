@@ -22,11 +22,39 @@ def scaling():
 
     
     # we ran 2 tests, one that was 384 zones wide, and one that was 768 zones wide
-    idx_384 = width[:] == 384
-    idx_768 = width[:] == 768
+    # we'll plot these in different colors, with hollow symbols for pure MPI
 
-    plt.errorbar(cores[idx_384], t_total[idx_384], yerr=std_total[idx_384], marker="o", color="k", label=r"$384\times 384\times 768$")
-    plt.errorbar(cores[idx_768], t_total[idx_768], yerr=std_total[idx_768], marker="^", color="r", label=r"$768\times 768\times 768$")
+    idx_384 = width[:] == 384
+    idx_MPI_384 = np.logical_and(width[:] == 384, N_omp[:] == 1)
+    idx_OMP_384 = np.logical_and(width[:] == 384, N_omp[:] != 1)
+
+    plt.errorbar(cores[idx_MPI_384], t_total[idx_MPI_384], yerr=std_total[idx_MPI_384], 
+                 marker="o", markeredgecolor="k", markerfacecolor="none", 
+                 markersize=7, markeredgewidth=1.25,
+                 color="k", ls="none")
+
+    plt.errorbar(cores[idx_OMP_384], t_total[idx_OMP_384], yerr=std_total[idx_OMP_384], 
+                 marker="o", markeredgecolor="k", markersize=7, markeredgewidth=1.25,
+                 color="k", ls="none")
+
+    plt.plot(cores[idx_384], t_total[idx_384], color="k", ls="-")
+
+
+    idx_768 = width[:] == 768
+    idx_MPI_768 = np.logical_and(width[:] == 768, N_omp[:] == 1)
+    idx_OMP_768 = np.logical_and(width[:] == 768, N_omp[:] != 1)
+
+    plt.errorbar(cores[idx_MPI_768], t_total[idx_MPI_768], yerr=std_total[idx_MPI_768], 
+                 marker="^", markeredgecolor="r", markerfacecolor="none", 
+                 markersize=7, markeredgewidth=1.25,
+                 color="r", ls="none")
+
+    plt.errorbar(cores[idx_OMP_768], t_total[idx_OMP_768], yerr=std_total[idx_OMP_768], 
+                 marker="^", markeredgecolor="r", markersize=7, markeredgewidth=1.25,
+                 color="r", ls="none")
+
+    plt.plot(cores[idx_768], t_total[idx_768], color="r", ls="-")
+
 
     ax = plt.gca()
     ax.set_xscale("log")
@@ -43,25 +71,41 @@ def scaling():
     id = np.argmin(cores[idx_768])
     plt.loglog([cm, cM], t_total[idx_768][id]*cm/np.array([cm, cM]), ":", color="k")
 
-    plt.text(600, 1.25, "Cray 8.4.0 compilers; 2015-08-31")
-    plt.xlim(512, 131072)
+    plt.text(400, 1.75, "48$^3$ domain decomposition")
+    plt.text(400, 1.25, "Cray 8.4.0 compilers; 2015-08-31")
+    plt.xlim(256, 131072)
 
-    plt.legend(frameon=False)
+
+    # custom legend
+    legs = []
+    legnames = []
+    legs.append(plt.Line2D((0,1),(0,0), color="k", marker="o"))
+    legnames.append(r"384$\times$384$\times$768")
+
+    legs.append(plt.Line2D((0,1),(0,0), color="r", marker="^", markeredgecolor="r"))
+    legnames.append(r"768$\times$768$\times$768")
+
+    legs.append(plt.Line2D((0,1),(0,0), color="k", 
+                           marker="o", markeredgecolor="k", linestyle="none"))
+    legnames.append("MPI + OpenMP")
+
+    legs.append(plt.Line2D((0,1),(0,0), color="k", 
+                           marker="o", markeredgecolor="k", markerfacecolor="none", linestyle="none"))
+    legnames.append("pure MPI")
+
+
+    plt.legend(legs, legnames, ncol=2, frameon=False, 
+                 fontsize=13, numpoints=1)
 
     plt.xlabel("number of cores")
     plt.ylabel("average time to advance timestep")
 
-    plt.title("OLCF Titan Scaling for 3-d XRB")
+    plt.title("OLCF Titan Scaling for Maestro 3-d XRB")
 
     plt.tight_layout()
 
     plt.savefig("titan_xrb_scaling.png")
 
-
-    plt.loglog(cores[idx_384], t_react[idx_384], "o--", color="0.5", label=r"$384\times 384\times 768$ reactions")
-    plt.loglog(cores[idx_768], t_react[idx_768], "^--", color="m", label=r"$384\times 384\times 768$ reactions")
-
-    plt.savefig("titan_xrb_scaling_react.png")
 
 if __name__== "__main__":
     scaling()
