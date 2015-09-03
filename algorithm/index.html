@@ -84,22 +84,20 @@ run in parallel, then an MPI library is needed.
 
 <p>Parallel performance depends on having enough work on each
 processor to balance the communication costs.  The figure below shows
-strong scaling for 2 different problem sizes (and 3 different domain
-decompositions) for an X-ray burst simulation on the OLCF titan
-machine.
+strong scaling for 2 different problem sizes for an X-ray burst
+simulation on the OLCF titan machine.
 
-<p class="center"><img src="./xrb_titan_scaling_by_grid_sm.png">
+<p class="center"><img src="./titan_xrb_scaling.png">
 
-<p>For each point, a single grid was assigned to each MPI task, and
-threads were used to distribute the work on this grid across the
-processors on the node.  For reference, a titan node has 16 cpus
-arranged into 8 compute units, but two cpus share a floating point
-unit on each compute unit.  For this strong scaling test, we see that
-once the problem is spread sufficiently thin across the cores, we
-become work-starved, and the communication costs dominate.  The main
-cost at the large core counts are the two linear solvers (a cell-centered
-and a node-centered multigrid solver) that Maestro uses to enforce
-the elliptic constraint on the velocities.
+<p>For each problem size, a 48<sup>3</sup> grid domain decomposition
+was used.  Runs were done with 2 grids / MPI task, 1 grid per MPI
+task, and then 1 grid per MPI task with 4, 8, and 16 OpenMP threads.
+For reference, a titan node has 16 cpus arranged into 8 compute units,
+but two cpus share a floating point unit on each compute unit.  These 
+are distributed across 2 physics sockets.  For
+this strong scaling test, we see excellent scaling so long as we stay
+on a single socket.  NUMA issues cause less ideal scaling when all
+cores on a node are used via OpenMP.
 
 </div>  <!-- main -->
 
