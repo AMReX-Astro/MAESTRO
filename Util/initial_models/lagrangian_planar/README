@@ -1,0 +1,3 @@
+This is a generic initial model routine that takes an starting model
+from a 1-d Lagrangian stellar evolution code and puts it onto a
+uniform grid and then enforces HSE.
