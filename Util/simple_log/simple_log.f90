@@ -17,6 +17,8 @@ module simple_log_module
   character (len=MAX_COLS), allocatable, save :: log_data(:)
   integer, save :: log_lines = 0
 
+  logical, save :: initialized = .false.
+
   interface log
      module procedure sd_log
      module procedure si_log
@@ -27,6 +29,7 @@ contains
 
   subroutine simple_log_init()
     allocate(log_data(MAX_LINES))
+    initialized = .true.
   end subroutine simple_log_init
 
   subroutine simple_log_finalize()
@@ -55,6 +58,8 @@ contains
 
   subroutine s_log(str)
     character (len=*), intent(in) :: str
+
+    if (.not. initialized) call simple_log_init()
     
     if (log_lines > MAX_LINES-1) then
        call bl_error("ERROR: log buffer exceeded in module simple_log")
