@@ -59,10 +59,12 @@ endif
 #-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
 UTIL_CORE := 
+
 ifndef BOXLIB_ONLY
   UTIL_CORE := Util/model_parser 
 endif
 
+UTIL_CORE += Util/simple_log
 
 #-----------------------------------------------------------------------------
 # microphysics
