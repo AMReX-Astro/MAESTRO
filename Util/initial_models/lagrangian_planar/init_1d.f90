@@ -161,7 +161,11 @@ program init_1d
 
   do i = 1, nx
      do n = 1, nvars_model
-        model_hse(i,n) = interpolate(xzn_hse(i), n)
+        if (n == itemp_model) then
+           model_hse(i,n) = max(temp_cutoff, interpolate(xzn_hse(i), n, interpolate_top=.true.))
+        else
+           model_hse(i,n) = interpolate(xzn_hse(i), n)
+        endif
      enddo
 
      ! make it all thermodynamically consistent
