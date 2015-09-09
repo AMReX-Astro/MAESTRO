@@ -26,7 +26,7 @@ module model_parser_module
   use network
   use bl_types
   use simple_log_module
-  use probin_module, only: grav_const, base_cutoff_density
+
   implicit none
 
   ! integer keys for indexing the model_state array
@@ -49,24 +49,28 @@ module model_parser_module
 
   integer, parameter :: MAX_VARNAME_LENGTH=80
 
-  double precision :: rhog, dpdr, max_hse_error
-  
   public :: read_model_file, model_parser_finalize
 
 contains
 
-  subroutine read_model_file(model_file)
+  subroutine read_model_file(model_file, grav_const_in, base_cutoff_density_in)
 
     use bl_constants_module
     use bl_error_module
 
     character(len=*), intent(in   ) :: model_file
 
+    real(kind=dp_t), optional :: grav_const_in, base_cutoff_density_in
+
     ! local variables
     integer :: nvars_model_file
     integer :: ierr
 
     integer :: i, j, comp
+
+    real(kind=dp_t) :: grav_const, base_cutoff_density
+
+    double precision :: rhog, dpdr, max_hse_error
 
     real(kind=dp_t), allocatable :: vars_stored(:)
     character(len=MAX_VARNAME_LENGTH), allocatable :: varnames_stored(:)
@@ -75,6 +79,18 @@ contains
     integer :: ipos
     character (len=256) :: header_line
 
+    if (present(grav_const_in)) then
+       grav_const = grav_const_in
+    else
+       grav_const = 0.0_dp_t
+    endif
+
+    if (present(base_cutoff_density_in)) then
+       base_cutoff_density = base_cutoff_density_in
+    else
+       base_cutoff_density = 0.0_dp_t
+    endif
+       
 
     ! open the model file
     open(99,file=trim(model_file),status='old',iostat=ierr)
