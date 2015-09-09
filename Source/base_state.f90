@@ -43,8 +43,8 @@ contains
     use geometry, only: dr, spherical, nr
     use inlet_bc_module, only: set_inlet_bcs
     use fundamental_constants_module, only: Gconst
-    use model_parser_module, only: read_model_file, npts_model, model_r, &
-                                   model_state, &
+    use model_parser_module, only: read_model_file, interpolate, npts_model, &
+                                   model_r, &
                                    idens_model, itemp_model, ipres_model, &
                                    ispec_model
     use simple_log_module
@@ -153,14 +153,14 @@ contains
 
        else
 
-          d_ambient = interpolate(rloc, npts_model, model_r, model_state(:,idens_model))
-          t_ambient = interpolate(rloc, npts_model, model_r, model_state(:,itemp_model))
-          p_ambient = interpolate(rloc, npts_model, model_r, model_state(:,ipres_model))
+          d_ambient = interpolate(rloc, idens_model)
+          t_ambient = interpolate(rloc, itemp_model)
+          p_ambient = interpolate(rloc, ipres_model)
 
           sumX = ZERO
           do comp = 1, nspec
              xn_ambient(comp) = max(ZERO, min(ONE, &
-                  interpolate(rloc, npts_model, model_r, model_state(:,ispec_model-1+comp))))
+                  interpolate(rloc, ispec_model-1+comp)))
              sumX = sumX + xn_ambient(comp)
           enddo
           xn_ambient = xn_ambient/sumX
@@ -275,94 +275,5 @@ contains
     call destroy(bpt)
 
   end subroutine init_base_state
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  function interpolate(r, npts, model_r, model_var)
-
-    ! given the array of model coordinates (model_r), and variable (model_var),
-    ! find the value of model_var at point r using linear interpolation.
-    ! Eventually, we can do something fancier here.
-
-    real(kind=dp_t) :: interpolate
-    real(kind=dp_t), intent(in) :: r
-    integer :: npts
-    real(kind=dp_t), dimension(npts) :: model_r, model_var
-
-    real(kind=dp_t) :: slope
-    real(kind=dp_t) :: minvar, maxvar
-
-    integer :: i, id
-
-    ! find the location in the coordinate array where we want to interpolate
-    do i = 1, npts
-       if (model_r(i) >= r) exit
-    enddo
-    if(i .gt. 1 .and. i .lt. npts+1) then
-       if(abs(r-model_r(i-1)) .lt. abs(r-model_r(i))) then
-          i = i-1
-       end if
-    end if
-    if (i == npts+1) then
-       i = npts
-    end if
-
-    id = i
-
-    if (id == 1) then
-
-       slope = (model_var(id+1) - model_var(id))/(model_r(id+1) - model_r(id))
-       interpolate = slope*(r - model_r(id)) + model_var(id)
-
-       ! safety check to make sure interpolate lies within the bounding points
-       minvar = min(model_var(id+1),model_var(id))
-       maxvar = max(model_var(id+1),model_var(id))
-       interpolate = max(interpolate,minvar)
-       interpolate = min(interpolate,maxvar)
-
-    else if (id == npts) then
-
-       slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
-       interpolate = slope*(r - model_r(id)) + model_var(id)
-
-       ! safety check to make sure interpolate lies within the bounding points
-       minvar = min(model_var(id),model_var(id-1))
-       maxvar = max(model_var(id),model_var(id-1))
-       interpolate = max(interpolate,minvar)
-       interpolate = min(interpolate,maxvar)
-
-    else
-
-       if (r .ge. model_r(id)) then
-
-          ! we should not wind up in here
-
-          slope = (model_var(id+1) - model_var(id))/(model_r(id+1) - model_r(id))
-          interpolate = slope*(r - model_r(id)) + model_var(id)
-          
-          ! safety check to make sure interpolate lies within the bounding points
-          minvar = min(model_var(id+1),model_var(id))
-          maxvar = max(model_var(id+1),model_var(id))
-          interpolate = max(interpolate,minvar)
-          interpolate = min(interpolate,maxvar)
-          
-       else
-
-          slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
-          interpolate = slope*(r - model_r(id)) + model_var(id)
-          
-          ! safety check to make sure interpolate lies within the bounding points
-          minvar = min(model_var(id),model_var(id-1))
-          maxvar = max(model_var(id),model_var(id-1))
-          interpolate = max(interpolate,minvar)
-          interpolate = min(interpolate,maxvar)
-          
-       end if
-
-    end if
-
-    return
-
-  end function interpolate
 
 end module base_state_module

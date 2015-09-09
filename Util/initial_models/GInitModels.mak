@@ -38,7 +38,8 @@ ifdef NEED_BLAS
   Fmdirs += Util/BLAS
 endif
 
-Fmdirs += Util/model_parser
+Fmdirs += Util/model_parser Util/simple_log
+
 
 MICROPHYS_CORE := $(EOS_TOP_DIR)/$(EOS_DIR) \
                   $(NETWORK_TOP_DIR)/$(NETWORK_DIR)
