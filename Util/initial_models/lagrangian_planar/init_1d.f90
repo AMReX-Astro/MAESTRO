@@ -54,6 +54,7 @@ program init_1d
   logical :: converged_hse, fluff
 
   real (kind=dp_t) :: low_density_cutoff, temp_cutoff, smallx, max_T
+  real (kind=dp_t) :: model_shift
 
   integer :: index_base
 
@@ -73,7 +74,7 @@ program init_1d
 
   namelist /params/ nx, model_file, xmin, xmax, g_const, &
                     temp_cutoff, do_invsq_grav, &
-                    low_density_cutoff, model_prefix
+                    low_density_cutoff, model_prefix, model_shift
 
   ! determine if we specified a runtime parameters file or use the default      
   narg = command_argument_count()
@@ -89,6 +90,8 @@ program init_1d
   nx = 640 
 
   model_file = "model.in"
+
+  model_shift = 0.0_dp_t
 
   xmin = 0.0_dp_t
   xmax = 2.e3_dp_t
@@ -121,6 +124,11 @@ program init_1d
 
   ! start by reading in the Lagrangian initial model
   call read_model_file(model_file)
+
+  ! apply the shift
+  do i = 1, npts_model
+     model_r(i) = model_r(i) - model_shift
+  enddo
 
 
 !-----------------------------------------------------------------------------
@@ -407,7 +415,7 @@ program init_1d
 
   dxstr = num_to_unitstring(dCoord)
 
-  outfile = trim(model_prefix) // ".hse." // ".dx_" // trim(adjustl(dxstr))
+  outfile = trim(model_prefix) // ".hse" // ".dx_" // trim(adjustl(dxstr))
   outfile2 = trim(outfile) // ".extras"
 
   open (newunit=lun1, file=outfile, status="unknown")
