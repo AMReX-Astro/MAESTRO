@@ -21,3 +21,13 @@
    isothermal.
 
 
+-- lagrangian_planar
+
+   This takes an existing initial model that is unequally gridded
+   (in space) and maps it onto a uniform grid and puts it in HSE
+   using our equation of state.  At the moment, it assumes a
+   constant gravitational acceleration and plane-parallel.  The
+   integration is down (up and down) from the location of the
+   peak T in the model, and the temperature profile of the initial
+   model is preserved.
+   
