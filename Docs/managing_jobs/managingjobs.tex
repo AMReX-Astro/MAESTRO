@@ -323,38 +323,24 @@ To make a movie (output sequence of images):
 \subsection{edison compilers}
 
 The default compilers on edison are the Intel compilers, but
-it seems that the Cray compilers are the best.
+PGI and Cray also work well
 
 \begin{itemize}
-\item Cray 8.2.6 works well on edison/NERSC with MPI/OpenMP.
+\item Cray 8.4.0 works well on edison/NERSC with MPI/OpenMP
 
-\item Cray 8.3.0 generates an internal compiler error on edison/NERSC.
-      To get back to the older Cray compilers, you need to do:
-
-\begin{verbatim}
-module swap cce/8.3.0 cce/8.2.6
-module swap cray-libsci cray-libsci/12.2.0
-module swap cray-mpich cray-mpich/6.3.1
-\end{verbatim}
-
-\item Cray 8.3.3--8.3.7 compile, but issue a runtime error:
-\begin{verbatim}
- BOXLIB ERROR: BOXARRAY_VERIFY_DIM: ba%dim not equal to some boxes dim:  3
-\end{verbatim}
-Again, the solution is to downgrade to the 8.2.6 version.
+\item Intel 15.0.1 works well on edison/NERSC with MPI/OpenMP
 
 \end{itemize}
 
 
 \subsection{General Guidelines}
 
-edison is configured with 24 cores per node split between two Intel IvyBridge
-12-core processors.  Each processor connects to 1/2 of the node's memory
-and is called a NUMA node, so there are 2 NUMA nodes per edison node.
-Best performance is seen when
-running with 6 threads and 4 MPI tasks per node, as example:
+edison is configured with 24 cores per node split between two Intel
+IvyBridge 12-core processors.  Each processor connects to 1/2 of the
+node's memory and is called a NUMA node, so there are 2 NUMA nodes per
+edison node.  Best performance is seen when running with 6 or 12 threads.
 \begin{verbatim}
-aprun -n 192 -N 4 -S 2 -d 6 -ss ./main.Linux.Cray.mpi.omp.exe inputs_3d
+aprun -n 192 -N 4 -S 2 -d 6 ./main.Linux.Cray.mpi.omp.exe inputs_3d
 \end{verbatim}
 Here,
 \begin{itemize}
@@ -370,22 +356,11 @@ per edison node.
 The script {\tt
 Util/job\_scripts/edison/edison.run} provides an example.
 
-\subsubsection{Older information---still relevant?}
-\noindent (2013-01-15) It's been seen that sometimes an MPICH2 error is 
-generated of the form:
-\begin{verbatim}
-MPIU_nem_gni_get_hugepages(): Unable to mmap 8388608 bytes for file 
-/var/lib/hugetlbfs/global/pagesize-2097152/hugepagefile.MPICH.1.19467.kvs_14619732, 
-err Cannot allocate memory
-\end{verbatim}
-Setting:
-\begin{verbatim}
-export MPICH_GNI_MALLOC_FALLBACK=enabled
-\end{verbatim}
-in your submission script seems to fix this issue.  This will allow
-MPI to continue if there are insufficient huge pages in one NUMA node.
-(Alternately, it was suggested to run without the {\tt -ss} option to
-{\tt aprun}.
+Note that with the Intel compilers, you should never use the {\tt -ss}
+option to {\tt aprun}, and should use {\tt -cc depth} for $< 12$
+threads and {\tt -cc numa\_node} for $12$ threads.
+
+
 
 \subsection{Automatic Restarting and Archiving of Data}
 
