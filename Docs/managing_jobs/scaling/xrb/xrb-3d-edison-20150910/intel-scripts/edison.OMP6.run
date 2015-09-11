@@ -104,7 +104,7 @@ fi
 
 echo "restart string: " ${restartString}
 
-aprun -n 1024 -N 4 -S 2 -d 6 -ss ./main.Linux.Intel.mpi.omp.exe inputs_3d_6.0cm.hi_dens ${restartString}
+aprun -n 1024 -N 4 -S 2 -d 6 -cc depth ./main.Linux.Intel.mpi.omp.exe inputs_3d_6.0cm.hi_dens ${restartString}
 
 
 rm -f process.pid
