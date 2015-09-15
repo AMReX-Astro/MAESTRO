@@ -10,7 +10,7 @@ MKVERBOSE := t
 
 
 # location of top-level MAESTRO directory
-MAESTRO_TOP_DIR = $(MAESTRO_HOME)
+MAESTRO_TOP_DIR = ../../..
 
 
 # EOS and network
