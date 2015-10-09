@@ -19,7 +19,7 @@ module subchandra
     integer :: XC12_comp = -1, XO16_comp = -1, XHe4_comp = -1, rhopert_comp = -1
     integer :: XdotC12_comp = -1, XdotO16_comp = -1, XdotHe4_comp = -1
     integer :: tpert_comp = -1, enuc_comp = -1, xvel_comp = -1
-    integer :: yvel_comp = -1, zvel_comp = -1, s_comp = -1
+    integer :: yvel_comp = -1, zvel_comp = -1, s_comp = -1, rv_comp = -1
     integer :: spert_comp = -1
   end type
 
@@ -42,6 +42,8 @@ module subchandra
     ! ncount keeps track of how many zones were written into
     ! each bin
     integer, allocatable :: ncount(:)
+    integer, allocatable :: rvn_ncount(:) !count for number of cells with
+                                          !negative radial velocity
     !binned averaging data for various physical quantities
     real(kind=dp_t), allocatable :: dens_avg_bin(:), dens_rms_bin(:)
     real(kind=dp_t), allocatable :: temp_avg_bin(:), temp_rms_bin(:)
@@ -50,6 +52,7 @@ module subchandra
     real(kind=dp_t), allocatable :: XC12_avg_bin(:), XO16_avg_bin(:), XHe4_avg_bin(:)
     real(kind=dp_t), allocatable :: XdotC12_avg_bin(:), XdotO16_avg_bin(:), XdotHe4_avg_bin(:)
     real(kind=dp_t), allocatable :: entropy_avg_bin(:), entropy_rms_bin(:)
+    real(kind=dp_t), allocatable :: rv_neg_avg_bin(:)
   end type radial_averages
 
   !Collection of global results based on evaluation of
@@ -395,6 +398,9 @@ contains
     type(plotfile), intent(in) :: pf
     type(state_comps), intent(out) :: sc
 
+    !The names of available plotfile components can be found in
+    !$MAESTRO_HOME/Source/make_plotfile.f90
+
     sc%dens_comp    = plotfile_var_index(pf, "density")
     sc%h_comp       = plotfile_var_index(pf, "h")
     sc%temp_comp    = plotfile_var_index(pf, "tfromp") 
@@ -414,6 +420,7 @@ contains
     sc%yvel_comp    = plotfile_var_index(pf, "y_vel") 
     sc%zvel_comp    = plotfile_var_index(pf, "z_vel") 
     sc%s_comp       = plotfile_var_index(pf, "entropy")
+    sc%rv_comp      = plotfile_var_index(pf, "radial_velocity")
     sc%spert_comp   = plotfile_var_index(pf, "entropypert")
 
     if ( sc%dens_comp < 0 .or. sc%temp_comp < 0 .or. sc%h_comp < 0 .or. &
@@ -423,7 +430,7 @@ contains
          sc%rhopert_comp < 0 .or. sc%tpert_comp < 0 .or. &
          sc%enuc_comp < 0 .or. &
          sc%xvel_comp < 0 .or. sc%yvel_comp < 0 .or. sc%zvel_comp < 0 .or. &
-         sc%s_comp < 0 .or. sc%spert_comp < 0) then
+         sc%s_comp < 0 .or. sc%spert_comp < 0 .or. sc%rv_comp < 0) then
        call bl_error("ERROR: plotfile varaible(s) not defined")
     endif
   end subroutine init_comps
@@ -499,8 +506,9 @@ contains
     radav%nbins = nbins
 
     ! ncount keeps track of how many zones were written into
-    ! each bin
+    ! each bin, rvn_ncount only includes zone w/ negative radial velocity
     allocate(radav%ncount(0:nbins-1))
+    allocate(radav%rvn_ncount(0:nbins-1))
 
     ! allocate storage for the data 
     allocate(   radav%dens_avg_bin(0:nbins-1))
@@ -511,16 +519,18 @@ contains
     allocate(   radav%XHe4_avg_bin(0:nbins-1))
     allocate(   radav%XC12_avg_bin(0:nbins-1))
     allocate(   radav%XO16_avg_bin(0:nbins-1))
-    allocate(   radav%XdotHe4_avg_bin(0:nbins-1))
-    allocate(   radav%XdotC12_avg_bin(0:nbins-1))
-    allocate(   radav%XdotO16_avg_bin(0:nbins-1))
+    allocate(radav%XdotHe4_avg_bin(0:nbins-1))
+    allocate(radav%XdotC12_avg_bin(0:nbins-1))
+    allocate(radav%XdotO16_avg_bin(0:nbins-1))
     allocate(   radav%dens_rms_bin(0:nbins-1))
     allocate(   radav%temp_rms_bin(0:nbins-1))
     allocate(   radav%pres_rms_bin(0:nbins-1))
     allocate(radav%entropy_avg_bin(0:nbins-1))
     allocate(radav%entropy_rms_bin(0:nbins-1))
+    allocate( radav%rv_neg_avg_bin(0:nbins-1))
 
     radav%ncount(:) = 0
+    radav%rvn_ncount(:) = 0
     radav%dens_avg_bin(:) = ZERO
     radav%temp_avg_bin(:) = ZERO
     radav%pres_avg_bin(:) = ZERO
@@ -537,6 +547,7 @@ contains
     radav%pres_rms_bin(:) = ZERO
     radav%entropy_avg_bin(:) = ZERO
     radav%entropy_rms_bin(:) = ZERO
+    radav%rv_neg_avg_bin(:) = ZERO
   end subroutine init_averages
   
   subroutine analyze(pf, geo, sc, thist, glb, radav, hh, hheap_frac_input)
@@ -817,6 +828,7 @@ contains
             radav%magv_avg_bin(i) = radav%magv_avg_bin(i)/radav%ncount(i)
             radav%enuc_avg_bin(i) = radav%enuc_avg_bin(i)/radav%ncount(i)
             radav%entropy_avg_bin(i) = radav%entropy_avg_bin(i)/radav%ncount(i)
+            radav%rv_neg_avg_bin(i) = radav%rv_neg_avg_bin(i)/radav%rvn_ncount(i)
 
             ! Favre averaged composition
             radav%XHe4_avg_bin(i) = (radav%XHe4_avg_bin(i)/radav%ncount(i)) / radav%dens_avg_bin(i)
@@ -893,6 +905,12 @@ contains
     
     radav%entropy_avg_bin(indx) = radav%entropy_avg_bin(indx) + &
          p(ii,jj,kk,sc%s_comp) * r1**3
+
+    if(p(ii,jj,kk,sc%rv_comp) .lt. 0.0) then
+       radav%rv_neg_avg_bin(indx) = radav%rv_neg_avg_bin(indx) + &
+            p(ii,jj,kk,sc%rv_comp) * r1**3
+       radav%rvn_ncount(indx) = radav%rvn_ncount(indx) + r1**3
+    endif
 
     ! do the Favre-average here, < rho * X(He4) > / < rho >
     radav%XHe4_avg_bin(indx) = radav%XHe4_avg_bin(indx) + &
@@ -1123,9 +1141,9 @@ contains
 
       ! write averages labels
       write(uno,fmt_labels) "r", "density", "temperature", "pressure",  &
-           "vel. magnitude", "Hnuc", "entropy", "X(He4)", "X(C12)", "X(O16)", &
-           "Xdot(He4)", "Xdot(C12)", "Xdot(O16)", "RMS density", "RMS temperature", &
-           "RMS pressure", "RMS entropy"
+           "vel. magnitude", "Hnuc", "entropy", "negative rad. vel.", &
+           "X(He4)", "X(C12)", "X(O16)", "Xdot(He4)", "Xdot(C12)", "Xdot(O16)",&
+           "RMS density", "RMS temperature", "RMS pressure", "RMS entropy"
 
       ! write the data in columns
       do i = 0, radav%nbins-1
@@ -1137,6 +1155,7 @@ contains
          if (abs(   radav%magv_avg_bin(i)) .lt. 1.d-99)    radav%magv_avg_bin(i) = 0.d0
          if (abs(   radav%enuc_avg_bin(i)) .lt. 1.d-99)    radav%enuc_avg_bin(i) = 0.d0
          if (abs(radav%entropy_avg_bin(i)) .lt. 1.d-99) radav%entropy_avg_bin(i) = 0.d0
+         if (abs( radav%rv_neg_avg_bin(i)) .lt. 1.d-99)  radav%rv_neg_avg_bin(i) = 0.d0
          if (abs(   radav%XHe4_avg_bin(i)) .lt. 1.d-99)    radav%XHe4_avg_bin(i) = 0.d0
          if (abs(   radav%XC12_avg_bin(i)) .lt. 1.d-99)    radav%XC12_avg_bin(i) = 0.d0
          if (abs(   radav%XO16_avg_bin(i)) .lt. 1.d-99)    radav%XO16_avg_bin(i) = 0.d0
@@ -1150,7 +1169,7 @@ contains
          
          write(uno,fmt_data) geo%r(i), radav%dens_avg_bin(i), radav%temp_avg_bin(i),        &
               radav%pres_avg_bin(i), radav%magv_avg_bin(i), radav%enuc_avg_bin(i),          &
-              radav%entropy_avg_bin(i),                                                     &
+              radav%entropy_avg_bin(i), radav%rv_neg_avg_bin(i),                            &
               radav%XHe4_avg_bin(i), radav%XC12_avg_bin(i), radav%XO16_avg_bin(i),          &
               radav%XdotHe4_avg_bin(i), radav%XdotC12_avg_bin(i), radav%XdotO16_avg_bin(i), &
               radav%dens_rms_bin(i), radav%temp_rms_bin(i),                                 &
