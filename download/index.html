@@ -66,11 +66,20 @@ typing <tt>make</tt></li>
 to run your first problem</li>
 </ol>
 
+<p>Note: it is recommended that you use <tt>git</tt> to manage
+your source rather than downloading a <tt>.zip</tt> file from
+github.  This way you can keep track with changes.
+
 <p><h2>&lowast; Keeping Up-to-date</h2>
 
 <p>The Maestro source is periodically updated.  To update your source
 tree, simply type <tt>git pull</tt> in your <tt>MAESTRO/</tt>
 directory.  Note: you cannot push back to the public git repo.
+
+<p>We use multiple branches for Maestro development.  The <tt>master</tt>
+branch is the stable source, which has passed the regression test 
+suite.  New changes are first pushed into <tt>development</tt>,
+and the test suite tests this branch.
 
 <p>ChangeLog:
 
@@ -90,9 +99,10 @@ ChangeLog appears here in browsers that support iframes...
 <p>Maestro has an
 extensive <a href="http://bender.astro.sunysb.edu/Maestro/test-suite/">Regression
 Test Suite</a>, using the BoxLib <tt>Tools/RegressionTesting</tt>
-framework.
+framework.  We test with both the GCC and PGI compilers.
   
   
+
 <p><h2>&lowast; Getting Help</h2>
 
 <p>Subscribe to
