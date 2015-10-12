@@ -58,13 +58,16 @@ The code runs without any problem if it is compiled with {\tt -O2
 -ftree-vectorize -fno-range-check} (our default) but with {\tt
 cluster\_f.f90} compiled with {\tt -O2 -ftree-vectorize
 -fno-range-check -fno-tree-pre}.  The ``{\tt fno-tree-pre}'' option
-turns off ``{\tt ftree-pre}'' that is turned on by ``{\tt O2}'' \\
+turns off ``{\tt ftree-pre}'' that is turned on by ``{\tt O2}''
  
 GCC manual says,
 
-{\tt -ftree-pre} \\
+\begin{quote}
+{\tt -ftree-pre} \newline
 Perform partial redundancy elimination (PRE) on trees. This flag is enabled by default at {\tt -O2} and {\tt -O3}.
+\end{quote}
 
+\item {\em gfortran 5.1.1}: These compilers have no known issues.
 
 
 \end{itemize}
