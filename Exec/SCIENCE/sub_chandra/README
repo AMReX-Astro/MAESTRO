@@ -1,0 +1,20 @@
+This directory contains files and sub-directories relevant to our study of explosive convection
+in a helium shell enveloping a sub-Chandrasekhar mass white dwarf.  Such burning establishes
+the conditions for various interesting phenomenon including double detonation type Ia 
+supernovae, helium novae, and ".Ia"'s (only the shell explodes, with a brightness of about a
+tenth that of a SNe Ia).
+
+build/
+These are the files required to build the executable for modelling this problem.
+
+job_scripts/
+Scripts useful for submitting and processing data of the executable.
+
+paper_I/
+Files specific to the first paper in our sub-Chandra series, Zingale et al. 2013 (ApJ, 764, 97)
+
+paper_II/
+Files specific to the second paper in our sub-Chandra series, Jacobs et al. 2015 (ApJ, submitted)
+
+postprocessing/
+A programs/scripts for processing a sub-Chandra simulation's pltfiles.
