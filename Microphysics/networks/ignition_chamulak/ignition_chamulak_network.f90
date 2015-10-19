@@ -16,7 +16,7 @@
 !  network_species_index -- return the index of the species given its name
 !
 
-module network
+module actual_network
 
   use bl_types
 
@@ -42,11 +42,11 @@ module network
   ! reaction
   real(kind=dp_t), parameter :: M12_chamulak = 2.93_dp_t
 
-  logical, save :: network_initialized = .false.
+!  logical, save :: network_initialized = .false.
 
 contains
 
-  subroutine network_init()
+  subroutine actual_network_init()
 
     use network_indices
     use rpar_indices
@@ -77,9 +77,9 @@ contains
     ! sense of what is stored in the rpar() array.
     call init_rpar_indices(nspec)
 
-    network_initialized = .true.
+!    network_initialized = .true.
 
-  end subroutine network_init
+  end subroutine actual_network_init
 
   function get_ebin_value(density) result (ebin)
 
@@ -113,24 +113,24 @@ contains
 
   end function get_ebin_value
 
-  function network_species_index(name) result(r)
+  ! function network_species_index(name) result(r)
 
-    character(len=*) :: name
-    integer :: r, n
+  !   character(len=*) :: name
+  !   integer :: r, n
 
-    r = -1
+  !   r = -1
 
-    do n = 1, nspec
-       if (name == spec_names(n) .or. name == short_spec_names(n)) then
-          r = n
-          exit
-       endif
-    enddo
-    return
-  end function network_species_index
+  !   do n = 1, nspec
+  !      if (name == spec_names(n) .or. name == short_spec_names(n)) then
+  !         r = n
+  !         exit
+  !      endif
+  !   enddo
+  !   return
+  ! end function network_species_index
 
   subroutine network_finalize()
 
   end subroutine network_finalize
 
-end module network
+end module actual_network
